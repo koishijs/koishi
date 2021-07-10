@@ -1,7 +1,7 @@
 import { Logger, paramCase, sleep, Time } from 'koishi-utils'
 import { Session } from './session'
 import { App } from './app'
-import type WebSocket from 'ws'
+import WebSocket from 'ws'
 
 export interface BotOptions {
   type?: string
@@ -28,12 +28,13 @@ export abstract class Adapter<P extends Platform = Platform> {
   abstract start(): Promise<void>
   abstract stop?(): void
 
-  constructor(public app: App, private Bot: Bot.Constructor<P>) {}
+  constructor(public app: App, private Bot?: Bot.Constructor<P>) {}
 
-  create(options: BotOptions) {
-    const bot = new this.Bot(this, options)
+  create(options: BotOptions, constructor = this.Bot) {
+    const bot = new constructor(this, options)
     this.bots.push(bot)
     this.app.bots.push(bot)
+    return bot
   }
 
   dispatch(session: Session) {
@@ -78,13 +79,14 @@ export namespace Adapter {
     const callback = typeof target === 'string' ? () => target : target
     return class {
       constructor(app: App, bot: BotOptions) {
-        logger.info('infer type as %c', bot.type = callback(bot))
+        logger.debug('infer type as %c', bot.type = callback(bot))
         return from(app, bot)
       }
     } as Constructor
   }
 
   export interface WsClientOptions {
+    retryLazy?: number
     retryTimes?: number
     retryInterval?: number
   }
@@ -94,43 +96,59 @@ export namespace Adapter {
     abstract connect(bot: Bot.Instance<P>): Promise<void>
 
     private _listening = false
+    public options: WsClientOptions
 
-    constructor(app: App, Bot: Bot.Constructor<P>, public options: WsClientOptions = {}) {
+    static options: WsClientOptions = {
+      retryLazy: Time.minute,
+      retryInterval: 5 * Time.second,
+      retryTimes: 6,
+    }
+
+    constructor(app: App, Bot: Bot.Constructor<P>, options: WsClientOptions = {}) {
       super(app, Bot)
+      this.options = { ...WsClient.options, ...options }
     }
 
     private async _listen(bot: Bot.Instance<P>) {
       let _retryCount = 0
-      const { retryTimes, retryInterval } = this.options
+      const { retryTimes, retryInterval, retryLazy } = this.options
 
       const connect = async (resolve: (value: void) => void, reject: (reason: Error) => void) => {
         logger.debug('websocket client opening')
         bot.status = Bot.Status.CONNECTING
         const socket = await this.prepare(bot)
+        const url = socket.url.replace(/\?.+/, '')
 
         socket.on('error', error => logger.debug(error))
 
         socket.on('close', (code, reason) => {
           bot.socket = null
           bot.status = Bot.Status.NET_ERROR
+          logger.debug(`websocket closed with ${code}`)
           if (!this._listening) return
 
-          const message = reason || `failed to connect to ${socket.url}`
-          if (!retryInterval || _retryCount >= retryTimes) {
-            return reject(new Error(message))
+          // remove query args to protect privacy
+          const message = reason || `failed to connect to ${url}`
+          let timeout = retryInterval
+          if (_retryCount >= retryTimes) {
+            if (this.app.status === App.Status.open) {
+              timeout = retryLazy
+            } else {
+              return reject(new Error(message))
+            }
           }
 
           _retryCount++
-          logger.warn(`${message}, will retry in ${Time.formatTimeShort(retryInterval)}...`)
+          logger.warn(`${message}, will retry in ${Time.formatTimeShort(timeout)}...`)
           setTimeout(() => {
             if (this._listening) connect(resolve, reject)
-          }, retryInterval)
+          }, timeout)
         })
 
         socket.on('open', () => {
           _retryCount = 0
           bot.socket = socket
-          logger.debug('connect to ws server:', socket.url)
+          logger.info('connect to ws server:', url)
           this.connect(bot).then(() => {
             bot.status = Bot.Status.GOOD
             resolve()
@@ -156,17 +174,16 @@ export namespace Adapter {
   }
 }
 
-export interface Bot<P = Platform> extends BotOptions {
+export interface Bot<P = Platform> extends BotOptions, UserBase {
   [Session.send](session: Session, message: string): Promise<void>
 
   status: Bot.Status
   socket?: WebSocket
   version?: string
-  username?: string
   getStatus(): Promise<Bot.Status>
 
   // message
-  sendMessage(channelId: string, content: string): Promise<string>
+  sendMessage(channelId: string, content: string, groupId?: string): Promise<string>
   sendPrivateMessage(userId: string, content: string): Promise<string>
   getMessage(channelId: string, messageId: string): Promise<MessageInfo>
   editMessage(channelId: string, messageId: string, content: string): Promise<void>
@@ -176,6 +193,7 @@ export interface Bot<P = Platform> extends BotOptions {
   getSelf(): Promise<UserInfo>
   getUser(userId: string): Promise<UserInfo>
   getFriendList(): Promise<UserInfo[]>
+  deleteFriend(userId: string): Promise<void>
 
   // group
   getGroup(groupId: string): Promise<GroupInfo>
@@ -226,6 +244,9 @@ export class Bot<P extends Platform> {
       author: {
         userId: this.selfId,
         username: this.username,
+        avatar: this.avatar,
+        discriminator: this.discriminator,
+        isBot: true,
       },
     })
   }
@@ -240,7 +261,7 @@ export class Bot<P extends Platform> {
     for (let index = 0; index < channels.length; index++) {
       if (index && delay) await sleep(delay)
       try {
-        messageIds.push(await this.sendMessage(channels[index], content))
+        messageIds.push(await this.sendMessage(channels[index], content, 'unknown'))
       } catch (error) {
         this.app.logger('bot').warn(error)
       }
@@ -277,20 +298,24 @@ export type Platform = keyof Bot.Platforms
 
 export interface ChannelInfo {
   channelId: string
-  channelName: string
+  channelName?: string
 }
 
 export interface GroupInfo {
   groupId: string
-  groupName: string
+  groupName?: string
 }
 
-export interface UserInfo {
-  userId: string
-  username: string
+export interface UserBase {
+  username?: string
   nickname?: string
   avatar?: string
   discriminator?: string
+  isBot?: boolean
+}
+
+export interface UserInfo extends UserBase {
+  userId: string
 }
 
 export interface GroupMemberInfo extends UserInfo {
@@ -299,6 +324,10 @@ export interface GroupMemberInfo extends UserInfo {
 
 export interface AuthorInfo extends GroupMemberInfo {
   anonymous?: string
+}
+
+export interface RoleInfo {
+  id: string
 }
 
 export interface MessageBase {

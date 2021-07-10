@@ -1,27 +1,20 @@
 import { Context } from 'koishi-core'
-import admin, { AdminConfig } from './admin'
-import debug, { DebugOptions } from './debug'
-import handler, { HandlerOptions } from './handler'
-import repeater, { RepeaterOptions } from './repeater'
-import sender, { SenderConfig } from './sender'
+import basic, { BasicConfig } from './basic'
+import handler, { HandlerConfig } from './handler'
+import updater, { UpdaterConfig } from './updater'
 
-export { admin, debug, handler, repeater, sender }
+export * from './basic'
+export * from './handler'
+export * from './updater'
 
-export interface Config extends AdminConfig, HandlerOptions, RepeaterOptions, SenderConfig {
-  debug?: DebugOptions
-}
+export interface Config extends HandlerConfig, BasicConfig, UpdaterConfig {}
 
 export const name = 'common'
 
 export function apply(ctx: Context, config: Config = {}) {
   ctx.command('common', '基础功能')
 
-  ctx.plugin(admin, config)
+  ctx.plugin(basic, config)
   ctx.plugin(handler, config)
-  ctx.plugin(repeater, config)
-  ctx.plugin(sender, config)
-
-  if (config.debug) {
-    ctx.plugin(debug, config.debug)
-  }
+  ctx.plugin(updater, config)
 }

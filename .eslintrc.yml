@@ -10,9 +10,13 @@ settings:
       alwaysTryTypes: true
 
 env:
+  browser: true
   node: true
   mocha: true
   es2020: true
+
+globals:
+  KOISHI_CONFIG: true
 
 extends:
   - standard
@@ -63,6 +67,9 @@ rules:
 
   default-param-last: off
   '@typescript-eslint/default-param-last': error
+
+  func-call-spacing: off
+  '@typescript-eslint/func-call-spacing': error
 
   keyword-spacing: off
   '@typescript-eslint/keyword-spacing': error

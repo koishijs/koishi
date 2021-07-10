@@ -1,9 +1,13 @@
+/* eslint-disable no-cond-assign */
+
 import { spawnAsync, cwd } from './utils'
+import { EOL } from 'os'
 import { resolve } from 'path'
 import fs from 'fs-extra'
 import globby from 'globby'
 import json5 from 'json5'
 import cac from 'cac'
+import ts from 'typescript'
 
 const { args, options } = cac().help().parse()
 delete options['--']
@@ -14,41 +18,105 @@ async function readJson(path: string) {
   return json5.parse(data)
 }
 
+async function getModules(srcpath: string) {
+  const files = await globby(srcpath)
+  return files.map(file => file.slice(srcpath.length + 1, -3))
+}
+
+async function compile(path: string, filename: string) {
+  const code = await spawnAsync(['tsc', '-b', 'packages/' + path, ...tsArgs])
+  if (code) process.exit(code)
+  return fs.readFile(filename, 'utf8')
+}
+
 async function bundle(path: string) {
   const fullpath = resolve(cwd, 'packages', path)
-  const srcpath = fullpath + '/src'
+  const config = await readJson(fullpath + '/tsconfig.json')
+  const { outFile, rootDir } = config.compilerOptions as ts.CompilerOptions
+  if (!outFile) return
 
-  const [files, code, config] = await Promise.all([
-    globby(srcpath),
-    spawnAsync(['tsc', '-b', 'packages/' + path, ...tsArgs]),
-    readJson(fullpath + '/tsconfig.json'),
-  ])
-  if (code) process.exit(code)
+  const srcpath = `${fullpath.replace(/\\/g, '/')}/${rootDir}`
+  const [files, content] = await Promise.all([getModules(srcpath), compile(path, resolve(fullpath, outFile))])
 
-  if (!config.compilerOptions.outFile) return
-  const entry = resolve(fullpath, config.compilerOptions.outFile)
-  const modules = files.map(file => file.slice(srcpath.length + 1, -3))
-  const moduleRE = `"(${modules.join('|')})"`
-  const [content, meta] = await Promise.all([
-    fs.readFile(entry, 'utf8'),
-    fs.readJson(fullpath + '/package.json'),
-  ])
+  const moduleRE = `"(${files.join('|')})"`
+  const internalImport = new RegExp('import\\(' + moduleRE + '\\)\\.', 'g')
+  const internalExport = new RegExp('^ {4}export .+ from ' + moduleRE + ';$')
+  const internalInject = new RegExp('^declare module ' + moduleRE + ' {$')
+  const importMap: Record<string, Record<string, string>> = {}
+  const namespaceMap: Record<string, string> = {}
 
-  const moduleMapper: Record<string, string> = {}
-  const starStmts = content.match(new RegExp('import \\* as (.+) from ' + moduleRE + ';\n', 'g')) || []
-  starStmts.forEach(stmt => {
-    const segments = stmt.split(' ')
-    const key = segments[5].slice(1, -3)
-    moduleMapper[key] = segments[3]
+  let prolog = '', epilog = '', cap: RegExpExecArray, identifier: string
+  const output = content.split(EOL).filter((line) => {
+    if (cap = /^ {4}import ["'](.+)["'];$/.exec(line)) {
+      if (!files.includes(cap[1])) prolog += line.trimStart() + EOL
+    } else if (cap = /^ {4}import \* as (.+) from ["'](.+)["'];$/.exec(line)) {
+      if (files.includes(cap[2])) {
+        namespaceMap[cap[2]] = cap[1]
+      } else {
+        prolog += line.trimStart() + EOL
+      }
+    } else if (cap = /^ {4}import +(\S*)(?:, *)?(?:\{(.+)\})? from ["'](.+)["'];$/.exec(line)) {
+      if (files.includes(cap[3])) return
+      const map = importMap[cap[3]] ||= {}
+      cap[1] && Object.defineProperty(map, 'default', { value: cap[1] })
+      cap[2] && cap[2].split(',').map((part) => {
+        part = part.trim()
+        if (part.includes(' as ')) {
+          const [left, right] = part.split(' as ')
+          map[left.trimEnd()] = right.trimStart()
+        } else {
+          map[part] = part
+        }
+      })
+    } else if (line.startsWith('///')) {
+      prolog += line + EOL
+    } else if (line.startsWith('    export default ')) {
+      epilog = line.trimStart() + EOL
+    } else {
+      return true
+    }
+  }).map((line) => {
+    if (cap = /^declare module ["'](.+)["'] \{( \})?$/.exec(line)) {
+      if (cap[2]) return ''
+      identifier = namespaceMap[cap[1]]
+      return identifier ? `declare namespace ${identifier} {` : ''
+    } else if (line === '}') {
+      return identifier ? '}' : ''
+    } else if (!internalExport.exec(line)) {
+      if (!identifier) line = line.slice(4)
+      return line
+        .replace(internalImport, '')
+        .replace(/import\("index"\)/g, 'import(".")')
+        .replace(/^((module|class|namespace) .+ \{)$/, (_) => `declare ${_}`)
+    } else {
+      return ''
+    }
+  }).map((line) => {
+    if (cap = internalInject.exec(line)) {
+      identifier = '@internal'
+      return ''
+    } else if (line === '}') {
+      return identifier ? identifier = '' : '}'
+    } else {
+      if (identifier) line = line.slice(4)
+      return line.replace(/^((class|namespace) .+ \{)$/, (_) => `export ${_}`)
+    }
+  }).filter(line => line).join(EOL)
+
+  Object.entries(importMap).forEach(([name, map]) => {
+    const output: string[] = []
+    const entries = Object.entries(map)
+    if (map.default) output.push(map.default)
+    if (entries.length) {
+      output.push('{ ' + entries.map(([left, right]) => {
+        if (left === right) return left
+        return `${left} as ${right}`
+      }).join(', ') + ' }')
+    }
+    prolog += `import ${output.join(', ')} from '${name}';${EOL}`
   })
 
-  await fs.writeFile(resolve(fullpath, 'dist/index.d.ts'), content
-    .replace(new RegExp('import\\(' + moduleRE + '\\)\\.', 'g'), '')
-    .replace(new RegExp('^    (import|export).+ from ' + moduleRE + ';$\n', 'gm'), '')
-    .replace(new RegExp('(declare module )' + moduleRE, 'g'), (_, $1, $2) => {
-      if (!moduleMapper[$2]) return `${$1}'${meta.name}'`
-      return `declare namespace ${moduleMapper[$2]}`
-    }))
+  await fs.writeFile(resolve(fullpath, 'lib/index.d.ts'), prolog + output + epilog)
 }
 
 async function bundleAll(names: readonly string[]) {
@@ -57,15 +125,23 @@ async function bundleAll(names: readonly string[]) {
   }
 }
 
-const targets = ['koishi-utils', 'koishi-core']
-const databases = ['mongo', 'mysql']
-const corePlugins = ['common', 'eval', 'puppeteer', 'teach']
+const targets = [
+  'koishi-utils',
+  'koishi-core',
+  'plugin-common',
+  'plugin-mysql',
+  'plugin-mongo',
+  'plugin-webui',
+  'plugin-teach',
+  'plugin-adventure',
+]
+
+const corePlugins = ['eval', 'puppeteer']
 
 function precedence(name: string) {
   if (name.startsWith('adapter')) return 1
   if (name.startsWith('koishi')) return 5
   const plugin = name.slice(7)
-  if (databases.includes(plugin)) return 2
   if (corePlugins.includes(plugin)) return 3
   return 4
 }

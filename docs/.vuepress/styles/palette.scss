@@ -1,0 +1,13 @@
+:root {
+  --c-brand: #5546a3;
+  --c-brand-light: #473a88;
+  --c-scroll-track: #eaecef;
+}
+
+.dark:root {
+  --c-brand: #33c0f6;
+  --c-brand-light: #7289da;
+  --c-scroll-track: #151310;
+}
+
+$textShadow: 1px 1px 1px rgba(23, 31, 35, 0.5);

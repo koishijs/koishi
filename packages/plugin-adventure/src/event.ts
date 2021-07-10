@@ -1,6 +1,5 @@
-import { getValue, Shopper, Adventurer } from './utils'
-import { User, checkTimer, Session } from 'koishi-core'
-import { Logger } from 'koishi-utils'
+import { User, checkTimer, Logger } from 'koishi-core'
+import { Adventurer } from './utils'
 import Buff from './buff'
 import Item from './item'
 import Luck from './luck'
@@ -8,10 +7,10 @@ import Phase from './phase'
 
 const logger = new Logger('cosmos').extend('event')
 
-type Event<T extends User.Field = Adventurer.Field> = (session: Session<T>) => string | void
+type Event<T = any> = (session: Adventurer.Session, state?: T) => string | void
 
 namespace Event {
-  export type Visible<T extends User.Field = Adventurer.Field> = (session: Session<T>) => string
+  export type Visible<T = any> = (session: Adventurer.Session, state?: T) => string
 
   export const ending = (id: string): Visible => (session) => {
     const { app, user } = session
@@ -26,7 +25,7 @@ namespace Event {
     return output.join('\n')
   }
 
-  export const sell = (itemMap: Readonly<Record<string, number>>): Visible<Shopper.Field> => ({ user, app }) => {
+  export const sell = (itemMap: Readonly<Record<string, number>>): Visible => ({ user, app }) => {
     let moneyGained = 0
     const toValue = app.adventure.createSeller(user)
     for (const name in itemMap) {
@@ -41,7 +40,7 @@ namespace Event {
     return `已售出${Item.format(itemMap)}，获得 ${+moneyGained.toFixed(1)}￥，余额 ${+user.money.toFixed(1)}￥。`
   }
 
-  export const buy = (itemMap: Readonly<Record<string, number>>): Visible<Shopper.Field> => ({ user, app }) => {
+  export const buy = (itemMap: Readonly<Record<string, number>>): Visible => ({ user, app }) => {
     let moneyLost = 0
     const toBid = app.adventure.createBuyer(user)
     for (const name in itemMap) {
@@ -56,29 +55,10 @@ namespace Event {
     return `已购入${Item.format(itemMap)}，花费 ${+moneyLost.toFixed(1)}￥，余额 ${+user.money.toFixed(1)}￥。`
   }
 
-  export const combine = (events: Event[]): Event => (session) => {
-    let message: string | void
-    events.forEach(event => message = event(session) || message)
-    return message
-  }
-
-  export const updateTimer = (name: string, hours: Adventurer.Infer<number>, reason = ''): Event => ({ user }) => {
-    // 替身地藏自动抵消无法交互的效果
-    if (name === '$system' && user.warehouse['替身地藏']) {
-      user.warehouse['替身地藏'] -= 1
-      user.avatarAchv += 1
-      return `${reason}\n$s 扔出替身地藏躲过了一劫。\n$s 失去了替身地藏（SP）！`
-    }
-
-    // 疗伤加护自动抵消无法使用物品的效果
-    if (name === '$use' && checkTimer('$healing', user)) {
-      return `${reason}\n河童的秘药瞬间治愈了 $s 手上的伤！`
-    }
-
-    // 当死亡时将酒品归零
-    if (name === '$system') {
-      user.taste = 0
-    }
+  export const updateTimer = <T>(name: string, hours: Adventurer.Update<number, T>, reason = ''): Event<T> => (session, state) => {
+    const { app, user } = session
+    const result = app.bail('adventure/before-timer', name, reason, session)
+    if (result) return result
 
     // 如果是新状态则清除调用提示
     if (!checkTimer(name, user)) {
@@ -87,7 +67,7 @@ namespace Event {
 
     // 生死流转仅对显式状态生效
     const scale = reason && checkTimer('$dirt', user) ? 1800000 : 3600000
-    checkTimer(name, user, getValue(hours, user) * scale)
+    checkTimer(name, user, Adventurer.getValue(hours, user, state) * scale)
     return reason
   }
 
@@ -117,95 +97,64 @@ namespace Event {
     return reason
   }
 
-  export const decreaseLuck = (delta: number, reason: string, preventMessage: string): Event => (session) => {
-    if (session.user.warehouse['疵痕之护符']) {
-      session.user.warehouse['疵痕之护符'] -= 1
-      session.user.avatarAchv += 1
-      return preventMessage
-    } else {
-      return updateLuck(-delta, reason)(session)
-    }
-  }
+  // Money
 
-  export const loseMoney = (value: Adventurer.Infer<number>): Event => ({ user }) => {
-    const loss = Math.min(getValue(value, user), user.money)
+  export const loseMoney = <T>(value: Adventurer.Update<number, T>): Visible<T> => ({ user }, state) => {
+    const loss = Math.min(Adventurer.getValue(value, user, state), user.money)
     user.money -= loss
     return `$s 损失了 ${+loss.toFixed(1)}￥！`
   }
 
-  export const gain = (...names: string[]): Event => (session) => {
+  export const gainMoney = <T>(value: Adventurer.Update<number, T>): Visible<T> => ({ user }, state) => {
+    const gain = Math.min(Adventurer.getValue(value, user, state), user.money)
+    user.money += gain
+    user.wealth += gain
+    return `$s 获得了 ${+gain.toFixed(1)}￥！`
+  }
+
+  // Item
+
+  function toItemMap(items: Item.Pack) {
+    if (!Array.isArray(items)) return items
+    const map: Record<string, number> = {}
+    for (const name of items) {
+      map[name] = (map[name] || 0) + 1
+    }
+    return map
+  }
+
+  export const gain = <T>(items: Adventurer.Update<Item.Pack, T>, reason = '$s $n获得了$i$r！'): Visible<T> => (session, state) => {
     const output: string[] = []
-    for (const name of names) {
+    const itemMap = toItemMap(Adventurer.getValue(items, session.user, state))
+    for (const name in itemMap) {
       const isOld = name in session.user.warehouse
       const { rarity, description } = Item.data[name]
       session._item = name
-      const result = Item.gain(session, name)
-      output.push(`$s ${isOld ? '' : '首次'}获得了${session._item}（${rarity}）！`)
+      const count = itemMap[name]
+      const result = Item.gain(session, name, count)
+      output.push(reason
+        .replace('$n', isOld ? '' : '首次')
+        .replace('$i', session._item + (count > 1 ? '×' + count : ''))
+        .replace('$r', `（${rarity}）`))
       if (!session._skipAll) output.push(description)
       if (result) output.push(result)
+      session._gains.add(name)
     }
-    const result = Item.checkOverflow(session, names)
-    if (result) output.push(result)
+    session.app.emit('adventure/gain', itemMap, session, output)
     return output.join('\n')
-  }
-
-  export function gainSingle(name: string, reason: string): Event.Visible
-  export function gainSingle(name: string, count: Adventurer.Infer<number>): Event.Visible
-  export function gainSingle(name: string, arg: string | Adventurer.Infer<number>): Visible {
-    return (session) => {
-      let output: string
-      if (typeof arg === 'string') {
-        session._item = name
-        const result = Item.gain(session, name)
-        output = arg.replace('$i', session._item)
-        if (!session._skipAll) output += '\n' + Item.data[name].description
-        if (result) output += '\n' + result
-      } else {
-        const { warehouse, gains } = session.user
-        const _count = getValue(arg, session.user)
-        const isOld = name in gains
-        if (!isOld) {
-          warehouse[name] = 0
-          gains[name] = 0
-        }
-        warehouse[name] += _count
-        gains[name] += _count
-        output = `$s ${isOld ? '' : '首次'}获得了${name}×${_count}！`
-        if (!session._skipAll) output += '\n' + Item.data[name].description
-      }
-      const result = Item.checkOverflow(session, [name])
-      if (result) output += '\n' + result
-      return output
-    }
-  }
-
-  export function lose(items: Item.Pack, reason = '$s 失去了$i！'): Visible<Shopper.Field> {
-    reason = reason.replace('$i', () => Item.format(items))
-    const itemMap = Array.isArray(items)
-      ? Object.fromEntries(items.map(arg => [arg, 1]))
-      : items
-    return (session) => {
-      const output = [reason]
-      for (const name in itemMap) {
-        const result = Item.lose(session, name)
-        if (result) output.push(result)
-      }
-      session.app.emit('adventure/lose', itemMap, session, output)
-      return output.join('\n')
-    }
   }
 
   const rarities = ['N', 'R', 'SR', 'SSR', 'EX'] as Item.Rarity[]
 
-  export const gainRandom = (count: Adventurer.Infer<number>, exclude: readonly string[] = []): Event => (session) => {
-    const _count = getValue(count, session.user)
-    const gainListOriginal: string[] = []
-    const gainListFormatted: string[] = []
+  export const gainRandom = <T>(count: Adventurer.Update<number, T>, exclude: readonly string[] = []): Visible<T> => (session, state) => {
+    const _count = Adventurer.getValue(count, session.user, state)
+    const itemMap: Record<string, number> = {}
+    const gainList: string[] = []
 
     const data = {} as Record<Item.Rarity, string[]>
     for (const rarity of rarities) {
-      data[rarity] = Item.data[rarity].filter(({ name, condition }) => {
-        return !exclude.includes(name) && (!condition || condition(session.user, false))
+      data[rarity] = Item.data[rarity].filter(({ name, beforePick }) => {
+        return !exclude.includes(name) && !beforePick?.(session)
       }).map(({ name }) => name)
     }
 
@@ -214,20 +163,34 @@ namespace Event {
       const rarity = Luck.use(session.user).weightedPick(Luck.probabilities)
       const index = Math.floor(Math.random() * data[rarity].length)
       const [item] = data[rarity].splice(index, 1)
+      if (!data[rarity].length) delete data[rarity]
       session._item = item
       const result = Item.gain(session, item)
       if (result) output.push(result)
-      gainListOriginal.push(item)
-      gainListFormatted.push(session._item)
+      session._gains.add(item)
+      itemMap[item] = (itemMap[item] || 0) + 1
+      gainList.push(session._item)
     }
 
-    output.unshift(`$s 获得了 ${_count} 件随机物品：${Item.format(gainListFormatted)}！`)
-    const result = Item.checkOverflow(session, gainListOriginal)
-    if (result) output.push(result)
+    output.unshift(`$s 获得了 ${_count} 件随机物品：${Item.format(gainList)}！`)
+    session.app.emit('adventure/gain', itemMap, session, output)
     return output.join('\n')
   }
 
-  export const loseRandom = (count: Adventurer.Infer<number>, exclude: readonly string[] = []): Event => (session) => {
+  export const lose = <T>(items: Adventurer.Update<Item.Pack, T>, reason = '$s 失去了$i！'): Visible<T> => (session, state) => {
+    const itemMap = toItemMap(Adventurer.getValue(items, session.user, state))
+    const output = reason
+      ? [reason.replace('$i', () => Item.format(Array.isArray(items) ? items : itemMap))]
+      : []
+    for (const name in itemMap) {
+      const result = Item.lose(session, name)
+      if (result) output.push(result)
+    }
+    session.app.emit('adventure/lose', itemMap, session, output)
+    return output.join('\n')
+  }
+
+  export const loseRandom = <T>(count: Adventurer.Update<number, T>, exclude: readonly string[] = []): Visible<T> => (session, state) => {
     const lostList: string[] = []
     let length = 0
 
@@ -240,7 +203,7 @@ namespace Event {
       length += data[rarity].length
       if (!data[rarity].length) probabilities[rarity] = 0
     }
-    length = Math.min(length, getValue(count, session.user))
+    length = Math.min(length, Adventurer.getValue(count, session.user, state))
 
     const output: string[] = []
     for (let i = 0; i < length; i += 1) {
@@ -253,11 +216,12 @@ namespace Event {
       if (result) output.push(result)
     }
     output.unshift(`$s 失去了 ${length} 件随机物品：${Item.format(lostList)}！`)
+    session.app.emit('adventure/lose', toItemMap(lostList), session, output)
     return output.join('\n')
   }
 
-  export const loseRecent = (count: Adventurer.Infer<number>): Event => (session) => {
-    const _count = getValue(count, session.user)
+  export const loseRecent = <T>(count: Adventurer.Update<number, T>): Visible<T> => (session, state) => {
+    const _count = Adventurer.getValue(count, session.user, state)
     const recent = session.user.recent.slice(0, _count)
     if (!recent.length) return
     const output = [`$s 失去了最后获得的 ${recent.length} 件物品：${Item.format(recent)}！`]
@@ -265,6 +229,7 @@ namespace Event {
       const result = Item.lose(session, name)
       if (result) output.push(result)
     }
+    session.app.emit('adventure/lose', toItemMap(recent), session, output)
     session.user.recent = []
     return output.join('\n')
   }

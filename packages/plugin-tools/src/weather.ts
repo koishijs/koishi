@@ -22,7 +22,7 @@ export function apply(ctx: Context) {
           params: { lon, lat, lang, unit },
           responseType: 'arraybuffer',
         })
-        return segment.image('base64://' + Buffer.from(data).toString('base64'))
+        return segment.image(data)
       } catch (error) {
         ctx.logger('tools').warn(error)
       }

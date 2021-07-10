@@ -1,17 +1,9 @@
-import { App, Command, Channel, Argv as IArgv, User } from 'koishi-core'
+import { App, Command, Channel, Argv as IArgv, User, Context } from 'koishi-core'
 import { Logger, Observed, pick, union } from 'koishi-utils'
 import { Worker, ResourceLimits } from 'worker_threads'
-import { WorkerAPI, WorkerConfig, WorkerData, WorkerResponse, ScopeData } from './worker'
+import { WorkerHandle, WorkerConfig, WorkerData, SessionData, Loader } from './worker'
 import { expose, Remote, wrap } from './transfer'
 import { resolve } from 'path'
-
-declare module 'koishi-core' {
-  interface EventMap {
-    'worker/start'(): void | Promise<void>
-    'worker/ready'(response: WorkerResponse): void
-    'worker/exit'(): void
-  }
-}
 
 const logger = new Logger('eval')
 
@@ -19,7 +11,7 @@ export interface MainConfig extends Trap.Config {
   prefix?: string
   authority?: number
   timeout?: number
-  maxLogs?: number
+  scriptLoader?: string
   resourceLimits?: ResourceLimits
   dataKeys?: (keyof WorkerData)[]
   gitRemote?: string
@@ -44,7 +36,7 @@ export class Trap<O extends {}> {
     }
   }
 
-  get(target: Observed<{}, Promise<void>>, fields: string[]) {
+  get(target: Observed<{}, Promise<void>>, fields: Iterable<string>) {
     if (!target) return
     const result: Partial<O> = {}
     for (const field of fields) {
@@ -66,8 +58,8 @@ export class Trap<O extends {}> {
 export namespace Trap {
   export interface Declaraion<O extends {}, T = any, K extends keyof O = never> {
     fields: Iterable<K>
-    get?(data: Pick<O, K>): T
-    set?(data: Pick<O, K>, value: T): void
+    get?(target: Pick<O, K>): T
+    set?(target: Pick<O, K>, value: T): void
   }
 
   export const user = new Trap<User>()
@@ -81,7 +73,7 @@ export namespace Trap {
   export type Access<T> = T[] | AccessObject<T>
 
   interface Argv<A extends any[], O> extends IArgv<never, never, A, O> {
-    scope?: ScopeData
+    payload?: SessionData
   }
 
   type Action<A extends any[], O> = (argv: Argv<A, O>, ...args: A) => ReturnType<Command.Action>
@@ -114,17 +106,23 @@ export namespace Trap {
 
     command.userFields([...Trap.user.fields(userAccess.readable)])
     command.channelFields([...Trap.channel.fields(channelAccess.readable)])
-    command.action((argv, ...args) => {
-      const { id } = argv.session
+    command.action(async (argv, ...args) => {
+      const { id, app } = argv.session
       const user = Trap.user.get(argv.session.user, userAccess.readable)
       const channel = Trap.channel.get(argv.session.channel, channelAccess.readable)
-      const ctxOptions = { id, user, channel, userWritable, channelWritable }
-      return action({ ...argv, scope: ctxOptions }, ...args)
-    })
+      const payload = { id, user, channel, userWritable, channelWritable }
+      const inactive = !app._sessions[id]
+      app._sessions[id] = argv.session
+      try {
+        return await action({ ...argv, payload }, ...args)
+      } finally {
+        if (inactive) delete app._sessions[id]
+      }
+    }, true)
   }
 }
 
-export class MainAPI {
+export class MainHandle {
   constructor(public app: App) {}
 
   private getSession(uuid: string) {
@@ -143,12 +141,10 @@ export class MainAPI {
     return result
   }
 
-  async send(uuid: string, message: string) {
+  async send(uuid: string, content: string) {
     const session = this.getSession(uuid)
-    if (!session._sendCount) session._sendCount = 0
-    if (this.app.worker.config.maxLogs > session._sendCount++) {
-      return await session.sendQueued(message)
-    }
+    content = await this.app.waterfall('eval/before-send', content, session)
+    if (content) return await session.sendQueued(content)
   }
 
   async updateUser(uuid: string, data: Partial<User>) {
@@ -168,24 +164,48 @@ function createRequire(filename: string) {
 
 enum State { closing, close, opening, open }
 
+declare const BUILTIN_LOADERS: string[]
+
 export class EvalWorker {
   private prevent = false
   private worker: Worker
   private promise: Promise<void>
 
   public state = State.close
-  public local: MainAPI
-  public remote: Remote<WorkerAPI>
+  public local: MainHandle
+  public loader: Loader
+  public remote: Remote<WorkerHandle>
 
   static readonly State = State
 
-  constructor(public app: App, public config: EvalConfig) {
-    this.local = new MainAPI(app)
+  constructor(public ctx: Context, public config: EvalConfig) {
+    this.local = new MainHandle(ctx.app)
+
+    ctx.before('eval/start', () => this.prepare(config))
+
+    // wait for dependents to be executed
+    process.nextTick(() => {
+      ctx.on('connect', () => this.start())
+      ctx.before('disconnect', () => this.stop())
+    })
   }
 
-  async start() {
+  prepare = async ({ scriptLoader, loaderConfig }: EvalConfig) => {
+    // resolve loader filepath
+    if (BUILTIN_LOADERS.includes(scriptLoader)) {
+      scriptLoader = resolve(__dirname, 'loaders', scriptLoader)
+    } else {
+      scriptLoader = resolve(process.cwd(), scriptLoader)
+    }
+    this.loader = require(scriptLoader)
+    return this.loader.prepare?.(loaderConfig)
+  }
+
+  // delegated class methods which use instance properties
+  // should be written in arrow functions to ensure accessibility
+  start = async () => {
     this.state = State.opening
-    await this.app.parallel('worker/start')
+    await this.ctx.parallel('eval/before-start')
     process.on('beforeExit', this.beforeExit)
 
     let index = 0
@@ -211,13 +231,12 @@ export class EvalWorker {
     this.remote = wrap(this.worker)
 
     await this.remote.start().then((response) => {
-      this.app.emit('worker/ready', response)
+      this.ctx.emit('eval/start', response)
       logger.debug('worker started')
       this.state = State.open
 
       this.worker.on('exit', (code) => {
         this.state = State.close
-        this.app.emit('worker/exit')
         logger.debug('exited with code', code)
         if (!this.prevent) this.promise = this.start()
       })
@@ -228,20 +247,20 @@ export class EvalWorker {
     this.prevent = true
   }
 
-  async stop() {
+  stop = async () => {
     this.state = State.closing
     this.beforeExit()
     process.off('beforeExit', this.beforeExit)
     await this.worker?.terminate()
   }
 
-  async restart() {
+  restart = async () => {
     this.state = State.closing
     await this.worker?.terminate()
     await this.promise
   }
 
-  onError(listener: (error: Error) => void) {
+  onError = (listener: (error: Error) => void) => {
     this.worker.on('error', listener)
     return () => this.worker.off('error', listener)
   }

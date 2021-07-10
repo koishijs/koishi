@@ -1,13 +1,12 @@
-import { App, Adapter, Logger } from 'koishi-core'
+import { App, Adapter, Logger, renameProperty } from 'koishi-core'
+import { Opcode, Payload } from './types'
+import { adaptSession, adaptUser } from './utils'
 import { DiscordBot } from './bot'
 import WebSocket from 'ws'
-import { Opcode, Payload } from './types'
-
-import { adaptSession } from './utils'
 
 const logger = new Logger('discord')
 
-// https://discord.com/developers/docs/topics/gateway
+/** https://discord.com/developers/docs/topics/gateway */
 export default class WsClient extends Adapter.WsClient<'discord'> {
   constructor(app: App) {
     super(app, DiscordBot, app.options.discord)
@@ -28,7 +27,7 @@ export default class WsClient extends Adapter.WsClient<'discord'> {
   async connect(bot: DiscordBot) {
     return new Promise<void>((resolve) => {
       if (bot._sessionId) {
-        logger.info('resuming')
+        logger.debug('resuming')
         bot.socket.send(JSON.stringify({
           op: Opcode.Resume,
           d: {
@@ -51,33 +50,38 @@ export default class WsClient extends Adapter.WsClient<'discord'> {
         if (parsed.s) {
           bot._d = parsed.s
         }
+
         // https://discord.com/developers/docs/topics/gateway#identifying
         if (parsed.op === Opcode.Hello) {
           bot._ping = setInterval(() => this.heartbeat(bot), parsed.d.heartbeat_interval)
+          if (bot._sessionId) return
           bot.socket.send(JSON.stringify({
             op: Opcode.Identify,
             d: {
               token: bot.token,
               properties: {},
               compress: false,
-              intents: (1 << 9) + (1 << 12),
+              // https://discord.com/developers/docs/topics/gateway#gateway-intents
+              intents: (1 << 9) + (1 << 10) + (1 << 12) + (1 << 13),
             },
           }))
-        } else if (parsed.op === Opcode.Dispatch) {
+        }
+
+        if (parsed.op === Opcode.Dispatch) {
           if (parsed.t === 'READY') {
             bot._sessionId = parsed.d.session_id
-            bot.username = parsed.d.user.username
-            bot.selfId = parsed.d.user.id
-            resolve()
+            const self: any = adaptUser(parsed.d.user)
+            renameProperty(self, 'selfId', 'userId')
+            Object.assign(bot, self)
             logger.debug('session_id ' + bot._sessionId)
+            return resolve()
           }
           const session = await adaptSession(bot, parsed)
           if (session) this.dispatch(session)
         }
       })
 
-      bot.socket.on('close', (c, r) => {
-        logger.warn(r)
+      bot.socket.on('close', () => {
         clearInterval(bot._ping)
       })
     })

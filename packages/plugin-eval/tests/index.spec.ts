@@ -5,10 +5,10 @@ import { resolve } from 'path'
 import { promises as fs } from 'fs'
 import * as eval from 'koishi-plugin-eval'
 
-const app = new App()
+const app = new App({ mockStart: false })
 
 app.plugin(eval, {
-  addonRoot: resolve(__dirname, 'fixtures'),
+  root: resolve(__dirname, 'fixtures'),
   setupFiles: {
     'test-worker': resolve(__dirname, 'worker.ts'),
   },
@@ -19,7 +19,7 @@ const ses = app.session('123')
 before(async () => {
   await fs.rmdir(resolve(__dirname, 'fixtures/.koishi'), { recursive: true })
   return new Promise<void>((resolve) => {
-    app.on('worker/ready', () => resolve())
+    app.on('eval/start', () => resolve())
     app.start()
   })
 })
@@ -29,9 +29,9 @@ after(() => app.stop())
 describe('Eval Plugin', () => {
   it('basic support', async () => {
     await ses.shouldReply('> 1 + 1', '2')
-    await ses.shouldNotReply('>> 1 + 1')
-    await ses.shouldReply('> send(1 + 1)', '2')
-    await ses.shouldReply('>> send(1 + 1)', '2')
+    await ses.shouldNotReply('>> 1 + 2')
+    await ses.shouldReply('> send(1 + 3)', '4')
+    await ses.shouldReply('>> send(1 + 4)', '5')
   })
 
   it('validation', async () => {
@@ -41,7 +41,7 @@ describe('Eval Plugin', () => {
   it('error', async () => {
     await ses.shouldReply('> throw 1', 'Uncaught: 1')
     await ses.shouldReply('> foo', 'ReferenceError: foo is not defined\n    at stdin:1:1')
-    await ses.shouldReply('> 1f', 'SyntaxError: Invalid or unexpected token\n    at stdin:1:1')
+    await ses.shouldReply('> 1f', /^SyntaxError/)
   })
 
   it('exec', async () => {
@@ -57,7 +57,7 @@ describe('Eval Plugin', () => {
   it('interpolate', async () => {
     app.command('echo <text:text>').action((_, text) => text)
     await ses.shouldReply('echo 1${1 + 1}3', '123')
-    await ses.shouldReply('echo 1${2 + 3', '12 + 3')
+    await ses.shouldReply('echo 1${2 + 3', '1')
   })
 
   it('global', async () => {
@@ -82,14 +82,41 @@ describe('Eval Plugin', () => {
   })
 })
 
+describe('Eval Loaders', () => {
+  function createApp(scriptLoader: string) {
+    const app = new App({ mockStart: false })
+    app.command('echo <text:text>').action((_, text) => text)
+    app.plugin(eval, { scriptLoader })
+
+    return new Promise<App>((resolve) => {
+      app.on('eval/start', () => resolve(app))
+      app.start()
+    })
+  }
+
+  it('esbuild', async () => {
+    const app = await createApp('esbuild')
+    const ses = app.session('123')
+    await ses.shouldReply('echo 1${"foo" as string}3', '1foo3')
+    await app.stop()
+  })
+
+  it('coffeescript', async () => {
+    const app = await createApp('coffeescript')
+    const ses = app.session('123')
+    await ses.shouldReply('echo 1${"foobar"}3', '1foobar3')
+    await app.stop()
+  })
+})
+
 describe('Eval Addons', () => {
   it('addon command', async () => {
     await ses.shouldReply('addon', /^addon\n扩展功能/)
     await ses.shouldReply('test -h', 'test\n测试功能')
-    await ses.shouldReply('test', 'bar')
+    await ses.shouldReply('test', 'barbaz')
   })
 
   it('sandbox injection', async () => {
-    await ses.shouldReply('> addon1.foo()', 'bar')
+    await ses.shouldReply('> addon1.foo(1)', 'baz')
   })
 })

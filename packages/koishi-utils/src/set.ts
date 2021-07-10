@@ -17,3 +17,11 @@ export function union<T>(array1: readonly T[], array2: readonly T[]) {
 export function deduplicate<T>(array: readonly T[]) {
   return [...new Set(array)]
 }
+
+export function remove<T>(list: T[], item: T) {
+  const index = list.indexOf(item)
+  if (index >= 0) {
+    list.splice(index, 1)
+    return true
+  }
+}

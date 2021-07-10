@@ -1,164 +1,218 @@
 /* eslint-disable quote-props */
 
-import { AuthorInfo, Bot, MessageInfo } from 'koishi-core'
-import { camelize, segment, pick, renameProperty, snakeCase } from 'koishi-utils'
+import { AuthorInfo, Bot, Session } from 'koishi-core'
+import { camelize, segment, renameProperty, snakeCase } from 'koishi-utils'
 import axios, { Method } from 'axios'
-import * as Kaiheila from './types'
+import * as KHL from './types'
 import { adaptGroup, adaptAuthor, adaptUser } from './utils'
+import FormData from 'form-data'
+import { createReadStream } from 'fs'
 
-export interface KaiheilaAuthorInfo extends AuthorInfo {
-  avatar?: string
-  descriminator?: string
-}
-
-export interface KaiheilaMessageInfo extends MessageInfo {
+export interface KaiheilaMessageInfo {
   channelName?: string
   mention?: string[]
   mentionRoles?: string[]
   mentionAll?: boolean
   mentionHere?: boolean
-  author?: KaiheilaAuthorInfo
+  author?: AuthorInfo
 }
+
+const attachmentTypes = ['image', 'video', 'audio', 'file']
+
+type SendHandle = [string, KHL.MessageParams, Session<never, never, 'kaiheila', 'send'>]
 
 export class KaiheilaBot extends Bot {
   _sn = 0
   _ping: NodeJS.Timeout
+  _heartbeat: NodeJS.Timeout
   version = 'kaiheila'
 
-  static toMessage(data: KaiheilaMessageInfo & Record<string, any>) {
-    renameProperty(data, 'channelId', 'targetId')
-    renameProperty(data, 'timestamp', 'msgTimestamp')
-    renameProperty(data, 'messageId', 'msgId')
-    renameProperty(data, 'userId', 'authorId')
-    const { author, channelName, guildId } = data.extra
-    data.channelName = channelName
-    data.groupId = guildId
-    data.author = {
-      userId: data.userId,
-      descriminator: author.identifyNum,
-      avatar: author.avatar,
-      username: author.username,
-      nickname: author.nickname,
-      roles: author.roles,
-    }
-    data.subtype = data['channelType'] === 'GROUP' ? 'group' : 'private'
-    data.content = data.content
-      .replace(/@(.+?)#(\d+)/, (_, $1, $2) => `[CQ:at,id=${$2}]`)
-      .replace(/@全体成员/, () => `[CQ:at,type=all]`)
-      .replace(/@在线成员/, () => `[CQ:at,type=here]`)
-      .replace(/@role:(\d+);/, (_, $1) => `[CQ:at,role=${$1}]`)
-      .replace(/#channel:(\d+);/, (_, $1) => `[CQ:sharp,id=${$1}]`)
-    Object.assign(data, pick(data.extra, ['mention', 'mentionRoles', 'memtionAll', 'mentionHere']))
-    delete data.channelType
-    delete data.verifyToken
-    delete data.nonce
-    delete data.type
-    delete data.extra
-  }
-
-  async request<T = any>(method: Method, path: string, data: any = {}): Promise<T> {
+  async request<T = any>(method: Method, path: string, data: any = {}, headers: any = {}): Promise<T> {
     const url = `${this.app.options.kaiheila.endpoint}${path}`
-    const headers: Record<string, any> = {
+    headers = {
       'Authorization': `Bot ${this.token}`,
       'Content-Type': 'application/json',
+      ...headers,
     }
 
     const response = await axios({
       method,
       url,
       headers,
-      data: JSON.stringify(snakeCase(data)),
+      data: data instanceof FormData ? data : JSON.stringify(snakeCase(data)),
     })
     const result = camelize(response.data)
     return result.data
   }
 
-  private parseQuote(chain: segment.Chain) {
-    if (chain[0].type !== 'quote') return
-    return chain.shift().data.id
-  }
-
-  private parseNode(node: segment.Parsed) {
-    if (node.type === 'image') {
-      return { type: 'image', src: node.data.url, size: node.data.size }
-    } else if (node.type === 'button') {
-      return { type: 'button', text: node.data.content }
-    }
-  }
-
-  private parseCard(chain: segment.Chain) {
-    if (chain[0].type !== 'card') return
-    const node = chain.shift()
-    const card = { type: 'card', modules: [], ...pick(node.data, ['theme', 'color', 'size']) }
-    for (const node of chain) {
-      if (node.type === 'text') {
-        card.modules.push({ type: 'plain-text', content: node.data.content })
-      } else if (node.type === 'header') {
-        card.modules.push({ type: 'header', text: { type: 'plain-text', content: node.data.content } })
-      } else if (node.type === 'section') {
-        card.modules.push({
-          type: 'section',
-          mode: node.data.mode,
-          text: { type: 'kmarkdown', content: node.data.content },
-          accessory: this.parseNode(segment.from(node.data.accessory)),
-        })
-      } else if (node.type === 'divider') {
-        card.modules.push({ type: 'divider' })
-      }
-    }
-    return JSON.stringify([card])
-  }
-
-  private renderText(chain: segment.Chain) {
-    return chain.reduce<string>((prev, code) => {
-      const { type, data } = code
-      if (type === 'text') {
-        return prev + data.content
-      } else if (type === 'at') {
-        if (data.id) return prev + `@user#${data.id}`
-        if (data.type === 'all') return prev + '@全体成员'
-        if (data.type === 'here') return prev + '@在线成员'
-        if (data.role) return prev + `@role:${data.role};`
-      } else if (type === 'sharp') {
-        return prev + `#channel:${data.id};`
-      }
-      return prev
-    }, '')
-  }
-
-  async sendMessage(channelId: string, content: string) {
+  private _prepareHandle(channelId: string, content: string, groupId: string): SendHandle {
     let path: string
-    const params: any = { type: 1 }
-    const session = this.createSession({ channelId, content })
+    const params = {} as KHL.MessageParams
+    const session = this.createSession({ channelId, content, groupId })
     if (channelId.length > 30) {
       params.chatCode = channelId
       session.subtype = 'private'
       path = '/user-chat/create-msg'
     } else {
-      params.channelId = channelId
+      params.targetId = channelId
       session.subtype = 'group'
       path = '/message/create'
     }
+    return [path, params, session]
+  }
 
-    // trigger before-send
-    if (await this.app.serial(session, 'before-send', session)) return
+  private async _sendHandle([path, params, session]: SendHandle, type: KHL.Type, content: string) {
+    params.type = type
+    params.content = content
+    const message = await this.request('POST', path, params)
+    session.messageId = message.msgId
+    this.app.emit(session, 'send', session)
+  }
 
-    // parse quote
-    const chain = segment.parse(session.content)
-    params.quote = this.parseQuote(chain)
+  private async _transformUrl({ type, data }: segment.Parsed) {
+    if (data.url.startsWith('file://') || data.url.startsWith('base64://')) {
+      const payload = new FormData()
+      payload.append('file', data.url.startsWith('file://')
+        ? createReadStream(data.url.slice(8))
+        : Buffer.from(data.url.slice(9), 'base64'))
+      const { url } = await this.request('POST', '/asset/create', payload, payload.getHeaders())
+      data.url = url
+    } else if (!data.url.includes('kaiheila')) {
+      const res = await axios.get<ReadableStream>(data.url, {
+        responseType: 'stream',
+        headers: { accept: type },
+      })
+      const payload = new FormData()
+      payload.append('file', res.data)
+      const { url } = await this.request('POST', '/asset/create', payload, payload.getHeaders())
+      data.url = url
+      console.log(url)
+    }
+  }
 
-    // parse card
-    const card = this.parseCard(chain)
-    if (card) {
-      params.type = Kaiheila.Type.card
-      params.content = card
-    } else {
-      params.content = this.renderText(chain)
+  private async _sendCard(handle: SendHandle, chain: segment.Chain, useMarkdown: boolean) {
+    const type = useMarkdown ? 'kmarkdown' : 'plain-text'
+    let text: KHL.Card.Text = { type, content: '' }
+    let card: KHL.Card = { type: 'card', modules: [] }
+    const output: KHL.Card[] = []
+    const flushText = () => {
+      text.content = text.content.trim()
+      if (!text.content) return
+      card.modules.push({ type: 'section', text })
+      text = { type, content: '' }
+    }
+    const flushCard = () => {
+      flushText()
+      if (!card.modules.length) return
+      output.push(card)
+      card = { type: 'card', modules: [] }
     }
 
-    const message = await this.request('POST', path, params)
-    this.app.emit(session, 'send', session)
-    return session.messageId = message.msgId
+    for (const { type, data } of chain) {
+      if (type === 'text') {
+        text.content += data.content
+      } else if (type === 'at') {
+        if (data.id) {
+          text.content += `@user#${data.id}`
+        } else if (data.type === 'all') {
+          text.content += '@全体成员'
+        } else if (data.type === 'here') {
+          text.content += '@在线成员'
+        } else if (data.role) {
+          text.content += `@role:${data.role};`
+        }
+      } else if (type === 'sharp') {
+        text.content += `#channel:${data.id};`
+      } else if (attachmentTypes.includes(type)) {
+        flushText()
+        await this._transformUrl({ type, data })
+        if (type === 'image') {
+          card.modules.push({
+            type: 'image-group',
+            elements: [{
+              type: 'image',
+              src: data.url,
+            }],
+          })
+        } else {
+          card.modules.push({
+            type: type as never,
+            src: data.url,
+          })
+        }
+      } else if (type === 'card') {
+        flushCard()
+        output.push(JSON.parse(data.content))
+      }
+    }
+    flushCard()
+    await this._sendHandle(handle, KHL.Type.card, JSON.stringify(output))
+  }
+
+  private async _sendSeparate(handle: SendHandle, chain: segment.Chain, useMarkdown: boolean) {
+    let textBuffer = ''
+    const type = useMarkdown ? KHL.Type.kmarkdown : KHL.Type.text
+    const flush = async () => {
+      textBuffer = textBuffer.trim()
+      if (!textBuffer) return
+      await this._sendHandle(handle, type, textBuffer)
+      handle[1].quote = null
+      textBuffer = ''
+    }
+
+    for (const { type, data } of chain) {
+      if (type === 'text') {
+        textBuffer += data.content
+      } else if (type === 'at') {
+        if (data.id) {
+          textBuffer += `@user#${data.id}`
+        } else if (data.type === 'all') {
+          textBuffer += '@全体成员'
+        } else if (data.type === 'here') {
+          textBuffer += '@在线成员'
+        } else if (data.role) {
+          textBuffer += `@role:${data.role};`
+        }
+      } else if (type === 'sharp') {
+        textBuffer += `#channel:${data.id};`
+      } else if (attachmentTypes.includes(type)) {
+        await flush()
+        await this._transformUrl({ type, data })
+        await this._sendHandle(handle, KHL.Type[type], data.url)
+      } else if (type === 'card') {
+        await flush()
+        await this._sendHandle(handle, KHL.Type.card, JSON.stringify([JSON.parse(data.content)]))
+      }
+    }
+    await flush()
+  }
+
+  async sendMessage(channelId: string, content: string, groupId?: string) {
+    const handle = this._prepareHandle(channelId, content, groupId)
+    const [, params, session] = handle
+    if (await this.app.serial(session, 'before-send', session)) return
+
+    let useMarkdown = false
+    const chain = segment.parse(content)
+    if (chain[0].type === 'quote') {
+      params.quote = chain.shift().data.id
+    }
+    if (chain[0].type === 'markdown') {
+      useMarkdown = true
+      chain.shift()
+    }
+
+    const { attachMode } = this.app.options.kaiheila
+    const hasAttachment = chain.some(node => attachmentTypes.includes(node.type))
+    const useCard = hasAttachment && (attachMode === 'card' || attachMode === 'mixed' && chain.length > 1)
+
+    if (useCard) {
+      await this._sendCard(handle, chain, useMarkdown)
+    } else {
+      await this._sendSeparate(handle, chain, useMarkdown)
+    }
+
+    return session.messageId
   }
 
   async sendPrivateMessage(targetId: string, content: string) {
@@ -175,28 +229,42 @@ export class KaiheilaBot extends Bot {
   }
 
   async editMessage(channelId: string, msgId: string, content: string) {
-    const chain = segment.parse(content)
-    const quote = this.parseQuote(chain)
-    content = this.renderText(chain)
     if (channelId.length > 30) {
-      await this.request('POST', '/user-chat/update-msg', { msgId, content, quote })
+      await this.request('POST', '/user-chat/update-msg', { msgId, content })
     } else {
-      await this.request('POST', '/message/update', { msgId, content, quote })
+      await this.request('POST', '/message/update', { msgId, content })
+    }
+  }
+
+  async $createReaction(channelId: string, messageId: string, emoji: string) {
+    if (channelId.length > 30) {
+      await this.request('POST', '/direct-message/add-reaction', { msg_id: messageId, emoji })
+    } else {
+      await this.request('POST', '/message/add-reaction', { msg_id: messageId, emoji })
+    }
+  }
+
+  async $deleteReaction(channelId: string, messageId: string, emoji: string, userId?: string) {
+    if (channelId.length > 30) {
+      await this.request('POST', '/direct-message/delete-reaction', { msg_id: messageId, emoji })
+    } else {
+      await this.request('POST', '/message/delete-reaction', { msg_id: messageId, emoji, user_id: userId })
     }
   }
 
   async getSelf() {
-    const data = await this.request<Kaiheila.Self>('GET', '/user/me')
-    return adaptUser(data)
+    const data = adaptUser(await this.request<KHL.Self>('GET', '/user/me'))
+    renameProperty(data, 'selfId' as never, 'userId')
+    return data
   }
 
   async getGroupList() {
-    const { items } = await this.request<Kaiheila.GuildList>('GET', '/guild/list')
+    const { items } = await this.request<KHL.GuildList>('GET', '/guild/list')
     return items.map(adaptGroup)
   }
 
   async getGroupMemberList() {
-    const { items } = await this.request<Kaiheila.GuildMemberList>('GET', '/guild/user-list')
+    const { items } = await this.request<KHL.GuildMemberList>('GET', '/guild/user-list')
     return items.map(adaptAuthor)
   }
 

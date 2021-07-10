@@ -1,6 +1,7 @@
 import { CQBot } from './bot'
 import { Adapter, Session } from 'koishi-core'
 import { Logger, camelCase, renameProperty, paramCase, segment } from 'koishi-utils'
+import * as qface from 'qface'
 import * as Koishi from 'koishi-core'
 import * as OneBot from './types'
 
@@ -8,38 +9,38 @@ export * from './types'
 
 export const adaptUser = (user: OneBot.AccountInfo): Koishi.UserInfo => ({
   userId: user.userId.toString(),
+  avatar: `http://q.qlogo.cn/headimg_dl?dst_uin=${user.userId}&spec=640`,
   username: user.nickname,
 })
 
 export const adaptGroupMember = (user: OneBot.SenderInfo): Koishi.GroupMemberInfo => ({
   ...adaptUser(user),
   nickname: user.card,
+  roles: [user.role],
 })
 
 export const adaptAuthor = (user: OneBot.SenderInfo, anonymous?: OneBot.AnonymousInfo): Koishi.AuthorInfo => ({
   ...adaptUser(user),
   nickname: anonymous?.name || user.card,
   anonymous: anonymous?.flag,
+  roles: [user.role],
 })
 
-function adaptContent(content: string) {
-  return segment.parse(content).reduce((prev, { type, data }) => {
-    if (type === 'at') {
-      if (data.qq === 'all') return prev + '[CQ:at,type=all]'
-      return prev + `[CQ:at,id=${data.qq}]`
-    } else if (type === 'reply') {
-      type = 'quote'
-    }
-    return prev + segment(type, data)
-  }, '')
+export function adaptMessage(message: OneBot.Message): Koishi.MessageInfo {
+  return {
+    messageId: message.messageId.toString(),
+    timestamp: message.time * 1000,
+    author: adaptAuthor(message.sender, message.anonymous),
+    content: segment.transform(message.message, {
+      at({ qq }) {
+        if (qq !== 'all') return segment.at(qq)
+        return segment('at', { type: 'all' })
+      },
+      face: ({ id }) => segment('face', { id, url: qface.getUrl(id) }),
+      reply: (data) => segment('quote', data),
+    }),
+  }
 }
-
-export const adaptMessage = (message: OneBot.Message): Koishi.MessageInfo => ({
-  messageId: message.messageId.toString(),
-  timestamp: message.time * 1000,
-  content: adaptContent(message.message),
-  author: adaptAuthor(message.sender, message.anonymous),
-})
 
 export const adaptGroup = (group: OneBot.GroupInfo): Koishi.GroupInfo => ({
   groupId: group.groupId.toString(),
@@ -123,10 +124,18 @@ export function createSession(adapter: Adapter, data: any) {
         session.type = session.userId === session.selfId ? 'group-added' : 'group-member-added'
         session.subtype = session.userId === session.operatorId ? 'active' : 'passive'
         break
+      case 'group_card':
+        session.type = 'group-member'
+        session.subtype = 'nickname'
+        break
       case 'notify':
         session.type = 'notice'
         session.subtype = paramCase(data.sub_type)
-        session.subsubtype = paramCase(data.honor_type)
+        if (session.subtype === 'poke') {
+          session.channelId ||= `private:${session.userId}`
+        } else if (session.subtype === 'honor') {
+          session.subsubtype = paramCase(data.honor_type)
+        }
         break
     }
   } else return
@@ -180,9 +189,9 @@ export function connect(bot: CQBot) {
       const data = { action, params, echo: ++counter }
       data.echo = ++counter
       return new Promise((resolve, reject) => {
-        listeners[counter] = resolve
+        listeners[data.echo] = resolve
         setTimeout(() => {
-          delete listeners[counter]
+          delete listeners[data.echo]
           reject(new Error('response timeout'))
         }, bot.app.options.onebot.responseTimeout)
         bot.socket.send(JSON.stringify(data), (error) => {

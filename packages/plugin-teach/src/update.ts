@@ -114,7 +114,7 @@ function review(dialogues: Dialogue[], argv: Dialogue.Argv) {
 
 async function revert(dialogues: Dialogue[], argv: Dialogue.Argv) {
   try {
-    return argv.session.send(await argv.app.database.revertDialogues(dialogues, argv))
+    return argv.session.send(await Dialogue.revert(dialogues, argv))
   } catch (err) {
     argv.app.logger('teach').warn(err)
     return argv.session.send('回退问答中出现问题。')
@@ -136,7 +136,7 @@ export async function update(argv: Dialogue.Argv) {
   argv.skipped = []
   const dialogues = argv.dialogues = revert || review
     ? Object.values(pick(argv.app.teachHistory, target)).filter(Boolean)
-    : await app.database.getDialoguesById(target)
+    : await Dialogue.get(app, target, null)
   argv.dialogueMap = Object.fromEntries(dialogues.map(d => [d.id, { ...d }]))
 
   if (search) {
@@ -163,15 +163,14 @@ export async function update(argv: Dialogue.Argv) {
   const targets = prepareTargets(argv)
 
   if (revert) {
-    const message = targets.length ? await app.database.revertDialogues(targets, argv) : ''
+    const message = targets.length ? await Dialogue.revert(targets, argv) : ''
     return sendResult(argv, message)
   }
 
   if (remove) {
     let message = ''
     if (targets.length) {
-      const editable = targets.map(d => d.id)
-      await app.database.removeDialogues(editable, argv)
+      const editable = await Dialogue.remove(targets, argv)
       message = `问答 ${editable.join(', ')} 已成功删除。`
     }
     await app.serial('dialogue/after-modify', argv)
@@ -211,8 +210,7 @@ export async function create(argv: Dialogue.Argv) {
     if (options.remove) {
       let message = ''
       if (targets.length) {
-        const editable = targets.map(d => d.id)
-        await app.database.removeDialogues(editable, argv)
+        const editable = await Dialogue.remove(targets, argv)
         message = `问答 ${editable.join(', ')} 已成功删除。`
       }
       await app.serial('dialogue/after-modify', argv)
@@ -233,7 +231,9 @@ export async function create(argv: Dialogue.Argv) {
 
   try {
     app.emit('dialogue/modify', argv, dialogue)
-    argv.dialogues = [await app.database.createDialogue(dialogue, argv)]
+    const created = await app.database.create('dialogue', dialogue)
+    Dialogue.addHistory(dialogue, '添加', argv, false)
+    argv.dialogues = [created]
 
     await app.serial('dialogue/after-modify', argv)
     return sendResult(argv, `问答已添加，编号为 ${argv.dialogues[0].id}。`)

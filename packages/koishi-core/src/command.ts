@@ -1,6 +1,6 @@
-import { Logger, coerce, Time, template } from 'koishi-utils'
-import { Argv, Domain } from './parser'
-import { Context, NextFunction } from './context'
+import { Logger, coerce, Time, template, remove } from 'koishi-utils'
+import { Argv } from './parser'
+import { Context, Disposable, NextFunction } from './context'
 import { User, Channel } from './database'
 import { FieldCollector, Session } from './session'
 import { inspect, format } from 'util'
@@ -33,6 +33,8 @@ export namespace Command {
     maxUsage?: UserType<number>
     /** min interval */
     minInterval?: UserType<number>
+    /** depend on existing commands */
+    patch?: boolean
   }
 
   export interface Shortcut {
@@ -42,18 +44,17 @@ export namespace Command {
     prefix?: boolean
     fuzzy?: boolean
     args?: string[]
-    greedy?: boolean
     options?: Record<string, any>
   }
 
   export type Action<U extends User.Field = never, G extends Channel.Field = never, A extends any[] = any[], O extends {} = {}>
-    = (this: Command<U, G, A, O>, argv: Argv<U, G, A, O>, ...args: A) => void | string | Promise<void | string>
+    = (argv: Argv<U, G, A, O>, ...args: A) => void | string | Promise<void | string>
 
   export type Usage<U extends User.Field = never, G extends Channel.Field = never>
-    = string | ((this: Command<U, G>, session: Session<U, G>) => string | Promise<string>)
+    = string | ((session: Session<U, G>) => string | Promise<string>)
 }
 
-export class Command<U extends User.Field = never, G extends Channel.Field = never, A extends any[] = any[], O extends {} = {}> extends Domain.CommandBase {
+export class Command<U extends User.Field = never, G extends Channel.Field = never, A extends any[] = any[], O extends {} = {}> extends Argv.CommandBase {
   config: Command.Config
   children: Command[] = []
   parent: Command = null
@@ -61,12 +62,13 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
   _aliases: string[] = []
   _examples: string[] = []
   _usage?: Command.Usage
+  _disposed?: boolean
+  _disposables?: Disposable[]
 
   private _userFields: FieldCollector<'user'>[] = []
   private _channelFields: FieldCollector<'channel'>[] = []
-
-  _actions: Command.Action<U, G, A, O>[] = []
-  _checkers: Command.Action<U, G, A, O>[] = []
+  private _actions: Command.Action<U, G, A, O>[] = []
+  private _checkers: Command.Action<U, G, A, O>[] = []
 
   static defaultConfig: Command.Config = {
     authority: 1,
@@ -75,7 +77,7 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
     minInterval: 0,
   }
 
-  static defaultOptionConfig: Domain.OptionConfig = {
+  static defaultOptionConfig: Argv.OptionConfig = {
     authority: 0,
   }
 
@@ -96,7 +98,7 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
     super(name, decl, desc)
     this.config = { ...Command.defaultConfig }
     this._registerAlias(this.name)
-    context.app._commands.push(this)
+    context.app._commandList.push(this)
     this.option('help', '-h  显示此信息', { hidden: true })
   }
 
@@ -107,9 +109,9 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
   private _registerAlias(name: string) {
     name = name.toLowerCase()
     this._aliases.push(name)
-    const previous = this.app._commandMap[name]
+    const previous = this.app._commands.get(name)
     if (!previous) {
-      this.app._commandMap[name] = this
+      this.app._commands.set(name, this)
     } else if (previous !== this) {
       throw new Error(format('duplicate command names: "%s"', name))
     }
@@ -130,25 +132,35 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
   }
 
   alias(...names: string[]) {
+    if (this._disposed) return this
     for (const name of names) {
       this._registerAlias(name)
+      this._disposables?.push(() => {
+        remove(this._aliases, name)
+        this.app._commands.delete(name)
+      })
     }
     return this
   }
 
   shortcut(name: string | RegExp, config: Command.Shortcut = {}) {
+    if (this._disposed) return this
     config.name = name
     config.command = this
     config.authority ||= this.config.authority
     this.app._shortcuts.push(config)
+    this._disposables?.push(() => remove(this.app._shortcuts, config))
     return this
   }
 
-  subcommand<D extends string>(def: D, config?: Command.Config): Command<never, never, Domain.ArgumentType<D>>
-  subcommand<D extends string>(def: D, desc: string, config?: Command.Config): Command<never, never, Domain.ArgumentType<D>>
+  subcommand<D extends string>(def: D, config?: Command.Config): Command<never, never, Argv.ArgumentType<D>>
+  subcommand<D extends string>(def: D, desc: string, config?: Command.Config): Command<never, never, Argv.ArgumentType<D>>
   subcommand(def: string, ...args: any[]) {
     def = this.name + (def.charCodeAt(0) === 46 ? '' : '/') + def
-    return this.context.command(def, ...args)
+    const desc = typeof args[0] === 'string' ? args.shift() as string : ''
+    const config = args[0] as Command.Config || {}
+    if (this._disposed) config.patch = true
+    return this.context.command(def, desc, config)
   }
 
   usage(text: Command.Usage<U, G>) {
@@ -161,9 +173,10 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
     return this
   }
 
-  option<K extends string, D extends string, T extends Domain.Type>(name: K, desc: D, config: Domain.OptionConfig<T> = {}) {
+  option<K extends string, D extends string, T extends Argv.Type>(name: K, desc: D, config: Argv.OptionConfig<T> = {}) {
     this._createOption(name, desc, config)
-    return this as Command<U, G, A, Extend<O, K, Domain.OptionType<D, T>>>
+    this._disposables?.push(() => this.removeOption(name))
+    return this as Command<U, G, A, Extend<O, K, Argv.OptionType<D, T>>>
   }
 
   match(session: Session) {
@@ -172,18 +185,19 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
     return this.context.match(session) && this.config.authority <= authority && !disable.includes(this.name)
   }
 
+  getConfig<K extends keyof Command.Config>(key: K, session: Session): Exclude<Command.Config[K], (user: User) => any> {
+    const value = this.config[key] as any
+    return typeof value === 'function' ? value(session.user) : value
+  }
+
   check(callback: Command.Action<U, G, A, O>, prepend = false) {
     if (prepend) {
       this._checkers.unshift(callback)
     } else {
       this._checkers.push(callback)
     }
+    this._disposables?.push(() => remove(this._checkers, callback))
     return this
-  }
-
-  getConfig<K extends keyof Command.Config>(key: K, session: Session): Exclude<Command.Config[K], (user: User) => any> {
-    const value = this.config[key] as any
-    return typeof value === 'function' ? value(session.user) : value
   }
 
   action(callback: Command.Action<U, G, A, O>, append = false) {
@@ -192,6 +206,7 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
     } else {
       this._actions.unshift(callback)
     }
+    this._disposables?.push(() => remove(this._actions, callback))
     return this
   }
 
@@ -215,7 +230,7 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
     const lastCall = this.app.options.prettyErrors && new Error().stack.split('\n', 4)[3]
     try {
       for (const validator of this._checkers) {
-        const result = validator.call(this, argv, ...args)
+        const result = await validator.call(this, argv, ...args)
         if (typeof result === 'string') return result
       }
       const result = await this.app.serial(session, 'before-command', argv)
@@ -241,16 +256,15 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
   }
 
   dispose() {
+    this._disposed = true
     for (const cmd of this.children.slice()) {
       cmd.dispose()
     }
     this.app._shortcuts = this.app._shortcuts.filter(s => s.command !== this)
-    this._aliases.forEach(name => delete this.app._commandMap[name])
-    const index = this.app._commands.indexOf(this)
-    this.app._commands.splice(index, 1)
+    this._aliases.forEach(name => this.app._commands.delete(name))
+    remove(this.app._commandList, this)
     if (this.parent) {
-      const index = this.parent.children.indexOf(this)
-      this.parent.children.splice(index, 1)
+      remove(this.parent.children, this)
     }
   }
 }
@@ -260,6 +274,8 @@ export function getUsageName(command: Command) {
 }
 
 export type ValidationField = 'authority' | 'usage' | 'timers'
+
+Command.channelFields(['disable'])
 
 Command.userFields(({ tokens, command, options = {} }, fields) => {
   if (!command) return

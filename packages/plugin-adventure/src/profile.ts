@@ -24,7 +24,7 @@ namespace Profile {
   }
 
   export function apply(ctx: Context) {
-    ctx.command('adventure/profile', '用户信息', { maxUsage: 100, usageName: 'show' })
+    ctx.command('adv/profile', '用户信息', { maxUsage: 100, usageName: 'show' })
       .alias('info')
       .shortcut('我的信息')
       .shortcut('查看信息')

@@ -2,11 +2,11 @@ import LruCache from 'lru-cache'
 import { distance } from 'fastest-levenshtein'
 import { User, Channel, TableType, Tables } from './database'
 import { Command } from './command'
-import { contain, observe, Logger, defineProperty, Random, template } from 'koishi-utils'
+import { contain, observe, Logger, defineProperty, Random, template, remove, noop, segment } from 'koishi-utils'
 import { Argv } from './parser'
 import { Middleware, NextFunction } from './context'
 import { App } from './app'
-import { Bot, ChannelInfo, MessageBase, Platform } from './adapter'
+import { Bot, ChannelInfo, GroupInfo, MessageBase, Platform } from './adapter'
 
 const logger = new Logger('session')
 
@@ -14,7 +14,7 @@ type UnionToIntersection<U> = (U extends any ? (key: U) => void : never) extends
 type Flatten<T, K extends keyof T = keyof T> = UnionToIntersection<T[K]>
 type InnerKeys<T, K extends keyof T = keyof T> = keyof Flatten<T> & keyof Flatten<T, K>
 
-export interface Session<U, G, P, X, Y> extends MessageBase, Partial<ChannelInfo> {}
+export interface Session<U, G, P, X, Y> extends MessageBase, Partial<ChannelInfo>, Partial<GroupInfo> {}
 
 export namespace Session {
   type Genres = 'friend' | 'channel' | 'group' | 'group-member' | 'group-role' | 'group-file' | 'group-emoji'
@@ -41,6 +41,7 @@ export namespace Session {
     'group-member': {
       'role': {}
       'ban': {}
+      'nickname': {}
     }
     'notice': {
       'poke': {}
@@ -50,6 +51,12 @@ export namespace Session {
         'performer': {}
         'emotion': {}
       }
+    }
+    'reaction-added': {}
+    'reaction-deleted': {
+      'one': {}
+      'all': {}
+      'emoji': {}
     }
   }
 
@@ -98,6 +105,7 @@ export class Session<
   readonly sid: string
   uid: string
   cid: string
+  gid: string
 
   id?: string
   argv?: Argv<U, G>
@@ -108,6 +116,7 @@ export class Session<
   private _delay?: number
   private _queued: Promise<void>
   private _hooks: (() => void)[]
+  private _promise: Promise<string>
 
   static readonly send = Symbol.for('koishi.session.send')
 
@@ -119,16 +128,32 @@ export class Session<
     defineProperty(this, 'sid', `${this.platform}:${this.selfId}`)
     defineProperty(this, 'uid', `${this.platform}:${this.userId}`)
     defineProperty(this, 'cid', `${this.platform}:${this.channelId}`)
+    defineProperty(this, 'gid', `${this.platform}:${this.groupId}`)
     defineProperty(this, 'bot', app.bots[this.sid])
     defineProperty(this, 'id', Random.uuid())
     defineProperty(this, '_queued', Promise.resolve())
     defineProperty(this, '_hooks', [])
   }
 
-  toJSON() {
+  toJSON(): Partial<Session> {
     return Object.fromEntries(Object.entries(this).filter(([key]) => {
       return !key.startsWith('_') && !key.startsWith('$')
     }))
+  }
+
+  private async _preprocess() {
+    let node: segment.Parsed
+    let content = this.app.options.processMessage(this.content)
+    // eslint-disable-next-line no-cond-assign
+    if (node = segment.from(content, { type: 'quote', caret: true })) {
+      content = content.slice(node.capture[0].length).trimStart()
+      this.quote = await this.bot.getMessage(node.data.channelId || this.channelId, node.data.id).catch(noop)
+    }
+    return content
+  }
+
+  async preprocess() {
+    return this._promise ||= this._preprocess()
   }
 
   get username(): string {
@@ -149,7 +174,7 @@ export class Session<
       return this.bot[Session.send](this, message)
     }
     if (!message) return
-    await this.bot.sendMessage(this.channelId, message)
+    await this.bot.sendMessage(this.channelId, message, this.groupId)
   }
 
   cancelQueued(delay = this.app.options.delay.cancel) {
@@ -167,8 +192,7 @@ export class Session<
       const hook = () => {
         resolve()
         clearTimeout(timer)
-        const index = this._hooks.indexOf(hook)
-        if (index >= 0) this._hooks.splice(index, 1)
+        remove(this._hooks, hook)
       }
       this._hooks.push(hook)
       const timer = setTimeout(async () => {
@@ -179,7 +203,7 @@ export class Session<
     }))
   }
 
-  private _getValue<T>(source: T | ((session: Session) => T)): T {
+  resolveValue<T>(source: T | ((session: Session) => T)): T {
     return typeof source === 'function' ? Reflect.apply(source, null, [this]) : source
   }
 
@@ -218,7 +242,7 @@ export class Session<
     if (hasActiveCache) return this.channel = cache as any
 
     // 绑定一个新的可观测频道实例
-    const assignee = this._getValue(this.app.options.autoAssign) ? this.selfId : ''
+    const assignee = this.resolveValue(this.app.options.autoAssign) ? this.selfId : ''
     const data = await this.getChannel(channelId, assignee, fieldArray)
     const newChannel = observe(data, diff => this.database.setChannel(platform, channelId, diff), `channel ${this.cid}`)
     this.app._channelCache.set(this.cid, newChannel)
@@ -265,7 +289,7 @@ export class Session<
     // 确保匿名消息不会写回数据库
     if (this.author?.anonymous) {
       const fallback = User.create(this.platform, userId)
-      fallback.authority = this._getValue(this.app.options.autoAuthorize)
+      fallback.authority = this.resolveValue(this.app.options.autoAuthorize)
       const user = observe(fallback, () => Promise.resolve())
       return this.user = user
     }
@@ -277,14 +301,13 @@ export class Session<
     if (hasActiveCache) return this.user = cache as any
 
     // 绑定一个新的可观测用户实例
-    const data = await this.getUser(userId, this._getValue(this.app.options.autoAuthorize), fieldArray)
+    const data = await this.getUser(userId, this.resolveValue(this.app.options.autoAuthorize), fieldArray)
     const newUser = observe(data, diff => this.database.setUser(this.platform, userId, diff), `user ${this.uid}`)
     userCache.set(userId, newUser)
     return this.user = newUser
   }
 
   collect<T extends TableType>(key: T, argv: Argv, fields = new Set<keyof Tables[T]>()) {
-    collectFields(argv, Command[`_${key}Fields`], fields)
     const collect = (argv: Argv) => {
       argv.session = this
       if (argv.tokens) {
@@ -293,6 +316,7 @@ export class Session<
         }
       }
       if (!this.resolve(argv)) return
+      collectFields(argv, Command[`_${key}Fields`], fields)
       collectFields(argv, argv.command[`_${key}Fields`], fields)
     }
     collect(argv)
@@ -302,7 +326,7 @@ export class Session<
   resolve(argv: Argv) {
     if (!argv.command) {
       const { name = this.app.bail('parse', argv, this) } = argv
-      if (!(argv.command = this.app._commandMap[name])) return
+      if (!(argv.command = this.app._commands.get(name))) return
     }
     if (argv.tokens?.every(token => !token.inters.length)) {
       const { options, args, error } = argv.command.parse(argv)
@@ -334,12 +358,14 @@ export class Session<
       }
       if (!this.resolve(argv)) return ''
     } else {
-      argv.command ||= this.app._commandMap[argv.name]
+      argv.command ||= this.app._commands.get(argv.name)
       if (!argv.command) {
         logger.warn(new Error(`cannot find command ${argv.name}`))
         return ''
       }
     }
+
+    if (!argv.command.context.match(this)) return ''
 
     if (this.database) {
       if (this.subtype === 'group') {
@@ -355,8 +381,9 @@ export class Session<
     }
 
     const result = await argv.command.execute(argv, next)
-    if (shouldEmit) await this.send(result)
-    return result
+    if (!shouldEmit) return result
+    await this.send(result)
+    return ''
   }
 
   middleware(middleware: Middleware) {

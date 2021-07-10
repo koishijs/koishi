@@ -31,17 +31,31 @@ export function capitalize(source: string) {
 
 // eslint-disable-next-line no-new-func
 export const interpolate = new Function('template', 'context', `
-with (context) {
   return template.replace(/\\{\\{[\\s\\S]+?\\}\\}/g, (sub) => {
     const expr = sub.substring(2, sub.length - 2)
-    return eval(expr)
+    try {
+      with (context) {
+        return eval(expr)
+      }
+    } catch {
+      return ''
+    }
   })
-}`) as ((template: string, context: object) => string)
+`) as ((template: string, context: object) => string)
 
 export function escapeRegExp(source: string) {
   return source
     .replace(/[|\\{}()[\]^$+*?.]/g, '\\$&')
     .replace(/-/g, '\\x2d')
+}
+
+export function trimSlash(source: string) {
+  return source.replace(/\/$/, '')
+}
+
+export function sanitize(source: string) {
+  if (!source.startsWith('/')) source = '/' + source
+  return trimSlash(source)
 }
 
 export function template(path: string | string[], ...params: any[]) {
@@ -53,6 +67,17 @@ export function template(path: string | string[], ...params: any[]) {
     }
   }
   return path[0]
+}
+
+function deepAssign(head: any, base: any): any {
+  Object.entries(base).forEach(([key, value]) => {
+    if (typeof value === 'object' && typeof head[key] === 'object') {
+      head[key] = deepAssign(head[key], value)
+    } else {
+      head[key] = base[key]
+    }
+  })
+  return head
 }
 
 export namespace template {
@@ -70,7 +95,7 @@ export namespace template {
     while (seg.length > 1) {
       node = node[seg.shift()] ||= {}
     }
-    node[seg[0]] = value
+    deepAssign(node, { [seg[0]]: value })
   }
 
   export function get(path: string) {
@@ -83,10 +108,13 @@ export namespace template {
   }
 
   export function format(source: string, ...params: any[]) {
+    if (params[0] && typeof params[0] === 'object') {
+      source = interpolate(source, params[0])
+    }
     let result = ''
     let cap: RegExpExecArray
     // eslint-disable-next-line no-cond-assign
-    while (cap = /\{([\w-]+)\}/.exec(source)) {
+    while (cap = /\{(\w+)\}/.exec(source)) {
       result += source.slice(0, cap.index) + (cap[1] in params ? params[cap[1]] : '')
       source = source.slice(cap.index + cap[0].length)
     }

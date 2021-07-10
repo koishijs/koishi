@@ -1,7 +1,7 @@
 /* eslint-disable no-new-wrappers, max-len */
 
 import 'koishi-test-utils'
-import { Sandbox } from 'koishi-plugin-eval/src/sandbox'
+import { Sandbox } from 'koishi-plugin-eval/src/worker/sandbox'
 import { inspect } from 'util'
 import { expect } from 'chai'
 

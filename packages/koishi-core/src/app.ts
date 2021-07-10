@@ -1,4 +1,4 @@
-import { simplify, defineProperty, Time, Observed, coerce, escapeRegExp, makeArray, noop, template, merge } from 'koishi-utils'
+import { simplify, defineProperty, Time, Observed, coerce, escapeRegExp, makeArray, template, trimSlash, merge } from 'koishi-utils'
 import { Context, Middleware, NextFunction, Plugin } from './context'
 import { Argv } from './parser'
 import { BotOptions, Adapter, createBots } from './adapter'
@@ -22,7 +22,7 @@ export interface DelayOptions {
 export interface AppOptions extends BotOptions {
   port?: number
   bots?: BotOptions[]
-  prefix?: string | string[]
+  prefix?: string | string[] | ((session: Session.Message) => void | string | string[])
   nickname?: string | string[]
   maxListeners?: number
   prettyErrors?: boolean
@@ -35,6 +35,7 @@ export interface AppOptions extends BotOptions {
   channelCacheLength?: number
   channelCacheAge?: number
   minSimilarity?: number
+  selfUrl?: string
   axiosConfig?: AxiosRequestConfig
 }
 
@@ -42,16 +43,20 @@ function createLeadingRE(patterns: string[], prefix = '', suffix = '') {
   return patterns.length ? new RegExp(`^${prefix}(${patterns.map(escapeRegExp).join('|')})${suffix}`) : /$^/
 }
 
+interface CommandMap extends Map<string, Command> {
+  resolve(key: string): Command
+}
+
 export class App extends Context {
   public app = this
   public options: AppOptions
   public status = App.Status.closed
   public adapters: Adapter.Instances = {}
-  public registry = new Map<Plugin, Plugin.State>()
+  public registry = new Plugin.Registry()
 
   _bots = createBots('sid')
-  _commands: Command[] = []
-  _commandMap: Record<string, Command> = {}
+  _commandList: Command[] = []
+  _commands: CommandMap = new Map<string, Command>() as never
   _shortcuts: Command.Shortcut[] = []
   _hooks: Record<keyof any, [Context, (...args: any[]) => any][]> = {}
   _userCache: Record<string, LruCache<string, Observed<Partial<User>, Promise<void>>>>
@@ -60,15 +65,14 @@ export class App extends Context {
   _sessions: Record<string, Session> = {}
 
   private _nameRE: RegExp
-  private _prefixRE: RegExp
 
   static defaultConfig: AppOptions = {
     maxListeners: 64,
     prettyErrors: true,
     userCacheAge: Time.minute,
     channelCacheAge: 5 * Time.minute,
-    autoAssign: false,
-    autoAuthorize: 0,
+    autoAssign: true,
+    autoAuthorize: 1,
     minSimilarity: 0.4,
     processMessage: message => simplify(message.trim()),
     delay: {
@@ -83,12 +87,11 @@ export class App extends Context {
   constructor(options: AppOptions = {}) {
     super(() => true)
     if (!options.bots) options.bots = [options]
+    if (options.selfUrl) options.selfUrl = trimSlash(options.selfUrl)
     this.options = merge(options, App.defaultConfig)
     this.registry.set(null, {
-      parent: null,
       children: [],
       disposables: [],
-      dependencies: new Set(),
     })
 
     defineProperty(this, '_userCache', {})
@@ -100,6 +103,16 @@ export class App extends Context {
     if (options.port) this.createServer()
     for (const bot of options.bots) {
       Adapter.from(this, bot).create(bot)
+    }
+
+    this._commands.resolve = (key) => {
+      if (!key) return
+      const segments = key.split('.')
+      let i = 1, name = segments[0], cmd: Command
+      while ((cmd = this._commands.get(name)) && i < segments.length) {
+        name = cmd.name + '.' + segments[i++]
+      }
+      return cmd
     }
 
     this.prepare()
@@ -118,14 +131,10 @@ export class App extends Context {
       // group message should have prefix or appel to be interpreted as a command call
       if (argv.root && subtype !== 'private' && parsed.prefix === null && !parsed.appel) return
       if (!argv.tokens.length) return
-      const segments = argv.tokens[0].content.split('.')
-      let i = 1, name = segments[0]
-      while (this._commandMap[name] && i < segments.length) {
-        name = this._commandMap[name].name + '.' + segments[i++]
-      }
-      if (name in this._commandMap) {
+      const cmd = this._commands.resolve(argv.tokens[0].content)
+      if (cmd) {
         argv.tokens.shift()
-        return name
+        return cmd.name
       }
     })
 
@@ -143,19 +152,17 @@ export class App extends Context {
 
   createServer() {
     const koa: Koa = new (require('koa'))()
-    defineProperty(this, '_router', new (require('@koa/router'))())
+    this.router = new (require('@koa/router'))()
     koa.use(require('koa-bodyparser')())
-    koa.use(this._router.routes())
-    koa.use(this._router.allowedMethods())
+    koa.use(this.router.routes())
+    koa.use(this.router.allowedMethods())
     defineProperty(this, '_httpServer', createServer(koa.callback()))
   }
 
   prepare() {
-    const { nickname, prefix } = this.options
+    const { nickname } = this.options
     this.options.nickname = makeArray(nickname)
-    this.options.prefix = Array.isArray(prefix) ? prefix : [prefix || '']
     this._nameRE = createLeadingRE(this.options.nickname, '@?', '([,，]\\s*|\\s+)')
-    this._prefixRE = createLeadingRE(this.options.prefix)
   }
 
   async start() {
@@ -195,20 +202,17 @@ export class App extends Context {
     this._httpServer?.close()
   }
 
-  private async _process(session: Session, next: NextFunction) {
-    let content = this.options.processMessage(session.content)
+  private _resolvePrefixes(session: Session.Message) {
+    const { prefix } = this.options
+    const temp = typeof prefix === 'function' ? prefix(session) : prefix
+    return Array.isArray(temp) ? temp : [temp || '']
+  }
 
+  private async _process(session: Session.Message, next: NextFunction) {
     let capture: RegExpMatchArray
     let atSelf = false, appel = false, prefix: string = null
     const pattern = /^\[CQ:(\w+)((,\w+=[^,\]]*)*)\]/
-    if ((capture = content.match(pattern)) && capture[1] === 'quote') {
-      content = content.slice(capture[0].length).trimStart()
-      for (const str of capture[2].slice(1).split(',')) {
-        if (!str.startsWith('id=')) continue
-        session.quote = await session.bot.getMessage(session.channelId, str.slice(3)).catch(noop)
-        break
-      }
-    }
+    let content = await session.preprocess()
 
     // strip prefix
     if (session.subtype !== 'private' && (capture = content.match(pattern)) && capture[1] === 'at' && capture[2].includes('id=' + session.selfId)) {
@@ -218,10 +222,12 @@ export class App extends Context {
     } else if (capture = content.match(this._nameRE)) {
       appel = true
       content = content.slice(capture[0].length)
-      // eslint-disable-next-line no-cond-assign
-    } else if (capture = content.match(this._prefixRE)) {
-      prefix = capture[0]
-      content = content.slice(capture[0].length)
+    }
+
+    for (const _prefix of this._resolvePrefixes(session)) {
+      if (!content.startsWith(_prefix)) continue
+      prefix = _prefix
+      content = content.slice(_prefix.length)
     }
 
     // store parsed message
@@ -235,7 +241,7 @@ export class App extends Context {
     if (this.database) {
       if (session.subtype === 'group') {
         // attach group data
-        const channelFields = new Set<Channel.Field>(['flag', 'assignee', 'disable'])
+        const channelFields = new Set<Channel.Field>(['flag', 'assignee'])
         this.emit('before-attach-channel', session, channelFields)
         const channel = await session.observeChannel(channelFields)
 
@@ -346,21 +352,18 @@ export class App extends Context {
     return argv
   }
 
-  private _handleShortcut(content: string, { parsed, quote }: Session) {
+  private _handleShortcut(content: string, session: Session) {
+    const { parsed, quote } = session
     if (parsed.prefix || quote) return
     for (const shortcut of this._shortcuts) {
-      const { name, fuzzy, command, greedy, prefix, options = {}, args = [] } = shortcut
-      if (prefix && !parsed.appel) continue
+      const { name, fuzzy, command, prefix, options = {}, args = [] } = shortcut
+      if (prefix && !parsed.appel || !command.context.match(session)) continue
       if (typeof name === 'string') {
         if (!fuzzy && content !== name || !content.startsWith(name)) continue
         const message = content.slice(name.length)
         if (fuzzy && !parsed.appel && message.match(/^\S/)) continue
-        const argv: Argv = greedy
-          ? { options: {}, args: [message.trim()] }
-          : command.parse(Argv.parse(message.trim()))
+        const argv = command.parse(message.trim(), '', [...args], { ...options })
         argv.command = command
-        argv.options = { ...options, ...argv.options }
-        argv.args = [...args, ...argv.args]
         return argv
       } else {
         const capture = name.exec(content)

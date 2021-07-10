@@ -5,6 +5,7 @@ declare module '../utils' {
   interface DialogueTest {
     writer?: string
     frozen?: boolean
+    substitute?: boolean
   }
 
   interface Dialogue {
@@ -34,8 +35,11 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
     .option('frozen', '-F, --no-frozen  解锁这个问答', { authority: authority.frozen, value: false })
     .option('writer', '-w <uid:user>  添加或设置问题的作者')
     .option('writer', '-W, --anonymous  添加或设置匿名问题', { authority: authority.writer, value: '' })
+    .option('substitute', '-s  由教学者完成问答的执行')
+    .option('substitute', '-S, --no-substitute  由触发者完成问答的执行', { value: false })
 
   ctx.emit('dialogue/flag', 'frozen')
+  ctx.emit('dialogue/flag', 'substitute')
 
   ctx.before('dialogue/detail', async (argv) => {
     argv.nameMap = {}
@@ -87,6 +91,9 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
     if (writer) {
       const name = argv.nameMap[writer]
       output.push(name ? `来源：${name}` : `来源：未知用户`)
+      if (flag & Dialogue.Flag.substitute) {
+        output.push('回答中的指令由教学者代行。')
+      }
     }
   })
 
@@ -95,17 +102,23 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
   // 当使用 -w 时需要原作者权限高于目标用户
   // 锁定的问答需要 frozen 级权限才能修改
   ctx.on('dialogue/permit', ({ session, target, options, authMap }, { writer, flag }) => {
-    const { writer: newWriter } = options
+    const { substitute, writer: newWriter } = options
     const { id, authority } = session.user
     return (
       (newWriter && authority <= authMap[newWriter] && newWriter !== id) ||
       ((flag & Dialogue.Flag.frozen) && authority < config.authority.frozen) ||
-      (writer !== id && target && authority < config.authority.admin)
+      (writer !== id && (
+        (target && authority < config.authority.admin) || (
+          (substitute || (flag & Dialogue.Flag.substitute)) &&
+          (authority <= (authMap[writer] || config.authority.base))
+        )
+      ))
     )
   })
 
   ctx.on('dialogue/detail-short', ({ flag }, output) => {
     if (flag & Dialogue.Flag.frozen) output.push('锁定')
+    if (flag & Dialogue.Flag.substitute) output.push('代行')
   })
 
   ctx.before('dialogue/search', ({ writer }, test) => {
@@ -121,6 +134,31 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
       data.writer = writer
     } else if (!target) {
       data.writer = session.user.id
+    }
+  })
+
+  ctx.before('dialogue/attach-user', (state, userFields) => {
+    for (const dialogue of state.dialogues) {
+      if (dialogue.flag & Dialogue.Flag.substitute) {
+        userFields.add('id')
+      }
+    }
+  })
+
+  // 触发代行者模式
+  ctx.on('dialogue/before-send', async (state) => {
+    const { dialogue, session } = state
+    if (dialogue.flag & Dialogue.Flag.substitute && dialogue.writer && session.user.id !== dialogue.writer) {
+      const userFields = new Set<User.Field>(['name', 'flag'])
+      ctx.app.emit(session, 'dialogue/before-attach-user', state, userFields)
+      // do a little trick here
+      const { platform, userId } = session
+      session.platform = 'id' as never
+      session.userId = dialogue.writer
+      session.user = null
+      await session.observeUser(userFields)
+      session.platform = platform
+      session.userId = userId
     }
   })
 }

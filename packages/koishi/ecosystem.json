@@ -1,89 +1,78 @@
 {
   "koishi-adapter-discord": {
-    "version": "1.0.1",
+    "version": "1.3.1",
     "description": "Discord adapter for Koishi"
   },
   "koishi-adapter-kaiheila": {
-    "version": "1.0.0",
+    "version": "1.2.1",
     "description": "Kaiheila adapter for Koishi"
   },
   "koishi-adapter-onebot": {
-    "version": "3.0.0",
+    "version": "3.1.0",
     "description": "CQHTTP adapter for Koishi"
   },
   "koishi-adapter-telegram": {
-    "version": "1.0.0",
+    "version": "1.0.3",
     "description": "Telegram adapter for Koishi"
   },
-  "koishi-adapter-tomon": {
-    "version": "1.0.0-beta.11",
-    "description": "Tomon adapter for Koishi"
+  "koishi-plugin-assets": {
+    "version": "1.1.1",
+    "description": "A classic assets provider for Koishi"
   },
-  "koishi-plugin-adventure": {
-    "version": "0.1.13",
-    "description": "Adventure Game for Koishi"
+  "koishi-plugin-chat": {
+    "version": "0.5.3",
+    "description": "Display and respond to messages for Koishi"
   },
   "koishi-plugin-chess": {
-    "version": "3.0.0-beta.11",
-    "description": "Chess Plugin for Koishi"
+    "version": "3.0.5",
+    "description": "Playing chess games in Koishi"
   },
   "koishi-plugin-common": {
-    "version": "4.0.0",
+    "version": "4.3.1",
     "description": "Common plugins for Koishi"
   },
-  "koishi-plugin-dice": {
-    "version": "0.1.10",
-    "description": "COC / DND Tools for Koishi"
+  "koishi-plugin-cryptocurrency": {
+    "version": "0.1.0",
+    "description": "Show market prices of cryptocurrencies for Koishi"
   },
   "koishi-plugin-eval": {
-    "version": "3.0.0-beta.12",
-    "description": "Execute JavaScript in Koishi"
+    "version": "3.2.1",
+    "description": "Execute JavaScript and create addons in Koishi"
   },
   "koishi-plugin-github": {
-    "version": "3.0.0-beta.11",
-    "description": "GitHub webhook plugin for Koishi"
+    "version": "3.1.2",
+    "description": "GitHub toolkit for Koishi"
   },
   "koishi-plugin-image-search": {
-    "version": "3.0.0-beta.10",
+    "version": "3.0.4",
     "description": "Image searching plugin for Koishi"
   },
   "koishi-plugin-mongo": {
-    "version": "2.0.0-beta.8",
+    "version": "2.2.3",
     "description": "MongoDB support for Koishi"
   },
-  "koishi-plugin-monitor": {
-    "version": "1.0.0-beta.27"
-  },
   "koishi-plugin-mysql": {
-    "version": "3.0.0-beta.16",
+    "version": "3.3.2",
     "description": "MySQL support for Koishi"
   },
   "koishi-plugin-puppeteer": {
-    "version": "2.0.0",
+    "version": "2.1.4",
     "description": "Take Screenshots in Koishi"
   },
-  "koishi-plugin-rss": {
-    "version": "2.0.0-beta.10",
-    "description": "Subscribe RSS Url for Koishi"
-  },
   "koishi-plugin-schedule": {
-    "version": "3.0.0",
-    "description": "Schedule plugin for Koishi"
-  },
-  "koishi-plugin-status": {
-    "version": "3.0.0",
-    "description": "Show Status of Koishi"
+    "version": "3.0.5",
+    "description": "Create scheduled tasks for Koishi"
   },
   "koishi-plugin-teach": {
-    "version": "2.0.0-beta.15",
+    "version": "2.2.0",
     "description": "Teach plugin for Koishi"
   },
   "koishi-plugin-tools": {
-    "version": "2.0.0-beta.10",
+    "version": "2.1.3",
     "description": "Some simple tools for Koishi"
   },
   "koishi-plugin-webui": {
-    "version": "0.1.3",
-    "description": "Web UI for Koishi"
+    "version": "4.6.2",
+    "description": "Create web user interface for Koishi"
   }
 }

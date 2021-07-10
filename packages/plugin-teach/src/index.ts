@@ -10,19 +10,21 @@ import update, { create } from './update'
 import mongo from './database/mongo'
 import mysql from './database/mysql'
 import context from './plugins/context'
-import image from './plugins/image'
 import throttle from './plugins/throttle'
 import probability from './plugins/probability'
 import successor from './plugins/successor'
 import time from './plugins/time'
 import writer from './plugins/writer'
+import {} from 'koishi-plugin-webui'
+import { resolve } from 'path'
 
 export * from './utils'
 export * from './receiver'
 export * from './search'
 export * from './update'
+export * from './database/mongo'
+export * from './database/mysql'
 export * from './plugins/context'
-export * from './plugins/image'
 export * from './plugins/throttle'
 export * from './plugins/probability'
 export * from './plugins/successor'
@@ -36,6 +38,29 @@ declare module 'koishi-core' {
     'dialogue/validate'(argv: Dialogue.Argv): void | string
     'dialogue/execute'(argv: Dialogue.Argv): void | Promise<void | string>
   }
+
+  namespace Plugin {
+    interface Packages {
+      'koishi-plugin-teach': typeof import('.')
+    }
+  }
+}
+
+declare module 'koishi-plugin-webui' {
+  namespace Meta {
+    interface Payload extends Dialogue.Stats {}
+  }
+
+  namespace Statistics {
+    interface Payload {
+      questions: QuestionData[]
+    }
+  }
+}
+
+interface QuestionData {
+  name: string
+  value: number
 }
 
 const cheatSheet = (session: Session<'authority'>, config: Config) => {
@@ -182,10 +207,43 @@ export function apply(ctx: Context, config: Config = {}) {
   // options
   ctx.plugin(internal, config)
   ctx.plugin(context, config)
-  ctx.plugin(image, config)
   ctx.plugin(throttle, config)
   ctx.plugin(probability, config)
   ctx.plugin(successor, config)
   ctx.plugin(time, config)
   ctx.plugin(writer, config)
+
+  ctx.with(['koishi-plugin-webui'], (ctx) => {
+    const { stats, meta } = ctx.webui.sources
+
+    ctx.on('dialogue/before-send', ({ session, dialogue }) => {
+      session._sendType = 'dialogue'
+      stats.sync.addDaily('dialogue', dialogue.id)
+      stats.upload()
+    })
+
+    meta.extend(() => ctx.database.getDialogueStats())
+
+    stats.extend(async (payload, data) => {
+      const dialogueMap = stats.average(data.daily.map(data => data.dialogue))
+      const dialogues = await ctx.database.get('dialogue', Object.keys(dialogueMap).map(i => +i), ['id', 'original'])
+      const questionMap: Record<string, QuestionData> = {}
+      for (const dialogue of dialogues) {
+        const { id, original: name } = dialogue
+        if (name.includes('[CQ:') || name.startsWith('hook:')) continue
+        if (!questionMap[name]) {
+          questionMap[name] = {
+            name,
+            value: dialogueMap[id],
+          }
+        } else {
+          questionMap[name].value += dialogueMap[id]
+        }
+      }
+      payload.questions = Object.values(questionMap)
+    })
+
+    const filename = ctx.webui.config.devMode ? '../client/index.ts' : '../dist/index.js'
+    ctx.webui.addEntry(resolve(__dirname, filename))
+  })
 }

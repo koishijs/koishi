@@ -1,10 +1,12 @@
+import { types } from 'util'
+
 export interface segment {
   type: string
   data: segment.Data
 }
 
 export function segment(type: string, data: segment.Data = {}) {
-  if (type === 'text') return String(data.content)
+  if (type === 'text') return segment.escape(String(data.content))
   let output = '[CQ:' + type
   for (const key in data) {
     if (data[key]) output += `,${key}=${segment.escape(data[key], true)}`
@@ -17,6 +19,8 @@ type primitive = string | number | boolean
 export namespace segment {
   export type Chain = segment.Parsed[]
   export type Data = Record<string, primitive>
+  export type Transformer = string | ((data: Record<string, string>, index: number, chain: Chain) => string)
+  export type AsyncTransformer = string | ((data: Record<string, string>, index: number, chain: Chain) => string | Promise<string>)
 
   export interface Parsed extends segment {
     data: Record<string, string>
@@ -41,12 +45,19 @@ export namespace segment {
       .replace(/&amp;/g, '&')
   }
 
-  export function join(codes: segment[]) {
-    return codes.map(code => segment(code.type, code.data)).join('')
+  export function join(chain: segment[]) {
+    return chain.map(node => segment(node.type, node.data)).join('')
   }
 
-  export function from(source: string, typeRegExp = '\\w+'): segment.Parsed {
-    const capture = new RegExp(`\\[CQ:(${typeRegExp})((,\\w+=[^,\\]]*)*)\\]`).exec(source)
+  export interface FindOptions {
+    type?: string
+    caret?: boolean
+  }
+
+  export function from(source: string, options: FindOptions = {}): segment.Parsed {
+    let regExpSource = `\\[CQ:(${options.type || '\\w+'})((,\\w+=[^,\\]]*)*)\\]`
+    if (options.caret) regExpSource = '^' + regExpSource
+    const capture = new RegExp(regExpSource).exec(source)
     if (!capture) return null
     const [, type, attrs] = capture
     const data: Record<string, string> = {}
@@ -63,27 +74,59 @@ export namespace segment {
     while ((result = from(source))) {
       const { capture } = result
       if (capture.index) {
-        chain.push({ type: 'text', data: { content: source.slice(0, capture.index) } })
+        chain.push({ type: 'text', data: { content: unescape(source.slice(0, capture.index)) } })
       }
       chain.push(result)
       source = source.slice(capture.index + capture[0].length)
     }
-    if (source) chain.push({ type: 'text', data: { content: source } })
+    if (source) chain.push({ type: 'text', data: { content: unescape(source) } })
     return chain
   }
 
-  export type Factory = (value: primitive, data?: segment.Data) => string
+  export function transform(source: string, rules: Record<string, Transformer>, dropOthers = false) {
+    return parse(source).map(({ type, data, capture }, index, chain) => {
+      const transformer = rules[type]
+      return typeof transformer === 'string' ? transformer
+        : typeof transformer === 'function' ? transformer(data, index, chain)
+          : dropOthers ? '' : type === 'text' ? escape(data.content) : capture[0]
+    }).join('')
+  }
 
-  function createFactory(type: string, key: string): Factory {
+  export async function transformAsync(source: string, rules: Record<string, AsyncTransformer>) {
+    const chain = segment.parse(source)
+    const cache = new Map<Parsed, string>()
+    await Promise.all(chain.map(async (node, index, chain) => {
+      const transformer = rules[node.type]
+      if (!transformer) return
+      cache.set(node, typeof transformer === 'string' ? transformer : await transformer(node.data, index, chain))
+    }))
+    return chain.map(node => cache.get(node) || segment(node.type, node.data)).join('')
+  }
+
+  export type Factory<T> = (value: T, data?: segment.Data) => string
+
+  function createFactory(type: string, key: string): Factory<primitive> {
     return (value, data = {}) => segment(type, { ...data, [key]: value })
+  }
+
+  function createAssetFactory(type: string): Factory<string | Buffer | ArrayBuffer> {
+    return (value, data = {}) => {
+      if (Buffer.isBuffer(value)) {
+        value = 'base64://' + value.toString('base64')
+      } else if (types.isArrayBuffer(value)) {
+        value = 'base64://' + Buffer.from(value).toString('base64')
+      }
+      return segment(type, { ...data, url: value })
+    }
   }
 
   export const at = createFactory('at', 'id')
   export const sharp = createFactory('sharp', 'id')
   export const quote = createFactory('quote', 'id')
-  export const image = createFactory('image', 'url')
-  export const video = createFactory('video', 'url')
-  export const audio = createFactory('audio', 'url')
+  export const image = createAssetFactory('image')
+  export const video = createAssetFactory('video')
+  export const audio = createAssetFactory('audio')
+  export const file = createAssetFactory('file')
 }
 
 export { segment as s }

@@ -3,12 +3,30 @@ import { Time, Random } from 'koishi-utils'
 import Profile from './profile'
 import Rank from './rank'
 
+declare module 'koishi-plugin-teach' {
+  interface DialogueTest {
+    matchAffinity?: number
+    mismatchAffinity?: number
+  }
+
+  interface Dialogue {
+    minAffinity: number
+    maxAffinity: number
+  }
+}
+
+declare module 'koishi-plugin-teach' {
+  interface SessionState {
+    noAffinityTest?: boolean
+  }
+}
+
 type AffinityResult = [] | [number, string]
 type AffinityCallback<T extends User.Field = never> = (user: Pick<User, T>, date: number) => void | AffinityResult
 type TheoreticalAffinityCallback = () => AffinityResult
 type HintCallback<T extends User.Field = User.Field> = (user: Pick<User, T>, now: Date) => Iterable<string>
 
-export interface Affinity<T extends User.Field = never> {
+interface Affinity<T extends User.Field = never> {
   order: number
   callback: AffinityCallback<T>
   theoretical: TheoreticalAffinityCallback
@@ -17,7 +35,7 @@ export interface Affinity<T extends User.Field = never> {
 const affinityList: Affinity[] = []
 const hintList: HintCallback[] = []
 
-export namespace Affinity {
+namespace Affinity {
   export const fields = new Set<User.Field>(['name', 'affinity'])
   export const hintFields = new Set<User.Field>()
 
@@ -35,8 +53,12 @@ export namespace Affinity {
     }
     for (const field of fields || []) {
       Affinity.fields.add(field)
+      // profile also needs affinity data
+      Profile.fields.add(field)
     }
   }
+
+  Profile.add(user => `好感度：${Affinity.get(user)}`, [], 20)
 
   export function hint<T extends User.Field = never>(callback: HintCallback<T>, fields: Iterable<T> = []) {
     hintList.push(callback)
@@ -59,11 +81,7 @@ export namespace Affinity {
   }
 
   export function apply(ctx: Context) {
-    ctx.before('connect', () => {
-      Profile.add(user => `好感度：${Affinity.get(user)}`, fields, 20)
-    })
-
-    ctx.command('adventure/affinity', '查看好感度', { maxUsage: 100, usageName: 'show' })
+    ctx.command('adv/affinity', '查看好感度', { maxUsage: 100, usageName: 'show' })
       .alias('aff')
       .userFields(fields)
       .userFields(hintFields)
@@ -116,6 +134,69 @@ export namespace Affinity {
 
         return output.join('\n')
       })
+
+    ctx.with(['koishi-plugin-teach'], integrateTeach)
+  }
+
+  function integrateTeach(ctx: Context) {
+    ctx.command('teach', { patch: true })
+      .option('minAffinity', '-a <aff:posint>  最小好感度')
+      .option('maxAffinity', '-A <aff:posint>  最大好感度')
+      .action(({ options }) => {
+        if (options.maxAffinity === 0) options.maxAffinity = 32768
+      })
+
+    ctx.before('dialogue/search', ({ options }, test) => {
+      if (options.minAffinity !== undefined) test.matchAffinity = options.minAffinity
+      if (options.maxAffinity !== undefined) test.mismatchAffinity = options.maxAffinity
+    })
+
+    function matchAffinity(affinity: number) {
+      return `(\`maxAffinity\` > ${affinity} && \`minAffinity\` <= ${affinity})`
+    }
+
+    ctx.on('dialogue/mysql', (test, conditionals) => {
+      if (test.matchAffinity !== undefined) {
+        conditionals.push(matchAffinity(test.matchAffinity))
+      }
+      if (test.mismatchAffinity !== undefined) {
+        conditionals.push('!' + matchAffinity(test.mismatchAffinity))
+      }
+    })
+
+    ctx.on('dialogue/modify', async ({ options }, data) => {
+      if (options.minAffinity !== undefined) data.minAffinity = options.minAffinity
+      if (options.maxAffinity !== undefined) data.maxAffinity = options.maxAffinity
+    })
+
+    ctx.on('dialogue/detail', (dialogue, output) => {
+      if (dialogue.minAffinity > 0) output.push(`最低好感度：${dialogue.minAffinity}`)
+      if (dialogue.maxAffinity < 32768) output.push(`最高好感度：${dialogue.maxAffinity}`)
+    })
+
+    ctx.on('dialogue/detail-short', (dialogue, output) => {
+      if (dialogue.minAffinity > 0) output.push(`a=${dialogue.minAffinity}`)
+      if (dialogue.maxAffinity < 32768) output.push(`A=${dialogue.maxAffinity}`)
+    })
+
+    ctx.before('dialogue/attach-user', (state, fields) => {
+      if (state.dialogue) return
+      // 如果所有可能触发的问答都不涉及好感度，则无需获取好感度字段
+      // eslint-disable-next-line no-cond-assign
+      if (state.noAffinityTest = state.dialogues.every(d => !d._weight || !d.minAffinity && d.maxAffinity === 32768)) return
+      for (const field of Affinity.fields) {
+        fields.add(field)
+      }
+    })
+
+    ctx.on('dialogue/attach-user', ({ session, dialogues, noAffinityTest }) => {
+      if (noAffinityTest) return
+      const affinity = Affinity.get(session.user)
+      dialogues.forEach((dialogue) => {
+        if (dialogue.minAffinity <= affinity && dialogue.maxAffinity > affinity) return
+        dialogue._weight = 0
+      })
+    })
   }
 }
 

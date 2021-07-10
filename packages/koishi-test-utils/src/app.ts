@@ -96,7 +96,13 @@ export class MockedApp extends App {
   public server: MockedServer
 
   constructor(options: MockedAppOptions = {}) {
-    super({ selfId: BASE_SELF_ID, type: 'mock', ...options })
+    super({
+      type: 'mock',
+      selfId: BASE_SELF_ID,
+      channelCacheAge: Number.EPSILON,
+      userCacheAge: Number.EPSILON,
+      ...options,
+    })
 
     this.server = this.adapters.mock as any
 
@@ -109,11 +115,7 @@ export class MockedApp extends App {
   }
 
   receive(meta: Partial<Session>) {
-    const session = new Session(this, {
-      platform: 'mock',
-      selfId: this.selfId,
-      ...meta,
-    })
+    const session = new Session(this, meta)
     this.adapters.mock.dispatch(session)
     return session.id
   }
@@ -132,6 +134,7 @@ export class TestSession {
     this.meta = {
       platform: 'mock',
       type: 'message',
+      selfId: app.selfId,
       userId,
       author: {
         userId,

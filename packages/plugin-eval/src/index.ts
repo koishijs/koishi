@@ -1,6 +1,5 @@
-import { Domain, Context, Command, Argv } from 'koishi-core'
+import { Context, Command, Argv } from 'koishi-core'
 import { segment, Logger, defineProperty, noop } from 'koishi-utils'
-import { Script } from 'vm'
 import { EvalWorker, Trap, EvalConfig, Config } from './main'
 import { resolve } from 'path'
 import { load } from 'js-yaml'
@@ -11,8 +10,10 @@ import { WorkerResponse } from './worker'
 export * from './main'
 
 declare module 'koishi-core' {
-  interface App {
-    worker: EvalWorker
+  namespace Context {
+    interface Delegates {
+      worker: EvalWorker
+    }
   }
 
   namespace Command {
@@ -23,11 +24,22 @@ declare module 'koishi-core' {
 
   interface Session {
     _isEval: boolean
-    _sendCount: number
+  }
+
+  namespace Plugin {
+    interface Packages {
+      'koishi-plugin-eval': typeof import('.')
+    }
+  }
+
+  interface EventMap {
+    'eval/before-send'(content: string, session: Session): string | Promise<string>
+    'eval/before-start'(): void | Promise<void>
+    'eval/start'(response: WorkerResponse): void
   }
 }
 
-interface OptionManifest extends Domain.OptionConfig {
+interface OptionManifest extends Argv.OptionConfig {
   name: string
   desc: string
 }
@@ -48,33 +60,27 @@ const defaultConfig: EvalConfig = {
   authority: 2,
   timeout: 1000,
   setupFiles: {},
-  maxLogs: Infinity,
+  loaderConfig: {},
+  moduleLoaders: {},
+  scriptLoader: 'default',
   channelFields: ['id'],
   userFields: ['id', 'authority'],
-  dataKeys: ['inspect', 'setupFiles'],
+  dataKeys: ['inspect', 'moduleLoaders', 'setupFiles', 'loaderConfig', 'serializer'],
 }
 
 const logger = new Logger('eval')
 
 export const name = 'eval'
 
+Context.delegate('worker')
+
 export function apply(ctx: Context, config: Config = {}) {
   const { prefix, authority } = config = { ...defaultConfig, ...config }
-  const { app } = ctx
+
+  ctx.worker = new EvalWorker(ctx, config)
 
   // addons are registered in another plugin
-  if (config.addonRoot) {
-    ctx.plugin(addon, config)
-  }
-
-  ctx.on('connect', () => {
-    app.worker = new EvalWorker(app, config)
-    app.worker.start()
-  })
-
-  ctx.before('disconnect', () => {
-    return app.worker?.stop()
-  })
+  if (config.root) ctx.plugin(addon, config)
 
   ctx.before('command', ({ command, session }) => {
     if (command.config.noEval && session._isEval) {
@@ -86,51 +92,49 @@ export function apply(ctx: Context, config: Config = {}) {
   const channelAccess = Trap.resolve(config.channelFields)
 
   // worker should be running for all the features
-  ctx = ctx.intersect(sess => sess.app.worker?.state === EvalWorker.State.open)
+  ctx = ctx.intersect(() => ctx.worker?.state === EvalWorker.State.open)
 
-  const command = ctx.command('evaluate [expr:text]', '执行 JavaScript 脚本', { noEval: true })
+  const command = ctx.command('evaluate [expr:rawtext]', '执行 JavaScript 脚本', { noEval: true })
     .alias('eval')
     .userFields(['authority'])
     .option('slient', '-s  不输出最后的结果')
     .option('restart', '-r  重启子线程', { authority: 3 })
-    .action(({ session }) => {
+    .check(({ session }) => {
       if (!session['_redirected'] && session.user?.authority < authority) return '权限不足。'
     })
+    .action(async ({ options }) => {
+      if (options.restart) {
+        await ctx.worker.restart()
+        return '子线程已重启。'
+      }
+    })
 
-  Trap.action(command, userAccess, channelAccess, async ({ session, options, scope }, expr) => {
-    if (options.restart) {
-      await app.worker.restart()
-      return '子线程已重启。'
-    }
-
+  Trap.action(command, userAccess, channelAccess, async ({ session, options, payload }, expr) => {
     if (!expr) return '请输入要执行的脚本。'
-    expr = segment.unescape(expr)
 
     try {
-      Reflect.construct(Script, [expr, { filename: 'stdin' }])
-    } catch (e) {
-      if (!(e instanceof SyntaxError)) throw e
-      const lines = e.stack.split('\n', 5)
-      return `${lines[4]}\n    at ${lines[0]}:${lines[2].length}`
+      expr = await ctx.worker.loader.transformScript(expr)
+    } catch (err) {
+      return err.message
     }
 
     return await new Promise((resolve) => {
       logger.debug(expr)
       defineProperty(session, '_isEval', true)
 
-      const _resolve = (result?: string) => {
+      const _resolve = async (content?: string) => {
         clearTimeout(timer)
         session._isEval = false
         dispose()
-        resolve(result)
+        resolve(content)
       }
 
       const timer = setTimeout(async () => {
-        await app.worker.restart()
-        _resolve(!session._sendCount && '执行超时。')
+        await ctx.worker.restart()
+        _resolve('执行超时。')
       }, config.timeout)
 
-      const dispose = app.worker.onError((error: Error) => {
+      const dispose = ctx.worker.onError((error: Error) => {
         let message = ERROR_CODES[error['code']]
         if (!message) {
           logger.warn(error)
@@ -139,45 +143,39 @@ export function apply(ctx: Context, config: Config = {}) {
         _resolve(message)
       })
 
-      app.worker.remote.eval(scope, {
-        silent: options.slient,
-        source: expr,
-      }).then(_resolve, (error) => {
-        logger.warn(error)
-        _resolve()
-      })
+      ctx.worker.remote
+        .eval(payload, { silent: options.slient, source: expr })
+        .then(content => ctx.waterfall('eval/before-send', content, session))
+        .catch(error => logger.warn(error))
+        .then(_resolve)
     })
   })
 
   if (prefix) {
-    command.shortcut(prefix, { greedy: true, fuzzy: true })
-    command.shortcut(prefix + prefix[prefix.length - 1], { greedy: true, fuzzy: true, options: { slient: true } })
+    command.shortcut(prefix, { fuzzy: true })
+    command.shortcut(prefix + prefix[prefix.length - 1], { fuzzy: true, options: { slient: true } })
   }
 
   Argv.interpolate('${', '}', (source) => {
-    const expr = segment.unescape(source)
-    try {
-      Reflect.construct(Script, [expr])
-    } catch (e) {
-      if (!(e instanceof Error)) throw e
-      if (e.message === "Unexpected token '}'") {
-        const eLines = e.stack.split('\n')
-        const sLines = expr.split('\n')
-        const cap = /\d+$/.exec(eLines[0])
-        const row = +cap[0] - 1
-        const rest = sLines[row].slice(eLines[2].length) + sLines.slice(row + 1)
-        source = sLines.slice(0, row) + sLines[row].slice(0, eLines[2].length - 1)
-        return { source, command, args: [source], rest: segment.escape(rest) }
-      }
+    const result = ctx.worker.loader.extractScript(segment.unescape(source))
+    if (!result) {
+      const index = source.indexOf('}')
+      if (index >= 0) return { source, rest: source.slice(index + 1), tokens: [] }
+      return { source, rest: '', tokens: [] }
     }
-    return { source, rest: source, tokens: [] }
+    return {
+      source,
+      command,
+      args: [result],
+      rest: segment.escape(source.slice(result.length + 1)),
+    }
   })
 }
 
 function addon(ctx: Context, config: EvalConfig) {
   const logger = ctx.logger('eval:addons')
-  const root = config.addonRoot = resolve(process.cwd(), config.addonRoot)
-  config.dataKeys.push('addonNames', 'addonRoot')
+  const root = config.root = resolve(process.cwd(), config.root)
+  config.dataKeys.push('addonNames', 'root')
 
   const git = Git(root)
 
@@ -193,9 +191,9 @@ function addon(ctx: Context, config: EvalConfig) {
       .option('update', '-u  更新扩展模块', { authority: 3 })
       .action(async ({ options }) => {
         if (!options.update) return
-        const { files, summary } = await git.pull(ctx.app.worker.config.gitRemote)
+        const { files, summary } = await git.pull(ctx.worker.config.gitRemote)
         if (!files.length) return '所有模块均已是最新。'
-        await ctx.app.worker.restart()
+        await ctx.worker.restart()
         return `更新成功！(${summary.insertions}A ${summary.deletions}D ${summary.changes}M)`
       })
   })
@@ -210,7 +208,7 @@ function addon(ctx: Context, config: EvalConfig) {
     return load(content) as Manifest
   }
 
-  ctx.on('worker/start', async () => {
+  ctx.before('eval/start', async () => {
     const dirents = await fs.readdir(root, { withFileTypes: true })
     const paths = config.addonNames = dirents
       .filter(dir => dir.isDirectory() && !exclude.test(dir.name))
@@ -239,10 +237,9 @@ function addon(ctx: Context, config: EvalConfig) {
         .subcommand(rawName, desc, config)
         .option('debug', '启用调试模式', { hidden: true })
 
-      Trap.action(cmd, userAccess, channelAccess, async ({ session, command, options, scope }, ...args) => {
-        const { name } = command, { remote } = session.app.worker
-        const result = await remote.callAddon(scope, { name, args, options })
-        return result
+      Trap.action(cmd, userAccess, channelAccess, async ({ command, options, payload }, ...args) => {
+        const { name } = command
+        return ctx.worker.remote.callAddon(payload, { name, args, options })
       })
 
       options.forEach((config) => {
@@ -252,7 +249,7 @@ function addon(ctx: Context, config: EvalConfig) {
     })
   }
 
-  ctx.on('worker/ready', (data) => {
+  ctx.on('eval/start', (data) => {
     config.addonNames.map((path) => {
       registerAddon(data, path)
     })

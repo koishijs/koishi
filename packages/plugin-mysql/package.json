@@ -1,11 +1,11 @@
 {
   "name": "koishi-plugin-mysql",
   "description": "MySQL support for Koishi",
-  "version": "3.0.0-beta.16",
-  "main": "dist/index.js",
-  "typings": "dist/index.d.ts",
+  "version": "3.3.2",
+  "main": "lib/index.js",
+  "typings": "lib/index.d.ts",
   "files": [
-    "dist"
+    "lib"
   ],
   "author": "Shigma <1700011071@pku.edu.cn>",
   "license": "MIT",
@@ -30,15 +30,11 @@
     "database",
     "mysql"
   ],
-  "devDependencies": {
-    "@types/debug": "^4.1.5",
-    "@types/mysql": "^2.15.18"
-  },
   "peerDependencies": {
-    "koishi-core": "^3.0.1",
-    "koishi-utils": "^4.0.1"
+    "koishi-core": "^3.12.2"
   },
   "dependencies": {
+    "@types/mysql": "^2.15.18",
     "mysql": "^2.18.1"
   }
 }

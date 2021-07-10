@@ -1,4 +1,5 @@
-import { spawnSync } from './utils'
+import { maxSatisfying } from 'semver'
+import { PackageJson, spawnSync } from './utils'
 
 const headerMap = {
   feat: 'Features',
@@ -10,7 +11,7 @@ const headerMap = {
 const prefixes = Object.keys(headerMap)
 const prefixRegExp = new RegExp(`^(${prefixes.join('|')})(?:\\((\\S+)\\))?: (.+)$`)
 
-export function draft(base: string, bumpMap: Record<string, string> = {}) {
+export function draft(base: string, bumpMap: Record<string, PackageJson> = {}) {
   const updates = {}
   const commits = spawnSync(['git', 'log', `${base}..HEAD`, '--format=%H %s']).split(/\r?\n/).reverse()
   for (const commit of commits) {
@@ -26,7 +27,9 @@ export function draft(base: string, bumpMap: Record<string, string> = {}) {
     updates[details[1]] += `- ${body} (${hash})\n`
   }
 
-  let output = Object.entries(bumpMap).map(([name, version]) => `- ${name}@${version}`).join('\n') + '\n'
+  let output = Object.values(bumpMap)
+    .map(({ name, version }) => `- ${name}@${version}`)
+    .sort().join('\n') + '\n'
   for (const type in headerMap) {
     if (!updates[type]) continue
     output += `\n## ${headerMap[type]}\n\n${updates[type]}`
@@ -35,6 +38,10 @@ export function draft(base: string, bumpMap: Record<string, string> = {}) {
 }
 
 if (require.main === module) {
-  const tags = spawnSync(['git', 'tag', '-l']).split(/\r?\n/)
-  console.log(draft(tags[tags.length - 1]))
+  let version = process.argv[2]
+  if (!version) {
+    const tags = spawnSync(['git', 'tag', '-l']).split(/\r?\n/)
+    version = maxSatisfying(tags, '*')
+  }
+  console.log(draft(version))
 }

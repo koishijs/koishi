@@ -1,5 +1,4 @@
-import { User, Context, Session, GroupMemberInfo, Database } from 'koishi-core'
-import { paramCase, camelCase, isInteger } from 'koishi-utils'
+import { User, Context, Session, GroupMemberInfo, Database, paramCase, camelCase, isInteger } from 'koishi-core'
 import {} from 'koishi-plugin-mysql'
 
 type ExtendedUser<T extends User.Field = User.Field> = Pick<User, T> & { _value: number }
@@ -126,7 +125,7 @@ namespace Rank {
   }
 
   export function apply(ctx: Context) {
-    ctx.command('adventure/rank [type]', '显示排行')
+    ctx.command('adv/rank [type]', '显示排行')
       .useRank()
       .action(async ({ session, options }, type) => {
         if (!type) {
@@ -147,7 +146,7 @@ namespace Rank {
         return Rank.show(rank, session, options)
       })
 
-    ctx.on('before-parse', (message, session) => {
+    ctx.before('parse', (message, session) => {
       if (session.quote || session.parsed.prefix) return
       const capture = /^(全服|本群)?(.+)(全服|本群)?排[名行]榜?$/.exec(message)
       if (!capture) return

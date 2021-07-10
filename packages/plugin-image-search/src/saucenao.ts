@@ -133,8 +133,10 @@ async function search(url: string, session: Session, config: saucenao.Config, mi
       })
       return response.data
     } catch (err) {
-      if (!('response' in err)) {
-        logger.warn(`[error] saucenao:`, err)
+      if (!err.response) {
+        if (!(err instanceof Error) || !err.message.includes('ECONNRESET') && !err.message.includes('ECONNREFUSED')) {
+          logger.warn(`[error] saucenao:`, err)
+        }
         return session.send('无法连接服务器。')
       } else if (err.response.status === 403) {
         const result = app.bail('saucenao/drop-key', api_key)

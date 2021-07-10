@@ -86,7 +86,10 @@ export class Daemon {
     this._status.unshift(value)
     this._status = this._status.slice(0, 5)
     if (status !== value) {
-      this.monitor.app.database.setSubscribe(this.config.id, { [this._statusKey]: value })
+      this.monitor.app.database.update('subscribe', [{
+        id: this.config.id,
+        [this._statusKey]: value,
+      }])
     }
   }
 
@@ -145,7 +148,7 @@ export class Daemon {
       }
       if (app.bail('monitor/before-send', info, group)) return
       for (const message of messages) {
-        await bot.sendMessage(channelId, message)
+        await bot.sendMessage(channelId, message, 'unknown')
       }
     })
   }

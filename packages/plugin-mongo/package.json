@@ -1,11 +1,11 @@
 {
   "name": "koishi-plugin-mongo",
   "description": "MongoDB support for Koishi",
-  "version": "2.0.0-beta.8",
-  "main": "dist/index.js",
-  "typings": "dist/index.d.ts",
+  "version": "2.2.3",
+  "main": "lib/index.js",
+  "typings": "lib/index.d.ts",
   "files": [
-    "dist"
+    "lib"
   ],
   "author": "undefined <masnn0@outlook.com>",
   "maintainers": [
@@ -31,13 +31,11 @@
     "database",
     "mysql"
   ],
-  "devDependencies": {
-    "@types/mongodb": "^3.6.8"
-  },
   "peerDependencies": {
-    "koishi-core": "^3.0.1"
+    "koishi-core": "^3.12.2"
   },
   "dependencies": {
-    "mongodb": "^3.6.4"
+    "@types/mongodb": "^3.6.12",
+    "mongodb": "^3.6.6"
   }
 }

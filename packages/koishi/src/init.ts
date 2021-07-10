@@ -16,6 +16,7 @@ const serverQuestions: PromptObject[] = [{
     { title: 'OneBot - HTTP', value: 'onebot:http' },
     { title: 'OneBot - WebSocket', value: 'onebot:ws' },
     { title: 'OneBot - WebSocket Reverse', value: 'onebot:ws-reverse' },
+    { title: 'Discord - WebSocket', value: 'discord' },
     { title: 'Telegram - HTTP', value: 'telegram' },
     { title: 'Kaiheila - HTTP', value: 'kaiheila:http' },
     { title: 'Kaiheila - WebSocket', value: 'kaiheila:ws' },
@@ -50,18 +51,19 @@ const botMap: PromptDict = {
     type: 'text',
     message: 'Token for CQHTTP Server',
   }],
+  'discord': [{
+    name: 'token',
+    type: 'text',
+    message: 'Token for Discord',
+  }],
   'telegram': [{
     name: 'token',
     type: 'text',
     message: 'Token for Telegram',
   }],
   'kaiheila': [{
-    name: 'selfId',
-    type: 'number',
-    message: 'Your Bot\'s Id',
-  }, {
     name: 'token',
-    type: 'text',
+    type: () => config.type === 'kaiheila:ws' ? 'text' : null,
     message: 'Token for Kaiheila',
   }, {
     name: 'verifyToken',
@@ -96,7 +98,7 @@ const adapterMap: PromptDict = {
   }],
   'kaiheila': [{
     name: 'path',
-    type: () => !config['onebot'] && config.type !== 'kaiheila:ws' ? 'text' : null,
+    type: () => !config['kaiheila'] && config.type !== 'kaiheila:ws' ? 'text' : null,
     message: 'Kaiheila Path',
   }],
 }
@@ -194,7 +196,8 @@ interface Package extends Partial<Record<DependencyType, Record<string, string>>
 const cwd = process.cwd()
 const metaPath = resolve(cwd, 'package.json')
 const ecosystem: Record<string, Package> = require('../ecosystem')
-const builtinPackages = ['koishi-plugin-common']
+const builtinPlugins = ['common', 'webui']
+const dbRelatedPlugins = ['schedule', 'teach']
 const config: AppConfig = {}
 const bots: BotOptions[] = []
 
@@ -224,8 +227,9 @@ async function createConfig() {
     if (!title.startsWith('koishi-plugin-')) return
     const value = title.slice(14)
     if (value in databaseMap) return
+    if (!database && dbRelatedPlugins.includes(value)) return
     const { description } = meta
-    const selected = builtinPackages.includes(title)
+    const selected = builtinPlugins.includes(value)
     return { title, value, description, selected }
   }).filter(Boolean)
 
@@ -241,7 +245,7 @@ async function createConfig() {
   }
 }
 
-const sourceTypes = ['js', 'ts', 'json'] as const
+const sourceTypes = ['js', 'ts', 'json', 'yaml', 'yml'] as const
 type SourceType = typeof sourceTypes[number]
 
 const error = red('error')
@@ -254,8 +258,9 @@ type Serializable = string | number | Serializable[] | SerializableObject
 function joinLines(lines: string[], type: SourceType, indent: string) {
   if (!lines.length) return ''
   // 如果是根节点就多个换行，看着舒服
-  const separator = indent ? ',\n  ' + indent : ',\n\n  '
-  return `\n  ${indent}${lines.join(separator)}${type === 'json' ? '' : ','}\n${indent}`
+  let separator = '\n  ' + indent
+  if (type !== 'yaml') separator = ',' + separator
+  return `\n  ${indent}${lines.join(separator)}${type === 'json' || type === 'yaml' ? '' : ','}\n${indent}`
 }
 
 function comment(data: SerializableObject, prop: string) {
@@ -271,46 +276,61 @@ function comment(data: SerializableObject, prop: string) {
   }
 }
 
-function codegen(data: Serializable, type: SourceType, indent = '') {
+function codegen(data: Serializable, type: SourceType, indent = ''): string {
   if (data === null) return 'null'
 
   switch (typeof data) {
     case 'number': case 'boolean': return '' + data
-    case 'string': return type === 'json' || data.includes("'") && !data.includes('"')
-      ? `"${data.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`
-      : `'${data.replace(/\\/g, '\\\\').replace(/'/g, "\\'")}'`
+    case 'string': return type === 'yaml' ? data
+      : type === 'json' || data.includes("'") && !data.includes('"')
+        ? `"${data.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`
+        : `'${data.replace(/\\/g, '\\\\').replace(/'/g, "\\'")}'`
     case 'undefined': return undefined
   }
 
   if (Array.isArray(data)) {
-    return `[${data.map(value => codegen(value, type, indent)).join(', ')}]`
-    // return `[${joinLines(value.map(value => codegen(value, type, '  ' + indent)), type, indent)}]`
+    return type === 'yaml'
+      ? joinLines(data.map(value => '- ' + codegen(value, type, '  ' + indent).trimStart()), type, indent)
+      : `[${data.map(value => codegen(value, type, indent)).join(', ')}]`
   }
 
-  return `{${joinLines(Object.entries(data).filter(([, value]) => value !== undefined).map(([key, value]) => {
+  // object
+  const prefix = type === 'yaml' ? '# ' : '// '
+  const shouldQuote = type === 'json' ? true
+    : type === 'yaml' ? Object.keys(data).some(name => name.startsWith('@'))
+      : !Object.keys(data).every(name => name.match(/^[\w$]+$/))
+  const output = joinLines(Object.entries(data).filter(([, value]) => value !== undefined).map(([key, value]) => {
     let output = type !== 'json' && comment(data, key) || ''
-    if (output) output = output.split('\n').map(line => '// ' + line + '\n  ' + indent).join('')
-    output += type === 'json' ? `"${key}"` : key
+    if (output) output = output.split('\n').map(line => prefix + line + '\n  ' + indent).join('')
+    output += type === 'json' ? `"${key}"` : shouldQuote ? `'${key}'` : key
     output += ': ' + codegen(value, type, '  ' + indent)
     return output
-  }), type, indent)}}`
+  }), type, indent)
+  return type === 'yaml' ? output : `{${output}}`
 }
 
 const rootComment = '配置项文档：https://koishi.js.org/api/app.html'
 
 async function writeConfig(config: any, path: string, type: SourceType) {
+  if (type === 'yml') type = 'yaml'
+
   // generate output
   let output = codegen(config, type) + '\n'
   if (type === 'js') {
     output = '// ' + rootComment + '\nmodule.exports = ' + output
   } else if (type === 'ts') {
-    output = '// ' + rootComment + '\nexport = ' + output
+    output = "import { AppConfig } from 'koishi'\n\n// "
+      + rootComment
+      + '\nexport default '
+      + output.replace(/\n$/, ' as AppConfig\n')
+  } else if (type === 'yaml') {
+    output = '# ' + rootComment + '\n' + output.replace(/^ {2}/mg, '')
   }
 
   // write to file
   const folder = dirname(path)
   await fs.mkdir(folder, { recursive: true })
-  await fs.writeFile(path, output)
+  await fs.writeFile(path, output.replace(/^ +$/mg, ''))
   console.log(`${success} created config file: ${path}`)
 }
 
@@ -319,7 +339,9 @@ async function loadMeta() {
 }
 
 function execute(bin: string, args: string[] = [], stdio: StdioOptions = 'inherit') {
-  const child = spawn(bin, args, { stdio })
+  // fix for #205
+  // https://stackoverflow.com/questions/43230346/error-spawn-npm-enoent
+  const child = spawn(bin + (process.platform === 'win32' ? '.cmd' : ''), args, { stdio })
   return new Promise<number>((resolve) => {
     child.on('close', resolve)
   })

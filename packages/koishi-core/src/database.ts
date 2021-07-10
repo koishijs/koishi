@@ -8,6 +8,39 @@ export interface Tables {
   channel: Channel
 }
 
+export namespace Tables {
+  type IndexType = string | number
+  type IndexKeys<O, T = any> = string & { [K in keyof O]: O[K] extends T ? K : never }[keyof O]
+  type QueryMap<O> = { [K in keyof O]?: O[K][] }
+  export type Index<T extends TableType> = IndexKeys<Tables[T], IndexType>
+  export type Query<T extends TableType> = IndexType[] | QueryMap<Tables[T]>
+  export type Field<T extends TableType> = string & keyof Tables[T]
+
+  interface Meta<O> {
+    type?: 'incremental'
+    primary?: keyof O
+    unique?: (keyof O)[]
+    foreign?: {
+      [K in keyof O]: [TableType, string]
+    }
+  }
+
+  export const config: { [T in TableType]?: Meta<Tables[T]> } = {}
+
+  export function extend<T extends TableType>(name: T, meta?: Meta<Tables[T]>) {
+    config[name] = { primary: 'id', unique: [], type: 'incremental', foreign: {}, ...meta } as any
+  }
+
+  extend('user')
+  extend('channel')
+
+  export function resolveQuery<T extends TableType>(name: T, query: Query<T>): Record<string, any[]> {
+    if (!Array.isArray(query)) return query
+    const { primary } = config[name]
+    return { [primary]: query }
+  }
+}
+
 export interface User extends Record<Platform, string> {
   id: string
   flag: number
@@ -85,14 +118,18 @@ export namespace Channel {
   extend((type, id) => ({ id: `${type}:${id}`, flag: 0, disable: [] }))
 }
 
-type MaybeArray<T> = T | readonly T[]
+type MaybeArray<T> = T | T[]
 
 export interface Database {
+  get<T extends TableType, F extends Tables.Field<T>>(table: T, query: Tables.Query<T>, fields?: readonly F[]): Promise<Pick<Tables[T], F>[]>
+  remove<T extends TableType>(table: T, query: Tables.Query<T>): Promise<void>
+  create<T extends TableType>(table: T, data: Partial<Tables[T]>): Promise<Tables[T]>
+  update<T extends TableType>(table: T, data: Partial<Tables[T]>[], key?: Tables.Index<T>): Promise<void>
+
   getUser<K extends User.Field, T extends User.Index>(type: T, id: string, fields?: readonly K[]): Promise<Pick<User, K | T>>
   getUser<K extends User.Field, T extends User.Index>(type: T, ids: readonly string[], fields?: readonly K[]): Promise<Pick<User, K | T>[]>
   setUser<T extends User.Index>(type: T, id: string, data: Partial<User>): Promise<void>
   createUser<T extends User.Index>(type: T, id: string, data: Partial<User>): Promise<void>
-  removeUser<T extends User.Index>(type: T, id: string): Promise<void>
 
   getChannel<K extends Channel.Field>(type: Platform, id: string, fields?: readonly K[]): Promise<Pick<Channel, K | 'id'>>
   getChannel<K extends Channel.Field>(type: Platform, ids: readonly string[], fields?: readonly K[]): Promise<Pick<Channel, K | 'id'>[]>
@@ -100,11 +137,10 @@ export interface Database {
   getAssignedChannels<K extends Channel.Field>(fields?: readonly K[], assignMap?: Record<string, readonly string[]>): Promise<Pick<Channel, K>[]>
   setChannel(type: Platform, id: string, data: Partial<Channel>): Promise<void>
   createChannel(type: Platform, id: string, data: Partial<Channel>): Promise<void>
-  removeChannel(type: Platform, id: string): Promise<void>
 }
 
 type Methods<S, T> = {
-  [K in keyof S]?: S[K] extends (...args: infer R) => infer S ? (this: T, ...args: R) => S : never
+  [K in keyof S]?: S[K] extends (...args: infer R) => infer U ? (this: T, ...args: R) => U : S[K]
 }
 
 export namespace Database {
@@ -132,5 +168,17 @@ export namespace Database {
   }
 }
 
-/** @deprecated use `Database.extend()` instead */
-export const extendDatabase = Database.extend
+export interface Assets {
+  types: readonly Assets.Type[]
+  upload(url: string, file: string): Promise<string>
+  stats(): Promise<Assets.Stats>
+}
+
+export namespace Assets {
+  export type Type = 'image' | 'audio' | 'video' | 'file'
+
+  export interface Stats {
+    assetCount?: number
+    assetSize?: number
+  }
+}

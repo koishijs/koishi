@@ -1,11 +1,11 @@
 {
   "name": "koishi-plugin-chess",
-  "description": "Chess Plugin for Koishi",
-  "version": "3.0.0-beta.11",
-  "main": "dist/index.js",
-  "typings": "dist/index.d.ts",
+  "description": "Playing chess games in Koishi",
+  "version": "3.0.5",
+  "main": "lib/index.js",
+  "typings": "lib/index.d.ts",
   "files": [
-    "dist"
+    "lib"
   ],
   "author": "Shigma <1700011071@pku.edu.cn>",
   "license": "MIT",
@@ -29,8 +29,8 @@
     "game"
   ],
   "peerDependencies": {
-    "koishi-core": "^3.0.1",
-    "koishi-plugin-puppeteer": "^2.0.0",
-    "koishi-utils": "^4.0.1"
+    "koishi-core": "^3.12.2",
+    "koishi-plugin-puppeteer": "^2.1.4",
+    "koishi-utils": "^4.2.3"
   }
 }

@@ -41,23 +41,21 @@ export const name = 'chess'
 export function apply(ctx: Context) {
   ctx = ctx.group()
 
+  State.imageMode = !!ctx.puppeteer
+  ctx.on('delegate/puppeteer', () => State.imageMode = true)
+
   ctx.on('connect', async () => {
     if (!ctx.database) return
     const channels = await ctx.database.getAssignedChannels(['id', 'chess'])
     for (const { id, chess } of channels) {
       if (chess) {
-        states[id] = State.from(ctx.app, chess)
+        states[id] = State.from(chess)
         states[id].update = rules[chess.rule].update
       }
     }
-
-    if (ctx.app.browser) {
-      chess.removeOption('imageMode')
-      chess.removeOption('textMode')
-    }
   })
 
-  const chess = ctx.command('chess [position]', '棋类游戏')
+  ctx.command('chess [position]', '棋类游戏')
     .userFields(['name'])
     .channelFields(['chess'])
     .shortcut('落子', { fuzzy: true })
@@ -69,8 +67,6 @@ export function apply(ctx: Context) {
     .shortcut('停止下棋', { options: { stop: true } })
     .shortcut('跳过回合', { options: { skip: true } })
     .shortcut('查看棋盘', { options: { show: true } })
-    .option('imageMode', '-i  使用图片模式')
-    .option('textMode', '-t  使用文本模式')
     .option('rule', '<rule>  设置规则，支持的规则有 go, gomoku, othello')
     .option('size', '<size>  设置大小')
     .option('skip', '跳过回合')
@@ -97,10 +93,8 @@ export function apply(ctx: Context) {
         const rule = rules[options.rule]
         if (!rule) return '没有找到对应的规则。'
 
-        const state = new State(ctx.app, options.rule, options.size, rule.placement || 'cross')
+        const state = new State(options.rule, options.size, rule.placement || 'cross')
         state.p1 = userId
-
-        if (options.textMode) state.imageMode = false
 
         if (rule.create) {
           const result = rule.create.call(state)
@@ -108,6 +102,7 @@ export function apply(ctx: Context) {
         }
         state.update = rule.update
         states[cid] = state
+        state.save()
 
         return state.draw(session, `${session.username} 发起了游戏！`)
       }
@@ -120,16 +115,6 @@ export function apply(ctx: Context) {
 
       const state = states[cid]
 
-      if (ctx.app.browser) {
-        if (options.textMode) {
-          state.imageMode = false
-          return state.draw(session, '已切换到文本模式。')
-        } else if (options.imageMode) {
-          state.imageMode = true
-          return state.draw(session, '已切换到图片模式。')
-        }
-      }
-
       if (options.show) return state.draw(session)
 
       if (state.p2 && state.p1 !== userId && state.p2 !== userId) {
@@ -137,6 +122,7 @@ export function apply(ctx: Context) {
       }
 
       if (options.skip) {
+        if (!state.next) return '对局尚未开始。'
         if (state.next !== userId) return '当前不是你的回合。'
         state.next = state.p1 === userId ? state.p2 : state.p1
         channel.chess = state.serial()
@@ -144,7 +130,7 @@ export function apply(ctx: Context) {
       }
 
       if (options.repent) {
-        if (!state.p2) return '尚未有人行棋。'
+        if (!state.next) return '对局尚未开始。'
         const last = state.p1 === state.next ? state.p2 : state.p1
         if (last !== userId) return '上一手棋不是你所下。'
         state.history.pop()
@@ -178,14 +164,19 @@ export function apply(ctx: Context) {
       if (state.get(x, y)) return '此处已有落子。'
 
       let message = ''
-      if (!state.p2 && userId !== state.p1) {
-        state.p2 = userId
-        message = `${session.username} 加入了游戏并落子于 ${position.toUpperCase()}，`
-      } else {
+      if (state.next || userId === state.p1) {
         message = `${session.username} 落子于 ${position.toUpperCase()}，`
+      } else {
+        if (state.history.length === 1) {
+          state.p2 = state.p1
+          state.p1 = userId
+        } else {
+          state.p2 = userId
+        }
+        message = `${session.username} 加入了游戏并落子于 ${position.toUpperCase()}，`
       }
 
-      const value = state.history.length % 2 ? -1 : 1
+      const value = userId === state.p1 ? 1 : -1
       const result = state.update(x, y, value)
 
       switch (result) {
@@ -196,30 +187,49 @@ export function apply(ctx: Context) {
           message += `下一手依然轮到 ${segment.at(userId)}。`
           break
         case MoveResult.p1Win:
-          message += `恭喜 ${segment.at(state.p1)} 获胜！`
           delete states[cid]
           channel.chess = null
-          break
+          return message + `恭喜 ${segment.at(state.p1)} 获胜！`
         case MoveResult.p2Win:
-          message += `恭喜 ${segment.at(state.p2)} 获胜！`
           delete states[cid]
           channel.chess = null
-          break
+          return message + `恭喜 ${segment.at(state.p2)} 获胜！`
         case MoveResult.draw:
-          message += '本局游戏平局。'
           delete states[cid]
           channel.chess = null
-          break
+          return message + '本局游戏平局。'
         case undefined:
-          state.next = userId === state.p1 ? state.p2 : state.p1
-          message += `下一手轮到 ${segment.at(state.next)}。`
+          // eslint-disable-next-line no-cond-assign
+          if (state.next = userId === state.p1 ? state.p2 : state.p1) {
+            message += `下一手轮到 ${segment.at(state.next)}。`
+          } else {
+            message = message.slice(0, -1) + '。'
+          }
           break
         default:
           state.next = userId
           return `非法落子（${result}）。`
       }
 
+      state.save()
       channel.chess = state.serial()
       return state.draw(session, message, x, y)
     })
+
+  ctx.with(['koishi-plugin-puppeteer'], (ctx) => {
+    ctx.command('chess', { patch: true })
+      .option('imageMode', '-i  使用图片模式')
+      .option('textMode', '-t  使用文本模式')
+      .action(({ session, options }) => {
+        const state = states[session.cid]
+        if (!state) return
+        if (options.textMode) {
+          state.imageMode = false
+          return state.draw(session, '已切换到文本模式。')
+        } else if (options.imageMode) {
+          state.imageMode = true
+          return state.draw(session, '已切换到图片模式。')
+        }
+      })
+  })
 }

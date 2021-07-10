@@ -1,14 +1,14 @@
 /* global BigInt */
 
-import * as puppeteer from 'koishi-plugin-puppeteer'
-import { Session, App } from 'koishi-core'
+import type * as puppeteer from 'koishi-plugin-puppeteer'
+import { Session } from 'koishi-core'
 
 const numbers = '①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳'
 const alphabet = 'ＡＢＣＤＥＦＧＨＩＪＫＬＭＮＯＰＱＲＳＴＵＶＷＸＹＺ'
 
 export enum MoveResult {
-  p1Win = -1,
-  p2Win = 1,
+  p1Win = 1,
+  p2Win = -1,
   draw = -2,
   skip = 2,
   illegal = 3,
@@ -26,10 +26,11 @@ export class State {
   imageMode: boolean
   update: (this: State, x: number, y: number, value: 1 | -1) => MoveResult | string
 
-  constructor(public app: App, public readonly rule: string, public readonly size: number, public readonly placement: 'cross' | 'grid') {
+  static imageMode: boolean
+
+  constructor(public readonly rule: string, public readonly size: number, public readonly placement: 'cross' | 'grid') {
     this.area = BigInt(size * size)
     this.full = (1n << this.area) - 1n
-    this.imageMode = !!app.browser
   }
 
   get pBoard() {
@@ -144,10 +145,6 @@ export class State {
     return svg
   }
 
-  drawImage(x?: number, y?: number) {
-    return this.drawSvg(x, y).render(this.app)
-  }
-
   drawText(x?: number, y?: number) {
     const max = this.size - 1
     let output = '　' + numbers.slice(0, this.size)
@@ -165,18 +162,14 @@ export class State {
     return output
   }
 
-  async draw(session: Session, message: string = '', x?: number, y?: number) {
-    if (this.imageMode) {
-      const [image] = await Promise.all([
-        this.drawImage(x, y),
-        message && session.send(message),
-      ])
-      await session.send(image)
+  async draw(session: Session, message = '', x?: number, y?: number) {
+    if (message) message += '\n'
+    if (this.imageMode ?? State.imageMode) {
+      message += await this.drawSvg(x, y).render(session.app)
     } else {
-      if (message) message += '\n'
       message += this.drawText(x, y)
-      await session.send(message)
     }
+    await session.send(message)
   }
 
   set(x: number, y: number, value: 0 | 1 | -1) {
@@ -192,7 +185,6 @@ export class State {
       this.wBoard &= ~chess
       this.bBoard &= ~chess
     }
-    this.save()
     return board
   }
 
@@ -211,8 +203,8 @@ export class State {
     return { rule, size, placement, p1, p2, next, history: history.join(',') }
   }
 
-  static from(app: App, data: StateData) {
-    const state = new State(app, data.rule, data.size, data.placement)
+  static from(data: StateData) {
+    const state = new State(data.rule, data.size, data.placement)
     state.p1 = data.p1
     state.p2 = data.p2
     state.next = data.next

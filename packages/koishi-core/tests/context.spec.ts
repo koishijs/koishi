@@ -2,6 +2,7 @@ import { App } from 'koishi-test-utils'
 import { Session, Context } from 'koishi-core'
 import { noop } from 'koishi-utils'
 import { expect } from 'chai'
+import { inspect } from 'util'
 import jest from 'jest-mock'
 
 const app = new App()
@@ -164,6 +165,21 @@ describe('Context API', () => {
       expect(() => app.plugin(undefined)).to.throw()
       expect(() => app.plugin({} as any)).to.throw()
       expect(() => app.plugin({ apply: {} } as any)).to.throw()
+    })
+
+    it('context inspect', () => {
+      expect(inspect(app)).to.equal('Context <root>')
+
+      app.plugin(function foo(ctx) {
+        expect(inspect(ctx)).to.equal('Context <anonymous>')
+      })
+
+      app.plugin({
+        name: 'bar',
+        apply: (ctx) => {
+          expect(inspect(ctx)).to.equal('Context <bar>')
+        },
+      })
     })
   })
 

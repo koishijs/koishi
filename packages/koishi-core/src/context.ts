@@ -1,8 +1,8 @@
-import { Logger, defineProperty } from 'koishi-utils'
+import { Logger, defineProperty, remove, segment, Random } from 'koishi-utils'
 import { Command } from './command'
 import { Session } from './session'
-import { User, Channel, Database } from './database'
-import { Argv, Domain } from './parser'
+import { User, Channel, Database, Assets } from './database'
+import { Argv } from './parser'
 import { Platform, Bot } from './adapter'
 import { App } from './app'
 import { inspect } from 'util'
@@ -31,16 +31,55 @@ export namespace Plugin {
 
   export type Config<T extends Plugin> = T extends Function<infer U> ? U : T extends Object<infer U> ? U : never
 
-  export interface State extends Meta {
-    parent: State
+  export interface State<T = any> extends Meta {
+    id?: string
+    parent?: State
+    context?: Context
+    config?: T
+    plugin?: Plugin
     children: Plugin[]
     disposables: Disposable[]
-    dependencies: Set<State>
+  }
+
+  export interface Packages {}
+
+  export type Teleporter<D extends readonly (keyof Packages)[]> = (ctx: Context, ...modules: From<D>) => void
+
+  type From<D extends readonly unknown[]> = D extends readonly [infer L, ...infer R]
+    ? [L extends keyof Packages ? Packages[L] : unknown, ...From<R>]
+    : []
+
+  export class Registry extends Map<Plugin, State> {
+    resolve(plugin: Plugin) {
+      return plugin && (typeof plugin === 'function' ? plugin : plugin.apply)
+    }
+
+    get(plugin: Plugin) {
+      return super.get(this.resolve(plugin))
+    }
+
+    set(plugin: Plugin, state: State) {
+      return super.set(this.resolve(plugin), state)
+    }
+
+    has(plugin: Plugin) {
+      return super.has(this.resolve(plugin))
+    }
+
+    delete(plugin: Plugin) {
+      return super.delete(this.resolve(plugin))
+    }
   }
 }
 
 function isBailed(value: any) {
   return value !== null && value !== false && value !== undefined
+}
+
+function safeRequire(id: string) {
+  try {
+    return require(id)
+  } catch {}
 }
 
 type Filter = (session: Session) => boolean
@@ -50,23 +89,22 @@ interface Selector<T> extends PartialSeletor<T> {
   except?: PartialSeletor<T>
 }
 
+export interface Context extends Context.Delegates {}
+
 export class Context {
-  static readonly middleware = Symbol('mid')
+  static readonly middleware = Symbol('middleware')
+  static readonly current = Symbol('source')
 
   protected _bots: Bot[] & Record<string, Bot>
-  protected _router: Router
-  protected _database: Database
-
-  public user = this.createSelector('userId')
-  public self = this.createSelector('selfId')
-  public group = this.createSelector('groupId')
-  public channel = this.createSelector('channelId')
-  public platform = this.createSelector('platform')
 
   protected constructor(public filter: Filter, public app?: App, private _plugin: Plugin = null) {}
 
+  private static inspect(plugin: Plugin) {
+    return !plugin ? 'root' : typeof plugin === 'object' && plugin.name || 'anonymous'
+  }
+
   [inspect.custom]() {
-    return `Context {}`
+    return `Context <${Context.inspect(this._plugin)}>`
   }
 
   private createSelector<K extends keyof Session>(key: K) {
@@ -75,30 +113,32 @@ export class Context {
     return selector
   }
 
+  get user() {
+    return this.createSelector('userId')
+  }
+
+  get self() {
+    return this.createSelector('selfId')
+  }
+
+  get group() {
+    return this.createSelector('groupId')
+  }
+
+  get channel() {
+    return this.createSelector('channelId')
+  }
+
+  get platform() {
+    return this.createSelector('platform')
+  }
+
   get private() {
     return this.unselect('groupId').user
   }
 
-  get router(): Router {
-    if (!this.app._router) return
-    const router = Object.create(this.app._router)
-    router._koishiContext = this
-    return router
-  }
-
   get bots() {
     return this.app._bots
-  }
-
-  get database() {
-    return this.app._database
-  }
-
-  set database(database) {
-    if (this.app._database && this.app._database !== database) {
-      this.logger('app').warn('ctx.database is overwritten')
-    }
-    this.app._database = database
   }
 
   logger(name: string) {
@@ -131,20 +171,17 @@ export class Context {
     return new Context(s => this.filter(s) && filter(s), this.app, this._plugin)
   }
 
+  except(arg: Filter | Context) {
+    const filter = typeof arg === 'function' ? arg : arg.filter
+    return new Context(s => this.filter(s) && !filter(s), this.app, this._plugin)
+  }
+
   match(session?: Session) {
     return !session || this.filter(session)
   }
 
   get state() {
     return this.app.registry.get(this._plugin)
-  }
-
-  private removeDisposable(listener: Disposable) {
-    const index = this.state.disposables.indexOf(listener)
-    if (index >= 0) {
-      this.state.disposables.splice(index, 1)
-      return true
-    }
   }
 
   addSideEffect(state = this.state) {
@@ -154,14 +191,31 @@ export class Context {
     }
   }
 
-  addDependency(plugin: string | Plugin) {
-    if (typeof plugin === 'string') {
-      plugin = require(plugin) as Plugin
+  private teleport(modules: any[], callback: Plugin.Teleporter<any>) {
+    const states: Plugin.State[] = []
+    for (const module of modules) {
+      const state = this.app.registry.get(module)
+      if (!state) return
+      states.push(state)
     }
-    const parent = this.app.registry.get(plugin)
-    if (!parent) throw new Error('dependency has not been installed')
-    this.state.dependencies.add(parent)
-    if (this.state.sideEffect) this.addSideEffect(parent)
+    const plugin = (ctx: Context) => callback(ctx, ...modules as [])
+    const dispose = () => this.dispose(plugin)
+    this.plugin(plugin)
+    states.every(state => state.disposables.push(dispose))
+    this.before('disconnect', () => {
+      states.every(state => remove(state.disposables, dispose))
+    })
+  }
+
+  with<D extends readonly (keyof Plugin.Packages)[]>(deps: D, callback: Plugin.Teleporter<D>) {
+    const modules = deps.map(safeRequire)
+    if (!modules.every(val => val)) return this
+    this.teleport(modules, callback)
+    this.on('plugin-added', (added) => {
+      const modules = deps.map(safeRequire)
+      if (modules.includes(added)) this.teleport(modules, callback)
+    })
+    return this
   }
 
   plugin<T extends Plugin>(plugin: T, options?: Plugin.Config<T>): this
@@ -170,17 +224,20 @@ export class Context {
     if (options === true) options = undefined
 
     if (this.app.registry.has(plugin)) {
-      this.logger('app').warn('duplicate plugin detected')
+      this.logger('app').warn(new Error(`duplicate plugin <${Context.inspect(plugin)}> detected`))
       return this
     }
 
     const ctx: this = Object.create(this)
     defineProperty(ctx, '_plugin', plugin)
     this.app.registry.set(plugin, {
+      plugin,
+      id: Random.uuid(),
+      context: this,
+      config: options,
       parent: this.state,
       children: [],
       disposables: [],
-      dependencies: new Set([this.state]),
     })
 
     if (typeof plugin === 'function') {
@@ -195,7 +252,7 @@ export class Context {
     }
 
     this.state.children.push(plugin)
-    this.emit('registry', this.app.registry)
+    this.emit('plugin-added', plugin, this.app.registry)
     return this
   }
 
@@ -203,14 +260,14 @@ export class Context {
     const state = this.app.registry.get(plugin)
     if (!state) return
     if (state.sideEffect) throw new Error('plugins with side effect cannot be disposed')
-    await Promise.all([
+    await Promise.allSettled([
       ...state.children.slice().map(plugin => this.dispose(plugin)),
       ...state.disposables.map(dispose => dispose()),
-    ])
-    this.app.registry.delete(plugin)
-    const index = state.parent.children.indexOf(plugin)
-    if (index >= 0) state.parent.children.splice(index, 1)
-    this.emit('registry', this.app.registry)
+    ]).finally(() => {
+      this.app.registry.delete(plugin)
+      remove(state.parent.children, plugin)
+      this.emit('plugin-removed', plugin, this.app.registry)
+    })
   }
 
   async parallel<K extends EventName>(name: K, ...args: Parameters<EventMap[K]>): Promise<Await<ReturnType<EventMap[K]>>[]>
@@ -282,19 +339,21 @@ export class Context {
     }
   }
 
-  on<K extends EventName>(name: K, listener: EventMap[K], prepend = false) {
+  on<K extends EventName>(name: K, listener: EventMap[K], prepend?: boolean): () => boolean
+  on(name: string & EventName, listener: Disposable, prepend = false) {
     const method = prepend ? 'unshift' : 'push'
 
-    // handle plugin-related events
-    const _listener = listener as Disposable
+    // handle special events
     if (name === 'connect' && this.app.status === App.Status.open) {
-      return _listener(), () => false
+      return listener(), () => false
     } else if (name === 'before-disconnect') {
-      this.state.disposables[method](_listener)
-      return () => this.removeDisposable(_listener)
+      this.state.disposables[method](listener)
+      return () => remove(this.state.disposables, listener)
     } else if (name === 'before-connect') {
       // before-connect is side effect
       this.addSideEffect()
+    } else if (typeof name === 'string' && name.startsWith('delegate/')) {
+      if (this[name.slice(9)]) return listener(), () => false
     }
 
     const hooks = this.app._hooks[name] ||= []
@@ -341,7 +400,7 @@ export class Context {
   private createTimerDispose(timer: NodeJS.Timeout) {
     const dispose = () => {
       clearTimeout(timer)
-      return this.removeDisposable(dispose)
+      return remove(this.state.disposables, dispose)
     }
     this.state.disposables.push(dispose)
     return dispose
@@ -356,31 +415,27 @@ export class Context {
   }
 
   setInterval(callback: (...args: any[]) => void, ms: number, ...args: any[]) {
-    const dispose = this.createTimerDispose(setInterval(() => {
-      dispose()
-      callback()
-    }, ms, ...args))
-    return dispose
+    return this.createTimerDispose(setInterval(callback, ms, ...args))
   }
 
-  command<D extends string>(def: D, config?: Command.Config): Command<never, never, Domain.ArgumentType<D>>
-  command<D extends string>(def: D, desc: string, config?: Command.Config): Command<never, never, Domain.ArgumentType<D>>
+  command<D extends string>(def: D, config?: Command.Config): Command<never, never, Argv.ArgumentType<D>>
+  command<D extends string>(def: D, desc: string, config?: Command.Config): Command<never, never, Argv.ArgumentType<D>>
   command(def: string, ...args: [Command.Config?] | [string, Command.Config?]) {
     const desc = typeof args[0] === 'string' ? args.shift() as string : ''
     const config = args[0] as Command.Config
     const path = def.split(' ', 1)[0].toLowerCase()
     const decl = def.slice(path.length)
-    const segments = path.split(/(?=[\\./])/)
+    const segments = path.split(/(?=[./])/g)
 
-    let parent: Command = null
+    let parent: Command, root: Command
     segments.forEach((segment, index) => {
       const code = segment.charCodeAt(0)
       const name = code === 46 ? parent.name + segment : code === 47 ? segment.slice(1) : segment
-      let command = this.app._commandMap[name]
+      let command = this.app._commands.get(name)
       if (command) {
         if (parent) {
           if (command === parent) {
-            throw new Error('cannot set a command as its own subcommand')
+            throw new Error(`cannot set a command (${command.name}) as its own subcommand`)
           }
           if (command.parent) {
             if (command.parent !== parent) {
@@ -394,6 +449,7 @@ export class Context {
         return parent = command
       }
       command = new Command(name, decl, index === segments.length - 1 ? desc : '', this)
+      if (!root) root = command
       if (parent) {
         command.parent = parent
         command.config.authority = parent.config.authority
@@ -404,8 +460,22 @@ export class Context {
 
     if (desc) parent.description = desc
     Object.assign(parent.config, config)
-    this.state.disposables.push(() => parent.dispose())
-    return parent
+    if (!config?.patch) {
+      if (root) this.state.disposables.unshift(() => root.dispose())
+      return parent
+    }
+
+    if (root) root.dispose()
+    const command = Object.create(parent)
+    command._disposables = this.state.disposables
+    return command
+  }
+
+  async transformAssets(content: string, assets = this.assets) {
+    if (!assets) return content
+    return segment.transformAsync(content, Object.fromEntries(assets.types.map((type) => {
+      return [type, async (data) => segment(type, { url: await assets.upload(data.url, data.file) })]
+    })))
   }
 
   getBot(platform: Platform, selfId?: string) {
@@ -433,7 +503,14 @@ export class Context {
     const [content, forced] = args as [string, boolean]
     if (!content) return []
 
-    const data = await this.database.getAssignedChannels(['id', 'assignee', 'flag'])
+    const data = this.database
+      ? await this.database.getAssignedChannels(['id', 'assignee', 'flag'])
+      : channels.map((id) => {
+        const [type] = id.split(':')
+        const bot = this.getBot(type as never)
+        return bot && { id, assignee: bot.selfId, flag: 0 }
+      }).filter(Boolean)
+
     const assignMap: Record<string, Record<string, string[]>> = {}
     for (const { id, assignee, flag } of data) {
       if (channels && !channels.includes(id)) continue
@@ -455,6 +532,35 @@ export class Context {
       })
     }))).flat(1)
   }
+
+  static delegate(key: string & keyof Context) {
+    if (Object.prototype.hasOwnProperty.call(Context.prototype, key)) return
+    const privateKey = Symbol(key)
+    Object.defineProperty(Context.prototype, key, {
+      get() {
+        if (!this.app[privateKey]) return
+        const value = Object.create(this.app[privateKey])
+        defineProperty(value, Context.current, this)
+        return value
+      },
+      set(value) {
+        if (!this.app[privateKey]) this.emit('delegate/' + key)
+        defineProperty(this.app, privateKey, value)
+      },
+    })
+  }
+}
+
+Context.delegate('database')
+Context.delegate('assets')
+Context.delegate('router')
+
+export namespace Context {
+  export interface Delegates {
+    database: Database
+    assets: Assets
+    router: Router
+  }
 }
 
 type FlattenEvents<T> = {
@@ -469,12 +575,17 @@ type SessionEventMap = {
     : (session: Session.Payload<K>) => void
 }
 
+type DelegateEventMap = {
+  [K in keyof Context.Delegates as `delegate/${K}`]: () => void
+}
+
 type EventName = keyof EventMap
 type OmitSubstring<S extends string, T extends string> = S extends `${infer L}${T}${infer R}` ? `${L}${R}` : never
 type BeforeEventName = OmitSubstring<EventName & string, 'before-'>
-type BeforeEventMap = { [E in EventName & string as OmitSubstring<E, 'before-'>]: EventMap[E] }
 
-export interface EventMap extends SessionEventMap {
+export type BeforeEventMap = { [E in EventName & string as OmitSubstring<E, 'before-'>]: EventMap[E] }
+
+export interface EventMap extends SessionEventMap, DelegateEventMap {
   [Context.middleware]: Middleware
 
   // Koishi events
@@ -491,7 +602,8 @@ export interface EventMap extends SessionEventMap {
   'before-command'(argv: Argv): Awaitable<void | string>
   'command'(argv: Argv): Awaitable<void>
   'middleware'(session: Session): void
-  'registry'(registry: Map<Plugin, Plugin.State>): void
+  'plugin-added'(plugin: Plugin, registry: Map<Plugin, Plugin.State>): void
+  'plugin-removed'(plugin: Plugin, registry: Map<Plugin, Plugin.State>): void
   'before-connect'(): Awaitable<void>
   'connect'(): void
   'before-disconnect'(): Awaitable<void>
@@ -503,10 +615,9 @@ export interface EventMap extends SessionEventMap {
 const register = Router.prototype.register
 Router.prototype.register = function (this: Router, ...args) {
   const layer = register.apply(this, args)
-  const context: Context = this['_koishiContext']
-  context.state.disposables.push(() => {
-    const index = this.stack.indexOf(layer)
-    if (index) this.stack.splice(index, 1)
+  const context: Context = this[Context.current]
+  context?.state.disposables.push(() => {
+    remove(this.stack, layer)
   })
   return layer
 }

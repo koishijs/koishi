@@ -1,6 +1,7 @@
 import { Context, Session, Command, makeArray, segment } from 'koishi-core'
 import ascii2d from './ascii2d'
 import saucenao from './saucenao'
+import iqdb from './iqdb'
 
 export interface Config extends saucenao.Config {
   saucenaoApiKey?: string | string[]
@@ -35,10 +36,12 @@ export function apply(ctx: Context, config: Config = {}) {
   ctx.command('search [image]', '搜图片')
     .shortcut('搜图', { fuzzy: true })
     .action(search(mixedSearch))
-    .subcommand('saucenao [image]', '使用 saucenao 搜图')
+  ctx.command('search/saucenao [image]', '使用 saucenao 搜图')
     .action(search(saucenao))
-    .subcommand('ascii2d [image]', '使用 ascii2d 搜图')
+  ctx.command('search/ascii2d [image]', '使用 ascii2d 搜图')
     .action(search(ascii2d))
+  ctx.command('search/iqdb [image]', '使用 iqdb 搜图')
+    .action(search(iqdb))
 
   const pendings = new Set<string>()
 
@@ -49,7 +52,8 @@ export function apply(ctx: Context, config: Config = {}) {
     pendings.add(id)
     try {
       await callback(url, session, config)
-    } catch {
+    } catch (error) {
+      ctx.logger('search').warn(error)
       await session.send('搜索失败。')
     } finally {
       pendings.delete(id)
@@ -61,7 +65,7 @@ export function apply(ctx: Context, config: Config = {}) {
       const id = session.channelId
       if (pendings.has(id)) return '存在正在进行的查询，请稍后再试。'
 
-      const code = segment.from(session.content, 'image')
+      const code = segment.from(session.content, { type: 'image' })
       if (code && code.data.url) {
         pendings.add(id)
         return searchUrl(session, code.data.url, callback)
@@ -69,7 +73,7 @@ export function apply(ctx: Context, config: Config = {}) {
 
       const dispose = session.middleware(({ content }, next) => {
         dispose()
-        const code = segment.from(content, 'image')
+        const code = segment.from(content, { type: 'image' })
         if (!code || !code.data.url) return next()
         return searchUrl(session, code.data.url, callback)
       })

@@ -1,0 +1,143 @@
+@import '@vuepress/plugin-palette/palette';
+
+#app {
+  .navbar .logo {
+    height: 2rem;
+    min-width: 2rem;
+    margin-right: 0.8rem;
+    vertical-align: top;
+  }
+
+  p code {
+    padding: 0.2rem 0.35rem;
+    margin: 0 2px;
+    border-radius: 2px;
+  }
+
+  a.header-anchor {
+    transition: opacity 0.3s ease;
+  }
+}
+
+.medium-zoom-image--opened {
+  border-radius: 0 !important;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track-piece {
+  background-color: var(--c-scroll-track);
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: var(--c-brand);
+}
+
+@media (max-width: 960px /* $MQMobile */) {
+  ::-webkit-scrollbar {
+    width: 3px;
+  }
+}
+
+.panel-view {
+  &::-webkit-scrollbar-track-piece {
+    border-radius: 6px;
+    background-color: inherit;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    border-radius: 6px;
+    background-color: #eaecef80;
+  }
+
+  &.code {
+    color: #eeeeee;
+    background-color: rgb(39, 40, 34);
+
+    .content {
+      padding: 1rem 1.2rem !important;
+    }
+
+    &:not(.mini) .content {
+      padding-top: 2.4rem !important;
+    }
+
+    pre {
+      padding: 0 !important;
+      margin: 0 0;
+      border-radius: 0;
+      background-color: inherit;
+      overflow: visible;
+      text-shadow: $textShadow;
+    }
+  }
+}
+
+h1, h2, h3, h4, h5, h6 {
+  line-height: 1.5;
+}
+
+h1, h4 {
+  .header-anchor {
+    display: none;
+  }
+}
+
+h3 + h3 {
+  margin-top: -3.6rem !important;
+}
+
+.custom-container {
+  padding: 1px 1.5rem !important;
+  margin: 2em 0;
+  border-left-width: 4px !important;
+  border-left-style: solid;
+  background-color: #f8f8f8;
+  position: relative;
+
+  .custom-container-title {
+    display: none;
+  }
+
+  h4 {
+    margin: 1rem 0;
+    line-height: 1.7;
+  }
+
+  &::before {
+    content: "!";
+    position: absolute;
+    top: 20px;
+    left: -12px;
+    color: #fff;
+    width: 20px;
+    height: 20px;
+    border-radius: 100%;
+    text-align: center;
+    line-height: 20px;
+    font-weight: bold;
+    font-family: "Dosis", "Source Sans Pro", "Helvetica Neue", Arial, sans-serif;
+    font-size: 14px;
+  }
+
+  $errorColor: #f66;
+  $infoColor: #409eff;
+  &.danger {
+    border-left-color: $errorColor;
+  }
+  &.danger:before {
+    background-color: $errorColor;
+  }
+  &.tip {
+    border-left-color: $infoColor;
+  }
+  &.tip:before {
+    background-color: $infoColor;
+  }
+  &.warning:before {
+    background-color: #e7c000;
+  }
+}

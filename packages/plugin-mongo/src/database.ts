@@ -1,6 +1,10 @@
 import { MongoClient, Db, Collection } from 'mongodb'
-import { App, Channel, Database, Tables, TableType, User } from 'koishi-core'
+import { App, Channel, Database, User, Tables as KoishiTables } from 'koishi-core'
 import { URLSearchParams } from 'url'
+
+type TableType = keyof Tables
+
+export interface Tables extends KoishiTables {}
 
 export interface Config {
   username?: string
