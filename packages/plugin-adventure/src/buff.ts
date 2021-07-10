@@ -3,13 +3,14 @@ import { Adventurer, Show } from './utils'
 
 declare module 'koishi-core' {
   interface Command<U, G, A, O> {
-    checkTimer(name: string): Command<U | 'timers', G, A, O>
+    checkTimer(name: string, when?: (argv: Argv<U, G, A, O>) => boolean): Command<U | 'timers', G, A, O>
   }
 }
 
-Command.prototype.checkTimer = function (this: Command, name) {
-  return this.userFields(['timers', 'usage']).check(({ session }) => {
-    const user = session.user
+Command.prototype.checkTimer = function (this: Command, name, when) {
+  return this.userFields(['timers', 'usage']).check((argv) => {
+    if (when && !when(argv)) return
+    const { user } = argv.session
     if (!checkTimer(name, user)) return
     const buff = Buff.timers[name]
     if (buff && !checkUsage(name + 'Hint', user, 1)) {

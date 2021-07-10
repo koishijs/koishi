@@ -71,28 +71,7 @@ Database.extend('koishi-plugin-mysql', ({ Domain, tables }) => {
   }
 })
 
-export default function apply(ctx: Context, config: Dialogue.Config) {
-  config.validateRegExp = {
-    onEscapeCharacterSet() {
-      throw new SyntaxError('unsupported escape character set')
-    },
-    onQuantifier(start, end, min, max, greedy) {
-      if (!greedy) throw new SyntaxError('unsupported non-greedy quantifier')
-    },
-    onWordBoundaryAssertion() {
-      throw new SyntaxError('unsupported word boundary assertion')
-    },
-    onLookaroundAssertionEnter() {
-      throw new SyntaxError('unsupported lookaround assertion')
-    },
-    onGroupEnter() {
-      throw new SyntaxError('unsupported non-capturing group')
-    },
-    onCapturingGroupEnter(start, name) {
-      if (name) throw new SyntaxError('unsupported named capturing group')
-    },
-  }
-
+export default function apply(ctx: Context) {
   ctx.on('dialogue/flag', (flag) => {
     ctx.on('dialogue/mysql', (test, conditionals) => {
       if (test[flag] === undefined) return

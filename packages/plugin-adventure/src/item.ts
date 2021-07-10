@@ -1,10 +1,10 @@
 import { Context, checkTimer, Argv, User, isInteger, Random } from 'koishi-core'
-import { getValue, Adventurer, ReadonlyUser, Show } from './utils'
+import { Adventurer, Show } from './utils'
 import Event from './event'
 import Phase from './phase'
 import Rank from './rank'
 
-type Note = (user: Pick<ReadonlyUser, 'flag' | 'warehouse'>) => string
+type Note = (user: Adventurer.Readonly<'flag' | 'warehouse'>) => string
 
 interface Item {
   name: string
@@ -15,7 +15,7 @@ interface Item {
   bid?: number
   onGain?: Event
   onLose?: Event
-  beforePick?: Adventurer.Callback<boolean>
+  beforePick?: (session: Adventurer.Session) => boolean
   lottery?: number
   plot?: boolean
   note?: Note
@@ -60,7 +60,7 @@ namespace Item {
     data[name].onLose = event
   }
 
-  export function beforePick(name: string, event: Adventurer.Callback<boolean>) {
+  export function beforePick(name: string, event: (session: Adventurer.Session) => boolean) {
     data[name].beforePick = event
   }
 
@@ -421,7 +421,7 @@ namespace Item {
         if (!user.progress && entries.length === 1 && entries[0][1] === 1 && entries[0][0] in Phase.salePlots) {
           const saleAction = Phase.salePlots[entries[0][0]]
           await session.observeUser(Adventurer.fields)
-          const progress = getValue(saleAction, user)
+          const progress = Adventurer.getValue(saleAction, user, null)
           if (progress) {
             const _meta = session as Adventurer.Session
             _meta.user['_skip'] = session._skipAll

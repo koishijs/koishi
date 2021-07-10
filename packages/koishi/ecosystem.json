@@ -1,10 +1,10 @@
 {
   "koishi-adapter-discord": {
-    "version": "1.3.0",
+    "version": "1.3.1",
     "description": "Discord adapter for Koishi"
   },
   "koishi-adapter-kaiheila": {
-    "version": "1.2.0",
+    "version": "1.2.1",
     "description": "Kaiheila adapter for Koishi"
   },
   "koishi-adapter-onebot": {
@@ -24,11 +24,11 @@
     "description": "Display and respond to messages for Koishi"
   },
   "koishi-plugin-chess": {
-    "version": "3.0.4",
+    "version": "3.0.5",
     "description": "Playing chess games in Koishi"
   },
   "koishi-plugin-common": {
-    "version": "4.3.0",
+    "version": "4.3.1",
     "description": "Common plugins for Koishi"
   },
   "koishi-plugin-cryptocurrency": {

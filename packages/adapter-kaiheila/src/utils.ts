@@ -1,5 +1,5 @@
 import { KaiheilaBot } from './bot'
-import { Session, segment, MessageInfo, AuthorInfo, GroupInfo, UserInfo } from 'koishi-core'
+import { Session, segment, MessageBase, AuthorInfo, GroupInfo, UserInfo } from 'koishi-core'
 import { camelCase } from 'koishi-utils'
 import * as KHL from './types'
 
@@ -20,7 +20,7 @@ export const adaptAuthor = (author: KHL.Author): AuthorInfo => ({
   nickname: author.nickname,
 })
 
-function adaptMessage(base: KHL.MessageBase, meta: KHL.MessageMeta, session: MessageInfo = {}) {
+function adaptMessage(base: KHL.MessageBase, meta: KHL.MessageMeta, session: MessageBase = {}) {
   if (meta.author) {
     session.author = adaptAuthor(meta.author)
     session.userId = meta.author.id
@@ -38,7 +38,7 @@ function adaptMessage(base: KHL.MessageBase, meta: KHL.MessageMeta, session: Mes
   return session
 }
 
-function adaptMessageSession(data: KHL.Data, meta: KHL.MessageMeta, session: Partial<Session.Payload<Session.MessageAction>> = {}) {
+function adaptMessageSession(data: KHL.Data, meta: KHL.MessageMeta, session: Partial<Session> = {}) {
   adaptMessage(data, meta, session)
   session.messageId = data.msgId
   session.timestamp = data.msgTimestamp
@@ -52,7 +52,7 @@ function adaptMessageSession(data: KHL.Data, meta: KHL.MessageMeta, session: Par
   return session
 }
 
-function adaptMessageCreate(data: KHL.Data, meta: KHL.MessageExtra, session: Partial<Session.Payload<Session.MessageAction>>) {
+function adaptMessageCreate(data: KHL.Data, meta: KHL.MessageExtra, session: Partial<Session>) {
   adaptMessageSession(data, meta, session)
   session.groupId = meta.guildId
   session.channelName = meta.channelName
@@ -65,15 +65,22 @@ function adaptMessageCreate(data: KHL.Data, meta: KHL.MessageExtra, session: Par
   }
 }
 
-function adaptMessageModify(data: KHL.Data, meta: KHL.NoticeBody, session: Partial<Session.Payload<Session.MessageAction>>) {
+function adaptMessageModify(data: KHL.Data, meta: KHL.NoticeBody, session: Partial<Session>) {
   adaptMessageSession(data, meta, session)
   session.messageId = meta.msgId
   session.channelId = meta.channelId
 }
 
+function adaptReaction(body: KHL.NoticeBody, session: Partial<Session>) {
+  session.channelId = body.channelId
+  session.messageId = body.msgId
+  session.userId = body.userId
+  session['emoji'] = body.emoji.id
+}
+
 export function adaptSession(bot: KaiheilaBot, input: any) {
   const data = camelCase<KHL.Data>(input)
-  const session: Partial<Session.Payload<Session.MessageAction>> = {
+  const session: Partial<Session> = {
     selfId: bot.selfId,
     platform: 'kaiheila',
   }
@@ -89,6 +96,16 @@ export function adaptSession(bot: KaiheilaBot, input: any) {
       case 'deleted_private_message':
         session.type = 'message-deleted'
         adaptMessageModify(data, body, session)
+        break
+      case 'added_reaction':
+      case 'private_added_reaction':
+        session.type = 'reaction-added'
+        adaptReaction(body, session)
+        break
+      case 'deleted_reaction':
+      case 'private_deleted_reaction':
+        session.type = 'reaction-deleted'
+        adaptReaction(body, session)
         break
       default: return
     }
