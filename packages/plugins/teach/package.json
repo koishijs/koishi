@@ -1,0 +1,49 @@
+{
+  "name": "@koishijs/plugin-teach",
+  "description": "Teach plugin for Koishi",
+  "version": "2.2.0",
+  "main": "lib/index.js",
+  "typings": "lib/index.d.ts",
+  "engines": {
+    "node": ">=12.0.0"
+  },
+  "files": [
+    "lib",
+    "dist"
+  ],
+  "author": "Shigma <1700011071@pku.edu.cn>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/koishijs/koishi.git"
+  },
+  "bugs": {
+    "url": "https://github.com/koishijs/koishi/issues"
+  },
+  "homepage": "https://github.com/koishijs/koishi/packages/plugin-teach#readme",
+  "keywords": [
+    "bot",
+    "qqbot",
+    "cqhttp",
+    "coolq",
+    "chatbot",
+    "koishi",
+    "plugin",
+    "teach",
+    "dialogue",
+    "conversation"
+  ],
+  "peerDependencies": {
+    "koishi": "^3.12.2"
+  },
+  "devDependencies": {
+    "@koishijs/plugin-mongo": "^2.2.3",
+    "@koishijs/plugin-mysql": "^3.3.2",
+    "@koishijs/plugin-webui": "^4.6.2",
+    "@koishijs/test-utils": "^6.0.1"
+  },
+  "dependencies": {
+    "axios": "^0.21.1",
+    "fastest-levenshtein": "^1.0.12"
+  }
+}

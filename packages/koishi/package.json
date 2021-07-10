@@ -1,0 +1,46 @@
+{
+  "name": "koishi",
+  "description": "A QQ bot framework based on CQHTTP",
+  "version": "3.12.2",
+  "main": "index.js",
+  "typings": "index.d.ts",
+  "engines": {
+    "node": ">=12.0.0"
+  },
+  "files": [
+    "lib",
+    "index.d.ts",
+    "index.js"
+  ],
+  "bin": "lib/index.js",
+  "author": "Shigma <1700011071@pku.edu.cn>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/koishijs/koishi.git"
+  },
+  "bugs": {
+    "url": "https://github.com/koishijs/koishi/issues"
+  },
+  "homepage": "https://koishi.js.org",
+  "keywords": [
+    "bot",
+    "qqbot",
+    "cqhttp",
+    "coolq",
+    "chatbot",
+    "koishi"
+  ],
+  "devDependencies": {
+    "@types/js-yaml": "^4.0.1",
+    "@types/prompts": "^2.0.11"
+  },
+  "dependencies": {
+    "cac": "^6.7.3",
+    "chokidar": "^3.5.1",
+    "js-yaml": "^4.1.0",
+    "kleur": "^4.1.4",
+    "koishi": "^3.12.2",
+    "prompts": "^2.4.1"
+  }
+}

@@ -79,7 +79,7 @@ const KOISHI_VERSION = JSON.stringify(version)
       entryPoints.push(base + '/src/transfer.ts')
       entryPoints.push(...loaders.map(name => `${base}/src/loaders/${name}`))
       options.define.BUILTIN_LOADERS = JSON.stringify(loaders.map(name => name.slice(0, -3)))
-    } else if (name === 'koishi-test-utils') {
+    } else if (name === '@koishijs/test-utils') {
       await tasks[chai]
     }
 

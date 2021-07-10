@@ -126,14 +126,14 @@ async function bundleAll(names: readonly string[]) {
 }
 
 const targets = [
-  'koishi-utils',
-  'koishi-core',
-  'plugin-common',
-  'plugin-mysql',
-  'plugin-mongo',
-  'plugin-webui',
-  'plugin-teach',
-  'plugin-adventure',
+  'utils',
+  'core',
+  'plugins/common',
+  'plugins/mysql',
+  'plugins/mongo',
+  'plugins/webui',
+  'plugins/teach',
+  'plugins/adventure',
 ]
 
 const corePlugins = ['eval', 'puppeteer']

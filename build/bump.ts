@@ -87,7 +87,7 @@ class Package {
 const packages: Record<string, Package> = {}
 
 function getPackage(name: string) {
-  return packages[`packages/${name}`]
+  return packages[`src/${name}`]
     || packages[`packages/koishi-${name}`]
     || packages[`packages/runtime-${name}`]
     || packages[`packages/plugin-${name}`]
