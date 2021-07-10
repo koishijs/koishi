@@ -1,0 +1,38 @@
+{
+  "name": "@koishijs/plugin-assets",
+  "description": "A classic assets provider for Koishi",
+  "version": "1.1.1",
+  "main": "lib/index.js",
+  "typings": "lib/index.d.ts",
+  "files": [
+    "lib"
+  ],
+  "author": "Shigma <1700011071@pku.edu.cn>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/koishijs/plugin-assets.git"
+  },
+  "bugs": {
+    "url": "https://github.com/koishijs/plugin-assets/issues"
+  },
+  "homepage": "https://koishi.js.org/plugins/other/assets",
+  "keywords": [
+    "bot",
+    "qqbot",
+    "cqhttp",
+    "coolq",
+    "chatbot",
+    "koishi",
+    "plugin",
+    "assets",
+    "server"
+  ],
+  "peerDependencies": {
+    "koishi-core": "^3.12.2"
+  },
+  "dependencies": {
+    "axios": "^0.21.1",
+    "form-data": "^4.0.0"
+  }
+}

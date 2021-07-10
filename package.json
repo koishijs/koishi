@@ -3,15 +3,14 @@
   "private": true,
   "workspaces": [
     "docs",
-    "atri",
     "addons",
     "shiki",
     "test",
-    "utsuho",
-    "packages/*"
+    "src/adapters/*",
+    "src/plugins/*",
+    "src/*"
   ],
   "scripts": {
-    "atri": "yarn workspace atri",
     "addons": "yarn workspace addons",
     "cli": "yarn compile koishi && yarn workspace test koishi",
     "build": "yarn compile && yarn dtsc",
@@ -29,7 +28,7 @@
     "test:text": "c8 -r text yarn test",
     "lint": "eslint packages/*/src/**/*.ts --fix --cache",
     "pub": "yarn build && yarn build:web && node -r ./build/register build/publish",
-    "webui": "yarn workspace koishi-plugin-webui",
+    "webui": "yarn workspace @koishijs/plugin-webui",
     "shiki": "yarn workspace bot-shiki",
     "utsuho": "yarn workspace bot-utsuho"
   },

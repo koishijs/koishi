@@ -1,0 +1,40 @@
+{
+  "name": "@koishijs/plugin-adventure",
+  "version": "0.3.1",
+  "description": "Adventure game framework for Koishi",
+  "main": "lib/index.js",
+  "typings": "lib/index.d.ts",
+  "files": [
+    "lib"
+  ],
+  "license": "MIT",
+  "author": "Shigma <1700011071@pku.edu.cn>",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/koishijs/koishi.git"
+  },
+  "bugs": {
+    "url": "https://github.com/koishijs/koishi/issues"
+  },
+  "homepage": "https://koishi.js.org/plugins/adventure.html",
+  "keywords": [
+    "bot",
+    "qqbot",
+    "cqhttp",
+    "coolq",
+    "chatbot",
+    "koishi",
+    "plugin",
+    "adventure"
+  ],
+  "peerDependencies": {
+    "koishi-core": "^3.12.2",
+    "@koishijs/plugin-common": "^4.3.1",
+    "@koishijs/plugin-mysql": "^3.3.2",
+    "@koishijs/plugin-teach": "^2.2.0",
+    "koishi-utils": "^4.2.3"
+  },
+  "devDependencies": {
+    "koishi-test-utils": "^6.0.1"
+  }
+}

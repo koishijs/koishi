@@ -54,7 +54,7 @@ if (CI && (GITHUB_REF !== 'refs/heads/master' || GITHUB_EVENT_NAME !== 'push')) 
     for (const folder in bumpMap) {
       const { name, version, dependencies, devDependencies } = bumpMap[folder]
       await publish(folder, name, version, prerelease(version) ? 'next' : 'latest')
-      if (name === 'koishi-plugin-webui') {
+      if (name === '@koishijs/plugin-webui') {
         const filename = cwd + '/packages/plugin-webui/package.json'
         await writeJson(filename, {
           ...bumpMap[folder],

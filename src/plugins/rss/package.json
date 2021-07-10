@@ -1,0 +1,42 @@
+{
+  "name": "@koishijs/plugin-rss",
+  "description": "Subscribe RSS Url for Koishi",
+  "version": "2.0.0",
+  "main": "lib/index.js",
+  "typings": "lib/index.d.ts",
+  "files": [
+    "lib"
+  ],
+  "author": "undefined <masnn0@outlook.com>",
+  "maintainers": [
+    "Shigma <1700011071@pku.edu.cn>"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/koishijs/koishi.git"
+  },
+  "bugs": {
+    "url": "https://github.com/koishijs/koishi/issues"
+  },
+  "homepage": "https://github.com/koishijs/koishi/blob/master/plugin-rss#readme",
+  "keywords": [
+    "bot",
+    "qqbot",
+    "cqhttp",
+    "coolq",
+    "chatbot",
+    "koishi",
+    "plugin",
+    "rss"
+  ],
+  "peerDependencies": {
+    "koishi-core": "^3.12.2"
+  },
+  "devDependencies": {
+    "koishi-test-utils": "^6.0.1"
+  },
+  "dependencies": {
+    "rss-feed-emitter": "^3.2.2"
+  }
+}

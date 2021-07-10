@@ -89,7 +89,7 @@ const packages: Record<string, Package> = {}
 function getPackage(name: string) {
   return packages[`packages/${name}`]
     || packages[`packages/koishi-${name}`]
-    || packages[`packages/adapter-${name}`]
+    || packages[`packages/runtime-${name}`]
     || packages[`packages/plugin-${name}`]
 }
 
