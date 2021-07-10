@@ -1,13 +1,17 @@
 {
-  "name": "koishi-adapter-onebot",
-  "description": "CQHTTP adapter for Koishi",
-  "version": "3.1.0",
+  "name": "@koishijs/plugin-telegram",
+  "description": "Telegram adapter for Koishi",
+  "version": "2.0.0-beta.0",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
     "lib"
   ],
-  "author": "Shigma <1700011071@pku.edu.cn>",
+  "author": "undefined <i@undefined.moe>",
+  "maintainers": [
+    "Shigma <1700011071@pku.edu.cn>",
+    "undefined <i@undefined.moe>"
+  ],
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -19,10 +23,7 @@
   "homepage": "https://github.com/koishijs/koishi/tree/master/packages/koishi-core#readme",
   "keywords": [
     "bot",
-    "qqbot",
-    "cqhttp",
-    "onebot",
-    "coolq",
+    "telegram",
     "chatbot",
     "koishi"
   ],
@@ -30,14 +31,11 @@
     "koishi-core": "^3.12.2"
   },
   "devDependencies": {
-    "@types/ws": "^7.4.2",
-    "get-port": "^5.1.1",
     "koishi-test-utils": "^6.0.1"
   },
   "dependencies": {
     "axios": "^0.21.1",
-    "koishi-utils": "^4.2.3",
-    "qface": "1.1.0",
-    "ws": "^7.4.5"
+    "form-data": "^4.0.0",
+    "koishi-utils": "^4.2.3"
   }
 }

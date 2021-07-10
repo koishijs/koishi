@@ -380,11 +380,11 @@ async function updateMeta() {
 
   for (const bot of config.bots) {
     const [name] = bot.type.split(':', 1)
-    ensureDependency('koishi-adapter-' + name)
+    ensureDependency('@koishijs/plugin-' + name)
   }
 
   for (const name of Object.keys(config.plugins)) {
-    ensureDependency('koishi-plugin-' + name)
+    ensureDependency('@koishijs/plugin-' + name)
   }
 
   if (!modified) return

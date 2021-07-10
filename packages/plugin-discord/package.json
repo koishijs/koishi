@@ -1,13 +1,17 @@
 {
-  "name": "koishi-adapter-kaiheila",
-  "description": "Kaiheila adapter for Koishi",
-  "version": "1.2.1",
+  "name": "@koishijs/plugin-discord",
+  "description": "Discord adapter for Koishi",
+  "version": "2.0.0-alpha.0",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
     "lib"
   ],
-  "author": "Shigma <1700011071@pku.edu.cn>",
+  "author": "LittleC <i@ltlec.cn>",
+  "maintainers": [
+    "Shigma <1700011071@pku.edu.cn>",
+    "LittleC <i@ltlec.cn>"
+  ],
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -19,7 +23,7 @@
   "homepage": "https://github.com/koishijs/koishi/tree/master/packages/koishi-core#readme",
   "keywords": [
     "bot",
-    "kaiheila",
+    "discord",
     "chatbot",
     "koishi"
   ],
@@ -27,10 +31,12 @@
     "koishi-core": "^3.12.2"
   },
   "devDependencies": {
+    "@types/ws": "^7.4.2",
     "koishi-test-utils": "^6.0.1"
   },
   "dependencies": {
     "axios": "^0.21.1",
+    "file-type": "^16.3.0",
     "form-data": "^4.0.0",
     "ws": "^7.4.5"
   }
