@@ -1,6 +1,6 @@
 /* eslint-disable no-cond-assign */
 
-import { spawnAsync, cwd } from './utils'
+import { spawnAsync, cwd, getPackages } from './utils'
 import { EOL } from 'os'
 import { resolve } from 'path'
 import fs from 'fs-extra'
@@ -24,13 +24,13 @@ async function getModules(srcpath: string) {
 }
 
 async function compile(path: string, filename: string) {
-  const code = await spawnAsync(['tsc', '-b', 'packages/' + path, ...tsArgs])
+  const code = await spawnAsync(['tsc', '-b', path, ...tsArgs])
   if (code) process.exit(code)
   return fs.readFile(filename, 'utf8')
 }
 
 async function bundle(path: string) {
-  const fullpath = resolve(cwd, 'packages', path)
+  const fullpath = resolve(cwd, path)
   const config = await readJson(fullpath + '/tsconfig.json')
   const { outFile, rootDir } = config.compilerOptions as ts.CompilerOptions
   if (!outFile) return
@@ -126,8 +126,8 @@ async function bundleAll(names: readonly string[]) {
 }
 
 const targets = [
-  'utils',
-  'core',
+  'packages/utils',
+  'packages/core',
   'plugins/common',
   'plugins/mysql',
   'plugins/mongo',
@@ -136,24 +136,22 @@ const targets = [
   'plugins/adventure',
 ]
 
-const corePlugins = ['eval', 'puppeteer']
+const corePlugins = ['plugins/eval', 'plugins/puppeteer']
 
 function precedence(name: string) {
-  if (name.startsWith('adapter')) return 1
-  if (name.startsWith('koishi')) return 5
-  const plugin = name.slice(7)
-  if (corePlugins.includes(plugin)) return 3
+  if (name.startsWith('packages/')) return 5
+  if (corePlugins.includes(name)) return 3
   return 4
 }
 
 async function prepareConfig() {
-  const folders = await fs.readdir(cwd + '/packages')
+  const folders = await getPackages()
   await fs.writeFile(cwd + '/tsconfig.temp.json', JSON.stringify({
     files: [],
     references: folders
-      .filter(name => !name.startsWith('.') && !targets.includes(name))
+      .filter(name => !name.includes('.') && !targets.includes(name))
       .sort((a, b) => precedence(a) - precedence(b))
-      .map(name => ({ path: './packages/' + name })),
+      .map(name => ({ path: './' + name })),
   }, null, 2))
 }
 

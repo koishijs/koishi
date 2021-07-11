@@ -1,4 +1,4 @@
-import * as K from 'koishi-core'
+import * as K from 'koishi'
 
 class Registry<T> extends WeakMap<Object, T> {
   constructor(private fallback: () => T) {

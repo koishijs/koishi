@@ -1,4 +1,4 @@
-import { App, User, Channel } from 'koishi-core'
+import { App, User, Channel } from 'koishi'
 import { expect } from 'chai'
 import '../chai'
 

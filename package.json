@@ -6,9 +6,8 @@
     "addons",
     "shiki",
     "test",
-    "packages/adapters/*",
-    "packages/plugins/*",
-    "packages/*"
+    "packages/*",
+    "plugins/*"
   ],
   "scripts": {
     "addons": "yarn workspace addons",

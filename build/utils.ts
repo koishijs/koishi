@@ -1,6 +1,7 @@
 import { resolve } from 'path'
 import globby from 'globby'
 import spawn from 'cross-spawn'
+import { readdir } from 'fs-extra'
 
 export const cwd = resolve(__dirname, '..')
 
@@ -11,6 +12,13 @@ export function getWorkspaces() {
     onlyDirectories: true,
     expandDirectories: false,
   })
+}
+
+export async function getPackages() {
+  return (await Promise.all(['packages', 'plugins'].map(async (seg) => {
+    const names = await readdir(`${cwd}/${seg}`)
+    return names.map(name => `${seg}/${name}`)
+  }))).flat()
 }
 
 export type DependencyType = 'dependencies' | 'devDependencies' | 'peerDependencies' | 'optionalDependencies'

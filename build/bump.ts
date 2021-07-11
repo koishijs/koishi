@@ -87,10 +87,7 @@ class Package {
 const packages: Record<string, Package> = {}
 
 function getPackage(name: string) {
-  return packages[`src/${name}`]
-    || packages[`packages/koishi-${name}`]
-    || packages[`packages/runtime-${name}`]
-    || packages[`packages/plugin-${name}`]
+  return packages[`packages/${name}`] || packages[`plugins/${name}`]
 }
 
 function each<T>(callback: (pkg: Package, name: string) => T) {
@@ -169,8 +166,7 @@ if (!args.length && !options.all) {
   const ecosystem: Record<string, Pick<PackageJson, 'version' | 'description'>> = {}
 
   for (const path in packages) {
-    if (!path.startsWith('packages/')) continue
-    if (path.startsWith('packages/koishi')) continue
+    if (!path.startsWith('plugins/')) continue
     if (beta.some(name => path.endsWith(name))) continue
     const { name, version, description } = packages[path].meta
     ecosystem[name] = { version, description }

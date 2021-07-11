@@ -2,6 +2,7 @@ import { build, BuildFailure, BuildOptions, Message } from 'esbuild'
 import { readdir } from 'fs/promises'
 import { resolve } from 'path'
 import { cyan, yellow, red } from 'kleur'
+import { getPackages } from './utils'
 
 const ignored = [
   'This call to "require" will not be bundled because the argument is not a string literal',
@@ -35,19 +36,19 @@ function bundle(options: BuildOptions) {
   })
 }
 
-const { version } = require('../packages/koishi-core/package.json')
+const { version } = require('../packages/core/package.json')
 const KOISHI_VERSION = JSON.stringify(version)
 
 ;(async () => {
-  const root = resolve(__dirname, '../packages')
-  const chai = 'koishi-test-utils/chai'
-  const workspaces = [chai, ...await readdir(root)]
+  const root = resolve(__dirname, '..') + '/'
+  const chai = 'packages/test-utils/chai'
   const tasks: Record<string, Promise<void>> = {}
+  const workspaces = [chai, ...await getPackages()]
 
   await Promise.all(workspaces.map(async (name) => {
-    if (name.startsWith('.')) return
+    if (name.includes('.')) return
 
-    const base = `${root}/${name}`
+    const base = root + name
     const entryPoints = [base + '/src/index.ts']
 
     let filter = /^[@/\w-]+$/
@@ -55,9 +56,9 @@ const KOISHI_VERSION = JSON.stringify(version)
       entryPoints,
       bundle: true,
       platform: 'node',
-      target: 'node12.19',
+      target: 'node12.22',
       charset: 'utf8',
-      outdir: `${root}/${name}/lib`,
+      outdir: base + '/lib',
       logLevel: 'silent',
       sourcemap: true,
       define: {
@@ -71,26 +72,25 @@ const KOISHI_VERSION = JSON.stringify(version)
       }],
     }
 
-    if (name === 'koishi' || name === 'plugin-puppeteer') {
+    if (name === 'packages/koishi' || name === 'plugins/puppeteer') {
       entryPoints.push(base + '/src/worker.ts')
-    } else if (name === 'plugin-eval') {
-      const loaders = await readdir(base + '/src/loaders')
-      entryPoints.push(base + '/src/worker/index.ts')
-      entryPoints.push(base + '/src/transfer.ts')
-      entryPoints.push(...loaders.map(name => `${base}/src/loaders/${name}`))
-      options.define.BUILTIN_LOADERS = JSON.stringify(loaders.map(name => name.slice(0, -3)))
-    } else if (name === '@koishijs/test-utils') {
+    } else if (name === 'packages/test-utils') {
       await tasks[chai]
     }
 
-    if (name !== 'plugin-eval') {
+    if (name !== 'plugins/eval') {
       return tasks[name] = bundle(options)
     }
 
     filter = /^([@/\w-]+|.+\/transfer)$/
+    const loaders = await readdir(base + '/src/loaders')
+    entryPoints.push(base + '/src/worker/index.ts')
+    entryPoints.push(base + '/src/transfer.ts')
+    entryPoints.push(...loaders.map(name => `${base}/src/loaders/${name}`))
+    options.define.BUILTIN_LOADERS = JSON.stringify(loaders.map(name => name.slice(0, -3)))
     tasks[name] = Promise.all([options, {
       ...options,
-      outdir: `${root}/${name}/lib/worker`,
+      outdir: base + '/lib/worker',
       entryPoints: [base + '/src/worker/internal.ts'],
       banner: { js: '(function (host, exports, GLOBAL) {' },
       footer: { js: '})' },

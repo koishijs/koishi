@@ -1,4 +1,4 @@
-import { Session } from 'koishi-core'
+import { Session } from 'koishi'
 import { App } from '@koishijs/test-utils'
 import { Plugin, PluginContext, Middleware, Before, Event, User, Channel, Apply, Command, Option, Usage, Example, Select, Unselect } from 'koishi-dev-utils'
 import { expect } from 'chai'

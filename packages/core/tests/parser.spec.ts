@@ -1,4 +1,4 @@
-import { Command } from 'koishi-core'
+import { Command } from 'koishi'
 import { App } from '@koishijs/test-utils'
 import { expect } from 'chai'
 

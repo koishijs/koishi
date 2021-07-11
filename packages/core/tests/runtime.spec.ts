@@ -1,5 +1,5 @@
 import { App } from '@koishijs/test-utils'
-import { User, Channel, Command, sleep } from 'koishi-core'
+import { User, Channel, Command, sleep } from 'koishi'
 import { install } from '@sinonjs/fake-timers'
 
 const app = new App({
