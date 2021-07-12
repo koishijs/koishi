@@ -1,7 +1,7 @@
 import { Logger, paramCase, sleep, Time } from '@koishijs/utils'
 import { Session } from './session'
 import { App } from './app'
-import WebSocket from 'ws'
+import type WebSocket from 'ws'
 
 export interface BotOptions {
   type?: string

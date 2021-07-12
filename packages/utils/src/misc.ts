@@ -1,5 +1,3 @@
-import { types } from 'util'
-
 export function noop(): any {}
 
 export function isInteger(source: any) {
@@ -22,20 +20,16 @@ export function defineEnumProperty<T extends object>(object: T, key: keyof T, va
 const primitives = ['number', 'string', 'bigint', 'boolean', 'symbol']
 
 export function clone<T extends unknown>(source: T): T {
-  // primitive types
+  // primitive types, null & undefined
   if (primitives.includes(typeof source)) return source
-
-  // null & undefined
   if (!source) return source
 
   // array
   if (Array.isArray(source)) return source.map(clone) as any
 
-  // date
-  if (types.isDate(source)) return new Date(source.valueOf()) as any
-
-  // regexp
-  if (types.isRegExp(source)) return new RegExp(source.source, source.flags) as any
+  const type = Object.prototype.toString.call(source).slice(8, -1)
+  if (type === 'Date') return new Date((source as any).valueOf()) as any
+  if (type === 'RegExp') return new RegExp((source as any).source, (source as any).flags) as any
 
   // fallback
   const entries = Object.entries(source).map(([key, value]) => [key, clone(value)])

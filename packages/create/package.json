@@ -1,16 +1,15 @@
 {
-  "name": "koishi",
-  "description": "A QQ bot framework based on CQHTTP",
+  "name": "create-koishi",
+  "description": "Node runtime for Koishi",
   "version": "3.12.2",
-  "main": "lib/node.js",
-  "module": "lib/browser.js",
-  "typings": "lib/node.d.ts",
+  "main": "lib/index.js",
   "engines": {
     "node": ">=12.0.0"
   },
   "files": [
     "lib"
   ],
+  "bin": "lib/index.js",
   "author": "Shigma <1700011071@pku.edu.cn>",
   "license": "MIT",
   "repository": {
@@ -29,14 +28,19 @@
     "chatbot",
     "koishi"
   ],
+  "devDependencies": {
+    "@types/koa": "^2.13.1",
+    "@koishijs/test-utils": "^6.0.1"
+  },
   "dependencies": {
     "@koa/router": "^10.0.0",
-    "@koishijs/core": "^3.12.2",
-    "@koishijs/cli": "^3.12.2",
-    "@koishijs/utils": "^4.2.3",
-    "@types/koa": "^2.13.1",
     "@types/koa__router": "^8.0.4",
+    "@types/lru-cache": "^5.1.0",
+    "@types/ws": "^7.4.2",
+    "axios": "^0.21.1",
+    "fastest-levenshtein": "^1.0.12",
     "koa": "^2.13.1",
-    "koa-bodyparser": "^4.3.0"
+    "koa-bodyparser": "^4.3.0",
+    "lru-cache": "^6.0.0"
   }
 }

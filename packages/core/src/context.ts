@@ -5,8 +5,6 @@ import { User, Channel, Database, Assets } from './database'
 import { Argv } from './parser'
 import { Platform, Bot } from './adapter'
 import { App } from './app'
-import { inspect } from 'util'
-import Router from '@koa/router'
 
 export type NextFunction = (next?: NextFunction) => Promise<void>
 export type Middleware = (session: Session, next: NextFunction) => any
@@ -103,7 +101,7 @@ export class Context {
     return !plugin ? 'root' : typeof plugin === 'object' && plugin.name || 'anonymous'
   }
 
-  [inspect.custom]() {
+  [Symbol.for('nodejs.util.inspect.custom')]() {
     return `Context <${Context.inspect(this._plugin)}>`
   }
 
@@ -553,13 +551,11 @@ export class Context {
 
 Context.delegate('database')
 Context.delegate('assets')
-Context.delegate('router')
 
 export namespace Context {
   export interface Delegates {
     database: Database
     assets: Assets
-    router: Router
   }
 }
 
@@ -608,16 +604,4 @@ export interface EventMap extends SessionEventMap, DelegateEventMap {
   'connect'(): void
   'before-disconnect'(): Awaitable<void>
   'disconnect'(): void
-}
-
-// hack into router methods to make sure
-// that koa middlewares are disposable
-const register = Router.prototype.register
-Router.prototype.register = function (this: Router, ...args) {
-  const layer = register.apply(this, args)
-  const context: Context = this[Context.current]
-  context?.state.disposables.push(() => {
-    remove(this.stack, layer)
-  })
-  return layer
 }

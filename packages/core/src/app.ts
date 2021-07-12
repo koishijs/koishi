@@ -8,8 +8,7 @@ import { Session } from './session'
 import help, { getCommandNames } from './help'
 import LruCache from 'lru-cache'
 import { AxiosRequestConfig } from 'axios'
-import { Server, createServer } from 'http'
-import type Koa from 'koa'
+import { Server } from 'http'
 
 export interface DelayOptions {
   character?: number
@@ -20,7 +19,6 @@ export interface DelayOptions {
 }
 
 export interface AppOptions extends BotOptions {
-  port?: number
   bots?: BotOptions[]
   prefix?: string | string[] | ((session: Session.Message) => void | string | string[])
   nickname?: string | string[]
@@ -61,7 +59,6 @@ export class App extends Context {
   _hooks: Record<keyof any, [Context, (...args: any[]) => any][]> = {}
   _userCache: Record<string, LruCache<string, Observed<Partial<User>, Promise<void>>>>
   _channelCache: LruCache<string, Observed<Partial<Channel>, Promise<void>>>
-  _httpServer?: Server
   _sessions: Record<string, Session> = {}
 
   private _nameRE: RegExp
@@ -100,7 +97,6 @@ export class App extends Context {
       maxAge: options.channelCacheAge,
     }))
 
-    if (options.port) this.createServer()
     for (const bot of options.bots) {
       Adapter.from(this, bot).create(bot)
     }
@@ -124,7 +120,7 @@ export class App extends Context {
     this.before('parse', this._handleArgv.bind(this))
     this.before('parse', this._handleShortcut.bind(this))
     this.before('connect', this._listen.bind(this))
-    this.before('disconnect', this._close.bind(this))
+    this.on('disconnect', this._close.bind(this))
 
     this.on('parse', (argv: Argv, session: Session) => {
       const { parsed, subtype } = session
@@ -150,15 +146,6 @@ export class App extends Context {
     this.plugin(help)
   }
 
-  createServer() {
-    const koa: Koa = new (require('koa'))()
-    this.router = new (require('@koa/router'))()
-    koa.use(require('koa-bodyparser')())
-    koa.use(this.router.routes())
-    koa.use(this.router.allowedMethods())
-    defineProperty(this, '_httpServer', createServer(koa.callback()))
-  }
-
   prepare() {
     const { nickname } = this.options
     this.options.nickname = makeArray(nickname)
@@ -175,11 +162,6 @@ export class App extends Context {
 
   private async _listen() {
     try {
-      const { port } = this.app.options
-      if (port) {
-        this._httpServer.listen(port)
-        this.logger('server').info('server listening at %c', port)
-      }
       await Promise.all(Object.values(this.adapters).map(adapter => adapter.start()))
     } catch (error) {
       this._close()
@@ -198,8 +180,6 @@ export class App extends Context {
 
   private _close() {
     Object.values(this.adapters).forEach(adapter => adapter.stop?.())
-    this.logger('server').debug('http server closing')
-    this._httpServer?.close()
   }
 
   private _resolvePrefixes(session: Session.Message) {

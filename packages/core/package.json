@@ -29,18 +29,13 @@
     "koishi"
   ],
   "devDependencies": {
-    "@types/koa": "^2.13.1",
     "@koishijs/test-utils": "^6.0.1"
   },
   "dependencies": {
-    "@koa/router": "^10.0.0",
-    "@types/koa__router": "^8.0.4",
     "@types/lru-cache": "^5.1.0",
     "@types/ws": "^7.4.2",
     "axios": "^0.21.1",
     "fastest-levenshtein": "^1.0.12",
-    "koa": "^2.13.1",
-    "koa-bodyparser": "^4.3.0",
     "lru-cache": "^6.0.0"
   }
 }

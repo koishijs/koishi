@@ -3,7 +3,6 @@ import { Argv } from './parser'
 import { Context, Disposable, NextFunction } from './context'
 import { User, Channel } from './database'
 import { FieldCollector, Session } from './session'
-import { inspect, format } from 'util'
 
 const logger = new Logger('command')
 
@@ -113,11 +112,11 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
     if (!previous) {
       this.app._commands.set(name, this)
     } else if (previous !== this) {
-      throw new Error(format('duplicate command names: "%s"', name))
+      throw new Error(template.format('duplicate command names: "{0}"', name))
     }
   }
 
-  [inspect.custom]() {
+  [Symbol.for('nodejs.util.inspect.custom')]() {
     return `Command <${this.name}>`
   }
 
