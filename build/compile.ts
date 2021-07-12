@@ -72,29 +72,40 @@ const KOISHI_VERSION = JSON.stringify(version)
       }],
     }
 
-    if (name === 'packages/koishi' || name === 'plugins/puppeteer') {
+    if (name === 'packages/cli' || name === 'plugins/puppeteer') {
       entryPoints.push(base + '/src/worker.ts')
     } else if (name === 'packages/test-utils') {
       await tasks[chai]
     }
 
-    if (name !== 'plugins/eval') {
-      return tasks[name] = bundle(options)
+    if (name === 'packages/koishi') {
+      entryPoints[0] = base + '/src/node.ts'
+      tasks[name] = Promise.all([options, {
+        ...options,
+        // minify: true,
+        platform: 'browser',
+        target: 'esnext',
+        format: 'iife',
+        entryPoints: [base + '/src/browser.ts'],
+        plugins: [],
+      }].map(bundle)).then(() => {})
+    } else if (name === 'plugins/eval') {
+      filter = /^([@/\w-]+|.+\/transfer)$/
+      const loaders = await readdir(base + '/src/loaders')
+      entryPoints.push(base + '/src/worker/index.ts')
+      entryPoints.push(base + '/src/transfer.ts')
+      entryPoints.push(...loaders.map(name => `${base}/src/loaders/${name}`))
+      options.define.BUILTIN_LOADERS = JSON.stringify(loaders.map(name => name.slice(0, -3)))
+      tasks[name] = Promise.all([options, {
+        ...options,
+        outdir: base + '/lib/worker',
+        entryPoints: [base + '/src/worker/internal.ts'],
+        banner: { js: '(function (host, exports, GLOBAL) {' },
+        footer: { js: '})' },
+      }].map(bundle)).then(() => {})
+    } else {
+      tasks[name] = bundle(options)
     }
-
-    filter = /^([@/\w-]+|.+\/transfer)$/
-    const loaders = await readdir(base + '/src/loaders')
-    entryPoints.push(base + '/src/worker/index.ts')
-    entryPoints.push(base + '/src/transfer.ts')
-    entryPoints.push(...loaders.map(name => `${base}/src/loaders/${name}`))
-    options.define.BUILTIN_LOADERS = JSON.stringify(loaders.map(name => name.slice(0, -3)))
-    tasks[name] = Promise.all([options, {
-      ...options,
-      outdir: base + '/lib/worker',
-      entryPoints: [base + '/src/worker/internal.ts'],
-      banner: { js: '(function (host, exports, GLOBAL) {' },
-      footer: { js: '})' },
-    }].map(bundle)).then(() => {})
   }))
 
   process.exit(code)

@@ -172,5 +172,5 @@ if (!args.length && !options.all) {
     ecosystem[name] = { version, description }
   }
 
-  await writeJson(resolve(__dirname, '../packages/koishi/ecosystem.json'), ecosystem, { spaces: 2 })
+  await writeJson(resolve(__dirname, '../packages/cli/ecosystem.json'), ecosystem, { spaces: 2 })
 })()
