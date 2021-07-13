@@ -4,8 +4,13 @@ import { App } from 'koishi-test-utils'
 import { resolve } from 'path'
 import { promises as fs } from 'fs'
 import * as eval from 'koishi-plugin-eval'
+import * as teach from 'koishi-plugin-teach'
+import { memory } from 'koishi-plugin-teach/tests/environment'
 
-const app = new App({ mockStart: false })
+const app = new App({
+  mockStart: false,
+  mockDatabase: true,
+})
 
 app.plugin(eval, {
   root: resolve(__dirname, 'fixtures'),
@@ -14,9 +19,21 @@ app.plugin(eval, {
   },
 })
 
-const ses = app.session('123')
+app.plugin(teach, {
+  historyAge: 0,
+  useContext: false,
+  useTime: false,
+  useWriter: false,
+  successorTimeout: 0,
+})
+
+app.plugin(memory)
+
+const ses = app.session('123', '456')
 
 before(async () => {
+  await app.database.initUser('123', 3)
+  await app.database.initChannel('456')
   await fs.rmdir(resolve(__dirname, 'fixtures/.koishi'), { recursive: true })
   return new Promise<void>((resolve) => {
     app.on('eval/start', () => resolve())
@@ -54,10 +71,17 @@ describe('Eval Plugin', () => {
     await ses.shouldReply('> exec("foo")', /^不能在 evaluate 指令中调用 foo 指令。/)
   })
 
-  it('interpolate', async () => {
+  it('command interpolate', async () => {
     app.command('echo <text:text>').action((_, text) => text)
     await ses.shouldReply('echo 1${1 + 1}3', '123')
     await ses.shouldReply('echo 1${2 + 3', '1')
+  })
+
+  it('dialogue interpolate', async () => {
+    await ses.shouldReply('# demo 1${1 + 1}3', '问答已添加，编号为 1。')
+    await ses.shouldReply('demo', '123')
+    await ses.shouldReply('# ^repeat:(.+) ${"$1".repeat(3)} -x', '问答已添加，编号为 2。')
+    await ses.shouldReply('repeat:123', '123123123')
   })
 
   it('global', async () => {
