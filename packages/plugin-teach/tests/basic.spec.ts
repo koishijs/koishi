@@ -118,4 +118,54 @@ describe('Teach Plugin - Basic', () => {
       await u3g1.shouldReply('koishi, fooo', 'baz')
     })
   })
+
+  describe('Interpolate', () => {
+    const { u3g1, app } = createEnvironment({})
+
+    app.command('bar').action(() => 'hello')
+    app.command('baz').action(({ session }) => session.sendQueued('hello'))
+    app.command('report [text]').action(async ({ session }, text) => {
+      await session.sendQueued(text)
+      await session.sendQueued('end')
+    })
+
+    it('basic support', async () => {
+      await u3g1.shouldReply('# foo $(bar)', '问答已添加，编号为 1。')
+      await u3g1.shouldReply('foo', ['hello'])
+      await u3g1.shouldReply('#1 ~ 1$(bar)2', '问答 1 已成功修改。')
+      await u3g1.shouldReply('foo', ['1hello2'])
+      await u3g1.shouldReply('#1 ~ 1$(bar)2$(bar)3', '问答 1 已成功修改。')
+      await u3g1.shouldReply('foo', ['1hello2hello3'])
+      await u3g1.shouldReply('#1 ~ 1$(barrr)2', '问答 1 已成功修改。')
+      await u3g1.shouldReply('foo', ['12'])
+      await u3g1.shouldReply('#1 ~ $(barrr)', '问答 1 已成功修改。')
+      await u3g1.shouldNotReply('foo')
+      await u3g1.shouldReply('#1 -r', '问答 1 已成功删除。')
+    })
+
+    it('queued messages', async () => {
+      await u3g1.shouldReply('# foo $(baz)', '问答已添加，编号为 1。')
+      await u3g1.shouldReply('foo', ['hello'])
+      await u3g1.shouldReply('#1 ~ 1$(baz)2', '问答 1 已成功修改。')
+      await u3g1.shouldReply('foo', ['1hello', '2'])
+      await u3g1.shouldReply('#1 ~ $(bar)$(baz)', '问答 1 已成功修改。')
+      await u3g1.shouldReply('foo', ['hellohello'])
+      await u3g1.shouldReply('#1 ~ $(baz)$(bar)', '问答 1 已成功修改。')
+      await u3g1.shouldReply('foo', ['hello', 'hello'])
+      await u3g1.shouldReply('#1 ~ 1$n$(bar)$n2', '问答 1 已成功修改。')
+      await u3g1.shouldReply('foo', ['1', 'hello', '2'])
+      await u3g1.shouldReply('#1 ~ 1$n$(baz)$n2', '问答 1 已成功修改。')
+      await u3g1.shouldReply('foo', ['1', 'hello', '2'])
+      await u3g1.shouldReply('#1 -r', '问答 1 已成功删除。')
+    })
+
+    it('capturing groups', async () => {
+      await u3g1.shouldReply('# ^foo(.*) $(report $1) -x', '问答已添加，编号为 1。')
+      await u3g1.shouldReply('foobar', ['bar', 'end'])
+      await u3g1.shouldReply('foo', ['end'])
+      await u3g1.shouldReply('#1 ~ foo$0', '问答 1 已成功修改。')
+      await u3g1.shouldReply('foobar', ['foofoobar'])
+      await u3g1.shouldReply('#1 -r', '问答 1 已成功删除。')
+    })
+  })
 })
