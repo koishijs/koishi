@@ -1,4 +1,4 @@
-import { types } from 'util'
+import { isType } from './misc'
 
 export interface segment {
   type: string
@@ -111,9 +111,9 @@ export namespace segment {
 
   function createAssetFactory(type: string): Factory<string | Buffer | ArrayBuffer> {
     return (value, data = {}) => {
-      if (Buffer.isBuffer(value)) {
+      if (isType('Buffer', value)) {
         value = 'base64://' + value.toString('base64')
-      } else if (types.isArrayBuffer(value)) {
+      } else if (isType('ArrayBuffer', value)) {
         value = 'base64://' + Buffer.from(value).toString('base64')
       }
       return segment(type, { ...data, url: value })

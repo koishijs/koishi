@@ -1,5 +1,4 @@
 import { inspect, InspectOptions, format } from 'util'
-import { clearScreenDown, cursorTo } from 'readline'
 import { stderr } from 'supports-color'
 import { Time } from './time'
 
@@ -54,14 +53,6 @@ export class Logger {
   static color(code: number, value: any, decoration = '') {
     if (!Logger.options.colors) return '' + value
     return `\u001B[3${code < 8 ? code : '8;5;' + code}${decoration}m${value}\u001B[0m`
-  }
-
-  static clearScreen() {
-    if (!Logger.stream['isTTY'] || process.env.CI) return
-    const blank = '\n'.repeat(Math.max(Logger.stream['rows'] - 2, 0))
-    console.log(blank)
-    cursorTo(Logger.stream, 0, 0)
-    clearScreenDown(Logger.stream)
   }
 
   private code: number

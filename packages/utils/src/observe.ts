@@ -1,5 +1,4 @@
-import { types } from 'util'
-import { noop, defineProperty } from './misc'
+import { noop, defineProperty, isType } from './misc'
 import { Logger } from './logger'
 
 const logger = new Logger('observer')
@@ -7,7 +6,7 @@ const staticTypes = ['number', 'string', 'bigint', 'boolean', 'symbol', 'functio
 const builtinClasses = ['Date', 'RegExp', 'Set', 'Map', 'WeakSet', 'WeakMap', 'Array']
 
 function observeProperty(value: any, proxy: any, key: any, label: string, update: any) {
-  if (types.isDate(value)) {
+  if (isType('Date', value)) {
     return proxy[key] = observeDate(value, update)
   } else if (Array.isArray(value)) {
     return proxy[key] = observeArray(value, label, update)

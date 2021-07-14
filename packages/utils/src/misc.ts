@@ -1,5 +1,33 @@
 export function noop(): any {}
 
+export function contain(array1: readonly any[], array2: readonly any[]) {
+  return array2.every(item => array1.includes(item))
+}
+
+export function intersection<T>(array1: readonly T[], array2: readonly T[]) {
+  return array1.filter(item => array2.includes(item))
+}
+
+export function difference<S>(array1: readonly S[], array2: readonly any[]) {
+  return array1.filter(item => !array2.includes(item))
+}
+
+export function union<T>(array1: readonly T[], array2: readonly T[]) {
+  return Array.from(new Set([...array1, ...array2]))
+}
+
+export function deduplicate<T>(array: readonly T[]) {
+  return [...new Set(array)]
+}
+
+export function remove<T>(list: T[], item: T) {
+  const index = list.indexOf(item)
+  if (index >= 0) {
+    list.splice(index, 1)
+    return true
+  }
+}
+
 export function isInteger(source: any) {
   return typeof source === 'number' && Math.floor(source) === source
 }
@@ -27,9 +55,8 @@ export function clone<T extends unknown>(source: T): T {
   // array
   if (Array.isArray(source)) return source.map(clone) as any
 
-  const type = Object.prototype.toString.call(source).slice(8, -1)
-  if (type === 'Date') return new Date((source as any).valueOf()) as any
-  if (type === 'RegExp') return new RegExp((source as any).source, (source as any).flags) as any
+  if (isType('Date', source)) return new Date(source.valueOf()) as any
+  if (isType('RegExp', source)) return new RegExp(source.source, source.flags) as any
 
   // fallback
   const entries = Object.entries(source).map(([key, value]) => [key, clone(value)])
@@ -87,4 +114,17 @@ export function makeArray<T>(source: T | T[]) {
 export function renameProperty<O extends object, K extends keyof O, T extends string>(config: O, key: K, oldKey: T) {
   config[key] = Reflect.get(config, oldKey)
   Reflect.deleteProperty(config, oldKey)
+}
+
+type Global = NodeJS.Global & Window & typeof globalThis
+
+type GlobalClass = {
+  [K in keyof Global]: Global[K] extends new (...args: any[]) => infer T ? T : never
+}
+
+const root: any = typeof self !== 'undefined' ? self : global
+
+export function isType<K extends keyof GlobalClass>(type: K, value: any): value is GlobalClass[K] {
+  return type in root && value instanceof root[type]
+    || Object.prototype.toString.call(value).slice(8, -1) === type
 }
