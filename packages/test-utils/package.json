@@ -9,7 +9,6 @@
   },
   "files": [
     "lib",
-    "chai/lib",
     "chai/index.d.ts",
     "chai/package.json"
   ],

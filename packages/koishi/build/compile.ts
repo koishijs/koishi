@@ -1,14 +1,13 @@
-import { defineBuild } from '../../../build'
 import { resolve } from 'path'
+import { defineBuild } from '../../../build'
 
 export = defineBuild(async (base, options) => {
-  delete options.outdir
-  options.outfile = base + '/lib/node.js'
+  options.entryPoints = [base + '/src/node.ts']
 
   return [options, {
     ...options,
+    entryPoints: [base + '/src/browser.ts'],
     minify: true,
-    outfile: base + '/lib/browser.js',
     platform: 'browser',
     target: 'esnext',
     format: 'iife',
@@ -16,6 +15,8 @@ export = defineBuild(async (base, options) => {
     plugins: [{
       name: 'browser support',
       setup(build) {
+        build.onResolve({ filter: /^@koishijs\/core$/ }, () => ({ path: resolve(__dirname, '../../core/src/index.ts') }))
+        build.onResolve({ filter: /^@koishijs\/utils$/ }, () => ({ path: resolve(__dirname, '../../utils/src/index.ts') }))
         build.onResolve({ filter: /^.+\/logger$/ }, ({ resolveDir }) => ({ path: resolve(resolveDir, 'logger/browser.ts') }))
       },
     }],

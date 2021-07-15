@@ -1,5 +1,4 @@
 import { camelCase, segment, escapeRegExp, paramCase, template, Time } from '@koishijs/utils'
-import { format } from 'util'
 import { Platform } from './adapter'
 import { Command } from './command'
 import { NextFunction } from './context'
@@ -432,7 +431,7 @@ export namespace Argv {
     private _assignOption(option: OptionDeclaration, names: readonly string[], optionMap: OptionDeclarationMap) {
       for (const name of names) {
         if (name in optionMap) {
-          throw new Error(format('duplicate option name "%s" for command "%s"', name, this.name))
+          throw new Error(template.format('duplicate option name "{0}" for command "{1}"', name, this.name))
         }
         optionMap[name] = option
       }

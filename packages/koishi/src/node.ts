@@ -4,6 +4,14 @@ import { Server, createServer } from 'http'
 import Router from '@koa/router'
 import type Koa from 'koa'
 
+declare module 'koa' {
+  // koa-bodyparser
+  interface Request {
+    body: any
+    rawBody: string
+  }
+}
+
 declare module '@koishijs/core' {
   interface App {
     _httpServer?: Server
