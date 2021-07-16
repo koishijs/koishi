@@ -1,28 +1,26 @@
 import { Time } from '../time'
-import { Logger } from './base'
+import { BaseLogger } from './base'
 
-class BrowserLogger extends Logger {
+export class Logger extends BaseLogger {
   extend = (namespace: string) => {
-    return new BrowserLogger(`${this.name}:${namespace}`)
+    return new Logger(`${this.name}:${namespace}`)
   }
 
-  createMethod(name: Logger.Type, prefix: string, minLevel: number) {
+  createMethod(name: BaseLogger.Type, prefix: string, minLevel: number) {
     this[name] = (...args) => {
       if (this.level < minLevel) return
       let output: string[] = []
-      if (Logger.showTime) {
-        output.push(Time.template(Logger.showTime))
+      if (BaseLogger.showTime) {
+        output.push(Time.template(BaseLogger.showTime))
       }
       output.push(prefix + this.displayName, ...args)
-      if (Logger.showDiff) {
+      if (BaseLogger.showDiff) {
         const now = Date.now()
-        const diff = Logger.timestamp && now - Logger.timestamp
+        const diff = BaseLogger.timestamp && now - BaseLogger.timestamp
         output.push(this.color('+' + Time.formatTimeShort(diff)))
-        Logger.timestamp = now
+        BaseLogger.timestamp = now
       }
       console[name === 'debug' ? 'debug' : 'log'](...output)
     }
   }
 }
-
-export { BrowserLogger as Logger }

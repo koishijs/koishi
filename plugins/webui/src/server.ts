@@ -7,6 +7,7 @@ import Meta from './payload/meta'
 import Profile from './payload/profile'
 import Statistics from './payload/stats'
 import WebSocket from 'ws'
+import { v4 } from 'uuid'
 import type * as Vite from 'vite'
 import type PluginVue from '@vitejs/plugin-vue'
 
@@ -37,7 +38,7 @@ const TOKEN_TIMEOUT = Time.minute * 10
 
 export class SocketHandle {
   readonly app: App
-  readonly id = Random.uuid()
+  readonly id = v4()
   authority: number
 
   constructor(public readonly webui: WebServer, public socket: WebSocket) {
@@ -96,7 +97,7 @@ export class WebServer extends Adapter {
       const state = this.states[session.uid]
       if (state && state[0] === session.content) {
         const user = await session.observeUser(['id', 'name', 'authority', 'token', 'expire'])
-        user.token = Random.uuid()
+        user.token = v4()
         user.expire = Date.now() + config.expiration
         return state[2].send('user', user)
       }
@@ -273,7 +274,7 @@ export namespace WebServer {
     const user = await this.app.database.getUser(platform, userId, ['name'])
     if (!user) return this.send('login', { message: '找不到此账户。' })
     const id = `${platform}:${userId}`
-    const token = Random.uuid()
+    const token = v4()
     const expire = Date.now() + TOKEN_TIMEOUT
     const { states } = this.app.webui
     states[id] = [token, expire, this]
@@ -294,7 +295,7 @@ export namespace WebServer {
     if (!user || user.password !== password) {
       return this.send('login', { message: '用户名或密码错误。' })
     }
-    user.token = Random.uuid()
+    user.token = v4()
     user.expire = Date.now() + this.app.webui.config.expiration
     await this.app.database.setUser('name', username, pick(user, ['token', 'expire']))
     this.send('user', omit(user, ['password']))

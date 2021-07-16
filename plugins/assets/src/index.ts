@@ -135,7 +135,7 @@ class RemoteAssets implements Assets {
     const { server, secret, axiosConfig } = this.config
     const params = { url, file } as any
     if (secret) {
-      params.salt = Random.uuid()
+      params.salt = Random.id()
       params.sign = createHmac('sha1', secret).update(file + params.salt).digest('hex')
     }
     const { data } = await axios.post(server, { ...axiosConfig, params })

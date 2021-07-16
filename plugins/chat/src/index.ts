@@ -50,7 +50,7 @@ export class SandboxBot extends Bot<'webui'> {
       },
     })
     this.adapter.handles[id]?.send('sandbox:bot', content)
-    return Random.uuid()
+    return Random.id()
   }
 }
 

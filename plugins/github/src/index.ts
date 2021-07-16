@@ -54,7 +54,7 @@ export function apply(ctx: Context, config: Config = {}) {
     .userFields(['id'])
     .action(async ({ session }, user) => {
       if (!user) return '请输入用户名。'
-      const token = Random.uuid()
+      const token = Random.id()
       tokens[token] = session.user.id
       const url = 'https://github.com/login/oauth/authorize?' + encode({
         client_id: appId,
@@ -86,7 +86,7 @@ export function apply(ctx: Context, config: Config = {}) {
         const [repo] = await ctx.database.get('github', [name])
         if (options.add) {
           if (repo) return `已经添加过仓库 ${name}。`
-          const secret = Random.uuid()
+          const secret = Random.id()
           let data: any
           try {
             data = await ctx.app.github.request('POST', url, session, {

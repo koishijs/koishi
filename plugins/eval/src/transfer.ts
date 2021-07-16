@@ -4,7 +4,7 @@ import { Logger, noop, Random } from '@koishijs/utils'
 type Endpoint = MessagePort | Worker
 
 interface Message {
-  uuid: string
+  id: string
   type: 'apply'
   key?: string
   args?: any[]
@@ -14,16 +14,16 @@ interface Message {
 const logger = new Logger('transfer')
 
 export function request(ep: Endpoint, payload: Partial<Message>) {
-  const uuid = Random.uuid()
+  const id = Random.id()
   return new Promise<Message>((resolve) => {
     ep.on('message', function listener(data: string) {
       const message = JSON.parse(data)
-      if (message.uuid !== uuid) return
+      if (message.id !== id) return
       ep.off('message', listener)
       resolve(message)
     })
-    logger.debug('[request] %o', { uuid, ...payload })
-    ep.postMessage(JSON.stringify({ uuid, ...payload }))
+    logger.debug('[request] %o', { id, ...payload })
+    ep.postMessage(JSON.stringify({ id, ...payload }))
   })
 }
 
@@ -53,9 +53,9 @@ export function expose(ep: Endpoint, object: {}) {
   ep.on('message', async (data: string) => {
     const payload = JSON.parse(data)
     logger.debug('[receive] %o', payload)
-    const { type, key, uuid, args } = payload
+    const { type, key, id, args } = payload
     if (type !== 'apply') return
     const value = await object[key](...args)
-    ep.postMessage(JSON.stringify({ uuid, value }))
+    ep.postMessage(JSON.stringify({ id, value }))
   })
 }

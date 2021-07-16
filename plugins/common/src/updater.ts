@@ -281,7 +281,7 @@ export function bind(ctx: Context, config: BindConfig = {}) {
   type TokenData = [platform: Platform, id: string, pending: number]
   const tokens: Record<string, TokenData> = {}
 
-  const { generateToken = () => 'koishi/' + Random.uuid() } = config
+  const { generateToken = () => 'koishi/' + Random.id(6, 10) } = config
 
   function generate(session: Session, pending: number) {
     const token = generateToken()

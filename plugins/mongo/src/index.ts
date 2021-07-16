@@ -151,7 +151,7 @@ Database.extend(MongoDatabase, {
   async setUser(type, id, data) {
     await this.user.updateOne(
       { [type]: id },
-      { $set: escapeKey(data), $setOnInsert: { id: Random.uuid() } },
+      { $set: escapeKey(data), $setOnInsert: { id: Random.id() } },
       { upsert: true },
     )
   },

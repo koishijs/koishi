@@ -55,17 +55,13 @@ export class Random {
   }
 }
 
-const hex: string[] = []
-
-for (let i = 0; i < 256; ++i) {
-  hex.push((i + 0x100).toString(16).substr(1))
-}
-
 export namespace Random {
-  export function digits(length: number) {
+  const chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
+
+  export function id(length = 8, radix = 16) {
     let result = ''
     for (let i = 0; i < length; ++i) {
-      result += Math.floor(Math.random() * 10)
+      result += chars[Math.floor(Math.random() * radix)]
     }
     return result
   }

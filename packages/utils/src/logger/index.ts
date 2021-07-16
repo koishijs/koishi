@@ -1,11 +1,11 @@
 import { inspect, InspectOptions, format } from 'util'
 import { stderr } from 'supports-color'
-import { Logger } from './base'
+import { BaseLogger } from './base'
 import { Time } from '../time'
 
-Logger.formatters.o = value => inspect(value, NodeLogger.options).replace(/\s*\n\s*/g, ' ')
+BaseLogger.formatters.o = value => inspect(value, Logger.options).replace(/\s*\n\s*/g, ' ')
 
-class NodeLogger extends Logger {
+export class Logger extends BaseLogger {
   static options: InspectOptions = {
     colors: !!stderr,
   }
@@ -13,25 +13,25 @@ class NodeLogger extends Logger {
   static stream: NodeJS.WritableStream = process.stderr
 
   extend = (namespace: string) => {
-    return new NodeLogger(`${this.name}:${namespace}`)
+    return new Logger(`${this.name}:${namespace}`)
   }
 
-  createMethod(name: Logger.Type, prefix: string, minLevel: number) {
+  createMethod(name: BaseLogger.Type, prefix: string, minLevel: number) {
     this[name] = (...args) => {
       if (this.level < minLevel) return
       let indent = 4, output = ''
-      if (Logger.showTime) {
-        indent += Logger.showTime.length + 1
-        output += Time.template(Logger.showTime + ' ')
+      if (BaseLogger.showTime) {
+        indent += BaseLogger.showTime.length + 1
+        output += Time.template(BaseLogger.showTime + ' ')
       }
       output += prefix + this.displayName + ' ' + this.format(indent, ...args)
-      if (Logger.showDiff) {
+      if (BaseLogger.showDiff) {
         const now = Date.now()
-        const diff = Logger.timestamp && now - Logger.timestamp
+        const diff = BaseLogger.timestamp && now - BaseLogger.timestamp
         output += this.color(' +' + Time.formatTimeShort(diff))
-        Logger.timestamp = now
+        BaseLogger.timestamp = now
       }
-      NodeLogger.stream.write(output + '\n')
+      Logger.stream.write(output + '\n')
     }
   }
 
@@ -46,7 +46,7 @@ class NodeLogger extends Logger {
     args[0] = (args[0] as string).replace(/%([a-zA-Z%])/g, (match, format) => {
       if (match === '%%') return '%'
       index += 1
-      const formatter = Logger.formatters[format]
+      const formatter = BaseLogger.formatters[format]
       if (typeof formatter === 'function') {
         match = formatter.call(this, args[index])
         args.splice(index, 1)
@@ -58,5 +58,3 @@ class NodeLogger extends Logger {
     return format(...args)
   }
 }
-
-export { NodeLogger as Logger }

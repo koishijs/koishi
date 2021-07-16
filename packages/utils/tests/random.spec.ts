@@ -2,13 +2,8 @@ import { Random, isInteger } from 'koishi'
 import { expect } from 'chai'
 
 describe('Random Manipulations', () => {
-  it('Random.uuid', () => {
-    // 00000000-0000-0000-0000-000000000000
-    expect(Random.uuid()).to.match(/^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/)
-  })
-
-  it('Random.digits', () => {
-    expect(Random.digits(7)).to.match(/^\d{7}$/)
+  it('Random.id', () => {
+    expect(Random.id(7)).to.match(/^\d{7}$/)
   })
 
   it('Random.bool', () => {

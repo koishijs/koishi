@@ -9,7 +9,7 @@ const c256 = [
   201, 202, 203, 204, 205, 206, 207, 208, 209, 214, 215, 220, 221,
 ]
 
-export namespace Logger {
+export namespace BaseLogger {
   export interface LevelConfig {
     base: number
     [K: string]: Level
@@ -20,10 +20,10 @@ export namespace Logger {
   export type Type = 'success' | 'error' | 'info' | 'warn' | 'debug'
 }
 
-export interface Logger extends Record<Logger.Type, Logger.Function> {
+export interface BaseLogger extends Record<BaseLogger.Type, BaseLogger.Function> {
 }
 
-export abstract class Logger {
+export abstract class BaseLogger {
   // log levels
   static readonly SILENT = 0
   static readonly SUCCESS = 1
@@ -39,22 +39,22 @@ export abstract class Logger {
 
   // global registry
   static colors = stderr ? stderr.has256 ? c256 : c16 : []
-  static instances: Record<string, Logger> = {}
+  static instances: Record<string, BaseLogger> = {}
 
-  static formatters: Record<string, (this: Logger, value: any) => string> = {
-    c: Logger.prototype.color,
-    C: value => Logger.color(15, value, ';1'),
+  static formatters: Record<string, (this: BaseLogger, value: any) => string> = {
+    c: BaseLogger.prototype.color,
+    C: value => BaseLogger.color(15, value, ';1'),
   }
 
-  static levels: Logger.LevelConfig = {
+  static levels: BaseLogger.LevelConfig = {
     base: 2,
   }
 
   protected code: number
   protected displayName: string
 
-  protected abstract createMethod(name: Logger.Type, prefix: string, minLevel: number): void
-  abstract extend: (namespace: string) => Logger
+  protected abstract createMethod(name: BaseLogger.Type, prefix: string, minLevel: number): void
+  abstract extend: (namespace: string) => BaseLogger
 
   static color(code: number, value: any, decoration = '') {
     if (!stderr) return '' + value
@@ -62,30 +62,30 @@ export abstract class Logger {
   }
 
   constructor(public name: string) {
-    if (name in Logger.instances) return Logger.instances[name]
+    if (name in BaseLogger.instances) return BaseLogger.instances[name]
 
     let hash = 0
     for (let i = 0; i < name.length; i++) {
       hash = ((hash << 3) - hash) + name.charCodeAt(i)
       hash |= 0
     }
-    Logger.instances[name] = this
-    this.code = Logger.colors[Math.abs(hash) % Logger.colors.length]
+    BaseLogger.instances[name] = this
+    this.code = BaseLogger.colors[Math.abs(hash) % BaseLogger.colors.length]
     this.displayName = this.color(name, ';1')
-    this.createMethod('success', '[S] ', Logger.SUCCESS)
-    this.createMethod('error', '[E] ', Logger.ERROR)
-    this.createMethod('info', '[I] ', Logger.INFO)
-    this.createMethod('warn', '[W] ', Logger.WARN)
-    this.createMethod('debug', '[D] ', Logger.DEBUG)
+    this.createMethod('success', '[S] ', BaseLogger.SUCCESS)
+    this.createMethod('error', '[E] ', BaseLogger.ERROR)
+    this.createMethod('info', '[I] ', BaseLogger.INFO)
+    this.createMethod('warn', '[W] ', BaseLogger.WARN)
+    this.createMethod('debug', '[D] ', BaseLogger.DEBUG)
   }
 
   protected color(value: any, decoration = '') {
-    return Logger.color(this.code, value, decoration)
+    return BaseLogger.color(this.code, value, decoration)
   }
 
   get level() {
     const paths = this.name.split(':')
-    let config: Logger.Level = Logger.levels
+    let config: BaseLogger.Level = BaseLogger.levels
     do {
       config = config[paths.shift()] ?? config['base']
     } while (paths.length && typeof config === 'object')
@@ -94,7 +94,7 @@ export abstract class Logger {
 
   set level(value) {
     const paths = this.name.split(':')
-    let config = Logger.levels
+    let config = BaseLogger.levels
     while (paths.length > 1) {
       const name = paths.shift()
       const value = config[name]

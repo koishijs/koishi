@@ -230,14 +230,14 @@ export class Context {
     defineProperty(ctx, '_plugin', plugin)
     this.app.registry.set(plugin, {
       plugin,
-      id: Random.uuid(),
+      id: Random.id(),
       context: this,
       config: options,
       parent: this.state,
       children: [],
       disposables: [],
     })
-
+ 
     if (typeof plugin === 'function') {
       plugin(ctx, options)
     } else if (plugin && typeof plugin === 'object' && typeof plugin.apply === 'function') {

@@ -41,8 +41,8 @@ const snapshot = require('./index.snap')
 const apiScope = nock('https://api.github.com')
 const tokenInterceptor = nock('https://github.com').post('/login/oauth/access_token')
 
-const ghAccessToken = Random.uuid()
-const ghRefreshToken = Random.uuid()
+const ghAccessToken = Random.id()
+const ghRefreshToken = Random.id()
 const payload = {
   access_token: ghAccessToken,
   refresh_token: ghRefreshToken,
@@ -151,7 +151,7 @@ describe('GitHub Plugin', () => {
       it(title, async () => {
         sendMessage.mockClear()
         sendMessage.mockImplementation(() => {
-          return Promise.resolve(idMap[title] = Random.uuid())
+          return Promise.resolve(idMap[title] = Random.id())
         })
 
         const payload = require(`./fixtures/${title}`)

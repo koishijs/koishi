@@ -130,7 +130,7 @@ export class Session<
     defineProperty(this, 'cid', `${this.platform}:${this.channelId}`)
     defineProperty(this, 'gid', `${this.platform}:${this.groupId}`)
     defineProperty(this, 'bot', app.bots[this.sid])
-    defineProperty(this, 'id', Random.uuid())
+    defineProperty(this, 'id', Random.id())
     defineProperty(this, '_queued', Promise.resolve())
     defineProperty(this, '_hooks', [])
   }
