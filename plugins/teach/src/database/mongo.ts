@@ -69,29 +69,24 @@ export default function apply(ctx: Context) {
   ctx.on('dialogue/mongo', ({ regexp, answer, question, original }, conditionals) => {
     if (regexp) {
       if (answer) conditionals.push({ answer: { $regex: new RegExp(answer, 'i') } })
-      if (question) conditionals.push({ question: { $regex: new RegExp(original, 'i') } })
+      if (original) conditionals.push({ original: { $regex: new RegExp(original, 'i') } })
       return
     }
     if (answer) conditionals.push({ answer })
-    if (question) {
-      if (regexp === false) {
-        conditionals.push({ question })
-      } else {
-        const $expr = {
-          body(field: string, question: string, original: string) {
-            const regex = new RegExp(field, 'i')
-            return regex.test(question) || regex.test(original)
-          },
-          args: ['$name', question, original],
-          lang: 'js',
-        }
-        conditionals.push({
-          $or: [
-            { flag: { $bitsAllClear: Dialogue.Flag.regexp }, question },
-            { flag: { $bitsAllSet: Dialogue.Flag.regexp }, $expr },
-          ],
-        })
+    if (regexp === false) {
+      if (question) conditionals.push({ question })
+    } else if (original) {
+      const $expr = {
+        body(field: string, original: string) {
+          const regex = new RegExp(field, 'i')
+          return regex.test(original)
+        },
+        args: ['$name', original],
+        lang: 'js',
       }
+      const conds = [{ flag: { $bitsAllSet: Dialogue.Flag.regexp }, $expr } as FilterQuery<Dialogue>]
+      if (question) conds.push({ flag: { $bitsAllClear: Dialogue.Flag.regexp }, question })
+      conditionals.push({ $or: conds })
     }
   })
 

@@ -240,7 +240,7 @@ export namespace Argv {
 
   createDomain('number', (source) => {
     const value = +source
-    if (value * 0 === 0) return value
+    if (Number.isFinite(value)) return value
     throw new Error(template('internal.invalid-number'))
   })
 
