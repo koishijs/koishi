@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-chat",
   "description": "Display and respond to messages for Koishi",
-  "version": "0.5.3",
+  "version": "1.0.0-alpha.0",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -30,9 +30,9 @@
     "server"
   ],
   "peerDependencies": {
-    "koishi": "^3.12.2"
+    "koishi": "^4.0.0-alpha.0"
   },
   "devDependencies": {
-    "@koishijs/plugin-webui": "^4.6.2"
+    "@koishijs/plugin-webui": "^5.0.0-alpha.0"
   }
 }

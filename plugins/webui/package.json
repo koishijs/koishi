@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-webui",
   "description": "Create web user interface for Koishi",
-  "version": "4.6.2",
+  "version": "5.0.0-alpha.0",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -29,13 +29,13 @@
     "webui"
   ],
   "peerDependencies": {
-    "koishi": "^3.12.2"
+    "koishi": "^4.0.0-alpha.0"
   },
   "devDependencies": {
     "@fortawesome/fontawesome-free": "^5.15.3",
-    "@koishijs/plugin-mongo": "^2.2.3",
-    "@koishijs/plugin-mysql": "^3.3.2",
-    "@koishijs/test-utils": "^6.0.1",
+    "@koishijs/plugin-mongo": "^3.0.0-alpha.0",
+    "@koishijs/plugin-mysql": "^4.0.0-alpha.0",
+    "@koishijs/test-utils": "^7.0.0-alpha.0",
     "@types/uuid": "^8.3.1",
     "@vitejs/plugin-vue": "^1.2.2",
     "@vue/compiler-sfc": "^3.0.11",

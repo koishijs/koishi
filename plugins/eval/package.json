@@ -1,6 +1,6 @@
 {
   "name": "@koishijs/plugin-eval",
-  "version": "3.2.1",
+  "version": "4.0.0-alpha.0",
   "description": "Execute JavaScript and create addons in Koishi",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
@@ -33,7 +33,7 @@
     "code"
   ],
   "peerDependencies": {
-    "koishi": "^3.12.2"
+    "koishi": "^4.0.0-alpha.0"
   },
   "optionalDependencies": {
     "@babel/core": "^7.14.0",
@@ -50,6 +50,6 @@
   "devDependencies": {
     "@types/babel__core": "^7.1.14",
     "@types/js-yaml": "^4.0.1",
-    "@koishijs/test-utils": "^6.0.1"
+    "@koishijs/test-utils": "^7.0.0-alpha.0"
   }
 }

@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-github",
   "description": "GitHub toolkit for Koishi",
-  "version": "3.1.2",
+  "version": "4.0.0-alpha.0",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -30,13 +30,13 @@
   ],
   "devDependencies": {
     "@types/marked": "^2.0.2",
-    "@koishijs/plugin-mongo": "^2.2.3",
-    "@koishijs/plugin-mysql": "^3.3.2",
-    "@koishijs/plugin-puppeteer": "^2.1.4",
-    "@koishijs/test-utils": "^6.0.1"
+    "@koishijs/plugin-mongo": "^3.0.0-alpha.0",
+    "@koishijs/plugin-mysql": "^4.0.0-alpha.0",
+    "@koishijs/plugin-puppeteer": "^3.0.0-alpha.0",
+    "@koishijs/test-utils": "^7.0.0-alpha.0"
   },
   "peerDependencies": {
-    "koishi": "^3.12.2"
+    "koishi": "^4.0.0-alpha.0"
   },
   "dependencies": {
     "@octokit/webhooks-types": "^3.75.2",

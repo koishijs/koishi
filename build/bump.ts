@@ -11,6 +11,7 @@ const { args, options } = cac()
   .option('-1, --major', '')
   .option('-2, --minor', '')
   .option('-3, --patch', '')
+  .option('-p, --prerelease', '')
   .option('-a, --all', '')
   .option('-v, --version <ver>', '')
   .option('-l, --local', '')
@@ -18,7 +19,7 @@ const { args, options } = cac()
   .help()
   .parse()
 
-const bumpTypes = ['major', 'minor', 'patch', 'version'] as const
+const bumpTypes = ['major', 'minor', 'patch', 'prerelease', 'version'] as const
 type BumpType = typeof bumpTypes[number]
 
 class Package {
@@ -60,9 +61,18 @@ class Package {
       }
     } else if (flag === 'version') {
       ver = new SemVer(options.version)
+    } else if (flag === 'prerelease') {
+      if (ver.prerelease.length) {
+        ver.prerelease = [{
+          alpha: 'beta',
+          beta: 'rc',
+        }[ver.prerelease[0]], 0]
+      } else {
+        ver = new SemVer(`${ver.major + 1}.0.0-alpha.0`)
+      }
     } else {
       if (ver.prerelease.length) {
-        ver.prerelease = []
+      ver.prerelease = []
       } else {
         ver[flag] += 1
         if (flag !== 'patch') ver.patch = 0
@@ -161,16 +171,4 @@ if (!args.length && !options.all) {
     }
     return pkg.save()
   }))
-
-  const beta = ['adventure', 'dice', 'monitor', 'rss', 'tomon']
-  const ecosystem: Record<string, Pick<PackageJson, 'version' | 'description'>> = {}
-
-  for (const path in packages) {
-    if (!path.startsWith('plugins/')) continue
-    if (beta.some(name => path.endsWith(name))) continue
-    const { name, version, description } = packages[path].meta
-    ecosystem[name] = { version, description }
-  }
-
-  await writeJson(resolve(__dirname, '../packages/cli/ecosystem.json'), ecosystem, { spaces: 2 })
 })()

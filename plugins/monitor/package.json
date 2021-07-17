@@ -1,6 +1,6 @@
 {
   "name": "@koishijs/plugin-monitor",
-  "version": "1.0.0-beta.31",
+  "version": "1.0.0-rc.0",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "author": "Shigma <1700011071@pku.edu.cn>",
@@ -17,6 +17,6 @@
   },
   "homepage": "https://github.com/koishijs/koishi#readme",
   "peerDependencies": {
-    "koishi": "^3.12.2"
+    "koishi": "^4.0.0-alpha.0"
   }
 }
