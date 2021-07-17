@@ -84,13 +84,7 @@ async function compile(name: string) {
 }
 
 ;(async () => {
-  const workspaces = await getPackages()
-
-  const folders = args.length ? args.map((name) => {
-    if (workspaces.includes('packages/' + name)) return 'packages/' + name
-    if (workspaces.includes('plugins/' + name)) return 'plugins/' + name
-  }).filter(Boolean) : workspaces
-
+  const folders = await getPackages(args)
   await Promise.all(folders.map(compile))
 
   process.exit(code)

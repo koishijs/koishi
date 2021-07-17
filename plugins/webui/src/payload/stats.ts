@@ -1,5 +1,4 @@
 import { Context, Channel, noop, Session, Bot, Platform, Time } from 'koishi'
-import {} from 'koishi'
 
 export type StatRecord = Record<string, number>
 

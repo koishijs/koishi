@@ -2,8 +2,6 @@ import { resolve } from 'path'
 import { defineBuild } from '../../../build'
 
 export = defineBuild(async (base, options) => {
-  options.entryPoints = [base + '/src/node.ts']
-
   return [options, {
     ...options,
     entryPoints: [base + '/src/browser.ts'],

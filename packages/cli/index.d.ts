@@ -6,12 +6,6 @@ export * from '@koishijs/utils'
 
 export type PluginConfig = Record<string, any> | (string | [string, any?])[]
 
-declare module '@koishijs/core' {
-  interface EventMap {
-    'exit'(signal: NodeJS.Signals): Promise<void>
-  }
-}
-
 interface LogLevelConfig {
   // a little different from koishi-utils
   // we don't enforce user to provide a base here

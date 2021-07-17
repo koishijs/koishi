@@ -36,7 +36,10 @@ async function bundle(path: string) {
   if (!outFile) return
 
   const srcpath = `${fullpath.replace(/\\/g, '/')}/${rootDir}`
-  const [files, content] = await Promise.all([getModules(srcpath), compile(path, resolve(fullpath, outFile))])
+  const [files, content] = await Promise.all([
+    getModules(srcpath),
+    compile(path, resolve(fullpath, outFile)),
+  ])
 
   const moduleRE = `"(${files.join('|')})"`
   const internalImport = new RegExp('import\\(' + moduleRE + '\\)\\.', 'g')
@@ -45,7 +48,7 @@ async function bundle(path: string) {
   const importMap: Record<string, Record<string, string>> = {}
   const namespaceMap: Record<string, string> = {}
 
-  let prolog = '', epilog = '', cap: RegExpExecArray, identifier: string
+  let prolog = '', epilog = '', cap: RegExpExecArray, identifier: string, detached = false
   const output = content.split(EOL).filter((line) => {
     if (cap = /^ {4}import ["'](.+)["'];$/.exec(line)) {
       if (!files.includes(cap[1])) prolog += line.trimStart() + EOL
@@ -78,11 +81,17 @@ async function bundle(path: string) {
   }).map((line) => {
     if (cap = /^declare module ["'](.+)["'] \{( \})?$/.exec(line)) {
       if (cap[2]) return ''
+      if (cap[1].endsWith('browser')) {
+        detached = true
+        return ''
+      }
       identifier = namespaceMap[cap[1]]
       return identifier ? `declare namespace ${identifier} {` : ''
     } else if (line === '}') {
+      if (detached) detached = false
       return identifier ? '}' : ''
     } else if (!internalExport.exec(line)) {
+      if (detached) return ''
       if (!identifier) line = line.slice(4)
       return line
         .replace(internalImport, '')
@@ -128,6 +137,7 @@ async function bundleAll(names: readonly string[]) {
 const targets = [
   'packages/utils',
   'packages/core',
+  'packages/koishi',
   'plugins/common',
   'plugins/mysql',
   'plugins/mongo',
@@ -144,28 +154,28 @@ function precedence(name: string) {
   return 4
 }
 
-async function prepareConfig() {
-  const folders = await getPackages()
+async function prepareConfig(folders: string[]) {
+  if (!folders.length) return
   await fs.writeFile(cwd + '/tsconfig.temp.json', JSON.stringify({
     files: [],
     references: folders
-      .filter(name => !name.includes('.') && !targets.includes(name))
       .sort((a, b) => precedence(a) - precedence(b))
       .map(name => ({ path: './' + name })),
   }, null, 2))
 }
 
 (async () => {
-  if (args.length) {
-    await bundleAll(args)
-    process.exit(0)
-  }
+  const folders = await getPackages(args)
+  const buildTargets = folders.filter(name => !targets.includes(name))
+  const bundleTargets = folders.filter(name => targets.includes(name))
 
   await Promise.all([
-    prepareConfig(),
-    bundleAll(targets),
+    prepareConfig(buildTargets),
+    bundleAll(bundleTargets),
   ])
 
-  const code = await spawnAsync(['tsc', '-b', 'tsconfig.temp.json', ...tsArgs])
-  process.exit(code)
+  if (buildTargets.length) {
+    const code = await spawnAsync(['tsc', '-b', 'tsconfig.temp.json', ...tsArgs])
+    process.exit(code)
+  }
 })()

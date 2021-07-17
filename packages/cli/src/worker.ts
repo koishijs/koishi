@@ -1,5 +1,5 @@
 import { resolve, relative, extname, dirname } from 'path'
-import { App, BotOptions, Context, Plugin, version, coerce, Logger, noop, LogLevelConfig, makeArray, template } from 'koishi'
+import { App, BotOptions, Context, Plugin, version, coerce, Logger, noop, makeArray, template } from 'koishi'
 import { readFileSync, readdirSync } from 'fs'
 import { performance } from 'perf_hooks'
 import { yellow } from 'kleur'
@@ -82,7 +82,7 @@ function loadEcosystem(type: string, name: string) {
   throw new Error(`cannot resolve ${type} ${name}`)
 }
 
-function ensureBaseLevel(config: LogLevelConfig, base: number) {
+function ensureBaseLevel(config: Logger.LevelConfig, base: number) {
   config.base ??= base
   Object.values(config).forEach((value) => {
     if (typeof value !== 'object') return

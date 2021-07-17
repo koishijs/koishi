@@ -26,6 +26,10 @@ declare module '@koishijs/core' {
       router: Router
     }
   }
+
+  interface EventMap {
+    'exit'(signal: NodeJS.Signals): Promise<void>
+  }
 }
 
 Context.delegate('router')
