@@ -57,8 +57,8 @@ class MongoSynchronizer implements Synchronizer {
     logger.debug('stats updated')
   }
 
-  async download(date: Date) {
-    const time = { $lt: new Date(date) }
+  async download() {
+    const time = { $lt: new Date() }
     const coll = this.db.collection('plugin-status')
     const hourly = await coll.find({ type: 'hourly', time }).sort({ time: -1 }).limit(24 * RECENT_LENGTH).toArray()
     const daily = await coll.find({ type: 'daily', time }).sort({ time: -1 }).limit(RECENT_LENGTH).toArray()

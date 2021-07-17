@@ -10,7 +10,7 @@ export interface Synchronizer {
   longterm: Record<Synchronizer.LongtermField, number>
   addDaily(field: Synchronizer.DailyField, key: string | number): void
   upload(date: Date): Promise<void>
-  download(date: Date): Promise<Synchronizer.Data>
+  download(): Promise<Synchronizer.Data>
 }
 
 export namespace Synchronizer {
@@ -209,8 +209,8 @@ class Statistics {
     await this.ctx.database.update('channel', updateList)
   }
 
-  async download(date: Date) {
-    const data = await this.sync.download(date)
+  async download() {
+    const data = await this.sync.download()
     const payload = {} as Statistics.Payload
     await Promise.all(this.callbacks.map(cb => cb(payload, data)))
     return payload
@@ -221,7 +221,7 @@ class Statistics {
     const date = new Date()
     const dateNumber = Time.getDateNumber(date, date.getTimezoneOffset())
     if (dateNumber !== this.cachedDate) {
-      this.cachedData = this.download(date)
+      this.cachedData = this.download()
       this.cachedDate = dateNumber
     }
     return this.cachedData

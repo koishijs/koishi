@@ -173,8 +173,9 @@ module.exports = {
       }],
     },
     lastUpdated: '上次更新',
-    docsRepo: 'koishijs/koishijs.github.io',
-    docsBranch: 'docs',
+    docsRepo: 'koishijs/koishi',
+    docsDir: 'docs',
+    docsBranch: 'develop',
     editLinks: true,
     editLinkText: '帮助我们改善此页面',
 
