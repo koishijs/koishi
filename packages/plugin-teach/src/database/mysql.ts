@@ -84,22 +84,17 @@ export default function apply(ctx: Context) {
 
     if (regexp) {
       if (answer) conditionals.push('`answer` REGEXP ' + escape(answer))
-      if (question) conditionals.push('`question` REGEXP ' + escape(original))
+      if (original) conditionals.push('`original` REGEXP ' + escape(original))
       return
     }
 
     if (answer) conditionals.push('`answer` = ' + escape(answer))
-    if (question) {
-      if (regexp === false) {
-        conditionals.push('`question` = ' + escape(question))
-      } else {
-        conditionals.push(`(\
-          !(\`flag\` & ${Dialogue.Flag.regexp}) && \`question\` = ${escape(question)} ||\
-          \`flag\` & ${Dialogue.Flag.regexp} && (\
-            ${escape(question)} REGEXP \`question\` || ${escape(original)} REGEXP \`question\`\
-          )\
-        )`)
-      }
+    if (regexp === false) {
+      if (question) conditionals.push('`question` = ' + escape(question))
+    } else if (original) {
+      const conds = [`\`flag\` & ${Dialogue.Flag.regexp} && ${escape(original)} REGEXP \`original\``]
+      if (question) conds.push(`!(\`flag\` & ${Dialogue.Flag.regexp}) && \`question\` = ${escape(question)}`)
+      conditionals.push(`(${conds.join(' || ')})`)
     }
   })
 
