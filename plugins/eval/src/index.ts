@@ -163,7 +163,7 @@ export function apply(ctx: Context, config: Config = {}) {
       return { source, rest: '', tokens: [] }
     }
     return {
-      source,
+      source: result,
       command,
       args: [result],
       rest: segment.escape(source.slice(result.length + 1)),
