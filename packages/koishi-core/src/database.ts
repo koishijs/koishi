@@ -11,7 +11,17 @@ export interface Tables {
 export namespace Tables {
   type IndexType = string | number
   type IndexKeys<O, T = any> = string & { [K in keyof O]: O[K] extends T ? K : never }[keyof O]
-  type QueryMap<O> = { [K in keyof O]?: O[K][] }
+  type QueryExpr<T> = {
+    $eq?: T
+    $gt?: T; $gte?: T
+    $lt?: T; $lte?: T
+  }
+  type QueryItem<T> = T extends string
+    ? QueryExpr<T> | T[] | RegExp
+    : QueryExpr<T> | T[]
+  type QueryMap<O> = {
+    [K in keyof O]?: QueryItem<O[K]>
+  }
   export type Index<T extends TableType> = IndexKeys<Tables[T], IndexType>
   export type Query<T extends TableType> = IndexType[] | QueryMap<Tables[T]>
   export type Field<T extends TableType> = string & keyof Tables[T]
@@ -34,10 +44,10 @@ export namespace Tables {
   extend('user')
   extend('channel')
 
-  export function resolveQuery<T extends TableType>(name: T, query: Query<T>): Record<string, any[]> {
+  export function resolveQuery<T extends TableType>(name: T, query: Query<T>): Query<T> {
     if (!Array.isArray(query)) return query
     const { primary } = config[name]
-    return { [primary]: query }
+    return { [primary]: query } as Query<T>
   }
 }
 
