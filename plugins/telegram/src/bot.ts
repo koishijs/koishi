@@ -4,8 +4,15 @@ import {
   Bot, GroupInfo, GroupMemberInfo, UserInfo, BotOptions, Adapter,
 } from 'koishi'
 import * as Telegram from './types'
-import axios, { AxiosError } from 'axios'
+import axios, { AxiosError, AxiosRequestConfig } from 'axios'
 import FormData from 'form-data'
+
+export interface Config {
+  endpoint?: string
+  path?: string
+  selfUrl?: string
+  axiosConfig?: AxiosRequestConfig
+}
 
 const logger = new Logger('telegram')
 
@@ -43,6 +50,8 @@ function maybeFile(payload: Record<string, any>, field: string) {
 }
 
 export class TelegramBot extends Bot {
+  static config: Config
+
   static adaptUser(data: Partial<Telegram.User & UserInfo>) {
     data.userId = data.id.toString()
     data.nickname = data.firstName + (data.lastName || '')
@@ -75,7 +84,7 @@ export class TelegramBot extends Bot {
   }
 
   async _listen() {
-    const { endpoint, selfUrl, path, axiosConfig } = this.app.options.telegram
+    const { endpoint, selfUrl, path, axiosConfig } = TelegramBot.config
     this._request = async (action, params, field, content, filename = 'file') => {
       const payload = new FormData()
       for (const key in params) {

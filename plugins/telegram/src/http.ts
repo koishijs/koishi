@@ -1,5 +1,5 @@
 import axios from 'axios'
-import { App, Adapter, Session, assertProperty, camelCase, Logger, segment, trimSlash, sanitize } from 'koishi'
+import { App, Adapter, Session, camelCase, Logger, segment } from 'koishi'
 import { TelegramBot } from './bot'
 import * as Telegram from './types'
 
@@ -8,18 +8,10 @@ const logger = new Logger('telegram')
 export default class HttpServer extends Adapter<'telegram'> {
   constructor(app: App) {
     super(app, TelegramBot)
-    const config = app.options.telegram ||= {}
-    config.path = sanitize(config.path || '/telegram')
-    config.endpoint = trimSlash(config.endpoint || 'https://api.telegram.org')
-    if (config.selfUrl) {
-      config.selfUrl = trimSlash(config.selfUrl)
-    } else {
-      config.selfUrl = assertProperty(app.options, 'selfUrl')
-    }
   }
 
   async start() {
-    const { endpoint, path } = this.app.options.telegram
+    const { endpoint, path } = TelegramBot.config
     this.app.router.post(path, async (ctx) => {
       logger.debug('receive %s', JSON.stringify(ctx.request.body))
       const payload = camelCase<Telegram.Update>(ctx.request.body)
