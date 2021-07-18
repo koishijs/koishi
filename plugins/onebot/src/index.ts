@@ -1,21 +1,10 @@
-import { Adapter, App, Context, Time } from 'koishi'
+import { Adapter, Context } from 'koishi'
 import { WsClient, WsServer } from './ws'
-import { CQBot } from './bot'
+import { Config, CQBot } from './bot'
 import HttpServer, { ResponsePayload } from './http'
 import axios from 'axios'
 
-interface OneBotOptions extends Adapter.WsClientOptions {
-  path?: string
-  secret?: string
-  quickOperation?: number
-  responseTimeout?: number
-}
-
 declare module '@koishijs/core' {
-  interface AppOptions {
-    onebot?: OneBotOptions
-  }
-
   interface BotOptions {
     server?: string
   }
@@ -36,14 +25,11 @@ export * from './utils'
 export * from './http'
 export * from './ws'
 
-App.defaultConfig.onebot = {
-  responseTimeout: Time.minute,
-}
-
 Adapter.types['onebot:http'] = HttpServer
 Adapter.types['onebot:ws'] = WsClient
 Adapter.types['onebot:ws-reverse'] = WsServer
-Adapter.types['onebot'] = Adapter.redirect((bot) => {
+
+Adapter.types.onebot = Adapter.redirect((bot) => {
   return !bot.server ? 'onebot:ws-reverse'
     : bot.server.startsWith('ws') ? 'onebot:ws'
       : 'onebot:http'
@@ -67,4 +53,10 @@ Context.prototype.broadcast = async function (this: Context, ...args: any[]) {
   }
   args[index] = output + message
   return broadcast.apply(this, args)
+}
+
+export const name = 'onebot'
+
+export function apply(ctx: Context, config: Config = {}) {
+  Object.assign(CQBot.config, config)
 }

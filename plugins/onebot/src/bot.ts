@@ -1,5 +1,12 @@
-import { Bot, Session, segment, camelCase, snakeCase, BotOptions, Adapter } from 'koishi'
+import { Bot, Session, segment, camelCase, snakeCase, BotOptions, Adapter, Time } from 'koishi'
 import * as OneBot from './utils'
+
+export interface Config extends Adapter.WsClientOptions {
+  path?: string
+  secret?: string
+  quickOperation?: number
+  responseTimeout?: number
+}
 
 export class SenderError extends Error {
   constructor(args: Record<string, any>, url: string, retcode: number, selfId: string) {
@@ -32,6 +39,10 @@ function renderText(source: string) {
 export interface CQBot extends OneBot.API {}
 
 export class CQBot extends Bot {
+  static config: Config = {
+    responseTimeout: Time.minute,
+  }
+
   version = 'onebot'
 
   _request?(action: string, params: Record<string, any>): Promise<OneBot.Response>
@@ -44,7 +55,7 @@ export class CQBot extends Bot {
   async [Session.send](message: Session, content: string) {
     if (!content) return
     const { userId, groupId, channelId, channelName } = message
-    if (!this.app.options.onebot?.quickOperation) {
+    if (!CQBot.config.quickOperation) {
       await this.sendMessage(channelId, content)
       return
     }
