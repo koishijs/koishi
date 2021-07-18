@@ -48,7 +48,25 @@ Database.extend(MemoryDatabase, {
   async get(name, query, fields) {
     const entries = Object.entries(Tables.resolveQuery(name, query))
     return this.$table(name)
-      .filter(row => entries.every(([key, value]) => value.includes(row[key])))
+      .filter(row => {
+        return entries.every(([key, value]) => {
+          if (Array.isArray(value)) {
+            return value.includes(row[key])
+          }
+          if (value instanceof RegExp) {
+            return value.test(row[key])
+          }
+          return Object.entries({
+            $eq: row[key] === value['$eq'],
+            $gt: row[key] > value['$gt'],
+            $gte: row[key] >= value['$gte'],
+            $lt: row[key] < value['$lt'],
+            $lte: row[key] <= value['$lte'],
+          }).map(
+            ([operate, result]) => value[operate] === undefined ? true : result,
+          ).reduce((a, b) => a && b)
+        })
+      })
       .map(row => fields ? pick(row, fields) : row)
       .map(clone)
   },
@@ -147,4 +165,10 @@ Database.extend(MemoryDatabase, {
 
 export function apply(app: App, config: MemoryConfig = {}) {
   app.database = new MemoryDatabase(app, config) as any
+
+  const originalTablesExtend = Tables.extend
+  Tables.extend = <T>(name, meta) => {
+    app.database.memory.$store[name] = []
+    return originalTablesExtend.apply(Tables, [name, meta])
+  }
 }

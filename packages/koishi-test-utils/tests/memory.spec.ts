@@ -53,4 +53,31 @@ describe('Memory Database', () => {
     await expect(db.removeFoo(1)).eventually.to.be.undefined
     await expect(db.getFooCount()).eventually.to.equal(2)
   })
+
+  it('compile expr query', async () => {
+    db.memory.$store.foo = []
+
+    await expect(db.createFoo({ bar: 'awesome foo' }))
+      .eventually.to.have.shape({ id: 1 })
+    await expect(db.createFoo({ bar: 'awesome bar' }))
+      .eventually.to.have.shape({ id: 2 })
+    await expect(db.createFoo({ bar: 'awesome foo bar' }))
+      .eventually.to.have.shape({ id: 3 })
+
+    await expect(db.get('foo', {
+      id: { $eq: 1 },
+    })).eventually.to
+      .have.nested.property('[0].bar')
+      .equal('awesome foo')
+
+    await expect(db.get('foo', {
+      id: { $gt: 1 },
+    })).eventually.to
+      .have.nested.property('[0].bar')
+      .equal('awesome bar')
+
+    await expect(db.get('foo', {
+      id: { $lt: 1 },
+    })).eventually.length(0)
+  })
 })
