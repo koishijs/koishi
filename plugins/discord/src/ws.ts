@@ -9,7 +9,7 @@ const logger = new Logger('discord')
 /** https://discord.com/developers/docs/topics/gateway */
 export default class WsClient extends Adapter.WsClient<'discord'> {
   constructor(app: App) {
-    super(app, DiscordBot, app.options.discord)
+    super(app, DiscordBot, DiscordBot.config)
   }
 
   async prepare() {

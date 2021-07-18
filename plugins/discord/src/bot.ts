@@ -1,12 +1,31 @@
 /* eslint-disable camelcase */
 
-import axios, { Method } from 'axios'
-import { Bot, MessageInfo, segment } from 'koishi'
+import axios, { AxiosRequestConfig, Method } from 'axios'
+import { Adapter, Bot, MessageInfo, segment } from 'koishi'
 import * as DC from './types'
 import { adaptChannel, adaptGroup, adaptMessage, adaptUser } from './utils'
 import { readFileSync } from 'fs'
 import FormData from 'form-data'
 import FileType from 'file-type'
+
+export interface Config extends Adapter.WsClientOptions {
+  endpoint?: string
+  axiosConfig?: AxiosRequestConfig
+  /**
+   * 发送外链资源时采用的方法
+   * - download：先下载后发送
+   * - direct：直接发送链接
+   * - auto：发送一个 HEAD 请求，如果返回的 Content-Type 正确，则直接发送链接，否则先下载后发送（默认）
+   */
+  handleExternalAsset?: HandleExternalAsset
+  /**
+   * 发送图文等混合内容时采用的方法
+   * - separate：将每个不同形式的内容分开发送
+   * - attach：图片前如果有文本内容，则将文本作为图片的附带信息进行发送
+   * - auto：如果图片本身采用直接发送则与前面的文本分开，否则将文本作为图片的附带信息发送（默认）
+   */
+  handleMixedContent?: HandleMixedContent
+}
 
 export type HandleExternalAsset = 'auto' | 'download' | 'direct'
 export type HandleMixedContent = 'auto' | 'separate' | 'attach'
@@ -24,19 +43,21 @@ export class SenderError extends Error {
 }
 
 export class DiscordBot extends Bot<'discord'> {
+  static config: Config = {}
+
   _d = 0
   version = 'discord'
   _ping: NodeJS.Timeout
   _sessionId: string = ''
 
   async request<T = any>(method: Method, path: string, data?: any, exHeaders?: any): Promise<T> {
-    const { axiosConfig, discord = {} } = this.app.options
-    const endpoint = discord.endpoint || 'https://discord.com/api/v8'
+    const { axiosConfig } = this.app.options
+    const endpoint = DiscordBot.config.endpoint || 'https://discord.com/api/v8'
     const url = `${endpoint}${path}`
     try {
       const response = await axios({
         ...axiosConfig,
-        ...discord.axiosConfig,
+        ...DiscordBot.config.axiosConfig,
         method,
         url,
         headers: {
@@ -84,9 +105,10 @@ export class DiscordBot extends Bot<'discord'> {
   }
 
   private async _sendAsset(requestUrl: string, type: string, data: Record<string, string>, addition: Record<string, any>) {
-    const { axiosConfig, discord = {} } = this.app.options
+    const { axiosConfig } = this.app.options
+    const { handleMixedContent, handleExternalAsset } = DiscordBot.config
 
-    if (discord.handleMixedContent === 'separate' && addition.content) {
+    if (handleMixedContent === 'separate' && addition.content) {
       await this._sendContent(requestUrl, addition.content, addition)
       addition.content = ''
     }
@@ -108,7 +130,7 @@ export class DiscordBot extends Bot<'discord'> {
     const sendDownload = async () => {
       const a = await axios.get(data.url, {
         ...axiosConfig,
-        ...discord.axiosConfig,
+        ...DiscordBot.config.axiosConfig,
         responseType: 'arraybuffer',
         headers: {
           accept: type + '/*',
@@ -117,8 +139,8 @@ export class DiscordBot extends Bot<'discord'> {
       return this._sendEmbed(requestUrl, a.data, addition)
     }
 
-    const mode = data.mode as HandleExternalAsset || discord.handleExternalAsset
-    if (mode === 'download' || discord.handleMixedContent === 'attach' && addition.content) {
+    const mode = data.mode as HandleExternalAsset || handleExternalAsset
+    if (mode === 'download' || handleMixedContent === 'attach' && addition.content) {
       return sendDownload()
     } else if (mode === 'direct') {
       return sendDirect()
@@ -127,7 +149,7 @@ export class DiscordBot extends Bot<'discord'> {
     // auto mode
     await axios.head(data.url, {
       ...axiosConfig,
-      ...discord.axiosConfig,
+      ...DiscordBot.config.axiosConfig,
       headers: {
         accept: type + '/*',
       },
