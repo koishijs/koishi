@@ -1,4 +1,4 @@
-import { App, Bot, Adapter, Logger, assertProperty, trimSlash, sanitize } from 'koishi'
+import { App, Bot, Adapter, Logger, assertProperty } from 'koishi'
 import { KaiheilaBot } from './bot'
 import { adaptSession } from './utils'
 
@@ -8,9 +8,6 @@ export default class HttpServer extends Adapter<'kaiheila'> {
   constructor(app: App) {
     assertProperty(app.options, 'port')
     super(app, KaiheilaBot)
-    const config = this.app.options.kaiheila ||= {}
-    config.path = sanitize(config.path || '/kaiheila')
-    config.endpoint = trimSlash(config.endpoint || 'https://www.kaiheila.cn/api/v3')
   }
 
   private async _listen(bot: KaiheilaBot) {
@@ -19,8 +16,7 @@ export default class HttpServer extends Adapter<'kaiheila'> {
   }
 
   async start() {
-    const { kaiheila = {} } = this.app.options
-    const { path = '' } = kaiheila
+    const { path = '' } = KaiheilaBot.config
     this.app.router.post(path, (ctx) => {
       const { body } = ctx.request
       logger.debug('receive %o', body)

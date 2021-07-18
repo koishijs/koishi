@@ -1,11 +1,17 @@
 /* eslint-disable quote-props */
 
-import { AuthorInfo, Bot, Session, camelize, segment, renameProperty, snakeCase } from 'koishi'
+import { AuthorInfo, Bot, Session, camelize, segment, renameProperty, snakeCase, Adapter } from 'koishi'
 import axios, { Method } from 'axios'
 import * as KHL from './types'
 import { adaptGroup, adaptAuthor, adaptUser } from './utils'
 import FormData from 'form-data'
 import { createReadStream } from 'fs'
+
+export interface Config extends Adapter.WsClientOptions {
+  path?: string
+  endpoint?: string
+  attachMode?: 'separate' | 'card' | 'mixed'
+}
 
 export interface KaiheilaMessageInfo {
   channelName?: string
@@ -21,13 +27,15 @@ const attachmentTypes = ['image', 'video', 'audio', 'file']
 type SendHandle = [string, KHL.MessageParams, Session<never, never, 'kaiheila', 'send'>]
 
 export class KaiheilaBot extends Bot {
+  static config: Config = {}
+
   _sn = 0
   _ping: NodeJS.Timeout
   _heartbeat: NodeJS.Timeout
   version = 'kaiheila'
 
   async request<T = any>(method: Method, path: string, data: any = {}, headers: any = {}): Promise<T> {
-    const url = `${this.app.options.kaiheila.endpoint}${path}`
+    const url = `${KaiheilaBot.config.endpoint}${path}`
     headers = {
       'Authorization': `Bot ${this.token}`,
       'Content-Type': 'application/json',
@@ -201,7 +209,7 @@ export class KaiheilaBot extends Bot {
       chain.shift()
     }
 
-    const { attachMode } = this.app.options.kaiheila
+    const { attachMode } = KaiheilaBot.config
     const hasAttachment = chain.some(node => attachmentTypes.includes(node.type))
     const useCard = hasAttachment && (attachMode === 'card' || attachMode === 'mixed' && chain.length > 1)
 

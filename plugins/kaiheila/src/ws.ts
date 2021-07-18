@@ -1,4 +1,4 @@
-import { App, Adapter, Bot, Logger, Time, trimSlash, sanitize } from 'koishi'
+import { App, Adapter, Bot, Logger, Time } from 'koishi'
 import { KaiheilaBot } from './bot'
 import { adaptSession } from './utils'
 import { Payload, Signal } from './types'
@@ -10,10 +10,7 @@ const heartbeatIntervals = [6, 2, 4]
 
 export default class WsClient extends Adapter.WsClient<'kaiheila'> {
   constructor(app: App) {
-    super(app, KaiheilaBot, app.options.kaiheila)
-    const config = this.app.options.kaiheila ||= {}
-    config.path = sanitize(config.path || '/kaiheila')
-    config.endpoint = trimSlash(config.endpoint || 'https://www.kaiheila.cn/api/v3')
+    super(app, KaiheilaBot, KaiheilaBot.config)
   }
 
   async prepare(bot: KaiheilaBot) {
