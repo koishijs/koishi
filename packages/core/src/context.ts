@@ -1,7 +1,7 @@
 import { Logger, defineProperty, remove, segment, Random } from '@koishijs/utils'
 import { Command } from './command'
 import { Session } from './session'
-import { User, Channel, Database, Assets } from './database'
+import { User, Channel, Database, Assets, Cache } from './database'
 import { Argv } from './parser'
 import { Platform, Bot } from './adapter'
 import { App } from './app'
@@ -551,11 +551,13 @@ export class Context {
 
 Context.delegate('database')
 Context.delegate('assets')
+Context.delegate('cache')
 
 export namespace Context {
   export interface Delegates {
     database: Database
     assets: Assets
+    cache: Cache
   }
 }
 

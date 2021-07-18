@@ -1,4 +1,4 @@
-import { simplify, defineProperty, Time, Observed, coerce, escapeRegExp, makeArray, template, trimSlash, merge } from '@koishijs/utils'
+import { simplify, defineProperty, Time, coerce, escapeRegExp, makeArray, template, trimSlash, merge } from '@koishijs/utils'
 import { Context, Middleware, NextFunction, Plugin } from './context'
 import { Argv } from './parser'
 import { BotOptions, Adapter, createBots } from './adapter'
@@ -6,9 +6,7 @@ import { Channel, User } from './database'
 import validate, { Command } from './command'
 import { Session } from './session'
 import help, { getCommandNames } from './help'
-import LruCache from 'lru-cache'
 import { AxiosRequestConfig } from 'axios'
-import { Server } from 'http'
 
 export interface DelayOptions {
   character?: number
@@ -28,10 +26,6 @@ export interface AppOptions extends BotOptions {
   delay?: DelayOptions
   autoAssign?: boolean | ((session: Session) => boolean)
   autoAuthorize?: number | ((session: Session) => number)
-  userCacheAge?: number
-  userCacheLength?: number
-  channelCacheLength?: number
-  channelCacheAge?: number
   minSimilarity?: number
   selfUrl?: string
   axiosConfig?: AxiosRequestConfig
@@ -57,8 +51,6 @@ export class App extends Context {
   _commands: CommandMap = new Map<string, Command>() as never
   _shortcuts: Command.Shortcut[] = []
   _hooks: Record<keyof any, [Context, (...args: any[]) => any][]> = {}
-  _userCache: Record<string, LruCache<string, Observed<Partial<User>, Promise<void>>>>
-  _channelCache: LruCache<string, Observed<Partial<Channel>, Promise<void>>>
   _sessions: Record<string, Session> = {}
 
   private _nameRE: RegExp
@@ -66,8 +58,6 @@ export class App extends Context {
   static defaultConfig: AppOptions = {
     maxListeners: 64,
     prettyErrors: true,
-    userCacheAge: Time.minute,
-    channelCacheAge: 5 * Time.minute,
     autoAssign: true,
     autoAuthorize: 1,
     minSimilarity: 0.4,
@@ -90,12 +80,6 @@ export class App extends Context {
       children: [],
       disposables: [],
     })
-
-    defineProperty(this, '_userCache', {})
-    defineProperty(this, '_channelCache', new LruCache({
-      max: options.channelCacheLength,
-      maxAge: options.channelCacheAge,
-    }))
 
     for (const bot of options.bots) {
       Adapter.from(this, bot).create(bot)

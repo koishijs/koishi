@@ -230,13 +230,13 @@ export class Session<
       }
       if (fieldSet.size) {
         const data = await this.getChannel(channelId, '', [...fieldSet])
-        this.app._channelCache.set(this.cid, channel._merge(data))
+        await this.app.cache?.set('channel', this.cid, channel._merge(data))
       }
       return channel as any
     }
 
     // 如果存在满足可用的缓存数据，使用缓存代替数据获取
-    const cache = this.app._channelCache.get(this.cid)
+    const cache = await this.app.cache?.get('channel', this.cid)
     const fieldArray = [...fieldSet]
     const hasActiveCache = cache && contain(Object.keys(cache), fieldArray)
     if (hasActiveCache) return this.channel = cache as any
@@ -245,7 +245,7 @@ export class Session<
     const assignee = this.resolveValue(this.app.options.autoAssign) ? this.selfId : ''
     const data = await this.getChannel(channelId, assignee, fieldArray)
     const newChannel = observe(data, diff => this.database.setChannel(platform, channelId, diff), `channel ${this.cid}`)
-    this.app._channelCache.set(this.cid, newChannel)
+    await this.app.cache?.set('channel', this.cid, newChannel)
     return this.channel = newChannel
   }
 
@@ -265,14 +265,6 @@ export class Session<
     const fieldSet = new Set<User.Field>(fields)
     const { userId, user } = this
 
-    let userCache = this.app._userCache[this.platform]
-    if (!userCache) {
-      userCache = this.app._userCache[this.platform] = new LruCache({
-        max: this.app.options.userCacheLength,
-        maxAge: this.app.options.userCacheAge,
-      })
-    }
-
     // 对于已经绑定可观测用户的，判断字段是否需要自动补充
     if (user && !this.author?.anonymous) {
       for (const key in user) {
@@ -280,7 +272,7 @@ export class Session<
       }
       if (fieldSet.size) {
         const data = await this.getUser(userId, 0, [...fieldSet])
-        userCache.set(userId, user._merge(data))
+        await this.app.cache?.set('user', this.uid, user._merge(data))
       }
     }
 
@@ -295,7 +287,7 @@ export class Session<
     }
 
     // 如果存在满足可用的缓存数据，使用缓存代替数据获取
-    const cache = userCache.get(userId)
+    const cache = await this.app.cache?.get('user', this.uid)
     const fieldArray = [...fieldSet]
     const hasActiveCache = cache && contain(Object.keys(cache), fieldArray)
     if (hasActiveCache) return this.user = cache as any
@@ -303,7 +295,7 @@ export class Session<
     // 绑定一个新的可观测用户实例
     const data = await this.getUser(userId, this.resolveValue(this.app.options.autoAuthorize), fieldArray)
     const newUser = observe(data, diff => this.database.setUser(this.platform, userId, diff), `user ${this.uid}`)
-    userCache.set(userId, newUser)
+    await this.app.cache?.set('user', this.uid, newUser)
     return this.user = newUser
   }
 

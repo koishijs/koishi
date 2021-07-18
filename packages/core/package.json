@@ -32,10 +32,8 @@
     "@koishijs/test-utils": "^7.0.0-alpha.0"
   },
   "dependencies": {
-    "@types/lru-cache": "^5.1.0",
     "@types/ws": "^7.4.2",
     "axios": "^0.21.1",
-    "fastest-levenshtein": "^1.0.12",
-    "lru-cache": "^6.0.0"
+    "fastest-levenshtein": "^1.0.12"
   }
 }
