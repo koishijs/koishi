@@ -1,4 +1,3 @@
-import LruCache from 'lru-cache'
 import { distance } from 'fastest-levenshtein'
 import { User, Channel, TableType, Tables } from './database'
 import { Command } from './command'
@@ -103,7 +102,6 @@ export class Session<
   readonly app: App
   readonly bot: Bot.Instance<P>
   readonly sid: string
-  uid: string
   cid: string
   gid: string
 
@@ -126,13 +124,16 @@ export class Session<
     defineProperty(this, 'user', null)
     defineProperty(this, 'channel', null)
     defineProperty(this, 'sid', `${this.platform}:${this.selfId}`)
-    defineProperty(this, 'uid', `${this.platform}:${this.userId}`)
     defineProperty(this, 'cid', `${this.platform}:${this.channelId}`)
     defineProperty(this, 'gid', `${this.platform}:${this.groupId}`)
     defineProperty(this, 'bot', app.bots[this.sid])
     defineProperty(this, 'id', Random.id())
     defineProperty(this, '_queued', Promise.resolve())
     defineProperty(this, '_hooks', [])
+  }
+
+  get uid() {
+    return `${this.platform}:${this.userId}`
   }
 
   toJSON(): Partial<Session> {

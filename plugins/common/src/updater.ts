@@ -160,7 +160,6 @@ Command.prototype.adminUser = function (this: Command, callback, autoCreate) {
           if (!autoCreate) {
             session = Object.create(argv.session)
             session.user = target
-            session.uid = options.target
             session.userId = userId
             session.platform = platform
           }

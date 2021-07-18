@@ -73,7 +73,6 @@ export function contextify(ctx: Context) {
 
       if (options.user && options.user !== session.uid) {
         sess.userId = sess.author.userId = Argv.parsePid(options.user)[1]
-        sess.uid = `${sess.platform}:${sess.userId}`
         const user = await sess.observeUser(User.fields)
         if (session.user.authority <= user.authority) {
           return template('internal.low-authority')
