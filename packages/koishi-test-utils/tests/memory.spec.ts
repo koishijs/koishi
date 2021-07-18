@@ -37,9 +37,9 @@ Database.extend('koishi-test-utils', {
 
 describe('Memory Database', () => {
   const db = testDatabase(new App({ mockDatabase: true }))
-  db.memory.$store.foo = []
 
   it('extended methods', async () => {
+    db.memory.$store.foo = []
     await expect(db.getFooCount()).eventually.to.equal(0)
     await expect(db.createFoo({ bar: '0' })).eventually.to.have.shape({ id: 1 })
     await expect(db.getFooCount()).eventually.to.equal(1)
@@ -54,6 +54,7 @@ describe('Memory Database', () => {
   })
 
   it('compile expr query', async () => {
+    db.memory.$store.foo = []
     await expect(db.createFoo({ bar: 'awesome foo' }))
       .eventually.to.have.shape({ id: 1 })
     await expect(db.createFoo({ bar: 'awesome bar' }))
@@ -79,6 +80,7 @@ describe('Memory Database', () => {
   })
 
   it('filter data by regex', async () => {
+    db.memory.$store.foo = []
     await expect(db.createFoo({ bar: 'awesome foo' }))
       .eventually.to.have.shape({ id: 1 })
     await expect(db.createFoo({ bar: 'awesome bar' }))
