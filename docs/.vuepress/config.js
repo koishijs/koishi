@@ -2,6 +2,7 @@ const { remove: removeDiacritics } = require('diacritics')
 const { resolve } = require('path')
 
 module.exports = {
+  base: '/v4',
   title: 'Koishi',
   theme: resolve(__dirname, 'theme'),
   bundler: '@vuepress/vite',
@@ -175,7 +176,7 @@ module.exports = {
     lastUpdated: '上次更新',
     docsRepo: 'koishijs/koishi',
     docsDir: 'docs',
-    docsBranch: 'develop',
+    docsBranch: 'next',
     editLinks: true,
     editLinkText: '帮助我们改善此页面',
 
@@ -184,6 +185,4 @@ module.exports = {
       git: process.env.NODE_ENV === 'production',
     },
   },
-
-  evergreen: () => false,// !context.isProd,
 }
