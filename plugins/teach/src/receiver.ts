@@ -1,5 +1,6 @@
-import { Context, User, Session, NextFunction, Channel, Argv, segment, simplify, noop, escapeRegExp, Random, makeArray } from 'koishi'
+import { Context, User, Session, NextFunction, Channel, Argv, segment, noop, escapeRegExp, Random, makeArray } from 'koishi'
 import { Dialogue, DialogueTest } from './utils'
+import { simplify } from 'simplify-chinese'
 
 declare module '@koishijs/core' {
   interface App {

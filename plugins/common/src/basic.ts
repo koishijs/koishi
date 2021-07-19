@@ -1,4 +1,4 @@
-import { Context, Channel, Session, User, Argv, sleep, segment, template, makeArray, Time, simplify } from 'koishi'
+import { Context, Channel, Session, User, Argv, sleep, segment, template, makeArray, Time } from 'koishi'
 
 template.set('common', {
   'expect-text': '请输入要发送的文本。',
@@ -236,7 +236,7 @@ export interface Respondent {
 
 export function respond(ctx: Context, respondents: Respondent[]) {
   ctx.middleware((session, next) => {
-    const message = simplify(session.content)
+    const message = session.content.trim()
     for (const { match, reply } of respondents) {
       const capture = typeof match === 'string' ? message === match && [message] : message.match(match)
       if (capture) return session.send(typeof reply === 'string' ? reply : reply(...capture))

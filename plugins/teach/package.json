@@ -44,6 +44,7 @@
   },
   "dependencies": {
     "axios": "^0.21.1",
-    "fastest-levenshtein": "^1.0.12"
+    "fastest-levenshtein": "^1.0.12",
+    "simplify-chinese": "^1.1.0"
   }
 }

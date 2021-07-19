@@ -144,7 +144,7 @@ export class Session<
 
   private async _preprocess() {
     let node: segment.Parsed
-    let content = this.app.options.processMessage(this.content)
+    let content = this.content.trim()
     // eslint-disable-next-line no-cond-assign
     if (node = segment.from(content, { type: 'quote', caret: true })) {
       content = content.slice(node.capture[0].length).trimStart()

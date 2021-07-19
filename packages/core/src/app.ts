@@ -1,4 +1,4 @@
-import { simplify, defineProperty, Time, coerce, escapeRegExp, makeArray, template, trimSlash, merge } from '@koishijs/utils'
+import { defineProperty, Time, coerce, escapeRegExp, makeArray, template, trimSlash, merge } from '@koishijs/utils'
 import { Context, Middleware, NextFunction, Plugin } from './context'
 import { Argv } from './parser'
 import { BotOptions, Adapter, createBots } from './adapter'
@@ -22,7 +22,6 @@ export interface AppOptions extends BotOptions {
   nickname?: string | string[]
   maxListeners?: number
   prettyErrors?: boolean
-  processMessage?: (message: string) => string
   delay?: DelayOptions
   autoAssign?: boolean | ((session: Session) => boolean)
   autoAuthorize?: number | ((session: Session) => number)
@@ -61,7 +60,6 @@ export class App extends Context {
     autoAssign: true,
     autoAuthorize: 1,
     minSimilarity: 0.4,
-    processMessage: message => simplify(message.trim()),
     delay: {
       character: 0,
       cancel: 0,

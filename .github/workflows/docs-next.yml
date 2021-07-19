@@ -36,5 +36,5 @@ jobs:
           deploy_key: ${{ secrets.ACTIONS_DEPLOY_KEY_NEXT }}
           publish_dir: docs/.vuepress/dist
           publish_branch: master
-          external_repository: koishijs/next
+          external_repository: koishijs/v4
           force_orphan: true
