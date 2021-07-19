@@ -45,11 +45,11 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
       } else if (/\[CQ:(?!face)/.test(question)) {
         return template('teach.prohibited-cq-code')
       }
-      const { unprefixed, prefixed, appellative } = options.regexp
-        ? { unprefixed: question, prefixed: question, appellative: false }
+      const { unprefixed, appellative } = options.regexp
+        ? { unprefixed: question, appellative: false }
         : config._stripQuestion(question)
       defineProperty(options, 'appellative', appellative)
-      defineProperty(options, '_original', prefixed)
+      defineProperty(options, '_original', question)
       defineProperty(options, 'original', question)
       args[0] = unprefixed
       args[1] = answer

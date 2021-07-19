@@ -82,6 +82,8 @@ describe('Eval Plugin', () => {
     await ses.shouldReply('demo', '123')
     await ses.shouldReply('# ^repeat:(.+) ${"$1".repeat(3)} -x', '问答已添加，编号为 2。')
     await ses.shouldReply('repeat:123', '123123123')
+    await ses.shouldReply('# ^我.+ 对，${"$0".replace(/我/, "你")} -x', '问答已添加，编号为 3。')
+    await ses.shouldReply('我是伞兵', '对，你是伞兵')
   })
 
   it('global', async () => {

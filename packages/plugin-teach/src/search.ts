@@ -165,7 +165,7 @@ async function showSearch(argv: Dialogue.Argv) {
   const { regexp, page = 1, original, pipe, recursive, autoMerge } = options
   const { itemsPerPage = 30, mergeThreshold = 5 } = argv.config
 
-  const test: DialogueTest = { question, answer, regexp, original: options._original }
+  const test: DialogueTest = { question, answer, regexp, original }
   if (app.bail('dialogue/before-search', argv, test)) return
   const dialogues = await app.database.getDialoguesByTest(test)
 
@@ -182,14 +182,14 @@ async function showSearch(argv: Dialogue.Argv) {
     await argv.app.parallel('dialogue/search', argv, test, dialogues)
   }
 
-  if (!question && !answer) {
+  if (!original && !answer) {
     if (!dialogues.length) return '没有搜索到任何回答，尝试切换到其他环境。'
     return sendResult('全部问答如下', formatQuestionAnswers(argv, dialogues))
   }
 
   if (!options.regexp) {
     const suffix = options.regexp !== false ? '，请尝试使用正则表达式匹配' : ''
-    if (!question) {
+    if (!original) {
       if (!dialogues.length) return session.send(`没有搜索到回答“${answer}”${suffix}。`)
       const output = dialogues.map(d => `${formatPrefix(argv, d)}${d.original}`)
       return sendResult(`回答“${answer}”的问题如下`, output)
@@ -227,7 +227,7 @@ async function showSearch(argv: Dialogue.Argv) {
     })
   }
 
-  if (!question) {
+  if (!original) {
     if (!dialogues.length) return `没有搜索到含有正则表达式“${answer}”的回答。`
     return sendResult(`回答正则表达式“${answer}”的搜索结果如下`, output)
   } else if (!answer) {
