@@ -1,5 +1,5 @@
 import { resolve, relative, extname, dirname } from 'path'
-import { App, BotOptions, Context, Plugin, version, coerce, Logger, noop, makeArray, template } from 'koishi'
+import { App, Context, Plugin, version, coerce, Logger, noop, makeArray, template } from 'koishi'
 import { readFileSync, readdirSync } from 'fs'
 import { performance } from 'perf_hooks'
 import { yellow } from 'kleur'
@@ -46,40 +46,40 @@ function isErrorModule(error: any) {
 
 const cache: Record<string, [string, any]> = {}
 
-function loadEcosystem(type: string, name: string) {
-  const key = `${type}:${name}`
-  if (key in cache) return cache[key]
+function loadPlugin(name: string) {
+  if (name in cache) return cache[name]
 
-  const prefix = `koishi-${type}-`
+  const prefix1 = 'koishi-plugin-'
+  const prefix2 = '@koishijs/plugin-'
   const modules: string[] = []
   if ('./'.includes(name[0])) {
     // absolute or relative path
     modules.push(resolve(configDir, name))
-  } else if (name.includes(prefix)) {
+  } else if (name.includes(prefix1) || name.startsWith(prefix2)) {
     // full package path
     modules.push(name)
   } else if (name[0] === '@') {
     // scope package path
-    const index = name.lastIndexOf('/')
-    modules.push(name.slice(0, index + 1) + prefix + name.slice(index + 1), name)
+    const index = name.indexOf('/')
+    modules.push(name.slice(0, index + 1) + prefix1 + name.slice(index + 1), name)
   } else {
     // normal package path
-    modules.push(prefix + name, name)
+    modules.push(prefix1 + name, prefix2 + name)
   }
 
   for (const path of modules) {
     logger.debug('resolving %c', path)
     try {
       const result = require(path)
-      logger.info('apply %s %c', type, result.name || name)
-      return cache[key] = [path, result]
+      logger.info('apply plugin %c', result.name || name)
+      return cache[name] = [path, result]
     } catch (error) {
       if (isErrorModule(error)) {
         throw error
       }
     }
   }
-  throw new Error(`cannot resolve ${type} ${name}`)
+  throw new Error(`cannot resolve plugin ${name}`)
 }
 
 function ensureBaseLevel(config: Logger.LevelConfig, base: number) {
@@ -127,18 +127,6 @@ process.on('message', (data: Message) => {
     bot.sendMessage(channelId, message, groupId)
   }
 })
-
-function loadAdapter(bot: BotOptions) {
-  const [name] = bot.type.split(':', 1)
-  loadEcosystem('adapter', name)
-}
-
-// load adapter
-if (config.type) {
-  loadAdapter(config)
-} else {
-  config.bots.forEach(loadAdapter)
-}
 
 const app = new App(config)
 
@@ -221,7 +209,7 @@ const pluginEntries: [string, any?][] = Array.isArray(config.plugins)
   ? config.plugins.map(item => Array.isArray(item) ? item : [item])
   : Object.entries(config.plugins || {})
 for (const [name, options] of pluginEntries) {
-  const [path, plugin] = loadEcosystem('plugin', name)
+  const [path, plugin] = loadPlugin(name)
   plugins.add(require.resolve(path))
   createContext(options).plugin(plugin, options)
 }
