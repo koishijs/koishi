@@ -12,7 +12,8 @@ export namespace Tables {
   type IndexType = string | number
   type IndexKeys<O, T = any> = string & { [K in keyof O]: O[K] extends T ? K : never }[keyof O]
   type QueryExpr<T> = {
-    $eq?: T
+    $regex?: RegExp
+    $eq?: T; $ne?: T
     $gt?: T; $gte?: T
     $lt?: T; $lte?: T
   }

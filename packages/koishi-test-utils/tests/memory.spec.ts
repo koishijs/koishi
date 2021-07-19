@@ -95,6 +95,14 @@ describe('Memory Database', () => {
       .equal('awesome foo')
 
     await expect(db.get('foo', {
+      bar: {
+        $regex: /^.*foo$/,
+      },
+    })).eventually.to
+      .have.nested.property('[0].bar')
+      .equal('awesome foo')
+
+    await expect(db.get('foo', {
       bar: /^.*foo.*$/,
     })).eventually.length(2)
   })
