@@ -15,6 +15,26 @@ sidebarDepth: 2
 - 所有官方插件都改为 @koishijs/plugin-xxx
 - 所有官方适配器也调整为插件，名称与上一条一致
 
+## 适配器调整
+
+适配器现在通过插件的形式导入了：
+
+```ts koishi.config.js
+// before
+export default {
+  bots: [ /* 机器人配置项 */ ],
+  onebot: { /* 适配器配置项 */ },
+}
+
+// after
+export default {
+  bots: [ /* 机器人配置项 */ ],
+  plugins: {
+    onebot: { /* 适配器配置项 */ },
+  },
+}
+```
+
 ## 其他变动
 
 ### koishi-core
