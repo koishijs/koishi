@@ -23,6 +23,8 @@ export namespace Tables {
     : QueryExpr<T> | T[]
   type QueryMap<O> = {
     [K in keyof O]?: QueryItem<O[K]>
+  } & {
+    $or?: QueryMap<O>[]
   }
   export type Index<T extends TableType> = IndexKeys<Tables[T], IndexType>
   export type Query<T extends TableType> = IndexType[] | QueryMap<Tables[T]>

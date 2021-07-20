@@ -49,33 +49,49 @@ Database.extend(MemoryDatabase, {
     const entries = Object.entries(Tables.resolveQuery(name, query))
     return this.$table(name)
       .filter(row => {
-        return entries.every(([key, value]) => {
-          if (Array.isArray(value)) {
-            return value.includes(row[key])
-          }
-          if (value instanceof RegExp) {
-            return value.test(row[key])
-          }
-          return Object.entries({
-            $regex: value['$regex']
-              ? value['$regex'].test(row[key])
-              : true,
-            $in: value['$in']
-              ? value['$in'].includes(row[key])
-              : true,
-            $nin: value['$nin']
-              ? !value['$nin'].includes(row[key])
-              : true,
-            $ne: row[key] !== value['$ne'],
-            $eq: row[key] === value['$eq'],
-            $gt: row[key] > value['$gt'],
-            $gte: row[key] >= value['$gte'],
-            $lt: row[key] < value['$lt'],
-            $lte: row[key] <= value['$lte'],
-          }).map(
-            ([operate, result]) => value[operate] === undefined ? true : result,
-          ).reduce((a, b) => a && b)
-        })
+        const and = (entries: [string, any][]): boolean => {
+          return entries.every(([key, value]) => {
+            if (key === '$or') {
+              return value.map(
+                item => and(
+                  Object.entries(Tables.resolveQuery(name, item)),
+                ),
+              ).reduce((a, b) => a || b)
+            }
+            if (Array.isArray(value)) {
+              return value.includes(row[key])
+            }
+            if (value instanceof RegExp) {
+              return value.test(row[key])
+            }
+            return Object.entries({
+              get $or() {
+                if (!value['$or']) return true
+                return value.map(
+                  item => and(item),
+                ).reduce((a, b) => a || b)
+              },
+              $regex: value['$regex']
+                ? value['$regex'].test(row[key])
+                : true,
+              $in: value['$in']
+                ? value['$in'].includes(row[key])
+                : true,
+              $nin: value['$nin']
+                ? !value['$nin'].includes(row[key])
+                : true,
+              $ne: row[key] !== value['$ne'],
+              $eq: row[key] === value['$eq'],
+              $gt: row[key] > value['$gt'],
+              $gte: row[key] >= value['$gte'],
+              $lt: row[key] < value['$lt'],
+              $lte: row[key] <= value['$lte'],
+            }).map(
+              ([operate, result]) => value[operate] === undefined ? true : result,
+            ).reduce((a, b) => a && b)
+          })
+        }
+        return and(entries)
       })
       .map(row => fields ? pick(row, fields) : row)
       .map(clone)
