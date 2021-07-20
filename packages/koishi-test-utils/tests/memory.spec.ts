@@ -79,6 +79,24 @@ describe('Memory Database', () => {
     })).eventually.length(0)
   })
 
+  it('filter data by include', async () => {
+    db.memory.$store.foo = []
+    await expect(db.createFoo({ bar: 'awesome foo' }))
+      .eventually.to.have.shape({ id: 1 })
+    await expect(db.createFoo({ bar: 'awesome bar' }))
+      .eventually.to.have.shape({ id: 2 })
+    await expect(db.createFoo({ bar: 'awesome foo bar' }))
+      .eventually.to.have.shape({ id: 3 })
+
+    await expect(db.get('foo', {
+      id: { $in: [1, 2] },
+    })).eventually.length(2)
+
+    await expect(db.get('foo', {
+      id: { $nin: [1] },
+    })).eventually.length(2)
+  })
+
   it('filter data by regex', async () => {
     db.memory.$store.foo = []
     await expect(db.createFoo({ bar: 'awesome foo' }))

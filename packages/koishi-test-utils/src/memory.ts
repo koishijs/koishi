@@ -56,10 +56,16 @@ Database.extend(MemoryDatabase, {
           if (value instanceof RegExp) {
             return value.test(row[key])
           }
-          if (value['$regex'] && value['$regex'] instanceof RegExp) {
-            return value['$regex'].test(row[key])
-          }
           return Object.entries({
+            $regex: value['$regex']
+              ? value['$regex'].test(row[key])
+              : true,
+            $in: value['$in']
+              ? value['$in'].includes(row[key])
+              : true,
+            $nin: value['$nin']
+              ? !value['$nin'].includes(row[key])
+              : true,
             $ne: row[key] !== value['$ne'],
             $eq: row[key] === value['$eq'],
             $gt: row[key] > value['$gt'],
