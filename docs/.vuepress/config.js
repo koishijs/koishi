@@ -1,8 +1,7 @@
-const { remove: removeDiacritics } = require('diacritics')
 const { resolve } = require('path')
 
 module.exports = {
-  base: '/v4',
+  base: '/v4/',
   title: 'Koishi',
   theme: resolve(__dirname, 'theme'),
   bundler: '@vuepress/vite',
@@ -19,22 +18,6 @@ module.exports = {
     // ['meta', { name: 'msapplication-TileColor', content: '#000000' }]
   ],
 
-  markdown: {
-    code: false,
-    slugify (str) {
-      const rControl = /[\u0000-\u001f]/g
-      const rSpecial = /[\s~`!@#$%^&*()\-_+=[\]{}|\\;:"'“”‘’<>,.?/]+/g
-      return removeDiacritics(str)
-        .replace(rControl, '')
-        .replace(/\(.+\)(?=\s|$)/, '')
-        .replace(rSpecial, '-')
-        .replace(/\-{2,}/g, '-')
-        .replace(/^\-+|\-+$/g, '')
-        .replace(/^(\d)/, '_$1')
-        .toLowerCase()
-    },
-  },
-
   themeConfig: {
     logo: '/koishi.png',
     navbar: [
@@ -42,6 +25,7 @@ module.exports = {
       { text: '指南', link: '/guide/starter.html' },
       { text: 'API', link: '/api/' },
       { text: '官方插件', link: '/plugins/' },
+      { text: '演练场', link: '/playground.html' },
       { text: 'GitHub', link: 'https://github.com/koishijs/koishi' },
     ],
     sidebar: {

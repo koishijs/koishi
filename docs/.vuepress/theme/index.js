@@ -1,8 +1,24 @@
+const { remove: removeDiacritics } = require('diacritics')
+const { resolve } = require('path')
+
 module.exports = {
   extends: '@vuepress/theme-default',
+  layouts: resolve(__dirname, '../layouts'),
 
   markdown: {
     code: false,
+    slugify (str) {
+      const rControl = /[\u0000-\u001f]/g
+      const rSpecial = /[\s~`!@#$%^&*()\-_+=[\]{}|\\;:"'“”‘’<>,.?/]+/g
+      return removeDiacritics(str)
+        .replace(rControl, '')
+        .replace(/\(.+\)(?=\s|$)/, '')
+        .replace(rSpecial, '-')
+        .replace(/\-{2,}/g, '-')
+        .replace(/^\-+|\-+$/g, '')
+        .replace(/^(\d)/, '_$1')
+        .toLowerCase()
+    },
   },
 
   plugins: [
