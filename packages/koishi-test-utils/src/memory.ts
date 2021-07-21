@@ -65,12 +65,6 @@ Database.extend(MemoryDatabase, {
               return value.test(row[key])
             }
             return Object.entries({
-              get $or() {
-                if (!value['$or']) return true
-                return value.map(
-                  item => and(item),
-                ).reduce((a, b) => a || b)
-              },
               $regex: value['$regex']
                 ? value['$regex'].test(row[key])
                 : true,
