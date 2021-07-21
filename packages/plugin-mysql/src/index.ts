@@ -38,9 +38,7 @@ export function createFilter<T extends TableType>(name: T, _query: KoishiTables.
         }
         if (val instanceof RegExp) {
           const regexStr = val.toString()
-          return `${escapeKey}${notStr} REGEXP '${
-            regexStr.substring(1, regexStr.length - 1)
-          }'`
+          return `${escapeKey}${notStr} REGEXP '${regexStr.substring(1, regexStr.length - 1)}'`
         }
         return undefined
       }
@@ -50,13 +48,9 @@ export function createFilter<T extends TableType>(name: T, _query: KoishiTables.
         output.push(queryItem)
         continue
       }
-      ['$regex', '$in', '$nin'].filter(
-        key => !!value[key],
-      ).forEach(key => {
+      ['$regex', '$in', '$nin'].filter(key => !!value[key]).forEach(key => {
         const queryItem = genQueryItem(value[key], key === '$nin')
-        if (queryItem) {
-          output.push(queryItem)
-        }
+        if (queryItem) output.push(queryItem)
       })
       output.push(
         ...Object.entries({
@@ -66,11 +60,8 @@ export function createFilter<T extends TableType>(name: T, _query: KoishiTables.
           $gte: '>=',
           $lt: '<',
           $lte: '<=',
-        }).filter(
-          ([key, queryStr]) => !!value[key],
-        ).map(([key, queryStr]) => {
-          return `${escapeKey} ${queryStr} ${value[key]}`
-        }),
+        }).filter(([key, queryStr]) => !!value[key])
+          .map(([key, queryStr]) => `${escapeKey} ${queryStr} ${value[key]}`),
       )
     }
     return output.join(' AND ')
