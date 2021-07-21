@@ -3,12 +3,6 @@ import { Tables } from 'koishi-core'
 import { createFilter } from 'koishi-plugin-mysql'
 
 declare module 'koishi-core' {
-  interface Database {
-    createFoo(data?: FooData): Promise<FooData>
-    removeFoo(id: number): Promise<void>
-    getFooCount(): Promise<number>
-  }
-
   interface Tables {
     foo: FooData
   }
