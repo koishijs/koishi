@@ -9,7 +9,7 @@ declare module 'mysql' {
   }
 }
 
-type TableType = keyof Tables
+type KoishiTableType = keyof Tables
 
 export interface Tables extends KoishiTables {}
 
@@ -19,7 +19,7 @@ export interface Config extends PoolConfig {}
 
 interface MysqlDatabase extends Database {}
 
-export function escape(value: any, table?: TableType, field?: string) {
+export function escape(value: any, table?: KoishiTableType, field?: string) {
   const type = MysqlDatabase.tables[table]?.[field]
   return mysqlEscape(typeof type === 'object' ? type.stringify(value) : value)
 }
@@ -30,10 +30,10 @@ class MysqlDatabase {
 
   mysql = this
 
-  escape: (value: any, table?: TableType, field?: string) => string
+  escape: (value: any, table?: KoishiTableType, field?: string) => string
   escapeId: (value: string) => string
 
-  inferFields<T extends TableType>(table: T, keys: readonly string[]) {
+  inferFields<T extends KoishiTableType>(table: T, keys: readonly string[]) {
     const types = MysqlDatabase.tables[table] || {}
     return keys.map((key) => {
       const type = types[key]
@@ -82,7 +82,7 @@ class MysqlDatabase {
         const cols = Object.keys(table)
           .filter((key) => typeof table[key] !== 'function')
           .map((key) => `${escapeId(key)} ${MysqlDatabase.Domain.definition(table[key])}`)
-        const { primary, unique, foreign } = KoishiTables.config[name as TableType]
+        const { primary, unique, foreign } = KoishiTables.config[name as KoishiTableType]
         cols.push(`primary key (${escapeId(primary)})`)
         for (const key of unique) {
           cols.push(`unique index (${escapeId(key)})`)
@@ -113,7 +113,7 @@ class MysqlDatabase {
     return keys ? keys.map(key => key.includes('`') ? key : `\`${key}\``).join(',') : '*'
   }
 
-  $in = (table: TableType, key: string, values: readonly any[]) => {
+  $in = (table: KoishiTableType, key: string, values: readonly any[]) => {
     return `${this.escapeId(key)} IN (${values.map(val => this.escape(val, table, key)).join(', ')})`
   }
 
@@ -167,7 +167,7 @@ class MysqlDatabase {
     return this.query(sql, values)
   }
 
-  async create<K extends TableType>(table: K, data: Partial<Tables[K]>): Promise<Tables[K]> {
+  async create<K extends KoishiTableType>(table: K, data: Partial<Tables[K]>): Promise<Tables[K]> {
     const keys = Object.keys(data)
     if (!keys.length) return
     logger.debug(`[create] ${table}: ${data}`)
@@ -178,7 +178,7 @@ class MysqlDatabase {
     return { ...data, id: header.insertId } as any
   }
 
-  async count<K extends TableType>(table: K, conditional?: string) {
+  async count<K extends KoishiTableType>(table: K, conditional?: string) {
     const [{ 'COUNT(*)': count }] = await this.query(`SELECT COUNT(*) FROM ?? ${conditional ? 'WHERE ' + conditional : ''}`, [table])
     return count as number
   }
@@ -193,7 +193,7 @@ MysqlDatabase.prototype.escapeId = escapeId
 
 namespace MysqlDatabase {
   type Declarations = {
-    [T in TableType]?: {
+    [T in KoishiTableType]?: {
       [K in keyof Tables[T]]?: string | (() => string) | Domain<Tables[T][K]>
     }
   }

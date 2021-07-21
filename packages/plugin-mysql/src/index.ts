@@ -1,5 +1,5 @@
 import MysqlDatabase, { Config, escape } from './database'
-import { User, Channel, Database, Context, TableType, Tables } from 'koishi-core'
+import { User, Channel, Database, Context, TableType, Tables as KoishiTables } from 'koishi-core'
 import { difference } from 'koishi-utils'
 import { OkPacket, escapeId } from 'mysql'
 
@@ -18,9 +18,9 @@ declare module 'koishi-core' {
   }
 }
 
-export function createFilter<T extends TableType>(name: T, _query: Tables.Query<T>) {
-  const and = (_query: Tables.Query<T>) => {
-    const query = Tables.resolveQuery(name, _query)
+export function createFilter<T extends TableType>(name: T, _query: KoishiTables.Query<T>) {
+  const and = (_query: KoishiTables.Query<T>) => {
+    const query = KoishiTables.resolveQuery(name, _query)
     const output: string[] = []
     for (const key in query) {
       if (key === '$or') {
