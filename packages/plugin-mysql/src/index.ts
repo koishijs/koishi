@@ -18,15 +18,64 @@ declare module 'koishi-core' {
   }
 }
 
-function createFilter<T extends TableType>(name: T, _query: Tables.Query<T>) {
-  const query = Tables.resolveQuery(name, _query)
-  const output: string[] = []
-  for (const key in query) {
-    const value = query[key]
-    if (!value.length) return '0'
-    output.push(`${escapeId(key)} IN (${value.map(val => escape(val, name, key)).join(', ')})`)
+export function createFilter<T extends TableType>(name: T, _query: Tables.Query<T>) {
+  const and = (_query: Tables.Query<T>) => {
+    const query = Tables.resolveQuery(name, _query)
+    const output: string[] = []
+    for (const key in query) {
+      if (key === '$or') {
+        const value = query[key]
+        output.push(`(${value.map(item => and(item)).join(' OR ')})`)
+        continue
+      }
+      const value = query[key]
+      const escapeKey = escapeId(key)
+      function genQueryItem(val: typeof value, isNot: boolean = false): string {
+        const notStr = isNot ? ' NOT' : ''
+        if (Array.isArray(val)) {
+          if (!val.length) return isNot ? '1' : '0'
+          return `${escapeKey}${notStr} IN (${val.map(val => escape(val, name, key)).join(', ')})`
+        }
+        if (val instanceof RegExp) {
+          const regexStr = val.toString()
+          return `${escapeKey}${notStr} REGEXP '${
+            regexStr.substring(1, regexStr.length - 1)
+          }'`
+        }
+        return undefined
+      }
+
+      const queryItem = genQueryItem(value)
+      if (queryItem) {
+        output.push(queryItem)
+        continue
+      }
+      ['$regex', '$in', '$nin'].filter(
+        key => !!value[key],
+      ).forEach(key => {
+        const queryItem = genQueryItem(value[key], key === '$nin')
+        if (queryItem) {
+          output.push(queryItem)
+        }
+      })
+      output.push(
+        ...Object.entries({
+          $ne: '!=',
+          $eq: '=',
+          $gt: '>',
+          $gte: '>=',
+          $lt: '<',
+          $lte: '<=',
+        }).filter(
+          ([key, queryStr]) => !!value[key],
+        ).map(([key, queryStr]) => {
+          return `${escapeKey} ${queryStr} ${value[key]}`
+        }),
+      )
+    }
+    return output.join(' AND ')
   }
-  return output.join(' AND ')
+  return and(_query)
 }
 
 Database.extend(MysqlDatabase, {
