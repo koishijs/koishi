@@ -81,6 +81,16 @@ describe('Memory Database', () => {
       })).eventually.length(0)
     })
 
+    it('should verify empty array', async () => {
+      await expect(db.get('foo', {
+        id: { $in: [] },
+      })).eventually.length(0)
+
+      await expect(db.get('foo', {
+        id: { $nin: [] },
+      })).eventually.length(3)
+    })
+
     it('filter data by include', async () => {
       await expect(db.get('foo', {
         id: { $in: [1, 2] },
