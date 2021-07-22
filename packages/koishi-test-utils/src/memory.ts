@@ -47,6 +47,22 @@ export class MemoryDatabase {
   }
 }
 
+const queryOperators: ([string, (lVal: any, rVal: any) => boolean] | boolean)[] = Object.entries({
+  $regex: (val: RegExp, rVal) => val.test(rVal),
+  $in: (val: any[], rVal) => val.includes(rVal),
+  $nin: (val: any[], rVal) => !val.includes(rVal),
+  $ne: (val, rVal) => rVal !== val,
+  $eq: (val, rVal) => rVal === val,
+  $gt: (val, rVal) => rVal > val,
+  $gte: (val, rVal) => rVal >= val,
+  $lt: (val, rVal) => rVal < val,
+  $lte: (val, rVal) => rVal <= val,
+})
+
+function doOperate<T0, T1>(operator: string, callback: (lVal: T0, rVal: T1) => boolean, lVal: T0, rVal: T1) {
+  return operator in lVal ? callback(lVal[operator], rVal) : true
+}
+
 Database.extend(MemoryDatabase, {
   async get(name, query, fields) {
     const entries = Object.entries(Tables.resolveQuery(name, query))
@@ -65,25 +81,15 @@ Database.extend(MemoryDatabase, {
             if (value instanceof RegExp) {
               return value.test(row[key])
             }
-            return Object.entries({
-              $regex: value['$regex']
-                ? value['$regex'].test(row[key])
-                : true,
-              $in: value['$in']
-                ? value['$in'].includes(row[key])
-                : true,
-              $nin: value['$nin']
-                ? !value['$nin'].includes(row[key])
-                : true,
-              $ne: row[key] !== value['$ne'],
-              $eq: row[key] === value['$eq'],
-              $gt: row[key] > value['$gt'],
-              $gte: row[key] >= value['$gte'],
-              $lt: row[key] < value['$lt'],
-              $lte: row[key] <= value['$lte'],
+            return queryOperators.reduce((prev, next) => {
+              const [prop, callback] = next as any[]
+              const waitAnd = doOperate(prop, callback, value, row[key])
+              if (typeof prev === 'boolean') return prev && waitAnd
+              if (Array.isArray(prev)) {
+                const [prevProp, prevCallback] = prev
+                return doOperate(prevProp, prevCallback, value, row[key]) && waitAnd
+              }
             })
-              .map(([operate, result]) => value[operate] === undefined ? true : result)
-              .reduce((a, b) => a && b)
           })
         }
         return and(entries)
