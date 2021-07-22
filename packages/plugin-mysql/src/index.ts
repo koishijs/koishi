@@ -1,5 +1,5 @@
 import MysqlDatabase, { Config, escape } from './database'
-import { User, Channel, Database, Context, TableType, Tables as KoishiTables } from 'koishi-core'
+import { User, Channel, Database, Context, TableType, Tables as KoishiTables, Tables } from 'koishi-core'
 import { difference } from 'koishi-utils'
 import { OkPacket, escapeId } from 'mysql'
 
@@ -24,7 +24,7 @@ export function createFilter<T extends TableType>(name: T, _query: KoishiTables.
     const output: string[] = []
     for (const key in query) {
       if (key === '$or') {
-        const value = query[key]
+        const value = query[key] as Tables.QueryMap<Tables[T]>['$or']
         output.push(`(${value.map(item => and(item)).join(' OR ')})`)
         continue
       }
@@ -60,7 +60,7 @@ export function createFilter<T extends TableType>(name: T, _query: KoishiTables.
           $gte: '>=',
           $lt: '<',
           $lte: '<=',
-        }).filter(([key, queryStr]) => !!value[key])
+        }).filter(([key]) => !!value[key])
           .map(([key, queryStr]) => `${escapeKey} ${queryStr} ${value[key]}`),
       )
     }

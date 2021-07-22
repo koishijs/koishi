@@ -78,27 +78,27 @@ describe('Memory Database', () => {
 
       await expect(db.get('foo', {
         id: { $lt: 1 },
-      })).eventually.length(0)
+      })).eventually.to.have.length(0)
     })
 
     it('should verify empty array', async () => {
       await expect(db.get('foo', {
         id: { $in: [] },
-      })).eventually.length(0)
+      })).eventually.to.have.length(0)
 
       await expect(db.get('foo', {
         id: { $nin: [] },
-      })).eventually.length(3)
+      })).eventually.to.have.length(3)
     })
 
     it('filter data by include', async () => {
       await expect(db.get('foo', {
         id: { $in: [1, 2] },
-      })).eventually.length(2)
+      })).eventually.to.have.length(2)
 
       await expect(db.get('foo', {
         id: { $nin: [1] },
-      })).eventually.length(2)
+      })).eventually.to.have.length(2)
     })
 
     it('filter data by regex', async () => {
@@ -118,7 +118,7 @@ describe('Memory Database', () => {
 
       await expect(db.get('foo', {
         bar: /^.*foo.*$/,
-      })).eventually.length(2)
+      })).eventually.to.have.length(2)
     })
 
     it('should verify `$or`', async () => {
@@ -128,7 +128,7 @@ describe('Memory Database', () => {
         }, {
           id: [1, 3],
         }],
-      })).eventually.length(3)
+      })).eventually.to.have.length(3)
 
       await expect(db.get('foo', {
         $or: [{
@@ -136,7 +136,7 @@ describe('Memory Database', () => {
         }, {
           bar: /.*foo.*/,
         }],
-      })).eventually.length(3)
+      })).eventually.to.have.length(3)
 
       await expect(db.get('foo', {
         $or: [{
@@ -144,7 +144,7 @@ describe('Memory Database', () => {
         }, {
           bar: /.*foo$/,
         }],
-      })).eventually.length(3)
+      })).eventually.to.have.length(3)
 
       await expect(db.get('foo', {
         $or: [{
@@ -152,7 +152,7 @@ describe('Memory Database', () => {
         }, {
           bar: /foo.*/,
         }],
-      })).eventually.length(2)
+      })).eventually.to.have.length(2)
     })
 
     it('should verify `$or` and other key', async () => {
@@ -161,14 +161,14 @@ describe('Memory Database', () => {
         $or: [{
           bar: /.*foo/,
         }],
-      })).eventually.length(2)
+      })).eventually.to.have.length(2)
 
       await expect(db.get('foo', {
         bar: /.*foo.*/,
         $or: [{
           bar: /foo.+/,
         }],
-      })).eventually.length(1)
+      })).eventually.to.have.length(1)
     })
   })
 })

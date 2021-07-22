@@ -52,11 +52,9 @@ Database.extend(MemoryDatabase, {
         const and = (entries: [string, any][]): boolean => {
           return entries.every(([key, value]) => {
             if (key === '$or') {
-              return value.map(
-                item => and(
-                  Object.entries(Tables.resolveQuery(name, item)),
-                ),
-              ).reduce((a, b) => a || b)
+              return value
+                .map(item => and(Object.entries(Tables.resolveQuery(name, item))))
+                .reduce((a, b) => a || b)
             }
             if (Array.isArray(value)) {
               return value.includes(row[key])
@@ -80,9 +78,9 @@ Database.extend(MemoryDatabase, {
               $gte: row[key] >= value['$gte'],
               $lt: row[key] < value['$lt'],
               $lte: row[key] <= value['$lte'],
-            }).map(
-              ([operate, result]) => value[operate] === undefined ? true : result,
-            ).reduce((a, b) => a && b)
+            })
+              .map(([operate, result]) => value[operate] === undefined ? true : result)
+              .reduce((a, b) => a && b)
           })
         }
         return and(entries)

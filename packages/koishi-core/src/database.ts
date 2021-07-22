@@ -11,17 +11,22 @@ export interface Tables {
 export namespace Tables {
   type IndexType = string | number
   type IndexKeys<O, T = any> = string & { [K in keyof O]: O[K] extends T ? K : never }[keyof O]
-  type QueryExpr<T> = {
+  interface QueryExpr<T> {
     $regex?: RegExp
-    $in?: T[]; $nin?: T[]
-    $eq?: T; $ne?: T
-    $gt?: T; $gte?: T
-    $lt?: T; $lte?: T
+    $in?: T[]
+    $nin?: T[]
+    $eq?: T
+    $ne?: T
+    $gt?: T
+    $gte?: T
+    $lt?: T
+    $lte?: T
   }
-  type QueryItem<T> = T extends string
-    ? QueryExpr<T> | T[] | RegExp
-    : QueryExpr<T> | T[]
-  type QueryMap<O> = {
+  // type QueryItem<T> = T extends string
+  //   ? QueryExpr<T> | T[] | RegExp
+  //   : QueryExpr<T> | T[]
+  type QueryItem<T> = QueryExpr<T> | T[] | IndexType[] | RegExp
+  export type QueryMap<O> = {
     [K in keyof O]?: QueryItem<O[K]>
   } & {
     $or?: QueryMap<O>[]
@@ -48,10 +53,10 @@ export namespace Tables {
   extend('user')
   extend('channel')
 
-  export function resolveQuery<T extends TableType>(name: T, query: Query<T>): Query<T> {
-    if (!Array.isArray(query)) return query
+  export function resolveQuery<T extends TableType>(name: T, query: Query<T>): QueryMap<T> {
+    if (!Array.isArray(query)) return query as QueryMap<T>
     const { primary } = config[name]
-    return { [primary]: query } as Query<T>
+    return { [primary]: query } as QueryMap<T>
   }
 }
 
