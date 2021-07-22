@@ -39,8 +39,12 @@ describe('Memory Database', () => {
   const db = testDatabase(new App({ mockDatabase: true }))
 
   describe('base support', () => {
-    it('extended methods', async () => {
+    after(() => {
+      // clear memory data, prevent the following single test from being affected
       db.memory.$store.foo = []
+    })
+
+    it('extended methods', async () => {
       await expect(db.getFooCount()).eventually.to.equal(0)
       await expect(db.createFoo({ bar: '0' })).eventually.to.have.shape({ id: 1 })
       await expect(db.getFooCount()).eventually.to.equal(1)
@@ -56,11 +60,14 @@ describe('Memory Database', () => {
   })
 
   describe('complex expression', () => {
-    beforeEach(async () => {
+    before(async () => {
+      await db.createFoo({ bar: 'awesome foo' })
+      await db.createFoo({ bar: 'awesome bar' })
+      await db.createFoo({ bar: 'awesome foo bar' })
+    })
+    after(() => {
+      // clear memory data, prevent the following single test from being affected
       db.memory.$store.foo = []
-      db.createFoo({ bar: 'awesome foo' })
-      db.createFoo({ bar: 'awesome bar' })
-      db.createFoo({ bar: 'awesome foo bar' })
     })
 
     it('compile expr query', async () => {

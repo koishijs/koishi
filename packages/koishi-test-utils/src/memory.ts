@@ -36,6 +36,9 @@ export class MemoryDatabase {
   constructor(public app: App, public config: MemoryConfig) {}
 
   $table<K extends TableType>(table: K): any[] {
+    if (!this.$store[table]) {
+      this.$store[table] = []
+    }
     return this.$store[table]
   }
 
@@ -183,10 +186,4 @@ Database.extend(MemoryDatabase, {
 
 export function apply(app: App, config: MemoryConfig = {}) {
   app.database = new MemoryDatabase(app, config) as any
-
-  const originalTablesExtend = Tables.extend
-  Tables.extend = <T>(name, meta) => {
-    app.database.memory.$store[name] = []
-    return originalTablesExtend.apply(Tables, [name, meta])
-  }
 }
