@@ -8,8 +8,8 @@ import { editor as monaco } from 'monaco-editor'
 import { ref, watch, onMounted, onBeforeUnmount, defineProps, defineEmit, withDefaults } from 'vue'
 import editorWorker from 'monaco-editor/esm/vs/editor/editor.worker?worker'
 import tsWorker from 'monaco-editor/esm/vs/language/typescript/ts.worker?worker'
-import OneDark from './onedark.json'
-import OneLight from './onelight.json'
+import OneDark from './onedark.yaml'
+import OneLight from './onelight.yaml'
 
 window.MonacoEnvironment = {
   getWorker(_, label) {
@@ -70,6 +70,10 @@ watch(() => props.theme, (newVal) => {
 
 onMounted(() => {
   const options = {
+    fontSize: 16,
+    minimap: {
+      enabled: false,
+    },
     value: props.modelValue,
     theme: props.theme,
     language: props.language,
@@ -80,7 +84,7 @@ onMounted(() => {
     diffEditor = monaco.createDiffEditor(root.value, options)
     diffEditor.setModel({
       original: monaco.createModel(props.original, props.language),
-      modified: monaco.createModel(props.modelValue, props.language)
+      modified: monaco.createModel(props.modelValue, props.language),
     })
     codeEditor = diffEditor.getModifiedEditor()
     origEditor = diffEditor.getOriginalEditor()
@@ -113,5 +117,14 @@ onBeforeUnmount(() => {
 
 monaco.defineTheme('onedark', OneDark)
 monaco.defineTheme('onelight', OneLight)
+
+if (import.meta.hot) {
+  import.meta.hot.accept('./onedark.yaml', (OneDark) => {
+    monaco.defineTheme('onedark', OneDark)
+  })
+  import.meta.hot.accept('./onelight.yaml', (OneDark) => {
+    monaco.defineTheme('onelight', OneLight)
+  })
+}
 
 </script>

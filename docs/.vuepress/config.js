@@ -169,4 +169,12 @@ module.exports = {
       git: process.env.NODE_ENV === 'production',
     },
   },
+
+  bundlerConfig: {
+    viteOptions: {
+      plugins: [
+        require('@rollup/plugin-yaml')(),
+      ],
+    },
+  },
 }

@@ -20,9 +20,9 @@
       </template>
     </t-sidebar>
 
-    <main class="playground">
+    <main class="playground" :style="{ backgroundColor }">
       <monaco-editor class="editor" :theme="theme" language="typescript"/>
-      {{ theme }}
+      <div class="chat"></div>
     </main>
   </div>
 </template>
@@ -42,8 +42,9 @@ function toggleSidebar(to?: boolean) {
   isSidebarOpen.value = typeof to === 'boolean' ? to : !isSidebarOpen.value
 }
 
-const isDarkMode = useDarkMode(true)
+const isDarkMode = useDarkMode()
 const theme = computed(() => isDarkMode.value ? 'onedark' : 'onelight')
+const backgroundColor = computed(() => isDarkMode.value ? '#282C34' : '#FAFAFA')
 
 </script>
 
@@ -61,6 +62,13 @@ main.playground {
     height: 100%;
     left: 0;
     right: 50%;
+  }
+
+  .chat {
+    position: absolute;
+    height: 100%;
+    left: 50%;
+    right: 0;
   }
 }
 
