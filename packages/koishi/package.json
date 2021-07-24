@@ -1,7 +1,7 @@
 {
   "name": "koishi",
   "description": "A QQ bot framework based on CQHTTP",
-  "version": "3.12.2",
+  "version": "3.12.3",
   "main": "index.js",
   "typings": "index.d.ts",
   "engines": {
@@ -40,7 +40,7 @@
     "chokidar": "^3.5.1",
     "js-yaml": "^4.1.0",
     "kleur": "^4.1.4",
-    "koishi-core": "^3.12.2",
+    "koishi-core": "^3.12.3",
     "koishi-utils": "^4.2.3",
     "prompts": "^2.4.1"
   }

@@ -36,7 +36,7 @@
     "koishi-test-utils": "^6.0.1"
   },
   "peerDependencies": {
-    "koishi-core": "^3.12.2"
+    "koishi-core": "^3.12.3"
   },
   "dependencies": {
     "@octokit/webhooks-types": "^3.75.2",

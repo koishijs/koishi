@@ -1,7 +1,6 @@
 import { Context, template, defineProperty } from 'koishi-core'
 import { Dialogue } from './utils'
 import { create, update } from './update'
-import { RegExpValidator } from 'regexpp'
 import { formatQuestionAnswers } from './search'
 import { distance } from 'fastest-levenshtein'
 
@@ -46,11 +45,11 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
       } else if (/\[CQ:(?!face)/.test(question)) {
         return template('teach.prohibited-cq-code')
       }
-      const { unprefixed, prefixed, appellative } = options.regexp
-        ? { unprefixed: question, prefixed: question, appellative: false }
+      const { unprefixed, appellative } = options.regexp
+        ? { unprefixed: question, appellative: false }
         : config._stripQuestion(question)
       defineProperty(options, 'appellative', appellative)
-      defineProperty(options, '_original', prefixed)
+      defineProperty(options, '_original', question)
       defineProperty(options, 'original', question)
       args[0] = unprefixed
       args[1] = answer
@@ -68,8 +67,6 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
   function maybeRegExp(question: string) {
     return question.startsWith('^') || question.endsWith('$')
   }
-
-  const validator = new RegExpValidator(config.validateRegExp)
 
   ctx.before('dialogue/modify', async (argv) => {
     const { options, session, target, dialogues, args } = argv
@@ -107,9 +104,9 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
 
     // 检测正则表达式的合法性
     if (regexp || regexp !== false && question && dialogues.some(d => d.flag & Dialogue.Flag.regexp)) {
-      const questions = question ? [question as string] : dialogues.map(d => d.question)
+      const questions = question ? [question] : dialogues.map(d => d.question)
       try {
-        questions.map(q => validator.validatePattern(q))
+        questions.forEach(q => new RegExp(q))
       } catch (error) {
         return template('teach.illegal-regexp')
       }
