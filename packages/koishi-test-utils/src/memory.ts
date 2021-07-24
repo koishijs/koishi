@@ -59,30 +59,29 @@ const queryOperators: ([string, (lVal: any, rVal: any) => boolean])[] = Object.e
   $lte: (val, rVal) => rVal <= val,
 })
 
-function doOperate<T0, T1>(operator: string, callback: (lVal: T0, rVal: T1) => boolean, lVal: T0, rVal: T1) {
-  return operator in lVal ? callback(lVal[operator], rVal) : true
-}
-
 Database.extend(MemoryDatabase, {
   async get(name, query, fields) {
-    const and = (fieldQuery: typeof query, row): boolean => {
-      const entries = Object.entries(Tables.resolveQuery(name, fieldQuery))
+    function execute(query: Tables.Query<keyof Tables>, data: any): boolean {
+      const entries: [string, any][] = Object.entries(Tables.resolveQuery(name, query))
       return entries.every(([key, value]) => {
-        if (key === '$or') {
-          return value
-            .reduce((a, b) => a || and(b, row), false)
+        if (key === '$and') {
+          return (value as Tables.QueryExpr[]).reduce((a, b) => a && execute(b, data), true)
+        } else if (key === '$or') {
+          return (value as Tables.QueryExpr[]).reduce((a, b) => a || execute(b, data), false)
+        } else if (key === '$not') {
+          return !execute(query, data)
+        } else if (Array.isArray(value)) {
+          return value.includes(data[key])
+        } else if (value instanceof RegExp) {
+          return value.test(data[key])
         }
-        if (Array.isArray(value)) {
-          return value.includes(row[key])
-        }
-        if (value instanceof RegExp) {
-          return value.test(row[key])
-        }
-        return queryOperators.reduce((prev, [prop, callback]) => prev && doOperate(prop, callback, value, row[key]), true)
+        return queryOperators.reduce((prev, [prop, callback]) => {
+          return prev && (prop in value ? callback(value[prop], data[key]) : true)
+        }, true)
       })
     }
     return this.$table(name)
-      .filter(row => and(query, row))
+      .filter(row => execute(query, row))
       .map(row => fields ? pick(row, fields) : row)
       .map(clone)
   },

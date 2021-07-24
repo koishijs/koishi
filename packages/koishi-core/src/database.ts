@@ -12,7 +12,7 @@ export namespace Tables {
   type IndexType = string | number
   type IndexKeys<O, T = any> = string & { [K in keyof O]: O[K] extends T ? K : never }[keyof O]
 
-  interface FieldQueryExpr<T> {
+  export interface FieldQueryExpr<T> {
     $regex?: RegExp
     $in?: T[]
     $nin?: T[]
@@ -24,16 +24,20 @@ export namespace Tables {
     $lte?: T
   }
 
-  interface LogicalQueryExpr<T> {
-    $or: QueryExpr<T>[]
+  export interface LogicalQueryExpr<T> {
+    $or?: QueryExpr<T>[]
+    $and?: QueryExpr<T>[]
+    $not?: QueryExpr<T>
   }
 
-  type FieldQuery<T> = FieldQueryExpr<T> | T[] | RegExp
-  export type QueryExpr<O> = LogicalQueryExpr<O> & {
-    [K in keyof O]?: FieldQuery<O[K]>
+  type QueryShorthand<T = IndexType> = T[] | RegExp
+  type FieldQuery<T> = FieldQueryExpr<T> | QueryShorthand<T>
+  export type QueryExpr<T = any> = LogicalQueryExpr<T> & {
+    [K in keyof T]?: FieldQuery<T[K]>
   }
+
   export type Index<T extends TableType> = IndexKeys<Tables[T], IndexType>
-  export type Query<T extends TableType> = IndexType[] | QueryExpr<Tables[T]>
+  export type Query<T extends TableType> = QueryExpr<Tables[T]> | QueryShorthand
   export type Field<T extends TableType> = string & keyof Tables[T]
 
   interface Meta<O> {
@@ -55,9 +59,9 @@ export namespace Tables {
   extend('channel')
 
   export function resolveQuery<T extends TableType>(name: T, query: Query<T>): QueryExpr<T> {
-    if (!Array.isArray(query)) return query as QueryExpr<T>
+    if (!Array.isArray(query) && !(query instanceof RegExp)) return query as any
     const { primary } = config[name]
-    return { [primary]: query } as QueryExpr<T>
+    return { [primary]: query } as any
   }
 }
 
