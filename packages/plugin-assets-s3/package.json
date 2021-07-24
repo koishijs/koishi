@@ -8,6 +8,10 @@
     "lib"
   ],
   "author": "Nanahira <nanahira@momobko.com>",
+  "maintainers": [
+    "Shigma <1700011071@pku.edu.cn>",
+    "Nanahira <nanahira@momobko.com>"
+  ],
   "license": "MIT",
   "repository": {
     "type": "git",
