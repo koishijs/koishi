@@ -23,9 +23,11 @@ export namespace Tables {
     $lt?: T
     $lte?: T
   }
+
   interface LogicalQueryExpr<T> {
     $or: QueryExpr<T>[]
   }
+
   type FieldQuery<T> = FieldQueryExpr<T> | T[] | RegExp
   export type QueryExpr<O> = LogicalQueryExpr<O> & {
     [K in keyof O]?: FieldQuery<O[K]>
