@@ -65,27 +65,24 @@ function doOperate<T0, T1>(operator: string, callback: (lVal: T0, rVal: T1) => b
 
 Database.extend(MemoryDatabase, {
   async get(name, query, fields) {
-    const entries = Object.entries(Tables.resolveQuery(name, query))
-    return this.$table(name)
-      .filter(row => {
-        const and = (entries: [string, any][]): boolean => {
-          return entries.every(([key, value]) => {
-            if (key === '$or') {
-              return value
-                .map(item => and(Object.entries(Tables.resolveQuery(name, item))))
-                .reduce((a, b) => a || b)
-            }
-            if (Array.isArray(value)) {
-              return value.includes(row[key])
-            }
-            if (value instanceof RegExp) {
-              return value.test(row[key])
-            }
-            return queryOperators.reduce((prev, [prop, callback]) => prev && doOperate(prop, callback, value, row[key]), true)
-          })
+    const and = (fieldQuery: typeof query, row): boolean => {
+      const entries = Object.entries(Tables.resolveQuery(name, fieldQuery))
+      return entries.every(([key, value]) => {
+        if (key === '$or') {
+          return value
+            .reduce((a, b) => a || and(b, row), false)
         }
-        return and(entries)
+        if (Array.isArray(value)) {
+          return value.includes(row[key])
+        }
+        if (value instanceof RegExp) {
+          return value.test(row[key])
+        }
+        return queryOperators.reduce((prev, [prop, callback]) => prev && doOperate(prop, callback, value, row[key]), true)
       })
+    }
+    return this.$table(name)
+      .filter(row => and(query, row))
       .map(row => fields ? pick(row, fields) : row)
       .map(clone)
   },
