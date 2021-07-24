@@ -47,7 +47,7 @@ export class MemoryDatabase {
   }
 }
 
-const queryOperators: ([string, (lVal: any, rVal: any) => boolean] | boolean)[] = Object.entries({
+const queryOperators: ([string, (lVal: any, rVal: any) => boolean])[] = Object.entries({
   $regex: (val: RegExp, rVal) => val.test(rVal),
   $in: (val: any[], rVal) => val.includes(rVal),
   $nin: (val: any[], rVal) => !val.includes(rVal),
@@ -81,15 +81,7 @@ Database.extend(MemoryDatabase, {
             if (value instanceof RegExp) {
               return value.test(row[key])
             }
-            return queryOperators.reduce((prev, next) => {
-              const [prop, callback] = next as any[]
-              const waitAnd = doOperate(prop, callback, value, row[key])
-              if (typeof prev === 'boolean') return prev && waitAnd
-              if (Array.isArray(prev)) {
-                const [prevProp, prevCallback] = prev
-                return doOperate(prevProp, prevCallback, value, row[key]) && waitAnd
-              }
-            })
+            return queryOperators.reduce((prev, [prop, callback]) => prev && doOperate(prop, callback, value, row[key]), true)
           })
         }
         return and(entries)
