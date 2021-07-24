@@ -1,5 +1,5 @@
 import MysqlDatabase, { Config, escape } from './database'
-import { User, Channel, Database, Context, TableType, Tables as KoishiTables, Tables } from 'koishi-core'
+import { User, Channel, Database, Context, TableType, Tables } from 'koishi-core'
 import { difference } from 'koishi-utils'
 import { OkPacket, escapeId } from 'mysql'
 
@@ -18,16 +18,23 @@ declare module 'koishi-core' {
   }
 }
 
-export function createFilter<T extends TableType>(name: T, _query: KoishiTables.Query<T>) {
-  const and = (_query: KoishiTables.Query<T>) => {
-    const query = KoishiTables.resolveQuery(name, _query)
+export function createFilter<T extends TableType>(name: T, query: Tables.Query<T>) {
+  const createQuery = (query: Tables.QueryExpr) => {
     const output: string[] = []
     for (const key in query) {
+      // logical expression
       if (key === '$or') {
-        const value = query[key] as Tables.QueryMap<Tables[T]>['$or']
-        output.push(`(${value.map(item => and(item)).join(' OR ')})`)
+        output.push(`!(${createQuery(query.$not)})`)
+        continue
+      } else if (key === '$and') {
+        if (!query.$and.length) return
+        output.push(`(${query.$and.map(item => createQuery(item)).join(' && ')})`)
+        continue
+      } else if (key === '$or' && query.$or.length) {
+        output.push(`(${query.$or.map(createQuery).join(' || ')})`)
         continue
       }
+
       const value = query[key]
       const escapeKey = escapeId(key)
       function genQueryItem(val: typeof value, isNot: boolean = false): string {
@@ -66,7 +73,7 @@ export function createFilter<T extends TableType>(name: T, _query: KoishiTables.
     }
     return output.join(' AND ')
   }
-  return and(_query)
+  return createQuery(Tables.resolveQuery(name, query))
 }
 
 Database.extend(MysqlDatabase, {

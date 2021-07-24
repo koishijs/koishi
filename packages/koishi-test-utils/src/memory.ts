@@ -61,15 +61,15 @@ const queryOperators: ([string, (lVal: any, rVal: any) => boolean])[] = Object.e
 
 Database.extend(MemoryDatabase, {
   async get(name, query, fields) {
-    function execute(query: Tables.Query<keyof Tables>, data: any): boolean {
-      const entries: [string, any][] = Object.entries(Tables.resolveQuery(name, query))
+    function executeQuery(query: Tables.QueryExpr, data: any): boolean {
+      const entries: [string, any][] = Object.entries(query)
       return entries.every(([key, value]) => {
         if (key === '$and') {
-          return (value as Tables.QueryExpr[]).reduce((a, b) => a && execute(b, data), true)
+          return (value as Tables.QueryExpr[]).reduce((prev, query) => prev && executeQuery(query, data), true)
         } else if (key === '$or') {
-          return (value as Tables.QueryExpr[]).reduce((a, b) => a || execute(b, data), false)
+          return (value as Tables.QueryExpr[]).reduce((prev, query) => prev || executeQuery(query, data), false)
         } else if (key === '$not') {
-          return !execute(query, data)
+          return !executeQuery(query, data)
         } else if (Array.isArray(value)) {
           return value.includes(data[key])
         } else if (value instanceof RegExp) {
@@ -80,8 +80,10 @@ Database.extend(MemoryDatabase, {
         }, true)
       })
     }
+
+    const expr = Tables.resolveQuery(name, query) as Tables.QueryExpr
     return this.$table(name)
-      .filter(row => execute(query, row))
+      .filter(row => executeQuery(expr, row))
       .map(row => fields ? pick(row, fields) : row)
       .map(clone)
   },

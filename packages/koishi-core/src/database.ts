@@ -58,7 +58,7 @@ export namespace Tables {
   extend('user')
   extend('channel')
 
-  export function resolveQuery<T extends TableType>(name: T, query: Query<T>): QueryExpr<T> {
+  export function resolveQuery<T extends TableType>(name: T, query: Query<T>): QueryExpr<Tables[T]> {
     if (!Array.isArray(query) && !(query instanceof RegExp)) return query as any
     const { primary } = config[name]
     return { [primary]: query } as any
