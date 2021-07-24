@@ -161,7 +161,7 @@ export function apply(ctx: Context, config: Config = {}) {
   })
 
   const ctx1 = ctx.intersect(sess => !!sess.app.puppeteer)
-  ctx1.command('shot <url> [selector:text]', '网页截图', { authority: 2 })
+  ctx1.command('shot <url> [selector:rawtext]', '网页截图', { authority: 2 })
     .alias('screenshot')
     .option('full', '-f  对整个可滚动区域截图')
     .option('viewport', '-v <viewport>  指定视口', { type: 'string' })
@@ -244,12 +244,12 @@ export function apply(ctx: Context, config: Config = {}) {
       }).finally(() => page.close())
     })
 
-  ctx1.command('tex <code:text>', 'TeX 渲染', { authority: 2 })
+  ctx1.command('tex <code:rawtext>', 'TeX 渲染', { authority: 2 })
     .usage('渲染器由 https://www.zhihu.com/equation 提供。')
     .action(async (_, tex) => {
       if (!tex) return '请输入要渲染的 LaTeX 代码。'
       return ctx.puppeteer.render(null, async (page, next) => {
-        await page.goto('https://www.zhihu.com/equation?tex=' + escape(segment.unescape(tex)))
+        await page.goto('https://www.zhihu.com/equation?tex=' + escape(tex))
         const svg = await page.$('svg')
         const inner: string = await svg.evaluate((node: SVGElement) => {
           node.style.padding = '0.25rem 0.375rem'

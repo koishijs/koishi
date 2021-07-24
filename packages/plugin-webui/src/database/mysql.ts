@@ -141,14 +141,13 @@ class MysqlSynchronizer implements Synchronizer {
     await this.db.query(sqls)
   }
 
-  async download(date: Date) {
-    const dateString = date.toLocaleDateString()
+  async download() {
     const [daily, hourly, longterm, groups] = await this.db.query([
-      'SELECT * FROM `stats_daily` WHERE `time` < DATE(?) ORDER BY `time` DESC LIMIT ?',
-      'SELECT * FROM `stats_hourly` WHERE `time` < DATE(?) ORDER BY `time` DESC LIMIT ?',
-      'SELECT * FROM `stats_longterm` WHERE `time` < DATE(?) ORDER BY `time` DESC',
+      'SELECT * FROM `stats_daily` WHERE `time` < CURRENT_TIMESTAMP ORDER BY `time` DESC LIMIT ?',
+      'SELECT * FROM `stats_hourly` WHERE `time` < CURRENT_TIMESTAMP ORDER BY `time` DESC LIMIT ?',
+      'SELECT * FROM `stats_longterm` WHERE `time` < CURRENT_TIMESTAMP ORDER BY `time` DESC',
       'SELECT `id`, `name`, `assignee` FROM `channel`',
-    ], [dateString, RECENT_LENGTH, dateString, 24 * RECENT_LENGTH, dateString])
+    ], [RECENT_LENGTH, 24 * RECENT_LENGTH])
     return { daily, hourly, longterm, groups }
   }
 }

@@ -17,6 +17,7 @@ for (const name of readdirSync(__dirname + '/packages')) {
 const specs = [
   'packages/koishi-core/tests/*.spec.ts',
   'packages/koishi-utils/tests/*.spec.ts',
+  'packages/koishi-dev-utils/tests/*.spec.ts',
   'packages/koishi-test-utils/tests/*.spec.ts',
   'packages/plugin-common/tests/*.spec.ts',
   'packages/plugin-eval/tests/*.spec.ts',
@@ -41,5 +42,6 @@ function getSpecFromArgv() {
 
 module.exports = {
   exit: true,
+  timeout: 5000,
   spec: getSpecFromArgv(),
 }

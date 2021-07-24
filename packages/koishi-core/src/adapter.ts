@@ -79,7 +79,7 @@ export namespace Adapter {
     const callback = typeof target === 'string' ? () => target : target
     return class {
       constructor(app: App, bot: BotOptions) {
-        logger.info('infer type as %c', bot.type = callback(bot))
+        logger.debug('infer type as %c', bot.type = callback(bot))
         return from(app, bot)
       }
     } as Constructor
@@ -193,6 +193,7 @@ export interface Bot<P = Platform> extends BotOptions, UserBase {
   getSelf(): Promise<UserInfo>
   getUser(userId: string): Promise<UserInfo>
   getFriendList(): Promise<UserInfo[]>
+  deleteFriend(userId: string): Promise<void>
 
   // group
   getGroup(groupId: string): Promise<GroupInfo>

@@ -1,4 +1,4 @@
-import { Bot, Context, Random, segment, Session, template } from 'koishi-core'
+import { Adapter, Bot, Context, Random, segment, Session, template } from 'koishi-core'
 import { resolve } from 'path'
 import { WebServer } from 'koishi-plugin-webui'
 import receiver, { Message, ReceiverConfig } from './receiver'
@@ -13,7 +13,7 @@ declare module 'koishi-core' {
 
   namespace Bot {
     interface Platforms {
-      'web': SandboxBot
+      'webui': SandboxBot
     }
   }
 }
@@ -34,12 +34,12 @@ template.set('chat', {
   receive: '[{{ channelName || "私聊" }}] {{ username }}: {{ abstract }}',
 })
 
-export class SandboxBot extends Bot<'web'> {
+export class SandboxBot extends Bot<'webui'> {
   username = 'sandbox'
   status = Bot.Status.GOOD
 
-  constructor(public readonly adapter: WebServer) {
-    super(adapter, { type: 'web', selfId: 'sandbox' })
+  constructor(public readonly adapter: WebServer & Adapter<'webui'>) {
+    super(adapter, { type: 'webui', selfId: 'sandbox' })
   }
 
   async sendMessage(id: string, content: string) {
@@ -107,7 +107,7 @@ export function apply(ctx: Context, options: Config = {}) {
       content = await ctx.transformAssets(content)
       this.send('sandbox:user', content)
       const session = new Session(ctx.app, {
-        platform: 'web',
+        platform: 'webui',
         userId: id,
         content,
         channelId: this.id,

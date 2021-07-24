@@ -41,6 +41,7 @@ async function bundle(path: string) {
   const moduleRE = `"(${files.join('|')})"`
   const internalImport = new RegExp('import\\(' + moduleRE + '\\)\\.', 'g')
   const internalExport = new RegExp('^ {4}export .+ from ' + moduleRE + ';$')
+  const internalInject = new RegExp('^declare module ' + moduleRE + ' {$')
   const importMap: Record<string, Record<string, string>> = {}
   const namespaceMap: Record<string, string> = {}
 
@@ -76,7 +77,7 @@ async function bundle(path: string) {
     }
   }).map((line) => {
     if (cap = /^declare module ["'](.+)["'] \{( \})?$/.exec(line)) {
-      if (cap[2]) return
+      if (cap[2]) return ''
       identifier = namespaceMap[cap[1]]
       return identifier ? `declare namespace ${identifier} {` : ''
     } else if (line === '}') {
@@ -87,6 +88,18 @@ async function bundle(path: string) {
         .replace(internalImport, '')
         .replace(/import\("index"\)/g, 'import(".")')
         .replace(/^((module|class|namespace) .+ \{)$/, (_) => `declare ${_}`)
+    } else {
+      return ''
+    }
+  }).map((line) => {
+    if (cap = internalInject.exec(line)) {
+      identifier = '@internal'
+      return ''
+    } else if (line === '}') {
+      return identifier ? identifier = '' : '}'
+    } else {
+      if (identifier) line = line.slice(4)
+      return line.replace(/^((class|namespace) .+ \{)$/, (_) => `export ${_}`)
     }
   }).filter(line => line).join(EOL)
 
@@ -112,8 +125,18 @@ async function bundleAll(names: readonly string[]) {
   }
 }
 
-const targets = ['koishi-utils', 'koishi-core', 'plugin-mysql', 'plugin-mongo', 'plugin-webui']
-const corePlugins = ['common', 'eval', 'puppeteer', 'teach']
+const targets = [
+  'koishi-utils',
+  'koishi-core',
+  'plugin-common',
+  'plugin-mysql',
+  'plugin-mongo',
+  'plugin-webui',
+  'plugin-teach',
+  'plugin-adventure',
+]
+
+const corePlugins = ['eval', 'puppeteer']
 
 function precedence(name: string) {
   if (name.startsWith('adapter')) return 1

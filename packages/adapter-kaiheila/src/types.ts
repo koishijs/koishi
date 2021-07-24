@@ -50,7 +50,7 @@ export interface Data extends MessageBase {
 type AttachmentType = 'image' | 'video' | 'audio' | 'file'
 type NoticeType =
   | 'message_btn_click'
-  | 'add_reaction' | 'deleted_reaction'
+  | 'added_reaction' | 'deleted_reaction'
   | 'updated_message' | 'deleted_message'
   | 'joined_guild' | 'exited_guild'
   | 'updated_guild_member'

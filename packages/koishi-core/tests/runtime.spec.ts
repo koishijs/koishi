@@ -4,8 +4,6 @@ import { install } from '@sinonjs/fake-timers'
 
 const app = new App({
   mockDatabase: true,
-  channelCacheAge: Number.EPSILON,
-  userCacheAge: Number.EPSILON,
   minSimilarity: 0,
 })
 
@@ -21,7 +19,7 @@ const session5 = app.session('123', '654')
 const cmd1 = app.command('cmd1 <arg1>', { authority: 2 })
   .channelFields(['id'])
   .shortcut('foo1', { args: ['bar'] })
-  .shortcut('foo4', { greedy: true, fuzzy: true })
+  .shortcut('foo4', { fuzzy: true })
   .option('--bar', '', { authority: 3 })
   .option('--baz', '', { notUsage: true })
   .action(({ session }, arg) => session.send('cmd1:' + arg))
@@ -173,9 +171,9 @@ describe('Runtime', () => {
     })
 
     it('one argument & fuzzy', async () => {
-      await session4.shouldReply('foo4 bar baz', 'cmd1:bar baz')
+      await session4.shouldReply('foo4 bar baz', 'cmd1:bar')
       await session4.shouldNotReply('foo4bar baz')
-      await session4.shouldReply(`[CQ:at,id=${app.selfId}] foo4bar baz`, 'cmd1:bar baz')
+      await session4.shouldReply(`[CQ:at,id=${app.selfId}] foo4bar baz`, 'cmd1:bar')
     })
   })
 

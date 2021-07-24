@@ -118,12 +118,12 @@ export const name = 'brainfuck'
 export function apply(ctx: Context, config: BrainfuckOptions = {}) {
   ctx.command('tools/brainfuck <code>', '运行 brainfuck 代码')
     .alias('bf')
-    .option('input', '-- <input:text>  设置输入', { fallback: '' })
+    .option('input', '-- <input:rawtext>  设置输入', { fallback: '' })
     .usage('语言介绍：http://www.muppetlabs.com/~breadbox/bf')
     .action(async ({ options }, source) => {
       if (!source) return '请输入源代码。'
       source = segment.unescape(source)
-      const input = segment.unescape(options.input)
+      const input = options.input
       try {
         return segment.escape(new BrainFuck(source, config).exec(input))
       } catch (error) {

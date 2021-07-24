@@ -3,13 +3,14 @@ import { Adventurer, Show } from './utils'
 
 declare module 'koishi-core' {
   interface Command<U, G, A, O> {
-    checkTimer(name: string): Command<U | 'timers', G, A, O>
+    checkTimer(name: string, when?: (argv: Argv<U, G, A, O>) => boolean): Command<U | 'timers', G, A, O>
   }
 }
 
-Command.prototype.checkTimer = function (this: Command, name) {
-  return this.userFields(['timers', 'usage']).check(({ session }) => {
-    const user = session.user
+Command.prototype.checkTimer = function (this: Command, name, when) {
+  return this.userFields(['timers', 'usage']).check((argv) => {
+    if (when && !when(argv)) return
+    const { user } = argv.session
     if (!checkTimer(name, user)) return
     const buff = Buff.timers[name]
     if (buff && !checkUsage(name + 'Hint', user, 1)) {
@@ -49,7 +50,6 @@ namespace Buff {
     Show.redirect(name, 'buff')
   }
 
-  timer('$healing', '愈疗加护', '一段时间内免疫状态「无法使用物品」。')
   timer('$drunk', '醉迷恍惚', '一段时间内进行剧情选择时改为随机选择。')
   timer('$mellow', '至醇佳酿', '一段时间内幸运值提高 10 点。')
   timer('$dirt', '生死流转', '一段时间内新获得的状态持续时间减半。')

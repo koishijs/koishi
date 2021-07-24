@@ -71,28 +71,7 @@ Database.extend('koishi-plugin-mysql', ({ Domain, tables }) => {
   }
 })
 
-export default function apply(ctx: Context, config: Dialogue.Config) {
-  config.validateRegExp = {
-    onEscapeCharacterSet() {
-      throw new SyntaxError('unsupported escape character set')
-    },
-    onQuantifier(start, end, min, max, greedy) {
-      if (!greedy) throw new SyntaxError('unsupported non-greedy quantifier')
-    },
-    onWordBoundaryAssertion() {
-      throw new SyntaxError('unsupported word boundary assertion')
-    },
-    onLookaroundAssertionEnter() {
-      throw new SyntaxError('unsupported lookaround assertion')
-    },
-    onGroupEnter() {
-      throw new SyntaxError('unsupported non-capturing group')
-    },
-    onCapturingGroupEnter(start, name) {
-      if (name) throw new SyntaxError('unsupported named capturing group')
-    },
-  }
-
+export default function apply(ctx: Context) {
   ctx.on('dialogue/flag', (flag) => {
     ctx.on('dialogue/mysql', (test, conditionals) => {
       if (test[flag] === undefined) return
@@ -105,22 +84,17 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
 
     if (regexp) {
       if (answer) conditionals.push('`answer` REGEXP ' + escape(answer))
-      if (question) conditionals.push('`question` REGEXP ' + escape(original))
+      if (original) conditionals.push('`original` REGEXP ' + escape(original))
       return
     }
 
     if (answer) conditionals.push('`answer` = ' + escape(answer))
-    if (question) {
-      if (regexp === false) {
-        conditionals.push('`question` = ' + escape(question))
-      } else {
-        conditionals.push(`(\
-          !(\`flag\` & ${Dialogue.Flag.regexp}) && \`question\` = ${escape(question)} ||\
-          \`flag\` & ${Dialogue.Flag.regexp} && (\
-            ${escape(question)} REGEXP \`question\` || ${escape(original)} REGEXP \`question\`\
-          )\
-        )`)
-      }
+    if (regexp === false) {
+      if (question) conditionals.push('`question` = ' + escape(question))
+    } else if (original) {
+      const conds = [`\`flag\` & ${Dialogue.Flag.regexp} && ${escape(original)} REGEXP \`original\``]
+      if (question) conds.push(`!(\`flag\` & ${Dialogue.Flag.regexp}) && \`question\` = ${escape(question)}`)
+      conditionals.push(`(${conds.join(' || ')})`)
     }
   })
 

@@ -3,12 +3,11 @@ import Vigenere from './algorithms/vigenere'
 import TwoSquare from './algorithms/two-square'
 import FourSquare from './algorithms/four-square'
 import { Context } from 'koishi-core'
-import { segment } from 'koishi-utils'
 
 export const name = 'crypto'
 
 export function apply(ctx: Context) {
-  ctx.command('tools/crypto <algorithm> <text>', '加密解密工具')
+  ctx.command('tools/crypto <algorithm> <text:rawtext>', '加密解密工具')
     .option('encrypt', '-e  加密模式（默认）')
     .option('decrypt', '-d  解密模式')
     .option('case', '-c <maintain|upper|lower>  控制输出字母的大小写，默认为 maintain')
@@ -30,8 +29,6 @@ export function apply(ctx: Context) {
     .action(({ options }, algorithms, text) => {
       if (!text) return '请输入文本。'
       if (!algorithms) return '请指定算法。'
-      text = segment.unescape(text)
-      algorithms = segment.unescape(algorithms)
 
       let cap: RegExpMatchArray
       const cryptos = []

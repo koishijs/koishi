@@ -1,14 +1,14 @@
 import { difference, observe, Time, enumKeys, Random, template, deduplicate, intersection } from 'koishi-utils'
-import { Context, User, Channel, Command, Argv, Platform, Session } from 'koishi-core'
+import { Context, User, Channel, Command, Argv, Platform, Session, Extend } from 'koishi-core'
 
 type AdminAction<U extends User.Field, G extends Channel.Field, A extends any[], O extends {}, T>
-  = (argv: Argv<U | 'authority', G, A, O> & { target: T }, ...args: A)
+  = (argv: Argv<U | 'authority', G, A, Extend<O, 'target', string>> & { target: T }, ...args: A)
     => void | string | Promise<void | string>
 
 declare module 'koishi-core' {
   interface Command<U, G, A, O> {
-    adminUser(callback: AdminAction<U, G, A, O, User.Observed<U | 'authority'>>): this
-    adminChannel(callback: AdminAction<U, G, A, O, Channel.Observed<G>>): this
+    adminUser(callback: AdminAction<U, G, A, O, User.Observed<U | 'authority'>>, autoCreate?: boolean): this
+    adminChannel(callback: AdminAction<U, G, A, O, Channel.Observed<G>>, autoCreate?: boolean): this
   }
 
   interface EventMap {
@@ -25,12 +25,14 @@ template.set('admin', {
   'current-flags': '当前的标记为：{0}。',
 
   // admin helper
+  'user-expected': '请指定目标用户。',
   'user-not-found': '未找到指定的用户。',
   'user-unchanged': '用户数据未改动。',
   'user-updated': '用户数据已修改。',
   'channel-not-found': '未找到指定的频道。',
   'channel-unchanged': '频道数据未改动。',
   'channel-updated': '频道数据已修改。',
+  'invalid-assignee-platform': '代理者应与目标频道属于同一平台。',
   'not-in-group': '当前不在群组上下文中，请使用 -t 参数指定目标频道。',
 })
 
@@ -47,14 +49,16 @@ template.set('callme', {
 
 template.set('bind', {
   'generated-1': [
-    '请在 5 分钟内使用你的账号在要绑定的平台内向机器人发送以下文本：',
+    'bind 指令可用于在多个平台间绑定用户数据。绑定过程中，源平台的用户数据将完全保留，而目标平台的用户数据将被源平台的数据所覆盖。',
+    '请确认当前平台是你的目标平台，并在 5 分钟内使用你的账号在源平台内向机器人发送以下文本：',
     '{0}',
     '注意：每个账号只能绑定到每个平台一次，此操作将会抹去你当前平台上的数据，请谨慎操作！',
   ].join('\n'),
   'generated-2': [
     '令牌核验成功！下面将进行第二步操作。',
-    '请在 5 分钟内使用你的账号在之前的平台内向机器人发送以下文本：',
+    '请在 5 分钟内使用你的账号在目标平台内向机器人发送以下文本：',
     '{0}',
+    '注意：当前平台是你的源平台，这里的用户数据将完全保留，而目标平台的用户数据将被覆盖，请谨慎操作！',
   ].join('\n'),
   'failed': '账号绑定失败：你已经绑定过该平台。',
   'success': '账号绑定成功！',
@@ -117,39 +121,52 @@ function flagAction(map: FlagMap, { target, options }: FlagArgv, ...flags: strin
   return template('admin.current-flags', keys.join(', '))
 }
 
-Command.prototype.adminUser = function (this: Command, callback) {
-  const { database } = this.app
+Command.prototype.adminUser = function (this: Command, callback, autoCreate) {
+  this.config.checkUnknown = true
+
   const command = this
     .userFields(['authority'])
     .option('target', '-t [user:user]  指定目标用户', { authority: 3 })
-    .userFields(({ options }, fields) => {
-      if (!options.target) return
-      const [platform] = options.target.split(':')
+    .userFields(({ session, options }, fields) => {
+      const platform = options.target ? options.target.split(':')[0] : session.platform
       fields.add(platform as Platform)
     })
 
   command.action(async (argv) => {
-    const { options, session, args } = argv
-    const fields = session.collect('user', argv)
-    let target: User.Observed<never>
+    const { options, args, session: { user, database } } = argv
+    const fields = argv.session.collect('user', argv)
+    let target: User.Observed, session = argv.session
     if (!options.target) {
-      target = await session.observeUser(fields)
+      target = await argv.session.observeUser(fields)
     } else {
       const [platform, userId] = Argv.parsePid(options.target)
-      if (session.user[platform] === userId) {
-        target = await session.observeUser(fields)
+      if (user[platform] === userId) {
+        target = await argv.session.observeUser(fields)
       } else {
         const data = await database.getUser(platform, userId, [...fields])
-        if (!data) return template('admin.user-not-found')
-        if (session.user.authority <= data.authority) {
+        if (!data) {
+          if (!autoCreate) return template('admin.user-not-found')
+          const fallback = observe(User.create(platform, userId), async () => {
+            if (!fallback.authority) return
+            await database.createUser(platform, userId, fallback)
+          })
+          target = fallback
+        } else if (user.authority <= data.authority) {
           return template('internal.low-authority')
         } else {
           target = observe(data, diff => database.setUser(platform, userId, diff), `user ${options.target}`)
+          if (!autoCreate) {
+            session = Object.create(argv.session)
+            session.user = target
+            session.uid = options.target
+            session.userId = userId
+            session.platform = platform
+          }
         }
       }
     }
     const diffKeys = Object.keys(target._diff)
-    const result = await callback({ ...argv, target }, ...args)
+    const result = await callback({ ...argv, target, session }, ...args)
     if (typeof result === 'string') return result
     if (!difference(Object.keys(target._diff), diffKeys).length) {
       return template('admin.user-unchanged')
@@ -161,27 +178,43 @@ Command.prototype.adminUser = function (this: Command, callback) {
   return command
 }
 
-Command.prototype.adminChannel = function (this: Command, callback) {
-  const { database } = this.app
+Command.prototype.adminChannel = function (this: Command, callback, autoCreate) {
+  this.config.checkUnknown = true
+
   const command = this
     .userFields(['authority'])
     .option('target', '-t [channel:channel]  指定目标频道', { authority: 3 })
 
   command.action(async (argv, ...args) => {
-    const { options, session } = argv
-    const fields = session.collect('channel', argv)
-    let target: Channel.Observed
-    if ((!options.target || options.target === session.cid) && session.subtype === 'group') {
-      target = await session.observeChannel(fields)
+    const { options, session: { cid, subtype, database } } = argv
+    const fields = argv.session.collect('channel', argv)
+    let target: Channel.Observed, session = argv.session
+    if ((!options.target || options.target === cid) && subtype === 'group') {
+      target = await argv.session.observeChannel(fields)
     } else if (options.target) {
       const [platform, channelId] = Argv.parsePid(options.target)
       const data = await database.getChannel(platform, channelId, [...fields])
-      if (!data) return template('admin.channel-not-found')
-      target = observe(data, diff => database.setChannel(platform, channelId, diff), `channel ${options.target}`)
+      if (!data) {
+        if (!autoCreate) return template('admin.channel-not-found')
+        const fallback = observe(Channel.create(platform, channelId), async () => {
+          if (!fallback.assignee) return
+          await database.createChannel(platform, channelId, fallback)
+        })
+        target = fallback
+      } else {
+        target = observe(data, diff => database.setChannel(platform, channelId, diff), `channel ${options.target}`)
+        if (!autoCreate) {
+          session = Object.create(argv.session)
+          session.channel = target
+          session.cid = options.target
+          session.channelId = channelId
+          session.platform = platform
+        }
+      }
     } else {
       return template('admin.not-in-group')
     }
-    const result = await callback({ ...argv, target }, ...args)
+    const result = await callback({ ...argv, target, session }, ...args)
     if (typeof result === 'string') return result
     if (!Object.keys(target._diff).length) {
       return template('admin.channel-unchanged')
@@ -193,21 +226,12 @@ Command.prototype.adminChannel = function (this: Command, callback) {
   return command
 }
 
-export interface AdminConfig {
-  admin?: boolean
-  generateToken?: () => string
-}
-
-export default function apply(ctx: Context, config: AdminConfig = {}) {
-  if (config.admin === false) return
+export function callme(ctx: Context) {
   ctx = ctx.select('database')
-
-  ctx.command('common/user', '用户管理', { authority: 3 })
-  ctx.command('common/channel', '频道管理', { authority: 3 })
 
   ctx.command('common/callme [name:text]', '修改自己的称呼')
     .userFields(['id', 'name'])
-    .shortcut('叫我', { prefix: true, fuzzy: true, greedy: true })
+    .shortcut('叫我', { prefix: true, fuzzy: true })
     .action(async ({ session }, name) => {
       const { user } = session
       if (!name) {
@@ -240,6 +264,14 @@ export default function apply(ctx: Context, config: AdminConfig = {}) {
         }
       }
     })
+}
+
+export interface BindConfig {
+  generateToken?: () => string
+}
+
+export function bind(ctx: Context, config: BindConfig = {}) {
+  ctx = ctx.select('database')
 
   // 1: group (1st step)
   // 0: private
@@ -263,7 +295,7 @@ export default function apply(ctx: Context, config: AdminConfig = {}) {
     await user._update()
   }
 
-  ctx.command('user/bind', '绑定到账号', { authority: 0 })
+  ctx.command('common/bind', '绑定到账号', { authority: 0 })
     .action(({ session }) => {
       const token = generate(session, +(session.subtype === 'group'))
       return template('bind.generated-1', token)
@@ -292,16 +324,22 @@ export default function apply(ctx: Context, config: AdminConfig = {}) {
       }
     }
   }, true)
+}
+
+export function admin(ctx: Context) {
+  ctx = ctx.select('database')
+
+  ctx.command('common/user', '用户管理', { authority: 3 })
+  ctx.command('common/channel', '频道管理', { authority: 3 })
 
   ctx.command('user/authorize <value:posint>', '权限信息', { authority: 4 })
     .alias('auth')
     .adminUser(async ({ session, target }, authority) => {
+      if (session.userId === target[session.platform]) return template('admin.user-expected')
       if (authority >= session.user.authority) return template('internal.low-authority')
       if (authority === target.authority) return template('admin.user-unchanged')
-      await ctx.database.createUser(session.platform, target[session.platform], { authority })
-      target._merge({ authority })
-      return template('admin.user-updated')
-    })
+      target.authority = authority
+    }, true)
 
   ctx.command('user.flag [-s|-S] [...flags]', '标记信息', { authority: 3 })
     .userFields(['flag'])
@@ -373,12 +411,18 @@ export default function apply(ctx: Context, config: AdminConfig = {}) {
     .channelFields(['assignee'])
     .option('noTarget', '-T  移除受理者')
     .adminChannel(async ({ session, options, target }, value) => {
-      const assignee = options.noTarget ? null : value ? Argv.parsePid(value)[1] : session.selfId
-      if (assignee === target.assignee) return template('admin.channel-unchanged')
-      await ctx.database.createChannel(session.platform, session.channelId, { assignee })
-      target._merge({ assignee })
-      return template('admin.channel-updated')
-    })
+      if (options.noTarget) {
+        target.assignee = ''
+      } else if (!value) {
+        target.assignee = session.selfId
+      } else {
+        const [platform, userId] = Argv.parsePid(value)
+        if (platform !== Argv.parsePid(options.target)[0]) {
+          return template('admin.invalid-assignee-platform')
+        }
+        target.assignee = userId
+      }
+    }, true)
 
   ctx.command('channel/switch <command...>', '启用和禁用功能', { authority: 3 })
     .channelFields(['disable'])
@@ -413,4 +457,16 @@ export default function apply(ctx: Context, config: AdminConfig = {}) {
     .option('set', '-s  添加标记', { authority: 4 })
     .option('unset', '-S  删除标记', { authority: 4 })
     .adminChannel(flagAction.bind(null, Channel.Flag))
+}
+
+export interface UpdaterConfig extends BindConfig {
+  admin?: boolean
+  bind?: boolean
+  callme?: boolean
+}
+
+export default function apply(ctx: Context, config: UpdaterConfig = {}) {
+  if (config.admin !== false) ctx.plugin(admin)
+  if (config.bind !== false) ctx.plugin(bind, config)
+  if (config.callme !== false) ctx.plugin(callme)
 }

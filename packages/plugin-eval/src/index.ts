@@ -65,7 +65,7 @@ const defaultConfig: EvalConfig = {
   scriptLoader: 'default',
   channelFields: ['id'],
   userFields: ['id', 'authority'],
-  dataKeys: ['inspect', 'moduleLoaders', 'setupFiles', 'loaderConfig'],
+  dataKeys: ['inspect', 'moduleLoaders', 'setupFiles', 'loaderConfig', 'serializer'],
 }
 
 const logger = new Logger('eval')
@@ -94,7 +94,7 @@ export function apply(ctx: Context, config: Config = {}) {
   // worker should be running for all the features
   ctx = ctx.intersect(() => ctx.worker?.state === EvalWorker.State.open)
 
-  const command = ctx.command('evaluate [expr:text]', '执行 JavaScript 脚本', { noEval: true })
+  const command = ctx.command('evaluate [expr:rawtext]', '执行 JavaScript 脚本', { noEval: true })
     .alias('eval')
     .userFields(['authority'])
     .option('slient', '-s  不输出最后的结果')
@@ -113,7 +113,7 @@ export function apply(ctx: Context, config: Config = {}) {
     if (!expr) return '请输入要执行的脚本。'
 
     try {
-      expr = await ctx.worker.loader.transformScript(segment.unescape(expr))
+      expr = await ctx.worker.loader.transformScript(expr)
     } catch (err) {
       return err.message
     }
@@ -152,8 +152,8 @@ export function apply(ctx: Context, config: Config = {}) {
   })
 
   if (prefix) {
-    command.shortcut(prefix, { greedy: true, fuzzy: true })
-    command.shortcut(prefix + prefix[prefix.length - 1], { greedy: true, fuzzy: true, options: { slient: true } })
+    command.shortcut(prefix, { fuzzy: true })
+    command.shortcut(prefix + prefix[prefix.length - 1], { fuzzy: true, options: { slient: true } })
   }
 
   Argv.interpolate('${', '}', (source) => {
@@ -164,7 +164,7 @@ export function apply(ctx: Context, config: Config = {}) {
       return { source, rest: '', tokens: [] }
     }
     return {
-      source,
+      source: result,
       command,
       args: [result],
       rest: segment.escape(source.slice(result.length + 1)),

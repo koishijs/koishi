@@ -26,7 +26,12 @@ function onRepeat(options: RepeatHandler | StateCallback): StateCallback {
   return ({ repeated, times, content }) => times >= minTimes && !repeated && Random.bool(probability) ? content : ''
 }
 
-export function repeater(ctx: Context, config: HandlerConfig) {
+export interface RepeaterConfig {
+  onRepeat?: RepeatHandler | StateCallback
+  onInterrupt?: StateCallback
+}
+
+export function repeater(ctx: Context, config: RepeaterConfig = {}) {
   ctx = ctx.group()
 
   const states: Record<string, RepeatState> = {}
@@ -98,7 +103,13 @@ async function getHandlerResult(handler: RequestHandler, session: Session, prefe
   }
 }
 
-export function verify(ctx: Context, config: HandlerConfig) {
+export interface VerifierConfig {
+  onFriendRequest?: RequestHandler
+  onGroupMemberRequest?: RequestHandler
+  onGroupRequest?: RequestHandler
+}
+
+export function verifier(ctx: Context, config: VerifierConfig = {}) {
   ctx.on('friend-request', async (session) => {
     const result = await getHandlerResult(config.onFriendRequest, session, true)
     if (result) return session.bot.handleFriendRequest(session.messageId, ...result)
@@ -115,15 +126,9 @@ export function verify(ctx: Context, config: HandlerConfig) {
   })
 }
 
-export interface HandlerConfig {
-  onRepeat?: RepeatHandler | StateCallback
-  onInterrupt?: StateCallback
-  onFriendRequest?: RequestHandler
-  onGroupMemberRequest?: RequestHandler
-  onGroupRequest?: RequestHandler
-}
+export interface HandlerConfig extends RepeaterConfig, VerifierConfig {}
 
-export default function apply(ctx: Context, config: HandlerConfig = {}) {
+export default function apply(ctx: Context, config?: HandlerConfig) {
   ctx.plugin(repeater, config)
-  ctx.plugin(verify, config)
+  ctx.plugin(verifier, config)
 }

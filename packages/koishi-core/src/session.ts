@@ -41,6 +41,7 @@ export namespace Session {
     'group-member': {
       'role': {}
       'ban': {}
+      'nickname': {}
     }
     'notice': {
       'poke': {}
@@ -50,6 +51,12 @@ export namespace Session {
         'performer': {}
         'emotion': {}
       }
+    }
+    'reaction-added': {}
+    'reaction-deleted': {
+      'one': {}
+      'all': {}
+      'emoji': {}
     }
   }
 

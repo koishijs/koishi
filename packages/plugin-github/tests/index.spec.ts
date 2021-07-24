@@ -13,8 +13,6 @@ const app = new App({
   prefix: '.',
   mockStart: false,
   mockDatabase: true,
-  userCacheAge: Number.EPSILON,
-  channelCacheAge: Number.EPSILON,
 })
 
 app.plugin(github)

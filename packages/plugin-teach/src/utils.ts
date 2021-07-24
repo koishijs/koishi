@@ -1,6 +1,5 @@
 import { Session, App, Context, Tables } from 'koishi-core'
 import { difference, observe, isInteger, defineProperty, Observed, clone } from 'koishi-utils'
-import { RegExpValidator } from 'regexpp'
 
 declare module 'koishi-core' {
   interface App {
@@ -72,7 +71,6 @@ export namespace Dialogue {
     prefix?: string
     authority?: AuthorityConfig
     historyAge?: number
-    validateRegExp?: RegExpValidator.Options
   }
 
   export interface Stats {

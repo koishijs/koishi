@@ -1,5 +1,5 @@
 import { Context, getUsage, Session, checkTimer, checkUsage, User, Random } from 'koishi-core'
-import { Adventurer, ReadonlyUser } from './utils'
+import { Adventurer } from './utils'
 import Affinity from './affinity'
 import Phase from './phase'
 import Item from './item'
@@ -15,27 +15,27 @@ namespace Luck {
     return Math.min(Math.max(luck, -MAX_LUCKY), MAX_LUCKY)
   }
 
-  export function coefficient(user: Pick<ReadonlyUser, 'timers'>) {
-    return checkTimer('$reverseLucky', user) ? -1 : 1
+  export function coefficient(user: Adventurer.Readonly<'timers'>) {
+    return checkTimer('$reverseLucky', user as Adventurer) ? -1 : 1
   }
 
-  export function get(user: Pick<ReadonlyUser, Field>) {
+  export function get(user: Adventurer.Readonly<Field>) {
     return restrict(
       (coefficient(user) * user.luck) +
-      (checkTimer('$mellow', user) ? 10 : 0) +
-      (checkTimer('$luckyBonus', user) ? 5 : 0),
+      (checkTimer('$mellow', user as Adventurer) ? 10 : 0) +
+      (checkTimer('$luckyBonus', user as Adventurer) ? 5 : 0),
     )
   }
 
-  export function use(user: Pick<ReadonlyUser, Field>, base = DEFAULT_BASE) {
+  export function use(user: Adventurer.Readonly<Field>, base = DEFAULT_BASE) {
     return new Random(1 / (1 + (1 / Math.random() - 1) * base ** get(user)))
   }
 
   export const probabilities: Record<Item.Rarity, number> = {
     N: 500,
     R: 300,
-    SR: 150,
-    SSR: 49,
+    SR: 160,
+    SSR: 39,
     EX: 1,
     SP: 0,
   }
@@ -77,7 +77,7 @@ namespace Luck {
       .usage(showLotteryUsage)
       .action(async ({ session, options }) => {
         const { user } = session
-        if (Phase.metaMap[session.userId]) return '当前处于剧情模式中，无法抽卡。'
+        if (Phase.userSessionMap[session.user.id]) return '当前处于剧情模式中，无法抽卡。'
         if (user.progress) return '检测到你有未完成的剧情，请尝试输入“继续当前剧情”。'
 
         if (checkTimer('lottery', user, minInterval * 60 * 1000)) {
@@ -88,7 +88,7 @@ namespace Luck {
         if (options.tenTimes) {
           const output = [`恭喜 ${session.username} 获得了：`]
           for (let index = 10; index > 0; index--) {
-            const prize = Item.pick(Item.data[Random.weightedPick(probabilities)], user)
+            const prize = Item.pick(Item.data[Random.weightedPick(probabilities)], session, 'lottery', 1)
             output.push(`${prize.name}（${prize.rarity}）`)
           }
           return output.join('\n')
@@ -96,15 +96,15 @@ namespace Luck {
 
         const affinity = Affinity.get(user)
         const maxUsage = Math.floor(affinity / 30) + 5
-        let times = maxUsage - getUsage('lottery', user)
-        if (times <= 0) {
+        session._lotteryLast = maxUsage - getUsage('lottery', user)
+        if (session._lotteryLast <= 0) {
           return '调用次数已达上限。'
         }
 
-        const gainList: string[] = []
+        session._gains = new Set()
         const output: string[] = []
         function getPrize(output: string[]) {
-          times -= 1
+          session._lotteryLast -= 1
           const weights = user.noSR >= 9 ? allowanceProbabilities : probabilities
           const rarity = Luck.use(user).weightedPick(weights)
           if (rarity === 'R' || rarity === 'N') {
@@ -112,10 +112,10 @@ namespace Luck {
           } else {
             user.noSR = 0
           }
-          const item = Item.pick(Item.data[rarity], user, !times)
+          const item = Item.pick(Item.data[rarity], session, 'lottery', 1)
           const { name, description } = item
           const isOld = item.name in user.warehouse
-          gainList.push(name)
+          session._gains.add(name)
           session._item = name
           const result = Item.gain(session, item.name)
           if (options.simple && options.quick) {
@@ -131,18 +131,18 @@ namespace Luck {
           getPrize(output)
         } else {
           if (options.simple) output.push(`恭喜 ${session.username} 获得了：`)
-          while (times && !checkTimer('$lottery', user)) {
+          while (session._lotteryLast && !checkTimer('$lottery', user)) {
             getPrize(output)
           }
         }
 
-        const result = Item.checkOverflow(session, gainList)
+        const result = Item.checkOverflow(session)
         if (result) output.push(result)
-        user.usage.lottery = maxUsage - times
+        user.usage.lottery = maxUsage - session._lotteryLast
         session.app.emit('adventure/check', session, output)
         await user._update()
 
-        if (!times) output.push('您本日的抽奖次数已用完，请明天再试吧~')
+        if (!session._lotteryLast) output.push('您本日的抽奖次数已用完，请明天再试吧~')
         return output.join('\n').replace(/\$s/g, session.username)
       })
   }

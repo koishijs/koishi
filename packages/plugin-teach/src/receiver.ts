@@ -163,6 +163,10 @@ tokenizer.interpolate('$n', '', (rest) => {
   return { rest, tokens: [], source: '' }
 })
 
+const halfWidth = ',,.~?!()[]'
+const fullWidth = '，、。～？！（）【】'
+const fullWidthRegExp = new RegExp(`[${fullWidth}]`)
+
 export async function triggerDialogue(ctx: Context, session: Session, next: NextFunction = noop) {
   const state = ctx.getSessionState(session)
   state.next = next
@@ -203,8 +207,7 @@ export async function triggerDialogue(ctx: Context, session: Session, next: Next
     .replace(/\$0/g, escapeAnswer(session.content))
 
   if (dialogue.flag & Dialogue.Flag.regexp) {
-    const capture = dialogue._capture || new RegExp(dialogue.question, 'i').exec(state.test.question)
-    if (!capture) console.log(dialogue.question, state.test.question)
+    const capture = dialogue._capture || new RegExp(dialogue.original, 'i').exec(state.test.original)
     capture.map((segment, index) => {
       if (index && index <= 9) {
         state.answer = state.answer.replace(new RegExp(`\\$${index}`, 'g'), escapeAnswer(segment || ''))
@@ -245,7 +248,17 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
   ctx.app._dialogueStates = {}
 
   config._stripQuestion = (source) => {
-    source = prepareSource(source)
+    source = segment.transform(source, {
+      text: ({ content }, index, chain) => {
+        let message = simplify(segment.unescape('' + content))
+          .toLowerCase()
+          .replace(/\s+/g, '')
+          .replace(fullWidthRegExp, $0 => halfWidth[fullWidth.indexOf($0)])
+        if (index === 0) message = message.replace(/^[()\[\]]*/, '')
+        if (index === chain.length - 1) message = message.replace(/[\.,?!()\[\]~]*$/, '')
+        return message
+      },
+    })
     const original = source
     const capture = nicknameRE.exec(source)
     if (capture) source = source.slice(capture[0].length)
@@ -297,12 +310,11 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
 
   ctx.on('dialogue/receive', ({ session, test }) => {
     if (session.content.includes('[CQ:image,')) return true
-    const { unprefixed, prefixed, appellative, activated } = config._stripQuestion(session.content)
+    const { unprefixed, appellative, activated } = config._stripQuestion(session.content)
     test.question = unprefixed
-    test.original = prefixed
+    test.original = session.content
     test.activated = activated
     test.appellative = appellative
-    if (!test.question) return true
   })
 
   // 预判要获取的用户字段
@@ -321,28 +333,4 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
       session.content = message
       return triggerDialogue(ctx, session, next)
     })
-}
-
-function prepareSource(source: string) {
-  return segment.transform(source, {
-    text: ({ content }, index, chain) => {
-      let message = simplify(segment.unescape('' + content))
-        .toLowerCase()
-        .replace(/\s+/g, '')
-        .replace(/，/g, ',')
-        .replace(/、/g, ',')
-        .replace(/。/g, '.')
-        .replace(/？/g, '?')
-        .replace(/！/g, '!')
-        .replace(/（/g, '(')
-        .replace(/）/g, ')')
-        .replace(/【/g, '[')
-        .replace(/】/g, ']')
-        .replace(/～/g, '~')
-        .replace(/…/g, '...')
-      if (index === 0) message = message.replace(/^[()\[\]]*/, '')
-      if (index === chain.length - 1) message = message.replace(/[\.,?!()\[\]~]*$/, '')
-      return message
-    },
-  })
 }

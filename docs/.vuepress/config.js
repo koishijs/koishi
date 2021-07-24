@@ -69,6 +69,7 @@ module.exports = {
           '/guide/adapter.md',
           '/guide/logger.md',
           '/guide/unit-tests.md',
+          '/guide/decorator.md',
         ],
       }],
       '/api': [{
@@ -147,7 +148,14 @@ module.exports = {
           '/plugins/eval/sandbox.md',
           '/plugins/eval/config.md',
         ],
-      }, {
+      }, ...process.env.NODE_ENV === 'production' ? [] : [{
+        text: '冒险系统 (Adventure)',
+        isGroup: true,
+        children: [
+          '/plugins/adventure/index.md',
+          '/plugins/adventure/events.md',
+        ],
+      }], {
         text: '其他官方插件',
         isGroup: true,
         children: [
@@ -165,8 +173,9 @@ module.exports = {
       }],
     },
     lastUpdated: '上次更新',
-    docsRepo: 'koishijs/koishijs.github.io',
-    docsBranch: 'docs',
+    docsRepo: 'koishijs/koishi',
+    docsDir: 'docs',
+    docsBranch: 'develop',
     editLinks: true,
     editLinkText: '帮助我们改善此页面',
 

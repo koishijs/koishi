@@ -130,6 +130,7 @@ Koishi v3 的另一大亮点就是拥有官方的网页控制台插件。这个�
 - [koishi-plugin-work](https://github.com/NWYLZW/koishi-plugin-work): 工作学习工具，已有功能 todos: 代办管理
 - [koishi-plugin-aircon](https://github.com/idlist/koishi-plugin-aircon): 群空调
 - [koishi-plugin-cryptocurrency](https://github.com/koishijs/plugin-cryptocurrency): 查看和订阅加密货币的市场价格
+- [koishi-plugin-jrrp](https://github.com/idlist/koishi-plugin-jrrp): 今日人品
 
 ### 社区项目
 
@@ -152,6 +153,6 @@ Copyright © 2019-present, Shigma
 
 ## 联系方式
 
-[![Discord](https://img.shields.io/discord/811975252883800125?label=discord&style=flat-square)](https://discord.com/channels/811975252883800125)
+[![Discord](https://img.shields.io/discord/811975252883800125?label=discord&style=flat-square)](https://discord.gg/xfxYwmd284)
 
 本群只交流程序开发，不欢迎伸手党，禁止谈论商业行为。
