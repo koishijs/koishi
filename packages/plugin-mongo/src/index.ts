@@ -81,8 +81,12 @@ function createFilter<T extends TableType>(name: T, _query: Tables.Query<T>) {
   const filter = {}
   for (const key in query) {
     const value = query[key]
-    if (!value.length) return
-    filter[key] = { $in: value }
+    if (Array.isArray(value)) {
+      if (!value.length) return
+      filter[key] = { $in: value }
+    } else {
+      filter[key] = value
+    }
   }
   const { primary } = Tables.config[name]
   if (filter[primary]) {

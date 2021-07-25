@@ -36,6 +36,9 @@ export class MemoryDatabase {
   constructor(public app: App, public config: MemoryConfig) {}
 
   $table<K extends TableType>(table: K): any[] {
+    if (!this.$store[table]) {
+      this.$store[table] = []
+    }
     return this.$store[table]
   }
 
@@ -44,11 +47,43 @@ export class MemoryDatabase {
   }
 }
 
+const queryOperators: ([string, (lVal: any, rVal: any) => boolean])[] = Object.entries({
+  $regex: (val: RegExp, rVal) => val.test(rVal),
+  $in: (val: any[], rVal) => val.includes(rVal),
+  $nin: (val: any[], rVal) => !val.includes(rVal),
+  $ne: (val, rVal) => rVal !== val,
+  $eq: (val, rVal) => rVal === val,
+  $gt: (val, rVal) => rVal > val,
+  $gte: (val, rVal) => rVal >= val,
+  $lt: (val, rVal) => rVal < val,
+  $lte: (val, rVal) => rVal <= val,
+})
+
 Database.extend(MemoryDatabase, {
   async get(name, query, fields) {
-    const entries = Object.entries(Tables.resolveQuery(name, query))
+    function executeQuery(query: Tables.QueryExpr, data: any): boolean {
+      const entries: [string, any][] = Object.entries(query)
+      return entries.every(([key, value]) => {
+        if (key === '$and') {
+          return (value as Tables.QueryExpr[]).reduce((prev, query) => prev && executeQuery(query, data), true)
+        } else if (key === '$or') {
+          return (value as Tables.QueryExpr[]).reduce((prev, query) => prev || executeQuery(query, data), false)
+        } else if (key === '$not') {
+          return !executeQuery(query[key], data)
+        } else if (Array.isArray(value)) {
+          return value.includes(data[key])
+        } else if (value instanceof RegExp) {
+          return value.test(data[key])
+        }
+        return queryOperators.reduce((prev, [prop, callback]) => {
+          return prev && (prop in value ? callback(value[prop], data[key]) : true)
+        }, true)
+      })
+    }
+
+    const expr = Tables.resolveQuery(name, query) as Tables.QueryExpr
     return this.$table(name)
-      .filter(row => entries.every(([key, value]) => value.includes(row[key])))
+      .filter(row => executeQuery(expr, row))
       .map(row => fields ? pick(row, fields) : row)
       .map(clone)
   },
