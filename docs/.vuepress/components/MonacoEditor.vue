@@ -13,7 +13,7 @@ import OneLight from './onelight.yaml'
 
 window.MonacoEnvironment = {
   getWorker(_, label) {
-    if (label === 'typescript' || label === 'javascript') {
+    if (label === 'typescript') {
       return new tsWorker()
     }
     return new editorWorker()

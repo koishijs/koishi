@@ -21,7 +21,9 @@
     </t-sidebar>
 
     <main class="playground" :style="{ backgroundColor }">
-      <monaco-editor class="editor" :theme="theme" language="typescript"/>
+      <client-only>
+        <monaco-editor class="editor" :theme="theme" language="typescript"/>
+      </client-only>
       <div class="chat"></div>
     </main>
   </div>
