@@ -14,7 +14,7 @@ export const version = KOISHI_VERSION
 declare module 'koa' {
   // koa-bodyparser
   interface Request {
-    body: any
+    body?: any
     rawBody: string
   }
 }
