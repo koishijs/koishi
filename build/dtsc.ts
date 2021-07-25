@@ -52,7 +52,7 @@ async function bundle(path: string) {
     } else if (cap = /^ {4}import \* as (.+) from ["'](.+)["'];$/.exec(line)) {
       if (files.includes(cap[2])) {
         namespaceMap[cap[2]] = cap[1]
-      } else {
+      } else if (!prolog.includes(line.trimStart())) {
         prolog += line.trimStart() + EOL
       }
     } else if (cap = /^ {4}import +(\S*)(?:, *)?(?:\{(.+)\})? from ["'](.+)["'];$/.exec(line)) {

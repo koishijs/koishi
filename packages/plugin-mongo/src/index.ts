@@ -1,5 +1,5 @@
 import MongoDatabase, { Config } from './database'
-import { User, Tables, Database, Context, Channel, Random, pick, omit, TableType } from 'koishi-core'
+import { User, Tables, Database, Context, Channel, Random, pick, omit, TableType, Query } from 'koishi-core'
 
 export * from './database'
 export default MongoDatabase
@@ -76,14 +76,28 @@ function unescapeKey<T extends Partial<User>>(data: T) {
   return data
 }
 
-function createFilter<T extends TableType>(name: T, _query: Tables.Query<T>) {
-  const query = Tables.resolveQuery(name, _query)
-  const filter = {}
-  for (const key in query) {
-    const value = query[key]
-    if (!value.length) return
-    filter[key] = { $in: value }
+function createFilter<T extends TableType>(name: T, _query: Query<T>) {
+  function transformQuery(query: Query.Expr) {
+    const filter = {}
+    for (const key in query) {
+      const value = query[key]
+      if (key === '$and' || key === '$or') {
+        filter[key] = value.map(transformQuery)
+      } else if (key === '$not') {
+        filter[key] = transformQuery(value)
+      } else if (typeof value === 'string' || typeof value === 'number') {
+        filter[key] = { $eq: value }
+      } else if (Array.isArray(value)) {
+        if (!value.length) return
+        filter[key] = { $in: value }
+      } else {
+        filter[key] = value
+      }
+    }
+    return filter
   }
+
+  const filter = transformQuery(Query.resolve(name, _query))
   const { primary } = Tables.config[name]
   if (filter[primary]) {
     filter['_id'] = filter[primary]
