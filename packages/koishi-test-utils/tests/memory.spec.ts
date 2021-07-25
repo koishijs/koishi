@@ -128,7 +128,7 @@ describe('Memory Database', () => {
       })).eventually.to.have.length(2)
     })
 
-    it('should verify `$or`', async () => {
+    it('should verify `$or`, `$and` and `$not`', async () => {
       await expect(db.get('foo', {
         $or: [{
           id: [1, 2],
@@ -154,12 +154,20 @@ describe('Memory Database', () => {
       })).eventually.to.have.length(3)
 
       await expect(db.get('foo', {
-        $or: [{
-          bar: /.*foo/,
-        }, {
-          bar: /foo.*/,
-        }],
+        $or: [{ bar: /.*foo/ }, { bar: /foo.*/ }],
       })).eventually.to.have.length(2)
+
+      await expect(db.get('foo', {
+        $and: [{ bar: /.*foo$/ }, { bar: /foo.*/ }],
+      })).eventually.to.have.length(1)
+
+      await expect(db.get('foo', {
+        $not: { $and: [{ bar: /.*foo$/ }, { bar: /foo.*/ }] },
+      })).eventually.to.have.length(2)
+
+      await expect(db.get('foo', {
+        $not: { $or: [{ bar: /.*foo/ }, { bar: /foo.*/ }] },
+      })).eventually.to.have.length(1)
     })
 
     it('should verify `$or` and other key', async () => {

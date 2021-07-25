@@ -69,7 +69,7 @@ Database.extend(MemoryDatabase, {
         } else if (key === '$or') {
           return (value as Tables.QueryExpr[]).reduce((prev, query) => prev || executeQuery(query, data), false)
         } else if (key === '$not') {
-          return !executeQuery(query, data)
+          return !executeQuery(query[key], data)
         } else if (Array.isArray(value)) {
           return value.includes(data[key])
         } else if (value instanceof RegExp) {
