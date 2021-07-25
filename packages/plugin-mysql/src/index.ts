@@ -1,5 +1,6 @@
 import MysqlDatabase, { Config, escape } from './database'
-import { User, Channel, Database, Context, TableType, Tables } from 'koishi-core'
+import { User, Channel, Database, Context } from 'koishi-core'
+import * as Koishi from 'koishi-core'
 import { difference } from 'koishi-utils'
 import { OkPacket, escapeId } from 'mysql'
 
@@ -18,73 +19,79 @@ declare module 'koishi-core' {
   }
 }
 
-export function createFilter<T extends TableType>(name: T, query: Tables.Query<T>) {
-  const createQuery = (query: Tables.QueryExpr) => {
-    const output: string[] = []
+function createMemberQuery(key: string, value: any[], notStr = '') {
+  if (!value.length) return notStr ? '1' : '0'
+  return `${key}${notStr} IN (${value.map(val => escape(val)).join(', ')})`
+}
+
+function createRegExpQuery(key: string, value: RegExp) {
+  return `${key} REGEXP ${escape(value.source)}`
+}
+
+const queryOperators: Record<string, (key: string, value: any) => string> = {
+  $regex: createRegExpQuery,
+  $in: (key, value) => createMemberQuery(key, value, ''),
+  $nin: (key, value) => createMemberQuery(key, value, ' NOT'),
+  $ne: (key, value) => `${key} != ${escape(value)}`,
+  $eq: (key, value) => `${key} = ${escape(value)}`,
+  $gt: (key, value) => `${key} > ${escape(value)}`,
+  $gte: (key, value) => `${key} >= ${escape(value)}`,
+  $lt: (key, value) => `${key} < ${escape(value)}`,
+  $lte: (key, value) => `${key} <= ${escape(value)}`,
+}
+
+export function createWhereClause<T extends Koishi.TableType>(name: T, query: Koishi.Tables.Query<T>) {
+  function parseQuery(query: Koishi.Tables.QueryExpr) {
+    const conditions: string[] = []
     for (const key in query) {
       // logical expression
       if (key === '$or') {
-        output.push(`!(${createQuery(query.$not)})`)
+        conditions.push(`!(${parseQuery(query.$not)})`)
         continue
       } else if (key === '$and') {
-        if (!query.$and.length) return
-        output.push(`(${query.$and.map(item => createQuery(item)).join(' && ')})`)
+        if (!query.$and.length) return '0'
+        conditions.push(...query.$and.map(parseQuery))
         continue
       } else if (key === '$or' && query.$or.length) {
-        output.push(`(${query.$or.map(createQuery).join(' || ')})`)
+        conditions.push(`(${query.$or.map(parseQuery).join(' || ')})`)
         continue
       }
 
+      // query shorthand
       const value = query[key]
-      const escapeKey = escapeId(key)
-      function genQueryItem(val: typeof value, isNot: boolean = false): string {
-        const notStr = isNot ? ' NOT' : ''
-        if (Array.isArray(val)) {
-          if (!val.length) return isNot ? '1' : '0'
-          return `${escapeKey}${notStr} IN (${val.map(val => escape(val, name, key)).join(', ')})`
-        }
-        if (val instanceof RegExp) {
-          const regexStr = val.toString()
-          return `${escapeKey}${notStr} REGEXP '${regexStr.substring(1, regexStr.length - 1)}'`
-        }
-        return undefined
-      }
-
-      const queryItem = genQueryItem(value)
-      if (queryItem) {
-        output.push(queryItem)
+      const escKey = escapeId(key)
+      if (Array.isArray(value)) {
+        conditions.push(createMemberQuery(escKey, value))
+        continue
+      } else if (value instanceof RegExp) {
+        conditions.push(createRegExpQuery(escKey, value))
         continue
       }
-      ['$regex', '$in', '$nin'].filter(key => !!value[key]).forEach(key => {
-        const queryItem = genQueryItem(value[key], key === '$nin')
-        if (queryItem) output.push(queryItem)
-      })
-      output.push(
-        ...Object.entries({
-          $ne: '!=',
-          $eq: '=',
-          $gt: '>',
-          $gte: '>=',
-          $lt: '<',
-          $lte: '<=',
-        }).filter(([key]) => !!value[key])
-          .map(([key, queryStr]) => `${escapeKey} ${queryStr} ${value[key]}`),
-      )
+
+      // query expression
+      for (const prop in value) {
+        if (prop in queryOperators) {
+          conditions.push(queryOperators[prop](escKey, value[prop]))
+        }
+      }
     }
-    return output.join(' AND ')
+
+    if (!conditions.length) return '1'
+    if (conditions.includes('0')) return '0'
+    return conditions.join(' && ')
   }
-  return createQuery(Tables.resolveQuery(name, query))
+  return parseQuery(Koishi.Tables.resolveQuery(name, query))
 }
 
 Database.extend(MysqlDatabase, {
   async get(name, query, fields) {
-    const filter = createFilter(name, query)
+    const filter = createWhereClause(name, query)
     if (filter === '0') return []
     return this.select(name, fields, filter)
   },
 
   async remove(name, query) {
-    const filter = createFilter(name, query)
+    const filter = createWhereClause(name, query)
     if (filter === '0') return
     await this.query('DELETE FROM ?? WHERE ' + filter, [name])
   },
