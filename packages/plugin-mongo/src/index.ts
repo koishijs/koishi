@@ -78,7 +78,7 @@ function unescapeKey<T extends Partial<User>>(data: T) {
 
 function createFilter<T extends TableType>(name: T, _query: Query<T>) {
   function transformQuery(query: Query.Expr) {
-    const filter = {}
+    const filter = {}, pending = []
     for (const key in query) {
       const value = query[key]
       if (key === '$and' || key === '$or') {
@@ -91,8 +91,24 @@ function createFilter<T extends TableType>(name: T, _query: Query<T>) {
         if (!value.length) return
         filter[key] = { $in: value }
       } else {
-        filter[key] = value
+        filter[key] = {}
+        for (const prop in value) {
+          if (prop === '$regexFor') {
+            filter[key].$expr = {
+              body(data: string, value: string) {
+                return new RegExp(data, 'i').test(value)
+              },
+              args: ['$' + key, value],
+              lang: 'js',
+            }
+          } else {
+            filter[key][prop] = value[prop]
+          }
+        }
       }
+    }
+    if (pending.length) {
+      (filter['$and'] ||= []).push(...pending)
     }
     return filter
   }

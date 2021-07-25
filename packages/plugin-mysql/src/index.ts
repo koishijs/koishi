@@ -33,6 +33,7 @@ function createEqualQuery(key: string, value: any) {
 
 const queryOperators: Record<string, (key: string, value: any) => string> = {
   $regex: createRegExpQuery,
+  $regexFor: (key, value) => `${escape(value)} REGEXP ${key}`,
   $in: (key, value) => createMemberQuery(key, value, ''),
   $nin: (key, value) => createMemberQuery(key, value, ' NOT'),
   $eq: createEqualQuery,
