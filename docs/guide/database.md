@@ -175,7 +175,7 @@ const rows = await ctx.database.get('schedule', {
 })
 ```
 
-> 你可以在 [这里](../api/database.md#db-get-table-query-fields) 看到更多相关的 api
+> 你可以在 [这里](../api/database.md#db-get-table) 看到更多相关的 API。
 
 删除数据的语法与获取数据类似：
 

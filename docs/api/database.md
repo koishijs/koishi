@@ -73,12 +73,12 @@ sidebarDepth: 2
 
 ### db.get(table, query, fields?)
 
-- **table:** `keyof Tables` 注册在 orm 中的表名
+- **table:** `keyof Tables` 注册在 ORM 中的表名
 - **query:** `QueryExpr<Tables[T]> | QueryShorthand` 搜索表达式
-- **fields:** `(keyof Tables[T])[]` 请求的字段，默认为全部字段
+- **fields:** `Tables.Field<T>[]` 请求的字段，默认为全部字段
 - 返回值: `Promise<Tables[T][]>` 用户数据
 
-参数 query 支持正则以及表达式，你可以使用复杂的嵌套更细致化的去完成你对数据库的查找服务。实现上与 mongo 近似，如果你有使用过 mongodb 经验，那么使用 koishi orm 对你来说便不是一件难事。
+参数 query 支持正则以及表达式，你可以使用复杂的嵌套更细致化的去完成你对数据库的查找服务。实现上与 mongo 近似，如果你有使用过 mongodb 经验，那么使用 koishi ORM 对你来说便不是一件难事。
 
 ```ts
 interface FieldQueryExpr<T> {
@@ -107,6 +107,14 @@ type QueryExpr<T = any> = LogicalQueryExpr<T> & {
 下面是一些简单的示例
 
 ```js
+// 获取名为 schedule 的表中 id 为 1 或者 2 的数据行
+// koishi ORM 自动解析你的 primary key
+const rows = await ctx.database.get('schedule', [1, 2])
+const rows = await ctx.database.get('schedule', { id: [1, 2] })
+
+// 当然 koishi ORM 也支持了 mongo 的正则写法
+const rows = await ctx.database.get('schedule', { command: /echo.*/ })
+
 // 获取名为 schedule 的表中 id 大于 2 但是小于等于 5 的数据行
 const rows = await ctx.database.get('schedule', {
   id: { $gt: 2, $lte: 5 }
