@@ -166,13 +166,11 @@ const rows = await ctx.database.get('schedule', [1234], ['command', 'lastCall'])
 const rows = await ctx.database.get('schedule', { assignee: ['onebot:123456'] })
 ```
 
-对于需要进行复杂的数据库搜索的，orm 也提供了相对应的方法：
+对于需要进行复杂的数据库搜索的，ORM 也提供了相对应的方法：
 
 ```js
 // 获取名为 schedule 的表中 id 大于 2 但是小于等于 5 的数据行
-const rows = await ctx.database.get('schedule', {
-  id: { $gt: 2, $lte: 5 }
-})
+const rows = await ctx.database.get('schedule', { id: { $gt: 2, $lte: 5 } })
 ```
 
 > 你可以在 [这里](../api/database.md#db-get-table) 看到更多相关的 API。
