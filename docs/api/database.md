@@ -73,7 +73,7 @@ sidebarDepth: 2
 
 ### db.get(table, query, fields?)
 
-- **table:** `string` 注册在 orm 中的表名
+- **table:** `keyof Tables` 注册在 orm 中的表名
 - **query:** `QueryExpr<Tables[T]> | QueryShorthand` 搜索表达式
 - **fields:** `Tables[T].Field[]` 请求的字段，默认为全部字段
 - 返回值: `Promise<Tables[T][]>` 用户数据
@@ -111,6 +111,7 @@ type QueryExpr<T = any> = LogicalQueryExpr<T> & {
 const rows = await ctx.database.get('schedule', {
   id: { $gt: 2, $lte: 5 }
 })
+
 // 获取名为 schedule 的表中
 // id 大于 2 但是小于等于 5 或者 id 大于 100 的数据行
 const rows = await ctx.database.get('schedule', {
