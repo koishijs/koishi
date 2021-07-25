@@ -73,6 +73,52 @@ sidebarDepth: 2
 
 ### db.get(table, query, fields?)
 
+- **table:** `string` 注册在 orm 中的表名
+- **query:** `QueryExpr<Tables[T]> | QueryShorthand` 搜索表达式
+- **fields:** `Tables[T].Field[]` 请求的字段，默认为全部字段
+- 返回值: `Promise<Tables[T][]>` 用户数据
+
+参数 query 支持正则以及表达式，你可以使用复杂的嵌套更细致化的去完成你对数据库的查找服务。实现上与 mongo 近似，如果你有使用过 mongodb 经验，那么使用 koishi orm 对你来说便不是一件难事。
+
+```ts
+interface FieldQueryExpr<T> {
+  $regex?: RegExp
+  $in?: T[]
+  $nin?: T[]
+  $eq?: T
+  $ne?: T
+  $gt?: T
+  $gte?: T
+  $lt?: T
+  $lte?: T
+}
+interface LogicalQueryExpr<T> {
+  $or?: QueryExpr<T>[]
+  $and?: QueryExpr<T>[]
+  $not?: QueryExpr<T>
+}
+type QueryShorthand<T = IndexType> = T[] | RegExp
+type FieldQuery<T> = FieldQueryExpr<T> | QueryShorthand<T>
+type QueryExpr<T = any> = LogicalQueryExpr<T> & {
+  [K in keyof T]?: FieldQuery<T[K]>
+}
+```
+
+下面是一些简单的示例
+
+```js
+// 获取名为 schedule 的表中 id 大于 2 但是小于等于 5 的数据行
+const rows = await ctx.database.get('schedule', {
+  id: { $gt: 2, $lte: 5 }
+})
+// 获取名为 schedule 的表中
+// id 大于 2 但是小于等于 5 或者 id 大于 100 的数据行
+const rows = await ctx.database.get('schedule', {
+  id: { $gt: 2, $lte: 5 },
+  $or: [{ $id: { $gt: 100 } }]
+})
+```
+
 ### db.remove(table, query)
 
 ### db.create(table, data)
