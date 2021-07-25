@@ -65,12 +65,19 @@ describe('Memory Database', () => {
       await db.createFoo({ bar: 'awesome bar' })
       await db.createFoo({ bar: 'awesome foo bar' })
     })
+
     after(() => {
       // clear memory data, prevent the following single test from being affected
       db.memory.$store.foo = []
     })
 
     it('compile expr query', async () => {
+      await expect(db.get('foo', {
+        id: 1,
+      })).eventually.to
+        .have.nested.property('[0].bar')
+        .equal('awesome foo')
+
       await expect(db.get('foo', {
         id: { $eq: 1 },
       })).eventually.to

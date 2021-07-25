@@ -9,37 +9,6 @@ export interface Tables {
 }
 
 export namespace Tables {
-  type IndexType = string | number
-  type IndexKeys<O, T = any> = string & { [K in keyof O]: O[K] extends T ? K : never }[keyof O]
-
-  export interface FieldQueryExpr<T> {
-    $regex?: RegExp
-    $in?: T[]
-    $nin?: T[]
-    $eq?: T
-    $ne?: T
-    $gt?: T
-    $gte?: T
-    $lt?: T
-    $lte?: T
-  }
-
-  export interface LogicalQueryExpr<T> {
-    $or?: QueryExpr<T>[]
-    $and?: QueryExpr<T>[]
-    $not?: QueryExpr<T>
-  }
-
-  type QueryShorthand<T = IndexType> = T[] | RegExp
-  type FieldQuery<T> = FieldQueryExpr<T> | QueryShorthand<T>
-  export type QueryExpr<T = any> = LogicalQueryExpr<T> & {
-    [K in keyof T]?: FieldQuery<T[K]>
-  }
-
-  export type Index<T extends TableType> = IndexKeys<Tables[T], IndexType>
-  export type Query<T extends TableType> = QueryExpr<Tables[T]> | QueryShorthand
-  export type Field<T extends TableType> = string & keyof Tables[T]
-
   interface Meta<O> {
     type?: 'incremental'
     primary?: keyof O
@@ -57,11 +26,46 @@ export namespace Tables {
 
   extend('user')
   extend('channel')
+}
 
-  export function resolveQuery<T extends TableType>(name: T, query: Query<T>): QueryExpr<Tables[T]> {
-    if (!Array.isArray(query) && !(query instanceof RegExp)) return query as any
-    const { primary } = config[name]
-    return { [primary]: query } as any
+export type Query<T extends TableType> = Query.Expr<Tables[T]> | Query.Shorthand
+
+export namespace Query {
+  export type IndexType = string | number
+  export type IndexKeys<O, T = any> = string & { [K in keyof O]: O[K] extends T ? K : never }[keyof O]
+  export type Field<T extends TableType> = string & keyof Tables[T]
+  export type Index<T extends TableType> = IndexKeys<Tables[T], IndexType>
+
+  export interface FieldExpr<T> {
+    $regex?: RegExp
+    $in?: T[]
+    $nin?: T[]
+    $eq?: T
+    $ne?: T
+    $gt?: T
+    $gte?: T
+    $lt?: T
+    $lte?: T
+  }
+
+  export interface LogicalExpr<T> {
+    $or?: Expr<T>[]
+    $and?: Expr<T>[]
+    $not?: Expr<T>
+  }
+
+  export type Shorthand<T = IndexType> = T | T[] | RegExp
+  export type FieldQuery<T> = FieldExpr<T> | Shorthand<T>
+  export type Expr<T = any> = LogicalExpr<T> & {
+    [K in keyof T]?: FieldQuery<T[K]>
+  }
+
+  export function resolve<T extends TableType>(name: T, query: Query<T>): Expr<Tables[T]> {
+    if (Array.isArray(query) || query instanceof RegExp || ['string', 'number'].includes(typeof query)) {
+      const { primary } = Tables.config[name]
+      return { [primary]: query } as any
+    }
+    return query as any
   }
 }
 
@@ -145,10 +149,10 @@ export namespace Channel {
 type MaybeArray<T> = T | T[]
 
 export interface Database {
-  get<T extends TableType, F extends Tables.Field<T>>(table: T, query: Tables.Query<T>, fields?: readonly F[]): Promise<Pick<Tables[T], F>[]>
-  remove<T extends TableType>(table: T, query: Tables.Query<T>): Promise<void>
+  get<T extends TableType, F extends Query.Field<T>>(table: T, query: Query<T>, fields?: readonly F[]): Promise<Pick<Tables[T], F>[]>
+  remove<T extends TableType>(table: T, query: Query<T>): Promise<void>
   create<T extends TableType>(table: T, data: Partial<Tables[T]>): Promise<Tables[T]>
-  update<T extends TableType>(table: T, data: Partial<Tables[T]>[], key?: Tables.Index<T>): Promise<void>
+  update<T extends TableType>(table: T, data: Partial<Tables[T]>[], key?: Query.Index<T>): Promise<void>
 
   getUser<K extends User.Field, T extends User.Index>(type: T, id: string, fields?: readonly K[]): Promise<Pick<User, K | T>>
   getUser<K extends User.Field, T extends User.Index>(type: T, ids: readonly string[], fields?: readonly K[]): Promise<Pick<User, K | T>[]>

@@ -1,4 +1,4 @@
-import { Tables, TableType, App, Database, User, Channel } from 'koishi-core'
+import { Tables, TableType, Query, App, Database, User, Channel } from 'koishi-core'
 import { clone, pick } from 'koishi-utils'
 
 declare module 'koishi-core' {
@@ -61,19 +61,21 @@ const queryOperators: ([string, (lVal: any, rVal: any) => boolean])[] = Object.e
 
 Database.extend(MemoryDatabase, {
   async get(name, query, fields) {
-    function executeQuery(query: Tables.QueryExpr, data: any): boolean {
+    function executeQuery(query: Query.Expr, data: any): boolean {
       const entries: [string, any][] = Object.entries(query)
       return entries.every(([key, value]) => {
         if (key === '$and') {
-          return (value as Tables.QueryExpr[]).reduce((prev, query) => prev && executeQuery(query, data), true)
+          return (value as Query.Expr[]).reduce((prev, query) => prev && executeQuery(query, data), true)
         } else if (key === '$or') {
-          return (value as Tables.QueryExpr[]).reduce((prev, query) => prev || executeQuery(query, data), false)
+          return (value as Query.Expr[]).reduce((prev, query) => prev || executeQuery(query, data), false)
         } else if (key === '$not') {
-          return !executeQuery(query[key], data)
+          return !executeQuery(value, data)
         } else if (Array.isArray(value)) {
           return value.includes(data[key])
         } else if (value instanceof RegExp) {
           return value.test(data[key])
+        } else if (typeof value === 'string' || typeof value === 'number') {
+          return value === data[key]
         }
         return queryOperators.reduce((prev, [prop, callback]) => {
           return prev && (prop in value ? callback(value[prop], data[key]) : true)
@@ -81,7 +83,7 @@ Database.extend(MemoryDatabase, {
       })
     }
 
-    const expr = Tables.resolveQuery(name, query) as Tables.QueryExpr
+    const expr = Query.resolve(name, query)
     return this.$table(name)
       .filter(row => executeQuery(expr, row))
       .map(row => fields ? pick(row, fields) : row)
@@ -89,7 +91,7 @@ Database.extend(MemoryDatabase, {
   },
 
   async remove(name, query) {
-    const entries = Object.entries(Tables.resolveQuery(name, query))
+    const entries = Object.entries(Query.resolve(name, query))
     this.$store[name] = this.$table(name)
       .filter(row => !entries.every(([key, value]) => value.includes(row[key])))
   },

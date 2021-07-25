@@ -1,6 +1,5 @@
-import MysqlDatabase, { Config, escape } from './database'
-import { User, Channel, Database, Context } from 'koishi-core'
-import * as Koishi from 'koishi-core'
+import MysqlDatabase, { Config, escape, TableType } from './database'
+import { User, Channel, Database, Context, Query } from 'koishi-core'
 import { difference } from 'koishi-utils'
 import { OkPacket, escapeId } from 'mysql'
 
@@ -28,20 +27,24 @@ function createRegExpQuery(key: string, value: RegExp) {
   return `${key} REGEXP ${escape(value.source)}`
 }
 
+function createEqualQuery(key: string, value: any) {
+  return `${key} = ${escape(value)}`
+}
+
 const queryOperators: Record<string, (key: string, value: any) => string> = {
   $regex: createRegExpQuery,
   $in: (key, value) => createMemberQuery(key, value, ''),
   $nin: (key, value) => createMemberQuery(key, value, ' NOT'),
+  $eq: createEqualQuery,
   $ne: (key, value) => `${key} != ${escape(value)}`,
-  $eq: (key, value) => `${key} = ${escape(value)}`,
   $gt: (key, value) => `${key} > ${escape(value)}`,
   $gte: (key, value) => `${key} >= ${escape(value)}`,
   $lt: (key, value) => `${key} < ${escape(value)}`,
   $lte: (key, value) => `${key} <= ${escape(value)}`,
 }
 
-export function createWhereClause<T extends Koishi.TableType>(name: T, query: Koishi.Tables.Query<T>) {
-  function parseQuery(query: Koishi.Tables.QueryExpr) {
+export function createWhereClause<T extends TableType>(name: T, query: Query<T>) {
+  function parseQuery(query: Query.Expr) {
     const conditions: string[] = []
     for (const key in query) {
       // logical expression
@@ -66,6 +69,9 @@ export function createWhereClause<T extends Koishi.TableType>(name: T, query: Ko
       } else if (value instanceof RegExp) {
         conditions.push(createRegExpQuery(escKey, value))
         continue
+      } else if (typeof value === 'string' || typeof value === 'number') {
+        conditions.push(createEqualQuery(escKey, value))
+        continue
       }
 
       // query expression
@@ -80,7 +86,7 @@ export function createWhereClause<T extends Koishi.TableType>(name: T, query: Ko
     if (conditions.includes('0')) return '0'
     return conditions.join(' && ')
   }
-  return parseQuery(Koishi.Tables.resolveQuery(name, query))
+  return parseQuery(Query.resolve(name, query))
 }
 
 Database.extend(MysqlDatabase, {
