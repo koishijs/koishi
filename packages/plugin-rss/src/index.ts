@@ -20,6 +20,7 @@ Database.extend('koishi-plugin-mysql', ({ Domain, tables }) => {
 export interface Config {
   timeout?: number
   refresh?: number
+  delay?: number
   userAgent?: string
 }
 
@@ -72,7 +73,7 @@ export function apply(ctx: Context, config: Config = {}) {
       const source = payload.meta.link
       if (!feedMap[source]) return
       const message = `${payload.meta.title} (${payload.author})\n${payload.title}`
-      await ctx.broadcast([...feedMap[source]], message)
+      for (const bot of ctx.bots) await bot.broadcast([...feedMap[source]], message, config.delay)
     })
   })
 
