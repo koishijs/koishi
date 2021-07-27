@@ -1,6 +1,6 @@
-import { Context, Channel, Session, Database } from 'koishi-core'
+import { Channel, Context, Database, Session } from 'koishi-core'
+import { } from 'koishi-plugin-mysql'
 import { Logger, Time } from 'koishi-utils'
-import {} from 'koishi-plugin-mysql'
 import RssFeedEmitter from 'rss-feed-emitter'
 
 declare module 'koishi-core' {
