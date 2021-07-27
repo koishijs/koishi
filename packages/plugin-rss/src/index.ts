@@ -73,7 +73,7 @@ export function apply(ctx: Context, config: Config = {}) {
       const source = payload.meta.link
       if (!feedMap[source]) return
       const message = `${payload.meta.title} (${payload.author})\n${payload.title}`
-      for (const bot of ctx.bots) await bot.broadcast([...feedMap[source]], message, config.delay)
+      ctx.bots.forEach(async bot => await bot.broadcast([...feedMap[source]], message, config.delay))
     })
   })
 
