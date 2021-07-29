@@ -33,7 +33,8 @@
   "devDependencies": {
     "@types/es-aggregate-error": "^1.0.2",
     "@types/ws": "^7.4.2",
-    "koishi-test-utils": "^6.0.1"
+    "koishi-test-utils": "^6.0.1",
+    "koishi-utils": "^4.2.3"
   },
   "dependencies": {
     "axios": "^0.21.1",
