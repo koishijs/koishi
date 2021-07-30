@@ -14,7 +14,6 @@ export function prepare(config: LoaderConfig) {
     options.plugins.push(['@babel/plugin-transform-react-jsx', {
       pragma: config.jsxFactory,
       pragmaFrag: config.jsxFragment,
-      useBuiltIns: true,
       useSpread: true,
     }])
   }
