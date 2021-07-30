@@ -28,7 +28,7 @@ module.exports = {
   port: 7070,
   onebot: {
     // onebot 服务将在 http://localhost:7070/onebot 进行处理
-    path: '/event',
+    path: '/onebot',
     secret: 'my-secret',
   },
   kaiheila: {
