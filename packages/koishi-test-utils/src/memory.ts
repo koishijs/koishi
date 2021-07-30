@@ -1,4 +1,4 @@
-import { Tables, TableType, App, Database, User, Channel } from 'koishi-core'
+import { Tables, TableType, Query, App, Database, User, Channel } from 'koishi-core'
 import { clone, pick } from 'koishi-utils'
 
 declare module 'koishi-core' {
@@ -36,6 +36,9 @@ export class MemoryDatabase {
   constructor(public app: App, public config: MemoryConfig) {}
 
   $table<K extends TableType>(table: K): any[] {
+    if (!this.$store[table]) {
+      this.$store[table] = []
+    }
     return this.$store[table]
   }
 
@@ -44,17 +47,52 @@ export class MemoryDatabase {
   }
 }
 
+const queryOperators: ([string, (data: any, value: any) => boolean])[] = Object.entries({
+  $regex: (data: RegExp, value) => data.test(value),
+  $regexFor: (data, value) => new RegExp(value, 'i').test(data),
+  $in: (data: any[], value) => data.includes(value),
+  $nin: (data: any[], value) => !data.includes(value),
+  $ne: (data, value) => value !== data,
+  $eq: (data, value) => value === data,
+  $gt: (data, value) => value > data,
+  $gte: (data, value) => value >= data,
+  $lt: (data, value) => value < data,
+  $lte: (data, value) => value <= data,
+})
+
 Database.extend(MemoryDatabase, {
   async get(name, query, fields) {
-    const entries = Object.entries(Tables.resolveQuery(name, query))
+    function executeQuery(query: Query.Expr, data: any): boolean {
+      const entries: [string, any][] = Object.entries(query)
+      return entries.every(([key, value]) => {
+        if (key === '$and') {
+          return (value as Query.Expr[]).reduce((prev, query) => prev && executeQuery(query, data), true)
+        } else if (key === '$or') {
+          return (value as Query.Expr[]).reduce((prev, query) => prev || executeQuery(query, data), false)
+        } else if (key === '$not') {
+          return !executeQuery(value, data)
+        } else if (Array.isArray(value)) {
+          return value.includes(data[key])
+        } else if (value instanceof RegExp) {
+          return value.test(data[key])
+        } else if (typeof value === 'string' || typeof value === 'number') {
+          return value === data[key]
+        }
+        return queryOperators.reduce((prev, [prop, callback]) => {
+          return prev && (prop in value ? callback(value[prop], data[key]) : true)
+        }, true)
+      })
+    }
+
+    const expr = Query.resolve(name, query)
     return this.$table(name)
-      .filter(row => entries.every(([key, value]) => value.includes(row[key])))
+      .filter(row => executeQuery(expr, row))
       .map(row => fields ? pick(row, fields) : row)
       .map(clone)
   },
 
   async remove(name, query) {
-    const entries = Object.entries(Tables.resolveQuery(name, query))
+    const entries = Object.entries(Query.resolve(name, query))
     this.$store[name] = this.$table(name)
       .filter(row => !entries.every(([key, value]) => value.includes(row[key])))
   },

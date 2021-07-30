@@ -1,5 +1,6 @@
 import { createPool, Pool, PoolConfig, escape as mysqlEscape, escapeId, format, OkPacket, TypeCast } from 'mysql'
-import { Tables as KoishiTables, App, Database } from 'koishi-core'
+import { App, Database } from 'koishi-core'
+import * as Koishi from 'koishi-core'
 import { Logger } from 'koishi-utils'
 import { types } from 'util'
 
@@ -9,9 +10,9 @@ declare module 'mysql' {
   }
 }
 
-type TableType = keyof Tables
+export type TableType = keyof Tables
 
-export interface Tables extends KoishiTables {}
+export interface Tables extends Koishi.Tables {}
 
 const logger = new Logger('mysql')
 
@@ -82,7 +83,7 @@ class MysqlDatabase {
         const cols = Object.keys(table)
           .filter((key) => typeof table[key] !== 'function')
           .map((key) => `${escapeId(key)} ${MysqlDatabase.Domain.definition(table[key])}`)
-        const { primary, unique, foreign } = KoishiTables.config[name as TableType]
+        const { primary, unique, foreign } = Koishi.Tables.config[name as TableType]
         cols.push(`primary key (${escapeId(primary)})`)
         for (const key of unique) {
           cols.push(`unique index (${escapeId(key)})`)
