@@ -30,13 +30,13 @@
   ],
   "devDependencies": {
     "@types/marked": "^2.0.2",
-    "koishi-plugin-mongo": "^2.2.3",
-    "koishi-plugin-mysql": "^3.3.2",
+    "koishi-plugin-mongo": "^2.3.0",
+    "koishi-plugin-mysql": "^3.4.0",
     "koishi-plugin-puppeteer": "^2.1.4",
-    "koishi-test-utils": "^6.0.1"
+    "koishi-test-utils": "^6.1.0"
   },
   "peerDependencies": {
-    "koishi-core": "^3.12.3"
+    "koishi-core": "^3.13.0"
   },
   "dependencies": {
     "@octokit/webhooks-types": "^3.75.2",
