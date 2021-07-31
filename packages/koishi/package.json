@@ -31,10 +31,10 @@
   ],
   "dependencies": {
     "@koa/router": "^10.0.0",
-    "@koishijs/core": "^4.0.0-alpha.0",
     "@koishijs/cli": "^4.0.0-alpha.0",
+    "@koishijs/core": "^4.0.0-alpha.0",
     "@koishijs/utils": "^5.0.0-alpha.0",
-    "@types/koa": "^2.13.1",
+    "@types/koa": "^2.13.4",
     "@types/koa__router": "^8.0.4",
     "koa": "^2.13.1",
     "koa-bodyparser": "^4.3.0"

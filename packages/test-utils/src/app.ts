@@ -98,8 +98,6 @@ export class MockedApp extends App {
     super({
       type: 'mock',
       selfId: BASE_SELF_ID,
-      channelCacheAge: Number.EPSILON,
-      userCacheAge: Number.EPSILON,
       ...options,
     })
 

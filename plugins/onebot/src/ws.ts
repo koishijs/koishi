@@ -9,7 +9,7 @@ export class WsClient extends Adapter.WsClient<'onebot'> {
   connect = connect
 
   constructor(app: App) {
-    super(app, CQBot, app.options.onebot)
+    super(app, CQBot, CQBot.config)
   }
 
   prepare(bot: CQBot) {
@@ -25,8 +25,7 @@ export class WsServer extends Adapter<'onebot'> {
   constructor(app: App) {
     assertProperty(app.options, 'port')
     super(app, CQBot)
-    const { onebot = {} } = this.app.options
-    const { path = '/onebot' } = onebot
+    const { path = '/onebot' } = CQBot.config
     this.wsServer = new WebSocket.Server({
       path,
       server: this.app._httpServer,

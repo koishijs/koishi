@@ -42,8 +42,7 @@ export default class HttpServer extends Adapter<'onebot'> {
   }
 
   async start() {
-    const { onebot = {} } = this.app.options
-    const { secret, path = '/onebot' } = onebot
+    const { secret, path = '/onebot', quickOperation } = CQBot.config
     this.app.router.post(path, (ctx) => {
       if (secret) {
         // no signature
@@ -58,7 +57,6 @@ export default class HttpServer extends Adapter<'onebot'> {
       logger.debug('receive %o', ctx.request.body)
       const session = createSession(this, ctx.request.body)
 
-      const { quickOperation } = onebot
       if (session && quickOperation > 0) {
         // bypass koa's built-in response handling for quick operations
         ctx.respond = false

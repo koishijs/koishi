@@ -192,7 +192,7 @@ export function connect(bot: CQBot) {
         setTimeout(() => {
           delete listeners[data.echo]
           reject(new Error('response timeout'))
-        }, bot.app.options.onebot.responseTimeout)
+        }, CQBot.config.responseTimeout)
         bot.socket.send(JSON.stringify(data), (error) => {
           if (error) reject(error)
         })

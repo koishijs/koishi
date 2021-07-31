@@ -1,5 +1,5 @@
-import MysqlDatabase, { Config, escape } from './database'
-import { User, Channel, Database, Context, TableType, Tables, difference } from 'koishi'
+import MysqlDatabase, { Config, escape, TableType } from './database'
+import { User, Channel, Database, Context, Query, difference } from 'koishi'
 import { OkPacket, escapeId } from 'mysql'
 
 export * from './database'
@@ -17,15 +17,76 @@ declare module '@koishijs/core' {
   }
 }
 
-function createFilter<T extends TableType>(name: T, _query: Tables.Query<T>) {
-  const query = Tables.resolveQuery(name, _query)
-  const output: string[] = []
-  for (const key in query) {
-    const value = query[key]
-    if (!value.length) return '0'
-    output.push(`${escapeId(key)} IN (${value.map(val => escape(val, name, key)).join(', ')})`)
+function createMemberQuery(key: string, value: any[], notStr = '') {
+  if (!value.length) return notStr ? '1' : '0'
+  return `${key}${notStr} IN (${value.map(val => escape(val)).join(', ')})`
+}
+
+function createRegExpQuery(key: string, value: RegExp) {
+  return `${key} REGEXP ${escape(value.source)}`
+}
+
+function createEqualQuery(key: string, value: any) {
+  return `${key} = ${escape(value)}`
+}
+
+const queryOperators: Record<string, (key: string, value: any) => string> = {
+  $regex: createRegExpQuery,
+  $regexFor: (key, value) => `${escape(value)} REGEXP ${key}`,
+  $in: (key, value) => createMemberQuery(key, value, ''),
+  $nin: (key, value) => createMemberQuery(key, value, ' NOT'),
+  $eq: createEqualQuery,
+  $ne: (key, value) => `${key} != ${escape(value)}`,
+  $gt: (key, value) => `${key} > ${escape(value)}`,
+  $gte: (key, value) => `${key} >= ${escape(value)}`,
+  $lt: (key, value) => `${key} < ${escape(value)}`,
+  $lte: (key, value) => `${key} <= ${escape(value)}`,
+}
+
+export function createFilter<T extends TableType>(name: T, query: Query<T>) {
+  function parseQuery(query: Query.Expr) {
+    const conditions: string[] = []
+    for (const key in query) {
+      // logical expression
+      if (key === '$or') {
+        conditions.push(`!(${parseQuery(query.$not)})`)
+        continue
+      } else if (key === '$and') {
+        if (!query.$and.length) return '0'
+        conditions.push(...query.$and.map(parseQuery))
+        continue
+      } else if (key === '$or' && query.$or.length) {
+        conditions.push(`(${query.$or.map(parseQuery).join(' || ')})`)
+        continue
+      }
+
+      // query shorthand
+      const value = query[key]
+      const escKey = escapeId(key)
+      if (Array.isArray(value)) {
+        conditions.push(createMemberQuery(escKey, value))
+        continue
+      } else if (value instanceof RegExp) {
+        conditions.push(createRegExpQuery(escKey, value))
+        continue
+      } else if (typeof value === 'string' || typeof value === 'number') {
+        conditions.push(createEqualQuery(escKey, value))
+        continue
+      }
+
+      // query expression
+      for (const prop in value) {
+        if (prop in queryOperators) {
+          conditions.push(queryOperators[prop](escKey, value[prop]))
+        }
+      }
+    }
+
+    if (!conditions.length) return '1'
+    if (conditions.includes('0')) return '0'
+    return conditions.join(' && ')
   }
-  return output.join(' AND ')
+  return parseQuery(Query.resolve(name, query))
 }
 
 Database.extend(MysqlDatabase, {

@@ -10,6 +10,13 @@ declare module 'koa' {
     body: any
     rawBody: string
   }
+
+  namespace Application {
+    interface Request {
+      body: any
+      rawBody: string
+    }
+  }
 }
 
 declare module '@koishijs/core' {

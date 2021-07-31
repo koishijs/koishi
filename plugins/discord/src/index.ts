@@ -25,5 +25,11 @@ Adapter.types.discord = WsClient
 export const name = 'discord'
 
 export function apply(ctx: Context, config: Config = {}) {
-  Object.assign(DiscordBot.config, config)
+  DiscordBot.config = {
+    axiosConfig: {
+      ...ctx.app.options.axiosConfig,
+      ...config.axiosConfig,
+    },
+    ...config,
+  }
 }
