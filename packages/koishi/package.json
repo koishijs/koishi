@@ -34,8 +34,8 @@
     "@koishijs/cli": "^4.0.0-alpha.0",
     "@koishijs/core": "^4.0.0-alpha.0",
     "@koishijs/utils": "^5.0.0-alpha.0",
-    "@types/koa": "^2.13.4",
-    "@types/koa__router": "^8.0.4",
+    "@types/koa": "*",
+    "@types/koa__router": "*",
     "koa": "^2.13.1",
     "koa-bodyparser": "^4.3.0"
   }

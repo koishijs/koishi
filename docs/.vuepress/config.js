@@ -1,4 +1,5 @@
 const { resolve } = require('path')
+const { remove: removeDiacritics } = require('diacritics')
 
 module.exports = {
   base: '/v4/',
@@ -17,6 +18,22 @@ module.exports = {
     // ['meta', { name: 'msapplication-TileImage', content: '/icons/msapplication-icon-144x144.png' }],
     // ['meta', { name: 'msapplication-TileColor', content: '#000000' }]
   ],
+
+  markdown: {
+    code: false,
+    slugify (str) {
+      const rControl = /[\u0000-\u001f]/g
+      const rSpecial = /[\s~`!@#$%^&*()\-_+=[\]{}|\\;:"'“”‘’<>,.?/]+/g
+      return removeDiacritics(str)
+        .replace(rControl, '')
+        .replace(/\(.+\)(?=\s|$)/, '')
+        .replace(rSpecial, '-')
+        .replace(/\-{2,}/g, '-')
+        .replace(/^\-+|\-+$/g, '')
+        .replace(/^(\d)/, '_$1')
+        .toLowerCase()
+    },
+  },
 
   themeConfig: {
     logo: '/koishi.png',

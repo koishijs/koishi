@@ -39,7 +39,6 @@ const emit = defineEmit(['update:modelValue', 'update:original'])
 let codeEditor: monaco.IStandaloneCodeEditor
 let origEditor: monaco.IStandaloneCodeEditor
 let diffEditor: monaco.IStandaloneDiffEditor
-let resizeObserver: ResizeObserver
 
 watch(() => props.options, (options) => {
   codeEditor?.updateOptions(options)
@@ -77,6 +76,10 @@ onMounted(() => {
     value: props.modelValue,
     theme: props.theme,
     language: props.language,
+    tabSize: 2,
+    insertSpaces: true,
+    automaticLayout: true,
+    scrollBeyondLastLine: false,
     ...props.options,
   }
 
@@ -105,14 +108,10 @@ onMounted(() => {
       emit('update:original', value, event)
     }
   })
-
-  resizeObserver = new ResizeObserver(() => (diffEditor || codeEditor)?.layout())
-  resizeObserver.observe(root.value)
 })
 
 onBeforeUnmount(() => {
   (diffEditor || codeEditor)?.dispose()
-  resizeObserver.disconnect()
 })
 
 monaco.defineTheme('onedark', OneDark)

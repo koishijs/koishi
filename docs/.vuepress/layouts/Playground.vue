@@ -1,48 +1,23 @@
 <template>
-  <div class="theme-container no-sidebar" :class="{ 'sidebar-open': isSidebarOpen }">
-    <t-navbar @toggle-sidebar="toggleSidebar">
-      <template #before>
-        <slot name="navbar-before" />
-      </template>
-      <template #after>
-        <slot name="navbar-after" />
-      </template>
-    </t-navbar>
-
-    <div class="sidebar-mask" @click="toggleSidebar(false)" />
-
-    <t-sidebar>
-      <template #top>
-        <slot name="sidebar-top" />
-      </template>
-      <template #bottom>
-        <slot name="sidebar-bottom" />
-      </template>
-    </t-sidebar>
-
-    <main class="playground" :style="{ backgroundColor }">
-      <client-only>
-        <monaco-editor class="editor" :theme="theme" language="typescript"/>
-      </client-only>
-      <div class="chat"></div>
-    </main>
-  </div>
+  <t-layout>
+    <template #main>
+      <main class="playground" :style="{ backgroundColor }">
+        <client-only>
+          <monaco-editor class="editor" :theme="theme" language="typescript"/>
+        </client-only>
+        <div class="chat"></div>
+      </main>
+    </template>
+  </t-layout>
 </template>
 
 <script lang="ts" setup>
 
-import { ref, computed } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, computed, defineAsyncComponent } from 'vue'
 import { useDarkMode } from '@vuepress/theme-default/lib/client/composables'
-import TNavbar from '@vuepress/theme-default/lib/client/components/Navbar.vue'
-import TSidebar from '@vuepress/theme-default/lib/client/components/Sidebar.vue'
-import MonacoEditor from '../components/MonacoEditor.vue'
+import TLayout from '@vuepress/theme-default/lib/client/layouts/Layout.vue'
 
-const isSidebarOpen = ref(false)
-
-function toggleSidebar(to?: boolean) {
-  isSidebarOpen.value = typeof to === 'boolean' ? to : !isSidebarOpen.value
-}
+const MonacoEditor = defineAsyncComponent(() => import('../components/MonacoEditor.vue'))
 
 const isDarkMode = useDarkMode()
 const theme = computed(() => isDarkMode.value ? 'onedark' : 'onelight')
