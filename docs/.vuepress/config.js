@@ -175,6 +175,19 @@ module.exports = {
       plugins: [
         require('@rollup/plugin-yaml')(),
       ],
+      build: {
+        // fix for monaco workers
+        // https://github.com/vitejs/vite/issues/1927#issuecomment-805803918
+        rollupOptions: {
+          output: {
+            inlineDynamicImports: false,
+            manualChunks: {
+              tsWorker: ['monaco-editor/esm/vs/language/typescript/ts.worker'],
+              editorWorker: ['monaco-editor/esm/vs/editor/editor.worker'],
+            },
+          },
+        },
+      },
     },
   },
 }
