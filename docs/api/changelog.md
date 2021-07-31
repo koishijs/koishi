@@ -5,6 +5,106 @@ externalIcon: false
 
 # v3 更新日志
 
+## [Koishi 3.13.0](https://github.com/koishijs/koishi/releases/tag/3.13.0)
+
+### Notable Changes
+
+- **orm:** 大幅优化了 query 语法，支持了表达式和操作符机制
+
+### Features
+
+- **discord:** 支持了当遇到错误时将继续发送剩余片段 (#267) (=7dd8292ced2cabf0762a8592f32860e57e15fa4b)
+- **eval:** 针对 CoffeeScript 支持了 top-level await (#319) (=b0096427290d8403fe9f8cc57a61b89b2a7df9f2)
+- **orm:** 支持了请求表达式和正则语法 (#305) (=657e4b2b9ac79031c2715da185e676b0a96c9d0c)
+- **orm:** 支持了传入 IndexType 以严格匹配的语法 (=3cc390ad65df1d4c9dd7ba2d79b0c9137ce856e5)
+- **orm:** 支持了 `$regexFor` 操作符 (=8e5fe1a706381243b965118db507ac5e9a53b609)
+
+### Bug Fixes
+
+- **cli:** 修复了 koishi start 不自动支持 koishi.config.yml 的问题 (#306) (=bac8a011300648329edc80aeb93e4113525b923c)
+- **eval:** 修复了同时使用 `useSpread` 和 `useBuiltIns` 导致的冲突 (#316) (=ad05b4e4a7d52457f8ca2c6710b75c6ccec9e817)
+- **mongo:** 不手动传入默认的 27017 端口以避免 `MongoParseError` (#312) (=11bbad7d879ebb1f6ce09b3261340e491ad7fae5)
+- **teach:** 修复了当使用正则表达式时存储了错误的转义表达式的问题 (#309) (=ce19057eeb34406320633bb26628f1a4dc3fb635)
+
+## [Koishi 3.12.3](https://github.com/koishijs/koishi/releases/tag/3.12.3)
+
+### Features
+
+- **adventure:** 优化了类型标注 (=bfc5ded68b5e8f3bd0e011d2682c23d80bccd73f)
+- **adventure:** 新增了 `Action.useItem()` 的 `onTimeout` 配置项 (=16a22f075df35ba8bb3f1d6521979b73f34cc9b5)
+- **teach:** 移除了正则表达式的兼容性检测代码 (#299) (#300) (=b3c5d73e928da52024c17f5b8b5f43d50584663e)
+
+### Bug Fixes
+
+- **core:** 使用 `Number.isFinite()` 以检验输入内容 (#302) (=e625328a925c2eb48703b39bf1de7edd6c6dcdb5)
+- **discord:** 修复了部分情况下会发生连续两次重连的问题 (#297) (=845afc03668f1ce390edaff2fa833690dc57d1b0)
+- **eval:** 修复了错误的插值行为 (#304) (=616142bcfc37364da20e417319fd6bf56b1ed966)
+- **teach:** 修复了特定正则表达式的匹配不符合预期的问题 (#249) (=20e6522bc34c07a5bd7bdc668b9b1b2553a4f954)
+- **webui:** 修复了对 MySQL 的不兼容问题 (#295) (=cc27cd8f51307e5668fc2046516fd33f81ac5ad7)
+
+## [Koishi 3.12.2](https://github.com/koishijs/koishi/releases/tag/3.12.2)
+
+### Features
+
+- **adventure:** 新增了 item.add, item.remove, item.set 指令 (=73cf5bf345ba2022796cabbceeb4b597534cdced)
+- **common:** 将插件入口分离以便于用户部分安装 (=12346abacf4eabd56878bd14fce88d906529201f)
+- **discord:** 支持了 `handleMixedContent` 配置项 (#279) (=8fb69129186f21e6b746b51a58e51b26f885d22a, =253b0d6584ad1882efcd176d53594e5ecbc293fe, =e96a920e679300afc4674f06386d2fa4a41a2cbb)
+- **discord:** 支持了 reaction 相关事件和 API (=21d06f25c677209ced79857cbea1912c220d798b, =f0d9a61dce557aac81d04cf9e08c37c55958c3dd)
+- **kaiheila:** 支持了 reaction 相关事件 (#296) (=173ce8547261919106278194a934ea492db37d36)
+
+### Bug Fixes
+
+- **adventure:** 修复了 `Event.gain()` 未修改 `session._gains` 的问题 (=58a290f4bd55f5396c5122d3965157d8f96d9dc6)
+- **adventure:** 修复了部分情况下 use 指令可以在无法使用物品状态下调用的问题 (=eb11cc1a33b66e2459dbd8acbcaa33c26d81ae02)
+- **adventure:** 修复了剧情存在状态时 items 回调函数报错的问题 (=26621aa4c84ecffa82127ebadfc0a23f5c1bf34f)
+- **common:** 优化了 bind 指令的文本提示 (=c654d66527b4f55b071baf08219376ba07eaacaa)
+
+## [Koishi 3.12.1](https://github.com/koishijs/koishi/releases/tag/3.12.1)
+
+### Features
+
+- **adventure:** 新增了 adventure/gain 和 adventure/before-timer 事件 (=126832a4e42c594d2ad561eb8adf4c68eec2c3f9)
+- **adventure:** 优化了 `Event.gain()` 操作的行为 (=1981c0c45586f7da7169b87d6edfd5272ff44e76, =4b01056f872b753bfceeb8b7efcd58f6568e5215)
+- **adventure:** 支持了 `phase.prepare` 属性，用于在阶段初期初始化状态 (=b6c052756478e800d0d9a15e0133be225d8fec22)
+- **adventure:** 新增了若干 `Action.choose()` 的配置项 (=b22612ce0c9b6801ef61a67c4a42e48e03b875e4)
+- **adventure:** add-item 指令支持了 -p 选项，用于控制物品添加行为是否触发相关事件 (=bd54c8656c742bd1d598892a7a09341c21b94d5d)
+- **discord:** 新增了 `bot.$setGroupName()`, `bot.$setGroupCard()` 方法 (#283) (=83cfa2a16a1061639395a25c3ec7f67654402650)
+- **discord:** 优化了图片类消息段的发送行为 (#280) (#282) (=12207bdee5adcb30633e9db7f4c5809fec1e7a04)
+- **onebot:** 支持了最新的 go-cqhttp API (=90d9dc864c522969b26de2000e062c295323ea0f)
+- **test-utils:** `MockedApp` 默认情况下将不使用数据库缓存 (=782d33ff69cdb36fbff61f62418844fd87ce9386)
+
+### Bug Fixes
+
+- **adventure:** 优化了结局列表的输出 (=b527e0e7850fcef26b4eb6537c7de8b0c8d894aa)
+- **adventure:** 剧情锁将定时解除，以防止内存泄漏 (=af73653e4f5b62d649562035a1a2b4ec9bcaa038)
+- **chat:** 修复了 debug 输出时报错的问题 (=5f34a0e7efa76057da495979cb41b5bd4238bc91)
+- **common:** 修复了 assign 和 authorize 指令的异常行为 (#292) (=c342ce0cbbdff951be9bd7bb5e2af0c2cb3d5622)
+- **core:** 针对贪婪匹配的参数支持了自定义类型 (=2087b7c8deeae5495f1970dc693e14d77459ce7e)
+- **core:** 针对快捷调用支持了自定义类型 (=a055b26cb5d641f8604a605a14da99fa8abc134a)
+- **utils:** 当插值中出现 ReferenceError 时使用空串替代 (=0426a86ffde2baf2f28ff1f5449d3653211abb5b)
+
+## [Koishi 3.12.0](https://github.com/koishijs/koishi/releases/tag/3.12.0)
+
+### Notable Changes
+
+- 新增了工具库 koishi-dev-utils，支持了使用装饰器开发插件
+
+### Features
+
+- **core:** 现在自定义参数类型也可以配置为贪婪匹配了 (=11e9fe3240c847dc1c63a5f40598af7d2bbde947)
+- **dev-utils:** 新增了 koishi-dev-utils (=fdd954148454e68092da062db7ad21a0e6c0c1be, =3ce5fc7588a7225ae2c7d3634735551c1ee973eb, =26bcd3a5ba9d04899aae46811b872d90f89aebd2, =fbae1161dea82969ae671b7f0736a7152f9ff184, =79b86323173388dee5e55a7ffb7173738905de68, =3bd9ed1eaa9b4358dc018f93fe963261dea692e7, =c1a90dad6189674aa630bf0fb86a5ee24af7931c)
+- **discord, kaiheila:** send 事件现在支持了 `groupId` 属性 (=8976f250d04f69fb835fc93ca9bebf2e5b8e8d8a)
+- **eval:** 新增了配置项 `serializer` (=58f8281650d979cebdd46efe3cdb6e636e1ecf51)
+
+### Bug Fixes
+
+- **adventure:** 修复了用户数据中存有未知结局时会产生报错的问题 (=72d8ae7459caa6493ad505086426a8d910ccdcae)
+- **chat:** 修复了与其他适配器共同使用时的类型错误 (=a5af832d1a1f697be3ee345c346b672355cced4d)
+- **core:** 修复了 koa-bodyparser 的类型错误 (=5fd2228e02ccc6498e5f76bde9049bbe80c70675)
+- **eval:** 修复了少量平台中 SyntaxError 不附带位置信息的问题 (=ac7e67b67b7179e3a662577ecd43df0f4f46aead)
+- **puppeteer:** 修复了 selector 参数被错误转义的问题 (=03507fadb5f5c19763e278a68b0f2907b571e81a)
+- **webui:** 修复了未安装数据库时 status 指令报错的问题 (=27717c91fe5603f5aa0ba7bf1490b15fbc2ec80d)
+
 ## [Koishi 3.11.2](https://github.com/koishijs/koishi/releases/tag/3.11.2)
 
 ### Features
@@ -33,11 +133,11 @@ externalIcon: false
 
 ### Bug Fixes
 
-- **core:** 修复了由于 esbuild 导致的插件不一致问题 (=398ad5bd3f882a2922293afff8b0b5dc72ec9969)
 - **adventure:** 修复了重复计算结局达成次数的问题 (=dfd683c5c9a488157010c8c20f26e7b792134431)
-- **cli:** 修复了成功启动前 SIGINT/SIGTERM 无效的问题 (=632dc6156febb0a613b0c2dcd1c84a7e4d3e6ffb)
 - **adventure:** 修复了 ending 指令查看剧情线失效的问题 (=4d77b86af6d3e00ea063b9ffdec2862423ef0fe0)
-- **adventure:** 修复了 show 指令直接调用时参数丢失的问题 (e87ac4dc619a1d889534ece2c625fe89fac57802)
+- **adventure:** 修复了 show 指令直接调用时参数丢失的问题 (=e87ac4dc619a1d889534ece2c625fe89fac57802)
+- **cli:** 修复了成功启动前 SIGINT/SIGTERM 无效的问题 (=632dc6156febb0a613b0c2dcd1c84a7e4d3e6ffb)
+- **core:** 修复了由于 esbuild 导致的插件不一致问题 (=398ad5bd3f882a2922293afff8b0b5dc72ec9969)
 
 ## [Koishi 3.11.0](https://github.com/koishijs/koishi/releases/tag/3.11.0)
 

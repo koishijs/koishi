@@ -23,7 +23,7 @@ if (process.env.KOISHI_CONFIG_FILE) {
   configDir = dirname(configFile)
 } else {
   const files = readdirSync(configDir)
-  const configExt = ['.js', '.json', '.ts', '.yaml', '.yml'].find(ext => files.includes(basename + ext))
+  configExt = ['.js', '.json', '.ts', '.yaml', '.yml'].find(ext => files.includes(basename + ext))
   if (!configExt) {
     throw new Error(`config file not found. use ${yellow('koishi init')} command to initialize a config file.`)
   }

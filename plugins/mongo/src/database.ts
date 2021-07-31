@@ -37,7 +37,6 @@ export class MongoDatabase {
   constructor(public app: App, config?: Config) {
     this.config = {
       host: 'localhost',
-      port: 27017,
       name: 'koishi',
       protocol: 'mongodb',
       ...config,

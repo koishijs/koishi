@@ -118,6 +118,11 @@ describe('Teach Plugin - Appellative', () => {
     await u3g1.shouldReply('#4 -p 0.5 -P 1', '问答 4 已成功修改。')
     await u3g1.shouldReply('koishi, fooo', 'baz')
   })
+
+  it('unescape semgent (#309)', async () => {
+    await u3g1.shouldReply('# ^有人说&#91;:：&#93;(.+) 谁说过$1？ -x', '问答已添加，编号为 5。')
+    await u3g1.shouldReply('有人说：要有光', '谁说过要有光？')
+  })
 })
 
 describe('Teach Plugin - Interpolate', () => {

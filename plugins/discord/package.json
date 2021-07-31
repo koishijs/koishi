@@ -31,11 +31,13 @@
     "koishi": "^4.0.0-alpha.0"
   },
   "devDependencies": {
+    "@types/es-aggregate-error": "^1.0.2",
     "@types/ws": "^7.4.2",
     "@koishijs/test-utils": "^7.0.0-alpha.0"
   },
   "dependencies": {
     "axios": "^0.21.1",
+    "es-aggregate-error": "^1.0.5",
     "file-type": "^16.3.0",
     "form-data": "^4.0.0",
     "ws": "^7.4.5"

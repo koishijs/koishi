@@ -131,6 +131,7 @@ describe('Eval Loaders', () => {
     const app = await createApp('coffeescript')
     const ses = app.session('123')
     await ses.shouldReply('echo 1${"foobar"}3', '1foobar3')
+    await ses.shouldReply('evaluate await 1; 2', '2')
     await app.stop()
   })
 })
