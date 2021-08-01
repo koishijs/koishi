@@ -41,25 +41,53 @@ async function bundle(path: string) {
     compile(path, resolve(fullpath, outFile)),
   ])
 
-  const moduleRE = `"(${files.join('|')})"`
+  const moduleRE = `["'](${files.join('|')})["']`
   const internalImport = new RegExp('import\\(' + moduleRE + '\\)\\.', 'g')
   const internalExport = new RegExp('^ {4}export .+ from ' + moduleRE + ';$')
   const internalInject = new RegExp('^declare module ' + moduleRE + ' {$')
   const importMap: Record<string, Record<string, string>> = {}
   const namespaceMap: Record<string, string> = {}
 
-  let prolog = '', epilog = '', cap: RegExpExecArray, identifier: string, detached = false
+  let prolog = '', cap: RegExpExecArray
+  let current: string, temporary: string[]
+  let identifier: string
+  const platforms: Record<string, Record<string, string[]>> = {}
   const output = content.split(EOL).filter((line) => {
-    if (cap = /^ {4}import ["'](.+)["'];$/.exec(line)) {
+    // Phase 1: collect informations
+    if (temporary) {
+      if (line === '}') return temporary = null
+      temporary.push(line)
+    } else if (cap = /^declare module ["'](.+)["'] \{( \})?$/.exec(line)) {
+      //                                  ^1
+      // ignore empty module declarations
+      if (cap[2]) return temporary = null
+      current = cap[1]
+      const segments = current.split(/\//g)
+      const lastName = segments.pop()
+      if (['node', 'browser'].includes(lastName) && segments.length) {
+        temporary = (platforms[segments.join('/')] ||= {})[lastName] = []
+      } else {
+        return true
+      }
+    } else if (cap = /^ {4}import ["'](.+)["'];$/.exec(line)) {
+      //                       ^1
+      // import module directly
       if (!files.includes(cap[1])) prolog += line.trimStart() + EOL
     } else if (cap = /^ {4}import \* as (.+) from ["'](.+)["'];$/.exec(line)) {
+      //                                ^1            ^2
+      // import as namespace
       if (files.includes(cap[2])) {
+        // mark internal module as namespace
         namespaceMap[cap[2]] = cap[1]
       } else if (!prolog.includes(line.trimStart())) {
+        // preserve external module imports once
         prolog += line.trimStart() + EOL
       }
-    } else if (cap = /^ {4}import +(\S*)(?:, *)?(?:\{(.+)\})? from ["'](.+)["'];$/.exec(line)) {
+    } else if (cap = /^ {4}import (\S*)(?:, *)?(?:\{(.+)\})? from ["'](.+)["'];$/.exec(line)) {
+      //                          ^1                ^2                ^3
+      // ignore internal imports
       if (files.includes(cap[3])) return
+      // handle aliases from external imports
       const map = importMap[cap[3]] ||= {}
       cap[1] && Object.defineProperty(map, 'default', { value: cap[1] })
       cap[2] && cap[2].split(',').map((part) => {
@@ -72,31 +100,28 @@ async function bundle(path: string) {
         }
       })
     } else if (line.startsWith('///')) {
-      prolog += line + EOL
+      if (!corePackages.includes(path)) prolog += line + EOL
     } else if (line.startsWith('    export default ')) {
-      epilog = line.trimStart() + EOL
+      return current === 'index'
     } else {
-      return true
+      return line.trim() !== 'export {};'
     }
   }).map((line) => {
-    if (cap = /^declare module ["'](.+)["'] \{( \})?$/.exec(line)) {
-      if (cap[2]) return ''
-      if (cap[1].endsWith('browser')) {
-        detached = true
+    // Phase 2: flatten module declarations
+    if (cap = /^declare module ["'](.+)["'] \{$/.exec(line)) {
+      if (identifier = namespaceMap[cap[1]]) {
+        return `declare namespace ${identifier} {`
+      } else {
         return ''
       }
-      identifier = namespaceMap[cap[1]]
-      return identifier ? `declare namespace ${identifier} {` : ''
     } else if (line === '}') {
-      if (detached) detached = false
       return identifier ? '}' : ''
     } else if (!internalExport.exec(line)) {
-      if (detached) return ''
       if (!identifier) line = line.slice(4)
       return line
         .replace(internalImport, '')
-        .replace(/import\("index"\)/g, 'import(".")')
-        .replace(/^((module|class|namespace) .+ \{)$/, (_) => `declare ${_}`)
+        .replace(/import\("index"\)/g, "import('.')")
+        .replace(/^((module|(abstract )?class|namespace) .+ \{)$/, (_) => `declare ${_}`)
     } else {
       return ''
     }
@@ -125,12 +150,69 @@ async function bundle(path: string) {
     prolog += `import ${output.join(', ')} from '${name}';${EOL}`
   })
 
-  await fs.writeFile(resolve(fullpath, 'lib/index.d.ts'), prolog + output + epilog)
+  await fs.writeFile(resolve(fullpath, 'lib/index.d.ts'), prolog + output + EOL)
+}
+
+async function wrapModule(name: string, source: string, target: string) {
+  const newline = EOL + '    '
+  const typings = await fs.readFile(resolve(cwd, source), 'utf8')
+  const content = typings.trim().split(EOL).join(newline) + EOL
+  await fs.writeFile(
+    resolve(cwd, 'packages/koishi/lib', target),
+    `declare module "${name}" {${newline}${content}}${EOL}`,
+  )
+}
+
+async function bundleNode() {
+  let cap: RegExpExecArray
+  const typings = await compile('packages/koishi', resolve(cwd, 'packages/koishi/temp/index.d.ts'))
+  const prolog = ['/// <reference types="./koishi" />']
+  const modules: Record<string, string[]> = {}
+  let current: string
+  for (const line of typings.split(EOL)) {
+    if (line.startsWith('///')) {
+      prolog.push(line)
+    } else if (cap = /^ {4}import .+ from ['"](.+)['"];$/.exec(line)) {
+      if (!cap[1].includes('@koishijs')) prolog.push(line.slice(4))
+    } else if (cap = /^ {4}module ['"](.+)['"] \{$/.exec(line)) {
+      current = cap[1]
+      if (current === '@koishijs/core') current = 'koishi'
+    } else if (current) {
+      if (line === '    }') {
+        current = ''
+      } else {
+        (modules[current] ||= []).push(line.slice(4))
+      }
+    } else if (line.startsWith('    ')) {
+      const content = line.slice(4)
+      if (content.startsWith('import ') || /^export .+ from/.test(content)) continue
+      if (content.startsWith('export namespace Injected')) {
+        (modules.koishi ||= []).push('    namespace ' + line.slice(29))
+      } else {
+        (modules.koishi ||= []).push(line)
+      }
+    }
+  }
+  for (const name in modules) {
+    prolog.push(`declare module '${name}' {`, ...modules[name], '}')
+  }
+  await fs.writeFile(
+    resolve(cwd, 'packages/koishi/lib/index.d.ts'),
+    prolog.join(EOL) + EOL,
+  )
 }
 
 async function bundleAll(names: readonly string[]) {
   for (const name of names) {
-    await bundle(name)
+    if (name === 'packages/koishi') {
+      await Promise.all([
+        wrapModule('koishi', 'packages/core/lib/index.d.ts', 'koishi.d.ts'),
+        wrapModule('@koishijs/utils', 'packages/utils/lib/index.d.ts', 'utils.d.ts'),
+        bundleNode(),
+      ])
+    } else {
+      await bundle(name)
+    }
   }
 }
 
@@ -146,7 +228,15 @@ const targets = [
   'plugins/adventure',
 ]
 
-const corePlugins = ['plugins/eval', 'plugins/puppeteer']
+const corePackages = [
+  'packages/utils',
+  'packages/core',
+]
+
+const corePlugins = [
+  'plugins/eval',
+  'plugins/puppeteer',
+]
 
 function precedence(name: string) {
   if (name.startsWith('packages/')) return 5

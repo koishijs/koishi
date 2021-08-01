@@ -1,21 +1,20 @@
 import { App, Context } from '@koishijs/core'
 import { defineProperty, remove } from '@koishijs/utils'
 import { Server, createServer } from 'http'
+import { AxiosRequestConfig } from 'axios'
 import Router from '@koa/router'
 import type Koa from 'koa'
+
+import './adapter'
+
+export * from '@koishijs/core'
+export * from '@koishijs/utils'
 
 declare module 'koa' {
   // koa-bodyparser
   interface Request {
     body: any
     rawBody: string
-  }
-
-  namespace Application {
-    interface Request {
-      body: any
-      rawBody: string
-    }
   }
 }
 
@@ -26,6 +25,7 @@ declare module '@koishijs/core' {
 
   interface AppOptions {
     port?: number
+    axiosConfig?: AxiosRequestConfig
   }
 
   namespace Context {
@@ -77,6 +77,3 @@ Router.prototype.register = function (this: Router, ...args) {
   })
   return layer
 }
-
-export * from '@koishijs/core'
-export * from '@koishijs/utils'

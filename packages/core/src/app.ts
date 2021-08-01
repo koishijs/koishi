@@ -6,7 +6,6 @@ import { Channel, User } from './database'
 import validate, { Command } from './command'
 import { Session } from './session'
 import help, { getCommandNames } from './help'
-import { AxiosRequestConfig } from 'axios'
 
 export interface DelayOptions {
   character?: number
@@ -27,7 +26,6 @@ export interface AppOptions extends BotOptions {
   autoAuthorize?: number | ((session: Session) => number)
   minSimilarity?: number
   selfUrl?: string
-  axiosConfig?: AxiosRequestConfig
 }
 
 function createLeadingRE(patterns: string[], prefix = '', suffix = '') {

@@ -1,3 +1,4 @@
+export * from '@koishijs/utils'
 export * from './adapter'
 export * from './app'
 export * from './command'

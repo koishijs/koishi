@@ -3,7 +3,6 @@
   "description": "A QQ bot framework based on CQHTTP",
   "version": "4.0.0-alpha.0",
   "main": "lib/index.js",
-  "module": "lib/browser.js",
   "typings": "lib/index.d.ts",
   "engines": {
     "node": ">=12.0.0"
@@ -36,6 +35,7 @@
     "@koishijs/utils": "^5.0.0-alpha.0",
     "@types/koa": "*",
     "@types/koa__router": "*",
+    "@types/ws": "^7.4.2",
     "koa": "^2.13.1",
     "koa-bodyparser": "^4.3.0"
   }

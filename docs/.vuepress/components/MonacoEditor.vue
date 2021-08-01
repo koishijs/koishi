@@ -4,7 +4,7 @@
 
 <script lang="ts" setup>
 
-import { editor as monaco } from 'monaco-editor'
+import { editor, Uri } from 'monaco-editor'
 import { ref, watch, onMounted, onBeforeUnmount, defineProps, defineEmit, withDefaults } from 'vue'
 import editorWorker from 'monaco-editor/esm/vs/editor/editor.worker?worker'
 import tsWorker from 'monaco-editor/esm/vs/language/typescript/ts.worker?worker'
@@ -36,9 +36,9 @@ const props = withDefaults(defineProps<{
 
 const emit = defineEmit(['update:modelValue', 'update:original'])
 
-let codeEditor: monaco.IStandaloneCodeEditor
-let origEditor: monaco.IStandaloneCodeEditor
-let diffEditor: monaco.IStandaloneDiffEditor
+let codeEditor: editor.IStandaloneCodeEditor
+let origEditor: editor.IStandaloneCodeEditor
+let diffEditor: editor.IStandaloneDiffEditor
 
 watch(() => props.options, (options) => {
   codeEditor?.updateOptions(options)
@@ -60,11 +60,11 @@ watch(() => props.original, (newValue) => {
 
 watch(() => props.language, (newVal) => {
   if (!codeEditor) return
-  monaco.setModelLanguage(codeEditor.getModel(), newVal)
+  editor.setModelLanguage(codeEditor.getModel(), newVal)
 })
 
 watch(() => props.theme, (newVal) => {
-  if (codeEditor) monaco.setTheme(newVal)
+  if (codeEditor) editor.setTheme(newVal)
 })
 
 onMounted(() => {
@@ -84,15 +84,16 @@ onMounted(() => {
   }
 
   if (props.diff) {
-    diffEditor = monaco.createDiffEditor(root.value, options)
+    diffEditor = editor.createDiffEditor(root.value, options)
     diffEditor.setModel({
-      original: monaco.createModel(props.original, props.language),
-      modified: monaco.createModel(props.modelValue, props.language),
+      original: editor.createModel(props.original, props.language),
+      modified: editor.createModel(props.modelValue, props.language),
     })
     codeEditor = diffEditor.getModifiedEditor()
     origEditor = diffEditor.getOriginalEditor()
   } else {
-    codeEditor = monaco.create(root.value, options)
+    options.model = editor.createModel(props.original, props.language, Uri.parse(`file:///untitled.ts`))
+    codeEditor = editor.create(root.value, options)
   }
 
   codeEditor.onDidChangeModelContent((event) => {
@@ -114,15 +115,15 @@ onBeforeUnmount(() => {
   (diffEditor || codeEditor)?.dispose()
 })
 
-monaco.defineTheme('onedark', OneDark)
-monaco.defineTheme('onelight', OneLight)
+editor.defineTheme('onedark', OneDark)
+editor.defineTheme('onelight', OneLight)
 
 if (import.meta.hot) {
   import.meta.hot.accept('./onedark.yaml', (OneDark) => {
-    monaco.defineTheme('onedark', OneDark)
+    editor.defineTheme('onedark', OneDark)
   })
   import.meta.hot.accept('./onelight.yaml', (OneDark) => {
-    monaco.defineTheme('onelight', OneLight)
+    editor.defineTheme('onelight', OneLight)
   })
 }
 

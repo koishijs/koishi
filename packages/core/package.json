@@ -2,7 +2,8 @@
   "name": "@koishijs/core",
   "description": "Core features for Koishi",
   "version": "4.0.0-alpha.0",
-  "main": "lib/index.js",
+  "main": "lib/node.js",
+  "module": "lib/browser.js",
   "typings": "lib/index.d.ts",
   "engines": {
     "node": ">=12.0.0"
@@ -32,7 +33,6 @@
     "@koishijs/test-utils": "^7.0.0-alpha.0"
   },
   "dependencies": {
-    "@types/ws": "^7.4.2",
     "axios": "^0.21.1",
     "fastest-levenshtein": "^1.0.12"
   }

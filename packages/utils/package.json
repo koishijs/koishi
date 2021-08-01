@@ -2,11 +2,11 @@
   "name": "@koishijs/utils",
   "description": "Utilities for Koishi",
   "version": "5.0.0-alpha.0",
-  "main": "lib/index.js",
+  "main": "lib/node.js",
+  "module": "lib/browser.js",
   "typings": "lib/index.d.ts",
   "files": [
-    "lib",
-    "chinese.txt"
+    "lib"
   ],
   "author": "Shigma <1700011071@pku.edu.cn>",
   "license": "MIT",
