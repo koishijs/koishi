@@ -4,8 +4,10 @@
 
 <script lang="ts" setup>
 
+/// <reference types="../global" />
+
 import { editor, Uri } from 'monaco-editor'
-import { ref, watch, onMounted, onBeforeUnmount, defineProps, defineEmit, withDefaults } from 'vue'
+import { ref, watch, onMounted, onBeforeUnmount } from 'vue'
 import editorWorker from 'monaco-editor/esm/vs/editor/editor.worker?worker'
 import tsWorker from 'monaco-editor/esm/vs/language/typescript/ts.worker?worker'
 import OneDark from './onedark.yaml'
@@ -34,7 +36,7 @@ const props = withDefaults(defineProps<{
   modelValue: '\n',
 })
 
-const emit = defineEmit(['update:modelValue', 'update:original'])
+const emit = defineEmits(['update:modelValue', 'update:original'])
 
 let codeEditor: editor.IStandaloneCodeEditor
 let origEditor: editor.IStandaloneCodeEditor
@@ -73,8 +75,6 @@ onMounted(() => {
     minimap: {
       enabled: false,
     },
-    value: props.modelValue,
-    theme: props.theme,
     language: props.language,
     tabSize: 2,
     insertSpaces: true,
@@ -92,7 +92,7 @@ onMounted(() => {
     codeEditor = diffEditor.getModifiedEditor()
     origEditor = diffEditor.getOriginalEditor()
   } else {
-    options.model = editor.createModel(props.original, props.language, Uri.parse(`file:///untitled.ts`))
+    options['model'] = editor.createModel(props.modelValue, props.language, Uri.parse(`file:///untitled.ts`))
     codeEditor = editor.create(root.value, options)
   }
 
@@ -119,10 +119,10 @@ editor.defineTheme('onedark', OneDark)
 editor.defineTheme('onelight', OneLight)
 
 if (import.meta.hot) {
-  import.meta.hot.accept('./onedark.yaml', (OneDark) => {
+  import.meta.hot.accept('./onedark.yaml', (OneDark: any) => {
     editor.defineTheme('onedark', OneDark)
   })
-  import.meta.hot.accept('./onelight.yaml', (OneDark) => {
+  import.meta.hot.accept('./onelight.yaml', (OneLight: any) => {
     editor.defineTheme('onelight', OneLight)
   })
 }

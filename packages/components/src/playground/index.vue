@@ -1,11 +1,9 @@
 <template>
   <t-layout>
-    <template #main>
+    <template #page>
       <main class="playground" :style="{ backgroundColor }">
-        <client-only>
-          <monaco-editor class="editor" :theme="theme" language="typescript" v-model="source"/>
-        </client-only>
-        <div class="chat">{{ result }}</div>
+        <monaco-editor class="editor" :theme="theme" language="typescript" v-model="source"/>
+        <k-chat-panel class="chat" :messages="messages" @send="handleSend"/>
       </main>
     </template>
   </t-layout>
@@ -13,13 +11,20 @@
 
 <script lang="ts" setup>
 
+/// <reference types="../global" />
+
 import { ref, computed, watch, defineAsyncComponent } from 'vue'
+import { useStorage } from '@vueuse/core'
 import { useDarkMode } from '@vuepress/theme-default/lib/client/composables'
+import { KChatPanel } from '@koishijs/components'
 import TLayout from '@vuepress/theme-default/lib/client/layouts/Layout.vue'
 import coreLib from 'koishi/lib/koishi.d.ts?raw'
 import utilsLib from 'koishi/lib/utils.d.ts?raw'
+import { Random } from '@koishijs/core'
 
-const MonacoEditor = defineAsyncComponent(() => import('../components/MonacoEditor.vue'))
+const messages = ref<any[]>([])
+
+const MonacoEditor = defineAsyncComponent(() => import('./MonacoEditor.vue'))
 const isDarkMode = useDarkMode()
 const theme = computed(() => isDarkMode.value ? 'onedark' : 'onelight')
 const backgroundColor = computed(() => isDarkMode.value ? '#282C34' : '#FAFAFA')
@@ -27,7 +32,7 @@ const backgroundColor = computed(() => isDarkMode.value ? '#282C34' : '#FAFAFA')
 const workerPromise = (async () => {
   const [{ languages, Uri }] = await Promise.all([
     import('monaco-editor'),
-    import('../components/MonacoEditor.vue'),
+    import('./MonacoEditor.vue'),
   ])
 
   const { ModuleKind, ScriptTarget, typescriptDefaults, getTypeScriptWorker } = languages.typescript
@@ -43,7 +48,7 @@ const workerPromise = (async () => {
   return getter(Uri.parse('file:///untitled.ts'))
 })()
 
-const source = ref('')
+const source = useStorage('koishi.playground.source', '')
 const result = ref('')
 
 watch(source, async () => {
@@ -53,6 +58,14 @@ watch(source, async () => {
     result.value = outputFiles[0].text
   } catch {}
 })
+
+function handleSend(content: string) {
+  messages.value.push({
+    messageId: Random.id(),
+    timestamp: Date.now(),
+    content,
+  })
+}
 
 </script>
 
@@ -68,6 +81,7 @@ main.playground {
   .editor {
     position: absolute;
     height: 100%;
+    top: 1px;
     left: 0;
     right: 50%;
   }

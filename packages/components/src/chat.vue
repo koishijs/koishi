@@ -32,7 +32,6 @@
 
 <script lang="ts" setup>
 
-import { receive, storage, send, user } from '~/client'
 import { ref } from 'vue'
 import ChatPanel from './utils/panel.vue'
 import ChatMessage from './utils/message.vue'
@@ -41,13 +40,7 @@ import type { Message } from '../src'
 const pinned = ref(true)
 const index = ref<string>()
 const activeMessage = ref<Message>()
-const messages = storage.create<Message[]>('chat', [])
 const divs = ref<Record<string, HTMLElement>>({})
-
-receive('chat', (body) => {
-  messages.value.push(body)
-  messages.value.splice(0, messages.value.length - KOISHI_CONFIG.maxMessages)
-})
 
 function isSuccessive({ quote, userId, channelId }: Message, index: number) {
   const prev = messages.value[index - 1]
@@ -60,14 +53,6 @@ function getItemClass(message: Message, index: number) {
 
 function handleClick(message: Message) {
   activeMessage.value = message
-}
-
-function handleSend(content: string) {
-  if (!activeMessage.value) return
-  pinned.value = false
-  const { platform, selfId, channelId, groupId } = activeMessage.value
-  const { token, id } = user.value
-  send('chat', { token, id, content, platform, selfId, channelId, groupId })
 }
 
 function onClickQuote(id: string) {

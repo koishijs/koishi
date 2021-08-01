@@ -12,10 +12,10 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/koishijs/plugin-chat.git"
+    "url": "git+https://github.com/koishijs/koishi.git"
   },
   "bugs": {
-    "url": "https://github.com/koishijs/plugin-chat/issues"
+    "url": "https://github.com/koishijs/koishi/issues"
   },
   "homepage": "https://koishi.js.org/plugins/other/chat",
   "keywords": [

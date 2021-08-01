@@ -1,15 +1,16 @@
-const { resolve } = require('path')
-
 module.exports = {
   extends: '@vuepress/theme-default',
-  layouts: resolve(__dirname, '../layouts'),
+
+  layouts: {
+    Playground: require.resolve('@koishijs/components/src/playground/index.vue'),
+  },
 
   plugins: [
     ['@vuepress/palette', {
       preset: 'sass',
     }],
-    [require('../markdown/highlight')],
-    [require('../markdown/github')],
+    [require('./markdown/highlight')],
+    [require('./markdown/github')],
     ['medium-zoom', {
       selector: '.theme-default-content :not(a) > img:not(.no-zooming)',
     }],
