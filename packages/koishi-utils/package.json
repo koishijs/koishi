@@ -28,7 +28,10 @@
     "utilities"
   ],
   "devDependencies": {
+    "@sinonjs/fake-timers": "^7.1.2",
     "@types/supports-color": "^8.1.0",
+    "chai": "^4.3.4",
+    "jest-mock": "^27.0.6",
     "koishi-test-utils": "^6.0.1"
   },
   "dependencies": {

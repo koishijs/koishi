@@ -8,5 +8,9 @@
   "files": [
     "index.d.ts",
     "lib"
-  ]
+  ],
+  "dependencies": {
+    "chai": "^4.3.4",
+    "chai-as-promised": "^7.1.1"
+  }
 }

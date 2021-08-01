@@ -18,5 +18,12 @@
   "homepage": "https://github.com/koishijs/koishi#readme",
   "peerDependencies": {
     "koishi-core": "^3.12.3"
+  },
+  "dependencies": {
+    "axios": "^0.21.1",
+    "koishi-plugin-mongo": "workspace:packages/plugin-mongo",
+    "koishi-plugin-mysql": "workspace:packages/plugin-mysql",
+    "koishi-utils": "workspace:packages/koishi-utils",
+    "mysql": "^2.18.1"
   }
 }

@@ -26,6 +26,7 @@
   "dependencies": {
     "axios": "^0.21.1",
     "cheerio": "^1.0.0-rc.6",
+    "koishi-utils": "workspace:packages/koishi-utils",
     "qrcode": "^1.4.4",
     "xml-js": "^1.6.11"
   }

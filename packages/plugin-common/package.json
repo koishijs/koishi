@@ -34,6 +34,9 @@
     "koishi-utils": "^4.2.3"
   },
   "devDependencies": {
+    "@sinonjs/fake-timers": "^7.1.2",
+    "chai": "^4.3.4",
+    "jest-mock": "^27.0.6",
     "koishi-test-utils": "^6.0.1"
   }
 }

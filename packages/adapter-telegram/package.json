@@ -31,7 +31,12 @@
     "koishi-core": "^3.12.3"
   },
   "devDependencies": {
-    "koishi-test-utils": "^6.0.1"
+    "chai": "^4.3.4",
+    "get-port": "^5.1.1",
+    "jest-mock": "^27.0.6",
+    "koishi-adapter-cqhttp": "^1.0.8",
+    "koishi-test-utils": "^6.0.1",
+    "ws": "^7.5.3"
   },
   "dependencies": {
     "axios": "^0.21.1",

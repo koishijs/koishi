@@ -29,11 +29,17 @@
     "task"
   ],
   "devDependencies": {
+    "@sinonjs/fake-timers": "^7.1.2",
+    "chai": "^4.3.4",
+    "jest-mock": "^27.0.6",
     "koishi-plugin-mongo": "^2.2.3",
     "koishi-plugin-mysql": "^3.3.2",
     "koishi-test-utils": "^6.0.1"
   },
   "peerDependencies": {
     "koishi-core": "^3.12.3"
+  },
+  "dependencies": {
+    "koishi-utils": "workspace:packages/koishi-utils"
   }
 }

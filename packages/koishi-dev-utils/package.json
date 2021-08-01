@@ -33,5 +33,10 @@
   "peerDependencies": {
     "koishi-core": "^3.12.3",
     "koishi-utils": "^4.2.3"
+  },
+  "devDependencies": {
+    "chai": "^4.3.4",
+    "jest-mock": "^27.0.6",
+    "koishi-test-utils": "workspace:packages/koishi-test-utils"
   }
 }

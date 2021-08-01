@@ -47,6 +47,10 @@
     "vue-router": "^4.0.5"
   },
   "dependencies": {
+    "axios": "^0.21.1",
+    "fs-extra": "^9.1.0",
+    "koishi": "workspace:packages/koishi",
+    "koishi-utils": "workspace:packages/koishi-utils",
     "semver": "^7.3.5",
     "systeminformation": "^5.6.14",
     "ws": "^7.4.5"

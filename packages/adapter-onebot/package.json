@@ -31,7 +31,9 @@
   },
   "devDependencies": {
     "@types/ws": "^7.4.2",
+    "chai": "^4.3.4",
     "get-port": "^5.1.1",
+    "koishi-adapter-cqhttp": "^1.0.8",
     "koishi-test-utils": "^6.0.1"
   },
   "dependencies": {

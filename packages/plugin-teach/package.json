@@ -37,6 +37,8 @@
     "koishi-core": "^3.12.3"
   },
   "devDependencies": {
+    "@sinonjs/fake-timers": "^7.1.2",
+    "jest-mock": "^27.0.6",
     "koishi-plugin-mongo": "^2.2.3",
     "koishi-plugin-mysql": "^3.3.2",
     "koishi-plugin-webui": "^4.6.3",
@@ -44,6 +46,9 @@
   },
   "dependencies": {
     "axios": "^0.21.1",
-    "fastest-levenshtein": "^1.0.12"
+    "fastest-levenshtein": "^1.0.12",
+    "koishi-utils": "workspace:packages/koishi-utils",
+    "mongodb": "^4.0.1",
+    "mysql": "^2.18.1"
   }
 }

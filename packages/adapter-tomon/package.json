@@ -32,6 +32,7 @@
   },
   "dependencies": {
     "axios": "^0.21.1",
+    "form-data": "^4.0.0",
     "koishi-utils": "^4.2.3",
     "pako": "^2.0.3",
     "ws": "^7.4.5"
