@@ -163,17 +163,17 @@ export function feedback(ctx: Context, operators: string[]) {
 }
 
 export interface RecallConfig {
-  recallCount?: number
+  recall?: number
 }
 
-export function recall(ctx: Context, { recallCount = 10 }: RecallConfig) {
+export function recall(ctx: Context, { recall = 10 }: RecallConfig) {
   ctx = ctx.group()
   const recent: Record<string, string[]> = {}
 
   ctx.on('send', (session) => {
     const list = recent[session.channelId] ||= []
     list.unshift(session.messageId)
-    if (list.length > recallCount) {
+    if (list.length > recall) {
       list.pop()
     }
   })
@@ -235,7 +235,7 @@ export interface Respondent {
   reply: string | ((...capture: string[]) => string)
 }
 
-export function respond(ctx: Context, respondents: Respondent[]) {
+export function respondent(ctx: Context, respondents: Respondent[]) {
   ctx.middleware((session, next) => {
     const message = simplify(session.content)
     for (const { match, reply } of respondents) {
@@ -259,7 +259,7 @@ export default function apply(ctx: Context, config: BasicConfig = {}) {
   if (config.broadcast !== false) ctx.plugin(broadcast)
   if (config.contextify !== false) ctx.plugin(contextify)
   if (config.echo !== false) ctx.plugin(echo)
-  if (config.recallCount !== 0) ctx.plugin(recall, config)
+  if (!(config.recall <= 0)) ctx.plugin(recall, config)
 
   const operators = makeArray(config.operator)
   if (operators.length) ctx.plugin(feedback, operators)
@@ -268,5 +268,5 @@ export default function apply(ctx: Context, config: BasicConfig = {}) {
   if (relays.length) ctx.plugin(relay, relays)
 
   const respondents = makeArray(config.respondent)
-  if (respondents.length) ctx.plugin(respond, respondents)
+  if (respondents.length) ctx.plugin(respondent, respondents)
 }

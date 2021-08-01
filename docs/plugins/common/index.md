@@ -9,57 +9,47 @@ sidebarDepth: 2
 本章介绍的功能都由 koishi-plugin-common 插件提供。
 :::
 
-::: danger 注意
-这里是**正在施工**的 koishi v3 的文档。
-:::
+koishi-plugin-common 包含了一些基本插件，它们在你使用 `koishi` 的命令行工具时是默认安装的。
 
-koishi-plugin-common 包含了一些基本插件，它们在你使用 `koishi` 库时是默认安装的。
+## 部分安装
 
-## 指令列表
-
-以下是这个插件包含的指令列表。注明“需要数据库”的指令在没有配置数据库时默认不注册。
-
-| 指令 | 默认权限 | 需要数据库 |
-|:-:|:-:|:-:|
-| admin | 4 | 是 |
-| broadcast | 3 | 是 |
-| contextify (ctxf) | 3 | 是 |
-| echo | 3 | 否 |
-| exec | 4 | 否 |
-| exit | 4 | 否 |
-| help | 0 | 否 |
-
-你也可以在安装插件时显式地声明某些指令不注册：
+如果你觉得某些功能不需要的话，你也可以选择在配置项中排除部分功能：
 
 ```js koishi.config.js
 module.exports = {
-  plugins: [['common', {
-    exit: false,        // 不注册 exit 指令
-  }]],
+  plugins: {
+    common: {
+      // 不安装 broadcast 指令
+      broadcast: false,
+    },
+  },
 }
 ```
 
-## 配置列表
+或者通过使用导入子功能的方式只安装部分功能：
 
-除了上述指令都可以声明不注册外，koishi-plugin-common 还提供了其他的一些配置项如下：
+```js index.js
+import { broadcast } from 'koishi-plugin-common'
 
-| 配置项 | 对应章节 |
-|:-:|:-:|
-| broadcastInterval | [向所有群广播消息](./message.md#向所有群广播消息) |
-| respondent | [配置内置问答](./reply.md#配置内置问答) |
-| repeater | [配置复读机](./handler.md#配置复读机) |
-| handleFriend | [处理好友申请](./handler.md#处理好友申请、加群邀请和申请) |
-| handleGroupAdd | [处理加群申请](./handler.md#处理好友申请、加群邀请和申请) |
-| handleGroupInvite | [处理加群邀请](./handler.md#处理好友申请、加群邀请和申请) |
-| welcomeMessage | [欢迎新成员](./handler.md#欢迎新成员) |
-| getUserName | [查看用户信息](./information.md#查看用户信息) |
+// 只安装 broadcast 指令
+app.plugin(broadcast)
+```
 
-## 导出的方法
+## 功能列表
 
-此外，koishi-plugin-common 还导出了一些方法如下：
+以下列出了这个插件包含的功能列表：
 
-| 导出方法 | 对应章节 |
-|:-:|:-:|
-| registerUserInfo | [扩展要显示的信息](./information.md#扩展要显示的信息) |
-| registerUserAction | [添加可用操作](./information.md#添加可用操作) |
-| registerGroupAction | [添加可用操作](./information.md#添加可用操作) |
+| 功能名称 | 需要数据库 | 支持部分排除 |
+| :-: | :-: | :-: |
+| [admin](./admin.md) | 是 | 是 |
+| [bind](./admin.md#指令-bind) | 是 | 是 |
+| [broadcast](./basic.md#指令-broadcast) | 是 | 是 |
+| [callme](./admin.md#指令-callme) | 是 | 是 |
+| [contextify](./basic.md#指令-contextify) | 是 | 是 |
+| [echo](./basic.md#指令-echo) | 否 | 是 |
+| [feedback](./basic.md#指令-feedback) | 否 | 通过 `operator` 配置 |
+| [recall](./basic.md#指令-recall) | 否 | 是 |
+| [relay](./handler.md#跨频道消息转发) | 否 | 是 |
+| [repeater](./repeater.md) | 否 | 是 |
+| [respondent](./handler.md#配置内置问答) | 否 | 是 |
+| [verifier](./handler.md#处理好友和群申请) | 否 | 是 |

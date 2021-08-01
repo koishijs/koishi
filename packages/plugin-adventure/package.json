@@ -28,13 +28,13 @@
     "adventure"
   ],
   "peerDependencies": {
-    "koishi-core": "^3.12.3",
-    "koishi-plugin-common": "^4.3.1",
-    "koishi-plugin-mysql": "^3.3.2",
-    "koishi-plugin-teach": "^2.2.1",
+    "koishi-core": "^3.13.0",
+    "koishi-plugin-common": "^4.3.2",
+    "koishi-plugin-mysql": "^3.4.0",
+    "koishi-plugin-teach": "^2.2.2",
     "koishi-utils": "^4.2.3"
   },
   "devDependencies": {
-    "koishi-test-utils": "^6.0.1"
+    "koishi-test-utils": "^6.1.0"
   }
 }
