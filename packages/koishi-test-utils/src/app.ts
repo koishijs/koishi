@@ -4,7 +4,7 @@ import { Socket } from 'net'
 import { format } from 'util'
 import * as http from 'http'
 import * as memory from './memory'
-import { pick } from 'koishi-utils'
+import { pick } from 'koishi-core'
 
 export const BASE_SELF_ID = '514'
 

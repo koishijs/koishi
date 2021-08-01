@@ -29,7 +29,10 @@
     "koishi"
   ],
   "devDependencies": {
+    "@sinonjs/fake-timers": "^7.1.2",
     "@types/koa": "^2.13.1",
+    "chai": "^4.3.4",
+    "jest-mock": "^27.0.6",
     "koishi-test-utils": "^6.0.1"
   },
   "dependencies": {
@@ -42,6 +45,7 @@
     "koa": "^2.13.1",
     "koa-bodyparser": "^4.3.0",
     "koishi-utils": "^4.2.3",
-    "lru-cache": "^6.0.0"
+    "lru-cache": "^6.0.0",
+    "ws": "^7.5.3"
   }
 }

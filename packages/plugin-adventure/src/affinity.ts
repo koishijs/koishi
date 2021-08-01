@@ -1,5 +1,4 @@
-import { User, Context } from 'koishi-core'
-import { Time, Random } from 'koishi-utils'
+import { User, Context, Time, Random } from 'koishi-core'
 import Profile from './profile'
 import Rank from './rank'
 

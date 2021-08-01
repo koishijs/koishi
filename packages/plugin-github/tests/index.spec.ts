@@ -1,5 +1,5 @@
 import { App } from 'koishi-test-utils'
-import { Random } from 'koishi-utils'
+import { Random } from 'koishi-core'
 import { expect } from 'chai'
 import { readdirSync } from 'fs-extra'
 import { resolve } from 'path'

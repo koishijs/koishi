@@ -1,5 +1,4 @@
-import { Context } from 'koishi-core'
-import { makeArray } from 'koishi-utils'
+import { Context, makeArray } from 'koishi-core'
 import { Dialogue } from '../utils'
 
 export interface ThrottleConfig {

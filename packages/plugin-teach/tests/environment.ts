@@ -1,5 +1,4 @@
-import { Database, Context } from 'koishi-core'
-import { defineProperty, Observed, clone, intersection } from 'koishi-utils'
+import { Database, Context, defineProperty, Observed, clone, intersection } from 'koishi-core'
 import { Dialogue, DialogueTest, equal, apply } from 'koishi-plugin-teach'
 import { App } from 'koishi-test-utils'
 

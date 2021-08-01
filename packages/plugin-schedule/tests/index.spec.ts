@@ -1,5 +1,4 @@
-import { App } from 'koishi-test-utils'
-import { Time } from 'koishi-utils'
+import { App, Time } from 'koishi-test-utils'
 import { install, InstalledClock } from '@sinonjs/fake-timers'
 import * as schedule from 'koishi-plugin-schedule'
 import jest from 'jest-mock'

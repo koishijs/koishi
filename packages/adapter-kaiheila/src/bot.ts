@@ -1,7 +1,6 @@
 /* eslint-disable quote-props */
 
-import { AuthorInfo, Bot, Session } from 'koishi-core'
-import { camelize, segment, renameProperty, snakeCase } from 'koishi-utils'
+import { AuthorInfo, Bot, Session, camelize, segment, renameProperty, snakeCase } from 'koishi-core'
 import axios, { Method } from 'axios'
 import * as KHL from './types'
 import { adaptGroup, adaptAuthor, adaptUser } from './utils'

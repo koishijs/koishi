@@ -1,4 +1,4 @@
-import { Logger, paramCase, sleep, Time } from 'koishi-utils'
+import { Logger, paramCase, sleep, Time } from 'koishi-core'
 import { Session } from './session'
 import { App } from './app'
 import WebSocket from 'ws'

@@ -1,5 +1,7 @@
-import { difference, observe, Time, enumKeys, Random, template, deduplicate, intersection } from 'koishi-utils'
-import { Context, User, Channel, Command, Argv, Platform, Session, Extend } from 'koishi-core'
+import {
+  Context, User, Channel, Command, Argv, Platform, Session, Extend,
+  difference, observe, Time, enumKeys, Random, template, deduplicate, intersection
+} from 'koishi-core'
 
 type AdminAction<U extends User.Field, G extends Channel.Field, A extends any[], O extends {}, T>
   = (argv: Argv<U | 'authority', G, A, Extend<O, 'target', string>> & { target: T }, ...args: A)

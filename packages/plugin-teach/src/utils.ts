@@ -1,5 +1,4 @@
-import { Session, App, Context, Tables } from 'koishi-core'
-import { difference, observe, isInteger, defineProperty, Observed, clone } from 'koishi-utils'
+import { Session, App, Context, Tables, difference, observe, isInteger, defineProperty, Observed, clone } from 'koishi-core'
 
 declare module 'koishi-core' {
   interface App {

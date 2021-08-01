@@ -1,4 +1,4 @@
-import { snakeCase } from 'koishi-utils'
+import { snakeCase } from 'koishi-core'
 import { CQResponse } from 'koishi-adapter-cqhttp'
 import { expect } from 'chai'
 

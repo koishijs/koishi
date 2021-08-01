@@ -1,6 +1,5 @@
 import axios from 'axios'
-import { App, Adapter, Session } from 'koishi-core'
-import { assertProperty, camelCase, Logger, segment, trimSlash, sanitize } from 'koishi-utils'
+import { App, Adapter, Session, assertProperty, camelCase, Logger, segment, trimSlash, sanitize } from 'koishi-core'
 import { TelegramBot } from './bot'
 import * as Telegram from './types'
 

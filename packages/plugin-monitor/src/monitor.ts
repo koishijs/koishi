@@ -1,5 +1,4 @@
-import { Channel, App } from 'koishi-core'
-import { segment, Logger } from 'koishi-utils'
+import { Channel, App, segment, Logger } from 'koishi-core'
 import { Subscribe } from './database'
 import bilibili from './bilibili'
 import twitcasting from './twitCasting'

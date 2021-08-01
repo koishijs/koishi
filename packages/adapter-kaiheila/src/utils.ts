@@ -1,6 +1,5 @@
 import { KaiheilaBot } from './bot'
-import { Session, segment, MessageBase, AuthorInfo, GroupInfo, UserInfo } from 'koishi-core'
-import { camelCase } from 'koishi-utils'
+import { Session, segment, MessageBase, AuthorInfo, GroupInfo, UserInfo, camelCase } from 'koishi-core'
 import * as KHL from './types'
 
 export const adaptGroup = (data: KHL.Guild): GroupInfo => ({

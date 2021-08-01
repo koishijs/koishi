@@ -1,5 +1,4 @@
-import { App, Command, Channel, Argv as IArgv, User, Context } from 'koishi-core'
-import { Logger, Observed, pick, union } from 'koishi-utils'
+import { App, Command, Channel, Argv as IArgv, User, Context, Logger, Observed, pick, union } from 'koishi-core'
 import { Worker, ResourceLimits } from 'worker_threads'
 import { WorkerHandle, WorkerConfig, WorkerData, SessionData, Loader } from './worker'
 import { expose, Remote, wrap } from './transfer'

@@ -1,6 +1,5 @@
-import { App, BotOptions, Context, Plugin, version } from 'koishi-core'
+import { App, BotOptions, Context, Plugin, version, coerce, Logger, noop, LogLevelConfig, makeArray, template } from 'koishi-core'
 import { resolve, relative, extname, dirname } from 'path'
-import { coerce, Logger, noop, LogLevelConfig, makeArray, template } from 'koishi-utils'
 import { readFileSync, readdirSync } from 'fs'
 import { performance } from 'perf_hooks'
 import { yellow } from 'kleur'

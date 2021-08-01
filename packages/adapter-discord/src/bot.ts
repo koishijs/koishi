@@ -4,7 +4,7 @@ import axios, { Method } from 'axios'
 import { Bot, MessageInfo } from 'koishi-core'
 import * as DC from './types'
 import { adaptChannel, adaptGroup, adaptMessage, adaptUser } from './utils'
-import { segment } from 'koishi-utils'
+import { segment } from 'koishi-core'
 import { Sender } from './sender'
 
 export class SenderError extends Error {

@@ -1,7 +1,6 @@
 /* eslint-disable no-irregular-whitespace */
 
-import { Argv, Context, Session } from 'koishi-core'
-import { escapeRegExp, merge } from 'koishi-utils'
+import { Argv, Context, Session, escapeRegExp, merge } from 'koishi-core'
 import { Dialogue } from './utils'
 import internal from './internal'
 import receiver from './receiver'

@@ -1,7 +1,7 @@
 import { config, context, internal } from '.'
 import { resolve, posix, dirname, extname } from 'path'
 import { promises as fs } from 'fs'
-import { Logger } from 'koishi-utils'
+import { Logger } from 'koishi-core'
 import * as yaml from 'js-yaml'
 import * as v8 from 'v8'
 

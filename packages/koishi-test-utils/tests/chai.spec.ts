@@ -1,6 +1,6 @@
 import 'koishi-test-utils'
 import { expect } from 'chai'
-import { Random } from 'koishi-utils'
+import { Random } from 'koishi-core'
 
 describe('Chai Extensions', () => {
   it('shape', () => {

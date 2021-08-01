@@ -1,6 +1,8 @@
 import { createReadStream } from 'fs'
-import { camelCase, snakeCase, renameProperty, segment, assertProperty, Logger } from 'koishi-utils'
-import { Bot, GroupInfo, GroupMemberInfo, UserInfo, BotOptions, Adapter } from 'koishi-core'
+import {
+  Bot, GroupInfo, GroupMemberInfo, UserInfo, BotOptions, Adapter,
+  camelCase, snakeCase, renameProperty, segment, assertProperty, Logger,
+} from 'koishi-core'
 import * as Telegram from './types'
 import axios, { AxiosError } from 'axios'
 import FormData from 'form-data'

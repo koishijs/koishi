@@ -1,5 +1,5 @@
 import { performance } from 'perf_hooks'
-import { isInteger } from 'koishi-utils'
+import { isInteger } from 'koishi-core'
 import { fork, ChildProcess } from 'child_process'
 import { resolve } from 'path'
 import { CAC } from 'cac'

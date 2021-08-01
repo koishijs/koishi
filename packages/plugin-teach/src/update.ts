@@ -1,5 +1,4 @@
-import { Context } from 'koishi-core'
-import { difference, deduplicate, sleep, pick, Time } from 'koishi-utils'
+import { Context, difference, deduplicate, sleep, pick, Time } from 'koishi-core'
 import { Dialogue, prepareTargets, sendResult, split, RE_DIALOGUES, isPositiveInteger } from './utils'
 import { getDetails, formatDetails, formatAnswer, formatQuestionAnswers } from './search'
 

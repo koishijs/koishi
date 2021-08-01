@@ -1,5 +1,4 @@
-import { Context, Channel, User } from 'koishi-core'
-import { template, Time } from 'koishi-utils'
+import { Context, Channel, User, template, Time } from 'koishi-core'
 import { Synchronizer } from './payload/stats'
 import { WebServer, Config } from './server'
 import Meta from './payload/meta'

@@ -1,6 +1,5 @@
 import { CQBot } from './bot'
-import { Adapter, Session } from 'koishi-core'
-import { Logger, camelCase, renameProperty, paramCase, segment } from 'koishi-utils'
+import { Adapter, Session, Logger, camelCase, renameProperty, paramCase, segment } from 'koishi-core'
 import * as qface from 'qface'
 import * as Koishi from 'koishi-core'
 import * as OneBot from './types'

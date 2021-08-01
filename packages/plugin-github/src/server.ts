@@ -2,8 +2,7 @@
 
 import { EventConfig } from './events'
 import axios, { AxiosError, Method } from 'axios'
-import { App, Channel, Database, Session, Tables, User } from 'koishi-core'
-import { segment, Logger } from 'koishi-utils'
+import { App, Channel, Database, Session, Tables, User, segment, Logger } from 'koishi-core'
 import {} from 'koishi-plugin-puppeteer'
 import {} from 'koishi-plugin-mysql'
 import {} from 'koishi-plugin-mongo'

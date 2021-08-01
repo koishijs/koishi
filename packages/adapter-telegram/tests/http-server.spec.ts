@@ -1,6 +1,7 @@
 import { HttpServer, createHttpServer, BASE_SELF_ID } from 'koishi-test-utils'
 import { App, startAll, Meta } from 'koishi-core'
 import getPort from 'get-port'
+import jest from "jest-mock";
 
 let server: HttpServer
 let app1: App, app2: App

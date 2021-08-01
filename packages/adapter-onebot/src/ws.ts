@@ -1,5 +1,4 @@
-import { App, Adapter } from 'koishi-core'
-import { Logger, assertProperty } from 'koishi-utils'
+import { App, Adapter, Logger, assertProperty } from 'koishi-core'
 import { connect } from './utils'
 import { CQBot } from './bot'
 import WebSocket from 'ws'

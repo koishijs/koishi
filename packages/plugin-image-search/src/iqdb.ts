@@ -1,6 +1,5 @@
 import { searchPic } from 'iqdb-client'
-import { segment } from 'koishi-utils'
-import { Session } from 'koishi-core'
+import { Session, segment } from 'koishi-core'
 
 async function makeSearch(url: string): Promise<string> {
   const res = await searchPic(url, { lib: 'www' })

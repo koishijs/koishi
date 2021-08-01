@@ -3,7 +3,7 @@ import json5 from 'json5'
 import { promises as fs } from 'fs'
 import { LoaderConfig } from '../worker'
 import { resolve } from 'path'
-import { Logger } from 'koishi-utils'
+import { Logger } from 'koishi-core'
 
 export { extractScript } from './default'
 

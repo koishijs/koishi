@@ -1,5 +1,4 @@
-import { Context, Session } from 'koishi-core'
-import { Time, Logger } from 'koishi-utils'
+import { Context, Session, Time, Logger } from 'koishi-core'
 import { Schedule } from './database'
 
 export * from './database'

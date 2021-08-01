@@ -1,4 +1,4 @@
-import { simplify, defineProperty, Time, Observed, coerce, escapeRegExp, makeArray, template, trimSlash, merge } from 'koishi-utils'
+import { simplify, defineProperty, Time, Observed, coerce, escapeRegExp, makeArray, template, trimSlash, merge } from 'koishi-core'
 import { Context, Middleware, NextFunction, Plugin } from './context'
 import { Argv } from './parser'
 import { BotOptions, Adapter, createBots } from './adapter'

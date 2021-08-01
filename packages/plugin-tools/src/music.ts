@@ -1,5 +1,4 @@
-import { Context } from 'koishi-core'
-import { segment } from 'koishi-utils'
+import { Context, segment } from 'koishi-core'
 import axios from 'axios'
 
 type Platform = 'netease' | 'qq'

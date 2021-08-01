@@ -1,5 +1,4 @@
-import { Context, Database } from 'koishi-core'
-import { clone, defineProperty, Observed } from 'koishi-utils'
+import { Context, Databaseclone, defineProperty, Observed } from 'koishi-core'
 import type { FilterQuery } from 'mongodb'
 import {} from 'koishi-plugin-mongo'
 import { Dialogue, DialogueTest, equal } from '../utils'

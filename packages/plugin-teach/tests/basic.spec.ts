@@ -1,4 +1,4 @@
-import { Random } from 'koishi-utils'
+import { Random } from 'koishi-core'
 import { install, InstalledClock } from '@sinonjs/fake-timers'
 import createEnvironment from './environment'
 import jest from 'jest-mock'

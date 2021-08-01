@@ -1,5 +1,4 @@
-import { Context } from 'koishi-core'
-import { Random } from 'koishi-utils'
+import { Context, Random } from 'koishi-core'
 
 export interface RollConfig {
   maxPoint?: number

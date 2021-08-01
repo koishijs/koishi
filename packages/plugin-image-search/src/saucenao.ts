@@ -4,8 +4,7 @@ import axios, { AxiosRequestConfig } from 'axios'
 import nhentai from './nhentai'
 import danbooru from './danbooru'
 import konachan from './konachan'
-import { Session } from 'koishi-core'
-import { Logger } from 'koishi-utils'
+import { Session, Logger } from 'koishi-core'
 import { getShareText, checkHost } from './utils'
 
 declare module 'koishi-core' {

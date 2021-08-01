@@ -1,5 +1,4 @@
-import { Context } from 'koishi-core'
-import { contain, union, difference } from 'koishi-utils'
+import { Context, contain, union, difference } from 'koishi-core'
 import { equal, split, prepareTargets, RE_DIALOGUES, isPositiveInteger, Dialogue } from '../utils'
 import { formatQuestionAnswers } from '../search'
 

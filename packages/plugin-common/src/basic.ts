@@ -1,5 +1,4 @@
-import { Context, Channel, Session, User, Argv } from 'koishi-core'
-import { sleep, segment, template, makeArray, Time, simplify } from 'koishi-utils'
+import { Context, Channel, Session, User, Argv, sleep, segment, template, makeArray, Time, simplify } from 'koishi-core'
 
 template.set('common', {
   'expect-text': '请输入要发送的文本。',

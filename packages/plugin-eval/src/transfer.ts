@@ -1,5 +1,5 @@
 import { MessagePort, Worker } from 'worker_threads'
-import { Logger, noop, Random } from 'koishi-utils'
+import { Logger, noop, Random } from 'koishi-core'
 
 type Endpoint = MessagePort | Worker
 

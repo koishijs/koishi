@@ -1,6 +1,5 @@
 import MysqlDatabase, { Config, escape, TableType } from './database'
-import { User, Channel, Database, Context, Query } from 'koishi-core'
-import { difference } from 'koishi-utils'
+import { User, Channel, Database, Context, Query, difference } from 'koishi-core'
 import { OkPacket, escapeId } from 'mysql'
 
 export * from './database'

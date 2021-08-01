@@ -1,5 +1,4 @@
-import { Context, User, Session, NextFunction, Channel, Argv } from 'koishi-core'
-import { segment, simplify, noop, escapeRegExp, Random, makeArray } from 'koishi-utils'
+import { Context, User, Session, NextFunction, Channel, Argv, segment, simplify, noop, escapeRegExp, Random, makeArray } from 'koishi-core'
 import { Dialogue, DialogueTest } from './utils'
 
 declare module 'koishi-core' {

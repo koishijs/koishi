@@ -1,4 +1,4 @@
-import { isInteger } from 'koishi-utils'
+import { isInteger } from 'koishi-core'
 
 export function mod(n: number, m: number) {
   return n >= 0 ? n % m : n % m + m

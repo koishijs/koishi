@@ -1,7 +1,6 @@
 import { createPool, Pool, PoolConfig, escape as mysqlEscape, escapeId, format, OkPacket, TypeCast } from 'mysql'
-import { App, Database } from 'koishi-core'
+import { App, Database, Logger } from 'koishi-core'
 import * as Koishi from 'koishi-core'
-import { Logger } from 'koishi-utils'
 import { types } from 'util'
 
 declare module 'mysql' {

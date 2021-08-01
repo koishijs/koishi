@@ -1,5 +1,4 @@
-import { App, Adapter, Bot } from 'koishi-core'
-import { Logger, Time, trimSlash, sanitize } from 'koishi-utils'
+import { App, Adapter, Bot, Logger, Time, trimSlash, sanitize } from 'koishi-core'
 import { KaiheilaBot } from './bot'
 import { adaptSession } from './utils'
 import { Payload, Signal } from './types'

@@ -1,7 +1,6 @@
 import { Session as SocketSession } from './network/session'
-import { App, Adapter, Session } from 'koishi-core'
+import { App, Adapter, Session, camelize } from 'koishi-core'
 import { TomonBot, TomonMessageInfo } from './bot'
-import { camelize } from 'koishi-utils'
 
 export * from './bot'
 

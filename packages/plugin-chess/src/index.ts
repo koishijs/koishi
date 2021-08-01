@@ -1,5 +1,4 @@
-import { Channel, Context, Database } from 'koishi-core'
-import { isInteger, segment } from 'koishi-utils'
+import { Channel, Context, Database, isInteger, segment } from 'koishi-core'
 import { State, MoveResult, StateData } from './state'
 import {} from 'koishi-plugin-mysql'
 import * as go from './go'

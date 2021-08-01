@@ -34,5 +34,11 @@
   },
   "devDependencies": {
     "koishi-plugin-webui": "^4.6.3"
+  },
+  "dependencies": {
+    "axios": "^0.21.1",
+    "chai": "^4.3.4",
+    "koishi-utils": "workspace:packages/koishi-utils",
+    "vue": "^2.6.14"
   }
 }

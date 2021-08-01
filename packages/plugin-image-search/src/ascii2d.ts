@@ -1,7 +1,6 @@
 import axios from 'axios'
 import Cheerio from 'cheerio'
-import { Session } from 'koishi-core'
-import { noop, Logger } from 'koishi-utils'
+import { Session, noop, Logger } from 'koishi-core'
 import { getShareText } from './utils'
 
 const baseURL = 'https://ascii2d.net'

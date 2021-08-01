@@ -1,5 +1,4 @@
-import { Context } from 'koishi-core'
-import { observe, Logger } from 'koishi-utils'
+import { Context, observe, Logger } from 'koishi-core'
 import { Monitor, INTERVAL } from './monitor'
 import './database'
 

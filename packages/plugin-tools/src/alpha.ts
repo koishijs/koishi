@@ -1,5 +1,4 @@
-import { Context, Session } from 'koishi-core'
-import { segment } from 'koishi-utils'
+import { Context, Session, segment } from 'koishi-core'
 import { xml2js } from 'xml-js'
 import axios from 'axios'
 

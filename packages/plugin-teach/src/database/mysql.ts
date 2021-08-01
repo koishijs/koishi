@@ -1,5 +1,4 @@
-import { Context, Database } from 'koishi-core'
-import { clone, defineProperty, Observed, pick } from 'koishi-utils'
+import { Context, Database, clone, defineProperty, Observed, pick } from 'koishi-core'
 import { Dialogue, equal, DialogueTest } from '../utils'
 import {} from 'koishi-plugin-mysql'
 

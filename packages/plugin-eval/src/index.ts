@@ -1,5 +1,4 @@
-import { Context, Command, Argv } from 'koishi-core'
-import { segment, Logger, defineProperty, noop } from 'koishi-utils'
+import { Context, Command, Argv, segment, Logger, defineProperty, noop } from 'koishi-core'
 import { EvalWorker, Trap, EvalConfig, Config } from './main'
 import { resolve } from 'path'
 import { load } from 'js-yaml'

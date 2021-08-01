@@ -1,5 +1,4 @@
-import { Bot, Context, Session } from 'koishi-core'
-import { Time, pick, segment } from 'koishi-utils'
+import { Bot, Context, Session, Time, pick, segment } from 'koishi-core'
 
 export interface ReceiverConfig {
   refreshUserName?: number

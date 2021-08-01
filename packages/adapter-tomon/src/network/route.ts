@@ -1,5 +1,5 @@
 import axios, { Method, AxiosRequestConfig } from 'axios'
-import { camelize, snakeCase } from 'koishi-utils'
+import { camelize, snakeCase } from 'koishi-core'
 import FormData from 'form-data'
 import fs from 'fs'
 import ospath from 'path'

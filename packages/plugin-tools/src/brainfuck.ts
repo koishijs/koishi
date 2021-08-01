@@ -1,5 +1,4 @@
-import { Context } from 'koishi-core'
-import { segment } from 'koishi-utils'
+import { Context, segment } from 'koishi-core'
 
 export interface BrainfuckOptions {
   cellSize?: number

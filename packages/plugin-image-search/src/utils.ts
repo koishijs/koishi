@@ -1,4 +1,4 @@
-import { segment } from 'koishi-utils'
+import { segment } from 'koishi-core'
 
 export function getLink(url: string) {
   const pidSearch = /pixiv.+illust_id=(\d+)/.exec(url)

@@ -1,4 +1,4 @@
-import { segment } from 'koishi-utils'
+import { segment } from 'koishi-core'
 import marked, { Token, lexer } from 'marked'
 
 declare module 'marked' {

@@ -1,5 +1,4 @@
-import { App, Adapter, Bot } from 'koishi-core'
-import { Logger, defineProperty, snakeCase, assertProperty } from 'koishi-utils'
+import { App, Adapter, Bot, Logger, defineProperty, snakeCase, assertProperty } from 'koishi-core'
 import { CQBot } from './bot'
 import { createSession } from './utils'
 import { createHmac } from 'crypto'

@@ -1,5 +1,4 @@
-import { Tables, TableType, Query, App, Database, User, Channel } from 'koishi-core'
-import { clone, pick } from 'koishi-utils'
+import { Tables, TableType, Query, App, Database, User, Channel, clone, pick } from 'koishi-core'
 
 declare module 'koishi-core' {
   interface Database {
