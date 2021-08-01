@@ -33,14 +33,14 @@
     "chai": "^4.3.4",
     "fs-extra": "^10.0.0",
     "jest-mock": "^27.0.6",
-    "koishi-plugin-mongo": "^2.2.3",
-    "koishi-plugin-mysql": "^3.3.2",
+    "koishi-plugin-mongo": "^2.3.0",
+    "koishi-plugin-mysql": "^3.4.0",
     "koishi-plugin-puppeteer": "^2.1.4",
-    "koishi-test-utils": "^6.0.1",
+    "koishi-test-utils": "^6.1.0",
     "nock": "^13.1.1"
   },
   "peerDependencies": {
-    "koishi-core": "^3.12.3"
+    "koishi-core": "^3.13.0"
   },
   "dependencies": {
     "@octokit/webhooks-types": "^3.75.2",

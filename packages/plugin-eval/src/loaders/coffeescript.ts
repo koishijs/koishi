@@ -14,7 +14,6 @@ export function prepare(config: LoaderConfig) {
     options.plugins.push(['@babel/plugin-transform-react-jsx', {
       pragma: config.jsxFactory,
       pragmaFrag: config.jsxFragment,
-      useBuiltIns: true,
       useSpread: true,
     }])
   }
@@ -34,9 +33,15 @@ export function extractScript(expr: string) {
 }
 
 export async function transformScript(expr: string) {
+  // wrapped by `do` so that we can use `await` in the exporession
+  expr = `do -> (${expr})`
   const raw = compile(expr, { bare: true })
   const { code } = await transformAsync(raw, options)
   return code
 }
 
-export const transformModule = transformScript
+export async function transformModule(expr: string) {
+  const raw = compile(expr, { bare: true })
+  const { code } = await transformAsync(raw, options)
+  return code
+}

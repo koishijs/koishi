@@ -28,14 +28,14 @@
     "koishi"
   ],
   "peerDependencies": {
-    "koishi-core": "^3.12.3"
+    "koishi-core": "^3.13.0"
   },
   "devDependencies": {
     "chai": "^4.3.4",
     "get-port": "^5.1.1",
     "jest-mock": "^27.0.6",
     "koishi-adapter-cqhttp": "^1.0.8",
-    "koishi-test-utils": "^6.0.1",
+    "koishi-test-utils": "^6.1.0",
     "ws": "^7.5.3"
   },
   "dependencies": {
