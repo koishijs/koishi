@@ -131,6 +131,7 @@ Koishi v3 的另一大亮点就是拥有官方的网页控制台插件。这个�
 - [koishi-plugin-aircon](https://github.com/idlist/koishi-plugin-aircon): 群空调
 - [koishi-plugin-cryptocurrency](https://github.com/koishijs/plugin-cryptocurrency): 查看和订阅加密货币的市场价格
 - [koishi-plugin-jrrp](https://github.com/idlist/koishi-plugin-jrrp): 今日人品
+- [koishi-plugin-rpc](https://github.com/Anillc/koishi-plugin-rpc): 一个为其他插件提供 RPC 的插件
 
 ### 社区项目
 
