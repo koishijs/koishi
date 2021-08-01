@@ -45,7 +45,6 @@
   "dependencies": {
     "@octokit/webhooks-types": "^3.75.2",
     "axios": "^0.21.1",
-    "koishi-utils": "workspace:packages/koishi-utils",
     "marked": "^2.0.3"
   }
 }

@@ -35,7 +35,6 @@
   },
   "dependencies": {
     "@types/mysql": "^2.15.18",
-    "koishi-utils": "workspace:packages/koishi-utils",
     "mysql": "^2.18.1"
   },
   "devDependencies": {

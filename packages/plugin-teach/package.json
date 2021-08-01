@@ -47,7 +47,6 @@
   "dependencies": {
     "axios": "^0.21.1",
     "fastest-levenshtein": "^1.0.12",
-    "koishi-utils": "workspace:packages/koishi-utils",
     "mongodb": "^4.0.1",
     "mysql": "^2.18.1"
   }

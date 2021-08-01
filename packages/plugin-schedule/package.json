@@ -38,10 +38,5 @@
   },
   "peerDependencies": {
     "koishi-core": "^3.13.0"
-  },
-  "dependencies": {
-    "koishi-utils": "^4.2.3"
-  },
-  "peerDependencies": {
   }
 }

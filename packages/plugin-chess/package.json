@@ -34,6 +34,6 @@
     "koishi-utils": "^4.2.3"
   },
   "dependencies": {
-    "koishi-plugin-mysql": "workspace:packages/plugin-mysql"
+    "koishi-plugin-mysql": "^3.4.0"
   }
 }

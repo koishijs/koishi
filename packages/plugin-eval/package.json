@@ -45,15 +45,14 @@
   },
   "dependencies": {
     "js-yaml": "^4.1.0",
-    "koishi-utils": "workspace:packages/koishi-utils",
     "simple-git": "^2.38.0"
   },
   "devDependencies": {
     "@types/babel__core": "^7.1.14",
     "@types/js-yaml": "^4.0.1",
     "chai": "^4.3.4",
-    "koishi": "workspace:packages/koishi",
-    "koishi-plugin-teach": "workspace:packages/plugin-teach",
+    "koishi": "^3.13.0",
+    "koishi-plugin-teach": "^2.2.2",
     "koishi-test-utils": "^6.1.0"
   }
 }

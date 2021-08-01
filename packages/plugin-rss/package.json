@@ -37,8 +37,7 @@
     "koishi-test-utils": "^6.1.0"
   },
   "dependencies": {
-    "koishi-plugin-mysql": "workspace:packages/plugin-mysql",
-    "koishi-utils": "workspace:packages/koishi-utils",
+    "koishi-plugin-mysql": "^3.4.0",
     "rss-feed-emitter": "^3.2.2"
   }
 }
