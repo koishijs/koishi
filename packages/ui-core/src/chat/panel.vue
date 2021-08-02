@@ -128,18 +128,11 @@ function formatDateTime(date: Date) {
 
 <style lang="scss">
 
-$padding: 1.5rem;
-
-.k-card.k-chat-panel {
+.k-chat-panel {
   height: 100%;
-
-  .k-card-body {
-    padding: 1rem 0;
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-    box-sizing: border-box;
-  }
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
 
   .k-chat-body {
     overflow-x: visible;
@@ -157,13 +150,13 @@ $padding: 1.5rem;
     padding: 0.25rem 1rem;
 
     &:hover {
-      background-color: rgba(4, 4, 5, 0.2);
+      background-color: var(--c-chat-hover);
     }
   }
 
   .k-input {
-    margin-top: 1rem;
-    width: -webkit-fill-available;
+    margin: 1rem 0;
+    width: 100%;
   }
 }
 

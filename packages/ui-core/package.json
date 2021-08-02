@@ -1,5 +1,5 @@
 {
-  "name": "@koishijs/components",
+  "name": "@koishijs/ui-core",
   "description": "UI components for Koishi",
   "version": "0.1.0",
   "private": true,
@@ -21,8 +21,6 @@
     "vue": "^3.1.5"
   },
   "dependencies": {
-    "@vueuse/core": "^5.2.0",
-    "koishi": "^4.0.0-alpha.0",
-    "monaco-editor": "^0.26.1"
+    "@koishijs/core": "^4.0.0-alpha.0"
   }
 }

@@ -4,23 +4,11 @@
 
 <script lang="ts" setup>
 
-/// <reference types="../global" />
-
 import { editor, Uri } from 'monaco-editor'
 import { ref, watch, onMounted, onBeforeUnmount } from 'vue'
-import editorWorker from 'monaco-editor/esm/vs/editor/editor.worker?worker'
-import tsWorker from 'monaco-editor/esm/vs/language/typescript/ts.worker?worker'
+import { filename } from './monaco'
 import OneDark from './onedark.yaml'
 import OneLight from './onelight.yaml'
-
-window.MonacoEnvironment = {
-  getWorker(_, label) {
-    if (label === 'typescript') {
-      return new tsWorker()
-    }
-    return new editorWorker()
-  },
-}
 
 const root = ref<HTMLElement>()
 
@@ -34,6 +22,7 @@ const props = withDefaults(defineProps<{
 }>(), {
   original: '\n',
   modelValue: '\n',
+  language: 'typescript',
 })
 
 const emit = defineEmits(['update:modelValue', 'update:original'])
@@ -75,6 +64,7 @@ onMounted(() => {
     minimap: {
       enabled: false,
     },
+    theme: props.theme,
     language: props.language,
     tabSize: 2,
     insertSpaces: true,
@@ -92,7 +82,7 @@ onMounted(() => {
     codeEditor = diffEditor.getModifiedEditor()
     origEditor = diffEditor.getOriginalEditor()
   } else {
-    options['model'] = editor.createModel(props.modelValue, props.language, Uri.parse(`file:///untitled.ts`))
+    options['model'] = editor.createModel(props.modelValue, props.language, Uri.parse(filename))
     codeEditor = editor.create(root.value, options)
   }
 
