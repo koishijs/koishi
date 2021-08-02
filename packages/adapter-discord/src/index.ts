@@ -1,6 +1,7 @@
 import { Adapter } from 'koishi-core'
 import { AxiosRequestConfig } from 'axios'
-import { DiscordBot, HandleExternalAsset, HandleMixedContent } from './bot'
+import { DiscordBot } from './bot'
+import { HandleExternalAsset, HandleMixedContent } from './sender'
 import WsClient from './ws'
 import * as DC from './types'
 export * from './bot'

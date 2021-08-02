@@ -59,11 +59,17 @@ new App({
 - 类型：`DelayOptions`
 
 ```js
+// 所有配置项的单位均为毫秒
 interface DelayOptions {
+  // 调用 session.sendQueued() 是消息间发送的最小延迟，按前一条消息的字数计算，默认值为 0
   character?: number
+  // 调用 session.sendQueued() 时消息间发送的最小延迟，按固定值计算，默认值为 100
   message?: number
+  // 调用 session.cancelQueued() 时默认的延迟，默认值为 0
   cancel?: number
+  // 调用 bot.broadcast() 时默认的延迟，默认值为 500
   broadcast?: number
+  // 调用 session.prompt() 是默认的等待时间，默认值为 60000
   prompt?: number
 }
 ```

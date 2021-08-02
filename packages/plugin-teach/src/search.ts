@@ -85,14 +85,14 @@ export default function apply(ctx: Context) {
       const { answer } = dialogue
       // TODO extract dialogue command
       if (!answer.startsWith('%{dialogue ')) continue
-      const { prefixed, unprefixed } = argv.config._stripQuestion(answer.slice(11, -1).trimStart())
-      if (unprefixed in argv.questionMap) continue
+      const { original, parsed } = argv.config._stripQuestion(answer.slice(11, -1).trimStart())
+      if (parsed in argv.questionMap) continue
       // TODO multiple tests in one query
-      const dialogues = argv.questionMap[unprefixed] = await ctx.database.getDialoguesByTest({
+      const dialogues = argv.questionMap[parsed] = await ctx.database.getDialoguesByTest({
         ...test,
         regexp: null,
-        question: unprefixed,
-        original: prefixed,
+        question: parsed,
+        original: original,
       })
       Object.defineProperty(dialogue, '_redirections', { writable: true, value: dialogues })
       await argv.app.parallel('dialogue/search', argv, test, dialogues)

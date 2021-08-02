@@ -1,4 +1,4 @@
-import { Context, template, defineProperty } from 'koishi-core'
+import { Context, template, defineProperty, segment } from 'koishi-core'
 import { Dialogue } from './utils'
 import { create, update } from './update'
 import { formatQuestionAnswers } from './search'
@@ -45,13 +45,12 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
       } else if (/\[CQ:(?!face)/.test(question)) {
         return template('teach.prohibited-cq-code')
       }
-      const { unprefixed, appellative } = options.regexp
-        ? { unprefixed: question, appellative: false }
+      const { original, parsed, appellative } = options.regexp
+        ? { original: segment.unescape(question), parsed: question, appellative: false }
         : config._stripQuestion(question)
       defineProperty(options, 'appellative', appellative)
-      defineProperty(options, '_original', question)
-      defineProperty(options, 'original', question)
-      args[0] = unprefixed
+      defineProperty(options, 'original', original)
+      args[0] = parsed
       args[1] = answer
       if (!args[0] && !args[1]) args.splice(0, Infinity)
     })

@@ -47,16 +47,17 @@ export class MemoryDatabase {
   }
 }
 
-const queryOperators: ([string, (lVal: any, rVal: any) => boolean])[] = Object.entries({
-  $regex: (val: RegExp, rVal) => val.test(rVal),
-  $in: (val: any[], rVal) => val.includes(rVal),
-  $nin: (val: any[], rVal) => !val.includes(rVal),
-  $ne: (val, rVal) => rVal !== val,
-  $eq: (val, rVal) => rVal === val,
-  $gt: (val, rVal) => rVal > val,
-  $gte: (val, rVal) => rVal >= val,
-  $lt: (val, rVal) => rVal < val,
-  $lte: (val, rVal) => rVal <= val,
+const queryOperators: ([string, (data: any, value: any) => boolean])[] = Object.entries({
+  $regex: (data: RegExp, value) => data.test(value),
+  $regexFor: (data, value) => new RegExp(value, 'i').test(data),
+  $in: (data: any[], value) => data.includes(value),
+  $nin: (data: any[], value) => !data.includes(value),
+  $ne: (data, value) => value !== data,
+  $eq: (data, value) => value === data,
+  $gt: (data, value) => value > data,
+  $gte: (data, value) => value >= data,
+  $lt: (data, value) => value < data,
+  $lte: (data, value) => value <= data,
 })
 
 Database.extend(MemoryDatabase, {
