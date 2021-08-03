@@ -128,6 +128,10 @@ function onBlur(event: FocusEvent) {
     }
   }
 
+  nav:hover ~ * & > input {
+    transition: none;
+  }
+
   &.round > input {
     border-radius: 1rem;
   }

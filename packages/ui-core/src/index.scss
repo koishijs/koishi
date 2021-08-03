@@ -17,6 +17,7 @@ html {
   // border colors
   --c-border: #eaecef;
   --c-border-dark: #dfe2e5;
+  --c-border-darker: #d7d7d7;
   --c-border-active: var(--c-brand);
 
   // input
@@ -35,6 +36,7 @@ html.dark {
   --c-bg: #22272e;
   --c-bg-light: #2b313a;
   --c-bg-lighter: #262c34;
+  --c-bg-lightest: #383b41;
 
   // text colors
   --c-text: #adbac7;
@@ -45,6 +47,7 @@ html.dark {
   // border colors
   --c-border: #3e4c5a;
   --c-border-dark: #34404c;
+  --c-border-darker: #404349;
 
   // chat
   --c-chat-hover: rgba(4, 4, 5, 0.2);

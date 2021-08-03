@@ -91,6 +91,9 @@ export default {
 
 <style lang="scss">
 
+$avatar-size: 2.8rem;
+$msgbox-left: 4.2rem;
+
 .chat-message {
   position: relative;
   margin: 1rem 0;
@@ -102,32 +105,29 @@ export default {
     opacity: 1;
     transform: translateX(0);
   }
-}
 
-$avatar-size: 2.8rem;
-$msgbox-left: 4.2rem;
+  .avatar {
+    width: $avatar-size;
+    height: $avatar-size;
+    position: absolute;
+    border-radius: 100%;
+    transform: translateY(-1px);
+    user-select: none;
+    pointer-events: none;
+    text-align: center;
+    line-height: $avatar-size;
+    font-size: 1.6rem;
+    color: white;
+    font-family: "Comic Sans MS";
+  }
 
-.avatar{
-  width: $avatar-size;
-  height: $avatar-size;
-  position: absolute;
-  border-radius: 100%;
-  transform: translateY(-1px);
-  user-select: none;
-  pointer-events: none;
-  text-align: center;
-  line-height: $avatar-size;
-  font-size: 1.6rem;
-  color: white;
-  font-family: "Comic Sans MS";
-}
-
-.nickname {
-  user-select: none;
-  position: relative;
-  margin: 0 0 0.4rem $msgbox-left;
-  font-weight: bold;
-  font-size: 0.9rem;
+  .nickname {
+    user-select: none;
+    position: relative;
+    margin: 0 0 0.4rem $msgbox-left;
+    font-weight: bold;
+    font-size: 0.9rem;
+  }
 }
 
 .message-box {

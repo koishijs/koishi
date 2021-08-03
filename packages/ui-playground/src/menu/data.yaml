@@ -1,0 +1,41 @@
+editor:
+  - key: 转到定义
+    bind: F12
+    command: editor.action.goToDefinition
+  - key: 转到引用
+    bind: Shift+F12
+    command: editor.action.goToReferences
+
+menubar:
+  - key: 文件
+    shortcut: F
+    content:
+      - key: 打开
+        bind: Ctrl+O
+        command: workbench.action.files.openFile
+      - key: 保存
+        bind: Ctrl+S
+        command: workbench.action.files.save
+  - key: 编辑
+    shortcut: E
+    content:
+      - key: 撤销
+        bind: Ctrl+Z
+      - key: 恢复
+        bind: Ctrl+Y
+      - key: $separator
+      - key: 剪切
+        bind: Ctrl+X
+      - key: 复制
+        bind: Ctrl+C
+      - key: 粘贴
+        bind: Ctrl+V
+      - key: $separator
+      - key: 查找
+        bind: Ctrl+F
+      - key: 替换
+        bind: Ctrl+H
+  # - key: view
+  #   bind: V
+  #   content:
+  #     - command palette

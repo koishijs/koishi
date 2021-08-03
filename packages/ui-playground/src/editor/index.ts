@@ -1,9 +1,12 @@
-/// <reference types="../../ui-core/src/global" />
+/// <reference types="../../../ui-core/src/global" />
 
+import { defineAsyncComponent } from 'vue'
 import editorWorker from 'monaco-editor/esm/vs/editor/editor.worker?worker'
 import tsWorker from 'monaco-editor/esm/vs/language/typescript/ts.worker?worker'
 import coreLibrary from 'koishi/lib/koishi.d.ts?raw'
 import utilsLibrary from 'koishi/lib/utils.d.ts?raw'
+import OneDark from './onedark.yaml'
+import OneLight from './onelight.yaml'
 
 window.MonacoEnvironment = {
   getWorker(_, label) {
@@ -14,9 +17,23 @@ window.MonacoEnvironment = {
   },
 }
 
+export default defineAsyncComponent(() => import('./editor.vue'))
+
 const workerPromise = (async () => {
-  const { languages, Uri } = await import('monaco-editor')
+  const { editor, languages, Uri } = await import('monaco-editor')
   const { ModuleKind, ScriptTarget, typescriptDefaults, getTypeScriptWorker } = languages.typescript
+
+  editor.defineTheme('onedark', OneDark)
+  editor.defineTheme('onelight', OneLight)
+  
+  if (import.meta.hot) {
+    import.meta.hot.accept('./onedark.yaml', (OneDark: any) => {
+      editor.defineTheme('onedark', OneDark)
+    })
+    import.meta.hot.accept('./onelight.yaml', (OneLight: any) => {
+      editor.defineTheme('onelight', OneLight)
+    })
+  }
 
   typescriptDefaults.setCompilerOptions({
     module: ModuleKind.CommonJS,
@@ -30,7 +47,7 @@ const workerPromise = (async () => {
   return getter(Uri.parse('file:///untitled.ts'))
 })()
 
-export const filename = 'file:///untitled.ts'
+const filename = 'file:///untitled.ts'
 
 export async function transpile() {
   try {

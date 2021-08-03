@@ -6,9 +6,6 @@
 
 import { editor, Uri } from 'monaco-editor'
 import { ref, watch, onMounted, onBeforeUnmount } from 'vue'
-import { filename } from './monaco'
-import OneDark from './onedark.yaml'
-import OneLight from './onelight.yaml'
 
 const root = ref<HTMLElement>()
 
@@ -18,7 +15,6 @@ const props = withDefaults(defineProps<{
   theme?: string
   language?: string
   options?: {}
-  diff?: boolean
 }>(), {
   original: '\n',
   modelValue: '\n',
@@ -29,7 +25,6 @@ const emit = defineEmits(['update:modelValue', 'update:original'])
 
 let codeEditor: editor.IStandaloneCodeEditor
 let origEditor: editor.IStandaloneCodeEditor
-let diffEditor: editor.IStandaloneDiffEditor
 
 watch(() => props.options, (options) => {
   codeEditor?.updateOptions(options)
@@ -59,32 +54,27 @@ watch(() => props.theme, (newVal) => {
 })
 
 onMounted(() => {
-  const options = {
+  const options: editor.IStandaloneEditorConstructionOptions = {
     fontSize: 16,
     minimap: {
       enabled: false,
+    },
+    padding: {
+      top: 8,
+      bottom: 8,
     },
     theme: props.theme,
     language: props.language,
     tabSize: 2,
     insertSpaces: true,
     automaticLayout: true,
+    overviewRulerLanes: 0,
     scrollBeyondLastLine: false,
     ...props.options,
   }
 
-  if (props.diff) {
-    diffEditor = editor.createDiffEditor(root.value, options)
-    diffEditor.setModel({
-      original: editor.createModel(props.original, props.language),
-      modified: editor.createModel(props.modelValue, props.language),
-    })
-    codeEditor = diffEditor.getModifiedEditor()
-    origEditor = diffEditor.getOriginalEditor()
-  } else {
-    options['model'] = editor.createModel(props.modelValue, props.language, Uri.parse(filename))
-    codeEditor = editor.create(root.value, options)
-  }
+  options.model = editor.createModel(props.modelValue, props.language, Uri.parse('file:///untitled.ts'))
+  codeEditor = editor.create(root.value, options)
 
   codeEditor.onDidChangeModelContent((event) => {
     const value = codeEditor.getValue()
@@ -92,29 +82,10 @@ onMounted(() => {
       emit('update:modelValue', value, event)
     }
   })
-
-  origEditor?.onDidChangeModelContent((event) => {
-    const value = origEditor.getValue()
-    if (props.original !== value) {
-      emit('update:original', value, event)
-    }
-  })
 })
 
 onBeforeUnmount(() => {
-  (diffEditor || codeEditor)?.dispose()
+  codeEditor?.dispose()
 })
-
-editor.defineTheme('onedark', OneDark)
-editor.defineTheme('onelight', OneLight)
-
-if (import.meta.hot) {
-  import.meta.hot.accept('./onedark.yaml', (OneDark: any) => {
-    editor.defineTheme('onedark', OneDark)
-  })
-  import.meta.hot.accept('./onelight.yaml', (OneLight: any) => {
-    editor.defineTheme('onelight', OneLight)
-  })
-}
 
 </script>

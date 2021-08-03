@@ -14,7 +14,8 @@
           <span class="timestamp">{{ formatTime(new Date(message.timestamp)) }}</span>
         </template>
         <template v-else>
-          <img class="avatar" :src="message.avatar"/>
+          <img v-if="message.avatar" class="avatar" :src="message.avatar"/>
+          <div v-else class="avatar">{{ message.username[0] }}</div>
           <div class="header">
             <span class="channel">{{ message.channelName || '私聊' }}</span>
             <span class="username">{{ message.username }}</span>
@@ -157,6 +158,106 @@ function formatDateTime(date: Date) {
   .k-input {
     margin: 1rem 0;
     width: 100%;
+  }
+
+  $avatarSize: 2.5rem;
+  $padding: $avatarSize + 1rem;
+
+  .successive {
+    margin-top: -0.5rem;
+
+    .timestamp {
+      position: absolute;
+      visibility: hidden;
+      left: 0;
+      width: $padding + 1rem;
+      text-align: center;
+      user-select: none;
+    }
+
+    &:hover {
+      .timestamp {
+        visibility: initial;
+      }
+    }
+  }
+
+  .avatar {
+    position: absolute;
+    margin-top: 4px;
+    width: $avatarSize;
+    height: $avatarSize;
+    border-radius: $avatarSize;
+    user-select: none;
+    font-family: "Comic Sans MS";
+    text-align: center;
+    line-height: $avatarSize;
+    font-size: 1.3rem;
+    color: var(--c-bg);
+    background-color: var(--c-brand);
+  }
+
+  .quote {
+    position: relative;
+    font-size: 0.875rem;
+    margin-left: $padding;
+    cursor: pointer;
+    * + span {
+      margin-left: 0.5rem;
+    }
+
+    &::before {
+      content: '';
+      display: block;
+      position: absolute;
+      box-sizing: border-box;
+      top: 50%;
+      right: 100%;
+      bottom: 0;
+      left: -36px;
+      margin-right: 4px;
+      margin-top: -1px;
+      margin-left: -1px;
+      margin-bottom: calc(.125rem - 4px);
+      border-left: 1px solid #4f545c;
+      border-top: 1px solid #4f545c;
+      border-top-left-radius: 6px;
+    }
+
+    .quote-avatar {
+      width: 1rem;
+      height: 1rem;
+      border-radius: 1rem;
+      vertical-align: text-top;
+    }
+
+    .abstract {
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+  }
+
+  .header {
+    margin-left: $padding;
+    color: #72767d;
+    * + span {
+      margin-left: 0.5rem;
+    }
+  }
+
+  .username {
+    color: rgba(244, 244, 245, 0.8);
+    font-weight: bold;
+    line-height: 1.375rem;
+  }
+
+  .timestamp {
+    color: #72767d;
+    font-size: 0.75rem;
+  }
+
+  .k-message {
+    margin-left: $padding;
   }
 }
 
