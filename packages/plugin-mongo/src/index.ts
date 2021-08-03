@@ -160,7 +160,9 @@ Database.extend(MongoDatabase, {
     if (!key || key === primary) key = '_id'
     const bulk = this.db.collection(name).initializeUnorderedBulkOp()
     for (const item of data) {
-      bulk.find({ [key]: item[primary] }).updateOne({ $set: omit(item, [primary]) })
+      const $set = omit(item, [primary])
+      if (!Object.keys($set).length) continue
+      bulk.find({ [key]: item[primary] }).updateOne({ $set })
     }
     await bulk.execute()
   },
@@ -181,6 +183,11 @@ Database.extend(MongoDatabase, {
   async setUser(type, id, data) {
     const [udoc] = await this.user.find({}).sort({ id: -1 }).limit(1).project({ id: 1 }).toArray()
     const uid = (+udoc?.id || 0) + 1
+    if (!Object.keys(data).length) {
+      // @ts-ignore
+      await this.user.insertOne({ [type]: id, id: uid.toString() })
+      return
+    }
     await this.user.updateOne(
       { [type]: id },
       { $set: escapeKey(data), $setOnInsert: { id: uid.toString() } },
@@ -212,7 +219,12 @@ Database.extend(MongoDatabase, {
     return channels.map(channel => ({ ...pick(Channel.create(channel.type, channel.pid), fields), ...channel, _id: `${channel.type}:${channel.pid}`, id: `${channel.type}:${channel.pid}` }))
   },
 
-  async setChannel(type, pid, data) {
+  async setChannel(type, pid, data = {}) {
+    if (!Object.keys(data).length) {
+      // @ts-ignore
+      await this.channel.insertOne({ type, pid })
+      return
+    }
     await this.channel.updateOne({ type, pid }, { $set: data }, { upsert: true })
   },
 
