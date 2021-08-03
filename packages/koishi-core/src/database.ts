@@ -38,6 +38,7 @@ export namespace Query {
 
   export interface FieldExpr<T> {
     $regex?: RegExp
+    $regexFor?: string
     $in?: T[]
     $nin?: T[]
     $eq?: T

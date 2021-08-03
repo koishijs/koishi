@@ -27,10 +27,10 @@ declare module 'koishi-core' {
 }
 
 interface Question {
-  /** 去除句首句尾标点符号，句中空格后的句子 */
-  prefixed: string
+  /** 被 unescape 处理后原本的句子 */
+  original: string
   /** 去除句首句尾标点符号，句中空格和句首称呼的句子 */
-  unprefixed: string
+  parsed: string
   /** 是否含有称呼 */
   appellative: boolean
   /** 是否仅含有称呼 */
@@ -248,6 +248,7 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
   ctx.app._dialogueStates = {}
 
   config._stripQuestion = (source) => {
+    const original = segment.unescape(source)
     source = segment.transform(source, {
       text: ({ content }, index, chain) => {
         let message = simplify(segment.unescape('' + content))
@@ -259,14 +260,13 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
         return message
       },
     })
-    const original = source
     const capture = nicknameRE.exec(source)
-    if (capture) source = source.slice(capture[0].length)
+    const unprefixed = capture ? source.slice(capture[0].length) : source
     return {
-      prefixed: original,
-      unprefixed: source || original,
-      appellative: source && source !== original,
-      activated: !source && source !== original,
+      original,
+      parsed: unprefixed || source,
+      appellative: unprefixed && unprefixed !== source,
+      activated: !unprefixed && unprefixed !== source,
     }
   }
 
@@ -310,9 +310,9 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
 
   ctx.on('dialogue/receive', ({ session, test }) => {
     if (session.content.includes('[CQ:image,')) return true
-    const { unprefixed, appellative, activated } = config._stripQuestion(session.content)
-    test.question = unprefixed
-    test.original = session.content
+    const { original, parsed, appellative, activated } = config._stripQuestion(session.content)
+    test.question = parsed
+    test.original = original
     test.activated = activated
     test.appellative = appellative
   })
