@@ -8,6 +8,12 @@ import utilsLibrary from 'koishi/lib/utils.d.ts?raw'
 import OneDark from './onedark.yaml'
 import OneLight from './onelight.yaml'
 
+declare global {
+  interface Window {
+    editor: import('monaco-editor').editor.IStandaloneCodeEditor
+  }
+}
+
 window.MonacoEnvironment = {
   getWorker(_, label) {
     if (label === 'typescript') {
@@ -25,7 +31,7 @@ const workerPromise = (async () => {
 
   editor.defineTheme('onedark', OneDark)
   editor.defineTheme('onelight', OneLight)
-  
+
   if (import.meta.hot) {
     import.meta.hot.accept('./onedark.yaml', (OneDark: any) => {
       editor.defineTheme('onedark', OneDark)

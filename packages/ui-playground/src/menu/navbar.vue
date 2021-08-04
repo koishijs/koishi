@@ -2,7 +2,8 @@
   <nav class="playground-navbar">
     <div class="menu-group" @contextmenu.stop>
       <div v-for="(menu, index) in data.menubar" class="menu"
-        @click.stop="showMenu(menu.key, $event)"
+        @click.stop="showNavbarMenu(menu.key, $event)"
+        @mouseover.stop="hoverNavbarMenu(menu.key, $event)"
       >
         {{ menu.key }} (<span>{{ menu.shortcut }}</span>)
       </div>
@@ -19,7 +20,7 @@
 
 import ToggleDarkModeButton from '@vuepress/theme-default/lib/client/components/ToggleDarkModeButton.vue'
 import MenuPort from './port.vue'
-import { data, showMenu } from './utils'
+import { data, showNavbarMenu, hoverNavbarMenu } from './utils'
 
 </script>
 
@@ -38,7 +39,7 @@ import { data, showMenu } from './utils'
   .menu {
     height: 100%;
     font-size: 14px;
-    line-height: $menubar-height;
+    line-height: 2rem;
     padding: 0 0.8rem;
     display: inline-block;
     user-select: none;

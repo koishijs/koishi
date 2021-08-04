@@ -1,41 +1,75 @@
 editor:
   - key: 转到定义
-    bind: F12
-    command: editor.action.goToDefinition
+    action: editor.action.goToDefinition
   - key: 转到引用
-    bind: Shift+F12
-    command: editor.action.goToReferences
+    action: editor.action.goToReferences
+  - key: $separator
+  - key: 重命名符号
+    action: editor.action.rename
+  - key: 更改所有匹配项
+    action: editor.action.changeAll
+  - key: 格式化文档
+    action: editor.action.formatDocument
+  - key: $separator
+  - key: 剪切
+    action: editor.action.clipboardCutAction
+  - key: 复制
+    action: editor.action.clipboardCopyAction
+  - key: 粘贴
+    action: editor.action.clipboardPasteAction
+  - key: $separator
+  - key: 命令面板
+    action: editor.action.quickCommand
+
+message:
+  - key: 添加反应
+    action: chat.addReaction
+  - key: 标注消息
+    action: chat.pinMessage
+  - key: 引用回复
+    action: chat.quoteReply
+  - key: 设为未读消息
+    action: chat.markUnread
 
 menubar:
   - key: 文件
     shortcut: F
     content:
       - key: 打开
-        bind: Ctrl+O
-        command: workbench.action.files.openFile
+        action: custom.openFile
       - key: 保存
-        bind: Ctrl+S
-        command: workbench.action.files.save
+        action: custom.saveFile
+
   - key: 编辑
     shortcut: E
     content:
       - key: 撤销
-        bind: Ctrl+Z
+        action: undo
       - key: 恢复
-        bind: Ctrl+Y
+        action: redo
       - key: $separator
       - key: 剪切
-        bind: Ctrl+X
+        action: editor.action.clipboardCutAction
       - key: 复制
-        bind: Ctrl+C
+        action: editor.action.clipboardCopyAction
       - key: 粘贴
-        bind: Ctrl+V
+        action: editor.action.clipboardPasteAction
       - key: $separator
       - key: 查找
-        bind: Ctrl+F
+        action: actions.find
       - key: 替换
-        bind: Ctrl+H
-  # - key: view
-  #   bind: V
-  #   content:
-  #     - command palette
+        action: editor.action.startFindReplaceAction
+      - key: 查找下一个
+        action: editor.action.nextMatchFindAction
+      - key: 查找上一个
+        action: editor.action.previoustMatchFindAction
+
+  - key: 视图
+    shortcut: V
+    content:
+      - key: 命令面板
+        action: editor.action.quickCommand
+      - key: 切换全屏
+        action: custom.toggleFullScreen
+      - key: 切换主题色
+        action: custom.toggleDarkMode

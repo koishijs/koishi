@@ -10,21 +10,18 @@ import { ref, watch, onMounted, onBeforeUnmount } from 'vue'
 const root = ref<HTMLElement>()
 
 const props = withDefaults(defineProps<{
-  original?: string
   modelValue?: string
   theme?: string
   language?: string
   options?: {}
 }>(), {
-  original: '\n',
   modelValue: '\n',
   language: 'typescript',
 })
 
-const emit = defineEmits(['update:modelValue', 'update:original'])
+const emit = defineEmits(['update:modelValue', 'menu'])
 
 let codeEditor: editor.IStandaloneCodeEditor
-let origEditor: editor.IStandaloneCodeEditor
 
 watch(() => props.options, (options) => {
   codeEditor?.updateOptions(options)
@@ -34,13 +31,6 @@ watch(() => props.modelValue, (newValue) => {
   if (!codeEditor) return
   if (newValue !== codeEditor.getValue()) {
     codeEditor.setValue(newValue)
-  }
-})
-
-watch(() => props.original, (newValue) => {
-  if (!origEditor) return
-  if (newValue !== origEditor.getValue()) {
-    origEditor.setValue(newValue)
   }
 })
 
@@ -63,6 +53,7 @@ onMounted(() => {
       top: 8,
       bottom: 8,
     },
+    contextmenu: false,
     theme: props.theme,
     language: props.language,
     tabSize: 2,
@@ -74,7 +65,7 @@ onMounted(() => {
   }
 
   options.model = editor.createModel(props.modelValue, props.language, Uri.parse('file:///untitled.ts'))
-  codeEditor = editor.create(root.value, options)
+  codeEditor = window.editor = editor.create(root.value, options)
 
   codeEditor.onDidChangeModelContent((event) => {
     const value = codeEditor.getValue()
@@ -82,6 +73,32 @@ onMounted(() => {
       emit('update:modelValue', value, event)
     }
   })
+
+  codeEditor.onContextMenu((ev) => {
+    ev.event.preventDefault()
+    ev.event.stopPropagation()
+    emit('menu', ev.event.browserEvent)
+  })
+
+  function createDocumentAction(id: string, label: string, command: string) {
+    codeEditor.addAction({
+      id,
+      label,
+      run() {
+        if (!codeEditor) return
+        codeEditor.focus()
+        if (!document.execCommand(command)) {
+          codeEditor.getModel()[command]?.()
+        }
+      },
+    })
+  }
+
+  createDocumentAction('undo', 'Undo', 'undo')
+  createDocumentAction('redo', 'Redo', 'redo')
+  createDocumentAction('editor.action.clipboardCutAction', 'Cut', 'cut')
+  createDocumentAction('editor.action.clipboardCopyAction', 'Copy', 'copy')
+  createDocumentAction('editor.action.clipboardPasteAction', 'Paste', 'paste')
 })
 
 onBeforeUnmount(() => {

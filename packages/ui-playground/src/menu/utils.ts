@@ -6,7 +6,7 @@ export interface MenuItem {
   key: string
   bind?: string
   shortcut?: string
-  command?: string
+  action?: string
   content?: MenuItem[]
 }
 
@@ -52,33 +52,18 @@ export function hideContextMenus() {
   }
 }
 
-export function showContextMenu(key, event) {
-  const style = this.menuReference[key].style
-  hideContextMenus()
-  locateMenuAtClient(event, style)
-  states[key].show = true
-}
-
 const top = ref(0)
 const left = ref(0)
 
 export const menubarActive = ref(false)
 
-export function hoverMenu(index, event) {
-  if (menubarActive.value && !states.menubar.active === index) {
-    this.showMenu(index, event)
+export function hoverNavbarMenu(key: string, event: MouseEvent) {
+  if (menubarActive.value && states.menubar.active !== key) {
+    showNavbarMenu(key, event)
   }
 }
 
-export function showButtonMenu(key, event) {
-  const style = this.menuReference[key].style
-  hideContextMenus()
-  locateMenuAtButton(event, style)
-  states[key].show = true
-}
-
-export function showMenu(key: string, event: MouseEvent) {
-  // this.contextId = null
+export function showNavbarMenu(key: string, event: MouseEvent) {
   const style = states.menubar.element.style
   if (states.menubar.active === key) {
     menubarActive.value = false
@@ -89,6 +74,20 @@ export function showMenu(key: string, event: MouseEvent) {
   locateMenuAtButton(event, style)
   menubarActive.value = true
   states.menubar.active = key
+}
+
+export function showButtonMenu(key: string, event: MouseEvent) {
+  const style = states[key].element.style
+  hideContextMenus()
+  locateMenuAtButton(event, style)
+  states[key].show = true
+}
+
+export function showContextMenu(key: string, event: MouseEvent) {
+  const style = states[key].element.style
+  hideContextMenus()
+  locateMenuAtClient(event, style)
+  states[key].show = true
 }
 
 export function locateMenuAtClient(event: MouseEvent, style: CSSStyleDeclaration) {
@@ -107,7 +106,7 @@ export function locateMenuAtClient(event: MouseEvent, style: CSSStyleDeclaration
 }
 
 export function locateMenuAtButton(event: MouseEvent, style: CSSStyleDeclaration) {
-  const rect = (event.target as Element).getBoundingClientRect()
+  const rect = (event.currentTarget as Element).getBoundingClientRect()
   if (rect.left + 200 > width.value) {
     style.left = rect.left + rect.width - 200 - left.value + 'px'
   } else {

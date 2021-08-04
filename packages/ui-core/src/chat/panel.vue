@@ -3,7 +3,10 @@
     <k-virtual-list
       class="k-chat-body" :item-class="resolveItemClass"
       key-name="messageId" :data="messages" :pinned="pinned"
-      @click="handleClick" :active-key="index">
+      @item:click="(...args) => emit('item:click', ...args)"
+      @item:menu="(...args) => emit('item:menu', ...args)"
+      :active-key="index"
+    >
       <template v-if="type === 'modern'" #default="message">
         <div class="quote" v-if="message.quote" @click="onClickQuote(message.quote.messageId)">
           <img class="quote-avatar" :src="message.quote.author.avatar"/>
@@ -59,7 +62,11 @@ export interface Message {
   quote?: Message
 }
 
-const emit = defineEmits(['send'])
+const emit = defineEmits<{
+  (type: 'send', text: string): void
+  (type: 'item:click', item: any, event: MouseEvent): void
+  (type: 'item:menu', item: any, event: MouseEvent): void
+}>()
 
 const props = withDefaults(defineProps<{
   messages: Message[]
@@ -71,7 +78,6 @@ const props = withDefaults(defineProps<{
 
 const text = ref('')
 const index = ref<string>()
-const activeMessage = ref<Message>()
 
 function resolveItemClass(item: any, index: number) {
   return 'k-chat-message' + (isSuccessive(item, index) ? ' successive' : '')
@@ -99,10 +105,6 @@ async function onPaste(event: ClipboardEvent) {
 function isSuccessive({ quote, userId, channelId }: Message, index: number) {
   const prev = props.messages[index - 1]
   return !quote && prev && prev.userId === userId && prev.channelId === channelId
-}
-
-function handleClick(message: Message) {
-  activeMessage.value = message
 }
 
 function onClickQuote(id: string) {

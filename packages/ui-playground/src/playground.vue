@@ -1,17 +1,19 @@
 <template>
   <navbar/>
-  <main class="playground" :style="{ backgroundColor }">
+  <main class="playground" :style="{ backgroundColor }" @click="hideContextMenus" @contextmenu="hideContextMenus">
     <monaco-editor
       class="container editor"
       v-model="store.source"
       :style="{ width: scale }"
       :theme="theme"
+      @menu="showContextMenu('editor', $event)"
     />
     <k-chat-panel
       class="container chat"
       :messages="messages"
       :style="{ left: scale }"
       @send="handleSend"
+      @item:menu="handleItemMenu"
     />
     <div class="separator" @mousedown="startDrag" :class="{ active: isDragging }" :style="{ left: scale }"/>
   </main>
@@ -24,7 +26,7 @@ import { useEventListener } from '@vueuse/core'
 import { useDarkMode } from '@vuepress/theme-default/lib/client/composables'
 import { KChatPanel, useStorage } from '@koishijs/ui-core'
 import { Random } from '@koishijs/core'
-import Navbar from './menu'
+import Navbar, { showContextMenu, hideContextMenus } from './menu'
 import MonacoEditor, { transpile } from './editor'
 
 const messages = ref<any[]>([])
@@ -58,6 +60,10 @@ function handleSend(content: string) {
     username: 'Alice',
     content,
   })
+}
+
+function handleItemMenu(item: any, event: MouseEvent) {
+  showContextMenu('message', event)
 }
 
 const isDragging = ref(false)

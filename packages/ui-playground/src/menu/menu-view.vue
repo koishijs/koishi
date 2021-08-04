@@ -1,14 +1,15 @@
 <template>
   <template v-if="state.key !== 'menubar'">
-    <li class="menu-item" v-for="item in state.content"
-      :class="{ disabled: item.key === '$separator' }">
+    <li v-for="item in state.content"
+      :class="getItemClass(state, item)"
+      @click.stop="handleClick(item)">
       <div v-if="item.key === '$separator'" class="separator"/>
       <span class="label" v-else>{{ item.key }}</span>
-      <span class="bind" v-if="item.bind">{{ item.bind }}</span>
+      <span class="bind" v-if="getBinding(item)">{{ getBinding(item) }}</span>
     </li>
   </template>
   <transition v-if="state.children.length" name="el-zoom-in-top">
-    <ul class="menu-view" :ref="state.ref">
+    <ul class="menu-view" :ref="state.ref" v-show="state.active">
       <template v-for="item in state.children">
         <menu-view v-if="state.active === item.key" :state="item"/>
       </template>
@@ -19,17 +20,50 @@
 <script lang="ts" setup>
 
 import type { MenuState, MenuItem } from './utils'
+import type {} from '../editor'
+import { hideContextMenus } from './utils'
+import * as actions from './actions'
+import keymap from './keymap.yaml'
 
-defineProps<{
+const customActions = { ...actions }
+
+if (import.meta.hot) {
+  import.meta.hot.accept('./actions', (newModule) => {
+    Object.assign(customActions, newModule)
+  })
+}
+
+defineProps<{ 
   state: MenuState
 }>()
 
-function getCaption(item: string) {
-  return item
+const getBinding = (item: MenuItem) => keymap[item.action]
+
+const getItemClass = (state: MenuState, item: MenuItem) => ({
+  'menu-item': true,
+  disabled: !item.action && !item.content,
+  active: item.key === state.active,
+})
+
+function getActionCallback(key: string) {
+  if (key.startsWith('custom')) {
+    return customActions[key.slice(7)]
+  } else if (window.editor) {
+    const action = window.editor.getAction(key)
+    if (!action) return
+    return () => {
+      window.editor.focus()
+      action.run()
+    }
+  }
 }
 
-function getBinding(item: string) {
-  return item
+function handleClick(item: MenuItem) {
+  if (!item.action) return
+  hideContextMenus()
+  const action = getActionCallback(item.action)
+  if (action) return action()
+  console.warn(`cannot find action "${item.action}"`)
 }
 
 </script>
@@ -46,7 +80,7 @@ function getBinding(item: string) {
   font-size: 14px;
   transition: 0.3s ease;
 	list-style-type: none;
-  min-width: 200px;
+  min-width: 240px;
   user-select: none;
   cursor: default;
   color: var(--c-menu-fg);
@@ -61,6 +95,15 @@ function getBinding(item: string) {
   &:not(.disabled):hover {
     color: var(--c-menu-hover-fg);
     background-color: var(--c-menu-hover-bg);
+  }
+
+  &.disabled {
+    color: var(--c-menu-disabled);
+  }
+
+  &.active {
+    color: var(--c-menu-active-fg);
+    background-color: var(--c-menu-active-bg);
   }
 
   .separator {

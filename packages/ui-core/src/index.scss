@@ -52,3 +52,15 @@ html.dark {
   // chat
   --c-chat-hover: rgba(4, 4, 5, 0.2);
 }
+
+.el-zoom-in-top-enter-active, .el-zoom-in-top-leave-active {
+  opacity: 1;
+  transform: scaleY(1);
+  transition: transform .3s cubic-bezier(.23, 1, .32, 1), opacity .3s cubic-bezier(.23, 1, .32, 1);
+  transform-origin: center top;
+}
+
+.el-zoom-in-top-enter, .el-zoom-in-top-leave-active {
+  opacity:0;
+  transform:scaleY(0);
+}

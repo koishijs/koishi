@@ -5,8 +5,13 @@
     </virtual-item>
     <div :style="wrapperStyle">
       <virtual-item v-for="(item, index) in dataShown"
-        :tag="itemTag" :class="resolveItemClass(item, index)" :uid="item[keyName]"
-        @click.stop="emit('click', item, $event)" @resize="virtual.saveSize">
+        :tag="itemTag"
+        :uid="item[keyName]"
+        :class="resolveItemClass(item, index)"
+        @click.stop.prevent="emit('item:click', item, $event)"
+        @contextmenu.stop.prevent="emit('item:menu', item, $event)"
+        @resize="virtual.saveSize"
+      >
         <slot v-bind="item" :index="index + range.start"/>
       </virtual-item>
     </div>
@@ -22,7 +27,14 @@
 import { ref, computed, watch, nextTick, onMounted, onUpdated, onBeforeUnmount, defineComponent, h } from 'vue'
 import Virtual from './virtual'
 
-const emit = defineEmits(['click', 'scroll', 'top', 'bottom', 'update:activeKey'])
+const emit = defineEmits<{
+  (type: 'scroll', ...args: any[]): void
+  (type: 'top'): void
+  (type: 'bottom'): void
+  (type: 'item:click', item: any, event: MouseEvent): void
+  (type: 'item:menu', item: any, event: MouseEvent): void
+  (type: 'update:activeKey', value: string): void
+}>()
 
 const props = defineProps({
   tag: { default: 'div' },
