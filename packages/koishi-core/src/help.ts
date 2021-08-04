@@ -51,7 +51,7 @@ export default function apply(ctx: Context) {
         const output = formatCommands('internal.global-help-prolog', session, commands, options)
         const epilog = template('internal.global-help-epilog')
         if (epilog) output.push(epilog)
-        return output.join('\n')
+        return output.filter(Boolean).join('\n')
       }
 
       const command = findCommand(target)
@@ -188,7 +188,7 @@ async function showHelp(command: Command, session: Session<ValidationField>, con
 
   output.push(...formatCommands('internal.subcommand-prolog', session, command.children, config))
 
-  return output.join('\n')
+  return output.filter(Boolean).join('\n')
 }
 
 /* eslint-disable quote-props */
