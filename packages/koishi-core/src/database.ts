@@ -68,6 +68,26 @@ export namespace Query {
     }
     return query as any
   }
+
+  export interface Options<T> {
+    limit?: number
+    offset?: number
+    select?: T[]
+  }
+
+  export type Modifier<T> = T[] | Options<T>
+
+  export function resolveModifier<T>(modifier: Modifier<T>): Options<T> {
+    if (Array.isArray(modifier)) return { select: modifier }
+    return modifier || {}
+  }
+
+  export interface Database {
+    get<T extends TableType, K extends Field<T>>(table: T, query: Query<T>, modifier?: Modifier<K>): Promise<Pick<Tables[T], K>[]>
+    remove<T extends TableType>(table: T, query: Query<T>): Promise<void>
+    create<T extends TableType>(table: T, data: Partial<Tables[T]>): Promise<Tables[T]>
+    update<T extends TableType>(table: T, data: Partial<Tables[T]>[], key?: Index<T>): Promise<void>
+  }
 }
 
 export interface User extends Record<Platform, string> {
@@ -147,23 +167,19 @@ export namespace Channel {
   extend((type, id) => ({ id: `${type}:${id}`, flag: 0, disable: [] }))
 }
 
-type MaybeArray<T> = T | T[]
+type MaybeArray<T> = T | readonly T[]
 
-export interface Database {
-  get<T extends TableType, F extends Query.Field<T>>(table: T, query: Query<T>, fields?: readonly F[]): Promise<Pick<Tables[T], F>[]>
-  remove<T extends TableType>(table: T, query: Query<T>): Promise<void>
-  create<T extends TableType>(table: T, data: Partial<Tables[T]>): Promise<Tables[T]>
-  update<T extends TableType>(table: T, data: Partial<Tables[T]>[], key?: Query.Index<T>): Promise<void>
-
-  getUser<K extends User.Field, T extends User.Index>(type: T, id: string, fields?: readonly K[]): Promise<Pick<User, K | T>>
-  getUser<K extends User.Field, T extends User.Index>(type: T, ids: readonly string[], fields?: readonly K[]): Promise<Pick<User, K | T>[]>
+export interface Database extends Query.Database {
+  getUser<K extends User.Field, T extends User.Index>(type: T, id: string, modifier?: Query.Modifier<K>): Promise<Pick<User, K | T>>
+  getUser<K extends User.Field, T extends User.Index>(type: T, ids: readonly string[], modifier?: Query.Modifier<K>): Promise<Pick<User, K>[]>
+  getUser<K extends User.Field, T extends User.Index>(type: T, id: MaybeArray<string>, modifier?: Query.Modifier<K>): Promise<any>
   setUser<T extends User.Index>(type: T, id: string, data: Partial<User>): Promise<void>
   createUser<T extends User.Index>(type: T, id: string, data: Partial<User>): Promise<void>
 
-  getChannel<K extends Channel.Field>(type: Platform, id: string, fields?: readonly K[]): Promise<Pick<Channel, K | 'id'>>
-  getChannel<K extends Channel.Field>(type: Platform, ids: readonly string[], fields?: readonly K[]): Promise<Pick<Channel, K | 'id'>[]>
-  getChannel<K extends Channel.Field>(type: Platform, id: MaybeArray<string>, fields?: readonly K[]): Promise<any>
-  getAssignedChannels<K extends Channel.Field>(fields?: readonly K[], assignMap?: Record<string, readonly string[]>): Promise<Pick<Channel, K>[]>
+  getChannel<K extends Channel.Field>(type: Platform, id: string, modifier?: Query.Modifier<K>): Promise<Pick<Channel, K | 'id'>>
+  getChannel<K extends Channel.Field>(type: Platform, ids: readonly string[], modifier?: Query.Modifier<K>): Promise<Pick<Channel, K>[]>
+  getChannel<K extends Channel.Field>(type: Platform, id: MaybeArray<string>, modifier?: Query.Modifier<K>): Promise<any>
+  getAssignedChannels<K extends Channel.Field>(fields?: K[], assignMap?: Record<string, readonly string[]>): Promise<Pick<Channel, K>[]>
   setChannel(type: Platform, id: string, data: Partial<Channel>): Promise<void>
   createChannel(type: Platform, id: string, data: Partial<Channel>): Promise<void>
 }

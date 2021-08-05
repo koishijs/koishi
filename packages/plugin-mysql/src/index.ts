@@ -44,7 +44,7 @@ const queryOperators: Record<string, (key: string, value: any) => string> = {
   $lte: (key, value) => `${key} <= ${escape(value)}`,
 }
 
-export function createWhereClause<T extends TableType>(name: T, query: Query<T>) {
+export function createFilter<T extends TableType>(name: T, query: Query<T>) {
   function parseQuery(query: Query.Expr) {
     const conditions: string[] = []
     for (const key in query) {
@@ -91,14 +91,19 @@ export function createWhereClause<T extends TableType>(name: T, query: Query<T>)
 }
 
 Database.extend(MysqlDatabase, {
-  async get(name, query, fields) {
-    const filter = createWhereClause(name, query)
+  async get(name, query, modifier) {
+    const filter = createFilter(name, query)
     if (filter === '0') return []
-    return this.select(name, fields, filter)
+    const { select, limit, offset } = Query.resolveModifier(modifier)
+    const fields = this.joinKeys(this.inferFields(name, select))
+    let sql = `SELECT ${fields} FROM ${name} WHERE ${filter}`
+    if (limit) sql += ' LIMIT ' + limit
+    if (offset) sql += ' OFFSET ' + offset
+    return this.query(sql)
   },
 
   async remove(name, query) {
-    const filter = createWhereClause(name, query)
+    const filter = createFilter(name, query)
     if (filter === '0') return
     await this.query('DELETE FROM ?? WHERE ' + filter, [name])
   },
@@ -124,16 +129,14 @@ Database.extend(MysqlDatabase, {
     )
   },
 
-  async getUser(type, id, _fields) {
-    const fields = _fields ? this.inferFields('user', _fields) : User.fields
-    if (fields && !fields.length) return { [type]: id } as any
-    if (Array.isArray(id)) {
-      if (!id.length) return []
-      const list = id.map(id => this.escape(id)).join(',')
-      return this.select<User>('user', fields, `?? IN (${list})`, [type])
+  async getUser(type, id, modifier) {
+    const { select } = Query.resolveModifier(modifier)
+    if (select && !select.length) {
+      return Array.isArray(id) ? id.map(id => ({ [type]: id })) : { [type]: id }
     }
-    const [data] = await this.select<User>('user', fields, '?? = ?', [type, id])
-    return data && { ...data, [type]: id }
+    const data = await this.get('user', { [type]: id }, modifier)
+    if (Array.isArray(id)) return data
+    return data[0] && { ...data[0], [type]: id }
   },
 
   async createUser(type, id, data) {
@@ -161,15 +164,15 @@ Database.extend(MysqlDatabase, {
     await this.query(`UPDATE ?? SET ${assignments} WHERE ?? = ?`, ['user', type, id])
   },
 
-  async getChannel(type, pid, fields) {
-    if (Array.isArray(pid)) {
-      if (fields && !fields.length) return pid.map(id => ({ id: `${type}:${id}` }))
-      const placeholders = pid.map(() => '?').join(',')
-      return this.select<Channel>('channel', fields, '`id` IN (' + placeholders + ')', pid.map(id => `${type}:${id}`))
+  async getChannel(type, pid, modifier) {
+    const { select } = Query.resolveModifier(modifier)
+    if (select && !select.length) {
+      return Array.isArray(pid) ? pid.map(id => ({ id: `${type}:${id}` })) : { id: `${type}:${pid}` }
     }
-    if (fields && !fields.length) return { id: `${type}:${pid}` }
-    const [data] = await this.select<Channel>('channel', fields, '`id` = ?', [`${type}:${pid}`])
-    return data && { ...data, id: `${type}:${pid}` }
+    const id = Array.isArray(pid) ? pid.map(id => `${type}:${id}`) : `${type}:${pid}`
+    const data = await this.get('channel', { id }, modifier)
+    if (Array.isArray(pid)) return data
+    return data[0] && { ...data[0], id: `${type}:${pid}` }
   },
 
   async getAssignedChannels(fields, assignMap = this.app.getSelfIds()) {
@@ -231,7 +234,7 @@ export const name = 'mysql'
 
 export function apply(ctx: Context, config: Config = {}) {
   const db = new MysqlDatabase(ctx.app, config)
-  ctx.database = db as any
+  ctx.database = db
   ctx.before('connect', () => db.start())
   ctx.before('disconnect', () => db.stop())
 }
