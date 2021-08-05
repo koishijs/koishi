@@ -8,13 +8,11 @@
       <span class="bind" v-if="getBinding(item)">{{ getBinding(item) }}</span>
     </li>
   </template>
-  <transition v-if="state.children.length" name="el-zoom-in-top">
-    <ul class="menu-view" :ref="state.ref" v-show="state.active">
-      <template v-for="item in state.children">
-        <menu-view v-if="state.active === item.key" :state="item"/>
-      </template>
-    </ul>
-  </transition>
+  <ul v-if="state.children.length" class="menu-view" :ref="state.ref" v-show="state.active">
+    <template v-for="item in state.children">
+      <menu-view v-if="state.active === item.key" :state="item"/>
+    </template>
+  </ul>
 </template>
 
 <script lang="ts" setup>
@@ -62,7 +60,7 @@ function handleClick(item: MenuItem) {
   if (!item.action) return
   hideContextMenus()
   const action = getActionCallback(item.action)
-  if (action) return action()
+  if (action) return action(...item.args)
   console.warn(`cannot find action "${item.action}"`)
 }
 
@@ -78,7 +76,6 @@ function handleClick(item: MenuItem) {
 	outline: 0;
   border: none;
   font-size: 14px;
-  transition: 0.3s ease;
 	list-style-type: none;
   min-width: 240px;
   user-select: none;

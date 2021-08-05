@@ -14,6 +14,10 @@ export function toggleFullScreen() {
   }
 }
 
+export function gotoPage(url: string) {
+  window.router.push(url)
+}
+
 export async function openFile() {
   const text = await upload('.js, .ts')
   window.editor.setValue(text)

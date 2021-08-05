@@ -73,3 +73,19 @@ menubar:
         action: custom.toggleFullScreen
       - key: 切换主题色
         action: custom.toggleDarkMode
+
+  - key: 帮助
+    shortcut: H
+    content:
+      - key: 回到主页
+        action: custom.gotoPage
+        args: [/]
+      - key: 查看指南
+        action: custom.gotoPage
+        args: [/guide/starter.html]
+      - key: API 文档
+        action: custom.gotoPage
+        args: [/api/]
+      - key: 官方插件
+        action: custom.gotoPage
+        args: [/plugins/]

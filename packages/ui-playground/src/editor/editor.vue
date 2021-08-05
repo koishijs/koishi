@@ -6,6 +6,9 @@
 
 import { editor, Uri } from 'monaco-editor'
 import { ref, watch, onMounted, onBeforeUnmount } from 'vue'
+import { useRouter } from 'vue-router'
+
+window.router = useRouter()
 
 const root = ref<HTMLElement>()
 
@@ -86,7 +89,6 @@ onMounted(() => {
       label,
       run() {
         if (!codeEditor) return
-        codeEditor.focus()
         if (!document.execCommand(command)) {
           codeEditor.getModel()[command]?.()
         }

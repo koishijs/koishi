@@ -11,6 +11,7 @@ import OneLight from './onelight.yaml'
 declare global {
   interface Window {
     editor: import('monaco-editor').editor.IStandaloneCodeEditor
+    router: import('vue-router').Router
   }
 }
 

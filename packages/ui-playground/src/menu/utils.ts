@@ -7,6 +7,7 @@ export interface MenuItem {
   bind?: string
   shortcut?: string
   action?: string
+  args?: string[]
   content?: MenuItem[]
 }
 
