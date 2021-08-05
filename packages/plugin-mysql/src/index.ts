@@ -94,9 +94,9 @@ Database.extend(MysqlDatabase, {
   async get(name, query, modifier) {
     const filter = createFilter(name, query)
     if (filter === '0') return []
-    const { select, limit, offset } = Query.resolveModifier(modifier)
-    const fields = this.joinKeys(this.inferFields(name, select))
-    let sql = `SELECT ${fields} FROM ${name} WHERE ${filter}`
+    const { fields, limit, offset } = Query.resolveModifier(modifier)
+    const keys = this.joinKeys(this.inferFields(name, fields))
+    let sql = `SELECT ${keys} FROM ${name} WHERE ${filter}`
     if (limit) sql += ' LIMIT ' + limit
     if (offset) sql += ' OFFSET ' + offset
     return this.query(sql)
@@ -130,8 +130,8 @@ Database.extend(MysqlDatabase, {
   },
 
   async getUser(type, id, modifier) {
-    const { select } = Query.resolveModifier(modifier)
-    if (select && !select.length) {
+    const { fields } = Query.resolveModifier(modifier)
+    if (fields && !fields.length) {
       return Array.isArray(id) ? id.map(id => ({ [type]: id })) : { [type]: id }
     }
     const data = await this.get('user', { [type]: id }, modifier)
@@ -165,8 +165,8 @@ Database.extend(MysqlDatabase, {
   },
 
   async getChannel(type, pid, modifier) {
-    const { select } = Query.resolveModifier(modifier)
-    if (select && !select.length) {
+    const { fields } = Query.resolveModifier(modifier)
+    if (fields && !fields.length) {
       return Array.isArray(pid) ? pid.map(id => ({ id: `${type}:${id}` })) : { id: `${type}:${pid}` }
     }
     const id = Array.isArray(pid) ? pid.map(id => `${type}:${id}`) : `${type}:${pid}`

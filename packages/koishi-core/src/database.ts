@@ -69,16 +69,16 @@ export namespace Query {
     return query as any
   }
 
-  export interface Options<T> {
+  export interface Options<T extends string> {
     limit?: number
     offset?: number
-    select?: T[]
+    fields?: T[]
   }
 
-  export type Modifier<T> = T[] | Options<T>
+  export type Modifier<T extends string = any> = T[] | Options<T>
 
-  export function resolveModifier<T>(modifier: Modifier<T>): Options<T> {
-    if (Array.isArray(modifier)) return { select: modifier }
+  export function resolveModifier<T extends string>(modifier: Modifier<T>): Options<T> {
+    if (Array.isArray(modifier)) return { fields: modifier }
     return modifier || {}
   }
 
@@ -89,6 +89,8 @@ export namespace Query {
     update<T extends TableType>(table: T, data: Partial<Tables[T]>[], key?: Index<T>): Promise<void>
   }
 }
+
+type MaybeArray<T> = T | readonly T[]
 
 export interface User extends Record<Platform, string> {
   id: string
@@ -130,6 +132,14 @@ export namespace User {
     }
     return result as User
   }
+
+  export interface Datbase {
+    getUser<K extends Field, T extends Index>(type: T, id: string, modifier?: Query.Modifier<K>): Promise<Pick<User, K | T>>
+    getUser<K extends Field, T extends Index>(type: T, ids: readonly string[], modifier?: Query.Modifier<K>): Promise<Pick<User, K>[]>
+    getUser<K extends Field, T extends Index>(type: T, id: MaybeArray<string>, modifier?: Query.Modifier<K>): Promise<any>
+    setUser<T extends Index>(type: T, id: string, data: Partial<User>): Promise<void>
+    createUser<T extends Index>(type: T, id: string, data: Partial<User>): Promise<void>
+  }
 }
 
 export interface Channel {
@@ -165,24 +175,18 @@ export namespace Channel {
   }
 
   extend((type, id) => ({ id: `${type}:${id}`, flag: 0, disable: [] }))
+
+  export interface Database {
+    getChannel<K extends Field>(type: Platform, id: string, modifier?: Query.Modifier<K>): Promise<Pick<Channel, K | 'id'>>
+    getChannel<K extends Field>(type: Platform, ids: readonly string[], modifier?: Query.Modifier<K>): Promise<Pick<Channel, K>[]>
+    getChannel<K extends Field>(type: Platform, id: MaybeArray<string>, modifier?: Query.Modifier<K>): Promise<any>
+    getAssignedChannels<K extends Field>(fields?: K[], assignMap?: Record<string, readonly string[]>): Promise<Pick<Channel, K>[]>
+    setChannel(type: Platform, id: string, data: Partial<Channel>): Promise<void>
+    createChannel(type: Platform, id: string, data: Partial<Channel>): Promise<void>
+  }
 }
 
-type MaybeArray<T> = T | readonly T[]
-
-export interface Database extends Query.Database {
-  getUser<K extends User.Field, T extends User.Index>(type: T, id: string, modifier?: Query.Modifier<K>): Promise<Pick<User, K | T>>
-  getUser<K extends User.Field, T extends User.Index>(type: T, ids: readonly string[], modifier?: Query.Modifier<K>): Promise<Pick<User, K>[]>
-  getUser<K extends User.Field, T extends User.Index>(type: T, id: MaybeArray<string>, modifier?: Query.Modifier<K>): Promise<any>
-  setUser<T extends User.Index>(type: T, id: string, data: Partial<User>): Promise<void>
-  createUser<T extends User.Index>(type: T, id: string, data: Partial<User>): Promise<void>
-
-  getChannel<K extends Channel.Field>(type: Platform, id: string, modifier?: Query.Modifier<K>): Promise<Pick<Channel, K | 'id'>>
-  getChannel<K extends Channel.Field>(type: Platform, ids: readonly string[], modifier?: Query.Modifier<K>): Promise<Pick<Channel, K>[]>
-  getChannel<K extends Channel.Field>(type: Platform, id: MaybeArray<string>, modifier?: Query.Modifier<K>): Promise<any>
-  getAssignedChannels<K extends Channel.Field>(fields?: K[], assignMap?: Record<string, readonly string[]>): Promise<Pick<Channel, K>[]>
-  setChannel(type: Platform, id: string, data: Partial<Channel>): Promise<void>
-  createChannel(type: Platform, id: string, data: Partial<Channel>): Promise<void>
-}
+export interface Database extends Query.Database, User.Datbase, Channel.Database {}
 
 type Methods<S, T> = {
   [K in keyof S]?: S[K] extends (...args: infer R) => infer U ? (this: T, ...args: R) => U : S[K]

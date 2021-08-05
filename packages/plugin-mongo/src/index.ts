@@ -21,12 +21,6 @@ declare module 'koishi-core' {
   }
 }
 
-function projection(keys: Iterable<string>) {
-  const d = {}
-  for (const key of keys) d[key] = 1
-  return d
-}
-
 function escapeKey<T extends Partial<User>>(doc: T) {
   const data: T = { ...doc }
   delete data.timers
@@ -127,8 +121,8 @@ Database.extend(MongoDatabase, {
     const filter = createFilter(name, query)
     if (!filter) return []
     let cursor = this.db.collection(name).find(filter)
-    const { select, limit, offset = 0 } = Query.resolveModifier(modifier)
-    if (select) cursor = cursor.project(projection(select))
+    const { fields, limit, offset = 0 } = Query.resolveModifier(modifier)
+    if (fields) cursor = cursor.project(Object.fromEntries(fields.map(key => [key, 1])))
     if (offset) cursor = cursor.skip(offset)
     if (limit) cursor = cursor.limit(offset + limit)
     const data = await cursor.toArray()
@@ -169,9 +163,9 @@ Database.extend(MongoDatabase, {
   },
 
   async getUser(type, id, modifier) {
-    const { select } = Query.resolveModifier(modifier)
+    const { fields } = Query.resolveModifier(modifier)
     const applyDefault = (user: User) => ({
-      ...pick(User.create(type, user[type]), select),
+      ...pick(User.create(type, user[type]), fields),
       ...unescapeKey(user),
     })
 
@@ -197,7 +191,7 @@ Database.extend(MongoDatabase, {
 
   async getChannel(type, pid, modifier) {
     modifier = Query.resolveModifier(modifier)
-    const fields = modifier.select.slice()
+    const fields = modifier.fields.slice()
     const applyDefault = (channel: Channel) => ({
       ...pick(Channel.create(type, channel.pid), fields),
       ...omit(channel, ['type', 'pid']),
@@ -207,13 +201,13 @@ Database.extend(MongoDatabase, {
     if (Array.isArray(pid)) {
       const ids = pid.map(id => `${type}:${id}`)
       if (fields && !fields.length) return ids.map(id => ({ id }))
-      if (index >= 0) modifier.select.splice(index, 1, 'type', 'pid')
+      if (index >= 0) modifier.fields.splice(index, 1, 'type', 'pid')
       const data = await this.get('channel', ids, modifier)
       return data.map(applyDefault)
     } else {
       const id = `${type}:${pid}`
       if (fields && !fields.length) return { id }
-      if (index >= 0) modifier.select.splice(index, 1)
+      if (index >= 0) modifier.fields.splice(index, 1)
       const data = await this.get('channel', id, modifier)
       return data[0] && { ...applyDefault(data[0]), id }
     }

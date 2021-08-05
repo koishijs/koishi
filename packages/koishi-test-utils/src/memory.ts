@@ -60,13 +60,6 @@ const queryOperators: ([string, (data: any, value: any) => boolean])[] = Object.
   $lte: (data, value) => value <= data,
 })
 
-function applyModifier(data: any[], modifier: Query.Modifier<any>) {
-  const { select, limit = Infinity, offset = 0 } = Query.resolveModifier(modifier)
-  return data
-    .map(row => clone(pick(row, select)))
-    .slice(offset, offset + limit)
-}
-
 Database.extend(MemoryDatabase, {
   async get(name, query, modifier) {
     function executeQuery(query: Query.Expr, data: any): boolean {
@@ -92,7 +85,11 @@ Database.extend(MemoryDatabase, {
     }
 
     const expr = Query.resolve(name, query)
-    return applyModifier(this.$table(name).filter(row => executeQuery(expr, row)), modifier)
+    const { fields, limit = Infinity, offset = 0 } = Query.resolveModifier(modifier)
+    return this.$table(name)
+      .filter(row => executeQuery(expr, row))
+      .map(row => clone(pick(row, fields)))
+      .slice(offset, offset + limit)
   },
 
   async remove(name, query) {
@@ -158,11 +155,11 @@ Database.extend(MemoryDatabase, {
     }
   },
 
-  async getAssignedChannels(modifier, assignMap = this.app.getSelfIds()) {
-    return applyModifier(this.$table('channel').filter((row) => {
+  async getAssignedChannels(fields, assignMap = this.app.getSelfIds()) {
+    return this.$table('channel').filter((row) => {
       const [type] = row.id.split(':')
       return assignMap[type]?.includes(row.assignee)
-    }), modifier)
+    }).map(row => clone(pick(row, fields)))
   },
 
   async setChannel(type, id, data) {
