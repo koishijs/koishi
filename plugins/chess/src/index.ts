@@ -21,7 +21,7 @@ const rules: Record<string, Rule> = {
   othello,
 }
 
-declare module '@koishijs/core' {
+declare module 'koishi' {
   interface Channel {
     chess: StateData
   }

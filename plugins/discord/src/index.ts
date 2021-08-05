@@ -4,7 +4,7 @@ import WsClient from './ws'
 import * as DC from './types'
 export * from './bot'
 
-declare module '@koishijs/core' {
+declare module 'koishi' {
   interface Session {
     discord?: {
       // eslint-disable-next-line camelcase

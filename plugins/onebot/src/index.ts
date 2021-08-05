@@ -4,7 +4,7 @@ import { Config, CQBot } from './bot'
 import HttpServer, { ResponsePayload } from './http'
 import axios from 'axios'
 
-declare module '@koishijs/core' {
+declare module 'koishi' {
   interface BotOptions {
     server?: string
   }

@@ -1,6 +1,6 @@
 import { Session, App, Context, Tables, difference, observe, isInteger, defineProperty, Observed, clone } from 'koishi'
 
-declare module '@koishijs/core' {
+declare module 'koishi' {
   interface App {
     teachHistory: Record<number, Dialogue>
   }

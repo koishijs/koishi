@@ -4,7 +4,7 @@ import { User, Tables, Database, Context, Channel, Random, pick, omit, TableType
 export * from './database'
 export default MongoDatabase
 
-declare module '@koishijs/core' {
+declare module 'koishi' {
   interface Database {
     mongo: MongoDatabase
   }

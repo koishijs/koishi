@@ -6,7 +6,7 @@ import axios from 'axios'
 
 export * from './receiver'
 
-declare module '@koishijs/core' {
+declare module 'koishi' {
   interface EventMap {
     'chat/receive'(message: Message, session: Session): void
   }

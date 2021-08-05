@@ -13,7 +13,7 @@ interface MockedResponse {
   headers: Record<string, any>
 }
 
-declare module '@koishijs/core' {
+declare module 'koishi' {
   namespace Bot {
     interface Platforms {
       mock: MockedBot

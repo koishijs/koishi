@@ -2,7 +2,7 @@ import { Adapter, assertProperty, Context, sanitize, trimSlash } from 'koishi'
 import { Config, TelegramBot } from './bot'
 import HttpServer from './http'
 
-declare module '@koishijs/core' {
+declare module 'koishi' {
   interface BotOptions {
     token?: string
   }

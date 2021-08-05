@@ -7,7 +7,7 @@ export interface SearchDetails extends Array<string> {
   answerType?: string
 }
 
-declare module '@koishijs/core' {
+declare module 'koishi' {
   interface EventMap {
     'dialogue/status'(): Promise<string>
     'dialogue/list'(dialogue: Dialogue, output: string[], prefix: string, argv: Dialogue.Argv): void

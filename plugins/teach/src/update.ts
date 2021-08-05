@@ -2,7 +2,7 @@ import { Context, difference, deduplicate, sleep, pick, Time } from 'koishi'
 import { Dialogue, prepareTargets, sendResult, split, RE_DIALOGUES, isPositiveInteger } from './utils'
 import { getDetails, formatDetails, formatAnswer, formatQuestionAnswers } from './search'
 
-declare module '@koishijs/core' {
+declare module 'koishi' {
   interface EventMap {
     'dialogue/before-modify'(argv: Dialogue.Argv): void | string | Promise<void | string>
     'dialogue/modify'(argv: Dialogue.Argv, dialogue: Dialogue): void

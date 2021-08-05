@@ -3,7 +3,7 @@ import type { FilterQuery } from 'mongodb'
 import {} from '@koishijs/plugin-mongo'
 import { Dialogue, DialogueTest, equal } from '../utils'
 
-declare module '@koishijs/core' {
+declare module 'koishi' {
   interface EventMap {
     'dialogue/mongo'(test: DialogueTest, conditionals?: FilterQuery<Dialogue>[]): void
   }

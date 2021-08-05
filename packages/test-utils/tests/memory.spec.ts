@@ -2,7 +2,7 @@ import { expect } from 'chai'
 import { Database, Tables } from 'koishi'
 import { testDatabase, App } from '@koishijs/test-utils'
 
-declare module '@koishijs/core' {
+declare module 'koishi' {
   interface Database {
     createFoo(data?: FooData): Promise<FooData>
     removeFoo(id: number): Promise<void>

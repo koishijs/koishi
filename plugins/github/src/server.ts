@@ -7,7 +7,7 @@ import {} from '@koishijs/plugin-puppeteer'
 import {} from '@koishijs/plugin-mysql'
 import {} from '@koishijs/plugin-mongo'
 
-declare module '@koishijs/core' {
+declare module 'koishi' {
   interface App {
     github?: GitHub
   }

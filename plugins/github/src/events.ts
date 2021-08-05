@@ -30,7 +30,7 @@ type Payload<T extends EmitterWebhookEventName> = T extends `${infer E}/${infer 
   : EventPayloadMap[T & WebhookEventName]
 
 // https://github.com/microsoft/TypeScript/issues/42790
-// declare module '@koishijs/core' {
+// declare module 'koishi' {
 //   type WebhookEventMap = {
 //     [E in EmitterWebhookEventName as `github/${E}`]: (payload: Payload<E>) => void
 //   }

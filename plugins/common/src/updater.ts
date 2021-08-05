@@ -7,7 +7,7 @@ type AdminAction<U extends User.Field, G extends Channel.Field, A extends any[],
   = (argv: Argv<U | 'authority', G, A, Extend<O, 'target', string>> & { target: T }, ...args: A)
     => void | string | Promise<void | string>
 
-declare module '@koishijs/core' {
+declare module 'koishi' {
   interface Command<U, G, A, O> {
     adminUser(callback: AdminAction<U, G, A, O, User.Observed<U | 'authority'>>, autoCreate?: boolean): this
     adminChannel(callback: AdminAction<U, G, A, O, Channel.Observed<G>>, autoCreate?: boolean): this

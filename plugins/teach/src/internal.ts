@@ -4,7 +4,7 @@ import { create, update } from './update'
 import { formatQuestionAnswers } from './search'
 import { distance } from 'fastest-levenshtein'
 
-declare module '@koishijs/core' {
+declare module 'koishi' {
   namespace Command {
     interface Config {
       noInterp?: boolean

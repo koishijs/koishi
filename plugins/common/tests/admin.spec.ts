@@ -13,7 +13,7 @@ app.command('foo', { maxUsage: 10 }).action(() => 'bar')
 app.command('bar', { minInterval: 1000 }).action(() => 'foo')
 app.command('baz').action(() => 'zab')
 
-declare module '@koishijs/core' {
+declare module 'koishi' {
   namespace User {
     enum Flag {
       test = 1 << 4,

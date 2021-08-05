@@ -8,7 +8,7 @@ import { WorkerResponse } from './worker'
 
 export * from './main'
 
-declare module '@koishijs/core' {
+declare module 'koishi' {
   namespace Context {
     interface Delegates {
       worker: EvalWorker

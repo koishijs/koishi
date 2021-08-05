@@ -4,7 +4,7 @@ import {} from '@koishijs/plugin-common'
 import Profile from './profile'
 import Rank from './rank'
 
-declare module '@koishijs/core' {
+declare module 'koishi' {
   interface Session<U> {
     achieve(id: string, hints: string[], achieve?: boolean | boolean[]): string
   }

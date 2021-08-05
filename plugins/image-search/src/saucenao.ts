@@ -7,7 +7,7 @@ import konachan from './konachan'
 import { Session, Logger } from 'koishi'
 import { getShareText, checkHost } from './utils'
 
-declare module '@koishijs/core' {
+declare module 'koishi' {
   interface EventMap {
     'saucenao/get-key'(): string
     'saucenao/drop-key'(key: string): string | void

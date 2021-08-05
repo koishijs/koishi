@@ -4,7 +4,7 @@ import { TomonBot, TomonMessageInfo } from './bot'
 
 export * from './bot'
 
-declare module '@koishijs/core' {
+declare module 'koishi' {
   interface BotOptions {
     token?: string
     fullName?: string

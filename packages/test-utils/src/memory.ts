@@ -1,6 +1,6 @@
 import { Tables, TableType, App, Database, User, Channel, Query, clone, pick } from 'koishi'
 
-declare module '@koishijs/core' {
+declare module 'koishi' {
   interface Database {
     memory: MemoryDatabase
     initUser(id: string, authority?: number): Promise<void>

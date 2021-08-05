@@ -3,7 +3,7 @@ import {} from '@koishijs/plugin-mongo'
 import { Channel, Database, Tables } from 'koishi'
 import { OkPacket } from 'mysql'
 
-declare module '@koishijs/core' {
+declare module 'koishi' {
   interface Channel {
     subscribe: Record<number, string[]>
   }

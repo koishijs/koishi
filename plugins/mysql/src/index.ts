@@ -5,7 +5,7 @@ import { OkPacket, escapeId } from 'mysql'
 export * from './database'
 export default MysqlDatabase
 
-declare module '@koishijs/core' {
+declare module 'koishi' {
   interface Database {
     mysql: MysqlDatabase
   }

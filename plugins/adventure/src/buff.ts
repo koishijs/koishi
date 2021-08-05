@@ -1,7 +1,7 @@
 import { Context, Command, checkTimer, checkUsage, Time } from 'koishi'
 import { Adventurer, Show } from './utils'
 
-declare module '@koishijs/core' {
+declare module 'koishi' {
   interface Command<U, G, A, O> {
     checkTimer(name: string, when?: (argv: Argv<U, G, A, O>) => boolean): Command<U | 'timers', G, A, O>
   }

@@ -2,7 +2,7 @@ import { Context, Channel, Session, Database, Logger, Time } from 'koishi'
 import {} from '@koishijs/plugin-mysql'
 import RssFeedEmitter from 'rss-feed-emitter'
 
-declare module '@koishijs/core' {
+declare module 'koishi' {
   interface Channel {
     rss?: string[]
   }

@@ -6,7 +6,7 @@ import Event from './event'
 import Rank from './rank'
 import Item from './item'
 
-declare module '@koishijs/core' {
+declare module 'koishi' {
   interface Session<U> {
     /** skip current phase */
     _skipCurrent?: boolean

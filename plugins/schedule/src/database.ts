@@ -2,7 +2,7 @@ import { Session, Database, Tables } from 'koishi'
 import {} from '@koishijs/plugin-mysql'
 import {} from '@koishijs/plugin-mongo'
 
-declare module '@koishijs/core' {
+declare module 'koishi' {
   interface Tables {
     schedule: Schedule
   }

@@ -30,7 +30,7 @@ Command.prototype.useRank = function (this: Command) {
     .option('threshold', '-t <value>  数据阈值')
 }
 
-declare module '@koishijs/core' {
+declare module 'koishi' {
   interface Command<U, G, A, O> {
     useRest(): Command<U, G, A, O & { rest: string }>
     useRank(): Command<U, G, A, O>

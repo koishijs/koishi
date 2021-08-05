@@ -2,7 +2,7 @@ import { Context, User, Session, NextFunction, Channel, Argv, segment, noop, esc
 import { Dialogue, DialogueTest } from './utils'
 import { simplify } from 'simplify-chinese'
 
-declare module '@koishijs/core' {
+declare module 'koishi' {
   interface App {
     _dialogueStates: Record<number, SessionState>
   }

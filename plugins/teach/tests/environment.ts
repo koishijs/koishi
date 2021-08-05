@@ -2,7 +2,7 @@ import { Database, Context, defineProperty, Observed, clone, intersection } from
 import { Dialogue, DialogueTest, equal, apply } from '@koishijs/plugin-teach'
 import { App } from '@koishijs/test-utils'
 
-declare module '@koishijs/core' {
+declare module 'koishi' {
   interface EventMap {
     'dialogue/memory'(dialogue: Dialogue, test: DialogueTest): boolean | void
   }

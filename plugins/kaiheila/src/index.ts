@@ -3,7 +3,7 @@ import { Config, KaiheilaBot } from './bot'
 import HttpServer from './http'
 import WsClient from './ws'
 
-declare module '@koishijs/core' {
+declare module 'koishi' {
   namespace Bot {
     interface Platforms {
       kaiheila: KaiheilaBot

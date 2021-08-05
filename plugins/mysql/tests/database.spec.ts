@@ -2,7 +2,7 @@ import { expect } from 'chai'
 import { Tables } from 'koishi'
 import { createFilter } from '@koishijs/plugin-mysql'
 
-declare module '@koishijs/core' {
+declare module 'koishi' {
   interface Tables {
     foo: FooData
   }

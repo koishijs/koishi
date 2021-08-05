@@ -34,7 +34,7 @@ declare module 'puppeteer-core/lib/types' {
   }
 }
 
-declare module '@koishijs/core' {
+declare module 'koishi' {
   namespace Context {
     interface Delegates {
       puppeteer: Puppeteer

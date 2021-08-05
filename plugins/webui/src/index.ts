@@ -10,7 +10,7 @@ export * from './server'
 
 export type Activity = Record<number, number>
 
-declare module '@koishijs/core' {
+declare module 'koishi' {
   namespace Context {
     interface Delegates {
       webui: WebServer
