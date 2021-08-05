@@ -22,11 +22,14 @@ let message: string
 
 describe('Help Command', () => {
   it('basic support', async () => {
-    await session.shouldReply('help', [
+    await session.shouldReply('help', message = [
       '当前可用的指令有：',
       '    help  显示帮助信息',
       'EPILOG',
     ].join('\n'))
+
+    // global shortcut
+    await session.shouldReply('帮助', message)
 
     await session.shouldReply('help help', message = [
       'help [command]',
@@ -139,5 +142,28 @@ describe('Help Command', () => {
     const app = new App()
     const session = app.session('123')
     await session.shouldReply('help', '当前可用的指令有：\n    help  显示帮助信息')
+  })
+
+  it('disable help command', async () => {
+    const app = new App({ help: false })
+    app.command('foo')
+    const session = app.session('123')
+    await session.shouldNotReply('help')
+    await session.shouldNotReply('foo -h')
+  })
+
+  it('disable help options', async () => {
+    const app = new App({ help: { options: false } })
+    app.command('foo')
+    const session = app.session('123')
+    await session.shouldReply('help')
+    await session.shouldNotReply('foo -h')
+  })
+
+  it('disable help shortcut', async () => {
+    const app = new App({ help: { shortcut: false } })
+    const session = app.session('123')
+    await session.shouldReply('help')
+    await session.shouldNotReply('帮助')
   })
 })

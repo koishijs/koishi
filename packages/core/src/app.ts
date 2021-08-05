@@ -5,7 +5,7 @@ import { BotOptions, Adapter, createBots } from './adapter'
 import { Channel, User } from './database'
 import validate, { Command } from './command'
 import { Session } from './session'
-import help, { getCommandNames } from './help'
+import help, { getCommandNames, HelpConfig } from './help'
 
 export interface DelayOptions {
   character?: number
@@ -22,6 +22,7 @@ export interface AppOptions extends BotOptions {
   maxListeners?: number
   prettyErrors?: boolean
   delay?: DelayOptions
+  help?: boolean | HelpConfig
   autoAssign?: boolean | ((session: Session) => boolean)
   autoAuthorize?: number | ((session: Session) => number)
   minSimilarity?: number
@@ -123,7 +124,7 @@ export class App extends Context {
     })
 
     this.plugin(validate)
-    this.plugin(help)
+    this.plugin(help, options.help)
   }
 
   prepare() {

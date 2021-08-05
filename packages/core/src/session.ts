@@ -208,7 +208,7 @@ export class Session<
     return typeof source === 'function' ? Reflect.apply(source, null, [this]) : source
   }
 
-  async getChannel<K extends Channel.Field = never>(id = this.channelId, assignee = '', fields: readonly K[] = []) {
+  async getChannel<K extends Channel.Field = never>(id = this.channelId, assignee = '', fields: K[] = []) {
     const group = await this.database.getChannel(this.platform, id, fields)
     if (group) return group
     const fallback = Channel.create(this.platform, id)
@@ -250,7 +250,7 @@ export class Session<
     return this.channel = newChannel
   }
 
-  async getUser<K extends User.Field = never>(id = this.userId, authority = 0, fields: readonly K[] = []) {
+  async getUser<K extends User.Field = never>(id = this.userId, authority = 0, fields: K[] = []) {
     const user = await this.database.getUser(this.platform, id, fields)
     if (user) return user
     const fallback = User.create(this.platform, id)
