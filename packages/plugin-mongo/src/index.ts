@@ -121,11 +121,14 @@ Database.extend(MongoDatabase, {
     if (!filter) return []
     let cursor = this.db.collection(name).find(filter)
     const { fields, limit, offset = 0 } = Query.resolveModifier(modifier)
-    if (fields) cursor = cursor.project(Object.fromEntries(fields.map(key => [key, 1])))
+    const { primary } = Tables.config[name]
+    if (fields) {
+      fields.push(primary as any)
+      cursor = cursor.project(Object.fromEntries(fields.map(key => [key, 1])))
+    }
     if (offset) cursor = cursor.skip(offset)
     if (limit) cursor = cursor.limit(offset + limit)
     const data = await cursor.toArray()
-    const { primary } = Tables.config[name]
     for (const item of data) item[primary] = item[primary] ?? item._id
     return data
   },
