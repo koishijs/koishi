@@ -9,7 +9,7 @@ class Meta {
     this.extend(async () => ctx.assets?.stats())
     this.extend(async () => ctx.database?.getStats())
 
-    ctx.all().on('command', ({ session }: Argv<'lastCall'>) => {
+    ctx.any().on('command', ({ session }: Argv<'lastCall'>) => {
       session.user.lastCall = new Date()
     })
   }

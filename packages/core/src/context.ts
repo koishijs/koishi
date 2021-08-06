@@ -155,8 +155,12 @@ export class Context {
     })
   }
 
-  all() {
+  any() {
     return new Context(() => true, this.app, this._plugin)
+  }
+
+  never() {
+    return new Context(() => false, this.app, this._plugin)
   }
 
   union(arg: Filter | Context) {

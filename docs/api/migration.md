@@ -39,10 +39,12 @@ export default {
 
 ### koishi-core
 
+- `ctx.all()` 被更名为 `ctx.any()`
 - 移除了 `processMessage` 配置项，即取消了内置的将中文字符替换为简体字的机制
 
 ### koishi-utils
 
 - 移除了 `Random.uuid()` 方法，新增了 `Random.id()` 方法
 - 移除了 `simplify()` 和 `traditionalize()` 方法，请使用 [simplify-chinese](https://www.npmjs.com/package/simplify-chinese) 这个包
+- Observer API 改动：所有 `_` 前缀替换为 `$` 前缀，例如 `observer.$update()`
 

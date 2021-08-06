@@ -94,11 +94,11 @@ class Profile {
   private apply(ctx: Context, config: Profile.Config = {}) {
     const { tickInterval } = config
 
-    ctx.all().before('send', (session) => {
+    ctx.any().before('send', (session) => {
       session.bot.messageSent[0] += 1
     })
 
-    ctx.all().on('message', (session) => {
+    ctx.any().on('message', (session) => {
       session.bot.messageReceived[0] += 1
     })
 

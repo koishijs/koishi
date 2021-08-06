@@ -92,7 +92,7 @@ export class WebServer extends Adapter {
       stats: new Statistics(ctx, config),
     }
 
-    ctx.all().middleware(async (session, next) => {
+    ctx.any().middleware(async (session, next) => {
       if (session.subtype !== 'private') return next()
       const state = this.states[session.uid]
       if (state && state[0] === session.content) {

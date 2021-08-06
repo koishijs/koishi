@@ -38,7 +38,7 @@ ctx.router.get('/path', (ctx, next) => {
 
 有关这里的 API，请参见 [使用上下文](../guide/context.md#使用上下文)。
 
-### ctx.all()
+### ctx.any()
 
 - 返回值: `Context` 新的上下文
 
@@ -47,6 +47,12 @@ ctx.router.get('/path', (ctx, next) => {
 ::: tip
 这个方法与 `ctx.app` 的区别在于，后者不受插件管理器控制，容易产生内存泄漏。因此我们建议，除非你已经为你的插件声明了副作用，你应当尽量使用这个方法。参见 [插件热重载](../guide/context.md#插件热重载)。
 :::
+
+### ctx.never()
+
+- 返回值: `Context` 新的上下文
+
+选取上下文空集。
 
 ### ctx.self(...values)
 ### ctx.user(...values)

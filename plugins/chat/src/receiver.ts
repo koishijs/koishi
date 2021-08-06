@@ -175,6 +175,6 @@ export default function apply(ctx: Context, config: ReceiverConfig = {}) {
     ctx.emit('chat/receive', params, session)
   }
 
-  ctx.all().on('message', handleMessage)
-  ctx.all().on('send', handleMessage)
+  ctx.any().on('message', handleMessage)
+  ctx.any().on('send', handleMessage)
 }
