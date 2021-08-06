@@ -126,7 +126,7 @@ Database.extend(MongoDatabase, {
     if (limit) cursor = cursor.limit(offset + limit)
     const data = await cursor.toArray()
     const { primary } = Tables.config[name]
-    for (const item of data) item[primary] = item._id
+    for (const item of data) item[primary] = item[primary] ?? item._id
     return data
   },
 
