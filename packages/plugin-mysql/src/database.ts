@@ -20,9 +20,22 @@ export interface Config extends PoolConfig {}
 
 interface MysqlDatabase extends Database {}
 
-export function escape(value: any, table?: TableType, field?: string) {
+function stringify(value: any, table?: TableType, field?: string) {
   const type = MysqlDatabase.tables[table]?.[field]
-  return mysqlEscape(typeof type === 'object' ? type.stringify(value) : value)
+  if (typeof type === 'object') return type.stringify(value)
+
+  const meta = (Koishi.Tables.config[table] as Koishi.Tables.Meta)?.fields[field]
+  if (meta?.type === 'json') {
+    return JSON.stringify(value)
+  } else if (meta?.type === 'list') {
+    return value.join(',')
+  }
+
+  return value
+}
+
+function escape(value: any, table?: TableType, field?: string) {
+  return mysqlEscape(stringify(value, table, field))
 }
 
 function getTypeDefinition({ type, length }: Koishi.Tables.Field) {
@@ -164,9 +177,7 @@ class MysqlDatabase {
   formatValues = (table: string, data: object, keys: readonly string[]) => {
     return keys.map((key) => {
       if (typeof data[key] !== 'object' || types.isDate(data[key])) return data[key]
-      const type = MysqlDatabase.tables[table]?.[key]
-      if (type && typeof type !== 'string') return type.stringify(data[key])
-      return JSON.stringify(data[key])
+      return stringify(data[key], table as never, key)
     })
   }
 
@@ -245,7 +256,10 @@ namespace MysqlDatabase {
   /**
    * @deprecated use `Tables.Field` instead
    */
-  export const tables: Declarations = {}
+  export const tables: Declarations = {
+    user: {},
+    channel: {},
+  }
 
   type FieldInfo = Parameters<Exclude<TypeCast, boolean>>[0]
 

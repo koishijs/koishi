@@ -1,7 +1,7 @@
-import MysqlDatabase, { Config, escape, TableType } from './database'
+import MysqlDatabase, { Config, TableType } from './database'
 import { User, Channel, Database, Context, Query } from 'koishi-core'
 import { difference } from 'koishi-utils'
-import { OkPacket, escapeId } from 'mysql'
+import { OkPacket, escapeId, escape } from 'mysql'
 
 export * from './database'
 export default MysqlDatabase
@@ -96,7 +96,7 @@ Database.extend(MysqlDatabase, {
     if (filter === '0') return []
     const { fields, limit, offset } = Query.resolveModifier(modifier)
     const keys = this.joinKeys(this.inferFields(name, fields))
-    let sql = `SELECT ${keys} FROM ${name} WHERE ${filter}`
+    let sql = `SELECT ${keys} FROM ${name} _${name} WHERE ${filter}`
     if (limit) sql += ' LIMIT ' + limit
     if (offset) sql += ' OFFSET ' + offset
     return this.query(sql)

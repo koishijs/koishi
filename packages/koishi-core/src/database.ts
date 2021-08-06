@@ -41,13 +41,13 @@ export namespace Tables {
   export const config: { [T in TableType]?: Meta<Tables[T]> } = {}
 
   export function extend<T extends TableType>(name: T, meta?: Meta<Tables[T]>): void
-  export function extend(name: string, meta?: Meta) {
-    const { unique = [], foreign = {}, fields = {} } = config[name] || {}
+  export function extend(name: string, meta: Meta = {}) {
+    const { unique = [], foreign, fields } = config[name] || {}
     config[name] = {
       type: 'incremental',
       primary: 'id',
       ...meta,
-      unique: [...unique, ...meta.unique],
+      unique: [...unique, ...meta.unique || []],
       foreign: { ...foreign, ...meta.foreign },
       fields: { ...fields, ...meta.fields },
     }
