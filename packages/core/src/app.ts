@@ -296,8 +296,8 @@ export class App extends Context {
     this.emit(session, 'middleware', session)
 
     // flush user & group data
-    await session.user?._update()
-    await session.channel?._update()
+    await session.user?.$update()
+    await session.channel?.$update()
   }
 
   private _handleArgv(content: string, session: Session) {

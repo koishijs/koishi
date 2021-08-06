@@ -140,7 +140,7 @@ namespace Luck {
         if (result) output.push(result)
         user.usage.lottery = maxUsage - session._lotteryLast
         session.app.emit('adventure/check', session, output)
-        await user._update()
+        await user.$update()
 
         if (!session._lotteryLast) output.push('您本日的抽奖次数已用完，请明天再试吧~')
         return output.join('\n').replace(/\$s/g, session.username)

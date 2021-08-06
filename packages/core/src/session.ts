@@ -231,7 +231,7 @@ export class Session<
       }
       if (fieldSet.size) {
         const data = await this.getChannel(channelId, '', [...fieldSet])
-        await this.app.cache?.set('channel', this.cid, channel._merge(data))
+        await this.app.cache?.set('channel', this.cid, channel.$merge(data))
       }
       return channel as any
     }
@@ -273,7 +273,7 @@ export class Session<
       }
       if (fieldSet.size) {
         const data = await this.getUser(userId, 0, [...fieldSet])
-        await this.app.cache?.set('user', this.uid, user._merge(data))
+        await this.app.cache?.set('user', this.uid, user.$merge(data))
       }
     }
 

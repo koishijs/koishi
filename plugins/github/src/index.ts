@@ -183,13 +183,13 @@ export function apply(ctx: Context, config: Config = {}) {
             return `尚未添加过仓库 ${name}。发送空行或句号以立即添加并订阅该仓库。`
           }
           webhooks[name] = {}
-          await session.channel._update()
+          await session.channel.$update()
           subscribe(name, session.cid, {})
           return '添加订阅成功！'
         } else if (options.delete) {
           if (!webhooks[name]) return `尚未在当前频道订阅过仓库 ${name}。`
           delete webhooks[name]
-          await session.channel._update()
+          await session.channel.$update()
           unsubscribe(name, session.cid)
           return '移除订阅成功！'
         }

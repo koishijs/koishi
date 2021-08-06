@@ -1,5 +1,5 @@
-import { Time } from '../time'
 import { stderr } from 'supports-color'
+import { Time } from '../time'
 
 const c16 = [6, 2, 3, 4, 5, 1]
 const c256 = [

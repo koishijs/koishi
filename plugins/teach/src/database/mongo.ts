@@ -31,11 +31,11 @@ Database.extend('@koishijs/plugin-mongo', {
   async updateDialogues(dialogues: Observed<Dialogue>[], argv: Dialogue.Argv) {
     const data: Partial<Dialogue>[] = []
     for (const dialogue of dialogues) {
-      if (!Object.keys(dialogue._diff).length) {
+      if (!Object.keys(dialogue.$diff).length) {
         argv.skipped.push(dialogue.id)
       } else {
-        data.push({ id: dialogue.id, ...dialogue._diff })
-        dialogue._diff = {}
+        data.push({ id: dialogue.id, ...dialogue.$diff })
+        dialogue.$diff = {}
         argv.updated.push(dialogue.id)
         Dialogue.addHistory(dialogue._backup, '修改', argv, false)
       }

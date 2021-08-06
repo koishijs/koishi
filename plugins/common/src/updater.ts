@@ -166,13 +166,13 @@ Command.prototype.adminUser = function (this: Command, callback, autoCreate) {
         }
       }
     }
-    const diffKeys = Object.keys(target._diff)
+    const diffKeys = Object.keys(target.$diff)
     const result = await callback({ ...argv, target, session }, ...args)
     if (typeof result === 'string') return result
-    if (!difference(Object.keys(target._diff), diffKeys).length) {
+    if (!difference(Object.keys(target.$diff), diffKeys).length) {
       return template('admin.user-unchanged')
     }
-    await target._update()
+    await target.$update()
     return template('admin.user-updated')
   })
 
@@ -217,10 +217,10 @@ Command.prototype.adminChannel = function (this: Command, callback, autoCreate) 
     }
     const result = await callback({ ...argv, target, session }, ...args)
     if (typeof result === 'string') return result
-    if (!Object.keys(target._diff).length) {
+    if (!Object.keys(target.$diff).length) {
       return template('admin.channel-unchanged')
     }
-    await target._update()
+    await target.$update()
     return template('admin.channel-updated')
   })
 
@@ -254,7 +254,7 @@ export function callme(ctx: Context) {
 
       try {
         user.name = name
-        await user._update()
+        await user.$update()
         return template('callme.updated', session.username)
       } catch (error) {
         if (error[Symbol.for('koishi.error-type')] === 'duplicate-entry') {
@@ -293,7 +293,7 @@ export function bind(ctx: Context, config: BindConfig = {}) {
     await ctx.database.remove('user', { [platform]: [userId] })
     ctx.cache.set('user', userId, user)
     user[platform] = userId as never
-    await user._update()
+    await user.$update()
   }
 
   ctx.command('common/bind', '绑定到账号', { authority: 0 })
@@ -448,7 +448,7 @@ export function admin(ctx: Context) {
       if (add.length) output.push(`禁用 ${add.join(', ')} 功能`)
       if (remove.length) output.push(`启用 ${remove.join(', ')} 功能`)
       target.disable = [...preserve, ...add]
-      await target._update()
+      await target.$update()
       return `已${output.join('，')}。`
     })
 

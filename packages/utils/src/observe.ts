@@ -16,30 +16,30 @@ function observeProperty(value: any, proxy: any, key: any, label: string, update
 }
 
 function observeObject<T extends object>(target: T, label: string, update?: () => void): T {
-  if (!target['__proxyGetters__']) {
-    Object.defineProperty(target, '__proxyGetters__', { value: {} })
+  if (!target['$$proxyGetters']) {
+    Object.defineProperty(target, '$$proxyGetters', { value: {} })
   }
 
   const diff = {}
-  const getters = target['__proxyGetters__']
-  if (!update) defineProperty(target, '_diff', diff)
+  const getters = target['$$proxyGetters']
+  if (!update) defineProperty(target, '$diff', diff)
 
   const proxy = new Proxy(target as Observed<T>, {
     get(target, key) {
       if (key in getters) return getters[key]
       const value = target[key]
-      if (!value || staticTypes.includes(typeof value) || typeof key === 'string' && key.startsWith('_')) return value
-      const _update = update || (() => {
+      if (!value || staticTypes.includes(typeof value) || typeof key === 'string' && key.startsWith('$')) return value
+      const $update = update || (() => {
         const hasKey = key in diff
         diff[key] = getters[key]
         if (!hasKey && label) {
           logger.debug(`[diff] ${label}: ${String(key)} (deep)`)
         }
       })
-      return observeProperty(value, getters, key, label, _update)
+      return observeProperty(value, getters, key, label, $update)
     },
     set(target, key, value) {
-      if (target[key] !== value && (typeof key !== 'string' || !key.startsWith('_'))) {
+      if (target[key] !== value && (typeof key !== 'string' || !key.startsWith('$'))) {
         if (update) {
           update()
         } else {
@@ -106,9 +106,9 @@ function observeDate(target: Date, update: () => void) {
 }
 
 export type Observed<T, R = any> = T & {
-  _diff: Partial<T>
-  _update: () => R
-  _merge: (value: Partial<T>) => Observed<T, R>
+  $diff: Partial<T>
+  $update: () => R
+  $merge: (value: Partial<T>) => Observed<T, R>
 }
 
 type UpdateFunction<T, R> = (diff: Partial<T>) => R
@@ -133,25 +133,25 @@ export function observe<T extends object, R>(target: T, ...args: [(string | numb
 
   const observer = observeObject(target, label, null) as Observed<T>
 
-  defineProperty(observer, '_update', function _update(this: Observed<T>) {
-    const diff = { ...this._diff }
+  defineProperty(observer, '$update', function $update(this: Observed<T>) {
+    const diff = { ...this.$diff }
     const fields = Object.keys(diff)
     if (fields.length) {
       if (label) logger.debug(`[update] ${label}: ${fields.join(', ')}`)
-      for (const key in this._diff) {
-        delete this._diff[key]
+      for (const key in this.$diff) {
+        delete this.$diff[key]
       }
       return update(diff)
     }
   })
 
-  defineProperty(observer, '_merge', function _merge(this: Observed<T>, value: Partial<T>) {
+  defineProperty(observer, '$merge', function $merge(this: Observed<T>, value: Partial<T>) {
     for (const key in value) {
-      if (key in this._diff) {
+      if (key in this.$diff) {
         throw new Error(`unresolved diff key "${key}"`)
       }
       target[key] = value[key]
-      delete this['__proxyGetters__'][key]
+      delete this['$$proxyGetters'][key]
     }
     return this
   })

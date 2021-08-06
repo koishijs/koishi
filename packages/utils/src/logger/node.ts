@@ -63,7 +63,7 @@ export class Logger {
   private displayName: string
 
   static color(code: number, value: any, decoration = '') {
-    if (!stderr) return '' + value
+    if (!stderr || !Logger.options.colors) return '' + value
     return `\u001b[3${code < 8 ? code : '8;5;' + code}${stderr.has256 ? decoration : ''}m${value}\u001b[0m`
   }
 

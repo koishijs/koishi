@@ -25,16 +25,16 @@ Database.extend('@koishijs/plugin-mysql', {
   async updateDialogues(dialogues: Observed<Dialogue>[], argv: Dialogue.Argv) {
     const data: Partial<Dialogue>[] = []
     const fields = new Set<Dialogue.Field>(['id'])
-    for (const { _diff } of dialogues) {
-      for (const key in _diff) {
+    for (const { $diff } of dialogues) {
+      for (const key in $diff) {
         fields.add(key as Dialogue.Field)
       }
     }
     for (const dialogue of dialogues) {
-      if (!Object.keys(dialogue._diff).length) {
+      if (!Object.keys(dialogue.$diff).length) {
         argv.skipped.push(dialogue.id)
       } else {
-        dialogue._diff = {}
+        dialogue.$diff = {}
         argv.updated.push(dialogue.id)
         data.push(pick(dialogue, fields))
         Dialogue.addHistory(dialogue._backup, '修改', argv, false)

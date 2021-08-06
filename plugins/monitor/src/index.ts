@@ -135,14 +135,14 @@ export function apply(ctx: Context) {
       }
       if (nameUpdated) account.names = Array.from(nameSet)
 
-      if (!Object.keys(account._diff).length) {
+      if (!Object.keys(account.$diff).length) {
         return '没有信息被修改。'
       }
 
       if (configUpdated && account.id in monitors) {
         monitors[account.id].start()
       }
-      await account._update()
+      await account.$update()
       return '账号修改成功。'
     })
 
@@ -210,7 +210,7 @@ export function apply(ctx: Context) {
           }
         }
         if (count) {
-          await session.channel._update()
+          await session.channel.$update()
           return `已成功取消关注 ${count} 个账号。`
         } else {
           return '未在本群内关注任何账号。'
@@ -235,7 +235,7 @@ export function apply(ctx: Context) {
         } else {
           subscribe[id].splice(index)
         }
-        await session.channel._update()
+        await session.channel.$update()
         return '已成功取消关注。'
       }
 
@@ -247,7 +247,7 @@ export function apply(ctx: Context) {
         monitors[id] = new Monitor(account, ctx.app)
         monitors[id].start()
       }
-      await session.channel._update()
+      await session.channel.$update()
       return '关注成功！'
     })
 }

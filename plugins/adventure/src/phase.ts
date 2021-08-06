@@ -132,7 +132,7 @@ namespace Phase {
       user.phases.unshift(user.progress)
     }
     user.progress = progress || ''
-    return user._update()
+    return user.$update()
   }
 
   export function getPhase(user: Adventurer) {

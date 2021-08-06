@@ -30,8 +30,8 @@
   ],
   "devDependencies": {
     "@types/pngjs": "^6.0.0",
-    "@types/react": "^17.0.5",
-    "@types/react-dom": "^17.0.3",
+    "@types/react": "*",
+    "@types/react-dom": "*",
     "@koishijs/plugin-eval": "^4.0.0-alpha.0",
     "@koishijs/test-utils": "^7.0.0-alpha.0"
   },
@@ -42,7 +42,7 @@
     "chrome-finder": "^1.0.7",
     "pngjs": "^6.0.0",
     "puppeteer-core": "^9.1.0",
-    "react": "*",
-    "react-dom": "*"
+    "react": "^17.0.2",
+    "react-dom": "^17.0.2"
   }
 }

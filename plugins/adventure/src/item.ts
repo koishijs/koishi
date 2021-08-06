@@ -271,7 +271,7 @@ namespace Item {
         const nCount = Number(count)
         if (!isInteger(nCount) || nCount <= 0) return '参数错误。'
         await Phase.dispatch(session, [Event.gain({ [item]: nCount })])
-        await session.user._update()
+        await session.user.$update()
         return ''
       })
 
@@ -282,7 +282,7 @@ namespace Item {
         const nCount = Number(count)
         if (!isInteger(nCount) || nCount <= 0) return '参数错误。'
         await Phase.dispatch(session, [Event.lose({ [item]: nCount })])
-        await session.user._update()
+        await session.user.$update()
         return ''
       })
 
@@ -358,7 +358,7 @@ namespace Item {
         const hints = [Event.buy(buyMap)(session)]
         session.app.emit('adventure/check', session as any, hints)
 
-        await user._update()
+        await user.$update()
         await session.send(hints.join('\n'))
       })
 
@@ -432,7 +432,7 @@ namespace Item {
 
         const hints = [Event.sell(sellMap)(session)]
         session.app.emit('adventure/check', session as any, hints)
-        await user._update()
+        await user.$update()
         await session.send(hints.join('\n'))
       })
 

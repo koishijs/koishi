@@ -152,8 +152,8 @@ export class WorkerHandle {
   }
 
   async sync(scope: Session) {
-    await scope.user?._update()
-    await scope.channel?._update()
+    await scope.user?.$update()
+    await scope.channel?.$update()
     try {
       const buffer = system.serialize(scope.storage)
       await system.write(storagePath, backupStorage = buffer)

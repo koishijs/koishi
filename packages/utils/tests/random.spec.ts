@@ -3,7 +3,7 @@ import { expect } from 'chai'
 
 describe('Random Manipulations', () => {
   it('Random.id', () => {
-    expect(Random.id(7)).to.match(/^\d{7}$/)
+    expect(Random.id(7)).to.match(/^[\da-f]{7}$/)
   })
 
   it('Random.bool', () => {

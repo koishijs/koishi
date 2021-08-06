@@ -50,7 +50,7 @@ export class Trap<O extends {}> {
       const setter = this.traps[field]?.set
       setter ? setter(target, data[field]) : Reflect.set(target, field, data[field])
     }
-    return target._update()
+    return target.$update()
   }
 }
 
