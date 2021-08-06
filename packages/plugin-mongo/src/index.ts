@@ -21,12 +21,6 @@ declare module 'koishi-core' {
   }
 }
 
-function projection(keys: Iterable<string>) {
-  const d = {}
-  for (const key of keys) d[key] = 1
-  return d
-}
-
 function escapeKey<T extends Partial<User>>(doc: T) {
   const data: T = { ...doc }
   delete data.timers
@@ -123,11 +117,14 @@ function createFilter<T extends TableType>(name: T, _query: Query<T>) {
 }
 
 Database.extend(MongoDatabase, {
-  async get(name, query, fields) {
+  async get(name, query, modifier) {
     const filter = createFilter(name, query)
     if (!filter) return []
     let cursor = this.db.collection(name).find(filter)
-    if (fields) cursor = cursor.project(projection(fields))
+    const { fields, limit, offset = 0 } = Query.resolveModifier(modifier)
+    if (fields) cursor = cursor.project(Object.fromEntries(fields.map(key => [key, 1])))
+    if (offset) cursor = cursor.skip(offset)
+    if (limit) cursor = cursor.limit(offset + limit)
     const data = await cursor.toArray()
     const { primary } = Tables.config[name]
     for (const item of data) item[primary] = item._id
@@ -167,17 +164,19 @@ Database.extend(MongoDatabase, {
     await bulk.execute()
   },
 
-  async getUser(type, id, fields = User.fields) {
-    if (fields && !fields.length) return { [type]: id } as any
+  async getUser(type, id, modifier) {
+    const { fields } = Query.resolveModifier(modifier)
+    const applyDefault = (user: User) => ({
+      ...pick(User.create(type, user[type]), fields),
+      ...unescapeKey(user),
+    })
+
+    const data = await this.get('user', { [type]: id }, modifier)
     if (Array.isArray(id)) {
-      const users = await this.user.find({ [type]: { $in: id } }).project(projection(fields)).toArray()
-      return users.map(data => (data && {
-        ...pick(User.create(type, data[type]), fields), ...unescapeKey(data),
-      }))
+      return data.map(applyDefault)
+    } else if (data[0]) {
+      return { ...applyDefault(data[0]), [type]: id }
     }
-    const [data] = await this.user.find({ [type]: id }).project(projection(fields)).toArray()
-    const udoc = User.create(type, id as any)
-    return data && { ...pick(udoc, fields), ...unescapeKey(data), [type]: id }
   },
 
   async setUser(type, id, data) {
@@ -199,7 +198,15 @@ Database.extend(MongoDatabase, {
     await this.setUser(type, id, data)
   },
 
-  async getChannel(type, pid, fields = Channel.fields) {
+  async getChannel(type, pid, modifier) {
+    modifier = Query.resolveModifier(modifier)
+    const fields = modifier.fields.slice()
+    const applyDefault = (channel: Channel) => ({
+      ...pick(Channel.create(type, channel.pid), fields),
+      ...omit(channel, ['type', 'pid']),
+    })
+
+    const index = fields.indexOf('id')
     if (Array.isArray(pid)) {
       if (fields && !fields.length) return pid.map(id => ({ id: `${type}:${id}` }))
       const channels = await this.channel.find({ _id: { $in: pid.map(id => `${type}:${id}`) } })

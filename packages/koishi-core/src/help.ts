@@ -5,21 +5,32 @@ import { template } from 'koishi-utils'
 import { Context } from './context'
 import { Argv } from './parser'
 
-interface HelpConfig {
+interface HelpOptions {
   showHidden?: boolean
   authority?: boolean
 }
 
-export default function apply(ctx: Context) {
-  // show help when use `-h, --help` or when there is no action
-  ctx.before('command', async ({ command, session, options }) => {
-    if (command['_actions'].length && !options['help']) return
-    await session.execute({
-      name: 'help',
-      args: [command.name],
+export interface HelpConfig extends Command.Config {
+  shortcut?: boolean
+  options?: boolean
+}
+
+export default function apply(ctx: Context, config: HelpConfig = {}) {
+  if (config.options !== false) {
+    ctx.on('command-added', (cmd) => {
+      cmd.option('help', '-h  显示此信息', { hidden: true })
     })
-    return ''
-  })
+
+    // show help when use `-h, --help` or when there is no action
+    ctx.before('command', async ({ command, session, options }) => {
+      if (command['_actions'].length && !options['help']) return
+      await session.execute({
+        name: 'help',
+        args: [command.name],
+      })
+      return ''
+    })
+  }
 
   const app = ctx.app
   function findCommand(target: string) {
@@ -38,11 +49,10 @@ export default function apply(ctx: Context) {
     session.collect(key, { ...argv, command, args: [], options: { help: true } }, fields)
   }
 
-  ctx.command('help [command]', '显示帮助信息', { authority: 0 })
+  const cmd = ctx.command('help [command]', '显示帮助信息', { authority: 0, ...config })
     .userFields(['authority'])
     .userFields(createCollector('user'))
     .channelFields(createCollector('channel'))
-    .shortcut('帮助', { fuzzy: true })
     .option('authority', '-a  显示权限设置')
     .option('showHidden', '-H  查看隐藏的选项和指令')
     .action(async ({ session, options }, target) => {
@@ -51,7 +61,7 @@ export default function apply(ctx: Context) {
         const output = formatCommands('internal.global-help-prolog', session, commands, options)
         const epilog = template('internal.global-help-epilog')
         if (epilog) output.push(epilog)
-        return output.join('\n')
+        return output.filter(Boolean).join('\n')
       }
 
       const command = findCommand(target)
@@ -72,6 +82,8 @@ export default function apply(ctx: Context) {
 
       return showHelp(command, session, options)
     })
+
+  if (config.shortcut !== false) cmd.shortcut('帮助', { fuzzy: true })
 }
 
 export function getCommandNames(session: Session) {
@@ -91,7 +103,7 @@ function* getCommands(session: Session<'authority'>, commands: Command[], showHi
   }
 }
 
-function formatCommands(path: string, session: Session<ValidationField>, children: Command[], options: HelpConfig) {
+function formatCommands(path: string, session: Session<ValidationField>, children: Command[], options: HelpOptions) {
   const commands = Array
     .from(getCommands(session, children, options.showHidden))
     .sort((a, b) => a.name > b.name ? 1 : -1)
@@ -118,7 +130,7 @@ function getOptionVisibility(option: Argv.OptionConfig, session: Session<Validat
   return !session.resolveValue(option.hidden)
 }
 
-function getOptions(command: Command, session: Session<ValidationField>, maxUsage: number, config: HelpConfig) {
+function getOptions(command: Command, session: Session<ValidationField>, maxUsage: number, config: HelpOptions) {
   if (command.config.hideOptions && !config.showHidden) return []
   const options = config.showHidden
     ? Object.values(command._options)
@@ -141,7 +153,7 @@ function getOptions(command: Command, session: Session<ValidationField>, maxUsag
   return output
 }
 
-async function showHelp(command: Command, session: Session<ValidationField>, config: HelpConfig) {
+async function showHelp(command: Command, session: Session<ValidationField>, config: HelpOptions) {
   const output = [command.name + command.declaration]
 
   if (command.description) output.push(command.description)
@@ -188,7 +200,7 @@ async function showHelp(command: Command, session: Session<ValidationField>, con
 
   output.push(...formatCommands('internal.subcommand-prolog', session, command.children, config))
 
-  return output.join('\n')
+  return output.filter(Boolean).join('\n')
 }
 
 /* eslint-disable quote-props */

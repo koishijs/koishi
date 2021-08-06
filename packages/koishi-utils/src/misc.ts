@@ -52,7 +52,8 @@ export function merge<T extends object>(head: T, base: T): T {
   return head
 }
 
-export function pick<T, K extends keyof T>(source: T, keys: Iterable<K>) {
+export function pick<T, K extends keyof T>(source: T, keys?: Iterable<K>) {
+  if (!keys) return { ...source }
   const result = {} as Pick<T, K>
   for (const key of keys) {
     result[key] = source[key]
@@ -60,7 +61,8 @@ export function pick<T, K extends keyof T>(source: T, keys: Iterable<K>) {
   return result
 }
 
-export function omit<T, K extends keyof T>(source: T, keys: Iterable<K>) {
+export function omit<T, K extends keyof T>(source: T, keys?: Iterable<K>) {
+  if (!keys) return { ...source }
   const result = { ...source } as Omit<T, K>
   for (const key of keys) {
     Reflect.deleteProperty(result, key)

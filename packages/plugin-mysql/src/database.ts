@@ -35,6 +35,7 @@ class MysqlDatabase {
   escapeId: (value: string) => string
 
   inferFields<T extends TableType>(table: T, keys: readonly string[]) {
+    if (!keys) return
     const types = MysqlDatabase.tables[table] || {}
     return keys.map((key) => {
       const type = types[key]
