@@ -1,5 +1,5 @@
 import MongoDatabase, { Config } from './database'
-import { User, Tables, Database, Context, Channel, Random, pick, omit, TableType, Query } from 'koishi-core'
+import { User, Tables, Database, Context, Channel, pick, omit, TableType, Query } from 'koishi-core'
 
 export * from './database'
 export default MongoDatabase
@@ -82,7 +82,6 @@ function createFilter<T extends TableType>(name: T, _query: Query<T>) {
       } else if (typeof value === 'string' || typeof value === 'number') {
         filter[key] = { $eq: value }
       } else if (Array.isArray(value)) {
-        if (!value.length) return
         filter[key] = { $in: value }
       } else {
         filter[key] = {}
@@ -161,7 +160,7 @@ Database.extend(MongoDatabase, {
       if (!Object.keys($set).length) continue
       bulk.find({ [key]: item[primary] }).updateOne({ $set })
     }
-    await bulk.execute()
+    if (bulk.length) await bulk.execute()
   },
 
   async getUser(type, id, modifier) {
@@ -207,23 +206,34 @@ Database.extend(MongoDatabase, {
     })
 
     const index = fields.indexOf('id')
-    if (Array.isArray(pid)) {
-      if (fields && !fields.length) return pid.map(id => ({ id: `${type}:${id}` }))
-      const channels = await this.channel.find({ _id: { $in: pid.map(id => `${type}:${id}`) } })
-        .project(projection(fields)).toArray()
-      return channels.map(channel => ({ ...pick(Channel.create(type, channel.pid), fields), ...channel, _id: `${type}:${channel.pid}`, id: `${type}:${channel.pid}` }))
+    if (pid instanceof Array) {
+      const ids = pid.map(id => `${type}:${id}`)
+      if (!pid.length) return []
+      if (fields && !fields.length) return ids.map(id => ({ id }))
+      if (index >= 0) modifier.fields.splice(index, 1, 'type', 'pid')
+      const data = await this.get('channel', { type, pid: { $in: ids } }, modifier)
+      return data.map(applyDefault)
     }
-    if (fields && !fields.length) return { id: `${type}:${pid}` }
-    const [data] = await this.channel.find({ type, pid: pid as string }).project(projection(fields)).toArray()
-    return data && { ...pick(Channel.create(type, pid as string), fields), ...data, _id: `${type}:${pid}`, id: `${type}:${pid}` }
+    const id = `${type}:${pid}`
+    if (fields && !fields.length) return { id }
+    if (index >= 0) modifier.fields.splice(index, 1)
+    const data = await this.get('channel', { type, pid }, modifier)
+    return data[0] && { ...applyDefault(data[0]), id }
   },
 
-  async getAssignedChannels(fields, assignMap = this.app.getSelfIds()) {
-    const project = { pid: 1, type: 1, ...projection(fields) }
-    const channels = await this.channel.find({
-      $or: Object.entries(assignMap).map<any>(([type, ids]) => ({ type, assignee: { $in: ids } })),
-    }).project(project).toArray()
-    return channels.map(channel => ({ ...pick(Channel.create(channel.type, channel.pid), fields), ...channel, _id: `${channel.type}:${channel.pid}`, id: `${channel.type}:${channel.pid}` }))
+  async getAssignedChannels(_fields, assignMap = this.app.getSelfIds()) {
+    const fields = _fields.slice()
+    const applyDefault = (channel: Channel) => ({
+      ...pick(Channel.create(channel.type, channel.pid), _fields),
+      ...omit(channel, ['type', 'pid']),
+    })
+
+    const index = fields.indexOf('id')
+    if (index >= 0) fields.splice(index, 1, 'type', 'pid')
+    const data = await this.get('channel', {
+      $or: Object.entries(assignMap).map<any>(([type, assignee]) => ({ type, assignee })),
+    }, fields)
+    return data.map(applyDefault)
   },
 
   async setChannel(type, pid, data = {}) {
@@ -248,3 +258,4 @@ export function apply(ctx: Context, config: Config) {
   ctx.before('connect', () => db.start())
   ctx.before('disconnect', () => db.stop())
 }
+
