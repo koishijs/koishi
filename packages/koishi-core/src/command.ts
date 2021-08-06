@@ -99,7 +99,7 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
     this.config = { ...Command.defaultConfig }
     this._registerAlias(this.name)
     context.app._commandList.push(this)
-    this.option('help', '-h  显示此信息', { hidden: true })
+    context.app.emit('command-added', this)
   }
 
   get app() {
@@ -257,6 +257,7 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
 
   dispose() {
     this._disposed = true
+    this.app.emit('command-removed', this)
     for (const cmd of this.children.slice()) {
       cmd.dispose()
     }
