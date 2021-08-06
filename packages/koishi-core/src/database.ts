@@ -57,8 +57,8 @@ export namespace Tables {
     const { fields } = Tables.config[name]
     const result = {} as Tables[T]
     for (const key in fields) {
-      if (fields[key].default !== undefined) {
-        result[key] = utils.clone(fields[key].default)
+      if (fields[key].initial !== undefined) {
+        result[key] = utils.clone(fields[key].initial)
       }
     }
     return result

@@ -208,6 +208,10 @@ export async function triggerDialogue(ctx: Context, session: Session, next: Next
 
   if (dialogue.flag & Dialogue.Flag.regexp) {
     const capture = dialogue._capture || new RegExp(dialogue.original, 'i').exec(state.test.original)
+    // emojis will be transformed into "?" in mysql
+    // which will lead to incorrect matches
+    // TODO enhance emojis in regexp tests
+    if (!capture) return
     capture.map((segment, index) => {
       if (index && index <= 9) {
         state.answer = state.answer.replace(new RegExp(`\\$${index}`, 'g'), escapeAnswer(segment || ''))
