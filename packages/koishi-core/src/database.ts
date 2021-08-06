@@ -9,23 +9,80 @@ export interface Tables {
 }
 
 export namespace Tables {
-  interface Meta<O> {
-    type?: 'incremental'
-    primary?: keyof O
-    unique?: (keyof O)[]
+  type Unique<K> = (K | K[])[]
+
+  type FieldType<T = any> =
+    | T extends number ? 'integer' | 'unsigned' | 'float' | 'double'
+    : T extends string ? 'string'
+    : T extends Date ? 'timestamp' | 'date' | 'time'
+    : T extends any[] ? 'list' | 'json'
+    : T extends object ? 'json'
+    : never
+
+  export interface Field<T = any> {
+    type: FieldType<T>
+    length?: number
+    nullable?: boolean
+    initial?: T
+  }
+
+  export interface Meta<O = any> {
+    type?: 'random' | 'incremental'
+    primary?: string & keyof O
+    unique?: Unique<string & keyof O>
     foreign?: {
-      [K in keyof O]: [TableType, string]
+      [K in keyof O]?: [TableType, string]
+    }
+    fields?: {
+      [K in keyof O]?: Field<O[K]>
     }
   }
 
   export const config: { [T in TableType]?: Meta<Tables[T]> } = {}
 
-  export function extend<T extends TableType>(name: T, meta?: Meta<Tables[T]>) {
-    config[name] = { primary: 'id', unique: [], type: 'incremental', foreign: {}, ...meta } as any
+  export function extend<T extends TableType>(name: T, meta?: Meta<Tables[T]>): void
+  export function extend(name: string, meta?: Meta) {
+    const { unique = [], foreign = {}, fields = {} } = config[name] || {}
+    config[name] = {
+      type: 'incremental',
+      primary: 'id',
+      ...meta,
+      unique: [...unique, ...meta.unique],
+      foreign: { ...foreign, ...meta.foreign },
+      fields: { ...fields, ...meta.fields },
+    }
   }
 
-  extend('user')
-  extend('channel')
+  export function create<T extends TableType>(name: T): Tables[T] {
+    const { fields } = Tables.config[name]
+    const result = {} as Tables[T]
+    for (const key in fields) {
+      if (fields[key].default !== undefined) {
+        result[key] = utils.clone(fields[key].default)
+      }
+    }
+    return result
+  }
+
+  extend('user', {
+    fields: {
+      id: { type: 'string', length: 50 },
+      name: { type: 'string', length: 50 },
+      flag: { type: 'unsigned', length: 20, initial: 0 },
+      authority: { type: 'unsigned', length: 4, initial: 0 },
+      usage: { type: 'json', initial: {} },
+      timers: { type: 'json', initial: {} },
+    },
+  })
+
+  extend('channel', {
+    fields: {
+      id: { type: 'string', length: 50 },
+      flag: { type: 'unsigned', length: 20, initial: 0 },
+      assignee: { type: 'string', length: 50 },
+      disable: { type: 'list', initial: [] },
+    },
+  })
 }
 
 export type Query<T extends TableType> = Query.Expr<Tables[T]> | Query.Shorthand
@@ -113,20 +170,17 @@ export namespace User {
   type Getter = <T extends Index>(type: T, id: string) => Partial<User>
   const getters: Getter[] = []
 
+  /**
+   * @deprecated use `Tables.extend('user', { fields })` instead
+   */
   export function extend(getter: Getter) {
     getters.push(getter)
     fields.push(...Object.keys(getter(null as never, '0')) as any)
   }
 
-  extend(() => ({
-    authority: 0,
-    flag: 0,
-    usage: {},
-    timers: {},
-  }))
-
   export function create<T extends Index>(type: T, id: string) {
-    const result = { [type]: id } as Partial<User>
+    const result = Tables.create('user')
+    result[type] = id
     for (const getter of getters) {
       Object.assign(result, getter(type, id))
     }
@@ -161,20 +215,22 @@ export namespace Channel {
   type Getter = (type: Platform, id: string) => Partial<Channel>
   const getters: Getter[] = []
 
+  /**
+   * @deprecated use `Tables.extend('user', { fields })` instead
+   */
   export function extend(getter: Getter) {
     getters.push(getter)
     fields.push(...Object.keys(getter(null as never, '')) as any)
   }
 
   export function create(type: Platform, id: string) {
-    const result = {} as Channel
+    const result = Tables.create('channel')
+    result.id = `${type}:${id}`
     for (const getter of getters) {
       Object.assign(result, getter(type, id))
     }
     return result
   }
-
-  extend((type, id) => ({ id: `${type}:${id}`, flag: 0, disable: [] }))
 
   export interface Database {
     getChannel<K extends Field>(type: Platform, id: string, modifier?: Query.Modifier<K>): Promise<Pick<Channel, K | 'id'>>

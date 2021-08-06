@@ -25,6 +25,21 @@ export function escape(value: any, table?: TableType, field?: string) {
   return mysqlEscape(typeof type === 'object' ? type.stringify(value) : value)
 }
 
+function getTypeDefinition({ type, length }: Koishi.Tables.Field) {
+  switch (type) {
+    case 'float':
+    case 'double':
+    case 'date':
+    case 'time':
+    case 'timestamp': return type
+    case 'integer': return `int(${length || 10})`
+    case 'unsigned': return `int(${length || 10}) unsigned`
+    case 'string': return `varchar(${length || 65536})`
+    case 'list': return `varchar(${length || 65536})`
+    case 'json': return `varchar(${length || 65536})`
+  }
+}
+
 class MysqlDatabase {
   public pool: Pool
   public config: Config
@@ -48,10 +63,20 @@ class MysqlDatabase {
       database: 'koishi',
       charset: 'utf8mb4_general_ci',
       typeCast: (field, next) => {
-        const type = MysqlDatabase.tables[field.packet.orgTable]?.[field.packet.orgName]
-        if (typeof type === 'object') {
-          return type.parse(field)
+        const { orgName, orgTable } = field.packet
+        const type = MysqlDatabase.tables[orgTable]?.[orgName]
+        if (typeof type === 'object') return type.parse(field)
+
+        const meta = (Koishi.Tables.config[orgTable] as Koishi.Tables.Meta)?.fields[orgName]
+        if (meta?.type === 'string') {
+          return field.string()
+        } else if (meta?.type === 'json') {
+          return JSON.parse(field.string()) || meta.initial
+        } else if (meta?.type === 'list') {
+          const source = field.string()
+          return source ? source.split(',') : []
         }
+
         if (field.type === 'BIT') {
           return Boolean(field.buffer()?.readUInt8(0))
         } else {
@@ -84,10 +109,14 @@ class MysqlDatabase {
         const cols = Object.keys(table)
           .filter((key) => typeof table[key] !== 'function')
           .map((key) => `${escapeId(key)} ${MysqlDatabase.Domain.definition(table[key])}`)
-        const { primary, unique, foreign } = Koishi.Tables.config[name as TableType]
+        const { type, primary, unique, foreign, fields } = Koishi.Tables.config[name] as Koishi.Tables.Meta
         cols.push(`primary key (${escapeId(primary)})`)
         for (const key of unique) {
-          cols.push(`unique index (${escapeId(key)})`)
+          if (Array.isArray(key)) {
+            cols.push(`unique index (${key.map(key => escapeId(key)).join(', ')})`)
+          } else {
+            cols.push(`unique index (${escapeId(key)})`)
+          }
         }
         if (name === 'user') {
           for (const key of platforms) {
@@ -97,6 +126,19 @@ class MysqlDatabase {
         for (const key in foreign) {
           const [table, key2] = foreign[key]
           cols.push(`foreign key (${escapeId(key)}) references ${escapeId(table)} (${escapeId(key2)})`)
+        }
+        for (const key in fields) {
+          const { initial, nullable = initial === undefined } = fields[key]
+          let def = getTypeDefinition(fields[key])
+          def += (nullable ? ' ' : ' not ') + 'null'
+          if (initial && typeof initial !== 'string') {
+            // mysql does not support text column with default value
+            def += ' default ' + mysqlEscape(initial)
+          }
+          if (key === primary && type === 'incremental') {
+            def = 'bigint(20) unsigned not null auto_increment'
+          }
+          cols.push(def)
         }
         logger.info('auto creating table %c', name)
         await this.query(`CREATE TABLE ?? (${cols.join(',')}) COLLATE = ?`, [name, this.config.charset])
@@ -200,6 +242,9 @@ namespace MysqlDatabase {
     }
   }
 
+  /**
+   * @deprecated use `Tables.Field` instead
+   */
   export const tables: Declarations = {}
 
   type FieldInfo = Parameters<Exclude<TypeCast, boolean>>[0]
@@ -210,6 +255,9 @@ namespace MysqlDatabase {
     stringify(value: T): string
   }
 
+  /**
+   * @deprecated use `Tables.Field` instead
+   */
   export namespace Domain {
     export function definition(domain: string | Domain) {
       return typeof domain === 'string' ? domain : domain.definition

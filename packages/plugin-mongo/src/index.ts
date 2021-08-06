@@ -116,6 +116,11 @@ function createFilter<T extends TableType>(name: T, _query: Query<T>) {
   return filter
 }
 
+function getFallbackType({ fields, primary }: Tables.Meta) {
+  const { type } = fields[primary]
+  return type === 'string' ? 'random' : 'incremental'
+}
+
 Database.extend(MongoDatabase, {
   async get(name, query, modifier) {
     const filter = createFilter(name, query)
@@ -138,7 +143,8 @@ Database.extend(MongoDatabase, {
   },
 
   async create(name, data: any) {
-    const { primary, type } = Tables.config[name]
+    const meta = Tables.config[name]
+    const { primary, type = getFallbackType(meta) } = meta
     const copy = { ...data }
     if (copy[primary]) {
       copy['_id'] = copy[primary]
@@ -146,6 +152,8 @@ Database.extend(MongoDatabase, {
     } else if (type === 'incremental') {
       const [latest] = await this.db.collection(name).find().sort('_id', -1).limit(1).toArray()
       copy['_id'] = data[primary] = latest ? latest._id + 1 : 1
+    } else if (type === 'random') {
+      copy['_id'] = data[primary] = Random.uuid()
     }
     await this.db.collection(name).insertOne(copy)
     return data

@@ -212,24 +212,6 @@ Database.extend(MysqlDatabase, {
   },
 })
 
-Database.extend(MysqlDatabase, ({ tables, Domain }) => {
-  tables.user = {
-    id: new Domain.String(`bigint(20) unsigned not null auto_increment`),
-    name: `varchar(50) null default null collate 'utf8mb4_general_ci'`,
-    flag: `bigint(20) unsigned not null default '0'`,
-    authority: `tinyint(4) unsigned not null default '0'`,
-    usage: new Domain.Json(),
-    timers: new Domain.Json(),
-  }
-
-  tables.channel = {
-    id: `varchar(50) not null`,
-    flag: `bigint(20) unsigned not null default '0'`,
-    assignee: `varchar(50) null`,
-    disable: new Domain.Array(),
-  }
-})
-
 export const name = 'mysql'
 
 export function apply(ctx: Context, config: Config = {}) {
