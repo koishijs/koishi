@@ -1,6 +1,6 @@
 import {} from '@koishijs/plugin-mysql'
 import {} from '@koishijs/plugin-mongo'
-import { Channel, Database, Tables } from 'koishi'
+import { Database, Tables } from 'koishi'
 import { OkPacket } from 'mysql'
 
 declare module 'koishi' {
@@ -20,7 +20,11 @@ declare module 'koishi' {
   }
 }
 
-Channel.extend(() => ({ subscribe: {} }))
+Tables.extend('channel', {
+  fields: {
+    subscribe: { type: 'json', initial: {} },
+  },
+})
 
 interface SubscribeOptions {
   names?: string[]
@@ -45,7 +49,13 @@ const subscribeKeys = [
   'twitCasting', 'twitCastingStatus',
 ] as SubscribeField[]
 
-Tables.extend('subscribe')
+Tables.extend('subscribe', {
+  type: 'incremental',
+  fields: {
+    id: { type: 'unsigned' },
+    names: { type: 'list' },
+  },
+})
 
 Database.extend('@koishijs/plugin-mysql', {
   async getSubscribes(ids, keys = subscribeKeys) {
@@ -65,14 +75,6 @@ Database.extend('@koishijs/plugin-mysql', {
     const { changedRows } = await this.query<OkPacket>('DELETE FROM `subscribe` WHERE FIND_IN_SET(?, `names`)', [name])
     return !!changedRows
   },
-})
-
-Database.extend('@koishijs/plugin-mysql', ({ tables, Domain }) => {
-  tables.channel.subscribe = new Domain.Json()
-  tables.subscribe = {
-    id: 'INT(10) UNSIGNED NOT NULL AUTO_INCREMENT',
-    names: new Domain.Array(),
-  }
 })
 
 Database.extend('@koishijs/plugin-mongo', {

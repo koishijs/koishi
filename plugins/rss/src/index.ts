@@ -1,5 +1,4 @@
-import { Context, Channel, Session, Database, Logger, Time } from 'koishi'
-import {} from '@koishijs/plugin-mysql'
+import { Context, Session, Logger, Tables, Time } from 'koishi'
 import RssFeedEmitter from 'rss-feed-emitter'
 
 declare module 'koishi' {
@@ -8,12 +7,10 @@ declare module 'koishi' {
   }
 }
 
-Channel.extend(() => ({
-  rss: [],
-}))
-
-Database.extend('@koishijs/plugin-mysql', ({ Domain, tables }) => {
-  tables.channel.rss = new Domain.Array()
+Tables.extend('channel', {
+  fields: {
+    rss: { type: 'list' },
+  },
 })
 
 export interface Config {

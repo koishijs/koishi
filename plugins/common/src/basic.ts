@@ -1,4 +1,4 @@
-import { Context, Channel, Session, User, Argv, sleep, segment, template, makeArray, Time } from 'koishi'
+import { Context, Channel, Session, Argv, sleep, segment, template, makeArray, Time } from 'koishi'
 
 template.set('common', {
   'expect-text': '请输入要发送的文本。',
@@ -66,14 +66,14 @@ export function contextify(ctx: Context) {
         sess.channelId = Argv.parsePid(options.channel)[1]
         sess.cid = `${sess.platform}:${sess.channelId}`
         sess.subtype = 'group'
-        await sess.observeChannel(Channel.fields)
+        await sess.observeChannel()
       } else {
         sess.channel = session.channel
       }
 
       if (options.user && options.user !== session.uid) {
         sess.userId = sess.author.userId = Argv.parsePid(options.user)[1]
-        const user = await sess.observeUser(User.fields)
+        const user = await sess.observeUser(['authority'])
         if (session.user.authority <= user.authority) {
           return template('internal.low-authority')
         }

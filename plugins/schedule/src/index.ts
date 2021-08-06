@@ -1,7 +1,33 @@
-import { Context, Session, Time, Logger } from 'koishi'
-import { Schedule } from './database'
+import { Context, Session, Time, Logger, Tables } from 'koishi'
 
-export * from './database'
+declare module 'koishi' {
+  interface Tables {
+    schedule: Schedule
+  }
+}
+
+export interface Schedule {
+  id: number
+  assignee: string
+  time: Date
+  lastCall: Date
+  interval: number
+  command: string
+  session: Partial<Session>
+}
+
+Tables.extend('schedule', {
+  type: 'incremental',
+  fields: {
+    id: { type: 'integer' },
+    assignee: { type: 'string', length: 50 },
+    time: { type: 'timestamp' },
+    lastCall: { type: 'timestamp' },
+    interval: { type: 'integer', length: 20, initial: 0 },
+    command: { type: 'string', length: 1000 },
+    session: { type: 'json' },
+  },
+})
 
 const logger = new Logger('schedule')
 

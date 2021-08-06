@@ -2,10 +2,8 @@
 
 import { EventConfig } from './events'
 import axios, { AxiosError, Method } from 'axios'
-import { App, Channel, Database, Session, Tables, User, segment, Logger } from 'koishi'
+import { App, Session, Tables, segment, Logger } from 'koishi'
 import {} from '@koishijs/plugin-puppeteer'
-import {} from '@koishijs/plugin-mysql'
-import {} from '@koishijs/plugin-mongo'
 
 declare module 'koishi' {
   interface App {
@@ -26,26 +24,26 @@ declare module 'koishi' {
   }
 }
 
-User.extend(() => ({
-  ghAccessToken: '',
-  ghRefreshToken: '',
-}))
+Tables.extend('user', {
+  fields: {
+    ghAccessToken: { type: 'string', length: 50 },
+    ghRefreshToken: { type: 'string', length: 50 },
+  },
+})
 
-Channel.extend(() => ({
-  githubWebhooks: {},
-}))
+Tables.extend('channel', {
+  fields: {
+    githubWebhooks: { type: 'json', initial: {} },
+  },
+})
 
-Tables.extend('github', { primary: 'name' })
-
-Database.extend('@koishijs/plugin-mysql', ({ tables, Domain }) => {
-  tables.user.ghAccessToken = 'varchar(50)'
-  tables.user.ghRefreshToken = 'varchar(50)'
-  tables.channel.githubWebhooks = new Domain.Json('text', {})
-  tables.github = {
-    id: 'int',
-    name: 'varchar(50)',
-    secret: 'varchar(50)',
-  }
+Tables.extend('github', {
+  primary: 'name',
+  fields: {
+    id: { type: 'integer' },
+    name: { type: 'string', length: 50 },
+    secret: { type: 'string', length: 50 },
+  },
 })
 
 interface Repository {
