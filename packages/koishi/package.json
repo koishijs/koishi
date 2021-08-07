@@ -36,6 +36,7 @@
     "@types/koa": "*",
     "@types/koa__router": "*",
     "@types/ws": "^7.4.2",
+    "axios": "^0.21.1",
     "koa": "^2.13.1",
     "koa-bodyparser": "^4.3.0"
   }

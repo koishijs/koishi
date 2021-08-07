@@ -25,26 +25,19 @@ declare module 'koishi' {
 }
 
 Tables.extend('user', {
-  fields: {
-    ghAccessToken: { type: 'string', length: 50 },
-    ghRefreshToken: { type: 'string', length: 50 },
-  },
+  ghAccessToken: { type: 'string', length: 50 },
+  ghRefreshToken: { type: 'string', length: 50 },
 })
 
 Tables.extend('channel', {
-  fields: {
-    githubWebhooks: { type: 'json', initial: {} },
-  },
+  githubWebhooks: { type: 'json', initial: {} },
 })
 
 Tables.extend('github', {
-  primary: 'name',
-  fields: {
-    id: { type: 'integer' },
-    name: { type: 'string', length: 50 },
-    secret: { type: 'string', length: 50 },
-  },
-})
+  id: { type: 'integer' },
+  name: { type: 'string', length: 50 },
+  secret: { type: 'string', length: 50 },
+}, { primary: 'name' })
 
 interface Repository {
   name: string

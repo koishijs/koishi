@@ -26,6 +26,10 @@ export namespace Tables {
     initial?: T
   }
 
+  type Fields<O> = {
+    [K in keyof O]?: Field<O[K]>
+  }
+
   export interface Meta<O = any> {
     type?: 'random' | 'incremental'
     primary?: string & keyof O
@@ -33,23 +37,21 @@ export namespace Tables {
     foreign?: {
       [K in keyof O]?: [TableType, string]
     }
-    fields?: {
-      [K in keyof O]?: Field<O[K]>
-    }
+    fields?: Fields<O>
   }
 
   export const config: { [T in TableType]?: Meta<Tables[T]> } = {}
 
-  export function extend<T extends TableType>(name: T, meta?: Meta<Tables[T]>): void
-  export function extend(name: string, meta: Meta = {}) {
-    const { unique = [], foreign, fields } = config[name] || {}
+  export function extend<T extends TableType>(name: T, fields: Fields<Tables[T]>, meta?: Meta<Tables[T]>): void
+  export function extend(name: string, fields = {}, meta: Meta = {}) {
+    const oldConfig = config[name] || {}
     config[name] = {
       type: 'incremental',
       primary: 'id',
       ...meta,
-      unique: [...unique, ...meta.unique || []],
-      foreign: { ...foreign, ...meta.foreign },
-      fields: { ...fields, ...meta.fields },
+      unique: [...oldConfig.unique || [], ...meta.unique || []],
+      foreign: { ...oldConfig.foreign, ...meta.foreign },
+      fields: { ...oldConfig.fields, ...fields },
     }
   }
 
@@ -65,23 +67,19 @@ export namespace Tables {
   }
 
   extend('user', {
-    fields: {
-      id: { type: 'string', length: 50 },
-      name: { type: 'string', length: 50 },
-      flag: { type: 'unsigned', length: 20, initial: 0 },
-      authority: { type: 'unsigned', length: 4, initial: 0 },
-      usage: { type: 'json', initial: {} },
-      timers: { type: 'json', initial: {} },
-    },
+    id: { type: 'string', length: 50 },
+    name: { type: 'string', length: 50 },
+    flag: { type: 'unsigned', length: 20, initial: 0 },
+    authority: { type: 'unsigned', length: 4, initial: 0 },
+    usage: { type: 'json', initial: {} },
+    timers: { type: 'json', initial: {} },
   })
 
   extend('channel', {
-    fields: {
-      id: { type: 'string', length: 50 },
-      flag: { type: 'unsigned', length: 20, initial: 0 },
-      assignee: { type: 'string', length: 50 },
-      disable: { type: 'list', initial: [] },
-    },
+    id: { type: 'string', length: 50 },
+    flag: { type: 'unsigned', length: 20, initial: 0 },
+    assignee: { type: 'string', length: 50 },
+    disable: { type: 'list', initial: [] },
   })
 }
 
@@ -139,7 +137,7 @@ export namespace Query {
     return modifier || {}
   }
 
-  export interface Database {
+  export interface Methods {
     get<T extends TableType, K extends Field<T>>(table: T, query: Query<T>, modifier?: Modifier<K>): Promise<Pick<Tables[T], K>[]>
     remove<T extends TableType>(table: T, query: Query<T>): Promise<void>
     create<T extends TableType>(table: T, data: Partial<Tables[T]>): Promise<Tables[T]>
@@ -187,10 +185,7 @@ export namespace User {
     return result as User
   }
 
-  export interface Datbase {
-    getUser<K extends Field, T extends Index>(type: T, id: string, modifier?: Query.Modifier<K>): Promise<Pick<User, K | T>>
-    getUser<K extends Field, T extends Index>(type: T, ids: readonly string[], modifier?: Query.Modifier<K>): Promise<Pick<User, K>[]>
-    getUser<K extends Field, T extends Index>(type: T, id: MaybeArray<string>, modifier?: Query.Modifier<K>): Promise<any>
+  export interface Methods {
     setUser<T extends Index>(type: T, id: string, data: Partial<User>): Promise<void>
     createUser<T extends Index>(type: T, id: string, data: Partial<User>): Promise<void>
   }
@@ -198,6 +193,7 @@ export namespace User {
 
 export interface Channel {
   id: string
+  type: Platform
   flag: number
   assignee: string
   disable: string[]
@@ -232,7 +228,7 @@ export namespace Channel {
     return result
   }
 
-  export interface Database {
+  export interface Methods {
     getChannel<K extends Field>(type: Platform, id: string, modifier?: Query.Modifier<K>): Promise<Pick<Channel, K | 'id'>>
     getChannel<K extends Field>(type: Platform, ids: readonly string[], modifier?: Query.Modifier<K>): Promise<Pick<Channel, K>[]>
     getChannel<K extends Field>(type: Platform, id: MaybeArray<string>, modifier?: Query.Modifier<K>): Promise<any>
@@ -242,14 +238,23 @@ export namespace Channel {
   }
 }
 
-export interface Database extends Query.Database, User.Datbase, Channel.Database {}
+export interface Database extends Query.Methods, User.Methods, Channel.Methods {}
 
-type Methods<S, T> = {
-  [K in keyof S]?: S[K] extends (...args: infer R) => infer U ? (this: T, ...args: R) => U : S[K]
+export class Database {
+  getUser<K extends User.Field, T extends User.Index>(type: T, id: string, modifier?: Query.Modifier<K>): Promise<Pick<User, K | T>>
+  getUser<K extends User.Field, T extends User.Index>(type: T, ids: readonly string[], modifier?: Query.Modifier<K>): Promise<Pick<User, K>[]>
+  async getUser(type: User.Index, id: MaybeArray<string>, modifier?: Query.Modifier) {
+    const data = await this.get('user', { [type]: id }, modifier)
+    return Array.isArray(id) ? data : data[0] && { ...data[0], [type]: id }
+  }
 }
 
 export namespace Database {
   export interface Statics {}
+
+  type Methods<S, T> = {
+    [K in keyof S]?: S[K] extends (...args: infer R) => infer U ? (this: T, ...args: R) => U : S[K]
+  }
 
   type Constructor<T> = new (...args: any[]) => T
   type ExtensionMethods<T> = Methods<Database, T extends Constructor<infer I> ? I : never>

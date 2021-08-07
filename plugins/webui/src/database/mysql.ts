@@ -58,7 +58,7 @@ namespace Stat {
   export class Recorded<K extends string> extends Stat<K, StatRecord> {
     constructor(table: string, fields: readonly K[], preserve: boolean) {
       super(table, fields, preserve)
-      Tables.extend(table as never, { primary: 'time' })
+      Tables.extend(table as any, {}, { primary: 'time' })
       Database.extend('@koishijs/plugin-mysql', ({ tables, Domain }) => {
         tables[table] = Object.fromEntries(fields.map(key => [key, new Domain.Json()]))
         tables[table].time = 'datetime'

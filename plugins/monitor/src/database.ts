@@ -21,9 +21,7 @@ declare module 'koishi' {
 }
 
 Tables.extend('channel', {
-  fields: {
-    subscribe: { type: 'json', initial: {} },
-  },
+  subscribe: { type: 'json', initial: {} },
 })
 
 interface SubscribeOptions {
@@ -50,12 +48,9 @@ const subscribeKeys = [
 ] as SubscribeField[]
 
 Tables.extend('subscribe', {
-  type: 'incremental',
-  fields: {
-    id: { type: 'unsigned' },
-    names: { type: 'list' },
-  },
-})
+  id: { type: 'unsigned' },
+  names: { type: 'list' },
+}, { type: 'incremental' })
 
 Database.extend('@koishijs/plugin-mysql', {
   async getSubscribes(ids, keys = subscribeKeys) {

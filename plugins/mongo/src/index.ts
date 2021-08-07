@@ -42,34 +42,6 @@ function escapeKey<T extends Partial<User>>(doc: T) {
   return data
 }
 
-function unescapeKey<T extends Partial<User>>(data: T) {
-  if (data.timers) {
-    if (data.timers._date) {
-      data.timers.$date = data.timers._date
-      delete data.timers._date
-    }
-    for (const key in data.timers) {
-      if (key.includes('_')) {
-        data.timers[key.replace(/_/gmi, '.')] = data.timers[key]
-        delete data.timers[key]
-      }
-    }
-  }
-  if (data.usage) {
-    if (data.usage._date) {
-      data.usage.$date = data.usage._date
-      delete data.usage._date
-    }
-    for (const key in data.usage) {
-      if (key.includes('_')) {
-        data.usage[key.replace(/_/gmi, '.')] = data.usage[key]
-        delete data.usage[key]
-      }
-    }
-  }
-  return data
-}
-
 function createFilter<T extends TableType>(name: T, _query: Query<T>) {
   function transformQuery(query: Query.Expr) {
     const filter = {}, pending = []
@@ -153,7 +125,7 @@ Database.extend(MongoDatabase, {
       const [latest] = await this.db.collection(name).find().sort('_id', -1).limit(1).toArray()
       copy['_id'] = data[primary] = latest ? latest._id + 1 : 1
     } else if (type === 'random') {
-      copy['_id'] = data[primary] = Random.uuid()
+      copy['_id'] = data[primary] = Random.id()
     }
     await this.db.collection(name).insertOne(copy)
     return data
@@ -168,21 +140,6 @@ Database.extend(MongoDatabase, {
       bulk.find({ [key]: item[primary] }).updateOne({ $set: omit(item, [primary]) })
     }
     await bulk.execute()
-  },
-
-  async getUser(type, id, modifier) {
-    const { fields } = Query.resolveModifier(modifier)
-    const applyDefault = (user: User) => ({
-      ...pick(User.create(type, user[type]), fields),
-      ...unescapeKey(user),
-    })
-
-    const data = await this.get('user', { [type]: id }, modifier)
-    if (Array.isArray(id)) {
-      return data.map(applyDefault)
-    } else if (data[0]) {
-      return { ...applyDefault(data[0]), [type]: id }
-    }
   },
 
   async setUser(type, id, data) {
