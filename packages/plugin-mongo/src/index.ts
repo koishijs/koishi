@@ -120,7 +120,7 @@ Database.extend(MongoDatabase, {
     const filter = createFilter(name, query) as any
     const { primary } = Tables.config[name]
     if (!filter) return []
-    if (filter._id && !filter.$or) {
+    if (primary && filter._id && !filter.$or) {
       filter.$or = [{ [primary]: filter._id }, { _id: filter._id }]
       delete filter._id
     }
