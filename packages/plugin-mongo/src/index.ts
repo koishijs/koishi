@@ -117,19 +117,20 @@ function createFilter<T extends TableType>(name: T, _query: Query<T>) {
 
 Database.extend(MongoDatabase, {
   async get(name, query, modifier) {
-    const filter = createFilter(name, query)
+    const filter = createFilter(name, query) as any
+    const { primary } = Tables.config[name]
     if (!filter) return []
+    if (filter._id && !filter.$or) {
+      filter.$or = [{ [primary]: filter._id }, { _id: filter._id }]
+      delete filter._id
+    }
     let cursor = this.db.collection(name).find(filter)
     const { fields, limit, offset = 0 } = Query.resolveModifier(modifier)
-    const { primary } = Tables.config[name]
-    if (fields) {
-      fields.push(primary as any)
-      cursor = cursor.project(Object.fromEntries(fields.map(key => [key, 1])))
-    }
+    if (fields) cursor = cursor.project(Object.fromEntries(fields.map(key => [key, 1])))
     if (offset) cursor = cursor.skip(offset)
     if (limit) cursor = cursor.limit(offset + limit)
     const data = await cursor.toArray()
-    for (const item of data) item[primary] = item[primary] ?? item._id
+    if (fields?.includes(primary as any)) for (const item of data) item[primary] ??= item._id
     return data
   },
 
