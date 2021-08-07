@@ -117,19 +117,20 @@ function createFilter<T extends TableType>(name: T, _query: Query<T>) {
 
 Database.extend(MongoDatabase, {
   async get(name, query, modifier) {
-    const filter = createFilter(name, query)
+    const filter = createFilter(name, query) as any
+    const { primary } = Tables.config[name]
     if (!filter) return []
+    if (filter._id && !filter.$or) {
+      filter.$or = [{ [primary]: filter._id }, { _id: filter._id }]
+      delete filter._id
+    }
     let cursor = this.db.collection(name).find(filter)
     const { fields, limit, offset = 0 } = Query.resolveModifier(modifier)
-    const { primary } = Tables.config[name]
-    if (fields) {
-      fields.push(primary as any)
-      cursor = cursor.project(Object.fromEntries(fields.map(key => [key, 1])))
-    }
+    if (fields) cursor = cursor.project(Object.fromEntries(fields.map(key => [key, 1])))
     if (offset) cursor = cursor.skip(offset)
     if (limit) cursor = cursor.limit(offset + limit)
     const data = await cursor.toArray()
-    for (const item of data) item[primary] = item[primary] ?? item._id
+    if (fields?.includes(primary as any)) for (const item of data) item[primary] ??= item._id
     return data
   },
 
@@ -149,7 +150,7 @@ Database.extend(MongoDatabase, {
       const [latest] = await this.db.collection(name).find().sort('_id', -1).limit(1).toArray()
       copy['_id'] = data[primary] = latest ? latest._id + 1 : 1
     }
-    await this.db.collection(name).insertOne(copy)
+    await this.db.collection(name).insertOne(copy).catch(() => { })
     return data
   },
 
@@ -186,7 +187,7 @@ Database.extend(MongoDatabase, {
     const uid = (+udoc?.id || 0) + 1
     if (!Object.keys(data).length) {
       // @ts-ignore
-      await this.user.insertOne({ [type]: id, id: uid.toString() })
+      await this.user.insertOne({ [type]: id, id: uid.toString() }).catch(() => { })
       return
     }
     await this.user.updateOne(
@@ -242,7 +243,7 @@ Database.extend(MongoDatabase, {
   async setChannel(type, pid, data = {}) {
     if (!Object.keys(data).length) {
       // @ts-ignore
-      await this.channel.insertOne({ type, pid })
+      await this.channel.insertOne({ type, pid }).catch(() => { })
       return
     }
     await this.channel.updateOne({ type, pid }, { $set: data }, { upsert: true })
