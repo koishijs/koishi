@@ -70,7 +70,7 @@ export class MongoDatabase {
   connectionStringFromConfig() {
     const { authDatabase, connectOptions, host, name, password, port, protocol, username } = this.config
     let mongourl = `${protocol}://`
-    if (username) mongourl += `${username}${password ? `:${password}` : ''}@`
+    if (username) mongourl += `${username}${password ? `:${encodeURIComponent(password)}` : ''}@`
     mongourl += `${host}${port ? `:${port}` : ''}/${authDatabase || name}`
     if (connectOptions) {
       const params = new URLSearchParams(connectOptions)
