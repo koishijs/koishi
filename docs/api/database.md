@@ -4,7 +4,7 @@ sidebarDepth: 2
 
 # 数据库 (Database)
 
-## 数据类型
+## 内置表
 
 ### User
 
@@ -49,11 +49,14 @@ sidebarDepth: 2
 ### Tables.extend(name, config?)
 
 - **name:** `string` 数据表名
-- **config:** `TableMeta` 表的基本配置
+- **config:** `Table.Meta` 表的基本配置
   - **config.primary:** `string` 主键名，默认为 `'id'`
   - **config.unique:** `string[]` 值唯一的键名列表
+  - **config.fields:** `Record<string, Table.Field>` 字段信息
   - **config.type:** `string` 主键产生的方式，目前支持：
-    - `incremental`: 检测目前最大的主键值，并增加 1 作为新的主键值
+    - `incremental`: 检测目前最大的主键值，并增加 1 作为新的主键值，适用于数值类型的主键
+    - `random`: 产生一个随机字符串作为新的主键值，适用于字符串类型的主键
+    - 注意：如果你的主键值是用户指定的，那么你将不需要此项配置
 
 扩展一个新的数据表。
 
@@ -67,7 +70,58 @@ sidebarDepth: 2
 
 扩展数据库的功能。
 
-## 数据库对象
+## 数据类型
+
+数值类型会被用于 [`Tables.extend()`](#tables-extend-name-config)，其定义如下：
+
+```ts
+export interface Field<T> {
+  type: string
+  length?: number
+  nullable?: boolean
+  initial?: T
+  comment?: string
+}
+```
+
+::: tip
+- 默认情况下 `nullable` 为 `true`
+- 如果 `initial` 或默认初始值不为 `null`，则 `nullable` 默认为 `false`
+- 如果希望覆盖默认初始值的以上行为，可以将 `initial` 手动设置为 `null`
+:::
+
+### 数值类型
+
+| 名称 | TS 类型 | 默认长度 | 默认初始值 | 说明 |
+| :-: | :-: | :-: | :-: | :-: |
+| integer | `number` | 10 | `0` | 有符号整型数，长度决定了数据的范围 |
+| unsigned | `number` | 10 | `0` | 无符号整型数，长度决定了数据的范围 |
+| float | `number` | 固定长度 | `0` | 单精度浮点数 |
+| double | `number` | 固定长度 | `0` | 双精度浮点数 |
+
+### 字符串类型
+
+| 名称 | TS 类型 | 默认长度 | 默认初始值 | 说明 |
+| :-: | :-: | :-: | :-: | :-: |
+| char | `string` |  需手动设置 | `''` | 定长的字符串 |
+| string | `string` |  65536 | `''` | 变长的字符串 |
+
+### 时间类型
+
+| 名称 | TS 类型 | 默认长度 | 默认初始值 | 说明 |
+| :-: | :-: | :-: | :-: | :-: |
+| date | `Date` | 固定长度 | `null` | 日期值 |
+| time | `Date` | 固定长度 | `null` | 时间值 |
+| timestamp | `Date` |  固定长度 | `null` | 时间戳 |
+
+### 其他类型
+
+| 名称 | TS 类型 | 默认长度 | 默认初始值 | 说明 |
+| :-: | :-: | :-: | :-: | :-: |
+| json | `object` | 65536 | `null` | 可被序列化为 json 的结构化数据 |
+| list | `string[]` | 65536 | `[]` | 字符串构成的列表，序列化时以逗号分隔 |
+
+## ORM API
 
 一个 Database 对象代理了 Koishi 上下文绑定的应用实例有关的所有数据库访问。同时它具有注入特性，任何插件都可以自己定义数据库上的方法。本章主要介绍数据库的官方接口。注意：**它们并不由 Koishi 自身实现，而是由每个数据库分别实现的**。Koishi 只是提供了一套标准。
 
@@ -92,11 +146,13 @@ interface FieldQueryExpr<T> {
   $lt?: T
   $lte?: T
 }
+
 interface LogicalQueryExpr<T> {
   $or?: QueryExpr<T>[]
   $and?: QueryExpr<T>[]
   $not?: QueryExpr<T>
 }
+
 type QueryShorthand<T = IndexType> = T[] | RegExp
 type FieldQuery<T> = FieldQueryExpr<T> | QueryShorthand<T>
 type QueryExpr<T = any> = LogicalQueryExpr<T> & {
@@ -132,6 +188,8 @@ const rows = await ctx.database.get('schedule', {
 
 ### db.update(table, data, key?)
 
+## 数据库方法
+
 ### db.getUser(type, id, fields?)
 
 - **type:** `string` 平台名
@@ -146,14 +204,13 @@ const rows = await ctx.database.get('schedule', {
 :::
 
 ### db.setUser(type, id, data)
-### db.createUser(type, id, data)
 
 - **type:** `string` 平台名
 - **id:** `string` 用户标识符
 - **data:** `User` 要修改 / 添加的数据
 - 返回值: `Promise<void>`
 
-向数据库修改 / 添加用户数据。
+向数据库修改或添加用户数据。
 
 ### db.getChannel(type, id, fields?)
 
@@ -164,7 +221,7 @@ const rows = await ctx.database.get('schedule', {
 
 向数据库请求频道数据。如果传入的 id 是一个列表，则返回值也应当是一个列表。
 
-### db.getChannelList(fields?, type?, assignees?)
+### db.getAssignedChannels(fields?, type?, assignees?)
 
 - **fields:** `ChannelField[]` 请求的字段，默认为全部字段
 - **type:** `string` 平台名，默认为全平台
@@ -174,11 +231,10 @@ const rows = await ctx.database.get('schedule', {
 向数据库请求被特定机器人管理的所有频道数据。这里的两个参数可以写任意一个，都可以识别。
 
 ### db.setChannel(type, id, data)
-### db.createChannel(type, id, data)
 
 - **type:** `string` 平台名
 - **id:** `number` 频道标识符
 - **data:** `Channel` 要修改 / 添加的数据
 - 返回值: `Promise<void>`
 
-向数据库修改 / 添加频道数据。
+向数据库修改或添加频道数据。
