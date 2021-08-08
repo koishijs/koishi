@@ -15,4 +15,4 @@ function wrapFactory<F extends (...args: any) => any>(func: F) {
 }
 
 internal.setGlobal(config.loaderConfig.jsxFactory, wrapFactory(createElement))
-internal.setGlobal(config.loaderConfig.jsxFragment, wrapFactory(Fragment))
+internal.setGlobal(config.loaderConfig.jsxFragment, Fragment)

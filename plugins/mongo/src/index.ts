@@ -1,5 +1,5 @@
 import MongoDatabase, { Config } from './database'
-import { User, Tables, Database, Context, Channel, Random, pick, omit, TableType, Query } from 'koishi'
+import { User, Tables, Database, Field, Context, Channel, Random, pick, omit, TableType, Query } from 'koishi'
 
 export * from './database'
 export default MongoDatabase
@@ -90,7 +90,7 @@ function createFilter<T extends TableType>(name: T, _query: Query<T>) {
 
 function getFallbackType({ fields, primary }: Tables.Meta) {
   const { type } = fields[primary]
-  return type === 'string' ? 'random' : 'incremental'
+  return Field.stringTypes.includes(type) ? 'random' : 'incremental'
 }
 
 Database.extend(MongoDatabase, {
@@ -104,7 +104,11 @@ Database.extend(MongoDatabase, {
     if (limit) cursor = cursor.limit(offset + limit)
     const data = await cursor.toArray()
     const { primary } = Tables.config[name]
-    for (const item of data) item[primary] = item._id
+    if (fields.includes(primary as never)) {
+      for (const item of data) {
+        item[primary] ??= item._id
+      }
+    }
     return data
   },
 
@@ -127,7 +131,7 @@ Database.extend(MongoDatabase, {
     } else if (type === 'random') {
       copy['_id'] = data[primary] = Random.id()
     }
-    await this.db.collection(name).insertOne(copy)
+    await this.db.collection(name).insertOne(copy).catch(() => {})
     return data
   },
 

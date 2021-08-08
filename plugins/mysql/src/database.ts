@@ -1,5 +1,5 @@
 import { createPool, Pool, PoolConfig, escape as mysqlEscape, escapeId, format, OkPacket, TypeCast } from 'mysql'
-import { App, Database, Logger } from 'koishi'
+import { App, Database, Field, Logger } from 'koishi'
 import * as Koishi from 'koishi'
 import { types } from 'util'
 
@@ -37,7 +37,7 @@ function escape(value: any, table?: TableType, field?: string) {
   return mysqlEscape(stringify(value, table, field))
 }
 
-function getTypeDefinition({ type, length }: Koishi.Tables.Field) {
+function getTypeDefinition({ type, length }: Field) {
   switch (type) {
     case 'float':
     case 'double':
@@ -253,7 +253,7 @@ namespace MysqlDatabase {
   }
 
   /**
-   * @deprecated use `Tables.Field` instead
+   * @deprecated use `import('koishi-core').Field` instead
    */
   export const tables: Declarations = {
     user: {},
@@ -269,7 +269,7 @@ namespace MysqlDatabase {
   }
 
   /**
-   * @deprecated use `Tables.Field` instead
+   * @deprecated use `import('koishi-core').Field` instead
    */
   export namespace Domain {
     export function definition(domain: string | Domain) {
