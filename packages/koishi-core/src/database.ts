@@ -8,23 +8,30 @@ export interface Tables {
   channel: Channel
 }
 
-export namespace Tables {
-  type Unique<K> = (K | K[])[]
+export interface Field<T = any> {
+  type: Field.Type<T>
+  length?: number
+  nullable?: boolean
+  initial?: T
+}
 
-  type FieldType<T = any> =
+export namespace Field {
+  export const numberTypes: Type[] = ['integer', 'unsigned', 'float', 'double']
+  export const stringTypes: Type[] = ['char', 'string', 'text']
+  export const dateTypes: Type[] = ['timestamp', 'date', 'time']
+  export const objectTypes: Type[] = ['list', 'json']
+
+  export type Type<T = any> =
     | T extends number ? 'integer' | 'unsigned' | 'float' | 'double'
-    : T extends string ? 'string'
+    : T extends string ? 'char' | 'string' | 'text'
     : T extends Date ? 'timestamp' | 'date' | 'time'
     : T extends any[] ? 'list' | 'json'
     : T extends object ? 'json'
     : never
+}
 
-  export interface Field<T = any> {
-    type: FieldType<T>
-    length?: number
-    nullable?: boolean
-    initial?: T
-  }
+export namespace Tables {
+  type Unique<K> = (K | K[])[]
 
   export interface Meta<O = any> {
     type?: 'random' | 'incremental'

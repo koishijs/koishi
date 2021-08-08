@@ -1,5 +1,5 @@
 import MongoDatabase, { Config } from './database'
-import { User, Tables, Database, Context, Channel, Random, pick, omit, TableType, Query } from 'koishi-core'
+import { User, Tables, Database, Field, Context, Channel, Random, pick, omit, TableType, Query } from 'koishi-core'
 
 export * from './database'
 export default MongoDatabase
@@ -118,7 +118,7 @@ function createFilter<T extends TableType>(name: T, _query: Query<T>) {
 
 function getFallbackType({ fields, primary }: Tables.Meta) {
   const { type } = fields[primary]
-  return type === 'string' ? 'random' : 'incremental'
+  return Field.stringTypes.includes(type) ? 'random' : 'incremental'
 }
 
 Database.extend(MongoDatabase, {
