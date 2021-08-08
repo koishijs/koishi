@@ -46,9 +46,10 @@ sidebarDepth: 2
 
 创建一个新用户 / 频道数据对象。
 
-### Tables.extend(name, config?)
+### Tables.extend(name, fields, config?)
 
 - **name:** `string` 数据表名
+- **fields:** `Field.Config` 字段信息
 - **config:** `Table.Meta` 表的基本配置
   - **config.primary:** `string` 主键名，默认为 `'id'`
   - **config.unique:** `string[]` 值唯一的键名列表
@@ -68,6 +69,58 @@ sidebarDepth: 2
   - 如果传入一个函数，则会传入上述类构造器并立即执行
 
 扩展数据库的功能。
+
+## 数据类型
+
+数值类型会被用于 [`Tables.extend()`](#tables-extend-name-fields-config)，其定义如下：
+
+```ts
+export interface Field<T> {
+  type: string
+  length?: number
+  nullable?: boolean
+  initial?: T
+  comment?: string
+}
+```
+
+::: tip
+- 默认情况下 `nullable` 为 `true`
+- 如果 `initial` 或默认初始值不为 `null`，则 `nullable` 默认为 `false`
+- 如果希望覆盖默认初始值的以上行为，可以将 `initial` 手动设置为 `null`
+:::
+
+### 数值类型
+
+| 名称 | TS 类型 | 默认长度 | 默认初始值 | 说明 |
+| :-: | :-: | :-: | :-: | :-: |
+| integer | `number` | 10 | `0` | 有符号整型数，长度决定了数据的范围 |
+| unsigned | `number` | 10 | `0` | 无符号整型数，长度决定了数据的范围 |
+| float | `number` | 固定长度 | `0` | 单精度浮点数 |
+| double | `number` | 固定长度 | `0` | 双精度浮点数 |
+
+### 字符串类型
+
+| 名称 | TS 类型 | 默认长度 | 默认初始值 | 说明 |
+| :-: | :-: | :-: | :-: | :-: |
+| char | `string` | 64 | `''` | 定长的字符串 |
+| string | `string` | 256 | `''` | 变长的字符串 |
+| text | `string` | 65535 | `''` | 变长的字符串 |
+
+### 时间类型
+
+| 名称 | TS 类型 | 默认长度 | 默认初始值 | 说明 |
+| :-: | :-: | :-: | :-: | :-: |
+| date | `Date` | 固定长度 | `null` | 日期值 |
+| time | `Date` | 固定长度 | `null` | 时间值 |
+| timestamp | `Date` |  固定长度 | `null` | 时间戳 |
+
+### 其他类型
+
+| 名称 | TS 类型 | 默认长度 | 默认初始值 | 说明 |
+| :-: | :-: | :-: | :-: | :-: |
+| json | `object` | 65535 | `null` | 可被序列化为 json 的结构化数据 |
+| list | `string[]` | 65535 | `[]` | 字符串构成的列表，序列化时以逗号分隔 |
 
 ## ORM API
 

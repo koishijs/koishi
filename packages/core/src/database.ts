@@ -21,6 +21,12 @@ export namespace Field {
   export const dateTypes: Type[] = ['timestamp', 'date', 'time']
   export const objectTypes: Type[] = ['list', 'json']
 
+  type WithParam<S extends string> = S | `${S}(${any})`
+
+  export type Config<O> = {
+    [K in keyof O]?: Field<O[K]> | WithParam<Type<O[K]>>
+  }
+
   export type Type<T = any> =
     | T extends number ? 'integer' | 'unsigned' | 'float' | 'double'
     : T extends string ? 'char' | 'string' | 'text'
@@ -28,14 +34,18 @@ export namespace Field {
     : T extends any[] ? 'list' | 'json'
     : T extends object ? 'json'
     : never
+
+  const regexp = /^\w+(\(.+\))?$/
+
+  export function parse(definition: string) {
+    const capture = regexp.exec(definition)
+    if (!capture) throw new Error('invalid field definition')
+    return { type: capture[0], length: +capture[1] } as Field
+  }
 }
 
 export namespace Tables {
   type Unique<K> = (K | K[])[]
-
-  type Fields<O> = {
-    [K in keyof O]?: Field<O[K]>
-  }
 
   export interface Meta<O = any> {
     type?: 'random' | 'incremental'
@@ -44,12 +54,14 @@ export namespace Tables {
     foreign?: {
       [K in keyof O]?: [TableType, string]
     }
-    fields?: Fields<O>
+    fields?: {
+      [K in keyof O]?: Field<O[K]>
+    }
   }
 
   export const config: { [T in TableType]?: Meta<Tables[T]> } = {}
 
-  export function extend<T extends TableType>(name: T, fields: Fields<Tables[T]>, meta?: Meta<Tables[T]>): void
+  export function extend<T extends TableType>(name: T, fields: Field.Config<Tables[T]>, meta?: Meta<Tables[T]>): void
   export function extend(name: string, fields = {}, meta: Meta = {}) {
     const oldConfig = config[name] || {}
     config[name] = {
@@ -191,11 +203,6 @@ export namespace User {
     }
     return result as User
   }
-
-  export interface Methods {
-    setUser<T extends Index>(type: T, id: string, data: Partial<User>): Promise<void>
-    createUser<T extends Index>(type: T, id: string, data: Partial<User>): Promise<void>
-  }
 }
 
 export interface Channel {
@@ -245,7 +252,7 @@ export namespace Channel {
   }
 }
 
-export interface Database extends Query.Methods, User.Methods, Channel.Methods {}
+export interface Database extends Query.Methods, Channel.Methods {}
 
 export class Database {
   getUser<K extends User.Field, T extends User.Index>(type: T, id: string, modifier?: Query.Modifier<K>): Promise<Pick<User, K | T>>
@@ -253,6 +260,10 @@ export class Database {
   async getUser(type: User.Index, id: MaybeArray<string>, modifier?: Query.Modifier) {
     const data = await this.get('user', { [type]: id }, modifier)
     return Array.isArray(id) ? data : data[0] && { ...data[0], [type]: id }
+  }
+
+  setUser<T extends User.Index>(type: T, id: string, data: Partial<User>) {
+    return this.update('user', [{ ...data, [type]: id }], type)
   }
 }
 

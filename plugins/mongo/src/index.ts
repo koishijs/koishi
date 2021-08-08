@@ -154,10 +154,6 @@ Database.extend(MongoDatabase, {
     )
   },
 
-  async createUser(type, id, data) {
-    await this.setUser(type, id, data)
-  },
-
   async getChannel(type, pid, modifier) {
     modifier = Query.resolveModifier(modifier)
     const fields = modifier.fields.slice()

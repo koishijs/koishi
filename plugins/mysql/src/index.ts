@@ -128,16 +128,6 @@ Database.extend(MysqlDatabase, {
     )
   },
 
-  async getUser(type, id, modifier) {
-    const { fields } = Query.resolveModifier(modifier)
-    if (fields && !fields.length) {
-      return Array.isArray(id) ? id.map(id => ({ [type]: id })) : { [type]: id }
-    }
-    const data = await this.get('user', { [type]: id }, modifier)
-    if (Array.isArray(id)) return data
-    return data[0] && { ...data[0], [type]: id }
-  },
-
   async createUser(type, id, data) {
     data[type] = id
     const newKeys = Object.keys(data)

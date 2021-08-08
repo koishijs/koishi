@@ -256,8 +256,9 @@ async function prepareConfig(folders: string[]) {
 
 (async () => {
   const folders = await getPackages(args)
-  const buildTargets = folders.filter(name => !targets.includes(name))
-  const bundleTargets = folders.filter(name => targets.includes(name))
+  if (folders.includes('koishi')) folders.push('core', 'utils')
+  const buildTargets = folders.filter(name => !targets.includes(name) && !name.includes('ui-'))
+  const bundleTargets = folders.filter(name => targets.includes(name) && !name.includes('ui-'))
 
   await Promise.all([
     prepareConfig(buildTargets),

@@ -43,7 +43,7 @@ const KOISHI_VERSION = JSON.stringify(version)
 const root = resolve(__dirname, '..') + '/'
 
 async function compile(name: string) {
-  if (name.includes('.')) return
+  if (name.includes('.') || name.includes('ui-')) return
 
   const base = root + name
   const entryPoints = [base + '/src/index.ts']

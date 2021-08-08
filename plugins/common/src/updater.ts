@@ -150,7 +150,7 @@ Command.prototype.adminUser = function (this: Command, callback, autoCreate) {
           if (!autoCreate) return template('admin.user-not-found')
           const fallback = observe(User.create(platform, userId), async () => {
             if (!fallback.authority) return
-            await database.createUser(platform, userId, fallback)
+            await database.setUser(platform, userId, fallback)
           })
           target = fallback
         } else if (user.authority <= data.authority) {

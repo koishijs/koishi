@@ -256,7 +256,7 @@ export class Session<
     const fallback = User.create(this.platform, id)
     fallback.authority = authority
     if (authority) {
-      await this.database.createUser(this.platform, id, fallback)
+      await this.database.setUser(this.platform, id, fallback)
     }
     return fallback
   }

@@ -35,11 +35,15 @@ export default {
 }
 ```
 
+## ORM API
+
+请直接参见相关文档。
+
 ## 其他变动
 
 ### koishi-core
 
-- `ctx.all()` 被更名为 `ctx.any()`
+- `ctx.all()` 被更名为 `ctx.any()`，这是为了搭配新增的 `ctx.never()`
 - 移除了 `processMessage` 配置项，即取消了内置的将中文字符替换为简体字的机制
 
 ### koishi-utils

@@ -110,14 +110,6 @@ Database.extend(MemoryDatabase, {
     }
   },
 
-  async getUser(type, id, fields) {
-    if (Array.isArray(id)) {
-      return this.get('user', { [type]: id }, fields) as any
-    } else {
-      return (await this.get('user', { [type]: [id] }, fields))[0]
-    }
-  },
-
   async setUser(type, id, data) {
     const table = this.$table('user')
     const index = table.findIndex(row => row[type] === id)
