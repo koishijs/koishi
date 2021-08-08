@@ -1,5 +1,6 @@
 import * as utils from '@koishijs/utils'
 import { Platform } from './adapter'
+import { App } from './app'
 
 export type TableType = keyof Tables
 
@@ -61,7 +62,7 @@ export namespace Tables {
 
   export const config: { [T in TableType]?: Meta<Tables[T]> } = {}
 
-  export function extend<T extends TableType>(name: T, fields: Field.Config<Tables[T]>, meta?: Meta<Tables[T]>): void
+  export function extend<T extends TableType>(name: T, fields?: Field.Config<Tables[T]>, meta?: Meta<Tables[T]>): void
   export function extend(name: string, fields = {}, meta: Meta = {}) {
     const oldConfig = config[name] || {}
     config[name] = {
@@ -160,11 +161,11 @@ export namespace Query {
     get<T extends TableType, K extends Field<T>>(table: T, query: Query<T>, modifier?: Modifier<K>): Promise<Pick<Tables[T], K>[]>
     remove<T extends TableType>(table: T, query: Query<T>): Promise<void>
     create<T extends TableType>(table: T, data: Partial<Tables[T]>): Promise<Tables[T]>
-    update<T extends TableType>(table: T, data: Partial<Tables[T]>[], key?: Index<T>): Promise<void>
+    update<T extends TableType>(table: T, data: Partial<Tables[T]>[], key?: Index<T> | Index<T>[]): Promise<void>
   }
 }
 
-type MaybeArray<T> = T | readonly T[]
+type MaybeArray<T> = T | T[]
 
 export interface User extends Record<Platform, string> {
   id: string
@@ -207,7 +208,7 @@ export namespace User {
 
 export interface Channel {
   id: string
-  type: Platform
+  type: string
   flag: number
   assignee: string
   disable: string[]
@@ -243,27 +244,42 @@ export namespace Channel {
   }
 
   export interface Methods {
-    getChannel<K extends Field>(type: Platform, id: string, modifier?: Query.Modifier<K>): Promise<Pick<Channel, K | 'id'>>
-    getChannel<K extends Field>(type: Platform, ids: readonly string[], modifier?: Query.Modifier<K>): Promise<Pick<Channel, K>[]>
-    getChannel<K extends Field>(type: Platform, id: MaybeArray<string>, modifier?: Query.Modifier<K>): Promise<any>
     getAssignedChannels<K extends Field>(fields?: K[], assignMap?: Record<string, readonly string[]>): Promise<Pick<Channel, K>[]>
-    setChannel(type: Platform, id: string, data: Partial<Channel>): Promise<void>
-    createChannel(type: Platform, id: string, data: Partial<Channel>): Promise<void>
   }
 }
 
 export interface Database extends Query.Methods, Channel.Methods {}
 
-export class Database {
-  getUser<K extends User.Field, T extends User.Index>(type: T, id: string, modifier?: Query.Modifier<K>): Promise<Pick<User, K | T>>
-  getUser<K extends User.Field, T extends User.Index>(type: T, ids: readonly string[], modifier?: Query.Modifier<K>): Promise<Pick<User, K>[]>
+export abstract class Database {
+  abstract start(): void | Promise<void>
+  abstract stop(): void | Promise<void>
+
+  constructor(public app: App) {
+    app.before('connect', () => this.start())
+    app.before('disconnect', () => this.stop())
+  }
+
+  getUser<K extends User.Field, T extends string>(type: T, id: string, modifier?: Query.Modifier<K>): Promise<Pick<User, K> & Record<T, string>>
+  getUser<K extends User.Field>(type: string, ids: string[], modifier?: Query.Modifier<K>): Promise<Pick<User, K>[]>
   async getUser(type: User.Index, id: MaybeArray<string>, modifier?: Query.Modifier) {
     const data = await this.get('user', { [type]: id }, modifier)
     return Array.isArray(id) ? data : data[0] && { ...data[0], [type]: id }
   }
 
-  setUser<T extends User.Index>(type: T, id: string, data: Partial<User>) {
-    return this.update('user', [{ ...data, [type]: id }], type)
+  setUser(type: string, id: string, data: Partial<User>) {
+    return this.update('user', [{ ...data, [type]: id }], type as never)
+  }
+
+  getChannel<K extends Channel.Field>(type: string, id: string, modifier?: Query.Modifier<K>): Promise<Pick<Channel, K | 'id' | 'type'>>
+  getChannel<K extends Channel.Field>(type: string, ids: string[], modifier?: Query.Modifier<K>): Promise<Pick<Channel, K>[]>
+  async getChannel(type: string, id: MaybeArray<string>, modifier?: Query.Modifier<Channel.Field>) {
+    const data = await this.get('channel', { type, id }, modifier)
+    return Array.isArray(id) ? data : data[0] && { ...data[0], type, id }
+  }
+
+  setChannel(type: string, id: string, data: Partial<Channel>) {
+    // TODO: use primary key (type, id) by default
+    return this.update('channel', [{ ...data, type, id }], ['type', 'id'])
   }
 }
 

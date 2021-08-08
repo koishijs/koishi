@@ -2,8 +2,8 @@ import { AppOptions, App, Adapter, Session, Bot, AuthorInfo, pick } from 'koishi
 import { assert } from 'chai'
 import { Socket } from 'net'
 import { format } from 'util'
+import * as database from '@koishijs/plugin-database'
 import * as http from 'http'
-import * as memory from './memory'
 
 export const BASE_SELF_ID = '514'
 
@@ -104,7 +104,7 @@ export class MockedApp extends App {
     this.server = this.adapters.mock as any
 
     if (options.mockStart !== false) this.status = App.Status.open
-    if (options.mockDatabase) this.plugin(memory)
+    if (options.mockDatabase) this.plugin(database)
   }
 
   get selfId() {

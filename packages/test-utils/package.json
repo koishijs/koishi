@@ -33,14 +33,14 @@
     "unit",
     "utilities"
   ],
-  "dependencies": {
-    "chai": "^4.3.4",
-    "chai-as-promised": "^7.1.1",
-    "@koishijs/core": "^4.0.0-alpha.0",
-    "@koishijs/utils": "^5.0.0-alpha.0"
-  },
   "devDependencies": {
     "@types/chai": "^4.2.17",
     "@types/chai-as-promised": "^7.1.3"
+  },
+  "dependencies": {
+    "@koishijs/plugin-database": "^1.0.0-alpha.0",
+    "chai": "^4.3.4",
+    "chai-as-promised": "^7.1.1",
+    "koishi": "^4.0.0-alpha.0"
   }
 }

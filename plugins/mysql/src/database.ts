@@ -17,8 +17,6 @@ const logger = new Logger('mysql')
 
 export interface Config extends PoolConfig {}
 
-interface MysqlDatabase extends Database {}
-
 function stringify(value: any, table?: TableType, field?: string) {
   const type = MysqlDatabase.tables[table]?.[field]
   if (typeof type === 'object') return type.stringify(value)
@@ -52,7 +50,7 @@ function getTypeDefinition({ type, length }: Field) {
   }
 }
 
-class MysqlDatabase {
+class MysqlDatabase extends Database {
   public pool: Pool
   public config: Config
 
@@ -71,6 +69,7 @@ class MysqlDatabase {
   }
 
   constructor(public app: App, config?: Config) {
+    super(app)
     this.config = {
       database: 'koishi',
       charset: 'utf8mb4_general_ci',

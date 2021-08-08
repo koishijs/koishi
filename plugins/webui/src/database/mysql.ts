@@ -85,7 +85,7 @@ namespace Stat {
   export class Numerical<K extends string> extends Stat<K, number> {
     constructor(table: string, fields: readonly K[], preserve: boolean) {
       super(table, fields, preserve)
-      Tables.extend(table as never, { primary: 'time' })
+      Tables.extend(table as any, {}, { primary: 'time' })
       Database.extend('@koishijs/plugin-mysql', ({ tables }) => {
         tables[table] = Object.fromEntries(fields.map(key => [key, 'int unsigned']))
         tables[table].time = 'datetime'

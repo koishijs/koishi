@@ -205,8 +205,10 @@ Database.extend(MongoDatabase, {
 export const name = 'mongo'
 
 export function apply(ctx: Context, config: Config) {
-  const db = new MongoDatabase(ctx.app, { host: 'localhost', name: 'koishi', protocol: 'mongodb', ...config })
-  ctx.database = db as any
-  ctx.before('connect', () => db.start())
-  ctx.before('disconnect', () => db.stop())
+  ctx.database = new MongoDatabase(ctx.app, {
+    host: 'localhost',
+    name: 'koishi',
+    protocol: 'mongodb',
+    ...config,
+  })
 }

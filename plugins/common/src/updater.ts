@@ -199,7 +199,7 @@ Command.prototype.adminChannel = function (this: Command, callback, autoCreate) 
         if (!autoCreate) return template('admin.channel-not-found')
         const fallback = observe(Channel.create(platform, channelId), async () => {
           if (!fallback.assignee) return
-          await database.createChannel(platform, channelId, fallback)
+          await database.setChannel(platform, channelId, fallback)
         })
         target = fallback
       } else {

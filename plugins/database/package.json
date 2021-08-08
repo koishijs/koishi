@@ -1,0 +1,34 @@
+{
+  "name": "@koishijs/plugin-database",
+  "description": "A basic database implementation for Koishi",
+  "version": "1.0.0-alpha.0",
+  "main": "lib/index.js",
+  "typings": "lib/index.d.ts",
+  "files": [
+    "lib"
+  ],
+  "author": "Shigma <1700011071@pku.edu.cn>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/koishijs/koishi.git"
+  },
+  "bugs": {
+    "url": "https://github.com/koishijs/koishi/issues"
+  },
+  "homepage": "https://koishi.js.org/plugins/other/database",
+  "keywords": [
+    "bot",
+    "qqbot",
+    "cqhttp",
+    "coolq",
+    "chatbot",
+    "koishi",
+    "plugin",
+    "database",
+    "server"
+  ],
+  "peerDependencies": {
+    "koishi": "^4.0.0-alpha.0"
+  }
+}

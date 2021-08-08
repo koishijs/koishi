@@ -100,7 +100,7 @@ async function bundle(path: string) {
         }
       })
     } else if (line.startsWith('///')) {
-      if (!corePackages.includes(path)) prolog += line + EOL
+      if (!corePackages.includes(path) && line !== referenceHack) prolog += line + EOL
     } else if (line.startsWith('    export default ')) {
       return current === 'index'
     } else {
@@ -163,10 +163,12 @@ async function wrapModule(name: string, source: string, target: string) {
   )
 }
 
+const referenceHack = '/// <reference types="koishi/lib/koishi" />'
+
 async function bundleNode() {
   let cap: RegExpExecArray
   const typings = await compile('packages/koishi', resolve(cwd, 'packages/koishi/temp/index.d.ts'))
-  const prolog = ['/// <reference types="./koishi" />']
+  const prolog = [referenceHack]
   const modules: Record<string, string[]> = {}
   let current: string
   for (const line of typings.split(EOL)) {

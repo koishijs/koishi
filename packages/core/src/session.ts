@@ -214,7 +214,7 @@ export class Session<
     const fallback = Channel.create(this.platform, id)
     fallback.assignee = assignee
     if (assignee) {
-      await this.database.createChannel(this.platform, id, fallback)
+      await this.database.setChannel(this.platform, id, fallback)
     }
     return fallback
   }

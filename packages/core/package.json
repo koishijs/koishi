@@ -33,7 +33,6 @@
     "@koishijs/test-utils": "^7.0.0-alpha.0"
   },
   "dependencies": {
-    "@koishijs/orm": "^1.0.0-alpha.0",
     "@koishijs/utils": "^5.0.0-alpha.0",
     "fastest-levenshtein": "^1.0.12"
   }

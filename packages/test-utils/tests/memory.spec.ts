@@ -21,7 +21,7 @@ interface FooData {
 
 Tables.extend('foo')
 
-Database.extend('@koishijs/test-utils', {
+Database.extend('@koishijs/plugin-database', {
   async createFoo(data: FooData) {
     return this.create('foo', data)
   },

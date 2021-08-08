@@ -1,5 +1,5 @@
 import MysqlDatabase, { Config, TableType } from './database'
-import { User, Channel, Database, Context, Query, difference } from 'koishi'
+import { Channel, Database, Context, Query, difference } from 'koishi'
 import { OkPacket, escapeId, escape } from 'mysql'
 
 export * from './database'
@@ -128,21 +128,21 @@ Database.extend(MysqlDatabase, {
     )
   },
 
-  async createUser(type, id, data) {
-    data[type] = id
-    const newKeys = Object.keys(data)
-    const assignments = difference(newKeys, [type]).map((key) => {
-      key = this.escapeId(key)
-      return `${key} = VALUES(${key})`
-    }).join(', ')
-    const user = Object.assign(User.create(type, id), data)
-    const keys = Object.keys(user)
-    await this.query(
-      `INSERT INTO ?? (${this.joinKeys(keys)}) VALUES (${keys.map(() => '?').join(', ')})
-      ON DUPLICATE KEY UPDATE ${assignments}`,
-      ['user', ...this.formatValues('user', user, keys)],
-    )
-  },
+  // async createUser(type, id, data) {
+  //   data[type] = id
+  //   const newKeys = Object.keys(data)
+  //   const assignments = difference(newKeys, [type]).map((key) => {
+  //     key = this.escapeId(key)
+  //     return `${key} = VALUES(${key})`
+  //   }).join(', ')
+  //   const user = Object.assign(User.create(type, id), data)
+  //   const keys = Object.keys(user)
+  //   await this.query(
+  //     `INSERT INTO ?? (${this.joinKeys(keys)}) VALUES (${keys.map(() => '?').join(', ')})
+  //     ON DUPLICATE KEY UPDATE ${assignments}`,
+  //     ['user', ...this.formatValues('user', user, keys)],
+  //   )
+  // },
 
   async setUser(type, id, data) {
     data[type] = id
@@ -204,8 +204,5 @@ Database.extend(MysqlDatabase, {
 export const name = 'mysql'
 
 export function apply(ctx: Context, config: Config = {}) {
-  const db = new MysqlDatabase(ctx.app, config)
-  ctx.database = db
-  ctx.before('connect', () => db.start())
-  ctx.before('disconnect', () => db.stop())
+  ctx.database = new MysqlDatabase(ctx.app, config)
 }

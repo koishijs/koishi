@@ -22,9 +22,7 @@ export interface Config {
   uri?: string
 }
 
-export interface MongoDatabase extends Database {}
-
-export class MongoDatabase {
+export class MongoDatabase extends Database {
   public config: Config
   public client: MongoClient
   public db: Db
@@ -35,6 +33,7 @@ export class MongoDatabase {
   channel: Collection<Channel>
 
   constructor(public app: App, config?: Config) {
+    super(app)
     this.config = {
       host: 'localhost',
       name: 'koishi',
