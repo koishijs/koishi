@@ -1,5 +1,5 @@
 import puppeteer, { Browser, ElementHandle, Page, Shooter, Viewport } from 'puppeteer-core'
-import { Context, Logger, noop, segment } from 'koishi-core'
+import { Context, Logger, noop, segment, hyphenate } from 'koishi-core'
 import { escape } from 'querystring'
 import { PNG } from 'pngjs'
 import { resolve } from 'path'
@@ -64,6 +64,7 @@ export interface Config {
   idleTimeout?: number
   maxLength?: number
   protocols?: string[]
+  bodyStyle?: Record<string, string>
 }
 
 enum Status { close, opening, open, closing }
@@ -134,6 +135,10 @@ export const defaultConfig: Config = {
     width: 800,
     height: 600,
     deviceScaleFactor: 2,
+  },
+  bodyStyle: {
+    display: 'inline-block',
+    padding: '0.25rem 0.375rem',
   },
 }
 
@@ -268,8 +273,12 @@ export function apply(ctx: Context, config: Config = {}) {
     ctx.before('eval/send', (content) => {
       return segment.transformAsync(content, {
         async fragment({ content }) {
+          const style = Object
+            .entries(config.bodyStyle)
+            .map(([key, value]) => `${hyphenate(key)}: ${value};`)
+            .join('')
           return await ctx.puppeteer.render(`<!doctype html>
-            <html><body style="display: inline-block; padding: 0.25rem 0.375rem">${content}</body></html>
+            <html><body style="${style}">${content}</body></html>
           `, async (page, next) => next(await page.$('body')))
         },
       })
