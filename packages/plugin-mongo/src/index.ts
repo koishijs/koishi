@@ -1,5 +1,5 @@
 import MongoDatabase, { Config } from './database'
-import { User, Tables, Database, Context, Channel, pick, omit, TableType, Query } from 'koishi-core'
+import { User, Tables, Database, Field, Context, Channel, Random, pick, omit, TableType, Query } from 'koishi-core'
 
 export * from './database'
 export default MongoDatabase
@@ -115,6 +115,11 @@ function createFilter<T extends TableType>(name: T, _query: Query<T>) {
   return filter
 }
 
+function getFallbackType({ fields, primary }: Tables.Meta) {
+  const { type } = fields[primary]
+  return Field.stringTypes.includes(type) ? 'random' : 'incremental'
+}
+
 Database.extend(MongoDatabase, {
   async get(name, query, modifier) {
     const filter = createFilter(name, query) as any
@@ -130,7 +135,11 @@ Database.extend(MongoDatabase, {
     if (offset) cursor = cursor.skip(offset)
     if (limit) cursor = cursor.limit(offset + limit)
     const data = await cursor.toArray()
-    if (fields?.includes(primary as any)) for (const item of data) item[primary] ??= item._id
+    if (fields.includes(primary as never)) {
+      for (const item of data) {
+        item[primary] ??= item._id
+      }
+    }
     return data
   },
 
@@ -141,7 +150,8 @@ Database.extend(MongoDatabase, {
   },
 
   async create(name, data: any) {
-    const { primary, type } = Tables.config[name]
+    const meta = Tables.config[name]
+    const { primary, type = getFallbackType(meta) } = meta
     const copy = { ...data }
     if (copy[primary]) {
       copy['_id'] = copy[primary]
@@ -149,8 +159,10 @@ Database.extend(MongoDatabase, {
     } else if (type === 'incremental') {
       const [latest] = await this.db.collection(name).find().sort('_id', -1).limit(1).toArray()
       copy['_id'] = data[primary] = latest ? latest._id + 1 : 1
+    } else if (type === 'random') {
+      copy['_id'] = data[primary] = Random.uuid()
     }
-    await this.db.collection(name).insertOne(copy).catch(() => { })
+    await this.db.collection(name).insertOne(copy).catch(() => {})
     return data
   },
 

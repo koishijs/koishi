@@ -24,10 +24,7 @@ interface TableConfig<O> {
 }
 
 export class MemoryDatabase {
-  $store: { [K in TableType]?: Tables[K][] } = {
-    user: [],
-    channel: [],
-  }
+  $store: { [K in TableType]?: Tables[K][] } = {}
 
   memory = this
 
@@ -36,10 +33,7 @@ export class MemoryDatabase {
   constructor(public app: App, public config: MemoryConfig) {}
 
   $table<K extends TableType>(table: K): any[] {
-    if (!this.$store[table]) {
-      this.$store[table] = []
-    }
-    return this.$store[table]
+    return this.$store[table] ||= []
   }
 
   $count<K extends TableType>(table: K, field: keyof Tables[K] = 'id') {
