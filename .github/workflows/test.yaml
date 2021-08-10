@@ -41,4 +41,4 @@ jobs:
           file: ./coverage/coverage-final.json
           name: codecov
       - name: Publish
-        run: npx ts-node build/publish
+        run: yarn pub
