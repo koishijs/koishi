@@ -34,7 +34,7 @@
     "koishi": "^4.0.0-alpha.0"
   },
   "dependencies": {
-    "@types/mysql": "^2.15.18",
+    "@types/mysql": "^2.15.19",
     "mysql": "^2.18.1"
   }
 }

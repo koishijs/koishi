@@ -39,8 +39,8 @@
     "koishi": "^4.0.0-alpha.0"
   },
   "dependencies": {
-    "@octokit/webhooks-types": "^3.75.2",
+    "@octokit/webhooks-types": "^4.3.0",
     "axios": "^0.21.1",
-    "marked": "^2.0.3"
+    "marked": "^2.1.3"
   }
 }

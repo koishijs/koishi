@@ -44,7 +44,7 @@
     "sass": "^1.32.12",
     "vite": "^2.2.4",
     "vue": "^3.0.11",
-    "vue-echarts": "^6.0.0-rc.5",
+    "vue-echarts": "^6.0.0",
     "vue-router": "^4.0.5"
   },
   "dependencies": {

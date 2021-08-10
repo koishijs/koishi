@@ -33,10 +33,10 @@
     "@koishijs/test-utils": "^7.0.0-alpha.0"
   },
   "dependencies": {
-    "@koa/router": "^10.0.0",
-    "@types/koa__router": "^8.0.4",
-    "@types/lru-cache": "^5.1.0",
-    "@types/ws": "^7.4.2",
+    "@koa/router": "^10.1.0",
+    "@types/koa__router": "^8.0.7",
+    "@types/lru-cache": "^5.1.1",
+    "@types/ws": "^7.4.7",
     "axios": "^0.21.1",
     "fastest-levenshtein": "^1.0.12",
     "koa": "^2.13.1",

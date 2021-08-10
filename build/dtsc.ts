@@ -121,7 +121,7 @@ async function bundle(path: string) {
       return line
         .replace(internalImport, '')
         .replace(/import\("index"\)/g, "import('.')")
-        .replace(/^((module|(abstract )?class|namespace) .+ \{)$/, (_) => `declare ${_}`)
+        .replace(/^(module|class|namespace|const) /, (_) => `declare ${_}`)
     } else {
       return ''
     }
