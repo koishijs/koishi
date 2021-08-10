@@ -1,7 +1,7 @@
-import MysqlDatabase, { Config, escape, TableType } from './database'
+import MysqlDatabase, { Config, TableType } from './database'
 import { User, Channel, Database, Context, Query } from 'koishi-core'
 import { difference } from 'koishi-utils'
-import { OkPacket, escapeId } from 'mysql'
+import { OkPacket, escapeId, escape } from 'mysql'
 
 export * from './database'
 export default MysqlDatabase
@@ -96,7 +96,7 @@ Database.extend(MysqlDatabase, {
     if (filter === '0') return []
     const { fields, limit, offset } = Query.resolveModifier(modifier)
     const keys = this.joinKeys(this.inferFields(name, fields))
-    let sql = `SELECT ${keys} FROM ${name} WHERE ${filter}`
+    let sql = `SELECT ${keys} FROM ${name} _${name} WHERE ${filter}`
     if (limit) sql += ' LIMIT ' + limit
     if (offset) sql += ' OFFSET ' + offset
     return this.query(sql)
@@ -210,24 +210,6 @@ Database.extend(MysqlDatabase, {
     }).join(', ')
     await this.query(`UPDATE ?? SET ${assignments} WHERE ?? = ?`, ['channel', 'id', data.id])
   },
-})
-
-Database.extend(MysqlDatabase, ({ tables, Domain }) => {
-  tables.user = {
-    id: new Domain.String(`bigint(20) unsigned not null auto_increment`),
-    name: `varchar(50) null default null collate 'utf8mb4_general_ci'`,
-    flag: `bigint(20) unsigned not null default '0'`,
-    authority: `tinyint(4) unsigned not null default '0'`,
-    usage: new Domain.Json(),
-    timers: new Domain.Json(),
-  }
-
-  tables.channel = {
-    id: `varchar(50) not null`,
-    flag: `bigint(20) unsigned not null default '0'`,
-    assignee: `varchar(50) null`,
-    disable: new Domain.Array(),
-  }
 })
 
 export const name = 'mysql'
