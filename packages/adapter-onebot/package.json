@@ -27,17 +27,17 @@
     "koishi"
   ],
   "peerDependencies": {
-    "koishi-core": "^3.13.0"
+    "koishi-core": "^3.13.1"
   },
   "devDependencies": {
-    "@types/ws": "^7.4.2",
+    "@types/ws": "^7.4.7",
     "get-port": "^5.1.1",
-    "koishi-test-utils": "^6.1.0"
+    "koishi-test-utils": "^6.2.0"
   },
   "dependencies": {
     "axios": "^0.21.1",
-    "koishi-utils": "^4.2.3",
-    "qface": "1.1.0",
-    "ws": "^7.4.5"
+    "koishi-utils": "^4.2.4",
+    "qface": "^1.2.0",
+    "ws": "^8.0.0"
   }
 }

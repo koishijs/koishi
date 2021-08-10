@@ -18,14 +18,14 @@
   },
   "homepage": "https://github.com/koishijs/koishi#readme",
   "devDependencies": {
-    "@types/qrcode": "^1.4.0"
+    "@types/qrcode": "^1.4.1"
   },
   "peerDependencies": {
-    "koishi-core": "^3.13.0"
+    "koishi-core": "^3.13.1"
   },
   "dependencies": {
     "axios": "^0.21.1",
-    "cheerio": "^1.0.0-rc.6",
+    "cheerio": "^1.0.0-rc.10",
     "qrcode": "^1.4.4",
     "xml-js": "^1.6.11"
   }

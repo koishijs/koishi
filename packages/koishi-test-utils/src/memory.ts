@@ -24,10 +24,7 @@ interface TableConfig<O> {
 }
 
 export class MemoryDatabase {
-  $store: { [K in TableType]?: Tables[K][] } = {
-    user: [],
-    channel: [],
-  }
+  $store: { [K in TableType]?: Tables[K][] } = {}
 
   memory = this
 
@@ -36,10 +33,7 @@ export class MemoryDatabase {
   constructor(public app: App, public config: MemoryConfig) {}
 
   $table<K extends TableType>(table: K): any[] {
-    if (!this.$store[table]) {
-      this.$store[table] = []
-    }
-    return this.$store[table]
+    return this.$store[table] ||= []
   }
 
   $count<K extends TableType>(table: K, field: keyof Tables[K] = 'id') {
@@ -61,7 +55,7 @@ const queryOperators: ([string, (data: any, value: any) => boolean])[] = Object.
 })
 
 Database.extend(MemoryDatabase, {
-  async get(name, query, fields) {
+  async get(name, query, modifier) {
     function executeQuery(query: Query.Expr, data: any): boolean {
       const entries: [string, any][] = Object.entries(query)
       return entries.every(([key, value]) => {
@@ -85,10 +79,11 @@ Database.extend(MemoryDatabase, {
     }
 
     const expr = Query.resolve(name, query)
+    const { fields, limit = Infinity, offset = 0 } = Query.resolveModifier(modifier)
     return this.$table(name)
       .filter(row => executeQuery(expr, row))
-      .map(row => fields ? pick(row, fields) : row)
-      .map(clone)
+      .map(row => clone(pick(row, fields)))
+      .slice(offset, offset + limit)
   },
 
   async remove(name, query) {
@@ -158,7 +153,7 @@ Database.extend(MemoryDatabase, {
     return this.$table('channel').filter((row) => {
       const [type] = row.id.split(':')
       return assignMap[type]?.includes(row.assignee)
-    })
+    }).map(row => clone(pick(row, fields)))
   },
 
   async setChannel(type, id, data) {

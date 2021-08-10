@@ -135,8 +135,9 @@ $msgbox-left: 4.2rem;
   margin-left: $msgbox-left;
   width: fit-content;
   border-radius: 0.5rem;
-  background-color: white;
+  background-color: var(--c-bg);
   word-break: break-all;
+  transition: background-color ease 0.3s;
 
   .chat-message:not(.no-padding) &{
     padding: 0.5rem 0.7rem;
@@ -165,7 +166,8 @@ $msgbox-left: 4.2rem;
     border-bottom-width: 8px;
     border-bottom-color: currentColor;
     border-radius: 0 0 0 32px;
-    color: white;
+    color: var(--c-bg);
+    transition: color ease 0.3s;
   }
 
   p {
@@ -179,7 +181,9 @@ $msgbox-left: 4.2rem;
     border: none;
     border-radius: 0.5rem;
     padding: 0.2rem 0.6rem;
-    color: grayscale(10%);
+    background-color: var(--c-bg-light);
+    color: var(--c-text-lighter);
+    transition: background-color ease 0.3s, color ease 0.3s;
   }
 }
 

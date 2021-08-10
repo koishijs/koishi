@@ -5,7 +5,7 @@ import { BotOptions, Adapter, createBots } from './adapter'
 import { Channel, User } from './database'
 import validate, { Command } from './command'
 import { Session } from './session'
-import help, { getCommandNames } from './help'
+import help, { getCommandNames, HelpConfig } from './help'
 import LruCache from 'lru-cache'
 import { AxiosRequestConfig } from 'axios'
 import { Server, createServer } from 'http'
@@ -28,6 +28,7 @@ export interface AppOptions extends BotOptions {
   prettyErrors?: boolean
   processMessage?: (message: string) => string
   delay?: DelayOptions
+  help?: boolean | HelpConfig
   autoAssign?: boolean | ((session: Session) => boolean)
   autoAuthorize?: number | ((session: Session) => number)
   userCacheAge?: number
@@ -147,7 +148,7 @@ export class App extends Context {
     })
 
     this.plugin(validate)
-    this.plugin(help)
+    this.plugin(help, options.help)
   }
 
   createServer() {
