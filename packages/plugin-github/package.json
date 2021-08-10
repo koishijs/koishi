@@ -29,7 +29,7 @@
     "webhook"
   ],
   "devDependencies": {
-    "@types/marked": "^2.0.2",
+    "@types/marked": "^2.0.4",
     "koishi-plugin-mongo": "^2.3.0",
     "koishi-plugin-mysql": "^3.4.0",
     "koishi-plugin-puppeteer": "^2.1.4",
@@ -39,8 +39,8 @@
     "koishi-core": "^3.13.0"
   },
   "dependencies": {
-    "@octokit/webhooks-types": "^3.75.2",
+    "@octokit/webhooks-types": "^4.3.0",
     "axios": "^0.21.1",
-    "marked": "^2.0.3"
+    "marked": "^2.1.3"
   }
 }

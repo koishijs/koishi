@@ -32,23 +32,23 @@
     "koishi-core": "^3.13.0"
   },
   "devDependencies": {
-    "@fortawesome/fontawesome-free": "^5.15.3",
-    "@vitejs/plugin-vue": "^1.2.2",
-    "@vue/compiler-sfc": "^3.0.11",
-    "echarts": "^5.1.1",
+    "@fortawesome/fontawesome-free": "^5.15.4",
+    "@vitejs/plugin-vue": "^1.4.0",
+    "@vue/compiler-sfc": "^3.2.1",
+    "echarts": "^5.1.2",
     "echarts-wordcloud": "^2.0.0",
     "koishi-plugin-mongo": "^2.3.0",
     "koishi-plugin-mysql": "^3.4.0",
     "koishi-test-utils": "^6.1.0",
-    "sass": "^1.32.12",
-    "vite": "^2.2.4",
+    "sass": "^1.37.5",
+    "vite": "^2.4.4",
     "vue": "^3.0.11",
-    "vue-echarts": "^6.0.0-rc.5",
+    "vue-echarts": "^6.0.0",
     "vue-router": "^4.0.5"
   },
   "dependencies": {
     "semver": "^7.3.5",
-    "systeminformation": "^5.6.14",
-    "ws": "^7.4.5"
+    "systeminformation": "^5.8.0",
+    "ws": "^8.0.0"
   }
 }

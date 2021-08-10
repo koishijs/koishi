@@ -28,7 +28,7 @@
     "utilities"
   ],
   "devDependencies": {
-    "@types/supports-color": "^8.1.0",
+    "@types/supports-color": "^8.1.1",
     "koishi-test-utils": "^6.1.0"
   },
   "dependencies": {
