@@ -11,13 +11,13 @@
     "build": "vuepress build ."
   },
   "devDependencies": {
-    "@vuepress/plugin-docsearch": "^2.0.0-beta.12",
-    "@vuepress/plugin-pwa": "^2.0.0-beta.12",
-    "@vuepress/plugin-register-components": "^2.0.0-beta.12",
+    "@vuepress/plugin-docsearch": "^2.0.0-beta.23",
+    "@vuepress/plugin-pwa": "^2.0.0-beta.23",
+    "@vuepress/plugin-register-components": "^2.0.0-beta.23",
     "diacritics": "^1.3.0",
     "shiki": "^0.9.6",
     "typescript": "^4.3.5",
     "vuepress-plugin-medium-zoom": "^1.1.9",
-    "vuepress-vite": "^2.0.0-beta.12"
+    "vuepress-vite": "^2.0.0-beta.23"
   }
 }

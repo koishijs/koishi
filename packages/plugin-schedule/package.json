@@ -1,7 +1,7 @@
 {
   "name": "koishi-plugin-schedule",
   "description": "Create scheduled tasks for Koishi",
-  "version": "3.0.5",
+  "version": "3.0.6",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -29,11 +29,11 @@
     "task"
   ],
   "devDependencies": {
-    "koishi-plugin-mongo": "^2.3.0",
-    "koishi-plugin-mysql": "^3.4.0",
-    "koishi-test-utils": "^6.1.0"
+    "koishi-plugin-mongo": "^2.4.0",
+    "koishi-plugin-mysql": "^3.5.0",
+    "koishi-test-utils": "^6.2.0"
   },
   "peerDependencies": {
-    "koishi-core": "^3.13.0"
+    "koishi-core": "^3.13.1"
   }
 }
