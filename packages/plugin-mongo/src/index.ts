@@ -135,7 +135,7 @@ Database.extend(MongoDatabase, {
     if (offset) cursor = cursor.skip(offset)
     if (limit) cursor = cursor.limit(offset + limit)
     const data = await cursor.toArray()
-    if (fields.includes(primary as never)) {
+    if (!fields || fields.includes(primary as never)) {
       for (const item of data) {
         item[primary] ??= item._id
       }
@@ -162,7 +162,7 @@ Database.extend(MongoDatabase, {
     } else if (type === 'random') {
       copy['_id'] = data[primary] = Random.uuid()
     }
-    await this.db.collection(name).insertOne(copy).catch(() => {})
+    await this.db.collection(name).insertOne(copy).catch(() => { })
     return data
   },
 

@@ -1,4 +1,4 @@
-import { Context, Database } from 'koishi-core'
+import { Context, Database, Tables } from 'koishi-core'
 import { clone, defineProperty, Observed } from 'koishi-utils'
 import type { FilterQuery } from 'mongodb'
 import {} from 'koishi-plugin-mongo'
@@ -10,13 +10,19 @@ declare module 'koishi-core' {
   }
 }
 
+Tables.extend('dialogue', {
+  primary: 'id',
+})
+
 Database.extend('koishi-plugin-mongo', {
   async getDialoguesByTest(test: DialogueTest) {
     const query: FilterQuery<Dialogue> = { $and: [] }
     this.app.emit('dialogue/mongo', test, query.$and)
+    if (!query.$and.length) delete query.$and
     const dialogues = await this.db.collection('dialogue').find(query).toArray()
     dialogues.forEach(d => defineProperty(d, '_backup', clone(d)))
     return dialogues.filter(value => {
+      value.id = value._id
       if (value.flag & Dialogue.Flag.regexp) {
         const regex = new RegExp(value.question, 'i')
         if (!(regex.test(test.question) || regex.test(test.original))) return false
@@ -24,7 +30,6 @@ Database.extend('koishi-plugin-mongo', {
       if (test.groups && !test.partial) {
         return !(value.flag & Dialogue.Flag.complement) === test.reversed || !equal(test.groups, value.groups)
       }
-      value.id = value._id
       return true
     })
   },
@@ -87,7 +92,7 @@ export default function apply(ctx: Context) {
       }
       const conds = [{ flag: { $bitsAllSet: Dialogue.Flag.regexp }, $expr } as FilterQuery<Dialogue>]
       if (question) conds.push({ flag: { $bitsAllClear: Dialogue.Flag.regexp }, question })
-      conditionals.push({ $or: conds })
+      conditionals.push(question ? { $or: conds } : conds[0])
     }
   })
 
