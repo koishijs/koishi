@@ -163,7 +163,7 @@ async function wrapModule(name: string, source: string, target: string) {
   )
 }
 
-const referenceHack = '/// <reference types="koishi/lib/koishi" />'
+const referenceHack = '/// <reference types="koishi/lib" />'
 
 async function bundleNode() {
   let cap: RegExpExecArray
@@ -199,7 +199,7 @@ async function bundleNode() {
     prolog.push(`declare module '${name}' {`, ...modules[name], '}')
   }
   await fs.writeFile(
-    resolve(cwd, 'packages/koishi/lib/index.d.ts'),
+    resolve(cwd, 'packages/koishi/lib/node.d.ts'),
     prolog.join(EOL) + EOL,
   )
 }
@@ -208,7 +208,7 @@ async function bundleAll(names: readonly string[]) {
   for (const name of names) {
     if (name === 'packages/koishi') {
       await Promise.all([
-        wrapModule('koishi', 'packages/core/lib/index.d.ts', 'koishi.d.ts'),
+        wrapModule('koishi', 'packages/core/lib/index.d.ts', 'index.d.ts'),
         wrapModule('@koishijs/utils', 'packages/utils/lib/index.d.ts', 'utils.d.ts'),
         bundleNode(),
       ])
@@ -258,7 +258,10 @@ async function prepareConfig(folders: string[]) {
 
 (async () => {
   const folders = await getPackages(args)
-  if (folders.includes('koishi')) folders.push('core', 'utils')
+  if (folders.includes('packages/koishi')) {
+    if (!folders.includes('packages/core')) folders.push('packages/core')
+    if (!folders.includes('packages/utils')) folders.push('packages/utils')
+  }
   const buildTargets = folders.filter(name => !targets.includes(name) && !name.includes('ui-'))
   const bundleTargets = folders.filter(name => targets.includes(name) && !name.includes('ui-'))
 

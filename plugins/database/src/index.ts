@@ -8,7 +8,7 @@ declare module 'koishi' {
   }
 
   namespace Database {
-    interface Statics {
+    interface Library {
       '@koishijs/plugin-database': typeof MemoryDatabase
     }
   }

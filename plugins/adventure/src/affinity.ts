@@ -1,6 +1,7 @@
 import { User, Context, Time, Random } from 'koishi'
 import Profile from './profile'
 import Rank from './rank'
+import {} from '@koishijs/plugin-teach'
 
 declare module '@koishijs/plugin-teach' {
   interface DialogueTest {

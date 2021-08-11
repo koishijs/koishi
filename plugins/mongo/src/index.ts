@@ -10,14 +10,9 @@ declare module 'koishi' {
   }
 
   namespace Database {
-    interface Statics {
+    interface Library {
       '@koishijs/plugin-mongo': typeof MongoDatabase
     }
-  }
-
-  interface Channel {
-    type: Platform
-    pid: string
   }
 }
 
@@ -135,7 +130,7 @@ Database.extend(MongoDatabase, {
     return data
   },
 
-  async update(name, data: any[], key: string) {
+  async update(name, data: any[], key) {
     if (!data.length) return
     const { primary } = Tables.config[name]
     if (!key || key === primary) key = '_id'
@@ -144,38 +139,6 @@ Database.extend(MongoDatabase, {
       bulk.find({ [key]: item[primary] }).updateOne({ $set: omit(item, [primary]) })
     }
     await bulk.execute()
-  },
-
-  async setUser(type, id, data) {
-    await this.user.updateOne(
-      { [type]: id },
-      { $set: escapeKey(data), $setOnInsert: { id: Random.id() } },
-      { upsert: true },
-    )
-  },
-
-  async getChannel(type, pid, modifier) {
-    modifier = Query.resolveModifier(modifier)
-    const fields = modifier.fields.slice()
-    const applyDefault = (channel: Channel) => ({
-      ...pick(Channel.create(type, channel.pid), fields),
-      ...omit(channel, ['type', 'pid']),
-    })
-
-    const index = fields.indexOf('id')
-    if (Array.isArray(pid)) {
-      const ids = pid.map(id => `${type}:${id}`)
-      if (fields && !fields.length) return ids.map(id => ({ id }))
-      if (index >= 0) modifier.fields.splice(index, 1, 'type', 'pid')
-      const data = await this.get('channel', ids, modifier)
-      return data.map(applyDefault)
-    } else {
-      const id = `${type}:${pid}`
-      if (fields && !fields.length) return { id }
-      if (index >= 0) modifier.fields.splice(index, 1)
-      const data = await this.get('channel', id, modifier)
-      return data[0] && { ...applyDefault(data[0]), id }
-    }
   },
 
   async getAssignedChannels(_fields, assignMap = this.app.getSelfIds()) {
@@ -191,14 +154,6 @@ Database.extend(MongoDatabase, {
       $or: Object.entries(assignMap).map<any>(([type, assignee]) => ({ type, assignee })),
     }, fields)
     return data.map(applyDefault)
-  },
-
-  async setChannel(type, pid, data) {
-    await this.channel.updateOne({ type, pid }, { $set: data }, { upsert: true })
-  },
-
-  async createChannel(type, pid, data) {
-    await this.setChannel(type, pid, data)
   },
 })
 

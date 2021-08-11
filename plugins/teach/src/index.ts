@@ -39,7 +39,7 @@ declare module 'koishi' {
   }
 
   namespace Plugin {
-    interface Packages {
+    interface Library {
       '@koishijs/plugin-teach': typeof import('.')
     }
   }

@@ -20,7 +20,7 @@ declare module 'koishi' {
   }
 
   namespace Plugin {
-    interface Packages {
+    interface Library {
       '@koishijs/plugin-adventure': typeof import('.')
     }
   }

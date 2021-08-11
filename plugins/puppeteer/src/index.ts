@@ -42,7 +42,7 @@ declare module 'koishi' {
   }
 
   namespace Plugin {
-    interface Packages {
+    interface Library {
       '@koishijs/plugin-puppeteer': typeof import('.'),
     }
   }

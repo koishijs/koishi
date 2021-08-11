@@ -284,7 +284,7 @@ export abstract class Database {
 }
 
 export namespace Database {
-  export interface Statics {}
+  export interface Library {}
 
   type Methods<S, T> = {
     [K in keyof S]?: S[K] extends (...args: infer R) => infer U ? (this: T, ...args: R) => U : S[K]
@@ -294,13 +294,13 @@ export namespace Database {
   type ExtensionMethods<T> = Methods<Database, T extends Constructor<infer I> ? I : never>
   type Extension<T> = ((Database: T) => void) | ExtensionMethods<T>
 
-  export function extend<K extends keyof Statics>(module: K, extension: Extension<Statics[K]>): void
+  export function extend<K extends keyof Library>(module: K, extension: Extension<Library[K]>): void
   export function extend<T extends Constructor<unknown>>(module: T, extension: Extension<T>): void
   export function extend(module: any, extension: any) {
     let Database: any
     try {
       Database = typeof module === 'string' ? require(module).default : module
-    } catch (error) {
+    } catch {
       return
     }
 

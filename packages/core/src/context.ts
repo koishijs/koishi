@@ -39,12 +39,12 @@ export namespace Plugin {
     disposables: Disposable[]
   }
 
-  export interface Packages {}
+  export interface Library {}
 
-  export type Teleporter<D extends readonly (keyof Packages)[]> = (ctx: Context, ...modules: From<D>) => void
+  export type Teleporter<D extends readonly (keyof Library)[]> = (ctx: Context, ...modules: From<D>) => void
 
   type From<D extends readonly unknown[]> = D extends readonly [infer L, ...infer R]
-    ? [L extends keyof Packages ? Packages[L] : unknown, ...From<R>]
+    ? [L extends keyof Library ? Library[L] : unknown, ...From<R>]
     : []
 
   export class Registry extends Map<Plugin, State> {
@@ -209,7 +209,7 @@ export class Context {
     })
   }
 
-  with<D extends readonly (keyof Plugin.Packages)[]>(deps: D, callback: Plugin.Teleporter<D>) {
+  with<D extends readonly (keyof Plugin.Library)[]>(deps: D, callback: Plugin.Teleporter<D>) {
     const modules = deps.map(safeRequire)
     if (!modules.every(val => val)) return this
     this.teleport(modules, callback)
