@@ -23,5 +23,6 @@ describe('Mongo Database', () => {
       username: 'koishi',
       password: 'koishi@114514',
     })
+    await app.start()
   })
 })
