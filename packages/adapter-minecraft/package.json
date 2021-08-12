@@ -1,0 +1,34 @@
+{
+  "name": "koishi-adapter-minecraft",
+  "description": "Discord adapter for Koishi",
+  "version": "1.3.3",
+  "main": "lib/index.js",
+  "typings": "lib/index.d.ts",
+  "files": [
+    "lib"
+  ],
+  "author": "undefined <i@undefined.moe>",
+  "maintainers": [
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/koishijs/koishi.git"
+  },
+  "bugs": {
+    "url": "https://github.com/koishijs/koishi/issues"
+  },
+  "homepage": "https://github.com/koishijs/koishi/tree/master/packages/koishi-core#readme",
+  "keywords": [
+    "bot",
+    "discord",
+    "chatbot",
+    "koishi"
+  ],
+  "peerDependencies": {
+    "koishi-core": "^3.13.0"
+  },
+  "dependencies": {
+    "mineflayer": "^3.9.0",
+  }
+}
