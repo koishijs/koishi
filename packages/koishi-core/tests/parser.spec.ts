@@ -33,8 +33,11 @@ describe('Parser API', () => {
       cmd = app.command('cmd2 <foo> [bar:text]')
       cmd.option('alpha', '-a')
       cmd.option('beta', '-b <beta>')
+      // infer argument type from fallback
       cmd.option('gamma', '-c <gamma>', { fallback: 0 })
+      // define argument type by OptionConfig
       cmd.option('delta', '-d <delta>', { type: 'string' })
+      // define argument type directly (should not be overrode by default)
       cmd.option('epsilon', '-e <epsilon:posint>', { fallback: 1 })
     })
 
