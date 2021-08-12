@@ -1,5 +1,6 @@
 import { expect } from 'chai'
-import { Tables } from 'koishi-core'
+import { App, Tables } from 'koishi-core'
+import * as mysql from 'koishi-plugin-mysql'
 import { createFilter } from 'koishi-plugin-mysql'
 
 declare module 'koishi-core' {
@@ -16,6 +17,21 @@ interface FooData {
 Tables.extend('foo')
 
 describe('Mysql Database', () => {
+  it('should support maria10, mysql57, mysql8', async () => {
+    const portMap = { maria10: 3307, mysql57: 3306, mysql8: 3308 }
+    const app = new App()
+    for (const databaseName in portMap) {
+      app.plugin(mysql, {
+        host: 'localhost',
+        port: portMap[databaseName],
+        user: 'koishi',
+        password: 'koishi@114514',
+        database: 'koishi',
+      })
+      await app.dispose(mysql)
+    }
+  })
+
   describe('createFilter', () => {
     it('base support', () => {
       expect(createFilter('foo', [1, 2]))
