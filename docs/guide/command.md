@@ -223,7 +223,7 @@ import { Argv } from 'koishi-core'
 declare module 'koishi-core' {
   namespace Argv {
     interface Domain {
-      int: number
+      positive: number
     }
   }
 }
