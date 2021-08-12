@@ -35,6 +35,7 @@ describe('Parser API', () => {
       cmd.option('beta', '-b <beta>')
       cmd.option('gamma', '-c <gamma>', { fallback: 0 })
       cmd.option('delta', '-d <delta>', { type: 'string' })
+      cmd.option('epsilon', '-e <epsilon:posint>', { fallback: 1 })
     })
 
     it('option parser', () => {
@@ -57,6 +58,8 @@ describe('Parser API', () => {
       expect(cmd.parse('--delta')).to.have.shape({ error: '', options: { delta: '' } })
       expect(cmd.parse('--delta 1')).to.have.shape({ error: '', options: { delta: '1' } })
       expect(cmd.parse('--delta -1')).to.have.shape({ error: '', options: { delta: '-1' } })
+      expect(cmd.parse('--epsilon awee')).to.have.shape({ error: '选项 epsilon 输入无效，请提供一个正整数。' })
+      expect(cmd.parse('--epsilon 1.2')).to.have.shape({ error: '选项 epsilon 输入无效，请提供一个正整数。' })
     })
 
     it('short alias', () => {
