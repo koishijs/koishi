@@ -23,6 +23,7 @@ export const adaptUser = (user: Mew.User, bot?: MewBot): UserInfo => ({
   // discriminator: user.,
   isBot: bot && user.id === bot.selfId || false,
 })
+
 export const adaptAuthor = (author: Mew.User, bot: MewBot): AuthorInfo => ({
   ...adaptUser(author, bot),
   nickname: author.name,
@@ -112,12 +113,7 @@ export async function adaptSession(bot: MewBot, input: Mew.Payload) {
       prepareMessageSession(session, input.data)
       break
     }
-    case Mew.EventType.MessageUpdate: {
-
-    }
-    case Mew.EventType.NodeMemberAdd: {
-
-    }
+    default: return
   }
 
   return new Session(bot.app, session)

@@ -1,8 +1,8 @@
-import { App, Adapter, Logger, Bot, Platform } from 'koishi-core'
+import { App, Adapter, Logger, Bot, Platform, renameProperty } from 'koishi-core'
 import { io, SocketOptions, ManagerOptions, Socket } from 'socket.io-client'
 import { MewBot } from './bot'
 import { MessageType, Payload } from './types'
-import { adaptSession } from './utils'
+import { adaptSession, adaptUser } from './utils'
 const logger = new Logger('mew')
 
 export type SocketIOOption = Partial<ManagerOptions & SocketOptions>
@@ -81,21 +81,33 @@ export class SocketIoClientImpl extends SocketIoClient<'mew'> {
 
   connect(bot: MewBot) {
     return new Promise<void>((resolve) => {
-      // 建联
       bot.socketio.emit(MessageType.Identity, JSON.stringify({
         token: bot.token,
         platform: 'web',
         active: true,
       }))
-      bot.socketio.emit(MessageType.Subscription, JSON.stringify({
-        node: {
-          op: 'set',
-          items: bot.app.options.mew?.subscribeNodes || [],
-        },
-      }))
 
-      bot.socketio.on(MessageType.Identity, () => {
-        logger.info('recevie identity success')
+      if (bot.subscribeNodes) {
+        bot.socketio.emit(MessageType.Subscription, JSON.stringify({
+          node: {
+            op: 'set',
+            items: bot.subscribeNodes,
+          },
+        }))
+      }
+
+      bot.socketio.on(MessageType.Identity, (data) => {
+        data = data.toString()
+        let parsed: any
+        try {
+          parsed = JSON.parse(data)
+        } catch (error) {
+          return logger.warn('cannot parse message', data)
+        }
+        const self: any = adaptUser(parsed.user)
+        renameProperty(self, 'selfId', 'userId')
+        Object.assign(bot, self)
+        logger.info('receive identity success')
       })
 
       bot.socketio.on(MessageType.Dispatch, async (data) => {
@@ -107,16 +119,9 @@ export class SocketIoClientImpl extends SocketIoClient<'mew'> {
           return logger.warn('cannot parse message', data)
         }
         const session = await adaptSession(bot, parsed)
-        console.log(session)
         if (session) this.dispatch(session)
       })
 
-      bot.socketio.on(MessageType.Subscription, (data) => {
-        console.log('Subscription', data)
-      })
-      bot.socketio.on(MessageType.Active, (data) => {
-        console.log('Active', data)
-      })
       resolve()
     })
   }

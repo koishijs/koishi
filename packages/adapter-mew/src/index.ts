@@ -8,7 +8,6 @@ export * from './bot'
 
 interface MewOption extends SocketIOOption {
   axiosConfig?: AxiosRequestConfig
-  subscribeNodes: string[]
   endpoint?: string
 }
 
@@ -21,6 +20,10 @@ declare module 'koishi-core' {
     interface Platforms {
       mew: MewBot
     }
+  }
+
+  interface BotOptions {
+    subscribeNodes?: string[]
   }
 
   interface Bot {
