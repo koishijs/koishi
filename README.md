@@ -77,7 +77,6 @@ Koishi v3 的另一大亮点就是拥有官方的网页控制台插件。这个�
 - koishi-adapter-discord: [Discord](https://discord.com/) 平台支持
 - koishi-adapter-telegram: [Telegram](https://telegram.org/) 平台支持
 - koishi-adapter-kaiheila: [开黑啦](https://kaiheila.cn/) 平台支持
-- koishi-plugin-text-dialogue: [Markdown](https://zh.wikipedia.org/wiki/Markdown) 支持在 md 文档中和你的 bot 对话，[文档](https://github.com/koishijs/koishi-plugin-developer/tree/master/packages/plugin-text-dialogue#koishi-plugin-text-dialogue)
 
 ### 数据库支持
 
@@ -133,6 +132,7 @@ Koishi v3 的另一大亮点就是拥有官方的网页控制台插件。这个�
 - [koishi-plugin-cryptocurrency](https://github.com/koishijs/plugin-cryptocurrency): 查看和订阅加密货币的市场价格
 - [koishi-plugin-jrrp](https://github.com/idlist/koishi-plugin-jrrp): 今日人品
 - [koishi-plugin-rpc](https://github.com/Anillc/koishi-plugin-rpc): 一个为其他插件提供 RPC 的插件
+- [koishi-plugin-text-dialogue](https://github.com/koishijs/koishi-plugin-developer/tree/master/packages/plugin-text-dialogue): 支持在 md 文档中和你的 bot 对话
 
 ### 社区项目
 
