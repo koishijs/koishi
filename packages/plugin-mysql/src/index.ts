@@ -49,7 +49,7 @@ export function createFilter<T extends TableType>(name: T, query: Query<T>) {
     const conditions: string[] = []
     for (const key in query) {
       // logical expression
-      if (key === '$or') {
+      if (key === '$not') {
         conditions.push(`!(${parseQuery(query.$not)})`)
         continue
       } else if (key === '$and') {

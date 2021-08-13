@@ -25,7 +25,7 @@ describe('Mysql Database', () => {
         .to.equal('`id` IN (1, 2)')
 
       expect(createFilter('foo', { id: [1, 2], bar: ['foo'] }))
-        .to.equal('`id` IN (1, 2) AND `bar` IN (\'foo\')')
+        .to.equal('`id` IN (1, 2) && `bar` IN (\'foo\')')
     })
 
     it('compile expr query', () => {
@@ -38,7 +38,7 @@ describe('Mysql Database', () => {
       expect(createFilter('foo', {
         id: { $gt: 2 },
         bar: /^.*foo/,
-      })).to.equal('`id` > 2 AND `bar` REGEXP \'^.*foo\'')
+      })).to.equal('`id` > 2 && `bar` REGEXP \'^.*foo\'')
     })
 
     it('filter data by include', () => {
@@ -71,24 +71,30 @@ describe('Mysql Database', () => {
 
     it('should verify `$or`', () => {
       expect(createFilter('foo', {
-        $or: [{ bar: { $regex: /^.*foo/ } }, { bar: { $regex: /^foo.*/ } }],
-      })).to.equal('(`bar` REGEXP \'^.*foo\' OR `bar` REGEXP \'^foo.*\')')
+        $or: [
+          { bar: { $regex: /^.*foo/ } },
+          { bar: { $regex: /^foo.*/ } },
+        ],
+      })).to.equal('(`bar` REGEXP \'^.*foo\' || `bar` REGEXP \'^foo.*\')')
 
       expect(createFilter('foo', {
-        $or: [{ id: [1, 2] }, { bar: { $regex: /^foo.*/ } }],
-      })).to.equal('(`id` IN (1, 2) OR `bar` REGEXP \'^foo.*\')')
+        $or: [
+          { id: [1, 2] },
+          { bar: { $regex: /^foo.*/ } },
+        ],
+      })).to.equal('(`id` IN (1, 2) || `bar` REGEXP \'^foo.*\')')
     })
 
     it('should verify `$or` and other key`', () => {
       expect(createFilter('foo', {
         id: [1, 2],
         $or: [{ bar: { $regex: /^foo.*/ } }],
-      })).to.equal('`id` IN (1, 2) AND (`bar` REGEXP \'^foo.*\')')
+      })).to.equal('`id` IN (1, 2) && (`bar` REGEXP \'^foo.*\')')
 
       expect(createFilter('foo', {
         id: { $lt: 2 },
         $or: [{ bar: { $regex: /^foo.*/ } }, { bar: { $regex: /^.*foo/ } }],
-      })).to.equal('`id` < 2 AND (`bar` REGEXP \'^foo.*\' OR `bar` REGEXP \'^.*foo\')')
+      })).to.equal('`id` < 2 && (`bar` REGEXP \'^foo.*\' || `bar` REGEXP \'^.*foo\')')
     })
   })
 })
