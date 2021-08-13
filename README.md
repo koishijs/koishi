@@ -77,6 +77,7 @@ Koishi v3 的另一大亮点就是拥有官方的网页控制台插件。这个�
 - koishi-adapter-discord: [Discord](https://discord.com/) 平台支持
 - koishi-adapter-telegram: [Telegram](https://telegram.org/) 平台支持
 - koishi-adapter-kaiheila: [开黑啦](https://kaiheila.cn/) 平台支持
+- koishi-plugin-text-dialogue: [Markdown](https://zh.wikipedia.org/wiki/Markdown) 支持在 md 文档中和你的 bot 对话，[文档](https://github.com/koishijs/koishi-plugin-developer/tree/master/packages/plugin-text-dialogue#koishi-plugin-text-dialogue)
 
 ### 数据库支持
 
@@ -141,6 +142,8 @@ Koishi v3 的另一大亮点就是拥有官方的网页控制台插件。这个�
 - [hydro-dev/HydroBot](https://github.com/hydro-dev/HydroBot): A Simple QQ Robot
 - [Wjghj-Project/Chatbot-SILI](https://github.com/Wjghj-Project/Chatbot-SILI): 「即时通讯软件转接姬」SILI-t137-[Tumita]-Invoke-II@LD(A)
 - [idlist/2bot-v3](https://github.com/idlist/2bot-v3): 2bot，一个很 2 的 FFXIV bot
+- [koishijs/koishi-plugin-developer](https://github.com/koishijs/koishi-plugin-developer): 使用 monorepo + ts + cli 开发你的 koishi 插件，已集成部分开发辅助功能。
+- [koishijs/koishi-bots](https://github.com/koishijs/koishi-bots): 用于部署生产环境的 bot，并集合已有的 koishi bot。
 
 ## 使用协议
 
