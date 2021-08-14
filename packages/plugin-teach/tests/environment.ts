@@ -46,35 +46,6 @@ Database.extend('koishi-test-utils', {
 export function memory(ctx: Context) {
   ctx.database.memory.$store.dialogue = []
 
-  // flag
-  ctx.on('dialogue/flag', (flag: string) => {
-    ctx.on('dialogue/memory', (data, test) => {
-      if (test[flag] !== undefined) {
-        return !(data.flag & Dialogue.Flag[flag]) === test[flag]
-      }
-    })
-  })
-
-  // internal
-  ctx.on('dialogue/memory', (data, { regexp, answer, question, original }) => {
-    if (regexp) {
-      if (answer && !new RegExp(answer, 'i').test(data.answer)) return true
-      if (original && !new RegExp(original, 'i').test(data.original)) return true
-      return
-    }
-
-    if (answer && answer !== data.answer) return true
-    if (regexp === false) {
-      if (question) return question !== data.question
-    } else if (original) {
-      if (data.flag & Dialogue.Flag.regexp) {
-        return !new RegExp(data.original, 'i').test(original)
-      } else {
-        return question !== data.question
-      }
-    }
-  })
-
   // writer
   ctx.on('dialogue/memory', (data, { writer }) => {
     if (writer !== undefined && data.writer !== writer) return true
@@ -84,15 +55,6 @@ export function memory(ctx: Context) {
   ctx.on('dialogue/memory', (data, { matchTime, mismatchTime }) => {
     if (matchTime !== undefined && getProduct(data, matchTime) < 0) return true
     if (mismatchTime !== undefined && getProduct(data, mismatchTime) >= 0) return true
-  })
-
-  // successor
-  ctx.on('dialogue/memory', (data, { predecessors, stateful, noRecursive }) => {
-    if (noRecursive) return !!data.predecessors.length
-    if (!predecessors) return
-    const hasMatched = !!intersection(data.predecessors, predecessors).length
-    if (stateful) return hasMatched
-    return hasMatched || !data.predecessors.length
   })
 
   // context

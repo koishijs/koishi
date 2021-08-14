@@ -72,13 +72,6 @@ Database.extend('koishi-plugin-mysql', ({ Domain, tables }) => {
 })
 
 export default function apply(ctx: Context) {
-  ctx.on('dialogue/flag', (flag) => {
-    ctx.on('dialogue/mysql', (test, conditionals) => {
-      if (test[flag] === undefined) return
-      conditionals.push(`!(\`flag\` & ${Dialogue.Flag[flag]}) = !${test[flag]}`)
-    })
-  })
-
   ctx.on('dialogue/mysql', (test, conditionals) => {
     if (!test.groups || !test.groups.length) return
     conditionals.push(`(

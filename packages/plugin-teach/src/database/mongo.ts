@@ -17,10 +17,6 @@ Database.extend('koishi-plugin-mongo', {
     const dialogues = await this.db.collection('dialogue').find(query).toArray()
     dialogues.forEach(d => defineProperty(d, '_backup', clone(d)))
     return dialogues.filter(value => {
-      if (value.flag & Dialogue.Flag.regexp) {
-        const regex = new RegExp(value.question, 'i')
-        if (!(regex.test(test.question) || regex.test(test.original))) return false
-      }
       if (test.groups && !test.partial) {
         return !(value.flag & Dialogue.Flag.complement) === test.reversed || !equal(test.groups, value.groups)
       }
@@ -58,15 +54,6 @@ Database.extend('koishi-plugin-mongo', {
 })
 
 export default function apply(ctx: Context) {
-  ctx.on('dialogue/flag', (flag) => {
-    ctx.on('dialogue/mongo', (test, conditionals) => {
-      if (test[flag] === undefined) return
-      conditionals.push({
-        flag: { [test[flag] ? '$bitsAllSet' : '$bitsAllClear']: Dialogue.Flag[flag] },
-      })
-    })
-  })
-
   ctx.on('dialogue/mongo', (test, conditionals) => {
     if (!test.groups || !test.groups.length) return
     const $and: FilterQuery<Dialogue>[] = test.groups.map((group) => ({ groups: { $ne: group } }))

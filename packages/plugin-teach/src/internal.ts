@@ -152,6 +152,13 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
         data.flag |= +options[flag] * Dialogue.Flag[flag]
       }
     })
+
+    ctx.on('dialogue/test', (test, query) => {
+      if (test[flag] === undefined) return
+      query.$and.push({
+        flag: { [test[flag] ? '$bitsAllSet' : '$bitsAllClear']: Dialogue.Flag[flag] },
+      })
+    })
   })
 
   ctx.before('command', ({ command, session }) => {
