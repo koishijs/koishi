@@ -79,25 +79,6 @@ export default function apply(ctx: Context) {
     })
   })
 
-  ctx.on('dialogue/mysql', ({ regexp, answer, question, original }, conditionals) => {
-    const { escape } = require('mysql') as typeof import('mysql')
-
-    if (regexp) {
-      if (answer) conditionals.push('`answer` REGEXP ' + escape(answer))
-      if (original) conditionals.push('`original` REGEXP ' + escape(original))
-      return
-    }
-
-    if (answer) conditionals.push('`answer` = ' + escape(answer))
-    if (regexp === false) {
-      if (question) conditionals.push('`question` = ' + escape(question))
-    } else if (original) {
-      const conds = [`\`flag\` & ${Dialogue.Flag.regexp} && ${escape(original)} REGEXP \`original\``]
-      if (question) conds.push(`!(\`flag\` & ${Dialogue.Flag.regexp}) && \`question\` = ${escape(question)}`)
-      conditionals.push(`(${conds.join(' || ')})`)
-    }
-  })
-
   ctx.on('dialogue/mysql', (test, conditionals) => {
     if (!test.groups || !test.groups.length) return
     conditionals.push(`(

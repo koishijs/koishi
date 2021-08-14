@@ -1,4 +1,4 @@
-import { Session, App, Context, Tables } from 'koishi-core'
+import { Session, App, Context, Tables, Query } from 'koishi-core'
 import { difference, observe, isInteger, defineProperty, Observed, clone } from 'koishi-utils'
 
 declare module 'koishi-core' {
@@ -9,6 +9,7 @@ declare module 'koishi-core' {
   interface EventMap {
     'dialogue/permit'(argv: Dialogue.Argv, dialogue: Dialogue): boolean
     'dialogue/flag'(flag: keyof typeof Dialogue.Flag): void
+    'dialogue/test'(test: DialogueTest, query: Query.Expr<Dialogue>): void
   }
 
   interface Tables {

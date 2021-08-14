@@ -67,30 +67,6 @@ export default function apply(ctx: Context) {
     })
   })
 
-  ctx.on('dialogue/mongo', ({ regexp, answer, question, original }, conditionals) => {
-    if (regexp) {
-      if (answer) conditionals.push({ answer: { $regex: new RegExp(answer, 'i') } })
-      if (original) conditionals.push({ original: { $regex: new RegExp(original, 'i') } })
-      return
-    }
-    if (answer) conditionals.push({ answer })
-    if (regexp === false) {
-      if (question) conditionals.push({ question })
-    } else if (original) {
-      const $expr = {
-        body(field: string, original: string) {
-          const regex = new RegExp(field, 'i')
-          return regex.test(original)
-        },
-        args: ['$name', original],
-        lang: 'js',
-      }
-      const conds = [{ flag: { $bitsAllSet: Dialogue.Flag.regexp }, $expr } as FilterQuery<Dialogue>]
-      if (question) conds.push({ flag: { $bitsAllClear: Dialogue.Flag.regexp }, question })
-      conditionals.push({ $or: conds })
-    }
-  })
-
   ctx.on('dialogue/mongo', (test, conditionals) => {
     if (!test.groups || !test.groups.length) return
     const $and: FilterQuery<Dialogue>[] = test.groups.map((group) => ({ groups: { $ne: group } }))

@@ -1,4 +1,4 @@
-import { Context, template, defineProperty, segment } from 'koishi-core'
+import { Context, template, defineProperty, segment, Query } from 'koishi-core'
 import { Dialogue } from './utils'
 import { create, update } from './update'
 import { formatQuestionAnswers } from './search'
@@ -167,6 +167,25 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
     } catch (error) {
       ctx.logger('teach').warn(error.message)
       return '上传图片时发生错误。'
+    }
+  })
+
+  ctx.on('dialogue/test', ({ regexp, answer, question, original }, query) => {
+    if (regexp) {
+      if (answer) query.answer = { $regex: new RegExp(answer, 'i') }
+      if (original) query.original = { $regex: new RegExp(original, 'i') }
+      return
+    }
+    if (answer) query.answer = answer
+    if (regexp === false) {
+      if (question) query.question = question
+    } else if (original) {
+      const $or: Query.Expr<Dialogue>[] = [{
+        flag: { $bitsAllSet: Dialogue.Flag.regexp },
+        original: { $regexFor: original },
+      }]
+      if (question) $or.push({ flag: { $bitsAllClear: Dialogue.Flag.regexp }, question })
+      query.$and.push({ $or })
     }
   })
 }
