@@ -97,8 +97,12 @@ function executeQuery(query: Query.Expr, data: any): boolean {
     }
 
     // execute field query
-    if (!(key in data)) return false
-    return executeFieldQuery(value, data[key])
+    try {
+      if (!(key in data)) return false
+      return executeFieldQuery(value, data[key])
+    } catch {
+      return false
+    }
   })
 }
 
