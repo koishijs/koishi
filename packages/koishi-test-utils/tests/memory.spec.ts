@@ -18,6 +18,7 @@ interface FooData {
   id?: number
   bar: string
   baz?: number
+  list?: number[]
 }
 
 Tables.extend('foo')
@@ -62,9 +63,9 @@ describe('Memory Database', () => {
 
   describe('complex expression', () => {
     before(async () => {
-      await db.createFoo({ bar: 'awesome foo', baz: 3 })
-      await db.createFoo({ bar: 'awesome bar', baz: 4 })
-      await db.createFoo({ bar: 'awesome foo bar', baz: 7 })
+      await db.createFoo({ bar: 'awesome foo', baz: 3, list: [] })
+      await db.createFoo({ bar: 'awesome bar', baz: 4, list: [1] })
+      await db.createFoo({ bar: 'awesome foo bar', baz: 7, list: [100] })
     })
 
     after(() => {
@@ -152,6 +153,20 @@ describe('Memory Database', () => {
       await expect(db.get('foo', {
         baz: { $bitsAnyClear: 6 },
       })).eventually.to.have.shape([{ baz: 3 }, { baz: 4 }])
+    })
+
+    it('filter data by list operations', async () => {
+      await expect(db.get('foo', {
+        list: { $size: 1 },
+      })).eventually.to.have.shape([{ baz: 4 }, { baz: 7 }])
+
+      await expect(db.get('foo', {
+        list: { $el: 100 },
+      })).eventually.to.have.shape([{ baz: 7 }])
+
+      await expect(db.get('foo', {
+        list: { $el: { $lt: 50 } },
+      })).eventually.to.have.shape([{ baz: 4 }])
     })
 
     it('should verify `$or`, `$and` and `$not`', async () => {

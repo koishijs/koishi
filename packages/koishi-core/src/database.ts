@@ -100,21 +100,27 @@ export namespace Query {
   export type Field<T extends TableType> = string & keyof Tables[T]
   export type Index<T extends TableType> = IndexKeys<Tables[T], IndexType>
 
+  type Extract<S, T, U = S> = S extends T ? U : never
+  type Primitive = string | number
+  type Comparable = Primitive | Date
+
   export interface FieldExpr<T = any> {
-    $in?: T[]
-    $nin?: T[]
-    $eq?: T
-    $ne?: T
-    $gt?: T
-    $gte?: T
-    $lt?: T
-    $lte?: T
-    $regex?: RegExp
-    $regexFor?: string
-    $bitsAllClear?: number
-    $bitsAllSet?: number
-    $bitsAnyClear?: number
-    $bitsAnySet?: number
+    $in?: Extract<T, Primitive, T[]>
+    $nin?: Extract<T, Primitive, T[]>
+    $eq?: Extract<T, Comparable>
+    $ne?: Extract<T, Comparable>
+    $gt?: Extract<T, Comparable>
+    $gte?: Extract<T, Comparable>
+    $lt?: Extract<T, Comparable>
+    $lte?: Extract<T, Comparable>
+    $el?: T extends (infer U)[] ? FieldQuery<U> : never
+    $size?: Extract<T, any[], number>
+    $regex?: Extract<T, string, RegExp>
+    $regexFor?: Extract<T, string>
+    $bitsAllClear?: Extract<T, number>
+    $bitsAllSet?: Extract<T, number>
+    $bitsAnyClear?: Extract<T, number>
+    $bitsAnySet?: Extract<T, number>
   }
 
   export interface LogicalExpr<T = any> {
@@ -123,8 +129,8 @@ export namespace Query {
     $not?: Expr<T>
   }
 
-  export type Shorthand<T = IndexType> = T | T[] | RegExp
-  export type FieldQuery<T> = FieldExpr<T> | Shorthand<T>
+  export type Shorthand<T extends Primitive = Primitive> = T | T[] | Extract<T, string, RegExp>
+  export type FieldQuery<T = any> = FieldExpr<T> | (T extends Primitive ? Shorthand<T> : never)
   export type Expr<T = any> = LogicalExpr<T> & {
     [K in keyof T]?: FieldQuery<T[K]>
   }
