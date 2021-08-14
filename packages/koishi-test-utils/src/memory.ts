@@ -52,6 +52,10 @@ const queryOperators: ([string, (data: any, value: any) => boolean])[] = Object.
   $gte: (data, value) => value >= data,
   $lt: (data, value) => value < data,
   $lte: (data, value) => value <= data,
+  $bitsAllSet: (data, value) => (data & value) === data,
+  $bitsAllClear: (data, value) => (data & value) === 0,
+  $bitsAnySet: (data, value) => (data & value) !== 0,
+  $bitsAnyClear: (data, value) => (data & value) !== data,
 })
 
 Database.extend(MemoryDatabase, {

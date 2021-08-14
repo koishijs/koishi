@@ -100,9 +100,7 @@ export namespace Query {
   export type Field<T extends TableType> = string & keyof Tables[T]
   export type Index<T extends TableType> = IndexKeys<Tables[T], IndexType>
 
-  export interface FieldExpr<T> {
-    $regex?: RegExp
-    $regexFor?: string
+  export interface FieldExpr<T = any> {
     $in?: T[]
     $nin?: T[]
     $eq?: T
@@ -111,9 +109,15 @@ export namespace Query {
     $gte?: T
     $lt?: T
     $lte?: T
+    $regex?: RegExp
+    $regexFor?: string
+    $bitsAllClear?: number
+    $bitsAllSet?: number
+    $bitsAnyClear?: number
+    $bitsAnySet?: number
   }
 
-  export interface LogicalExpr<T> {
+  export interface LogicalExpr<T = any> {
     $or?: Expr<T>[]
     $and?: Expr<T>[]
     $not?: Expr<T>

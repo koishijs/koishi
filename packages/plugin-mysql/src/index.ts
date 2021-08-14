@@ -32,8 +32,6 @@ function createEqualQuery(key: string, value: any) {
 }
 
 const queryOperators: Record<string, (key: string, value: any) => string> = {
-  $regex: createRegExpQuery,
-  $regexFor: (key, value) => `${escape(value)} REGEXP ${key}`,
   $in: (key, value) => createMemberQuery(key, value, ''),
   $nin: (key, value) => createMemberQuery(key, value, ' NOT'),
   $eq: createEqualQuery,
@@ -42,6 +40,12 @@ const queryOperators: Record<string, (key: string, value: any) => string> = {
   $gte: (key, value) => `${key} >= ${escape(value)}`,
   $lt: (key, value) => `${key} < ${escape(value)}`,
   $lte: (key, value) => `${key} <= ${escape(value)}`,
+  $regex: createRegExpQuery,
+  $regexFor: (key, value) => `${escape(value)} REGEXP ${key}`,
+  $bitsAllSet: (key, value) => `${key} & ${escape(value)} = ${escape(value)}`,
+  $bitsAllClear: (key, value) => `${key} & ${escape(value)} = 0`,
+  $bitsAnySet: (key, value) => `${key} & ${escape(value)} != 0`,
+  $bitsAnyClear: (key, value) => `${key} & ${escape(value)} != ${escape(value)}`,
 }
 
 export function createFilter<T extends TableType>(name: T, query: Query<T>) {
