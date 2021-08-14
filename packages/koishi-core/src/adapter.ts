@@ -64,6 +64,8 @@ export namespace Adapter {
   export const types: Record<string, Constructor> = {}
 
   export function from(app: App, bot: BotOptions) {
+    if (!bot.type) throw new Error('bot type is not set')
+
     const type = bot.type = bot.type.toLowerCase()
     if (app.adapters[type]) return app.adapters[type]
     const constructor = Adapter.types[type]
