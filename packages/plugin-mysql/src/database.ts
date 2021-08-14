@@ -142,16 +142,18 @@ class MysqlDatabase {
         }
         for (const key in fields) {
           const { initial, nullable = initial === undefined } = fields[key]
-          let def = getTypeDefinition(fields[key])
-          def += (nullable ? ' ' : ' not ') + 'null'
-          if (initial && typeof initial !== 'string') {
-            // mysql does not support text column with default value
-            def += ' default ' + mysqlEscape(initial)
-          }
+          let def = escapeId(key)
           if (key === primary && type === 'incremental') {
-            def = 'bigint(20) unsigned not null auto_increment'
+            def += ' bigint(20) unsigned not null auto_increment'
+          } else {
+            def += ' ' + getTypeDefinition(fields[key])
+            def += (nullable ? ' ' : ' not ') + 'null'
+            if (initial && typeof initial !== 'string') {
+              // mysql does not support text column with default value
+              def += ' default ' + mysqlEscape(initial)
+            }
           }
-          cols.push(`\`${key}\` ${def}`)
+          cols.push(def)
         }
         logger.info('auto creating table %c', name)
         await this.query(`CREATE TABLE ?? (${cols.join(',')}) COLLATE = ?`, [name, this.config.charset])
