@@ -94,11 +94,17 @@ describe('Mysql Database', () => {
 
     it('should verify `$or`', () => {
       expect(createFilter('foo', {
-        $or: [{ bar: { $regex: /^.*foo/ } }, { bar: { $regex: /^foo.*/ } }],
+        $or: [
+          { bar: { $regex: /^.*foo/ } },
+          { bar: { $regex: /^foo.*/ } },
+        ],
       })).to.equal('(`bar` REGEXP \'^.*foo\' || `bar` REGEXP \'^foo.*\')')
 
       expect(createFilter('foo', {
-        $or: [{ id: [1, 2] }, { bar: { $regex: /^foo.*/ } }],
+        $or: [
+          { id: [1, 2] },
+          { bar: { $regex: /^foo.*/ } },
+        ],
       })).to.equal('(`id` IN (1, 2) || `bar` REGEXP \'^foo.*\')')
     })
 
