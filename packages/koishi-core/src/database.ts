@@ -13,16 +13,18 @@ export interface Field<T = any> {
   length?: number
   nullable?: boolean
   initial?: T
+  precision?: number
+  scale?: number
 }
 
 export namespace Field {
-  export const numberTypes: Type[] = ['integer', 'unsigned', 'float', 'double']
+  export const numberTypes: Type[] = ['integer', 'unsigned', 'float', 'double', 'decimal']
   export const stringTypes: Type[] = ['char', 'string', 'text']
   export const dateTypes: Type[] = ['timestamp', 'date', 'time']
   export const objectTypes: Type[] = ['list', 'json']
 
   export type Type<T = any> =
-    | T extends number ? 'integer' | 'unsigned' | 'float' | 'double'
+    | T extends number ? 'integer' | 'unsigned' | 'float' | 'double' | 'decimal'
     : T extends string ? 'char' | 'string' | 'text'
     : T extends Date ? 'timestamp' | 'date' | 'time'
     : T extends any[] ? 'list' | 'json'

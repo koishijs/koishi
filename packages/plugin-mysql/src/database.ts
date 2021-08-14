@@ -38,7 +38,7 @@ function escape(value: any, table?: TableType, field?: string) {
   return mysqlEscape(stringify(value, table, field))
 }
 
-function getTypeDefinition({ type, length }: Field) {
+function getTypeDefinition({ type, length, precision, scale }: Field) {
   switch (type) {
     case 'float':
     case 'double':
@@ -47,6 +47,7 @@ function getTypeDefinition({ type, length }: Field) {
     case 'timestamp': return type
     case 'integer': return `int(${length || 10})`
     case 'unsigned': return `int(${length || 10}) unsigned`
+    case 'decimal': return `int(${precision}, ${scale}) unsigned`
     case 'string': return `varchar(${length || 65536})`
     case 'list': return `varchar(${length || 65536})`
     case 'json': return `varchar(${length || 65536})`
