@@ -19,7 +19,7 @@ interface FooData {
   bar: string
   baz?: number
   list?: number[]
-  datetime?: Date
+  date?: Date
 }
 
 Tables.extend('foo')
@@ -64,7 +64,7 @@ describe('Memory Database', () => {
 
   describe('complex expression', () => {
     before(async () => {
-      await db.createFoo({ bar: 'awesome foo', baz: 3, list: [], datetime: new Date('2000-01-01') })
+      await db.createFoo({ bar: 'awesome foo', baz: 3, list: [], date: new Date('2000-01-01') })
       await db.createFoo({ bar: 'awesome bar', baz: 4, list: [1] })
       await db.createFoo({ bar: 'awesome foo bar', baz: 7, list: [100] })
     })
@@ -74,15 +74,15 @@ describe('Memory Database', () => {
       db.memory.$store.foo = []
     })
 
-    it('should check in addition to basic types.', async () => {
+    it('should convert date to primitives when doing comparisons', async () => {
       await expect(db.get('foo', {
-        datetime: { $eq: new Date('2000-01-01') },
+        date: { $eq: new Date('2000-01-01') },
       })).eventually.to
         .have.nested.property('[0].bar')
         .equal('awesome foo')
 
       await expect(db.get('foo', {
-        datetime: { $gte: new Date('2000-01-01') },
+        date: { $gte: new Date('2000-01-01') },
       })).eventually.to
         .have.nested.property('[0].bar')
         .equal('awesome foo')

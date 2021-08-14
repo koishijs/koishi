@@ -65,8 +65,6 @@ const queryOperators: QueryOperators = {
 }
 
 function executeFieldQuery(query: Query.FieldQuery, data: any) {
-  if (!data) return false
-
   // shorthand syntax
   if (Array.isArray(query)) {
     return query.includes(data)
@@ -99,6 +97,7 @@ function executeQuery(query: Query.Expr, data: any): boolean {
     }
 
     // execute field query
+    if (!(key in data)) return false
     return executeFieldQuery(value, data[key])
   })
 }
