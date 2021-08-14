@@ -2,6 +2,7 @@ import MysqlDatabase, { Config, TableType } from './database'
 import { User, Channel, Database, Context, Query } from 'koishi-core'
 import { difference } from 'koishi-utils'
 import { OkPacket, escapeId, escape } from 'mysql'
+import * as Koishi from 'koishi-core'
 
 export * from './database'
 export default MysqlDatabase
@@ -138,8 +139,8 @@ Database.extend(MysqlDatabase, {
   },
 
   async create(table, data) {
+    data = { ...data, ...Koishi.Tables.create(table) }
     const keys = Object.keys(data)
-    if (!keys.length) return
     const header = await this.query<OkPacket>(
       `INSERT INTO ?? (${this.joinKeys(keys)}) VALUES (${keys.map(() => '?').join(', ')})`,
       [table, ...this.formatValues(table, data, keys)],
@@ -149,12 +150,17 @@ Database.extend(MysqlDatabase, {
 
   async update(table, data) {
     if (!data.length) return
+    data = data.map(item => ({ ...item, ...Koishi.Tables.create(table) }))
     const keys = Object.keys(data[0])
     const placeholder = `(${keys.map(() => '?').join(', ')})`
+    const update = keys.filter(key => key !== 'id').map((key) => {
+      key = escapeId(key)
+      return `${key} = VALUES(${key})`
+    }).join(', ')
     await this.query(
-      `INSERT INTO ?? (${this.joinKeys(keys)}) VALUES ${data.map(() => placeholder).join(', ')}
-      ON DUPLICATE KEY UPDATE ${keys.filter(key => key !== 'id').map(key => `\`${key}\` = VALUES(\`${key}\`)`).join(', ')}`,
-      [table, ...[].concat(...data.map(data => this.formatValues(table, data, keys)))],
+      `INSERT INTO ${escapeId(table)} (${this.joinKeys(keys)}) VALUES ${data.map(() => placeholder).join(', ')}
+      ON DUPLICATE KEY UPDATE ${update}`,
+      [].concat(...data.map(data => this.formatValues(table, data, keys))),
     )
   },
 

@@ -160,7 +160,7 @@ Database.extend(MongoDatabase, {
   async create(name, data: any) {
     const meta = Tables.config[name]
     const { primary, type = getFallbackType(meta) } = meta
-    const copy = { ...data }
+    const copy = { ...data, ...Tables.create(name) }
     if (copy[primary]) {
       copy['_id'] = copy[primary]
       delete copy[primary]

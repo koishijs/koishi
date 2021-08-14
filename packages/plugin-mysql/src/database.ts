@@ -1,4 +1,4 @@
-import { createPool, Pool, PoolConfig, escape as mysqlEscape, escapeId, format, OkPacket, TypeCast } from 'mysql'
+import { createPool, Pool, PoolConfig, escape as mysqlEscape, escapeId, format, TypeCast } from 'mysql'
 import { App, Database, Field } from 'koishi-core'
 import * as Koishi from 'koishi-core'
 import { Logger } from 'koishi-utils'
@@ -223,17 +223,6 @@ class MysqlDatabase {
       + (table.includes('.') ? `FROM ${table}` : ' FROM `' + table + `\` _${table}`)
       + (conditional ? ' WHERE ' + conditional : '')
     return this.query(sql, values)
-  }
-
-  async create<K extends TableType>(table: K, data: Partial<Tables[K]>): Promise<Tables[K]> {
-    const keys = Object.keys(data)
-    if (!keys.length) return
-    logger.debug(`[create] ${table}: ${data}`)
-    const header = await this.query<OkPacket>(
-      `INSERT INTO ?? (${this.joinKeys(keys)}) VALUES (${keys.map(() => '?').join(', ')})`,
-      [table, ...this.formatValues(table, data, keys)],
-    )
-    return { ...data, id: header.insertId } as any
   }
 
   async count<K extends TableType>(table: K, conditional?: string) {
