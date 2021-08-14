@@ -24,6 +24,8 @@ const specs = [
   'packages/plugin-github/tests/*.spec.ts',
   'packages/plugin-schedule/tests/*.spec.ts',
   'packages/plugin-teach/tests/*.spec.ts',
+  'packages/plugin-mysql/tests/*.spec.ts',
+  'packages/plugin-mongo/tests/*.spec.ts',
 ]
 
 function getSpecFromArgv() {

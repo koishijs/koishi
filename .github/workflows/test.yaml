@@ -14,6 +14,35 @@ env:
 jobs:
   build:
     runs-on: ubuntu-latest
+    services:
+      mongo:
+        image: mongo
+        ports:
+          - 27017
+        env:
+          MONGO_INITDB_ROOT_USERNAME: koishi
+          MONGO_INITDB_ROOT_PASSWORD: koishi@114514
+      maria10:
+        image: mariadb:10.5
+        ports:
+          - 3307:3306
+        env:
+          MYSQL_PASSWORD: koishi@114514
+          MYSQL_USER: koishi
+      mysql57:
+        image: mysql:5.7
+        ports:
+          - 3306:3306
+        env:
+          MYSQL_PASSWORD: koishi@114514
+          MYSQL_USER: koishi
+      mysql8:
+        image: mysql:8
+        ports:
+          - 3308:3306
+        env:
+          MYSQL_PASSWORD: koishi@114514
+          MYSQL_USER: koishi
     env:
       GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
       NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
