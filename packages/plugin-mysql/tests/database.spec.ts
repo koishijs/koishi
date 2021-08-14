@@ -1,5 +1,6 @@
 import { expect } from 'chai'
-import { App, Database, Tables } from 'koishi-core'
+import { Database, Tables } from 'koishi-core'
+import { App } from 'koishi-test-utils'
 import * as mysql from 'koishi-plugin-mysql'
 import { createFilter } from 'koishi-plugin-mysql'
 
@@ -25,9 +26,8 @@ describe('Mysql Database', () => {
       }
     })
     const portMap = { maria10: 3307, mysql57: 3306, mysql8: 3308 }
-    const app = new App()
-    await app.start()
     for (const databaseName in portMap) {
+      const app = new App()
       app.plugin(mysql, {
         host: 'localhost',
         port: portMap[databaseName],
@@ -35,7 +35,8 @@ describe('Mysql Database', () => {
         password: 'koishi@114514',
         database: 'koishi',
       })
-      await app.dispose(mysql)
+      await app.start()
+      await app.stop()
     }
   })
 

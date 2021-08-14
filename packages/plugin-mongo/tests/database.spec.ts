@@ -1,4 +1,5 @@
-import { App, Tables } from 'koishi-core'
+import { Tables } from 'koishi-core'
+import { App } from 'koishi-test-utils'
 import * as mongo from 'koishi-plugin-mongo'
 
 declare module 'koishi-core' {
