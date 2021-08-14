@@ -87,19 +87,6 @@ export default function apply(ctx: Context) {
     )`)
   })
 
-  ctx.on('dialogue/mysql', ({ predecessors, stateful, noRecursive }, conditionals) => {
-    if (noRecursive) {
-      conditionals.push('!`predecessors`')
-    } else if (predecessors !== undefined) {
-      const segments = predecessors.map(id => `FIND_IN_SET(${id}, \`predecessors\`)`)
-      if (stateful) {
-        conditionals.push(`(${['!`predecessors`', ...segments].join('||')})`)
-      } else if (predecessors.length) {
-        conditionals.push(`(${segments.join('||')})`)
-      }
-    }
-  })
-
   function getProduct(time: number) {
     return `(\`startTime\`-${time})*(${time}-\`endTime\`)*(\`endTime\`-\`startTime\`)`
   }

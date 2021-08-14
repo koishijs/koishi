@@ -263,4 +263,22 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
       }
     }, dialogue.successorTimeout || successorTimeout)
   })
+
+  ctx.on('dialogue/test', ({ predecessors, stateful, noRecursive }, query) => {
+    if (noRecursive) {
+      query.predecessors = { $size: 0 }
+    } else if (predecessors !== undefined) {
+      const $el = predecessors.map(i => i.toString())
+      if (stateful) {
+        query.$and.push({
+          $or: [
+            { predecessors: { $size: 0 } },
+            { predecessors: { $el } },
+          ],
+        })
+      } else if (predecessors.length) {
+        query.predecessors = { $el }
+      }
+    }
+  })
 }
