@@ -92,8 +92,4 @@ export default function apply(ctx: Context) {
       conditionals.push(getProduct(test.matchTime) + '<0')
     }
   })
-
-  ctx.on('dialogue/mysql', (test, conditionals) => {
-    if (test.writer !== undefined) conditionals.push(`\`writer\` = ${test.writer}`)
-  })
 }

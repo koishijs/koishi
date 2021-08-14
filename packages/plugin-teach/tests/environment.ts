@@ -1,5 +1,5 @@
 import { Database, Context } from 'koishi-core'
-import { defineProperty, Observed, clone, intersection } from 'koishi-utils'
+import { defineProperty, Observed, clone } from 'koishi-utils'
 import { Dialogue, DialogueTest, equal, apply } from 'koishi-plugin-teach'
 import { App } from 'koishi-test-utils'
 
@@ -45,11 +45,6 @@ Database.extend('koishi-test-utils', {
 
 export function memory(ctx: Context) {
   ctx.database.memory.$store.dialogue = []
-
-  // writer
-  ctx.on('dialogue/memory', (data, { writer }) => {
-    if (writer !== undefined && data.writer !== writer) return true
-  })
 
   // time
   ctx.on('dialogue/memory', (data, { matchTime, mismatchTime }) => {

@@ -84,8 +84,4 @@ export default function apply(ctx: Context) {
       conditionals.push({ $expr: { $lt: [expr, 0] } })
     }
   })
-
-  ctx.on('dialogue/mongo', (test, conditionals) => {
-    if (test.writer !== undefined) conditionals.push({ writer: test.writer })
-  })
 }
