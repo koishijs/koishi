@@ -1,5 +1,3 @@
-const { readdirSync } = require('fs')
-
 process.env.TS_NODE_PROJECT = 'tsconfig.test.json'
 
 const specs = [
@@ -10,6 +8,8 @@ const specs = [
   'plugins/common/tests/*.spec.ts',
   'plugins/eval/tests/*.spec.ts',
   'plugins/github/tests/*.spec.ts',
+  'plugins/mongo/tests/*.spec.ts',
+  'plugins/mysql/tests/*.spec.ts',
   'plugins/schedule/tests/*.spec.ts',
   'plugins/teach/tests/*.spec.ts',
 ]

@@ -1,12 +1,12 @@
-import { Channel, Context, Database, isInteger, segment } from 'koishi'
+import { Channel, Context, Tables, isInteger, segment } from 'koishi'
 import { State, MoveResult, StateData } from './state'
 import {} from '@koishijs/plugin-mysql'
 import * as go from './go'
 import * as gomoku from './gomoku'
 import * as othello from './othello'
 
-Database.extend('@koishijs/plugin-mysql', ({ tables, Domain }) => {
-  tables.channel.chess = new Domain.Json()
+Tables.extend('channel', {
+  chess: { type: 'json' },
 })
 
 interface Rule {

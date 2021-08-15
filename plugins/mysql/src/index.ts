@@ -1,6 +1,7 @@
 import MysqlDatabase, { Config, TableType } from './database'
 import { Channel, Database, Context, Query, difference } from 'koishi'
 import { OkPacket, escapeId, escape } from 'mysql'
+import * as Koishi from 'koishi-core'
 
 export * from './database'
 export default MysqlDatabase
@@ -26,21 +27,50 @@ function createRegExpQuery(key: string, value: RegExp) {
   return `${key} REGEXP ${escape(value.source)}`
 }
 
-function createEqualQuery(key: string, value: any) {
-  return `${key} = ${escape(value)}`
+function createElementQuery(key: string, value: any) {
+  return `FIND_IN_SET(${escape(value)}, ${key})`
 }
 
-const queryOperators: Record<string, (key: string, value: any) => string> = {
-  $regex: createRegExpQuery,
-  $regexFor: (key, value) => `${escape(value)} REGEXP ${key}`,
+function comparator(operator: string) {
+  return function (key: string, value: any) {
+    return `${key} ${operator} ${escape(value)}`
+  }
+}
+
+const createEqualQuery = comparator('=')
+
+type QueryOperators = {
+  [K in keyof Query.FieldExpr]?: (key: string, value: Query.FieldExpr[K]) => string
+}
+
+const queryOperators: QueryOperators = {
   $in: (key, value) => createMemberQuery(key, value, ''),
   $nin: (key, value) => createMemberQuery(key, value, ' NOT'),
   $eq: createEqualQuery,
-  $ne: (key, value) => `${key} != ${escape(value)}`,
-  $gt: (key, value) => `${key} > ${escape(value)}`,
-  $gte: (key, value) => `${key} >= ${escape(value)}`,
-  $lt: (key, value) => `${key} < ${escape(value)}`,
-  $lte: (key, value) => `${key} <= ${escape(value)}`,
+  $ne: comparator('!='),
+  $gt: comparator('>'),
+  $gte: comparator('>='),
+  $lt: comparator('<'),
+  $lte: comparator('<='),
+  $regex: createRegExpQuery,
+  $regexFor: (key, value) => `${escape(value)} REGEXP ${key}`,
+  $el: (key, value) => {
+    if (Array.isArray(value)) {
+      return `(${value.map(value => createElementQuery(key, value)).join(' || ')})`
+    } else if (typeof value !== 'number' && typeof value !== 'string') {
+      throw new TypeError('query expr under $el is not supported')
+    } else {
+      return createElementQuery(key, value)
+    }
+  },
+  $size: (key, value) => {
+    if (!value) return `!${key}`
+    return `LENGTH(${key}) - LENGTH(REPLACE(${key}, ",", "")) = ${escape(value)}`
+  },
+  $bitsAllSet: (key, value) => `${key} & ${escape(value)} = ${escape(value)}`,
+  $bitsAllClear: (key, value) => `${key} & ${escape(value)} = 0`,
+  $bitsAnySet: (key, value) => `${key} & ${escape(value)} != 0`,
+  $bitsAnyClear: (key, value) => `${key} & ${escape(value)} != ${escape(value)}`,
 }
 
 export function createFilter<T extends TableType>(name: T, query: Query<T>) {
@@ -48,7 +78,7 @@ export function createFilter<T extends TableType>(name: T, query: Query<T>) {
     const conditions: string[] = []
     for (const key in query) {
       // logical expression
-      if (key === '$or') {
+      if (key === '$not') {
         conditions.push(`!(${parseQuery(query.$not)})`)
         continue
       } else if (key === '$and') {
@@ -108,8 +138,8 @@ Database.extend(MysqlDatabase, {
   },
 
   async create(table, data) {
+    data = { ...data, ...Koishi.Tables.create(table) }
     const keys = Object.keys(data)
-    if (!keys.length) return
     const header = await this.query<OkPacket>(
       `INSERT INTO ?? (${this.joinKeys(keys)}) VALUES (${keys.map(() => '?').join(', ')})`,
       [table, ...this.formatValues(table, data, keys)],
@@ -119,12 +149,17 @@ Database.extend(MysqlDatabase, {
 
   async update(table, data) {
     if (!data.length) return
+    data = data.map(item => ({ ...item, ...Koishi.Tables.create(table) }))
     const keys = Object.keys(data[0])
     const placeholder = `(${keys.map(() => '?').join(', ')})`
+    const update = keys.filter(key => key !== 'id').map((key) => {
+      key = escapeId(key)
+      return `${key} = VALUES(${key})`
+    }).join(', ')
     await this.query(
-      `INSERT INTO ?? (${this.joinKeys(keys)}) VALUES ${data.map(() => placeholder).join(', ')}
-      ON DUPLICATE KEY UPDATE ${keys.filter(key => key !== 'id').map(key => `\`${key}\` = VALUES(\`${key}\`)`).join(', ')}`,
-      [table, ...[].concat(...data.map(data => this.formatValues(table, data, keys)))],
+      `INSERT INTO ${escapeId(table)} (${this.joinKeys(keys)}) VALUES ${data.map(() => placeholder).join(', ')}
+      ON DUPLICATE KEY UPDATE ${update}`,
+      [].concat(...data.map(data => this.formatValues(table, data, keys))),
     )
   },
 

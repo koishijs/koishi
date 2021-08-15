@@ -308,8 +308,9 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
 
   ctx.on('group-member-deleted', triggerNotice.bind(null, 'leave'))
 
-  ctx.on('dialogue/attach-user', ({ session }) => {
-    if (session.user.flag & User.Flag.ignore) return true
+  ctx.on('dialogue/receive', ({ session }) => {
+    // generally flag and authority has already attached to users
+    if (session.user.authority < config.authority.receive) return true
   })
 
   ctx.on('dialogue/receive', ({ session, test }) => {

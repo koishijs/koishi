@@ -417,7 +417,7 @@ export namespace Argv {
         names.forEach(name => option.values[name] = config.value)
       } else if (!bracket.trim()) {
         option.type = 'boolean'
-      } else if (!option.type && fallbackType === 'string' || fallbackType === 'number') {
+      } else if (!option.type && (fallbackType === 'string' || fallbackType === 'number')) {
         option.type = fallbackType
       }
 

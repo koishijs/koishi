@@ -155,12 +155,13 @@ export function apply(ctx: Context, config: Config = {}) {
     command.shortcut(prefix + prefix[prefix.length - 1], { fuzzy: true, options: { slient: true } })
   }
 
-  Argv.interpolate('${', '}', (source) => {
-    const result = ctx.worker.loader.extractScript(segment.unescape(source))
+  Argv.interpolate('${', '}', (raw) => {
+    const source = segment.unescape(raw)
+    const result = ctx.worker.loader.extractScript(source)
     if (!result) {
-      const index = source.indexOf('}')
-      if (index >= 0) return { source, rest: source.slice(index + 1), tokens: [] }
-      return { source, rest: '', tokens: [] }
+      const index = raw.indexOf('}')
+      if (index >= 0) return { source: raw, rest: raw.slice(index + 1), tokens: [] }
+      return { source: raw, rest: '', tokens: [] }
     }
     return {
       source: result,

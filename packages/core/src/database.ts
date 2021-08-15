@@ -14,10 +14,12 @@ export interface Field<T = any> {
   length?: number
   nullable?: boolean
   initial?: T
+  precision?: number
+  scale?: number
 }
 
 export namespace Field {
-  export const numberTypes: Type[] = ['integer', 'unsigned', 'float', 'double']
+  export const numberTypes: Type[] = ['integer', 'unsigned', 'float', 'double', 'decimal']
   export const stringTypes: Type[] = ['char', 'string', 'text']
   export const dateTypes: Type[] = ['timestamp', 'date', 'time']
   export const objectTypes: Type[] = ['list', 'json']
@@ -29,7 +31,7 @@ export namespace Field {
   }
 
   export type Type<T = any> =
-    | T extends number ? 'integer' | 'unsigned' | 'float' | 'double'
+    | T extends number ? 'integer' | 'unsigned' | 'float' | 'double' | 'decimal'
     : T extends string ? 'char' | 'string' | 'text'
     : T extends Date ? 'timestamp' | 'date' | 'time'
     : T extends any[] ? 'list' | 'json'
@@ -111,27 +113,37 @@ export namespace Query {
   export type Field<T extends TableType> = string & keyof Tables[T]
   export type Index<T extends TableType> = IndexKeys<Tables[T], IndexType>
 
-  export interface FieldExpr<T> {
-    $regex?: RegExp
-    $regexFor?: string
-    $in?: T[]
-    $nin?: T[]
-    $eq?: T
-    $ne?: T
-    $gt?: T
-    $gte?: T
-    $lt?: T
-    $lte?: T
+  type Extract<S, T, U = S> = S extends T ? U : never
+  type Primitive = string | number
+  type Comparable = Primitive | Date
+
+  export interface FieldExpr<T = any> {
+    $in?: Extract<T, Primitive, T[]>
+    $nin?: Extract<T, Primitive, T[]>
+    $eq?: Extract<T, Comparable>
+    $ne?: Extract<T, Comparable>
+    $gt?: Extract<T, Comparable>
+    $gte?: Extract<T, Comparable>
+    $lt?: Extract<T, Comparable>
+    $lte?: Extract<T, Comparable>
+    $el?: T extends (infer U)[] ? FieldQuery<U> : never
+    $size?: Extract<T, any[], number>
+    $regex?: Extract<T, string, RegExp>
+    $regexFor?: Extract<T, string>
+    $bitsAllClear?: Extract<T, number>
+    $bitsAllSet?: Extract<T, number>
+    $bitsAnyClear?: Extract<T, number>
+    $bitsAnySet?: Extract<T, number>
   }
 
-  export interface LogicalExpr<T> {
+  export interface LogicalExpr<T = any> {
     $or?: Expr<T>[]
     $and?: Expr<T>[]
     $not?: Expr<T>
   }
 
-  export type Shorthand<T = IndexType> = T | T[] | RegExp
-  export type FieldQuery<T> = FieldExpr<T> | Shorthand<T>
+  export type Shorthand<T extends Primitive = Primitive> = T | T[] | Extract<T, string, RegExp>
+  export type FieldQuery<T = any> = FieldExpr<T> | (T extends Primitive ? Shorthand<T> : never)
   export type Expr<T = any> = LogicalExpr<T> & {
     [K in keyof T]?: FieldQuery<T[K]>
   }
