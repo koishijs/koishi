@@ -1,5 +1,5 @@
 import MongoDatabase, { Config } from './database'
-import { User, Tables, Database, Field, Context, Channel, Random, pick, omit, TableType, Query } from 'koishi-core'
+import { User, Tables, Database, Context, Channel, Random, pick, omit, TableType, Query } from 'koishi-core'
 import { QuerySelector } from 'mongodb'
 
 export * from './database'
@@ -127,9 +127,9 @@ function createFilter<T extends TableType>(name: T, _query: Query<T>) {
   return filter
 }
 
-function getFallbackType({ fields, primary }: Tables.Meta) {
+function getFallbackType({ fields, primary }: Tables.Config) {
   const { type } = fields[primary]
-  return Field.stringTypes.includes(type) ? 'random' : 'incremental'
+  return Tables.Field.Type.string.includes(type) ? 'random' : 'incremental'
 }
 
 Database.extend(MongoDatabase, {
@@ -160,7 +160,7 @@ Database.extend(MongoDatabase, {
   async create(name, data: any) {
     const meta = Tables.config[name]
     const { primary, type = getFallbackType(meta) } = meta
-    const copy = { ...data }
+    const copy = { ...data, ...Tables.create(name) }
     if (copy[primary]) {
       copy['_id'] = copy[primary]
       delete copy[primary]
