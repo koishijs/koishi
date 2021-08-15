@@ -1,3 +1,4 @@
+/* eslint-disable camelcase */
 export enum MessageType {
   // 建联相关
   Identity = 'identity',

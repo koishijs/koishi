@@ -27,8 +27,6 @@ export abstract class SocketIoClient<P extends Platform = Platform> extends Adap
   }
 
   private async _listen(bot: Bot.Instance<P>) {
-    const { timeout, reconnectionDelay } = this.options
-
     const connect = async (resolve: (value: void) => void, reject: (reason: Error) => void) => {
       logger.debug('socket.io client opening')
       bot.status = Bot.Status.CONNECTING
@@ -119,7 +117,7 @@ export class SocketIoClientImpl extends SocketIoClient<'mew'> {
           return logger.warn('cannot parse message', data)
         }
         const session = await adaptSession(bot, parsed)
-        if (session) this.dispatch(session)
+        if (session) console.log(session.content), this.dispatch(session)
       })
 
       resolve()

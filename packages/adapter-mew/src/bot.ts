@@ -1,3 +1,4 @@
+/* eslint-disable camelcase */
 import { Bot, segment } from 'koishi'
 import axios, { Method } from 'axios'
 import * as Mew from './types'
@@ -53,15 +54,6 @@ export class MewBot extends Bot<'mew'> {
     return adaptUser(data)
   }
 
-  private async _sendEmbed(requestUrl: string, fileBuffer: Buffer, payload_json: Record<string, any> = {}) {
-    // const fd = new FormData()
-    // const type = await FileType.fromBuffer(fileBuffer)
-    // fd.append('file', fileBuffer, 'file.' + type.ext)
-    // fd.append('payload_json', JSON.stringify(payload_json))
-    // const r = await this.request('POST', requestUrl, fd, fd.getHeaders())
-    // return r.id as string
-  }
-
   private async _sendContent(requestUrl: string, content: string, addition: Record<string, any>) {
     const r = await this.request('POST', requestUrl, {
       ...addition,
@@ -76,66 +68,8 @@ export class MewBot extends Bot<'mew'> {
     return chain.shift()?.data.id || ''
   }
 
-  // @ts-ignore
   async sendPrivateMessage(channelId: string, content: string) {
     return this.sendMessage(channelId, content)
-  }
-
-  private async _sendAsset(requestUrl: string, type: string, data: Record<string, string>, addition: Record<string, any>) {
-    // const { axiosConfig, discord = {} } = this.app.options
-
-    // if (discord.handleMixedContent === 'separate' && addition.content) {
-    //   await this._sendContent(requestUrl, addition.content, addition)
-    //   addition.content = ''
-    // }
-
-    // if (data.url.startsWith('file://')) {
-    //   return this._sendEmbed(requestUrl, readFileSync(data.url.slice(8)), addition)
-    // } else if (data.url.startsWith('base64://')) {
-    //   const a = Buffer.from(data.url.slice(9), 'base64')
-    //   return await this._sendEmbed(requestUrl, a, addition)
-    // }
-
-    // const sendDirect = async () => {
-    //   if (addition.content) {
-    //     await this._sendContent(requestUrl, addition.content, addition)
-    //   }
-    //   return this._sendContent(requestUrl, data.url, addition)
-    // }
-
-    // const sendDownload = async () => {
-    //   const a = await axios.get(data.url, {
-    //     ...axiosConfig,
-    //     ...discord.axiosConfig,
-    //     responseType: 'arraybuffer',
-    //     headers: {
-    //       accept: type + '/*',
-    //     },
-    //   })
-    //   return this._sendEmbed(requestUrl, a.data, addition)
-    // }
-
-    // const mode = data.mode as HandleExternalAsset || discord.handleExternalAsset
-    // if (mode === 'download' || discord.handleMixedContent === 'attach' && addition.content) {
-    //   return sendDownload()
-    // } else if (mode === 'direct') {
-    //   return sendDirect()
-    // }
-
-    // // auto mode
-    // await axios.head(data.url, {
-    //   ...axiosConfig,
-    //   ...discord.axiosConfig,
-    //   headers: {
-    //     accept: type + '/*',
-    //   },
-    // }).then(({ headers }) => {
-    //   if (headers['content-type'].startsWith(type)) {
-    //     return sendDirect()
-    //   } else {
-    //     return sendDownload()
-    //   }
-    // }, sendDownload)
   }
 
   private async _sendMessage(requestUrl: string, content?: string, addition: Record<string, any> = {}) {
@@ -167,21 +101,6 @@ export class MewBot extends Bot<'mew'> {
       } else if (type === 'face' && data.name && data.id) {
         textBuffer += `<:${data.name}:${data.id}>`
       }
-    //   } else if ((type === 'image' || type === 'video') && data.url) {
-    //     messageId = await this._sendAsset(requestUrl, type, data, {
-    //       ...addition,
-    //       content: textBuffer.trim(),
-    //     })
-    //     textBuffer = ''
-    //   } else if (type === 'share') {
-    //     await sendBuffer()
-    //     const r = await this.request('POST', requestUrl, {
-    //       ...addition,
-    //       embeds: [{ ...data }],
-    //     })
-    //     messageId = r.id
-    //   }
-    // }
     }
 
     await sendBuffer()
@@ -315,7 +234,7 @@ export class MewBot extends Bot<'mew'> {
   // }
 
   // $getGuildWebhooks(guildId: string) {
-  //   return this.request<DC.Webhook[]>('GET', `/guilds/${guildId}/webhooks`)
+  //   return this.request<DC.Webhook[]>('GET', `/nodes/${guildId}/webhooks`)
   // }
 
   // $modifyChannel(channelId: string, data: DC.ModifyChannel) {
@@ -323,7 +242,7 @@ export class MewBot extends Bot<'mew'> {
   // }
 
   $getGuild(guildId: string) {
-    return this.request<Mew.Node>('GET', `/guilds/${guildId}`)
+    return this.request<Mew.Node>('GET', `/nodes/${guildId}`)
   }
 
   async getGroup(groupId: string) {

@@ -3,7 +3,7 @@ import { AxiosRequestConfig } from 'axios'
 import { MewBot } from './bot'
 import { SocketIoClientImpl, SocketIOOption } from './ws'
 import { Socket } from 'socket.io-client'
-// import * as DC from './types'
+
 export * from './bot'
 
 interface MewOption extends SocketIOOption {
