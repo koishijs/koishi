@@ -53,24 +53,6 @@ Database.extend('koishi-plugin-mysql', {
   },
 })
 
-Database.extend('koishi-plugin-mysql', ({ Domain, tables }) => {
-  tables.dialogue = {
-    id: `INT(11) UNSIGNED NOT NULL AUTO_INCREMENT`,
-    flag: `INT(10) UNSIGNED NOT NULL DEFAULT '0'`,
-    probS: `DECIMAL(4,3) UNSIGNED NOT NULL DEFAULT '1.000'`,
-    probA: `DECIMAL(4,3) UNSIGNED NOT NULL DEFAULT '0.000'`,
-    startTime: `INT(10) NOT NULL DEFAULT '0'`,
-    endTime: `INT(10) NOT NULL DEFAULT '0'`,
-    groups: new Domain.Array(`TINYTEXT`),
-    original: `TINYTEXT NULL DEFAULT NULL COLLATE 'utf8mb4_general_ci'`,
-    question: `TINYTEXT NULL DEFAULT NULL COLLATE 'utf8mb4_general_ci'`,
-    answer: `TEXT(65535) NULL DEFAULT NULL COLLATE 'utf8mb4_general_ci'`,
-    predecessors: new Domain.Array(`TINYTEXT`),
-    successorTimeout: `INT(10) UNSIGNED NOT NULL DEFAULT '0'`,
-    writer: 'INT(11) UNSIGNED',
-  }
-})
-
 export default function apply(ctx: Context) {
   ctx.on('dialogue/mysql', (test, conditionals) => {
     if (!test.groups || !test.groups.length) return

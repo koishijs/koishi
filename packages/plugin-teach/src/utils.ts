@@ -23,7 +23,23 @@ declare module 'koishi-core' {
   }
 }
 
-Tables.extend('dialogue')
+Tables.extend('dialogue', {
+  fields: {
+    id: 'unsigned',
+    flag: 'unsigned(4)',
+    probS: { type: 'decimal', precision: 4, scale: 3, initial: 1 },
+    probA: { type: 'decimal', precision: 4, scale: 3, initial: 0 },
+    startTime: 'unsigned',
+    endTime: 'unsigned',
+    groups: 'list(255)',
+    original: 'string(255)',
+    question: 'string(255)',
+    answer: 'text',
+    predecessors: 'list(255)',
+    successorTimeout: 'unsigned',
+    writer: 'string(255)',
+  },
+})
 
 export interface Dialogue {
   id?: number
