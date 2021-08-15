@@ -125,7 +125,7 @@ function formatCommands(path: string, session: Session<ValidationField>, childre
   return output
 }
 
-function getOptionVisibility(option: Argv.OptionConfig, session: Session<ValidationField>) {
+function getOptionVisibility(option: Argv.OptionDeclaration, session: Session<ValidationField>) {
   if (session.user && option.authority > session.user.authority) return false
   return !session.resolveValue(option.hidden)
 }

@@ -21,7 +21,7 @@ declare module 'koishi' {
 }
 
 Tables.extend('channel', {
-  subscribe: { type: 'json', initial: {} },
+  subscribe: 'json',
 })
 
 interface SubscribeOptions {

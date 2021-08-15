@@ -1,5 +1,5 @@
 import { createPool, Pool, PoolConfig, escape as mysqlEscape, escapeId, format, TypeCast } from 'mysql'
-import { App, Database, Field, Logger } from 'koishi'
+import { App, Database, Logger } from 'koishi'
 import * as Koishi from 'koishi'
 import { types } from 'util'
 
@@ -21,7 +21,7 @@ function stringify(value: any, table?: TableType, field?: string) {
   const type = MysqlDatabase.tables[table]?.[field]
   if (typeof type === 'object') return type.stringify(value)
 
-  const meta = (Koishi.Tables.config[table] as Koishi.Tables.Meta)?.fields[field]
+  const meta = (Koishi.Tables.config[table] as Koishi.Tables.Config)?.fields[field]
   if (meta?.type === 'json') {
     return JSON.stringify(value)
   } else if (meta?.type === 'list') {
@@ -35,7 +35,7 @@ function escape(value: any, table?: TableType, field?: string) {
   return mysqlEscape(stringify(value, table, field))
 }
 
-function getTypeDefinition({ type, length, precision, scale }: Field) {
+function getTypeDefinition({ type, length, precision, scale }: Koishi.Tables.Field) {
   switch (type) {
     case 'float':
     case 'double':
@@ -45,9 +45,11 @@ function getTypeDefinition({ type, length, precision, scale }: Field) {
     case 'integer': return `int(${length || 10})`
     case 'unsigned': return `int(${length || 10}) unsigned`
     case 'decimal': return `int(${precision}, ${scale}) unsigned`
-    case 'string': return `varchar(${length || 65536})`
-    case 'list': return `varchar(${length || 65536})`
-    case 'json': return `varchar(${length || 65536})`
+    case 'char': return `char(${length || 64})`
+    case 'string': return `char(${length || 256})`
+    case 'text': return `text(${length || 65535})`
+    case 'list': return `text(${length || 65535})`
+    case 'json': return `text(${length || 65535})`
   }
 }
 
@@ -79,7 +81,7 @@ class MysqlDatabase extends Database {
         const type = MysqlDatabase.tables[orgTable]?.[orgName]
         if (typeof type === 'object') return type.parse(field)
 
-        const meta = (Koishi.Tables.config[orgTable] as Koishi.Tables.Meta)?.fields[orgName]
+        const meta = (Koishi.Tables.config[orgTable] as Koishi.Tables.Config)?.fields[orgName]
         if (meta?.type === 'string') {
           return field.string()
         } else if (meta?.type === 'json') {
@@ -121,7 +123,7 @@ class MysqlDatabase extends Database {
         const cols = Object.keys(table)
           .filter((key) => typeof table[key] !== 'function')
           .map((key) => `${escapeId(key)} ${MysqlDatabase.Domain.definition(table[key])}`)
-        const { type, primary, unique, foreign, fields } = Koishi.Tables.config[name] as Koishi.Tables.Meta
+        const { type, primary, unique, foreign, fields } = Koishi.Tables.config[name] as Koishi.Tables.Config
         cols.push(`primary key (${escapeId(primary)})`)
         for (const key of unique) {
           if (Array.isArray(key)) {

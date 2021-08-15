@@ -168,12 +168,3 @@ Database.extend('@koishijs/plugin-mysql', {
     return new MysqlSynchronizer(this)
   },
 })
-
-Database.extend('@koishijs/plugin-mysql', ({ tables, Domain }) => {
-  tables.user.lastCall = 'timestamp'
-  tables.user.password = 'varchar(64)'
-  tables.user.token = 'varchar(64)'
-  tables.user.expire = 'bigint unsigned default 0'
-  tables.channel.name = 'varchar(50)'
-  tables.channel.activity = new Domain.Json()
-})

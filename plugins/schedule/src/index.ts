@@ -17,14 +17,16 @@ export interface Schedule {
 }
 
 Tables.extend('schedule', {
-  id: { type: 'integer' },
-  assignee: { type: 'string', length: 50 },
-  time: { type: 'timestamp' },
-  lastCall: { type: 'timestamp' },
-  interval: { type: 'integer', length: 20, initial: 0 },
-  command: { type: 'string', length: 1000 },
-  session: { type: 'json' },
-}, { type: 'incremental' })
+  id: 'unsigned',
+  assignee: 'string',
+  time: 'timestamp',
+  lastCall: 'timestamp',
+  interval: 'integer',
+  command: 'text',
+  session: 'json',
+}, {
+  type: 'incremental',
+})
 
 const logger = new Logger('schedule')
 

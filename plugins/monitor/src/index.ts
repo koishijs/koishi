@@ -49,7 +49,7 @@ export function apply(ctx: Context) {
   cmd.subcommand('.create <...names>', '添加新的监测账号', { authority: 3 })
     .option('bilibili', '-b <id>  设置 Bilibili 账号')
     .option('mirrativ', '-m <id>  设置 Mirrativ 账号')
-    .option('twitcasting', '-t <id>  设置 TwitCasting 账号', { type: 'string' })
+    .option('twitcasting', '-t <id:string>  设置 TwitCasting 账号')
     .action(async ({ options }, ...names) => {
       if (!names.length) return '请提供至少一个名字。'
 
@@ -95,11 +95,11 @@ export function apply(ctx: Context) {
     })
 
   cmd.subcommand('.update <name>', '修改已有账号信息', { authority: 3 })
-    .option('addName', '-n <name>  添加账号名', { type: 'string', fallback: '' })
-    .option('removeName', '-N <name>  删除账号名', { type: 'string', fallback: '' })
-    .option('bilibili', '-b <id>  设置 Bilibili 账号', { type: 'string' })
-    .option('mirrativ', '-m <id>  设置 Mirrativ 账号', { type: 'string' })
-    .option('twitcasting', '-t <id>  设置 TwitCasting 账号', { type: 'string' })
+    .option('addName', '-n <name:string>  添加账号名', { fallback: '' })
+    .option('removeName', '-N <name:string>  删除账号名', { fallback: '' })
+    .option('bilibili', '-b <id:string>  设置 Bilibili 账号')
+    .option('mirrativ', '-m <id:string>  设置 Mirrativ 账号')
+    .option('twitcasting', '-t <id:string>  设置 TwitCasting 账号')
     .action(async ({ options }, name: string) => {
       if (!name) return '请输入账号。'
       name = String(name)

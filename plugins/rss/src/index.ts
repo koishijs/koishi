@@ -8,7 +8,7 @@ declare module 'koishi' {
 }
 
 Tables.extend('channel', {
-  rss: { type: 'list' },
+  rss: 'list',
 })
 
 export interface Config {

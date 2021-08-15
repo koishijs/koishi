@@ -1,4 +1,4 @@
-import { Context, Channel, User, template, Time } from 'koishi'
+import { Context, template, Time, Tables } from 'koishi'
 import { Synchronizer } from './payload/stats'
 import { WebServer, Config } from './server'
 import Meta from './payload/meta'
@@ -56,13 +56,17 @@ declare module 'koishi' {
 
 Context.delegate('webui')
 
-Channel.extend(() => ({
-  activity: {},
-}))
+Tables.extend('user', {
+  lastCall: 'timestamp',
+  password: 'string(64)',
+  token: 'string(64)',
+  expire: 'unsigned(20)',
+})
 
-User.extend(() => ({
-  expire: 0,
-}))
+Tables.extend('channel', {
+  name: 'string(50)',
+  activity: 'json',
+})
 
 template.set('status', {
   // eslint-disable-next-line no-template-curly-in-string
