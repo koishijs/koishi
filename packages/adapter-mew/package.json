@@ -1,13 +1,16 @@
 {
   "name": "koishi-adapter-mew",
   "description": "mew adapter for Koishi",
-  "version": "1.0.0-beta.11",
+  "version": "0.1.0",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
     "lib"
   ],
-  "author": "Shigma <1700011071@pku.edu.cn>",
+  "author": "weoking <971182281@qq.com>",
+  "maintainers": [
+    "Shigma <1700011071@pku.edu.cn>"
+  ],
   "license": "MIT",
   "repository": {
     "type": "git",

@@ -1,4 +1,4 @@
-// @ts-ignore
+/* eslint-disable */
 // @ts-nocheck
 function o(e, t, n) {
   for (
