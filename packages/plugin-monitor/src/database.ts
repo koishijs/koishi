@@ -22,7 +22,7 @@ declare module 'koishi-core' {
 
 Tables.extend('channel', {
   fields: {
-    subscribe: { type: 'json', initial: {} },
+    subscribe: 'json',
   },
 })
 

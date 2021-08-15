@@ -44,16 +44,6 @@ export namespace Tables {
       [K in keyof O]?: Field<O[K]>
     }
 
-    const defaultLength: Partial<Record<Type, number>> = {
-      integer: 10,
-      unsigned: 10,
-      char: 64,
-      string: 256,
-      text: 65535,
-      json: 65535,
-      list: 65535,
-    }
-
     const regexp = /^(\w+)(?:\((.+)\))?$/
 
     export function parse(source: string | Field): Field {
@@ -78,8 +68,6 @@ export namespace Tables {
         field.scale = +args[1]
       } else if (args.length) {
         field.length = +args[0]
-      } else {
-        field.length = defaultLength[type]
       }
 
       return field
@@ -87,7 +75,10 @@ export namespace Tables {
 
     export function extend(fields: Config, extension: Extension = {}) {
       for (const key in extension) {
-        fields[key] = parse(extension[key])
+        const field = fields[key] = parse(extension[key])
+        if (field.initial !== undefined && field.initial !== null) {
+          field.nullable ??= false
+        }
       }
       return fields
     }
@@ -113,7 +104,7 @@ export namespace Tables {
 
   export function extend<T extends TableType>(name: T, meta?: Extension<Tables[T]>): void
   export function extend(name: string, meta: Extension = {}) {
-    const { unique = [], foreign, fields } = config[name] || {}
+    const { unique = [], foreign, fields = {} } = config[name] || {}
     config[name] = {
       type: 'incremental',
       primary: 'id',

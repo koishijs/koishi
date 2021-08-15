@@ -1,4 +1,4 @@
-import { Channel, Context, Tables } from 'koishi-core'
+import { Context, Tables } from 'koishi-core'
 import { isInteger, segment } from 'koishi-utils'
 import { State, MoveResult, StateData } from './state'
 import {} from 'koishi-plugin-mysql'
@@ -8,6 +8,7 @@ import * as othello from './othello'
 
 Tables.extend('channel', {
   fields: {
+    // do not use shorthand because the initial value is `null`
     chess: { type: 'json' },
   },
 })
@@ -29,10 +30,6 @@ declare module 'koishi-core' {
     chess: StateData
   }
 }
-
-Channel.extend(() => ({
-  chess: null,
-}))
 
 const states: Record<string, State> = {}
 
