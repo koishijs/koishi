@@ -1,5 +1,5 @@
 {
-  "name": "koishi-adapter-minecraft",
+  "name": "@koishijs/plugin-minecraft",
   "description": "Minecraft adapter for Koishi",
   "version": "0.1.0",
   "main": "lib/index.js",

@@ -1,7 +1,7 @@
 import MysqlDatabase, { Config, TableType } from './database'
-import { Channel, Database, Context, Query, difference } from 'koishi'
+import { Channel, Database, Context, Query } from 'koishi'
 import { OkPacket, escapeId, escape } from 'mysql'
-import * as Koishi from 'koishi-core'
+import * as Koishi from 'koishi'
 
 export * from './database'
 export default MysqlDatabase
@@ -163,42 +163,6 @@ Database.extend(MysqlDatabase, {
     )
   },
 
-  // async createUser(type, id, data) {
-  //   data[type] = id
-  //   const newKeys = Object.keys(data)
-  //   const assignments = difference(newKeys, [type]).map((key) => {
-  //     key = this.escapeId(key)
-  //     return `${key} = VALUES(${key})`
-  //   }).join(', ')
-  //   const user = Object.assign(User.create(type, id), data)
-  //   const keys = Object.keys(user)
-  //   await this.query(
-  //     `INSERT INTO ?? (${this.joinKeys(keys)}) VALUES (${keys.map(() => '?').join(', ')})
-  //     ON DUPLICATE KEY UPDATE ${assignments}`,
-  //     ['user', ...this.formatValues('user', user, keys)],
-  //   )
-  // },
-
-  async setUser(type, id, data) {
-    data[type] = id
-    const keys = Object.keys(data)
-    const assignments = difference(keys, [type]).map((key) => {
-      return `${this.escapeId(key)} = ${this.escape(data[key], 'user', key)}`
-    }).join(', ')
-    await this.query(`UPDATE ?? SET ${assignments} WHERE ?? = ?`, ['user', type, id])
-  },
-
-  async getChannel(type, pid, modifier) {
-    const { fields } = Query.resolveModifier(modifier)
-    if (fields && !fields.length) {
-      return Array.isArray(pid) ? pid.map(id => ({ id: `${type}:${id}` })) : { id: `${type}:${pid}` }
-    }
-    const id = Array.isArray(pid) ? pid.map(id => `${type}:${id}`) : `${type}:${pid}`
-    const data = await this.get('channel', { id }, modifier)
-    if (Array.isArray(pid)) return data
-    return data[0] && { ...data[0], id: `${type}:${pid}` }
-  },
-
   async getAssignedChannels(fields, assignMap = this.app.getSelfIds()) {
     return this.select<Channel>('channel', fields, Object.entries(assignMap).map(([type, ids]) => {
       return [
@@ -206,33 +170,6 @@ Database.extend(MysqlDatabase, {
         `\`assignee\` IN (${ids.map(id => this.escape(id)).join(',')})`,
       ].join(' AND ')
     }).join(' OR '))
-  },
-
-  async createChannel(type, pid, data) {
-    data.id = `${type}:${pid}`
-    const newKeys = Object.keys(data)
-    if (!newKeys.length) return
-    const assignments = difference(newKeys, ['id']).map((key) => {
-      key = this.escapeId(key)
-      return `${key} = VALUES(${key})`
-    })
-    const channel = Object.assign(Channel.create(type, pid), data)
-    const keys = Object.keys(channel)
-    await this.query(
-      `INSERT INTO ?? (${this.joinKeys(keys)}) VALUES (${keys.map(() => '?').join(', ')})
-      ON DUPLICATE KEY UPDATE ${assignments.join(', ')}`,
-      ['channel', ...this.formatValues('channel', channel, keys)],
-    )
-  },
-
-  async setChannel(type, pid, data) {
-    data.id = `${type}:${pid}`
-    const keys = Object.keys(data)
-    if (!keys.length) return
-    const assignments = difference(keys, ['id']).map((key) => {
-      return `${this.escapeId(key)} = ${this.escape(data[key], 'channel', key)}`
-    }).join(', ')
-    await this.query(`UPDATE ?? SET ${assignments} WHERE ?? = ?`, ['channel', 'id', data.id])
   },
 })
 
