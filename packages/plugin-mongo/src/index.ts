@@ -1,5 +1,6 @@
 import MongoDatabase, { Config } from './database'
 import { User, Tables, Database, Field, Context, Channel, Random, pick, omit, TableType, Query } from 'koishi-core'
+import { QuerySelector } from 'mongodb'
 
 export * from './database'
 export default MongoDatabase
@@ -70,39 +71,49 @@ function unescapeKey<T extends Partial<User>>(data: T) {
   return data
 }
 
+function transformFieldQuery(query: Query.FieldQuery, key: string) {
+  // shorthand syntax
+  if (typeof query === 'string' || typeof query === 'number') {
+    return { $eq: query }
+  } else if (Array.isArray(query)) {
+    if (!query.length) return
+    return { $in: query }
+  } else if (query instanceof RegExp) {
+    return { $regex: query }
+  }
+
+  // query operators
+  const result: QuerySelector<any> = {}
+  for (const prop in query) {
+    if (prop === '$el') {
+      result.$elemMatch = transformFieldQuery(query[prop], key)
+    } else if (prop === '$regexFor') {
+      result.$expr = {
+        body(data: string, value: string) {
+          return new RegExp(data, 'i').test(value)
+        },
+        args: ['$' + key, query],
+        lang: 'js',
+      }
+    } else {
+      result[prop] = query[prop]
+    }
+  }
+  return result
+}
+
 function createFilter<T extends TableType>(name: T, _query: Query<T>) {
   function transformQuery(query: Query.Expr) {
-    const filter = {}, pending = []
+    const filter = {}
     for (const key in query) {
       const value = query[key]
       if (key === '$and' || key === '$or') {
         filter[key] = value.map(transformQuery)
       } else if (key === '$not') {
         filter[key] = transformQuery(value)
-      } else if (typeof value === 'string' || typeof value === 'number') {
-        filter[key] = { $eq: value }
-      } else if (Array.isArray(value)) {
-        if (!value.length) return
-        filter[key] = { $in: value }
       } else {
-        filter[key] = {}
-        for (const prop in value) {
-          if (prop === '$regexFor') {
-            filter[key].$expr = {
-              body(data: string, value: string) {
-                return new RegExp(data, 'i').test(value)
-              },
-              args: ['$' + key, value],
-              lang: 'js',
-            }
-          } else {
-            filter[key][prop] = value[prop]
-          }
-        }
+        filter[key] = transformFieldQuery(value, key)
       }
-    }
-    if (pending.length) {
-      (filter['$and'] ||= []).push(...pending)
     }
     return filter
   }
@@ -149,7 +160,7 @@ Database.extend(MongoDatabase, {
   async create(name, data: any) {
     const meta = Tables.config[name]
     const { primary, type = getFallbackType(meta) } = meta
-    const copy = { ...data }
+    const copy = { ...data, ...Tables.create(name) }
     if (copy[primary]) {
       copy['_id'] = copy[primary]
       delete copy[primary]

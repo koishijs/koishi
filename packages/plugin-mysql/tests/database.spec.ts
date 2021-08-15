@@ -1,5 +1,6 @@
 import { expect } from 'chai'
-import { Tables } from 'koishi-core'
+import { App, Database, Tables } from 'koishi-core'
+import * as mysql from 'koishi-plugin-mysql'
 import { createFilter } from 'koishi-plugin-mysql'
 
 declare module 'koishi-core' {
@@ -16,6 +17,28 @@ interface FooData {
 Tables.extend('foo')
 
 describe('Mysql Database', () => {
+  it('should support maria10, mysql57, mysql8', async () => {
+    Database.extend('koishi-plugin-mysql', ({ tables }) => {
+      tables.foo = {
+        id: 'BIGINT(20)',
+        bar: 'VARCHAR(100)',
+      }
+    })
+    const portMap = { maria10: 3307, mysql57: 3306, mysql8: 3308 }
+    const app = new App()
+    await app.start()
+    for (const databaseName in portMap) {
+      app.plugin(mysql, {
+        host: 'localhost',
+        port: portMap[databaseName],
+        user: 'koishi',
+        password: 'koishi@114514',
+        database: 'koishi',
+      })
+      await app.dispose(mysql)
+    }
+  })
+
   describe('createFilter', () => {
     it('base support', () => {
       expect(createFilter('foo', [1, 2]))
@@ -25,7 +48,7 @@ describe('Mysql Database', () => {
         .to.equal('`id` IN (1, 2)')
 
       expect(createFilter('foo', { id: [1, 2], bar: ['foo'] }))
-        .to.equal('`id` IN (1, 2) AND `bar` IN (\'foo\')')
+        .to.equal('`id` IN (1, 2) && `bar` IN (\'foo\')')
     })
 
     it('compile expr query', () => {
@@ -38,7 +61,7 @@ describe('Mysql Database', () => {
       expect(createFilter('foo', {
         id: { $gt: 2 },
         bar: /^.*foo/,
-      })).to.equal('`id` > 2 AND `bar` REGEXP \'^.*foo\'')
+      })).to.equal('`id` > 2 && `bar` REGEXP \'^.*foo\'')
     })
 
     it('filter data by include', () => {
@@ -71,24 +94,30 @@ describe('Mysql Database', () => {
 
     it('should verify `$or`', () => {
       expect(createFilter('foo', {
-        $or: [{ bar: { $regex: /^.*foo/ } }, { bar: { $regex: /^foo.*/ } }],
-      })).to.equal('(`bar` REGEXP \'^.*foo\' OR `bar` REGEXP \'^foo.*\')')
+        $or: [
+          { bar: { $regex: /^.*foo/ } },
+          { bar: { $regex: /^foo.*/ } },
+        ],
+      })).to.equal('(`bar` REGEXP \'^.*foo\' || `bar` REGEXP \'^foo.*\')')
 
       expect(createFilter('foo', {
-        $or: [{ id: [1, 2] }, { bar: { $regex: /^foo.*/ } }],
-      })).to.equal('(`id` IN (1, 2) OR `bar` REGEXP \'^foo.*\')')
+        $or: [
+          { id: [1, 2] },
+          { bar: { $regex: /^foo.*/ } },
+        ],
+      })).to.equal('(`id` IN (1, 2) || `bar` REGEXP \'^foo.*\')')
     })
 
     it('should verify `$or` and other key`', () => {
       expect(createFilter('foo', {
         id: [1, 2],
         $or: [{ bar: { $regex: /^foo.*/ } }],
-      })).to.equal('`id` IN (1, 2) AND (`bar` REGEXP \'^foo.*\')')
+      })).to.equal('`id` IN (1, 2) && (`bar` REGEXP \'^foo.*\')')
 
       expect(createFilter('foo', {
         id: { $lt: 2 },
         $or: [{ bar: { $regex: /^foo.*/ } }, { bar: { $regex: /^.*foo/ } }],
-      })).to.equal('`id` < 2 AND (`bar` REGEXP \'^foo.*\' OR `bar` REGEXP \'^.*foo\')')
+      })).to.equal('`id` < 2 && (`bar` REGEXP \'^foo.*\' || `bar` REGEXP \'^.*foo\')')
     })
   })
 })

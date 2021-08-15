@@ -1,4 +1,4 @@
-import { createPool, Pool, PoolConfig, escape as mysqlEscape, escapeId, format, OkPacket, TypeCast } from 'mysql'
+import { createPool, Pool, PoolConfig, escape as mysqlEscape, escapeId, format, TypeCast } from 'mysql'
 import { App, Database, Field } from 'koishi-core'
 import * as Koishi from 'koishi-core'
 import { Logger } from 'koishi-utils'
@@ -38,7 +38,7 @@ function escape(value: any, table?: TableType, field?: string) {
   return mysqlEscape(stringify(value, table, field))
 }
 
-function getTypeDefinition({ type, length }: Field) {
+function getTypeDefinition({ type, length, precision, scale }: Field) {
   switch (type) {
     case 'float':
     case 'double':
@@ -47,6 +47,7 @@ function getTypeDefinition({ type, length }: Field) {
     case 'timestamp': return type
     case 'integer': return `int(${length || 10})`
     case 'unsigned': return `int(${length || 10}) unsigned`
+    case 'decimal': return `int(${precision}, ${scale}) unsigned`
     case 'string': return `varchar(${length || 65536})`
     case 'list': return `varchar(${length || 65536})`
     case 'json': return `varchar(${length || 65536})`
@@ -142,14 +143,16 @@ class MysqlDatabase {
         }
         for (const key in fields) {
           const { initial, nullable = initial === undefined } = fields[key]
-          let def = getTypeDefinition(fields[key])
-          def += (nullable ? ' ' : ' not ') + 'null'
-          if (initial && typeof initial !== 'string') {
-            // mysql does not support text column with default value
-            def += ' default ' + mysqlEscape(initial)
-          }
+          let def = escapeId(key)
           if (key === primary && type === 'incremental') {
-            def = 'bigint(20) unsigned not null auto_increment'
+            def += ' bigint(20) unsigned not null auto_increment'
+          } else {
+            def += ' ' + getTypeDefinition(fields[key])
+            def += (nullable ? ' ' : ' not ') + 'null'
+            if (initial && typeof initial !== 'string') {
+              // mysql does not support text column with default value
+              def += ' default ' + mysqlEscape(initial)
+            }
           }
           cols.push(def)
         }
@@ -220,17 +223,6 @@ class MysqlDatabase {
       + (table.includes('.') ? `FROM ${table}` : ' FROM `' + table + `\` _${table}`)
       + (conditional ? ' WHERE ' + conditional : '')
     return this.query(sql, values)
-  }
-
-  async create<K extends TableType>(table: K, data: Partial<Tables[K]>): Promise<Tables[K]> {
-    const keys = Object.keys(data)
-    if (!keys.length) return
-    logger.debug(`[create] ${table}: ${data}`)
-    const header = await this.query<OkPacket>(
-      `INSERT INTO ?? (${this.joinKeys(keys)}) VALUES (${keys.map(() => '?').join(', ')})`,
-      [table, ...this.formatValues(table, data, keys)],
-    )
-    return { ...data, id: header.insertId } as any
   }
 
   async count<K extends TableType>(table: K, conditional?: string) {
