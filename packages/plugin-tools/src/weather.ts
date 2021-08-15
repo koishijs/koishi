@@ -10,7 +10,7 @@ export const name = 'weather'
 export function apply(ctx: Context) {
   ctx.command('tools/weather <longitude> <latitude>', '查询天气')
     // typescript cannot infer type from string templates
-    .option('product', `-p <product>  晴天钟产品选择，可为 ${products.join(', ')}`, { type: 'string', fallback: 'civil' })
+    .option('product', `-p <product:string>  晴天钟产品选择，可为 ${products.join(', ')}`, { fallback: 'civil' })
     .action(async ({ options }, lon, lat) => {
       if (!lon || !lat) return '请输入经纬度。'
       const { product } = options

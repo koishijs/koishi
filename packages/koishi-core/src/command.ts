@@ -173,10 +173,9 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
     return this
   }
 
-  option<K extends string, T extends keyof Argv.Domain>(name: K, desc: string, config: Argv.OptionConfig<T>): Command<U, G, A, Extend<O, K, Argv.Domain[T]>>
-  option<K extends string, R extends string>(name: K, desc: string, config: Argv.OptionConfig<R[]>): Command<U, G, A, Extend<O, K, R>>
-  option<K extends string, R>(name: K, desc: string, config: Argv.OptionConfig<(source: string) => R>): Command<U, G, A, Extend<O, K, R>>
-  option<K extends string>(name: K, desc: string, config: Argv.OptionConfig<RegExp>): Command<U, G, A, Extend<O, K, string>>
+  option<K extends string>(name: K, desc: string, config: Argv.TypedOptionConfig<RegExp>): Command<U, G, A, Extend<O, K, string>>
+  option<K extends string, R>(name: K, desc: string, config: Argv.TypedOptionConfig<(source: string) => R>): Command<U, G, A, Extend<O, K, R>>
+  option<K extends string, R extends string>(name: K, desc: string, config: Argv.TypedOptionConfig<R[]>): Command<U, G, A, Extend<O, K, R>>
   option<K extends string, D extends string>(name: K, desc: D, config?: Argv.OptionConfig): Command<U, G, A, Extend<O, K, Argv.OptionType<D>>>
   option(name: string, desc: string, config: Argv.OptionConfig = {}) {
     this._createOption(name, desc, config)

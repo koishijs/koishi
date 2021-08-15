@@ -355,6 +355,10 @@ export namespace Argv {
     notUsage?: boolean
   }
 
+  export interface TypedOptionConfig<T extends Type> extends OptionConfig<T> {
+    type: T
+  }
+
   export interface OptionDeclaration extends Declaration, OptionConfig {
     description?: string
     values?: Record<string, any>
@@ -377,7 +381,7 @@ export namespace Argv {
       this.declaration = decl.stripped
     }
 
-    _createOption(name: string, def: string, config?: OptionConfig) {
+    _createOption(name: string, def: string, config: OptionConfig) {
       const param = paramCase(name)
       const decl = def.replace(/(?<=^|\s)[\w\x80-\uffff].*/, '')
       const desc = def.slice(decl.length)
