@@ -8,49 +8,111 @@ export interface Tables {
   channel: Channel
 }
 
-export interface Field<T = any> {
-  type: Field.Type<T>
-  length?: number
-  nullable?: boolean
-  initial?: T
-  precision?: number
-  scale?: number
-}
-
-export namespace Field {
-  export const numberTypes: Type[] = ['integer', 'unsigned', 'float', 'double', 'decimal']
-  export const stringTypes: Type[] = ['char', 'string', 'text']
-  export const dateTypes: Type[] = ['timestamp', 'date', 'time']
-  export const objectTypes: Type[] = ['list', 'json']
-
-  export type Type<T = any> =
-    | T extends number ? 'integer' | 'unsigned' | 'float' | 'double' | 'decimal'
-    : T extends string ? 'char' | 'string' | 'text'
-    : T extends Date ? 'timestamp' | 'date' | 'time'
-    : T extends any[] ? 'list' | 'json'
-    : T extends object ? 'json'
-    : never
-}
-
 export namespace Tables {
+  export interface Field<T = any> {
+    type: Field.Type<T>
+    length?: number
+    nullable?: boolean
+    initial?: T
+    precision?: number
+    scale?: number
+  }
+
+  export namespace Field {
+    export type Type<T = any> =
+      | T extends number ? 'integer' | 'unsigned' | 'float' | 'double' | 'decimal'
+      : T extends string ? 'char' | 'string' | 'text'
+      : T extends Date ? 'timestamp' | 'date' | 'time'
+      : T extends any[] ? 'list' | 'json'
+      : T extends object ? 'json'
+      : never
+
+    export namespace Type {
+      export const number: Type[] = ['integer', 'unsigned', 'float', 'double', 'decimal']
+      export const string: Type[] = ['char', 'string', 'text']
+      export const date: Type[] = ['timestamp', 'date', 'time']
+      export const object: Type[] = ['list', 'json']
+    }
+
+    type WithParam<S extends string> = S | `${S}(${any})`
+
+    export type Extension<O = any> = {
+      [K in keyof O]?: Field<O[K]> | WithParam<Type<O[K]>>
+    }
+
+    export type Config<O = any> = {
+      [K in keyof O]?: Field<O[K]>
+    }
+
+    const defaultLength: Partial<Record<Type, number>> = {
+      integer: 10,
+      unsigned: 10,
+      char: 64,
+      string: 256,
+      text: 65535,
+      json: 65535,
+      list: 65535,
+    }
+
+    const regexp = /^(\w+)(?:\((.+)\))?$/
+
+    export function parse(source: string | Field): Field {
+      if (typeof source !== 'string') return source
+      const capture = regexp.exec(source)
+      if (!capture) throw new TypeError('invalid field definition')
+      const type = capture[1] as Type
+      const args = (capture[2] || '').split(',')
+      const field: Field = { type }
+
+      // set default initial value
+      if (field.initial === undefined) {
+        if (Type.number.includes(field.type)) field.initial = 0
+        if (Type.string.includes(field.type)) field.initial = ''
+        if (field.type === 'list') field.initial = []
+        if (field.type === 'json') field.initial = {}
+      }
+
+      // set length information
+      if (type === 'decimal') {
+        field.precision = +args[0]
+        field.scale = +args[1]
+      } else if (args.length) {
+        field.length = +args[0]
+      } else {
+        field.length = defaultLength[type]
+      }
+
+      return field
+    }
+
+    export function extend(fields: Config, extension: Extension = {}) {
+      for (const key in extension) {
+        fields[key] = parse(extension[key])
+      }
+      return fields
+    }
+  }
+
   type Unique<K> = (K | K[])[]
 
-  export interface Meta<O = any> {
+  export interface Extension<O = any> {
     type?: 'random' | 'incremental'
     primary?: string & keyof O
     unique?: Unique<string & keyof O>
     foreign?: {
       [K in keyof O]?: [TableType, string]
     }
-    fields?: {
-      [K in keyof O]?: Field<O[K]>
-    }
+    fields?: Field.Extension<O>
   }
 
-  export const config: { [T in TableType]?: Meta<Tables[T]> } = {}
+  export interface Config<O = any> extends Extension<O> {
+    fields?: Field.Config<O>
+  }
 
-  export function extend<T extends TableType>(name: T, meta?: Meta<Tables[T]>): void
-  export function extend(name: string, meta: Meta = {}) {
+  export const config: { [T in TableType]?: Config<Tables[T]> } = {}
+
+  export function extend<T extends TableType>(name: T, meta?: Extension<Tables[T]>): void
+  export function extend(name: string, meta: Extension = {}) {
     const { unique = [], foreign, fields } = config[name] || {}
     config[name] = {
       type: 'incremental',
@@ -58,7 +120,7 @@ export namespace Tables {
       ...meta,
       unique: [...unique, ...meta.unique || []],
       foreign: { ...foreign, ...meta.foreign },
-      fields: { ...fields, ...meta.fields },
+      fields: Field.extend(fields, meta.fields),
     }
   }
 
