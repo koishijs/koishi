@@ -20,12 +20,12 @@ Tables.extend('foo')
 const getMysqlPorts = () => {
   const argv = process.argv.splice(3)
   const match = /^--mysql-ports=(.*)/
-  const ports = [3306]
+  const ports = []
   for (let i = 0; i < argv.length; i++) {
     const envMatch = argv[i].match(match)
-    ports.push(+envMatch[1].split(','))
+    envMatch && ports.push(...envMatch[1].split(',').map(port => +port))
   }
-  return ports
+  return ports.length === 0 ? undefined : ports
 }
 
 describe('Mysql Database', () => {
@@ -36,7 +36,7 @@ describe('Mysql Database', () => {
         bar: 'VARCHAR(100)',
       }
     })
-    const ports = getMysqlPorts()
+    const ports = getMysqlPorts() ?? [3306]
     for (const port of ports) {
       const app = new App()
       app.plugin(mysql, {

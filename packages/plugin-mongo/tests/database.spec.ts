@@ -18,17 +18,17 @@ Tables.extend('foo')
 const getMongoPorts = () => {
   const argv = process.argv.splice(3)
   const match = /^--mongo-ports=(.*)/
-  const ports = [27017]
+  const ports = []
   for (let i = 0; i < argv.length; i++) {
     const envMatch = argv[i].match(match)
-    ports.push(+envMatch[1].split(','))
+    envMatch && ports.push(...envMatch[1].split(',').map(port => +port))
   }
-  return ports
+  return ports.length === 0 ? undefined : ports
 }
 
 describe('Mongo Database', () => {
   it('should support mongo', async () => {
-    const ports = getMongoPorts()
+    const ports = getMongoPorts() ?? [27017]
     for (const port of ports) {
       const app = new App()
       app.plugin(mongo, {
