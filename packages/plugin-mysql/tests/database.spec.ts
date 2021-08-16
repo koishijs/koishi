@@ -17,20 +17,31 @@ interface FooData {
 
 Tables.extend('foo')
 
+const getMysqlPorts = () => {
+  const argv = process.argv.splice(3)
+  const match = /^--mysql-ports=(.*)/
+  const ports = [3306]
+  for (let i = 0; i < argv.length; i++) {
+    const envMatch = argv[i].match(match)
+    ports.push(+envMatch[1].split(','))
+  }
+  return ports
+}
+
 describe('Mysql Database', () => {
-  it('should support maria10, mysql57, mysql8', async () => {
+  it('should support mysql', async () => {
     Database.extend('koishi-plugin-mysql', ({ tables }) => {
       tables.foo = {
         id: 'BIGINT(20)',
         bar: 'VARCHAR(100)',
       }
     })
-    const portMap = { maria10: 3307, mysql57: 3306, mysql8: 3308 }
-    for (const databaseName in portMap) {
+    const ports = getMysqlPorts()
+    for (const port of ports) {
       const app = new App()
       app.plugin(mysql, {
         host: 'localhost',
-        port: portMap[databaseName],
+        port: port,
         user: 'koishi',
         password: 'koishi@114514',
         database: 'koishi',
