@@ -50,12 +50,12 @@ const queryOperators: QueryOperators = {
   $regexFor: (query, data) => new RegExp(data, 'i').test(query),
   $in: (query, data) => query.includes(data),
   $nin: (query, data) => !query.includes(data),
-  $ne: (query, data) => data !== query,
-  $eq: (query, data) => data === query,
-  $gt: (query, data) => data > query,
-  $gte: (query, data) => data >= query,
-  $lt: (query, data) => data < query,
-  $lte: (query, data) => data <= query,
+  $ne: (query, data) => data.valueOf() !== query.valueOf(),
+  $eq: (query, data) => data.valueOf() === query.valueOf(),
+  $gt: (query, data) => data.valueOf() > query.valueOf(),
+  $gte: (query, data) => data.valueOf() >= query.valueOf(),
+  $lt: (query, data) => data.valueOf() < query.valueOf(),
+  $lte: (query, data) => data.valueOf() <= query.valueOf(),
   $el: (query, data) => data.some(item => executeFieldQuery(query, item)),
   $size: (query, data) => data.length === query,
   $bitsAllSet: (query, data) => (query & data) === query,
@@ -97,7 +97,12 @@ function executeQuery(query: Query.Expr, data: any): boolean {
     }
 
     // execute field query
-    return executeFieldQuery(value, data[key])
+    try {
+      if (!(key in data)) return false
+      return executeFieldQuery(value, data[key])
+    } catch {
+      return false
+    }
   })
 }
 

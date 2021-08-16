@@ -65,6 +65,8 @@ export namespace Dialogue {
     regExp?: number
     /** 可设置作者或匿名，默认值为 2 */
     writer?: number
+    /** 可触发教学问答，默认值为 1 */
+    receive?: number
   }
 
   export interface Config {

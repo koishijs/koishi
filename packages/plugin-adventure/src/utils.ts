@@ -1,4 +1,4 @@
-import { User, Database, Context, Command, Argv, TableType, FieldCollector, defineEnumProperty } from 'koishi-core'
+import { User, Database, Context, Command, Argv, TableType, Tables, FieldCollector, defineEnumProperty } from 'koishi-core'
 import {} from 'koishi-plugin-mysql'
 import * as Koishi from 'koishi-core'
 import Achievement from './achv'
@@ -63,32 +63,28 @@ declare module 'koishi-core' {
   }
 }
 
+Tables.extend('user', {
+  fields: {
+    noSR: { type: 'unsigned', length: 4, initial: 5 },
+    achievement: 'list',
+    affinity: 'unsigned(6)',
+    wealth: 'decimal(10,1)',
+    money: 'decimal(10,1)',
+    gains: 'json',
+    warehouse: 'json',
+    luck: 'integer(6)',
+    taste: 'unsigned(6)',
+    recent: 'list',
+    progress: 'string',
+    phases: 'list',
+    endings: 'json',
+    drunkAchv: 'unsigned(6)',
+  },
+})
+
 defineEnumProperty(User.Flag, 'noLeading', 1 << 3)
 
-User.extend(() => ({
-  noSR: 5,
-  achievement: [],
-  affinity: 0,
-  wealth: 100,
-  money: 100,
-  gains: {},
-  warehouse: {},
-  luck: 0,
-  taste: 0,
-  recent: [],
-  progress: '',
-  phases: [],
-  endings: {},
-  drunkAchv: 0,
-}))
-
-Database.extend('koishi-plugin-mysql', ({ Domain, tables }) => {
-  tables.user.gains = new Domain.Json()
-  tables.user.endings = new Domain.Json()
-  tables.user.warehouse = new Domain.Json()
-  tables.user.achievement = new Domain.Array()
-  tables.user.recent = new Domain.Array()
-  tables.user.phases = new Domain.Array()
+Database.extend('koishi-plugin-mysql', ({ tables }) => {
   tables.user.achvCount = () => 'list_length(`achievement`)'
 })
 

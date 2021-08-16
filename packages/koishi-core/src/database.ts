@@ -3,60 +3,116 @@ import { Platform } from './adapter'
 
 export type TableType = keyof Tables
 
+export type MaybeArray<K> = K | K[]
+export type Keys<O, T = any> = string & { [K in keyof O]: O[K] extends T ? K : never }[keyof O]
+
 export interface Tables {
   user: User
   channel: Channel
 }
 
-export interface Field<T = any> {
-  type: Field.Type<T>
-  length?: number
-  nullable?: boolean
-  initial?: T
-}
-
-export namespace Field {
-  export const numberTypes: Type[] = ['integer', 'unsigned', 'float', 'double']
-  export const stringTypes: Type[] = ['char', 'string', 'text']
-  export const dateTypes: Type[] = ['timestamp', 'date', 'time']
-  export const objectTypes: Type[] = ['list', 'json']
-
-  export type Type<T = any> =
-    | T extends number ? 'integer' | 'unsigned' | 'float' | 'double'
-    : T extends string ? 'char' | 'string' | 'text'
-    : T extends Date ? 'timestamp' | 'date' | 'time'
-    : T extends any[] ? 'list' | 'json'
-    : T extends object ? 'json'
-    : never
-}
-
 export namespace Tables {
-  type Unique<K> = (K | K[])[]
+  export interface Field<T = any> {
+    type: Field.Type<T>
+    length?: number
+    nullable?: boolean
+    initial?: T
+    precision?: number
+    scale?: number
+  }
 
-  export interface Meta<O = any> {
-    type?: 'random' | 'incremental'
-    primary?: string & keyof O
-    unique?: Unique<string & keyof O>
-    foreign?: {
-      [K in keyof O]?: [TableType, string]
+  export namespace Field {
+    export type Type<T = any> =
+      | T extends number ? 'integer' | 'unsigned' | 'float' | 'double' | 'decimal'
+      : T extends string ? 'char' | 'string' | 'text'
+      : T extends Date ? 'timestamp' | 'date' | 'time'
+      : T extends any[] ? 'list' | 'json'
+      : T extends object ? 'json'
+      : never
+
+    export namespace Type {
+      export const number: Type[] = ['integer', 'unsigned', 'float', 'double', 'decimal']
+      export const string: Type[] = ['char', 'string', 'text']
+      export const date: Type[] = ['timestamp', 'date', 'time']
+      export const object: Type[] = ['list', 'json']
     }
-    fields?: {
+
+    type WithParam<S extends string> = S | `${S}(${any})`
+
+    export type Extension<O = any> = {
+      [K in keyof O]?: Field<O[K]> | WithParam<Type<O[K]>>
+    }
+
+    export type Config<O = any> = {
       [K in keyof O]?: Field<O[K]>
+    }
+
+    const regexp = /^(\w+)(?:\((.+)\))?$/
+
+    export function parse(source: string | Field): Field {
+      if (typeof source !== 'string') return source
+      const capture = regexp.exec(source)
+      if (!capture) throw new TypeError('invalid field definition')
+      const type = capture[1] as Type
+      const args = (capture[2] || '').split(',')
+      const field: Field = { type }
+
+      // set default initial value
+      if (field.initial === undefined) {
+        if (Type.number.includes(field.type)) field.initial = 0
+        if (Type.string.includes(field.type)) field.initial = ''
+        if (field.type === 'list') field.initial = []
+        if (field.type === 'json') field.initial = {}
+      }
+
+      // set length information
+      if (type === 'decimal') {
+        field.precision = +args[0]
+        field.scale = +args[1]
+      } else if (args.length) {
+        field.length = +args[0]
+      }
+
+      return field
+    }
+
+    export function extend(fields: Config, extension: Extension = {}) {
+      for (const key in extension) {
+        const field = fields[key] = parse(extension[key])
+        if (field.initial !== undefined && field.initial !== null) {
+          field.nullable ??= false
+        }
+      }
+      return fields
     }
   }
 
-  export const config: { [T in TableType]?: Meta<Tables[T]> } = {}
+  export interface Extension<O = any> {
+    type?: 'random' | 'incremental'
+    primary?: Keys<O>
+    unique?: MaybeArray<Keys<O>>[]
+    foreign?: {
+      [K in keyof O]?: [TableType, string]
+    }
+    fields?: Field.Extension<O>
+  }
 
-  export function extend<T extends TableType>(name: T, meta?: Meta<Tables[T]>): void
-  export function extend(name: string, meta: Meta = {}) {
-    const { unique = [], foreign, fields } = config[name] || {}
+  export interface Config<O = any> extends Extension<O> {
+    fields?: Field.Config<O>
+  }
+
+  export const config: { [T in TableType]?: Config<Tables[T]> } = {}
+
+  export function extend<T extends TableType>(name: T, meta?: Extension<Tables[T]>): void
+  export function extend(name: string, meta: Extension = {}) {
+    const { unique = [], foreign, fields = {} } = config[name] || {}
     config[name] = {
       type: 'incremental',
       primary: 'id',
       ...meta,
       unique: [...unique, ...meta.unique || []],
       foreign: { ...foreign, ...meta.foreign },
-      fields: { ...fields, ...meta.fields },
+      fields: Field.extend(fields, meta.fields),
     }
   }
 
@@ -96,9 +152,8 @@ export type Query<T extends TableType> = Query.Expr<Tables[T]> | Query.Shorthand
 
 export namespace Query {
   export type IndexType = string | number
-  export type IndexKeys<O, T = any> = string & { [K in keyof O]: O[K] extends T ? K : never }[keyof O]
   export type Field<T extends TableType> = string & keyof Tables[T]
-  export type Index<T extends TableType> = IndexKeys<Tables[T], IndexType>
+  export type Index<T extends TableType> = Keys<Tables[T], IndexType>
 
   type Extract<S, T, U = S> = S extends T ? U : never
   type Primitive = string | number
@@ -164,8 +219,6 @@ export namespace Query {
   }
 }
 
-type MaybeArray<T> = T | readonly T[]
-
 export interface User extends Record<Platform, string> {
   id: string
   flag: number
@@ -204,9 +257,9 @@ export namespace User {
     return result as User
   }
 
-  export interface Datbase {
+  export interface Database {
     getUser<K extends Field, T extends Index>(type: T, id: string, modifier?: Query.Modifier<K>): Promise<Pick<User, K | T>>
-    getUser<K extends Field, T extends Index>(type: T, ids: readonly string[], modifier?: Query.Modifier<K>): Promise<Pick<User, K>[]>
+    getUser<K extends Field, T extends Index>(type: T, ids: string[], modifier?: Query.Modifier<K>): Promise<Pick<User, K>[]>
     getUser<K extends Field, T extends Index>(type: T, id: MaybeArray<string>, modifier?: Query.Modifier<K>): Promise<any>
     setUser<T extends Index>(type: T, id: string, data: Partial<User>): Promise<void>
     createUser<T extends Index>(type: T, id: string, data: Partial<User>): Promise<void>
@@ -259,7 +312,7 @@ export namespace Channel {
   }
 }
 
-export interface Database extends Query.Database, User.Datbase, Channel.Database {}
+export interface Database extends Query.Database, User.Database, Channel.Database {}
 
 type Methods<S, T> = {
   [K in keyof S]?: S[K] extends (...args: infer R) => infer U ? (this: T, ...args: R) => U : S[K]

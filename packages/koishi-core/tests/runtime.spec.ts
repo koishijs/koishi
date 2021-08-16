@@ -265,10 +265,12 @@ describe('Runtime', () => {
       cmd3.option('foo', '<foo>', { type: () => { throw new Error() } })
       cmd3.option('bar', '<bar>', { type: () => { throw new Error('SUFFIX') } })
       cmd3.option('baz', '<baz>', { type: /$^/ })
+      cmd3.option('bax', '<baz>', { type: ['abc', 'def'] })
       await session1.shouldReply('cmd3', 'after cmd3')
       await session1.shouldReply('cmd3 --foo xxx', '选项 foo 输入无效，输入帮助以查看用法。')
       await session1.shouldReply('cmd3 --bar xxx', '选项 bar 输入无效，SUFFIX')
       await session1.shouldReply('cmd3 --baz xxx', '选项 baz 输入无效，输入帮助以查看用法。')
+      await session1.shouldReply('cmd3 --bax cba', '选项 bax 输入无效，输入帮助以查看用法。')
       cmd3.dispose()
     })
 
