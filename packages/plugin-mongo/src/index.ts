@@ -129,7 +129,7 @@ function createFilter<T extends TableType>(name: T, _query: Query<T>) {
 
 function getFallbackType({ fields, primary }: Tables.Config) {
   const { type } = fields[primary]
-  return Tables.Field.Type.string.includes(type) ? 'random' : 'incremental'
+  return Tables.Field.string.includes(type) ? 'random' : 'incremental'
 }
 
 Database.extend(MongoDatabase, {

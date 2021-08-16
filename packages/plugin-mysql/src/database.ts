@@ -24,7 +24,7 @@ function stringify(value: any, table?: string, field?: string) {
   const type = MysqlDatabase.tables[table]?.[field]
   if (typeof type === 'object') return type.stringify(value)
 
-  const meta = (Koishi.Tables.config[table] as Koishi.Tables.Config)?.fields[field]
+  const meta = Koishi.Tables.config[table]?.fields[field]
   if (meta?.type === 'json') {
     return JSON.stringify(value)
   } else if (meta?.type === 'list') {
@@ -91,7 +91,7 @@ class MysqlDatabase {
         const type = MysqlDatabase.tables[orgTable]?.[orgName]
         if (typeof type === 'object') return type.parse(field)
 
-        const meta = (Koishi.Tables.config[orgTable] as Koishi.Tables.Config)?.fields[orgName]
+        const meta = Koishi.Tables.config[orgTable]?.fields[orgName]
         if (meta?.type === 'string') {
           return field.string()
         } else if (meta?.type === 'json') {
@@ -133,7 +133,7 @@ class MysqlDatabase {
         const cols = Object.keys(table)
           .filter((key) => typeof table[key] !== 'function')
           .map((key) => `${escapeId(key)} ${MysqlDatabase.Domain.definition(table[key])}`)
-        const { type, primary, unique, foreign, fields } = Koishi.Tables.config[name] as Koishi.Tables.Config
+        const { type, primary, unique, foreign, fields } = Koishi.Tables.config[name]
         cols.push(`primary key (${escapeId(primary)})`)
         for (const key of unique) {
           if (Array.isArray(key)) {
@@ -152,15 +152,15 @@ class MysqlDatabase {
           cols.push(`foreign key (${escapeId(key)}) references ${escapeId(table)} (${escapeId(key2)})`)
         }
         for (const key in fields) {
-          const { type: fieldType, initial, nullable = initial === undefined } = fields[key]
+          const { initial, nullable = initial === undefined } = fields[key]
           let def = escapeId(key)
           if (key === primary && type === 'incremental') {
             def += ' bigint(20) unsigned not null auto_increment'
           } else {
-            def += ' ' + getTypeDefinition(fields[key])
-            def += (nullable ? ' ' : ' not ') + 'null'
-            if (initial && !Koishi.Tables.Field.Type.string.includes(fieldType)) {
-              // mysql does not support text column with default value
+            const typedef = getTypeDefinition(fields[key])
+            def += ' ' + typedef + (nullable ? ' ' : ' not ') + 'null'
+            // blob, text, geometry or json columns cannot have default values
+            if (initial && !typedef.startsWith('text')) {
               def += ' default ' + escape(initial, name, key)
             }
           }
