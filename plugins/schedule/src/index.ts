@@ -58,7 +58,7 @@ export function apply(ctx: Context, config: Config = {}) {
       await session.execute(command)
       if (!lastCall || !interval) return
       lastCall = new Date()
-      await database.update('schedule', [{ id, lastCall }])
+      await database.set('schedule', id, { lastCall })
     }
 
     if (!interval) {

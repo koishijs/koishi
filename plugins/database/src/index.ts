@@ -152,13 +152,6 @@ Database.extend(MemoryDatabase, {
     return this.setUser('mock', id, { authority })
   },
 
-  async getAssignedChannels(fields, assignMap = this.app.getSelfIds()) {
-    return this.$table('channel').filter((row) => {
-      const [type] = row.id.split(':')
-      return assignMap[type]?.includes(row.assignee)
-    }).map(row => clone(pick(row, fields)))
-  },
-
   initChannel(id, assignee = this.app.bots[0].selfId) {
     return this.setChannel('mock', id, { assignee })
   },

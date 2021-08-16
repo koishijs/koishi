@@ -40,7 +40,7 @@ Database.extend('@koishijs/plugin-mysql', {
         Dialogue.addHistory(dialogue._backup, '修改', argv, false)
       }
     }
-    await this.update('dialogue', data)
+    await this.upsert('dialogue', data)
   },
 
   async getDialogueStats() {

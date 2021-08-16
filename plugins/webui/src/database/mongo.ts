@@ -63,8 +63,7 @@ class MongoSynchronizer implements Synchronizer {
     const hourly = await coll.find({ type: 'hourly', time }).sort({ time: -1 }).limit(24 * RECENT_LENGTH).toArray()
     const daily = await coll.find({ type: 'daily', time }).sort({ time: -1 }).limit(RECENT_LENGTH).toArray()
     const longterm = await coll.find({ type: 'longterm', time }).sort({ time: -1 }).toArray()
-    const groups = await this.db.channel.find({}).project({ type: 1, pid: 1, name: 1, assignee: 1 })
-      .map(data => ({ ...data, id: `${data.type}:${data.pid}` })).toArray()
+    const groups = await this.db.channel.find({}).project({ type: 1, id: 1, name: 1, assignee: 1 }).toArray()
     return { daily, hourly, longterm, groups }
   }
 }

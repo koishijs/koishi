@@ -212,9 +212,10 @@ export namespace Query {
 
   export interface Methods {
     get<T extends TableType, K extends Field<T>>(table: T, query: Query<T>, modifier?: Modifier<K>): Promise<Pick<Tables[T], K>[]>
+    set<T extends TableType>(table: T, query: Query<T>, updater?: Partial<Tables[T]>): Promise<void>
     remove<T extends TableType>(table: T, query: Query<T>): Promise<void>
     create<T extends TableType>(table: T, data: Partial<Tables[T]>): Promise<Tables[T]>
-    update<T extends TableType>(table: T, data: Partial<Tables[T]>[], keys?: MaybeArray<Index<T>>): Promise<void>
+    upsert<T extends TableType>(table: T, data: Partial<Tables[T]>[], keys?: MaybeArray<Index<T>>): Promise<void>
   }
 }
 
@@ -298,7 +299,7 @@ export abstract class Database {
   }
 
   setUser(type: string, id: string, data: Partial<User>) {
-    return this.update('user', [{ ...data, [type]: id }], type as never)
+    return this.set('user', { [type]: id }, data)
   }
 
   getChannel<K extends Channel.Field>(type: string, id: string, modifier?: Query.Modifier<K>): Promise<Pick<Channel, K | 'id' | 'type'>>
@@ -316,7 +317,7 @@ export abstract class Database {
   }
 
   setChannel(type: string, id: string, data: Partial<Channel>) {
-    return this.update('channel', [{ ...data, type, id }])
+    return this.set('channel', { type, id }, data)
   }
 }
 

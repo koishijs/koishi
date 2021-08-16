@@ -116,7 +116,7 @@ export namespace Dialogue {
   }
 
   export async function recover(dialogues: Dialogue[], argv: Dialogue.Argv) {
-    await argv.app.database.update('dialogue', dialogues)
+    await argv.app.database.upsert('dialogue', dialogues)
     for (const dialogue of dialogues) {
       Dialogue.addHistory(dialogue, '修改', argv, true)
     }

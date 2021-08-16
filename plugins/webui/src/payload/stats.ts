@@ -168,7 +168,7 @@ class Statistics {
     payload.groups = []
     const groupMap = Object.fromEntries(data.groups.map(g => [g.id, g]))
     const messageMap = average(data.daily.map(data => data.group))
-    const updateList: Pick<Channel, 'id' | 'name'>[] = []
+    const updateList: Pick<Channel, 'id' | 'type' | 'name'>[] = []
 
     async function getGroupInfo(bot: Bot) {
       const { platform } = bot
@@ -178,7 +178,7 @@ class Statistics {
         if (!messageMap[id] || !groupMap[id] || groupSet.has(id)) continue
         groupSet.add(id)
         const { name: oldName, assignee } = groupMap[id]
-        if (name !== oldName) updateList.push({ id, name })
+        if (name !== oldName) updateList.push({ type: bot.platform, id: groupId, name })
         payload.groups.push({
           name,
           platform,
@@ -205,7 +205,7 @@ class Statistics {
       }
     }
 
-    await this.ctx.database.update('channel', updateList)
+    await this.ctx.database.upsert('channel', updateList)
   }
 
   async download() {

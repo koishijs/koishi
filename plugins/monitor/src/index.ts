@@ -109,7 +109,7 @@ export function apply(ctx: Context) {
       const addList = (options.addName || '').split(',')
       const usedNames = await checkNames(addList)
       if (usedNames.length) return `名称 ${usedNames.join(', ')} 已被使用。`
-      const account = observe(data, diff => ctx.database.update('subscribe', [{ id: data.id, ...diff }]), `subscribe ${data.id}`)
+      const account = observe(data, diff => ctx.database.set('subscribe', data.id, diff), `subscribe ${data.id}`)
 
       let configUpdated = false
       for (const key of ['bilibili', 'mirrativ', 'twitcasting']) {
