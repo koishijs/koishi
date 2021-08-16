@@ -58,10 +58,6 @@ jobs:
       DB_USERNAME: koishi
       DB_PASSWORD: koishi@114514
     steps:
-      - name: test service is start
-        run: |
-          mysqladmin ping -h"127.0.0.1" -P"3307" --silent
-          mysqladmin ping -h"127.0.0.1" -P"3308" --silent
       - name: Check out
         uses: actions/checkout@v1
       - name: Set up Node
