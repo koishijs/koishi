@@ -41,43 +41,68 @@ export class MemoryDatabase {
   }
 }
 
-const queryOperators: ([string, (data: any, value: any) => boolean])[] = Object.entries({
-  $regex: (data: RegExp, value) => data.test(value),
-  $regexFor: (data, value) => new RegExp(value, 'i').test(data),
-  $in: (data: any[], value) => data.includes(value),
-  $nin: (data: any[], value) => !data.includes(value),
-  $ne: (data, value) => value !== data,
-  $eq: (data, value) => value === data,
-  $gt: (data, value) => value > data,
-  $gte: (data, value) => value >= data,
-  $lt: (data, value) => value < data,
-  $lte: (data, value) => value <= data,
-})
+type QueryOperators = {
+  [K in keyof Query.FieldExpr]?: (query: Query.FieldExpr[K], data: any) => boolean
+}
+
+const queryOperators: QueryOperators = {
+  $regex: (query, data) => query.test(data),
+  $regexFor: (query, data) => new RegExp(data, 'i').test(query),
+  $in: (query, data) => query.includes(data),
+  $nin: (query, data) => !query.includes(data),
+  $ne: (query, data) => data !== query,
+  $eq: (query, data) => data === query,
+  $gt: (query, data) => data > query,
+  $gte: (query, data) => data >= query,
+  $lt: (query, data) => data < query,
+  $lte: (query, data) => data <= query,
+  $el: (query, data) => data.some(item => executeFieldQuery(query, item)),
+  $size: (query, data) => data.length === query,
+  $bitsAllSet: (query, data) => (query & data) === query,
+  $bitsAllClear: (query, data) => (query & data) === 0,
+  $bitsAnySet: (query, data) => (query & data) !== 0,
+  $bitsAnyClear: (query, data) => (query & data) !== query,
+}
+
+function executeFieldQuery(query: Query.FieldQuery, data: any) {
+  // shorthand syntax
+  if (Array.isArray(query)) {
+    return query.includes(data)
+  } else if (query instanceof RegExp) {
+    return query.test(data)
+  } else if (typeof query === 'string' || typeof query === 'number') {
+    return query === data
+  }
+
+  // query operators
+  for (const key in queryOperators) {
+    const value = query[key]
+    if (value === undefined) continue
+    if (!queryOperators[key](value, data)) return false
+  }
+
+  return true
+}
+
+function executeQuery(query: Query.Expr, data: any): boolean {
+  const entries: [string, any][] = Object.entries(query)
+  return entries.every(([key, value]) => {
+    // execute logical query
+    if (key === '$and') {
+      return (value as Query.Expr[]).reduce((prev, query) => prev && executeQuery(query, data), true)
+    } else if (key === '$or') {
+      return (value as Query.Expr[]).reduce((prev, query) => prev || executeQuery(query, data), false)
+    } else if (key === '$not') {
+      return !executeQuery(value, data)
+    }
+
+    // execute field query
+    return executeFieldQuery(value, data[key])
+  })
+}
 
 Database.extend(MemoryDatabase, {
   async get(name, query, modifier) {
-    function executeQuery(query: Query.Expr, data: any): boolean {
-      const entries: [string, any][] = Object.entries(query)
-      return entries.every(([key, value]) => {
-        if (key === '$and') {
-          return (value as Query.Expr[]).reduce((prev, query) => prev && executeQuery(query, data), true)
-        } else if (key === '$or') {
-          return (value as Query.Expr[]).reduce((prev, query) => prev || executeQuery(query, data), false)
-        } else if (key === '$not') {
-          return !executeQuery(value, data)
-        } else if (Array.isArray(value)) {
-          return value.includes(data[key])
-        } else if (value instanceof RegExp) {
-          return value.test(data[key])
-        } else if (typeof value === 'string' || typeof value === 'number') {
-          return value === data[key]
-        }
-        return queryOperators.reduce((prev, [prop, callback]) => {
-          return prev && (prop in value ? callback(value[prop], data[key]) : true)
-        }, true)
-      })
-    }
-
     const expr = Query.resolve(name, query)
     const { fields, limit = Infinity, offset = 0 } = Query.resolveModifier(modifier)
     return this.$table(name)

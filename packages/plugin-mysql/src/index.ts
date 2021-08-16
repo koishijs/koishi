@@ -27,21 +27,50 @@ function createRegExpQuery(key: string, value: RegExp) {
   return `${key} REGEXP ${escape(value.source)}`
 }
 
-function createEqualQuery(key: string, value: any) {
-  return `${key} = ${escape(value)}`
+function createElementQuery(key: string, value: any) {
+  return `FIND_IN_SET(${escape(value)}, ${key})`
 }
 
-const queryOperators: Record<string, (key: string, value: any) => string> = {
-  $regex: createRegExpQuery,
-  $regexFor: (key, value) => `${escape(value)} REGEXP ${key}`,
+function comparator(operator: string) {
+  return function (key: string, value: any) {
+    return `${key} ${operator} ${escape(value)}`
+  }
+}
+
+const createEqualQuery = comparator('=')
+
+type QueryOperators = {
+  [K in keyof Query.FieldExpr]?: (key: string, value: Query.FieldExpr[K]) => string
+}
+
+const queryOperators: QueryOperators = {
   $in: (key, value) => createMemberQuery(key, value, ''),
   $nin: (key, value) => createMemberQuery(key, value, ' NOT'),
   $eq: createEqualQuery,
-  $ne: (key, value) => `${key} != ${escape(value)}`,
-  $gt: (key, value) => `${key} > ${escape(value)}`,
-  $gte: (key, value) => `${key} >= ${escape(value)}`,
-  $lt: (key, value) => `${key} < ${escape(value)}`,
-  $lte: (key, value) => `${key} <= ${escape(value)}`,
+  $ne: comparator('!='),
+  $gt: comparator('>'),
+  $gte: comparator('>='),
+  $lt: comparator('<'),
+  $lte: comparator('<='),
+  $regex: createRegExpQuery,
+  $regexFor: (key, value) => `${escape(value)} REGEXP ${key}`,
+  $el: (key, value) => {
+    if (Array.isArray(value)) {
+      return `(${value.map(value => createElementQuery(key, value)).join(' || ')})`
+    } else if (typeof value !== 'number' && typeof value !== 'string') {
+      throw new TypeError('query expr under $el is not supported')
+    } else {
+      return createElementQuery(key, value)
+    }
+  },
+  $size: (key, value) => {
+    if (!value) return `!${key}`
+    return `LENGTH(${key}) - LENGTH(REPLACE(${key}, ",", "")) = ${escape(value)}`
+  },
+  $bitsAllSet: (key, value) => `${key} & ${escape(value)} = ${escape(value)}`,
+  $bitsAllClear: (key, value) => `${key} & ${escape(value)} = 0`,
+  $bitsAnySet: (key, value) => `${key} & ${escape(value)} != 0`,
+  $bitsAnyClear: (key, value) => `${key} & ${escape(value)} != ${escape(value)}`,
 }
 
 export function createFilter<T extends TableType>(name: T, query: Query<T>) {
