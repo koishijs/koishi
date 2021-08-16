@@ -32,15 +32,19 @@ jobs:
         image: mysql:5.7
         ports:
           - 3306:3306
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
         env:
           MYSQL_USER: koishi
+          MYSQL_DATABASE: koishi
           MYSQL_PASSWORD: koishi@114514
       maria10:
         image: mariadb:10.5
         ports:
           - 3307:3306
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
         env:
           MYSQL_USER: koishi
+          MYSQL_DATABASE: koishi
           MYSQL_PASSWORD: koishi@114514
 #      mysql8:
 #        image: mysql:8
@@ -56,11 +60,10 @@ jobs:
       DB_USERNAME: koishi
       DB_PASSWORD: koishi@114514
     steps:
-      - name: Start services
+      - name: test service is start
         run: |
-          sudo cat /etc/init.d/mysql
-          mysql -V
-          mysql -e 'CREATE DATABASE ${{ env.DB_DATABASE }};' -u${{ env.DB_USERNAME }} -p${{ env.DB_PASSWORD }}
+          mysqladmin ping -h"127.0.0.1" -P"3307" --silent
+          mysqladmin ping -h"127.0.0.1" -P"3308" --silent
       - name: Check out
         uses: actions/checkout@v1
       - name: Set up Node
