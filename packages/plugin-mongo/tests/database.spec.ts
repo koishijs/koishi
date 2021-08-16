@@ -36,6 +36,7 @@ describe('Mongo Database', () => {
         port: port,
         username: 'koishi',
         password: 'koishi@114514',
+        authDatabase: 'koishi',
       })
       await app.start()
       await app.stop()
