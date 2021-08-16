@@ -20,7 +20,7 @@ export interface Config extends PoolConfig {}
 
 interface MysqlDatabase extends Database {}
 
-function stringify(value: any, table?: TableType, field?: string) {
+function stringify(value: any, table?: string, field?: string) {
   const type = MysqlDatabase.tables[table]?.[field]
   if (typeof type === 'object') return type.stringify(value)
 
@@ -34,7 +34,7 @@ function stringify(value: any, table?: TableType, field?: string) {
   return value
 }
 
-function escape(value: any, table?: TableType, field?: string) {
+function escape(value: any, table?: string, field?: string) {
   return mysqlEscape(stringify(value, table, field))
 }
 
@@ -161,7 +161,7 @@ class MysqlDatabase {
             def += (nullable ? ' ' : ' not ') + 'null'
             if (initial && typeof initial !== 'string') {
               // mysql does not support text column with default value
-              def += ' default ' + mysqlEscape(initial)
+              def += ' default ' + escape(initial, name, key)
             }
           }
           cols.push(def)

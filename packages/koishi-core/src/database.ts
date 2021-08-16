@@ -129,21 +129,21 @@ export namespace Tables {
 
   extend('user', {
     fields: {
-      id: { type: 'string', length: 50 },
-      name: { type: 'string', length: 50 },
-      flag: { type: 'unsigned', length: 20, initial: 0 },
-      authority: { type: 'unsigned', length: 4, initial: 0 },
-      usage: { type: 'json', initial: {} },
-      timers: { type: 'json', initial: {} },
+      id: 'string(63)',
+      name: 'string(63)',
+      flag: 'unsigned(20)',
+      authority: 'unsigned(4)',
+      usage: 'json',
+      timers: 'json',
     },
   })
 
   extend('channel', {
     fields: {
-      id: { type: 'string', length: 50 },
-      flag: { type: 'unsigned', length: 20, initial: 0 },
-      assignee: { type: 'string', length: 50 },
-      disable: { type: 'list', initial: [] },
+      id: 'string(63)',
+      flag: 'unsigned(20)',
+      assignee: 'string(63)',
+      disable: 'list',
     },
   })
 }
