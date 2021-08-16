@@ -35,6 +35,14 @@ function escape(value: any, table?: TableType, field?: string) {
   return mysqlEscape(stringify(value, table, field))
 }
 
+function getIntegerType(length = 11) {
+  if (length <= 4) return 'tinyint'
+  if (length <= 6) return 'smallint'
+  if (length <= 9) return 'mediumint'
+  if (length <= 11) return 'int'
+  return 'bigint'
+}
+
 function getTypeDefinition({ type, length, precision, scale }: Koishi.Tables.Field) {
   switch (type) {
     case 'float':
@@ -42,11 +50,11 @@ function getTypeDefinition({ type, length, precision, scale }: Koishi.Tables.Fie
     case 'date':
     case 'time':
     case 'timestamp': return type
-    case 'integer': return `int(${length || 10})`
-    case 'unsigned': return `int(${length || 10}) unsigned`
-    case 'decimal': return `int(${precision}, ${scale}) unsigned`
-    case 'char': return `char(${length || 64})`
-    case 'string': return `char(${length || 256})`
+    case 'integer': return getIntegerType(length)
+    case 'unsigned': return `${getIntegerType(length)} unsigned`
+    case 'decimal': return `decimal(${precision}, ${scale}) unsigned`
+    case 'char': return `char(${length || 255})`
+    case 'string': return `char(${length || 255})`
     case 'text': return `text(${length || 65535})`
     case 'list': return `text(${length || 65535})`
     case 'json': return `text(${length || 65535})`
