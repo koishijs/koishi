@@ -152,14 +152,14 @@ class MysqlDatabase {
           cols.push(`foreign key (${escapeId(key)}) references ${escapeId(table)} (${escapeId(key2)})`)
         }
         for (const key in fields) {
-          const { initial, nullable = initial === undefined } = fields[key]
+          const { type: fieldType, initial, nullable = initial === undefined } = fields[key]
           let def = escapeId(key)
           if (key === primary && type === 'incremental') {
             def += ' bigint(20) unsigned not null auto_increment'
           } else {
             def += ' ' + getTypeDefinition(fields[key])
             def += (nullable ? ' ' : ' not ') + 'null'
-            if (initial && typeof initial !== 'string') {
+            if (initial && !Koishi.Tables.Field.Type.string.includes(fieldType)) {
               // mysql does not support text column with default value
               def += ' default ' + escape(initial, name, key)
             }
