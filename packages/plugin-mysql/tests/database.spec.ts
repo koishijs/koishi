@@ -1,5 +1,6 @@
 import { expect } from 'chai'
-import { App, Database, Tables } from 'koishi-core'
+import { Database, Tables } from 'koishi-core'
+import { App } from 'koishi-test-utils'
 import * as mysql from 'koishi-plugin-mysql'
 import { createFilter } from 'koishi-plugin-mysql'
 
@@ -16,26 +17,37 @@ interface FooData {
 
 Tables.extend('foo')
 
+const getMysqlPorts = () => {
+  const argv = process.argv.splice(3)
+  const match = /^--mysql-ports=(.*)/
+  const ports = []
+  for (let i = 0; i < argv.length; i++) {
+    const envMatch = argv[i].match(match)
+    envMatch && ports.push(...envMatch[1].split(',').map(port => +port))
+  }
+  return ports.length === 0 ? undefined : ports
+}
+
 describe('Mysql Database', () => {
-  it('should support maria10, mysql57, mysql8', async () => {
+  it('should support mysql', async () => {
     Database.extend('koishi-plugin-mysql', ({ tables }) => {
       tables.foo = {
         id: 'BIGINT(20)',
         bar: 'VARCHAR(100)',
       }
     })
-    const portMap = { maria10: 3307, mysql57: 3306, mysql8: 3308 }
-    const app = new App()
-    await app.start()
-    for (const databaseName in portMap) {
+    const ports = getMysqlPorts() ?? [3306]
+    for (const port of ports) {
+      const app = new App()
       app.plugin(mysql, {
         host: 'localhost',
-        port: portMap[databaseName],
+        port: port,
         user: 'koishi',
         password: 'koishi@114514',
         database: 'koishi',
       })
-      await app.dispose(mysql)
+      await app.start()
+      await app.stop()
     }
   })
 
@@ -94,17 +106,11 @@ describe('Mysql Database', () => {
 
     it('should verify `$or`', () => {
       expect(createFilter('foo', {
-        $or: [
-          { bar: { $regex: /^.*foo/ } },
-          { bar: { $regex: /^foo.*/ } },
-        ],
+        $or: [{ bar: { $regex: /^.*foo/ } }, { bar: { $regex: /^foo.*/ } }],
       })).to.equal('(`bar` REGEXP \'^.*foo\' || `bar` REGEXP \'^foo.*\')')
 
       expect(createFilter('foo', {
-        $or: [
-          { id: [1, 2] },
-          { bar: { $regex: /^foo.*/ } },
-        ],
+        $or: [{ id: [1, 2] }, { bar: { $regex: /^foo.*/ } }],
       })).to.equal('(`id` IN (1, 2) || `bar` REGEXP \'^foo.*\')')
     })
 
