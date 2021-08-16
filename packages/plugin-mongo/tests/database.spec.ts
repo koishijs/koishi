@@ -33,9 +33,7 @@ describe('Mongo Database', () => {
       const app = new App()
       app.plugin(mongo, {
         host: 'localhost',
-        port: port,
-        username: 'koishi',
-        password: 'koishi@114514',
+        port: port
       })
       await app.start()
       await app.stop()
