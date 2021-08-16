@@ -1,4 +1,4 @@
-import { App, Database, Query, Tables, TableType, clone, makeArray, pick, Field, Context } from 'koishi'
+import { App, Database, Query, Tables, TableType, clone, makeArray, pick, Context } from 'koishi'
 
 declare module 'koishi' {
   interface Database {
@@ -121,12 +121,12 @@ Database.extend(MemoryDatabase, {
 
   async create(name, data: any) {
     const store = this.$table(name)
-    const { primary, fields } = Tables.config[name] as Tables.Meta
+    const { primary, fields } = Tables.config[name] as Tables.Config
     data = clone(data)
-    if (!data[primary]) {
+    if (!Array.isArray(primary) && !data[primary]) {
       const max = store.length ? Math.max(...store.map(row => +row[primary])) : 0
       data[primary] = max + 1
-      if (Field.stringTypes.includes(fields[primary].type)) {
+      if (Tables.Field.Type.string.includes(fields[primary].type)) {
         data[primary] += ''
       }
     }

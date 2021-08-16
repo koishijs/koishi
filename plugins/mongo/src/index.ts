@@ -1,5 +1,5 @@
 import MongoDatabase, { Config } from './database'
-import { Tables, Database, Context, Channel, Random, pick, omit, TableType, Query } from 'koishi'
+import { Tables, Database, Context, Random, omit, TableType, Query, pick, makeArray } from 'koishi'
 import { QuerySelector } from 'mongodb'
 
 export * from './database'
@@ -64,17 +64,10 @@ function createFilter<T extends TableType>(name: T, _query: Query<T>) {
     return filter
   }
 
-  const filter = transformQuery(Query.resolve(name, _query))
-  const { primary } = Tables.config[name]
-  if (filter[primary]) {
-    filter['_id'] = filter[primary]
-    delete filter[primary]
-  }
-  return filter
+  return transformQuery(Query.resolve(name, _query))
 }
 
-function getFallbackType({ fields, primary }: Tables.Config) {
-  const { type } = fields[primary]
+function getFallbackType({ type }: Tables.Field) {
   return Tables.Field.Type.string.includes(type) ? 'random' : 'incremental'
 }
 
@@ -87,14 +80,7 @@ Database.extend(MongoDatabase, {
     if (fields) cursor = cursor.project(Object.fromEntries(fields.map(key => [key, 1])))
     if (offset) cursor = cursor.skip(offset)
     if (limit) cursor = cursor.limit(offset + limit)
-    const data = await cursor.toArray()
-    const { primary } = Tables.config[name]
-    if (fields.includes(primary as never)) {
-      for (const item of data) {
-        item[primary] ??= item._id
-      }
-    }
-    return data
+    return await cursor.toArray()
   },
 
   async remove(name, query) {
@@ -104,46 +90,31 @@ Database.extend(MongoDatabase, {
   },
 
   async create(name, data: any) {
-    const meta = Tables.config[name]
-    const { primary, type = getFallbackType(meta) } = meta
-    const copy = { ...data, ...Tables.create(name) }
-    if (copy[primary]) {
-      copy['_id'] = copy[primary]
-      delete copy[primary]
-    } else if (type === 'incremental') {
-      const [latest] = await this.db.collection(name).find().sort('_id', -1).limit(1).toArray()
-      copy['_id'] = data[primary] = latest ? latest._id + 1 : 1
-    } else if (type === 'random') {
-      copy['_id'] = data[primary] = Random.id()
+    const table = Tables.config[name]
+    const { primary, fields } = table
+    if (!Array.isArray(primary) && !data[primary]) {
+      const type = table.type || getFallbackType(fields[primary].type)
+      if (type === 'incremental') {
+        const [latest] = await this.db.collection(name).find().sort(primary, -1).limit(1).toArray()
+        data[primary] = latest ? latest[primary] + 1 : 1
+      } else if (type === 'random') {
+        data[primary] = Random.id()
+      }
     }
+    const copy = { ...data, ...Tables.create(name) }
     await this.db.collection(name).insertOne(copy).catch(() => {})
-    return data
+    return copy
   },
 
-  async update(name, data: any[], key) {
+  async update(name, data: any[], keys: string | string[]) {
     if (!data.length) return
-    const { primary } = Tables.config[name]
-    if (!key || key === primary) key = '_id'
+    if (!keys) keys = Tables.config[name].primary
+    keys = makeArray(keys)
     const bulk = this.db.collection(name).initializeUnorderedBulkOp()
     for (const item of data) {
-      bulk.find({ [key]: item[primary] }).updateOne({ $set: omit(item, [primary]) })
+      bulk.find(pick(item, keys)).updateOne({ $set: omit(item, keys) })
     }
     await bulk.execute()
-  },
-
-  async getAssignedChannels(_fields, assignMap = this.app.getSelfIds()) {
-    const fields = _fields.slice()
-    const applyDefault = (channel: Channel) => ({
-      ...pick(Channel.create(channel.type, channel.pid), _fields),
-      ...omit(channel, ['type', 'pid']),
-    })
-
-    const index = fields.indexOf('id')
-    if (index >= 0) fields.splice(index, 1, 'type', 'pid')
-    const data = await this.get('channel', {
-      $or: Object.entries(assignMap).map<any>(([type, assignee]) => ({ type, assignee })),
-    }, fields)
-    return data.map(applyDefault)
   },
 })
 

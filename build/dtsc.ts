@@ -263,7 +263,7 @@ async function prepareConfig(folders: string[]) {
     if (!folders.includes('packages/utils')) folders.push('packages/utils')
   }
   const buildTargets = folders.filter(name => !targets.includes(name) && !name.includes('ui-'))
-  const bundleTargets = folders.filter(name => targets.includes(name) && !name.includes('ui-'))
+  const bundleTargets = targets.filter(name => folders.includes(name))
 
   await Promise.all([
     prepareConfig(buildTargets),

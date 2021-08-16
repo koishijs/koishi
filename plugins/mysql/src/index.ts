@@ -162,15 +162,6 @@ Database.extend(MysqlDatabase, {
       [].concat(...data.map(data => this.formatValues(table, data, keys))),
     )
   },
-
-  async getAssignedChannels(fields, assignMap = this.app.getSelfIds()) {
-    return this.select<Channel>('channel', fields, Object.entries(assignMap).map(([type, ids]) => {
-      return [
-        `LEFT(\`id\`, ${type.length}) = ${this.escape(type)}`,
-        `\`assignee\` IN (${ids.map(id => this.escape(id)).join(',')})`,
-      ].join(' AND ')
-    }).join(' OR '))
-  },
 })
 
 export const name = 'mysql'

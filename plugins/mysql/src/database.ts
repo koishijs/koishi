@@ -1,5 +1,5 @@
 import { createPool, Pool, PoolConfig, escape as mysqlEscape, escapeId, format, TypeCast } from 'mysql'
-import { App, Database, Logger } from 'koishi'
+import { App, Database, Logger, makeArray } from 'koishi'
 import * as Koishi from 'koishi'
 import { types } from 'util'
 
@@ -59,6 +59,10 @@ function getTypeDefinition({ type, length, precision, scale }: Koishi.Tables.Fie
     case 'list': return `text(${length || 65535})`
     case 'json': return `text(${length || 65535})`
   }
+}
+
+function createIndex(keys: string | string[]) {
+  return makeArray(keys).map(key => escapeId(key)).join(', ')
 }
 
 class MysqlDatabase extends Database {
@@ -132,13 +136,9 @@ class MysqlDatabase extends Database {
           .filter((key) => typeof table[key] !== 'function')
           .map((key) => `${escapeId(key)} ${MysqlDatabase.Domain.definition(table[key])}`)
         const { type, primary, unique, foreign, fields } = Koishi.Tables.config[name] as Koishi.Tables.Config
-        cols.push(`primary key (${escapeId(primary)})`)
+        cols.push(`primary key (${createIndex(primary)})`)
         for (const key of unique) {
-          if (Array.isArray(key)) {
-            cols.push(`unique index (${key.map(key => escapeId(key)).join(', ')})`)
-          } else {
-            cols.push(`unique index (${escapeId(key)})`)
-          }
+          cols.push(`unique index (${createIndex(key)})`)
         }
         if (name === 'user') {
           for (const key of platforms) {

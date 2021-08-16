@@ -485,7 +485,7 @@ export class Context {
     return this.bots.find(bot => bot.platform === platform)
   }
 
-  getSelfIds(type?: Platform, assignees?: readonly string[]): Record<string, readonly string[]> {
+  getSelfIds(type?: Platform, assignees?: string[]): Record<string, string[]> {
     if (type) {
       assignees ||= this.app.bots.filter(bot => bot.platform === type).map(bot => bot.selfId)
       return { [type]: assignees }

@@ -90,7 +90,7 @@ export namespace Tables {
 
   export interface Extension<O = any> {
     type?: 'random' | 'incremental'
-    primary?: Keys<O>
+    primary?: MaybeArray<Keys<O>>
     unique?: MaybeArray<Keys<O>>[]
     foreign?: {
       [K in keyof O]?: [TableType, string]
@@ -189,6 +189,9 @@ export namespace Query {
   export function resolve<T extends TableType>(name: T, query: Query<T>): Expr<Tables[T]> {
     if (Array.isArray(query) || query instanceof RegExp || ['string', 'number'].includes(typeof query)) {
       const { primary } = Tables.config[name]
+      if (Array.isArray(primary)) {
+        throw new TypeError('invalid query syntax')
+      }
       return { [primary]: query } as any
     }
     return query as any
@@ -211,7 +214,7 @@ export namespace Query {
     get<T extends TableType, K extends Field<T>>(table: T, query: Query<T>, modifier?: Modifier<K>): Promise<Pick<Tables[T], K>[]>
     remove<T extends TableType>(table: T, query: Query<T>): Promise<void>
     create<T extends TableType>(table: T, data: Partial<Tables[T]>): Promise<Tables[T]>
-    update<T extends TableType>(table: T, data: Partial<Tables[T]>[], key?: Index<T> | Index<T>[]): Promise<void>
+    update<T extends TableType>(table: T, data: Partial<Tables[T]>[], keys?: MaybeArray<Index<T>>): Promise<void>
   }
 }
 
@@ -235,14 +238,6 @@ export namespace User {
   export type Observed<K extends Field = Field> = utils.Observed<Pick<User, K>, Promise<void>>
   type Getter = <T extends Index>(type: T, id: string) => Partial<User>
   const getters: Getter[] = []
-
-  /**
-   * @deprecated use `Tables.extend('user', { fields })` instead
-   */
-  export function extend(getter: Getter) {
-    getters.push(getter)
-    fields.push(...Object.keys(getter(null as never, '0')) as any)
-  }
 
   export function create<T extends Index>(type: T, id: string) {
     const result = Tables.create('user')
@@ -274,14 +269,6 @@ export namespace Channel {
   type Getter = (type: Platform, id: string) => Partial<Channel>
   const getters: Getter[] = []
 
-  /**
-   * @deprecated use `Tables.extend('user', { fields })` instead
-   */
-  export function extend(getter: Getter) {
-    getters.push(getter)
-    fields.push(...Object.keys(getter(null as never, '')) as any)
-  }
-
   export function create(type: Platform, id: string) {
     const result = Tables.create('channel')
     result.id = `${type}:${id}`
@@ -290,13 +277,9 @@ export namespace Channel {
     }
     return result
   }
-
-  export interface Methods {
-    getAssignedChannels<K extends Field>(fields?: K[], assignMap?: Record<string, readonly string[]>): Promise<Pick<Channel, K>[]>
-  }
 }
 
-export interface Database extends Query.Methods, Channel.Methods {}
+export interface Database extends Query.Methods {}
 
 export abstract class Database {
   abstract start(): void | Promise<void>
@@ -325,9 +308,15 @@ export abstract class Database {
     return Array.isArray(id) ? data : data[0] && { ...data[0], type, id }
   }
 
+  getAssignedChannels<K extends Channel.Field>(fields?: K[], assignMap?: Record<string, string[]>): Promise<Pick<Channel, K>[]>
+  async getAssignedChannels(fields?: Channel.Field[], assignMap: Record<string, string[]> = this.app.getSelfIds()) {
+    return this.get('channel', {
+      $or: Object.entries(assignMap).map(([type, assignee]) => ({ type, assignee })),
+    }, fields)
+  }
+
   setChannel(type: string, id: string, data: Partial<Channel>) {
-    // TODO: use primary key (type, id) by default
-    return this.update('channel', [{ ...data, type, id }], ['type', 'id'])
+    return this.update('channel', [{ ...data, type, id }])
   }
 }
 
