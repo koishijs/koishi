@@ -60,8 +60,8 @@ Context.delegate('webui')
 Tables.extend('user', {
   fields: {
     lastCall: 'timestamp',
-    password: 'string(64)',
-    token: 'string(64)',
+    password: 'string(63)',
+    token: 'string(63)',
     expire: 'unsigned(20)',
   },
 })

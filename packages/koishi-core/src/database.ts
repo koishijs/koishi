@@ -3,6 +3,9 @@ import { Platform } from './adapter'
 
 export type TableType = keyof Tables
 
+export type MaybeArray<K> = K | K[]
+export type Keys<O, T = any> = string & { [K in keyof O]: O[K] extends T ? K : never }[keyof O]
+
 export interface Tables {
   user: User
   channel: Channel
@@ -84,12 +87,10 @@ export namespace Tables {
     }
   }
 
-  type Unique<K> = (K | K[])[]
-
   export interface Extension<O = any> {
     type?: 'random' | 'incremental'
-    primary?: string & keyof O
-    unique?: Unique<string & keyof O>
+    primary?: Keys<O>
+    unique?: MaybeArray<Keys<O>>[]
     foreign?: {
       [K in keyof O]?: [TableType, string]
     }
@@ -151,9 +152,8 @@ export type Query<T extends TableType> = Query.Expr<Tables[T]> | Query.Shorthand
 
 export namespace Query {
   export type IndexType = string | number
-  export type IndexKeys<O, T = any> = string & { [K in keyof O]: O[K] extends T ? K : never }[keyof O]
   export type Field<T extends TableType> = string & keyof Tables[T]
-  export type Index<T extends TableType> = IndexKeys<Tables[T], IndexType>
+  export type Index<T extends TableType> = Keys<Tables[T], IndexType>
 
   type Extract<S, T, U = S> = S extends T ? U : never
   type Primitive = string | number
@@ -219,8 +219,6 @@ export namespace Query {
   }
 }
 
-type MaybeArray<T> = T | readonly T[]
-
 export interface User extends Record<Platform, string> {
   id: string
   flag: number
@@ -259,9 +257,9 @@ export namespace User {
     return result as User
   }
 
-  export interface Datbase {
+  export interface Database {
     getUser<K extends Field, T extends Index>(type: T, id: string, modifier?: Query.Modifier<K>): Promise<Pick<User, K | T>>
-    getUser<K extends Field, T extends Index>(type: T, ids: readonly string[], modifier?: Query.Modifier<K>): Promise<Pick<User, K>[]>
+    getUser<K extends Field, T extends Index>(type: T, ids: string[], modifier?: Query.Modifier<K>): Promise<Pick<User, K>[]>
     getUser<K extends Field, T extends Index>(type: T, id: MaybeArray<string>, modifier?: Query.Modifier<K>): Promise<any>
     setUser<T extends Index>(type: T, id: string, data: Partial<User>): Promise<void>
     createUser<T extends Index>(type: T, id: string, data: Partial<User>): Promise<void>
@@ -314,7 +312,7 @@ export namespace Channel {
   }
 }
 
-export interface Database extends Query.Database, User.Datbase, Channel.Database {}
+export interface Database extends Query.Database, User.Database, Channel.Database {}
 
 type Methods<S, T> = {
   [K in keyof S]?: S[K] extends (...args: infer R) => infer U ? (this: T, ...args: R) => U : S[K]
