@@ -1,4 +1,4 @@
-import { App, Adapter, Session } from 'koishi-core'
+import { App, Adapter, Session } from 'koishi'
 import { createBot } from 'mineflayer'
 import { MinecraftBot } from './bot'
 

@@ -1,9 +1,9 @@
-import { Adapter } from 'koishi-core'
+import { Adapter } from 'koishi'
 import { MinecraftBot } from './bot'
 import WsClient from './ws'
 export * from './bot'
 
-declare module 'koishi-core' {
+declare module 'koishi' {
   interface AppOptions {
     minecraft?: {}
   }

@@ -179,7 +179,8 @@ export type User = K.User
 export type Channel = K.Channel
 export type Platform = K.Platform
 
-export const All = createPartialSelector('all')
+export const Any = createPartialSelector('any')
+export const Never = createPartialSelector('never')
 export const User = createSelector('user', UserStatic)
 export const Channel = createSelector('channel', ChannelStatic)
 export const Platform = createSelector('platform')

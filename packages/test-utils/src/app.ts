@@ -163,7 +163,7 @@ export class TestSession {
         if (!content) return
         const session = this.app.bots[0].createSession(pick(this.meta, ['userId', 'channelId', 'groupId']))
         session.content = content
-        this.app.emit(session, 'before-send', session)
+        this.app.emit(session as any, 'before-send', session)
         const length = this.replies.push(content)
         if (length >= count) _resolve()
       }

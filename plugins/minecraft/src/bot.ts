@@ -1,4 +1,4 @@
-import { Bot, Random, segment } from 'koishi-core'
+import { Bot, Random, segment } from 'koishi'
 
 const noop = async () => null
 
@@ -16,7 +16,7 @@ export class MinecraftBot extends Bot<'minecraft'> {
     else this.client.whisper(channelId, content)
 
     this.app.emit(session, 'send', session)
-    return Random.uuid()
+    return Random.id()
   }
 
   async sendPrivateMessage(channelId: string, content: string) {

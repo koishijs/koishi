@@ -113,6 +113,13 @@ Database.extend(MemoryDatabase, {
       .slice(offset, offset + limit)
   },
 
+  async set(name, query, data) {
+    const expr = Query.resolve(name, query)
+    this.$table(name)
+      .filter(row => executeQuery(expr, row))
+      .forEach(row => Object.assign(row, data))
+  },
+
   async remove(name, query) {
     const entries = Object.entries(Query.resolve(name, query))
     this.$store[name] = this.$table(name)
@@ -134,7 +141,7 @@ Database.extend(MemoryDatabase, {
     return data
   },
 
-  async update(name, data, key) {
+  async upsert(name, data, key) {
     const keys = makeArray(key || Tables.config[name].primary)
     for (const item of data) {
       const row = this.$table(name).find(row => {

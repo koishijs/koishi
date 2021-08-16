@@ -1,5 +1,5 @@
 import MysqlDatabase, { Config, TableType } from './database'
-import { Channel, Database, Context, Query } from 'koishi'
+import { Database, Context, Query, makeArray, difference } from 'koishi'
 import { OkPacket, escapeId, escape } from 'mysql'
 import * as Koishi from 'koishi'
 
@@ -131,6 +131,17 @@ Database.extend(MysqlDatabase, {
     return this.query(sql)
   },
 
+  async set(name, query, data) {
+    const filter = createFilter(name, query)
+    if (filter === '0') return
+    const keys = Object.keys(data)
+    const update = keys.map((key) => {
+      key = escapeId(key)
+      return `${key} = VALUES(${key})`
+    }).join(', ')
+    await this.query(`UPDATE ${name} SET ${update}`)
+  },
+
   async remove(name, query) {
     const filter = createFilter(name, query)
     if (filter === '0') return
@@ -147,19 +158,20 @@ Database.extend(MysqlDatabase, {
     return { ...data, id: header.insertId } as any
   },
 
-  async update(table, data) {
+  async upsert(name, data, keys: string | string[]) {
     if (!data.length) return
-    data = data.map(item => ({ ...item, ...Koishi.Tables.create(table) }))
-    const keys = Object.keys(data[0])
-    const placeholder = `(${keys.map(() => '?').join(', ')})`
-    const update = keys.filter(key => key !== 'id').map((key) => {
+    data = data.map(item => ({ ...item, ...Koishi.Tables.create(name) }))
+    keys = makeArray(keys || Koishi.Tables.config[name].primary)
+    const fields = Object.keys(data[0])
+    const placeholder = `(${fields.map(() => '?').join(', ')})`
+    const update = difference(fields, keys).map((key) => {
       key = escapeId(key)
       return `${key} = VALUES(${key})`
     }).join(', ')
     await this.query(
-      `INSERT INTO ${escapeId(table)} (${this.joinKeys(keys)}) VALUES ${data.map(() => placeholder).join(', ')}
+      `INSERT INTO ${escapeId(name)} (${this.joinKeys(fields)}) VALUES ${data.map(() => placeholder).join(', ')}
       ON DUPLICATE KEY UPDATE ${update}`,
-      [].concat(...data.map(data => this.formatValues(table, data, keys))),
+      [].concat(...data.map(data => this.formatValues(name, data, fields))),
     )
   },
 })

@@ -74,7 +74,6 @@ function getFallbackType({ type }: Tables.Field) {
 Database.extend(MongoDatabase, {
   async get(name, query, modifier) {
     const filter = createFilter(name, query)
-    if (!filter) return []
     let cursor = this.db.collection(name).find(filter)
     const { fields, limit, offset = 0 } = Query.resolveModifier(modifier)
     if (fields) cursor = cursor.project(Object.fromEntries(fields.map(key => [key, 1])))
@@ -83,9 +82,13 @@ Database.extend(MongoDatabase, {
     return await cursor.toArray()
   },
 
+  async set(name, query, data) {
+    const filter = createFilter(name, query)
+    await this.db.collection(name).updateMany(filter, { $set: data })
+  },
+
   async remove(name, query) {
     const filter = createFilter(name, query)
-    if (!filter) return
     await this.db.collection(name).deleteMany(filter)
   },
 
@@ -106,7 +109,7 @@ Database.extend(MongoDatabase, {
     return copy
   },
 
-  async update(name, data: any[], keys: string | string[]) {
+  async upsert(name, data: any[], keys: string | string[]) {
     if (!data.length) return
     if (!keys) keys = Tables.config[name].primary
     keys = makeArray(keys)
