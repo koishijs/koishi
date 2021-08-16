@@ -59,7 +59,7 @@ jobs:
       - name: Start services
         run: |
           sudo cat /etc/init.d/mysql
-          sudo /etc/init.d/mysql start
+          mysql -V
           mysql -e 'CREATE DATABASE ${{ env.DB_DATABASE }};' -u${{ env.DB_USERNAME }} -p${{ env.DB_PASSWORD }}
       - name: Check out
         uses: actions/checkout@v1
