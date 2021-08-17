@@ -1,6 +1,8 @@
 import { expect } from 'chai'
 import { Database, Tables } from 'koishi-core'
 import { testDatabase, App } from 'koishi-test-utils'
+import { Tests } from '../src'
+import { ORMTests } from '../src/orm'
 
 declare module 'koishi-core' {
   interface Database {
@@ -39,7 +41,9 @@ Database.extend('koishi-test-utils', {
 })
 
 describe('Memory Database', () => {
-  const db = testDatabase(new App({ mockDatabase: true }))
+  const app = new App({ mockDatabase: true })
+  Tests.orm(app)
+  const db = app.database
 
   describe('base support', () => {
     after(() => {
