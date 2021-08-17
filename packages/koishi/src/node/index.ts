@@ -5,7 +5,8 @@ import { AxiosRequestConfig } from 'axios'
 import Router from '@koa/router'
 import type Koa from 'koa'
 
-import './adapter'
+export * from './adapter'
+export * from './config'
 
 export * from '@koishijs/core'
 export * from '@koishijs/utils'
@@ -13,8 +14,8 @@ export * from '@koishijs/utils'
 declare module 'koa' {
   // koa-bodyparser
   interface Request {
-    body: any
-    rawBody: string
+    body?: any
+    rawBody?: string
   }
 }
 

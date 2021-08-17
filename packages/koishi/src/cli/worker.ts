@@ -1,9 +1,8 @@
 import { resolve, relative, extname, dirname } from 'path'
-import { App, Context, Plugin, version, coerce, Logger, noop, makeArray, template } from 'koishi'
+import { App, Context, Plugin, version, coerce, Logger, noop, makeArray, template, AppConfig } from '../node'
 import { readFileSync, readdirSync } from 'fs'
 import { performance } from 'perf_hooks'
 import { yellow } from 'kleur'
-import { AppConfig } from '..'
 
 const logger = new Logger('app')
 let configDir = process.cwd()

@@ -70,10 +70,6 @@ async function compile(name: string) {
     }],
   }
 
-  if (name === 'packages/cli' || name === 'plugins/puppeteer') {
-    entryPoints.push(base + '/src/worker.ts')
-  }
-
   try {
     const helper = require(base + '/build/compile')
     const result = await helper(base, options) as BuildOptions[]

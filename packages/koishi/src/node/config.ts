@@ -1,9 +1,6 @@
 import { AppOptions } from '@koishijs/core'
 import { WatchOptions } from 'chokidar'
 
-export * from '@koishijs/core'
-export * from '@koishijs/utils'
-
 export type PluginConfig = Record<string, any> | (string | [string, any?])[]
 
 interface LogLevelConfig {
@@ -32,4 +29,8 @@ export interface AppConfig extends AppOptions {
   logTime?: string | boolean
   watch?: WatchConfig
   deamon?: DeamonConfig
+}
+
+export function defineConfig(config: AppConfig) {
+  return config
 }

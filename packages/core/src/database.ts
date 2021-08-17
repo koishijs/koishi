@@ -141,6 +141,8 @@ export namespace Tables {
     flag: { type: 'unsigned', length: 20, initial: 0 },
     assignee: { type: 'string', length: 50 },
     disable: { type: 'list', initial: [] },
+  }, {
+    primary: ['id', 'type'],
   })
 }
 

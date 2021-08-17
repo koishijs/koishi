@@ -5,6 +5,6 @@
     "outFile": "temp/index.d.ts",
   },
   "include": [
-    "src",
+    "src/node",
   ],
 }
