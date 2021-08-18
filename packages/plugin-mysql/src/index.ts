@@ -138,29 +138,30 @@ Database.extend(MysqlDatabase, {
     await this.query('DELETE FROM ?? WHERE ' + filter, [name])
   },
 
-  async create(table, data) {
-    data = { ...data, ...Koishi.Tables.create(table) }
+  async create(name, data) {
+    data = { ...data, ...Koishi.Tables.create(name) }
     const keys = Object.keys(data)
     const header = await this.query<OkPacket>(
       `INSERT INTO ?? (${this.joinKeys(keys)}) VALUES (${keys.map(() => '?').join(', ')})`,
-      [table, ...this.formatValues(table, data, keys)],
+      [name, ...this.formatValues(name, data, keys)],
     )
     return { ...data, id: header.insertId } as any
   },
 
-  async update(table, data) {
+  async update(name, data, key: string) {
     if (!data.length) return
-    data = data.map(item => ({ ...item, ...Koishi.Tables.create(table) }))
-    const keys = Object.keys(data[0])
-    const placeholder = `(${keys.map(() => '?').join(', ')})`
-    const update = keys.filter(key => key !== 'id').map((key) => {
+    key ||= Koishi.Tables.config[name].primary
+    data = data.map(item => ({ ...item, ...Koishi.Tables.create(name) }))
+    const fields = Object.keys(data[0])
+    const placeholder = `(${fields.map(() => '?').join(', ')})`
+    const update = difference(fields, [key]).map((key) => {
       key = escapeId(key)
       return `${key} = VALUES(${key})`
     }).join(', ')
     await this.query(
-      `INSERT INTO ${escapeId(table)} (${this.joinKeys(keys)}) VALUES ${data.map(() => placeholder).join(', ')}
+      `INSERT INTO ${escapeId(name)} (${this.joinKeys(fields)}) VALUES ${data.map(() => placeholder).join(', ')}
       ON DUPLICATE KEY UPDATE ${update}`,
-      [].concat(...data.map(data => this.formatValues(table, data, keys))),
+      [].concat(...data.map(data => this.formatValues(name, data, fields))),
     )
   },
 
