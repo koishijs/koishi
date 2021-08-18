@@ -4,9 +4,6 @@ on:
   push:
     paths-ignore:
       - docs/**
-  pull_request:
-    paths-ignore:
-      - docs/**
 
 env:
   CI: true
@@ -14,6 +11,10 @@ env:
 jobs:
   build:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node: [14, 16]
+
     services:
       mongo:
         image: mongo
@@ -41,13 +42,14 @@ jobs:
           MYSQL_DATABASE: koishi
           MYSQL_PASSWORD: koishi@114514
           MYSQL_ROOT_PASSWORD: password
-#      mysql8:
-#        image: mysql:8
-#        ports:
-#          - 3308:3306
-#        env:
-#          MYSQL_PASSWORD: koishi@114514
-#          MYSQL_USER: koishi
+      mysql8:
+        image: mysql:8
+        ports:
+          - 3308:3306
+        env:
+          MYSQL_PASSWORD: koishi@114514
+          MYSQL_USER: koishi
+
     env:
       GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
       NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
@@ -58,24 +60,24 @@ jobs:
       - name: Check out
         uses: actions/checkout@v1
       - name: Set up Node
-        uses: actions/setup-node@v1
+        uses: actions/setup-node@v2
         with:
-          node-version: 14.x
+          node-version: ${{ matrix.node }}
       - name: Create .npmrc
         run: 'echo "//registry.npmjs.org/:_authToken=${{secrets.NPM_TOKEN}}" > .npmrc'
       - name: Install
         run: yarn
       - name: Build
         run: yarn build:ci
-      - name: Lint
-        run: yarn lint
       - name: Unit Test
         run: yarn test:json
       - name: Report Coverage
+        if: ${{ matrix.node === 14 }}
         uses: codecov/codecov-action@v1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           file: ./coverage/coverage-final.json
           name: codecov
       - name: Publish
+        if: ${{ matrix.node === 14 }}
         run: yarn pub
