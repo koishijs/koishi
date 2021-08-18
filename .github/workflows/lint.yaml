@@ -1,0 +1,21 @@
+name: Lint
+
+on:
+  push:
+    paths-ignore:
+      - docs/**
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out
+        uses: actions/checkout@v1
+      - name: Set up Node
+        uses: actions/setup-node@v1
+        with:
+          node-version: 14.x
+      - name: Install
+        run: yarn
+      - name: Lint
+        run: yarn lint
