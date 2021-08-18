@@ -96,7 +96,7 @@ module.exports = (ctx) => {
 console.log(window) // 你现在可以操作客户端了！
 ```
 
-## 调试模式 <Badge text="beta" type="warn"/>
+## 调试模式 <Badge text="beta" type="warning"/>
 
 调试模式将允许你使用 SFC, HMR 等特性，便于开发自己的功能。
 
