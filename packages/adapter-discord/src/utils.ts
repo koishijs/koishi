@@ -163,6 +163,7 @@ export async function adaptSession(bot: DiscordBot, input: DC.Payload) {
     if (session.userId === bot.selfId) return
   } else if (input.t === 'MESSAGE_DELETE') {
     session.type = 'message-deleted'
+    session.messageId = input.d.id
     prepareMessageSession(session, input.d)
   } else if (input.t === 'MESSAGE_REACTION_ADD') {
     session.type = 'reaction-added'
