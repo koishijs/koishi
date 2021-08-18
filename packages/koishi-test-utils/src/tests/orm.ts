@@ -1,6 +1,22 @@
-import { App, User, Channel } from 'koishi-core'
+import { App, User, Channel, Tables } from 'koishi-core'
 import { expect } from 'chai'
-import '../chai'
+import '../../chai'
+
+interface Foo {
+  id?: number
+  bar: string
+  baz?: number
+  list?: number[]
+  date?: Date
+}
+
+declare module 'koishi-core' {
+  interface Tables {
+    foo: Foo
+  }
+}
+
+Tables.extend('foo')
 
 export namespace ORMTests {
   export function builtin(app: App) {
@@ -51,8 +67,6 @@ export namespace ORMTests {
       await db.remove('channel', { id: ['mock:A'] })
       await expect(db.getChannel('mock', ['A'])).eventually.to.deep.equal([])
     })
-
-    return db
   }
 
   export namespace query {
