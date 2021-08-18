@@ -1,4 +1,5 @@
 import { readFileSync } from 'fs'
+import { basename } from 'path'
 import FormData from 'form-data'
 import FileType from 'file-type'
 import AggregateError from 'es-aggregate-error'
@@ -27,10 +28,11 @@ export class Sender {
     }
   }
 
-  async sendEmbed(fileBuffer: Buffer, payload_json: Record<string, any> = {}) {
+  async sendEmbed(fileBuffer: Buffer, payload_json: Record<string, any> = {}, filename = '') {
     const fd = new FormData()
     const type = await FileType.fromBuffer(fileBuffer)
-    fd.append('file', fileBuffer, 'file.' + type.ext)
+    filename ||= 'file.' + type.ext
+    fd.append('file', fileBuffer, filename)
     fd.append('payload_json', JSON.stringify(payload_json))
     return this.post(fd, fd.getHeaders())
   }
@@ -48,10 +50,11 @@ export class Sender {
     }
 
     if (data.url.startsWith('file://')) {
-      return this.sendEmbed(readFileSync(data.url.slice(8)), addition)
+      const filename = basename(data.url.slice(7))
+      return this.sendEmbed(readFileSync(data.url.slice(7)), addition, data.file || filename)
     } else if (data.url.startsWith('base64://')) {
       const a = Buffer.from(data.url.slice(9), 'base64')
-      return await this.sendEmbed(a, addition)
+      return await this.sendEmbed(a, addition, data.file)
     }
 
     const sendDirect = async () => {
@@ -62,6 +65,7 @@ export class Sender {
     }
 
     const sendDownload = async () => {
+      const filename = basename(data.url)
       const a = await axios.get(data.url, {
         ...axiosConfig,
         ...discord.axiosConfig,
@@ -70,7 +74,7 @@ export class Sender {
           accept: type + '/*',
         },
       })
-      return this.sendEmbed(a.data, addition)
+      return this.sendEmbed(a.data, addition, data.file || filename)
     }
 
     const mode = data.mode as HandleExternalAsset || discord.handleExternalAsset
@@ -135,6 +139,12 @@ export class Sender {
           ...addition,
           embeds: [{ ...data }],
         })
+      } else if (type === 'record'){
+        await this.sendAsset('file', {...data, mode: "download"}, {
+          ...addition,
+          content: textBuffer.trim()
+        })
+        textBuffer = ''
       }
     }
 
