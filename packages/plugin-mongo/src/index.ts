@@ -133,6 +133,15 @@ function getFallbackType({ fields, primary }: Tables.Config) {
 }
 
 Database.extend(MongoDatabase, {
+  async drop(table?: TableType) {
+    if (table) {
+      await this.db.collection(table).drop()
+    } else {
+      await Promise.all(
+        await this.db.collections().then(collections => collections.map(c => c.drop()))
+      )
+    }
+  },
   async get(name, query, modifier) {
     const filter = createFilter(name, query)
     if (!filter) return []

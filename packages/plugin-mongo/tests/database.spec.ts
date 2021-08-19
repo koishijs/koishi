@@ -24,7 +24,7 @@ describe('Mongo Plugin', () => {
         port: port,
       })
 
-      Tests.orm.BuiltinMethods(app)
+      Tests.orm(app)
     })
   }
 })
