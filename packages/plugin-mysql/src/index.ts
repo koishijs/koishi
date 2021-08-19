@@ -66,7 +66,7 @@ const queryOperators: QueryOperators = {
   },
   $size: (key, value) => {
     if (!value) return `!${key}`
-    return `LENGTH(${key}) - LENGTH(REPLACE(${key}, ",", "")) = ${escape(value)}`
+    return `${key} && LENGTH(${key}) - LENGTH(REPLACE(${key}, ",", "")) = ${escape(value)} - 1`
   },
   $bitsAllSet: (key, value) => `${key} & ${escape(value)} = ${escape(value)}`,
   $bitsAllClear: (key, value) => `${key} & ${escape(value)} = 0`,
@@ -148,7 +148,7 @@ Database.extend(MysqlDatabase, {
   },
 
   async create(name, data) {
-    data = { ...data, ...Koishi.Tables.create(name) }
+    data = { ...Koishi.Tables.create(name), ...data }
     const keys = Object.keys(data)
     const header = await this.query<OkPacket>(
       `INSERT INTO ?? (${this.joinKeys(keys)}) VALUES (${keys.map(() => '?').join(', ')})`,
@@ -160,7 +160,7 @@ Database.extend(MysqlDatabase, {
   async update(name, data, key: string) {
     if (!data.length) return
     key ||= Koishi.Tables.config[name].primary
-    data = data.map(item => ({ ...item, ...Koishi.Tables.create(name) }))
+    data = data.map(item => ({ ...Koishi.Tables.create(name), ...item }))
     const fields = Object.keys(data[0])
     const placeholder = `(${fields.map(() => '?').join(', ')})`
     const update = difference(fields, [key]).map((key) => {
