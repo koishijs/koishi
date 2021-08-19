@@ -45,14 +45,10 @@ export namespace ORMTests {
       await expect(db.getUser('mock', 'A')).eventually.not.to.be.ok
 
       await db.createUser('mock', 'A', { authority: 1 })
-      await expect(db.getUser('mock', 'A')).eventually.to.have.shape({
-        authority: 1,
-      })
+      await expect(db.getUser('mock', 'A')).eventually.to.have.shape({ authority: 1 })
 
       await db.setUser('mock', 'A', { authority: 2 })
-      await expect(db.getUser('mock', 'A')).eventually.to.have.shape({
-        authority: 2,
-      })
+      await expect(db.getUser('mock', 'A')).eventually.to.have.shape({ authority: 2 })
 
       await db.remove('user', { mock: ['A'] })
       await expect(db.getUser('mock', ['A'])).eventually.to.deep.equal([])
@@ -63,14 +59,10 @@ export namespace ORMTests {
       await expect(db.getChannel('mock', 'A')).eventually.not.to.be.ok
 
       await db.createChannel('mock', 'A', { assignee: '123' })
-      await expect(db.getChannel('mock', 'A')).eventually.to.have.shape({
-        assignee: '123',
-      })
+      await expect(db.getChannel('mock', 'A')).eventually.to.have.shape({ assignee: '123' })
 
       await db.setChannel('mock', 'A', { assignee: '321' })
-      await expect(db.getChannel('mock', 'A')).eventually.to.have.shape({
-        assignee: '321',
-      })
+      await expect(db.getChannel('mock', 'A')).eventually.to.have.shape({ assignee: '321' })
 
       await db.createChannel('mock', 'B', { assignee: app.bots[0].selfId })
       await db.createChannel('mock', 'C', { assignee: app.bots[0].selfId })

@@ -121,7 +121,7 @@ function createFilter<T extends TableType>(name: T, _query: Query<T>) {
   const filter = transformQuery(Query.resolve(name, _query))
   const { primary } = Tables.config[name]
   if (filter[primary]) {
-    filter['_id'] = filter[primary]
+    filter['$or'] = [{ id: filter[primary] }, { _id: filter[primary] }]
     delete filter[primary]
   }
   return filter
@@ -143,7 +143,7 @@ Database.extend(MongoDatabase, {
     if (limit) cursor = cursor.limit(offset + limit)
     const data = await cursor.toArray()
     const { primary } = Tables.config[name]
-    if (fields.includes(primary as never)) {
+    if (fields && fields.includes(primary as never)) {
       for (const item of data) {
         item[primary] ??= item._id
       }
@@ -201,6 +201,11 @@ Database.extend(MongoDatabase, {
   },
 
   async setUser(type, id, data) {
+    delete data['id']
+    await this.user.updateOne({ [type]: id }, { $set: escapeKey(data) })
+  },
+
+  async createUser(type, id, data) {
     await this.user.updateOne(
       { [type]: id },
       { $set: escapeKey(data), $setOnInsert: { id: Random.uuid() } },
@@ -208,13 +213,9 @@ Database.extend(MongoDatabase, {
     )
   },
 
-  async createUser(type, id, data) {
-    await this.setUser(type, id, data)
-  },
-
   async getChannel(type, pid, modifier) {
     modifier = Query.resolveModifier(modifier)
-    const fields = modifier.fields.slice()
+    const fields = (modifier?.fields ?? []).slice()
     const applyDefault = (channel: Channel) => ({
       ...pick(Channel.create(type, channel.pid), fields),
       ...omit(channel, ['type', 'pid']),
@@ -223,13 +224,11 @@ Database.extend(MongoDatabase, {
     const index = fields.indexOf('id')
     if (Array.isArray(pid)) {
       const ids = pid.map(id => `${type}:${id}`)
-      if (fields && !fields.length) return ids.map(id => ({ id }))
       if (index >= 0) modifier.fields.splice(index, 1, 'type', 'pid')
-      const data = await this.get('channel', ids, modifier)
+      const data = await this.get('channel', { id: ids }, modifier)
       return data.map(applyDefault)
     } else {
       const id = `${type}:${pid}`
-      if (fields && !fields.length) return { id }
       if (index >= 0) modifier.fields.splice(index, 1)
       const data = await this.get('channel', id, modifier)
       return data[0] && { ...applyDefault(data[0]), id }
@@ -237,7 +236,7 @@ Database.extend(MongoDatabase, {
   },
 
   async getAssignedChannels(_fields, assignMap = this.app.getSelfIds()) {
-    const fields = _fields.slice()
+    const fields = (_fields ?? []).slice()
     const applyDefault = (channel: Channel) => ({
       ...pick(Channel.create(channel.type, channel.pid), _fields),
       ...omit(channel, ['type', 'pid']),
@@ -245,6 +244,7 @@ Database.extend(MongoDatabase, {
 
     const index = fields.indexOf('id')
     if (index >= 0) fields.splice(index, 1, 'type', 'pid')
+    console.log(Object.entries(assignMap).map<any>(([type, assignee]) => ({ type, assignee })))
     const data = await this.get('channel', {
       $or: Object.entries(assignMap).map<any>(([type, assignee]) => ({ type, assignee })),
     }, fields)
@@ -252,11 +252,13 @@ Database.extend(MongoDatabase, {
   },
 
   async setChannel(type, pid, data) {
-    await this.channel.updateOne({ type, pid }, { $set: data }, { upsert: true })
+    await this.channel.updateOne({ type, pid, id: `${type}:${pid}` }, { $set: data })
   },
 
   async createChannel(type, pid, data) {
-    await this.setChannel(type, pid, data)
+    await this.channel.updateOne({ type, pid, id: `${type}:${pid}` }, {
+      $set: Object.keys(data).length === 0 ? Channel.create(type, pid) : data,
+    }, { upsert: true })
   },
 })
 
