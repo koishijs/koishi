@@ -169,7 +169,7 @@ Database.extend(MongoDatabase, {
   async create(name, data: any) {
     const meta = Tables.config[name]
     const { primary, type = getFallbackType(meta) } = meta
-    const copy = { ...data, ...Tables.create(name) }
+    const copy = { ...Tables.create(name), ...data }
     if (copy[primary]) {
       copy['_id'] = copy[primary]
       delete copy[primary]
@@ -253,7 +253,6 @@ Database.extend(MongoDatabase, {
 
     const index = fields.indexOf('id')
     if (index >= 0) fields.splice(index, 1, 'type', 'pid')
-    console.log(Object.entries(assignMap).map<any>(([type, assignee]) => ({ type, assignee })))
     const data = await this.get('channel', {
       $or: Object.entries(assignMap).map<any>(([type, assignee]) => ({ type, assignee })),
     }, fields)
