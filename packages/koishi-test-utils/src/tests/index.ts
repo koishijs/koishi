@@ -2,15 +2,18 @@ import { ORMTests } from './orm'
 import { App } from 'koishi-core'
 
 export namespace Tests {
+  const Keywords = ['name']
+  type Keywords = 'name'
+
   type UnitOptions<T> = (T extends (app: App, options?: infer R) => any ? R : {}) & {
-    [K in keyof T]?: false | UnitOptions<T[K]>
+    [K in keyof T as Exclude<K, Keywords>]?: false | UnitOptions<T[K]>
   }
 
   type Unit<T> = ((app: App, options?: UnitOptions<T>) => void) & {
-    [K in keyof T]: Unit<T[K]>
+    [K in keyof T as Exclude<K, Keywords>]: Unit<T[K]>
   }
 
-  function createUnit<T>(target: T, title?: string): Unit<T> {
+  function createUnit<T>(target: T, root = false): Unit<T> {
     const test: any = (app: App, options: any = {}) => {
       function callback() {
         if (typeof target === 'function') {
@@ -18,24 +21,26 @@ export namespace Tests {
         }
 
         for (const key in target) {
-          if (options[key] === false) continue
+          if (options[key] === false || Keywords.includes(key)) continue
           test[key](app, options[key])
         }
       }
 
-      if (title) {
-        describe(title, callback)
+      const title = target['name']
+      if (!root && title) {
+        describe(title.replace(/(?=[A-Z])/g, ' ').trimStart(), callback)
       } else {
         callback()
       }
     }
 
     for (const key in target) {
-      test[key] = createUnit(target[key], key.replace(/(?=[A-Z])/g, ' ').trimStart())
+      if (Keywords.includes(key)) continue
+      test[key] = createUnit(target[key])
     }
 
     return test
   }
 
-  export const orm = createUnit(ORMTests)
+  export const orm = createUnit(ORMTests, true)
 }

@@ -37,7 +37,7 @@ export function ORMTests(app: App) {
 }
 
 export namespace ORMTests {
-  export function BuiltinMethods(app: App) {
+  export const builtin = function BuiltinMethods(app: App) {
     const { database: db } = app
 
     it('user operations', async () => {
@@ -74,8 +74,10 @@ export namespace ORMTests {
     })
   }
 
-  export namespace QueryOperators {
-    export function Comparison(app: App) {
+  export namespace query {
+    export const name = 'QueryOperators'
+
+    export const comparison = function Comparison(app: App) {
       const db = app.database
 
       before(async () => {
@@ -132,7 +134,7 @@ export namespace ORMTests {
       })
     }
 
-    export function Membership(app: App) {
+    export const membership = function Membership(app: App) {
       const db = app.database
 
       before(async () => {
@@ -163,7 +165,7 @@ export namespace ORMTests {
       })
     }
 
-    export function RegularExpression(app: App) {
+    export const regexp = function RegularExpression(app: App) {
       const db = app.database
 
       before(async () => {
@@ -188,7 +190,7 @@ export namespace ORMTests {
       })
     }
 
-    export function Bitwise(app: App) {
+    export const bitwise = function Bitwise(app: App) {
       const db = app.database
 
       before(async () => {
@@ -217,8 +219,15 @@ export namespace ORMTests {
       })
     }
 
-    export function List(app: App) {
+    interface ListOptions {
+      size?: boolean
+      element?: boolean
+      elementQuery?: boolean
+    }
+
+    export const list = function List(app: App, options: ListOptions = {}) {
       const db = app.database
+      const { size = true, element = true, elementQuery = element } = options
 
       before(async () => {
         await db.remove('foo', {})
@@ -228,26 +237,26 @@ export namespace ORMTests {
         await db.create('foo', { id: 4, list: [233, 332] })
       })
 
-      it('$size', async () => {
+      size && it('$size', async () => {
         await expect(db.get('foo', {
           list: { $size: 1 },
         })).eventually.to.have.length(2).with.shape([{ id: 2 }, { id: 3 }])
       })
 
-      it('$el shorthand', async () => {
+      element && it('$el shorthand', async () => {
         await expect(db.get('foo', {
           list: { $el: 233 },
         })).eventually.to.have.length(2).with.shape([{ id: 3 }, { id: 4 }])
       })
 
-      it('$el with field query', async () => {
+      elementQuery && it('$el with field query', async () => {
         await expect(db.get('foo', {
           list: { $el: { $lt: 50 } },
         })).eventually.to.have.shape([{ id: 2 }])
       })
     }
 
-    export function Logical(app: App) {
+    export const logical = function Logical(app: App) {
       const db = app.database
 
       before(async () => {
