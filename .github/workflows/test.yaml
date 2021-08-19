@@ -30,17 +30,17 @@ jobs:
       - name: Prepare Cache
         uses: actions/cache@v2
         with:
-          path: ${{ steps.cache.value }}
-          key: yarn-cache-${{ runner.os }}-${{ steps.random.value }}-node-14
+          path: ${{ steps.cache.outputs.value }}
+          key: yarn-cache-${{ runner.os }}-${{ steps.random.outputs.value }}-node-14
       - name: Prepare Lockfile
         uses: actions/cache@v2
         with:
           path: yarn.lock
-          key: yarn-lock-${{ runner.os }}-${{ steps.random.value }}-node-14
+          key: yarn-lock-${{ runner.os }}-${{ steps.random.outputs.value }}-node-14
 
     outputs:
-      random-uuid: ${{ steps.random.value }}
-      cache-dir: ${{ steps.cache.value }}
+      random-uuid: ${{ steps.random.outputs.value }}
+      cache-dir: ${{ steps.cache.outputs.value }}
 
   build:
     runs-on: ubuntu-latest
