@@ -86,6 +86,7 @@ class MysqlDatabase {
     this.config = {
       database: 'koishi',
       charset: 'utf8mb4_general_ci',
+      multipleStatements: true,
       typeCast: (field, next) => {
         const { orgName, orgTable } = field.packet
         const type = MysqlDatabase.tables[orgTable]?.[orgName]

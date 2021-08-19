@@ -72,8 +72,8 @@ export namespace ORMTests {
         assignee: '321',
       })
 
-      await db.createChannel('mock', 'B', {})
-      await db.createChannel('mock', 'C', {})
+      await db.createChannel('mock', 'B', { assignee: app.bots[0].selfId })
+      await db.createChannel('mock', 'C', { assignee: app.bots[0].selfId })
       await expect(db.getAssignedChannels(null)).eventually.to.have.length(2)
       await expect(db.getAssignedChannels(null, { mock: ['321'] })).eventually.to.have.length(1)
 
