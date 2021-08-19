@@ -25,7 +25,7 @@ jobs:
       - name: Build
         run: yarn build:ci
       - name: Upload
-        run: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v2
         with:
           name: packages
           path: packages
@@ -116,7 +116,7 @@ jobs:
       - name: Install
         run: yarn
       - name: Download
-        run: actions/download-artifact@v2
+        uses: actions/download-artifact@v2
         with:
           name: packages
           path: packages
