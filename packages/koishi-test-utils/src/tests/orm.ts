@@ -27,12 +27,18 @@ Tables.extend('foo', {
   },
 })
 
+export function ORMTests(app: App) {
+  before(() => app.start())
+
+  after(async () => {
+    await app.database.drop()
+    await app.stop()
+  })
+}
+
 export namespace ORMTests {
   export function BuiltinMethods(app: App) {
     const { database: db } = app
-
-    before(() => app.start())
-    after(() => app.stop())
 
     it('user operations', async () => {
       await db.setUser('mock', 'A', User.create('mock', 'A'))
