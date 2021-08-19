@@ -8,13 +8,6 @@ on:
 env:
   CI: true
 
-shared:
-  - &mysql-env
-    MYSQL_USER: koishi
-    MYSQL_DATABASE: koishi
-    MYSQL_PASSWORD: koishi@114514
-    MYSQL_ROOT_PASSWORD: password
-
 jobs:
   lint:
     runs-on: ubuntu-latest
@@ -69,7 +62,11 @@ jobs:
         ports:
           - 3308:3306
         options: --health-cmd "mysqladmin ping" --health-interval 10s --health-timeout 5s --health-retries 5
-        env: *mysql-env
+        env:
+          MYSQL_USER: koishi
+          MYSQL_DATABASE: koishi
+          MYSQL_PASSWORD: koishi@114514
+          MYSQL_ROOT_PASSWORD: password
 
     env:
       GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
