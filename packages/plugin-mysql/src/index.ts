@@ -100,7 +100,7 @@ export function createFilter<T extends TableType>(name: T, query: Query<T>) {
       } else if (value instanceof RegExp) {
         conditions.push(createRegExpQuery(escKey, value))
         continue
-      } else if (typeof value === 'string' || typeof value === 'number') {
+      } else if (typeof value === 'string' || typeof value === 'number' || value instanceof Date) {
         conditions.push(createEqualQuery(escKey, value))
         continue
       }

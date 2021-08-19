@@ -70,8 +70,8 @@ function executeFieldQuery(query: Query.FieldQuery, data: any) {
     return query.includes(data)
   } else if (query instanceof RegExp) {
     return query.test(data)
-  } else if (typeof query === 'string' || typeof query === 'number') {
-    return query === data
+  } else if (typeof query === 'string' || typeof query === 'number' || query instanceof Date) {
+    return data.valueOf() === query.valueOf()
   }
 
   // query operators

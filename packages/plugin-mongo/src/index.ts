@@ -73,7 +73,7 @@ function unescapeKey<T extends Partial<User>>(data: T) {
 
 function transformFieldQuery(query: Query.FieldQuery, key: string) {
   // shorthand syntax
-  if (typeof query === 'string' || typeof query === 'number') {
+  if (typeof query === 'string' || typeof query === 'number' || query instanceof Date) {
     return { $eq: query }
   } else if (Array.isArray(query)) {
     if (!query.length) return
@@ -137,11 +137,11 @@ Database.extend(MongoDatabase, {
     if (table) {
       await this.db.collection(table).drop()
     } else {
-      await Promise.all(
-        await this.db.collections().then(collections => collections.map(c => c.drop()))
-      )
+      const collections = await this.db.collections()
+      await Promise.all(collections.map(c => c.drop()))
     }
   },
+
   async get(name, query, modifier) {
     const filter = createFilter(name, query)
     if (!filter) return []
