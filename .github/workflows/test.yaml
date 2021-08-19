@@ -95,8 +95,6 @@ jobs:
         run: 'echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" > .npmrc'
       - name: Install
         run: yarn
-      - name: Build JS
-        run: yarn compile
       - name: Unit Test
         run: yarn test:json
       - name: Report Coverage
