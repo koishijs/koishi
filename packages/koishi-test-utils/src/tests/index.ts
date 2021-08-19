@@ -1,5 +1,6 @@
-import { ORMTests } from './orm'
 import { App } from 'koishi-core'
+import BuiltinMethods from './builtin'
+import QueryOperators from './query'
 
 export namespace Tests {
   const Keywords = ['name']
@@ -40,6 +41,20 @@ export namespace Tests {
     }
 
     return test
+  }
+
+  function ORMTests(app: App) {
+    before(() => app.start())
+
+    after(async () => {
+      await app.database.drop()
+      await app.stop()
+    })
+  }
+
+  namespace ORMTests {
+    export const builtin = BuiltinMethods
+    export const query = QueryOperators
   }
 
   export const orm = createUnit(ORMTests, true)
