@@ -4,8 +4,8 @@ import '../../chai'
 
 interface Foo {
   id?: number
-  bar?: string
-  baz?: number
+  text?: string
+  value?: number
   list?: number[]
   date?: Date
 }
@@ -20,8 +20,8 @@ Tables.extend('foo', {
   type: 'incremental',
   fields: {
     id: 'unsigned',
-    bar: 'string',
-    baz: 'integer',
+    text: 'string',
+    value: 'integer',
     list: 'list',
     date: 'timestamp',
   },
@@ -35,27 +35,27 @@ namespace QueryOperators {
 
     before(async () => {
       await db.remove('foo', {})
-      await db.create('foo', { bar: 'awesome foo', date: new Date('2000-01-01') })
-      await db.create('foo', { bar: 'awesome bar' })
-      await db.create('foo', { bar: 'awesome baz' })
+      await db.create('foo', { text: 'awesome foo', date: new Date('2000-01-01') })
+      await db.create('foo', { text: 'awesome bar' })
+      await db.create('foo', { text: 'awesome baz' })
     })
 
     it('compile expr query', async () => {
       await expect(db.get('foo', {
         id: { $eq: 2 },
-      })).eventually.to.have.length(1).with.nested.property('0.bar').equal('awesome bar')
+      })).eventually.to.have.length(1).with.nested.property('0.text').equal('awesome bar')
 
       await expect(db.get('foo', {
         id: { $ne: 3 },
-      })).eventually.to.have.length(2).with.nested.property('0.bar').equal('awesome foo')
+      })).eventually.to.have.length(2).with.nested.property('0.text').equal('awesome foo')
 
       await expect(db.get('foo', {
         id: { $gt: 1 },
-      })).eventually.to.have.length(2).with.nested.property('1.bar').equal('awesome baz')
+      })).eventually.to.have.length(2).with.nested.property('1.text').equal('awesome baz')
 
       await expect(db.get('foo', {
         id: { $gte: 3 },
-      })).eventually.to.have.length(1).with.nested.property('0.bar').equal('awesome baz')
+      })).eventually.to.have.length(1).with.nested.property('0.text').equal('awesome baz')
 
       await expect(db.get('foo', {
         id: { $lt: 1 },
@@ -63,13 +63,13 @@ namespace QueryOperators {
 
       await expect(db.get('foo', {
         id: { $lte: 2 },
-      })).eventually.to.have.length(2).with.nested.property('0.bar').equal('awesome foo')
+      })).eventually.to.have.length(2).with.nested.property('0.text').equal('awesome foo')
     })
 
     it('date comparisons', async () => {
       await expect(db.get('foo', {
         date: { $gt: new Date('1999-01-01') },
-      })).eventually.to.have.length(1).with.nested.property('0.bar').equal('awesome foo')
+      })).eventually.to.have.length(1).with.nested.property('0.text').equal('awesome foo')
 
       await expect(db.get('foo', {
         date: { $lte: new Date('1999-01-01') },
@@ -79,11 +79,11 @@ namespace QueryOperators {
     it('shorthand syntax', async () => {
       await expect(db.get('foo', {
         id: 2,
-      })).eventually.to.have.length(1).with.nested.property('0.bar').equal('awesome bar')
+      })).eventually.to.have.length(1).with.nested.property('0.text').equal('awesome bar')
 
       await expect(db.get('foo', {
         date: new Date('2000-01-01'),
-      })).eventually.to.have.length(1).with.nested.property('0.bar').equal('awesome foo')
+      })).eventually.to.have.length(1).with.nested.property('0.text').equal('awesome foo')
     })
   }
 
@@ -92,28 +92,28 @@ namespace QueryOperators {
 
     before(async () => {
       await db.remove('foo', {})
-      await db.create('foo', { baz: 3 })
-      await db.create('foo', { baz: 4 })
-      await db.create('foo', { baz: 7 })
+      await db.create('foo', { value: 3 })
+      await db.create('foo', { value: 4 })
+      await db.create('foo', { value: 7 })
     })
 
     it('should verify empty array', async () => {
       await expect(db.get('foo', {
-        baz: { $in: [] },
+        value: { $in: [] },
       })).eventually.to.have.length(0)
 
       await expect(db.get('foo', {
-        baz: { $nin: [] },
+        value: { $nin: [] },
       })).eventually.to.have.length(3)
     })
 
     it('filter data by include', async () => {
       await expect(db.get('foo', {
-        baz: { $in: [3, 4] },
+        value: { $in: [3, 4] },
       })).eventually.to.have.length(2)
 
       await expect(db.get('foo', {
-        baz: { $nin: [4] },
+        value: { $nin: [4] },
       })).eventually.to.have.length(2)
     })
   }
@@ -123,22 +123,22 @@ namespace QueryOperators {
 
     before(async () => {
       await db.remove('foo', {})
-      await db.create('foo', { bar: 'awesome foo' })
-      await db.create('foo', { bar: 'awesome bar' })
-      await db.create('foo', { bar: 'awesome foo bar' })
+      await db.create('foo', { text: 'awesome foo' })
+      await db.create('foo', { text: 'awesome bar' })
+      await db.create('foo', { text: 'awesome foo bar' })
     })
 
     it('filter data by regex', async () => {
       await expect(db.get('foo', {
-        bar: /^.*foo$/,
-      })).eventually.to.have.nested.property('[0].bar').equal('awesome foo')
+        text: /^.*foo$/,
+      })).eventually.to.have.nested.property('[0].text').equal('awesome foo')
 
       await expect(db.get('foo', {
-        bar: { $regex: /^.*foo$/ },
-      })).eventually.to.have.nested.property('[0].bar').equal('awesome foo')
+        text: { $regex: /^.*foo$/ },
+      })).eventually.to.have.nested.property('[0].text').equal('awesome foo')
 
       await expect(db.get('foo', {
-        bar: /^.*foo.*$/,
+        text: /^.*foo.*$/,
       })).eventually.to.have.length(2)
     })
   }
@@ -148,27 +148,27 @@ namespace QueryOperators {
 
     before(async () => {
       await db.remove('foo', {})
-      await db.create('foo', { baz: 3 })
-      await db.create('foo', { baz: 4 })
-      await db.create('foo', { baz: 7 })
+      await db.create('foo', { value: 3 })
+      await db.create('foo', { value: 4 })
+      await db.create('foo', { value: 7 })
     })
 
     it('filter data by bits', async () => {
       await expect(db.get('foo', {
-        baz: { $bitsAllSet: 3 },
-      })).eventually.to.have.shape([{ baz: 3 }, { baz: 7 }])
+        value: { $bitsAllSet: 3 },
+      })).eventually.to.have.shape([{ value: 3 }, { value: 7 }])
 
       await expect(db.get('foo', {
-        baz: { $bitsAllClear: 9 },
-      })).eventually.to.have.shape([{ baz: 4 }])
+        value: { $bitsAllClear: 9 },
+      })).eventually.to.have.shape([{ value: 4 }])
 
       await expect(db.get('foo', {
-        baz: { $bitsAnySet: 4 },
-      })).eventually.to.have.shape([{ baz: 4 }, { baz: 7 }])
+        value: { $bitsAnySet: 4 },
+      })).eventually.to.have.shape([{ value: 4 }, { value: 7 }])
 
       await expect(db.get('foo', {
-        baz: { $bitsAnyClear: 6 },
-      })).eventually.to.have.shape([{ baz: 3 }, { baz: 4 }])
+        value: { $bitsAnyClear: 6 },
+      })).eventually.to.have.shape([{ value: 3 }, { value: 4 }])
     })
   }
 
@@ -214,9 +214,9 @@ namespace QueryOperators {
 
     before(async () => {
       await db.remove('foo', {})
-      await db.create('foo', { id: 1, bar: 'awesome foo', baz: 3, list: [], date: new Date('2000-01-01') })
-      await db.create('foo', { id: 2, bar: 'awesome bar', baz: 4, list: [1] })
-      await db.create('foo', { id: 3, bar: 'awesome foo bar', baz: 7, list: [100] })
+      await db.create('foo', { id: 1, text: 'awesome foo', value: 3, list: [], date: new Date('2000-01-01') })
+      await db.create('foo', { id: 2, text: 'awesome bar', value: 4, list: [1] })
+      await db.create('foo', { id: 3, text: 'awesome foo bar', value: 7, list: [100] })
     })
 
     it('should verify `$or`, `$and` and `$not`', async () => {
@@ -232,7 +232,7 @@ namespace QueryOperators {
         $or: [{
           id: [2],
         }, {
-          bar: /.*foo.*/,
+          text: /.*foo.*/,
         }],
       })).eventually.to.have.length(3)
 
@@ -240,39 +240,39 @@ namespace QueryOperators {
         $or: [{
           id: { $gt: 1 },
         }, {
-          bar: /.*foo$/,
+          text: /.*foo$/,
         }],
       })).eventually.to.have.length(3)
 
       await expect(db.get('foo', {
-        $or: [{ bar: /.*foo/ }, { bar: /foo.*/ }],
+        $or: [{ text: /.*foo/ }, { text: /foo.*/ }],
       })).eventually.to.have.length(2)
 
       await expect(db.get('foo', {
-        $and: [{ bar: /.*foo$/ }, { bar: /foo.*/ }],
+        $and: [{ text: /.*foo$/ }, { text: /foo.*/ }],
       })).eventually.to.have.length(1)
 
       await expect(db.get('foo', {
-        $not: { $and: [{ bar: /.*foo$/ }, { bar: /foo.*/ }] },
+        $not: { $and: [{ text: /.*foo$/ }, { text: /foo.*/ }] },
       })).eventually.to.have.length(2)
 
       await expect(db.get('foo', {
-        $not: { $or: [{ bar: /.*foo/ }, { bar: /foo.*/ }] },
+        $not: { $or: [{ text: /.*foo/ }, { text: /foo.*/ }] },
       })).eventually.to.have.length(1)
     })
 
     it('should verify `$or` and other key', async () => {
       await expect(db.get('foo', {
-        bar: /.*foo.*/,
+        text: /.*foo.*/,
         $or: [{
-          bar: /.*foo/,
+          text: /.*foo/,
         }],
       })).eventually.to.have.length(2)
 
       await expect(db.get('foo', {
-        bar: /.*foo.*/,
+        text: /.*foo.*/,
         $or: [{
-          bar: /foo.+/,
+          text: /foo.+/,
         }],
       })).eventually.to.have.length(1)
     })
