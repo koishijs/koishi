@@ -105,7 +105,6 @@ export namespace Tables {
   export function extend(name: string, meta: Extension = {}) {
     const { unique = [], foreign, fields = {} } = config[name] || {}
     config[name] = {
-      type: 'incremental',
       primary: 'id',
       ...meta,
       unique: [...unique, ...meta.unique || []],

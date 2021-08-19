@@ -21,10 +21,10 @@ jobs:
           node-version: 14
       - id: random
         name: Generate UUID
-        run: echo "::set-outut name=value::$(openssl rand -hex 10)"
+        run: echo "::set-output name=value::$(openssl rand -hex 10)"
       - id: cache
         name: Yarn Cache Dir
-        run: echo "::set-outut name=value::$(yarn cache dir)"
+        run: echo "::set-output name=value::$(yarn cache dir)"
       - name: Install
         run: yarn
       - name: Prepare Cache

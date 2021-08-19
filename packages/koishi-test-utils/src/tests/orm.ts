@@ -16,7 +16,9 @@ declare module 'koishi-core' {
   }
 }
 
-Tables.extend('foo')
+Tables.extend('foo', {
+  type: 'incremental',
+})
 
 export namespace ORMTests {
   export function BuiltinMethods(app: App) {
