@@ -8,7 +8,28 @@ on:
 env:
   CI: true
 
+shared:
+  - &mysql-env
+    MYSQL_USER: koishi
+    MYSQL_DATABASE: koishi
+    MYSQL_PASSWORD: koishi@114514
+    MYSQL_ROOT_PASSWORD: password
+
 jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out
+        uses: actions/checkout@v1
+      - name: Set up Node
+        uses: actions/setup-node@v1
+        with:
+          node-version: 14.x
+      - name: Install
+        run: yarn
+      - name: Lint
+        run: yarn lint
+
   build:
     runs-on: ubuntu-latest
     strategy:
@@ -43,20 +64,17 @@ jobs:
           MYSQL_DATABASE: koishi
           MYSQL_PASSWORD: koishi@114514
           MYSQL_ROOT_PASSWORD: password
-      # mysql8:
-      #   image: mysql:8
-      #   ports:
-      #     - 3308:3306
-      #   env:
-      #     MYSQL_PASSWORD: koishi@114514
-      #     MYSQL_USER: koishi
+      mysql8:
+        image: mysql:8
+        ports:
+          - 3308:3306
+        options: --health-cmd "mysqladmin ping" --health-interval 10s --health-timeout 5s --health-retries 5
+        env: *mysql-env
 
     env:
       GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
       NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-      DB_DATABASE: koishi
-      DB_USERNAME: koishi
-      DB_PASSWORD: koishi@114514
+
     steps:
       - name: Check out
         uses: actions/checkout@v1
@@ -68,8 +86,6 @@ jobs:
         run: 'echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" > .npmrc'
       - name: Install
         run: yarn
-      - name: Build
-        run: yarn build:ci
       - name: Unit Test
         run: yarn test:json
       - name: Report Coverage
