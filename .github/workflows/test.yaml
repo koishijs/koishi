@@ -11,6 +11,7 @@ env:
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
       - name: Check out
         uses: actions/checkout@v1
@@ -22,8 +23,12 @@ jobs:
         run: yarn
       - name: Lint
         run: yarn lint
-      - name: Build
-        run: yarn build:ci
+      - name: Build JS
+        run: yarn compile
+      - name: Build DTS
+        run: yarn dtsc --listEmittedFiles
+      - name: Build for WebUI
+        run: yarn build:web
       - name: Upload
         uses: actions/upload-artifact@v2
         with:
@@ -90,6 +95,8 @@ jobs:
         run: 'echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" > .npmrc'
       - name: Install
         run: yarn
+      - name: Build JS
+        run: yarn compile
       - name: Unit Test
         run: yarn test:json
       - name: Report Coverage
@@ -101,6 +108,7 @@ jobs:
           name: codecov
 
   publish:
+    if: ${{ github.ref == 'refs/heads/master' }}
     runs-on: ubuntu-latest
     needs:
       - build
