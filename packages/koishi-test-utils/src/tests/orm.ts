@@ -29,9 +29,8 @@ export namespace ORMTests {
       await db.setUser('mock', 'A', User.create('mock', 'A'))
       await expect(db.getUser('mock', 'A')).eventually.not.to.be.ok
 
-      await db.initUser('A', 1)
+      await db.createUser('mock', 'A', { authority: 1 })
       await expect(db.getUser('mock', 'A')).eventually.to.have.shape({
-        mock: 'A',
         authority: 1,
       })
 
@@ -48,9 +47,8 @@ export namespace ORMTests {
       await db.setChannel('mock', 'A', Channel.create('mock', 'A'))
       await expect(db.getChannel('mock', 'A')).eventually.not.to.be.ok
 
-      await db.initChannel('A', '123')
+      await db.createChannel('mock', 'A', { assignee: '123' })
       await expect(db.getChannel('mock', 'A')).eventually.to.have.shape({
-        id: 'mock:A',
         assignee: '123',
       })
 
@@ -59,8 +57,8 @@ export namespace ORMTests {
         assignee: '321',
       })
 
-      await db.initChannel('B')
-      await db.initChannel('C')
+      await db.createChannel('mock', 'B', {})
+      await db.createChannel('mock', 'C', {})
       await expect(db.getAssignedChannels(null)).eventually.to.have.length(2)
       await expect(db.getAssignedChannels(null, { mock: ['321'] })).eventually.to.have.length(1)
 

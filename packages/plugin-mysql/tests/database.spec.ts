@@ -14,21 +14,20 @@ const getMysqlPorts = () => {
 
 const ports = getMysqlPorts() ?? [3306]
 
-for (const port of ports) {
-  describe(`MySQL Database (${port})`, () => {
-    const app = new App()
+describe('Mysql Plugin', () => {
+  for (const port of ports) {
+    describe(`MySQL Database (${port})`, () => {
+      const app = new App()
 
-    app.plugin(mysql, {
-      host: 'localhost',
-      port: port,
-      user: 'koishi',
-      password: 'koishi@114514',
-      database: 'koishi',
+      app.plugin(mysql, {
+        host: '47.113.125.249',
+        port: 24501,
+        user: 'demo_0',
+        password: 'AxCG8GaikiE6f8rt',
+        database: 'demo_0',
+      })
+
+      Tests.orm.BuiltinMethods(app)
     })
-
-    before(() => app.start())
-    after(() => app.stop())
-
-    Tests.orm(app)
-  })
-}
+  }
+})
