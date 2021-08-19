@@ -27,16 +27,16 @@ jobs:
         run: echo "::set-output name=value::$(yarn cache dir)"
       - name: Install
         run: yarn
+      - name: Prepare Lockfile
+        uses: actions/cache@v2
+        with:
+          path: yarn.lock
+          key: yarn-lock-${{ runner.os }}-${{ steps.random.outputs.value }}
       - name: Prepare Cache
         uses: actions/cache@v2
         with:
           path: ${{ steps.cache.outputs.value }}
           key: yarn-cache-${{ runner.os }}-${{ steps.random.outputs.value }}-node-14
-      - name: Prepare Lockfile
-        uses: actions/cache@v2
-        with:
-          path: yarn.lock
-          key: yarn-lock-${{ runner.os }}-${{ steps.random.outputs.value }}-node-14
 
     outputs:
       random-uuid: ${{ steps.random.outputs.value }}
@@ -54,16 +54,16 @@ jobs:
         uses: actions/setup-node@v2
         with:
           node-version: 14
+      - name: Restore Lockfile
+        uses: actions/cache@v2
+        with:
+          path: yarn.lock
+          key: yarn-lock-${{ runner.os }}-${{ needs.prepare.outputs.random-uuid }}
       - name: Restore Cache
         uses: actions/cache@v2
         with:
           path: ${{ needs.prepare.outputs.cache-dir }}
           key: yarn-cache-${{ runner.os }}-${{ needs.prepare.outputs.random-uuid }}-node-14
-      - name: Restore Cache
-        uses: actions/cache@v2
-        with:
-          path: yarn.lock
-          key: yarn-lock-${{ runner.os }}-${{ needs.prepare.outputs.random-uuid }}-node-14
       - name: Install
         run: yarn
       - name: Lint
@@ -139,16 +139,18 @@ jobs:
         uses: actions/setup-node@v2
         with:
           node-version: ${{ matrix.node-version }}
+      - name: Restore Lockfile
+        uses: actions/cache@v2
+        with:
+          path: yarn.lock
+          key: yarn-lock-${{ runner.os }}-${{ needs.prepare.outputs.random-uuid }}
       - name: Restore Cache
         uses: actions/cache@v2
         with:
           path: ${{ needs.prepare.outputs.cache-dir }}
           key: yarn-cache-${{ runner.os }}-${{ needs.prepare.outputs.random-uuid }}-node-${{ matrix.node-version }}
-      - name: Restore Cache
-        uses: actions/cache@v2
-        with:
-          path: yarn.lock
-          key: yarn-lock-${{ runner.os }}-${{ needs.prepare.outputs.random-uuid }}-node-${{ matrix.node-version }}
+          restore-keys: |
+            yarn-lock-${{ runner.os }}-${{ needs.prepare.outputs.random-uuid }}-node
       - name: Install
         run: yarn
       - name: Build JS
@@ -178,17 +180,17 @@ jobs:
       - name: Set up Node
         uses: actions/setup-node@v2
         with:
-          node-version: 14.x
+          node-version: 14
+      - name: Restore Lockfile
+        uses: actions/cache@v2
+        with:
+          path: yarn.lock
+          key: yarn-lock-${{ runner.os }}-${{ needs.prepare.outputs.random-uuid }}
       - name: Restore Cache
         uses: actions/cache@v2
         with:
           path: ${{ needs.prepare.outputs.cache-dir }}
           key: yarn-cache-${{ runner.os }}-${{ needs.prepare.outputs.random-uuid }}-node-14
-      - name: Restore Cache
-        uses: actions/cache@v2
-        with:
-          path: yarn.lock
-          key: yarn-lock-${{ runner.os }}-${{ needs.prepare.outputs.random-uuid }}-node-14
       - name: Install
         run: yarn
       - name: Download

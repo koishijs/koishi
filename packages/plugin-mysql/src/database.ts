@@ -116,11 +116,10 @@ class MysqlDatabase {
     const data = await this.select('information_schema.columns', ['TABLE_NAME', 'COLUMN_NAME'], 'TABLE_SCHEMA = ?', [this.config.database])
     const tables: Record<string, string[]> = {}
     for (const { TABLE_NAME, COLUMN_NAME } of data) {
-      if (!tables[TABLE_NAME]) tables[TABLE_NAME] = []
-      tables[TABLE_NAME].push(COLUMN_NAME)
+      (tables[TABLE_NAME] ||= []).push(COLUMN_NAME)
     }
 
-    for (const name in MysqlDatabase.tables) {
+    for (const name in Koishi.Tables.config) {
       const table = { ...MysqlDatabase.tables[name] }
       // create platform rows
       const platforms = new Set<string>(this.app.bots.map(bot => bot.platform))

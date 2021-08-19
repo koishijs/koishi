@@ -18,6 +18,13 @@ declare module 'koishi-core' {
 
 Tables.extend('foo', {
   type: 'incremental',
+  fields: {
+    id: 'unsigned',
+    bar: 'string',
+    baz: 'integer',
+    list: 'list',
+    date: 'date',
+  },
 })
 
 export namespace ORMTests {
