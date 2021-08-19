@@ -107,6 +107,14 @@ function executeQuery(query: Query.Expr, data: any): boolean {
 }
 
 Database.extend(MemoryDatabase, {
+  async drop(name) {
+    if (name) {
+      delete this.$store[name]
+    } else {
+      this.$store = {}
+    }
+  },
+
   async get(name, query, modifier) {
     const expr = Query.resolve(name, query)
     const { fields, limit = Infinity, offset = 0 } = Query.resolveModifier(modifier)

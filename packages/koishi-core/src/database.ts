@@ -213,6 +213,7 @@ export namespace Query {
     remove<T extends TableType>(table: T, query: Query<T>): Promise<void>
     create<T extends TableType>(table: T, data: Partial<Tables[T]>): Promise<Tables[T]>
     update<T extends TableType>(table: T, data: Partial<Tables[T]>[], key?: Index<T>): Promise<void>
+    drop(table?: TableType): Promise<void>
   }
 }
 

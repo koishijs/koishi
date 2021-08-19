@@ -121,6 +121,14 @@ export function createFilter<T extends TableType>(name: T, query: Query<T>) {
 }
 
 Database.extend(MysqlDatabase, {
+  async drop(name) {
+    if (name) {
+      await this.query(`DROP TABLE ${escapeId(name)}`)
+    } else {
+      await this.query(`DROP DATABASE ${escapeId(this.config.database)}`)
+    }
+  },
+
   async get(name, query, modifier) {
     const filter = createFilter(name, query)
     if (filter === '0') return []
