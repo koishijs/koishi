@@ -9,7 +9,7 @@ env:
   CI: true
 
 jobs:
-  lint:
+  build:
     runs-on: ubuntu-latest
     steps:
       - name: Check out
@@ -22,8 +22,15 @@ jobs:
         run: yarn
       - name: Lint
         run: yarn lint
+      - name: Build
+        run: yarn build:ci
+      - name: Upload
+        run: actions/upload-artifact@v2
+        with:
+          name: packages
+          path: packages
 
-  build:
+  unit-test:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -92,6 +99,26 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
           file: ./coverage/coverage-final.json
           name: codecov
+
+  publish:
+    runs-on: ubuntu-latest
+    needs:
+      - build
+      - unit-test
+
+    steps:
+      - name: Check out
+        uses: actions/checkout@v1
+      - name: Set up Node
+        uses: actions/setup-node@v1
+        with:
+          node-version: 14.x
+      - name: Install
+        run: yarn
+      - name: Download
+        run: actions/download-artifact@v2
+        with:
+          name: packages
+          path: packages
       - name: Publish
-        if: ${{ matrix.NODE_VERSION == 14 }}
         run: yarn pub
