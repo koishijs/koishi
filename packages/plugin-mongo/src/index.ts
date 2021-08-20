@@ -124,7 +124,8 @@ function createFilter<T extends TableType>(name: T, _query: Query<T>) {
     filter['$or'] = [{ id: filter[primary] }, { _id: filter[primary] }]
     delete filter[primary]
   }
-  if (filter?.['$not']) {
+  // https://stackoverflow.com/questions/25270396/mongodb-how-to-invert-query-with-not
+  if (filter['$not']) {
     filter['$nor'] = [filter['$not']]
     delete filter['$not']
   }
