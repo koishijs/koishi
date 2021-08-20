@@ -28,7 +28,7 @@ export class Sender {
     }
   }
 
-  async sendEmbed(fileBuffer: Buffer, payload_json: Record<string, any> = {}, filename = '') {
+  async sendEmbed(fileBuffer: Buffer, payload_json: Record<string, any> = {}, filename) {
     const fd = new FormData()
     const type = await FileType.fromBuffer(fileBuffer)
     filename ||= 'file.' + type.ext
