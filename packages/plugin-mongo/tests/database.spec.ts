@@ -14,17 +14,15 @@ const getMongoPorts = () => {
 
 const ports = getMongoPorts() ?? [27017]
 
-describe('Mongo Plugin', () => {
-  for (const port of ports) {
-    describe(`Mongo Database (${port})`, () => {
-      const app = new App()
+for (const port of ports) {
+  describe(`Mongo Database (${port})`, () => {
+    const app = new App()
 
-      app.plugin(mongo, {
-        host: 'localhost',
-        port: port,
-      })
-
-      Tests.orm(app)
+    app.plugin(mongo, {
+      host: 'localhost',
+      port: port,
     })
-  }
-})
+
+    Tests.database(app)
+  })
+}

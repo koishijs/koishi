@@ -26,7 +26,7 @@ for (const port of ports) {
       database: 'koishi',
     })
 
-    Tests.orm(app, {
+    Tests.database(app, {
       query: {
         list: {
           elementQuery: false,

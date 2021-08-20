@@ -6,9 +6,7 @@
     "build/**",
     "coverage/**",
     "packages/*/tests/**",
-    "packages/chai-extended/**",
     "packages/plugin-*/**/database/**",
-    "packages/plugin-*/**/database.js",
     "packages/plugin-webui/**"
   ]
 }

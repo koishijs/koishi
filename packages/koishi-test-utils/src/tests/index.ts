@@ -43,7 +43,7 @@ export namespace Tests {
     return test
   }
 
-  function ORMTests(app: App) {
+  function DatabaseTests(app: App) {
     before(() => app.start())
 
     after(async () => {
@@ -52,10 +52,10 @@ export namespace Tests {
     })
   }
 
-  namespace ORMTests {
+  namespace DatabaseTests {
     export const builtin = BuiltinMethods
     export const query = QueryOperators
   }
 
-  export const orm = createUnit(ORMTests, true)
+  export const database = createUnit(DatabaseTests, true)
 }
