@@ -10,7 +10,7 @@ declare module 'koishi-core' {
 
 Tables.extend('channel', {
   fields: {
-    rss: { type: 'list' },
+    rss: 'list',
   },
 })
 

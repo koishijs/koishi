@@ -181,6 +181,7 @@ export function apply(ctx: Context, config: Config = {}) {
       frozen: 4,
       regExp: 3,
       writer: 2,
+      receive: 1,
     },
   })
 

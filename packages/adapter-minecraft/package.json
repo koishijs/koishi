@@ -1,16 +1,16 @@
 {
-  "name": "koishi-plugin-mongo",
-  "description": "MongoDB support for Koishi",
-  "version": "2.5.0",
+  "name": "koishi-adapter-minecraft-dev",
+  "description": "Minecraft adapter for Koishi",
+  "version": "0.1.0",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
     "lib"
   ],
-  "author": "undefined <masnn0@outlook.com>",
+  "author": "undefined <i@undefined.moe>",
   "maintainers": [
     "Shigma <1700011071@pku.edu.cn>",
-    "undefined <masnn0@outlook.com>"
+    "undefined <i@undefined.moe>"
   ],
   "license": "MIT",
   "repository": {
@@ -20,22 +20,18 @@
   "bugs": {
     "url": "https://github.com/koishijs/koishi/issues"
   },
-  "homepage": "https://github.com/koishijs/koishi/tree/master/packages/plugin-mongo#readme",
+  "homepage": "https://koishi.js.org/api/adapter/minecraft.html",
   "keywords": [
     "bot",
-    "qqbot",
-    "cqhttp",
-    "coolq",
+    "minecraft",
+    "mineflayer",
     "chatbot",
-    "koishi",
-    "database",
-    "mysql"
+    "koishi"
   ],
   "peerDependencies": {
     "koishi-core": "^3.14.0"
   },
   "dependencies": {
-    "@types/mongodb": "^3.6.12",
-    "mongodb": "^3.6.6"
+    "mineflayer": "^3.9.0"
   }
 }
