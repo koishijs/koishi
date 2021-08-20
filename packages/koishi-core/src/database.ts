@@ -105,7 +105,6 @@ export namespace Tables {
   export function extend(name: string, meta: Extension = {}) {
     const { unique = [], foreign, fields = {} } = config[name] || {}
     config[name] = {
-      type: 'incremental',
       primary: 'id',
       ...meta,
       unique: [...unique, ...meta.unique || []],
@@ -182,8 +181,12 @@ export namespace Query {
     $not?: Expr<T>
   }
 
-  export type Shorthand<T extends Primitive = Primitive> = T | T[] | Extract<T, string, RegExp>
-  export type FieldQuery<T = any> = FieldExpr<T> | (T extends Primitive ? Shorthand<T> : never)
+  export type Shorthand<T = any> =
+    | Extract<T, Comparable, T>
+    | Extract<T, Primitive, T[]>
+    | Extract<T, string, RegExp>
+
+  export type FieldQuery<T = any> = FieldExpr<T> | Shorthand<T>
   export type Expr<T = any> = LogicalExpr<T> & {
     [K in keyof T]?: FieldQuery<T[K]>
   }
@@ -214,6 +217,7 @@ export namespace Query {
     remove<T extends TableType>(table: T, query: Query<T>): Promise<void>
     create<T extends TableType>(table: T, data: Partial<Tables[T]>): Promise<Tables[T]>
     update<T extends TableType>(table: T, data: Partial<Tables[T]>[], key?: Index<T>): Promise<void>
+    drop(table?: TableType): Promise<void>
   }
 }
 

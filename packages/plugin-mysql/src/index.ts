@@ -66,7 +66,7 @@ const queryOperators: QueryOperators = {
   },
   $size: (key, value) => {
     if (!value) return `!${key}`
-    return `LENGTH(${key}) - LENGTH(REPLACE(${key}, ",", "")) = ${escape(value)}`
+    return `${key} && LENGTH(${key}) - LENGTH(REPLACE(${key}, ",", "")) = ${escape(value)} - 1`
   },
   $bitsAllSet: (key, value) => `${key} & ${escape(value)} = ${escape(value)}`,
   $bitsAllClear: (key, value) => `${key} & ${escape(value)} = 0`,
@@ -100,7 +100,7 @@ export function createFilter<T extends TableType>(name: T, query: Query<T>) {
       } else if (value instanceof RegExp) {
         conditions.push(createRegExpQuery(escKey, value))
         continue
-      } else if (typeof value === 'string' || typeof value === 'number') {
+      } else if (typeof value === 'string' || typeof value === 'number' || value instanceof Date) {
         conditions.push(createEqualQuery(escKey, value))
         continue
       }
@@ -121,6 +121,15 @@ export function createFilter<T extends TableType>(name: T, query: Query<T>) {
 }
 
 Database.extend(MysqlDatabase, {
+  async drop(name) {
+    if (name) {
+      await this.query(`DROP TABLE ${escapeId(name)}`)
+    } else {
+      const data = await this.select('information_schema.tables', ['TABLE_NAME'], 'TABLE_SCHEMA = ?', [this.config.database])
+      await this.query(data.map(({ TABLE_NAME }) => `DROP TABLE ${escapeId(TABLE_NAME)}`).join('; '))
+    }
+  },
+
   async get(name, query, modifier) {
     const filter = createFilter(name, query)
     if (filter === '0') return []
@@ -139,7 +148,7 @@ Database.extend(MysqlDatabase, {
   },
 
   async create(name, data) {
-    data = { ...data, ...Koishi.Tables.create(name) }
+    data = { ...Koishi.Tables.create(name), ...data }
     const keys = Object.keys(data)
     const header = await this.query<OkPacket>(
       `INSERT INTO ?? (${this.joinKeys(keys)}) VALUES (${keys.map(() => '?').join(', ')})`,
@@ -151,7 +160,7 @@ Database.extend(MysqlDatabase, {
   async update(name, data, key: string) {
     if (!data.length) return
     key ||= Koishi.Tables.config[name].primary
-    data = data.map(item => ({ ...item, ...Koishi.Tables.create(name) }))
+    data = data.map(item => ({ ...Koishi.Tables.create(name), ...item }))
     const fields = Object.keys(data[0])
     const placeholder = `(${fields.map(() => '?').join(', ')})`
     const update = difference(fields, [key]).map((key) => {

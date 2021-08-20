@@ -73,7 +73,7 @@ function unescapeKey<T extends Partial<User>>(data: T) {
 
 function transformFieldQuery(query: Query.FieldQuery, key: string) {
   // shorthand syntax
-  if (typeof query === 'string' || typeof query === 'number') {
+  if (typeof query === 'string' || typeof query === 'number' || query instanceof Date) {
     return { $eq: query }
   } else if (Array.isArray(query)) {
     if (!query.length) return
@@ -121,8 +121,13 @@ function createFilter<T extends TableType>(name: T, _query: Query<T>) {
   const filter = transformQuery(Query.resolve(name, _query))
   const { primary } = Tables.config[name]
   if (filter[primary]) {
-    filter['_id'] = filter[primary]
+    filter['$or'] = [{ id: filter[primary] }, { _id: filter[primary] }]
     delete filter[primary]
+  }
+  // https://stackoverflow.com/questions/25270396/mongodb-how-to-invert-query-with-not
+  if (filter['$not']) {
+    filter['$nor'] = [filter['$not']]
+    delete filter['$not']
   }
   return filter
 }
@@ -133,6 +138,15 @@ function getFallbackType({ fields, primary }: Tables.Config) {
 }
 
 Database.extend(MongoDatabase, {
+  async drop(table?: TableType) {
+    if (table) {
+      await this.db.collection(table).drop()
+    } else {
+      const collections = await this.db.collections()
+      await Promise.all(collections.map(c => c.drop()))
+    }
+  },
+
   async get(name, query, modifier) {
     const filter = createFilter(name, query)
     if (!filter) return []
@@ -143,7 +157,7 @@ Database.extend(MongoDatabase, {
     if (limit) cursor = cursor.limit(offset + limit)
     const data = await cursor.toArray()
     const { primary } = Tables.config[name]
-    if (fields.includes(primary as never)) {
+    if (fields && fields.includes(primary as never)) {
       for (const item of data) {
         item[primary] ??= item._id
       }
@@ -160,13 +174,12 @@ Database.extend(MongoDatabase, {
   async create(name, data: any) {
     const meta = Tables.config[name]
     const { primary, type = getFallbackType(meta) } = meta
-    const copy = { ...data, ...Tables.create(name) }
+    const copy = { ...Tables.create(name), ...data }
     if (copy[primary]) {
       copy['_id'] = copy[primary]
-      delete copy[primary]
     } else if (type === 'incremental') {
       const [latest] = await this.db.collection(name).find().sort('_id', -1).limit(1).toArray()
-      copy['_id'] = data[primary] = latest ? latest._id + 1 : 1
+      copy['_id'] = copy[primary] = data[primary] = latest ? latest._id + 1 : 1
     } else if (type === 'random') {
       copy['_id'] = data[primary] = Random.uuid()
     }
@@ -201,6 +214,11 @@ Database.extend(MongoDatabase, {
   },
 
   async setUser(type, id, data) {
+    delete data['id']
+    await this.user.updateOne({ [type]: id }, { $set: escapeKey(data) })
+  },
+
+  async createUser(type, id, data) {
     await this.user.updateOne(
       { [type]: id },
       { $set: escapeKey(data), $setOnInsert: { id: Random.uuid() } },
@@ -208,13 +226,9 @@ Database.extend(MongoDatabase, {
     )
   },
 
-  async createUser(type, id, data) {
-    await this.setUser(type, id, data)
-  },
-
   async getChannel(type, pid, modifier) {
     modifier = Query.resolveModifier(modifier)
-    const fields = modifier.fields.slice()
+    const fields = (modifier?.fields ?? []).slice()
     const applyDefault = (channel: Channel) => ({
       ...pick(Channel.create(type, channel.pid), fields),
       ...omit(channel, ['type', 'pid']),
@@ -223,13 +237,11 @@ Database.extend(MongoDatabase, {
     const index = fields.indexOf('id')
     if (Array.isArray(pid)) {
       const ids = pid.map(id => `${type}:${id}`)
-      if (fields && !fields.length) return ids.map(id => ({ id }))
       if (index >= 0) modifier.fields.splice(index, 1, 'type', 'pid')
-      const data = await this.get('channel', ids, modifier)
+      const data = await this.get('channel', { id: ids }, modifier)
       return data.map(applyDefault)
     } else {
       const id = `${type}:${pid}`
-      if (fields && !fields.length) return { id }
       if (index >= 0) modifier.fields.splice(index, 1)
       const data = await this.get('channel', id, modifier)
       return data[0] && { ...applyDefault(data[0]), id }
@@ -237,7 +249,7 @@ Database.extend(MongoDatabase, {
   },
 
   async getAssignedChannels(_fields, assignMap = this.app.getSelfIds()) {
-    const fields = _fields.slice()
+    const fields = (_fields ?? []).slice()
     const applyDefault = (channel: Channel) => ({
       ...pick(Channel.create(channel.type, channel.pid), _fields),
       ...omit(channel, ['type', 'pid']),
@@ -252,11 +264,13 @@ Database.extend(MongoDatabase, {
   },
 
   async setChannel(type, pid, data) {
-    await this.channel.updateOne({ type, pid }, { $set: data }, { upsert: true })
+    await this.channel.updateOne({ type, pid, id: `${type}:${pid}` }, { $set: data })
   },
 
   async createChannel(type, pid, data) {
-    await this.setChannel(type, pid, data)
+    await this.channel.updateOne({ type, pid, id: `${type}:${pid}` }, {
+      $set: Object.keys(data).length === 0 ? Channel.create(type, pid) : data,
+    }, { upsert: true })
   },
 })
 
