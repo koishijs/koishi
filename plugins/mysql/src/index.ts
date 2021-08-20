@@ -65,7 +65,7 @@ const queryOperators: QueryOperators = {
   },
   $size: (key, value) => {
     if (!value) return `!${key}`
-    return `LENGTH(${key}) - LENGTH(REPLACE(${key}, ",", "")) = ${escape(value)}`
+    return `${key} && LENGTH(${key}) - LENGTH(REPLACE(${key}, ",", "")) = ${escape(value)} - 1`
   },
   $bitsAllSet: (key, value) => `${key} & ${escape(value)} = ${escape(value)}`,
   $bitsAllClear: (key, value) => `${key} & ${escape(value)} = 0`,
@@ -99,7 +99,7 @@ export function createFilter<T extends TableType>(name: T, query: Query<T>) {
       } else if (value instanceof RegExp) {
         conditions.push(createRegExpQuery(escKey, value))
         continue
-      } else if (typeof value === 'string' || typeof value === 'number') {
+      } else if (typeof value === 'string' || typeof value === 'number' || value instanceof Date) {
         conditions.push(createEqualQuery(escKey, value))
         continue
       }
@@ -120,6 +120,15 @@ export function createFilter<T extends TableType>(name: T, query: Query<T>) {
 }
 
 Database.extend(MysqlDatabase, {
+  async drop(name) {
+    if (name) {
+      await this.query(`DROP TABLE ${escapeId(name)}`)
+    } else {
+      const data = await this.select('information_schema.tables', ['TABLE_NAME'], 'TABLE_SCHEMA = ?', [this.config.database])
+      await this.query(data.map(({ TABLE_NAME }) => `DROP TABLE ${escapeId(TABLE_NAME)}`).join('; '))
+    }
+  },
+
   async get(name, query, modifier) {
     const filter = createFilter(name, query)
     if (filter === '0') return []
@@ -148,12 +157,12 @@ Database.extend(MysqlDatabase, {
     await this.query('DELETE FROM ?? WHERE ' + filter, [name])
   },
 
-  async create(table, data) {
-    data = { ...data, ...Koishi.Tables.create(table) }
+  async create(name, data) {
+    data = { ...Koishi.Tables.create(name), ...data }
     const keys = Object.keys(data)
     const header = await this.query<OkPacket>(
       `INSERT INTO ?? (${this.joinKeys(keys)}) VALUES (${keys.map(() => '?').join(', ')})`,
-      [table, ...this.formatValues(table, data, keys)],
+      [name, ...this.formatValues(name, data, keys)],
     )
     return { ...data, id: header.insertId } as any
   },

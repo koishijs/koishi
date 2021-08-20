@@ -23,6 +23,11 @@ export namespace Tables {
   }
 
   export namespace Field {
+    export const number: Type[] = ['integer', 'unsigned', 'float', 'double', 'decimal']
+    export const string: Type[] = ['char', 'string', 'text']
+    export const date: Type[] = ['timestamp', 'date', 'time']
+    export const object: Type[] = ['list', 'json']
+
     export type Type<T = any> =
       | T extends number ? 'integer' | 'unsigned' | 'float' | 'double' | 'decimal'
       : T extends string ? 'char' | 'string' | 'text'
@@ -30,13 +35,6 @@ export namespace Tables {
       : T extends any[] ? 'list' | 'json'
       : T extends object ? 'json'
       : never
-
-    export namespace Type {
-      export const number: Type[] = ['integer', 'unsigned', 'float', 'double', 'decimal']
-      export const string: Type[] = ['char', 'string', 'text']
-      export const date: Type[] = ['timestamp', 'date', 'time']
-      export const object: Type[] = ['list', 'json']
-    }
 
     type WithParam<S extends string> = S | `${S}(${any})`
 
@@ -60,8 +58,8 @@ export namespace Tables {
 
       // set default initial value
       if (field.initial === undefined) {
-        if (Type.number.includes(field.type)) field.initial = 0
-        if (Type.string.includes(field.type)) field.initial = ''
+        if (number.includes(field.type)) field.initial = 0
+        if (string.includes(field.type)) field.initial = ''
         if (field.type === 'list') field.initial = []
         if (field.type === 'json') field.initial = {}
       }
@@ -101,13 +99,12 @@ export namespace Tables {
     fields?: Field.Config<O>
   }
 
-  export const config: { [T in TableType]?: Config<Tables[T]> } = {}
+  export const config: Record<string, Config> = {}
 
   export function extend<T extends TableType>(name: T, fields?: Field.Extension<Tables[T]>, extension?: Config<Tables[T]>): void
   export function extend(name: string, fields = {}, extension: Config = {}) {
     const table = config[name] || {}
     config[name] = {
-      type: 'incremental',
       primary: 'id',
       ...extension,
       unique: [...table.unique || [], ...extension.unique || []],
@@ -128,19 +125,19 @@ export namespace Tables {
   }
 
   extend('user', {
-    id: { type: 'string', length: 50 },
-    name: { type: 'string', length: 50 },
-    flag: { type: 'unsigned', length: 20, initial: 0 },
-    authority: { type: 'unsigned', length: 4, initial: 0 },
-    usage: { type: 'json', initial: {} },
-    timers: { type: 'json', initial: {} },
+    id: 'string(63)',
+    name: 'string(63)',
+    flag: 'unsigned(20)',
+    authority: 'unsigned(4)',
+    usage: 'json',
+    timers: 'json',
   })
 
   extend('channel', {
-    id: { type: 'string', length: 50 },
-    flag: { type: 'unsigned', length: 20, initial: 0 },
-    assignee: { type: 'string', length: 50 },
-    disable: { type: 'list', initial: [] },
+    id: 'string(63)',
+    flag: 'unsigned(20)',
+    assignee: 'string(63)',
+    disable: 'list',
   }, {
     primary: ['id', 'type'],
   })
@@ -182,8 +179,12 @@ export namespace Query {
     $not?: Expr<T>
   }
 
-  export type Shorthand<T extends Primitive = Primitive> = T | T[] | Extract<T, string, RegExp>
-  export type FieldQuery<T = any> = FieldExpr<T> | (T extends Primitive ? Shorthand<T> : never)
+  export type Shorthand<T = any> =
+    | Extract<T, Comparable, T>
+    | Extract<T, Primitive, T[]>
+    | Extract<T, string, RegExp>
+
+  export type FieldQuery<T = any> = FieldExpr<T> | Shorthand<T>
   export type Expr<T = any> = LogicalExpr<T> & {
     [K in keyof T]?: FieldQuery<T[K]>
   }
@@ -218,6 +219,7 @@ export namespace Query {
     remove<T extends TableType>(table: T, query: Query<T>): Promise<void>
     create<T extends TableType>(table: T, data: Partial<Tables[T]>): Promise<Tables[T]>
     upsert<T extends TableType>(table: T, data: Partial<Tables[T]>[], keys?: MaybeArray<Index<T>>): Promise<void>
+    drop(table?: TableType): Promise<void>
   }
 }
 

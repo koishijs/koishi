@@ -4,70 +4,200 @@ on:
   push:
     paths-ignore:
       - docs/**
-  pull_request:
-    paths-ignore:
-      - docs/**
 
 env:
   CI: true
 
 jobs:
-  build:
+  prepare:
     runs-on: ubuntu-latest
-    services:
-      mongo:
-        image: mongo
-        ports:
-          - 27017
-        env:
-          MONGO_INITDB_ROOT_USERNAME: koishi
-          MONGO_INITDB_ROOT_PASSWORD: koishi@114514
-      maria10:
-        image: mariadb:10.5
-        ports:
-          - 3307:3306
-        env:
-          MYSQL_PASSWORD: koishi@114514
-          MYSQL_USER: koishi
-      mysql57:
-        image: mysql:5.7
-        ports:
-          - 3306:3306
-        env:
-          MYSQL_PASSWORD: koishi@114514
-          MYSQL_USER: koishi
-      mysql8:
-        image: mysql:8
-        ports:
-          - 3308:3306
-        env:
-          MYSQL_PASSWORD: koishi@114514
-          MYSQL_USER: koishi
-    env:
-      GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
-      NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
     steps:
       - name: Check out
         uses: actions/checkout@v1
       - name: Set up Node
-        uses: actions/setup-node@v1
+        uses: actions/setup-node@v2
         with:
-          node-version: 14.x
-      - name: Create .npmrc
-        run: 'echo "//registry.npmjs.org/:_authToken=${{secrets.NPM_TOKEN}}" > .npmrc'
+          node-version: 14
+      - id: random
+        name: Generate UUID
+        run: echo "::set-output name=value::$(openssl rand -hex 10)"
+      - id: cache
+        name: Yarn Cache Dir
+        run: echo "::set-output name=value::$(yarn cache dir)"
       - name: Install
         run: yarn
-      - name: Build
-        run: yarn build:ci
+      - name: Prepare Lockfile
+        uses: actions/cache@v2
+        with:
+          path: yarn.lock
+          key: yarn-lock-${{ runner.os }}-${{ steps.random.outputs.value }}
+      - name: Prepare Cache
+        uses: actions/cache@v2
+        with:
+          path: ${{ steps.cache.outputs.value }}
+          key: yarn-cache-${{ runner.os }}-${{ steps.random.outputs.value }}-node-14
+
+    outputs:
+      random-uuid: ${{ steps.random.outputs.value }}
+      cache-dir: ${{ steps.cache.outputs.value }}
+
+  build:
+    runs-on: ubuntu-latest
+    needs:
+      - prepare
+
+    steps:
+      - name: Check out
+        uses: actions/checkout@v1
+      - name: Set up Node
+        uses: actions/setup-node@v2
+        with:
+          node-version: 14
+      - name: Restore Lockfile
+        uses: actions/cache@v2
+        with:
+          path: yarn.lock
+          key: yarn-lock-${{ runner.os }}-${{ needs.prepare.outputs.random-uuid }}
+      - name: Restore Cache
+        uses: actions/cache@v2
+        with:
+          path: ${{ needs.prepare.outputs.cache-dir }}
+          key: yarn-cache-${{ runner.os }}-${{ needs.prepare.outputs.random-uuid }}-node-14
+      - name: Install
+        run: yarn
       - name: Lint
         run: yarn lint
+      - name: Build JS
+        run: yarn compile
+      - name: Build DTS
+        run: yarn dtsc --listEmittedFiles
+      - name: Build for WebUI
+        run: yarn build:web
+      - name: Upload
+        uses: actions/upload-artifact@v2
+        with:
+          name: packages
+          path: packages
+
+  unit-test:
+    runs-on: ubuntu-latest
+    needs:
+      - prepare
+
+    continue-on-error: ${{ matrix.node-version == 16 }}
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version: [14, 16]
+
+    services:
+      mongo:
+        image: mongo
+        ports:
+          - 27017:27017
+        # https://stackoverflow.com/questions/66317184/github-actions-cannot-connect-to-mongodb-service
+        options: --health-cmd "mongo" --health-interval 10s --health-timeout 5s --health-retries 5
+      mysql57:
+        image: mysql:5.7
+        ports:
+          - 3306:3306
+        options: --health-cmd "mysqladmin ping" --health-interval 10s --health-timeout 5s --health-retries 5
+        env:
+          MYSQL_USER: koishi
+          MYSQL_DATABASE: koishi
+          MYSQL_PASSWORD: koishi@114514
+          MYSQL_ROOT_PASSWORD: password
+      maria10:
+        image: mariadb:10.5
+        ports:
+          - 3307:3306
+        options: --health-cmd "mysqladmin ping" --health-interval 10s --health-timeout 5s --health-retries 5
+        env:
+          MYSQL_USER: koishi
+          MYSQL_DATABASE: koishi
+          MYSQL_PASSWORD: koishi@114514
+          MYSQL_ROOT_PASSWORD: password
+      mysql8:
+        image: mysql:8
+        ports:
+          - 3308:3306
+        options: --health-cmd "mysqladmin ping" --health-interval 10s --health-timeout 5s --health-retries 5
+        env:
+          MYSQL_USER: koishi
+          MYSQL_DATABASE: koishi
+          MYSQL_PASSWORD: koishi@114514
+          MYSQL_ROOT_PASSWORD: password
+
+    env:
+      GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+      NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+    steps:
+      - name: Check out
+        uses: actions/checkout@v1
+      - name: Set up Node
+        uses: actions/setup-node@v2
+        with:
+          node-version: ${{ matrix.node-version }}
+      - name: Restore Lockfile
+        uses: actions/cache@v2
+        with:
+          path: yarn.lock
+          key: yarn-lock-${{ runner.os }}-${{ needs.prepare.outputs.random-uuid }}
+      - name: Restore Cache
+        uses: actions/cache@v2
+        with:
+          path: ${{ needs.prepare.outputs.cache-dir }}
+          key: yarn-cache-${{ runner.os }}-${{ needs.prepare.outputs.random-uuid }}-node-${{ matrix.node-version }}
+          restore-keys: |
+            yarn-lock-${{ runner.os }}-${{ needs.prepare.outputs.random-uuid }}-node
+      - name: Install
+        run: yarn
+      - name: Build JS
+        run: yarn compile
       - name: Unit Test
         run: yarn test:json
       - name: Report Coverage
+        if: ${{ matrix.node-version == 14 }}
         uses: codecov/codecov-action@v1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           file: ./coverage/coverage-final.json
           name: codecov
+
+  publish:
+    if: ${{ github.ref == 'refs/heads/master' }}
+    runs-on: ubuntu-latest
+    needs:
+      - build
+      - unit-test
+
+    steps:
+      - name: Check out
+        uses: actions/checkout@v1
+      - name: Create .npmrc
+        run: 'echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" > .npmrc'
+      - name: Set up Node
+        uses: actions/setup-node@v2
+        with:
+          node-version: 14
+      - name: Restore Lockfile
+        uses: actions/cache@v2
+        with:
+          path: yarn.lock
+          key: yarn-lock-${{ runner.os }}-${{ needs.prepare.outputs.random-uuid }}
+      - name: Restore Cache
+        uses: actions/cache@v2
+        with:
+          path: ${{ needs.prepare.outputs.cache-dir }}
+          key: yarn-cache-${{ runner.os }}-${{ needs.prepare.outputs.random-uuid }}-node-14
+      - name: Install
+        run: yarn
+      - name: Download
+        uses: actions/download-artifact@v2
+        with:
+          name: packages
+          path: packages
       - name: Publish
         run: yarn pub

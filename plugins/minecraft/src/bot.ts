@@ -1,10 +1,11 @@
 import { Bot, Random, segment } from 'koishi'
+import * as mineflayer from 'mineflayer'
 
 const noop = async () => null
 
 export class MinecraftBot extends Bot<'minecraft'> {
   version = 'minecraft'
-  client: import('mineflayer').Bot
+  flayer: mineflayer.Bot
 
   async sendMessage(channelId: string, content: string, groupId?: string) {
     const session = this.createSession({ channelId, content, groupId, subtype: groupId ? 'group' : 'private' })
@@ -12,8 +13,8 @@ export class MinecraftBot extends Bot<'minecraft'> {
     const image = { type: 'text', data: { content: '[Image]' } }
     content = segment.join(segment.parse(content).map(i => i.type === 'image' ? image : i))
     if (content.length > 512) content = content.substr(0, 512) + '...'
-    if (channelId === '_public') this.client.chat(content)
-    else this.client.whisper(channelId, content)
+    if (channelId === '_public') this.flayer.chat(content)
+    else this.flayer.whisper(channelId, content)
 
     this.app.emit(session, 'send', session)
     return Random.id()

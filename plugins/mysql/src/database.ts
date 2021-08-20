@@ -17,11 +17,11 @@ const logger = new Logger('mysql')
 
 export interface Config extends PoolConfig {}
 
-function stringify(value: any, table?: TableType, field?: string) {
+function stringify(value: any, table?: string, field?: string) {
   const type = MysqlDatabase.tables[table]?.[field]
   if (typeof type === 'object') return type.stringify(value)
 
-  const meta = (Koishi.Tables.config[table] as Koishi.Tables.Config)?.fields[field]
+  const meta = Koishi.Tables.config[table]?.fields[field]
   if (meta?.type === 'json') {
     return JSON.stringify(value)
   } else if (meta?.type === 'list') {
@@ -31,7 +31,7 @@ function stringify(value: any, table?: TableType, field?: string) {
   return value
 }
 
-function escape(value: any, table?: TableType, field?: string) {
+function escape(value: any, table?: string, field?: string) {
   return mysqlEscape(stringify(value, table, field))
 }
 
@@ -88,12 +88,13 @@ class MysqlDatabase extends Database {
     this.config = {
       database: 'koishi',
       charset: 'utf8mb4_general_ci',
+      multipleStatements: true,
       typeCast: (field, next) => {
         const { orgName, orgTable } = field.packet
         const type = MysqlDatabase.tables[orgTable]?.[orgName]
         if (typeof type === 'object') return type.parse(field)
 
-        const meta = (Koishi.Tables.config[orgTable] as Koishi.Tables.Config)?.fields[orgName]
+        const meta = Koishi.Tables.config[orgTable]?.fields[orgName]
         if (meta?.type === 'string') {
           return field.string()
         } else if (meta?.type === 'json') {
@@ -118,11 +119,10 @@ class MysqlDatabase extends Database {
     const data = await this.select('information_schema.columns', ['TABLE_NAME', 'COLUMN_NAME'], 'TABLE_SCHEMA = ?', [this.config.database])
     const tables: Record<string, string[]> = {}
     for (const { TABLE_NAME, COLUMN_NAME } of data) {
-      if (!tables[TABLE_NAME]) tables[TABLE_NAME] = []
-      tables[TABLE_NAME].push(COLUMN_NAME)
+      (tables[TABLE_NAME] ||= []).push(COLUMN_NAME)
     }
 
-    for (const name in MysqlDatabase.tables) {
+    for (const name in Koishi.Tables.config) {
       const table = { ...MysqlDatabase.tables[name] }
       // create platform rows
       const platforms = new Set<string>(this.app.bots.map(bot => bot.platform))
@@ -135,7 +135,7 @@ class MysqlDatabase extends Database {
         const cols = Object.keys(table)
           .filter((key) => typeof table[key] !== 'function')
           .map((key) => `${escapeId(key)} ${MysqlDatabase.Domain.definition(table[key])}`)
-        const { type, primary, unique, foreign, fields } = Koishi.Tables.config[name] as Koishi.Tables.Config
+        const { type, primary, unique, foreign, fields } = Koishi.Tables.config[name]
         cols.push(`primary key (${createIndex(primary)})`)
         for (const key of unique) {
           cols.push(`unique index (${createIndex(key)})`)
@@ -155,11 +155,11 @@ class MysqlDatabase extends Database {
           if (key === primary && type === 'incremental') {
             def += ' bigint(20) unsigned not null auto_increment'
           } else {
-            def += ' ' + getTypeDefinition(fields[key])
-            def += (nullable ? ' ' : ' not ') + 'null'
-            if (initial && typeof initial !== 'string') {
-              // mysql does not support text column with default value
-              def += ' default ' + mysqlEscape(initial)
+            const typedef = getTypeDefinition(fields[key])
+            def += ' ' + typedef + (nullable ? ' ' : ' not ') + 'null'
+            // blob, text, geometry or json columns cannot have default values
+            if (initial && !typedef.startsWith('text')) {
+              def += ' default ' + escape(initial, name, key)
             }
           }
           cols.push(def)
