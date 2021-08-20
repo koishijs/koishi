@@ -85,6 +85,7 @@ jobs:
     needs:
       - prepare
 
+    continue-on-error: ${{ matrix.node-version == 16 }}
     strategy:
       fail-fast: false
       matrix:

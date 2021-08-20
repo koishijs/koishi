@@ -9,8 +9,6 @@
     "packages/chai-extended/**",
     "packages/plugin-*/**/database/**",
     "packages/plugin-*/**/database.js",
-    "packages/plugin-mongo/**",
-    "packages/plugin-mysql/**",
     "packages/plugin-webui/**"
   ]
 }
