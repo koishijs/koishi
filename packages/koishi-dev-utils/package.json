@@ -31,7 +31,7 @@
     "utilities"
   ],
   "peerDependencies": {
-    "koishi-core": "^3.13.1",
+    "koishi-core": "^3.14.0",
     "koishi-utils": "^4.2.4"
   }
 }

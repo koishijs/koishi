@@ -1,5 +1,5 @@
 {
-  "name": "koishi-adapter-minecraft",
+  "name": "koishi-adapter-minecraft-dev",
   "description": "Minecraft adapter for Koishi",
   "version": "0.1.0",
   "main": "lib/index.js",
@@ -29,7 +29,7 @@
     "koishi"
   ],
   "peerDependencies": {
-    "koishi-core": "^3.13.0"
+    "koishi-core": "^3.14.0"
   },
   "dependencies": {
     "mineflayer": "^3.9.0"
