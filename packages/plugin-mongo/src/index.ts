@@ -124,6 +124,10 @@ function createFilter<T extends TableType>(name: T, _query: Query<T>) {
     filter['$or'] = [{ id: filter[primary] }, { _id: filter[primary] }]
     delete filter[primary]
   }
+  if (filter?.['$not']) {
+    filter['$nor'] = [filter['$not']]
+    delete filter['$not']
+  }
   return filter
 }
 
@@ -172,10 +176,9 @@ Database.extend(MongoDatabase, {
     const copy = { ...Tables.create(name), ...data }
     if (copy[primary]) {
       copy['_id'] = copy[primary]
-      delete copy[primary]
     } else if (type === 'incremental') {
       const [latest] = await this.db.collection(name).find().sort('_id', -1).limit(1).toArray()
-      copy['_id'] = data[primary] = latest ? latest._id + 1 : 1
+      copy['_id'] = copy[primary] = data[primary] = latest ? latest._id + 1 : 1
     } else if (type === 'random') {
       copy['_id'] = data[primary] = Random.uuid()
     }
