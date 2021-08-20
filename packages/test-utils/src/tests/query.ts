@@ -1,4 +1,4 @@
-import { App, Tables } from 'koishi-core'
+import { App, Tables } from 'koishi'
 import { expect } from 'chai'
 import '../../chai'
 
@@ -10,21 +10,20 @@ interface Foo {
   date?: Date
 }
 
-declare module 'koishi-core' {
+declare module 'koishi' {
   interface Tables {
     foo: Foo
   }
 }
 
 Tables.extend('foo', {
+  id: 'unsigned',
+  text: 'string',
+  value: 'integer',
+  list: 'list',
+  date: 'timestamp',
+}, {
   type: 'incremental',
-  fields: {
-    id: 'unsigned',
-    text: 'string',
-    value: 'integer',
-    list: 'list',
-    date: 'timestamp',
-  },
 })
 
 namespace QueryOperators {

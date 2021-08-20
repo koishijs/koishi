@@ -1,4 +1,4 @@
-import { App } from 'koishi-core'
+import { App } from 'koishi'
 import BuiltinMethods from './builtin'
 import QueryOperators from './query'
 

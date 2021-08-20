@@ -141,7 +141,7 @@ Database.extend(MemoryDatabase, {
     if (!Array.isArray(primary) && !data[primary]) {
       const max = store.length ? Math.max(...store.map(row => +row[primary])) : 0
       data[primary] = max + 1
-      if (Tables.Field.Type.string.includes(fields[primary].type)) {
+      if (Tables.Field.string.includes(fields[primary].type)) {
         data[primary] += ''
       }
     }

@@ -19,7 +19,7 @@ declare module 'koishi' {
 
 function transformFieldQuery(query: Query.FieldQuery, key: string) {
   // shorthand syntax
-  if (typeof query === 'string' || typeof query === 'number') {
+  if (typeof query === 'string' || typeof query === 'number' || query instanceof Date) {
     return { $eq: query }
   } else if (Array.isArray(query)) {
     if (!query.length) return
@@ -61,6 +61,12 @@ function createFilter<T extends TableType>(name: T, _query: Query<T>) {
         filter[key] = transformFieldQuery(value, key)
       }
     }
+
+    // https://stackoverflow.com/questions/25270396/mongodb-how-to-invert-query-with-not
+    if (filter['$not']) {
+      filter['$nor'] = [filter['$not']]
+      delete filter['$not']
+    }
     return filter
   }
 
@@ -68,10 +74,19 @@ function createFilter<T extends TableType>(name: T, _query: Query<T>) {
 }
 
 function getFallbackType({ type }: Tables.Field) {
-  return Tables.Field.Type.string.includes(type) ? 'random' : 'incremental'
+  return Tables.Field.string.includes(type) ? 'random' : 'incremental'
 }
 
 Database.extend(MongoDatabase, {
+  async drop(table) {
+    if (table) {
+      await this.db.collection(table).drop()
+    } else {
+      const collections = await this.db.collections()
+      await Promise.all(collections.map(c => c.drop()))
+    }
+  },
+
   async get(name, query, modifier) {
     const filter = createFilter(name, query)
     let cursor = this.db.collection(name).find(filter)
@@ -96,7 +111,7 @@ Database.extend(MongoDatabase, {
     const table = Tables.config[name]
     const { primary, fields } = table
     if (!Array.isArray(primary) && !data[primary]) {
-      const type = table.type || getFallbackType(fields[primary].type)
+      const type = table.type || getFallbackType(fields[primary])
       if (type === 'incremental') {
         const [latest] = await this.db.collection(name).find().sort(primary, -1).limit(1).toArray()
         data[primary] = latest ? latest[primary] + 1 : 1
@@ -104,7 +119,7 @@ Database.extend(MongoDatabase, {
         data[primary] = Random.id()
       }
     }
-    const copy = { ...data, ...Tables.create(name) }
+    const copy = { ...Tables.create(name), ...data }
     await this.db.collection(name).insertOne(copy).catch(() => {})
     return copy
   },

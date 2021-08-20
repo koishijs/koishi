@@ -169,7 +169,7 @@ Database.extend(MysqlDatabase, {
 
   async upsert(name, data, keys: string | string[]) {
     if (!data.length) return
-    data = data.map(item => ({ ...item, ...Koishi.Tables.create(name) }))
+    data = data.map(item => ({ ...Koishi.Tables.create(name), ...item }))
     keys = makeArray(keys || Koishi.Tables.config[name].primary)
     const fields = Object.keys(data[0])
     const placeholder = `(${fields.map(() => '?').join(', ')})`
