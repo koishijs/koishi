@@ -1,9 +1,9 @@
 import { App, Tests } from 'koishi-test-utils'
-import * as mysql from 'koishi-plugin-mysql'
+import * as mongo from 'koishi-plugin-mongo'
 
-const getMysqlPorts = () => {
+const getMongoPorts = () => {
   const argv = process.argv.splice(3)
-  const match = /^--mysql-ports=(.*)/
+  const match = /^--mongo-ports=(.*)/
   const ports = []
   for (let i = 0; i < argv.length; i++) {
     const envMatch = argv[i].match(match)
@@ -12,26 +12,17 @@ const getMysqlPorts = () => {
   return ports.length === 0 ? undefined : ports
 }
 
-const ports = getMysqlPorts() ?? [3306]
+const ports = getMongoPorts() ?? [27017]
 
 for (const port of ports) {
-  describe(`MySQL Database (${port})`, () => {
+  describe(`Mongo Database (${port})`, () => {
     const app = new App()
 
-    app.plugin(mysql, {
+    app.plugin(mongo, {
       host: 'localhost',
       port: port,
-      user: 'koishi',
-      password: 'koishi@114514',
-      database: 'koishi',
     })
 
-    Tests.database(app, {
-      query: {
-        list: {
-          elementQuery: false,
-        },
-      },
-    })
+    Tests.database(app)
   })
 }

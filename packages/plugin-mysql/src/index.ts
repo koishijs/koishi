@@ -2,6 +2,7 @@ import MysqlDatabase, { Config, TableType } from './database'
 import { User, Channel, Database, Context, Query } from 'koishi-core'
 import { difference } from 'koishi-utils'
 import { OkPacket, escapeId, escape } from 'mysql'
+import * as Koishi from 'koishi-core'
 
 export * from './database'
 export default MysqlDatabase
@@ -27,21 +28,50 @@ function createRegExpQuery(key: string, value: RegExp) {
   return `${key} REGEXP ${escape(value.source)}`
 }
 
-function createEqualQuery(key: string, value: any) {
-  return `${key} = ${escape(value)}`
+function createElementQuery(key: string, value: any) {
+  return `FIND_IN_SET(${escape(value)}, ${key})`
 }
 
-const queryOperators: Record<string, (key: string, value: any) => string> = {
-  $regex: createRegExpQuery,
-  $regexFor: (key, value) => `${escape(value)} REGEXP ${key}`,
+function comparator(operator: string) {
+  return function (key: string, value: any) {
+    return `${key} ${operator} ${escape(value)}`
+  }
+}
+
+const createEqualQuery = comparator('=')
+
+type QueryOperators = {
+  [K in keyof Query.FieldExpr]?: (key: string, value: Query.FieldExpr[K]) => string
+}
+
+const queryOperators: QueryOperators = {
   $in: (key, value) => createMemberQuery(key, value, ''),
   $nin: (key, value) => createMemberQuery(key, value, ' NOT'),
   $eq: createEqualQuery,
-  $ne: (key, value) => `${key} != ${escape(value)}`,
-  $gt: (key, value) => `${key} > ${escape(value)}`,
-  $gte: (key, value) => `${key} >= ${escape(value)}`,
-  $lt: (key, value) => `${key} < ${escape(value)}`,
-  $lte: (key, value) => `${key} <= ${escape(value)}`,
+  $ne: comparator('!='),
+  $gt: comparator('>'),
+  $gte: comparator('>='),
+  $lt: comparator('<'),
+  $lte: comparator('<='),
+  $regex: createRegExpQuery,
+  $regexFor: (key, value) => `${escape(value)} REGEXP ${key}`,
+  $el: (key, value) => {
+    if (Array.isArray(value)) {
+      return `(${value.map(value => createElementQuery(key, value)).join(' || ')})`
+    } else if (typeof value !== 'number' && typeof value !== 'string') {
+      throw new TypeError('query expr under $el is not supported')
+    } else {
+      return createElementQuery(key, value)
+    }
+  },
+  $size: (key, value) => {
+    if (!value) return `!${key}`
+    return `${key} && LENGTH(${key}) - LENGTH(REPLACE(${key}, ",", "")) = ${escape(value)} - 1`
+  },
+  $bitsAllSet: (key, value) => `${key} & ${escape(value)} = ${escape(value)}`,
+  $bitsAllClear: (key, value) => `${key} & ${escape(value)} = 0`,
+  $bitsAnySet: (key, value) => `${key} & ${escape(value)} != 0`,
+  $bitsAnyClear: (key, value) => `${key} & ${escape(value)} != ${escape(value)}`,
 }
 
 export function createFilter<T extends TableType>(name: T, query: Query<T>) {
@@ -49,7 +79,7 @@ export function createFilter<T extends TableType>(name: T, query: Query<T>) {
     const conditions: string[] = []
     for (const key in query) {
       // logical expression
-      if (key === '$or') {
+      if (key === '$not') {
         conditions.push(`!(${parseQuery(query.$not)})`)
         continue
       } else if (key === '$and') {
@@ -70,7 +100,7 @@ export function createFilter<T extends TableType>(name: T, query: Query<T>) {
       } else if (value instanceof RegExp) {
         conditions.push(createRegExpQuery(escKey, value))
         continue
-      } else if (typeof value === 'string' || typeof value === 'number') {
+      } else if (typeof value === 'string' || typeof value === 'number' || value instanceof Date) {
         conditions.push(createEqualQuery(escKey, value))
         continue
       }
@@ -91,6 +121,15 @@ export function createFilter<T extends TableType>(name: T, query: Query<T>) {
 }
 
 Database.extend(MysqlDatabase, {
+  async drop(name) {
+    if (name) {
+      await this.query(`DROP TABLE ${escapeId(name)}`)
+    } else {
+      const data = await this.select('information_schema.tables', ['TABLE_NAME'], 'TABLE_SCHEMA = ?', [this.config.database])
+      await this.query(data.map(({ TABLE_NAME }) => `DROP TABLE ${escapeId(TABLE_NAME)}`).join('; '))
+    }
+  },
+
   async get(name, query, modifier) {
     const filter = createFilter(name, query)
     if (filter === '0') return []
@@ -108,24 +147,30 @@ Database.extend(MysqlDatabase, {
     await this.query('DELETE FROM ?? WHERE ' + filter, [name])
   },
 
-  async create(table, data) {
+  async create(name, data) {
+    data = { ...Koishi.Tables.create(name), ...data }
     const keys = Object.keys(data)
-    if (!keys.length) return
     const header = await this.query<OkPacket>(
       `INSERT INTO ?? (${this.joinKeys(keys)}) VALUES (${keys.map(() => '?').join(', ')})`,
-      [table, ...this.formatValues(table, data, keys)],
+      [name, ...this.formatValues(name, data, keys)],
     )
     return { ...data, id: header.insertId } as any
   },
 
-  async update(table, data) {
+  async update(name, data, key: string) {
     if (!data.length) return
-    const keys = Object.keys(data[0])
-    const placeholder = `(${keys.map(() => '?').join(', ')})`
+    key ||= Koishi.Tables.config[name].primary
+    data = data.map(item => ({ ...Koishi.Tables.create(name), ...item }))
+    const fields = Object.keys(data[0])
+    const placeholder = `(${fields.map(() => '?').join(', ')})`
+    const update = difference(fields, [key]).map((key) => {
+      key = escapeId(key)
+      return `${key} = VALUES(${key})`
+    }).join(', ')
     await this.query(
-      `INSERT INTO ?? (${this.joinKeys(keys)}) VALUES ${data.map(() => placeholder).join(', ')}
-      ON DUPLICATE KEY UPDATE ${keys.filter(key => key !== 'id').map(key => `\`${key}\` = VALUES(\`${key}\`)`).join(', ')}`,
-      [table, ...[].concat(...data.map(data => this.formatValues(table, data, keys)))],
+      `INSERT INTO ${escapeId(name)} (${this.joinKeys(fields)}) VALUES ${data.map(() => placeholder).join(', ')}
+      ON DUPLICATE KEY UPDATE ${update}`,
+      [].concat(...data.map(data => this.formatValues(name, data, fields))),
     )
   },
 

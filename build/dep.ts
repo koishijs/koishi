@@ -39,7 +39,8 @@ interface Dependency {
     for (const type of ['dependencies', 'devDependencies', 'peerDependencies', 'optionalDependencies'] as const) {
       for (const dep in meta[type] || {}) {
         // skip workspaces and symlinks
-        if (workspaces[dep] || meta[type][dep].includes(':')) continue
+        const version = meta[type][dep]
+        if (workspaces[dep] || version === '*' || version.includes(':')) continue
         if (!dependencies[dep]) dependencies[dep] = { dependents: [] }
         dependencies[dep].dependents.push({ name, type })
       }

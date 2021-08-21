@@ -1,12 +1,11 @@
 import { Adapter } from 'koishi-core'
 import { MinecraftBot } from './bot'
 import WsClient from './ws'
+import * as mineflayer from 'mineflayer'
 export * from './bot'
 
 declare module 'koishi-core' {
-  interface AppOptions {
-    minecraft?: {}
-  }
+  interface BotOptions extends mineflayer.BotOptions {}
 
   namespace Bot {
     interface Platforms {

@@ -1,5 +1,6 @@
 import MongoDatabase, { Config } from './database'
-import { User, Tables, Database, Field, Context, Channel, Random, pick, omit, TableType, Query } from 'koishi-core'
+import { User, Tables, Database, Context, Channel, Random, pick, omit, TableType, Query } from 'koishi-core'
+import { QuerySelector } from 'mongodb'
 
 export * from './database'
 export default MongoDatabase
@@ -70,9 +71,40 @@ function unescapeKey<T extends Partial<User>>(data: T) {
   return data
 }
 
+function transformFieldQuery(query: Query.FieldQuery, key: string) {
+  // shorthand syntax
+  if (typeof query === 'string' || typeof query === 'number' || query instanceof Date) {
+    return { $eq: query }
+  } else if (Array.isArray(query)) {
+    if (!query.length) return
+    return { $in: query }
+  } else if (query instanceof RegExp) {
+    return { $regex: query }
+  }
+
+  // query operators
+  const result: QuerySelector<any> = {}
+  for (const prop in query) {
+    if (prop === '$el') {
+      result.$elemMatch = transformFieldQuery(query[prop], key)
+    } else if (prop === '$regexFor') {
+      result.$expr = {
+        body(data: string, value: string) {
+          return new RegExp(data, 'i').test(value)
+        },
+        args: ['$' + key, query],
+        lang: 'js',
+      }
+    } else {
+      result[prop] = query[prop]
+    }
+  }
+  return result
+}
+
 function createFilter<T extends TableType>(name: T, _query: Query<T>) {
   function transformQuery(query: Query.Expr) {
-    const filter = {}, pending = []
+    const filter = {}
     for (const key in query) {
       const value = query[key]
       if (key === '$and' || key === '$or') {
@@ -84,24 +116,8 @@ function createFilter<T extends TableType>(name: T, _query: Query<T>) {
       } else if (Array.isArray(value)) {
         filter[key] = { $in: value }
       } else {
-        filter[key] = {}
-        for (const prop in value) {
-          if (prop === '$regexFor') {
-            filter[key].$expr = {
-              body(data: string, value: string) {
-                return new RegExp(data, 'i').test(value)
-              },
-              args: ['$' + key, value],
-              lang: 'js',
-            }
-          } else {
-            filter[key][prop] = value[prop]
-          }
-        }
+        filter[key] = transformFieldQuery(value, key)
       }
-    }
-    if (pending.length) {
-      (filter['$and'] ||= []).push(...pending)
     }
     return filter
   }
@@ -109,15 +125,20 @@ function createFilter<T extends TableType>(name: T, _query: Query<T>) {
   const filter = transformQuery(Query.resolve(name, _query))
   const { primary } = Tables.config[name]
   if (filter[primary]) {
-    filter['_id'] = filter[primary]
+    filter['$or'] = [{ id: filter[primary] }, { _id: filter[primary] }]
     delete filter[primary]
+  }
+  // https://stackoverflow.com/questions/25270396/mongodb-how-to-invert-query-with-not
+  if (filter['$not']) {
+    filter['$nor'] = [filter['$not']]
+    delete filter['$not']
   }
   return filter
 }
 
-function getFallbackType({ fields, primary }: Tables.Meta) {
+function getFallbackType({ fields, primary }: Tables.Config) {
   const { type } = fields[primary]
-  return Field.stringTypes.includes(type) ? 'random' : 'incremental'
+  return Tables.Field.string.includes(type) ? 'random' : 'incremental'
 }
 
 Database.extend(MongoDatabase, {
@@ -152,13 +173,12 @@ Database.extend(MongoDatabase, {
   async create(name, data: any) {
     const meta = Tables.config[name]
     const { primary, type = getFallbackType(meta) } = meta
-    const copy = { ...data }
+    const copy = { ...Tables.create(name), ...data }
     if (copy[primary]) {
       copy['_id'] = copy[primary]
-      delete copy[primary]
     } else if (type === 'incremental') {
       const [latest] = await this.db.collection(name).find().sort('_id', -1).limit(1).toArray()
-      copy['_id'] = data[primary] = latest ? latest._id + 1 : 1
+      copy['_id'] = copy[primary] = data[primary] = latest ? latest._id + 1 : 1
     } else if (type === 'random') {
       copy['_id'] = data[primary] = Random.uuid()
     }
@@ -209,13 +229,9 @@ Database.extend(MongoDatabase, {
     )
   },
 
-  async createUser(type, id, data) {
-    await this.setUser(type, id, data)
-  },
-
   async getChannel(type, pid, modifier) {
     modifier = Query.resolveModifier(modifier)
-    const fields = modifier.fields.slice()
+    const fields = (modifier?.fields ?? []).slice()
     const applyDefault = (channel: Channel) => ({
       ...pick(Channel.create(type, channel.pid), fields),
       ...omit(channel, ['type', 'pid']),
@@ -238,7 +254,7 @@ Database.extend(MongoDatabase, {
   },
 
   async getAssignedChannels(_fields, assignMap = this.app.getSelfIds()) {
-    const fields = _fields.slice()
+    const fields = (_fields ?? []).slice()
     const applyDefault = (channel: Channel) => ({
       ...pick(Channel.create(channel.type, channel.pid), _fields),
       ...omit(channel, ['type', 'pid']),
@@ -262,7 +278,9 @@ Database.extend(MongoDatabase, {
   },
 
   async createChannel(type, pid, data) {
-    await this.setChannel(type, pid, data)
+    await this.channel.updateOne({ type, pid, id: `${type}:${pid}` }, {
+      $set: Object.keys(data).length === 0 ? Channel.create(type, pid) : data,
+    }, { upsert: true })
   },
 })
 
@@ -274,4 +292,3 @@ export function apply(ctx: Context, config: Config) {
   ctx.before('connect', () => db.start())
   ctx.before('disconnect', () => db.stop())
 }
-

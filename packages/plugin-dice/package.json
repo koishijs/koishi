@@ -31,10 +31,10 @@
     "dice"
   ],
   "peerDependencies": {
-    "koishi-core": "^3.13.0",
-    "koishi-utils": "^4.2.3"
+    "koishi-core": "^3.14.0",
+    "koishi-utils": "^4.2.4"
   },
   "devDependencies": {
-    "koishi-test-utils": "^6.1.0"
+    "koishi-test-utils": "^7.0.0"
   }
 }

@@ -58,7 +58,7 @@ namespace Stat {
   export class Recorded<K extends string> extends Stat<K, StatRecord> {
     constructor(table: string, fields: readonly K[], preserve: boolean) {
       super(table, fields, preserve)
-      Tables.extend(table as never, { primary: 'time' })
+      Tables.extend(table as any, { primary: 'time' })
       Database.extend('koishi-plugin-mysql', ({ tables, Domain }) => {
         tables[table] = Object.fromEntries(fields.map(key => [key, new Domain.Json()]))
         tables[table].time = 'datetime'
@@ -85,7 +85,7 @@ namespace Stat {
   export class Numerical<K extends string> extends Stat<K, number> {
     constructor(table: string, fields: readonly K[], preserve: boolean) {
       super(table, fields, preserve)
-      Tables.extend(table as never, { primary: 'time' })
+      Tables.extend(table as any, { primary: 'time' })
       Database.extend('koishi-plugin-mysql', ({ tables }) => {
         tables[table] = Object.fromEntries(fields.map(key => [key, 'int unsigned']))
         tables[table].time = 'datetime'
@@ -167,13 +167,4 @@ Database.extend('koishi-plugin-mysql', {
   createSynchronizer() {
     return new MysqlSynchronizer(this)
   },
-})
-
-Database.extend('koishi-plugin-mysql', ({ tables, Domain }) => {
-  tables.user.lastCall = 'timestamp'
-  tables.user.password = 'varchar(64)'
-  tables.user.token = 'varchar(64)'
-  tables.user.expire = 'bigint unsigned default 0'
-  tables.channel.name = 'varchar(50)'
-  tables.channel.activity = new Domain.Json()
 })
