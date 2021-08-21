@@ -4,8 +4,8 @@ import type MongoDatabase from 'koishi-plugin-mongo'
 
 const logger = new Logger('status')
 
-declare module 'koishi-plugin-mongo' {
-  interface Collections {
+declare module 'koishi-core' {
+  interface Tables {
     'plugin-status': any
   }
 }
