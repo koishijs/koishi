@@ -13,7 +13,7 @@ export type HandleMixedContent = 'auto' | 'separate' | 'attach'
 export class Sender {
   private errors: Error[] = []
 
-  private constructor(private bot: DiscordBot, private url: string) {}
+  private constructor(private bot: DiscordBot, private url: string) { }
 
   static from(bot: DiscordBot, url: string) {
     return new Sender(bot, url).sendMessage
@@ -139,7 +139,7 @@ export class Sender {
           ...addition,
           embeds: [{ ...data }],
         })
-      } else if (type === 'record') {
+      } else if (type === 'record' || type === 'audio') {
         await this.sendAsset('file', { ...data, mode: 'download' }, {
           ...addition,
           content: textBuffer.trim(),
