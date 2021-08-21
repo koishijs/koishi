@@ -256,8 +256,8 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
     source = segment.transform(source, {
       text: ({ content }, index, chain) => {
         let message = simplify(segment.unescape('' + content))
-          .toLowerCase()
-          .replace(/\s+/g, '')
+          // .toLowerCase()
+          // .replace(/\s+/g, '')
           .replace(fullWidthRegExp, $0 => halfWidth[fullWidth.indexOf($0)])
         if (index === 0) message = message.replace(/^[()\[\]]*/, '')
         if (index === chain.length - 1) message = message.replace(/[\.,?!()\[\]~]*$/, '')
@@ -310,7 +310,7 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
 
   ctx.on('dialogue/receive', ({ session }) => {
     // generally flag and authority has already attached to users
-    if (session.user.authority < config.authority.receive) return true
+    if (!session.user || session.user.authority < config.authority.receive) return true
   })
 
   ctx.on('dialogue/receive', ({ session, test }) => {
