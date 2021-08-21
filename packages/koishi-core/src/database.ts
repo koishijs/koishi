@@ -212,7 +212,7 @@ export namespace Query {
     return modifier || {}
   }
 
-  type Projection<T extends TableType, K extends string> = Record<K, Evaluation.Aggregation<Tables[T]>>
+  type Projection<T extends TableType, K extends string> = Record<K, Eval.Aggregation<Tables[T]>>
 
   export interface Database {
     drop(table?: TableType): Promise<void>
@@ -224,7 +224,7 @@ export namespace Query {
   }
 }
 
-export namespace Evaluation {
+export namespace Eval {
   export type Numeric<T = any, U = never> = U | number | Keys<T, number> | NumericExpr<Numeric<T, U>>
 
   export interface NumericExpr<N = Numeric> {

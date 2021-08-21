@@ -1,5 +1,5 @@
 import MongoDatabase, { Config } from './database'
-import { User, Tables, Database, Context, Channel, Random, pick, omit, TableType, Query } from 'koishi-core'
+import { User, Tables, Database, Context, Channel, Random, pick, omit, TableType, Query, Eval } from 'koishi-core'
 import { QuerySelector } from 'mongodb'
 
 export * from './database'
@@ -102,22 +102,22 @@ function transformFieldQuery(query: Query.FieldQuery, key: string) {
   return result
 }
 
-function createFilter<T extends TableType>(name: T, _query: Query<T>) {
-  function transformQuery(query: Query.Expr) {
-    const filter = {}
-    for (const key in query) {
-      const value = query[key]
-      if (key === '$and' || key === '$or') {
-        filter[key] = value.map(transformQuery)
-      } else if (key === '$not') {
-        filter[key] = transformQuery(value)
-      } else {
-        filter[key] = transformFieldQuery(value, key)
-      }
+function transformQuery(query: Query.Expr) {
+  const filter = {}
+  for (const key in query) {
+    const value = query[key]
+    if (key === '$and' || key === '$or') {
+      filter[key] = value.map(transformQuery)
+    } else if (key === '$not') {
+      filter[key] = transformQuery(value)
+    } else {
+      filter[key] = transformFieldQuery(value, key)
     }
-    return filter
   }
+  return filter
+}
 
+function createFilter<T extends TableType>(name: T, _query: Query<T>) {
   const filter = transformQuery(Query.resolve(name, _query))
   const { primary } = Tables.config[name]
   if (filter[primary]) {
@@ -130,6 +130,22 @@ function createFilter<T extends TableType>(name: T, _query: Query<T>) {
     delete filter['$not']
   }
   return filter
+}
+
+function transformEval(expr: Eval.Numeric | Eval.Aggregation) {
+  if (typeof expr === 'string') {
+    return '$' + expr
+  } else if (typeof expr === 'number') {
+    return expr
+  }
+
+  return Object.fromEntries(Object.entries(expr).map(([key, value]) => {
+    if (Array.isArray(value)) {
+      return [key, value.map(transformEval)]
+    } else {
+      return [key, transformEval(value)]
+    }
+  }))
 }
 
 function getFallbackType({ fields, primary }: Tables.Config) {
@@ -149,7 +165,6 @@ Database.extend(MongoDatabase, {
 
   async get(name, query, modifier) {
     const filter = createFilter(name, query)
-    if (!filter) return []
     let cursor = this.db.collection(name).find(filter)
     const { fields, limit, offset = 0 } = Query.resolveModifier(modifier)
     if (fields) cursor = cursor.project(Object.fromEntries(fields.map(key => [key, 1])))
@@ -167,7 +182,6 @@ Database.extend(MongoDatabase, {
 
   async remove(name, query) {
     const filter = createFilter(name, query)
-    if (!filter) return
     await this.db.collection(name).deleteMany(filter)
   },
 
@@ -196,6 +210,17 @@ Database.extend(MongoDatabase, {
       bulk.find({ [key]: item[primary] }).updateOne({ $set: omit(item, [primary]) })
     }
     await bulk.execute()
+  },
+
+  async aggregate(name, fields, query) {
+    const $match = createFilter(name, query)
+    const [data] = await this.db.collection(name).aggregate([{ $match }, {
+      $group: {
+        _id: 1,
+        ...Object.fromEntries(Object.entries(fields).map(([key, value]) => [key, transformEval(value)])),
+      },
+    }]).toArray()
+    return data
   },
 
   async getUser(type, id, modifier) {

@@ -1,5 +1,5 @@
 import MysqlDatabase, { Config } from './database'
-import { User, Channel, Database, Context, Query, Evaluation } from 'koishi-core'
+import { User, Channel, Database, Context, Query, Eval } from 'koishi-core'
 import { difference } from 'koishi-utils'
 import { OkPacket, escapeId, escape } from 'mysql'
 import * as Koishi from 'koishi-core'
@@ -117,6 +117,32 @@ function parseQuery(query: Query.Expr) {
   return conditions.join(' && ')
 }
 
+function parseNumeric(expr: Eval.Aggregation | Eval.Numeric) {
+  if (typeof expr === 'string') {
+    return escapeId(expr)
+  } else if (typeof expr === 'number') {
+    return escape(expr)
+  } else if ('$sum' in expr) {
+    return `ifnull(sum(${parseNumeric(expr.$sum)}), 0)`
+  } else if ('$avg' in expr) {
+    return `avg(${parseNumeric(expr.$avg)})`
+  } else if ('$min' in expr) {
+    return `min(${parseNumeric(expr.$min)})`
+  } else if ('$max' in expr) {
+    return `max(${parseNumeric(expr.$max)})`
+  } else if ('$count' in expr) {
+    return `count(${parseNumeric(expr.$count)})`
+  } else if ('$add' in expr) {
+    return expr.$add.map(parseNumeric).join(' + ')
+  } else if ('$multiply' in expr) {
+    return expr.$multiply.map(parseNumeric).join(' * ')
+  } else if ('$subtract' in expr) {
+    return expr.$subtract.map(parseNumeric).join(' - ')
+  } else if ('$divide' in expr) {
+    return expr.$divide.map(parseNumeric).join(' / ')
+  }
+}
+
 Database.extend(MysqlDatabase, {
   async drop(name) {
     if (name) {
@@ -169,6 +195,16 @@ Database.extend(MysqlDatabase, {
       ON DUPLICATE KEY UPDATE ${update}`,
       [].concat(...data.map(data => this.formatValues(name, data, fields))),
     )
+  },
+
+  async aggregate(name, fields, query) {
+    const keys = Object.keys(fields)
+    if (!keys.length) return {}
+
+    const filter = parseQuery(Query.resolve(name, query))
+    const exprs = keys.map(key => `${parseNumeric(fields[key])} AS ${escapeId(key)}`).join(', ')
+    const [data] = await this.query(`SELECT ${exprs} FROM ${name} WHERE ${filter}`)
+    return data
   },
 
   async getUser(type, id, modifier) {
