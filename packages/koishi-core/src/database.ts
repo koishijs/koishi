@@ -212,12 +212,47 @@ export namespace Query {
     return modifier || {}
   }
 
+  type Projection<T extends TableType, K extends string> = Record<K, Evaluation.Aggregation<Tables[T]>>
+
   export interface Database {
+    drop(table?: TableType): Promise<void>
     get<T extends TableType, K extends Field<T>>(table: T, query: Query<T>, modifier?: Modifier<K>): Promise<Pick<Tables[T], K>[]>
     remove<T extends TableType>(table: T, query: Query<T>): Promise<void>
     create<T extends TableType>(table: T, data: Partial<Tables[T]>): Promise<Tables[T]>
     update<T extends TableType>(table: T, data: Partial<Tables[T]>[], key?: Index<T>): Promise<void>
-    drop(table?: TableType): Promise<void>
+    aggregate<T extends TableType, K extends string>(table: T, fields: Projection<T, K>, query?: Query<T>): Promise<Record<K, number>>
+  }
+}
+
+export namespace Evaluation {
+  export type Numeric<T = any, U = never> = U | number | Keys<T, number> | NumericExpr<Numeric<T, U>>
+
+  export interface NumericExpr<N = Numeric> {
+    $add?: N[]
+    $multiply?: N[]
+    $subtract?: [N, N]
+    $divide?: [N, N]
+  }
+
+  export type Boolean<T = any, U = never> = U | boolean | Keys<T, boolean> | BooleanExpr<Numeric<T, U>>
+
+  export interface BooleanExpr<N = Numeric> {
+    $eq?: [N, N]
+    $ne?: [N, N]
+    $gt?: [N, N]
+    $gte?: [N, N]
+    $lt?: [N, N]
+    $lte?: [N, N]
+  }
+
+  export type Aggregation<T = any> = Numeric<{}, AggregationExpr<Numeric<T>>>
+
+  export interface AggregationExpr<N = Numeric> {
+    $sum?: N
+    $avg?: N
+    $max?: N
+    $min?: N
+    $count?: N
   }
 }
 
