@@ -1,4 +1,4 @@
-import { Tables, TableType, Query, App, Database, User, Channel } from 'koishi-core'
+import { Tables, TableType, Query, App, Database, User, Channel, Eval } from 'koishi-core'
 import { clone, pick } from 'koishi-utils'
 
 declare module 'koishi-core' {
@@ -70,8 +70,8 @@ function executeFieldQuery(query: Query.FieldQuery, data: any) {
     return query.includes(data)
   } else if (query instanceof RegExp) {
     return query.test(data)
-  } else if (typeof query === 'string' || typeof query === 'number') {
-    return query === data
+  } else if (typeof query === 'string' || typeof query === 'number' || query instanceof Date) {
+    return data.valueOf() === query.valueOf()
   }
 
   // query operators
@@ -106,7 +106,55 @@ function executeQuery(query: Query.Expr, data: any): boolean {
   })
 }
 
+function executeNumericExpr<U>(expr: Eval.NumericExpr<U>, data: any, execute: (expr: U, data: any) => number = executeNumeric) {
+  if ('$add' in expr) {
+    return expr.$add.reduce<number>((prev, curr) => prev + execute(curr, data), 0)
+  } else if ('$multiply' in expr) {
+    return expr.$multiply.reduce<number>((prev, curr) => prev * execute(curr, data), 1)
+  } else if ('$subtract' in expr) {
+    return execute(expr.$subtract[0], data) - execute(expr.$subtract[1], data)
+  } else if ('$divide' in expr) {
+    return execute(expr.$divide[0], data) / execute(expr.$divide[1], data)
+  }
+}
+
+function executeNumeric(expr: Eval.Numeric, data: any): number {
+  if (typeof expr === 'string') {
+    return data[expr]
+  } else if (typeof expr === 'number') {
+    return expr
+  } else {
+    return executeNumericExpr(expr, data)
+  }
+}
+
+function executeAggregation(expr: Eval.Aggregation, table: any[]): number {
+  if (typeof expr === 'number') {
+    return expr
+  } else if ('$sum' in expr) {
+    return table.reduce((prev, curr) => prev + executeNumeric(expr.$sum, curr), 0)
+  } else if ('$avg' in expr) {
+    return table.reduce((prev, curr) => prev + executeNumeric(expr.$avg, curr), 0) / table.length
+  } else if ('$min' in expr) {
+    return Math.min(...table.map(data => executeNumeric(expr.$min, data)))
+  } else if ('$max' in expr) {
+    return Math.max(...table.map(data => executeNumeric(expr.$max, data)))
+  } else if ('$count' in expr) {
+    return new Set(table.map(data => executeNumeric(expr.$count, data))).size
+  } else {
+    return executeNumericExpr(expr as never, table, executeAggregation)
+  }
+}
+
 Database.extend(MemoryDatabase, {
+  async drop(name) {
+    if (name) {
+      delete this.$store[name]
+    } else {
+      this.$store = {}
+    }
+  },
+
   async get(name, query, modifier) {
     const expr = Query.resolve(name, query)
     const { fields, limit = Infinity, offset = 0 } = Query.resolveModifier(modifier)
@@ -139,6 +187,12 @@ Database.extend(MemoryDatabase, {
       const row = this.$table(table).find(row => row[key] === item[key])
       Object.assign(row, clone(item))
     }
+  },
+
+  async aggregate(name, fields, query) {
+    const expr = Query.resolve(name, query)
+    const table = this.$table(name).filter(row => executeQuery(expr, row))
+    return Object.fromEntries(Object.entries(fields).map(([key, expr]) => [key, executeAggregation(expr, table)]))
   },
 
   async getUser(type, id, fields) {

@@ -1,28 +1,28 @@
-import { App, Tables } from 'koishi-core'
+import { App, Tests } from 'koishi-test-utils'
 import * as mongo from 'koishi-plugin-mongo'
 
-declare module 'koishi-core' {
-  interface Tables {
-    foo: FooData
+const getMongoPorts = () => {
+  const argv = process.argv.splice(3)
+  const match = /^--mongo-ports=(.*)/
+  const ports = []
+  for (let i = 0; i < argv.length; i++) {
+    const envMatch = argv[i].match(match)
+    envMatch && ports.push(...envMatch[1].split(',').map(port => +port))
   }
+  return ports.length === 0 ? undefined : ports
 }
 
-interface FooData {
-  id?: number
-  bar: string
-}
+const ports = getMongoPorts() ?? [27017]
 
-Tables.extend('foo')
-
-describe('Mongo Database', () => {
-  it('should support mongo', async () => {
+for (const port of ports) {
+  describe(`Mongo Database (${port})`, () => {
     const app = new App()
+
     app.plugin(mongo, {
       host: 'localhost',
-      port: 27017,
-      username: 'koishi',
-      password: 'koishi@114514',
+      port: port,
     })
-    await app.start()
+
+    Tests.database(app)
   })
-})
+}

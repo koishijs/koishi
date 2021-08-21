@@ -28,10 +28,10 @@
     "koishi"
   ],
   "peerDependencies": {
-    "koishi-core": "^3.13.1"
+    "koishi-core": "^3.14.0"
   },
   "devDependencies": {
-    "koishi-test-utils": "^6.2.0"
+    "koishi-test-utils": "^7.0.0"
   },
   "dependencies": {
     "axios": "^0.21.1",

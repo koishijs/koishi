@@ -1,5 +1,5 @@
-import MysqlDatabase, { Config, TableType } from './database'
-import { User, Channel, Database, Context, Query } from 'koishi-core'
+import MysqlDatabase, { Config } from './database'
+import { User, Channel, Database, Context, Query, Eval } from 'koishi-core'
 import { difference } from 'koishi-utils'
 import { OkPacket, escapeId, escape } from 'mysql'
 import * as Koishi from 'koishi-core'
@@ -66,7 +66,7 @@ const queryOperators: QueryOperators = {
   },
   $size: (key, value) => {
     if (!value) return `!${key}`
-    return `LENGTH(${key}) - LENGTH(REPLACE(${key}, ",", "")) = ${escape(value)}`
+    return `${key} && LENGTH(${key}) - LENGTH(REPLACE(${key}, ",", "")) = ${escape(value)} - 1`
   },
   $bitsAllSet: (key, value) => `${key} & ${escape(value)} = ${escape(value)}`,
   $bitsAllClear: (key, value) => `${key} & ${escape(value)} = 0`,
@@ -74,55 +74,87 @@ const queryOperators: QueryOperators = {
   $bitsAnyClear: (key, value) => `${key} & ${escape(value)} != ${escape(value)}`,
 }
 
-export function createFilter<T extends TableType>(name: T, query: Query<T>) {
-  function parseQuery(query: Query.Expr) {
-    const conditions: string[] = []
-    for (const key in query) {
-      // logical expression
-      if (key === '$not') {
-        conditions.push(`!(${parseQuery(query.$not)})`)
-        continue
-      } else if (key === '$and') {
-        if (!query.$and.length) return '0'
-        conditions.push(...query.$and.map(parseQuery))
-        continue
-      } else if (key === '$or' && query.$or.length) {
-        conditions.push(`(${query.$or.map(parseQuery).join(' || ')})`)
-        continue
-      }
-
-      // query shorthand
-      const value = query[key]
-      const escKey = escapeId(key)
-      if (Array.isArray(value)) {
-        conditions.push(createMemberQuery(escKey, value))
-        continue
-      } else if (value instanceof RegExp) {
-        conditions.push(createRegExpQuery(escKey, value))
-        continue
-      } else if (typeof value === 'string' || typeof value === 'number') {
-        conditions.push(createEqualQuery(escKey, value))
-        continue
-      }
-
-      // query expression
-      for (const prop in value) {
-        if (prop in queryOperators) {
-          conditions.push(queryOperators[prop](escKey, value[prop]))
-        }
-      }
+function parseQuery(query: Query.Expr) {
+  const conditions: string[] = []
+  for (const key in query) {
+    // logical expression
+    if (key === '$not') {
+      conditions.push(`!(${parseQuery(query.$not)})`)
+      continue
+    } else if (key === '$and') {
+      if (!query.$and.length) return '0'
+      conditions.push(...query.$and.map(parseQuery))
+      continue
+    } else if (key === '$or' && query.$or.length) {
+      conditions.push(`(${query.$or.map(parseQuery).join(' || ')})`)
+      continue
     }
 
-    if (!conditions.length) return '1'
-    if (conditions.includes('0')) return '0'
-    return conditions.join(' && ')
+    // query shorthand
+    const value = query[key]
+    const escKey = escapeId(key)
+    if (Array.isArray(value)) {
+      conditions.push(createMemberQuery(escKey, value))
+      continue
+    } else if (value instanceof RegExp) {
+      conditions.push(createRegExpQuery(escKey, value))
+      continue
+    } else if (typeof value === 'string' || typeof value === 'number' || value instanceof Date) {
+      conditions.push(createEqualQuery(escKey, value))
+      continue
+    }
+
+    // query expression
+    for (const prop in value) {
+      if (prop in queryOperators) {
+        conditions.push(queryOperators[prop](escKey, value[prop]))
+      }
+    }
   }
-  return parseQuery(Query.resolve(name, query))
+
+  if (!conditions.length) return '1'
+  if (conditions.includes('0')) return '0'
+  return conditions.join(' && ')
+}
+
+function parseNumeric(expr: Eval.Aggregation | Eval.Numeric) {
+  if (typeof expr === 'string') {
+    return escapeId(expr)
+  } else if (typeof expr === 'number') {
+    return escape(expr)
+  } else if ('$sum' in expr) {
+    return `ifnull(sum(${parseNumeric(expr.$sum)}), 0)`
+  } else if ('$avg' in expr) {
+    return `avg(${parseNumeric(expr.$avg)})`
+  } else if ('$min' in expr) {
+    return `min(${parseNumeric(expr.$min)})`
+  } else if ('$max' in expr) {
+    return `max(${parseNumeric(expr.$max)})`
+  } else if ('$count' in expr) {
+    return `count(${parseNumeric(expr.$count)})`
+  } else if ('$add' in expr) {
+    return expr.$add.map(parseNumeric).join(' + ')
+  } else if ('$multiply' in expr) {
+    return expr.$multiply.map(parseNumeric).join(' * ')
+  } else if ('$subtract' in expr) {
+    return expr.$subtract.map(parseNumeric).join(' - ')
+  } else if ('$divide' in expr) {
+    return expr.$divide.map(parseNumeric).join(' / ')
+  }
 }
 
 Database.extend(MysqlDatabase, {
+  async drop(name) {
+    if (name) {
+      await this.query(`DROP TABLE ${escapeId(name)}`)
+    } else {
+      const data = await this.select('information_schema.tables', ['TABLE_NAME'], 'TABLE_SCHEMA = ?', [this.config.database])
+      await this.query(data.map(({ TABLE_NAME }) => `DROP TABLE ${escapeId(TABLE_NAME)}`).join('; '))
+    }
+  },
+
   async get(name, query, modifier) {
-    const filter = createFilter(name, query)
+    const filter = parseQuery(Query.resolve(name, query))
     if (filter === '0') return []
     const { fields, limit, offset } = Query.resolveModifier(modifier)
     const keys = this.joinKeys(this.inferFields(name, fields))
@@ -133,35 +165,46 @@ Database.extend(MysqlDatabase, {
   },
 
   async remove(name, query) {
-    const filter = createFilter(name, query)
+    const filter = parseQuery(Query.resolve(name, query))
     if (filter === '0') return
     await this.query('DELETE FROM ?? WHERE ' + filter, [name])
   },
 
-  async create(table, data) {
-    data = { ...data, ...Koishi.Tables.create(table) }
+  async create(name, data) {
+    data = { ...Koishi.Tables.create(name), ...data }
     const keys = Object.keys(data)
     const header = await this.query<OkPacket>(
       `INSERT INTO ?? (${this.joinKeys(keys)}) VALUES (${keys.map(() => '?').join(', ')})`,
-      [table, ...this.formatValues(table, data, keys)],
+      [name, ...this.formatValues(name, data, keys)],
     )
     return { ...data, id: header.insertId } as any
   },
 
-  async update(table, data) {
+  async update(name, data, key: string) {
     if (!data.length) return
-    data = data.map(item => ({ ...item, ...Koishi.Tables.create(table) }))
-    const keys = Object.keys(data[0])
-    const placeholder = `(${keys.map(() => '?').join(', ')})`
-    const update = keys.filter(key => key !== 'id').map((key) => {
+    key ||= Koishi.Tables.config[name].primary
+    data = data.map(item => ({ ...Koishi.Tables.create(name), ...item }))
+    const fields = Object.keys(data[0])
+    const placeholder = `(${fields.map(() => '?').join(', ')})`
+    const update = difference(fields, [key]).map((key) => {
       key = escapeId(key)
       return `${key} = VALUES(${key})`
     }).join(', ')
     await this.query(
-      `INSERT INTO ${escapeId(table)} (${this.joinKeys(keys)}) VALUES ${data.map(() => placeholder).join(', ')}
+      `INSERT INTO ${escapeId(name)} (${this.joinKeys(fields)}) VALUES ${data.map(() => placeholder).join(', ')}
       ON DUPLICATE KEY UPDATE ${update}`,
-      [].concat(...data.map(data => this.formatValues(table, data, keys))),
+      [].concat(...data.map(data => this.formatValues(name, data, fields))),
     )
+  },
+
+  async aggregate(name, fields, query) {
+    const keys = Object.keys(fields)
+    if (!keys.length) return {}
+
+    const filter = parseQuery(Query.resolve(name, query))
+    const exprs = keys.map(key => `${parseNumeric(fields[key])} AS ${escapeId(key)}`).join(', ')
+    const [data] = await this.query(`SELECT ${exprs} FROM ${name} WHERE ${filter}`)
+    return data
   },
 
   async getUser(type, id, modifier) {

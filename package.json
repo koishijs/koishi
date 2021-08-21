@@ -15,7 +15,6 @@
     "addons": "yarn workspace addons",
     "cli": "yarn compile koishi && yarn workspace test koishi",
     "build": "yarn compile && yarn dtsc",
-    "build:ci": "yarn compile && yarn compile && yarn compile && yarn dtsc --listEmittedFiles && yarn build:web",
     "build:web": "node -r ./build/register packages/plugin-webui/build",
     "dtsc": "node -r ./build/register build/dtsc",
     "bump": "node -r ./build/register build/bump",
