@@ -3,8 +3,16 @@ import { Platform } from './adapter'
 
 export type TableType = keyof Tables
 
-export type MaybeArray<K> = K | K[]
-export type Keys<O, T = any> = string & { [K in keyof O]: O[K] extends T ? K : never }[keyof O]
+// shared types
+type Primitive = string | number
+type Comparable = Primitive | Date
+type MaybeArray<K> = K | K[]
+type Get<T extends {}, K> = K extends keyof T ? T[K] : never
+type Extract<S, T, U = S> = S extends T ? U : never
+
+type Keys<O, T = any> = string & {
+  [K in keyof O]: O[K] extends T ? K : never
+}[keyof O]
 
 export interface Tables {
   user: User
@@ -152,10 +160,6 @@ export namespace Query {
   export type Field<T extends TableType> = string & keyof Tables[T]
   export type Index<T extends TableType> = Keys<Tables[T], IndexType>
 
-  type Extract<S, T, U = S> = S extends T ? U : never
-  type Primitive = string | number
-  type Comparable = Primitive | Date
-
   export interface FieldExpr<T = any> {
     $in?: Extract<T, Primitive, T[]>
     $nin?: Extract<T, Primitive, T[]>
@@ -173,6 +177,7 @@ export namespace Query {
     $bitsAllSet?: Extract<T, number>
     $bitsAnyClear?: Extract<T, number>
     $bitsAnySet?: Extract<T, number>
+    $expr?: Eval.Boolean<T>
   }
 
   export interface LogicalExpr<T = any> {
@@ -199,20 +204,24 @@ export namespace Query {
     return query as any
   }
 
-  export interface Options<T extends string> {
+  export interface ModifierExpr<K extends string> {
     limit?: number
     offset?: number
-    fields?: T[]
+    fields?: K[]
   }
 
-  export type Modifier<T extends string = any> = T[] | Options<T>
+  export type Modifier<T extends string> = T[] | ModifierExpr<T>
 
-  export function resolveModifier<T extends string>(modifier: Modifier<T>): Options<T> {
+  export function resolveModifier<K extends string>(modifier: Modifier<K>): ModifierExpr<K> {
     if (Array.isArray(modifier)) return { fields: modifier }
     return modifier || {}
   }
 
-  type Projection<T extends TableType, K extends string> = Record<K, Eval.Aggregation<Tables[T]>>
+  type Projection<T extends TableType> = Record<string, Eval.Aggregation<Tables[T]>>
+
+  type MapEval<T, P> = {
+    [K in keyof P]: Eval<T, P[K]>
+  }
 
   export interface Database {
     drop(table?: TableType): Promise<void>
@@ -220,39 +229,47 @@ export namespace Query {
     remove<T extends TableType>(table: T, query: Query<T>): Promise<void>
     create<T extends TableType>(table: T, data: Partial<Tables[T]>): Promise<Tables[T]>
     update<T extends TableType>(table: T, data: Partial<Tables[T]>[], key?: Index<T>): Promise<void>
-    aggregate<T extends TableType, K extends string>(table: T, fields: Projection<T, K>, query?: Query<T>): Promise<Record<K, number>>
+    aggregate<T extends TableType, P extends Projection<T>>(table: T, fields: P, query?: Query<T>): Promise<MapEval<T, P>>
   }
 }
 
+export type Eval<T, U> =
+  | U extends number ? number
+  : U extends boolean ? boolean
+  : U extends string ? Get<T, U>
+  : U extends Eval.NumericExpr ? number
+  : U extends Eval.BooleanExpr ? boolean
+  : U extends Eval.AggregationExpr ? number
+  : never
+
 export namespace Eval {
-  export type Numeric<T = any, U = never> = U | number | Keys<T, number> | NumericExpr<Numeric<T, U>>
+  export type Any<T, A = never> = A | number | boolean | Keys<T> | NumericExpr<T, A> | BooleanExpr<T, A>
+  export type Numeric<T = any, A = never> = A | number | Keys<T, number> | NumericExpr<T, A>
+  export type Boolean<T = any, A = never> = boolean | Keys<T, boolean> | BooleanExpr<T, A>
+  export type Aggregation<T = any> = Any<{}, AggregationExpr<T>>
 
-  export interface NumericExpr<N = Numeric> {
-    $add?: N[]
-    $multiply?: N[]
-    $subtract?: [N, N]
-    $divide?: [N, N]
+  export interface NumericExpr<T = any, A = never> {
+    $add?: Numeric<T, A>[]
+    $multiply?: Numeric<T, A>[]
+    $subtract?: [Numeric<T, A>, Numeric<T, A>]
+    $divide?: [Numeric<T, A>, Numeric<T, A>]
   }
 
-  export type Boolean<T = any, U = never> = U | boolean | Keys<T, boolean> | BooleanExpr<Numeric<T, U>>
-
-  export interface BooleanExpr<N = Numeric> {
-    $eq?: [N, N]
-    $ne?: [N, N]
-    $gt?: [N, N]
-    $gte?: [N, N]
-    $lt?: [N, N]
-    $lte?: [N, N]
+  export interface BooleanExpr<T = any, A = never> {
+    $eq?: [Numeric<T, A>, Numeric<T, A>]
+    $ne?: [Numeric<T, A>, Numeric<T, A>]
+    $gt?: [Numeric<T, A>, Numeric<T, A>]
+    $gte?: [Numeric<T, A>, Numeric<T, A>]
+    $lt?: [Numeric<T, A>, Numeric<T, A>]
+    $lte?: [Numeric<T, A>, Numeric<T, A>]
   }
 
-  export type Aggregation<T = any> = Numeric<{}, AggregationExpr<Numeric<T>>>
-
-  export interface AggregationExpr<N = Numeric> {
-    $sum?: N
-    $avg?: N
-    $max?: N
-    $min?: N
-    $count?: N
+  export interface AggregationExpr<T = any> {
+    $sum?: Numeric<T>
+    $avg?: Numeric<T>
+    $max?: Numeric<T>
+    $min?: Numeric<T>
+    $count?: Numeric<T>
   }
 }
 

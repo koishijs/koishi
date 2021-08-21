@@ -310,7 +310,7 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
 
   ctx.on('dialogue/receive', ({ session }) => {
     // generally flag and authority has already attached to users
-    if (session.user.authority < config.authority.receive) return true
+    if (session.user?.authority < config.authority.receive) return true
   })
 
   ctx.on('dialogue/receive', ({ session, test }) => {
