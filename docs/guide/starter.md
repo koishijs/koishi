@@ -18,8 +18,6 @@ Koishi 支持多个聊天平台，对于不同的平台，你也需要做好相�
 - [yyuueexxiinngg/cqhttp-mirai](https://github.com/yyuueexxiinngg/cqhttp-mirai)
 - [richardchien/coolq-http-api](https://github.com/richardchien/coolq-http-api)（配合 [iTXTech/mirai-native](https://github.com/iTXTech/mirai-native) 使用）
 
-
-
 ### [Telegram (Telegram)](../api/adapter/telegram.md)
 
 1. 搜索 @botfather（有个官方认证的符号）并进入聊天界面

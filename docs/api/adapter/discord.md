@@ -82,15 +82,6 @@ sidebarDepth: 2
 
 修改频道信息。
 
-## 消息
-
-### bot.$getMessage(channelId, messageId)
-- **channelId:** `string` 频道 ID
-- **messageId:** `string` 消息 ID
-- 返回值: `Promise<Message>`
-
-获取消息。
-
 ## 反应
 
 ### bot.$createReaction(channelId, messageId, emoji)
