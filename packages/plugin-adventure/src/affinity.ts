@@ -1,5 +1,6 @@
-import { User, Context } from 'koishi-core'
+import { User, Context, Query } from 'koishi-core'
 import { Time, Random } from 'koishi-utils'
+import type { Dialogue } from 'koishi-plugin-teach'
 import Profile from './profile'
 import Rank from './rank'
 
@@ -151,16 +152,19 @@ namespace Affinity {
       if (options.maxAffinity !== undefined) test.mismatchAffinity = options.maxAffinity
     })
 
-    function matchAffinity(affinity: number) {
-      return `(\`maxAffinity\` > ${affinity} && \`minAffinity\` <= ${affinity})`
-    }
+    const createAffinityQuery = (affinity: number): Query.Expr<Dialogue> => ({
+      maxAffinity: { $gt: affinity },
+      minAffinity: { $lte: affinity },
+    })
 
-    ctx.on('dialogue/mysql', (test, conditionals) => {
+    ctx.on('dialogue/test', (test, query) => {
       if (test.matchAffinity !== undefined) {
-        conditionals.push(matchAffinity(test.matchAffinity))
+        Object.assign(query, createAffinityQuery(test.matchAffinity))
       }
       if (test.mismatchAffinity !== undefined) {
-        conditionals.push('!' + matchAffinity(test.mismatchAffinity))
+        query.$and.push({
+          $not: createAffinityQuery(test.mismatchAffinity),
+        })
       }
     })
 
