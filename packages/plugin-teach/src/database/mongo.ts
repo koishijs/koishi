@@ -1,4 +1,4 @@
-import { Context, Database } from 'koishi-core'
+import { Database } from 'koishi-core'
 import { clone, defineProperty, Observed } from 'koishi-utils'
 import type { FilterQuery } from 'mongodb'
 import {} from 'koishi-plugin-mongo'
@@ -40,20 +40,3 @@ Database.extend('koishi-plugin-mongo', {
     await this.update('dialogue', data)
   },
 })
-
-export default function apply(ctx: Context) {
-  ctx.on('dialogue/mongo', (test, conditionals) => {
-    if (!test.groups || !test.groups.length) return
-    const $and: FilterQuery<Dialogue>[] = test.groups.map((group) => ({ groups: { $ne: group } }))
-    $and.push({ flag: { [test.reversed ? '$bitsAllClear' : '$bitsAllSet']: Dialogue.Flag.complement } })
-    conditionals.push({
-      $or: [
-        {
-          flag: { [test.reversed ? '$bitsAllSet' : '$bitsAllClear']: Dialogue.Flag.complement },
-          groups: { $all: test.groups },
-        },
-        { $and },
-      ],
-    })
-  })
-}

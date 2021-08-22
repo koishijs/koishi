@@ -1,4 +1,4 @@
-import { Context, Database } from 'koishi-core'
+import { Database } from 'koishi-core'
 import { clone, defineProperty, Observed, pick } from 'koishi-utils'
 import { Dialogue, equal, DialogueTest } from '../utils'
 import {} from 'koishi-plugin-mysql'
@@ -44,13 +44,3 @@ Database.extend('koishi-plugin-mysql', {
     await this.update('dialogue', data)
   },
 })
-
-export default function apply(ctx: Context) {
-  ctx.on('dialogue/mysql', (test, conditionals) => {
-    if (!test.groups || !test.groups.length) return
-    conditionals.push(`(
-      !(\`flag\` & ${Dialogue.Flag.complement}) != ${test.reversed} && ${test.groups.map(id => `FIND_IN_SET("${id}", \`groups\`)`).join(' && ')} ||
-      !(\`flag\` & ${Dialogue.Flag.complement}) = ${test.reversed} && ${test.groups.map(id => `!FIND_IN_SET("${id}", \`groups\`)`).join(' && ')}
-    )`)
-  })
-}

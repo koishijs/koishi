@@ -1,4 +1,4 @@
-import { Database, Context } from 'koishi-core'
+import { Database } from 'koishi-core'
 import { defineProperty, Observed, clone } from 'koishi-utils'
 import { Dialogue, DialogueTest, equal, apply } from 'koishi-plugin-teach'
 import { App } from 'koishi-test-utils'
@@ -37,18 +37,6 @@ Database.extend('koishi-test-utils', {
   },
 })
 
-export function memory(ctx: Context) {
-  // context
-  ctx.on('dialogue/memory', (data, test) => {
-    if (!test.groups || !test.groups.length) return
-    if (!(data.flag & Dialogue.Flag.complement) === test.reversed) {
-      return test.groups.some(id => data.groups.includes(id))
-    } else {
-      return test.groups.some(id => !data.groups.includes(id))
-    }
-  })
-}
-
 export default function (config: Dialogue.Config) {
   const app = new App({
     nickname: ['koishi', 'satori'],
@@ -75,8 +63,6 @@ export default function (config: Dialogue.Config) {
     successorTimeout: 0,
     ...config,
   })
-
-  app.plugin(memory)
 
   async function start() {
     await app.start()
