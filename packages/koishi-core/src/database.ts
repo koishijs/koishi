@@ -84,10 +84,7 @@ export namespace Tables {
 
     export function extend(fields: Config, extension: Extension = {}) {
       for (const key in extension) {
-        const field = fields[key] = parse(extension[key])
-        if (field.initial !== undefined && field.initial !== null) {
-          field.nullable ??= false
-        }
+        fields[key] = parse(extension[key])
       }
       return fields
     }
