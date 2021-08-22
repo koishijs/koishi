@@ -110,6 +110,8 @@ function transformQuery(query: Query.Expr) {
       filter[key] = value.map(transformQuery)
     } else if (key === '$not') {
       filter[key] = transformQuery(value)
+    } else if (key === '$expr') {
+      filter[key] = transformEval(value)
     } else {
       filter[key] = transformFieldQuery(value, key)
     }
@@ -135,7 +137,7 @@ function createFilter<T extends TableType>(name: T, _query: Query<T>) {
 function transformEval(expr: Eval.Numeric | Eval.Aggregation) {
   if (typeof expr === 'string') {
     return '$' + expr
-  } else if (typeof expr === 'number') {
+  } else if (typeof expr === 'number' || typeof expr === 'boolean') {
     return expr
   }
 
