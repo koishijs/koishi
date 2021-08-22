@@ -82,7 +82,7 @@ export function adaptMessage(bot: DiscordBot, meta: DC.Message, session: Partial
           proxy_url: v.proxy_url,
           file: v.filename,
         })
-      } else if(v.content_type?.startsWith("audio/")){
+      } else if (v.content_type?.startsWith('audio/')) {
         return segment('record', {
           url: v.url,
           proxy_url: v.proxy_url,
@@ -91,6 +91,7 @@ export function adaptMessage(bot: DiscordBot, meta: DC.Message, session: Partial
       } else {
         return segment('file', {
           url: v.url,
+          proxy_url: v.proxy_url,
           file: v.filename,
         })
       }

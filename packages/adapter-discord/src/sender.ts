@@ -78,9 +78,7 @@ export class Sender {
     }
 
     const mode = data.mode as HandleExternalAsset || discord.handleExternalAsset
-    if (type === "file") {
-      return sendDownload()
-    } else if (mode === 'download' || discord.handleMixedContent === 'attach' && addition.content) {
+    if (mode === 'download' || discord.handleMixedContent === 'attach' && addition.content || type === 'file') {
       return sendDownload()
     } else if (mode === 'direct') {
       return sendDirect()
