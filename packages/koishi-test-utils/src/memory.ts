@@ -80,7 +80,7 @@ type EvalOperators = {
 const evalOperators: EvalOperators = {
   // numeric
   $add: (args, data) => args.reduce<number>((prev, curr) => prev + executeEval(curr, data), 0),
-  $multiply: (args, data) => args.reduce<number>((prev, curr) => prev * executeEval(curr, data), 0),
+  $multiply: (args, data) => args.reduce<number>((prev, curr) => prev * executeEval(curr, data), 1),
   $subtract: ([left, right], data) => executeEval(left, data) - executeEval(right, data),
   $divide: ([left, right], data) => executeEval(left, data) - executeEval(right, data),
 

@@ -195,7 +195,7 @@ export namespace Query {
     [K in keyof T]?: FieldQuery<T[K]>
   }
 
-  export function resolve<T extends TableType>(name: T, query: Query<T>): Expr<Tables[T]> {
+  export function resolve<T extends TableType>(name: T, query: Query<T> = {}): Expr<Tables[T]> {
     if (Array.isArray(query) || query instanceof RegExp || ['string', 'number'].includes(typeof query)) {
       const { primary } = Tables.config[name]
       return { [primary]: query } as any
