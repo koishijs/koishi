@@ -208,6 +208,23 @@ namespace QueryOperators {
     })
   }
 
+  export const evaluation = function Evaluation(app: App) {
+    const db = app.database
+
+    before(async () => {
+      await db.remove('foo', {})
+      await db.create('foo', { id: 1, value: 8 })
+      await db.create('foo', { id: 2, value: 7 })
+      await db.create('foo', { id: 3, value: 9 })
+    })
+
+    it('should verify $add', async () => {
+      await expect(db.get('foo', {
+        $expr: { $eq: [9, { $add: ['id', 'value'] }] },
+      })).eventually.to.have.length(2).with.shape([{ id: 1 }, { id: 2 }])
+    })
+  }
+
   export const logical = function Logical(app: App) {
     const db = app.database
 

@@ -130,4 +130,17 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
     test.reversed = false
     test.groups = [session.cid]
   })
+
+  ctx.on('dialogue/test', (test, query) => {
+    if (!test.groups || !test.groups.length) return
+    query.$and.push({
+      $or: [{
+        flag: { [test.reversed ? '$bitsAllSet' : '$bitsAllClear']: Dialogue.Flag.complement },
+        $and: test.groups.map($el => ({ groups: { $el } })),
+      }, {
+        flag: { [test.reversed ? '$bitsAllClear' : '$bitsAllSet']: Dialogue.Flag.complement },
+        $not: { groups: { $el: test.groups } },
+      }],
+    })
+  })
 }

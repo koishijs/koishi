@@ -1,113 +1,5 @@
-import { Database, Context, defineProperty, Observed, clone, intersection } from 'koishi'
-import { Dialogue, DialogueTest, equal, apply } from '@koishijs/plugin-teach'
+import { Dialogue, apply } from '@koishijs/plugin-teach'
 import { App } from '@koishijs/test-utils'
-
-declare module 'koishi' {
-  interface EventMap {
-    'dialogue/memory'(dialogue: Dialogue, test: DialogueTest): boolean | void
-  }
-}
-
-Database.extend('@koishijs/test-utils', {
-  async getDialoguesByTest(test: DialogueTest) {
-    const dialogues = this.$table('dialogue').filter((dialogue) => {
-      return !this.app.bail('dialogue/memory', dialogue, test)
-    }).map<Dialogue>(clone)
-    dialogues.forEach(d => defineProperty(d, '_backup', clone(d)))
-    return dialogues.filter((data) => {
-      if (!test.groups || test.partial) return true
-      return !(data.flag & Dialogue.Flag.complement) === test.reversed || !equal(test.groups, data.groups)
-    })
-  },
-
-  async updateDialogues(dialogues: Observed<Dialogue>[], argv: Dialogue.Argv) {
-    const data: Partial<Dialogue>[] = []
-    for (const dialogue of dialogues) {
-      if (!Object.keys(dialogue.$diff).length) {
-        argv.skipped.push(dialogue.id)
-      } else {
-        data.push({ id: dialogue.id, ...dialogue.$diff })
-        dialogue.$diff = {}
-        argv.updated.push(dialogue.id)
-        Dialogue.addHistory(dialogue._backup, '修改', argv, false)
-      }
-    }
-    await this.update('dialogue', data)
-  },
-
-  async getDialogueStats() {
-    const dialogues = this.$count('dialogue')
-    const questions = this.$count('dialogue', 'question')
-    return { questions, dialogues }
-  },
-})
-
-export function memory(ctx: Context) {
-  ctx.database.memory.$store.dialogue = []
-
-  // flag
-  ctx.on('dialogue/flag', (flag: string) => {
-    ctx.on('dialogue/memory', (data, test) => {
-      if (test[flag] !== undefined) {
-        return !(data.flag & Dialogue.Flag[flag]) === test[flag]
-      }
-    })
-  })
-
-  // internal
-  ctx.on('dialogue/memory', (data, { regexp, answer, question, original }) => {
-    if (regexp) {
-      if (answer && !new RegExp(answer, 'i').test(data.answer)) return true
-      if (original && !new RegExp(original, 'i').test(data.original)) return true
-      return
-    }
-
-    if (answer && answer !== data.answer) return true
-    if (regexp === false) {
-      if (question) return question !== data.question
-    } else if (original) {
-      if (data.flag & Dialogue.Flag.regexp) {
-        return !new RegExp(data.original, 'i').test(original)
-      } else {
-        return question !== data.question
-      }
-    }
-  })
-
-  // writer
-  ctx.on('dialogue/memory', (data, { writer }) => {
-    if (writer !== undefined && data.writer !== writer) return true
-  })
-
-  // time
-  ctx.on('dialogue/memory', (data, { matchTime, mismatchTime }) => {
-    if (matchTime !== undefined && getProduct(data, matchTime) < 0) return true
-    if (mismatchTime !== undefined && getProduct(data, mismatchTime) >= 0) return true
-  })
-
-  // successor
-  ctx.on('dialogue/memory', (data, { predecessors, stateful, noRecursive }) => {
-    if (noRecursive) return !!data.predecessors.length
-    if (!predecessors) return
-    const hasMatched = !!intersection(data.predecessors, predecessors).length
-    if (stateful) return hasMatched
-    return hasMatched || !data.predecessors.length
-  })
-
-  // context
-  ctx.on('dialogue/memory', (data, test) => {
-    if (!test.groups || !test.groups.length) return
-    if (!(data.flag & Dialogue.Flag.complement) === test.reversed) {
-      return test.groups.some(id => data.groups.includes(id))
-    } else {
-      return test.groups.some(id => !data.groups.includes(id))
-    }
-  })
-}
-
-function getProduct({ startTime, endTime }: Dialogue, time: number) {
-  return (startTime - time) * (time - endTime) * (endTime - startTime)
-}
 
 export default function (config: Dialogue.Config) {
   const app = new App({
@@ -135,8 +27,6 @@ export default function (config: Dialogue.Config) {
     successorTimeout: 0,
     ...config,
   })
-
-  app.plugin(memory)
 
   async function start() {
     await app.start()

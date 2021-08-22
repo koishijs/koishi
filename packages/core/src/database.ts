@@ -4,8 +4,16 @@ import { App } from './app'
 
 export type TableType = keyof Tables
 
-export type MaybeArray<K> = K | K[]
-export type Keys<O, T = any> = string & { [K in keyof O]: O[K] extends T ? K : never }[keyof O]
+// shared types
+type Primitive = string | number
+type Comparable = Primitive | Date
+type MaybeArray<K> = K | K[]
+type Get<T extends {}, K> = K extends keyof T ? T[K] : never
+type Extract<S, T, U = S> = S extends T ? U : never
+
+type Keys<O, T = any> = string & {
+  [K in keyof O]: O[K] extends T ? K : never
+}[keyof O]
 
 export interface Tables {
   user: User
@@ -143,16 +151,11 @@ export namespace Tables {
   })
 }
 
-export type Query<T extends TableType> = Query.Expr<Tables[T]> | Query.Shorthand
+export type Query<T extends TableType> = Query.Expr<Tables[T]> | Query.Shorthand<Primitive>
 
 export namespace Query {
-  export type IndexType = string | number
   export type Field<T extends TableType> = string & keyof Tables[T]
-  export type Index<T extends TableType> = Keys<Tables[T], IndexType>
-
-  type Extract<S, T, U = S> = S extends T ? U : never
-  type Primitive = string | number
-  type Comparable = Primitive | Date
+  export type Index<T extends TableType> = Keys<Tables[T], Primitive>
 
   export interface FieldExpr<T = any> {
     $in?: Extract<T, Primitive, T[]>
@@ -177,10 +180,11 @@ export namespace Query {
     $or?: Expr<T>[]
     $and?: Expr<T>[]
     $not?: Expr<T>
+    $expr?: Eval.Boolean<T>
   }
 
   export type Shorthand<T = any> =
-    | Extract<T, Comparable, T>
+    | Extract<T, Comparable>
     | Extract<T, Primitive, T[]>
     | Extract<T, string, RegExp>
 
@@ -189,7 +193,7 @@ export namespace Query {
     [K in keyof T]?: FieldQuery<T[K]>
   }
 
-  export function resolve<T extends TableType>(name: T, query: Query<T>): Expr<Tables[T]> {
+  export function resolve<T extends TableType>(name: T, query: Query<T> = {}): Expr<Tables[T]> {
     if (Array.isArray(query) || query instanceof RegExp || ['string', 'number'].includes(typeof query)) {
       const { primary } = Tables.config[name]
       if (Array.isArray(primary)) {
@@ -200,26 +204,74 @@ export namespace Query {
     return query as any
   }
 
-  export interface Options<T extends string> {
+  export interface ModifierExpr<K extends string> {
     limit?: number
     offset?: number
-    fields?: T[]
+    fields?: K[]
   }
 
-  export type Modifier<T extends string = any> = T[] | Options<T>
+  export type Modifier<T extends string> = T[] | ModifierExpr<T>
 
-  export function resolveModifier<T extends string>(modifier: Modifier<T>): Options<T> {
+  export function resolveModifier<K extends string>(modifier: Modifier<K>): ModifierExpr<K> {
     if (Array.isArray(modifier)) return { fields: modifier }
     return modifier || {}
   }
 
+  type Projection<T extends TableType> = Record<string, Eval.Aggregation<Tables[T]>>
+
+  type MapEval<T, P> = {
+    [K in keyof P]: Eval<T, P[K]>
+  }
+
   export interface Methods {
+    drop(table?: TableType): Promise<void>
     get<T extends TableType, K extends Field<T>>(table: T, query: Query<T>, modifier?: Modifier<K>): Promise<Pick<Tables[T], K>[]>
     set<T extends TableType>(table: T, query: Query<T>, updater?: Partial<Tables[T]>): Promise<void>
     remove<T extends TableType>(table: T, query: Query<T>): Promise<void>
     create<T extends TableType>(table: T, data: Partial<Tables[T]>): Promise<Tables[T]>
     upsert<T extends TableType>(table: T, data: Partial<Tables[T]>[], keys?: MaybeArray<Index<T>>): Promise<void>
-    drop(table?: TableType): Promise<void>
+    aggregate<T extends TableType, P extends Projection<T>>(table: T, fields: P, query?: Query<T>): Promise<MapEval<T, P>>
+  }
+}
+
+export type Eval<T, U> =
+  | U extends number ? number
+  : U extends boolean ? boolean
+  : U extends string ? Get<T, U>
+  : U extends Eval.NumericExpr ? number
+  : U extends Eval.BooleanExpr ? boolean
+  : U extends Eval.AggregationExpr ? number
+  : never
+
+export namespace Eval {
+  export type Any<T = any, A = never> = A | number | boolean | Keys<T> | NumericExpr<T, A> | BooleanExpr<T, A>
+  export type GeneralExpr = NumericExpr & BooleanExpr & AggregationExpr
+  export type Numeric<T = any, A = never> = A | number | Keys<T, number> | NumericExpr<T, A>
+  export type Boolean<T = any, A = never> = boolean | Keys<T, boolean> | BooleanExpr<T, A>
+  export type Aggregation<T = any> = Any<{}, AggregationExpr<T>>
+
+  export interface NumericExpr<T = any, A = never> {
+    $add?: Numeric<T, A>[]
+    $multiply?: Numeric<T, A>[]
+    $subtract?: [Numeric<T, A>, Numeric<T, A>]
+    $divide?: [Numeric<T, A>, Numeric<T, A>]
+  }
+
+  export interface BooleanExpr<T = any, A = never> {
+    $eq?: [Numeric<T, A>, Numeric<T, A>]
+    $ne?: [Numeric<T, A>, Numeric<T, A>]
+    $gt?: [Numeric<T, A>, Numeric<T, A>]
+    $gte?: [Numeric<T, A>, Numeric<T, A>]
+    $lt?: [Numeric<T, A>, Numeric<T, A>]
+    $lte?: [Numeric<T, A>, Numeric<T, A>]
+  }
+
+  export interface AggregationExpr<T = any> {
+    $sum?: Any<T>
+    $avg?: Any<T>
+    $max?: Any<T>
+    $min?: Any<T>
+    $count?: Any<T>
   }
 }
 
@@ -286,6 +338,8 @@ export namespace Channel {
 
 export interface Database extends Query.Methods {}
 
+type UserWithPlatform<T extends string, K extends string> = Pick<User, K & User.Field> & Record<T, string>
+
 export abstract class Database {
   abstract start(): void | Promise<void>
   abstract stop(): void | Promise<void>
@@ -295,11 +349,11 @@ export abstract class Database {
     app.before('disconnect', () => this.stop())
   }
 
-  getUser<K extends User.Field, T extends string>(type: T, id: string, modifier?: Query.Modifier<K>): Promise<Pick<User, K> & Record<T, string>>
-  getUser<K extends User.Field>(type: string, ids: string[], modifier?: Query.Modifier<K>): Promise<Pick<User, K>[]>
-  async getUser(type: User.Index, id: MaybeArray<string>, modifier?: Query.Modifier) {
+  getUser<T extends string, K extends T | User.Field>(type: T, id: string, modifier?: Query.Modifier<K>): Promise<UserWithPlatform<T, T | K>>
+  getUser<T extends string, K extends T | User.Field>(type: T, ids: string[], modifier?: Query.Modifier<K>): Promise<UserWithPlatform<T, K>[]>
+  async getUser(type: User.Index, id: MaybeArray<string>, modifier?: Query.Modifier<User.Field>) {
     const data = await this.get('user', { [type]: id }, modifier)
-    return Array.isArray(id) ? data : data[0] && { ...data[0], [type]: id }
+    return Array.isArray(id) ? data : data[0] && { ...data[0], [type]: id } as any
   }
 
   setUser(type: string, id: string, data: Partial<User>) {

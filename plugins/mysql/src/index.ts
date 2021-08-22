@@ -1,5 +1,5 @@
-import MysqlDatabase, { Config, TableType } from './database'
-import { Database, Context, Query, makeArray, difference } from 'koishi'
+import MysqlDatabase, { Config } from './database'
+import { Database, Context, Query, Eval, makeArray, difference } from 'koishi'
 import { OkPacket, escapeId, escape } from 'mysql'
 import * as Koishi from 'koishi'
 
@@ -44,16 +44,29 @@ type QueryOperators = {
 }
 
 const queryOperators: QueryOperators = {
-  $in: (key, value) => createMemberQuery(key, value, ''),
-  $nin: (key, value) => createMemberQuery(key, value, ' NOT'),
+  // comparison
   $eq: createEqualQuery,
   $ne: comparator('!='),
   $gt: comparator('>'),
   $gte: comparator('>='),
   $lt: comparator('<'),
   $lte: comparator('<='),
+
+  // membership
+  $in: (key, value) => createMemberQuery(key, value, ''),
+  $nin: (key, value) => createMemberQuery(key, value, ' NOT'),
+
+  // regexp
   $regex: createRegExpQuery,
   $regexFor: (key, value) => `${escape(value)} REGEXP ${key}`,
+
+  // bitwise
+  $bitsAllSet: (key, value) => `${key} & ${escape(value)} = ${escape(value)}`,
+  $bitsAllClear: (key, value) => `${key} & ${escape(value)} = 0`,
+  $bitsAnySet: (key, value) => `${key} & ${escape(value)} != 0`,
+  $bitsAnyClear: (key, value) => `${key} & ${escape(value)} != ${escape(value)}`,
+
+  // list
   $el: (key, value) => {
     if (Array.isArray(value)) {
       return `(${value.map(value => createElementQuery(key, value)).join(' || ')})`
@@ -67,56 +80,99 @@ const queryOperators: QueryOperators = {
     if (!value) return `!${key}`
     return `${key} && LENGTH(${key}) - LENGTH(REPLACE(${key}, ",", "")) = ${escape(value)} - 1`
   },
-  $bitsAllSet: (key, value) => `${key} & ${escape(value)} = ${escape(value)}`,
-  $bitsAllClear: (key, value) => `${key} & ${escape(value)} = 0`,
-  $bitsAnySet: (key, value) => `${key} & ${escape(value)} != 0`,
-  $bitsAnyClear: (key, value) => `${key} & ${escape(value)} != ${escape(value)}`,
 }
 
-export function createFilter<T extends TableType>(name: T, query: Query<T>) {
-  function parseQuery(query: Query.Expr) {
-    const conditions: string[] = []
-    for (const key in query) {
-      // logical expression
-      if (key === '$not') {
-        conditions.push(`!(${parseQuery(query.$not)})`)
-        continue
-      } else if (key === '$and') {
-        if (!query.$and.length) return '0'
-        conditions.push(...query.$and.map(parseQuery))
-        continue
-      } else if (key === '$or' && query.$or.length) {
-        conditions.push(`(${query.$or.map(parseQuery).join(' || ')})`)
-        continue
-      }
+type EvaluationOperators = {
+  [K in keyof Eval.GeneralExpr]?: (expr: Eval.GeneralExpr[K]) => string
+}
 
-      // query shorthand
-      const value = query[key]
-      const escKey = escapeId(key)
-      if (Array.isArray(value)) {
-        conditions.push(createMemberQuery(escKey, value))
-        continue
-      } else if (value instanceof RegExp) {
-        conditions.push(createRegExpQuery(escKey, value))
-        continue
-      } else if (typeof value === 'string' || typeof value === 'number' || value instanceof Date) {
-        conditions.push(createEqualQuery(escKey, value))
-        continue
-      }
+function binary(operator: string) {
+  return function ([left, right]: [Eval.Any, Eval.Any]) {
+    return `(${parseEval(left)} ${operator} ${parseEval(right)})`
+  }
+}
 
-      // query expression
-      for (const prop in value) {
-        if (prop in queryOperators) {
-          conditions.push(queryOperators[prop](escKey, value[prop]))
-        }
-      }
+const evalOperators: EvaluationOperators = {
+  // numeric
+  $add: (args) => `(${args.map(parseEval).join(' + ')})`,
+  $multiply: (args) => `(${args.map(parseEval).join(' * ')})`,
+  $subtract: binary('-'),
+  $divide: binary('/'),
+
+  // boolean
+  $eq: binary('='),
+  $ne: binary('!='),
+  $gt: binary('>'),
+  $gte: binary('>='),
+  $lt: binary('<'),
+  $lte: binary('<='),
+
+  // aggregation
+  $sum: (expr) => `ifnull(sum(${parseEval(expr)}), 0)`,
+  $avg: (expr) => `avg(${parseEval(expr)})`,
+  $min: (expr) => `$min(${parseEval(expr)})`,
+  $max: (expr) => `max(${parseEval(expr)})`,
+  $count: (expr) => `count(distinct ${parseEval(expr)})`,
+}
+
+function parseQuery(query: Query.Expr) {
+  const conditions: string[] = []
+  for (const key in query) {
+    // logical expression
+    if (key === '$not') {
+      conditions.push(`!(${parseQuery(query.$not)})`)
+      continue
+    } else if (key === '$and') {
+      if (!query.$and.length) return '0'
+      conditions.push(...query.$and.map(parseQuery))
+      continue
+    } else if (key === '$or' && query.$or.length) {
+      conditions.push(`(${query.$or.map(parseQuery).join(' || ')})`)
+      continue
+    } else if (key === '$expr') {
+      conditions.push(parseEval(query.$expr))
+      continue
     }
 
-    if (!conditions.length) return '1'
-    if (conditions.includes('0')) return '0'
-    return conditions.join(' && ')
+    // query shorthand
+    const value = query[key]
+    const escKey = escapeId(key)
+    if (Array.isArray(value)) {
+      conditions.push(createMemberQuery(escKey, value))
+      continue
+    } else if (value instanceof RegExp) {
+      conditions.push(createRegExpQuery(escKey, value))
+      continue
+    } else if (typeof value === 'string' || typeof value === 'number' || value instanceof Date) {
+      conditions.push(createEqualQuery(escKey, value))
+      continue
+    }
+
+    // query expression
+    for (const prop in value) {
+      if (prop in queryOperators) {
+        conditions.push(queryOperators[prop](escKey, value[prop]))
+      }
+    }
   }
-  return parseQuery(Query.resolve(name, query))
+
+  if (!conditions.length) return '1'
+  if (conditions.includes('0')) return '0'
+  return conditions.join(' && ')
+}
+
+function parseEval(expr: Eval.Any | Eval.Aggregation): string {
+  if (typeof expr === 'string') {
+    return escapeId(expr)
+  } else if (typeof expr === 'number' || typeof expr === 'boolean') {
+    return escape(expr)
+  }
+
+  for (const key in expr) {
+    if (key in evalOperators) {
+      return evalOperators[key](expr[key])
+    }
+  }
 }
 
 Database.extend(MysqlDatabase, {
@@ -130,7 +186,7 @@ Database.extend(MysqlDatabase, {
   },
 
   async get(name, query, modifier) {
-    const filter = createFilter(name, query)
+    const filter = parseQuery(Query.resolve(name, query))
     if (filter === '0') return []
     const { fields, limit, offset } = Query.resolveModifier(modifier)
     const keys = this.joinKeys(this.inferFields(name, fields))
@@ -141,7 +197,7 @@ Database.extend(MysqlDatabase, {
   },
 
   async set(name, query, data) {
-    const filter = createFilter(name, query)
+    const filter = parseQuery(Query.resolve(name, query))
     if (filter === '0') return
     const keys = Object.keys(data)
     const update = keys.map((key) => {
@@ -152,7 +208,7 @@ Database.extend(MysqlDatabase, {
   },
 
   async remove(name, query) {
-    const filter = createFilter(name, query)
+    const filter = parseQuery(Query.resolve(name, query))
     if (filter === '0') return
     await this.query('DELETE FROM ?? WHERE ' + filter, [name])
   },
@@ -182,6 +238,16 @@ Database.extend(MysqlDatabase, {
       ON DUPLICATE KEY UPDATE ${update}`,
       [].concat(...data.map(data => this.formatValues(name, data, fields))),
     )
+  },
+
+  async aggregate(name, fields, query) {
+    const keys = Object.keys(fields)
+    if (!keys.length) return {}
+
+    const filter = parseQuery(Query.resolve(name, query))
+    const exprs = keys.map(key => `${parseEval(fields[key])} AS ${escapeId(key)}`).join(', ')
+    const [data] = await this.query(`SELECT ${exprs} FROM ${name} WHERE ${filter}`)
+    return data
   },
 })
 

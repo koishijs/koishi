@@ -5,7 +5,7 @@ import * as mineflayer from 'mineflayer'
 export * from './bot'
 
 declare module 'koishi' {
-  interface BotOptions extends mineflayer.BotOptions {}
+  interface BotOptions extends Partial<mineflayer.BotOptions> {}
 
   namespace Bot {
     interface Platforms {

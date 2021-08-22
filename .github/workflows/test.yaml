@@ -129,10 +129,6 @@ jobs:
           MYSQL_PASSWORD: koishi@114514
           MYSQL_ROOT_PASSWORD: password
 
-    env:
-      GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
-      NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-
     steps:
       - name: Check out
         uses: actions/checkout@v1
@@ -170,8 +166,12 @@ jobs:
     if: ${{ github.ref == 'refs/heads/master' }}
     runs-on: ubuntu-latest
     needs:
+      - prepare
       - build
       - unit-test
+
+    env:
+      GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
 
     steps:
       - name: Check out

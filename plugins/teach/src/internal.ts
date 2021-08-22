@@ -1,4 +1,4 @@
-import { Context, template, defineProperty, segment } from 'koishi'
+import { Context, template, defineProperty, segment, Query } from 'koishi'
 import { Dialogue } from './utils'
 import { create, update } from './update'
 import { formatQuestionAnswers } from './search'
@@ -152,6 +152,13 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
         data.flag |= +options[flag] * Dialogue.Flag[flag]
       }
     })
+
+    ctx.on('dialogue/test', (test, query) => {
+      if (test[flag] === undefined) return
+      query.$and.push({
+        flag: { [test[flag] ? '$bitsAllSet' : '$bitsAllClear']: Dialogue.Flag[flag] },
+      })
+    })
   })
 
   ctx.before('command', ({ command, session }) => {
@@ -167,6 +174,25 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
     } catch (error) {
       ctx.logger('teach').warn(error.message)
       return '上传图片时发生错误。'
+    }
+  })
+
+  ctx.on('dialogue/test', ({ regexp, answer, question, original }, query) => {
+    if (regexp) {
+      if (answer) query.answer = { $regex: new RegExp(answer, 'i') }
+      if (original) query.original = { $regex: new RegExp(original, 'i') }
+      return
+    }
+    if (answer) query.answer = answer
+    if (regexp === false) {
+      if (question) query.question = question
+    } else if (original) {
+      const $or: Query.Expr<Dialogue>[] = [{
+        flag: { $bitsAllSet: Dialogue.Flag.regexp },
+        original: { $regexFor: original },
+      }]
+      if (question) $or.push({ flag: { $bitsAllClear: Dialogue.Flag.regexp }, question })
+      query.$and.push({ $or })
     }
   })
 }

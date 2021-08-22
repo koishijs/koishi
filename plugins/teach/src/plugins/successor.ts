@@ -1,4 +1,4 @@
-import { Context, contain, union, difference } from 'koishi'
+import { Context, contain, union, difference, Query } from 'koishi'
 import { equal, split, prepareTargets, RE_DIALOGUES, isPositiveInteger, Dialogue } from '../utils'
 import { formatQuestionAnswers } from '../search'
 
@@ -113,7 +113,7 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
     argv.unknown = difference(successors, newTargets)
 
     if (succOverwrite) {
-      for (const dialogue of await ctx.database.getDialoguesByTest({ predecessors })) {
+      for (const dialogue of await Dialogue.get(ctx, { predecessors })) {
         if (!newTargets.includes(dialogue.id)) {
           newTargets.push(dialogue.id)
           successorDialogues.push(dialogue)
@@ -131,7 +131,7 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
       }
     }
 
-    await ctx.database.updateDialogues(targets, argv)
+    await Dialogue.update(targets, argv)
   })
 
   ctx.on('dialogue/after-modify', async ({ options: { createSuccessor }, dialogues, session }) => {
@@ -199,7 +199,7 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
     }).map(d => d.id)
     if (!predecessors.length) return
 
-    const successors = (await ctx.database.getDialoguesByTest({
+    const successors = (await Dialogue.get(ctx, {
       ...test,
       question: undefined,
       answer: undefined,
@@ -261,5 +261,17 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
         delete predMap[dialogue.id]
       }
     }, dialogue.successorTimeout || successorTimeout)
+  })
+
+  ctx.on('dialogue/test', ({ predecessors, stateful, noRecursive }, query) => {
+    if (noRecursive) {
+      query.predecessors = { $size: 0 }
+    } else if (predecessors !== undefined) {
+      const $el = predecessors.map(i => i.toString())
+      const $or: Query.Expr<Dialogue>[] = []
+      if (stateful) $or.push({ predecessors: { $size: 0 } })
+      if ($el.length) $or.push({ predecessors: { $el } })
+      if ($or.length) query.$and.push({ $or })
+    }
   })
 }
