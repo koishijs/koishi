@@ -46,22 +46,58 @@ type QueryOperators = {
 }
 
 const queryOperators: QueryOperators = {
-  $regex: (query, data) => query.test(data),
-  $regexFor: (query, data) => new RegExp(data, 'i').test(query),
-  $in: (query, data) => query.includes(data),
-  $nin: (query, data) => !query.includes(data),
-  $ne: (query, data) => data.valueOf() !== query.valueOf(),
+  // comparison
   $eq: (query, data) => data.valueOf() === query.valueOf(),
+  $ne: (query, data) => data.valueOf() !== query.valueOf(),
   $gt: (query, data) => data.valueOf() > query.valueOf(),
   $gte: (query, data) => data.valueOf() >= query.valueOf(),
   $lt: (query, data) => data.valueOf() < query.valueOf(),
   $lte: (query, data) => data.valueOf() <= query.valueOf(),
-  $el: (query, data) => data.some(item => executeFieldQuery(query, item)),
-  $size: (query, data) => data.length === query,
+
+  // membership
+  $in: (query, data) => query.includes(data),
+  $nin: (query, data) => !query.includes(data),
+
+  // regexp
+  $regex: (query, data) => query.test(data),
+  $regexFor: (query, data) => new RegExp(data, 'i').test(query),
+
+  // bitwise
   $bitsAllSet: (query, data) => (query & data) === query,
   $bitsAllClear: (query, data) => (query & data) === 0,
   $bitsAnySet: (query, data) => (query & data) !== 0,
   $bitsAnyClear: (query, data) => (query & data) !== query,
+
+  // list
+  $el: (query, data) => data.some(item => executeFieldQuery(query, item)),
+  $size: (query, data) => data.length === query,
+}
+
+type EvalOperators = {
+  [K in keyof Eval.GeneralExpr]?: (args: Eval.GeneralExpr[K], data: any) => any
+}
+
+const evalOperators: EvalOperators = {
+  // numeric
+  $add: (args, data) => args.reduce<number>((prev, curr) => prev + executeEval(curr, data), 0),
+  $multiply: (args, data) => args.reduce<number>((prev, curr) => prev * executeEval(curr, data), 0),
+  $subtract: ([left, right], data) => executeEval(left, data) - executeEval(right, data),
+  $divide: ([left, right], data) => executeEval(left, data) - executeEval(right, data),
+
+  // boolean
+  $eq: ([left, right], data) => executeEval(left, data).valueOf() === executeEval(right, data).valueOf(),
+  $ne: ([left, right], data) => executeEval(left, data).valueOf() !== executeEval(right, data).valueOf(),
+  $gt: ([left, right], data) => executeEval(left, data).valueOf() > executeEval(right, data).valueOf(),
+  $gte: ([left, right], data) => executeEval(left, data).valueOf() >= executeEval(right, data).valueOf(),
+  $lt: ([left, right], data) => executeEval(left, data).valueOf() < executeEval(right, data).valueOf(),
+  $lte: ([left, right], data) => executeEval(left, data).valueOf() <= executeEval(right, data).valueOf(),
+
+  // aggregation
+  $sum: (expr, table: any[]) => table.reduce((prev, curr) => prev + executeEval(expr, curr), 0),
+  $avg: (expr, table: any[]) => table.reduce((prev, curr) => prev + executeEval(expr, curr), 0) / table.length,
+  $min: (expr, table: any[]) => Math.min(...table.map(data => executeEval(expr, data))),
+  $max: (expr, table: any[]) => Math.max(...table.map(data => executeEval(expr, data))),
+  $count: (expr, table: any[]) => new Set(table.map(data => executeEval(expr, data))).size,
 }
 
 function executeFieldQuery(query: Query.FieldQuery, data: any) {
@@ -94,6 +130,8 @@ function executeQuery(query: Query.Expr, data: any): boolean {
       return (value as Query.Expr[]).reduce((prev, query) => prev || executeQuery(query, data), false)
     } else if (key === '$not') {
       return !executeQuery(value, data)
+    } else if (key === '$expr') {
+      return executeEval(value, data)
     }
 
     // execute field query
@@ -106,43 +144,17 @@ function executeQuery(query: Query.Expr, data: any): boolean {
   })
 }
 
-function executeNumericExpr<U>(expr: Eval.NumericExpr<U>, data: any, execute: (expr: U, data: any) => number = executeNumeric) {
-  if ('$add' in expr) {
-    return expr.$add.reduce<number>((prev, curr) => prev + execute(curr, data), 0)
-  } else if ('$multiply' in expr) {
-    return expr.$multiply.reduce<number>((prev, curr) => prev * execute(curr, data), 1)
-  } else if ('$subtract' in expr) {
-    return execute(expr.$subtract[0], data) - execute(expr.$subtract[1], data)
-  } else if ('$divide' in expr) {
-    return execute(expr.$divide[0], data) / execute(expr.$divide[1], data)
-  }
-}
-
-function executeNumeric(expr: Eval.Numeric, data: any): number {
+function executeEval(expr: Eval.Any | Eval.Aggregation, data: any) {
   if (typeof expr === 'string') {
     return data[expr]
-  } else if (typeof expr === 'number') {
+  } else if (typeof expr === 'number' || typeof expr === 'boolean') {
     return expr
-  } else {
-    return executeNumericExpr(expr, data)
   }
-}
 
-function executeAggregation(expr: Eval.Aggregation, table: any[]): number {
-  if (typeof expr === 'number') {
-    return expr
-  } else if ('$sum' in expr) {
-    return table.reduce((prev, curr) => prev + executeNumeric(expr.$sum, curr), 0)
-  } else if ('$avg' in expr) {
-    return table.reduce((prev, curr) => prev + executeNumeric(expr.$avg, curr), 0) / table.length
-  } else if ('$min' in expr) {
-    return Math.min(...table.map(data => executeNumeric(expr.$min, data)))
-  } else if ('$max' in expr) {
-    return Math.max(...table.map(data => executeNumeric(expr.$max, data)))
-  } else if ('$count' in expr) {
-    return new Set(table.map(data => executeNumeric(expr.$count, data))).size
-  } else {
-    return executeNumericExpr(expr as never, table, executeAggregation)
+  for (const key in expr) {
+    if (key in evalOperators) {
+      return evalOperators[key](expr[key], data)
+    }
   }
 }
 
@@ -192,7 +204,7 @@ Database.extend(MemoryDatabase, {
   async aggregate(name, fields, query) {
     const expr = Query.resolve(name, query)
     const table = this.$table(name).filter(row => executeQuery(expr, row))
-    return Object.fromEntries(Object.entries(fields).map(([key, expr]) => [key, executeAggregation(expr, table)]))
+    return Object.fromEntries(Object.entries(fields).map(([key, expr]) => [key, executeEval(expr, table)]))
   },
 
   async getUser(type, id, fields) {

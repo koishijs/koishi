@@ -45,16 +45,29 @@ type QueryOperators = {
 }
 
 const queryOperators: QueryOperators = {
-  $in: (key, value) => createMemberQuery(key, value, ''),
-  $nin: (key, value) => createMemberQuery(key, value, ' NOT'),
+  // comparison
   $eq: createEqualQuery,
   $ne: comparator('!='),
   $gt: comparator('>'),
   $gte: comparator('>='),
   $lt: comparator('<'),
   $lte: comparator('<='),
+
+  // membership
+  $in: (key, value) => createMemberQuery(key, value, ''),
+  $nin: (key, value) => createMemberQuery(key, value, ' NOT'),
+
+  // regexp
   $regex: createRegExpQuery,
   $regexFor: (key, value) => `${escape(value)} REGEXP ${key}`,
+
+  // bitwise
+  $bitsAllSet: (key, value) => `${key} & ${escape(value)} = ${escape(value)}`,
+  $bitsAllClear: (key, value) => `${key} & ${escape(value)} = 0`,
+  $bitsAnySet: (key, value) => `${key} & ${escape(value)} != 0`,
+  $bitsAnyClear: (key, value) => `${key} & ${escape(value)} != ${escape(value)}`,
+
+  // list
   $el: (key, value) => {
     if (Array.isArray(value)) {
       return `(${value.map(value => createElementQuery(key, value)).join(' || ')})`
@@ -68,10 +81,39 @@ const queryOperators: QueryOperators = {
     if (!value) return `!${key}`
     return `${key} && LENGTH(${key}) - LENGTH(REPLACE(${key}, ",", "")) = ${escape(value)} - 1`
   },
-  $bitsAllSet: (key, value) => `${key} & ${escape(value)} = ${escape(value)}`,
-  $bitsAllClear: (key, value) => `${key} & ${escape(value)} = 0`,
-  $bitsAnySet: (key, value) => `${key} & ${escape(value)} != 0`,
-  $bitsAnyClear: (key, value) => `${key} & ${escape(value)} != ${escape(value)}`,
+}
+
+type EvaluationOperators = {
+  [K in keyof Eval.GeneralExpr]?: (expr: Eval.GeneralExpr[K]) => string
+}
+
+function binary(operator: string) {
+  return function ([left, right]: [Eval.Any, Eval.Any]) {
+    return `(${parseEval(left)} ${operator} ${parseEval(right)})`
+  }
+}
+
+const evalOperators: EvaluationOperators = {
+  // numeric
+  $add: (args) => `(${args.map(parseEval).join(' + ')})`,
+  $multiply: (args) => `(${args.map(parseEval).join(' * ')})`,
+  $subtract: binary('-'),
+  $divide: binary('/'),
+
+  // boolean
+  $eq: binary('='),
+  $ne: binary('!='),
+  $gt: binary('>'),
+  $gte: binary('>='),
+  $lt: binary('<'),
+  $lte: binary('<='),
+
+  // aggregation
+  $sum: (expr) => `ifnull(sum(${parseEval(expr)}), 0)`,
+  $avg: (expr) => `avg(${parseEval(expr)})`,
+  $min: (expr) => `$min(${parseEval(expr)})`,
+  $max: (expr) => `max(${parseEval(expr)})`,
+  $count: (expr) => `count(distinct ${parseEval(expr)})`,
 }
 
 function parseQuery(query: Query.Expr) {
@@ -87,6 +129,9 @@ function parseQuery(query: Query.Expr) {
       continue
     } else if (key === '$or' && query.$or.length) {
       conditions.push(`(${query.$or.map(parseQuery).join(' || ')})`)
+      continue
+    } else if (key === '$expr') {
+      conditions.push(parseEval(query.$expr))
       continue
     }
 
@@ -117,29 +162,17 @@ function parseQuery(query: Query.Expr) {
   return conditions.join(' && ')
 }
 
-function parseNumeric(expr: Eval.Aggregation | Eval.Numeric) {
+function parseEval(expr: Eval.Any | Eval.Aggregation): string {
   if (typeof expr === 'string') {
     return escapeId(expr)
-  } else if (typeof expr === 'number') {
+  } else if (typeof expr === 'number' || typeof expr === 'boolean') {
     return escape(expr)
-  } else if ('$sum' in expr) {
-    return `ifnull(sum(${parseNumeric(expr.$sum)}), 0)`
-  } else if ('$avg' in expr) {
-    return `avg(${parseNumeric(expr.$avg)})`
-  } else if ('$min' in expr) {
-    return `min(${parseNumeric(expr.$min)})`
-  } else if ('$max' in expr) {
-    return `max(${parseNumeric(expr.$max)})`
-  } else if ('$count' in expr) {
-    return `count(${parseNumeric(expr.$count)})`
-  } else if ('$add' in expr) {
-    return expr.$add.map(parseNumeric).join(' + ')
-  } else if ('$multiply' in expr) {
-    return expr.$multiply.map(parseNumeric).join(' * ')
-  } else if ('$subtract' in expr) {
-    return expr.$subtract.map(parseNumeric).join(' - ')
-  } else if ('$divide' in expr) {
-    return expr.$divide.map(parseNumeric).join(' / ')
+  }
+
+  for (const key in expr) {
+    if (key in evalOperators) {
+      return evalOperators[key](expr[key])
+    }
   }
 }
 
@@ -202,7 +235,7 @@ Database.extend(MysqlDatabase, {
     if (!keys.length) return {}
 
     const filter = parseQuery(Query.resolve(name, query))
-    const exprs = keys.map(key => `${parseNumeric(fields[key])} AS ${escapeId(key)}`).join(', ')
+    const exprs = keys.map(key => `${parseEval(fields[key])} AS ${escapeId(key)}`).join(', ')
     const [data] = await this.query(`SELECT ${exprs} FROM ${name} WHERE ${filter}`)
     return data
   },

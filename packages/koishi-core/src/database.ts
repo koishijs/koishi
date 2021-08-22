@@ -153,12 +153,11 @@ export namespace Tables {
   })
 }
 
-export type Query<T extends TableType> = Query.Expr<Tables[T]> | Query.Shorthand
+export type Query<T extends TableType> = Query.Expr<Tables[T]> | Query.Shorthand<Primitive>
 
 export namespace Query {
-  export type IndexType = string | number
   export type Field<T extends TableType> = string & keyof Tables[T]
-  export type Index<T extends TableType> = Keys<Tables[T], IndexType>
+  export type Index<T extends TableType> = Keys<Tables[T], Primitive>
 
   export interface FieldExpr<T = any> {
     $in?: Extract<T, Primitive, T[]>
@@ -177,17 +176,17 @@ export namespace Query {
     $bitsAllSet?: Extract<T, number>
     $bitsAnyClear?: Extract<T, number>
     $bitsAnySet?: Extract<T, number>
-    $expr?: Eval.Boolean<T>
   }
 
   export interface LogicalExpr<T = any> {
     $or?: Expr<T>[]
     $and?: Expr<T>[]
     $not?: Expr<T>
+    $expr?: Eval.Boolean<T>
   }
 
   export type Shorthand<T = any> =
-    | Extract<T, Comparable, T>
+    | Extract<T, Comparable>
     | Extract<T, Primitive, T[]>
     | Extract<T, string, RegExp>
 
@@ -243,7 +242,8 @@ export type Eval<T, U> =
   : never
 
 export namespace Eval {
-  export type Any<T, A = never> = A | number | boolean | Keys<T> | NumericExpr<T, A> | BooleanExpr<T, A>
+  export type Any<T = any, A = never> = A | number | boolean | Keys<T> | NumericExpr<T, A> | BooleanExpr<T, A>
+  export type GeneralExpr = NumericExpr & BooleanExpr & AggregationExpr
   export type Numeric<T = any, A = never> = A | number | Keys<T, number> | NumericExpr<T, A>
   export type Boolean<T = any, A = never> = boolean | Keys<T, boolean> | BooleanExpr<T, A>
   export type Aggregation<T = any> = Any<{}, AggregationExpr<T>>
@@ -265,11 +265,11 @@ export namespace Eval {
   }
 
   export interface AggregationExpr<T = any> {
-    $sum?: Numeric<T>
-    $avg?: Numeric<T>
-    $max?: Numeric<T>
-    $min?: Numeric<T>
-    $count?: Numeric<T>
+    $sum?: Any<T>
+    $avg?: Any<T>
+    $max?: Any<T>
+    $min?: Any<T>
+    $count?: Any<T>
   }
 }
 
