@@ -42,7 +42,7 @@ export default function apply(ctx: Context) {
   })
 
   ctx.on('dialogue/status', async () => {
-    const { questions, dialogues } = await ctx.database.getDialogueStats()
+    const { questions, dialogues } = await Dialogue.getStats(ctx)
     return `共收录了 ${questions} 个问题和 ${dialogues} 个回答。`
   })
 

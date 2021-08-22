@@ -223,7 +223,7 @@ export function apply(ctx: Context, config: Config = {}) {
       stats.upload()
     })
 
-    meta.extend(() => ctx.database.getDialogueStats())
+    meta.extend(() => Dialogue.getStats(ctx))
 
     stats.extend(async (payload, data) => {
       const dialogueMap = stats.average(data.daily.map(data => data.dialogue))

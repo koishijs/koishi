@@ -39,18 +39,6 @@ Database.extend('koishi-plugin-mongo', {
     }
     await this.update('dialogue', data)
   },
-
-  async getDialogueStats() {
-    const [data, dialogues] = await Promise.all([
-      this.db.collection('dialogue').aggregate([
-        { $group: { _id: null, questions: { $addToSet: '$question' } } },
-        { $project: { questions: { $size: '$questions' } } },
-      ]).toArray(),
-      this.db.collection('dialogue').countDocuments(),
-    ])
-    const { questions } = data[0]
-    return { questions, dialogues }
-  },
 })
 
 export default function apply(ctx: Context) {

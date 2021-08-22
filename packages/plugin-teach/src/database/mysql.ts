@@ -43,14 +43,6 @@ Database.extend('koishi-plugin-mysql', {
     }
     await this.update('dialogue', data)
   },
-
-  async getDialogueStats() {
-    const [{
-      'COUNT(DISTINCT `question`)': questions,
-      'COUNT(*)': dialogues,
-    }] = await this.query<any>('SELECT COUNT(DISTINCT `question`), COUNT(*) FROM `dialogue`')
-    return { questions, dialogues }
-  },
 })
 
 export default function apply(ctx: Context) {

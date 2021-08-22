@@ -35,12 +35,6 @@ Database.extend('koishi-test-utils', {
     }
     await this.update('dialogue', data)
   },
-
-  async getDialogueStats() {
-    const dialogues = this.$count('dialogue')
-    const questions = this.$count('dialogue', 'question')
-    return { questions, dialogues }
-  },
 })
 
 export function memory(ctx: Context) {

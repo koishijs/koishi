@@ -19,7 +19,6 @@ declare module 'koishi-core' {
   interface Database {
     getDialoguesByTest(test: DialogueTest): Promise<Dialogue[]>
     updateDialogues(dialogues: Observed<Dialogue>[], argv: Dialogue.Argv): Promise<void>
-    getDialogueStats(): Promise<Dialogue.Stats>
   }
 }
 
@@ -108,6 +107,13 @@ export namespace Dialogue {
     substitute = 8,
     /** 补集：上下文匹配时取补集 */
     complement = 16,
+  }
+
+  export async function getStats(ctx: Context): Promise<Stats> {
+    return ctx.database.aggregate('dialogue', {
+      dialogues: { $count: 'id' },
+      questions: { $count: 'question' },
+    })
   }
 
   export async function get<K extends Dialogue.Field>(ctx: Context, ids: number[], fields?: K[]) {
