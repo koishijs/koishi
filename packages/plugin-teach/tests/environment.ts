@@ -38,14 +38,6 @@ Database.extend('koishi-test-utils', {
 })
 
 export function memory(ctx: Context) {
-  ctx.database.memory.$store.dialogue = []
-
-  // time
-  ctx.on('dialogue/memory', (data, { matchTime, mismatchTime }) => {
-    if (matchTime !== undefined && getProduct(data, matchTime) < 0) return true
-    if (mismatchTime !== undefined && getProduct(data, mismatchTime) >= 0) return true
-  })
-
   // context
   ctx.on('dialogue/memory', (data, test) => {
     if (!test.groups || !test.groups.length) return
@@ -55,10 +47,6 @@ export function memory(ctx: Context) {
       return test.groups.some(id => !data.groups.includes(id))
     }
   })
-}
-
-function getProduct({ startTime, endTime }: Dialogue, time: number) {
-  return (startTime - time) * (time - endTime) * (endTime - startTime)
 }
 
 export default function (config: Dialogue.Config) {

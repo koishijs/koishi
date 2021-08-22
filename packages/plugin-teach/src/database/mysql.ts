@@ -53,17 +53,4 @@ export default function apply(ctx: Context) {
       !(\`flag\` & ${Dialogue.Flag.complement}) = ${test.reversed} && ${test.groups.map(id => `!FIND_IN_SET("${id}", \`groups\`)`).join(' && ')}
     )`)
   })
-
-  function getProduct(time: number) {
-    return `(\`startTime\`-${time})*(${time}-\`endTime\`)*(\`endTime\`-\`startTime\`)`
-  }
-
-  ctx.on('dialogue/mysql', (test, conditionals) => {
-    if (test.matchTime !== undefined) {
-      conditionals.push(getProduct(test.matchTime) + '>=0')
-    }
-    if (test.mismatchTime !== undefined) {
-      conditionals.push(getProduct(test.matchTime) + '<0')
-    }
-  })
 }
