@@ -28,7 +28,7 @@ export class Sender {
     }
   }
 
-  async sendEmbed(fileBuffer: Buffer, payload_json: Record<string, any> = {}, filename) {
+  async sendEmbed(fileBuffer: Buffer, payload_json: Record<string, any> = {}, filename: string) {
     const fd = new FormData()
     const type = await FileType.fromBuffer(fileBuffer)
     filename ||= 'file.' + type.ext
@@ -78,7 +78,9 @@ export class Sender {
     }
 
     const mode = data.mode as HandleExternalAsset || discord.handleExternalAsset
-    if (mode === 'download' || discord.handleMixedContent === 'attach' && addition.content) {
+    if (type === "file") {
+      return sendDownload()
+    } else if (mode === 'download' || discord.handleMixedContent === 'attach' && addition.content) {
       return sendDownload()
     } else if (mode === 'direct') {
       return sendDirect()
@@ -140,9 +142,9 @@ export class Sender {
           embeds: [{ ...data }],
         })
       } else if (type === 'record'){
-        await this.sendAsset('file', {...data, mode: "download"}, {
+        await this.sendAsset('file', data, {
           ...addition,
-          content: textBuffer.trim()
+          content: textBuffer.trim(),
         })
         textBuffer = ''
       }
