@@ -36,11 +36,11 @@ app.command('show-context')
   })
 
 before(async () => {
-  await app.database.initUser('123', 4)
-  await app.database.initUser('456', 3)
-  await app.database.initUser('789', 5)
-  await app.database.initChannel('456')
-  await app.database.initChannel('654')
+  await app.initUser('123', 4)
+  await app.initUser('456', 3)
+  await app.initUser('789', 5)
+  await app.initChannel('456')
+  await app.initChannel('654')
   await app.database.setChannel('mock', '654', { flag: Channel.Flag.silent })
 })
 

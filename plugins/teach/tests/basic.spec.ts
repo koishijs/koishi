@@ -13,9 +13,9 @@ describe('Teach Plugin - Basic Support', () => {
 
   before(async () => {
     await app.start()
-    await app.database.initUser('123', 3)
-    await app.database.initUser('321', 2)
-    await app.database.initChannel('456')
+    await app.initUser('123', 3)
+    await app.initUser('321', 2)
+    await app.initChannel('456')
   })
 
   it('create', async () => {

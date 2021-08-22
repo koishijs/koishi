@@ -117,7 +117,7 @@ export namespace Tables {
       ...extension,
       unique: [...table.unique || [], ...extension.unique || []],
       foreign: { ...table.foreign, ...extension.foreign },
-      fields: Field.extend(table.fields, fields),
+      fields: Field.extend(table.fields || {}, fields),
     }
   }
 

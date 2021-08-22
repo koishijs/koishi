@@ -48,14 +48,8 @@
     "simple-git": "^2.42.0"
   },
   "devDependencies": {
-<<<<<<< HEAD:plugins/eval/package.json
     "@types/babel__core": "^7.1.14",
     "@types/js-yaml": "^4.0.1",
     "@koishijs/test-utils": "^7.0.0-alpha.0"
-=======
-    "@types/babel__core": "^7.1.15",
-    "@types/js-yaml": "^4.0.2",
-    "koishi-test-utils": "^7.0.0"
->>>>>>> develop:packages/plugin-eval/package.json
   }
 }

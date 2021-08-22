@@ -27,8 +27,8 @@ start.mockReturnValue(Promise.resolve())
 
 before(async () => {
   app.database.memory.$store.github = []
-  await app.database.initUser('123', 3)
-  await app.database.initUser('456', 3)
+  await app.initUser('123', 3)
+  await app.initUser('456', 3)
   await app.database.createChannel('mock', '999', {
     assignee: app.bots[0].selfId,
     githubWebhooks: { 'koishijs/koishi': {} },

@@ -1,5 +1,5 @@
 import MongoDatabase, { Config } from './database'
-import { Tables, Database, Context, Random, omit, TableType, Query, pick, makeArray } from 'koishi'
+import { Tables, Database, Context, Random, omit, TableType, Query, pick, makeArray, Eval } from 'koishi'
 import { QuerySelector } from 'mongodb'
 
 export * from './database'
@@ -48,29 +48,49 @@ function transformFieldQuery(query: Query.FieldQuery, key: string) {
   return result
 }
 
-function createFilter<T extends TableType>(name: T, _query: Query<T>) {
-  function transformQuery(query: Query.Expr) {
-    const filter = {}
-    for (const key in query) {
-      const value = query[key]
-      if (key === '$and' || key === '$or') {
-        filter[key] = value.map(transformQuery)
-      } else if (key === '$not') {
-        filter[key] = transformQuery(value)
-      } else {
-        filter[key] = transformFieldQuery(value, key)
-      }
+function transformQuery(query: Query.Expr) {
+  const filter = {}
+  for (const key in query) {
+    const value = query[key]
+    if (key === '$and' || key === '$or') {
+      filter[key] = value.map(transformQuery)
+    } else if (key === '$not') {
+      filter[key] = transformQuery(value)
+    } else if (key === '$expr') {
+      filter[key] = transformEval(value)
+    } else {
+      filter[key] = transformFieldQuery(value, key)
     }
+  }
+  return filter
+}
 
-    // https://stackoverflow.com/questions/25270396/mongodb-how-to-invert-query-with-not
-    if (filter['$not']) {
-      filter['$nor'] = [filter['$not']]
-      delete filter['$not']
-    }
-    return filter
+function createFilter<T extends TableType>(name: T, _query: Query<T>) {
+  const filter = transformQuery(Query.resolve(name, _query))
+
+  // https://stackoverflow.com/questions/25270396/mongodb-how-to-invert-query-with-not
+  if (filter['$not']) {
+    filter['$nor'] = [filter['$not']]
+    delete filter['$not']
   }
 
-  return transformQuery(Query.resolve(name, _query))
+  return filter
+}
+
+function transformEval(expr: Eval.Numeric | Eval.Aggregation) {
+  if (typeof expr === 'string') {
+    return '$' + expr
+  } else if (typeof expr === 'number' || typeof expr === 'boolean') {
+    return expr
+  }
+
+  return Object.fromEntries(Object.entries(expr).map(([key, value]) => {
+    if (Array.isArray(value)) {
+      return [key, value.map(transformEval)]
+    } else {
+      return [key, transformEval(value)]
+    }
+  }))
 }
 
 function getFallbackType({ type }: Tables.Field) {
@@ -133,6 +153,17 @@ Database.extend(MongoDatabase, {
       bulk.find(pick(item, keys)).updateOne({ $set: omit(item, keys) })
     }
     await bulk.execute()
+  },
+
+  async aggregate(name, fields, query) {
+    const $match = createFilter(name, query)
+    const [data] = await this.db.collection(name).aggregate([{ $match }, {
+      $group: {
+        _id: 1,
+        ...Object.fromEntries(Object.entries(fields).map(([key, value]) => [key, transformEval(value)])),
+      },
+    }]).toArray()
+    return data
   },
 })
 

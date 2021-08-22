@@ -3,8 +3,6 @@ import { App, Database, Eval, Query, Tables, TableType, clone, makeArray, pick, 
 declare module 'koishi' {
   interface Database {
     memory: MemoryDatabase
-    initUser(id: string, authority?: number): Promise<void>
-    initChannel(id: string, assignee?: string): Promise<void>
   }
 
   namespace Database {
@@ -219,14 +217,6 @@ Database.extend(MemoryDatabase, {
     const expr = Query.resolve(name, query)
     const table = this.$table(name).filter(row => executeQuery(expr, row))
     return Object.fromEntries(Object.entries(fields).map(([key, expr]) => [key, executeEval(expr, table)]))
-  },
-
-  initUser(id, authority = 1) {
-    return this.setUser('mock', id, { authority })
-  },
-
-  initChannel(id, assignee = this.app.bots[0].selfId) {
-    return this.setChannel('mock', id, { assignee })
   },
 })
 
