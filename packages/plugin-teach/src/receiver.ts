@@ -177,7 +177,7 @@ export async function triggerDialogue(ctx: Context, session: Session, next: Next
   logger.debug('[receive]', session.messageId, session.content)
 
   // fetch matched dialogues
-  const dialogues = state.dialogues = await ctx.database.getDialoguesByTest(state.test)
+  const dialogues = state.dialogues = await Dialogue.get(ctx, state.test)
 
   // pick dialogue
   let dialogue: Dialogue

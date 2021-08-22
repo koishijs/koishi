@@ -1,41 +1,5 @@
-import { Database } from 'koishi-core'
-import { defineProperty, Observed, clone } from 'koishi-utils'
-import { Dialogue, DialogueTest, equal, apply } from 'koishi-plugin-teach'
+import { Dialogue, apply } from 'koishi-plugin-teach'
 import { App } from 'koishi-test-utils'
-
-declare module 'koishi-core' {
-  interface EventMap {
-    'dialogue/memory'(dialogue: Dialogue, test: DialogueTest): boolean | void
-  }
-}
-
-Database.extend('koishi-test-utils', {
-  async getDialoguesByTest(test: DialogueTest) {
-    const dialogues = this.$table('dialogue').filter((dialogue) => {
-      return !this.app.bail('dialogue/memory', dialogue, test)
-    }).map<Dialogue>(clone)
-    dialogues.forEach(d => defineProperty(d, '_backup', clone(d)))
-    return dialogues.filter((data) => {
-      if (!test.groups || test.partial) return true
-      return !(data.flag & Dialogue.Flag.complement) === test.reversed || !equal(test.groups, data.groups)
-    })
-  },
-
-  async updateDialogues(dialogues: Observed<Dialogue>[], argv: Dialogue.Argv) {
-    const data: Partial<Dialogue>[] = []
-    for (const dialogue of dialogues) {
-      if (!Object.keys(dialogue._diff).length) {
-        argv.skipped.push(dialogue.id)
-      } else {
-        data.push({ id: dialogue.id, ...dialogue._diff })
-        dialogue._diff = {}
-        argv.updated.push(dialogue.id)
-        Dialogue.addHistory(dialogue._backup, '修改', argv, false)
-      }
-    }
-    await this.update('dialogue', data)
-  },
-})
 
 export default function (config: Dialogue.Config) {
   const app = new App({
