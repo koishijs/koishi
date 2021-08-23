@@ -214,11 +214,11 @@ Database.extend(MongoDatabase, {
   async setUser(type, id, data) {
     const current = await this.user.findOne({ [type]: id })
     if (current) {
-      await this.user.updateOne({ type: id }, { $set: escapeKey(data) })
+      await this.user.updateOne({ [type]: id }, { $set: escapeKey(data) })
       return
     }
     const [udoc] = await this.user.find({}).sort({ id: -1 }).limit(1).project({ id: 1 }).toArray()
-    const uid = (+udoc?.id || 0) + 1
+    const uid = ((+udoc?.id || 0) + 1).toString()
     delete data.id
     if (type === 'id' || !Object.keys(data).length) {
       // @ts-ignore
