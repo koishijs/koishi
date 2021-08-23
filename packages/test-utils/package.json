@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/test-utils",
   "description": "Test utilities for Koishi",
-  "version": "7.0.0-alpha.0",
+  "version": "8.0.0-alpha.0",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "engines": {
@@ -9,8 +9,7 @@
   },
   "files": [
     "lib",
-    "chai/index.d.ts",
-    "chai/package.json"
+    "chai/index.d.ts"
   ],
   "author": "Shigma <1700011071@pku.edu.cn>",
   "license": "MIT",

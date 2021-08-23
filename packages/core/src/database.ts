@@ -145,11 +145,12 @@ export namespace Tables {
 
   extend('channel', {
     id: 'string(63)',
+    domain: 'string(63)',
     flag: 'unsigned(20)',
     assignee: 'string(63)',
     disable: 'list',
   }, {
-    primary: ['id', 'type'],
+    primary: ['id', 'domain'],
   })
 }
 
@@ -305,7 +306,7 @@ export namespace User {
 
 export interface Channel {
   id: string
-  type: string
+  domain: string
   flag: number
   assignee: string
   disable: string[]
@@ -321,9 +322,9 @@ export namespace Channel {
   export const fields: Field[] = []
   export type Observed<K extends Field = Field> = utils.Observed<Pick<Channel, K>, Promise<void>>
 
-  export function create(type: Platform, id: string) {
+  export function create(domain: string, id: string) {
     const result = Tables.create('channel')
-    result.type = type
+    result.domain = domain
     result.id = id
     return result
   }
@@ -353,11 +354,11 @@ export abstract class Database {
     return this.set('user', { [type]: id }, data)
   }
 
-  getChannel<K extends Channel.Field>(type: string, id: string, modifier?: Query.Modifier<K>): Promise<Pick<Channel, K | 'id' | 'type'>>
+  getChannel<K extends Channel.Field>(type: string, id: string, modifier?: Query.Modifier<K>): Promise<Pick<Channel, K | 'id' | 'domain'>>
   getChannel<K extends Channel.Field>(type: string, ids: string[], modifier?: Query.Modifier<K>): Promise<Pick<Channel, K>[]>
-  async getChannel(type: string, id: MaybeArray<string>, modifier?: Query.Modifier<Channel.Field>) {
-    const data = await this.get('channel', { type, id }, modifier)
-    return Array.isArray(id) ? data : data[0] && { ...data[0], type, id }
+  async getChannel(domain: string, id: MaybeArray<string>, modifier?: Query.Modifier<Channel.Field>) {
+    const data = await this.get('channel', { domain, id }, modifier)
+    return Array.isArray(id) ? data : data[0] && { ...data[0], domain, id }
   }
 
   getAssignedChannels<K extends Channel.Field>(fields?: K[], assignMap?: Record<string, string[]>): Promise<Pick<Channel, K>[]>
@@ -367,8 +368,8 @@ export abstract class Database {
     }, fields)
   }
 
-  setChannel(type: string, id: string, data: Partial<Channel>) {
-    return this.set('channel', { type, id }, data)
+  setChannel(domain: string, id: string, data: Partial<Channel>) {
+    return this.set('channel', { domain, id }, data)
   }
 }
 

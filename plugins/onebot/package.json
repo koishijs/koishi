@@ -31,7 +31,7 @@
   },
   "devDependencies": {
     "@types/ws": "^7.4.2",
-    "@koishijs/test-utils": "^7.0.0-alpha.0"
+    "@koishijs/test-utils": "^8.0.0-alpha.0"
   },
   "dependencies": {
     "axios": "^0.21.1",
