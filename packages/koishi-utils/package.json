@@ -29,7 +29,7 @@
   ],
   "devDependencies": {
     "@types/supports-color": "^8.1.1",
-    "koishi-test-utils": "^7.0.0"
+    "koishi-test-utils": "^7.0.1"
   },
   "dependencies": {
     "supports-color": "^8.1.0"

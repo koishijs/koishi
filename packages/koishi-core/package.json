@@ -1,7 +1,7 @@
 {
   "name": "koishi-core",
   "description": "Core features for Koishi",
-  "version": "3.14.0",
+  "version": "3.14.1",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "engines": {
@@ -30,7 +30,7 @@
   ],
   "devDependencies": {
     "@types/koa": "*",
-    "koishi-test-utils": "^7.0.0"
+    "koishi-test-utils": "^7.0.1"
   },
   "dependencies": {
     "@koa/router": "^10.1.0",
