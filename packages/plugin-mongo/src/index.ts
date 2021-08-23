@@ -1,5 +1,5 @@
 import MongoDatabase, { Config } from './database'
-import { User, Tables, Database, Context, Channel, Random, pick, omit, TableType, Query } from 'koishi-core'
+import { User, Tables, Database, Context, Channel, Random, pick, omit, TableType, Query, noop } from 'koishi-core'
 import { QuerySelector } from 'mongodb'
 
 export * from './database'
@@ -125,7 +125,7 @@ function createFilter<T extends TableType>(name: T, _query: Query<T>) {
   const filter = transformQuery(Query.resolve(name, _query))
   const { primary } = Tables.config[name]
   if (filter[primary]) {
-    filter['$or'] = [{ id: filter[primary] }, { _id: filter[primary] }]
+    filter['$or'] = [{ [primary]: filter[primary] }, { _id: filter[primary] }]
     delete filter[primary]
   }
   // https://stackoverflow.com/questions/25270396/mongodb-how-to-invert-query-with-not
@@ -146,10 +146,6 @@ Database.extend(MongoDatabase, {
     const filter = createFilter(name, query) as any
     const { primary } = Tables.config[name]
     if (!filter) return []
-    if (primary && filter._id && !filter.$or) {
-      filter.$or = [{ [primary]: filter._id }, { _id: filter._id }]
-      delete filter._id
-    }
     let cursor = this.db.collection(name).find(filter)
     const { fields, limit, offset = 0 } = Query.resolveModifier(modifier)
     if (fields) cursor = cursor.project(Object.fromEntries(fields.map(key => [key, 1])))
@@ -203,6 +199,7 @@ Database.extend(MongoDatabase, {
     const { fields } = Query.resolveModifier(modifier)
     const applyDefault = (user: User) => ({
       ...pick(User.create(type, user[type]), fields),
+      authority: 1,
       ...unescapeKey(user),
     })
 
@@ -215,18 +212,25 @@ Database.extend(MongoDatabase, {
   },
 
   async setUser(type, id, data) {
-    const [udoc] = await this.user.find({}).sort({ id: -1 }).limit(1).project({ id: 1 }).toArray()
-    const uid = (+udoc?.id || 0) + 1
-    if (!Object.keys(data).length) {
-      // @ts-ignore
-      await this.user.insertOne({ [type]: id, id: uid.toString() }).catch(() => { })
+    const current = await this.user.findOne({ [type]: id })
+    if (current) {
+      await this.user.updateOne({ type: id }, { $set: escapeKey(data) })
       return
     }
-    await this.user.updateOne(
-      { [type]: id },
-      { $set: escapeKey(data), $setOnInsert: { id: uid.toString() } },
-      { upsert: true },
-    )
+    const [udoc] = await this.user.find({}).sort({ id: -1 }).limit(1).project({ id: 1 }).toArray()
+    const uid = (+udoc?.id || 0) + 1
+    delete data.id
+    if (type === 'id' || !Object.keys(data).length) {
+      // @ts-ignore
+      await this.user.insertOne({ _id: uid, id: uid, [type]: id, ...data }).catch(noop)
+      return
+    }
+    // @ts-ignore
+    await this.user.insertOne({ _id: uid, id: uid, [type]: id, ...escapeKey(data) })
+  },
+
+  createUser(type, id, data) {
+    return this.setUser(type, id, data)
   },
 
   async getChannel(type, pid, modifier) {

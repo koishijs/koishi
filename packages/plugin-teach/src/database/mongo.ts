@@ -12,6 +12,9 @@ declare module 'koishi-core' {
 
 Tables.extend('dialogue', {
   primary: 'id',
+  fields: {
+    id: 'unsigned',
+  },
 })
 
 Database.extend('koishi-plugin-mongo', {
