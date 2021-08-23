@@ -58,6 +58,8 @@ export namespace Tables {
 
     export function parse(source: string | Field): Field {
       if (typeof source !== 'string') return source
+
+      // parse string definition
       const capture = regexp.exec(source)
       if (!capture) throw new TypeError('invalid field definition')
       const type = capture[1] as Type
@@ -76,21 +78,11 @@ export namespace Tables {
       if (type === 'decimal') {
         field.precision = +args[0]
         field.scale = +args[1]
-      } else if (args.length) {
+      } else if (args[0]) {
         field.length = +args[0]
       }
 
       return field
-    }
-
-    export function extend(fields: Config, extension: Extension = {}) {
-      for (const key in extension) {
-        const field = fields[key] = parse(extension[key])
-        if (field.initial !== undefined && field.initial !== null) {
-          field.nullable ??= false
-        }
-      }
-      return fields
     }
   }
 
@@ -109,23 +101,31 @@ export namespace Tables {
 
   export const config: Record<string, Config> = {}
 
-  export function extend<T extends TableType>(name: T, fields?: Field.Extension<Tables[T]>, extension?: Config<Tables[T]>): void
-  export function extend(name: string, fields = {}, extension: Config = {}) {
-    const table = config[name] || {}
-    config[name] = {
+  export function extend<T extends TableType>(name: T, fields?: Field.Extension<Tables[T]>, extension?: Extension<Tables[T]>): void
+  export function extend(name: string, fields = {}, extension: Extension = {}) {
+    const { primary, type, unique = [], foreign } = extension
+    const table = config[name] ||= {
       primary: 'id',
-      ...extension,
-      unique: [...table.unique || [], ...extension.unique || []],
-      foreign: { ...table.foreign, ...extension.foreign },
-      fields: Field.extend(table.fields || {}, fields),
+      unique: [],
+      foreign: {},
+      fields: {},
+    }
+
+    table.type = type || table.type
+    table.primary = primary || table.primary
+    table.unique.push(...unique)
+    Object.assign(table.foreign, foreign)
+
+    for (const key in fields) {
+      table.fields[key] = Field.parse(fields[key])
     }
   }
 
   export function create<T extends TableType>(name: T): Tables[T] {
-    const { fields } = Tables.config[name]
+    const { fields, primary } = Tables.config[name]
     const result = {} as Tables[T]
     for (const key in fields) {
-      if (fields[key].initial !== undefined) {
+      if (key !== primary && fields[key].initial !== undefined) {
         result[key] = utils.clone(fields[key].initial)
       }
     }
@@ -139,6 +139,8 @@ export namespace Tables {
     authority: 'unsigned(4)',
     usage: 'json',
     timers: 'json',
+  }, {
+    type: 'incremental',
   })
 
   extend('channel', {

@@ -1,7 +1,7 @@
-import { User, Context, Time, Random } from 'koishi'
+import { User, Context, Time, Random, Query } from 'koishi'
 import Profile from './profile'
 import Rank from './rank'
-import {} from '@koishijs/plugin-teach'
+import type { Dialogue } from '@koishijs/plugin-teach'
 
 declare module '@koishijs/plugin-teach' {
   interface DialogueTest {
@@ -149,16 +149,19 @@ namespace Affinity {
       if (options.maxAffinity !== undefined) test.mismatchAffinity = options.maxAffinity
     })
 
-    function matchAffinity(affinity: number) {
-      return `(\`maxAffinity\` > ${affinity} && \`minAffinity\` <= ${affinity})`
-    }
+    const createAffinityQuery = (affinity: number): Query.Expr<Dialogue> => ({
+      maxAffinity: { $gt: affinity },
+      minAffinity: { $lte: affinity },
+    })
 
-    ctx.on('dialogue/mysql', (test, conditionals) => {
+    ctx.on('dialogue/test', (test, query) => {
       if (test.matchAffinity !== undefined) {
-        conditionals.push(matchAffinity(test.matchAffinity))
+        Object.assign(query, createAffinityQuery(test.matchAffinity))
       }
       if (test.mismatchAffinity !== undefined) {
-        conditionals.push('!' + matchAffinity(test.mismatchAffinity))
+        query.$and.push({
+          $not: createAffinityQuery(test.mismatchAffinity),
+        })
       }
     })
 

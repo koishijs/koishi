@@ -33,6 +33,8 @@ Tables.extend('dialogue', {
   predecessors: 'list(255)',
   successorTimeout: 'unsigned',
   writer: 'string(255)',
+}, {
+  type: 'incremental',
 })
 
 export interface Dialogue {

@@ -9,7 +9,7 @@ import { App } from './app'
 export type NextFunction = (next?: NextFunction) => Promise<void>
 export type Middleware = (session: Session, next: NextFunction) => any
 export type Promisify<T> = T extends Promise<unknown> ? T : Promise<T>
-export type Awaitable<T> = T extends Promise<unknown> ? T : T | Promise<T>
+export type Awaitable<T> = [T] extends [Promise<unknown>] ? T : T | Promise<T>
 export type Await<T> = T extends Promise<infer U> ? U : T
 export type Disposable = () => void
 
@@ -382,7 +382,7 @@ export class Context {
     const dispose = this.on(name, function (...args: any[]) {
       dispose()
       return listener.apply(this, args)
-    } as any, prepend)
+    }, prepend)
     return dispose
   }
 

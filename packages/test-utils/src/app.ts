@@ -121,12 +121,12 @@ export class MockedApp extends App {
     return new TestSession(this, userId, channelId)
   }
 
-  initUser(id: string, authority = 1) {
-    return this.database.setUser('mock', id, { authority })
+  async initUser(id: string, authority = 1) {
+    await this.database.create('user', { mock: id, authority })
   }
 
-  initChannel(id: string, assignee = this.selfId) {
-    return this.database.setChannel('mock', id, { assignee })
+  async initChannel(id: string, assignee = this.selfId) {
+    await this.database.create('channel', { type: 'mock', id, assignee })
   }
 }
 
