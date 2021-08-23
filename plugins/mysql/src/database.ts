@@ -118,7 +118,7 @@ class MysqlDatabase extends Database {
 
   private getColDefs(name: string, cols: string[] = []) {
     const table = Koishi.Tables.config[name]
-    const { primary, foreign, type } = table
+    const { primary, foreign, autoInc } = table
     const fields = { ...table.fields }
     const unique = [...table.unique]
     const keys = this.columns[name] || []
@@ -144,8 +144,8 @@ class MysqlDatabase extends Database {
       if (keys.includes(key)) continue
       const { initial, nullable = initial === undefined || initial === null } = fields[key]
       let def = escapeId(key)
-      if (key === primary && type === 'incremental') {
-        def += ' bigint(20) unsigned not null auto_increment'
+      if (key === primary && autoInc) {
+        def += ' int unsigned not null auto_increment'
       } else {
         const typedef = getTypeDefinition(fields[key])
         def += ' ' + typedef + (nullable ? ' ' : ' not ') + 'null'

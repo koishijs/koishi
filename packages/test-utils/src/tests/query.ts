@@ -23,7 +23,7 @@ Tables.extend('foo', {
   list: 'list',
   date: 'timestamp',
 }, {
-  type: 'incremental',
+  autoInc: true,
 })
 
 namespace QueryOperators {

@@ -34,7 +34,7 @@ Tables.extend('dialogue', {
   successorTimeout: 'unsigned',
   writer: 'string(255)',
 }, {
-  type: 'incremental',
+  autoInc: true,
 })
 
 export interface Dialogue {

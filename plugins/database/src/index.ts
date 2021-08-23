@@ -186,9 +186,9 @@ Database.extend(MemoryDatabase, {
 
   async create(name, data: any) {
     const store = this.$table(name)
-    const { primary, fields } = Tables.config[name] as Tables.Config
+    const { primary, fields, autoInc } = Tables.config[name] as Tables.Config
     data = clone(data)
-    if (!Array.isArray(primary) && !data[primary]) {
+    if (!Array.isArray(primary) && autoInc) {
       const max = store.length ? Math.max(...store.map(row => +row[primary])) : 0
       data[primary] = max + 1
       if (Tables.Field.string.includes(fields[primary].type)) {

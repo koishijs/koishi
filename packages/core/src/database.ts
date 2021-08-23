@@ -87,7 +87,7 @@ export namespace Tables {
   }
 
   export interface Extension<O = any> {
-    type?: 'random' | 'incremental'
+    autoInc?: boolean
     primary?: MaybeArray<Keys<O>>
     unique?: MaybeArray<Keys<O>>[]
     foreign?: {
@@ -103,7 +103,7 @@ export namespace Tables {
 
   export function extend<T extends TableType>(name: T, fields?: Field.Extension<Tables[T]>, extension?: Extension<Tables[T]>): void
   export function extend(name: string, fields = {}, extension: Extension = {}) {
-    const { primary, type, unique = [], foreign } = extension
+    const { primary, autoInc, unique = [], foreign } = extension
     const table = config[name] ||= {
       primary: 'id',
       unique: [],
@@ -111,8 +111,8 @@ export namespace Tables {
       fields: {},
     }
 
-    table.type = type || table.type
     table.primary = primary || table.primary
+    table.autoInc = autoInc || table.autoInc
     table.unique.push(...unique)
     Object.assign(table.foreign, foreign)
 
@@ -140,7 +140,7 @@ export namespace Tables {
     usage: 'json',
     timers: 'json',
   }, {
-    type: 'incremental',
+    autoInc: true,
   })
 
   extend('channel', {
@@ -295,15 +295,10 @@ export namespace User {
   export const fields: Field[] = []
   export type Index = Platform | 'name' | 'id'
   export type Observed<K extends Field = Field> = utils.Observed<Pick<User, K>, Promise<void>>
-  type Getter = <T extends Index>(type: T, id: string) => Partial<User>
-  const getters: Getter[] = []
 
   export function create<T extends Index>(type: T, id: string) {
     const result = Tables.create('user')
     result[type] = id
-    for (const getter of getters) {
-      Object.assign(result, getter(type, id))
-    }
     return result as User
   }
 }
@@ -325,15 +320,11 @@ export namespace Channel {
   export type Field = keyof Channel
   export const fields: Field[] = []
   export type Observed<K extends Field = Field> = utils.Observed<Pick<Channel, K>, Promise<void>>
-  type Getter = (type: Platform, id: string) => Partial<Channel>
-  const getters: Getter[] = []
 
   export function create(type: Platform, id: string) {
     const result = Tables.create('channel')
-    result.id = `${type}:${id}`
-    for (const getter of getters) {
-      Object.assign(result, getter(type, id))
-    }
+    result.type = type
+    result.id = id
     return result
   }
 }

@@ -50,7 +50,7 @@ const subscribeKeys = [
 Tables.extend('subscribe', {
   id: { type: 'unsigned' },
   names: { type: 'list' },
-}, { type: 'incremental' })
+}, { autoInc: true, })
 
 Database.extend('@koishijs/plugin-mysql', {
   async getSubscribes(ids, keys = subscribeKeys) {

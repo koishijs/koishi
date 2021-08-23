@@ -1,5 +1,5 @@
 import MongoDatabase, { Config } from './database'
-import { Tables, Database, Context, Random, omit, TableType, Query, pick, makeArray, Eval } from 'koishi'
+import { Tables, Database, Context, omit, TableType, Query, pick, makeArray, Eval } from 'koishi'
 import { QuerySelector } from 'mongodb'
 
 export * from './database'
@@ -126,11 +126,12 @@ Database.extend(MongoDatabase, {
   async create(name, data: any) {
     const table = Tables.config[name]
     const { primary, fields } = table
-    if (!Array.isArray(primary) && table.type === 'incremental') {
+    if (!Array.isArray(primary) && table.autoInc) {
       const [latest] = await this.db.collection(name).find().sort(primary, -1).limit(1).toArray()
-      let id = latest ? latest[primary] + 1 : 1
-      if (Tables.Field.string.includes(fields[primary].type)) id = id.toString()
-      data[primary] = id
+      data[primary] = latest ? latest[primary] + 1 : 1
+      if (Tables.Field.string.includes(fields[primary].type)) {
+        data[primary] += ''
+      }
     }
     const copy = { ...Tables.create(name), ...data }
     await this.db.collection(name).insertOne(copy).catch(() => {})

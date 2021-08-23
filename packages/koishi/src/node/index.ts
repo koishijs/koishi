@@ -26,6 +26,7 @@ declare module '@koishijs/core' {
 
   interface AppOptions {
     port?: number
+    host?: string
     axiosConfig?: AxiosRequestConfig
   }
 
@@ -57,7 +58,11 @@ App.prototype.prepare = function (this: App, ...args) {
   defineProperty(this, '_httpServer', createServer(koa.callback()))
 
   this.before('connect', () => {
-    this._httpServer.listen(port)
+    const { port, host } = this.app.options
+    if (port) {
+      this._httpServer.listen(port, host)
+      this.logger('server').info('server listening at %c', `http://${host || 'localhost'}:${port}`)
+    }
     this.logger('server').info('server listening at %c', port)
   })
 

@@ -25,7 +25,7 @@ Tables.extend('schedule', {
   command: 'text',
   session: 'json',
 }, {
-  type: 'incremental',
+  autoInc: true,
 })
 
 const logger = new Logger('schedule')
