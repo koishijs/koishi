@@ -75,7 +75,7 @@ export namespace Tables {
       if (type === 'decimal') {
         field.precision = +args[0]
         field.scale = +args[1]
-      } else if (args.length) {
+      } else if (args[0]) {
         field.length = +args[0]
       }
 
