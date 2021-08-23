@@ -191,7 +191,7 @@ Database.extend(MongoDatabase, {
     } else if (type === 'incremental') {
       const [latest] = await this.db.collection(name).find().sort('_id', -1).limit(1).toArray()
       let id = copy['_id'] = latest ? latest._id + 1 : 1
-      if (Tables.Field.string.includes(fields[id].type)) id = id.toString()
+      if (Tables.Field.string.includes(fields[primary].type)) id = id.toString()
       copy[primary] = data[primary] = id
     } else if (type === 'random') {
       copy['_id'] = data[primary] = Random.uuid()
