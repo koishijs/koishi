@@ -18,8 +18,8 @@ let clock: InstalledClock
 
 before(async () => {
   app.database.memory.$store.schedule = []
-  await app.database.initUser('123', 4)
-  await app.database.initChannel('456')
+  await app.initUser('123', 4)
+  await app.initChannel('456')
   await app.database.create('schedule', {
     id: 1,
     time: new Date('2000-1-1 0:59'),

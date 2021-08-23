@@ -183,7 +183,7 @@ export async function update(argv: Dialogue.Argv) {
     for (const dialogue of targets) {
       app.emit('dialogue/modify', argv, dialogue)
     }
-    await app.database.updateDialogues(targets, argv)
+    await Dialogue.update(targets, argv)
     await app.serial('dialogue/after-modify', argv)
   }
 
@@ -198,7 +198,7 @@ export async function create(argv: Dialogue.Argv) {
   argv.uneditable = []
   argv.updated = []
   argv.skipped = []
-  argv.dialogues = await app.database.getDialoguesByTest({ question, answer, regexp: false })
+  argv.dialogues = await Dialogue.get(app, { question, answer, regexp: false })
   await app.serial('dialogue/before-detail', argv)
   const result = await app.serial('dialogue/before-modify', argv)
   if (typeof result === 'string') return result
@@ -219,7 +219,7 @@ export async function create(argv: Dialogue.Argv) {
     for (const dialogue of targets) {
       app.emit('dialogue/modify', argv, dialogue)
     }
-    await app.database.updateDialogues(targets, argv)
+    await Dialogue.update(targets, argv)
     await app.serial('dialogue/after-modify', argv)
     return sendResult(argv)
   }

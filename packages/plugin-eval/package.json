@@ -33,7 +33,7 @@
     "code"
   ],
   "peerDependencies": {
-    "koishi-core": "^3.14.0"
+    "koishi-core": "^3.14.1"
   },
   "optionalDependencies": {
     "@babel/core": "^7.15.0",
@@ -50,6 +50,6 @@
   "devDependencies": {
     "@types/babel__core": "^7.1.15",
     "@types/js-yaml": "^4.0.2",
-    "koishi-test-utils": "^7.0.0"
+    "koishi-test-utils": "^7.0.1"
   }
 }

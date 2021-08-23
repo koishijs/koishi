@@ -1,5 +1,5 @@
-import { Session, App, Context, Tables } from 'koishi-core'
-import { difference, observe, isInteger, defineProperty, Observed, clone } from 'koishi-utils'
+import { Session, App, Context, Tables, Query } from 'koishi-core'
+import { difference, observe, isInteger, defineProperty, Observed, clone, pick } from 'koishi-utils'
 
 declare module 'koishi-core' {
   interface App {
@@ -9,20 +9,32 @@ declare module 'koishi-core' {
   interface EventMap {
     'dialogue/permit'(argv: Dialogue.Argv, dialogue: Dialogue): boolean
     'dialogue/flag'(flag: keyof typeof Dialogue.Flag): void
+    'dialogue/test'(test: DialogueTest, query: Query.Expr<Dialogue>): void
   }
 
   interface Tables {
     dialogue: Dialogue
   }
-
-  interface Database {
-    getDialoguesByTest(test: DialogueTest): Promise<Dialogue[]>
-    updateDialogues(dialogues: Observed<Dialogue>[], argv: Dialogue.Argv): Promise<void>
-    getDialogueStats(): Promise<Dialogue.Stats>
-  }
 }
 
-Tables.extend('dialogue')
+Tables.extend('dialogue', {
+  type: 'incremental',
+  fields: {
+    id: 'unsigned',
+    flag: 'unsigned(4)',
+    probS: { type: 'decimal', precision: 4, scale: 3, initial: 1 },
+    probA: { type: 'decimal', precision: 4, scale: 3, initial: 0 },
+    startTime: 'unsigned',
+    endTime: 'unsigned',
+    groups: 'list(255)',
+    original: 'string(255)',
+    question: 'string(255)',
+    answer: 'text',
+    predecessors: 'list(255)',
+    successorTimeout: 'unsigned',
+    writer: 'string(255)',
+  },
+})
 
 export interface Dialogue {
   id?: number
@@ -93,13 +105,54 @@ export namespace Dialogue {
     complement = 16,
   }
 
-  export async function get<K extends Dialogue.Field>(ctx: Context, ids: number[], fields?: K[]) {
-    const dialogues = await ctx.database.get('dialogue', ids, fields)
-    dialogues.forEach(d => defineProperty(d, '_backup', clone(d)))
-    return dialogues
+  export function get(ctx: Context, test: DialogueTest): Promise<Dialogue[]>
+  export function get<K extends Field>(ctx: Context, ids: number[], fields?: K[]): Promise<Pick<Dialogue, K>[]>
+  export async function get(ctx: Context, test: DialogueTest | number[], fields?: Field[]) {
+    if (Array.isArray(test)) {
+      const dialogues = await ctx.database.get('dialogue', test, fields)
+      dialogues.forEach(d => defineProperty(d, '_backup', clone(d)))
+      return dialogues
+    } else {
+      const query: Query.Expr<Dialogue> = { $and: [] }
+      ctx.emit('dialogue/test', test, query)
+      const dialogues = await ctx.database.get('dialogue', query)
+      dialogues.forEach(d => defineProperty(d, '_backup', clone(d)))
+      return dialogues.filter((data) => {
+        if (!test.groups || test.partial) return true
+        return !(data.flag & Flag.complement) === test.reversed || !equal(test.groups, data.groups)
+      })
+    }
   }
 
-  export async function remove(dialogues: Dialogue[], argv: Dialogue.Argv, revert = false) {
+  export async function update(dialogues: Observed<Dialogue>[], argv: Argv) {
+    const data: Partial<Dialogue>[] = []
+    const fields = new Set<Field>(['id'])
+    for (const { _diff } of dialogues) {
+      for (const key in _diff) {
+        fields.add(key as Field)
+      }
+    }
+    for (const dialogue of dialogues) {
+      if (!Object.keys(dialogue._diff).length) {
+        argv.skipped.push(dialogue.id)
+      } else {
+        dialogue._diff = {}
+        argv.updated.push(dialogue.id)
+        data.push(pick(dialogue, fields))
+        addHistory(dialogue._backup, '修改', argv, false)
+      }
+    }
+    await argv.app.database.update('dialogue', data)
+  }
+
+  export async function stats(ctx: Context): Promise<Stats> {
+    return ctx.database.aggregate('dialogue', {
+      dialogues: { $count: 'id' },
+      questions: { $count: 'question' },
+    })
+  }
+
+  export async function remove(dialogues: Dialogue[], argv: Argv, revert = false) {
     const ids = dialogues.map(d => d.id)
     argv.app.database.remove('dialogue', ids)
     for (const id of ids) {
@@ -108,22 +161,22 @@ export namespace Dialogue {
     return ids
   }
 
-  export async function revert(dialogues: Dialogue[], argv: Dialogue.Argv) {
+  export async function revert(dialogues: Dialogue[], argv: Argv) {
     const created = dialogues.filter(d => d._type === '添加')
     const edited = dialogues.filter(d => d._type !== '添加')
-    await Dialogue.remove(created, argv, true)
+    await remove(created, argv, true)
     await recover(edited, argv)
     return `问答 ${dialogues.map(d => d.id).sort((a, b) => a - b)} 已回退完成。`
   }
 
-  export async function recover(dialogues: Dialogue[], argv: Dialogue.Argv) {
+  export async function recover(dialogues: Dialogue[], argv: Argv) {
     await argv.app.database.update('dialogue', dialogues)
     for (const dialogue of dialogues) {
-      Dialogue.addHistory(dialogue, '修改', argv, true)
+      addHistory(dialogue, '修改', argv, true)
     }
   }
 
-  export function addHistory(dialogue: Dialogue, type: Dialogue.ModifyType, argv: Dialogue.Argv, revert: boolean) {
+  export function addHistory(dialogue: Dialogue, type: ModifyType, argv: Argv, revert: boolean) {
     if (revert) return delete argv.app.teachHistory[dialogue.id]
     argv.app.teachHistory[dialogue.id] = dialogue
     const time = Date.now()

@@ -31,11 +31,11 @@ defineEnumProperty(User.Flag, 'test', 1 << 4)
 defineEnumProperty(Channel.Flag, 'test', 1 << 4)
 
 before(async () => {
-  await app.database.initUser('123', 4)
-  await app.database.initUser('456', 3)
-  await app.database.initUser('789', 4)
-  await app.database.initChannel('321')
-  await app.database.initChannel('654')
+  await app.initUser('123', 4)
+  await app.initUser('456', 3)
+  await app.initUser('789', 4)
+  await app.initChannel('321')
+  await app.initChannel('654')
 })
 
 describe('Admin Commands', () => {
@@ -43,7 +43,7 @@ describe('Admin Commands', () => {
     await session.shouldReply('authorize', '请指定目标用户。')
     await session.shouldReply('authorize -t nan', '选项 target 输入无效，请指定正确的用户。')
     await session.shouldReply('authorize -t @789', '权限不足。')
-    await session.shouldReply('authorize -t @456 1.5', '参数 value 输入无效，请提供一个正整数。')
+    await session.shouldReply('authorize -t @456 1.5', '参数 value 输入无效，请提供一个非负整数。')
     await session.shouldReply('authorize -t @456 3', '用户数据未改动。')
     await session.shouldReply('authorize -t @456 4', '权限不足。')
     await session.shouldReply('authorize -t @456 2', '用户数据已修改。')

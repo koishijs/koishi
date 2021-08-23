@@ -11,7 +11,7 @@ const session = app.session('123')
 const now = Date.now()
 
 before(async () => {
-  await app.database.initUser('123', 2)
+  await app.initUser('123', 2)
   await app.database.setUser('mock', '123', {
     usage: { foo7: 1, $date: Time.getDateNumber() },
     timers: { foo8: now + Time.minute, $date: now + Time.day },

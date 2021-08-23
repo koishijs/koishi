@@ -1,6 +1,6 @@
 {
   "koishi-adapter-discord": {
-    "version": "1.3.3",
+    "version": "1.3.4",
     "description": "Discord adapter for Koishi"
   },
   "koishi-adapter-kaiheila": {
@@ -8,7 +8,7 @@
     "description": "Kaiheila adapter for Koishi"
   },
   "koishi-adapter-minecraft-dev": {
-    "version": "0.1.0",
+    "version": "0.1.1",
     "description": "Minecraft adapter for Koishi"
   },
   "koishi-adapter-onebot": {
@@ -32,7 +32,7 @@
     "description": "Playing chess games in Koishi"
   },
   "koishi-plugin-common": {
-    "version": "4.3.3",
+    "version": "4.3.4",
     "description": "Common plugins for Koishi"
   },
   "koishi-plugin-cryptocurrency": {
@@ -52,11 +52,11 @@
     "description": "Image searching plugin for Koishi"
   },
   "koishi-plugin-mongo": {
-    "version": "2.5.0",
+    "version": "2.5.1",
     "description": "MongoDB support for Koishi"
   },
   "koishi-plugin-mysql": {
-    "version": "3.6.0",
+    "version": "3.6.1",
     "description": "MySQL support for Koishi"
   },
   "koishi-plugin-puppeteer": {
@@ -68,7 +68,7 @@
     "description": "Create scheduled tasks for Koishi"
   },
   "koishi-plugin-teach": {
-    "version": "2.2.3",
+    "version": "2.3.0",
     "description": "Teach plugin for Koishi"
   },
   "koishi-plugin-tools": {

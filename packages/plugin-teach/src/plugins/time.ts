@@ -1,4 +1,4 @@
-import { Context } from 'koishi-core'
+import { Context, Eval } from 'koishi-core'
 import { Dialogue } from '../utils'
 
 declare module '../utils' {
@@ -77,5 +77,22 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
   ctx.on('dialogue/detail-short', (dialogue, output) => {
     if (dialogue.startTime === dialogue.endTime) return
     output.push(`${formatTime(dialogue.startTime)}-${formatTime(dialogue.endTime)}`)
+  })
+
+  const getRangeProduct = (time: number): Eval.Numeric<Dialogue> => ({
+    $multiply: [
+      { $subtract: ['endTime', 'startTime'] },
+      { $subtract: ['startTime', time] },
+      { $subtract: [time, 'endTime'] },
+    ],
+  })
+
+  ctx.on('dialogue/test', (test, query) => {
+    if (test.matchTime !== undefined) {
+      query.$and.push({ $expr: { $gte: [getRangeProduct(test.matchTime), 0] } })
+    }
+    if (test.mismatchTime !== undefined) {
+      query.$and.push({ $expr: { $lt: [getRangeProduct(test.mismatchTime), 0] } })
+    }
   })
 }

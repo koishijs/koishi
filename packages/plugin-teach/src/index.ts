@@ -7,8 +7,6 @@ import internal from './internal'
 import receiver from './receiver'
 import search from './search'
 import update, { create } from './update'
-import mongo from './database/mongo'
-import mysql from './database/mysql'
 import context from './plugins/context'
 import throttle from './plugins/throttle'
 import probability from './plugins/probability'
@@ -22,8 +20,6 @@ export * from './utils'
 export * from './receiver'
 export * from './search'
 export * from './update'
-export * from './database/mongo'
-export * from './database/mysql'
 export * from './plugins/context'
 export * from './plugins/throttle'
 export * from './plugins/probability'
@@ -202,8 +198,6 @@ export function apply(ctx: Context, config: Config = {}) {
   ctx.plugin(receiver, config)
   ctx.plugin(search, config)
   ctx.plugin(update, config)
-  ctx.plugin(mongo, config)
-  ctx.plugin(mysql, config)
 
   // options
   ctx.plugin(internal, config)
@@ -223,7 +217,7 @@ export function apply(ctx: Context, config: Config = {}) {
       stats.upload()
     })
 
-    meta.extend(() => ctx.database.getDialogueStats())
+    meta.extend(() => Dialogue.stats(ctx))
 
     stats.extend(async (payload, data) => {
       const dialogueMap = stats.average(data.daily.map(data => data.dialogue))

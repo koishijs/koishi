@@ -161,4 +161,8 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
       session.userId = userId
     }
   })
+
+  ctx.on('dialogue/test', (test, query) => {
+    if (test.writer !== undefined) query.writer = test.writer
+  })
 }

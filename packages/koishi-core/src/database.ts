@@ -3,8 +3,16 @@ import { Platform } from './adapter'
 
 export type TableType = keyof Tables
 
-export type MaybeArray<K> = K | K[]
-export type Keys<O, T = any> = string & { [K in keyof O]: O[K] extends T ? K : never }[keyof O]
+// shared types
+type Primitive = string | number
+type Comparable = Primitive | Date
+type MaybeArray<K> = K | K[]
+type Get<T extends {}, K> = K extends keyof T ? T[K] : never
+type Extract<S, T, U = S> = S extends T ? U : never
+
+type Keys<O, T = any> = string & {
+  [K in keyof O]: O[K] extends T ? K : never
+}[keyof O]
 
 export interface Tables {
   user: User
@@ -49,6 +57,8 @@ export namespace Tables {
 
     export function parse(source: string | Field): Field {
       if (typeof source !== 'string') return source
+
+      // parse string definition
       const capture = regexp.exec(source)
       if (!capture) throw new TypeError('invalid field definition')
       const type = capture[1] as Type
@@ -67,21 +77,11 @@ export namespace Tables {
       if (type === 'decimal') {
         field.precision = +args[0]
         field.scale = +args[1]
-      } else if (args.length) {
+      } else if (args[0]) {
         field.length = +args[0]
       }
 
       return field
-    }
-
-    export function extend(fields: Config, extension: Extension = {}) {
-      for (const key in extension) {
-        const field = fields[key] = parse(extension[key])
-        if (field.initial !== undefined && field.initial !== null) {
-          field.nullable ??= false
-        }
-      }
-      return fields
     }
   }
 
@@ -103,21 +103,29 @@ export namespace Tables {
 
   export function extend<T extends TableType>(name: T, meta?: Extension<Tables[T]>): void
   export function extend(name: string, meta: Extension = {}) {
-    const { unique = [], foreign, fields = {} } = config[name] || {}
-    config[name] = {
+    const { primary, type, unique = [], foreign, fields = {} } = meta
+    const table = config[name] ||= {
       primary: 'id',
-      ...meta,
-      unique: [...unique, ...meta.unique || []],
-      foreign: { ...foreign, ...meta.foreign },
-      fields: Field.extend(fields, meta.fields),
+      unique: [],
+      foreign: {},
+      fields: {},
+    }
+
+    table.type = type || table.type
+    table.primary = primary || table.primary
+    table.unique.push(...unique)
+    Object.assign(table.foreign, foreign)
+
+    for (const key in fields) {
+      table.fields[key] = Field.parse(fields[key])
     }
   }
 
   export function create<T extends TableType>(name: T): Tables[T] {
-    const { fields } = Tables.config[name]
+    const { fields, primary } = Tables.config[name]
     const result = {} as Tables[T]
     for (const key in fields) {
-      if (fields[key].initial !== undefined) {
+      if (key !== primary && fields[key].initial !== undefined) {
         result[key] = utils.clone(fields[key].initial)
       }
     }
@@ -125,6 +133,7 @@ export namespace Tables {
   }
 
   extend('user', {
+    type: 'incremental',
     fields: {
       id: 'string(63)',
       name: 'string(63)',
@@ -145,16 +154,11 @@ export namespace Tables {
   })
 }
 
-export type Query<T extends TableType> = Query.Expr<Tables[T]> | Query.Shorthand
+export type Query<T extends TableType> = Query.Expr<Tables[T]> | Query.Shorthand<Primitive>
 
 export namespace Query {
-  export type IndexType = string | number
   export type Field<T extends TableType> = string & keyof Tables[T]
-  export type Index<T extends TableType> = Keys<Tables[T], IndexType>
-
-  type Extract<S, T, U = S> = S extends T ? U : never
-  type Primitive = string | number
-  type Comparable = Primitive | Date
+  export type Index<T extends TableType> = Keys<Tables[T], Primitive>
 
   export interface FieldExpr<T = any> {
     $in?: Extract<T, Primitive, T[]>
@@ -179,10 +183,11 @@ export namespace Query {
     $or?: Expr<T>[]
     $and?: Expr<T>[]
     $not?: Expr<T>
+    $expr?: Eval.Boolean<T>
   }
 
   export type Shorthand<T = any> =
-    | Extract<T, Comparable, T>
+    | Extract<T, Comparable>
     | Extract<T, Primitive, T[]>
     | Extract<T, string, RegExp>
 
@@ -191,7 +196,7 @@ export namespace Query {
     [K in keyof T]?: FieldQuery<T[K]>
   }
 
-  export function resolve<T extends TableType>(name: T, query: Query<T>): Expr<Tables[T]> {
+  export function resolve<T extends TableType>(name: T, query: Query<T> = {}): Expr<Tables[T]> {
     if (Array.isArray(query) || query instanceof RegExp || ['string', 'number'].includes(typeof query)) {
       const { primary } = Tables.config[name]
       return { [primary]: query } as any
@@ -199,25 +204,73 @@ export namespace Query {
     return query as any
   }
 
-  export interface Options<T extends string> {
+  export interface ModifierExpr<K extends string> {
     limit?: number
     offset?: number
-    fields?: T[]
+    fields?: K[]
   }
 
-  export type Modifier<T extends string = any> = T[] | Options<T>
+  export type Modifier<T extends string> = T[] | ModifierExpr<T>
 
-  export function resolveModifier<T extends string>(modifier: Modifier<T>): Options<T> {
+  export function resolveModifier<K extends string>(modifier: Modifier<K>): ModifierExpr<K> {
     if (Array.isArray(modifier)) return { fields: modifier }
     return modifier || {}
   }
 
+  type Projection<T extends TableType> = Record<string, Eval.Aggregation<Tables[T]>>
+
+  type MapEval<T, P> = {
+    [K in keyof P]: Eval<T, P[K]>
+  }
+
   export interface Database {
+    drop(table?: TableType): Promise<void>
     get<T extends TableType, K extends Field<T>>(table: T, query: Query<T>, modifier?: Modifier<K>): Promise<Pick<Tables[T], K>[]>
     remove<T extends TableType>(table: T, query: Query<T>): Promise<void>
     create<T extends TableType>(table: T, data: Partial<Tables[T]>): Promise<Tables[T]>
     update<T extends TableType>(table: T, data: Partial<Tables[T]>[], key?: Index<T>): Promise<void>
-    drop(table?: TableType): Promise<void>
+    aggregate<T extends TableType, P extends Projection<T>>(table: T, fields: P, query?: Query<T>): Promise<MapEval<T, P>>
+  }
+}
+
+export type Eval<T, U> =
+  | U extends number ? number
+  : U extends boolean ? boolean
+  : U extends string ? Get<T, U>
+  : U extends Eval.NumericExpr ? number
+  : U extends Eval.BooleanExpr ? boolean
+  : U extends Eval.AggregationExpr ? number
+  : never
+
+export namespace Eval {
+  export type Any<T = any, A = never> = A | number | boolean | Keys<T> | NumericExpr<T, A> | BooleanExpr<T, A>
+  export type GeneralExpr = NumericExpr & BooleanExpr & AggregationExpr
+  export type Numeric<T = any, A = never> = A | number | Keys<T, number> | NumericExpr<T, A>
+  export type Boolean<T = any, A = never> = boolean | Keys<T, boolean> | BooleanExpr<T, A>
+  export type Aggregation<T = any> = Any<{}, AggregationExpr<T>>
+
+  export interface NumericExpr<T = any, A = never> {
+    $add?: Numeric<T, A>[]
+    $multiply?: Numeric<T, A>[]
+    $subtract?: [Numeric<T, A>, Numeric<T, A>]
+    $divide?: [Numeric<T, A>, Numeric<T, A>]
+  }
+
+  export interface BooleanExpr<T = any, A = never> {
+    $eq?: [Numeric<T, A>, Numeric<T, A>]
+    $ne?: [Numeric<T, A>, Numeric<T, A>]
+    $gt?: [Numeric<T, A>, Numeric<T, A>]
+    $gte?: [Numeric<T, A>, Numeric<T, A>]
+    $lt?: [Numeric<T, A>, Numeric<T, A>]
+    $lte?: [Numeric<T, A>, Numeric<T, A>]
+  }
+
+  export interface AggregationExpr<T = any> {
+    $sum?: Any<T>
+    $avg?: Any<T>
+    $max?: Any<T>
+    $min?: Any<T>
+    $count?: Any<T>
   }
 }
 

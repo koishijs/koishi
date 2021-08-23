@@ -1,5 +1,5 @@
 import MongoDatabase, { Config } from './database'
-import { User, Tables, Database, Context, Channel, Random, pick, omit, TableType, Query } from 'koishi-core'
+import { User, Tables, Database, Context, Channel, Random, pick, omit, TableType, Query, Eval } from 'koishi-core'
 import { QuerySelector } from 'mongodb'
 
 export * from './database'
@@ -102,22 +102,24 @@ function transformFieldQuery(query: Query.FieldQuery, key: string) {
   return result
 }
 
-function createFilter<T extends TableType>(name: T, _query: Query<T>) {
-  function transformQuery(query: Query.Expr) {
-    const filter = {}
-    for (const key in query) {
-      const value = query[key]
-      if (key === '$and' || key === '$or') {
-        filter[key] = value.map(transformQuery)
-      } else if (key === '$not') {
-        filter[key] = transformQuery(value)
-      } else {
-        filter[key] = transformFieldQuery(value, key)
-      }
+function transformQuery(query: Query.Expr) {
+  const filter = {}
+  for (const key in query) {
+    const value = query[key]
+    if (key === '$and' || key === '$or') {
+      filter[key] = value.map(transformQuery)
+    } else if (key === '$not') {
+      filter[key] = transformQuery(value)
+    } else if (key === '$expr') {
+      filter[key] = transformEval(value)
+    } else {
+      filter[key] = transformFieldQuery(value, key)
     }
-    return filter
   }
+  return filter
+}
 
+function createFilter<T extends TableType>(name: T, _query: Query<T>) {
   const filter = transformQuery(Query.resolve(name, _query))
   const { primary } = Tables.config[name]
   if (filter[primary]) {
@@ -132,9 +134,20 @@ function createFilter<T extends TableType>(name: T, _query: Query<T>) {
   return filter
 }
 
-function getFallbackType({ fields, primary }: Tables.Config) {
-  const { type } = fields[primary]
-  return Tables.Field.string.includes(type) ? 'random' : 'incremental'
+function transformEval(expr: Eval.Numeric | Eval.Aggregation) {
+  if (typeof expr === 'string') {
+    return '$' + expr
+  } else if (typeof expr === 'number' || typeof expr === 'boolean') {
+    return expr
+  }
+
+  return Object.fromEntries(Object.entries(expr).map(([key, value]) => {
+    if (Array.isArray(value)) {
+      return [key, value.map(transformEval)]
+    } else {
+      return [key, transformEval(value)]
+    }
+  }))
 }
 
 Database.extend(MongoDatabase, {
@@ -149,7 +162,6 @@ Database.extend(MongoDatabase, {
 
   async get(name, query, modifier) {
     const filter = createFilter(name, query)
-    if (!filter) return []
     let cursor = this.db.collection(name).find(filter)
     const { fields, limit, offset = 0 } = Query.resolveModifier(modifier)
     if (fields) cursor = cursor.project(Object.fromEntries(fields.map(key => [key, 1])))
@@ -167,19 +179,20 @@ Database.extend(MongoDatabase, {
 
   async remove(name, query) {
     const filter = createFilter(name, query)
-    if (!filter) return
     await this.db.collection(name).deleteMany(filter)
   },
 
   async create(name, data: any) {
     const meta = Tables.config[name]
-    const { primary, type = getFallbackType(meta) } = meta
+    const { primary, type, fields } = meta
     const copy = { ...Tables.create(name), ...data }
     if (copy[primary]) {
       copy['_id'] = copy[primary]
     } else if (type === 'incremental') {
       const [latest] = await this.db.collection(name).find().sort('_id', -1).limit(1).toArray()
-      copy['_id'] = copy[primary] = data[primary] = latest ? latest._id + 1 : 1
+      let id = copy['_id'] = latest ? latest._id + 1 : 1
+      if (Tables.Field.string.includes(fields[primary].type)) id = id.toString()
+      copy[primary] = data[primary] = id
     } else if (type === 'random') {
       copy['_id'] = data[primary] = Random.uuid()
     }
@@ -196,6 +209,17 @@ Database.extend(MongoDatabase, {
       bulk.find({ [key]: item[primary] }).updateOne({ $set: omit(item, [primary]) })
     }
     await bulk.execute()
+  },
+
+  async aggregate(name, fields, query) {
+    const $match = createFilter(name, query)
+    const [data] = await this.db.collection(name).aggregate([{ $match }, {
+      $group: {
+        _id: 1,
+        ...Object.fromEntries(Object.entries(fields).map(([key, value]) => [key, transformEval(value)])),
+      },
+    }]).toArray()
+    return data
   },
 
   async getUser(type, id, modifier) {

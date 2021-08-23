@@ -177,7 +177,7 @@ export async function triggerDialogue(ctx: Context, session: Session, next: Next
   logger.debug('[receive]', session.messageId, session.content)
 
   // fetch matched dialogues
-  const dialogues = state.dialogues = await ctx.database.getDialoguesByTest(state.test)
+  const dialogues = state.dialogues = await Dialogue.get(ctx, state.test)
 
   // pick dialogue
   let dialogue: Dialogue
@@ -310,7 +310,7 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
 
   ctx.on('dialogue/receive', ({ session }) => {
     // generally flag and authority has already attached to users
-    if (session.user.authority < config.authority.receive) return true
+    if (session.user?.authority < config.authority.receive) return true
   })
 
   ctx.on('dialogue/receive', ({ session, test }) => {

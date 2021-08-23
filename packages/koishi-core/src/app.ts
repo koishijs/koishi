@@ -21,6 +21,7 @@ export interface DelayOptions {
 
 export interface AppOptions extends BotOptions {
   port?: number
+  host?: string
   bots?: BotOptions[]
   prefix?: string | string[] | ((session: Session.Message) => void | string | string[])
   nickname?: string | string[]
@@ -176,10 +177,10 @@ export class App extends Context {
 
   private async _listen() {
     try {
-      const { port } = this.app.options
+      const { port, host } = this.app.options
       if (port) {
-        this._httpServer.listen(port)
-        this.logger('server').info('server listening at %c', port)
+        this._httpServer.listen(port, host)
+        this.logger('server').info('server listening at %c', `http://${host || 'localhost'}:${port}`)
       }
       await Promise.all(Object.values(this.adapters).map(adapter => adapter.start()))
     } catch (error) {

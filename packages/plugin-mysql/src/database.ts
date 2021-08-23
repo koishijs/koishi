@@ -1,7 +1,7 @@
 import { createPool, Pool, PoolConfig, escape as mysqlEscape, escapeId, format, TypeCast } from 'mysql'
 import { App, Database } from 'koishi-core'
 import * as Koishi from 'koishi-core'
-import { Logger } from 'koishi-utils'
+import { Logger, makeArray } from 'koishi-utils'
 import { types } from 'util'
 
 declare module 'mysql' {
@@ -64,6 +64,10 @@ function getTypeDefinition({ type, length, precision, scale }: Koishi.Tables.Fie
   }
 }
 
+function createIndex(keys: string | string[]) {
+  return makeArray(keys).map(key => escapeId(key)).join(', ')
+}
+
 class MysqlDatabase {
   public pool: Pool
   public config: Config
@@ -112,69 +116,78 @@ class MysqlDatabase {
     }
   }
 
+  private columns: Record<string, string[]> = {}
+
+  private getColDefs(name: string, cols: string[] = []) {
+    const table = Koishi.Tables.config[name]
+    const { primary, foreign, type } = table
+    const fields = { ...table.fields }
+    const unique = [...table.unique]
+    const keys = this.columns[name] || []
+
+    // create platform rows
+    if (name === 'user') {
+      const platforms = new Set<string>(this.app.bots.map(bot => bot.platform))
+      for (const name of platforms) {
+        fields[name] = { type: 'string', length: 63 }
+        unique.push(name)
+      }
+    }
+
+    // mysql definitions (FIXME: remove in v4)
+    for (const key in MysqlDatabase.tables[name]) {
+      const value = MysqlDatabase.tables[name][key]
+      if (keys.includes(key) || typeof value === 'function') continue
+      cols.push(`${escapeId(key)} ${MysqlDatabase.Domain.definition(value)}`)
+    }
+
+    // orm definitions
+    for (const key in fields) {
+      if (keys.includes(key)) continue
+      const { initial, nullable = initial === undefined || initial === null } = fields[key]
+      let def = escapeId(key)
+      if (key === primary && type === 'incremental') {
+        def += ' bigint(20) unsigned not null auto_increment'
+      } else {
+        const typedef = getTypeDefinition(fields[key])
+        def += ' ' + typedef + (nullable ? ' ' : ' not ') + 'null'
+        // blob, text, geometry or json columns cannot have default values
+        if (initial && !typedef.startsWith('text')) {
+          def += ' default ' + escape(initial, name, key)
+        }
+      }
+      cols.push(def)
+    }
+
+    if (!keys.length) {
+      cols.push(`primary key (${createIndex(primary)})`)
+      for (const key of unique) {
+        cols.push(`unique index (${createIndex(key)})`)
+      }
+      for (const key in foreign) {
+        const [table, key2] = foreign[key]
+        cols.push(`foreign key (${escapeId(key)}) references ${escapeId(table)} (${escapeId(key2)})`)
+      }
+    }
+
+    return cols
+  }
+
   async start() {
     this.pool = createPool(this.config)
-    const data = await this.select('information_schema.columns', ['TABLE_NAME', 'COLUMN_NAME'], 'TABLE_SCHEMA = ?', [this.config.database])
-    const tables: Record<string, string[]> = {}
+    const data = await this.query<any[]>('SELECT TABLE_NAME, COLUMN_NAME from information_schema.columns WHERE TABLE_SCHEMA = ?', [this.config.database])
     for (const { TABLE_NAME, COLUMN_NAME } of data) {
-      (tables[TABLE_NAME] ||= []).push(COLUMN_NAME)
+      (this.columns[TABLE_NAME] ||= []).push(COLUMN_NAME)
     }
 
     for (const name in Koishi.Tables.config) {
-      const table = { ...MysqlDatabase.tables[name] }
-      // create platform rows
-      const platforms = new Set<string>(this.app.bots.map(bot => bot.platform))
-      if (name === 'user') {
-        for (const name of platforms) {
-          table[name] = 'varchar(50) null default null'
-        }
-      }
-      if (!tables[name]) {
-        const cols = Object.keys(table)
-          .filter((key) => typeof table[key] !== 'function')
-          .map((key) => `${escapeId(key)} ${MysqlDatabase.Domain.definition(table[key])}`)
-        const { type, primary, unique, foreign, fields } = Koishi.Tables.config[name]
-        cols.push(`primary key (${escapeId(primary)})`)
-        for (const key of unique) {
-          if (Array.isArray(key)) {
-            cols.push(`unique index (${key.map(key => escapeId(key)).join(', ')})`)
-          } else {
-            cols.push(`unique index (${escapeId(key)})`)
-          }
-        }
-        if (name === 'user') {
-          for (const key of platforms) {
-            cols.push(`unique index (${escapeId(key)})`)
-          }
-        }
-        for (const key in foreign) {
-          const [table, key2] = foreign[key]
-          cols.push(`foreign key (${escapeId(key)}) references ${escapeId(table)} (${escapeId(key2)})`)
-        }
-        for (const key in fields) {
-          const { initial, nullable = initial === undefined } = fields[key]
-          let def = escapeId(key)
-          if (key === primary && type === 'incremental') {
-            def += ' bigint(20) unsigned not null auto_increment'
-          } else {
-            const typedef = getTypeDefinition(fields[key])
-            def += ' ' + typedef + (nullable ? ' ' : ' not ') + 'null'
-            // blob, text, geometry or json columns cannot have default values
-            if (initial && !typedef.startsWith('text')) {
-              def += ' default ' + escape(initial, name, key)
-            }
-          }
-          cols.push(def)
-        }
+      const cols = this.getColDefs(name)
+      if (!this.columns[name]) {
         logger.info('auto creating table %c', name)
         await this.query(`CREATE TABLE ?? (${cols.join(',')}) COLLATE = ?`, [name, this.config.charset])
-      } else {
-        const cols = Object.keys(table)
-          .filter(key => typeof table[key] !== 'function' && !tables[name].includes(key))
-          .map(key => `ADD \`${key}\` ${MysqlDatabase.Domain.definition(table[key])}`)
-        if (!cols.length) continue
+      } else if (cols.length) {
         logger.info('auto updating table %c', name)
-        await this.query(`ALTER TABLE ?? ${cols.join(',')}`, [name])
+        await this.query(`ALTER TABLE ?? ${cols.map(def => 'ADD ' + def).join(',')}`, [name])
       }
     }
   }
