@@ -133,6 +133,7 @@ export namespace Tables {
   }
 
   extend('user', {
+    type: 'incremental',
     fields: {
       id: 'string(63)',
       name: 'string(63)',

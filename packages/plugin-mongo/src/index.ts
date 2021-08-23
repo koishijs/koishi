@@ -150,11 +150,6 @@ function transformEval(expr: Eval.Numeric | Eval.Aggregation) {
   }))
 }
 
-function getFallbackType({ fields, primary }: Tables.Config) {
-  const { type } = fields[primary]
-  return Tables.Field.string.includes(type) ? 'random' : 'incremental'
-}
-
 Database.extend(MongoDatabase, {
   async drop(table?: TableType) {
     if (table) {
@@ -189,13 +184,15 @@ Database.extend(MongoDatabase, {
 
   async create(name, data: any) {
     const meta = Tables.config[name]
-    const { primary, type = getFallbackType(meta) } = meta
+    const { primary, type, fields } = meta
     const copy = { ...Tables.create(name), ...data }
     if (copy[primary]) {
       copy['_id'] = copy[primary]
     } else if (type === 'incremental') {
       const [latest] = await this.db.collection(name).find().sort('_id', -1).limit(1).toArray()
-      copy['_id'] = copy[primary] = data[primary] = latest ? latest._id + 1 : 1
+      let id = copy['_id'] = latest ? latest._id + 1 : 1
+      if (Tables.Field.string.includes(fields[id].type)) id = id.toString()
+      copy[primary] = data[primary] = id
     } else if (type === 'random') {
       copy['_id'] = data[primary] = Random.uuid()
     }

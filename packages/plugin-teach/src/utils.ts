@@ -18,6 +18,7 @@ declare module 'koishi-core' {
 }
 
 Tables.extend('dialogue', {
+  type: 'incremental',
   fields: {
     id: 'unsigned',
     flag: 'unsigned(4)',

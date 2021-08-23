@@ -182,6 +182,7 @@ Database.extend(MysqlDatabase, {
       await this.query(`DROP TABLE ${escapeId(name)}`)
     } else {
       const data = await this.select('information_schema.tables', ['TABLE_NAME'], 'TABLE_SCHEMA = ?', [this.config.database])
+      if (!data.length) return
       await this.query(data.map(({ TABLE_NAME }) => `DROP TABLE ${escapeId(TABLE_NAME)}`).join('; '))
     }
   },
