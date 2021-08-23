@@ -57,6 +57,8 @@ export namespace Tables {
 
     export function parse(source: string | Field): Field {
       if (typeof source !== 'string') return source
+
+      // parse string definition
       const capture = regexp.exec(source)
       if (!capture) throw new TypeError('invalid field definition')
       const type = capture[1] as Type
@@ -81,13 +83,6 @@ export namespace Tables {
 
       return field
     }
-
-    export function extend(fields: Config, extension: Extension = {}) {
-      for (const key in extension) {
-        fields[key] = parse(extension[key])
-      }
-      return fields
-    }
   }
 
   export interface Extension<O = any> {
@@ -108,21 +103,29 @@ export namespace Tables {
 
   export function extend<T extends TableType>(name: T, meta?: Extension<Tables[T]>): void
   export function extend(name: string, meta: Extension = {}) {
-    const { unique = [], foreign, fields = {} } = config[name] || {}
-    config[name] = {
+    const { primary, type, unique = [], foreign, fields = {} } = meta
+    const table = config[name] ||= {
       primary: 'id',
-      ...meta,
-      unique: [...unique, ...meta.unique || []],
-      foreign: { ...foreign, ...meta.foreign },
-      fields: Field.extend(fields, meta.fields),
+      unique: [],
+      foreign: {},
+      fields: {},
+    }
+
+    table.type = type || table.type
+    table.primary = primary || table.primary
+    table.unique.push(...unique)
+    Object.assign(table.foreign, foreign)
+
+    for (const key in fields) {
+      table.fields[key] = Field.parse(fields[key])
     }
   }
 
   export function create<T extends TableType>(name: T): Tables[T] {
-    const { fields } = Tables.config[name]
+    const { fields, primary } = Tables.config[name]
     const result = {} as Tables[T]
     for (const key in fields) {
-      if (fields[key].initial !== undefined) {
+      if (key !== primary && fields[key].initial !== undefined) {
         result[key] = utils.clone(fields[key].initial)
       }
     }
