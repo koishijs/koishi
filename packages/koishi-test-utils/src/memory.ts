@@ -4,8 +4,6 @@ import { clone, pick } from 'koishi-utils'
 declare module 'koishi-core' {
   interface Database {
     memory: MemoryDatabase
-    initUser(id: string, authority?: number): Promise<void>
-    initChannel(id: string, assignee?: string): Promise<void>
   }
 
   namespace Database {
@@ -233,10 +231,6 @@ Database.extend(MemoryDatabase, {
     user.id = '' + user.id
   },
 
-  initUser(id, authority = 1) {
-    return this.createUser('mock', id, { authority })
-  },
-
   async getChannel(type, id, fields) {
     if (Array.isArray(id)) {
       return this.get('channel', id.map(id => `${type}:${id}`), fields)
@@ -267,10 +261,6 @@ Database.extend(MemoryDatabase, {
       ...Channel.create(type, id),
       ...clone(data),
     })
-  },
-
-  initChannel(id, assignee = this.app.bots[0].selfId) {
-    return this.createChannel('mock', id, { assignee })
   },
 })
 

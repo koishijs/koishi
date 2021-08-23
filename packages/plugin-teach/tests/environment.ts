@@ -30,11 +30,11 @@ export default function (config: Dialogue.Config) {
 
   async function start() {
     await app.start()
-    await app.database.initUser(u2id, 2)
-    await app.database.initUser(u3id, 3)
-    await app.database.initUser(u4id, 4)
-    await app.database.initChannel(g1id)
-    await app.database.initChannel(g2id)
+    await app.initUser(u2id, 2)
+    await app.initUser(u3id, 3)
+    await app.initUser(u4id, 4)
+    await app.initChannel(g1id)
+    await app.initChannel(g2id)
   }
 
   before(start)

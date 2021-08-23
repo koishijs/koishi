@@ -29,8 +29,8 @@ app.plugin(teach, {
 const ses = app.session('123', '456')
 
 before(async () => {
-  await app.database.initUser('123', 3)
-  await app.database.initChannel('456')
+  await app.initUser('123', 3)
+  await app.initChannel('456')
   await fs.rmdir(resolve(__dirname, 'fixtures/.koishi'), { recursive: true })
   return new Promise<void>((resolve) => {
     app.on('eval/start', () => resolve())
