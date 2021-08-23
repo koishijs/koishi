@@ -164,6 +164,7 @@ export namespace Argv {
     channel: string
     integer: number
     posint: number
+    natural: number
     date: Date
   }
 
@@ -255,6 +256,12 @@ export namespace Argv {
     const value = +source
     if (value * 0 === 0 && Math.floor(value) === value && value > 0) return value
     throw new Error(template('internal.invalid-posint'))
+  })
+
+  createDomain('natural', (source) => {
+    const value = +source
+    if (value * 0 === 0 && Math.floor(value) === value && value >= 0) return value
+    throw new Error(template('internal.invalid-natural'))
   })
 
   createDomain('date', (source) => {

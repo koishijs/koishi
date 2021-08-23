@@ -5,7 +5,6 @@ import { resolve } from 'path'
 import { promises as fs } from 'fs'
 import * as eval from 'koishi-plugin-eval'
 import * as teach from 'koishi-plugin-teach'
-import { memory } from 'koishi-plugin-teach/tests/environment'
 
 const app = new App({
   mockStart: false,
@@ -26,8 +25,6 @@ app.plugin(teach, {
   useWriter: false,
   successorTimeout: 0,
 })
-
-app.plugin(memory)
 
 const ses = app.session('123', '456')
 

@@ -332,7 +332,7 @@ export function admin(ctx: Context) {
   ctx.command('common/user', '用户管理', { authority: 3 })
   ctx.command('common/channel', '频道管理', { authority: 3 })
 
-  ctx.command('user/authorize <value:posint>', '权限信息', { authority: 4 })
+  ctx.command('user/authorize <value:natural>', '权限信息', { authority: 4 })
     .alias('auth')
     .adminUser(async ({ session, target }, authority) => {
       if (session.userId === target[session.platform]) return template('admin.user-expected')
