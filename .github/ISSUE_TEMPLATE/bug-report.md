@@ -23,8 +23,7 @@ labels:
 
 - OS: [e.g. iOS]
 - Node Version: [e.g. 10.16.0]
-- CoolQ Version: [e.g. 5.15.4]
-- CQHTTP Version: [e.g. 4.13.2]
+- Bot Instance (mirai, go-cqhttp etc.) Version: [e.g. 0.9.40]
 - Koishi Version: [e.g. 1.0.0]
 
 **Additional context**
