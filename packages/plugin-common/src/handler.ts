@@ -1,4 +1,4 @@
-import { Context, Session, Random } from 'koishi-core'
+import { Context, Session, Random, Awaitable } from 'koishi-core'
 
 declare module 'koishi-core' {
   interface EventMap {
@@ -92,7 +92,7 @@ export function repeater(ctx: Context, config: RepeaterConfig = {}) {
   })
 }
 
-type RequestHandler = string | boolean | ((session: Session) => string | boolean | void | Promise<string | boolean | void>)
+type RequestHandler = string | boolean | ((session: Session) => Awaitable<string | boolean | void>)
 
 async function getHandlerResult(handler: RequestHandler, session: Session, prefer: boolean): Promise<[boolean, string?]> {
   const result = typeof handler === 'function' ? await handler(session) : handler

@@ -1,4 +1,4 @@
-import { Channel, User, Logger, escapeRegExp, observe, difference, Time, segment, Random } from 'koishi-core'
+import { Channel, User, Logger, escapeRegExp, observe, difference, Time, segment, Random, Awaitable } from 'koishi-core'
 import { parentPort, workerData } from 'worker_threads'
 import { InspectOptions, formatWithOptions } from 'util'
 import { findSourceMap } from 'module'
@@ -143,7 +143,7 @@ interface AddonArgv {
 
 interface AddonScope extends AddonArgv, Session {}
 
-type AddonAction = (scope: AddonScope) => string | void | Promise<string | void>
+type AddonAction = (scope: AddonScope) => Awaitable<string | void>
 const commandMap: Record<string, AddonAction> = {}
 
 export class WorkerHandle {
