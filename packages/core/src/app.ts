@@ -78,10 +78,6 @@ export class App extends Context {
       disposables: [],
     })
 
-    for (const bot of options.bots) {
-      Adapter.from(this, bot).create(bot)
-    }
-
     this._commands.resolve = (key) => {
       if (!key) return
       const segments = key.split('.')
@@ -135,6 +131,9 @@ export class App extends Context {
 
   async start() {
     this.status = App.Status.opening
+    for (const bot of this.options.bots) {
+      Adapter.from(this, bot).create(bot)
+    }
     await this.parallel('before-connect')
     this.status = App.Status.open
     this.logger('app').debug('started')

@@ -3,6 +3,7 @@ import { defineProperty, remove } from '@koishijs/utils'
 import { Server, createServer } from 'http'
 import { AxiosRequestConfig } from 'axios'
 import Router from '@koa/router'
+import type ProxyAgent from 'proxy-agent'
 import type Koa from 'koa'
 
 export * from './adapter'
@@ -27,6 +28,7 @@ declare module '@koishijs/core' {
   interface AppOptions {
     port?: number
     host?: string
+    proxyAgent?: string
     axiosConfig?: AxiosRequestConfig
   }
 
@@ -45,8 +47,20 @@ Context.delegate('router')
 
 const prepare = App.prototype.prepare
 App.prototype.prepare = function (this: App, ...args) {
-  prepare.apply(this, ...args)
-  const { port } = this.options
+  prepare.call(this, ...args)
+  prepareServer.call(this)
+
+  const { proxyAgent } = this.options
+  if (proxyAgent) {
+    const Agent: typeof ProxyAgent = require('proxy-agent')
+    const config = this.options.axiosConfig ||= {}
+    config.httpAgent = new Agent(proxyAgent)
+    config.httpsAgent = new Agent(proxyAgent)
+  }
+}
+
+function prepareServer(this: App) {
+  const { port, host } = this.options
   if (!port) return
 
   // create server
@@ -58,12 +72,8 @@ App.prototype.prepare = function (this: App, ...args) {
   defineProperty(this, '_httpServer', createServer(koa.callback()))
 
   this.before('connect', () => {
-    const { port, host } = this.app.options
-    if (port) {
-      this._httpServer.listen(port, host)
-      this.logger('server').info('server listening at %c', `http://${host || 'localhost'}:${port}`)
-    }
-    this.logger('server').info('server listening at %c', port)
+    this._httpServer.listen(port, host)
+    this.logger('server').info('server listening at %c', `http://${host || 'localhost'}:${port}`)
   })
 
   this.on('disconnect', () => {

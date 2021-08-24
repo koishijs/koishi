@@ -92,6 +92,8 @@ export class Session<
   subtype?: Y
   subsubtype?: InnerKeys<UnionToIntersection<Session.Events[X]>, Y>
   platform?: P
+  variant?: string
+  domain?: string
 
   selfId?: string
   operatorId?: string

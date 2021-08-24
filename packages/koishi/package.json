@@ -10,9 +10,7 @@
   "files": [
     "lib"
   ],
-  "bin": {
-    "koishi": "lib/cli"
-  },
+  "bin": "lib/cli/index.js",
   "author": "Shigma <1700011071@pku.edu.cn>",
   "license": "MIT",
   "repository": {
@@ -49,6 +47,7 @@
     "kleur": "^4.1.4",
     "koa": "^2.13.1",
     "koa-bodyparser": "^4.3.0",
-    "prompts": "^2.4.1"
+    "prompts": "^2.4.1",
+    "proxy-agent": "^5.0.0"
   }
 }

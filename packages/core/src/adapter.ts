@@ -127,6 +127,8 @@ export class Bot<P extends Platform> {
   readonly app: App
   readonly logger: Logger
   readonly platform: P
+  readonly variant: string
+  readonly domain: string
 
   constructor(public adapter: Adapter<P>, options: BotOptions) {
     Object.assign(this, options)
