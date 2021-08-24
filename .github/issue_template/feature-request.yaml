@@ -1,0 +1,26 @@
+name: Feature Request
+description: 提交错误报告
+title: "Feature request: "
+labels:
+  - feature
+body:
+  - type: textarea
+    attributes:
+      label: Describe the problem related to the feature request
+      description: 请简要地说明是什么问题导致你想要一个新特性。
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Describe the solution you'd like
+      description: 请说明你希望使用什么样的方法（比如增加什么功能）解决上述问题。
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Describe alternatives you've considered
+      description: 除了上述方法以外，你还考虑过哪些其他的实现方式？
+  - type: textarea
+    attributes:
+      label: Additional context
+      description: 请描述其他想要补充的信息。
