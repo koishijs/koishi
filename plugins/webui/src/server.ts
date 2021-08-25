@@ -1,4 +1,4 @@
-import { Adapter, App, Context, Logger, noop, omit, pick, Random, remove, Time, User, version } from 'koishi'
+import { Adapter, App, Context, Logger, noop, omit, pick, remove, Time, User, version } from 'koishi'
 import { resolve, extname } from 'path'
 import { promises as fs, Stats, createReadStream } from 'fs'
 import Awesome from './payload/awesome'
@@ -92,8 +92,7 @@ export class WebServer extends Adapter {
       stats: new Statistics(ctx, config),
     }
 
-    ctx.any().middleware(async (session, next) => {
-      if (session.subtype !== 'private') return next()
+    ctx.any().private().middleware(async (session, next) => {
       const state = this.states[session.uid]
       if (state && state[0] === session.content) {
         const user = await session.observeUser(['id', 'name', 'authority', 'token', 'expire'])
