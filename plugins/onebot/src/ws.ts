@@ -41,7 +41,7 @@ export class WsServer extends Adapter<'onebot'> {
           return socket.close(1008, 'invalid x-client-role')
         }
         const selfId = headers['x-self-id'].toString()
-        const bot = this.bots[selfId]
+        const bot = this.bots.find(bot => bot.selfId === selfId)
         if (!bot) return socket.close(1008, 'invalid x-self-id')
 
         bot.socket = socket

@@ -343,19 +343,19 @@ export abstract class Database {
     app.before('disconnect', () => this.stop())
   }
 
-  getUser<T extends string, K extends T | User.Field>(type: T, id: string, modifier?: Query.Modifier<K>): Promise<UserWithPlatform<T, T | K>>
-  getUser<T extends string, K extends T | User.Field>(type: T, ids: string[], modifier?: Query.Modifier<K>): Promise<UserWithPlatform<T, K>[]>
-  async getUser(type: User.Index, id: MaybeArray<string>, modifier?: Query.Modifier<User.Field>) {
-    const data = await this.get('user', { [type]: id }, modifier)
-    return Array.isArray(id) ? data : data[0] && { ...data[0], [type]: id } as any
+  getUser<T extends string, K extends T | User.Field>(domain: T, id: string, modifier?: Query.Modifier<K>): Promise<UserWithPlatform<T, T | K>>
+  getUser<T extends string, K extends T | User.Field>(domain: T, ids: string[], modifier?: Query.Modifier<K>): Promise<UserWithPlatform<T, K>[]>
+  async getUser(domain: User.Index, id: MaybeArray<string>, modifier?: Query.Modifier<User.Field>) {
+    const data = await this.get('user', { [domain]: id }, modifier)
+    return Array.isArray(id) ? data : data[0] && { ...data[0], [domain]: id } as any
   }
 
-  setUser(type: string, id: string, data: Partial<User>) {
-    return this.set('user', { [type]: id }, data)
+  setUser(domain: string, id: string, data: Partial<User>) {
+    return this.set('user', { [domain]: id }, data)
   }
 
-  getChannel<K extends Channel.Field>(type: string, id: string, modifier?: Query.Modifier<K>): Promise<Pick<Channel, K | 'id' | 'domain'>>
-  getChannel<K extends Channel.Field>(type: string, ids: string[], modifier?: Query.Modifier<K>): Promise<Pick<Channel, K>[]>
+  getChannel<K extends Channel.Field>(domain: string, id: string, modifier?: Query.Modifier<K>): Promise<Pick<Channel, K | 'id' | 'domain'>>
+  getChannel<K extends Channel.Field>(domain: string, ids: string[], modifier?: Query.Modifier<K>): Promise<Pick<Channel, K>[]>
   async getChannel(domain: string, id: MaybeArray<string>, modifier?: Query.Modifier<Channel.Field>) {
     const data = await this.get('channel', { domain, id }, modifier)
     return Array.isArray(id) ? data : data[0] && { ...data[0], domain, id }
@@ -364,7 +364,7 @@ export abstract class Database {
   getAssignedChannels<K extends Channel.Field>(fields?: K[], assignMap?: Record<string, string[]>): Promise<Pick<Channel, K>[]>
   async getAssignedChannels(fields?: Channel.Field[], assignMap: Record<string, string[]> = this.app.getSelfIds()) {
     return this.get('channel', {
-      $or: Object.entries(assignMap).map(([type, assignee]) => ({ type, assignee })),
+      $or: Object.entries(assignMap).map(([domain, assignee]) => ({ domain, assignee })),
     }, fields)
   }
 

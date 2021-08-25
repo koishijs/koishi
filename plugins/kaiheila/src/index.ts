@@ -29,7 +29,7 @@ Adapter.types.kaiheila = Adapter.redirect((bot) => {
 export const name = 'kaiheila'
 
 export function apply(ctx: Context, config: Config = {}) {
-  Object.assign(KaiheilaBot.config, config)
   config.path = sanitize(config.path || '/kaiheila')
   config.endpoint = trimSlash(config.endpoint || 'https://www.kaiheila.cn/api/v3')
+  Object.assign(KaiheilaBot.config, config)
 }

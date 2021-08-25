@@ -202,8 +202,7 @@ Database.extend(MysqlDatabase, {
     if (filter === '0') return
     const keys = Object.keys(data)
     const update = keys.map((key) => {
-      key = escapeId(key)
-      return `${key} = VALUES(${key})`
+      return `${escapeId(key)} = ${this.escape(data[key], name, key)}`
     }).join(', ')
     await this.query(`UPDATE ${name} SET ${update}`)
   },
