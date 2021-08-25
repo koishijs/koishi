@@ -1,7 +1,7 @@
 import { App } from '@koishijs/test-utils'
 import { User, Channel, defineEnumProperty } from 'koishi'
 import { install } from '@sinonjs/fake-timers'
-import * as common from 'koishi-plugin-common'
+import * as common from '@koishijs/plugin-common'
 import { expect } from 'chai'
 
 const app = new App({ mockDatabase: true })

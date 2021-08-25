@@ -25,8 +25,8 @@ export class MinecraftBot extends Bot<'minecraft'> {
   }
 
   handleFriendRequest = noop
-  handleGroupMemberRequest = noop
-  handleGroupRequest = noop
+  handleGuildMemberRequest = noop
+  handleGuildRequest = noop
   editMessage = noop
   deleteMessage = noop
   deleteFriend = noop

@@ -207,8 +207,8 @@ export namespace Bot {
 
     // request
     handleFriendRequest(messageId: string, approve: boolean, comment?: string): Promise<void>
-    handleGroupRequest(messageId: string, approve: boolean, comment?: string): Promise<void>
-    handleGroupMemberRequest(messageId: string, approve: boolean, comment?: string): Promise<void>
+    handleGuildRequest(messageId: string, approve: boolean, comment?: string): Promise<void>
+    handleGuildMemberRequest(messageId: string, approve: boolean, comment?: string): Promise<void>
   }
 
   export interface Channel {

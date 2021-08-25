@@ -190,11 +190,11 @@ export class CQBot extends Bot {
     await this.$setFriendAddRequest(messageId, approve, comment)
   }
 
-  async handleGroupRequest(messageId: string, approve: boolean, comment?: string) {
+  async handleGuildRequest(messageId: string, approve: boolean, comment?: string) {
     await this.$setGroupAddRequest(messageId, 'invite', approve, comment)
   }
 
-  async handleGroupMemberRequest(messageId: string, approve: boolean, comment?: string) {
+  async handleGuildMemberRequest(messageId: string, approve: boolean, comment?: string) {
     await this.$setGroupAddRequest(messageId, 'add', approve, comment)
   }
 

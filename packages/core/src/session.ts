@@ -25,14 +25,14 @@ export namespace Session {
   export type Message = Session<never, never, Platform, MessageAction>
   export interface Events extends Record<MessageAction, MessageType> {}
 
-  export type RequestAction = 'friend-request' | 'group-request' | 'group-member-request'
+  export type RequestAction = 'friend-request' | 'guild-request' | 'guild-member-request'
   export type Request = Session<never, never, Platform, RequestAction>
   export interface Events extends Record<RequestAction, {}> {}
 
   export interface Events {
     'friend-request': {}
-    'group-request': {}
-    'group-member-request': {}
+    'guild-request': {}
+    'guild-member-request': {}
     'group-added': GroupMemberChangeType
     'group-member-added': GroupMemberChangeType
     'group-deleted': GroupMemberChangeType

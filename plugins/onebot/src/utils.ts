@@ -92,9 +92,9 @@ export function createSession(adapter: Adapter, data: any) {
       session.type = 'friend-request'
       session.channelId = `private:${session.userId}`
     } else if (data.sub_type === 'add') {
-      session.type = 'group-member-request'
+      session.type = 'guild-member-request'
     } else {
-      session.type = 'group-request'
+      session.type = 'guild-request'
     }
   } else if (data.post_type === 'notice') {
     delete session['noticeType']

@@ -2,7 +2,7 @@ import { Channel } from 'koishi'
 import { App } from '@koishijs/test-utils'
 import { expect } from 'chai'
 import jest from 'jest-mock'
-import * as common from 'koishi-plugin-common'
+import * as common from '@koishijs/plugin-common'
 
 const app = new App({
   mockDatabase: true,
