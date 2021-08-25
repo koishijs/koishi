@@ -222,14 +222,9 @@ export class Session<
   }
 
   async getChannel<K extends Channel.Field = never>(id = this.channelId, assignee = '', fields: K[] = []) {
-    const group = await this.database.getChannel(this.platform, id, fields)
-    if (group) return group
-    const fallback = Channel.create(this.platform, id)
-    fallback.assignee = assignee
-    if (assignee) {
-      await this.database.setChannel(this.platform, id, fallback)
-    }
-    return fallback
+    const channel = await this.database.getChannel(this.platform, id, fields)
+    if (channel) return channel
+    return this.database.createChannel(this.platform, id, { assignee })
   }
 
   /** 在当前会话上绑定一个可观测频道实例 */
@@ -267,12 +262,7 @@ export class Session<
   async getUser<K extends User.Field = never>(id = this.userId, authority = 0, fields: K[] = []) {
     const user = await this.database.getUser(this.platform, id, fields)
     if (user) return user
-    const fallback = User.create(this.platform, id)
-    fallback.authority = authority
-    if (authority) {
-      await this.database.setUser(this.platform, id, fallback)
-    }
-    return fallback
+    return this.database.createUser(this.platform, id, { authority })
   }
 
   /** 在当前会话上绑定一个可观测用户实例 */

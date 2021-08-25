@@ -54,7 +54,6 @@ export interface Message extends MessageId {
   time: number
   messageType: 'private' | 'group'
   sender: SenderInfo
-  group: boolean
   groupId?: number
   message: string
   anonymous?: AnonymousInfo

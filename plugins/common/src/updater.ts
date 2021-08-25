@@ -150,7 +150,7 @@ Command.prototype.adminUser = function (this: Command, callback, autoCreate) {
           if (!autoCreate) return template('admin.user-not-found')
           const fallback = observe(User.create(platform, userId), async () => {
             if (!fallback.authority) return
-            await database.setUser(platform, userId, fallback)
+            await database.createUser(platform, userId, fallback)
           })
           target = fallback
         } else if (user.authority <= data.authority) {
@@ -199,7 +199,7 @@ Command.prototype.adminChannel = function (this: Command, callback, autoCreate) 
         if (!autoCreate) return template('admin.channel-not-found')
         const fallback = observe(Channel.create(platform, channelId), async () => {
           if (!fallback.assignee) return
-          await database.setChannel(platform, channelId, fallback)
+          await database.createChannel(platform, channelId, fallback)
         })
         target = fallback
       } else {
@@ -207,7 +207,6 @@ Command.prototype.adminChannel = function (this: Command, callback, autoCreate) 
         if (!autoCreate) {
           session = Object.create(argv.session)
           session.channel = target
-          session.cid = options.target
           session.channelId = channelId
           session.platform = platform
         }

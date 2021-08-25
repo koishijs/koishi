@@ -40,7 +40,7 @@ export function adaptMessage(message: OneBot.Message): Bot.Message {
       reply: (data) => segment('quote', data),
     }),
   }
-  if (message.group) {
+  if (message.groupId) {
     result.guildId = result.channelId = message.groupId.toString()
   } else {
     result.channelId = 'private:' + author.userId
@@ -84,7 +84,6 @@ export function createSession(adapter: Adapter, data: any) {
   if (session.type === 'message') {
     Object.assign(session, adaptMessage(session as any))
     renameProperty(session, 'subtype', 'messageType')
-    session.channelId ||= `private:${session.userId}`
   } else if (data.post_type === 'request') {
     delete session['requestType']
     renameProperty(session, 'content', 'comment')

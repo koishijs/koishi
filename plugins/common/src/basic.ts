@@ -64,7 +64,6 @@ export function contextify(ctx: Context) {
         sess.subtype = 'private'
       } else if (options.channel !== session.cid) {
         sess.channelId = Argv.parsePid(options.channel)[1]
-        sess.cid = `${sess.platform}:${sess.channelId}`
         sess.subtype = 'group'
         await sess.observeChannel()
       } else {

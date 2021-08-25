@@ -352,6 +352,10 @@ export abstract class Database {
     return this.set('user', { [domain]: id }, data)
   }
 
+  createUser(domain: string, id: string, data: Partial<User>) {
+    return this.create('user', { [domain]: id, ...data })
+  }
+
   getChannel<K extends Channel.Field>(domain: string, id: string, modifier?: Query.Modifier<K>): Promise<Pick<Channel, K | 'id' | 'domain'>>
   getChannel<K extends Channel.Field>(domain: string, ids: string[], modifier?: Query.Modifier<K>): Promise<Pick<Channel, K>[]>
   async getChannel(domain: string, id: MaybeArray<string>, modifier?: Query.Modifier<Channel.Field>) {
@@ -368,6 +372,10 @@ export abstract class Database {
 
   setChannel(domain: string, id: string, data: Partial<Channel>) {
     return this.set('channel', { domain, id }, data)
+  }
+
+  createChannel(domain: string, id: string, data: Partial<Channel>) {
+    return this.create('channel', { domain, id, ...data })
   }
 }
 
