@@ -1,20 +1,10 @@
 import { App, Tests } from 'koishi-test-utils'
 import * as mysql from 'koishi-plugin-mysql'
+import parse from 'yargs-parser'
 
-const getMysqlPorts = () => {
-  const argv = process.argv.splice(3)
-  const match = /^--mysql-ports=(.*)/
-  const ports = []
-  for (let i = 0; i < argv.length; i++) {
-    const envMatch = argv[i].match(match)
-    envMatch && ports.push(...envMatch[1].split(',').map(port => +port))
-  }
-  return ports.length === 0 ? undefined : ports
-}
+const { mysqlPorts } = parse(process.argv.slice(2), { string: ['mysql-ports'] })
 
-const ports = getMysqlPorts() ?? [3306]
-
-for (const port of ports) {
+for (const port of mysqlPorts ? mysqlPorts.split(',') : []) {
   describe(`MySQL Database (${port})`, () => {
     const app = new App()
 

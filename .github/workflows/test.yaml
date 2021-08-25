@@ -153,7 +153,7 @@ jobs:
       - name: Build JS
         run: yarn compile
       - name: Unit Test
-        run: yarn test:json
+        run: yarn test:json --mongo-ports=27017 --mysql-ports=3306,3307,3308
       - name: Report Coverage
         if: ${{ matrix.node-version == 14 }}
         uses: codecov/codecov-action@v1

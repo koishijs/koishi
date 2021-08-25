@@ -91,8 +91,7 @@ export class WebServer extends Adapter {
       stats: new Statistics(ctx, config),
     }
 
-    ctx.all().middleware(async (session, next) => {
-      if (session.subtype !== 'private') return next()
+    ctx.all().private().middleware(async (session, next) => {
       const state = this.states[session.uid]
       if (state && state[0] === session.content) {
         const user = await session.observeUser(['id', 'name', 'authority', 'token', 'expire'])

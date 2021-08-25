@@ -99,6 +99,6 @@ export function renameProperty<O extends object, K extends keyof O, T extends st
 
 export type Get<T extends {}, K> = K extends keyof T ? T[K] : never
 export type Extract<S, T, U = S> = S extends T ? U : never
-export type MaybeArray<T> = T extends unknown[] ? T : T | T[]
-export type Promisify<T> = T extends Promise<unknown> ? T : Promise<T>
+export type MaybeArray<T> = [T] extends [unknown[]] ? T : T | T[]
+export type Promisify<T> = [T] extends [Promise<unknown>] ? T : Promise<T>
 export type Awaitable<T> = [T] extends [Promise<unknown>] ? T : T | Promise<T>
