@@ -1,25 +1,25 @@
 import { KaiheilaBot } from './bot'
-import { Session, segment, MessageBase, AuthorInfo, GuildInfo, UserInfo, camelCase } from 'koishi'
+import { Bot, Session, segment,camelCase } from 'koishi'
 import * as KHL from './types'
 
-export const adaptGroup = (data: KHL.Guild): GuildInfo => ({
+export const adaptGroup = (data: KHL.Guild): Bot.Guild => ({
   guildId: data.id,
   guildName: data.name,
 })
 
-export const adaptUser = (user: KHL.User): UserInfo => ({
+export const adaptUser = (user: KHL.User): Bot.User => ({
   userId: user.id,
   avatar: user.avatar,
   username: user.username,
   discriminator: user.identifyNum,
 })
 
-export const adaptAuthor = (author: KHL.Author): AuthorInfo => ({
+export const adaptAuthor = (author: KHL.Author): Bot.Author => ({
   ...adaptUser(author),
   nickname: author.nickname,
 })
 
-function adaptMessage(base: KHL.MessageBase, meta: KHL.MessageMeta, session: MessageBase = {}) {
+function adaptMessage(base: KHL.MessageBase, meta: KHL.MessageMeta, session: Bot.MessageBase = {}) {
   if (meta.author) {
     session.author = adaptAuthor(meta.author)
     session.userId = meta.author.id

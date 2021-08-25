@@ -5,7 +5,7 @@ import { contain, observe, Logger, defineProperty, Random, template, remove, noo
 import { Argv } from './parser'
 import { Middleware, NextFunction } from './context'
 import { App } from './app'
-import { Bot, ChannelInfo, GuildInfo, MessageBase, Platform } from './adapter'
+import { Bot, Platform } from './adapter'
 
 const logger = new Logger('session')
 
@@ -13,7 +13,7 @@ type UnionToIntersection<U> = (U extends any ? (key: U) => void : never) extends
 type Flatten<T, K extends keyof T = keyof T> = UnionToIntersection<T[K]>
 type InnerKeys<T, K extends keyof T = keyof T> = keyof Flatten<T> & keyof Flatten<T, K>
 
-export interface Session<U, G, P, X, Y> extends MessageBase, Partial<ChannelInfo>, Partial<GuildInfo> {}
+export interface Session<U, G, P, X, Y> extends Bot.MessageBase, Partial<Bot.Channel>, Partial<Bot.Guild> {}
 
 export namespace Session {
   type Genres = 'friend' | 'channel' | 'group' | 'group-member' | 'group-role' | 'group-file' | 'group-emoji'

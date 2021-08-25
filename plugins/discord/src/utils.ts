@@ -1,9 +1,9 @@
 /* eslint-disable camelcase */
-import { AuthorInfo, ChannelInfo, GuildInfo, MessageInfo, segment, Session, UserInfo } from 'koishi'
+import { Bot, segment, Session } from 'koishi'
 import { DiscordBot } from './bot'
 import * as DC from './types'
 
-export const adaptUser = (user: DC.DiscordUser): UserInfo => ({
+export const adaptUser = (user: DC.DiscordUser): Bot.User => ({
   userId: user.id,
   avatar: `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png`,
   username: user.username,
@@ -11,21 +11,21 @@ export const adaptUser = (user: DC.DiscordUser): UserInfo => ({
   isBot: user.bot || false,
 })
 
-export function adaptGroup(data: DC.PartialGuild | DC.Guild): GuildInfo {
+export function adaptGroup(data: DC.PartialGuild | DC.Guild): Bot.Guild {
   return {
     guildId: data.id,
     guildName: data.name,
   }
 }
 
-export function adaptChannel(data: DC.Channel): ChannelInfo {
+export function adaptChannel(data: DC.Channel): Bot.Channel {
   return {
     channelId: data.id,
     channelName: data.name,
   }
 }
 
-export const adaptAuthor = (author: DC.User): AuthorInfo => ({
+export const adaptAuthor = (author: DC.User): Bot.Author => ({
   ...adaptUser(author),
   nickname: author.username,
 })
@@ -110,7 +110,7 @@ export function adaptMessage(bot: DiscordBot, meta: DC.Message, session: Partial
       session.content += segment('video', { url: embed.video.url, proxy_url: embed.video.proxy_url })
     }
   }
-  return session as MessageInfo
+  return session as Bot.Message
 }
 
 function adaptMessageSession(bot: DiscordBot, meta: DC.Message, session: Partial<Session> = {}) {

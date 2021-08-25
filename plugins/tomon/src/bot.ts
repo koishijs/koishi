@@ -1,9 +1,9 @@
-import { Bot, MessageInfo, GuildInfo, UserInfo, GuildMemberInfo, AuthorInfo } from 'koishi'
+import { Bot } from 'koishi'
 import { Method } from 'axios'
 import { Route, RequestOptions } from './network/route'
 import WebSocket from 'ws'
 
-export interface TomonAuthor extends AuthorInfo {
+export interface TomonAuthor extends Bot.Author {
   id: string
   username: string
   discriminator: string
@@ -26,7 +26,7 @@ export interface Channel {
   defaultMessageNotifications: number
 }
 
-export interface TomonMessageInfo extends MessageInfo {
+export interface TomonMessageInfo extends Bot.Message {
   id: string
   channelId: string
   guildId: string
@@ -41,7 +41,7 @@ export interface TomonMessageInfo extends MessageInfo {
   editedTimestamp: number
 }
 
-export interface TomonGroupInfo extends GuildInfo {
+export interface TomonGroupInfo extends Bot.Guild {
   description: string
   icon: string
   iconUrl: string
@@ -58,14 +58,14 @@ export interface TomonGroupInfo extends GuildInfo {
   updatedAt: number
 }
 
-export interface TomonUserInfo extends UserInfo {
+export interface TomonUserInfo extends Bot.User {
   avatar?: string
   name: string
   createdAt: number
   updatedAt: number
 }
 
-export interface TomonGroupMemberInfo extends TomonUserInfo, GuildMemberInfo {
+export interface TomonGroupMemberInfo extends TomonUserInfo, Bot.GuildMember {
   joinedAt: number
   mute: boolean
   deaf: boolean

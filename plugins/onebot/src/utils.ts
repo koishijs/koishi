@@ -1,35 +1,36 @@
 import { CQBot } from './bot'
-import { Adapter, Session, Logger, camelCase, renameProperty, paramCase, segment } from 'koishi'
+import { Adapter, Bot, Session, Logger, camelCase, renameProperty, paramCase, segment } from 'koishi'
 import * as qface from 'qface'
-import * as Koishi from 'koishi'
 import * as OneBot from './types'
 
 export * from './types'
 
-export const adaptUser = (user: OneBot.AccountInfo): Koishi.UserInfo => ({
+export const adaptUser = (user: OneBot.AccountInfo): Bot.User => ({
   userId: user.userId.toString(),
   avatar: `http://q.qlogo.cn/headimg_dl?dst_uin=${user.userId}&spec=640`,
   username: user.nickname,
 })
 
-export const adaptGroupMember = (user: OneBot.SenderInfo): Koishi.GuildMemberInfo => ({
+export const adaptGroupMember = (user: OneBot.SenderInfo): Bot.GuildMember => ({
   ...adaptUser(user),
   nickname: user.card,
   roles: [user.role],
 })
 
-export const adaptAuthor = (user: OneBot.SenderInfo, anonymous?: OneBot.AnonymousInfo): Koishi.AuthorInfo => ({
+export const adaptAuthor = (user: OneBot.SenderInfo, anonymous?: OneBot.AnonymousInfo): Bot.Author => ({
   ...adaptUser(user),
   nickname: anonymous?.name || user.card,
   anonymous: anonymous?.flag,
   roles: [user.role],
 })
 
-export function adaptMessage(message: OneBot.Message): Koishi.MessageInfo {
-  return {
+export function adaptMessage(message: OneBot.Message): Bot.Message {
+  const author = adaptAuthor(message.sender, message.anonymous)
+  const result: Bot.Message = {
+    author,
+    userId: author.userId,
     messageId: message.messageId.toString(),
     timestamp: message.time * 1000,
-    author: adaptAuthor(message.sender, message.anonymous),
     content: segment.transform(message.message, {
       at({ qq }) {
         if (qq !== 'all') return segment.at(qq)
@@ -39,14 +40,20 @@ export function adaptMessage(message: OneBot.Message): Koishi.MessageInfo {
       reply: (data) => segment('quote', data),
     }),
   }
+  if (message.group) {
+    result.guildId = result.channelId = message.groupId.toString()
+  } else {
+    result.channelId = 'private:' + author.userId
+  }
+  return result
 }
 
-export const adaptGroup = (group: OneBot.GroupInfo): Koishi.GuildInfo => ({
+export const adaptGroup = (group: OneBot.GroupInfo): Bot.Guild => ({
   guildId: group.groupId.toString(),
   guildName: group.groupName,
 })
 
-export const adaptChannel = (group: OneBot.GroupInfo): Koishi.ChannelInfo => ({
+export const adaptChannel = (group: OneBot.GroupInfo): Bot.Channel => ({
   channelId: group.groupId.toString(),
   channelName: group.groupName,
 })

@@ -1,6 +1,6 @@
 /* eslint-disable quote-props */
 
-import { AuthorInfo, Bot, Session, camelize, segment, renameProperty, snakeCase, Adapter } from 'koishi'
+import { Bot, Session, camelize, segment, renameProperty, snakeCase, Adapter } from 'koishi'
 import axios, { Method } from 'axios'
 import * as KHL from './types'
 import { adaptGroup, adaptAuthor, adaptUser } from './utils'
@@ -19,7 +19,7 @@ export interface KaiheilaMessageInfo {
   mentionRoles?: string[]
   mentionAll?: boolean
   mentionHere?: boolean
-  author?: AuthorInfo
+  author?: Bot.Author
 }
 
 const attachmentTypes = ['image', 'video', 'audio', 'file']

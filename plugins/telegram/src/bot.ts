@@ -1,7 +1,7 @@
 import { createReadStream } from 'fs'
 import {
   camelCase, snakeCase, renameProperty, segment, assertProperty, Logger,
-  Bot, GuildInfo, GuildMemberInfo, UserInfo, BotOptions, Adapter,
+  Bot, BotOptions, Adapter,
 } from 'koishi'
 import * as Telegram from './types'
 import axios, { AxiosError, AxiosRequestConfig } from 'axios'
@@ -52,13 +52,13 @@ function maybeFile(payload: Record<string, any>, field: string) {
 export class TelegramBot extends Bot {
   static config: Config
 
-  static adaptUser(data: Partial<Telegram.User & UserInfo>) {
+  static adaptUser(data: Partial<Telegram.User & Bot.User>) {
     data.userId = data.id.toString()
     data.nickname = data.firstName + (data.lastName || '')
     delete data.id
     delete data.firstName
     delete data.lastName
-    return data as UserInfo
+    return data as Bot.User
   }
 
   constructor(adapter: Adapter, options: BotOptions) {
@@ -162,13 +162,13 @@ export class TelegramBot extends Bot {
     await this.get('deleteMessage', { chatId, messageId })
   }
 
-  static adaptGroup(data: Telegram.Chat & GuildInfo): GuildInfo {
+  static adaptGroup(data: Telegram.Chat & Bot.Guild): Bot.Guild {
     renameProperty(data, 'guildId', 'id')
     renameProperty(data, 'guildName', 'title')
     return data
   }
 
-  async getGuild(chatId: string): Promise<GuildInfo> {
+  async getGuild(chatId: string): Promise<Bot.Guild> {
     const data = await this.get('getChat', { chatId })
     return TelegramBot.adaptGroup(data)
   }
@@ -177,13 +177,13 @@ export class TelegramBot extends Bot {
     return []
   }
 
-  async getGuildMember(chatId: string, userId: string): Promise<GuildMemberInfo> {
+  async getGuildMember(chatId: string, userId: string): Promise<Bot.GuildMember> {
     if (Number.isNaN(+userId)) return null
     const data = await this.get('getChatMember', { chatId, userId })
     return TelegramBot.adaptUser(data)
   }
 
-  async getGuildMemberList(chatId: string): Promise<GuildMemberInfo[]> {
+  async getGuildMemberList(chatId: string): Promise<Bot.GuildMember[]> {
     const data = await this.get('getChatAdministrators', { chatId })
     return data.map(TelegramBot.adaptUser)
   }

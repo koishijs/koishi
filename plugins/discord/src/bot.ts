@@ -1,7 +1,7 @@
 /* eslint-disable camelcase */
 
 import axios, { AxiosRequestConfig, Method } from 'axios'
-import { Adapter, Bot, MessageInfo, segment } from 'koishi'
+import { Adapter, Bot, segment } from 'koishi'
 import * as DC from './types'
 import { adaptChannel, adaptGroup, adaptMessage, adaptUser } from './utils'
 import { Sender, HandleExternalAsset, HandleMixedContent } from './sender'
@@ -116,12 +116,12 @@ export class DiscordBot extends Bot<'discord'> {
     return this.request<DC.Message>('GET', `/channels/${channelId}/messages/${messageId}`)
   }
 
-  async getMessage(channelId: string, messageId: string): Promise<MessageInfo> {
+  async getMessage(channelId: string, messageId: string): Promise<Bot.Message> {
     const [msg, channel] = await Promise.all([
       this.$getMessage(channelId, messageId),
       this.$getChannel(channelId),
     ])
-    const result: MessageInfo = {
+    const result: Bot.Message = {
       messageId: msg.id,
       channelId: msg.channel_id,
       guildId: channel.guild_id,

@@ -1,4 +1,4 @@
-import { AppOptions, App, Adapter, Session, Bot, AuthorInfo, pick } from 'koishi'
+import { AppOptions, App, Adapter, Session, Bot, pick } from 'koishi'
 import { assert } from 'chai'
 import { Socket } from 'net'
 import { format } from 'util'
@@ -32,7 +32,7 @@ class MockedBot extends Bot<'mock'> {
       time: 0,
       subtype: null,
       messageType: null,
-      author: { userId: this.selfId } as AuthorInfo,
+      author: { userId: this.selfId } as Bot.Author,
     }
   }
 }

@@ -85,49 +85,16 @@ export namespace Adapter {
   }
 }
 
-export interface Bot<P = Platform> extends BotOptions, UserBase {
-  [Session.send](session: Session, message: string): Promise<void>
-
-  status: Bot.Status
-  version?: string
-  getStatus(): Promise<Bot.Status>
-
-  // message
-  sendMessage(channelId: string, content: string, guildId?: string): Promise<string>
-  sendPrivateMessage(userId: string, content: string): Promise<string>
-  getMessage(channelId: string, messageId: string): Promise<MessageInfo>
-  editMessage(channelId: string, messageId: string, content: string): Promise<void>
-  deleteMessage(channelId: string, messageId: string): Promise<void>
-
-  // user
-  getSelf(): Promise<UserInfo>
-  getUser(userId: string): Promise<UserInfo>
-  getFriendList(): Promise<UserInfo[]>
-  deleteFriend(userId: string): Promise<void>
-
-  // guild
-  getGuild(guildId: string): Promise<GuildInfo>
-  getGuildList(): Promise<GuildInfo[]>
-
-  // guild member
-  getGuildMember(guildId: string, userId: string): Promise<GuildMemberInfo>
-  getGuildMemberList(guildId: string): Promise<GuildMemberInfo[]>
-
-  // channel
-  getChannel(channelId: string): Promise<ChannelInfo>
-  getChannelList(guildId: string): Promise<ChannelInfo[]>
-
-  // request
-  handleFriendRequest(messageId: string, approve: boolean, comment?: string): Promise<void>
-  handleGroupRequest(messageId: string, approve: boolean, comment?: string): Promise<void>
-  handleGroupMemberRequest(messageId: string, approve: boolean, comment?: string): Promise<void>
-}
+export interface Bot<P = Platform> extends Bot.Methods, BotOptions, Bot.UserBase {}
 
 export class Bot<P extends Platform> {
   readonly app: App
   readonly logger: Logger
   readonly platform: P
   readonly variant = ''
+
+  status: Bot.Status
+  version?: string
 
   constructor(public adapter: Adapter<P>, options: BotOptions) {
     Object.assign(this, options)
@@ -207,55 +174,91 @@ export namespace Bot {
     /** 正在尝试连接 */
     CONNECTING,
   }
+
+  export interface Methods {
+    [Session.send](session: Session, message: string): Promise<void>
+
+    getStatus(): Promise<Status>
+
+    // message
+    sendMessage(channelId: string, content: string, guildId?: string): Promise<string>
+    sendPrivateMessage(userId: string, content: string): Promise<string>
+    getMessage(channelId: string, messageId: string): Promise<Message>
+    editMessage(channelId: string, messageId: string, content: string): Promise<void>
+    deleteMessage(channelId: string, messageId: string): Promise<void>
+
+    // user
+    getSelf(): Promise<User>
+    getUser(userId: string): Promise<User>
+    getFriendList(): Promise<User[]>
+    deleteFriend(userId: string): Promise<void>
+
+    // guild
+    getGuild(guildId: string): Promise<Guild>
+    getGuildList(): Promise<Guild[]>
+
+    // guild member
+    getGuildMember(guildId: string, userId: string): Promise<GuildMember>
+    getGuildMemberList(guildId: string): Promise<GuildMember[]>
+
+    // channel
+    getChannel(channelId: string): Promise<Channel>
+    getChannelList(guildId: string): Promise<Channel[]>
+
+    // request
+    handleFriendRequest(messageId: string, approve: boolean, comment?: string): Promise<void>
+    handleGroupRequest(messageId: string, approve: boolean, comment?: string): Promise<void>
+    handleGroupMemberRequest(messageId: string, approve: boolean, comment?: string): Promise<void>
+  }
+
+  export interface Channel {
+    channelId: string
+    channelName?: string
+  }
+
+  export interface Guild {
+    guildId: string
+    guildName?: string
+  }
+
+  export interface UserBase {
+    username?: string
+    nickname?: string
+    avatar?: string
+    discriminator?: string
+    isBot?: boolean
+  }
+
+  export interface User extends UserBase {
+    userId: string
+  }
+
+  export interface GuildMember extends User {
+    roles?: string[]
+  }
+
+  export interface Author extends GuildMember {
+    anonymous?: string
+  }
+
+  export interface Role {
+    id: string
+  }
+
+  export interface MessageBase {
+    messageId?: string
+    channelId?: string
+    guildId?: string
+    userId?: string
+    content?: string
+    timestamp?: number
+    author?: Author
+    quote?: Message
+  }
+
+  export interface Message extends MessageBase {
+    subtype?: keyof Session.Events['message']
+  }
 }
 
 export type Platform = keyof Bot.Platforms
-
-export interface ChannelInfo {
-  channelId: string
-  channelName?: string
-}
-
-export interface GuildInfo {
-  guildId: string
-  guildName?: string
-}
-
-export interface UserBase {
-  username?: string
-  nickname?: string
-  avatar?: string
-  discriminator?: string
-  isBot?: boolean
-}
-
-export interface UserInfo extends UserBase {
-  userId: string
-}
-
-export interface GuildMemberInfo extends UserInfo {
-  roles?: string[]
-}
-
-export interface AuthorInfo extends GuildMemberInfo {
-  anonymous?: string
-}
-
-export interface RoleInfo {
-  id: string
-}
-
-export interface MessageBase {
-  messageId?: string
-  channelId?: string
-  guildId?: string
-  userId?: string
-  content?: string
-  timestamp?: number
-  author?: AuthorInfo
-  quote?: MessageInfo
-}
-
-export interface MessageInfo extends MessageBase {
-  subtype?: keyof Session.Events['message']
-}
