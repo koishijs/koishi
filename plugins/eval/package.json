@@ -33,7 +33,7 @@
     "code"
   ],
   "peerDependencies": {
-    "koishi": "^4.0.0-alpha.0"
+    "koishi": "^4.0.0-alpha.1"
   },
   "optionalDependencies": {
     "@babel/core": "^7.15.0",

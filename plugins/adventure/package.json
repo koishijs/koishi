@@ -28,8 +28,8 @@
     "adventure"
   ],
   "peerDependencies": {
-    "koishi": "^4.0.0-alpha.0",
-    "@koishijs/plugin-common": "^5.0.0-alpha.0",
+    "koishi": "^4.0.0-alpha.1",
+    "@koishijs/plugin-common": "^5.0.0-alpha.1",
     "@koishijs/plugin-mysql": "^4.0.0-alpha.0",
     "@koishijs/plugin-teach": "^3.0.0-alpha.0"
   },

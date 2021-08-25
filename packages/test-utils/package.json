@@ -40,6 +40,6 @@
     "@koishijs/plugin-database": "^1.0.0-alpha.0",
     "chai": "^4.3.4",
     "chai-as-promised": "^7.1.1",
-    "koishi": "^4.0.0-alpha.0"
+    "koishi": "^4.0.0-alpha.1"
   }
 }
