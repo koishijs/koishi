@@ -1,7 +1,7 @@
 import { config, context, internal } from '.'
 import { resolve, posix, dirname, extname } from 'path'
 import { promises as fs } from 'fs'
-import { Logger } from '@koishijs/utils'
+import { Awaitable, Logger } from '@koishijs/utils'
 import * as yaml from 'js-yaml'
 import * as v8 from 'v8'
 
@@ -22,10 +22,10 @@ interface Module {
 export interface Loader {
   name: string
   synthetize: boolean
-  prepare(config: LoaderConfig, root?: string): void | Promise<void>
+  prepare(config: LoaderConfig, root?: string): Awaitable<void>
   extractScript(expr: string): string
-  transformScript(expr: string): string | Promise<string>
-  transformModule(expr: string, extension: string): string | Promise<string>
+  transformScript(expr: string): Awaitable<string>
+  transformModule(expr: string, extension: string): Awaitable<string>
 }
 
 export interface LoaderConfig {

@@ -1,4 +1,7 @@
-import { Context, User, Session, NextFunction, Channel, Argv, segment, noop, escapeRegExp, Random, makeArray } from 'koishi'
+import {
+  Context, User, Session, NextFunction, Channel, Argv,
+  segment, noop, escapeRegExp, Random, makeArray, Awaitable,
+} from 'koishi'
 import { Dialogue, DialogueTest } from './utils'
 import { simplify } from 'simplify-chinese'
 
@@ -13,7 +16,7 @@ declare module 'koishi' {
     'dialogue/prepare'(state: SessionState): void
     'dialogue/before-attach-user'(state: SessionState, userFields: Set<User.Field>): void
     'dialogue/attach-user'(state: SessionState): void | boolean
-    'dialogue/before-send'(state: SessionState): void | boolean | Promise<void | boolean>
+    'dialogue/before-send'(state: SessionState): Awaitable<void | boolean>
     'dialogue/send'(state: SessionState): void
   }
 

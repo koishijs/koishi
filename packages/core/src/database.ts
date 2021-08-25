@@ -1,4 +1,5 @@
 import * as utils from '@koishijs/utils'
+import { MaybeArray, Get, Extract } from '@koishijs/utils'
 import { Platform } from './adapter'
 import { App } from './app'
 
@@ -7,9 +8,6 @@ export type TableType = keyof Tables
 // shared types
 type Primitive = string | number
 type Comparable = Primitive | Date
-type MaybeArray<K> = K | K[]
-type Get<T extends {}, K> = K extends keyof T ? T[K] : never
-type Extract<S, T, U = S> = S extends T ? U : never
 
 type Keys<O, T = any> = string & {
   [K in keyof O]: O[K] extends T ? K : never

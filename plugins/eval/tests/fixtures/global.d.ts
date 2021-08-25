@@ -1,5 +1,5 @@
 declare module 'koishi/addons' {
-  import { User, Channel } from 'koishi'
+  import { User, Channel, Awaitable } from 'koishi'
 
   interface Argv {
     args: string[]
@@ -10,7 +10,7 @@ declare module 'koishi/addons' {
     exec(message: string): Promise<void>
   }
 
-  export function registerCommand(name: string, callback: (argv: Argv) => void | string | Promise<void | string>): void
+  export function registerCommand(name: string, callback: (argv: Argv) => Awaitable<void | string>): void
 }
 
 declare module 'koishi/utils' {

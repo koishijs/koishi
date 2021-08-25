@@ -126,7 +126,7 @@ export namespace Adventurer {
     'endings', 'usage', 'drunkAchv', 'name', 'achievement',
   ]
 
-  export function getValue<U, T>(source: Infer<U, T>, user: Adventurer.Readonly, state: T): U {
+  export function getValue<U, T>(source: Infer<U, T>, user: Adventurer.Readonly, state?: T): U {
     return typeof source === 'function' ? (source as any)(user, state) : source
   }
 }

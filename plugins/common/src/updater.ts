@@ -1,11 +1,11 @@
 import {
   difference, observe, Time, enumKeys, Random, template, deduplicate, intersection,
-  Context, User, Channel, Command, Argv, Platform, Session, Extend,
+  Context, User, Channel, Command, Argv, Platform, Session, Extend, Awaitable,
 } from 'koishi'
 
 type AdminAction<U extends User.Field, G extends Channel.Field, A extends any[], O extends {}, T>
   = (argv: Argv<U | 'authority', G, A, Extend<O, 'target', string>> & { target: T }, ...args: A)
-    => void | string | Promise<void | string>
+    => Awaitable<void | string>
 
 declare module 'koishi' {
   interface Command<U, G, A, O> {

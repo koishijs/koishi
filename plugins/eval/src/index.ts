@@ -1,4 +1,4 @@
-import { Context, Command, Argv, segment, Logger, defineProperty, noop } from 'koishi'
+import { Context, Command, Argv, segment, Logger, defineProperty, noop, Awaitable } from 'koishi'
 import { EvalWorker, Trap, EvalConfig, Config } from './main'
 import { resolve } from 'path'
 import { load } from 'js-yaml'
@@ -32,8 +32,8 @@ declare module 'koishi' {
   }
 
   interface EventMap {
-    'eval/before-send'(content: string, session: Session): string | Promise<string>
-    'eval/before-start'(): void | Promise<void>
+    'eval/before-send'(content: string, session: Session): Awaitable<string>
+    'eval/before-start'(): Awaitable<void>
     'eval/start'(response: WorkerResponse): void
   }
 }

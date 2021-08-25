@@ -1,4 +1,4 @@
-import { isType } from './misc'
+import { isType, Awaitable } from './misc'
 
 export interface segment {
   type: string
@@ -20,7 +20,7 @@ export namespace segment {
   export type Chain = segment.Parsed[]
   export type Data = Record<string, primitive>
   export type Transformer = string | ((data: Record<string, string>, index: number, chain: Chain) => string)
-  export type AsyncTransformer = string | ((data: Record<string, string>, index: number, chain: Chain) => string | Promise<string>)
+  export type AsyncTransformer = string | ((data: Record<string, string>, index: number, chain: Chain) => Awaitable<string>)
 
   export interface Parsed extends segment {
     data: Record<string, string>
