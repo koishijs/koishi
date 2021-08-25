@@ -82,7 +82,7 @@ export function contextify(ctx: Context) {
       }
 
       if (options.member) {
-        const info = await session.bot.getGroupMember?.(sess.groupId, sess.userId).catch(() => ({}))
+        const info = await session.bot.getGuildMember?.(sess.guildId, sess.userId).catch(() => ({}))
         Object.assign(sess.author, info)
       } else if (options.user) {
         const info = await session.bot.getUser?.(sess.userId).catch(() => ({}))
@@ -131,7 +131,7 @@ export function echo(ctx: Context) {
 }
 
 export function feedback(ctx: Context, operators: string[]) {
-  type FeedbackData = [sid: string, channelId: string, groupId: string]
+  type FeedbackData = [sid: string, channelId: string, guildId: string]
   const feedbacks: Record<number, FeedbackData> = {}
 
   ctx.command('common/feedback <message:text>', '发送反馈信息给作者')
@@ -142,7 +142,7 @@ export function feedback(ctx: Context, operators: string[]) {
       const nickname = name === '' + userId ? userId : `${name} (${userId})`
       const message = template('common.feedback-receive', nickname, text)
       const delay = ctx.app.options.delay.broadcast
-      const data: FeedbackData = [session.sid, session.channelId, session.groupId]
+      const data: FeedbackData = [session.sid, session.channelId, session.guildId]
       for (let index = 0; index < operators.length; ++index) {
         if (index && delay) await sleep(delay)
         const [platform, userId] = Argv.parsePid(operators[index])
@@ -166,7 +166,7 @@ export interface RecallConfig {
 }
 
 export function recall(ctx: Context, { recall = 10 }: RecallConfig) {
-  ctx = ctx.group()
+  ctx = ctx.guild()
   const recent: Record<string, string[]> = {}
 
   ctx.on('send', (session) => {

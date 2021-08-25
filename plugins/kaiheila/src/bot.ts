@@ -52,10 +52,10 @@ export class KaiheilaBot extends Bot {
     return result.data
   }
 
-  private _prepareHandle(channelId: string, content: string, groupId: string): SendHandle {
+  private _prepareHandle(channelId: string, content: string, guildId: string): SendHandle {
     let path: string
     const params = {} as KHL.MessageParams
-    const session = this.createSession({ channelId, content, groupId })
+    const session = this.createSession({ channelId, content, guildId })
     if (channelId.length > 30) {
       params.chatCode = channelId
       session.subtype = 'private'
@@ -194,8 +194,8 @@ export class KaiheilaBot extends Bot {
     await flush()
   }
 
-  async sendMessage(channelId: string, content: string, groupId?: string) {
-    const handle = this._prepareHandle(channelId, content, groupId)
+  async sendMessage(channelId: string, content: string, guildId?: string) {
+    const handle = this._prepareHandle(channelId, content, guildId)
     const [, params, session] = handle
     if (await this.app.serial(session, 'before-send', session)) return
 
@@ -265,12 +265,12 @@ export class KaiheilaBot extends Bot {
     return data
   }
 
-  async getGroupList() {
+  async getGuildList() {
     const { items } = await this.request<KHL.GuildList>('GET', '/guild/list')
     return items.map(adaptGroup)
   }
 
-  async getGroupMemberList() {
+  async getGuildMemberList() {
     const { items } = await this.request<KHL.GuildMemberList>('GET', '/guild/user-list')
     return items.map(adaptAuthor)
   }

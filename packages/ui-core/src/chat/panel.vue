@@ -54,10 +54,10 @@ export interface Message {
   messageId?: string
   userId?: string
   channelId?: string
-  groupId?: string
+  guildId?: string
   selfId?: string
   channelName?: string
-  groupName?: string
+  guildName?: string
   timestamp?: number
   quote?: Message
 }

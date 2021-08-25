@@ -32,7 +32,7 @@ export interface RepeaterConfig {
 }
 
 export function repeater(ctx: Context, config: RepeaterConfig = {}) {
-  ctx = ctx.group()
+  ctx = ctx.guild()
 
   const states: Record<string, RepeatState> = {}
 

@@ -31,7 +31,7 @@ Tables.extend('schedule', {
 const logger = new Logger('schedule')
 
 function formatContext(session: Partial<Session>) {
-  return session.subtype === 'private' ? `私聊 ${session.userId}` : `群聊 ${session.groupId}`
+  return session.subtype === 'private' ? `私聊 ${session.userId}` : `群聊 ${session.guildId}`
 }
 
 export interface Config {

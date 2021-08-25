@@ -1,7 +1,7 @@
 import { createReadStream } from 'fs'
 import {
   camelCase, snakeCase, renameProperty, segment, assertProperty, Logger,
-  Bot, GroupInfo, GroupMemberInfo, UserInfo, BotOptions, Adapter,
+  Bot, GuildInfo, GuildMemberInfo, UserInfo, BotOptions, Adapter,
 } from 'koishi'
 import * as Telegram from './types'
 import axios, { AxiosError, AxiosRequestConfig } from 'axios'
@@ -143,7 +143,7 @@ export class TelegramBot extends Bot {
 
   async sendMessage(channelId: string, content: string) {
     if (!content) return
-    const session = this.createSession({ content, channelId, subtype: 'group', groupId: channelId })
+    const session = this.createSession({ content, channelId, subtype: 'group', guildId: channelId })
     if (await this.app.serial(session, 'before-send', session)) return
     session.messageId = await this._sendMessage(channelId, session.content)
     this.app.emit(session, 'send', session)
@@ -162,28 +162,28 @@ export class TelegramBot extends Bot {
     await this.get('deleteMessage', { chatId, messageId })
   }
 
-  static adaptGroup(data: Telegram.Chat & GroupInfo): GroupInfo {
-    renameProperty(data, 'groupId', 'id')
-    renameProperty(data, 'groupName', 'title')
+  static adaptGroup(data: Telegram.Chat & GuildInfo): GuildInfo {
+    renameProperty(data, 'guildId', 'id')
+    renameProperty(data, 'guildName', 'title')
     return data
   }
 
-  async getGroup(chatId: string): Promise<GroupInfo> {
+  async getGuild(chatId: string): Promise<GuildInfo> {
     const data = await this.get('getChat', { chatId })
     return TelegramBot.adaptGroup(data)
   }
 
-  async getGroupList() {
+  async getGuildList() {
     return []
   }
 
-  async getGroupMember(chatId: string, userId: string): Promise<GroupMemberInfo> {
+  async getGuildMember(chatId: string, userId: string): Promise<GuildMemberInfo> {
     if (Number.isNaN(+userId)) return null
     const data = await this.get('getChatMember', { chatId, userId })
     return TelegramBot.adaptUser(data)
   }
 
-  async getGroupMemberList(chatId: string): Promise<GroupMemberInfo[]> {
+  async getGuildMemberList(chatId: string): Promise<GuildMemberInfo[]> {
     const data = await this.get('getChatAdministrators', { chatId })
     return data.map(TelegramBot.adaptUser)
   }

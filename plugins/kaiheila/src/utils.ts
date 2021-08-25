@@ -1,10 +1,10 @@
 import { KaiheilaBot } from './bot'
-import { Session, segment, MessageBase, AuthorInfo, GroupInfo, UserInfo, camelCase } from 'koishi'
+import { Session, segment, MessageBase, AuthorInfo, GuildInfo, UserInfo, camelCase } from 'koishi'
 import * as KHL from './types'
 
-export const adaptGroup = (data: KHL.Guild): GroupInfo => ({
-  groupId: data.id,
-  groupName: data.name,
+export const adaptGroup = (data: KHL.Guild): GuildInfo => ({
+  guildId: data.id,
+  guildName: data.name,
 })
 
 export const adaptUser = (user: KHL.User): UserInfo => ({
@@ -53,7 +53,7 @@ function adaptMessageSession(data: KHL.Data, meta: KHL.MessageMeta, session: Par
 
 function adaptMessageCreate(data: KHL.Data, meta: KHL.MessageExtra, session: Partial<Session>) {
   adaptMessageSession(data, meta, session)
-  session.groupId = meta.guildId
+  session.guildId = meta.guildId
   session.channelName = meta.channelName
   if (data.channelType === 'GROUP') {
     session.subtype = 'group'

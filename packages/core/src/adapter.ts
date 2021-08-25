@@ -93,7 +93,7 @@ export interface Bot<P = Platform> extends BotOptions, UserBase {
   getStatus(): Promise<Bot.Status>
 
   // message
-  sendMessage(channelId: string, content: string, groupId?: string): Promise<string>
+  sendMessage(channelId: string, content: string, guildId?: string): Promise<string>
   sendPrivateMessage(userId: string, content: string): Promise<string>
   getMessage(channelId: string, messageId: string): Promise<MessageInfo>
   editMessage(channelId: string, messageId: string, content: string): Promise<void>
@@ -105,17 +105,17 @@ export interface Bot<P = Platform> extends BotOptions, UserBase {
   getFriendList(): Promise<UserInfo[]>
   deleteFriend(userId: string): Promise<void>
 
-  // group
-  getGroup(groupId: string): Promise<GroupInfo>
-  getGroupList(): Promise<GroupInfo[]>
+  // guild
+  getGuild(guildId: string): Promise<GuildInfo>
+  getGuildList(): Promise<GuildInfo[]>
 
-  // group member
-  getGroupMember(groupId: string, userId: string): Promise<GroupMemberInfo>
-  getGroupMemberList(groupId: string): Promise<GroupMemberInfo[]>
+  // guild member
+  getGuildMember(guildId: string, userId: string): Promise<GuildMemberInfo>
+  getGuildMemberList(guildId: string): Promise<GuildMemberInfo[]>
 
   // channel
   getChannel(channelId: string): Promise<ChannelInfo>
-  getChannelList(groupId: string): Promise<ChannelInfo[]>
+  getChannelList(guildId: string): Promise<ChannelInfo[]>
 
   // request
   handleFriendRequest(messageId: string, approve: boolean, comment?: string): Promise<void>
@@ -127,8 +127,7 @@ export class Bot<P extends Platform> {
   readonly app: App
   readonly logger: Logger
   readonly platform: P
-  readonly variant: string
-  readonly domain: string
+  readonly variant = ''
 
   constructor(public adapter: Adapter<P>, options: BotOptions) {
     Object.assign(this, options)
@@ -138,8 +137,12 @@ export class Bot<P extends Platform> {
     this.status = Bot.Status.BOT_IDLE
   }
 
+  get domain() {
+    return this.variant ? `${this.platform}#${this.variant}` : this.platform
+  }
+
   get sid() {
-    return `${this.platform}:${this.selfId}`
+    return `${this.domain}:${this.selfId}`
   }
 
   async getStatus() {
@@ -163,8 +166,8 @@ export class Bot<P extends Platform> {
     })
   }
 
-  async getGroupMemberMap(groupId: string) {
-    const list = await this.getGroupMemberList(groupId)
+  async getGuildMemberMap(guildId: string) {
+    const list = await this.getGuildMemberList(guildId)
     return Object.fromEntries(list.map(info => [info.userId, info.nickname || info.username]))
   }
 
@@ -213,9 +216,9 @@ export interface ChannelInfo {
   channelName?: string
 }
 
-export interface GroupInfo {
-  groupId: string
-  groupName?: string
+export interface GuildInfo {
+  guildId: string
+  guildName?: string
 }
 
 export interface UserBase {
@@ -230,11 +233,11 @@ export interface UserInfo extends UserBase {
   userId: string
 }
 
-export interface GroupMemberInfo extends UserInfo {
+export interface GuildMemberInfo extends UserInfo {
   roles?: string[]
 }
 
-export interface AuthorInfo extends GroupMemberInfo {
+export interface AuthorInfo extends GuildMemberInfo {
   anonymous?: string
 }
 
@@ -245,7 +248,7 @@ export interface RoleInfo {
 export interface MessageBase {
   messageId?: string
   channelId?: string
-  groupId?: string
+  guildId?: string
   userId?: string
   content?: string
   timestamp?: number

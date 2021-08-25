@@ -34,29 +34,29 @@ export interface Message {
   messageId?: string
   userId?: string
   channelId?: string
-  groupId?: string
+  guildId?: string
   selfId?: string
   channelName?: string
-  groupName?: string
+  guildName?: string
   timestamp?: number
   quote?: Message
 }
 
-async function getUserName(bot: Bot, groupId: string, userId: string) {
+async function getUserName(bot: Bot, guildId: string, userId: string) {
   try {
-    const { username } = await bot.getGroupMember(groupId, userId)
+    const { username } = await bot.getGuildMember(guildId, userId)
     return username
   } catch {
     return userId
   }
 }
 
-async function getGroupName(bot: Bot, groupId: string) {
+async function getGroupName(bot: Bot, guildId: string) {
   try {
-    const { groupName } = await bot.getGroup(groupId)
-    return groupName
+    const { guildName } = await bot.getGuild(guildId)
+    return guildName
   } catch {
-    return groupId
+    return guildId
   }
 }
 
@@ -86,12 +86,12 @@ export default function apply(ctx: Context, config: ReceiverConfig = {}) {
   })
 
   async function prepareChannel(session: Session, params: Message, timestamp: number) {
-    const { cid, groupId, channelName } = session
+    const { cid, guildId, channelName } = session
     if (channelName) {
       channelMap[cid] = [Promise.resolve(channelName), timestamp]
       return
     }
-    if (!groupId) return
+    if (!guildId) return
     if (!channelMap[cid] || timestamp - channelMap[cid][1] >= refreshChannelName) {
       channelMap[cid] = [getChannelName(session.bot, session.channelId), timestamp]
     }
@@ -99,16 +99,16 @@ export default function apply(ctx: Context, config: ReceiverConfig = {}) {
   }
 
   async function prepareGroup(session: Session, params: Message, timestamp: number) {
-    const { cid, gid, groupId, groupName } = session
-    if (groupName) {
-      groupMap[gid] = [Promise.resolve(groupName), timestamp]
+    const { cid, gid, guildId, guildName } = session
+    if (guildName) {
+      groupMap[gid] = [Promise.resolve(guildName), timestamp]
       return
     }
-    if (!groupId || cid === gid) return
+    if (!guildId || cid === gid) return
     if (!groupMap[gid] || timestamp - groupMap[gid][1] >= refreshGroupName) {
-      groupMap[gid] = [getGroupName(session.bot, groupId), timestamp]
+      groupMap[gid] = [getGroupName(session.bot, guildId), timestamp]
     }
-    params.groupName = await groupMap[gid][0]
+    params.guildName = await groupMap[gid][0]
   }
 
   async function prepareAbstract(session: Session, params: Message, timestamp: number) {
@@ -129,7 +129,7 @@ export default function apply(ctx: Context, config: ReceiverConfig = {}) {
           if (code.data.name) {
             userMap[id] = [Promise.resolve(code.data.name), timestamp]
           } else if (!userMap[id] || timestamp - userMap[id][1] >= refreshUserName) {
-            userMap[id] = [getUserName(session.bot, session.groupId, code.data.id), timestamp]
+            userMap[id] = [getUserName(session.bot, session.guildId, code.data.id), timestamp]
           }
           params.abstract += '@' + (code.data.name = await userMap[id][0])
         } else {
@@ -159,7 +159,7 @@ export default function apply(ctx: Context, config: ReceiverConfig = {}) {
   async function handleMessage(session: Session) {
     const params: Message = pick(session, [
       'content', 'timestamp', 'messageId', 'platform', 'selfId',
-      'channelId', 'channelName', 'groupId', 'groupName', 'userId',
+      'channelId', 'channelName', 'guildId', 'guildName', 'userId',
     ])
     Object.assign(params, pick(session.author, ['username', 'nickname', 'avatar']))
     if (session.type === 'message') {

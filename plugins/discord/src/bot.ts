@@ -76,8 +76,8 @@ export class DiscordBot extends Bot<'discord'> {
     return chain.shift().data.id
   }
 
-  async sendMessage(channelId: string, content: string, groupId?: string) {
-    const session = this.createSession({ channelId, content, groupId, subtype: groupId ? 'group' : 'private' })
+  async sendMessage(channelId: string, content: string, guildId?: string) {
+    const session = this.createSession({ channelId, content, guildId, subtype: guildId ? 'group' : 'private' })
     if (await this.app.serial(session, 'before-send', session)) return
 
     const chain = segment.parse(session.content)
@@ -124,7 +124,7 @@ export class DiscordBot extends Bot<'discord'> {
     const result: MessageInfo = {
       messageId: msg.id,
       channelId: msg.channel_id,
-      groupId: channel.guild_id,
+      guildId: channel.guild_id,
       userId: msg.author.id,
       content: msg.content,
       timestamp: new Date(msg.timestamp).valueOf(),
@@ -143,7 +143,7 @@ export class DiscordBot extends Bot<'discord'> {
     return adaptUser(data)
   }
 
-  async getGroupMemberList(guildId: string) {
+  async getGuildMemberList(guildId: string) {
     const data = await this.$listGuildMembers(guildId)
     return data.map(v => adaptUser(v.user))
   }
@@ -180,8 +180,8 @@ export class DiscordBot extends Bot<'discord'> {
     return this.request<DC.GuildMember>('GET', `/guilds/${guildId}/members/${userId}`)
   }
 
-  async getGroupMember(groupId: string, userId: string) {
-    const member = await this.$getGuildMember(groupId, userId)
+  async getGuildMember(guildId: string, userId: string) {
+    const member = await this.$getGuildMember(guildId, userId)
     return {
       ...adaptUser(member.user),
       nickname: member.nick,
@@ -278,8 +278,8 @@ export class DiscordBot extends Bot<'discord'> {
     return this.request<DC.Guild>('GET', `/guilds/${guildId}`)
   }
 
-  async getGroup(groupId: string) {
-    const data = await this.$getGuild(groupId)
+  async getGuild(guildId: string) {
+    const data = await this.$getGuild(guildId)
     return adaptGroup(data)
   }
 
@@ -287,7 +287,7 @@ export class DiscordBot extends Bot<'discord'> {
     return this.request<DC.PartialGuild[]>('GET', '/users/@me/guilds')
   }
 
-  async getGroupList() {
+  async getGuildList() {
     const data = await this.$getUserGuilds()
     return data.map(v => adaptGroup(v))
   }
@@ -296,8 +296,8 @@ export class DiscordBot extends Bot<'discord'> {
     return this.request<DC.Channel[]>('GET', `/guilds/${guildId}/channels`)
   }
 
-  async getChannelList(groupId: string) {
-    const data = await this.$getGuildChannels(groupId)
+  async getChannelList(guildId: string) {
+    const data = await this.$getGuildChannels(guildId)
     return data.map(v => adaptChannel(v))
   }
 }

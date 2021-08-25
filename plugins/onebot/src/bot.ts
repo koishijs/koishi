@@ -54,7 +54,7 @@ export class CQBot extends Bot {
 
   async [Session.send](message: Session, content: string) {
     if (!content) return
-    const { userId, groupId, channelId, channelName } = message
+    const { userId, guildId, channelId, channelName } = message
     if (!CQBot.config.quickOperation) {
       await this.sendMessage(channelId, content)
       return
@@ -62,8 +62,8 @@ export class CQBot extends Bot {
 
     let id: string
     const session = this.createSession({ content, channelId, channelName })
-    if (groupId) {
-      id = session.groupId = groupId
+    if (guildId) {
+      id = session.guildId = guildId
       session.subtype = 'group'
     } else {
       id = session.userId = userId
@@ -77,7 +77,7 @@ export class CQBot extends Bot {
       return message._response({ reply: content, atSender: false })
     }
 
-    return groupId
+    return guildId
       ? this.$sendGroupMsgAsync(id, content)
       : this.$sendPrivateMsgAsync(id, content)
   }
@@ -136,31 +136,31 @@ export class CQBot extends Bot {
     return OneBot.adaptChannel(data)
   }
 
-  async getGroup(groupId: string) {
-    const data = await this.$getGroupInfo(groupId)
+  async getGuild(guildId: string) {
+    const data = await this.$getGroupInfo(guildId)
     return OneBot.adaptGroup(data)
   }
 
-  async getGroupList() {
+  async getGuildList() {
     const data = await this.$getGroupList()
     return data.map(OneBot.adaptGroup)
   }
 
-  async getGroupMember(groupId: string, userId: string) {
-    const data = await this.$getGroupMemberInfo(groupId, userId)
+  async getGuildMember(guildId: string, userId: string) {
+    const data = await this.$getGroupMemberInfo(guildId, userId)
     return OneBot.adaptGroupMember(data)
   }
 
-  async getGroupMemberList(groupId: string) {
-    const data = await this.$getGroupMemberList(groupId)
+  async getGuildMemberList(guildId: string) {
+    const data = await this.$getGroupMemberList(guildId)
     return data.map(OneBot.adaptGroupMember)
   }
 
-  async sendGroupMessage(groupId: string, content: string) {
+  async sendGroupMessage(guildId: string, content: string) {
     if (!content) return
-    const session = this.createSession({ content, subtype: 'group', groupId, channelId: groupId })
+    const session = this.createSession({ content, subtype: 'group', guildId, channelId: guildId })
     if (this.app.bail(session, 'before-send', session)) return
-    session.messageId = '' + await this.$sendGroupMsg(groupId, content)
+    session.messageId = '' + await this.$sendGroupMsg(guildId, content)
     this.app.emit(session, 'send', session)
     return session.messageId
   }
@@ -174,14 +174,14 @@ export class CQBot extends Bot {
     return session.messageId
   }
 
-  async $setGroupAnonymousBan(groupId: string, meta: string | object, duration?: number) {
-    const args = { groupId, duration } as any
+  async $setGroupAnonymousBan(guildId: string, meta: string | object, duration?: number) {
+    const args = { guildId, duration } as any
     args[typeof meta === 'string' ? 'flag' : 'anonymous'] = meta
     await this.get('set_group_anonymous_ban', args)
   }
 
-  $setGroupAnonymousBanAsync(groupId: string, meta: string | object, duration?: number) {
-    const args = { groupId, duration } as any
+  $setGroupAnonymousBanAsync(guildId: string, meta: string | object, duration?: number) {
+    const args = { guildId, duration } as any
     args[typeof meta === 'string' ? 'flag' : 'anonymous'] = meta
     return this.getAsync('set_group_anonymous_ban', args)
   }

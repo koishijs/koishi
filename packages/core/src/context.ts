@@ -116,8 +116,8 @@ export class Context {
     return this.createSelector('selfId')
   }
 
-  get group() {
-    return this.createSelector('groupId')
+  get guild() {
+    return this.createSelector('guildId')
   }
 
   get channel() {
@@ -128,8 +128,12 @@ export class Context {
     return this.createSelector('platform')
   }
 
+  get variant() {
+    return this.createSelector('variant')
+  }
+
   get private() {
-    return this.unselect('groupId').user
+    return this.unselect('guildId').user
   }
 
   get bots() {

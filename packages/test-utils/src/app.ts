@@ -126,7 +126,7 @@ export class MockedApp extends App {
   }
 
   async initChannel(id: string, assignee = this.selfId) {
-    await this.database.create('channel', { type: 'mock', id, assignee })
+    await this.database.create('channel', { domain: 'mock', id, assignee })
   }
 }
 
@@ -148,7 +148,7 @@ export class TestSession {
     }
 
     if (channelId) {
-      this.meta.groupId = channelId
+      this.meta.guildId = channelId
       this.meta.channelId = channelId
       this.meta.subtype = 'group'
     } else {
@@ -169,7 +169,7 @@ export class TestSession {
       }
       const send = async (content: string) => {
         if (!content) return
-        const session = this.app.bots[0].createSession(pick(this.meta, ['userId', 'channelId', 'groupId']))
+        const session = this.app.bots[0].createSession(pick(this.meta, ['userId', 'channelId', 'guildId']))
         session.content = content
         this.app.emit(session as any, 'before-send', session)
         const length = this.replies.push(content)

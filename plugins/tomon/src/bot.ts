@@ -1,4 +1,4 @@
-import { Bot, MessageInfo, GroupInfo, UserInfo, GroupMemberInfo, AuthorInfo } from 'koishi'
+import { Bot, MessageInfo, GuildInfo, UserInfo, GuildMemberInfo, AuthorInfo } from 'koishi'
 import { Method } from 'axios'
 import { Route, RequestOptions } from './network/route'
 import WebSocket from 'ws'
@@ -41,7 +41,7 @@ export interface TomonMessageInfo extends MessageInfo {
   editedTimestamp: number
 }
 
-export interface TomonGroupInfo extends GroupInfo {
+export interface TomonGroupInfo extends GuildInfo {
   description: string
   icon: string
   iconUrl: string
@@ -65,7 +65,7 @@ export interface TomonUserInfo extends UserInfo {
   updatedAt: number
 }
 
-export interface TomonGroupMemberInfo extends TomonUserInfo, GroupMemberInfo {
+export interface TomonGroupMemberInfo extends TomonUserInfo, GuildMemberInfo {
   joinedAt: number
   mute: boolean
   deaf: boolean
@@ -139,26 +139,26 @@ export class TomonBot extends Bot<'tomon'> {
     return data
   }
 
-  async getGroup(groupId: string): Promise<TomonGroupInfo> {
-    const data = await this.request('GET', `/guilds/${groupId}`)
+  async getGuild(guildId: string): Promise<TomonGroupInfo> {
+    const data = await this.request('GET', `/guilds/${guildId}`)
     TomonBot.toGroup(data)
     return data
   }
 
-  async getGroupList(): Promise<TomonGroupInfo[]> {
+  async getGuildList(): Promise<TomonGroupInfo[]> {
     const data = await this.request('GET', '/users/@me/guilds')
     data.forEach(TomonBot.toGroup)
     return data
   }
 
-  async getGroupMember(groupId: string, userId: string): Promise<TomonGroupMemberInfo> {
-    const data = await this.request('GET', `/guilds/${groupId}/members/${userId}`)
+  async getGuildMember(guildId: string, userId: string): Promise<TomonGroupMemberInfo> {
+    const data = await this.request('GET', `/guilds/${guildId}/members/${userId}`)
     TomonBot.toGroupMember(data)
     return data
   }
 
-  async getGroupMemberList(groupId: string): Promise<TomonGroupMemberInfo[]> {
-    const data = await this.request('GET', `/guilds/${groupId}/members`)
+  async getGuildMemberList(guildId: string): Promise<TomonGroupMemberInfo[]> {
+    const data = await this.request('GET', `/guilds/${guildId}/members`)
     data.forEach(TomonBot.toGroupMember)
     return data
   }

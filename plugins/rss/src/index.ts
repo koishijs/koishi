@@ -26,18 +26,18 @@ export function apply(ctx: Context, config: Config = {}) {
   const feedMap: Record<string, Set<string>> = {}
   const feeder = new RssFeedEmitter({ skipFirstLoad: true, userAgent })
 
-  function subscribe(url: string, groupId: string) {
+  function subscribe(url: string, guildId: string) {
     if (url in feedMap) {
-      feedMap[url].add(groupId)
+      feedMap[url].add(guildId)
     } else {
-      feedMap[url] = new Set([groupId])
+      feedMap[url] = new Set([guildId])
       feeder.add({ url, refresh })
       logger.debug('subscribe', url)
     }
   }
 
-  function unsubscribe(url: string, groupId: string) {
-    feedMap[url].delete(groupId)
+  function unsubscribe(url: string, guildId: string) {
+    feedMap[url].delete(guildId)
     if (!feedMap[url].size) {
       delete feedMap[url]
       feeder.remove(url)
@@ -92,7 +92,7 @@ export function apply(ctx: Context, config: Config = {}) {
     })
   }
 
-  ctx.group()
+  ctx.guild()
     .command('rss <url:text>', '订阅 RSS 链接')
     .channelFields(['rss', 'id'])
     .option('list', '-l 查看订阅列表')

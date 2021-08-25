@@ -12,7 +12,7 @@ export const adaptUser = (user: OneBot.AccountInfo): Koishi.UserInfo => ({
   username: user.nickname,
 })
 
-export const adaptGroupMember = (user: OneBot.SenderInfo): Koishi.GroupMemberInfo => ({
+export const adaptGroupMember = (user: OneBot.SenderInfo): Koishi.GuildMemberInfo => ({
   ...adaptUser(user),
   nickname: user.card,
   roles: [user.role],
@@ -41,9 +41,9 @@ export function adaptMessage(message: OneBot.Message): Koishi.MessageInfo {
   }
 }
 
-export const adaptGroup = (group: OneBot.GroupInfo): Koishi.GroupInfo => ({
-  groupId: group.groupId.toString(),
-  groupName: group.groupName,
+export const adaptGroup = (group: OneBot.GroupInfo): Koishi.GuildInfo => ({
+  guildId: group.groupId.toString(),
+  guildName: group.groupName,
 })
 
 export const adaptChannel = (group: OneBot.GroupInfo): Koishi.ChannelInfo => ({
@@ -66,10 +66,11 @@ export function createSession(adapter: Adapter, data: any) {
   const session = camelCase<Session>(data)
   renameProperty(session, 'type', 'postType')
   renameProperty(session, 'subtype', 'subType')
+  renameProperty(session, 'guildId', 'groupId')
   session.platform = 'onebot'
   session.selfId = '' + session.selfId
   if (session.userId) session.userId = '' + session.userId
-  if (session.groupId) session.groupId = session.channelId = '' + session.groupId
+  if (session.guildId) session.guildId = session.channelId = '' + session.guildId
   if (session.targetId) session.targetId = '' + session.targetId
   if (session.operatorId) session.operatorId = '' + session.operatorId
 

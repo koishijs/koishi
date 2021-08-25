@@ -1,4 +1,4 @@
-import { User, Context, Session, GroupMemberInfo, Database, paramCase, camelCase, isInteger } from 'koishi'
+import { User, Context, Session, GuildMemberInfo, Database, paramCase, camelCase, isInteger } from 'koishi'
 import {} from '@koishijs/plugin-mysql'
 
 type ExtendedUser<T extends User.Field = User.Field> = Pick<User, T> & { _value: number }
@@ -93,9 +93,9 @@ namespace Rank {
     if (options.global) {
       data = await db.query<ExtendedUser[]>(`${prefix}${conditionals.length ? ' WHERE ' + conditionals.join(' AND ') : ''}${postfix}`)
     } else {
-      let members: GroupMemberInfo[]
+      let members: GuildMemberInfo[]
       try {
-        members = await session.bot.getGroupMemberList(session.groupId)
+        members = await session.bot.getGuildMemberList(session.guildId)
       } catch (error) {
         return '无法获得群成员列表。'
       }

@@ -168,17 +168,17 @@ class Statistics {
     payload.groups = []
     const groupMap = Object.fromEntries(data.groups.map(g => [g.id, g]))
     const messageMap = average(data.daily.map(data => data.group))
-    const updateList: Pick<Channel, 'id' | 'type' | 'name'>[] = []
+    const updateList: Pick<Channel, 'id' | 'domain' | 'name'>[] = []
 
     async function getGroupInfo(bot: Bot) {
       const { platform } = bot
-      const groups = await bot.getGroupList()
-      for (const { groupId, groupName: name } of groups) {
-        const id = `${bot.platform}:${groupId}`
+      const groups = await bot.getGuildList()
+      for (const { guildId, guildName: name } of groups) {
+        const id = `${bot.platform}:${guildId}`
         if (!messageMap[id] || !groupMap[id] || groupSet.has(id)) continue
         groupSet.add(id)
         const { name: oldName, assignee } = groupMap[id]
-        if (name !== oldName) updateList.push({ type: bot.platform, id: groupId, name })
+        if (name !== oldName) updateList.push({ domain: bot.domain, id: guildId, name })
         payload.groups.push({
           name,
           platform,

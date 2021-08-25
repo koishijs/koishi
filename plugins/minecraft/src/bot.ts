@@ -7,8 +7,8 @@ export class MinecraftBot extends Bot<'minecraft'> {
   version = 'minecraft'
   flayer: mineflayer.Bot
 
-  async sendMessage(channelId: string, content: string, groupId?: string) {
-    const session = this.createSession({ channelId, content, groupId, subtype: groupId ? 'group' : 'private' })
+  async sendMessage(channelId: string, content: string, guildId?: string) {
+    const session = this.createSession({ channelId, content, guildId, subtype: guildId ? 'group' : 'private' })
     if (await this.app.serial(session, 'before-send', session)) return
     const image = { type: 'text', data: { content: '[Image]' } }
     content = segment.join(segment.parse(content).map(i => i.type === 'image' ? image : i))
@@ -33,14 +33,14 @@ export class MinecraftBot extends Bot<'minecraft'> {
   getMessage = noop
   getUser = noop
   getChannel = noop
-  getGroupMember = noop
-  getGroup = noop
+  getGuildMember = noop
+  getGuild = noop
 
-  async getGroupMemberList() {
+  async getGuildMemberList() {
     return []
   }
 
-  async getGroupList() {
+  async getGuildList() {
     return []
   }
 

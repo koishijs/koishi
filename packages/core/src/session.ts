@@ -5,7 +5,7 @@ import { contain, observe, Logger, defineProperty, Random, template, remove, noo
 import { Argv } from './parser'
 import { Middleware, NextFunction } from './context'
 import { App } from './app'
-import { Bot, ChannelInfo, GroupInfo, MessageBase, Platform } from './adapter'
+import { Bot, ChannelInfo, GuildInfo, MessageBase, Platform } from './adapter'
 
 const logger = new Logger('session')
 
@@ -13,7 +13,7 @@ type UnionToIntersection<U> = (U extends any ? (key: U) => void : never) extends
 type Flatten<T, K extends keyof T = keyof T> = UnionToIntersection<T[K]>
 type InnerKeys<T, K extends keyof T = keyof T> = keyof Flatten<T> & keyof Flatten<T, K>
 
-export interface Session<U, G, P, X, Y> extends MessageBase, Partial<ChannelInfo>, Partial<GroupInfo> {}
+export interface Session<U, G, P, X, Y> extends MessageBase, Partial<ChannelInfo>, Partial<GuildInfo> {}
 
 export namespace Session {
   type Genres = 'friend' | 'channel' | 'group' | 'group-member' | 'group-role' | 'group-file' | 'group-emoji'
@@ -93,7 +93,6 @@ export class Session<
   subsubtype?: InnerKeys<UnionToIntersection<Session.Events[X]>, Y>
   platform?: P
   variant?: string
-  domain?: string
 
   selfId?: string
   operatorId?: string
@@ -102,10 +101,6 @@ export class Session<
   file?: FileInfo
 
   readonly app: App
-  readonly bot: Bot.Instance<P>
-  readonly sid: string
-  cid: string
-  gid: string
 
   id?: string
   argv?: Argv<U, G>
@@ -125,17 +120,33 @@ export class Session<
     defineProperty(this, 'app', app)
     defineProperty(this, 'user', null)
     defineProperty(this, 'channel', null)
-    defineProperty(this, 'sid', `${this.platform}:${this.selfId}`)
-    defineProperty(this, 'cid', `${this.platform}:${this.channelId}`)
-    defineProperty(this, 'gid', `${this.platform}:${this.groupId}`)
-    defineProperty(this, 'bot', app.bots[this.sid])
     defineProperty(this, 'id', Random.id())
     defineProperty(this, '_queued', Promise.resolve())
     defineProperty(this, '_hooks', [])
   }
 
+  get domain() {
+    return this.variant ? `${this.platform}#${this.variant}` : this.platform
+  }
+
   get uid() {
-    return `${this.platform}:${this.userId}`
+    return `${this.domain}:${this.userId}`
+  }
+
+  get gid() {
+    return `${this.domain}:${this.guildId}`
+  }
+
+  get cid() {
+    return `${this.domain}:${this.channelId}`
+  }
+
+  get sid() {
+    return `${this.domain}:${this.selfId}`
+  }
+
+  get bot() {
+    return this.app.bots[this.sid]
   }
 
   toJSON(): Partial<Session> {
@@ -177,7 +188,7 @@ export class Session<
       return this.bot[Session.send](this, message)
     }
     if (!message) return
-    await this.bot.sendMessage(this.channelId, message, this.groupId)
+    await this.bot.sendMessage(this.channelId, message, this.guildId)
   }
 
   cancelQueued(delay = this.app.options.delay.cancel) {

@@ -30,10 +30,10 @@ describe('Teach Plugin - Writer', () => {
 
     // 实在找不到名字就只显示未知用户
     await u4g2.shouldReply('#1', DETAIL_HEAD + '来源：未知用户')
-    const getGroupMemberMap = app.bots[0].getGroupMemberMap = jest.fn()
-    getGroupMemberMap.mockReturnValue(Promise.resolve({ 200: 'mock2' }))
+    const getGuildMemberMap = app.bots[0].getGuildMemberMap = jest.fn()
+    getGuildMemberMap.mockReturnValue(Promise.resolve({ 200: 'mock2' }))
     await u4g2.shouldReply('#1', DETAIL_HEAD + '来源：mock2')
-    getGroupMemberMap.mockRestore()
+    getGuildMemberMap.mockRestore()
   })
 
   it('anonymous', async () => {

@@ -71,7 +71,7 @@ export default class HttpServer extends Adapter<'telegram'> {
           body.subtype = 'private'
         } else {
           body.subtype = 'group'
-          body.groupId = body.channelId
+          body.guildId = body.channelId
         }
       }
       logger.debug('receive %o', body)

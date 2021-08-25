@@ -78,7 +78,7 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
 
     if (!options.modify && hasUnnamed && session.subtype === 'group') {
       try {
-        const memberMap = await session.bot.getGroupMemberMap(session.groupId)
+        const memberMap = await session.bot.getGuildMemberMap(session.guildId)
         for (const userId in memberMap) {
           nameMap[idMap[userId]] ||= memberMap[userId]
         }

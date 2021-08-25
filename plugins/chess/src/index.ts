@@ -35,7 +35,7 @@ export * from './state'
 export const name = 'chess'
 
 export function apply(ctx: Context) {
-  ctx = ctx.group()
+  ctx = ctx.guild()
 
   State.imageMode = !!ctx.puppeteer
   ctx.on('delegate/puppeteer', () => State.imageMode = true)

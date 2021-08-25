@@ -5,59 +5,59 @@ import { inspect } from 'util'
 import jest from 'jest-mock'
 
 const app = new App()
-const groupSession = new Session(app, { userId: '123', groupId: '456', subtype: 'group' })
+const guildSession = new Session(app, { userId: '123', guildId: '456', subtype: 'group' })
 const privateSession = new Session(app, { userId: '123', subtype: 'private' })
 
 describe('Context API', () => {
   describe('Composition API', () => {
     it('root context', () => {
-      expect(app.match(groupSession)).to.be.true
+      expect(app.match(guildSession)).to.be.true
       expect(app.match(privateSession)).to.be.true
     })
 
     it('context.prototype.user', () => {
-      expect(app.user().match(groupSession)).to.be.true
+      expect(app.user().match(guildSession)).to.be.true
       expect(app.user().match(privateSession)).to.be.true
-      expect(app.user('123').match(groupSession)).to.be.true
+      expect(app.user('123').match(guildSession)).to.be.true
       expect(app.user('123').match(privateSession)).to.be.true
-      expect(app.user('456').match(groupSession)).to.be.false
+      expect(app.user('456').match(guildSession)).to.be.false
       expect(app.user('456').match(privateSession)).to.be.false
     })
 
     it('context.prototype.private', () => {
-      expect(app.private().match(groupSession)).to.be.false
+      expect(app.private().match(guildSession)).to.be.false
       expect(app.private().match(privateSession)).to.be.true
-      expect(app.private().user('123').match(groupSession)).to.be.false
+      expect(app.private().user('123').match(guildSession)).to.be.false
       expect(app.private().user('123').match(privateSession)).to.be.true
-      expect(app.private().user('456').match(groupSession)).to.be.false
+      expect(app.private().user('456').match(guildSession)).to.be.false
       expect(app.private().user('456').match(privateSession)).to.be.false
     })
 
-    it('context.prototype.group', () => {
-      expect(app.group().match(groupSession)).to.be.true
-      expect(app.group().match(privateSession)).to.be.false
-      expect(app.group('123').match(groupSession)).to.be.false
-      expect(app.group('123').match(privateSession)).to.be.false
-      expect(app.group('456').match(groupSession)).to.be.true
-      expect(app.group('456').match(privateSession)).to.be.false
+    it('context.prototype.guild', () => {
+      expect(app.guild().match(guildSession)).to.be.true
+      expect(app.guild().match(privateSession)).to.be.false
+      expect(app.guild('123').match(guildSession)).to.be.false
+      expect(app.guild('123').match(privateSession)).to.be.false
+      expect(app.guild('456').match(guildSession)).to.be.true
+      expect(app.guild('456').match(privateSession)).to.be.false
     })
 
     it('context chaining', () => {
-      expect(app.group('456').user('123').match(groupSession)).to.be.true
-      expect(app.group('456').user('456').match(groupSession)).to.be.false
-      expect(app.group('123').user('123').match(groupSession)).to.be.false
-      expect(app.user('123').group('456').match(groupSession)).to.be.true
-      expect(app.user('456').group('456').match(groupSession)).to.be.false
-      expect(app.user('123').group('123').match(groupSession)).to.be.false
+      expect(app.guild('456').user('123').match(guildSession)).to.be.true
+      expect(app.guild('456').user('456').match(guildSession)).to.be.false
+      expect(app.guild('123').user('123').match(guildSession)).to.be.false
+      expect(app.user('123').guild('456').match(guildSession)).to.be.true
+      expect(app.user('456').guild('456').match(guildSession)).to.be.false
+      expect(app.user('123').guild('123').match(guildSession)).to.be.false
     })
 
     it('context intersection', () => {
-      expect(app.group('456', '789').group('123', '456').match(groupSession)).to.be.true
-      expect(app.group('456', '789').group('123', '789').match(groupSession)).to.be.false
-      expect(app.group('123', '789').group('123', '456').match(groupSession)).to.be.false
-      expect(app.user('123', '789').user('123', '456').match(groupSession)).to.be.true
-      expect(app.user('456', '789').user('123', '456').match(groupSession)).to.be.false
-      expect(app.user('123', '789').user('456', '789').match(groupSession)).to.be.false
+      expect(app.guild('456', '789').guild('123', '456').match(guildSession)).to.be.true
+      expect(app.guild('456', '789').guild('123', '789').match(guildSession)).to.be.false
+      expect(app.guild('123', '789').guild('123', '456').match(guildSession)).to.be.false
+      expect(app.user('123', '789').user('123', '456').match(guildSession)).to.be.true
+      expect(app.user('456', '789').user('123', '456').match(guildSession)).to.be.false
+      expect(app.user('123', '789').user('456', '789').match(guildSession)).to.be.false
     })
   })
 
@@ -74,7 +74,7 @@ describe('Context API', () => {
       app.private().on(event, callback)
       await app.parallel(event, null)
       expect(callback.mock.calls).to.have.length(1)
-      await app.parallel(groupSession, event, null)
+      await app.parallel(guildSession, event, null)
       expect(callback.mock.calls).to.have.length(1)
       await app.parallel(privateSession, event, null)
       expect(callback.mock.calls).to.have.length(2)
@@ -86,7 +86,7 @@ describe('Context API', () => {
       app.private().on(event, callback)
       app.emit(event, null)
       expect(callback.mock.calls).to.have.length(1)
-      app.emit(groupSession, event, null)
+      app.emit(guildSession, event, null)
       expect(callback.mock.calls).to.have.length(1)
       app.emit(privateSession, event, null)
       expect(callback.mock.calls).to.have.length(2)
@@ -98,7 +98,7 @@ describe('Context API', () => {
       app.private().on(event, callback)
       app.serial(event, null)
       expect(callback.mock.calls).to.have.length(1)
-      app.serial(groupSession, event, null)
+      app.serial(guildSession, event, null)
       expect(callback.mock.calls).to.have.length(1)
       app.serial(privateSession, event, null)
       expect(callback.mock.calls).to.have.length(2)
@@ -110,7 +110,7 @@ describe('Context API', () => {
       app.private().on(event, callback)
       app.bail(event, null)
       expect(callback.mock.calls).to.have.length(1)
-      app.bail(groupSession, event, null)
+      app.bail(guildSession, event, null)
       expect(callback.mock.calls).to.have.length(1)
       app.bail(privateSession, event, null)
       expect(callback.mock.calls).to.have.length(2)

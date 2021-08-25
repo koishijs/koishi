@@ -1,5 +1,5 @@
 /* eslint-disable camelcase */
-import { AuthorInfo, ChannelInfo, GroupInfo, MessageInfo, segment, Session, UserInfo } from 'koishi'
+import { AuthorInfo, ChannelInfo, GuildInfo, MessageInfo, segment, Session, UserInfo } from 'koishi'
 import { DiscordBot } from './bot'
 import * as DC from './types'
 
@@ -11,10 +11,10 @@ export const adaptUser = (user: DC.DiscordUser): UserInfo => ({
   isBot: user.bot || false,
 })
 
-export function adaptGroup(data: DC.PartialGuild | DC.Guild): GroupInfo {
+export function adaptGroup(data: DC.PartialGuild | DC.Guild): GuildInfo {
   return {
-    groupId: data.id,
-    groupName: data.name,
+    guildId: data.id,
+    guildName: data.name,
   }
 }
 
@@ -126,7 +126,7 @@ function adaptMessageSession(bot: DiscordBot, meta: DC.Message, session: Partial
 }
 
 function prepareMessageSession(session: Partial<Session>, data: DC.Message) {
-  session.groupId = data.guild_id
+  session.guildId = data.guild_id
   session.subtype = data.guild_id ? 'group' : 'private'
   session.channelId = data.channel_id
 }
@@ -134,7 +134,7 @@ function prepareMessageSession(session: Partial<Session>, data: DC.Message) {
 function prepareReactionSession(session: Partial<Session>, data: any) {
   session.userId = data.user_id
   session.messageId = data.message_id
-  session.groupId = data.guild_id
+  session.guildId = data.guild_id
   session.channelId = data.channel_id
   session.subtype = data.guild_id ? 'group' : 'private'
   if (!data.emoji) return

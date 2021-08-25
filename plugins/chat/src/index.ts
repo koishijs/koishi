@@ -86,12 +86,12 @@ export function apply(ctx: Context, options: Config = {}) {
     ctx.webui.global.maxMessages = options.maxMessages
     ctx.webui.addEntry(resolve(__dirname, filename))
 
-    ctx.webui.addListener('chat', async function ({ id, token, content, platform, selfId, channelId, groupId }) {
+    ctx.webui.addListener('chat', async function ({ id, token, content, platform, selfId, channelId, guildId }) {
       const user = await this.validate(id, token, ['name', 'authority'])
       if (!user) return
       if (user.authority < 4) return this.send('unauthorized')
       content = await ctx.transformAssets(content)
-      ctx.bots[`${platform}:${selfId}`]?.sendMessage(channelId, content, groupId)
+      ctx.bots[`${platform}:${selfId}`]?.sendMessage(channelId, content, guildId)
     })
 
     ctx.on('connect', () => {
