@@ -29,6 +29,8 @@ export interface AppConfig extends AppOptions {
   logTime?: string | boolean
   watch?: WatchConfig
   deamon?: DeamonConfig
+  timezoneOffset?: number
+  stackTraceLimit?: number
 }
 
 export function defineConfig(config: AppConfig) {

@@ -3,8 +3,8 @@
 import { App } from '@koishijs/test-utils'
 import { resolve } from 'path'
 import { promises as fs } from 'fs'
-import * as eval from 'koishi-plugin-eval'
-import * as teach from 'koishi-plugin-teach'
+import * as eval from '@koishijs/plugin-eval'
+import * as teach from '@koishijs/plugin-teach'
 
 const app = new App({
   mockStart: false,

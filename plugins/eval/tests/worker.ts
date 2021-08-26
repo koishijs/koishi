@@ -1,6 +1,6 @@
 /* eslint-disable no-new-wrappers */
 
-import { internal } from 'koishi-plugin-eval/lib/worker'
+import { internal } from '@koishijs/plugin-eval/lib/worker'
 
 internal.setGlobal('test', {
   null: null,

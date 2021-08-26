@@ -2,7 +2,7 @@ import { App } from '@koishijs/test-utils'
 import { Assets, Logger, Time } from 'koishi'
 import createEnvironment from './environment'
 import { install } from '@sinonjs/fake-timers'
-import * as teach from 'koishi-plugin-teach'
+import * as teach from '@koishijs/plugin-teach'
 import jest from 'jest-mock'
 
 const DETAIL_HEAD = '编号为 1 的问答信息：\n问题：foo\n回答：bar\n'

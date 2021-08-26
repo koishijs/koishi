@@ -1,5 +1,5 @@
 import { resolve, relative, extname, dirname } from 'path'
-import { App, Context, Plugin, version, coerce, Logger, noop, makeArray, template, AppConfig } from '../node'
+import { App, Context, Plugin, version, coerce, Logger, noop, Time, makeArray, template, AppConfig } from '../node'
 import { readFileSync, readdirSync } from 'fs'
 import { performance } from 'perf_hooks'
 import { yellow } from 'kleur'
@@ -112,6 +112,14 @@ if (process.env.KOISHI_DEBUG) {
   for (const name of process.env.KOISHI_DEBUG.split(',')) {
     new Logger(name).level = Logger.DEBUG
   }
+}
+
+if (config.timezoneOffset !== undefined) {
+  Time.setTimezoneOffset(config.timezoneOffset)
+}
+
+if (config.stackTraceLimit !== undefined) {
+  Error.stackTraceLimit = config.stackTraceLimit
 }
 
 interface Message {
