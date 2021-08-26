@@ -126,3 +126,30 @@ yarn koishi start -- -- -r ts-node/register
 :::
 
 这样你就可以直接使用 koishi.config.ts，或在 koishi.config.js 中引用 ts 文件作为插件了。
+
+### 使用 CoffeeScript
+
+Koishi 也支持直接调用 CoffeeScript 编写的插件。首先安装 CoffeeScript：
+
+::: code-group manager
+```npm
+npm i coffeescript -D
+```
+```yarn
+yarn add coffeescript -D
+```
+:::
+
+接着在你的命令行之后加上一段额外的参数：
+
+::: code-group manager
+```npm
+npx koishi start -- -r coffeescript/register
+```
+```yarn
+# 因为 yarn 自己会吞掉 -- 所以需要额外写一个
+yarn koishi start -- -- -r coffeescript/register
+```
+:::
+
+这样你就可以直接使用 koishi.config.coffee，或在 koishi.config.js 中引用 coffee 文件作为插件了。
