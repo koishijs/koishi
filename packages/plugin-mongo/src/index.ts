@@ -220,13 +220,9 @@ Database.extend(MongoDatabase, {
     const [udoc] = await this.user.find({}).sort({ id: -1 }).limit(1).project({ id: 1 }).toArray()
     const uid = ((+udoc?.id || 0) + 1).toString()
     delete data.id
-    if (type === 'id' || !Object.keys(data).length) {
-      // @ts-ignore
-      await this.user.insertOne({ _id: uid, id: uid, [type]: id, ...data }).catch(noop)
-      return
-    }
-    // @ts-ignore
-    await this.user.insertOne({ _id: uid, id: uid, [type]: id, ...escapeKey(data) })
+    const value = { _id: uid, id: uid, [type]: id, ...escapeKey(data) } as any
+    await this.user.insertOne(value)
+    return value
   },
 
   createUser(type, id, data) {
