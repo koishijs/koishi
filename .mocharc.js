@@ -6,6 +6,7 @@ const specs = [
   'packages/dev-utils/tests/*.spec.ts',
   'packages/test-utils/tests/*.spec.ts',
   'plugins/common/tests/*.spec.ts',
+  'plugins/database/tests/*.spec.ts',
   'plugins/eval/tests/*.spec.ts',
   'plugins/github/tests/*.spec.ts',
   'plugins/mongo/tests/*.spec.ts',

@@ -30,10 +30,6 @@ export class MemoryDatabase extends Database {
   $table<K extends TableType>(table: K): any[] {
     return this.$store[table] ||= []
   }
-
-  $count<K extends TableType>(table: K, field: keyof Tables[K] = 'id') {
-    return new Set(this.$table(table).map(data => data[field])).size
-  }
 }
 
 type QueryOperators = {
