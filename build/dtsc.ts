@@ -223,6 +223,7 @@ const targets = [
   'packages/core',
   'packages/koishi',
   'plugins/common',
+  'plugins/database',
   'plugins/mysql',
   'plugins/mongo',
   'plugins/webui',

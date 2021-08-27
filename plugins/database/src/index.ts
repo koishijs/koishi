@@ -1,4 +1,5 @@
 import { App, Database, Eval, Query, Tables, TableType, clone, makeArray, pick, Context } from 'koishi'
+import { Storage, Config } from './storage'
 
 declare module 'koishi' {
   interface Database {
@@ -12,22 +13,35 @@ declare module 'koishi' {
   }
 }
 
-export interface MemoryConfig {}
-
 export class MemoryDatabase extends Database {
-  memory = this
+  public memory = this
+  public $store: Record<string, any[]> = {}
 
-  constructor(public app: App, public config: MemoryConfig) {
+  private _storage: Storage
+
+  constructor(public app: App, public config: Config = {}) {
     super(app)
+
+    if (config.storage) {
+      this._storage = new Storage(config)
+    }
   }
 
-  start() {}
+  async start() {
+    await this._storage?.start(this.$store)
+  }
+
+  async $drop(name?: string) {
+    await this._storage?.drop(name)
+  }
+
+  async $save(name: string) {
+    await this._storage?.save(name, this.$store[name])
+  }
 
   stop() {}
 
-  $store: { [K in TableType]?: Tables[K][] } = {}
-
-  $table<K extends TableType>(table: K): any[] {
+  $table<K extends TableType>(table: K) {
     return this.$store[table] ||= []
   }
 }
@@ -156,6 +170,7 @@ Database.extend(MemoryDatabase, {
     } else {
       this.$store = {}
     }
+    await this.$drop(name)
   },
 
   async get(name, query, modifier) {
@@ -172,12 +187,14 @@ Database.extend(MemoryDatabase, {
     this.$table(name)
       .filter(row => executeQuery(expr, row))
       .forEach(row => Object.assign(row, data))
+    this.$save(name)
   },
 
   async remove(name, query) {
     const entries = Object.entries(Query.resolve(name, query))
     this.$store[name] = this.$table(name)
       .filter(row => !entries.every(([key, value]) => value.includes(row[key])))
+    this.$save(name)
   },
 
   async create(name, data: any) {
@@ -192,6 +209,7 @@ Database.extend(MemoryDatabase, {
       }
     }
     store.push(data)
+    this.$save(name)
     return data
   },
 
@@ -207,6 +225,7 @@ Database.extend(MemoryDatabase, {
         await this.create(name, item)
       }
     }
+    this.$save(name)
   },
 
   async aggregate(name, fields, query) {
@@ -218,6 +237,6 @@ Database.extend(MemoryDatabase, {
 
 export const name = 'database'
 
-export function apply(ctx: Context, config: MemoryConfig = {}) {
+export function apply(ctx: Context, config: Config = {}) {
   ctx.database = new MemoryDatabase(ctx.app, config)
 }

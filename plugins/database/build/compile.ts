@@ -1,3 +1,3 @@
 import { defineCrossBuild } from '../../../build'
 
-export = defineCrossBuild('logger')
+export = defineCrossBuild('storage')

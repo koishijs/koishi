@@ -1,0 +1,6 @@
+{
+  "name": "@koishijs/storage",
+  "main": "node.ts",
+  "module": "browser.ts",
+  "typings": "index.ts"
+}
