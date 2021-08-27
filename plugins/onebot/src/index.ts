@@ -1,16 +1,12 @@
 import { Adapter, Context } from 'koishi'
 import { WsClient, WsServer } from './ws'
 import { Config, CQBot } from './bot'
-import HttpServer, { ResponsePayload } from './http'
+import HttpServer from './http'
 import axios from 'axios'
 
 declare module 'koishi' {
   interface BotOptions {
     server?: string
-  }
-
-  interface Session {
-    _response?: (payload: ResponsePayload) => void
   }
 
   namespace Bot {

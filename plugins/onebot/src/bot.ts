@@ -73,10 +73,6 @@ export class CQBot extends Bot {
     if (await this.app.serial(session, 'before-send', session)) return
     content = renderText(session.content)
 
-    if (message._response) {
-      return message._response({ reply: content, atSender: false })
-    }
-
     return guildId
       ? this.$sendGroupMsgAsync(id, content)
       : this.$sendPrivateMsgAsync(id, content)

@@ -1,21 +1,8 @@
-import { App, Adapter, Bot, Logger, defineProperty, snakeCase, assertProperty } from 'koishi'
+import { App, Adapter, Bot, Logger, assertProperty } from 'koishi'
 import { CQBot } from './bot'
 import { createSession } from './utils'
 import { createHmac } from 'crypto'
 import axios from 'axios'
-
-export interface ResponsePayload {
-  delete?: boolean
-  ban?: boolean
-  banDuration?: number
-  kick?: boolean
-  reply?: string
-  autoEscape?: boolean
-  atSender?: boolean
-  approve?: boolean
-  remark?: string
-  reason?: string
-}
 
 const logger = new Logger('onebot')
 
@@ -56,27 +43,6 @@ export default class HttpServer extends Adapter<'onebot'> {
 
       logger.debug('receive %o', ctx.request.body)
       const session = createSession(this, ctx.request.body)
-
-      if (session && quickOperation > 0) {
-        // bypass koa's built-in response handling for quick operations
-        ctx.respond = false
-        ctx.res.writeHead(200, {
-          'Content-Type': 'application/json',
-        })
-
-        // use defineProperty to avoid meta duplication
-        defineProperty(session, '$response', (data: any) => {
-          session._response = null
-          clearTimeout(timer)
-          ctx.res.write(JSON.stringify(snakeCase(data)))
-          ctx.res.end()
-        })
-
-        const timer = setTimeout(() => {
-          session._response = null
-          ctx.res.end()
-        }, quickOperation)
-      }
 
       // dispatch events
       if (session) this.dispatch(session)
