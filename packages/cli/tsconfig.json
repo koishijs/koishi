@@ -2,7 +2,8 @@
   "extends": "../../tsconfig.base",
   "compilerOptions": {
     "rootDir": "src",
-    "outFile": "temp/index.d.ts",
+    "noEmit": true,
+    "emitDeclarationOnly": false,
   },
   "include": [
     "src",

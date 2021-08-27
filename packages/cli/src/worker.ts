@@ -1,8 +1,9 @@
 import { resolve, relative, extname, dirname } from 'path'
-import { App, Context, Plugin, version, coerce, Logger, noop, Time, makeArray, template, AppConfig } from '../node'
+import { App, Context, Plugin, version, coerce, Logger, noop, Time, makeArray, template } from 'koishi'
 import { readFileSync, readdirSync } from 'fs'
 import { performance } from 'perf_hooks'
 import { yellow } from 'kleur'
+import { AppConfig } from '..'
 
 const logger = new Logger('app')
 let configDir = process.cwd()
@@ -120,6 +121,13 @@ if (config.timezoneOffset !== undefined) {
 
 if (config.stackTraceLimit !== undefined) {
   Error.stackTraceLimit = config.stackTraceLimit
+}
+
+if (config.proxyAgent !== undefined) {
+  const ProxyAgent = require('proxy-agent') as typeof import('proxy-agent')
+  const axiosConfig = config.axiosConfig ||= {}
+  axiosConfig.httpAgent = new ProxyAgent(config.proxyAgent)
+  axiosConfig.httpsAgent = new ProxyAgent(config.proxyAgent)
 }
 
 interface Message {

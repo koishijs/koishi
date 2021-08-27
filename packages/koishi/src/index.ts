@@ -3,11 +3,9 @@ import { defineProperty, remove } from '@koishijs/utils'
 import { Server, createServer } from 'http'
 import { AxiosRequestConfig } from 'axios'
 import Router from '@koa/router'
-import type ProxyAgent from 'proxy-agent'
 import type Koa from 'koa'
 
 export * from './adapter'
-export * from './config'
 
 export * from '@koishijs/core'
 export * from '@koishijs/utils'
@@ -28,7 +26,6 @@ declare module '@koishijs/core' {
   interface AppOptions {
     port?: number
     host?: string
-    proxyAgent?: string
     axiosConfig?: AxiosRequestConfig
   }
 
@@ -49,14 +46,6 @@ const prepare = App.prototype.prepare
 App.prototype.prepare = function (this: App, ...args) {
   prepare.call(this, ...args)
   prepareServer.call(this)
-
-  const { proxyAgent } = this.options
-  if (proxyAgent) {
-    const Agent: typeof ProxyAgent = require('proxy-agent')
-    const config = this.options.axiosConfig ||= {}
-    config.httpAgent = new Agent(proxyAgent)
-    config.httpsAgent = new Agent(proxyAgent)
-  }
 }
 
 function prepareServer(this: App) {

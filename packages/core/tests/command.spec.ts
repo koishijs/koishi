@@ -16,7 +16,7 @@ describe('Command API', () => {
 
     it('context.prototype.command', () => {
       const ctx1 = app.user('10000')
-      const ctx2 = app.group('10000')
+      const ctx2 = app.guild('10000')
       app.command('a')
       ctx1.command('b')
       ctx2.command('c')

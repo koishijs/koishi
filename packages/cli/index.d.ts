@@ -1,4 +1,4 @@
-import { AppOptions } from '@koishijs/core'
+import { AppOptions } from 'koishi'
 import { WatchOptions } from 'chokidar'
 
 export type PluginConfig = Record<string, any> | (string | [string, any?])[]
@@ -29,10 +29,11 @@ export interface AppConfig extends AppOptions {
   logTime?: string | boolean
   watch?: WatchConfig
   deamon?: DeamonConfig
+  proxyAgent?: string
   timezoneOffset?: number
   stackTraceLimit?: number
 }
 
-export function defineConfig(config: AppConfig) {
-  return config
-}
+export * from 'koishi'
+
+export function defineConfig(config: AppConfig): AppConfig
