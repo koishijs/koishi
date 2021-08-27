@@ -30,7 +30,7 @@
   ],
   "devDependencies": {
     "@types/koa": "^2.13.1",
-    "@koishijs/test-utils": "^8.0.0-alpha.0"
+    "@koishijs/test-utils": "^8.0.0-alpha.1"
   },
   "dependencies": {
     "@koa/router": "^10.1.0",

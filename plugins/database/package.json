@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-database",
   "description": "A basic database implementation for Koishi",
-  "version": "1.0.0-alpha.0",
+  "version": "1.0.0-alpha.1",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -29,7 +29,7 @@
     "server"
   ],
   "peerDependencies": {
-    "koishi": "^4.0.0-alpha.1"
+    "koishi": "^4.0.0-alpha.2"
   },
   "devDependencies": {
     "@types/js-yaml": "^4.0.3",

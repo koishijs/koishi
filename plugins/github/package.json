@@ -33,10 +33,10 @@
     "@koishijs/plugin-mongo": "^3.0.0-alpha.0",
     "@koishijs/plugin-mysql": "^4.0.0-alpha.0",
     "@koishijs/plugin-puppeteer": "^3.0.0-alpha.0",
-    "@koishijs/test-utils": "^8.0.0-alpha.0"
+    "@koishijs/test-utils": "^8.0.0-alpha.1"
   },
   "peerDependencies": {
-    "koishi": "^4.0.0-alpha.1"
+    "koishi": "^4.0.0-alpha.2"
   },
   "dependencies": {
     "@octokit/webhooks-types": "^4.3.0",

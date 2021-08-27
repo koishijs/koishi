@@ -29,13 +29,13 @@
     "webui"
   ],
   "peerDependencies": {
-    "koishi": "^4.0.0-alpha.1"
+    "koishi": "^4.0.0-alpha.2"
   },
   "devDependencies": {
     "@fortawesome/fontawesome-free": "^5.15.3",
     "@koishijs/plugin-mongo": "^3.0.0-alpha.0",
     "@koishijs/plugin-mysql": "^4.0.0-alpha.0",
-    "@koishijs/test-utils": "^8.0.0-alpha.0",
+    "@koishijs/test-utils": "^8.0.0-alpha.1",
     "@types/uuid": "^8.3.1",
     "@vitejs/plugin-vue": "^1.2.2",
     "@vue/compiler-sfc": "^3.0.11",

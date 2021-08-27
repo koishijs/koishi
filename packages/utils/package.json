@@ -29,7 +29,7 @@
   ],
   "devDependencies": {
     "@types/supports-color": "^8.1.0",
-    "@koishijs/test-utils": "^8.0.0-alpha.0"
+    "@koishijs/test-utils": "^8.0.0-alpha.1"
   },
   "dependencies": {
     "supports-color": "^8.1.0"
