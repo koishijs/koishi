@@ -1,5 +1,6 @@
 import { stderr } from 'supports-color'
 import { Time } from '../time'
+import { Dict } from '../misc'
 
 const c16 = [6, 2, 3, 4, 5, 1]
 const c256 = [
@@ -40,7 +41,7 @@ export class Logger {
 
   // global registry
   static colors = stderr ? stderr.has256 ? c256 : c16 : []
-  static instances: Record<string, Logger> = {}
+  static instances: Dict<Logger> = {}
 
   static levels: Logger.LevelConfig = {
     base: 2,

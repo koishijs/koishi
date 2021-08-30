@@ -1,4 +1,4 @@
-import { User, checkTimer, Logger } from 'koishi'
+import { User, checkTimer, Logger, Dict } from 'koishi'
 import { Adventurer } from './utils'
 import Buff from './buff'
 import Item from './item'
@@ -25,7 +25,7 @@ namespace Event {
     return output.join('\n')
   }
 
-  export const sell = (itemMap: Readonly<Record<string, number>>): Visible => ({ user, app }) => {
+  export const sell = (itemMap: Readonly<Dict<number>>): Visible => ({ user, app }) => {
     let moneyGained = 0
     const toValue = app.adventure.createSeller(user)
     for (const name in itemMap) {
@@ -40,7 +40,7 @@ namespace Event {
     return `已售出${Item.format(itemMap)}，获得 ${+moneyGained.toFixed(1)}￥，余额 ${+user.money.toFixed(1)}￥。`
   }
 
-  export const buy = (itemMap: Readonly<Record<string, number>>): Visible => ({ user, app }) => {
+  export const buy = (itemMap: Readonly<Dict<number>>): Visible => ({ user, app }) => {
     let moneyLost = 0
     const toBid = app.adventure.createBuyer(user)
     for (const name in itemMap) {
@@ -116,7 +116,7 @@ namespace Event {
 
   function toItemMap(items: Item.Pack) {
     if (!Array.isArray(items)) return items
-    const map: Record<string, number> = {}
+    const map: Dict<number> = {}
     for (const name of items) {
       map[name] = (map[name] || 0) + 1
     }
@@ -148,7 +148,7 @@ namespace Event {
 
   export const gainRandom = <T>(count: Adventurer.Update<number, T>, exclude: readonly string[] = []): Visible<T> => (session, state) => {
     const _count = Adventurer.getValue(count, session.user, state)
-    const itemMap: Record<string, number> = {}
+    const itemMap: Dict<number> = {}
     const gainList: string[] = []
 
     const data = {} as Record<Item.Rarity, string[]>

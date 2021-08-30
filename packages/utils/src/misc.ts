@@ -131,6 +131,7 @@ export function isType<K extends keyof GlobalClass>(type: K, value: any): value 
     || Object.prototype.toString.call(value).slice(8, -1) === type
 }
 
+export type Dict<T = any> = { [key: string]: T }
 export type Get<T extends {}, K> = K extends keyof T ? T[K] : never
 export type Extract<S, T, U = S> = S extends T ? U : never
 export type MaybeArray<T> = [T] extends [unknown[]] ? T : T | T[]

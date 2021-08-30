@@ -1,6 +1,7 @@
 import { inspect, InspectOptions, format } from 'util'
 import { stderr } from 'supports-color'
 import { Time } from '../time'
+import { Dict } from '../misc'
 
 const c16 = [6, 2, 3, 4, 5, 1]
 const c256 = [
@@ -41,9 +42,9 @@ export class Logger {
 
   // global registry
   static colors = stderr ? stderr.has256 ? c256 : c16 : []
-  static instances: Record<string, Logger> = {}
+  static instances: Dict<Logger> = {}
 
-  static formatters: Record<string, (this: Logger, value: any) => string> = {
+  static formatters: Dict<(this: Logger, value: any) => string> = {
     c: Logger.prototype.color,
     C: value => Logger.color(15, value, ';1'),
     o: value => inspect(value, Logger.options).replace(/\s*\n\s*/g, ' '),

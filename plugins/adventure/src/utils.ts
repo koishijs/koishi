@@ -1,4 +1,4 @@
-import { User, Database, Context, Command, Argv, TableType, Tables, FieldCollector, defineEnumProperty } from 'koishi'
+import { User, Database, Context, Command, Argv, TableType, Tables, Dict, FieldCollector, defineEnumProperty } from 'koishi'
 import {} from '@koishijs/plugin-mysql'
 import * as Koishi from 'koishi'
 import Achievement from './achv'
@@ -40,11 +40,11 @@ declare module 'koishi' {
     'adventure/check'(session: Adventurer.Session, hints: string[]): void
     'adventure/rank'(name: string): [string, string]
     'adventure/use'(userId: string, progress: string): void
-    'adventure/before-sell'(itemMap: Record<string, number>, session: Adventurer.Session): string | undefined
+    'adventure/before-sell'(itemMap: Dict<number>, session: Adventurer.Session): string | undefined
     'adventure/before-use'(item: string, session: Adventurer.Session): string | undefined
     'adventure/before-timer'(name: string, reason: string, session: Adventurer.Session): string | undefined
-    'adventure/lose'(itemMap: Record<string, number>, session: Adventurer.Session, hints: string[]): void
-    'adventure/gain'(itemMap: Record<string, number>, session: Adventurer.Session, hints: string[]): void
+    'adventure/lose'(itemMap: Dict<number>, session: Adventurer.Session, hints: string[]): void
+    'adventure/gain'(itemMap: Dict<number>, session: Adventurer.Session, hints: string[]): void
     'adventure/ending'(session: Adventurer.Session, id: string, hints: string[]): void
     'adventure/achieve'(session: Session<Achievement.Field>, achv: Achievement, hints: string[]): void
   }
@@ -96,10 +96,10 @@ export interface Adventurer {
   id: string
   money: number
   wealth: number
-  usage: Record<string, number>
-  timers: Record<string, number>
-  gains: Record<string, number>
-  warehouse: Record<string, number>
+  usage: Dict<number>
+  timers: Dict<number>
+  gains: Dict<number>
+  warehouse: Dict<number>
   name: string
   flag: number
   luck: number
@@ -107,7 +107,7 @@ export interface Adventurer {
   recent: string[]
   progress: string
   phases: string[]
-  endings: Record<string, number>
+  endings: Dict<number>
   drunkAchv: number
   achievement: string[]
 }
@@ -132,7 +132,7 @@ export namespace Adventurer {
 }
 
 export namespace Show {
-  const data: Record<string, ShowRedirect | ShowCallback> = {}
+  const data: Dict<ShowRedirect | ShowCallback> = {}
 
   type ShowRedirect = ['redirect', string, ((user: Partial<User>, name: string) => boolean)?]
   type ShowCallback = ['callback', User.Field[], (user: Partial<User>, name: string) => string | undefined]

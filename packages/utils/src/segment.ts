@@ -1,4 +1,4 @@
-import { isType, Awaitable } from './misc'
+import { isType, Awaitable, Dict } from './misc'
 
 export interface segment {
   type: string
@@ -18,12 +18,12 @@ type primitive = string | number | boolean
 
 export namespace segment {
   export type Chain = segment.Parsed[]
-  export type Data = Record<string, primitive>
-  export type Transformer = string | ((data: Record<string, string>, index: number, chain: Chain) => string)
-  export type AsyncTransformer = string | ((data: Record<string, string>, index: number, chain: Chain) => Awaitable<string>)
+  export type Data = Dict<primitive>
+  export type Transformer = string | ((data: Dict<string>, index: number, chain: Chain) => string)
+  export type AsyncTransformer = string | ((data: Dict<string>, index: number, chain: Chain) => Awaitable<string>)
 
   export interface Parsed extends segment {
-    data: Record<string, string>
+    data: Dict<string>
     capture?: RegExpExecArray
   }
 
@@ -60,7 +60,7 @@ export namespace segment {
     const capture = new RegExp(regExpSource).exec(source)
     if (!capture) return null
     const [, type, attrs] = capture
-    const data: Record<string, string> = {}
+    const data: Dict<string> = {}
     attrs && attrs.slice(1).split(',').forEach((str) => {
       const index = str.indexOf('=')
       data[str.slice(0, index)] = unescape(str.slice(index + 1))
@@ -83,7 +83,7 @@ export namespace segment {
     return chain
   }
 
-  export function transform(source: string, rules: Record<string, Transformer>, dropOthers = false) {
+  export function transform(source: string, rules: Dict<Transformer>, dropOthers = false) {
     return parse(source).map(({ type, data, capture }, index, chain) => {
       const transformer = rules[type]
       return typeof transformer === 'string' ? transformer
@@ -92,7 +92,7 @@ export namespace segment {
     }).join('')
   }
 
-  export async function transformAsync(source: string, rules: Record<string, AsyncTransformer>) {
+  export async function transformAsync(source: string, rules: Dict<AsyncTransformer>) {
     const chain = segment.parse(source)
     const cache = new Map<Parsed, string>()
     await Promise.all(chain.map(async (node, index, chain) => {

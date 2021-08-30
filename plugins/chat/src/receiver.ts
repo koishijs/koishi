@@ -1,4 +1,4 @@
-import { Bot, Context, Session, Time, pick, segment } from 'koishi'
+import { Bot, Context, Session, Time, pick, segment, Dict } from 'koishi'
 
 export interface ReceiverConfig {
   refreshUserName?: number
@@ -76,9 +76,9 @@ export default function apply(ctx: Context, config: ReceiverConfig = {}) {
     refreshChannelName = Time.hour,
   } = config
 
-  const channelMap: Record<string, [Promise<string>, number]> = {}
-  const groupMap: Record<string, [Promise<string>, number]> = {}
-  const userMap: Record<string, [Promise<string>, number]> = {}
+  const channelMap: Dict<[Promise<string>, number]> = {}
+  const groupMap: Dict<[Promise<string>, number]> = {}
+  const userMap: Dict<[Promise<string>, number]> = {}
 
   ctx.on('connect', () => {
     const timestamp = Date.now()

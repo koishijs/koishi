@@ -1,4 +1,4 @@
-import { Context, Tables, isInteger, segment } from 'koishi'
+import { Context, Tables, isInteger, segment, Dict } from 'koishi'
 import { State, MoveResult, StateData } from './state'
 import {} from '@koishijs/plugin-mysql'
 import * as go from './go'
@@ -16,7 +16,7 @@ interface Rule {
   update?: (this: State, x: number, y: number, value: -1 | 1) => MoveResult | string
 }
 
-const rules: Record<string, Rule> = {
+const rules: Dict<Rule> = {
   go,
   gomoku,
   othello,
@@ -28,7 +28,7 @@ declare module 'koishi' {
   }
 }
 
-const states: Record<string, State> = {}
+const states: Dict<State> = {}
 
 export * from './state'
 

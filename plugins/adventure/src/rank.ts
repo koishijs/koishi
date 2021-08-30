@@ -1,4 +1,4 @@
-import { Bot, User, Context, Session, Database, paramCase, camelCase, isInteger } from 'koishi'
+import { Bot, User, Context, Session, Database, paramCase, camelCase, isInteger, Dict } from 'koishi'
 import {} from '@koishijs/plugin-mysql'
 
 type ExtendedUser<T extends User.Field = User.Field> = Pick<User, T> & { _value: number }
@@ -16,8 +16,8 @@ interface Rank<T extends User.Field = never> {
   limit?: number
 }
 
-const ranks: Record<string, Rank<User.Field>> = {}
-const rankMap: Record<string, string> = {}
+const ranks: Dict<Rank<User.Field>> = {}
+const rankMap: Dict<string> = {}
 
 namespace Rank {
   interface Options<T extends User.Field> extends Pick<Rank<T>, 'threshold' | 'format' | 'reverse' | 'fields' | 'order'> {

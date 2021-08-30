@@ -1,4 +1,4 @@
-import { User, Context, Session, difference, defineProperty, union, makeArray } from 'koishi'
+import { User, Context, Session, difference, defineProperty, union, makeArray, Dict } from 'koishi'
 import { Show } from './utils'
 import {} from '@koishijs/plugin-common'
 import {} from '@koishijs/plugin-mysql'
@@ -33,10 +33,10 @@ interface Category {
 
 namespace Achievement {
   export let theoretical = 0
-  const catMap: Record<string, Category> = {}
-  const achvMap: Record<string, Achievement> = {}
-  const categories: Category[] & Record<string, Category> = [] as any
-  const data: Achievement[] & Record<string, Achievement> = [] as any
+  const catMap: Dict<Category> = {}
+  const achvMap: Dict<Achievement> = {}
+  const categories: Category[] & Dict<Category> = [] as any
+  const data: Achievement[] & Dict<Achievement> = [] as any
   const fields = new Set<User.Field>(['achievement', 'name', 'flag'])
 
   export type Field = 'achievement' | 'name' | 'flag' | 'wealth' | 'money'
@@ -309,7 +309,7 @@ namespace Achievement {
           sql += ` find_achv('${id}') AS '${id}',`
         }
       }
-      const [result] = await ctx.database.mysql.query<[Record<string, number>]>(sql.slice(0, -1))
+      const [result] = await ctx.database.mysql.query<[Dict<number>]>(sql.slice(0, -1))
       for (const key in result) {
         const achv = data[key]
         if (!achv.parent) {

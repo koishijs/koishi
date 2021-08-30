@@ -1,4 +1,4 @@
-import { Context, User, Session, checkTimer, Logger, Random, interpolate, Time } from 'koishi'
+import { Context, User, Session, checkTimer, Logger, Random, interpolate, Dict, Time } from 'koishi'
 import { Adventurer, Show } from './utils'
 import {} from '@koishijs/plugin-common'
 import {} from '@koishijs/plugin-teach'
@@ -26,7 +26,7 @@ declare module 'koishi' {
 interface Phase<S = any> extends Phase.ChooseOptions, Phase.UseOptions {
   prepare?: (session: Adventurer.Session) => S
   texts?: Adventurer.Infer<string[], S>
-  items?: Record<string, Adventurer.Infer<string, S>>
+  items?: Dict<Adventurer.Infer<string, S>>
   choices?: Phase.Choice[]
   next?: string | Phase.Action<S>
   events?: Event<S>[]
@@ -36,11 +36,11 @@ namespace Phase {
   const logger = new Logger('adventure')
 
   export const mainEntry: Phase = { items: {} }
-  export const registry: Record<string, Phase> = { '': mainEntry }
-  export const salePlots: Record<string, Adventurer.Infer<string, Adventurer.Field>> = {}
+  export const registry: Dict<Phase> = { '': mainEntry }
+  export const salePlots: Dict<Adventurer.Infer<string, Adventurer.Field>> = {}
 
-  export const userSessionMap: Record<string, [Adventurer.Session, NodeJS.Timer]> = {}
-  export const channelUserMap: Record<string, [string, NodeJS.Timer]> = {}
+  export const userSessionMap: Dict<[Adventurer.Session, NodeJS.Timer]> = {}
+  export const channelUserMap: Dict<[string, NodeJS.Timer]> = {}
   export const activeUsers = new Map<string, any>()
 
   export function getBadEndingCount(user: Pick<User, 'endings'>) {
@@ -88,12 +88,12 @@ namespace Phase {
     registry[id] = phase
   }
 
-  export const endingMap: Record<string, string> = {}
-  export const endingCount: Record<string, Set<string>> = {}
-  export const reversedEndingMap: Record<string, string> = {}
+  export const endingMap: Dict<string> = {}
+  export const endingCount: Dict<Set<string>> = {}
+  export const reversedEndingMap: Dict<string> = {}
   /** 键：prefix，值：[剧情线名，结局数] */
-  export const lines: Record<string, [string, number]> = {}
-  export const reversedLineMap: Record<string, string> = {}
+  export const lines: Dict<[string, number]> = {}
+  export const reversedLineMap: Dict<string> = {}
   export const badEndings = new Set<string>()
 
   function checkLine(user: Pick<User, 'endings'>, target: string) {
@@ -105,7 +105,7 @@ namespace Phase {
     return !(target in user.endings)
   }
 
-  export function ending(prefix: string, name: string, map: Record<string, string>, bad: Pick<string, 'includes'> = '') {
+  export function ending(prefix: string, name: string, map: Dict<string>, bad: Pick<string, 'includes'> = '') {
     if (prefix in lines) {
       lines[prefix][1] += Object.keys(map).length
     } else {
@@ -196,8 +196,8 @@ namespace Phase {
     }
 
     let fallback: Choice
-    const orderMap: Record<string, string> = {}
-    const choiceMap: Record<string, Choice> = {}
+    const orderMap: Dict<string> = {}
+    const choiceMap: Dict<Choice> = {}
     const output = choices.map((choice, index) => {
       const { name, order = String.fromCharCode(65 + index), text = name } = choice
       choiceMap[text.toUpperCase()] = choice
@@ -269,7 +269,7 @@ namespace Phase {
     })
   }
 
-  export const useItem = (items: Record<string, Adventurer.Infer<string>>, options: UseOptions = {}): Action => async (session, state) => {
+  export const useItem = (items: Dict<Adventurer.Infer<string>>, options: UseOptions = {}): Action => async (session, state) => {
     const { user, app } = session
     const { onTimeout = '' } = options
 
@@ -280,7 +280,7 @@ namespace Phase {
 
     // drunk: use random item
     if (checkTimer('$drunk', user)) {
-      const nextMap: Record<string, string> = {}
+      const nextMap: Dict<string> = {}
       for (const name in items) {
         if (name && !user.warehouse[name]) continue
         const next = Adventurer.getValue(items[name], user, state)
@@ -390,7 +390,7 @@ namespace Phase {
     logger.debug('%s phase finish', session.userId)
   }
 
-  function setState<V>(map: Record<string, [V, NodeJS.Timer]>, key: string, value: V) {
+  function setState<V>(map: Dict<[V, NodeJS.Timer]>, key: string, value: V) {
     const current = map[key]
     if (current) clearTimeout(current[1])
     const timer = setTimeout(() => this.map.delete(key), Time.hour)
@@ -450,7 +450,7 @@ namespace Phase {
         }
 
         const { endings } = session.user
-        const storyMap: Record<string, string[]> = {}
+        const storyMap: Dict<string[]> = {}
         for (const ending in endings) {
           const [prefix] = ending.split('-', 1)
           if (!storyMap[prefix]) storyMap[prefix] = []

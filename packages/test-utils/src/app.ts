@@ -1,4 +1,4 @@
-import { AppOptions, App, Adapter, Session, Bot, pick } from 'koishi'
+import { AppOptions, App, Adapter, Session, Bot, pick, Dict } from 'koishi'
 import { assert } from 'chai'
 import { Socket } from 'net'
 import { format } from 'util'
@@ -10,7 +10,7 @@ export const BASE_SELF_ID = '514'
 interface MockedResponse {
   code: number
   body: string
-  headers: Record<string, any>
+  headers: Dict<any>
 }
 
 declare module 'koishi' {
@@ -46,18 +46,18 @@ class MockedServer extends Adapter {
 
   async start() {}
 
-  get(path: string, headers?: Record<string, any>) {
+  get(path: string, headers?: Dict<any>) {
     return this.receive('GET', path, headers, '')
   }
 
-  post(path: string, body: any, headers?: Record<string, any>) {
+  post(path: string, body: any, headers?: Dict<any>) {
     return this.receive('POST', path, {
       ...headers,
       'content-type': 'application/json',
     }, JSON.stringify(body))
   }
 
-  receive(method: string, path: string, headers: Record<string, any>, content: string) {
+  receive(method: string, path: string, headers: Dict<any>, content: string) {
     const socket = new Socket()
     const req = new http.IncomingMessage(socket)
     req.url = path

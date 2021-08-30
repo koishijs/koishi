@@ -1,4 +1,4 @@
-import { Context, Command, checkTimer, checkUsage, Time } from 'koishi'
+import { Context, Command, checkTimer, checkUsage, Time, Dict } from 'koishi'
 import { Adventurer, Show } from './utils'
 
 declare module 'koishi' {
@@ -44,7 +44,7 @@ namespace Buff {
     }
   }
 
-  export const timers: Record<string, [string, string]> = {}
+  export const timers: Dict<[string, string]> = {}
   export function timer(key: string, name: string, desc: string) {
     timers[key] = [name, desc]
     Show.redirect(name, 'buff')
@@ -86,7 +86,7 @@ namespace Buff {
     return output.join('\n')
   }, ['timers'])
 
-  export const flags = {} as Record<string, number>
+  export const flags = {} as Dict<number>
 
   define((user) => {
     const hints: string[] = []

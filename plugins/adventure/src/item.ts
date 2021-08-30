@@ -1,4 +1,4 @@
-import { Context, checkTimer, Argv, User, isInteger, Random } from 'koishi'
+import { Context, checkTimer, Argv, User, isInteger, Random, Dict } from 'koishi'
 import { Adventurer, Show } from './utils'
 import Event from './event'
 import Phase from './phase'
@@ -25,7 +25,7 @@ namespace Item {
   export enum rarities { N, R, SR, SSR, EX, SP }
   export type Rarity = keyof typeof rarities
 
-  type Data = Record<string, Item> & Item[] & Record<Rarity, Item[]>
+  type Data = Dict<Item> & Item[] & Record<Rarity, Item[]>
 
   export const data: Data = [] as any
 
@@ -120,7 +120,7 @@ namespace Item {
     return Item.data[name].rarity
   }
 
-  export type Pack = string[] | Record<string, number>
+  export type Pack = string[] | Dict<number>
 
   export function format(items: Pack, list?: string[]): string {
     if (Array.isArray(items)) {
@@ -134,7 +134,7 @@ namespace Item {
   }
 
   export function checkOverflow(session: Adventurer.Session, names: Iterable<string> = session._gains) {
-    const itemMap: Record<string, number> = {}
+    const itemMap: Dict<number> = {}
     for (const name of names) {
       const { maxCount, value } = Item.data[name]
       const overflow = session.user.warehouse[name] - maxCount
@@ -153,7 +153,7 @@ namespace Item {
 
   async function argvToMap(argv: Argv) {
     const { args } = argv
-    const itemMap: Record<string, number> = {}
+    const itemMap: Dict<number> = {}
     for (let i = 0; i < args.length; i++) {
       const name = args[i]
       if (!data[name]) {
