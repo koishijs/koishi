@@ -1,7 +1,7 @@
 import { defineProperty, Time, coerce, escapeRegExp, makeArray, template, trimSlash, merge, Dict } from '@koishijs/utils'
 import { Context, Middleware, NextFunction, Plugin } from './context'
 import { Argv } from './parser'
-import { Adapter, BotList } from './adapter'
+import { Adapter } from './adapter'
 import { Channel, User } from './database'
 import validate, { Command } from './command'
 import { Session } from './session'
@@ -40,10 +40,9 @@ export class App extends Context {
   public app = this
   public options: AppOptions
   public status = App.Status.closed
-  public adapters: Dict<Adapter> = {}
   public registry = new Plugin.Registry()
+  public manager = new Adapter.Manager(this)
 
-  _bots = new BotList(this)
   _commandList: Command[] = []
   _commands: CommandMap = new Map<string, Command>() as never
   _shortcuts: Command.Shortcut[] = []
@@ -137,7 +136,7 @@ export class App extends Context {
 
   private async _listen() {
     try {
-      await Promise.all(Object.values(this.adapters).map(adapter => adapter.start()))
+      await Promise.all(Object.values(this.manager.instances).map(adapter => adapter.start()))
     } catch (error) {
       this._close()
       throw error
@@ -154,7 +153,7 @@ export class App extends Context {
   }
 
   private _close() {
-    Object.values(this.adapters).forEach(adapter => adapter.stop?.())
+    Object.values(this.manager.instances).forEach(adapter => adapter.stop?.())
   }
 
   private _resolvePrefixes(session: Session.Message) {

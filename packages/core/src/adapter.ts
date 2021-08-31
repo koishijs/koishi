@@ -3,16 +3,16 @@ import { Session } from './session'
 import { App } from './app'
 import { Context, Plugin } from './context'
 
-export abstract class Adapter<T extends Bot = Bot> {
-  public bots: T[] = []
+export abstract class Adapter<S extends Bot = Bot, T = {}> {
+  public bots: S[] = []
   public platform: string
 
   abstract start(): Promise<void>
   abstract stop?(): void
 
-  constructor(public app: App, private Bot?: Bot.Constructor<T>) {}
+  constructor(public app: App, private Bot: Bot.Constructor<S>, public config: T) {}
 
-  create(variant: string, options: Bot.Options, constructor = this.Bot) {
+  create(variant: string, options: Bot.GetConfig<S>, constructor = this.Bot) {
     const bot = new constructor(this, options)
     bot.variant = variant
     this.bots.push(bot)
@@ -45,45 +45,28 @@ export namespace Adapter {
 
   const redirect = Symbol('koishi.adapter.redirect')
   const library: Dict<Constructor> = {}
+  const configMap: Dict = {}
 
   export function join(platform: string, variant: string) {
     return variant ? `${platform}#${variant}` : platform
   }
 
-  export function resolve(app: App, platform: string, bot: Bot.Options, options?: {}) {
-    const type = join(platform, bot.protocol)
-    if (app.adapters[type]) return app.adapters[type]
-    const constructor = library[type]
-    if (!constructor) {
-      throw new Error(`unsupported protocol "${bot.protocol}"`)
-    }
-    if (!constructor[redirect]) {
-      const adapter = new constructor(app, options)
-      adapter.platform = platform
-      return app.adapters[type] = adapter
-    }
-    logger.debug('infer protocol as %c', bot.protocol = constructor[redirect](bot))
-    return resolve(app, platform, bot, options)
-  }
-
   export type BotConfig<R> = R & { bots?: R[] }
   export type VariantConfig<B> = B & { variants?: Dict<B> }
-  export type Config<R = any, S = any> = S & VariantConfig<BotConfig<R>>
+  export type Config<S = any, R = any> = S & VariantConfig<BotConfig<R>>
 
-  export function createPlugin<T extends Bot, R, S>(
+  export function createPlugin<T extends Bot, S>(
     platform: string,
-    bot: Bot.Constructor<T, R>,
     adapter: Constructor<T, S>,
-  ): Plugin.Object<Config<R, S>>
+  ): Plugin.Object<Config<S, Bot.GetConfig<T>>>
 
-  export function createPlugin<T extends Bot, R, S, K extends string>(
+  export function createPlugin<T extends Bot, S, K extends string>(
     platform: string,
-    bot: Bot.Constructor<T, R>,
     adapters: Record<K, Constructor<T, S>>,
-    redirect: (bot: R) => K,
-  ): Plugin.Object<Config<R, S>>
+    redirect: (config: Bot.GetConfig<T>) => K,
+  ): Plugin.Object<Config<S, Bot.GetConfig<T>>>
 
-  export function createPlugin(platform: string, bot: Bot.Constructor, ...args: [Constructor] | [Dict<Constructor>, (bot: any) => string]) {
+  export function createPlugin(platform: string, ...args: [Constructor] | [Dict<Constructor>, (bot: any) => string]) {
     if (args.length === 1) {
       library[platform] = args[0]
     } else {
@@ -96,64 +79,81 @@ export namespace Adapter {
     return {
       name: platform,
       apply(ctx: Context, config: Config = {}) {
+        configMap[platform] = config
         const variants = config.variants || { '': config }
         for (const key in variants) {
           const config = variants[key]
           const bots = config.bots || [config]
           for (const options of bots) {
-            ctx.bots.create('onebot', options)
+            ctx.bots.create(platform, options)
           }
         }
       }
     }
   }
+
+  export class Manager extends Array<Bot> {
+    instances: Dict<Adapter> = {}
+
+    constructor(private app: App) {
+      super()
+    }
+
+    get(sid: string) {
+      return this.find(bot => bot.sid === sid)
+    }
+
+    create(host: string, options: Bot.Config): Promise<Bot> {
+      const [platform, variant] = host.split('#')
+      const adapter = this.resolve(platform, options)
+      const bot = adapter.create(variant, options)
+      return new Promise((resolve, reject) => {
+        bot.onConnectSuccess = resolve
+        bot.onConnectFailure = reject
+      })
+    }
+
+    remove(sid: string) {
+      const index = this.findIndex(bot => bot.sid === sid)
+      if (index < 0) return false
+      this.splice(index, 1)
+      return true
+    }
+
+    private resolve(platform: string, bot: Bot.Config): Adapter {
+      const type = join(platform, bot.protocol)
+      if (this.instances[type]) return this.instances[type]
+      const constructor = library[type]
+      if (!constructor) {
+        throw new Error(`unsupported protocol "${bot.protocol}"`)
+      }
+      if (!constructor[redirect]) {
+        const adapter = new constructor(this.app, configMap[platform])
+        adapter.platform = platform
+        return this.instances[type] = adapter
+      }
+      logger.debug('infer protocol as %c', bot.protocol = constructor[redirect](bot))
+      return this.resolve(platform, bot)
+    }
+  }
 }
 
-export class BotList extends Array<Bot> {
-  constructor(private app: App) {
-    super()
-  }
+export interface Bot<T> extends Bot.Config, Bot.Methods, Bot.UserBase {}
 
-  get(sid: string) {
-    return this.find(bot => bot.sid === sid)
-  }
-
-  create(host: string, options: Bot.Options): Promise<Bot> {
-    const [platform, variant] = host.split('#')
-    const adapter = Adapter.resolve(this.app, platform as never, options)
-    const bot = adapter.create(variant, options)
-    return new Promise((resolve, reject) => {
-      bot.onConnectSuccess = resolve
-      bot.onConnectFailure = reject
-    })
-  }
-
-  remove(sid: string) {
-    const index = this.findIndex(bot => bot.sid === sid)
-    if (index < 0) return false
-    this.splice(index, 1)
-    return true
-  }
-}
-
-export interface Bot extends Bot.Options, Bot.Methods, Bot.UserBase {}
-
-export class Bot {
+export class Bot<T extends Bot.Config = Bot.Config> {
   readonly app: App
   readonly logger: Logger
   readonly platform: string
 
   status: Bot.Status
-  version?: string
   selfId?: string
   variant?: string
   onConnectSuccess?: (bot: Bot) => void
   onConnectFailure?: (bot: Bot) => void
 
-  constructor(public adapter: Adapter, options: Bot.Options) {
-    Object.assign(this, options)
+  constructor(public adapter: Adapter, public config: T) {
     this.app = adapter.app
-    this.platform = adapter.platform as never
+    this.platform = adapter.platform
     this.logger = new Logger(this.platform)
     this.status = Bot.Status.BOT_IDLE
   }
@@ -207,11 +207,12 @@ export class Bot {
 }
 
 export namespace Bot {
-  export interface Options {
+  export interface Config {
     protocol?: string
   }
 
-  export type Constructor<T extends Bot = Bot, R = Options> = new (adapter: Adapter<T>, options: R) => T
+  export type GetConfig<S extends Bot = Bot> = S extends Bot<infer R> ? R : never
+  export type Constructor<S extends Bot = Bot> = new (adapter: Adapter<S>, config: GetConfig<S>) => S
 
   export enum Status {
     /** 正常运行 */

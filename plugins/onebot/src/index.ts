@@ -1,35 +1,7 @@
 import { Adapter, Context } from 'koishi'
-import { WsClient, WsServer } from './ws'
-import { Config, CQBot } from './bot'
+import { WebSocketClient, WebSocketServer } from './ws'
 import HttpServer from './http'
 import axios from 'axios'
-
-declare module 'koishi' {
-  interface BotOptions {
-    server?: string
-  }
-
-  namespace Bot {
-    interface Platforms {
-      onebot: CQBot
-    }
-  }
-}
-
-export * from './bot'
-export * from './utils'
-export * from './http'
-export * from './ws'
-
-Adapter.types['onebot:http'] = HttpServer
-Adapter.types['onebot:ws'] = WsClient
-Adapter.types['onebot:ws-reverse'] = WsServer
-
-Adapter.types.onebot = Adapter.redirect((bot) => {
-  return !bot.server ? 'onebot:ws-reverse'
-    : bot.server.startsWith('ws') ? 'onebot:ws'
-      : 'onebot:http'
-})
 
 const { broadcast } = Context.prototype
 const imageRE = /\[CQ:image,file=([^,]+),url=([^\]]+)\]/
@@ -51,8 +23,18 @@ Context.prototype.broadcast = async function (this: Context, ...args: any[]) {
   return broadcast.apply(this, args)
 }
 
-export const name = 'onebot'
-
-export function apply(ctx: Context, config: Config = {}) {
-  Object.assign(CQBot.config, config)
+declare module 'koishi' {
+  namespace Plugin {
+    interface Library {
+      'onebot': typeof plugin
+    }
+  }
 }
+
+const plugin = Adapter.createPlugin('onebot', {
+  'http': HttpServer,
+  'ws': WebSocketClient,
+  'ws-reverse': WebSocketServer,
+}, ({ server }) => !server ? 'ws-reverse' : server.startsWith('ws') ? 'ws' : 'http')
+
+export = plugin

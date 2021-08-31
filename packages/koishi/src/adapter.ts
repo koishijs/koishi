@@ -19,12 +19,12 @@ export namespace InjectedAdapter {
     }
   }
 
-  export abstract class WebSocketClient<T extends Bot> extends Adapter<T> {
-    protected abstract prepare(bot: T): WebSocket | Promise<WebSocket>
-    protected abstract connect(bot: T): Promise<void>
+  export abstract class WebSocketClient<S extends Bot, T extends WebSocketClient.Config> extends Adapter<S, T> {
+    protected abstract prepare(bot: S): WebSocket | Promise<WebSocket>
+    protected abstract connect(bot: S): Promise<void>
 
     private _listening = false
-    public config: WebSocketClient.Config
+    public config: T
 
     static config: WebSocketClient.Config = {
       retryLazy: Time.minute,
@@ -32,12 +32,14 @@ export namespace InjectedAdapter {
       retryTimes: 6,
     }
 
-    constructor(app: App, Bot: Bot.Constructor<T>, options: WebSocketClient.Config = {}) {
-      super(app, Bot)
-      this.config = { ...WebSocketClient.config, ...options }
+    constructor(app: App, Bot: Bot.Constructor<S>, config: T) {
+      super(app, Bot, {
+        ...WebSocketClient.config,
+        ...config,
+      })
     }
 
-    private async _listen(bot: T) {
+    private async _listen(bot: S) {
       let _retryCount = 0
       const { retryTimes, retryInterval, retryLazy } = this.config
 

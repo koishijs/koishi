@@ -143,7 +143,7 @@ export class Session<
   }
 
   get bot() {
-    return this.app.bots[this.sid]
+    return this.app.bots.get(this.sid)
   }
 
   toJSON(): Partial<Session> {

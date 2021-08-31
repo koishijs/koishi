@@ -134,7 +134,7 @@ export class Context {
   }
 
   get bots() {
-    return this.app._bots
+    return this.app.manager
   }
 
   logger(name: string) {
@@ -479,7 +479,7 @@ export class Context {
   }
 
   getBot(platform: string, selfId?: string) {
-    if (selfId) return this.bots[`${platform}:${selfId}`]
+    if (selfId) return this.bots.get(`${platform}:${selfId}`)
     return this.bots.find(bot => bot.platform === platform)
   }
 

@@ -1,12 +1,5 @@
-import { Bot, Session, segment, camelCase, snakeCase, BotOptions, Adapter, Time } from 'koishi'
+import { Bot, segment, camelCase, snakeCase, Adapter } from 'koishi'
 import * as OneBot from './utils'
-
-export interface Config extends Adapter.WsClientOptions {
-  path?: string
-  secret?: string
-  quickOperation?: number
-  responseTimeout?: number
-}
 
 export class SenderError extends Error {
   constructor(args: Record<string, any>, url: string, retcode: number, selfId: string) {
@@ -36,46 +29,23 @@ function renderText(source: string) {
   }, '')
 }
 
+export namespace CQBot {
+  export interface Config extends Bot.Config {
+    selfId?: string
+    server?: string
+    token?: string
+  }
+}
+
 export interface CQBot extends OneBot.API {}
 
-export class CQBot extends Bot {
-  static config: Config = {
-    responseTimeout: Time.minute,
-  }
-
-  version = 'onebot'
-
+export class CQBot extends Bot<CQBot.Config> {
   _request?(action: string, params: Record<string, any>): Promise<OneBot.Response>
 
-  constructor(adapter: Adapter<'onebot'>, options: BotOptions) {
+  constructor(adapter: Adapter, options: CQBot.Config) {
     super(adapter, options)
+    this.selfId = options.selfId
     this.avatar = `http://q.qlogo.cn/headimg_dl?dst_uin=${options.selfId}&spec=640`
-  }
-
-  async [Session.send](message: Session, content: string) {
-    if (!content) return
-    const { userId, guildId, channelId, channelName } = message
-    if (!CQBot.config.quickOperation) {
-      await this.sendMessage(channelId, content)
-      return
-    }
-
-    let id: string
-    const session = this.createSession({ content, channelId, channelName })
-    if (guildId) {
-      id = session.guildId = guildId
-      session.subtype = 'group'
-    } else {
-      id = session.userId = userId
-      session.subtype = 'private'
-    }
-
-    if (await this.app.serial(session, 'before-send', session)) return
-    content = renderText(session.content)
-
-    return guildId
-      ? this.$sendGroupMsgAsync(id, content)
-      : this.$sendPrivateMsgAsync(id, content)
   }
 
   async get<T = any>(action: string, params = {}, silent = false): Promise<T> {

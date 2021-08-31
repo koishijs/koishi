@@ -1,9 +1,14 @@
-import { CQBot } from './bot'
-import { Adapter, Bot, Session, Logger, camelCase, renameProperty, paramCase, segment } from 'koishi'
+import { Adapter, Bot, Session, camelCase, renameProperty, paramCase, segment } from 'koishi'
 import * as qface from 'qface'
 import * as OneBot from './types'
 
 export * from './types'
+
+export interface SharedConfig extends Adapter.WebSocketClient.Config {
+  path?: string
+  secret?: string
+  responseTimeout?: number
+}
 
 export const adaptUser = (user: OneBot.AccountInfo): Bot.User => ({
   userId: user.userId.toString(),
@@ -58,33 +63,26 @@ export const adaptChannel = (group: OneBot.GroupInfo): Bot.Channel => ({
   channelName: group.groupName,
 })
 
-export function toVersion(data: OneBot.VersionInfo) {
-  const { coolqEdition, pluginVersion, goCqhttp, version } = data
-  if (goCqhttp) {
-    return `go-cqhttp/${version.slice(1)}`
-  } else {
-    return `coolq/${coolqEdition} cqhttp/${pluginVersion}`
-  }
-}
-
-const logger = new Logger('onebot')
-
-export function createSession(adapter: Adapter, data: any) {
+export function adaptSession(data: any) {
   const session = camelCase<Session>(data)
-  renameProperty(session, 'type', 'postType')
-  renameProperty(session, 'subtype', 'subType')
-  renameProperty(session, 'guildId', 'groupId')
   session.platform = 'onebot'
   session.selfId = '' + session.selfId
+  renameProperty(session, 'type', 'postType')
+  renameProperty(session, 'subtype', 'subType')
+
+  if (data.post_type === 'message') {
+    Object.assign(session, adaptMessage(session as any))
+    renameProperty(session, 'subtype', 'messageType')
+    return session
+  }
+
+  renameProperty(session, 'guildId', 'groupId')
   if (session.userId) session.userId = '' + session.userId
   if (session.guildId) session.guildId = session.channelId = '' + session.guildId
   if (session.targetId) session.targetId = '' + session.targetId
   if (session.operatorId) session.operatorId = '' + session.operatorId
 
-  if (session.type === 'message') {
-    Object.assign(session, adaptMessage(session as any))
-    renameProperty(session, 'subtype', 'messageType')
-  } else if (data.post_type === 'request') {
+  if (data.post_type === 'request') {
     delete session['requestType']
     renameProperty(session, 'content', 'comment')
     renameProperty(session, 'messageId', 'flag')
@@ -146,64 +144,5 @@ export function createSession(adapter: Adapter, data: any) {
     }
   } else return
 
-  return new Session(adapter.app, session)
-}
-
-let counter = 0
-const listeners: Record<number, (response: OneBot.Response) => void> = {}
-
-export function connect(bot: CQBot) {
-  return new Promise<void>((resolve, reject) => {
-    bot.socket.on('message', (data) => {
-      data = data.toString()
-      let parsed: any
-      try {
-        parsed = JSON.parse(data)
-      } catch (error) {
-        return logger.warn('cannot parse message', data)
-      }
-
-      if ('post_type' in parsed) {
-        logger.debug('receive %o', parsed)
-        const session = createSession(bot.adapter, parsed)
-        if (session) bot.adapter.dispatch(session)
-      } else if (parsed.echo === -1) {
-        Object.assign(bot, adaptUser(camelCase(parsed.data)))
-        logger.debug('%d got self info', parsed.data)
-        if (bot.server) {
-          logger.info('connected to %c', bot.server)
-        }
-        resolve()
-      } else if (parsed.echo in listeners) {
-        listeners[parsed.echo](parsed)
-        delete listeners[parsed.echo]
-      }
-    })
-
-    bot.socket.on('close', () => {
-      delete bot._request
-    })
-
-    bot.socket.send(JSON.stringify({
-      action: 'get_login_info',
-      echo: -1,
-    }), (error) => {
-      if (error) reject(error)
-    })
-
-    bot._request = (action, params) => {
-      const data = { action, params, echo: ++counter }
-      data.echo = ++counter
-      return new Promise((resolve, reject) => {
-        listeners[data.echo] = resolve
-        setTimeout(() => {
-          delete listeners[data.echo]
-          reject(new Error('response timeout'))
-        }, CQBot.config.responseTimeout)
-        bot.socket.send(JSON.stringify(data), (error) => {
-          if (error) reject(error)
-        })
-      })
-    }
-  })
+  return session
 }
