@@ -39,12 +39,6 @@ export function adaptMessage(bot: DiscordBot, meta: DC.Message, session: Partial
     session.author.nickname = meta.member?.nick
   }
 
-  // TODO remove in a future version
-  session.discord = {
-    webhook_id: meta.webhook_id,
-    flags: meta.flags,
-  }
-
   // https://discord.com/developers/docs/reference#message-formatting
   session.content = ''
   if (meta.content) {

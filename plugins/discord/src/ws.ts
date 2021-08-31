@@ -6,10 +6,14 @@ import WebSocket from 'ws'
 
 const logger = new Logger('discord')
 
+export namespace WebSocketClient {
+  export interface Config extends Adapter.WebSocketClient.Config {}
+}
+
 /** https://discord.com/developers/docs/topics/gateway */
-export default class WsClient extends Adapter.WsClient<'discord'> {
-  constructor(app: App) {
-    super(app, DiscordBot, DiscordBot.config)
+export default class WebSocketClient extends Adapter.WebSocketClient<DiscordBot, WebSocketClient.Config> {
+  constructor(app: App, config: WebSocketClient.Config) {
+    super(app, DiscordBot, config)
   }
 
   async prepare() {
@@ -31,7 +35,7 @@ export default class WsClient extends Adapter.WsClient<'discord'> {
         bot.socket.send(JSON.stringify({
           op: Opcode.Resume,
           d: {
-            token: bot.token,
+            token: bot.config.token,
             session_id: bot._sessionId,
             seq: bot._d,
           },
@@ -58,7 +62,7 @@ export default class WsClient extends Adapter.WsClient<'discord'> {
           bot.socket.send(JSON.stringify({
             op: Opcode.Identify,
             d: {
-              token: bot.token,
+              token: bot.config.token,
               properties: {},
               compress: false,
               // https://discord.com/developers/docs/topics/gateway#gateway-intents

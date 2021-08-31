@@ -1,29 +1,10 @@
 /* eslint-disable camelcase */
 
 import axios, { AxiosRequestConfig, Method } from 'axios'
-import { Adapter, Bot, segment } from 'koishi'
-import * as DC from './types'
+import { Adapter, Bot, segment, trimSlash } from 'koishi'
 import { adaptChannel, adaptGroup, adaptMessage, adaptUser } from './utils'
-import { Sender, HandleExternalAsset, HandleMixedContent } from './sender'
-
-export interface Config extends Adapter.WsClientOptions {
-  endpoint?: string
-  axiosConfig?: AxiosRequestConfig
-  /**
-   * 发送外链资源时采用的方法
-   * - download：先下载后发送
-   * - direct：直接发送链接
-   * - auto：发送一个 HEAD 请求，如果返回的 Content-Type 正确，则直接发送链接，否则先下载后发送（默认）
-   */
-  handleExternalAsset?: HandleExternalAsset
-  /**
-   * 发送图文等混合内容时采用的方法
-   * - separate：将每个不同形式的内容分开发送
-   * - attach：图片前如果有文本内容，则将文本作为图片的附带信息进行发送
-   * - auto：如果图片本身采用直接发送则与前面的文本分开，否则将文本作为图片的附带信息发送（默认）
-   */
-  handleMixedContent?: HandleMixedContent
-}
+import { Sender } from './sender'
+import * as DC from './types'
 
 export class SenderError extends Error {
   constructor(url: string, data: any, selfId: string) {
@@ -37,16 +18,33 @@ export class SenderError extends Error {
   }
 }
 
-export class DiscordBot extends Bot<'discord'> {
-  static config: Config = {}
+export namespace DiscordBot {
+  export interface Config extends Bot.Config, Sender.Config {
+    token?: string
+    endpoint?: string
+    axiosConfig?: AxiosRequestConfig
+  }
+}
 
-  _d = 0
-  version = 'discord'
+export class DiscordBot extends Bot<DiscordBot.Config> {
+  _d: number
   _ping: NodeJS.Timeout
-  _sessionId: string = ''
+  _sessionId: string
+
+  constructor(adapter: Adapter, options: DiscordBot.Config) {
+    options.endpoint = trimSlash(options.endpoint || 'https://discord.com/api/v8')
+    options.axiosConfig = {
+      ...adapter.app.options.axiosConfig,
+      ...options.axiosConfig,
+    }
+
+    super(adapter, options)
+    this._d = 0
+    this._sessionId = ''
+  }
 
   async request<T = any>(method: Method, path: string, data?: any, headers?: any): Promise<T> {
-    const { axiosConfig, endpoint = 'https://discord.com/api/v8' } = DiscordBot.config
+    const { axiosConfig, endpoint, token } = this.config
     const url = `${endpoint}${path}`
     try {
       const response = await axios({
@@ -54,7 +52,7 @@ export class DiscordBot extends Bot<'discord'> {
         method,
         url,
         headers: {
-          Authorization: `Bot ${this.token}`,
+          Authorization: `Bot ${token}`,
           ...headers,
         },
         data,

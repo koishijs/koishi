@@ -1,6 +1,6 @@
 import {
   difference, observe, Time, enumKeys, Random, template, deduplicate, intersection,
-  Context, User, Channel, Command, Argv, Session, Extend, Awaitable,
+  Context, User, Channel, Command, Argv, Session, Extend, Awaitable, Tables,
 } from 'koishi'
 
 type AdminAction<U extends User.Field, G extends Channel.Field, A extends any[], O extends {}, T>
@@ -148,7 +148,9 @@ Command.prototype.adminUser = function (this: Command, callback, autoCreate) {
         const data = await database.getUser(platform, userId, [...fields])
         if (!data) {
           if (!autoCreate) return template('admin.user-not-found')
-          const fallback = observe(User.create(platform, userId), async () => {
+          const temp = Tables.create('user')
+          temp[platform] = userId
+          const fallback = observe(temp, async () => {
             if (!fallback.authority) return
             await database.createUser(platform, userId, fallback)
           })
@@ -197,7 +199,10 @@ Command.prototype.adminChannel = function (this: Command, callback, autoCreate) 
       const data = await database.getChannel(platform, channelId, [...fields])
       if (!data) {
         if (!autoCreate) return template('admin.channel-not-found')
-        const fallback = observe(Channel.create(platform, channelId), async () => {
+        const temp = Tables.create('channel')
+        temp.host = platform
+        temp.id = channelId
+        const fallback = observe(temp, async () => {
           if (!fallback.assignee) return
           await database.createChannel(platform, channelId, fallback)
         })
@@ -306,12 +311,12 @@ export function bind(ctx: Context, config: BindConfig = {}) {
     if (!data) return next()
     if (data[2] < 0) {
       const sess = new Session(ctx.app, { ...session, platform: data[0], userId: data[1] })
-      const user = await sess.observeUser([session.platform])
+      const user = await sess.observeUser([session.platform as never])
       delete tokens[session.content]
       await bind(user, session.platform, session.userId)
       return session.send(template('bind.success'))
     } else {
-      const user = await session.observeUser(['authority', data[0]])
+      const user = await session.observeUser(['authority', data[0] as never])
       if (!user.authority) return session.send(template('internal.low-authority'))
       if (user[data[0]]) return session.send(template('bind.failed'))
       delete tokens[session.content]
