@@ -1,7 +1,7 @@
-import { defineProperty, Time, coerce, escapeRegExp, makeArray, template, trimSlash, merge } from '@koishijs/utils'
+import { defineProperty, Time, coerce, escapeRegExp, makeArray, template, trimSlash, merge, Dict } from '@koishijs/utils'
 import { Context, Middleware, NextFunction, Plugin } from './context'
 import { Argv } from './parser'
-import { BotOptions, Adapter, createBots } from './adapter'
+import { Adapter, BotList } from './adapter'
 import { Channel, User } from './database'
 import validate, { Command } from './command'
 import { Session } from './session'
@@ -15,8 +15,7 @@ export interface DelayOptions {
   prompt?: number
 }
 
-export interface AppOptions extends BotOptions {
-  bots?: BotOptions[]
+export interface AppOptions {
   prefix?: string | string[] | ((session: Session.Message) => void | string | string[])
   nickname?: string | string[]
   maxListeners?: number
@@ -41,15 +40,15 @@ export class App extends Context {
   public app = this
   public options: AppOptions
   public status = App.Status.closed
-  public adapters: Adapter.Instances = {}
+  public adapters: Dict<Adapter> = {}
   public registry = new Plugin.Registry()
 
-  _bots = createBots('sid')
+  _bots = new BotList(this)
   _commandList: Command[] = []
   _commands: CommandMap = new Map<string, Command>() as never
   _shortcuts: Command.Shortcut[] = []
   _hooks: Record<keyof any, [Context, (...args: any[]) => any][]> = {}
-  _sessions: Record<string, Session> = {}
+  _sessions: Dict<Session> = {}
 
   private _nameRE: RegExp
 
@@ -70,7 +69,6 @@ export class App extends Context {
 
   constructor(options: AppOptions = {}) {
     super(() => true)
-    if (!options.bots) options.bots = [options]
     if (options.selfUrl) options.selfUrl = trimSlash(options.selfUrl)
     this.options = merge(options, App.defaultConfig)
     this.registry.set(null, {
@@ -131,9 +129,6 @@ export class App extends Context {
 
   async start() {
     this.status = App.Status.opening
-    for (const bot of this.options.bots) {
-      Adapter.from(this, bot).create(bot)
-    }
     await this.parallel('before-connect')
     this.status = App.Status.open
     this.logger('app').debug('started')

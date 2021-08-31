@@ -1,9 +1,8 @@
-import { Logger, defineProperty, remove, segment, Random, Promisify, Awaitable } from '@koishijs/utils'
+import { Logger, defineProperty, remove, segment, Random, Promisify, Awaitable, Dict } from '@koishijs/utils'
 import { Command } from './command'
 import { Session } from './session'
 import { User, Channel, Database, Assets, Cache } from './database'
 import { Argv } from './parser'
-import { Platform, Bot } from './adapter'
 import { App } from './app'
 
 export type NextFunction = (next?: NextFunction) => Promise<void>
@@ -89,8 +88,6 @@ export interface Context extends Context.Delegates {}
 export class Context {
   static readonly middleware = Symbol('middleware')
   static readonly current = Symbol('source')
-
-  protected _bots: Bot[] & Record<string, Bot>
 
   protected constructor(public filter: Filter, public app?: App, private _plugin: Plugin = null) {}
 
@@ -481,17 +478,17 @@ export class Context {
     })))
   }
 
-  getBot(platform: Platform, selfId?: string) {
+  getBot(platform: string, selfId?: string) {
     if (selfId) return this.bots[`${platform}:${selfId}`]
     return this.bots.find(bot => bot.platform === platform)
   }
 
-  getSelfIds(type?: Platform, assignees?: string[]): Record<string, string[]> {
+  getSelfIds(type?: string, assignees?: string[]): Dict<string[]> {
     if (type) {
       assignees ||= this.app.bots.filter(bot => bot.platform === type).map(bot => bot.selfId)
       return { [type]: assignees }
     }
-    const platforms: Record<string, string[]> = {}
+    const platforms: Dict<string[]> = {}
     for (const bot of this.app.bots) {
       (platforms[bot.platform] ||= []).push(bot.selfId)
     }
@@ -514,7 +511,7 @@ export class Context {
         return bot && { id, assignee: bot.selfId, flag: 0 }
       }).filter(Boolean)
 
-    const assignMap: Record<string, Record<string, string[]>> = {}
+    const assignMap: Dict<Dict<string[]>> = {}
     for (const { id, assignee, flag } of data) {
       if (channels && !channels.includes(id)) continue
       if (!forced && (flag & Channel.Flag.silent)) continue
@@ -601,7 +598,7 @@ export interface EventMap extends SessionEventMap, DelegateEventMap {
   'attach-user'(session: Session): Awaitable<void | boolean>
   'before-attach'(session: Session): void
   'attach'(session: Session): void
-  'before-send'(session: Session<never, never, Platform, 'send'>): Awaitable<void | boolean>
+  'before-send'(session: Session<never, never, 'send'>): Awaitable<void | boolean>
   'before-command'(argv: Argv): Awaitable<void | string>
   'command'(argv: Argv): Awaitable<void>
   'command-added'(command: Command): void

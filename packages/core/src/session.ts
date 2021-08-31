@@ -5,7 +5,7 @@ import { contain, observe, Logger, defineProperty, Random, template, remove, noo
 import { Argv } from './parser'
 import { Middleware, NextFunction } from './context'
 import { App } from './app'
-import { Bot, Platform } from './adapter'
+import { Bot } from './adapter'
 
 const logger = new Logger('session')
 
@@ -13,7 +13,7 @@ type UnionToIntersection<U> = (U extends any ? (key: U) => void : never) extends
 type Flatten<T, K extends keyof T = keyof T> = UnionToIntersection<T[K]>
 type InnerKeys<T, K extends keyof T = keyof T> = keyof Flatten<T> & keyof Flatten<T, K>
 
-export interface Session<U, G, P, X, Y> extends Bot.MessageBase, Partial<Bot.Channel>, Partial<Bot.Guild> {}
+export interface Session<U, G, X, Y> extends Bot.MessageBase, Partial<Bot.Channel>, Partial<Bot.Guild> {}
 
 export namespace Session {
   type Genres = 'friend' | 'channel' | 'group' | 'group-member' | 'group-role' | 'group-file' | 'group-emoji'
@@ -22,11 +22,11 @@ export namespace Session {
   export interface Events extends Record<`${Genres}-${Actions}`, {}> {}
 
   export type MessageAction = 'message' | 'message-deleted' | 'message-updated' | 'send'
-  export type Message = Session<never, never, Platform, MessageAction>
+  export type Message = Session<never, never, MessageAction>
   export interface Events extends Record<MessageAction, MessageType> {}
 
   export type RequestAction = 'friend-request' | 'guild-request' | 'guild-member-request'
-  export type Request = Session<never, never, Platform, RequestAction>
+  export type Request = Session<never, never, RequestAction>
   export interface Events extends Record<RequestAction, {}> {}
 
   export interface Events {
@@ -72,7 +72,7 @@ export namespace Session {
   type ParamX<X> = Extract<keyof Events, X>
   type ParamY<X, Y> = Extract<InnerKeys<Events, ParamX<X>>, Y>
 
-  export type Payload<X, Y = any> = Session<never, never, Platform, ParamX<X>, ParamY<X, Y>>
+  export type Payload<X, Y = any> = Session<never, never, ParamX<X>, ParamY<X, Y>>
 }
 
 export interface Parsed {
@@ -84,14 +84,13 @@ export interface Parsed {
 export class Session<
   U extends User.Field = never,
   G extends Channel.Field = never,
-  P extends Platform = Platform,
   X extends keyof Session.Events = keyof Session.Events,
   Y extends InnerKeys<Session.Events, X> = InnerKeys<Session.Events, X>,
 > {
   type?: X
   subtype?: Y
   subsubtype?: InnerKeys<UnionToIntersection<Session.Events[X]>, Y>
-  platform?: P
+  platform?: string
   variant?: string
 
   selfId?: string
@@ -113,8 +112,6 @@ export class Session<
   private _hooks: (() => void)[]
   private _promise: Promise<string>
 
-  static readonly send = Symbol.for('koishi.session.send')
-
   constructor(app: App, session: Partial<Session>) {
     Object.assign(this, session)
     defineProperty(this, 'app', app)
@@ -125,24 +122,24 @@ export class Session<
     defineProperty(this, '_hooks', [])
   }
 
-  get domain() {
+  get host() {
     return this.variant ? `${this.platform}#${this.variant}` : this.platform
   }
 
   get uid() {
-    return `${this.domain}:${this.userId}`
+    return `${this.host}:${this.userId}`
   }
 
   get gid() {
-    return `${this.domain}:${this.guildId}`
+    return `${this.host}:${this.guildId}`
   }
 
   get cid() {
-    return `${this.domain}:${this.channelId}`
+    return `${this.host}:${this.channelId}`
   }
 
   get sid() {
-    return `${this.domain}:${this.selfId}`
+    return `${this.host}:${this.selfId}`
   }
 
   get bot() {
@@ -184,9 +181,6 @@ export class Session<
   }
 
   async send(message: string) {
-    if (this.bot[Session.send]) {
-      return this.bot[Session.send](this, message)
-    }
     if (!message) return
     await this.bot.sendMessage(this.channelId, message, this.guildId)
   }
@@ -262,7 +256,7 @@ export class Session<
   async getUser<K extends User.Field = never>(id = this.userId, authority = 0, fields: K[] = []) {
     const user = await this.database.getUser(this.platform, id, fields)
     if (user) return user
-    return this.database.createUser(this.platform, id, { authority })
+    return this.database.createUser(this.host, id, { authority })
   }
 
   /** 在当前会话上绑定一个可观测用户实例 */
@@ -286,7 +280,8 @@ export class Session<
 
     // 确保匿名消息不会写回数据库
     if (this.author?.anonymous) {
-      const fallback = User.create(this.platform, userId)
+      const fallback = Tables.create('user')
+      fallback[this.host] = this.userId
       fallback.authority = this.resolveValue(this.app.options.autoAuthorize)
       const user = observe(fallback, () => Promise.resolve())
       return this.user = user

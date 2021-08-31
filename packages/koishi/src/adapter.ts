@@ -1,4 +1,4 @@
-import { Adapter, App, Bot, Platform } from '@koishijs/core'
+import { Adapter, App, Bot } from '@koishijs/core'
 import { Logger, Time } from '@koishijs/utils'
 import WebSocket from 'ws'
 
@@ -11,33 +11,35 @@ declare module '@koishijs/core' {
 export namespace InjectedAdapter {
   const logger = new Logger('adapter')
 
-  export interface WsClientOptions {
-    retryLazy?: number
-    retryTimes?: number
-    retryInterval?: number
+  export namespace WebSocketClient {
+    export interface Config {
+      retryLazy?: number
+      retryTimes?: number
+      retryInterval?: number
+    }
   }
 
-  export abstract class WsClient<P extends Platform = Platform> extends Adapter<P> {
-    abstract prepare(bot: Bot.Instance<P>): WebSocket | Promise<WebSocket>
-    abstract connect(bot: Bot.Instance<P>): Promise<void>
+  export abstract class WebSocketClient<T extends Bot> extends Adapter<T> {
+    protected abstract prepare(bot: T): WebSocket | Promise<WebSocket>
+    protected abstract connect(bot: T): Promise<void>
 
     private _listening = false
-    public options: WsClientOptions
+    public config: WebSocketClient.Config
 
-    static options: WsClientOptions = {
+    static config: WebSocketClient.Config = {
       retryLazy: Time.minute,
       retryInterval: 5 * Time.second,
       retryTimes: 6,
     }
 
-    constructor(app: App, Bot: Bot.Constructor<P>, options: WsClientOptions = {}) {
+    constructor(app: App, Bot: Bot.Constructor<T>, options: WebSocketClient.Config = {}) {
       super(app, Bot)
-      this.options = { ...WsClient.options, ...options }
+      this.config = { ...WebSocketClient.config, ...options }
     }
 
-    private async _listen(bot: Bot.Instance<P>) {
+    private async _listen(bot: T) {
       let _retryCount = 0
-      const { retryTimes, retryInterval, retryLazy } = this.options
+      const { retryTimes, retryInterval, retryLazy } = this.config
 
       const connect = async (resolve: (value: void) => void, reject: (reason: Error) => void) => {
         logger.debug('websocket client opening')

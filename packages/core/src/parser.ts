@@ -1,5 +1,4 @@
-import { camelCase, segment, escapeRegExp, paramCase, template, Time } from '@koishijs/utils'
-import { Platform } from './adapter'
+import { camelCase, segment, escapeRegExp, paramCase, template, Time, Dict } from '@koishijs/utils'
 import { Command } from './command'
 import { NextFunction } from './context'
 import { Channel, User } from './database'
@@ -39,7 +38,7 @@ export namespace Argv {
     parse?(source: string): Argv
   }
 
-  const bracs: Record<string, Interpolation> = {}
+  const bracs: Dict<Interpolation> = {}
 
   export function interpolate(initiator: string, terminator: string, parse?: (source: string) => Argv) {
     bracs[initiator] = { terminator, parse }
@@ -48,7 +47,7 @@ export namespace Argv {
   interpolate('$(', ')')
 
   export class Tokenizer {
-    private bracs: Record<string, Interpolation>
+    private bracs: Dict<Interpolation>
 
     constructor() {
       this.bracs = Object.create(bracs)
@@ -145,7 +144,7 @@ export namespace Argv {
     }
   }
 
-  export function parsePid(target: string): [Platform, string] {
+  export function parsePid(target: string): [string, string] {
     const index = target.indexOf(':')
     const platform = target.slice(0, index)
     const id = target.slice(index + 1)
@@ -227,7 +226,7 @@ export namespace Argv {
     return builtin[type]?.transform
   }
 
-  const builtin: Record<string, DomainConfig<any>> = {}
+  const builtin: Dict<DomainConfig<any>> = {}
 
   export function createDomain<K extends keyof Domain>(name: K, transform: Transform<Domain[K]>, options?: DomainConfig<Domain[K]>) {
     builtin[name] = { ...options, transform }
@@ -367,10 +366,10 @@ export namespace Argv {
 
   export interface OptionDeclaration extends Declaration, OptionConfig {
     description?: string
-    values?: Record<string, any>
+    values?: Dict<any>
   }
 
-  type OptionDeclarationMap = Record<string, OptionDeclaration>
+  type OptionDeclarationMap = Dict<OptionDeclaration>
 
   export class CommandBase {
     public declaration: string
@@ -466,7 +465,7 @@ export namespace Argv {
     }
 
     parse(argv: Argv): Argv
-    parse(source: string, terminator?: string, args?: any[], options?: Record<string, any>): Argv
+    parse(source: string, terminator?: string, args?: any[], options?: Dict<any>): Argv
     parse(argv: string | Argv, terminator?: string, args = [], options = {}): Argv {
       if (typeof argv === 'string') argv = Argv.parse(argv, terminator)
 

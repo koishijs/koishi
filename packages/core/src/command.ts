@@ -1,4 +1,4 @@
-import { Logger, coerce, Time, template, remove, Awaitable } from '@koishijs/utils'
+import { Logger, coerce, Time, template, remove, Awaitable, Dict } from '@koishijs/utils'
 import { Argv } from './parser'
 import { Context, Disposable, NextFunction } from './context'
 import { User, Channel } from './database'
@@ -43,7 +43,7 @@ export namespace Command {
     prefix?: boolean
     fuzzy?: boolean
     args?: string[]
-    options?: Record<string, any>
+    options?: Dict
   }
 
   export type Action<U extends User.Field = never, G extends Channel.Field = never, A extends any[] = any[], O extends {} = {}>

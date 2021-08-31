@@ -1,6 +1,5 @@
 import * as utils from '@koishijs/utils'
-import { MaybeArray, Get, Extract } from '@koishijs/utils'
-import { Platform } from './adapter'
+import { MaybeArray, Dict, Get, Extract } from '@koishijs/utils'
 import { App } from './app'
 
 export type TableType = keyof Tables
@@ -97,7 +96,7 @@ export namespace Tables {
     fields?: Field.Config<O>
   }
 
-  export const config: Record<string, Config> = {}
+  export const config: Dict<Config> = {}
 
   export function extend<T extends TableType>(name: T, fields?: Field.Extension<Tables[T]>, extension?: Extension<Tables[T]>): void
   export function extend(name: string, fields = {}, extension: Extension = {}) {
@@ -143,12 +142,12 @@ export namespace Tables {
 
   extend('channel', {
     id: 'string(63)',
-    domain: 'string(63)',
+    host: 'string(63)',
     flag: 'unsigned(20)',
     assignee: 'string(63)',
     disable: 'list',
   }, {
-    primary: ['id', 'domain'],
+    primary: ['id', 'host'],
   })
 }
 
@@ -218,7 +217,7 @@ export namespace Query {
     return modifier || {}
   }
 
-  type Projection<T extends TableType> = Record<string, Eval.Aggregation<Tables[T]>>
+  type Projection<T extends TableType> = Dict<Eval.Aggregation<Tables[T]>>
 
   type MapEval<T, P> = {
     [K in keyof P]: Eval<T, P[K]>
@@ -276,13 +275,13 @@ export namespace Eval {
   }
 }
 
-export interface User extends Record<Platform, string> {
+export interface User {
   id: string
   flag: number
   authority: number
   name: string
-  usage: Record<string, number>
-  timers: Record<string, number>
+  usage: Dict<number>
+  timers: Dict<number>
 }
 
 export namespace User {
@@ -292,19 +291,12 @@ export namespace User {
 
   export type Field = keyof User
   export const fields: Field[] = []
-  export type Index = Platform | 'name' | 'id'
   export type Observed<K extends Field = Field> = utils.Observed<Pick<User, K>, Promise<void>>
-
-  export function create<T extends Index>(type: T, id: string) {
-    const result = Tables.create('user')
-    result[type] = id
-    return result as User
-  }
 }
 
 export interface Channel {
   id: string
-  domain: string
+  host: string
   flag: number
   assignee: string
   disable: string[]
@@ -319,13 +311,6 @@ export namespace Channel {
   export type Field = keyof Channel
   export const fields: Field[] = []
   export type Observed<K extends Field = Field> = utils.Observed<Pick<Channel, K>, Promise<void>>
-
-  export function create(domain: string, id: string) {
-    const result = Tables.create('channel')
-    result.domain = domain
-    result.id = id
-    return result
-  }
 }
 
 export interface Database extends Query.Methods {}
@@ -341,41 +326,41 @@ export abstract class Database {
     app.before('disconnect', () => this.stop())
   }
 
-  getUser<T extends string, K extends T | User.Field>(domain: T, id: string, modifier?: Query.Modifier<K>): Promise<UserWithPlatform<T, T | K>>
-  getUser<T extends string, K extends T | User.Field>(domain: T, ids: string[], modifier?: Query.Modifier<K>): Promise<UserWithPlatform<T, K>[]>
-  async getUser(domain: User.Index, id: MaybeArray<string>, modifier?: Query.Modifier<User.Field>) {
-    const data = await this.get('user', { [domain]: id }, modifier)
-    return Array.isArray(id) ? data : data[0] && { ...data[0], [domain]: id } as any
+  getUser<T extends string, K extends T | User.Field>(host: T, id: string, modifier?: Query.Modifier<K>): Promise<UserWithPlatform<T, T | K>>
+  getUser<T extends string, K extends T | User.Field>(host: T, ids: string[], modifier?: Query.Modifier<K>): Promise<UserWithPlatform<T, K>[]>
+  async getUser(host: string, id: MaybeArray<string>, modifier?: Query.Modifier<User.Field>) {
+    const data = await this.get('user', { [host]: id }, modifier)
+    return Array.isArray(id) ? data : data[0] && { ...data[0], [host]: id } as any
   }
 
-  setUser(domain: string, id: string, data: Partial<User>) {
-    return this.set('user', { [domain]: id }, data)
+  setUser(host: string, id: string, data: Partial<User>) {
+    return this.set('user', { [host]: id }, data)
   }
 
-  createUser(domain: string, id: string, data: Partial<User>) {
-    return this.create('user', { [domain]: id, ...data })
+  createUser(host: string, id: string, data: Partial<User>) {
+    return this.create('user', { [host]: id, ...data })
   }
 
-  getChannel<K extends Channel.Field>(domain: string, id: string, modifier?: Query.Modifier<K>): Promise<Pick<Channel, K | 'id' | 'domain'>>
-  getChannel<K extends Channel.Field>(domain: string, ids: string[], modifier?: Query.Modifier<K>): Promise<Pick<Channel, K>[]>
-  async getChannel(domain: string, id: MaybeArray<string>, modifier?: Query.Modifier<Channel.Field>) {
-    const data = await this.get('channel', { domain, id }, modifier)
-    return Array.isArray(id) ? data : data[0] && { ...data[0], domain, id }
+  getChannel<K extends Channel.Field>(host: string, id: string, modifier?: Query.Modifier<K>): Promise<Pick<Channel, K | 'id' | 'host'>>
+  getChannel<K extends Channel.Field>(host: string, ids: string[], modifier?: Query.Modifier<K>): Promise<Pick<Channel, K>[]>
+  async getChannel(host: string, id: MaybeArray<string>, modifier?: Query.Modifier<Channel.Field>) {
+    const data = await this.get('channel', { host, id }, modifier)
+    return Array.isArray(id) ? data : data[0] && { ...data[0], host, id }
   }
 
-  getAssignedChannels<K extends Channel.Field>(fields?: K[], assignMap?: Record<string, string[]>): Promise<Pick<Channel, K>[]>
-  async getAssignedChannels(fields?: Channel.Field[], assignMap: Record<string, string[]> = this.app.getSelfIds()) {
+  getAssignedChannels<K extends Channel.Field>(fields?: K[], assignMap?: Dict<string[]>): Promise<Pick<Channel, K>[]>
+  async getAssignedChannels(fields?: Channel.Field[], assignMap: Dict<string[]> = this.app.getSelfIds()) {
     return this.get('channel', {
-      $or: Object.entries(assignMap).map(([domain, assignee]) => ({ domain, assignee })),
+      $or: Object.entries(assignMap).map(([host, assignee]) => ({ host, assignee })),
     }, fields)
   }
 
-  setChannel(domain: string, id: string, data: Partial<Channel>) {
-    return this.set('channel', { domain, id }, data)
+  setChannel(host: string, id: string, data: Partial<Channel>) {
+    return this.set('channel', { host, id }, data)
   }
 
-  createChannel(domain: string, id: string, data: Partial<Channel>) {
-    return this.create('channel', { domain, id, ...data })
+  createChannel(host: string, id: string, data: Partial<Channel>) {
+    return this.create('channel', { host, id, ...data })
   }
 }
 
