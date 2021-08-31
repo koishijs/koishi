@@ -68,13 +68,6 @@ sidebarDepth: 2
 
 ## 频道
 
-### bot.$getChannel(channelId)
-
-- **channelId:** `string` 频道 ID
-- 返回值: `Promise<Channel>`
-
-获取频道信息。
-
 ### bot.$modifyChannel(channelId, data)
 
 - **channelId:** `string` 频道 ID
@@ -148,29 +141,11 @@ sidebarDepth: 2
 
 ## 服务器
 
-### bot.$getGuild(guildId)
-- **guildId:** `string` 服务器 ID
-- 返回值: `Promise<Guild>`
-
-获取服务器信息。
-
-### bot.$getUserGuilds()
-- 返回值: `Promise<PartialGuild[]>`
-
-获取机器人加入的服务器列表。
-
 ### bot.getGuildChannels(guildId)
 - **guildId:** `string` 服务器 ID
 - 返回值: `Promise<Channel[]>`
 
 获取服务器下的频道列表。
-
-### bot.$getGuildMember(guildId, userId)
-- **guildId:** `string` 服务器 ID
-- **userId:** `string` 用户 ID
-- 返回值: `Promise<GuildMember>`
-
-获取服务器用户信息。
 
 ### bot.$getGuildRoles(guildId)
 - **guildId:** `string` 服务器 ID
