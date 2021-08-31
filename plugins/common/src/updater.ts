@@ -3,6 +3,8 @@ import {
   Context, User, Channel, Command, Argv, Session, Extend, Awaitable, Tables,
 } from 'koishi'
 
+import { parseHost } from './utils'
+
 type AdminAction<U extends User.Field, G extends Channel.Field, A extends any[], O extends {}, T>
   = (argv: Argv<U | 'authority', G, A, Extend<O, 'target', string>> & { target: T }, ...args: A)
     => Awaitable<void | string>
@@ -141,7 +143,7 @@ Command.prototype.adminUser = function (this: Command, callback, autoCreate) {
     if (!options.target) {
       target = await argv.session.observeUser(fields)
     } else {
-      const [platform, userId] = Argv.parsePid(options.target)
+      const [platform, userId] = parseHost(options.target)
       if (user[platform] === userId) {
         target = await argv.session.observeUser(fields)
       } else {
@@ -195,7 +197,7 @@ Command.prototype.adminChannel = function (this: Command, callback, autoCreate) 
     if ((!options.target || options.target === cid) && subtype === 'group') {
       target = await argv.session.observeChannel(fields)
     } else if (options.target) {
-      const [platform, channelId] = Argv.parsePid(options.target)
+      const [platform, channelId] = parseHost(options.target)
       const data = await database.getChannel(platform, channelId, [...fields])
       if (!data) {
         if (!autoCreate) return template('admin.channel-not-found')
@@ -421,8 +423,8 @@ export function admin(ctx: Context) {
       } else if (!value) {
         target.assignee = session.selfId
       } else {
-        const [platform, userId] = Argv.parsePid(value)
-        if (platform !== Argv.parsePid(options.target)[0]) {
+        const [platform, userId] = parseHost(value)
+        if (platform !== parseHost(options.target)[0]) {
           return template('admin.invalid-assignee-platform')
         }
         target.assignee = userId

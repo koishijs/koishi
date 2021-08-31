@@ -19,11 +19,11 @@ declare module 'koishi' {
   }
 }
 
-interface BotConfig extends Bot.Config {
-  selfId?: string
+interface BotConfig extends Bot.BaseConfig {
+  selfId: string
 }
 
-class MockedBot extends Bot {
+class MockedBot extends Bot<BotConfig> {
   status = Bot.Status.GOOD
 
   constructor(adapter: Adapter, options: BotConfig) {
@@ -45,9 +45,10 @@ class MockedBot extends Bot {
 
 interface AdapterConfig {}
 
-class MockedServer extends Adapter<MockedBot> {
-  constructor(app: App, public config: AdapterConfig) {
-    super(app, MockedBot)
+class MockedServer extends Adapter<MockedBot, AdapterConfig> {
+  constructor(app: MockedApp, config: AdapterConfig) {
+    super(app, MockedBot, config)
+    app.server = this
   }
 
   stop() {}
@@ -92,7 +93,7 @@ class MockedServer extends Adapter<MockedBot> {
   }
 }
 
-const mocker = Adapter.createPlugin('mock', MockedBot, MockedServer)
+const mocker = Adapter.createPlugin('mock', MockedServer)
 
 interface MockedAppOptions extends AppOptions {
   mockStart?: boolean
@@ -109,8 +110,6 @@ export class MockedApp extends App {
       selfId: BASE_SELF_ID,
     })
 
-    this.server = this.adapters.mock as any
-
     if (options.mockStart !== false) this.status = App.Status.open
     if (options.mockDatabase) this.plugin(database)
   }
@@ -121,7 +120,7 @@ export class MockedApp extends App {
 
   receive(meta: Partial<Session>) {
     const session = new Session(this, meta)
-    this.adapters.mock.dispatch(session)
+    this.server.dispatch(session)
     return session.id
   }
 

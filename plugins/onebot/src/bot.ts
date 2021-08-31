@@ -30,7 +30,7 @@ function renderText(source: string) {
 }
 
 export namespace CQBot {
-  export interface Config extends Bot.Config {
+  export interface Config extends Bot.BaseConfig {
     selfId?: string
     server?: string
     token?: string

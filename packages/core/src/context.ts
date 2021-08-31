@@ -478,11 +478,6 @@ export class Context {
     })))
   }
 
-  getBot(platform: string, selfId?: string) {
-    if (selfId) return this.bots.get(`${platform}:${selfId}`)
-    return this.bots.find(bot => bot.platform === platform)
-  }
-
   getSelfIds(type?: string, assignees?: string[]): Dict<string[]> {
     if (type) {
       assignees ||= this.app.bots.filter(bot => bot.platform === type).map(bot => bot.selfId)
@@ -506,8 +501,8 @@ export class Context {
     const data = this.database
       ? await this.database.getAssignedChannels(['id', 'assignee', 'flag'])
       : channels.map((id) => {
-        const [type] = id.split(':')
-        const bot = this.getBot(type as never)
+        const [host] = id.split(':')
+        const bot = this.bots.find(bot => bot.host === host)
         return bot && { id, assignee: bot.selfId, flag: 0 }
       }).filter(Boolean)
 

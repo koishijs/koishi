@@ -4,7 +4,7 @@ import * as mineflayer from 'mineflayer'
 const noop = async () => null
 
 export namespace MinecraftBot {
-  export interface Config extends Bot.Config, mineflayer.BotOptions {}
+  export interface Config extends Bot.BaseConfig, mineflayer.BotOptions {}
 }
 
 export class MinecraftBot extends Bot<MinecraftBot.Config> {

@@ -4,7 +4,7 @@ import * as Telegram from './types'
 import { AxiosRequestConfig } from 'axios'
 
 export namespace TelegramBot {
-  export interface Config extends Bot.Config {
+  export interface Config extends Bot.BaseConfig {
     endpoint?: string
     selfId?: string
     token?: string

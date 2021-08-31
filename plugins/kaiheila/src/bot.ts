@@ -21,7 +21,7 @@ const attachmentTypes = ['image', 'video', 'audio', 'file']
 type SendHandle = [string, KHL.MessageParams, Session<never, never, 'send'>]
 
 export namespace KaiheilaBot {
-  export interface Config extends Bot.Config {
+  export interface Config extends Bot.BaseConfig {
     type?: string
     token?: string
     verifyToken?: string

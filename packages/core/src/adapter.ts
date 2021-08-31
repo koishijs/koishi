@@ -53,18 +53,18 @@ export namespace Adapter {
 
   export type BotConfig<R> = R & { bots?: R[] }
   export type VariantConfig<B> = B & { variants?: Dict<B> }
-  export type Config<S = any, R = any> = S & VariantConfig<BotConfig<R>>
+  export type PluginConfig<S = any, R = any> = S & VariantConfig<BotConfig<R>>
 
   export function createPlugin<T extends Bot, S>(
     platform: string,
     adapter: Constructor<T, S>,
-  ): Plugin.Object<Config<S, Bot.GetConfig<T>>>
+  ): Plugin.Object<PluginConfig<S, Bot.GetConfig<T>>>
 
   export function createPlugin<T extends Bot, S, K extends string>(
     platform: string,
     adapters: Record<K, Constructor<T, S>>,
     redirect: (config: Bot.GetConfig<T>) => K,
-  ): Plugin.Object<Config<S, Bot.GetConfig<T>>>
+  ): Plugin.Object<PluginConfig<S, Bot.GetConfig<T>>>
 
   export function createPlugin(platform: string, ...args: [Constructor] | [Dict<Constructor>, (bot: any) => string]) {
     if (args.length === 1) {
@@ -78,7 +78,7 @@ export namespace Adapter {
 
     return {
       name: platform,
-      apply(ctx: Context, config: Config = {}) {
+      apply(ctx: Context, config: PluginConfig = {}) {
         configMap[platform] = config
         const variants = config.variants || { '': config }
         for (const key in variants) {
@@ -93,7 +93,7 @@ export namespace Adapter {
   }
 
   export class Manager extends Array<Bot> {
-    instances: Dict<Adapter> = {}
+    adapters: Dict<Adapter> = {}
 
     constructor(private app: App) {
       super()
@@ -103,7 +103,7 @@ export namespace Adapter {
       return this.find(bot => bot.sid === sid)
     }
 
-    create(host: string, options: Bot.Config): Promise<Bot> {
+    create(host: string, options: Bot.BaseConfig): Promise<Bot> {
       const [platform, variant] = host.split('#')
       const adapter = this.resolve(platform, options)
       const bot = adapter.create(variant, options)
@@ -120,9 +120,9 @@ export namespace Adapter {
       return true
     }
 
-    private resolve(platform: string, bot: Bot.Config): Adapter {
+    private resolve(platform: string, bot: Bot.BaseConfig): Adapter {
       const type = join(platform, bot.protocol)
-      if (this.instances[type]) return this.instances[type]
+      if (this.adapters[type]) return this.adapters[type]
       const constructor = library[type]
       if (!constructor) {
         throw new Error(`unsupported protocol "${bot.protocol}"`)
@@ -130,7 +130,7 @@ export namespace Adapter {
       if (!constructor[redirect]) {
         const adapter = new constructor(this.app, configMap[platform])
         adapter.platform = platform
-        return this.instances[type] = adapter
+        return this.adapters[type] = adapter
       }
       logger.debug('infer protocol as %c', bot.protocol = constructor[redirect](bot))
       return this.resolve(platform, bot)
@@ -138,9 +138,9 @@ export namespace Adapter {
   }
 }
 
-export interface Bot<T> extends Bot.Config, Bot.Methods, Bot.UserBase {}
+export interface Bot<T> extends Bot.BaseConfig, Bot.Methods, Bot.UserBase {}
 
-export class Bot<T extends Bot.Config = Bot.Config> {
+export class Bot<T extends Bot.BaseConfig = Bot.BaseConfig> {
   readonly app: App
   readonly logger: Logger
   readonly platform: string
@@ -207,7 +207,7 @@ export class Bot<T extends Bot.Config = Bot.Config> {
 }
 
 export namespace Bot {
-  export interface Config {
+  export interface BaseConfig {
     protocol?: string
   }
 

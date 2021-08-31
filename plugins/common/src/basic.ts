@@ -1,9 +1,11 @@
-import { Context, Channel, Session, Argv, sleep, segment, template, makeArray, Time } from 'koishi'
+import { Context, Channel, Session, noop, sleep, segment, template, makeArray, Time } from 'koishi'
+import { parseHost } from './utils'
 
 template.set('common', {
   'expect-text': '请输入要发送的文本。',
   'expect-command': '请输入要触发的指令。',
   'expect-context': '请提供新的上下文。',
+  'platform-not-found': '找不到指定的平台。',
   'invalid-private-member': '无法在私聊上下文使用 --member 选项。',
   'feedback-receive': '收到来自 {0} 的反馈信息：\n{1}',
   'feedback-success': '反馈信息发送成功！',
@@ -63,7 +65,7 @@ export function contextify(ctx: Context) {
       if (!options.channel) {
         sess.subtype = 'private'
       } else if (options.channel !== session.cid) {
-        sess.channelId = Argv.parsePid(options.channel)[1]
+        sess.channelId = parseHost(options.channel)[1]
         sess.subtype = 'group'
         await sess.observeChannel()
       } else {
@@ -71,7 +73,7 @@ export function contextify(ctx: Context) {
       }
 
       if (options.user && options.user !== session.uid) {
-        sess.userId = sess.author.userId = Argv.parsePid(options.user)[1]
+        sess.userId = sess.author.userId = parseHost(options.user)[1]
         const user = await sess.observeUser(['authority'])
         if (session.user.authority <= user.authority) {
           return template('internal.low-authority')
@@ -114,10 +116,11 @@ export function echo(ctx: Context) {
 
       const target = options.user || options.channel
       if (target) {
-        const [platform] = target.split(':')
-        const id = target.slice(platform.length + 1)
-        const bot = ctx.getBot(platform as never)
-        if (options.user) {
+        const [host, id] = parseHost(target)
+        const bot = ctx.bots.find(bot => bot.host === host)
+        if (!bot) {
+          return template('common.platform-not-found')
+        } else if (options.user) {
           await bot.sendPrivateMessage(id, message)
         } else {
           await bot.sendMessage(id, message, 'unknown')
@@ -144,9 +147,11 @@ export function feedback(ctx: Context, operators: string[]) {
       const data: FeedbackData = [session.sid, session.channelId, session.guildId]
       for (let index = 0; index < operators.length; ++index) {
         if (index && delay) await sleep(delay)
-        const [platform, userId] = Argv.parsePid(operators[index])
-        const id = await ctx.getBot(platform).sendPrivateMessage(userId, message)
-        feedbacks[id] = data
+        const [host, userId] = parseHost(operators[index])
+        const bot = ctx.bots.find(bot => bot.host === host)
+        await bot
+          .sendPrivateMessage(userId, message)
+          .then(id => feedbacks[id] = data, noop)
       }
       return template('common.feedback-success')
     })
@@ -205,8 +210,8 @@ export function relay(ctx: Context, relays: RelayOptions[]) {
   const relayMap: Record<string, RelayOptions> = {}
 
   async function sendRelay(session: Session, { destination, selfId, lifespan = Time.hour }: RelayOptions) {
-    const [platform, channelId] = Argv.parsePid(destination)
-    const bot = ctx.getBot(platform, selfId)
+    const [host, channelId] = parseHost(destination)
+    const bot = ctx.bots.get(`${host}:${selfId}`)
     if (!session.parsed.content) return
     const content = template('common.relay', session.username, session.parsed.content)
     const id = await bot.sendMessage(channelId, content, 'unknown')

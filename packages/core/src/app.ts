@@ -136,7 +136,7 @@ export class App extends Context {
 
   private async _listen() {
     try {
-      await Promise.all(Object.values(this.manager.instances).map(adapter => adapter.start()))
+      await Promise.all(Object.values(this.manager.adapters).map(adapter => adapter.start()))
     } catch (error) {
       this._close()
       throw error
@@ -153,7 +153,7 @@ export class App extends Context {
   }
 
   private _close() {
-    Object.values(this.manager.instances).forEach(adapter => adapter.stop?.())
+    Object.values(this.manager.adapters).forEach(adapter => adapter.stop?.())
   }
 
   private _resolvePrefixes(session: Session.Message) {

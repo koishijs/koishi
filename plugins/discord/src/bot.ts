@@ -19,7 +19,7 @@ export class SenderError extends Error {
 }
 
 export namespace DiscordBot {
-  export interface Config extends Bot.Config, Sender.Config {
+  export interface Config extends Bot.BaseConfig, Sender.Config {
     token?: string
     endpoint?: string
     axiosConfig?: AxiosRequestConfig

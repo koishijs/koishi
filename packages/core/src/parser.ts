@@ -144,13 +144,6 @@ export namespace Argv {
     }
   }
 
-  export function parsePid(target: string): [string, string] {
-    const index = target.indexOf(':')
-    const platform = target.slice(0, index)
-    const id = target.slice(index + 1)
-    return [platform, id] as any
-  }
-
   // builtin domains
   export interface Domain {
     string: string
