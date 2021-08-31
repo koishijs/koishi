@@ -2,9 +2,11 @@ import { App, Adapter, Session } from 'koishi'
 import { createBot } from 'mineflayer'
 import { MinecraftBot } from './bot'
 
-export default class WsClient extends Adapter.WsClient<'minecraft'> {
-  constructor(app: App) {
-    super(app, MinecraftBot)
+export interface MinecraftConfig {}
+
+export default class WebSocketClient extends Adapter.WebSocketClient<MinecraftBot, MinecraftConfig> {
+  constructor(app: App, config: MinecraftConfig) {
+    super(app, MinecraftBot, config)
   }
 
   async prepare(bot: MinecraftBot) {
@@ -14,7 +16,7 @@ export default class WsClient extends Adapter.WsClient<'minecraft'> {
       username: 'bot', // minecraft username
       password: '12345678', // minecraft password, comment out if you want to log into online-mode=false servers
       port: 25565, // only set if you need a port that isn't 25565
-      ...bot,
+      ...bot.config,
     }
     bot.flayer = createBot(config)
     return {

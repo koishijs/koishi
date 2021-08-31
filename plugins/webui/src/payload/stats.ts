@@ -1,4 +1,4 @@
-import { Context, Channel, noop, Session, Bot, Platform, Time } from 'koishi'
+import { Context, Channel, noop, Session, Bot, Time } from 'koishi'
 
 export type StatRecord = Record<string, number>
 
@@ -55,7 +55,7 @@ export function average(stats: {}[]) {
 
 interface GroupData {
   name: string
-  platform: Platform
+  platform: string
   assignee: string
   value: number
   last: number
@@ -168,7 +168,7 @@ class Statistics {
     payload.groups = []
     const groupMap = Object.fromEntries(data.groups.map(g => [g.id, g]))
     const messageMap = average(data.daily.map(data => data.group))
-    const updateList: Pick<Channel, 'id' | 'domain' | 'name'>[] = []
+    const updateList: Pick<Channel, 'id' | 'host' | 'name'>[] = []
 
     async function getGroupInfo(bot: Bot) {
       const { platform } = bot
@@ -178,7 +178,7 @@ class Statistics {
         if (!messageMap[id] || !groupMap[id] || groupSet.has(id)) continue
         groupSet.add(id)
         const { name: oldName, assignee } = groupMap[id]
-        if (name !== oldName) updateList.push({ domain: bot.domain, id: guildId, name })
+        if (name !== oldName) updateList.push({ host: bot.host, id: guildId, name })
         payload.groups.push({
           name,
           platform,
@@ -200,7 +200,7 @@ class Statistics {
           name: name || key,
           value: messageMap[key],
           last: data.daily[0].group[key] || 0,
-          assignee: this.ctx.bots[`${platform}:${assignee}`]?.selfId || '',
+          assignee: this.ctx.bots.get(`${platform}:${assignee}`)?.selfId || '',
         })
       }
     }

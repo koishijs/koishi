@@ -1,13 +1,14 @@
-import { App, Bot, Adapter, Logger, assertProperty } from 'koishi'
+import { App, Bot, Adapter, Logger, assertProperty, sanitize } from 'koishi'
 import { KaiheilaBot } from './bot'
-import { adaptSession } from './utils'
+import { adaptSession, SharedConfig } from './utils'
 
 const logger = new Logger('kaiheila')
 
-export default class HttpServer extends Adapter<'kaiheila'> {
-  constructor(app: App) {
+export default class HttpServer extends Adapter<KaiheilaBot, SharedConfig> {
+  constructor(app: App, config: SharedConfig) {
     assertProperty(app.options, 'port')
-    super(app, KaiheilaBot)
+    config.path = sanitize(config.path || '/kaiheila')
+    super(app, KaiheilaBot, config)
   }
 
   private async _listen(bot: KaiheilaBot) {
@@ -16,7 +17,7 @@ export default class HttpServer extends Adapter<'kaiheila'> {
   }
 
   async start() {
-    const { path = '' } = KaiheilaBot.config
+    const { path = '' } = this.config
     this.app.router.post(path, (ctx) => {
       const { body } = ctx.request
       logger.debug('receive %o', body)
@@ -28,7 +29,7 @@ export default class HttpServer extends Adapter<'kaiheila'> {
         return
       }
 
-      const bot = this.bots.find(bot => bot.verifyToken === body.d.verify_token)
+      const bot = this.bots.find(bot => bot.config.verifyToken === body.d.verify_token)
       if (!bot) return
 
       // dispatch events

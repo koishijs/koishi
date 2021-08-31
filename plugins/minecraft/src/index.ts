@@ -1,17 +1,14 @@
 import { Adapter } from 'koishi'
-import { MinecraftBot } from './bot'
-import WsClient from './ws'
-import * as mineflayer from 'mineflayer'
-export * from './bot'
+import WebSocketClient from './ws'
 
 declare module 'koishi' {
-  interface BotOptions extends Partial<mineflayer.BotOptions> {}
-
-  namespace Bot {
-    interface Platforms {
-      minecraft: MinecraftBot
+  namespace Plugin {
+    interface Library {
+      'minecraft': typeof plugin
     }
   }
 }
 
-Adapter.types['minecraft'] = WsClient
+const plugin = Adapter.createPlugin('minecraft', WebSocketClient)
+
+export = plugin

@@ -1,35 +1,18 @@
-import { Adapter, Context, sanitize, trimSlash } from 'koishi'
-import { Config, KaiheilaBot } from './bot'
+import { Adapter } from 'koishi'
 import HttpServer from './http'
-import WsClient from './ws'
+import WebSocketClient from './ws'
 
 declare module 'koishi' {
-  namespace Bot {
-    interface Platforms {
-      kaiheila: KaiheilaBot
+  namespace Plugin {
+    interface Library {
+      'kaiheila': typeof plugin
     }
   }
-
-  interface BotOptions {
-    verifyToken?: string
-  }
 }
 
-export * from './types'
-export * from './utils'
-export * from './bot'
+const plugin = Adapter.createPlugin('kaiheila', {
+  'http': HttpServer,
+  'ws': WebSocketClient,
+}, config => config.verifyToken ? 'http' : 'ws')
 
-Adapter.types['kaiheila:http'] = HttpServer
-Adapter.types['kaiheila:ws'] = WsClient
-
-Adapter.types.kaiheila = Adapter.redirect((bot) => {
-  return bot.verifyToken ? 'kaiheila:http' : 'kaiheila:ws'
-})
-
-export const name = 'kaiheila'
-
-export function apply(ctx: Context, config: Config = {}) {
-  config.path = sanitize(config.path || '/kaiheila')
-  config.endpoint = trimSlash(config.endpoint || 'https://www.kaiheila.cn/api/v3')
-  Object.assign(KaiheilaBot.config, config)
-}
+export = plugin

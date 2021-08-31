@@ -1,4 +1,4 @@
-import { Bot, Context, Platform } from 'koishi'
+import { Bot, Context } from 'koishi'
 import { cpus } from 'os'
 import { mem } from 'systeminformation'
 
@@ -46,7 +46,7 @@ function updateCpuUsage() {
 export interface BotData {
   username: string
   selfId: string
-  platform: Platform
+  platform: string
   code: Bot.Status
   currentRate: MessageRate
 }

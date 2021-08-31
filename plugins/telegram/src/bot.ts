@@ -1,20 +1,16 @@
 import { createReadStream } from 'fs'
-import {
-  camelCase, snakeCase, renameProperty, segment, assertProperty, Logger,
-  Bot, BotOptions, Adapter,
-} from 'koishi'
+import { Bot, Adapter, camelCase, snakeCase, renameProperty, segment, assertProperty, trimSlash } from 'koishi'
 import * as Telegram from './types'
-import axios, { AxiosError, AxiosRequestConfig } from 'axios'
-import FormData from 'form-data'
+import { AxiosRequestConfig } from 'axios'
 
-export interface Config {
-  endpoint?: string
-  path?: string
-  selfUrl?: string
-  axiosConfig?: AxiosRequestConfig
+export namespace TelegramBot {
+  export interface Config extends Bot.Config {
+    endpoint?: string
+    selfId?: string
+    token?: string
+    axiosConfig?: AxiosRequestConfig
+  }
 }
-
-const logger = new Logger('telegram')
 
 export class SenderError extends Error {
   constructor(args: Record<string, any>, url: string, retcode: number, selfId: string) {
@@ -49,9 +45,7 @@ function maybeFile(payload: Record<string, any>, field: string) {
   return [payload, field, content]
 }
 
-export class TelegramBot extends Bot {
-  static config: Config
-
+export class TelegramBot extends Bot<TelegramBot.Config> {
   static adaptUser(data: Partial<Telegram.User & Bot.User>) {
     data.userId = data.id.toString()
     data.nickname = data.firstName + (data.lastName || '')
@@ -61,7 +55,7 @@ export class TelegramBot extends Bot {
     return data as Bot.User
   }
 
-  constructor(adapter: Adapter, options: BotOptions) {
+  constructor(adapter: Adapter, options: TelegramBot.Config) {
     assertProperty(options, 'token')
     if (!options.selfId) {
       if (options.token.includes(':')) {
@@ -70,8 +64,8 @@ export class TelegramBot extends Bot {
         assertProperty(options, 'selfId')
       }
     }
+    options.endpoint = trimSlash(options.endpoint || 'https://api.telegram.org')
     super(adapter, options)
-    this.version = 'telegram'
   }
 
   async get<T = any>(action: string, params = {}, field = '', content: Buffer = null): Promise<T> {
@@ -81,36 +75,6 @@ export class TelegramBot extends Bot {
     const { ok, result } = response
     if (ok) return camelCase(result)
     throw new SenderError(params, action, -1, this.selfId)
-  }
-
-  async _listen() {
-    const { endpoint, selfUrl, path, axiosConfig } = TelegramBot.config
-    this._request = async (action, params, field, content, filename = 'file') => {
-      const payload = new FormData()
-      for (const key in params) {
-        payload.append(key, params[key].toString())
-      }
-      if (field) payload.append(field, content, filename)
-      const data = await axios.post(`${endpoint}/bot${this.token}/${action}`, payload, {
-        ...this.app.options.axiosConfig,
-        ...axiosConfig,
-        headers: payload.getHeaders(),
-      }).then(res => {
-        return res.data
-      }).catch((e: AxiosError) => {
-        return e.response.data
-      })
-      return data
-    }
-    const { username } = await this.getLoginInfo()
-    await this.get('setWebhook', {
-      url: selfUrl + path + '?token=' + this.token,
-      drop_pending_updates: true,
-    })
-    this.status = Bot.Status.GOOD
-    this.username = username
-    logger.debug('%d got version debug', this.selfId)
-    logger.debug('connected to %c', 'telegram:' + this.selfId)
   }
 
   private async _sendMessage(chatId: string, content: string) {
@@ -197,50 +161,3 @@ export class TelegramBot extends Bot {
     return TelegramBot.adaptUser(data)
   }
 }
-
-function defineSync(name: string, ...params: string[]) {
-  const prop = camelCase(name.replace(/^_/, ''))
-  TelegramBot.prototype[prop] = function (this: TelegramBot, ...args: any[]) {
-    return this.get(name, Object.fromEntries(params.map((name, index) => [name, args[index]])))
-  }
-}
-
-function defineAsync(name: string, ...params: string[]) {
-  const prop = camelCase(name.replace(/^_/, ''))
-  TelegramBot.prototype[prop] = async function (this: TelegramBot, ...args: any[]) {
-    await this.get(name, Object.fromEntries(params.map((name, index) => [name, args[index]])))
-  }
-  TelegramBot.prototype[prop + 'Async'] = async function (this: TelegramBot, ...args: any[]) {
-    await this.get(name, Object.fromEntries(params.map((name, index) => [name, args[index]])))
-  }
-}
-
-function defineExtract(name: string, key: string, ...params: string[]) {
-  const prop = camelCase(name.replace(/^_/, ''))
-  TelegramBot.prototype[prop] = async function (this: TelegramBot, ...args: any[]) {
-    const data = await this.get(name, Object.fromEntries(params.map((name, index) => [name, args[index]])))
-    return data[key]
-  }
-}
-
-defineAsync('set_group_kick', 'group_id', 'user_id', 'reject_add_request')
-defineAsync('set_group_ban', 'group_id', 'user_id', 'duration')
-defineAsync('set_group_whole_ban', 'group_id', 'enable')
-defineAsync('set_group_admin', 'group_id', 'user_id', 'enable')
-defineAsync('set_group_anonymous', 'group_id', 'enable')
-defineAsync('set_group_card', 'group_id', 'user_id', 'card')
-defineAsync('set_group_leave', 'group_id', 'is_dismiss')
-defineExtract('get_friend_list', '[]')
-defineExtract('get_group_list', '[]')
-defineSync('get_group_info', 'group_id', 'no_cache')
-defineSync('get_group_member_info', 'group_id', 'user_id', 'no_cache')
-defineSync('get_group_member_list', 'group_id')
-defineSync('get_group_honor_info', 'group_id', 'type')
-defineExtract('get_cookies', 'cookies', 'domain')
-defineExtract('get_csrf_token', 'token')
-defineSync('get_credentials', 'domain')
-defineSync('get_record', 'file', 'out_format', 'full_path')
-defineSync('get_image', 'file')
-defineExtract('can_send_image', 'yes')
-defineExtract('can_send_record', 'yes')
-defineSync('get_version_info')

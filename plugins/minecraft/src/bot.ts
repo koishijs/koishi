@@ -3,8 +3,11 @@ import * as mineflayer from 'mineflayer'
 
 const noop = async () => null
 
-export class MinecraftBot extends Bot<'minecraft'> {
-  version = 'minecraft'
+export namespace MinecraftBot {
+  export interface Config extends Bot.Config, mineflayer.BotOptions {}
+}
+
+export class MinecraftBot extends Bot<MinecraftBot.Config> {
   flayer: mineflayer.Bot
 
   async sendMessage(channelId: string, content: string, guildId?: string) {

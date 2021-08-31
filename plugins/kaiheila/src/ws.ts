@@ -1,6 +1,6 @@
 import { App, Adapter, Bot, Logger, Time } from 'koishi'
 import { KaiheilaBot } from './bot'
-import { adaptSession } from './utils'
+import { adaptSession, SharedConfig } from './utils'
 import { Payload, Signal } from './types'
 import WebSocket from 'ws'
 
@@ -8,14 +8,14 @@ const logger = new Logger('kaiheila')
 
 const heartbeatIntervals = [6, 2, 4]
 
-export default class WsClient extends Adapter.WsClient<'kaiheila'> {
-  constructor(app: App) {
-    super(app, KaiheilaBot, KaiheilaBot.config)
+export default class WebSocketClient extends Adapter.WebSocketClient<KaiheilaBot, SharedConfig> {
+  constructor(app: App, config: SharedConfig) {
+    super(app, KaiheilaBot, config)
   }
 
   async prepare(bot: KaiheilaBot) {
     const { url } = await bot.request('GET', '/gateway/index?compress=0')
-    const headers = { Authorization: `Bot ${bot.token}` }
+    const headers = { Authorization: `Bot ${bot.config.token}` }
     return new WebSocket(url, { headers })
   }
 

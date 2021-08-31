@@ -204,7 +204,7 @@ Database.extend(MysqlDatabase, {
     const update = keys.map((key) => {
       return `${escapeId(key)} = ${this.escape(data[key], name, key)}`
     }).join(', ')
-    await this.query(`UPDATE ${name} SET ${update}`)
+    await this.query(`UPDATE ${name} SET ${update} WHERE ${filter}`)
   },
 
   async remove(name, query) {

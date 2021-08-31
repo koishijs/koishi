@@ -1,6 +1,10 @@
 import { KaiheilaBot } from './bot'
-import { Bot, Session, segment,camelCase } from 'koishi'
+import { Adapter, Bot, Session, segment, camelCase } from 'koishi'
 import * as KHL from './types'
+
+export interface SharedConfig extends Adapter.WebSocketClient.Config {
+  path?: string
+}
 
 export const adaptGroup = (data: KHL.Guild): Bot.Guild => ({
   guildId: data.id,
