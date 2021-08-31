@@ -33,7 +33,7 @@
     "pixiv"
   ],
   "peerDependencies": {
-    "koishi": "^4.0.0-alpha.2"
+    "koishi": "^4.0.0-alpha.3"
   },
   "dependencies": {
     "axios": "^0.21.1",
