@@ -1,5 +1,5 @@
-import { Database, Logger, Time } from 'koishi'
-import { RECENT_LENGTH, StatRecord, Synchronizer } from '../payload/stats'
+import { Database, Logger, Time, Dict } from 'koishi'
+import { RECENT_LENGTH, Synchronizer } from '../payload/stats'
 import type MongoDatabase from '@koishijs/plugin-mongo'
 
 const logger = new Logger('status')
@@ -11,7 +11,7 @@ declare module '@koishijs/plugin-mongo' {
 }
 
 class MongoSynchronizer implements Synchronizer {
-  groups: StatRecord
+  groups: Dict<number>
   daily: any
   hourly: Record<Synchronizer.HourlyField, number>
   longterm: Record<Synchronizer.LongtermField, number>

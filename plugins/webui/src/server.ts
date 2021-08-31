@@ -1,4 +1,4 @@
-import { Adapter, App, Context, Logger, noop, omit, pick, remove, Time, User, version } from 'koishi'
+import { Adapter, App, Context, Logger, noop, omit, pick, remove, Time, User, version, Dict } from 'koishi'
 import { resolve, extname } from 'path'
 import { promises as fs, Stats, createReadStream } from 'fs'
 import Awesome from './payload/awesome'
@@ -63,9 +63,9 @@ export class WebServer extends Adapter {
   readonly root: string
   readonly sources: WebServer.Sources
   readonly global: ClientConfig
-  readonly entries: Record<string, string> = {}
-  readonly handles: Record<string, SocketHandle> = {}
-  readonly states: Record<string, [string, number, SocketHandle]> = {}
+  readonly entries: Dict<string> = {}
+  readonly handles: Dict<SocketHandle> = {}
+  readonly states: Dict<[string, number, SocketHandle]> = {}
 
   private vite: Vite.ViteDevServer
   private readonly server: WebSocket.Server
@@ -252,7 +252,7 @@ export namespace WebServer {
     get(forced?: boolean): Promise<T>
   }
 
-  export interface Sources extends Record<string, DataSource> {
+  export interface Sources extends Dict<DataSource> {
     meta: Meta
     awesome: Awesome
     stats: Statistics
@@ -261,7 +261,7 @@ export namespace WebServer {
   }
 
   export type Listener = (this: SocketHandle, payload: any) => Promise<void>
-  export const listeners: Record<string, Listener> = {}
+  export const listeners: Dict<Listener> = {}
 
   // builtin listeners
 

@@ -3,7 +3,7 @@
 
 import { createHmac } from 'crypto'
 import { encode } from 'querystring'
-import { Context, camelize, Time, Random, sanitize, Logger, Session } from 'koishi'
+import { Context, camelize, Time, Random, sanitize, Logger, Session, Dict } from 'koishi'
 import { CommonPayload, addListeners, defaultEvents, EventConfig } from './events'
 import { Config, GitHub, ReplyHandler, ReplySession, ReplyPayloads } from './server'
 import axios, { Method } from 'axios'
@@ -26,13 +26,13 @@ export function apply(ctx: Context, config: Config = {}) {
 
   const { app, database } = ctx
   const { appId, redirect } = config
-  const subscriptions: Record<string, Record<string, EventConfig>> = {}
+  const subscriptions: Dict<Dict<EventConfig>> = {}
   const github = app.github = new GitHub(app, config)
 
   ctx.command('github', 'GitHub 相关功能').alias('gh')
     .action(({ session }) => session.execute('help github', true))
 
-  const tokens: Record<string, string> = {}
+  const tokens: Dict<string> = {}
 
   ctx.router.get(config.path + '/authorize', async (ctx) => {
     const token = ctx.query.state
@@ -245,7 +245,7 @@ export function apply(ctx: Context, config: Config = {}) {
 
   const reactions = ['+1', '-1', 'laugh', 'confused', 'heart', 'hooray', 'rocket', 'eyes']
 
-  const history: Record<string, ReplyPayloads> = {}
+  const history: Dict<ReplyPayloads> = {}
 
   function safeParse(source: string) {
     try {

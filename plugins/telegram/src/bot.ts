@@ -1,5 +1,5 @@
 import { createReadStream } from 'fs'
-import { Bot, Adapter, camelCase, snakeCase, renameProperty, segment, assertProperty, trimSlash } from 'koishi'
+import { Bot, Adapter, camelCase, snakeCase, renameProperty, segment, assertProperty, trimSlash, Dict } from 'koishi'
 import * as Telegram from './types'
 import { AxiosRequestConfig } from 'axios'
 
@@ -13,7 +13,7 @@ export namespace TelegramBot {
 }
 
 export class SenderError extends Error {
-  constructor(args: Record<string, any>, url: string, retcode: number, selfId: string) {
+  constructor(args: Dict<any>, url: string, retcode: number, selfId: string) {
     super(`Error when trying to send to ${url}, args: ${JSON.stringify(args)}, retcode: ${retcode}`)
     Object.defineProperties(this, {
       name: { value: 'SenderError' },
@@ -31,10 +31,10 @@ export interface TelegramResponse {
 }
 
 export interface TelegramBot {
-  _request?(action: string, params: Record<string, any>, field?: string, content?: Buffer, filename?: string): Promise<TelegramResponse>
+  _request?(action: string, params: Dict<any>, field?: string, content?: Buffer, filename?: string): Promise<TelegramResponse>
 }
 
-function maybeFile(payload: Record<string, any>, field: string) {
+function maybeFile(payload: Dict<any>, field: string) {
   if (!payload[field]) return [payload]
   let content
   const [schema, data] = payload[field].split('://')

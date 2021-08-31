@@ -1,4 +1,4 @@
-import { Context, pick, version as coreVersion } from 'koishi'
+import { Context, pick, Dict, version as coreVersion } from 'koishi'
 import { dirname, resolve } from 'path'
 import { existsSync, promises as fs } from 'fs'
 import { spawn, StdioOptions } from 'child_process'
@@ -12,10 +12,10 @@ interface PackageBase {
 }
 
 interface PackageJson extends PackageBase {
-  dependencies?: Record<string, string>
-  devDependencies?: Record<string, string>
-  peerDependencies?: Record<string, string>
-  optionalDependencies?: Record<string, string>
+  dependencies?: Dict<string>
+  devDependencies?: Dict<string>
+  peerDependencies?: Dict<string>
+  optionalDependencies?: Dict<string>
 }
 
 interface PackageLocal extends PackageJson {
@@ -33,7 +33,7 @@ interface SearchResult {
 }
 
 interface Registry extends PackageBase {
-  versions: Record<string, PackageRemote>
+  versions: Dict<PackageRemote>
 }
 
 const officialPlugins = [
@@ -98,7 +98,7 @@ class Awesome {
       return { isWorkspace, isInstalled, ...pick(data, ['name', 'version', 'description']) }
     }
 
-    const loadCache: Record<string, Promise<Awesome.PackageMeta>> = {}
+    const loadCache: Dict<Promise<Awesome.PackageMeta>> = {}
     const loadDep = (filename: string, isInstalled: boolean) => {
       return loadCache[filename] ||= _loadDep(filename, isInstalled)
     }

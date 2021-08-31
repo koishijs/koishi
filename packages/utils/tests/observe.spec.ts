@@ -1,4 +1,4 @@
-import { observe, noop } from 'koishi'
+import { observe, noop, Dict } from 'koishi'
 import { expect } from 'chai'
 import jest from 'jest-mock'
 import '@koishijs/test-utils'
@@ -25,7 +25,7 @@ describe('Observer API', () => {
   })
 
   it('observe property', () => {
-    const target: Record<string, number> = { a: 1, b: 2 }
+    const target: Dict<number> = { a: 1, b: 2 }
     const object = observe(target, 'foo')
     expect(object.$diff).to.have.shape({})
 

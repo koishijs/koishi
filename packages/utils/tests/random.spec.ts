@@ -1,4 +1,4 @@
-import { Random, isInteger } from 'koishi'
+import { Random, Dict, isInteger } from 'koishi'
 import { expect } from 'chai'
 
 describe('Random Manipulations', () => {
@@ -57,7 +57,7 @@ describe('Random Manipulations', () => {
   })
 
   it('Random.weightedPick', () => {
-    const source: Record<string, number> = {}
+    const source: Dict<number> = {}
     for (let index = 0; index < 10; ++index) source[index] = index
     const value = +Random.weightedPick(source)
     expect(value < 10 && value >= 0 && isInteger(value)).to.equal(true)

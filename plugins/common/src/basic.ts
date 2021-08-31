@@ -1,4 +1,4 @@
-import { Context, Channel, Session, noop, sleep, segment, template, makeArray, Time } from 'koishi'
+import { Context, Channel, Session, noop, sleep, segment, template, makeArray, Dict, Time } from 'koishi'
 import { parseHost } from './utils'
 
 template.set('common', {
@@ -171,7 +171,7 @@ export interface RecallConfig {
 
 export function recall(ctx: Context, { recall = 10 }: RecallConfig) {
   ctx = ctx.guild()
-  const recent: Record<string, string[]> = {}
+  const recent: Dict<string[]> = {}
 
   ctx.on('send', (session) => {
     const list = recent[session.channelId] ||= []
@@ -207,7 +207,7 @@ interface RelayOptions {
 }
 
 export function relay(ctx: Context, relays: RelayOptions[]) {
-  const relayMap: Record<string, RelayOptions> = {}
+  const relayMap: Dict<RelayOptions> = {}
 
   async function sendRelay(session: Session, { destination, selfId, lifespan = Time.hour }: RelayOptions) {
     const [host, channelId] = parseHost(destination)

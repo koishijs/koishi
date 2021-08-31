@@ -1,4 +1,4 @@
-import { Context, contain, union, difference, Query } from 'koishi'
+import { Context, contain, union, difference, Query, Dict } from 'koishi'
 import { equal, split, prepareTargets, RE_DIALOGUES, isPositiveInteger, Dialogue } from '../utils'
 import { formatQuestionAnswers } from '../search'
 
@@ -154,7 +154,7 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
         predecessors.add(+id)
       }
     }
-    const dialogueMap: Record<string, Dialogue> = {}
+    const dialogueMap: Dict<Dialogue> = {}
     for (const dialogue of await Dialogue.get(ctx, [...predecessors])) {
       dialogueMap[dialogue.id] = dialogue
     }

@@ -2,7 +2,7 @@
 
 import { EventConfig } from './events'
 import axios, { AxiosError, Method } from 'axios'
-import { App, Session, Tables, segment, Logger } from 'koishi'
+import { App, Session, Tables, segment, Logger, Dict } from 'koishi'
 import {} from '@koishijs/plugin-puppeteer'
 
 declare module 'koishi' {
@@ -16,7 +16,7 @@ declare module 'koishi' {
   }
 
   interface Channel {
-    githubWebhooks: Record<string, EventConfig>
+    githubWebhooks: Dict<EventConfig>
   }
 
   interface Tables {
@@ -86,7 +86,7 @@ export class GitHub {
     return data
   }
 
-  private async _request(method: Method, url: string, session: ReplySession, data?: any, headers?: Record<string, any>) {
+  private async _request(method: Method, url: string, session: ReplySession, data?: any, headers?: Dict) {
     logger.debug(method, url, data)
     const response = await axios(url, {
       ...this.app.options.axiosConfig,
@@ -109,7 +109,7 @@ export class GitHub {
     await session.execute({ name: 'github.authorize', args: [name] })
   }
 
-  async request(method: Method, url: string, session: ReplySession, body?: any, headers?: Record<string, any>) {
+  async request(method: Method, url: string, session: ReplySession, body?: any, headers?: Dict) {
     if (!session.user.ghAccessToken) {
       return this.authorize(session, '要使用此功能，请对机器人进行授权。输入你的 GitHub 用户名。')
     }
@@ -145,7 +145,7 @@ export type EventData<T = {}> = [string, (ReplyPayloads & T)?]
 export class ReplyHandler {
   constructor(public github: GitHub, public session: ReplySession, public content?: string) {}
 
-  async request(method: Method, url: string, message: string, body?: any, headers?: Record<string, any>) {
+  async request(method: Method, url: string, message: string, body?: any, headers?: Dict) {
     try {
       await this.github.request(method, url, this.session, body, headers)
     } catch (err) {
@@ -175,7 +175,7 @@ export class ReplyHandler {
     }, true)
   }
 
-  async reply(url: string, params?: Record<string, any>) {
+  async reply(url: string, params?: Dict) {
     return this.request('POST', url, '发送失败。', {
       body: await this.transform(this.content),
       ...params,

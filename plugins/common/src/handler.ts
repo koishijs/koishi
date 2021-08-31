@@ -1,4 +1,4 @@
-import { Context, Session, Random, Awaitable } from 'koishi'
+import { Context, Session, Random, Dict, Awaitable } from 'koishi'
 
 declare module 'koishi' {
   interface EventMap {
@@ -10,7 +10,7 @@ interface RepeatState {
   content: string
   repeated: boolean
   times: number
-  users: Record<string, number>
+  users: Dict<number>
 }
 
 type StateCallback = (state: RepeatState, session: Session) => void | string
@@ -34,7 +34,7 @@ export interface RepeaterConfig {
 export function repeater(ctx: Context, config: RepeaterConfig = {}) {
   ctx = ctx.guild()
 
-  const states: Record<string, RepeatState> = {}
+  const states: Dict<RepeatState> = {}
 
   function getState(id: string) {
     return states[id] || (states[id] = {

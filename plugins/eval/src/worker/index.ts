@@ -1,4 +1,4 @@
-import { Channel, User, Logger, escapeRegExp, observe, difference, Time, segment, Random, Awaitable } from 'koishi'
+import { Channel, User, Logger, escapeRegExp, observe, difference, Time, segment, Random, Awaitable, Dict } from 'koishi'
 import { parentPort, workerData } from 'worker_threads'
 import { InspectOptions, formatWithOptions } from 'util'
 import { findSourceMap } from 'module'
@@ -29,11 +29,11 @@ export * from './loader'
 export interface WorkerConfig {
   root?: string
   serializer?: 'yaml' | 'v8'
-  moduleLoaders?: Record<string, string>
+  moduleLoaders?: Dict<string>
   inspect?: InspectOptions
   cacheFile?: string
   storageFile?: string
-  setupFiles?: Record<string, string>
+  setupFiles?: Dict<string>
   loaderConfig?: LoaderConfig
 }
 
@@ -50,7 +50,7 @@ const vm = new Sandbox()
 export const context = vm.context
 export const internal = vm.internal
 
-const pathMapper: Record<string, RegExp> = {}
+const pathMapper: Dict<RegExp> = {}
 
 function formatResult(...param: [string, ...any[]]) {
   return formatWithOptions(config.inspect, ...param)
@@ -138,13 +138,13 @@ export const response: WorkerResponse = {}
 interface AddonArgv {
   name: string
   args: string[]
-  options: Record<string, any>
+  options: Dict<any>
 }
 
 interface AddonScope extends AddonArgv, Session {}
 
 type AddonAction = (scope: AddonScope) => Awaitable<string | void>
-const commandMap: Record<string, AddonAction> = {}
+const commandMap: Dict<AddonAction> = {}
 
 export class WorkerHandle {
   start() {

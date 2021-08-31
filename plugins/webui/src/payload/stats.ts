@@ -1,10 +1,8 @@
-import { Context, Channel, noop, Session, Bot, Time } from 'koishi'
-
-export type StatRecord = Record<string, number>
+import { Context, Channel, noop, Session, Bot, Time, Dict } from 'koishi'
 
 export interface Synchronizer {
-  groups: StatRecord
-  daily: Record<Synchronizer.DailyField, StatRecord>
+  groups: Dict<number>
+  daily: Record<Synchronizer.DailyField, Dict<number>>
   hourly: Record<Synchronizer.HourlyField, number>
   longterm: Record<Synchronizer.LongtermField, number>
   addDaily(field: Synchronizer.DailyField, key: string | number): void
@@ -31,7 +29,7 @@ export namespace Synchronizer {
   export interface Data {
     extension?: Statistics.Payload
     groups: Pick<Channel, 'id' | 'name' | 'assignee'>[]
-    daily: Record<DailyField, StatRecord>[]
+    daily: Record<DailyField, Dict<number>>[]
     hourly: ({ time: Date } & Record<HourlyField, number>)[]
     longterm: ({ time: Date } & Record<LongtermField, number>)[]
   }
@@ -40,7 +38,7 @@ export namespace Synchronizer {
 export const RECENT_LENGTH = 5
 
 export function average(stats: {}[]) {
-  const result: StatRecord = {}
+  const result: Dict<number> = {}
   stats.slice(0, RECENT_LENGTH).forEach((stat) => {
     for (const key in stat) {
       if (typeof stat[key] !== 'number') continue
@@ -229,12 +227,12 @@ class Statistics {
 
 namespace Statistics {
   export interface Payload {
-    history: StatRecord
-    commands: StatRecord
-    hours: StatRecord[]
+    history: Dict<number>
+    commands: Dict<number>
+    hours: Dict<number>[]
     groups: GroupData[]
-    botSend: StatRecord
-    botReceive: StatRecord
+    botSend: Dict<number>
+    botReceive: Dict<number>
   }
 
   export interface Config {

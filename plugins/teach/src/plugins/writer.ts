@@ -1,4 +1,4 @@
-import { Context, User } from 'koishi'
+import { Context, User, Dict } from 'koishi'
 import { Dialogue } from '../utils'
 
 declare module '../utils' {
@@ -15,9 +15,9 @@ declare module '../utils' {
   namespace Dialogue {
     interface Argv {
       writer?: string
-      nameMap?: Record<string, string>
+      nameMap?: Dict<string>
       /** 用于保存用户权限的键值对，键的范围包括目标问答列表的全体作者以及 -w 参数 */
-      authMap?: Record<string, number>
+      authMap?: Dict<number>
     }
 
     interface Config {
@@ -46,7 +46,7 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
     argv.authMap = {}
     const { options, nameMap, session, dialogues, authMap } = argv
     const writers = new Set(dialogues.map(d => d.writer).filter(Boolean))
-    const fields: User.Field[] = ['id', 'authority', session.platform]
+    const fields: User.Field[] = ['id', 'authority', session.platform as never]
     if (options.writer === '') {
       argv.writer = ''
     } else if (options.writer) {
@@ -61,7 +61,7 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
     const users = await ctx.database.getUser('id', [...writers], fields)
 
     let hasUnnamed = false
-    const idMap: Record<string, string> = {}
+    const idMap: Dict<string> = {}
     for (const user of users) {
       authMap[user.id] = user.authority
       if (options.modify) continue

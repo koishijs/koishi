@@ -1,5 +1,5 @@
 import {
-  difference, observe, Time, enumKeys, Random, template, deduplicate, intersection,
+  difference, observe, Time, enumKeys, Random, template, deduplicate, intersection, Dict,
   Context, User, Channel, Command, Argv, Session, Extend, Awaitable, Tables,
 } from 'koishi'
 
@@ -93,7 +93,7 @@ interface FlagOptions {
   unset?: boolean
 }
 
-type FlagMap = Record<string, number> & Record<number, string>
+type FlagMap = Dict<number> & Record<number, string>
 
 interface FlagArgv extends Argv<never, never, string[], FlagOptions> {
   target: User.Observed<'flag'> | Channel.Observed<'flag'>
@@ -284,7 +284,7 @@ export function bind(ctx: Context, config: BindConfig = {}) {
   // 0: private
   // -1: group (2nd step)
   type TokenData = [platform: string, id: string, pending: number]
-  const tokens: Record<string, TokenData> = {}
+  const tokens: Dict<TokenData> = {}
 
   const { generateToken = () => 'koishi/' + Random.id(6, 10) } = config
 

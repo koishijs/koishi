@@ -1,5 +1,5 @@
-import { Database, Logger, Tables, Time } from 'koishi'
-import { StatRecord, Synchronizer, RECENT_LENGTH } from '../payload/stats'
+import { Database, Logger, Tables, Time, Dict } from 'koishi'
+import { Synchronizer, RECENT_LENGTH } from '../payload/stats'
 import type MysqlDatabase from '@koishijs/plugin-mysql'
 
 const logger = new Logger('status')
@@ -55,7 +55,7 @@ ON DUPLICATE KEY UPDATE ${updates.join(', ')}`)
 }
 
 namespace Stat {
-  export class Recorded<K extends string> extends Stat<K, StatRecord> {
+  export class Recorded<K extends string> extends Stat<K, Dict<number>> {
     constructor(table: string, fields: readonly K[], preserve: boolean) {
       super(table, fields, preserve)
       Tables.extend(table as any, {}, { primary: 'time' })
@@ -69,11 +69,11 @@ namespace Stat {
       return {}
     }
 
-    create(value: StatRecord) {
+    create(value: Dict<number>) {
       return `JSON_OBJECT(${Object.entries(value).map(([key, value]) => `'${key}', ${value}`).join(', ')})`
     }
 
-    update(name: string, value: StatRecord) {
+    update(name: string, value: Dict<number>) {
       const entries = Object.entries(value)
       if (!entries.length) return
       return `\`${name}\` = JSON_SET(\`${name}\`, ${entries.map(([key, value]) => {
@@ -112,7 +112,7 @@ class MysqlSynchronizer implements Synchronizer {
   private _hourly = new Stat.Numerical('stats_hourly', Synchronizer.hourlyFields, false)
   private _longterm = new Stat.Numerical('stats_longterm', Synchronizer.longtermFields, true)
 
-  groups: StatRecord = {}
+  groups: Dict<number> = {}
   daily = this._daily.data
   hourly = this._hourly.data
   longterm = this._longterm.data

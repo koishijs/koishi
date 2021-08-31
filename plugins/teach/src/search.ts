@@ -1,5 +1,5 @@
 import { isPositiveInteger, Dialogue, DialogueTest } from './utils'
-import { Context } from 'koishi'
+import { Context, Dict } from 'koishi'
 import { getTotalWeight } from './receiver'
 
 export interface SearchDetails extends Array<string> {
@@ -29,7 +29,7 @@ declare module './utils' {
     }
 
     interface Argv {
-      questionMap?: Record<string, Dialogue[]>
+      questionMap?: Dict<Dialogue[]>
     }
   }
 }
@@ -207,7 +207,7 @@ async function showSearch(argv: Dialogue.Argv) {
   if (!autoMerge || question && answer) {
     output = formatQuestionAnswers(argv, dialogues)
   } else {
-    const idMap: Record<string, number[]> = {}
+    const idMap: Dict<number[]> = {}
     for (const dialogue of dialogues) {
       const key = question ? dialogue.original : dialogue.answer
       if (!idMap[key]) idMap[key] = []

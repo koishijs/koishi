@@ -1,8 +1,8 @@
-import { Bot, segment, camelCase, snakeCase, Adapter } from 'koishi'
+import { Bot, segment, camelCase, snakeCase, Adapter, Dict } from 'koishi'
 import * as OneBot from './utils'
 
 export class SenderError extends Error {
-  constructor(args: Record<string, any>, url: string, retcode: number, selfId: string) {
+  constructor(args: Dict, url: string, retcode: number, selfId: string) {
     super(`Error when trying to send to ${url}, args: ${JSON.stringify(args)}, retcode: ${retcode}`)
     Object.defineProperties(this, {
       name: { value: 'SenderError' },
@@ -40,7 +40,7 @@ export namespace CQBot {
 export interface CQBot extends OneBot.API {}
 
 export class CQBot extends Bot<CQBot.Config> {
-  _request?(action: string, params: Record<string, any>): Promise<OneBot.Response>
+  _request?(action: string, params: Dict): Promise<OneBot.Response>
 
   constructor(adapter: Adapter, options: CQBot.Config) {
     super(adapter, options)

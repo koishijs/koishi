@@ -1,5 +1,5 @@
 import { resolve, relative, extname, dirname } from 'path'
-import { App, Context, Plugin, version, coerce, Logger, noop, Time, makeArray, template } from 'koishi'
+import { App, Context, Plugin, version, coerce, Logger, noop, Time, makeArray, template, Dict } from 'koishi'
 import { readFileSync, readdirSync } from 'fs'
 import { performance } from 'perf_hooks'
 import { yellow } from 'kleur'
@@ -44,7 +44,7 @@ function isErrorModule(error: any) {
   return error.code !== 'MODULE_NOT_FOUND' || error.requireStack && error.requireStack[0] !== __filename
 }
 
-const cache: Record<string, [string, any]> = {}
+const cache: Dict<[string, any]> = {}
 
 function loadPlugin(name: string) {
   if (name in cache) return cache[name]

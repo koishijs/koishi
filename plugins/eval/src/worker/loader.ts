@@ -1,7 +1,7 @@
 import { config, context, internal } from '.'
 import { resolve, posix, dirname, extname } from 'path'
 import { promises as fs } from 'fs'
-import { Awaitable, Logger } from '@koishijs/utils'
+import { Awaitable, Logger, Dict } from '@koishijs/utils'
 import * as yaml from 'js-yaml'
 import * as v8 from 'v8'
 
@@ -33,8 +33,8 @@ export interface LoaderConfig {
   jsxFragment?: string
 }
 
-export const modules: Record<string, Module> = {}
-export const synthetics: Record<string, Module> = {}
+export const modules: Dict<Module> = {}
+export const synthetics: Dict<Module> = {}
 
 export function synthetize(identifier: string, namespace: {}, globalName?: string) {
   const module = new SyntheticModule(Object.keys(namespace), function () {
@@ -102,8 +102,8 @@ interface FileCache {
 
 const CACHE_TAG = 1
 const V8_TAG = v8.cachedDataVersionTag()
-const files: Record<string, FileCache> = {}
-const cachedFiles: Record<string, FileCache> = {}
+const files: Dict<FileCache> = {}
+const cachedFiles: Dict<FileCache> = {}
 
 export const system = new class System {
   serialize: (value: any) => Buffer
@@ -176,7 +176,7 @@ function exposeGlobal(name: string, namespace: {}) {
 }
 
 declare const BUILTIN_LOADERS: string[]
-const fileAssoc: Record<string, Loader> = {}
+const fileAssoc: Dict<Loader> = {}
 const loaderSet = new Set<Loader>()
 
 function resolveLoader(extension: string) {

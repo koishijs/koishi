@@ -1,4 +1,4 @@
-import { App, Database, Eval, Query, Tables, TableType, clone, makeArray, pick, Context } from 'koishi'
+import { App, Database, Eval, Query, Tables, TableType, clone, makeArray, pick, Context, Dict } from 'koishi'
 import { Storage, Config } from './storage'
 
 declare module 'koishi' {
@@ -15,7 +15,7 @@ declare module 'koishi' {
 
 export class MemoryDatabase extends Database {
   public memory = this
-  public $store: Record<string, any[]> = {}
+  public $store: Dict<any[]> = {}
 
   private _storage: Storage
 

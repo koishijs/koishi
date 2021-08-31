@@ -1,4 +1,4 @@
-import { isInteger } from 'koishi'
+import { isInteger, Dict } from 'koishi'
 
 export function mod(n: number, m: number) {
   return n >= 0 ? n % m : n % m + m
@@ -58,7 +58,7 @@ export type SquareType = '25ij' | '25q' | '36'
 
 export class Square {
   data: number[][] = []
-  map: Record<string, [number, number]> = {}
+  map: Dict<[number, number]> = {}
 
   constructor(type: SquareType, keyword = '') {
     let size: number, source = keyword.toUpperCase() + ALPHABET

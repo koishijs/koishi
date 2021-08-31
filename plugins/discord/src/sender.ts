@@ -5,7 +5,7 @@ import FileType from 'file-type'
 import AggregateError from 'es-aggregate-error'
 import axios from 'axios'
 import { DiscordBot } from './bot'
-import { segment } from 'koishi'
+import { segment, Dict } from 'koishi'
 
 export type HandleExternalAsset = 'auto' | 'download' | 'direct'
 export type HandleMixedContent = 'auto' | 'separate' | 'attach'
@@ -47,7 +47,7 @@ export class Sender {
     }
   }
 
-  async sendEmbed(fileBuffer: Buffer, payload_json: Record<string, any> = {}, filename: string) {
+  async sendEmbed(fileBuffer: Buffer, payload_json: Dict = {}, filename: string) {
     const fd = new FormData()
     const type = await FileType.fromBuffer(fileBuffer)
     filename ||= 'file.' + type.ext
@@ -56,11 +56,11 @@ export class Sender {
     return this.post(fd, fd.getHeaders())
   }
 
-  async sendContent(content: string, addition: Record<string, any>) {
+  async sendContent(content: string, addition: Dict) {
     return this.post({ ...addition, content })
   }
 
-  async sendAsset(type: string, data: Record<string, string>, addition: Record<string, any>) {
+  async sendAsset(type: string, data: Dict<string>, addition: Dict) {
     const { axiosConfig, handleMixedContent, handleExternalAsset } = this.bot.config
 
     if (handleMixedContent === 'separate' && addition.content) {
@@ -117,7 +117,7 @@ export class Sender {
     }, sendDownload)
   }
 
-  sendMessage = async (content: string, addition: Record<string, any> = {}) => {
+  sendMessage = async (content: string, addition: Dict = {}) => {
     const chain = segment.parse(content)
     let messageId = '0'
     let textBuffer = ''
