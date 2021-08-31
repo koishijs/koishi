@@ -34,12 +34,13 @@ template.set('chat', {
   receive: '[{{ channelName || "私聊" }}] {{ username }}: {{ abstract }}',
 })
 
-export class SandboxBot extends Bot<'webui'> {
+export class SandboxBot extends Bot {
   username = 'sandbox'
   status = Bot.Status.GOOD
 
-  constructor(public readonly adapter: WebServer & Adapter<'webui'>) {
-    super(adapter, { type: 'webui', selfId: 'sandbox' })
+  constructor(public readonly adapter: WebServer & Adapter<SandboxBot>) {
+    super(adapter, {})
+    this.selfId = 'sandbox'
   }
 
   async sendMessage(id: string, content: string) {
@@ -91,13 +92,13 @@ export function apply(ctx: Context, options: Config = {}) {
       if (!user) return
       if (user.authority < 4) return this.send('unauthorized')
       content = await ctx.transformAssets(content)
-      ctx.bots[`${platform}:${selfId}`]?.sendMessage(channelId, content, guildId)
+      ctx.bots.get(`${platform}:${selfId}`)?.sendMessage(channelId, content, guildId)
     })
 
     ctx.on('connect', () => {
       // create bot after connection
       // to prevent mysql from altering user table
-      const sandbox = ctx.webui.create({}, SandboxBot)
+      const sandbox = ctx.webui.create('', {}, SandboxBot)
       Profile.initBot(sandbox)
     })
 

@@ -14,15 +14,21 @@ interface MockedResponse {
 }
 
 declare module 'koishi' {
-  namespace Bot {
-    interface Platforms {
-      mock: MockedBot
-    }
+  interface User {
+    mock: string
   }
 }
 
-class MockedBot extends Bot<'mock'> {
+interface BotConfig extends Bot.Config {
+  selfId?: string
+}
+
+class MockedBot extends Bot {
   status = Bot.Status.GOOD
+
+  constructor(adapter: Adapter, options: BotConfig) {
+    super(adapter, options)
+  }
 
   async getMessage(channelId: string, messageId: string) {
     return {
@@ -37,8 +43,10 @@ class MockedBot extends Bot<'mock'> {
   }
 }
 
-class MockedServer extends Adapter {
-  constructor(app: App) {
+interface AdapterConfig {}
+
+class MockedServer extends Adapter<MockedBot> {
+  constructor(app: App, public config: AdapterConfig) {
     super(app, MockedBot)
   }
 
@@ -84,7 +92,7 @@ class MockedServer extends Adapter {
   }
 }
 
-Adapter.types.mock = MockedServer
+const mocker = Adapter.createPlugin('mock', MockedBot, MockedServer)
 
 interface MockedAppOptions extends AppOptions {
   mockStart?: boolean
@@ -95,10 +103,10 @@ export class MockedApp extends App {
   public server: MockedServer
 
   constructor(options: MockedAppOptions = {}) {
-    super({
-      type: 'mock',
+    super(options)
+
+    this.plugin(mocker, {
       selfId: BASE_SELF_ID,
-      ...options,
     })
 
     this.server = this.adapters.mock as any
@@ -126,7 +134,7 @@ export class MockedApp extends App {
   }
 
   async initChannel(id: string, assignee = this.selfId) {
-    await this.database.create('channel', { domain: 'mock', id, assignee })
+    await this.database.create('channel', { host: 'mock', id, assignee })
   }
 }
 

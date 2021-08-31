@@ -61,7 +61,7 @@ export function repeater(ctx: Context, config: RepeaterConfig = {}) {
     const { content, uid, userId } = session
 
     // never respond to messages from self
-    if (ctx.bots[uid]) return
+    if (ctx.bots.get(uid)) return
 
     const state = getState(session.cid)
     const check = (handle: StateCallback) => {

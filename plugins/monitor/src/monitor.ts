@@ -127,7 +127,7 @@ export class Daemon {
       const { id, flag, assignee, subscribe } = group
       const [type, channelId] = id.split(':')
       if (!subscribe[this.config.id] || flag & Channel.Flag.silent) return
-      const bot = app.bots[`${type}:${assignee}`]
+      const bot = app.bots.get(`${type}:${assignee}`)
       const output = [`[直播提示] ${this.config.names[0]} 正在 ${this._displayType} 上直播：${url}`]
       // at subscibers
       try {

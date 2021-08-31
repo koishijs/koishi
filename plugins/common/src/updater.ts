@@ -1,6 +1,6 @@
 import {
   difference, observe, Time, enumKeys, Random, template, deduplicate, intersection,
-  Context, User, Channel, Command, Argv, Platform, Session, Extend, Awaitable,
+  Context, User, Channel, Command, Argv, Session, Extend, Awaitable,
 } from 'koishi'
 
 type AdminAction<U extends User.Field, G extends Channel.Field, A extends any[], O extends {}, T>
@@ -131,7 +131,7 @@ Command.prototype.adminUser = function (this: Command, callback, autoCreate) {
     .option('target', '-t [user:user]  指定目标用户', { authority: 3 })
     .userFields(({ session, options }, fields) => {
       const platform = options.target ? options.target.split(':')[0] : session.platform
-      fields.add(platform as Platform)
+      fields.add(platform as never)
     })
 
   command.action(async (argv) => {
@@ -276,7 +276,7 @@ export function bind(ctx: Context, config: BindConfig = {}) {
   // 1: group (1st step)
   // 0: private
   // -1: group (2nd step)
-  type TokenData = [platform: Platform, id: string, pending: number]
+  type TokenData = [platform: string, id: string, pending: number]
   const tokens: Record<string, TokenData> = {}
 
   const { generateToken = () => 'koishi/' + Random.id(6, 10) } = config
@@ -288,7 +288,7 @@ export function bind(ctx: Context, config: BindConfig = {}) {
     return token
   }
 
-  async function bind(user: User.Observed<never>, platform: Platform, userId: string) {
+  async function bind(user: User.Observed<never>, platform: string, userId: string) {
     await ctx.database.remove('user', { [platform]: [userId] })
     ctx.cache.set('user', userId, user)
     user[platform] = userId as never

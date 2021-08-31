@@ -96,7 +96,7 @@ export function apply(ctx: Context, config: Config = {}) {
     const schedules = await database.get('schedule', { assignee: ctx.bots.map(bot => bot.sid) })
     schedules.forEach((schedule) => {
       const { session, assignee } = schedule
-      if (!ctx.bots[assignee]) return
+      if (!ctx.bots.get(assignee)) return
       schedule.session = new Session(ctx.app, session)
       prepareSchedule(schedule)
     })

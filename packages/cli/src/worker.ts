@@ -138,7 +138,7 @@ interface Message {
 process.on('message', (data: Message) => {
   if (data.type === 'send') {
     const { channelId, guildId, sid, message } = data.body
-    const bot = app.bots[sid]
+    const bot = app.bots.get(sid)
     bot.sendMessage(channelId, message, guildId)
   }
 })

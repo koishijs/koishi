@@ -177,7 +177,6 @@ ChannelStatic.Field = (fields) => (target, prop, desc) => {
 
 export type User = K.User
 export type Channel = K.Channel
-export type Platform = K.Platform
 
 export const Any = createPartialSelector('any')
 export const Never = createPartialSelector('never')
@@ -185,7 +184,7 @@ export const User = createSelector('user', UserStatic)
 export const Channel = createSelector('channel', ChannelStatic)
 export const Platform = createSelector('platform')
 export const Self = createSelector('self')
-export const Group = createSelector('group')
+export const Guild = createSelector('guild')
 export const Private = createSelector('private')
 
 export namespace User {

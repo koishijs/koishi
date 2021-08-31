@@ -156,7 +156,7 @@ export function feedback(ctx: Context, operators: string[]) {
     if (!parsed.content || !quote) return next()
     const data = feedbacks[quote.messageId]
     if (!data) return next()
-    return ctx.bots[data[0]].sendMessage(data[1], parsed.content, data[2])
+    return ctx.bots.get(data[0]).sendMessage(data[1], parsed.content, data[2])
   })
 }
 
