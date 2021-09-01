@@ -5,7 +5,7 @@ import { contain, observe, Logger, defineProperty, Random, template, remove, noo
 import { Argv } from './parser'
 import { Middleware, NextFunction } from './context'
 import { App } from './app'
-import { Bot } from './adapter'
+import { Bot } from './bot'
 
 const logger = new Logger('session')
 

@@ -1,6 +1,7 @@
 export * from '@koishijs/utils'
 export * from './adapter'
 export * from './app'
+export * from './bot'
 export * from './command'
 export * from './context'
 export * from './database'
