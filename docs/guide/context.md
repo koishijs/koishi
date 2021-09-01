@@ -344,7 +344,7 @@ module.exports = (ctx) => {
 }
 ```
 
-### 声明通用上下文属性 <Badge text="beta" type="warn"/>
+### 声明通用上下文属性 <Badge text="beta" type="warning"/>
 
 事实上，当你了解了更多接口之后，你就会发现 Context 对象上的一些属性对所有上下文都是一样的，比如 `ctx.database`, `ctx.router` 以及上面的例子中提到的 `ctx.webui` 等等。如果你也想开发出像 koishi-plugin-webui 这样的插件，那么你或许也会需要定义一个通用的上下文属性。这非常简单：
 

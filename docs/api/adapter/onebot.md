@@ -17,7 +17,7 @@ sidebarDepth: 2
 
 上述框架也在 OneBot 的基础上扩展了各自的接口，而这些扩展的功能也被包含在了 koishi-adapter-onebot 中。
 
-- 标有 <Badge vertical="baseline" text="go-cqhttp" type="warn"/> 的 API 只能基于 go-cqhttp 运行
+- 标有 <Badge vertical="baseline" text="go-cqhttp" type="warning"/> 的 API 只能基于 go-cqhttp 运行
 
 ## 特性介绍
 
@@ -213,7 +213,7 @@ servers:
 
 发送群消息。
 
-### bot.$sendGroupForwardMsg(groupId, nodes) <Badge text="go-cqhttp" type="warn"/>
+### bot.$sendGroupForwardMsg(groupId, nodes) <Badge text="go-cqhttp" type="warning"/>
 
 - **groupId:** `number` 群号
 - **nodes:** `CQNode[]` 消息节点列表
@@ -246,7 +246,7 @@ interface CQNode {
 本接口仅限**对好友**使用。
 :::
 
-### bot.$getGroupMsg(messageId) <Badge text="go-cqhttp" type="warn"/>
+### bot.$getGroupMsg(messageId) <Badge text="go-cqhttp" type="warning"/>
 
 - **messageId:** `number` 消息编号
 - 返回值: `Promise<GroupMessage>`
@@ -263,7 +263,7 @@ export interface GroupMessage {
 }
 ```
 
-### bot.$getForwardMsg(messageId) <Badge text="go-cqhttp" type="warn"/>
+### bot.$getForwardMsg(messageId) <Badge text="go-cqhttp" type="warning"/>
 
 - **messageId:** `number` 消息编号
 - 返回值: `Promise<ForwardMessage>`
@@ -370,7 +370,7 @@ export interface ForwardMessage {
 
 发布群公告。
 
-### bot.$setGroupName(groupId, name) <Badge text="go-cqhttp" type="warn"/>
+### bot.$setGroupName(groupId, name) <Badge text="go-cqhttp" type="warning"/>
 
 - **groupId:** `number` 群号
 - **name:** `string` 群名称
