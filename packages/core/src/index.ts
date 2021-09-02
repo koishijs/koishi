@@ -6,6 +6,7 @@ export * from './command'
 export * from './context'
 export * from './database'
 export * from './help'
+export * from './orm'
 export * from './parser'
 export * from './session'
 

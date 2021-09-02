@@ -1,5 +1,6 @@
 import { distance } from 'fastest-levenshtein'
-import { User, Channel, TableType, Tables } from './database'
+import { User, Channel } from './database'
+import { TableType, Tables } from './orm'
 import { Command } from './command'
 import { contain, observe, Logger, defineProperty, Random, template, remove, noop, segment } from '@koishijs/utils'
 import { Argv } from './parser'

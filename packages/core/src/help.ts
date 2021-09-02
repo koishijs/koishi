@@ -1,5 +1,5 @@
 import { Command, getUsage, getUsageName, ValidationField } from './command'
-import { TableType } from './database'
+import { TableType } from './orm'
 import { Session, FieldCollector } from './session'
 import { template } from '@koishijs/utils'
 import { Context } from './context'
