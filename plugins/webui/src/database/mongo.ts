@@ -68,7 +68,7 @@ class MongoSynchronizer implements Synchronizer {
   }
 }
 
-Database.extend('@koishijs/plugin-mongo', {
+Database.extend('mongo', {
   async getStats() {
     const $gt = new Date(new Date().getTime() - 1000 * 3600 * 24)
     const [allGroups, activeGroups, allUsers, activeUsers, { storageSize }] = await Promise.all([

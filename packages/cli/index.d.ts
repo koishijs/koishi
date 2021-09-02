@@ -1,7 +1,9 @@
-import { AppOptions } from 'koishi'
+import { AppOptions, Plugin, Dict, camelize, Loader } from 'koishi'
 import { WatchOptions } from 'chokidar'
 
-export type PluginConfig = Record<string, any> | (string | [string, any?])[]
+export type PluginConfig = {
+  [K in keyof Loader as camelize<K>]?: Loader[K] extends Plugin<infer T> ? T : never
+} & Dict<unknown>
 
 interface LogLevelConfig {
   // a little different from koishi-utils

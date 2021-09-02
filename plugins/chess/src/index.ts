@@ -1,6 +1,7 @@
 import { Context, Tables, isInteger, segment, Dict } from 'koishi'
 import { State, MoveResult, StateData } from './state'
 import {} from '@koishijs/plugin-mysql'
+import {} from '@koishijs/plugin-puppeteer'
 import * as go from './go'
 import * as gomoku from './gomoku'
 import * as othello from './othello'
@@ -25,6 +26,10 @@ const rules: Dict<Rule> = {
 declare module 'koishi' {
   interface Channel {
     chess: StateData
+  }
+
+  interface Loader {
+    chess: typeof import('.')
   }
 }
 
@@ -212,7 +217,7 @@ export function apply(ctx: Context) {
       return state.draw(session, message, x, y)
     })
 
-  ctx.with(['@koishijs/plugin-puppeteer'], (ctx) => {
+  ctx.with(['puppeteer'], (ctx) => {
     ctx.command('chess', { patch: true })
       .option('imageMode', '-i  使用图片模式')
       .option('textMode', '-t  使用文本模式')

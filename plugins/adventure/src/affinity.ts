@@ -133,7 +133,7 @@ namespace Affinity {
         return output.join('\n')
       })
 
-    ctx.with(['@koishijs/plugin-teach'], integrateTeach)
+    ctx.with(['teach'], integrateTeach)
   }
 
   function integrateTeach(ctx: Context) {

@@ -4,6 +4,10 @@ declare module 'koishi' {
   interface Tables {
     schedule: Schedule
   }
+
+  interface Loader {
+    schedule: typeof import('.')
+  }
 }
 
 export interface Schedule {

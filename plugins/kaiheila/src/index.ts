@@ -3,10 +3,8 @@ import HttpServer from './http'
 import WebSocketClient from './ws'
 
 declare module 'koishi' {
-  namespace Plugin {
-    interface Library {
-      'kaiheila': typeof plugin
-    }
+  interface Loader {
+    kaiheila: typeof plugin
   }
 }
 

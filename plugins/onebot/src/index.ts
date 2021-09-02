@@ -24,10 +24,8 @@ Context.prototype.broadcast = async function (this: Context, ...args: any[]) {
 }
 
 declare module 'koishi' {
-  namespace Plugin {
-    interface Library {
-      'onebot': typeof plugin
-    }
+  interface Loader {
+    onebot: typeof plugin
   }
 }
 

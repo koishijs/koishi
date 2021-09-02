@@ -19,10 +19,8 @@ declare module 'koishi' {
     adventure: Config
   }
 
-  namespace Plugin {
-    interface Library {
-      '@koishijs/plugin-adventure': typeof import('.')
-    }
+  interface Loader {
+    adventure: typeof import('.')
   }
 }
 

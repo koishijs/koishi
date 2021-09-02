@@ -7,6 +7,12 @@ export * from './basic'
 export * from './handler'
 export * from './updater'
 
+declare module 'koishi' {
+  interface Loader {
+    common: typeof import('.')
+  }
+}
+
 export interface Config extends HandlerConfig, BasicConfig, UpdaterConfig {}
 
 export const name = 'common'

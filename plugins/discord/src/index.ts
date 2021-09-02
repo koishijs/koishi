@@ -2,10 +2,8 @@ import { Adapter } from 'koishi'
 import WebSocketClient from './ws'
 
 declare module 'koishi' {
-  namespace Plugin {
-    interface Library {
-      'discord': typeof plugin
-    }
+  interface Loader {
+    discord: typeof plugin
   }
 }
 

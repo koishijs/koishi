@@ -1,5 +1,5 @@
-import { resolve, relative, extname, dirname } from 'path'
-import { App, Context, Plugin, version, coerce, Logger, noop, Time, makeArray, template, Dict } from 'koishi'
+import { isAbsolute, resolve, relative, extname, dirname } from 'path'
+import { App, Context, Plugin, version, coerce, Logger, noop, Time, makeArray, template, Loader, hyphenate } from 'koishi'
 import { readFileSync, readdirSync } from 'fs'
 import { performance } from 'perf_hooks'
 import { yellow } from 'kleur'
@@ -40,46 +40,17 @@ function loadConfig() {
   }
 }
 
-function isErrorModule(error: any) {
-  return error.code !== 'MODULE_NOT_FOUND' || error.requireStack && error.requireStack[0] !== __filename
+const oldPaths = Loader.internal.paths
+Loader.internal.paths = function (name: string) {
+  if (isAbsolute(name)) {
+    // absolute or relative path
+    return [resolve(configDir, name)]
+  }
+  return oldPaths(name)
 }
 
-const cache: Dict<[string, any]> = {}
-
-function loadPlugin(name: string) {
-  if (name in cache) return cache[name]
-
-  const prefix1 = 'koishi-plugin-'
-  const prefix2 = '@koishijs/plugin-'
-  const modules: string[] = []
-  if ('./'.includes(name[0])) {
-    // absolute or relative path
-    modules.push(resolve(configDir, name))
-  } else if (name.includes(prefix1) || name.startsWith(prefix2)) {
-    // full package path
-    modules.push(name)
-  } else if (name[0] === '@') {
-    // scope package path
-    const index = name.indexOf('/')
-    modules.push(name.slice(0, index + 1) + prefix1 + name.slice(index + 1), name)
-  } else {
-    // normal package path
-    modules.push(prefix1 + name, prefix2 + name)
-  }
-
-  for (const path of modules) {
-    logger.debug('resolving %c', path)
-    try {
-      const result = require(path)
-      logger.info('apply plugin %c', result.name || name)
-      return cache[name] = [path, result]
-    } catch (error) {
-      if (isErrorModule(error)) {
-        throw error
-      }
-    }
-  }
-  throw new Error(`cannot resolve plugin ${name}`)
+Loader.internal.isErrorModule = function (error: any) {
+  return error.code !== 'MODULE_NOT_FOUND' || error.requireStack && error.requireStack[0] !== __filename
 }
 
 function ensureBaseLevel(config: Logger.LevelConfig, base: number) {
@@ -178,11 +149,11 @@ const selectors = ['user', 'group', 'channel', 'self', 'private', 'platform'] as
 
 type SelectorType = typeof selectors[number]
 type SelectorValue = boolean | string | number | (string | number)[]
-type BaseSelection = { [K in SelectorType as `$${K}`]: SelectorValue }
+type BaseSelection = { [K in SelectorType as `$${K}`]?: SelectorValue }
 
 interface Selection extends BaseSelection {
-  $union: Selection[]
-  $except: Selection
+  $union?: Selection[]
+  $except?: Selection
 }
 
 function createContext(options: Selection) {
@@ -219,14 +190,13 @@ function createContext(options: Selection) {
 }
 
 // load plugins
+config.plugins ||= {}
 const plugins = new Set<string>()
-const pluginEntries: [string, any?][] = Array.isArray(config.plugins)
-  ? config.plugins.map(item => Array.isArray(item) ? item : [item])
-  : Object.entries(config.plugins || {})
-for (const [name, options] of pluginEntries) {
-  const [path, plugin] = loadPlugin(name)
-  plugins.add(require.resolve(path))
-  createContext(options).plugin(plugin, options)
+for (const name in config.plugins) {
+  const options = config.plugins[name]
+  const path = require.resolve(Loader.resolve(hyphenate(name)))
+  plugins.add(path)
+  createContext(options).plugin(require(path), options)
 }
 
 process.on('unhandledRejection', (error) => {

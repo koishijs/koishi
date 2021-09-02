@@ -59,7 +59,7 @@ namespace Stat {
     constructor(table: string, fields: readonly K[], preserve: boolean) {
       super(table, fields, preserve)
       Tables.extend(table as any, {}, { primary: 'time' })
-      Database.extend('@koishijs/plugin-mysql', ({ tables, Domain }) => {
+      Database.extend('mysql', ({ tables, Domain }) => {
         tables[table] = Object.fromEntries(fields.map(key => [key, new Domain.Json()]))
         tables[table].time = 'datetime'
       })
@@ -86,7 +86,7 @@ namespace Stat {
     constructor(table: string, fields: readonly K[], preserve: boolean) {
       super(table, fields, preserve)
       Tables.extend(table as any, {}, { primary: 'time' })
-      Database.extend('@koishijs/plugin-mysql', ({ tables }) => {
+      Database.extend('mysql', ({ tables }) => {
         tables[table] = Object.fromEntries(fields.map(key => [key, 'int unsigned']))
         tables[table].time = 'datetime'
       })
@@ -152,7 +152,7 @@ class MysqlSynchronizer implements Synchronizer {
   }
 }
 
-Database.extend('@koishijs/plugin-mysql', {
+Database.extend('mysql', {
   async getStats() {
     const [[{ activeUsers }], [{ allUsers }], [{ activeGroups }], [{ allGroups }], [{ storageSize }]] = await this.query([
       'SELECT COUNT(*) as activeUsers FROM `user` WHERE CURRENT_TIMESTAMP() - `lastCall` < 1000 * 3600 * 24',

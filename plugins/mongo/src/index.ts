@@ -10,10 +10,8 @@ declare module 'koishi' {
     mongo: MongoDatabase
   }
 
-  namespace Database {
-    interface Library {
-      '@koishijs/plugin-mongo': typeof MongoDatabase
-    }
+  interface Loader {
+    mongo: typeof import('.')
   }
 }
 

@@ -82,7 +82,7 @@ Tables.extend('user', {
 
 defineEnumProperty(User.Flag, 'noLeading', 1 << 3)
 
-Database.extend('@koishijs/plugin-mysql', ({ tables }) => {
+Database.extend('mysql', ({ tables }) => {
   tables.user.achvCount = () => 'list_length(`achievement`)'
 })
 

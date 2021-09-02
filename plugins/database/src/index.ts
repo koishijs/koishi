@@ -6,10 +6,8 @@ declare module 'koishi' {
     memory: MemoryDatabase
   }
 
-  namespace Database {
-    interface Library {
-      '@koishijs/plugin-database': typeof MemoryDatabase
-    }
+  interface Loader {
+    database: typeof import('.')
   }
 }
 

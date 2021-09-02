@@ -1,7 +1,7 @@
 import { Logger, defineProperty, remove, segment, Random, Promisify, Awaitable, Dict } from '@koishijs/utils'
 import { Command } from './command'
 import { Session } from './session'
-import { User, Channel, Database, Assets, Cache } from './database'
+import { User, Channel, Database, Assets, Cache, Loader } from './database'
 import { Argv } from './parser'
 import { App } from './app'
 
@@ -35,12 +35,10 @@ export namespace Plugin {
     disposables: Disposable[]
   }
 
-  export interface Library {}
-
-  export type Teleporter<D extends readonly (keyof Library)[]> = (ctx: Context, ...modules: From<D>) => void
+  export type Teleporter<D extends readonly (keyof Loader)[]> = (ctx: Context, ...modules: From<D>) => void
 
   type From<D extends readonly unknown[]> = D extends readonly [infer L, ...infer R]
-    ? [L extends keyof Library ? Library[L] : unknown, ...From<R>]
+    ? [L extends keyof Loader ? Loader[L] : unknown, ...From<R>]
     : []
 
   export class Registry extends Map<Plugin, State> {
@@ -68,12 +66,6 @@ export namespace Plugin {
 
 function isBailed(value: any) {
   return value !== null && value !== false && value !== undefined
-}
-
-function safeRequire(id: string) {
-  try {
-    return require(id)
-  } catch {}
 }
 
 type Filter = (session: Session) => boolean
@@ -207,12 +199,12 @@ export class Context {
     })
   }
 
-  with<D extends readonly (keyof Plugin.Library)[]>(deps: D, callback: Plugin.Teleporter<D>) {
-    const modules = deps.map(safeRequire)
+  with<D extends readonly (keyof Loader)[]>(deps: D, callback: Plugin.Teleporter<D>) {
+    const modules = deps.map(Loader.require)
     if (!modules.every(val => val)) return this
     this.teleport(modules, callback)
     this.on('plugin-added', (added) => {
-      const modules = deps.map(safeRequire)
+      const modules = deps.map(Loader.require)
       if (modules.includes(added)) this.teleport(modules, callback)
     })
     return this

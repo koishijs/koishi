@@ -34,10 +34,8 @@ declare module 'koishi' {
     'dialogue/execute'(argv: Dialogue.Argv): void | Promise<void | string>
   }
 
-  namespace Plugin {
-    interface Library {
-      '@koishijs/plugin-teach': typeof import('.')
-    }
+  interface Loader {
+    teach: typeof import('.')
   }
 }
 
@@ -207,7 +205,7 @@ export function apply(ctx: Context, config: Config = {}) {
   ctx.plugin(time, config)
   ctx.plugin(writer, config)
 
-  ctx.with(['@koishijs/plugin-webui'], (ctx) => {
+  ctx.with(['webui'], (ctx) => {
     const { stats, meta } = ctx.webui.sources
 
     ctx.on('dialogue/before-send', ({ session, dialogue }) => {

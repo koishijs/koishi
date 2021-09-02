@@ -365,8 +365,6 @@ export abstract class Database {
 }
 
 export namespace Database {
-  export interface Library {}
-
   type Methods<S, T> = {
     [K in keyof S]?: S[K] extends (...args: infer R) => infer U ? (this: T, ...args: R) => U : S[K]
   }
@@ -375,21 +373,75 @@ export namespace Database {
   type ExtensionMethods<T> = Methods<Database, T extends Constructor<infer I> ? I : never>
   type Extension<T> = ((Database: T) => void) | ExtensionMethods<T>
 
-  export function extend<K extends keyof Library>(module: K, extension: Extension<Library[K]>): void
+  export function extend<K extends keyof Loader>(module: K, extension: Extension<Get<Loader[K], 'default'>>): void
   export function extend<T extends Constructor<unknown>>(module: T, extension: Extension<T>): void
   export function extend(module: any, extension: any) {
-    let Database: any
-    try {
-      Database = typeof module === 'string' ? require(module).default : module
-    } catch {
-      return
-    }
+    const Database = typeof module === 'string' ? Loader.require(module).default : module
+    if (!Database) return
 
     if (typeof extension === 'function') {
       extension(Database)
     } else {
       Object.assign(Database.prototype, extension)
     }
+  }
+}
+
+export interface Loader {}
+
+export namespace Loader {
+  const cache: Dict = {}
+
+  export function define(name: string, value: any) {
+    cache[name] = value
+  }
+
+  export function require(name: string): any {
+    try {
+      const path = resolve(name)
+      return internal.require(path)
+    } catch {}
+  }
+
+  export namespace internal {
+    export function isErrorModule(error: any) {
+      return true
+    }
+
+    export function require(name: string) {
+      return cache[name]
+    }
+
+    export function paths(name: string) {
+      const prefix1 = 'koishi-plugin-'
+      const prefix2 = '@koishijs/plugin-'
+      if (name.includes(prefix1) || name.startsWith(prefix2)) {
+        // full package path
+        return [name]
+      } else if (name[0] === '@') {
+        // scope package path
+        const index = name.indexOf('/')
+        return [name.slice(0, index + 1) + prefix1 + name.slice(index + 1)]
+      } else {
+        // normal package path
+        return [prefix1 + name, prefix2 + name]
+      }
+    }
+  }
+
+  export function resolve(name: string) {
+    const modules = internal.paths(name)
+    for (const path of modules) {
+      try {
+        internal.require(path)
+        return path
+      } catch (error) {
+        if (internal.isErrorModule(error)) {
+          throw error
+        }
+      }
+    }
+    throw new Error(`cannot resolve plugin ${name}`)
   }
 }
 

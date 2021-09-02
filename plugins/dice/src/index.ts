@@ -1,6 +1,12 @@
 import { Context } from 'koishi'
 import roll, { RollConfig } from './roll'
 
+declare module 'koishi' {
+  interface Loader {
+    dice: typeof import('.')
+  }
+}
+
 export interface Config extends RollConfig {}
 
 export const name = 'dice'

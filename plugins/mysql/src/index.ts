@@ -11,10 +11,8 @@ declare module 'koishi' {
     mysql: MysqlDatabase
   }
 
-  namespace Database {
-    interface Library {
-      '@koishijs/plugin-mysql': typeof MysqlDatabase
-    }
+  interface Loader {
+    mysql: typeof import('.')
   }
 }
 

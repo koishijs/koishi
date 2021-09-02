@@ -47,10 +47,8 @@ declare module 'koishi' {
     activity: Activity
   }
 
-  namespace Plugin {
-    interface Library {
-      '@koishijs/plugin-webui': typeof import('.')
-    }
+  interface Loader {
+    webui: typeof import('.')
   }
 }
 

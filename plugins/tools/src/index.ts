@@ -5,6 +5,12 @@ import { BrainfuckOptions } from './brainfuck'
 import { MusicOptions } from './music'
 import { TranslateOptions } from './translate'
 
+declare module 'koishi' {
+  interface Loader {
+    tools: typeof import('.')
+  }
+}
+
 export interface Options extends AlphaOptions, TranslateOptions {
   baidu?: false | BaiduOptions
   brainfuck?: false | BrainfuckOptions

@@ -10,6 +10,12 @@ import axios, { Method } from 'axios'
 
 export * from './server'
 
+declare module 'koishi' {
+  interface Loader {
+    github: typeof import('.')
+  }
+}
+
 const logger = new Logger('github')
 
 const defaultOptions: Config = {

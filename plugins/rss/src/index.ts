@@ -3,7 +3,11 @@ import RssFeedEmitter from 'rss-feed-emitter'
 
 declare module 'koishi' {
   interface Channel {
-    rss?: string[]
+    rss: string[]
+  }
+
+  interface Loader {
+    rss: typeof import('.')
   }
 }
 

@@ -25,10 +25,8 @@ declare module 'koishi' {
     _isEval: boolean
   }
 
-  namespace Plugin {
-    interface Library {
-      '@koishijs/plugin-eval': typeof import('.')
-    }
+  interface Loader {
+    eval: typeof import('.')
   }
 
   interface EventMap {

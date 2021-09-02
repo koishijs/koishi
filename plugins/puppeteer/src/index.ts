@@ -41,10 +41,8 @@ declare module 'koishi' {
     }
   }
 
-  namespace Plugin {
-    interface Library {
-      '@koishijs/plugin-puppeteer': typeof import('.'),
-    }
+  interface Loader {
+    puppeteer: typeof import('.')
   }
 
   interface EventMap {
@@ -265,7 +263,7 @@ export function apply(ctx: Context, config: Config = {}) {
       })
     })
 
-  ctx1.with(['@koishijs/plugin-eval'], (ctx) => {
+  ctx1.with(['eval'], (ctx) => {
     ctx.worker.config.loaderConfig.jsxFactory = 'jsxFactory'
     ctx.worker.config.loaderConfig.jsxFragment = 'jsxFragment'
     ctx.worker.config.setupFiles['puppeteer.ts'] = resolve(__dirname, 'worker')

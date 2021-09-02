@@ -33,7 +33,7 @@ namespace Rank {
     const { threshold = 0, key } = options
     add(id, { names, value, threshold, ...options })
     if (!key) return
-    Database.extend('@koishijs/plugin-mysql', ({ tables }) => {
+    Database.extend('mysql', ({ tables }) => {
       tables.user[key] = () => `IF(\
         ${typeof threshold === 'string' ? threshold : `${value} > ${threshold}`},\
         (SELECT COUNT(*) + 1 FROM \`user\` WHERE ${value} > (SELECT ${value} FROM \`user\` WHERE \`id\` = _user.id)),\

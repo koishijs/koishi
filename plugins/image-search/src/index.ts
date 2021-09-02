@@ -3,6 +3,12 @@ import ascii2d from './ascii2d'
 import saucenao from './saucenao'
 import iqdb from './iqdb'
 
+declare module 'koishi' {
+  interface Loader {
+    'image-search': typeof import('.')
+  }
+}
+
 export interface Config extends saucenao.Config {
   saucenaoApiKey?: string | string[]
 }

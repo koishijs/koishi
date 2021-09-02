@@ -5,6 +5,12 @@ import { extname, resolve } from 'path'
 import { createHmac, createHash } from 'crypto'
 import FormData from 'form-data'
 
+declare module 'koishi' {
+  interface Loader {
+    assets: typeof import('.')
+  }
+}
+
 const PTC_BASE64 = 'base64://'
 
 async function getAssetBuffer(url: string, axiosConfig: AxiosRequestConfig) {

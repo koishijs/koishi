@@ -11,10 +11,8 @@ declare module 'koishi' {
     'chat/receive'(message: Message, session: Session): void
   }
 
-  namespace Bot {
-    interface Platforms {
-      'webui': SandboxBot
-    }
+  interface Loader {
+    chat: typeof import('.')
   }
 }
 
@@ -78,7 +76,7 @@ export function apply(ctx: Context, options: Config = {}) {
     ctx.logger('message').debug(template('chat.' + (session.type === 'message' ? 'receive' : 'send'), message))
   })
 
-  ctx.with(['@koishijs/plugin-webui'] as const, (ctx, { Profile }) => {
+  ctx.with(['webui'] as const, (ctx, { Profile }) => {
     const { devMode, apiPath } = ctx.webui.config
     const filename = devMode ? '../client/index.ts' : '../dist/index.js'
     const whitelist = [...builtinWhitelist, ...options.whitelist || []]
