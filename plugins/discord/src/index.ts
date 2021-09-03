@@ -3,10 +3,8 @@ import WebSocketClient from './ws'
 
 declare module 'koishi' {
   interface Loader {
-    discord: typeof plugin
+    discord: typeof import('.')
   }
 }
 
-const plugin = Adapter.createPlugin('discord', WebSocketClient)
-
-export = plugin
+export = Adapter.createPlugin('discord', WebSocketClient)

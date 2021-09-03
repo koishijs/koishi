@@ -42,6 +42,7 @@ declare module '@koishijs/core' {
 
 // use node require
 Loader.internal.require = require
+Loader.internal.resolve = require.resolve
 
 Context.delegate('router')
 

@@ -124,20 +124,14 @@ export namespace Loader {
     cache[name] = value
   }
 
-  export function require(name: string): any {
-    try {
-      const path = resolve(name)
-      return internal.require(path)
-    } catch {}
-  }
-
   export namespace internal {
-    export function isErrorModule(error: any) {
-      return true
-    }
-
     export function require(name: string) {
       return cache[name]
+    }
+
+    export function resolve(name: string) {
+      if (name in cache) return name
+      throw new Error(`Cannot find module "${name}"`)
     }
 
     export function paths(name: string) {
@@ -157,19 +151,21 @@ export namespace Loader {
     }
   }
 
+  export function require(name: string) {
+    try {
+      const path = resolve(name)
+      return internal.require(path)
+    } catch {}
+  }
+
   export function resolve(name: string) {
     const modules = internal.paths(name)
     for (const path of modules) {
       try {
-        internal.require(path)
-        return path
-      } catch (error) {
-        if (internal.isErrorModule(error)) {
-          throw error
-        }
-      }
+        return internal.resolve(path)
+      } catch {}
     }
-    throw new Error(`cannot resolve plugin ${name}`)
+    throw new Error(`cannot resolve plugin "${name}"`)
   }
 }
 

@@ -3,10 +3,8 @@ import WebSocketClient from './ws'
 
 declare module 'koishi' {
   interface Loader {
-    minecraft: typeof plugin
+    minecraft: typeof import('.')
   }
 }
 
-const plugin = Adapter.createPlugin('minecraft', WebSocketClient)
-
-export = plugin
+export = Adapter.createPlugin('minecraft', WebSocketClient)

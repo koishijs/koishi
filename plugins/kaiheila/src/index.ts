@@ -4,13 +4,11 @@ import WebSocketClient from './ws'
 
 declare module 'koishi' {
   interface Loader {
-    kaiheila: typeof plugin
+    kaiheila: typeof import('.')
   }
 }
 
-const plugin = Adapter.createPlugin('kaiheila', {
+export = Adapter.createPlugin('kaiheila', {
   'http': HttpServer,
   'ws': WebSocketClient,
 }, config => config.verifyToken ? 'http' : 'ws')
-
-export = plugin

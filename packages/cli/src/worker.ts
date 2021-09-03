@@ -49,10 +49,6 @@ Loader.internal.paths = function (name: string) {
   return oldPaths(name)
 }
 
-Loader.internal.isErrorModule = function (error: any) {
-  return error.code !== 'MODULE_NOT_FOUND' || error.requireStack && error.requireStack[0] !== __filename
-}
-
 function ensureBaseLevel(config: Logger.LevelConfig, base: number) {
   config.base ??= base
   Object.values(config).forEach((value) => {

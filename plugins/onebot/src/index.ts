@@ -25,14 +25,12 @@ Context.prototype.broadcast = async function (this: Context, ...args: any[]) {
 
 declare module 'koishi' {
   interface Loader {
-    onebot: typeof plugin
+    onebot: typeof import('.')
   }
 }
 
-const plugin = Adapter.createPlugin('onebot', {
+export = Adapter.createPlugin('onebot', {
   'http': HttpServer,
   'ws': WebSocketClient,
   'ws-reverse': WebSocketServer,
 }, ({ server }) => !server ? 'ws-reverse' : server.startsWith('ws') ? 'ws' : 'http')
-
-export = plugin

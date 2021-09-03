@@ -3,10 +3,8 @@ import HttpServer from './http'
 
 declare module 'koishi' {
   interface Loader {
-    telegram: typeof plugin
+    telegram: typeof import('.')
   }
 }
 
-const plugin = Adapter.createPlugin('telegram', HttpServer)
-
-export = plugin
+export = Adapter.createPlugin('telegram', HttpServer)
