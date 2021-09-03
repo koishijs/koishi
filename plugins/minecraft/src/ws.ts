@@ -29,7 +29,9 @@ export default class WebSocketClient extends Adapter.WebSocketClient<MinecraftBo
     } as any
   }
 
-  async connect(bot: MinecraftBot) {
+  async accept(bot: MinecraftBot) {
+    bot.resolve()
+
     const common: Partial<Session> = {
       platform: 'minecraft',
       type: 'message',

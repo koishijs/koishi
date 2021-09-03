@@ -202,10 +202,6 @@ process.on('unhandledRejection', (error) => {
 app.start().then(() => {
   logger.info('%C', `Koishi/${version}`)
 
-  app.bots.forEach(bot => {
-    logger.info('logged in to %s as %c (%s)', bot.platform, bot.username, bot.selfId)
-  })
-
   const time = Math.max(0, performance.now() - +process.env.KOISHI_START_TIME).toFixed()
   logger.success(`bot started successfully in ${time} ms`)
   Logger.timestamp = Date.now()

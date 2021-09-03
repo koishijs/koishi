@@ -1,4 +1,4 @@
-import { Logger, paramCase, Dict } from '@koishijs/utils'
+import { Logger, paramCase, Dict, Awaitable } from '@koishijs/utils'
 import { Session } from './session'
 import { App } from './app'
 import { Bot } from './bot'
@@ -8,17 +8,35 @@ export abstract class Adapter<S extends Bot = Bot, T = {}> {
   public bots: S[] = []
   public platform: string
 
-  abstract start(): Promise<void>
-  abstract stop?(): void
+  abstract connect(bot: Bot): Awaitable<void>
+  abstract start(): Awaitable<void>
+  abstract stop(): Awaitable<void>
 
-  constructor(public app: App, private Bot: Bot.Constructor<S>, public config: T) {}
+  constructor(public app: App, private Bot: Bot.Constructor<S>, public config: T) {
+    app.before('connect', async () => {
+      await this.start()
+      this.bots.forEach(async (bot) => {
+        try {
+          await this.connect(bot)
+        } catch (error) {
+          bot.reject(error)
+        }
+      })
+    })
+
+    app.on('disconnect', () => this.stop())
+  }
 
   create(variant: string, options: Bot.GetConfig<S>, constructor = this.Bot) {
-    const bot = new constructor(this, options)
+    const bot: S = new constructor(this, options)
     bot.variant = variant
     this.bots.push(bot)
     this.app.bots.push(bot)
-    return bot
+    const promise = bot.start()
+    if (this.app.status === App.Status.open) {
+      this.connect(bot)
+    }
+    return promise
   }
 
   dispatch(session: Session) {
@@ -77,20 +95,24 @@ export namespace Adapter {
       library[platform] = { [redirect]: args[1] } as Constructor
     }
 
-    return {
-      name: platform,
-      apply(ctx: Context, config: PluginConfig = {}) {
-        configMap[platform] = config
-        const variants = config.variants || { '': config }
-        for (const key in variants) {
-          const config = variants[key]
-          const bots = config.bots || [config]
-          for (const options of bots) {
-            ctx.bots.create(platform, options)
-          }
+    function apply(ctx: Context, config: PluginConfig = {}) {
+      configMap[platform] = config
+      const variants = config.variants || { '': config }
+      for (const key in variants) {
+        const config = variants[key]
+        const bots = config.bots || [config]
+        for (const options of bots) {
+          const host = join(platform, key)
+          ctx.bots.create(platform, options).then((bot) => {
+            logger.success('logged in to %s as %c (%s)', host, bot.username, bot.selfId)
+          }, (error: Error) => {
+            logger.error(error)
+          })
         }
       }
     }
+
+    return { name: platform, apply }
   }
 
   export class Manager extends Array<Bot> {
@@ -104,14 +126,10 @@ export namespace Adapter {
       return this.find(bot => bot.sid === sid)
     }
 
-    create(host: string, options: Bot.BaseConfig): Promise<Bot> {
+    create(host: string, options: Bot.BaseConfig) {
       const [platform, variant] = host.split('#')
       const adapter = this.resolve(platform, options)
-      const bot = adapter.create(variant, options)
-      return new Promise((resolve, reject) => {
-        bot.onConnectSuccess = resolve
-        bot.onConnectFailure = reject
-      })
+      return adapter.create(variant, options)
     }
 
     remove(sid: string) {
@@ -124,17 +142,20 @@ export namespace Adapter {
     private resolve(platform: string, bot: Bot.BaseConfig): Adapter {
       const type = join(platform, bot.protocol)
       if (this.adapters[type]) return this.adapters[type]
+
       const constructor = library[type]
       if (!constructor) {
-        throw new Error(`unsupported protocol "${bot.protocol}"`)
+        throw new Error(`unsupported protocol "${type}"`)
       }
-      if (!constructor[redirect]) {
-        const adapter = new constructor(this.app, configMap[platform])
-        adapter.platform = platform
-        return this.adapters[type] = adapter
+
+      if (constructor[redirect]) {
+        bot.protocol = constructor[redirect](bot)
+        return this.resolve(platform, bot)
       }
-      logger.debug('infer protocol as %c', bot.protocol = constructor[redirect](bot))
-      return this.resolve(platform, bot)
+
+      const adapter = new constructor(this.app, configMap[platform])
+      adapter.platform = platform
+      return this.adapters[type] = adapter
     }
   }
 }

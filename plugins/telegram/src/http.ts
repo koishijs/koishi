@@ -22,7 +22,7 @@ export default class HttpServer extends Adapter<TelegramBot, TelegramConfig> {
     }
   }
 
-  async _listen(bot: TelegramBot) {
+  async connect(bot: TelegramBot) {
     const { token, endpoint, axiosConfig } = bot.config
     const { path, selfUrl } = this.config
     bot._request = async (action, params, field, content, filename = 'file') => {
@@ -42,14 +42,15 @@ export default class HttpServer extends Adapter<TelegramBot, TelegramConfig> {
       })
       return data
     }
+
     const { username } = await bot.getLoginInfo()
     await bot.get('setWebhook', {
       url: selfUrl + path + '?token=' + token,
       drop_pending_updates: true,
     })
-    bot.status = Bot.Status.GOOD
     bot.username = username
     logger.debug('connected to %c', 'telegram:' + bot.selfId)
+    bot.resolve()
   }
 
   async start() {
@@ -120,7 +121,6 @@ export default class HttpServer extends Adapter<TelegramBot, TelegramConfig> {
       const session = new Session(this.app, body)
       this.dispatch(session)
     })
-    await Promise.all(this.bots.map(bot => this._listen(bot)))
   }
 
   stop() {

@@ -1,4 +1,4 @@
-import { App, Adapter, Bot, Logger, assertProperty, Session } from 'koishi'
+import { App, Adapter, Logger, assertProperty, Session } from 'koishi'
 import { CQBot } from './bot'
 import { adaptSession, SharedConfig } from './utils'
 import { createHmac } from 'crypto'
@@ -12,10 +12,10 @@ export default class HttpServer extends Adapter<CQBot, SharedConfig> {
     assertProperty(app.options, 'port')
   }
 
-  private async _listen(bot: CQBot) {
+  async connect(bot: CQBot) {
     const { server, token } = bot.config
     if (!server) return
-    bot.status = Bot.Status.GOOD
+
     bot._request = async (action, params) => {
       const headers = { 'Content-Type': 'application/json' } as any
       if (token) {
@@ -25,8 +25,10 @@ export default class HttpServer extends Adapter<CQBot, SharedConfig> {
       const { data } = await axios.post(uri, params, { headers })
       return data
     }
+
     Object.assign(bot, await bot.getSelf())
     logger.info('connected to %c', server)
+    bot.resolve()
   }
 
   async start() {
@@ -48,8 +50,6 @@ export default class HttpServer extends Adapter<CQBot, SharedConfig> {
       // dispatch events
       if (session) this.dispatch(new Session(this.app, session))
     })
-
-    await Promise.all(this.bots.map(bot => this._listen(bot)))
   }
 
   stop() {

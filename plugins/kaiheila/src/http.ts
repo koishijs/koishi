@@ -1,4 +1,4 @@
-import { App, Bot, Adapter, Logger, assertProperty, sanitize } from 'koishi'
+import { App, Adapter, Logger, assertProperty, sanitize } from 'koishi'
 import { KaiheilaBot } from './bot'
 import { adaptSession, SharedConfig } from './utils'
 
@@ -11,12 +11,12 @@ export default class HttpServer extends Adapter<KaiheilaBot, SharedConfig> {
     super(app, KaiheilaBot, config)
   }
 
-  private async _listen(bot: KaiheilaBot) {
+  async connect(bot: KaiheilaBot) {
     Object.assign(bot, await bot.getSelf())
-    bot.status = Bot.Status.GOOD
+    bot.resolve()
   }
 
-  async start() {
+  start() {
     const { path = '' } = this.config
     this.app.router.post(path, (ctx) => {
       const { body } = ctx.request
@@ -36,11 +36,7 @@ export default class HttpServer extends Adapter<KaiheilaBot, SharedConfig> {
       const session = adaptSession(bot, body.d)
       if (session) this.dispatch(session)
     })
-
-    await Promise.all(this.bots.map(bot => this._listen(bot)))
   }
 
-  stop() {
-    logger.debug('http server closing')
-  }
+  stop() {}
 }

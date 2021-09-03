@@ -1,5 +1,5 @@
 import { Adapter, App, Bot } from '@koishijs/core'
-import { Logger, Time } from '@koishijs/utils'
+import { Logger, Time, Awaitable } from '@koishijs/utils'
 import WebSocket from 'ws'
 
 declare module '@koishijs/core' {
@@ -20,10 +20,9 @@ export namespace InjectedAdapter {
   }
 
   export abstract class WebSocketClient<S extends Bot, T extends WebSocketClient.Config> extends Adapter<S, T> {
-    protected abstract prepare(bot: S): WebSocket | Promise<WebSocket>
-    protected abstract connect(bot: S): Promise<void>
+    protected abstract prepare(bot: S): Awaitable<WebSocket>
+    protected abstract accept(bot: S): void
 
-    private _listening = false
     public config: T
 
     static config: WebSocketClient.Config = {
@@ -39,11 +38,11 @@ export namespace InjectedAdapter {
       })
     }
 
-    private async _listen(bot: S) {
+    connect(bot: S) {
       let _retryCount = 0
       const { retryTimes, retryInterval, retryLazy } = this.config
 
-      const connect = async (resolve: (value: void) => void, reject: (reason: Error) => void) => {
+      const connect = async (resolve: () => void, reject: (reason: Error) => void) => {
         logger.debug('websocket client opening')
         bot.status = Bot.Status.CONNECTING
         const socket = await this.prepare(bot)
@@ -55,7 +54,7 @@ export namespace InjectedAdapter {
           bot.socket = null
           bot.status = Bot.Status.NET_ERROR
           logger.debug(`websocket closed with ${code}`)
-          if (!this._listening) return
+          if (!this.app.isActive()) return
 
           // remove query args to protect privacy
           const message = reason || `failed to connect to ${url}`
@@ -71,7 +70,7 @@ export namespace InjectedAdapter {
           _retryCount++
           logger.warn(`${message}, will retry in ${Time.formatTimeShort(timeout)}...`)
           setTimeout(() => {
-            if (this._listening) connect(resolve, reject)
+            if (this.app.isActive()) connect(resolve, reject)
           }, timeout)
         })
 
@@ -79,23 +78,16 @@ export namespace InjectedAdapter {
           _retryCount = 0
           bot.socket = socket
           logger.info('connect to ws server:', url)
-          this.connect(bot).then(() => {
-            bot.status = Bot.Status.GOOD
-            resolve()
-          }, reject)
+          this.connect(bot)
         })
       }
 
-      return new Promise(connect)
+      connect(bot.resolve, bot.reject)
     }
 
-    async start() {
-      this._listening = true
-      await Promise.all(this.bots.map(bot => this._listen(bot)))
-    }
+    start() {}
 
     stop() {
-      this._listening = false
       logger.debug('websocket client closing')
       for (const bot of this.bots) {
         bot.socket?.close()

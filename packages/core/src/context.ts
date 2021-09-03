@@ -4,6 +4,7 @@ import { Session } from './session'
 import { User, Channel, Database, Assets, Cache, Loader } from './database'
 import { Argv } from './parser'
 import { App } from './app'
+import { Adapter } from './adapter'
 
 export type NextFunction = (next?: NextFunction) => Promise<void>
 export type Middleware = (session: Session, next: NextFunction) => any
@@ -123,10 +124,6 @@ export class Context {
 
   get private() {
     return this.unselect('guildId').user
-  }
-
-  get bots() {
-    return this.app.manager
   }
 
   logger(name: string) {
@@ -541,12 +538,14 @@ export class Context {
 Context.delegate('database')
 Context.delegate('assets')
 Context.delegate('cache')
+Context.delegate('bots')
 
 export namespace Context {
   export interface Delegates {
     database: Database
     assets: Assets
     cache: Cache
+    bots: Adapter.Manager
   }
 }
 

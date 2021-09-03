@@ -5,7 +5,7 @@ import { Session } from './session'
 
 export interface Bot<T> extends Bot.BaseConfig, Bot.Methods, Bot.UserBase {}
 
-export class Bot<T extends Bot.BaseConfig = Bot.BaseConfig> {
+export abstract class Bot<T extends Bot.BaseConfig = Bot.BaseConfig> {
   readonly app: App
   readonly logger: Logger
   readonly platform: string
@@ -13,14 +13,29 @@ export class Bot<T extends Bot.BaseConfig = Bot.BaseConfig> {
   status: Bot.Status
   selfId?: string
   variant?: string
-  onConnectSuccess?: (bot: Bot) => void
-  onConnectFailure?: (bot: Bot) => void
+
+  resolve?: () => void
+  reject?: (error: Error) => void
 
   constructor(public adapter: Adapter, public config: T) {
     this.app = adapter.app
     this.platform = adapter.platform
     this.logger = new Logger(this.platform)
     this.status = Bot.Status.BOT_IDLE
+  }
+
+  start() {
+    return new Promise<this>((resolve, reject) => {
+      this.resolve = () => {
+        this.status = Bot.Status.GOOD
+        resolve(this)
+      }
+
+      this.reject = (error) => {
+        this.status = Bot.Status.BOT_IDLE
+        reject(error)
+      }
+    })
   }
 
   get host() {

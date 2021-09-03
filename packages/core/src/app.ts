@@ -41,7 +41,7 @@ export class App extends Context {
   public options: AppOptions
   public status = App.Status.closed
   public registry = new Plugin.Registry()
-  public manager = new Adapter.Manager(this)
+  public bots = new Adapter.Manager(this)
 
   _commandList: Command[] = []
   _commands: CommandMap = new Map<string, Command>() as never
@@ -93,8 +93,6 @@ export class App extends Context {
     this.on('message', this._handleMessage.bind(this))
     this.before('parse', this._handleArgv.bind(this))
     this.before('parse', this._handleShortcut.bind(this))
-    this.before('connect', this._listen.bind(this))
-    this.on('disconnect', this._close.bind(this))
 
     this.on('parse', (argv: Argv, session: Session) => {
       const { parsed, subtype } = session
@@ -126,21 +124,20 @@ export class App extends Context {
     this._nameRE = createLeadingRE(this.options.nickname, '@?', '([,，]\\s*|\\s+)')
   }
 
+  isActive() {
+    return this.status === App.Status.open || this.status === App.Status.opening
+  }
+
   async start() {
     this.status = App.Status.opening
-    await this.parallel('before-connect')
+    try {
+      await this.parallel('before-connect')
+    } catch (err) {
+      return this.stop()
+    }
     this.status = App.Status.open
     this.logger('app').debug('started')
     this.emit('connect')
-  }
-
-  private async _listen() {
-    try {
-      await Promise.all(Object.values(this.manager.adapters).map(adapter => adapter.start()))
-    } catch (error) {
-      this._close()
-      throw error
-    }
   }
 
   async stop() {
@@ -150,10 +147,6 @@ export class App extends Context {
     this.status = App.Status.closed
     this.logger('app').debug('stopped')
     this.emit('disconnect')
-  }
-
-  private _close() {
-    Object.values(this.manager.adapters).forEach(adapter => adapter.stop?.())
   }
 
   private _resolvePrefixes(session: Session.Message) {
