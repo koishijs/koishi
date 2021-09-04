@@ -36,12 +36,6 @@ export namespace Plugin {
     disposables: Disposable[]
   }
 
-  export type Teleporter<D extends readonly (keyof Loader)[]> = (ctx: Context, ...modules: From<D>) => void
-
-  type From<D extends readonly unknown[]> = D extends readonly [infer L, ...infer R]
-    ? [L extends keyof Loader ? Loader[L] : unknown, ...From<R>]
-    : []
-
   export class Registry extends Map<Plugin, State> {
     resolve(plugin: Plugin) {
       return plugin && (typeof plugin === 'function' ? plugin : plugin.apply)
@@ -180,14 +174,14 @@ export class Context {
     }
   }
 
-  private teleport(modules: any[], callback: Plugin.Teleporter<any>) {
+  private teleport<T extends Dict>(modules: T, callback: Plugin.Function<T>) {
     const states: Plugin.State[] = []
-    for (const module of modules) {
-      const state = this.app.registry.get(module)
+    for (const key in modules) {
+      const state = this.app.registry.get(modules[key])
       if (!state) return
       states.push(state)
     }
-    const plugin = (ctx: Context) => callback(ctx, ...modules as [])
+    const plugin = (ctx: Context) => callback(ctx, modules)
     const dispose = () => this.dispose(plugin)
     this.plugin(plugin)
     states.every(state => state.disposables.push(dispose))
@@ -196,13 +190,24 @@ export class Context {
     })
   }
 
-  with<D extends readonly (keyof Loader)[]>(deps: D, callback: Plugin.Teleporter<D>) {
-    const modules = deps.map(Loader.require)
-    if (!modules.every(val => val)) return this
+  private loadDeps<K extends keyof Loader>(deps: readonly K[]) {
+    const modules: Pick<Loader, K> = {}
+    for (const dep of deps) {
+      modules[dep] = Loader.require(dep)
+      if (!modules[dep]) return
+    }
+    return modules
+  }
+
+  with<K extends keyof Loader>(deps: readonly K[], callback: Plugin.Function<Pick<Loader, K>>) {
+    const modules = this.loadDeps(deps)
+    if (!modules) return
     this.teleport(modules, callback)
     this.on('plugin-added', (added) => {
-      const modules = deps.map(Loader.require)
-      if (modules.includes(added)) this.teleport(modules, callback)
+      const modules = this.loadDeps(deps)
+      if (Object.values(modules).includes(added)) {
+        this.teleport(modules, callback)
+      }
     })
     return this
   }

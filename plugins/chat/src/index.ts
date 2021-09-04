@@ -76,7 +76,7 @@ export function apply(ctx: Context, options: Config = {}) {
     ctx.logger('message').debug(template('chat.' + (session.type === 'message' ? 'receive' : 'send'), message))
   })
 
-  ctx.with(['webui'] as const, (ctx, { Profile }) => {
+  ctx.with(['webui'], (ctx, { webui }) => {
     const { devMode, apiPath } = ctx.webui.config
     const filename = devMode ? '../client/index.ts' : '../dist/index.js'
     const whitelist = [...builtinWhitelist, ...options.whitelist || []]
@@ -93,11 +93,11 @@ export function apply(ctx: Context, options: Config = {}) {
       ctx.bots.get(`${platform}:${selfId}`)?.sendMessage(channelId, content, guildId)
     })
 
-    ctx.on('connect', () => {
+    ctx.on('connect', async () => {
       // create bot after connection
       // to prevent mysql from altering user table
-      const sandbox = ctx.webui.create('', {}, SandboxBot)
-      Profile.initBot(sandbox)
+      const sandbox = await ctx.webui.create('', {}, SandboxBot)
+      webui.Profile.initBot(sandbox)
     })
 
     ctx.webui.addListener('sandbox', async function ({ id, token, content }) {
