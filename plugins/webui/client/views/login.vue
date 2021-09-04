@@ -17,7 +17,7 @@
       </h1>
       <h1 v-else><span>平台账户登录</span></h1>
       <template v-if="config.authType === 0">
-        <k-input prefix="at" placeholder="平台名" v-model="config.variant"/>
+        <k-input prefix="at" placeholder="平台名" v-model="config.platform"/>
         <k-input prefix="user" placeholder="账号" v-model="config.userId" @enter="enter"/>
         <p class="error" v-if="data.message">{{ data.message }}</p>
         <div class="control">
@@ -72,10 +72,10 @@ let timestamp = 0
 async function enter() {
   const now = Date.now()
   if (now < timestamp) return
-  const { variant, userId } = config.value
-  if (!variant || !userId) return
+  const { platform, userId } = config.value
+  if (!platform || !userId) return
   timestamp = now + 1000
-  send('token', { variant, userId })
+  send('token', { platform, userId })
 }
 
 async function login() {

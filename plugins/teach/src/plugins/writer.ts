@@ -46,12 +46,12 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
     argv.authMap = {}
     const { options, nameMap, session, dialogues, authMap } = argv
     const writers = new Set(dialogues.map(d => d.writer).filter(Boolean))
-    const fields: User.Field[] = ['id', 'authority', session.variant as never]
+    const fields: User.Field[] = ['id', 'authority', session.platform as never]
     if (options.writer === '') {
       argv.writer = ''
     } else if (options.writer) {
-      const [variant, userId] = options.writer.split(':')
-      const user = await ctx.database.getUser(variant, userId, fields)
+      const [platform, userId] = options.writer.split(':')
+      const user = await ctx.database.getUser(platform, userId, fields)
       if (user) {
         writers.add(user.id)
         argv.writer = user.id
@@ -65,7 +65,7 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
     for (const user of users) {
       authMap[user.id] = user.authority
       if (options.modify) continue
-      const userId = user[session.variant]
+      const userId = user[session.platform]
       if (user.name) {
         nameMap[user.id] = `${user.name} (${userId})`
       } else if (userId === session.userId) {
@@ -152,12 +152,12 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
       const userFields = new Set<User.Field>(['name', 'flag'])
       ctx.app.emit(session, 'dialogue/before-attach-user', state, userFields)
       // do a little trick here
-      const { variant, userId } = session
-      session.variant = 'id' as never
+      const { platform, userId } = session
+      session.platform = 'id'
       session.userId = dialogue.writer
       session.user = null
       await session.observeUser(userFields)
-      session.variant = variant
+      session.platform = platform
       session.userId = userId
     }
   })

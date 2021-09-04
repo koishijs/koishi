@@ -17,12 +17,12 @@
         <th>当前消息频率</th>
         <th v-if="stats">近期消息频率</th>
       </tr>
-      <tr v-for="{ variant, username, selfId, code, currentRate } in profile.bots">
-        <td>{{ variant }}</td>
+      <tr v-for="{ platform, username, selfId, code, currentRate } in profile.bots">
+        <td>{{ platform }}</td>
         <td>{{ username }}</td>
         <td>{{ codes[code] }}</td>
         <td>发送 {{ currentRate[0] }}/min，接收 {{ currentRate[1] }}/min</td>
-        <td v-if="stats">发送 {{ stats.botSend[`${variant}:${selfId}`] || 0 }}/d，接收 {{ stats.botReceive[`${variant}:${selfId}`] || 0 }}/d</td>
+        <td v-if="stats">发送 {{ stats.botSend[`${platform}:${selfId}`] || 0 }}/d，接收 {{ stats.botReceive[`${platform}:${selfId}`] || 0 }}/d</td>
       </tr>
     </table>
     <p v-else>暂无数据。</p>

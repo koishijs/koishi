@@ -24,7 +24,7 @@ export namespace User {
 
 export interface Channel {
   id: string
-  variant: string
+  platform: string
   flag: number
   assignee: string
   disable: string[]
@@ -54,41 +54,41 @@ export abstract class Database {
     app.before('disconnect', () => this.stop())
   }
 
-  getUser<T extends string, K extends T | User.Field>(variant: T, id: string, modifier?: Query.Modifier<K>): Promise<UserWithPlatform<T, T | K>>
-  getUser<T extends string, K extends T | User.Field>(variant: T, ids: string[], modifier?: Query.Modifier<K>): Promise<UserWithPlatform<T, K>[]>
-  async getUser(variant: string, id: MaybeArray<string>, modifier?: Query.Modifier<User.Field>) {
-    const data = await this.get('user', { [variant]: id }, modifier)
-    return Array.isArray(id) ? data : data[0] && { ...data[0], [variant]: id } as any
+  getUser<T extends string, K extends T | User.Field>(platform: T, id: string, modifier?: Query.Modifier<K>): Promise<UserWithPlatform<T, T | K>>
+  getUser<T extends string, K extends T | User.Field>(platform: T, ids: string[], modifier?: Query.Modifier<K>): Promise<UserWithPlatform<T, K>[]>
+  async getUser(platform: string, id: MaybeArray<string>, modifier?: Query.Modifier<User.Field>) {
+    const data = await this.get('user', { [platform]: id }, modifier)
+    return Array.isArray(id) ? data : data[0] && { ...data[0], [platform]: id } as any
   }
 
-  setUser(variant: string, id: string, data: Partial<User>) {
-    return this.set('user', { [variant]: id }, data)
+  setUser(platform: string, id: string, data: Partial<User>) {
+    return this.set('user', { [platform]: id }, data)
   }
 
-  createUser(variant: string, id: string, data: Partial<User>) {
-    return this.create('user', { [variant]: id, ...data })
+  createUser(platform: string, id: string, data: Partial<User>) {
+    return this.create('user', { [platform]: id, ...data })
   }
 
-  getChannel<K extends Channel.Field>(variant: string, id: string, modifier?: Query.Modifier<K>): Promise<Pick<Channel, K | 'id' | 'variant'>>
-  getChannel<K extends Channel.Field>(variant: string, ids: string[], modifier?: Query.Modifier<K>): Promise<Pick<Channel, K>[]>
-  async getChannel(variant: string, id: MaybeArray<string>, modifier?: Query.Modifier<Channel.Field>) {
-    const data = await this.get('channel', { variant, id }, modifier)
-    return Array.isArray(id) ? data : data[0] && { ...data[0], variant, id }
+  getChannel<K extends Channel.Field>(platform: string, id: string, modifier?: Query.Modifier<K>): Promise<Pick<Channel, K | 'id' | 'platform'>>
+  getChannel<K extends Channel.Field>(platform: string, ids: string[], modifier?: Query.Modifier<K>): Promise<Pick<Channel, K>[]>
+  async getChannel(platform: string, id: MaybeArray<string>, modifier?: Query.Modifier<Channel.Field>) {
+    const data = await this.get('channel', { platform, id }, modifier)
+    return Array.isArray(id) ? data : data[0] && { ...data[0], platform, id }
   }
 
   getAssignedChannels<K extends Channel.Field>(fields?: K[], assignMap?: Dict<string[]>): Promise<Pick<Channel, K>[]>
   async getAssignedChannels(fields?: Channel.Field[], assignMap: Dict<string[]> = this.app.getSelfIds()) {
     return this.get('channel', {
-      $or: Object.entries(assignMap).map(([variant, assignee]) => ({ variant, assignee })),
+      $or: Object.entries(assignMap).map(([platform, assignee]) => ({ platform, assignee })),
     }, fields)
   }
 
-  setChannel(variant: string, id: string, data: Partial<Channel>) {
-    return this.set('channel', { variant, id }, data)
+  setChannel(platform: string, id: string, data: Partial<Channel>) {
+    return this.set('channel', { platform, id }, data)
   }
 
-  createChannel(variant: string, id: string, data: Partial<Channel>) {
-    return this.create('channel', { variant, id, ...data })
+  createChannel(platform: string, id: string, data: Partial<Channel>) {
+    return this.create('channel', { platform, id, ...data })
   }
 }
 

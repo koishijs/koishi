@@ -265,11 +265,11 @@ export namespace Argv {
     if (source.startsWith('@')) {
       source = source.slice(1)
       if (source.includes(':')) return source
-      return `${session.variant}:${source}`
+      return `${session.platform}:${source}`
     }
     const code = segment.from(source)
     if (code && code.type === 'at') {
-      return `${session.variant}:${code.data.id}`
+      return `${session.platform}:${code.data.id}`
     }
     throw new Error(template('internal.invalid-user'))
   })
@@ -278,11 +278,11 @@ export namespace Argv {
     if (source.startsWith('#')) {
       source = source.slice(1)
       if (source.includes(':')) return source
-      return `${session.variant}:${source}`
+      return `${session.platform}:${source}`
     }
     const code = segment.from(source)
     if (code && code.type === 'sharp') {
-      return `${session.variant}:${code.data.id}`
+      return `${session.platform}:${code.data.id}`
     }
     throw new Error(template('internal.invalid-channel'))
   })

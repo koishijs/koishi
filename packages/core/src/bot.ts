@@ -12,16 +12,14 @@ export abstract class Bot<T extends Bot.BaseConfig = Bot.BaseConfig> {
 
   status: Bot.Status
   selfId?: string
-  variant?: string
 
   resolve?: () => void
   reject?: (error: Error) => void
 
   constructor(public adapter: Adapter, public config: T) {
     this.app = adapter.app
-    this.platform = adapter.platform
-    this.variant = config.variant || this.platform
-    this.logger = new Logger(this.platform)
+    this.platform = config.platform || adapter.platform
+    this.logger = new Logger(adapter.platform)
     this.status = Bot.Status.BOT_IDLE
   }
 
@@ -52,7 +50,7 @@ export abstract class Bot<T extends Bot.BaseConfig = Bot.BaseConfig> {
   }
 
   get sid() {
-    return `${this.variant}:${this.selfId}`
+    return `${this.platform}:${this.selfId}`
   }
 
   async getStatus() {
@@ -98,7 +96,7 @@ export abstract class Bot<T extends Bot.BaseConfig = Bot.BaseConfig> {
 export namespace Bot {
   export interface BaseConfig {
     protocol?: string
-    variant?: string
+    platform?: string
   }
 
   export type GetConfig<S extends Bot = Bot> = S extends Bot<infer R> ? R : never

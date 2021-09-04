@@ -141,7 +141,7 @@ exitCommand && app
     process.exit(114)
   })
 
-const selectors = ['user', 'group', 'channel', 'self', 'private', 'platform', 'variant'] as const
+const selectors = ['user', 'group', 'channel', 'self', 'private', 'platform'] as const
 
 type SelectorType = typeof selectors[number]
 type SelectorValue = boolean | string | number | (string | number)[]

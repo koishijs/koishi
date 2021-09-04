@@ -65,7 +65,7 @@ interface Config {
   authType: 0 | 1
   username?: string
   password?: string
-  variant?: string
+  platform?: string
   userId?: string
   showPass?: boolean
 }

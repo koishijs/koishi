@@ -112,10 +112,6 @@ export class Context {
     return this.createSelector('platform')
   }
 
-  get variant() {
-    return this.createSelector('variant')
-  }
-
   get private() {
     return this.unselect('guildId').user
   }
@@ -495,8 +491,8 @@ export class Context {
     const data = this.database
       ? await this.database.getAssignedChannels(['id', 'assignee', 'flag'])
       : channels.map((id) => {
-        const [variant] = id.split(':')
-        const bot = this.bots.find(bot => bot.variant === variant)
+        const [platform] = id.split(':')
+        const bot = this.bots.find(bot => bot.platform === platform)
         return bot && { id, assignee: bot.selfId, flag: 0 }
       }).filter(Boolean)
 

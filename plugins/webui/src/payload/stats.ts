@@ -53,7 +53,7 @@ export function average(stats: {}[]) {
 
 interface GroupData {
   name: string
-  variant: string
+  platform: string
   assignee: string
   value: number
   last: number
@@ -166,20 +166,20 @@ class Statistics {
     payload.groups = []
     const groupMap = Object.fromEntries(data.groups.map(g => [g.id, g]))
     const messageMap = average(data.daily.map(data => data.group))
-    const updateList: Pick<Channel, 'id' | 'variant' | 'name'>[] = []
+    const updateList: Pick<Channel, 'id' | 'platform' | 'name'>[] = []
 
     async function getGroupInfo(bot: Bot) {
-      const { variant } = bot
+      const { platform } = bot
       const groups = await bot.getGuildList()
       for (const { guildId, guildName: name } of groups) {
-        const id = `${bot.variant}:${guildId}`
+        const id = `${platform}:${guildId}`
         if (!messageMap[id] || !groupMap[id] || groupSet.has(id)) continue
         groupSet.add(id)
         const { name: oldName, assignee } = groupMap[id]
-        if (name !== oldName) updateList.push({ variant: bot.variant, id: guildId, name })
+        if (name !== oldName) updateList.push({ platform, id: guildId, name })
         payload.groups.push({
           name,
-          variant,
+          platform,
           assignee,
           value: messageMap[id],
           last: data.daily[0].group[id] || 0,
@@ -192,13 +192,13 @@ class Statistics {
     for (const key in messageMap) {
       if (!groupSet.has(key) && groupMap[key]) {
         const { name, assignee } = groupMap[key]
-        const [variant] = key.split(':') as [never]
+        const [platform] = key.split(':') as [never]
         payload.groups.push({
-          variant,
+          platform,
           name: name || key,
           value: messageMap[key],
           last: data.daily[0].group[key] || 0,
-          assignee: this.ctx.bots.get(`${variant}:${assignee}`)?.selfId || '',
+          assignee: this.ctx.bots.get(`${platform}:${assignee}`)?.selfId || '',
         })
       }
     }

@@ -91,7 +91,7 @@ export namespace Adapter {
       for (const options of bots) {
         const bot = ctx.bots.create(platform, options)
         bot.start().then((bot) => {
-          logger.success('logged in to %s as %c (%s)', bot.variant, bot.username, bot.selfId)
+          logger.success('logged in to %s as %c (%s)', bot.platform, bot.username, bot.selfId)
         }, (error: Error) => {
           logger.error(error)
         })

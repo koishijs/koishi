@@ -58,10 +58,10 @@ export function apply(ctx: Context, config: Config = {}) {
       logger.debug(err.message)
     })
 
-    const channels = await ctx.database.getAssignedChannels(['variant', 'id', 'rss'])
+    const channels = await ctx.database.getAssignedChannels(['platform', 'id', 'rss'])
     for (const channel of channels) {
       for (const url of channel.rss) {
-        subscribe(url, `${channel.variant}:${channel.id}`)
+        subscribe(url, `${channel.platform}:${channel.id}`)
       }
     }
 

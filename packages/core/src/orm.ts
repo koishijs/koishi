@@ -141,12 +141,12 @@ export namespace Tables {
 
   extend('channel', {
     id: 'string(63)',
-    variant: 'string(63)',
+    platform: 'string(63)',
     flag: 'unsigned(20)',
     assignee: 'string(63)',
     disable: 'list',
   }, {
-    primary: ['id', 'variant'],
+    primary: ['id', 'platform'],
   })
 }
 

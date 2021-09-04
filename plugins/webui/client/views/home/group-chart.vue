@@ -15,7 +15,7 @@ const option = computed(() => ({
     trigger: 'item',
     formatter({ data, value }) {
       const output = [data.name]
-      output.push(`平台：${data.variant}`)
+      output.push(`平台：${data.platform}`)
       if (data.memberCount) output.push(`人数：${data.memberCount}`)
       if (data.assignee) output.push(`接入：${data.assignee}`)
       output.push(`日均发言：${+value.toFixed(1)}`)

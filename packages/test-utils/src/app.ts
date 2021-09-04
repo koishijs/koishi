@@ -135,7 +135,7 @@ export class MockedApp extends App {
   }
 
   async initChannel(id: string, assignee = this.selfId) {
-    await this.database.create('channel', { variant: 'mock', id, assignee })
+    await this.database.create('channel', { platform: 'mock', id, assignee })
   }
 }
 
@@ -147,7 +147,6 @@ export class TestSession {
   constructor(public app: MockedApp, public userId: string, public channelId?: string) {
     this.meta = {
       platform: 'mock',
-      variant: 'mock',
       type: 'message',
       selfId: app.selfId,
       userId,

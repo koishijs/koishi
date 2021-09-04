@@ -272,10 +272,10 @@ export namespace WebServer {
     await this.validate(id, token)
   }
 
-  listeners.token = async function ({ variant, userId }) {
-    const user = await this.app.database.getUser(variant, userId, ['name'])
+  listeners.token = async function ({ platform, userId }) {
+    const user = await this.app.database.getUser(platform, userId, ['name'])
     if (!user) return this.send('login', { message: '找不到此账户。' })
-    const id = `${variant}:${userId}`
+    const id = `${platform}:${userId}`
     const token = v4()
     const expire = Date.now() + TOKEN_TIMEOUT
     const { states } = this.app.webui

@@ -3,7 +3,7 @@ import {
   Context, User, Channel, Command, Argv, Session, Extend, Awaitable, Tables,
 } from 'koishi'
 
-import { parseVariant } from './utils'
+import { parsePlatform } from './utils'
 
 type AdminAction<U extends User.Field, G extends Channel.Field, A extends any[], O extends {}, T>
   = (argv: Argv<U | 'authority', G, A, Extend<O, 'target', string>> & { target: T }, ...args: A)
@@ -132,8 +132,8 @@ Command.prototype.adminUser = function (this: Command, callback, autoCreate) {
     .userFields(['authority'])
     .option('target', '-t [user:user]  指定目标用户', { authority: 3 })
     .userFields(({ session, options }, fields) => {
-      const variant = options.target ? options.target.split(':')[0] : session.variant
-      fields.add(variant as never)
+      const platform = options.target ? options.target.split(':')[0] : session.platform
+      fields.add(platform as never)
     })
 
   command.action(async (argv) => {
@@ -143,29 +143,29 @@ Command.prototype.adminUser = function (this: Command, callback, autoCreate) {
     if (!options.target) {
       target = await argv.session.observeUser(fields)
     } else {
-      const [variant, userId] = parseVariant(options.target)
-      if (user[variant] === userId) {
+      const [platform, userId] = parsePlatform(options.target)
+      if (user[platform] === userId) {
         target = await argv.session.observeUser(fields)
       } else {
-        const data = await database.getUser(variant, userId, [...fields])
+        const data = await database.getUser(platform, userId, [...fields])
         if (!data) {
           if (!autoCreate) return template('admin.user-not-found')
           const temp = Tables.create('user')
-          temp[variant] = userId
+          temp[platform] = userId
           const fallback = observe(temp, async () => {
             if (!fallback.authority) return
-            await database.createUser(variant, userId, fallback)
+            await database.createUser(platform, userId, fallback)
           })
           target = fallback
         } else if (user.authority <= data.authority) {
           return template('internal.low-authority')
         } else {
-          target = observe(data, diff => database.setUser(variant, userId, diff), `user ${options.target}`)
+          target = observe(data, diff => database.setUser(platform, userId, diff), `user ${options.target}`)
           if (!autoCreate) {
             session = Object.create(argv.session)
             session.user = target
             session.userId = userId
-            session.variant = variant
+            session.platform = platform
           }
         }
       }
@@ -197,25 +197,25 @@ Command.prototype.adminChannel = function (this: Command, callback, autoCreate) 
     if ((!options.target || options.target === cid) && subtype === 'group') {
       target = await argv.session.observeChannel(fields)
     } else if (options.target) {
-      const [variant, channelId] = parseVariant(options.target)
-      const data = await database.getChannel(variant, channelId, [...fields])
+      const [platform, channelId] = parsePlatform(options.target)
+      const data = await database.getChannel(platform, channelId, [...fields])
       if (!data) {
         if (!autoCreate) return template('admin.channel-not-found')
         const temp = Tables.create('channel')
-        temp.variant = variant
+        temp.platform = platform
         temp.id = channelId
         const fallback = observe(temp, async () => {
           if (!fallback.assignee) return
-          await database.createChannel(variant, channelId, fallback)
+          await database.createChannel(platform, channelId, fallback)
         })
         target = fallback
       } else {
-        target = observe(data, diff => database.setChannel(variant, channelId, diff), `channel ${options.target}`)
+        target = observe(data, diff => database.setChannel(platform, channelId, diff), `channel ${options.target}`)
         if (!autoCreate) {
           session = Object.create(argv.session)
           session.channel = target
           session.channelId = channelId
-          session.variant = variant
+          session.platform = platform
         }
       }
     } else {
@@ -283,22 +283,22 @@ export function bind(ctx: Context, config: BindConfig = {}) {
   // 1: group (1st step)
   // 0: private
   // -1: group (2nd step)
-  type TokenData = [variant: string, id: string, pending: number]
+  type TokenData = [platform: string, id: string, pending: number]
   const tokens: Dict<TokenData> = {}
 
   const { generateToken = () => 'koishi/' + Random.id(6, 10) } = config
 
   function generate(session: Session, pending: number) {
     const token = generateToken()
-    tokens[token] = [session.variant, session.userId, pending]
+    tokens[token] = [session.platform, session.userId, pending]
     setTimeout(() => delete tokens[token], 5 * Time.minute)
     return token
   }
 
-  async function bind(user: User.Observed<never>, variant: string, userId: string) {
-    await ctx.database.remove('user', { [variant]: [userId] })
+  async function bind(user: User.Observed<never>, platform: string, userId: string) {
+    await ctx.database.remove('user', { [platform]: [userId] })
     ctx.cache.set('user', userId, user)
-    user[variant] = userId as never
+    user[platform] = userId as never
     await user.$update()
   }
 
@@ -312,10 +312,10 @@ export function bind(ctx: Context, config: BindConfig = {}) {
     const data = tokens[session.content]
     if (!data) return next()
     if (data[2] < 0) {
-      const sess = new Session(session.bot, { ...session, variant: data[0], userId: data[1] })
-      const user = await sess.observeUser([session.variant as never])
+      const sess = new Session(session.bot, { ...session, platform: data[0], userId: data[1] })
+      const user = await sess.observeUser([session.platform as never])
       delete tokens[session.content]
-      await bind(user, session.variant, session.userId)
+      await bind(user, session.platform, session.userId)
       return session.send(template('bind.success'))
     } else {
       const user = await session.observeUser(['authority', data[0] as never])
@@ -342,7 +342,7 @@ export function admin(ctx: Context) {
   ctx.command('user/authorize <value:natural>', '权限信息', { authority: 4 })
     .alias('auth')
     .adminUser(async ({ session, target }, authority) => {
-      if (session.userId === target[session.variant]) return template('admin.user-expected')
+      if (session.userId === target[session.platform]) return template('admin.user-expected')
       if (authority >= session.user.authority) return template('internal.low-authority')
       if (authority === target.authority) return template('admin.user-unchanged')
       target.authority = authority
@@ -423,8 +423,8 @@ export function admin(ctx: Context) {
       } else if (!value) {
         target.assignee = session.selfId
       } else {
-        const [variant, userId] = parseVariant(value)
-        if (variant !== parseVariant(options.target)[0]) {
+        const [platform, userId] = parsePlatform(value)
+        if (platform !== parsePlatform(options.target)[0]) {
           return template('admin.invalid-assignee-platform')
         }
         target.assignee = userId

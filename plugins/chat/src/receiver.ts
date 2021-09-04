@@ -30,7 +30,7 @@ export interface Message {
   abstract?: string
   username?: string
   nickname?: string
-  variant?: string
+  platform?: string
   messageId?: string
   userId?: string
   channelId?: string
@@ -125,7 +125,7 @@ export default function apply(ctx: Context, config: ReceiverConfig = {}) {
         } else if (code.data.role) {
           params.abstract += '@角色组'
         } else if (session.subtype === 'group') {
-          const id = `${session.variant}:${code.data.id}`
+          const id = `${session.platform}:${code.data.id}`
           if (code.data.name) {
             userMap[id] = [Promise.resolve(code.data.name), timestamp]
           } else if (!userMap[id] || timestamp - userMap[id][1] >= refreshUserName) {
@@ -158,7 +158,7 @@ export default function apply(ctx: Context, config: ReceiverConfig = {}) {
 
   async function handleMessage(session: Session) {
     const params: Message = pick(session, [
-      'content', 'timestamp', 'messageId', 'variant', 'selfId',
+      'content', 'timestamp', 'messageId', 'platform', 'selfId',
       'channelId', 'channelName', 'guildId', 'guildName', 'userId',
     ])
     Object.assign(params, pick(session.author, ['username', 'nickname', 'avatar']))
