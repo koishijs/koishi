@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-schedule",
   "description": "Create scheduled tasks for Koishi",
-  "version": "4.0.0-alpha.1",
+  "version": "4.0.0-alpha.2",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -29,11 +29,11 @@
     "task"
   ],
   "devDependencies": {
-    "@koishijs/plugin-mongo": "^3.0.0-alpha.0",
-    "@koishijs/plugin-mysql": "^4.0.0-alpha.1",
-    "@koishijs/test-utils": "^8.0.0-alpha.2"
+    "@koishijs/plugin-mongo": "^3.0.0-alpha.1",
+    "@koishijs/plugin-mysql": "^4.0.0-alpha.2",
+    "@koishijs/test-utils": "^8.0.0-alpha.3"
   },
   "peerDependencies": {
-    "koishi": "^4.0.0-alpha.3"
+    "koishi": "^4.0.0-alpha.4"
   }
 }

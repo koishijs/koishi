@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-assets",
   "description": "A classic assets provider for Koishi",
-  "version": "2.0.0-alpha.0",
+  "version": "2.0.0-alpha.1",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -29,7 +29,7 @@
     "server"
   ],
   "peerDependencies": {
-    "koishi": "^4.0.0-alpha.3"
+    "koishi": "^4.0.0-alpha.4"
   },
   "dependencies": {
     "axios": "^0.21.1",
