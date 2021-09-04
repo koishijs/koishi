@@ -1,4 +1,4 @@
-import { Logger, defineProperty, remove, segment, Random, Promisify, Awaitable, Dict } from '@koishijs/utils'
+import { Logger, defineProperty, remove, segment, Random, Schema, Promisify, Awaitable, Dict } from '@koishijs/utils'
 import { Command } from './command'
 import { Session } from './session'
 import { User, Channel, Database, Assets, Cache, Loader } from './database'
@@ -17,6 +17,7 @@ export namespace Plugin {
 
   export interface Meta {
     name?: string
+    schema?: Schema
     sideEffect?: boolean
   }
 

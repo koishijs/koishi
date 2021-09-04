@@ -1,4 +1,4 @@
-import { Context, Session, Time, Logger, Tables } from 'koishi'
+import { Context, Session, Time, Logger, Tables, Schema } from 'koishi'
 
 declare module 'koishi' {
   interface Tables {
@@ -38,13 +38,13 @@ function formatContext(session: Partial<Session>) {
   return session.subtype === 'private' ? `私聊 ${session.userId}` : `群聊 ${session.guildId}`
 }
 
-export interface Config {
-  minInterval?: number
-}
-
 export const name = 'schedule'
 
-export function apply(ctx: Context, config: Config = {}) {
+export const schema = Schema.Object({
+  minInterval: Schema.Number(),
+})
+
+export function apply(ctx: Context, config: Schema.Type<typeof schema> = {}) {
   const { database } = ctx
   const { minInterval = Time.minute } = config
 
