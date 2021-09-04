@@ -64,7 +64,7 @@ export default class HttpServer extends Adapter<TelegramBot, TelegramConfig> {
       if (!(bot?.config.token === token)) return ctx.status = 403
 
       ctx.body = 'OK'
-      const body: Partial<Session> = { selfId, platform: 'telegram' }
+      const body: Partial<Session> = { selfId }
       if (payload.message) {
         const message = payload.message
         body.messageId = message.messageId.toString()
@@ -118,7 +118,7 @@ export default class HttpServer extends Adapter<TelegramBot, TelegramConfig> {
         }
       }
       logger.debug('receive %o', body)
-      const session = new Session(this.app, body)
+      const session = new Session(bot, body)
       this.dispatch(session)
     })
   }

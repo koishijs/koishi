@@ -51,9 +51,11 @@ class MockedServer extends Adapter<MockedBot, AdapterConfig> {
     app.server = this
   }
 
+  connect() {}
+
   stop() {}
 
-  async start() {}
+  start() {}
 
   get(path: string, headers?: Dict<any>) {
     return this.receive('GET', path, headers, '')
@@ -119,7 +121,7 @@ export class MockedApp extends App {
   }
 
   receive(meta: Partial<Session>) {
-    const session = new Session(this, meta)
+    const session = new Session(this.bots[0], meta)
     this.server.dispatch(session)
     return session.id
   }
@@ -133,7 +135,7 @@ export class MockedApp extends App {
   }
 
   async initChannel(id: string, assignee = this.selfId) {
-    await this.database.create('channel', { host: 'mock', id, assignee })
+    await this.database.create('channel', { variant: 'mock', id, assignee })
   }
 }
 
@@ -145,6 +147,7 @@ export class TestSession {
   constructor(public app: MockedApp, public userId: string, public channelId?: string) {
     this.meta = {
       platform: 'mock',
+      variant: 'mock',
       type: 'message',
       selfId: app.selfId,
       userId,

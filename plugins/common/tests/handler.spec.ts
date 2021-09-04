@@ -19,6 +19,7 @@ function receive(session: Partial<Session>) {
 
 const receiveFriendRequest = (userId: string) => receive({
   platform: 'mock',
+  variant: 'mock',
   selfId: app.selfId,
   type: 'friend-request',
   messageId: 'flag',
@@ -27,6 +28,7 @@ const receiveFriendRequest = (userId: string) => receive({
 
 const receiveGroupRequest = (userId: string) => receive({
   platform: 'mock',
+  variant: 'mock',
   selfId: app.selfId,
   type: 'guild-request',
   guildId: '10000',
@@ -36,6 +38,7 @@ const receiveGroupRequest = (userId: string) => receive({
 
 const receiveGroupMemberRequest = (userId: string) => receive({
   platform: 'mock',
+  variant: 'mock',
   selfId: app.selfId,
   type: 'guild-member-request',
   guildId: '10000',

@@ -44,11 +44,15 @@ export default class HttpServer extends Adapter<CQBot, SharedConfig> {
         if (signature !== `sha1=${sig}`) return ctx.status = 403
       }
 
+      const selfId = ctx.headers['x-self-id'].toString()
+      const bot = this.bots.find(bot => bot.selfId === selfId)
+      if (!bot) return ctx.status = 403
+
       logger.debug('receive %o', ctx.request.body)
       const session = adaptSession(ctx.request.body)
 
       // dispatch events
-      if (session) this.dispatch(new Session(this.app, session))
+      if (session) this.dispatch(new Session(bot, session))
     })
   }
 

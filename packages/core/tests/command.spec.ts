@@ -174,7 +174,7 @@ describe('Command API', () => {
   describe('Error Handling', () => {
     const app = new App()
     const command = app.command('test')
-    const session = new Session(app, {})
+    const session = new Session(app.bots[0], {})
     const cmdWarn = jest.spyOn(new Logger('command'), 'warn')
     const argv = { command, session }
 

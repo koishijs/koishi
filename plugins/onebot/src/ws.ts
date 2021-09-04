@@ -77,7 +77,7 @@ export function accept(this: Adapter<CQBot, SharedConfig>, bot: CQBot) {
     if ('post_type' in parsed) {
       logger.debug('receive %o', parsed)
       const session = adaptSession(parsed)
-      if (session) bot.adapter.dispatch(new Session(bot.app, session))
+      if (session) bot.adapter.dispatch(new Session(bot, session))
     } else if (parsed.echo === -1) {
       Object.assign(bot, adaptUser(camelCase(parsed.data)))
       logger.debug('%d got self info', parsed.data)

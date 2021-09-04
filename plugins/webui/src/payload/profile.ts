@@ -46,7 +46,7 @@ function updateCpuUsage() {
 export interface BotData {
   username: string
   selfId: string
-  platform: string
+  variant: string
   code: Bot.Status
   currentRate: MessageRate
 }
@@ -57,7 +57,7 @@ function accumulate(record: number[]) {
 
 export async function BotData(bot: Bot) {
   return {
-    platform: bot.platform,
+    variant: bot.variant,
     selfId: bot.selfId,
     username: bot.username,
     code: await bot.getStatus(),

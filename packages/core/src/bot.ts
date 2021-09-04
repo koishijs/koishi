@@ -20,30 +20,39 @@ export abstract class Bot<T extends Bot.BaseConfig = Bot.BaseConfig> {
   constructor(public adapter: Adapter, public config: T) {
     this.app = adapter.app
     this.platform = adapter.platform
+    this.variant = config.variant || this.platform
     this.logger = new Logger(this.platform)
     this.status = Bot.Status.BOT_IDLE
   }
 
+  async connect() {
+    try {
+      await this.adapter.connect(this)
+    } catch (error) {
+      this.reject(error)
+    }
+  }
+
   start() {
-    return new Promise<this>((resolve, reject) => {
+    const task = new Promise<this>((resolve, reject) => {
       this.resolve = () => {
         this.status = Bot.Status.GOOD
         resolve(this)
       }
-
       this.reject = (error) => {
         this.status = Bot.Status.BOT_IDLE
         reject(error)
       }
     })
-  }
 
-  get host() {
-    return Adapter.join(this.platform, this.variant)
+    if (this.app.status === App.Status.open) {
+      this.connect()
+    }
+    return task
   }
 
   get sid() {
-    return `${this.host}:${this.selfId}`
+    return `${this.variant}:${this.selfId}`
   }
 
   async getStatus() {
@@ -51,7 +60,7 @@ export abstract class Bot<T extends Bot.BaseConfig = Bot.BaseConfig> {
   }
 
   createSession(session: Partial<Session<never, never, 'send'>>) {
-    return new Session<never, never, 'send'>(this.app, {
+    return new Session<never, never, 'send'>(this, {
       ...session,
       type: 'send',
       selfId: this.selfId,
@@ -89,6 +98,7 @@ export abstract class Bot<T extends Bot.BaseConfig = Bot.BaseConfig> {
 export namespace Bot {
   export interface BaseConfig {
     protocol?: string
+    variant?: string
   }
 
   export type GetConfig<S extends Bot = Bot> = S extends Bot<infer R> ? R : never

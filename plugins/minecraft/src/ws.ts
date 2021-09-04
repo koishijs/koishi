@@ -33,14 +33,13 @@ export default class WebSocketClient extends Adapter.WebSocketClient<MinecraftBo
     bot.resolve()
 
     const common: Partial<Session> = {
-      platform: 'minecraft',
       type: 'message',
       selfId: bot.flayer.username,
     }
 
     bot.flayer.on('chat', (author, content, translate, jsonMsg, matches) => {
       if (author === bot.flayer.username) return
-      this.dispatch(new Session(this.app, {
+      this.dispatch(new Session(bot, {
         ...common,
         content,
         author: { userId: author },
@@ -49,7 +48,7 @@ export default class WebSocketClient extends Adapter.WebSocketClient<MinecraftBo
     })
 
     bot.flayer.on('whisper', (author, content, translate, jsonMsg, matches) => {
-      this.dispatch(new Session(this.app, {
+      this.dispatch(new Session(bot, {
         ...common,
         content,
         author: { userId: author },

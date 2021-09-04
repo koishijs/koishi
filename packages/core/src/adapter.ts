@@ -15,28 +15,19 @@ export abstract class Adapter<S extends Bot = Bot, T = {}> {
   constructor(public app: App, private Bot: Bot.Constructor<S>, public config: T) {
     app.before('connect', async () => {
       await this.start()
-      this.bots.forEach(async (bot) => {
-        try {
-          await this.connect(bot)
-        } catch (error) {
-          bot.reject(error)
-        }
-      })
+      for (const bot of this.bots) {
+        bot.connect()
+      }
     })
 
     app.on('disconnect', () => this.stop())
   }
 
-  create(variant: string, options: Bot.GetConfig<S>, constructor = this.Bot) {
+  create(options: Bot.GetConfig<S>, constructor = this.Bot) {
     const bot: S = new constructor(this, options)
-    bot.variant = variant
     this.bots.push(bot)
     this.app.bots.push(bot)
-    const promise = bot.start()
-    if (this.app.status === App.Status.open) {
-      this.connect(bot)
-    }
-    return promise
+    return bot
   }
 
   dispatch(session: Session) {
@@ -66,13 +57,12 @@ export namespace Adapter {
   const library: Dict<Constructor> = {}
   const configMap: Dict = {}
 
-  export function join(platform: string, variant: string) {
-    return variant ? `${platform}#${variant}` : platform
-  }
-
   export type BotConfig<R> = R & { bots?: R[] }
-  export type VariantConfig<B> = B & { variants?: Dict<B> }
-  export type PluginConfig<S = any, R = any> = S & VariantConfig<BotConfig<R>>
+  export type PluginConfig<S = any, R = any> = S & BotConfig<R>
+
+  function join(platform: string, protocol: string) {
+    return protocol ? `${platform}.${protocol}` : platform
+  }
 
   export function createPlugin<T extends Bot, S>(
     platform: string,
@@ -97,18 +87,14 @@ export namespace Adapter {
 
     function apply(ctx: Context, config: PluginConfig = {}) {
       configMap[platform] = config
-      const variants = config.variants || { '': config }
-      for (const key in variants) {
-        const config = variants[key]
-        const bots = config.bots || [config]
-        for (const options of bots) {
-          const host = join(platform, key)
-          ctx.bots.create(platform, options).then((bot) => {
-            logger.success('logged in to %s as %c (%s)', host, bot.username, bot.selfId)
-          }, (error: Error) => {
-            logger.error(error)
-          })
-        }
+      const bots = config.bots || [config]
+      for (const options of bots) {
+        const bot = ctx.bots.create(platform, options)
+        bot.start().then((bot) => {
+          logger.success('logged in to %s as %c (%s)', bot.variant, bot.username, bot.selfId)
+        }, (error: Error) => {
+          logger.error(error)
+        })
       }
     }
 
@@ -126,10 +112,9 @@ export namespace Adapter {
       return this.find(bot => bot.sid === sid)
     }
 
-    create(host: string, options: Bot.BaseConfig) {
-      const [platform, variant] = host.split('#')
+    create(platform: string, options: Bot.BaseConfig) {
       const adapter = this.resolve(platform, options)
-      return adapter.create(variant, options)
+      return adapter.create(options)
     }
 
     remove(sid: string) {
@@ -139,8 +124,8 @@ export namespace Adapter {
       return true
     }
 
-    private resolve(platform: string, bot: Bot.BaseConfig): Adapter {
-      const type = join(platform, bot.protocol)
+    private resolve(platform: string, config: Bot.BaseConfig): Adapter {
+      const type = join(platform, config.protocol)
       if (this.adapters[type]) return this.adapters[type]
 
       const constructor = library[type]
@@ -149,8 +134,8 @@ export namespace Adapter {
       }
 
       if (constructor[redirect]) {
-        bot.protocol = constructor[redirect](bot)
-        return this.resolve(platform, bot)
+        config.protocol = constructor[redirect](config)
+        return this.resolve(platform, config)
       }
 
       const adapter = new constructor(this.app, configMap[platform])

@@ -65,7 +65,6 @@ export const adaptChannel = (group: OneBot.GroupInfo): Bot.Channel => ({
 
 export function adaptSession(data: any) {
   const session = camelCase<Session>(data)
-  session.platform = 'onebot'
   session.selfId = '' + session.selfId
   renameProperty(session, 'type', 'postType')
   renameProperty(session, 'subtype', 'subType')

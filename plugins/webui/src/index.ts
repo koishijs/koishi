@@ -109,12 +109,12 @@ export function apply(ctx: Context, config: Config = {}) {
     .action(async ({ session, options }) => {
       const status = await getStatus()
       if (!options.all) {
-        status.bots = status.bots.filter(bot => bot.platform === session.platform)
+        status.bots = status.bots.filter(bot => bot.variant === session.variant)
       }
       status.bots.toString = () => {
         return status.bots.map(bot => {
           let output = template('status.bot', bot)
-          if (options.all) output = `[${bot.platform}] ` + output
+          if (options.all) output = `[${bot.variant}] ` + output
           return output
         }).join('\n')
       }

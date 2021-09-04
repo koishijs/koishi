@@ -123,10 +123,10 @@ class MysqlDatabase extends Database {
     const unique = [...table.unique]
     const keys = this.columns[name] || []
 
-    // create platform rows
+    // create variant rows
     if (name === 'user') {
-      const platforms = new Set<string>(this.app.bots.map(bot => bot.platform))
-      for (const name of platforms) {
+      const variants = new Set<string>(this.app.bots.map(bot => bot.variant))
+      for (const name of variants) {
         fields[name] = { type: 'string', length: 63 }
         unique.push(name)
       }

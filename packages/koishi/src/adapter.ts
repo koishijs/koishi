@@ -42,7 +42,7 @@ export namespace InjectedAdapter {
       let _retryCount = 0
       const { retryTimes, retryInterval, retryLazy } = this.config
 
-      const connect = async (resolve: () => void, reject: (reason: Error) => void) => {
+      const reconnect = async () => {
         logger.debug('websocket client opening')
         bot.status = Bot.Status.CONNECTING
         const socket = await this.prepare(bot)
@@ -63,14 +63,14 @@ export namespace InjectedAdapter {
             if (this.app.status === App.Status.open) {
               timeout = retryLazy
             } else {
-              return reject(new Error(message))
+              return bot.reject(new Error(message))
             }
           }
 
           _retryCount++
           logger.warn(`${message}, will retry in ${Time.formatTimeShort(timeout)}...`)
           setTimeout(() => {
-            if (this.app.isActive()) connect(resolve, reject)
+            if (this.app.isActive()) reconnect()
           }, timeout)
         })
 
@@ -78,11 +78,11 @@ export namespace InjectedAdapter {
           _retryCount = 0
           bot.socket = socket
           logger.info('connect to ws server:', url)
-          this.connect(bot)
+          this.accept(bot)
         })
       }
 
-      connect(bot.resolve, bot.reject)
+      reconnect()
     }
 
     start() {}

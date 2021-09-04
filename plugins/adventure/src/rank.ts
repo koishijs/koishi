@@ -99,11 +99,11 @@ namespace Rank {
       } catch (error) {
         return '无法获得群成员列表。'
       }
-      conditionals.push(`\`${session.platform}\` IN (${members.map(m => m.userId).join(', ')})`)
+      conditionals.push(`\`${session.variant}\` IN (${members.map(m => m.userId).join(', ')})`)
       const users = await db.query<ExtendedUser[]>(prefix + ` WHERE ` + conditionals.join(' AND ') + postfix)
       data = users.map((user) => {
         if (user.name !== String(user.id)) return { ...user, name: user.name }
-        const member = members.find(m => m.userId === user[session.platform])
+        const member = members.find(m => m.userId === user[session.variant])
         return { ...user, name: member.nickname || member.username }
       })
     }

@@ -91,8 +91,9 @@ export class Session<
   type?: X
   subtype?: Y
   subsubtype?: InnerKeys<UnionToIntersection<Session.Events[X]>, Y>
-  platform?: string
-  variant?: string
+
+  bot: Bot
+  app: App
 
   selfId?: string
   operatorId?: string
@@ -100,9 +101,9 @@ export class Session<
   duration?: number
   file?: FileInfo
 
-  readonly app: App
-
   id?: string
+  platform?: string
+  variant?: string
   argv?: Argv<U, G>
   user?: User.Observed<U>
   channel?: Channel.Observed<G>
@@ -113,9 +114,12 @@ export class Session<
   private _hooks: (() => void)[]
   private _promise: Promise<string>
 
-  constructor(app: App, session: Partial<Session>) {
+  constructor(bot: Bot, session: Partial<Session>) {
     Object.assign(this, session)
-    defineProperty(this, 'app', app)
+    this.platform = bot.platform
+    this.variant = bot.variant
+    defineProperty(this, 'app', bot.app)
+    defineProperty(this, 'bot', bot)
     defineProperty(this, 'user', null)
     defineProperty(this, 'channel', null)
     defineProperty(this, 'id', Random.id())
@@ -123,28 +127,20 @@ export class Session<
     defineProperty(this, '_hooks', [])
   }
 
-  get host() {
-    return this.variant ? `${this.platform}#${this.variant}` : this.platform
-  }
-
   get uid() {
-    return `${this.host}:${this.userId}`
+    return `${this.variant}:${this.userId}`
   }
 
   get gid() {
-    return `${this.host}:${this.guildId}`
+    return `${this.variant}:${this.guildId}`
   }
 
   get cid() {
-    return `${this.host}:${this.channelId}`
+    return `${this.variant}:${this.channelId}`
   }
 
   get sid() {
-    return `${this.host}:${this.selfId}`
-  }
-
-  get bot() {
-    return this.app.bots.get(this.sid)
+    return `${this.variant}:${this.selfId}`
   }
 
   toJSON(): Partial<Session> {
@@ -217,15 +213,15 @@ export class Session<
   }
 
   async getChannel<K extends Channel.Field = never>(id = this.channelId, assignee = '', fields: K[] = []) {
-    const channel = await this.database.getChannel(this.platform, id, fields)
+    const channel = await this.database.getChannel(this.variant, id, fields)
     if (channel) return channel
-    return this.database.createChannel(this.platform, id, { assignee })
+    return this.database.createChannel(this.variant, id, { assignee })
   }
 
   /** 在当前会话上绑定一个可观测频道实例 */
   async observeChannel<T extends Channel.Field = never>(fields: Iterable<T> = []): Promise<Channel.Observed<T | G>> {
     const fieldSet = new Set<Channel.Field>(fields)
-    const { platform, channelId, channel } = this
+    const { variant, channelId, channel } = this
 
     // 对于已经绑定可观测频道的，判断字段是否需要自动补充
     if (channel) {
@@ -249,15 +245,15 @@ export class Session<
     // 绑定一个新的可观测频道实例
     const assignee = this.resolveValue(this.app.options.autoAssign) ? this.selfId : ''
     const data = await this.getChannel(channelId, assignee, fieldArray)
-    const newChannel = observe(data, diff => this.database.setChannel(platform, channelId, diff), `channel ${this.cid}`)
+    const newChannel = observe(data, diff => this.database.setChannel(variant, channelId, diff), `channel ${this.cid}`)
     await this.app.cache?.set('channel', this.cid, newChannel)
     return this.channel = newChannel
   }
 
   async getUser<K extends User.Field = never>(id = this.userId, authority = 0, fields: K[] = []) {
-    const user = await this.database.getUser(this.platform, id, fields)
+    const user = await this.database.getUser(this.variant, id, fields)
     if (user) return user
-    return this.database.createUser(this.host, id, { authority })
+    return this.database.createUser(this.variant, id, { authority })
   }
 
   /** 在当前会话上绑定一个可观测用户实例 */
@@ -282,7 +278,7 @@ export class Session<
     // 确保匿名消息不会写回数据库
     if (this.author?.anonymous) {
       const fallback = Tables.create('user')
-      fallback[this.host] = this.userId
+      fallback[this.variant] = this.userId
       fallback.authority = this.resolveValue(this.app.options.autoAuthorize)
       const user = observe(fallback, () => Promise.resolve())
       return this.user = user
@@ -296,7 +292,7 @@ export class Session<
 
     // 绑定一个新的可观测用户实例
     const data = await this.getUser(userId, this.resolveValue(this.app.options.autoAuthorize), fieldArray)
-    const newUser = observe(data, diff => this.database.setUser(this.platform, userId, diff), `user ${this.uid}`)
+    const newUser = observe(data, diff => this.database.setUser(this.variant, userId, diff), `user ${this.uid}`)
     await this.app.cache?.set('user', this.uid, newUser)
     return this.user = newUser
   }
@@ -310,8 +306,8 @@ export class Session<
         }
       }
       if (!this.resolve(argv)) return
-      collectFields(argv, Command[`_${key}Fields`], fields)
-      collectFields(argv, argv.command[`_${key}Fields`], fields)
+      collectFields(argv, Command[`_${key}Fields`] as any, fields)
+      collectFields(argv, argv.command[`_${key}Fields`] as any, fields)
     }
     collect(argv)
     return fields

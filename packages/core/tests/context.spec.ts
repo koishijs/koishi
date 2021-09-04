@@ -5,8 +5,8 @@ import { inspect } from 'util'
 import jest from 'jest-mock'
 
 const app = new App()
-const guildSession = new Session(app, { userId: '123', guildId: '456', subtype: 'group' })
-const privateSession = new Session(app, { userId: '123', subtype: 'private' })
+const guildSession = new Session(app.bots[0], { userId: '123', guildId: '456', subtype: 'group' })
+const privateSession = new Session(app.bots[0], { userId: '123', subtype: 'private' })
 
 describe('Context API', () => {
   describe('Composition API', () => {

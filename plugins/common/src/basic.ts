@@ -1,5 +1,5 @@
 import { Context, Channel, Session, noop, sleep, segment, template, makeArray, Dict, Time } from 'koishi'
-import { parseHost } from './utils'
+import { parseVariant } from './utils'
 
 template.set('common', {
   'expect-text': '请输入要发送的文本。',
@@ -27,11 +27,11 @@ export function broadcast(ctx: Context) {
 
       const fields: ('id' | 'flag')[] = ['id']
       if (!options.forced) fields.push('flag')
-      let groups = await ctx.database.getAssignedChannels(fields, { [session.platform]: [session.selfId] })
+      let channels = await ctx.database.getAssignedChannels(fields, { [session.variant]: [session.selfId] })
       if (!options.forced) {
-        groups = groups.filter(g => !(g.flag & Channel.Flag.silent))
+        channels = channels.filter(g => !(g.flag & Channel.Flag.silent))
       }
-      await session.bot.broadcast(groups.map(g => g.id.slice(session.platform['length'] + 1)), message)
+      await session.bot.broadcast(channels.map(channel => channel.id), message)
     })
 }
 
@@ -58,14 +58,14 @@ export function contextify(ctx: Context) {
         return template('common.expect-context')
       }
 
-      const sess = new Session(ctx.app, session)
+      const sess = new Session(session.bot, session)
       sess.send = session.send.bind(session)
       sess.sendQueued = session.sendQueued.bind(session)
 
       if (!options.channel) {
         sess.subtype = 'private'
       } else if (options.channel !== session.cid) {
-        sess.channelId = parseHost(options.channel)[1]
+        sess.channelId = parseVariant(options.channel)[1]
         sess.subtype = 'group'
         await sess.observeChannel()
       } else {
@@ -73,7 +73,7 @@ export function contextify(ctx: Context) {
       }
 
       if (options.user && options.user !== session.uid) {
-        sess.userId = sess.author.userId = parseHost(options.user)[1]
+        sess.userId = sess.author.userId = parseVariant(options.user)[1]
         const user = await sess.observeUser(['authority'])
         if (session.user.authority <= user.authority) {
           return template('internal.low-authority')
@@ -116,8 +116,8 @@ export function echo(ctx: Context) {
 
       const target = options.user || options.channel
       if (target) {
-        const [host, id] = parseHost(target)
-        const bot = ctx.bots.find(bot => bot.host === host)
+        const [variant, id] = parseVariant(target)
+        const bot = ctx.bots.find(bot => bot.variant === variant)
         if (!bot) {
           return template('common.platform-not-found')
         } else if (options.user) {
@@ -147,8 +147,8 @@ export function feedback(ctx: Context, operators: string[]) {
       const data: FeedbackData = [session.sid, session.channelId, session.guildId]
       for (let index = 0; index < operators.length; ++index) {
         if (index && delay) await sleep(delay)
-        const [host, userId] = parseHost(operators[index])
-        const bot = ctx.bots.find(bot => bot.host === host)
+        const [variant, userId] = parseVariant(operators[index])
+        const bot = ctx.bots.find(bot => bot.variant === variant)
         await bot
           .sendPrivateMessage(userId, message)
           .then(id => feedbacks[id] = data, noop)
@@ -210,8 +210,8 @@ export function relay(ctx: Context, relays: RelayOptions[]) {
   const relayMap: Dict<RelayOptions> = {}
 
   async function sendRelay(session: Session, { destination, selfId, lifespan = Time.hour }: RelayOptions) {
-    const [host, channelId] = parseHost(destination)
-    const bot = ctx.bots.get(`${host}:${selfId}`)
+    const [variant, channelId] = parseVariant(destination)
+    const bot = ctx.bots.get(`${variant}:${selfId}`)
     if (!session.parsed.content) return
     const content = template('common.relay', session.username, session.parsed.content)
     const id = await bot.sendMessage(channelId, content, 'unknown')

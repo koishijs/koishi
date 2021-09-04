@@ -139,7 +139,6 @@ function prepareReactionSession(session: Partial<Session>, data: any) {
 export async function adaptSession(bot: DiscordBot, input: DC.Payload) {
   const session: Partial<Session> = {
     selfId: bot.selfId,
-    platform: 'discord',
   }
   if (input.t === 'MESSAGE_CREATE') {
     session.type = 'message'
@@ -179,5 +178,5 @@ export async function adaptSession(bot: DiscordBot, input: DC.Payload) {
   } else {
     return
   }
-  return new Session(bot.app, session)
+  return new Session(bot, session)
 }

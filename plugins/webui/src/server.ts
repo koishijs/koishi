@@ -66,6 +66,7 @@ export class WebServer extends Adapter {
   readonly entries: Dict<string> = {}
   readonly handles: Dict<SocketHandle> = {}
   readonly states: Dict<[string, number, SocketHandle]> = {}
+  readonly platform = 'web'
 
   private vite: Vite.ViteDevServer
   private readonly server: WebSocket.Server
@@ -142,6 +143,8 @@ export class WebServer extends Adapter {
   addListener(event: string, listener: WebServer.Listener) {
     WebServer.listeners[event] = listener
   }
+
+  connect() {}
 
   async start() {
     if (this.config.devMode) await this.createVite()
@@ -269,10 +272,10 @@ export namespace WebServer {
     await this.validate(id, token)
   }
 
-  listeners.token = async function ({ platform, userId }) {
-    const user = await this.app.database.getUser(platform, userId, ['name'])
+  listeners.token = async function ({ variant, userId }) {
+    const user = await this.app.database.getUser(variant, userId, ['name'])
     if (!user) return this.send('login', { message: '找不到此账户。' })
-    const id = `${platform}:${userId}`
+    const id = `${variant}:${userId}`
     const token = v4()
     const expire = Date.now() + TOKEN_TIMEOUT
     const { states } = this.app.webui

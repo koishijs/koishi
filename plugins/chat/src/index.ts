@@ -85,41 +85,38 @@ export function apply(ctx: Context, options: Config = {}) {
     ctx.webui.global.maxMessages = options.maxMessages
     ctx.webui.addEntry(resolve(__dirname, filename))
 
-    ctx.webui.addListener('chat', async function ({ id, token, content, platform, selfId, channelId, guildId }) {
-      const user = await this.validate(id, token, ['name', 'authority'])
-      if (!user) return
-      if (user.authority < 4) return this.send('unauthorized')
-      content = await ctx.transformAssets(content)
-      ctx.bots.get(`${platform}:${selfId}`)?.sendMessage(channelId, content, guildId)
-    })
-
     ctx.on('connect', async () => {
       // create bot after connection
       // to prevent mysql from altering user table
-      const sandbox = await ctx.webui.create('', {}, SandboxBot)
+      const sandbox = ctx.webui.create({ variant: 'id' }, SandboxBot)
       webui.Profile.initBot(sandbox)
-    })
 
-    ctx.webui.addListener('sandbox', async function ({ id, token, content }) {
-      const user = await this.validate(id, token, ['name'])
-      if (!user) return
-      content = await ctx.transformAssets(content)
-      this.send('sandbox:user', content)
-      const session = new Session(ctx.app, {
-        platform: 'webui',
-        userId: id,
-        content,
-        channelId: this.id,
-        selfId: 'sandbox',
-        type: 'message',
-        subtype: 'private',
-        author: {
-          userId: 'id',
-          username: user.name,
-        },
+      ctx.webui.addListener('chat', async function ({ id, token, content, variant, selfId, channelId, guildId }) {
+        const user = await this.validate(id, token, ['name', 'authority'])
+        if (!user) return
+        if (user.authority < 4) return this.send('unauthorized')
+        content = await ctx.transformAssets(content)
+        ctx.bots.get(`${variant}:${selfId}`)?.sendMessage(channelId, content, guildId)
       })
-      session.platform = 'id' as never
-      ctx.webui.dispatch(session)
+
+      ctx.webui.addListener('sandbox', async function ({ id, token, content }) {
+        const user = await this.validate(id, token, ['name'])
+        if (!user) return
+        content = await ctx.transformAssets(content)
+        this.send('sandbox:user', content)
+        ctx.webui.dispatch(new Session(sandbox, {
+          userId: id,
+          content,
+          channelId: this.id,
+          selfId: 'sandbox',
+          type: 'message',
+          subtype: 'private',
+          author: {
+            userId: 'id',
+            username: user.name,
+          },
+        }))
+      })
     })
 
     ctx.self('sandbox')

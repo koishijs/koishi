@@ -42,8 +42,8 @@ function loadConfig() {
 
 const oldPaths = Loader.internal.paths
 Loader.internal.paths = function (name: string) {
-  if (isAbsolute(name)) {
-    // absolute or relative path
+  // resolve absolute or relative path
+  if (isAbsolute(name) || name.startsWith('.')) {
     return [resolve(configDir, name)]
   }
   return oldPaths(name)
@@ -141,7 +141,7 @@ exitCommand && app
     process.exit(114)
   })
 
-const selectors = ['user', 'group', 'channel', 'self', 'private', 'platform'] as const
+const selectors = ['user', 'group', 'channel', 'self', 'private', 'platform', 'variant'] as const
 
 type SelectorType = typeof selectors[number]
 type SelectorValue = boolean | string | number | (string | number)[]

@@ -37,17 +37,17 @@ interface CommandMap extends Map<string, Command> {
 }
 
 export class App extends Context {
-  public app = this
-  public options: AppOptions
-  public status = App.Status.closed
-  public registry = new Plugin.Registry()
-  public bots = new Adapter.Manager(this)
-
   _commandList: Command[] = []
   _commands: CommandMap = new Map<string, Command>() as never
   _shortcuts: Command.Shortcut[] = []
   _hooks: Record<keyof any, [Context, (...args: any[]) => any][]> = {}
   _sessions: Dict<Session> = {}
+
+  public app = this
+  public options: AppOptions
+  public status = App.Status.closed
+  public registry = new Plugin.Registry()
+  public bots = new Adapter.Manager(this)
 
   private _nameRE: RegExp
 

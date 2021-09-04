@@ -495,8 +495,8 @@ export class Context {
     const data = this.database
       ? await this.database.getAssignedChannels(['id', 'assignee', 'flag'])
       : channels.map((id) => {
-        const [host] = id.split(':')
-        const bot = this.bots.find(bot => bot.host === host)
+        const [variant] = id.split(':')
+        const bot = this.bots.find(bot => bot.variant === variant)
         return bot && { id, assignee: bot.selfId, flag: 0 }
       }).filter(Boolean)
 

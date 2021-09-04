@@ -85,7 +85,6 @@ export function adaptSession(bot: KaiheilaBot, input: any) {
   const data = camelCase<KHL.Data>(input)
   const session: Partial<Session> = {
     selfId: bot.selfId,
-    platform: 'kaiheila',
   }
   if (data.type === KHL.Type.system) {
     const { type, body } = data.extra as KHL.Notice
@@ -118,5 +117,5 @@ export function adaptSession(bot: KaiheilaBot, input: any) {
     if (!session.content) return
     if (session.userId === bot.selfId) return
   }
-  return new Session(bot.app, session)
+  return new Session(bot, session)
 }
