@@ -83,7 +83,7 @@ Koishi 的命令行工具支持自动重启。当运行 Koishi 的进程崩溃�
   ['Koishi', '重启完成。'],
 ]"/>
 
-### 模块热替换 <Badge text="beta" type="warn"/>
+### 模块热替换 <Badge text="beta" type="warning"/>
 
 如果你开发着一个巨大的 Koishi 项目，可能光是加载一遍全部插件就需要好几秒了。在这种时候，像前端框架一样支持模块热替换就成了一个很棒的主意。Koishi 也做到了！在启动脚本后加上 `--watch`，就可以实现插件级别的热替换了。每当你修改你的本地文件时，Koishi 就会尝试重载你的插件，并在控制台提醒你。
 
@@ -126,3 +126,30 @@ yarn koishi start -- -- -r ts-node/register
 :::
 
 这样你就可以直接使用 koishi.config.ts，或在 koishi.config.js 中引用 ts 文件作为插件了。
+
+### 使用 CoffeeScript
+
+Koishi 也支持直接调用 CoffeeScript 编写的插件。首先安装 CoffeeScript：
+
+::: code-group manager
+```npm
+npm i coffeescript -D
+```
+```yarn
+yarn add coffeescript -D
+```
+:::
+
+接着在你的命令行之后加上一段额外的参数：
+
+::: code-group manager
+```npm
+npx koishi start -- -r coffeescript/register
+```
+```yarn
+# 因为 yarn 自己会吞掉 -- 所以需要额外写一个
+yarn koishi start -- -- -r coffeescript/register
+```
+:::
+
+这样你就可以直接使用 koishi.config.coffee，或在 koishi.config.js 中引用 coffee 文件作为插件了。

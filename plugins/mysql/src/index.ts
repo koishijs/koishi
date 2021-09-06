@@ -121,10 +121,10 @@ function parseQuery(query: Query.Expr) {
       conditions.push(`!(${parseQuery(query.$not)})`)
       continue
     } else if (key === '$and') {
-      if (!query.$and.length) return '0'
       conditions.push(...query.$and.map(parseQuery))
       continue
-    } else if (key === '$or' && query.$or.length) {
+    } else if (key === '$or') {
+      if (!query.$or.length) return '0'
       conditions.push(`(${query.$or.map(parseQuery).join(' || ')})`)
       continue
     } else if (key === '$expr') {
@@ -223,18 +223,21 @@ Database.extend(MysqlDatabase, {
 
   async upsert(name, data, keys: string | string[]) {
     if (!data.length) return
-    data = data.map(item => ({ ...Koishi.Tables.create(name), ...item }))
-    keys = makeArray(keys || Koishi.Tables.config[name].primary)
-    const fields = Object.keys(data[0])
-    const placeholder = `(${fields.map(() => '?').join(', ')})`
-    const update = difference(fields, keys).map((key) => {
+    const { fields, primary } = Koishi.Tables.config[name]
+    const fallback = Koishi.Tables.create(name)
+    const initKeys = Object.keys(fields)
+    const updateKeys = Object.keys(data[0])
+    data = data.map(item => ({ ...fallback, ...item }))
+    keys = makeArray(keys || primary)
+    const placeholder = `(${initKeys.map(() => '?').join(', ')})`
+    const update = difference(updateKeys, keys).map((key) => {
       key = escapeId(key)
       return `${key} = VALUES(${key})`
     }).join(', ')
     await this.query(
-      `INSERT INTO ${escapeId(name)} (${this.joinKeys(fields)}) VALUES ${data.map(() => placeholder).join(', ')}
+      `INSERT INTO ${escapeId(name)} (${this.joinKeys(initKeys)}) VALUES ${data.map(() => placeholder).join(', ')}
       ON DUPLICATE KEY UPDATE ${update}`,
-      [].concat(...data.map(data => this.formatValues(name, data, fields))),
+      [].concat(...data.map(data => this.formatValues(name, data, initKeys))),
     )
   },
 

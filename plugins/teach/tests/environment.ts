@@ -37,7 +37,13 @@ export default function (config: Dialogue.Config) {
     await app.initChannel(g2id)
   }
 
-  before(start)
+  async function stop() {
+    await app.database.drop()
+    await app.stop()
+  }
 
-  return { app, u2, u3, u4, u2g1, u2g2, u3g1, u3g2, u4g1, u4g2, start }
+  before(start)
+  after(stop)
+
+  return { app, u2, u3, u4, u2g1, u2g2, u3g1, u3g2, u4g1, u4g2, start, stop }
 }
