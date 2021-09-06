@@ -217,18 +217,21 @@ Database.extend(MysqlDatabase, {
 
   async update(name, data, key: string) {
     if (!data.length) return
-    key ||= Koishi.Tables.config[name].primary
-    data = data.map(item => ({ ...Koishi.Tables.create(name), ...item }))
-    const fields = Object.keys(data[0])
-    const placeholder = `(${fields.map(() => '?').join(', ')})`
-    const update = difference(fields, [key]).map((key) => {
+    const { fields, primary } = Koishi.Tables.config[name]
+    const updateFields = Object.keys(data[0])
+    const fallback = Koishi.Tables.create(name)
+    const keys = Object.keys(fields)
+    key ||= primary
+    data = data.map(item => ({ ...fallback, ...item }))
+    const placeholder = `(${keys.map(() => '?').join(', ')})`
+    const update = difference(updateFields, [key]).map((key) => {
       key = escapeId(key)
       return `${key} = VALUES(${key})`
     }).join(', ')
     await this.query(
-      `INSERT INTO ${escapeId(name)} (${this.joinKeys(fields)}) VALUES ${data.map(() => placeholder).join(', ')}
+      `INSERT INTO ${escapeId(name)} (${this.joinKeys(keys)}) VALUES ${data.map(() => placeholder).join(', ')}
       ON DUPLICATE KEY UPDATE ${update}`,
-      [].concat(...data.map(data => this.formatValues(name, data, fields))),
+      [].concat(...data.map(data => this.formatValues(name, data, keys))),
     )
   },
 
