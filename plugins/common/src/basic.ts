@@ -212,8 +212,9 @@ export function relay(ctx: Context, relays: RelayOptions[]) {
   async function sendRelay(session: Session, { destination, selfId, lifespan = Time.hour }: RelayOptions) {
     const [platform, channelId] = parsePlatform(destination)
     const bot = ctx.bots.get(`${platform}:${selfId}`)
-    if (!session.parsed.content) return
-    const content = template('common.relay', session.username, session.parsed.content)
+    const { author, parsed } = session
+    if (!parsed.content) return
+    const content = template('common.relay', author.nickname || author.username, parsed.content)
     const id = await bot.sendMessage(channelId, content, 'unknown')
     relayMap[id] = { source: destination, destination: session.cid, selfId: session.selfId, lifespan }
     setTimeout(() => delete relayMap[id], lifespan)
