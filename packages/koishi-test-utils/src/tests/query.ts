@@ -219,7 +219,7 @@ namespace QueryOperators {
       await db.create('foo', { id: 3, value: 9 })
     })
 
-    it('should verify $add', async () => {
+    it('arithmetic operators', async () => {
       await expect(db.get('foo', {
         $expr: { $eq: [9, { $add: ['id', 'value'] }] },
       })).eventually.to.have.length(2).with.shape([{ id: 1 }, { id: 2 }])
@@ -234,6 +234,15 @@ namespace QueryOperators {
       await db.create('foo', { id: 1, text: 'awesome foo', value: 3, list: [], date: new Date('2000-01-01') })
       await db.create('foo', { id: 2, text: 'awesome bar', value: 4, list: [1] })
       await db.create('foo', { id: 3, text: 'awesome foo bar', value: 7, list: [100] })
+    })
+
+    it('edge cases', async () => {
+      await expect(db.get('foo', {})).eventually.to.have.length(3)
+      await expect(db.get('foo', { $and: [] })).eventually.to.have.length(3)
+      await expect(db.get('foo', { $or: [] })).eventually.to.have.length(0)
+      await expect(db.get('foo', { $not: {} })).eventually.to.have.length(0)
+      await expect(db.get('foo', { $not: { $and: [] } })).eventually.to.have.length(0)
+      await expect(db.get('foo', { $not: { $or: [] } })).eventually.to.have.length(3)
     })
 
     it('should verify `$or`, `$and` and `$not`', async () => {

@@ -124,10 +124,11 @@ function parseQuery(query: Query.Expr) {
       conditions.push(`!(${parseQuery(query.$not)})`)
       continue
     } else if (key === '$and') {
-      if (!query.$and.length) return '0'
+      if (!query.$and.length) return '1'
       conditions.push(...query.$and.map(parseQuery))
       continue
-    } else if (key === '$or' && query.$or.length) {
+    } else if (key === '$or') {
+      if (!query.$or.length) return '0'
       conditions.push(`(${query.$or.map(parseQuery).join(' || ')})`)
       continue
     } else if (key === '$expr') {
