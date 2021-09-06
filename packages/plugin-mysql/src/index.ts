@@ -124,7 +124,6 @@ function parseQuery(query: Query.Expr) {
       conditions.push(`!(${parseQuery(query.$not)})`)
       continue
     } else if (key === '$and') {
-      if (!query.$and.length) return '1'
       conditions.push(...query.$and.map(parseQuery))
       continue
     } else if (key === '$or') {
