@@ -191,7 +191,7 @@ export function apply(ctx: Context, config: Config = {}) {
           const viewport = options.viewport.split('x')
           const width = +viewport[0]
           const height = +viewport[1]
-          if (width !== defaultViewport.width || height !== defaultViewport.height) {
+          if (width !== defaultViewport?.width || height !== defaultViewport?.height) {
             await page.setViewport({ width, height })
           }
         }
