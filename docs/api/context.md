@@ -262,7 +262,7 @@ type Plugin<U> = PluginFunction<T, U> | PluginObject<T, U>
 
 特殊的键值，可以在通用上下文属性对象的方法上访问。参见 [声明通用上下文属性](../guide/context.md#声明通用上下文属性)。
 
-### Context.delegate(name) <Badge text="beta" type="warn"/>
+### Context.delegate(name) <Badge text="beta" type="warning"/>
 
 - **name:** `string` 属性名称
 

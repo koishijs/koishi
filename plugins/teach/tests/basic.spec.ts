@@ -1,4 +1,5 @@
 import { Random } from 'koishi'
+import { TestSession } from '@koishijs/test-utils'
 import { install, InstalledClock } from '@sinonjs/fake-timers'
 import createEnvironment from './environment'
 import jest from 'jest-mock'
@@ -126,16 +127,23 @@ describe('Teach Plugin - Appellative', () => {
 })
 
 describe('Teach Plugin - Interpolate', () => {
-  const { u3g1, app } = createEnvironment({})
+  function createTest(title: string, callback: (u3g1: TestSession) => Promise<void>) {
+    it(title, async () => {
+      const { app, u3g1, start, stop } = createEnvironment({})
+      app.command('bar').action(() => 'hello')
+      app.command('baz').action(({ session }) => session.sendQueued('hello'))
+      app.command('report [text]').action(async ({ session }, text) => {
+        await session.sendQueued(text)
+        await session.sendQueued('end')
+      })
 
-  app.command('bar').action(() => 'hello')
-  app.command('baz').action(({ session }) => session.sendQueued('hello'))
-  app.command('report [text]').action(async ({ session }, text) => {
-    await session.sendQueued(text)
-    await session.sendQueued('end')
-  })
+      await start()
+      await callback(u3g1)
+      await stop()
+    })
+  }
 
-  it('basic support', async () => {
+  createTest('basic support', async (u3g1) => {
     await u3g1.shouldReply('# foo $(bar)', '问答已添加，编号为 1。')
     await u3g1.shouldReply('foo', ['hello'])
     await u3g1.shouldReply('#1 ~ 1$(bar)2', '问答 1 已成功修改。')
@@ -146,10 +154,9 @@ describe('Teach Plugin - Interpolate', () => {
     await u3g1.shouldReply('foo', ['12'])
     await u3g1.shouldReply('#1 ~ $(barrr)', '问答 1 已成功修改。')
     await u3g1.shouldNotReply('foo')
-    await u3g1.shouldReply('#1 -r', '问答 1 已成功删除。')
   })
 
-  it('queued messages', async () => {
+  createTest('queued messages', async (u3g1) => {
     await u3g1.shouldReply('# foo $(baz)', '问答已添加，编号为 1。')
     await u3g1.shouldReply('foo', ['hello'])
     await u3g1.shouldReply('#1 ~ 1$(baz)2', '问答 1 已成功修改。')
@@ -162,15 +169,13 @@ describe('Teach Plugin - Interpolate', () => {
     await u3g1.shouldReply('foo', ['1', 'hello', '2'])
     await u3g1.shouldReply('#1 ~ 1$n$(baz)$n2', '问答 1 已成功修改。')
     await u3g1.shouldReply('foo', ['1', 'hello', '2'])
-    await u3g1.shouldReply('#1 -r', '问答 1 已成功删除。')
   })
 
-  it('capturing groups', async () => {
+  createTest('capturing groups', async (u3g1) => {
     await u3g1.shouldReply('# ^foo(.*) $(report $1) -x', '问答已添加，编号为 1。')
     await u3g1.shouldReply('foobar', ['bar', 'end'])
     await u3g1.shouldReply('foo', ['end'])
     await u3g1.shouldReply('#1 ~ foo$0', '问答 1 已成功修改。')
     await u3g1.shouldReply('foobar', ['foofoobar'])
-    await u3g1.shouldReply('#1 -r', '问答 1 已成功删除。')
   })
 })

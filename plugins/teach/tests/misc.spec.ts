@@ -73,7 +73,7 @@ describe('Teach Plugin - Miscellaneous', () => {
     new App().plugin(teach, { preventLoop: 10 })
 
     it('throttle', async () => {
-      const { u2g1, u3g1, u4g1, u4g2, start } = createEnvironment({
+      const { u2g1, u3g1, u4g1, u4g2, start, stop } = createEnvironment({
         throttle: { interval: 1000, responses: 2 },
       })
 
@@ -84,10 +84,11 @@ describe('Teach Plugin - Miscellaneous', () => {
       await u3g1.shouldReply('foo', 'bar')
       await u4g1.shouldNotReply('foo')
       await u4g2.shouldReply('foo', 'bar')
+      await stop()
     })
 
     it('preventLoop', async () => {
-      const { u2g1, u3g1, u4g1, start } = createEnvironment({
+      const { u2g1, u3g1, u4g1, start, stop } = createEnvironment({
         preventLoop: { length: 5, participants: 2 },
       })
 
@@ -102,6 +103,7 @@ describe('Teach Plugin - Miscellaneous', () => {
       await u2g1.shouldNotReply('foo')
       await u3g1.shouldNotReply('foo')
       await u4g1.shouldReply('foo', 'bar')
+      await stop()
     })
   })
 })

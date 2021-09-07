@@ -4,7 +4,6 @@ import { Session } from './session'
 import { User, Channel, Database, Assets, Cache, Loader } from './database'
 import { Argv } from './parser'
 import { App } from './app'
-import { Adapter } from './adapter'
 
 export type NextFunction = (next?: NextFunction) => Promise<void>
 export type Middleware = (session: Session, next: NextFunction) => any
@@ -85,6 +84,10 @@ export class Context {
 
   [Symbol.for('nodejs.util.inspect.custom')]() {
     return `Context <${Context.inspect(this._plugin)}>`
+  }
+
+  get bots() {
+    return this.app.manager
   }
 
   private createSelector<K extends keyof Session>(key: K) {
@@ -540,14 +543,12 @@ export class Context {
 Context.delegate('database')
 Context.delegate('assets')
 Context.delegate('cache')
-Context.delegate('bots')
 
 export namespace Context {
   export interface Delegates {
     database: Database
     assets: Assets
     cache: Cache
-    bots: Adapter.Manager
   }
 }
 
