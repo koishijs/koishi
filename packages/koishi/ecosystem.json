@@ -52,7 +52,7 @@
     "description": "Image searching plugin for Koishi"
   },
   "koishi-plugin-mongo": {
-    "version": "2.5.1",
+    "version": "2.5.2",
     "description": "MongoDB support for Koishi"
   },
   "koishi-plugin-mysql": {

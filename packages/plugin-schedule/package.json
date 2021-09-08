@@ -29,8 +29,6 @@
     "task"
   ],
   "devDependencies": {
-    "koishi-plugin-mongo": "^2.5.1",
-    "koishi-plugin-mysql": "^3.6.2",
     "koishi-test-utils": "^7.0.2"
   },
   "peerDependencies": {

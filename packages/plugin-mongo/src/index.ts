@@ -111,10 +111,12 @@ function transformQuery(query: Query.Expr) {
       if (value.length) {
         filter[key] = value.map(transformQuery)
       } else if (key === '$or') {
-        return
+        return { $nor: [{}] }
       }
     } else if (key === '$not') {
-      filter[key] = transformQuery(value)
+      // MongoError: unknown top level operator: $not
+      // https://stackoverflow.com/questions/25270396/mongodb-how-to-invert-query-with-not
+      filter['$nor'] = [transformQuery(value)]
     } else if (key === '$expr') {
       filter[key] = transformEval(value)
     } else {
@@ -125,16 +127,11 @@ function transformQuery(query: Query.Expr) {
 }
 
 function createFilter<T extends TableType>(name: T, _query: Query<T>) {
-  const filter = transformQuery(Query.resolve(name, _query)) || { $not: {} }
+  const filter = transformQuery(Query.resolve(name, _query))
   const { primary } = Tables.config[name]
   if (filter[primary]) {
     filter['$or'] = [{ id: filter[primary] }, { _id: filter[primary] }]
     delete filter[primary]
-  }
-  // https://stackoverflow.com/questions/25270396/mongodb-how-to-invert-query-with-not
-  if (filter['$not']) {
-    filter['$nor'] = [filter['$not']]
-    delete filter['$not']
   }
   return filter
 }

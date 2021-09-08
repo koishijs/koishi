@@ -37,7 +37,7 @@
     "@vue/compiler-sfc": "^3.2.10",
     "echarts": "^5.2.0",
     "echarts-wordcloud": "^2.0.0",
-    "koishi-plugin-mongo": "^2.5.1",
+    "koishi-plugin-mongo": "^2.5.2",
     "koishi-plugin-mysql": "^3.6.2",
     "koishi-test-utils": "^7.0.2",
     "sass": "^1.39.0",
