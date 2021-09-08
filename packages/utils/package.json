@@ -28,7 +28,7 @@
     "utilities"
   ],
   "devDependencies": {
-    "@types/supports-color": "^8.1.0",
+    "@types/supports-color": "^8.1.1",
     "@koishijs/test-utils": "^8.0.0-alpha.3"
   },
   "dependencies": {

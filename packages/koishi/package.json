@@ -29,13 +29,13 @@
     "koishi"
   ],
   "dependencies": {
-    "@koa/router": "^10.0.0",
+    "@koa/router": "^10.1.1",
     "@koishijs/core": "^4.0.0-alpha.4",
     "@koishijs/utils": "^5.0.0-alpha.1",
     "@types/koa": "*",
     "@types/koa__router": "*",
-    "@types/ws": "^7.4.2",
-    "axios": "^0.21.1",
+    "@types/ws": "^7.4.7",
+    "axios": "^0.21.4",
     "koa": "^2.13.1",
     "koa-bodyparser": "^4.3.0"
   }

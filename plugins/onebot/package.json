@@ -30,12 +30,12 @@
     "koishi": "^4.0.0-alpha.4"
   },
   "devDependencies": {
-    "@types/ws": "^7.4.2",
+    "@types/ws": "^7.4.7",
     "@koishijs/test-utils": "^8.0.0-alpha.3"
   },
   "dependencies": {
-    "axios": "^0.21.1",
-    "qface": "1.1.0",
-    "ws": "^7.4.5"
+    "axios": "^0.21.4",
+    "qface": "^1.2.0",
+    "ws": "^8.2.1"
   }
 }
