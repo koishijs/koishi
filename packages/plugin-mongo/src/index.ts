@@ -107,7 +107,12 @@ function transformQuery(query: Query.Expr) {
   for (const key in query) {
     const value = query[key]
     if (key === '$and' || key === '$or') {
-      filter[key] = value.map(transformQuery)
+      // MongoError: $and/$or/$nor must be a nonempty array
+      if (value.length) {
+        filter[key] = value.map(transformQuery)
+      } else if (key === '$or') {
+        return
+      }
     } else if (key === '$not') {
       filter[key] = transformQuery(value)
     } else if (key === '$expr') {
@@ -120,7 +125,7 @@ function transformQuery(query: Query.Expr) {
 }
 
 function createFilter<T extends TableType>(name: T, _query: Query<T>) {
-  const filter = transformQuery(Query.resolve(name, _query))
+  const filter = transformQuery(Query.resolve(name, _query)) || { $not: {} }
   const { primary } = Tables.config[name]
   if (filter[primary]) {
     filter['$or'] = [{ id: filter[primary] }, { _id: filter[primary] }]
