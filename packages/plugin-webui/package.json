@@ -1,7 +1,7 @@
 {
   "name": "koishi-plugin-webui",
   "description": "Create web user interface for Koishi",
-  "version": "4.7.0",
+  "version": "4.7.1",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -29,7 +29,7 @@
     "webui"
   ],
   "peerDependencies": {
-    "koishi-core": "^3.14.1"
+    "koishi-core": "^3.14.2"
   },
   "devDependencies": {
     "@fortawesome/fontawesome-free": "^5.15.4",
@@ -38,8 +38,8 @@
     "echarts": "^5.2.0",
     "echarts-wordcloud": "^2.0.0",
     "koishi-plugin-mongo": "^2.5.1",
-    "koishi-plugin-mysql": "^3.6.1",
-    "koishi-test-utils": "^7.0.1",
+    "koishi-plugin-mysql": "^3.6.2",
+    "koishi-test-utils": "^7.0.2",
     "sass": "^1.39.0",
     "vite": "^2.5.5",
     "vue": "^3.2.10",

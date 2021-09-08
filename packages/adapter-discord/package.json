@@ -28,12 +28,12 @@
     "koishi"
   ],
   "peerDependencies": {
-    "koishi-core": "^3.14.1"
+    "koishi-core": "^3.14.2"
   },
   "devDependencies": {
     "@types/es-aggregate-error": "^1.0.2",
     "@types/ws": "^7.4.7",
-    "koishi-test-utils": "^7.0.1"
+    "koishi-test-utils": "^7.0.2"
   },
   "dependencies": {
     "axios": "^0.21.4",
