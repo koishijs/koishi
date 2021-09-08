@@ -31,7 +31,7 @@
 
 import type { Awesome } from '~/server'
 import { send, user } from '~/client'
-import { defineProps, computed, ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 
 const props = defineProps<{ data: Awesome.PackageData }>()
 
