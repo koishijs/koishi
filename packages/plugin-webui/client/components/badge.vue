@@ -6,8 +6,6 @@
 
 <script lang="ts" setup>
 
-import { defineProps } from 'vue'
-
 defineProps<{ type?: 'warning' }>()
 
 </script>

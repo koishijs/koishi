@@ -30,17 +30,15 @@
   ],
   "devDependencies": {
     "@types/marked": "^2.0.4",
-    "koishi-plugin-mongo": "^2.5.1",
-    "koishi-plugin-mysql": "^3.6.1",
-    "koishi-plugin-puppeteer": "^2.1.6",
-    "koishi-test-utils": "^7.0.1"
+    "koishi-plugin-puppeteer": "^2.1.7",
+    "koishi-test-utils": "^7.0.2"
   },
   "peerDependencies": {
-    "koishi-core": "^3.14.1"
+    "koishi-core": "^3.14.2"
   },
   "dependencies": {
-    "@octokit/webhooks-types": "^4.3.0",
-    "axios": "^0.21.1",
+    "@octokit/webhooks-types": "^4.4.0",
+    "axios": "^0.21.4",
     "marked": "^2.1.3"
   }
 }

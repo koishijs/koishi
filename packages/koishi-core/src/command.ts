@@ -1,4 +1,4 @@
-import { Logger, coerce, Time, template, remove } from 'koishi-utils'
+import { Logger, coerce, Time, template, remove, Awaitable } from 'koishi-utils'
 import { Argv } from './parser'
 import { Context, Disposable, NextFunction } from './context'
 import { User, Channel } from './database'
@@ -48,10 +48,10 @@ export namespace Command {
   }
 
   export type Action<U extends User.Field = never, G extends Channel.Field = never, A extends any[] = any[], O extends {} = {}>
-    = (argv: Argv<U, G, A, O>, ...args: A) => void | string | Promise<void | string>
+    = (argv: Argv<U, G, A, O>, ...args: A) => Awaitable<void | string>
 
   export type Usage<U extends User.Field = never, G extends Channel.Field = never>
-    = string | ((session: Session<U, G>) => string | Promise<string>)
+    = string | ((session: Session<U, G>) => Awaitable<string>)
 }
 
 export class Command<U extends User.Field = never, G extends Channel.Field = never, A extends any[] = any[], O extends {} = {}> extends Argv.CommandBase {

@@ -1,3 +1,4 @@
+import { MaybeArray, Get, Extract } from 'koishi-utils'
 import * as utils from 'koishi-utils'
 import { Platform } from './adapter'
 
@@ -6,9 +7,6 @@ export type TableType = keyof Tables
 // shared types
 type Primitive = string | number
 type Comparable = Primitive | Date
-type MaybeArray<K> = K | K[]
-type Get<T extends {}, K> = K extends keyof T ? T[K] : never
-type Extract<S, T, U = S> = S extends T ? U : never
 
 type Keys<O, T = any> = string & {
   [K in keyof O]: O[K] extends T ? K : never

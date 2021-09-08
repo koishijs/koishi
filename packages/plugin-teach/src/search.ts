@@ -9,7 +9,6 @@ export interface SearchDetails extends Array<string> {
 
 declare module 'koishi-core' {
   interface EventMap {
-    'dialogue/status'(): Promise<string>
     'dialogue/list'(dialogue: Dialogue, output: string[], prefix: string, argv: Dialogue.Argv): void
     'dialogue/detail-short'(dialogue: Dialogue, output: SearchDetails, argv: Dialogue.Argv): void
     'dialogue/before-search'(argv: Dialogue.Argv, test: DialogueTest): void | boolean
@@ -37,11 +36,6 @@ declare module './utils' {
 
 export default function apply(ctx: Context) {
   ctx.command('teach.status').action(async () => {
-    const output = await ctx.parallel('dialogue/status')
-    return output.filter(x => x).join('\n')
-  })
-
-  ctx.on('dialogue/status', async () => {
     const { questions, dialogues } = await Dialogue.stats(ctx)
     return `共收录了 ${questions} 个问题和 ${dialogues} 个回答。`
   })

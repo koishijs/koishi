@@ -316,8 +316,8 @@ export class Session<
         }
       }
       if (!this.resolve(argv)) return
-      collectFields(argv, Command[`_${key}Fields`], fields)
-      collectFields(argv, argv.command[`_${key}Fields`], fields)
+      collectFields(argv, Command[`_${key}Fields`] as any, fields)
+      collectFields(argv, argv.command[`_${key}Fields`] as any, fields)
     }
     collect(argv)
     return fields

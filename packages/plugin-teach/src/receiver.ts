@@ -1,5 +1,5 @@
 import { Context, User, Session, NextFunction, Channel, Argv } from 'koishi-core'
-import { segment, simplify, noop, escapeRegExp, Random, makeArray } from 'koishi-utils'
+import { segment, simplify, noop, escapeRegExp, Random, makeArray, Awaitable } from 'koishi-utils'
 import { Dialogue, DialogueTest } from './utils'
 
 declare module 'koishi-core' {
@@ -13,7 +13,7 @@ declare module 'koishi-core' {
     'dialogue/prepare'(state: SessionState): void
     'dialogue/before-attach-user'(state: SessionState, userFields: Set<User.Field>): void
     'dialogue/attach-user'(state: SessionState): void | boolean
-    'dialogue/before-send'(state: SessionState): void | boolean | Promise<void | boolean>
+    'dialogue/before-send'(state: SessionState): Awaitable<void | boolean>
     'dialogue/send'(state: SessionState): void
   }
 

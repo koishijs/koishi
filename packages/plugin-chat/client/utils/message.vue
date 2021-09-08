@@ -13,7 +13,6 @@
 
 <script lang="ts" setup>
 
-import { defineProps } from 'vue'
 import { segment } from '~/client'
 import KImage from './image.vue'
 
