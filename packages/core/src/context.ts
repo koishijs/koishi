@@ -232,7 +232,7 @@ export class Context {
       children: [],
       disposables: [],
     })
- 
+
     if (typeof plugin === 'function') {
       plugin(ctx, options)
     } else if (plugin && typeof plugin === 'object' && typeof plugin.apply === 'function') {

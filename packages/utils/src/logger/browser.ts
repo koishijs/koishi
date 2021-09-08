@@ -16,7 +16,7 @@ export namespace Logger {
     base: number
     [K: string]: Level
   }
-  
+
   export type Level = number | LevelConfig
   export type Function = (format: any, ...param: any[]) => void
   export type Type = 'success' | 'error' | 'info' | 'warn' | 'debug'

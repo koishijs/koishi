@@ -14,7 +14,7 @@ type UnionToIntersection<U> = (U extends any ? (key: U) => void : never) extends
 type Flatten<T, K extends keyof T = keyof T> = UnionToIntersection<T[K]>
 type InnerKeys<T, K extends keyof T = keyof T> = keyof Flatten<T> & keyof Flatten<T, K>
 
-export interface Session<U, G, X, Y> extends Bot.MessageBase, Partial<Bot.Channel>, Partial<Bot.Guild> {}
+export interface Session extends Bot.MessageBase, Partial<Bot.Channel>, Partial<Bot.Guild> {}
 
 export namespace Session {
   type Genres = 'friend' | 'channel' | 'group' | 'group-member' | 'group-role' | 'group-file' | 'group-emoji'

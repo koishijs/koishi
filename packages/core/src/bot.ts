@@ -3,7 +3,7 @@ import { Adapter } from './adapter'
 import { App } from './app'
 import { Session } from './session'
 
-export interface Bot<T> extends Bot.BaseConfig, Bot.Methods, Bot.UserBase {}
+export interface Bot extends Bot.BaseConfig, Bot.Methods, Bot.UserBase {}
 
 export abstract class Bot<T extends Bot.BaseConfig = Bot.BaseConfig> {
   readonly app: App

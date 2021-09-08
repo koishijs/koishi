@@ -318,7 +318,7 @@ export class App extends Context {
         function escape(source: any) {
           if (typeof source !== 'string') return source
           source = source.replace(/\$\$/g, '@@__PLACEHOLDER__@@')
-          capture.map((segment, index) => {
+          capture.forEach((segment, index) => {
             if (!index || index > 9) return
             source = source.replace(new RegExp(`\\$${index}`, 'g'), (segment || '').replace(/\$/g, '@@__PLACEHOLDER__@@'))
           })

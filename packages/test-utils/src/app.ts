@@ -26,10 +26,6 @@ interface BotConfig extends Bot.BaseConfig {
 class MockedBot extends Bot<BotConfig> {
   status = Bot.Status.GOOD
 
-  constructor(adapter: Adapter, options: BotConfig) {
-    super(adapter, options)
-  }
-
   async getMessage(channelId: string, messageId: string) {
     return {
       messageId,

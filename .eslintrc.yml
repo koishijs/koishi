@@ -5,9 +5,6 @@ parser: '@typescript-eslint/parser'
 settings:
   import/parsers:
     '@typescript-eslint/parser': ['.ts']
-  import/resolver:
-    typescript:
-      alwaysTryTypes: true
 
 env:
   browser: true
@@ -16,6 +13,7 @@ env:
   es2020: true
 
 globals:
+  NodeJS: true
   KOISHI_CONFIG: true
 
 extends:
@@ -26,41 +24,39 @@ plugins:
   - '@typescript-eslint'
 
 rules:
-  array-callback-return: off
   comma-dangle:
-    - warn
+    - error
     - always-multiline
-  curly: warn
+
   dot-notation: off
+
   generator-star-spacing:
-    - warn
+    - error
     - after
+
   max-len:
     - warn
     - 160
-  multiline-ternary: off
-  no-ex-assign: off
+
   no-mixed-operators: off
-  no-unused-expressions: off
   no-use-before-define: off
-  no-useless-escape: off
-  no-redeclare: off
   no-return-assign: off
   no-sequences: off
   one-var: off
   operator-linebreak: off
+
   quotes:
-    - warn
+    - error
     - single
     - avoidEscape: true
       allowTemplateLiterals: true
+
   yield-star-spacing:
-    - warn
+    - error
     - after
-  yoda: off
 
   # node
-  node/no-callback-literal: off
+  # node/no-callback-literal: off
 
   # typescript
   import/export: off
@@ -74,8 +70,13 @@ rules:
   keyword-spacing: off
   '@typescript-eslint/keyword-spacing': error
 
+  # no-useless-escape: offhttps://github.com/typescript-eslint/typescript-eslint/blob/master/packages/eslint-plugin/docs/rules/no-redeclare.md
+  no-redeclare: off
+
   no-unused-vars: off
-  '@typescript-eslint/no-unused-vars': warn
+  '@typescript-eslint/no-unused-vars':
+    - error
+    - args: none
 
   no-dupe-class-members: off
   '@typescript-eslint/no-dupe-class-members': error
@@ -85,6 +86,15 @@ rules:
 
   no-useless-constructor: off
   '@typescript-eslint/no-useless-constructor': warn
+
+  semi: off
+  '@typescript-eslint/semi':
+    - error
+    - never
+  '@typescript-eslint/member-delimiter-style':
+    - error
+    - multiline:
+        delimiter: none
 
   space-before-function-paren: off
   '@typescript-eslint/space-before-function-paren':

@@ -216,7 +216,7 @@ app.start().then(() => {
 
 function loadDependencies(filename: string, ignored: Set<string>) {
   const dependencies = new Set<string>()
-  function traverse({ filename, children }: NodeModule) {
+  function traverse({ filename, children }: NodeJS.Module) {
     if (ignored.has(filename) || dependencies.has(filename) || filename.includes('/node_modules/')) return
     dependencies.add(filename)
     children.forEach(traverse)

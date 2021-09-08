@@ -34,7 +34,8 @@
   ],
   "devDependencies": {
     "@types/chai": "^4.2.21",
-    "@types/chai-as-promised": "^7.1.4"
+    "@types/chai-as-promised": "^7.1.4",
+    "@types/node": "^16.7.13"
   },
   "dependencies": {
     "@koishijs/plugin-database": "^1.0.0-alpha.2",

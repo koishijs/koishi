@@ -1,8 +1,8 @@
 /// <reference types="../../../ui-core/src/global" />
 
 import { defineAsyncComponent } from 'vue'
-import editorWorker from 'monaco-editor/esm/vs/editor/editor.worker?worker'
-import tsWorker from 'monaco-editor/esm/vs/language/typescript/ts.worker?worker'
+import EditorWorker from 'monaco-editor/esm/vs/editor/editor.worker?worker'
+import TsWorker from 'monaco-editor/esm/vs/language/typescript/ts.worker?worker'
 import coreLibrary from 'koishi/lib/koishi.d.ts?raw'
 import utilsLibrary from 'koishi/lib/utils.d.ts?raw'
 import OneDark from './onedark.yaml'
@@ -18,9 +18,9 @@ declare global {
 window.MonacoEnvironment = {
   getWorker(_, label) {
     if (label === 'typescript') {
-      return new tsWorker()
+      return new TsWorker()
     }
-    return new editorWorker()
+    return new EditorWorker()
   },
 }
 
