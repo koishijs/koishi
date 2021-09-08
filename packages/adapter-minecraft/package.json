@@ -32,6 +32,6 @@
     "koishi-core": "^3.14.1"
   },
   "dependencies": {
-    "mineflayer": "^3.9.0"
+    "mineflayer": "^3.11.0"
   }
 }

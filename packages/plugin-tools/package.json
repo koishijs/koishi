@@ -24,7 +24,7 @@
     "koishi-core": "^3.14.1"
   },
   "dependencies": {
-    "axios": "^0.21.1",
+    "axios": "^0.21.4",
     "cheerio": "^1.0.0-rc.10",
     "qrcode": "^1.4.4",
     "xml-js": "^1.6.11"

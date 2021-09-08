@@ -32,7 +32,7 @@
     "koishi"
   ],
   "devDependencies": {
-    "@types/js-yaml": "^4.0.2",
+    "@types/js-yaml": "^4.0.3",
     "@types/prompts": "^2.0.14"
   },
   "dependencies": {

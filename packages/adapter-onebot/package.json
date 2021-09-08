@@ -35,9 +35,9 @@
     "koishi-test-utils": "^7.0.1"
   },
   "dependencies": {
-    "axios": "^0.21.1",
+    "axios": "^0.21.4",
     "koishi-utils": "^4.2.4",
     "qface": "^1.2.0",
-    "ws": "^8.0.0"
+    "ws": "^8.2.1"
   }
 }

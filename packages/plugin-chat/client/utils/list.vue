@@ -19,10 +19,10 @@
 
 <script lang="ts" setup>
 
-import { defineEmit, ref, defineProps, computed, watch, nextTick, onMounted, onUpdated, onBeforeUnmount, defineComponent, h } from 'vue'
+import { ref, computed, watch, nextTick, onMounted, onUpdated, onBeforeUnmount, defineComponent, h } from 'vue'
 import Virtual from './virtual'
 
-const emit = defineEmit(['click', 'scroll', 'top', 'bottom', 'update:activeKey'])
+const emit = defineEmits(['click', 'scroll', 'top', 'bottom', 'update:activeKey'])
 
 const props = defineProps({
   tag: { default: 'div' },

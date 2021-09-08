@@ -16,7 +16,7 @@
 <script lang="ts" setup>
 
 import type { LoadRate } from '~/server'
-import { defineProps, computed } from 'vue'
+import { computed } from 'vue'
 
 const props = defineProps<{ rate: LoadRate, title: string }>()
 
