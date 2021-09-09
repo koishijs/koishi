@@ -42,8 +42,12 @@ rules:
   no-use-before-define: off
   no-return-assign: off
   no-sequences: off
+  no-useless-escape: off
   one-var: off
-  operator-linebreak: off
+
+  operator-linebreak:
+    - error
+    - before
 
   quotes:
     - error
@@ -55,11 +59,10 @@ rules:
     - error
     - after
 
-  # node
-  # node/no-callback-literal: off
-
   # typescript
   import/export: off
+
+  '@typescript-eslint/array-type': error
 
   default-param-last: off
   '@typescript-eslint/default-param-last': error
@@ -70,7 +73,29 @@ rules:
   keyword-spacing: off
   '@typescript-eslint/keyword-spacing': error
 
-  # no-useless-escape: offhttps://github.com/typescript-eslint/typescript-eslint/blob/master/packages/eslint-plugin/docs/rules/no-redeclare.md
+  camelcase: off
+  '@typescript-eslint/naming-convention':
+    - error
+    
+    # group selectors
+    - selector: default
+      format: [camelCase, UPPER_CASE]
+      leadingUnderscore: allow
+    - selector: [variableLike, memberLike]
+      format: [camelCase, UPPER_CASE, PascalCase]
+      leadingUnderscore: allow
+    - selector: [typeLike]
+      format: [PascalCase]
+
+    # selectors
+    - selector: [function]
+      format: [camelCase, PascalCase]
+    - selector: [enum]
+      format: [UPPER_CASE, PascalCase]
+    - selector: [typeParameter]
+      format: [PascalCase]
+
+  # https://github.com/typescript-eslint/typescript-eslint/blob/master/packages/eslint-plugin/docs/rules/no-redeclare.md
   no-redeclare: off
 
   no-unused-vars: off

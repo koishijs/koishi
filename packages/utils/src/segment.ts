@@ -1,5 +1,6 @@
 import { isType, Awaitable, Dict } from './misc'
 
+// eslint-disable-next-line @typescript-eslint/naming-convention
 export interface segment {
   type: string
   data: segment.Data
@@ -14,6 +15,7 @@ export function segment(type: string, data: segment.Data = {}) {
   return output + ']'
 }
 
+// eslint-disable-next-line @typescript-eslint/naming-convention
 type primitive = string | number | boolean
 
 export namespace segment {
@@ -86,8 +88,10 @@ export namespace segment {
   export function transform(source: string, rules: Dict<Transformer>, dropOthers = false) {
     return parse(source).map(({ type, data, capture }, index, chain) => {
       const transformer = rules[type]
-      return typeof transformer === 'string' ? transformer
-        : typeof transformer === 'function' ? transformer(data, index, chain)
+      return typeof transformer === 'string'
+        ? transformer
+        : typeof transformer === 'function'
+          ? transformer(data, index, chain)
           : dropOthers ? '' : type === 'text' ? escape(data.content) : capture[0]
     }).join('')
   }

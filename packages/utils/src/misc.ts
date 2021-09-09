@@ -108,8 +108,10 @@ export function coerce(val: any) {
 }
 
 export function makeArray<T>(source: T | T[]) {
-  return Array.isArray(source) ? source
-    : source === null || source === undefined ? []
+  return Array.isArray(source)
+    ? source
+    : source === null || source === undefined
+      ? []
       : [source]
 }
 

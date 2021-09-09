@@ -45,8 +45,10 @@ namespace Letter {
   export type ToLower<S extends string, P extends string = ''> = S extends Upper ? `${P}${UpperToLower[S]}` : S
 }
 
+/* eslint-disable @typescript-eslint/naming-convention */
 export type camelize<S extends string> = S extends `${infer L}-${infer M}${infer R}` ? `${L}${Letter.ToUpper<M>}${camelize<R>}` : S
 export type hyphenate<S extends string> = S extends `${infer L}${infer R}` ? `${Letter.ToLower<L, '-'>}${hyphenate<R>}` : S
+/* eslint-enable @typescript-eslint/naming-convention */
 
 export function capitalize(source: string) {
   return source.charAt(0).toUpperCase() + source.slice(1)

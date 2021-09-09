@@ -80,7 +80,7 @@ export class Logger {
   createMethod(name: Logger.Type, prefix: string, minLevel: number) {
     this[name] = (...args) => {
       if (this.level < minLevel) return
-      let output: string[] = []
+      const output: string[] = []
       if (Logger.showTime) {
         output.push(Time.template(Logger.showTime))
       }
