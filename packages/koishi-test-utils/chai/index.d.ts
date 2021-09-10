@@ -2,10 +2,10 @@
 
 declare namespace Chai {
   interface Assertion {
-    shape(expected: any): void
+    shape(expected: any, message?: string): Assertion
   }
 
   interface Eventually {
-    shape(expected: any, message?: string): any
+    shape(expected: any, message?: string): PromisedAssertion
   }
 }
