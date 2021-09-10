@@ -159,18 +159,32 @@ export namespace Query {
   export type Index<T extends TableType> = Keys<Tables[T], Primitive>
 
   export interface FieldExpr<T = any> {
+    // logical
+    $or?: FieldQuery<T>[]
+    $and?: FieldQuery<T>[]
+    $not?: FieldQuery<T>
+
+    // membership
     $in?: Extract<T, Primitive, T[]>
     $nin?: Extract<T, Primitive, T[]>
+
+    // arithmatic
     $eq?: Extract<T, Comparable>
     $ne?: Extract<T, Comparable>
     $gt?: Extract<T, Comparable>
     $gte?: Extract<T, Comparable>
     $lt?: Extract<T, Comparable>
     $lte?: Extract<T, Comparable>
+
+    // list
     $el?: T extends (infer U)[] ? FieldQuery<U> : never
     $size?: Extract<T, any[], number>
+
+    // regexp
     $regex?: Extract<T, string, RegExp>
     $regexFor?: Extract<T, string>
+
+    // bitwise
     $bitsAllClear?: Extract<T, number>
     $bitsAllSet?: Extract<T, number>
     $bitsAnyClear?: Extract<T, number>

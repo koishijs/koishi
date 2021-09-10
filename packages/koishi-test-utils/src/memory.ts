@@ -44,6 +44,11 @@ type QueryOperators = {
 }
 
 const queryOperators: QueryOperators = {
+  // logical
+  $or: (query, data) => query.reduce((prev, query) => prev || executeFieldQuery(query, data), false),
+  $and: (query, data) => query.reduce((prev, query) => prev && executeFieldQuery(query, data), true),
+  $not: (query, data) => !executeFieldQuery(query, data),
+
   // comparison
   $eq: (query, data) => data.valueOf() === query.valueOf(),
   $ne: (query, data) => data.valueOf() !== query.valueOf(),
@@ -108,11 +113,10 @@ function executeFieldQuery(query: Query.FieldQuery, data: any) {
     return data.valueOf() === query.valueOf()
   }
 
-  // query operators
-  for (const key in queryOperators) {
-    const value = query[key]
-    if (value === undefined) continue
-    if (!queryOperators[key](value, data)) return false
+  for (const key in query) {
+    if (key in queryOperators) {
+      if (!queryOperators[key](query[key], data)) return false
+    }
   }
 
   return true
