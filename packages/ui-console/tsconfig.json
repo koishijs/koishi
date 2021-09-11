@@ -1,5 +1,5 @@
 {
-  "extends": "../../../tsconfig.base",
+  "extends": "../../tsconfig.base",
   "compilerOptions": {
     "rootDir": ".",
     "noEmit": true,
@@ -7,8 +7,11 @@
     "module": "esnext",
     "emitDeclarationOnly": false,
     "lib": ["dom", "esnext"],
+    "types": [
+      "vite/client",
+    ],
   },
   "include": [
-    ".",
+    "src",
   ],
 }

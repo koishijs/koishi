@@ -9,12 +9,4 @@ declare module '~/server' {
   export * from '@koishijs/plugin-status'
 }
 
-declare module '~/client' {
-  export * from '@koishijs/plugin-status/client'
-}
-
-declare const Vue: typeof import('vue')
-declare const VueRouter: typeof import('vue-router')
-declare const KoishiClient: typeof import('~/client')
-
 declare const KOISHI_CONFIG: import('~/server').ClientConfig

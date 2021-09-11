@@ -20,6 +20,7 @@ interface BaseConfig {
 }
 
 export interface Config extends BaseConfig, Profile.Config, Meta.Config, Registry.Config, Statistics.Config {
+  root?: string
   title?: string
   selfUrl?: string
   apiPath?: string
