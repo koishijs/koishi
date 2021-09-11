@@ -1,13 +1,17 @@
 /// <reference types="./global"/>
 
 import { ref, watch, reactive, Ref, Component } from 'vue'
-import type { RouteRecordRaw } from 'vue-router'
+import { createWebHistory, createRouter } from 'vue-router'
 import type { User } from 'koishi'
 import type { Registry, Profile, Meta, Statistics, Awesome } from '~/server'
 import * as client from '.'
 
 export const views: Component[] = []
-export const routes: RouteRecordRaw[] = []
+
+export const router = createRouter({
+  history: createWebHistory(KOISHI_CONFIG.uiPath),
+  routes: [],
+})
 
 export const store = reactive({
   showOverlay: false,

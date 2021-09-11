@@ -2,7 +2,7 @@
 
 import * as Vue from 'vue'
 import * as Router from 'vue-router'
-import * as client from '@koishijs/plugin-status/client'
+import * as client from './index'
 import Badge from './components/badge.vue'
 import Card from './components/card.vue'
 import Collapse from './components/collapse.vue'
@@ -18,7 +18,7 @@ import '@fortawesome/fontawesome-free/css/solid.css'
 
 import './index.scss'
 
-const { routes, receive } = client
+const { router, receive } = client
 
 self['Vue'] = Vue
 self['VueRouter'] = Router
@@ -28,35 +28,35 @@ const app = Vue.createApp(App)
 
 const stats: 'stats'[] = KOISHI_CONFIG.database ? ['stats'] : []
 
-routes.push({
+router.addRoute({
   path: '/',
   name: '仪表盘',
   meta: { icon: 'tachometer-alt', require: [...stats, 'meta', 'profile'] },
   component: () => import('./views/home/home.vue'),
 })
 
-routes.push({
+router.addRoute({
   path: '/plugins',
   name: '插件',
   meta: { icon: 'plug', require: ['registry'] },
   component: () => import('./views/plugins/index.vue'),
 })
 
-routes.push({
+router.addRoute({
   path: '/awesome',
   name: '依赖',
   meta: { icon: 'puzzle-piece', authority: 4, require: ['awesome'] },
   component: () => import('./views/awesome/index.vue'),
 })
 
-routes.push({
+router.addRoute({
   path: '/profile',
   name: '资料',
   meta: { icon: 'user-circle', authority: 1, hidden: true },
   component: () => import('./views/profile.vue'),
 })
 
-routes.push({
+router.addRoute({
   path: '/login',
   name: '登录',
   meta: { icon: 'sign-in-alt', frameless: true, hidden: true },
@@ -72,11 +72,6 @@ app.component('k-input', Input)
 app.component('k-numeric', Numeric)
 
 app.provide('ecTheme', 'dark-blue')
-
-const router = Router.createRouter({
-  history: Router.createWebHistory(KOISHI_CONFIG.uiPath),
-  routes: client.routes,
-})
 
 app.use(router)
 

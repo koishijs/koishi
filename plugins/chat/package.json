@@ -33,6 +33,7 @@
     "koishi": "^4.0.0-alpha.4"
   },
   "devDependencies": {
-    "@koishijs/plugin-status": "^5.0.0-alpha.2"
+    "@koishijs/plugin-status": "^5.0.0-alpha.2",
+    "@koishijs/ui-console": "^1.0.0-alpha.0"
   }
 }

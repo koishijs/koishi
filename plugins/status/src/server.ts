@@ -8,8 +8,7 @@ import Profile from './payload/profile'
 import Statistics from './payload/stats'
 import WebSocket from 'ws'
 import { v4 } from 'uuid'
-import type * as Vite from 'vite'
-import type PluginVue from '@vitejs/plugin-vue'
+import type { ViteDevServer } from 'vite'
 
 export { Awesome, Registry, Meta, Profile, Statistics }
 
@@ -61,7 +60,6 @@ export class SocketHandle {
 }
 
 export class WebServer extends Adapter {
-  readonly root: string
   readonly sources: WebServer.Sources
   readonly global: ClientConfig
   readonly entries: Dict<string> = {}
@@ -69,7 +67,7 @@ export class WebServer extends Adapter {
   readonly states: Dict<[string, number, SocketHandle]> = {}
   readonly platform = 'web'
 
-  private vite: Vite.ViteDevServer
+  private vite: ViteDevServer
   private readonly server: WebSocket.Server
   private readonly [Context.current]: Context
 
@@ -79,7 +77,11 @@ export class WebServer extends Adapter {
     const { apiPath, uiPath, devMode, selfUrl, title } = config
     const endpoint = selfUrl + apiPath
     this.global = { title, uiPath, endpoint, devMode, extensions: [], database: false, version }
-    this.root = resolve(__dirname, '..', devMode ? 'client' : 'dist')
+
+    if (config.root === undefined) {
+      const filename = require.resolve('@koishijs/ui-console/package.json')
+      config.root = resolve(filename, '..', devMode ? 'src' : 'dist')
+    }
 
     this.server = new WebSocket.Server({
       path: apiPath,
@@ -121,7 +123,7 @@ export class WebServer extends Adapter {
 
   private triggerReload() {
     this.global.extensions = Object.entries(this.entries).map(([name, filename]) => {
-      return this.config.devMode ? '/vite/@fs' + filename : `./${name}`
+      return this.config.devMode ? '/vite/@fs/' + filename : `./${name}`
     })
     this.vite?.ws.send({ type: 'full-reload' })
   }
@@ -148,8 +150,9 @@ export class WebServer extends Adapter {
   connect() {}
 
   async start() {
-    if (this.config.devMode) await this.createVite()
     this.server.on('connection', this.onConnection)
+    if (!this.config.root) return
+    if (this.config.devMode) await this.createVite()
     this.serveAssets()
   }
 
@@ -190,7 +193,7 @@ export class WebServer extends Adapter {
   }
 
   private serveAssets() {
-    const { uiPath } = this.config
+    const { uiPath, root } = this.config
 
     this.ctx.router.get(uiPath + '(/.+)*', async (ctx) => {
       // add trailing slash and redirect
@@ -206,15 +209,15 @@ export class WebServer extends Adapter {
         const key = name.slice(7)
         if (this.entries[key]) return sendFile(this.entries[key])
       }
-      const filename = resolve(this.root, name)
-      if (!filename.startsWith(this.root) && !filename.includes('node_modules')) {
+      const filename = resolve(root, name)
+      if (!filename.startsWith(root) && !filename.includes('node_modules')) {
         return ctx.status = 403
       }
       const stats = await fs.stat(filename).catch<Stats>(noop)
       if (stats?.isFile()) return sendFile(filename)
       const ext = extname(filename)
       if (ext && ext !== '.html') return ctx.status = 404
-      const template = await fs.readFile(resolve(this.root, 'index.html'), 'utf8')
+      const template = await fs.readFile(resolve(root, 'index.html'), 'utf8')
       ctx.type = 'html'
       ctx.body = await this.transformHtml(template)
     })
@@ -227,23 +230,29 @@ export class WebServer extends Adapter {
   }
 
   private async createVite() {
-    const { createServer } = require('vite') as typeof Vite
-    const pluginVue = require('@vitejs/plugin-vue').default as typeof PluginVue
+    const { root } = this.config
+    const { createServer } = require('vite') as typeof import('vite')
+    const { default: pluginVue } = require('@vitejs/plugin-vue') as typeof import('@vitejs/plugin-vue')
 
     this.vite = await createServer({
-      root: this.root,
+      root: root,
       base: '/vite/',
-      server: { middlewareMode: true },
+      server: {
+        middlewareMode: true,
+        fs: {
+          strict: true,
+        },
+      },
       plugins: [pluginVue()],
       resolve: {
         alias: {
-          '~/client': this.root,
-          '~/variables': this.root + '/index.scss',
+          '~/client': root,
+          '~/variables': root + '/index.scss',
         },
       },
     })
 
-    this.ctx.router.all('/vite(/.+)+', (ctx) => new Promise((resolve) => {
+    this.ctx.router.all('/vite(/.+)*', (ctx) => new Promise((resolve) => {
       this.vite.middlewares(ctx.req, ctx.res, resolve)
     }))
 

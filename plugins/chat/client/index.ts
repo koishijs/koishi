@@ -1,4 +1,4 @@
-import { router, views } from '@koishijs/plugin-status/client'
+import { router, views } from '@koishijs/ui-console'
 import Chat from './chat.vue'
 import Sandbox from './sandbox.vue'
 import Overlay from './overlay.vue'
