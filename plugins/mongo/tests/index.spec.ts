@@ -13,6 +13,12 @@ for (const port of mongoPorts ? mongoPorts.split(',') : []) {
       port: port,
     })
 
-    Tests.database(app)
+    Tests.database(app, {
+      query: {
+        logical: {
+          fieldLevel: false,
+        },
+      },
+    })
   })
 }

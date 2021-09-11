@@ -42,6 +42,11 @@ type QueryOperators = {
 }
 
 const queryOperators: QueryOperators = {
+  // logical
+  $or: (key, value) => logicalOr(value.map(value => parseFieldQuery(key, value))),
+  $and: (key, value) => logicalAnd(value.map(value => parseFieldQuery(key, value))),
+  $not: (key, value) => logicalNot(parseFieldQuery(key, value)),
+
   // comparison
   $eq: createEqualQuery,
   $ne: comparator('!='),
@@ -113,50 +118,62 @@ const evalOperators: EvaluationOperators = {
   $count: (expr) => `count(distinct ${parseEval(expr)})`,
 }
 
+function logicalAnd(conditions: string[]) {
+  if (!conditions.length) return '1'
+  if (conditions.includes('0')) return '0'
+  return conditions.join(' && ')
+}
+
+function logicalOr(conditions: string[]) {
+  if (!conditions.length) return '0'
+  if (conditions.includes('1')) return '1'
+  return `(${conditions.join(' || ')})`
+}
+
+function logicalNot(condition: string) {
+  return `!(${condition})`
+}
+
+function parseFieldQuery(key: string, query: Query.FieldExpr) {
+  const conditions: string[] = []
+
+  // query shorthand
+  if (Array.isArray(query)) {
+    conditions.push(createMemberQuery(key, query))
+  } else if (query instanceof RegExp) {
+    conditions.push(createRegExpQuery(key, query))
+  } else if (typeof query === 'string' || typeof query === 'number' || query instanceof Date) {
+    conditions.push(createEqualQuery(key, query))
+  } else {
+    // query expression
+    for (const prop in query) {
+      if (prop in queryOperators) {
+        conditions.push(queryOperators[prop](key, query[prop]))
+      }
+    }
+  }
+
+  return logicalAnd(conditions)
+}
+
 function parseQuery(query: Query.Expr) {
   const conditions: string[] = []
   for (const key in query) {
     // logical expression
     if (key === '$not') {
-      conditions.push(`!(${parseQuery(query.$not)})`)
-      continue
+      conditions.push(logicalNot(parseQuery(query.$not)))
     } else if (key === '$and') {
-      conditions.push(...query.$and.map(parseQuery))
-      continue
+      conditions.push(logicalAnd(query.$and.map(parseQuery)))
     } else if (key === '$or') {
-      if (!query.$or.length) return '0'
-      conditions.push(`(${query.$or.map(parseQuery).join(' || ')})`)
-      continue
+      conditions.push(logicalOr(query.$or.map(parseQuery)))
     } else if (key === '$expr') {
       conditions.push(parseEval(query.$expr))
-      continue
-    }
-
-    // query shorthand
-    const value = query[key]
-    const escKey = escapeId(key)
-    if (Array.isArray(value)) {
-      conditions.push(createMemberQuery(escKey, value))
-      continue
-    } else if (value instanceof RegExp) {
-      conditions.push(createRegExpQuery(escKey, value))
-      continue
-    } else if (typeof value === 'string' || typeof value === 'number' || value instanceof Date) {
-      conditions.push(createEqualQuery(escKey, value))
-      continue
-    }
-
-    // query expression
-    for (const prop in value) {
-      if (prop in queryOperators) {
-        conditions.push(queryOperators[prop](escKey, value[prop]))
-      }
+    } else {
+      conditions.push(parseFieldQuery(escapeId(key), query[key]))
     }
   }
 
-  if (!conditions.length) return '1'
-  if (conditions.includes('0')) return '0'
-  return conditions.join(' && ')
+  return logicalAnd(conditions)
 }
 
 function parseEval(expr: Eval.Any | Eval.Aggregation): string {

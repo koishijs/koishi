@@ -39,7 +39,7 @@ namespace QueryOperators {
       await db.create('foo', { text: 'awesome baz' })
     })
 
-    it('compile expr query', async () => {
+    it('basic support', async () => {
       await expect(db.get('foo', {
         id: { $eq: 2 },
       })).eventually.to.have.length(1).with.nested.property('0.text').equal('awesome bar')
@@ -96,7 +96,7 @@ namespace QueryOperators {
       await db.create('foo', { value: 7 })
     })
 
-    it('should verify empty array', async () => {
+    it('edge cases', async () => {
       await expect(db.get('foo', {
         value: { $in: [] },
       })).eventually.to.have.length(0)
@@ -106,19 +106,35 @@ namespace QueryOperators {
       })).eventually.to.have.length(3)
     })
 
-    it('filter data by include', async () => {
+    it('basic support', async () => {
       await expect(db.get('foo', {
-        value: { $in: [3, 4] },
+        value: { $in: [3, 4, 5] },
       })).eventually.to.have.length(2)
 
       await expect(db.get('foo', {
-        value: { $nin: [4] },
+        value: { $nin: [4, 5, 6] },
+      })).eventually.to.have.length(2)
+    })
+
+    it('shorthand syntax', async () => {
+      await expect(db.get('foo', {
+        value: [],
+      })).eventually.to.have.length(0)
+
+      await expect(db.get('foo', {
+        value: [3, 4, 5],
       })).eventually.to.have.length(2)
     })
   }
 
-  export const regexp = function RegularExpression(app: App) {
+  interface RegExpOptions {
+    regexBy?: boolean
+    regexFor?: boolean
+  }
+
+  export const regexp = function RegularExpression(app: App, options: RegExpOptions = {}) {
     const db = app.database
+    const { regexBy = true } = options
 
     before(async () => {
       await db.remove('foo', {})
@@ -127,18 +143,20 @@ namespace QueryOperators {
       await db.create('foo', { text: 'awesome foo bar' })
     })
 
-    it('filter data by regex', async () => {
+    regexBy && it('$regexBy', async () => {
+      await expect(db.get('foo', {
+        text: { $regex: /^.*foo.*$/ },
+      })).eventually.to.have.length(2)
+
+      await expect(db.get('foo', {
+        text: { $regex: /^.*bar$/ },
+      })).eventually.to.have.length(2)
+    })
+
+    regexBy && it('shorthand syntax', async () => {
       await expect(db.get('foo', {
         text: /^.*foo$/,
-      })).eventually.to.have.nested.property('[0].text').equal('awesome foo')
-
-      await expect(db.get('foo', {
-        text: { $regex: /^.*foo$/ },
-      })).eventually.to.have.nested.property('[0].text').equal('awesome foo')
-
-      await expect(db.get('foo', {
-        text: /^.*foo.*$/,
-      })).eventually.to.have.length(2)
+      })).eventually.to.have.length(1).with.nested.property('[0].text').equal('awesome foo')
     })
   }
 
@@ -152,7 +170,7 @@ namespace QueryOperators {
       await db.create('foo', { value: 7 })
     })
 
-    it('filter data by bits', async () => {
+    it('basic support', async () => {
       await expect(db.get('foo', {
         value: { $bitsAllSet: 3 },
       })).eventually.to.have.shape([{ value: 3 }, { value: 7 }])
@@ -225,83 +243,117 @@ namespace QueryOperators {
     })
   }
 
-  export const logical = function Logical(app: App) {
-    const db = app.database
+  namespace Logical {
+    export const queryLevel = function LogicalQueryLevel(app: App) {
+      const db = app.database
 
-    before(async () => {
-      await db.remove('foo', {})
-      await db.create('foo', { id: 1, text: 'awesome foo', value: 3, list: [], date: new Date('2000-01-01') })
-      await db.create('foo', { id: 2, text: 'awesome bar', value: 4, list: [1] })
-      await db.create('foo', { id: 3, text: 'awesome foo bar', value: 7, list: [100] })
-    })
+      before(async () => {
+        await db.remove('foo', {})
+        await db.create('foo', { id: 1 })
+        await db.create('foo', { id: 2 })
+        await db.create('foo', { id: 3 })
+      })
 
-    it('edge cases', async () => {
-      await expect(db.get('foo', {})).eventually.to.have.length(3)
-      await expect(db.get('foo', { $and: [] })).eventually.to.have.length(3)
-      await expect(db.get('foo', { $or: [] })).eventually.to.have.length(0)
-      await expect(db.get('foo', { $not: {} })).eventually.to.have.length(0)
-      await expect(db.get('foo', { $not: { $and: [] } })).eventually.to.have.length(0)
-      await expect(db.get('foo', { $not: { $or: [] } })).eventually.to.have.length(3)
-    })
+      it('edge cases', async () => {
+        await expect(db.get('foo', {})).eventually.to.have.length(3)
+        await expect(db.get('foo', { $and: [] })).eventually.to.have.length(3)
+        await expect(db.get('foo', { $or: [] })).eventually.to.have.length(0)
+        await expect(db.get('foo', { $not: {} })).eventually.to.have.length(0)
+        await expect(db.get('foo', { $not: { $and: [] } })).eventually.to.have.length(0)
+        await expect(db.get('foo', { $not: { $or: [] } })).eventually.to.have.length(3)
+      })
 
-    it('should verify `$or`, `$and` and `$not`', async () => {
-      await expect(db.get('foo', {
-        $or: [{
-          id: [1, 2],
-        }, {
-          id: [1, 3],
-        }],
-      })).eventually.to.have.length(3)
+      it('$or', async () => {
+        await expect(db.get('foo', {
+          $or: [{ id: 1 }, { id: { $ne: 2 } }],
+        })).eventually.to.have.length(2).with.shape([{ id: 1 }, { id: 3 }])
 
-      await expect(db.get('foo', {
-        $or: [{
-          id: [2],
-        }, {
-          text: /.*foo.*/,
-        }],
-      })).eventually.to.have.length(3)
+        await expect(db.get('foo', {
+          $or: [{ id: 1 }, { id: { $eq: 2 } }],
+        })).eventually.to.have.length(2).with.shape([{ id: 1 }, { id: 2 }])
 
-      await expect(db.get('foo', {
-        $or: [{
-          id: { $gt: 1 },
-        }, {
-          text: /.*foo$/,
-        }],
-      })).eventually.to.have.length(3)
+        await expect(db.get('foo', {
+          $or: [{ id: { $ne: 1 } }, { id: { $ne: 2 } }],
+        })).eventually.to.have.length(3).with.shape([{ id: 1 }, { id: 2 }, { id: 3 }])
+      })
 
-      await expect(db.get('foo', {
-        $or: [{ text: /.*foo/ }, { text: /foo.*/ }],
-      })).eventually.to.have.length(2)
+      it('$and', async () => {
+        await expect(db.get('foo', {
+          $and: [{ id: 1 }, { id: { $ne: 2 } }],
+        })).eventually.to.have.length(1).with.shape([{ id: 1 }])
 
-      await expect(db.get('foo', {
-        $and: [{ text: /.*foo$/ }, { text: /foo.*/ }],
-      })).eventually.to.have.length(1)
+        await expect(db.get('foo', {
+          $and: [{ id: 1 }, { id: { $eq: 2 } }],
+        })).eventually.to.have.length(0)
 
-      await expect(db.get('foo', {
-        $not: { $and: [{ text: /.*foo$/ }, { text: /foo.*/ }] },
-      })).eventually.to.have.length(2)
+        await expect(db.get('foo', {
+          $and: [{ id: { $ne: 1 } }, { id: { $ne: 2 } }],
+        })).eventually.to.have.length(1).with.shape([{ id: 3 }])
+      })
 
-      await expect(db.get('foo', {
-        $not: { $or: [{ text: /.*foo/ }, { text: /foo.*/ }] },
-      })).eventually.to.have.length(1)
-    })
+      it('$not', async () => {
+        await expect(db.get('foo', {
+          $not: { id: 1 },
+        })).eventually.to.have.length(2).with.shape([{ id: 2 }, { id: 3 }])
 
-    it('should verify `$or` and other key', async () => {
-      await expect(db.get('foo', {
-        text: /.*foo.*/,
-        $or: [{
-          text: /.*foo/,
-        }],
-      })).eventually.to.have.length(2)
+        await expect(db.get('foo', {
+          $not: { id: { $ne: 1 } },
+        })).eventually.to.have.length(1).with.shape([{ id: 1 }])
+      })
+    }
 
-      await expect(db.get('foo', {
-        text: /.*foo.*/,
-        $or: [{
-          text: /foo.+/,
-        }],
-      })).eventually.to.have.length(1)
-    })
+    export const fieldLevel = function LogicalFieldLevel(app: App) {
+      const db = app.database
+
+      before(async () => {
+        await db.remove('foo', {})
+        await db.create('foo', { id: 1 })
+        await db.create('foo', { id: 2 })
+        await db.create('foo', { id: 3 })
+      })
+
+      it('edge cases', async () => {
+        await expect(db.get('foo', { id: {} })).eventually.to.have.length(3)
+        await expect(db.get('foo', { id: { $and: [] } })).eventually.to.have.length(3)
+        await expect(db.get('foo', { id: { $or: [] } })).eventually.to.have.length(0)
+        await expect(db.get('foo', { id: { $not: {} } })).eventually.to.have.length(0)
+        await expect(db.get('foo', { id: { $not: { $and: [] } } })).eventually.to.have.length(0)
+        await expect(db.get('foo', { id: { $not: { $or: [] } } })).eventually.to.have.length(3)
+      })
+
+      it('$or', async () => {
+        await expect(db.get('foo', {
+          id: { $or: [1, { $gt: 2 }] },
+        })).eventually.to.have.length(2).with.shape([{ id: 1 }, { id: 3 }])
+
+        await expect(db.get('foo', {
+          id: { $or: [1, { $gt: 2 }], $ne: 3 },
+        })).eventually.to.have.length(1).with.shape([{ id: 1 }])
+      })
+
+      it('$and', async () => {
+        await expect(db.get('foo', {
+          id: { $and: [[1, 2], { $lt: 2 }] },
+        })).eventually.to.have.length(1).with.shape([{ id: 1 }])
+
+        await expect(db.get('foo', {
+          id: { $and: [[1, 2], { $lt: 2 }], $eq: 2 },
+        })).eventually.to.have.length(0)
+      })
+
+      it('$not', async () => {
+        await expect(db.get('foo', {
+          id: { $not: 1 },
+        })).eventually.to.have.length(2).with.shape([{ id: 2 }, { id: 3 }])
+
+        await expect(db.get('foo', {
+          id: { $not: 1, $lt: 3 },
+        })).eventually.to.have.length(1).with.shape([{ id: 2 }])
+      })
+    }
   }
+
+  export const logical = Logical
 }
 
 export default QueryOperators
