@@ -9,7 +9,7 @@
 <script lang="ts" setup>
 
 import { ref, watch } from 'vue'
-import { send, receive, user, storage } from '~/client'
+import { send, receive, user, storage } from '@koishijs/ui-console'
 import ChatPanel from './utils/panel.vue'
 import ChatMessage from './utils/message.vue'
 

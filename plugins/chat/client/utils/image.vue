@@ -4,7 +4,7 @@
 
 <script lang="ts" setup>
 
-import { store } from '~/client'
+import { store } from '@koishijs/ui-console'
 
 const props = defineProps<{ src: string }>()
 

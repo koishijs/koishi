@@ -11,7 +11,7 @@
 
 <script lang="ts" setup>
 
-import { meta } from '~/client'
+import { meta } from '@koishijs/ui-console'
 import WordCloud from './word-cloud.vue'
 
 </script>

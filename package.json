@@ -11,7 +11,7 @@
   ],
   "scripts": {
     "addons": "yarn workspace addons",
-    "cli": "yarn compile koishi && yarn workspace test koishi",
+    "cli": "yarn compile koishi && yarn workspace test",
     "build": "yarn compile && yarn dtsc",
     "build:web": "node -r ./build/register packages/plugins/status/build",
     "dtsc": "node -r ./build/register build/dtsc",

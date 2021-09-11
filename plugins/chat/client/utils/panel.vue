@@ -17,7 +17,7 @@
 <script lang="ts" setup>
 
 import { ref } from 'vue'
-import { segment } from '~/client'
+import { segment } from '@koishijs/utils'
 import VirtualList from './list.vue'
 
 const emit = defineEmits(['send', 'click', 'update:activeKey'])

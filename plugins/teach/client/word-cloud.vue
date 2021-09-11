@@ -13,7 +13,7 @@
 
 <script lang="ts" setup>
 
-import { stats } from '~/client'
+import { stats } from '@koishijs/ui-console'
 import { computed, ref } from 'vue'
 
 const questions = ref(stats.value.questions)

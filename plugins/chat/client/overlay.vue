@@ -23,7 +23,7 @@
 
 <script lang="ts" setup>
 
-import { store } from '~/client'
+import { store } from '@koishijs/ui-console'
 import { computed, watch, ref, onMounted, onBeforeUnmount } from 'vue'
 
 const scale = ref(1)
