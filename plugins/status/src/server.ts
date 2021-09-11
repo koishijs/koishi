@@ -33,7 +33,7 @@ export interface ClientConfig extends Required<BaseConfig> {
   extensions: string[]
 }
 
-const logger = new Logger('webui')
+const logger = new Logger('status')
 const TOKEN_TIMEOUT = Time.minute * 10
 
 export class SocketHandle {

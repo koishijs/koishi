@@ -59,24 +59,8 @@ function getVersion(name: string, isLatest = true) {
 
   if (Object.keys(bumpMap).length) {
     for (const folder in bumpMap) {
-      const { name, version, dependencies, devDependencies } = bumpMap[folder]
+      const { name, version } = bumpMap[folder]
       await publish(folder, name, version, prerelease(version) ? 'next' : 'latest')
-      if (name === '@koishijs/plugin-webui') {
-        const filename = cwd + '/plugins/webui/package.json'
-        await writeJson(filename, {
-          ...bumpMap[folder],
-          version: version + '-dev',
-          files: ['lib', 'dist', 'client'],
-          dependencies: Object.fromEntries([
-            ...Object.entries(dependencies),
-            ...Object.entries(devDependencies).filter(([key]) => {
-              return !key.startsWith('@types') && !key.startsWith('koishi')
-            }),
-          ]),
-        }, { spaces: 2 })
-        await publish(folder, name, version + '-dev', 'dev')
-        await writeJson(filename, bumpMap[folder])
-      }
     }
   }
 

@@ -13,7 +13,7 @@
     "addons": "yarn workspace addons",
     "cli": "yarn compile koishi && yarn workspace test koishi",
     "build": "yarn compile && yarn dtsc",
-    "build:web": "node -r ./build/register packages/plugins/webui/build",
+    "build:web": "node -r ./build/register packages/plugins/status/build",
     "dtsc": "node -r ./build/register build/dtsc",
     "bump": "node -r ./build/register build/bump",
     "compile": "node -r ./build/register build/compile",
@@ -26,9 +26,8 @@
     "test:text": "c8 -r text yarn test",
     "lint": "eslint packages/**/src/**/*.ts --fix --cache",
     "pub": "node -r ./build/register build/publish",
-    "webui": "yarn workspace @koishijs/plugin-webui",
     "shiki": "yarn workspace bot-shiki",
-    "utsuho": "yarn workspace bot-utsuho"
+    "webui": "yarn workspace @koishijs/plugin-status"
   },
   "version": "1.0.0",
   "license": "MIT",

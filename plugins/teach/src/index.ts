@@ -12,7 +12,7 @@ import probability from './plugins/probability'
 import successor from './plugins/successor'
 import time from './plugins/time'
 import writer from './plugins/writer'
-import {} from '@koishijs/plugin-webui'
+import {} from '@koishijs/plugin-status'
 import { resolve } from 'path'
 
 export * from './utils'
@@ -39,7 +39,7 @@ declare module 'koishi' {
   }
 }
 
-declare module '@koishijs/plugin-webui' {
+declare module '@koishijs/plugin-status' {
   namespace Meta {
     interface Payload extends Dialogue.Stats {}
   }
@@ -205,7 +205,7 @@ export function apply(ctx: Context, config: Config = {}) {
   ctx.plugin(time, config)
   ctx.plugin(writer, config)
 
-  ctx.with(['webui'], (ctx) => {
+  ctx.with(['status'], (ctx) => {
     const { stats, meta } = ctx.webui.sources
 
     ctx.on('dialogue/before-send', ({ session, dialogue }) => {

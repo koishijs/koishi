@@ -1,6 +1,6 @@
 import { Adapter, Bot, Context, Random, segment, Session, template } from 'koishi'
 import { resolve } from 'path'
-import { WebServer } from '@koishijs/plugin-webui'
+import { WebServer } from '@koishijs/plugin-status'
 import receiver, { Message, ReceiverConfig } from './receiver'
 import axios from 'axios'
 
@@ -16,7 +16,7 @@ declare module 'koishi' {
   }
 }
 
-declare module '@koishijs/plugin-webui' {
+declare module '@koishijs/plugin-status' {
   interface ClientConfig extends ClientExtension {}
 }
 
@@ -76,7 +76,7 @@ export function apply(ctx: Context, options: Config = {}) {
     ctx.logger('message').debug(template('chat.' + (session.type === 'message' ? 'receive' : 'send'), message))
   })
 
-  ctx.with(['webui'], (ctx, { webui }) => {
+  ctx.with(['status'], (ctx, { status }) => {
     const { devMode, apiPath } = ctx.webui.config
     const filename = devMode ? '../client/index.ts' : '../dist/index.js'
     const whitelist = [...builtinWhitelist, ...options.whitelist || []]

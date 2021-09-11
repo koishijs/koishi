@@ -1,4 +1,4 @@
-import { router, views } from '@koishijs/plugin-webui/client'
+import { router, views } from '@koishijs/plugin-status/client'
 import Chat from './chat.vue'
 import Sandbox from './sandbox.vue'
 import Overlay from './overlay.vue'

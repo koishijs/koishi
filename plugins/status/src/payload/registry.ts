@@ -12,8 +12,8 @@ class Registry {
   cached: Promise<Registry.PluginData[]>
   promise: Promise<void>
 
-  static readonly placeholder = Symbol('webui.registry.placeholder')
-  static readonly webExtension = Symbol('webui.registry.web-extension')
+  static readonly placeholder = Symbol('status.registry.placeholder')
+  static readonly webExtension = Symbol('status.registry.web-extension')
 
   constructor(private ctx: Context, public config: Registry.Config) {
     ctx.on('plugin-added', this.update)

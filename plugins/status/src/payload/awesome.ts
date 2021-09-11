@@ -39,7 +39,7 @@ interface Registry extends PackageBase {
 const officialPlugins = [
   'adventure', 'assets', 'chat', 'chess', 'common', 'dice',
   'eval', 'github', 'image-search', 'mongo', 'mysql',
-  'puppeteer', 'schedule', 'teach', 'tools', 'webui',
+  'puppeteer', 'schedule', 'status', 'teach', 'tools',
 ]
 
 type Manager = 'yarn' | 'npm'

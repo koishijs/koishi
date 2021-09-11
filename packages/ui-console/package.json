@@ -1,12 +1,14 @@
 {
-  "name": "@koishijs/plugin-chat",
-  "description": "Display and respond to messages for Koishi",
-  "version": "1.0.0-alpha.2",
+  "name": "@koishijs/ui-console",
+  "description": "Status Client for Koishi",
+  "version": "1.0.0-alpha.0",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
+  "engines": {
+    "node": ">=12.0.0"
+  },
   "files": [
-    "lib",
-    "dist"
+    "lib"
   ],
   "author": "Shigma <1700011071@pku.edu.cn>",
   "license": "MIT",
@@ -17,21 +19,15 @@
   "bugs": {
     "url": "https://github.com/koishijs/koishi/issues"
   },
-  "homepage": "https://koishi.js.org/plugins/other/chat",
+  "homepage": "https://koishi.js.org",
   "keywords": [
     "bot",
     "qqbot",
     "cqhttp",
     "coolq",
     "chatbot",
-    "koishi",
-    "plugin",
-    "chat",
-    "server"
+    "koishi"
   ],
-  "peerDependencies": {
-    "koishi": "^4.0.0-alpha.4"
-  },
   "devDependencies": {
     "@koishijs/plugin-status": "^5.0.0-alpha.2"
   }

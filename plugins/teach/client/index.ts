@@ -1,4 +1,4 @@
-import { router } from '@koishijs/plugin-webui/client'
+import { router } from '@koishijs/plugin-status/client'
 import Teach from './teach.vue'
 
 router.addRoute({

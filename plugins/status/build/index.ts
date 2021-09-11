@@ -45,7 +45,7 @@ function build(root: string, config: vite.UserConfig) {
         'vue': root + '/vue.js',
         'vue-router': root + '/vue-router.js',
         '~/client': root + '/client.js',
-        '@koishijs/plugin-webui/client': root + '/client.js',
+        '@koishijs/plugin-status/client': root + '/client.js',
         ...config.resolve?.alias,
       },
     },

@@ -226,7 +226,7 @@ const targets = [
   'plugins/database',
   'plugins/mysql',
   'plugins/mongo',
-  'plugins/webui',
+  'plugins/status',
   'plugins/teach',
   'plugins/adventure',
 ]

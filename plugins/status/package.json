@@ -1,5 +1,5 @@
 {
-  "name": "@koishijs/plugin-webui",
+  "name": "@koishijs/plugin-status",
   "description": "Create web user interface for Koishi",
   "version": "5.0.0-alpha.2",
   "main": "lib/index.js",
@@ -17,7 +17,7 @@
   "bugs": {
     "url": "https://github.com/koishijs/koishi/issues"
   },
-  "homepage": "https://github.com/koishijs/plugins/plugin-webui#readme",
+  "homepage": "https://koishi.js.org/plugins/other/status.html",
   "keywords": [
     "bot",
     "qqbot",

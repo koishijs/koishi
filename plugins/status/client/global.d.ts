@@ -6,11 +6,11 @@ declare module '*.vue' {
 }
 
 declare module '~/server' {
-  export * from '@koishijs/plugin-webui'
+  export * from '@koishijs/plugin-status'
 }
 
 declare module '~/client' {
-  export * from '@koishijs/plugin-webui/client'
+  export * from '@koishijs/plugin-status/client'
 }
 
 declare const Vue: typeof import('vue')

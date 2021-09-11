@@ -48,7 +48,7 @@ declare module 'koishi' {
   }
 
   interface Loader {
-    webui: typeof import('.')
+    status: typeof import('.')
   }
 }
 
@@ -88,7 +88,7 @@ const defaultConfig: Config = {
   metaInterval: Time.hour,
 }
 
-export const name = 'webui'
+export const name = 'status'
 
 export function apply(ctx: Context, config: Config = {}) {
   config = Object.assign(defaultConfig, config)

@@ -37,7 +37,7 @@
     "koishi": "^4.0.0-alpha.4"
   },
   "devDependencies": {
-    "@koishijs/plugin-webui": "^5.0.0-alpha.2",
+    "@koishijs/plugin-status": "^5.0.0-alpha.2",
     "@koishijs/test-utils": "^8.0.0-alpha.3"
   },
   "dependencies": {

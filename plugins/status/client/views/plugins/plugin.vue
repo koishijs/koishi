@@ -9,7 +9,7 @@
       </span>
       <span class="complexity">{{ data.complexity || '-' }}</span>
       <span class="operation">
-        <k-button class="right" frameless :type="data.name === 'webui' ? 'danger' : ''"
+        <k-button class="right" frameless :type="data.name === 'status' ? 'danger' : ''"
           :disabled="data.sideEffect" @click="toggle(data.id)"
         >{{ data.complexity ? '停用' : '启用' }}</k-button>
       </span>
