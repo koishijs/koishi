@@ -14,7 +14,7 @@ export namespace Schema {
 
   export interface Base<T = any> {
     desc?: string
-    initial?: T
+    initial?: T extends {} ? Partial<T> : T
     nullable?: boolean
   }
 
@@ -48,6 +48,10 @@ export namespace Schema {
 
   export function Merge<T extends Schema[]>(values: T, options: Base = {}): Schema<Intersect<Type<T[number]>>> {
     return { type: 'merge', values, ...options }
+  }
+
+  export function Extend<S, T>(value: Schema<S>, value2: Schema<T>): Schema<S & T> {
+    return { type: 'extend', value, value2 }
   }
 
   export function Adapt<S, T>(value: Schema<S>, value2: Schema<T>, adapt: (value: T) => S): Schema<S> {

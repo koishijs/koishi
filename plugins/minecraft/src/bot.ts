@@ -1,4 +1,4 @@
-import { Bot, Random, segment } from 'koishi'
+import { Bot, Random, Schema, segment } from 'koishi'
 import * as mineflayer from 'mineflayer'
 
 const noop = async () => null
@@ -9,6 +9,10 @@ export namespace MinecraftBot {
 
 export class MinecraftBot extends Bot<MinecraftBot.Config> {
   flayer: mineflayer.Bot
+
+  static schema: Schema<MinecraftBot.Config> = Schema.Object({
+    username: Schema.String(),
+  })
 
   async sendMessage(channelId: string, content: string, guildId?: string) {
     const session = this.createSession({ channelId, content, guildId, subtype: guildId ? 'group' : 'private' })

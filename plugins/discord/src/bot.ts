@@ -1,7 +1,7 @@
 /* eslint-disable camelcase */
 
 import axios, { AxiosRequestConfig, Method } from 'axios'
-import { Adapter, Bot, segment, trimSlash } from 'koishi'
+import { Adapter, Bot, Schema, segment, trimSlash } from 'koishi'
 import { adaptChannel, adaptGroup, adaptMessage, adaptUser } from './utils'
 import { Sender } from './sender'
 import * as DC from './types'
@@ -30,6 +30,15 @@ export class DiscordBot extends Bot<DiscordBot.Config> {
   _d: number
   _ping: NodeJS.Timeout
   _sessionId: string
+
+  static schema: Schema<DiscordBot.Config> = Schema.Merge([
+    Schema.Object({
+      token: Schema.String(),
+    }),
+    Schema.Extend(Bot.schema, Schema.Object({
+      endpoint: Schema.String({ initial: 'https://discord.com/api/v8' }),
+    })),
+  ])
 
   constructor(adapter: Adapter, options: DiscordBot.Config) {
     options.endpoint = trimSlash(options.endpoint || 'https://discord.com/api/v8')

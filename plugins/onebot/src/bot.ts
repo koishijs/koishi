@@ -1,4 +1,4 @@
-import { Bot, segment, camelCase, snakeCase, Adapter, Dict } from 'koishi'
+import { Bot, segment, camelCase, snakeCase, Adapter, Dict, Schema } from 'koishi'
 import * as OneBot from './utils'
 
 export class SenderError extends Error {
@@ -41,6 +41,13 @@ export interface CQBot extends OneBot.API {}
 
 export class CQBot extends Bot<CQBot.Config> {
   _request?(action: string, params: Dict): Promise<OneBot.Response>
+
+  static schema: Schema<CQBot.Config> = Schema.Merge([
+    Schema.Object({
+      token: Schema.String(),
+    }),
+    Bot.schema,
+  ])
 
   constructor(adapter: Adapter, options: CQBot.Config) {
     super(adapter, options)

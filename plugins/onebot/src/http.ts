@@ -6,9 +6,9 @@ import axios from 'axios'
 
 const logger = new Logger('onebot')
 
-export default class HttpServer extends Adapter<CQBot, SharedConfig> {
+export default class HttpServer extends Adapter<CQBot.Config, SharedConfig> {
   constructor(app: App, config: SharedConfig = {}) {
-    super(app, CQBot, config)
+    super(app, config)
     assertProperty(app.options, 'port')
   }
 

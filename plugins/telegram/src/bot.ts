@@ -1,16 +1,7 @@
 import { createReadStream } from 'fs'
-import { Bot, Adapter, camelCase, snakeCase, renameProperty, segment, assertProperty, trimSlash, Dict } from 'koishi'
+import { Bot, Adapter, camelCase, snakeCase, renameProperty, segment, assertProperty, trimSlash, Dict, Schema } from 'koishi'
 import * as Telegram from './types'
 import { AxiosRequestConfig } from 'axios'
-
-export namespace TelegramBot {
-  export interface Config extends Bot.BaseConfig {
-    endpoint?: string
-    selfId?: string
-    token?: string
-    axiosConfig?: AxiosRequestConfig
-  }
-}
 
 export class SenderError extends Error {
   constructor(args: Dict<any>, url: string, retcode: number, selfId: string) {
@@ -28,6 +19,15 @@ export class SenderError extends Error {
 export interface TelegramResponse {
   ok: boolean
   result: any
+}
+
+export namespace TelegramBot {
+  export interface Config extends Bot.BaseConfig {
+    endpoint?: string
+    selfId?: string
+    token?: string
+    axiosConfig?: AxiosRequestConfig
+  }
 }
 
 export interface TelegramBot {
@@ -54,6 +54,15 @@ export class TelegramBot extends Bot<TelegramBot.Config> {
     delete data.lastName
     return data as Bot.User
   }
+
+  static schema: Schema<TelegramBot.Config> = Schema.Merge([
+    Schema.Object({
+      token: Schema.String(),
+    }),
+    Schema.Extend(Bot.schema, Schema.Object({
+      endpoint: Schema.String({ initial: 'https://api.telegram.org' }),
+    })),
+  ])
 
   constructor(adapter: Adapter, options: TelegramBot.Config) {
     assertProperty(options, 'token')

@@ -1,4 +1,6 @@
 import { Adapter, Context } from 'koishi'
+import { CQBot } from './bot'
+import { schema } from './utils'
 import { WebSocketClient, WebSocketServer } from './ws'
 import HttpServer from './http'
 import axios from 'axios'
@@ -29,8 +31,8 @@ declare module 'koishi' {
   }
 }
 
-export = Adapter.createPlugin('onebot', {
+export = Adapter.define('onebot', CQBot, {
   'http': HttpServer,
   'ws': WebSocketClient,
   'ws-reverse': WebSocketServer,
-}, ({ server }) => !server ? 'ws-reverse' : server.startsWith('ws') ? 'ws' : 'http')
+}, ({ server }) => !server ? 'ws-reverse' : server.startsWith('ws') ? 'ws' : 'http', schema)

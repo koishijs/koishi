@@ -1,18 +1,18 @@
-import { Logger, paramCase, Dict, Awaitable } from '@koishijs/utils'
+import { Logger, Schema, paramCase, Dict, Awaitable } from '@koishijs/utils'
 import { Session } from './session'
 import { App } from './app'
 import { Bot } from './bot'
 import { Context, Plugin } from './context'
 
-export abstract class Adapter<S extends Bot = Bot, T = {}> {
-  public bots: S[] = []
+export abstract class Adapter<S extends Bot.BaseConfig = Bot.BaseConfig, T = {}> {
+  public bots: Bot<S>[] = []
   public platform: string
 
   abstract connect(bot: Bot): Awaitable<void>
   abstract start(): Awaitable<void>
   abstract stop(): Awaitable<void>
 
-  constructor(public app: App, private Bot: Bot.Constructor<S>, public config: T) {
+  constructor(public app: App, public config: T) {
     app.before('connect', async () => {
       await this.start()
       for (const bot of this.bots) {
@@ -21,13 +21,6 @@ export abstract class Adapter<S extends Bot = Bot, T = {}> {
     })
 
     app.on('disconnect', () => this.stop())
-  }
-
-  create(options: Bot.GetConfig<S>, constructor = this.Bot) {
-    const bot: S = new constructor(this, options)
-    this.bots.push(bot)
-    this.app.bots.push(bot)
-    return bot
   }
 
   dispatch(session: Session) {
@@ -45,17 +38,18 @@ export abstract class Adapter<S extends Bot = Bot, T = {}> {
   }
 }
 
-const logger = new Logger('adapter')
+const logger = new Logger('app')
 
 export namespace Adapter {
-  export interface Constructor<T extends Bot = Bot, S = any> {
-    [redirect]?(bot: any): string
+  export interface Constructor<T extends Bot.BaseConfig = Bot.BaseConfig, S = any> {
     new (app: App, options?: S): Adapter<T>
+    [redirect]?(bot: any): string
+    schema?: Schema<S>
   }
 
-  const redirect = Symbol('koishi.adapter.redirect')
-  const library: Dict<Constructor> = {}
-  const configMap: Dict = {}
+  export const redirect = Symbol('koishi.adapter.redirect')
+  export const library: Dict<Constructor> = {}
+  export const configMap: Dict = {}
 
   export type BotConfig<R> = R & { bots?: R[] }
   export type PluginConfig<S = any, R = any> = S & BotConfig<R>
@@ -64,26 +58,42 @@ export namespace Adapter {
     return protocol ? `${platform}.${protocol}` : platform
   }
 
-  export function createPlugin<T extends Bot, S>(
+  type CreatePluginRestParams = [Constructor] | [Dict<Constructor>, (bot: any) => string, Schema?]
+
+  export function define<T extends Bot.BaseConfig, S>(
     platform: string,
+    bot: Bot.Constructor<T>,
     adapter: Constructor<T, S>,
-  ): Plugin.Object<PluginConfig<S, Bot.GetConfig<T>>>
+  ): Plugin.Object<PluginConfig<S, T>>
 
-  export function createPlugin<T extends Bot, S, K extends string>(
+  export function define<T extends Bot.BaseConfig, S, K extends string>(
     platform: string,
+    bot: Bot.Constructor<T>,
     adapters: Record<K, Constructor<T, S>>,
-    redirect: (config: Bot.GetConfig<T>) => K,
-  ): Plugin.Object<PluginConfig<S, Bot.GetConfig<T>>>
+    redirect: (config: T) => K,
+    schema?: Schema<S>,
+  ): Plugin.Object<PluginConfig<S, T>>
 
-  export function createPlugin(platform: string, ...args: [Constructor] | [Dict<Constructor>, (bot: any) => string]) {
+  export function define(platform: string, constructor: Bot.Constructor, ...args: CreatePluginRestParams) {
+    const botSchema = constructor.schema
+    Bot.library[platform] = constructor
+
+    let adapterSchema: Schema
     if (args.length === 1) {
       library[platform] = args[0]
+      adapterSchema = args[0].schema
     } else {
       for (const protocol in args[0]) {
         library[join(platform, protocol)] = args[0][protocol]
       }
       library[platform] = { [redirect]: args[1] } as Constructor
+      adapterSchema = args[2]
     }
+
+    const schema = Schema.Merge([
+      adapterSchema,
+      Schema.Adapt(Schema.Object({ bots: Schema.Array(botSchema) }), botSchema, config => ({ bots: [config] })),
+    ])
 
     function apply(ctx: Context, config: PluginConfig = {}) {
       configMap[platform] = config
@@ -98,7 +108,7 @@ export namespace Adapter {
       }
     }
 
-    return { name: platform, apply }
+    return { name: platform, schema, apply }
   }
 
   export class Manager extends Array<Bot> {
@@ -114,7 +124,10 @@ export namespace Adapter {
 
     create(platform: string, options: Bot.BaseConfig) {
       const adapter = this.resolve(platform, options)
-      return adapter.create(options)
+      const bot = new Bot.library[platform](adapter, options)
+      adapter.bots.push(bot)
+      this.push(bot)
+      return bot
     }
 
     remove(sid: string) {

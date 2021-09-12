@@ -1,5 +1,5 @@
 import { Adapter, App, Bot } from '@koishijs/core'
-import { Logger, Time, Awaitable } from '@koishijs/utils'
+import { Logger, Time, Awaitable, Schema } from '@koishijs/utils'
 import WebSocket from 'ws'
 
 declare module '@koishijs/core' {
@@ -19,9 +19,9 @@ export namespace InjectedAdapter {
     }
   }
 
-  export abstract class WebSocketClient<S extends Bot, T extends WebSocketClient.Config> extends Adapter<S, T> {
-    protected abstract prepare(bot: S): Awaitable<WebSocket>
-    protected abstract accept(bot: S): void
+  export abstract class WebSocketClient<S extends Bot.BaseConfig, T extends WebSocketClient.Config> extends Adapter<S, T> {
+    protected abstract prepare(bot: Bot<S>): Awaitable<WebSocket>
+    protected abstract accept(bot: Bot<S>): void
 
     public config: T
 
@@ -31,14 +31,20 @@ export namespace InjectedAdapter {
       retryTimes: 6,
     }
 
-    constructor(app: App, Bot: Bot.Constructor<S>, config: T) {
-      super(app, Bot, {
+    static schema = Schema.Object({
+      retryLazy: Schema.Number({ initial: Time.minute }),
+      retryInterval: Schema.Number({ initial: 5 * Time.second }),
+      retryTimes: Schema.Number({ initial: 6 }),
+    })
+
+    constructor(app: App, config: T) {
+      super(app, {
         ...WebSocketClient.config,
         ...config,
       })
     }
 
-    connect(bot: S) {
+    connect(bot: Bot<S>) {
       let _retryCount = 0
       const { retryTimes, retryInterval, retryLazy } = this.config
 
@@ -77,7 +83,7 @@ export namespace InjectedAdapter {
         socket.on('open', () => {
           _retryCount = 0
           bot.socket = socket
-          logger.info('connect to ws server:', url)
+          logger.debug('connect to ws server:', url)
           this.accept(bot)
         })
       }

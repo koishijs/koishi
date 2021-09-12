@@ -5,11 +5,11 @@ import WebSocket from 'ws'
 
 const logger = new Logger('onebot')
 
-export class WebSocketClient extends Adapter.WebSocketClient<CQBot, SharedConfig> {
+export class WebSocketClient extends Adapter.WebSocketClient<CQBot.Config, SharedConfig> {
   protected accept = accept
 
   constructor(app: App, config: SharedConfig) {
-    super(app, CQBot, config)
+    super(app, config)
   }
 
   prepare(bot: CQBot) {
@@ -20,13 +20,13 @@ export class WebSocketClient extends Adapter.WebSocketClient<CQBot, SharedConfig
   }
 }
 
-export class WebSocketServer extends Adapter<CQBot, SharedConfig> {
+export class WebSocketServer extends Adapter<CQBot.Config, SharedConfig> {
   public wsServer?: WebSocket.Server
 
   protected accept = accept
 
   constructor(app: App, config: SharedConfig) {
-    super(app, CQBot, config)
+    super(app, config)
     assertProperty(app.options, 'port')
     const { path = '/onebot' } = config
     this.wsServer = new WebSocket.Server({
@@ -48,7 +48,7 @@ export class WebSocketServer extends Adapter<CQBot, SharedConfig> {
       if (!bot) return socket.close(1008, 'invalid x-self-id')
 
       bot.socket = socket
-      this.accept(bot)
+      this.accept(bot as CQBot)
     })
   }
 
@@ -64,7 +64,7 @@ export class WebSocketServer extends Adapter<CQBot, SharedConfig> {
 let counter = 0
 const listeners: Record<number, (response: Response) => void> = {}
 
-export function accept(this: Adapter<CQBot, SharedConfig>, bot: CQBot) {
+export function accept(this: Adapter<CQBot.Config, SharedConfig>, bot: CQBot) {
   bot.socket.on('message', (data) => {
     data = data.toString()
     let parsed: any

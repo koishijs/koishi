@@ -1,4 +1,4 @@
-import { App, Adapter, Logger, renameProperty } from 'koishi'
+import { Adapter, Logger, renameProperty } from 'koishi'
 import { Opcode, Payload } from './types'
 import { adaptSession, adaptUser } from './utils'
 import { DiscordBot } from './bot'
@@ -11,10 +11,8 @@ export namespace WebSocketClient {
 }
 
 /** https://discord.com/developers/docs/topics/gateway */
-export default class WebSocketClient extends Adapter.WebSocketClient<DiscordBot, WebSocketClient.Config> {
-  constructor(app: App, config: WebSocketClient.Config) {
-    super(app, DiscordBot, config)
-  }
+export default class WebSocketClient extends Adapter.WebSocketClient<DiscordBot.Config, WebSocketClient.Config> {
+  static schama = Adapter.WebSocketClient.schema
 
   prepare() {
     return new WebSocket('wss://gateway.discord.gg/?v=8&encoding=json')

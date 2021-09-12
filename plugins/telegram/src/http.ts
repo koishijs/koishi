@@ -1,5 +1,5 @@
 import axios, { AxiosError } from 'axios'
-import { App, Adapter, Session, camelCase, Logger, segment, Bot, sanitize, trimSlash, assertProperty } from 'koishi'
+import { App, Adapter, Session, camelCase, Logger, segment, sanitize, trimSlash, assertProperty } from 'koishi'
 import { TelegramBot } from './bot'
 import * as Telegram from './types'
 import FormData from 'form-data'
@@ -11,9 +11,9 @@ export interface TelegramConfig {
   selfUrl?: string
 }
 
-export default class HttpServer extends Adapter<TelegramBot, TelegramConfig> {
-  constructor(app: App, public config: TelegramConfig) {
-    super(app, TelegramBot, config)
+export default class HttpServer extends Adapter<TelegramBot.Config, TelegramConfig> {
+  constructor(app: App, config: TelegramConfig) {
+    super(app, config)
     config.path = sanitize(config.path || '/telegram')
     if (config.selfUrl) {
       config.selfUrl = trimSlash(config.selfUrl)
