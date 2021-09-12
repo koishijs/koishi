@@ -13,7 +13,7 @@
     "addons": "yarn workspace addons",
     "cli": "yarn compile koishi && yarn workspace test koishi",
     "build": "yarn compile && yarn dtsc",
-    "build:web": "node -r ./build/register packages/plugins/status/build",
+    "build:web": "node -r ./build/register packages/ui-console/build",
     "dtsc": "node -r ./build/register build/dtsc",
     "bump": "node -r ./build/register build/bump",
     "compile": "node -r ./build/register build/compile",

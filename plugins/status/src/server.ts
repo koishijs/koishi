@@ -1,7 +1,7 @@
 import { Adapter, App, Context, Logger, noop, remove, version, Dict } from 'koishi'
 import { resolve, extname } from 'path'
 import { promises as fs, Stats, createReadStream } from 'fs'
-import Awesome from './payload/awesome'
+import Market from './payload/market'
 import Registry from './payload/registry'
 import Meta from './payload/meta'
 import Profile from './payload/profile'
@@ -10,7 +10,7 @@ import WebSocket from 'ws'
 import { v4 } from 'uuid'
 import type { ViteDevServer } from 'vite'
 
-export { Awesome, Registry, Meta, Profile, Statistics }
+export { Market, Registry, Meta, Profile, Statistics }
 
 interface BaseConfig {
   title?: string
@@ -80,7 +80,7 @@ export class WebServer extends Adapter {
     })
 
     this.sources = {
-      awesome: new Awesome(ctx, config),
+      market: new Market(ctx, config),
       profile: new Profile(ctx, config),
       meta: new Meta(ctx, config),
       registry: new Registry(ctx, config),
@@ -239,7 +239,7 @@ export namespace WebServer {
 
   export interface Sources extends Dict<DataSource> {
     meta: Meta
-    awesome: Awesome
+    market: Market
     stats: Statistics
     profile: Profile
     registry: Registry
@@ -252,7 +252,7 @@ export namespace WebServer {
 
   listeners.install = async function ({ name }) {
     if (await this.validate()) return this.send('unauthorized')
-    this.app.webui.sources.awesome.install(name)
+    this.app.webui.sources.market.install(name)
   }
 
   listeners.switch = async function ({ plugin }) {

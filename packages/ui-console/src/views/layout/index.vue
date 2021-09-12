@@ -40,13 +40,8 @@ a {
 }
 
 main {
-  margin: 2rem 0;
-  padding: 0 $mainPadding;
-  position: absolute;
-  bottom: 0;
-  top: 0;
-  right: 0;
-  left: $sidebarWidth;
+  margin-left: var(--aside-width);
+  padding: 2rem 2rem 0;
 }
 
 ::-webkit-scrollbar {
@@ -63,6 +58,7 @@ main {
 
 ::-webkit-scrollbar-track {
   border-radius: 0.6rem;
+  background: var(--bg0);
 }
 
 .card-grid {
@@ -136,23 +132,23 @@ table {
   text-align: center;
   width: 100%;
   border-collapse: collapse;
-}
 
-tr {
-  transition: 0.3s ease;
-}
+  tr {
+    transition: 0.3s ease;
+  }
 
-tr:hover {
-  background-color: var(--bg1);
-}
+  tr:hover {
+    background-color: var(--bg1);
+  }
 
-td, th {
-  padding: .5em 1em;
-  border-bottom: 1px solid var(--border-dark);
-}
+  td, th {
+    padding: .5em 1em;
+    border-bottom: 1px solid var(--border-dark);
+  }
 
-tr {
-  border-top: 1px solid var(--border-dark);
+  tr {
+    border-top: 1px solid var(--border-dark);
+  }
 }
 
 </style>

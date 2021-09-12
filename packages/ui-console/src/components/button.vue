@@ -62,7 +62,7 @@ button {
     cursor: default;
   }
   // default: transparent & framed
-  color: $tpFgColor3;
+  color: var(--active);
   border: 1px solid $tpBorderColor2;
   background-color: $tpBgColor1;
   &:disabled {
@@ -103,7 +103,6 @@ button {
     padding: 0;
     border-color: transparent;
     background-color: transparent;
-    text-shadow: 1px 2px 3px #000a;
     &:hover {
       border-color: transparent;
       background-color: transparent;

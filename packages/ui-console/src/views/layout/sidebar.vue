@@ -16,12 +16,10 @@
 
 <script lang="ts" setup>
 
-import { user } from '~/client'
 import type { RouteMeta } from 'vue-router'
 
 function isShown(meta: RouteMeta) {
   if (meta.hidden) return false
-  if (meta.authority > 1 && !(meta.authority <= user.value?.authority)) return false
   return true
 }
 
@@ -66,7 +64,7 @@ aside {
     cursor: pointer;
     color: var(--fg1);
     line-height: 3rem;
-    padding: 0 1.5rem;
+    padding: 0 2rem;
     transition: 0.3s ease;
   }
 

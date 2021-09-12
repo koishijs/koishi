@@ -29,11 +29,11 @@
 
 <script lang="ts" setup>
 
-import type { Awesome } from '~/server'
+import type { Market } from '~/server'
 import { send, user } from '~/client'
 import { computed, ref, watch } from 'vue'
 
-const props = defineProps<{ data: Awesome.PackageData }>()
+const props = defineProps<{ data: Market.PackageData }>()
 
 const hasUpdate = computed(() => {
   const { local, version } = props.data
@@ -54,7 +54,7 @@ watch(() => props.data.local, () => {
   downloading.value = false
 }, { deep: true })
 
-function toggle(data: Awesome.PackageData) {
+function toggle(data: Market.PackageData) {
   const { id, token } = user.value
   send('install', { name: `${data.name}@^${data.version}`, id, token })
   downloading.value = true
@@ -74,11 +74,7 @@ function toggle(data: Awesome.PackageData) {
   a {
     font-weight: bold;
     transition: 0.3s ease;
-    color: rgba(244, 244, 245, 0.75);
-  }
-
-  a:hover {
-    color: rgba(244, 244, 245);
+    color: var(--fg1);
   }
 
   .description {
@@ -110,13 +106,13 @@ function toggle(data: Awesome.PackageData) {
   }
 }
 
-.page-awesome td:not(.package) {
+.page-market td:not(.package) {
   min-width: 4rem;
 }
 
 tr.workspace {
   .latest, .size {
-    color: rgba(244, 244, 245, .25);
+    opacity: 0.25;
   }
 }
 

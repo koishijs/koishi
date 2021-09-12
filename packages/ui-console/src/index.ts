@@ -3,7 +3,7 @@
 import { ref, watch, reactive, Ref, Component } from 'vue'
 import { createWebHistory, createRouter } from 'vue-router'
 import type { User } from 'koishi'
-import type { Registry, Profile, Meta, Statistics, Awesome } from '~/server'
+import type { Registry, Profile, Meta, Statistics, Market } from '~/server'
 import * as client from '.'
 
 export const views: Component[] = []
@@ -70,7 +70,7 @@ export const user = storage.create<User>('user')
 export const config = storage.create<Config>('config', { authType: 0 }, true)
 export const meta = ref<Meta.Payload>(null)
 export const profile = ref<Profile.Payload>(null)
-export const awesome = ref<Awesome.PackageData[]>(null)
+export const market = ref<Market.PackageData[]>(null)
 export const registry = ref<Registry.PluginData[]>(null)
 export const stats = ref<Statistics.Payload>(null)
 export const socket = ref<WebSocket>(null)

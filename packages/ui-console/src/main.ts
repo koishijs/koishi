@@ -36,24 +36,45 @@ router.addRoute({
 })
 
 router.addRoute({
+  path: '/bots',
+  name: '机器人',
+  meta: { icon: 'robot' },
+  component: () => import('./views/bots/index.vue'),
+})
+
+router.addRoute({
+  path: '/database',
+  name: '数据库',
+  meta: { icon: 'database' },
+  component: () => import('./views/database/index.vue'),
+})
+
+router.addRoute({
   path: '/plugins',
-  name: '插件',
+  name: '插件管理',
   meta: { icon: 'plug', require: ['registry'] },
   component: () => import('./views/plugins/index.vue'),
 })
 
 router.addRoute({
-  path: '/awesome',
-  name: '依赖',
-  meta: { icon: 'puzzle-piece', authority: 4, require: ['awesome'] },
-  component: () => import('./views/awesome/index.vue'),
+  path: '/market',
+  name: '插件市场',
+  meta: { icon: 'puzzle-piece', require: ['market'] },
+  component: () => import('./views/market/index.vue'),
 })
 
 router.addRoute({
-  path: '/profile',
-  name: '资料',
-  meta: { icon: 'user-circle', authority: 1, hidden: true },
-  component: () => import('./views/profile.vue'),
+  path: '/settings',
+  name: '设置',
+  meta: { icon: 'cog' },
+  component: () => import('./views/settings/index.vue'),
+})
+
+router.addRoute({
+  path: '/logs',
+  name: '日志',
+  meta: { icon: 'clipboard-list' },
+  component: () => import('./views/logs/index.vue'),
 })
 
 app.component('k-badge', Badge)
@@ -81,7 +102,7 @@ router.afterEach((route) => {
 })
 
 receive('meta', data => client.meta.value = data)
-receive('awesome', data => client.awesome.value = data)
+receive('market', data => client.market.value = data)
 receive('profile', data => client.profile.value = data)
 receive('registry', data => client.registry.value = data)
 receive('stats', data => client.stats.value = data)

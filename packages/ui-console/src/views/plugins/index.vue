@@ -1,5 +1,5 @@
 <template>
-  <k-card class="page-plugins" :class="{ authorized: user?.authority >= 4 }" title="插件列表">
+  <k-card class="page-plugins" title="插件列表">
     <div class="table-header plugin-item">
       <span class="title">插件名</span>
       <span class="complexity">复杂度</span>
@@ -14,45 +14,18 @@
 <script setup lang="ts">
 
 import PluginView from './plugin.vue'
-import { registry, user } from '~/client'
+import { registry } from '~/client'
 
 </script>
 
 <style lang="scss">
 
-@import '~/variables';
-
-.page-plugins {
-  header {
-    color: rgba(244, 244, 245, .6);
-
-    span {
-      transition: 0.3s ease;
-    }
-
-    span.inactive:hover {
-      cursor: pointer;
-      color: rgba(244, 244, 245, .8);
-    }
-
-    span:not(.inactive) {
-      color: rgba(244, 244, 245);
-    }
-  }
-}
-
 .table-header {
   font-weight: bold;
-  border-top: var(--border) 1px solid;
+  border-top: var(--border-dark) 1px solid;
 
   .title {
     margin-left: 3rem;
-  }
-}
-
-.page-plugins:not(.authorized) {
-  .complexity, .operation {
-    display: none;
   }
 }
 

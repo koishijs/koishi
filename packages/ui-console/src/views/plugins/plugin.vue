@@ -9,7 +9,7 @@
       </span>
       <span class="complexity">{{ data.complexity || '-' }}</span>
       <span class="operation">
-        <k-button class="right" frameless :type="data.name === 'status' ? 'danger' : ''"
+        <k-button class="right" frameless type="danger"
           :disabled="data.sideEffect" @click="toggle(data.id)"
         >{{ data.complexity ? '停用' : '启用' }}</k-button>
       </span>
@@ -70,7 +70,7 @@ function toggle(plugin: string) {
   line-height: 1.6;
   user-select: none;
   padding: 0.5rem 0;
-  border-bottom: $borderColor 1px solid;
+  border-bottom: var(--border-dark) 1px solid;
 
   .title {
     font-weight: bold;
@@ -89,7 +89,7 @@ function toggle(plugin: string) {
   }
 
   &:hover {
-    background-color: #474d8450;
+    background-color: var(--bg1);
   }
 
   .complexity {

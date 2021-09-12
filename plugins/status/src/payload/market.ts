@@ -36,12 +36,6 @@ interface Registry extends PackageBase {
   versions: Dict<PackageRemote>
 }
 
-const officialPlugins = [
-  'adventure', 'assets', 'chat', 'chess', 'common', 'dice',
-  'eval', 'github', 'image-search', 'mongo', 'mysql',
-  'puppeteer', 'schedule', 'status', 'teach', 'tools',
-]
-
 type Manager = 'yarn' | 'npm'
 
 const cwd = process.cwd()
@@ -68,10 +62,10 @@ const installArgs: Record<Manager, string[]> = {
   npm: ['install', '--loglevel', 'error'],
 }
 
-class Awesome {
-  cached: Promise<Awesome.PackageData[]>
+class Market {
+  cached: Promise<Market.PackageData[]>
 
-  constructor(private ctx: Context, public config: Awesome.Config) {
+  constructor(private ctx: Context, public config: Market.Config) {
     ctx.router.get(config.apiPath + '/package(/.+)+', async (ctx) => {
       const name = ctx.path.slice(config.apiPath.length + 9)
       const { data } = await axios.get(`https://registry.npmjs.org/${name}`)
@@ -98,13 +92,13 @@ class Awesome {
       return { isWorkspace, isInstalled, ...pick(data, ['name', 'version', 'description']) }
     }
 
-    const loadCache: Dict<Promise<Awesome.PackageMeta>> = {}
+    const loadCache: Dict<Promise<Market.PackageMeta>> = {}
     const loadDep = (filename: string, isInstalled: boolean) => {
       return loadCache[filename] ||= _loadDep(filename, isInstalled)
     }
 
     const [{ data }] = await Promise.all([
-      axios.get<SearchResult>('https://api.npms.io/v2/search?q=koishi-plugin+not:deprecated&size=250'),
+      axios.get<SearchResult>('https://api.npms.io/v2/search?q=koishi+plugin+not:deprecated&size=250'),
       Promise.all(Object.keys(require.cache).map((filename) => {
         const { exports } = require.cache[filename]
         if (this.ctx.app.registry.has(exports)) return loadDep(filename, true)
@@ -120,7 +114,10 @@ class Awesome {
 
     return Promise.all(data.results.map(async (item) => {
       const { name, version } = item.package
-      const official = officialPlugins.includes(name.slice(14))
+      const official = name.startsWith('@koishijs/plugin-')
+      const community = name.startsWith('koishi-plugin-')
+      if (!official && !community) return
+
       const [local, { data }] = await Promise.all([
         loadExternal(name),
         axios.get<Registry>(`https://registry.npmjs.org/${name}`),
@@ -138,7 +135,7 @@ class Awesome {
           final: item.score.final,
           ...item.score.detail,
         },
-      } as Awesome.PackageData
+      } as Market.PackageData
     })).then(data => data.filter(Boolean))
   }
 
@@ -146,11 +143,11 @@ class Awesome {
     const kind = await (_managerPromise ||= getManager())
     const args = [...installArgs[kind], name]
     await execute(kind, args)
-    this.ctx.webui.broadcast('awesome', await this.get(true))
+    this.ctx.webui.broadcast('market', await this.get(true))
   }
 }
 
-namespace Awesome {
+namespace Market {
   export interface Config {
     apiPath?: string
   }
@@ -173,4 +170,4 @@ namespace Awesome {
   }
 }
 
-export default Awesome
+export default Market

@@ -55,7 +55,7 @@ $paddingY: 1.5rem;
   }
 
   .footer {
-    border-top: 1px solid #EBEEF5;
+    border-top: 1px solid var(--border);
   }
 }
 

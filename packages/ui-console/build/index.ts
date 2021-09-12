@@ -5,11 +5,8 @@ import { resolve } from 'path'
 import { copyFile } from 'fs-extra'
 import pluginVue from '@vitejs/plugin-vue'
 
-const root = resolve(__dirname, '../client')
-const dist = resolve(__dirname, '../dist')
-
 function findModulePath(id: string) {
-  const path = require.resolve(id)
+  const path = require.resolve(id).replace(/\\/g, '/')
   const keyword = `/node_modules/${id}/`
   return path.slice(0, path.indexOf(keyword)) + keyword.slice(0, -1)
 }
@@ -53,7 +50,7 @@ function build(root: string, config: vite.UserConfig) {
 }
 
 function buildExtension(name: string) {
-  const root = resolve(__dirname, '../../plugin-' + name)
+  const root = resolve(__dirname, '../../../plugins/' + name)
   return build(root, {
     build: {
       outDir: 'dist',
@@ -70,6 +67,9 @@ function buildExtension(name: string) {
 }
 
 ;(async () => {
+  const root = resolve(__dirname, '../src')
+  const dist = resolve(__dirname, '../dist')
+
   await build(root, {
     base: './',
     resolve: {
