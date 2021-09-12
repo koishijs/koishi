@@ -29,7 +29,7 @@
     "koishi"
   ],
   "peerDependencies": {
-    "koishi": "^4.0.0-alpha.4"
+    "koishi": "^4.0.0-alpha.5"
   },
   "dependencies": {
     "mineflayer": "^3.11.0"

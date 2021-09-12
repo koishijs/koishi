@@ -9,6 +9,7 @@ const { args } = cac().help().parse()
 const ignored = [
   'This call to "require" will not be bundled because the argument is not a string literal',
   'Indirect calls to "require" will not be bundled',
+  'should be marked as external for use with "require.resolve"',
 ]
 
 function display(prefix: string) {

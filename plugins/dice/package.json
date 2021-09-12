@@ -31,9 +31,9 @@
     "dice"
   ],
   "peerDependencies": {
-    "koishi": "^4.0.0-alpha.4"
+    "koishi": "^4.0.0-alpha.5"
   },
   "devDependencies": {
-    "@koishijs/test-utils": "^8.0.0-alpha.3"
+    "@koishijs/test-utils": "^8.0.0-alpha.4"
   }
 }
