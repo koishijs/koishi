@@ -56,13 +56,6 @@ router.addRoute({
   component: () => import('./views/profile.vue'),
 })
 
-router.addRoute({
-  path: '/login',
-  name: '登录',
-  meta: { icon: 'sign-in-alt', frameless: true, hidden: true },
-  component: () => import('./views/login.vue'),
-})
-
 app.component('k-badge', Badge)
 app.component('k-card', Card)
 app.component('k-chart', Vue.defineAsyncComponent(() => import('./components/echarts')))
@@ -79,9 +72,6 @@ router.beforeEach((route, from) => {
   if (from === Router.START_LOCATION && !route.matched.length) {
     loadingExtensions.then(() => router.replace(route))
   }
-  if (route.meta.authority && !client.user.value) {
-    return history.state.forward === '/login' ? '/' : '/login'
-  }
 })
 
 router.afterEach((route) => {
@@ -96,9 +86,6 @@ receive('profile', data => client.profile.value = data)
 receive('registry', data => client.registry.value = data)
 receive('stats', data => client.stats.value = data)
 receive('user', data => client.user.value = data)
-receive('expire', () => {
-  router.push('/login')
-})
 
 function connect() {
   const endpoint = new URL(KOISHI_CONFIG.endpoint, location.origin).toString()

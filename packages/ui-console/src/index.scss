@@ -1,3 +1,26 @@
+:root {
+  --bg0: #ffffff;
+  --bg1: #f4f4f5;
+  --bg2: #d5d5d8;
+
+  --fg0: #000000;
+  --fg1: #231f37;
+  --fg2: #545260;
+
+  --border: #e2e2e4;
+  --border-dark: #c8c9cc;
+
+  --primary: #5546a3;
+
+  --page-bg: var(--bg1);
+  --page-fg: var(--fg1);
+
+  --card-bg: var(--bg0);
+  --card-fg: var(--page-fg);
+
+  --aside-width: 16rem;
+}
+
 $text: #303133;
 $text2: #606266;
 $text3: #909399;
@@ -42,6 +65,5 @@ $bp_md: 1024px;
 $bp_sm: 768px;
 $bp_xs: 480px;
 
-$navbarHeight: 4rem;
 $sidebarWidth: 16rem;
 $mainPadding: 2rem;

@@ -43,7 +43,7 @@ import { registry, user } from '~/client'
 
 .table-header {
   font-weight: bold;
-  border-top: $borderColor 1px solid;
+  border-top: var(--border) 1px solid;
 
   .title {
     margin-left: 3rem;

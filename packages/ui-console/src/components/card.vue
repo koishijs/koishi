@@ -27,15 +27,15 @@ $paddingY: 1.5rem;
   margin: 0 auto 2rem;
   width: 100%;
   border-radius: 8px;
-  background: rgba(0, 0, 0, .24);
-  box-shadow: 0 23px 20px -20px rgb(9 10 18 / 10%), 0 0 15px rgb(9 10 18 / 6%);
+  color: var(--card-fg);
+  background-color: var(--card-bg);
+  box-shadow: 0 6px 10px -4px rgb(0 0 0 / 15%);
 
   header {
     font-size: 1.25rem;
     font-weight: bolder;
     padding: $paddingX $paddingY 0;
     transition: color 0.3s ease;
-    color: rgba(244, 244, 245, .8);
   }
 
   footer {

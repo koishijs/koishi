@@ -1,29 +1,21 @@
 <template>
-  <template v-if="!frameless">
-    <navbar/>
-    <sidebar/>
-  </template>
-  <main :class="{ frameless }">
-    <p v-if="invalid">权限不足。</p>
-    <router-view v-else-if="loaded"/>
+  <sidebar/>
+  <main>
+    <router-view v-if="loaded"/>
     <p v-else>正在加载数据……</p>
   </main>
-  <component v-for="view in views" :is="view"/>
+  <component v-for="view in client.views" :is="view"/>
 </template>
 
 <script lang="ts" setup>
 
 import * as client from '~/client'
-import { views } from '~/client'
-import Navbar from './navbar.vue'
 import Sidebar from './sidebar.vue'
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 
 const route = useRoute()
-const frameless = computed(() => route.meta.frameless)
 const loaded = computed(() => (route.meta.require || []).every((key) => client[key].value))
-const invalid = computed(() => route.meta.authority > client.user.value?.authority)
 
 </script>
 
@@ -34,12 +26,11 @@ const invalid = computed(() => route.meta.authority > client.user.value?.authori
 body {
   margin: 0;
   min-height: 100vh;
-  font-family: Avenir, Helvetica, Arial, sans-serif;
+  font-family: PingFang SC, Hiragino Sans GB, Microsoft YaHei, SimSun, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  color: rgba(244, 244, 245, .6);
-  background: radial-gradient(farthest-side ellipse at 10% 0, #333867, #17193b);
-  background-attachment: fixed;
+  color: var(--page-fg);
+  background: var(--page-bg);
   position: relative;
 }
 
@@ -49,7 +40,7 @@ a {
 }
 
 main {
-  margin: $navbarHeight 0;
+  margin: 2rem 0;
   padding: 0 $mainPadding;
   position: absolute;
   bottom: 0;
@@ -58,30 +49,20 @@ main {
   left: $sidebarWidth;
 }
 
-main.frameless {
-  margin: 0;
-  left: 0;
-  top: 50%;
-  transform: translateY(-50%);
-  height: fit-content;
-}
-
 ::-webkit-scrollbar {
   height: 100%;
   width: 0.6rem;
 }
 
 ::-webkit-scrollbar-thumb {
-  border-radius: 0.6rem;
-  background: #fff4;
+  background: var(--border);
   &:hover {
-    background: #fff8;
+    background: var(--border-dark);
   }
 }
 
 ::-webkit-scrollbar-track {
   border-radius: 0.6rem;
-  box-shadow: inset 0 0 6px #000b;
 }
 
 .card-grid {
@@ -162,16 +143,16 @@ tr {
 }
 
 tr:hover {
-  background-color: #474d8450;
+  background-color: var(--bg1);
 }
 
 td, th {
   padding: .5em 1em;
-  border-bottom: 1px solid $borderColor;
+  border-bottom: 1px solid var(--border-dark);
 }
 
-th {
-  border-top: 1px solid $borderColor;
+tr {
+  border-top: 1px solid var(--border-dark);
 }
 
 </style>

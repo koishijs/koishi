@@ -129,7 +129,7 @@ async function install() {
 
 async function start() {
   console.log()
-  console.log(`  ${bold('Koishi')} Create  ${blue(`v${KOISHI_VERSION}`)}`)
+  console.log(`  ${bold('Koishi')}  ${blue(`v${KOISHI_VERSION}`)}`)
   console.log()
 
   const name = await getName()

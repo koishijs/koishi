@@ -1,4 +1,4 @@
-import { Adapter, App, Context, Logger, noop, omit, pick, remove, Time, User, version, Dict } from 'koishi'
+import { Adapter, App, Context, Logger, noop, remove, version, Dict } from 'koishi'
 import { resolve, extname } from 'path'
 import { promises as fs, Stats, createReadStream } from 'fs'
 import Awesome from './payload/awesome'
@@ -34,14 +34,12 @@ export interface ClientConfig extends Required<BaseConfig> {
 }
 
 const logger = new Logger('status')
-const TOKEN_TIMEOUT = Time.minute * 10
 
 export class SocketHandle {
   readonly app: App
   readonly id = v4()
-  authority: number
 
-  constructor(public readonly webui: WebServer, public socket: WebSocket) {
+  constructor(webui: WebServer, public socket: WebSocket) {
     this.app = webui.app
   }
 
@@ -49,13 +47,8 @@ export class SocketHandle {
     this.socket.send(JSON.stringify({ type, body }))
   }
 
-  async validate<T extends User.Field>(id: string, token: string, fields: T[] = []) {
-    const user = await this.app.database.getUser('id', id, ['token', 'expire', 'authority', ...fields])
-    if (!user || token !== user.token || user.expire <= Date.now()) {
-      return this.send('expire')
-    }
-    this.authority = user.authority
-    return user
+  async validate() {
+    return this.app.serial('status/validate', this)
   }
 }
 
@@ -63,8 +56,6 @@ export class WebServer extends Adapter {
   readonly sources: WebServer.Sources
   readonly global: ClientConfig
   readonly entries: Dict<string> = {}
-  readonly handles: Dict<SocketHandle> = {}
-  readonly states: Dict<[string, number, SocketHandle]> = {}
   readonly platform = 'web'
 
   private vite: ViteDevServer
@@ -95,17 +86,6 @@ export class WebServer extends Adapter {
       registry: new Registry(ctx, config),
       stats: new Statistics(ctx, config),
     }
-
-    ctx.any().private().middleware(async (session, next) => {
-      const state = this.states[session.uid]
-      if (state && state[0] === session.content) {
-        const user = await session.observeUser(['id', 'name', 'authority', 'token', 'expire'])
-        user.token = v4()
-        user.expire = Date.now() + config.expiration
-        return state[2].send('user', user)
-      }
-      return next()
-    }, true)
 
     ctx.on('connect', () => this.start())
     ctx.before('disconnect', () => this.stop())
@@ -165,20 +145,12 @@ export class WebServer extends Adapter {
 
   private onConnection = (socket: WebSocket) => {
     const channel = new SocketHandle(this, socket)
-    this.handles[channel.id] = channel
 
     for (const type in this.sources) {
       this.sources[type].get().then((body) => {
         socket.send(JSON.stringify({ type, body }))
       })
     }
-
-    socket.on('close', () => {
-      delete this.handles[channel.id]
-      for (const id in this.states) {
-        if (this.states[id][2] === channel) delete this.states[id]
-      }
-    })
 
     socket.on('message', async (data) => {
       if (!this.ctx.database) return
@@ -278,53 +250,13 @@ export namespace WebServer {
 
   // builtin listeners
 
-  listeners.validate = async function ({ id, token }) {
-    await this.validate(id, token)
+  listeners.install = async function ({ name }) {
+    if (await this.validate()) return this.send('unauthorized')
+    this.app.webui.sources.awesome.install(name)
   }
 
-  listeners.token = async function ({ platform, userId }) {
-    const user = await this.app.database.getUser(platform, userId, ['name'])
-    if (!user) return this.send('login', { message: '找不到此账户。' })
-    const id = `${platform}:${userId}`
-    const token = v4()
-    const expire = Date.now() + TOKEN_TIMEOUT
-    const { states } = this.app.webui
-    states[id] = [token, expire, this]
-    setTimeout(() => {
-      if (states[id]?.[1] > Date.now()) delete states[id]
-    }, TOKEN_TIMEOUT)
-    this.send('login', { token, name: user.name })
-  }
-
-  listeners.password = async function ({ id, token, password }) {
-    const user = await this.validate(id, token, ['password'])
-    if (!user || password === user.password) return
-    await this.app.database.setUser('id', id, { password })
-  }
-
-  listeners.login = async function ({ username, password }) {
-    const user = await this.app.database.getUser('name', username, ['password', 'authority', 'id', 'expire', 'token'])
-    if (!user || user.password !== password) {
-      return this.send('login', { message: '用户名或密码错误。' })
-    }
-    user.token = v4()
-    user.expire = Date.now() + this.app.webui.config.expiration
-    await this.app.database.setUser('name', username, pick(user, ['token', 'expire']))
-    this.send('user', omit(user, ['password']))
-    this.authority = user.authority
-  }
-
-  listeners.install = async function ({ id, token, name }) {
-    const user = await this.validate(id, token, ['name', 'authority'])
-    if (!user) return
-    if (user.authority < 4) return this.send('unauthorized')
-    this.webui.sources.awesome.install(name)
-  }
-
-  listeners.switch = async function ({ id, token, plugin }) {
-    const user = await this.validate(id, token, ['name', 'authority'])
-    if (!user) return
-    if (user.authority < 4) return this.send('unauthorized')
-    this.webui.sources.registry.switch(plugin)
+  listeners.switch = async function ({ plugin }) {
+    if (await this.validate()) return this.send('unauthorized')
+    this.app.webui.sources.registry.switch(plugin)
   }
 }

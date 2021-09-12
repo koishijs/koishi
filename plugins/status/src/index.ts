@@ -1,6 +1,6 @@
-import { Context, template, Time, Tables } from 'koishi'
+import { Context, template, Time, Tables, Awaitable } from 'koishi'
 import { Synchronizer } from './payload/stats'
-import { WebServer, Config } from './server'
+import { WebServer, SocketHandle, Config } from './server'
 import Meta from './payload/meta'
 
 import './database/mongo'
@@ -33,6 +33,7 @@ declare module 'koishi' {
 
   interface EventMap {
     'status/tick'(): void
+    'status/validate'(handle: SocketHandle): Awaitable<boolean>
   }
 
   interface User {

@@ -89,7 +89,7 @@ export function apply(ctx: Context, options: Config = {}) {
       // create bot after connection
       // to prevent mysql from altering user table
       const sandbox = ctx.webui.create({ platform: 'id' }, SandboxBot)
-      webui.Profile.initBot(sandbox)
+      status.Profile.initBot(sandbox)
 
       ctx.webui.addListener('chat', async function ({ id, token, content, platform, selfId, channelId, guildId }) {
         const user = await this.validate(id, token, ['name', 'authority'])

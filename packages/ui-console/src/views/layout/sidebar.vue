@@ -1,5 +1,6 @@
 <template>
   <aside>
+    <h1>Koishi 控制台</h1>
     <ul>
       <template v-for="({ name, path, meta }) in $router.getRoutes()">
         <li v-if="isShown(meta)" :class="{ current: name === $route.name }">
@@ -31,10 +32,15 @@ function isShown(meta: RouteMeta) {
 @import '../../index.scss';
 
 aside {
-  margin: 0 1rem;
-  position: absolute;
-  top: $navbarHeight;
-  width: $sidebarWidth - 1rem;
+  position: fixed;
+  height: 100%;
+  width: var(--aside-width);
+  background-color: var(--card-bg);
+
+  h1 {
+    font-size: 1.5rem;
+    text-align: center;
+  }
 
   ul {
     list-style: none;
@@ -44,7 +50,6 @@ aside {
   }
 
   li {
-    border-radius: 0.5rem;
     transition: 0.3s ease;
   }
 
@@ -59,22 +64,22 @@ aside {
     font-size: 1.05rem;
     text-decoration: none;
     cursor: pointer;
-    color: rgba(244, 244, 245, .6);
+    color: var(--fg1);
     line-height: 3rem;
-    padding: 0 1rem;
+    padding: 0 1.5rem;
     transition: 0.3s ease;
   }
 
   li:hover {
-    background-color: rgba(4, 6, 32, .24);
+    background-color: var(--bg1);
     a {
-      color: rgba(244, 244, 245, .8);
+      color: var(--fg0);
     }
   }
 
   li.current a {
     font-weight: bolder;
-    color: rgba(244, 244, 245);
+    color: var(--primary);
   }
 }
 

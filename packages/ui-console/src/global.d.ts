@@ -9,4 +9,8 @@ declare module '~/server' {
   export * from '@koishijs/plugin-status'
 }
 
+declare module '~/client' {
+  export * from '@koishijs/ui-console'
+}
+
 declare const KOISHI_CONFIG: import('~/server').ClientConfig

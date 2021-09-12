@@ -11,7 +11,7 @@
   ],
   "scripts": {
     "addons": "yarn workspace addons",
-    "cli": "yarn compile koishi && yarn workspace test",
+    "cli": "yarn compile koishi && yarn workspace test koishi",
     "build": "yarn compile && yarn dtsc",
     "build:web": "node -r ./build/register packages/plugins/status/build",
     "dtsc": "node -r ./build/register build/dtsc",
@@ -26,6 +26,7 @@
     "test:text": "c8 -r text yarn test",
     "lint": "eslint packages/**/src/**/*.ts --fix --cache",
     "pub": "node -r ./build/register build/publish",
+    "scaffold": "yarn compile koishi && yarn create-koishi test",
     "shiki": "yarn workspace bot-shiki",
     "webui": "yarn workspace @koishijs/plugin-status"
   },

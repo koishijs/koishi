@@ -43,6 +43,7 @@ const text = computed(() => {
     padding: 0.3rem 0;
     width: 3rem;
     text-align: center;
+    color: var(--fg2);
   }
 
   .content {
@@ -57,7 +58,6 @@ const text = computed(() => {
   .value {
     font-size: 1.2rem;
     margin-top: 0.2rem;
-    color: rgba(244, 244, 245, .8);
   }
 }
 

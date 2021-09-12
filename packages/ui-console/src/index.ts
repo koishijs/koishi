@@ -26,8 +26,6 @@ declare module 'vue-router' {
   interface RouteMeta {
     icon?: string
     hidden?: boolean
-    authority?: number
-    frameless?: boolean
     require?: Keys<typeof client, Ref>[]
   }
 }
