@@ -50,10 +50,10 @@ router.addRoute({
 })
 
 router.addRoute({
-  path: '/plugins',
-  name: '插件管理',
-  meta: { icon: 'plug', require: ['registry'] },
-  component: () => import('./views/plugins/index.vue'),
+  path: '/config',
+  name: '配置项',
+  meta: { icon: 'tools', require: ['registry'] },
+  component: () => import('./views/config/index.vue'),
 })
 
 router.addRoute({
@@ -64,15 +64,8 @@ router.addRoute({
 })
 
 router.addRoute({
-  path: '/settings',
-  name: '设置',
-  meta: { icon: 'cog' },
-  component: () => import('./views/settings/index.vue'),
-})
-
-router.addRoute({
   path: '/logs',
-  name: '日志',
+  name: '运行日志',
   meta: { icon: 'clipboard-list' },
   component: () => import('./views/logs/index.vue'),
 })
