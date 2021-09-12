@@ -4,11 +4,11 @@ import { adaptSession, SharedConfig } from './utils'
 
 const logger = new Logger('kaiheila')
 
-export default class HttpServer extends Adapter<KaiheilaBot, SharedConfig> {
+export default class HttpServer extends Adapter<KaiheilaBot.Config, SharedConfig> {
   constructor(app: App, config: SharedConfig) {
     assertProperty(app.options, 'port')
     config.path = sanitize(config.path || '/kaiheila')
-    super(app, KaiheilaBot, config)
+    super(app, config)
   }
 
   async connect(bot: KaiheilaBot) {

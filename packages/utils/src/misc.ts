@@ -107,12 +107,12 @@ export function coerce(val: any) {
   return stack
 }
 
+export function isNullable(value: any) {
+  return value === null || value === undefined
+}
+
 export function makeArray<T>(source: T | T[]) {
-  return Array.isArray(source)
-    ? source
-    : source === null || source === undefined
-      ? []
-      : [source]
+  return Array.isArray(source) ? source : isNullable(source) ? [] : [source]
 }
 
 export function renameProperty<O extends object, K extends keyof O, T extends string>(config: O, key: K, oldKey: T) {
@@ -139,3 +139,4 @@ export type Extract<S, T, U = S> = S extends T ? U : never
 export type MaybeArray<T> = [T] extends [unknown[]] ? T : T | T[]
 export type Promisify<T> = [T] extends [Promise<unknown>] ? T : Promise<T>
 export type Awaitable<T> = [T] extends [Promise<unknown>] ? T : T | Promise<T>
+export type Intersect<U> = (U extends any ? (arg: U) => void : never) extends ((arg: infer I) => void) ? I : never

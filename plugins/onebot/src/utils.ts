@@ -1,4 +1,4 @@
-import { Adapter, Bot, Session, camelCase, renameProperty, paramCase, segment } from 'koishi'
+import { Adapter, Bot, Session, camelCase, renameProperty, paramCase, segment, Schema } from 'koishi'
 import * as qface from 'qface'
 import * as OneBot from './types'
 
@@ -9,6 +9,10 @@ export interface SharedConfig extends Adapter.WebSocketClient.Config {
   secret?: string
   responseTimeout?: number
 }
+
+export const schema: Schema<SharedConfig> = Schema.Extend(Adapter.WebSocketClient.schema, Schema.Object({
+  path: Schema.String({ initial: '/onebot' }),
+}))
 
 export const adaptUser = (user: OneBot.AccountInfo): Bot.User => ({
   userId: user.userId.toString(),

@@ -1,4 +1,5 @@
 import { Adapter } from 'koishi'
+import { MinecraftBot } from './bot'
 import WebSocketClient from './ws'
 
 declare module 'koishi' {
@@ -7,4 +8,4 @@ declare module 'koishi' {
   }
 }
 
-export = Adapter.createPlugin('minecraft', WebSocketClient)
+export = Adapter.define('minecraft', MinecraftBot, WebSocketClient)

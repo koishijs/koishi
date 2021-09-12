@@ -1,13 +1,11 @@
-import { App, Adapter, Session } from 'koishi'
+import { Adapter, Session, Schema } from 'koishi'
 import { createBot } from 'mineflayer'
 import { MinecraftBot } from './bot'
 
 export interface MinecraftConfig {}
 
-export default class WebSocketClient extends Adapter.WebSocketClient<MinecraftBot, MinecraftConfig> {
-  constructor(app: App, config: MinecraftConfig) {
-    super(app, MinecraftBot, config)
-  }
+export default class WebSocketClient extends Adapter.WebSocketClient<MinecraftBot.Config, MinecraftConfig> {
+  static schema: Schema<MinecraftConfig> = Schema.Object({})
 
   async prepare(bot: MinecraftBot) {
     const config = {

@@ -1,4 +1,5 @@
 import { Adapter } from 'koishi'
+import { TelegramBot } from './bot'
 import HttpServer from './http'
 
 declare module 'koishi' {
@@ -7,4 +8,4 @@ declare module 'koishi' {
   }
 }
 
-export = Adapter.createPlugin('telegram', HttpServer)
+export = Adapter.define('telegram', TelegramBot, HttpServer)

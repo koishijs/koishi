@@ -1,4 +1,4 @@
-import { Logger, sleep } from '@koishijs/utils'
+import { Logger, sleep, Schema, Dict } from '@koishijs/utils'
 import { Adapter } from './adapter'
 import { App } from './app'
 import { Session } from './session'
@@ -99,8 +99,15 @@ export namespace Bot {
     platform?: string
   }
 
-  export type GetConfig<S extends Bot = Bot> = S extends Bot<infer R> ? R : never
-  export type Constructor<S extends Bot = Bot> = new (adapter: Adapter<S>, config: GetConfig<S>) => S
+  export const library: Dict<Constructor> = {}
+  export const schema = Schema.Object<{}>({
+    platform: Schema.String({ desc: '平台名称' }),
+  }, { desc: '高级设置' })
+
+  export interface Constructor<S extends Bot.BaseConfig = Bot.BaseConfig, T = any> {
+    new (adapter: Adapter, config: S): Bot<S>
+    schema?: Schema<S>
+  }
 
   export enum Status {
     /** 正常运行 */

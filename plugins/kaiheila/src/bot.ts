@@ -1,6 +1,6 @@
 /* eslint-disable quote-props */
 
-import { Bot, Session, camelize, segment, renameProperty, snakeCase, Adapter, trimSlash } from 'koishi'
+import { Bot, Session, camelize, segment, renameProperty, snakeCase, Adapter, trimSlash, Schema } from 'koishi'
 import axios, { Method } from 'axios'
 import * as KHL from './types'
 import { adaptGroup, adaptAuthor, adaptUser } from './utils'
@@ -22,7 +22,6 @@ type SendHandle = [string, KHL.MessageParams, Session<never, never, 'send'>]
 
 export namespace KaiheilaBot {
   export interface Config extends Bot.BaseConfig {
-    type?: string
     token?: string
     verifyToken?: string
     endpoint?: string
@@ -34,6 +33,16 @@ export class KaiheilaBot extends Bot<KaiheilaBot.Config> {
   _sn: number
   _ping: NodeJS.Timeout
   _heartbeat: NodeJS.Timeout
+
+  static schema: Schema<KaiheilaBot.Config> = Schema.Merge([
+    Schema.Object({
+      token: Schema.String(),
+      verifyToken: Schema.String(),
+    }),
+    Schema.Extend(Bot.schema, Schema.Object({
+      endpoint: Schema.String({ initial: 'https://www.kaiheila.cn/api/v3' }),
+    })),
+  ])
 
   constructor(adapter: Adapter, options: KaiheilaBot.Config) {
     options.endpoint = trimSlash(options.endpoint || 'https://www.kaiheila.cn/api/v3')

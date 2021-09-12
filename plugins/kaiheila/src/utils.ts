@@ -1,10 +1,13 @@
-import { KaiheilaBot } from './bot'
-import { Adapter, Bot, Session, segment, camelCase } from 'koishi'
+import { Adapter, Bot, Session, segment, camelCase, Schema } from 'koishi'
 import * as KHL from './types'
 
 export interface SharedConfig extends Adapter.WebSocketClient.Config {
   path?: string
 }
+
+export const schema: Schema<SharedConfig> = Schema.Extend(Adapter.WebSocketClient.schema, Schema.Object({
+  path: Schema.String({ initial: '/kaiheila' }),
+}))
 
 export const adaptGroup = (data: KHL.Guild): Bot.Guild => ({
   guildId: data.id,
@@ -81,7 +84,7 @@ function adaptReaction(body: KHL.NoticeBody, session: Partial<Session>) {
   session['emoji'] = body.emoji.id
 }
 
-export function adaptSession(bot: KaiheilaBot, input: any) {
+export function adaptSession(bot: Bot, input: any) {
   const data = camelCase<KHL.Data>(input)
   const session: Partial<Session> = {
     selfId: bot.selfId,
