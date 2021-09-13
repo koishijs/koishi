@@ -126,8 +126,10 @@ class Market {
       const core = { ...dependencies, ...peerDependencies }['koishi']
       if (!core || !satisfies(coreVersion, core)) return
 
+      const title = official ? name.slice(17) : name.slice(14)
       return {
         ...item.package,
+        title,
         local,
         official,
         size: dist.unpackedSize,
@@ -158,6 +160,7 @@ namespace Market {
   }
 
   export interface PackageData extends PackageBase {
+    title: string
     local?: PackageMeta
     official: boolean
     size: number

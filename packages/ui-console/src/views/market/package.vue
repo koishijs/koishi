@@ -5,7 +5,8 @@
         <a
           :href="'http://npmjs.com/package/' + data.name"
           target="blank" rel="noopener noreferrer"
-        >{{ data.name.replace('@koishijs/plugin-', '') }}</a>
+        >{{ data.title }}</a>
+        <span class="current" v-if="data.local">@{{ data.local.version }}</span>
         <k-badge type="success" v-if="data.official">官方</k-badge>
         <k-badge type="default" v-if="data.local?.isWorkspace">本地</k-badge>
         <k-badge type="warning" v-else-if="hasUpdate">可更新</k-badge>
@@ -14,7 +15,6 @@
         {{ data.description }}
       </div>
     </td>
-    <td class="version">{{ data.local ? data.local.version : '-' }}</td>
     <td class="latest">{{ data.version }}</td>
     <td class="size">{{ formatSize(data.size) }}</td>
     <td class="score">{{ +data.score.final.toFixed(2) }}</td>
@@ -70,6 +70,10 @@ function toggle(data: Market.PackageData) {
   text-align: left;
   padding-left: 3rem;
   position: relative;
+
+  .current {
+    color: var(--fg2);
+  }
 
   a {
     font-weight: bold;

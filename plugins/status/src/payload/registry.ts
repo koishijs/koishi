@@ -1,4 +1,4 @@
-import { Context, Plugin } from 'koishi'
+import { Context, omit, pick, Plugin, Schema } from 'koishi'
 
 function debounce(callback: Function, ms: number) {
   let timer: number
@@ -9,7 +9,7 @@ function debounce(callback: Function, ms: number) {
 }
 
 class Registry {
-  cached: Promise<Registry.PluginData[]>
+  cached: Promise<Registry.Data[]>
   promise: Promise<void>
 
   static readonly placeholder = Symbol('status.registry.placeholder')
@@ -29,8 +29,25 @@ class Registry {
     return this.cached = this.getForced()
   }
 
+  private getState(plugin: Plugin) {
+    return this.ctx.app.registry.get(plugin)
+  }
+
   private async getForced() {
-    return this.traverse(null).children
+    const children: Registry.Data[] = [{
+      id: null,
+      name: null,
+      schema: null,
+      config: omit(this.ctx.app.options, ['plugins' as any]),
+    }]
+
+    for (const plugin of this.getState(null).children) {
+      const state = this.getState(plugin)
+      if (!state.name) continue
+      children.push(pick(state, ['id', 'name', 'schema', 'config']))
+    }
+
+    return children
   }
 
   async switch(id: string) {
@@ -48,36 +65,16 @@ class Registry {
       break
     }
   }
-
-  traverse = (plugin: Plugin): Registry.PluginData => {
-    const state = this.ctx.app.registry.get(plugin)
-    let webExtension = state[Registry.webExtension]
-    let complexity = plugin?.[Registry.placeholder] ? 0 : 1 + state.disposables.length
-    const children: Registry.PluginData[] = []
-    state.children.forEach((plugin) => {
-      const data = this.traverse(plugin)
-      complexity += data.complexity
-      webExtension ||= data.webExtension
-      if (data.name) {
-        children.push(data)
-      } else {
-        children.push(...data.children)
-      }
-    })
-    const { id, name, sideEffect } = state
-    children.sort((a, b) => a.name > b.name ? 1 : -1)
-    return { id, name, sideEffect, children, complexity, webExtension }
-  }
 }
 
 namespace Registry {
   export interface Config {}
 
-  export interface PluginData extends Plugin.Meta {
-    id: string
-    children: PluginData[]
-    complexity: number
-    webExtension: boolean
+  export interface Data {
+    id?: string
+    name?: string
+    schema?: Schema
+    config?: any
   }
 }
 

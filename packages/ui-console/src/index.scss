@@ -11,8 +11,8 @@
   --border-dark: #c8c9cc;
 
   --primary: #5546a3;
-  --active: #409eff;
-  --success: #2d8515;
+  --active: #466fa3;
+  --success: #46a368;
   --error: #F56C6C;
   --warning: #e49400;
 
@@ -21,6 +21,7 @@
 
   --card-bg: var(--bg0);
   --card-fg: var(--page-fg);
+  --card-shadow: 0 6px 10px -4px rgb(0 0 0 / 15%);
 
   --aside-width: 16rem;
 }

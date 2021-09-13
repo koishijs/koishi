@@ -1,4 +1,4 @@
-import { AppOptions, App, Adapter, Session, Bot, pick, Dict } from 'koishi'
+import { AppOptions, App, Adapter, Session, Bot, pick, Dict, Schema } from 'koishi'
 import { assert } from 'chai'
 import { Socket } from 'net'
 import { format } from 'util'
@@ -26,6 +26,15 @@ interface BotConfig extends Bot.BaseConfig {
 class MockedBot extends Bot<BotConfig> {
   status = Bot.Status.GOOD
 
+  static schema: Schema<BotConfig> = Schema.Object({
+    selfId: Schema.String(),
+  })
+
+  constructor(adapter: MockedServer, config: BotConfig) {
+    super(adapter, config)
+    this.selfId = config.selfId
+  }
+
   async getMessage(channelId: string, messageId: string) {
     return {
       messageId,
@@ -41,9 +50,9 @@ class MockedBot extends Bot<BotConfig> {
 
 interface AdapterConfig {}
 
-class MockedServer extends Adapter<MockedBot, AdapterConfig> {
+class MockedServer extends Adapter<BotConfig, AdapterConfig> {
   constructor(app: MockedApp, config: AdapterConfig) {
-    super(app, MockedBot, config)
+    super(app, config)
     app.server = this
   }
 
@@ -91,7 +100,7 @@ class MockedServer extends Adapter<MockedBot, AdapterConfig> {
   }
 }
 
-const mocker = Adapter.createPlugin('mock', MockedServer)
+const mocker = Adapter.define('mock', MockedBot, MockedServer)
 
 interface MockedAppOptions extends AppOptions {
   mockStart?: boolean

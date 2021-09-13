@@ -63,7 +63,7 @@ export class WebServer extends Adapter {
   private readonly [Context.current]: Context
 
   constructor(private ctx: Context, public config: Config) {
-    super(ctx.app, null, config)
+    super(ctx.app, config)
 
     const { apiPath, uiPath, devMode, selfUrl, title } = config
     const endpoint = selfUrl + apiPath

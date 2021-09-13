@@ -30,6 +30,7 @@
   "devDependencies": {
     "@fortawesome/fontawesome-free": "^5.15.4",
     "@koishijs/plugin-status": "^5.0.0-alpha.3",
+    "@koishijs/utils": "5.0.0-alpha.1",
     "@vitejs/plugin-vue": "^1.6.2",
     "echarts": "^5.2.0",
     "echarts-wordcloud": "^2.0.0",

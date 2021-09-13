@@ -34,6 +34,7 @@ aside {
   height: 100%;
   width: var(--aside-width);
   background-color: var(--card-bg);
+  box-shadow: var(--card-shadow);
 
   h1 {
     font-size: 1.5rem;

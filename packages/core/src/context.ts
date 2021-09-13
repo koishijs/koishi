@@ -238,6 +238,7 @@ export class Context {
       plugin(ctx, options)
     } else if (plugin && typeof plugin === 'object' && typeof plugin.apply === 'function') {
       ctx.state.name = plugin.name
+      ctx.state.schema = plugin.schema
       if (plugin.sideEffect) ctx.addSideEffect()
       plugin.apply(ctx, options)
     } else {

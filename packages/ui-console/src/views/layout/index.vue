@@ -137,17 +137,20 @@ table {
     transition: 0.3s ease;
   }
 
-  tr:hover {
+  tr:not(:first-child):hover {
     background-color: var(--bg1);
   }
 
   td, th {
     padding: .5em 1em;
-    border-bottom: 1px solid var(--border-dark);
   }
 
   tr {
-    border-top: 1px solid var(--border-dark);
+    border-top: 1px solid var(--border);
+  }
+
+  tr:last-child {
+    border-bottom: 1px solid var(--border);
   }
 }
 

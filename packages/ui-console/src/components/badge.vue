@@ -26,15 +26,15 @@ defineProps<{ type?: 'warning' }>()
   vertical-align: baseline;
 
   &.default {
-    background-color: $default;
+    background-color: var(--active);
   }
 
   &.success {
-    background-color: $success;
+    background-color: var(--success);
   }
 
   &.warning {
-    background-color: $warning;
+    background-color: var(--warning);
   }
 }
 

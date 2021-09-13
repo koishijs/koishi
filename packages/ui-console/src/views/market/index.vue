@@ -1,9 +1,8 @@
 <template>
-  <k-card class="page-market" title="依赖管理">
+  <k-card class="page-market frameless">
     <table>
       <tr>
         <th>插件名称</th>
-        <th>当前版本</th>
         <th>最新版本</th>
         <th>总体积</th>
         <th>综合评分</th>

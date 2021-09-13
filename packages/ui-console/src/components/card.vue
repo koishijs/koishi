@@ -18,7 +18,7 @@ defineProps<{
 
 </script>
 
-<style lang="scss" scoped>
+<style lang="scss">
 
 $paddingX: 1.25rem;
 $paddingY: 1.5rem;
@@ -27,9 +27,10 @@ $paddingY: 1.5rem;
   margin: 0 auto 2rem;
   width: 100%;
   border-radius: 8px;
+  overflow: hidden;
   color: var(--card-fg);
   background-color: var(--card-bg);
-  box-shadow: 0 6px 10px -4px rgb(0 0 0 / 15%);
+  box-shadow: var(--card-shadow);
 
   header {
     font-size: 1.25rem;
@@ -49,8 +50,16 @@ $paddingY: 1.5rem;
   &.frameless .k-card-body {
     padding: 0;
 
-    p {
-      margin: 1.5rem 2rem;
+    > table:first-child {
+      tr:first-child {
+        border-top: none;
+      }
+    }
+
+    > table:last-child {
+      tr:last-child {
+        border-bottom: none;
+      }
     }
   }
 
