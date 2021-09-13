@@ -15,7 +15,11 @@ export interface DelayOptions {
   prompt?: number
 }
 
-export interface AppOptions {
+export interface NetworkOptions {
+  selfUrl?: string
+}
+
+export interface AppOptions extends NetworkOptions {
   prefix?: string | string[] | ((session: Session.Message) => void | string | string[])
   nickname?: string | string[]
   maxListeners?: number
@@ -25,7 +29,6 @@ export interface AppOptions {
   autoAssign?: boolean | ((session: Session) => boolean)
   autoAuthorize?: number | ((session: Session) => number)
   minSimilarity?: number
-  selfUrl?: string
 }
 
 function createLeadingRE(patterns: string[], prefix = '', suffix = '') {
@@ -337,7 +340,9 @@ export class App extends Context {
 export namespace App {
   export enum Status { closed, opening, open, closing }
 
-  export const schema: Schema<AppOptions> = Schema.object({
+  export const networkSchema: Schema<NetworkOptions> = Schema.object({
     selfUrl: Schema.string('Koishi 服务暴露在公网的地址。部分插件（例如 github 和 telegram）需要用到。'),
-  })
+  }, '网络设置')
+
+  export const schema: Schema<AppOptions> = Schema.merge([networkSchema])
 }

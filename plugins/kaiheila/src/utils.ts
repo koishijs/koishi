@@ -6,7 +6,7 @@ export interface SharedConfig extends Adapter.WebSocketClient.Config {
 }
 
 export const schema: Schema<SharedConfig> = Schema.extend(Adapter.WebSocketClient.schema, Schema.object({
-  path: Schema.string({ fallback: '/kaiheila' }),
+  path: Schema.string('服务器监听的路径，仅用于 http 协议。').default('/kaiheila'),
 }))
 
 export const adaptGroup = (data: KHL.Guild): Bot.Guild => ({

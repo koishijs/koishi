@@ -60,7 +60,7 @@ export class TelegramBot extends Bot<TelegramBot.Config> {
       token: Schema.string(),
     }),
     Schema.extend(Bot.schema, Schema.object({
-      endpoint: Schema.string({ fallback: 'https://api.telegram.org' }),
+      endpoint: Schema.string().default('https://api.telegram.org'),
     })),
   ])
 

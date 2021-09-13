@@ -40,7 +40,7 @@ export class KaiheilaBot extends Bot<KaiheilaBot.Config> {
       verifyToken: Schema.string(),
     }),
     Schema.extend(Bot.schema, Schema.object({
-      endpoint: Schema.string({ fallback: 'https://www.kaiheila.cn/api/v3' }),
+      endpoint: Schema.string().default('https://www.kaiheila.cn/api/v3'),
     })),
   ])
 

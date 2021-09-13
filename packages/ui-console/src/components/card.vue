@@ -44,6 +44,7 @@ $paddingY: 1.5rem;
   }
 
   .k-card-body {
+    position: relative;
     padding: $paddingX $paddingY;
   }
 

@@ -10,9 +10,13 @@ export interface SharedConfig extends Adapter.WebSocketClient.Config {
   responseTimeout?: number
 }
 
-export const schema: Schema<SharedConfig> = Schema.extend(Adapter.WebSocketClient.schema, Schema.object({
-  path: Schema.string({ fallback: '/onebot' }),
-}))
+export const schema: Schema<SharedConfig> = Schema.merge([
+  Schema.object({
+    path: Schema.string('服务器监听的路径，用于 http 和 ws-reverse 协议。').default('/onebot'),
+    secret: Schema.string('接收事件推送时用于验证的字段，应该与 OneBot 的 secret 配置保持一致。'),
+  }),
+  Adapter.WebSocketClient.schema,
+])
 
 export const adaptUser = (user: OneBot.AccountInfo): Bot.User => ({
   userId: user.userId.toString(),

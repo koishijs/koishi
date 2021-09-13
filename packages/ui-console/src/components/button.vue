@@ -113,6 +113,10 @@ button {
       color: $success;
     }
   }
+
+  & + & {
+    margin: 0 1rem;
+  }
 }
 
 </style>

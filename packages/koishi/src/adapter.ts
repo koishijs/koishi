@@ -32,10 +32,10 @@ export namespace InjectedAdapter {
     }
 
     static schema = Schema.object({
-      retryLazy: Schema.number({ fallback: Time.minute }),
-      retryInterval: Schema.number({ fallback: 5 * Time.second }),
-      retryTimes: Schema.number({ fallback: 6 }),
-    })
+      retryTimes: Schema.number('初次连接时的最大重试次数，仅用于 ws 协议。').default(6),
+      retryInterval: Schema.number('初次连接时的重试时间间隔，仅用于 ws 协议。').default(5 * Time.second),
+      retryLazy: Schema.number('连接关闭后的重试时间间隔，仅用于 ws 协议。').default(Time.minute),
+    }, '连接设置')
 
     constructor(app: App, config: T) {
       super(app, {

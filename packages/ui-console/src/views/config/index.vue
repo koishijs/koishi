@@ -1,27 +1,37 @@
 <template>
   <k-card class="page-config frameless">
     <div class="plugin-select">
-      <k-choice class="group" :data="registry[0]" v-model="current"/>
-      <div class="group">正在运行的插件</div>
-      <k-choice v-for="data in registry.slice(1)" :data="data" v-model="current"/>
-      <template v-if="market">
-        <div class="group">未运行的插件</div>
-        <k-choice v-for="data in available" :data="createExternal(data)" v-model="current"/>
-      </template>
+      <div class="content">
+        <k-choice class="group" :data="registry[0]" v-model="current"/>
+        <div class="group">正在运行的插件</div>
+        <k-choice v-for="data in registry.slice(1)" :data="data" v-model="current"/>
+        <template v-if="market">
+          <div class="group">未运行的插件</div>
+          <k-choice v-for="data in available" :data="createExternal(data)" v-model="current"/>
+        </template>
+      </div>
     </div>
     <div class="plugin-view">
-      <template v-if="!current.name">
-        <h1>全局配置</h1>
-      </template>
-      <template v-else>
-        <h1>
-          <span>{{ title }}</span>
-          <k-button solid type="warning" v-if="current.id">停用</k-button>
-          <k-button solid v-else>启用</k-button>
-        </h1>
-      </template>
-      <p v-if="!current.schema">此插件暂无可用配置项。</p>
-      <k-schema v-else :schema="current.schema" :config="current.config"/>
+      <div class="content">
+        <template v-if="!current.name">
+          <h1>全局配置</h1>
+        </template>
+        <template v-else>
+          <h1>
+            <span>{{ title }}</span>
+            <template v-if="current.id">
+              <k-button solid type="error">停用插件</k-button>
+              <k-button solid>重载配置</k-button>
+            </template>
+            <template v-else>
+              <k-button solid type="success">启用插件</k-button>
+              <k-button solid>保存配置</k-button>
+            </template>
+          </h1>
+        </template>
+        <p v-if="!current.schema">此插件暂无可用配置项。</p>
+        <schema-view v-else :schema="current.schema" :config="current.config"/>
+      </div>
     </div>
   </k-card>
 </template>
@@ -32,7 +42,7 @@ import { ref, computed } from 'vue'
 import { registry, market } from '~/client'
 import { Registry, Dict, Market } from '~/server'
 import kChoice from './choice.vue'
-import kSchema from './schema.vue'
+import SchemaView from './schema-view.vue'
 
 interface PluginData extends Registry.Data {
   module?: string
@@ -69,16 +79,19 @@ const available = computed(() => {
 <style lang="scss">
 
 .page-config .k-card-body {
-  display: grid;
   max-height: calc(100vh - 4rem);
-  grid-template-columns: 16rem 1fr;
 }
 
 .plugin-select {
-  padding: 1rem 0;
-  line-height: 2.25rem;
+  width: 16rem;
+  height: 100%;
   border-right: 1px solid var(--border);
   overflow: auto;
+
+  .content {
+    padding: 1rem 0;
+    line-height: 2.25rem;
+  }
 
   .group {
     padding: 0 2rem !important;
@@ -97,7 +110,18 @@ const available = computed(() => {
 }
 
 .plugin-view {
-  padding: 3rem 3rem;
+  position: absolute;
+  top: 0;
+  left: 16rem;
+  right: 0;
+  height: 100%;
+  overflow: auto;
+
+  .content {
+    margin: auto;
+    max-width: 50rem;
+    padding: 3rem 3rem 1rem;
+  }
 
   h1 {
     margin: 0 0 2rem;
@@ -106,15 +130,6 @@ const available = computed(() => {
   h1 .k-button {
     float: right;
     font-size: 1rem;
-  }
-}
-
-.table-header {
-  font-weight: bold;
-  border-top: var(--border-dark) 1px solid;
-
-  .title {
-    margin-left: 3rem;
   }
 }
 

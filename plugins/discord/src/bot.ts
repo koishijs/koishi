@@ -36,7 +36,7 @@ export class DiscordBot extends Bot<DiscordBot.Config> {
       token: Schema.string(),
     }),
     Schema.extend(Bot.schema, Schema.object({
-      endpoint: Schema.string({ fallback: 'https://discord.com/api/v8' }),
+      endpoint: Schema.string().default('https://discord.com/api/v8'),
     })),
   ])
 
