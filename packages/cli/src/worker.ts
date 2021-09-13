@@ -189,7 +189,7 @@ function createContext(options: Selection) {
 config.plugins ||= {}
 const plugins = new Set<string>()
 for (const name in config.plugins) {
-  const options = config.plugins[name]
+  const options = config.plugins[name] ?? {}
   const path = Loader.resolve(hyphenate(name))
   plugins.add(path)
   createContext(options).plugin(require(path), options)

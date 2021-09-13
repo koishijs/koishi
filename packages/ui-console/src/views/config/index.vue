@@ -14,7 +14,7 @@
     <div class="plugin-view">
       <div class="content">
         <template v-if="!current.name">
-          <h1>全局配置</h1>
+          <h1>全局设置</h1>
         </template>
         <template v-else>
           <h1>
@@ -79,7 +79,7 @@ const available = computed(() => {
 <style lang="scss">
 
 .page-config .k-card-body {
-  max-height: calc(100vh - 4rem);
+  height: calc(100vh - 4rem);
 }
 
 .plugin-select {

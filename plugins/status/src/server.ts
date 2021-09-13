@@ -7,6 +7,7 @@ import Meta from './payload/meta'
 import Profile from './payload/profile'
 import Statistics from './payload/stats'
 import WebSocket from 'ws'
+import open from 'open'
 import { v4 } from 'uuid'
 import type { ViteDevServer } from 'vite'
 
@@ -19,6 +20,7 @@ interface BaseConfig {
 
 export interface Config extends BaseConfig, Profile.Config, Meta.Config, Registry.Config, Statistics.Config {
   root?: string
+  open?: boolean
   selfUrl?: string
   apiPath?: string
 }
@@ -86,9 +88,6 @@ export class WebServer extends Adapter {
       stats: new Statistics(ctx, config),
     }
 
-    ctx.on('connect', () => this.start())
-    ctx.before('disconnect', () => this.stop())
-
     ctx.on('delegate/database', () => {
       this.global.database = !!ctx.database
     })
@@ -133,6 +132,11 @@ export class WebServer extends Adapter {
     if (!this.config.root) return
     if (this.config.devMode) await this.createVite()
     this.serveAssets()
+
+    if (this.config.open) {
+      const { host, port } = this.app.options
+      open(`http://${host || 'localhost'}:${port}${this.config.uiPath}`)
+    }
   }
 
   stop() {

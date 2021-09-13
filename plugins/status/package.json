@@ -42,6 +42,7 @@
     "@koishijs/ui-console": "^1.0.0-alpha.0",
     "semver": "^7.3.5",
     "systeminformation": "^5.8.7",
+    "open": "^8.2.1",
     "uuid": "^8.3.2",
     "ws": "^8.2.1"
   }

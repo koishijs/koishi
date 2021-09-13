@@ -90,6 +90,7 @@ const defaultConfig: Config = {
 export const name = 'status'
 
 export const schema: Schema<Config> = Schema.object({
+  open: Schema.boolean('在应用启动后自动在浏览器中打开控制台。'),
   apiPath: Schema.string('后端 API 服务的路径。').default('/status'),
   devMode: Schema.boolean('启用调试模式（仅供开发者使用）。'),
 })
