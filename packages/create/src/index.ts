@@ -28,7 +28,7 @@ async function getName() {
 }
 
 // baseline is Node 12 so can't use rmSync
-function emptyDir (root: string) {
+function emptyDir(root: string) {
   for (const file of fs.readdirSync(root)) {
     const abs = join(root, file)
     if (fs.lstatSync(abs).isDirectory()) {

@@ -169,7 +169,7 @@ export class WebServer extends Adapter {
   private serveAssets() {
     const { uiPath, root } = this.config
 
-    this.ctx.router.get(uiPath + '(/.+)*', async (ctx) => {
+    this.ctx.router.get(uiPath + '(/.+)*', async (ctx, next) => {
       // add trailing slash and redirect
       if (ctx.path === uiPath && !uiPath.endsWith('/')) {
         return ctx.redirect(ctx.path + '/')
@@ -190,7 +190,7 @@ export class WebServer extends Adapter {
       const stats = await fs.stat(filename).catch<Stats>(noop)
       if (stats?.isFile()) return sendFile(filename)
       const ext = extname(filename)
-      if (ext && ext !== '.html') return ctx.status = 404
+      if (ext && ext !== '.html') return next()
       const template = await fs.readFile(resolve(root, 'index.html'), 'utf8')
       ctx.type = 'html'
       ctx.body = await this.transformHtml(template)

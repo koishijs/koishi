@@ -1,4 +1,4 @@
-import { Context, pick, Dict, version as coreVersion } from 'koishi'
+import { Context, pick, Dict, version as currentVersion, Schema } from 'koishi'
 import { dirname, resolve } from 'path'
 import { existsSync, promises as fs } from 'fs'
 import { spawn, StdioOptions } from 'child_process'
@@ -63,7 +63,7 @@ const installArgs: Record<Manager, string[]> = {
 }
 
 class Market {
-  cached: Promise<Market.PackageData[]>
+  cached: Promise<Market.Data[]>
 
   constructor(private ctx: Context, public config: Market.Config) {
     ctx.router.get(config.apiPath + '/package(/.+)+', async (ctx) => {
@@ -80,7 +80,7 @@ class Market {
   }
 
   private async getForced() {
-    const _loadDep = async (filename: string, isInstalled: boolean) => {
+    const loadDep = async (filename: string, uuid?: string) => {
       do {
         filename = dirname(filename)
         const files = await fs.readdir(filename)
@@ -88,27 +88,27 @@ class Market {
       } while (true)
       const data: PackageLocal = JSON.parse(await fs.readFile(filename + '/package.json', 'utf8'))
       if (data.private) return null
-      const isWorkspace = !filename.includes('node_modules')
-      return { isWorkspace, isInstalled, ...pick(data, ['name', 'version', 'description']) }
+      const workspace = !filename.includes('node_modules')
+      const { schema } = require(filename)
+      return { schema, workspace, uuid, ...pick(data, ['name', 'version', 'description']) }
     }
 
-    const loadCache: Dict<Promise<Market.PackageMeta>> = {}
-    const loadDep = (filename: string, isInstalled: boolean) => {
-      return loadCache[filename] ||= _loadDep(filename, isInstalled)
-    }
+    const loadCache: Dict<Promise<Market.Local>> = {}
 
     const [{ data }] = await Promise.all([
       axios.get<SearchResult>('https://api.npms.io/v2/search?q=koishi+plugin+not:deprecated&size=250'),
-      Promise.all(Object.keys(require.cache).map((filename) => {
+      Promise.all(Object.keys(require.cache).map(async (filename) => {
         const { exports } = require.cache[filename]
-        if (this.ctx.app.registry.has(exports)) return loadDep(filename, true)
+        const state = this.ctx.app.registry.get(exports)
+        if (!state) return
+        return loadCache[filename] ||= loadDep(filename, state.id)
       })),
     ])
 
-    const loadExternal = (name: string) => {
+    const loadLocal = (name: string) => {
       try {
         const filename = require.resolve(name)
-        return loadDep(filename, false)
+        return loadCache[filename] ||= loadDep(filename)
       } catch {}
     }
 
@@ -119,17 +119,17 @@ class Market {
       if (!official && !community) return
 
       const [local, { data }] = await Promise.all([
-        loadExternal(name),
+        loadLocal(name),
         axios.get<Registry>(`https://registry.npmjs.org/${name}`),
       ])
       const { dependencies = {}, peerDependencies = {}, dist } = data.versions[version]
-      const core = { ...dependencies, ...peerDependencies }['koishi']
-      if (!core || !satisfies(coreVersion, core)) return
+      const declaredVersion = { ...dependencies, ...peerDependencies }['koishi']
+      if (!declaredVersion || !satisfies(currentVersion, declaredVersion)) return
 
-      const title = official ? name.slice(17) : name.slice(14)
+      const shortname = official ? name.slice(17) : name.slice(14)
       return {
         ...item.package,
-        title,
+        shortname,
         local,
         official,
         size: dist.unpackedSize,
@@ -137,7 +137,7 @@ class Market {
           final: item.score.final,
           ...item.score.detail,
         },
-      } as Market.PackageData
+      } as Market.Data
     })).then(data => data.filter(Boolean))
   }
 
@@ -154,14 +154,15 @@ namespace Market {
     apiPath?: string
   }
 
-  export interface PackageMeta extends PackageBase {
-    isWorkspace: boolean
-    isInstalled: boolean
+  export interface Local extends PackageBase {
+    workspace: boolean
+    schema?: Schema
+    uuid?: string
   }
 
-  export interface PackageData extends PackageBase {
-    title: string
-    local?: PackageMeta
+  export interface Data extends PackageBase {
+    shortname: string
+    local?: Local
     official: boolean
     size: number
     score: {

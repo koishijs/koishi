@@ -104,7 +104,7 @@ export namespace Bot {
     platform: Schema.string({ desc: '平台名称' }),
   }, { desc: '高级设置' })
 
-  export interface Constructor<S extends Bot.BaseConfig = Bot.BaseConfig, T = any> {
+  export interface Constructor<S extends Bot.BaseConfig = Bot.BaseConfig> {
     new (adapter: Adapter, config: S): Bot<S>
     schema?: Schema<S>
   }

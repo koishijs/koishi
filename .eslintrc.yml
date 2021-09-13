@@ -38,6 +38,8 @@ rules:
     - warn
     - 160
 
+  multiline-ternary: off
+
   no-mixed-operators: off
   no-use-before-define: off
   no-return-assign: off
@@ -54,6 +56,8 @@ rules:
     - single
     - avoidEscape: true
       allowTemplateLiterals: true
+
+  valid-typeof: off
 
   yield-star-spacing:
     - error

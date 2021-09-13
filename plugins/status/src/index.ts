@@ -80,7 +80,7 @@ template.set('status', {
 
 const defaultConfig: Config = {
   apiPath: '/status',
-  uiPath: '/console',
+  uiPath: '',
   selfUrl: '',
   title: 'Koishi 控制台',
   expiration: Time.week,

@@ -31,7 +31,7 @@ import PluginView from './plugin.vue'
 
 const show = ref(false)
 
-defineProps<{ data: Registry.PluginData }>()
+defineProps<{ data: Registry.Data }>()
 
 function toggle(plugin: string) {
   const { id, token } = user.value

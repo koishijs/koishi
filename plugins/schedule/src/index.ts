@@ -44,13 +44,13 @@ export interface Config {
   minInterval?: number
 }
 
-export const schema: Schema<Config> = Schema.object({
-  minInterval: Schema.number({ fallback: Time.minute, desc: '允许的最小时间间隔' }),
+export const schema = Schema.object({
+  minInterval: Schema.number({ fallback: Time.minute, desc: '允许的最小时间间隔。' }),
 })
 
 export function apply(ctx: Context, config: Config = {}) {
   const { database } = ctx
-  const { minInterval } = schema.resolve(config)
+  const { minInterval } = Schema.resolve(schema, config)
 
   async function hasSchedule(id: number) {
     const data = await database.get('schedule', [id])

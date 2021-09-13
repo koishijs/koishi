@@ -1,14 +1,14 @@
 <template>
-  <tr :class="{ workspace: data.local?.isWorkspace }">
-    <td class="package" :class="data.local ? data.local.isInstalled ? 'active' : 'local' : 'remote'">
+  <tr :class="{ workspace: data.local?.workspace }">
+    <td class="package" :class="data.local ? data.local.installed ? 'active' : 'local' : 'remote'">
       <div>
         <a
           :href="'http://npmjs.com/package/' + data.name"
           target="blank" rel="noopener noreferrer"
-        >{{ data.title }}</a>
+        >{{ data.shortname }}</a>
         <span class="current" v-if="data.local">@{{ data.local.version }}</span>
         <k-badge type="success" v-if="data.official">官方</k-badge>
-        <k-badge type="default" v-if="data.local?.isWorkspace">本地</k-badge>
+        <k-badge type="default" v-if="data.local?.workspace">本地</k-badge>
         <k-badge type="warning" v-else-if="hasUpdate">可更新</k-badge>
       </div>
       <div class="description">
@@ -33,11 +33,11 @@ import type { Market } from '~/server'
 import { send, user } from '~/client'
 import { computed, ref, watch } from 'vue'
 
-const props = defineProps<{ data: Market.PackageData }>()
+const props = defineProps<{ data: Market.Data }>()
 
 const hasUpdate = computed(() => {
   const { local, version } = props.data
-  return local && !local.isWorkspace && local.version !== version
+  return local && !local.workspace && local.version !== version
 })
 
 function formatSize(size: number) {
@@ -54,7 +54,7 @@ watch(() => props.data.local, () => {
   downloading.value = false
 }, { deep: true })
 
-function toggle(data: Market.PackageData) {
+function toggle(data: Market.Data) {
   const { id, token } = user.value
   send('install', { name: `${data.name}@^${data.version}`, id, token })
   downloading.value = true

@@ -6,18 +6,20 @@
       <k-choice v-for="data in registry.slice(1)" :data="data" v-model="current"/>
       <template v-if="market">
         <div class="group">未加载的插件</div>
-        <k-choice v-for="data in available" :data="{ name: data.title }" v-model="current"/>
+        <k-choice v-for="data in available" :data="createExternal(data)" v-model="current"/>
       </template>
     </div>
-    <div class="plugin-view" v-if="!current.name">
-      <h1>全局配置</h1>
-      <k-schema :schema="current.schema" :config="current.config"/>
-    </div>
     <div class="plugin-view">
-      <h1>插件：{{ current.name }}</h1>
-      <k-button>停用</k-button>
-      <hr>
-      <k-schema :schema="current.schema || { type: 'object', props: {} }" :config="current.config"/>
+      <template v-if="!current.name">
+        <h1>全局配置</h1>
+      </template>
+      <template v-else>
+        <h1>插件：{{ title }}</h1>
+        <k-button v-if="current.id">停用</k-button>
+        <k-button v-else>启用</k-button>
+      </template>
+      <p v-if="!current.schema">此插件暂无可用配置项。</p>
+      <k-schema v-else :schema="current.schema" :config="current.config"/>
     </div>
   </k-card>
 </template>
@@ -26,16 +28,38 @@
 
 import { ref, computed } from 'vue'
 import { registry, market } from '~/client'
-import { Registry } from '~/server'
+import { Registry, Dict, Market } from '~/server'
 import kChoice from './choice.vue'
 import kSchema from './schema.vue'
 
-const current = ref<Registry.Data>(registry.value[0])
+interface PluginData extends Registry.Data {
+  module?: string
+}
+
+const current = ref<PluginData>(registry.value[0])
+const cache: Dict<PluginData> = {}
+
+function createExternal(data: Market.Data) {
+  return cache[data.name] ||= {
+    name: data.shortname,
+    module: data.name,
+    schema: data.local.schema,
+    config: {},
+  }
+}
+
+const title = computed(() => {
+  const { name, module, id } = current.value
+  if (!name || module) return module
+  const item = market.value?.find(item => item.local?.uuid === id)
+  if (item) return item.name
+  return name
+})
 
 const available = computed(() => {
   return market.value
-    .filter(data => data.local && !data.local.isInstalled && !registry.value[data.title])
-    .sort((a, b) => a.title > b.title ? 1 : -1)
+    .filter(data => data.local && !data.local.uuid)
+    .sort((a, b) => a.shortname > b.shortname ? 1 : -1)
 })
 
 </script>
@@ -69,7 +93,11 @@ const available = computed(() => {
 }
 
 .plugin-view {
-  padding: 2rem;
+  padding: 2rem 3rem;
+
+  h1 {
+    margin: 0 0 2rem;
+  }
 }
 
 .table-header {
