@@ -10,6 +10,7 @@ import Button from './components/button.vue'
 import Input from './components/input.vue'
 import Numeric from './components/numeric.vue'
 import App from './views/layout/index.vue'
+import { ElCheckbox } from 'element-plus'
 
 import '@fortawesome/fontawesome-free/css/fontawesome.css'
 import '@fortawesome/fontawesome-free/css/brands.css'
@@ -25,6 +26,8 @@ self['VueRouter'] = Router
 self['KoishiClient'] = client
 
 const app = Vue.createApp(App)
+
+app.use(ElCheckbox)
 
 const stats: 'stats'[] = KOISHI_CONFIG.database ? ['stats'] : []
 
@@ -90,7 +93,7 @@ router.beforeEach((route, from) => {
 
 router.afterEach((route) => {
   if (typeof route.name === 'string') {
-    document.title = `${route.name} | ${KOISHI_CONFIG.title}`
+    document.title = `${route.name} | Koishi 控制台`
   }
 })
 

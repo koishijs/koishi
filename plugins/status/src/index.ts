@@ -1,4 +1,4 @@
-import { Context, template, Time, Tables, Awaitable } from 'koishi'
+import { Context, template, Time, Tables, Awaitable, Schema } from 'koishi'
 import { Synchronizer } from './payload/stats'
 import { WebServer, SocketHandle, Config } from './server'
 import Meta from './payload/meta'
@@ -82,14 +82,17 @@ const defaultConfig: Config = {
   apiPath: '/status',
   uiPath: '',
   selfUrl: '',
-  title: 'Koishi 控制台',
-  expiration: Time.week,
   tickInterval: Time.second * 5,
   statsInternal: Time.minute * 10,
   metaInterval: Time.hour,
 }
 
 export const name = 'status'
+
+export const schema: Schema<Config> = Schema.object({
+  apiPath: Schema.string('后端 API 服务的路径。').default('/status'),
+  devMode: Schema.boolean('启用调试模式（仅供开发者使用）。'),
+})
 
 export function apply(ctx: Context, config: Config = {}) {
   config = Object.assign(defaultConfig, config)

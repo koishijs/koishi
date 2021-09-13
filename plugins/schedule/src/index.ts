@@ -45,7 +45,7 @@ export interface Config {
 }
 
 export const schema = Schema.object({
-  minInterval: Schema.number({ fallback: Time.minute, desc: '允许的最小时间间隔。' }),
+  minInterval: Schema.number('允许的最小时间间隔。').default(Time.minute),
 })
 
 export function apply(ctx: Context, config: Config = {}) {

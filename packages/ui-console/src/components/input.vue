@@ -87,7 +87,7 @@ function onBlur(event) {
   display: inline-block;
 
   > i.prefix, > i.suffix {
-    color: $tpColor1;
+    color: var(--fg2);
     top: 50%;
     position: absolute;
     margin-top: -0.5em;
@@ -101,7 +101,6 @@ function onBlur(event) {
 
   > input {
     padding: 0;
-    color: white;
     width: 100%;
     outline: none;
     font-size: 1em;
@@ -112,29 +111,23 @@ function onBlur(event) {
     box-sizing: border-box;
     appearance: none;
     background-color: transparent;
-    border: 1px solid $tpBorderColor1;
+    border: 1px solid var(--border);
+
     &:hover:not(:disabled) {
-      border-color: $tpBorderColor2;
-      background-color: $tpBgColor1;
-      box-shadow: 0 0 4px 1px inset $tpInsetColor;
+      border-color: var(--border-dark);
+      background-color: var(--bg1);
     }
     &:focus:not(:disabled) {
-      border-color: #409eff;
-      background-color: $tpBgColor2;
-      box-shadow: 0 0 8px 2px inset $tpInsetColor;
+      border-color: var(--primary);
+      background-color: var(--bg1);
     }
+
     &::-webkit-input-placeholder {
-      color: $tpColor1;
+      color: var(--fg2);
       user-select: none;
     }
-    &:hover:not(:disabled)::-webkit-input-placeholder {
-      color: $tpColor2;
-    }
-    &:focus:not(:disabled)::-webkit-input-placeholder {
-      color: $tpColor3;
-    }
     &:disabled::-webkit-input-placeholder {
-      color: $tpFgColor2;
+      opacity: 0.5;
     }
   }
 

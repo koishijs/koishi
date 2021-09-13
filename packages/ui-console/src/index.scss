@@ -11,10 +11,22 @@
   --border-dark: #c8c9cc;
 
   --primary: #5546a3;
-  --active: #466fa3;
-  --success: #46a368;
-  --error: #F56C6C;
+
+  --active: #409eff;
+  --active-dark: #0d84ff;
+  --active-light: #66b1ff;
+
+  --success: #67c23a;
+  --success-dark: #67c23a;
+  --success-light: #67c23a;
+
+  --error: #f56c6c;
+  --error-dark: #f23c3c;
+  --error-light: #f78989;
+
   --warning: #e49400;
+  --warning-dark: #d48a1b;
+  --warning-light: #ebb563;
 
   --page-bg: var(--bg1);
   --page-fg: var(--fg1);

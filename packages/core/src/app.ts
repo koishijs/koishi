@@ -338,6 +338,6 @@ export namespace App {
   export enum Status { closed, opening, open, closing }
 
   export const schema: Schema<AppOptions> = Schema.object({
-    selfUrl: Schema.string({ desc: 'Koishi 服务暴露在公网的地址。部分插件（例如 github 和 telegram）需要用到。' }),
+    selfUrl: Schema.string('Koishi 服务暴露在公网的地址。部分插件（例如 github 和 telegram）需要用到。'),
   })
 }

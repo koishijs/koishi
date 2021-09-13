@@ -14,40 +14,57 @@ export namespace Schema {
 
   export interface Base<T = any> {
     desc?: string
-    fallback?: T extends {} ? Partial<T> : T
-    required?: boolean
+    _default?: T extends {} ? Partial<T> : T
+    _required?: boolean
   }
 
-  export function any(options: Base = {}): Schema {
-    return { type: 'any', ...options }
+  interface Chainable<T> extends Schema<T> {}
+
+  class Chainable<T> {
+    constructor(schema: Schema<T>) {
+      Object.assign(this, schema)
+    }
+
+    default(value: T) {
+      this._default = value
+      return this
+    }
+
+    required() {
+      this._required = true
+    }
   }
 
-  export function string(options: Base = {}): Schema<string> {
-    return { type: 'string', ...options }
+  export function any(desc?: string) {
+    return new Chainable({ type: 'any', desc })
   }
 
-  export function number(options: Base = {}): Schema<number> {
-    return { type: 'number', ...options }
+  export function string(desc?: string) {
+    return new Chainable<string>({ type: 'string', desc })
   }
 
-  export function boolean(options: Base = {}): Schema<boolean> {
-    return { type: 'boolean', ...options }
+  export function number(desc?: string) {
+    return new Chainable<number>({ type: 'number', desc })
   }
 
-  export function array<T>(value: Schema<T>, options: Base = {}): Schema<T[]> {
-    return { type: 'array', value, ...options }
+  export function boolean(desc?: string) {
+    return new Chainable<boolean>({ type: 'boolean', desc })
   }
 
-  export function dict<T>(value: Schema<T>, options: Base = {}): Schema<Dict<T>> {
-    return { type: 'dict', value, ...options }
+  export function array<T>(value: Schema<T>, desc?: string) {
+    return new Chainable<T[]>({ type: 'array', value, desc })
   }
 
-  export function object<T extends Dict<Schema>>(props: T, options: Base = {}): Schema<{ [K in keyof T]?: Type<T[K]> }> {
-    return { type: 'object', props, ...options }
+  export function dict<T>(value: Schema<T>, desc?: string) {
+    return new Chainable<Dict<T>>({ type: 'dict', value, desc })
   }
 
-  export function merge<T extends Schema[]>(values: T, options: Base = {}): Schema<Intersect<Type<T[number]>>> {
-    return { type: 'merge', values, ...options }
+  export function object<T extends Dict<Schema>>(props: T, desc?: string) {
+    return new Chainable<{ [K in keyof T]?: Type<T[K]> }>({ type: 'object', props, desc })
+  }
+
+  export function merge<T extends Schema[]>(values: T, desc?: string) {
+    return new Chainable<Intersect<Type<T[number]>>>({ type: 'merge', values, desc })
   }
 
   export function extend<S, T>(value: Schema<S>, value2: Schema<T>): Schema<S & T> {
@@ -60,7 +77,7 @@ export namespace Schema {
 
   export function resolve(schema: Schema, value: any) {
     if (isNullable(value)) {
-      if (!schema.required) return schema.fallback ?? value
+      if (!schema._required) return schema._default ?? value
       throw new TypeError(`missing required value`)
     }
 

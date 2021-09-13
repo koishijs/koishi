@@ -13,17 +13,14 @@ import type { ViteDevServer } from 'vite'
 export { Market, Registry, Meta, Profile, Statistics }
 
 interface BaseConfig {
-  title?: string
   devMode?: boolean
   uiPath?: string
 }
 
 export interface Config extends BaseConfig, Profile.Config, Meta.Config, Registry.Config, Statistics.Config {
   root?: string
-  title?: string
   selfUrl?: string
   apiPath?: string
-  expiration?: number
 }
 
 export interface ClientConfig extends Required<BaseConfig> {
@@ -67,9 +64,9 @@ export class WebServer extends Adapter {
   constructor(private ctx: Context, public config: Config) {
     super(ctx.app, config)
 
-    const { apiPath, uiPath, devMode, selfUrl, title } = config
+    const { apiPath, uiPath, devMode, selfUrl } = config
     const endpoint = selfUrl + apiPath
-    this.global = { title, uiPath, endpoint, devMode, extensions: [], database: false, version }
+    this.global = { uiPath, endpoint, devMode, extensions: [], database: false, version }
 
     if (config.root === undefined) {
       const filename = require.resolve('@koishijs/ui-console/package.json')
