@@ -40,13 +40,17 @@ function formatContext(session: Partial<Session>) {
 
 export const name = 'schedule'
 
-export const schema = Schema.Object({
-  minInterval: Schema.Number(),
+export interface Config {
+  minInterval?: number
+}
+
+export const schema: Schema<Config> = Schema.object({
+  minInterval: Schema.number({ fallback: Time.minute, desc: '允许的最小时间间隔' }),
 })
 
-export function apply(ctx: Context, config: Schema.Type<typeof schema> = {}) {
+export function apply(ctx: Context, config: Config = {}) {
   const { database } = ctx
-  const { minInterval = Time.minute } = config
+  const { minInterval } = schema.resolve(config)
 
   async function hasSchedule(id: number) {
     const data = await database.get('schedule', [id])

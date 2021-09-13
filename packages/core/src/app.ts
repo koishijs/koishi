@@ -1,4 +1,4 @@
-import { defineProperty, Time, coerce, escapeRegExp, makeArray, template, trimSlash, merge, Dict } from '@koishijs/utils'
+import { defineProperty, Time, coerce, escapeRegExp, makeArray, template, trimSlash, merge, Dict, Schema, valueMap } from '@koishijs/utils'
 import { Context, Middleware, NextFunction, Plugin } from './context'
 import { Argv } from './parser'
 import { Adapter } from './adapter'
@@ -327,7 +327,7 @@ export class App extends Context {
         return {
           command,
           args: args.map(escape),
-          options: Object.fromEntries(Object.entries(options).map(([k, v]) => [k, escape(v)])),
+          options: valueMap(options, escape),
         }
       }
     }
@@ -336,4 +336,8 @@ export class App extends Context {
 
 export namespace App {
   export enum Status { closed, opening, open, closing }
+
+  export const schema: Schema<AppOptions> = Schema.object({
+    selfUrl: Schema.string({ desc: 'Koishi 服务暴露在公网的地址。部分功能（例如 plugin-github 和 plugin-telegram）需要用到。' }),
+  })
 }

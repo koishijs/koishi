@@ -26,8 +26,8 @@ interface BotConfig extends Bot.BaseConfig {
 class MockedBot extends Bot<BotConfig> {
   status = Bot.Status.GOOD
 
-  static schema: Schema<BotConfig> = Schema.Object({
-    selfId: Schema.String(),
+  static schema: Schema<BotConfig> = Schema.object({
+    selfId: Schema.string(),
   })
 
   constructor(adapter: MockedServer, config: BotConfig) {

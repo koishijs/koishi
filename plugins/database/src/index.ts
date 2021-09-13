@@ -1,4 +1,4 @@
-import { App, Database, Eval, Query, Tables, TableType, clone, makeArray, pick, Context, Dict } from 'koishi'
+import { App, Database, Eval, Query, Tables, TableType, clone, makeArray, pick, Context, Dict, valueMap } from 'koishi'
 import { Storage, Config } from './storage'
 
 declare module 'koishi' {
@@ -233,7 +233,7 @@ Database.extend(MemoryDatabase, {
   async aggregate(name, fields, query) {
     const expr = Query.resolve(name, query)
     const table = this.$table(name).filter(row => executeQuery(expr, row))
-    return Object.fromEntries(Object.entries(fields).map(([key, expr]) => [key, executeEval(expr, table)]))
+    return valueMap(fields, expr => executeEval(expr, table))
   },
 })
 

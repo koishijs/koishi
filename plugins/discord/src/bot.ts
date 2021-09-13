@@ -31,12 +31,12 @@ export class DiscordBot extends Bot<DiscordBot.Config> {
   _ping: NodeJS.Timeout
   _sessionId: string
 
-  static schema: Schema<DiscordBot.Config> = Schema.Merge([
-    Schema.Object({
-      token: Schema.String(),
+  static schema: Schema<DiscordBot.Config> = Schema.merge([
+    Schema.object({
+      token: Schema.string(),
     }),
-    Schema.Extend(Bot.schema, Schema.Object({
-      endpoint: Schema.String({ initial: 'https://discord.com/api/v8' }),
+    Schema.extend(Bot.schema, Schema.object({
+      endpoint: Schema.string({ fallback: 'https://discord.com/api/v8' }),
     })),
   ])
 

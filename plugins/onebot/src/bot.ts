@@ -42,9 +42,9 @@ export interface CQBot extends OneBot.API {}
 export class CQBot extends Bot<CQBot.Config> {
   _request?(action: string, params: Dict): Promise<OneBot.Response>
 
-  static schema: Schema<CQBot.Config> = Schema.Merge([
-    Schema.Object({
-      token: Schema.String(),
+  static schema: Schema<CQBot.Config> = Schema.merge([
+    Schema.object({
+      token: Schema.string(),
     }),
     Bot.schema,
   ])

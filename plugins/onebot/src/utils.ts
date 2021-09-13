@@ -10,8 +10,8 @@ export interface SharedConfig extends Adapter.WebSocketClient.Config {
   responseTimeout?: number
 }
 
-export const schema: Schema<SharedConfig> = Schema.Extend(Adapter.WebSocketClient.schema, Schema.Object({
-  path: Schema.String({ initial: '/onebot' }),
+export const schema: Schema<SharedConfig> = Schema.extend(Adapter.WebSocketClient.schema, Schema.object({
+  path: Schema.string({ fallback: '/onebot' }),
 }))
 
 export const adaptUser = (user: OneBot.AccountInfo): Bot.User => ({

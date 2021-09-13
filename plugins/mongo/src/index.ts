@@ -1,5 +1,5 @@
 import MongoDatabase, { Config } from './database'
-import { Tables, Database, Context, omit, TableType, Query, pick, makeArray, Eval } from 'koishi'
+import { Tables, Database, Context, omit, TableType, Query, pick, makeArray, Eval, valueMap } from 'koishi'
 import { QuerySelector } from 'mongodb'
 
 export * from './database'
@@ -82,13 +82,13 @@ function transformEval(expr: Eval.Numeric | Eval.Aggregation) {
     return expr
   }
 
-  return Object.fromEntries(Object.entries(expr).map(([key, value]) => {
+  return valueMap(expr as any, (value) => {
     if (Array.isArray(value)) {
-      return [key, value.map(transformEval)]
+      return value.map(transformEval)
     } else {
-      return [key, transformEval(value)]
+      return transformEval(value)
     }
-  }))
+  })
 }
 
 Database.extend(MongoDatabase, {
@@ -152,7 +152,7 @@ Database.extend(MongoDatabase, {
     const [data] = await this.db.collection(name).aggregate([{ $match }, {
       $group: {
         _id: 1,
-        ...Object.fromEntries(Object.entries(fields).map(([key, value]) => [key, transformEval(value)])),
+        ...valueMap(fields, transformEval),
       },
     }]).toArray()
     return data

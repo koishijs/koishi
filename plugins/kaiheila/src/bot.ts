@@ -34,13 +34,13 @@ export class KaiheilaBot extends Bot<KaiheilaBot.Config> {
   _ping: NodeJS.Timeout
   _heartbeat: NodeJS.Timeout
 
-  static schema: Schema<KaiheilaBot.Config> = Schema.Merge([
-    Schema.Object({
-      token: Schema.String(),
-      verifyToken: Schema.String(),
+  static schema: Schema<KaiheilaBot.Config> = Schema.merge([
+    Schema.object({
+      token: Schema.string(),
+      verifyToken: Schema.string(),
     }),
-    Schema.Extend(Bot.schema, Schema.Object({
-      endpoint: Schema.String({ initial: 'https://www.kaiheila.cn/api/v3' }),
+    Schema.extend(Bot.schema, Schema.object({
+      endpoint: Schema.string({ fallback: 'https://www.kaiheila.cn/api/v3' }),
     })),
   ])
 

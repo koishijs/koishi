@@ -55,12 +55,12 @@ export class TelegramBot extends Bot<TelegramBot.Config> {
     return data as Bot.User
   }
 
-  static schema: Schema<TelegramBot.Config> = Schema.Merge([
-    Schema.Object({
-      token: Schema.String(),
+  static schema: Schema<TelegramBot.Config> = Schema.merge([
+    Schema.object({
+      token: Schema.string(),
     }),
-    Schema.Extend(Bot.schema, Schema.Object({
-      endpoint: Schema.String({ initial: 'https://api.telegram.org' }),
+    Schema.extend(Bot.schema, Schema.object({
+      endpoint: Schema.string({ fallback: 'https://api.telegram.org' }),
     })),
   ])
 

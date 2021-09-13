@@ -9,11 +9,15 @@
         <k-choice v-for="data in available" :data="{ name: data.title }" v-model="current"/>
       </template>
     </div>
-    <div class="plugin-view" v-if="current.config">
-      {{ current.config }}
+    <div class="plugin-view" v-if="!current.name">
+      <h1>全局配置</h1>
+      <k-schema :schema="current.schema" :config="current.config"/>
     </div>
-    <div class="plugin-view" v-else>
-      暂不支持
+    <div class="plugin-view">
+      <h1>插件：{{ current.name }}</h1>
+      <k-button>停用</k-button>
+      <hr>
+      <k-schema :schema="current.schema || { type: 'object', props: {} }" :config="current.config"/>
     </div>
   </k-card>
 </template>
@@ -24,6 +28,7 @@ import { ref, computed } from 'vue'
 import { registry, market } from '~/client'
 import { Registry } from '~/server'
 import kChoice from './choice.vue'
+import kSchema from './schema.vue'
 
 const current = ref<Registry.Data>(registry.value[0])
 

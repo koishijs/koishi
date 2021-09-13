@@ -28,6 +28,10 @@ export function remove<T>(list: T[], item: T) {
   }
 }
 
+export function valueMap<T, U>(object: Dict<T>, transform: (value: T, key: string) => U): Dict<U> {
+  return Object.fromEntries(Object.entries(object).map(([key, value]) => [key, transform(value, key)]))
+}
+
 export function isInteger(source: any) {
   return typeof source === 'number' && Math.floor(source) === source
 }

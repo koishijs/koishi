@@ -5,7 +5,7 @@ import { MinecraftBot } from './bot'
 export interface MinecraftConfig {}
 
 export default class WebSocketClient extends Adapter.WebSocketClient<MinecraftBot.Config, MinecraftConfig> {
-  static schema: Schema<MinecraftConfig> = Schema.Object({})
+  static schema: Schema<MinecraftConfig> = Schema.object({})
 
   async prepare(bot: MinecraftBot) {
     const config = {

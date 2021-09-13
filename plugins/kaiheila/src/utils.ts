@@ -5,8 +5,8 @@ export interface SharedConfig extends Adapter.WebSocketClient.Config {
   path?: string
 }
 
-export const schema: Schema<SharedConfig> = Schema.Extend(Adapter.WebSocketClient.schema, Schema.Object({
-  path: Schema.String({ initial: '/kaiheila' }),
+export const schema: Schema<SharedConfig> = Schema.extend(Adapter.WebSocketClient.schema, Schema.object({
+  path: Schema.string({ fallback: '/kaiheila' }),
 }))
 
 export const adaptGroup = (data: KHL.Guild): Bot.Guild => ({

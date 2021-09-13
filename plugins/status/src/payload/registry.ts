@@ -1,4 +1,4 @@
-import { Context, omit, pick, Plugin, Schema } from 'koishi'
+import { App, Context, omit, pick, Plugin, Schema } from 'koishi'
 
 function debounce(callback: Function, ms: number) {
   let timer: number
@@ -37,7 +37,7 @@ class Registry {
     const children: Registry.Data[] = [{
       id: null,
       name: null,
-      schema: null,
+      schema: App.schema,
       config: omit(this.ctx.app.options, ['plugins' as any]),
     }]
 

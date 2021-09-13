@@ -1,12 +1,11 @@
-import { Dict, Intersect, isNullable } from './misc'
+import { Dict, Intersect, isNullable, valueMap } from './misc'
 
-export interface Schema<T = any> extends Schema.Base<T> {
-  type: string
-  value?: Schema
-  value2?: Schema
-  values?: Schema[]
-  props?: Dict<Schema>
-  adapt?: Function
+export interface Schema<T = any> extends Schema.Data<T> {
+  resolve(value: any): T extends {} ? Partial<T> : T
+}
+
+export function Schema<T>(schema: Schema.Data<T>): Schema<T> {
+  return { ...schema, resolve: value => Schema.resolve(schema, value) }
 }
 
 export namespace Schema {
@@ -14,67 +13,86 @@ export namespace Schema {
 
   export interface Base<T = any> {
     desc?: string
-    initial?: T extends {} ? Partial<T> : T
-    nullable?: boolean
+    fallback?: T extends {} ? Partial<T> : T
+    required?: boolean
   }
 
-  export function Any(options: Base = {}): Schema {
-    return { type: 'any', ...options }
+  export interface Data<T = any> extends Base<T> {
+    type: string
+    value?: Schema
+    value2?: Schema
+    values?: Schema[]
+    props?: Dict<Schema>
+    adapt?: Function
   }
 
-  export function String(options: Base = {}): Schema<string> {
-    return { type: 'string', ...options }
+  export function any(options: Base = {}): Schema {
+    return Schema({ type: 'any', ...options })
   }
 
-  export function Number(options: Base = {}): Schema<number> {
-    return { type: 'number', ...options }
+  export function string(options: Base = {}): Schema<string> {
+    return Schema({ type: 'string', ...options })
   }
 
-  export function Boolean(options: Base = {}): Schema<boolean> {
-    return { type: 'boolean', ...options }
+  export function number(options: Base = {}): Schema<number> {
+    return Schema({ type: 'number', ...options })
   }
 
-  export function Array<T>(value: Schema<T>, options: Base = {}): Schema<T[]> {
-    return { type: 'array', value, ...options }
+  export function boolean(options: Base = {}): Schema<boolean> {
+    return Schema({ type: 'boolean', ...options })
   }
 
-  export function Dict<T>(value: Schema<T>, options: Base = {}): Schema<Dict<T>> {
-    return { type: 'dict', value, ...options }
+  export function array<T>(value: Schema<T>, options: Base = {}): Schema<T[]> {
+    return Schema({ type: 'array', value, ...options })
   }
 
-  export function Object<T extends Dict<Schema>>(props: T, options: Base = {}): Schema<{ [K in keyof T]?: Type<T[K]> }> {
-    return { type: 'object', props, ...options }
+  export function dict<T>(value: Schema<T>, options: Base = {}): Schema<Dict<T>> {
+    return Schema({ type: 'dict', value, ...options })
   }
 
-  export function Merge<T extends Schema[]>(values: T, options: Base = {}): Schema<Intersect<Type<T[number]>>> {
-    return { type: 'merge', values, ...options }
+  export function object<T extends Dict<Schema>>(props: T, options: Base = {}): Schema<{ [K in keyof T]?: Type<T[K]> }> {
+    return Schema({ type: 'object', props, ...options })
   }
 
-  export function Extend<S, T>(value: Schema<S>, value2: Schema<T>): Schema<S & T> {
-    return { type: 'extend', value, value2 }
+  export function merge<T extends Schema[]>(values: T, options: Base = {}): Schema<Intersect<Type<T[number]>>> {
+    return Schema({ type: 'merge', values, ...options })
   }
 
-  export function Adapt<S, T>(value: Schema<S>, value2: Schema<T>, adapt: (value: T) => S): Schema<S> {
-    return { type: 'adapt', value, value2, adapt }
+  export function extend<S, T>(value: Schema<S>, value2: Schema<T>): Schema<S & T> {
+    return Schema({ type: 'extend', value, value2 })
   }
-}
 
-export function validate(schema: Schema, value: any) {
-  if (schema.nullable && isNullable(value)) return true
-  switch (schema.type) {
-    case 'string': return typeof value === 'string'
-    case 'number': return typeof value === 'number'
-    case 'boolean': return typeof value === 'boolean'
-    case 'array':
-      return Array.isArray(value)
-        && value.every(item => validate(schema.value, item))
-    case 'dict':
-      return value && typeof value === 'object'
-        && Object.values(value).every(item => validate(schema.value, item))
-    case 'object':
-      return value && typeof value === 'object'
-        && Object.entries(schema.props).every(([key, item]) => validate(item, value[key]))
-    default:
-      throw new Error(`unsupported type "${schema.type}"`);
+  export function adapt<S, T>(value: Schema<S>, value2: Schema<T>, adapt: (value: T) => S): Schema<S> {
+    return Schema({ type: 'adapt', value, value2, adapt })
+  }
+
+  export function resolve(schema: Schema.Data, value: any) {
+    if (isNullable(value)) {
+      if (!schema.required) return schema.fallback ?? value
+      throw new TypeError(`missing required value`)
+    }
+
+    switch (schema.type) {
+      case 'string':
+      case 'number':
+      case 'boolean':
+        if (typeof value === schema.type) return value
+        throw new TypeError(`expected ${schema.type} but got ${value}`)
+
+      case 'array':
+        if (!Array.isArray(value)) throw new TypeError(`expected array but got ${value}`)
+        return value.map(item => resolve(schema.value, item))
+
+      case 'dict':
+        if (!value || typeof value !== 'object') throw new TypeError(`expected dict but got ${value}`)
+        return valueMap(value, item => resolve(schema.value, item))
+
+      case 'object':
+        if (!value || typeof value !== 'object') throw new TypeError(`expected object but got ${value}`)
+        return { ...value, ...valueMap(schema.props, (schema, key) => resolve(schema, value[key])) }
+
+      default:
+        throw new TypeError(`unsupported type "${schema.type}"`)
+    }
   }
 }

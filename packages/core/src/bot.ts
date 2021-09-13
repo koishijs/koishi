@@ -100,8 +100,8 @@ export namespace Bot {
   }
 
   export const library: Dict<Constructor> = {}
-  export const schema = Schema.Object<{}>({
-    platform: Schema.String({ desc: '平台名称' }),
+  export const schema = Schema.object<{}>({
+    platform: Schema.string({ desc: '平台名称' }),
   }, { desc: '高级设置' })
 
   export interface Constructor<S extends Bot.BaseConfig = Bot.BaseConfig, T = any> {

@@ -31,10 +31,10 @@ export namespace InjectedAdapter {
       retryTimes: 6,
     }
 
-    static schema = Schema.Object({
-      retryLazy: Schema.Number({ initial: Time.minute }),
-      retryInterval: Schema.Number({ initial: 5 * Time.second }),
-      retryTimes: Schema.Number({ initial: 6 }),
+    static schema = Schema.object({
+      retryLazy: Schema.number({ fallback: Time.minute }),
+      retryInterval: Schema.number({ fallback: 5 * Time.second }),
+      retryTimes: Schema.number({ fallback: 6 }),
     })
 
     constructor(app: App, config: T) {

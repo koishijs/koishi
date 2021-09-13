@@ -10,8 +10,8 @@ export namespace MinecraftBot {
 export class MinecraftBot extends Bot<MinecraftBot.Config> {
   flayer: mineflayer.Bot
 
-  static schema: Schema<MinecraftBot.Config> = Schema.Object({
-    username: Schema.String(),
+  static schema: Schema<MinecraftBot.Config> = Schema.object({
+    username: Schema.string(),
   })
 
   async sendMessage(channelId: string, content: string, guildId?: string) {
