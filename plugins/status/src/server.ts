@@ -37,10 +37,11 @@ const logger = new Logger('status')
 
 export class SocketHandle {
   readonly app: App
-  readonly id = v4()
+  readonly id: string
 
   constructor(webui: WebServer, public socket: WebSocket) {
     this.app = webui.app
+    webui.handles[this.id = v4()] = this
   }
 
   send(type: string, body?: any) {
@@ -56,7 +57,8 @@ export class WebServer extends Adapter {
   readonly sources: WebServer.Sources
   readonly global: ClientConfig
   readonly entries: Dict<string> = {}
-  readonly platform = 'web'
+  readonly handles: Dict<SocketHandle> = {}
+  readonly platform = 'status'
 
   private vite: ViteDevServer
   private readonly server: WebSocket.Server

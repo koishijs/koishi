@@ -122,9 +122,9 @@ export namespace Adapter {
       return this.find(bot => bot.sid === sid)
     }
 
-    create(platform: string, options: Bot.BaseConfig) {
+    create(platform: string, options: Bot.BaseConfig, constructor: Bot.Constructor = Bot.library[platform]) {
       const adapter = this.resolve(platform, options)
-      const bot = new Bot.library[platform](adapter, options)
+      const bot = new constructor(adapter, options)
       adapter.bots.push(bot)
       this.push(bot)
       return bot

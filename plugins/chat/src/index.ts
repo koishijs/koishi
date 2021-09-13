@@ -1,4 +1,4 @@
-import { Adapter, Bot, Context, Random, segment, Session, template } from 'koishi'
+import { Bot, Context, Random, segment, Session, template } from 'koishi'
 import { resolve } from 'path'
 import { WebServer } from '@koishijs/plugin-status'
 import receiver, { Message, ReceiverConfig } from './receiver'
@@ -36,7 +36,7 @@ export class SandboxBot extends Bot {
   username = 'sandbox'
   status = Bot.Status.GOOD
 
-  constructor(public readonly adapter: WebServer & Adapter<SandboxBot>) {
+  constructor(public readonly adapter: WebServer) {
     super(adapter, {})
     this.selfId = 'sandbox'
   }
@@ -88,20 +88,17 @@ export function apply(ctx: Context, options: Config = {}) {
     ctx.on('connect', async () => {
       // create bot after connection
       // to prevent mysql from altering user table
-      const sandbox = ctx.webui.create({ platform: 'id' }, SandboxBot)
+      const sandbox = ctx.bots.create('status', { platform: 'id' }, SandboxBot)
       status.Profile.initBot(sandbox)
 
-      ctx.webui.addListener('chat', async function ({ id, token, content, platform, selfId, channelId, guildId }) {
-        const user = await this.validate(id, token, ['name', 'authority'])
-        if (!user) return
-        if (user.authority < 4) return this.send('unauthorized')
+      ctx.webui.addListener('chat', async function ({ content, platform, selfId, channelId, guildId }) {
+        if (await this.validate()) return this.send('unauthorized')
         content = await ctx.transformAssets(content)
         ctx.bots.get(`${platform}:${selfId}`)?.sendMessage(channelId, content, guildId)
       })
 
-      ctx.webui.addListener('sandbox', async function ({ id, token, content }) {
-        const user = await this.validate(id, token, ['name'])
-        if (!user) return
+      ctx.webui.addListener('sandbox', async function ({ id, content }) {
+        if (await this.validate()) return this.send('unauthorized')
         content = await ctx.transformAssets(content)
         this.send('sandbox:user', content)
         ctx.webui.dispatch(new Session(sandbox, {
@@ -113,7 +110,7 @@ export function apply(ctx: Context, options: Config = {}) {
           subtype: 'private',
           author: {
             userId: 'id',
-            username: user.name,
+            username: id,
           },
         }))
       })
@@ -127,7 +124,7 @@ export function apply(ctx: Context, options: Config = {}) {
 
     ctx.on('chat/receive', async (message) => {
       Object.values(ctx.webui.handles).forEach((handle) => {
-        if (handle.authority >= 4) handle.socket.send(JSON.stringify({ type: 'chat', body: message }))
+        handle.socket.send(JSON.stringify({ type: 'chat', body: message }))
       })
     })
 
