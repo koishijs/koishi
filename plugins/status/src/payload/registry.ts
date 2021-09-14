@@ -1,14 +1,8 @@
 import { App, Context, omit, pick, Plugin, Schema } from 'koishi'
+import { debounce } from 'throttle-debounce'
+import { StatusServer } from '../server'
 
-function debounce(callback: Function, ms: number) {
-  let timer: number
-  return function () {
-    if (timer) clearTimeout(timer)
-    timer = setTimeout(callback, ms)
-  }
-}
-
-class Registry {
+class Registry implements StatusServer.DataSource {
   cached: Promise<Registry.Data[]>
   promise: Promise<void>
 
@@ -20,9 +14,9 @@ class Registry {
     ctx.on('plugin-removed', this.update)
   }
 
-  update = debounce(async () => {
+  update = debounce(0, async () => {
     this.ctx.webui.broadcast('registry', await this.get(true))
-  }, 0)
+  })
 
   async get(forced = false) {
     if (this.cached && !forced) return this.cached

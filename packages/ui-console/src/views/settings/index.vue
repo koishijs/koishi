@@ -7,7 +7,7 @@
         <k-choice v-for="data in registry.slice(1)" :data="data" v-model="current"/>
         <template v-if="market">
           <div class="group">未运行的插件</div>
-          <k-choice v-for="data in available" :data="createExternal(data)" v-model="current"/>
+          <k-choice v-for="data in available" :data="data" v-model="current"/>
         </template>
       </div>
     </div>
@@ -20,11 +20,11 @@
           <h1>
             <span>{{ title }}</span>
             <template v-if="current.id">
-              <k-button solid type="error" @click="send('config/dispose', payload)">停用插件</k-button>
-              <k-button solid @click="send('config/reload', payload)">重载配置</k-button>
+              <k-button solid type="error" @click="execute('dispose')">停用插件</k-button>
+              <k-button solid @click="execute('reload')">重载配置</k-button>
             </template>
             <template v-else>
-              <k-button solid @click="send('config/install', payload)">启用插件</k-button>
+              <k-button solid @click="execute('install')">启用插件</k-button>
             </template>
           </h1>
         </template>
@@ -37,9 +37,9 @@
 
 <script setup lang="ts">
 
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { registry, market, send } from '~/client'
-import { Registry, Dict, Market } from '~/server'
+import { Registry } from '~/server'
 import kChoice from './choice.vue'
 
 interface PluginData extends Registry.Data {
@@ -47,36 +47,48 @@ interface PluginData extends Registry.Data {
 }
 
 const current = ref<PluginData>(registry.value[0])
-const cache: Dict<PluginData> = {}
-
-function createExternal(data: Market.Data) {
-  return cache[data.name] ||= {
-    name: data.shortname,
-    module: data.name,
-    schema: data.local.schema,
-    config: {},
-  }
-}
 
 const title = computed(() => {
   const { name, module, id } = current.value
   if (!name || module) return module
-  const item = market.value?.find(item => item.local?.uuid === id)
+  const item = market.value?.find(item => item.local?.id === id)
   if (item) return item.name
   return name
 })
 
-const payload = computed(() => {
-  // we do not need to send schema
-  const { id, name, module, config } = current.value
-  return { id, name, module, config }
+const available = computed(() => {
+  return Object.fromEntries(market.value
+    .filter(data => data.local && !data.local.id)
+    .sort((a, b) => a.shortname > b.shortname ? 1 : -1)
+    .map(data => [data.shortname, {
+      name: data.shortname,
+      module: data.name,
+      schema: data.local?.schema,
+      config: {},
+    }]))
 })
 
-const available = computed(() => {
-  return market.value
-    .filter(data => data.local && !data.local.uuid)
-    .sort((a, b) => a.shortname > b.shortname ? 1 : -1)
+let detached = ''
+
+watch(registry, plugins => {
+  const data = plugins.find(item => item.name === detached)
+  if (!data) return
+  current.value = data
+  detached = ''
 })
+
+watch(available, () => {
+  const data = available.value[detached]
+  if (!data) return
+  current.value = data
+  detached = ''
+})
+
+function execute(event: string) {
+  const { name, config } = current.value
+  send('config/' + event, { name, config })
+  detached = current.value.name
+}
 
 </script>
 

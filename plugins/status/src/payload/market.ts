@@ -1,8 +1,10 @@
-import { Context, pick, Dict, version as currentVersion, Schema } from 'koishi'
+import { Context, pick, Dict, version as currentVersion, Schema, App } from 'koishi'
 import { dirname, resolve } from 'path'
 import { existsSync, promises as fs } from 'fs'
 import { spawn, StdioOptions } from 'child_process'
 import { satisfies } from 'semver'
+import { StatusServer } from '../server'
+import { throttle } from 'throttle-debounce'
 import axios from 'axios'
 
 interface PackageBase {
@@ -62,64 +64,84 @@ const installArgs: Record<Manager, string[]> = {
   npm: ['install', '--loglevel', 'error'],
 }
 
-class Market {
-  cached: Promise<Market.Data[]>
+class Market implements StatusServer.DataSource {
+  dataCache: Dict<Market.Data> = {}
+  localCache: Dict<Promise<Market.Local>> = {}
+  callbacks: ((data: Market.Data[]) => void)[] = []
+  flushData: throttle<() => void>
 
   constructor(private ctx: Context, public config: Market.Config) {
-    ctx.router.get(config.apiPath + '/package(/.+)+', async (ctx) => {
-      const name = ctx.path.slice(config.apiPath.length + 9)
-      const { data } = await axios.get(`https://registry.npmjs.org/${name}`)
-      ctx.body = data
-      ctx.set('Access-Control-Allow-Origin', '*')
+    ctx.on('connect', () => {
+      this.start()
+      this.flushData = throttle(100, () => this.broadcast())
+
+      ctx.on('plugin-added', async (plugin) => {
+        const entry = Object.entries(require.cache).find(([, { exports }]) => exports === plugin)
+        if (!entry) return
+        const state = this.ctx.app.registry.get(plugin)
+        const local = await this.localCache[entry[0]]
+        local.id = state.id
+        this.broadcast()
+      })
+
+      ctx.on('plugin-removed', async (plugin) => {
+        const entry = Object.entries(require.cache).find(([, { exports }]) => exports === plugin)
+        if (!entry) return
+        const local = await this.localCache[entry[0]]
+        delete local.id
+        this.broadcast()
+      })
     })
   }
 
-  async get(forced = false) {
-    if (this.cached && !forced) return this.cached
-    return this.cached = this.getForced()
+  private async loadPackage(path: string, id?: string): Promise<Market.Local> {
+    const data: PackageLocal = JSON.parse(await fs.readFile(path + '/package.json', 'utf8'))
+    if (data.private) return null
+    const workspace = !path.includes('node_modules')
+    const { schema } = require(path)
+    return { schema, workspace, id, ...pick(data, ['name', 'version', 'description']) }
   }
 
-  private async getForced() {
-    const loadDep = async (filename: string, uuid?: string) => {
-      do {
-        filename = dirname(filename)
-        const files = await fs.readdir(filename)
-        if (files.includes('package.json')) break
-      } while (true)
-      const data: PackageLocal = JSON.parse(await fs.readFile(filename + '/package.json', 'utf8'))
-      if (data.private) return null
-      const workspace = !filename.includes('node_modules')
-      const { schema } = require(filename)
-      return { schema, workspace, uuid, ...pick(data, ['name', 'version', 'description']) }
-    }
+  private async loadCached(filename: string, id?: string) {
+    do {
+      filename = dirname(filename)
+      const files = await fs.readdir(filename)
+      if (files.includes('package.json')) break
+    } while (true)
+    return this.loadPackage(filename, id)
+  }
 
-    const loadCache: Dict<Promise<Market.Local>> = {}
+  private async loadLocal(name: string) {
+    try {
+      const filename = require.resolve(name)
+      const path = require.resolve(name + '/package.json').slice(0, -12)
+      return this.localCache[filename] ||= this.loadPackage(path)
+    } catch {}
+  }
 
+  broadcast() {
+    this.ctx.webui.broadcast('market', Object.values(this.dataCache))
+  }
+
+  async start() {
     const [{ data }] = await Promise.all([
       axios.get<SearchResult>('https://api.npms.io/v2/search?q=koishi+plugin+not:deprecated&size=250'),
       Promise.all(Object.keys(require.cache).map(async (filename) => {
         const { exports } = require.cache[filename]
         const state = this.ctx.app.registry.get(exports)
         if (!state) return
-        return loadCache[filename] ||= loadDep(filename, state.id)
+        return this.localCache[filename] = this.loadCached(filename, state.id)
       })),
     ])
 
-    const loadLocal = (name: string) => {
-      try {
-        const filename = require.resolve(name)
-        return loadCache[filename] ||= loadDep(filename)
-      } catch {}
-    }
-
-    return Promise.all(data.results.map(async (item) => {
+    data.results.forEach(async (item) => {
       const { name, version } = item.package
       const official = name.startsWith('@koishijs/plugin-')
       const community = name.startsWith('koishi-plugin-')
       if (!official && !community) return
 
       const [local, { data }] = await Promise.all([
-        loadLocal(name),
+        this.loadLocal(name),
         axios.get<Registry>(`https://registry.npmjs.org/${name}`),
       ])
       const { dependencies = {}, peerDependencies = {}, dist } = data.versions[version]
@@ -127,7 +149,7 @@ class Market {
       if (!declaredVersion || !satisfies(currentVersion, declaredVersion)) return
 
       const shortname = official ? name.slice(17) : name.slice(14)
-      return {
+      this.dataCache[name] = {
         ...item.package,
         shortname,
         local,
@@ -137,8 +159,13 @@ class Market {
           final: item.score.final,
           ...item.score.detail,
         },
-      } as Market.Data
-    })).then(data => data.filter(Boolean))
+      }
+      this.flushData()
+    })
+  }
+
+  async get(forced = false) {
+    return Object.values(this.dataCache)
   }
 
   async install(name: string) {
@@ -157,7 +184,7 @@ namespace Market {
   export interface Local extends PackageBase {
     workspace: boolean
     schema?: Schema
-    uuid?: string
+    id?: string
   }
 
   export interface Data extends PackageBase {

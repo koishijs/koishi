@@ -1,6 +1,6 @@
 <template>
   <tr :class="{ workspace: data.local?.workspace }">
-    <td class="package" :class="data.local ? data.local.installed ? 'active' : 'local' : 'remote'">
+    <td class="package" :class="data.local ? data.local.id ? 'active' : 'local' : 'remote'">
       <div>
         <a
           :href="'http://npmjs.com/package/' + data.name"

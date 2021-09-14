@@ -153,7 +153,7 @@ class MysqlSynchronizer implements Synchronizer {
 }
 
 Database.extend('mysql', {
-  async getStats() {
+  async stats() {
     const [[{ activeUsers }], [{ allUsers }], [{ activeGroups }], [{ allGroups }], [{ storageSize }]] = await this.query([
       'SELECT COUNT(*) as activeUsers FROM `user` WHERE CURRENT_TIMESTAMP() - `lastCall` < 1000 * 3600 * 24',
       'SELECT COUNT(*) as allUsers FROM `user`',

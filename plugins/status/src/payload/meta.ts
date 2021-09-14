@@ -1,13 +1,14 @@
 import { Argv, Assets, Context, noop } from 'koishi'
+import { StatusServer } from '../server'
 
-class Meta {
+class Meta implements StatusServer.DataSource {
   timestamp = 0
   cached: Promise<Meta.Payload>
   callbacks: Meta.Extension[] = []
 
   constructor(private ctx: Context, public config: Meta.Config) {
     this.extend(async () => ctx.assets?.stats())
-    this.extend(async () => ctx.database?.getStats())
+    this.extend(async () => ctx.database?.stats())
 
     ctx.any().on('command', ({ session }: Argv<'lastCall'>) => {
       session.user.lastCall = new Date()

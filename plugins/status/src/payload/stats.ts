@@ -1,5 +1,5 @@
 import { Context, Channel, noop, Session, Bot, Time, Dict } from 'koishi'
-import {} from '@koishijs/cli'
+import { StatusServer } from '../server'
 
 export interface Synchronizer {
   groups: Dict<number>
@@ -71,7 +71,7 @@ Session.prototype.send = function (this: Session, ...args) {
 const customTag = Symbol('custom-send')
 Session.prototype.send[customTag] = send
 
-class Statistics {
+class Statistics implements StatusServer.DataSource {
   sync: Synchronizer
   lastUpdate = new Date()
   updateHour = this.lastUpdate.getHours()

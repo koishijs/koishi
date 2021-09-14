@@ -69,7 +69,7 @@ class MongoSynchronizer implements Synchronizer {
 }
 
 Database.extend('mongo', {
-  async getStats() {
+  async stats() {
     const $gt = new Date(new Date().getTime() - 1000 * 3600 * 24)
     const [allGroups, activeGroups, allUsers, activeUsers, { storageSize }] = await Promise.all([
       this.channel.countDocuments(),

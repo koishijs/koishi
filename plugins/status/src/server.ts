@@ -10,6 +10,7 @@ import WebSocket from 'ws'
 import open from 'open'
 import { v4 } from 'uuid'
 import type { ViteDevServer } from 'vite'
+import {} from '@koishijs/cli'
 
 export { Market, Registry, Meta, Profile, Statistics }
 
@@ -38,7 +39,7 @@ export class SocketHandle {
   readonly app: App
   readonly id: string
 
-  constructor(webui: WebServer, public socket: WebSocket) {
+  constructor(webui: StatusServer, public socket: WebSocket) {
     this.app = webui.app
     webui.handles[this.id = v4()] = this
   }
@@ -52,8 +53,8 @@ export class SocketHandle {
   }
 }
 
-export class WebServer extends Adapter {
-  readonly sources: WebServer.Sources
+export class StatusServer extends Adapter {
+  readonly sources: StatusServer.Sources
   readonly global: ClientConfig
   readonly entries: Dict<string> = {}
   readonly handles: Dict<SocketHandle> = {}
@@ -121,8 +122,8 @@ export class WebServer extends Adapter {
     })
   }
 
-  addListener(event: string, listener: WebServer.Listener) {
-    WebServer.listeners[event] = listener
+  addListener(event: string, listener: StatusServer.Listener) {
+    StatusServer.listeners[event] = listener
   }
 
   connect() {}
@@ -157,7 +158,7 @@ export class WebServer extends Adapter {
 
     socket.on('message', async (data) => {
       const { type, body } = JSON.parse(data.toString())
-      const method = WebServer.listeners[type]
+      const method = StatusServer.listeners[type]
       if (method) {
         await method.call(channel, body)
       } else {
@@ -234,7 +235,7 @@ export class WebServer extends Adapter {
   }
 }
 
-export namespace WebServer {
+export namespace StatusServer {
   export interface DataSource<T = any> {
     get(forced?: boolean): Promise<T>
   }

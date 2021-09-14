@@ -1,6 +1,7 @@
 import { Bot, Context } from 'koishi'
 import { cpus } from 'os'
 import { mem } from 'systeminformation'
+import { StatusServer } from '../server'
 
 export type LoadRate = [app: number, total: number]
 export type MessageRate = [send: number, receive: number]
@@ -65,7 +66,7 @@ export async function BotData(bot: Bot) {
   } as BotData
 }
 
-class Profile {
+class Profile implements StatusServer.DataSource {
   cached: Profile.Payload
 
   constructor(private ctx: Context, config: Profile.Config) {

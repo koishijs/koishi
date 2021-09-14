@@ -1,6 +1,6 @@
 import { Context, template, Time, Tables, Awaitable, Schema } from 'koishi'
 import { Synchronizer } from './payload/stats'
-import { WebServer, SocketHandle, Config } from './server'
+import { StatusServer, SocketHandle, Config } from './server'
 import Meta from './payload/meta'
 
 import './database/mongo'
@@ -13,12 +13,12 @@ export type Activity = Record<number, number>
 declare module 'koishi' {
   namespace Context {
     interface Delegates {
-      webui: WebServer
+      webui: StatusServer
     }
   }
 
   interface Database {
-    getStats(): Promise<Meta.Stats>
+    stats(): Promise<Meta.Stats>
     createSynchronizer(): Synchronizer
   }
 
@@ -100,7 +100,7 @@ export const schema: Schema<Config> = Schema.object({
 export function apply(ctx: Context, config: Config = {}) {
   config = Object.assign(defaultConfig, config)
 
-  ctx.webui = new WebServer(ctx, config)
+  ctx.webui = new StatusServer(ctx, config)
 
   ctx.router.get(config.apiPath, async (ctx) => {
     ctx.set('Access-Control-Allow-Origin', '*')

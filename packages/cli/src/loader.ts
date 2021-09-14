@@ -59,7 +59,7 @@ export class Loader {
     const app = this.app = new App(config)
     const plugins = app.options.plugins ||= {}
     for (const name in plugins) {
-      this.loadPlugin(name, plugins[name] ?? undefined)
+      this.loadPlugin(name, plugins[name] ?? {})
     }
     return app
   }
