@@ -5,7 +5,7 @@ declare module 'koishi' {
     schedule: Schedule
   }
 
-  interface Loader {
+  interface Module {
     schedule: typeof import('.')
   }
 }

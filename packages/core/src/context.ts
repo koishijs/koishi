@@ -1,7 +1,7 @@
 import { Logger, defineProperty, remove, segment, Random, Schema, Promisify, Awaitable, Dict } from '@koishijs/utils'
 import { Command } from './command'
 import { Session } from './session'
-import { User, Channel, Database, Assets, Cache, Loader } from './database'
+import { User, Channel, Database, Assets, Cache, Module } from './database'
 import { Argv } from './parser'
 import { App } from './app'
 
@@ -190,16 +190,16 @@ export class Context {
     })
   }
 
-  private loadDeps<K extends keyof Loader>(deps: readonly K[]) {
-    const modules: Pick<Loader, K> = {}
+  private loadDeps<K extends keyof Module>(deps: readonly K[]) {
+    const modules: Pick<Module, K> = {}
     for (const dep of deps) {
-      modules[dep] = Loader.require(dep)
+      modules[dep] = Module.require(dep)
       if (!modules[dep]) return
     }
     return modules
   }
 
-  with<K extends keyof Loader>(deps: readonly K[], callback: Plugin.Function<Pick<Loader, K>>) {
+  with<K extends keyof Module>(deps: readonly K[], callback: Plugin.Function<Pick<Module, K>>) {
     const modules = this.loadDeps(deps)
     if (!modules) return
     this.teleport(modules, callback)

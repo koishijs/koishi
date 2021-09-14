@@ -19,7 +19,7 @@ declare module 'koishi' {
     adventure: Config
   }
 
-  interface Loader {
+  interface Module {
     adventure: typeof import('.')
   }
 }

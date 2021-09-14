@@ -41,7 +41,7 @@ declare module 'koishi' {
     }
   }
 
-  interface Loader {
+  interface Module {
     puppeteer: typeof import('.')
   }
 

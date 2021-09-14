@@ -6,7 +6,7 @@ import { createHmac, createHash } from 'crypto'
 import FormData from 'form-data'
 
 declare module 'koishi' {
-  interface Loader {
+  interface Module {
     assets: typeof import('.')
   }
 }

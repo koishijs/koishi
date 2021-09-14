@@ -11,7 +11,7 @@ declare module 'koishi' {
     'chat/receive'(message: Message, session: Session): void
   }
 
-  interface Loader {
+  interface Module {
     chat: typeof import('.')
   }
 }

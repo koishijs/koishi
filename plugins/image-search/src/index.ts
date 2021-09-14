@@ -4,7 +4,7 @@ import saucenao from './saucenao'
 import iqdb from './iqdb'
 
 declare module 'koishi' {
-  interface Loader {
+  interface Module {
     'image-search': typeof import('.')
   }
 }

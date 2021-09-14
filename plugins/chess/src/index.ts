@@ -28,7 +28,7 @@ declare module 'koishi' {
     chess: StateData
   }
 
-  interface Loader {
+  interface Module {
     chess: typeof import('.')
   }
 }

@@ -34,7 +34,7 @@ declare module 'koishi' {
     'dialogue/execute'(argv: Dialogue.Argv): void | Promise<void | string>
   }
 
-  interface Loader {
+  interface Module {
     teach: typeof import('.')
   }
 }

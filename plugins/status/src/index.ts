@@ -48,7 +48,7 @@ declare module 'koishi' {
     activity: Activity
   }
 
-  interface Loader {
+  interface Module {
     status: typeof import('.')
   }
 }

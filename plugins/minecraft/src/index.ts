@@ -3,7 +3,7 @@ import { MinecraftBot } from './bot'
 import WebSocketClient from './ws'
 
 declare module 'koishi' {
-  interface Loader {
+  interface Module {
     minecraft: typeof import('.')
   }
 }

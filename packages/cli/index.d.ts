@@ -24,18 +24,25 @@ interface DeamonConfig {
   autoRestart?: boolean
 }
 
-export interface AppConfig extends App.Config {
-  plugins?: PluginConfig
-  logLevel?: LogLevel
-  logDiff?: boolean
-  logTime?: string | boolean
-  watch?: WatchConfig
-  deamon?: DeamonConfig
-  proxyAgent?: string
-  timezoneOffset?: number
-  stackTraceLimit?: number
+declare module 'koishi' {
+  namespace App {
+    interface NetworkConfig {
+      proxyAgent?: string
+    }
+
+    interface Config {
+      plugins?: PluginConfig
+      logLevel?: LogLevel
+      logDiff?: boolean
+      logTime?: string | boolean
+      watch?: WatchConfig
+      deamon?: DeamonConfig
+      timezoneOffset?: number
+      stackTraceLimit?: number
+    }
+  }
 }
 
 export * from 'koishi'
 
-export function defineConfig(config: AppConfig): AppConfig
+export function defineConfig(config: App.Config): App.Config

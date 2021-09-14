@@ -8,7 +8,7 @@ export * from './handler'
 export * from './updater'
 
 declare module 'koishi' {
-  interface Loader {
+  interface Module {
     common: typeof import('.')
   }
 }

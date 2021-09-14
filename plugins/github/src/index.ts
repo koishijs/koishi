@@ -11,7 +11,7 @@ import axios, { Method } from 'axios'
 export * from './server'
 
 declare module 'koishi' {
-  interface Loader {
+  interface Module {
     github: typeof import('.')
   }
 }

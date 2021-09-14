@@ -5,7 +5,7 @@ import HttpServer from './http'
 import WebSocketClient from './ws'
 
 declare module 'koishi' {
-  interface Loader {
+  interface Module {
     kaiheila: typeof import('.')
   }
 }

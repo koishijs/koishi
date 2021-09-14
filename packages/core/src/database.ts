@@ -101,10 +101,10 @@ export namespace Database {
   type ExtensionMethods<T> = Methods<Database, T extends Constructor<infer I> ? I : never>
   type Extension<T> = ((Database: T) => void) | ExtensionMethods<T>
 
-  export function extend<K extends keyof Loader>(module: K, extension: Extension<Get<Loader[K], 'default'>>): void
+  export function extend<K extends keyof Module>(module: K, extension: Extension<Get<Module[K], 'default'>>): void
   export function extend<T extends Constructor<unknown>>(module: T, extension: Extension<T>): void
   export function extend(module: any, extension: any) {
-    const Database = typeof module === 'string' ? Loader.require(module).default : module
+    const Database = typeof module === 'string' ? Module.require(module).default : module
     if (!Database) return
 
     if (typeof extension === 'function') {
@@ -115,9 +115,9 @@ export namespace Database {
   }
 }
 
-export interface Loader {}
+export interface Module {}
 
-export namespace Loader {
+export namespace Module {
   const cache: Dict = {}
 
   export function define(name: string, value: any) {

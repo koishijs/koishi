@@ -20,12 +20,11 @@
           <h1>
             <span>{{ title }}</span>
             <template v-if="current.id">
-              <k-button solid type="error">停用插件</k-button>
-              <k-button solid>重载配置</k-button>
+              <k-button solid type="error" @click="send('plugin/dispose', payload)">停用插件</k-button>
+              <k-button solid @click="send('plugin/reload', payload)">重载配置</k-button>
             </template>
             <template v-else>
-              <k-button solid type="success">启用插件</k-button>
-              <k-button solid @click="send('config/save-external', { module: current.module, config: current.config })">保存配置</k-button>
+              <k-button solid @click="send('plugin/install', payload)">启用插件</k-button>
             </template>
           </h1>
         </template>
@@ -65,6 +64,12 @@ const title = computed(() => {
   const item = market.value?.find(item => item.local?.uuid === id)
   if (item) return item.name
   return name
+})
+
+const payload = computed(() => {
+  // we do not need to send schema
+  const { id, name, module, config } = current.value
+  return { id, name, module, config }
 })
 
 const available = computed(() => {

@@ -1,4 +1,4 @@
-import { App, Context, Loader } from '@koishijs/core'
+import { App, Context, Module } from '@koishijs/core'
 import { defineProperty, remove } from '@koishijs/utils'
 import { Server, createServer } from 'http'
 import { AxiosRequestConfig } from 'axios'
@@ -43,8 +43,8 @@ declare module '@koishijs/core' {
 }
 
 // use node require
-Loader.internal.require = require
-Loader.internal.resolve = require.resolve
+Module.internal.require = require
+Module.internal.resolve = require.resolve
 
 Context.delegate('router')
 
