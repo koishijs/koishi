@@ -37,7 +37,7 @@ class Registry {
     const children: Registry.Data[] = [{
       id: null,
       name: null,
-      schema: App.schema,
+      schema: App.Config,
       config: omit(this.ctx.app.options, ['plugins' as any]),
     }]
 

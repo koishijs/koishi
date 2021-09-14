@@ -1,4 +1,4 @@
-import { AppOptions, Plugin, Dict, camelize, Loader } from 'koishi'
+import { App, Plugin, Dict, camelize, Loader } from 'koishi'
 import { WatchOptions } from 'chokidar'
 
 export type PluginConfig = {
@@ -24,7 +24,7 @@ interface DeamonConfig {
   autoRestart?: boolean
 }
 
-export interface AppConfig extends AppOptions {
+export interface AppConfig extends App.Config {
   plugins?: PluginConfig
   logLevel?: LogLevel
   logDiff?: boolean

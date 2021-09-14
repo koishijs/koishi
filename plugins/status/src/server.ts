@@ -156,7 +156,6 @@ export class WebServer extends Adapter {
     }
 
     socket.on('message', async (data) => {
-      if (!this.ctx.database) return
       const { type, body } = JSON.parse(data.toString())
       const method = WebServer.listeners[type]
       if (method) {

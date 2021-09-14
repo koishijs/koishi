@@ -114,6 +114,7 @@ function onBlur(event) {
     &:hover:not(:disabled) {
       border-color: var(--border-dark);
       background-color: var(--bg1);
+      box-shadow: var(--hover-inset);
     }
     &:focus:not(:disabled) {
       border-color: var(--primary);

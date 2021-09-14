@@ -25,7 +25,7 @@
             </template>
             <template v-else>
               <k-button solid type="success">启用插件</k-button>
-              <k-button solid>保存配置</k-button>
+              <k-button solid @click="send('config/save-external', { module: current.module, config: current.config })">保存配置</k-button>
             </template>
           </h1>
         </template>
@@ -39,7 +39,7 @@
 <script setup lang="ts">
 
 import { ref, computed } from 'vue'
-import { registry, market } from '~/client'
+import { registry, market, send } from '~/client'
 import { Registry, Dict, Market } from '~/server'
 import kChoice from './choice.vue'
 

@@ -7,28 +7,30 @@ import validate, { Command } from './command'
 import { Session } from './session'
 import help, { getCommandNames, HelpConfig } from './help'
 
-export interface DelayOptions {
-  character?: number
-  message?: number
-  cancel?: number
-  broadcast?: number
-  prompt?: number
-}
+export namespace App {
+  export interface DelayConfig {
+    character?: number
+    message?: number
+    cancel?: number
+    broadcast?: number
+    prompt?: number
+  }
 
-export interface NetworkOptions {
-  selfUrl?: string
-}
+  export interface NetworkConfig {
+    selfUrl?: string
+  }
 
-export interface AppOptions extends NetworkOptions {
-  prefix?: string | string[] | ((session: Session.Message) => void | string | string[])
-  nickname?: string | string[]
-  maxListeners?: number
-  prettyErrors?: boolean
-  delay?: DelayOptions
-  help?: boolean | HelpConfig
-  autoAssign?: boolean | ((session: Session) => boolean)
-  autoAuthorize?: number | ((session: Session) => number)
-  minSimilarity?: number
+  export interface Config extends NetworkConfig {
+    prefix?: string | string[] | ((session: Session.Message) => void | string | string[])
+    nickname?: string | string[]
+    maxListeners?: number
+    prettyErrors?: boolean
+    delay?: DelayConfig
+    help?: boolean | HelpConfig
+    autoAssign?: boolean | ((session: Session) => boolean)
+    autoAuthorize?: number | ((session: Session) => number)
+    minSimilarity?: number
+  }
 }
 
 function createLeadingRE(patterns: string[], prefix = '', suffix = '') {
@@ -47,14 +49,14 @@ export class App extends Context {
   _sessions: Dict<Session> = {}
 
   public app = this
-  public options: AppOptions
+  public options: App.Config
   public status = App.Status.closed
   public registry = new Plugin.Registry()
   public manager = new Adapter.Manager(this)
 
   private _nameRE: RegExp
 
-  static defaultConfig: AppOptions = {
+  static defaultConfig: App.Config = {
     maxListeners: 64,
     prettyErrors: true,
     autoAssign: true,
@@ -69,7 +71,7 @@ export class App extends Context {
     },
   }
 
-  constructor(options: AppOptions = {}) {
+  constructor(options: App.Config = {}) {
     super(() => true)
     if (options.selfUrl) options.selfUrl = trimSlash(options.selfUrl)
     this.options = merge(options, App.defaultConfig)
@@ -340,9 +342,9 @@ export class App extends Context {
 export namespace App {
   export enum Status { closed, opening, open, closing }
 
-  export const networkSchema: Schema<NetworkOptions> = Schema.object({
+  export const NetworkConfig: Schema<NetworkConfig> = Schema.object({
     selfUrl: Schema.string('Koishi 服务暴露在公网的地址。部分插件（例如 github 和 telegram）需要用到。'),
   }, '网络设置')
 
-  export const schema: Schema<AppOptions> = Schema.merge([networkSchema])
+  export const Config: Schema<Config> = Schema.merge([NetworkConfig])
 }

@@ -59,9 +59,10 @@ export class TelegramBot extends Bot<TelegramBot.Config> {
     Schema.object({
       token: Schema.string(),
     }),
-    Schema.extend(Bot.schema, Schema.object({
+    Schema.object({
+      platform: Schema.string('平台名称').default('telegram'),
       endpoint: Schema.string().default('https://api.telegram.org'),
-    })),
+    }, '高级设置'),
   ])
 
   constructor(adapter: Adapter, options: TelegramBot.Config) {

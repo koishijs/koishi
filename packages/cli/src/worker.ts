@@ -1,5 +1,5 @@
 import { isAbsolute, resolve, relative, extname, dirname } from 'path'
-import { App, Context, Plugin, version, coerce, Logger, noop, Time, makeArray, template, Loader, hyphenate } from 'koishi'
+import { App, Context, Plugin, version, coerce, Logger, noop, Time, makeArray, template, Loader, hyphenate, Schema } from 'koishi'
 import { readFileSync, readdirSync } from 'fs'
 import { performance } from 'perf_hooks'
 import { yellow } from 'kleur'
@@ -109,6 +109,13 @@ process.on('message', (data: Message) => {
     bot.sendMessage(channelId, message, guildId)
   }
 })
+
+App.NetworkConfig.dict = {
+  host: Schema.string('要监听的 IP 地址。如果将此设置为 `0.0.0.0` 将监听所有地址，包括局域网和公网地址。'),
+  port: Schema.number('要监听的端口。'),
+  ...App.NetworkConfig.dict,
+  proxyAgent: Schema.string('使用的代理服务地址。'),
+}
 
 const app = new App(config)
 

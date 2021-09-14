@@ -100,9 +100,6 @@ export namespace Bot {
   }
 
   export const library: Dict<Constructor> = {}
-  export const schema = Schema.object<{}>({
-    platform: Schema.string('平台名称'),
-  }, '高级设置')
 
   export interface Constructor<S extends Bot.BaseConfig = Bot.BaseConfig> {
     new (adapter: Adapter, config: S): Bot<S>

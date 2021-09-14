@@ -23,10 +23,12 @@ declare module '@koishijs/core' {
     _httpServer?: Server
   }
 
-  interface AppOptions {
-    port?: number
-    host?: string
-    axiosConfig?: AxiosRequestConfig
+  namespace App {
+    interface NetworkConfig {
+      port?: number
+      host?: string
+      axiosConfig?: AxiosRequestConfig
+    }
   }
 
   namespace Context {

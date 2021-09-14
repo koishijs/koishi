@@ -1,4 +1,4 @@
-import { AppOptions, App, Adapter, Session, Bot, pick, Dict, Schema } from 'koishi'
+import { App, Adapter, Session, Bot, pick, Dict, Schema } from 'koishi'
 import { assert } from 'chai'
 import { Socket } from 'net'
 import { format } from 'util'
@@ -102,7 +102,7 @@ class MockedServer extends Adapter<BotConfig, AdapterConfig> {
 
 const mocker = Adapter.define('mock', MockedBot, MockedServer)
 
-interface MockedAppOptions extends AppOptions {
+interface MockedAppOptions extends App.Config {
   mockStart?: boolean
   mockDatabase?: boolean
 }

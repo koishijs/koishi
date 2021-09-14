@@ -46,7 +46,9 @@ export class CQBot extends Bot<CQBot.Config> {
     Schema.object({
       token: Schema.string(),
     }),
-    Bot.schema,
+    Schema.object({
+      platform: Schema.string('平台名称').default('onebot'),
+    }, '高级设置'),
   ])
 
   constructor(adapter: Adapter, options: CQBot.Config) {

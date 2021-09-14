@@ -39,9 +39,10 @@ export class KaiheilaBot extends Bot<KaiheilaBot.Config> {
       token: Schema.string(),
       verifyToken: Schema.string(),
     }),
-    Schema.extend(Bot.schema, Schema.object({
+    Schema.object({
+      platform: Schema.string('平台名称').default('kaiheila'),
       endpoint: Schema.string().default('https://www.kaiheila.cn/api/v3'),
-    })),
+    }, '高级设置'),
   ])
 
   constructor(adapter: Adapter, options: KaiheilaBot.Config) {

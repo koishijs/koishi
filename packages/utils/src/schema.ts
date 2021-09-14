@@ -79,10 +79,6 @@ export namespace Schema {
     return new Chainable<Intersect<Type<T[number]>>>({ type: 'merge', list, desc })
   }
 
-  export function extend<S, T>(value: Schema<S>, value2: Schema<T>): Schema<S & T> {
-    return { type: 'extend', value, value2 }
-  }
-
   export function adapt<S, T>(value: Schema<S>, value2: Schema<T>, adapt: (value: T) => S): Schema<S> {
     return { type: 'adapt', value, value2, adapt }
   }

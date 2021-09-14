@@ -86,7 +86,7 @@ defineProps<{
     > .checkbox > span {
       background-color: var(--bg1);
       border-color: var(--border-dark);
-      box-shadow: 0 0 2px inset #0003;
+      box-shadow: var(--hover-inset);
     }
   }
 

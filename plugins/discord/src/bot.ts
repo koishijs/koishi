@@ -35,9 +35,10 @@ export class DiscordBot extends Bot<DiscordBot.Config> {
     Schema.object({
       token: Schema.string(),
     }),
-    Schema.extend(Bot.schema, Schema.object({
+    Schema.object({
+      platform: Schema.string('平台名称').default('discord'),
       endpoint: Schema.string().default('https://discord.com/api/v8'),
-    })),
+    }, '高级设置'),
   ])
 
   constructor(adapter: Adapter, options: DiscordBot.Config) {
