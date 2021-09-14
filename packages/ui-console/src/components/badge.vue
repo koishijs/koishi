@@ -36,6 +36,10 @@ defineProps<{ type?: 'warning' }>()
   &.warning {
     background-color: var(--warning);
   }
+
+  &.error {
+    background-color: var(--error);
+  }
 }
 
 </style>

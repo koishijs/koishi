@@ -77,8 +77,6 @@ function onBlur(event) {
 
 <style lang="scss" scoped>
 
-@import '../index.scss';
-
 .k-input {
   height: 2em;
   position: relative;

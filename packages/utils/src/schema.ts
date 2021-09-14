@@ -2,10 +2,11 @@ import { Dict, Intersect, isNullable, valueMap } from './misc'
 
 export interface Schema<T = any> extends Schema.Base<T> {
   type: string
+  primary?: string
   value?: Schema
   value2?: Schema
-  values?: Schema[]
-  props?: Dict<Schema>
+  list?: Schema[]
+  dict?: Dict<Schema>
   adapt?: Function
 }
 
@@ -66,12 +67,16 @@ export namespace Schema {
     return new Chainable<Dict<T>>({ type: 'dict', value, desc })
   }
 
-  export function object<T extends Dict<Schema>>(props: T, desc?: string) {
-    return new Chainable<{ [K in keyof T]?: Type<T[K]> }>({ type: 'object', props, desc })
+  export function object<T extends Dict<Schema>>(dict: T, desc?: string) {
+    return new Chainable<{ [K in keyof T]?: Type<T[K]> }>({ type: 'object', dict, desc })
   }
 
-  export function merge<T extends Schema[]>(values: T, desc?: string) {
-    return new Chainable<Intersect<Type<T[number]>>>({ type: 'merge', values, desc })
+  export function select<T extends Dict<Schema>, K extends string>(dict: T, primary: K, desc?: string) {
+    return new Chainable<Intersect<Type<T[string]>> & { [P in K]: keyof T }>({ type: 'select', dict, primary, desc })
+  }
+
+  export function merge<T extends Schema[]>(list: T, desc?: string) {
+    return new Chainable<Intersect<Type<T[number]>>>({ type: 'merge', list, desc })
   }
 
   export function extend<S, T>(value: Schema<S>, value2: Schema<T>): Schema<S & T> {
@@ -105,7 +110,7 @@ export namespace Schema {
 
       case 'object':
         if (!value || typeof value !== 'object') throw new TypeError(`expected object but got ${value}`)
-        return { ...value, ...valueMap(schema.props, (schema, key) => resolve(schema, value[key])) }
+        return { ...value, ...valueMap(schema.dict, (schema, key) => resolve(schema, value[key])) }
 
       default:
         throw new TypeError(`unsupported type "${schema.type}"`)

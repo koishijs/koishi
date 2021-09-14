@@ -1,5 +1,7 @@
 <template>
-  <div class="schema" v-if="schema.type === 'string' || schema.type === 'number'">
+  <template v-if="!schema"/>
+
+  <div class="schema" v-else-if="schema.type === 'string' || schema.type === 'number'">
     <slot/>
     <p>
       <span>{{ schema.desc }}</span>
@@ -12,7 +14,9 @@
 
   <div class="schema" v-else-if="schema.type === 'boolean'">
     <slot/>
-    <el-checkbox v-model="config">{{ schema.desc }}</el-checkbox>
+    <p>
+      <k-checkbox v-model="config">{{ schema.desc }}</k-checkbox>
+    </p>
   </div>
 
   <div class="schema" v-else-if="schema.type === 'array'">
@@ -23,14 +27,29 @@
     </ul>
   </div>
 
-  <schema-group v-else-if="schema.type === 'object'" :desc="schema.desc">
-    <k-schema v-for="(item, key) in schema.props" :schema="item" v-model="config[key]" :prefix="prefix + key + '.'">
-      <h3>{{ prefix + key }}</h3>
+  <schema-group v-else-if="schema.type === 'object'" :desc="!noDesc && schema.desc">
+    <k-schema v-for="(item, key) in schema.dict" :schema="item" v-model="config[key]" :prefix="prefix + key + '.'">
+      <h3 :class="{ required: item._required }">
+        <span>{{ prefix + key }}</span>
+      </h3>
     </k-schema>
   </schema-group>
 
   <template v-else-if="schema.type === 'merge'">
-    <k-schema v-for="item in schema.values" :schema="item" v-model="config" :prefix="prefix"/>
+    <k-schema v-for="item in schema.list" :schema="item" v-model="config" :prefix="prefix"/>
+  </template>
+
+  <template v-else-if="schema.type === 'select'">
+    <div class="schema">
+      <h3 class="required">
+        <span>{{ prefix + schema.primary }}</span>
+      </h3>
+      <p>{{ schema.desc }}</p>
+      <el-radio-group v-model="config[schema.primary]">
+        <el-radio v-for="(item, key) in schema.dict" :label="key">{{ item.desc }}</el-radio>
+      </el-radio-group>
+    </div>
+    <k-schema :schema="schema.dict[config[schema.primary]]" v-model="config" :prefix="prefix" no-desc/>
   </template>
 </template>
 
@@ -44,6 +63,7 @@ const props = defineProps<{
   schema: Schema
   modelValue: any
   prefix?: string
+  noDesc?: boolean
 }>()
 
 const emit = defineEmits(['update:modelValue'])
@@ -74,7 +94,15 @@ watch(config, updateModelValue, { deep: true })
 
   h3 {
     font-size: 1.125em;
-    margin: 0.5rem 0;
+    margin: 0.25rem 0;
+    position: relative;
+  }
+
+  h3.required::before {
+    content: '*';
+    position: absolute;
+    left: -1.25rem;
+    color: var(--error);
   }
 
   p {
@@ -83,7 +111,7 @@ watch(config, updateModelValue, { deep: true })
   }
 
   .control {
-    margin: 0.625rem 0;
+    margin: 0.5rem 0;
   }
 }
 

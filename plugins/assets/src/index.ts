@@ -1,4 +1,4 @@
-import { Assets, Context, Random, sanitize, Time, trimSlash } from 'koishi'
+import { Assets, Context, Random, sanitize, Time, trimSlash, Schema } from 'koishi'
 import axios, { AxiosRequestConfig } from 'axios'
 import { promises as fs, createReadStream, existsSync } from 'fs'
 import { extname, resolve } from 'path'
@@ -23,6 +23,24 @@ async function getAssetBuffer(url: string, axiosConfig: AxiosRequestConfig) {
   })
   return Buffer.from(data)
 }
+
+export const schema = Schema.select({
+  local: Schema.object({
+    root: Schema.string('本地存储资源文件的绝对路径。').required(),
+    path: Schema.string('静态图片暴露在服务器的路径。').default('/assets'),
+    selfUrl: Schema.string('Koishi 服务暴露在公网的地址。缺省时将使用全局配置。'),
+    secret: Schema.string('用于验证上传者的密钥，配合 type: remote 使用。')
+  }, '存储在本地目录'),
+
+  remote: Schema.object({
+    server: Schema.string('远程服务器地址。').required(),
+    secret: Schema.string('服务器设置的密钥，配合 type: local 使用。')
+  }, '存储在远程服务器'),
+
+  smms: Schema.object({
+    token: Schema.string('sm.ms 的访问令牌。').required(),
+  }, '存储在 sm.ms 图床服务'),
+}, 'type', '使用的存储方式。')
 
 interface LocalConfig {
   type: 'local'
