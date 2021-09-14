@@ -92,7 +92,11 @@ export namespace Adapter {
 
     const schema = Schema.merge([
       adapterSchema,
-      Schema.adapt(Schema.object({ bots: Schema.array(botSchema) }), botSchema, config => ({ bots: [config] })),
+      Schema.adapt(
+        Schema.object({ bots: Schema.array(botSchema).hidden() }),
+        botSchema,
+        config => ({ bots: [config] }),
+      ),
     ])
 
     function apply(ctx: Context, config: PluginConfig = {}) {

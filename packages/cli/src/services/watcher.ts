@@ -1,6 +1,6 @@
 import { App, coerce, Logger, Plugin } from 'koishi'
 import { relative, resolve } from 'path'
-import { Loader } from './loader'
+import { Loader } from '../loader'
 
 function loadDependencies(filename: string, ignored: Set<string>) {
   const dependencies = new Set<string>()
@@ -13,12 +13,12 @@ function loadDependencies(filename: string, ignored: Set<string>) {
   return dependencies
 }
 
-export function createWatcher(app: App, loader: Loader) {
+export function createFileWatcher(app: App, loader: Loader) {
   if (process.env.KOISHI_WATCH_ROOT === undefined && !app.options.watch) return
 
   const { watch } = require('chokidar') as typeof import('chokidar')
   const { root = '', ignored = [], fullReload } = app.options.watch || {}
-  const watchRoot = resolve(loader.configDir, process.env.KOISHI_WATCH_ROOT ?? root)
+  const watchRoot = resolve(loader.dirname, process.env.KOISHI_WATCH_ROOT ?? root)
   const watcher = watch(watchRoot, {
     ...app.options.watch,
     ignored: ['**/node_modules/**', '**/.git/**', ...ignored],
@@ -29,7 +29,7 @@ export function createWatcher(app: App, loader: Loader) {
    *
    * - root R -> external E -> none of plugin Q
    */
-  const externals = loadDependencies(__filename, loader.children)
+  const externals = loadDependencies(__filename, new Set(Object.keys(loader.cache)))
 
   const logger = new Logger('app:watcher')
   function triggerFullReload() {
@@ -143,7 +143,7 @@ export function createWatcher(app: App, loader: Loader) {
     logger.debug('change detected:', path)
 
     // files independent from any plugins will trigger a full reload
-    if (path === loader.configFile || externals.has(path)) {
+    if (path === loader.filename || externals.has(path)) {
       return triggerFullReload()
     }
 

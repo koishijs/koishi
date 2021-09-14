@@ -1,4 +1,9 @@
+# 网络设置
 port: 8080
 
+# CLI 设置
+allowWrite: true
+
+# 插件设置
 plugins:
   status:

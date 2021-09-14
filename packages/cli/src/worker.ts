@@ -1,7 +1,9 @@
-import { App, version, Logger, noop, Time, template, Schema } from 'koishi'
+import { App, version, Logger, Time, Schema } from 'koishi'
 import { performance } from 'perf_hooks'
-import { createWatcher } from './watcher'
 import { Loader } from './loader'
+import { createFileWatcher } from './services/watcher'
+import { createConfigManager } from './services/config'
+import * as deamon from './services/deamon'
 import {} from '..'
 
 const logger = new Logger('app')
@@ -12,14 +14,6 @@ function handleException(error: any) {
 }
 
 process.on('uncaughtException', handleException)
-
-function ensureBaseLevel(config: Logger.LevelConfig, base: number) {
-  config.base ??= base
-  Object.values(config).forEach((value) => {
-    if (typeof value !== 'object') return
-    ensureBaseLevel(value, config.base)
-  })
-}
 
 const loader = new Loader()
 
@@ -38,6 +32,14 @@ if (config.logTime) Logger.showTime = config.logTime
 // cli options have higher precedence
 if (process.env.KOISHI_LOG_LEVEL) {
   Logger.levels.base = +process.env.KOISHI_LOG_LEVEL
+}
+
+function ensureBaseLevel(config: Logger.LevelConfig, base: number) {
+  config.base ??= base
+  Object.values(config).forEach((value) => {
+    if (typeof value !== 'object') return
+    ensureBaseLevel(value, config.base)
+  })
 }
 
 ensureBaseLevel(Logger.levels, 2)
@@ -83,38 +85,17 @@ App.NetworkConfig.dict = {
   proxyAgent: Schema.string('使用的代理服务地址。'),
 }
 
-const app = new App(config)
+App.Config.list.push(Schema.object({
+  allowWrite: Schema.boolean('允许插件修改本地配置文件。'),
+  deamon: Schema.object({
+    autoRestart: Schema.boolean('当应用在运行时崩溃将自动重启。').default(true),
+  }),
+  plugins: Schema.any().hidden(),
+}, 'CLI 设置'))
 
-const { exitCommand, autoRestart = true } = config.deamon || {}
+const app = loader.createApp(config)
 
-const handleSignal = (signal: NodeJS.Signals) => {
-  new Logger('app').info(`terminated by ${signal}`)
-  app.parallel('exit', signal).finally(() => process.exit())
-}
-
-template.set('deamon', {
-  exiting: '正在关机……',
-  restarting: '正在重启……',
-  restarted: '已成功重启。',
-})
-
-exitCommand && app
-  .command(exitCommand === true ? 'exit' : exitCommand, '停止机器人运行', { authority: 4 })
-  .option('restart', '-r  重新启动')
-  .shortcut('关机', { prefix: true })
-  .shortcut('重启', { prefix: true, options: { restart: true } })
-  .action(async ({ options, session }) => {
-    const { channelId, guildId, sid } = session
-    if (!options.restart) {
-      await session.send(template('deamon.exiting')).catch(noop)
-      process.exit()
-    }
-    process.send({ type: 'queue', body: { channelId, guildId, sid, message: template('deamon.restarted') } })
-    await session.send(template('deamon.restarting')).catch(noop)
-    process.exit(114)
-  })
-
-loader.loadPlugins(app)
+app.plugin(deamon, config.deamon)
 
 process.on('unhandledRejection', (error) => {
   logger.warn(error)
@@ -128,9 +109,6 @@ app.start().then(() => {
   Logger.timestamp = Date.now()
   Logger.showDiff = config.logDiff ?? !Logger.showTime
 
-  process.send({ type: 'start', body: { autoRestart } })
-  createWatcher(app, loader)
-
-  process.on('SIGINT', handleSignal)
-  process.on('SIGTERM', handleSignal)
+  createFileWatcher(app, loader)
+  createConfigManager(app, loader)
 }, handleException)

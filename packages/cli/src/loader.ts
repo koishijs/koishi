@@ -1,60 +1,67 @@
 import { resolve, extname, dirname, isAbsolute } from 'path'
 import { yellow } from 'kleur'
 import { readdirSync, readFileSync } from 'fs'
-import { App, Context, hyphenate, makeArray, Module } from 'koishi'
+import { App, Context, Dict, hyphenate, makeArray, Module, Plugin } from 'koishi'
+import { load } from 'js-yaml'
 
 const oldPaths = Module.internal.paths
 Module.internal.paths = function (name: string) {
   // resolve absolute or relative path
   if (isAbsolute(name) || name.startsWith('.')) {
-    return [resolve(configDir, name)]
+    return [resolve(cwd, name)]
   }
   return oldPaths(name)
 }
 
-let configDir = process.cwd()
+let cwd = process.cwd()
 
 export class Loader {
-  configDir: string
-  configFile: string
-  configExt: string
-  children = new Set<string>()
+  dirname: string
+  filename: string
+  extname: string
+  app: App
+  cache: Dict<Plugin> = {}
 
   constructor() {
     const basename = 'koishi.config'
     if (process.env.KOISHI_CONFIG_FILE) {
-      this.configFile = resolve(configDir, process.env.KOISHI_CONFIG_FILE)
-      this.configExt = extname(this.configFile)
-      this.configDir = configDir = dirname(this.configFile)
+      this.filename = resolve(cwd, process.env.KOISHI_CONFIG_FILE)
+      this.extname = extname(this.filename)
+      this.dirname = cwd = dirname(this.filename)
     } else {
-      const files = readdirSync(configDir)
-      this.configExt = ['.js', '.json', '.ts', '.coffee', '.yaml', '.yml'].find(ext => files.includes(basename + ext))
-      if (!this.configExt) {
+      const files = readdirSync(cwd)
+      this.extname = ['.js', '.json', '.ts', '.coffee', '.yaml', '.yml'].find(ext => files.includes(basename + ext))
+      if (!this.extname) {
         throw new Error(`config file not found. use ${yellow('koishi init')} command to initialize a config file.`)
       }
-      this.configDir = configDir
-      this.configFile = configDir + '/' + basename + this.configExt
+      this.dirname = cwd
+      this.filename = cwd + '/' + basename + this.extname
     }
   }
 
   loadConfig() {
-    if (['.yaml', '.yml'].includes(this.configExt)) {
-      const { load } = require('js-yaml') as typeof import('js-yaml')
-      return load(readFileSync(this.configFile, 'utf8')) as any
+    if (['.yaml', '.yml'].includes(this.extname)) {
+      return load(readFileSync(this.filename, 'utf8')) as any
     } else {
-      const exports = require(this.configFile)
+      const exports = require(this.filename)
       return exports.__esModule ? exports.default : exports
     }
   }
 
-  loadPlugins(app: App) {
-    const config = app.options.plugins ||= {}
-    for (const name in config) {
-      const options = config[name] ?? undefined
-      const path = Module.resolve(hyphenate(name))
-      this.children.add(path)
-      createContext(app, options).plugin(require(path), options)
+  loadPlugin(name: string, options: any) {
+    const path = Module.resolve(hyphenate(name))
+    const plugin = this.cache[name] = require(path)
+    createContext(this.app, options).plugin(plugin, options)
+    return plugin
+  }
+
+  createApp(config: App.Config) {
+    const app = this.app = new App(config)
+    const plugins = app.options.plugins ||= {}
+    for (const name in plugins) {
+      this.loadPlugin(name, plugins[name] ?? undefined)
     }
+    return app
   }
 }
 

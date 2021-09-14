@@ -19,7 +19,7 @@ export interface WatchConfig extends WatchOptions {
   fullReload?: boolean
 }
 
-interface DeamonConfig {
+export interface DeamonConfig {
   exitCommand?: boolean | string
   autoRestart?: boolean
 }
@@ -31,6 +31,7 @@ declare module 'koishi' {
     }
 
     interface Config {
+      allowWrite?: boolean
       plugins?: PluginConfig
       logLevel?: LogLevel
       logDiff?: boolean
