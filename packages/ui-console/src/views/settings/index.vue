@@ -20,11 +20,11 @@
           <h1>
             <span>{{ title }}</span>
             <template v-if="current.id">
-              <k-button solid type="error" @click="send('plugin/dispose', payload)">停用插件</k-button>
-              <k-button solid @click="send('plugin/reload', payload)">重载配置</k-button>
+              <k-button solid type="error" @click="send('config/dispose', payload)">停用插件</k-button>
+              <k-button solid @click="send('config/reload', payload)">重载配置</k-button>
             </template>
             <template v-else>
-              <k-button solid @click="send('plugin/install', payload)">启用插件</k-button>
+              <k-button solid @click="send('config/install', payload)">启用插件</k-button>
             </template>
           </h1>
         </template>

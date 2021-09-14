@@ -32,6 +32,7 @@
     "koishi": "^4.0.0-alpha.5"
   },
   "devDependencies": {
+    "@koishijs/cli": "4.0.0-alpha.1",
     "@koishijs/plugin-mongo": "^3.0.0-alpha.1",
     "@koishijs/plugin-mysql": "^4.0.0-alpha.3",
     "@koishijs/test-utils": "^8.0.0-alpha.4",

@@ -261,4 +261,19 @@ export namespace WebServer {
     if (await this.validate()) return this.send('unauthorized')
     this.app.webui.sources.registry.switch(plugin)
   }
+
+  listeners['config/install'] = async function ({ name, config }) {
+    if (await this.validate()) return this.send('unauthorized')
+    this.app.emit('config/install', name, config)
+  }
+
+  listeners['config/dispose'] = async function ({ name, config }) {
+    if (await this.validate()) return this.send('unauthorized')
+    this.app.emit('config/dispose', name, config)
+  }
+
+  listeners['config/reload'] = async function ({ name, config }) {
+    if (await this.validate()) return this.send('unauthorized')
+    this.app.emit('config/reload', name, config)
+  }
 }

@@ -55,22 +55,22 @@ router.addRoute({
 })
 
 router.addRoute({
-  path: '/config',
-  name: '配置项',
+  path: '/settings',
+  name: '设置',
   meta: { icon: 'tools', require: ['registry'] },
-  component: () => import('./views/config/index.vue'),
+  component: () => import('./views/settings/index.vue'),
 })
 
 router.addRoute({
   path: '/market',
-  name: '插件市场',
+  name: '市场',
   meta: { icon: 'puzzle-piece', require: ['market'] },
   component: () => import('./views/market/index.vue'),
 })
 
 router.addRoute({
   path: '/logs',
-  name: '运行日志',
+  name: '日志',
   meta: { icon: 'clipboard-list' },
   component: () => import('./views/logs/index.vue'),
 })

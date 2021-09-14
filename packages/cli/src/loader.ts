@@ -58,7 +58,7 @@ export class Loader {
   }
 }
 
-const selectors = ['user', 'group', 'channel', 'self', 'private', 'platform'] as const
+const selectors = ['user', 'guild', 'channel', 'self', 'private', 'platform'] as const
 
 type SelectorType = typeof selectors[number]
 type SelectorValue = boolean | string | number | (string | number)[]

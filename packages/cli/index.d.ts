@@ -41,6 +41,13 @@ declare module 'koishi' {
       stackTraceLimit?: number
     }
   }
+
+  interface EventMap {
+    'exit'(signal: NodeJS.Signals): Promise<void>
+    'config/install'(name: string, config: any): void
+    'config/reload'(name: string, config: any): void
+    'config/dispose'(name: string, config: any): void
+  }
 }
 
 export * from 'koishi'

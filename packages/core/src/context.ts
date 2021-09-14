@@ -247,7 +247,7 @@ export class Context {
     }
 
     this.state.children.push(plugin)
-    this.emit('plugin-added', plugin, this.app.registry)
+    this.emit('plugin-added', plugin)
     return this
   }
 
@@ -261,7 +261,7 @@ export class Context {
     ]).finally(() => {
       this.app.registry.delete(plugin)
       remove(state.parent.children, plugin)
-      this.emit('plugin-removed', plugin, this.app.registry)
+      this.emit('plugin-removed', plugin)
     })
   }
 
@@ -594,8 +594,8 @@ export interface EventMap extends SessionEventMap, DelegateEventMap {
   'command-added'(command: Command): void
   'command-removed'(command: Command): void
   'middleware'(session: Session): void
-  'plugin-added'(plugin: Plugin, registry: Map<Plugin, Plugin.State>): void
-  'plugin-removed'(plugin: Plugin, registry: Map<Plugin, Plugin.State>): void
+  'plugin-added'(plugin: Plugin): void
+  'plugin-removed'(plugin: Plugin): void
   'before-connect'(): Awaitable<void>
   'connect'(): void
   'before-disconnect'(): Awaitable<void>
