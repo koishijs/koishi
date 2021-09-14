@@ -182,9 +182,9 @@ namespace Market {
   }
 
   export interface Local extends PackageBase {
-    workspace: boolean
-    schema?: Schema
     id?: string
+    schema?: Schema
+    workspace: boolean
   }
 
   export interface Data extends PackageBase {

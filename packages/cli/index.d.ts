@@ -30,14 +30,13 @@ declare module 'koishi' {
       proxyAgent?: string
     }
 
-    interface Config {
+    interface Config extends DeamonConfig {
       allowWrite?: boolean
       plugins?: PluginConfig
       logLevel?: LogLevel
       logDiff?: boolean
       logTime?: string | boolean
       watch?: WatchConfig
-      deamon?: DeamonConfig
       timezoneOffset?: number
       stackTraceLimit?: number
     }

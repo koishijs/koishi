@@ -1,4 +1,4 @@
-import { App, Schema, isNullable, Dict } from 'koishi'
+import { App, Schema, isNullable, Dict, Plugin } from 'koishi'
 import { writeFileSync } from 'fs'
 import { dump } from 'js-yaml'
 import { Loader } from '../loader'
@@ -73,15 +73,20 @@ export function createConfigManager(app: App, loader: Loader) {
   app.on('config/install', (name, config) => {
     const plugin = loader.loadPlugin(name, config)
     plugins[name] = config
+    delete plugins['~' + name]
     if (!allowWrite) return
     updateText(name, config, plugin)
+    delete configTexts['~' + name]
     writeConfig()
   })
 
-  app.on('config/dispose', async (name) => {
-    await app.dispose(loader.cache[name])
+  app.on('config/dispose', async (name, config) => {
+    const plugin = loader.cache[name]
+    await app.dispose(plugin)
+    plugins['~' + name] = plugins[name]
     delete plugins[name]
     if (!allowWrite) return
+    updateText('~' + name, config, plugin)
     delete configTexts[name]
     writeConfig()
   })
@@ -97,7 +102,7 @@ export function createConfigManager(app: App, loader: Loader) {
     writeConfig()
   })
 
-  function updateText(name: string, config: any, plugin: any) {
+  function updateText(name: string, config: any, plugin: Plugin) {
     configTexts[name] = codegenForDict(config, plugin['schema'])
   }
 

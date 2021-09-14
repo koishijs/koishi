@@ -57,7 +57,7 @@ router.addRoute({
 router.addRoute({
   path: '/settings',
   name: '设置',
-  meta: { icon: 'tools', require: ['registry'] },
+  meta: { icon: 'tools', require: ['registry', 'market'] },
   component: () => import('./views/settings/index.vue'),
 })
 

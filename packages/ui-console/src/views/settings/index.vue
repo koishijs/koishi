@@ -3,8 +3,8 @@
     <div class="plugin-select">
       <div class="content">
         <k-choice class="group" :data="registry[0]" v-model="current"/>
-        <div class="group">正在运行的插件</div>
-        <k-choice v-for="data in registry.slice(1)" :data="data" v-model="current"/>
+        <div class="group">运行中的插件</div>
+        <k-choice v-for="data in registry.filter(data => data.id)" :data="data" v-model="current"/>
         <template v-if="market">
           <div class="group">未运行的插件</div>
           <k-choice v-for="data in available" :data="data" v-model="current"/>
@@ -39,7 +39,7 @@
 
 import { ref, computed, watch } from 'vue'
 import { registry, market, send } from '~/client'
-import { Registry } from '~/server'
+import { Dict, Registry } from '~/server'
 import kChoice from './choice.vue'
 
 interface PluginData extends Registry.Data {
@@ -57,37 +57,39 @@ const title = computed(() => {
 })
 
 const available = computed(() => {
-  return Object.fromEntries(market.value
-    .filter(data => data.local && !data.local.id)
-    .sort((a, b) => a.shortname > b.shortname ? 1 : -1)
-    .map(data => [data.shortname, {
+  const result: Dict<PluginData> = {}
+  for (const data of registry.value.filter(data => data.name && !data.id)) {
+    result[data.name] = data
+  }
+
+  for (const data of market.value.filter(data => data.local && !data.local.id)) {
+    result[data.shortname] = {
       name: data.shortname,
       module: data.name,
       schema: data.local?.schema,
       config: {},
-    }]))
+      ...result[data.shortname],
+    }
+  }
+
+  return Object.fromEntries(Object.entries(result).sort(([a], [b]) => a > b ? 1 : -1))
 })
 
-let detached = ''
-
 watch(registry, plugins => {
-  const data = plugins.find(item => item.name === detached)
+  const data = plugins.find(item => item.name === current.value.name)
   if (!data) return
   current.value = data
-  detached = ''
 })
 
 watch(available, () => {
-  const data = available.value[detached]
+  const data = available.value[current.value.name]
   if (!data) return
   current.value = data
-  detached = ''
 })
 
 function execute(event: string) {
   const { name, config } = current.value
   send('config/' + event, { name, config })
-  detached = current.value.name
 }
 
 </script>
@@ -112,6 +114,10 @@ function execute(event: string) {
   .group {
     padding: 0 2rem !important;
     font-weight: bold;
+  }
+
+  .group:not(.choice) {
+    margin-top: 0.5rem;
   }
 
   .choice {

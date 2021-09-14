@@ -41,6 +41,16 @@ class Registry implements StatusServer.DataSource {
       children.push(pick(state, ['id', 'name', 'schema', 'config']))
     }
 
+    const { plugins = {} } = this.ctx.app.options
+    for (const key in plugins) {
+      if (!key.startsWith('~')) continue
+      children.push({
+        id: null,
+        name: key.slice(1),
+        config: plugins[key],
+      })
+    }
+
     return children
   }
 

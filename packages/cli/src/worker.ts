@@ -87,15 +87,13 @@ App.NetworkConfig.dict = {
 
 App.Config.list.push(Schema.object({
   allowWrite: Schema.boolean('允许插件修改本地配置文件。'),
-  deamon: Schema.object({
-    autoRestart: Schema.boolean('当应用在运行时崩溃将自动重启。').default(true),
-  }),
+  autoRestart: Schema.boolean('应用在运行时崩溃自动重启。').default(true),
   plugins: Schema.any().hidden(),
 }, 'CLI 设置'))
 
 const app = loader.createApp(config)
 
-app.plugin(deamon, config.deamon)
+app.plugin(deamon, config)
 
 process.on('unhandledRejection', (error) => {
   logger.warn(error)
