@@ -1,5 +1,5 @@
 import MysqlDatabase, { Config } from './database'
-import { Database, Context, Query, Eval, makeArray, difference } from 'koishi'
+import { Database, Context, Query, Eval, makeArray, difference, Schema } from 'koishi'
 import { OkPacket, escapeId, escape } from 'mysql'
 import * as Koishi from 'koishi'
 
@@ -270,6 +270,14 @@ Database.extend(MysqlDatabase, {
 })
 
 export const name = 'mysql'
+
+export const schema: Schema<Config> = Schema.object({
+  host: Schema.string('要连接到的主机名。').required(),
+  port: Schema.number('要连接到的端口号。').default(3306),
+  user: Schema.string('要使用的用户名。').default('root'),
+  password: Schema.string('要使用的密码。').hidden(),
+  database: Schema.string('要访问的数据库名。').default('koishi'),
+})
 
 export function apply(ctx: Context, config: Config = {}) {
   ctx.database = new MysqlDatabase(ctx.app, config)

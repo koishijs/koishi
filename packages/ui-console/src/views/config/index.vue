@@ -30,7 +30,7 @@
           </h1>
         </template>
         <p v-if="!current.schema">此插件暂无可用配置项。</p>
-        <schema-view v-else :schema="current.schema" :config="current.config"/>
+        <k-schema v-else :schema="current.schema" v-model="current.config" prefix=""/>
       </div>
     </div>
   </k-card>
@@ -42,7 +42,6 @@ import { ref, computed } from 'vue'
 import { registry, market } from '~/client'
 import { Registry, Dict, Market } from '~/server'
 import kChoice from './choice.vue'
-import SchemaView from './schema-view.vue'
 
 interface PluginData extends Registry.Data {
   module?: string

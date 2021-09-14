@@ -16,6 +16,7 @@ export namespace Schema {
     desc?: string
     _default?: T extends {} ? Partial<T> : T
     _required?: boolean
+    _hidden?: boolean
   }
 
   interface Chainable<T> extends Schema<T> {}
@@ -32,6 +33,12 @@ export namespace Schema {
 
     required() {
       this._required = true
+      return this
+    }
+
+    hidden() {
+      this._hidden = true
+      return this
     }
   }
 

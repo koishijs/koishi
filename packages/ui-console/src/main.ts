@@ -10,6 +10,7 @@ import Button from './components/button.vue'
 import Input from './components/input.vue'
 import Numeric from './components/numeric.vue'
 import App from './views/layout/index.vue'
+import Schema from './components/schema/index.vue'
 import { ElCheckbox } from 'element-plus'
 
 import '@fortawesome/fontawesome-free/css/fontawesome.css'
@@ -80,6 +81,7 @@ app.component('k-button', Button)
 app.component('k-collapse', Collapse)
 app.component('k-input', Input)
 app.component('k-numeric', Numeric)
+app.component('k-schema', Schema)
 
 app.provide('ecTheme', 'dark-blue')
 

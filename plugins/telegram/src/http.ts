@@ -1,5 +1,5 @@
 import axios, { AxiosError } from 'axios'
-import { App, Adapter, Session, camelCase, Logger, segment, sanitize, trimSlash, assertProperty } from 'koishi'
+import { App, Adapter, Session, camelCase, Logger, segment, sanitize, trimSlash, assertProperty, Schema } from 'koishi'
 import { TelegramBot } from './bot'
 import * as Telegram from './types'
 import FormData from 'form-data'
@@ -12,6 +12,11 @@ export interface TelegramConfig {
 }
 
 export default class HttpServer extends Adapter<TelegramBot.Config, TelegramConfig> {
+  static schema: Schema<TelegramConfig> = Schema.object({
+    path: Schema.string('服务器监听的路径。').default('/telegram'),
+    selfUrl: Schema.string('Koishi 服务暴露在公网的地址。缺省时将使用全局配置。'),
+  })
+
   constructor(app: App, config: TelegramConfig) {
     super(app, config)
     config.path = sanitize(config.path || '/telegram')

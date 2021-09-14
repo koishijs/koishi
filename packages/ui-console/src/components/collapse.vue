@@ -1,67 +1,105 @@
-<script lang="ts">
+<template>
+  <div class="k-collapse" :class="{ header: $slots.header, closed: isClosed }">
+    <div class="slot-header" tabindex="0" @click.stop="onClickHeader" v-if="$slots.header">
+      <slot name="header"/>
+    </div>
+    <collapse-transition
+      @before-enter="beforeEnter" @after-enter="afterEnter"
+      @before-leave="beforeLeave" @after-leave="afterLeave">
+      <div class="content" v-show="isOpen">
+        <slot/>
+      </div>
+    </collapse-transition>
+  </div>
+</template>
 
-import { defineComponent, Transition, h } from 'vue'
+<script lang="ts" setup>
 
-export default defineComponent(() => {
-  return (context) => h(Transition, {
-    onBeforeEnter(el: HTMLElement) {
-      el.classList.add('collapse-transition')
-      el.dataset.oldPaddingTop = el.style.paddingTop
-      el.dataset.oldPaddingBottom = el.style.paddingBottom
-      el.style.height = '0'
-      el.style.paddingTop = '0'
-      el.style.paddingBottom = '0'
-    },
-    onEnter(el: HTMLElement) {
-      el.dataset.oldOverflow = el.style.overflow
-      if (el.scrollHeight !== 0) {
-        el.style.height = el.scrollHeight + 'px'
-        el.style.paddingTop = el.dataset.oldPaddingTop
-        el.style.paddingBottom = el.dataset.oldPaddingBottom
-      } else {
-        el.style.height = ''
-        el.style.paddingTop = el.dataset.oldPaddingTop
-        el.style.paddingBottom = el.dataset.oldPaddingBottom
-      }
-      el.style.overflow = 'hidden'
-    },
-    onAfterEnter(el: HTMLElement) {
-      el.classList.remove('collapse-transition')
-      el.style.height = ''
-      el.style.overflow = el.dataset.oldOverflow
-    },
-    onBeforeLeave(el: HTMLElement) {
-      el.dataset.oldPaddingTop = el.style.paddingTop
-      el.dataset.oldPaddingBottom = el.style.paddingBottom
-      el.dataset.oldOverflow = el.style.overflow
-      el.style.height = el.scrollHeight + 'px'
-      el.style.overflow = 'hidden'
-    },
-    onLeave(el: HTMLElement) {
-      if (el.scrollHeight !== 0) {
-        el.classList.add('collapse-transition')
-        el.style.transitionProperty = 'height'
-        el.style.height = '0'
-        el.style.paddingTop = '0'
-        el.style.paddingBottom = '0'
-      }
-    },
-    onAfterLeave(el: HTMLElement) {
-      el.classList.remove('collapse-transition')
-      el.style.height = ''
-      el.style.overflow = el.dataset.oldOverflow
-      el.style.paddingTop = el.dataset.oldPaddingTop
-      el.style.paddingBottom = el.dataset.oldPaddingBottom
-    },
-  }, context.$slots.default)
-})
+import { ref, watch } from 'vue'
+import CollapseTransition from './transitions/collapse.vue'
+
+function isBoolean(value) {
+  return value === true || value === false
+}
+
+const isOpen = ref(true)
+const isClosed = ref(true)
+
+const props = defineProps<{
+  modelValue?: boolean
+  initial?: 'open' | 'closed'
+}>()
+
+const emit = defineEmits(['update:modelValue', 'before-update', 'after-update'])
+
+if (props.initial) {
+  isOpen.value = props.initial === 'open'
+} else {
+  isOpen.value = props.modelValue
+  watch(() => props.modelValue, (value) => {
+    if (isBoolean(value) && value !== isOpen.value) isOpen.value = value
+  })
+}
+
+function onClickHeader(event: MouseEvent) {
+  if (props.initial) {
+    isOpen.value = !isOpen.value
+  } else {
+    emit('update:modelValue', !props.modelValue)
+  }
+}
+
+isClosed.value = !isOpen.value
+
+function beforeEnter() {
+  emit('before-update')
+  isClosed.value = false
+}
+
+function afterEnter() {
+  emit('after-update')
+}
+
+function beforeLeave() {
+  emit('before-update')
+}
+
+function afterLeave() {
+  isClosed.value = true
+  emit('after-update')
+}
 
 </script>
 
-<style>
+<style lang="scss" scoped>
 
-.collapse-transition {
-  transition: 0.3s height ease-in-out, 0.3s padding-top ease-in-out, 0.3s padding-bottom ease-in-out;
+.k-collapse {
+  position: relative;
+  background-color: transparent;
+  width: -webkit-fill-available;
+  transition: background-color 0.3s ease;
+  border-bottom: 1px solid #ebeef5;
+
+  > .slot-header {
+    color: #303133;
+    padding: 8px 16px;
+    font-size: 20px;
+    line-height: 1.5em;
+    font-weight: bold;
+    border: none;
+    outline: none;
+    cursor: pointer;
+    position: relative;
+    transition: 0.3s ease;
+  }
+
+  > .content {
+    position: relative;
+    transition: 0.3s ease;
+  }
+
+  &.header:hover { background-color: #f5f7fa }
+  &.closed:not(.header) { border-bottom: none }
 }
 
 </style>

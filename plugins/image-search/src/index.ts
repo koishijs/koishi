@@ -1,4 +1,4 @@
-import { Context, Session, Command, makeArray, segment } from 'koishi'
+import { Context, Session, Command, makeArray, segment, Schema } from 'koishi'
 import ascii2d from './ascii2d'
 import saucenao from './saucenao'
 import iqdb from './iqdb'
@@ -18,6 +18,13 @@ async function mixedSearch(url: string, session: Session, config: Config) {
 }
 
 export const name = 'search'
+
+export const schema = Schema.merge([
+  Schema.object({
+    saucenaoApiKey: Schema.array(Schema.string(), '可用的 saucenao api key 列表。'),
+  }),
+  saucenao.schema,
+])
 
 export function apply(ctx: Context, config: Config = {}) {
   let index = 0

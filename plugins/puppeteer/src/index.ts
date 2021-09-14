@@ -1,5 +1,5 @@
 import puppeteer, { Browser, ElementHandle, Page, Shooter, Viewport } from 'puppeteer-core'
-import { Context, Logger, hyphenate, noop, segment } from 'koishi'
+import { Context, Logger, hyphenate, noop, segment, Schema, Time } from 'koishi'
 import { escape } from 'querystring'
 import { PNG } from 'pngjs'
 import { resolve } from 'path'
@@ -60,10 +60,24 @@ export interface Config {
   renderViewport?: Partial<Viewport>
   loadTimeout?: number
   idleTimeout?: number
-  maxLength?: number
+  maxSize?: number
   protocols?: string[]
   bodyStyle?: Record<string, string>
 }
+
+export const schema: Schema<Config> = Schema.object({
+  browser: Schema.object({
+    executablePath: Schema.string('Chromium 可执行文件的路径。缺省时将自动从系统中寻找。'),
+    viewPort: Schema.object({
+      width: Schema.number('默认的视图宽度。').default(800),
+      height: Schema.number('默认的视图高度。').default(600),
+      deviceScaleFactor: Schema.number('默认的设备缩放比率。').default(2),
+    }),
+  }, '浏览器设置'),
+  maxSize: Schema.number('单张图片的最大尺寸，单位为字节。当截图尺寸超过这个值时会自动截取图片顶部的一段进行发送。').default(1000000),
+  loadTimeout: Schema.number('加载页面的最长时间。当一个页面等待时间超过这个值时，如果此页面主体已经加载完成，则会发送一条提示消息“正在加载中，请稍等片刻”并继续等待加载；否则会直接提示“无法打开页面”并终止加载。').default(Time.second * 10),
+  idleTimeout: Schema.number('等待页面空闲的最长时间。当一个页面等待时间超过这个值时，将停止进一步的加载并立即发送截图。').default(Time.second * 30),
+})
 
 enum Status { close, opening, open, closing }
 
@@ -127,7 +141,7 @@ export const defaultConfig: Config = {
   browser: {},
   loadTimeout: 10000, // 10s
   idleTimeout: 30000, // 30s
-  maxLength: 1000000, // 1MB
+  maxSize: 1000000, // 1MB
   protocols: ['http', 'https'],
   renderViewport: {
     width: 800,
@@ -226,7 +240,7 @@ export function apply(ctx: Context, config: Config = {}) {
       return shooter.screenshot({
         fullPage: options.full,
       }).then(async (buffer) => {
-        if (buffer.byteLength > config.maxLength) {
+        if (buffer.byteLength > config.maxSize) {
           await new Promise<PNG>((resolve, reject) => {
             const png = new PNG()
             png.parse(buffer, (error, data) => {
@@ -234,7 +248,7 @@ export function apply(ctx: Context, config: Config = {}) {
             })
           }).then((data) => {
             const width = data.width
-            const height = data.height * config.maxLength / buffer.byteLength
+            const height = data.height * config.maxSize / buffer.byteLength
             const png = new PNG({ width, height })
             data.bitblt(png, 0, 0, width, height, 0, 0)
             buffer = PNG.sync.write(png)
