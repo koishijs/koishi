@@ -86,6 +86,9 @@ class MysqlDatabase extends Database {
   constructor(public app: App, config?: Config) {
     super(app)
     this.config = {
+      host: 'localhost',
+      port: 3306,
+      user: 'root',
       database: 'koishi',
       charset: 'utf8mb4_general_ci',
       multipleStatements: true,

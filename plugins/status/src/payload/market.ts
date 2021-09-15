@@ -94,19 +94,20 @@ class Market implements StatusServer.DataSource {
     })
   }
 
+  private getPluginDeps(deps: Dict<string> = {}) {
+    return Object.keys(deps).filter(name => name.startsWith('@koishijs/plugin-') || name.startsWith('koishi-plugin-'))
+  }
+
   private async loadPackage(path: string, id?: string): Promise<Market.Local> {
     const data: PackageLocal = JSON.parse(await fs.readFile(path + '/package.json', 'utf8'))
     if (data.private) return null
     const workspace = !path.includes('node_modules')
     const { schema, delegates } = require(path)
 
-    const optional: string[] = []
-    const { devDependencies, peerDependencies } = data
-    for (const name in { ...devDependencies, ...peerDependencies }) {
-      if (name.startsWith('@koishijs/plugin-') || name.startsWith('koishi-plugin-')) optional.push(name)
-    }
+    const devDeps = this.getPluginDeps(data.devDependencies)
+    const peerDeps = this.getPluginDeps(data.peerDependencies)
 
-    return { schema, delegates, workspace, optional, id, ...pick(data, ['name', 'version', 'description']) }
+    return { schema, delegates, workspace, devDeps, peerDeps, id, ...pick(data, ['name', 'version', 'description']) }
   }
 
   private async loadCached(filename: string, id?: string) {
@@ -191,8 +192,9 @@ namespace Market {
   export interface Local extends PackageBase {
     id?: string
     schema?: Schema
+    devDeps: string[]
+    peerDeps: string[]
     delegates?: Context.Delegates.Meta
-    optional: string[]
     workspace: boolean
   }
 

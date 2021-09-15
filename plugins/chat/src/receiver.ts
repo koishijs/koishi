@@ -1,9 +1,9 @@
 import { Bot, Context, Session, Time, pick, segment, Dict } from 'koishi'
 
-export interface ReceiverConfig {
-  refreshUserName?: number
-  refreshGroupName?: number
-  refreshChannelName?: number
+export interface RefreshConfig {
+  user?: number
+  guild?: number
+  channel?: number
 }
 
 const textSegmentTypes = ['text', 'header', 'section']
@@ -69,11 +69,11 @@ async function getChannelName(bot: Bot, channelId: string) {
   }
 }
 
-export default function apply(ctx: Context, config: ReceiverConfig = {}) {
+export default function apply(ctx: Context, config: RefreshConfig = {}) {
   const {
-    refreshUserName = Time.hour,
-    refreshGroupName = Time.hour,
-    refreshChannelName = Time.hour,
+    user: refreshUserName = Time.hour,
+    guild: refreshGroupName = Time.hour,
+    channel: refreshChannelName = Time.hour,
   } = config
 
   const channelMap: Dict<[Promise<string>, number]> = {}

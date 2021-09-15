@@ -1,5 +1,5 @@
 import MongoDatabase, { Config } from './database'
-import { Tables, Database, Context, omit, TableType, Query, pick, makeArray, Eval, valueMap } from 'koishi'
+import { Tables, Database, Context, omit, TableType, Query, pick, makeArray, Eval, valueMap, Schema } from 'koishi'
 import { QuerySelector } from 'mongodb'
 
 export * from './database'
@@ -161,6 +161,16 @@ Database.extend(MongoDatabase, {
 
 export const name = 'mongo'
 
+export const schema: Schema<Config> = Schema.object({
+  protocol: Schema.string('要使用的协议名。').default('mongodb'),
+  host: Schema.string('要连接到的主机名。').default('localhost'),
+  port: Schema.number('要连接到的端口号。').default(3306),
+  username: Schema.string('要使用的用户名。'),
+  password: Schema.string('要使用的密码。'),
+  database: Schema.string('要访问的数据库名。').default('koishi'),
+  prefix: Schema.string('使用的表名前缀。当配置了这一项时，所有通过 Koishi 创建的表名都会以这个配置项为前缀。'),
+})
+
 export const delegates: Context.Delegates.Meta = {
   providing: ['database'],
 }
@@ -168,7 +178,7 @@ export const delegates: Context.Delegates.Meta = {
 export function apply(ctx: Context, config: Config) {
   ctx.database = new MongoDatabase(ctx.app, {
     host: 'localhost',
-    name: 'koishi',
+    database: 'koishi',
     protocol: 'mongodb',
     ...config,
   })

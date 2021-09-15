@@ -13,7 +13,7 @@ export interface Config {
   host?: string
   port?: number
   /** database name */
-  name?: string
+  database?: string
   prefix?: string
   /** default auth database */
   authDatabase?: string
@@ -36,7 +36,7 @@ export class MongoDatabase extends Database {
     super(app)
     this.config = {
       host: 'localhost',
-      name: 'koishi',
+      database: 'koishi',
       protocol: 'mongodb',
       ...config,
     }
@@ -47,7 +47,7 @@ export class MongoDatabase extends Database {
     this.client = await MongoClient.connect(
       mongourl, { useNewUrlParser: true, useUnifiedTopology: true },
     )
-    this.db = this.client.db(this.config.name)
+    this.db = this.client.db(this.config.database)
     if (this.config.prefix) {
       this.db.collection = ((func, prefix) => function collection<T extends TableType>(name: T) {
         return func(`${prefix}.${name}`)
@@ -67,7 +67,7 @@ export class MongoDatabase extends Database {
   }
 
   connectionStringFromConfig() {
-    const { authDatabase, connectOptions, host, name, password, port, protocol, username } = this.config
+    const { authDatabase, connectOptions, host, database: name, password, port, protocol, username } = this.config
     let mongourl = `${protocol}://`
     if (username) mongourl += `${encodeURIComponent(username)}${password ? `:${encodeURIComponent(password)}` : ''}@`
     mongourl += `${host}${port ? `:${port}` : ''}/${authDatabase || name}`

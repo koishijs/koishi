@@ -1,7 +1,7 @@
-import { Bot, Context, Random, segment, Session, template } from 'koishi'
+import { Bot, Context, Random, Schema, segment, Session, template, Time } from 'koishi'
 import { resolve } from 'path'
 import { StatusServer } from '@koishijs/plugin-status'
-import receiver, { Message, ReceiverConfig } from './receiver'
+import receiver, { Message, RefreshConfig } from './receiver'
 import axios from 'axios'
 
 export * from './receiver'
@@ -25,7 +25,9 @@ interface ClientExtension {
   maxMessages?: number
 }
 
-export interface Config extends ReceiverConfig, ClientExtension {}
+export interface Config extends ClientExtension {
+  refresh?: RefreshConfig
+}
 
 template.set('chat', {
   send: '[{{ channelName || "私聊" }}] {{ abstract }}',
@@ -64,9 +66,17 @@ const defaultOptions: Config = {
 
 export const name = 'chat'
 
+export const schema: Schema<Config> = Schema.object({
+  refresh: Schema.object({
+    user: Schema.number('刷新用户数据的时间间隔。').default(Time.hour),
+    guild: Schema.number('刷新群组数据的时间间隔。').default(Time.hour),
+    channel: Schema.number('刷新频道数据的时间间隔。').default(Time.hour),
+  }, '刷新选项'),
+})
+
 export function apply(ctx: Context, options: Config = {}) {
   options = { ...defaultOptions, ...options }
-  ctx.plugin(receiver, options)
+  ctx.plugin(receiver, options.refresh)
 
   ctx.on('chat/receive', async (message, session) => {
     if (session.subtype !== 'private') {

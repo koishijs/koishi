@@ -3,12 +3,26 @@
     <div class="plugin-select">
       <div class="content">
         <choice-view class="group" :data="registry[0]" v-model="current"/>
-        <div class="group">运行中的插件</div>
+        <div class="group">
+          运行中的插件
+          <k-hint placement="right">
+            <b>为什么一些插件没有显示？</b>
+            <br>这里只展示直接从 app 注册的具名插件。换言之，在其他插件内部注册的插件或没有提供 name 的插件将不予显示。
+          </k-hint>
+        </div>
         <choice-view v-for="data in registry.filter(data => data.id)" :data="data" v-model="current"/>
-        <template v-if="market">
-          <div class="group">未运行的插件</div>
-          <choice-view v-for="data in available" :data="data" v-model="current"/>
-        </template>
+        <div class="group">
+          未运行的插件
+          <k-hint placement="right" icon="fas fa-filter" :class="{ filtered }" @click="filtered = !filtered">
+            <template v-if="filtered">
+              <b>筛选：开启</b><br>只显示支持在线配置的插件。
+            </template>
+            <template v-else>
+              <b>筛选：关闭</b><br>显示所有可用插件。
+            </template>
+          </k-hint>
+        </div>
+        <choice-view v-for="data in available.filter(data => !filtered || data.schema)" :data="data" v-model="current"/>
       </div>
     </div>
     <div class="plugin-view">
@@ -30,7 +44,7 @@
                 </el-tooltip>
               </template>
               <template v-else>
-                <el-tooltip :content="message" placement="bottom-end" effect="dark">
+                <el-tooltip :content="message" placement="bottom-end">
                   <k-button solid :disabled="!!message" :title="message" @click="execute('install')">启用插件</k-button>
                 </el-tooltip>
                 <k-button solid @click="execute('save')" :title="message">保存配置</k-button>
@@ -45,6 +59,9 @@
             <ul>
               <li v-for="name in data.available">{{ name }}</li>
             </ul>
+          </k-comment>
+          <k-comment v-for="(fulfilled, name) in peerDeps" :type="fulfilled ? 'success' : 'warning'">
+            <template #header>依赖插件：{{ name }}</template>
           </k-comment>
         </template>
         <p v-if="!current.schema">此插件暂不支持在线配置。</p>
@@ -65,8 +82,11 @@ import ChoiceView from './choice.vue'
 
 interface PluginData extends Registry.Data {
   fullname?: string
+  devDeps?: string[]
+  peerDeps?: string[]
 }
 
+const filtered = ref(false)
 const current = ref<PluginData>(registry.value[0])
 
 const available = computed(() => {
@@ -79,8 +99,10 @@ const available = computed(() => {
     result[data.shortname] = {
       name: data.shortname,
       fullname: data.name,
-      schema: data.local?.schema,
-      delegates: data.local?.delegates,
+      schema: data.local.schema,
+      delegates: data.local.delegates,
+      devDeps: data.local.devDeps,
+      peerDeps: data.local.peerDeps,
       config: {},
       ...result[data.shortname],
     }
@@ -93,6 +115,10 @@ const message = computed(() => {
   const { required = [] } = current.value.delegates || {}
   if (required.some(name => !registry.value[0].delegates.providing.includes(name))) {
     return '存在未安装的依赖接口。'
+  }
+
+  if (!Object.values(peerDeps.value).every(v => v)) {
+    return '存在未安装的依赖插件。'
   }
 })
 
@@ -130,6 +156,10 @@ const delegates = computed(() => {
   }
   return result
 })
+
+const peerDeps = computed(() => Object.fromEntries((current.value.peerDeps || [])
+  .map(name => [name, market.value.some(data => data.name === name && data.local?.id)]))
+)
 
 watch(registry, plugins => {
   const data = plugins.find(item => item.name === current.value.name)
@@ -191,6 +221,19 @@ function execute(event: string) {
 
     &:hover, &.active {
       color: var(--fg1);
+    }
+  }
+
+  .fa-filter {
+    font-size: 0.9em;
+    cursor: pointer;
+
+    &:active, &.filtered {
+      opacity: 1;
+    }
+
+    &:active {
+      color: var(--fg0);
     }
   }
 }

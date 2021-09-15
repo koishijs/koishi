@@ -9,6 +9,7 @@ import Collapse from './components/collapse.vue'
 import Comment from './components/comment.vue'
 import Button from './components/button.vue'
 import Checkbox from './components/checkbox.vue'
+import Hint from './components/hint.vue'
 import Input from './components/input.vue'
 import Numeric from './components/numeric.vue'
 import App from './views/layout/index.vue'
@@ -85,6 +86,7 @@ app.component('k-chart', Vue.defineAsyncComponent(() => import('./components/ech
 app.component('k-button', Button)
 app.component('k-collapse', Collapse)
 app.component('k-comment', Comment)
+app.component('k-hint', Hint)
 app.component('k-input', Input)
 app.component('k-numeric', Numeric)
 app.component('k-schema', Schema)

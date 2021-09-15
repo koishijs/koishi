@@ -1,4 +1,4 @@
-import { Context, Session, Logger, Tables, Time } from 'koishi'
+import { Context, Session, Logger, Tables, Time, Schema } from 'koishi'
 import RssFeedEmitter from 'rss-feed-emitter'
 
 declare module 'koishi' {
@@ -24,6 +24,12 @@ export interface Config {
 const logger = new Logger('rss')
 
 export const name = 'rss'
+
+export const schema: Schema<Config> = Schema.object({
+  timeout: Schema.number('请求数据的最长时间。').default(Time.second * 10),
+  refresh: Schema.number('刷新数据的时间间隔。').default(Time.minute),
+  userAgent: Schema.string('请求时使用的 User Agent。'),
+})
 
 export const delegates: Context.Delegates.Meta = {
   required: ['database'],
