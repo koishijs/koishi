@@ -39,15 +39,27 @@
     <k-schema v-for="item in schema.list" :schema="item" v-model="config" :prefix="prefix"/>
   </template>
 
+  <div class="schema" v-else-if="schema.type === 'choose'">
+    <slot/>
+    <p>{{ schema.desc }}</p>
+    <ul>
+      <li v-for="key in schema.values">
+        <k-radio :label="key" v-model="config">{{ key }}</k-radio>
+      </li>
+    </ul>
+  </div>
+
   <template v-else-if="schema.type === 'select'">
     <div class="schema">
       <h3 class="required">
         <span>{{ prefix + schema.primary }}</span>
       </h3>
       <p>{{ schema.desc }}</p>
-      <el-radio-group v-model="config[schema.primary]">
-        <el-radio v-for="(item, key) in schema.dict" :label="key">{{ item.desc }}</el-radio>
-      </el-radio-group>
+      <ul>
+        <li v-for="(item, key) in schema.dict">
+          <k-radio :label="key" v-model="config[schema.primary]">{{ item.desc }}</k-radio>
+        </li>
+      </ul>
     </div>
     <k-schema :schema="schema.dict[config[schema.primary]]" v-model="config" :prefix="prefix" no-desc/>
   </template>
@@ -83,6 +95,11 @@ const config = computed<any>({
   set: updateModelValue,
 })
 
+const selected = computed<string>({
+  get: () => config.value[props.schema.primary],
+  set: val => config.value[props.schema.primary] = val,
+})
+
 watch(config, updateModelValue, { deep: true })
 
 </script>
@@ -112,6 +129,14 @@ watch(config, updateModelValue, { deep: true })
 
   .control {
     margin: 0.5rem 0;
+  }
+
+  ul {
+    list-style: none;
+    width: 100%;
+    padding-left: 0;
+    line-height: 1.7;
+    margin: 0.25rem 0;
   }
 }
 

@@ -1,8 +1,8 @@
 <template>
-  <label class="k-checkbox" :class="{ disabled, checked: modelValue }">
-    <span class="checkbox">
+  <label class="k-radio" :class="{ disabled, checked: label === model }">
+    <span class="radio">
       <span class="inner"/>
-      <input type="checkbox" :disabled="disabled" :value="label" v-model="modelValue">
+      <input type="radio" :disabled="disabled" :value="label" v-model="model">
     </span>
     <span class="label" v-if="$slots.default || label">
       <slot>{{ label }}</slot>
@@ -12,17 +12,26 @@
 
 <script lang="ts" setup>
 
-defineProps<{
-  modelValue?: boolean
+import { computed } from 'vue'
+
+const props = defineProps<{
+  modelValue?: any
   label?: string
   disabled?: boolean
 }>()
+
+const emits = defineEmits(['update:modelValue'])
+
+const model = computed({
+  get: () => props.modelValue,
+  set: val => emits('update:modelValue', val),
+})
 
 </script>
 
 <style lang="scss" scoped>
 
-.k-checkbox {
+.k-radio {
   cursor: pointer;
   user-select: none;
   display: inline-block;
@@ -30,10 +39,10 @@ defineProps<{
   line-height: 1em;
   vertical-align: text-top;
 
-  > .checkbox {
+  > .radio {
     outline: 0;
     line-height: 1em;
-    margin-right: 0.4em;
+    margin-right: 0.75em;
 
     > span {
       vertical-align: bottom;
@@ -43,25 +52,23 @@ defineProps<{
       transition: 0.3s ease;
       background-color: transparent;
       border: 0.08em solid var(--border);
-      border-radius: 2px;
+      border-radius: 100%;
       width: 1em;
       height: 1em;
     }
 
     > span::after {
       content: '';
-      box-sizing: content-box;
-      border: 0.13em solid var(--bg0);
-      border-left: 0;
-      border-top: 0;
-      height: 0.5em;
-      left: 0.31em;
-      top: 0.08em;
-      width: 0.21em;
+      width: 0.3em;
+      height: 0.3em;
+      left: 50%;
+      top: 50%;
       position: absolute;
-      transform: rotate(45deg) scaleY(0);
+      border-radius: 100%;
+      background-color: var(--bg0);
+      transform: translate(-50%, -50%) scale(0);
       transform-origin: center;
-      transition: transform .15s ease-in .05s;
+      transition: transform .15s ease-in;
     }
 
     > input {
@@ -83,7 +90,7 @@ defineProps<{
   &:not(.checked):hover {
     color: var(--fg0);
 
-    > .checkbox > span {
+    > .radio > span {
       background-color: var(--bg1);
       border-color: var(--border-dark);
       box-shadow: var(--hover-inset);
@@ -93,11 +100,11 @@ defineProps<{
   &.checked {
     color: var(--primary);
 
-    > .checkbox > span {
+    > .radio > span {
       background-color: var(--primary);
       border-color: var(--primary);
       &::after {
-        transform: rotate(45deg) scaleY(1);
+        transform: translate(-50%, -50%) scale(1);
       }
     }
   }
@@ -111,7 +118,7 @@ defineProps<{
       user-select: text;
     }
 
-    > .checkbox > span {
+    > .radio > span {
       box-shadow: none !important;
       border-color: transparent !important;
       background-color: var(--bg1) !important;
@@ -119,7 +126,7 @@ defineProps<{
 
     &.checked {
       color: var(--fg2);
-      > .checkbox > span {
+      > .radio > span {
         background-color: var(--bg1) !important;
         &::after {
           border-color: var(--fg2) !important;

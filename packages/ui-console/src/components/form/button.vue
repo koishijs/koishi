@@ -25,7 +25,7 @@ defineProps({
 
 <style lang="scss" scoped>
 
-@import '../index.scss';
+@import '../../index.scss';
 
 @mixin active-bg-color($color) {
   background-color: var(--#{$color}) !important;

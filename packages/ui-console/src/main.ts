@@ -3,14 +3,18 @@
 import * as Vue from 'vue'
 import * as Router from 'vue-router'
 import * as client from './index'
-import Badge from './components/badge.vue'
+
+import Badge from './components/notice/badge.vue'
+import Comment from './components/notice/comment.vue'
+import Hint from './components/notice/hint.vue'
+
+import Button from './components/form/button.vue'
+import Checkbox from './components/form/checkbox.vue'
+import Input from './components/form/input.vue'
+import Radio from './components/form/radio.vue'
+
 import Card from './components/card.vue'
 import Collapse from './components/collapse.vue'
-import Comment from './components/comment.vue'
-import Button from './components/button.vue'
-import Checkbox from './components/checkbox.vue'
-import Hint from './components/hint.vue'
-import Input from './components/input.vue'
 import Numeric from './components/numeric.vue'
 import App from './views/layout/index.vue'
 import Schema from './components/schema/index.vue'
@@ -79,15 +83,20 @@ router.addRoute({
   component: () => import('./views/logs/index.vue'),
 })
 
+// notice
 app.component('k-badge', Badge)
-app.component('k-checkbox', Checkbox)
-app.component('k-card', Card)
-app.component('k-chart', Vue.defineAsyncComponent(() => import('./components/echarts')))
-app.component('k-button', Button)
-app.component('k-collapse', Collapse)
 app.component('k-comment', Comment)
 app.component('k-hint', Hint)
+
+// form
+app.component('k-button', Button)
+app.component('k-checkbox', Checkbox)
 app.component('k-input', Input)
+app.component('k-radio', Radio)
+
+app.component('k-card', Card)
+app.component('k-chart', Vue.defineAsyncComponent(() => import('./components/echarts')))
+app.component('k-collapse', Collapse)
 app.component('k-numeric', Numeric)
 app.component('k-schema', Schema)
 
