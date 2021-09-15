@@ -48,9 +48,3 @@ Koishi 服务暴露在公网的地址，会覆盖 [`options.selfUrl`](../app.md#
 - 默认值: `'https://api.telegram.org'`
 
 要请求的 API 网址。
-
-### options.telegram.axiosConfig
-
-- 类型: [`AxiosRequestConfig`](https://github.com/axios/axios#request-config)
-
-用于 telegram 适配器的请求配置。

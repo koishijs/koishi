@@ -1,9 +1,9 @@
-import { Assets, Context, Random, sanitize, Time, trimSlash, Schema } from 'koishi'
-import axios, { AxiosRequestConfig } from 'axios'
+import { Assets, Context, Random, sanitize, Time, trimSlash, Schema, App } from 'koishi'
 import { promises as fs, createReadStream, existsSync } from 'fs'
 import { extname, resolve } from 'path'
 import { createHmac, createHash } from 'crypto'
 import FormData from 'form-data'
+import axios from 'axios'
 
 declare module 'koishi' {
   interface Module {
@@ -13,12 +13,12 @@ declare module 'koishi' {
 
 const PTC_BASE64 = 'base64://'
 
-async function getAssetBuffer(url: string, axiosConfig: AxiosRequestConfig) {
+async function getAssetBuffer(url: string, app: App) {
   if (url.startsWith(PTC_BASE64)) {
     return Buffer.from(url.slice(PTC_BASE64.length), 'base64')
   }
   const { data } = await axios.get<ArrayBuffer>(url, {
-    ...axiosConfig,
+    ...app.options.axiosConfig,
     responseType: 'arraybuffer',
   })
   return Buffer.from(data)
@@ -52,7 +52,6 @@ interface LocalConfig {
   root?: string
   selfUrl?: string
   secret?: string
-  axiosConfig?: AxiosRequestConfig
 }
 
 class LocalAssets implements Assets {
@@ -126,15 +125,15 @@ class LocalAssets implements Assets {
 
   async upload(url: string, file: string) {
     await this._promise
-    const { selfUrl, path, root, axiosConfig } = this.config
+    const { selfUrl, path, root } = this.config
     if (file) {
       const filename = resolve(root, file)
       if (!existsSync(filename)) {
-        const buffer = await getAssetBuffer(url, axiosConfig)
+        const buffer = await getAssetBuffer(url, this.ctx.app)
         await this.write(buffer, filename)
       }
     } else {
-      const buffer = await getAssetBuffer(url, axiosConfig)
+      const buffer = await getAssetBuffer(url, this.ctx.app)
       file = createHash('sha1').update(buffer).digest('hex')
       await this.write(buffer, resolve(root, file))
     }
@@ -151,7 +150,6 @@ interface RemoteConfig {
   type: 'remote'
   server: string
   secret?: string
-  axiosConfig?: AxiosRequestConfig
 }
 
 class RemoteAssets implements Assets {
@@ -160,18 +158,21 @@ class RemoteAssets implements Assets {
   constructor(public ctx: Context, public config: RemoteConfig) {}
 
   async upload(url: string, file: string) {
-    const { server, secret, axiosConfig } = this.config
+    const { server, secret } = this.config
     const params = { url, file } as any
     if (secret) {
       params.salt = Random.id()
       params.sign = createHmac('sha1', secret).update(file + params.salt).digest('hex')
     }
-    const { data } = await axios.post(server, { ...axiosConfig, params })
+    const { data } = await axios.post(server, {
+      ...this.ctx.app.options.axiosConfig,
+      params,
+    })
     return data
   }
 
   async stats() {
-    const { data } = await axios.get(this.config.server, this.config.axiosConfig)
+    const { data } = await axios.get(this.config.server, this.ctx.app.options.axiosConfig)
     return data
   }
 }
@@ -180,7 +181,6 @@ interface SmmsConfig {
   type: 'smms'
   endpoint?: string
   token: string
-  axiosConfig?: AxiosRequestConfig
 }
 
 class SmmsAssets implements Assets {
@@ -191,12 +191,12 @@ class SmmsAssets implements Assets {
   }
 
   async upload(url: string, file: string) {
-    const { token, endpoint, axiosConfig } = this.config
-    const buffer = await getAssetBuffer(url, axiosConfig)
+    const { token, endpoint } = this.config
+    const buffer = await getAssetBuffer(url, this.ctx.app)
     const payload = new FormData()
     payload.append('smfile', buffer, file || createHash('sha1').update(buffer).digest('hex'))
     const { data } = await axios.post(endpoint + '/upload', payload, {
-      ...axiosConfig,
+      ...this.ctx.app.options.axiosConfig,
       headers: {
         authorization: token,
         ...payload.getHeaders(),
@@ -213,10 +213,10 @@ class SmmsAssets implements Assets {
   }
 
   async stats() {
-    const { token, endpoint, axiosConfig } = this.config
+    const { token, endpoint } = this.config
     const { data } = await axios.post(endpoint + '/profile', null, {
+      ...this.ctx.app.options.axiosConfig,
       timeout: Time.second * 5,
-      ...axiosConfig,
       headers: {
         authorization: token,
       },
@@ -232,11 +232,6 @@ export type Config = LocalConfig | RemoteConfig | SmmsConfig
 export const name = 'assets'
 
 export function apply(ctx: Context, config: Config) {
-  config.axiosConfig = {
-    ...ctx.app.options.axiosConfig,
-    ...config.axiosConfig,
-  }
-
   switch (config.type) {
     case 'local': ctx.assets = new LocalAssets(ctx, config); break
     case 'remote': ctx.assets = new RemoteAssets(ctx, config); break

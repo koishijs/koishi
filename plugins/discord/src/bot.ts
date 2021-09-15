@@ -1,6 +1,6 @@
 /* eslint-disable camelcase */
 
-import axios, { AxiosRequestConfig, Method } from 'axios'
+import axios, { Method } from 'axios'
 import { Adapter, Bot, Schema, segment, trimSlash } from 'koishi'
 import { adaptChannel, adaptGroup, adaptMessage, adaptUser } from './utils'
 import { Sender } from './sender'
@@ -22,7 +22,6 @@ export namespace DiscordBot {
   export interface Config extends Bot.BaseConfig, Sender.Config {
     token?: string
     endpoint?: string
-    axiosConfig?: AxiosRequestConfig
   }
 }
 
@@ -34,6 +33,16 @@ export class DiscordBot extends Bot<DiscordBot.Config> {
   static schema: Schema<DiscordBot.Config> = Schema.merge([
     Schema.object({
       token: Schema.string(),
+      handleExternalAsset: Schema.choose({
+        download: '先下载后发送',
+        direct: '直接发送链接',
+        auto: '发送一个 HEAD 请求，如果返回的 Content-Type 正确，则直接发送链接，否则先下载后发送',
+      }, '发送外链资源时采用的方式。').default('auto'),
+      handleMixedContent: Schema.choose({
+        separate: '将每个不同形式的内容分开发送',
+        attach: '图片前如果有文本内容，则将文本作为图片的附带信息进行发送',
+        auto: '如果图片本身采用直接发送则与前面的文本分开，否则将文本作为图片的附带信息发送',
+      }, '发送图文等混合内容时采用的方式。').default('auto'),
     }),
     Schema.object({
       platform: Schema.string('平台名称').default('discord'),
@@ -42,10 +51,8 @@ export class DiscordBot extends Bot<DiscordBot.Config> {
   ])
 
   constructor(adapter: Adapter, options: DiscordBot.Config) {
-    options.endpoint = trimSlash(options.endpoint || 'https://discord.com/api/v8')
-    options.axiosConfig = {
-      ...adapter.app.options.axiosConfig,
-      ...options.axiosConfig,
+    if (options.endpoint) {
+      options.endpoint = trimSlash(options.endpoint)
     }
 
     super(adapter, options)
@@ -54,11 +61,11 @@ export class DiscordBot extends Bot<DiscordBot.Config> {
   }
 
   async request<T = any>(method: Method, path: string, data?: any, headers?: any): Promise<T> {
-    const { axiosConfig, endpoint, token } = this.config
+    const { endpoint = 'https://discord.com/api/v8', token } = this.config
     const url = `${endpoint}${path}`
     try {
       const response = await axios({
-        ...axiosConfig,
+        ...this.app.options.axiosConfig,
         method,
         url,
         headers: {

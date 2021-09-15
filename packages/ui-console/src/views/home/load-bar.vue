@@ -44,6 +44,7 @@ const caption = computed(() => {
   display: flex;
   align-items: center;
   user-select: none;
+  font-size: 0.9em;
 
   .title {
     min-width: 3rem;
@@ -54,7 +55,7 @@ const caption = computed(() => {
     height: 1.2rem;
     position: relative;
     display: inline;
-    background-color: #474d84;
+    background-color: var(--bg1);
     border-radius: 4px;
     overflow: hidden;
   }
@@ -67,17 +68,17 @@ const caption = computed(() => {
   }
 
   .used {
-    background-color: #2477ff;
+    background-color: var(--default);
     color: white;
     &:hover {
-      background-color: lighten(#2477ff, 10%);
+      background-color: var(--default-light);
     }
   }
 
   .app {
-    background-color: #e49400;
+    background-color: var(--warning);
     &:hover {
-      background-color: lighten(#e49400, 10%);
+      background-color: var(--warning-light);
     }
   }
 

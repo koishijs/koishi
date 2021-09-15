@@ -1,6 +1,6 @@
 /* eslint-disable camelcase */
 
-import axios, { AxiosRequestConfig } from 'axios'
+import axios from 'axios'
 import nhentai from './nhentai'
 import danbooru from './danbooru'
 import konachan from './konachan'
@@ -112,7 +112,6 @@ async function search(url: string, session: Session, config: saucenao.Config, mi
     try {
       const response = await axios.get<Response>('https://saucenao.com/search.php', {
         ...app.options.axiosConfig,
-        ...config.axiosConfig,
         params: {
           db: 999,
           numres: 3,
@@ -244,7 +243,6 @@ namespace saucenao {
     maxTrials?: number
     lowSimilarity?: number
     highSimilarity?: number
-    axiosConfig?: AxiosRequestConfig
   }
 
   export const schema: Schema<Config> = Schema.object({

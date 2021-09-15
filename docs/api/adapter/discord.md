@@ -36,12 +36,6 @@ sidebarDepth: 2
 
 要请求的 API 网址。
 
-### options.discord.axiosConfig
-
-- 类型: [`AxiosRequestConfig`](https://github.com/axios/axios#request-config)
-
-用于 discord 适配器的请求配置。
-
 ### options.discord.handleExternalAsset
 
 - 可选值: `string`

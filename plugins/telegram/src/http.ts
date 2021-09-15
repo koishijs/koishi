@@ -28,7 +28,7 @@ export default class HttpServer extends Adapter<TelegramBot.Config, TelegramConf
   }
 
   async connect(bot: TelegramBot) {
-    const { token, endpoint, axiosConfig } = bot.config
+    const { token, endpoint } = bot.config
     const { path, selfUrl } = this.config
     bot._request = async (action, params, field, content, filename = 'file') => {
       const payload = new FormData()
@@ -38,7 +38,6 @@ export default class HttpServer extends Adapter<TelegramBot.Config, TelegramConf
       if (field) payload.append(field, content, filename)
       const data = await axios.post(`${endpoint}/bot${token}/${action}`, payload, {
         ...this.app.options.axiosConfig,
-        ...axiosConfig,
         headers: payload.getHeaders(),
       }).then(res => {
         return res.data

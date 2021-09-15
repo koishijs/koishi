@@ -58,6 +58,7 @@ button {
   }
   &.disabled {
     cursor: default;
+    pointer-events: none;
   }
   // default: transparent & framed
   color: var(--default);

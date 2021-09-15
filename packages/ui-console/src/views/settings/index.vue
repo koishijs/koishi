@@ -2,7 +2,7 @@
   <k-card class="page-config frameless">
     <div class="plugin-select">
       <div class="content">
-        <choice-view class="group" :data="registry[0]" v-model="current"/>
+        <t-choice class="group" :data="registry[0]" v-model="current"/>
         <div class="group">
           运行中的插件
           <k-hint placement="right">
@@ -10,7 +10,7 @@
             <br>这里只展示直接从 app 注册的具名插件。换言之，在其他插件内部注册的插件或没有提供 name 的插件将不予显示。
           </k-hint>
         </div>
-        <choice-view v-for="data in registry.filter(data => data.id)" :data="data" v-model="current"/>
+        <t-choice v-for="data in registry.filter(data => data.id)" :data="data" v-model="current"/>
         <div class="group">
           未运行的插件
           <k-hint placement="right" icon="fas fa-filter" :class="{ filtered }" @click="filtered = !filtered">
@@ -22,7 +22,7 @@
             </template>
           </k-hint>
         </div>
-        <choice-view v-for="data in available.filter(data => !filtered || data.schema)" :data="data" v-model="current"/>
+        <t-choice v-for="data in available.filter(data => !filtered || data.schema)" :data="data" v-model="current"/>
       </div>
     </div>
     <div class="plugin-view">
@@ -39,15 +39,11 @@
             <template v-if="current.schema">
               <template v-if="current.id">
                 <k-button solid type="error" @click="execute('dispose')">停用插件</k-button>
-                <el-tooltip :content="message" placement="bottom-end" effect="dark">
-                  <k-button solid :disabled="!!message" @click="execute('reload')">重载配置</k-button>
-                </el-tooltip>
+                <t-button :message="message" @click="execute('reload')">重载配置</t-button>
               </template>
               <template v-else>
-                <el-tooltip :content="message" placement="bottom-end">
-                  <k-button solid :disabled="!!message" :title="message" @click="execute('install')">启用插件</k-button>
-                </el-tooltip>
-                <k-button solid @click="execute('save')" :title="message">保存配置</k-button>
+                <t-button :message="message" @click="execute('install')">启用插件</t-button>
+                <k-button solid @click="execute('save')">保存配置</k-button>
               </template>
             </template>
           </h1>
@@ -78,7 +74,8 @@
 import { ref, computed, watch } from 'vue'
 import { registry, market, send } from '~/client'
 import { Dict, Registry, Context } from '~/server'
-import ChoiceView from './choice.vue'
+import TChoice from './choice.vue'
+import TButton from './button.vue'
 
 interface PluginData extends Registry.Data {
   fullname?: string

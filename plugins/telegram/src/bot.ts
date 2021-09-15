@@ -1,7 +1,6 @@
 import { createReadStream } from 'fs'
 import { Bot, Adapter, camelCase, snakeCase, renameProperty, segment, assertProperty, trimSlash, Dict, Schema } from 'koishi'
 import * as Telegram from './types'
-import { AxiosRequestConfig } from 'axios'
 
 export class SenderError extends Error {
   constructor(args: Dict<any>, url: string, retcode: number, selfId: string) {
@@ -26,7 +25,6 @@ export namespace TelegramBot {
     endpoint?: string
     selfId?: string
     token?: string
-    axiosConfig?: AxiosRequestConfig
   }
 }
 

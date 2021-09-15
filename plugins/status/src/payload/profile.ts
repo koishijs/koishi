@@ -1,4 +1,4 @@
-import { Bot, Context } from 'koishi'
+import { Bot, Context, pick } from 'koishi'
 import { cpus } from 'os'
 import { mem } from 'systeminformation'
 import { StatusServer } from '../server'
@@ -48,6 +48,7 @@ export interface BotData {
   username: string
   selfId: string
   platform: string
+  avatar: string
   code: Bot.Status
   currentRate: MessageRate
 }
@@ -58,9 +59,7 @@ function accumulate(record: number[]) {
 
 export async function BotData(bot: Bot) {
   return {
-    platform: bot.platform,
-    selfId: bot.selfId,
-    username: bot.username,
+    ...pick(bot, ['platform', 'selfId', 'avatar', 'username']),
     code: await bot.getStatus(),
     currentRate: [accumulate(bot.messageSent), accumulate(bot.messageReceived)],
   } as BotData
