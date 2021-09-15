@@ -12,7 +12,11 @@ defineProps<{ type?: 'warning' }>()
 
 <style lang="scss">
 
-@import '~/variables';
+@mixin apply-color($name) {
+  &.#{$name} {
+    background-color: var(--#{$name});
+  }
+}
 
 .k-badge {
   display: inline-block;
@@ -25,21 +29,10 @@ defineProps<{ type?: 'warning' }>()
   color: white;
   vertical-align: baseline;
 
-  &.default {
-    background-color: var(--active);
-  }
-
-  &.success {
-    background-color: var(--success);
-  }
-
-  &.warning {
-    background-color: var(--warning);
-  }
-
-  &.error {
-    background-color: var(--error);
-  }
+  @include apply-color(default);
+  @include apply-color(warning);
+  @include apply-color(success);
+  @include apply-color(error);
 }
 
 </style>

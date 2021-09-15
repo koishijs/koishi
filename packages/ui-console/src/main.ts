@@ -8,17 +8,17 @@ import Badge from './components/notice/badge.vue'
 import Comment from './components/notice/comment.vue'
 import Hint from './components/notice/hint.vue'
 
-import Button from './components/form/button.vue'
+import Button from './components/button.vue'
 import Checkbox from './components/form/checkbox.vue'
 import Input from './components/form/input.vue'
 import Radio from './components/form/radio.vue'
+import Schema from './components/form/schema.vue'
 
 import Card from './components/card.vue'
 import Collapse from './components/collapse.vue'
 import Numeric from './components/numeric.vue'
 import App from './views/layout/index.vue'
-import Schema from './components/schema/index.vue'
-import { ElRadio, ElTooltip } from 'element-plus'
+import { ElTooltip } from 'element-plus'
 
 import '@fortawesome/fontawesome-free/css/fontawesome.css'
 import '@fortawesome/fontawesome-free/css/brands.css'
@@ -36,7 +36,6 @@ self['KoishiClient'] = client
 
 const app = Vue.createApp(App)
 
-app.use(ElRadio)
 app.use(ElTooltip)
 
 const stats: 'stats'[] = KOISHI_CONFIG.database ? ['stats'] : []
@@ -93,12 +92,12 @@ app.component('k-button', Button)
 app.component('k-checkbox', Checkbox)
 app.component('k-input', Input)
 app.component('k-radio', Radio)
+app.component('k-schema', Schema)
 
 app.component('k-card', Card)
 app.component('k-chart', Vue.defineAsyncComponent(() => import('./components/echarts')))
 app.component('k-collapse', Collapse)
 app.component('k-numeric', Numeric)
-app.component('k-schema', Schema)
 
 app.provide('ecTheme', 'dark-blue')
 

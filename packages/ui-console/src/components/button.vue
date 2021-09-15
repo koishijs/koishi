@@ -25,15 +25,17 @@ defineProps({
 
 <style lang="scss" scoped>
 
-@import '../../index.scss';
+@import '../index.scss';
 
-@mixin active-bg-color($color) {
-  background-color: var(--#{$color}) !important;
-  &:hover {
-    background-color: var(--#{$color}-light) !important;
-  }
-  &:active {
-    background-color: var(--#{$color}-dark) !important;
+@mixin apply-color($name) {
+  &.#{$name} {
+    background-color: var(--#{$name}) !important;
+    &:hover {
+      background-color: var(--#{$name}-light) !important;
+    }
+    &:active {
+      background-color: var(--#{$name}-dark) !important;
+    }
   }
 }
 
@@ -58,7 +60,7 @@ button {
     cursor: default;
   }
   // default: transparent & framed
-  color: var(--active);
+  color: var(--default);
   border: 1px solid $tpBorderColor2;
   background-color: $tpBgColor1;
   &.disabled {
@@ -82,18 +84,11 @@ button {
   }
 
   &.solid:not(.disabled) {
-    &.default {
-      @include active-bg-color('active');
-    }
-    &.warning {
-      @include active-bg-color('warning');
-    }
-    &.error {
-      @include active-bg-color('error');
-    }
-    &.success {
-      @include active-bg-color('success');
-    }
+
+    @include apply-color(default);
+    @include apply-color(warning);
+    @include apply-color(success);
+    @include apply-color(error);
   }
 
   // frameless

@@ -69,7 +69,7 @@
 
 import { computed, watch } from 'vue'
 import { Schema } from '@koishijs/utils'
-import SchemaGroup from './group.vue'
+import SchemaGroup from './schema-group.vue'
 
 const props = defineProps<{
   schema: Schema
