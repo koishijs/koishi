@@ -1,8 +1,7 @@
 <template>
   <button
     :title="disabled ? '' : title"
-    :class="['k-button', type, { solid, round, frameless }]"
-    :disabled="disabled"
+    :class="['k-button', type, { disabled, solid, round, frameless }]"
   >
     <slot/>
   </button>
@@ -36,9 +35,6 @@ defineProps({
   &:active {
     background-color: var(--#{$color}-dark) !important;
   }
-  &:disabled {
-    background-color: #999 !important;
-  }
 }
 
 button {
@@ -58,28 +54,34 @@ button {
   &:focus {
     outline: 0;
   }
-  &:disabled {
+  &.disabled {
     cursor: default;
   }
   // default: transparent & framed
   color: var(--active);
   border: 1px solid $tpBorderColor2;
   background-color: $tpBgColor1;
-  &:disabled {
+  &.disabled {
     color: $tpFgColor1;
     border-color: $tpBorderColor1;
     background-color: transparent;
   }
-  &:hover:not(:disabled) {
+  &:hover:not(.disabled) {
     color: $tpFgColor4;
     border: 1px solid $tpBorderColor3;
     background-color: $tpBgColor2;
   }
 
-  // solid
-  &.solid:not(:disabled) {
+  &.solid {
     color: #ffffff !important;
     border-color: transparent !important;
+  }
+
+  &.solid.disabled {
+    background-color: var(--disabled) !important;
+  }
+
+  &.solid:not(.disabled) {
     &.default {
       @include active-bg-color('active');
     }

@@ -21,24 +21,34 @@
         </template>
         <template v-else>
           <h1>
-            {{ title }}
+            {{ getFullname(current) }}
             <template v-if="current.schema">
               <template v-if="current.id">
                 <k-button solid type="error" @click="execute('dispose')">停用插件</k-button>
-                <k-button solid @click="execute('reload')">重载配置</k-button>
+                <el-tooltip :content="message" placement="bottom-end" effect="dark">
+                  <k-button solid :disabled="!!message" @click="execute('reload')">重载配置</k-button>
+                </el-tooltip>
               </template>
-              <template>
-                <k-button solid @click="execute('install')">启用插件</k-button>
-                <k-button solid @click="execute('save')">保存配置</k-button>
+              <template v-else>
+                <el-tooltip :content="message" placement="bottom-end" effect="dark">
+                  <k-button solid :disabled="!!message" :title="message" @click="execute('install')">启用插件</k-button>
+                </el-tooltip>
+                <k-button solid @click="execute('save')" :title="message">保存配置</k-button>
               </template>
             </template>
           </h1>
+          <k-comment v-for="key in current.delegates?.providing || []" type="success">
+            <template #header>实现接口：{{ key }}</template>
+          </k-comment>
+          <k-comment v-for="(data, key) in delegates" :type="data.fulfilled ? 'success' : data.required ? 'warning' : 'default'">
+            <template #header>{{ data.required ? '依赖' : '可选' }}接口：{{ key }}</template>
+            <ul>
+              <li v-for="name in data.available">{{ name }}</li>
+            </ul>
+          </k-comment>
         </template>
         <p v-if="!current.schema">此插件暂不支持在线配置。</p>
         <template v-else>
-          <p v-if="current.delegates?.providing">实现接口：{{ current.delegates.providing }}</p>
-          <p v-if="current.delegates?.required">依赖接口（必选）：{{ current.delegates.required }}</p>
-          <p v-if="current.delegates?.optional">依赖接口（可选）：{{ current.delegates.optional }}</p>
           <k-schema :schema="current.schema" v-model="current.config" prefix=""/>
         </template>
       </div>
@@ -50,7 +60,7 @@
 
 import { ref, computed, watch } from 'vue'
 import { registry, market, send } from '~/client'
-import { Dict, Registry } from '~/server'
+import { Dict, Registry, Context } from '~/server'
 import ChoiceView from './choice.vue'
 
 interface PluginData extends Registry.Data {
@@ -58,14 +68,6 @@ interface PluginData extends Registry.Data {
 }
 
 const current = ref<PluginData>(registry.value[0])
-
-const title = computed(() => {
-  const { name, fullname, id } = current.value
-  if (fullname) return fullname
-  const item = market.value?.find(item => item.local?.id === id)
-  if (item) return item.name
-  return name
-})
 
 const available = computed(() => {
   const result: Dict<PluginData> = {}
@@ -84,7 +86,49 @@ const available = computed(() => {
     }
   }
 
-  return Object.fromEntries(Object.entries(result).sort(([a], [b]) => a > b ? 1 : -1))
+  return Object.entries(result).sort(([a], [b]) => a > b ? 1 : -1).map(([, v]) => v)
+})
+
+const message = computed(() => {
+  const { required = [] } = current.value.delegates || {}
+  if (required.some(name => !registry.value[0].delegates.providing.includes(name))) {
+    return '存在未安装的依赖接口。'
+  }
+})
+
+interface DelegateData {
+  required: boolean
+  fulfilled: boolean
+  available?: string[]
+}
+
+function getFullname({ name, fullname, id }: PluginData) {
+  if (fullname) return fullname
+  const item = market.value?.find(item => item.local?.id === id)
+  if (item) return item.name
+  return name
+}
+
+function getDelegateData(name: Context.Delegates.Keys, required: boolean) {
+  const fulfilled = registry.value[0].delegates.providing.includes(name)
+  if (fulfilled) return { required, fulfilled }
+  return {
+    required,
+    fulfilled,
+    available: available.value.filter(item => item.delegates?.providing?.includes(name)).map(getFullname),
+  }
+}
+
+const delegates = computed(() => {
+  const { required = [], optional = [] } = current.value.delegates || {}
+  const result: Dict<DelegateData> = {}
+  for (const name of required) {
+    result[name] = getDelegateData(name, true)
+  }
+  for (const name of optional) {
+    result[name] = getDelegateData(name, false)
+  }
+  return result
 })
 
 watch(registry, plugins => {
@@ -136,15 +180,18 @@ function execute(event: string) {
     cursor: pointer;
     padding: 0 2rem 0 4rem;
     transition: 0.3s ease;
-  }
 
-  .choice:hover, .choice.active {
-    background-color: var(--bg1);
+    &:hover, &.active {
+      background-color: var(--bg1);
+    }
   }
 
   .choice.readonly {
-    color: var(--fg3);
-    opacity: 0.75;
+    color: var(--fg3t);
+
+    &:hover, &.active {
+      color: var(--fg1);
+    }
   }
 }
 

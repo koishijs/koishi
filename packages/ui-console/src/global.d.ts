@@ -6,7 +6,7 @@ declare module '*.vue' {
 }
 
 declare module '~/server' {
-  export type * from '@koishijs/utils'
+  export type * from 'koishi'
   export type * from '@koishijs/plugin-status'
 }
 

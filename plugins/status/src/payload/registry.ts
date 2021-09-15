@@ -28,10 +28,12 @@ class Registry implements StatusServer.DataSource {
   }
 
   private async getForced() {
+    const providing = (['assets', 'cache', 'database'] as const).filter(key => this.ctx[key])
     const children: Registry.Data[] = [{
       id: null,
       name: null,
       schema: App.Config,
+      delegates: { providing },
       config: omit(this.ctx.app.options, ['plugins' as any]),
     }]
 
