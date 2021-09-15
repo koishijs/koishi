@@ -20,7 +20,7 @@ export default function (config: Dialogue.Config) {
   const u4g2 = app.session(u4id, g2id)
 
   app.plugin(apply, {
-    historyAge: 0,
+    historyTimeout: 0,
     useContext: false,
     useTime: false,
     useWriter: false,

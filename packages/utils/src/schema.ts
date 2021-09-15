@@ -5,6 +5,7 @@ export interface Schema<T = any> extends Schema.Base<T> {
   primary?: string
   value?: Schema
   value2?: Schema
+  values?: T[]
   list?: Schema[]
   dict?: Dict<Schema>
   adapt?: Function
@@ -75,6 +76,10 @@ export namespace Schema {
 
   export function object<T extends Dict<Schema>>(dict: T, desc?: string) {
     return new Chainable<{ [K in keyof T]?: Type<T[K]> }>({ type: 'object', dict, desc })
+  }
+
+  export function choose<T extends string>(values: T[], desc?: string) {
+    return new Chainable<T>({ type: 'choose', values, desc })
   }
 
   export function select<T extends Dict<Schema>, K extends string>(dict: T, primary: K, desc?: string) {

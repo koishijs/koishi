@@ -2,7 +2,8 @@
   "name": "@koishijs/plugin-database",
   "description": "A in-memory database implementation for Koishi",
   "version": "1.0.0-alpha.2",
-  "main": "lib/index.js",
+  "main": "lib/node.js",
+  "module": "lib/browser.js",
   "typings": "lib/index.d.ts",
   "files": [
     "lib"

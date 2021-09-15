@@ -85,7 +85,7 @@ export namespace Dialogue {
   export interface Config {
     prefix?: string
     authority?: AuthorityConfig
-    historyAge?: number
+    historyTimeout?: number
   }
 
   export interface Stats {
@@ -188,7 +188,7 @@ export namespace Dialogue {
       if (argv.app.teachHistory[dialogue.id]?._timestamp === time) {
         delete argv.app.teachHistory[dialogue.id]
       }
-    }, argv.config.historyAge ?? 600000)
+    }, argv.config.historyTimeout ?? 600000)
   }
 
   export interface Argv {

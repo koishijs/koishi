@@ -19,7 +19,7 @@ app.plugin(eval, {
 })
 
 app.plugin(teach, {
-  historyAge: 0,
+  historyTimeout: 0,
   useContext: false,
   useTime: false,
   useWriter: false,

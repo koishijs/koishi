@@ -29,7 +29,7 @@ interface AuthorityConfig {
 }
 ```
 
-## historyAge
+## historyTimeout
 
 - 类型: `number`
 - 默认值: `60000`

@@ -1,4 +1,4 @@
-import { App, Database, Eval, Query, Tables, TableType, clone, makeArray, pick, Context, Dict, valueMap } from 'koishi'
+import { App, Database, Eval, Query, Tables, TableType, clone, makeArray, pick, Context, Dict, valueMap, Schema } from 'koishi'
 import { Storage, Config } from './storage'
 
 declare module 'koishi' {
@@ -242,6 +242,8 @@ export const name = 'database'
 export const delegates: Context.Delegates.Meta = {
   providing: ['database'],
 }
+
+export const schema: Schema<Config> = Schema.object({})
 
 export function apply(ctx: Context, config: Config = {}) {
   ctx.database = new MemoryDatabase(ctx.app, config)

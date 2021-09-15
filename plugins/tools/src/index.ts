@@ -1,4 +1,4 @@
-import { Context } from 'koishi'
+import { Context, Schema } from 'koishi'
 import { AlphaOptions } from './alpha'
 import { BaiduOptions } from './baidu'
 import { BrainfuckOptions } from './brainfuck'
@@ -11,7 +11,7 @@ declare module 'koishi' {
   }
 }
 
-export interface Options extends AlphaOptions, TranslateOptions {
+export interface Config extends AlphaOptions, TranslateOptions {
   baidu?: false | BaiduOptions
   brainfuck?: false | BrainfuckOptions
   bilibili?: false
@@ -27,7 +27,9 @@ export interface Options extends AlphaOptions, TranslateOptions {
 
 export const name = 'tools'
 
-export function apply(ctx: Context, config: Options = {}) {
+export const schema: Schema<Config> = Schema.object({})
+
+export function apply(ctx: Context, config: Config = {}) {
   ctx.command('tools', '实用工具')
 
   if (config.wolframAlphaAppId) ctx.plugin(require('./alpha'), config)

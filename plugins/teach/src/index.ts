@@ -1,6 +1,6 @@
 /* eslint-disable no-irregular-whitespace */
 
-import { Argv, Context, Session, escapeRegExp, merge } from 'koishi'
+import { Argv, Context, Session, escapeRegExp, merge, Schema, Time } from 'koishi'
 import { Dialogue } from './utils'
 import internal from './internal'
 import receiver from './receiver'
@@ -119,6 +119,38 @@ const cheatSheet = (session: Session<'authority'>, config: Config) => {
 }
 
 export const name = 'teach'
+
+export const schema: Schema<Config> = Schema.merge([
+  Schema.object({
+    prefix: Schema.string('教学指令的前缀。').default('#'),
+    historyTimeout: Schema.number('教学操作在内存中的保存时间。').default(Time.minute * 10),
+  }, '通用设置'),
+
+  Schema.object({
+    authority: Schema.object({
+      base: Schema.number('可访问教学系统的权限等级。').default(2),
+      admin: Schema.number('可修改非自己创建的问答的权限等级。').default(3),
+      context: Schema.number('可修改上下文设置的权限等级。').default(3),
+      frozen: Schema.number('可修改锁定的问答的权限等级。').default(4),
+      regExp: Schema.number('可使用正则表达式的权限等级。').default(3),
+      writer: Schema.number('可设置作者或匿名的权限等级。').default(2),
+    }),
+  }, '权限设置'),
+
+  Schema.object({
+    maxRedirections: Schema.number('问题重定向的次数上限。').default(3),
+    successorTimeout: Schema.number('问答触发后继问答的持续时间。').default(Time.second * 20),
+    appellationTimeout: Schema.number('称呼作为问题触发的后续效果持续时间。').default(Time.minute * 10),
+  }, '触发设置'),
+
+  Schema.object({
+    maxPreviews: Schema.number('同时查看的最大问答数量。').default(10),
+    previewDelay: Schema.number('显示两个问答之间的时间间隔。').default(Time.second * 0.5),
+    itemsPerPage: Schema.number('搜索结果每一页显示的最大数量。').default(30),
+    maxAnswerLength: Schema.number('搜索结果中回答显示的长度限制。').default(100),
+    mergeThreshold: Schema.number('合并搜索模式中，相同的问题和回答被合并的最小数量。').default(5),
+  }, '显示设置'),
+])
 
 export const delegates: Context.Delegates.Meta = {
   required: ['database'],

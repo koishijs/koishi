@@ -510,8 +510,27 @@ export class Context {
       })
     }))).flat(1)
   }
+}
 
-  static delegate(key: string & keyof Context) {
+export namespace Context {
+  export interface Delegates {
+    database: Database
+    assets: Assets
+    cache: Cache
+  }
+
+  export namespace Delegates {
+    export type Keys = keyof Delegates
+    export const Keys: Keys[] = []
+
+    export interface Meta {
+      providing?: Keys[]
+      required?: Keys[]
+      optional?: Keys[]
+    }
+  }
+
+  export function delegate(key: string & keyof Context) {
     if (Object.prototype.hasOwnProperty.call(Context.prototype, key)) return
     const privateKey = Symbol(key)
     Object.defineProperty(Context.prototype, key, {
@@ -527,28 +546,10 @@ export class Context {
       },
     })
   }
-}
 
-Context.delegate('database')
-Context.delegate('assets')
-Context.delegate('cache')
-
-export namespace Context {
-  export interface Delegates {
-    database: Database
-    assets: Assets
-    cache: Cache
-  }
-
-  export namespace Delegates {
-    export type Keys = keyof Delegates
-
-    export interface Meta {
-      providing?: Keys[]
-      required?: Keys[]
-      optional?: Keys[]
-    }
-  }
+  delegate('database')
+  delegate('assets')
+  delegate('cache')
 }
 
 type FlattenEvents<T> = {
