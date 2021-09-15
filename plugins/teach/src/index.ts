@@ -119,7 +119,11 @@ const cheatSheet = (session: Session<'authority'>, config: Config) => {
 }
 
 export const name = 'teach'
-export const disposable = true
+
+export const delegates: Context.Delegates.Meta = {
+  required: ['database'],
+  optional: ['assets'],
+}
 
 function registerPrefix(ctx: Context, prefix: string) {
   const g = '\\d+(?:\\.\\.\\d+)?'

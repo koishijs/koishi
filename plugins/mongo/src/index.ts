@@ -161,6 +161,10 @@ Database.extend(MongoDatabase, {
 
 export const name = 'mongo'
 
+export const delegates: Context.Delegates.Meta = {
+  providing: ['database'],
+}
+
 export function apply(ctx: Context, config: Config) {
   ctx.database = new MongoDatabase(ctx.app, {
     host: 'localhost',

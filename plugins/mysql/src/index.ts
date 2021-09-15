@@ -271,6 +271,10 @@ Database.extend(MysqlDatabase, {
 
 export const name = 'mysql'
 
+export const delegates: Context.Delegates.Meta = {
+  providing: ['database'],
+}
+
 export const schema: Schema<Config> = Schema.object({
   host: Schema.string('要连接到的主机名。').required(),
   port: Schema.number('要连接到的端口号。').default(3306),

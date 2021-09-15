@@ -38,10 +38,14 @@ function formatContext(session: Partial<Session>) {
   return session.subtype === 'private' ? `私聊 ${session.userId}` : `群聊 ${session.guildId}`
 }
 
-export const name = 'schedule'
-
 export interface Config {
   minInterval?: number
+}
+
+export const name = 'schedule'
+
+export const delegates: Context.Delegates.Meta = {
+  required: ['database'],
 }
 
 export const schema = Schema.object({

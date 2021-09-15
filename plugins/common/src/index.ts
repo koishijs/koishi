@@ -23,6 +23,10 @@ export const schema: Schema<Config> = Schema.object({
   contextify: Schema.boolean('启用 contextify 指令。').default(true),
 })
 
+export const delegates: Context.Delegates.Meta = {
+  optional: ['database'],
+}
+
 export function apply(ctx: Context, config: Config = {}) {
   ctx.command('common', '基础功能')
 

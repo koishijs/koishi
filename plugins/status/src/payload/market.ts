@@ -98,8 +98,15 @@ class Market implements StatusServer.DataSource {
     const data: PackageLocal = JSON.parse(await fs.readFile(path + '/package.json', 'utf8'))
     if (data.private) return null
     const workspace = !path.includes('node_modules')
-    const { schema } = require(path)
-    return { schema, workspace, id, ...pick(data, ['name', 'version', 'description']) }
+    const { schema, delegates } = require(path)
+
+    const optional: string[] = []
+    const { devDependencies, peerDependencies } = data
+    for (const name in { ...devDependencies, ...peerDependencies }) {
+      if (name.startsWith('@koishijs/plugin-') || name.startsWith('koishi-plugin-')) optional.push(name)
+    }
+
+    return { schema, delegates, workspace, optional, id, ...pick(data, ['name', 'version', 'description']) }
   }
 
   private async loadCached(filename: string, id?: string) {
@@ -144,7 +151,7 @@ class Market implements StatusServer.DataSource {
         this.loadLocal(name),
         axios.get<Registry>(`https://registry.npmjs.org/${name}`),
       ])
-      const { dependencies = {}, peerDependencies = {}, dist } = data.versions[version]
+      const { dependencies, peerDependencies, dist } = data.versions[version]
       const declaredVersion = { ...dependencies, ...peerDependencies }['koishi']
       if (!declaredVersion || !satisfies(currentVersion, declaredVersion)) return
 
@@ -184,6 +191,8 @@ namespace Market {
   export interface Local extends PackageBase {
     id?: string
     schema?: Schema
+    delegates?: Context.Delegates.Meta
+    optional: string[]
     workspace: boolean
   }
 

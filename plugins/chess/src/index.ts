@@ -1,4 +1,4 @@
-import { Context, Tables, isInteger, segment, Dict } from 'koishi'
+import { Context, Tables, isInteger, segment, Dict, Schema } from 'koishi'
 import { State, MoveResult, StateData } from './state'
 import {} from '@koishijs/plugin-mysql'
 import {} from '@koishijs/plugin-puppeteer'
@@ -37,7 +37,15 @@ const states: Dict<State> = {}
 
 export * from './state'
 
+export interface Config {}
+
 export const name = 'chess'
+
+export const schema: Schema<Config> = Schema.object({})
+
+export const delegates: Context.Delegates.Meta = {
+  optional: ['database'],
+}
 
 export function apply(ctx: Context) {
   ctx = ctx.guild()

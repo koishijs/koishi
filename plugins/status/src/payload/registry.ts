@@ -1,4 +1,4 @@
-import { App, Context, omit, pick, Plugin, Schema } from 'koishi'
+import { App, Context, hyphenate, omit, pick, Plugin, Schema, Module } from 'koishi'
 import { debounce } from 'throttle-debounce'
 import { StatusServer } from '../server'
 
@@ -38,15 +38,19 @@ class Registry implements StatusServer.DataSource {
     for (const plugin of this.getState(null).children) {
       const state = this.getState(plugin)
       if (!state.name) continue
-      children.push(pick(state, ['id', 'name', 'schema', 'config']))
+      children.push(pick(state, ['id', 'name', 'schema', 'delegates', 'config']))
     }
 
     const { plugins = {} } = this.ctx.app.options
     for (const key in plugins) {
       if (!key.startsWith('~')) continue
+      const name = hyphenate(key.slice(1))
+      const { schema, delegates } = require(Module.resolve(name))
       children.push({
         id: null,
-        name: key.slice(1),
+        name,
+        schema,
+        delegates,
         config: plugins[key],
       })
     }
@@ -78,6 +82,7 @@ namespace Registry {
     id?: string
     name?: string
     schema?: Schema
+    delegates?: Context.Delegates.Meta
     config?: any
   }
 }

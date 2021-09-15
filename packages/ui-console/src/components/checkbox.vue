@@ -51,7 +51,7 @@ defineProps<{
     > span::after {
       content: '';
       box-sizing: content-box;
-      border: 0.08em solid var(--bg0);
+      border: 0.13em solid var(--bg0);
       border-left: 0;
       border-top: 0;
       height: 0.5em;
@@ -91,11 +91,11 @@ defineProps<{
   }
 
   &.checked {
-    color: var(--active);
+    color: var(--primary);
 
     > .checkbox > span {
-      background-color: var(--active);
-      border-color: var(--active);
+      background-color: var(--primary);
+      border-color: var(--primary);
       &::after {
         transform: rotate(45deg) scaleY(1);
       }

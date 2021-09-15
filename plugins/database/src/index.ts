@@ -239,6 +239,10 @@ Database.extend(MemoryDatabase, {
 
 export const name = 'database'
 
+export const delegates: Context.Delegates.Meta = {
+  providing: ['database'],
+}
+
 export function apply(ctx: Context, config: Config = {}) {
   ctx.database = new MemoryDatabase(ctx.app, config)
 }

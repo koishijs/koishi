@@ -2,34 +2,45 @@
   <k-card class="page-config frameless">
     <div class="plugin-select">
       <div class="content">
-        <k-choice class="group" :data="registry[0]" v-model="current"/>
+        <choice-view class="group" :data="registry[0]" v-model="current"/>
         <div class="group">运行中的插件</div>
-        <k-choice v-for="data in registry.filter(data => data.id && data.schema)" :data="data" v-model="current"/>
+        <choice-view v-for="data in registry.filter(data => data.id)" :data="data" v-model="current"/>
         <template v-if="market">
           <div class="group">未运行的插件</div>
-          <k-choice v-for="data in available" :data="data" v-model="current"/>
+          <choice-view v-for="data in available" :data="data" v-model="current"/>
         </template>
       </div>
     </div>
     <div class="plugin-view">
       <div class="content">
         <template v-if="!current.name">
-          <h1>全局设置</h1>
+          <h1>
+            全局设置
+            <k-button solid>应用配置</k-button>
+          </h1>
         </template>
         <template v-else>
           <h1>
-            <span>{{ title }}</span>
-            <template v-if="current.id">
-              <k-button solid type="error" @click="execute('dispose')">停用插件</k-button>
-              <k-button solid @click="execute('reload')">重载配置</k-button>
-            </template>
-            <template v-else>
-              <k-button solid @click="execute('install')">启用插件</k-button>
+            {{ title }}
+            <template v-if="current.schema">
+              <template v-if="current.id">
+                <k-button solid type="error" @click="execute('dispose')">停用插件</k-button>
+                <k-button solid @click="execute('reload')">重载配置</k-button>
+              </template>
+              <template>
+                <k-button solid @click="execute('install')">启用插件</k-button>
+                <k-button solid @click="execute('save')">保存配置</k-button>
+              </template>
             </template>
           </h1>
         </template>
-        <p v-if="!current.schema">此插件暂无可用配置项。</p>
-        <k-schema v-else :schema="current.schema" v-model="current.config" prefix=""/>
+        <p v-if="!current.schema">此插件暂不支持在线配置。</p>
+        <template v-else>
+          <p v-if="current.delegates?.providing">实现接口：{{ current.delegates.providing }}</p>
+          <p v-if="current.delegates?.required">依赖接口（必选）：{{ current.delegates.required }}</p>
+          <p v-if="current.delegates?.optional">依赖接口（可选）：{{ current.delegates.optional }}</p>
+          <k-schema :schema="current.schema" v-model="current.config" prefix=""/>
+        </template>
       </div>
     </div>
   </k-card>
@@ -40,17 +51,17 @@
 import { ref, computed, watch } from 'vue'
 import { registry, market, send } from '~/client'
 import { Dict, Registry } from '~/server'
-import kChoice from './choice.vue'
+import ChoiceView from './choice.vue'
 
 interface PluginData extends Registry.Data {
-  module?: string
+  fullname?: string
 }
 
 const current = ref<PluginData>(registry.value[0])
 
 const title = computed(() => {
-  const { name, module, id } = current.value
-  if (!name || module) return module
+  const { name, fullname, id } = current.value
+  if (fullname) return fullname
   const item = market.value?.find(item => item.local?.id === id)
   if (item) return item.name
   return name
@@ -65,14 +76,15 @@ const available = computed(() => {
   for (const data of market.value.filter(data => data.local && !data.local.id)) {
     result[data.shortname] = {
       name: data.shortname,
-      module: data.name,
+      fullname: data.name,
       schema: data.local?.schema,
+      delegates: data.local?.delegates,
       config: {},
       ...result[data.shortname],
     }
   }
 
-  return Object.fromEntries(Object.entries(result).filter(([, v]) => v.schema).sort(([a], [b]) => a > b ? 1 : -1))
+  return Object.fromEntries(Object.entries(result).sort(([a], [b]) => a > b ? 1 : -1))
 })
 
 watch(registry, plugins => {
@@ -128,6 +140,11 @@ function execute(event: string) {
 
   .choice:hover, .choice.active {
     background-color: var(--bg1);
+  }
+
+  .choice.readonly {
+    color: var(--fg3);
+    opacity: 0.75;
   }
 }
 

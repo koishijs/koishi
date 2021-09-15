@@ -1,6 +1,6 @@
 import { Bot, Context, Random, segment, Session, template } from 'koishi'
 import { resolve } from 'path'
-import { WebServer } from '@koishijs/plugin-status'
+import { StatusServer } from '@koishijs/plugin-status'
 import receiver, { Message, ReceiverConfig } from './receiver'
 import axios from 'axios'
 
@@ -36,7 +36,7 @@ export class SandboxBot extends Bot {
   username = 'sandbox'
   status = Bot.Status.GOOD
 
-  constructor(public readonly adapter: WebServer) {
+  constructor(public readonly adapter: StatusServer) {
     super(adapter, {})
     this.selfId = 'sandbox'
   }

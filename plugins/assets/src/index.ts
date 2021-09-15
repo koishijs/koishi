@@ -42,6 +42,10 @@ export const schema = Schema.select({
   }, '存储在 sm.ms 图床服务'),
 }, 'type', '使用的存储方式。')
 
+export const delegates: Context.Delegates.Meta = {
+  providing: ['assets'],
+}
+
 interface LocalConfig {
   type: 'local'
   path?: string

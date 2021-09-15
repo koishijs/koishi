@@ -26,6 +26,11 @@ const defaultOptions: Config = {
 
 export const name = 'github'
 
+export const delegates: Context.Delegates.Meta = {
+  required: ['database'],
+  optional: ['assets'],
+}
+
 export function apply(ctx: Context, config: Config = {}) {
   config = { ...defaultOptions, ...config }
   config.path = sanitize(config.path)

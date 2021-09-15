@@ -25,6 +25,10 @@ const logger = new Logger('rss')
 
 export const name = 'rss'
 
+export const delegates: Context.Delegates.Meta = {
+  required: ['database'],
+}
+
 export function apply(ctx: Context, config: Config = {}) {
   const { timeout = 10 * Time.second, refresh = Time.minute, userAgent } = config
   const feedMap: Record<string, Set<string>> = {}

@@ -99,10 +99,6 @@ export function createFileWatcher(app: App, loader: Loader) {
       // accept dependencies to be reloaded
       dependencies.forEach(dep => accepted.add(dep))
       const plugin = require(filename)
-      if (state?.sideEffect) {
-        triggerFullReload()
-        continue
-      }
 
       // dispose installed plugin
       tasks.push(app.dispose(plugin).catch((err) => {

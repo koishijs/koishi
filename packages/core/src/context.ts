@@ -17,6 +17,7 @@ export namespace Plugin {
   export interface Meta {
     name?: string
     schema?: Schema
+    delegates?: Context.Delegates.Meta
   }
 
   export interface Object<T = any> extends Meta {
@@ -537,6 +538,16 @@ export namespace Context {
     database: Database
     assets: Assets
     cache: Cache
+  }
+
+  export namespace Delegates {
+    export type Keys = keyof Delegates
+
+    export interface Meta {
+      providing?: Keys[]
+      required?: Keys[]
+      optional?: Keys[]
+    }
   }
 }
 
