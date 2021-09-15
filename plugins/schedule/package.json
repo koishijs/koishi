@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-schedule",
   "description": "Create scheduled tasks for Koishi",
-  "version": "4.0.0-alpha.2",
+  "version": "4.0.0-alpha.3",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -29,9 +29,9 @@
     "task"
   ],
   "devDependencies": {
-    "@koishijs/test-utils": "^8.0.0-alpha.4"
+    "@koishijs/test-utils": "^8.0.0-alpha.5"
   },
   "peerDependencies": {
-    "koishi": "^4.0.0-alpha.5"
+    "koishi": "^4.0.0-alpha.6"
   }
 }

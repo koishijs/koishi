@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-image-search",
   "description": "Image searching plugin for Koishi",
-  "version": "4.0.0-alpha.1",
+  "version": "4.0.0-alpha.2",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -33,7 +33,7 @@
     "pixiv"
   ],
   "peerDependencies": {
-    "koishi": "^4.0.0-alpha.5"
+    "koishi": "^4.0.0-alpha.6"
   },
   "dependencies": {
     "axios": "^0.21.4",
