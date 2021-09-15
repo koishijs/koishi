@@ -66,7 +66,7 @@ export function createConfigManager(app: App, loader: Loader) {
   if (allowWrite) {
     configTexts[''] = codegen(app.options, App.Config)
     for (const name in plugins) {
-      configTexts[name] = codegenForDict(plugins[name], loader.cache[name]['schema'])
+      configTexts[name] = codegenForDict(plugins[name], loader.cache[name.replace(/^~/, '')]['schema'])
     }
   }
 
@@ -99,6 +99,14 @@ export function createConfigManager(app: App, loader: Loader) {
     plugins[name] = config
     if (!allowWrite) return
     updateText(name, config, plugin)
+    writeConfig()
+  })
+
+  app.on('config/save', async (name, config) => {
+    const plugin = loader.resolvePlugin(name)
+    plugins['~' + name] = config
+    if (!allowWrite) return
+    updateText('~' + name, config, plugin)
     writeConfig()
   })
 

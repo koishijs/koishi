@@ -87,7 +87,7 @@ class Statistics implements StatusServer.DataSource {
       this.sync = ctx.database.createSynchronizer()
     })
 
-    ctx.before('disconnect', async () => {
+    ctx.on('disconnect', async () => {
       // rollback to default implementation to prevent infinite call stack
       if (Session.prototype.send[customTag]) {
         Session.prototype.send = Session.prototype.send[customTag]

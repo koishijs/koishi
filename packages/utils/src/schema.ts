@@ -18,6 +18,7 @@ export namespace Schema {
     _default?: T extends {} ? Partial<T> : T
     _required?: boolean
     _hidden?: boolean
+    _comment?: string
   }
 
   interface Chainable<T> extends Schema<T> {}
@@ -39,6 +40,11 @@ export namespace Schema {
 
     hidden() {
       this._hidden = true
+      return this
+    }
+
+    comment(text: string) {
+      this._comment = text
       return this
     }
   }

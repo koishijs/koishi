@@ -116,7 +116,7 @@ export class StatusServer extends Adapter {
     const key = `${state?.name || 'entry'}-${hash}.js`
     this.entries[key] = filename
     this.triggerReload()
-    ctx.before('disconnect', () => {
+    ctx.on('disconnect', () => {
       delete this.entries[key]
       this.triggerReload()
     })
@@ -231,7 +231,7 @@ export class StatusServer extends Adapter {
       this.vite.middlewares(ctx.req, ctx.res, resolve)
     }))
 
-    this.ctx.before('disconnect', () => this.vite.close())
+    this.ctx.on('disconnect', () => this.vite.close())
   }
 }
 

@@ -62,7 +62,7 @@ function prepareServer(this: App) {
   koa.use(this.router.allowedMethods())
   defineProperty(this, '_httpServer', createServer(koa.callback()))
 
-  this.before('connect', () => {
+  this.on('connect', () => {
     this._httpServer.listen(port, host)
     this.logger('server').info('server listening at %c', `http://${host || 'localhost'}:${port}`)
   })

@@ -4,7 +4,7 @@
       <div class="content">
         <k-choice class="group" :data="registry[0]" v-model="current"/>
         <div class="group">运行中的插件</div>
-        <k-choice v-for="data in registry.filter(data => data.id)" :data="data" v-model="current"/>
+        <k-choice v-for="data in registry.filter(data => data.id && data.schema)" :data="data" v-model="current"/>
         <template v-if="market">
           <div class="group">未运行的插件</div>
           <k-choice v-for="data in available" :data="data" v-model="current"/>
@@ -72,7 +72,7 @@ const available = computed(() => {
     }
   }
 
-  return Object.fromEntries(Object.entries(result).sort(([a], [b]) => a > b ? 1 : -1))
+  return Object.fromEntries(Object.entries(result).filter(([, v]) => v.schema).sort(([a], [b]) => a > b ? 1 : -1))
 })
 
 watch(registry, plugins => {

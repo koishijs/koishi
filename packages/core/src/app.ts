@@ -136,22 +136,20 @@ export class App extends Context {
   async start() {
     this.status = App.Status.opening
     try {
-      await this.parallel('before-connect')
+      await this.parallel('connect')
     } catch (err) {
       return this.stop()
     }
     this.status = App.Status.open
     this.logger('app').debug('started')
-    this.emit('connect')
   }
 
   async stop() {
     this.status = App.Status.closing
-    // `before-disconnect` event is handled by ctx.disposables
+    // `disconnect` event is handled by ctx.disposables
     await Promise.all(this.state.disposables.map(dispose => dispose()))
     this.status = App.Status.closed
     this.logger('app').debug('stopped')
-    this.emit('disconnect')
   }
 
   private _resolvePrefixes(session: Session.Message) {

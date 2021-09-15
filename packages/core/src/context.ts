@@ -17,7 +17,6 @@ export namespace Plugin {
   export interface Meta {
     name?: string
     schema?: Schema
-    sideEffect?: boolean
   }
 
   export interface Object<T = any> extends Meta {
@@ -167,13 +166,6 @@ export class Context {
     return this.app.registry.get(this._plugin)
   }
 
-  addSideEffect(state = this.state) {
-    while (state && !state.sideEffect) {
-      state.sideEffect = true
-      state = state.parent
-    }
-  }
-
   private teleport<T extends Dict>(modules: T, callback: Plugin.Function<T>) {
     const states: Plugin.State[] = []
     for (const key in modules) {
@@ -185,7 +177,7 @@ export class Context {
     const dispose = () => this.dispose(plugin)
     this.plugin(plugin)
     states.every(state => state.disposables.push(dispose))
-    this.before('disconnect', () => {
+    this.on('disconnect', () => {
       states.every(state => remove(state.disposables, dispose))
     })
   }
@@ -239,7 +231,6 @@ export class Context {
     } else if (plugin && typeof plugin === 'object' && typeof plugin.apply === 'function') {
       ctx.state.name = plugin.name
       ctx.state.schema = plugin.schema
-      if (plugin.sideEffect) ctx.addSideEffect()
       plugin.apply(ctx, options)
     } else {
       this.app.registry.delete(plugin)
@@ -254,7 +245,6 @@ export class Context {
   async dispose(plugin = this._plugin) {
     const state = this.app.registry.get(plugin)
     if (!state) return
-    if (state.sideEffect) throw new Error('plugins with side effect cannot be disposed')
     await Promise.allSettled([
       ...state.children.slice().map(plugin => this.dispose(plugin)),
       ...state.disposables.map(dispose => dispose()),
@@ -341,12 +331,9 @@ export class Context {
     // handle special events
     if (name === 'connect' && this.app.status === App.Status.open) {
       return listener(), () => false
-    } else if (name === 'before-disconnect') {
+    } else if (name === 'disconnect') {
       this.state.disposables[method](listener)
       return () => remove(this.state.disposables, listener)
-    } else if (name === 'before-connect') {
-      // before-connect is side effect
-      this.addSideEffect()
     } else if (typeof name === 'string' && name.startsWith('delegate/')) {
       if (this[name.slice(9)]) return listener(), () => false
     }
@@ -597,7 +584,6 @@ export interface EventMap extends SessionEventMap, DelegateEventMap {
   'plugin-added'(plugin: Plugin): void
   'plugin-removed'(plugin: Plugin): void
   'before-connect'(): Awaitable<void>
-  'connect'(): void
-  'before-disconnect'(): Awaitable<void>
-  'disconnect'(): void
+  'connect'(): Awaitable<void>
+  'disconnect'(): Awaitable<void>
 }

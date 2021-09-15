@@ -13,7 +13,7 @@ export abstract class Adapter<S extends Bot.BaseConfig = Bot.BaseConfig, T = {}>
   abstract stop(): Awaitable<void>
 
   constructor(public app: App, public config: T) {
-    app.before('connect', async () => {
+    app.on('connect', async () => {
       await this.start()
       for (const bot of this.bots) {
         bot.connect()

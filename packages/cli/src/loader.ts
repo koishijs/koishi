@@ -48,9 +48,13 @@ export class Loader {
     }
   }
 
-  loadPlugin(name: string, options: any) {
+  resolvePlugin(name: string) {
     const path = Module.resolve(hyphenate(name))
-    const plugin = this.cache[name] = require(path)
+    return this.cache[name] = require(path)
+  }
+
+  loadPlugin(name: string, options: any) {
+    const plugin = this.resolvePlugin(name)
     createContext(this.app, options).plugin(plugin, options)
     return plugin
   }
@@ -59,8 +63,11 @@ export class Loader {
     const app = this.app = new App(config)
     const plugins = app.options.plugins ||= {}
     for (const name in plugins) {
-      if (name.startsWith('~')) continue
-      this.loadPlugin(name, plugins[name] ?? {})
+      if (name.startsWith('~')) {
+        this.resolvePlugin(name.slice(1))
+      } else {
+        this.loadPlugin(name, plugins[name] ?? {})
+      }
     }
     return app
   }

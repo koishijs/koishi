@@ -14,9 +14,9 @@
 
   <div class="schema" v-else-if="schema.type === 'boolean'">
     <slot/>
-    <p>
+    <div class="control">
       <k-checkbox v-model="config">{{ schema.desc }}</k-checkbox>
-    </p>
+    </div>
   </div>
 
   <div class="schema" v-else-if="schema.type === 'array'">

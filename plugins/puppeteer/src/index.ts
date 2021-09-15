@@ -172,7 +172,7 @@ export function apply(ctx: Context, config: Config = {}) {
     })
   })
 
-  ctx.before('disconnect', async () => {
+  ctx.on('disconnect', async () => {
     await ctx.puppeteer?.close()
     delete ctx.puppeteer
   })

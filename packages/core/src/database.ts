@@ -50,8 +50,8 @@ export abstract class Database {
   abstract stop(): void | Promise<void>
 
   constructor(public app: App) {
-    app.before('connect', () => this.start())
-    app.before('disconnect', () => this.stop())
+    app.on('connect', () => this.start())
+    app.on('disconnect', () => this.stop())
   }
 
   getUser<T extends string, K extends T | User.Field>(platform: T, id: string, modifier?: Query.Modifier<K>): Promise<UserWithPlatform<T, T | K>>

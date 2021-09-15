@@ -47,6 +47,7 @@ declare module 'koishi' {
     'config/install'(name: string, config: any): void
     'config/reload'(name: string, config: any): void
     'config/dispose'(name: string, config: any): void
+    'config/save'(name: string, config: any): void
   }
 }
 

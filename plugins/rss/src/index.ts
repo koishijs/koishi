@@ -49,7 +49,7 @@ export function apply(ctx: Context, config: Config = {}) {
     }
   }
 
-  ctx.before('disconnect', () => {
+  ctx.on('disconnect', () => {
     feeder.destroy()
   })
 
