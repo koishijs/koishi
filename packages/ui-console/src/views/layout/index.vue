@@ -35,7 +35,7 @@ body {
 }
 
 a {
-  color: $default;
+  color: var(--primary);
   text-decoration: none;
 }
 

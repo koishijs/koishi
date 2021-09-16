@@ -62,17 +62,17 @@ button {
   }
   // default: transparent & framed
   color: var(--default);
-  border: 1px solid $tpBorderColor2;
-  background-color: $tpBgColor1;
+  border: 1px solid var(--border);
+  background-color: transparent;
   &.disabled {
-    color: $tpFgColor1;
-    border-color: $tpBorderColor1;
+    color: var(--disabled);
+    border-color: var(--border);
     background-color: transparent;
   }
   &:hover:not(.disabled) {
-    color: $tpFgColor4;
-    border: 1px solid $tpBorderColor3;
-    background-color: $tpBgColor2;
+    color: var(--fg1);
+    border: 1px solid var(--border-dark);
+    background-color: var(--bg1);
   }
 
   &.solid {
@@ -102,13 +102,13 @@ button {
       background-color: transparent;
     }
     &.default {
-      color: $default;
+      color: var(--default);
     }
-    &.danger {
-      color: $error;
+    &.error {
+      color: var(--error);
     }
     &.success {
-      color: $success;
+      color: var(--success);
     }
   }
 

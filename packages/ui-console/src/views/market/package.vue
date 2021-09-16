@@ -100,13 +100,13 @@ function toggle(data: Market.Data) {
   }
 
   &.active::before {
-    background-color: $success;
+    background-color: var(--success);
   }
   &.local::before {
-    background-color: $warning;
+    background-color: var(--warning);
   }
   &.remote::before {
-    background-color: #eeeeee5f;
+    background-color: var(--disabled);
   }
 }
 
