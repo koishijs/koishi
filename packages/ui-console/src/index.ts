@@ -2,8 +2,7 @@
 
 import { ref, watch, reactive, Ref, Component } from 'vue'
 import { createWebHistory, createRouter } from 'vue-router'
-import type { User } from 'koishi'
-import type { Registry, Profile, Meta, Statistics, Market } from '~/server'
+import type { User, Registry, Profile, Meta, Statistics, Market } from '~/server'
 import * as client from '.'
 
 export const views: Component[] = []

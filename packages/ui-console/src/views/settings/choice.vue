@@ -6,7 +6,7 @@
 
 <script lang="ts" setup>
 
-import { Registry } from '~/server'
+import type { Registry } from '~/server'
 import { computed } from 'vue'
 
 defineEmits(['update:modelValue'])
