@@ -6,13 +6,11 @@ import { createHmac } from 'crypto'
 const logger = new Logger('onebot')
 
 export class HttpServer extends Adapter<BotConfig, AdapterConfig> {
-  static schema: Schema<BotConfig> = Schema.merge([
-    Schema.object({
-      selfId: Schema.string(),
-      token: Schema.string(),
-    }),
-    Requester.Config,
-  ])
+  static schema: Schema<BotConfig> = Schema.object({
+    selfId: Schema.string('机器人的账号。').required(),
+    token: Schema.string('发送信息时用于验证的字段，应与 OneBot 的 access_token 配置保持一致。'),
+    ...Requester.Config.dict,
+  })
 
   constructor(app: App, config: AdapterConfig = {}) {
     super(app, config)

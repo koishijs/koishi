@@ -48,7 +48,7 @@ export namespace Requester {
   export const Config: Schema<Config> = Schema.object({
     endpoint: Schema.string('要连接的端点。'),
     proxyAgent: Schema.string('使用的代理服务器地址。'),
-    headers: Schema.dict(Schema.string(), '额外的请求头。'),
+    headers: Schema.dict(Schema.string(), '要附加的额外请求头。'),
     timeout: Schema.number('等待连接建立的最长时间。'),
   }, '请求设置')
 

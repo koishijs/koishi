@@ -11,8 +11,7 @@ export interface BotConfig extends Bot.BaseConfig, Sender.Config {
 
 export const BotConfig: Schema<BotConfig> = Schema.merge([
   Schema.object({
-    platform: Schema.string('平台名称。').default('discord'),
-    token: Schema.string().required(),
+    token: Schema.string('机器人的用户令牌。').required(),
     handleExternalAsset: Schema.choose({
       download: '先下载后发送',
       direct: '直接发送链接',

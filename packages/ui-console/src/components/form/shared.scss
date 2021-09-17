@@ -4,13 +4,14 @@
   display: inline-block;
   transition: 0.3s ease;
   line-height: 1em;
+  position: relative;
   vertical-align: text-top;
 
   > .checker {
     outline: 0;
     line-height: 1em;
-    margin-right: 0.75em;
-    vertical-align: 6px;
+    top: 0.3em;
+    position: absolute;
 
     > .inner {
       vertical-align: bottom;
@@ -36,8 +37,9 @@
   }
 
   > .label {
+    display: inline-block;
     line-height: 1.7;
-    vertical-align: middle;
+    padding-left: 1.85rem;
   }
 
   &:not(.checked):hover {

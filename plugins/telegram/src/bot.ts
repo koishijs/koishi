@@ -27,7 +27,7 @@ export interface BotConfig extends Bot.BaseConfig {
 }
 
 export const BotConfig: Schema<BotConfig> = Schema.object({
-  token: Schema.string(),
+  token: Schema.string('机器人的用户令牌。').required(),
 })
 
 export interface TelegramBot {
