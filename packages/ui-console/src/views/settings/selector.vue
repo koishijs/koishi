@@ -47,3 +47,41 @@ const model = computed({
 const filtered = ref(false)
 
 </script>
+
+<style lang="scss">
+
+.plugin-select {
+  width: 16rem;
+  height: 100%;
+  border-right: 1px solid var(--border);
+  overflow: auto;
+
+  .content {
+    padding: 1rem 0;
+    line-height: 2.25rem;
+  }
+
+  .group {
+    padding: 0 2rem !important;
+    font-weight: bold;
+  }
+
+  .group:not(.t-choice) {
+    margin-top: 0.5rem;
+  }
+
+  .fa-filter {
+    font-size: 0.9em;
+    cursor: pointer;
+
+    &:active, &.filtered {
+      opacity: 1;
+    }
+
+    &:active {
+      color: var(--fg0);
+    }
+  }
+}
+
+</style>

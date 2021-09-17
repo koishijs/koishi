@@ -18,7 +18,8 @@ import Card from './components/card.vue'
 import Collapse from './components/collapse.vue'
 import Numeric from './components/numeric.vue'
 import App from './views/layout/index.vue'
-import { ElTooltip } from 'element-plus'
+
+import { ElTooltip, ElScrollbar } from 'element-plus'
 
 import '@fortawesome/fontawesome-free/css/fontawesome.css'
 import '@fortawesome/fontawesome-free/css/brands.css'
@@ -37,6 +38,7 @@ self['KoishiClient'] = client
 const app = Vue.createApp(App)
 
 app.use(ElTooltip)
+app.use(ElScrollbar)
 
 const stats: 'stats'[] = KOISHI_CONFIG.database ? ['stats'] : []
 

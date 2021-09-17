@@ -110,3 +110,31 @@ function execute(event: string) {
 }
 
 </script>
+
+<style lang="scss">
+
+.plugin-view {
+  position: absolute;
+  top: 0;
+  left: 16rem;
+  right: 0;
+  height: 100%;
+  overflow: auto;
+
+  .content {
+    margin: auto;
+    max-width: 50rem;
+    padding: 3rem 3rem 1rem;
+  }
+
+  h1 {
+    margin: 0 0 2rem;
+  }
+
+  h1 .k-button {
+    float: right;
+    font-size: 1rem;
+  }
+}
+
+</style>

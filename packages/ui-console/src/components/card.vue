@@ -50,18 +50,6 @@ $paddingY: 1.5rem;
 
   &.frameless .k-card-body {
     padding: 0;
-
-    > table:first-child {
-      tr:first-child {
-        border-top: none;
-      }
-    }
-
-    > table:last-child {
-      tr:last-child {
-        border-bottom: none;
-      }
-    }
   }
 
   .footer {

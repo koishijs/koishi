@@ -1,4 +1,4 @@
-import { Context, pick, Dict, version as currentVersion, Schema, App } from 'koishi'
+import { Context, pick, Dict, version as currentVersion, Schema } from 'koishi'
 import { dirname, resolve } from 'path'
 import { existsSync, promises as fs } from 'fs'
 import { spawn, StdioOptions } from 'child_process'
@@ -70,8 +70,10 @@ class Market implements StatusServer.DataSource {
   flushData: throttle<() => void>
 
   constructor(private ctx: Context, public config: Market.Config) {
+    const logger = ctx.logger('status')
+
     ctx.on('connect', () => {
-      this.start()
+      this.start().catch(logger.warn)
       this.flushData = throttle(100, () => this.broadcast())
 
       ctx.on('plugin-added', async (plugin) => {
@@ -109,7 +111,7 @@ class Market implements StatusServer.DataSource {
     return { schema, delegates, workspace, devDeps, peerDeps, id, ...pick(data, ['name', 'version', 'description']) }
   }
 
-  private async loadCached(filename: string, id?: string) {
+  private async loadActive(filename: string, id?: string) {
     do {
       filename = dirname(filename)
       const files = await fs.readdir(filename)
@@ -137,7 +139,7 @@ class Market implements StatusServer.DataSource {
         const { exports } = require.cache[filename]
         const state = this.ctx.app.registry.get(exports)
         if (!state) return
-        return this.localCache[filename] = this.loadCached(filename, state.id)
+        return this.localCache[filename] = this.loadActive(filename, state.id)
       })),
     ])
 

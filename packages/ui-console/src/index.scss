@@ -59,3 +59,7 @@
     background-color: var(--bg1);
   }
 }
+
+.el-scrollbar__bar {
+  z-index: 500;
+}

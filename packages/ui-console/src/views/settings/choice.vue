@@ -1,5 +1,5 @@
 <template>
-  <div class="choice" :class="attribs" @click="$emit('update:modelValue', data)">
+  <div class="t-choice" :class="attribs" @click="$emit('update:modelValue', data)">
     {{ data.name || '全局设置' }}
   </div>
 </template>
@@ -22,3 +22,30 @@ const attribs = computed(() => ({
 }))
 
 </script>
+
+<style lang="scss" scoped>
+
+.t-choice {
+  cursor: pointer;
+  padding: 0 2rem 0 4rem;
+  transition: 0.3s ease;
+
+  &:hover, &.active {
+    background-color: var(--bg1);
+  }
+
+  &.active {
+    font-weight: bold;
+    color: var(--primary);
+  }
+
+  &.readonly {
+    color: var(--fg3t);
+
+    &:hover, &.active {
+      color: var(--fg1);
+    }
+  }
+}
+
+</style>
