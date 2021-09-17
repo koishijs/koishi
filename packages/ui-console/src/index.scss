@@ -49,3 +49,13 @@
   --bp-small: 768px;
   --bp-tiny: 480px;
 }
+
+@mixin button-like {
+  cursor: pointer;
+  user-select: none;
+  transition: 0.3s ease;
+
+  &:hover {
+    background-color: var(--bg1);
+  }
+}

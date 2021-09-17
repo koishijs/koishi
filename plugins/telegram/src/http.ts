@@ -12,7 +12,7 @@ export interface TelegramConfig extends App.Config.Request {
 }
 
 export default class HttpServer extends Adapter<TelegramBot.Config, TelegramConfig> {
-  static schema: Schema<TelegramConfig> = Schema.object({
+  static Config: Schema<TelegramConfig> = Schema.object({
     path: Schema.string('服务器监听的路径。').default('/telegram'),
     selfUrl: Schema.string('Koishi 服务暴露在公网的地址。缺省时将使用全局配置。'),
   })

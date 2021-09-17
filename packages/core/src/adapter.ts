@@ -44,7 +44,7 @@ export namespace Adapter {
   export interface Constructor<T extends Bot.BaseConfig = Bot.BaseConfig, S = any> {
     new (app: App, options?: S): Adapter<T>
     [redirect]?(bot: any): string
-    schema?: Schema<S>
+    Config?: Schema<S>
   }
 
   export const redirect = Symbol('koishi.adapter.redirect')
@@ -75,13 +75,13 @@ export namespace Adapter {
   ): Plugin.Object<PluginConfig<S, T>>
 
   export function define(platform: string, constructor: Bot.Constructor, ...args: CreatePluginRestParams) {
-    const botSchema = constructor.schema
+    const botSchema = constructor.Config
     Bot.library[platform] = constructor
 
     let adapterSchema: Schema
     if (args.length === 1) {
       library[platform] = args[0]
-      adapterSchema = args[0].schema
+      adapterSchema = args[0].Config
     } else {
       for (const protocol in args[0]) {
         library[join(platform, protocol)] = args[0][protocol]

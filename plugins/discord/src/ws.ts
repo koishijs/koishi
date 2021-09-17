@@ -12,7 +12,7 @@ export namespace WebSocketClient {
 
 /** https://discord.com/developers/docs/topics/gateway */
 export default class WebSocketClient extends Adapter.WebSocketClient<DiscordBot.Config, WebSocketClient.Config> {
-  static schama: Schema<WebSocketClient.Config> = Schema.merge([
+  static Config: Schema<WebSocketClient.Config> = Schema.merge([
     App.Config.Request,
     Adapter.WebSocketClient.Config,
   ])

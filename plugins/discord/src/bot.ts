@@ -16,7 +16,7 @@ export class DiscordBot extends Bot<DiscordBot.Config> {
   _ping: NodeJS.Timeout
   _sessionId: string
 
-  static schema: Schema<DiscordBot.Config> = Schema.merge([
+  static Config: Schema<DiscordBot.Config> = Schema.merge([
     Schema.object({
       platform: Schema.string('平台名称。').default('discord'),
       token: Schema.string().required(),

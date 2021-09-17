@@ -7,7 +7,7 @@ import {} from '../..'
 function codegen(config: any, schema?: Schema) {
   if (isNullable(config)) return ''
   const handler = schema && handlers[schema.type]
-  return handler ? handler(config, schema) : (console.log(config), dump(config))
+  return handler ? handler(config, schema) : dump(config)
 }
 
 function indent(text: string) {
