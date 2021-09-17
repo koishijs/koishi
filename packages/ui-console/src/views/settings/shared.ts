@@ -10,8 +10,11 @@ export interface Data extends Registry.Data {
 
 export const available = computed(() => {
   const result: Dict<Data> = {}
-  for (const data of registry.value.filter(data => data.name && !data.id)) {
-    result[data.name] = data
+  for (const name in registry.value) {
+    const data = registry.value[name]
+    if (name && !data.id) {
+      result[name] = data
+    }
   }
 
   for (const data of market.value.filter(data => data.local && !data.local.id)) {

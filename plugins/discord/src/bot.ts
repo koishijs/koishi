@@ -1,42 +1,42 @@
 /* eslint-disable camelcase */
 
 import { Adapter, App, Bot, Schema, segment, Requester } from 'koishi'
-import { adaptChannel, adaptGroup, adaptMessage, adaptUser } from './utils'
+import { adaptChannel, adaptGroup, adaptMessage, adaptUser, AdapterConfig } from './utils'
 import { Sender } from './sender'
 import * as DC from './types'
 
-export namespace DiscordBot {
-  export interface Config extends Bot.BaseConfig, Sender.Config {
-    token: string
-  }
+export interface BotConfig extends Bot.BaseConfig, Sender.Config {
+  token: string
 }
 
-export class DiscordBot extends Bot<DiscordBot.Config> {
+export const BotConfig: Schema<BotConfig> = Schema.merge([
+  Schema.object({
+    platform: Schema.string('平台名称。').default('discord'),
+    token: Schema.string().required(),
+    handleExternalAsset: Schema.choose({
+      download: '先下载后发送',
+      direct: '直接发送链接',
+      auto: '发送一个 HEAD 请求，如果返回的 Content-Type 正确，则直接发送链接，否则先下载后发送',
+    }, '发送外链资源时采用的方式。').default('auto'),
+    handleMixedContent: Schema.choose({
+      separate: '将每个不同形式的内容分开发送',
+      attach: '图片前如果有文本内容，则将文本作为图片的附带信息进行发送',
+      auto: '如果图片本身采用直接发送则与前面的文本分开，否则将文本作为图片的附带信息发送',
+    }, '发送图文等混合内容时采用的方式。').default('auto'),
+  }),
+  App.Config.Request,
+])
+
+export class DiscordBot extends Bot<BotConfig> {
+  static schema = AdapterConfig
+
   _d: number
   _ping: NodeJS.Timeout
   _sessionId: string
 
-  static Config: Schema<DiscordBot.Config> = Schema.merge([
-    Schema.object({
-      platform: Schema.string('平台名称。').default('discord'),
-      token: Schema.string().required(),
-      handleExternalAsset: Schema.choose({
-        download: '先下载后发送',
-        direct: '直接发送链接',
-        auto: '发送一个 HEAD 请求，如果返回的 Content-Type 正确，则直接发送链接，否则先下载后发送',
-      }, '发送外链资源时采用的方式。').default('auto'),
-      handleMixedContent: Schema.choose({
-        separate: '将每个不同形式的内容分开发送',
-        attach: '图片前如果有文本内容，则将文本作为图片的附带信息进行发送',
-        auto: '如果图片本身采用直接发送则与前面的文本分开，否则将文本作为图片的附带信息发送',
-      }, '发送图文等混合内容时采用的方式。').default('auto'),
-    }),
-    App.Config.Request,
-  ])
-
   public request: Requester
 
-  constructor(adapter: Adapter, config: DiscordBot.Config) {
+  constructor(adapter: Adapter, config: BotConfig) {
     super(adapter, config)
     this._d = 0
     this._sessionId = ''

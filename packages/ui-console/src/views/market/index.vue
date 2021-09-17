@@ -17,9 +17,7 @@
           <th>综合评分</th>
           <th class="operation">操作</th>
         </tr>
-        <tbody>
-          <package-view v-for="data in market" :data="data"/>
-        </tbody>
+        <package-view v-for="data in market" :data="data"/>
       </table>
     </el-scrollbar>
   </k-card>
@@ -36,7 +34,6 @@ import { market } from '~/client'
 
 .page-market {
   height: calc(100vh - 4rem);
-  overflow-y: auto;
 
   .k-card-body {
     height: 100%;

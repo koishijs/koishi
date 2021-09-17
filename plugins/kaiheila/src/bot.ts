@@ -3,7 +3,7 @@
 import { Bot, Session, camelize, segment, renameProperty, snakeCase, Adapter, Schema, App, Requester } from 'koishi'
 import { Method } from 'axios'
 import * as KHL from './types'
-import { adaptGroup, adaptAuthor, adaptUser } from './utils'
+import { adaptGroup, adaptAuthor, adaptUser, AdapterConfig } from './utils'
 import FormData from 'form-data'
 import { createReadStream } from 'fs'
 
@@ -20,36 +20,24 @@ const attachmentTypes = ['image', 'video', 'audio', 'file']
 
 type SendHandle = [string, KHL.MessageParams, Session<never, never, 'send'>]
 
-export namespace KaiheilaBot {
-  export interface Config extends Bot.BaseConfig, App.Config.Request {
-    token?: string
-    verifyToken?: string
-    endpoint?: string
-    attachMode?: 'separate' | 'card' | 'mixed'
-  }
+export interface BotConfig extends Bot.BaseConfig {
+  token?: string
+  verifyToken?: string
+  attachMode?: 'separate' | 'card' | 'mixed'
 }
 
-export class KaiheilaBot extends Bot<KaiheilaBot.Config> {
+export class KaiheilaBot extends Bot<BotConfig> {
   _sn: number
   _ping: NodeJS.Timeout
   _heartbeat: NodeJS.Timeout
   http: Requester
 
-  static schema: Schema<KaiheilaBot.Config> = Schema.merge([
-    Schema.object({
-      token: Schema.string(),
-      verifyToken: Schema.string(),
-    }),
-    Schema.object({
-      platform: Schema.string('平台名称').default('kaiheila'),
-      endpoint: Schema.string().default('https://www.kaiheila.cn/api/v3'),
-    }, '高级设置'),
-  ])
+  static schema = AdapterConfig
 
-  constructor(adapter: Adapter, config: KaiheilaBot.Config) {
+  constructor(adapter: Adapter, config: BotConfig) {
     super(adapter, config)
     this._sn = 0
-    this.http = adapter.http.extend(config.request).extend({
+    this.http = adapter.http.extend({
       headers: {
         'Authorization': `Bot ${config.token}`,
         'Content-Type': 'application/json',

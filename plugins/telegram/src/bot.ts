@@ -1,6 +1,7 @@
 import { createReadStream } from 'fs'
 import { Bot, Adapter, camelCase, snakeCase, renameProperty, segment, assertProperty, Dict, Schema, App, Requester } from 'koishi'
 import * as Telegram from './types'
+import { AdapterConfig } from './utils'
 
 export class SenderError extends Error {
   constructor(args: Dict<any>, url: string, retcode: number, selfId: string) {
@@ -20,12 +21,14 @@ export interface TelegramResponse {
   result: any
 }
 
-export namespace TelegramBot {
-  export interface Config extends Bot.BaseConfig {
-    selfId?: string
-    token?: string
-  }
+export interface BotConfig extends Bot.BaseConfig {
+  selfId?: string
+  token?: string
 }
+
+export const BotConfig: Schema<BotConfig> = Schema.object({
+  token: Schema.string(),
+})
 
 export interface TelegramBot {
   _request?(action: string, params: Dict<any>, field?: string, content?: Buffer, filename?: string): Promise<TelegramResponse>
@@ -42,7 +45,7 @@ function maybeFile(payload: Dict<any>, field: string) {
   return [payload, field, content]
 }
 
-export class TelegramBot extends Bot<TelegramBot.Config> {
+export class TelegramBot extends Bot<BotConfig> {
   static adaptUser(data: Partial<Telegram.User & Bot.User>) {
     data.userId = data.id.toString()
     data.nickname = data.firstName + (data.lastName || '')
@@ -52,19 +55,11 @@ export class TelegramBot extends Bot<TelegramBot.Config> {
     return data as Bot.User
   }
 
-  static schema: Schema<TelegramBot.Config> = Schema.merge([
-    Schema.object({
-      token: Schema.string(),
-    }),
-    Schema.object({
-      platform: Schema.string('平台名称').default('telegram'),
-      endpoint: Schema.string().default('https://api.telegram.org'),
-    }, '高级设置'),
-  ])
+  static schema = AdapterConfig
 
   http: Requester
 
-  constructor(adapter: Adapter, config: TelegramBot.Config) {
+  constructor(adapter: Adapter, config: BotConfig) {
     assertProperty(config, 'token')
     if (!config.selfId) {
       if (config.token.includes(':')) {

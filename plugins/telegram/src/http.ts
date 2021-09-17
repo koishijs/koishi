@@ -1,23 +1,16 @@
 import { AxiosError } from 'axios'
 import { App, Adapter, Session, camelCase, Logger, segment, sanitize, trimSlash, assertProperty, Schema } from 'koishi'
-import { TelegramBot } from './bot'
+import { BotConfig, TelegramBot } from './bot'
 import * as Telegram from './types'
 import FormData from 'form-data'
+import { AdapterConfig } from './utils'
 
 const logger = new Logger('telegram')
 
-export interface TelegramConfig extends App.Config.Request {
-  path?: string
-  selfUrl?: string
-}
+export default class HttpServer extends Adapter<BotConfig, AdapterConfig> {
+  static schema = BotConfig
 
-export default class HttpServer extends Adapter<TelegramBot.Config, TelegramConfig> {
-  static Config: Schema<TelegramConfig> = Schema.object({
-    path: Schema.string('服务器监听的路径。').default('/telegram'),
-    selfUrl: Schema.string('Koishi 服务暴露在公网的地址。缺省时将使用全局配置。'),
-  })
-
-  constructor(app: App, config: TelegramConfig) {
+  constructor(app: App, config: AdapterConfig) {
     super(app, config)
     config.path = sanitize(config.path || '/telegram')
     if (config.selfUrl) {

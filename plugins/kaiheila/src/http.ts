@@ -1,11 +1,16 @@
-import { App, Adapter, Logger, assertProperty, sanitize } from 'koishi'
-import { KaiheilaBot } from './bot'
-import { adaptSession, SharedConfig } from './utils'
+import { App, Adapter, Logger, assertProperty, sanitize, Schema } from 'koishi'
+import { BotConfig, KaiheilaBot } from './bot'
+import { adaptSession, AdapterConfig } from './utils'
 
 const logger = new Logger('kaiheila')
 
-export default class HttpServer extends Adapter<KaiheilaBot.Config, SharedConfig> {
-  constructor(app: App, config: SharedConfig) {
+export default class HttpServer extends Adapter<BotConfig, AdapterConfig> {
+  static schema = Schema.object({
+    token: Schema.string(),
+    verifyToken: Schema.string(),
+  })
+
+  constructor(app: App, config: AdapterConfig) {
     assertProperty(app.options, 'port')
     config.path = sanitize(config.path || '/kaiheila')
     super(app, config)

@@ -1,9 +1,9 @@
-import { App, Context, hyphenate, omit, pick, Plugin, Schema, Module } from 'koishi'
+import { App, Context, hyphenate, omit, pick, Plugin, Schema, Module, Dict, Adapter, Bot } from 'koishi'
 import { debounce } from 'throttle-debounce'
 import { StatusServer } from '../server'
 
 class Registry implements StatusServer.DataSource {
-  cached: Promise<Registry.Data[]>
+  cached: Promise<Registry.Payload>
   promise: Promise<void>
 
   static readonly placeholder = Symbol('status.registry.placeholder')
@@ -28,14 +28,21 @@ class Registry implements StatusServer.DataSource {
   }
 
   private async getForced() {
+    // get protocols
+    const protocols: Dict<Schema> = {}
+    for (const key in Adapter.library) {
+      protocols[key] = Adapter.library[key].schema
+    }
+
     const providing = (['assets', 'cache', 'database'] as const).filter(key => this.ctx[key])
     const children: Registry.Data[] = [{
       id: null,
-      name: null,
+      name: '',
       schema: App.Config,
+      protocols,
       delegates: { providing },
       config: omit(this.ctx.app.options, ['plugins' as any]),
-    }]
+    } as Registry.AppData]
 
     for (const plugin of this.getState(null).children) {
       const state = this.getState(plugin)
@@ -57,7 +64,7 @@ class Registry implements StatusServer.DataSource {
       })
     }
 
-    return children
+    return Object.fromEntries(children.map(data => [data.name, data]))
   }
 
   async switch(id: string) {
@@ -80,12 +87,20 @@ class Registry implements StatusServer.DataSource {
 namespace Registry {
   export interface Config {}
 
+  export interface Payload extends Dict<Data> {
+    ''?: AppData
+  }
+
   export interface Data {
     id?: string
     name?: string
     schema?: Schema
     delegates?: Context.Delegates.Meta
     config?: any
+  }
+
+  export interface AppData extends Data {
+    protocols: Dict<Schema>
   }
 }
 

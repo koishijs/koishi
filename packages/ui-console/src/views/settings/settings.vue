@@ -1,7 +1,7 @@
 <template>
-  <div class="plugin-view">
+  <el-scrollbar class="plugin-view">
     <div class="content">
-      <template v-if="!current.name">
+      <template v-if="!data.name">
         <h1>
           全局设置
           <k-button solid>应用配置</k-button>
@@ -9,9 +9,9 @@
       </template>
       <template v-else>
         <h1>
-          {{ getFullname(current) }}
-          <template v-if="current.schema">
-            <template v-if="current.id">
+          {{ getFullname(data) }}
+          <template v-if="data.schema">
+            <template v-if="data.id">
               <k-button solid type="error" @click="execute('dispose')">停用插件</k-button>
               <t-button :message="message" @click="execute('reload')">重载配置</t-button>
             </template>
@@ -21,7 +21,7 @@
             </template>
           </template>
         </h1>
-        <k-comment v-for="key in current.delegates?.providing || []" type="success">
+        <k-comment v-for="key in data.delegates?.providing || []" type="success">
           <template #header>实现接口：{{ key }}</template>
         </k-comment>
         <k-comment v-for="(data, key) in delegates" :type="data.fulfilled ? 'success' : data.required ? 'warning' : 'default'">
@@ -34,12 +34,12 @@
           <template #header>依赖插件：{{ name }}</template>
         </k-comment>
       </template>
-      <p v-if="!current.schema">此插件暂不支持在线配置。</p>
+      <p v-if="!data.schema">此插件暂不支持在线配置。</p>
       <template v-else>
-        <k-schema :schema="current.schema" v-model="current.config" prefix=""/>
+        <k-schema :schema="data.schema" v-model="data.config" prefix=""/>
       </template>
     </div>
-  </div>
+  </el-scrollbar>
 </template>
 
 <script setup lang="ts">
@@ -51,10 +51,14 @@ import { Data, available } from './shared'
 import TButton from './button.vue'
 
 const props = defineProps<{
-  current: Data
+  current: string
 }>()
 
-const peerDeps = computed(() => Object.fromEntries((props.current.peerDeps || [])
+const data = computed<Data>(() => {
+  return registry.value[props.current] || available.value.find(data => data.name === props.current)
+})
+
+const peerDeps = computed(() => Object.fromEntries((data.value.peerDeps || [])
   .map(name => [name, market.value.some(data => data.name === name && data.local?.id)]))
 )
 
@@ -72,7 +76,7 @@ function getFullname({ name, fullname, id }: Data) {
 }
 
 function getDelegateData(name: Context.Delegates.Keys, required: boolean) {
-  const fulfilled = registry.value[0].delegates.providing.includes(name)
+  const fulfilled = registry.value[''].delegates.providing.includes(name)
   if (fulfilled) return { required, fulfilled }
   return {
     required,
@@ -82,7 +86,7 @@ function getDelegateData(name: Context.Delegates.Keys, required: boolean) {
 }
 
 const delegates = computed(() => {
-  const { required = [], optional = [] } = props.current.delegates || {}
+  const { required = [], optional = [] } = data.value.delegates || {}
   const result: Dict<DelegateData> = {}
   for (const name of required) {
     result[name] = getDelegateData(name, true)
@@ -94,8 +98,8 @@ const delegates = computed(() => {
 })
 
 const message = computed(() => {
-  const { required = [] } = props.current.delegates || {}
-  if (required.some(name => !registry.value[0].delegates.providing.includes(name))) {
+  const { required = [] } = data.value.delegates || {}
+  if (required.some(name => !registry.value[''].delegates.providing.includes(name))) {
     return '存在未安装的依赖接口。'
   }
 
@@ -105,7 +109,7 @@ const message = computed(() => {
 })
 
 function execute(event: string) {
-  const { name, config } = props.current
+  const { name, config } = data.value
   send('config/' + event, { name, config })
 }
 

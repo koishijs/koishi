@@ -1,23 +1,16 @@
-import { Adapter, App, Logger, renameProperty, Schema } from 'koishi'
+import { Adapter, App, Logger, renameProperty } from 'koishi'
 import { Opcode, Payload } from './types'
-import { adaptSession, adaptUser } from './utils'
-import { DiscordBot } from './bot'
+import { adaptSession, adaptUser, AdapterConfig } from './utils'
+import { BotConfig, DiscordBot } from './bot'
 import WebSocket from 'ws'
 
 const logger = new Logger('discord')
 
-export namespace WebSocketClient {
-  export interface Config extends Adapter.WebSocketClient.Config, App.Config.Request {}
-}
-
 /** https://discord.com/developers/docs/topics/gateway */
-export default class WebSocketClient extends Adapter.WebSocketClient<DiscordBot.Config, WebSocketClient.Config> {
-  static Config: Schema<WebSocketClient.Config> = Schema.merge([
-    App.Config.Request,
-    Adapter.WebSocketClient.Config,
-  ])
+export default class WebSocketClient extends Adapter.WebSocketClient<BotConfig, AdapterConfig> {
+  static schema = BotConfig
 
-  constructor(app: App, config: WebSocketClient.Config) {
+  constructor(app: App, config: AdapterConfig) {
     super(app, config)
     this.http = app.http.extend({
       endpoint: 'https://discord.com/api/v8',

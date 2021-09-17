@@ -1,7 +1,14 @@
 /* eslint-disable camelcase */
-import { Bot, segment, Session } from 'koishi'
+import { Adapter, App, Bot, Schema, segment, Session } from 'koishi'
 import { DiscordBot } from './bot'
 import * as DC from './types'
+
+export interface AdapterConfig extends Adapter.WebSocketClient.Config, App.Config.Request {}
+
+export const AdapterConfig: Schema<AdapterConfig> = Schema.merge([
+  App.Config.Request,
+  Adapter.WebSocketClient.Config,
+])
 
 export const adaptUser = (user: DC.DiscordUser): Bot.User => ({
   userId: user.id,

@@ -1,31 +1,17 @@
 <template>
   <k-card class="page-config frameless">
-    <plugin-selector v-model="current"></plugin-selector>
+    <plugin-select v-model="current"></plugin-select>
     <plugin-settings :current="current"></plugin-settings>
   </k-card>
 </template>
 
 <script setup lang="ts">
 
-import { ref, watch } from 'vue'
-import { registry } from '~/client'
-import { available, Data } from './shared'
-import PluginSelector from './selector.vue'
+import { ref } from 'vue'
+import PluginSelect from './select.vue'
 import PluginSettings from './settings.vue'
 
-const current = ref<Data>(registry.value[0])
-
-watch(registry, plugins => {
-  const data = plugins.find(item => item.name === current.value.name)
-  if (!data) return
-  current.value = data
-})
-
-watch(available, () => {
-  const data = available.value[current.value.name]
-  if (!data) return
-  current.value = data
-})
+const current = ref<string>('')
 
 </script>
 

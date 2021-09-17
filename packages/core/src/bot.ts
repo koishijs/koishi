@@ -103,7 +103,7 @@ export namespace Bot {
 
   export interface Constructor<S extends Bot.BaseConfig = Bot.BaseConfig> {
     new (adapter: Adapter, config: S): Bot<S>
-    Config?: Schema<S>
+    schema?: Schema
   }
 
   export enum Status {

@@ -70,7 +70,7 @@ export const config = storage.create<Config>('config', { authType: 0 }, true)
 export const meta = ref<Meta.Payload>(null)
 export const profile = ref<Profile.Payload>(null)
 export const market = ref<Market.Data[]>(null)
-export const registry = ref<Registry.Data[]>(null)
+export const registry = ref<Registry.Payload>(null)
 export const stats = ref<Statistics.Payload>(null)
 export const socket = ref<WebSocket>(null)
 

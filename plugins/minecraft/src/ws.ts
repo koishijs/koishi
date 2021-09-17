@@ -1,11 +1,10 @@
-import { Adapter, Session, Schema } from 'koishi'
+import { Adapter, Session } from 'koishi'
 import { createBot } from 'mineflayer'
-import { MinecraftBot } from './bot'
+import { BotConfig, MinecraftBot } from './bot'
+import { AdapterConfig } from './utils'
 
-export interface MinecraftConfig {}
-
-export default class WebSocketClient extends Adapter.WebSocketClient<MinecraftBot.Config, MinecraftConfig> {
-  static Config: Schema<MinecraftConfig> = Schema.object({})
+export default class WebSocketClient extends Adapter.WebSocketClient<BotConfig, AdapterConfig> {
+  static schema = BotConfig
 
   async prepare(bot: MinecraftBot) {
     const config = {

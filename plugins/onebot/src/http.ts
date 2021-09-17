@@ -1,20 +1,28 @@
-import { App, Adapter, Logger, assertProperty, Session } from 'koishi'
-import { CQBot } from './bot'
-import { adaptSession, SharedConfig } from './utils'
+import { App, Adapter, Logger, assertProperty, Session, Schema } from 'koishi'
+import { BotConfig, CQBot } from './bot'
+import { adaptSession, AdapterConfig } from './utils'
 import { createHmac } from 'crypto'
 
 const logger = new Logger('onebot')
 
-export default class HttpServer extends Adapter<CQBot.Config, SharedConfig> {
-  constructor(app: App, config: SharedConfig = {}) {
+export class HttpServer extends Adapter<BotConfig, AdapterConfig> {
+  static schema: Schema<BotConfig> = Schema.merge([
+    Schema.object({
+      selfId: Schema.string(),
+      token: Schema.string(),
+    }),
+    App.Config.Request,
+  ])
+
+  constructor(app: App, config: AdapterConfig = {}) {
     super(app, config)
     assertProperty(app.options, 'port')
     this.http = app.http.extend(config.request)
   }
 
   async connect(bot: CQBot) {
-    const { server, token } = bot.config
-    if (!server) return
+    const { request, token } = bot.config
+    if (!request?.endpoint) return
 
     const http = this.http.extend(bot.config.request).extend({
       headers: {
@@ -28,7 +36,7 @@ export default class HttpServer extends Adapter<CQBot.Config, SharedConfig> {
     }
 
     Object.assign(bot, await bot.getSelf())
-    logger.info('connected to %c', server)
+    logger.info('connected to %c', http.config.endpoint)
     bot.resolve()
   }
 

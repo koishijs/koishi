@@ -44,7 +44,7 @@ export namespace Adapter {
   export interface Constructor<T extends Bot.BaseConfig = Bot.BaseConfig, S = any> {
     new (app: App, options?: S): Adapter<T>
     [redirect]?(bot: any): string
-    Config?: Schema<S>
+    schema?: Schema
   }
 
   export const redirect = Symbol('koishi.adapter.redirect')
@@ -58,7 +58,7 @@ export namespace Adapter {
     return protocol ? `${platform}.${protocol}` : platform
   }
 
-  type CreatePluginRestParams = [Constructor] | [Dict<Constructor>, (bot: any) => string, Schema?]
+  type CreatePluginRestParams = [Constructor] | [Dict<Constructor>, (bot: any) => string]
 
   export function define<T extends Bot.BaseConfig, S>(
     platform: string,
@@ -71,27 +71,27 @@ export namespace Adapter {
     bot: Bot.Constructor<T>,
     adapters: Record<K, Constructor<T, S>>,
     redirect: (config: T) => K,
-    schema?: Schema<S>,
   ): Plugin.Object<PluginConfig<S, T>>
 
   export function define(platform: string, constructor: Bot.Constructor, ...args: CreatePluginRestParams) {
-    const botSchema = constructor.Config
     Bot.library[platform] = constructor
 
-    let adapterSchema: Schema
+    let botSchema: Schema
     if (args.length === 1) {
       library[platform] = args[0]
-      adapterSchema = args[0].Config
+      botSchema = args[0].schema
     } else {
+      const botSchemaDict: Dict<Schema> = {}
       for (const protocol in args[0]) {
         library[join(platform, protocol)] = args[0][protocol]
+        botSchemaDict[protocol] = args[0][protocol].schema
       }
       library[platform] = { [redirect]: args[1] } as Constructor
-      adapterSchema = args[2]
+      botSchema = library[platform].schema = Schema.select(botSchemaDict, 'protocol')
     }
 
-    const schema = Schema.merge([
-      adapterSchema,
+    const adapterSchema = Schema.merge([
+      constructor.schema,
       Schema.adapt(
         Schema.object({ bots: Schema.array(botSchema).hidden() }),
         botSchema,
@@ -112,7 +112,7 @@ export namespace Adapter {
       }
     }
 
-    return { name: platform, schema, apply }
+    return { name: platform, schema: adapterSchema, apply }
   }
 
   export class Manager extends Array<Bot> {

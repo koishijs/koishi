@@ -1,18 +1,19 @@
 import { Bot, Random, Schema, segment } from 'koishi'
 import * as mineflayer from 'mineflayer'
+import { AdapterConfig } from './utils'
 
 const noop = async () => null
 
-export namespace MinecraftBot {
-  export interface Config extends Bot.BaseConfig, mineflayer.BotOptions {}
-}
+export interface BotConfig extends Bot.BaseConfig, mineflayer.BotOptions {}
 
-export class MinecraftBot extends Bot<MinecraftBot.Config> {
+export const BotConfig: Schema<BotConfig> = Schema.object({
+  username: Schema.string(),
+})
+
+export class MinecraftBot extends Bot<BotConfig> {
   flayer: mineflayer.Bot
 
-  static schema: Schema<MinecraftBot.Config> = Schema.object({
-    username: Schema.string(),
-  })
+  static schema = AdapterConfig
 
   async sendMessage(channelId: string, content: string, guildId?: string) {
     const session = this.createSession({ channelId, content, guildId, subtype: guildId ? 'group' : 'private' })

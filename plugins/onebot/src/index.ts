@@ -1,8 +1,7 @@
 import { Adapter, Context } from 'koishi'
 import { CQBot } from './bot'
-import { schema } from './utils'
 import { WebSocketClient, WebSocketServer } from './ws'
-import HttpServer from './http'
+import { HttpServer } from './http'
 
 const { broadcast } = Context.prototype
 const imageRE = /\[CQ:image,file=([^,]+),url=([^\]]+)\]/
@@ -34,4 +33,7 @@ export = Adapter.define('onebot', CQBot, {
   'http': HttpServer,
   'ws': WebSocketClient,
   'ws-reverse': WebSocketServer,
-}, ({ server }) => !server ? 'ws-reverse' : server.startsWith('ws') ? 'ws' : 'http', schema)
+}, (config) => {
+  const { endpoint } = config.request || {}
+  return !endpoint ? 'ws-reverse' : endpoint.startsWith('ws') ? 'ws' : 'http'
+})

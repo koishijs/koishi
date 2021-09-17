@@ -1,4 +1,4 @@
-import { Bot, segment, camelCase, snakeCase, Adapter, Dict, Schema, App } from 'koishi'
+import { Bot, segment, camelCase, snakeCase, Adapter, Dict, Schema, App, Requester } from 'koishi'
 import * as OneBot from './utils'
 
 export class SenderError extends Error {
@@ -29,28 +29,27 @@ function renderText(source: string) {
   }, '')
 }
 
-export namespace CQBot {
-  export interface Config extends Bot.BaseConfig, App.Config.Request {
-    selfId?: string
-    server?: string
-    token?: string
-  }
+export interface BotConfig extends Bot.BaseConfig, App.Config.Request {
+  selfId?: string
+  token?: string
 }
+
+export const BotConfig: Schema<BotConfig> = Schema.merge([
+  Schema.object({
+    selfId: Schema.string(),
+    token: Schema.string(),
+  }),
+  App.Config.Request,
+])
 
 export interface CQBot extends OneBot.API {}
 
-export class CQBot extends Bot<CQBot.Config> {
+export class CQBot extends Bot<BotConfig> {
   _request?(action: string, params: Dict): Promise<OneBot.Response>
 
-  static schema: Schema<CQBot.Config> = Schema.merge([
-    Schema.object({
-      token: Schema.string(),
-      platform: Schema.string('平台名称').default('onebot'),
-    }),
-    App.Config.Request,
-  ])
+  static schema = OneBot.AdapterConfig
 
-  constructor(adapter: Adapter, options: CQBot.Config) {
+  constructor(adapter: Adapter, options: BotConfig) {
     super(adapter, options)
     this.selfId = options.selfId
     this.avatar = `http://q.qlogo.cn/headimg_dl?dst_uin=${options.selfId}&spec=640`

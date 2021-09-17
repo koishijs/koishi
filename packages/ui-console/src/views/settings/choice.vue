@@ -1,6 +1,6 @@
 <template>
-  <div class="t-choice" :class="attribs" @click="$emit('update:modelValue', data)">
-    {{ data.name || '全局设置' }}
+  <div class="t-choice" :class="attribs" @click="$emit('update:modelValue', props.data.name)">
+    {{ props.data.name || '全局设置' }}
   </div>
 </template>
 
@@ -12,12 +12,12 @@ import { computed } from 'vue'
 defineEmits(['update:modelValue'])
 
 const props = defineProps<{
-  modelValue: Registry.Data
+  modelValue: string
   data: Registry.Data
 }>()
 
 const attribs = computed(() => ({
-  active: props.data.name === props.modelValue.name,
+  active: props.data.name === props.modelValue,
   readonly: !props.data.schema,
 }))
 
@@ -25,16 +25,15 @@ const attribs = computed(() => ({
 
 <style lang="scss" scoped>
 
-.t-choice {
-  cursor: pointer;
-  padding: 0 2rem 0 4rem;
-  transition: 0.3s ease;
+@import '~/variables';
 
-  &:hover, &.active {
-    background-color: var(--bg1);
-  }
+.t-choice {
+  @include button-like;
+
+  padding: 0 2rem 0 4rem;
 
   &.active {
+    background-color: var(--bg1);
     font-weight: bold;
     color: var(--primary);
   }

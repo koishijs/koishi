@@ -1,31 +1,44 @@
-import { App, Adapter, Logger, assertProperty, camelCase, Time, Session } from 'koishi'
-import { CQBot } from './bot'
-import { SharedConfig, adaptSession, adaptUser, Response } from './utils'
+import { App, Adapter, Logger, assertProperty, camelCase, Time, Session, Schema } from 'koishi'
+import { BotConfig, CQBot } from './bot'
+import { AdapterConfig, adaptSession, adaptUser, Response } from './utils'
 import WebSocket from 'ws'
 
 const logger = new Logger('onebot')
 
-export class WebSocketClient extends Adapter.WebSocketClient<CQBot.Config, SharedConfig> {
+export class WebSocketClient extends Adapter.WebSocketClient<BotConfig, AdapterConfig> {
+  static schema: Schema<BotConfig> = Schema.merge([
+    Schema.object({
+      selfId: Schema.string(),
+      token: Schema.string(),
+    }),
+    App.Config.Request,
+  ])
+
   protected accept = accept
 
-  constructor(app: App, config: SharedConfig) {
+  constructor(app: App, config: AdapterConfig) {
     super(app, config)
   }
 
   prepare(bot: CQBot) {
-    const { server, token } = bot.config
+    const { request, token } = bot.config
     const headers: Record<string, string> = {}
     if (token) headers.Authorization = `Bearer ${token}`
-    return new WebSocket(server, { headers })
+    return new WebSocket(request.endpoint, { headers })
   }
 }
 
-export class WebSocketServer extends Adapter<CQBot.Config, SharedConfig> {
+export class WebSocketServer extends Adapter<BotConfig, AdapterConfig> {
+  static schema: Schema<BotConfig> = Schema.object({
+    selfId: Schema.string(),
+    token: Schema.string(),
+  })
+
   public wsServer?: WebSocket.Server
 
   protected accept = accept
 
-  constructor(app: App, config: SharedConfig) {
+  constructor(app: App, config: AdapterConfig) {
     super(app, config)
     assertProperty(app.options, 'port')
     const { path = '/onebot' } = config
@@ -64,7 +77,7 @@ export class WebSocketServer extends Adapter<CQBot.Config, SharedConfig> {
 let counter = 0
 const listeners: Record<number, (response: Response) => void> = {}
 
-export function accept(this: Adapter<CQBot.Config, SharedConfig>, bot: CQBot) {
+export function accept(this: Adapter<BotConfig, AdapterConfig>, bot: CQBot) {
   bot.socket.on('message', (data) => {
     data = data.toString()
     let parsed: any
@@ -81,8 +94,8 @@ export function accept(this: Adapter<CQBot.Config, SharedConfig>, bot: CQBot) {
     } else if (parsed.echo === -1) {
       Object.assign(bot, adaptUser(camelCase(parsed.data)))
       logger.debug('%d got self info', parsed.data)
-      if (bot.config.server) {
-        logger.info('connected to %c', bot.config.server)
+      if (bot.config.request.endpoint) {
+        logger.info('connected to %c', bot.config.request.endpoint)
       }
       bot.resolve()
     } else if (parsed.echo in listeners) {
