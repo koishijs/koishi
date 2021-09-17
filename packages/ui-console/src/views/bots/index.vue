@@ -1,33 +1,83 @@
 <template>
   <k-card class="bot-table" title="账号数据">
-    <table v-if="profile.bots.length">
-      <tr>
-        <th>平台名</th>
-        <th>用户名</th>
-        <th>运行状态</th>
-        <th>当前消息频率</th>
-        <th v-if="stats">近期消息频率</th>
-      </tr>
-      <tr v-for="{ platform, username, selfId, code, currentRate } in profile.bots">
-        <td>{{ platform }}</td>
-        <td>{{ username }}</td>
-        <td>{{ codes[code] }}</td>
-        <td>发送 {{ currentRate[0] }}/min，接收 {{ currentRate[1] }}/min</td>
-        <td v-if="stats">发送 {{ stats.botSend[`${platform}:${selfId}`] || 0 }}/d，接收 {{ stats.botReceive[`${platform}:${selfId}`] || 0 }}/d</td>
-      </tr>
-    </table>
-    <p v-else>暂无数据。</p>
+    <div class="bots-wrapper">
+      <div class="bots">
+        <template v-for="(_, i) in profile.bots" :key="_.selfId">
+          <bot
+              v-model="profile.bots[i]"
+              :class="{'sel': targetI === i}"
+              @avatar-click="targetI = i"/>
+        </template>
+      </div>
+    </div>
+    <div class="profile">
+      <el-empty
+          v-if="targetI < 0"
+          style="height: 100%"
+          :description="profile.bots.length !== 0 ? '当前未选择机器人' : '当前没有配置任何机器人，点击添加'">
+        <k-button v-if="profile.bots.length === 0" solid v-text="'添加机器人'"/>
+      </el-empty>
+      <!-- TODO 图表 -->
+      <!-- TODO 操作 -->
+      <!-- TODO 配置 -->
+      <!-- TODO 扩展 -->
+      <template v-else>
+        <bot v-model="profile.bots[targetI]" size="large"/>
+        <div class="echarts">
+        </div>
+        <div class="operate">
+        </div>
+        <div class="configuration">
+        </div>
+        <div class="extension">
+        </div>
+      </template>
+    </div>
   </k-card>
 </template>
 
 <script setup lang="ts">
 
-import { stats, profile } from '~/client'
+import { ref } from 'vue'
+import { ElEmpty } from 'element-plus'
+import { profile } from '~/client'
+import Bot from '../../components/bot.vue'
 
-const codes = ['运行中', '闲置', '离线', '网络异常', '服务器异常', '封禁中', '尝试连接']
+const targetI = ref(-1)
 
 </script>
 
 <style lang="scss">
+section.bot-table {
+  height: calc(100vh - 4rem);
+  display: flex;
+  flex-direction: column;
 
+  > div.k-card-body {
+    flex-grow: 1;
+    height: 0;
+
+    display: flex;
+    justify-content: space-around;
+
+    > div.bots-wrapper {
+      overflow-y: auto;
+      > div.bots {
+        height: 100%;
+        border-right: 1px solid var(--bg2);
+
+        > div.bot.sel {
+          > div.avatar {
+            transition: .1s;
+            box-sizing: border-box;
+            border: 5px solid var(--primary);
+          }
+        }
+      }
+    }
+    > div.profile {
+      flex-grow: 1;
+    }
+  }
+}
 </style>
