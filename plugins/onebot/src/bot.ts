@@ -29,7 +29,7 @@ function renderText(source: string) {
   }, '')
 }
 
-export interface BotConfig extends Bot.BaseConfig, App.Config.Request {
+export interface BotConfig extends Bot.BaseConfig, Requester.Config {
   selfId?: string
   token?: string
 }
@@ -39,7 +39,7 @@ export const BotConfig: Schema<BotConfig> = Schema.merge([
     selfId: Schema.string(),
     token: Schema.string(),
   }),
-  App.Config.Request,
+  Requester.Config,
 ])
 
 export interface CQBot extends OneBot.API {}

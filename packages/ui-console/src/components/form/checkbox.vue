@@ -1,6 +1,6 @@
 <template>
-  <label class="k-checkbox" :class="{ disabled, checked: modelValue }">
-    <span class="checkbox">
+  <label class="k-checkbox k-checker" :class="{ disabled, checked: modelValue }">
+    <span class="checker">
       <span class="inner"/>
       <input type="checkbox" :disabled="disabled" :value="label" v-model="modelValue">
     </span>
@@ -22,30 +22,12 @@ defineProps<{
 
 <style lang="scss" scoped>
 
+@import './shared.scss';
+
 .k-checkbox {
-  cursor: pointer;
-  user-select: none;
-  display: inline-block;
-  transition: 0.3s ease;
-  line-height: 1em;
-  vertical-align: text-top;
-
-  > .checkbox {
-    outline: 0;
-    line-height: 1em;
-    margin-right: 0.75em;
-
-    > span {
-      vertical-align: bottom;
-      position: relative;
-      display: inline-block;
-      box-sizing: border-box;
-      transition: 0.3s ease;
-      background-color: transparent;
-      border: 0.08em solid var(--border);
+  > .checker {
+    > span.inner {
       border-radius: 2px;
-      width: 1em;
-      height: 1em;
     }
 
     > span::after {
@@ -63,69 +45,10 @@ defineProps<{
       transform-origin: center;
       transition: transform .15s ease-in .05s;
     }
-
-    > input {
-      position: absolute;
-      opacity: 0;
-      outline: 0;
-      margin: 0;
-      width: 0;
-      height: 0;
-      z-index: -1;
-    }
   }
 
-  > .label {
-    line-height: 1em;
-    vertical-align: middle;
-  }
-
-  &:not(.checked):hover {
-    color: var(--fg0);
-
-    > .checkbox > span {
-      background-color: var(--bg1);
-      border-color: var(--border-dark);
-      box-shadow: var(--hover-inset);
-    }
-  }
-
-  &.checked {
-    color: var(--primary);
-
-    > .checkbox > span {
-      background-color: var(--primary);
-      border-color: var(--primary);
-      &::after {
-        transform: rotate(45deg) scaleY(1);
-      }
-    }
-  }
-
-  &.disabled {
-    cursor: default;
-    color: var(--fg2);
-
-    > .label {
-      cursor: text !important;
-      user-select: text;
-    }
-
-    > .checkbox > span {
-      box-shadow: none !important;
-      border-color: transparent !important;
-      background-color: var(--bg1) !important;
-    }
-
-    &.checked {
-      color: var(--fg2);
-      > .checkbox > span {
-        background-color: var(--bg1) !important;
-        &::after {
-          border-color: var(--fg2) !important;
-        }
-      }
-    }
+  &.checked > .checker > span::after {
+    transform: rotate(45deg) scaleY(1);
   }
 }
 

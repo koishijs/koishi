@@ -1,4 +1,4 @@
-import { App, Adapter, Logger, assertProperty, camelCase, Time, Session, Schema } from 'koishi'
+import { App, Adapter, Logger, assertProperty, camelCase, Requester, Time, Session, Schema } from 'koishi'
 import { BotConfig, CQBot } from './bot'
 import { AdapterConfig, adaptSession, adaptUser, Response } from './utils'
 import WebSocket from 'ws'
@@ -11,7 +11,7 @@ export class WebSocketClient extends Adapter.WebSocketClient<BotConfig, AdapterC
       selfId: Schema.string(),
       token: Schema.string(),
     }),
-    App.Config.Request,
+    Requester.Config,
   ])
 
   protected accept = accept
@@ -21,17 +21,16 @@ export class WebSocketClient extends Adapter.WebSocketClient<BotConfig, AdapterC
   }
 
   prepare(bot: CQBot) {
-    const { request, token } = bot.config
+    const { endpoint, token } = bot.config
     const headers: Record<string, string> = {}
     if (token) headers.Authorization = `Bearer ${token}`
-    return new WebSocket(request.endpoint, { headers })
+    return new WebSocket(endpoint, { headers })
   }
 }
 
 export class WebSocketServer extends Adapter<BotConfig, AdapterConfig> {
   static schema: Schema<BotConfig> = Schema.object({
     selfId: Schema.string(),
-    token: Schema.string(),
   })
 
   public wsServer?: WebSocket.Server
@@ -94,8 +93,8 @@ export function accept(this: Adapter<BotConfig, AdapterConfig>, bot: CQBot) {
     } else if (parsed.echo === -1) {
       Object.assign(bot, adaptUser(camelCase(parsed.data)))
       logger.debug('%d got self info', parsed.data)
-      if (bot.config.request.endpoint) {
-        logger.info('connected to %c', bot.config.request.endpoint)
+      if (bot.config.endpoint) {
+        logger.info('connected to %c', bot.config.endpoint)
       }
       bot.resolve()
     } else if (parsed.echo in listeners) {

@@ -52,7 +52,7 @@ router.addRoute({
 router.addRoute({
   path: '/bots',
   name: '机器人',
-  meta: { icon: 'robot', require: ['profile'] },
+  meta: { icon: 'robot', require: ['profile', 'registry'] },
   component: () => import('./views/bots/index.vue'),
 })
 

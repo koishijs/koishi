@@ -2,7 +2,7 @@
   <template v-if="!schema"/>
 
   <div class="schema" v-else-if="schema.type === 'string' || schema.type === 'number'">
-    <slot/>
+    <slot></slot>
     <p>
       <span>{{ schema.desc }}</span>
       <span v-if="schema._default">默认值：<code>{{ schema._default }}</code>。</span>
@@ -13,14 +13,14 @@
   </div>
 
   <div class="schema" v-else-if="schema.type === 'boolean'">
-    <slot/>
-    <div class="control">
+    <slot></slot>
+    <div>
       <k-checkbox v-model="config">{{ schema.desc }}</k-checkbox>
     </div>
   </div>
 
   <div class="schema" v-else-if="schema.type === 'array'">
-    <slot/>
+    <slot></slot>
     <p>{{ schema.desc }}</p>
     <ul>
       <li v-for="(item, index) in config">{{ item }}</li>
@@ -40,11 +40,11 @@
   </template>
 
   <div class="schema" v-else-if="schema.type === 'choose'">
-    <slot/>
+    <slot></slot>
     <p>{{ schema.desc }}</p>
     <ul>
-      <li v-for="key in schema.values">
-        <k-radio :label="key" v-model="config">{{ key }}</k-radio>
+      <li v-for="(label, key) in schema.sDict">
+        <k-radio :label="key" v-model="config">{{ label }}</k-radio>
       </li>
     </ul>
   </div>
@@ -67,16 +67,16 @@
 
 <script lang="ts" setup>
 
-import { computed, watch } from 'vue'
+import { computed, watch, PropType } from 'vue'
 import { Schema } from '@koishijs/utils'
 import SchemaGroup from './schema-group.vue'
 
-const props = defineProps<{
-  schema: Schema
-  modelValue: any
-  prefix?: string
-  noDesc?: boolean
-}>()
+const props = defineProps({
+  schema: {} as PropType<Schema>,
+  modelValue: {},
+  prefix: { type: String, default: '' },
+  noDesc: { type: Boolean, required: false },
+})
 
 const emit = defineEmits(['update:modelValue'])
 
@@ -135,7 +135,6 @@ watch(config, updateModelValue, { deep: true })
     list-style: none;
     width: 100%;
     padding-left: 0;
-    line-height: 1.7;
     margin: 0.25rem 0;
   }
 }

@@ -1,4 +1,4 @@
-import { App, Adapter, Logger, assertProperty, Session, Schema } from 'koishi'
+import { App, Adapter, Logger, assertProperty, Session, Schema, Requester } from 'koishi'
 import { BotConfig, CQBot } from './bot'
 import { adaptSession, AdapterConfig } from './utils'
 import { createHmac } from 'crypto'
@@ -11,7 +11,7 @@ export class HttpServer extends Adapter<BotConfig, AdapterConfig> {
       selfId: Schema.string(),
       token: Schema.string(),
     }),
-    App.Config.Request,
+    Requester.Config,
   ])
 
   constructor(app: App, config: AdapterConfig = {}) {
@@ -21,10 +21,10 @@ export class HttpServer extends Adapter<BotConfig, AdapterConfig> {
   }
 
   async connect(bot: CQBot) {
-    const { request, token } = bot.config
-    if (!request?.endpoint) return
+    const { endpoint, token } = bot.config
+    if (!endpoint) return
 
-    const http = this.http.extend(bot.config.request).extend({
+    const http = this.http.extend(bot.config).extend({
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Token ${token}`,

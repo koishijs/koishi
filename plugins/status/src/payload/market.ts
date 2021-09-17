@@ -1,4 +1,4 @@
-import { Context, pick, Dict, version as currentVersion, Schema } from 'koishi'
+import { Context, pick, Dict, version as currentVersion, Schema, Adapter } from 'koishi'
 import { dirname, resolve } from 'path'
 import { existsSync, promises as fs } from 'fs'
 import { spawn, StdioOptions } from 'child_process'
@@ -103,7 +103,12 @@ class Market implements StatusServer.DataSource {
     const data: PackageLocal = JSON.parse(await fs.readFile(path + '/package.json', 'utf8'))
     if (data.private) return null
     const workspace = !path.includes('node_modules')
+
+    // check adapter
+    const oldLength = Object.keys(Adapter.library).length
     const { schema, delegates } = require(path)
+    const newLength = Object.keys(Adapter.library).length
+    if (newLength > oldLength) this.ctx.webui.sources.registry.update()
 
     const devDeps = this.getPluginDeps(data.devDependencies)
     const peerDeps = this.getPluginDeps(data.peerDependencies)

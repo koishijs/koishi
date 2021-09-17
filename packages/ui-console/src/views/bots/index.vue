@@ -8,15 +8,17 @@
             :class="{ active: current === index }" @click="current = index"/>
       </div>
     </div>
-    <div class="bot-profile">
-      <template v-if="current === null">
-        <el-empty v-if="profile.bots.length" description="当前未选择机器人"></el-empty>
-        <el-empty v-else description="当前没有配置任何机器人">
-          <k-button solid>添加机器人</k-button>
-        </el-empty>
-      </template>
-      <add-bot v-else-if="current === -1"></add-bot>
-    </div>
+    <template v-if="current === null">
+      <el-empty v-if="profile.bots.length" description="当前未选择机器人"></el-empty>
+      <el-empty v-else description="当前没有配置任何机器人">
+        <k-button solid>添加机器人</k-button>
+      </el-empty>
+    </template>
+    <el-scrollbar v-else class="bot-profile">
+      <div class="content">
+        <add-bot v-if="current === -1"></add-bot>
+      </div>
+    </el-scrollbar>
   </k-card>
 </template>
 
@@ -41,7 +43,8 @@ section.page-bots {
 
   > div.k-card-body {
     height: 100%;
-    display: flex;
+    display: grid;
+    grid-template-columns: 20rem 1fr;
   }
 
   div.bot-table {
@@ -59,10 +62,14 @@ section.page-bots {
   }
 
   div.bot-profile {
-    flex-grow: 1;
-
-    > .el-empty {
+    .el-empty {
       height: 100%;
+    }
+
+    .content {
+      margin: auto;
+      max-width: 50rem;
+      padding: 3rem 3rem 1rem;
     }
   }
 }

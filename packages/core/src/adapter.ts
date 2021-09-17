@@ -82,21 +82,19 @@ export namespace Adapter {
       botSchema = args[0].schema
     } else {
       const botSchemaDict: Dict<Schema> = {}
+      library[platform] = { [redirect]: args[1] } as Constructor
+      botSchema = library[platform].schema = Schema.select(botSchemaDict, 'protocol')
       for (const protocol in args[0]) {
         library[join(platform, protocol)] = args[0][protocol]
         botSchemaDict[protocol] = args[0][protocol].schema
       }
-      library[platform] = { [redirect]: args[1] } as Constructor
-      botSchema = library[platform].schema = Schema.select(botSchemaDict, 'protocol')
     }
 
     const adapterSchema = Schema.merge([
       constructor.schema,
-      Schema.adapt(
-        Schema.object({ bots: Schema.array(botSchema).hidden() }),
-        botSchema,
-        config => ({ bots: [config] }),
-      ),
+      Schema.object({
+        bots: Schema.array(botSchema).hidden(),
+      }),
     ])
 
     function apply(ctx: Context, config: PluginConfig = {}) {

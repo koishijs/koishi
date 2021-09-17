@@ -14,10 +14,6 @@ function indent(text: string) {
   return text.split('\n').join('\n  ')
 }
 
-function comment(text: string, schema: Schema) {
-  return schema.desc ? `# ${schema.desc}\n${text}` : text
-}
-
 function codegenForDict(config: any, schema: Schema) {
   const output = codegen(config, schema)
   if (typeof config === 'object' && output) {
@@ -53,7 +49,7 @@ const handlers: Dict<(config: any, schema?: Schema) => string> = {
   },
   merge(config, schema) {
     return schema.list
-      .map(schema => comment(codegen(config, schema), schema))
+      .map(schema => codegen(config, schema), schema)
       .join('\n\n')
   },
 }
@@ -115,7 +111,7 @@ export function createConfigManager(app: App, loader: Loader) {
   }
 
   function writeConfig() {
-    let output = configTexts[''] + '\n\n# 插件设置\nplugins:'
+    let output = configTexts[''] + '\n\nplugins:'
     for (const name in plugins) {
       output += `\n  ${name}: ${indent(configTexts[name])}\n`
     }
