@@ -1,6 +1,5 @@
 import { Context } from 'koishi'
 import { load } from 'cheerio'
-import axios from 'axios'
 
 const tagMap = {
   description: '描述',
@@ -17,11 +16,8 @@ export function apply(ctx: Context) {
     .usage('由 https://magi.com 提供支持。')
     .action(async ({ session, options }, q) => {
       if (!q) return '请输入要搜索的文本。'
-      const { data } = await axios.get('https://magi.com/search', {
-        params: { q },
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.79 Safari/537.36',
-        },
+      const data = await ctx.http.get('https://magi.com/search', { q }, {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.79 Safari/537.36',
       })
       const $ = load(data)
       const messages = []

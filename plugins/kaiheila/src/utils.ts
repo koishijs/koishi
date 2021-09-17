@@ -1,7 +1,7 @@
-import { Adapter, Bot, Session, segment, camelCase, Schema } from 'koishi'
+import { Adapter, Bot, Session, segment, camelCase, Schema, App } from 'koishi'
 import * as KHL from './types'
 
-export interface SharedConfig extends Adapter.WebSocketClient.Config {
+export interface SharedConfig extends Adapter.WebSocketClient.Config, App.Config.Request {
   path?: string
 }
 
@@ -9,7 +9,8 @@ export const schema: Schema<SharedConfig> = Schema.merge([
   Schema.object({
     path: Schema.string('服务器监听的路径，仅用于 http 协议。').default('/kaiheila'),
   }),
-  Adapter.WebSocketClient.schema,
+  Adapter.WebSocketClient.Config,
+  App.Config.Request,
 ])
 
 export const adaptGroup = (data: KHL.Guild): Bot.Guild => ({

@@ -1,4 +1,3 @@
-import axios from 'axios'
 import Cheerio from 'cheerio'
 import { Session, noop, Logger } from 'koishi'
 import { getShareText } from './utils'
@@ -9,11 +8,11 @@ const logger = new Logger('search')
 export default async function (url: string, session: Session) {
   try {
     const tasks: Promise<void>[] = []
-    const response = await axios.get(`${baseURL}/search/url/${encodeURIComponent(url)}`)
+    const response = await session.app.http.get(`${baseURL}/search/url/${encodeURIComponent(url)}`)
     tasks.push(session.send('ascii2d 色合检索\n' + getDetail(response.data)).catch(noop))
     try {
       const bovwURL = response.request.res.responseUrl.replace('/color/', '/bovw/')
-      const bovwHTML = await axios.get(bovwURL).then(r => r.data)
+      const bovwHTML = await session.app.http.get(bovwURL).then(r => r.data)
       tasks.push(session.send('ascii2d 特征检索\n' + getDetail(bovwHTML)).catch(noop))
     } catch (err) {
       logger.warn(`[error] ascii2d bovw ${err}`)

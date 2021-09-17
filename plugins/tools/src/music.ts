@@ -1,5 +1,4 @@
 import { Context, segment } from 'koishi'
-import axios from 'axios'
 
 type Platform = 'netease' | 'qq'
 
@@ -8,21 +7,17 @@ interface Result {
   id: string
 }
 
-const platforms: Record<Platform, (keyword: string) => Promise<Result>> = {
-  async netease(keyword: string) {
-    const { data } = await axios.get('http://music.163.com/api/cloudsearch/pc', {
-      params: { s: keyword, type: 1, offset: 0, limit: 5 },
-    })
+const platforms: Record<Platform, (this: Context, keyword: string) => Promise<Result>> = {
+  async netease(keyword) {
+    const data = await this.http.get('http://music.163.com/api/cloudsearch/pc', { s: keyword, type: 1, offset: 0, limit: 5 })
     if (data.code !== 200) return
     return {
       type: '163',
       id: data.result.songs[0].id,
     }
   },
-  async qq(keyword: string) {
-    const { data } = await axios.get('https://c.y.qq.com/soso/fcgi-bin/client_search_cp', {
-      params: { p: 1, n: 5, w: keyword, format: 'json' },
-    })
+  async qq(keyword) {
+    const data = await this.http.get('https://c.y.qq.com/soso/fcgi-bin/client_search_cp', { p: 1, n: 5, w: keyword, format: 'json' })
     if (data.code) return
     return {
       type: 'qq',

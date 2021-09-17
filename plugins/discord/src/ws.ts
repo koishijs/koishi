@@ -1,4 +1,4 @@
-import { Adapter, Logger, renameProperty } from 'koishi'
+import { Adapter, App, Logger, renameProperty, Schema } from 'koishi'
 import { Opcode, Payload } from './types'
 import { adaptSession, adaptUser } from './utils'
 import { DiscordBot } from './bot'
@@ -7,12 +7,23 @@ import WebSocket from 'ws'
 const logger = new Logger('discord')
 
 export namespace WebSocketClient {
-  export interface Config extends Adapter.WebSocketClient.Config {}
+  export interface Config extends Adapter.WebSocketClient.Config, App.Config.Request {}
 }
 
 /** https://discord.com/developers/docs/topics/gateway */
 export default class WebSocketClient extends Adapter.WebSocketClient<DiscordBot.Config, WebSocketClient.Config> {
-  static schama = Adapter.WebSocketClient.schema
+  static schama: Schema<WebSocketClient.Config> = Schema.merge([
+    App.Config.Request,
+    Adapter.WebSocketClient.Config,
+  ])
+
+  constructor(app: App, config: WebSocketClient.Config) {
+    super(app, config)
+    this.http = app.http.extend({
+      endpoint: 'https://discord.com/api/v8',
+      ...config.request,
+    })
+  }
 
   prepare() {
     return new WebSocket('wss://gateway.discord.gg/?v=8&encoding=json')

@@ -58,13 +58,6 @@ if (config.stackTraceLimit !== undefined) {
   Error.stackTraceLimit = config.stackTraceLimit
 }
 
-if (config.proxyAgent !== undefined) {
-  const ProxyAgent = require('proxy-agent') as typeof import('proxy-agent')
-  const axiosConfig = config.axiosConfig ||= {}
-  axiosConfig.httpAgent = new ProxyAgent(config.proxyAgent)
-  axiosConfig.httpsAgent = new ProxyAgent(config.proxyAgent)
-}
-
 interface Message {
   type: 'send'
   body: any
@@ -78,11 +71,10 @@ process.on('message', (data: Message) => {
   }
 })
 
-App.NetworkConfig.dict = {
+App.Config.Network.dict = {
   host: Schema.string('要监听的 IP 地址。如果将此设置为 `0.0.0.0` 将监听所有地址，包括局域网和公网地址。'),
   port: Schema.number('要监听的端口。'),
-  ...App.NetworkConfig.dict,
-  proxyAgent: Schema.string('使用的代理服务地址。'),
+  ...App.Config.Network.dict,
 }
 
 App.Config.list.push(Schema.object({

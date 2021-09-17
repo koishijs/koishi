@@ -1,9 +1,9 @@
-import { Assets, Context, Random, sanitize, Time, trimSlash, Schema, App } from 'koishi'
+import { Assets, Context, Random, sanitize, trimSlash, Schema, Requester } from 'koishi'
 import { promises as fs, createReadStream, existsSync } from 'fs'
 import { extname, resolve } from 'path'
 import { createHmac, createHash } from 'crypto'
+import { stringify } from 'querystring'
 import FormData from 'form-data'
-import axios from 'axios'
 
 declare module 'koishi' {
   interface Module {
@@ -12,17 +12,6 @@ declare module 'koishi' {
 }
 
 const PTC_BASE64 = 'base64://'
-
-async function getAssetBuffer(url: string, app: App) {
-  if (url.startsWith(PTC_BASE64)) {
-    return Buffer.from(url.slice(PTC_BASE64.length), 'base64')
-  }
-  const { data } = await axios.get<ArrayBuffer>(url, {
-    ...app.options.axiosConfig,
-    responseType: 'arraybuffer',
-  })
-  return Buffer.from(data)
-}
 
 export const schema = Schema.select({
   local: Schema.object({
@@ -44,6 +33,14 @@ export const schema = Schema.select({
 
 export const delegates: Context.Delegates.Meta = {
   providing: ['assets'],
+}
+
+async function getAssetBuffer(url: string, http: Requester) {
+  if (url.startsWith(PTC_BASE64)) {
+    return Buffer.from(url.slice(PTC_BASE64.length), 'base64')
+  }
+  const data = await http.get.arraybuffer(url)
+  return Buffer.from(data)
 }
 
 interface LocalConfig {
@@ -129,11 +126,11 @@ class LocalAssets implements Assets {
     if (file) {
       const filename = resolve(root, file)
       if (!existsSync(filename)) {
-        const buffer = await getAssetBuffer(url, this.ctx.app)
+        const buffer = await getAssetBuffer(url, this.ctx.http)
         await this.write(buffer, filename)
       }
     } else {
-      const buffer = await getAssetBuffer(url, this.ctx.app)
+      const buffer = await getAssetBuffer(url, this.ctx.http)
       file = createHash('sha1').update(buffer).digest('hex')
       await this.write(buffer, resolve(root, file))
     }
@@ -146,62 +143,58 @@ class LocalAssets implements Assets {
   }
 }
 
-interface RemoteConfig {
+interface RemoteConfig extends Requester.Config {
   type: 'remote'
-  server: string
   secret?: string
 }
 
 class RemoteAssets implements Assets {
   types = ['video', 'audio', 'image'] as const
 
-  constructor(public ctx: Context, public config: RemoteConfig) {}
+  http: Requester
+
+  constructor(public ctx: Context, public config: RemoteConfig) {
+    this.http = ctx.http.extend(config)
+  }
 
   async upload(url: string, file: string) {
-    const { server, secret } = this.config
+    const { secret } = this.config
     const params = { url, file } as any
     if (secret) {
       params.salt = Random.id()
       params.sign = createHmac('sha1', secret).update(file + params.salt).digest('hex')
     }
-    const { data } = await axios.post(server, {
-      ...this.ctx.app.options.axiosConfig,
-      params,
-    })
+    const data = await this.http('POST', '?' + stringify(params))
     return data
   }
 
   async stats() {
-    const { data } = await axios.get(this.config.server, this.ctx.app.options.axiosConfig)
-    return data
+    return this.http.get('')
   }
 }
 
-interface SmmsConfig {
+interface SmmsConfig extends Requester.Config {
   type: 'smms'
-  endpoint?: string
   token: string
 }
 
 class SmmsAssets implements Assets {
   types = ['image'] as const
 
+  http: Requester
+
   constructor(public ctx: Context, public config: SmmsConfig) {
-    config.endpoint = trimSlash(config.endpoint || 'https://sm.ms/api/v2')
+    this.http = ctx.http.extend({
+      endpoint: 'https://sm.ms/api/v2',
+      headers: { authorization: config.token },
+    }).extend(config)
   }
 
   async upload(url: string, file: string) {
-    const { token, endpoint } = this.config
-    const buffer = await getAssetBuffer(url, this.ctx.app)
+    const buffer = await getAssetBuffer(url, this.ctx.http)
     const payload = new FormData()
     payload.append('smfile', buffer, file || createHash('sha1').update(buffer).digest('hex'))
-    const { data } = await axios.post(endpoint + '/upload', payload, {
-      ...this.ctx.app.options.axiosConfig,
-      headers: {
-        authorization: token,
-        ...payload.getHeaders(),
-      },
-    })
+    const data = await this.http('POST', '/upload', payload, payload.getHeaders())
     if (data.code === 'image_repeated') {
       return data.images
     }
@@ -213,14 +206,7 @@ class SmmsAssets implements Assets {
   }
 
   async stats() {
-    const { token, endpoint } = this.config
-    const { data } = await axios.post(endpoint + '/profile', null, {
-      ...this.ctx.app.options.axiosConfig,
-      timeout: Time.second * 5,
-      headers: {
-        authorization: token,
-      },
-    })
+    const data = await this.http('POST', '/profile')
     return {
       assetSize: data.data.disk_usage_raw,
     }

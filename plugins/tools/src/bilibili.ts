@@ -27,7 +27,7 @@ function decode(source: string) {
 
 const bvRegExp = /(BV[0-9a-zA-Z]{10})/gmi
 
-const patterns: [RegExp, (cap: RegExpExecArray) => Promise<number> | number][] = [
+const patterns: [RegExp, (this: Context, cap: RegExpExecArray) => Promise<number> | number][] = [
   [bvRegExp, (cap) => decode(cap[1])],
   [/b23\.tv\/([a-zA-Z0-9]+)/gmi, async (cap) => {
     try {
@@ -44,7 +44,7 @@ export const name = 'bilibili'
 
 export function apply(ctx: Context) {
   async function getInfo(id: number) {
-    const { data } = await axios.get(`http://api.bilibili.com/x/web-interface/view?aid=${id}`)
+    const data = await ctx.http.get(`http://api.bilibili.com/x/web-interface/view?aid=${id}`)
     return `bilibili.com/video/av${id}\n${data.data.title}\n[CQ:image,file=${data.data.pic}]`
   }
 
@@ -54,7 +54,7 @@ export function apply(ctx: Context) {
         const result = regExp.exec(session.content)
         if (!result) continue
         try {
-          const id = await processor(result)
+          const id = await processor.call(ctx, result)
           if (!id) return
           const output = await getInfo(id)
           return session.send(output)

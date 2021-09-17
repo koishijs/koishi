@@ -9,6 +9,10 @@ export default class HttpServer extends Adapter<KaiheilaBot.Config, SharedConfig
     assertProperty(app.options, 'port')
     config.path = sanitize(config.path || '/kaiheila')
     super(app, config)
+    this.http = app.http.extend({
+      endpoint: 'https://www.kaiheila.cn/api/v3',
+      ...config.request,
+    })
   }
 
   async connect(bot: KaiheilaBot) {

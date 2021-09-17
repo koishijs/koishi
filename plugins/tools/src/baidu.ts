@@ -1,4 +1,3 @@
-import axios from 'axios'
 import cheerio from 'cheerio'
 import { Context, isInteger, segment, template, interpolate } from 'koishi'
 
@@ -41,13 +40,6 @@ function getArticleLink($: CheerioRoot, index: number) {
   return url
 }
 
-/** 从搜索列表中获取指定顺位结果的词条内容 */
-async function getHtml(url: string) {
-  if (!url) return null
-  const { data } = await axios.get(url)
-  return cheerio.load(data)
-}
-
 function formatAnswer($: CheerioRoot, link: string, options: BaiduOptions): string {
   $('.lemma-summary sup').remove() // 删掉 [1] 这种鬼玩意
   let summary = $('.lemma-summary').text().trim() // 获取词条的第一段
@@ -70,6 +62,13 @@ export function apply(ctx: Context, options: BaiduOptions = {}) {
     maxSummaryLength: 200,
     format: '{{ thumbnail }}\n{{ title }}\n{{ tips }}\n{{ summary }}\n来自：{{ link }}',
     ...options,
+  }
+
+  /** 从搜索列表中获取指定顺位结果的词条内容 */
+  async function getHtml(url: string) {
+    if (!url) return null
+    const data = await ctx.http.get(url)
+    return cheerio.load(data)
   }
 
   ctx.command('tools/baidu <keyword>', '使用百度百科搜索')

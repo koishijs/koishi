@@ -2,7 +2,6 @@ import { App, Adapter, Logger, assertProperty, Session } from 'koishi'
 import { CQBot } from './bot'
 import { adaptSession, SharedConfig } from './utils'
 import { createHmac } from 'crypto'
-import axios from 'axios'
 
 const logger = new Logger('onebot')
 
@@ -10,20 +9,22 @@ export default class HttpServer extends Adapter<CQBot.Config, SharedConfig> {
   constructor(app: App, config: SharedConfig = {}) {
     super(app, config)
     assertProperty(app.options, 'port')
+    this.http = app.http.extend(config.request)
   }
 
   async connect(bot: CQBot) {
     const { server, token } = bot.config
     if (!server) return
 
+    const http = this.http.extend(bot.config.request).extend({
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Token ${token}`,
+      },
+    })
+
     bot._request = async (action, params) => {
-      const headers = { 'Content-Type': 'application/json' } as any
-      if (token) {
-        headers.Authorization = `Token ${token}`
-      }
-      const uri = new URL(action, server).href
-      const { data } = await axios.post(uri, params, { headers })
-      return data
+      return http.post('/' + action, params)
     }
 
     Object.assign(bot, await bot.getSelf())

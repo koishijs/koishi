@@ -16,11 +16,7 @@ export namespace App {
     prompt?: number
   }
 
-  export interface NetworkConfig {
-    selfUrl?: string
-  }
-
-  export interface Config extends NetworkConfig {
+  export interface Config extends Config.Network {
     prefix?: string | string[] | ((session: Session.Message) => void | string | string[])
     nickname?: string | string[]
     maxListeners?: number
@@ -30,6 +26,16 @@ export namespace App {
     autoAssign?: boolean | ((session: Session) => boolean)
     autoAuthorize?: number | ((session: Session) => number)
     minSimilarity?: number
+  }
+
+  export namespace Config {
+    export interface Static extends Schema<Config> {
+      Network?: Schema<Config.Network>
+    }
+
+    export interface Network {
+      selfUrl?: string
+    }
   }
 }
 
@@ -340,9 +346,13 @@ export class App extends Context {
 export namespace App {
   export enum Status { closed, opening, open, closing }
 
-  export const NetworkConfig: Schema<NetworkConfig> = Schema.object({
+  export const Config: Config.Static = Schema.merge([])
+
+  const NetworkConfig: Schema<Config.Network> = Schema.object({
     selfUrl: Schema.string('Koishi 服务暴露在公网的地址。部分插件（例如 github 和 telegram）需要用到。'),
   }, '网络设置')
 
-  export const Config: Schema<Config> = Schema.merge([NetworkConfig])
+  defineProperty(Config, 'Network', NetworkConfig)
+
+  Config.list.push(NetworkConfig)
 }

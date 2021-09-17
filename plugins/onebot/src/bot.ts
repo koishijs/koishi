@@ -1,4 +1,4 @@
-import { Bot, segment, camelCase, snakeCase, Adapter, Dict, Schema } from 'koishi'
+import { Bot, segment, camelCase, snakeCase, Adapter, Dict, Schema, App } from 'koishi'
 import * as OneBot from './utils'
 
 export class SenderError extends Error {
@@ -30,7 +30,7 @@ function renderText(source: string) {
 }
 
 export namespace CQBot {
-  export interface Config extends Bot.BaseConfig {
+  export interface Config extends Bot.BaseConfig, App.Config.Request {
     selfId?: string
     server?: string
     token?: string
@@ -45,10 +45,9 @@ export class CQBot extends Bot<CQBot.Config> {
   static schema: Schema<CQBot.Config> = Schema.merge([
     Schema.object({
       token: Schema.string(),
-    }),
-    Schema.object({
       platform: Schema.string('平台名称').default('onebot'),
-    }, '高级设置'),
+    }),
+    App.Config.Request,
   ])
 
   constructor(adapter: Adapter, options: CQBot.Config) {

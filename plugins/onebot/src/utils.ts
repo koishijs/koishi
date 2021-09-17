@@ -1,10 +1,10 @@
-import { Adapter, Bot, Session, camelCase, renameProperty, paramCase, segment, Schema } from 'koishi'
+import { Adapter, Bot, Session, camelCase, renameProperty, paramCase, segment, Schema, App } from 'koishi'
 import * as qface from 'qface'
 import * as OneBot from './types'
 
 export * from './types'
 
-export interface SharedConfig extends Adapter.WebSocketClient.Config {
+export interface SharedConfig extends Adapter.WebSocketClient.Config, App.Config.Request {
   path?: string
   secret?: string
   responseTimeout?: number
@@ -15,7 +15,8 @@ export const schema: Schema<SharedConfig> = Schema.merge([
     path: Schema.string('服务器监听的路径，用于 http 和 ws-reverse 协议。').default('/onebot'),
     secret: Schema.string('接收事件推送时用于验证的字段，应该与 OneBot 的 secret 配置保持一致。'),
   }),
-  Adapter.WebSocketClient.schema,
+  Adapter.WebSocketClient.Config,
+  App.Config.Request,
 ])
 
 export const adaptUser = (user: OneBot.AccountInfo): Bot.User => ({

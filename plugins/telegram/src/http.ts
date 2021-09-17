@@ -1,4 +1,4 @@
-import axios, { AxiosError } from 'axios'
+import { AxiosError } from 'axios'
 import { App, Adapter, Session, camelCase, Logger, segment, sanitize, trimSlash, assertProperty, Schema } from 'koishi'
 import { TelegramBot } from './bot'
 import * as Telegram from './types'
@@ -6,7 +6,7 @@ import FormData from 'form-data'
 
 const logger = new Logger('telegram')
 
-export interface TelegramConfig {
+export interface TelegramConfig extends App.Config.Request {
   path?: string
   selfUrl?: string
 }
@@ -25,10 +25,15 @@ export default class HttpServer extends Adapter<TelegramBot.Config, TelegramConf
     } else {
       config.selfUrl = assertProperty(app.options, 'selfUrl')
     }
+
+    this.http = app.http.extend({
+      endpoint: 'https://api.telegram.org',
+      ...config.request,
+    })
   }
 
   async connect(bot: TelegramBot) {
-    const { token, endpoint } = bot.config
+    const { token } = bot.config
     const { path, selfUrl } = this.config
     bot._request = async (action, params, field, content, filename = 'file') => {
       const payload = new FormData()
@@ -36,10 +41,7 @@ export default class HttpServer extends Adapter<TelegramBot.Config, TelegramConf
         payload.append(key, params[key].toString())
       }
       if (field) payload.append(field, content, filename)
-      const data = await axios.post(`${endpoint}/bot${token}/${action}`, payload, {
-        ...this.app.options.axiosConfig,
-        headers: payload.getHeaders(),
-      }).then(res => {
+      const data = await bot.http.post(action, payload, payload.getHeaders()).then(res => {
         return res.data
       }).catch((e: AxiosError) => {
         return e.response.data
@@ -48,7 +50,7 @@ export default class HttpServer extends Adapter<TelegramBot.Config, TelegramConf
     }
 
     const { username } = await bot.getLoginInfo()
-    await bot.get('setWebhook', {
+    await bot.get('/setWebhook', {
       url: selfUrl + path + '?token=' + token,
       drop_pending_updates: true,
     })
@@ -64,7 +66,7 @@ export default class HttpServer extends Adapter<TelegramBot.Config, TelegramConf
       const payload = camelCase<Telegram.Update>(ctx.request.body)
       const token = ctx.request.query.token as string
       const [selfId] = token.split(':')
-      const bot = this.bots.find(bot => bot.selfId === selfId)
+      const bot = this.bots.find(bot => bot.selfId === selfId) as TelegramBot
       if (!(bot?.config.token === token)) return ctx.status = 403
 
       ctx.body = 'OK'
@@ -84,20 +86,20 @@ export default class HttpServer extends Adapter<TelegramBot.Config, TelegramConf
         }
         if (message.photo) {
           const fid = message.photo[0].fileId
-          const { data } = await axios.get(bot.config.endpoint + '/bot' + token + `/getFile?file_id=${fid}`)
-          msg += segment.image(`${bot.config.endpoint}/file/bot${token}/${data.result.file_path}`)
+          const data = await bot.http.get(`/getFile?file_id=${fid}`)
+          msg += segment.image(`${this.config.request.endpoint}/file/bot${token}/${data.result.file_path}`)
         } else if (message.sticker) {
           const fid = message.sticker.fileId
-          const { data } = await axios.get(bot.config.endpoint + '/bot' + token + `/getFile?file_id=${fid}`)
-          msg += segment.image(`${bot.config.endpoint}/file/bot${token}/${data.result.file_path}`)
+          const data = await bot.http.get(`/getFile?file_id=${fid}`)
+          msg += segment.image(`${this.config.request.endpoint}/file/bot${token}/${data.result.file_path}`)
         } else if (message.animation) {
           const fid = message.animation.fileId
-          const { data } = await axios.get(bot.config.endpoint + '/bot' + token + `/getFile?file_id=${fid}`)
-          msg += segment.image(`${bot.config.endpoint}/file/bot${token}/${data.result.file_path}`)
+          const data = await bot.http.get(`/getFile?file_id=${fid}`)
+          msg += segment.image(`${this.config.request.endpoint}/file/bot${token}/${data.result.file_path}`)
         } else if (message.video) {
           const fid = message.video.fileId
-          const { data } = await axios.get(bot.config.endpoint + '/bot' + token + `/getFile?file_id=${fid}`)
-          msg += segment.video(`${bot.config.endpoint}/file/bot${token}/${data.result.file_path}`)
+          const data = await bot.http.get(`/getFile?file_id=${fid}`)
+          msg += segment.video(`${this.config.request.endpoint}/file/bot${token}/${data.result.file_path}`)
         } else if (!message.text) {
           msg += '[Unsupported message]'
         }

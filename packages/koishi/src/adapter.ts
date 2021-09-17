@@ -25,13 +25,7 @@ export namespace InjectedAdapter {
 
     public config: T
 
-    static config: WebSocketClient.Config = {
-      retryLazy: Time.minute,
-      retryInterval: 5 * Time.second,
-      retryTimes: 6,
-    }
-
-    static schema = Schema.object({
+    static Config: Schema<WebSocketClient.Config> = Schema.object({
       retryTimes: Schema.number('初次连接时的最大重试次数，仅用于 ws 协议。').default(6),
       retryInterval: Schema.number('初次连接时的重试时间间隔，仅用于 ws 协议。').default(5 * Time.second),
       retryLazy: Schema.number('连接关闭后的重试时间间隔，仅用于 ws 协议。').default(Time.minute),
@@ -39,7 +33,9 @@ export namespace InjectedAdapter {
 
     constructor(app: App, config: T) {
       super(app, {
-        ...WebSocketClient.config,
+        retryLazy: Time.minute,
+        retryInterval: 5 * Time.second,
+        retryTimes: 6,
         ...config,
       })
     }

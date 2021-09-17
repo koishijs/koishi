@@ -1,11 +1,12 @@
 import { App, Context, Module } from '@koishijs/core'
 import { defineProperty, remove } from '@koishijs/utils'
 import { Server, createServer } from 'http'
-import { AxiosRequestConfig } from 'axios'
+import { Requester } from './http'
 import Router from '@koa/router'
 import type Koa from 'koa'
 
 export * from './adapter'
+export * from './http'
 
 export * from '@koishijs/core'
 export * from '@koishijs/utils'
@@ -24,16 +25,18 @@ declare module '@koishijs/core' {
   }
 
   namespace App {
-    interface NetworkConfig {
-      port?: number
-      host?: string
-      axiosConfig?: AxiosRequestConfig
+    namespace Config {
+      interface Network {
+        port?: number
+        host?: string
+      }
     }
   }
 
   namespace Context {
     interface Delegates {
       router: Router
+      http: Requester
     }
   }
 }
@@ -43,9 +46,11 @@ Module.internal.require = require
 Module.internal.resolve = require.resolve
 
 Context.delegate('router')
+Context.delegate('http')
 
 const prepare = App.prototype.prepare
 App.prototype.prepare = function (this: App, ...args) {
+  this.http = Requester.create(this.options.request)
   prepare.call(this, ...args)
   prepareServer.call(this)
 }

@@ -1,7 +1,7 @@
 /* eslint-disable quote-props */
 
-import { Bot, Session, camelize, segment, renameProperty, snakeCase, Adapter, trimSlash, Schema } from 'koishi'
-import axios, { Method } from 'axios'
+import { Bot, Session, camelize, segment, renameProperty, snakeCase, Adapter, Schema, App, Requester } from 'koishi'
+import { Method } from 'axios'
 import * as KHL from './types'
 import { adaptGroup, adaptAuthor, adaptUser } from './utils'
 import FormData from 'form-data'
@@ -21,7 +21,7 @@ const attachmentTypes = ['image', 'video', 'audio', 'file']
 type SendHandle = [string, KHL.MessageParams, Session<never, never, 'send'>]
 
 export namespace KaiheilaBot {
-  export interface Config extends Bot.BaseConfig {
+  export interface Config extends Bot.BaseConfig, App.Config.Request {
     token?: string
     verifyToken?: string
     endpoint?: string
@@ -33,6 +33,7 @@ export class KaiheilaBot extends Bot<KaiheilaBot.Config> {
   _sn: number
   _ping: NodeJS.Timeout
   _heartbeat: NodeJS.Timeout
+  http: Requester
 
   static schema: Schema<KaiheilaBot.Config> = Schema.merge([
     Schema.object({
@@ -45,28 +46,21 @@ export class KaiheilaBot extends Bot<KaiheilaBot.Config> {
     }, '高级设置'),
   ])
 
-  constructor(adapter: Adapter, options: KaiheilaBot.Config) {
-    options.endpoint = trimSlash(options.endpoint || 'https://www.kaiheila.cn/api/v3')
-    super(adapter, options)
+  constructor(adapter: Adapter, config: KaiheilaBot.Config) {
+    super(adapter, config)
     this._sn = 0
+    this.http = adapter.http.extend(config.request).extend({
+      headers: {
+        'Authorization': `Bot ${config.token}`,
+        'Content-Type': 'application/json',
+      },
+    })
   }
 
-  async request<T = any>(method: Method, path: string, data: any = {}, headers: any = {}): Promise<T> {
-    const url = `${this.config.endpoint}${path}`
-    headers = {
-      'Authorization': `Bot ${this.config.token}`,
-      'Content-Type': 'application/json',
-      ...headers,
-    }
-
-    const response = await axios({
-      method,
-      url,
-      headers,
-      data: data instanceof FormData ? data : JSON.stringify(snakeCase(data)),
-    })
-    const result = camelize(response.data)
-    return result.data
+  async request<T = any>(method: Method, path: string, data?: any, headers: any = {}): Promise<T> {
+    data = data instanceof FormData ? data : JSON.stringify(snakeCase(data))
+    const response = await this.http(method, path, data, headers)
+    return camelize(response).data
   }
 
   private _prepareHandle(channelId: string, content: string, guildId: string): SendHandle {
@@ -102,12 +96,9 @@ export class KaiheilaBot extends Bot<KaiheilaBot.Config> {
       const { url } = await this.request('POST', '/asset/create', payload, payload.getHeaders())
       data.url = url
     } else if (!data.url.includes('kaiheila')) {
-      const res = await axios.get<ReadableStream>(data.url, {
-        responseType: 'stream',
-        headers: { accept: type },
-      })
+      const res = await this.app.http.get.stream(data.url, {}, { accept: type })
       const payload = new FormData()
-      payload.append('file', res.data)
+      payload.append('file', res)
       const { url } = await this.request('POST', '/asset/create', payload, payload.getHeaders())
       data.url = url
       console.log(url)

@@ -2,7 +2,7 @@
 
 import { EventConfig } from './events'
 import axios, { AxiosError, Method } from 'axios'
-import { App, Session, Tables, segment, Logger, Dict } from 'koishi'
+import { App, Session, Tables, segment, Logger, Dict, Requester } from 'koishi'
 import {} from '@koishijs/plugin-puppeteer'
 
 declare module 'koishi' {
@@ -47,7 +47,7 @@ interface Repository {
   id: number
 }
 
-export interface Config {
+export interface Config extends App.Config.Request {
   path?: string
   appId?: string
   appSecret?: string
@@ -72,34 +72,27 @@ export type ReplySession = Session<'ghAccessToken' | 'ghRefreshToken'>
 const logger = new Logger('github')
 
 export class GitHub {
-  constructor(public app: App, public config: Config) {}
+  http: Requester
+
+  constructor(public app: App, public config: Config) {
+    this.http = app.http.extend(config.request)
+  }
 
   async getTokens(params: any) {
-    const { data } = await axios.post<OAuth>('https://github.com/login/oauth/access_token', {
+    return this.http.post<OAuth>('https://github.com/login/oauth/access_token', {
       client_id: this.config.appId,
       client_secret: this.config.appSecret,
       ...params,
-    }, {
-      ...this.app.options.axiosConfig,
-      headers: { Accept: 'application/json' },
-    })
-    return data
+    }, { Accept: 'application/json' })
   }
 
   private async _request(method: Method, url: string, session: ReplySession, data?: any, headers?: Dict) {
     logger.debug(method, url, data)
-    const response = await axios(url, {
-      ...this.app.options.axiosConfig,
-      data,
-      method,
-      timeout: this.config.requestTimeout,
-      headers: {
-        accept: 'application/vnd.github.v3+json',
-        authorization: `token ${session.user.ghAccessToken}`,
-        ...headers,
-      },
+    return this.http(method, url, data, {
+      accept: 'application/vnd.github.v3+json',
+      authorization: `token ${session.user.ghAccessToken}`,
+      ...headers,
     })
-    return response.data
   }
 
   async authorize(session: Session, message: string) {

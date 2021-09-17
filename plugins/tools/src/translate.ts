@@ -2,7 +2,6 @@
 
 import { createHash } from 'crypto'
 import { assertProperty, Context } from 'koishi'
-import axios from 'axios'
 
 const languages = {
   'zh-CHS': '中文',
@@ -48,9 +47,7 @@ export function apply(ctx: Context, config: TranslateOptions) {
       const from = options.from
       const to = options.to
       const sign = encrypt(appKey + qShort + salt + secret)
-      const { data } = await axios.get('http://openapi.youdao.com/api', {
-        params: { q, appKey, salt, from, to, sign },
-      })
+      const data = await ctx.http.get('http://openapi.youdao.com/api', { q, appKey, salt, from, to, sign })
 
       if (Number(data.errorCode)) return `翻译失败，错误码：${data.errorCode}`
 

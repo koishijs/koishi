@@ -1,6 +1,5 @@
 /* eslint-disable camelcase */
 
-import axios from 'axios'
 import nhentai from './nhentai'
 import danbooru from './danbooru'
 import konachan from './konachan'
@@ -110,17 +109,13 @@ async function search(url: string, session: Session, config: saucenao.Config, mi
     }
     keys.add(api_key)
     try {
-      const response = await axios.get<Response>('https://saucenao.com/search.php', {
-        ...app.options.axiosConfig,
-        params: {
-          db: 999,
-          numres: 3,
-          api_key,
-          url,
-          output_type: Params.Type.json,
-        } as Params,
-      })
-      return response.data
+      return await session.app.http.get<Response>('https://saucenao.com/search.php', {
+        db: 999,
+        numres: 3,
+        api_key,
+        url,
+        output_type: Params.Type.json,
+      } as Params)
     } catch (err) {
       if (!err.response) {
         if (!(err instanceof Error) || !err.message.includes('ECONNRESET') && !err.message.includes('ECONNREFUSED')) {
@@ -171,7 +166,7 @@ async function saucenao(url: string, session: Session, config: saucenao.Config, 
     if (mixed) output[0] += '将自动使用 ascii2d 继续进行搜索。'
   }
 
-  if (!lowSimilarity || !mixed) await handleResult(data.results[0], output)
+  if (!lowSimilarity || !mixed) await handleResult(data.results[0], session, output)
 
   if (long_remaining < 20) {
     output.push(`注意：24h 内搜图次数仅剩 ${long_remaining} 次。`)
@@ -183,7 +178,7 @@ async function saucenao(url: string, session: Session, config: saucenao.Config, 
   return !highSimilarity && mixed
 }
 
-async function handleResult(result: Result, output: string[]) {
+async function handleResult(result: Result, session: Session, output: string[]) {
   const { header, data } = result
   const { thumbnail, similarity } = header
   const { ext_urls, title, member_id, member_name, eng_name, jp_name } = data
@@ -199,9 +194,9 @@ async function handleResult(result: Result, output: string[]) {
       }
     }
     if (checkHost(imageUrl, 'danbooru')) {
-      source = await danbooru(imageUrl).catch(logger.debug)
+      source = await danbooru(imageUrl, session).catch(logger.debug)
     } else if (checkHost(imageUrl, 'konachan')) {
-      source = await konachan(imageUrl).catch(logger.debug)
+      source = await konachan(imageUrl, session).catch(logger.debug)
     }
   }
 

@@ -1,5 +1,5 @@
 import { createReadStream } from 'fs'
-import { Bot, Adapter, camelCase, snakeCase, renameProperty, segment, assertProperty, trimSlash, Dict, Schema } from 'koishi'
+import { Bot, Adapter, camelCase, snakeCase, renameProperty, segment, assertProperty, Dict, Schema, App, Requester } from 'koishi'
 import * as Telegram from './types'
 
 export class SenderError extends Error {
@@ -22,7 +22,6 @@ export interface TelegramResponse {
 
 export namespace TelegramBot {
   export interface Config extends Bot.BaseConfig {
-    endpoint?: string
     selfId?: string
     token?: string
   }
@@ -63,17 +62,21 @@ export class TelegramBot extends Bot<TelegramBot.Config> {
     }, '高级设置'),
   ])
 
-  constructor(adapter: Adapter, options: TelegramBot.Config) {
-    assertProperty(options, 'token')
-    if (!options.selfId) {
-      if (options.token.includes(':')) {
-        options.selfId = options.token.split(':')[0]
+  http: Requester
+
+  constructor(adapter: Adapter, config: TelegramBot.Config) {
+    assertProperty(config, 'token')
+    if (!config.selfId) {
+      if (config.token.includes(':')) {
+        config.selfId = config.token.split(':')[0]
       } else {
-        assertProperty(options, 'selfId')
+        assertProperty(config, 'selfId')
       }
     }
-    options.endpoint = trimSlash(options.endpoint || 'https://api.telegram.org')
-    super(adapter, options)
+    super(adapter, config)
+    this.http = adapter.http.extend({
+      endpoint: `${adapter.http.config.endpoint}/bot${config.token}`,
+    })
   }
 
   async get<T = any>(action: string, params = {}, field = '', content: Buffer = null): Promise<T> {
@@ -94,7 +97,7 @@ export class TelegramBot extends Bot<TelegramBot.Config> {
         payload.caption += node.data.content
       } else if (node.type === 'image') {
         if (payload.photo) {
-          result = await this.get('sendPhoto', ...maybeFile(payload, 'photo'))
+          result = await this.get('/sendPhoto', ...maybeFile(payload, 'photo'))
           payload.caption = ''
           payload.photo = ''
         }
@@ -104,11 +107,11 @@ export class TelegramBot extends Bot<TelegramBot.Config> {
       }
     }
     if (payload.photo) {
-      result = await this.get('sendPhoto', ...maybeFile(payload, 'photo'))
+      result = await this.get('/sendPhoto', ...maybeFile(payload, 'photo'))
       payload.caption = ''
       payload.photo = ''
     } else if (payload.caption) {
-      result = await this.get('sendMessage', { chatId, text: payload.caption })
+      result = await this.get('/sendMessage', { chatId, text: payload.caption })
     }
     return result ? ('' + result.messageId) : null
   }
@@ -131,7 +134,7 @@ export class TelegramBot extends Bot<TelegramBot.Config> {
   }
 
   async deleteMessage(chatId: string, messageId: string) {
-    await this.get('deleteMessage', { chatId, messageId })
+    await this.get('/deleteMessage', { chatId, messageId })
   }
 
   static adaptGroup(data: Telegram.Chat & Bot.Guild): Bot.Guild {
@@ -141,7 +144,7 @@ export class TelegramBot extends Bot<TelegramBot.Config> {
   }
 
   async getGuild(chatId: string): Promise<Bot.Guild> {
-    const data = await this.get('getChat', { chatId })
+    const data = await this.get('/getChat', { chatId })
     return TelegramBot.adaptGroup(data)
   }
 
@@ -151,21 +154,21 @@ export class TelegramBot extends Bot<TelegramBot.Config> {
 
   async getGuildMember(chatId: string, userId: string): Promise<Bot.GuildMember> {
     if (Number.isNaN(+userId)) return null
-    const data = await this.get('getChatMember', { chatId, userId })
+    const data = await this.get('/getChatMember', { chatId, userId })
     return TelegramBot.adaptUser(data)
   }
 
   async getGuildMemberList(chatId: string): Promise<Bot.GuildMember[]> {
-    const data = await this.get('getChatAdministrators', { chatId })
+    const data = await this.get('/getChatAdministrators', { chatId })
     return data.map(TelegramBot.adaptUser)
   }
 
   setGroupLeave(chatId: string) {
-    return this.get('leaveChat', { chatId })
+    return this.get('/leaveChat', { chatId })
   }
 
   async getLoginInfo() {
-    const data = await this.get<Telegram.User>('getMe')
+    const data = await this.get<Telegram.User>('/getMe')
     return TelegramBot.adaptUser(data)
   }
 }

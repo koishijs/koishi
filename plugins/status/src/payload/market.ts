@@ -5,7 +5,6 @@ import { spawn, StdioOptions } from 'child_process'
 import { satisfies } from 'semver'
 import { StatusServer } from '../server'
 import { throttle } from 'throttle-debounce'
-import axios from 'axios'
 
 interface PackageBase {
   name: string
@@ -132,8 +131,8 @@ class Market implements StatusServer.DataSource {
   }
 
   async start() {
-    const [{ data }] = await Promise.all([
-      axios.get<SearchResult>('https://api.npms.io/v2/search?q=koishi+plugin+not:deprecated&size=250'),
+    const [data] = await Promise.all([
+      this.ctx.http.get<SearchResult>('https://api.npms.io/v2/search?q=koishi+plugin+not:deprecated&size=250'),
       Promise.all(Object.keys(require.cache).map(async (filename) => {
         const { exports } = require.cache[filename]
         const state = this.ctx.app.registry.get(exports)
@@ -148,9 +147,9 @@ class Market implements StatusServer.DataSource {
       const community = name.startsWith('koishi-plugin-')
       if (!official && !community) return
 
-      const [local, { data }] = await Promise.all([
+      const [local, data] = await Promise.all([
         this.loadLocal(name),
-        axios.get<Registry>(`https://registry.npmjs.org/${name}`),
+        this.ctx.http.get<Registry>(`https://registry.npmjs.org/${name}`),
       ])
       const { dependencies, peerDependencies, dist } = data.versions[version]
       const declaredVersion = { ...dependencies, ...peerDependencies }['koishi']

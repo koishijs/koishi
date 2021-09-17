@@ -3,7 +3,6 @@ import { CQBot } from './bot'
 import { schema } from './utils'
 import { WebSocketClient, WebSocketServer } from './ws'
 import HttpServer from './http'
-import axios from 'axios'
 
 const { broadcast } = Context.prototype
 const imageRE = /\[CQ:image,file=([^,]+),url=([^\]]+)\]/
@@ -18,7 +17,7 @@ Context.prototype.broadcast = async function (this: Context, ...args: any[]) {
     const [text, , url] = capture
     output += message.slice(0, capture.index)
     message = message.slice(capture.index + text.length)
-    const { data } = await axios.get<ArrayBuffer>(url, { responseType: 'arraybuffer' })
+    const data = await this.http.get.arraybuffer(url)
     output += `[CQ:image,file=base64://${Buffer.from(data).toString('base64')}]`
   }
   args[index] = output + message

@@ -1,27 +1,13 @@
 /* eslint-disable camelcase */
 
-import axios, { Method } from 'axios'
-import { Adapter, Bot, Schema, segment, trimSlash } from 'koishi'
+import { Adapter, App, Bot, Schema, segment, Requester } from 'koishi'
 import { adaptChannel, adaptGroup, adaptMessage, adaptUser } from './utils'
 import { Sender } from './sender'
 import * as DC from './types'
 
-export class SenderError extends Error {
-  constructor(url: string, data: any, selfId: string) {
-    super(`Error when trying to request ${url}, data: ${JSON.stringify(data)}`)
-    Object.defineProperties(this, {
-      name: { value: 'SenderError' },
-      selfId: { value: selfId },
-      data: { value: data },
-      url: { value: url },
-    })
-  }
-}
-
 export namespace DiscordBot {
   export interface Config extends Bot.BaseConfig, Sender.Config {
-    token?: string
-    endpoint?: string
+    token: string
   }
 }
 
@@ -32,7 +18,8 @@ export class DiscordBot extends Bot<DiscordBot.Config> {
 
   static schema: Schema<DiscordBot.Config> = Schema.merge([
     Schema.object({
-      token: Schema.string(),
+      platform: Schema.string('平台名称。').default('discord'),
+      token: Schema.string().required(),
       handleExternalAsset: Schema.choose({
         download: '先下载后发送',
         direct: '直接发送链接',
@@ -44,41 +31,18 @@ export class DiscordBot extends Bot<DiscordBot.Config> {
         auto: '如果图片本身采用直接发送则与前面的文本分开，否则将文本作为图片的附带信息发送',
       }, '发送图文等混合内容时采用的方式。').default('auto'),
     }),
-    Schema.object({
-      platform: Schema.string('平台名称').default('discord'),
-      endpoint: Schema.string().default('https://discord.com/api/v8'),
-    }, '高级设置'),
+    App.Config.Request,
   ])
 
-  constructor(adapter: Adapter, options: DiscordBot.Config) {
-    if (options.endpoint) {
-      options.endpoint = trimSlash(options.endpoint)
-    }
+  public request: Requester
 
-    super(adapter, options)
+  constructor(adapter: Adapter, config: DiscordBot.Config) {
+    super(adapter, config)
     this._d = 0
     this._sessionId = ''
-  }
-
-  async request<T = any>(method: Method, path: string, data?: any, headers?: any): Promise<T> {
-    const { endpoint = 'https://discord.com/api/v8', token } = this.config
-    const url = `${endpoint}${path}`
-    try {
-      const response = await axios({
-        ...this.app.options.axiosConfig,
-        method,
-        url,
-        headers: {
-          Authorization: `Bot ${token}`,
-          ...headers,
-        },
-        data,
-      })
-      return response.data
-    } catch (e) {
-      if (e.response?.data) console.log(e.response.data)
-      throw new SenderError(url, data, this.selfId)
-    }
+    this.request = adapter.http.extend({
+      headers: { Authorization: `Bot ${config.token}`, },
+    })
   }
 
   async getSelf() {

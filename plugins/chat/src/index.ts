@@ -2,7 +2,6 @@ import { Bot, Context, Random, Schema, segment, Session, template, Time } from '
 import { resolve } from 'path'
 import { StatusServer } from '@koishijs/plugin-status'
 import receiver, { Message, RefreshConfig } from './receiver'
-import axios from 'axios'
 
 export * from './receiver'
 
@@ -138,13 +137,13 @@ export function apply(ctx: Context, options: Config = {}) {
       })
     })
 
+    const { get } = ctx.http
     ctx.router.get(apiPath + '/assets/:url', async (ctx) => {
       if (!whitelist.some(prefix => ctx.params.url.startsWith(prefix))) {
         console.log(ctx.params.url)
         return ctx.status = 403
       }
-      const { data } = await axios.get(ctx.params.url, { responseType: 'stream' })
-      return ctx.body = data
+      return ctx.body = await get.stream(ctx.params.url)
     })
   })
 }

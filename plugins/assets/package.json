@@ -32,7 +32,6 @@
     "koishi": "^4.0.0-alpha.6"
   },
   "dependencies": {
-    "axios": "^0.21.4",
     "form-data": "^4.0.0"
   }
 }

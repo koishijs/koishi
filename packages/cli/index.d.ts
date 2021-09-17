@@ -26,10 +26,6 @@ export interface DeamonConfig {
 
 declare module 'koishi' {
   namespace App {
-    interface NetworkConfig {
-      proxyAgent?: string
-    }
-
     interface Config extends DeamonConfig {
       allowWrite?: boolean
       plugins?: PluginConfig

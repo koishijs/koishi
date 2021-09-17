@@ -3,7 +3,6 @@ import { basename } from 'path'
 import FormData from 'form-data'
 import FileType from 'file-type'
 import AggregateError from 'es-aggregate-error'
-import axios from 'axios'
 import { DiscordBot } from './bot'
 import { segment, Dict } from 'koishi'
 
@@ -47,7 +46,7 @@ export class Sender {
     }
   }
 
-  async sendEmbed(fileBuffer: Buffer, payload_json: Dict = {}, filename: string) {
+  async sendEmbed(fileBuffer: ArrayBuffer, payload_json: Dict = {}, filename: string) {
     const fd = new FormData()
     const type = await FileType.fromBuffer(fileBuffer)
     filename ||= 'file.' + type.ext
@@ -85,14 +84,10 @@ export class Sender {
 
     const sendDownload = async () => {
       const filename = basename(data.url)
-      const a = await axios.get(data.url, {
-        ...this.bot.app.options.axiosConfig,
-        responseType: 'arraybuffer',
-        headers: {
-          accept: type + '/*',
-        },
+      const buffer = await this.bot.app.http.get.arraybuffer(data.url, {}, {
+        accept: type + '/*',
       })
-      return this.sendEmbed(a.data, addition, data.file || filename)
+      return this.sendEmbed(buffer, addition, data.file || filename)
     }
 
     const mode = data.mode as HandleExternalAsset || handleExternalAsset
@@ -103,12 +98,9 @@ export class Sender {
     }
 
     // auto mode
-    await axios.head(data.url, {
-      ...this.bot.app.options.axiosConfig,
-      headers: {
-        accept: type + '/*',
-      },
-    }).then(({ headers }) => {
+    await this.bot.app.http.head(data.url, {}, {
+      accept: type + '/*',
+    }).then((headers) => {
       if (headers['content-type'].startsWith(type)) {
         return sendDirect()
       } else {
