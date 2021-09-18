@@ -33,7 +33,6 @@ export = Adapter.define('onebot', CQBot, {
   'http': HttpServer,
   'ws': WebSocketClient,
   'ws-reverse': WebSocketServer,
-}, (config) => {
-  const { endpoint } = config.request || {}
+}, ({ endpoint }) => {
   return !endpoint ? 'ws-reverse' : endpoint.startsWith('ws') ? 'ws' : 'http'
 })

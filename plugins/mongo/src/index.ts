@@ -171,10 +171,6 @@ export const schema: Schema<Config> = Schema.object({
   prefix: Schema.string('使用的表名前缀。当配置了这一项时，所有通过 Koishi 创建的表名都会以这个配置项为前缀。'),
 })
 
-export const delegates: Context.Delegates.Meta = {
-  providing: ['database'],
-}
-
 export function apply(ctx: Context, config: Config) {
   ctx.database = new MongoDatabase(ctx.app, {
     host: 'localhost',

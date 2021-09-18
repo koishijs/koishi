@@ -31,10 +31,6 @@ export const schema: Schema<Config> = Schema.object({
   userAgent: Schema.string('请求时使用的 User Agent。'),
 })
 
-export const delegates: Context.Delegates.Meta = {
-  required: ['database'],
-}
-
 export function apply(ctx: Context, config: Config = {}) {
   const { timeout = 10 * Time.second, refresh = Time.minute, userAgent } = config
   const feedMap: Record<string, Set<string>> = {}

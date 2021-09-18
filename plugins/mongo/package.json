@@ -29,7 +29,8 @@
     "chatbot",
     "koishi",
     "database",
-    "mysql"
+    "mysql",
+    "role:database"
   ],
   "peerDependencies": {
     "koishi": "^4.0.0-alpha.6"

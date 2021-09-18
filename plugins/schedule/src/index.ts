@@ -44,10 +44,6 @@ export interface Config {
 
 export const name = 'schedule'
 
-export const delegates: Context.Delegates.Meta = {
-  required: ['database'],
-}
-
 export const schema = Schema.object({
   minInterval: Schema.number('允许的最小时间间隔。').default(Time.minute),
 })

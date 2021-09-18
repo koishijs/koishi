@@ -31,10 +31,6 @@ export const schema = Schema.select({
   }, '存储在 sm.ms 图床服务'),
 }, 'type', '使用的存储方式。')
 
-export const delegates: Context.Delegates.Meta = {
-  providing: ['assets'],
-}
-
 async function getAssetBuffer(url: string, http: Requester) {
   if (url.startsWith(PTC_BASE64)) {
     return Buffer.from(url.slice(PTC_BASE64.length), 'base64')

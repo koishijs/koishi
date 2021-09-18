@@ -26,7 +26,8 @@
     "koishi",
     "plugin",
     "schedule",
-    "task"
+    "task",
+    "required:database"
   ],
   "devDependencies": {
     "@koishijs/test-utils": "^8.0.0-alpha.5"

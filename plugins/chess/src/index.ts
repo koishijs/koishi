@@ -43,10 +43,6 @@ export const name = 'chess'
 
 export const schema: Schema<Config> = Schema.object({})
 
-export const delegates: Context.Delegates.Meta = {
-  optional: ['database'],
-}
-
 export function apply(ctx: Context) {
   ctx = ctx.guild()
 

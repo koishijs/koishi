@@ -31,7 +31,9 @@
     "plugin",
     "teach",
     "dialogue",
-    "conversation"
+    "conversation",
+    "required:database",
+    "optional:assets"
   ],
   "peerDependencies": {
     "koishi": "^4.0.0-alpha.6"

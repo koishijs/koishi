@@ -36,11 +36,6 @@ export const schema: Schema<Config> = Schema.object({
   requestTimeout: Schema.number('等待请求 GitHub 的时间，超时将提示操作失败。缺省时会使用全局设置。'),
 })
 
-export const delegates: Context.Delegates.Meta = {
-  required: ['database'],
-  optional: ['assets'],
-}
-
 export function apply(ctx: Context, config: Config = {}) {
   config = { ...defaultOptions, ...config }
   config.path = sanitize(config.path)

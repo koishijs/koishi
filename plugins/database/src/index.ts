@@ -239,10 +239,6 @@ Database.extend(MemoryDatabase, {
 
 export const name = 'database'
 
-export const delegates: Context.Delegates.Meta = {
-  providing: ['database'],
-}
-
 export const schema: Schema<Config> = Schema.object({})
 
 export function apply(ctx: Context, config: Config = {}) {

@@ -21,7 +21,8 @@
     "bot",
     "kaiheila",
     "chatbot",
-    "koishi"
+    "koishi",
+    "role:adapter"
   ],
   "peerDependencies": {
     "koishi": "^4.0.0-alpha.6"

@@ -27,7 +27,8 @@
     "coolq",
     "chatbot",
     "koishi",
-    "plugin"
+    "plugin",
+    "optional:database"
   ],
   "peerDependencies": {
     "koishi": "^4.0.0-alpha.6"

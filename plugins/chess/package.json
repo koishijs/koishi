@@ -26,7 +26,8 @@
     "koishi",
     "plugin",
     "chess",
-    "game"
+    "game",
+    "optional:database"
   ],
   "peerDependencies": {
     "koishi": "^4.0.0-alpha.6",

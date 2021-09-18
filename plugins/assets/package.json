@@ -26,7 +26,8 @@
     "koishi",
     "plugin",
     "assets",
-    "server"
+    "server",
+    "role:assets"
   ],
   "peerDependencies": {
     "koishi": "^4.0.0-alpha.6"

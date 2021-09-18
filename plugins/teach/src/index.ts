@@ -152,11 +152,6 @@ export const schema: Schema<Config> = Schema.merge([
   }, '显示设置'),
 ])
 
-export const delegates: Context.Delegates.Meta = {
-  required: ['database'],
-  optional: ['assets'],
-}
-
 function registerPrefix(ctx: Context, prefix: string) {
   const g = '\\d+(?:\\.\\.\\d+)?'
   const last = prefix[prefix.length - 1]
