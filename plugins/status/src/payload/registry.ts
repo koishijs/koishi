@@ -27,7 +27,7 @@ class Registry implements StatusServer.DataSource {
     return this.ctx.app.registry.get(plugin)
   }
 
-  private async getForced() {
+  private getAppData(): Registry.AppData {
     // get protocols
     const protocols: Dict<Schema> = {}
     for (const key in Adapter.library) {
@@ -35,32 +35,37 @@ class Registry implements StatusServer.DataSource {
       protocols[key] = Adapter.library[key].schema
     }
 
-    const providing = (['assets', 'cache', 'database'] as const).filter(key => this.ctx[key])
-    const children: Registry.Data[] = [{
+    // get delegates
+    const delegates = Context.Delegates.filter(key => this.ctx[key])
+
+    return {
       id: null,
       name: '',
       schema: App.Config,
       protocols,
-      delegates: { providing },
+      delegates,
       config: omit(this.ctx.app.options, ['plugins' as any]),
-    } as Registry.AppData]
+    }
+  }
+
+  private async getForced() {
+    const children: Registry.Data[] = [this.getAppData()]
 
     for (const plugin of this.getState(null).children) {
       const state = this.getState(plugin)
       if (!state.name) continue
-      children.push(pick(state, ['id', 'name', 'schema', 'delegates', 'config']))
+      children.push(pick(state, ['id', 'name', 'schema', 'config']))
     }
 
     const { plugins = {} } = this.ctx.app.options
     for (const key in plugins) {
       if (!key.startsWith('~')) continue
       const name = hyphenate(key.slice(1))
-      const { schema, delegates } = require(Module.resolve(name))
+      const { schema } = require(Module.resolve(name))
       children.push({
         id: null,
         name,
         schema,
-        delegates,
         config: plugins[key],
       })
     }
@@ -96,11 +101,11 @@ namespace Registry {
     id?: string
     name?: string
     schema?: Schema
-    delegates?: Context.Delegates.Meta
     config?: any
   }
 
   export interface AppData extends Data {
+    delegates: string[]
     protocols: Dict<Schema>
   }
 }

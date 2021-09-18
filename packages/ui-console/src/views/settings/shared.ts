@@ -6,6 +6,7 @@ export interface Data extends Registry.Data {
   fullname?: string
   devDeps?: string[]
   peerDeps?: string[]
+  keywords?: string[]
 }
 
 export const available = computed(() => {
@@ -21,11 +22,11 @@ export const available = computed(() => {
     result[data.shortname] = {
       name: data.shortname,
       fullname: data.name,
-      schema: data.local.schema,
-      delegates: data.local.delegates,
-      devDeps: data.local.devDeps,
-      peerDeps: data.local.peerDeps,
       config: {},
+      schema: data.local.schema,
+      devDeps: data.local.devDeps || [],
+      peerDeps: data.local.peerDeps || [],
+      keywords: data.local.keywords || [],
       ...result[data.shortname],
     }
   }

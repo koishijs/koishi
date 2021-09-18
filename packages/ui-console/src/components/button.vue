@@ -1,15 +1,15 @@
 <template>
   <button
+    @click="onClick"
     :title="disabled ? '' : title"
-    :class="['k-button', type, { disabled, solid, round, frameless }]"
-  >
+    :class="['k-button', type, { disabled, solid, round, frameless }]">
     <slot/>
   </button>
 </template>
 
 <script lang="ts" setup>
 
-defineProps({
+const props = defineProps({
   type: {
     type: String,
     default: 'default',
@@ -20,6 +20,13 @@ defineProps({
   round: Boolean,
   disabled: Boolean,
 })
+
+const emit = defineEmits(['click'])
+
+function onClick(event: MouseEvent) {
+  if (props.disabled) return
+  emit('click', event)
+}
 
 </script>
 
@@ -58,7 +65,6 @@ button {
   }
   &.disabled {
     cursor: default;
-    pointer-events: none;
   }
   // default: transparent & framed
   color: var(--default);

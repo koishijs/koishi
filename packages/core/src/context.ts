@@ -17,7 +17,6 @@ export namespace Plugin {
   export interface Meta {
     name?: string
     schema?: Schema
-    delegates?: Context.Delegates.Meta
   }
 
   export interface Object<T = any> extends Meta {
@@ -519,19 +518,11 @@ export namespace Context {
     cache: Cache
   }
 
-  export namespace Delegates {
-    export type Keys = keyof Delegates
-    export const Keys: Keys[] = []
+  export const Delegates: string[] = []
 
-    export interface Meta {
-      providing?: Keys[]
-      required?: Keys[]
-      optional?: Keys[]
-    }
-  }
-
-  export function delegate(key: string & keyof Context) {
+  export function delegate(key: keyof Delegates) {
     if (Object.prototype.hasOwnProperty.call(Context.prototype, key)) return
+    Delegates.push(key)
     const privateKey = Symbol(key)
     Object.defineProperty(Context.prototype, key, {
       get() {

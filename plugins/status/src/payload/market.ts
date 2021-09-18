@@ -13,6 +13,7 @@ interface PackageBase {
 }
 
 interface PackageJson extends PackageBase {
+  keywords?: string[]
   dependencies?: Dict<string>
   devDependencies?: Dict<string>
   peerDependencies?: Dict<string>
@@ -106,14 +107,14 @@ class Market implements StatusServer.DataSource {
 
     // check adapter
     const oldLength = Object.keys(Adapter.library).length
-    const { schema, delegates } = require(path)
+    const { schema } = require(path)
     const newLength = Object.keys(Adapter.library).length
     if (newLength > oldLength) this.ctx.webui.sources.registry.update()
 
     const devDeps = this.getPluginDeps(data.devDependencies)
     const peerDeps = this.getPluginDeps(data.peerDependencies)
 
-    return { schema, delegates, workspace, devDeps, peerDeps, id, ...pick(data, ['name', 'version', 'description']) }
+    return { schema, workspace, devDeps, peerDeps, id, ...pick(data, ['name', 'version', 'keywords', 'description']) }
   }
 
   private async loadActive(filename: string, id?: string) {
@@ -158,7 +159,7 @@ class Market implements StatusServer.DataSource {
         this.loadLocal(name),
         this.ctx.http.get<Registry>(`https://registry.npmjs.org/${name}`),
       ])
-      const { dependencies, peerDependencies, dist } = data.versions[version]
+      const { dependencies, peerDependencies, dist, keywords } = data.versions[version]
       const declaredVersion = { ...dependencies, ...peerDependencies }['koishi']
       if (!declaredVersion || !satisfies(currentVersion, declaredVersion)) return
 
@@ -168,6 +169,7 @@ class Market implements StatusServer.DataSource {
         shortname,
         local,
         official,
+        keywords: local?.keywords || keywords,
         size: dist.unpackedSize,
         score: {
           final: item.score.final,
@@ -200,7 +202,7 @@ namespace Market {
     schema?: Schema
     devDeps: string[]
     peerDeps: string[]
-    delegates?: Context.Delegates.Meta
+    keywords?: string[]
     workspace: boolean
   }
 
@@ -208,6 +210,7 @@ namespace Market {
     shortname: string
     local?: Local
     official: boolean
+    keywords?: string[]
     size: number
     score: {
       final: number
