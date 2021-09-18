@@ -10,7 +10,7 @@ const heartbeatIntervals = [6, 2, 4]
 
 export default class WebSocketClient extends Adapter.WebSocketClient<BotConfig, AdapterConfig> {
   static schema = Schema.object({
-    token: Schema.string('机器人的用户令牌。'),
+    token: Schema.string('机器人的用户令牌。').required(),
   })
 
   constructor(app: App, config: AdapterConfig) {

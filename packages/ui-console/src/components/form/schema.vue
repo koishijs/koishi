@@ -67,7 +67,8 @@
 
 <script lang="ts" setup>
 
-import { computed, watch, PropType } from 'vue'
+import { computed, watch } from 'vue'
+import type { PropType } from 'vue'
 import { Schema } from '@koishijs/utils'
 import SchemaGroup from './schema-group.vue'
 

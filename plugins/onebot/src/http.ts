@@ -1,4 +1,4 @@
-import { App, Adapter, Logger, assertProperty, Session, Schema, Requester } from 'koishi'
+import { App, Adapter, Logger, assertProperty, Session, Schema, Requester, omit } from 'koishi'
 import { BotConfig, CQBot } from './bot'
 import { adaptSession, AdapterConfig } from './utils'
 import { createHmac } from 'crypto'
@@ -8,8 +8,9 @@ const logger = new Logger('onebot')
 export class HttpServer extends Adapter<BotConfig, AdapterConfig> {
   static schema: Schema<BotConfig> = Schema.object({
     selfId: Schema.string('机器人的账号。').required(),
-    token: Schema.string('发送信息时用于验证的字段，应与 OneBot 的 access_token 配置保持一致。'),
-    ...Requester.Config.dict,
+    token: Schema.string('发送信息时用于验证的字段，应与 OneBot 配置文件中的 access_token 保持一致。'),
+    endpoint: Schema.string('要连接的 OneBot 服务器地址。').required(),
+    ...omit(Requester.Config.dict, ['endpoint']),
   })
 
   constructor(app: App, config: AdapterConfig = {}) {

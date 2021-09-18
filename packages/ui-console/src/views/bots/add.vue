@@ -1,12 +1,13 @@
 <template>
   <div class="add-bot">
+    <k-button solid @click="send('bot/add', { platform, protocol, config })">启动</k-button>
     <h3 class="required">选择适配器</h3>
     <div class="platform-select">
       <el-select v-model="platform" @change="protocol = null, config = {}">
-        <el-option v-for="(_, name) in adapters" :value="name"></el-option>
+        <el-option v-for="(_, name) in registry[''].protocols" :value="name"></el-option>
       </el-select>
-      <el-select v-if="adapters[platform]?.length" v-model="protocol" @change="config = {}">
-        <el-option v-for="(name) in adapters[platform]" :value="name"></el-option>
+      <el-select v-if="schema1?.type === 'select'" v-model="protocol" @change="config = {}">
+        <el-option v-for="(_, name) in schema1.dict" :value="name"></el-option>
       </el-select>
     </div>
     <k-schema v-if="selected" :schema="selected" v-model="config"></k-schema>
@@ -17,31 +18,22 @@
 
 import { ElSelect, ElOption } from 'element-plus'
 import { ref, computed } from 'vue'
-import { registry } from '~/client'
-import type { Dict, Schema } from '~/server'
+import { registry, send } from '~/client'
+import type { Schema } from '~/server'
 
 const platform = ref<string>()
 const protocol = ref<string>()
 const config = ref({})
 
-const selected = computed<Schema>(() => {
+const schema1 = computed<Schema>(() => {
   if (!platform.value) return
-  if (protocol.value) return registry.value[''].protocols[`${platform.value}.${protocol.value}`]
-  if (adapters.value[platform.value].length) return
   return registry.value[''].protocols[platform.value]
 })
 
-const adapters = computed(() => {
-  const result: Dict<string[]> = {}
-  for (const key in registry.value[''].protocols) {
-    const [platform, protocol] = key.split('.')
-    if (protocol) {
-      result[platform].push(protocol)
-    } else {
-      result[key] = []
-    }
-  }
-  return result
+const selected = computed<Schema>(() => {
+  if (!schema1.value) return
+  if (schema1.value.type !== 'select') return schema1.value
+  if (protocol.value) return schema1.value.dict[protocol.value]
 })
 
 </script>

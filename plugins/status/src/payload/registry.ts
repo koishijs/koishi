@@ -1,4 +1,4 @@
-import { App, Context, hyphenate, omit, pick, Plugin, Schema, Module, Dict, Adapter, Bot } from 'koishi'
+import { App, Context, hyphenate, omit, pick, Plugin, Schema, Module, Dict, Adapter } from 'koishi'
 import { debounce } from 'throttle-debounce'
 import { StatusServer } from '../server'
 
@@ -31,6 +31,7 @@ class Registry implements StatusServer.DataSource {
     // get protocols
     const protocols: Dict<Schema> = {}
     for (const key in Adapter.library) {
+      if (key.includes('.')) continue
       protocols[key] = Adapter.library[key].schema
     }
 
