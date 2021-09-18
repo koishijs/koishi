@@ -58,7 +58,8 @@ const props = defineProps<{
 }>()
 
 const data = computed<Data>(() => {
-  return registry.value[props.current] || available.value.find(data => data.name === props.current)
+  return available.value.find(data => data.name === props.current)
+    || registry.value[props.current]
 })
 
 function getDeps(type: 'peerDeps' | 'devDeps') {
@@ -125,7 +126,7 @@ const message = computed(() => {
 
 function execute(event: string) {
   const { name, config } = data.value
-  send('config/' + event, { name, config })
+  send('plugin/' + event, { name, config })
 }
 
 </script>

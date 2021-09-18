@@ -263,18 +263,22 @@ export namespace StatusServer {
     this.app.webui.sources.registry.switch(plugin)
   }
 
-  listeners['config/install'] = async function ({ name, config }) {
-    if (await this.validate()) return this.send('unauthorized')
-    this.app.emit('config/install', name, config)
+  for (const event of ['install', 'dispose', 'reload', 'save'] as const) {
+    listeners[`plugin/${event}`] = async function ({ name, config }) {
+      if (await this.validate()) return this.send('unauthorized')
+      this.app.emit(`config/${event}`, name, config)
+    }
   }
 
-  listeners['config/dispose'] = async function ({ name, config }) {
+  listeners[`bot/create`] = async function ({ platform, protocol, config }) {
     if (await this.validate()) return this.send('unauthorized')
-    this.app.emit('config/dispose', name, config)
+    this.app.emit('bot/create', platform, { protocol, ...config })
   }
 
-  listeners['config/reload'] = async function ({ name, config }) {
-    if (await this.validate()) return this.send('unauthorized')
-    this.app.emit('config/reload', name, config)
+  for (const event of ['remove', 'start', 'stop'] as const) {
+    listeners[`bot/${event}`] = async function ({ id }) {
+      if (await this.validate()) return this.send('unauthorized')
+      this.app.emit(`bot/${event}`, id)
+    }
   }
 }

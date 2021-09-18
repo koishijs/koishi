@@ -53,8 +53,9 @@ export class Loader {
     return this.cache[name] = require(path)
   }
 
-  loadPlugin(name: string, options: any) {
+  loadPlugin(name: string, options?: any) {
     const plugin = this.resolvePlugin(name)
+    if (this.app.registry.has(plugin)) return plugin
     createContext(this.app, options).plugin(plugin, options)
     return plugin
   }

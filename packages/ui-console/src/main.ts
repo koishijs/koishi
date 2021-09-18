@@ -50,13 +50,6 @@ router.addRoute({
 })
 
 router.addRoute({
-  path: '/bots',
-  name: '机器人',
-  meta: { icon: 'robot', require: ['profile', 'registry'] },
-  component: () => import('./views/bots/index.vue'),
-})
-
-router.addRoute({
   path: '/database',
   name: '数据库',
   meta: { icon: 'database' },
@@ -64,22 +57,29 @@ router.addRoute({
 })
 
 router.addRoute({
+  path: '/bots',
+  name: '机器人',
+  meta: { icon: 'robot', require: ['profile', 'registry'] },
+  component: () => import('./views/bots/index.vue'),
+})
+
+router.addRoute({
   path: '/settings',
-  name: '设置',
+  name: '插件配置',
   meta: { icon: 'tools', require: ['registry', 'market'] },
   component: () => import('./views/settings/index.vue'),
 })
 
 router.addRoute({
   path: '/market',
-  name: '市场',
+  name: '插件市场',
   meta: { icon: 'puzzle-piece', require: ['market'] },
   component: () => import('./views/market/index.vue'),
 })
 
 router.addRoute({
   path: '/logs',
-  name: '日志',
+  name: '运行日志',
   meta: { icon: 'clipboard-list' },
   component: () => import('./views/logs/index.vue'),
 })

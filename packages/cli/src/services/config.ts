@@ -106,6 +106,22 @@ export function createConfigManager(app: App, loader: Loader) {
     writeConfig()
   })
 
+  app.on('bot/create', async (name, config) => {
+    if (plugins['~' + name]) {
+      plugins[name] = plugins['~' + name]
+      delete plugins['~' + name]
+    } else if (!plugins[name]) {
+      plugins[name] = { bots: [] }
+    }
+    const adapterConfig = plugins[name]
+    const adapter = loader.loadPlugin(name, adapterConfig)
+    adapterConfig['bots'].push(config)
+    if (!allowWrite) return
+    updateText(name, plugins[name], adapter)
+    delete configTexts['~' + name]
+    writeConfig()
+  })
+
   function updateText(name: string, config: any, plugin: Plugin) {
     configTexts[name] = codegenForDict(config, plugin['schema'])
   }

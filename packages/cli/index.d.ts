@@ -44,6 +44,10 @@ declare module 'koishi' {
     'config/reload'(name: string, config: any): void
     'config/dispose'(name: string, config: any): void
     'config/save'(name: string, config: any): void
+    'bot/create'(platform: string, config: any): void
+    'bot/remove'(id: string): void
+    'bot/start'(id: string): void
+    'bot/stop'(id: string): void
   }
 }
 
