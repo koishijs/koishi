@@ -7,6 +7,11 @@ template.set('deamon', {
   restarted: '已成功重启。',
 })
 
+interface Message {
+  type: 'send'
+  body: any
+}
+
 export function apply(ctx: Context, config: DeamonConfig = {}) {
   const { exitCommand, autoRestart = true } = config
 
@@ -35,5 +40,13 @@ export function apply(ctx: Context, config: DeamonConfig = {}) {
     process.send({ type: 'start', body: { autoRestart } })
     process.on('SIGINT', handleSignal)
     process.on('SIGTERM', handleSignal)
+  })
+
+  process.on('message', (data: Message) => {
+    if (data.type === 'send') {
+      const { channelId, guildId, sid, message } = data.body
+      const bot = ctx.bots.get(sid)
+      bot.sendMessage(channelId, message, guildId)
+    }
   })
 }

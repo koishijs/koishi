@@ -29,12 +29,9 @@ describe('Logger API', () => {
     logger = new Logger('test').extend('logger')
     expect(logger.name).to.equal('test:logger')
     expect(logger).to.equal(new Logger('test:logger'))
-    Logger.stream = new Writable({
-      write(chunk, encoding, callback) {
-        data = chunk.toString()
-        callback()
-      },
-    })
+    Logger.print = (text) => {
+      data += text + '\n'
+    }
   })
 
   it('format error', () => {

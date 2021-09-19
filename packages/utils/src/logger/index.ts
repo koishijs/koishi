@@ -31,6 +31,9 @@ export declare class Logger {
   static instances: Record<string, Logger>
   static levels: Logger.LevelConfig
 
+  // global function
+  static print(text: string): void
+
   private code: number
   private displayName: string
 

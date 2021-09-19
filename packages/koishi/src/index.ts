@@ -1,5 +1,5 @@
 import { App, Context, Module } from '@koishijs/core'
-import { defineProperty, remove } from '@koishijs/utils'
+import { defineProperty, remove, Schema } from '@koishijs/utils'
 import { Server, createServer } from 'http'
 import { Requester } from './http'
 import Router from '@koa/router'
@@ -39,6 +39,12 @@ declare module '@koishijs/core' {
       http: Requester
     }
   }
+}
+
+App.Config.Network.dict = {
+  host: Schema.string('要监听的 IP 地址。如果将此设置为 `0.0.0.0` 将监听所有地址，包括局域网和公网地址。'),
+  port: Schema.number('要监听的端口。'),
+  ...App.Config.Network.dict,
 }
 
 // use node require

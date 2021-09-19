@@ -1,11 +1,8 @@
-import { performance } from 'perf_hooks'
 import { isInteger } from '@koishijs/utils'
 import { fork, ChildProcess } from 'child_process'
 import { resolve } from 'path'
 import { CAC } from 'cac'
 import kleur from 'kleur'
-
-process.env.KOISHI_START_TIME = '' + performance.now()
 
 interface WorkerOptions {
   '--'?: string[]

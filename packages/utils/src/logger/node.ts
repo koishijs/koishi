@@ -58,7 +58,9 @@ export class Logger {
     colors: !!stderr,
   }
 
-  static stream: NodeJS.WritableStream = process.stderr
+  static print(text: string) {
+    process.stderr.write(text + '\n')
+  }
 
   private code: number
   private displayName: string
@@ -105,7 +107,7 @@ export class Logger {
         output += this.color(' +' + Time.formatTimeShort(diff))
         Logger.timestamp = now
       }
-      Logger.stream.write(output + '\n')
+      Logger.print(output)
     }
   }
 

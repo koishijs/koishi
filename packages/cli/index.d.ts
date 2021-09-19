@@ -29,12 +29,19 @@ declare module 'koishi' {
     interface Config extends DeamonConfig {
       allowWrite?: boolean
       plugins?: PluginConfig
-      logLevel?: LogLevel
-      logDiff?: boolean
-      logTime?: string | boolean
       watch?: WatchConfig
+      logger?: LoggerConfig
       timezoneOffset?: number
       stackTraceLimit?: number
+    }
+
+    namespace Config {
+      export interface Logger {
+        levels?: LogLevel
+        showDiff?: boolean
+        showTime?: string | boolean
+        root?: string
+      }
     }
   }
 
