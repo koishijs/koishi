@@ -39,7 +39,7 @@
     <k-schema v-for="item in schema.list" :schema="item" v-model="config" :prefix="prefix"/>
   </template>
 
-  <div class="schema" v-else-if="schema.type === 'choose'">
+  <div class="schema" v-else-if="schema.type === 'select'">
     <slot></slot>
     <p>{{ schema.desc }}</p>
     <ul>
@@ -49,7 +49,7 @@
     </ul>
   </div>
 
-  <template v-else-if="schema.type === 'select'">
+  <template v-else-if="schema.type === 'decide'">
     <div class="schema">
       <h3 class="required">
         <span>{{ prefix + schema.primary }}</span>

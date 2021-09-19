@@ -71,7 +71,7 @@ export const name = 'eval'
 
 export const schema: Schema<Config> = Schema.object({
   prefix: Schema.string('快捷调用的前缀字符。').default('>'),
-  serializer: Schema.choose(['v8', 'yaml'], '要使用的序列化方法。此配置将会影响 storage 能够支持的类型。').default('v8'),
+  serializer: Schema.select(['v8', 'yaml'], '要使用的序列化方法。此配置将会影响 storage 能够支持的类型。').default('v8'),
   userFields: Schema.array(Schema.string() as Schema<User.Field>, '能够在 evaluate 指令中被访问的用户字段列表。').default(['id', 'authority']),
   channelFields: Schema.array(Schema.string() as Schema<Channel.Field>, '能够在 evaluate 指令中被访问的频道字段列表。').default(['id']),
   resourceLimits: Schema.object({

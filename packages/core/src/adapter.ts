@@ -83,7 +83,7 @@ export namespace Adapter {
     } else {
       const botSchemaDict: Dict<Schema> = {}
       library[platform] = { [redirect]: args[1] } as Constructor
-      botSchema = library[platform].schema = Schema.select(botSchemaDict, 'protocol')
+      botSchema = library[platform].schema = Schema.decide('protocol', botSchemaDict, args[1])
       for (const protocol in args[0]) {
         library[join(platform, protocol)] = args[0][protocol]
         botSchemaDict[protocol] = args[0][protocol].schema

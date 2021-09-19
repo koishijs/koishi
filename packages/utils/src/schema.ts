@@ -1,4 +1,4 @@
-import { Dict, Intersect, isNullable, valueMap } from './misc'
+import { pick, Dict, Intersect, isNullable, valueMap } from './misc'
 
 export interface Schema<T = any> extends Schema.Base<T> {
   type: string
@@ -8,7 +8,7 @@ export interface Schema<T = any> extends Schema.Base<T> {
   sDict?: Dict<string>
   list?: Schema[]
   dict?: Dict<Schema>
-  adapt?: Function
+  callback?: Function
 }
 
 export namespace Schema {
@@ -54,6 +54,10 @@ export namespace Schema {
     return new Chainable({ type: 'any', desc })
   }
 
+  export function never(desc?: string) {
+    return new Chainable({ type: 'never', desc })
+  }
+
   export function string(desc?: string) {
     return new Chainable<string>({ type: 'string', desc })
   }
@@ -67,63 +71,158 @@ export namespace Schema {
   }
 
   export function array<T>(value: Schema<T>, desc?: string) {
-    return new Chainable<T[]>({ type: 'array', value, desc })
+    return new Chainable<T[]>({ type: 'array', value, desc, _default: [] })
   }
 
   export function dict<T>(value: Schema<T>, desc?: string) {
-    return new Chainable<Dict<T>>({ type: 'dict', value, desc })
+    return new Chainable<Dict<T>>({ type: 'dict', value, desc, _default: {} })
   }
 
   export function object<T extends Dict<Schema>>(dict: T, desc?: string) {
-    return new Chainable<{ [K in keyof T]?: Type<T[K]> }>({ type: 'object', dict, desc })
+    return new Chainable<{ [K in keyof T]?: Type<T[K]> }>({ type: 'object', dict, desc, _default: {} })
   }
 
-  export function choose<T extends string>(sList: T[], desc?: string): Chainable<T>
-  export function choose<T extends string>(sDict: Record<T, string>, desc?: string): Chainable<T>
-  export function choose(sDict: any, desc?: string) {
+  export function select<T extends string>(sList: T[], desc?: string): Chainable<T>
+  export function select<T extends string>(sDict: Record<T, string>, desc?: string): Chainable<T>
+  export function select(sDict: any, desc?: string) {
     if (Array.isArray(sDict)) sDict = Object.fromEntries(sDict.map(k => [k, k]))
-    return new Chainable({ type: 'choose', sDict, desc })
+    return new Chainable({ type: 'select', sDict, desc })
   }
 
-  export function select<T extends Dict<Schema>, K extends string>(dict: T, primary: K, desc?: string) {
-    return new Chainable<Intersect<Type<T[string]>> & { [P in K]: keyof T }>({ type: 'select', dict, primary, desc })
+  type Inner<K extends keyof any, T extends Record<K, Schema>> = Intersect<Type<T[K]>>
+
+  export function decide<T extends Dict<Schema>, K extends string>(primary: K, dict: T, desc?: string): Chainable<Inner<string, T> & { [P in K]: keyof T }>
+  export function decide<T extends Dict<Schema>, K extends string>(primary: K, dict: T, callback: (data: any) => keyof T, desc?: string): Chainable<Inner<string, T> & { [P in K]: keyof T }>
+  export function decide<T extends Dict<Schema>, K extends string>(primary: K, dict: T, ...args: any[]) {
+    const desc = typeof args[args.length - 1] === 'string' ? args.pop() : undefined
+    return new Chainable({ type: 'decide', dict, primary, desc, callback: args[0] })
   }
 
   export function merge<T extends Schema[]>(list: T, desc?: string) {
-    return new Chainable<Intersect<Type<T[number]>>>({ type: 'merge', list, desc })
+    return new Chainable<Inner<number, T>>({ type: 'merge', list, desc })
   }
 
-  export function adapt<S, T>(value: Schema<S>, value2: Schema<T>, adapt: (value: T) => S): Schema<S> {
-    return { type: 'adapt', value, value2, adapt }
+  export function adapt<S, T>(value: Schema<S>, value2: Schema<T>, callback: (value: T) => S): Schema<S> {
+    return { type: 'adapt', value, value2, callback }
   }
 
-  export function resolve(schema: Schema, value: any) {
-    if (isNullable(value)) {
-      if (!schema._required) return schema._default ?? value
-      throw new TypeError(`missing required value`)
+  function isObject(data: any) {
+    return data && typeof data === 'object' && !Array.isArray(data)
+  }
+
+  function getDefault(schema: Schema) {
+    return schema.type === 'adapt'
+      ? getDefault(schema.value)
+      : schema._default
+  }
+
+  function property(data: any, key: keyof any, schema?: Schema) {
+    const [value, adapted] = resolve(data[key], schema)
+    if (!isNullable(adapted)) data[key] = adapted
+    return value
+  }
+
+  function checkSelect(data: any, dict: Dict) {
+    const choices = Object.keys(dict)
+    if (choices.includes(data)) return [data]
+    throw TypeError(`expected one of ${choices.join(', ')} but got ${data}`)
+  }
+
+  function resolve(data: any, schema?: Schema) {
+    if (!schema) return [data]
+
+    if (isNullable(data)) {
+      if (schema._required) throw new TypeError(`missing required value`)
+      const fallback = getDefault(schema)
+      if (isNullable(fallback)) return [data]
+      data = fallback
     }
 
     switch (schema.type) {
+      case 'any': return [data]
+      case 'never':
+        throw new TypeError(`expected nullable but got ${data}`)
+
       case 'string':
       case 'number':
-      case 'boolean':
-        if (typeof value === schema.type) return value
-        throw new TypeError(`expected ${schema.type} but got ${value}`)
+      case 'boolean': {
+        if (typeof data === schema.type) return [data]
+        throw new TypeError(`expected ${schema.type} but got ${data}`)
+      }
 
-      case 'array':
-        if (!Array.isArray(value)) throw new TypeError(`expected array but got ${value}`)
-        return value.map(item => resolve(schema.value, item))
+      case 'array': {
+        if (!Array.isArray(data)) throw new TypeError(`expected array but got ${data}`)
+        return [data.map((_, index) => property(data, index, schema.value))]
+      }
 
-      case 'dict':
-        if (!value || typeof value !== 'object') throw new TypeError(`expected dict but got ${value}`)
-        return valueMap(value, item => resolve(schema.value, item))
+      case 'dict': {
+        if (!isObject(data)) throw new TypeError(`expected dict but got ${data}`)
+        return [valueMap(data, (_, key) => property(data, key, schema.value))]
+      }
 
-      case 'object':
-        if (!value || typeof value !== 'object') throw new TypeError(`expected object but got ${value}`)
-        return { ...value, ...valueMap(schema.dict, (schema, key) => resolve(schema, value[key])) }
+      case 'select':
+        return checkSelect(data, schema.sDict)
+
+      case 'decide': {
+        if (!isObject(data)) throw new TypeError(`expected dict but got ${data}`)
+        let key = data[schema.primary]
+        if (isNullable(key)) {
+          if (!schema.callback) throw new TypeError(`missing required value`)
+          key = schema.callback(data)
+        }
+        checkSelect(key, schema.dict)
+        const value = validate(data, schema.dict[key])
+        value[schema.primary] = key
+        return [value]
+      }
+
+      case 'object': {
+        if (!isObject(data)) throw new TypeError(`expected object but got ${data}`)
+        const result = {}
+        for (const key in schema.dict) {
+          const value = property(data, key, schema.dict[key])
+          if (!isNullable(value) || key in data) {
+            result[key] = value
+          }
+        }
+        return [result]
+      }
+
+      case 'merge': {
+        const result = {}
+        for (const inner of schema.list) {
+          const value = validate(data, inner)
+          Object.assign(result, value)
+        }
+        return [result]
+      }
+
+      case 'adapt': {
+        try {
+          return resolve(data, schema.value)
+        } catch {
+          const [value, adapted = data] = resolve(data, schema.value2)
+          if (isObject(data)) {
+            const temp = {}
+            for (const key in value) {
+              if (!(key in data)) continue
+              temp[key] = data[key]
+              delete data[key]
+            }
+            Object.assign(data, schema.callback(temp))
+            return [schema.callback(value)]
+          } else {
+            return [schema.callback(value), schema.callback(adapted)]
+          }
+        }
+      }
 
       default:
         throw new TypeError(`unsupported type "${schema.type}"`)
     }
+  }
+
+  export function validate(data: any, schema?: Schema) {
+    return resolve(data, schema)[0]
   }
 }

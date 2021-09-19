@@ -50,7 +50,7 @@ export const schema = Schema.object({
 
 export function apply(ctx: Context, config: Config = {}) {
   const { database } = ctx
-  const { minInterval } = Schema.resolve(schema, config)
+  const { minInterval } = Schema.validate(config, schema)
 
   async function hasSchedule(id: number) {
     const data = await database.get('schedule', [id])

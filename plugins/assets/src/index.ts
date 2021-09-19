@@ -13,7 +13,7 @@ declare module 'koishi' {
 
 const PTC_BASE64 = 'base64://'
 
-export const schema = Schema.select({
+export const schema = Schema.decide('type', {
   local: Schema.object({
     root: Schema.string('本地存储资源文件的绝对路径。').required(),
     path: Schema.string('静态图片暴露在服务器的路径。').default('/assets'),
@@ -29,7 +29,7 @@ export const schema = Schema.select({
   smms: Schema.object({
     token: Schema.string('sm.ms 的访问令牌。').required(),
   }, '存储在 sm.ms 图床服务'),
-}, 'type', '使用的存储方式。')
+}, '使用的存储方式。')
 
 async function getAssetBuffer(url: string, http: Requester) {
   if (url.startsWith(PTC_BASE64)) {
