@@ -24,7 +24,7 @@ export abstract class Adapter<S extends Bot.BaseConfig = Bot.BaseConfig, T = {}>
   }
 
   dispatch(session: Session) {
-    if (this.app.status !== App.Status.open) return
+    if (!this.app.isActive) return
     const events: string[] = [session.type]
     if (session.subtype) {
       events.unshift(events[0] + '/' + session.subtype)
@@ -100,6 +100,7 @@ export namespace Adapter {
     ])
 
     function apply(ctx: Context, config: PluginConfig = {}) {
+      config = Schema.validate(config, adapterSchema)
       configMap[platform] = config
       const bots = config.bots || [config]
       for (const options of bots) {

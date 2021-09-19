@@ -24,6 +24,7 @@ export namespace InjectedAdapter {
     protected abstract accept(bot: Bot<S>): void
 
     public config: T
+    public isListening = false
 
     static Config: Schema<WebSocketClient.Config> = Schema.object({
       retryTimes: Schema.number('初次连接时的最大重试次数，仅用于 ws 协议。').default(6),
@@ -56,13 +57,13 @@ export namespace InjectedAdapter {
           bot.socket = null
           bot.status = Bot.Status.NET_ERROR
           logger.debug(`websocket closed with ${code}`)
-          if (!this.app.isActive()) return
+          if (!this.isListening) return
 
           // remove query args to protect privacy
           const message = reason || `failed to connect to ${url}`
           let timeout = retryInterval
           if (_retryCount >= retryTimes) {
-            if (this.app.status === App.Status.open) {
+            if (this.app.isActive) {
               timeout = retryLazy
             } else {
               return bot.reject(new Error(message))
@@ -72,7 +73,7 @@ export namespace InjectedAdapter {
           _retryCount++
           logger.warn(`${message}, will retry in ${Time.formatTimeShort(timeout)}...`)
           setTimeout(() => {
-            if (this.app.isActive()) reconnect()
+            if (this.isListening) reconnect()
           }, timeout)
         })
 
@@ -87,9 +88,12 @@ export namespace InjectedAdapter {
       reconnect()
     }
 
-    start() {}
+    start() {
+      this.isListening = true
+    }
 
     stop() {
+      this.isListening = false
       logger.debug('websocket client closing')
       for (const bot of this.bots) {
         bot.socket?.close()

@@ -329,7 +329,7 @@ export class Context {
     const method = prepend ? 'unshift' : 'push'
 
     // handle special events
-    if (name === 'connect' && this.app.status === App.Status.open) {
+    if (name === 'connect' && this.app.isActive) {
       return listener(), () => false
     } else if (name === 'disconnect') {
       this.state.disposables[method](listener)

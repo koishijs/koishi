@@ -117,7 +117,10 @@ export class MockedApp extends App {
       selfId: BASE_SELF_ID,
     })
 
-    if (options.mockStart !== false) this.status = App.Status.open
+    if (options.mockStart !== false) {
+      this.isActive = true
+      this.isActive = true
+    }
     if (options.mockDatabase) this.plugin(database)
   }
 

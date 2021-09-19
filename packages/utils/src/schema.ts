@@ -1,10 +1,10 @@
-import { pick, Dict, Intersect, isNullable, valueMap } from './misc'
+import { Dict, Intersect, isNullable, valueMap } from './misc'
 
 export interface Schema<T = any> extends Schema.Base<T> {
   type: string
   primary?: string
   value?: Schema
-  value2?: Schema
+  alt?: Schema
   sDict?: Dict<string>
   list?: Schema[]
   dict?: Dict<Schema>
@@ -102,8 +102,12 @@ export namespace Schema {
     return new Chainable<Inner<number, T>>({ type: 'merge', list, desc })
   }
 
-  export function adapt<S, T>(value: Schema<S>, value2: Schema<T>, callback: (value: T) => S): Schema<S> {
-    return { type: 'adapt', value, value2, callback }
+  export function union<T extends Schema[]>(list: T, desc?: string) {
+    return new Chainable<Type<T[number]>>({ type: 'union', list, desc })
+  }
+
+  export function adapt<S, T>(value: Schema<S>, alt: Schema<T>, callback: (value: T) => S, desc?: string) {
+    return new Chainable<S>({ type: 'adapt', value, alt, callback, desc })
   }
 
   function isObject(data: any) {
@@ -164,11 +168,11 @@ export namespace Schema {
         return checkSelect(data, schema.sDict)
 
       case 'decide': {
-        if (!isObject(data)) throw new TypeError(`expected dict but got ${data}`)
+        if (!isObject(data)) throw new TypeError(`expected object but got ${data}`)
         let key = data[schema.primary]
         if (isNullable(key)) {
           if (!schema.callback) throw new TypeError(`missing required value`)
-          key = schema.callback(data)
+          key = data[schema.primary] = schema.callback(data)
         }
         checkSelect(key, schema.dict)
         const value = validate(data, schema.dict[key])
@@ -201,7 +205,7 @@ export namespace Schema {
         try {
           return resolve(data, schema.value)
         } catch {
-          const [value, adapted = data] = resolve(data, schema.value2)
+          const [value, adapted = data] = resolve(data, schema.alt)
           if (isObject(data)) {
             const temp = {}
             for (const key in value) {

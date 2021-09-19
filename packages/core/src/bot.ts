@@ -43,7 +43,7 @@ export abstract class Bot<T extends Bot.BaseConfig = Bot.BaseConfig> {
       }
     })
 
-    if (this.app.status === App.Status.open) {
+    if (this.app.isActive) {
       this.connect()
     }
     return task

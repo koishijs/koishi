@@ -203,17 +203,6 @@ interface Selection {
 
 当前 App 创建时传入的配置。
 
-### app.status
-
-- 类型: `App.Status`
-
-当前 App 的运行状态。它可能是下列数值中的一个：
-
-- Status.closed = 0
-- Status.opening = 1
-- Status.open = 2
-- Status.closing = 3
-
 ### app.start()
 
 - 返回值: `Promise<void>`

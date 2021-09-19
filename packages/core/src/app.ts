@@ -56,7 +56,7 @@ export class App extends Context {
 
   public app = this
   public options: App.Config
-  public status = App.Status.closed
+  public isActive = false
   public registry = new Plugin.Registry()
   public manager = new Adapter.Manager(this)
 
@@ -135,26 +135,20 @@ export class App extends Context {
     this._nameRE = createLeadingRE(this.options.nickname, '@?', '([,，]\\s*|\\s+)')
   }
 
-  isActive() {
-    return this.status === App.Status.open || this.status === App.Status.opening
-  }
-
   async start() {
-    this.status = App.Status.opening
     try {
       await this.parallel('connect')
     } catch (err) {
       return this.stop()
     }
-    this.status = App.Status.open
+    this.isActive = true
     this.logger('app').debug('started')
   }
 
   async stop() {
-    this.status = App.Status.closing
+    this.isActive = false
     // `disconnect` event is handled by ctx.disposables
     await Promise.all(this.state.disposables.map(dispose => dispose()))
-    this.status = App.Status.closed
     this.logger('app').debug('stopped')
   }
 
@@ -344,8 +338,6 @@ export class App extends Context {
 }
 
 export namespace App {
-  export enum Status { closed, opening, open, closing }
-
   export const Config: Config.Static = Schema.merge([])
 
   const NetworkConfig: Schema<Config.Network> = Schema.object({

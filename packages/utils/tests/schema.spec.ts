@@ -110,6 +110,7 @@ describe('Schema API', () => {
     expect(Schema.validate(null, schema)).to.equal(null)
     expect(Schema.validate({ a: 'foo', b: 123 }, schema)).to.deep.equal({ a: 'foo', b: 123 })
     expect(Schema.validate({ a: 'bar', b: 'x' }, schema)).to.deep.equal({ a: 'bar', b: 'x' })
+    expect(() => Schema.validate([], schema)).to.throw()
     expect(() => Schema.validate({ b: 123 }, schema)).to.throw()
     expect(() => Schema.validate({ b: 'x' }, schema)).to.throw()
   })
@@ -120,10 +121,14 @@ describe('Schema API', () => {
       bar: Schema.object({ b: Schema.string() }),
     }, ({ b }) => typeof b === 'number' ? 'foo' : 'bar')
 
-    expect(Schema.validate({ b: 123 }, schema)).to.deep.equal({ a: 'foo', b: 123 })
+    const original = { b: 123 }
+    expect(Schema.validate(original, schema)).to.deep.equal({ a: 'foo', b: 123 })
     expect(Schema.validate({ b: 'x' }, schema)).to.deep.equal({ a: 'bar', b: 'x' })
     expect(() => Schema.validate({ a: 'foo', b: 'x' }, schema)).to.throw()
     expect(() => Schema.validate({ a: 'bar', b: 123 }, schema)).to.throw()
+
+    // modify original data during adaptation
+    expect(original).to.deep.equal({ a: 'foo', b: 123 })
   })
 
   it('adapt with array', () => {
