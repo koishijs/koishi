@@ -66,7 +66,7 @@ export function createConfigManager(app: App, loader: Loader) {
     }
   }
 
-  app.on('config/install', (name, config) => {
+  app.on('config/plugin-install', (name, config) => {
     const plugin = loader.loadPlugin(name, config)
     plugins[name] = config
     delete plugins['~' + name]
@@ -76,7 +76,7 @@ export function createConfigManager(app: App, loader: Loader) {
     writeConfig()
   })
 
-  app.on('config/dispose', async (name, config) => {
+  app.on('config/plugin-dispose', async (name, config) => {
     const plugin = loader.cache[name]
     await app.dispose(plugin)
     plugins['~' + name] = plugins[name]
@@ -87,7 +87,7 @@ export function createConfigManager(app: App, loader: Loader) {
     writeConfig()
   })
 
-  app.on('config/reload', async (name, config) => {
+  app.on('config/plugin-reload', async (name, config) => {
     const plugin = loader.cache[name]
     const state = app.registry.get(plugin)
     await app.dispose(plugin)
@@ -98,7 +98,7 @@ export function createConfigManager(app: App, loader: Loader) {
     writeConfig()
   })
 
-  app.on('config/save', async (name, config) => {
+  app.on('config/plugin-save', async (name, config) => {
     const plugin = loader.resolvePlugin(name)
     plugins['~' + name] = config
     if (!allowWrite) return
@@ -106,7 +106,7 @@ export function createConfigManager(app: App, loader: Loader) {
     writeConfig()
   })
 
-  app.on('bot/create', async (name, config) => {
+  app.on('config/bot-create', async (name, config) => {
     if (plugins['~' + name]) {
       plugins[name] = plugins['~' + name]
       delete plugins['~' + name]

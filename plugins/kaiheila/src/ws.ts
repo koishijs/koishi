@@ -28,7 +28,7 @@ export default class WebSocketClient extends Adapter.WebSocketClient<BotConfig, 
   }
 
   heartbeat(bot: KaiheilaBot) {
-    if (!bot.socket || bot.status !== Bot.Status.GOOD) {
+    if (!bot.socket || bot.status !== 'online') {
       clearInterval(bot._heartbeat)
       return
     }

@@ -24,8 +24,6 @@ interface BotConfig extends Bot.BaseConfig {
 }
 
 class MockedBot extends Bot<BotConfig> {
-  status = Bot.Status.GOOD
-
   static schema: Schema<BotConfig> = Schema.object({
     selfId: Schema.string(),
   })
@@ -33,6 +31,7 @@ class MockedBot extends Bot<BotConfig> {
   constructor(adapter: MockedServer, config: BotConfig) {
     super(adapter, config)
     this.selfId = config.selfId
+    this.status = 'online'
   }
 
   async getMessage(channelId: string, messageId: string) {

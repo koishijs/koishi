@@ -4,6 +4,7 @@ import { Session } from './session'
 import { User, Channel, Database, Assets, Cache, Module } from './database'
 import { Argv } from './parser'
 import { App } from './app'
+import { Bot } from './bot'
 
 export type NextFunction = (next?: NextFunction) => Promise<void>
 export type Middleware = (session: Session, next: NextFunction) => any
@@ -589,4 +590,7 @@ export interface EventMap extends SessionEventMap, DelegateEventMap {
   'before-connect'(): Awaitable<void>
   'connect'(): Awaitable<void>
   'disconnect'(): Awaitable<void>
+  'bot-added'(bot: Bot): void
+  'bot-removed'(bot: Bot): void
+  'bot-updated'(bot: Bot): void
 }

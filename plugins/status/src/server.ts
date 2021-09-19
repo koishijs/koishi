@@ -266,19 +266,19 @@ export namespace StatusServer {
   for (const event of ['install', 'dispose', 'reload', 'save'] as const) {
     listeners[`plugin/${event}`] = async function ({ name, config }) {
       if (await this.validate()) return this.send('unauthorized')
-      this.app.emit(`config/${event}`, name, config)
+      this.app.emit(`config/plugin-${event}`, name, config)
     }
   }
 
   listeners[`bot/create`] = async function ({ platform, protocol, config }) {
     if (await this.validate()) return this.send('unauthorized')
-    this.app.emit('bot/create', platform, { protocol, ...config })
+    this.app.emit('config/bot-create', platform, { protocol, ...config })
   }
 
   for (const event of ['remove', 'start', 'stop'] as const) {
     listeners[`bot/${event}`] = async function ({ id }) {
       if (await this.validate()) return this.send('unauthorized')
-      this.app.emit(`bot/${event}`, id)
+      this.app.emit(`config/bot-${event}`, id)
     }
   }
 }

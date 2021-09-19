@@ -91,9 +91,6 @@ export function accept(this: Adapter<BotConfig, AdapterConfig>, bot: CQBot) {
     } else if (parsed.echo === -1) {
       Object.assign(bot, adaptUser(camelCase(parsed.data)))
       logger.debug('%d got self info', parsed.data)
-      if (bot.config.endpoint) {
-        logger.info('connected to %c', bot.config.endpoint)
-      }
       bot.resolve()
     } else if (parsed.echo in listeners) {
       listeners[parsed.echo](parsed)

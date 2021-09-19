@@ -49,7 +49,8 @@ export interface BotData {
   selfId: string
   platform: string
   avatar: string
-  code: Bot.Status
+  status: Bot.Status
+  error?: string
   currentRate: MessageRate
 }
 
@@ -60,7 +61,8 @@ function accumulate(record: number[]) {
 export async function BotData(bot: Bot) {
   return {
     ...pick(bot, ['platform', 'selfId', 'avatar', 'username']),
-    code: await bot.getStatus(),
+    status: bot.status,
+    error: bot.error?.message,
     currentRate: [accumulate(bot.messageSent), accumulate(bot.messageReceived)],
   } as BotData
 }
@@ -104,6 +106,7 @@ class Profile implements StatusServer.DataSource {
 
     ctx.on('connect', async () => {
       ctx.bots.forEach(Profile.initBot)
+      ctx.on('bot-added', Profile.initBot)
 
       ctx.setInterval(() => {
         updateCpuUsage()

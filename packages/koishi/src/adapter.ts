@@ -45,9 +45,8 @@ export namespace InjectedAdapter {
       let _retryCount = 0
       const { retryTimes, retryInterval, retryLazy } = this.config
 
-      const reconnect = async () => {
+      const reconnect = async (initial = false) => {
         logger.debug('websocket client opening')
-        bot.status = Bot.Status.CONNECTING
         const socket = await this.prepare(bot)
         const url = socket.url.replace(/\?.+/, '')
 
@@ -55,22 +54,22 @@ export namespace InjectedAdapter {
 
         socket.on('close', (code, reason) => {
           bot.socket = null
-          bot.status = Bot.Status.NET_ERROR
           logger.debug(`websocket closed with ${code}`)
-          if (!this.isListening) return
+          if (!this.isListening) return bot.status = 'offline'
 
           // remove query args to protect privacy
           const message = reason || `failed to connect to ${url}`
           let timeout = retryInterval
           if (_retryCount >= retryTimes) {
-            if (this.app.isActive) {
-              timeout = retryLazy
-            } else {
+            if (initial) {
               return bot.reject(new Error(message))
+            } else {
+              timeout = retryLazy
             }
           }
 
           _retryCount++
+          bot.status = 'reconnect'
           logger.warn(`${message}, will retry in ${Time.formatTimeShort(timeout)}...`)
           setTimeout(() => {
             if (this.isListening) reconnect()
@@ -80,12 +79,12 @@ export namespace InjectedAdapter {
         socket.on('open', () => {
           _retryCount = 0
           bot.socket = socket
-          logger.debug('connect to ws server:', url)
+          logger.info('connect to server: %c', url)
           this.accept(bot)
         })
       }
 
-      reconnect()
+      reconnect(true)
     }
 
     start() {

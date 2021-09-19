@@ -1,8 +1,8 @@
 <template>
   <div class="bot" :class="[size]">
     <div class="avatar" :style="{ backgroundImage: `url(${data.avatar})` }" @click="$emit('avatar-click')">
-      <el-tooltip :content="statusNames[data.code]">
-        <div class="status" :level="data.code"></div>
+      <el-tooltip :content="statusNames[data.status]">
+        <div :class="['status', data.status, { error: data.error }]"></div>
       </el-tooltip>
     </div>
     <div class="content">
@@ -38,9 +38,14 @@
 <script lang="ts" setup>
 
 import { stats } from '~/client'
-import type { BotData } from '~/server'
+import type { Bot, BotData } from '~/server'
 
-const statusNames = ['运行中', '闲置', '离线', '网络异常', '服务器异常', '封禁中', '尝试连接']
+const statusNames: Record<Bot.Status, string> = {
+  online: '运行中',
+  offline: '离线',
+  connect: '正在连接',
+  reconnect: '正在重连',
+}
 
 defineProps<{
   data: BotData,
@@ -87,27 +92,17 @@ div.bot {
       border-radius: 100%;
       border: $border-width solid var(--bg0);
 
-      // '运行中' '闲置' '离线' '网络异常' '服务器异常' '封禁中' '尝试连接'
-      &[level="0"] {
+      &.online {
         background-color: var(--success);
       }
-      &[level="1"] {
+      &.connect, &.reconnect {
         background-color: var(--warning);
       }
-      &[level="2"] {
-        background-color: var(--error);
+      &.error {
+        background-color: var(--error) !important;
       }
-      &[level="3"] {
-        background-color: var(--error-dark);
-      }
-      &[level="4"] {
-        background-color: var(--error-dark);
-      }
-      &[level="5"] {
-        background-color: var(--warning-dark);
-      }
-      &[level="6"] {
-        background-color: var(--warning-light);
+      &.offline {
+        background-color: var(--disabled);
       }
     }
   }

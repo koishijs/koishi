@@ -40,14 +40,14 @@ declare module 'koishi' {
 
   interface EventMap {
     'exit'(signal: NodeJS.Signals): Promise<void>
-    'config/install'(name: string, config: any): void
-    'config/reload'(name: string, config: any): void
-    'config/dispose'(name: string, config: any): void
-    'config/save'(name: string, config: any): void
-    'bot/create'(platform: string, config: any): void
-    'bot/remove'(id: string): void
-    'bot/start'(id: string): void
-    'bot/stop'(id: string): void
+    'config/plugin-install'(name: string, config: any): void
+    'config/plugin-reload'(name: string, config: any): void
+    'config/plugin-dispose'(name: string, config: any): void
+    'config/plugin-save'(name: string, config: any): void
+    'config/bot-create'(platform: string, config: any): void
+    'config/bot-remove'(id: string): void
+    'config/bot-start'(id: string): void
+    'config/bot-stop'(id: string): void
   }
 }
 

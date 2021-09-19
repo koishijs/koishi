@@ -174,16 +174,6 @@ export class CQBot extends Bot<BotConfig> {
   async deleteFriend(userId: string) {
     await this.$deleteFriend(userId)
   }
-
-  async getStatus() {
-    if (this.status !== Bot.Status.GOOD) return this.status
-    try {
-      const data = await this.$getStatus()
-      return data.good ? Bot.Status.GOOD : data.online ? Bot.Status.SERVER_ERROR : Bot.Status.BOT_OFFLINE
-    } catch {
-      return Bot.Status.NET_ERROR
-    }
-  }
 }
 
 const asyncPrefixes = ['$set', '$send', '$delete', '$create', '$upload']

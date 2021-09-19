@@ -10,9 +10,10 @@ export abstract class Bot<T extends Bot.BaseConfig = Bot.BaseConfig> {
   readonly logger: Logger
   readonly platform: string
 
-  status: Bot.Status
-  selfId?: string
+  private _status: Bot.Status
 
+  selfId?: string
+  error?: Error
   resolve?: () => void
   reject?: (error: Error) => void
 
@@ -20,11 +21,23 @@ export abstract class Bot<T extends Bot.BaseConfig = Bot.BaseConfig> {
     this.app = adapter.app
     this.platform = config.platform || adapter.platform
     this.logger = new Logger(adapter.platform)
-    this.status = Bot.Status.BOT_IDLE
+    this._status = 'offline'
+  }
+
+  get status() {
+    return this._status
+  }
+
+  set status(value) {
+    this._status = value
+    if (this.app.bots.includes(this)) {
+      this.app.emit('bot-updated', this)
+    }
   }
 
   async connect() {
     try {
+      this.status = 'connect'
       await this.adapter.connect(this)
     } catch (error) {
       this.reject(error)
@@ -34,11 +47,12 @@ export abstract class Bot<T extends Bot.BaseConfig = Bot.BaseConfig> {
   start() {
     const task = new Promise<this>((resolve, reject) => {
       this.resolve = () => {
-        this.status = Bot.Status.GOOD
+        this.status = 'online'
         resolve(this)
       }
       this.reject = (error) => {
-        this.status = Bot.Status.BOT_IDLE
+        this.error = error
+        this.status = 'offline'
         reject(error)
       }
     })
@@ -51,10 +65,6 @@ export abstract class Bot<T extends Bot.BaseConfig = Bot.BaseConfig> {
 
   get sid() {
     return `${this.platform}:${this.selfId}`
-  }
-
-  async getStatus() {
-    return this.status
   }
 
   createSession(session: Partial<Session<never, never, 'send'>>) {
@@ -106,26 +116,9 @@ export namespace Bot {
     schema?: Schema
   }
 
-  export enum Status {
-    /** 正常运行 */
-    GOOD,
-    /** 机器人处于闲置状态 */
-    BOT_IDLE,
-    /** 机器人离线 */
-    BOT_OFFLINE,
-    /** 无法获得状态 */
-    NET_ERROR,
-    /** 服务器状态异常 */
-    SERVER_ERROR,
-    /** 机器人被封禁 */
-    BANNED,
-    /** 正在尝试连接 */
-    CONNECTING,
-  }
+  export type Status = 'offline' | 'online' | 'connect' | 'reconnect'
 
   export interface Methods {
-    getStatus(): Promise<Status>
-
     // message
     sendMessage(channelId: string, content: string, guildId?: string): Promise<string>
     sendPrivateMessage(userId: string, content: string): Promise<string>

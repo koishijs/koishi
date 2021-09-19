@@ -132,13 +132,15 @@ export namespace Adapter {
       const bot = new constructor(adapter, options)
       adapter.bots.push(bot)
       this.push(bot)
+      this.app.emit('bot-added', bot)
       return bot
     }
 
     remove(sid: string) {
       const index = this.findIndex(bot => bot.sid === sid)
       if (index < 0) return false
-      this.splice(index, 1)
+      const [bot] = this.splice(index, 1)
+      this.app.emit('bot-removed', bot)
       return true
     }
 

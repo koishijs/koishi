@@ -35,11 +35,11 @@ template.set('chat', {
 
 export class SandboxBot extends Bot {
   username = 'sandbox'
-  status = Bot.Status.GOOD
 
   constructor(public readonly adapter: StatusServer) {
     super(adapter, {})
     this.selfId = 'sandbox'
+    this.status = 'online'
   }
 
   async sendMessage(id: string, content: string) {
