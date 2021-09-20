@@ -11,15 +11,41 @@ sidebarDepth: 2
 - koishi-core 与 node 解耦后更名为 @koishijs/core
 - koishi-utils 与 node 解耦后更名为 @koishijs/utils
 - koishi 为上述库加上 node 相关代码的整合
-- koishi-test-utils 更名为 @koishi/test-utils
-- 所有官方插件都改为 @koishijs/plugin-xxx
-- 所有官方适配器也调整为插件，名称与上一条一致
+- 原来的 koishi 现在更名为 @koishijs/cli
+- 新增了 create-koishi，可使用 yarn create 或 npm init 一键启动
+- **所有官方插件都改为 @koishijs/plugin-xxx**
+- **所有官方适配器也调整为插件**，名称与上一条一致
+- koishi-test-utils 更名为 @koishijs/test-utils
+- koishi-plugin-webui 更名为 @koishijs/plugin-status（~~我又改了回去~~
 
-## Adapter API
+## 新增包
+
+- create-koishi：可结合 npm init 或 yarn create 使用，用于快速搭建项目
+- @koishijs/plugin-ink：使用机器人展示视觉小说（计划中）
+- @koishijs/plugin-jsdelivr：使用 jsdelivr 和 GitHub 存放资源文件（计划中）
+- @koishijs/plugin-minecraft：在 Minecraft 中使用机器人
+- @koishijs/plugin-s3：使用 s3 云存储存放资源文件（计划中）
+
+## Core 变更
+
+所有涉及「群组」的概念，对应英文单词从 group 更改为 guild。下面是一些例子：
+
+```diff
+- session.groupId
++ session.guildId
+- bot.getGroupMember()
++ bot.getGuildMember()
+- ctx.on('group-request')
++ ctx.on('guild-request')
+```
+
+这样修改是为了提供更好的兼容性，减轻 group 本身在多种场合使用所带来的二义性。
+
+## Adapter 变更
 
 适配器现在通过插件的形式导入了：
 
-```ts koishi.config.js
+```ts koishi.config.ts
 // before
 export default {
   bots: [ /* 机器人配置项 */ ],
@@ -28,55 +54,61 @@ export default {
 
 // after
 export default {
-  bots: [ /* 机器人配置项 */ ],
   plugins: {
-    onebot: { /* 适配器配置项 */ },
+    onebot: {
+      bots: [ /* 机器人配置项 */ ],
+      /* 适配器配置项 */
+    },
   },
 }
 ```
 
-## Platform Variant
+同时我们也调整了一些机器人配置项，并支持了一些全新的特性。下面举一些例子：
 
-- 新增了 variant 概念，同时有
-  - ``pid = `${platform}#${variant}` ``
-  - ``cid = `${pid}:${channelId}` ``
-  - ``uid = `${pid}:${userId}` ``
-  - ``sid = `${pid}:${selfId}` ``
-- Bot API
-  - `bot.type`, `bot.platform` 语义不变
-  - 新增了 `bot.variant` 和 `bot.pid`
-- Database API
-  - `user[pid] = pid`
-  - `channel.type = pid`
-- Session API
-  - `session.platform` 语义不变
-  - 原有的 `session.type`, `session.subType` 等更名为 `session.event`, `session.subEvent` 等
-  - 新增了 `session.type = vid`
+```ts koishi.config.ts
+export default {
+  plugins: {
+    onebot: {
+      // 如果只有一个 bot，你仍然可以像 v3 一样直接写在这里，不用专门提供 bots 数组
+      protocol: 'http',   // 相当于过去的 type: 'onebot:http'
+      disabled: true,     // 不启动，可以配合网页控制台动态控制运行状态
+      platform: 'qq',     // 此时账户信息将从 user.qq 而非 user.onebot 访问
+                          // 你还可以对同一个适配器下的多个 bot 实例设置多个不同的平台
+    },
+  },
+}
+```
 
-## Database API
+## 数据库 API
 
 - 接口变更
-  - 新增方法 `db.set(table, query, updates)`
-  - 移除方法 `db.getAssignedChannels()`（目前仍然可用）
+  - 新增了方法 `db.set(table, query, updates)`
+  - 废弃了方法 `db.getAssignedChannels()`（目前暂无替代品，原接口仍然可用）
   - `db.update()` 更名为 `db.upsert()`，语法不变
 - 数据结构变更
-  - channel 表使用 `type`+`id` 复合主键进行索引，因此 `channel.id` 语义将发生变化
+  - channel 表使用 `platform`+`id` 复合主键进行索引，这意味着 `channel.id` 语义将发生变化，同时新增了 `channel.platform`
+- 全局接口变更
+  - `Tables.extend()` 接口略有调整，具体参见文档
 
-## Cache API
+## 缓存 API
 
 - 新增了 Cache API
-- 移除了内置于 koishi-core 中的数据缓存逻辑（但暂无替代品）
+- 移除了内置于 koishi-core 中的数据缓存逻辑（目前暂无替代品）
 
 ## 其他变动
 
-### koishi-core
+### @koishijs/core
 
-- `ctx.all()` 被更名为 `ctx.any()`，这是为了搭配新增的 `ctx.never()`
+- `ctx.all()` 被更名为 `ctx.any()`，同时新增了 `ctx.never()`
 - 移除了 `processMessage` 配置项，即取消了内置的将中文字符替换为简体字的机制
 
-### koishi-utils
+### @koishijs/utils
 
 - 移除了 `Random.uuid()` 方法，新增了 `Random.id()` 方法
 - 移除了 `simplify()` 和 `traditionalize()` 方法，请使用 [simplify-chinese](https://www.npmjs.com/package/simplify-chinese) 这个包
-- Observer API 改动：所有 `_` 前缀替换为 `$` 前缀，例如 `observer.$update()`
+- Observer API 改动：所有 `_` 前缀替换为 `$` 前缀，例如 `session.user.$update()`
 
+### @koishijs/plugin-onebot
+
+- `server` 配置项更名为 `endpoint`
+- 由于快速响应已经不属于 OneBot 标准，我们移除了对快速响应的支持

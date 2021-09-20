@@ -1,6 +1,10 @@
 const { resolve } = require('path')
 const { remove: removeDiacritics } = require('diacritics')
 
+function devOnly(value) {
+  return process.env.NODE_ENV === 'production' ? [] : [value]
+}
+
 module.exports = {
   base: '/v4/',
   title: 'Koishi',
@@ -42,7 +46,7 @@ module.exports = {
       { text: '指南', link: '/guide/starter.html' },
       { text: 'API', link: '/api/' },
       { text: '官方插件', link: '/plugins/' },
-      { text: '演练场', link: '/playground.html' },
+      ...devOnly({ text: '演练场', link: '/playground.html' }),
       { text: 'GitHub', link: 'https://github.com/koishijs/koishi' },
     ],
     sidebar: {
@@ -150,14 +154,14 @@ module.exports = {
           '/plugins/eval/sandbox.md',
           '/plugins/eval/config.md',
         ],
-      }, ...process.env.NODE_ENV === 'production' ? [] : [{
+      }, ...devOnly({
         text: '冒险系统 (Adventure)',
         isGroup: true,
         children: [
           '/plugins/adventure/index.md',
           '/plugins/adventure/events.md',
         ],
-      }], {
+      }), {
         text: '其他官方插件',
         isGroup: true,
         children: [
@@ -192,19 +196,19 @@ module.exports = {
       plugins: [
         require('@rollup/plugin-yaml')(),
       ],
-      build: {
-        // fix for monaco workers
-        // https://github.com/vitejs/vite/issues/1927#issuecomment-805803918
-        rollupOptions: {
-          output: {
-            inlineDynamicImports: false,
-            manualChunks: {
-              tsWorker: ['monaco-editor/esm/vs/language/typescript/ts.worker'],
-              editorWorker: ['monaco-editor/esm/vs/editor/editor.worker'],
-            },
-          },
-        },
-      },
+      // build: {
+      //   // fix for monaco workers
+      //   // https://github.com/vitejs/vite/issues/1927#issuecomment-805803918
+      //   rollupOptions: {
+      //     output: {
+      //       inlineDynamicImports: false,
+      //       manualChunks: {
+      //         tsWorker: ['monaco-editor/esm/vs/language/typescript/ts.worker'],
+      //         editorWorker: ['monaco-editor/esm/vs/editor/editor.worker'],
+      //       },
+      //     },
+      //   },
+      // },
     },
   },
 }
