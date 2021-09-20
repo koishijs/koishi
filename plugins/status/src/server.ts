@@ -1,18 +1,12 @@
 import { Adapter, App, Context, Logger, noop, remove, version, Dict } from 'koishi'
 import { resolve, extname } from 'path'
 import { promises as fs, Stats, createReadStream } from 'fs'
-import Market from './payload/market'
-import Registry from './payload/registry'
-import Meta from './payload/meta'
-import Profile from './payload/profile'
-import Statistics from './payload/stats'
+import { Logs, Market, Meta, Profile, Registry, Statistics } from './payload'
 import WebSocket from 'ws'
 import open from 'open'
 import { v4 } from 'uuid'
 import type { ViteDevServer } from 'vite'
 import {} from '@koishijs/cli'
-
-export { Market, Registry, Meta, Profile, Statistics }
 
 interface BaseConfig {
   devMode?: boolean
@@ -45,7 +39,7 @@ export class SocketHandle {
   }
 
   send(type: string, body?: any) {
-    this.socket.send(JSON.stringify({ type, body }))
+    this.socket.send(JSON.stringify({ type, body }), noop)
   }
 
   async validate() {
@@ -82,6 +76,7 @@ export class StatusServer extends Adapter {
     })
 
     this.sources = {
+      logs: new Logs(ctx),
       market: new Market(ctx, config),
       profile: new Profile(ctx, config),
       meta: new Meta(ctx, config),
@@ -97,7 +92,7 @@ export class StatusServer extends Adapter {
   broadcast(type: string, body: any) {
     if (!this?.server.clients.size) return
     const data = JSON.stringify({ type, body })
-    this.server.clients.forEach((socket) => socket.send(data))
+    this.server.clients.forEach((socket) => socket.send(data, noop))
   }
 
   private triggerReload() {

@@ -117,6 +117,8 @@ router.afterEach((route) => {
   }
 })
 
+receive('logs', data => client.logs.value = data)
+receive('logs/data', data => client.logs.value += data)
 receive('meta', data => client.meta.value = data)
 receive('market', data => client.market.value = data)
 receive('profile', data => client.profile.value = data)

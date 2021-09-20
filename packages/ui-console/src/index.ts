@@ -72,6 +72,7 @@ export const profile = ref<Profile.Payload>(null)
 export const market = ref<Market.Data[]>(null)
 export const registry = ref<Registry.Payload>(null)
 export const stats = ref<Statistics.Payload>(null)
+export const logs = ref<string>('')
 export const socket = ref<WebSocket>(null)
 
 export const listeners: Record<string, (data: any) => void> = {}

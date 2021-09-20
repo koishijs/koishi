@@ -6,6 +6,7 @@ import Meta from './payload/meta'
 import './database/mongo'
 import './database/mysql'
 
+export * from './payload'
 export * from './server'
 
 export type Activity = Record<number, number>
