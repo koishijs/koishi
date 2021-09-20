@@ -55,16 +55,20 @@ export class Logger {
     return `\u001b[3${code < 8 ? code : '8;5;' + code}${stderr.has256 ? decoration : ''}m${value}\u001b[0m`
   }
 
-  constructor(public name: string) {
-    if (name in Logger.instances) return Logger.instances[name]
-
+  static code(name: string) {
     let hash = 0
     for (let i = 0; i < name.length; i++) {
       hash = ((hash << 3) - hash) + name.charCodeAt(i)
       hash |= 0
     }
+    return Logger.colors[Math.abs(hash) % Logger.colors.length]
+  }
+
+  constructor(public name: string) {
+    if (name in Logger.instances) return Logger.instances[name]
+
     Logger.instances[name] = this
-    this.code = Logger.colors[Math.abs(hash) % Logger.colors.length]
+    this.code = Logger.code(name)
     this.displayName = this.color(name, ';1')
     this.createMethod('success', '[S] ', Logger.SUCCESS)
     this.createMethod('error', '[E] ', Logger.ERROR)

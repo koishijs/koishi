@@ -40,6 +40,7 @@ export declare class Logger {
   private displayName: string
 
   static color(code: number, value: any, decoration?: string): string
+  static code(name: string): number
 
   public name: string
   public level: number
