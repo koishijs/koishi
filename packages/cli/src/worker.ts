@@ -2,14 +2,12 @@ import { App, Logger, Time, Schema } from 'koishi'
 import { Loader } from './loader'
 import { createFileWatcher } from './services/watcher'
 import { createConfigManager } from './services/config'
-import { prepareLogger } from './services/logger'
+import * as logger from './services/logger'
 import * as deamon from './services/deamon'
 import {} from '..'
 
-const logger = new Logger('app')
-
 function handleException(error: any) {
-  logger.error(error)
+  new Logger('app').error(error)
   process.exit(1)
 }
 
@@ -19,7 +17,7 @@ const loader = new Loader()
 
 const config: App.Config = loader.loadConfig()
 
-prepareLogger(loader, config.logger)
+logger.prepare(loader, config.logger)
 
 if (config.timezoneOffset !== undefined) {
   Time.setTimezoneOffset(config.timezoneOffset)
@@ -38,9 +36,10 @@ App.Config.list.push(Schema.object({
 const app = loader.createApp(config)
 
 app.plugin(deamon, config)
+app.plugin(logger)
 
 process.on('unhandledRejection', (error) => {
-  logger.warn(error)
+  new Logger('app').warn(error)
 })
 
 app.start().then(() => {

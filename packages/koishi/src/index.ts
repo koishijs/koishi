@@ -75,11 +75,11 @@ function prepareServer(this: App) {
 
   this.on('connect', () => {
     this._httpServer.listen(port, host)
-    this.logger('server').info('server listening at %c', `http://${host || 'localhost'}:${port}`)
+    this.logger('app').info('server listening at %c', `http://${host || 'localhost'}:${port}`)
   })
 
   this.on('disconnect', () => {
-    this.logger('server').info('http server closing')
+    this.logger('app').info('http server closing')
     this._httpServer?.close()
   })
 }

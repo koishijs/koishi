@@ -7,6 +7,13 @@ export namespace Logger {
   export type Level = number | LevelConfig
   export type Function = (format: any, ...param: any[]) => void
   export type Type = 'success' | 'error' | 'info' | 'warn' | 'debug'
+  export type Formatter = (this: Logger, value: any) => string
+
+  export interface Target {
+    showDiff?: boolean
+    showTime: string
+    print(text: string): void
+  }
 }
 
 export interface Logger extends Record<Logger.Type, Logger.Function> {
@@ -22,17 +29,12 @@ export declare class Logger {
   static readonly DEBUG = 3
 
   // global config
-  static showDiff: boolean
-  static showTime: string
   static timestamp: number
-
-  // global registry
   static colors: number[]
   static instances: Record<string, Logger>
+  static targets: Logger.Target[]
   static levels: Logger.LevelConfig
-
-  // global function
-  static print(text: string): void
+  static formatters: Record<string, Logger.Formatter>
 
   private code: number
   private displayName: string

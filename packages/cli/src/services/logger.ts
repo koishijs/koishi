@@ -1,5 +1,6 @@
-import { App, Logger, Schema, version } from 'koishi'
-import { mkdirSync, createWriteStream } from 'fs'
+import { App, Logger, Schema, Time, version } from 'koishi'
+import { FileHandle, open } from 'fs/promises'
+import { mkdirSync } from 'fs'
 import { resolve } from 'path'
 import { Loader } from '../loader'
 import {} from '../..'
@@ -11,9 +12,11 @@ const LoggerConfig = Schema.object({
   root: Schema.string('输出日志所用的本地目录。'),
 }, '日志设置')
 
-App.Config.list.push(LoggerConfig)
+App.Config.list.push(Schema.object({
+  logger: LoggerConfig.hidden(),
+}))
 
-export function prepareLogger(loader: Loader, config: App.Config.Logger = {}) {
+export function prepare(loader: Loader, config: App.Config.Logger = {}) {
   // configurate logger levels
   if (typeof config.levels === 'object') {
     Logger.levels = config.levels as any
@@ -22,8 +25,9 @@ export function prepareLogger(loader: Loader, config: App.Config.Logger = {}) {
   }
 
   let showTime = config.showTime
-  if (showTime === true) showTime = 'yyyy/MM/dd hh:mm:ss'
-  if (showTime) Logger.showTime = showTime
+  if (showTime === true) showTime = 'yyyy-MM-dd hh:mm:ss'
+  if (showTime) Logger.targets[0].showTime = showTime
+  Logger.targets[0].showDiff = config.showDiff ?? !showTime
 
   // cli options have higher precedence
   if (process.env.KOISHI_LOG_LEVEL) {
@@ -46,19 +50,67 @@ export function prepareLogger(loader: Loader, config: App.Config.Logger = {}) {
     }
   }
 
-  new Logger('app').info('%C', `Koishi/${version}`)
-  Logger.timestamp = Date.now()
-  Logger.showDiff = config.showDiff ?? !showTime
-
   if (config.root) {
     const root = resolve(loader.dirname, config.root)
     mkdirSync(root, { recursive: true })
 
-    const stream = createWriteStream(`${root}/${new Date().toISOString()}.log`)
-    const oldPrint = Logger.print
-    Logger.print = (text) => {
-      oldPrint(text)
-      stream.write(text + '\n')
+    function createLogFile() {
+      date = Time.template('yyyy-MM-dd')
+      file = new FileWrapper(`${root}/${date}.log`)
     }
+
+    createLogFile()
+    Logger.targets.push({
+      showTime: 'yyyy-MM-dd hh:mm:ss',
+      print(text) {
+        if (!text.startsWith(date)) {
+          file.close()
+          createLogFile()
+        }
+        file.write(text + '\n')
+        if (loader.app?.isActive) {
+          loader.app.emit('logger/data', text + '\n')
+        }
+      },
+    })
+  }
+
+  new Logger('app').info('%C', `Koishi/${version}`)
+  Logger.timestamp = Date.now()
+}
+
+let date: string, file: FileWrapper
+
+export function apply(ctx: App) {
+  ctx.on('logger/read', () => {
+    return file.read()
+  })
+}
+
+class FileWrapper {
+  private task: Promise<FileHandle>
+  private text: string
+
+  constructor(path: string) {
+    this.task = open(path, 'a+').then(async (handle) => {
+      this.text = await handle.readFile('utf-8')
+      return handle
+    })
+  }
+
+  async read() {
+    await this.task
+    return this.text
+  }
+
+  async write(text: string) {
+    const handle = await this.task
+    await handle.write(text)
+    this.text += text
+  }
+
+  async close() {
+    const handle = await this.task
+    await handle.close()
   }
 }

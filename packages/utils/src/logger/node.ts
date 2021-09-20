@@ -21,6 +21,12 @@ export namespace Logger {
   export type Level = number | LevelConfig
   export type Function = (format: any, ...param: any[]) => void
   export type Type = 'success' | 'error' | 'info' | 'warn' | 'debug'
+
+  export interface Target {
+    showDiff?: boolean
+    showTime: string
+    print(text: string): void
+  }
 }
 
 export interface Logger extends Record<Logger.Type, Logger.Function> {
@@ -36,13 +42,17 @@ export class Logger {
   static readonly DEBUG = 3
 
   // global config
-  static showDiff = false
-  static showTime = ''
   static timestamp = 0
-
-  // global registry
   static colors = stderr ? stderr.has256 ? c256 : c16 : []
   static instances: Dict<Logger> = {}
+
+  static targets: Logger.Target[] = [{
+    showDiff: false,
+    showTime: '',
+    print(text: string) {
+      process.stderr.write(text + '\n')
+    },
+  }]
 
   static formatters: Dict<(this: Logger, value: any) => string> = {
     c: Logger.prototype.color,
@@ -56,10 +66,6 @@ export class Logger {
 
   static options: InspectOptions = {
     colors: !!stderr,
-  }
-
-  static print(text: string) {
-    process.stderr.write(text + '\n')
   }
 
   private code: number
@@ -95,19 +101,21 @@ export class Logger {
   createMethod(name: Logger.Type, prefix: string, minLevel: number) {
     this[name] = (...args) => {
       if (this.level < minLevel) return
-      let indent = 4, output = ''
-      if (Logger.showTime) {
-        indent += Logger.showTime.length + 1
-        output += Time.template(Logger.showTime + ' ')
+      const now = Date.now()
+      for (const target of Logger.targets) {
+        let indent = 4, output = ''
+        if (target.showTime) {
+          indent += target.showTime.length + 1
+          output += Time.template(target.showTime + ' ')
+        }
+        output += prefix + this.displayName + ' ' + this.format(indent, ...args)
+        if (target.showDiff) {
+          const diff = Logger.timestamp && now - Logger.timestamp
+          output += this.color(' +' + Time.formatTimeShort(diff))
+        }
+        target.print(output)
       }
-      output += prefix + this.displayName + ' ' + this.format(indent, ...args)
-      if (Logger.showDiff) {
-        const now = Date.now()
-        const diff = Logger.timestamp && now - Logger.timestamp
-        output += this.color(' +' + Time.formatTimeShort(diff))
-        Logger.timestamp = now
-      }
-      Logger.print(output)
+      Logger.timestamp = now
     }
   }
 

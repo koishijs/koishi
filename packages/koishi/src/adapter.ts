@@ -58,7 +58,7 @@ export namespace InjectedAdapter {
           if (!this.isListening) return bot.status = 'offline'
 
           // remove query args to protect privacy
-          const message = reason || `failed to connect to ${url}`
+          const message = reason.toString() || `failed to connect to ${url}`
           let timeout = retryInterval
           if (_retryCount >= retryTimes) {
             if (initial) {

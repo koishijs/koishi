@@ -55,6 +55,8 @@ declare module 'koishi' {
     'config/bot-remove'(id: string): void
     'config/bot-start'(id: string): void
     'config/bot-stop'(id: string): void
+    'logger/read'(date?: string): Promise<string>
+    'logger/data'(text: string): void
   }
 }
 
