@@ -9,7 +9,6 @@ export interface SearchDetails extends Array<string> {
 
 declare module 'koishi-core' {
   interface EventMap {
-    'dialogue/status'(): Promise<string>
     'dialogue/list'(dialogue: Dialogue, output: string[], prefix: string, argv: Dialogue.Argv): void
     'dialogue/detail-short'(dialogue: Dialogue, output: SearchDetails, argv: Dialogue.Argv): void
     'dialogue/before-search'(argv: Dialogue.Argv, test: DialogueTest): void | boolean
@@ -37,12 +36,7 @@ declare module './utils' {
 
 export default function apply(ctx: Context) {
   ctx.command('teach.status').action(async () => {
-    const output = await ctx.parallel('dialogue/status')
-    return output.filter(x => x).join('\n')
-  })
-
-  ctx.on('dialogue/status', async () => {
-    const { questions, dialogues } = await ctx.database.getDialogueStats()
+    const { questions, dialogues } = await Dialogue.stats(ctx)
     return `共收录了 ${questions} 个问题和 ${dialogues} 个回答。`
   })
 
@@ -88,7 +82,7 @@ export default function apply(ctx: Context) {
       const { original, parsed } = argv.config._stripQuestion(answer.slice(11, -1).trimStart())
       if (parsed in argv.questionMap) continue
       // TODO multiple tests in one query
-      const dialogues = argv.questionMap[parsed] = await ctx.database.getDialoguesByTest({
+      const dialogues = argv.questionMap[parsed] = await Dialogue.get(ctx, {
         ...test,
         regexp: null,
         question: parsed,
@@ -167,7 +161,7 @@ async function showSearch(argv: Dialogue.Argv) {
 
   const test: DialogueTest = { question, answer, regexp, original }
   if (app.bail('dialogue/before-search', argv, test)) return
-  const dialogues = await app.database.getDialoguesByTest(test)
+  const dialogues = await Dialogue.get(app, test)
 
   if (pipe) {
     if (!dialogues.length) return '没有搜索到任何问答。'

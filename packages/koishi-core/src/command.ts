@@ -1,4 +1,4 @@
-import { Logger, coerce, Time, template, remove } from 'koishi-utils'
+import { Logger, coerce, Time, template, remove, Awaitable } from 'koishi-utils'
 import { Argv } from './parser'
 import { Context, Disposable, NextFunction } from './context'
 import { User, Channel } from './database'
@@ -48,10 +48,10 @@ export namespace Command {
   }
 
   export type Action<U extends User.Field = never, G extends Channel.Field = never, A extends any[] = any[], O extends {} = {}>
-    = (argv: Argv<U, G, A, O>, ...args: A) => void | string | Promise<void | string>
+    = (argv: Argv<U, G, A, O>, ...args: A) => Awaitable<void | string>
 
   export type Usage<U extends User.Field = never, G extends Channel.Field = never>
-    = string | ((session: Session<U, G>) => string | Promise<string>)
+    = string | ((session: Session<U, G>) => Awaitable<string>)
 }
 
 export class Command<U extends User.Field = never, G extends Channel.Field = never, A extends any[] = any[], O extends {} = {}> extends Argv.CommandBase {
@@ -99,7 +99,7 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
     this.config = { ...Command.defaultConfig }
     this._registerAlias(this.name)
     context.app._commandList.push(this)
-    this.option('help', '-h  显示此信息', { hidden: true })
+    context.app.emit('command-added', this)
   }
 
   get app() {
@@ -173,10 +173,14 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
     return this
   }
 
-  option<K extends string, D extends string, T extends Argv.Type>(name: K, desc: D, config: Argv.OptionConfig<T> = {}) {
+  option<K extends string>(name: K, desc: string, config: Argv.TypedOptionConfig<RegExp>): Command<U, G, A, Extend<O, K, string>>
+  option<K extends string, R>(name: K, desc: string, config: Argv.TypedOptionConfig<(source: string) => R>): Command<U, G, A, Extend<O, K, R>>
+  option<K extends string, R extends string>(name: K, desc: string, config: Argv.TypedOptionConfig<R[]>): Command<U, G, A, Extend<O, K, R>>
+  option<K extends string, D extends string>(name: K, desc: D, config?: Argv.OptionConfig): Command<U, G, A, Extend<O, K, Argv.OptionType<D>>>
+  option(name: string, desc: string, config: Argv.OptionConfig = {}) {
     this._createOption(name, desc, config)
     this._disposables?.push(() => this.removeOption(name))
-    return this as Command<U, G, A, Extend<O, K, Argv.OptionType<D, T>>>
+    return this
   }
 
   match(session: Session) {
@@ -257,6 +261,7 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
 
   dispose() {
     this._disposed = true
+    this.app.emit('command-removed', this)
     for (const cmd of this.children.slice()) {
       cmd.dispose()
     }

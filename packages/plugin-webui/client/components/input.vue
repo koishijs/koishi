@@ -27,7 +27,7 @@
 
 <script lang="ts" setup>
 
-import { defineProps, ref, computed, defineEmit } from 'vue'
+import { ref, computed } from 'vue'
 
 const props = defineProps({
   prefix: String,
@@ -54,7 +54,7 @@ const inputStyle = computed(() => ({
   paddingRight: +!!(props.suffix) + 1 + 'em',
 }))
 
-const emit = defineEmit(['update:modelValue', 'paste', 'focus', 'blur', 'enter', 'clickPrefix', 'clickSuffix'])
+const emit = defineEmits(['update:modelValue', 'paste', 'focus', 'blur', 'enter', 'clickPrefix', 'clickSuffix'])
 
 function onInput(event) {
   if (props.validate) {

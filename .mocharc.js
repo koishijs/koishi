@@ -16,22 +16,24 @@ for (const name of readdirSync(__dirname + '/packages')) {
 
 const specs = [
   'packages/koishi-core/tests/*.spec.ts',
-  'packages/koishi-utils/tests/*.spec.ts',
   'packages/koishi-dev-utils/tests/*.spec.ts',
   'packages/koishi-test-utils/tests/*.spec.ts',
+  'packages/koishi-utils/tests/*.spec.ts',
   'packages/plugin-common/tests/*.spec.ts',
   'packages/plugin-eval/tests/*.spec.ts',
   'packages/plugin-github/tests/*.spec.ts',
+  'packages/plugin-mongo/tests/*.spec.ts',
+  'packages/plugin-mysql/tests/*.spec.ts',
   'packages/plugin-schedule/tests/*.spec.ts',
   'packages/plugin-teach/tests/*.spec.ts',
 ]
 
 function getSpecFromArgv() {
   if (!process.env.npm_config_argv) return specs
-  const { original } = JSON.parse(process.env.npm_config_argv)
-  if (original.length === 1) return specs
-  process.argv.splice(1 - original.length, Infinity)
-  return original.slice(1).flatMap((path) => {
+  const args = JSON.parse(process.env.npm_config_argv).original.filter(arg => !arg.startsWith('-'))
+  if (args.length === 1) return specs
+  process.argv.splice(1 - args.length, Infinity)
+  return args.slice(1).flatMap((path) => {
     const [lib] = path.split('/')
     const target = path.slice(lib.length)
     const prefix = `packages/${libraries[lib]}/tests/`

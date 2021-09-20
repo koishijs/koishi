@@ -1,4 +1,4 @@
-import { Logger, defineProperty, remove, segment, Random } from 'koishi-utils'
+import { Logger, defineProperty, remove, segment, Random, Promisify, Awaitable } from 'koishi-utils'
 import { Command } from './command'
 import { Session } from './session'
 import { User, Channel, Database, Assets } from './database'
@@ -10,9 +10,6 @@ import Router from '@koa/router'
 
 export type NextFunction = (next?: NextFunction) => Promise<void>
 export type Middleware = (session: Session, next: NextFunction) => any
-export type Promisify<T> = T extends Promise<unknown> ? T : Promise<T>
-export type Awaitable<T> = T extends Promise<unknown> ? T : T | Promise<T>
-export type Await<T> = T extends Promise<infer U> ? U : T
 export type Disposable = () => void
 
 export type Plugin<T = any> = Plugin.Function<T> | Plugin.Object<T>
@@ -218,7 +215,7 @@ export class Context {
     return this
   }
 
-  plugin<T extends Plugin>(plugin: T, options?: Plugin.Config<T>): this
+  plugin<T extends Plugin>(plugin: T, options?: boolean | Plugin.Config<T>): this
   plugin(plugin: Plugin, options?: any) {
     if (options === false) return this
     if (options === true) options = undefined
@@ -270,8 +267,8 @@ export class Context {
     })
   }
 
-  async parallel<K extends EventName>(name: K, ...args: Parameters<EventMap[K]>): Promise<Await<ReturnType<EventMap[K]>>[]>
-  async parallel<K extends EventName>(session: Session, name: K, ...args: Parameters<EventMap[K]>): Promise<Await<ReturnType<EventMap[K]>>[]>
+  async parallel<K extends EventName>(name: K, ...args: Parameters<EventMap[K]>): Promise<void>
+  async parallel<K extends EventName>(session: Session, name: K, ...args: Parameters<EventMap[K]>): Promise<void>
   async parallel(...args: any[]) {
     const tasks: Promise<any>[] = []
     const session = typeof args[0] === 'object' ? args.shift() : null
@@ -280,7 +277,7 @@ export class Context {
       if (!context.match(session)) continue
       tasks.push(callback.apply(session, args))
     }
-    return Promise.all(tasks)
+    await Promise.all(tasks)
   }
 
   emit<K extends EventName>(name: K, ...args: Parameters<EventMap[K]>): void
@@ -380,7 +377,7 @@ export class Context {
     const dispose = this.on(name, function (...args: any[]) {
       dispose()
       return listener.apply(this, args)
-    } as any, prepend)
+    }, prepend)
     return dispose
   }
 
@@ -601,6 +598,8 @@ export interface EventMap extends SessionEventMap, DelegateEventMap {
   'before-send'(session: Session<never, never, Platform, 'send'>): Awaitable<void | boolean>
   'before-command'(argv: Argv): Awaitable<void | string>
   'command'(argv: Argv): Awaitable<void>
+  'command-added'(command: Command): void
+  'command-removed'(command: Command): void
   'middleware'(session: Session): void
   'plugin-added'(plugin: Plugin, registry: Map<Plugin, Plugin.State>): void
   'plugin-removed'(plugin: Plugin, registry: Map<Plugin, Plugin.State>): void

@@ -1,5 +1,5 @@
 import puppeteer, { Browser, ElementHandle, Page, Shooter, Viewport } from 'puppeteer-core'
-import { Context, Logger, noop, segment } from 'koishi-core'
+import { Context, Logger, noop, segment, hyphenate } from 'koishi-core'
 import { escape } from 'querystring'
 import { PNG } from 'pngjs'
 import { resolve } from 'path'
@@ -64,6 +64,7 @@ export interface Config {
   idleTimeout?: number
   maxLength?: number
   protocols?: string[]
+  bodyStyle?: Record<string, string>
 }
 
 enum Status { close, opening, open, closing }
@@ -135,6 +136,10 @@ export const defaultConfig: Config = {
     height: 600,
     deviceScaleFactor: 2,
   },
+  bodyStyle: {
+    display: 'inline-block',
+    padding: '0.25rem 0.375rem',
+  },
 }
 
 Context.delegate('puppeteer')
@@ -164,7 +169,7 @@ export function apply(ctx: Context, config: Config = {}) {
   ctx1.command('shot <url> [selector:rawtext]', '网页截图', { authority: 2 })
     .alias('screenshot')
     .option('full', '-f  对整个可滚动区域截图')
-    .option('viewport', '-v <viewport>  指定视口', { type: 'string' })
+    .option('viewport', '-v <viewport:string>  指定视口')
     .action(async ({ session, options }, url, selector) => {
       if (!url) return '请输入网址。'
       const scheme = /^(\w+):\/\//.exec(url)
@@ -186,7 +191,7 @@ export function apply(ctx: Context, config: Config = {}) {
           const viewport = options.viewport.split('x')
           const width = +viewport[0]
           const height = +viewport[1]
-          if (width !== defaultViewport.width || height !== defaultViewport.height) {
+          if (width !== defaultViewport?.width || height !== defaultViewport?.height) {
             await page.setViewport({ width, height })
           }
         }
@@ -268,8 +273,12 @@ export function apply(ctx: Context, config: Config = {}) {
     ctx.before('eval/send', (content) => {
       return segment.transformAsync(content, {
         async fragment({ content }) {
+          const style = Object
+            .entries(config.bodyStyle)
+            .map(([key, value]) => `${hyphenate(key)}: ${value};`)
+            .join('')
           return await ctx.puppeteer.render(`<!doctype html>
-            <html><body style="display: inline-block; padding: 0.25rem 0.375rem">${content}</body></html>
+            <html><body style="${style}">${content}</body></html>
           `, async (page, next) => next(await page.$('body')))
         },
       })

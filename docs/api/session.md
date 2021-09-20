@@ -75,7 +75,7 @@ sidebarDepth: 2
 
 注册一个仅对当前会话生效的中间件。
 
-### session.prompt(timeout?) <Badge text="beta" type="warn"/>
+### session.prompt(timeout?) <Badge text="beta" type="warning"/>
 
 - **timeout:** `number` 中间件的生效时间，缺省时会使用 [`app.options.delay.prompt`](./app.md#options-delay)
 - 返回值: `Promise<string>` 用户输入

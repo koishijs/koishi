@@ -49,7 +49,7 @@ export function apply(ctx: Context, options: MusicOptions = {}) {
 
   ctx.command('tools/music <name:text>', '点歌')
     // typescript cannot infer type from string templates
-    .option('platform', `-p <platform>  点歌平台，目前支持 qq, netease，默认为 ${platform}`, { type: 'string' })
+    .option('platform', `-p <platform>  点歌平台，目前支持 qq, netease，默认为 ${platform}`, { type: Object.keys(platforms) })
     .alias('点歌')
     .shortcut('来一首', { fuzzy: true })
     .shortcut('点一首', { fuzzy: true })

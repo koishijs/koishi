@@ -1,7 +1,7 @@
 {
   "name": "koishi-utils",
   "description": "Utilities for Koishi",
-  "version": "4.2.3",
+  "version": "4.3.0",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -28,11 +28,8 @@
     "utilities"
   ],
   "devDependencies": {
-    "@sinonjs/fake-timers": "^7.1.2",
-    "@types/supports-color": "^8.1.0",
-    "chai": "^4.3.4",
-    "jest-mock": "^27.0.6",
-    "koishi-test-utils": "^6.1.0"
+    "@types/supports-color": "^8.1.1",
+    "koishi-test-utils": "^7.0.2"
   },
   "dependencies": {
     "supports-color": "^8.1.0"

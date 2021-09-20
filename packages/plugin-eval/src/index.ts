@@ -1,5 +1,5 @@
 import { Context, Command, Argv } from 'koishi-core'
-import { segment, Logger, defineProperty, noop } from 'koishi-utils'
+import { segment, Logger, defineProperty, noop, Awaitable } from 'koishi-utils'
 import { EvalWorker, Trap, EvalConfig, Config } from './main'
 import { resolve } from 'path'
 import { load } from 'js-yaml'
@@ -33,8 +33,8 @@ declare module 'koishi-core' {
   }
 
   interface EventMap {
-    'eval/before-send'(content: string, session: Session): string | Promise<string>
-    'eval/before-start'(): void | Promise<void>
+    'eval/before-send'(content: string, session: Session): Awaitable<string>
+    'eval/before-start'(): Awaitable<void>
     'eval/start'(response: WorkerResponse): void
   }
 }
@@ -156,12 +156,13 @@ export function apply(ctx: Context, config: Config = {}) {
     command.shortcut(prefix + prefix[prefix.length - 1], { fuzzy: true, options: { slient: true } })
   }
 
-  Argv.interpolate('${', '}', (source) => {
-    const result = ctx.worker.loader.extractScript(segment.unescape(source))
+  Argv.interpolate('${', '}', (raw) => {
+    const source = segment.unescape(raw)
+    const result = ctx.worker.loader.extractScript(source)
     if (!result) {
-      const index = source.indexOf('}')
-      if (index >= 0) return { source, rest: source.slice(index + 1), tokens: [] }
-      return { source, rest: '', tokens: [] }
+      const index = raw.indexOf('}')
+      if (index >= 0) return { source: raw, rest: raw.slice(index + 1), tokens: [] }
+      return { source: raw, rest: '', tokens: [] }
     }
     return {
       source: result,

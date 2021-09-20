@@ -24,17 +24,17 @@
     "koishi"
   ],
   "peerDependencies": {
-    "koishi-core": "^3.13.0"
+    "koishi-core": "^3.14.2"
   },
   "devDependencies": {
-    "@types/pako": "^1.0.1",
-    "koishi-test-utils": "^6.1.0"
+    "@types/pako": "^1.0.2",
+    "koishi-test-utils": "^7.0.2"
   },
   "dependencies": {
-    "axios": "^0.21.1",
+    "axios": "^0.21.4",
     "form-data": "^4.0.0",
-    "koishi-utils": "^4.2.3",
-    "pako": "^2.0.3",
-    "ws": "^7.4.5"
+    "koishi-utils": "^4.3.0",
+    "pako": "^2.0.4",
+    "ws": "^8.2.1"
   }
 }

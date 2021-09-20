@@ -1,5 +1,5 @@
 import { Context, User, Session, NextFunction, Channel, Argv } from 'koishi-core'
-import { segment, simplify, noop, escapeRegExp, Random, makeArray } from 'koishi-utils'
+import { segment, simplify, noop, escapeRegExp, Random, makeArray, Awaitable } from 'koishi-utils'
 import { Dialogue, DialogueTest } from './utils'
 
 declare module 'koishi-core' {
@@ -13,7 +13,7 @@ declare module 'koishi-core' {
     'dialogue/prepare'(state: SessionState): void
     'dialogue/before-attach-user'(state: SessionState, userFields: Set<User.Field>): void
     'dialogue/attach-user'(state: SessionState): void | boolean
-    'dialogue/before-send'(state: SessionState): void | boolean | Promise<void | boolean>
+    'dialogue/before-send'(state: SessionState): Awaitable<void | boolean>
     'dialogue/send'(state: SessionState): void
   }
 
@@ -177,7 +177,7 @@ export async function triggerDialogue(ctx: Context, session: Session, next: Next
   logger.debug('[receive]', session.messageId, session.content)
 
   // fetch matched dialogues
-  const dialogues = state.dialogues = await ctx.database.getDialoguesByTest(state.test)
+  const dialogues = state.dialogues = await Dialogue.get(ctx, state.test)
 
   // pick dialogue
   let dialogue: Dialogue
@@ -208,6 +208,10 @@ export async function triggerDialogue(ctx: Context, session: Session, next: Next
 
   if (dialogue.flag & Dialogue.Flag.regexp) {
     const capture = dialogue._capture || new RegExp(dialogue.original, 'i').exec(state.test.original)
+    // emojis will be transformed into "?" in mysql
+    // which will lead to incorrect matches
+    // TODO enhance emojis in regexp tests
+    if (!capture) return
     capture.map((segment, index) => {
       if (index && index <= 9) {
         state.answer = state.answer.replace(new RegExp(`\\$${index}`, 'g'), escapeAnswer(segment || ''))
@@ -304,8 +308,9 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
 
   ctx.on('group-member-deleted', triggerNotice.bind(null, 'leave'))
 
-  ctx.on('dialogue/attach-user', ({ session }) => {
-    if (session.user.flag & User.Flag.ignore) return true
+  ctx.on('dialogue/receive', ({ session }) => {
+    // generally flag and authority has already attached to users
+    if (session.user?.authority < config.authority.receive) return true
   })
 
   ctx.on('dialogue/receive', ({ session, test }) => {

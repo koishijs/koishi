@@ -5,7 +5,7 @@ import { BotOptions, Adapter, createBots } from './adapter'
 import { Channel, User } from './database'
 import validate, { Command } from './command'
 import { Session } from './session'
-import help, { getCommandNames } from './help'
+import help, { getCommandNames, HelpConfig } from './help'
 import LruCache from 'lru-cache'
 import { AxiosRequestConfig } from 'axios'
 import { Server, createServer } from 'http'
@@ -21,6 +21,7 @@ export interface DelayOptions {
 
 export interface AppOptions extends BotOptions {
   port?: number
+  host?: string
   bots?: BotOptions[]
   prefix?: string | string[] | ((session: Session.Message) => void | string | string[])
   nickname?: string | string[]
@@ -28,6 +29,7 @@ export interface AppOptions extends BotOptions {
   prettyErrors?: boolean
   processMessage?: (message: string) => string
   delay?: DelayOptions
+  help?: boolean | HelpConfig
   autoAssign?: boolean | ((session: Session) => boolean)
   autoAuthorize?: number | ((session: Session) => number)
   userCacheAge?: number
@@ -147,7 +149,7 @@ export class App extends Context {
     })
 
     this.plugin(validate)
-    this.plugin(help)
+    this.plugin(help, options.help)
   }
 
   createServer() {
@@ -175,10 +177,10 @@ export class App extends Context {
 
   private async _listen() {
     try {
-      const { port } = this.app.options
+      const { port, host } = this.app.options
       if (port) {
-        this._httpServer.listen(port)
-        this.logger('server').info('server listening at %c', port)
+        this._httpServer.listen(port, host)
+        this.logger('server').info('server listening at %c', `http://${host || 'localhost'}:${port}`)
       }
       await Promise.all(Object.values(this.adapters).map(adapter => adapter.start()))
     } catch (error) {

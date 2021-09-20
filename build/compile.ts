@@ -40,8 +40,7 @@ const KOISHI_VERSION = JSON.stringify(version)
 
 ;(async () => {
   const root = resolve(__dirname, '../packages')
-  const chai = 'koishi-test-utils/chai'
-  const workspaces = [chai, ...await readdir(root)]
+  const workspaces = await readdir(root)
   const tasks: Record<string, Promise<void>> = {}
 
   await Promise.all(workspaces.map(async (name) => {
@@ -79,8 +78,6 @@ const KOISHI_VERSION = JSON.stringify(version)
       entryPoints.push(base + '/src/transfer.ts')
       entryPoints.push(...loaders.map(name => `${base}/src/loaders/${name}`))
       options.define.BUILTIN_LOADERS = JSON.stringify(loaders.map(name => name.slice(0, -3)))
-    } else if (name === 'koishi-test-utils') {
-      await tasks[chai]
     }
 
     if (name !== 'plugin-eval') {

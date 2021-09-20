@@ -16,11 +16,11 @@
 
 <script lang="ts" setup>
 
-import { ref, defineProps, defineEmit } from 'vue'
+import { ref } from 'vue'
 import { segment } from '~/client'
 import VirtualList from './list.vue'
 
-const emit = defineEmit(['send', 'click', 'update:activeKey'])
+const emit = defineEmits(['send', 'click', 'update:activeKey'])
 
 const props = defineProps<{
   messages: any[],

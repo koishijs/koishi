@@ -1,9 +1,9 @@
-import { difference, observe, Time, enumKeys, Random, template, deduplicate, intersection } from 'koishi-utils'
+import { difference, observe, Time, enumKeys, Random, template, deduplicate, intersection, Awaitable } from 'koishi-utils'
 import { Context, User, Channel, Command, Argv, Platform, Session, Extend } from 'koishi-core'
 
 type AdminAction<U extends User.Field, G extends Channel.Field, A extends any[], O extends {}, T>
   = (argv: Argv<U | 'authority', G, A, Extend<O, 'target', string>> & { target: T }, ...args: A)
-    => void | string | Promise<void | string>
+    => Awaitable<void | string>
 
 declare module 'koishi-core' {
   interface Command<U, G, A, O> {
@@ -332,7 +332,7 @@ export function admin(ctx: Context) {
   ctx.command('common/user', '用户管理', { authority: 3 })
   ctx.command('common/channel', '频道管理', { authority: 3 })
 
-  ctx.command('user/authorize <value:posint>', '权限信息', { authority: 4 })
+  ctx.command('user/authorize <value:natural>', '权限信息', { authority: 4 })
     .alias('auth')
     .adminUser(async ({ session, target }, authority) => {
       if (session.userId === target[session.platform]) return template('admin.user-expected')

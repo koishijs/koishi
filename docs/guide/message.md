@@ -99,12 +99,12 @@ ctx.on('message', (session) => {
   // 这里其实有个小问题，因为来自不同群的消息都会触发这个回调函数
   // 因此理想的做法应该是分别记录每个群的当前消息和复读次数
   // 但这里我们假设机器人只处理一个群，这样可以简化逻辑
-  if (session.message === message) {
+  if (session.content === message) {
     times += 1
     if (times === 3) session.send(message)
   } else {
     times = 0
-    message = session.message
+    message = session.content
   }
 })
 ```
@@ -116,12 +116,12 @@ let times = 0 // 复读次数
 let message = '' // 当前消息
 
 ctx.middleware((session, next) => {
-  if (session.message === message) {
+  if (session.content === message) {
     times += 1
     if (times === 3) return session.send(message)
   } else {
     times = 0
-    message = session.message
+    message = session.content
     return next()
   }
 }, true /* true 表示这是前置中间件 */)
@@ -135,7 +135,7 @@ ctx.middleware((session, next) => {
 
 ```js
 ctx.middleware((session, next) => {
-  if (session.message === 'hlep') {
+  if (session.content === 'hlep') {
     // 如果该 session 没有被截获，则这里的回调函数将会被执行
     return next(() => session.send('你想说的是 help 吗？'))
   } else {
@@ -151,12 +151,12 @@ let times = 0 // 复读次数
 let message = '' // 当前消息
 
 ctx.middleware((session, next) => {
-  if (session.message === message) {
+  if (session.content === message) {
     times += 1
     if (times === 3) return next(() => session.send(message))
   } else {
     times = 0
-    message = session.message
+    message = session.content
     return next()
   }
 }, true)

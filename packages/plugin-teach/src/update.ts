@@ -1,15 +1,15 @@
 import { Context } from 'koishi-core'
-import { difference, deduplicate, sleep, pick, Time } from 'koishi-utils'
+import { difference, deduplicate, sleep, pick, Time, Awaitable } from 'koishi-utils'
 import { Dialogue, prepareTargets, sendResult, split, RE_DIALOGUES, isPositiveInteger } from './utils'
 import { getDetails, formatDetails, formatAnswer, formatQuestionAnswers } from './search'
 
 declare module 'koishi-core' {
   interface EventMap {
-    'dialogue/before-modify'(argv: Dialogue.Argv): void | string | Promise<void | string>
+    'dialogue/before-modify'(argv: Dialogue.Argv): Awaitable<void | string>
     'dialogue/modify'(argv: Dialogue.Argv, dialogue: Dialogue): void
-    'dialogue/after-modify'(argv: Dialogue.Argv): void | Promise<void>
-    'dialogue/before-detail'(argv: Dialogue.Argv): void | Promise<void>
-    'dialogue/detail'(dialogue: Dialogue, output: string[], argv: Dialogue.Argv): void | Promise<void>
+    'dialogue/after-modify'(argv: Dialogue.Argv): Awaitable<void>
+    'dialogue/before-detail'(argv: Dialogue.Argv): Awaitable<void>
+    'dialogue/detail'(dialogue: Dialogue, output: string[], argv: Dialogue.Argv): Awaitable<void>
   }
 }
 
@@ -183,7 +183,7 @@ export async function update(argv: Dialogue.Argv) {
     for (const dialogue of targets) {
       app.emit('dialogue/modify', argv, dialogue)
     }
-    await app.database.updateDialogues(targets, argv)
+    await Dialogue.update(targets, argv)
     await app.serial('dialogue/after-modify', argv)
   }
 
@@ -198,7 +198,7 @@ export async function create(argv: Dialogue.Argv) {
   argv.uneditable = []
   argv.updated = []
   argv.skipped = []
-  argv.dialogues = await app.database.getDialoguesByTest({ question, answer, regexp: false })
+  argv.dialogues = await Dialogue.get(app, { question, answer, regexp: false })
   await app.serial('dialogue/before-detail', argv)
   const result = await app.serial('dialogue/before-modify', argv)
   if (typeof result === 'string') return result
@@ -219,7 +219,7 @@ export async function create(argv: Dialogue.Argv) {
     for (const dialogue of targets) {
       app.emit('dialogue/modify', argv, dialogue)
     }
-    await app.database.updateDialogues(targets, argv)
+    await Dialogue.update(targets, argv)
     await app.serial('dialogue/after-modify', argv)
     return sendResult(argv)
   }

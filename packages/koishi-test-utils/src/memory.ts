@@ -1,11 +1,9 @@
-import { Tables, TableType, Query, App, Database, User, Channel } from 'koishi-core'
+import { Tables, TableType, Query, App, Database, User, Channel, Eval } from 'koishi-core'
 import { clone, pick } from 'koishi-utils'
 
 declare module 'koishi-core' {
   interface Database {
     memory: MemoryDatabase
-    initUser(id: string, authority?: number): Promise<void>
-    initChannel(id: string, assignee?: string): Promise<void>
   }
 
   namespace Database {
@@ -24,10 +22,7 @@ interface TableConfig<O> {
 }
 
 export class MemoryDatabase {
-  $store: { [K in TableType]?: Tables[K][] } = {
-    user: [],
-    channel: [],
-  }
+  $store: { [K in TableType]?: Tables[K][] } = {}
 
   memory = this
 
@@ -36,10 +31,7 @@ export class MemoryDatabase {
   constructor(public app: App, public config: MemoryConfig) {}
 
   $table<K extends TableType>(table: K): any[] {
-    if (!this.$store[table]) {
-      this.$store[table] = []
-    }
-    return this.$store[table]
+    return this.$store[table] ||= []
   }
 
   $count<K extends TableType>(table: K, field: keyof Tables[K] = 'id') {
@@ -47,48 +39,143 @@ export class MemoryDatabase {
   }
 }
 
-const queryOperators: ([string, (data: any, value: any) => boolean])[] = Object.entries({
-  $regex: (data: RegExp, value) => data.test(value),
-  $regexFor: (data, value) => new RegExp(value, 'i').test(data),
-  $in: (data: any[], value) => data.includes(value),
-  $nin: (data: any[], value) => !data.includes(value),
-  $ne: (data, value) => value !== data,
-  $eq: (data, value) => value === data,
-  $gt: (data, value) => value > data,
-  $gte: (data, value) => value >= data,
-  $lt: (data, value) => value < data,
-  $lte: (data, value) => value <= data,
-})
+type QueryOperators = {
+  [K in keyof Query.FieldExpr]?: (query: Query.FieldExpr[K], data: any) => boolean
+}
 
-Database.extend(MemoryDatabase, {
-  async get(name, query, fields) {
-    function executeQuery(query: Query.Expr, data: any): boolean {
-      const entries: [string, any][] = Object.entries(query)
-      return entries.every(([key, value]) => {
-        if (key === '$and') {
-          return (value as Query.Expr[]).reduce((prev, query) => prev && executeQuery(query, data), true)
-        } else if (key === '$or') {
-          return (value as Query.Expr[]).reduce((prev, query) => prev || executeQuery(query, data), false)
-        } else if (key === '$not') {
-          return !executeQuery(value, data)
-        } else if (Array.isArray(value)) {
-          return value.includes(data[key])
-        } else if (value instanceof RegExp) {
-          return value.test(data[key])
-        } else if (typeof value === 'string' || typeof value === 'number') {
-          return value === data[key]
-        }
-        return queryOperators.reduce((prev, [prop, callback]) => {
-          return prev && (prop in value ? callback(value[prop], data[key]) : true)
-        }, true)
-      })
+const queryOperators: QueryOperators = {
+  // logical
+  $or: (query, data) => query.reduce((prev, query) => prev || executeFieldQuery(query, data), false),
+  $and: (query, data) => query.reduce((prev, query) => prev && executeFieldQuery(query, data), true),
+  $not: (query, data) => !executeFieldQuery(query, data),
+
+  // comparison
+  $eq: (query, data) => data.valueOf() === query.valueOf(),
+  $ne: (query, data) => data.valueOf() !== query.valueOf(),
+  $gt: (query, data) => data.valueOf() > query.valueOf(),
+  $gte: (query, data) => data.valueOf() >= query.valueOf(),
+  $lt: (query, data) => data.valueOf() < query.valueOf(),
+  $lte: (query, data) => data.valueOf() <= query.valueOf(),
+
+  // membership
+  $in: (query, data) => query.includes(data),
+  $nin: (query, data) => !query.includes(data),
+
+  // regexp
+  $regex: (query, data) => query.test(data),
+  $regexFor: (query, data) => new RegExp(data, 'i').test(query),
+
+  // bitwise
+  $bitsAllSet: (query, data) => (query & data) === query,
+  $bitsAllClear: (query, data) => (query & data) === 0,
+  $bitsAnySet: (query, data) => (query & data) !== 0,
+  $bitsAnyClear: (query, data) => (query & data) !== query,
+
+  // list
+  $el: (query, data) => data.some(item => executeFieldQuery(query, item)),
+  $size: (query, data) => data.length === query,
+}
+
+type EvalOperators = {
+  [K in keyof Eval.GeneralExpr]?: (args: Eval.GeneralExpr[K], data: any) => any
+}
+
+const evalOperators: EvalOperators = {
+  // numeric
+  $add: (args, data) => args.reduce<number>((prev, curr) => prev + executeEval(curr, data), 0),
+  $multiply: (args, data) => args.reduce<number>((prev, curr) => prev * executeEval(curr, data), 1),
+  $subtract: ([left, right], data) => executeEval(left, data) - executeEval(right, data),
+  $divide: ([left, right], data) => executeEval(left, data) - executeEval(right, data),
+
+  // boolean
+  $eq: ([left, right], data) => executeEval(left, data).valueOf() === executeEval(right, data).valueOf(),
+  $ne: ([left, right], data) => executeEval(left, data).valueOf() !== executeEval(right, data).valueOf(),
+  $gt: ([left, right], data) => executeEval(left, data).valueOf() > executeEval(right, data).valueOf(),
+  $gte: ([left, right], data) => executeEval(left, data).valueOf() >= executeEval(right, data).valueOf(),
+  $lt: ([left, right], data) => executeEval(left, data).valueOf() < executeEval(right, data).valueOf(),
+  $lte: ([left, right], data) => executeEval(left, data).valueOf() <= executeEval(right, data).valueOf(),
+
+  // aggregation
+  $sum: (expr, table: any[]) => table.reduce((prev, curr) => prev + executeEval(expr, curr), 0),
+  $avg: (expr, table: any[]) => table.reduce((prev, curr) => prev + executeEval(expr, curr), 0) / table.length,
+  $min: (expr, table: any[]) => Math.min(...table.map(data => executeEval(expr, data))),
+  $max: (expr, table: any[]) => Math.max(...table.map(data => executeEval(expr, data))),
+  $count: (expr, table: any[]) => new Set(table.map(data => executeEval(expr, data))).size,
+}
+
+function executeFieldQuery(query: Query.FieldQuery, data: any) {
+  // shorthand syntax
+  if (Array.isArray(query)) {
+    return query.includes(data)
+  } else if (query instanceof RegExp) {
+    return query.test(data)
+  } else if (typeof query === 'string' || typeof query === 'number' || query instanceof Date) {
+    return data.valueOf() === query.valueOf()
+  }
+
+  for (const key in query) {
+    if (key in queryOperators) {
+      if (!queryOperators[key](query[key], data)) return false
+    }
+  }
+
+  return true
+}
+
+function executeQuery(query: Query.Expr, data: any): boolean {
+  const entries: [string, any][] = Object.entries(query)
+  return entries.every(([key, value]) => {
+    // execute logical query
+    if (key === '$and') {
+      return (value as Query.Expr[]).reduce((prev, query) => prev && executeQuery(query, data), true)
+    } else if (key === '$or') {
+      return (value as Query.Expr[]).reduce((prev, query) => prev || executeQuery(query, data), false)
+    } else if (key === '$not') {
+      return !executeQuery(value, data)
+    } else if (key === '$expr') {
+      return executeEval(value, data)
     }
 
+    // execute field query
+    try {
+      if (!(key in data)) return false
+      return executeFieldQuery(value, data[key])
+    } catch {
+      return false
+    }
+  })
+}
+
+function executeEval(expr: Eval.Any | Eval.Aggregation, data: any) {
+  if (typeof expr === 'string') {
+    return data[expr]
+  } else if (typeof expr === 'number' || typeof expr === 'boolean') {
+    return expr
+  }
+
+  for (const key in expr) {
+    if (key in evalOperators) {
+      return evalOperators[key](expr[key], data)
+    }
+  }
+}
+
+Database.extend(MemoryDatabase, {
+  async drop(name) {
+    if (name) {
+      delete this.$store[name]
+    } else {
+      this.$store = {}
+    }
+  },
+
+  async get(name, query, modifier) {
     const expr = Query.resolve(name, query)
+    const { fields, limit = Infinity, offset = 0 } = Query.resolveModifier(modifier)
     return this.$table(name)
       .filter(row => executeQuery(expr, row))
-      .map(row => fields ? pick(row, fields) : row)
-      .map(clone)
+      .map(row => clone(pick(row, fields)))
+      .slice(offset, offset + limit)
   },
 
   async remove(name, query) {
@@ -114,6 +201,12 @@ Database.extend(MemoryDatabase, {
       const row = this.$table(table).find(row => row[key] === item[key])
       Object.assign(row, clone(item))
     }
+  },
+
+  async aggregate(name, fields, query) {
+    const expr = Query.resolve(name, query)
+    const table = this.$table(name).filter(row => executeQuery(expr, row))
+    return Object.fromEntries(Object.entries(fields).map(([key, expr]) => [key, executeEval(expr, table)]))
   },
 
   async getUser(type, id, fields) {
@@ -142,10 +235,6 @@ Database.extend(MemoryDatabase, {
     user.id = '' + user.id
   },
 
-  initUser(id, authority = 1) {
-    return this.createUser('mock', id, { authority })
-  },
-
   async getChannel(type, id, fields) {
     if (Array.isArray(id)) {
       return this.get('channel', id.map(id => `${type}:${id}`), fields)
@@ -158,7 +247,7 @@ Database.extend(MemoryDatabase, {
     return this.$table('channel').filter((row) => {
       const [type] = row.id.split(':')
       return assignMap[type]?.includes(row.assignee)
-    })
+    }).map(row => clone(pick(row, fields)))
   },
 
   async setChannel(type, id, data) {
@@ -176,10 +265,6 @@ Database.extend(MemoryDatabase, {
       ...Channel.create(type, id),
       ...clone(data),
     })
-  },
-
-  initChannel(id, assignee = this.app.bots[0].selfId) {
-    return this.createChannel('mock', id, { assignee })
   },
 })
 

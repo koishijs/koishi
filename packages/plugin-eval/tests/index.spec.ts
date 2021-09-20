@@ -5,7 +5,6 @@ import { resolve } from 'path'
 import { promises as fs } from 'fs'
 import * as eval from 'koishi-plugin-eval'
 import * as teach from 'koishi-plugin-teach'
-import { memory } from 'koishi-plugin-teach/tests/environment'
 
 const app = new App({
   mockStart: false,
@@ -27,13 +26,11 @@ app.plugin(teach, {
   successorTimeout: 0,
 })
 
-app.plugin(memory)
-
 const ses = app.session('123', '456')
 
 before(async () => {
-  await app.database.initUser('123', 3)
-  await app.database.initChannel('456')
+  await app.initUser('123', 3)
+  await app.initChannel('456')
   await fs.rmdir(resolve(__dirname, 'fixtures/.koishi'), { recursive: true })
   return new Promise<void>((resolve) => {
     app.on('eval/start', () => resolve())

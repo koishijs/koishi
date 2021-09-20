@@ -1,6 +1,6 @@
 {
   "name": "koishi-plugin-eval",
-  "version": "3.2.3",
+  "version": "3.2.5",
   "description": "Execute JavaScript and create addons in Koishi",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
@@ -33,26 +33,23 @@
     "code"
   ],
   "peerDependencies": {
-    "koishi-core": "^3.13.0"
+    "koishi-core": "^3.14.2"
   },
   "optionalDependencies": {
-    "@babel/core": "^7.14.0",
-    "@babel/plugin-transform-react-jsx": "^7.13.12",
+    "@babel/core": "^7.15.5",
+    "@babel/plugin-transform-react-jsx": "^7.14.9",
     "coffeescript": "^2.5.1",
-    "esbuild": "^0.11.18",
+    "esbuild": "^0.12.25",
     "json5": "^2.2.0",
-    "typescript": "^4.2.4"
+    "typescript": "^4.4.2"
   },
   "dependencies": {
     "js-yaml": "^4.1.0",
-    "simple-git": "^2.38.0"
+    "simple-git": "^2.45.1"
   },
   "devDependencies": {
-    "@types/babel__core": "^7.1.14",
-    "@types/js-yaml": "^4.0.1",
-    "chai": "^4.3.4",
-    "koishi": "^3.13.0",
-    "koishi-plugin-teach": "^2.2.2",
-    "koishi-test-utils": "^6.1.0"
+    "@types/babel__core": "^7.1.16",
+    "@types/js-yaml": "^4.0.3",
+    "koishi-test-utils": "^7.0.2"
   }
 }

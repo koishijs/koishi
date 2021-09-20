@@ -1,7 +1,8 @@
-import MysqlDatabase, { Config, escape, TableType } from './database'
-import { User, Channel, Database, Context, Query } from 'koishi-core'
+import MysqlDatabase, { Config } from './database'
+import { User, Channel, Database, Context, Query, Eval } from 'koishi-core'
 import { difference } from 'koishi-utils'
-import { OkPacket, escapeId } from 'mysql'
+import { OkPacket, escapeId, escape } from 'mysql'
+import * as Koishi from 'koishi-core'
 
 export * from './database'
 export default MysqlDatabase
@@ -27,113 +28,247 @@ function createRegExpQuery(key: string, value: RegExp) {
   return `${key} REGEXP ${escape(value.source)}`
 }
 
-function createEqualQuery(key: string, value: any) {
-  return `${key} = ${escape(value)}`
+function createElementQuery(key: string, value: any) {
+  return `FIND_IN_SET(${escape(value)}, ${key})`
 }
 
-const queryOperators: Record<string, (key: string, value: any) => string> = {
-  $regex: createRegExpQuery,
-  $regexFor: (key, value) => `${escape(value)} REGEXP ${key}`,
+function comparator(operator: string) {
+  return function (key: string, value: any) {
+    return `${key} ${operator} ${escape(value)}`
+  }
+}
+
+const createEqualQuery = comparator('=')
+
+type QueryOperators = {
+  [K in keyof Query.FieldExpr]?: (key: string, value: Query.FieldExpr[K]) => string
+}
+
+const queryOperators: QueryOperators = {
+  // logical
+  $or: (key, value) => logicalOr(value.map(value => parseFieldQuery(key, value))),
+  $and: (key, value) => logicalAnd(value.map(value => parseFieldQuery(key, value))),
+  $not: (key, value) => logicalNot(parseFieldQuery(key, value)),
+
+  // comparison
+  $eq: createEqualQuery,
+  $ne: comparator('!='),
+  $gt: comparator('>'),
+  $gte: comparator('>='),
+  $lt: comparator('<'),
+  $lte: comparator('<='),
+
+  // membership
   $in: (key, value) => createMemberQuery(key, value, ''),
   $nin: (key, value) => createMemberQuery(key, value, ' NOT'),
-  $eq: createEqualQuery,
-  $ne: (key, value) => `${key} != ${escape(value)}`,
-  $gt: (key, value) => `${key} > ${escape(value)}`,
-  $gte: (key, value) => `${key} >= ${escape(value)}`,
-  $lt: (key, value) => `${key} < ${escape(value)}`,
-  $lte: (key, value) => `${key} <= ${escape(value)}`,
+
+  // regexp
+  $regex: createRegExpQuery,
+  $regexFor: (key, value) => `${escape(value)} REGEXP ${key}`,
+
+  // bitwise
+  $bitsAllSet: (key, value) => `${key} & ${escape(value)} = ${escape(value)}`,
+  $bitsAllClear: (key, value) => `${key} & ${escape(value)} = 0`,
+  $bitsAnySet: (key, value) => `${key} & ${escape(value)} != 0`,
+  $bitsAnyClear: (key, value) => `${key} & ${escape(value)} != ${escape(value)}`,
+
+  // list
+  $el: (key, value) => {
+    if (Array.isArray(value)) {
+      return `(${value.map(value => createElementQuery(key, value)).join(' || ')})`
+    } else if (typeof value !== 'number' && typeof value !== 'string') {
+      throw new TypeError('query expr under $el is not supported')
+    } else {
+      return createElementQuery(key, value)
+    }
+  },
+  $size: (key, value) => {
+    if (!value) return `!${key}`
+    return `${key} && LENGTH(${key}) - LENGTH(REPLACE(${key}, ",", "")) = ${escape(value)} - 1`
+  },
 }
 
-export function createWhereClause<T extends TableType>(name: T, query: Query<T>) {
-  function parseQuery(query: Query.Expr) {
-    const conditions: string[] = []
-    for (const key in query) {
-      // logical expression
-      if (key === '$or') {
-        conditions.push(`!(${parseQuery(query.$not)})`)
-        continue
-      } else if (key === '$and') {
-        if (!query.$and.length) return '0'
-        conditions.push(...query.$and.map(parseQuery))
-        continue
-      } else if (key === '$or' && query.$or.length) {
-        conditions.push(`(${query.$or.map(parseQuery).join(' || ')})`)
-        continue
-      }
+type EvaluationOperators = {
+  [K in keyof Eval.GeneralExpr]?: (expr: Eval.GeneralExpr[K]) => string
+}
 
-      // query shorthand
-      const value = query[key]
-      const escKey = escapeId(key)
-      if (Array.isArray(value)) {
-        conditions.push(createMemberQuery(escKey, value))
-        continue
-      } else if (value instanceof RegExp) {
-        conditions.push(createRegExpQuery(escKey, value))
-        continue
-      } else if (typeof value === 'string' || typeof value === 'number') {
-        conditions.push(createEqualQuery(escKey, value))
-        continue
-      }
+function binary(operator: string) {
+  return function ([left, right]: [Eval.Any, Eval.Any]) {
+    return `(${parseEval(left)} ${operator} ${parseEval(right)})`
+  }
+}
 
-      // query expression
-      for (const prop in value) {
-        if (prop in queryOperators) {
-          conditions.push(queryOperators[prop](escKey, value[prop]))
-        }
+const evalOperators: EvaluationOperators = {
+  // numeric
+  $add: (args) => `(${args.map(parseEval).join(' + ')})`,
+  $multiply: (args) => `(${args.map(parseEval).join(' * ')})`,
+  $subtract: binary('-'),
+  $divide: binary('/'),
+
+  // boolean
+  $eq: binary('='),
+  $ne: binary('!='),
+  $gt: binary('>'),
+  $gte: binary('>='),
+  $lt: binary('<'),
+  $lte: binary('<='),
+
+  // aggregation
+  $sum: (expr) => `ifnull(sum(${parseEval(expr)}), 0)`,
+  $avg: (expr) => `avg(${parseEval(expr)})`,
+  $min: (expr) => `$min(${parseEval(expr)})`,
+  $max: (expr) => `max(${parseEval(expr)})`,
+  $count: (expr) => `count(distinct ${parseEval(expr)})`,
+}
+
+function logicalAnd(conditions: string[]) {
+  if (!conditions.length) return '1'
+  if (conditions.includes('0')) return '0'
+  return conditions.join(' && ')
+}
+
+function logicalOr(conditions: string[]) {
+  if (!conditions.length) return '0'
+  if (conditions.includes('1')) return '1'
+  return `(${conditions.join(' || ')})`
+}
+
+function logicalNot(condition: string) {
+  return `!(${condition})`
+}
+
+function parseFieldQuery(key: string, query: Query.FieldExpr) {
+  const conditions: string[] = []
+
+  // query shorthand
+  if (Array.isArray(query)) {
+    conditions.push(createMemberQuery(key, query))
+  } else if (query instanceof RegExp) {
+    conditions.push(createRegExpQuery(key, query))
+  } else if (typeof query === 'string' || typeof query === 'number' || query instanceof Date) {
+    conditions.push(createEqualQuery(key, query))
+  } else {
+    // query expression
+    for (const prop in query) {
+      if (prop in queryOperators) {
+        conditions.push(queryOperators[prop](key, query[prop]))
       }
     }
-
-    if (!conditions.length) return '1'
-    if (conditions.includes('0')) return '0'
-    return conditions.join(' && ')
   }
-  return parseQuery(Query.resolve(name, query))
+
+  return logicalAnd(conditions)
+}
+
+function parseQuery(query: Query.Expr) {
+  const conditions: string[] = []
+  for (const key in query) {
+    // logical expression
+    if (key === '$not') {
+      conditions.push(logicalNot(parseQuery(query.$not)))
+    } else if (key === '$and') {
+      conditions.push(logicalAnd(query.$and.map(parseQuery)))
+    } else if (key === '$or') {
+      conditions.push(logicalOr(query.$or.map(parseQuery)))
+    } else if (key === '$expr') {
+      conditions.push(parseEval(query.$expr))
+    } else {
+      conditions.push(parseFieldQuery(escapeId(key), query[key]))
+    }
+  }
+
+  return logicalAnd(conditions)
+}
+
+function parseEval(expr: Eval.Any | Eval.Aggregation): string {
+  if (typeof expr === 'string') {
+    return escapeId(expr)
+  } else if (typeof expr === 'number' || typeof expr === 'boolean') {
+    return escape(expr)
+  }
+
+  for (const key in expr) {
+    if (key in evalOperators) {
+      return evalOperators[key](expr[key])
+    }
+  }
 }
 
 Database.extend(MysqlDatabase, {
-  async get(name, query, fields) {
-    const filter = createWhereClause(name, query)
+  async drop(name) {
+    if (name) {
+      await this.query(`DROP TABLE ${escapeId(name)}`)
+    } else {
+      const data = await this.select('information_schema.tables', ['TABLE_NAME'], 'TABLE_SCHEMA = ?', [this.config.database])
+      if (!data.length) return
+      await this.query(data.map(({ TABLE_NAME }) => `DROP TABLE ${escapeId(TABLE_NAME)}`).join('; '))
+    }
+  },
+
+  async get(name, query, modifier) {
+    const filter = parseQuery(Query.resolve(name, query))
     if (filter === '0') return []
-    return this.select(name, fields, filter)
+    const { fields, limit, offset } = Query.resolveModifier(modifier)
+    const keys = this.joinKeys(this.inferFields(name, fields))
+    let sql = `SELECT ${keys} FROM ${name} _${name} WHERE ${filter}`
+    if (limit) sql += ' LIMIT ' + limit
+    if (offset) sql += ' OFFSET ' + offset
+    return this.query(sql)
   },
 
   async remove(name, query) {
-    const filter = createWhereClause(name, query)
+    const filter = parseQuery(Query.resolve(name, query))
     if (filter === '0') return
     await this.query('DELETE FROM ?? WHERE ' + filter, [name])
   },
 
-  async create(table, data) {
+  async create(name, data) {
+    data = { ...Koishi.Tables.create(name), ...data }
     const keys = Object.keys(data)
-    if (!keys.length) return
     const header = await this.query<OkPacket>(
       `INSERT INTO ?? (${this.joinKeys(keys)}) VALUES (${keys.map(() => '?').join(', ')})`,
-      [table, ...this.formatValues(table, data, keys)],
+      [name, ...this.formatValues(name, data, keys)],
     )
     return { ...data, id: header.insertId } as any
   },
 
-  async update(table, data) {
+  async update(name, data, key: string) {
     if (!data.length) return
-    const keys = Object.keys(data[0])
+    const { fields, primary } = Koishi.Tables.config[name]
+    const updateFields = Object.keys(data[0])
+    const fallback = Koishi.Tables.create(name)
+    const keys = Object.keys(fields)
+    key ||= primary
+    data = data.map(item => ({ ...fallback, ...item }))
     const placeholder = `(${keys.map(() => '?').join(', ')})`
+    const update = difference(updateFields, [key]).map((key) => {
+      key = escapeId(key)
+      return `${key} = VALUES(${key})`
+    }).join(', ')
     await this.query(
-      `INSERT INTO ?? (${this.joinKeys(keys)}) VALUES ${data.map(() => placeholder).join(', ')}
-      ON DUPLICATE KEY UPDATE ${keys.filter(key => key !== 'id').map(key => `\`${key}\` = VALUES(\`${key}\`)`).join(', ')}`,
-      [table, ...[].concat(...data.map(data => this.formatValues(table, data, keys)))],
+      `INSERT INTO ${escapeId(name)} (${this.joinKeys(keys)}) VALUES ${data.map(() => placeholder).join(', ')}
+      ON DUPLICATE KEY UPDATE ${update}`,
+      [].concat(...data.map(data => this.formatValues(name, data, keys))),
     )
   },
 
-  async getUser(type, id, _fields) {
-    const fields = _fields ? this.inferFields('user', _fields) : User.fields
-    if (fields && !fields.length) return { [type]: id } as any
-    if (Array.isArray(id)) {
-      if (!id.length) return []
-      const list = id.map(id => this.escape(id)).join(',')
-      return this.select<User>('user', fields, `?? IN (${list})`, [type])
+  async aggregate(name, fields, query) {
+    const keys = Object.keys(fields)
+    if (!keys.length) return {}
+
+    const filter = parseQuery(Query.resolve(name, query))
+    const exprs = keys.map(key => `${parseEval(fields[key])} AS ${escapeId(key)}`).join(', ')
+    const [data] = await this.query(`SELECT ${exprs} FROM ${name} WHERE ${filter}`)
+    return data
+  },
+
+  async getUser(type, id, modifier) {
+    const { fields } = Query.resolveModifier(modifier)
+    if (fields && !fields.length) {
+      return Array.isArray(id) ? id.map(id => ({ [type]: id })) : { [type]: id }
     }
-    const [data] = await this.select<User>('user', fields, '?? = ?', [type, id])
-    return data && { ...data, [type]: id }
+    const data = await this.get('user', { [type]: id }, modifier)
+    if (Array.isArray(id)) return data
+    return data[0] && { ...data[0], [type]: id }
   },
 
   async createUser(type, id, data) {
@@ -161,15 +296,15 @@ Database.extend(MysqlDatabase, {
     await this.query(`UPDATE ?? SET ${assignments} WHERE ?? = ?`, ['user', type, id])
   },
 
-  async getChannel(type, pid, fields) {
-    if (Array.isArray(pid)) {
-      if (fields && !fields.length) return pid.map(id => ({ id: `${type}:${id}` }))
-      const placeholders = pid.map(() => '?').join(',')
-      return this.select<Channel>('channel', fields, '`id` IN (' + placeholders + ')', pid.map(id => `${type}:${id}`))
+  async getChannel(type, pid, modifier) {
+    const { fields } = Query.resolveModifier(modifier)
+    if (fields && !fields.length) {
+      return Array.isArray(pid) ? pid.map(id => ({ id: `${type}:${id}` })) : { id: `${type}:${pid}` }
     }
-    if (fields && !fields.length) return { id: `${type}:${pid}` }
-    const [data] = await this.select<Channel>('channel', fields, '`id` = ?', [`${type}:${pid}`])
-    return data && { ...data, id: `${type}:${pid}` }
+    const id = Array.isArray(pid) ? pid.map(id => `${type}:${id}`) : `${type}:${pid}`
+    const data = await this.get('channel', { id }, modifier)
+    if (Array.isArray(pid)) return data
+    return data[0] && { ...data[0], id: `${type}:${pid}` }
   },
 
   async getAssignedChannels(fields, assignMap = this.app.getSelfIds()) {
@@ -209,29 +344,11 @@ Database.extend(MysqlDatabase, {
   },
 })
 
-Database.extend(MysqlDatabase, ({ tables, Domain }) => {
-  tables.user = {
-    id: new Domain.String(`bigint(20) unsigned not null auto_increment`),
-    name: `varchar(50) null default null collate 'utf8mb4_general_ci'`,
-    flag: `bigint(20) unsigned not null default '0'`,
-    authority: `tinyint(4) unsigned not null default '0'`,
-    usage: new Domain.Json(),
-    timers: new Domain.Json(),
-  }
-
-  tables.channel = {
-    id: `varchar(50) not null`,
-    flag: `bigint(20) unsigned not null default '0'`,
-    assignee: `varchar(50) null`,
-    disable: new Domain.Array(),
-  }
-})
-
 export const name = 'mysql'
 
 export function apply(ctx: Context, config: Config = {}) {
   const db = new MysqlDatabase(ctx.app, config)
-  ctx.database = db as any
+  ctx.database = db
   ctx.before('connect', () => db.start())
   ctx.before('disconnect', () => db.stop())
 }

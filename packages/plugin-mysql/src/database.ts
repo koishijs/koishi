@@ -1,7 +1,7 @@
-import { createPool, Pool, PoolConfig, escape as mysqlEscape, escapeId, format, OkPacket, TypeCast } from 'mysql'
+import { createPool, Pool, PoolConfig, escape as mysqlEscape, escapeId, format, TypeCast } from 'mysql'
 import { App, Database } from 'koishi-core'
 import * as Koishi from 'koishi-core'
-import { Logger } from 'koishi-utils'
+import { Logger, makeArray } from 'koishi-utils'
 import { types } from 'util'
 
 declare module 'mysql' {
@@ -20,9 +20,52 @@ export interface Config extends PoolConfig {}
 
 interface MysqlDatabase extends Database {}
 
-export function escape(value: any, table?: TableType, field?: string) {
+function stringify(value: any, table?: string, field?: string) {
   const type = MysqlDatabase.tables[table]?.[field]
-  return mysqlEscape(typeof type === 'object' ? type.stringify(value) : value)
+  if (typeof type === 'object') return type.stringify(value)
+
+  const meta = Koishi.Tables.config[table]?.fields[field]
+  if (meta?.type === 'json') {
+    return JSON.stringify(value)
+  } else if (meta?.type === 'list') {
+    return value.join(',')
+  }
+
+  return value
+}
+
+function escape(value: any, table?: string, field?: string) {
+  return mysqlEscape(stringify(value, table, field))
+}
+
+function getIntegerType(length = 11) {
+  if (length <= 4) return 'tinyint'
+  if (length <= 6) return 'smallint'
+  if (length <= 9) return 'mediumint'
+  if (length <= 11) return 'int'
+  return 'bigint'
+}
+
+function getTypeDefinition({ type, length, precision, scale }: Koishi.Tables.Field) {
+  switch (type) {
+    case 'float':
+    case 'double':
+    case 'date':
+    case 'time':
+    case 'timestamp': return type
+    case 'integer': return getIntegerType(length)
+    case 'unsigned': return `${getIntegerType(length)} unsigned`
+    case 'decimal': return `decimal(${precision}, ${scale}) unsigned`
+    case 'char': return `char(${length || 255})`
+    case 'string': return `char(${length || 255})`
+    case 'text': return `text(${length || 65535})`
+    case 'list': return `text(${length || 65535})`
+    case 'json': return `text(${length || 65535})`
+  }
+}
+
+function createIndex(keys: string | string[]) {
+  return makeArray(keys).map(key => escapeId(key)).join(', ')
 }
 
 class MysqlDatabase {
@@ -35,6 +78,7 @@ class MysqlDatabase {
   escapeId: (value: string) => string
 
   inferFields<T extends TableType>(table: T, keys: readonly string[]) {
+    if (!keys) return
     const types = MysqlDatabase.tables[table] || {}
     return keys.map((key) => {
       const type = types[key]
@@ -46,11 +90,22 @@ class MysqlDatabase {
     this.config = {
       database: 'koishi',
       charset: 'utf8mb4_general_ci',
+      multipleStatements: true,
       typeCast: (field, next) => {
-        const type = MysqlDatabase.tables[field.packet.orgTable]?.[field.packet.orgName]
-        if (typeof type === 'object') {
-          return type.parse(field)
+        const { orgName, orgTable } = field.packet
+        const type = MysqlDatabase.tables[orgTable]?.[orgName]
+        if (typeof type === 'object') return type.parse(field)
+
+        const meta = Koishi.Tables.config[orgTable]?.fields[orgName]
+        if (meta?.type === 'string') {
+          return field.string()
+        } else if (meta?.type === 'json') {
+          return JSON.parse(field.string()) || meta.initial
+        } else if (meta?.type === 'list') {
+          const source = field.string()
+          return source ? source.split(',') : []
         }
+
         if (field.type === 'BIT') {
           return Boolean(field.buffer()?.readUInt8(0))
         } else {
@@ -61,51 +116,78 @@ class MysqlDatabase {
     }
   }
 
-  async start() {
-    this.pool = createPool(this.config)
-    const data = await this.select('information_schema.columns', ['TABLE_NAME', 'COLUMN_NAME'], 'TABLE_SCHEMA = ?', [this.config.database])
-    const tables: Record<string, string[]> = {}
-    for (const { TABLE_NAME, COLUMN_NAME } of data) {
-      if (!tables[TABLE_NAME]) tables[TABLE_NAME] = []
-      tables[TABLE_NAME].push(COLUMN_NAME)
+  private columns: Record<string, string[]> = {}
+
+  private getColDefs(name: string, cols: string[] = []) {
+    const table = Koishi.Tables.config[name]
+    const { primary, foreign, type } = table
+    const fields = { ...table.fields }
+    const unique = [...table.unique]
+    const keys = this.columns[name] || []
+
+    // create platform rows
+    if (name === 'user') {
+      const platforms = new Set<string>(this.app.bots.map(bot => bot.platform))
+      for (const name of platforms) {
+        fields[name] = { type: 'string', length: 63 }
+        unique.push(name)
+      }
     }
 
-    for (const name in MysqlDatabase.tables) {
-      const table = { ...MysqlDatabase.tables[name] }
-      // create platform rows
-      const platforms = new Set<string>(this.app.bots.map(bot => bot.platform))
-      if (name === 'user') {
-        for (const name of platforms) {
-          table[name] = 'varchar(50) null default null'
+    // mysql definitions (FIXME: remove in v4)
+    for (const key in MysqlDatabase.tables[name]) {
+      const value = MysqlDatabase.tables[name][key]
+      if (keys.includes(key) || typeof value === 'function') continue
+      cols.push(`${escapeId(key)} ${MysqlDatabase.Domain.definition(value)}`)
+    }
+
+    // orm definitions
+    for (const key in fields) {
+      if (keys.includes(key)) continue
+      const { initial, nullable = initial === undefined || initial === null } = fields[key]
+      let def = escapeId(key)
+      if (key === primary && type === 'incremental') {
+        def += ' bigint(20) unsigned not null auto_increment'
+      } else {
+        const typedef = getTypeDefinition(fields[key])
+        def += ' ' + typedef + (nullable ? ' ' : ' not ') + 'null'
+        // blob, text, geometry or json columns cannot have default values
+        if (initial && !typedef.startsWith('text')) {
+          def += ' default ' + escape(initial, name, key)
         }
       }
-      if (!tables[name]) {
-        const cols = Object.keys(table)
-          .filter((key) => typeof table[key] !== 'function')
-          .map((key) => `${escapeId(key)} ${MysqlDatabase.Domain.definition(table[key])}`)
-        const { primary, unique, foreign } = Koishi.Tables.config[name as TableType]
-        cols.push(`primary key (${escapeId(primary)})`)
-        for (const key of unique) {
-          cols.push(`unique index (${escapeId(key)})`)
-        }
-        if (name === 'user') {
-          for (const key of platforms) {
-            cols.push(`unique index (${escapeId(key)})`)
-          }
-        }
-        for (const key in foreign) {
-          const [table, key2] = foreign[key]
-          cols.push(`foreign key (${escapeId(key)}) references ${escapeId(table)} (${escapeId(key2)})`)
-        }
+      cols.push(def)
+    }
+
+    if (!keys.length) {
+      cols.push(`primary key (${createIndex(primary)})`)
+      for (const key of unique) {
+        cols.push(`unique index (${createIndex(key)})`)
+      }
+      for (const key in foreign) {
+        const [table, key2] = foreign[key]
+        cols.push(`foreign key (${escapeId(key)}) references ${escapeId(table)} (${escapeId(key2)})`)
+      }
+    }
+
+    return cols
+  }
+
+  async start() {
+    this.pool = createPool(this.config)
+    const data = await this.query<any[]>('SELECT TABLE_NAME, COLUMN_NAME from information_schema.columns WHERE TABLE_SCHEMA = ?', [this.config.database])
+    for (const { TABLE_NAME, COLUMN_NAME } of data) {
+      (this.columns[TABLE_NAME] ||= []).push(COLUMN_NAME)
+    }
+
+    for (const name in Koishi.Tables.config) {
+      const cols = this.getColDefs(name)
+      if (!this.columns[name]) {
         logger.info('auto creating table %c', name)
         await this.query(`CREATE TABLE ?? (${cols.join(',')}) COLLATE = ?`, [name, this.config.charset])
-      } else {
-        const cols = Object.keys(table)
-          .filter(key => typeof table[key] !== 'function' && !tables[name].includes(key))
-          .map(key => `ADD \`${key}\` ${MysqlDatabase.Domain.definition(table[key])}`)
-        if (!cols.length) continue
+      } else if (cols.length) {
         logger.info('auto updating table %c', name)
-        await this.query(`ALTER TABLE ?? ${cols.join(',')}`, [name])
+        await this.query(`ALTER TABLE ?? ${cols.map(def => 'ADD ' + def).join(',')}`, [name])
       }
     }
   }
@@ -121,9 +203,7 @@ class MysqlDatabase {
   formatValues = (table: string, data: object, keys: readonly string[]) => {
     return keys.map((key) => {
       if (typeof data[key] !== 'object' || types.isDate(data[key])) return data[key]
-      const type = MysqlDatabase.tables[table]?.[key]
-      if (type && typeof type !== 'string') return type.stringify(data[key])
-      return JSON.stringify(data[key])
+      return stringify(data[key], table as never, key)
     })
   }
 
@@ -168,17 +248,6 @@ class MysqlDatabase {
     return this.query(sql, values)
   }
 
-  async create<K extends TableType>(table: K, data: Partial<Tables[K]>): Promise<Tables[K]> {
-    const keys = Object.keys(data)
-    if (!keys.length) return
-    logger.debug(`[create] ${table}: ${data}`)
-    const header = await this.query<OkPacket>(
-      `INSERT INTO ?? (${this.joinKeys(keys)}) VALUES (${keys.map(() => '?').join(', ')})`,
-      [table, ...this.formatValues(table, data, keys)],
-    )
-    return { ...data, id: header.insertId } as any
-  }
-
   async count<K extends TableType>(table: K, conditional?: string) {
     const [{ 'COUNT(*)': count }] = await this.query(`SELECT COUNT(*) FROM ?? ${conditional ? 'WHERE ' + conditional : ''}`, [table])
     return count as number
@@ -199,7 +268,13 @@ namespace MysqlDatabase {
     }
   }
 
-  export const tables: Declarations = {}
+  /**
+   * @deprecated use `import('koishi-core').Field` instead
+   */
+  export const tables: Declarations = {
+    user: {},
+    channel: {},
+  }
 
   type FieldInfo = Parameters<Exclude<TypeCast, boolean>>[0]
 
@@ -209,6 +284,9 @@ namespace MysqlDatabase {
     stringify(value: T): string
   }
 
+  /**
+   * @deprecated use `import('koishi-core').Field` instead
+   */
   export namespace Domain {
     export function definition(domain: string | Domain) {
       return typeof domain === 'string' ? domain : domain.definition

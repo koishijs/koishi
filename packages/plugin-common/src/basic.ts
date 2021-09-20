@@ -1,4 +1,4 @@
-import { Context, Channel, Session, User, Argv } from 'koishi-core'
+import { Context, Channel, Session, Argv } from 'koishi-core'
 import { sleep, segment, template, makeArray, Time, simplify } from 'koishi-utils'
 
 template.set('common', {
@@ -67,7 +67,7 @@ export function contextify(ctx: Context) {
         sess.channelId = Argv.parsePid(options.channel)[1]
         sess.cid = `${sess.platform}:${sess.channelId}`
         sess.subtype = 'group'
-        await sess.observeChannel(Channel.fields)
+        await sess.observeChannel()
       } else {
         sess.channel = session.channel
       }
@@ -75,7 +75,7 @@ export function contextify(ctx: Context) {
       if (options.user && options.user !== session.uid) {
         sess.userId = sess.author.userId = Argv.parsePid(options.user)[1]
         sess.uid = `${sess.platform}:${sess.userId}`
-        const user = await sess.observeUser(User.fields)
+        const user = await sess.observeUser(['authority'])
         if (session.user.authority <= user.authority) {
           return template('internal.low-authority')
         }

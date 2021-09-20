@@ -1,5 +1,6 @@
 import MongoDatabase, { Config } from './database'
-import { User, Tables, Database, Context, Channel, Random, pick, omit, TableType, Query } from 'koishi-core'
+import { User, Tables, Database, Context, Channel, Random, pick, omit, TableType, Query, Eval } from 'koishi-core'
+import { QuerySelector } from 'mongodb'
 
 export * from './database'
 export default MongoDatabase
@@ -19,12 +20,6 @@ declare module 'koishi-core' {
     type: Platform
     pid: string
   }
-}
-
-function projection(keys: Iterable<string>) {
-  const d = {}
-  for (const key of keys) d[key] = 1
-  return d
 }
 
 function escapeKey<T extends Partial<User>>(doc: T) {
@@ -76,81 +71,134 @@ function unescapeKey<T extends Partial<User>>(data: T) {
   return data
 }
 
-function createFilter<T extends TableType>(name: T, _query: Query<T>) {
-  function transformQuery(query: Query.Expr) {
-    const filter = {}, pending = []
-    for (const key in query) {
-      const value = query[key]
-      if (key === '$and' || key === '$or') {
-        filter[key] = value.map(transformQuery)
-      } else if (key === '$not') {
-        filter[key] = transformQuery(value)
-      } else if (typeof value === 'string' || typeof value === 'number') {
-        filter[key] = { $eq: value }
-      } else if (Array.isArray(value)) {
-        if (!value.length) return
-        filter[key] = { $in: value }
-      } else {
-        filter[key] = {}
-        for (const prop in value) {
-          if (prop === '$regexFor') {
-            filter[key].$expr = {
-              body(data: string, value: string) {
-                return new RegExp(data, 'i').test(value)
-              },
-              args: ['$' + key, value],
-              lang: 'js',
-            }
-          } else {
-            filter[key][prop] = value[prop]
-          }
-        }
-      }
-    }
-    if (pending.length) {
-      (filter['$and'] ||= []).push(...pending)
-    }
-    return filter
+function transformFieldQuery(query: Query.FieldQuery, key: string) {
+  // shorthand syntax
+  if (typeof query === 'string' || typeof query === 'number' || query instanceof Date) {
+    return { $eq: query }
+  } else if (Array.isArray(query)) {
+    if (!query.length) return
+    return { $in: query }
+  } else if (query instanceof RegExp) {
+    return { $regex: query }
   }
 
+  // query operators
+  const result: QuerySelector<any> = {}
+  for (const prop in query) {
+    if (prop === '$el') {
+      result.$elemMatch = transformFieldQuery(query[prop], key)
+    } else if (prop === '$regexFor') {
+      result.$expr = {
+        body(data: string, value: string) {
+          return new RegExp(data, 'i').test(value)
+        },
+        args: ['$' + key, query],
+        lang: 'js',
+      }
+    } else {
+      result[prop] = query[prop]
+    }
+  }
+  return result
+}
+
+function transformQuery(query: Query.Expr) {
+  const filter = {}
+  for (const key in query) {
+    const value = query[key]
+    if (key === '$and' || key === '$or') {
+      // MongoError: $and/$or/$nor must be a nonempty array
+      if (value.length) {
+        filter[key] = value.map(transformQuery)
+      } else if (key === '$or') {
+        return { $nor: [{}] }
+      }
+    } else if (key === '$not') {
+      // MongoError: unknown top level operator: $not
+      // https://stackoverflow.com/questions/25270396/mongodb-how-to-invert-query-with-not
+      filter['$nor'] = [transformQuery(value)]
+    } else if (key === '$expr') {
+      filter[key] = transformEval(value)
+    } else {
+      filter[key] = transformFieldQuery(value, key)
+    }
+  }
+  return filter
+}
+
+function createFilter<T extends TableType>(name: T, _query: Query<T>) {
   const filter = transformQuery(Query.resolve(name, _query))
   const { primary } = Tables.config[name]
   if (filter[primary]) {
-    filter['_id'] = filter[primary]
+    filter['$or'] = [{ id: filter[primary] }, { _id: filter[primary] }]
     delete filter[primary]
   }
   return filter
 }
 
+function transformEval(expr: Eval.Numeric | Eval.Aggregation) {
+  if (typeof expr === 'string') {
+    return '$' + expr
+  } else if (typeof expr === 'number' || typeof expr === 'boolean') {
+    return expr
+  }
+
+  return Object.fromEntries(Object.entries(expr).map(([key, value]) => {
+    if (Array.isArray(value)) {
+      return [key, value.map(transformEval)]
+    } else {
+      return [key, transformEval(value)]
+    }
+  }))
+}
+
 Database.extend(MongoDatabase, {
-  async get(name, query, fields) {
+  async drop(table?: TableType) {
+    if (table) {
+      await this.db.collection(table).drop()
+    } else {
+      const collections = await this.db.collections()
+      await Promise.all(collections.map(c => c.drop()))
+    }
+  },
+
+  async get(name, query, modifier) {
     const filter = createFilter(name, query)
-    if (!filter) return []
     let cursor = this.db.collection(name).find(filter)
-    if (fields) cursor = cursor.project(projection(fields))
+    const { fields, limit, offset = 0 } = Query.resolveModifier(modifier)
+    if (fields) cursor = cursor.project(Object.fromEntries(fields.map(key => [key, 1])))
+    if (offset) cursor = cursor.skip(offset)
+    if (limit) cursor = cursor.limit(offset + limit)
     const data = await cursor.toArray()
     const { primary } = Tables.config[name]
-    for (const item of data) item[primary] = item._id
+    if (fields && fields.includes(primary as never)) {
+      for (const item of data) {
+        item[primary] ??= item._id
+      }
+    }
     return data
   },
 
   async remove(name, query) {
     const filter = createFilter(name, query)
-    if (!filter) return
     await this.db.collection(name).deleteMany(filter)
   },
 
   async create(name, data: any) {
-    const { primary, type } = Tables.config[name]
-    const copy = { ...data }
+    const meta = Tables.config[name]
+    const { primary, type, fields } = meta
+    const copy = { ...Tables.create(name), ...data }
     if (copy[primary]) {
       copy['_id'] = copy[primary]
-      delete copy[primary]
     } else if (type === 'incremental') {
       const [latest] = await this.db.collection(name).find().sort('_id', -1).limit(1).toArray()
-      copy['_id'] = data[primary] = latest ? latest._id + 1 : 1
+      let id = copy['_id'] = latest ? latest._id + 1 : 1
+      if (Tables.Field.string.includes(fields[primary].type)) id = id.toString()
+      copy[primary] = data[primary] = id
+    } else if (type === 'random') {
+      copy['_id'] = data[primary] = Random.uuid()
     }
-    await this.db.collection(name).insertOne(copy)
+    await this.db.collection(name).insertOne(copy).catch(() => {})
     return data
   },
 
@@ -165,20 +213,38 @@ Database.extend(MongoDatabase, {
     await bulk.execute()
   },
 
-  async getUser(type, id, fields = User.fields) {
-    if (fields && !fields.length) return { [type]: id } as any
+  async aggregate(name, fields, query) {
+    const $match = createFilter(name, query)
+    const [data] = await this.db.collection(name).aggregate([{ $match }, {
+      $group: {
+        _id: 1,
+        ...Object.fromEntries(Object.entries(fields).map(([key, value]) => [key, transformEval(value)])),
+      },
+    }]).toArray()
+    return data
+  },
+
+  async getUser(type, id, modifier) {
+    const { fields } = Query.resolveModifier(modifier)
+    const applyDefault = (user: User) => ({
+      ...pick(User.create(type, user[type]), fields),
+      ...unescapeKey(user),
+    })
+
+    const data = await this.get('user', { [type]: id }, modifier)
     if (Array.isArray(id)) {
-      const users = await this.user.find({ [type]: { $in: id } }).project(projection(fields)).toArray()
-      return users.map(data => (data && {
-        ...pick(User.create(type, data[type]), fields), ...unescapeKey(data),
-      }))
+      return data.map(applyDefault)
+    } else if (data[0]) {
+      return { ...applyDefault(data[0]), [type]: id }
     }
-    const [data] = await this.user.find({ [type]: id }).project(projection(fields)).toArray()
-    const udoc = User.create(type, id as any)
-    return data && { ...pick(udoc, fields), ...unescapeKey(data), [type]: id }
   },
 
   async setUser(type, id, data) {
+    delete data['id']
+    await this.user.updateOne({ [type]: id }, { $set: escapeKey(data) })
+  },
+
+  async createUser(type, id, data) {
     await this.user.updateOne(
       { [type]: id },
       { $set: escapeKey(data), $setOnInsert: { id: Random.uuid() } },
@@ -186,36 +252,51 @@ Database.extend(MongoDatabase, {
     )
   },
 
-  async createUser(type, id, data) {
-    await this.setUser(type, id, data)
-  },
+  async getChannel(type, pid, modifier) {
+    modifier = Query.resolveModifier(modifier)
+    const fields = (modifier?.fields ?? []).slice()
+    const applyDefault = (channel: Channel) => ({
+      ...pick(Channel.create(type, channel.pid), fields),
+      ...omit(channel, ['type', 'pid']),
+    })
 
-  async getChannel(type, pid, fields = Channel.fields) {
+    const index = fields.indexOf('id')
     if (Array.isArray(pid)) {
-      if (fields && !fields.length) return pid.map(id => ({ id: `${type}:${id}` }))
-      const channels = await this.channel.find({ _id: { $in: pid.map(id => `${type}:${id}`) } })
-        .project(projection(fields)).toArray()
-      return channels.map(channel => ({ ...pick(Channel.create(type, channel.pid), fields), ...channel, id: `${type}:${channel.pid}` }))
+      const ids = pid.map(id => `${type}:${id}`)
+      if (index >= 0) modifier.fields.splice(index, 1, 'type', 'pid')
+      const data = await this.get('channel', { id: ids }, modifier)
+      return data.map(applyDefault)
+    } else {
+      const id = `${type}:${pid}`
+      if (index >= 0) modifier.fields.splice(index, 1)
+      const data = await this.get('channel', id, modifier)
+      return data[0] && { ...applyDefault(data[0]), id }
     }
-    if (fields && !fields.length) return { id: `${type}:${pid}` }
-    const [data] = await this.channel.find({ type, pid: pid as string }).project(projection(fields)).toArray()
-    return data && { ...pick(Channel.create(type, pid as string), fields), ...data, id: `${type}:${pid}` }
   },
 
-  async getAssignedChannels(fields, assignMap = this.app.getSelfIds()) {
-    const project = { pid: 1, type: 1, ...projection(fields) }
-    const channels = await this.channel.find({
-      $or: Object.entries(assignMap).map<any>(([type, ids]) => ({ type, assignee: { $in: ids } })),
-    }).project(project).toArray()
-    return channels.map(channel => ({ ...pick(Channel.create(channel.type, channel.pid), fields), ...channel, id: `${channel.type}:${channel.pid}` }))
+  async getAssignedChannels(_fields, assignMap = this.app.getSelfIds()) {
+    const fields = (_fields ?? []).slice()
+    const applyDefault = (channel: Channel) => ({
+      ...pick(Channel.create(channel.type, channel.pid), _fields),
+      ...omit(channel, ['type', 'pid']),
+    })
+
+    const index = fields.indexOf('id')
+    if (index >= 0) fields.splice(index, 1, 'type', 'pid')
+    const data = await this.get('channel', {
+      $or: Object.entries(assignMap).map<any>(([type, assignee]) => ({ type, assignee })),
+    }, fields)
+    return data.map(applyDefault)
   },
 
   async setChannel(type, pid, data) {
-    await this.channel.updateOne({ type, pid }, { $set: data }, { upsert: true })
+    await this.channel.updateOne({ type, pid, id: `${type}:${pid}` }, { $set: data })
   },
 
   async createChannel(type, pid, data) {
-    await this.setChannel(type, pid, data)
+    await this.channel.updateOne({ type, pid, id: `${type}:${pid}` }, {
+      $set: Object.keys(data).length === 0 ? Channel.create(type, pid) : data,
+    }, { upsert: true })
   },
 })
 

@@ -14,11 +14,9 @@ Koishi 支持多个聊天平台，对于不同的平台，你也需要做好相�
 
 [OneBot](https://github.com/howmanybots/onebot) 是一个聊天机器人应用接口标准，目前可用于 QQ 聊天机器人的实现。你可以使用下列实现该协议的框架：
 
-- [Mrs4s/go-cqhttp](https://github.com/Mrs4s/go-cqhttp)（推荐）
+- [Mrs4s/go-cqhttp](https://github.com/Mrs4s/go-cqhttp)（推荐, 并使用 [WebSocket配置](../api/adapter/onebot.md#websocket)）
 - [yyuueexxiinngg/cqhttp-mirai](https://github.com/yyuueexxiinngg/cqhttp-mirai)
 - [richardchien/coolq-http-api](https://github.com/richardchien/coolq-http-api)（配合 [iTXTech/mirai-native](https://github.com/iTXTech/mirai-native) 使用）
-
-对于每一种框架，请分别参考它们对应的文档。
 
 ### [Telegram (Telegram)](../api/adapter/telegram.md)
 
@@ -54,7 +52,7 @@ Koishi 支持多个聊天平台，对于不同的平台，你也需要做好相�
 mkdir my-bot && cd my-bot
 ```
 
-然后输入下面的命令行：
+然后输入下面的命令行，生成配置文件的设置将在下方说明：
 
 ::: code-group manager
 ```npm
@@ -84,6 +82,18 @@ yarn koishi init
 yarn
 ```
 :::
+
+**Adapter Type:** 此处可根据你所需要的平台进行选择, 在[准备工作](./starter.md#准备工作)有详细说明
+
+**Koishi Port:** 一般情况保持默认即可, 确保不要与其他端口冲突(如 Vue CLI 项目)
+
+**Token for XXX Server / XXX Server / Secret for Koishi Server:** 根据实际情况填写。
+
+**configurate another bot?** 如有多个机器人, 可在此一并设置, 一般默认即可。
+
+**Database Type:** 为了确保体验的完整性（如[用户系统](./manage.md)及大部分官方/社区插件, 强烈建议在此配置数据库。
+
+**Choose Offical Plugins:** 在此选择一并安装的官方插件列表, 详情介绍参见[官方插件页面](../plugins/index.md)。选择后继续回车即可。
 
 此时，你会看到在你刚刚创建的目录下多了一些文件，包括 `package.json` 和 `koishi.config.js`。后者应该大概长这样：
 

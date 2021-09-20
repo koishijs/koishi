@@ -164,6 +164,7 @@ export namespace Argv {
     channel: string
     integer: number
     posint: number
+    natural: number
     date: Date
   }
 
@@ -187,15 +188,9 @@ export namespace Argv {
 
   export type ArgumentType<S extends string> = ExtractSpread<Replace<S, '>', ']'>>
 
-  // I don't know why I should write like this but
-  // [T] extends [xxx] just works, so don't touch it
-  export type OptionType<S extends string, T extends Type>
-    = [T] extends [DomainType] ? Domain[T]
-    : [T] extends [RegExp] ? string
-    : T extends (source: string) => infer R ? R
-    : ExtractFirst<Replace<S, '>', ']'>, any>
+  export type OptionType<S extends string> = ExtractFirst<Replace<S, '>', ']'>, any>
 
-  export type Type = DomainType | RegExp | Transform<any>
+  export type Type = DomainType | RegExp | string[] | Transform<any>
 
   export interface Declaration {
     name?: string
@@ -217,10 +212,16 @@ export namespace Argv {
   }
 
   function resolveType(type: Type) {
-    if (typeof type === 'function') return type
-    if (type instanceof RegExp) {
+    if (typeof type === 'function') {
+      return type
+    } else if (type instanceof RegExp) {
       return (source: string) => {
         if (type.test(source)) return source
+        throw new Error()
+      }
+    } else if (Array.isArray(type)) {
+      return (source: string) => {
+        if (type.includes(source)) return source
         throw new Error()
       }
     }
@@ -255,6 +256,12 @@ export namespace Argv {
     const value = +source
     if (value * 0 === 0 && Math.floor(value) === value && value > 0) return value
     throw new Error(template('internal.invalid-posint'))
+  })
+
+  createDomain('natural', (source) => {
+    const value = +source
+    if (value * 0 === 0 && Math.floor(value) === value && value >= 0) return value
+    throw new Error(template('internal.invalid-natural'))
   })
 
   createDomain('date', (source) => {
@@ -355,6 +362,10 @@ export namespace Argv {
     notUsage?: boolean
   }
 
+  export interface TypedOptionConfig<T extends Type> extends OptionConfig<T> {
+    type: T
+  }
+
   export interface OptionDeclaration extends Declaration, OptionConfig {
     description?: string
     values?: Record<string, any>
@@ -377,7 +388,7 @@ export namespace Argv {
       this.declaration = decl.stripped
     }
 
-    _createOption(name: string, def: string, config?: OptionConfig) {
+    _createOption(name: string, def: string, config: OptionConfig) {
       const param = paramCase(name)
       const decl = def.replace(/(?<=^|\s)[\w\x80-\uffff].*/, '')
       const desc = def.slice(decl.length)
@@ -418,7 +429,7 @@ export namespace Argv {
         names.forEach(name => option.values[name] = config.value)
       } else if (!bracket.trim()) {
         option.type = 'boolean'
-      } else if (!option.type && fallbackType === 'string' || fallbackType === 'number') {
+      } else if (!option.type && (fallbackType === 'string' || fallbackType === 'number')) {
         option.type = fallbackType
       }
 
