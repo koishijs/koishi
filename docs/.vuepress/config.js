@@ -94,6 +94,7 @@ module.exports = {
           '/api/segment.md',
           '/api/database.md',
           '/api/adapter.md',
+          '/api/schema.md',
           '/api/global.md',
         ],
       }, {

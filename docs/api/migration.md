@@ -26,7 +26,7 @@ sidebarDepth: 2
 - @koishijs/plugin-minecraft：在 Minecraft 中使用机器人
 - @koishijs/plugin-s3：使用 s3 云存储存放资源文件（计划中）
 
-## Core 变更
+## 概念用词变更
 
 所有涉及「群组」的概念，对应英文单词从 group 更改为 guild。下面是一些例子：
 
@@ -40,6 +40,29 @@ sidebarDepth: 2
 ```
 
 这样修改是为了提供更好的兼容性，减轻 group 本身在多种场合使用所带来的二义性。
+
+## 插件变更
+
+- 移除了 before-connect 和 before-disconnect 事件，请直接使用 connect 和 disconnect 事件代替
+- 移除了 sideEffect 声明，现在所有插件都视为无副作用
+- 新增了 [Schema API](./schema.md)，用于描述插件的配置项，下面是一个例子：
+
+```ts
+export const name = 'foo'
+
+export const schema: Schema<Config> = Schema.object({
+  bar: Schema.string('这是一个配置项').default('baz'),
+})
+
+export function apply(ctx: Context, config: Config) {
+  config.bar // string
+}
+```
+
+我们强烈建议开发者在 Koishi v4 插件的开发中为自己的每一个公开插件提供 schema 字段，基于下面的两点好处：
+
+1. 能够在插件被加载前就对插件的配置项进行类型检查，并提供缺省值和更多预处理
+2. 如果你希望自己的插件能够**在插件市场被动态安装**，那 schema 会作为网页控制台中呈现的配置表单
 
 ## Adapter 变更
 
@@ -79,7 +102,9 @@ export default {
 }
 ```
 
-## 数据库 API
+## Bot 变更
+
+## Database 变更
 
 - 接口变更
   - 新增了方法 `db.set(table, query, updates)`
@@ -90,7 +115,7 @@ export default {
 - 全局接口变更
   - `Tables.extend()` 接口略有调整，具体参见文档
 
-## 缓存 API
+## 缓存机制变更
 
 - 新增了 Cache API
 - 移除了内置于 koishi-core 中的数据缓存逻辑（目前暂无替代品）
