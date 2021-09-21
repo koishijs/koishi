@@ -5,6 +5,10 @@ noOutboundLinks: true
 
 # 介绍
 
+::: danger 注意
+这里是**正在施工**的 koishi v4 的文档。要查看 v3 版本的文档，请前往[**这里**](/)。
+:::
+
 Koishi 是一个基于 Node.js 的跨平台机器人框架。
 
 它的名字和图标设计来源于东方 Project 中的角色古明地恋（Komeiji Koishi）。

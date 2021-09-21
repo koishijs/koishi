@@ -4,6 +4,10 @@ sidebarDepth: 2
 
 # 查看和编写帮助
 
+::: danger 注意
+这里是**正在施工**的 koishi v4 的文档。要查看 v3 版本的文档，请前往[**这里**](/)。
+:::
+
 ::: tip
 下面的 echo 指令是为了理解方便而举的例子，与 koishi-plugin-common 中实际的 echo 指令并不相同。
 :::

@@ -18,13 +18,21 @@ sidebarDepth: 2
 - koishi-test-utils 更名为 @koishijs/test-utils
 - koishi-plugin-webui 更名为 @koishijs/plugin-status（~~我又改了回去~~
 
-## 新增包
+### 新增的包
 
 - create-koishi：可结合 npm init 或 yarn create 使用，用于快速搭建项目
+- @koishijs/plugin-database：一个内存数据库实现，支持输出到本地文件
 - @koishijs/plugin-ink：使用机器人展示视觉小说（计划中）
 - @koishijs/plugin-jsdelivr：使用 jsdelivr 和 GitHub 存放资源文件（计划中）
 - @koishijs/plugin-minecraft：在 Minecraft 中使用机器人
 - @koishijs/plugin-s3：使用 s3 云存储存放资源文件（计划中）
+
+### 移除的包
+
+下列包由于使用场景和用途的限制，不再考虑进行官方维护。这些包会放入一个专门的仓库 koishijs/legacy-plugins 中。
+
+- koishi-plugin-tomon
+- koishi-plugin-monitor
 
 ## 概念用词变更
 
@@ -64,7 +72,7 @@ export function apply(ctx: Context, config: Config) {
 1. 能够在插件被加载前就对插件的配置项进行类型检查，并提供缺省值和更多预处理
 2. 如果你希望自己的插件能够**在插件市场被动态安装**，那 schema 会作为网页控制台中呈现的配置表单
 
-## Adapter 变更
+## 适配器变更
 
 适配器现在通过插件的形式导入了：
 
@@ -102,9 +110,17 @@ export default {
 }
 ```
 
-## Bot 变更
+## 应用变更
 
-## Database 变更
+- 调整了 app.bots 接口的部分用法（参见文档）
+- 新增了 `ctx.http` 接口，移除了所有的 `axiosConfig` 配置
+
+除此以外，如果你使用 @koishijs/cli，那么有一些额外的配置项变更：
+
+- 新增 `allowWrite` 配置项，支持在运行时修改配置项本身的内容（只支持 yaml 格式）
+- 新增 `logger` 配置项，包含了过去的 `logLevel` 等一系列配置，同时支持将输出日志写入本地文件
+
+## 数据库变更
 
 - 接口变更
   - 新增了方法 `db.set(table, query, updates)`
@@ -120,7 +136,7 @@ export default {
 - 新增了 Cache API
 - 移除了内置于 koishi-core 中的数据缓存逻辑（目前暂无替代品）
 
-## 其他变动
+## 其他变更
 
 ### @koishijs/core
 

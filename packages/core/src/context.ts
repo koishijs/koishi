@@ -37,7 +37,7 @@ export namespace Plugin {
   }
 
   export class Registry extends Map<Plugin, State> {
-    resolve(plugin: Plugin) {
+    private resolve(plugin: Plugin) {
       return plugin && (typeof plugin === 'function' ? plugin : plugin.apply)
     }
 

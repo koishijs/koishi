@@ -4,6 +4,10 @@ sidebarDepth: 2
 
 # 使用装饰器 <Badge text="beta" type="warning"/>
 
+::: danger 注意
+这里是**正在施工**的 koishi v4 的文档。要查看 v3 版本的文档，请前往[**这里**](/)。
+:::
+
 koishi-dev-utils 允许你使用装饰器开发 Koishi 插件。下面是一个最简单的例子：
 
 ```ts

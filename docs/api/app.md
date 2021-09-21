@@ -10,6 +10,13 @@ sidebarDepth: 2
 
 通过 `new App(options)` 创建一个 App 实例。
 
+### options.host
+
+- 类型：`string`
+- 默认值：`'localhost'`
+
+服务器监听的 IP 地址。如果将此设置为 `0.0.0.0` 将监听所有地址，包括局域网和公网地址。
+
 ### options.port
 
 - 类型：`number`

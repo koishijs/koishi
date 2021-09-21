@@ -4,6 +4,10 @@ sidebarDepth: 2
 
 # 使用 Docker
 
+::: danger 注意
+这里是**正在施工**的 koishi v4 的文档。要查看 v3 版本的文档，请前往[**这里**](/)。
+:::
+
 Koishi 提供了一个 Docker 镜像，方便你在 Docker 容器中运行 Koishi。你需要首先安装 [Docker](https://www.docker.com) 来运行 Docker 镜像。
 
 ## 拉取镜像
