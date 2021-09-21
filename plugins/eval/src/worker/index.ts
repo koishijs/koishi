@@ -8,7 +8,7 @@ import { resolve, dirname, sep } from 'path'
 
 // time diff is not displayed because timestamp will not be synchronized between main thread and worker thread
 Logger.levels = workerData.logLevels
-Logger.showTime = workerData.logTime
+Logger.targets[0].showTime = workerData.logTime
 const logger = new Logger('eval')
 
 export const config: WorkerData = {

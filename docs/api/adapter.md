@@ -10,53 +10,42 @@ sidebarDepth: 2
 
 ## 静态属性和方法
 
-### Adapter.types
+### Adapter.define(platform, bot, adapter)
+### Adapter.define(platform, bot, adapters, redirect?)
 
-- 类型: `Record<string, Adapter.Constructor>`
+- 第一种调用方式：
+  - **platform:** `string` 平台名
+  - **bot:** `Bot.Constructor` Bot 构造函数
+  - **adapter:** `Adapter.Constructor` Adapter 构造函数
+- 第二种调用方式：
+  - **platform:** `string` 平台名
+  - **bot:** `Bot.Constructor` Bot 构造函数
+  - **adapters:** `Dict<Adapter.Constructor>` 协议到 Adapter 构造函数的键值对
+  - **redirect:** `Function` 由 Bot 配置项推断采用的协议的回调函数
+- 返回值: `Plugin`
 
-一个键值对，保存了已经注册的所有适配器。注册时请注意将键改为全小写。
-
-### Adapter.from(app, bot)
-
-- **app:** `App` 应用实例
-- **bot:** `BotOptions` 机器人配置
-- 返回值: `Adapter`
-
-创建一个适用于 bot 的适配器实例并挂载在 app 下。如果同类型的适配器已经被创建，则直接返回过去创建的实例。
-
-### Adapter.redirect(target)
-
-- **target:** `string | ((bot: BotOptions) => string)`
-- 返回值: `void`
-
-创建一个重定向适配器。
+创建一个适配器插件。参见 [编写适配器](../guide/adapter.md) 一节。
 
 ## 类：Adapter
 
-### new Adapter(app, BotStatic)
+### new Adapter(app, config)
 
 - **app:** `App` 应用实例
-- **BotStatic:** `Bot.Constructor` 机器人构造函数
+- **config:** `object` 配置项
 
 创建一个适配器实例。
 
+### adapter.config
+
+- 类型: `object`
+
+构造 Adapter 实例时所使用的配置项。
+
 ### adapter.bots
 
-- 类型: `Bot[] & Record<string, Bot>`
+- 类型: `Bot[]`
 
-当前适配器下的全部机器人实例。你既可以使用 Array 方法遍历全部机器人，也可以使用 `selfId` 作为索引找到具体的某一个。
-
-### adapter.create(bot)
-
-- **bot:** `BotOptions` 机器人配置
-- 返回值: `void`
-
-在当前适配器下添加一个新的机器人。下面是一个例子：
-
-```js
-// 如果想要在 App 创建完成后添加一个机器人，你应该这样做
-Adapter.from(app, bot).create(bot)
-```
+当前适配器下的全部机器人实例。
 
 ### adapter.dispatch(session)
 
@@ -73,22 +62,28 @@ Adapter.from(app, bot).create(bot)
 
 ### adapter.stop() <Badge text="abstract"/>
 
-- 返回值: `void`
+- 返回值: `void | Promise<void>`
 
 停止适配器所需的操作，将作为 disconnect 事件的回调函数。
 
-## 类：Adapter.WsClient
+### adapter.connect(bot) <Badge text="abstract"/>
 
-### new Adapter.WsClient(app, BotStatic, options?)
+- **bot:** `Bot` 机器人实例
+- 返回值: `void | Promise<void>`
+
+连接 Bot 所需的操作，将在 `bot.connect()` 中被调用。
+
+## 类：Adapter.WebSocketClient
+
+### new Adapter.WebSocketClient(app, options?)
 
 - **app:** `App` 应用实例
-- **BotStatic:** `Bot.Constructor` 机器人构造函数
-- **options:** `WsClientOptions` 连接配置
+- **options:** `WebSocketClientOptions` 连接配置
 
-创建一个 WsClient 适配器实例。
+创建一个 WebSocketClient 适配器实例。
 
 ```js
-export interface WsClientOptions {
+export interface WebSocketClientOptions {
   retryLazy?: number
   retryTimes?: number
   retryInterval?: number
@@ -102,9 +97,9 @@ export interface WsClientOptions {
 
 根据机器人实例生成一个 WebSocket 对象。
 
-### adapter.connect(bot) <Badge text="abstract"/>
+### adapter.accept(bot) <Badge text="abstract"/>
 
 - **bot:** `Bot` 机器人实例
-- 返回值: `Promise<void>`
+- 返回值: `void`
 
-WebSocket 连接成功建立后的回调函数。
+WebSocket 连接成功建立后的回调函数。你需要实现这个方法，并在其中手动调用 `bot.resolve()` 回调函数表示已经连接成功。

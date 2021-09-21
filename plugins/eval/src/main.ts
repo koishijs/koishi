@@ -220,7 +220,7 @@ export class EvalWorker {
       eval: true,
       workerData: {
         logLevels: Logger.levels,
-        logTime: Logger.showTime,
+        logTime: Logger.targets[0].showTime,
         ...pick(this.config, this.config.dataKeys),
       },
       resourceLimits: this.config.resourceLimits,

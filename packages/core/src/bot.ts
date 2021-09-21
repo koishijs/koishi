@@ -105,6 +105,7 @@ export abstract class Bot<T extends Bot.BaseConfig = Bot.BaseConfig> {
 
 export namespace Bot {
   export interface BaseConfig {
+    disabled?: boolean
     protocol?: string
     platform?: string
   }

@@ -58,7 +58,7 @@ export namespace Adapter {
     return protocol ? `${platform}.${protocol}` : platform
   }
 
-  type CreatePluginRestParams = [Constructor] | [Dict<Constructor>, (bot: any) => string]
+  type CreatePluginRestParams = [Constructor] | [Dict<Constructor>, ((bot: any) => string)?]
 
   export function define<T extends Bot.BaseConfig, S>(
     platform: string,
@@ -70,14 +70,14 @@ export namespace Adapter {
     platform: string,
     bot: Bot.Constructor<T>,
     adapters: Record<K, Constructor<T, S>>,
-    redirect: (config: T) => K,
+    redirect?: (config: T) => K,
   ): Plugin.Object<PluginConfig<S, T>>
 
   export function define(platform: string, constructor: Bot.Constructor, ...args: CreatePluginRestParams) {
     Bot.library[platform] = constructor
 
     let botSchema: Schema
-    if (args.length === 1) {
+    if (typeof args[0] === 'function') {
       library[platform] = args[0]
       botSchema = args[0].schema
     } else {
