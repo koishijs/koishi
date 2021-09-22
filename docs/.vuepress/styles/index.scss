@@ -19,6 +19,10 @@
   }
 }
 
+.sidebar-heading:not(:first-child) {
+  margin-top: 1rem;
+}
+
 .medium-zoom-image--opened {
   border-radius: 0 !important;
 }

@@ -4,10 +4,6 @@ sidebarDepth: 2
 
 # 指令触发机制
 
-::: danger 注意
-这里是**正在施工**的 koishi v4 的文档。要查看 v3 版本的文档，请前往[**这里**](/)。
-:::
-
 本节介绍有关指令调用的一些机制。
 
 ## 指令前缀
@@ -29,8 +25,8 @@ echo hello
 
 你也可以通过修改下列配置项来改变这种行为：
 
-- **[nickname](../api/app.md#options-nickname):** `string | string[]` 如果为空的话，上述几条以 `Koishi` 开头的信息就不会触发指令了。你也可以同时设置多个昵称。
-- **[prefix](../api/app.md#options-prefix):** `string | string[]` 设置为 `.` 可以禁止在群中调用 `echo` 但允许调用 `.echo`。你也可以同时设置多个前缀。
+- **[nickname](../../api/app.md#options-nickname):** `string | string[]` 如果为空的话，上述几条以 `Koishi` 开头的信息就不会触发指令了。你也可以同时设置多个昵称。
+- **[prefix](../../api/app.md#options-prefix):** `string | string[]` 设置为 `.` 可以禁止在群中调用 `echo` 但允许调用 `.echo`。你也可以同时设置多个前缀。
 
 ::: tip
 #### nickname 和 prefix 的区别

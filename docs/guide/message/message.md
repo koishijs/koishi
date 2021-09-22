@@ -10,7 +10,7 @@ sidebarDepth: 2
 
 从本节开始，我们开始深入研究如何利用 Koishi 的来接收和发送消息。
 
-首先让我们回顾一下之前展示过的 [基本实例](./starter.md#编写并调用你的插件)：
+首先让我们回顾一下之前展示过的 [基本实例](../starter.md#编写并调用你的插件)：
 
 ```js
 // 如果收到“天王盖地虎”，就回应“宝塔镇河妖”
@@ -24,7 +24,7 @@ ctx.middleware((session, next) => {
 
 在这个简单的示例中，这里有两件事你需要了解：
 
-上面的 `ctx.middleware()` 方法所传入的回调函数成为 **中间件**。你可以使用中间件来处理所有收到的一切消息。如果你希望处理其他类型的事件（例如加群申请又或者消息撤回等等），可以使用 Koishi 的 [事件系统](./lifecycle.md#事件系统)，这将在后面的章节中介绍。
+上面的 `ctx.middleware()` 方法所传入的回调函数成为 **中间件**。你可以使用中间件来处理所有收到的一切消息。如果你希望处理其他类型的事件（例如加群申请又或者消息撤回等等），可以使用 Koishi 的 [事件系统](../reusability/lifecycle.md#事件系统)，这将在后面的章节中介绍。
 
 上面的 `session` 对象被称为 **会话**。所有的上报事件都会被转化成一个会话对象。你可以利用这个对象访问与此事件有关的数据（例如用 `session.content` 表示消息的内容），或调用 API 作为对此事件的响应（例如用 `session.send()` 在当前频道内发送消息）。
 
@@ -166,7 +166,7 @@ ctx.middleware((session, next) => {
 }, true)
 ```
 
-搭配使用上面几种中间件，你的机器人便拥有了无限可能。在 koishi-plugin-common 库中，就有着一个官方实现的复读功能，它远比上面的示例所显示的更加强大。如果想深入了解中间件机制，可以去研究一下这个功能的 [源代码](https://github.com/koishijs/koishi/blob/master/packages/plugin-common/src/handler.ts)。
+搭配使用上面几种中间件，你的机器人便拥有了无限可能。在 koishi-plugin-common 库中，就有着一个官方实现的复读功能，它远比上面的示例所显示的更加强大。如果想深入了解中间件机制，可以去研究一下这个功能的 [源代码](https://github.com/koishijs/koishi/blob/master/plugins/common/src/handler.ts)。
 
 ## 使用会话
 

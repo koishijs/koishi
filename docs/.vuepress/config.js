@@ -15,12 +15,6 @@ module.exports = {
     ['link', { rel: 'icon', href: `/koishi.png` }],
     ['link', { rel: 'manifest', href: '/manifest.json' }],
     ['meta', { name: 'theme-color', content: '#5546a3' }],
-    // ['meta', { name: 'apple-mobile-web-app-capable', content: 'yes' }],
-    // ['meta', { name: 'apple-mobile-web-app-status-bar-style', content: 'black' }],
-    // ['link', { rel: 'apple-touch-icon', href: `/icons/apple-touch-icon-152x152.png` }],
-    // ['link', { rel: 'mask-icon', href: '/icons/safari-pinned-tab.svg', color: '#5546a3' }],
-    // ['meta', { name: 'msapplication-TileImage', content: '/icons/msapplication-icon-144x144.png' }],
-    // ['meta', { name: 'msapplication-TileColor', content: '#000000' }]
   ],
 
   markdown: {
@@ -57,25 +51,48 @@ module.exports = {
           '/guide/about.md',
           '/guide/starter.md',
           '/guide/cli.md',
-          '/guide/docker.md',
-          '/guide/faq.md',
+        ],
+      }, {
+        text: '处理交互',
+        isGroup: true,
+        children: [
+          '/guide/message/message.md',
+          '/guide/message/command.md',
+          '/guide/message/execute.md',
+          '/guide/message/help.md',
+        ],
+      }, {
+        text: '复用性',
+        isGroup: true,
+        children: [
+          '/guide/reusability/context.md',
+          '/guide/reusability/lifecycle.md',
+          '/guide/reusability/schema.md',
+        ],
+      }, {
+        text: '数据库',
+        isGroup: true,
+        children: [
+          '/guide/database/manage.md',
+          '/guide/database/database.md',
+          '/guide/database/writing.md',
+        ],
+      }, {
+        text: '跨平台',
+        isGroup: true,
+        children: [
+          '/guide/cross-platform/adapter.md',
+          '/guide/cross-platform/writing.md',
         ],
       }, {
         text: '进阶',
         isGroup: true,
         children: [
-          '/guide/message.md',
-          '/guide/context.md',
-          '/guide/command.md',
-          '/guide/execute.md',
-          '/guide/help.md',
-          '/guide/manage.md',
-          '/guide/database.md',
-          '/guide/lifecycle.md',
-          '/guide/adapter.md',
           '/guide/logger.md',
           '/guide/unit-tests.md',
           '/guide/decorator.md',
+          '/guide/docker.md',
+          '/guide/faq.md',
         ],
       }],
       '/api': [{
