@@ -1,0 +1,74 @@
+:root {
+  --bg0: #ffffff;
+  --bg1: #f4f4f5;
+  --bg2: #d5d5d8;
+
+  --fg0: #000000;
+  --fg1: #231f37;
+  --fg2: #545260;
+  --fg3: #7a7887;
+  --fg3t: #7a78877f;
+
+  --border: #e2e2e4;
+  --border-dark: #c8c9cc;
+
+  --primary: #5546a3;
+
+  --default: #409eff;
+  --default-dark: #0d84ff;
+  --default-light: #66b1ff;
+
+  --success: #67c23a;
+  --success-dark: #529b2e;
+  --success-light: #85ce61;
+
+  --error: #f56c6c;
+  --error-dark: #f23c3c;
+  --error-light: #f78989;
+
+  --warning: #e49400;
+  --warning-dark: #d48a1b;
+  --warning-light: #ebb563;
+
+  --disabled: #909399;
+
+  --hover-inset: 0 0 2px inset #0002;
+
+  --page-bg: var(--bg1);
+  --page-fg: var(--fg1);
+
+  --card-bg: var(--bg0);
+  --card-fg: var(--page-fg);
+  --card-shadow: 0 6px 10px -4px rgb(0 0 0 / 15%);
+
+  --aside-width: 16rem;
+
+  // terminal
+  --terminal-bg: #24292f;
+  --terminal-fg: #d0d7de;
+  --terminal-bg-hover: #32383f;
+  --terminal-fg-hover: #f6f8fa;
+  --terminal-bg-selection: rgba(33,139,255,0.15);
+  --terminal-separator: rgba(140,149,159,0.75);
+  --terminal-timestamp: #8c959f;
+
+  // breakpoints
+  --bp-large: 1440px;
+  --bp-medium: 1024px;
+  --bp-small: 768px;
+  --bp-tiny: 480px;
+}
+
+@mixin button-like {
+  cursor: pointer;
+  user-select: none;
+  transition: 0.3s ease;
+
+  &:hover {
+    background-color: var(--bg1);
+  }
+}
+
+.el-scrollbar__bar {
+  z-index: 500;
+}

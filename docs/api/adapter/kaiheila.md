@@ -61,9 +61,3 @@ sidebarDepth: 2
 - **separate:** 每一个资源消息段，以及资源消息段之间的文本都将单独发送一条消息
 - **mixed:** 当要发送的内容中含有多个资源消息段或资源消息段和文本的混合时，发送卡片消息；否则将单独发送资源消息段
 - **card:** 当要发送的内容中含有资源消息段，则以卡片消息的形式发送
-
-### options.kaiheila.axiosConfig
-
-- 类型: [`AxiosRequestConfig`](https://github.com/axios/axios#request-config)
-
-用于 kaiheila 适配器的请求配置。

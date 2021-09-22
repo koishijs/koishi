@@ -91,66 +91,67 @@ export default {
 
 <style lang="scss">
 
-.chat-message{
+$avatar-size: 2.8rem;
+$msgbox-left: 4.2rem;
+
+.chat-message {
   position: relative;
   margin: 1rem 0;
   opacity: 0;
   transform: translateX(-20%);
   transition: transform 0.3s ease-out, opacity 0.3s ease;
 
-  &.shown{
+  &.shown {
     opacity: 1;
     transform: translateX(0);
   }
+
+  .avatar {
+    width: $avatar-size;
+    height: $avatar-size;
+    position: absolute;
+    border-radius: 100%;
+    transform: translateY(-1px);
+    user-select: none;
+    pointer-events: none;
+    text-align: center;
+    line-height: $avatar-size;
+    font-size: 1.6rem;
+    color: white;
+    font-family: "Comic Sans MS";
+  }
+
+  .nickname {
+    user-select: none;
+    position: relative;
+    margin: 0 0 0.4rem $msgbox-left;
+    font-weight: bold;
+    font-size: 0.9rem;
+  }
 }
 
-$avatar-size: 2.8rem;
-$msgbox-left: 4.2rem;
-
-.avatar{
-  width: $avatar-size;
-  height: $avatar-size;
-  position: absolute;
-  border-radius: 100%;
-  transform: translateY(-1px);
-  user-select: none;
-  pointer-events: none;
-  text-align: center;
-  line-height: $avatar-size;
-  font-size: 1.6rem;
-  color: white;
-  font-family: "Comic Sans MS";
-}
-
-.nickname{
-  user-select: none;
-  position: relative;
-  margin: 0 0 0.4rem $msgbox-left;
-  font-weight: bold;
-  font-size: 0.9rem;
-}
-
-.message-box{
+.message-box {
   position: relative;
   margin-left: $msgbox-left;
   width: fit-content;
   border-radius: 0.5rem;
-  background-color: white;
+  background-color: var(--c-bg);
   word-break: break-all;
+  transition: background-color ease 0.3s;
 
-  .chat-message:not(.no-padding) &{
+  .chat-message:not(.no-padding) & {
     padding: 0.5rem 0.7rem;
   }
 
-  > img{
+  > img {
     border-radius: 0.5rem;
   }
 
-  img{
+  img {
     vertical-align: middle;
   }
 
-  p > img{
+  p > img {
     margin: 0.2rem 0;
   }
 
@@ -165,7 +166,8 @@ $msgbox-left: 4.2rem;
     border-bottom-width: 8px;
     border-bottom-color: currentColor;
     border-radius: 0 0 0 32px;
-    color: white;
+    color: var(--c-bg);
+    transition: color ease 0.3s;
   }
 
   p {
@@ -179,7 +181,9 @@ $msgbox-left: 4.2rem;
     border: none;
     border-radius: 0.5rem;
     padding: 0.2rem 0.6rem;
-    color: grayscale(10%);
+    background-color: var(--c-bg-light);
+    color: var(--c-text-lighter);
+    transition: background-color ease 0.3s, color ease 0.3s;
   }
 }
 

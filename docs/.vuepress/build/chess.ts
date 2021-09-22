@@ -1,4 +1,4 @@
-import { State } from 'koishi-plugin-chess'
+import { State } from '@koishijs/plugin-chess'
 import { mkdirSync, writeFile } from 'fs-extra'
 import { resolve } from 'path'
 

@@ -1,0 +1,38 @@
+{
+  "name": "@koishijs/plugin-kaiheila",
+  "description": "Kaiheila adapter for Koishi",
+  "version": "2.0.0-alpha.3",
+  "main": "lib/index.js",
+  "typings": "lib/index.d.ts",
+  "files": [
+    "lib"
+  ],
+  "author": "Shigma <1700011071@pku.edu.cn>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/koishijs/koishi.git"
+  },
+  "bugs": {
+    "url": "https://github.com/koishijs/koishi/issues"
+  },
+  "homepage": "https://koishi.js.org/api/adapter/kaiheila.html",
+  "keywords": [
+    "bot",
+    "kaiheila",
+    "chatbot",
+    "koishi",
+    "role:adapter"
+  ],
+  "peerDependencies": {
+    "koishi": "^4.0.0-alpha.6"
+  },
+  "devDependencies": {
+    "@koishijs/test-utils": "^8.0.0-alpha.5"
+  },
+  "dependencies": {
+    "axios": "^0.21.4",
+    "form-data": "^4.0.0",
+    "ws": "^8.2.1"
+  }
+}

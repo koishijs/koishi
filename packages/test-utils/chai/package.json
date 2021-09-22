@@ -1,0 +1,11 @@
+{
+  "name": "chai-extended",
+  "private": true,
+  "main": "src/index.ts",
+  "typings": "index.d.ts",
+  "author": "Shigma <1700011071@pku.edu.cn>",
+  "license": "MIT",
+  "files": [
+    "index.d.ts"
+  ]
+}

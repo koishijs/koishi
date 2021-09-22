@@ -30,15 +30,37 @@ ctx.router.get('/path', (ctx, next) => {
 
 ### ctx.bots
 
-- 类型: `Bot[] & Record<string, Bot>`
+- 类型: [`Bot[]`](./bot.md)
 
-一个键值对，保存了当前应用下的所有 Bot 实例。
+一个保存了当前全部 Bot 的数组。除了可以使用 `ctx.bot.forEach()` 这样的方法外，我们还提供了一些额外的接口：
+
+#### ctx.bots.get(sid)
+
+- **sid:** `string` 机器人的 sid
+- 返回值: `Bot` 机器人实例
+
+使用 sid 获取机器人实例。
+
+#### ctx.bots.remove(sid)
+
+- **sid:** `string` 机器人的 sid
+- 返回值: `boolean` 机器人实例是否存在
+
+移除一个机器人实例。
+
+#### ctx.bots.create(platform, options, constructor?)
+
+- **platform:** `string` 适配器名
+- **options:** `object` 配置项
+- **constructor:** `Function` 构造函数
+
+新增一个机器人实例。
 
 ## 过滤器
 
 有关这里的 API，请参见 [使用上下文](../guide/context.md#使用上下文)。
 
-### ctx.all()
+### ctx.any()
 
 - 返回值: `Context` 新的上下文
 
@@ -47,6 +69,12 @@ ctx.router.get('/path', (ctx, next) => {
 ::: tip
 这个方法与 `ctx.app` 的区别在于，后者不受插件管理器控制，容易产生内存泄漏。因此我们建议，除非你已经为你的插件声明了副作用，你应当尽量使用这个方法。参见 [插件热重载](../guide/context.md#插件热重载)。
 :::
+
+### ctx.never()
+
+- 返回值: `Context` 新的上下文
+
+选取上下文空集。
 
 ### ctx.self(...values)
 ### ctx.user(...values)
@@ -256,7 +284,7 @@ type Plugin<U> = PluginFunction<T, U> | PluginObject<T, U>
 
 特殊的键值，可以在通用上下文属性对象的方法上访问。参见 [声明通用上下文属性](../guide/context.md#声明通用上下文属性)。
 
-### Context.delegate(name) <Badge text="beta" type="warn"/>
+### Context.delegate(name) <Badge text="beta" type="warning"/>
 
 - **name:** `string` 属性名称
 

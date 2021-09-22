@@ -131,6 +131,11 @@ Koishi v3 的另一大亮点就是拥有官方的网页控制台插件。这个�
 - [koishi-plugin-aircon](https://github.com/idlist/koishi-plugin-aircon): 群空调
 - [koishi-plugin-cryptocurrency](https://github.com/koishijs/plugin-cryptocurrency): 查看和订阅加密货币的市场价格
 - [koishi-plugin-jrrp](https://github.com/idlist/koishi-plugin-jrrp): 今日人品
+- [koishi-plugin-rpc](https://github.com/Anillc/koishi-plugin-rpc): 一个为其他插件提供 RPC 的插件
+- [koishi-plugin-text-dialogue](https://github.com/koishijs/koishi-plugin-developer/tree/master/packages/plugin-text-dialogue): 支持在 md 文档中和你的 bot 对话
+- [koishi-plugin-holiday](https://github.com/LolitaOT/koishi-plugin-holiday): 问问bot什么时候放假，什么时候休息
+- [koishi-plugin-duplicate-checker](https://github.com/idlist/koishi-plugin-duplicate-checker) 火星图文出警器
+- [@idlist/koishi-plugin-blive](https://github.com/idlist/koishi-plugin-blive) 另一个 B 站直播订阅
 
 ### 社区项目
 
@@ -140,6 +145,8 @@ Koishi v3 的另一大亮点就是拥有官方的网页控制台插件。这个�
 - [hydro-dev/HydroBot](https://github.com/hydro-dev/HydroBot): A Simple QQ Robot
 - [Wjghj-Project/Chatbot-SILI](https://github.com/Wjghj-Project/Chatbot-SILI): 「即时通讯软件转接姬」SILI-t137-[Tumita]-Invoke-II@LD(A)
 - [idlist/2bot-v3](https://github.com/idlist/2bot-v3): 2bot，一个很 2 的 FFXIV bot
+- [koishijs/koishi-plugin-developer](https://github.com/koishijs/koishi-plugin-developer): 使用 monorepo + ts + cli 开发你的 koishi 插件，已集成部分开发辅助功能。
+- [koishijs/koishi-bots](https://github.com/koishijs/koishi-bots): 用于部署生产环境的 bot，并集合已有的 koishi bot。
 
 ## 使用协议
 

@@ -1,7 +1,12 @@
-const { remove: removeDiacritics } = require('diacritics')
 const { resolve } = require('path')
+const { remove: removeDiacritics } = require('diacritics')
+
+function devOnly(value) {
+  return process.env.NODE_ENV === 'production' ? [] : [value]
+}
 
 module.exports = {
+  base: '/v4/',
   title: 'Koishi',
   theme: resolve(__dirname, 'theme'),
   bundler: '@vuepress/vite',
@@ -10,12 +15,6 @@ module.exports = {
     ['link', { rel: 'icon', href: `/koishi.png` }],
     ['link', { rel: 'manifest', href: '/manifest.json' }],
     ['meta', { name: 'theme-color', content: '#5546a3' }],
-    // ['meta', { name: 'apple-mobile-web-app-capable', content: 'yes' }],
-    // ['meta', { name: 'apple-mobile-web-app-status-bar-style', content: 'black' }],
-    // ['link', { rel: 'apple-touch-icon', href: `/icons/apple-touch-icon-152x152.png` }],
-    // ['link', { rel: 'mask-icon', href: '/icons/safari-pinned-tab.svg', color: '#5546a3' }],
-    // ['meta', { name: 'msapplication-TileImage', content: '/icons/msapplication-icon-144x144.png' }],
-    // ['meta', { name: 'msapplication-TileColor', content: '#000000' }]
   ],
 
   markdown: {
@@ -41,6 +40,7 @@ module.exports = {
       { text: '指南', link: '/guide/starter.html' },
       { text: 'API', link: '/api/' },
       { text: '官方插件', link: '/plugins/' },
+      ...devOnly({ text: '演练场', link: '/playground.html' }),
       { text: 'GitHub', link: 'https://github.com/koishijs/koishi' },
     ],
     sidebar: {
@@ -50,26 +50,62 @@ module.exports = {
         children: [
           '/guide/about.md',
           '/guide/starter.md',
-          '/guide/cli.md',
-          '/guide/docker.md',
-          '/guide/faq.md',
+          '/guide/advanced/cli.md',
         ],
       }, {
-        text: '进阶',
+        text: '处理交互',
         isGroup: true,
         children: [
-          '/guide/message.md',
-          '/guide/context.md',
-          '/guide/command.md',
-          '/guide/execute.md',
-          '/guide/help.md',
-          '/guide/manage.md',
-          '/guide/database.md',
-          '/guide/lifecycle.md',
-          '/guide/adapter.md',
-          '/guide/logger.md',
-          '/guide/unit-tests.md',
-          '/guide/decorator.md',
+          '/guide/message/message.md',
+          '/guide/message/command.md',
+          '/guide/message/execute.md',
+          '/guide/message/help.md',
+        ],
+      }, {
+        text: '复用性',
+        isGroup: true,
+        children: [
+          '/guide/reusability/plugin.md',
+          '/guide/reusability/context.md',
+          '/guide/reusability/hot-reload.md',
+          '/guide/reusability/lifecycle.md',
+          '/guide/reusability/schema.md',
+        ],
+      }, {
+        text: '数据库',
+        isGroup: true,
+        children: [
+          '/guide/database/database.md',
+          '/guide/database/builtin.md',
+          '/guide/database/observer.md',
+          '/guide/database/writing.md',
+        ],
+      }, {
+        text: '跨平台',
+        isGroup: true,
+        children: [
+          '/guide/adapter/adapter.md',
+          '/guide/adapter/binding.md',
+          '/guide/adapter/writing.md',
+          '/guide/adapter/for-everything.md',
+        ],
+      }, {
+        text: '规模化',
+        isGroup: true,
+        children: [
+          '/guide/scaling-up/assets.md',
+          '/guide/scaling-up/cache.md',
+          '/guide/scaling-up/route.md',
+        ],
+      }, {
+        text: '更多',
+        isGroup: true,
+        children: [
+          '/guide/advanced/logger.md',
+          '/guide/advanced/unit-tests.md',
+          '/guide/advanced/decorator.md',
+          '/guide/advanced/docker.md',
+          '/guide/faq.md',
         ],
       }],
       '/api': [{
@@ -88,6 +124,7 @@ module.exports = {
           '/api/segment.md',
           '/api/database.md',
           '/api/adapter.md',
+          '/api/schema.md',
           '/api/global.md',
         ],
       }, {
@@ -148,14 +185,14 @@ module.exports = {
           '/plugins/eval/sandbox.md',
           '/plugins/eval/config.md',
         ],
-      }, ...process.env.NODE_ENV === 'production' ? [] : [{
+      }, ...devOnly({
         text: '冒险系统 (Adventure)',
         isGroup: true,
         children: [
           '/plugins/adventure/index.md',
           '/plugins/adventure/events.md',
         ],
-      }], {
+      }), {
         text: '其他官方插件',
         isGroup: true,
         children: [
@@ -175,7 +212,7 @@ module.exports = {
     lastUpdated: '上次更新',
     docsRepo: 'koishijs/koishi',
     docsDir: 'docs',
-    docsBranch: 'develop',
+    docsBranch: 'next',
     editLinks: true,
     editLinkText: '帮助我们改善此页面',
 
@@ -185,5 +222,24 @@ module.exports = {
     },
   },
 
-  evergreen: () => false,// !context.isProd,
+  bundlerConfig: {
+    viteOptions: {
+      plugins: [
+        require('@rollup/plugin-yaml')(),
+      ],
+      // build: {
+      //   // fix for monaco workers
+      //   // https://github.com/vitejs/vite/issues/1927#issuecomment-805803918
+      //   rollupOptions: {
+      //     output: {
+      //       inlineDynamicImports: false,
+      //       manualChunks: {
+      //         tsWorker: ['monaco-editor/esm/vs/language/typescript/ts.worker'],
+      //         editorWorker: ['monaco-editor/esm/vs/editor/editor.worker'],
+      //       },
+      //     },
+      //   },
+      // },
+    },
+  },
 }

@@ -1,0 +1,12 @@
+{
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "start": "koishi start"
+  },
+  "dependencies": {
+    "@koishijs/cli": "4.0.0-alpha.1",
+    "@koishijs/plugin-status": "5.0.0-alpha.3",
+    "koishi": "4.0.0-alpha.4"
+  }
+}

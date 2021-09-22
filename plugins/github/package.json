@@ -1,0 +1,46 @@
+{
+  "name": "@koishijs/plugin-github",
+  "description": "GitHub toolkit for Koishi",
+  "version": "4.0.0-alpha.2",
+  "main": "lib/index.js",
+  "typings": "lib/index.d.ts",
+  "files": [
+    "lib"
+  ],
+  "author": "Shigma <1700011071@pku.edu.cn>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/koishijs/koishi.git"
+  },
+  "bugs": {
+    "url": "https://github.com/koishijs/koishi/issues"
+  },
+  "homepage": "https://koishi.js.org/plugins/other/github",
+  "keywords": [
+    "bot",
+    "qqbot",
+    "cqhttp",
+    "coolq",
+    "chatbot",
+    "koishi",
+    "plugin",
+    "github",
+    "webhook",
+    "required:database",
+    "optional:assets"
+  ],
+  "devDependencies": {
+    "@types/marked": "^3.0.0",
+    "@koishijs/plugin-puppeteer": "^3.0.0-alpha.2",
+    "@koishijs/test-utils": "^8.0.0-alpha.5"
+  },
+  "peerDependencies": {
+    "koishi": "^4.0.0-alpha.6"
+  },
+  "dependencies": {
+    "@octokit/webhooks-types": "^4.4.0",
+    "axios": "^0.21.4",
+    "marked": "^3.0.2"
+  }
+}

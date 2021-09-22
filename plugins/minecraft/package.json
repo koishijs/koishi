@@ -1,0 +1,38 @@
+{
+  "name": "@koishijs/plugin-minecraft",
+  "description": "Minecraft adapter for Koishi",
+  "version": "1.0.0-alpha.4",
+  "main": "lib/index.js",
+  "typings": "lib/index.d.ts",
+  "files": [
+    "lib"
+  ],
+  "author": "undefined <i@undefined.moe>",
+  "maintainers": [
+    "Shigma <1700011071@pku.edu.cn>",
+    "undefined <i@undefined.moe>"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/koishijs/koishi.git"
+  },
+  "bugs": {
+    "url": "https://github.com/koishijs/koishi/issues"
+  },
+  "homepage": "https://koishi.js.org/api/adapter/minecraft.html",
+  "keywords": [
+    "bot",
+    "minecraft",
+    "mineflayer",
+    "chatbot",
+    "koishi",
+    "role:adapter"
+  ],
+  "peerDependencies": {
+    "koishi": "^4.0.0-alpha.6"
+  },
+  "dependencies": {
+    "mineflayer": "^3.11.0"
+  }
+}

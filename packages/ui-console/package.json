@@ -1,0 +1,44 @@
+{
+  "name": "@koishijs/ui-console",
+  "description": "Status Client for Koishi",
+  "version": "1.0.0-alpha.1",
+  "main": "src/index.ts",
+  "engines": {
+    "node": ">=12.0.0"
+  },
+  "files": [
+    "lib"
+  ],
+  "author": "Shigma <1700011071@pku.edu.cn>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/koishijs/koishi.git"
+  },
+  "bugs": {
+    "url": "https://github.com/koishijs/koishi/issues"
+  },
+  "homepage": "https://koishi.js.org",
+  "keywords": [
+    "bot",
+    "qqbot",
+    "cqhttp",
+    "coolq",
+    "chatbot",
+    "koishi"
+  ],
+  "devDependencies": {
+    "@fortawesome/fontawesome-free": "^5.15.4",
+    "@koishijs/plugin-status": "^5.0.0-alpha.4",
+    "@koishijs/utils": "^5.0.0-alpha.2",
+    "@vitejs/plugin-vue": "^1.6.2",
+    "ansi_up": "^5.0.1",
+    "echarts": "^5.2.0",
+    "echarts-wordcloud": "^2.0.0",
+    "element-plus": "^1.1.0-beta.9",
+    "sass": "^1.39.0",
+    "vue": "^3.2.10",
+    "vue-echarts": "^6.0.0",
+    "vue-router": "^4.0.11"
+  }
+}

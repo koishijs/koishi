@@ -4,11 +4,17 @@ sidebarDepth: 2
 
 # 常见问题
 
+::: danger 注意
+这里是**正在施工**的 koishi v4 的文档。要查看 v3 版本的文档，请前往[**这里**](/)。
+:::
+
 ## 最常见的问题
 
 ### 能收到消息但是不能发消息是什么原因？
 
 如果你使用的是 koishi-adapter-onebot，请先查看你的 go-cqhttp 控制台，看看是不是因为风控导致的消息无法发送。
+
+如果看到报错信息 `TypeError: Cannot read property 'Symbol(koishi.session.send)' of undefined`, 请检查 `App` 构建函数选项或 `koishi.config.js` 中 `bot` 的 `selfId` 是否配置有误，请注意 selfId 必须为字符串。
 
 ### 使用 TypeScript 开发时，部分必需的字段并没有代码提示？
 

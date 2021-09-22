@@ -1,0 +1,52 @@
+{
+  "name": "@koishijs/plugin-status",
+  "description": "Create web user interface for Koishi",
+  "version": "5.0.0-alpha.4",
+  "main": "lib/index.js",
+  "typings": "lib/index.d.ts",
+  "files": [
+    "lib",
+    "dist"
+  ],
+  "author": "Shigma <1700011071@pku.edu.cn>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/koishijs/koishi.git"
+  },
+  "bugs": {
+    "url": "https://github.com/koishijs/koishi/issues"
+  },
+  "homepage": "https://koishi.js.org/plugins/other/status.html",
+  "keywords": [
+    "bot",
+    "qqbot",
+    "cqhttp",
+    "coolq",
+    "chatbot",
+    "koishi",
+    "plugin",
+    "webui"
+  ],
+  "peerDependencies": {
+    "koishi": "^4.0.0-alpha.6"
+  },
+  "devDependencies": {
+    "@koishijs/cli": "^4.0.0-alpha.2",
+    "@koishijs/plugin-mongo": "^3.0.0-alpha.2",
+    "@koishijs/plugin-mysql": "^4.0.0-alpha.4",
+    "@koishijs/test-utils": "^8.0.0-alpha.5",
+    "@types/throttle-debounce": "^2.1.0",
+    "@types/uuid": "^8.3.1",
+    "vite": "^2.5.6"
+  },
+  "dependencies": {
+    "@koishijs/ui-console": "^1.0.0-alpha.0",
+    "open": "^8.2.1",
+    "semver": "^7.3.5",
+    "systeminformation": "^5.8.7",
+    "throttle-debounce": "^3.0.1",
+    "uuid": "^8.3.2",
+    "ws": "^8.2.1"
+  }
+}

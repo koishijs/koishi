@@ -1,0 +1,37 @@
+{
+  "name": "@koishijs/utils",
+  "description": "Utilities for Koishi",
+  "version": "5.0.0-alpha.2",
+  "main": "lib/node.js",
+  "module": "lib/browser.js",
+  "typings": "lib/index.d.ts",
+  "files": [
+    "lib"
+  ],
+  "author": "Shigma <1700011071@pku.edu.cn>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/koishijs/koishi.git"
+  },
+  "bugs": {
+    "url": "https://github.com/koishijs/koishi/issues"
+  },
+  "homepage": "https://koishi.js.org/api/utils.html",
+  "keywords": [
+    "bot",
+    "qqbot",
+    "cqhttp",
+    "coolq",
+    "chatbot",
+    "koishi",
+    "utilities"
+  ],
+  "devDependencies": {
+    "@types/supports-color": "^8.1.1",
+    "@koishijs/test-utils": "^8.0.0-alpha.5"
+  },
+  "dependencies": {
+    "supports-color": "^8.1.0"
+  }
+}
