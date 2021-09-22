@@ -73,7 +73,7 @@ export const schema: Schema<Config> = Schema.object({
       height: Schema.number('默认的视图高度。').default(600),
       deviceScaleFactor: Schema.number('默认的设备缩放比率。').default(2),
     }),
-  }, '浏览器设置'),
+  }, true, '浏览器设置'),
   maxSize: Schema.number('单张图片的最大尺寸，单位为字节。当截图尺寸超过这个值时会自动截取图片顶部的一段进行发送。').default(1000000),
   loadTimeout: Schema.number('加载页面的最长时间。当一个页面等待时间超过这个值时，如果此页面主体已经加载完成，则会发送一条提示消息“正在加载中，请稍等片刻”并继续等待加载；否则会直接提示“无法打开页面”并终止加载。').default(Time.second * 10),
   idleTimeout: Schema.number('等待页面空闲的最长时间。当一个页面等待时间超过这个值时，将停止进一步的加载并立即发送截图。').default(Time.second * 30),

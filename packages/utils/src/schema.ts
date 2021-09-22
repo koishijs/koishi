@@ -3,6 +3,7 @@ import { Dict, Intersect, isNullable, valueMap } from './misc'
 export interface Schema<T = any> extends Schema.Base<T> {
   type: string
   primary?: string
+  flag?: boolean
   value?: Schema
   alt?: Schema
   sDict?: Dict<string>
@@ -78,8 +79,11 @@ export namespace Schema {
     return new Chainable<Dict<T>>({ type: 'dict', value, desc, _default: {} })
   }
 
-  export function object<T extends Dict<Schema>>(dict: T, desc?: string) {
-    return new Chainable<{ [K in keyof T]?: Type<T[K]> }>({ type: 'object', dict, desc, _default: {} })
+  export function object<T extends Dict<Schema>>(dict: T, desc?: string): Chainable<{ [K in keyof T]?: Type<T[K]> }>
+  export function object<T extends Dict<Schema>>(dict: T, allowUnknown: true, desc?: string): Chainable<{ [K in keyof T]?: Type<T[K]> }>
+  export function object<T extends Dict<Schema>>(dict: T, ...args: any[]) {
+    const desc = typeof args[args.length - 1] === 'string' ? args.pop() : undefined
+    return new Chainable<{ [K in keyof T]?: Type<T[K]> }>({ type: 'object', dict, desc, flag: args[0], _default: {} })
   }
 
   export function select<T extends string>(sList: T[], desc?: string): Chainable<T>
@@ -90,9 +94,10 @@ export namespace Schema {
   }
 
   type Inner<K extends keyof any, T extends Record<K, Schema>> = Intersect<Type<T[K]>>
+  type Decide<T extends Dict<Schema>, K extends string> = Inner<string, T> & { [P in K]: keyof T }
 
-  export function decide<T extends Dict<Schema>, K extends string>(primary: K, dict: T, desc?: string): Chainable<Inner<string, T> & { [P in K]: keyof T }>
-  export function decide<T extends Dict<Schema>, K extends string>(primary: K, dict: T, callback: (data: any) => keyof T, desc?: string): Chainable<Inner<string, T> & { [P in K]: keyof T }>
+  export function decide<T extends Dict<Schema>, K extends string>(primary: K, dict: T, desc?: string): Chainable<Decide<T, K>>
+  export function decide<T extends Dict<Schema>, K extends string>(primary: K, dict: T, callback: (data: any) => keyof T, desc?: string): Chainable<Decide<T, K>>
   export function decide<T extends Dict<Schema>, K extends string>(primary: K, dict: T, ...args: any[]) {
     const desc = typeof args[args.length - 1] === 'string' ? args.pop() : undefined
     return new Chainable({ type: 'decide', dict, primary, desc, callback: args[0] })
@@ -187,6 +192,12 @@ export namespace Schema {
           const value = property(data, key, schema.dict[key])
           if (!isNullable(value) || key in data) {
             result[key] = value
+          }
+        }
+        if (schema.flag) {
+          for (const key in data) {
+            if (key in result) continue
+            result[key] = data[key]
           }
         }
         return [result]

@@ -92,10 +92,10 @@ describe('Schema API', () => {
     const schema = Schema.object({
       a: Schema.string(),
       b: Schema.number(),
-    })
+    }, true)
 
     expect(Schema.validate(null, schema)).to.deep.equal({})
-    expect(Schema.validate({}, schema)).to.deep.equal({})
+    expect(Schema.validate({ c: true }, schema)).to.deep.equal({ c: true })
     expect(() => Schema.validate([], schema)).to.throw()
     expect(() => Schema.validate('foo', schema)).to.throw()
     expect(() => Schema.validate(123, schema)).to.throw()

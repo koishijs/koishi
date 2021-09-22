@@ -60,6 +60,7 @@ module.exports = {
           '/guide/message/command.md',
           '/guide/message/execute.md',
           '/guide/message/help.md',
+          '/guide/message/push.md',
         ],
       }, {
         text: '复用性',
