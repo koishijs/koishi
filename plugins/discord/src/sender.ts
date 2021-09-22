@@ -1,7 +1,7 @@
 import { readFileSync } from 'fs'
 import { basename } from 'path'
+import { fromBuffer } from 'file-type'
 import FormData from 'form-data'
-import FileType from 'file-type'
 import AggregateError from 'es-aggregate-error'
 import { DiscordBot } from './bot'
 import { segment, Dict } from 'koishi'
@@ -48,7 +48,7 @@ export class Sender {
 
   async sendEmbed(fileBuffer: ArrayBuffer, payload_json: Dict = {}, filename: string) {
     const fd = new FormData()
-    const type = await FileType.fromBuffer(fileBuffer)
+    const type = await fromBuffer(fileBuffer)
     filename ||= 'file.' + type.ext
     fd.append('file', fileBuffer, filename)
     fd.append('payload_json', JSON.stringify(payload_json))
