@@ -63,9 +63,9 @@ ctx.plugin({
 module.exports.name = 'detect-space'
 
 module.exports.apply = (ctx) => {
-  ctx.middleware((meta, next) => {
-    if (meta.content.match(/^\s*(\S +){2,}\S\s*$/g)) {
-      return meta.send('在？为什么说话带空格？')
+  ctx.middleware((session, next) => {
+    if (session.content.match(/^\s*(\S +){2,}\S\s*$/g)) {
+      return session.send('在？为什么说话带空格？')
     } else {
       return next()
     }
