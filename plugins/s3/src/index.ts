@@ -1,4 +1,5 @@
-import { Assets, Context, Requester } from 'koishi'
+import { Assets, Context, Requester, Schema } from 'koishi'
+import { Credentials } from '@aws-sdk/types'
 import { ListObjectsCommand, PutObjectCommand, S3Client, S3ClientConfig } from '@aws-sdk/client-s3'
 import { createHash } from 'crypto'
 
@@ -15,8 +16,22 @@ async function getAssetBuffer(url: string, http: Requester) {
 export interface Config extends S3ClientConfig {
   bucket: string
   pathPrefix: string
-  selfUrl: string
+  publicUrl?: string
 }
+
+const credentialsSchema: Schema<Credentials> = Schema.object({
+  accessKeyId: Schema.string().required(),
+  secretAccessKey: Schema.string().required(),
+}, true)
+
+export const schema: Schema<Config> = Schema.object({
+  region: Schema.string().default('none'),
+  endpoint: Schema.string(),
+  credentials: credentialsSchema,
+  bucket: Schema.string().required(),
+  pathPrefix: Schema.string().default(''),
+  publicUrl: Schema.string(),
+}, true)
 
 class S3Assets implements Assets {
   types = ['video', 'audio', 'image', 'file'] as const
@@ -38,7 +53,7 @@ class S3Assets implements Assets {
     const buffer = await getAssetBuffer(url, this.ctx.http)
     const hash = createHash('sha1').update(buffer).digest('hex')
     const s3Key = `${this.config.pathPrefix}${hash}`
-    const finalUrl = `${this.config.selfUrl}${hash}`
+    const finalUrl = `${this.config.publicUrl}${hash}`
     try {
       const checkExisting = await this.listObjects(s3Key)
       if (checkExisting.Contents?.some((obj) => obj.Key === s3Key)) return finalUrl

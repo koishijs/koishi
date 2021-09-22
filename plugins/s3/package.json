@@ -30,14 +30,13 @@
     "koishi",
     "plugin",
     "assets",
-    "server"
+    "server",
+    "role:assets"
   ],
   "peerDependencies": {
     "koishi": "^4.0.0-alpha.6"
   },
   "dependencies": {
-    "@aws-sdk/client-s3": "^3.20.0",
-    "axios": "^0.21.1",
-    "lodash": "^4.17.21"
+    "@aws-sdk/client-s3": "^3.20.0"
   }
 }
