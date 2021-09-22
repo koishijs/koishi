@@ -198,7 +198,7 @@ utils.sleep.mockResolvedValueOnce()
 koishi-database-memory 是 Koishi 的一个数据库实现，只不过它将所有数据都留在内存中，方便调试：
 
 ```js
-const { App } = require('koishi-core')
+const { App } = require('koishi')
 require('koishi-database-memory')
 
 // 使用内存数据库

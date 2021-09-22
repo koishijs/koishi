@@ -49,7 +49,7 @@ class Bot {
 
 ::: code-group language adapter
 ```js
-const { Adapter, Bot, Session } = require('koishi-core')
+const { Adapter, Bot, Session } = require('koishi')
 
 class MyBot extends Bot {
   async sendMessage(channelId, content) {
@@ -78,7 +78,7 @@ class MyAdapter extends Adapter {
 Adapter.types['my-adapter'] = MyAdapter
 ```
 ```ts
-import { Adapter, Bot, Session } from 'koishi-core'
+import { Adapter, Bot, Session } from 'koishi'
 
 class MyBot extends Bot {
   async sendMessage(channelId: string, content: string) {
@@ -114,7 +114,7 @@ WebSocket 的逻辑相比 Webhook 要稍微复杂一些，因此我们提供了�
 
 ::: code-group language adapter
 ```js
-const { Adapter, Bot, Session } = require('koishi-core')
+const { Adapter, Bot, Session } = require('koishi')
 const WebSocket = require('ws')
 
 class MyAdapter2 extends Adapter.WsClient {
@@ -142,7 +142,7 @@ class MyAdapter2 extends Adapter.WsClient {
 Adapter.types['another-adapter'] = MyAdapter2
 ```
 ```ts
-import { Adapter, Bot, Session } from 'koishi-core'
+import { Adapter, Bot, Session } from 'koishi'
 import WebSocket from 'ws'
 
 class MyAdapter2 extends Adapter.WsClient {

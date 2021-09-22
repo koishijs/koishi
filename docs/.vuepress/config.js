@@ -50,7 +50,6 @@ module.exports = {
         children: [
           '/guide/about.md',
           '/guide/starter.md',
-          '/guide/cli.md',
         ],
       }, {
         text: '处理交互',
@@ -65,7 +64,9 @@ module.exports = {
         text: '复用性',
         isGroup: true,
         children: [
+          '/guide/reusability/plugin.md',
           '/guide/reusability/context.md',
+          '/guide/reusability/hot-reload.md',
           '/guide/reusability/lifecycle.md',
           '/guide/reusability/schema.md',
         ],
@@ -73,8 +74,8 @@ module.exports = {
         text: '数据库',
         isGroup: true,
         children: [
-          '/guide/database/manage.md',
           '/guide/database/database.md',
+          '/guide/database/manage.md',
           '/guide/database/writing.md',
         ],
       }, {
@@ -88,10 +89,11 @@ module.exports = {
         text: '进阶',
         isGroup: true,
         children: [
-          '/guide/logger.md',
-          '/guide/unit-tests.md',
-          '/guide/decorator.md',
-          '/guide/docker.md',
+          '/guide/advanced/cli.md',
+          '/guide/advanced/logger.md',
+          '/guide/advanced/unit-tests.md',
+          '/guide/advanced/decorator.md',
+          '/guide/advanced/docker.md',
           '/guide/faq.md',
         ],
       }],

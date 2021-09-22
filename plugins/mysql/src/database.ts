@@ -270,7 +270,7 @@ namespace MysqlDatabase {
   }
 
   /**
-   * @deprecated use `import('koishi-core').Field` instead
+   * @deprecated use `import('koishi').Field` instead
    */
   export const tables: Declarations = {
     user: {},
@@ -286,7 +286,7 @@ namespace MysqlDatabase {
   }
 
   /**
-   * @deprecated use `import('koishi-core').Field` instead
+   * @deprecated use `import('koishi').Field` instead
    */
   export namespace Domain {
     export function definition(domain: string | Domain) {

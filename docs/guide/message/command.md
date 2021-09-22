@@ -170,7 +170,7 @@ app.command('my-command [arg:number]')
 
 ::: code-group language
 ```js
-const { Argv } = require('koishi-core')
+const { Argv } = require('koishi')
 
 Argv.createDomain('repeat', source => source.repeat(3))
 
@@ -178,9 +178,9 @@ app.command('test [arg:repeat]')
   .action((_, arg) => arg)
 ```
 ```ts
-import { Argv } from 'koishi-core'
+import { Argv } from 'koishi'
 
-declare module 'koishi-core' {
+declare module 'koishi' {
   namespace Argv {
     interface Domain {
       repeat: string
@@ -206,7 +206,7 @@ app.command('test [arg:repeat]')
 
 ::: code-group language
 ```js
-const { Argv } = require('koishi-core')
+const { Argv } = require('koishi')
 
 Argv.createDomain('positive', (source) => {
   const value = +source
@@ -218,9 +218,9 @@ app.command('test [x:positive]')
   .action((_, arg) => arg)
 ```
 ```ts
-import { Argv } from 'koishi-core'
+import { Argv } from 'koishi'
 
-declare module 'koishi-core' {
+declare module 'koishi' {
   namespace Argv {
     interface Domain {
       positive: number

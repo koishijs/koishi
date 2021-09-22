@@ -78,7 +78,7 @@ export default {
 
 ::: code-group language index
 ```js
-const { App } = require('koishi-core')
+const { App } = require('koishi')
 
 // 你需要手动安装所有相关平台的适配器
 require('koishi-adapter-onebot')
@@ -90,7 +90,7 @@ new App({ /* 同上述配置 */ })
 app.start()
 ```
 ```ts
-import { App } from 'koishi-core'
+import { App } from 'koishi'
 
 // 你需要手动安装所有相关平台的适配器
 import 'koishi-adapter-onebot'

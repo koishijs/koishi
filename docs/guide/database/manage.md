@@ -2,7 +2,7 @@
 sidebarDepth: 2
 ---
 
-# 用户系统管理
+# 用户系统
 
 ::: danger 注意
 这里是**正在施工**的 koishi v4 的文档。要查看 v3 版本的文档，请前往[**这里**](/)。
@@ -14,7 +14,7 @@ sidebarDepth: 2
 
 在实际的机器人开发过程中，用户系统往往是必不可少的一环——它在展现机器人功能多样性的同时也避免了某个功能被滥用的情况。本章就来介绍 Koishi 内置的用户系统，以及用户数据是如何与指令调用相联系的。
 
-## 用户系统
+## 数据结构
 
 Koishi 内置了下面几个数据库字段：
 
@@ -27,7 +27,8 @@ Koishi 内置了下面几个数据库字段：
   - **usage:** `Record<string, number>` 指令调用次数
   - **timers:** `Record<string, number>` 指令调用时间
 - **channel:** 频道表
-  - **id:** `string` 频道标识符
+  - **platform:** `string` 平台名
+  - **id:** `string` [平台编号](#平台相关字段)
   - **flag:** `number` 状态标签
   - **assignee:** `string` 代理者
 
@@ -44,7 +45,7 @@ Koishi 使用**状态标签**来管理用户和群的可能状态。状态标签
 利用位运算操作符，你可以用下面的方法辨别和修改状态信息：
 
 ```js
-const { Channel } = require('koishi-core')
+const { Channel } = require('koishi')
 
 // 判断会话用户是否被设置了 ignore 状态
 if (session.channel.flag & Channel.Flag.ignore) {}
@@ -127,6 +128,32 @@ module.exports = {
 }
 ```
 
+### 使用会话 API
+
+对于 Koishi 内部的两个抽象表 User 和 Channel，我们在 [会话对象](../api/session.md) 中封装了几个高级方法：
+
+```js
+// 中间增加了一个第二参数，表示默认情况下的权限等级
+// 如果找到该用户，则返回该用户本身
+// 否则创建一个新的用户数据，权限为 authority
+// 如果 authority 大于 0，则将新的用户数据添加到表中
+session.getUser(id, authority, fields)
+
+// 在当前会话上绑定一个可观测用户实例
+// 也就是所谓的 session.user
+session.observeUser(fields)
+
+// 中间增加了一个第二参数，表示默认情况下的 assignee
+// 如果找到该频道，则不修改任何数据，返回该频道本身
+// 如果未找到该频道，则创建一个新的频道，代理者为 selfId
+// 如果 selfId 大于 0，则将新的频道数据添加到表中
+session.getChannel(id, selfId, fields)
+
+// 在当前会话上绑定一个可观测频道实例
+// 也就是所谓的 session.channel
+session.observeChannel(fields)
+```
+
 ## 指令调用管理
 
 利用上面描述的这套用户系统，我们就可以实现指令的调用权限控制。本节将分别介绍目前支持的权限控制形式。通过配置 `ctx.command()` 的第二个参数可以修改有关指令调用的一些设置。
@@ -164,7 +191,7 @@ ctx.command('lottery 抽卡', { maxUsage: 10 })
 有些指令（例如高强度刷屏）我们并不希望被短时间内重复调用，这时我们可以设置最短触发间隔：
 
 ```js
-const { Time } = require('koishi-core')
+const { Time } = require('koishi')
 
 // 设置 lottery 指令每 60 秒只能调用 1 次
 ctx.command('lottery', { minInterval: Time.minute })
@@ -221,7 +248,7 @@ ctx.command('lottery')
 如果你需要对全体指令添加所需的用户字段，可以使用 `Command.userFields()`。下面是一个例子：
 
 ```js
-const { Command } = require('koishi-core')
+const { Command } = require('koishi')
 
 // 注意这不是实例方法，而是类上的静态方法
 Command.userFields(['name'])

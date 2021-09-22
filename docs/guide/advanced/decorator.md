@@ -32,7 +32,7 @@ export = new MyPlugin()
 它等价于下面的代码：
 
 ```ts
-import { Context } from 'koishi-core'
+import { Context } from 'koishi'
 
 export const name = 'decorator-example'
 
