@@ -50,6 +50,7 @@ module.exports = {
         children: [
           '/guide/about.md',
           '/guide/starter.md',
+          '/guide/advanced/cli.md',
         ],
       }, {
         text: '处理交互',
@@ -75,21 +76,31 @@ module.exports = {
         isGroup: true,
         children: [
           '/guide/database/database.md',
-          '/guide/database/manage.md',
+          '/guide/database/builtin.md',
+          '/guide/database/observer.md',
           '/guide/database/writing.md',
         ],
       }, {
         text: '跨平台',
         isGroup: true,
         children: [
-          '/guide/cross-platform/adapter.md',
-          '/guide/cross-platform/writing.md',
+          '/guide/adapter/adapter.md',
+          '/guide/adapter/binding.md',
+          '/guide/adapter/writing.md',
+          '/guide/adapter/for-everything.md',
         ],
       }, {
-        text: '进阶',
+        text: '规模化',
         isGroup: true,
         children: [
-          '/guide/advanced/cli.md',
+          '/guide/scaling-up/assets.md',
+          '/guide/scaling-up/cache.md',
+          '/guide/scaling-up/route.md',
+        ],
+      }, {
+        text: '更多',
+        isGroup: true,
+        children: [
           '/guide/advanced/logger.md',
           '/guide/advanced/unit-tests.md',
           '/guide/advanced/decorator.md',

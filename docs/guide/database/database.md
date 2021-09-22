@@ -231,3 +231,41 @@ Tables.extend('schedule', {
 :::
 
 ### 创建索引
+
+我们还可以为数据库声明索引：
+
+```ts
+import { Tables } from 'koishi'
+
+Tables.extend('foo', {}, {
+  // 主键，默认为 'id'
+  // 主键将会被用于 Query 的简写形式，如果传入的是原始类型或数组则会自行理解成主键的值
+  primary: 'name',
+  // 唯一键，这应该是一个列表
+  // 这个列表中的字段对应的值在创建和修改的时候都不允许与其他行重复
+  unique: ['bar', 'baz'],
+  // 外键，这应该是一个键值对
+  foreign: {
+    // 相当于约束了 foo.uid 必须是某一个 user.id
+    uid: ['user', 'id'],
+  },
+})
+```
+
+## 使用原始接口
+
+::: danger
+虽然 Koishi 预留了这种方案，但必须说明的是我们不推荐这种行为。这样做会使你的代码的耦合度增加，并且难以被其他人使用。
+:::
+
+如果你需要调用原始的数据库接口而不是使用 ORM，你可以利用 Database 对象的特殊属性，它只在你使用了特定的数据库插件的时候有效：
+
+```ts
+// TypeScript 用户需要手动引入模块，否则将产生类型错误
+import {} from '@koishijs/plugin-mysql'
+
+// 直接发送 SQL 语句
+ctx.database.mysql.query('select * from user')
+```
+
+对于其他数据库实现类似，例如 mongo 的原始接口可以通过 `ctx.database.mongo` 访问到。
