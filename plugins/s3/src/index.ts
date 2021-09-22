@@ -1,24 +1,18 @@
-import { Assets, Context } from 'koishi-core'
-import axios, { AxiosRequestConfig } from 'axios'
+import { Assets, Context, Requester } from 'koishi'
 import { ListObjectsCommand, PutObjectCommand, S3Client, S3ClientConfig } from '@aws-sdk/client-s3'
-import { sumBy } from 'lodash'
 import { createHash } from 'crypto'
 
 const PTC_BASE64 = 'base64://'
 
-async function getAssetBuffer(url: string, axiosConfig: AxiosRequestConfig) {
+async function getAssetBuffer(url: string, http: Requester) {
   if (url.startsWith(PTC_BASE64)) {
     return Buffer.from(url.slice(PTC_BASE64.length), 'base64')
   }
-  const { data } = await axios.get<ArrayBuffer>(url, {
-    ...axiosConfig,
-    responseType: 'arraybuffer',
-  })
+  const data = await http.get.arraybuffer(url)
   return Buffer.from(data)
 }
 
 export interface Config extends S3ClientConfig {
-  axiosConfig?: AxiosRequestConfig
   bucket: string
   pathPrefix: string
   selfUrl: string
@@ -41,8 +35,7 @@ class S3Assets implements Assets {
   }
 
   async upload(url: string, file: string) {
-    const { axiosConfig } = this.config
-    const buffer = await getAssetBuffer(url, axiosConfig)
+    const buffer = await getAssetBuffer(url, this.ctx.http)
     const hash = createHash('sha1').update(buffer).digest('hex')
     const s3Key = `${this.config.pathPrefix}${hash}`
     const finalUrl = `${this.config.selfUrl}${hash}`
@@ -71,7 +64,7 @@ class S3Assets implements Assets {
       const data = await this.listObjects(this.config.pathPrefix)
       return {
         assetCount: data.Contents.length,
-        assetSize: sumBy(data.Contents, (c) => c.Size),
+        assetSize: data.Contents.reduce((prev, curr) => prev + curr.Size, 0),
       }
     } catch (e) {
       this.ctx
@@ -92,10 +85,6 @@ class S3Assets implements Assets {
 export const name = 'assets-s3'
 
 export function apply(ctx: Context, config: Config) {
-  config.axiosConfig = {
-    ...ctx.app.options.axiosConfig,
-    ...config.axiosConfig,
-  }
   // config.apiVersion ||= '2'
   config.region ||= 'none'
   config.pathPrefix ||= ''
