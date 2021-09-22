@@ -54,16 +54,22 @@ export default class JsdelivrAssets implements Assets {
   git: SimpleGit
   taskQueue: Task[] = []
   taskMap = new Map<string, Task>()
+  isActive = false
 
   constructor(private ctx: Context, public config: Config) {
     ctx.on('connect', async () => {
       await this.initRepo()
+      this.isActive = true
       this.start()
+    })
+
+    ctx.on('disconnect', () => {
+      this.isActive = false
     })
   }
 
   async start() {
-    while (true) {
+    while (this.isActive) {
       try {
         await this.mainLoop()
       } catch (e) {
