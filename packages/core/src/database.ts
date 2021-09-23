@@ -49,9 +49,15 @@ export abstract class Database {
   abstract start(): void | Promise<void>
   abstract stop(): void | Promise<void>
 
-  constructor(public app: App) {
-    app.on('connect', () => this.start())
-    app.on('disconnect', () => this.stop())
+  constructor(public app: App, noRegisterConnect: boolean = false) {
+    if (!noRegisterConnect) {
+      app.on('connect', () => this.start())
+      app.on('disconnect', () => this.stop())
+    }
+  }
+
+  async transaction<T>(transactionFun: (_this: this) => Promise<T>): Promise<T> {
+    return transactionFun(this)
   }
 
   getUser<T extends string, K extends T | User.Field>(platform: T, id: string, modifier?: Query.Modifier<K>): Promise<UserWithPlatform<T, T | K>>

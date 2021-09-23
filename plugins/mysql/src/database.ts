@@ -1,4 +1,4 @@
-import { createPool, Pool, PoolConfig, escape as mysqlEscape, escapeId, format, TypeCast } from 'mysql'
+import { createPool, Pool, PoolConfig, escape as mysqlEscape, escapeId, format, TypeCast, PoolConnection } from 'mysql'
 import { App, Database, Logger, makeArray } from 'koishi'
 import * as Koishi from 'koishi'
 import { types } from 'util'
@@ -83,8 +83,8 @@ class MysqlDatabase extends Database {
     }) as (keyof Tables[T])[]
   }
 
-  constructor(public app: App, config?: Config) {
-    super(app)
+  constructor(public app: App, config?: Config, private transactionClient?: PoolConnection) {
+    super(app, !!transactionClient)
     this.config = {
       host: 'localhost',
       port: 3306,
@@ -114,6 +114,58 @@ class MysqlDatabase extends Database {
         }
       },
       ...config,
+    }
+  }
+
+  async transaction<T>(transactionFun: (_this: MysqlDatabase) => Promise<T>): Promise<T> {
+    const error = new Error()
+    const transactionClient = await new Promise<PoolConnection>((resolve, reject) => {
+      this.pool.getConnection((err, client) => {
+        if (err) {
+          logger.warn(`Create transaction connnection failed.`)
+          err.stack = err.message + error.stack.slice(7)
+          reject(err)
+          return
+        }
+        client.beginTransaction(null, (err) => {
+          if (err) {
+            logger.warn(`Begin transaction failed.`)
+            err.stack = err.message + error.stack.slice(7)
+            reject(err)
+            return
+          }
+          resolve(client)
+        })
+      })
+    })
+    const transactionalDatabase = new MysqlDatabase(this.app, this.config, transactionClient)
+    try {
+      const result = await transactionFun(transactionalDatabase)
+      await new Promise<void>((resolve, reject) => {
+        transactionClient.commit((err) => {
+          if (err) {
+            logger.warn(`Commit transaction failed.`)
+            err.stack = err.message + error.stack.slice(7)
+            reject(err)
+            return
+          }
+          resolve()
+        })
+      })
+      return result
+    } catch (e) {
+      logger.warn(`Transaction failed, rolling back.`)
+      await new Promise<void>((resolve) => {
+        transactionClient.rollback((err) => {
+          if (err) {
+            logger.warn(`Rollback transaction failed: ${err.toString()}`)
+          }
+          resolve()
+        })
+      })
+      throw e
+    } finally {
+      transactionClient.release()
     }
   }
 
@@ -227,7 +279,7 @@ class MysqlDatabase extends Database {
     return new Promise((resolve, reject) => {
       const sql = format(source, values)
       logger.debug('[sql]', sql)
-      this.pool.query(sql, (err, results) => {
+      const queryCallback = (err, results) => {
         if (!err) return resolve(results)
         logger.warn(sql)
         err.stack = err.message + error.stack.slice(7)
@@ -235,7 +287,12 @@ class MysqlDatabase extends Database {
           err[Symbol.for('koishi.error-type')] = 'duplicate-entry'
         }
         reject(err)
-      })
+      }
+      if (this.transactionClient) {
+        this.transactionClient.query(sql, queryCallback)
+      } else {
+        this.pool.query(sql, queryCallback)
+      }
     })
   }
 
