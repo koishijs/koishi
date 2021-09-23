@@ -1,5 +1,5 @@
 import { createPool, Pool, PoolConfig, escape as mysqlEscape, escapeId, format, TypeCast, PoolConnection } from 'mysql'
-import { App, Database, Logger, makeArray } from 'koishi'
+import { App, Database, Logger, makeArray, sleep } from 'koishi'
 import * as Koishi from 'koishi'
 import { types } from 'util'
 
@@ -84,7 +84,7 @@ class MysqlDatabase extends Database {
   }
 
   constructor(public app: App, config?: Config, private transactionClient?: PoolConnection) {
-    super(app, !!transactionClient)
+    super(app)
     this.config = {
       host: 'localhost',
       port: 3306,
@@ -227,6 +227,10 @@ class MysqlDatabase extends Database {
   }
 
   async start() {
+    await sleep(0)
+    if (this.transactionClient) {
+      return
+    }
     this.pool = createPool(this.config)
     const data = await this.query<any[]>('SELECT TABLE_NAME, COLUMN_NAME from information_schema.columns WHERE TABLE_SCHEMA = ?', [this.config.database])
     for (const { TABLE_NAME, COLUMN_NAME } of data) {
@@ -312,6 +316,9 @@ class MysqlDatabase extends Database {
   }
 
   stop() {
+    if (this.transactionClient) {
+      return
+    }
     this.pool.end()
   }
 }
