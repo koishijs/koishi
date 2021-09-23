@@ -2,7 +2,7 @@ import { Dict, Intersect, isNullable, valueMap } from './misc'
 
 export interface Schema<T = any> extends Schema.Base<T> {
   type: string
-  primary?: string
+  key?: string
   flag?: boolean
   value?: Schema
   alt?: Schema
@@ -96,11 +96,11 @@ export namespace Schema {
   type Inner<K extends keyof any, T extends Record<K, Schema>> = Intersect<Type<T[K]>>
   type Decide<T extends Dict<Schema>, K extends string> = Inner<string, T> & { [P in K]: keyof T }
 
-  export function decide<T extends Dict<Schema>, K extends string>(primary: K, dict: T, desc?: string): Chainable<Decide<T, K>>
-  export function decide<T extends Dict<Schema>, K extends string>(primary: K, dict: T, callback: (data: any) => keyof T, desc?: string): Chainable<Decide<T, K>>
-  export function decide<T extends Dict<Schema>, K extends string>(primary: K, dict: T, ...args: any[]) {
+  export function decide<T extends Dict<Schema>, K extends string>(key: K, dict: T, desc?: string): Chainable<Decide<T, K>>
+  export function decide<T extends Dict<Schema>, K extends string>(key: K, dict: T, callback: (data: any) => keyof T, desc?: string): Chainable<Decide<T, K>>
+  export function decide<T extends Dict<Schema>, K extends string>(key: K, dict: T, ...args: any[]) {
     const desc = typeof args[args.length - 1] === 'string' ? args.pop() : undefined
-    return new Chainable({ type: 'decide', dict, primary, desc, callback: args[0] })
+    return new Chainable({ type: 'decide', dict, key, desc, callback: args[0] })
   }
 
   export function merge<T extends Schema[]>(list: T, desc?: string) {
@@ -174,14 +174,14 @@ export namespace Schema {
 
       case 'decide': {
         if (!isObject(data)) throw new TypeError(`expected object but got ${data}`)
-        let key = data[schema.primary]
+        let key = data[schema.key]
         if (isNullable(key)) {
           if (!schema.callback) throw new TypeError(`missing required value`)
-          key = data[schema.primary] = schema.callback(data)
+          key = data[schema.key] = schema.callback(data)
         }
         checkSelect(key, schema.dict)
         const value = validate(data, schema.dict[key])
-        value[schema.primary] = key
+        value[schema.key] = key
         return [value]
       }
 

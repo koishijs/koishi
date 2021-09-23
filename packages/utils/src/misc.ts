@@ -63,8 +63,7 @@ export function clone<T extends unknown>(source: T): T {
   if (isType('RegExp', source)) return new RegExp(source.source, source.flags) as any
 
   // fallback
-  const entries = Object.entries(source).map(([key, value]) => [key, clone(value)])
-  return Object.fromEntries(entries)
+  return valueMap(source as any, clone) as any
 }
 
 export function merge<T extends object>(head: T, base: T): T {
@@ -81,7 +80,7 @@ export function pick<T, K extends keyof T>(source: T, keys?: Iterable<K>) {
   if (!keys) return { ...source }
   const result = {} as Pick<T, K>
   for (const key of keys) {
-    result[key] = source[key]
+    if (key in source) result[key] = source[key]
   }
   return result
 }
