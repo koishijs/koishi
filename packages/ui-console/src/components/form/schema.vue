@@ -96,11 +96,6 @@ const config = computed<any>({
   set: updateModelValue,
 })
 
-const selected = computed<string>({
-  get: () => config.value[props.schema.primary],
-  set: val => config.value[props.schema.primary] = val,
-})
-
 watch(config, updateModelValue, { deep: true })
 
 </script>

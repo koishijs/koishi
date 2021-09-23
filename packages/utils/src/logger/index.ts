@@ -10,8 +10,15 @@ export namespace Logger {
   export type Formatter = (this: Logger, value: any) => string
 
   export interface Target {
+    /**
+     * - 0: no color support
+     * - 1: 16 color support
+     * - 2: 256 color support
+     * - 3: truecolor support
+     */
+    colors?: number
     showDiff?: boolean
-    showTime: string
+    showTime?: string
     print(text: string): void
   }
 }
@@ -36,14 +43,13 @@ export declare class Logger {
   static levels: Logger.LevelConfig
   static formatters: Record<string, Logger.Formatter>
 
-  private code: number
-  private displayName: string
-
   static color(code: number, value: any, decoration?: string): string
   static code(name: string): number
 
   public name: string
   public level: number
+
+  private code: number
 
   constructor(name: string)
 
