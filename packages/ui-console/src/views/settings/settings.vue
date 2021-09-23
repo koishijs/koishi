@@ -21,7 +21,7 @@
             </template>
           </template>
         </h1>
-        <k-comment v-for="key in getKeywords('role')" type="success">
+        <k-comment v-for="key in getKeywords('service')" type="success">
           <template #header>实现功能：{{ key }}</template>
         </k-comment>
         <k-comment v-for="(data, key) in delegates" :type="data.fulfilled ? 'success' : data.required ? 'warning' : 'default'">
@@ -95,7 +95,7 @@ function getDelegateData(name: string, required: boolean): DelegateData {
     required,
     fulfilled,
     available: market.value
-      .filter(data => getKeywords('role', data.keywords).includes(name))
+      .filter(data => getKeywords('service', data.keywords).includes(name))
       .map(data => data.name),
   }
 }

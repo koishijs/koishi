@@ -27,7 +27,7 @@
     "mineflayer",
     "chatbot",
     "koishi",
-    "role:adapter"
+    "service:adapter"
   ],
   "peerDependencies": {
     "koishi": "^4.0.0-alpha.6"

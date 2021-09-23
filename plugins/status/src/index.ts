@@ -13,7 +13,7 @@ export type Activity = Record<number, number>
 
 declare module 'koishi' {
   namespace Context {
-    interface Delegates {
+    interface Services {
       webui: StatusServer
     }
   }
@@ -54,7 +54,7 @@ declare module 'koishi' {
   }
 }
 
-Context.delegate('webui')
+Context.defineService('webui')
 
 Tables.extend('user', {
   lastCall: 'timestamp',

@@ -105,14 +105,14 @@ module.exports = (ctx) => {
 
 ```js
 // 还是以上面的 webui 为例
-Context.delegate('webui')
+Context.defineService('webui')
 
 // 假如你在某个上下文设置了这个值，其他的上下文也将拥有此属性
 app.group().webui = new WebUI()
 app.private().webui instanceof WebUI // true
 ```
 
-这个静态方法不仅可以在全体上下文中共享某一个对象，还可以定义具有热重载性质的接口。还记得上面的 `webui.addEntry()` 方法吗？如果我希望当 teach 插件被卸载时，上面注册的 entry 也同时被移除，可以做到吗？这就要用到特殊的 `Context.current` 属性了，它只在被 `Context.delegate()` 声明的类中可用：
+这个静态方法不仅可以在全体上下文中共享某一个对象，还可以定义具有热重载性质的接口。还记得上面的 `webui.addEntry()` 方法吗？如果我希望当 teach 插件被卸载时，上面注册的 entry 也同时被移除，可以做到吗？这就要用到特殊的 `Context.current` 属性了，它只在被 `Context.defineService()` 声明的类中可用：
 
 ```js
 class WebUI {
@@ -130,7 +130,7 @@ class WebUI {
 ```
 
 ::: warning
-#### 使用 `Context.delegate()` 时的注意事项
+#### 使用 `Context.defineService()` 时的注意事项
 
 由于你访问一个通用属性实际上获得的是以该属性原始值为原型的新对象，因此你需要格外警惕对原始对象上属性的修改。下面是一个**错误的实例**：
 

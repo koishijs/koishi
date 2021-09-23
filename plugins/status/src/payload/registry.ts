@@ -36,7 +36,7 @@ class Registry implements StatusServer.DataSource {
     }
 
     // get delegates
-    const delegates = Context.Delegates.filter(key => this.ctx[key])
+    const delegates = Context.Services.filter(key => this.ctx[key])
 
     return {
       id: null,

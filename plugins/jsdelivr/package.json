@@ -29,7 +29,7 @@
     "assets",
     "jsdelivr",
     "required:database",
-    "role:assets"
+    "service:assets"
   ],
   "peerDependencies": {
     "koishi": "^4.0.0-alpha.6"

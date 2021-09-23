@@ -70,7 +70,7 @@ interface Selector<T> extends PartialSeletor<T> {
   except?: PartialSeletor<T>
 }
 
-export interface Context extends Context.Delegates {}
+export interface Context extends Context.Services {}
 
 export class Context {
   static readonly middleware = Symbol('middleware')
@@ -335,7 +335,7 @@ export class Context {
     } else if (name === 'disconnect') {
       this.state.disposables[method](listener)
       return () => remove(this.state.disposables, listener)
-    } else if (typeof name === 'string' && name.startsWith('delegate/')) {
+    } else if (typeof name === 'string' && name.startsWith('service/')) {
       if (this[name.slice(9)]) return listener(), () => false
     }
 
@@ -513,17 +513,17 @@ export class Context {
 }
 
 export namespace Context {
-  export interface Delegates {
+  export interface Services {
     database: Database
     assets: Assets
     cache: Cache
   }
 
-  export const Delegates: string[] = []
+  export const Services: string[] = []
 
-  export function delegate(key: keyof Delegates) {
+  export function defineService(key: keyof Services) {
     if (Object.prototype.hasOwnProperty.call(Context.prototype, key)) return
-    Delegates.push(key)
+    Services.push(key)
     const privateKey = Symbol(key)
     Object.defineProperty(Context.prototype, key, {
       get() {
@@ -533,15 +533,15 @@ export namespace Context {
         return value
       },
       set(value) {
-        if (!this.app[privateKey]) this.emit('delegate/' + key)
+        if (!this.app[privateKey]) this.emit('service/' + key)
         defineProperty(this.app, privateKey, value)
       },
     })
   }
 
-  delegate('database')
-  delegate('assets')
-  delegate('cache')
+  defineService('database')
+  defineService('assets')
+  defineService('cache')
 }
 
 type FlattenEvents<T> = {
@@ -557,7 +557,7 @@ type SessionEventMap = {
 }
 
 type DelegateEventMap = {
-  [K in keyof Context.Delegates as `delegate/${K}`]: () => void
+  [K in keyof Context.Services as `service/${K}`]: () => void
 }
 
 type EventName = keyof EventMap

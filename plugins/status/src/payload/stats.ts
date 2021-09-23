@@ -83,7 +83,7 @@ class Statistics implements StatusServer.DataSource {
   constructor(private ctx: Context, public config: Statistics.Config = {}) {
     ctx.on('exit', () => this.upload(true))
 
-    ctx.on('delegate/database', () => {
+    ctx.on('service/database', () => {
       this.sync = ctx.database.createSynchronizer()
     })
 

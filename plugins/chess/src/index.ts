@@ -47,7 +47,7 @@ export function apply(ctx: Context) {
   ctx = ctx.guild()
 
   State.imageMode = !!ctx.puppeteer
-  ctx.on('delegate/puppeteer', () => State.imageMode = true)
+  ctx.on('service/puppeteer', () => State.imageMode = true)
 
   ctx.on('connect', async () => {
     if (!ctx.database) return

@@ -28,7 +28,7 @@
     "plugin",
     "database",
     "server",
-    "role:database"
+    "service:database"
   ],
   "peerDependencies": {
     "koishi": "^4.0.0-alpha.6"

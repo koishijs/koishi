@@ -10,7 +10,7 @@ export * from './main'
 
 declare module 'koishi' {
   namespace Context {
-    interface Delegates {
+    interface Services {
       worker: EvalWorker
     }
   }
@@ -82,7 +82,7 @@ export const schema: Schema<Config> = Schema.object({
   }, '资源限制')
 })
 
-Context.delegate('worker')
+Context.defineService('worker')
 
 export function apply(ctx: Context, config: Config = {}) {
   const { prefix, authority } = config = { ...defaultConfig, ...config }
