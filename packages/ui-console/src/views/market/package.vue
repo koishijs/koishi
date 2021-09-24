@@ -8,6 +8,10 @@
         >{{ data.shortname }}</a>
         <span class="current" v-if="data.local">@{{ data.local.version }}</span>
         <k-badge type="success" v-if="data.official">官方</k-badge>
+        <k-badge type="primary" v-if="data.keywords.includes('service:adapter')">适配器</k-badge>
+        <k-badge type="primary" v-if="data.keywords.includes('service:database')">数据库</k-badge>
+        <k-badge type="primary" v-if="data.keywords.includes('service:assets')">资源存储</k-badge>
+        <k-badge type="primary" v-if="data.keywords.includes('service:cache')">缓存</k-badge>
         <k-badge type="default" v-if="data.local?.workspace">本地</k-badge>
         <k-badge type="warning" v-else-if="hasUpdate">可更新</k-badge>
       </div>

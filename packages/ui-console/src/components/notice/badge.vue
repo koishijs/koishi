@@ -29,6 +29,7 @@ defineProps<{ type?: 'warning' }>()
   color: white;
   vertical-align: baseline;
 
+  @include apply-color(primary);
   @include apply-color(default);
   @include apply-color(warning);
   @include apply-color(success);

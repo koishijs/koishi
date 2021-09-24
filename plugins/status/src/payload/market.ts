@@ -159,7 +159,7 @@ class Market implements StatusServer.DataSource {
         this.loadLocal(name),
         this.ctx.http.get<Registry>(`https://registry.npmjs.org/${name}`),
       ])
-      const { dependencies, peerDependencies, dist, keywords } = data.versions[version]
+      const { dependencies, peerDependencies, dist, keywords, description } = data.versions[version]
       const declaredVersion = { ...dependencies, ...peerDependencies }['koishi']
       if (!declaredVersion || !satisfies(currentVersion, declaredVersion)) return
 
@@ -169,7 +169,8 @@ class Market implements StatusServer.DataSource {
         shortname,
         local,
         official,
-        keywords: local?.keywords || keywords,
+        description: local?.description || description,
+        keywords: local?.keywords || keywords || [],
         size: dist.unpackedSize,
         score: {
           final: item.score.final,
@@ -210,7 +211,7 @@ namespace Market {
     shortname: string
     local?: Local
     official: boolean
-    keywords?: string[]
+    keywords: string[]
     size: number
     score: {
       final: number

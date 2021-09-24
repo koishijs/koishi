@@ -25,7 +25,8 @@
     "chatbot",
     "koishi",
     "plugin",
-    "adventure"
+    "adventure",
+    "market:hidden"
   ],
   "peerDependencies": {
     "koishi": "^4.0.0-alpha.7",
