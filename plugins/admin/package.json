@@ -1,14 +1,17 @@
 {
-  "name": "@koishijs/plugin-adventure",
-  "version": "1.0.0-alpha.3",
-  "description": "Adventure game framework for Koishi",
+  "name": "@koishijs/plugin-admin",
+  "description": "Admin plugins for Koishi",
+  "version": "1.0.0-alpha.0",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
     "lib"
   ],
-  "license": "MIT",
   "author": "Shigma <1700011071@pku.edu.cn>",
+  "license": "MIT",
+  "scripts": {
+    "lint": "eslint src --ext .ts"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/koishijs/koishi.git"
@@ -16,7 +19,7 @@
   "bugs": {
     "url": "https://github.com/koishijs/koishi/issues"
   },
-  "homepage": "https://koishi.js.org/plugins/adventure.html",
+  "homepage": "https://koishi.js.org/plugins/admin/",
   "keywords": [
     "bot",
     "qqbot",
@@ -25,14 +28,11 @@
     "chatbot",
     "koishi",
     "plugin",
-    "adventure",
-    "market:hidden"
+    "admin",
+    "required:database"
   ],
   "peerDependencies": {
-    "koishi": "^4.0.0-alpha.7",
-    "@koishijs/plugin-admin": "^1.0.0-alpha.0",
-    "@koishijs/plugin-mysql": "^4.0.0-alpha.5",
-    "@koishijs/plugin-teach": "^3.0.0-alpha.4"
+    "koishi": "^4.0.0-alpha.7"
   },
   "devDependencies": {
     "@koishijs/test-utils": "^8.0.0-alpha.6"

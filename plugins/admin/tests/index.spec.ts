@@ -1,14 +1,14 @@
 import { App } from '@koishijs/test-utils'
 import { User, Channel, defineEnumProperty } from 'koishi'
 import { install } from '@sinonjs/fake-timers'
-import * as common from '@koishijs/plugin-common'
+import * as admin from '@koishijs/plugin-admin'
 import { expect } from 'chai'
 
 const app = new App({ mockDatabase: true })
 const session = app.session('123', '321')
 const session2 = app.session('123')
 
-app.plugin(common)
+app.plugin(admin)
 app.command('foo', { maxUsage: 10 }).action(() => 'bar')
 app.command('bar', { minInterval: 1000 }).action(() => 'foo')
 app.command('baz').action(() => 'zab')

@@ -3,8 +3,6 @@ import {
   Context, User, Channel, Command, Argv, Session, Extend, Awaitable, Tables,
 } from 'koishi'
 
-import { parsePlatform } from './utils'
-
 type AdminAction<U extends User.Field, G extends Channel.Field, A extends any[], O extends {}, T>
   = (argv: Argv<U | 'authority', G, A, Extend<O, 'target', string>> & { target: T }, ...args: A)
     => Awaitable<void | string>
@@ -86,6 +84,13 @@ template.set('switch', {
   'list': '当前禁用的功能有：{0}',
   'none': '当前没有禁用功能。',
 })
+
+function parsePlatform(target: string): [platform: string, id: string] {
+  const index = target.indexOf(':')
+  const platform = target.slice(0, index)
+  const id = target.slice(index + 1)
+  return [platform, id] as any
+}
 
 interface FlagOptions {
   list?: boolean
@@ -466,13 +471,15 @@ export function admin(ctx: Context) {
     .adminChannel(flagAction.bind(null, Channel.Flag))
 }
 
-export interface UpdaterConfig extends BindConfig {
+export interface Config extends BindConfig {
   admin?: boolean
   bind?: boolean
   callme?: boolean
 }
 
-export default function apply(ctx: Context, config: UpdaterConfig = {}) {
+export const name = 'admin'
+
+export function apply(ctx: Context, config: Config = {}) {
   if (config.admin !== false) ctx.plugin(admin)
   if (config.bind !== false) ctx.plugin(bind, config)
   if (config.callme !== false) ctx.plugin(callme)

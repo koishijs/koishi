@@ -1,6 +1,6 @@
 import { Context, User, Session, checkTimer, Logger, Random, interpolate, Dict, Time } from 'koishi'
 import { Adventurer, Show } from './utils'
-import {} from '@koishijs/plugin-common'
+import {} from '@koishijs/plugin-admin'
 import {} from '@koishijs/plugin-teach'
 import Event from './event'
 import Rank from './rank'
