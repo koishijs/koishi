@@ -1,4 +1,4 @@
-import { Context, Channel, Session, noop, sleep, segment, template, makeArray, Dict, Time } from 'koishi'
+import { Context, Channel, Session, noop, sleep, segment, template, makeArray, Dict } from 'koishi'
 import { parsePlatform } from './utils'
 
 template.set('common', {
@@ -199,41 +199,6 @@ export function recall(ctx: Context, { recall = 10 }: RecallConfig) {
     })
 }
 
-interface RelayOptions {
-  source: string
-  destination: string
-  selfId?: string
-  lifespan?: number
-}
-
-export function relay(ctx: Context, relays: RelayOptions[]) {
-  const relayMap: Dict<RelayOptions> = {}
-
-  async function sendRelay(session: Session, { destination, selfId, lifespan = Time.hour }: RelayOptions) {
-    const [platform, channelId] = parsePlatform(destination)
-    const bot = ctx.bots.get(`${platform}:${selfId}`)
-    const { author, parsed } = session
-    if (!parsed.content) return
-    const content = template('common.relay', author.nickname || author.username, parsed.content)
-    const id = await bot.sendMessage(channelId, content, 'unknown')
-    relayMap[id] = { source: destination, destination: session.cid, selfId: session.selfId, lifespan }
-    setTimeout(() => delete relayMap[id], lifespan)
-  }
-
-  ctx.middleware((session, next) => {
-    const { quote = {} } = session
-    const data = relayMap[quote.messageId]
-    if (data) return sendRelay(session, data)
-    const tasks: Promise<void>[] = []
-    for (const options of relays) {
-      if (session.cid !== options.source) continue
-      tasks.push(sendRelay(session, options).catch())
-    }
-    tasks.push(next())
-    return Promise.all(tasks)
-  })
-}
-
 export interface Respondent {
   match: string | RegExp
   reply: string | ((...capture: string[]) => string)
@@ -255,7 +220,6 @@ export interface BasicConfig extends RecallConfig {
   broadcast?: boolean
   contextify?: boolean
   operator?: string | string[]
-  relay?: RelayOptions | RelayOptions[]
   respondent?: Respondent | Respondent[]
 }
 
@@ -267,9 +231,6 @@ export default function apply(ctx: Context, config: BasicConfig = {}) {
 
   const operators = makeArray(config.operator)
   if (operators.length) ctx.plugin(feedback, operators)
-
-  const relays = makeArray(config.relay)
-  if (relays.length) ctx.plugin(relay, relays)
 
   const respondents = makeArray(config.respondent)
   if (respondents.length) ctx.plugin(respondent, respondents)

@@ -9,6 +9,7 @@ const specs = [
   'plugins/common/tests/*.spec.ts',
   'plugins/database/tests/*.spec.ts',
   'plugins/eval/tests/*.spec.ts',
+  'plugins/forward/tests/*.spec.ts',
   'plugins/github/tests/*.spec.ts',
   'plugins/mongo/tests/*.spec.ts',
   'plugins/mysql/tests/*.spec.ts',
