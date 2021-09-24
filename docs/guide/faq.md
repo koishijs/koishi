@@ -28,6 +28,17 @@ export default {
 } as AppConfig
 ```
 
+### koishi 和 go-cqhttp 均无报错，为什么我的“天王盖地虎”没有回应？
+
+可能是因为你的 go-cqhttp 用了 `array` 类型上报，请编辑 go-cqhttp 的配置文件，将其修改为 `string`。
+
+```yml config.yml
+message:
+  # 上报数据类型
+  # 可选: string,array
+  post-format: string
+```
+
 ## 关于生命周期
 
 ### 应该如何保证一段代码在成功连接服务器之后执行？
