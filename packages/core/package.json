@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/core",
   "description": "Core features for Koishi",
-  "version": "4.0.0-alpha.6",
+  "version": "4.0.0-alpha.7",
   "main": "lib/node.js",
   "module": "lib/browser.js",
   "typings": "lib/index.d.ts",
@@ -30,10 +30,10 @@
     "koishi"
   ],
   "devDependencies": {
-    "@koishijs/test-utils": "^8.0.0-alpha.5"
+    "@koishijs/test-utils": "^8.0.0-alpha.6"
   },
   "dependencies": {
-    "@koishijs/utils": "^5.0.0-alpha.2",
+    "@koishijs/utils": "^5.0.0-alpha.3",
     "fastest-levenshtein": "^1.0.12"
   }
 }

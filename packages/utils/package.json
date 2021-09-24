@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/utils",
   "description": "Utilities for Koishi",
-  "version": "5.0.0-alpha.2",
+  "version": "5.0.0-alpha.3",
   "main": "lib/node.js",
   "module": "lib/browser.js",
   "typings": "lib/index.d.ts",
@@ -29,7 +29,7 @@
   ],
   "devDependencies": {
     "@types/supports-color": "^8.1.1",
-    "@koishijs/test-utils": "^8.0.0-alpha.5"
+    "@koishijs/test-utils": "^8.0.0-alpha.6"
   },
   "dependencies": {
     "supports-color": "^8.1.0"

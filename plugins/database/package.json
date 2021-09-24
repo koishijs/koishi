@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-database",
   "description": "A in-memory database implementation for Koishi",
-  "version": "1.0.0-alpha.3",
+  "version": "1.0.0-alpha.4",
   "main": "lib/node.js",
   "module": "lib/browser.js",
   "typings": "lib/index.d.ts",
@@ -31,7 +31,7 @@
     "service:database"
   ],
   "peerDependencies": {
-    "koishi": "^4.0.0-alpha.6"
+    "koishi": "^4.0.0-alpha.7"
   },
   "devDependencies": {
     "@types/js-yaml": "^4.0.3",

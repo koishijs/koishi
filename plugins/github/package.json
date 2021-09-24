@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-github",
   "description": "GitHub toolkit for Koishi",
-  "version": "4.0.0-alpha.2",
+  "version": "4.0.0-alpha.3",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -32,11 +32,11 @@
   ],
   "devDependencies": {
     "@types/marked": "^3.0.0",
-    "@koishijs/plugin-puppeteer": "^3.0.0-alpha.2",
-    "@koishijs/test-utils": "^8.0.0-alpha.5"
+    "@koishijs/plugin-puppeteer": "^3.0.0-alpha.3",
+    "@koishijs/test-utils": "^8.0.0-alpha.6"
   },
   "peerDependencies": {
-    "koishi": "^4.0.0-alpha.6"
+    "koishi": "^4.0.0-alpha.7"
   },
   "dependencies": {
     "@octokit/webhooks-types": "^4.4.0",

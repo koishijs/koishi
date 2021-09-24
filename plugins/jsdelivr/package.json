@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-jsdelivr",
   "description": "A github-jsdelivr assets provider for Koishi",
-  "version": "1.0.0-alpha.0",
+  "version": "1.0.0-alpha.1",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -32,7 +32,7 @@
     "service:assets"
   ],
   "peerDependencies": {
-    "koishi": "^4.0.0-alpha.6"
+    "koishi": "^4.0.0-alpha.7"
   },
   "dependencies": {
     "file-type": "^16.5.3",
