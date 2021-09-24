@@ -2,12 +2,12 @@ import { App } from '@koishijs/test-utils'
 import { expect } from 'chai'
 import { sleep, Session } from 'koishi'
 import jest from 'jest-mock'
-import * as common from '@koishijs/plugin-common'
+import * as verifier from '@koishijs/plugin-verifier'
 
 const app = new App()
 
-const options: common.Config = {}
-app.plugin(common, options)
+const options: verifier.Config = {}
+app.plugin(verifier, options)
 
 function receive(session: Partial<Session>) {
   app.receive(session)

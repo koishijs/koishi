@@ -1,4 +1,4 @@
-import { Context, Session, Random, Dict, Awaitable } from 'koishi'
+import { Context, Session, Awaitable } from 'koishi'
 
 type RequestHandler = string | boolean | ((session: Session) => Awaitable<string | boolean | void>)
 type Response = [boolean, string?]
@@ -28,13 +28,15 @@ async function checkChannelAuthority(session: Session, authority: number): Promi
   }
 }
 
-export interface VerifierConfig {
+export const name = 'verifier'
+
+export interface Config {
   onFriendRequest?: number | RequestHandler
   onGuildMemberRequest?: number | RequestHandler
   onGuildRequest?: number | RequestHandler
 }
 
-export function verifier(ctx: Context, config: VerifierConfig = {}) {
+export function apply(ctx: Context, config: Config = {}) {
   const { onFriendRequest, onGuildRequest, onGuildMemberRequest } = config
 
   ctx.on('friend-request', async (session) => {
@@ -57,10 +59,4 @@ export function verifier(ctx: Context, config: VerifierConfig = {}) {
       : await useRequestHandler(onGuildMemberRequest, session, false)
     if (result) return session.bot.handleGuildMemberRequest(session.messageId, ...result)
   })
-}
-
-export interface HandlerConfig extends VerifierConfig {}
-
-export default function apply(ctx: Context, config?: HandlerConfig) {
-  ctx.plugin(verifier, config)
 }

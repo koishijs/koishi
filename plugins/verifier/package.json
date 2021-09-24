@@ -1,6 +1,6 @@
 {
-  "name": "@koishijs/plugin-repeater",
-  "description": "Repeater plugins for Koishi",
+  "name": "@koishijs/plugin-verifier",
+  "description": "Verify friend / guild requests for Koishi",
   "version": "1.0.0-alpha.0",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
@@ -19,7 +19,7 @@
   "bugs": {
     "url": "https://github.com/koishijs/koishi/issues"
   },
-  "homepage": "https://koishi.js.org/plugins/repeater/",
+  "homepage": "https://koishi.js.org/plugins/verifier/",
   "keywords": [
     "bot",
     "qqbot",
@@ -28,7 +28,7 @@
     "chatbot",
     "koishi",
     "plugin",
-    "repeater"
+    "verifier"
   ],
   "peerDependencies": {
     "koishi": "^4.0.0-alpha.7"

@@ -1,5 +1,11 @@
 import { Context, Channel, Session, noop, sleep, segment, template, makeArray, Dict } from 'koishi'
-import { parsePlatform } from './utils'
+
+function parsePlatform(target: string): [platform: string, id: string] {
+  const index = target.indexOf(':')
+  const platform = target.slice(0, index)
+  const id = target.slice(index + 1)
+  return [platform, id] as any
+}
 
 template.set('common', {
   'expect-text': '请输入要发送的文本。',
@@ -9,8 +15,6 @@ template.set('common', {
   'invalid-private-member': '无法在私聊上下文使用 --member 选项。',
   'feedback-receive': '收到来自 {0} 的反馈信息：\n{1}',
   'feedback-success': '反馈信息发送成功！',
-  // eslint-disable-next-line quote-props
-  'relay': '{0}: {1}',
 })
 
 export function broadcast(ctx: Context) {
