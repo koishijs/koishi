@@ -21,7 +21,6 @@
     </td>
     <td class="latest">{{ data.version }}</td>
     <td class="size">{{ formatSize(data.size) }}</td>
-    <td class="score">{{ +data.score.final.toFixed(2) }}</td>
     <td class="operation">
       <span v-if="downloading">安装中</span>
       <k-button frameless v-else-if="!data.local || hasUpdate"
