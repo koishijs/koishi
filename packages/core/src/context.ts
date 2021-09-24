@@ -70,7 +70,7 @@ interface Selector<T> extends PartialSeletor<T> {
   except?: PartialSeletor<T>
 }
 
-export interface Context extends Context.Services {}
+export interface Context extends Services {}
 
 export class Context {
   static readonly middleware = Symbol('middleware')
@@ -512,36 +512,46 @@ export class Context {
   }
 }
 
+export interface Services {
+  database: Database
+  assets: Assets
+  cache: Cache
+}
+
+export const Services: string[] = []
+
 export namespace Context {
-  export interface Services {
-    database: Database
-    assets: Assets
-    cache: Cache
+  export interface ServiceOptions {
+    dynamic?: boolean
+    traceable?: boolean
   }
 
-  export const Services: string[] = []
-
-  export function defineService(key: keyof Services) {
+  export function service(key: keyof Services, options: ServiceOptions = {}) {
     if (Object.prototype.hasOwnProperty.call(Context.prototype, key)) return
     Services.push(key)
     const privateKey = Symbol(key)
     Object.defineProperty(Context.prototype, key, {
       get() {
-        if (!this.app[privateKey]) return
+        if (!this.app[privateKey] || !options.traceable) {
+          return this.app[privateKey]
+        }
         const value = Object.create(this.app[privateKey])
         defineProperty(value, Context.current, this)
         return value
       },
       set(value) {
-        if (!this.app[privateKey]) this.emit('service/' + key)
+        if (this.app[privateKey] && !options.dynamic) {
+          this.logger(key).warn('service is overwritten')
+        }
         defineProperty(this.app, privateKey, value)
+        this.emit('service/' + key)
       },
     })
   }
 
-  defineService('database')
-  defineService('assets')
-  defineService('cache')
+  service('database')
+  service('assets')
+  service('cache')
 }
 
 type FlattenEvents<T> = {
@@ -557,7 +567,7 @@ type SessionEventMap = {
 }
 
 type DelegateEventMap = {
-  [K in keyof Context.Services as `service/${K}`]: () => void
+  [K in keyof Services as `service/${K}`]: () => void
 }
 
 type EventName = keyof EventMap

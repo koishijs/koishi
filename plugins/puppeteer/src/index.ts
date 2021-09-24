@@ -35,10 +35,8 @@ declare module 'puppeteer-core/lib/types' {
 }
 
 declare module 'koishi' {
-  namespace Context {
-    interface Services {
-      puppeteer: Puppeteer
-    }
+  interface Services {
+    puppeteer: Puppeteer
   }
 
   interface Module {
@@ -154,7 +152,7 @@ export const defaultConfig: Config = {
   },
 }
 
-Context.defineService('puppeteer')
+Context.service('puppeteer')
 
 const logger = new Logger('puppeteer')
 

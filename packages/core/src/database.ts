@@ -185,13 +185,14 @@ export namespace Assets {
 }
 
 export interface Cache {
-  get<T extends keyof Cache.Tables>(table: T, key: string): Cache.Tables[T] | Promise<Cache.Tables[T]>
-  set<T extends keyof Cache.Tables>(table: T, key: string, value: Cache.Tables[T]): void | Promise<void>
+  get<T extends keyof Cache.Tables>(table: T, key: string): Promise<Cache.Tables[T]>
+  set<T extends keyof Cache.Tables>(table: T, key: string, value: Cache.Tables[T]): Promise<void>
 }
 
 export namespace Cache {
   export interface Tables {
     channel: utils.Observed<Partial<Channel>>
     user: utils.Observed<Partial<User>>
+    config: any
   }
 }

@@ -12,10 +12,8 @@ export * from './server'
 export type Activity = Record<number, number>
 
 declare module 'koishi' {
-  namespace Context {
-    interface Services {
-      webui: StatusServer
-    }
+  interface Services {
+    webui: StatusServer
   }
 
   interface Database {
@@ -54,7 +52,7 @@ declare module 'koishi' {
   }
 }
 
-Context.defineService('webui')
+Context.service('webui', { traceable: true })
 
 Tables.extend('user', {
   lastCall: 'timestamp',

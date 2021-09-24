@@ -33,11 +33,9 @@ declare module '@koishijs/core' {
     }
   }
 
-  namespace Context {
-    interface Services {
-      router: Router
-      http: Requester
-    }
+  interface Services {
+    router: Router
+    http: Requester
   }
 }
 
@@ -51,8 +49,8 @@ App.Config.Network.dict = {
 Module.internal.require = require
 Module.internal.resolve = require.resolve
 
-Context.defineService('router')
-Context.defineService('http')
+Context.service('router', { traceable: true })
+Context.service('http')
 
 const prepare = App.prototype.prepare
 App.prototype.prepare = function (this: App, ...args) {
