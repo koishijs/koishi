@@ -3,7 +3,7 @@ title: 平台：Kaiheila
 sidebarDepth: 2
 ---
 
-# koishi-adapter-kaiheila
+# @koishijs/plugin-kaiheila
 
 ## 创建机器人
 

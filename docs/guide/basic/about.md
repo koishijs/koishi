@@ -31,15 +31,15 @@ Koishi 高度配置化的命令行工具可以让你无需写代码就搭建属�
 
 Koishi 在编写时，也同样编写了大量的官方插件作为补充。它们有些作为 Koishi 的基础功能，有些则为 Koishi 的使用提供了许多便利。更重要的是，这数十个插件都可以作为 Koishi 插件开发的极好示范。下面是一些例子：
 
-- koishi-plugin-schedule：管理计划任务
-- koishi-plugin-teach：教机器人说话
-- koishi-plugin-webui：网页控制台
+- @koishijs/plugin-schedule：管理计划任务
+- @koishijs/plugin-teach：教机器人说话
+- @koishijs/plugin-webui：网页控制台
 
 除了这些官方插件以外，社区贡献者也编写了各种各样的第三方插件：
 
-- koishi-plugin-genshin：原神资料查询
-- koishi-plugin-ink：展示视觉小说
-- koishi-plugin-shell：执行终端命令
+- @koishijs/plugin-genshin：原神资料查询
+- @koishijs/plugin-ink：展示视觉小说
+- @koishijs/plugin-shell：执行终端命令
 
 这些插件共同组成了 Koishi 如今的生态。
 
@@ -57,7 +57,7 @@ Koishi 原生地支持了多账户与跨平台，同时为这些机器人之间�
 
 Koishi v3 的另一大亮点就是拥有官方的网页控制台插件。这个控制台包含了非常多的功能：查看机器人运行状态、收集并展示统计数据、管理你的插件和依赖……
 
-这个控制台本身的也提供了接口，允许其他插件来新增页面。当你安装了另一个插件 koishi-plugin-chat 之后，你甚至可以利用控制台，直接使用机器人的号进行聊天！
+这个控制台本身的也提供了接口，允许其他插件来新增页面。当你安装了另一个插件 @koishijs/plugin-chat 之后，你甚至可以利用控制台，直接使用机器人的号进行聊天！
 
 参见：[网页控制台](../plugins/other/webui.md)
 

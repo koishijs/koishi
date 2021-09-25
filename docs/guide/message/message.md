@@ -162,7 +162,7 @@ ctx.middleware((session, next) => {
 }, true)
 ```
 
-搭配使用上面几种中间件，你的机器人便拥有了无限可能。在 koishi-plugin-common 库中，就有着一个官方实现的复读功能，它远比上面的示例所显示的更加强大。如果想深入了解中间件机制，可以去研究一下这个功能的 [源代码](https://github.com/koishijs/koishi/blob/master/plugins/common/src/handler.ts)。
+搭配使用上面几种中间件，你的机器人便拥有了无限可能。在 @koishijs/plugin-common 库中，就有着一个官方实现的复读功能，它远比上面的示例所显示的更加强大。如果想深入了解中间件机制，可以去研究一下这个功能的 [源代码](https://github.com/koishijs/koishi/blob/master/plugins/common/src/handler.ts)。
 
 ## 使用会话
 

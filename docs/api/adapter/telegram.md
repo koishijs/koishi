@@ -3,7 +3,7 @@ title: 平台：Telegram
 sidebarDepth: 2
 ---
 
-# koishi-adapter-telegram
+# @koishijs/plugin-telegram
 
 ## 创建机器人
 

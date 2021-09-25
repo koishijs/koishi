@@ -93,7 +93,7 @@ module.exports = (ctx) => {
   // ctx.with() 的第一个参数是一个数组，表示需要依赖的插件列表
   // 当列表中的所有插件都被注册时，回调函数所代表的插件即被注册
   // 当列表中的任意一个插件被卸载时，回调函数所代表的插件即被卸载
-  ctx.with(['koishi-plugin-webui'], (ctx) => {
+  ctx.with(['webui'], (ctx) => {
     ctx.webui.addEntry('/path/to/teach/extension')
   })
 }
@@ -101,7 +101,7 @@ module.exports = (ctx) => {
 
 ### 声明通用上下文属性 <Badge text="beta" type="warning"/>
 
-事实上，当你了解了更多接口之后，你就会发现 Context 对象上的一些属性对所有上下文都是一样的，比如 `ctx.database`, `ctx.router` 以及上面的例子中提到的 `ctx.webui` 等等。如果你也想开发出像 koishi-plugin-webui 这样的插件，那么你或许也会需要定义一个通用的上下文属性。这非常简单：
+事实上，当你了解了更多接口之后，你就会发现 Context 对象上的一些属性对所有上下文都是一样的，比如 `ctx.database`, `ctx.router` 以及上面的例子中提到的 `ctx.webui` 等等。如果你也想开发出像 @koishijs/plugin-webui 这样的插件，那么你或许也会需要定义一个通用的上下文属性。这非常简单：
 
 ```js
 // 还是以上面的 webui 为例

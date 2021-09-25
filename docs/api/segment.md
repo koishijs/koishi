@@ -6,7 +6,7 @@ sidebarDepth: 2
 
 **消息段** 的概念最早起源于 CoolQ，用于在纯文本中表达特殊的消息语义。由于这种方式非常便捷，也被 Koishi 所沿用至今。
 
-消息段协议本身也是 OneBot 协议的 [一部分](https://github.com/howmanybots/onebot/blob/master/v11/specs/message/segment.md)，但该协议与 Koishi 所使用的消息段**存在一定的区别，在实际使用时请以本页文档为准**。由于 koishi-adapter-onebot 会自动进行两种协议间的转换，你并不需要担心兼容性问题。
+消息段协议本身也是 OneBot 协议的 [一部分](https://github.com/howmanybots/onebot/blob/master/v11/specs/message/segment.md)，但该协议与 Koishi 所使用的消息段**存在一定的区别，在实际使用时请以本页文档为准**。由于 @koishijs/plugin-onebot 会自动进行两种协议间的转换，你并不需要担心兼容性问题。
 
 ## 消息段操作
 

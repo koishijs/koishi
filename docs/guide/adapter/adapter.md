@@ -50,8 +50,8 @@ module.exports = {
 ```ts
 // 这只是为了引入类型，本身没有作用
 import { AppConfig } from 'koishi'
-import {} from 'koishi-adapter-onebot'
-import {} from 'koishi-adapter-kaiheila'
+import {} from '@koishijs/plugin-onebot'
+import {} from '@koishijs/plugin-kaiheila'
 
 export default {
   port: 7070,
@@ -81,8 +81,8 @@ export default {
 const { App } = require('koishi')
 
 // 你需要手动安装所有相关平台的适配器
-require('koishi-adapter-onebot')
-require('koishi-adapter-kaiheila')
+require('@koishijs/plugin-onebot')
+require('@koishijs/plugin-kaiheila')
 
 new App({ /* 同上述配置 */ })
 
@@ -93,8 +93,8 @@ app.start()
 import { App } from 'koishi'
 
 // 你需要手动安装所有相关平台的适配器
-import 'koishi-adapter-onebot'
-import 'koishi-adapter-kaiheila'
+import '@koishijs/plugin-onebot'
+import '@koishijs/plugin-kaiheila'
 
 new App({ /* 同上述配置 */ })
 

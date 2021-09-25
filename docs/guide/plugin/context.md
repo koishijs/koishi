@@ -99,7 +99,7 @@ export default {
 app
   .platform('onebot')
   .channel('123456', '456789')
-  .plugin(require('koishi-plugin-common'), {
+  .plugin(require('@koishijs/plugin-common'), {
     onRepeat: {
       minTimes: 3,
       probability: 0.5,
@@ -126,5 +126,5 @@ plugins:
 app
   .private('123456789')
   .union(app.except(app.platform('discord')))
-  .plugin(require('koishi-plugin-eval'), {})
+  .plugin(require('@koishijs/plugin-eval'), {})
 ```

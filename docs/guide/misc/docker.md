@@ -44,11 +44,11 @@ docker run -d --name koishi \
 docker exec -it koishi sh
 ```
 
-在容器内，你可以安装所需要的插件（这里以 koishi-adapter-onebot 和 koishi-plugin-common 为例）：
+在容器内，你可以安装所需要的插件（这里以 @koishijs/plugin-onebot 和 @koishijs/plugin-common 为例）：
 
 ```cli
 # 安装插件
-npm i koishi-adapter-onebot koishi-plugin-common
+npm i @koishijs/plugin-onebot @koishijs/plugin-common
 
 # 退出容器
 exit

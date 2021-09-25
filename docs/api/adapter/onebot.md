@@ -3,19 +3,19 @@ title: 平台：OneBot
 sidebarDepth: 2
 ---
 
-# koishi-adapter-onebot
+# @koishijs/plugin-onebot
 
 ::: warning
-尽管 Koishi 使用了 [MIT](https://choosealicense.com/licenses/mit/) 协议，但 OneBot 相关框架普遍使用了基于 [AGPL 3.0](https://choosealicense.com/licenses/agpl-3.0/) 的协议。因此如果你使用 koishi-adapter-onebot 运行你的机器人，你将可能受到 AGPL 3.0 协议的限制，必须将你的代码开源并保持同协议。Koishi 及其作者对使用上述框架或违反上述限制的行为所可能造成的一切后果概不负责。
+尽管 Koishi 使用了 [MIT](https://choosealicense.com/licenses/mit/) 协议，但 OneBot 相关框架普遍使用了基于 [AGPL 3.0](https://choosealicense.com/licenses/agpl-3.0/) 的协议。因此如果你使用 @koishijs/plugin-onebot 运行你的机器人，你将可能受到 AGPL 3.0 协议的限制，必须将你的代码开源并保持同协议。Koishi 及其作者对使用上述框架或违反上述限制的行为所可能造成的一切后果概不负责。
 :::
 
-[OneBot](https://github.com/howmanybots/onebot) (旧名 CQHTTP) 是一个聊天机器人应用接口标准，目前可用于 QQ 机器人。要使用 koishi-adapter-onebot，你需要首先下载一个实现该协议的框架：
+[OneBot](https://github.com/howmanybots/onebot) (旧名 CQHTTP) 是一个聊天机器人应用接口标准，目前可用于 QQ 机器人。要使用 @koishijs/plugin-onebot，你需要首先下载一个实现该协议的框架：
 
 - [Mrs4s/go-cqhttp](https://github.com/Mrs4s/go-cqhttp)（推荐）
 - [yyuueexxiinngg/cqhttp-mirai](https://github.com/yyuueexxiinngg/cqhttp-mirai)
 - [richardchien/coolq-http-api](https://github.com/richardchien/coolq-http-api)（配合 [iTXTech/mirai-native](https://github.com/iTXTech/mirai-native) 使用）
 
-上述框架也在 OneBot 的基础上扩展了各自的接口，而这些扩展的功能也被包含在了 koishi-adapter-onebot 中。
+上述框架也在 OneBot 的基础上扩展了各自的接口，而这些扩展的功能也被包含在了 @koishijs/plugin-onebot 中。
 
 - 标有 <Badge vertical="baseline" text="go-cqhttp" type="warning"/> 的 API 只能基于 go-cqhttp 运行
 

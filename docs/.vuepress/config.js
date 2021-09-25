@@ -112,12 +112,12 @@ module.exports = {
         text: '更多',
         isGroup: true,
         children: [
-          '/guide/advanced/cli.md',
-          '/guide/advanced/logger.md',
-          '/guide/advanced/unit-tests.md',
-          '/guide/advanced/decorator.md',
-          '/guide/advanced/docker.md',
-          '/guide/faq.md',
+          '/guide/misc/cli.md',
+          '/guide/misc/logger.md',
+          '/guide/misc/unit-tests.md',
+          '/guide/misc/decorator.md',
+          '/guide/misc/docker.md',
+          '/guide/misc/faq.md',
         ],
       }],
       '/api': [{

@@ -3,7 +3,7 @@ title: 平台：Discord
 sidebarDepth: 2
 ---
 
-# koishi-adapter-discord
+# @koishijs/plugin-discord
 
 ## 创建机器人
 
