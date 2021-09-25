@@ -50,7 +50,17 @@ module.exports = {
         children: [
           '/guide/about.md',
           '/guide/starter.md',
+          '/guide/started/glossary.md',
           '/guide/advanced/cli.md',
+        ],
+      }, {
+        text: '平台指南',
+        isGroup: true,
+        children: [
+          '/guide/platform/onebot.md',
+          '/guide/platform/discord.md',
+          '/guide/platform/telegram.md',
+          '/guide/platform/kaiheila.md',
         ],
       }, {
         text: '处理交互',
