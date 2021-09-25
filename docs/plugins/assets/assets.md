@@ -1,8 +1,9 @@
 ---
+title: 资源存储：Assets
 sidebarDepth: 2
 ---
 
-# 资源转存 (Assets)
+# @koishijs/plugin-assets
 
 在一些情况下，我们需要非即时地处理含有资源消息段的消息，例如使用 [teach](../teach/) 添加问答或使用 [github](./github.md) 快速回复等等。
 

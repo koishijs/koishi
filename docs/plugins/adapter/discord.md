@@ -1,5 +1,5 @@
 ---
-title: 平台：Discord
+title: 适配器：Discord
 sidebarDepth: 2
 ---
 

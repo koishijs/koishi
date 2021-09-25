@@ -31,8 +31,6 @@ koishi-core 中提供的 API，包括以下几个子页面：
 - [平台：Telegram](./adapter/telegram.md)
 - [平台：Discord](./adapter/discord.md)
 - [平台：Kaiheila](./adapter/kaiheila.md)
-- [数据库：Mongo](./database/mongo.md)
-- [数据库：MySQL](./database/mysql.md)
 
 ## 更新与迁移
 

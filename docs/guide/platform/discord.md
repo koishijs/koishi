@@ -2,7 +2,7 @@
 sidebarDepth: 2
 ---
 
-# 创建 Discord 机器人
+# 接入 Discord
 
 1. 前往 [https://discord.com/developers/applications](https://discord.com/developers/applications)，登录账号创建一个应用
 2. 点击「Bot」并创建一个新的机器人，保存这个页面中的 token（请注意不要泄露）

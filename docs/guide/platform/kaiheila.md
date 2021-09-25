@@ -2,7 +2,7 @@
 sidebarDepth: 2
 ---
 
-# 创建开黑啦机器人
+# 接入开黑啦
 
 1. 前往 [开发者平台](https://developer.kaiheila.cn/)，选择「机器人」并点击「新建」
 2. 在机器人连接模式中配置 Webhook 或 WebSocket 中的一种：

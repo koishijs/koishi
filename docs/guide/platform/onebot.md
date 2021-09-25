@@ -2,7 +2,7 @@
 sidebarDepth: 2
 ---
 
-# 创建 OneBot (QQ) 机器人
+# 接入 OneBot (QQ)
 
 ## 框架介绍
 

@@ -1,5 +1,5 @@
 ---
-title: 平台：Kaiheila
+title: 适配器：Kaiheila
 sidebarDepth: 2
 ---
 

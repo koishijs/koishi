@@ -2,7 +2,7 @@
 sidebarDepth: 2
 ---
 
-# 创建 Telegram 机器人
+# 接入 Telegram
 
 参考文档：[https://core.telegram.org/bots](https://core.telegram.org/bots)
 

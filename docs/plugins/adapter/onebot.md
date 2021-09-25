@@ -1,5 +1,5 @@
 ---
-title: 平台：OneBot
+title: 适配器：OneBot
 sidebarDepth: 2
 ---
 

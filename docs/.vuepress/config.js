@@ -145,12 +145,6 @@ module.exports = {
         children: [
           '/api/utils.md',
           '/api/test-utils.md',
-          '/api/adapter/onebot.md',
-          '/api/adapter/telegram.md',
-          '/api/adapter/discord.md',
-          '/api/adapter/kaiheila.md',
-          '/api/database/mongo.md',
-          '/api/database/mysql.md',
         ],
       }, {
         text: '更新与迁移',
@@ -163,6 +157,39 @@ module.exports = {
       '/plugins/': [{
         text: '总览',
         link: '/plugins/',
+      }, {
+        text: '适配器支持',
+        isGroup: true,
+        children: [
+          '/plugins/adapter/discord.md',
+          '/plugins/adapter/kaiheila.md',
+          '/plugins/adapter/minecraft.md',
+          '/plugins/adapter/onebot.md',
+          '/plugins/adapter/telegram.md',
+        ],
+      }, {
+        text: '数据库支持',
+        isGroup: true,
+        children: [
+          '/plugins/database/database.md',
+          '/plugins/database/mongo.md',
+          '/plugins/database/mysql.md',
+        ],
+      }, {
+        text: '资源存储支持',
+        isGroup: true,
+        children: [
+          '/plugins/assets/assets.md',
+          '/plugins/assets/jsdelivr.md',
+          '/plugins/assets/s3.md',
+        ],
+      }, {
+        text: '缓存支持',
+        isGroup: true,
+        children: [
+          '/plugins/cache/cache.md',
+          '/plugins/cache/redis.md',
+        ],
       }, {
         text: '常用功能 (Common)',
         isGroup: true,
@@ -208,7 +235,6 @@ module.exports = {
         text: '其他官方插件',
         isGroup: true,
         children: [
-          '/plugins/other/assets.md',
           '/plugins/other/chat.md',
           '/plugins/other/chess.md',
           '/plugins/other/github.md',

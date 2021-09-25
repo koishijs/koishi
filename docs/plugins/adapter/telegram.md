@@ -1,5 +1,5 @@
 ---
-title: 平台：Telegram
+title: 适配器：Telegram
 sidebarDepth: 2
 ---
 

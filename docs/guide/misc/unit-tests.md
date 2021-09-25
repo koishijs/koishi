@@ -195,11 +195,11 @@ utils.sleep.mockResolvedValueOnce()
 
 ## 模拟数据库
 
-koishi-database-memory 是 Koishi 的一个数据库实现，只不过它将所有数据都留在内存中，方便调试：
+@koishijs/plugin-memory 是 Koishi 的一个数据库实现，只不过它将所有数据都留在内存中，方便调试：
 
 ```js
 const { App } = require('koishi')
-require('koishi-database-memory')
+require('@koishijs/plugin-memory')
 
 // 使用内存数据库
 const app = new App({
@@ -211,7 +211,7 @@ const app = new App({
 
 ```js
 const { MockedApp } = require('koishi-test-utils')
-require('koishi-database-memory')
+require('@koishijs/plugin-memory')
 
 // 使用内存数据库
 const app = new MockedApp({
@@ -225,7 +225,7 @@ const app = new MockedApp({
 
 ```js
 const { testDatabase } = require('koishi-test-utils')
-require('koishi-database-memory')
+require('@koishijs/plugin-memory')
 
 testDatabase({ memory: {} })
 
