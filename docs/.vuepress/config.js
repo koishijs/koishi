@@ -37,7 +37,7 @@ module.exports = {
     logo: '/koishi.png',
     navbar: [
       { text: '主页', link: '/' },
-      { text: '指南', link: '/guide/starter.html' },
+      { text: '指南', link: '/guide/basic/console.html' },
       { text: 'API', link: '/api/' },
       { text: '官方插件', link: '/plugins/' },
       ...devOnly({ text: '演练场', link: '/playground.html' }),
@@ -48,10 +48,10 @@ module.exports = {
         text: '入门',
         isGroup: true,
         children: [
-          '/guide/about.md',
-          '/guide/starter.md',
-          '/guide/started/glossary.md',
-          '/guide/advanced/cli.md',
+          '/guide/basic/about.md',
+          '/guide/basic/script.md',
+          '/guide/basic/console.md',
+          '/guide/basic/glossary.md',
         ],
       }, {
         text: '平台指南',
@@ -112,6 +112,7 @@ module.exports = {
         text: '更多',
         isGroup: true,
         children: [
+          '/guide/advanced/cli.md',
           '/guide/advanced/logger.md',
           '/guide/advanced/unit-tests.md',
           '/guide/advanced/decorator.md',

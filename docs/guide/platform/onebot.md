@@ -28,10 +28,11 @@ sidebarDepth: 2
 ## 安装与运行
 
 1. 首先从 [这个页面](https://github.com/Mrs4s/go-cqhttp/releases) 下载并解压最新版本的 go-cqhttp
+   - 如果你不知道下载哪一个，[请看这里](#我不知道应该下载-release-中的哪一个文件。)
 2. 打开命令行并 cd 到你的解压目录
 3. 输入 `./go-cqhttp` 并运行，此时将提示：
 
-```sh
+```cli
 未找到配置文件，正在为您生成配置文件中！
 请选择你需要的通信方式:
   1: HTTP 通信
@@ -43,7 +44,7 @@ sidebarDepth: 2
 
 4. 根据 [配置参考](#配置参考) 中的说明修改 config.yml 文件。之后再次输入 `./go-cqhttp` 并运行：
 
-```
+```cli
 [INFO]: 登录成功 欢迎使用: balabala
 ```
 
@@ -53,7 +54,7 @@ sidebarDepth: 2
 
 默认情况下启用 go-cqhttp 将会有五秒钟的延时，可以使用命令行参数 `faststart` 进行跳过：
 
-```sh
+```cli
 ./go-cqhttp faststart
 ```
 
@@ -87,7 +88,7 @@ plugins:
   onebot:
     protocol: http
     selfId: '123456789'
-    server: http://127.0.0.1:5700
+    endpoint: http://127.0.0.1:5700
     secret: my-secret
 ```
 
@@ -105,7 +106,7 @@ plugins:
   onebot:
     protocol: ws
     selfId: '123456789'
-    server: ws://127.0.0.1:6700
+    endpoint: ws://127.0.0.1:6700
 ```
 
 ### 反向 WebSocket
@@ -149,9 +150,15 @@ plugins:
 
 ## 常见问题
 
+#### 我不知道应该下载 release 中的哪一个文件。
+
+- Windows：右击我的电脑 → 属性 → 处理器，在这里可以看到架构
+- MacOS：如果你的电脑能安装 iOS 应用，那就是 arm，不然就是 amd64
+- Linux：在命令行中输入 `lscpu`，看 arch 那一行输出
+
 #### 我的 go-cqhttp 初次启动时并没有生成 config.yml。
 
-请插件你的 go-cqhttp 是否为最新版本。
+请检查你的 go-cqhttp 是否为最新版本。
 
 #### 使用 HTTP 或反向 WebSocket 时无法接收消息，同时 go-cqhttp 有报错。
 
@@ -189,13 +196,13 @@ plugins:
 
 在命令行中进入 go-cqhttp 所在目录并输入：
 
-```sh
+```cli
 ./go-cqhttp update
 ```
 
 如果在国内连接 GitHub 下载速度可能很慢, 可以使用镜像源下载：
 
-```sh
+```cli
 ./go-cqhttp update https://github.rc1844.workers.dev
 ```
 

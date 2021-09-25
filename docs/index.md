@@ -5,7 +5,7 @@ heroText: Koishi
 tagline: 一个跨平台的机器人框架
 actions:
   - text: 快速上手 →
-    link: /guide/starter.html
+    link: /guide/basic/console.html
     type: primary
 features:
   - title: 开箱即用
