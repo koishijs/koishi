@@ -64,11 +64,23 @@ sidebarDepth: 2
 
 - [API 文档 / 事件 (Events)](../../api/core/events.md)
 
+## 输出日志 (Logger)
+
+参考：
+
+- [API 文档 / 输出日志 (Logger)](../../api/utils/logger.md)
+
 ## 中间件 (Middleware)
 
 参考：
 
 - [处理交互 / 接收和发送消息 / 使用中间件](../message/message.md#使用中间件)
+
+## 观察者 (Observer)
+
+参考：
+
+- [API 文档 / 观察者 (Observer)](../../api/utils/observer.md)
 
 ## 平台 (Platform)
 

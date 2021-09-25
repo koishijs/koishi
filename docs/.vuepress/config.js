@@ -151,8 +151,9 @@ module.exports = {
         text: '其他官方包',
         isGroup: true,
         children: [
-          '/api/cli.md',
-          '/api/test-utils.md',
+          '/api/tools/cli.md',
+          '/api/tools/dev-utils.md',
+          '/api/tools/test-utils.md',
         ],
       }, {
         text: '更新与迁移',

@@ -86,17 +86,3 @@ const mockedApp = new App()
 - 返回值: `Promise<void>`
 
 断言某条信息不应存在任何回复。
-
-## 类：MemoryDatabase
-
-### db.$store
-
-### db.$create
-
-### db.$select
-
-### db.$update
-
-### db.$remove
-
-### db.$count
