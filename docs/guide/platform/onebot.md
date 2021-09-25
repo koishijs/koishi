@@ -82,7 +82,8 @@ servers:
           secret: my-secret
 ```
 
-```yaml koishi.config.yml
+::: code-group config koishi.config
+```yaml
 port: 8080
 plugins:
   onebot:
@@ -91,6 +92,20 @@ plugins:
     endpoint: http://127.0.0.1:5700
     secret: my-secret
 ```
+```ts
+export default {
+  port: 8080,
+  plugins: {
+    onebot: {
+      protocol: 'http',
+      selfId: '123456789',
+      endpoint: 'http://127.0.0.1:5700',
+      secret: 'my-secret',
+    },
+  },
+}
+```
+:::
 
 ### 正向 WebSocket
 
@@ -101,13 +116,26 @@ servers:
       port: 6700
 ```
 
-```yaml koishi.config.yml
+::: code-group config koishi.config
+```yaml
 plugins:
   onebot:
     protocol: ws
     selfId: '123456789'
     endpoint: ws://127.0.0.1:6700
 ```
+```ts
+export default {
+  plugins: {
+    onebot: {
+      protocol: 'ws',
+      selfId: '123456789',
+      endpoint: 'ws://127.0.0.1:6700',
+    },
+  },
+}
+```
+:::
 
 ### 反向 WebSocket
 
@@ -117,13 +145,26 @@ servers:
       universal: ws://127.0.0.1:8080/onebot
 ```
 
-```yaml koishi.config.yml
+::: code-group config koishi.config
+```yaml
 port: 8080
 plugins:
   onebot:
     protocol: ws-reverse
     selfId: '123456789'
 ```
+```ts
+export default {
+  port: 8080,
+  plugins: {
+    onebot: {
+      protocol: 'ws-reverse',
+      selfId: '123456789',
+    },
+  },
+}
+```
+:::
 
 ### 配置 `path` 和 `selfUrl`
 
@@ -138,7 +179,8 @@ servers:
       universal: wss://my-host:9090/onebot
 ```
 
-```yaml koishi.config.yml
+::: code-group config koishi.config
+```yaml
 # 请注意这里的 port 可能跟 selfUrl 中的不一致
 # 你可以通过 nginx，candy 等工具实现端口的转发和 SSL 等需求
 port: 8080
@@ -147,6 +189,20 @@ plugins:
   onebot:
     path: /foo
 ```
+```ts
+export default {
+  // 请注意这里的 port 可能跟 selfUrl 中的不一致
+  // 你可以通过 nginx，candy 等工具实现端口的转发和 SSL 等需求
+  port: 8080,
+  selfUrl: 'https://my-host:9090',
+  plugins: {
+    onebot: {
+      path: '/foo',
+    },
+  },
+}
+```
+:::
 
 ## 常见问题
 

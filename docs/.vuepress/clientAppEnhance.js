@@ -12,6 +12,7 @@ export default defineClientAppEnhance(({ app }) => {
   const data = {
     manager: 'yarn',
     language: 'ts',
+    config: 'yaml',
   }
   if (typeof localStorage !== 'undefined') {
     const config = localStorage.getItem(key)

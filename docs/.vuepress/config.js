@@ -49,7 +49,7 @@ module.exports = {
         isGroup: true,
         children: [
           '/guide/basic/about.md',
-          '/guide/basic/script.md',
+          '/guide/basic/coding.md',
           '/guide/basic/console.md',
           '/guide/basic/glossary.md',
         ],
@@ -76,11 +76,11 @@ module.exports = {
         text: '复用性',
         isGroup: true,
         children: [
-          '/guide/reusability/plugin.md',
-          '/guide/reusability/context.md',
-          '/guide/reusability/hot-reload.md',
-          '/guide/reusability/lifecycle.md',
-          '/guide/reusability/schema.md',
+          '/guide/plugin/plugin.md',
+          '/guide/plugin/context.md',
+          '/guide/plugin/hot-reload.md',
+          '/guide/plugin/lifecycle.md',
+          '/guide/plugin/schema.md',
         ],
       }, {
         text: '数据库',
@@ -104,9 +104,9 @@ module.exports = {
         text: '规模化',
         isGroup: true,
         children: [
-          '/guide/scaling-up/assets.md',
-          '/guide/scaling-up/cache.md',
-          '/guide/scaling-up/route.md',
+          '/guide/service/assets.md',
+          '/guide/service/cache.md',
+          '/guide/service/route.md',
         ],
       }, {
         text: '更多',

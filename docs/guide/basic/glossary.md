@@ -23,7 +23,7 @@ sidebarDepth: 2
 
 参考：
 
-- [规模化 / 存储资源文件](../scaling-up/assets.md)
+- [规模化 / 存储资源文件](../service/assets.md)
 
 ## 机器人 (Bot)
 
@@ -35,7 +35,7 @@ sidebarDepth: 2
 
 参考：
 
-- [规模化 / 使用缓存数据](../scaling-up/cache.md)
+- [规模化 / 使用缓存数据](../service/cache.md)
 
 ## 指令 (Command)
 
@@ -48,7 +48,7 @@ sidebarDepth: 2
 
 参考：
 
-- [复用性 / 使用上下文](../reusability/context.md)
+- [复用性 / 使用上下文](../plugin/context.md)
 - [API 文档 / 上下文 (Context)](../../api/context.md)
 
 ## 数据库 (Database)
@@ -76,7 +76,7 @@ sidebarDepth: 2
 
 参考：
 
-- [复用性 / 使用插件](../reusability/plugin.md)
+- [复用性 / 使用插件](../plugin/plugin.md)
 
 ## 协议 (Protocol)
 
@@ -84,7 +84,7 @@ sidebarDepth: 2
 
 参考：
 
-- [规模化 / 提供网络服务](../scaling-up/router.md)
+- [规模化 / 提供网络服务](../service/router.md)
 
 ## 配置模式 (Schema)
 

@@ -4,13 +4,9 @@ sidebarDepth: 2
 
 # 接收和发送消息
 
-::: danger 注意
-这里是**正在施工**的 koishi v4 的文档。要查看 v3 版本的文档，请前往[**这里**](/)。
-:::
-
 从本节开始，我们开始深入研究如何利用 Koishi 的来接收和发送消息。
 
-首先让我们回顾一下之前展示过的 [基本实例](../starter.md#编写并调用你的插件)：
+首先让我们回顾一下之前展示过的 [基本示例](../basic/coding.md#添加交互逻辑)：
 
 ```js
 // 如果收到“天王盖地虎”，就回应“宝塔镇河妖”
@@ -24,7 +20,7 @@ ctx.middleware((session, next) => {
 
 在这个简单的示例中，这里有两件事你需要了解：
 
-上面的 `ctx.middleware()` 方法所传入的回调函数成为 **中间件**。你可以使用中间件来处理所有收到的一切消息。如果你希望处理其他类型的事件（例如加群申请又或者消息撤回等等），可以使用 Koishi 的 [事件系统](../reusability/lifecycle.md#事件系统)，这将在后面的章节中介绍。
+上面的 `ctx.middleware()` 方法所传入的回调函数成为 **中间件**。你可以使用中间件来处理所有收到的一切消息。如果你希望处理其他类型的事件（例如加群申请又或者消息撤回等等），可以使用 Koishi 的 [事件系统](../plugin/lifecycle.md#事件系统)，这将在后面的章节中介绍。
 
 上面的 `session` 对象被称为 **会话**。所有的上报事件都会被转化成一个会话对象。你可以利用这个对象访问与此事件有关的数据（例如用 `session.content` 表示消息的内容），或调用 API 作为对此事件的响应（例如用 `session.send()` 在当前频道内发送消息）。
 
@@ -195,7 +191,17 @@ await session.cancelQueued(0.5 * Time.second)
 
 事实上，对于不同的消息长度，系统等待的时间也是不一样的，你可以通过配置项修改这个行为：
 
-```js koishi.config.js
+::: code-group config koishi.config
+```yaml
+delay:
+  # 消息里每有一个字符就等待 0.02s
+  character: 20
+  # 每条消息至少等待 0.5s
+  message: 500
+```
+```js
+const { Time } = require('koishi')
+
 module.exports = {
   delay: {
     // 消息里每有一个字符就等待 0.02s
@@ -205,6 +211,19 @@ module.exports = {
   },
 }
 ```
+```ts
+import { Time } from 'koishi'
+
+export default {
+  delay: {
+    // 消息里每有一个字符就等待 0.02s
+    character: 0.02 * Time.second,
+    // 每条消息至少等待 0.5s
+    message: 0.5 * Time.second,
+  },
+}
+```
+:::
 
 这样一来，一段长度为 60 个字符的消息发送后，下一条消息发送前就需要等待 1.2 秒了。
 
@@ -234,7 +253,7 @@ return session.send(`${name}，请多指教！`)
 await session.bot.sendMessage(123456789, 'Hello world')
 
 // 获取特定群的成员列表
-const members = await session.bot.getGroupMemberList(987654321)
+const members = await session.bot.getGuildMemberList(987654321)
 ```
 
 你可以在 [**机器人**](../api/bot.md) 一章中看到完整的 API 列表。

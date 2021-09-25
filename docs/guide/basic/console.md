@@ -31,9 +31,11 @@ Koishi 支持多个聊天平台，对于不同的平台，你也需要做好相�
 
 ::: code-group manager
 ```npm
+# 零基础快速搭建 Koishi
 npm init koishi
 ```
 ```yarn
+# 零基础快速搭建 Koishi
 yarn create koishi
 ```
 :::
