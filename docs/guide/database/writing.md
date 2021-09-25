@@ -60,4 +60,4 @@ export function apply(ctx: Context, config: PoolConfig = {}) {
 }
 ```
 
-当然，真正的 [@koishijs/plugin-mysql](../api/database/mysql.md) 要比上面的例子复杂的多，我们还需要处理有关数据库的更多细节。你可以在 [这里](https://github.com/koishijs/koishi/tree/master/packages/plugin-mysql) 看到完整的源代码。
+当然，真正的 [@koishijs/plugin-mysql](../../api/core/database/mysql.md) 要比上面的例子复杂的多，我们还需要处理有关数据库的更多细节。你可以在 [这里](https://github.com/koishijs/koishi/tree/master/packages/plugin-mysql) 看到完整的源代码。

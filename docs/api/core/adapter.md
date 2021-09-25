@@ -24,7 +24,7 @@ sidebarDepth: 2
   - **redirect:** `Function` 由 Bot 配置项推断采用的协议的回调函数
 - 返回值: `Plugin`
 
-创建一个适配器插件。参见 [编写适配器](../guide/adapter.md) 一节。
+创建一个适配器插件。参见 [编写适配器](../../guide/adapter.md) 一节。
 
 ## 类：Adapter
 

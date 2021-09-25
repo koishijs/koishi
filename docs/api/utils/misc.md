@@ -2,27 +2,11 @@
 sidebarDepth: 2
 ---
 
-# 常用工具 (Utils)
+# 实用工具 (Utils)
 
-::: tip 注意
-尽管本页介绍的 API 由 koishi-utils 包提供，但你仍然可以直接从 koishi-core 中引入它们。
-:::
+这一节介绍了其他未被归类的内置工具函数。
 
 ## 字符串操作
-
-### simplify(source)
-
-- **source:** `string` 源文本
-- 返回值: `string` 简体文本
-
-繁体转简体。
-
-### traditionalize(source)
-
-- **source:** `string` 源文本
-- 返回值: `string` 繁体文本
-
-简体转繁体。
 
 ### capitalize(source)
 

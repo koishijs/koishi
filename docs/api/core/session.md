@@ -70,7 +70,7 @@ sidebarDepth: 2
 
 ### session.middleware(middleware)
 
-- **middleware:** [`Middleware`](../guide/message.md#中间件) 要注册的中间件
+- **middleware:** [`Middleware`](../../guide/message.md#中间件) 要注册的中间件
 - 返回值: `() => void` 取消该中间件的函数
 
 注册一个仅对当前会话生效的中间件。
@@ -86,7 +86,7 @@ sidebarDepth: 2
 
 - **options.target:** `string` 目标字符串
 - **options.items:** `string[]` 源字符串列表
-- **options.next:** [`NextFunction?`](../guide/message.md#使用中间件) 回调函数
+- **options.next:** [`NextFunction?`](../../guide/message.md#使用中间件) 回调函数
 - **options.prefix:** `string?` 显示在候选输入前的文本
 - **options.suffix:** `string` 当只有一个选项时，显示在候选输入后的文本
 - **options.coefficient:** `number` 用于模糊匹配的相似系数，缺省时会使用 [`app.options.minSimilarity`](./app.md#options-minsimilarity)
@@ -114,7 +114,7 @@ sidebarDepth: 2
 ### session.execute(argv, next?)
 
 - **argv:** `string | Argv` 指令文本或运行时参数对象
-- **next:** [`NextFunction`](../guide/message.md#使用中间件) 回调函数
+- **next:** [`NextFunction`](../../guide/message.md#使用中间件) 回调函数
 - 返回值: `Promise<void>`
 
 执行一个指令。可以传入一个 argv 对象或者指令对应的文本。

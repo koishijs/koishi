@@ -25,7 +25,7 @@ ctx.on('message', (session) => {
 
 上面的 `message` 字符串被称为 **事件名称**。这个事件名称可能有多级：我们用 `message/group` 表示群组消息，`message/private` 表示私聊消息。这意味着你可以只监听收到消息的一部分。而当你监听 `message` 事件时，则所有收到的消息都会经由这个回调函数处理。
 
-除去这个例子中所使用的 **上报事件** 外，Koishi 自身也提供了一批 **内部事件**，例如用 `connect` 事件表示应用启动完成等。前者通常由适配器生成，回调函数只接受一个会话对象；而后者由 Koishi 自身生成，回调函数有着各种不同的形式。你可以在 [事件文档](../api/events.md) 中看到全部 Koishi 支持的事件接口。
+除去这个例子中所使用的 **上报事件** 外，Koishi 自身也提供了一批 **内部事件**，例如用 `connect` 事件表示应用启动完成等。前者通常由适配器生成，回调函数只接受一个会话对象；而后者由 Koishi 自身生成，回调函数有着各种不同的形式。你可以在 [事件文档](../../api/core/events.md) 中看到全部 Koishi 支持的事件接口。
 
 ### 事件的命名
 
@@ -84,34 +84,34 @@ const dispose = ctx.on('foo', (...args) => {
     - 通过 `ctx.middleware(cb, true)` 注册的中间件会插在队列的更前面
     - 临时中间件会直接插在当前序列的尾端，并不会影响中间件池本身
     - 如果执行中遇到错误或未调用 `next` 函数，会停止后续中间件的执行
-4. 触发 [middleware](../api/events.md#事件：middleware) 事件
+4. 触发 [middleware](../../api/core/events.md#事件：middleware) 事件
 5. 更新当前用户和群的缓冲数据（参见 [按需加载与自动更新](./manage.md#按需加载与自动更新)）
 
 ### 内置中间件
 
 1. 从前缀中匹配 at 机器人，nickname 或 prefix
-2. 预处理消息内容，生成 [`session.parsed`](../api/session.md#session-parsed)
-3. 触发 [before-parse](../api/events.md#事件：before-parse) 事件，尝试解析消息内容（[快捷方式](./execute.md#快捷方式) 的解析也在此处完成）
+2. 预处理消息内容，生成 [`session.parsed`](../../api/core/session.md#session-parsed)
+3. 触发 [before-parse](../../api/core/events.md#事件：before-parse) 事件，尝试解析消息内容（[快捷方式](./execute.md#快捷方式) 的解析也在此处完成）
 4. 如果数据库存在：
-    - 触发 [before-attach-channel](../api/events.md#事件：before-attach-channel) 事件
-    - 获取频道数据并存储于 [`session.channel`](../api/session.md#session-channel)
+    - 触发 [before-attach-channel](../../api/core/events.md#事件：before-attach-channel) 事件
+    - 获取频道数据并存储于 [`session.channel`](../../api/core/session.md#session-channel)
     - 根据 flags, assignee 等字段判断是否应该处理该信息，如果不应该则直接返回
-    - 触发 [attach-channel](../api/events.md#事件：attach-channel) 事件（用户可以在其中同步地更新群数据，或中止执行后续操作）
-    - 触发 [before-attach-user](../api/events.md#事件：before-attach-user) 事件
-    - 获取用户数据并存储于 [`session.user`](../api/session.md#session-user)
+    - 触发 [attach-channel](../../api/core/events.md#事件：attach-channel) 事件（用户可以在其中同步地更新群数据，或中止执行后续操作）
+    - 触发 [before-attach-user](../../api/core/events.md#事件：before-attach-user) 事件
+    - 获取用户数据并存储于 [`session.user`](../../api/core/session.md#session-user)
     - 根据 flags 等字段判断是否应该处理该信息，如果不应该则直接返回
-    - 触发 [attach-user](../api/events.md#事件：attach-user) 事件（用户可以在其中同步地更新群和用户数据，或中止执行后续操作）
+    - 触发 [attach-user](../../api/core/events.md#事件：attach-user) 事件（用户可以在其中同步地更新群和用户数据，或中止执行后续操作）
 5. 如果解析出指令：执行该指令（下接 [指令执行流程](#指令执行流程)）
 6. 尝试解析出候选指令，如果成功则显示候选项（参见 [模糊匹配](./execute.md#模糊匹配)）
 
-在以上过程中，无论是解析指令还是出发内置的 before-attach-* 钩子都可能用到 [parse](../api/events.md#事件：parse) 事件。
+在以上过程中，无论是解析指令还是出发内置的 before-attach-* 钩子都可能用到 [parse](../../api/core/events.md#事件：parse) 事件。
 
 ### 指令执行流程
 
 1. 如果解析过程中存在错误（如非法参数等），直接返回错误信息
 2. 逐一调用 check 回调函数，直到返回值不为 `undefined`
-3. 触发 [before-command](../api/events.md#事件：before-command) 事件：
+3. 触发 [before-command](../../api/core/events.md#事件：before-command) 事件：
     - 如果是 -h, --help 则直接显示帮助信息（参见 [查看帮助](./help.md#查看帮助)）
     - 根据配置检查用户权限和调用记录（参见 [指令调用管理](./message.md#指令调用管理)）
 4. 逐一调用 action 回调函数，直到返回值不为 `undefined`
-5. 触发 [command](../api/events.md#事件：command) 事件
+5. 触发 [command](../../api/core/events.md#事件：command) 事件

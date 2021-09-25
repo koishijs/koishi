@@ -32,7 +32,7 @@ yarn add mocha chai koishi-test-utils -D
 :::
 
 ::: tip 提示
-你可以在 [这里](../api/test-utils.md) 看到完整的接口列表和所需的最低版本。
+你可以在 [这里](../../api/test-utils.md) 看到完整的接口列表和所需的最低版本。
 :::
 
 ### 使用 TypeScript
@@ -238,7 +238,7 @@ testDatabase({ memory: {} }, {
 })
 ```
 
-这个函数将测试所有 [内置的数据库方法](../api/database.md) 是否已经被实现。
+这个函数将测试所有 [内置的数据库方法](../../api/core/database.md) 是否已经被实现。
 
 除此以外，你还可以测试你扩展的数据库接口，就像这样：
 

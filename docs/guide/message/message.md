@@ -256,7 +256,7 @@ await session.bot.sendMessage(123456789, 'Hello world')
 const members = await session.bot.getGuildMemberList(987654321)
 ```
 
-你可以在 [**机器人**](../api/bot.md) 一章中看到完整的 API 列表。
+你可以在 [**机器人**](../../api/core/bot.md) 一章中看到完整的 API 列表。
 
 ### 发送广播消息
 

@@ -58,7 +58,7 @@ ctx.router.get('/path', (ctx, next) => {
 
 ## 过滤器
 
-有关这里的 API，请参见 [使用上下文](../guide/context.md#使用上下文)。
+有关这里的 API，请参见 [使用上下文](../../guide/context.md#使用上下文)。
 
 ### ctx.any()
 
@@ -67,7 +67,7 @@ ctx.router.get('/path', (ctx, next) => {
 选取上下文全集。
 
 ::: tip
-这个方法与 `ctx.app` 的区别在于，后者不受插件管理器控制，容易产生内存泄漏。因此我们建议，除非你已经为你的插件声明了副作用，你应当尽量使用这个方法。参见 [插件热重载](../guide/context.md#插件热重载)。
+这个方法与 `ctx.app` 的区别在于，后者不受插件管理器控制，容易产生内存泄漏。因此我们建议，除非你已经为你的插件声明了副作用，你应当尽量使用这个方法。参见 [插件热重载](../../guide/context.md#插件热重载)。
 :::
 
 ### ctx.never()
@@ -138,7 +138,7 @@ ctx.router.get('/path', (ctx, next) => {
 
 ## 钩子与中间件
 
-有关这里的 API，请参见 [事件系统](../guide/lifecycle.md#事件系统)。
+有关这里的 API，请参见 [事件系统](../../guide/lifecycle.md#事件系统)。
 
 ### ctx.emit(session?, event, ...param)
 ### ctx.parallel(session?, event, ...param)
@@ -199,7 +199,7 @@ ctx.router.get('/path', (ctx, next) => {
 
 ### ctx.middleware(middleware, prepend?)
 
-- **middleware:** [`Middleware`](../guide/message.md#使用中间件) 要注册的中间件
+- **middleware:** [`Middleware`](../../guide/message.md#使用中间件) 要注册的中间件
 - **prepend:** `boolean` 是否前置
 - 返回值: `() => boolean` 取消这个中间件
 
@@ -227,7 +227,7 @@ type Plugin<U> = PluginFunction<T, U> | PluginObject<T, U>
 - **plugin:** `Plugin` 要安装的插件
 - 返回值: `this`
 
-安装一个存在依赖的插件，参见 [声明依赖关系](../guide/context.md#声明依赖关系)。请注意：这里的依赖列表都应该是 node 模块名，并且都必须直接以插件的形式导出（如所有官方插件都具备这个特征）。
+安装一个存在依赖的插件，参见 [声明依赖关系](../../guide/context.md#声明依赖关系)。请注意：这里的依赖列表都应该是 node 模块名，并且都必须直接以插件的形式导出（如所有官方插件都具备这个特征）。
 
 ### ctx.command(def, desc?, config?)
 
@@ -260,21 +260,21 @@ type Plugin<U> = PluginFunction<T, U> | PluginObject<T, U>
 - **forced:** `boolean` 是否无视 silent 标记
 - 返回值: `Promise<string[]>` 成功发送的消息 ID 列表
 
-所有机器人向自己分配的频道广播消息，存在标记 silent 的频道除外。如有失败不会抛出错误。参见 [发送广播消息](../guide/message.md#发送广播消息)。
+所有机器人向自己分配的频道广播消息，存在标记 silent 的频道除外。如有失败不会抛出错误。参见 [发送广播消息](../../guide/message.md#发送广播消息)。
 
 ### ctx.logger(scope?)
 
 - **scope:** `string` 要指定的类型，默认为 `''`
-- 返回值: [`Logger`](../guide/logger.md#使用-logger)
+- 返回值: [`Logger`](../../guide/logger.md#使用-logger)
 
-根据 namespace 生成一个 [Logger 对象](../guide/logger.md#使用-logger)。
+根据 namespace 生成一个 [Logger 对象](../../guide/logger.md#使用-logger)。
 
 ### ctx.dispose(plugin?)
 
 - **plugin:** `Plugin` 要移除的插件
 - 返回值: `void`
 
-移除插件中所注册的钩子、中间件、指令和子插件等。`plugin` 是默认为当前上下文所在的插件。如果既没有提供 `plugin`，上下文也不是一个插件上下文的话，会抛出一个错误。参见 [卸载插件](../guide/context.md#卸载插件)。
+移除插件中所注册的钩子、中间件、指令和子插件等。`plugin` 是默认为当前上下文所在的插件。如果既没有提供 `plugin`，上下文也不是一个插件上下文的话，会抛出一个错误。参见 [卸载插件](../../guide/context.md#卸载插件)。
 
 ## 静态属性和方法
 
@@ -282,10 +282,10 @@ type Plugin<U> = PluginFunction<T, U> | PluginObject<T, U>
 
 - 类型: `symbol`
 
-特殊的键值，可以在通用上下文属性对象的方法上访问。参见 [声明通用上下文属性](../guide/context.md#声明通用上下文属性)。
+特殊的键值，可以在通用上下文属性对象的方法上访问。参见 [声明通用上下文属性](../../guide/context.md#声明通用上下文属性)。
 
 ### Context.service(name) <Badge text="beta" type="warning"/>
 
 - **name:** `string` 属性名称
 
-声明一个通用上下文属性。参见 [声明通用上下文属性](../guide/context.md#声明通用上下文属性)。
+声明一个通用上下文属性。参见 [声明通用上下文属性](../../guide/context.md#声明通用上下文属性)。

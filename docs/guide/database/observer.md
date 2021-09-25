@@ -31,7 +31,7 @@ ctx.command('lottery')
 
 当然，如果你确实需要阻塞式地等待数据写入，我们也提供了 `user._update()` 方法。顺便一提，一旦成功执行了观察者的 `_update()` 方法，之前的缓冲区将会被清空，因此之后不会重复更新数据；对于缓冲区为空的观察者，`_update()` 方法也会直接返回，不会产生任何的数据库访问。这些都是我们优化的几个细节。
 
-你可以在 [这里](../api/utils.md#observer-api) 看到完整的观察者 API。
+你可以在 [这里](../../api/utils/observer.md) 看到完整的观察者 API。
 
 ## 声明所需字段
 
@@ -68,7 +68,7 @@ app.middleware((session, next) => {
 
 ## 使用会话 API
 
-对于 Koishi 内部的两个抽象表 User 和 Channel，我们在 [会话对象](../api/session.md) 中封装了几个高级方法：
+对于 Koishi 内部的两个抽象表 User 和 Channel，我们在 [会话对象](../../api/core/session.md) 中封装了几个高级方法：
 
 ```js
 // 中间增加了一个第二参数，表示默认情况下的权限等级

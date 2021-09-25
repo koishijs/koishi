@@ -47,7 +47,7 @@ const user = await ctx.database.getUser(platform, id)
 await ctx.database.setChannel(platform, id, { assignee: '123456789' })
 ```
 
-你可以在后面的 API 文档中看到全部内置的 [数据库方法](../api/database.md)。
+你可以在后面的 API 文档中看到全部内置的 [数据库方法](../../api/core/database.md)。
 
 ## 调用数据库
 
@@ -100,7 +100,7 @@ await ctx.database.get('schedule', {
 })
 ```
 
-> 你可以在 [这里](../../api/database.md#db-get-table) 看到更多相关的 API。
+> 你可以在 [这里](../../api/core/database.md#db-get-table) 看到更多相关的 API。
 
 ### 删除数据
 

@@ -4,7 +4,7 @@ sidebarDepth: 2
 
 # 事件 (Events)
 
-建议配套阅读：[事件与生命周期](../guide/lifecycle.md)
+建议配套阅读：[事件与生命周期](../../guide/lifecycle.md)
 
 ## 上报事件
 
@@ -194,7 +194,7 @@ sidebarDepth: 2
 
 - **触发方式:** parallel
 
-关闭服务器前，或所属插件被卸载时触发。参见 [可卸载的插件](../guide/context.md#可卸载的插件)。
+关闭服务器前，或所属插件被卸载时触发。参见 [可卸载的插件](../../guide/context.md#可卸载的插件)。
 
 ### 事件：disconnect
 

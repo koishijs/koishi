@@ -142,19 +142,19 @@ module.exports = {
 
 - 类型：`string`
 
-对应配置项 [`logTime`](../api/app.md#options-logtime)，只支持字符串格式。默认值为空串。
+对应配置项 [`logTime`](../../api/core/app.md#options-logtime)，只支持字符串格式。默认值为空串。
 
 ### Logger.showDiff
 
 - 类型：`boolean`
 
-对应配置项 [`logDiff`](../api/app.md#options-logdiff)。默认值为 `false`。
+对应配置项 [`logDiff`](../../api/core/app.md#options-logdiff)。默认值为 `false`。
 
 ### Logger.levels
 
 - 类型：`LogLevelConfig`
 
-对应配置项 [`logLevel`](../api/app.md#options-loglevel) 和 [`logFilter`](../api/app.md#options-logfilter)，只支持对象格式。默认值为 `{ base: 2 }`。
+对应配置项 [`logLevel`](../../api/core/app.md#options-loglevel) 和 [`logFilter`](../../api/core/app.md#options-logfilter)，只支持对象格式。默认值为 `{ base: 2 }`。
 
 ## 内置的输出
 
