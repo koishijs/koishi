@@ -9,8 +9,10 @@ import { WorkerResponse } from './worker'
 export * from './main'
 
 declare module 'koishi' {
-  interface Services {
-    worker: EvalWorker
+  namespace Context {
+    interface Services {
+      worker: EvalWorker
+    }
   }
 
   namespace Command {

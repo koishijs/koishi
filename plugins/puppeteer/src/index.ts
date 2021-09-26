@@ -35,8 +35,10 @@ declare module 'puppeteer-core/lib/types' {
 }
 
 declare module 'koishi' {
-  interface Services {
-    puppeteer: Puppeteer
+  namespace Context {
+    interface Services {
+      puppeteer: Puppeteer
+    }
   }
 
   interface Module {

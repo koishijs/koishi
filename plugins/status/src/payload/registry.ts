@@ -1,4 +1,4 @@
-import { App, Context, hyphenate, omit, pick, Plugin, Schema, Module, Dict, Adapter, Services } from 'koishi'
+import { App, Context, hyphenate, omit, pick, Plugin, Schema, Module, Dict, Adapter } from 'koishi'
 import { debounce } from 'throttle-debounce'
 import { StatusServer } from '../server'
 
@@ -36,7 +36,7 @@ class Registry implements StatusServer.DataSource {
     }
 
     // get delegates
-    const delegates = Services.filter(key => this.ctx[key])
+    const delegates = Context.Services.filter(key => this.ctx[key])
 
     return {
       id: null,

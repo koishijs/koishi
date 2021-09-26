@@ -115,7 +115,7 @@ export namespace Adapter {
     return { name: platform, schema: adapterSchema, apply }
   }
 
-  export class Manager extends Array<Bot> {
+  export class BotList extends Array<Bot> {
     adapters: Dict<Adapter> = {}
 
     constructor(private app: App) {

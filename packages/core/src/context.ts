@@ -5,6 +5,7 @@ import { User, Channel, Database, Assets, Cache, Module } from './database'
 import { Argv } from './parser'
 import { App } from './app'
 import { Bot } from './bot'
+import { Adapter } from './adapter'
 
 export type NextFunction = (next?: NextFunction) => Promise<void>
 export type Middleware = (session: Session, next: NextFunction) => any
@@ -70,7 +71,7 @@ interface Selector<T> extends PartialSeletor<T> {
   except?: PartialSeletor<T>
 }
 
-export interface Context extends Services {}
+export interface Context extends Context.Services {}
 
 export class Context {
   static readonly middleware = Symbol('middleware')
@@ -84,10 +85,6 @@ export class Context {
 
   [Symbol.for('nodejs.util.inspect.custom')]() {
     return `Context <${Context.inspect(this._plugin)}>`
-  }
-
-  get bots() {
-    return this.app.manager
   }
 
   private createSelector<K extends keyof Session>(key: K) {
@@ -512,18 +509,18 @@ export class Context {
   }
 }
 
-export interface Services {
-  database: Database
-  assets: Assets
-  cache: Cache
-}
-
-export const Services: string[] = []
-
 export namespace Context {
+  export interface Services {
+    database: Database
+    assets: Assets
+    cache: Cache
+    bots: Adapter.BotList
+  }
+
+  export const Services: string[] = []
+
   export interface ServiceOptions {
     dynamic?: boolean
-    traceable?: boolean
   }
 
   export function service(key: keyof Services, options: ServiceOptions = {}) {
@@ -532,10 +529,8 @@ export namespace Context {
     const privateKey = Symbol(key)
     Object.defineProperty(Context.prototype, key, {
       get() {
-        if (!this.app[privateKey] || !options.traceable) {
-          return this.app[privateKey]
-        }
-        const value = Object.create(this.app[privateKey])
+        const value = this.app[privateKey]
+        if (!value) return
         defineProperty(value, Context.current, this)
         return value
       },
@@ -552,6 +547,7 @@ export namespace Context {
   service('database')
   service('assets')
   service('cache')
+  service('bots')
 }
 
 type FlattenEvents<T> = {
@@ -567,7 +563,7 @@ type SessionEventMap = {
 }
 
 type DelegateEventMap = {
-  [K in keyof Services as `service/${K}`]: () => void
+  [K in keyof Context.Services as `service/${K}`]: () => void
 }
 
 type EventName = keyof EventMap
