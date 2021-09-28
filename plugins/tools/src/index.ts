@@ -6,7 +6,7 @@ import { MusicOptions } from './music'
 import { TranslateOptions } from './translate'
 
 declare module 'koishi' {
-  interface Module {
+  interface Modules {
     tools: typeof import('.')
   }
 }

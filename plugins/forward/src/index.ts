@@ -1,5 +1,11 @@
 import { Context, Session, Dict, Time, template } from 'koishi'
 
+declare module 'koishi' {
+  interface Modules {
+    forward: typeof import('.')
+  }
+}
+
 template.set('forward', '{0}: {1}')
 
 function parsePlatform(target: string): [platform: string, id: string] {

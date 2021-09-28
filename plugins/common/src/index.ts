@@ -4,7 +4,7 @@ import basic, { BasicConfig } from './basic'
 export * from './basic'
 
 declare module 'koishi' {
-  interface Module {
+  interface Modules {
     common: typeof import('.')
   }
 }

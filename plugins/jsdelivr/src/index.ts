@@ -6,6 +6,12 @@ import { createHash } from 'crypto'
 import { File, Task, FileBase } from './file'
 import { fromBuffer } from 'file-type'
 
+declare module 'koishi' {
+  interface Modules {
+    jsdelivr: typeof import('.')
+  }
+}
+
 export interface Branch {
   branch: number
   size: number

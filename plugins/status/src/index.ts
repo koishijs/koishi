@@ -49,7 +49,7 @@ declare module 'koishi' {
     activity: Activity
   }
 
-  interface Module {
+  interface Modules {
     status: typeof import('.')
   }
 }

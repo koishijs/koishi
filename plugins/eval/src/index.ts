@@ -25,7 +25,7 @@ declare module 'koishi' {
     _isEval: boolean
   }
 
-  interface Module {
+  interface Modules {
     eval: typeof import('.')
   }
 

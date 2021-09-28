@@ -3,7 +3,7 @@ import { TelegramBot } from './bot'
 import HttpServer from './http'
 
 declare module 'koishi' {
-  interface Module {
+  interface Modules {
     telegram: typeof import('.')
   }
 }

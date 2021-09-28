@@ -1,4 +1,4 @@
-import { App, Context, hyphenate, omit, pick, Plugin, Schema, Module, Dict, Adapter } from 'koishi'
+import { App, Context, hyphenate, omit, pick, Plugin, Schema, Modules, Dict, Adapter } from 'koishi'
 import { debounce } from 'throttle-debounce'
 import { StatusServer } from '../server'
 
@@ -61,7 +61,7 @@ class Registry implements StatusServer.DataSource {
     for (const key in plugins) {
       if (!key.startsWith('~')) continue
       const name = hyphenate(key.slice(1))
-      const { schema } = require(Module.resolve(name))
+      const { schema } = require(Modules.resolve(name))
       children.push({
         id: null,
         name,

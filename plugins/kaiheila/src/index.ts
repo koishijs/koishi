@@ -4,7 +4,7 @@ import HttpServer from './http'
 import WebSocketClient from './ws'
 
 declare module 'koishi' {
-  interface Module {
+  interface Modules {
     kaiheila: typeof import('.')
   }
 }

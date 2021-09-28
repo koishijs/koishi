@@ -6,7 +6,7 @@ import { stringify } from 'querystring'
 import FormData from 'form-data'
 
 declare module 'koishi' {
-  interface Module {
+  interface Modules {
     assets: typeof import('.')
   }
 }

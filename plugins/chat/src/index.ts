@@ -10,7 +10,7 @@ declare module 'koishi' {
     'chat/receive'(message: Message, session: Session): void
   }
 
-  interface Module {
+  interface Modules {
     chat: typeof import('.')
   }
 }

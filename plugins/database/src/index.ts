@@ -6,7 +6,7 @@ declare module 'koishi' {
     memory: MemoryDatabase
   }
 
-  interface Module {
+  interface Modules {
     database: typeof import('.')
   }
 }

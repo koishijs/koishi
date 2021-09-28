@@ -1,4 +1,4 @@
-import { Adapter, Bot, Session, renameProperty, paramCase, segment, Schema, App } from 'koishi'
+import { Adapter, Bot, Session, renameProperty, paramCase, segment, Schema, App, defineProperty } from 'koishi'
 import * as qface from 'qface'
 import { OneBotBot } from './bot'
 import * as OneBot from './types'
@@ -73,12 +73,13 @@ export const adaptChannel = (group: OneBot.GroupInfo): Bot.Channel => ({
   channelName: group.group_name,
 })
 
-export function dispatchSession(bot: OneBotBot, payload: OneBot.Payload) {
-  const session = adaptSession(payload)
-  if (!session) return
-  session.onebot = Object.create(bot.internal)
-  Object.assign(session.onebot, payload)
-  bot.adapter.dispatch(new Session(bot, session))
+export function dispatchSession(bot: OneBotBot, data: OneBot.Payload) {
+  const payload = adaptSession(data)
+  if (!payload) return
+  const session = new Session(bot, payload)
+  defineProperty(session, 'onebot', Object.create(bot.internal))
+  Object.assign(session.onebot, data)
+  bot.adapter.dispatch(session)
 }
 
 export function adaptSession(data: OneBot.Payload) {

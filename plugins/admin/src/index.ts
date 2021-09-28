@@ -16,6 +16,10 @@ declare module 'koishi' {
   interface EventMap {
     'common/callme'(name: string, session: Session): string | void
   }
+
+  interface Modules {
+    admin: typeof import('.')
+  }
 }
 
 /* eslint-disable quote-props */

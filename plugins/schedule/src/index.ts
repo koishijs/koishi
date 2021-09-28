@@ -5,7 +5,7 @@ declare module 'koishi' {
     schedule: Schedule
   }
 
-  interface Module {
+  interface Modules {
     schedule: typeof import('.')
   }
 }

@@ -6,7 +6,7 @@ declare module 'koishi' {
     rss: string[]
   }
 
-  interface Module {
+  interface Modules {
     rss: typeof import('.')
   }
 }

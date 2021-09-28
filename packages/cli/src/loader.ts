@@ -1,11 +1,11 @@
 import { resolve, extname, dirname, isAbsolute } from 'path'
 import { yellow } from 'kleur'
 import { readdirSync, readFileSync } from 'fs'
-import { App, Context, Dict, hyphenate, makeArray, Module, Plugin } from 'koishi'
+import { App, Context, Dict, hyphenate, makeArray, Modules, Plugin } from 'koishi'
 import { load } from 'js-yaml'
 
-const oldPaths = Module.internal.paths
-Module.internal.paths = function (name: string) {
+const oldPaths = Modules.internal.paths
+Modules.internal.paths = function (name: string) {
   // resolve absolute or relative path
   if (isAbsolute(name) || name.startsWith('.')) {
     return [resolve(cwd, name)]
@@ -49,7 +49,7 @@ export class Loader {
   }
 
   resolvePlugin(name: string) {
-    const path = Module.resolve(hyphenate(name))
+    const path = Modules.resolve(hyphenate(name))
     return this.cache[name] = require(path)
   }
 

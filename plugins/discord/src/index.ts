@@ -3,7 +3,7 @@ import { DiscordBot } from './bot'
 import WebSocketClient from './ws'
 
 declare module 'koishi' {
-  interface Module {
+  interface Modules {
     discord: typeof import('.')
   }
 }

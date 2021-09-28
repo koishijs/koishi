@@ -1,5 +1,11 @@
 import { Context, Session, Awaitable } from 'koishi'
 
+declare module 'koishi' {
+  interface Modules {
+    verifier: typeof import('.')
+  }
+}
+
 type RequestHandler = string | boolean | ((session: Session) => Awaitable<string | boolean | void>)
 type Response = [boolean, string?]
 

@@ -10,7 +10,7 @@ declare module 'koishi' {
     mongo: MongoDatabase
   }
 
-  interface Module {
+  interface Modules {
     mongo: typeof import('.')
   }
 }

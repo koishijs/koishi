@@ -11,7 +11,7 @@ declare module 'koishi' {
     mysql: MysqlDatabase
   }
 
-  interface Module {
+  interface Modules {
     mysql: typeof import('.')
   }
 }

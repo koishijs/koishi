@@ -3,6 +3,12 @@ import { Credentials } from '@aws-sdk/types'
 import { ListObjectsCommand, PutObjectCommand, S3Client, S3ClientConfig } from '@aws-sdk/client-s3'
 import { createHash } from 'crypto'
 
+declare module 'koishi' {
+  interface Modules {
+    s3: typeof import('.')
+  }
+}
+
 const PTC_BASE64 = 'base64://'
 
 async function getAssetBuffer(url: string, http: Requester) {
