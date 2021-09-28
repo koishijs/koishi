@@ -1,5 +1,5 @@
 import {
-  difference, observe, Time, enumKeys, Random, template, deduplicate, intersection, Dict,
+  difference, observe, Time, enumKeys, Random, template, Dict,
   Context, User, Channel, Command, Argv, Session, Extend, Awaitable, Tables,
 } from 'koishi'
 
@@ -81,12 +81,6 @@ template.set('timer', {
   'absent': '定时器 {0} 当前并未生效。',
   'list': '各定时器的生效时间为：',
   'none': '当前没有生效的定时器。',
-})
-
-template.set('switch', {
-  'forbidden': '您无权修改 {0} 功能。',
-  'list': '当前禁用的功能有：{0}',
-  'none': '当前没有禁用功能。',
 })
 
 function parsePlatform(target: string): [platform: string, id: string] {
@@ -439,33 +433,6 @@ export function admin(ctx: Context) {
         target.assignee = userId
       }
     }, true)
-
-  ctx.command('channel/switch <command...>', '启用和禁用功能', { authority: 3 })
-    .channelFields(['disable'])
-    .userFields(['authority'])
-    .adminChannel(async ({ session, target }, ...names: string[]) => {
-      if (!names.length) {
-        if (!target.disable.length) return template('switch.none')
-        return template('switch.list', target.disable.join(', '))
-      }
-
-      names = deduplicate(names)
-      const forbidden = names.filter((name) => {
-        const command = ctx.app._commands.get(name)
-        return command && command.config.authority >= session.user.authority
-      })
-      if (forbidden.length) return template('switch.forbidden', forbidden.join(', '))
-
-      const add = difference(names, target.disable)
-      const remove = intersection(names, target.disable)
-      const preserve = difference(target.disable, names)
-      const output: string[] = []
-      if (add.length) output.push(`禁用 ${add.join(', ')} 功能`)
-      if (remove.length) output.push(`启用 ${remove.join(', ')} 功能`)
-      target.disable = [...preserve, ...add]
-      await target.$update()
-      return `已${output.join('，')}。`
-    })
 
   ctx.command('channel.flag [-s|-S] [...flags]', '标记信息', { authority: 3 })
     .channelFields(['flag'])

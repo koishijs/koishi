@@ -27,7 +27,6 @@ export interface Channel {
   platform: string
   flag: number
   assignee: string
-  disable: string[]
 }
 
 export namespace Channel {

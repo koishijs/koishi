@@ -65,11 +65,6 @@ function isBailed(value: any) {
 }
 
 type Filter = (session: Session) => boolean
-type PartialSeletor<T> = (...values: T[]) => Context
-
-interface Selector<T> extends PartialSeletor<T> {
-  except?: PartialSeletor<T>
-}
 
 const selectors = ['user', 'guild', 'channel', 'self', 'private', 'platform'] as const
 
@@ -99,46 +94,42 @@ export class Context {
     return `Context <${Context.inspect(this._plugin)}>`
   }
 
-  private createSelector<K extends keyof Session>(key: K) {
-    const selector: Selector<Session[K]> = (...values) => {
+  user(...values: string[]) {
+    return this.select('userId', ...values)
+  }
+
+  self(...values: string[]) {
+    return this.select('selfId', ...values)
+  }
+
+  guild(...values: string[]) {
+    return this.select('guildId', ...values)
+  }
+
+  channel(...values: string[]) {
+    return this.select('channelId', ...values)
+  }
+
+  platform(...values: string[]) {
+    return this.select('platform', ...values)
+  }
+
+  private(...values: string[]) {
+    return this.except(this.select('guildId')).select('userId', ...values)
+  }
+
+  select<K extends keyof Session>(key: K, ...values: Session[K][]): Context
+  select(options?: Selection): Context
+  select(...args: [Selection?] | [string, ...any[]]) {
+    if (typeof args[0] === 'string') {
+      const key = args.shift()
       return this.intersect((session) => {
-        return values.length ? values.includes(session[key]) : !!session[key]
+        return args.length ? args.includes(session[key]) : !!session[key]
       })
     }
-    selector.except = (...values) => {
-      return this.intersect((session) => {
-        return values.length ? !values.includes(session[key]) : !session[key]
-      })
-    }
-    return selector
-  }
 
-  get user() {
-    return this.createSelector('userId')
-  }
-
-  get self() {
-    return this.createSelector('selfId')
-  }
-
-  get guild() {
-    return this.createSelector('guildId')
-  }
-
-  get channel() {
-    return this.createSelector('channelId')
-  }
-
-  get platform() {
-    return this.createSelector('platform')
-  }
-
-  get private() {
-    return this.intersect(session => !session.guildId).user
-  }
-
-  select(options: Selection = {}) {
     let ctx: Context = this
+    const options = args[0]
 
     // basic selectors
     for (const type of selectors) {
@@ -146,7 +137,7 @@ export class Context {
       if (value === true) {
         ctx = ctx[type]()
       } else if (value === false) {
-        ctx = ctx[type].except()
+        ctx = ctx.except(ctx[type]())
       } else if (value !== undefined) {
         // we turn everything into string
         ctx = ctx[type](...makeArray(value).map(item => '' + item))

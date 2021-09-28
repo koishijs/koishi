@@ -144,7 +144,6 @@ export namespace Tables {
     platform: 'string(63)',
     flag: 'unsigned(20)',
     assignee: 'string(63)',
-    disable: 'list',
   }, {
     primary: ['id', 'platform'],
   })

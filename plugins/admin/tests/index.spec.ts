@@ -107,18 +107,6 @@ describe('Admin Commands', () => {
     await getChannel().to.have.property('assignee', '514')
   })
 
-  it('channel/switch', async () => {
-    await session.shouldReply('switch -t #123', '未找到指定的频道。')
-    await session.shouldReply('switch', '当前没有禁用功能。')
-    await session.shouldReply('baz', 'zab')
-    await session.shouldReply('switch baz', '已禁用 baz 功能。')
-    await session.shouldReply('switch', '当前禁用的功能有：baz')
-    await session.shouldNotReply('baz')
-    await session.shouldReply('switch baz', '已启用 baz 功能。')
-    await session.shouldReply('baz', 'zab')
-    await session.shouldReply('switch assign', '您无权修改 assign 功能。')
-  })
-
   it('channel.flag', async () => {
     await session.shouldReply('channel.flag', '未设置任何标记。')
     await session.shouldReply('channel.flag -s foo', '未找到标记 foo。')
