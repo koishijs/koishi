@@ -6,11 +6,11 @@ export interface Response {
 }
 
 export interface MessageId {
-  messageId: number
+  message_id: number
 }
 
 export interface AccountInfo {
-  userId: string
+  user_id: string
   nickname: string
 }
 
@@ -21,7 +21,7 @@ export interface StrangerInfo extends AccountInfo {
 
 export interface TalkativeMemberInfo extends AccountInfo {
   avatar: string
-  dayCount: number
+  day_count: number
 }
 
 export type GroupRole = 'member' | 'admin' | 'owner'
@@ -33,12 +33,12 @@ export interface HonoredMemberInfo {
 }
 
 export interface HonorInfo {
-  currentTalkative: TalkativeMemberInfo
-  talkativeList: HonoredMemberInfo[]
-  performerList: HonoredMemberInfo[]
-  legendList: HonoredMemberInfo[]
-  strongNewbieList: HonoredMemberInfo[]
-  emotionList: HonoredMemberInfo[]
+  current_talkative: TalkativeMemberInfo
+  talkative_list: HonoredMemberInfo[]
+  performer_list: HonoredMemberInfo[]
+  legend_list: HonoredMemberInfo[]
+  strong_newbie_list: HonoredMemberInfo[]
+  emotion_list: HonoredMemberInfo[]
 }
 
 export interface SenderInfo extends StrangerInfo {
@@ -50,12 +50,12 @@ export interface SenderInfo extends StrangerInfo {
 }
 
 export interface Message extends MessageId {
-  realId: number
+  real_id?: number
   time: number
-  messageType: 'private' | 'group'
+  message_type: 'private' | 'group'
   sender: SenderInfo
-  groupId?: number
-  message: string
+  group_id?: number
+  message: string | any[]
   anonymous?: AnonymousInfo
 }
 
@@ -73,27 +73,27 @@ export interface FriendInfo extends AccountInfo {
 }
 
 export interface GroupBase {
-  groupId: number
-  groupName: string
+  group_id: number
+  group_name: string
 }
 
 export interface GroupInfo extends GroupBase {
-  memberCount: number
-  maxMemberCount: number
+  member_count: number
+  max_member_count: number
 }
 
 export interface GroupMemberInfo extends SenderInfo {
-  cardChangeable: boolean
-  groupId: number
-  joinTime: number
-  lastSentTime: number
-  titleExpireTime: number
+  card_changeable: boolean
+  group_id: number
+  join_time: number
+  last_sent_time: number
+  title_expire_time: number
   unfriendly: boolean
 }
 
 export interface Credentials {
   cookies: string
-  csrfToken: number
+  csrf_token: number
 }
 
 export interface ImageInfo {
@@ -105,15 +105,15 @@ export interface RecordInfo {
 }
 
 export interface VersionInfo {
-  coolqDirectory: string
-  coolqEdition: 'air' | 'pro'
-  pluginVersion: string
-  pluginBuildNumber: number
-  pluginBuildConfiguration: 'debug' | 'release'
+  coolq_directory: string
+  coolq_edition: 'air' | 'pro'
+  plugin_version: string
+  plugin_build_number: number
+  plugin_build_configuration: 'debug' | 'release'
   version?: string
-  goCqhttp?: boolean
-  runtimeVersion?: string
-  runtimeOs?: string
+  go_cqhttp?: boolean
+  runtime_version?: string
+  runtime_os?: string
 }
 
 export interface ImageInfo {
@@ -129,12 +129,12 @@ export interface ForwardMessage {
 }
 
 export interface EssenceMessage extends MessageId {
-  senderId: number
-  senderNick: string
-  senderTime: number
-  operatorId: number
-  operatorNick: string
-  operatorTime: number
+  sender_id: number
+  sender_nick: string
+  sender_time: number
+  operator_id: number
+  operator_nick: string
+  operator_time: number
 }
 
 interface CQNode {
@@ -150,10 +150,10 @@ interface CQNode {
 
 export interface VipInfo extends AccountInfo {
   level: number
-  levelSpeed: number
-  vipLevel: number
-  vipGrowthSpeed: number
-  vipGrowthTotal: string
+  level_speed: number
+  vip_level: number
+  vip_growth_speed: number
+  vip_growth_total: string
 }
 
 export interface GroupNotice {
@@ -162,34 +162,34 @@ export interface GroupNotice {
   fn: number
   msg: {
     text: string
-    textFace: string
+    text_face: string
     title: string
   }
   pubt: number
-  readNum: number
+  read_num: number
   settings: {
-    isShowEditCard: number
-    remindTs: number
+    is_show_edit_card: number
+    remind_ts: number
   }
   u: number
   vn: number
 }
 
 export interface Statistics {
-  packetReceived: number
-  packetSent: number
-  packetLost: number
-  messageReceived: number
-  messageSent: number
-  disconnectTimes: number
-  lostTimes: number
+  packet_received: number
+  packet_sent: number
+  packet_lost: number
+  message_received: number
+  message_sent: number
+  disconnect_times: number
+  lost_times: number
 }
 
 export interface StatusInfo {
-  appInitialized: boolean
-  appEnabled: boolean
-  pluginsGood: boolean
-  appGood: boolean
+  app_initialized: boolean
+  app_enabled: boolean
+  plugins_good: boolean
+  app_good: boolean
   online: boolean
   good: boolean
   stat: Statistics
@@ -207,9 +207,9 @@ export interface OcrResult {
 }
 
 export interface GroupRequest extends GroupBase {
-  requestId: number
-  invitorUin: number
-  invitorNick: string
+  request_id: number
+  invitor_uin: number
+  invitor_nick: string
   checked: boolean
   actor: number
 }
@@ -221,37 +221,37 @@ export interface JoinRequest extends GroupRequest {
 }
 
 export interface GroupSystemMessageInfo {
-  invitedRequests: InvitedRequest[]
-  joinRequests: JoinRequest[]
+  invited_qequests: InvitedRequest[]
+  join_requests: JoinRequest[]
 }
 
 export interface GroupFileSystemInfo {
-  fileCount: number
-  limitCount: number
-  usedSpace: number
-  totalSpace: number
+  file_count: number
+  limit_count: number
+  used_space: number
+  total_space: number
 }
 
 export interface GroupFile {
-  fileId: string
-  fileName: string
+  file_id: string
+  file_name: string
   busid: number
-  fileSize: number
-  uploadTime: number
-  deadTime: number
-  modifyTime: number
-  downloadTime: number
+  file_size: number
+  upload_time: number
+  dead_time: number
+  modify_time: number
+  download_time: number
   uploader: number
-  uploaderName: string
+  uploader_name: string
 }
 
 export interface GroupFolder {
-  folderId: string
-  folderName: string
-  createTime: number
+  folder_id: string
+  folder_name: string
+  create_time: number
   creator: number
-  creatorName: string
-  totalFileCount: number
+  creator_name: string
+  total_file_count: number
 }
 
 export interface GroupFileList {
@@ -260,111 +260,130 @@ export interface GroupFileList {
 }
 
 export interface AtAllRemain {
-  canAtAll: boolean
-  remainAtAllCountForGroup: number
-  remainAtAllCountForUin: number
+  can_at_all: boolean
+  remain_at_all_count_for_group: number
+  remain_at_all_count_for_uin: number
 }
 
 export interface Device {
-  appId: number
-  deviceName: string
-  deviceKind: string
+  app_id: number
+  device_name: string
+  device_kind: string
 }
 
 export interface ModelVariant {
-  modelShow: string
-  needPay: boolean
+  model_show: string
+  need_pay: boolean
 }
 
 export enum SafetyLevel { safe, unknown, danger }
 
+export interface Payload extends Message {
+  time: number
+  self_id: number
+  post_type: string
+  request_type: string
+  notice_type: string
+  meta_event_type: string
+  honor_type: string
+  sub_type: string
+  message_id: number
+  user_id: number
+  target_id: number
+  operator_id: number
+  raw_message: string
+  font: number
+  comment: string
+  flag: string
+}
+
 type id = string | number
 
-export interface API {
-  $sendPrivateMsg(userId: id, message: string, autoEscape?: boolean): Promise<number>
-  $sendPrivateMsgAsync(userId: id, message: string, autoEscape?: boolean): Promise<void>
-  $sendGroupMsg(groupId: id, message: string, autoEscape?: boolean): Promise<number>
-  $sendGroupMsgAsync(groupId: id, message: string, autoEscape?: boolean): Promise<void>
-  $sendGroupForwardMsg(groupId: id, messages: readonly CQNode[]): Promise<number>
-  $sendGroupForwardMsgAsync(groupId: id, messages: readonly CQNode[]): Promise<void>
-  $deleteMsg(messageId: id): Promise<void>
-  $deleteMsgAsync(messageId: id): Promise<void>
-  $setEssenceMsg(messageId: id): Promise<void>
-  $setEssenceMsgAsync(messageId: id): Promise<void>
-  $deleteEssenceMsg(messageId: id): Promise<void>
-  $deleteEssenceMsgAsync(messageId: id): Promise<void>
-  $sendLike(userId: id, times?: number): Promise<void>
-  $sendLikeAsync(userId: id, times?: number): Promise<void>
-  $getMsg(messageId: id): Promise<Message>
-  $getForwardMsg(messageId: id): Promise<ForwardMessage[]>
-  $getEssenceMsgList(groupId: id): Promise<EssenceMessage[]>
-  $getWordSlices(content: string): Promise<string[]>
-  $ocrImage(image: string): Promise<OcrResult>
-  $getGroupMsgHistory(groupId: id, messageSeq: id): Promise<Message[]>
-  $deleteFriend(userId: id): Promise<void>
-  $deleteFriendAsync(userId: id): Promise<void>
-  $setFriendAddRequest(flag: string, approve: boolean, remark?: string): Promise<void>
-  $setFriendAddRequestAsync(flag: string, approve: boolean, remark?: string): Promise<void>
-  $setGroupAddRequest(flag: string, subType: 'add' | 'invite', approve: boolean, reason?: string): Promise<void>
-  $setGroupAddRequestAsync(flag: string, subType: 'add' | 'invite', approve: boolean, reason?: string): Promise<void>
+export interface Internal {
+  sendPrivateMsg(user_id: id, message: string, autoEscape?: boolean): Promise<number>
+  sendPrivateMsgAsync(user_id: id, message: string, autoEscape?: boolean): Promise<void>
+  sendGroupMsg(groupId: id, message: string, autoEscape?: boolean): Promise<number>
+  sendGroupMsgAsync(groupId: id, message: string, autoEscape?: boolean): Promise<void>
+  sendGroupForwardMsg(groupId: id, messages: readonly CQNode[]): Promise<number>
+  sendGroupForwardMsgAsync(groupId: id, messages: readonly CQNode[]): Promise<void>
+  deleteMsg(message_id: id): Promise<void>
+  deleteMsgAsync(message_id: id): Promise<void>
+  setEssenceMsg(message_id: id): Promise<void>
+  setEssenceMsgAsync(message_id: id): Promise<void>
+  deleteEssenceMsg(message_id: id): Promise<void>
+  deleteEssenceMsgAsync(message_id: id): Promise<void>
+  sendLike(user_id: id, times?: number): Promise<void>
+  sendLikeAsync(user_id: id, times?: number): Promise<void>
+  getMsg(message_id: id): Promise<Message>
+  getForwardMsg(message_id: id): Promise<ForwardMessage[]>
+  getEssenceMsgList(groupId: id): Promise<EssenceMessage[]>
+  getWordSlices(content: string): Promise<string[]>
+  ocrImage(image: string): Promise<OcrResult>
+  getGroupMsgHistory(groupId: id, messageSeq: id): Promise<Message[]>
+  deleteFriend(user_id: id): Promise<void>
+  deleteFriendAsync(user_id: id): Promise<void>
+  setFriendAddRequest(flag: string, approve: boolean, remark?: string): Promise<void>
+  setFriendAddRequestAsync(flag: string, approve: boolean, remark?: string): Promise<void>
+  setGroupAddRequest(flag: string, subType: 'add' | 'invite', approve: boolean, reason?: string): Promise<void>
+  setGroupAddRequestAsync(flag: string, subType: 'add' | 'invite', approve: boolean, reason?: string): Promise<void>
 
-  $setGroupKick(groupId: id, userId: id, rejectAddRequest?: boolean): Promise<void>
-  $setGroupKickAsync(groupId: id, userId: id, rejectAddRequest?: boolean): Promise<void>
-  $setGroupBan(groupId: id, userId: id, duration?: number): Promise<void>
-  $setGroupBanAsync(groupId: id, userId: id, duration?: number): Promise<void>
-  $setGroupWholeBan(groupId: id, enable?: boolean): Promise<void>
-  $setGroupWholeBanAsync(groupId: id, enable?: boolean): Promise<void>
-  $setGroupAdmin(groupId: id, userId: id, enable?: boolean): Promise<void>
-  $setGroupAdminAsync(groupId: id, userId: id, enable?: boolean): Promise<void>
-  $setGroupAnonymous(groupId: id, enable?: boolean): Promise<void>
-  $setGroupAnonymousAsync(groupId: id, enable?: boolean): Promise<void>
-  $setGroupCard(groupId: id, userId: id, card?: string): Promise<void>
-  $setGroupCardAsync(groupId: id, userId: id, card?: string): Promise<void>
-  $setGroupLeave(groupId: id, isDismiss?: boolean): Promise<void>
-  $setGroupLeaveAsync(groupId: id, isDismiss?: boolean): Promise<void>
-  $setGroupSpecialTitle(groupId: id, userId: id, specialTitle?: string, duration?: number): Promise<void>
-  $setGroupSpecialTitleAsync(groupId: id, userId: id, specialTitle?: string, duration?: number): Promise<void>
-  $setGroupName(groupId: id, name: string): Promise<void>
-  $setGroupNameAsync(groupId: id, name: string): Promise<void>
-  $setGroupPortrait(groupId: id, file: string, cache?: boolean): Promise<void>
-  $setGroupPortraitAsync(groupId: id, file: string, cache?: boolean): Promise<void>
-  $getGroupAtAllRemain(groupId: id): Promise<AtAllRemain>
-  $sendGroupNotice(groupId: id, content: string): Promise<void>
-  $sendGroupNoticeAsync(groupId: id, content: string): Promise<void>
+  setGroupKick(groupId: id, user_id: id, rejectAddRequest?: boolean): Promise<void>
+  setGroupKickAsync(groupId: id, user_id: id, rejectAddRequest?: boolean): Promise<void>
+  setGroupBan(groupId: id, user_id: id, duration?: number): Promise<void>
+  setGroupBanAsync(groupId: id, user_id: id, duration?: number): Promise<void>
+  setGroupWholeBan(groupId: id, enable?: boolean): Promise<void>
+  setGroupWholeBanAsync(groupId: id, enable?: boolean): Promise<void>
+  setGroupAdmin(groupId: id, user_id: id, enable?: boolean): Promise<void>
+  setGroupAdminAsync(groupId: id, user_id: id, enable?: boolean): Promise<void>
+  setGroupAnonymous(groupId: id, enable?: boolean): Promise<void>
+  setGroupAnonymousAsync(groupId: id, enable?: boolean): Promise<void>
+  setGroupCard(groupId: id, user_id: id, card?: string): Promise<void>
+  setGroupCardAsync(groupId: id, user_id: id, card?: string): Promise<void>
+  setGroupLeave(groupId: id, isDismiss?: boolean): Promise<void>
+  setGroupLeaveAsync(groupId: id, isDismiss?: boolean): Promise<void>
+  setGroupSpecialTitle(groupId: id, user_id: id, specialTitle?: string, duration?: number): Promise<void>
+  setGroupSpecialTitleAsync(groupId: id, user_id: id, specialTitle?: string, duration?: number): Promise<void>
+  setGroupName(groupId: id, name: string): Promise<void>
+  setGroupNameAsync(groupId: id, name: string): Promise<void>
+  setGroupPortrait(groupId: id, file: string, cache?: boolean): Promise<void>
+  setGroupPortraitAsync(groupId: id, file: string, cache?: boolean): Promise<void>
+  getGroupAtAllRemain(groupId: id): Promise<AtAllRemain>
+  sendGroupNotice(groupId: id, content: string): Promise<void>
+  sendGroupNoticeAsync(groupId: id, content: string): Promise<void>
 
-  $getLoginInfo(): Promise<AccountInfo>
-  $getVipInfo(): Promise<VipInfo>
-  $getStrangerInfo(userId: id, noCache?: boolean): Promise<StrangerInfo>
-  $getFriendList(): Promise<FriendInfo[]>
-  $getGroupInfo(groupId: id, noCache?: boolean): Promise<GroupInfo>
-  $getGroupList(): Promise<GroupInfo[]>
-  $getGroupMemberInfo(groupId: id, userId: id, noCache?: boolean): Promise<GroupMemberInfo>
-  $getGroupMemberList(groupId: id, noCache?: boolean): Promise<GroupMemberInfo[]>
-  $getGroupHonorInfo(groupId: id, type: HonorType): Promise<HonorInfo>
-  $getGroupSystemMsg(): Promise<GroupSystemMessageInfo>
-  $getGroupFileSystemInfo(groupId: id): Promise<GroupFileSystemInfo>
-  $getGroupRootFiles(groupId: id): Promise<GroupFileList>
-  $getGroupFilesByFolder(groupId: id, folderId: string): Promise<GroupFileList>
-  $getGroupFileUrl(groupId: id, fileId: string, busid: number): Promise<string>
-  $downloadFile(url: string, headers?: string | string[], threadCount?: number): Promise<string>
-  $uploadGroupFile(groupId: id, file: string, name: string, folder?: string): Promise<void>
-  $createGroupFileFolder(groupId: id, folderId: string, name: string): Promise<void>
-  $deleteGroupFolder(groupId: id, folderId: string): Promise<void>
-  $deleteGroupFile(groupId: id, folderId: string, fileId: string, busid: number): Promise<void>
-  $getOnlineClients(noCache?: boolean): Promise<Device[]>
-  $checkUrlSafely(url: string): Promise<SafetyLevel>
-  $getModelShow(model: string): Promise<ModelVariant[]>
-  $setModelShow(model: string, modelShow: string): Promise<void>
+  getLoginInfo(): Promise<AccountInfo>
+  getVipInfo(): Promise<VipInfo>
+  getStrangerInfo(user_id: id, noCache?: boolean): Promise<StrangerInfo>
+  getFriendList(): Promise<FriendInfo[]>
+  getGroupInfo(groupId: id, noCache?: boolean): Promise<GroupInfo>
+  getGroupList(): Promise<GroupInfo[]>
+  getGroupMemberInfo(groupId: id, user_id: id, noCache?: boolean): Promise<GroupMemberInfo>
+  getGroupMemberList(groupId: id, noCache?: boolean): Promise<GroupMemberInfo[]>
+  getGroupHonorInfo(groupId: id, type: HonorType): Promise<HonorInfo>
+  getGroupSystemMsg(): Promise<GroupSystemMessageInfo>
+  getGroupFileSystemInfo(groupId: id): Promise<GroupFileSystemInfo>
+  getGroupRootFiles(groupId: id): Promise<GroupFileList>
+  getGroupFilesByFolder(groupId: id, folderId: string): Promise<GroupFileList>
+  getGroupFileUrl(groupId: id, fileId: string, busid: number): Promise<string>
+  downloadFile(url: string, headers?: string | string[], threadCount?: number): Promise<string>
+  uploadGroupFile(groupId: id, file: string, name: string, folder?: string): Promise<void>
+  createGroupFileFolder(groupId: id, folderId: string, name: string): Promise<void>
+  deleteGroupFolder(groupId: id, folderId: string): Promise<void>
+  deleteGroupFile(groupId: id, folderId: string, fileId: string, busid: number): Promise<void>
+  getOnlineClients(noCache?: boolean): Promise<Device[]>
+  checkUrlSafely(url: string): Promise<SafetyLevel>
+  getModelShow(model: string): Promise<ModelVariant[]>
+  setModelShow(model: string, modelShow: string): Promise<void>
 
-  $getCookies(domain?: string): Promise<string>
-  $getCsrfToken(): Promise<number>
-  $getCredentials(domain?: string): Promise<Credentials>
-  $getRecord(file: string, outFormat: RecordFormat, fullPath?: boolean): Promise<RecordInfo>
-  $getImage(file: string): Promise<ImageInfo>
-  $canSendImage(): Promise<boolean>
-  $canSendRecord(): Promise<boolean>
-  $getStatus(): Promise<StatusInfo>
-  $getVersionInfo(): Promise<VersionInfo>
-  $setRestart(delay?: number): Promise<void>
-  $reloadEventFilter(): Promise<void>
+  getCookies(domain?: string): Promise<string>
+  getCsrfToken(): Promise<number>
+  getCredentials(domain?: string): Promise<Credentials>
+  getRecord(file: string, outFormat: RecordFormat, fullPath?: boolean): Promise<RecordInfo>
+  getImage(file: string): Promise<ImageInfo>
+  canSendImage(): Promise<boolean>
+  canSendRecord(): Promise<boolean>
+  getStatus(): Promise<StatusInfo>
+  getVersionInfo(): Promise<VersionInfo>
+  setRestart(delay?: number): Promise<void>
+  reloadEventFilter(): Promise<void>
 }

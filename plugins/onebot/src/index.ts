@@ -1,7 +1,8 @@
 import { Adapter, Context } from 'koishi'
-import { CQBot } from './bot'
+import { OneBotBot } from './bot'
 import { WebSocketClient, WebSocketServer } from './ws'
 import { HttpServer } from './http'
+import * as OneBot from './types'
 
 const { broadcast } = Context.prototype
 const imageRE = /\[CQ:image,file=([^,]+),url=([^\]]+)\]/
@@ -27,9 +28,13 @@ declare module 'koishi' {
   interface Module {
     onebot: typeof import('.')
   }
+
+  interface Session {
+    onebot?: OneBot.Payload & OneBot.Internal
+  }
 }
 
-export = Adapter.define('onebot', CQBot, {
+export = Adapter.define('onebot', OneBotBot, {
   'http': HttpServer,
   'ws': WebSocketClient,
   'ws-reverse': WebSocketServer,

@@ -85,19 +85,20 @@ export namespace segment {
     return chain
   }
 
-  export function transform(source: string, rules: Dict<Transformer>, dropOthers = false) {
-    return parse(source).map(({ type, data, capture }, index, chain) => {
+  export function transform(source: string | Chain, rules: Dict<Transformer>, dropOthers = false) {
+    const chain = typeof source === 'string' ? parse(source) : source
+    return chain.map(({ type, data, capture }, index, chain) => {
       const transformer = rules[type]
-      return typeof transformer === 'string'
-        ? transformer
-        : typeof transformer === 'function'
-          ? transformer(data, index, chain)
-          : dropOthers ? '' : type === 'text' ? escape(data.content) : capture[0]
+      if (typeof transformer === 'string') return transformer
+      if (typeof transformer === 'function') return transformer(data, index, chain)
+      if (dropOthers) return ''
+      if (capture && type !== 'text') return capture[0]
+      return segment(type, data)
     }).join('')
   }
 
-  export async function transformAsync(source: string, rules: Dict<AsyncTransformer>) {
-    const chain = segment.parse(source)
+  export async function transformAsync(source: string | Chain, rules: Dict<AsyncTransformer>) {
+    const chain = typeof source === 'string' ? parse(source) : source
     const cache = new Map<Parsed, string>()
     await Promise.all(chain.map(async (node, index, chain) => {
       const transformer = rules[node.type]

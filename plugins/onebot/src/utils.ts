@@ -1,5 +1,6 @@
-import { Adapter, Bot, Session, camelCase, renameProperty, paramCase, segment, Schema, App } from 'koishi'
+import { Adapter, Bot, Session, renameProperty, paramCase, segment, Schema, App } from 'koishi'
 import * as qface from 'qface'
+import { OneBotBot } from './bot'
 import * as OneBot from './types'
 
 export * from './types'
@@ -20,12 +21,12 @@ export const AdapterConfig: Schema<AdapterConfig> = Schema.merge([
 ])
 
 export const adaptUser = (user: OneBot.AccountInfo): Bot.User => ({
-  userId: user.userId.toString(),
-  avatar: `http://q.qlogo.cn/headimg_dl?dst_uin=${user.userId}&spec=640`,
+  userId: user.user_id.toString(),
+  avatar: `http://q.qlogo.cn/headimg_dl?dst_uin=${user.user_id}&spec=640`,
   username: user.nickname,
 })
 
-export const adaptGroupMember = (user: OneBot.SenderInfo): Bot.GuildMember => ({
+export const adaptGuildMember = (user: OneBot.SenderInfo): Bot.GuildMember => ({
   ...adaptUser(user),
   nickname: user.card,
   roles: [user.role],
@@ -43,7 +44,7 @@ export function adaptMessage(message: OneBot.Message): Bot.Message {
   const result: Bot.Message = {
     author,
     userId: author.userId,
-    messageId: message.messageId.toString(),
+    messageId: message.message_id.toString(),
     timestamp: message.time * 1000,
     content: segment.transform(message.message, {
       at({ qq }) {
@@ -54,46 +55,53 @@ export function adaptMessage(message: OneBot.Message): Bot.Message {
       reply: (data) => segment('quote', data),
     }),
   }
-  if (message.groupId) {
-    result.guildId = result.channelId = message.groupId.toString()
+  if (message.group_id) {
+    result.guildId = result.channelId = message.group_id.toString()
   } else {
     result.channelId = 'private:' + author.userId
   }
   return result
 }
 
-export const adaptGroup = (group: OneBot.GroupInfo): Bot.Guild => ({
-  guildId: group.groupId.toString(),
-  guildName: group.groupName,
+export const adaptGuild = (group: OneBot.GroupInfo): Bot.Guild => ({
+  guildId: group.group_id.toString(),
+  guildName: group.group_name,
 })
 
 export const adaptChannel = (group: OneBot.GroupInfo): Bot.Channel => ({
-  channelId: group.groupId.toString(),
-  channelName: group.groupName,
+  channelId: group.group_id.toString(),
+  channelName: group.group_name,
 })
 
-export function adaptSession(data: any) {
-  const session = camelCase<Session>(data)
-  session.selfId = '' + session.selfId
-  renameProperty(session, 'type', 'postType')
-  renameProperty(session, 'subtype', 'subType')
+export function dispatchSession(bot: OneBotBot, payload: OneBot.Payload) {
+  const session = adaptSession(payload)
+  if (!session) return
+  session.onebot = Object.create(bot.internal)
+  Object.assign(session.onebot, payload)
+  bot.adapter.dispatch(new Session(bot, session))
+}
+
+export function adaptSession(data: OneBot.Payload) {
+  const session: Partial<Session> = {}
+  session.selfId = '' + data.self_id
+  session.type = data.post_type as any
+  session.subtype = data.sub_type as any
 
   if (data.post_type === 'message') {
-    Object.assign(session, adaptMessage(session as any))
-    renameProperty(session, 'subtype', 'messageType')
+    Object.assign(session, adaptMessage(data))
+    session.subtype = data.message_type
     return session
   }
 
   renameProperty(session, 'guildId', 'groupId')
-  if (session.userId) session.userId = '' + session.userId
-  if (session.guildId) session.guildId = session.channelId = '' + session.guildId
-  if (session.targetId) session.targetId = '' + session.targetId
-  if (session.operatorId) session.operatorId = '' + session.operatorId
+  if (data.user_id) session.userId = '' + data.user_id
+  if (data.group_id) session.guildId = session.channelId = '' + data.group_id
+  if (data.target_id) session.targetId = '' + data.target_id
+  if (data.operator_id) session.operatorId = '' + data.operator_id
 
   if (data.post_type === 'request') {
-    delete session['requestType']
-    renameProperty(session, 'content', 'comment')
-    renameProperty(session, 'messageId', 'flag')
+    session.content = data.comment
+    session.messageId = data.flag
     if (data.request_type === 'friend') {
       session.type = 'friend-request'
       session.channelId = `private:${session.userId}`
@@ -103,7 +111,6 @@ export function adaptSession(data: any) {
       session.type = 'guild-request'
     }
   } else if (data.post_type === 'notice') {
-    delete session['noticeType']
     switch (data.notice_type) {
       case 'group_recall':
         session.type = 'message-deleted'
@@ -142,11 +149,11 @@ export function adaptSession(data: any) {
         break
       case 'notify':
         session.type = 'notice'
-        session.subtype = paramCase(data.sub_type)
+        session.subtype = paramCase(data.sub_type) as any
         if (session.subtype === 'poke') {
           session.channelId ||= `private:${session.userId}`
         } else if (session.subtype === 'honor') {
-          session.subsubtype = paramCase(data.honor_type)
+          session.subsubtype = paramCase(data.honor_type) as any
         }
         break
     }

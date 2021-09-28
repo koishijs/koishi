@@ -1,6 +1,6 @@
-import { App, Adapter, Logger, assertProperty, camelCase, Time, Session, Schema } from 'koishi'
-import { BotConfig, CQBot } from './bot'
-import { AdapterConfig, adaptSession, adaptUser, Response } from './utils'
+import { App, Adapter, Logger, assertProperty, Time, Schema } from 'koishi'
+import { BotConfig, OneBotBot } from './bot'
+import { AdapterConfig, dispatchSession, adaptUser, Response } from './utils'
 import WebSocket from 'ws'
 
 const logger = new Logger('onebot')
@@ -18,7 +18,7 @@ export class WebSocketClient extends Adapter.WebSocketClient<BotConfig, AdapterC
     super(app, config)
   }
 
-  prepare(bot: CQBot) {
+  prepare(bot: OneBotBot) {
     const { endpoint, token } = bot.config
     const headers: Record<string, string> = {}
     if (token) headers.Authorization = `Bearer ${token}`
@@ -58,7 +58,7 @@ export class WebSocketServer extends Adapter<BotConfig, AdapterConfig> {
       if (!bot) return socket.close(1008, 'invalid x-self-id')
 
       bot.socket = socket
-      this.accept(bot as CQBot)
+      this.accept(bot as OneBotBot)
     })
   }
 
@@ -74,7 +74,7 @@ export class WebSocketServer extends Adapter<BotConfig, AdapterConfig> {
 let counter = 0
 const listeners: Record<number, (response: Response) => void> = {}
 
-export function accept(this: Adapter<BotConfig, AdapterConfig>, bot: CQBot) {
+export function accept(this: Adapter<BotConfig, AdapterConfig>, bot: OneBotBot) {
   bot.socket.on('message', (data) => {
     data = data.toString()
     let parsed: any
@@ -86,10 +86,9 @@ export function accept(this: Adapter<BotConfig, AdapterConfig>, bot: CQBot) {
 
     if ('post_type' in parsed) {
       logger.debug('receive %o', parsed)
-      const session = adaptSession(parsed)
-      if (session) bot.adapter.dispatch(new Session(bot, session))
+      dispatchSession(bot, parsed)
     } else if (parsed.echo === -1) {
-      Object.assign(bot, adaptUser(camelCase(parsed.data)))
+      Object.assign(bot, adaptUser(parsed.data))
       logger.debug('%d got self info', parsed.data)
       bot.resolve()
     } else if (parsed.echo in listeners) {
@@ -99,7 +98,7 @@ export function accept(this: Adapter<BotConfig, AdapterConfig>, bot: CQBot) {
   })
 
   bot.socket.on('close', () => {
-    delete bot._request
+    delete bot.internal._request
   })
 
   bot.socket.send(JSON.stringify({
@@ -109,7 +108,7 @@ export function accept(this: Adapter<BotConfig, AdapterConfig>, bot: CQBot) {
     if (error) bot.reject(error)
   })
 
-  bot._request = (action, params) => {
+  bot.internal._request = (action, params) => {
     const data = { action, params, echo: ++counter }
     data.echo = ++counter
     return new Promise((resolve, reject) => {

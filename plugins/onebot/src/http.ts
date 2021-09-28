@@ -1,6 +1,6 @@
-import { App, Adapter, Logger, assertProperty, Session, Schema, Requester, omit } from 'koishi'
-import { BotConfig, CQBot } from './bot'
-import { adaptSession, AdapterConfig } from './utils'
+import { App, Adapter, Logger, assertProperty, Schema, Requester, omit } from 'koishi'
+import { BotConfig, OneBotBot } from './bot'
+import { dispatchSession, AdapterConfig } from './utils'
 import { createHmac } from 'crypto'
 
 const logger = new Logger('onebot')
@@ -13,13 +13,15 @@ export class HttpServer extends Adapter<BotConfig, AdapterConfig> {
     ...omit(Requester.Config.dict, ['endpoint']),
   })
 
+  public bots: OneBotBot[]
+
   constructor(app: App, config: AdapterConfig = {}) {
     super(app, config)
     assertProperty(app.options, 'port')
     this.http = app.http.extend(config.request)
   }
 
-  async connect(bot: CQBot) {
+  async connect(bot: OneBotBot) {
     const { endpoint, token } = bot.config
     if (!endpoint) return
 
@@ -30,7 +32,7 @@ export class HttpServer extends Adapter<BotConfig, AdapterConfig> {
       },
     })
 
-    bot._request = async (action, params) => {
+    bot.internal._request = async (action, params) => {
       return http.post('/' + action, params)
     }
 
@@ -57,10 +59,7 @@ export class HttpServer extends Adapter<BotConfig, AdapterConfig> {
       if (!bot) return ctx.status = 403
 
       logger.debug('receive %o', ctx.request.body)
-      const session = adaptSession(ctx.request.body)
-
-      // dispatch events
-      if (session) this.dispatch(new Session(bot, session))
+      dispatchSession(bot, ctx.request.body)
     })
   }
 
