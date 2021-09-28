@@ -94,20 +94,6 @@ ctx.router.get('/path', (ctx, next) => {
 
 选取当前上下文的子集，排除机器人 / 用户 / 群组 / 频道 / 平台名称为所给定的值。这里的 type 同上文。
 
-### ctx.select(key, ...values)
-
-- **values:** `string[]` 如果非空则表示允许的 key 属性可选值；否则只需 key 属性为 truthy 即可
-- 返回值: `Context` 新的上下文
-
-选取当前上下文的子集，限定会话对象的 key 属性所对应的值。
-
-### ctx.unselect(key, ...values)
-
-- **values:** `string[]` 如果非空则表示允许的 key 属性禁用值；否则只需 key 属性为 falsy 即可
-- 返回值: `Context` 新的上下文
-
-选取当前上下文的子集，排除会话对象的 key 属性所对应的值。
-
 ### ctx.union(filter)
 
 - **context:** `Context | ((session: Session) => boolean)` 另一个上下文或者过滤器函数

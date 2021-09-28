@@ -56,7 +56,7 @@ export class Loader {
   loadPlugin(name: string, options?: any) {
     const plugin = this.resolvePlugin(name)
     if (this.app.registry.has(plugin)) return plugin
-    createContext(this.app, options).plugin(plugin, options)
+    this.app.plugin(plugin, options)
     return plugin
   }
 
@@ -72,48 +72,4 @@ export class Loader {
     }
     return app
   }
-}
-
-const selectors = ['user', 'guild', 'channel', 'self', 'private', 'platform'] as const
-
-type SelectorType = typeof selectors[number]
-type SelectorValue = boolean | string | number | (string | number)[]
-type BaseSelection = { [K in SelectorType as `$${K}`]?: SelectorValue }
-
-interface Selection extends BaseSelection {
-  $union?: Selection[]
-  $except?: Selection
-}
-
-function createContext(app: App, options: Selection) {
-  let ctx: Context = app
-
-  // basic selectors
-  for (const type of selectors) {
-    const value = options[`$${type}`] as SelectorValue
-    if (value === true) {
-      ctx = ctx[type]()
-    } else if (value === false) {
-      ctx = ctx[type].except()
-    } else if (value !== undefined) {
-      // we turn everything into string
-      ctx = ctx[type](...makeArray(value).map(item => '' + item))
-    }
-  }
-
-  // union
-  if (options.$union) {
-    let ctx2: Context = app
-    for (const selection of options.$union) {
-      ctx2 = ctx2.union(createContext(app, selection))
-    }
-    ctx = ctx.intersect(ctx2)
-  }
-
-  // except
-  if (options.$except) {
-    ctx = ctx.except(createContext(app, options.$except))
-  }
-
-  return ctx
 }

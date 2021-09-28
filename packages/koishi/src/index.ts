@@ -1,4 +1,4 @@
-import { App, Context, Module } from '@koishijs/core'
+import { App, Context, Modules } from '@koishijs/core'
 import { defineProperty, remove, Schema } from '@koishijs/utils'
 import { Server, createServer } from 'http'
 import { Requester } from './http'
@@ -48,8 +48,8 @@ App.Config.Network.dict = {
 }
 
 // use node require
-Module.internal.require = require
-Module.internal.resolve = require.resolve
+Modules.internal.require = require
+Modules.internal.resolve = require.resolve
 
 Context.service('router')
 Context.service('http')

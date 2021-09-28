@@ -1,4 +1,4 @@
-import { Logger, defineProperty, remove, segment, Random, Schema, Promisify, Awaitable, Dict } from '@koishijs/utils'
+import { Logger, defineProperty, makeArray, remove, segment, Random, Schema, Promisify, Awaitable, Dict, MaybeArray } from '@koishijs/utils'
 import { Command } from './command'
 import { Session } from './session'
 import { User, Channel, Database, Assets, Cache, Modules } from './database'
@@ -71,6 +71,18 @@ interface Selector<T> extends PartialSeletor<T> {
   except?: PartialSeletor<T>
 }
 
+const selectors = ['user', 'guild', 'channel', 'self', 'private', 'platform'] as const
+
+type SelectorType = typeof selectors[number]
+type SelectorValue = boolean | MaybeArray<string | number>
+type BaseSelection = { [K in SelectorType as `$${K}`]?: SelectorValue }
+
+interface Selection extends BaseSelection {
+  $and?: Selection[]
+  $or?: Selection[]
+  $not?: Selection
+}
+
 export interface Context extends Context.Services {}
 
 export class Context {
@@ -88,8 +100,16 @@ export class Context {
   }
 
   private createSelector<K extends keyof Session>(key: K) {
-    const selector: Selector<Session[K]> = (...args) => this.select(key, ...args)
-    selector.except = (...args) => this.unselect(key, ...args)
+    const selector: Selector<Session[K]> = (...values) => {
+      return this.intersect((session) => {
+        return values.length ? values.includes(session[key]) : !!session[key]
+      })
+    }
+    selector.except = (...values) => {
+      return this.intersect((session) => {
+        return values.length ? !values.includes(session[key]) : !session[key]
+      })
+    }
     return selector
   }
 
@@ -114,23 +134,51 @@ export class Context {
   }
 
   get private() {
-    return this.unselect('guildId').user
+    return this.intersect(session => !session.guildId).user
+  }
+
+  select(options: Selection = {}) {
+    let ctx: Context = this
+
+    // basic selectors
+    for (const type of selectors) {
+      const value = options[`$${type}`] as SelectorValue
+      if (value === true) {
+        ctx = ctx[type]()
+      } else if (value === false) {
+        ctx = ctx[type].except()
+      } else if (value !== undefined) {
+        // we turn everything into string
+        ctx = ctx[type](...makeArray(value).map(item => '' + item))
+      }
+    }
+
+    // intersect
+    if (options.$and) {
+      for (const selection of options.$and) {
+        ctx = ctx.intersect(this.select(selection))
+      }
+    }
+
+    // union
+    if (options.$or) {
+      let ctx2: Context = this.app
+      for (const selection of options.$or) {
+        ctx2 = ctx2.union(this.select(selection))
+      }
+      ctx = ctx.intersect(ctx2)
+    }
+
+    // except
+    if (options.$not) {
+      ctx = ctx.except(this.select(options.$not))
+    }
+
+    return ctx
   }
 
   logger(name: string) {
     return new Logger(name)
-  }
-
-  select<K extends keyof Session>(key: K, ...values: Session[K][]) {
-    return this.intersect((session) => {
-      return values.length ? values.includes(session[key]) : !!session[key]
-    })
-  }
-
-  unselect<K extends keyof Session>(key: K, ...values: Session[K][]) {
-    return this.intersect((session) => {
-      return values.length ? !values.includes(session[key]) : !session[key]
-    })
   }
 
   any() {
@@ -212,8 +260,7 @@ export class Context {
       return this
     }
 
-    const ctx: this = Object.create(this)
-    defineProperty(ctx, '_plugin', plugin)
+    const ctx = new Context(this.filter, this.app, plugin).select(options)
     this.app.registry.set(plugin, {
       plugin,
       id: Random.id(),
