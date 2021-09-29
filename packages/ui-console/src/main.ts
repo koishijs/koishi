@@ -14,6 +14,8 @@ import Input from './components/form/input.vue'
 import Radio from './components/form/radio.vue'
 import Schema from './components/form/schema.vue'
 
+import Content from './components/layout/content.vue'
+import CardAside from './components/layout/card-aside.vue'
 import Card from './components/card.vue'
 import Collapse from './components/collapse.vue'
 import Numeric from './components/numeric.vue'
@@ -96,6 +98,8 @@ app.component('k-input', Input)
 app.component('k-radio', Radio)
 app.component('k-schema', Schema)
 
+app.component('k-content', Content)
+app.component('k-card-aside', CardAside)
 app.component('k-card', Card)
 app.component('k-chart', Vue.defineAsyncComponent(() => import('./components/echarts')))
 app.component('k-collapse', Collapse)

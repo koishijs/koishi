@@ -1,48 +1,46 @@
 <template>
-  <el-scrollbar class="plugin-view">
-    <div class="content">
-      <template v-if="!data.name">
-        <h1>
-          全局设置
-          <k-button solid>应用配置</k-button>
-        </h1>
-      </template>
-      <template v-else>
-        <h1>
-          {{ getFullname(data) }}
-          <template v-if="data.schema">
-            <template v-if="data.id">
-              <k-button solid type="error" @click="execute('dispose')">停用插件</k-button>
-              <t-button :message="message" @click="execute('reload')">重载配置</t-button>
-            </template>
-            <template v-else>
-              <t-button :message="message" @click="execute('install')">启用插件</t-button>
-              <k-button solid @click="execute('save')">保存配置</k-button>
-            </template>
+  <k-content class="plugin-view">
+    <template v-if="!data.name">
+      <h1>
+        全局设置
+        <k-button solid>应用配置</k-button>
+      </h1>
+    </template>
+    <template v-else>
+      <h1>
+        {{ getFullname(data) }}
+        <template v-if="data.schema">
+          <template v-if="data.id">
+            <k-button solid type="error" @click="execute('dispose')">停用插件</k-button>
+            <t-button :message="message" @click="execute('reload')">重载配置</t-button>
           </template>
-        </h1>
-        <k-comment v-for="key in getKeywords('service')" type="success">
-          <template #header>实现功能：{{ key }}</template>
-        </k-comment>
-        <k-comment v-for="(data, key) in delegates" :type="data.fulfilled ? 'success' : data.required ? 'warning' : 'default'">
-          <template #header>{{ data.required ? '依赖' : '可选' }}功能：{{ key }}</template>
-          <ul>
-            <li v-for="name in data.available">{{ name }}</li>
-          </ul>
-        </k-comment>
-        <k-comment v-for="(fulfilled, name) in getDeps('peerDeps')" :type="fulfilled ? 'success' : 'warning'">
-          <template #header>依赖插件：{{ name }}</template>
-        </k-comment>
-        <k-comment v-for="(fulfilled, name) in getDeps('devDeps')" :type="fulfilled ? 'success' : 'default'">
-          <template #header>可选插件：{{ name }}</template>
-        </k-comment>
-      </template>
-      <p v-if="!data.schema">此插件暂不支持在线配置。</p>
-      <template v-else>
-        <k-schema :schema="data.schema" v-model="data.config" prefix=""/>
-      </template>
-    </div>
-  </el-scrollbar>
+          <template v-else>
+            <t-button :message="message" @click="execute('install')">启用插件</t-button>
+            <k-button solid @click="execute('save')">保存配置</k-button>
+          </template>
+        </template>
+      </h1>
+      <k-comment v-for="key in getKeywords('service')" type="success">
+        <template #header>实现功能：{{ key }}</template>
+      </k-comment>
+      <k-comment v-for="(data, key) in delegates" :type="data.fulfilled ? 'success' : data.required ? 'warning' : 'default'">
+        <template #header>{{ data.required ? '依赖' : '可选' }}功能：{{ key }}</template>
+        <ul>
+          <li v-for="name in data.available">{{ name }}</li>
+        </ul>
+      </k-comment>
+      <k-comment v-for="(fulfilled, name) in getDeps('peerDeps')" :type="fulfilled ? 'success' : 'warning'">
+        <template #header>依赖插件：{{ name }}</template>
+      </k-comment>
+      <k-comment v-for="(fulfilled, name) in getDeps('devDeps')" :type="fulfilled ? 'success' : 'default'">
+        <template #header>可选插件：{{ name }}</template>
+      </k-comment>
+    </template>
+    <p v-if="!data.schema">此插件暂不支持在线配置。</p>
+    <template v-else>
+      <k-schema :schema="data.schema" v-model="data.config" prefix=""/>
+    </template>
+  </k-content>
 </template>
 
 <script setup lang="ts">
@@ -134,19 +132,6 @@ function execute(event: string) {
 <style lang="scss">
 
 .plugin-view {
-  position: absolute;
-  top: 0;
-  left: 16rem;
-  right: 0;
-  height: 100%;
-  overflow: auto;
-
-  .content {
-    margin: auto;
-    max-width: 50rem;
-    padding: 3rem 3rem 1rem;
-  }
-
   h1 {
     margin: 0 0 2rem;
   }

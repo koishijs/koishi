@@ -1,5 +1,5 @@
 <template>
-  <aside>
+  <aside class="layout-aside">
     <h1>Koishi 控制台</h1>
     <ul>
       <template v-for="({ name, path, meta }) in $router.getRoutes()">
@@ -29,7 +29,7 @@ function isShown(meta: RouteMeta) {
 
 @import '../../index.scss';
 
-aside {
+aside.layout-aside {
   position: fixed;
   height: 100%;
   width: var(--aside-width);
