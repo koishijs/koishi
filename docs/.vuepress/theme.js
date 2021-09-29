@@ -2,6 +2,7 @@ module.exports = {
   extends: '@vuepress/theme-default',
 
   layouts: {
+    Home: require.resolve('./layouts/Home.vue'),
     // Playground: require.resolve('@koishijs/ui-playground'),
   },
 

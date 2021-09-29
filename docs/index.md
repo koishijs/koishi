@@ -1,8 +1,9 @@
 ---
+layout: Home
 home: true
 heroImage: /koishi.png
 heroText: Koishi
-tagline: 一个跨平台的机器人框架
+tagline: Cross-Platform Chatbot Framework Made with Koi
 actions:
   - text: 快速上手 →
     link: /guide/basic/console.html

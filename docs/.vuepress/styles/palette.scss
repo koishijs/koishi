@@ -1,4 +1,13 @@
+// H: 250
+
 :root {
+  --bg0: #F9F7FF; // 250 3 100
+  --fg1: #1E0A80; // 250 92 50
+  --c-fg4: #6859B3; // 250 50 70
+  --c-love: #8F17E6; // 275 90 90
+
+  --c-text: var(--fg1);
+  --c-bg-navbar: var(--bg0);
   --c-brand: #5546a3;
   --c-brand-light: #473a88;
   --c-scroll-track: #eaecef;

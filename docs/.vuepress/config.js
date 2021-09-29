@@ -36,12 +36,10 @@ module.exports = {
   themeConfig: {
     logo: '/koishi.png',
     navbar: [
-      { text: '主页', link: '/' },
       { text: '指南', link: '/guide/basic/console.html' },
       { text: 'API', link: '/api/' },
       { text: '官方插件', link: '/plugins/' },
       ...devOnly({ text: '演练场', link: '/playground.html' }),
-      { text: 'GitHub', link: 'https://github.com/koishijs/koishi' },
     ],
     sidebar: {
       '/guide/': [{
