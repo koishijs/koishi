@@ -3,8 +3,7 @@
     <template #aside>
       <el-scrollbar>
         <div class="content">
-          <div class="k-tab-group-title">表</div>
-          <k-tab-item v-for="(_, key) in meta.tables" :key="key" :label="key" v-model="current"></k-tab-item>
+          <k-tab-group :data="meta.tables" v-model="current">数据</k-tab-group>
         </div>
       </el-scrollbar>
     </template>
@@ -25,9 +24,11 @@ const current = ref<string>('')
 
 <style lang="scss">
 
-.content {
-  padding: 1rem 0;
-  line-height: 2.25rem;
+.page-database {
+  .content {
+    padding: 1rem 0;
+    line-height: 2.25rem;
+  }
 }
 
 </style>
