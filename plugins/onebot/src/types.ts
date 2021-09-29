@@ -300,10 +300,10 @@ export interface Payload extends Message {
 type id = string | number
 
 export interface Internal {
-  sendPrivateMsg(user_id: id, message: string, autoEscape?: boolean): Promise<number>
-  sendPrivateMsgAsync(user_id: id, message: string, autoEscape?: boolean): Promise<void>
-  sendGroupMsg(groupId: id, message: string, autoEscape?: boolean): Promise<number>
-  sendGroupMsgAsync(groupId: id, message: string, autoEscape?: boolean): Promise<void>
+  sendPrivateMsg(user_id: id, message: string, auto_escape?: boolean): Promise<number>
+  sendPrivateMsgAsync(user_id: id, message: string, auto_escape?: boolean): Promise<void>
+  sendGroupMsg(groupId: id, message: string, auto_escape?: boolean): Promise<number>
+  sendGroupMsgAsync(groupId: id, message: string, auto_escape?: boolean): Promise<void>
   sendGroupForwardMsg(groupId: id, messages: readonly CQNode[]): Promise<number>
   sendGroupForwardMsgAsync(groupId: id, messages: readonly CQNode[]): Promise<void>
   deleteMsg(message_id: id): Promise<void>

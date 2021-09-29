@@ -154,14 +154,15 @@ class MysqlSynchronizer implements Synchronizer {
 
 Database.extend('mysql', {
   async stats() {
-    const [[{ activeUsers }], [{ allUsers }], [{ activeGroups }], [{ allGroups }], [{ storageSize }]] = await this.query([
+    const [[{ activeUsers }], [{ allUsers }], [{ activeGroups }], [{ allGroups }], tablesStats] = await this.query([
       'SELECT COUNT(*) as activeUsers FROM `user` WHERE CURRENT_TIMESTAMP() - `lastCall` < 1000 * 3600 * 24',
       'SELECT COUNT(*) as allUsers FROM `user`',
       'SELECT COUNT(*) as activeGroups FROM `channel` WHERE `assignee`',
       'SELECT COUNT(*) as allGroups FROM `channel`',
-      'SELECT SUM(DATA_LENGTH) as storageSize from information_schema.TABLES',
+      'SELECT TABLE_NAME as name, TABLE_ROWS as count, DATA_LENGTH as size from information_schema.TABLES where TABLE_SCHEMA = ' + this.escape(this.config.database),
     ])
-    return { activeUsers, allUsers, activeGroups, allGroups, storageSize }
+    const tables = Object.fromEntries(tablesStats.map(({ name, ...data }) => [name, data]))
+    return { activeUsers, allUsers, activeGroups, allGroups, tables }
   },
 
   createSynchronizer() {

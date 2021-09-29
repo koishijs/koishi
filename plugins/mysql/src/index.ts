@@ -277,8 +277,9 @@ export const schema: Schema<Config> = Schema.object({
   user: Schema.string('要使用的用户名。').default('root'),
   password: Schema.string('要使用的密码。'),
   database: Schema.string('要访问的数据库名。').default('koishi'),
-})
+}, true)
 
 export function apply(ctx: Context, config: Config = {}) {
+  config = Schema.validate(config, schema)
   ctx.database = new MysqlDatabase(ctx.app, config)
 }

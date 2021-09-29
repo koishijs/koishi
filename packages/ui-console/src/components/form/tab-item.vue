@@ -1,25 +1,18 @@
 <template>
-  <div class="t-choice" :class="attribs" @click="$emit('update:modelValue', props.data.name)">
-    {{ props.data.name || '全局设置' }}
+  <div class="k-tab-item" :class="{ active: label === modelValue, readonly }" @click="$emit('update:modelValue', label)">
+    <slot>{{ label }}</slot>
   </div>
 </template>
 
 <script lang="ts" setup>
 
-import type { Registry } from '~/server'
-import { computed } from 'vue'
-
 defineEmits(['update:modelValue'])
 
-const props = defineProps<{
+defineProps<{
+  label: string
+  readonly?: boolean
   modelValue: string
-  data: Registry.Data
 }>()
-
-const attribs = computed(() => ({
-  active: props.data.name === props.modelValue,
-  readonly: !props.data.schema,
-}))
 
 </script>
 
@@ -27,9 +20,10 @@ const attribs = computed(() => ({
 
 @import '~/variables';
 
-.t-choice {
+.k-tab-item {
   @include button-like;
 
+  line-height: 2.25rem;
   padding: 0 2rem 0 4rem;
 
   &.active {

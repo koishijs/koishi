@@ -32,7 +32,7 @@ function onClick(event: MouseEvent) {
 
 <style lang="scss" scoped>
 
-@import '../index.scss';
+@import '~/variables';
 
 @mixin apply-color($name) {
   &.#{$name} {

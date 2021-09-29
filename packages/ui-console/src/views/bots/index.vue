@@ -5,8 +5,8 @@
         <div class="add" :class="{ active: current === -1 }" @click="current = -1">添加机器人</div>
         <div class="bots">
           <bot-view
-              v-for="(bot, index) in profile.bots" :data="bot"
-              :class="{ active: current === index }" @click="current = index"/>
+            v-for="(bot, index) in profile.bots" :data="bot"
+            :class="{ active: current === index }" @click="current = index"/>
         </div>
       </el-scrollbar>
     </template>
@@ -49,10 +49,6 @@ section.page-bots {
       border-bottom: 1px solid var(--border);
       @include button-like;
     }
-  }
-
-  .el-empty {
-    height: 100%;
   }
 }
 

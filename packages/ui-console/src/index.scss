@@ -69,6 +69,20 @@
   }
 }
 
+.el-empty {
+  height: 100%;
+}
+
 .el-scrollbar__bar {
   z-index: 500;
+}
+
+.k-tab-group-title {
+  line-height: 2.25rem;
+  padding: 0 2rem !important;
+  font-weight: bold;
+}
+
+.k-tab-group-title:not(.k-select-item) {
+  margin-top: 0.5rem;
 }

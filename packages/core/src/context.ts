@@ -129,7 +129,7 @@ export class Context {
     }
 
     let ctx: Context = this
-    const options = args[0]
+    const options = args[0] ?? {}
 
     // basic selectors
     for (const type of selectors) {

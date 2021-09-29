@@ -70,15 +70,24 @@ class MongoSynchronizer implements Synchronizer {
 
 Database.extend('mongo', {
   async stats() {
+    const getTableStats = async () => {
+      const cols = await this.db.collections()
+      const entries = await Promise.all(cols.map(async (col) => {
+        const { count, size } = await col.stats()
+        return [col.collectionName, { count, size }] as const
+      }))
+      return Object.fromEntries(entries)
+    }
+
     const $gt = new Date(new Date().getTime() - 1000 * 3600 * 24)
-    const [allGroups, activeGroups, allUsers, activeUsers, { storageSize }] = await Promise.all([
+    const [allGroups, activeGroups, allUsers, activeUsers, tables] = await Promise.all([
       this.channel.countDocuments(),
       this.channel.find({ assignee: { $ne: null } }).count(),
       this.user.countDocuments(),
       this.user.find({ lastCall: { $gt } }).count(),
-      this.mongo.db.stats(),
+      getTableStats(),
     ])
-    return { allGroups, activeGroups, allUsers, activeUsers, storageSize }
+    return { allGroups, activeGroups, allUsers, activeUsers, tables }
   },
 
   createSynchronizer() {

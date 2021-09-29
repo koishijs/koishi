@@ -4,16 +4,11 @@ import * as Vue from 'vue'
 import * as Router from 'vue-router'
 import * as client from './index'
 
+import form from './components/form'
+
 import Badge from './components/notice/badge.vue'
 import Comment from './components/notice/comment.vue'
 import Hint from './components/notice/hint.vue'
-
-import Button from './components/button.vue'
-import Checkbox from './components/form/checkbox.vue'
-import Input from './components/form/input.vue'
-import Radio from './components/form/radio.vue'
-import Schema from './components/form/schema.vue'
-
 import Content from './components/layout/content.vue'
 import CardAside from './components/layout/card-aside.vue'
 import Card from './components/card.vue'
@@ -54,7 +49,7 @@ router.addRoute({
 router.addRoute({
   path: '/database',
   name: '数据库',
-  meta: { icon: 'database' },
+  meta: { icon: 'database', require: ['meta'] },
   component: () => import('./views/database/index.vue'),
 })
 
@@ -91,12 +86,7 @@ app.component('k-badge', Badge)
 app.component('k-comment', Comment)
 app.component('k-hint', Hint)
 
-// form
-app.component('k-button', Button)
-app.component('k-checkbox', Checkbox)
-app.component('k-input', Input)
-app.component('k-radio', Radio)
-app.component('k-schema', Schema)
+app.use(form)
 
 app.component('k-content', Content)
 app.component('k-card-aside', CardAside)
