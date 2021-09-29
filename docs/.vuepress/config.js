@@ -118,7 +118,7 @@ module.exports = {
           '/guide/misc/faq.md',
         ],
       }],
-      '/api': [{
+      '/api/': [{
         text: '总览',
         link: '/api/',
       }, {
