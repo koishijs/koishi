@@ -40,7 +40,7 @@ const toggleDarkMode = () => {
 <style lang="scss">
 
 .navbar-icons {
-  margin: 0 0.5rem 0 1.5rem;
+  margin: -2px 0.5rem 0 1.5rem;
   display: inline-flex;
   align-items: center;
   gap: 0.75rem;
@@ -49,13 +49,13 @@ const toggleDarkMode = () => {
     width: 1.25rem;
     height: 1.25rem;
     line-height: 2rem;
-    color: var(--c-fg4);
+    color: var(--c-text-light);
     cursor: pointer;
     transition: .3s ease;
     user-select: none;
 
     &:hover {
-      color: var(--c-text);
+      color: var(--c-text-0);
     }
   }
 }
@@ -67,6 +67,14 @@ const toggleDarkMode = () => {
 
 .toggle-dark-button {
   display: none;
+}
+
+.DocSearch-Button .DocSearch-Search-Icon {
+  margin: 0 0.25rem;
+}
+
+.DocSearch-Button-Keys {
+  height: 18px;
 }
 
 </style>

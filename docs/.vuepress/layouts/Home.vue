@@ -113,7 +113,7 @@ function getSidebarItems(route: string) {
   grid-template-rows: repeat(5, 100vh);
 
   .desc {
-    color: var(--c-fg4);
+    color: var(--c-text-lightest);
     text-transform: uppercase;
   }
 
@@ -159,9 +159,11 @@ function getSidebarItems(route: string) {
 }
 
 .screen-2, .screen-4, .screen-6 {
+  color: var(--c-text-1);
   border-bottom: 1px solid var(--c-border);
   border-top: 1px solid var(--c-border);
-  background-color: var(--c-bg-light);
+  background-color: var(--c-bg-0);
+  transition: var(--t-color);
 }
 
 .feature-view {
@@ -203,6 +205,7 @@ function getSidebarItems(route: string) {
 }
 
 .screen-6 {
+  --c-text: var(--c-text-1);
   padding: 2rem 0 2rem 6rem;
   overflow-y: overlay;
 }
