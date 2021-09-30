@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-teach",
   "description": "Teach plugin for Koishi",
-  "version": "3.0.0-alpha.4",
+  "version": "3.0.0-alpha.5",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "engines": {
@@ -36,11 +36,11 @@
     "optional:assets"
   ],
   "peerDependencies": {
-    "koishi": "^4.0.0-alpha.7"
+    "koishi": "^4.0.0-alpha.8"
   },
   "devDependencies": {
-    "@koishijs/plugin-status": "^5.0.0-alpha.5",
-    "@koishijs/test-utils": "^8.0.0-alpha.6",
+    "@koishijs/plugin-status": "^5.0.0-alpha.6",
+    "@koishijs/test-utils": "^8.0.0-alpha.7",
     "@koishijs/ui-console": "^1.0.0-alpha.2"
   },
   "dependencies": {

@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/ui-console",
   "description": "Status Client for Koishi",
-  "version": "1.0.0-alpha.2",
+  "version": "1.0.0-alpha.3",
   "main": "src/index.ts",
   "engines": {
     "node": ">=12.0.0"
@@ -29,8 +29,8 @@
   ],
   "devDependencies": {
     "@fortawesome/fontawesome-free": "^5.15.4",
-    "@koishijs/plugin-status": "^5.0.0-alpha.5",
-    "@koishijs/utils": "^5.0.0-alpha.3",
+    "@koishijs/plugin-status": "^5.0.0-alpha.6",
+    "@koishijs/utils": "^5.0.0-alpha.4",
     "@vitejs/plugin-vue": "^1.6.2",
     "ansi_up": "^5.0.1",
     "echarts": "^5.2.0",

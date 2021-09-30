@@ -127,7 +127,7 @@ function bump(source: Package, flag: BumpType, recursive = false) {
       })
   })
   if (!recursive) return
-  dependents.forEach(dep => bump(dep, flag))
+  dependents.forEach(dep => bump(dep, flag, recursive))
 }
 
 const flag = (() => {
@@ -143,6 +143,8 @@ if (!args.length && !options.all) {
 
 ;(async () => {
   const folders = await getWorkspaces()
+  folders.push('packages/create/template')
+
   const spinner = ora()
   let progress = 0
   spinner.start(`loading packages 0/${folders.length}`)

@@ -1,12 +1,13 @@
 {
+  "name": "template",
   "version": "1.0.0",
   "private": true,
   "scripts": {
     "start": "koishi start"
   },
   "dependencies": {
-    "@koishijs/cli": "4.0.0-alpha.3",
-    "@koishijs/plugin-status": "5.0.0-alpha.5",
-    "koishi": "4.0.0-alpha.7"
+    "@koishijs/cli": "^4.0.0-alpha.4",
+    "@koishijs/plugin-status": "^5.0.0-alpha.6",
+    "koishi": "^4.0.0-alpha.8"
   }
 }

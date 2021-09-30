@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-status",
   "description": "Create web user interface for Koishi",
-  "version": "5.0.0-alpha.5",
+  "version": "5.0.0-alpha.6",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -29,19 +29,19 @@
     "webui"
   ],
   "peerDependencies": {
-    "koishi": "^4.0.0-alpha.7"
+    "koishi": "^4.0.0-alpha.8"
   },
   "devDependencies": {
-    "@koishijs/cli": "^4.0.0-alpha.3",
-    "@koishijs/plugin-mongo": "^3.0.0-alpha.3",
-    "@koishijs/plugin-mysql": "^4.0.0-alpha.5",
-    "@koishijs/test-utils": "^8.0.0-alpha.6",
+    "@koishijs/cli": "^4.0.0-alpha.4",
+    "@koishijs/plugin-mongo": "^3.0.0-alpha.4",
+    "@koishijs/plugin-mysql": "^4.0.0-alpha.6",
+    "@koishijs/test-utils": "^8.0.0-alpha.7",
     "@types/throttle-debounce": "^2.1.0",
     "@types/uuid": "^8.3.1",
     "vite": "^2.5.10"
   },
   "dependencies": {
-    "@koishijs/ui-console": "^1.0.0-alpha.2",
+    "@koishijs/ui-console": "^1.0.0-alpha.3",
     "open": "^8.2.1",
     "semver": "^7.3.5",
     "systeminformation": "^5.8.7",

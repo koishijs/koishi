@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-rss",
   "description": "Subscribe RSS Url for Koishi",
-  "version": "3.0.0-alpha.4",
+  "version": "3.0.0-alpha.5",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -32,10 +32,10 @@
     "required:database"
   ],
   "peerDependencies": {
-    "koishi": "^4.0.0-alpha.7"
+    "koishi": "^4.0.0-alpha.8"
   },
   "devDependencies": {
-    "@koishijs/test-utils": "^8.0.0-alpha.6"
+    "@koishijs/test-utils": "^8.0.0-alpha.7"
   },
   "dependencies": {
     "rss-feed-emitter": "^3.2.2"

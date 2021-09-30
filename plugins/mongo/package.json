@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-mongo",
   "description": "MongoDB support for Koishi",
-  "version": "3.0.0-alpha.3",
+  "version": "3.0.0-alpha.4",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -33,7 +33,7 @@
     "service:database"
   ],
   "peerDependencies": {
-    "koishi": "^4.0.0-alpha.7"
+    "koishi": "^4.0.0-alpha.8"
   },
   "dependencies": {
     "@types/mongodb": "^3.6.12",

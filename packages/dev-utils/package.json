@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/dev-utils",
   "description": "Test utilities for Koishi",
-  "version": "1.0.0-alpha.4",
+  "version": "1.0.0-alpha.5",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "engines": {
@@ -31,6 +31,6 @@
     "utilities"
   ],
   "peerDependencies": {
-    "koishi": "^4.0.0-alpha.7"
+    "koishi": "^4.0.0-alpha.8"
   }
 }
