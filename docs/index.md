@@ -1,5 +1,4 @@
 ---
-layout: Home
 home: true
 heroImage: /koishi.png
 heroText: Koishi
