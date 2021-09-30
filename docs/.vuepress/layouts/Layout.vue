@@ -69,8 +69,10 @@ const toggleDarkMode = () => {
   display: none;
 }
 
-.DocSearch-Button .DocSearch-Search-Icon {
-  margin: 0 0.25rem;
+@media (min-width: 750px) {
+  .DocSearch-Button .DocSearch-Search-Icon {
+    margin: 0 0.25rem;
+  }
 }
 
 .DocSearch-Button-Keys {
