@@ -147,6 +147,7 @@ Koishi v3 的另一大亮点就是拥有官方的网页控制台插件。这个�
 - [idlist/2bot-v3](https://github.com/idlist/2bot-v3): 2bot，一个很 2 的 FFXIV bot
 - [koishijs/koishi-plugin-developer](https://github.com/koishijs/koishi-plugin-developer): 使用 monorepo + ts + cli 开发你的 koishi 插件，已集成部分开发辅助功能。
 - [koishijs/koishi-bots](https://github.com/koishijs/koishi-bots): 用于部署生产环境的 bot，并集合已有的 koishi bot。
+- [Afanyiyu/qa-bot](https://github.com/Afanyiyu/qa-bot): 基于 plugin-teach 魔改的问答机器人，适用于客服/知识库等场景。
 
 ## 使用协议
 
