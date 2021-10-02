@@ -6,6 +6,7 @@
     "addons",
     "shiki",
     "test",
+    "community/*",
     "packages/*",
     "plugins/*"
   ],

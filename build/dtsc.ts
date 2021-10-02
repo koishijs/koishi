@@ -228,7 +228,7 @@ const targets = [
   'plugins/mongo',
   'plugins/status',
   'plugins/teach',
-  'plugins/adventure',
+  'community/adventure',
 ]
 
 const corePackages = [
