@@ -171,15 +171,6 @@ export namespace Modules {
     }
     throw new Error(`cannot resolve plugin "${name}"`)
   }
-
-  export function exists(name: string) {
-    try {
-      resolve(name)
-      return true
-    } catch {
-      return false
-    }
-  }
 }
 
 export interface Assets {
