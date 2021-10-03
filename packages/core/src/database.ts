@@ -103,8 +103,12 @@ export namespace Database {
   export function extend<K extends keyof Modules>(module: K, extension: Extension<Get<Modules[K], 'default'>>): void
   export function extend<T extends Constructor<unknown>>(module: T, extension: Extension<T>): void
   export function extend(module: any, extension: any) {
-    if (!Modules.exists(module)) return
-    const Database = typeof module === 'string' ? Modules.require(module).default : module
+    let Database: any
+    try {
+      Database = typeof module === 'string' ? Modules.require(module).default : module
+    } catch {
+      return
+    }
     if (!Database) return
 
     if (typeof extension === 'function') {
