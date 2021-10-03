@@ -152,22 +152,20 @@ class MysqlSynchronizer implements Synchronizer {
   }
 }
 
-if (Modules.exists('mysql')) {
-  Database.extend('mysql', {
-    async stats() {
-      const [[{ activeUsers }], [{ allUsers }], [{ activeGroups }], [{ allGroups }], tablesStats] = await this.query([
-        'SELECT COUNT(*) as activeUsers FROM `user` WHERE CURRENT_TIMESTAMP() - `lastCall` < 1000 * 3600 * 24',
-        'SELECT COUNT(*) as allUsers FROM `user`',
-        'SELECT COUNT(*) as activeGroups FROM `channel` WHERE `assignee`',
-        'SELECT COUNT(*) as allGroups FROM `channel`',
-        'SELECT TABLE_NAME as name, TABLE_ROWS as count, DATA_LENGTH as size from information_schema.TABLES where TABLE_SCHEMA = ' + this.escape(this.config.database),
-      ])
-      const tables = Object.fromEntries(tablesStats.map(({ name, ...data }) => [name, data]))
-      return { activeUsers, allUsers, activeGroups, allGroups, tables }
-    },
+Database.extend('mysql', {
+  async stats() {
+    const [[{ activeUsers }], [{ allUsers }], [{ activeGroups }], [{ allGroups }], tablesStats] = await this.query([
+      'SELECT COUNT(*) as activeUsers FROM `user` WHERE CURRENT_TIMESTAMP() - `lastCall` < 1000 * 3600 * 24',
+      'SELECT COUNT(*) as allUsers FROM `user`',
+      'SELECT COUNT(*) as activeGroups FROM `channel` WHERE `assignee`',
+      'SELECT COUNT(*) as allGroups FROM `channel`',
+      'SELECT TABLE_NAME as name, TABLE_ROWS as count, DATA_LENGTH as size from information_schema.TABLES where TABLE_SCHEMA = ' + this.escape(this.config.database),
+    ])
+    const tables = Object.fromEntries(tablesStats.map(({ name, ...data }) => [name, data]))
+    return { activeUsers, allUsers, activeGroups, allGroups, tables }
+  },
 
-    createSynchronizer() {
-      return new MysqlSynchronizer(this)
-    },
-  })
-}
+  createSynchronizer() {
+    return new MysqlSynchronizer(this)
+  },
+})
