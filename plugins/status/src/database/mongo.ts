@@ -1,4 +1,4 @@
-import { Database, Logger, Time, Dict, Modules } from 'koishi'
+import { Database, Logger, Time, Dict } from 'koishi'
 import { RECENT_LENGTH, Synchronizer } from '../payload/stats'
 import type MongoDatabase from '@koishijs/plugin-mongo'
 
