@@ -1,23 +1,24 @@
 process.env.TS_NODE_PROJECT = 'tsconfig.test.json'
 
 const specs = [
-  'packages/core/tests/*.spec.ts',
-  'packages/utils/tests/*.spec.ts',
-  'packages/dev-utils/tests/*.spec.ts',
-  'packages/test-utils/tests/*.spec.ts',
-  'plugins/admin/tests/*.spec.ts',
-  'plugins/common/tests/*.spec.ts',
-  'plugins/database/tests/*.spec.ts',
-  'plugins/eval/tests/*.spec.ts',
-  'plugins/forward/tests/*.spec.ts',
-  'plugins/github/tests/*.spec.ts',
-  'plugins/mongo/tests/*.spec.ts',
-  'plugins/mysql/tests/*.spec.ts',
-  'plugins/repeater/tests/*.spec.ts',
-  'plugins/schedule/tests/*.spec.ts',
-  'plugins/teach/tests/*.spec.ts',
-  'plugins/verifier/tests/*.spec.ts',
-]
+  "packages/core/tests/*.spec.ts",
+  "packages/utils/tests/*.spec.ts",
+  "packages/dev-utils/tests/*.spec.ts",
+  "packages/test-utils/tests/*.spec.ts",
+  "plugins/admin/tests/*.spec.ts",
+  "plugins/common/tests/*.spec.ts",
+  "plugins/database/tests/*.spec.ts",
+  "plugins/eval/tests/*.spec.ts",
+  "plugins/forward/tests/*.spec.ts",
+  "plugins/github/tests/*.spec.ts",
+  "plugins/leveldb/tests/*.spec.ts",
+  "plugins/mongo/tests/*.spec.ts",
+  "plugins/mysql/tests/*.spec.ts",
+  "plugins/repeater/tests/*.spec.ts",
+  "plugins/schedule/tests/*.spec.ts",
+  "plugins/teach/tests/*.spec.ts",
+  "plugins/verifier/tests/*.spec.ts",
+];
 
 const libraries = {}
 
