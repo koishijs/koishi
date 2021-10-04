@@ -145,6 +145,7 @@ Database.extend(MongoDatabase, {
     const bulk = this.db.collection(name).initializeUnorderedBulkOp()
     for (const item of data) {
       bulk.find(pick(item, keys)).updateOne({ $set: omit(item, keys) })
+      bulk.find(pick(item, keys)).upsert().updateOne({ $setOnInsert: omit({ ...Tables.create(name), ...item }, keys) })
     }
     await bulk.execute()
   },
