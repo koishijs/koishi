@@ -136,6 +136,7 @@ Koishi v3 的另一大亮点就是拥有官方的网页控制台插件。这个�
 - [koishi-plugin-holiday](https://github.com/LolitaOT/koishi-plugin-holiday): 问问bot什么时候放假，什么时候休息
 - [koishi-plugin-duplicate-checker](https://github.com/idlist/koishi-plugin-duplicate-checker) 火星图文出警器
 - [@idlist/koishi-plugin-blive](https://github.com/idlist/koishi-plugin-blive) 另一个 B 站直播订阅
+- [koishi-plugin-eval-purs-loader](https://github.com/Anillc/koishi-plugin-eval-purs-loader): 在 eval 中使用 purescript
 
 ### 社区项目
 
