@@ -177,7 +177,10 @@ Database.extend(LevelDatabase, {
 
   async set(name, query, data) {
     const { primary } = Tables.config[name] as Tables.Config
-    if (makeArray(primary).some(key => key in data)) throw new Error('Cannot update primary key')
+    if (makeArray(primary).some(key => key in data)) {
+      process.emitWarning(new Error('Cannot update primary key!'))
+      return
+    }
 
     const expr = Query.resolve(name, query)
     // Direct update
@@ -235,7 +238,7 @@ Database.extend(LevelDatabase, {
   async create(name, data: any, forced?: boolean) {
     const { primary, fields, autoInc } = Tables.config[name] as Tables.Config
     data = clone(data)
-    if (!Array.isArray(primary) && autoInc) {
+    if (!Array.isArray(primary) && autoInc && !(primary in data)) {
       const max = await this._maxKey(name)
       data[primary] = max + 1
       if (Tables.Field.string.includes(fields[primary].type)) {
@@ -243,7 +246,7 @@ Database.extend(LevelDatabase, {
       }
     }
     const key = this._makeKey(name, primary, data)
-    if (!forced && await this._exists(key)) throw new Error('Duplicate key')
+    if (!forced && await this._exists(key)) return
     await this._level.put(key, data)
     return data
   },
@@ -274,8 +277,13 @@ Database.extend(LevelDatabase, {
         if (keys.every(key => value[key] === item[key])) {
           insert = false
           const { primary } = Tables.config[name] as Tables.Config
-          if (makeArray(primary).some(key => (key in data) && value[key] !== data[key])) throw new Error('Cannot update primary key')
+          if (makeArray(primary).some(key => (key in data) && value[key] !== data[key])) {
+            process.emitWarning(new Error('Cannot update primary key!'))
+            break
+          }
           await this._level.put(key, Object.assign(value, data))
+          // Match the behavior here
+          // mongo/src/index.ts > upsert() > bulk.find(pick(item, keys)).updateOne({ $set: omit(item, keys) })
           break
         }
       }
