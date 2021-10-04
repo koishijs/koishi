@@ -3,12 +3,8 @@ import level from 'level'
 import { deserialize, serialize } from 'v8'
 
 const valueEncoding = {
-  encode: function (data: any) {
-    return serialize(data)
-  },
-  decode: function (data: Buffer) {
-    return deserialize(data)
-  },
+  encode: serialize,
+  decode: deserialize,
   buffer: true,
   type: 'sca',
 }
@@ -63,5 +59,15 @@ export class LevelDatabase extends Database {
     + (Array.isArray(primary)
       ? primary.map(key => data[key]).join('-')
       : data[primary])
+  }
+
+  async _exists(key: string) {
+    try {
+      // Avoid deserialize
+      await this._level.get(key, { valueEncoding: 'binary' })
+      return true
+    } catch {
+      return false
+    }
   }
 }

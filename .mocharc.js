@@ -18,7 +18,7 @@ const specs = [
   'plugins/schedule/tests/*.spec.ts',
   'plugins/teach/tests/*.spec.ts',
   'plugins/verifier/tests/*.spec.ts',
-];
+]
 
 const libraries = {}
 

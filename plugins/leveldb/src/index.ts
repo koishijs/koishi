@@ -132,6 +132,10 @@ function executeEval(expr: Eval.Any | Eval.Aggregation, data: any) {
   }
 }
 
+function isDirectFieldQuery(q: Query.FieldQuery) {
+  return typeof q === 'string' || typeof q === 'number'
+}
+
 Database.extend(LevelDatabase, {
   async drop(name) {
     if (name) {
@@ -144,6 +148,22 @@ Database.extend(LevelDatabase, {
   async get(name, query, modifier) {
     const expr = Query.resolve(name, query)
     const { fields, limit = Infinity, offset = 0 } = Query.resolveModifier(modifier)
+
+    const { primary } = Tables.config[name] as Tables.Config
+    // Direct read
+    if (makeArray(primary).every(key => isDirectFieldQuery(expr[key]))) {
+      const key = this._makeKey(name, primary, expr)
+      try {
+        const value = await this._level.get(key)
+        if (offset === 0 && limit > 0 && executeQuery(expr, value)) {
+          return [pick(value, fields)]
+        }
+      } catch (e) {
+        if (e.notFound !== true) throw e
+      }
+      return []
+    }
+
     const result: any[] = []
     // @ts-ignore
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -160,6 +180,20 @@ Database.extend(LevelDatabase, {
     if (makeArray(primary).some(key => key in data)) throw new Error('Cannot update primary key')
 
     const expr = Query.resolve(name, query)
+    // Direct update
+    if (makeArray(primary).every(key => isDirectFieldQuery(expr[key]))) {
+      const key = this._makeKey(name, primary, expr)
+      try {
+        const value = await this._level.get(key)
+        if (executeQuery(expr, value)) {
+          await this._level.put(key, Object.assign(value, data))
+        }
+      } catch (e) {
+        if (e.notFound !== true) throw e
+      }
+      return
+    }
+
     const ops: any[] = []
     // @ts-ignore
     for await (const [key, value] of this._table(name)) {
@@ -172,6 +206,22 @@ Database.extend(LevelDatabase, {
 
   async remove(name, query) {
     const expr = Query.resolve(name, query)
+
+    const { primary } = Tables.config[name] as Tables.Config
+    // Direct delete
+    if (makeArray(primary).every(key => isDirectFieldQuery(expr[key]))) {
+      const key = this._makeKey(name, primary, expr)
+      try {
+        const value = await this._level.get(key)
+        if (executeQuery(expr, value)) {
+          await this._level.del(key)
+        }
+      } catch (e) {
+        if (e.notFound !== true) throw e
+      }
+      return
+    }
+
     const ops: any[] = []
     // @ts-ignore
     for await (const [key, value] of this._table(name)) {
@@ -182,7 +232,7 @@ Database.extend(LevelDatabase, {
     await this._level.batch(ops)
   },
 
-  async create(name, data: any) {
+  async create(name, data: any, forced?: boolean) {
     const { primary, fields, autoInc } = Tables.config[name] as Tables.Config
     data = clone(data)
     if (!Array.isArray(primary) && autoInc) {
@@ -192,13 +242,32 @@ Database.extend(LevelDatabase, {
         data[primary] += ''
       }
     }
-    await this._level.put(this._makeKey(name, primary, data), data)
+    const key = this._makeKey(name, primary, data)
+    if (!forced && await this._exists(key)) throw new Error('Duplicate key')
+    await this._level.put(key, data)
     return data
   },
 
   async upsert(name, data, key) {
+    const { primary } = Tables.config[name] as Tables.Config
     const keys = makeArray(key || Tables.config[name].primary)
     for (const item of data) {
+      // Direct upsert
+      if (makeArray(primary).every(key => key in item)) {
+        const key = this._makeKey(name, primary, item)
+        try {
+          const value = await this._level.get(key)
+          if (keys.every(key => value[key] === item[key])) {
+            await this._level.put(key, Object.assign(value, item))
+          }
+        } catch (e) {
+          if (e.notFound !== true) throw e
+          // @ts-ignore
+          await this.create(name, item, true)
+        }
+        continue
+      }
+
       let insert: boolean = true
       // @ts-ignore
       for await (const [key, value] of this._table(name)) {
@@ -206,12 +275,13 @@ Database.extend(LevelDatabase, {
           insert = false
           const { primary } = Tables.config[name] as Tables.Config
           if (makeArray(primary).some(key => (key in data) && value[key] !== data[key])) throw new Error('Cannot update primary key')
-          this._level.put(key, Object.assign(value, data))
+          await this._level.put(key, Object.assign(value, data))
           break
         }
       }
       if (insert) {
-        await this.create(name, item)
+        // @ts-ignore
+        await this.create(name, item, true)
       }
     }
   },
