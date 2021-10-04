@@ -1,6 +1,7 @@
 <script>
 
 import { h } from 'vue'
+import PanelView from './PanelView.vue'
 
 function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms))
@@ -141,7 +142,7 @@ export default {
 
   render () {
     const mini = !this.title && this.static
-    return h('panel-view', {
+    return h(PanelView, {
       class: 'terminal',
       style: {
         height: (this.lines.length * 1.4 + (mini ? 2 : 3.4)) * 16 + 'px',
