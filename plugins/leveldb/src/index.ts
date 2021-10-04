@@ -247,8 +247,9 @@ Database.extend(LevelDatabase, {
     }
     const key = this._makeKey(name, primary, data)
     if (!forced && await this._exists(key)) return
-    await this._level.put(key, data)
-    return data
+    const copy = { ...Tables.create(name), ...data }
+    await this._level.put(key, copy)
+    return copy
   },
 
   async upsert(name, data, key) {

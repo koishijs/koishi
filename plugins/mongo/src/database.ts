@@ -1,5 +1,5 @@
 import { MongoClient, Db, Collection } from 'mongodb'
-import { App, Channel, Database, User, Tables as KoishiTables } from 'koishi'
+import { App, Channel, Database, User, Tables as KoishiTables, makeArray } from 'koishi'
 import { URLSearchParams } from 'url'
 
 type TableType = keyof Tables
@@ -56,6 +56,12 @@ export class MongoDatabase extends Database {
     this.user = this.db.collection('user')
     this.channel = this.db.collection('channel')
     await this.channel.createIndex({ type: 1, pid: 1 }, { unique: true })
+
+    for (const name in KoishiTables.config) {
+      const { primary } = KoishiTables.config[name]
+      const col = this.db.collection(name)
+      await col.createIndex(Object.fromEntries(makeArray(primary).map(K => [K, 1])), { unique: true })
+    }
   }
 
   collection<T extends TableType>(name: T): Collection<Tables[T]> {

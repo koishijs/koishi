@@ -51,7 +51,7 @@ namespace UpdateOperators {
 
     const merge = <T>(a: T, b: Partial<T>): T => ({ ...a, ...b })
 
-    const barObjs = [
+    const barInsertions = [
       { id: 1 },
       { id: 2, text: 'pku' },
       { id: 3, num: 1989 },
@@ -60,6 +60,29 @@ namespace UpdateOperators {
       { id: 6, meta: { foo: 'bar' } },
     ]
 
+    const bazInsertions = [
+      { ida: 1, idb: 'a', value: 'a' },
+      { ida: 2, idb: 'a', value: 'b' },
+      { ida: 1, idb: 'b', value: 'c' },
+      { ida: 2, idb: 'b', value: 'd' },
+    ]
+
+    const setupBar = async () => {
+      await db.remove('bar', {})
+      for (const i in barInsertions) {
+        await db.create('bar', omit(barInsertions[i], ['id']))
+      }
+      return barInsertions.map(bar => merge(Tables.create('bar'), bar))
+    }
+
+    const setupBaz = async () => {
+      await db.remove('baz', {})
+      for (const obj of bazInsertions) {
+        await db.create('baz', obj)
+      }
+      return bazInsertions.map(baz => merge(Tables.create('baz'), baz))
+    }
+
     const { database: db } = app
     before(async () => {
       await db.remove('bar', {})
@@ -67,8 +90,9 @@ namespace UpdateOperators {
     })
 
     it('create with autoInc primary key', async () => {
-      for (const obj of barObjs) {
-        await expect(db.create('bar', omit(obj, ['id']))).eventually.shape(obj)
+      const barObjs = barInsertions.map(bar => merge(Tables.create('bar'), bar))
+      for (const i in barInsertions) {
+        await expect(db.create('bar', omit(barInsertions[i], ['id']))).eventually.shape(barObjs[i])
       }
       for (const obj of barObjs) {
         await expect(db.get('bar', { id: obj.id })).eventually.shape([obj])
@@ -77,16 +101,10 @@ namespace UpdateOperators {
     })
 
     it('create with specified primary key', async () => {
-      const objs = [
-        { ida: 1, idb: 'a', value: 'a' },
-        { ida: 2, idb: 'a', value: 'b' },
-        { ida: 1, idb: 'b', value: 'c' },
-        { ida: 2, idb: 'b', value: 'd' },
-      ]
-      for (const obj of objs) {
+      for (const obj of bazInsertions) {
         await expect(db.create('baz', obj)).eventually.shape(obj)
       }
-      for (const obj of objs) {
+      for (const obj of bazInsertions) {
         await expect(db.get('baz', { ida: obj.ida, idb: obj.idb })).eventually.shape([obj])
       }
     })
@@ -96,7 +114,8 @@ namespace UpdateOperators {
       await expect(db.create('baz', { ida: 1, idb: 'a' })).eventually.not.to.be.ok
     })
 
-    it('upsert update', async () => {
+    it('upsert', async () => {
+      const barObjs = await setupBar()
       const updateBar = [{ id: 1, text: 'thu' }, { id: 2, num: 1911 }]
       updateBar.forEach(update => {
         const index = barObjs.findIndex(obj => obj.id === update.id)
@@ -104,16 +123,15 @@ namespace UpdateOperators {
       })
       await expect(db.upsert('bar', updateBar)).eventually.fulfilled
       await expect(db.get('bar', {})).eventually.shape(barObjs)
-    })
 
-    it('upsert insert', async () => {
       const insertBar = [{ id: 7, text: 'wmlake' }, { id: 8, text: 'bytower' }]
-      barObjs.push(...insertBar)
+      barObjs.push(...insertBar.map(bar => merge(Tables.create('bar'), bar)))
       await expect(db.upsert('bar', insertBar)).eventually.fulfilled
       await expect(db.get('bar', {})).eventually.shape(barObjs)
     })
 
     it('set', async () => {
+      const barObjs = await setupBar()
       const cond = {
         $or: [
           { id: { $in: [1, 2] } },
@@ -128,6 +146,8 @@ namespace UpdateOperators {
     })
 
     it('remove', async () => {
+      await setupBar()
+      await setupBaz()
       await expect(db.remove('baz', { ida: 1, idb: 'a' })).eventually.fulfilled
       await expect(db.get('baz', {})).eventually.length(3)
       await expect(db.remove('baz', { ida: 1, idb: 'b', value: 'b' })).eventually.fulfilled

@@ -108,7 +108,7 @@ Database.extend(MongoDatabase, {
     if (fields) cursor = cursor.project(Object.fromEntries(fields.map(key => [key, 1])))
     if (offset) cursor = cursor.skip(offset)
     if (limit) cursor = cursor.limit(offset + limit)
-    return await cursor.toArray()
+    return (await cursor.toArray()).map(x => omit(x, ['_id'])) as any
   },
 
   async set(name, query, data) {
@@ -124,7 +124,7 @@ Database.extend(MongoDatabase, {
   async create(name, data: any) {
     const table = Tables.config[name]
     const { primary, fields } = table
-    if (!Array.isArray(primary) && table.autoInc) {
+    if (!Array.isArray(primary) && table.autoInc && !(primary in data)) {
       const [latest] = await this.db.collection(name).find().sort(primary, -1).limit(1).toArray()
       data[primary] = latest ? latest[primary] + 1 : 1
       if (Tables.Field.string.includes(fields[primary].type)) {
@@ -132,8 +132,10 @@ Database.extend(MongoDatabase, {
       }
     }
     const copy = { ...Tables.create(name), ...data }
-    await this.db.collection(name).insertOne(copy).catch(() => {})
-    return copy
+    try {
+      await this.db.collection(name).insertOne(copy)
+      return copy
+    } catch {}
   },
 
   async upsert(name, data: any[], keys: string | string[]) {
