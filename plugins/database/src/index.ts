@@ -193,9 +193,9 @@ Database.extend(MemoryDatabase, {
   },
 
   async remove(name, query) {
-    const entries = Object.entries(Query.resolve(name, query))
+    const expr = Query.resolve(name, query)
     this.$store[name] = this.$table(name)
-      .filter(row => !entries.every(([key, value]) => value.includes(row[key])))
+      .filter(row => !executeQuery(expr, row))
     this.$save(name)
   },
 
@@ -203,16 +203,20 @@ Database.extend(MemoryDatabase, {
     const store = this.$table(name)
     const { primary, fields, autoInc } = Tables.config[name] as Tables.Config
     data = clone(data)
-    if (!Array.isArray(primary) && autoInc) {
+    if (!Array.isArray(primary) && autoInc && !(primary in data)) {
       const max = store.length ? Math.max(...store.map(row => +row[primary])) : 0
       data[primary] = max + 1
       if (Tables.Field.string.includes(fields[primary].type)) {
         data[primary] += ''
       }
+    } else {
+      const duplicated = await this.get(name, pick(data, makeArray(primary)))
+      if (duplicated.length) return
     }
-    store.push(data)
+    const copy = { ...Tables.create(name), ...data }
+    store.push(copy)
     this.$save(name)
-    return data
+    return copy
   },
 
   async upsert(name, data, key) {
