@@ -1,6 +1,15 @@
 import { Database, Eval, Query, Tables, clone, makeArray, pick, Context, valueMap, Schema } from 'koishi'
 import { LevelDatabase, Config } from './database'
 
+/**
+ * LevelDB database
+ * storage format: _makeKey(obj) -> obj
+ * TODOs:
+ * - support for unique indexes (using #index$table$field -> primary key map)
+ * - optimize for indexed reads
+ * - support cache API
+ */
+
 declare module 'koishi' {
   interface Database {
     leveldb: LevelDatabase
@@ -312,7 +321,7 @@ Database.extend(LevelDatabase, {
 export const name = 'leveldb'
 
 export const schema: Schema<Config> = Schema.object({
-  path: Schema.string().required(),
+  path: Schema.string('数据保存的位置').required(),
 })
 
 export function apply(ctx: Context, config: Config) {
