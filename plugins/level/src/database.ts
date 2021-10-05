@@ -14,7 +14,7 @@ export interface Config {
 }
 
 export class LevelDatabase extends Database {
-  public leveldb = this
+  public level = this
 
   _level: level.LevelDB
 

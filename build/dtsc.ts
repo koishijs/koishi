@@ -224,7 +224,7 @@ const targets = [
   'packages/koishi',
   'plugins/admin',
   'plugins/database',
-  'plugins/leveldb',
+  'plugins/level',
   'plugins/mysql',
   'plugins/mongo',
   'plugins/status',
