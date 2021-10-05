@@ -1,5 +1,6 @@
 import { App, Database, TableType } from 'koishi'
 import { deserialize, serialize } from 'v8'
+import { resolve } from 'path'
 import type { AbstractIteratorOptions, AbstractOptions } from 'abstract-leveldown'
 import type { LevelUp } from 'levelup'
 import level from 'level'
@@ -32,7 +33,7 @@ export class LevelDatabase extends Database {
   constructor(public app: App, public config: Config) {
     super(app)
 
-    this.#level = level(config.path)
+    this.#level = level(resolve(config.path))
     this.#tables = Object.create(null)
   }
 
