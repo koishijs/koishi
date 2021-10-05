@@ -4,11 +4,10 @@ import { logger, executeEval, executeQuery } from './utils'
 
 /**
  * LevelDB database
- * storage format: _makeKey(obj) -> obj
+ * storage format: sublevel(table) -> _makeKey(obj) -> obj
  * TODOs:
  * - support for unique indexes (using #index$table$field -> primary key map)
  * - optimize for indexed reads
- * - support cache API
  */
 
 declare module 'koishi' {
@@ -30,7 +29,7 @@ Database.extend(LevelDatabase, {
     if (name) {
       this._dropTable(name)
     } else {
-      this._clear()
+      this._dropAll()
     }
   },
 
@@ -39,11 +38,12 @@ Database.extend(LevelDatabase, {
     const { fields, limit = Infinity, offset = 0 } = Query.resolveModifier(modifier)
 
     const { primary } = Tables.config[name] as Tables.Config
+    const table = this.table(name)
     // Direct read
     if (makeArray(primary).every(key => isDirectFieldQuery(expr[key]))) {
-      const key = this._makeKey(name, primary, expr)
+      const key = this._makeKey(primary, expr)
       try {
-        const value = await this._level.get(key)
+        const value = await table.get(key)
         if (offset === 0 && limit > 0 && executeQuery(expr, value)) {
           return [pick(value, fields)]
         }
@@ -56,7 +56,7 @@ Database.extend(LevelDatabase, {
     const result: any[] = []
     // @ts-ignore
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    for await (const [_, value] of this._table(name)) {
+    for await (const [_, value] of table.iterator()) {
       if (executeQuery(expr, value)) {
         result.push(pick(value, fields))
       }
@@ -72,13 +72,14 @@ Database.extend(LevelDatabase, {
     }
 
     const expr = Query.resolve(name, query)
+    const table = this.table(name)
     // Direct update
     if (makeArray(primary).every(key => isDirectFieldQuery(expr[key]))) {
-      const key = this._makeKey(name, primary, expr)
+      const key = this._makeKey(primary, expr)
       try {
-        const value = await this._level.get(key)
+        const value = await table.get(key)
         if (executeQuery(expr, value)) {
-          await this._level.put(key, Object.assign(value, data))
+          await table.put(key, Object.assign(value, data))
         }
       } catch (e) {
         if (e.notFound !== true) throw e
@@ -88,25 +89,26 @@ Database.extend(LevelDatabase, {
 
     const ops: any[] = []
     // @ts-ignore
-    for await (const [key, value] of this._table(name)) {
+    for await (const [key, value] of table.iterator()) {
       if (executeQuery(expr, value)) {
         ops.push({ type: 'put', key, value: Object.assign(value, data) })
       }
     }
-    await this._level.batch(ops)
+    await table.batch(ops)
   },
 
   async remove(name, query) {
     const expr = Query.resolve(name, query)
 
     const { primary } = Tables.config[name] as Tables.Config
+    const table = this.table(name)
     // Direct delete
     if (makeArray(primary).every(key => isDirectFieldQuery(expr[key]))) {
-      const key = this._makeKey(name, primary, expr)
+      const key = this._makeKey(primary, expr)
       try {
-        const value = await this._level.get(key)
+        const value = await table.get(key)
         if (executeQuery(expr, value)) {
-          await this._level.del(key)
+          await table.del(key)
         }
       } catch (e) {
         if (e.notFound !== true) throw e
@@ -116,12 +118,12 @@ Database.extend(LevelDatabase, {
 
     const ops: any[] = []
     // @ts-ignore
-    for await (const [key, value] of this._table(name)) {
+    for await (const [key, value] of table.iterator()) {
       if (executeQuery(expr, value)) {
         ops.push({ type: 'del', key })
       }
     }
-    await this._level.batch(ops)
+    await table.batch(ops)
   },
 
   async create(name, data: any, forced?: boolean) {
@@ -134,24 +136,25 @@ Database.extend(LevelDatabase, {
         data[primary] += ''
       }
     }
-    const key = this._makeKey(name, primary, data)
-    if (!forced && await this._exists(key)) return
+    const key = this._makeKey(primary, data)
+    if (!forced && await this._exists(name, key)) return
     const copy = { ...Tables.create(name), ...data }
-    await this._level.put(key, copy)
+    await this.table(name).put(key, copy)
     return copy
   },
 
   async upsert(name, data, key) {
     const { primary } = Tables.config[name] as Tables.Config
     const keys = makeArray(key || Tables.config[name].primary)
+    const table = this.table(name)
     for (const item of data) {
       // Direct upsert
       if (makeArray(primary).every(key => key in item)) {
-        const key = this._makeKey(name, primary, item)
+        const key = this._makeKey(primary, item)
         try {
-          const value = await this._level.get(key)
+          const value = await table.get(key)
           if (keys.every(key => value[key] === item[key])) {
-            await this._level.put(key, Object.assign(value, item))
+            await table.put(key, Object.assign(value, item))
           }
         } catch (e) {
           if (e.notFound !== true) throw e
@@ -163,7 +166,7 @@ Database.extend(LevelDatabase, {
 
       let insert: boolean = true
       // @ts-ignore
-      for await (const [key, value] of this._table(name)) {
+      for await (const [key, value] of table.iterator()) {
         if (keys.every(key => value[key] === item[key])) {
           insert = false
           const { primary } = Tables.config[name] as Tables.Config
@@ -171,7 +174,7 @@ Database.extend(LevelDatabase, {
             logger.warn('Cannot update primary key')
             break
           }
-          await this._level.put(key, Object.assign(value, data))
+          await table.put(key, Object.assign(value, data))
           // Match the behavior here
           // mongo/src/index.ts > upsert() > bulk.find(pick(item, keys)).updateOne({ $set: omit(item, keys) })
           break
@@ -187,9 +190,10 @@ Database.extend(LevelDatabase, {
   async aggregate(name, fields, query) {
     const expr = Query.resolve(name, query)
     const result: any[] = []
+    const table = this.table(name)
     // @ts-ignore
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    for await (const [_, value] of this._table(name)) {
+    for await (const [_, value] of table.iterator()) {
       if (executeQuery(expr, value)) {
         result.push(value)
       }
@@ -202,6 +206,7 @@ export const name = 'level'
 
 export const schema: Schema<Config> = Schema.object({
   path: Schema.string('数据保存的位置').required(),
+  separator: Schema.string('主键分隔符').default('#'),
 })
 
 export function apply(ctx: Context, config: Config) {

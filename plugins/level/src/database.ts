@@ -1,6 +1,9 @@
 import { App, Database, TableType } from 'koishi'
 import { deserialize, serialize } from 'v8'
+import type { AbstractIteratorOptions } from 'abstract-leveldown'
+import type { LevelUp } from 'levelup'
 import level from 'level'
+import sub from 'subleveldown'
 
 const valueEncoding = {
   encode: serialize,
@@ -11,17 +14,20 @@ const valueEncoding = {
 
 export interface Config {
   path: string
+  separator: string
 }
 
 export class LevelDatabase extends Database {
   public level = this
 
-  _level: level.LevelDB
+  #level: LevelUp
+  #tables: Record<string, LevelUp>
 
   constructor(public app: App, public config: Config) {
     super(app)
 
-    this._level = level(config.path, { valueEncoding })
+    this.#level = level(config.path)
+    this.#tables = Object.create(null)
   }
 
   async start() {
@@ -29,45 +35,50 @@ export class LevelDatabase extends Database {
   }
 
   async stop() {
-    await this._level.close()
+    await this.#level.close()
   }
 
-  _table<K extends TableType>(table: K) {
-    return this._level.iterator({ gte: table, lte: `${table}\xff` })
+  table<K extends TableType>(table: K): LevelUp {
+    // LevelDB's type definition is not complete
+    return this.#tables[table] ?? (this.#tables[table] = sub(this.#level, table, { valueEncoding }))
   }
 
-  _clear() {
-    return this._level.clear()
+  _tableIterator<K extends TableType>(table: K, options: AbstractIteratorOptions) {
+    return this.table(table).iterator(options)
   }
 
-  _dropTable(table: string) {
-    return this._level.clear({ gte: table, lte: `${table}\xff` })
+  async _dropAll() {
+    this.#tables = Object.create(null)
+    await this.#level.clear()
   }
 
-  async _maxKey(table: string) {
-    const it = this._level.iterator({ gte: table, lte: `${table}\xff`, reverse: true, limit: 1 })
+  async _dropTable<K extends TableType>(table: K) {
+    await this.table(table).clear()
+    delete this.#tables[table]
+  }
+
+  async _maxKey<K extends TableType>(table: K) {
     // @ts-ignore
     // eslint-disable-next-line no-unreachable-loop
-    for await (const [key] of it) {
-      return +(key.substr(table.length + 1))
+    for await (const [key] of this._tableIterator(table, { reverse: true, limit: 1 })) {
+      return +key
     }
     return 0
   }
 
-  _makeKey(table: string, primary: string | string[], data: any) {
-    return table + '$'
-    + (Array.isArray(primary)
-      ? primary.map(key => data[key]).join('-')
-      : data[primary])
-  }
-
-  async _exists(key: string) {
+  async _exists<K extends TableType>(table: K, key: string) {
     try {
       // Avoid deserialize
-      await this._level.get(key, { valueEncoding: 'binary' })
+      await this.table(table).get(key, { valueEncoding: 'binary' })
       return true
     } catch {
       return false
     }
+  }
+
+  _makeKey(primary: string | string[], data: any) {
+    return (Array.isArray(primary)
+      ? primary.map(key => data[key]).join(this.config.separator)
+      : data[primary])
   }
 }

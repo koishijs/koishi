@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-level",
   "description": "Database implementation based on LevelDB for Koishi",
-  "version": "1.0.0-alpha.1",
+  "version": "1.0.0-alpha.2",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -34,7 +34,9 @@
     "koishi": "^4.0.0-alpha.8"
   },
   "devDependencies": {
-    "@types/level": "^6.0.0"
+    "@types/abstract-leveldown": "^5.0.2",
+    "@types/level": "^6.0.0",
+    "@types/subleveldown": "^4.1.1"
   },
   "dependencies": {
     "level": "^7.0.1",
