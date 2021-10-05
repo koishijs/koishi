@@ -1,5 +1,4 @@
-import { Logger, Query, Eval } from 'koishi'
-import { nextTick } from 'process'
+import { Logger, Query, Eval, Tables } from 'koishi'
 
 export const logger = new Logger('level')
 
@@ -124,46 +123,39 @@ export function executeEval(expr: Eval.Any | Eval.Aggregation, data: any) {
   }
 }
 
-interface IAsyncTask<T> {
-  factory: () => Promise<T>
-  resolve: (value: T | PromiseLike<T>) => void
-  reject: (reason?: any) => void
-}
-
 export class AsyncQueue {
-  #queue: IAsyncTask<any>[]
-  #running: boolean
+  #last: Promise<any>
 
   constructor() {
-    this.#queue = []
-    this.#running = false
+    this.#last = Promise.resolve()
   }
 
-  execute<T>(factory: () => Promise<T>): Promise<T> {
-    nextTick(() => this.run())
-    return new Promise<T>((resolve, reject) => this.#queue.push({ factory, resolve, reject }))
-  }
-
-  async run() {
-    if (this.#running) return
-    this.#running = true
-    while (this.#queue.length) {
-      const task = this.#queue.shift()
-      await task.factory().then(task.resolve).catch(task.reject)
-    }
-    this.#running = false
+  async execute<T>(factory: () => Promise<T>): Promise<T> {
+    const last = this.#last
+    return this.#last = last.catch(() => {}).then(factory)
   }
 }
 
-// export class AsyncQueue {
-//   #last: Promise<any>
-
-//   constructor() {
-//     this.#last = Promise.resolve()
-//   }
-
-//   async execute<T>(factory: () => Promise<T>): Promise<T> {
-//     const last = this.#last
-//     return this.#last = last.catch(() => {}).finally(() => factory())
-//   }
-// }
+export function createValueEncoding(table: string) {
+  const { fields } = Tables.config[table]
+  const dates = Object.keys(fields).filter(f => ['timestamp', 'date', 'time'].includes(fields[f].type))
+  if (!dates.length) {
+    return {
+      encode: JSON.stringify,
+      decode: JSON.parse,
+      buffer: false,
+      type: 'json',
+    }
+  } else {
+    return {
+      encode: JSON.stringify,
+      decode: (str: string) => {
+        const obj = JSON.parse(str)
+        dates.forEach(key => obj[key] = new Date(obj[key]))
+        return obj
+      },
+      buffer: false,
+      type: 'json-for-' + table,
+    }
+  }
+}

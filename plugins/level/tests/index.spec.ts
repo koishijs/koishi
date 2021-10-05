@@ -6,7 +6,7 @@ describe('LevelDB Database', () => {
   const app = new App()
 
   app.plugin(level, {
-    path: resolve(__dirname, 'temp'),
+    location: resolve(__dirname, 'temp'),
   })
 
   Tests.database(app)

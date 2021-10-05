@@ -1,10 +1,10 @@
 import { App, Database, TableType } from 'koishi'
-import { deserialize, serialize } from 'v8'
-import { resolve } from 'path'
 import type { AbstractIteratorOptions, AbstractOptions } from 'abstract-leveldown'
 import type { LevelUp } from 'levelup'
 import level from 'level'
 import sub from 'subleveldown'
+import { createValueEncoding } from './utils'
+import { resolveLocation } from './runtime'
 
 declare module 'abstract-leveldown' {
   export interface AbstractIterator<K, V> extends AbstractOptions {
@@ -12,16 +12,9 @@ declare module 'abstract-leveldown' {
   }
 }
 
-const valueEncoding = {
-  encode: serialize,
-  decode: deserialize,
-  buffer: true,
-  type: 'sca',
-}
-
 export interface Config {
-  path: string
-  separator: string
+  location: string
+  separator?: string
 }
 
 export class LevelDatabase extends Database {
@@ -36,7 +29,7 @@ export class LevelDatabase extends Database {
 
   async start() {
     // LevelDB will automaticely open
-    this.#level = level(resolve(this.config.path))
+    this.#level = level(resolveLocation(this.config.location))
     this.#tables = Object.create(null)
   }
 
@@ -45,7 +38,7 @@ export class LevelDatabase extends Database {
   }
 
   table<K extends TableType>(table: K): LevelUp {
-    return this.#tables[table] ??= sub(this.#level, table, { valueEncoding })
+    return this.#tables[table] ??= sub(this.#level, table, { valueEncoding: createValueEncoding(table) })
   }
 
   _tableIterator<K extends TableType>(table: K, options: AbstractIteratorOptions) {

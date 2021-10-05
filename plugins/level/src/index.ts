@@ -56,8 +56,7 @@ Database.extend(LevelDatabase, {
     }
 
     const result: any[] = []
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    for await (const [_, value] of table.iterator()) {
+    for await (const [, value] of table.iterator()) {
       if (executeQuery(expr, value)) {
         result.push(pick(value, fields))
       }
@@ -204,7 +203,7 @@ Database.extend(LevelDatabase, {
 export const name = 'level'
 
 export const schema: Schema<Config> = Schema.object({
-  path: Schema.string('数据保存的位置').required(),
+  location: Schema.string('数据保存的位置').default('.level'),
   separator: Schema.string('主键分隔符').default('#'),
 })
 

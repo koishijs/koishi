@@ -4,6 +4,11 @@
     "rootDir": "src",
     "outFile": "temp/index.d.ts",
   },
+  "references": [
+    {
+      "path": "./src/runtime"
+    }
+  ],
   "include": [
     "src",
   ],
