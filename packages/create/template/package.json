@@ -7,6 +7,10 @@
   },
   "dependencies": {
     "@koishijs/cli": "^4.0.0-alpha.4",
+    "@koishijs/plugin-common": "5.0.0-alpha.8",
+    "@koishijs/plugin-discord": "2.0.0-alpha.5",
+    "@koishijs/plugin-onebot": "2.0.0-alpha.7",
+    "@koishijs/plugin-telegram": "2.0.0-alpha.5",
     "@koishijs/plugin-status": "^5.0.0-alpha.6",
     "koishi": "^4.0.0-alpha.8"
   }

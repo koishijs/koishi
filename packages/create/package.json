@@ -7,7 +7,8 @@
     "node": ">=12.0.0"
   },
   "files": [
-    "lib"
+    "lib",
+    "template"
   ],
   "bin": "lib/index.js",
   "author": "Shigma <1700011071@pku.edu.cn>",
