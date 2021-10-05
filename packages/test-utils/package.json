@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/test-utils",
   "description": "Test utilities for Koishi",
-  "version": "8.0.0-alpha.7",
+  "version": "8.0.0-alpha.8",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "engines": {
@@ -38,9 +38,9 @@
     "@types/node": "^16.7.13"
   },
   "dependencies": {
-    "@koishijs/plugin-database": "^1.0.0-alpha.5",
+    "@koishijs/plugin-database": "^1.0.0-alpha.6",
     "chai": "^4.3.4",
     "chai-as-promised": "^7.1.1",
-    "koishi": "^4.0.0-alpha.8"
+    "koishi": "^4.0.0-alpha.9"
   }
 }

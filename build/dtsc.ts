@@ -100,7 +100,7 @@ async function bundle(path: string) {
         }
       })
     } else if (line.startsWith('///')) {
-      if (!corePackages.includes(path) && line !== referenceHack) prolog += line + EOL
+      if (!coreTargets.includes(path) && line !== referenceHack) prolog += line + EOL
     } else if (line.startsWith('    export default ')) {
       return current === 'index'
     } else {
@@ -232,19 +232,20 @@ const targets = [
   'community/adventure',
 ]
 
-const corePackages = [
+const coreTargets = [
   'packages/utils',
   'packages/core',
 ]
 
-const corePlugins = [
+const corePackages = [
   'plugins/eval',
   'plugins/puppeteer',
+  'packages/orm-utils',
 ]
 
 function precedence(name: string) {
   if (name.startsWith('packages/')) return 5
-  if (corePlugins.includes(name)) return 3
+  if (corePackages.includes(name)) return 1
   return 4
 }
 

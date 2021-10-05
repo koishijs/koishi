@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-minecraft",
   "description": "Minecraft adapter for Koishi",
-  "version": "1.0.0-alpha.6",
+  "version": "1.0.0-alpha.7",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -30,7 +30,7 @@
     "service:adapter"
   ],
   "peerDependencies": {
-    "koishi": "^4.0.0-alpha.8"
+    "koishi": "^4.0.0-alpha.9"
   },
   "dependencies": {
     "mineflayer": "^3.11.0"
