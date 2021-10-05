@@ -10,7 +10,7 @@ for (const port of mysqlPorts ? mysqlPorts.split(',') : []) {
 
     app.plugin(mysql, {
       host: 'localhost',
-      port: port,
+      port: +port,
       user: 'koishi',
       password: 'koishi@114514',
       database: 'koishi',

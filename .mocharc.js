@@ -11,6 +11,7 @@ const specs = [
   'plugins/eval/tests/*.spec.ts',
   'plugins/forward/tests/*.spec.ts',
   'plugins/github/tests/*.spec.ts',
+  'plugins/level/tests/*.spec.ts',
   'plugins/mongo/tests/*.spec.ts',
   'plugins/mysql/tests/*.spec.ts',
   'plugins/repeater/tests/*.spec.ts',

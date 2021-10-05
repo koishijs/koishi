@@ -105,7 +105,7 @@ Database.extend(MongoDatabase, {
     const filter = createFilter(name, query)
     let cursor = this.db.collection(name).find(filter)
     const { fields, limit, offset = 0 } = Query.resolveModifier(modifier)
-    if (fields) cursor = cursor.project(Object.fromEntries(fields.map(key => [key, 1])))
+    cursor = cursor.project({ _id: 0, ...Object.fromEntries((fields ?? []).map(key => [key, 1])) })
     if (offset) cursor = cursor.skip(offset)
     if (limit) cursor = cursor.limit(offset + limit)
     return await cursor.toArray()
@@ -124,7 +124,7 @@ Database.extend(MongoDatabase, {
   async create(name, data: any) {
     const table = Tables.config[name]
     const { primary, fields } = table
-    if (!Array.isArray(primary) && table.autoInc) {
+    if (!Array.isArray(primary) && table.autoInc && !(primary in data)) {
       const [latest] = await this.db.collection(name).find().sort(primary, -1).limit(1).toArray()
       data[primary] = latest ? latest[primary] + 1 : 1
       if (Tables.Field.string.includes(fields[primary].type)) {
@@ -132,8 +132,10 @@ Database.extend(MongoDatabase, {
       }
     }
     const copy = { ...Tables.create(name), ...data }
-    await this.db.collection(name).insertOne(copy).catch(() => {})
-    return copy
+    try {
+      await this.db.collection(name).insertOne(copy)
+      return copy
+    } catch {}
   },
 
   async upsert(name, data: any[], keys: string | string[]) {
@@ -142,7 +144,9 @@ Database.extend(MongoDatabase, {
     keys = makeArray(keys)
     const bulk = this.db.collection(name).initializeUnorderedBulkOp()
     for (const item of data) {
-      bulk.find(pick(item, keys)).updateOne({ $set: omit(item, keys) })
+      bulk.find(pick(item, keys))
+        .upsert()
+        .updateOne({ $set: omit(item, keys), $setOnInsert: omit(Tables.create(name), [...keys, ...Object.keys(item) as any]) })
     }
     await bulk.execute()
   },
