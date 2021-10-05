@@ -5,7 +5,8 @@
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
-    "lib"
+    "lib",
+    "template.yml"
   ],
   "scripts": {
     "postinstall": "node lib/install"
@@ -34,10 +35,12 @@
   },
   "devDependencies": {
     "@octokit/openapi-types": "^10.6.4",
+    "@types/cross-spawn": "^6.0.2",
     "@types/tar": "^4.0.5"
   },
   "dependencies": {
     "axios": "^0.22.0",
+    "cross-spawn": "^7.0.3",
     "tar": "^6.1.11"
   }
 }
