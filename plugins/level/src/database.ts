@@ -1,14 +1,37 @@
-import { App, Database, TableType } from 'koishi'
-import type { AbstractIteratorOptions, AbstractOptions } from 'abstract-leveldown'
+import { App, Database, Tables, TableType } from 'koishi'
+import type { AbstractIteratorOptions } from 'abstract-leveldown'
 import type { LevelUp } from 'levelup'
 import level from 'level'
 import sub from 'subleveldown'
-import { createValueEncoding } from './utils'
 import { resolveLocation } from './runtime'
 
 declare module 'abstract-leveldown' {
   export interface AbstractIterator<K, V> extends AbstractOptions {
     [Symbol.asyncIterator](): AsyncIterator<[K, V]>
+  }
+}
+
+function createValueEncoding(table: string) {
+  const { fields } = Tables.config[table]
+  const dates = Object.keys(fields).filter(f => ['timestamp', 'date', 'time'].includes(fields[f].type))
+  if (!dates.length) {
+    return {
+      encode: JSON.stringify,
+      decode: JSON.parse,
+      buffer: false,
+      type: 'json',
+    }
+  } else {
+    return {
+      encode: JSON.stringify,
+      decode: (str: string) => {
+        const obj = JSON.parse(str)
+        dates.forEach(key => obj[key] = new Date(obj[key]))
+        return obj
+      },
+      buffer: false,
+      type: 'json-for-' + table,
+    }
   }
 }
 
@@ -22,6 +45,7 @@ export class LevelDatabase extends Database {
 
   #level: LevelUp
   #tables: Record<string, LevelUp>
+  #last: Promise<any>
 
   constructor(public app: App, public config: Config) {
     super(app)
@@ -78,5 +102,9 @@ export class LevelDatabase extends Database {
     return (Array.isArray(primary)
       ? primary.map(key => data[key]).join(this.config.separator)
       : data[primary])
+  }
+
+  async queue<T>(factory: () => Promise<T>): Promise<T> {
+    return this.#last = this.#last.catch(() => {}).then(factory)
   }
 }

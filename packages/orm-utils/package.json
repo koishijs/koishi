@@ -1,10 +1,12 @@
 {
-  "name": "@koishijs/plugin-database",
-  "description": "A in-memory database implementation for Koishi",
-  "version": "1.0.0-alpha.5",
-  "main": "lib/node.js",
-  "module": "lib/browser.js",
+  "name": "@koishijs/orm-utils",
+  "description": "ORM utilities for Koishi",
+  "version": "1.0.0-alpha.0",
+  "main": "lib/index.js",
   "typings": "lib/index.d.ts",
+  "engines": {
+    "node": ">=12.0.0"
+  },
   "files": [
     "lib"
   ],
@@ -17,7 +19,7 @@
   "bugs": {
     "url": "https://github.com/koishijs/koishi/issues"
   },
-  "homepage": "https://koishi.js.org/plugins/other/database",
+  "homepage": "https://github.com/koishijs/koishi/packages/orm-utils#readme",
   "keywords": [
     "bot",
     "qqbot",
@@ -26,18 +28,9 @@
     "chatbot",
     "koishi",
     "plugin",
-    "database",
-    "server",
-    "service:database"
+    "utilities"
   ],
   "peerDependencies": {
     "koishi": "^4.0.0-alpha.8"
-  },
-  "devDependencies": {
-    "@types/js-yaml": "^4.0.3",
-    "js-yaml": "^4.1.0"
-  },
-  "dependencies": {
-    "@koishijs/orm-utils": "^1.0.0-alpha.0"
   }
 }

@@ -1,6 +1,8 @@
-import { Database, Query, Tables, clone, makeArray, pick, Context, valueMap, Schema } from 'koishi'
+import { Database, Query, Tables, clone, makeArray, pick, Context, valueMap, Schema, Logger } from 'koishi'
+import { executeEval, executeQuery } from '@koishijs/orm-utils'
 import { LevelDatabase, Config } from './database'
-import { logger, executeEval, executeQuery, AsyncQueue } from './utils'
+
+export const logger = new Logger('level')
 
 /**
  * LevelDB database
@@ -23,8 +25,6 @@ declare module 'koishi' {
 function isDirectFieldQuery(q: Query.FieldQuery) {
   return typeof q === 'string' || typeof q === 'number'
 }
-
-const createQueue = new AsyncQueue()
 
 Database.extend(LevelDatabase, {
   async drop(name) {
@@ -125,7 +125,7 @@ Database.extend(LevelDatabase, {
   },
 
   create(name, data: any, forced?: boolean) {
-    return createQueue.execute(async () => {
+    return this.queue(async () => {
       const { primary, fields, autoInc } = Tables.config[name] as Tables.Config
       data = clone(data)
       if (!Array.isArray(primary) && autoInc && !(primary in data)) {

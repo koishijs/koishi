@@ -1,6 +1,6 @@
 import axios from 'axios'
-import { createWriteStream } from 'fs'
-import { mkdir, writeFile } from 'fs/promises'
+import { createWriteStream, existsSync } from 'fs'
+import { mkdir, rm, writeFile } from 'fs/promises'
 import { components } from '@octokit/openapi-types'
 import { resolve } from 'path'
 import { extract } from 'tar'
@@ -31,13 +31,15 @@ function getPlatform() {
 async function install() {
   const arch = getArch()
   const platform = getPlatform()
+  const outDir = resolve(__dirname, '../bin')
+
+  if (existsSync(outDir)) return
 
   const { data } = await axios.get<Release[]>('https://api.github.com/repos/Mrs4s/go-cqhttp/releases')
   const name = `go-cqhttp_${platform}_${arch}.${platform === 'windows' ? 'exe' : 'tar.gz'}`
   const asset = data[0].assets.find(asset => asset.name === name)
   if (!asset) throw new Error(`target "${name}" is not found`)
 
-  const outDir = resolve(__dirname, '../bin')
   const url = asset.browser_download_url.replace('https://github.com', 'https://download.fastgit.org')
   const [{ data: stream }] = await Promise.all([
     axios.get<NodeJS.ReadableStream>(url, { responseType: 'stream' }),
@@ -55,7 +57,7 @@ async function install() {
         stream.pipe(extract({ cwd: outDir, newer: true }, ['go-cqhttp']))
       }
     })
-  ])
+  ]).catch(() => rm(outDir, { force: true, recursive: true }))
 }
 
 if (require.main === module) {

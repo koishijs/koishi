@@ -1,6 +1,4 @@
-import { Logger, Query, Eval, Tables } from 'koishi'
-
-export const logger = new Logger('level')
+import { Query, Eval } from 'koishi'
 
 type QueryOperators = {
   [K in keyof Query.FieldExpr]?: (query: Query.FieldExpr[K], data: any) => boolean
@@ -66,7 +64,7 @@ const evalOperators: EvalOperators = {
   $count: (expr, table: any[]) => new Set(table.map(data => executeEval(expr, data))).size,
 }
 
-export function executeFieldQuery(query: Query.FieldQuery, data: any) {
+function executeFieldQuery(query: Query.FieldQuery, data: any) {
   // shorthand syntax
   if (Array.isArray(query)) {
     return query.includes(data)
@@ -119,43 +117,6 @@ export function executeEval(expr: Eval.Any | Eval.Aggregation, data: any) {
   for (const key in expr) {
     if (key in evalOperators) {
       return evalOperators[key](expr[key], data)
-    }
-  }
-}
-
-export class AsyncQueue {
-  #last: Promise<any>
-
-  constructor() {
-    this.#last = Promise.resolve()
-  }
-
-  async execute<T>(factory: () => Promise<T>): Promise<T> {
-    const last = this.#last
-    return this.#last = last.catch(() => {}).then(factory)
-  }
-}
-
-export function createValueEncoding(table: string) {
-  const { fields } = Tables.config[table]
-  const dates = Object.keys(fields).filter(f => ['timestamp', 'date', 'time'].includes(fields[f].type))
-  if (!dates.length) {
-    return {
-      encode: JSON.stringify,
-      decode: JSON.parse,
-      buffer: false,
-      type: 'json',
-    }
-  } else {
-    return {
-      encode: JSON.stringify,
-      decode: (str: string) => {
-        const obj = JSON.parse(str)
-        dates.forEach(key => obj[key] = new Date(obj[key]))
-        return obj
-      },
-      buffer: false,
-      type: 'json-for-' + table,
     }
   }
 }
