@@ -1,6 +1,6 @@
 import { App, Database, TableType } from 'koishi'
-import level from 'level'
 import { deserialize, serialize } from 'v8'
+import level from 'level'
 
 const valueEncoding = {
   encode: serialize,
