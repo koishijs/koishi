@@ -1,48 +1,6 @@
-import { App, Database, Eval, Query, Tables, TableType, clone, makeArray, pick, Context, Dict, valueMap, Schema } from 'koishi'
-import { Storage, Config } from './storage'
+import { Logger, Query, Eval, Tables } from 'koishi'
 
-declare module 'koishi' {
-  interface Database {
-    memory: MemoryDatabase
-  }
-
-  interface Modules {
-    database: typeof import('.')
-  }
-}
-
-export class MemoryDatabase extends Database {
-  public memory = this
-  public $store: Dict<any[]> = {}
-
-  private _storage: Storage
-
-  constructor(public app: App, public config: Config = {}) {
-    super(app)
-
-    if (config.storage) {
-      this._storage = new Storage(config)
-    }
-  }
-
-  async start() {
-    await this._storage?.start(this.$store)
-  }
-
-  async $drop(name?: string) {
-    await this._storage?.drop(name)
-  }
-
-  async $save(name: string) {
-    await this._storage?.save(name, this.$store[name])
-  }
-
-  stop() {}
-
-  $table<K extends TableType>(table: K) {
-    return this.$store[table] ||= []
-  }
-}
+export const logger = new Logger('level')
 
 type QueryOperators = {
   [K in keyof Query.FieldExpr]?: (query: Query.FieldExpr[K], data: any) => boolean
@@ -108,7 +66,7 @@ const evalOperators: EvalOperators = {
   $count: (expr, table: any[]) => new Set(table.map(data => executeEval(expr, data))).size,
 }
 
-function executeFieldQuery(query: Query.FieldQuery, data: any) {
+export function executeFieldQuery(query: Query.FieldQuery, data: any) {
   // shorthand syntax
   if (Array.isArray(query)) {
     return query.includes(data)
@@ -127,7 +85,7 @@ function executeFieldQuery(query: Query.FieldQuery, data: any) {
   return true
 }
 
-function executeQuery(query: Query.Expr, data: any): boolean {
+export function executeQuery(query: Query.Expr, data: any): boolean {
   const entries: [string, any][] = Object.entries(query)
   return entries.every(([key, value]) => {
     // execute logical query
@@ -151,7 +109,7 @@ function executeQuery(query: Query.Expr, data: any): boolean {
   })
 }
 
-function executeEval(expr: Eval.Any | Eval.Aggregation, data: any) {
+export function executeEval(expr: Eval.Any | Eval.Aggregation, data: any) {
   if (typeof expr === 'string') {
     return data[expr]
   } else if (typeof expr === 'number' || typeof expr === 'boolean') {
@@ -165,86 +123,39 @@ function executeEval(expr: Eval.Any | Eval.Aggregation, data: any) {
   }
 }
 
-Database.extend(MemoryDatabase, {
-  async drop(name) {
-    if (name) {
-      delete this.$store[name]
-    } else {
-      this.$store = {}
+export class AsyncQueue {
+  #last: Promise<any>
+
+  constructor() {
+    this.#last = Promise.resolve()
+  }
+
+  async execute<T>(factory: () => Promise<T>): Promise<T> {
+    const last = this.#last
+    return this.#last = last.catch(() => {}).then(factory)
+  }
+}
+
+export function createValueEncoding(table: string) {
+  const { fields } = Tables.config[table]
+  const dates = Object.keys(fields).filter(f => ['timestamp', 'date', 'time'].includes(fields[f].type))
+  if (!dates.length) {
+    return {
+      encode: JSON.stringify,
+      decode: JSON.parse,
+      buffer: false,
+      type: 'json',
     }
-    await this.$drop(name)
-  },
-
-  async get(name, query, modifier) {
-    const expr = Query.resolve(name, query)
-    const { fields, limit = Infinity, offset = 0 } = Query.resolveModifier(modifier)
-    return this.$table(name)
-      .filter(row => executeQuery(expr, row))
-      .map(row => clone(pick(row, fields)))
-      .slice(offset, offset + limit)
-  },
-
-  async set(name, query, data) {
-    const expr = Query.resolve(name, query)
-    this.$table(name)
-      .filter(row => executeQuery(expr, row))
-      .forEach(row => Object.assign(row, data))
-    this.$save(name)
-  },
-
-  async remove(name, query) {
-    const expr = Query.resolve(name, query)
-    this.$store[name] = this.$table(name)
-      .filter(row => !executeQuery(expr, row))
-    this.$save(name)
-  },
-
-  async create(name, data: any) {
-    const store = this.$table(name)
-    const { primary, fields, autoInc } = Tables.config[name] as Tables.Config
-    data = clone(data)
-    if (!Array.isArray(primary) && autoInc && !(primary in data)) {
-      const max = store.length ? Math.max(...store.map(row => +row[primary])) : 0
-      data[primary] = max + 1
-      if (Tables.Field.string.includes(fields[primary].type)) {
-        data[primary] += ''
-      }
-    } else {
-      const duplicated = await this.get(name, pick(data, makeArray(primary)))
-      if (duplicated.length) return
+  } else {
+    return {
+      encode: JSON.stringify,
+      decode: (str: string) => {
+        const obj = JSON.parse(str)
+        dates.forEach(key => obj[key] = new Date(obj[key]))
+        return obj
+      },
+      buffer: false,
+      type: 'json-for-' + table,
     }
-    const copy = { ...Tables.create(name), ...data }
-    store.push(copy)
-    this.$save(name)
-    return copy
-  },
-
-  async upsert(name, data, key) {
-    const keys = makeArray(key || Tables.config[name].primary)
-    for (const item of data) {
-      const row = this.$table(name).find(row => {
-        return keys.every(key => row[key] === item[key])
-      })
-      if (row) {
-        Object.assign(row, clone(item))
-      } else {
-        await this.create(name, item)
-      }
-    }
-    this.$save(name)
-  },
-
-  async aggregate(name, fields, query) {
-    const expr = Query.resolve(name, query)
-    const table = this.$table(name).filter(row => executeQuery(expr, row))
-    return valueMap(fields, expr => executeEval(expr, table))
-  },
-})
-
-export const name = 'database'
-
-export const schema: Schema<Config> = Schema.object({})
-
-export function apply(ctx: Context, config: Config = {}) {
-  ctx.database = new MemoryDatabase(ctx.app, config)
+  }
 }
