@@ -86,13 +86,13 @@ Database.extend(LevelDatabase, {
       return
     }
 
-    const ops: any[] = []
+    const batch = table.batch()
     for await (const [key, value] of table.iterator()) {
       if (executeQuery(expr, value)) {
-        ops.push({ type: 'put', key, value: Object.assign(value, data) })
+        batch.put(key, Object.assign(value, data))
       }
     }
-    await table.batch(ops)
+    await batch.write()
   },
 
   async remove(name, query) {
@@ -114,13 +114,13 @@ Database.extend(LevelDatabase, {
       return
     }
 
-    const ops: any[] = []
+    const batch = table.batch()
     for await (const [key, value] of table.iterator()) {
       if (executeQuery(expr, value)) {
-        ops.push({ type: 'del', key })
+        batch.del(key)
       }
     }
-    await table.batch(ops)
+    await batch.write()
   },
 
   async create(name, data: any, forced?: boolean) {

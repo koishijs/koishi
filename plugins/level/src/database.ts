@@ -32,13 +32,12 @@ export class LevelDatabase extends Database {
 
   constructor(public app: App, public config: Config) {
     super(app)
-
-    this.#level = level(resolve(config.path))
-    this.#tables = Object.create(null)
   }
 
   async start() {
     // LevelDB will automaticely open
+    this.#level = level(resolve(this.config.path))
+    this.#tables = Object.create(null)
   }
 
   async stop() {
