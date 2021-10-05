@@ -105,10 +105,10 @@ Database.extend(MongoDatabase, {
     const filter = createFilter(name, query)
     let cursor = this.db.collection(name).find(filter)
     const { fields, limit, offset = 0 } = Query.resolveModifier(modifier)
-    if (fields) cursor = cursor.project(Object.fromEntries(fields.map(key => [key, 1])))
+    cursor = cursor.project({ _id: 0, ...Object.fromEntries((fields ?? []).map(key => [key, 1])) })
     if (offset) cursor = cursor.skip(offset)
     if (limit) cursor = cursor.limit(offset + limit)
-    return (await cursor.toArray()).map(x => omit(x, ['_id'])) as any
+    return await cursor.toArray()
   },
 
   async set(name, query, data) {

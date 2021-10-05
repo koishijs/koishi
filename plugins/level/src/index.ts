@@ -54,7 +54,6 @@ Database.extend(LevelDatabase, {
     }
 
     const result: any[] = []
-    // @ts-ignore
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     for await (const [_, value] of table.iterator()) {
       if (executeQuery(expr, value)) {
@@ -88,7 +87,6 @@ Database.extend(LevelDatabase, {
     }
 
     const ops: any[] = []
-    // @ts-ignore
     for await (const [key, value] of table.iterator()) {
       if (executeQuery(expr, value)) {
         ops.push({ type: 'put', key, value: Object.assign(value, data) })
@@ -117,7 +115,6 @@ Database.extend(LevelDatabase, {
     }
 
     const ops: any[] = []
-    // @ts-ignore
     for await (const [key, value] of table.iterator()) {
       if (executeQuery(expr, value)) {
         ops.push({ type: 'del', key })
@@ -165,7 +162,6 @@ Database.extend(LevelDatabase, {
       }
 
       let insert: boolean = true
-      // @ts-ignore
       for await (const [key, value] of table.iterator()) {
         if (keys.every(key => value[key] === item[key])) {
           insert = false
@@ -191,7 +187,6 @@ Database.extend(LevelDatabase, {
     const expr = Query.resolve(name, query)
     const result: any[] = []
     const table = this.table(name)
-    // @ts-ignore
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     for await (const [_, value] of table.iterator()) {
       if (executeQuery(expr, value)) {
