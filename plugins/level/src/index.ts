@@ -1,6 +1,6 @@
 import { Database, Query, Tables, clone, makeArray, pick, Context, valueMap, Schema } from 'koishi'
 import { LevelDatabase, Config } from './database'
-import { logger, executeEval, executeQuery } from './utils'
+import { logger, executeEval, executeQuery, AsyncQueue } from './utils'
 
 /**
  * LevelDB database
@@ -23,6 +23,8 @@ declare module 'koishi' {
 function isDirectFieldQuery(q: Query.FieldQuery) {
   return typeof q === 'string' || typeof q === 'number'
 }
+
+const createQueue = new AsyncQueue()
 
 Database.extend(LevelDatabase, {
   async drop(name) {
@@ -123,21 +125,23 @@ Database.extend(LevelDatabase, {
     await batch.write()
   },
 
-  async create(name, data: any, forced?: boolean) {
-    const { primary, fields, autoInc } = Tables.config[name] as Tables.Config
-    data = clone(data)
-    if (!Array.isArray(primary) && autoInc && !(primary in data)) {
-      const max = await this._maxKey(name)
-      data[primary] = max + 1
-      if (Tables.Field.string.includes(fields[primary].type)) {
-        data[primary] += ''
+  create(name, data: any, forced?: boolean) {
+    return createQueue.execute(async () => {
+      const { primary, fields, autoInc } = Tables.config[name] as Tables.Config
+      data = clone(data)
+      if (!Array.isArray(primary) && autoInc && !(primary in data)) {
+        const max = await this._maxKey(name)
+        data[primary] = max + 1
+        if (Tables.Field.string.includes(fields[primary].type)) {
+          data[primary] += ''
+        }
       }
-    }
-    const key = this._makeKey(primary, data)
-    if (!forced && await this._exists(name, key)) return
-    const copy = { ...Tables.create(name), ...data }
-    await this.table(name).put(key, copy)
-    return copy
+      const key = this._makeKey(primary, data)
+      if (!forced && await this._exists(name, key)) return
+      const copy = { ...Tables.create(name), ...data }
+      await this.table(name).put(key, copy)
+      return copy
+    })
   },
 
   async upsert(name, data, key) {

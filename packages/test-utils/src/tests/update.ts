@@ -162,6 +162,15 @@ namespace UpdateOperators {
       await expect(db.remove('bar', { id: { $lte: 2 } })).eventually.fulfilled
       await expect(db.get('bar', {})).eventually.length(0)
     })
+
+    it('parallel create with autoInc primary key', async () => {
+      await db.remove('bar', {})
+      await Promise.all([...Array(5)].map(() => db.create('bar', {})))
+      const result = await db.get('bar', {})
+      expect(result).length(5)
+      expect(result.map(e => e.id).sort((a, b) => a - b)).shape([1, 2, 3, 4, 5])
+      await db.remove('bar', {})
+    })
   }
 }
 

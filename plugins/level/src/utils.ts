@@ -1,4 +1,5 @@
 import { Logger, Query, Eval } from 'koishi'
+import { nextTick } from 'process'
 
 export const logger = new Logger('level')
 
@@ -122,3 +123,47 @@ export function executeEval(expr: Eval.Any | Eval.Aggregation, data: any) {
     }
   }
 }
+
+interface IAsyncTask<T> {
+  factory: () => Promise<T>
+  resolve: (value: T | PromiseLike<T>) => void
+  reject: (reason?: any) => void
+}
+
+export class AsyncQueue {
+  #queue: IAsyncTask<any>[]
+  #running: boolean
+
+  constructor() {
+    this.#queue = []
+    this.#running = false
+  }
+
+  execute<T>(factory: () => Promise<T>): Promise<T> {
+    nextTick(() => this.run())
+    return new Promise<T>((resolve, reject) => this.#queue.push({ factory, resolve, reject }))
+  }
+
+  async run() {
+    if (this.#running) return
+    this.#running = true
+    while (this.#queue.length) {
+      const task = this.#queue.shift()
+      await task.factory().then(task.resolve).catch(task.reject)
+    }
+    this.#running = false
+  }
+}
+
+// export class AsyncQueue {
+//   #last: Promise<any>
+
+//   constructor() {
+//     this.#last = Promise.resolve()
+//   }
+
+//   async execute<T>(factory: () => Promise<T>): Promise<T> {
+//     const last = this.#last
+//     return this.#last = last.catch(() => {}).finally(() => factory())
+//   }
+// }
