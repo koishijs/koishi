@@ -1,7 +1,7 @@
 import { resolve, extname, dirname, isAbsolute } from 'path'
 import { yellow } from 'kleur'
 import { readdirSync, readFileSync } from 'fs'
-import { App, Context, Dict, hyphenate, makeArray, Modules, Plugin } from 'koishi'
+import { App, Dict, hyphenate, Modules, Plugin } from 'koishi'
 import { load } from 'js-yaml'
 
 const oldPaths = Modules.internal.paths
@@ -61,6 +61,7 @@ export class Loader {
   }
 
   createApp(config: App.Config) {
+    config.baseDir = this.dirname
     const app = this.app = new App(config)
     const plugins = app.options.plugins ||= {}
     for (const name in plugins) {

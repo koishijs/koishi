@@ -1,7 +1,7 @@
 import * as utils from '@koishijs/utils'
 import { MaybeArray, Dict, Get } from '@koishijs/utils'
 import { Query } from './orm'
-import { App } from './app'
+import { Context } from './context'
 
 export interface User {
   id: string
@@ -48,9 +48,9 @@ export abstract class Database {
   abstract start(): void | Promise<void>
   abstract stop(): void | Promise<void>
 
-  constructor(public app: App) {
-    app.on('connect', () => this.start())
-    app.on('disconnect', () => this.stop())
+  constructor(public ctx: Context) {
+    ctx.on('connect', () => this.start())
+    ctx.on('disconnect', () => this.stop())
   }
 
   getUser<T extends string, K extends T | User.Field>(platform: T, id: string, modifier?: Query.Modifier<K>): Promise<UserWithPlatform<T, T | K>>
@@ -76,7 +76,7 @@ export abstract class Database {
   }
 
   getAssignedChannels<K extends Channel.Field>(fields?: K[], assignMap?: Dict<string[]>): Promise<Pick<Channel, K>[]>
-  async getAssignedChannels(fields?: Channel.Field[], assignMap: Dict<string[]> = this.app.getSelfIds()) {
+  async getAssignedChannels(fields?: Channel.Field[], assignMap: Dict<string[]> = this.ctx.getSelfIds()) {
     return this.get('channel', {
       $or: Object.entries(assignMap).map(([platform, assignee]) => ({ platform, assignee })),
     }, fields)

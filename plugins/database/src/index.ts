@@ -1,4 +1,4 @@
-import { App, Database, Query, Tables, TableType, clone, makeArray, pick, Context, Dict, valueMap, Schema } from 'koishi'
+import { Context, Database, Query, Tables, TableType, clone, makeArray, pick, Dict, valueMap, Schema } from 'koishi'
 import { executeEval, executeQuery } from '@koishijs/orm-utils'
 import { Storage, Config } from './storage'
 
@@ -126,5 +126,5 @@ export const name = 'database'
 export const schema: Schema<Config> = Schema.object({})
 
 export function apply(ctx: Context, config: Config = {}) {
-  ctx.database = new MemoryDatabase(ctx.app, config)
+  ctx.database = new MemoryDatabase(ctx, config)
 }

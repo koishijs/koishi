@@ -176,7 +176,7 @@ export const schema: Schema<Config> = Schema.object({
 })
 
 export function apply(ctx: Context, config: Config) {
-  ctx.database = new MongoDatabase(ctx.app, {
+  ctx.database = new MongoDatabase(ctx, {
     host: 'localhost',
     database: 'koishi',
     protocol: 'mongodb',

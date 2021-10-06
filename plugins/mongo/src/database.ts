@@ -1,5 +1,5 @@
 import { MongoClient, Db, Collection } from 'mongodb'
-import { App, Channel, Database, User, Tables as KoishiTables, makeArray } from 'koishi'
+import { Context, Channel, Database, User, Tables as KoishiTables, makeArray } from 'koishi'
 import { URLSearchParams } from 'url'
 
 type TableType = keyof Tables
@@ -32,8 +32,8 @@ export class MongoDatabase extends Database {
   user: Collection<User>
   channel: Collection<Channel>
 
-  constructor(public app: App, config?: Config) {
-    super(app)
+  constructor(public ctx: Context, config?: Config) {
+    super(ctx)
     this.config = {
       host: 'localhost',
       database: 'koishi',

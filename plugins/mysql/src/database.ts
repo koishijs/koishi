@@ -1,5 +1,5 @@
 import { createPool, Pool, PoolConfig, escape as mysqlEscape, escapeId, format, TypeCast } from 'mysql'
-import { App, Database, Logger, makeArray } from 'koishi'
+import { Context, Database, Logger, makeArray } from 'koishi'
 import * as Koishi from 'koishi'
 import { types } from 'util'
 
@@ -83,8 +83,8 @@ class MysqlDatabase extends Database {
     }) as (keyof Tables[T])[]
   }
 
-  constructor(public app: App, config?: Config) {
-    super(app)
+  constructor(public ctx: Context, config?: Config) {
+    super(ctx)
     this.config = {
       host: 'localhost',
       port: 3306,
@@ -128,7 +128,7 @@ class MysqlDatabase extends Database {
 
     // create platform rows
     if (name === 'user') {
-      const platforms = new Set<string>(this.app.bots.map(bot => bot.platform))
+      const platforms = new Set<string>(this.ctx.bots.map(bot => bot.platform))
       for (const name of platforms) {
         fields[name] = { type: 'string', length: 63 }
         unique.push(name)
