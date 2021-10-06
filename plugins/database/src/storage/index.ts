@@ -1,5 +1,7 @@
+import { Context } from 'koishi'
+
 export declare class Storage {
-  constructor(config: Config)
+  constructor(ctx: Context, config: Config)
 
   start(tables: Record<string, any[]>): Promise<void>
   save(name: string, table: any[]): Promise<void>

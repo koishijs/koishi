@@ -25,6 +25,10 @@ declare module '@koishijs/core' {
   }
 
   namespace App {
+    interface Config {
+      baseDir?: string
+    }
+
     namespace Config {
       interface Network {
         port?: number
@@ -62,6 +66,8 @@ App.prototype.prepare = function (this: App, ...args) {
 }
 
 function prepareServer(this: App) {
+  this.options.baseDir ||= process.cwd()
+
   const { port, host } = this.options
   if (!port) return
 

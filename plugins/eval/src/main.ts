@@ -194,7 +194,7 @@ export class EvalWorker {
     if (BUILTIN_LOADERS.includes(scriptLoader)) {
       scriptLoader = resolve(__dirname, 'loaders', scriptLoader)
     } else {
-      scriptLoader = resolve(process.cwd(), scriptLoader)
+      scriptLoader = resolve(this.ctx.app.options.baseDir, scriptLoader)
     }
     this.loader = require(scriptLoader)
     return this.loader.prepare?.(loaderConfig)
@@ -221,6 +221,7 @@ export class EvalWorker {
       workerData: {
         logLevels: Logger.levels,
         logTime: Logger.targets[0].showTime,
+        baseDir: this.ctx.app.options.baseDir,
         ...pick(this.config, this.config.dataKeys),
       },
       resourceLimits: this.config.resourceLimits,

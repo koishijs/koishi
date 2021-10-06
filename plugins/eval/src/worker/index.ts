@@ -38,6 +38,7 @@ export interface WorkerConfig {
 }
 
 export interface WorkerData extends WorkerConfig {
+  baseDir: string
   addonNames?: string[]
 }
 
@@ -94,7 +95,7 @@ export interface Session {
 
 let storage: SerializableObject
 let backupStorage: Buffer
-const storagePath = resolve(config.root || process.cwd(), config.storageFile || '.koishi/storage')
+const storagePath = resolve(config.root || config.baseDir, config.storageFile || '.koishi/storage')
 
 export const createSession = ({ id, user, userWritable, channel, channelWritable }: SessionData): Session => ({
   storage,

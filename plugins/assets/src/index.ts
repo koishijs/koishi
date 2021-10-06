@@ -59,7 +59,7 @@ class LocalAssets implements Assets {
   constructor(public ctx: Context, public config: LocalConfig) {
     config.path = sanitize(config.path || '/assets')
     if (config.root) {
-      config.root = resolve(process.cwd(), config.root)
+      config.root = resolve(ctx.app.options.baseDir, config.root)
     } else {
       config.root = resolve(__dirname, '../public')
     }

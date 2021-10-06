@@ -18,11 +18,11 @@ export class MemoryDatabase extends Database {
 
   private _storage: Storage
 
-  constructor(public app: App, public config: Config = {}) {
-    super(app)
+  constructor(public ctx: Context, public config: Config = {}) {
+    super(ctx)
 
     if (config.storage) {
-      this._storage = new Storage(config)
+      this._storage = new Storage(ctx, config)
     }
   }
 

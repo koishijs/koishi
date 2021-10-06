@@ -1,4 +1,4 @@
-import { App, Database, Tables, TableType } from 'koishi'
+import { Context, Database, Tables, TableType } from 'koishi'
 import type { AbstractIteratorOptions } from 'abstract-leveldown'
 import type { LevelUp } from 'levelup'
 import level from 'level'
@@ -47,8 +47,8 @@ export class LevelDatabase extends Database {
   #tables: Record<string, LevelUp>
   #last: Promise<any>
 
-  constructor(public app: App, public config: Config) {
-    super(app)
+  constructor(public ctx: Context, public config: Config) {
+    super(ctx)
   }
 
   async start() {

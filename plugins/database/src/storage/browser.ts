@@ -1,9 +1,11 @@
+import { Context } from 'koishi'
+
 export interface Config {
   prefix?: string
 }
 
 export class Storage {
-  constructor(private config: Config) {
+  constructor(ctx: Context, private config: Config) {
     config.prefix ||= 'koishi.database.'
   }
 

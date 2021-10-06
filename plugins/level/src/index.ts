@@ -209,5 +209,5 @@ export const schema: Schema<Config> = Schema.object({
 
 export function apply(ctx: Context, config: Config) {
   config = Schema.validate(config, schema)
-  ctx.database = new LevelDatabase(ctx.app, config)
+  ctx.database = new LevelDatabase(ctx, config)
 }

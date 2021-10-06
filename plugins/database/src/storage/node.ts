@@ -1,4 +1,5 @@
 import type * as yaml from 'js-yaml'
+import { Context } from 'koishi'
 import { promises as fs } from 'fs'
 import { extname, resolve } from 'path'
 
@@ -11,9 +12,9 @@ export interface Config {
 }
 
 export class Storage {
-  constructor(private config: Config) {
+  constructor(ctx: Context, private config: Config) {
     config.loader ||= 'json'
-    config.root ||= resolve(process.cwd(), '.koishi/database')
+    config.root ||= resolve(ctx.app.options.baseDir, '.koishi/database')
     if (!loaders.includes(config.loader)) {
       throw new Error(`unsupported loader "${config.loader}"`)
     }
