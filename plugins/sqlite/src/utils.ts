@@ -1,12 +1,21 @@
 import { Logger } from 'koishi'
-import { escape as sqlEscape } from 'sqlstring-sqlite'
-export { escapeId } from 'sqlstring-sqlite'
+import Factory, { escape as sqlEscape } from '@koishijs/sql-utils'
 
-export const logger = new Logger('sqlite3')
+export const logger = new Logger('sqlite')
 
-export function escape(value: any, stringifyObjects?: boolean, timeZone?: string) {
-  if (value instanceof Date) {
-    return (+value) + ''
+logger.level = 4
+
+const { escape, escapeId, parseEval, parseQuery } = new class extends Factory {
+  escape = (value: any, stringifyObjects?: boolean, timeZone?: string) => {
+    if (value instanceof Date) {
+      return (+value) + ''
+    }
+    return sqlEscape(value, stringifyObjects, timeZone)
   }
-  return sqlEscape(value, stringifyObjects, timeZone)
-}
+
+  createElementQuery = (key: string, value: any) => {
+    return `(',' || ${key} || ',') LIKE '%,${this.escape(value)},%'`
+  }
+}()
+
+export { escape, escapeId, parseEval, parseQuery }

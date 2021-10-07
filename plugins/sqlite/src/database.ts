@@ -1,10 +1,9 @@
-import { App, clone, Database, makeArray } from 'koishi'
-import * as Koishi from 'koishi'
+import { App, clone, Database, makeArray, Tables } from 'koishi'
 import sqlite from 'better-sqlite3'
 import { resolve } from 'path'
 import { escapeId, escape, logger } from './utils'
 
-export type TableType = keyof Koishi.Tables
+export type TableType = keyof Tables
 
 export interface Config {
   path?: string
@@ -23,7 +22,7 @@ function createStubDbAdapter(): DbAdapter {
 }
 
 function createDbAdapter(table: string): DbAdapter {
-  const config = Koishi.Tables.config[table]
+  const config = Tables.config[table]
   if (!config) throw new Error(`table ${table} not found`)
   const fields = Object.keys(config.fields)
   const jsons = fields.filter(field => config.fields[field].type === 'json')
@@ -48,7 +47,7 @@ function createDbAdapter(table: string): DbAdapter {
   }
 }
 
-function getTypeDefinition({ type, length, precision, scale }: Koishi.Tables.Field) {
+function getTypeDefinition({ type, length, precision, scale }: Tables.Field) {
   switch (type) {
     case 'integer':
     case 'unsigned':
@@ -67,7 +66,7 @@ function getTypeDefinition({ type, length, precision, scale }: Koishi.Tables.Fie
 }
 
 function getColumnDefinitionSQL(table: string, key: string, adapter: DbAdapter) {
-  const config = Koishi.Tables.config[table]
+  const config = Tables.config[table]
   const { initial, nullable = initial === undefined || initial === null } = config.fields[key]
   let def = escapeId(key)
   if (key === config.primary && config.autoInc) {
@@ -100,8 +99,8 @@ class SqliteDatabase extends Database {
 
     const info = await this._getTableInfo(table)
     // FIXME: register platform columns before database initializion
-    // WARN: side effecting Koishi.Tables.config
-    const config = Koishi.Tables.config[table]
+    // WARN: side effecting Tables.config
+    const config = Tables.config[table]
     if (table === 'user') {
       new Set(this.app.bots.map(bot => bot.platform)).forEach(platform => {
         config.fields[platform] = { type: 'string', length: 63 }
@@ -147,7 +146,7 @@ class SqliteDatabase extends Database {
     this.db = sqlite(this.config.path === ':memory:' ? this.config.path : resolve(this.config.path))
     this.db.function('regexp', (pattern, str) => +new RegExp(pattern).test(str))
     // Synchronize database schemas
-    for (const name in Koishi.Tables.config) {
+    for (const name in Tables.config) {
       await this.#syncTable(name)
     }
   }
