@@ -6,10 +6,10 @@ import { ensureDirSync } from 'fs-extra'
 describe(`SQLite Database`, () => {
   const app = new App()
 
-  ensureDirSync(join(__dirname, '..', 'temp'))
+  ensureDirSync(join(__dirname, '..', 'test'))
 
   app.plugin(sqlite, {
-    path: join(__dirname, '..', 'temp', 'test.db'),
+    path: join(__dirname, '..', 'test', 'test.db'),
   })
 
   Tests.database(app, {

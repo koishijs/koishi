@@ -47,7 +47,7 @@ function createDbAdapter(table: string): DbAdapter {
   }
 }
 
-function getTypeDefinition({ type, length, precision, scale }: Tables.Field) {
+function getTypeDefinition({ type }: Tables.Field) {
   switch (type) {
     case 'integer':
     case 'unsigned':
@@ -197,9 +197,13 @@ class SqliteDatabase extends Database {
   }
 
   async _dropAll() {
-    const tables = Object.keys(this.#dbAdapters)
+    const tables = await this._getTables()
     for (const table of tables) {
-      await this._dropTable(table)
+      try {
+        await this._dropTable(table)
+      } catch {
+        // Remove internal tables might cause errors
+      }
     }
     this.#dbAdapters = Object.create(null)
   }
