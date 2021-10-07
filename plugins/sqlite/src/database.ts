@@ -1,0 +1,213 @@
+import { App, clone, Database, makeArray } from 'koishi'
+import * as Koishi from 'koishi'
+import sqlite from 'better-sqlite3'
+import { resolve } from 'path'
+import { escapeId, escape, logger } from './utils'
+
+export type TableType = keyof Koishi.Tables
+
+export interface Config {
+  path?: string
+}
+
+export interface DbAdapter {
+  localToDb(obj: any): any
+  dbToLocal(obj: any): any
+}
+
+function createStubDbAdapter(): DbAdapter {
+  return {
+    localToDb: obj => obj,
+    dbToLocal: obj => obj,
+  }
+}
+
+function createDbAdapter(table: string): DbAdapter {
+  const config = Koishi.Tables.config[table]
+  if (!config) throw new Error(`table ${table} not found`)
+  const fields = Object.keys(config.fields)
+  const jsons = fields.filter(field => config.fields[field].type === 'json')
+  const lists = fields.filter(field => config.fields[field].type === 'list')
+  const dates = fields.filter(field => ['timestamp', 'date', 'time'].includes(config.fields[field].type))
+  if (jsons.length + lists.length + dates.length === 0) return createStubDbAdapter()
+  return {
+    localToDb: obj => {
+      const result = clone(obj)
+      jsons.filter(field => field in obj).forEach(field => result[field] = JSON.stringify(obj[field]))
+      lists.filter(field => field in obj).forEach(field => result[field] = obj[field].join(','))
+      dates.filter(field => field in obj).forEach(field => result[field] = +obj[field])
+      return result
+    },
+    dbToLocal: obj => {
+      const result = clone(obj)
+      jsons.filter(field => field in obj).forEach(field => result[field] = JSON.parse(obj[field]))
+      lists.filter(field => field in obj).forEach(field => result[field] = obj[field].split(','))
+      dates.filter(field => field in obj).forEach(field => result[field] = new Date(obj[field]))
+      return result
+    },
+  }
+}
+
+function getTypeDefinition({ type, length, precision, scale }: Koishi.Tables.Field) {
+  switch (type) {
+    case 'integer':
+    case 'unsigned':
+    case 'date':
+    case 'time':
+    case 'timestamp': return `INTEGER`
+    case 'float':
+    case 'double':
+    case 'decimal': return `REAL`
+    case 'char':
+    case 'string':
+    case 'text':
+    case 'list':
+    case 'json': return `TEXT`
+  }
+}
+
+function getColumnDefinitionSQL(table: string, key: string, adapter: DbAdapter) {
+  const config = Koishi.Tables.config[table]
+  const { initial, nullable = initial === undefined || initial === null } = config.fields[key]
+  let def = escapeId(key)
+  if (key === config.primary && config.autoInc) {
+    def += ' INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT'
+  } else {
+    const typedef = getTypeDefinition(config.fields[key])
+    def += ' ' + typedef + (nullable ? ' ' : ' NOT ') + 'NULL'
+    if (initial) {
+      def += ' DEFAULT ' + escape(adapter.localToDb({ [key]: initial })[key])
+    }
+  }
+  return def
+}
+
+class SqliteDatabase extends Database {
+  public db: sqlite.Database
+
+  sqlite = this
+
+  #dbAdapters: Record<string, DbAdapter>
+
+  constructor(public app: App, public config: Config) {
+    super(app)
+    this.#dbAdapters = Object.create(null)
+  }
+
+  async #syncTable(table: string) {
+    const adapter = createDbAdapter(table)
+    this.#dbAdapters[table] = adapter
+
+    const info = await this._getTableInfo(table)
+    // FIXME: register platform columns before database initializion
+    // WARN: side effecting Koishi.Tables.config
+    const config = Koishi.Tables.config[table]
+    if (table === 'user') {
+      new Set(this.app.bots.map(bot => bot.platform)).forEach(platform => {
+        config.fields[platform] = { type: 'string', length: 63 }
+        config.unique.push(platform)
+      })
+    }
+    const keys = Object.keys(config.fields)
+    if (info.length) {
+      logger.info('auto updating table %c', table)
+      const allKeys = [...keys, ...info.map(row => row.name)]
+      for (const key of allKeys) {
+        if (keys.includes(key) && info.some(({ name }) => name === key)) continue
+        if (keys.includes(key)) {
+          // Add column
+          const def = getColumnDefinitionSQL(table, key, adapter)
+          await this.run(`ALTER TABLE ${escapeId(table)} ADD COLUMN ${def}`)
+        } else {
+          // Drop column
+          await this.run(`ALTER TABLE ${escapeId(table)} DROP COLUMN ${escapeId(key)}`)
+        }
+      }
+    } else {
+      logger.info('auto creating table %c', table)
+      const defs = keys.map(key => getColumnDefinitionSQL(table, key, adapter))
+      const constraints = []
+      if (config.primary && !config.autoInc) {
+        constraints.push(`PRIMARY KEY (${this._joinKeys(config.primary)})`)
+      }
+      if (config.unique) {
+        constraints.push(...config.unique.map(keys => `UNIQUE (${this._joinKeys(keys)})`))
+      }
+      if (config.foreign) {
+        constraints.push(
+          ...Object.entries(config.foreign)
+            .map(([key, [table, key2]]) => `FOREIGN KEY (${escapeId(key)}) REFERENCES ${escapeId(table)} (${escapeId(key2)})`),
+        )
+      }
+      await this.run(`CREATE TABLE ${escapeId(table)} (${[...defs, ...constraints].join(',')})`)
+    }
+  }
+
+  async start() {
+    this.db = sqlite(this.config.path === ':memory:' ? this.config.path : resolve(this.config.path))
+    this.db.function('regexp', (pattern, str) => +new RegExp(pattern).test(str))
+    // Synchronize database schemas
+    for (const name in Koishi.Tables.config) {
+      await this.#syncTable(name)
+    }
+  }
+
+  _joinKeys(keys?: string | string[]) {
+    return keys ? makeArray(keys).map(key => escapeId(key)).join(',') : '*'
+  }
+
+  run(sql: string, params: any = []) {
+    logger.debug('SQL > %c', sql)
+    return this.db.prepare(sql).run(params)
+  }
+
+  get(sql: string, params: any = []) {
+    logger.debug('SQL > %c', sql)
+    return this.db.prepare(sql).get(params)
+  }
+
+  all(sql: string, params: any = []) {
+    logger.debug('SQL > %c', sql)
+    return this.db.prepare(sql).all(params)
+  }
+
+  async count<K extends TableType>(table: K, where?: string) {
+    const [{ 'COUNT(*)': count }] = await this.get(`SELECT COUNT(*) FROM ${escapeId(table)} ${where ? 'WHERE ' + where : ''}`)
+    return count as number
+  }
+
+  _getDbAdapter(table: string) {
+    return this.#dbAdapters[table]
+  }
+
+  async _getTables(): Promise<string[]> {
+    const rows = await this.all(`SELECT name FROM sqlite_master WHERE type='table';`)
+    return rows.map(({ name }) => name)
+  }
+
+  async _getTableInfo(table: string): Promise<{ name: string; type: string; notnull: boolean; default: string; pk: boolean }[]> {
+    const rows = await this.all(`PRAGMA table_info(${escapeId(table)});`)
+    // eslint-disable-next-line @typescript-eslint/naming-convention
+    const columns = rows.map(({ name, type, notnull, dflt_value, pk }) => ({ name, type, notnull: !!notnull, default: dflt_value, pk: !!pk }))
+    return columns
+  }
+
+  async _dropTable(table: string) {
+    await this.run(`DROP TABLE ${escapeId(table)}`)
+    delete this.#dbAdapters[table]
+  }
+
+  async _dropAll() {
+    const tables = Object.keys(this.#dbAdapters)
+    for (const table of tables) {
+      await this._dropTable(table)
+    }
+    this.#dbAdapters = Object.create(null)
+  }
+
+  stop() {
+    this.db.close()
+  }
+}
+
+export default SqliteDatabase
