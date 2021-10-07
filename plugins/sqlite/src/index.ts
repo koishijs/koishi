@@ -19,9 +19,14 @@ declare module 'koishi' {
 Database.extend(SqliteDatabase, {
   async drop(name) {
     if (name) {
-      await this._dropTable(name)
+      this.run(`DROP TABLE ${utils.escapeId(name)}`)
+      delete this.dbAdapters[name]
     } else {
-      await this._dropAll()
+      const tables = Object.keys(this.dbAdapters)
+      for (const table of tables) {
+        this.run(`DROP TABLE ${utils.escapeId(table)}`)
+      }
+      this.dbAdapters = Object.create(null)
     }
   },
 
@@ -33,14 +38,14 @@ Database.extend(SqliteDatabase, {
     if (limit) sql += ' LIMIT ' + limit
     if (offset) sql += ' OFFSET ' + offset
     const rows = this.all(sql)
-    const adapter = this._getDbAdapter(name)
+    const adapter = this.dbAdapters[name]
     return rows.map(row => adapter.dbToLocal(row))
   },
 
   async set(name, query, data) {
     const filter = utils.parseQuery(Query.resolve(name, query))
     if (filter === '0') return
-    const adapter = this._getDbAdapter(name)
+    const adapter = this.dbAdapters[name]
     data = adapter.localToDb(data)
     const update = Object.keys(data).map((key) => {
       return `${utils.escapeId(key)} = ${utils.escape(data[key])}`
@@ -55,7 +60,7 @@ Database.extend(SqliteDatabase, {
   },
 
   async create(name, data) {
-    const adapter = this._getDbAdapter(name)
+    const adapter = this.dbAdapters[name]
     data = { ...Koishi.Tables.create(name), ...data }
     const dbData = adapter.localToDb(data)
     const keys = Object.keys(data)
@@ -76,7 +81,7 @@ Database.extend(SqliteDatabase, {
     const { fields, primary } = Koishi.Tables.config[name]
     const fallback = Koishi.Tables.create(name)
     const initKeys = Object.keys(fields)
-    const adapter = this._getDbAdapter(name)
+    const adapter = this.dbAdapters[name]
     keys = makeArray(keys || primary)
     for (const item of data) {
       const updateKeys = Object.keys(item)

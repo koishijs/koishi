@@ -15,9 +15,9 @@ export namespace DbAdapter {
     localToDb: (value: S) => T
     dbToLocal: (value: T, initial?: S) => S
   }
-  const fieldAdapters: FieldAdapter[] = []
+  const fieldAdapters: Record<string, FieldAdapter> = Object.create(null)
   function defineFieldConverter<S, T>(converter: FieldAdapter<S, T>) {
-    fieldAdapters.push(converter)
+    converter.match.forEach(type => fieldAdapters[type] = converter)
   }
 
   defineFieldConverter<object, string>({
@@ -50,30 +50,19 @@ export namespace DbAdapter {
 
   export function createTableAdapter(table: string): TableAdapter {
     const config = Tables.config[table]
-    if (!config) throw new Error(`table ${table} not found`)
     const fields = Object.keys(config.fields)
-    const targets = fieldAdapters
-      .map(converter =>
-        [
-          converter,
-          fields.filter(field => converter.match.includes(config.fields[field].type)),
-        ] as const,
-      )
-      .filter(([, fields]) => fields.length)
+    const targets = fields.filter(field => config.fields[field].type in fieldAdapters)
+      .map(field => [field, fieldAdapters[config.fields[field].type]] as const)
     if (!targets.length) return createStubTableAdapter()
     return {
       localToDb: obj => {
         const result = clone(obj)
-        targets.forEach(([converter, fields]) =>
-          fields.filter(field => field in obj).forEach(field => result[field] = converter.localToDb(obj[field])),
-        )
+        targets.forEach(([field, converter]) => field in result && (result[field] = converter.localToDb(obj[field])))
         return result
       },
       dbToLocal: obj => {
         const result = clone(obj)
-        targets.forEach(([converter, fields]) =>
-          fields.filter(field => field in obj).forEach(field => result[field] = converter.dbToLocal(obj[field], config.fields[field].initial)),
-        )
+        targets.forEach(([field, converter]) => field in result && (result[field] = converter.dbToLocal(obj[field], config.fields[field].initial)))
         return result
       },
     }
@@ -119,18 +108,18 @@ class SqliteDatabase extends Database {
 
   sqlite = this
 
-  #dbAdapters: Record<string, DbAdapter.TableAdapter>
+  dbAdapters: Record<string, DbAdapter.TableAdapter>
 
   constructor(public app: App, public config: Config) {
     super(app)
-    this.#dbAdapters = Object.create(null)
+    this.dbAdapters = Object.create(null)
   }
 
-  async #syncTable(table: string) {
+  private syncTable(table: string) {
     const adapter = DbAdapter.createTableAdapter(table)
-    this.#dbAdapters[table] = adapter
+    this.dbAdapters[table] = adapter
 
-    const info = await this._getTableInfo(table)
+    const info = this._getTableInfo(table)
     // FIXME: register platform columns before database initializion
     // WARN: side effecting Tables.config
     const config = Tables.config[table]
@@ -149,10 +138,10 @@ class SqliteDatabase extends Database {
         if (keys.includes(key)) {
           // Add column
           const def = getColumnDefinitionSQL(table, key, adapter)
-          await this.run(`ALTER TABLE ${utils.escapeId(table)} ADD COLUMN ${def}`)
+          this.run(`ALTER TABLE ${utils.escapeId(table)} ADD COLUMN ${def}`)
         } else {
           // Drop column
-          await this.run(`ALTER TABLE ${utils.escapeId(table)} DROP COLUMN ${utils.escapeId(key)}`)
+          this.run(`ALTER TABLE ${utils.escapeId(table)} DROP COLUMN ${utils.escapeId(key)}`)
         }
       }
     } else {
@@ -160,10 +149,10 @@ class SqliteDatabase extends Database {
       const defs = keys.map(key => getColumnDefinitionSQL(table, key, adapter))
       const constraints = []
       if (config.primary && !config.autoInc) {
-        constraints.push(`PRIMARY KEY (${this._joinKeys(config.primary)})`)
+        constraints.push(`PRIMARY KEY (${this._joinKeys(makeArray(config.primary))})`)
       }
       if (config.unique) {
-        constraints.push(...config.unique.map(keys => `UNIQUE (${this._joinKeys(keys)})`))
+        constraints.push(...config.unique.map(keys => `UNIQUE (${this._joinKeys(makeArray(keys))})`))
       }
       if (config.foreign) {
         constraints.push(
@@ -171,7 +160,7 @@ class SqliteDatabase extends Database {
             .map(([key, [table, key2]]) => `FOREIGN KEY (${utils.escapeId(key)}) REFERENCES ${utils.escapeId(table)} (${utils.escapeId(key2)})`),
         )
       }
-      await this.run(`CREATE TABLE ${utils.escapeId(table)} (${[...defs, ...constraints].join(',')})`)
+      this.run(`CREATE TABLE ${utils.escapeId(table)} (${[...defs, ...constraints].join(',')})`)
     }
   }
 
@@ -180,61 +169,54 @@ class SqliteDatabase extends Database {
     this.db.function('regexp', (pattern, str) => +new RegExp(pattern).test(str))
     // Synchronize database schemas
     for (const name in Tables.config) {
-      await this.#syncTable(name)
+      this.syncTable(name)
     }
   }
 
-  _joinKeys(keys?: string | string[]) {
-    return keys ? makeArray(keys).map(key => utils.escapeId(key)).join(',') : '*'
+  _joinKeys(keys?: string[]) {
+    return keys ? keys.map(key => utils.escapeId(key)).join(',') : '*'
   }
 
   run(sql: string, params: any = []) {
     logger.debug('SQL > %c', sql)
-    return this.db.prepare(sql).run(params)
+    try {
+      return this.db.prepare(sql).run(params)
+    } catch (e) {
+      logger.warn('SQL Failed > %c', sql)
+      throw e
+    }
   }
 
   get(sql: string, params: any = []) {
     logger.debug('SQL > %c', sql)
-    return this.db.prepare(sql).get(params)
+    try {
+      return this.db.prepare(sql).get(params)
+    } catch (e) {
+      logger.warn('SQL Failed > %c', sql)
+      throw e
+    }
   }
 
   all(sql: string, params: any = []) {
     logger.debug('SQL > %c', sql)
-    return this.db.prepare(sql).all(params)
+    try {
+      return this.db.prepare(sql).all(params)
+    } catch (e) {
+      logger.warn('SQL Failed > %c', sql)
+      throw e
+    }
   }
 
-  async count<K extends TableType>(table: K, where?: string) {
-    const [{ 'COUNT(*)': count }] = await this.get(`SELECT COUNT(*) FROM ${utils.escapeId(table)} ${where ? 'WHERE ' + where : ''}`)
-    return count as number
-  }
-
-  _getDbAdapter(table: string) {
-    return this.#dbAdapters[table]
-  }
-
-  async _getTables(): Promise<string[]> {
-    const rows = await this.all(`SELECT name FROM sqlite_master WHERE type='table';`)
+  _getTables(): string[] {
+    const rows = this.all(`SELECT name FROM sqlite_master WHERE type='table';`)
     return rows.map(({ name }) => name)
   }
 
-  async _getTableInfo(table: string): Promise<{ name: string; type: string; notnull: boolean; default: string; pk: boolean }[]> {
-    const rows = await this.all(`PRAGMA table_info(${utils.escapeId(table)});`)
+  _getTableInfo(table: string): { name: string; type: string; notnull: boolean; default: string; pk: boolean }[] {
+    const rows = this.all(`PRAGMA table_info(${utils.escapeId(table)});`)
     // eslint-disable-next-line @typescript-eslint/naming-convention
     const columns = rows.map(({ name, type, notnull, dflt_value, pk }) => ({ name, type, notnull: !!notnull, default: dflt_value, pk: !!pk }))
     return columns
-  }
-
-  async _dropTable(table: string) {
-    this.run(`DROP TABLE ${utils.escapeId(table)}`)
-    delete this.#dbAdapters[table]
-  }
-
-  async _dropAll() {
-    const tables = Object.keys(this.#dbAdapters)
-    for (const table of tables) {
-      await this._dropTable(table)
-    }
-    this.#dbAdapters = Object.create(null)
   }
 
   stop() {
