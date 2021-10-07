@@ -37,10 +37,9 @@
   },
   "dependencies": {
     "better-sqlite3": "^7.4.3",
-    "sqlstring": "^2.3.2"
+    "sqlstring-sqlite": "^0.1.1"
   },
   "devDependencies": {
-    "@types/better-sqlite3": "^7.4.0",
-    "@types/sqlstring": "^2.3.0"
+    "@types/better-sqlite3": "^7.4.0"
   }
 }

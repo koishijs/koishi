@@ -1,6 +1,6 @@
 import { Logger } from 'koishi'
-import { escape as sqlEscape } from 'sqlstring'
-export { escapeId } from 'sqlstring'
+import { escape as sqlEscape } from 'sqlstring-sqlite'
+export { escapeId } from 'sqlstring-sqlite'
 
 export const logger = new Logger('sqlite3')
 

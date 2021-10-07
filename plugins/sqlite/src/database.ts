@@ -40,9 +40,9 @@ function createDbAdapter(table: string): DbAdapter {
     },
     dbToLocal: obj => {
       const result = clone(obj)
-      jsons.filter(field => field in obj).forEach(field => result[field] = JSON.parse(obj[field]))
-      lists.filter(field => field in obj).forEach(field => result[field] = obj[field].split(','))
-      dates.filter(field => field in obj).forEach(field => result[field] = new Date(obj[field]))
+      jsons.filter(field => field in obj).forEach(field => result[field] = obj[field] ? JSON.parse(obj[field]) : config.fields[field].initial)
+      lists.filter(field => field in obj).forEach(field => result[field] = obj[field] ? obj[field].split(',') : [])
+      dates.filter(field => field in obj).forEach(field => result[field] = obj[field] === null ? null : new Date(obj[field]))
       return result
     },
   }
@@ -75,7 +75,7 @@ function getColumnDefinitionSQL(table: string, key: string, adapter: DbAdapter) 
   } else {
     const typedef = getTypeDefinition(config.fields[key])
     def += ' ' + typedef + (nullable ? ' ' : ' NOT ') + 'NULL'
-    if (initial) {
+    if (initial !== undefined && initial !== null) {
       def += ' DEFAULT ' + escape(adapter.localToDb({ [key]: initial })[key])
     }
   }
@@ -193,7 +193,7 @@ class SqliteDatabase extends Database {
   }
 
   async _dropTable(table: string) {
-    await this.run(`DROP TABLE ${escapeId(table)}`)
+    this.run(`DROP TABLE ${escapeId(table)}`)
     delete this.#dbAdapters[table]
   }
 

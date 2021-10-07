@@ -231,16 +231,18 @@ Database.extend(SqliteDatabase, {
   async create(name, data) {
     const adapter = this._getDbAdapter(name)
     data = { ...Koishi.Tables.create(name), ...data }
-    data = adapter.localToDb(data)
+    const dbData = adapter.localToDb(data)
     const keys = Object.keys(data)
-    const result = this.run(
-      `INSERT INTO ${escapeId(name)} (${this._joinKeys(keys)}) VALUES (${keys.map(key => escape(data[key])).join(', ')})`,
-    )
-    const config = Koishi.Tables.config[name]
-    if (config?.autoInc) {
-      return { ...data, [config.primary as string]: result.lastInsertRowid } as any
-    }
-    return data as any
+    try {
+      const result = this.run(
+      `INSERT INTO ${escapeId(name)} (${this._joinKeys(keys)}) VALUES (${keys.map(key => escape(dbData[key])).join(', ')})`,
+      )
+      const config = Koishi.Tables.config[name]
+      if (config?.autoInc) {
+        return { ...data, [config.primary as string]: result.lastInsertRowid } as any
+      }
+      return data as any
+    } catch {}
   },
 
   async upsert(name, data, keys: string | string[]) {
@@ -248,19 +250,18 @@ Database.extend(SqliteDatabase, {
     const { fields, primary } = Koishi.Tables.config[name]
     const fallback = Koishi.Tables.create(name)
     const initKeys = Object.keys(fields)
-    const updateKeys = Object.keys(data[0])
     const adapter = this._getDbAdapter(name)
-    data = data.map(item => ({ ...fallback, ...adapter.localToDb(item) }))
     keys = makeArray(keys || primary)
-    const update = difference(updateKeys, keys).map((key) => {
-      key = escapeId(key)
-      return `${key} = VALUES(${key})`
-    }).join(', ')
-    this.run(
-      `INSERT INTO ${escapeId(name)} (${this._joinKeys(initKeys)})
-      VALUES ${data.map(item => `(${initKeys.map(key => escape(item[key])).join(', ')})`).join(', ')}
-      ON DUPLICATE KEY UPDATE ${update}`,
-    )
+    for (const item of data) {
+      const updateKeys = Object.keys(item)
+      const dbItem = adapter.localToDb({ ...fallback, ...item })
+      const update = difference(updateKeys, keys).map((key) => `${escapeId(key)} = ${escape(dbItem[key])}`).join(',')
+      this.run(
+        `INSERT INTO ${escapeId(name)} (${this._joinKeys(initKeys)})
+        VALUES (${initKeys.map(key => escape(dbItem[key])).join(', ')})
+        ON CONFLICT DO UPDATE SET ${update}`,
+      )
+    }
   },
 
   async aggregate(name, fields, query) {
