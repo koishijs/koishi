@@ -82,8 +82,8 @@ export default abstract class Factory {
     }
   }
 
-  abstract escapeId(value: any, forbidQualified?: boolean): string
-  abstract escape(value: any, stringifyObjects?: boolean, timeZone?: string): string
+  abstract escapeId(value: any): string
+  abstract escape(value: any): string
 
   protected createMemberQuery(key: string, value: any[], notStr = '') {
     if (!value.length) return notStr ? '1' : '0'
