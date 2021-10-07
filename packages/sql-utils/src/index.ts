@@ -13,6 +13,9 @@ export default abstract class Factory {
   protected queryOperators: QueryOperators
   protected evalOperators: EvaluationOperators
 
+  abstract escapeId(value: any): string
+  abstract escape(value: any): string
+
   constructor() {
     this.queryOperators = {
       // logical
@@ -76,14 +79,11 @@ export default abstract class Factory {
       // aggregation
       $sum: (expr) => `ifnull(sum(${this.parseEval(expr)}), 0)`,
       $avg: (expr) => `avg(${this.parseEval(expr)})`,
-      $min: (expr) => `$min(${this.parseEval(expr)})`,
+      $min: (expr) => `min(${this.parseEval(expr)})`,
       $max: (expr) => `max(${this.parseEval(expr)})`,
       $count: (expr) => `count(distinct ${this.parseEval(expr)})`,
     }
   }
-
-  abstract escapeId(value: any): string
-  abstract escape(value: any): string
 
   protected createMemberQuery(key: string, value: any[], notStr = '') {
     if (!value.length) return notStr ? '1' : '0'
