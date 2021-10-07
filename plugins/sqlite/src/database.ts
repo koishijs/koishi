@@ -1,7 +1,7 @@
 import { App, clone, Database, makeArray, Tables } from 'koishi'
 import sqlite from 'better-sqlite3'
 import { resolve } from 'path'
-import { escapeId, escape, logger } from './utils'
+import { utils, logger } from './utils'
 
 export type TableType = keyof Tables
 
@@ -68,14 +68,14 @@ function getTypeDefinition({ type, length, precision, scale }: Tables.Field) {
 function getColumnDefinitionSQL(table: string, key: string, adapter: DbAdapter) {
   const config = Tables.config[table]
   const { initial, nullable = initial === undefined || initial === null } = config.fields[key]
-  let def = escapeId(key)
+  let def = utils.escapeId(key)
   if (key === config.primary && config.autoInc) {
     def += ' INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT'
   } else {
     const typedef = getTypeDefinition(config.fields[key])
     def += ' ' + typedef + (nullable ? ' ' : ' NOT ') + 'NULL'
     if (initial !== undefined && initial !== null) {
-      def += ' DEFAULT ' + escape(adapter.localToDb({ [key]: initial })[key])
+      def += ' DEFAULT ' + utils.escape(adapter.localToDb({ [key]: initial })[key])
     }
   }
   return def
@@ -116,10 +116,10 @@ class SqliteDatabase extends Database {
         if (keys.includes(key)) {
           // Add column
           const def = getColumnDefinitionSQL(table, key, adapter)
-          await this.run(`ALTER TABLE ${escapeId(table)} ADD COLUMN ${def}`)
+          await this.run(`ALTER TABLE ${utils.escapeId(table)} ADD COLUMN ${def}`)
         } else {
           // Drop column
-          await this.run(`ALTER TABLE ${escapeId(table)} DROP COLUMN ${escapeId(key)}`)
+          await this.run(`ALTER TABLE ${utils.escapeId(table)} DROP COLUMN ${utils.escapeId(key)}`)
         }
       }
     } else {
@@ -135,10 +135,10 @@ class SqliteDatabase extends Database {
       if (config.foreign) {
         constraints.push(
           ...Object.entries(config.foreign)
-            .map(([key, [table, key2]]) => `FOREIGN KEY (${escapeId(key)}) REFERENCES ${escapeId(table)} (${escapeId(key2)})`),
+            .map(([key, [table, key2]]) => `FOREIGN KEY (${utils.escapeId(key)}) REFERENCES ${utils.escapeId(table)} (${utils.escapeId(key2)})`),
         )
       }
-      await this.run(`CREATE TABLE ${escapeId(table)} (${[...defs, ...constraints].join(',')})`)
+      await this.run(`CREATE TABLE ${utils.escapeId(table)} (${[...defs, ...constraints].join(',')})`)
     }
   }
 
@@ -152,7 +152,7 @@ class SqliteDatabase extends Database {
   }
 
   _joinKeys(keys?: string | string[]) {
-    return keys ? makeArray(keys).map(key => escapeId(key)).join(',') : '*'
+    return keys ? makeArray(keys).map(key => utils.escapeId(key)).join(',') : '*'
   }
 
   run(sql: string, params: any = []) {
@@ -171,7 +171,7 @@ class SqliteDatabase extends Database {
   }
 
   async count<K extends TableType>(table: K, where?: string) {
-    const [{ 'COUNT(*)': count }] = await this.get(`SELECT COUNT(*) FROM ${escapeId(table)} ${where ? 'WHERE ' + where : ''}`)
+    const [{ 'COUNT(*)': count }] = await this.get(`SELECT COUNT(*) FROM ${utils.escapeId(table)} ${where ? 'WHERE ' + where : ''}`)
     return count as number
   }
 
@@ -185,14 +185,14 @@ class SqliteDatabase extends Database {
   }
 
   async _getTableInfo(table: string): Promise<{ name: string; type: string; notnull: boolean; default: string; pk: boolean }[]> {
-    const rows = await this.all(`PRAGMA table_info(${escapeId(table)});`)
+    const rows = await this.all(`PRAGMA table_info(${utils.escapeId(table)});`)
     // eslint-disable-next-line @typescript-eslint/naming-convention
     const columns = rows.map(({ name, type, notnull, dflt_value, pk }) => ({ name, type, notnull: !!notnull, default: dflt_value, pk: !!pk }))
     return columns
   }
 
   async _dropTable(table: string) {
-    this.run(`DROP TABLE ${escapeId(table)}`)
+    this.run(`DROP TABLE ${utils.escapeId(table)}`)
     delete this.#dbAdapters[table]
   }
 
