@@ -33,7 +33,7 @@ export default abstract class Factory {
       $nin: (key, value) => this.createMemberQuery(key, value, ' NOT'),
 
       // regexp
-      $regex: this.createRegExpQuery,
+      $regex: (key: string, value: RegExp) => this.createRegExpQuery(key, value),
       $regexFor: (key, value) => `${this.escape(value)} REGEXP ${key}`,
 
       // bitwise
@@ -140,7 +140,7 @@ export default abstract class Factory {
     // query expression
       for (const prop in query) {
         if (prop in this.queryOperators) {
-          conditions.push(this.queryOperators[prop].bind(this)(key, query[prop]))
+          conditions.push(this.queryOperators[prop](key, query[prop]))
         }
       }
     }
@@ -177,7 +177,7 @@ export default abstract class Factory {
 
     for (const key in expr) {
       if (key in this.evalOperators) {
-        return this.evalOperators[key].bind(this)(expr[key])
+        return this.evalOperators[key](expr[key])
       }
     }
   }

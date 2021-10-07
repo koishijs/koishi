@@ -230,13 +230,9 @@ class SqliteDatabase extends Database {
   }
 
   async _dropAll() {
-    const tables = await this._getTables()
+    const tables = Object.keys(this.#dbAdapters)
     for (const table of tables) {
-      try {
-        await this._dropTable(table)
-      } catch {
-        // Remove internal tables might cause errors
-      }
+      await this._dropTable(table)
     }
     this.#dbAdapters = Object.create(null)
   }
