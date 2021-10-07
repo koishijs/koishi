@@ -227,6 +227,7 @@ const targets = [
   'plugins/level',
   'plugins/mysql',
   'plugins/mongo',
+  'plugins/sqlite',
   'plugins/status',
   'plugins/teach',
   'community/adventure',
