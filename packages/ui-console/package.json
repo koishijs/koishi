@@ -1,13 +1,13 @@
 {
   "name": "@koishijs/ui-console",
   "description": "Status Client for Koishi",
-  "version": "1.0.0-alpha.4",
+  "version": "1.0.0-alpha.5",
   "main": "src/index.ts",
   "engines": {
     "node": ">=12.0.0"
   },
   "files": [
-    "lib"
+    "dist"
   ],
   "author": "Shigma <1700011071@pku.edu.cn>",
   "license": "MIT",
@@ -28,7 +28,7 @@
     "koishi"
   ],
   "peerDependencies": {
-    "@koishijs/plugin-status": "^5.0.0-alpha.7"
+    "@koishijs/plugin-status": "^5.0.0-alpha.8"
   },
   "devDependencies": {
     "@fortawesome/fontawesome-free": "^5.15.4",

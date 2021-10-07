@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-status",
   "description": "Create web user interface for Koishi",
-  "version": "5.0.0-alpha.7",
+  "version": "5.0.0-alpha.8",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -41,7 +41,7 @@
     "vite": "^2.5.10"
   },
   "dependencies": {
-    "@koishijs/ui-console": "^1.0.0-alpha.4",
+    "@koishijs/ui-console": "^1.0.0-alpha.5",
     "open": "^8.2.1",
     "semver": "^7.3.5",
     "systeminformation": "^5.8.7",
