@@ -14,12 +14,12 @@ export function getWorkspaces() {
   })
 }
 
-const categories = ['packages', 'plugins', 'community']
+const categories = ['packages', 'plugins/adapters', 'plugins', 'community']
 
 export async function getPackages(args: readonly string[]) {
   const folders = (await Promise.all(categories.map(async (seg) => {
-    const names = await readdir(`${cwd}/${seg}`)
-    return names.filter(name => !name.includes('.')).map(name => `${seg}/${name}`)
+    const names = await readdir(`${cwd}/${seg}`).catch<string[]>(() => [])
+    return names.map(name => `${seg}/${name}`).filter(name => !name.includes('.') && !categories.includes(name))
   }))).flat()
 
   return args.length ? args.map((name) => {

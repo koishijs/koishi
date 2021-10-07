@@ -1,7 +1,7 @@
 {
-  "name": "@koishijs/plugin-telegram",
-  "description": "Telegram adapter for Koishi",
-  "version": "2.0.0-alpha.6",
+  "name": "@koishijs/plugin-adapter-minecraft",
+  "description": "Minecraft adapter for Koishi",
+  "version": "1.0.0-alpha.7",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -20,22 +20,18 @@
   "bugs": {
     "url": "https://github.com/koishijs/koishi/issues"
   },
-  "homepage": "https://koishi.js.org/api/adapter/telegram.html",
+  "homepage": "https://koishi.js.org/api/adapter/minecraft.html",
   "keywords": [
     "bot",
-    "telegram",
+    "minecraft",
+    "mineflayer",
     "chatbot",
-    "koishi",
-    "service:adapter"
+    "koishi"
   ],
   "peerDependencies": {
     "koishi": "^4.0.0-alpha.9"
   },
-  "devDependencies": {
-    "@koishijs/test-utils": "^8.0.0-alpha.8"
-  },
   "dependencies": {
-    "axios": "^0.21.4",
-    "form-data": "^4.0.0"
+    "mineflayer": "^3.11.0"
   }
 }

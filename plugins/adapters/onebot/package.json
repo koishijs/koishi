@@ -1,5 +1,5 @@
 {
-  "name": "@koishijs/plugin-onebot",
+  "name": "@koishijs/plugin-adapter-onebot",
   "description": "CQHTTP adapter for Koishi",
   "version": "4.0.0-alpha.8",
   "main": "lib/index.js",
@@ -24,8 +24,7 @@
     "onebot",
     "coolq",
     "chatbot",
-    "koishi",
-    "service:adapter"
+    "koishi"
   ],
   "peerDependencies": {
     "koishi": "^4.0.0-alpha.9"

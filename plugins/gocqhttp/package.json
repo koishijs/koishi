@@ -30,7 +30,7 @@
     "koishi"
   ],
   "peerDependencies": {
-    "@koishijs/plugin-onebot": "^4.0.0-alpha.8",
+    "@koishijs/plugin-adapter-onebot": "^4.0.0-alpha.8",
     "koishi": "^4.0.0-alpha.9"
   },
   "devDependencies": {

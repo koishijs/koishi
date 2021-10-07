@@ -8,6 +8,7 @@
     "test",
     "community/*",
     "packages/*",
+    "plugins/adapters/*",
     "plugins/*"
   ],
   "scripts": {
