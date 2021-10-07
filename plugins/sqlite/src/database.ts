@@ -16,21 +16,21 @@ export namespace DbAdapter {
     dbToLocal: (value: T, initial?: S) => S
   }
   const fieldAdapters: Record<string, FieldAdapter> = Object.create(null)
-  function defineFieldConverter<S, T>(converter: FieldAdapter<S, T>) {
+  function registerFieldConverter<S, T>(converter: FieldAdapter<S, T>) {
     converter.match.forEach(type => fieldAdapters[type] = converter)
   }
 
-  defineFieldConverter<object, string>({
+  registerFieldConverter<object, string>({
     match: ['json'],
     localToDb: value => JSON.stringify(value),
     dbToLocal: (value, initial) => value ? JSON.parse(value) : initial,
   })
-  defineFieldConverter<string[], string>({
+  registerFieldConverter<string[], string>({
     match: ['list'],
     localToDb: value => value.join(','),
     dbToLocal: (value) => value ? value.split(',') : [],
   })
-  defineFieldConverter<Date, number>({
+  registerFieldConverter<Date, number>({
     match: ['date', 'time', 'timestamp'],
     localToDb: value => +value,
     dbToLocal: (value) => value === null ? null : new Date(value),
