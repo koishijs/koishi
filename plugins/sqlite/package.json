@@ -36,6 +36,7 @@
     "koishi": "^4.0.0-alpha.9"
   },
   "dependencies": {
+    "@koishijs/sql-utils": "^1.0.0-alpha.0",
     "better-sqlite3": "^7.4.3",
     "sqlstring-sqlite": "^0.1.1"
   },

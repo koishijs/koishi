@@ -1,36 +1,121 @@
 import { Query, Eval } from 'koishi'
 import { escape, escapeId } from 'sqlstring'
 
-function createMemberQuery(key: string, value: any[], notStr = '') {
-  if (!value.length) return notStr ? '1' : '0'
-  return `${key}${notStr} IN (${value.map(val => escape(val)).join(', ')})`
+export * from 'sqlstring'
+
+type QueryOperators = {
+  [K in keyof Query.FieldExpr]?: (this: Factory, key: string, value: Query.FieldExpr[K]) => string
 }
 
-function createRegExpQuery(key: string, value: RegExp) {
-  return `${key} REGEXP ${escape(value.source)}`
+type EvaluationOperators = {
+  [K in keyof Eval.GeneralExpr]?: (this: Factory, expr: Eval.GeneralExpr[K]) => string
 }
 
-function createElementQuery(key: string, value: any) {
-  return `FIND_IN_SET(${escape(value)}, ${key})`
+export default class Factory {
+  escape = escape
+  escapeId = escapeId
+
+  protected query: QueryOperators & this
+  protected eval: EvaluationOperators & this
+
+  constructor() {
+    this.query = Object.assign(Object.create(this), queryOperators)
+    this.eval = Object.assign(Object.create(this), evalOperators)
+  }
+
+  createElementQuery = (key: string, value: any) => {
+    return `FIND_IN_SET(${this.escape(value)}, ${key})`
+  }
+
+  parseFieldQuery = (key: string, query: Query.FieldExpr) => {
+    const conditions: string[] = []
+
+    // query shorthand
+    if (Array.isArray(query)) {
+      conditions.push(this.query.$in(key, query))
+    } else if (query instanceof RegExp) {
+      conditions.push(this.query.$regex(key, query))
+    } else if (typeof query === 'string' || typeof query === 'number' || query instanceof Date) {
+      conditions.push(this.query.$eq(key, query))
+    } else {
+      // query expression
+      for (const prop in query) {
+        if (this.query.hasOwnProperty(prop)) {
+          conditions.push(this.query[prop](key, query[prop]))
+        }
+      }
+    }
+
+    return logicalAnd(conditions)
+  }
+
+  parseQuery = (query: Query.Expr) => {
+    const conditions: string[] = []
+    for (const key in query) {
+      // logical expression
+      if (key === '$not') {
+        conditions.push(logicalNot(this.parseQuery(query.$not)))
+      } else if (key === '$and') {
+        conditions.push(logicalAnd(query.$and.map(this.parseQuery)))
+      } else if (key === '$or') {
+        conditions.push(logicalOr(query.$or.map(this.parseQuery)))
+      } else if (key === '$expr') {
+        conditions.push(this.parseEval(query.$expr))
+      } else {
+        conditions.push(this.parseFieldQuery(this.escapeId(key), query[key]))
+      }
+    }
+
+    return logicalAnd(conditions)
+  }
+
+  parseEval = (expr: Eval.Any | Eval.Aggregation): string => {
+    if (typeof expr === 'string') {
+      return this.escapeId(expr)
+    } else if (typeof expr === 'number' || typeof expr === 'boolean') {
+      return this.escape(expr)
+    }
+  
+    for (const key in expr) {
+      if (this.eval.hasOwnProperty(key)) {
+        return this.eval[key](expr[key])
+      }
+    }
+  }
 }
 
 function comparator(operator: string) {
-  return function (key: string, value: any) {
-    return `${key} ${operator} ${escape(value)}`
+  return function (this: Factory, key: string, value: any) {
+    return `${key} ${operator} ${this.escape(value)}`
   }
 }
 
 const createEqualQuery = comparator('=')
 
-type QueryOperators = {
-  [K in keyof Query.FieldExpr]?: (key: string, value: Query.FieldExpr[K]) => string
+function membership(infix: string) {
+  return function (this: Factory, key: string, value: any[]) {
+    if (!value.length) return infix ? '1' : '0'
+    return `${key}${infix} IN (${value.map(val => this.escape(val)).join(', ')})`
+  }
+}
+
+const createMemberQuery = membership('')
+
+function createRegExpQuery(this: Factory, key: string, value: RegExp) {
+  return `${key} REGEXP ${this.escape(value.source)}`
 }
 
 const queryOperators: QueryOperators = {
   // logical
-  $or: (key, value) => logicalOr(value.map(value => parseFieldQuery(key, value))),
-  $and: (key, value) => logicalAnd(value.map(value => parseFieldQuery(key, value))),
-  $not: (key, value) => logicalNot(parseFieldQuery(key, value)),
+  $or(key, value) {
+    return logicalOr(value.map(value => this.parseFieldQuery(key, value)))
+  },
+  $and(key, value) {
+    return logicalAnd(value.map(value => this.parseFieldQuery(key, value)))
+  },
+  $not(key, value) {
+    return logicalNot(this.parseFieldQuery(key, value))
+  },
 
   // comparison
   $eq: createEqualQuery,
@@ -41,8 +126,8 @@ const queryOperators: QueryOperators = {
   $lte: comparator('<='),
 
   // membership
-  $in: (key, value) => createMemberQuery(key, value, ''),
-  $nin: (key, value) => createMemberQuery(key, value, ' NOT'),
+  $in: createMemberQuery,
+  $nin: membership(' NOT'),
 
   // regexp
   $regex: createRegExpQuery,
@@ -55,122 +140,74 @@ const queryOperators: QueryOperators = {
   $bitsAnyClear: (key, value) => `${key} & ${escape(value)} != ${escape(value)}`,
 
   // list
-  $el: (key, value) => {
+  $el(key, value) {
     if (Array.isArray(value)) {
-      return `(${value.map(value => createElementQuery(key, value)).join(' || ')})`
+      return logicalOr(value.map(value => this.createElementQuery(key, value)))
     } else if (typeof value !== 'number' && typeof value !== 'string') {
       throw new TypeError('query expr under $el is not supported')
     } else {
-      return createElementQuery(key, value)
+      return this.createElementQuery(key, value)
     }
   },
-  $size: (key, value) => {
-    if (!value) return `!${key}`
-    return `${key} && LENGTH(${key}) - LENGTH(REPLACE(${key}, ",", "")) = ${escape(value)} - 1`
+  $size(key, value) {
+    if (!value) return logicalNot(key)
+    return `${key} AND LENGTH(${key}) - LENGTH(REPLACE(${key}, ",", "")) = ${escape(value)} - 1`
   },
 }
 
-type EvaluationOperators = {
-  [K in keyof Eval.GeneralExpr]?: (expr: Eval.GeneralExpr[K]) => string
+function evalBinary(operator: string) {
+  return function (this: Factory, [left, right]: [Eval.Any, Eval.Any]) {
+    return `(${this.parseEval(left)} ${operator} ${this.parseEval(right)})`
+  }
 }
 
-function binary(operator: string) {
-  return function ([left, right]: [Eval.Any, Eval.Any]) {
-    return `(${parseEval(left)} ${operator} ${parseEval(right)})`
+function evalUnary(wrapper: (expr: string) => string) {
+  return function (this: Factory, expr: Eval.Any) {
+    return wrapper(this.parseEval(expr))
+  }
+}
+
+function evalList(wrapper: (args: string[]) => string) {
+  return function (this: Factory, args: Eval.Any[]) {
+    return wrapper(args.map(this.parseEval))
   }
 }
 
 const evalOperators: EvaluationOperators = {
   // numeric
-  $add: (args) => `(${args.map(parseEval).join(' + ')})`,
-  $multiply: (args) => `(${args.map(parseEval).join(' * ')})`,
-  $subtract: binary('-'),
-  $divide: binary('/'),
+  $add: evalList(args => `(${args.join(' + ')})`),
+  $multiply: evalList(args => `(${args.join(' * ')})`),
+  $subtract: evalBinary('-'),
+  $divide: evalBinary('/'),
 
   // boolean
-  $eq: binary('='),
-  $ne: binary('!='),
-  $gt: binary('>'),
-  $gte: binary('>='),
-  $lt: binary('<'),
-  $lte: binary('<='),
+  $eq: evalBinary('='),
+  $ne: evalBinary('!='),
+  $gt: evalBinary('>'),
+  $gte: evalBinary('>='),
+  $lt: evalBinary('<'),
+  $lte: evalBinary('<='),
 
   // aggregation
-  $sum: (expr) => `ifnull(sum(${parseEval(expr)}), 0)`,
-  $avg: (expr) => `avg(${parseEval(expr)})`,
-  $min: (expr) => `$min(${parseEval(expr)})`,
-  $max: (expr) => `max(${parseEval(expr)})`,
-  $count: (expr) => `count(distinct ${parseEval(expr)})`,
+  $sum: evalUnary(expr => `ifnull(sum(${expr}), 0)`),
+  $avg: evalUnary(expr => `avg(${expr})`),
+  $min: evalUnary(expr => `min(${expr})`),
+  $max: evalUnary(expr => `max(${expr})`),
+  $count: evalUnary(expr => `count(distinct ${expr})`),
 }
 
 function logicalAnd(conditions: string[]) {
   if (!conditions.length) return '1'
   if (conditions.includes('0')) return '0'
-  return conditions.join(' && ')
+  return conditions.join(' AND ')
 }
 
 function logicalOr(conditions: string[]) {
   if (!conditions.length) return '0'
   if (conditions.includes('1')) return '1'
-  return `(${conditions.join(' || ')})`
+  return `(${conditions.join(' OR ')})`
 }
 
 function logicalNot(condition: string) {
-  return `!(${condition})`
-}
-
-function parseFieldQuery(key: string, query: Query.FieldExpr) {
-  const conditions: string[] = []
-
-  // query shorthand
-  if (Array.isArray(query)) {
-    conditions.push(createMemberQuery(key, query))
-  } else if (query instanceof RegExp) {
-    conditions.push(createRegExpQuery(key, query))
-  } else if (typeof query === 'string' || typeof query === 'number' || query instanceof Date) {
-    conditions.push(createEqualQuery(key, query))
-  } else {
-    // query expression
-    for (const prop in query) {
-      if (prop in queryOperators) {
-        conditions.push(queryOperators[prop](key, query[prop]))
-      }
-    }
-  }
-
-  return logicalAnd(conditions)
-}
-
-export function parseQuery(query: Query.Expr) {
-  const conditions: string[] = []
-  for (const key in query) {
-    // logical expression
-    if (key === '$not') {
-      conditions.push(logicalNot(parseQuery(query.$not)))
-    } else if (key === '$and') {
-      conditions.push(logicalAnd(query.$and.map(parseQuery)))
-    } else if (key === '$or') {
-      conditions.push(logicalOr(query.$or.map(parseQuery)))
-    } else if (key === '$expr') {
-      conditions.push(parseEval(query.$expr))
-    } else {
-      conditions.push(parseFieldQuery(escapeId(key), query[key]))
-    }
-  }
-
-  return logicalAnd(conditions)
-}
-
-export function parseEval(expr: Eval.Any | Eval.Aggregation): string {
-  if (typeof expr === 'string') {
-    return escapeId(expr)
-  } else if (typeof expr === 'number' || typeof expr === 'boolean') {
-    return escape(expr)
-  }
-
-  for (const key in expr) {
-    if (key in evalOperators) {
-      return evalOperators[key](expr[key])
-    }
-  }
+  return `NOT (${condition})`
 }

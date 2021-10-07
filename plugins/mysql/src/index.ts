@@ -1,7 +1,7 @@
 import MysqlDatabase, { Config } from './database'
 import { Database, Context, Query, makeArray, difference, Schema } from 'koishi'
 import { OkPacket, escapeId } from 'mysql'
-import { parseEval, parseQuery } from '@koishijs/sql-utils'
+import Factory from '@koishijs/sql-utils'
 import * as Koishi from 'koishi'
 
 export * from './database'
@@ -16,6 +16,8 @@ declare module 'koishi' {
     mysql: typeof import('.')
   }
 }
+
+const { parseEval, parseQuery } = new Factory()
 
 Database.extend(MysqlDatabase, {
   async drop(name) {
