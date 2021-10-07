@@ -9,41 +9,74 @@ export interface Config {
   path?: string
 }
 
-export interface DbAdapter {
-  localToDb(obj: any): any
-  dbToLocal(obj: any): any
-}
-
-function createStubDbAdapter(): DbAdapter {
-  return {
-    localToDb: obj => obj,
-    dbToLocal: obj => obj,
+export namespace DbAdapter {
+  interface FieldAdapter<S = any, T = any> {
+    match: Tables.Field.Type<S>[]
+    localToDb: (value: S) => T
+    dbToLocal: (value: T, initial?: S) => S
   }
-}
+  const fieldAdapters: FieldAdapter[] = []
+  function defineFieldConverter<S, T>(converter: FieldAdapter<S, T>) {
+    fieldAdapters.push(converter)
+  }
 
-function createDbAdapter(table: string): DbAdapter {
-  const config = Tables.config[table]
-  if (!config) throw new Error(`table ${table} not found`)
-  const fields = Object.keys(config.fields)
-  const jsons = fields.filter(field => config.fields[field].type === 'json')
-  const lists = fields.filter(field => config.fields[field].type === 'list')
-  const dates = fields.filter(field => ['timestamp', 'date', 'time'].includes(config.fields[field].type))
-  if (jsons.length + lists.length + dates.length === 0) return createStubDbAdapter()
-  return {
-    localToDb: obj => {
-      const result = clone(obj)
-      jsons.filter(field => field in obj).forEach(field => result[field] = JSON.stringify(obj[field]))
-      lists.filter(field => field in obj).forEach(field => result[field] = obj[field].join(','))
-      dates.filter(field => field in obj).forEach(field => result[field] = +obj[field])
-      return result
-    },
-    dbToLocal: obj => {
-      const result = clone(obj)
-      jsons.filter(field => field in obj).forEach(field => result[field] = obj[field] ? JSON.parse(obj[field]) : config.fields[field].initial)
-      lists.filter(field => field in obj).forEach(field => result[field] = obj[field] ? obj[field].split(',') : [])
-      dates.filter(field => field in obj).forEach(field => result[field] = obj[field] === null ? null : new Date(obj[field]))
-      return result
-    },
+  defineFieldConverter<object, string>({
+    match: ['json'],
+    localToDb: value => JSON.stringify(value),
+    dbToLocal: (value, initial) => value ? JSON.parse(value) : initial,
+  })
+  defineFieldConverter<string[], string>({
+    match: ['list'],
+    localToDb: value => value.join(','),
+    dbToLocal: (value) => value ? value.split(',') : [],
+  })
+  defineFieldConverter<Date, number>({
+    match: ['date', 'time', 'timestamp'],
+    localToDb: value => +value,
+    dbToLocal: (value) => value === null ? null : new Date(value),
+  })
+
+  export interface TableAdapter {
+    localToDb(obj: any): any
+    dbToLocal(obj: any): any
+  }
+
+  function createStubTableAdapter(): TableAdapter {
+    return {
+      localToDb: obj => obj,
+      dbToLocal: obj => obj,
+    }
+  }
+
+  export function createTableAdapter(table: string): TableAdapter {
+    const config = Tables.config[table]
+    if (!config) throw new Error(`table ${table} not found`)
+    const fields = Object.keys(config.fields)
+    const targets = fieldAdapters
+      .map(converter =>
+        [
+          converter,
+          fields.filter(field => converter.match.includes(config.fields[field].type)),
+        ] as const,
+      )
+      .filter(([, fields]) => fields.length)
+    if (!targets.length) return createStubTableAdapter()
+    return {
+      localToDb: obj => {
+        const result = clone(obj)
+        targets.forEach(([converter, fields]) =>
+          fields.filter(field => field in obj).forEach(field => result[field] = converter.localToDb(obj[field])),
+        )
+        return result
+      },
+      dbToLocal: obj => {
+        const result = clone(obj)
+        targets.forEach(([converter, fields]) =>
+          fields.filter(field => field in obj).forEach(field => result[field] = converter.dbToLocal(obj[field], config.fields[field].initial)),
+        )
+        return result
+      },
+    }
   }
 }
 
@@ -65,7 +98,7 @@ function getTypeDefinition({ type }: Tables.Field) {
   }
 }
 
-function getColumnDefinitionSQL(table: string, key: string, adapter: DbAdapter) {
+function getColumnDefinitionSQL(table: string, key: string, adapter: DbAdapter.TableAdapter) {
   const config = Tables.config[table]
   const { initial, nullable = initial === undefined || initial === null } = config.fields[key]
   let def = utils.escapeId(key)
@@ -86,7 +119,7 @@ class SqliteDatabase extends Database {
 
   sqlite = this
 
-  #dbAdapters: Record<string, DbAdapter>
+  #dbAdapters: Record<string, DbAdapter.TableAdapter>
 
   constructor(public app: App, public config: Config) {
     super(app)
@@ -94,7 +127,7 @@ class SqliteDatabase extends Database {
   }
 
   async #syncTable(table: string) {
-    const adapter = createDbAdapter(table)
+    const adapter = DbAdapter.createTableAdapter(table)
     this.#dbAdapters[table] = adapter
 
     const info = await this._getTableInfo(table)
