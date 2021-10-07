@@ -219,13 +219,13 @@ Database.extend(SqliteDatabase, {
     const update = Object.keys(data).map((key) => {
       return `${escapeId(key)} = ${escape(data[key])}`
     }).join(', ')
-    this.run(`UPDATE ${name} SET ${update} WHERE ${filter}`)
+    this.run(`UPDATE ${escapeId(name)} SET ${update} WHERE ${filter}`)
   },
 
   async remove(name, query) {
     const filter = parseQuery(Query.resolve(name, query))
     if (filter === '0') return
-    this.run(`DELETE FROM ${name} WHERE ${filter}`)
+    this.run(`DELETE FROM ${escapeId(name)} WHERE ${filter}`)
   },
 
   async create(name, data) {
@@ -234,7 +234,7 @@ Database.extend(SqliteDatabase, {
     data = adapter.localToDb(data)
     const keys = Object.keys(data)
     const result = this.run(
-      `INSERT INTO ${name} (${this._joinKeys(keys)}) VALUES (${keys.map(key => escape(data[key])).join(', ')})`,
+      `INSERT INTO ${escapeId(name)} (${this._joinKeys(keys)}) VALUES (${keys.map(key => escape(data[key])).join(', ')})`,
     )
     const config = Koishi.Tables.config[name]
     if (config?.autoInc) {
@@ -269,7 +269,7 @@ Database.extend(SqliteDatabase, {
 
     const filter = parseQuery(Query.resolve(name, query))
     const exprs = keys.map(key => `${parseEval(fields[key])} AS ${escapeId(key)}`).join(', ')
-    const data = await this.get(`SELECT ${exprs} FROM ${name} WHERE ${filter}`)
+    const data = await this.get(`SELECT ${exprs} FROM ${escapeId(name)} WHERE ${filter}`)
     return data
   },
 })
