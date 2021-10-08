@@ -16,6 +16,7 @@ const specs = [
   'plugins/mysql/tests/*.spec.ts',
   'plugins/repeater/tests/*.spec.ts',
   'plugins/schedule/tests/*.spec.ts',
+  'plugins/sqlite/tests/*.spec.ts',
   'plugins/teach/tests/*.spec.ts',
   'plugins/verifier/tests/*.spec.ts',
 ]

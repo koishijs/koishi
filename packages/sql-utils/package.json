@@ -33,10 +33,6 @@
   "peerDependencies": {
     "koishi": "^4.0.0-alpha.9"
   },
-  "devDependencies": {
-    "@types/sqlstring": "^2.3.0"
-  },
-  "dependencies": {
-    "sqlstring": "^2.3.2"
-  }
+  "devDependencies": {},
+  "dependencies": {}
 }

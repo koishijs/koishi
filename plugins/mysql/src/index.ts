@@ -1,8 +1,8 @@
 import MysqlDatabase, { Config } from './database'
 import { Database, Context, Query, makeArray, difference, Schema } from 'koishi'
-import { OkPacket, escapeId } from 'mysql'
-import { parseEval, parseQuery } from '@koishijs/sql-utils'
+import { OkPacket } from 'mysql'
 import * as Koishi from 'koishi'
+import { utils } from './utils'
 
 export * from './database'
 export default MysqlDatabase
@@ -20,16 +20,16 @@ declare module 'koishi' {
 Database.extend(MysqlDatabase, {
   async drop(name) {
     if (name) {
-      await this.query(`DROP TABLE ${escapeId(name)}`)
+      await this.query(`DROP TABLE ${this.escapeId(name)}`)
     } else {
       const data = await this.select('information_schema.tables', ['TABLE_NAME'], 'TABLE_SCHEMA = ?', [this.config.database])
       if (!data.length) return
-      await this.query(data.map(({ TABLE_NAME }) => `DROP TABLE ${escapeId(TABLE_NAME)}`).join('; '))
+      await this.query(data.map(({ TABLE_NAME }) => `DROP TABLE ${this.escapeId(TABLE_NAME)}`).join('; '))
     }
   },
 
   async get(name, query, modifier) {
-    const filter = parseQuery(Query.resolve(name, query))
+    const filter = utils.parseQuery(Query.resolve(name, query))
     if (filter === '0') return []
     const { fields, limit, offset } = Query.resolveModifier(modifier)
     const keys = this.joinKeys(this.inferFields(name, fields))
@@ -40,17 +40,17 @@ Database.extend(MysqlDatabase, {
   },
 
   async set(name, query, data) {
-    const filter = parseQuery(Query.resolve(name, query))
+    const filter = utils.parseQuery(Query.resolve(name, query))
     if (filter === '0') return
     const keys = Object.keys(data)
     const update = keys.map((key) => {
-      return `${escapeId(key)} = ${this.escape(data[key], name, key)}`
+      return `${this.escapeId(key)} = ${this.escape(data[key], name, key)}`
     }).join(', ')
     await this.query(`UPDATE ${name} SET ${update} WHERE ${filter}`)
   },
 
   async remove(name, query) {
-    const filter = parseQuery(Query.resolve(name, query))
+    const filter = utils.parseQuery(Query.resolve(name, query))
     if (filter === '0') return
     await this.query('DELETE FROM ?? WHERE ' + filter, [name])
   },
@@ -75,11 +75,11 @@ Database.extend(MysqlDatabase, {
     keys = makeArray(keys || primary)
     const placeholder = `(${initKeys.map(() => '?').join(', ')})`
     const update = difference(updateKeys, keys).map((key) => {
-      key = escapeId(key)
+      key = this.escapeId(key)
       return `${key} = VALUES(${key})`
     }).join(', ')
     await this.query(
-      `INSERT INTO ${escapeId(name)} (${this.joinKeys(initKeys)}) VALUES ${data.map(() => placeholder).join(', ')}
+      `INSERT INTO ${this.escapeId(name)} (${this.joinKeys(initKeys)}) VALUES ${data.map(() => placeholder).join(', ')}
       ON DUPLICATE KEY UPDATE ${update}`,
       [].concat(...data.map(data => this.formatValues(name, data, initKeys))),
     )
@@ -89,8 +89,8 @@ Database.extend(MysqlDatabase, {
     const keys = Object.keys(fields)
     if (!keys.length) return {}
 
-    const filter = parseQuery(Query.resolve(name, query))
-    const exprs = keys.map(key => `${parseEval(fields[key])} AS ${escapeId(key)}`).join(', ')
+    const filter = utils.parseQuery(Query.resolve(name, query))
+    const exprs = keys.map(key => `${utils.parseEval(fields[key])} AS ${this.escapeId(key)}`).join(', ')
     const [data] = await this.query(`SELECT ${exprs} FROM ${name} WHERE ${filter}`)
     return data
   },

@@ -1,7 +1,8 @@
 import { createPool, Pool, PoolConfig, escape as mysqlEscape, escapeId, format, TypeCast } from 'mysql'
-import { Context, Database, Logger, makeArray } from 'koishi'
+import { Context, Database, makeArray } from 'koishi'
 import * as Koishi from 'koishi'
 import { types } from 'util'
+import { logger } from './utils'
 
 declare module 'mysql' {
   interface UntypedFieldInfo {
@@ -12,8 +13,6 @@ declare module 'mysql' {
 export type TableType = keyof Tables
 
 export interface Tables extends Koishi.Tables {}
-
-const logger = new Logger('mysql')
 
 export interface Config extends PoolConfig {}
 
