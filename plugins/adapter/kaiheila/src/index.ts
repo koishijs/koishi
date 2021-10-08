@@ -5,7 +5,7 @@ import WebSocketClient from './ws'
 
 declare module 'koishi' {
   interface Modules {
-    kaiheila: typeof import('.')
+    'adaper-kaiheila': typeof import('.')
   }
 }
 

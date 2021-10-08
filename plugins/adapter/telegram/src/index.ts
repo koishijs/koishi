@@ -4,7 +4,7 @@ import HttpServer from './http'
 
 declare module 'koishi' {
   interface Modules {
-    telegram: typeof import('.')
+    'adaper-telegram': typeof import('.')
   }
 }
 

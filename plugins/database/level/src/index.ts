@@ -18,7 +18,7 @@ declare module 'koishi' {
   }
 
   interface Modules {
-    level: typeof import('.')
+    'database-level': typeof import('.')
   }
 }
 
@@ -200,7 +200,7 @@ Database.extend(LevelDatabase, {
   },
 })
 
-export const name = 'level'
+export const name = 'database-level'
 
 export const schema: Schema<Config> = Schema.object({
   location: Schema.string('数据保存的位置').default('.level'),

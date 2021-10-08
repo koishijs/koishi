@@ -4,7 +4,7 @@ import WebSocketClient from './ws'
 
 declare module 'koishi' {
   interface Modules {
-    minecraft: typeof import('.')
+    'adaper-minecraft': typeof import('.')
   }
 }
 

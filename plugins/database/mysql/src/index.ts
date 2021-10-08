@@ -12,7 +12,7 @@ declare module 'koishi' {
   }
 
   interface Modules {
-    mysql: typeof import('.')
+    'database-mysql': typeof import('.')
   }
 }
 
@@ -95,7 +95,7 @@ Database.extend(MysqlDatabase, {
   },
 })
 
-export const name = 'mysql'
+export const name = 'database-mysql'
 
 export const schema: Schema<Config> = Schema.object({
   host: Schema.string('要连接到的主机名。').default('localhost'),

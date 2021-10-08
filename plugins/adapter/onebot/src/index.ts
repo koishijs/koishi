@@ -26,7 +26,7 @@ Context.prototype.broadcast = async function (this: Context, ...args: any[]) {
 
 declare module 'koishi' {
   interface Modules {
-    onebot: typeof import('.')
+    'adaper-onebot': typeof import('.')
   }
 
   interface Session {

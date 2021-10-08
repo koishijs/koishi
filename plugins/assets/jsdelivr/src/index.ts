@@ -242,7 +242,7 @@ export default class JsdelivrAssets extends Assets {
   }
 }
 
-export const name = 'jsdelivr'
+export const name = 'assets-jsdelivr'
 
 export function apply(ctx: Context, config: Config) {
   config = Schema.validate(config, schema)

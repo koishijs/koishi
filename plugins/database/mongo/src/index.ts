@@ -11,7 +11,7 @@ declare module 'koishi' {
   }
 
   interface Modules {
-    mongo: typeof import('.')
+    'database-mongo': typeof import('.')
   }
 }
 
@@ -163,7 +163,7 @@ Database.extend(MongoDatabase, {
   },
 })
 
-export const name = 'mongo'
+export const name = 'database-mongo'
 
 export const schema: Schema<Config> = Schema.object({
   protocol: Schema.string('要使用的协议名。').default('mongodb'),

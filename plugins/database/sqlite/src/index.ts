@@ -11,7 +11,7 @@ declare module 'koishi' {
   }
 
   interface Modules {
-    sqlite: typeof import('.')
+    'database-sqlite': typeof import('.')
   }
 }
 
@@ -99,7 +99,7 @@ Database.extend(SQLiteDatabase, {
   },
 })
 
-export const name = 'sqlite'
+export const name = 'database-sqlite'
 
 export const schema: Schema<Config> = Schema.object({
   path: Schema.string('数据库路径').default('.koishi.db'),

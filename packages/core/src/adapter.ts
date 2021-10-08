@@ -112,7 +112,7 @@ export namespace Adapter {
       }
     }
 
-    return { name: platform, schema: adapterSchema, apply }
+    return { name: 'adapter-' + platform, schema: adapterSchema, apply }
   }
 
   export class BotList extends Array<Bot> {

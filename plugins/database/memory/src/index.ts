@@ -8,7 +8,7 @@ declare module 'koishi' {
   }
 
   interface Modules {
-    database: typeof import('.')
+    'database-memory': typeof import('.')
   }
 }
 
@@ -121,7 +121,7 @@ Database.extend(MemoryDatabase, {
   },
 })
 
-export const name = 'database'
+export const name = 'database-memory'
 
 export const schema: Schema<Config> = Schema.object({})
 

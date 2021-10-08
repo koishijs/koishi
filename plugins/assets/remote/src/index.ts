@@ -42,7 +42,7 @@ class RemoteAssets extends Assets {
   }
 }
 
-export const name = 'remote'
+export const name = 'assets-remote'
 
 export function apply(ctx: Context, config: Config) {
   ctx.assets = new RemoteAssets(ctx, config)

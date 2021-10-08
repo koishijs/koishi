@@ -4,7 +4,7 @@ import WebSocketClient from './ws'
 
 declare module 'koishi' {
   interface Modules {
-    discord: typeof import('.')
+    'adaper-discord': typeof import('.')
   }
 }
 

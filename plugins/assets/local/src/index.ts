@@ -115,7 +115,7 @@ class LocalAssets extends Assets {
   }
 }
 
-export const name = 'local'
+export const name = 'assets-local'
 
 export function apply(ctx: Context, config: Config) {
   ctx.assets = new LocalAssets(ctx, config)
