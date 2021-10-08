@@ -6,10 +6,11 @@
   "typings": "lib/index.d.ts",
   "files": [
     "lib",
+    "install.js",
     "template.yml"
   ],
   "scripts": {
-    "postinstall": "node lib/install"
+    "postinstall": "node install"
   },
   "author": "Shigma <1700011071@pku.edu.cn>",
   "license": "MIT",

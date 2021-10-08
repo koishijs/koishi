@@ -28,7 +28,7 @@ function getPlatform() {
   throw new Error(`platform "${process.platform}" is not supported`)
 }
 
-async function install() {
+export async function install() {
   const arch = getArch()
   const platform = getPlatform()
   const outDir = resolve(__dirname, '../bin')
@@ -58,8 +58,4 @@ async function install() {
       }
     })
   ]).catch(() => rm(outDir, { force: true, recursive: true }))
-}
-
-if (require.main === module) {
-  install()
 }
