@@ -8,7 +8,7 @@
     "test",
     "community/*",
     "packages/*",
-    "plugins/adapters/*",
+    "plugins/adapter/*",
     "plugins/assets/*",
     "plugins/database/*",
     "plugins/*"
