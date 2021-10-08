@@ -1,7 +1,7 @@
 {
-  "name": "@koishijs/plugin-jsdelivr",
-  "description": "A github-jsdelivr assets provider for Koishi",
-  "version": "1.0.0-alpha.3",
+  "name": "@koishijs/plugin-assets-remote",
+  "description": "A classic assets provider for Koishi",
+  "version": "2.0.0-alpha.5",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -16,7 +16,7 @@
   "bugs": {
     "url": "https://github.com/koishijs/koishi/issues"
   },
-  "homepage": "https://koishi.js.org/plugins/other/jsdelivr",
+  "homepage": "https://koishi.js.org/plugins/other/assets",
   "keywords": [
     "bot",
     "qqbot",
@@ -25,17 +25,11 @@
     "chatbot",
     "koishi",
     "plugin",
-    "github",
     "assets",
-    "jsdelivr",
-    "required:database",
+    "server",
     "service:assets"
   ],
   "peerDependencies": {
     "koishi": "^4.0.0-alpha.9"
-  },
-  "dependencies": {
-    "file-type": "^16.5.3",
-    "simple-git": "^2.45.1"
   }
 }

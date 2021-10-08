@@ -1,5 +1,5 @@
 {
-  "name": "@koishijs/plugin-s3",
+  "name": "@koishijs/plugin-assets-s3",
   "description": "Assets provider based on s3 for Koishi",
   "version": "1.0.0-alpha.3",
   "main": "lib/index.js",

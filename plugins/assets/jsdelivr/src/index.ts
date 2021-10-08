@@ -8,7 +8,7 @@ import { fromBuffer } from 'file-type'
 
 declare module 'koishi' {
   interface Modules {
-    jsdelivr: typeof import('.')
+    'assets-jsdelivr': typeof import('.')
   }
 }
 

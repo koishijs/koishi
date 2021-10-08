@@ -1,5 +1,5 @@
 {
-  "name": "@koishijs/plugin-assets",
+  "name": "@koishijs/plugin-assets-local",
   "description": "A classic assets provider for Koishi",
   "version": "2.0.0-alpha.5",
   "main": "lib/index.js",
@@ -31,8 +31,5 @@
   ],
   "peerDependencies": {
     "koishi": "^4.0.0-alpha.9"
-  },
-  "dependencies": {
-    "form-data": "^4.0.0"
   }
 }

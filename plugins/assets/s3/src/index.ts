@@ -5,7 +5,7 @@ import { createHash } from 'crypto'
 
 declare module 'koishi' {
   interface Modules {
-    s3: typeof import('.')
+    'assets-s3': typeof import('.')
   }
 }
 
