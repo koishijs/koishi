@@ -19,13 +19,11 @@ Database.extend(SQLiteDatabase, {
   async drop(name) {
     if (name) {
       this.run(`DROP TABLE ${this.sql.escapeId(name)}`)
-      delete this.dbAdapters[name]
     } else {
       const tables = Object.keys(Koishi.Tables.config)
       for (const table of tables) {
         this.run(`DROP TABLE ${this.sql.escapeId(table)}`)
       }
-      this.dbAdapters = Object.create(null)
     }
   },
 
@@ -37,15 +35,13 @@ Database.extend(SQLiteDatabase, {
     if (limit) sql += ' LIMIT ' + limit
     if (offset) sql += ' OFFSET ' + offset
     const rows = this.all(sql)
-    const adapter = this.dbAdapters[name]
-    return rows.map(row => adapter.load(row))
+    return rows.map(row => this.caster.load(name, row))
   },
 
   async set(name, query, data) {
     const filter = this.sql.parseQuery(Query.resolve(name, query))
     if (filter === '0') return
-    const adapter = this.dbAdapters[name]
-    data = adapter.dump(data)
+    data = this.caster.dump(name, data)
     const update = Object.keys(data).map((key) => {
       return `${this.sql.escapeId(key)} = ${this.sql.escape(data[key])}`
     }).join(', ')
@@ -59,9 +55,8 @@ Database.extend(SQLiteDatabase, {
   },
 
   async create(name, data) {
-    const adapter = this.dbAdapters[name]
     data = { ...Koishi.Tables.create(name), ...data }
-    const dbData = adapter.dump(data)
+    const dbData = this.caster.dump(name, data)
     const keys = Object.keys(data)
     try {
       const result = this.run(
@@ -80,11 +75,10 @@ Database.extend(SQLiteDatabase, {
     const { fields, primary } = Koishi.Tables.config[name]
     const fallback = Koishi.Tables.create(name)
     const initKeys = Object.keys(fields)
-    const adapter = this.dbAdapters[name]
     keys = makeArray(keys || primary)
     for (const item of data) {
       const updateKeys = Object.keys(item)
-      const dbItem = adapter.dump({ ...fallback, ...item })
+      const dbItem = this.caster.dump(name, { ...fallback, ...item })
       const update = difference(updateKeys, keys).map((key) => `${this.sql.escapeId(key)} = ${this.sql.escape(dbItem[key])}`).join(',')
       this.run(
         `INSERT INTO ${this.sql.escapeId(name)} (${this._joinKeys(initKeys)})

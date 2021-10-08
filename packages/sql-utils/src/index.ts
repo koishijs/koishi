@@ -183,49 +183,42 @@ export abstract class SQLHelper {
   }
 }
 
-export interface FieldCaster<S = any, T = any> {
+export interface TypeCaster<S = any, T = any> {
   types: Tables.Field.Type<S>[]
   dump: (value: S) => T
   load: (value: T, initial?: S) => S
 }
 
-export interface TableCaster {
-  dump(obj: any): any
-  load(obj: any): any
-}
-
 export class Caster {
-  protected fieldCasters: Dict<FieldCaster>
+  protected types: Dict<TypeCaster>
 
   constructor() {
-    this.fieldCasters = Object.create(null)
+    this.types = Object.create(null)
   }
 
-  registerFieldCaster<S, T>(converter: FieldCaster<S, T>) {
-    converter.types.forEach(type => this.fieldCasters[type] = converter)
+  register<S, T>(typeCaster: TypeCaster<S, T>) {
+    typeCaster.types.forEach(type => this.types[type] = typeCaster)
   }
 
-  createTableCaster(table: string): TableCaster {
+  dump(table: string, obj: any): any {
     const { fields } = Tables.config[table]
-    return {
-      dump: obj => {
-        const result = {}
-        for (const key in obj) {
-          const { type } = fields[key]
-          const converter = this.fieldCasters[type]
-          result[key] = converter ? converter.dump(obj[key]) : obj[key]
-        }
-        return result
-      },
-      load: obj => {
-        const result = {}
-        for (const key in obj) {
-          const { type, initial } = fields[key]
-          const converter = this.fieldCasters[type]
-          result[key] = converter ? converter.load(obj[key], initial) : obj[key]
-        }
-        return result
-      },
+    const result = {}
+    for (const key in obj) {
+      const { type } = fields[key]
+      const converter = this.types[type]
+      result[key] = converter ? converter.dump(obj[key]) : obj[key]
     }
+    return result
+  }
+
+  load(table: string, obj: any): any {
+    const { fields } = Tables.config[table]
+    const result = {}
+    for (const key in obj) {
+      const { type, initial } = fields[key]
+      const converter = this.types[type]
+      result[key] = converter ? converter.load(obj[key], initial) : obj[key]
+    }
+    return result
   }
 }

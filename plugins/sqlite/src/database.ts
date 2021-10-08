@@ -1,9 +1,10 @@
-import { App, Database, makeArray, Tables } from 'koishi'
+import { App, Database, makeArray, Tables, Logger } from 'koishi'
 import sqlite from 'better-sqlite3'
 import { resolve } from 'path'
-import { logger, caster, TableCaster } from './utils'
-import { SQLHelper } from '@koishijs/sql-utils'
+import { SQLHelper, Caster } from '@koishijs/sql-utils'
 import { escape as sqlEscape, escapeId } from 'sqlstring-sqlite'
+
+const logger = new Logger('sqlite')
 
 export type TableType = keyof Tables
 
@@ -42,11 +43,10 @@ class SQLiteDatabase extends Database {
   public db: sqlite.Database
   sqlite = this
   sql: SQLHelper
-  dbAdapters: Record<string, TableCaster>
+  caster: Caster
 
   constructor(public app: App, public config: Config) {
     super(app)
-    this.dbAdapters = Object.create(null)
 
     this.sql = new class extends SQLHelper {
       escapeId = escapeId
@@ -61,9 +61,26 @@ class SQLiteDatabase extends Database {
         return `(',' || ${key} || ',') LIKE '%,${this.escape(value)},%'`
       }
     }()
+
+    this.caster = new Caster()
+    this.caster.register<object, string>({
+      types: ['json'],
+      dump: value => JSON.stringify(value),
+      load: (value, initial) => value ? JSON.parse(value) : initial,
+    })
+    this.caster.register<string[], string>({
+      types: ['list'],
+      dump: value => value.join(','),
+      load: (value) => value ? value.split(',') : [],
+    })
+    this.caster.register<Date, number>({
+      types: ['date', 'time', 'timestamp'],
+      dump: value => +value,
+      load: (value) => value === null ? null : new Date(value),
+    })
   }
 
-  private getColumnDefinitionSQL(table: string, key: string, adapter: TableCaster) {
+  private getColumnDefinitionSQL(table: string, key: string) {
     const config = Tables.config[table]
     const { initial, nullable = initial === undefined || initial === null } = config.fields[key]
     let def = this.sql.escapeId(key)
@@ -73,16 +90,13 @@ class SQLiteDatabase extends Database {
       const typedef = getTypeDefinition(config.fields[key])
       def += ' ' + typedef + (nullable ? ' ' : ' NOT ') + 'NULL'
       if (initial !== undefined && initial !== null) {
-        def += ' DEFAULT ' + this.sql.escape(adapter.dump({ [key]: initial })[key])
+        def += ' DEFAULT ' + this.sql.escape(this.caster.dump(table, { [key]: initial })[key])
       }
     }
     return def
   }
 
   private syncTable(table: string) {
-    const adapter = caster.createTableCaster(table)
-    this.dbAdapters[table] = adapter
-
     const info = this._getTableInfo(table)
     // FIXME: register platform columns before database initializion
     // WARN: side effecting Tables.config
@@ -101,7 +115,7 @@ class SQLiteDatabase extends Database {
         if (keys.includes(key) && info.some(({ name }) => name === key)) continue
         if (keys.includes(key)) {
           // Add column
-          const def = this.getColumnDefinitionSQL(table, key, adapter)
+          const def = this.getColumnDefinitionSQL(table, key)
           this.run(`ALTER TABLE ${this.sql.escapeId(table)} ADD COLUMN ${def}`)
         } else {
           // Drop column
@@ -110,7 +124,7 @@ class SQLiteDatabase extends Database {
       }
     } else {
       logger.info('auto creating table %c', table)
-      const defs = keys.map(key => this.getColumnDefinitionSQL(table, key, adapter))
+      const defs = keys.map(key => this.getColumnDefinitionSQL(table, key))
       const constraints = []
       if (config.primary && !config.autoInc) {
         constraints.push(`PRIMARY KEY (${this._joinKeys(makeArray(config.primary))})`)
