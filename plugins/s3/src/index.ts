@@ -1,4 +1,4 @@
-import { Assets, Context, Requester, Schema } from 'koishi'
+import { Assets, Context, Schema } from 'koishi'
 import { Credentials } from '@aws-sdk/types'
 import { ListObjectsCommand, PutObjectCommand, S3Client, S3ClientConfig } from '@aws-sdk/client-s3'
 import { createHash } from 'crypto'
@@ -7,16 +7,6 @@ declare module 'koishi' {
   interface Modules {
     s3: typeof import('.')
   }
-}
-
-const PTC_BASE64 = 'base64://'
-
-async function getAssetBuffer(url: string, http: Requester) {
-  if (url.startsWith(PTC_BASE64)) {
-    return Buffer.from(url.slice(PTC_BASE64.length), 'base64')
-  }
-  const data = await http.get.arraybuffer(url)
-  return Buffer.from(data)
 }
 
 export interface Config extends S3ClientConfig {
@@ -39,11 +29,11 @@ export const schema: Schema<Config> = Schema.object({
   publicUrl: Schema.string(),
 }, true)
 
-class S3Assets implements Assets {
-  types = ['video', 'audio', 'image', 'file'] as const
+class S3Assets extends Assets {
   private s3: S3Client
 
-  constructor(public ctx: Context, public config: Config) {
+  constructor(ctx: Context, public config: Config) {
+    super(ctx)
     this.s3 = new S3Client(config)
   }
 
@@ -56,7 +46,7 @@ class S3Assets implements Assets {
   }
 
   async upload(url: string, file: string) {
-    const buffer = await getAssetBuffer(url, this.ctx.http)
+    const buffer = await this.download(url)
     const hash = createHash('sha1').update(buffer).digest('hex')
     const s3Key = `${this.config.pathPrefix}${hash}`
     const finalUrl = `${this.config.publicUrl}${hash}`

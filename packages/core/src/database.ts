@@ -173,21 +173,6 @@ export namespace Modules {
   }
 }
 
-export interface Assets {
-  types: readonly Assets.Type[]
-  upload(url: string, file: string): Promise<string>
-  stats(): Promise<Assets.Stats>
-}
-
-export namespace Assets {
-  export type Type = 'image' | 'audio' | 'video' | 'file'
-
-  export interface Stats {
-    assetCount?: number
-    assetSize?: number
-  }
-}
-
 export interface Cache {
   get<T extends keyof Cache.Tables>(table: T, key: string): Promise<Cache.Tables[T]>
   set<T extends keyof Cache.Tables>(table: T, key: string, value: Cache.Tables[T]): Promise<void>

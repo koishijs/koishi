@@ -11,8 +11,6 @@ declare module 'koishi' {
   }
 }
 
-const PTC_BASE64 = 'base64://'
-
 export const schema = Schema.decide('type', {
   local: Schema.object({
     root: Schema.string('本地存储资源文件的绝对路径。').required(),
@@ -31,14 +29,6 @@ export const schema = Schema.decide('type', {
   }, '存储在 sm.ms 图床服务'),
 }, '使用的存储方式。')
 
-async function getAssetBuffer(url: string, http: Requester) {
-  if (url.startsWith(PTC_BASE64)) {
-    return Buffer.from(url.slice(PTC_BASE64.length), 'base64')
-  }
-  const data = await http.get.arraybuffer(url)
-  return Buffer.from(data)
-}
-
 interface LocalConfig {
   type: 'local'
   path?: string
@@ -47,16 +37,16 @@ interface LocalConfig {
   secret?: string
 }
 
-class LocalAssets implements Assets {
-  types = ['video', 'audio', 'image'] as const
-
+class LocalAssets extends Assets {
   private _promise: Promise<void>
   private _stats: Assets.Stats = {
     assetCount: 0,
     assetSize: 0,
   }
 
-  constructor(public ctx: Context, public config: LocalConfig) {
+  constructor(ctx: Context, public config: LocalConfig) {
+    super(ctx)
+
     config.path = sanitize(config.path || '/assets')
     if (config.root) {
       config.root = resolve(ctx.app.options.baseDir, config.root)
@@ -122,11 +112,11 @@ class LocalAssets implements Assets {
     if (file) {
       const filename = resolve(root, file)
       if (!existsSync(filename)) {
-        const buffer = await getAssetBuffer(url, this.ctx.http)
+        const buffer = await this.download(url)
         await this.write(buffer, filename)
       }
     } else {
-      const buffer = await getAssetBuffer(url, this.ctx.http)
+      const buffer = await this.download(url)
       file = createHash('sha1').update(buffer).digest('hex')
       await this.write(buffer, resolve(root, file))
     }
@@ -144,12 +134,11 @@ interface RemoteConfig extends Requester.Config {
   secret?: string
 }
 
-class RemoteAssets implements Assets {
-  types = ['video', 'audio', 'image'] as const
-
+class RemoteAssets extends Assets {
   http: Requester
 
-  constructor(public ctx: Context, public config: RemoteConfig) {
+  constructor(ctx: Context, public config: RemoteConfig) {
+    super(ctx)
     this.http = ctx.http.extend(config)
   }
 
@@ -174,12 +163,13 @@ interface SmmsConfig extends Requester.Config {
   token: string
 }
 
-class SmmsAssets implements Assets {
-  types = ['image'] as const
+class SmmsAssets extends Assets {
+  types = ['image']
 
   http: Requester
 
-  constructor(public ctx: Context, public config: SmmsConfig) {
+  constructor(ctx: Context, public config: SmmsConfig) {
+    super(ctx)
     this.http = ctx.http.extend({
       endpoint: 'https://sm.ms/api/v2',
       headers: { authorization: config.token },
@@ -187,7 +177,7 @@ class SmmsAssets implements Assets {
   }
 
   async upload(url: string, file: string) {
-    const buffer = await getAssetBuffer(url, this.ctx.http)
+    const buffer = await this.download(url)
     const payload = new FormData()
     payload.append('smfile', buffer, file || createHash('sha1').update(buffer).digest('hex'))
     const data = await this.http('POST', '/upload', payload, payload.getHeaders())

@@ -17,8 +17,6 @@ export interface Branch {
   size: number
 }
 
-const PTC_BASE64 = 'base64://'
-
 function toBranchName(id: number) {
   return id.toString(36).padStart(8)
 }
@@ -55,14 +53,15 @@ export const schema: Schema<Config> = Schema.object({
 
 const logger = new Logger('jsdelivr')
 
-export default class JsdelivrAssets implements Assets {
-  types = ['image', 'audio', 'video', 'file'] as const
+export default class JsdelivrAssets extends Assets {
   git: SimpleGit
   taskQueue: Task[] = []
   taskMap = new Map<string, Task>()
   isActive = false
 
-  constructor(private ctx: Context, public config: Config) {
+  constructor(ctx: Context, public config: Config) {
+    super(ctx)
+
     ctx.on('connect', async () => {
       await this.initRepo()
       this.isActive = true
@@ -214,14 +213,6 @@ export default class JsdelivrAssets implements Assets {
     }
   }
 
-  private async getAssetBuffer(url: string) {
-    if (url.startsWith(PTC_BASE64)) {
-      return Buffer.from(url.slice(PTC_BASE64.length), 'base64')
-    }
-    const data = await this.ctx.http.get.arraybuffer(url)
-    return Buffer.from(data)
-  }
-
   private async getFileName(buffer: Buffer) {
     const { ext } = await fromBuffer(buffer)
     return 'untitled.' + ext
@@ -233,7 +224,7 @@ export default class JsdelivrAssets implements Assets {
   }
 
   async upload(url: string, name?: string) {
-    const buffer = await this.getAssetBuffer(url)
+    const buffer = await this.download(url)
     const hash = createHash('sha1').update(buffer).digest('hex')
     const [file] = await this.ctx.database.get('jsdelivr', { hash })
     if (file) return this.toPublicUrl(file)

@@ -1,5 +1,5 @@
 import { Context, Schema, interpolate } from 'koishi'
-import onebot from '@koishijs/plugin-onebot'
+import onebot from '@koishijs/plugin-adapter-onebot'
 import { spawn } from 'cross-spawn'
 import { ChildProcess } from 'child_process'
 import { resolve } from 'path'
@@ -12,7 +12,7 @@ declare module 'koishi' {
   }
 }
 
-declare module '@koishijs/plugin-onebot/lib/bot' {
+declare module '@koishijs/plugin-adapter-onebot/lib/bot' {
   interface BotConfig {
     password?: string
   }

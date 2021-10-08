@@ -38,7 +38,7 @@ export interface WorkerConfig {
 }
 
 export interface WorkerData extends WorkerConfig {
-  baseDir: string
+  baseDir?: string
   addonNames?: string[]
 }
 

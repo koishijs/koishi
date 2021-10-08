@@ -2,6 +2,7 @@ import { App, Context, Modules } from '@koishijs/core'
 import { defineProperty, remove, Schema } from '@koishijs/utils'
 import { Server, createServer } from 'http'
 import { Requester } from './http'
+import { Assets } from './assets'
 import Router from '@koa/router'
 import type Koa from 'koa'
 
@@ -39,6 +40,7 @@ declare module '@koishijs/core' {
 
   namespace Context {
     interface Services {
+      assets: Assets
       router: Router
       http: Requester
     }
@@ -55,6 +57,7 @@ App.Config.Network.dict = {
 Modules.internal.require = require
 Modules.internal.resolve = require.resolve
 
+Context.service('assets')
 Context.service('router')
 Context.service('http')
 
@@ -89,6 +92,8 @@ function prepareServer(this: App) {
     this._httpServer?.close()
   })
 }
+
+
 
 // hack into router methods to make sure
 // that koa middlewares are disposable
