@@ -50,14 +50,15 @@ class SQLiteDatabase extends Database {
 
     this.sql = new class extends SQLHelper {
       escapeId = escapeId
-      escape(value: any, stringifyObjects?: boolean, timeZone?: string) {
+
+      escape(value: any) {
         if (value instanceof Date) {
           return (+value) + ''
         }
-        return sqlEscape(value, stringifyObjects, timeZone)
+        return sqlEscape(value)
       }
 
-      protected createElementQuery = (key: string, value: any) => {
+      protected createElementQuery(key: string, value: any) {
         return `(',' || ${key} || ',') LIKE '%,${this.escape(value)},%'`
       }
     }()
