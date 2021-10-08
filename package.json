@@ -9,6 +9,7 @@
     "community/*",
     "packages/*",
     "plugins/adapters/*",
+    "plugins/database/*",
     "plugins/*"
   ],
   "scripts": {

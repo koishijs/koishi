@@ -1,10 +1,10 @@
 import { Database, Logger, Time, Dict } from 'koishi'
 import { RECENT_LENGTH, Synchronizer } from '../payload/stats'
-import type MongoDatabase from '@koishijs/plugin-mongo'
+import type MongoDatabase from '@koishijs/plugin-database-mongo'
 
 const logger = new Logger('status')
 
-declare module '@koishijs/plugin-mongo' {
+declare module '@koishijs/plugin-database-mongo' {
   interface Tables {
     'plugin-status': any
   }

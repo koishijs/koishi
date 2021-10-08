@@ -3,14 +3,14 @@ title: 数据库：MySQL
 sidebarDepth: 2
 ---
 
-# @koishijs/plugin-mysql
+# @koishijs/plugin-database-mysql
 
 ::: danger 注意
 这里是**正在施工**的 koishi v3 的文档。要查看 v1 版本的文档，请前往[**这里**](/v1/)。
 :::
 
 ::: tip 注意
-本页显示的版本号都表示对应的 @koishijs/plugin-mysql 版本号（而不是对应的 koishi 版本号）。
+本页显示的版本号都表示对应的 @koishijs/plugin-database-mysql 版本号（而不是对应的 koishi 版本号）。
 
 所有功能实现均对应于 MySQL v5.7。
 :::

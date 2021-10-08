@@ -17,11 +17,11 @@ sidebarDepth: 2
 ::: code-group manager
 ```npm
 # 我们以 mysql 数据库为例
-npm i @koishijs/plugin-mysql -D
+npm i @koishijs/plugin-database-mysql -D
 ```
 ```yarn
 # 我们以 mysql 数据库为例
-yarn add @koishijs/plugin-mysql -D
+yarn add @koishijs/plugin-database-mysql -D
 ```
 :::
 
@@ -262,7 +262,7 @@ Tables.extend('foo', {}, {
 
 ```ts
 // TypeScript 用户需要手动引入模块，否则将产生类型错误
-import {} from '@koishijs/plugin-mysql'
+import {} from '@koishijs/plugin-database-mysql'
 
 // 直接发送 SQL 语句
 ctx.database.mysql.query('select * from user')

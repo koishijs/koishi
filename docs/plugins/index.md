@@ -18,8 +18,8 @@ Koishi 官方提供了许多插件。为了更好地模块化开发，它们被�
 ## 数据库支持
 
 - [@koishijs/plugin-database](./database/database.md)
-- [@koishijs/plugin-mongo](./database/mongo.md)
-- [@koishijs/plugin-mysql](./database/mysql.md)
+- [@koishijs/plugin-database-mongo](./database/mongo.md)
+- [@koishijs/plugin-database-mysql](./database/mysql.md)
 
 ## 资源存储支持
 

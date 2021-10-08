@@ -38,7 +38,7 @@
     "@types/node": "^16.7.13"
   },
   "dependencies": {
-    "@koishijs/plugin-database": "^1.0.0-alpha.6",
+    "@koishijs/plugin-database-memory": "^1.0.0-alpha.6",
     "chai": "^4.3.4",
     "chai-as-promised": "^7.1.1",
     "koishi": "^4.0.0-alpha.9"

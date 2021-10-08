@@ -80,8 +80,8 @@ Koishi v3 的另一大亮点就是拥有官方的网页控制台插件。这个�
 
 ### 数据库支持
 
-- @koishijs/plugin-mongo: MongoDB 支持
-- @koishijs/plugin-mysql: MySQL 5.7 / MariaDB 10.5 支持
+- @koishijs/plugin-database-mongo: MongoDB 支持
+- @koishijs/plugin-database-mysql: MySQL 5.7 / MariaDB 10.5 支持
 
 ### 核心插件
 

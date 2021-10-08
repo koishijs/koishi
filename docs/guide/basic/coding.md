@@ -112,17 +112,17 @@ app.middleware((session, next) => {
 
 ::: code-group manager
 ```npm
-npm i @koishijs/plugin-mysql
+npm i @koishijs/plugin-database-mysql
 ```
 ```yarn
-yarn add @koishijs/plugin-mysql
+yarn add @koishijs/plugin-database-mysql
 ```
 :::
 
 然后继续修改你的代码，在应用中配置 MySQL 插件：
 
 ```js index.js
-app.plugin(require('@koishijs/plugin-mysql'), {
+app.plugin(require('@koishijs/plugin-database-mysql'), {
   host: '[your-host]',
   port: 3306,
   user: 'root',
