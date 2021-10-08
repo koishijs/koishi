@@ -22,7 +22,7 @@ Database.extend(SqliteDatabase, {
       this.run(`DROP TABLE ${utils.escapeId(name)}`)
       delete this.dbAdapters[name]
     } else {
-      const tables = Object.keys(this.dbAdapters)
+      const tables = Object.keys(Koishi.Tables.config)
       for (const table of tables) {
         this.run(`DROP TABLE ${utils.escapeId(table)}`)
       }

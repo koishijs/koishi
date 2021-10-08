@@ -103,6 +103,15 @@ function getColumnDefinitionSQL(table: string, key: string, adapter: DbAdapter.T
   return def
 }
 
+export interface ISqliteFieldInfo {
+  name: string
+  type: string
+  notnull: number
+  // eslint-disable-next-line @typescript-eslint/naming-convention
+  dflt_value: string
+  pk: boolean
+}
+
 class SqliteDatabase extends Database {
   public db: sqlite.Database
 
@@ -208,15 +217,13 @@ class SqliteDatabase extends Database {
   }
 
   _getTables(): string[] {
-    const rows = this.all(`SELECT name FROM sqlite_master WHERE type='table';`)
+    const rows = this.all(`SELECT name FROM sqlite_master WHERE type='table'`)
     return rows.map(({ name }) => name)
   }
 
-  _getTableInfo(table: string): { name: string; type: string; notnull: boolean; default: string; pk: boolean }[] {
-    const rows = this.all(`PRAGMA table_info(${utils.escapeId(table)});`)
+  _getTableInfo(table: string): ISqliteFieldInfo[] {
     // eslint-disable-next-line @typescript-eslint/naming-convention
-    const columns = rows.map(({ name, type, notnull, dflt_value, pk }) => ({ name, type, notnull: !!notnull, default: dflt_value, pk: !!pk }))
-    return columns
+    return this.all(`PRAGMA table_info(${utils.escapeId(table)})`)
   }
 
   stop() {
