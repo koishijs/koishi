@@ -1,7 +1,7 @@
 import { App, Database, makeArray, Tables, Logger } from 'koishi'
 import sqlite from 'better-sqlite3'
 import { resolve } from 'path'
-import { SQLHelper, Caster } from '@koishijs/sql-utils'
+import { SQLBuilder, Caster } from '@koishijs/sql-utils'
 import { escape as sqlEscape, escapeId } from 'sqlstring-sqlite'
 
 const logger = new Logger('sqlite')
@@ -42,13 +42,13 @@ export interface ISQLiteFieldInfo {
 class SQLiteDatabase extends Database {
   public db: sqlite.Database
   sqlite = this
-  sql: SQLHelper
+  sql: SQLBuilder
   caster: Caster
 
   constructor(public app: App, public config: Config) {
     super(app)
 
-    this.sql = new class extends SQLHelper {
+    this.sql = new class extends SQLBuilder {
       escapeId = escapeId
 
       escape(value: any) {
