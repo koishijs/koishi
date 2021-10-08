@@ -1,7 +1,9 @@
 import { App, Database, makeArray, Tables } from 'koishi'
 import sqlite from 'better-sqlite3'
 import { resolve } from 'path'
-import { queryHelper, logger, caster, TableCaster } from './utils'
+import { logger, caster, TableCaster } from './utils'
+import { SQLHelper } from '@koishijs/sql-utils'
+import { escape as sqlEscape, escapeId } from 'sqlstring-sqlite'
 
 export type TableType = keyof Tables
 
@@ -27,23 +29,7 @@ function getTypeDefinition({ type }: Tables.Field) {
   }
 }
 
-function getColumnDefinitionSQL(table: string, key: string, adapter: TableCaster) {
-  const config = Tables.config[table]
-  const { initial, nullable = initial === undefined || initial === null } = config.fields[key]
-  let def = queryHelper.escapeId(key)
-  if (key === config.primary && config.autoInc) {
-    def += ' INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT'
-  } else {
-    const typedef = getTypeDefinition(config.fields[key])
-    def += ' ' + typedef + (nullable ? ' ' : ' NOT ') + 'NULL'
-    if (initial !== undefined && initial !== null) {
-      def += ' DEFAULT ' + queryHelper.escape(adapter.dump({ [key]: initial })[key])
-    }
-  }
-  return def
-}
-
-export interface ISqliteFieldInfo {
+export interface ISQLiteFieldInfo {
   name: string
   type: string
   notnull: number
@@ -52,16 +38,45 @@ export interface ISqliteFieldInfo {
   pk: boolean
 }
 
-class SqliteDatabase extends Database {
+class SQLiteDatabase extends Database {
   public db: sqlite.Database
-
   sqlite = this
-
+  sql: SQLHelper
   dbAdapters: Record<string, TableCaster>
 
   constructor(public app: App, public config: Config) {
     super(app)
     this.dbAdapters = Object.create(null)
+
+    this.sql = new class extends SQLHelper {
+      escapeId = escapeId
+      escape(value: any, stringifyObjects?: boolean, timeZone?: string) {
+        if (value instanceof Date) {
+          return (+value) + ''
+        }
+        return sqlEscape(value, stringifyObjects, timeZone)
+      }
+
+      protected createElementQuery = (key: string, value: any) => {
+        return `(',' || ${key} || ',') LIKE '%,${this.escape(value)},%'`
+      }
+    }()
+  }
+
+  private getColumnDefinitionSQL(table: string, key: string, adapter: TableCaster) {
+    const config = Tables.config[table]
+    const { initial, nullable = initial === undefined || initial === null } = config.fields[key]
+    let def = this.sql.escapeId(key)
+    if (key === config.primary && config.autoInc) {
+      def += ' INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT'
+    } else {
+      const typedef = getTypeDefinition(config.fields[key])
+      def += ' ' + typedef + (nullable ? ' ' : ' NOT ') + 'NULL'
+      if (initial !== undefined && initial !== null) {
+        def += ' DEFAULT ' + this.sql.escape(adapter.dump({ [key]: initial })[key])
+      }
+    }
+    return def
   }
 
   private syncTable(table: string) {
@@ -86,16 +101,16 @@ class SqliteDatabase extends Database {
         if (keys.includes(key) && info.some(({ name }) => name === key)) continue
         if (keys.includes(key)) {
           // Add column
-          const def = getColumnDefinitionSQL(table, key, adapter)
-          this.run(`ALTER TABLE ${queryHelper.escapeId(table)} ADD COLUMN ${def}`)
+          const def = this.getColumnDefinitionSQL(table, key, adapter)
+          this.run(`ALTER TABLE ${this.sql.escapeId(table)} ADD COLUMN ${def}`)
         } else {
           // Drop column
-          this.run(`ALTER TABLE ${queryHelper.escapeId(table)} DROP COLUMN ${queryHelper.escapeId(key)}`)
+          this.run(`ALTER TABLE ${this.sql.escapeId(table)} DROP COLUMN ${this.sql.escapeId(key)}`)
         }
       }
     } else {
       logger.info('auto creating table %c', table)
-      const defs = keys.map(key => getColumnDefinitionSQL(table, key, adapter))
+      const defs = keys.map(key => this.getColumnDefinitionSQL(table, key, adapter))
       const constraints = []
       if (config.primary && !config.autoInc) {
         constraints.push(`PRIMARY KEY (${this._joinKeys(makeArray(config.primary))})`)
@@ -107,12 +122,12 @@ class SqliteDatabase extends Database {
         constraints.push(
           ...Object.entries(config.foreign)
             .map(([key, [table, key2]]) =>
-              `FOREIGN KEY (${queryHelper.escapeId(key)})
-              REFERENCES ${queryHelper.escapeId(table)} (${queryHelper.escapeId(key2)})`,
+              `FOREIGN KEY (${this.sql.escapeId(key)})
+              REFERENCES ${this.sql.escapeId(table)} (${this.sql.escapeId(key2)})`,
             ),
         )
       }
-      this.run(`CREATE TABLE ${queryHelper.escapeId(table)} (${[...defs, ...constraints].join(',')})`)
+      this.run(`CREATE TABLE ${this.sql.escapeId(table)} (${[...defs, ...constraints].join(',')})`)
     }
   }
 
@@ -126,7 +141,7 @@ class SqliteDatabase extends Database {
   }
 
   _joinKeys(keys?: string[]) {
-    return keys ? keys.map(key => queryHelper.escapeId(key)).join(',') : '*'
+    return keys ? keys.map(key => this.sql.escapeId(key)).join(',') : '*'
   }
 
   run(sql: string, params: any = []) {
@@ -164,9 +179,9 @@ class SqliteDatabase extends Database {
     return rows.map(({ name }) => name)
   }
 
-  _getTableInfo(table: string): ISqliteFieldInfo[] {
+  _getTableInfo(table: string): ISQLiteFieldInfo[] {
     // eslint-disable-next-line @typescript-eslint/naming-convention
-    return this.all(`PRAGMA table_info(${queryHelper.escapeId(table)})`)
+    return this.all(`PRAGMA table_info(${this.sql.escapeId(table)})`)
   }
 
   stop() {
@@ -174,4 +189,4 @@ class SqliteDatabase extends Database {
   }
 }
 
-export default SqliteDatabase
+export default SQLiteDatabase

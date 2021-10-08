@@ -8,7 +8,7 @@ export type EvaluationOperators = {
   [K in keyof Eval.GeneralExpr]?: (expr: Eval.GeneralExpr[K]) => string
 }
 
-export abstract class QueryHelper {
+export abstract class SQLHelper {
   protected createEqualQuery = this.comparator('=')
   protected queryOperators: QueryOperators
   protected evalOperators: EvaluationOperators

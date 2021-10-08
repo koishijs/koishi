@@ -1,26 +1,8 @@
 import { Logger } from 'koishi'
-import { QueryHelper, Caster } from '@koishijs/sql-utils'
-import { escape as sqlEscape, escapeId } from 'sqlstring-sqlite'
+import { Caster } from '@koishijs/sql-utils'
 export { TableCaster } from '@koishijs/sql-utils'
 
 export const logger = new Logger('sqlite')
-
-class SqliteQueryHelper extends QueryHelper {
-  escape(value: any, stringifyObjects?: boolean, timeZone?: string) {
-    if (value instanceof Date) {
-      return (+value) + ''
-    }
-    return sqlEscape(value, stringifyObjects, timeZone)
-  }
-
-  escapeId = escapeId
-
-  protected createElementQuery = (key: string, value: any) => {
-    return `(',' || ${key} || ',') LIKE '%,${this.escape(value)},%'`
-  }
-}
-
-export const queryHelper = new SqliteQueryHelper()
 
 export const caster = new Caster()
 caster.registerFieldCaster<object, string>({

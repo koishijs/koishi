@@ -1,12 +1,12 @@
 import { escapeId, escape } from 'mysql'
-import { QueryHelper } from '@koishijs/sql-utils'
+import { SQLHelper } from '@koishijs/sql-utils'
 import { Logger } from 'koishi'
 
-class MysqlQueryHelper extends QueryHelper {
+class MysqlSQLHelper extends SQLHelper {
   escape = escape
   escapeId = escapeId
 }
 
-export const utils = new MysqlQueryHelper()
+export const utils = new MysqlSQLHelper()
 
 export const logger = new Logger('mysql')
