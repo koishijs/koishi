@@ -1,72 +1,12 @@
-import { App, clone, Database, makeArray, Tables } from 'koishi'
+import { App, Database, makeArray, Tables } from 'koishi'
 import sqlite from 'better-sqlite3'
 import { resolve } from 'path'
-import { utils, logger } from './utils'
+import { queryHelper, logger, caster, TableCaster } from './utils'
 
 export type TableType = keyof Tables
 
 export interface Config {
   path?: string
-}
-
-export namespace DbAdapter {
-  interface FieldAdapter<S = any, T = any> {
-    match: Tables.Field.Type<S>[]
-    localToDb: (value: S) => T
-    dbToLocal: (value: T, initial?: S) => S
-  }
-  const fieldAdapters: Record<string, FieldAdapter> = Object.create(null)
-  function registerFieldConverter<S, T>(converter: FieldAdapter<S, T>) {
-    converter.match.forEach(type => fieldAdapters[type] = converter)
-  }
-
-  registerFieldConverter<object, string>({
-    match: ['json'],
-    localToDb: value => JSON.stringify(value),
-    dbToLocal: (value, initial) => value ? JSON.parse(value) : initial,
-  })
-  registerFieldConverter<string[], string>({
-    match: ['list'],
-    localToDb: value => value.join(','),
-    dbToLocal: (value) => value ? value.split(',') : [],
-  })
-  registerFieldConverter<Date, number>({
-    match: ['date', 'time', 'timestamp'],
-    localToDb: value => +value,
-    dbToLocal: (value) => value === null ? null : new Date(value),
-  })
-
-  export interface TableAdapter {
-    localToDb(obj: any): any
-    dbToLocal(obj: any): any
-  }
-
-  function createStubTableAdapter(): TableAdapter {
-    return {
-      localToDb: obj => obj,
-      dbToLocal: obj => obj,
-    }
-  }
-
-  export function createTableAdapter(table: string): TableAdapter {
-    const config = Tables.config[table]
-    const fields = Object.keys(config.fields)
-    const targets = fields.filter(field => config.fields[field].type in fieldAdapters)
-      .map(field => [field, fieldAdapters[config.fields[field].type]] as const)
-    if (!targets.length) return createStubTableAdapter()
-    return {
-      localToDb: obj => {
-        const result = clone(obj)
-        targets.forEach(([field, converter]) => field in result && (result[field] = converter.localToDb(obj[field])))
-        return result
-      },
-      dbToLocal: obj => {
-        const result = clone(obj)
-        targets.forEach(([field, converter]) => field in result && (result[field] = converter.dbToLocal(obj[field], config.fields[field].initial)))
-        return result
-      },
-    }
-  }
 }
 
 function getTypeDefinition({ type }: Tables.Field) {
@@ -87,17 +27,17 @@ function getTypeDefinition({ type }: Tables.Field) {
   }
 }
 
-function getColumnDefinitionSQL(table: string, key: string, adapter: DbAdapter.TableAdapter) {
+function getColumnDefinitionSQL(table: string, key: string, adapter: TableCaster) {
   const config = Tables.config[table]
   const { initial, nullable = initial === undefined || initial === null } = config.fields[key]
-  let def = utils.escapeId(key)
+  let def = queryHelper.escapeId(key)
   if (key === config.primary && config.autoInc) {
     def += ' INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT'
   } else {
     const typedef = getTypeDefinition(config.fields[key])
     def += ' ' + typedef + (nullable ? ' ' : ' NOT ') + 'NULL'
     if (initial !== undefined && initial !== null) {
-      def += ' DEFAULT ' + utils.escape(adapter.localToDb({ [key]: initial })[key])
+      def += ' DEFAULT ' + queryHelper.escape(adapter.dump({ [key]: initial })[key])
     }
   }
   return def
@@ -117,7 +57,7 @@ class SqliteDatabase extends Database {
 
   sqlite = this
 
-  dbAdapters: Record<string, DbAdapter.TableAdapter>
+  dbAdapters: Record<string, TableCaster>
 
   constructor(public app: App, public config: Config) {
     super(app)
@@ -125,7 +65,7 @@ class SqliteDatabase extends Database {
   }
 
   private syncTable(table: string) {
-    const adapter = DbAdapter.createTableAdapter(table)
+    const adapter = caster.createTableCaster(table)
     this.dbAdapters[table] = adapter
 
     const info = this._getTableInfo(table)
@@ -147,10 +87,10 @@ class SqliteDatabase extends Database {
         if (keys.includes(key)) {
           // Add column
           const def = getColumnDefinitionSQL(table, key, adapter)
-          this.run(`ALTER TABLE ${utils.escapeId(table)} ADD COLUMN ${def}`)
+          this.run(`ALTER TABLE ${queryHelper.escapeId(table)} ADD COLUMN ${def}`)
         } else {
           // Drop column
-          this.run(`ALTER TABLE ${utils.escapeId(table)} DROP COLUMN ${utils.escapeId(key)}`)
+          this.run(`ALTER TABLE ${queryHelper.escapeId(table)} DROP COLUMN ${queryHelper.escapeId(key)}`)
         }
       }
     } else {
@@ -166,10 +106,13 @@ class SqliteDatabase extends Database {
       if (config.foreign) {
         constraints.push(
           ...Object.entries(config.foreign)
-            .map(([key, [table, key2]]) => `FOREIGN KEY (${utils.escapeId(key)}) REFERENCES ${utils.escapeId(table)} (${utils.escapeId(key2)})`),
+            .map(([key, [table, key2]]) =>
+              `FOREIGN KEY (${queryHelper.escapeId(key)})
+              REFERENCES ${queryHelper.escapeId(table)} (${queryHelper.escapeId(key2)})`,
+            ),
         )
       }
-      this.run(`CREATE TABLE ${utils.escapeId(table)} (${[...defs, ...constraints].join(',')})`)
+      this.run(`CREATE TABLE ${queryHelper.escapeId(table)} (${[...defs, ...constraints].join(',')})`)
     }
   }
 
@@ -183,7 +126,7 @@ class SqliteDatabase extends Database {
   }
 
   _joinKeys(keys?: string[]) {
-    return keys ? keys.map(key => utils.escapeId(key)).join(',') : '*'
+    return keys ? keys.map(key => queryHelper.escapeId(key)).join(',') : '*'
   }
 
   run(sql: string, params: any = []) {
@@ -223,7 +166,7 @@ class SqliteDatabase extends Database {
 
   _getTableInfo(table: string): ISqliteFieldInfo[] {
     // eslint-disable-next-line @typescript-eslint/naming-convention
-    return this.all(`PRAGMA table_info(${utils.escapeId(table)})`)
+    return this.all(`PRAGMA table_info(${queryHelper.escapeId(table)})`)
   }
 
   stop() {

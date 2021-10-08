@@ -1,4 +1,4 @@
-import { Query, Eval } from 'koishi'
+import { Query, Eval, Tables, Dict } from 'koishi'
 
 export type QueryOperators = {
   [K in keyof Query.FieldExpr]?: (key: string, value: Query.FieldExpr[K]) => string
@@ -8,7 +8,7 @@ export type EvaluationOperators = {
   [K in keyof Eval.GeneralExpr]?: (expr: Eval.GeneralExpr[K]) => string
 }
 
-export default abstract class Factory {
+export abstract class QueryHelper {
   protected createEqualQuery = this.comparator('=')
   protected queryOperators: QueryOperators
   protected evalOperators: EvaluationOperators
@@ -179,6 +179,53 @@ export default abstract class Factory {
       if (key in this.evalOperators) {
         return this.evalOperators[key](expr[key])
       }
+    }
+  }
+}
+
+export interface FieldCaster<S = any, T = any> {
+  types: Tables.Field.Type<S>[]
+  dump: (value: S) => T
+  load: (value: T, initial?: S) => S
+}
+
+export interface TableCaster {
+  dump(obj: any): any
+  load(obj: any): any
+}
+
+export class Caster {
+  protected fieldCasters: Dict<FieldCaster>
+
+  constructor() {
+    this.fieldCasters = Object.create(null)
+  }
+
+  registerFieldCaster<S, T>(converter: FieldCaster<S, T>) {
+    converter.types.forEach(type => this.fieldCasters[type] = converter)
+  }
+
+  createTableCaster(table: string): TableCaster {
+    const { fields } = Tables.config[table]
+    return {
+      dump: obj => {
+        const result = {}
+        for (const key in obj) {
+          const { type } = fields[key]
+          const converter = this.fieldCasters[type]
+          result[key] = converter ? converter.dump(obj[key]) : obj[key]
+        }
+        return result
+      },
+      load: obj => {
+        const result = {}
+        for (const key in obj) {
+          const { type, initial } = fields[key]
+          const converter = this.fieldCasters[type]
+          result[key] = converter ? converter.load(obj[key], initial) : obj[key]
+        }
+        return result
+      },
     }
   }
 }

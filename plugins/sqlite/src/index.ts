@@ -1,6 +1,6 @@
 import SqliteDatabase, { Config } from './database'
 import { Database, Context, Query, makeArray, difference, Schema } from 'koishi'
-import { utils } from './utils'
+import { queryHelper } from './utils'
 import * as Koishi from 'koishi'
 
 export * from './database'
@@ -19,54 +19,54 @@ declare module 'koishi' {
 Database.extend(SqliteDatabase, {
   async drop(name) {
     if (name) {
-      this.run(`DROP TABLE ${utils.escapeId(name)}`)
+      this.run(`DROP TABLE ${queryHelper.escapeId(name)}`)
       delete this.dbAdapters[name]
     } else {
       const tables = Object.keys(Koishi.Tables.config)
       for (const table of tables) {
-        this.run(`DROP TABLE ${utils.escapeId(table)}`)
+        this.run(`DROP TABLE ${queryHelper.escapeId(table)}`)
       }
       this.dbAdapters = Object.create(null)
     }
   },
 
   async get(name, query, modifier) {
-    const filter = utils.parseQuery(Query.resolve(name, query))
+    const filter = queryHelper.parseQuery(Query.resolve(name, query))
     if (filter === '0') return []
     const { fields, limit, offset } = Query.resolveModifier(modifier)
-    let sql = `SELECT ${this._joinKeys(fields)} FROM ${utils.escapeId(name)} WHERE ${filter}`
+    let sql = `SELECT ${this._joinKeys(fields)} FROM ${queryHelper.escapeId(name)} WHERE ${filter}`
     if (limit) sql += ' LIMIT ' + limit
     if (offset) sql += ' OFFSET ' + offset
     const rows = this.all(sql)
     const adapter = this.dbAdapters[name]
-    return rows.map(row => adapter.dbToLocal(row))
+    return rows.map(row => adapter.load(row))
   },
 
   async set(name, query, data) {
-    const filter = utils.parseQuery(Query.resolve(name, query))
+    const filter = queryHelper.parseQuery(Query.resolve(name, query))
     if (filter === '0') return
     const adapter = this.dbAdapters[name]
-    data = adapter.localToDb(data)
+    data = adapter.dump(data)
     const update = Object.keys(data).map((key) => {
-      return `${utils.escapeId(key)} = ${utils.escape(data[key])}`
+      return `${queryHelper.escapeId(key)} = ${queryHelper.escape(data[key])}`
     }).join(', ')
-    this.run(`UPDATE ${utils.escapeId(name)} SET ${update} WHERE ${filter}`)
+    this.run(`UPDATE ${queryHelper.escapeId(name)} SET ${update} WHERE ${filter}`)
   },
 
   async remove(name, query) {
-    const filter = utils.parseQuery(Query.resolve(name, query))
+    const filter = queryHelper.parseQuery(Query.resolve(name, query))
     if (filter === '0') return
-    this.run(`DELETE FROM ${utils.escapeId(name)} WHERE ${filter}`)
+    this.run(`DELETE FROM ${queryHelper.escapeId(name)} WHERE ${filter}`)
   },
 
   async create(name, data) {
     const adapter = this.dbAdapters[name]
     data = { ...Koishi.Tables.create(name), ...data }
-    const dbData = adapter.localToDb(data)
+    const dbData = adapter.dump(data)
     const keys = Object.keys(data)
     try {
       const result = this.run(
-      `INSERT INTO ${utils.escapeId(name)} (${this._joinKeys(keys)}) VALUES (${keys.map(key => utils.escape(dbData[key])).join(', ')})`,
+      `INSERT INTO ${queryHelper.escapeId(name)} (${this._joinKeys(keys)}) VALUES (${keys.map(key => queryHelper.escape(dbData[key])).join(', ')})`,
       )
       const config = Koishi.Tables.config[name]
       if (config?.autoInc) {
@@ -85,11 +85,11 @@ Database.extend(SqliteDatabase, {
     keys = makeArray(keys || primary)
     for (const item of data) {
       const updateKeys = Object.keys(item)
-      const dbItem = adapter.localToDb({ ...fallback, ...item })
-      const update = difference(updateKeys, keys).map((key) => `${utils.escapeId(key)} = ${utils.escape(dbItem[key])}`).join(',')
+      const dbItem = adapter.dump({ ...fallback, ...item })
+      const update = difference(updateKeys, keys).map((key) => `${queryHelper.escapeId(key)} = ${queryHelper.escape(dbItem[key])}`).join(',')
       this.run(
-        `INSERT INTO ${utils.escapeId(name)} (${this._joinKeys(initKeys)})
-        VALUES (${initKeys.map(key => utils.escape(dbItem[key])).join(', ')})
+        `INSERT INTO ${queryHelper.escapeId(name)} (${this._joinKeys(initKeys)})
+        VALUES (${initKeys.map(key => queryHelper.escape(dbItem[key])).join(', ')})
         ON CONFLICT DO UPDATE SET ${update}`,
       )
     }
@@ -99,9 +99,9 @@ Database.extend(SqliteDatabase, {
     const keys = Object.keys(fields)
     if (!keys.length) return {}
 
-    const filter = utils.parseQuery(Query.resolve(name, query))
-    const exprs = keys.map(key => `${utils.parseEval(fields[key])} AS ${utils.escapeId(key)}`).join(', ')
-    const data = await this.get(`SELECT ${exprs} FROM ${utils.escapeId(name)} WHERE ${filter}`)
+    const filter = queryHelper.parseQuery(Query.resolve(name, query))
+    const exprs = keys.map(key => `${queryHelper.parseEval(fields[key])} AS ${queryHelper.escapeId(key)}`).join(', ')
+    const data = await this.get(`SELECT ${exprs} FROM ${queryHelper.escapeId(name)} WHERE ${filter}`)
     return data
   },
 })
