@@ -1,14 +1,16 @@
 import { createPool, Pool, PoolConfig, escape as mysqlEscape, escapeId, format, TypeCast } from 'mysql'
-import { Context, Database, makeArray } from 'koishi'
+import { Context, Database, Logger, makeArray } from 'koishi'
+import { SQLBuilder } from '@koishijs/sql-utils'
 import * as Koishi from 'koishi'
 import { types } from 'util'
-import { logger } from './utils'
 
 declare module 'mysql' {
   interface UntypedFieldInfo {
     packet: UntypedFieldInfo
   }
 }
+
+const logger = new Logger('mysql')
 
 export type TableType = keyof Tables
 
@@ -69,6 +71,7 @@ class MysqlDatabase extends Database {
   public config: Config
 
   mysql = this
+  sql: SQLBuilder
 
   escape: (value: any, table?: TableType, field?: string) => string
   escapeId: (value: string) => string
@@ -114,6 +117,11 @@ class MysqlDatabase extends Database {
       },
       ...config,
     }
+
+    this.sql = new class extends SQLBuilder {
+      escape = escape
+      escapeId = escapeId
+    }()
   }
 
   private columns: Record<string, string[]> = {}

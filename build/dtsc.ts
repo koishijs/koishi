@@ -222,6 +222,8 @@ const targets = [
   'packages/utils',
   'packages/core',
   'packages/koishi',
+  'packages/orm-utils',
+  'packages/sql-utils',
   'plugins/admin',
   'plugins/database/level',
   'plugins/database/memory',

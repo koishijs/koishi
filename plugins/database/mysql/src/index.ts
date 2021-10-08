@@ -2,7 +2,6 @@ import MysqlDatabase, { Config } from './database'
 import { Database, Context, Query, makeArray, difference, Schema } from 'koishi'
 import { OkPacket } from 'mysql'
 import * as Koishi from 'koishi'
-import { utils } from './utils'
 
 export * from './database'
 export default MysqlDatabase
@@ -29,7 +28,7 @@ Database.extend(MysqlDatabase, {
   },
 
   async get(name, query, modifier) {
-    const filter = utils.parseQuery(Query.resolve(name, query))
+    const filter = this.sql.parseQuery(Query.resolve(name, query))
     if (filter === '0') return []
     const { fields, limit, offset } = Query.resolveModifier(modifier)
     const keys = this.joinKeys(this.inferFields(name, fields))
@@ -40,7 +39,7 @@ Database.extend(MysqlDatabase, {
   },
 
   async set(name, query, data) {
-    const filter = utils.parseQuery(Query.resolve(name, query))
+    const filter = this.sql.parseQuery(Query.resolve(name, query))
     if (filter === '0') return
     const keys = Object.keys(data)
     const update = keys.map((key) => {
@@ -50,7 +49,7 @@ Database.extend(MysqlDatabase, {
   },
 
   async remove(name, query) {
-    const filter = utils.parseQuery(Query.resolve(name, query))
+    const filter = this.sql.parseQuery(Query.resolve(name, query))
     if (filter === '0') return
     await this.query('DELETE FROM ?? WHERE ' + filter, [name])
   },
@@ -89,8 +88,8 @@ Database.extend(MysqlDatabase, {
     const keys = Object.keys(fields)
     if (!keys.length) return {}
 
-    const filter = utils.parseQuery(Query.resolve(name, query))
-    const exprs = keys.map(key => `${utils.parseEval(fields[key])} AS ${this.escapeId(key)}`).join(', ')
+    const filter = this.sql.parseQuery(Query.resolve(name, query))
+    const exprs = keys.map(key => `${this.sql.parseEval(fields[key])} AS ${this.escapeId(key)}`).join(', ')
     const [data] = await this.query(`SELECT ${exprs} FROM ${name} WHERE ${filter}`)
     return data
   },
