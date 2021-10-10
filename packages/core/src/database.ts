@@ -45,8 +45,8 @@ export interface Database extends Query.Methods {}
 type UserWithPlatform<T extends string, K extends string> = Pick<User, K & User.Field> & Record<T, string>
 
 export abstract class Database {
-  abstract start(): void | Promise<void>
-  abstract stop(): void | Promise<void>
+  protected abstract start(): void | Promise<void>
+  protected abstract stop(): void | Promise<void>
 
   constructor(public ctx: Context) {
     ctx.on('connect', () => this.start())
@@ -173,15 +173,37 @@ export namespace Modules {
   }
 }
 
-export interface Cache {
-  get<T extends keyof Cache.Tables>(table: T, key: string): Promise<Cache.Tables[T]>
-  set<T extends keyof Cache.Tables>(table: T, key: string, value: Cache.Tables[T]): Promise<void>
+export abstract class Cache {
+  private static kConfig = Symbol('cache.config')
+
+  abstract get<T extends keyof Cache.Tables>(table: T, key: string): Promise<Cache.Tables[T]>
+  abstract set<T extends keyof Cache.Tables>(table: T, key: string, value: Cache.Tables[T]): Promise<void>
+
+  constructor(protected ctx: Context) {}
+
+  get #tables(): Dict<Cache.TableConfig> {
+    return this.ctx.app[Cache.kConfig] ||= {}
+  }
+
+  table<T extends keyof Cache.Tables>(table: T, config?: Cache.TableConfig) {
+    return config ? this.#tables[table] = config : this.#tables[table]
+  }
 }
 
 export namespace Cache {
+  export interface TableConfig {
+    maxAge?: number
+    maxSize?: number
+  }
+
   export interface Tables {
     channel: utils.Observed<Partial<Channel>>
     user: utils.Observed<Partial<User>>
     config: any
+  }
+
+  export class Stub extends Cache {
+    async get() {}
+    async set() {}
   }
 }

@@ -19,6 +19,7 @@ const categories = [
   'plugins',
   'plugins/adapter',
   'plugins/assets',
+  'plugins/cache',
   'plugins/database',
   'community',
 ]

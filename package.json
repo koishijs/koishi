@@ -10,6 +10,7 @@
     "packages/*",
     "plugins/adapter/*",
     "plugins/assets/*",
+    "plugins/cache/*",
     "plugins/database/*",
     "plugins/*"
   ],
