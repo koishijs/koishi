@@ -1,6 +1,6 @@
 {
-  "name": "@koishijs/plugin-cache-lru",
-  "description": "LRU cache support for Koishi",
+  "name": "@koishijs/plugin-cache-redis",
+  "description": "Redis cache support for Koishi",
   "version": "4.0.0-alpha.7",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
