@@ -176,8 +176,9 @@ export namespace Modules {
 export abstract class Cache {
   private static kConfig = Symbol('cache.config')
 
+  abstract clear<T extends keyof Cache.Tables>(table: T): Promise<void>
   abstract get<T extends keyof Cache.Tables>(table: T, key: string): Promise<Cache.Tables[T]>
-  abstract set<T extends keyof Cache.Tables>(table: T, key: string, value: Cache.Tables[T]): Promise<void>
+  abstract set<T extends keyof Cache.Tables>(table: T, key: string, value: Cache.Tables[T], maxAge?: number): Promise<void>
 
   constructor(protected ctx: Context) {}
 
@@ -203,6 +204,7 @@ export namespace Cache {
   }
 
   export class Stub extends Cache {
+    async clear() {}
     async get() {}
     async set() {}
   }

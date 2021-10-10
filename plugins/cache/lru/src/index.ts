@@ -18,14 +18,18 @@ export default class LruCache extends Cache {
     })
   }
 
+  async clear(table: keyof Cache.Tables) {
+    delete this.#store[table]
+  }
+
   async get(table: keyof Cache.Tables, key: string) {
     this.prepare(table)
     return this.#store[table]?.get(key)
   }
 
-  async set(table: keyof Cache.Tables, key: string, value: any) {
+  async set(table: keyof Cache.Tables, key: string, value: any, maxAge?: number) {
     this.prepare(table)
-    this.#store[table]?.set(key, value)
+    this.#store[table]?.set(key, value, maxAge)
   }
 }
 
