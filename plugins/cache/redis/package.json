@@ -1,0 +1,40 @@
+{
+  "name": "@koishijs/plugin-cache-lru",
+  "description": "LRU cache support for Koishi",
+  "version": "4.0.0-alpha.7",
+  "main": "lib/index.js",
+  "typings": "lib/index.d.ts",
+  "files": [
+    "lib"
+  ],
+  "author": "Nanahira <nanahira@momobako.com>",
+  "license": "MIT",
+  "scripts": {
+    "lint": "eslint src --ext .ts"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/koishijs/koishi.git"
+  },
+  "bugs": {
+    "url": "https://github.com/koishijs/koishi/issues"
+  },
+  "homepage": "https://koishi.js.org/api/cache/redis.html",
+  "keywords": [
+    "bot",
+    "qqbot",
+    "cqhttp",
+    "coolq",
+    "chatbot",
+    "koishi",
+    "cache",
+    "lru"
+  ],
+  "peerDependencies": {
+    "koishi": "^4.0.0-alpha.9"
+  },
+  "dependencies": {
+    "generic-pool": "^3.8.2",
+    "redis": "^4.0.0-rc.2"
+  }
+}
