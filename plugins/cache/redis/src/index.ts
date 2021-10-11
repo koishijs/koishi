@@ -61,8 +61,6 @@ export default class RedisCache extends Cache {
         const record = await client.get(redisKey)
         if (record != null) {
           return this.decode(record)
-        } else {
-          return
         }
       } catch (e) {
         this.logger.warn(`Failed to get ${redisKey} from redis: ${e.toString()}`)
