@@ -89,7 +89,6 @@ export default class RedisCache extends Cache {
         await command.exec()
       } catch (e) {
         this.logger.warn(`Failed to set ${redisKey} to redis: ${e.toString()}`)
-        return undefined
       }
     })
   }
