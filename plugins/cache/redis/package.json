@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-cache-redis",
   "description": "Redis cache support for Koishi",
-  "version": "4.0.0-alpha.7",
+  "version": "1.0.0-alpha.0",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -31,7 +31,7 @@
     "coolq",
     "chatbot",
     "koishi",
-    "cache",
+    "service:cache",
     "lru"
   ],
   "peerDependencies": {

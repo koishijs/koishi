@@ -21,7 +21,7 @@ export default class RedisCache extends Cache {
   }
 
   private getRedisKey(table: keyof Cache.Tables, key: string) {
-    return `${this.config.keyPrefix}${table}:${key}`
+    return `${this.config.prefix}${table}:${key}`
   }
 
   private encode(data: any): string {
@@ -38,17 +38,17 @@ export default class RedisCache extends Cache {
       client = await this.pool.acquire()
     } catch (e) {
       this.logger.warn(`Failed to create Redis connection: ${e.toString()}`)
-      return undefined
+      return
     }
     if (!client) {
       this.logger.warn(`Failed to create Redis connection: Got empty client`)
-      return undefined
+      return
     }
     try {
       return await action(client)
     } catch (e) {
       this.logger.warn(`Client action failed: ${e.toString()}`)
-      return undefined
+      return
     } finally {
       await this.pool.release(client)
     }
@@ -59,14 +59,13 @@ export default class RedisCache extends Cache {
     return this.doInPool(async (client) => {
       try {
         const record = await client.get(redisKey)
-        if (record) {
+        if (record != null) {
           return this.decode(record)
         } else {
-          return undefined
+          return
         }
       } catch (e) {
         this.logger.warn(`Failed to get ${redisKey} from redis: ${e.toString()}`)
-        return undefined
       }
     })
   }
@@ -113,12 +112,12 @@ export default class RedisCache extends Cache {
 export const name = 'cache-redis'
 
 export interface Config extends RedisClientOptions<{}, {}> {
-  keyPrefix?: string
+  prefix?: string
 }
 
 export const schema: Schema<Config> = Schema.object({
   url: Schema.string('Redis URL').default('redis://localhost:6379'),
-  keyPrefix: Schema.string('Redis 数据 Key 的前缀').default('koishi:'),
+  prefix: Schema.string('Redis 数据 Key 的前缀').default('koishi:'),
 })
 
 export function apply(ctx: Context, config?: Config) {
