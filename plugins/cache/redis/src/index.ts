@@ -59,9 +59,10 @@ export default class RedisCache extends Cache {
     return this.doInPool(async (client) => {
       try {
         const record = await client.get(redisKey)
-        if (record != null) {
-          return this.decode(record)
+        if (record == null) {
+          return
         }
+        return this.decode(record)
       } catch (e) {
         this.logger.warn(`Failed to get ${redisKey} from redis: ${e.toString()}`)
       }
