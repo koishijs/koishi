@@ -93,7 +93,7 @@ export namespace Adapter {
     const adapterSchema = Schema.merge([
       constructor.schema,
       Schema.adapt(
-        Schema.object({ bots: Schema.array(botSchema).hidden() }),
+        Schema.object({ bots: Schema.array(botSchema).required().hidden() }),
         botSchema,
         config => ({ bots: [config] }),
       ),
@@ -102,8 +102,7 @@ export namespace Adapter {
     function apply(ctx: Context, config: PluginConfig = {}) {
       config = Schema.validate(config, adapterSchema)
       configMap[platform] = config
-      const bots = config.bots || [config]
-      for (const options of bots) {
+      for (const options of config.bots) {
         const bot = ctx.bots.create(platform, options)
         bot.start().then((bot) => {
           logger.success('logged in to %s as %c (%s)', bot.platform, bot.username, bot.selfId)
@@ -113,10 +112,10 @@ export namespace Adapter {
       }
     }
 
-    return { name: platform, schema: adapterSchema, apply }
+    return { name: 'adapter-' + platform, schema: adapterSchema, apply }
   }
 
-  export class Manager extends Array<Bot> {
+  export class BotList extends Array<Bot> {
     adapters: Dict<Adapter> = {}
 
     constructor(private app: App) {

@@ -55,18 +55,18 @@ export function capitalize(source: string) {
 }
 
 // eslint-disable-next-line no-new-func
-export const interpolate = new Function('template', 'context', `
-  return template.replace(/\\{\\{[\\s\\S]+?\\}\\}/g, (sub) => {
-    const expr = sub.substring(2, sub.length - 2)
+export const interpolate = new Function('template', 'context', 'pattern', `
+  return template.replace(pattern || /\\{\\{([\\s\\S]+?)\\}\\}/g, (_, expr) => {
     try {
       with (context) {
-        return eval(expr)
+        const result = eval(expr)
+        return result === undefined ? '' : result
       }
     } catch {
       return ''
     }
   })
-`) as ((template: string, context: object) => string)
+`) as ((template: string, context: object, pattern?: RegExp) => string)
 
 export function escapeRegExp(source: string) {
   return source

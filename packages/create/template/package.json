@@ -1,12 +1,17 @@
 {
+  "name": "template",
   "version": "1.0.0",
   "private": true,
   "scripts": {
     "start": "koishi start"
   },
   "dependencies": {
-    "@koishijs/cli": "4.0.0-alpha.1",
-    "@koishijs/plugin-status": "5.0.0-alpha.3",
-    "koishi": "4.0.0-alpha.4"
+    "@koishijs/cli": "^4.0.0-alpha.5",
+    "@koishijs/plugin-adapter-discord": "^2.0.0-alpha.6",
+    "@koishijs/plugin-adapter-onebot": "^4.0.0-alpha.8",
+    "@koishijs/plugin-adapter-telegram": "^2.0.0-alpha.6",
+    "@koishijs/plugin-common": "^5.0.0-alpha.9",
+    "@koishijs/plugin-status": "^5.0.0-alpha.8",
+    "koishi": "^4.0.0-alpha.9"
   }
 }

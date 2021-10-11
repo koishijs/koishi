@@ -1,25 +1,25 @@
 <template>
-  <k-card class="page-bots frameless">
-    <div class="bot-table" v-if="profile.bots.length">
-      <div class="add" :class="{ active: current === -1 }" @click="current = -1">添加机器人</div>
-      <div class="bots">
-        <bot-view
+  <k-card-aside class="page-bots">
+    <template #aside v-if="profile.bots.length || current === -1">
+      <el-scrollbar>
+        <div class="add" :class="{ active: current === -1 }" @click="current = -1">添加机器人</div>
+        <div class="bots">
+          <bot-view
             v-for="(bot, index) in profile.bots" :data="bot"
             :class="{ active: current === index }" @click="current = index"/>
-      </div>
-    </div>
+        </div>
+      </el-scrollbar>
+    </template>
     <template v-if="current === null">
       <el-empty v-if="profile.bots.length" description="当前未选择机器人"></el-empty>
       <el-empty v-else description="当前没有配置任何机器人">
-        <k-button solid>添加机器人</k-button>
+        <k-button solid @click="current = -1">添加机器人</k-button>
       </el-empty>
     </template>
-    <el-scrollbar v-else class="bot-profile">
-      <div class="content">
-        <add-bot v-if="current === -1"></add-bot>
-      </div>
-    </el-scrollbar>
-  </k-card>
+    <k-content v-else class="bot-profile">
+      <add-bot v-if="current === -1"></add-bot>
+    </k-content>
+  </k-card-aside>
 </template>
 
 <script setup lang="ts">
@@ -39,18 +39,8 @@ const current = ref<number>(null)
 @import '~/variables';
 
 section.page-bots {
-  height: calc(100vh - 4rem);
-
-  > div.k-card-body {
-    height: 100%;
-    display: grid;
-    grid-template-columns: 20rem 1fr;
-  }
-
-  div.bot-table {
-    overflow-y: auto;
-    border-right: 1px solid var(--border);
-
+  > aside {
+    width: 20rem;
     .add {
       font-size: 1.15rem;
       text-align: center;
@@ -58,18 +48,6 @@ section.page-bots {
       font-weight: bold;
       border-bottom: 1px solid var(--border);
       @include button-like;
-    }
-  }
-
-  div.bot-profile {
-    .el-empty {
-      height: 100%;
-    }
-
-    .content {
-      margin: auto;
-      max-width: 50rem;
-      padding: 3rem 3rem 1rem;
     }
   }
 }

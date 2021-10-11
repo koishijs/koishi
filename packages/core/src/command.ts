@@ -184,8 +184,7 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
 
   match(session: Session) {
     const { authority = Infinity } = (session.user || {}) as User
-    const { disable = [] } = (session.channel || {}) as Channel
-    return this.context.match(session) && this.config.authority <= authority && !disable.includes(this.name)
+    return this.context.match(session) && this.config.authority <= authority
   }
 
   getConfig<K extends keyof Command.Config>(key: K, session: Session): Exclude<Command.Config[K], (user: User) => any> {
@@ -279,8 +278,6 @@ export function getUsageName(command: Command) {
 
 export type ValidationField = 'authority' | 'usage' | 'timers'
 
-Command.channelFields(['disable'])
-
 Command.userFields(({ tokens, command, options = {} }, fields) => {
   if (!command) return
   const { maxUsage, minInterval, authority } = command.config
@@ -302,15 +299,6 @@ Command.userFields(({ tokens, command, options = {} }, fields) => {
 })
 
 export default function apply(ctx: Context) {
-  // check channel
-  ctx.before('command', ({ session, command }: Argv<never, 'disable'>) => {
-    if (!session.channel) return
-    while (command) {
-      if (session.channel.disable.includes(command.name)) return ''
-      command = command.parent as any
-    }
-  })
-
   // check user
   ctx.before('command', (argv: Argv<ValidationField>) => {
     const { session, options, command } = argv

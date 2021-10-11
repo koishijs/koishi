@@ -1,5 +1,9 @@
 @import '@vuepress/plugin-palette/palette';
 
+html {
+  background-color: var(--bg0);
+}
+
 #app {
   .navbar .logo {
     height: 2rem;

@@ -10,7 +10,7 @@ export * from './main'
 
 declare module 'koishi' {
   namespace Context {
-    interface Delegates {
+    interface Services {
       worker: EvalWorker
     }
   }
@@ -25,7 +25,7 @@ declare module 'koishi' {
     _isEval: boolean
   }
 
-  interface Module {
+  interface Modules {
     eval: typeof import('.')
   }
 
@@ -82,7 +82,7 @@ export const schema: Schema<Config> = Schema.object({
   }, '资源限制')
 })
 
-Context.delegate('worker')
+Context.service('worker')
 
 export function apply(ctx: Context, config: Config = {}) {
   const { prefix, authority } = config = { ...defaultConfig, ...config }
@@ -185,7 +185,7 @@ export function apply(ctx: Context, config: Config = {}) {
 
 function addon(ctx: Context, config: EvalConfig) {
   const logger = ctx.logger('eval:addons')
-  const root = config.root = resolve(process.cwd(), config.root)
+  const root = config.root = resolve(ctx.app.options.baseDir, config.root)
   config.dataKeys.push('addonNames', 'root')
 
   const git = Git(root)

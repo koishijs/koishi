@@ -19,7 +19,7 @@
           <span>{{ data.currentRate[1] }}/min</span>
         </span>
       </div>
-      <div v-if="stats" class="recent-frequency">
+      <!-- <div v-if="stats" class="recent-frequency">
         <span title="发送"
               style="margin-right: 5px">
           <i class="fas fa-paper-plane"/>
@@ -30,7 +30,7 @@
              style="transform: rotateX(180deg)"/>
           {{stats.botSend[`${data.platform}:${data.selfId}`] || 0}}/min
         </span>
-      </div>
+      </div> -->
     </div>
   </div>
 </template>

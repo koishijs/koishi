@@ -1,4 +1,4 @@
-import { inspect, InspectOptions, format } from 'util'
+import { inspect, format } from 'util'
 import { stderr } from 'supports-color'
 import { Time } from '../time'
 import { Dict } from '../misc'
@@ -23,8 +23,9 @@ export namespace Logger {
   export type Type = 'success' | 'error' | 'info' | 'warn' | 'debug'
 
   export interface Target {
+    colors?: number
     showDiff?: boolean
-    showTime: string
+    showTime?: string
     print(text: string): void
   }
 }
@@ -47,33 +48,25 @@ export class Logger {
   static instances: Dict<Logger> = {}
 
   static targets: Logger.Target[] = [{
-    showDiff: false,
-    showTime: '',
+    colors: stderr && stderr.level,
     print(text: string) {
       process.stderr.write(text + '\n')
     },
   }]
 
-  static formatters: Dict<(this: Logger, value: any) => string> = {
-    c: Logger.prototype.color,
-    C: value => Logger.color(15, value, ';1'),
-    o: value => inspect(value, Logger.options).replace(/\s*\n\s*/g, ' '),
+  static formatters: Dict<(value: any, target: Logger.Target, logger: Logger) => string> = {
+    c: (value, target, logger) => Logger.color(target, logger.code, value),
+    C: (value, target) => Logger.color(target, 15, value, ';1'),
+    o: (value, target) => inspect(value, { colors: !!target.colors }).replace(/\s*\n\s*/g, ' '),
   }
 
   static levels: Logger.LevelConfig = {
     base: 2,
   }
 
-  static options: InspectOptions = {
-    colors: !!stderr,
-  }
-
-  private code: number
-  private displayName: string
-
-  static color(code: number, value: any, decoration = '') {
-    if (!stderr || !Logger.options.colors) return '' + value
-    return `\u001b[3${code < 8 ? code : '8;5;' + code}${stderr.has256 ? decoration : ''}m${value}\u001b[0m`
+  static color(target: Logger.Target, code: number, value: any, decoration = '') {
+    if (!target.colors) return '' + value
+    return `\u001b[3${code < 8 ? code : '8;5;' + code}${target.colors >= 2 ? decoration : ''}m${value}\u001b[0m`
   }
 
   static code(name: string) {
@@ -85,12 +78,13 @@ export class Logger {
     return Logger.colors[Math.abs(hash) % Logger.colors.length]
   }
 
+  private code: number
+
   constructor(public name: string) {
     if (name in Logger.instances) return Logger.instances[name]
 
     Logger.instances[name] = this
     this.code = Logger.code(name)
-    this.displayName = this.color(name, ';1')
     this.createMethod('success', '[S] ', Logger.SUCCESS)
     this.createMethod('error', '[E] ', Logger.ERROR)
     this.createMethod('info', '[I] ', Logger.INFO)
@@ -112,10 +106,10 @@ export class Logger {
           indent += target.showTime.length + 1
           output += Time.template(target.showTime + ' ')
         }
-        output += prefix + this.displayName + ' ' + this.format(indent, ...args)
+        output += prefix + this.color(target, this.name, ';1') + ' ' + this.format(target, indent, ...args)
         if (target.showDiff) {
           const diff = Logger.timestamp && now - Logger.timestamp
-          output += this.color(' +' + Time.formatTimeShort(diff))
+          output += this.color(target, ' +' + Time.formatTimeShort(diff))
         }
         target.print(output)
       }
@@ -123,7 +117,11 @@ export class Logger {
     }
   }
 
-  private format(indent: number, ...args: any[]) {
+  private color(target: Logger.Target, value: any, decoration = '') {
+    return Logger.color(target, this.code, value, decoration)
+  }
+
+  private format(target: Logger.Target, indent: number, ...args: any[]) {
     if (args[0] instanceof Error) {
       args[0] = args[0].stack || args[0].message
     } else if (typeof args[0] !== 'string') {
@@ -136,7 +134,7 @@ export class Logger {
       index += 1
       const formatter = Logger.formatters[format]
       if (typeof formatter === 'function') {
-        match = formatter.call(this, args[index])
+        match = formatter(args[index], target, this)
         args.splice(index, 1)
         index -= 1
       }
@@ -144,10 +142,6 @@ export class Logger {
     }).replace(/\n/g, '\n' + ' '.repeat(indent))
 
     return format(...args)
-  }
-
-  private color(value: any, decoration = '') {
-    return Logger.color(this.code, value, decoration)
   }
 
   get level() {

@@ -61,6 +61,7 @@ export function prepare(loader: Loader, config: App.Config.Logger = {}) {
 
     createLogFile()
     Logger.targets.push({
+      colors: 3,
       showTime: 'yyyy-MM-dd hh:mm:ss',
       print(text) {
         if (!text.startsWith(date)) {

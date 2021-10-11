@@ -1,7 +1,7 @@
 import * as utils from '@koishijs/utils'
 import { MaybeArray, Dict, Get } from '@koishijs/utils'
 import { Query } from './orm'
-import { App } from './app'
+import { Context } from './context'
 
 export interface User {
   id: string
@@ -27,7 +27,6 @@ export interface Channel {
   platform: string
   flag: number
   assignee: string
-  disable: string[]
 }
 
 export namespace Channel {
@@ -46,12 +45,12 @@ export interface Database extends Query.Methods {}
 type UserWithPlatform<T extends string, K extends string> = Pick<User, K & User.Field> & Record<T, string>
 
 export abstract class Database {
-  abstract start(): void | Promise<void>
-  abstract stop(): void | Promise<void>
+  protected abstract start(): void | Promise<void>
+  protected abstract stop(): void | Promise<void>
 
-  constructor(public app: App) {
-    app.on('connect', () => this.start())
-    app.on('disconnect', () => this.stop())
+  constructor(public ctx: Context) {
+    ctx.on('connect', () => this.start())
+    ctx.on('disconnect', () => this.stop())
   }
 
   async transaction<T>(transactionFun: (_this: this) => Promise<T>): Promise<T> {
@@ -81,7 +80,7 @@ export abstract class Database {
   }
 
   getAssignedChannels<K extends Channel.Field>(fields?: K[], assignMap?: Dict<string[]>): Promise<Pick<Channel, K>[]>
-  async getAssignedChannels(fields?: Channel.Field[], assignMap: Dict<string[]> = this.app.getSelfIds()) {
+  async getAssignedChannels(fields?: Channel.Field[], assignMap: Dict<string[]> = this.ctx.getSelfIds()) {
     return this.get('channel', {
       $or: Object.entries(assignMap).map(([platform, assignee]) => ({ platform, assignee })),
     }, fields)
@@ -105,10 +104,15 @@ export namespace Database {
   type ExtensionMethods<T> = Methods<Database, T extends Constructor<infer I> ? I : never>
   type Extension<T> = ((Database: T) => void) | ExtensionMethods<T>
 
-  export function extend<K extends keyof Module>(module: K, extension: Extension<Get<Module[K], 'default'>>): void
+  export function extend<K extends keyof Modules>(module: K, extension: Extension<Get<Modules[K], 'default'>>): void
   export function extend<T extends Constructor<unknown>>(module: T, extension: Extension<T>): void
   export function extend(module: any, extension: any) {
-    const Database = typeof module === 'string' ? Module.require(module).default : module
+    let Database: any
+    try {
+      Database = typeof module === 'string' ? Modules.require(module).default : module
+    } catch {
+      return
+    }
     if (!Database) return
 
     if (typeof extension === 'function') {
@@ -119,9 +123,9 @@ export namespace Database {
   }
 }
 
-export interface Module {}
+export interface Modules {}
 
-export namespace Module {
+export namespace Modules {
   const cache: Dict = {}
 
   export function define(name: string, value: any) {
@@ -173,29 +177,39 @@ export namespace Module {
   }
 }
 
-export interface Assets {
-  types: readonly Assets.Type[]
-  upload(url: string, file: string): Promise<string>
-  stats(): Promise<Assets.Stats>
-}
+export abstract class Cache {
+  private static kConfig = Symbol('cache.config')
 
-export namespace Assets {
-  export type Type = 'image' | 'audio' | 'video' | 'file'
+  abstract clear<T extends keyof Cache.Tables>(table: T): Promise<void>
+  abstract get<T extends keyof Cache.Tables>(table: T, key: string): Promise<Cache.Tables[T]>
+  abstract set<T extends keyof Cache.Tables>(table: T, key: string, value: Cache.Tables[T], maxAge?: number): Promise<void>
 
-  export interface Stats {
-    assetCount?: number
-    assetSize?: number
+  constructor(protected ctx: Context) {}
+
+  get #tables(): Dict<Cache.TableConfig> {
+    return this.ctx.app[Cache.kConfig] ||= {}
+  }
+
+  table<T extends keyof Cache.Tables>(table: T, config?: Cache.TableConfig) {
+    return config ? this.#tables[table] = config : this.#tables[table]
   }
 }
 
-export interface Cache {
-  get<T extends keyof Cache.Tables>(table: T, key: string): Cache.Tables[T] | Promise<Cache.Tables[T]>
-  set<T extends keyof Cache.Tables>(table: T, key: string, value: Cache.Tables[T]): void | Promise<void>
-}
-
 export namespace Cache {
+  export interface TableConfig {
+    maxAge?: number
+    maxSize?: number
+  }
+
   export interface Tables {
     channel: utils.Observed<Partial<Channel>>
     user: utils.Observed<Partial<User>>
+    config: any
+  }
+
+  export class Stub extends Cache {
+    async clear() {}
+    async get() {}
+    async set() {}
   }
 }

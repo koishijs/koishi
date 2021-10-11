@@ -17,11 +17,11 @@ sidebarDepth: 2
 ::: code-group manager
 ```npm
 # 我们以 mysql 数据库为例
-npm i @koishijs/plugin-mysql -D
+npm i @koishijs/plugin-database-mysql -D
 ```
 ```yarn
 # 我们以 mysql 数据库为例
-yarn add @koishijs/plugin-mysql -D
+yarn add @koishijs/plugin-database-mysql -D
 ```
 :::
 
@@ -47,7 +47,7 @@ const user = await ctx.database.getUser(platform, id)
 await ctx.database.setChannel(platform, id, { assignee: '123456789' })
 ```
 
-你可以在后面的 API 文档中看到全部内置的 [数据库方法](../api/database.md)。
+你可以在后面的 API 文档中看到全部内置的 [数据库方法](../../api/core/database.md)。
 
 ## 调用数据库
 
@@ -100,7 +100,7 @@ await ctx.database.get('schedule', {
 })
 ```
 
-> 你可以在 [这里](../../api/database.md#db-get-table) 看到更多相关的 API。
+> 你可以在 [这里](../../api/core/database.md#db-get-table) 看到更多相关的 API。
 
 ### 删除数据
 
@@ -262,7 +262,7 @@ Tables.extend('foo', {}, {
 
 ```ts
 // TypeScript 用户需要手动引入模块，否则将产生类型错误
-import {} from '@koishijs/plugin-mysql'
+import {} from '@koishijs/plugin-database-mysql'
 
 // 直接发送 SQL 语句
 ctx.database.mysql.query('select * from user')

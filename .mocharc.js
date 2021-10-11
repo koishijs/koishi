@@ -5,14 +5,20 @@ const specs = [
   'packages/utils/tests/*.spec.ts',
   'packages/dev-utils/tests/*.spec.ts',
   'packages/test-utils/tests/*.spec.ts',
+  'plugins/admin/tests/*.spec.ts',
   'plugins/common/tests/*.spec.ts',
-  'plugins/database/tests/*.spec.ts',
+  'plugins/database/level/tests/*.spec.ts',
+  'plugins/database/memory/tests/*.spec.ts',
+  'plugins/database/mongo/tests/*.spec.ts',
+  'plugins/database/mysql/tests/*.spec.ts',
+  'plugins/database/sqlite/tests/*.spec.ts',
   'plugins/eval/tests/*.spec.ts',
+  'plugins/forward/tests/*.spec.ts',
   'plugins/github/tests/*.spec.ts',
-  'plugins/mongo/tests/*.spec.ts',
-  'plugins/mysql/tests/*.spec.ts',
+  'plugins/repeater/tests/*.spec.ts',
   'plugins/schedule/tests/*.spec.ts',
   'plugins/teach/tests/*.spec.ts',
+  'plugins/verifier/tests/*.spec.ts',
 ]
 
 const libraries = {}

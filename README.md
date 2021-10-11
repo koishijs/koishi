@@ -67,25 +67,25 @@ Koishi 原生地支持了多账户与跨平台，同时为这些机器人之间�
 
 Koishi v3 的另一大亮点就是拥有官方的网页控制台插件。这个控制台包含了非常多的功能：查看机器人运行状态、收集并展示统计数据、管理你的插件和依赖……
 
-这个控制台本身的也提供了接口，允许其他插件来新增页面。当你安装了另一个插件 koishi-plugin-chat 之后，你甚至可以利用控制台，直接使用机器人的号进行聊天！
+这个控制台本身的也提供了接口，允许其他插件来新增页面。当你安装了另一个插件 @koishijs/plugin-chat 之后，你甚至可以利用控制台，直接使用机器人的号进行聊天！
 
 ## 官方生态
 
 ### 平台支持
 
-- koishi-adapter-onebot: [OneBot](https://github.com/howmanybots/onebot) 协议支持，可用于 QQ
-- koishi-adapter-discord: [Discord](https://discord.com/) 平台支持
-- koishi-adapter-telegram: [Telegram](https://telegram.org/) 平台支持
-- koishi-adapter-kaiheila: [开黑啦](https://kaiheila.cn/) 平台支持
+- @koishijs/plugin-onebot: [OneBot](https://github.com/howmanybots/onebot) 协议支持，可用于 QQ
+- @koishijs/plugin-discord: [Discord](https://discord.com/) 平台支持
+- @koishijs/plugin-telegram: [Telegram](https://telegram.org/) 平台支持
+- @koishijs/plugin-kaiheila: [开黑啦](https://kaiheila.cn/) 平台支持
 
 ### 数据库支持
 
-- koishi-plugin-mongo: MongoDB 支持
-- koishi-plugin-mysql: MySQL 5.7 / MariaDB 10.5 支持
+- @koishijs/plugin-database-mongo: MongoDB 支持
+- @koishijs/plugin-database-mysql: MySQL 5.7 / MariaDB 10.5 支持
 
 ### 核心插件
 
-[koishi-plugin-common](https://koishi.js.org/plugins/common/) 是一个插件合集，包含了一些最常用功能：
+[@koishijs/plugin-common](https://koishi.js.org/plugins/common/) 是一个插件合集，包含了一些最常用功能：
 
 - 发送和广播消息
 - 管理用户和频道数据
@@ -94,20 +94,20 @@ Koishi v3 的另一大亮点就是拥有官方的网页控制台插件。这个�
 - 输出聊天记录到控制台
 - 定制复读，处理申请，自定义回复……
 
-[koishi-plugin-eval](https://koishi.js.org/plugins/eval/) 允许用户直接使用机器人执行脚本。它利用了 Node.js 的 [vm](https://nodejs.org/api/vm.html) 和 [worker_threads](https://nodejs.org/api/worker_threads.html) 模块，在保护执行安全的前提下能够获得较快的响应速度。同时，插件还提供了一些内置的 API 供用户调用，并允许用户编写自己的模块并永久保存，甚至可以动态定义新的指令。
+[@koishijs/plugin-eval](https://koishi.js.org/plugins/eval/) 允许用户直接使用机器人执行脚本。它利用了 Node.js 的 [vm](https://nodejs.org/api/vm.html) 和 [worker_threads](https://nodejs.org/api/worker_threads.html) 模块，在保护执行安全的前提下能够获得较快的响应速度。同时，插件还提供了一些内置的 API 供用户调用，并允许用户编写自己的模块并永久保存，甚至可以动态定义新的指令。
 
-[koishi-plugin-teach](https://koishi.js.org/plugins/teach/) 允许用户在运行时编写问答并由机器人触发。每个人都可以随时随地修改机器人的行为，大大提高了互动的灵活性。支持概率控制、称呼匹配、指令插值、权限管理、频道过滤、正则匹配、后继问答等多种功能，足以应对绝大部分使用场景。
+[@koishijs/plugin-teach](https://koishi.js.org/plugins/teach/) 允许用户在运行时编写问答并由机器人触发。每个人都可以随时随地修改机器人的行为，大大提高了互动的灵活性。支持概率控制、称呼匹配、指令插值、权限管理、频道过滤、正则匹配、后继问答等多种功能，足以应对绝大部分使用场景。
 
 ### 其他官方插件
 
-- [koishi-plugin-assets](https://koishi.js.org/plugins/other/assets.html) / 资源转存
-- [koishi-plugin-chess](https://koishi.js.org/plugins/other/chess.html) / 棋类游戏
-- [koishi-plugin-github](https://koishi.js.org/plugins/other/github.html) / 接入 GitHub
-- [koishi-plugin-image-search](https://koishi.js.org/plugins/other/image-search.html) / 图片搜索
-- [koishi-plugin-puppeteer](https://koishi.js.org/plugins/other/puppeteer.html) / 网页截图
-- [koishi-plugin-schedule](https://koishi.js.org/plugins/other/schedule.html) / 计划任务
-- [koishi-plugin-tools](https://koishi.js.org/plugins/other/tools.html) / 实用工具
-- [koishi-plugin-webui](https://koishi.js.org/plugins/other/webui.html) / 网页控制台
+- [@koishijs/plugin-assets](https://koishi.js.org/plugins/other/assets.html) / 资源转存
+- [@koishijs/plugin-chess](https://koishi.js.org/plugins/other/chess.html) / 棋类游戏
+- [@koishijs/plugin-github](https://koishi.js.org/plugins/other/github.html) / 接入 GitHub
+- [@koishijs/plugin-image-search](https://koishi.js.org/plugins/other/image-search.html) / 图片搜索
+- [@koishijs/plugin-puppeteer](https://koishi.js.org/plugins/other/puppeteer.html) / 网页截图
+- [@koishijs/plugin-schedule](https://koishi.js.org/plugins/other/schedule.html) / 计划任务
+- [@koishijs/plugin-tools](https://koishi.js.org/plugins/other/tools.html) / 实用工具
+- [@koishijs/plugin-webui](https://koishi.js.org/plugins/other/webui.html) / 网页控制台
 
 ## 应用案例
 

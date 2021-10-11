@@ -1,23 +1,25 @@
 import { install, InstalledClock } from '@sinonjs/fake-timers'
 import { expect } from 'chai'
 import { Logger } from 'koishi'
-import { Writable } from 'stream'
 
 describe('Logger API', () => {
   let logger: Logger
   let data: string
   let clock: InstalledClock
-  const { colors } = Logger.options
 
   before(() => {
-    Logger.showDiff = true
-    Logger.options.colors = false
     clock = install({ now: Date.now() })
+
+    Logger.targets.push({
+      showDiff: true,
+      print(text) {
+        data += text + '\n'
+      },
+    })
   })
 
   after(() => {
-    Logger.showDiff = false
-    Logger.options.colors = colors
+    Logger.targets.pop()
     clock.uninstall()
   })
 
@@ -29,9 +31,6 @@ describe('Logger API', () => {
     logger = new Logger('test').extend('logger')
     expect(logger.name).to.equal('test:logger')
     expect(logger).to.equal(new Logger('test:logger'))
-    Logger.print = (text) => {
-      data += text + '\n'
-    }
   })
 
   it('format error', () => {

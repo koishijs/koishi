@@ -1,0 +1,40 @@
+{
+  "name": "@koishijs/plugin-adapter-onebot",
+  "description": "CQHTTP adapter for Koishi",
+  "version": "4.0.0-alpha.8",
+  "main": "lib/index.js",
+  "typings": "lib/index.d.ts",
+  "files": [
+    "lib"
+  ],
+  "author": "Shigma <1700011071@pku.edu.cn>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/koishijs/koishi.git"
+  },
+  "bugs": {
+    "url": "https://github.com/koishijs/koishi/issues"
+  },
+  "homepage": "https://koishi.js.org/api/adapter/onebot.html",
+  "keywords": [
+    "bot",
+    "qqbot",
+    "cqhttp",
+    "onebot",
+    "coolq",
+    "chatbot",
+    "koishi"
+  ],
+  "peerDependencies": {
+    "koishi": "^4.0.0-alpha.9"
+  },
+  "devDependencies": {
+    "@types/ws": "^7.4.7",
+    "@koishijs/test-utils": "^8.0.0-alpha.8"
+  },
+  "dependencies": {
+    "qface": "^1.2.0",
+    "ws": "^8.2.1"
+  }
+}

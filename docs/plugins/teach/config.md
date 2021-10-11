@@ -39,7 +39,7 @@ interface AuthorityConfig {
 ## nickname
 
 - 类型: `string | string[]`
-- 默认值: [`app.options.nickname`](../../api/app.md#options-nickname)
+- 默认值: [`app.options.nickname`](../../api/core/app.md#options-nickname)
 
 问答中使用的昵称。参见 [**称呼匹配**](./prob.md#称呼匹配)。
 

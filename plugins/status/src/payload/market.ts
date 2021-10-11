@@ -25,13 +25,10 @@ interface PackageLocal extends PackageJson {
 }
 
 interface PackageRemote extends PackageJson {
+  deprecated?: string
   dist: {
     unpackedSize: number
   }
-}
-
-interface SearchResult {
-  results: any[]
 }
 
 interface Registry extends PackageBase {
@@ -138,9 +135,17 @@ class Market implements StatusServer.DataSource {
     this.ctx.webui.broadcast('market', Object.values(this.dataCache))
   }
 
+  private getRegistry(name: string) {
+    return this.ctx.http.get<Registry>(`https://registry.npmjs.org/${name}`)
+  }
+
+  private getSuggestions() {
+    return this.ctx.http.get<PackageBase[]>('https://www.npmjs.com/search/suggestions?q=koishi+plugin&size=250')
+  }
+
   async start() {
     const [data] = await Promise.all([
-      this.ctx.http.get<SearchResult>('https://api.npms.io/v2/search?q=koishi+plugin+not:deprecated&size=250'),
+      this.getSuggestions(),
       Promise.all(Object.keys(require.cache).map(async (filename) => {
         const { exports } = require.cache[filename]
         const state = this.ctx.app.registry.get(exports)
@@ -149,32 +154,29 @@ class Market implements StatusServer.DataSource {
       })),
     ])
 
-    data.results.forEach(async (item) => {
-      const { name, version } = item.package
+    data.forEach(async (item) => {
+      const { name, version } = item
       const official = name.startsWith('@koishijs/plugin-')
       const community = name.startsWith('koishi-plugin-')
       if (!official && !community) return
 
       const [local, data] = await Promise.all([
         this.loadLocal(name),
-        this.ctx.http.get<Registry>(`https://registry.npmjs.org/${name}`),
+        this.getRegistry(name),
       ])
-      const { dependencies, peerDependencies, dist, keywords } = data.versions[version]
+      const { dependencies, peerDependencies, dist, keywords, description, deprecated } = data.versions[version]
       const declaredVersion = { ...dependencies, ...peerDependencies }['koishi']
-      if (!declaredVersion || !satisfies(currentVersion, declaredVersion)) return
+      if (deprecated || !declaredVersion || !satisfies(currentVersion, declaredVersion)) return
 
       const shortname = official ? name.slice(17) : name.slice(14)
       this.dataCache[name] = {
-        ...item.package,
+        ...item,
         shortname,
         local,
         official,
-        keywords: local?.keywords || keywords,
+        description: local?.description || description,
+        keywords: local?.keywords || keywords || [],
         size: dist.unpackedSize,
-        score: {
-          final: item.score.final,
-          ...item.score.detail,
-        },
       }
       this.flushData()
     })
@@ -210,14 +212,8 @@ namespace Market {
     shortname: string
     local?: Local
     official: boolean
-    keywords?: string[]
+    keywords: string[]
     size: number
-    score: {
-      final: number
-      quality: number
-      popularity: number
-      maintenance: number
-    }
   }
 }
 

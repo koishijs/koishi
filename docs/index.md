@@ -2,10 +2,10 @@
 home: true
 heroImage: /koishi.png
 heroText: Koishi
-tagline: 一个跨平台的机器人框架
+tagline: Cross-Platform Chatbot Framework Made with Koi
 actions:
   - text: 快速上手 →
-    link: /guide/starter.html
+    link: /guide/basic/console.html
     type: primary
 features:
   - title: 开箱即用
@@ -19,42 +19,11 @@ footer: MIT Licensed | Copyright © 2019-present Shigma
 
 ::: code-group manager
 ```npm
-# 创建并进入文件夹
-mkdir my-bot && cd my-bot
-
-# 安装 Koishi
-npm i koishi -D
-
-# 初始化配置文件
-npx koishi init
-
-# 安装插件
-npm i
-
-# 运行你的 Bot
-npx koishi start
+# 零基础快速搭建 Koishi
+npm init koishi
 ```
 ```yarn
-# 创建并进入文件夹
-mkdir my-bot && cd my-bot
-
-# 安装 Koishi
-yarn add koishi -D
-
-# 初始化配置文件
-yarn koishi init
-
-# 安装插件
-yarn
-
-# 运行你的 Bot
-yarn koishi start
+# 零基础快速搭建 Koishi
+yarn create koishi
 ```
 :::
-
-现在可以对你的机器人说话了：
-
-<panel-view :messages="[
-  ['Alice', 'echo 你好'],
-  ['Koishi', '你好'],
-]"/>

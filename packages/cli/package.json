@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/cli",
   "description": "CLI for Koishi",
-  "version": "4.0.0-alpha.2",
+  "version": "4.0.0-alpha.5",
   "main": "index.js",
   "typings": "index.d.ts",
   "engines": {
@@ -42,8 +42,7 @@
     "chokidar": "^3.5.2",
     "js-yaml": "^4.1.0",
     "kleur": "^4.1.4",
-    "koishi": "^4.0.0-alpha.6",
-    "prompts": "^2.4.1",
-    "proxy-agent": "^5.0.0"
+    "koishi": "^4.0.0-alpha.9",
+    "prompts": "^2.4.1"
   }
 }

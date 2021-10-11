@@ -8,6 +8,10 @@
         >{{ data.shortname }}</a>
         <span class="current" v-if="data.local">@{{ data.local.version }}</span>
         <k-badge type="success" v-if="data.official">官方</k-badge>
+        <k-badge type="primary" v-if="data.keywords.includes('service:adapter')">适配器</k-badge>
+        <k-badge type="primary" v-if="data.keywords.includes('service:database')">数据库</k-badge>
+        <k-badge type="primary" v-if="data.keywords.includes('service:assets')">资源存储</k-badge>
+        <k-badge type="primary" v-if="data.keywords.includes('service:cache')">缓存</k-badge>
         <k-badge type="default" v-if="data.local?.workspace">本地</k-badge>
         <k-badge type="warning" v-else-if="hasUpdate">可更新</k-badge>
       </div>
@@ -17,7 +21,6 @@
     </td>
     <td class="latest">{{ data.version }}</td>
     <td class="size">{{ formatSize(data.size) }}</td>
-    <td class="score">{{ +data.score.final.toFixed(2) }}</td>
     <td class="operation">
       <span v-if="downloading">安装中</span>
       <k-button frameless v-else-if="!data.local || hasUpdate"

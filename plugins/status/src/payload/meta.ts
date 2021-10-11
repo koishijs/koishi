@@ -1,4 +1,4 @@
-import { Argv, Assets, Context, noop } from 'koishi'
+import { Argv, Assets, Context, Dict, noop } from 'koishi'
 import { StatusServer } from '../server'
 
 class Meta implements StatusServer.DataSource {
@@ -40,7 +40,10 @@ namespace Meta {
     activeUsers: number
     allGroups: number
     activeGroups: number
-    storageSize: number
+    tables: Dict<{
+      count: number
+      size: number
+    }>
   }
 
   export interface Payload extends Stats, Assets.Stats {}

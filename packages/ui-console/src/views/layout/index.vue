@@ -1,6 +1,6 @@
 <template>
   <sidebar/>
-  <main>
+  <main class="layout-main">
     <router-view v-if="loaded"/>
     <p v-else>正在加载数据……</p>
   </main>
@@ -39,7 +39,7 @@ a {
   text-decoration: none;
 }
 
-main {
+main.layout-main {
   margin-left: var(--aside-width);
   padding: 2rem 2rem 0;
 }

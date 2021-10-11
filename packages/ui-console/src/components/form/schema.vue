@@ -52,16 +52,16 @@
   <template v-else-if="schema.type === 'decide'">
     <div class="schema">
       <h3 class="required">
-        <span>{{ prefix + schema.primary }}</span>
+        <span>{{ prefix + schema.key }}</span>
       </h3>
       <p>{{ schema.desc }}</p>
       <ul>
         <li v-for="(item, key) in schema.dict">
-          <k-radio :label="key" v-model="config[schema.primary]">{{ item.desc }}</k-radio>
+          <k-radio :label="key" v-model="config[schema.key]">{{ item.desc }}</k-radio>
         </li>
       </ul>
     </div>
-    <k-schema :schema="schema.dict[config[schema.primary]]" v-model="config" :prefix="prefix" no-desc/>
+    <k-schema :schema="schema.dict[config[schema.key]]" v-model="config" :prefix="prefix" no-desc/>
   </template>
 </template>
 
@@ -94,11 +94,6 @@ const updateModelValue = emit.bind(null, 'update:modelValue')
 const config = computed<any>({
   get: () => props.modelValue ?? getFallback(),
   set: updateModelValue,
-})
-
-const selected = computed<string>({
-  get: () => config.value[props.schema.primary],
-  set: val => config.value[props.schema.primary] = val,
 })
 
 watch(config, updateModelValue, { deep: true })

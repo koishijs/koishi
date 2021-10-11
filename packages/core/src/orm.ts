@@ -144,7 +144,6 @@ export namespace Tables {
     platform: 'string(63)',
     flag: 'unsigned(20)',
     assignee: 'string(63)',
-    disable: 'list',
   }, {
     primary: ['id', 'platform'],
   })
@@ -239,7 +238,7 @@ export namespace Query {
   export interface Methods {
     drop(table?: TableType): Promise<void>
     get<T extends TableType, K extends Field<T>>(table: T, query: Query<T>, modifier?: Modifier<K>): Promise<Pick<Tables[T], K>[]>
-    set<T extends TableType>(table: T, query: Query<T>, updater?: Partial<Tables[T]>): Promise<void>
+    set<T extends TableType>(table: T, query: Query<T>, updater: Partial<Tables[T]>): Promise<void>
     remove<T extends TableType>(table: T, query: Query<T>): Promise<void>
     create<T extends TableType>(table: T, data: Partial<Tables[T]>): Promise<Tables[T]>
     upsert<T extends TableType>(table: T, data: Partial<Tables[T]>[], keys?: MaybeArray<Index<T>>): Promise<void>

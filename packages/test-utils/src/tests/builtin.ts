@@ -35,12 +35,12 @@ export default function BuiltinMethods(app: App) {
       await expect(db.getChannel('mock', 'A')).eventually.not.to.be.ok
     })
 
-    it('db.createChannel() on non-existing user', async () => {
+    it('db.createChannel() on non-existing channel', async () => {
       await db.createChannel('mock', 'A', { assignee: '123' })
       await expect(db.getChannel('mock', 'A')).eventually.to.have.shape({ assignee: '123' })
     })
 
-    it('db.setChannel() on existing user', async () => {
+    it('db.setChannel() on existing channel', async () => {
       await db.setChannel('mock', 'A', { assignee: '321' })
       await expect(db.getChannel('mock', 'A')).eventually.to.have.shape({ assignee: '321' })
     })

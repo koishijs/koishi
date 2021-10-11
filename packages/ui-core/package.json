@@ -21,6 +21,6 @@
     "vue": "^3.2.10"
   },
   "dependencies": {
-    "@koishijs/core": "^4.0.0-alpha.6"
+    "@koishijs/core": "^4.0.0-alpha.9"
   }
 }

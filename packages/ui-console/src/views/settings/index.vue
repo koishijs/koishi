@@ -1,8 +1,10 @@
 <template>
-  <k-card class="page-config frameless">
-    <plugin-select v-model="current"></plugin-select>
+  <k-card-aside class="page-settings">
+    <template #aside>
+      <plugin-select v-model="current"></plugin-select>
+    </template>
     <plugin-settings :current="current"></plugin-settings>
-  </k-card>
+  </k-card-aside>
 </template>
 
 <script setup lang="ts">
@@ -16,9 +18,5 @@ const current = ref<string>('')
 </script>
 
 <style lang="scss">
-
-.page-config .k-card-body {
-  height: calc(100vh - 4rem);
-}
 
 </style>

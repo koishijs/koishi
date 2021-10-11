@@ -2,7 +2,7 @@ import { Context, Schema } from 'koishi'
 import roll, { RollConfig } from './roll'
 
 declare module 'koishi' {
-  interface Module {
+  interface Modules {
     dice: typeof import('.')
   }
 }

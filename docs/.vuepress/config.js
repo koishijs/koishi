@@ -36,21 +36,29 @@ module.exports = {
   themeConfig: {
     logo: '/koishi.png',
     navbar: [
-      { text: '主页', link: '/' },
-      { text: '指南', link: '/guide/starter.html' },
+      { text: '指南', link: '/guide/basic/about.html' },
       { text: 'API', link: '/api/' },
       { text: '官方插件', link: '/plugins/' },
-      ...devOnly({ text: '演练场', link: '/playground.html' }),
-      { text: 'GitHub', link: 'https://github.com/koishijs/koishi' },
+      // ...devOnly({ text: '演练场', link: '/playground.html' }),
     ],
     sidebar: {
       '/guide/': [{
         text: '入门',
         isGroup: true,
         children: [
-          '/guide/about.md',
-          '/guide/starter.md',
-          '/guide/advanced/cli.md',
+          '/guide/basic/about.md',
+          '/guide/basic/coding.md',
+          '/guide/basic/console.md',
+          '/guide/basic/glossary.md',
+        ],
+      }, {
+        text: '平台指南',
+        isGroup: true,
+        children: [
+          '/guide/platform/onebot.md',
+          '/guide/platform/discord.md',
+          '/guide/platform/telegram.md',
+          '/guide/platform/kaiheila.md',
         ],
       }, {
         text: '处理交互',
@@ -66,11 +74,11 @@ module.exports = {
         text: '复用性',
         isGroup: true,
         children: [
-          '/guide/reusability/plugin.md',
-          '/guide/reusability/context.md',
-          '/guide/reusability/hot-reload.md',
-          '/guide/reusability/lifecycle.md',
-          '/guide/reusability/schema.md',
+          '/guide/plugin/plugin.md',
+          '/guide/plugin/context.md',
+          '/guide/plugin/hot-reload.md',
+          '/guide/plugin/lifecycle.md',
+          '/guide/plugin/schema.md',
         ],
       }, {
         text: '数据库',
@@ -94,52 +102,56 @@ module.exports = {
         text: '规模化',
         isGroup: true,
         children: [
-          '/guide/scaling-up/assets.md',
-          '/guide/scaling-up/cache.md',
-          '/guide/scaling-up/route.md',
+          '/guide/service/assets.md',
+          '/guide/service/cache.md',
+          '/guide/service/route.md',
         ],
       }, {
         text: '更多',
         isGroup: true,
         children: [
-          '/guide/advanced/logger.md',
-          '/guide/advanced/unit-tests.md',
-          '/guide/advanced/decorator.md',
-          '/guide/advanced/docker.md',
-          '/guide/faq.md',
+          '/guide/misc/cli.md',
+          '/guide/misc/logger.md',
+          '/guide/misc/unit-tests.md',
+          '/guide/misc/decorator.md',
+          '/guide/misc/docker.md',
+          '/guide/misc/faq.md',
         ],
       }],
-      '/api': [{
+      '/api/': [{
         text: '总览',
         link: '/api/',
       }, {
         text: '核心 API',
         isGroup: true,
         children: [
-          '/api/context.md',
-          '/api/app.md',
-          '/api/bot.md',
-          '/api/events.md',
-          '/api/session.md',
-          '/api/command.md',
-          '/api/segment.md',
-          '/api/database.md',
-          '/api/adapter.md',
-          '/api/schema.md',
-          '/api/global.md',
+          '/api/core/context.md',
+          '/api/core/app.md',
+          '/api/core/bot.md',
+          '/api/core/events.md',
+          '/api/core/session.md',
+          '/api/core/command.md',
+          '/api/core/database.md',
+          '/api/core/adapter.md',
+        ],
+      }, {
+        text: '其他内置 API',
+        isGroup: true,
+        children: [
+          '/api/utils/segment.md',
+          '/api/utils/schema.md',
+          '/api/utils/observer.md',
+          '/api/utils/template.md',
+          '/api/utils/logger.md',
+          '/api/utils/misc.md',
         ],
       }, {
         text: '其他官方包',
         isGroup: true,
         children: [
-          '/api/utils.md',
-          '/api/test-utils.md',
-          '/api/adapter/onebot.md',
-          '/api/adapter/telegram.md',
-          '/api/adapter/discord.md',
-          '/api/adapter/kaiheila.md',
-          '/api/database/mongo.md',
-          '/api/database/mysql.md',
+          '/api/tools/cli.md',
+          '/api/tools/dev-utils.md',
+          '/api/tools/test-utils.md',
         ],
       }, {
         text: '更新与迁移',
@@ -152,6 +164,39 @@ module.exports = {
       '/plugins/': [{
         text: '总览',
         link: '/plugins/',
+      }, {
+        text: '适配器支持',
+        isGroup: true,
+        children: [
+          '/plugins/adapter/discord.md',
+          '/plugins/adapter/kaiheila.md',
+          '/plugins/adapter/minecraft.md',
+          '/plugins/adapter/onebot.md',
+          '/plugins/adapter/telegram.md',
+        ],
+      }, {
+        text: '数据库支持',
+        isGroup: true,
+        children: [
+          '/plugins/database/database.md',
+          '/plugins/database/mongo.md',
+          '/plugins/database/mysql.md',
+        ],
+      }, {
+        text: '资源存储支持',
+        isGroup: true,
+        children: [
+          '/plugins/assets/assets.md',
+          '/plugins/assets/jsdelivr.md',
+          '/plugins/assets/s3.md',
+        ],
+      }, {
+        text: '缓存支持',
+        isGroup: true,
+        children: [
+          '/plugins/cache/cache.md',
+          '/plugins/cache/redis.md',
+        ],
       }, {
         text: '常用功能 (Common)',
         isGroup: true,
@@ -197,7 +242,6 @@ module.exports = {
         text: '其他官方插件',
         isGroup: true,
         children: [
-          '/plugins/other/assets.md',
           '/plugins/other/chat.md',
           '/plugins/other/chess.md',
           '/plugins/other/github.md',

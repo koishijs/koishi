@@ -184,7 +184,7 @@ function resolveLoader(extension: string) {
   if (BUILTIN_LOADERS.includes(filename)) {
     return require('../loaders/' + filename)
   } else if (filename) {
-    return require(resolve(process.cwd(), filename))
+    return require(resolve(config.baseDir, filename))
   } else if (extension === '.js') {
     return require('../loaders/default')
   } else if (extension === '.json' || extension === '.yml' || extension === '.yaml') {

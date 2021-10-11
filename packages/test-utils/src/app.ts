@@ -2,7 +2,7 @@ import { App, Adapter, Session, Bot, pick, Dict, Schema } from 'koishi'
 import { assert } from 'chai'
 import { Socket } from 'net'
 import { format } from 'util'
-import * as database from '@koishijs/plugin-database'
+import * as database from '@koishijs/plugin-database-memory'
 import * as http from 'http'
 
 export const BASE_SELF_ID = '514'
@@ -24,9 +24,7 @@ interface BotConfig extends Bot.BaseConfig {
 }
 
 class MockedBot extends Bot<BotConfig> {
-  static schema: Schema<BotConfig> = Schema.object({
-    selfId: Schema.string(),
-  })
+  static schema: Schema<AdapterConfig> = Schema.object({})
 
   constructor(adapter: MockedServer, config: BotConfig) {
     super(adapter, config)
@@ -50,6 +48,10 @@ class MockedBot extends Bot<BotConfig> {
 interface AdapterConfig {}
 
 class MockedServer extends Adapter<BotConfig, AdapterConfig> {
+  static schema: Schema<BotConfig> = Schema.object({
+    selfId: Schema.string(),
+  })
+
   constructor(app: MockedApp, config: AdapterConfig) {
     super(app, config)
     app.server = this
@@ -116,11 +118,13 @@ export class MockedApp extends App {
       selfId: BASE_SELF_ID,
     })
 
-    if (options.mockStart !== false) {
-      this.isActive = true
-      this.isActive = true
+    if (options.mockDatabase) {
+      this.plugin(database)
     }
-    if (options.mockDatabase) this.plugin(database)
+
+    if (options.mockStart !== false) {
+      this.start()
+    }
   }
 
   get selfId() {

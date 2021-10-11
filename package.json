@@ -6,7 +6,12 @@
     "addons",
     "shiki",
     "test",
+    "community/*",
     "packages/*",
+    "plugins/adapter/*",
+    "plugins/assets/*",
+    "plugins/cache/*",
+    "plugins/database/*",
     "plugins/*"
   ],
   "scripts": {

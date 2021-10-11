@@ -161,7 +161,9 @@ export class ReplyHandler {
   }
 
   async transform(source: string) {
-    source = await this.session.app.transformAssets(source)
+    if (this.github.app.assets) {
+      source = await this.github.app.assets.transform(source)
+    }
     return segment.transform(source, {
       text: ({ content }) => content,
       image: ({ url }) => `![image](${url})`,

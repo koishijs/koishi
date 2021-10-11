@@ -58,7 +58,7 @@ export class App extends Context {
   public options: App.Config
   public isActive = false
   public registry = new Plugin.Registry()
-  public manager = new Adapter.Manager(this)
+  public bots = new Adapter.BotList(this)
 
   private _nameRE: RegExp
 

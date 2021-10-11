@@ -15,9 +15,9 @@ import { Database } from 'koishi'
 // 类型注入
 declare module 'koishi' {
   namespace Database {
-    interface Statics {
+    interface Library {
       // 别忘了加 typeof，不然就不对了~
-      'koishi-plugin-mysql': typeof MysqlDatabase
+      mysql: typeof MysqlDatabase
     }
   }
 }
@@ -60,4 +60,4 @@ export function apply(ctx: Context, config: PoolConfig = {}) {
 }
 ```
 
-当然，真正的 [koishi-plugin-mysql](../api/database/mysql.md) 要比上面的例子复杂的多，我们还需要处理有关数据库的更多细节。你可以在 [这里](https://github.com/koishijs/koishi/tree/master/packages/plugin-mysql) 看到完整的源代码。
+当然，真正的 [@koishijs/plugin-database-mysql](../../api/core/database/mysql.md) 要比上面的例子复杂的多，我们还需要处理有关数据库的更多细节。你可以在 [这里](https://github.com/koishijs/koishi/tree/master/packages/plugin-mysql) 看到完整的源代码。

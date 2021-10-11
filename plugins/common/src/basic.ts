@@ -1,5 +1,11 @@
-import { Context, Channel, Session, noop, sleep, segment, template, makeArray, Dict, Time } from 'koishi'
-import { parsePlatform } from './utils'
+import { Context, Channel, Session, noop, sleep, segment, template, makeArray, Dict } from 'koishi'
+
+function parsePlatform(target: string): [platform: string, id: string] {
+  const index = target.indexOf(':')
+  const platform = target.slice(0, index)
+  const id = target.slice(index + 1)
+  return [platform, id] as any
+}
 
 template.set('common', {
   'expect-text': '请输入要发送的文本。',
@@ -9,8 +15,6 @@ template.set('common', {
   'invalid-private-member': '无法在私聊上下文使用 --member 选项。',
   'feedback-receive': '收到来自 {0} 的反馈信息：\n{1}',
   'feedback-success': '反馈信息发送成功！',
-  // eslint-disable-next-line quote-props
-  'relay': '{0}: {1}',
 })
 
 export function broadcast(ctx: Context) {
@@ -199,41 +203,6 @@ export function recall(ctx: Context, { recall = 10 }: RecallConfig) {
     })
 }
 
-interface RelayOptions {
-  source: string
-  destination: string
-  selfId?: string
-  lifespan?: number
-}
-
-export function relay(ctx: Context, relays: RelayOptions[]) {
-  const relayMap: Dict<RelayOptions> = {}
-
-  async function sendRelay(session: Session, { destination, selfId, lifespan = Time.hour }: RelayOptions) {
-    const [platform, channelId] = parsePlatform(destination)
-    const bot = ctx.bots.get(`${platform}:${selfId}`)
-    const { author, parsed } = session
-    if (!parsed.content) return
-    const content = template('common.relay', author.nickname || author.username, parsed.content)
-    const id = await bot.sendMessage(channelId, content, 'unknown')
-    relayMap[id] = { source: destination, destination: session.cid, selfId: session.selfId, lifespan }
-    setTimeout(() => delete relayMap[id], lifespan)
-  }
-
-  ctx.middleware((session, next) => {
-    const { quote = {} } = session
-    const data = relayMap[quote.messageId]
-    if (data) return sendRelay(session, data)
-    const tasks: Promise<void>[] = []
-    for (const options of relays) {
-      if (session.cid !== options.source) continue
-      tasks.push(sendRelay(session, options).catch())
-    }
-    tasks.push(next())
-    return Promise.all(tasks)
-  })
-}
-
 export interface Respondent {
   match: string | RegExp
   reply: string | ((...capture: string[]) => string)
@@ -255,7 +224,6 @@ export interface BasicConfig extends RecallConfig {
   broadcast?: boolean
   contextify?: boolean
   operator?: string | string[]
-  relay?: RelayOptions | RelayOptions[]
   respondent?: Respondent | Respondent[]
 }
 
@@ -267,9 +235,6 @@ export default function apply(ctx: Context, config: BasicConfig = {}) {
 
   const operators = makeArray(config.operator)
   if (operators.length) ctx.plugin(feedback, operators)
-
-  const relays = makeArray(config.relay)
-  if (relays.length) ctx.plugin(relay, relays)
 
   const respondents = makeArray(config.respondent)
   if (respondents.length) ctx.plugin(respondent, respondents)

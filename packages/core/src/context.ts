@@ -1,10 +1,11 @@
-import { Logger, defineProperty, remove, segment, Random, Schema, Promisify, Awaitable, Dict } from '@koishijs/utils'
+import { Logger, defineProperty, makeArray, remove, Random, Schema, Promisify, Awaitable, Dict, MaybeArray } from '@koishijs/utils'
 import { Command } from './command'
 import { Session } from './session'
-import { User, Channel, Database, Assets, Cache, Module } from './database'
+import { User, Channel, Database, Cache, Modules } from './database'
 import { Argv } from './parser'
 import { App } from './app'
 import { Bot } from './bot'
+import { Adapter } from './adapter'
 
 export type NextFunction = (next?: NextFunction) => Promise<void>
 export type Middleware = (session: Session, next: NextFunction) => any
@@ -64,13 +65,20 @@ function isBailed(value: any) {
 }
 
 type Filter = (session: Session) => boolean
-type PartialSeletor<T> = (...values: T[]) => Context
 
-interface Selector<T> extends PartialSeletor<T> {
-  except?: PartialSeletor<T>
+const selectors = ['user', 'guild', 'channel', 'self', 'private', 'platform'] as const
+
+type SelectorType = typeof selectors[number]
+type SelectorValue = boolean | MaybeArray<string | number>
+type BaseSelection = { [K in SelectorType as `$${K}`]?: SelectorValue }
+
+interface Selection extends BaseSelection {
+  $and?: Selection[]
+  $or?: Selection[]
+  $not?: Selection
 }
 
-export interface Context extends Context.Delegates {}
+export interface Context extends Context.Services {}
 
 export class Context {
   static readonly middleware = Symbol('middleware')
@@ -86,54 +94,82 @@ export class Context {
     return `Context <${Context.inspect(this._plugin)}>`
   }
 
-  get bots() {
-    return this.app.manager
+  user(...values: string[]) {
+    return this.select('userId', ...values)
   }
 
-  private createSelector<K extends keyof Session>(key: K) {
-    const selector: Selector<Session[K]> = (...args) => this.select(key, ...args)
-    selector.except = (...args) => this.unselect(key, ...args)
-    return selector
+  self(...values: string[]) {
+    return this.select('selfId', ...values)
   }
 
-  get user() {
-    return this.createSelector('userId')
+  guild(...values: string[]) {
+    return this.select('guildId', ...values)
   }
 
-  get self() {
-    return this.createSelector('selfId')
+  channel(...values: string[]) {
+    return this.select('channelId', ...values)
   }
 
-  get guild() {
-    return this.createSelector('guildId')
+  platform(...values: string[]) {
+    return this.select('platform', ...values)
   }
 
-  get channel() {
-    return this.createSelector('channelId')
+  private(...values: string[]) {
+    return this.except(this.select('guildId')).select('userId', ...values)
   }
 
-  get platform() {
-    return this.createSelector('platform')
-  }
+  select<K extends keyof Session>(key: K, ...values: Session[K][]): Context
+  select(options?: Selection): Context
+  select(...args: [Selection?] | [string, ...any[]]) {
+    if (typeof args[0] === 'string') {
+      const key = args.shift()
+      return this.intersect((session) => {
+        return args.length ? args.includes(session[key]) : !!session[key]
+      })
+    }
 
-  get private() {
-    return this.unselect('guildId').user
+    let ctx: Context = this
+    const options = args[0] ?? {}
+
+    // basic selectors
+    for (const type of selectors) {
+      const value = options[`$${type}`] as SelectorValue
+      if (value === true) {
+        ctx = ctx[type]()
+      } else if (value === false) {
+        ctx = ctx.except(ctx[type]())
+      } else if (value !== undefined) {
+        // we turn everything into string
+        ctx = ctx[type](...makeArray(value).map(item => '' + item))
+      }
+    }
+
+    // intersect
+    if (options.$and) {
+      for (const selection of options.$and) {
+        ctx = ctx.intersect(this.select(selection))
+      }
+    }
+
+    // union
+    if (options.$or) {
+      let ctx2: Context = this.app
+      for (const selection of options.$or) {
+        ctx2 = ctx2.union(this.select(selection))
+      }
+      ctx = ctx.intersect(ctx2)
+    }
+
+    // except
+    if (options.$not) {
+      ctx = ctx.except(this.select(options.$not))
+    }
+
+    return ctx
   }
 
   logger(name: string) {
     return new Logger(name)
-  }
-
-  select<K extends keyof Session>(key: K, ...values: Session[K][]) {
-    return this.intersect((session) => {
-      return values.length ? values.includes(session[key]) : !!session[key]
-    })
-  }
-
-  unselect<K extends keyof Session>(key: K, ...values: Session[K][]) {
-    return this.intersect((session) => {
-      return values.length ? !values.includes(session[key]) : !session[key]
-    })
   }
 
   any() {
@@ -183,16 +219,16 @@ export class Context {
     })
   }
 
-  private loadDeps<K extends keyof Module>(deps: readonly K[]) {
-    const modules: Pick<Module, K> = {}
+  private loadDeps<K extends keyof Modules>(deps: readonly K[]) {
+    const modules: Pick<Modules, K> = {}
     for (const dep of deps) {
-      modules[dep] = Module.require(dep)
+      modules[dep] = Modules.require(dep)
       if (!modules[dep]) return
     }
     return modules
   }
 
-  with<K extends keyof Module>(deps: readonly K[], callback: Plugin.Function<Pick<Module, K>>) {
+  with<K extends keyof Modules>(deps: readonly K[], callback: Plugin.Function<Pick<Modules, K>>) {
     const modules = this.loadDeps(deps)
     if (!modules) return
     this.teleport(modules, callback)
@@ -215,8 +251,7 @@ export class Context {
       return this
     }
 
-    const ctx: this = Object.create(this)
-    defineProperty(ctx, '_plugin', plugin)
+    const ctx = new Context(this.filter, this.app, plugin).select(options)
     this.app.registry.set(plugin, {
       plugin,
       id: Random.id(),
@@ -335,7 +370,7 @@ export class Context {
     } else if (name === 'disconnect') {
       this.state.disposables[method](listener)
       return () => remove(this.state.disposables, listener)
-    } else if (typeof name === 'string' && name.startsWith('delegate/')) {
+    } else if (typeof name === 'string' && name.startsWith('service/')) {
       if (this[name.slice(9)]) return listener(), () => false
     }
 
@@ -454,13 +489,6 @@ export class Context {
     return command
   }
 
-  async transformAssets(content: string, assets = this.assets) {
-    if (!assets) return content
-    return segment.transformAsync(content, Object.fromEntries(assets.types.map((type) => {
-      return [type, async (data) => segment(type, { url: await assets.upload(data.url, data.file) })]
-    })))
-  }
-
   getSelfIds(type?: string, assignees?: string[]): Dict<string[]> {
     if (type) {
       assignees ||= this.app.bots.filter(bot => bot.platform === type).map(bot => bot.selfId)
@@ -513,35 +541,42 @@ export class Context {
 }
 
 export namespace Context {
-  export interface Delegates {
+  export interface Services {
     database: Database
-    assets: Assets
     cache: Cache
+    bots: Adapter.BotList
   }
 
-  export const Delegates: string[] = []
+  export const Services: string[] = []
 
-  export function delegate(key: keyof Delegates) {
+  export interface ServiceOptions {
+    dynamic?: boolean
+  }
+
+  export function service(key: keyof Services, options: ServiceOptions = {}) {
     if (Object.prototype.hasOwnProperty.call(Context.prototype, key)) return
-    Delegates.push(key)
+    Services.push(key)
     const privateKey = Symbol(key)
     Object.defineProperty(Context.prototype, key, {
       get() {
-        if (!this.app[privateKey]) return
-        const value = Object.create(this.app[privateKey])
+        const value = this.app[privateKey]
+        if (!value) return
         defineProperty(value, Context.current, this)
         return value
       },
       set(value) {
-        if (!this.app[privateKey]) this.emit('delegate/' + key)
+        if (this.app[privateKey] && !options.dynamic) {
+          this.logger(key).warn('service is overwritten')
+        }
         defineProperty(this.app, privateKey, value)
+        this.emit('service/' + key)
       },
     })
   }
 
-  delegate('database')
-  delegate('assets')
-  delegate('cache')
+  service('database')
+  service('cache')
+  service('bots')
 }
 
 type FlattenEvents<T> = {
@@ -557,7 +592,7 @@ type SessionEventMap = {
 }
 
 type DelegateEventMap = {
-  [K in keyof Context.Delegates as `delegate/${K}`]: () => void
+  [K in keyof Context.Services as `service/${K}`]: () => void
 }
 
 type EventName = keyof EventMap

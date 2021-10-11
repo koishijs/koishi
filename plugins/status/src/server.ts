@@ -84,7 +84,7 @@ export class StatusServer extends Adapter {
       stats: new Statistics(ctx, config),
     }
 
-    ctx.on('delegate/database', () => {
+    ctx.on('service/database', () => {
       this.global.database = !!ctx.database
     })
   }

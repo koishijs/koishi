@@ -1,18 +1,17 @@
 <template>
   <el-scrollbar class="plugin-select">
     <div class="content">
-      <t-choice class="group" :data="registry['']" v-model="model"/>
-      <div class="group">
+      <k-tab-item class="k-tab-group-title" :label="registry[''].name" v-model="model">
+        全局设置
+      </k-tab-item>
+      <k-tab-group :data="Object.values(registry).filter(item => item.id)" :label="getLabel" :readonly="getReadonly" v-model="model">
         运行中的插件
         <k-hint placement="right">
           <b>为什么一些插件没有显示？</b>
           <br>这里只展示直接从 app 注册的具名插件。换言之，在其他插件内部注册的插件或没有提供 name 的插件将不予显示。
         </k-hint>
-      </div>
-      <template v-for="data in registry">
-        <t-choice v-if="data.id" :data="data" v-model="model"/>
-      </template>
-      <div class="group">
+      </k-tab-group>
+      <k-tab-group :data="available.filter(data => !filtered || data.schema)" :label="getLabel" :readonly="getReadonly" v-model="model">
         未运行的插件
         <k-hint placement="right" icon="fas fa-filter" :class="{ filtered }" @click="filtered = !filtered">
           <template v-if="filtered">
@@ -22,8 +21,7 @@
             <b>筛选：关闭</b><br>显示所有可用插件。
           </template>
         </k-hint>
-      </div>
-      <t-choice v-for="data in available.filter(data => !filtered || data.schema)" :data="data" v-model="model"/>
+      </k-tab-group>
     </div>
   </el-scrollbar>
 </template>
@@ -33,7 +31,6 @@
 import { registry } from '~/client'
 import { ref, computed } from 'vue'
 import { available } from './shared'
-import TChoice from './choice.vue'
 
 const props = defineProps<{
   modelValue: string
@@ -48,6 +45,9 @@ const model = computed({
 
 const filtered = ref(false)
 
+const getLabel = item => item.name
+const getReadonly = item => !item.schema
+
 </script>
 
 <style lang="scss">
@@ -61,15 +61,6 @@ const filtered = ref(false)
   .content {
     padding: 1rem 0;
     line-height: 2.25rem;
-  }
-
-  .group {
-    padding: 0 2rem !important;
-    font-weight: bold;
-  }
-
-  .group:not(.t-choice) {
-    margin-top: 0.5rem;
   }
 
   .fa-filter {

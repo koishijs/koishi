@@ -168,9 +168,9 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
   })
 
   ctx.before('dialogue/modify', async ({ args }) => {
-    if (!args[1]) return
+    if (!args[1] || !ctx.assets) return
     try {
-      args[1] = await ctx.transformAssets(args[1])
+      args[1] = await ctx.assets.transform(args[1])
     } catch (error) {
       ctx.logger('teach').warn(error.message)
       return '上传图片时发生错误。'

@@ -1,7 +1,8 @@
-import { App, Context, Module } from '@koishijs/core'
+import { App, Context, Modules } from '@koishijs/core'
 import { defineProperty, remove, Schema } from '@koishijs/utils'
 import { Server, createServer } from 'http'
 import { Requester } from './http'
+import { Assets } from './assets'
 import Router from '@koa/router'
 import type Koa from 'koa'
 
@@ -25,6 +26,10 @@ declare module '@koishijs/core' {
   }
 
   namespace App {
+    interface Config {
+      baseDir?: string
+    }
+
     namespace Config {
       interface Network {
         port?: number
@@ -34,7 +39,8 @@ declare module '@koishijs/core' {
   }
 
   namespace Context {
-    interface Delegates {
+    interface Services {
+      assets: Assets
       router: Router
       http: Requester
     }
@@ -48,11 +54,12 @@ App.Config.Network.dict = {
 }
 
 // use node require
-Module.internal.require = require
-Module.internal.resolve = require.resolve
+Modules.internal.require = require
+Modules.internal.resolve = require.resolve
 
-Context.delegate('router')
-Context.delegate('http')
+Context.service('assets')
+Context.service('router')
+Context.service('http')
 
 const prepare = App.prototype.prepare
 App.prototype.prepare = function (this: App, ...args) {
@@ -62,6 +69,8 @@ App.prototype.prepare = function (this: App, ...args) {
 }
 
 function prepareServer(this: App) {
+  this.options.baseDir ||= process.cwd()
+
   const { port, host } = this.options
   if (!port) return
 
@@ -83,6 +92,8 @@ function prepareServer(this: App) {
     this._httpServer?.close()
   })
 }
+
+
 
 // hack into router methods to make sure
 // that koa middlewares are disposable

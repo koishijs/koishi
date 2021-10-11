@@ -10,7 +10,7 @@ declare module 'koishi' {
     'chat/receive'(message: Message, session: Session): void
   }
 
-  interface Module {
+  interface Modules {
     chat: typeof import('.')
   }
 }
@@ -102,13 +102,13 @@ export function apply(ctx: Context, options: Config = {}) {
 
       ctx.webui.addListener('chat', async function ({ content, platform, selfId, channelId, guildId }) {
         if (await this.validate()) return this.send('unauthorized')
-        content = await ctx.transformAssets(content)
+        if (ctx.assets) content = await ctx.assets.transform(content)
         ctx.bots.get(`${platform}:${selfId}`)?.sendMessage(channelId, content, guildId)
       })
 
       ctx.webui.addListener('sandbox', async function ({ id, content }) {
         if (await this.validate()) return this.send('unauthorized')
-        content = await ctx.transformAssets(content)
+        if (ctx.assets) content = await ctx.assets.transform(content)
         this.send('sandbox:user', content)
         ctx.webui.dispatch(new Session(sandbox, {
           userId: id,
