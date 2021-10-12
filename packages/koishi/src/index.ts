@@ -2,6 +2,7 @@ import { App, Context, Modules } from '@koishijs/core'
 import { defineProperty, remove, Schema } from '@koishijs/utils'
 import { Server, createServer } from 'http'
 import { Requester } from './http'
+import { Cache } from './cache'
 import { Assets } from './assets'
 import Router from '@koa/router'
 import type Koa from 'koa'
@@ -41,8 +42,9 @@ declare module '@koishijs/core' {
   namespace Context {
     interface Services {
       assets: Assets
-      router: Router
+      cache: Cache
       http: Requester
+      router: Router
     }
   }
 }
@@ -58,12 +60,14 @@ Modules.internal.require = require
 Modules.internal.resolve = require.resolve
 
 Context.service('assets')
-Context.service('router')
+Context.service('cache')
 Context.service('http')
+Context.service('router')
 
 const prepare = App.prototype.prepare
 App.prototype.prepare = function (this: App, ...args) {
   this.http = Requester.create(this.options.request)
+  this.plugin(require('@koishijs/plugin-cache-lru'))
   prepare.call(this, ...args)
   prepareServer.call(this)
 }

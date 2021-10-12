@@ -1,7 +1,7 @@
 import { Logger, defineProperty, makeArray, remove, Random, Schema, Promisify, Awaitable, Dict, MaybeArray } from '@koishijs/utils'
 import { Command } from './command'
 import { Session } from './session'
-import { User, Channel, Database, Cache, Modules } from './database'
+import { User, Channel, Database, Modules } from './database'
 import { Argv } from './parser'
 import { App } from './app'
 import { Bot } from './bot'
@@ -532,7 +532,7 @@ export class Context {
     }
 
     return (await Promise.all(Object.entries(assignMap).flatMap(([type, map]) => {
-      return this.app.bots.map((bot) => {
+      return this.bots.map((bot) => {
         if (bot.platform !== type) return Promise.resolve([])
         return bot.broadcast(map[bot.selfId] || [], content)
       })
@@ -543,7 +543,6 @@ export class Context {
 export namespace Context {
   export interface Services {
     database: Database
-    cache: Cache
     bots: Adapter.BotList
   }
 
@@ -575,7 +574,6 @@ export namespace Context {
   }
 
   service('database')
-  service('cache')
   service('bots')
 }
 

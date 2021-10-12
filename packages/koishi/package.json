@@ -31,6 +31,7 @@
   "dependencies": {
     "@koa/router": "^10.1.1",
     "@koishijs/core": "^4.0.0-alpha.9",
+    "@koishijs/plugin-cache-lru": "^1.0.0-alpha.0",
     "@koishijs/utils": "^5.0.0-alpha.5",
     "@types/koa": "*",
     "@types/koa__router": "*",
