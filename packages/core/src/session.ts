@@ -228,13 +228,13 @@ export class Session<
       }
       if (fieldSet.size) {
         const data = await this.getChannel(channelId, '', [...fieldSet])
-        await this.app.cache.set('channel', this.cid, channel.$merge(data))
+        this.app._channelCache.set(this.id, this.cid, channel.$merge(data))
       }
       return channel as any
     }
 
     // 如果存在满足可用的缓存数据，使用缓存代替数据获取
-    const cache = await this.app.cache.get('channel', this.cid)
+    const cache = this.app._channelCache.get(this.id, this.cid)
     const fieldArray = [...fieldSet]
     const hasActiveCache = cache && contain(Object.keys(cache), fieldArray)
     if (hasActiveCache) return this.channel = cache as any
@@ -243,7 +243,7 @@ export class Session<
     const assignee = this.resolveValue(this.app.options.autoAssign) ? this.selfId : ''
     const data = await this.getChannel(channelId, assignee, fieldArray)
     const newChannel = observe(data, diff => this.database.setChannel(platform, channelId, diff), `channel ${this.cid}`)
-    await this.app.cache.set('channel', this.cid, newChannel)
+    this.app._channelCache.set(this.id, this.cid, newChannel)
     return this.channel = newChannel
   }
 
@@ -265,7 +265,7 @@ export class Session<
       }
       if (fieldSet.size) {
         const data = await this.getUser(userId, 0, [...fieldSet])
-        await this.app.cache.set('user', this.uid, user.$merge(data))
+        this.app._userCache.set(this.id, this.uid, user.$merge(data))
       }
     }
 
@@ -281,7 +281,7 @@ export class Session<
     }
 
     // 如果存在满足可用的缓存数据，使用缓存代替数据获取
-    const cache = await this.app.cache.get('user', this.uid)
+    const cache = this.app._userCache.get(this.id, this.uid)
     const fieldArray = [...fieldSet]
     const hasActiveCache = cache && contain(Object.keys(cache), fieldArray)
     if (hasActiveCache) return this.user = cache as any
@@ -289,7 +289,7 @@ export class Session<
     // 绑定一个新的可观测用户实例
     const data = await this.getUser(userId, this.resolveValue(this.app.options.autoAuthorize), fieldArray)
     const newUser = observe(data, diff => this.database.setUser(this.platform, userId, diff), `user ${this.uid}`)
-    await this.app.cache.set('user', this.uid, newUser)
+    this.app._userCache.set(this.id, this.uid, newUser)
     return this.user = newUser
   }
 

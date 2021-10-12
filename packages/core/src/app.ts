@@ -52,7 +52,9 @@ export class App extends Context {
   _commands: CommandMap = new Map<string, Command>() as never
   _shortcuts: Command.Shortcut[] = []
   _hooks: Record<keyof any, [Context, (...args: any[]) => any][]> = {}
-  _sessions: Dict<Session> = {}
+  _sessions: Dict<Session> = Object.create(null)
+  _userCache = new SharedCache<User.Observed<any>>()
+  _channelCache = new SharedCache<Channel.Observed<any>>()
 
   public app = this
   public options: App.Config
@@ -246,7 +248,7 @@ export class App extends Context {
   private async _handleMessage(session: Session) {
     // preparation
     this._sessions[session.id] = session
-    const middlewares: Middleware[] = this._hooks[Context.middleware as any]
+    const middlewares: Middleware[] = this._hooks[Context.middleware]
       .filter(([context]) => context.match(session))
       .map(([, middleware]) => middleware)
 
@@ -285,6 +287,8 @@ export class App extends Context {
     this.emit(session, 'middleware', session)
 
     // flush user & group data
+    this._userCache.delete(session.id)
+    this._channelCache.delete(session.id)
     await session.user?.$update()
     await session.channel?.$update()
   }
@@ -347,4 +351,45 @@ export namespace App {
   defineProperty(Config, 'Network', NetworkConfig)
 
   Config.list.push(NetworkConfig)
+}
+
+export namespace SharedCache {
+  export interface Entry<T> {
+    value: T
+    key: string
+    refs: Set<string>
+  }
+}
+
+export class SharedCache<T> {
+  #keyMap: Dict<SharedCache.Entry<T>> = Object.create(null)
+  #refMap: Dict<SharedCache.Entry<T>> = Object.create(null)
+
+  get(ref: string, key: string) {
+    const entry = this.#keyMap[key]
+    if (!entry) return
+    this.ref(ref, entry)
+    return entry.value
+  }
+
+  set(ref: string, key: string, value: T) {
+    const entry = this.#keyMap[key] ||= { value, key, refs: new Set() }
+    this.ref(ref, entry)
+  }
+
+  private ref(ref: string, entry: SharedCache.Entry<T>) {
+    this.delete(ref)
+    this.#refMap[ref] = entry
+    entry.refs.add(ref)
+  }
+
+  delete(ref: string) {
+    const entry = this.#refMap[ref]
+    if (!entry) return
+    entry.refs.delete(ref)
+    if (!entry.refs.size) {
+      delete this.#keyMap[entry.key]
+    }
+    delete this.#refMap[ref]
+  }
 }
