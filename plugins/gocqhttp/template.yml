@@ -83,7 +83,7 @@ servers:
         <<: *default # 引用默认中间件
       # 反向HTTP POST地址列表
       post:
-        - url: $$ selfUrl
+        - url: http://$$ selfUrl
           secret: $$ adapter.secret
 
   # 正向WS设置

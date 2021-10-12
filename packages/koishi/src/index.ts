@@ -8,6 +8,8 @@ import Router from '@koa/router'
 import type Koa from 'koa'
 
 export * from './adapter'
+export * from './assets'
+export * from './cache'
 export * from './http'
 
 export * from '@koishijs/core'
@@ -96,8 +98,6 @@ function prepareServer(this: App) {
     this._httpServer?.close()
   })
 }
-
-
 
 // hack into router methods to make sure
 // that koa middlewares are disposable

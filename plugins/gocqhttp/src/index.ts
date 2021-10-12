@@ -31,6 +31,8 @@ dict['ws-reverse'].dict['password'] = Schema.string('机器人的密码。')
 export function apply(ctx: Context) {
   ctx.on('bot-added', async (bot: onebot.Bot) => {
     if (bot.adapter.platform !== 'onebot') return
+    const { port, host = 'localhost' } = ctx.app.options
+    const { path = '/onebot/' } = ctx.app.registry.get(onebot).config
     const cwd = resolve('accounts/' + bot.selfId)
     await mkdir(cwd, { recursive: true })
     await copyFile(resolve(__dirname, '../bin/go-cqhttp'), cwd + '/go-cqhttp')
@@ -39,6 +41,7 @@ export function apply(ctx: Context) {
       bot: bot.config,
       adapter: bot.adapter.config,
       endpoint: bot.config.endpoint && new URL(bot.config.endpoint),
+      selfUrl: `${host}:${port}${path}`,
     }, /\$\$(.+)/g))
     bot.process = spawn('./go-cqhttp', ['faststart'], { stdio: 'inherit', cwd })
   })
