@@ -102,8 +102,10 @@ module.exports = {
         text: '规模化',
         isGroup: true,
         children: [
+          '/guide/service/service.md',
           '/guide/service/assets.md',
           '/guide/service/cache.md',
+          '/guide/service/http.md',
           '/guide/service/route.md',
         ],
       }, {

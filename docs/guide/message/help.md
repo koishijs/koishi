@@ -154,3 +154,18 @@ ctx.command('foo.bar') // 用小数点表示派生式子指令
 ctx.command('foo.bar/abc.xyz')
 ```
 
+## 禁用帮助功能
+
+如果你在开发用于特定目的的机器人，你可能不希望用户使用全局的 help 指令查看指令列表。
+
+```yaml koishi.config.yml
+# 禁用帮助指令
+help: false
+
+# 配置帮助指令
+help:
+  # 不能通过 -h 触发帮助指令
+  options: false
+  # 禁用全局「帮助」快捷调用（指令依然存在）
+  shortcut: false
+```
