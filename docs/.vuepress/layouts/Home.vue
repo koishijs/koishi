@@ -105,15 +105,12 @@ function getSidebarItems(route: string) {
 <style lang="scss">
 
 .homepage {
-  --c-text: var(--c-text-home);
-
   position: absolute;
   width: 100%;
   top: 0;
   left: 0;
   display: grid;
   grid-template-rows: repeat(5, 100vh);
-  color: var(--c-text);
 
   .koi {
     color: var(--c-love);
@@ -155,6 +152,12 @@ function getSidebarItems(route: string) {
     background-color: var(--c-bg-home);
     transition: var(--t-color);
   }
+}
+
+.screen {
+  --c-text: var(--c-text-home);
+  color: var(--c-text);
+  transition: var(--t-color);
 }
 
 .screen-1 {

@@ -27,3 +27,33 @@ Koishi 规范化了一系列内置服务。它们可以分为两种类型：
 相关的插件名通常以服务名作为前缀，例如 assets-local, cache-redis, database-mysql 等等。这并非强制的要求，但我们建议插件开发者也都遵循这个规范，这有助于让使用者对你插件的功能建立一个更明确的认识。
 
 值得注意的是，Koishi 内置官方插件 @koishijs/plugin-cache-lru。你依然可以通过安装其他缓存插件覆盖默认的实现，但即使你不这样做你也可以正常使用 Cache API。
+
+## 自定义服务
+
+如果你也想开发出像 @koishijs/plugin-webui 这样的插件，那么你或许也会需要定义一个通用的上下文属性。这非常简单：
+
+```js
+// 还是以上面的 webui 为例
+Context.service('webui')
+
+// 假如你在某个上下文设置了这个值，其他的上下文也将拥有此属性
+app.group().webui = new WebUI()
+app.private().webui instanceof WebUI // true
+```
+
+这个静态方法不仅可以在全体上下文中共享某一个对象，还可以定义具有热重载性质的接口。还记得上面的 `webui.addEntry()` 方法吗？如果我希望当 teach 插件被卸载时，上面注册的 entry 也同时被移除，可以做到吗？这就要用到特殊的 `Context.current` 属性了，它只在被 `Context.service()` 声明的类中可用：
+
+```js
+class WebUI {
+  addEntry(filename) {
+    // Context.current 是一个特殊的 symbol，用来标记调用这个方法时所在的上下文
+    const ctx = this[Context.current]
+    this.entries.add(filename)
+
+    // 当 teach 插件被卸载时，自然会触发 ctx 的 disconnect 事件，这样就实现了无副作用的方法
+    ctx.before('disconnect', () => {
+      this.entries.delete(filename)
+    })
+  }
+}
+```

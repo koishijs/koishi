@@ -117,3 +117,41 @@ ctx.plugin(require('koishi-plugin-foo/a'))
 ```
 
 Koishi 的官方插件 koishi-plugin-common 也使用了 [这种写法](https://github.com/koishijs/koishi/blob/master/packages/plugin-common/src/index.ts)。
+
+### 卸载插件
+
+通常来说一个插件的效应应该是永久的，但如果你想在运行时卸载一个插件，应该怎么做？你可以使用插件定义中的那个上下文的 `dispose` 方法来解决：
+
+```js my-plugin.js
+module.exports = (ctx, options) => {
+  // 编写你的插件逻辑
+  ctx.on('message', someListener)
+  ctx.command('foo').action(callback)
+  ctx.middleware(callback)
+  ctx.plugin(require('another-plugin'))
+
+  // 卸载这个插件，取消上面的全部操作
+  ctx.dispose()
+}
+```
+
+看起来很神奇，不过它的实现方式也非常简单。当一个插件被注册时，Koishi 会记录注册过程中定义的所有事件钩子、指令、中间件乃至子插件。当 `ctx.dispose()` 被调用时，再逐一取消上述操作的效应。因此，它的局限性也很明显：它并不能妥善处理除了 Context API 以外的**副作用**。不过，我们也准备了额外的解决办法：
+
+```js my-plugin.js
+module.exports = (ctx, options) => {
+  const server = createServer()
+
+  ctx.on('connect', () => {
+    // ctx.dispose 无法消除 server.listen 带来的副作用
+    server.listen(1234)
+  })
+
+  // 添加一个特殊的回调函数来处理副作用
+  ctx.before('disconnect', () => {
+    server.close()
+  })
+
+  // 现在我们又可以愉快地使用 ctx.dispose() 啦
+  ctx.dispose()
+}
+```

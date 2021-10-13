@@ -71,14 +71,14 @@ module.exports = {
           '/guide/message/push.md',
         ],
       }, {
-        text: '复用性',
+        text: '模块化',
         isGroup: true,
         children: [
           '/guide/plugin/plugin.md',
           '/guide/plugin/context.md',
-          '/guide/plugin/hot-reload.md',
           '/guide/plugin/lifecycle.md',
           '/guide/plugin/schema.md',
+          '/guide/plugin/publish.md',
         ],
       }, {
         text: '数据库',
