@@ -105,12 +105,15 @@ function getSidebarItems(route: string) {
 <style lang="scss">
 
 .homepage {
+  --c-text: var(--c-text-home);
+
   position: absolute;
   width: 100%;
   top: 0;
   left: 0;
   display: grid;
   grid-template-rows: repeat(5, 100vh);
+  color: var(--c-text);
 
   .koi {
     color: var(--c-love);
@@ -145,6 +148,13 @@ function getSidebarItems(route: string) {
   h2 {
     font-weight: 400;
   }
+
+  > :nth-child(2n+1) {
+    border-bottom: 1px solid var(--c-border);
+    border-top: 1px solid var(--c-border);
+    background-color: var(--c-bg-home);
+    transition: var(--t-color);
+  }
 }
 
 .screen-1 {
@@ -165,15 +175,6 @@ function getSidebarItems(route: string) {
     text-transform: uppercase;
     text-align: center;
   }
-}
-
-.screen-2, .screen-4, .screen-6 {
-  --c-text: var(--c-text-1);
-  color: var(--c-text);
-  border-bottom: 1px solid var(--c-border);
-  border-top: 1px solid var(--c-border);
-  background-color: var(--c-bg-0);
-  transition: var(--t-color);
 }
 
 .feature-view {

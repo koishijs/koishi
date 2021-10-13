@@ -55,7 +55,7 @@ const toggleDarkMode = () => {
     user-select: none;
 
     &:hover {
-      color: var(--c-text-0);
+      color: var(--c-text-dark);
     }
   }
 }
