@@ -68,7 +68,7 @@ class MongoSynchronizer implements Synchronizer {
   }
 }
 
-Database.extend('mongo', {
+Database.extend('database-mongo', {
   async stats() {
     const getTableStats = async () => {
       const cols = await this.db.collections()
