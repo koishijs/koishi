@@ -39,14 +39,14 @@ Koishi 支持多个聊天平台，对于不同的平台，你也需要做好相�
 npm init
 
 # 安装 koishi 和相关库
-npm i koishi @koishijs/plugin-onebot @koishijs/plugin-common
+npm i koishi @koishijs/plugin-adapter-onebot @koishijs/plugin-common
 ```
 ```yarn
 # 初始化项目
 yarn init
 
 # 安装 koishi 和相关库
-yarn add koishi @koishijs/plugin-onebot @koishijs/plugin-common
+yarn add koishi @koishijs/plugin-adapter-onebot @koishijs/plugin-common
 ```
 :::
 
@@ -58,8 +58,8 @@ const { App } = require('koishi')
 // 创建一个 Koishi 应用
 const app = new App()
 
-// 安装 onebot 插件，并配置机器人
-app.plugin(require('@koishijs/plugin-onebot'), {
+// 安装 onebot 适配器插件，并配置机器人
+app.plugin(require('@koishijs/plugin-adapter-onebot'), {
   protocol: 'ws',
   selfId: '123456789',
   endpoint: 'ws://127.0.0.1:6700',
@@ -119,7 +119,7 @@ yarn add @koishijs/plugin-database-mysql
 ```
 :::
 
-然后继续修改你的代码，在应用中配置 MySQL 插件：
+然后继续修改你的代码，在应用中配置 MySQL 数据库插件：
 
 ```js index.js
 app.plugin(require('@koishijs/plugin-database-mysql'), {
@@ -139,7 +139,7 @@ app.plugin(require('@koishijs/plugin-database-mysql'), {
 
 ```js index.js
 // 来自 onebot 适配器的机器人
-app.plugin(require('@koishijs/plugin-onebot'), {
+app.plugin(require('@koishijs/plugin-adapter-onebot'), {
   protocol: 'ws',
   selfId: '123456789',
   endpoint: 'ws://127.0.0.1:6700',
@@ -154,7 +154,7 @@ app.plugin(require('@koishijs/plugin-discord'), {
 如果你要同时运行来自同一个平台的多个机器人，只需将上述配置写进一个 `bots` 数组即可：
 
 ```js index.js
-app.plugin(require('@koishijs/plugin-onebot'), {
+app.plugin(require('@koishijs/plugin-adapter-onebot'), {
   bots: [{
     // 这里配置你的第一个机器人
     protocol: 'ws',
