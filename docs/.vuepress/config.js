@@ -64,11 +64,19 @@ module.exports = {
         text: '处理交互',
         isGroup: true,
         children: [
+          '/guide/message/middleware.md',
+          '/guide/message/session.md',
           '/guide/message/message.md',
-          '/guide/message/command.md',
-          '/guide/message/execute.md',
-          '/guide/message/help.md',
-          '/guide/message/push.md',
+          '/guide/message/bot.md',
+        ],
+      }, {
+        text: '指令系统',
+        isGroup: true,
+        children: [
+          '/guide/command/introduction.md',
+          '/guide/command/execution.md',
+          '/guide/command/help.md',
+          '/guide/command/type-system.md',
         ],
       }, {
         text: '模块化',
