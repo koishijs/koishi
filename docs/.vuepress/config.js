@@ -99,7 +99,7 @@ module.exports = {
           '/guide/adapter/for-everything.md',
         ],
       }, {
-        text: '规模化',
+        text: '更多功能',
         isGroup: true,
         children: [
           '/guide/service/service.md',
@@ -107,17 +107,16 @@ module.exports = {
           '/guide/service/cache.md',
           '/guide/service/http.md',
           '/guide/service/route.md',
+          '/guide/service/logger.md',
         ],
       }, {
-        text: '更多',
+        text: '调试与部署',
         isGroup: true,
         children: [
           '/guide/misc/cli.md',
-          '/guide/misc/logger.md',
           '/guide/misc/unit-tests.md',
           '/guide/misc/decorator.md',
           '/guide/misc/docker.md',
-          '/guide/misc/faq.md',
         ],
       }],
       '/api/': [{
