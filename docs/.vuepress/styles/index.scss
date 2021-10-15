@@ -23,6 +23,11 @@ html {
   }
 }
 
+strong {
+  color: var(--c-text-darker);
+  transition: 0.3s ease;
+}
+
 .sidebar-heading:not(:first-child) {
   margin-top: 1rem;
 }
