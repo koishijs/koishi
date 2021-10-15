@@ -24,8 +24,8 @@ html {
 }
 
 strong {
-  color: var(--c-text-darker);
-  transition: 0.3s ease;
+  color: var(--c-text-dark);
+  transition: color var(--t-color);
 }
 
 .sidebar-heading:not(:first-child) {
