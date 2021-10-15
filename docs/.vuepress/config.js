@@ -126,6 +126,14 @@ module.exports = {
           '/guide/misc/decorator.md',
           '/guide/misc/docker.md',
         ],
+      }, {
+        text: '贡献指南',
+        isGroup: true,
+        children: [
+          '/guide/contribution/structure.md',
+          '/guide/contribution/code.md',
+          '/guide/contribution/docs.md',
+        ],
       }],
       '/api/': [{
         text: '总览',
