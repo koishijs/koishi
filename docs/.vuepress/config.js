@@ -36,7 +36,7 @@ module.exports = {
   themeConfig: {
     logo: '/koishi.png',
     navbar: [
-      { text: '指南', link: '/guide/basic/about.html' },
+      { text: '指南', link: '/guide/introduction/' },
       { text: 'API', link: '/api/' },
       { text: '官方插件', link: '/plugins/' },
       // ...devOnly({ text: '演练场', link: '/playground.html' }),
@@ -46,19 +46,10 @@ module.exports = {
         text: '入门',
         isGroup: true,
         children: [
-          '/guide/basic/about.md',
-          '/guide/basic/coding.md',
-          '/guide/basic/console.md',
-          '/guide/basic/glossary.md',
-        ],
-      }, {
-        text: '平台指南',
-        isGroup: true,
-        children: [
-          '/guide/platform/onebot.md',
-          '/guide/platform/discord.md',
-          '/guide/platform/telegram.md',
-          '/guide/platform/kaiheila.md',
+          '/guide/introduction/index.md',
+          '/guide/introduction/coding.md',
+          '/guide/introduction/console.md',
+          '/guide/introduction/glossary.md',
         ],
       }, {
         text: '处理交互',
@@ -187,7 +178,6 @@ module.exports = {
         children: [
           '/plugins/adapter/discord.md',
           '/plugins/adapter/kaiheila.md',
-          '/plugins/adapter/minecraft.md',
           '/plugins/adapter/onebot.md',
           '/plugins/adapter/telegram.md',
         ],

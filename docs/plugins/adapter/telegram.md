@@ -3,9 +3,9 @@ title: 适配器：Telegram
 sidebarDepth: 2
 ---
 
-# @koishijs/plugin-telegram
+# @koishijs/plugin-adapter-telegram
 
-## 创建机器人
+## 接入方法
 
 1. 搜索 @botfather（有个官方认证的符号）并进入聊天界面
 2. 输入 `/start` 后，会出现一个使用菜单，你可以使用这里指令对你的机器人进行配置
@@ -29,20 +29,20 @@ sidebarDepth: 2
 
 ## 适配器选项
 
-### options.telegram.path
+### options.path
 
 - 类型：`string`
 - 默认值：`'/telegram'`
 
 服务器监听的路径。
 
-### options.telegram.selfUrl
+### options.selfUrl
 
 - 类型：`string`
 
 Koishi 服务暴露在公网的地址，会覆盖 [`options.selfUrl`](../app.md#options-selfurl) 的值。
 
-### options.telegram.endpoint
+### options.endpoint
 
 - 类型: `string`
 - 默认值: `'https://api.telegram.org'`

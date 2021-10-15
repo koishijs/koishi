@@ -18,10 +18,10 @@ Koishi 需要 [NodeJS](https://nodejs.org/) (最低 v12，推荐使用 LTS) 运�
 
 Koishi 支持多个聊天平台，对于不同的平台，你也需要做好相应的准备工作。
 
-- [接入 OneBot (QQ)](./platform/onebot.md)
-- [接入 Discord](./platform/discord.md)
-- [接入 Telegram](./platform/telegram.md)
-- [接入开黑啦](./platform/kaiheila.md)
+- [接入 OneBot (QQ)](../../plugins/adapter/onebot.md)
+- [接入 Discord](../../plugins/adapter/discord.md)
+- [接入 Telegram](../../plugins/adapter/telegram.md)
+- [接入开黑啦](../../plugins/adapter/kaiheila.md)
 
 如果你还没有准备好对接到哪些平台，也不用着急，Koishi 可以在不对接任何平台的情况直接启动。
 

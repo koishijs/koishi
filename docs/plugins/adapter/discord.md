@@ -3,9 +3,9 @@ title: 适配器：Discord
 sidebarDepth: 2
 ---
 
-# @koishijs/plugin-discord
+# @koishijs/plugin-adapter-discord
 
-## 创建机器人
+## 接入方法
 
 1. 前往 [https://discord.com/developers/applications](https://discord.com/developers/applications)，登录账号创建一个应用
 2. 点击「Bot」并创建一个新的机器人，保存这个页面中的 token（请注意不要泄露）
@@ -14,10 +14,6 @@ sidebarDepth: 2
 5. 将上面的 token 作为机器人配置项即可使用
 
 ## 机器人选项
-
-### options(.bots[]).type
-
-- 可选值: discord
 
 ### options(.bots[]).token
 
@@ -29,14 +25,14 @@ sidebarDepth: 2
 
 包括全部的 [`WsClient`](../adapter.md#类-adapter-wsclient) 选项和下列额外选项：
 
-### options.discord.endpoint
+### options.endpoint
 
 - 类型: `string`
 - 默认值: `'https://discord.com/api/v8'`
 
 要请求的 API 网址。
 
-### options.discord.handleExternalAsset
+### options.handleExternalAsset
 
 - 可选值: `string`
 - 默认值: `'auto'`
@@ -47,7 +43,7 @@ sidebarDepth: 2
 - **direct:** 直接发送链接
 - **auto:** 发送一个 HEAD 请求，如果返回的 Content-Type 正确，则直接发送链接，否则先下载后发送
 
-### options.discord.handleMixedContent
+### options.handleMixedContent
 
 - 可选值: `string`
 - 默认值: `'auto'`

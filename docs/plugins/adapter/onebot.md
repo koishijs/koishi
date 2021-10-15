@@ -3,61 +3,120 @@ title: 适配器：OneBot
 sidebarDepth: 2
 ---
 
-# @koishijs/plugin-onebot
+# @koishijs/plugin-adapter-onebot
 
 ::: warning
-尽管 Koishi 使用了 [MIT](https://choosealicense.com/licenses/mit/) 协议，但 OneBot 相关框架普遍使用了基于 [AGPL 3.0](https://choosealicense.com/licenses/agpl-3.0/) 的协议。因此如果你使用 @koishijs/plugin-onebot 运行你的机器人，你将可能受到 AGPL 3.0 协议的限制，必须将你的代码开源并保持同协议。Koishi 及其作者对使用上述框架或违反上述限制的行为所可能造成的一切后果概不负责。
+尽管 Koishi 使用了 [MIT](https://choosealicense.com/licenses/mit/) 协议，但 OneBot 相关框架普遍使用了基于 [AGPL 3.0](https://choosealicense.com/licenses/agpl-3.0/) 的协议。因此如果你使用 @koishijs/plugin-adapter-onebot 运行你的机器人，你将可能受到 AGPL 3.0 协议的限制，必须将你的代码开源并保持同协议。Koishi 及其作者对使用上述框架或违反上述限制的行为所可能造成的一切后果概不负责。
 :::
 
-[OneBot](https://github.com/howmanybots/onebot) (旧名 CQHTTP) 是一个聊天机器人应用接口标准，目前可用于 QQ 机器人。要使用 @koishijs/plugin-onebot，你需要首先下载一个实现该协议的框架：
+- 标有 <Badge vertical="baseline" text="go-cqhttp" type="warning"/> 的 API 只能基于 go-cqhttp 运行
+
+## 框架介绍
+
+[OneBot](https://github.com/howmanybots/onebot) 是一个聊天机器人应用接口标准，目前可用于 QQ 聊天机器人的实现。你可以使用下列实现该协议的框架：
 
 - [Mrs4s/go-cqhttp](https://github.com/Mrs4s/go-cqhttp)（推荐）
 - [yyuueexxiinngg/cqhttp-mirai](https://github.com/yyuueexxiinngg/cqhttp-mirai)
 - [richardchien/coolq-http-api](https://github.com/richardchien/coolq-http-api)（配合 [iTXTech/mirai-native](https://github.com/iTXTech/mirai-native) 使用）
 
-上述框架也在 OneBot 的基础上扩展了各自的接口，而这些扩展的功能也被包含在了 @koishijs/plugin-onebot 中。
+我们推荐使用 go-cqhttp。在本文的后续部分我们只会介绍这个框架的使用方法。有对其他框架感兴趣的同学也可以自行探索。
 
-- 标有 <Badge vertical="baseline" text="go-cqhttp" type="warning"/> 的 API 只能基于 go-cqhttp 运行
+### 通信方式
 
-## 特性介绍
+OneBot 协议规定了四种不同的通信方式：
 
-### 协议选择
+- 正向 HTTP：OneBot 作为 HTTP 服务端，提供 API 调用服务
+- 反向 HTTP：OneBot 作为 HTTP 客户端，向用户配置的 URL 推送事件，并处理用户返回的响应
+- 正向 WebSocket：OneBot 作为 WebSocket 服务端，接受用户连接，提供 API 调用和事件推送服务
+- 反向 WebSocket：OneBot 作为 WebSocket 客户端，主动连接用户配置的 URL，提供 API 调用和事件推送服务
 
-目前 Koishi 已经完全实现了 OneBot 所定义的全部三种通信方式，因此它们之间**不存在任何功能上的差别**。
+我们推荐使用正向 WebSocket，这种通信方式操作简便，且拥有相对较高的性能。在本文的后续部分我们将介绍每一种通信方式的配置方法。
 
-但是，HTTP 需要 Koishi 和 OneBot 所处于同一台机器，或所处的机器都拥有公网 IP；而 WebSocket 只需要 Koishi 和 OneBot 所处于同一台机器，或运行 OneBot 的机器拥有公网 IP。因此如果你在服务端运行 CoolQ，同时在个人电脑上调试你的 Koishi 应用，你应当选择使用 WebSocket 模式。
+### 安装与运行
 
-从性能上说，WebSocket 占用的资源会更少（因为不需要每次都建立连接），但是响应速度可能不如 HTTP；另一方面，当一个 Koishi 应用同时管理着多个机器人时，HTTP 能通过快捷调用和服务器复用的方式来提高性能，但是 WebSocket 并没有这些机制。
+1. 首先从 [这个页面](https://github.com/Mrs4s/go-cqhttp/releases) 下载并解压最新版本的 go-cqhttp
+   - 如果你不知道下载哪一个，[请看这里](#我不知道应该下载-release-中的哪一个文件。)
+2. 打开命令行并 cd 到你的解压目录
+3. 输入 `./go-cqhttp` 并运行，此时将提示：
 
-### 异步调用
-
-OneBot 提出了**异步调用**的概念，当 OneBot 服务器受到异步调用请求时，如果调用正确，将直接返回 200。这样做的好处是，如果某些操作有较长的耗时（例如发送含有大量图片的消息或清空数据目录等）或你不关心调用结果，使用异步调用可以有效防止阻塞。下面说明了异步调用和普通调用的关系：
-
-![async-method](/async-method.png)
-
-但是另一方面，你也无法得知异步调用是否成功被执行。与此同时，没有副作用的异步调用也毫无意义（因为这些调用本身就是为了获取某些信息，但是异步调用是无法获取调用结果的）。因此，Koishi 为除此以外的所有异步调用都提供了 API，它们的调用接口与非异步的版本除了在方法后面加了一个 `Async` 外没有任何区别：
-
-```js
-// 普通版本
-const messageId = await bot.$sendPrivateMsg('123456789', 'Hello world')
-
-// 异步版本，无法获得调用结果
-await bot.$sendPrivateMsgAsync('123456789', 'Hello world')
+```cli
+未找到配置文件，正在为您生成配置文件中！
+请选择你需要的通信方式:
+  1: HTTP 通信
+  2: 正向 WebSocket 通信
+  3: 反向 WebSocket 通信
+你的选择是: 2           # 根据你的需求可作更改，输入后回车进入下一步
+默认配置文件已生成，请修改 config.yml 后重新启动。
 ```
 
-::: tip
-虽然异步调用方法的名字以 Async 结尾，但是其他方法也是**异步函数**，它们都会返回一个 `Promise` 对象。取这样的名字只是为了与 OneBot 保持一致。
-:::
+4. 根据 [配置参考](#go-cqhttp-配置参考) 中的说明修改 config.yml 文件。之后再次输入 `./go-cqhttp` 并运行：
 
-### 快捷回复
+```cli
+[INFO]: 登录成功 欢迎使用: balabala
+```
 
-Meta 对象还提供了一个快捷回复方法 `session.send`，调用它可以快速实现对原消息的回复。快捷操作的响应速度会高于普通的 Sender API 调用，但是默认情况下这种操作同上面的异步调用一样，这些操作也是无法获得调用结果的。完整的快捷操作列表参见 [Koishi 添加的属性](#koishi-添加的属性)。
+5. 如出现需要认证的信息, 请自行认证设备。
 
-这里也简单介绍一下快捷操作的原理。当正常使用 HTTP 模式时，每个事件上报和 API 调用都使用了不同的连接。那么快捷操作则相当于将 API 调用作为事件上报的响应。当然，这种做法有着很多限制，例如对 WebSocket 无效，同一个事件只能响应一次，以及需要手动处理响应超时的问题。因此，默认情况下这种优化是不开启的。如果手动配置了 [`quickOperation`](#options-quickoperation)，则会将这个配置项作为时间限制，在这个时间限制内第一个调用快捷操作的会享受这种优化（事实上大部分操作都只有一个响应，所以这种优化对 HTTP 往往是非常有效的），之后的所有快捷操作调用都会自动转化为异步调用，这样可以保证快捷操作永远都是可用的。
+#### 快速启动
 
-下面这张图比较了使用 HTTP 时，快捷操作与默认机制的区别：
+默认情况下启用 go-cqhttp 将会有五秒钟的延时，可以使用命令行参数 `faststart` 进行跳过：
 
-![quick-operation](/quick-operation.png)
+```cli
+./go-cqhttp faststart
+```
+
+### 获取更新
+
+除了直接用前面的方法下载新版本并替换原文件外，go-cqhttp 还提供了另一种获取更新的方式。
+
+在命令行中进入 go-cqhttp 所在目录并输入：
+
+```cli
+./go-cqhttp update
+```
+
+如果在国内连接 GitHub 下载速度可能很慢, 可以使用镜像源下载：
+
+```cli
+./go-cqhttp update https://github.rc1844.workers.dev
+```
+
+几个可用的镜像源：
+
+- `https://hub.fastgit.org`
+- `https://github.com.cnpmjs.org`
+- `https://github.bajins.com`
+- `https://github.rc1844.workers.dev`
+
+### 安装 FFmpeg
+
+为了支持任意格式的语音发送, 你需要安装 FFmpeg。
+
+#### Windows
+
+[点击这里](https://www.gyan.dev/ffmpeg/builds/ffmpeg-release-full.7z) 下载并解压, 并为 `bin` 这个文件夹添加环境变量。
+
+如果遇到下载速度缓慢的问题可以用 [这个源](https://downloads.go-cqhttp.org/ffmpeg-release-full.7z)。
+
+#### Ubuntu / Debian
+
+在终端执行：
+
+```cli
+apt install -y ffmpeg
+```
+
+#### Fedora / RHEL / CentOS
+
+在终端执行：
+
+```cli
+# Centos7 及之前
+yum install ffmpeg ffmpeg-devel 
+
+# CentOS8 及之后
+dnf install ffmpeg ffmpeg-devel
+```
 
 ## 机器人选项
 
@@ -87,7 +146,7 @@ Meta 对象还提供了一个快捷回复方法 `session.send`，调用它可以
 
 包括全部的 [`WsClient`](../adapter.md#类-adapter-wsclient) 选项和下列额外选项：
 
-### options.onebot.path
+### options.path
 
 - 类型：`string`
 - 默认值：`'/onebot'`
@@ -96,39 +155,29 @@ Meta 对象还提供了一个快捷回复方法 `session.send`，调用它可以
 
 相关 OneBot 配置：`post_url`。
 
-### options.onebot.secret
+### options.secret
 
 - 类型：`string`
 
 接收信息时用于验证的字段，应与 OneBot 的 `secret` 配置保持一致。
 
-### options.onebot.quickOperation
-
-- 类型：`number`
-
-快捷操作的时间限制，单位为毫秒。如果配置了这个选项且使用了 HTTP 通信方式，则在这段时间内的首次调用 `session.send()` 或类似的方法将不产生新的 HTTP 请求。默认值为 `100`。参见 [**快捷操作**](#快捷操作) 一节。
-
 ## go-cqhttp 配置参考
 
-### HTTP
-
-```js koishi.config.js
-module.exports = {
-  type: 'onebot:http',
-  selfId: '123456789',
-  server: 'http://127.0.0.1:5700',
-  secret: 'my-secret',
-  port: 8080,
-}
-```
+首先下面的配置是与通信方式无关的：
 
 ```yaml config.yml
 account:
-  uin: 123456789
+  uin: 123456     # 必填，QQ 账号
+  password: ''    # 推荐，密码为空时将使用扫码登录
+```
 
+下面介绍不同的通信方式所需的配置，以及 koishi.config.yml 的对应配置。
+
+### HTTP
+
+```yaml config.yml
 servers:
   - http:
-      disabled: false
       host: 127.0.0.1
       port: 5700
       post:
@@ -136,60 +185,91 @@ servers:
           secret: my-secret
 ```
 
-### WebSocket
-
-```js koishi.config.js
-module.exports = {
-  type: 'onebot:ws',
-  selfId: '123456789',
-  server: 'ws://127.0.0.1:6700',
+::: code-group config koishi.config
+```yaml
+port: 8080
+plugins:
+  onebot:
+    protocol: http
+    selfId: '123456789'
+    endpoint: http://127.0.0.1:5700
+    secret: my-secret
+```
+```ts
+export default {
+  port: 8080,
+  plugins: {
+    onebot: {
+      protocol: 'http',
+      selfId: '123456789',
+      endpoint: 'http://127.0.0.1:5700',
+      secret: 'my-secret',
+    },
+  },
 }
 ```
+:::
+
+### 正向 WebSocket
 
 ```yaml config.yml
-account:
-  uin: 123456789
-
 servers:
   - ws:
-      disabled: false
       host: 127.0.0.1
       port: 6700
 ```
 
-### 反向 WebSocket
-
-```js koishi.config.js
-module.exports = {
-  type: 'onebot:ws-reverse',
-  selfId: '123456789',
-  port: 8080,
-}
+::: code-group config koishi.config
+```yaml
+plugins:
+  onebot:
+    protocol: ws
+    selfId: '123456789'
+    endpoint: ws://127.0.0.1:6700
 ```
-
-```yaml config.yml
-account:
-  uin: 123456789
-
-servers:
-  - ws-reverse:
-      disabled: false
-      universal: ws://127.0.0.1:8080/onebot
-```
-
-### 配置 `path` 和 `selfUrl`
-
-```js koishi.config.js
-module.exports = {
-  // 请注意这里的 port 可能跟 selfUrl 中的不一致
-  // 你可以通过 nginx，candy 等工具实现端口的转发和 SSL 等需求
-  port: 8080,
-  selfUrl: 'https://my-host:9090',
-  onebot: {
-    path: '/foo',
+```ts
+export default {
+  plugins: {
+    onebot: {
+      protocol: 'ws',
+      selfId: '123456789',
+      endpoint: 'ws://127.0.0.1:6700',
+    },
   },
 }
 ```
+:::
+
+### 反向 WebSocket
+
+```yaml config.yml
+servers:
+  - ws-reverse:
+      universal: ws://127.0.0.1:8080/onebot
+```
+
+::: code-group config koishi.config
+```yaml
+port: 8080
+plugins:
+  onebot:
+    protocol: ws-reverse
+    selfId: '123456789'
+```
+```ts
+export default {
+  port: 8080,
+  plugins: {
+    onebot: {
+      protocol: 'ws-reverse',
+      selfId: '123456789',
+    },
+  },
+}
+```
+:::
+
+### 配置 `path` 和 `selfUrl`
 
 ```yaml config.yml
 servers:
@@ -201,6 +281,73 @@ servers:
   - ws-reverse:
       universal: wss://my-host:9090/onebot
 ```
+
+::: code-group config koishi.config
+```yaml
+# 请注意这里的 port 可能跟 selfUrl 中的不一致
+# 你可以通过 nginx，candy 等工具实现端口的转发和 SSL 等需求
+port: 8080
+selfUrl: https://my-host:9090
+plugins:
+  onebot:
+    path: /foo
+```
+```ts
+export default {
+  // 请注意这里的 port 可能跟 selfUrl 中的不一致
+  // 你可以通过 nginx，candy 等工具实现端口的转发和 SSL 等需求
+  port: 8080,
+  selfUrl: 'https://my-host:9090',
+  plugins: {
+    onebot: {
+      path: '/foo',
+    },
+  },
+}
+```
+:::
+
+## 常见问题
+
+#### 我不知道应该下载 release 中的哪一个文件。
+
+- Windows：右击我的电脑 → 属性 → 处理器，在这里可以看到架构
+- MacOS：如果你的电脑能安装 iOS 应用，那就是 arm，不然就是 amd64
+- Linux：在命令行中输入 `lscpu`，看 arch 那一行输出
+
+#### 我的 go-cqhttp 初次启动时并没有生成 config.yml。
+
+请检查你的 go-cqhttp 是否为最新版本。
+
+#### 使用 HTTP 或反向 WebSocket 时无法接收消息，同时 go-cqhttp 有报错。
+
+请检查你的配置是否正确。尤其注意以下几点：
+
+- koishi.config.yml 中的 `selfId` 必须写并且必须是字符串
+- 如果你使用 HTTP：请不要忘记配置 post，同时默认情况下 post 的 `url` 字段应该包含 `/onebot`
+- 如果你使用反向 WebSocket：默认情况下 `universal` 字段应该包含 `/onebot`
+
+#### 发送消息时提示「账号可能被风控」。
+
+以下内容摘自 [Mrs4s/go-cqhttp#211](https://github.com/Mrs4s/go-cqhttp/issues/211#issuecomment-812059109) 和 [Mrs4s/go-cqhttp#633](https://github.com/Mrs4s/go-cqhttp/issues/633)：
+
+风控也是分种类的，有 xml 消息被风控，有 json 消息被风控，也有发消息全部被风控。官方客户端正常那可以尝试更换 device.json 文件。再次声明，风控是随机事件，有人挂三五个月都不会被风控，有人天天被风控。是否风控由腾讯根据网络环境，设备，发送的消息来判断。
+
+这里留下几个建议:
+
+- 不要在短时间内进行批量操作
+- 不要在新设备登录不久发长信息 / xml / json 信息，以 100 字内的信息最佳
+- 不要过分使用敏感操作
+
+#### 为什么其他平台的适配器名字都与平台一致，只有 QQ 对应 OneBot？
+
+这是由多方原因共同导致的。
+
+首先，许多平台都公开了自己的机器人接口，只有腾讯官方对机器人采取封杀的态度。因此只有 QQ 的适配器是基于第三方协议实现的，OneBot 正是这个协议的名字。而第三方协议远远不止一个，所以不应该用 QQ 这个笼统的名称。在未来也可能出现其他面向 QQ 的适配器。
+
+反过来，OneBot 作为一个协议，未来也可能支持更多的聊天平台。届时只需有 @koishijs/plugin-onebot，Koishi 也相当于支持了这些平台。一旦出现了这样的情况，用 QQ 作为适配器名反而显得以偏概全了，这也是不妥当的。
+
+但尽管这么说，从目前来看，当我们在讨论用 Koishi 实现 QQ 机器人时，都默认采用这个协议。
 
 ## 发送消息
 

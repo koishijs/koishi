@@ -3,9 +3,9 @@ title: 适配器：Kaiheila
 sidebarDepth: 2
 ---
 
-# @koishijs/plugin-kaiheila
+# @koishijs/plugin-adapter-kaiheila
 
-## 创建机器人
+## 接入方法
 
 1. 前往 [开发者平台](https://developer.kaiheila.cn/)，选择「机器人」并点击「新建」
 2. 在机器人连接模式中配置 Webhook 或 WebSocket 中的一种：
@@ -37,21 +37,21 @@ sidebarDepth: 2
 
 包括全部的 [`WsClient`](../adapter.md#类-adapter-wsclient) 选项和下列额外选项：
 
-### options.kaiheila.path
+### options.path
 
 - 类型：`string`
 - 默认值：`'/kaiheila'`
 
 服务器监听的路径。仅用于 HTTP 通信方式。
 
-### options.kaiheila.endpoint
+### options.endpoint
 
 - 类型: `string`
 - 默认值: `'https://www.kaiheila.cn/api/v3'`
 
 要请求的 API 网址。
 
-### options.kaiheila.attachMode
+### options.attachMode
 
 - 类型: `'separate' | 'mixed' | 'card'`
 - 默认值: `'separate'`
