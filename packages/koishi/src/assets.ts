@@ -4,7 +4,8 @@ import { segment } from '@koishijs/utils'
 const PROTOCOL_BASE64 = 'base64://'
 
 export abstract class Assets {
-  protected types: readonly string[] = ['image', 'audio', 'video']
+  static types = ['image', 'audio', 'video']
+  protected types: readonly string[] = Assets.types
 
   abstract upload(url: string, file: string): Promise<string>
   abstract stats(): Promise<Assets.Stats>
@@ -31,4 +32,16 @@ export namespace Assets {
     assetCount?: number
     assetSize?: number
   }
+}
+
+const { broadcast } = Context.prototype
+Context.prototype.broadcast = async function (this: Context, ...args: any[]) {
+  const index = Array.isArray(args[0]) ? 1 : 0
+  args[index] = await segment.transformAsync(args[index], Object.fromEntries(Assets.types.map((type) => {
+    return [type, async (data) => {
+      const buffer = await this.http.get.arraybuffer(data.url)
+      return segment(type, { url: 'base64://' + Buffer.from(buffer).toString('base64') })
+    }]
+  })))
+  return broadcast.apply(this, args)
 }
