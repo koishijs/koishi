@@ -23,9 +23,15 @@ html {
   }
 }
 
-strong {
-  color: var(--c-text-dark);
-  transition: color var(--t-color);
+.page {
+  strong {
+    color: var(--c-text-dark);
+    transition: color var(--t-color);
+  }
+
+  a {
+    font-weight: 600;
+  }
 }
 
 .sidebar-heading:not(:first-child) {

@@ -189,7 +189,7 @@ servers:
 ```yaml
 port: 8080
 plugins:
-  onebot:
+  adapter-onebot:
     protocol: http
     selfId: '123456789'
     endpoint: http://127.0.0.1:5700
@@ -199,7 +199,7 @@ plugins:
 export default {
   port: 8080,
   plugins: {
-    onebot: {
+    'adapter-onebot': {
       protocol: 'http',
       selfId: '123456789',
       endpoint: 'http://127.0.0.1:5700',
@@ -222,7 +222,7 @@ servers:
 ::: code-group config koishi.config
 ```yaml
 plugins:
-  onebot:
+  adapter-onebot:
     protocol: ws
     selfId: '123456789'
     endpoint: ws://127.0.0.1:6700
@@ -230,7 +230,7 @@ plugins:
 ```ts
 export default {
   plugins: {
-    onebot: {
+    'adapter-onebot': {
       protocol: 'ws',
       selfId: '123456789',
       endpoint: 'ws://127.0.0.1:6700',
@@ -252,7 +252,7 @@ servers:
 ```yaml
 port: 8080
 plugins:
-  onebot:
+  adapter-onebot:
     protocol: ws-reverse
     selfId: '123456789'
 ```
@@ -260,7 +260,7 @@ plugins:
 export default {
   port: 8080,
   plugins: {
-    onebot: {
+    'adapter-onebot': {
       protocol: 'ws-reverse',
       selfId: '123456789',
     },
@@ -289,7 +289,7 @@ servers:
 port: 8080
 selfUrl: https://my-host:9090
 plugins:
-  onebot:
+  adapter-onebot:
     path: /foo
 ```
 ```ts
@@ -299,7 +299,7 @@ export default {
   port: 8080,
   selfUrl: 'https://my-host:9090',
   plugins: {
-    onebot: {
+    'adapter-onebot': {
       path: '/foo',
     },
   },
