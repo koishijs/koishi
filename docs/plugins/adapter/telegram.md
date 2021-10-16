@@ -17,10 +17,6 @@ sidebarDepth: 2
 
 ## 机器人选项
 
-### options(.bots[]).type
-
-- 可选值: telegram
-
 ### options(.bots[]).token
 
 - 类型: `string`
@@ -40,11 +36,11 @@ sidebarDepth: 2
 
 - 类型：`string`
 
-Koishi 服务暴露在公网的地址，会覆盖 [`options.selfUrl`](../app.md#options-selfurl) 的值。
+Koishi 服务暴露在公网的地址，会覆盖 [`app.options.selfUrl`](../../api/app.md#options-selfurl) 的值。
 
 ### options.endpoint
 
 - 类型: `string`
 - 默认值: `'https://api.telegram.org'`
 
-要请求的 API 网址。
+要请求的 API 终结点。
