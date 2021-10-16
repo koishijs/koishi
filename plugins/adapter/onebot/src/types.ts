@@ -302,10 +302,10 @@ type id = string | number
 export interface Internal {
   sendPrivateMsg(user_id: id, message: string, auto_escape?: boolean): Promise<number>
   sendPrivateMsgAsync(user_id: id, message: string, auto_escape?: boolean): Promise<void>
-  sendGroupMsg(groupId: id, message: string, auto_escape?: boolean): Promise<number>
-  sendGroupMsgAsync(groupId: id, message: string, auto_escape?: boolean): Promise<void>
-  sendGroupForwardMsg(groupId: id, messages: readonly CQNode[]): Promise<number>
-  sendGroupForwardMsgAsync(groupId: id, messages: readonly CQNode[]): Promise<void>
+  sendGroupMsg(group_id: id, message: string, auto_escape?: boolean): Promise<number>
+  sendGroupMsgAsync(group_id: id, message: string, auto_escape?: boolean): Promise<void>
+  sendGroupForwardMsg(group_id: id, messages: readonly CQNode[]): Promise<number>
+  sendGroupForwardMsgAsync(group_id: id, messages: readonly CQNode[]): Promise<void>
   deleteMsg(message_id: id): Promise<void>
   deleteMsgAsync(message_id: id): Promise<void>
   setEssenceMsg(message_id: id): Promise<void>
@@ -316,10 +316,10 @@ export interface Internal {
   sendLikeAsync(user_id: id, times?: number): Promise<void>
   getMsg(message_id: id): Promise<Message>
   getForwardMsg(message_id: id): Promise<ForwardMessage[]>
-  getEssenceMsgList(groupId: id): Promise<EssenceMessage[]>
+  getEssenceMsgList(group_id: id): Promise<EssenceMessage[]>
   getWordSlices(content: string): Promise<string[]>
   ocrImage(image: string): Promise<OcrResult>
-  getGroupMsgHistory(groupId: id, messageSeq: id): Promise<Message[]>
+  getGroupMsgHistory(group_id: id, message_seq: id): Promise<Message[]>
   deleteFriend(user_id: id): Promise<void>
   deleteFriendAsync(user_id: id): Promise<void>
   setFriendAddRequest(flag: string, approve: boolean, remark?: string): Promise<void>
@@ -327,58 +327,58 @@ export interface Internal {
   setGroupAddRequest(flag: string, subType: 'add' | 'invite', approve: boolean, reason?: string): Promise<void>
   setGroupAddRequestAsync(flag: string, subType: 'add' | 'invite', approve: boolean, reason?: string): Promise<void>
 
-  setGroupKick(groupId: id, user_id: id, rejectAddRequest?: boolean): Promise<void>
-  setGroupKickAsync(groupId: id, user_id: id, rejectAddRequest?: boolean): Promise<void>
-  setGroupBan(groupId: id, user_id: id, duration?: number): Promise<void>
-  setGroupBanAsync(groupId: id, user_id: id, duration?: number): Promise<void>
-  setGroupWholeBan(groupId: id, enable?: boolean): Promise<void>
-  setGroupWholeBanAsync(groupId: id, enable?: boolean): Promise<void>
-  setGroupAdmin(groupId: id, user_id: id, enable?: boolean): Promise<void>
-  setGroupAdminAsync(groupId: id, user_id: id, enable?: boolean): Promise<void>
-  setGroupAnonymous(groupId: id, enable?: boolean): Promise<void>
-  setGroupAnonymousAsync(groupId: id, enable?: boolean): Promise<void>
-  setGroupCard(groupId: id, user_id: id, card?: string): Promise<void>
-  setGroupCardAsync(groupId: id, user_id: id, card?: string): Promise<void>
-  setGroupLeave(groupId: id, isDismiss?: boolean): Promise<void>
-  setGroupLeaveAsync(groupId: id, isDismiss?: boolean): Promise<void>
-  setGroupSpecialTitle(groupId: id, user_id: id, specialTitle?: string, duration?: number): Promise<void>
-  setGroupSpecialTitleAsync(groupId: id, user_id: id, specialTitle?: string, duration?: number): Promise<void>
-  setGroupName(groupId: id, name: string): Promise<void>
-  setGroupNameAsync(groupId: id, name: string): Promise<void>
-  setGroupPortrait(groupId: id, file: string, cache?: boolean): Promise<void>
-  setGroupPortraitAsync(groupId: id, file: string, cache?: boolean): Promise<void>
-  getGroupAtAllRemain(groupId: id): Promise<AtAllRemain>
-  sendGroupNotice(groupId: id, content: string): Promise<void>
-  sendGroupNoticeAsync(groupId: id, content: string): Promise<void>
+  setGroupKick(group_id: id, user_id: id, reject_add_request?: boolean): Promise<void>
+  setGroupKickAsync(group_id: id, user_id: id, reject_add_request?: boolean): Promise<void>
+  setGroupBan(group_id: id, user_id: id, duration?: number): Promise<void>
+  setGroupBanAsync(group_id: id, user_id: id, duration?: number): Promise<void>
+  setGroupWholeBan(group_id: id, enable?: boolean): Promise<void>
+  setGroupWholeBanAsync(group_id: id, enable?: boolean): Promise<void>
+  setGroupAdmin(group_id: id, user_id: id, enable?: boolean): Promise<void>
+  setGroupAdminAsync(group_id: id, user_id: id, enable?: boolean): Promise<void>
+  setGroupAnonymous(group_id: id, enable?: boolean): Promise<void>
+  setGroupAnonymousAsync(group_id: id, enable?: boolean): Promise<void>
+  setGroupCard(group_id: id, user_id: id, card?: string): Promise<void>
+  setGroupCardAsync(group_id: id, user_id: id, card?: string): Promise<void>
+  setGroupLeave(group_id: id, is_dismiss?: boolean): Promise<void>
+  setGroupLeaveAsync(group_id: id, is_dismiss?: boolean): Promise<void>
+  setGroupSpecialTitle(group_id: id, user_id: id, special_title?: string, duration?: number): Promise<void>
+  setGroupSpecialTitleAsync(group_id: id, user_id: id, special_title?: string, duration?: number): Promise<void>
+  setGroupName(group_id: id, name: string): Promise<void>
+  setGroupNameAsync(group_id: id, name: string): Promise<void>
+  setGroupPortrait(group_id: id, file: string, cache?: boolean): Promise<void>
+  setGroupPortraitAsync(group_id: id, file: string, cache?: boolean): Promise<void>
+  getGroupAtAllRemain(group_id: id): Promise<AtAllRemain>
+  sendGroupNotice(group_id: id, content: string): Promise<void>
+  sendGroupNoticeAsync(group_id: id, content: string): Promise<void>
 
   getLoginInfo(): Promise<AccountInfo>
   getVipInfo(): Promise<VipInfo>
-  getStrangerInfo(user_id: id, noCache?: boolean): Promise<StrangerInfo>
+  getStrangerInfo(user_id: id, no_cache?: boolean): Promise<StrangerInfo>
   getFriendList(): Promise<FriendInfo[]>
-  getGroupInfo(groupId: id, noCache?: boolean): Promise<GroupInfo>
+  getGroupInfo(group_id: id, no_cache?: boolean): Promise<GroupInfo>
   getGroupList(): Promise<GroupInfo[]>
-  getGroupMemberInfo(groupId: id, user_id: id, noCache?: boolean): Promise<GroupMemberInfo>
-  getGroupMemberList(groupId: id, noCache?: boolean): Promise<GroupMemberInfo[]>
-  getGroupHonorInfo(groupId: id, type: HonorType): Promise<HonorInfo>
+  getGroupMemberInfo(group_id: id, user_id: id, no_cache?: boolean): Promise<GroupMemberInfo>
+  getGroupMemberList(group_id: id, no_cache?: boolean): Promise<GroupMemberInfo[]>
+  getGroupHonorInfo(group_id: id, type: HonorType): Promise<HonorInfo>
   getGroupSystemMsg(): Promise<GroupSystemMessageInfo>
-  getGroupFileSystemInfo(groupId: id): Promise<GroupFileSystemInfo>
-  getGroupRootFiles(groupId: id): Promise<GroupFileList>
-  getGroupFilesByFolder(groupId: id, folderId: string): Promise<GroupFileList>
-  getGroupFileUrl(groupId: id, fileId: string, busid: number): Promise<string>
-  downloadFile(url: string, headers?: string | string[], threadCount?: number): Promise<string>
-  uploadGroupFile(groupId: id, file: string, name: string, folder?: string): Promise<void>
-  createGroupFileFolder(groupId: id, folderId: string, name: string): Promise<void>
-  deleteGroupFolder(groupId: id, folderId: string): Promise<void>
-  deleteGroupFile(groupId: id, folderId: string, fileId: string, busid: number): Promise<void>
-  getOnlineClients(noCache?: boolean): Promise<Device[]>
+  getGroupFileSystemInfo(group_id: id): Promise<GroupFileSystemInfo>
+  getGroupRootFiles(group_id: id): Promise<GroupFileList>
+  getGroupFilesByFolder(group_id: id, folder_id: string): Promise<GroupFileList>
+  getGroupFileUrl(group_id: id, file_id: string, busid: number): Promise<string>
+  downloadFile(url: string, headers?: string | readonly string[], thread_count?: number): Promise<string>
+  uploadGroupFile(group_id: id, file: string, name: string, folder?: string): Promise<void>
+  createGroupFileFolder(group_id: id, folder_id: string, name: string): Promise<void>
+  deleteGroupFolder(group_id: id, folder_id: string): Promise<void>
+  deleteGroupFile(group_id: id, folder_id: string, file_id: string, busid: number): Promise<void>
+  getOnlineClients(no_cache?: boolean): Promise<Device[]>
   checkUrlSafely(url: string): Promise<SafetyLevel>
   getModelShow(model: string): Promise<ModelVariant[]>
-  setModelShow(model: string, modelShow: string): Promise<void>
+  setModelShow(model: string, model_show: string): Promise<void>
 
   getCookies(domain?: string): Promise<string>
   getCsrfToken(): Promise<number>
   getCredentials(domain?: string): Promise<Credentials>
-  getRecord(file: string, outFormat: RecordFormat, fullPath?: boolean): Promise<RecordInfo>
+  getRecord(file: string, out_format: RecordFormat, full_path?: boolean): Promise<RecordInfo>
   getImage(file: string): Promise<ImageInfo>
   canSendImage(): Promise<boolean>
   canSendRecord(): Promise<boolean>

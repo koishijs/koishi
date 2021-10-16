@@ -9,21 +9,15 @@ sidebarDepth: 2
 尽管 Koishi 使用了 [MIT](https://choosealicense.com/licenses/mit/) 协议，但 OneBot 相关框架普遍使用了基于 [AGPL 3.0](https://choosealicense.com/licenses/agpl-3.0/) 的协议。因此如果你使用 @koishijs/plugin-adapter-onebot 运行你的机器人，你将可能受到 AGPL 3.0 协议的限制，必须将你的代码开源并保持同协议。Koishi 及其作者对使用上述框架或违反上述限制的行为所可能造成的一切后果概不负责。
 :::
 
-- 标有 <Badge vertical="baseline" text="go-cqhttp" type="warning"/> 的 API 只能基于 go-cqhttp 运行
-
-## 框架介绍
-
 [OneBot](https://github.com/howmanybots/onebot) 是一个聊天机器人应用接口标准，目前可用于 QQ 聊天机器人的实现。你可以使用下列实现该协议的框架：
 
 - [Mrs4s/go-cqhttp](https://github.com/Mrs4s/go-cqhttp)（推荐）
 - [yyuueexxiinngg/cqhttp-mirai](https://github.com/yyuueexxiinngg/cqhttp-mirai)
 - [richardchien/coolq-http-api](https://github.com/richardchien/coolq-http-api)（配合 [iTXTech/mirai-native](https://github.com/iTXTech/mirai-native) 使用）
 
-我们推荐使用 go-cqhttp。在本文的后续部分我们只会介绍这个框架的使用方法。有对其他框架感兴趣的同学也可以自行探索。
+我们推荐使用 go-cqhttp。**在本文的后续部分我们只会介绍 go-cqhttp 的使用方法**。有对其他框架感兴趣的同学也可以自行探索。
 
-### 通信方式
-
-OneBot 协议规定了四种不同的通信方式：
+与此同时，OneBot 协议规定了四种不同的通信方式：
 
 - 正向 HTTP：OneBot 作为 HTTP 服务端，提供 API 调用服务
 - 反向 HTTP：OneBot 作为 HTTP 客户端，向用户配置的 URL 推送事件，并处理用户返回的响应
@@ -32,7 +26,7 @@ OneBot 协议规定了四种不同的通信方式：
 
 我们推荐使用正向 WebSocket，这种通信方式操作简便，且拥有相对较高的性能。在本文的后续部分我们将介绍每一种通信方式的配置方法。
 
-### 安装与运行
+## 安装与运行
 
 1. 首先从 [这个页面](https://github.com/Mrs4s/go-cqhttp/releases) 下载并解压最新版本的 go-cqhttp
    - 如果你不知道下载哪一个，[请看这里](#我不知道应该下载-release-中的哪一个文件。)
@@ -57,7 +51,7 @@ OneBot 协议规定了四种不同的通信方式：
 
 5. 如出现需要认证的信息, 请自行认证设备。
 
-#### 快速启动
+### 快速启动
 
 默认情况下启用 go-cqhttp 将会有五秒钟的延时，可以使用命令行参数 `faststart` 进行跳过：
 
@@ -120,31 +114,25 @@ dnf install ffmpeg ffmpeg-devel
 
 ## 机器人选项
 
-### options(.bots[]).type
+### options(.bots[]).protocol
 
-- 可选值: onebot, onebot:http, onebot:ws, onebot:ws-reverse
+- 可选值: http, ws, ws-reverse
 
-如果使用了 onebot，Koishi 会读取你的 `server` 选项，根据你配置的服务器 URL 进行适配。
+如果缺省，Koishi 会读取你的 `endpoint` 选项，根据你配置的服务器 URL 进行适配。
 
-相关 OneBot 配置：`use_http`, `use_ws`。
-
-### options(.bots[]).server
+### options(.bots[]).endpoint
 
 - 类型：`string`
 
 如果使用了 HTTP，则该配置将作为发送信息的服务端；如果使用了 WebSocket，则该配置将作为监听事件和发送信息的服务端。
 
-相关 OneBot 配置：`host`, `port`, `ws_host`, `ws_port`。
-
 ### options(.bots[]).token
 
 - 类型：`string`
 
-发送信息时用于验证的字段，应与 OneBot 的 `access_token` 配置保持一致。
+发送信息时用于验证的字段。
 
 ## 适配器选项
-
-包括全部的 [`WsClient`](../adapter.md#类-adapter-wsclient) 选项和下列额外选项：
 
 ### options.path
 
@@ -152,8 +140,6 @@ dnf install ffmpeg ffmpeg-devel
 - 默认值：`'/onebot'`
 
 服务器监听的路径。仅用于 HTTP 通信方式。
-
-相关 OneBot 配置：`post_url`。
 
 ### options.secret
 
@@ -307,13 +293,123 @@ export default {
 ```
 :::
 
+## 内部 API
+
+你可以通过 `bot.internal` 或 `session.onebot` 访问到内部 API，参见 [调用机器人](../../guide/message/session.md#调用机器人)。
+
+下面展示了目前已经实现的 API 列表。如要了解细节请自行点击对应方法的链接进行查阅。
+
+### OneBot v11 标准 API
+
+- [`onebot.sendPrivateMsg()`](https://github.com/botuniverse/onebot/blob/master/v11/specs/api/public.md#send_private_msg-发送私聊消息) 发送私聊消息
+- [`onebot.sendGroupMsg()`](https://github.com/botuniverse/onebot/blob/master/v11/specs/api/public.md#send_group_msg-发送群消息) 发送群消息
+- [`onebot.deleteMsg()`](https://github.com/botuniverse/onebot/blob/master/v11/specs/api/public.md#delete_msg-撤回消息) 撤回消息
+- [`onebot.getMsg()`](https://github.com/botuniverse/onebot/blob/master/v11/specs/api/public.md#get_msg-获取消息) 获取消息
+- [`onebot.getForwardMsg()`](https://github.com/botuniverse/onebot/blob/master/v11/specs/api/public.md#get_forward_msg-获取合并转发消息) 获取合并转发消息
+- [`onebot.sendLike()`](https://github.com/botuniverse/onebot/blob/master/v11/specs/api/public.md#send_like-发送好友赞) 发送好友赞
+- [`onebot.setGroupKick()`](https://github.com/botuniverse/onebot/blob/master/v11/specs/api/public.md#set_group_kick-群组踢人) 群组踢人
+- [`onebot.setGroupBan()`](https://github.com/botuniverse/onebot/blob/master/v11/specs/api/public.md#set_group_ban-群组单人禁言) 群组单人禁言
+- [`onebot.setGroupAnonymousBan()`](https://github.com/botuniverse/onebot/blob/master/v11/specs/api/public.md#set_group_anonymous_ban-群组匿名用户禁言) 群组匿名用户禁言 <sup>[1]</sup>
+- [`onebot.setGroupWholeBan()`](https://github.com/botuniverse/onebot/blob/master/v11/specs/api/public.md#set_group_whole_ban-群组全员禁言) 群组全员禁言
+- [`onebot.setGroupAdmin()`](https://github.com/botuniverse/onebot/blob/master/v11/specs/api/public.md#set_group_admin-群组设置管理员) 群组设置管理员
+- [`onebot.setGroupAnonymous()`](https://github.com/botuniverse/onebot/blob/master/v11/specs/api/public.md#set_group_anonymous-群组匿名) 群组匿名 <sup>[2]</sup>
+- [`onebot.setGroupCard()`](https://github.com/botuniverse/onebot/blob/master/v11/specs/api/public.md#set_group_card-设置群名片群备注) 设置群名片（群备注）
+- [`onebot.setGroupName()`](https://github.com/botuniverse/onebot/blob/master/v11/specs/api/public.md#set_group_name-设置群名) 设置群名
+- [`onebot.setGroupLeave()`](https://github.com/botuniverse/onebot/blob/master/v11/specs/api/public.md#set_group_leave-退出群组) 退出群组
+- [`onebot.setGroupSpecialTitle()`](https://github.com/botuniverse/onebot/blob/master/v11/specs/api/public.md#set_group_special_title-设置群组专属头衔) 设置群组专属头衔
+- [`onebot.setFriendAddRequest()`](https://github.com/botuniverse/onebot/blob/master/v11/specs/api/public.md#set_friend_add_request-处理加好友请求) 处理加好友请求
+- [`onebot.setGroupAddRequest()`](https://github.com/botuniverse/onebot/blob/master/v11/specs/api/public.md#set_group_add_request-处理加群请求邀请) 处理加群请求／邀请
+- [`onebot.getLoginInfo()`](https://github.com/botuniverse/onebot/blob/master/v11/specs/api/public.md#get_login_info-获取登录号信息) 获取登录号信息
+- [`onebot.getStrangerInfo()`](https://github.com/botuniverse/onebot/blob/master/v11/specs/api/public.md#get_stranger_info-获取陌生人信息) 获取陌生人信息
+- [`onebot.getFriendList()`](https://github.com/botuniverse/onebot/blob/master/v11/specs/api/public.md#get_friend_list-获取好友列表) 获取好友列表
+- [`onebot.getGroupInfo()`](https://github.com/botuniverse/onebot/blob/master/v11/specs/api/public.md#get_group_info-获取群信息) 获取群信息
+- [`onebot.getGroupList()`](https://github.com/botuniverse/onebot/blob/master/v11/specs/api/public.md#get_group_list-获取群列表) 获取群列表
+- [`onebot.getGroupMemberInfo()`](https://github.com/botuniverse/onebot/blob/master/v11/specs/api/public.md#get_group_member_info-获取群成员信息) 获取群成员信息
+- [`onebot.getGroupMemberList()`](https://github.com/botuniverse/onebot/blob/master/v11/specs/api/public.md#get_group_member_list-获取群成员列表) 获取群成员列表
+- [`onebot.getGroupHonorInfo()`](https://github.com/botuniverse/onebot/blob/master/v11/specs/api/public.md#get_group_honor_info-获取群荣誉信息) 获取群荣誉信息
+- [`onebot.getCookies()`](https://github.com/botuniverse/onebot/blob/master/v11/specs/api/public.md#get_cookies-获取-cookies) 获取 Cookies <sup>[2]</sup>
+- [`onebot.getCsrfToken()`](https://github.com/botuniverse/onebot/blob/master/v11/specs/api/public.md#get_csrf_token-获取-csrf-token) 获取 CSRF Token <sup>[2]</sup>
+- [`onebot.getCredentials()`](https://github.com/botuniverse/onebot/blob/master/v11/specs/api/public.md#get_credentials-获取-qq-相关接口凭证) 获取 QQ 相关接口凭证 <sup>[2]</sup>
+- [`onebot.getRecord()`](https://github.com/botuniverse/onebot/blob/master/v11/specs/api/public.md#get_record-获取语音) 获取语音 <sup>[2]</sup>
+- [`onebot.getImage()`](https://github.com/botuniverse/onebot/blob/master/v11/specs/api/public.md#get_image-获取图片) 获取图片
+- [`onebot.canSendImage()`](https://github.com/botuniverse/onebot/blob/master/v11/specs/api/public.md#can_send_image-检查是否可以发送图片) 检查是否可以发送图片
+- [`onebot.canSendRecord()`](https://github.com/botuniverse/onebot/blob/master/v11/specs/api/public.md#can_send_record-检查是否可以发送语音) 检查是否可以发送语音
+- [`onebot.getStatus()`](https://github.com/botuniverse/onebot/blob/master/v11/specs/api/public.md#get_status-获取运行状态) 获取运行状态
+- [`onebot.getVersionInfo()`](https://github.com/botuniverse/onebot/blob/master/v11/specs/api/public.md#get_version_info-获取版本信息) 获取版本信息
+- [`onebot.setRestart()`](https://github.com/botuniverse/onebot/blob/master/v11/specs/api/public.md#set_restart-重启-onebot-实现) 重启 OneBot 实现
+- [`onebot.cleanCache()`](https://github.com/botuniverse/onebot/blob/master/v11/specs/api/public.md#clean_cache-清理缓存) 清理缓存 <sup>[2]</sup>
+
+注释：
+
+1. 这个方法只有三个参数，其中第二个参数对应 `anonymous` 或 `flag`
+2. 这些方法并未被 go-cqhttp 支持，访问时可能出错
+
+### go-cqhttp 扩展 API
+
+- [`onebot.sendGroupForwardMsg()`](https://docs.go-cqhttp.org/api/#发送合并转发-群) 发送合并转发 (群)
+- [`onebot.deleteFriend()`](https://docs.go-cqhttp.org/api/#删除好友) 删除好友
+- [`onebot.setGroupPortrait()`](https://docs.go-cqhttp.org/api/#设置群头像) 设置群头像
+- [`onebot.getWordSlices()`](https://docs.go-cqhttp.org/api/#获取中文分词-隐藏-api) 获取中文分词
+- [`onebot.ocrImage()`](https://docs.go-cqhttp.org/api/#图片-ocr) 图片 OCR
+- [`onebot.getGroupSystemMsg()`](https://docs.go-cqhttp.org/api/#获取群系统消息) 获取群系统消息
+- [`onebot.uploadGroupFile()`](https://docs.go-cqhttp.org/api/#上传群文件) 上传群文件
+- [`onebot.getGroupFileSystemInfo()`](https://docs.go-cqhttp.org/api/#获取群文件系统信息) 获取群文件系统信息
+- [`onebot.getGroupRootFiles()`](https://docs.go-cqhttp.org/api/#获取群根目录文件列表) 获取群根目录文件列表
+- [`onebot.getGroupFilesByFolder()`](https://docs.go-cqhttp.org/api/#获取群子目录文件列表) 获取群子目录文件列表
+- [`onebot.getGroupFileUrl()`](https://docs.go-cqhttp.org/api/#获取群文件资源链接) 获取群文件资源链接
+- [`onebot.getGroupAtAllRemain()`](https://docs.go-cqhttp.org/api/#获取群-全体成员-剩余次数) 获取群 @全体成员 剩余次数
+- [`onebot.getVipInfo()`](https://docs.go-cqhttp.org/api/#获取VIP信息) 获取 VIP 信息
+- [`onebot.sendGroupNotice()`](https://docs.go-cqhttp.org/api/#发送群公告) 发送群公告
+- [`onebot.downloadFile()`](https://docs.go-cqhttp.org/api/#下载文件到缓存目录) 下载文件到缓存目录
+- [`onebot.getOnlineClients()`](https://docs.go-cqhttp.org/api/#获取当前账号在线客户端列表) 获取当前账号在线客户端列表
+- [`onebot.getGroupMsgHistory()`](https://docs.go-cqhttp.org/api/#获取群消息历史记录) 获取群消息历史记录
+- [`onebot.setEssenceMsg()`](https://docs.go-cqhttp.org/api/#设置精华消息) 设置精华消息
+- [`onebot.deleteEssenceMsg()`](https://docs.go-cqhttp.org/api/#移出精华消息) 移出精华消息
+- [`onebot.getEssenceMsgList()`](https://docs.go-cqhttp.org/api/#获取精华消息列表) 获取精华消息列表
+- [`onebot.checkUrlSafely()`](https://docs.go-cqhttp.org/api/#检查链接安全性) 检查链接安全性 <sup>[3]</sup>
+- [`onebot.getModelShow()`](https://docs.go-cqhttp.org/api/#获取在线机型) 获取在线机型
+- [`onebot.setModelShow()`](https://docs.go-cqhttp.org/api/#设置在线机型) 设置在线机型
+
+注释：
+
+3. 这个方法名与 go-cqhttp 一致，并不是拼写错误
+
+### 使用异步调用
+
+OneBot 提出了 **异步调用** 的概念，当 OneBot 服务器受到异步调用请求时，如果调用正确，将直接返回 200。这样做的好处是，如果某些操作有较长的耗时（例如发送含有大量图片的消息或清空数据目录等）或你不关心调用结果，使用异步调用可以有效防止阻塞。下面说明了异步调用和普通调用的关系：
+
+![async-method](/async-method.png)
+
+但是另一方面，你也无法得知异步调用是否成功被执行。与此同时，没有副作用的异步调用也毫无意义（因为这些调用本身就是为了获取某些信息，但是异步调用是无法获取调用结果的）。因此，Koishi 为除此以外的所有异步调用都提供了 API，它们的调用接口与非异步的版本除了在方法后面加了一个 Async 外没有任何区别：
+
+```js
+// 普通版本
+const messageId = await session.onebot.sendPrivateMsg('123456789', 'Hello world')
+
+// 异步版本，无法获得调用结果
+await session.onebot.sendPrivateMsgAsync('123456789', 'Hello world')
+```
+
+::: tip
+虽然异步调用方法的名字以 Async 结尾，但是其他方法也是异步函数，它们都会返回一个 Promise 对象。取这样的名字只是为了与 OneBot 保持一致。
+:::
+
 ## 常见问题
 
 #### 我不知道应该下载 release 中的哪一个文件。
 
-- Windows：右击我的电脑 → 属性 → 处理器，在这里可以看到架构
-- MacOS：如果你的电脑能安装 iOS 应用，那就是 arm，不然就是 amd64
-- Linux：在命令行中输入 `lscpu`，看 arch 那一行输出
+在终端执行：
+
+```cli
+node -e "console.log(process.arch)"
+```
+
+然后根据输出结果决定你要下载的文件的后缀部分：
+
+- x32: 386
+- x64: amd64
+- arm64: arm64
+- arm: armv7
 
 #### 我的 go-cqhttp 初次启动时并没有生成 config.yml。
 
@@ -348,494 +444,3 @@ export default {
 反过来，OneBot 作为一个协议，未来也可能支持更多的聊天平台。届时只需有 @koishijs/plugin-onebot，Koishi 也相当于支持了这些平台。一旦出现了这样的情况，用 QQ 作为适配器名反而显得以偏概全了，这也是不妥当的。
 
 但尽管这么说，从目前来看，当我们在讨论用 Koishi 实现 QQ 机器人时，都默认采用这个协议。
-
-## 发送消息
-
-### bot.$sendGroupMsg(groupId, message, autoEscape?)
-
-- **groupId:** `number` 群号
-- **message:** `string` 要发送的内容
-- **autoEsacpe:** `boolean` 消息内容是否作为纯文本发送（即不解析 CQ 码）
-- 返回值: `Promise<number>` 新信息的 messageId
-
-发送群消息。
-
-### bot.$sendGroupForwardMsg(groupId, nodes) <Badge text="go-cqhttp" type="warning"/>
-
-- **groupId:** `number` 群号
-- **nodes:** `CQNode[]` 消息节点列表
-- 返回值: `Promise<void>`
-
-发送群批量转发消息。
-
-```js
-interface CQNode {
-  type: 'node'
-  data: {
-    id: number
-  } | {
-    name: string
-    uin: number
-    content: string
-  }
-}
-```
-
-### bot.$sendLike(userId, times?)
-
-- **userId:** `number` 好友 QQ 号
-- **times:** `number` 点赞次数
-- 返回值: `Promise<void>`
-
-给好友点赞。
-
-::: warning 注意
-本接口仅限**对好友**使用。
-:::
-
-### bot.$getGroupMsg(messageId) <Badge text="go-cqhttp" type="warning"/>
-
-- **messageId:** `number` 消息编号
-- 返回值: `Promise<GroupMessage>`
-
-发送群批量转发消息。
-
-```js
-export interface GroupMessage {
-  messageId: number
-  realId: number
-  sender: AuthorInfo
-  time: number
-  content: string
-}
-```
-
-### bot.$getForwardMsg(messageId) <Badge text="go-cqhttp" type="warning"/>
-
-- **messageId:** `number` 消息编号
-- 返回值: `Promise<ForwardMessage>`
-
-发送群批量转发消息。
-
-```js
-export interface ForwardMessage {
-  messages: {
-    sender: AuthorInfo
-    time: number
-    content: string
-  }[]
-}
-```
-
-## 群相关
-
-### bot.$setGroupKick(groupId, userId, rejectAddRequest?)
-
-- **groupId:** `number` 群号
-- **userId:** `number` QQ 号
-- **rejectAddRequest:** `boolean` 拒绝此人的加群请求
-- 返回值: `Promise<void>`
-
-踢出群聊或拒绝加群。
-
-### bot.$setGroupBan(groupId, userId, duration?)
-
-- **groupId:** `number` 群号
-- **userId:** `number` QQ 号
-- **duration:** `number` 禁言时长（秒），设为 0 表示解除禁言
-- 返回值: `Promise<void>`
-
-群组单人禁言。
-
-### bot.$setGroupAnonymousBan(groupId, anonymous, duration?)
-
-- **groupId:** `number` 群号
-- **anonymous:** `object | string` 匿名用户的信息或 flag，参见 [Message 型元数据属性](../guide/message.md#message-型元数据属性)
-- **duration:** `number` 禁言时长（秒），设为 0 表示解除禁言
-- 返回值: `Promise<void>`
-
-群组匿名用户禁言。
-
-### bot.$setGroupWholeBan(groupId, enable?)
-
-- **groupId:** `number` 群号
-- **enable:** `boolean` 是否禁言，默认为 `true`
-- 返回值: `Promise<void>`
-
-群组全员禁言。
-
-### bot.$setGroupAdmin(groupId, userId, enable?)
-
-- **groupId:** `number` 群号
-- **userId:** `number` QQ 号
-- **enable:** `boolean` 是否设置为管理员，默认为 `true`
-- 返回值: `Promise<void>`
-
-群组设置管理员。
-
-### bot.$setGroupAnonymous(groupId, enable?)
-
-- **groupId:** `number` 群号
-- **enable:** `boolean` 是否允许匿名，默认为 `true`
-- 返回值: `Promise<void>`
-
-群组设置匿名。
-
-### bot.$setGroupCard(groupId, userId, card?)
-
-- **groupId:** `number` 群号
-- **userId:** `number` QQ 号
-- **card:** `string` 群名片
-- 返回值: `Promise<void>`
-
-设置群名片。
-
-### bot.$setGroupLeave(groupId, isDismiss?)
-
-- **groupId:** `number` 群号
-- **isDismiss:** `boolean` 是否解散群（仅对群主生效）
-- 返回值: `Promise<void>`
-
-退出群组。
-
-### bot.$setGroupSpecialTitle(groupId, userId, specialTitle?, duration?)
-
-- **groupId:** `number` 群号
-- **userId:** `number` QQ 号
-- **specialTitle:** `string` 专属头衔
-- **duration:** `number` 有效时长（秒，目前可能没用）
-- 返回值: `Promise<void>`
-
-设置群组专属头衔。
-
-### bot.$sendGroupNotice(groupId, title, content)
-
-- **groupId:** `number` 群号
-- **title:** `string` 标题
-- **content:** `string` 内容
-- 返回值: `Promise<void>`
-
-发布群公告。
-
-### bot.$setGroupName(groupId, name) <Badge text="go-cqhttp" type="warning"/>
-
-- **groupId:** `number` 群号
-- **name:** `string` 群名称
-- 返回值: `Promise<void>`
-
-修改群名称。
-
-## 处理请求
-
-### bot.$setFriendAddRequest(flag, approve?, remark?)
-
-- **flag:** `string` 加好友请求的 flag（需从上报的数据中获得）
-- **approve:** `boolean` 是否同意请求，默认为 `true`
-- **remark:** `string` 好友备注名（仅当同意时有效）
-- 返回值: `Promise<void>`
-
-处理加好友请求。
-
-### bot.$setGroupAddRequest(flag, subtype, approve?, reason?)
-
-- **flag:** `string` 加群请求的 flag（需从上报的数据中获得）
-- **subtype:** `'add' | 'invite'` 子类型，参见 [Request 型元数据属性](../guide/message.md#request-型元数据属性)
-- **approve:** `boolean` 是否同意请求，默认为 `true`
-- **reason:** `string` 拒绝理由（仅当拒绝时有效）
-- 返回值: `Promise<void>`
-
-处理加群请求或邀请。
-
-## 账号信息
-
-### bot.$getLoginInfo()
-
-- 返回值: `Promise<UserInfo>` 登录号信息
-
-获取登录号信息。
-
-```js
-export interface UserInfo {
-  userId: number
-  nickname: string
-}
-```
-
-### bot.$getVipInfo()
-
-- 返回值: `Promise<VipInfo>` 会员信息
-
-获取会员信息。
-
-```js
-export interface VipInfo extends UserInfo {
-  level: number
-  levelSpeed: number
-  vipLevel: number
-  vipGrowthSpeed: number
-  vipGrowthTotal: string
-}
-```
-
-### bot.$getStrangerInfo(userId, noCache?)
-
-- **userId:** `number` 目标 QQ 号
-- **noCache:** `boolean` 是否不使用缓存，默认为 `false`
-- 返回值: `Promise<StrangerInfo>` 陌生人信息
-
-获取陌生人信息。
-
-```js
-export interface StrangerInfo extends UserInfo {
-  sex: 'male' | 'female' | 'unknown'
-  age: number
-}
-```
-
-### bot.$getFriendList()
-
-- 返回值: `Promise<FriendInfo[]>` 好友列表
-
-获取好友列表。
-
-```js
-export interface FriendInfo extends UserInfo {
-  remark: string
-}
-```
-
-### bot.$getGroupList()
-
-- 返回值: `Promise<ListedGroupInfo[]>` 群信息列表
-
-获取群列表。
-
-```js
-export interface ListedGroupInfo {
-  groupId: number
-  groupName: string
-}
-```
-
-### bot.$getGroupInfo(groupId, noCache?)
-
-- **groupId:** `number` 目标群号
-- **noCache:** `boolean` 是否不使用缓存，默认为 `false`
-- 返回值: `Promise<GroupInfo>` 群信息
-
-获取群信息。
-
-```js
-export interface GroupInfo extends ListedGroupInfo {
-  memberCount: number
-  maxMemberCount: number
-}
-```
-
-### bot.$getGroupMemberInfo(groupId, userId, noCache?)
-
-- **groupId:** `number` 目标群号
-- **userId:** `number` 目标 QQ 号
-- **noCache:** `boolean` 是否不使用缓存，默认为 `false`
-- 返回值: `Promise<GroupMemberInfo>` 群成员信息
-
-获取群成员信息。
-
-```js
-export interface SenderInfo extends StrangerInfo {
-  area?: string
-  card?: string
-  level?: string
-  role?: 'owner' | 'admin' | 'member'
-  title?: string
-}
-
-export interface GroupMemberInfo extends SenderInfo {
-  cardChangeable: boolean
-  groupId: number
-  joinTime: number
-  lastSentTime: number
-  titleExpireTime: number
-  unfriendly: boolean
-}
-```
-
-### bot.$getGroupMemberList(groupId)
-
-- **groupId:** `number` 目标群号
-- 返回值: `Promise<GroupMemberInfo[]>` 群成员列表
-
-获取群成员列表。
-
-### bot.$getGroupNotice(groupId)
-
-- **groupId:** `number` 目标群号
-- 返回值: `Promise<GroupNoticeInfo[]>` 群公告列表
-
-获取群公告列表。部分字段具体含义可能需要自行理解。
-
-```js
-export interface GroupNoticeInfo {
-  cn: number
-  fid: string
-  fn: number
-  msg: {
-    text: string
-    textFace: string
-    title: string
-  }
-  pubt: number
-  readNum: number
-  settings: {
-    isShowEditCard: number
-    remindTs: number
-  }
-  u: number
-  vn: number
-}
-```
-
-## 其他操作
-
-### bot.$getCookies(domain?)
-
-- **domain:** `string` 需要获取 cookies 的域名
-- 返回值: `Promise<string>` cookies
-
-获取 Cookies。
-
-### bot.$getCsrfToken()
-
-- 返回值: `Promise<string>` CSRF Token
-
-获取 CSRF Token。
-
-### bot.$getCredentials()
-
-- **domain:** `string` 需要获取 cookies 的域名
-- 返回值: `Promise<Credentials>` 接口凭证
-
-获取 QQ 相关接口凭证，相当于上面两个接口的合并。
-
-```js
-export interface Credentials {
-  cookies: string
-  csrfToken: number
-}
-```
-
-### bot.$getRecord(file, outFormat, fullPath?)
-
-- **file:** `string` 语音文件名
-- **outFormat:** `'mp3' | 'amr' | 'wma' | 'm4a' | 'spx' | 'ogg' | 'wav' | 'flac'`
-- **fullPath:** `boolean` 是否返回文件的绝对路径
-- 返回值: `Promise<RecordInfo>`
-
-获取语音：并不是真的获取语音，而是转换语音到指定的格式，然后返回 `data/record` 目录下的语音文件名。注意，要使用此接口，需要安装 CoolQ 的 [语音组件](https://cqp.cc/t/21132)。
-
-```js
-export interface RecordInfo {
-  file: string
-}
-```
-
-### bot.$getImage(file)
-
-- **file:** `string` 图片文件名
-- 返回值: `Promise<ImageInfo>`
-
-获取图片：与上面类似，不过返回 `data/image` 目录下的图片路径。
-
-```js
-export interface ImageInfo {
-  file: string
-
-  // go-cqhttp 特有
-  size: number
-  filename: string
-  url: string
-}
-```
-
-### bot.$canSendImage()
-
-- 返回值: `Promise<boolean>` 是否可以发送图片
-
-检查是否可以发送图片。
-
-### bot.$canSendRecord()
-
-- 返回值: `Promise<boolean>` 是否可以发送语音
-
-检查是否可以发送语音。
-
-### bot.$getStatus()
-
-- 返回值: `Promise<StatusInfo>` 插件运行状态
-
-获取插件运行状态。
-
-```js
-export interface StatusInfo {
-  appInitialized: boolean
-  appEnabled: boolean
-  pluginsGood: boolean
-  appGood: boolean
-  online: boolean
-  good: boolean
-}
-```
-
-### bot.$getVersionInfo()
-
-- 返回值: `Promise<VersionInfo>` 插件版本信息
-
-获取 OneBot 的版本信息。
-
-```js
-export interface VersionInfo {
-  coolqDirectory: string
-  coolqEdition: 'air' | 'pro'
-  pluginVersion: string
-  pluginBuildNumber: number
-  pluginBuildConfiguration: 'debug' | 'release'
-
-  // go-cqhttp 特有
-  goCqhttp: boolean
-  runtimeVersion: string
-  runtimeOs: string
-}
-```
-
-### bot.$setRestart(cleanLog?, cleanCache?, cleanEvent?)
-
-- **cleanLog:** `boolean` 是否在重启时清空 CoolQ 的日志数据库（log*.db）
-- **cleanCache:** `boolean` 是否在重启时清空 CoolQ 的缓存数据库（cache.db）
-- **cleanEvent:** `boolean` 是否在重启时清空 CoolQ 的事件数据库（eventv2.db）
-- 返回值: `Promise<void>`
-
-重启 CoolQ，并以当前登录号自动登录（需勾选快速登录）。
-
-::: warning 警告
-由于强行退出可能导致 CoolQ 数据库损坏而影响功能，此接口除非必要请尽量避免使用。
-:::
-
-### bot.$setRestartPlugin(delay?)
-
-- **delay:** `string` 要延迟的毫秒数，如果默认情况下无法重启，可以尝试设置延迟为 2000 左右
-- 返回值: `Promise<void>`
-
-重启 HTTP API 插件。
-
-### bot.$cleanDataDir(dataDir)
-
-- **dataDir:** `'image' | 'record' | 'show' | 'bface'` 要清理的目录名
-- 返回值: `Promise<void>`
-
-清理积攒了太多旧文件的数据目录。
-
-### bot.$cleanPluginLog()
-
-- 返回值: `Promise<void>`
-
-清空插件的日志文件。

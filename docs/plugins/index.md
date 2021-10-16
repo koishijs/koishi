@@ -9,11 +9,10 @@ Koishi 官方提供了许多插件。为了更好地模块化开发，它们被�
 
 ## 适配器支持
 
-- [@koishijs/plugin-discord](./adapter/discord.md)
-- [@koishijs/plugin-kaiheila](./adapter/kaiheila.md)
-- [@koishijs/plugin-minecraft](./adapter/minecraft.md)
-- [@koishijs/plugin-onebot](./adapter/onebot.md)
-- [@koishijs/plugin-telegram](./adapter/telegram.md)
+- [@koishijs/plugin-adapter-discord](./adapter/discord.md)
+- [@koishijs/plugin-adapter-kaiheila](./adapter/kaiheila.md)
+- [@koishijs/plugin-adapter-onebot](./adapter/onebot.md)
+- [@koishijs/plugin-adapter-telegram](./adapter/telegram.md)
 
 ## 数据库支持
 
