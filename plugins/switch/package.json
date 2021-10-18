@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-switch",
   "description": "Switch plugins for Koishi",
-  "version": "1.0.0-alpha.2",
+  "version": "1.0.0-alpha.3",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -33,9 +33,9 @@
     "required:database"
   ],
   "peerDependencies": {
-    "koishi": "^4.0.0-alpha.9"
+    "koishi": "^4.0.0-alpha.10"
   },
   "devDependencies": {
-    "@koishijs/test-utils": "^8.0.0-alpha.8"
+    "@koishijs/test-utils": "^8.0.0-alpha.9"
   }
 }

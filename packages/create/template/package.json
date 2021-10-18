@@ -6,12 +6,12 @@
     "start": "koishi start"
   },
   "dependencies": {
-    "@koishijs/cli": "^4.0.0-alpha.5",
-    "@koishijs/plugin-adapter-discord": "^2.0.0-alpha.6",
-    "@koishijs/plugin-adapter-onebot": "^4.0.0-alpha.8",
-    "@koishijs/plugin-adapter-telegram": "^2.0.0-alpha.6",
-    "@koishijs/plugin-common": "^5.0.0-alpha.9",
-    "@koishijs/plugin-status": "^5.0.0-alpha.8",
-    "koishi": "^4.0.0-alpha.9"
+    "@koishijs/cli": "^4.0.0-alpha.6",
+    "@koishijs/plugin-adapter-discord": "^2.0.0-alpha.7",
+    "@koishijs/plugin-adapter-onebot": "^4.0.0-alpha.9",
+    "@koishijs/plugin-adapter-telegram": "^2.0.0-alpha.7",
+    "@koishijs/plugin-common": "^5.0.0-alpha.10",
+    "@koishijs/plugin-status": "^5.0.0-alpha.9",
+    "koishi": "^4.0.0-alpha.10"
   }
 }
