@@ -7,6 +7,7 @@ export abstract class Cache {
   abstract clear<T extends keyof Cache.Tables>(table: T): Promise<void>
   abstract get<T extends keyof Cache.Tables>(table: T, key: string): Promise<Cache.Tables[T]>
   abstract set<T extends keyof Cache.Tables>(table: T, key: string, value: Cache.Tables[T], maxAge?: number): Promise<void>
+  abstract del<T extends keyof Cache.Tables>(table: T, key: string): Promise<void>
 
   constructor(protected ctx: Context) {}
 

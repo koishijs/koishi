@@ -95,6 +95,17 @@ export default class RedisCache extends Cache {
     })
   }
 
+  async del(table: keyof Cache.Tables, key: string) {
+    const redisKey = this.getRedisKey(table, key)
+    return this.doInPool(async (client) => {
+      try {
+        return client.del(redisKey)
+      } catch (e) {
+        this.logger.warn(`Failed to delete ${redisKey} from redis: ${e.toString()}`)
+      }
+    })
+  }
+
   async clear(table: keyof Cache.Tables) {
     const redisKey = this.getRedisKey(table, '*')
     return this.doInPool(async (client) => {
