@@ -98,7 +98,8 @@ export default class RedisCache extends Cache {
     const redisKey = this.getRedisKey(table, key)
     return this.doInPool(async (client) => {
       try {
-        return client.del(redisKey)
+        await client.del(redisKey)
+        return
       } catch (e) {
         this.logger.warn(`Failed to delete ${redisKey} from redis: ${e.toString()}`)
       }
