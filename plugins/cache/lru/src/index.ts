@@ -29,7 +29,7 @@ export default class LruCache extends Cache {
 
   async set(table: keyof Cache.Tables, key: string, value: any, maxAge?: number) {
     if (isNullable(value)) {
-      return this.del(table, key)
+      return
     }
     this.prepare(table)
     this.#store[table]?.set(key, value, maxAge)

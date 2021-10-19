@@ -70,6 +70,9 @@ export default class RedisCache extends Cache {
   }
 
   async set(table: keyof Cache.Tables, key: string, value: any, maxAge?: number) {
+    if (isNullable(value)) {
+      return
+    }
     const tableConfig = this.table(table)
     if (!tableConfig) {
       return
@@ -78,17 +81,13 @@ export default class RedisCache extends Cache {
     const redisKey = this.getRedisKey(table, key)
     return this.doInPool(async (client) => {
       try {
-        if (!isNullable(value)) {
-          const record = this.encode(value)
-          const command = client.multi()
-            .set(redisKey, record)
-          if (age) {
-            command.expire(redisKey, age)
-          }
-          await command.exec()
-        } else {
-          await client.del(redisKey)
+        const record = this.encode(value)
+        const command = client.multi()
+          .set(redisKey, record)
+        if (age) {
+          command.expire(redisKey, age)
         }
+        await command.exec()
       } catch (e) {
         this.logger.warn(`Failed to set ${redisKey} to redis: ${e.toString()}`)
       }
