@@ -1,5 +1,5 @@
 import { createPool } from 'generic-pool'
-import { Cache, Context, Schema, Logger } from 'koishi'
+import { Cache, Context, Schema, Logger, isNullable } from 'koishi'
 import { createClient } from 'redis'
 import { RedisClientOptions, RedisClientType } from 'redis/dist/lib/client'
 
@@ -59,7 +59,7 @@ export default class RedisCache extends Cache {
     return this.doInPool(async (client) => {
       try {
         const record = await client.get(redisKey)
-        if (record == null) {
+        if (isNullable(record)) {
           return
         }
         return this.decode(record)
@@ -78,7 +78,7 @@ export default class RedisCache extends Cache {
     const redisKey = this.getRedisKey(table, key)
     return this.doInPool(async (client) => {
       try {
-        if (value != null) {
+        if (!isNullable(value)) {
           const record = this.encode(value)
           const command = client.multi()
             .set(redisKey, record)
