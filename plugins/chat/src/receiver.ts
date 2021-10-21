@@ -160,8 +160,8 @@ export default function apply(ctx: Context, config: RefreshConfig = {}) {
     const params: Message = pick(session, [
       'content', 'timestamp', 'messageId', 'platform', 'selfId',
       'channelId', 'channelName', 'guildId', 'guildName', 'userId',
-    ])
-    Object.assign(params, pick(session.author, ['username', 'nickname', 'avatar']))
+    ], true)
+    Object.assign(params, pick(session.author, ['username', 'nickname', 'avatar'], true))
     if (session.type === 'message') {
       userMap[session.uid] = [Promise.resolve(session.author.username), Date.now()]
     }

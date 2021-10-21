@@ -36,7 +36,7 @@
     "optional:assets"
   ],
   "peerDependencies": {
-    "koishi": "^4.0.0-alpha.10"
+    "koishi": "^4.0.0-alpha.11"
   },
   "devDependencies": {
     "@koishijs/plugin-status": "^5.0.0-alpha.9",

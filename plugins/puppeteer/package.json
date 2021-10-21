@@ -36,7 +36,7 @@
     "@koishijs/test-utils": "^8.0.0-alpha.9"
   },
   "peerDependencies": {
-    "koishi": "^4.0.0-alpha.10"
+    "koishi": "^4.0.0-alpha.11"
   },
   "dependencies": {
     "chrome-finder": "^1.0.7",

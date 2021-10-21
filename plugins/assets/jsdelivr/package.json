@@ -32,7 +32,7 @@
     "service:assets"
   ],
   "peerDependencies": {
-    "koishi": "^4.0.0-alpha.10"
+    "koishi": "^4.0.0-alpha.11"
   },
   "dependencies": {
     "file-type": "^16.5.3",

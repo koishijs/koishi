@@ -1,4 +1,4 @@
-import { Bot, Context, Random, Schema, segment, Session, template, Time } from 'koishi'
+import { Bot, Context, Logger, Random, Schema, segment, Session, template, Time } from 'koishi'
 import { resolve } from 'path'
 import { StatusServer } from '@koishijs/plugin-status'
 import receiver, { Message, RefreshConfig } from './receiver'
@@ -26,6 +26,7 @@ interface ClientExtension {
 
 export interface Config extends ClientExtension {
   refresh?: RefreshConfig
+  logLevel?: number
 }
 
 template.set('chat', {
@@ -73,16 +74,20 @@ export const schema: Schema<Config> = Schema.object({
   }, '刷新选项'),
 })
 
+const logger = new Logger('message')
+
 export function apply(ctx: Context, options: Config = {}) {
   options = { ...defaultOptions, ...options }
   ctx.plugin(receiver, options.refresh)
 
+  logger.level = options.logLevel || 3
+
   ctx.on('chat/receive', async (message, session) => {
-    if (session.subtype !== 'private') {
+    if (session.subtype !== 'private' && ctx.database) {
       const { assignee } = await session.observeChannel(['assignee'])
       if (assignee !== session.selfId) return
     }
-    ctx.logger('message').debug(template('chat.' + (session.type === 'message' ? 'receive' : 'send'), message))
+    logger.debug(template('chat.' + (session.type === 'message' ? 'receive' : 'send'), message))
   })
 
   ctx.with(['status'], (ctx, { status }) => {
