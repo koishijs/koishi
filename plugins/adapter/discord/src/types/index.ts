@@ -24,3 +24,7 @@ export * from './webhook'
 export type integer = number
 export type snowflake = string
 export type timestamp = string
+
+export interface Internal {}
+
+export class Internal {}

@@ -3,7 +3,7 @@
 import { Adapter, App, Bot, Schema, segment, Requester } from 'koishi'
 import { adaptChannel, adaptGroup, adaptMessage, adaptUser, AdapterConfig } from './utils'
 import { Sender } from './sender'
-import * as DC from './types'
+import * as Discord from './types'
 
 export interface BotConfig extends Bot.BaseConfig, Sender.Config {
   token: string
@@ -34,6 +34,7 @@ export class DiscordBot extends Bot<BotConfig> {
   _sessionId: string
 
   public request: Requester
+  public internal: Discord.Internal
 
   constructor(adapter: Adapter, config: BotConfig) {
     super(adapter, config)
@@ -45,7 +46,7 @@ export class DiscordBot extends Bot<BotConfig> {
   }
 
   async getSelf() {
-    const data = await this.request<DC.DiscordUser>('GET', '/users/@me')
+    const data = await this.request<Discord.User>('GET', '/users/@me')
     return adaptUser(data)
   }
 
@@ -90,14 +91,10 @@ export class DiscordBot extends Bot<BotConfig> {
     })
   }
 
-  $getMessage(channelId: string, messageId: string) {
-    return this.request<DC.Message>('GET', `/channels/${channelId}/messages/${messageId}`)
-  }
-
   async getMessage(channelId: string, messageId: string): Promise<Bot.Message> {
     const [msg, channel] = await Promise.all([
-      this.$getMessage(channelId, messageId),
-      this.$getChannel(channelId),
+      this.internal.getChannelMessage(channelId, messageId),
+      this.internal.getChannel(channelId),
     ])
     const result: Bot.Message = {
       messageId: msg.id,
@@ -110,14 +107,14 @@ export class DiscordBot extends Bot<BotConfig> {
     }
     result.author.nickname = msg.member?.nick
     if (msg.message_reference) {
-      const quoteMsg = await this.$getMessage(msg.message_reference.channel_id, msg.message_reference.message_id)
+      const quoteMsg = await this.internal.getChannelMessage(msg.message_reference.channel_id, msg.message_reference.message_id)
       result.quote = adaptMessage(this, quoteMsg)
     }
     return result
   }
 
   async getUser(userId: string) {
-    const data = await this.request<DC.DiscordUser>('GET', `/users/${userId}`)
+    const data = await this.request<Discord.User>('GET', `/users/${userId}`)
     return adaptUser(data)
   }
 
@@ -131,33 +128,6 @@ export class DiscordBot extends Bot<BotConfig> {
     return adaptChannel(data)
   }
 
-  async $createReaction(channelId: string, messageId: string, emoji: string) {
-    await this.request('PUT', `/channels/${channelId}/messages/${messageId}/reactions/${emoji}/@me`)
-  }
-
-  async $deleteReaction(channelId: string, messageId: string, emoji: string, userId = '@me') {
-    await this.request('DELETE', `/channels/${channelId}/messages/${messageId}/reactions/${emoji}/${userId}`)
-  }
-
-  async $deleteAllReactions(channelId: string, messageId: string, emoji?: string) {
-    const path = emoji ? '/' + emoji : ''
-    await this.request('DELETE', `/channels/${channelId}/messages/${messageId}/reactions${path}`)
-  }
-
-  async $executeWebhook(id: string, token: string, data: DC.ExecuteWebhookBody, wait = false): Promise<string> {
-    const chain = segment.parse(data.content)
-    if (chain.filter(v => v.type === 'image').length > 10) {
-      throw new Error('Up to 10 embed objects')
-    }
-
-    const send = Sender.from(this, `/webhooks/${id}/${token}?wait=${wait}`)
-    return await send(data.content, data)
-  }
-
-  $getGuildMember(guildId: string, userId: string) {
-    return this.request<DC.GuildMember>('GET', `/guilds/${guildId}/members/${userId}`)
-  }
-
   async getGuildMember(guildId: string, userId: string) {
     const member = await this.$getGuildMember(guildId, userId)
     return {
@@ -166,103 +136,13 @@ export class DiscordBot extends Bot<BotConfig> {
     }
   }
 
-  $getGuildRoles(guildId: string) {
-    return this.request<DC.Role[]>('GET', `/guilds/${guildId}/roles`)
-  }
-
-  $getChannel(channelId: string) {
-    return this.request<DC.Channel>('GET', `/channels/${channelId}`)
-  }
-
-  $listGuildMembers(guildId: string, limit?: number, after?: string) {
-    return this.request<DC.GuildMember[]>('GET', `/guilds/${guildId}/members?limit=${limit || 1000}&after=${after || '0'}`)
-  }
-
-  async $getRoleMembers(guildId: string, roleId: string) {
-    let members: DC.GuildMember[] = []
-    let after = '0'
-    while (true) {
-      const data = await this.$listGuildMembers(guildId, 1000, after)
-      members = members.concat(data)
-      if (data.length) {
-        after = data[data.length - 1].user.id
-      } else {
-        break
-      }
-    }
-    return members.filter(v => v.roles.includes(roleId))
-  }
-
-  $modifyGuildMember(guildId: string, userId: string, data: Partial<DC.ModifyGuildMember>) {
-    return this.request('PATCH', `/guilds/${guildId}/members/${userId}`, data)
-  }
-
-  $setGroupCard(guildId: string, userId: string, nick: string) {
-    return this.$modifyGuildMember(guildId, userId, { nick })
-  }
-
-  $addGuildMemberRole(guildId: string, userId: string, roleId: string) {
-    return this.request('PUT', `/guilds/${guildId}/members/${userId}/roles/${roleId}`)
-  }
-
-  $removeGuildMemberRole(guildId: string, userId: string, roleId: string) {
-    return this.request('DELETE', `/guilds/${guildId}/members/${userId}/roles/${roleId}`)
-  }
-
-  $createGuildRole(guildId: string, data: DC.GuildRoleBody) {
-    return this.request('POST', `/guilds/${guildId}/roles`, data)
-  }
-
-  $modifyGuildRole(guildId: string, roleId: string, data: Partial<DC.GuildRoleBody>) {
-    return this.request('PATCH', `/guilds/${guildId}/roles/${roleId}`, data)
-  }
-
-  $modifyGuild(guildId: string, data: DC.GuildModify) {
-    return this.request('PATCH', `/guilds/${guildId}`, data)
-  }
-
-  $setGroupName(guildId: string, name: string) {
-    return this.$modifyGuild(guildId, { name })
-  }
-
-  $createWebhook(channelId: string, data: {
-    name: string;
-    avatar?: string
-  }) {
-    return this.request('POST', `/channels/${channelId}/webhooks`, data)
-  }
-
-  $modifyWebhook(webhookId: string, data: {
-    name?: string;
-    avatar?: string
-    channel_id?: string
-  }) {
-    return this.request('PATCH', `/webhooks/${webhookId}`, data)
-  }
-
-  $getChannelWebhooks(channelId: string) {
-    return this.request<DC.Webhook[]>('GET', `/channels/${channelId}/webhooks`)
-  }
-
-  $getGuildWebhooks(guildId: string) {
-    return this.request<DC.Webhook[]>('GET', `/guilds/${guildId}/webhooks`)
-  }
-
-  $modifyChannel(channelId: string, data: DC.ModifyChannel) {
-    return this.request('PATCH', `/channels/${channelId}`, data)
-  }
-
-  $getGuild(guildId: string) {
-    return this.request<DC.Guild>('GET', `/guilds/${guildId}`)
-  }
-
   async getGuild(guildId: string) {
     const data = await this.$getGuild(guildId)
     return adaptGroup(data)
   }
 
   async $getUserGuilds() {
-    return this.request<DC.PartialGuild[]>('GET', '/users/@me/guilds')
+    return this.request<Discord.PartialGuild[]>('GET', '/users/@me/guilds')
   }
 
   async getGuildList() {
@@ -271,7 +151,7 @@ export class DiscordBot extends Bot<BotConfig> {
   }
 
   $getGuildChannels(guildId: string) {
-    return this.request<DC.Channel[]>('GET', `/guilds/${guildId}/channels`)
+    return this.request<Discord.Channel[]>('GET', `/guilds/${guildId}/channels`)
   }
 
   async getChannelList(guildId: string) {

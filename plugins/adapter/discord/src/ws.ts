@@ -1,12 +1,11 @@
 import { Adapter, App, Logger, renameProperty } from 'koishi'
-import { Opcode, Payload } from './types'
+import { GatewayOpcode, GatewayPayload, GatewayIntent } from './types'
 import { adaptSession, adaptUser, AdapterConfig } from './utils'
 import { BotConfig, DiscordBot } from './bot'
 import WebSocket from 'ws'
 
 const logger = new Logger('discord')
 
-/** https://discord.com/developers/docs/topics/gateway */
 export default class WebSocketClient extends Adapter.WebSocketClient<BotConfig, AdapterConfig> {
   static schema = BotConfig
 
@@ -25,7 +24,7 @@ export default class WebSocketClient extends Adapter.WebSocketClient<BotConfig, 
   heartbeat(bot: DiscordBot) {
     logger.debug(`heartbeat d ${bot._d}`)
     bot.socket.send(JSON.stringify({
-      op: Opcode.Heartbeat,
+      op: GatewayOpcode.HEARTBEAT,
       d: bot._d,
     }))
   }
@@ -34,7 +33,7 @@ export default class WebSocketClient extends Adapter.WebSocketClient<BotConfig, 
     if (bot._sessionId) {
       logger.debug('resuming')
       bot.socket.send(JSON.stringify({
-        op: Opcode.Resume,
+        op: GatewayOpcode.RESUME,
         d: {
           token: bot.config.token,
           session_id: bot._sessionId,
@@ -45,7 +44,7 @@ export default class WebSocketClient extends Adapter.WebSocketClient<BotConfig, 
 
     bot.socket.on('message', async (data) => {
       data = data.toString()
-      let parsed: Payload
+      let parsed: GatewayPayload
       try {
         parsed = JSON.parse(data)
       } catch (error) {
@@ -57,22 +56,25 @@ export default class WebSocketClient extends Adapter.WebSocketClient<BotConfig, 
       }
 
       // https://discord.com/developers/docs/topics/gateway#identifying
-      if (parsed.op === Opcode.Hello) {
+      if (parsed.op === GatewayOpcode.HELLO) {
         bot._ping = setInterval(() => this.heartbeat(bot), parsed.d.heartbeat_interval)
         if (bot._sessionId) return
         bot.socket.send(JSON.stringify({
-          op: Opcode.Identify,
+          op: GatewayOpcode.IDENTIFY,
           d: {
             token: bot.config.token,
             properties: {},
             compress: false,
-            // https://discord.com/developers/docs/topics/gateway#gateway-intents
-            intents: (1 << 9) + (1 << 10) + (1 << 12) + (1 << 13),
+            intents: GatewayIntent.GUILD_MEMBERS
+              | GatewayIntent.GUILD_MESSAGES
+              | GatewayIntent.GUILD_MESSAGE_REACTIONS
+              | GatewayIntent.DIRECT_MESSAGES
+              | GatewayIntent.DIRECT_MESSAGE_REACTIONS,
           },
         }))
       }
 
-      if (parsed.op === Opcode.Dispatch) {
+      if (parsed.op === GatewayOpcode.DISPATCH) {
         if (parsed.t === 'READY') {
           bot._sessionId = parsed.d.session_id
           const self: any = adaptUser(parsed.d.user)

@@ -115,3 +115,24 @@ export enum ApplicationCommandPermissionType {
   ROLE = 1,
   USER = 2,
 }
+
+declare module '.' {
+  interface Internal {
+    getGlobalApplicationCommands(application_id: snowflake): Promise<ApplicationCommand[]>
+    createGlobalApplicationCommand(application_id: snowflake, command: Partial<ApplicationCommand>): Promise<ApplicationCommand>
+    bulkOverwriteGlobalApplicationCommands(application_id: snowflake): Promise<ApplicationCommand[]>
+    getGlobalApplicationCommand(application_id: snowflake, command_id: snowflake): Promise<ApplicationCommand>
+    editGlobalApplicationCommand(application_id: snowflake, command_id: snowflake, command: Partial<ApplicationCommand>): Promise<ApplicationCommand>
+    deleteGlobalApplicationCommand(application_id: snowflake, command_id: snowflake): Promise<void>
+    getGuildApplicationCommands(application_id: snowflake, guild_id: snowflake): Promise<ApplicationCommand[]>
+    createGuildApplicationCommand(application_id: snowflake, guild_id: snowflake, command: Partial<ApplicationCommand>): Promise<ApplicationCommand>
+    bulkOverwriteGuildApplicationCommands(application_id: snowflake, guild_id: snowflake): Promise<void>
+    getGuildApplicationCommandPermissions(application_id: snowflake, guild_id: snowflake): Promise<GuildApplicationCommandPermissions[]>
+    batchEditApplicationCommandPermissions(application_id: snowflake, guild_id: snowflake, permissions: Partial<GuildApplicationCommandPermissions>[]): Promise<void>
+    getGuildApplicationCommand(application_id: snowflake, guild_id: snowflake, command_id: snowflake): Promise<ApplicationCommand>
+    editGuildApplicationCommand(application_id: snowflake, guild_id: snowflake, command_id: snowflake, command: Partial<ApplicationCommand>): Promise<ApplicationCommand>
+    deleteGuildApplicationCommand(application_id: snowflake, guild_id: snowflake, command_id: snowflake): Promise<void>
+    getApplicationCommandPermissions(application_id: snowflake, guild_id: snowflake, command_id: snowflake): Promise<GuildApplicationCommandPermissions>
+    editApplicationCommandPermissions(application_id: snowflake, guild_id: snowflake, command_id: snowflake, permissions: ApplicationCommandPermissions[]): Promise<GuildApplicationCommandPermissions>
+  }
+}

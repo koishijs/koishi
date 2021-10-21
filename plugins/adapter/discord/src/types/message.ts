@@ -1,4 +1,4 @@
-import { Application, Channel, ChannelType, Component, Emoji, GuildMember, integer, MessageInteraction, snowflake, Sticker, StickerItem, timestamp, User } from '.'
+import { Application, Channel, ChannelType, Component, GuildMember, integer, MessageInteraction, Reaction, snowflake, Sticker, StickerItem, timestamp, User } from '.'
 
 /** https://discord.com/developers/docs/resources/channel#message-object-message-structure */
 export interface Message {
@@ -139,16 +139,6 @@ export interface MessageReference {
   guild_id?: snowflake
   /** when sending, whether to error if the referenced message doesn't exist instead of sending as a normal (non-reply) message, default true */
   fail_if_not_exists?: boolean
-}
-
-/** https://discord.com/developers/docs/resources/channel#reaction-object-reaction-structure */
-export interface Reaction {
-  /** times this emoji has been used to react */
-  count: integer
-  /** whether the current user reacted using this emoji */
-  me: boolean
-  /** emoji information */
-  emoji: Partial<Emoji>
 }
 
 /** https://discord.com/developers/docs/resources/channel#embed-object-embed-structure */
@@ -315,58 +305,6 @@ export interface MessageDeleteBulkEvent {
   guild_id?: snowflake
 }
 
-/** https://discord.com/developers/docs/topics/gateway#message-reaction-add-message-reaction-add-event-fields */
-export interface MessageReactionAddEvent {
-  /** the id of the user */
-  user_id: snowflake
-  /** the id of the channel */
-  channel_id: snowflake
-  /** the id of the message */
-  message_id: snowflake
-  /** the id of the guild */
-  guild_id?: snowflake
-  /** the member who reacted if this happened in a guild */
-  member?: GuildMember
-  /** the emoji used to react - example */
-  emoji: Partial<Emoji>
-}
-
-/** https://discord.com/developers/docs/topics/gateway#message-reaction-remove-message-reaction-remove-event-fields */
-export interface MessageReactionRemoveEvent {
-  /** the id of the user */
-  user_id: snowflake
-  /** the id of the channel */
-  channel_id: snowflake
-  /** the id of the message */
-  message_id: snowflake
-  /** the id of the guild */
-  guild_id?: snowflake
-  /** the emoji used to react - example */
-  emoji: Partial<Emoji>
-}
-
-/** https://discord.com/developers/docs/topics/gateway#message-reaction-remove-all-message-reaction-remove-all-event-fields */
-export interface MessageReactionRemoveAllEvent {
-  /** the id of the channel */
-  channel_id: snowflake
-  /** the id of the message */
-  message_id: snowflake
-  /** the id of the guild */
-  guild_id?: snowflake
-}
-
-/** https://discord.com/developers/docs/topics/gateway#message-reaction-remove-emoji-message-reaction-remove-emoji */
-export interface MessageReactionRemoveEmojiEvent {
-  /** the id of the channel */
-  channel_id: snowflake
-  /** the id of the guild */
-  guild_id?: snowflake
-  /** the id of the message */
-  message_id: snowflake
-  /** the emoji that was removed */
-  emoji: Partial<Emoji>
-}
-
 declare module './gateway' {
   interface GatewayEvents {
     /** message was created */
@@ -377,13 +315,14 @@ declare module './gateway' {
     MESSAGE_DELETE: MessageDeleteEvent
     /** multiple messages were deleted at once */
     MESSAGE_DELETE_BULK: MessageDeleteBulkEvent
-    /** user reacted to a message */
-    MESSAGE_REACTION_ADD: MessageReactionAddEvent
-    /** user removed a reaction from a message */
-    MESSAGE_REACTION_REMOVE: MessageReactionRemoveEvent
-    /** all reactions were explicitly removed from a message */
-    MESSAGE_REACTION_REMOVE_ALL: MessageReactionRemoveAllEvent
-    /** all reactions for a given emoji were explicitly removed from a message */
-    MESSAGE_REACTION_REMOVE_EMOJI: MessageReactionRemoveEmojiEvent
+  }
+}
+
+declare module '.' {
+  interface Internal {
+    getChannelMessages(channel_id: string): Promise<Message[]>
+    getChannelMessage(channel_id: string, message_id: string): Promise<Message>
+    createMessage(channel_id: string, data: Partial<Message>): Promise<Message>
+    crosspostMessage(channel_id: string, message_id: string): Promise<Message>
   }
 }

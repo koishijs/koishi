@@ -228,3 +228,11 @@ declare module './gateway' {
     TYPING_START: TypingStartEvent
   }
 }
+
+declare module '.' {
+  interface Internal {
+    getChannel(channel_id: string): Promise<Channel>
+    modifyChannel(channel_id: string, data: Partial<Channel>): Promise<Channel>
+    deleteChannel(channel_id: string): Promise<Channel>
+  }
+}

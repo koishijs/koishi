@@ -10,7 +10,7 @@ export const AdapterConfig: Schema<AdapterConfig> = Schema.merge([
   Adapter.WebSocketClient.Config,
 ])
 
-export const adaptUser = (user: DC.DiscordUser): Bot.User => ({
+export const adaptUser = (user: DC.User): Bot.User => ({
   userId: user.id,
   avatar: `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png`,
   username: user.username,
@@ -18,7 +18,7 @@ export const adaptUser = (user: DC.DiscordUser): Bot.User => ({
   isBot: user.bot || false,
 })
 
-export function adaptGroup(data: DC.PartialGuild | DC.Guild): Bot.Guild {
+export function adaptGroup(data: DC.Guild): Bot.Guild {
   return {
     guildId: data.id,
     guildName: data.name,
@@ -126,7 +126,7 @@ function adaptMessageSession(bot: DiscordBot, meta: DC.Message, session: Partial
   return session
 }
 
-function prepareMessageSession(session: Partial<Session>, data: DC.Message) {
+function prepareMessageSession(session: Partial<Session>, data: Partial<DC.Message>) {
   session.guildId = data.guild_id
   session.subtype = data.guild_id ? 'group' : 'private'
   session.channelId = data.channel_id
@@ -143,7 +143,7 @@ function prepareReactionSession(session: Partial<Session>, data: any) {
   session.content = id ? `${name}:${id}` : name
 }
 
-export async function adaptSession(bot: DiscordBot, input: DC.Payload) {
+export async function adaptSession(bot: DiscordBot, input: DC.GatewayPayload) {
   const session: Partial<Session> = {
     selfId: bot.selfId,
   }
