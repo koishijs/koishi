@@ -16,6 +16,20 @@ const cwd = process.cwd()
 const argv = parse(process.argv.slice(2))
 const tempDir = join(__dirname, '..', 'template')
 
+const { npm_execpath: execpath = '' } = process.env
+const isYarn = execpath.includes('yarn')
+const hasPnpm = !isYarn && supports('pnpm', ['--version'])
+
+function supports(command: string, args: string[] = []) {
+  return new Promise<boolean>((resolve) => {
+    const child = spawn(command, args, { stdio: 'ignore' })
+    child.on('close', (code) => {
+      if (code === 0) return resolve(true)
+      return resolve(false)
+    })
+  })
+}
+
 async function getName() {
   if (argv._[0]) return argv._[0]
   const { name } = await prompts({
@@ -107,22 +121,34 @@ async function scaffold() {
   console.log(green('  Done.\n'))
 }
 
+async function getAgent() {
+  if (isYarn) return 'yarn'
+  const agents = ['npm']
+  if (await hasPnpm) agents.push('pnpm')
+  const { agent } = await prompts({
+    type: 'select',
+    name: 'agent',
+    message: 'Select a package manager:',
+    choices: agents.map((agent) => ({ title: agent, value: agent })),
+  })
+  return agent as string
+}
+
 async function install() {
-  const { npm_execpath: execpath = '' } = process.env
-  const manager = execpath.includes('pnpm') ? 'pnpm' : execpath.includes('yarn') ? 'yarn' : 'npm'
+  const agent = await getAgent()
 
   const yes = await confirm('Install and start it now?')
   if (yes) {
-    spawn.sync(manager, ['install'], { stdio: 'inherit', cwd: rootDir })
-    spawn.sync(manager, ['run', 'start'], { stdio: 'inherit', cwd: rootDir })
+    spawn.sync(agent, ['install'], { stdio: 'inherit', cwd: rootDir })
+    spawn.sync(agent, ['run', 'start'], { stdio: 'inherit', cwd: rootDir })
   } else {
     console.log(dim('  You can start it later by:\n'))
     if (rootDir !== cwd) {
       const related = relative(cwd, rootDir)
       console.log(blue(`  cd ${bold(related)}`))
     }
-    console.log(blue(`  ${manager === 'yarn' ? 'yarn' : `${manager} install`}`))
-    console.log(blue(`  ${manager === 'yarn' ? 'yarn start' : `${manager} run start`}`))
+    console.log(blue(`  ${agent === 'yarn' ? 'yarn' : `${agent} install`}`))
+    console.log(blue(`  ${agent === 'yarn' ? 'yarn start' : `${agent} run start`}`))
     console.log()
   }
 }
