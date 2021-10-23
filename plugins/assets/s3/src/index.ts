@@ -11,7 +11,7 @@ declare module 'koishi' {
 
 export interface Config extends S3ClientConfig {
   bucket: string
-  pathPrefix: string
+  pathPrefix?: string
   publicUrl?: string
 }
 
@@ -99,5 +99,9 @@ export function apply(ctx: Context, config: Config) {
   // config.apiVersion ||= '2'
   config.region ||= 'none'
   config.pathPrefix ||= ''
+  if (config.endpoint && !config.publicUrl) {
+    // MinIO style public URL
+    config.publicUrl = `${config.endpoint}/${config.bucket}/${config.pathPrefix}`
+  }
   ctx.assets = new S3Assets(ctx, config)
 }
