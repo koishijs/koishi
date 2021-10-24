@@ -1,4 +1,4 @@
-import { Adapter, App, Bot, Logger, Schema, Time } from 'koishi'
+import { Adapter, Context, Logger, Schema, Time } from 'koishi'
 import { BotConfig, KaiheilaBot } from './bot'
 import { adaptSession, AdapterConfig } from './utils'
 import { Payload, Signal } from './types'
@@ -13,9 +13,9 @@ export default class WebSocketClient extends Adapter.WebSocketClient<BotConfig, 
     token: Schema.string('机器人的用户令牌。').required(),
   })
 
-  constructor(app: App, config: AdapterConfig) {
-    super(app, config)
-    this.http = app.http.extend({
+  constructor(ctx: Context, config: AdapterConfig) {
+    super(ctx, config)
+    this.http = ctx.http.extend({
       endpoint: 'https://www.kaiheila.cn/api/v3',
       ...config.request,
     })

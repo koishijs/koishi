@@ -12,19 +12,26 @@ export abstract class Adapter<S extends Bot.BaseConfig = Bot.BaseConfig, T = {}>
   abstract start(): Awaitable<void>
   abstract stop(): Awaitable<void>
 
-  constructor(public app: App, public config: T) {
-    app.on('connect', async () => {
+  constructor(public ctx: Context, public config: T) {
+    ctx.on('connect', async () => {
       await this.start()
       for (const bot of this.bots) {
         bot.connect()
       }
     })
 
-    app.on('disconnect', () => this.stop())
+    ctx.on('disconnect', async () => {
+      for (const bot of this.bots) {
+        bot.dispose()
+      }
+      await this.stop()
+    })
   }
 
+  dispose(bot: Bot): Awaitable<void> {}
+
   dispatch(session: Session) {
-    if (!this.app.isActive) return
+    if (!this.ctx.app.isActive) return
     const events: string[] = [session.type]
     if (session.subtype) {
       events.unshift(events[0] + '/' + session.subtype)
@@ -33,7 +40,7 @@ export abstract class Adapter<S extends Bot.BaseConfig = Bot.BaseConfig, T = {}>
       }
     }
     for (const event of events) {
-      this.app.emit(session, paramCase<any>(event), session)
+      this.ctx.emit(session, paramCase<any>(event), session)
     }
   }
 }
@@ -42,7 +49,7 @@ const logger = new Logger('app')
 
 export namespace Adapter {
   export interface Constructor<T extends Bot.BaseConfig = Bot.BaseConfig, S = any> {
-    new (app: App, options?: S): Adapter<T>
+    new (ctx: Context, options?: S): Adapter<T>
     [redirect]?(bot: any): string
     schema?: Schema
   }
@@ -103,8 +110,7 @@ export namespace Adapter {
       config = Schema.validate(config, adapterSchema)
       configMap[platform] = config
       for (const options of config.bots) {
-        const bot = ctx.bots.create(platform, options)
-        bot.start().then((bot) => {
+        ctx.bots.create(platform, options).then((bot) => {
           logger.success('logged in to %s as %c (%s)', bot.platform, bot.username, bot.selfId)
         }, (error: Error) => {
           logger.error(error)
@@ -132,15 +138,15 @@ export namespace Adapter {
       adapter.bots.push(bot)
       this.push(bot)
       this.app.emit('bot-added', bot)
-      return bot
+      return bot.start()
     }
 
-    remove(sid: string) {
+    async remove(sid: string) {
       const index = this.findIndex(bot => bot.sid === sid)
-      if (index < 0) return false
+      if (index < 0) return
       const [bot] = this.splice(index, 1)
       this.app.emit('bot-removed', bot)
-      return true
+      return bot.dispose()
     }
 
     private resolve(platform: string, config: Bot.BaseConfig): Adapter {
@@ -157,7 +163,7 @@ export namespace Adapter {
         return this.resolve(platform, config)
       }
 
-      const adapter = new constructor(this.app, configMap[platform])
+      const adapter = new constructor(this[Context.current], configMap[platform])
       adapter.platform = platform
       return this.adapters[type] = adapter
     }

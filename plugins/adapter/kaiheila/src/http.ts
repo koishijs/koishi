@@ -1,4 +1,4 @@
-import { App, Adapter, Logger, assertProperty, sanitize, Schema } from 'koishi'
+import { App, Adapter, Logger, assertProperty, sanitize, Schema, Context } from 'koishi'
 import { BotConfig, KaiheilaBot } from './bot'
 import { adaptSession, AdapterConfig } from './utils'
 
@@ -10,11 +10,11 @@ export default class HttpServer extends Adapter<BotConfig, AdapterConfig> {
     verifyToken: Schema.string('机器人的验证令牌。').required(),
   })
 
-  constructor(app: App, config: AdapterConfig) {
-    assertProperty(app.options, 'port')
+  constructor(ctx: Context, config: AdapterConfig) {
+    assertProperty(ctx.app.options, 'port')
     config.path = sanitize(config.path || '/kaiheila')
-    super(app, config)
-    this.http = app.http.extend({
+    super(ctx, config)
+    this.http = ctx.http.extend({
       endpoint: 'https://www.kaiheila.cn/api/v3',
       ...config.request,
     })
@@ -27,7 +27,7 @@ export default class HttpServer extends Adapter<BotConfig, AdapterConfig> {
 
   start() {
     const { path = '' } = this.config
-    this.app.router.post(path, (ctx) => {
+    this.ctx.router.post(path, (ctx) => {
       const { body } = ctx.request
       logger.debug('receive %o', body)
 

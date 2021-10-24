@@ -1,4 +1,4 @@
-import { Adapter, App, Bot } from '@koishijs/core'
+import { Adapter, Bot, Context } from '@koishijs/core'
 import { Logger, Time, Awaitable, Schema } from '@koishijs/utils'
 import WebSocket from 'ws'
 
@@ -32,8 +32,8 @@ export namespace InjectedAdapter {
       retryLazy: Schema.number('连接关闭后的重试时间间隔，仅用于 ws 协议。').default(Time.minute),
     }, '连接设置')
 
-    constructor(app: App, config: T) {
-      super(app, {
+    constructor(ctx: Context, config: T) {
+      super(ctx, {
         retryLazy: Time.minute,
         retryInterval: 5 * Time.second,
         retryTimes: 6,

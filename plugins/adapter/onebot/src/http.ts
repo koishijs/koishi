@@ -1,4 +1,4 @@
-import { App, Adapter, Logger, assertProperty, Schema, Requester, omit } from 'koishi'
+import { Adapter, Logger, assertProperty, Schema, Requester, omit, Context } from 'koishi'
 import { BotConfig, OneBotBot } from './bot'
 import { dispatchSession, AdapterConfig } from './utils'
 import { createHmac } from 'crypto'
@@ -15,10 +15,10 @@ export class HttpServer extends Adapter<BotConfig, AdapterConfig> {
 
   public bots: OneBotBot[]
 
-  constructor(app: App, config: AdapterConfig = {}) {
-    super(app, config)
-    assertProperty(app.options, 'port')
-    this.http = app.http.extend(config.request)
+  constructor(ctx: Context, config: AdapterConfig = {}) {
+    super(ctx, config)
+    assertProperty(ctx.app.options, 'port')
+    this.http = ctx.http.extend(config.request)
   }
 
   async connect(bot: OneBotBot) {
@@ -43,7 +43,7 @@ export class HttpServer extends Adapter<BotConfig, AdapterConfig> {
 
   async start() {
     const { secret, path = '/onebot' } = this.config
-    this.app.router.post(path, (ctx) => {
+    this.ctx.router.post(path, (ctx) => {
       if (secret) {
         // no signature
         const signature = ctx.headers['x-signature']

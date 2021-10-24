@@ -1,4 +1,4 @@
-import { App, Adapter, Logger, assertProperty, Time, Schema } from 'koishi'
+import { Adapter, Logger, assertProperty, Time, Schema, Context } from 'koishi'
 import { BotConfig, OneBotBot } from './bot'
 import { AdapterConfig, dispatchSession, adaptUser, Response } from './utils'
 import WebSocket from 'ws'
@@ -13,10 +13,6 @@ export class WebSocketClient extends Adapter.WebSocketClient<BotConfig, AdapterC
   })
 
   protected accept = accept
-
-  constructor(app: App, config: AdapterConfig) {
-    super(app, config)
-  }
 
   prepare(bot: OneBotBot) {
     const { endpoint, token } = bot.config
@@ -35,13 +31,13 @@ export class WebSocketServer extends Adapter<BotConfig, AdapterConfig> {
 
   protected accept = accept
 
-  constructor(app: App, config: AdapterConfig) {
-    super(app, config)
-    assertProperty(app.options, 'port')
+  constructor(ctx: Context, config: AdapterConfig) {
+    super(ctx, config)
+    assertProperty(ctx.app.options, 'port')
     const { path = '/onebot' } = config
     this.wsServer = new WebSocket.Server({
       path,
-      server: this.app._httpServer,
+      server: ctx.app._httpServer,
     })
   }
 

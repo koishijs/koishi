@@ -18,7 +18,7 @@ export abstract class Bot<T extends Bot.BaseConfig = Bot.BaseConfig> {
   reject?: (error: Error) => void
 
   constructor(public adapter: Adapter, public config: T) {
-    this.app = adapter.app
+    this.app = adapter.ctx.app
     this.platform = config.platform || adapter.platform
     this.logger = new Logger(adapter.platform)
     this._status = 'offline'
@@ -38,10 +38,21 @@ export abstract class Bot<T extends Bot.BaseConfig = Bot.BaseConfig> {
   async connect() {
     try {
       this.status = 'connect'
+      await this.app.parallel('bot-connect', this)
       await this.adapter.connect(this)
     } catch (error) {
       this.reject(error)
     }
+  }
+
+  async dispose() {
+    try {
+      await this.app.parallel('bot-dispose', this)
+      await this.adapter.dispose(this)
+    } catch (error) {
+      this.logger.warn(error)
+    }
+    this.status = 'offline'
   }
 
   start() {

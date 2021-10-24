@@ -34,7 +34,7 @@ export class SocketHandle {
   readonly id: string
 
   constructor(webui: StatusServer, public socket: WebSocket) {
-    this.app = webui.app
+    this.app = webui.ctx.app
     webui.handles[this.id = v4()] = this
   }
 
@@ -58,7 +58,7 @@ export class StatusServer extends Adapter {
   private readonly server: WebSocket.Server
   private readonly [Context.current]: Context
 
-  constructor(private ctx: Context, public config: Config) {
+  constructor(ctx: Context, public config: Config) {
     super(ctx.app, config)
 
     const { apiPath, uiPath, devMode, selfUrl } = config
@@ -130,16 +130,13 @@ export class StatusServer extends Adapter {
     this.serveAssets()
 
     if (this.config.open) {
-      const { host, port } = this.app.options
+      const { host, port } = this.ctx.app.options
       open(`http://${host || 'localhost'}:${port}${this.config.uiPath}`)
     }
   }
 
   stop() {
     this.server.close()
-    for (const bot of this.bots) {
-      remove(this.app.bots, bot)
-    }
   }
 
   private onConnection = (socket: WebSocket) => {

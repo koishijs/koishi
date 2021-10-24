@@ -1,5 +1,5 @@
 import { AxiosError } from 'axios'
-import { App, Adapter, Session, camelCase, Logger, segment, sanitize, trimSlash, assertProperty, Schema } from 'koishi'
+import { Adapter, Session, camelCase, Logger, segment, sanitize, trimSlash, assertProperty, Context } from 'koishi'
 import { BotConfig, TelegramBot } from './bot'
 import * as Telegram from './types'
 import FormData from 'form-data'
@@ -10,16 +10,16 @@ const logger = new Logger('telegram')
 export default class HttpServer extends Adapter<BotConfig, AdapterConfig> {
   static schema = BotConfig
 
-  constructor(app: App, config: AdapterConfig) {
-    super(app, config)
+  constructor(ctx: Context, config: AdapterConfig) {
+    super(ctx, config)
     config.path = sanitize(config.path || '/telegram')
     if (config.selfUrl) {
       config.selfUrl = trimSlash(config.selfUrl)
     } else {
-      config.selfUrl = assertProperty(app.options, 'selfUrl')
+      config.selfUrl = assertProperty(ctx.app.options, 'selfUrl')
     }
 
-    this.http = app.http.extend({
+    this.http = ctx.http.extend({
       endpoint: 'https://api.telegram.org',
       ...config.request,
     })
@@ -54,7 +54,7 @@ export default class HttpServer extends Adapter<BotConfig, AdapterConfig> {
 
   async start() {
     const { path } = this.config
-    this.app.router.post(path, async (ctx) => {
+    this.ctx.router.post(path, async (ctx) => {
       logger.debug('receive %s', JSON.stringify(ctx.request.body))
       const payload = camelCase<Telegram.Update>(ctx.request.body)
       const token = ctx.request.query.token as string

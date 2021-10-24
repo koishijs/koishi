@@ -626,4 +626,6 @@ export interface EventMap extends SessionEventMap, DelegateEventMap {
   'bot-added'(bot: Bot): void
   'bot-removed'(bot: Bot): void
   'bot-updated'(bot: Bot): void
+  'bot-connect'(bot: Bot): Awaitable<void>
+  'bot-dispose'(bot: Bot): Awaitable<void>
 }
