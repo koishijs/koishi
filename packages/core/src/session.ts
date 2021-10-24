@@ -177,7 +177,7 @@ export class Session<
 
   async send(message: string) {
     if (!message) return
-    await this.bot.sendMessage(this.channelId, message, this.guildId)
+    await this.bot.sendMessage(this.channelId, message, this.guildId).catch(noop)
   }
 
   cancelQueued(delay = this.app.options.delay.cancel) {
