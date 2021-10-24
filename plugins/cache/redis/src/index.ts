@@ -1,5 +1,5 @@
 import { createPool } from 'generic-pool'
-import { Cache, Context, Schema, Logger } from 'koishi'
+import { Cache, Context, Schema, Logger, isNullable } from 'koishi'
 import { createClient } from 'redis'
 import { RedisClientOptions, RedisClientType } from 'redis/dist/lib/client'
 
@@ -32,7 +32,7 @@ export default class RedisCache extends Cache {
     return JSON.parse(record)
   }
 
-  private async doInPool<T>(action: (client: RedisClientType<{}, {}>) => Promise<T>): Promise<T> {
+  private async doInPool<T>(action: (client: RedisClientType<{}, {}>) => Promise<T>, errActionMessage = 'perform unknown action'): Promise<T> {
     let client: RedisClientType<{}, {}>
     try {
       client = await this.pool.acquire()
@@ -47,7 +47,7 @@ export default class RedisCache extends Cache {
     try {
       return await action(client)
     } catch (e) {
-      this.logger.warn(`Client action failed: ${e.toString()}`)
+      this.logger.warn(`Failed to ${errActionMessage}: ${e.toString()}`)
       return
     } finally {
       await this.pool.release(client)
@@ -57,54 +57,44 @@ export default class RedisCache extends Cache {
   async get(table: keyof Cache.Tables, key: string) {
     const redisKey = this.getRedisKey(table, key)
     return this.doInPool(async (client) => {
-      try {
-        const record = await client.get(redisKey)
-        if (record == null) {
-          return
-        }
-        return this.decode(record)
-      } catch (e) {
-        this.logger.warn(`Failed to get ${redisKey} from redis: ${e.toString()}`)
+      const record = await client.get(redisKey)
+      if (isNullable(record)) {
+        return
       }
-    })
+      return this.decode(record)
+    }, `get ${redisKey}`)
   }
 
   async set(table: keyof Cache.Tables, key: string, value: any, maxAge?: number) {
+    if (isNullable(value)) return
     const tableConfig = this.table(table)
-    if (!tableConfig) {
-      return
-    }
+    if (!tableConfig) return
     const age: number = maxAge || tableConfig.maxAge
     const redisKey = this.getRedisKey(table, key)
     return this.doInPool(async (client) => {
-      try {
-        if (value != null) {
-          const record = this.encode(value)
-          const command = client.multi()
-            .set(redisKey, record)
-          if (age) {
-            command.expire(redisKey, age)
-          }
-          await command.exec()
-        } else {
-          await client.del(redisKey)
-        }
-      } catch (e) {
-        this.logger.warn(`Failed to set ${redisKey} to redis: ${e.toString()}`)
+      const record = this.encode(value)
+      const command = client.multi()
+        .set(redisKey, record)
+      if (age) {
+        command.expire(redisKey, age)
       }
-    })
+      await command.exec()
+    }, `set ${redisKey}`)
+  }
+
+  async del(table: keyof Cache.Tables, key: string) {
+    const redisKey = this.getRedisKey(table, key)
+    return this.doInPool(async (client) => {
+      await client.del(redisKey)
+    }, `delete ${redisKey}`)
   }
 
   async clear(table: keyof Cache.Tables) {
     const redisKey = this.getRedisKey(table, '*')
     return this.doInPool(async (client) => {
-      try {
-        const allKeys = await client.keys(redisKey)
-        await client.del(allKeys)
-      } catch (e) {
-        this.logger.warn(`Failed to clear table ${redisKey} in redis: ${e.toString()}`)
-      }
-    })
+      const allKeys = await client.keys(redisKey)
+      await client.del(allKeys)
+    }, `clear table ${redisKey}`)
   }
 }
 

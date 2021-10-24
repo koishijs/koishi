@@ -1,4 +1,4 @@
-import { Cache, Context, Dict, Schema } from 'koishi'
+import { Cache, Context, Dict, Schema, isNullable } from 'koishi'
 import LRU from 'lru-cache'
 
 export default class LruCache extends Cache {
@@ -28,8 +28,16 @@ export default class LruCache extends Cache {
   }
 
   async set(table: keyof Cache.Tables, key: string, value: any, maxAge?: number) {
+    if (isNullable(value)) {
+      return
+    }
     this.prepare(table)
     this.#store[table]?.set(key, value, maxAge)
+  }
+
+  async del(table: keyof Cache.Tables, key: string) {
+    this.prepare(table)
+    return this.#store[table]?.del(key)
   }
 }
 
