@@ -1,4 +1,4 @@
-import { Context, Schema, interpolate } from 'koishi'
+import { Context, Schema, interpolate, Logger } from 'koishi'
 import onebot from '@koishijs/plugin-adapter-onebot'
 import { spawn } from 'cross-spawn'
 import { ChildProcess } from 'child_process'
@@ -16,6 +16,8 @@ declare module '@koishijs/plugin-adapter-onebot/lib/bot' {
   }
 }
 
+export const logger = new Logger('gocqhttp')
+
 export const name = 'gocqhttp'
 
 export const schema = Schema.object({})
@@ -26,13 +28,15 @@ dict['http'].dict['password'] = Schema.string('机器人的密码。')
 dict['ws'].dict['password'] = Schema.string('机器人的密码。')
 dict['ws-reverse'].dict['password'] = Schema.string('机器人的密码。')
 
-async function prepare(bot: onebot.Bot) {
-  if (bot.adapter.platform !== 'onebot') return
-  const { port, host = 'localhost' } = bot.app.options
-  const { path = '/onebot/' } = bot.app.registry.get(onebot).config
+async function start(bot: onebot.Bot) {
+  // create working folder
   const cwd = resolve('accounts/' + bot.selfId)
   await mkdir(cwd, { recursive: true })
   await copyFile(resolve(__dirname, '../bin/go-cqhttp'), cwd + '/go-cqhttp')
+
+  // create config.yml
+  const { port, host = 'localhost' } = bot.app.options
+  const { path = '/onebot/' } = bot.app.registry.get(onebot).config
   const template = await readFile(resolve(__dirname, '../template.yml'), 'utf8')
   await writeFile(cwd + '/config.yml', interpolate(template, {
     bot: bot.config,
@@ -40,18 +44,31 @@ async function prepare(bot: onebot.Bot) {
     endpoint: bot.config.endpoint && new URL(bot.config.endpoint),
     selfUrl: `${host}:${port}${path}`,
   }, /\$\$(.+)/g))
-  bot.process = spawn('./go-cqhttp', ['faststart'], { stdio: 'inherit', cwd })
+
+  // spawn go-cqhttp process
+  bot.process = spawn('./go-cqhttp', ['faststart'], { cwd })
+  return new Promise<void>((resolve, reject) => {
+    bot.process.stderr.on('data', (data) => {
+      data = data.toString().trim()
+      if (!data) return
+      for (const line of data.split('\n')) {
+        const text = line.slice(30)
+        logger.info(text)
+        if (text.includes('アトリは、高性能ですから')) resolve()
+      }
+    })
+    bot.process.on('exit', reject)
+  })
 }
 
 export function apply(ctx: Context) {
-  ctx.on('connect', () => {
-    ctx.bots.forEach(prepare)
+  ctx.on('bot-connect', async (bot: onebot.Bot) => {
+    if (bot.adapter.platform !== 'onebot') return
+    return start(bot)
+  })
 
-    ctx.on('bot-added', prepare)
-
-    ctx.on('bot-removed', async (bot: onebot.Bot) => {
-      if (bot.adapter.platform !== 'onebot') return
-      bot.process?.kill()
-    })
+  ctx.on('bot-dispose', async (bot: onebot.Bot) => {
+    if (bot.adapter.platform !== 'onebot') return
+    bot.process?.kill()
   })
 }
