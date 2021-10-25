@@ -43,7 +43,7 @@ async function start(bot: onebot.Bot) {
 
   // create config.yml
   const { port, host = 'localhost' } = bot.app.options
-  const { path = '/onebot/' } = bot.app.registry.get(onebot).config
+  const { path = '/onebot' } = bot.app.registry.get(onebot).config
   const template = await readFile(resolve(__dirname, '../template.yml'), 'utf8')
   await writeFile(cwd + '/config.yml', interpolate(template, {
     bot: bot.config,
@@ -61,7 +61,7 @@ async function start(bot: onebot.Bot) {
       for (const line of data.split('\n')) {
         const text = line.slice(23)
         const [type] = text.split(']: ', 1)
-        logger[logLevelMap[type]](text.slice(type.length))
+        logger[logLevelMap[type]](text.slice(type.length + 3))
         if (text.includes('アトリは、高性能ですから')) resolve()
       }
     })
@@ -69,7 +69,13 @@ async function start(bot: onebot.Bot) {
   })
 }
 
-export function apply(ctx: Context) {
+export interface Config {
+  logLevel?: number
+}
+
+export function apply(ctx: Context, config: Config = {}) {
+  logger.level = config.logLevel || 2
+
   ctx.on('bot-connect', async (bot: onebot.Bot) => {
     if (bot.adapter.platform !== 'onebot') return
     return start(bot)
