@@ -37,7 +37,7 @@ const recentRate = computed(() => {
 })
 
 const storageSize = computed(() => {
-  return Object.values(meta.value.tables).reduce((prev, curr) => prev + curr.size, 0)
+  return Object.values(meta.value.tables || {}).reduce((prev, curr) => prev + curr.size, 0)
 })
 
 </script>

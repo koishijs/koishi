@@ -35,6 +35,19 @@ function renderLine(line: string) {
     font-family: ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas, Liberation Mono, monospace;
   }
 
+  .logs:not(:first-child) .line.start {
+    margin-top: 1rem;
+
+    &::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: -0.5rem;
+      border-top: 1px solid var(--terminal-separator);
+    }
+  }
+
   .line {
     padding: 0 0.5rem;
     border-radius: 2px;
@@ -50,19 +63,6 @@ function renderLine(line: string) {
 
     ::selection {
       background-color: var(--terminal-bg-selection);
-    }
-
-    &.start {
-      margin-top: 1rem;
-    }
-
-    &.start::before {
-      content: '';
-      position: absolute;
-      left: 0;
-      right: 0;
-      top: -0.5rem;
-      border-top: 1px solid var(--terminal-separator);
     }
   }
 }
