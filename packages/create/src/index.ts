@@ -23,9 +23,11 @@ const hasPnpm = !isYarn && supports('pnpm', ['--version'])
 function supports(command: string, args: string[] = []) {
   return new Promise<boolean>((resolve) => {
     const child = spawn(command, args, { stdio: 'ignore' })
-    child.on('close', (code) => {
-      if (code === 0) return resolve(true)
-      return resolve(false)
+    child.on('exit', (code) => {
+      resolve(code ? false : true)
+    })
+    child.on('error', () => {
+      resolve(false)
     })
   })
 }
