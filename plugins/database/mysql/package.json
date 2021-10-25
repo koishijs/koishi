@@ -34,6 +34,7 @@
     "koishi": "^4.0.0-alpha.11"
   },
   "dependencies": {
+    "@koishijs/sql-utils": "^1.0.0-alpha.2",
     "@types/mysql": "^2.15.19",
     "mysql": "^2.18.1"
   }
