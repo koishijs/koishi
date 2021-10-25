@@ -5,6 +5,6 @@ logger:
 
 allowWrite: true
 
-# 插件设置
 plugins:
+  ./src/ping:
   status:
