@@ -28,6 +28,13 @@ dict['http'].dict['password'] = Schema.string('机器人的密码。')
 dict['ws'].dict['password'] = Schema.string('机器人的密码。')
 dict['ws-reverse'].dict['password'] = Schema.string('机器人的密码。')
 
+const logLevelMap = {
+  INFO: 'debug',
+  DEBUG: 'debug',
+  ERROR: 'error',
+  WARNING: 'warn',
+}
+
 async function start(bot: onebot.Bot) {
   // create working folder
   const cwd = resolve('accounts/' + bot.selfId)
@@ -52,8 +59,9 @@ async function start(bot: onebot.Bot) {
       data = data.toString().trim()
       if (!data) return
       for (const line of data.split('\n')) {
-        const text = line.slice(30)
-        logger.info(text)
+        const text = line.slice(23)
+        const [type] = text.split(']: ', 1)
+        logger[logLevelMap[type]](text.slice(type.length))
         if (text.includes('アトリは、高性能ですから')) resolve()
       }
     })
