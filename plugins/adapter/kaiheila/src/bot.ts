@@ -1,6 +1,6 @@
 /* eslint-disable quote-props */
 
-import { Bot, Session, camelize, segment, renameProperty, snakeCase, Adapter, Schema, App, Requester } from 'koishi'
+import { Bot, Session, camelize, segment, renameProperty, snakeCase, Adapter, Schema, App, Quester } from 'koishi'
 import { Method } from 'axios'
 import * as KHL from './types'
 import { adaptGroup, adaptAuthor, adaptUser, AdapterConfig } from './utils'
@@ -30,7 +30,7 @@ export class KaiheilaBot extends Bot<BotConfig> {
   _sn: number
   _ping: NodeJS.Timeout
   _heartbeat: NodeJS.Timeout
-  http: Requester
+  http: Quester
 
   static schema = AdapterConfig
 

@@ -1,4 +1,4 @@
-import { Bot, segment, Adapter, Dict, Schema, Requester, Logger, camelize } from 'koishi'
+import { Bot, segment, Adapter, Dict, Schema, Quester, Logger, camelize } from 'koishi'
 import * as OneBot from './utils'
 
 function renderText(source: string) {
@@ -16,7 +16,7 @@ function renderText(source: string) {
   }, '')
 }
 
-export interface BotConfig extends Bot.BaseConfig, Requester.Config {
+export interface BotConfig extends Bot.BaseConfig, Quester.Config {
   selfId?: string
   token?: string
 }
@@ -26,7 +26,7 @@ export const BotConfig: Schema<BotConfig> = Schema.merge([
     selfId: Schema.string(),
     token: Schema.string(),
   }),
-  Requester.Config,
+  Quester.Config,
 ])
 
 export class OneBotBot extends Bot<BotConfig> {

@@ -1,4 +1,4 @@
-import { Adapter, Logger, assertProperty, Schema, Requester, omit, Context } from 'koishi'
+import { Adapter, Logger, assertProperty, Schema, Quester, omit, Context } from 'koishi'
 import { BotConfig, OneBotBot } from './bot'
 import { dispatchSession, AdapterConfig } from './utils'
 import { createHmac } from 'crypto'
@@ -10,7 +10,7 @@ export class HttpServer extends Adapter<BotConfig, AdapterConfig> {
     selfId: Schema.string('机器人的账号。').required(),
     token: Schema.string('发送信息时用于验证的字段，应与 OneBot 配置文件中的 access_token 保持一致。'),
     endpoint: Schema.string('要连接的 OneBot 服务器地址。').required(),
-    ...omit(Requester.Config.dict, ['endpoint']),
+    ...omit(Quester.Config.dict, ['endpoint']),
   })
 
   public bots: OneBotBot[]

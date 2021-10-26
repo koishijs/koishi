@@ -1,5 +1,5 @@
 import { createReadStream } from 'fs'
-import { Bot, Adapter, camelCase, snakeCase, renameProperty, segment, assertProperty, Dict, Schema, App, Requester } from 'koishi'
+import { Bot, Adapter, camelCase, snakeCase, renameProperty, segment, assertProperty, Dict, Schema, App, Quester } from 'koishi'
 import * as Telegram from './types'
 import { AdapterConfig } from './utils'
 
@@ -57,7 +57,7 @@ export class TelegramBot extends Bot<BotConfig> {
 
   static schema = AdapterConfig
 
-  http: Requester
+  http: Quester
 
   constructor(adapter: Adapter, config: BotConfig) {
     assertProperty(config, 'token')

@@ -2,7 +2,7 @@
 
 import { EventConfig } from './events'
 import axios, { AxiosError, Method } from 'axios'
-import { App, Session, Tables, segment, Logger, Dict, Requester } from 'koishi'
+import { App, Session, Tables, segment, Logger, Dict, Quester } from 'koishi'
 import {} from '@koishijs/plugin-puppeteer'
 
 declare module 'koishi' {
@@ -72,7 +72,7 @@ export type ReplySession = Session<'ghAccessToken' | 'ghRefreshToken'>
 const logger = new Logger('github')
 
 export class GitHub {
-  http: Requester
+  http: Quester
 
   constructor(public app: App, public config: Config) {
     this.http = app.http.extend(config.request)

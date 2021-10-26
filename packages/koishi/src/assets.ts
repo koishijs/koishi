@@ -1,11 +1,14 @@
 import { Context, Service } from '@koishijs/core'
-import { segment } from '@koishijs/utils'
+import { Awaitable, segment } from '@koishijs/utils'
 
 const PROTOCOL_BASE64 = 'base64://'
 
 export abstract class Assets<T = any> extends Service<T> {
   static types = ['image', 'audio', 'video']
   protected types: readonly string[] = Assets.types
+
+  start(): Awaitable<void> {}
+  stop(): Awaitable<void> {}
 
   abstract upload(url: string, file: string): Promise<string>
   abstract stats(): Promise<Assets.Stats>

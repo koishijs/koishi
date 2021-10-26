@@ -14,21 +14,21 @@ declare module '@koishijs/core' {
       }
 
       interface Request {
-        request?: Requester.Config
+        request?: Quester.Config
       }
     }
   }
 
   interface Adapter {
-    http?: Requester
+    http?: Quester
   }
 }
 
-export interface Requester {
+export interface Quester {
   <T = any>(method: Method, url: string, data?: any, headers?: Dict): Promise<T>
-  extend(config: Requester.Config): Requester
-  config: Requester.Config
-  get: Requester.Get
+  extend(config: Quester.Config): Quester
+  config: Quester.Config
+  get: Quester.Get
   head(url: string, params?: Dict, headers?: Dict): Promise<Dict<string>>
   delete(url: string, params?: Dict, headers?: Dict): Promise<Dict<string>>
   options(url: string, params?: Dict, headers?: Dict): Promise<Dict<string>>
@@ -37,7 +37,7 @@ export interface Requester {
   patch<T = any>(url: string, data?: any, headers?: Dict): Promise<T>
 }
 
-export namespace Requester {
+export namespace Quester {
   export interface Config {
     headers?: Dict
     endpoint?: string
@@ -64,7 +64,7 @@ export namespace Requester {
     return agents[url] ||= new ProxyAgent(url)
   }
 
-  export function create(config: Requester.Config = {}) {
+  export function create(config: Quester.Config = {}) {
     const { endpoint = '' } = config
 
     const options: AxiosRequestConfig = {
@@ -91,7 +91,7 @@ export namespace Requester {
       return response.data as T
     }
 
-    const instance = ((method, url, data, headers) => request(method, url, { headers, data })) as Requester
+    const instance = ((method, url, data, headers) => request(method, url, { headers, data })) as Quester
     instance.get = ((url, params, headers) => request('GET', url, { headers, params })) as Get
     instance.get.stream = (url, params, headers) => request('GET', url, { headers, params, responseType: 'stream' })
     instance.get.arraybuffer = (url, params, headers) => request('GET', url, { headers, params, responseType: 'arraybuffer' })
@@ -107,7 +107,7 @@ export namespace Requester {
 }
 
 const RequestConfig: Schema<App.Config.Request> = Schema.object({
-  request: Requester.Config,
+  request: Quester.Config,
 })
 
 defineProperty(App.Config, 'Request', RequestConfig)

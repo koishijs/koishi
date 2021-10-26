@@ -1,6 +1,6 @@
 /* eslint-disable camelcase */
 
-import { Adapter, App, Bot, Schema, segment, Requester } from 'koishi'
+import { Adapter, App, Bot, Schema, segment, Quester } from 'koishi'
 import { adaptChannel, adaptGroup, adaptMessage, adaptUser, AdapterConfig } from './utils'
 import { Sender } from './sender'
 import * as Discord from './types'
@@ -33,7 +33,7 @@ export class DiscordBot extends Bot<BotConfig> {
   _ping: NodeJS.Timeout
   _sessionId: string
 
-  public request: Requester
+  public request: Quester
   public internal: Discord.Internal
 
   constructor(adapter: Adapter, config: BotConfig) {

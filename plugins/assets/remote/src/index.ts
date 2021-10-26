@@ -1,4 +1,4 @@
-import { Assets, Context, Random, Schema, Requester } from 'koishi'
+import { Assets, Context, Random, Schema, Quester } from 'koishi'
 import { createHmac } from 'crypto'
 import { stringify } from 'querystring'
 
@@ -13,13 +13,13 @@ export const schema = Schema.object({
   secret: Schema.string('服务器设置的密钥，配合 assets-local 使用。')
 })
 
-interface Config extends Requester.Config {
+interface Config extends Quester.Config {
   endpoint: string
   secret?: string
 }
 
 class RemoteAssets extends Assets {
-  http: Requester
+  http: Quester
 
   constructor(ctx: Context, public config: Config) {
     super(ctx)

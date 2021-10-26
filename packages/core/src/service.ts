@@ -23,10 +23,10 @@ export namespace Service {
     dynamic?: boolean
   }
 
-  export const registry: Dict<Options> = {}
+  export const Injection: Dict<Options> = {}
 
   export function register(key: keyof Injection, options: Options = {}) {
-    registry[key] = options
+    Injection[key] = options
     if (Object.prototype.hasOwnProperty.call(Context.prototype, key)) return
     const privateKey = Symbol(key)
     Object.defineProperty(Context.prototype, key, {
@@ -37,7 +37,7 @@ export namespace Service {
         return value
       },
       set(value) {
-        if (this.app[privateKey] && !registry[key].dynamic) {
+        if (this.app[privateKey] && !Injection[key].dynamic) {
           this.logger(key).warn('service is overwritten')
         }
         defineProperty(this.app, privateKey, value)

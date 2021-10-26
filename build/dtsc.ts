@@ -29,6 +29,8 @@ async function compile(path: string, filename: string) {
   return fs.readFile(filename, 'utf8')
 }
 
+const referenceHack = '/// <reference types="koishi/lib" />'
+
 async function bundle(path: string) {
   const fullpath = resolve(cwd, path)
   const config = await readJson(fullpath + '/tsconfig.json')
@@ -150,58 +152,55 @@ async function bundle(path: string) {
     prolog += `import ${output.join(', ')} from '${name}';${EOL}`
   })
 
-  await fs.writeFile(resolve(fullpath, 'lib/index.d.ts'), prolog + output + EOL)
+  return prolog + output + EOL
 }
 
 async function wrapModule(name: string, source: string, target: string) {
   const newline = EOL + '    '
   const typings = await fs.readFile(resolve(cwd, source), 'utf8')
-  const content = typings.trim().split(EOL).join(newline) + EOL
+  const content = typings.trim().split(EOL).map(line => line.replace(/^declare /, '')).join(newline) + EOL
   await fs.writeFile(
     resolve(cwd, 'packages/koishi/lib', target),
     `declare module "${name}" {${newline}${content}}${EOL}`,
   )
 }
 
-const referenceHack = '/// <reference types="koishi/lib" />'
-
 async function bundleNode() {
-  let cap: RegExpExecArray
-  const typings = await compile('packages/koishi', resolve(cwd, 'packages/koishi/temp/index.d.ts'))
+  const content = await bundle('packages/koishi')
   const prolog = [referenceHack]
-  const modules: Record<string, string[]> = {}
-  let current: string
-  for (const line of typings.split(EOL)) {
-    if (line.startsWith('///')) {
-      prolog.push(line)
-    } else if (cap = /^ {4}import .+ from ['"](.+)['"];$/.exec(line)) {
-      if (!cap[1].includes('@koishijs')) prolog.push(line.slice(4))
-    } else if (cap = /^ {4}module ['"](.+)['"] \{$/.exec(line)) {
-      current = cap[1]
-      if (current === '@koishijs/core') current = 'koishi'
-    } else if (current) {
-      if (line === '    }') {
-        current = ''
-      } else {
-        (modules[current] ||= []).push(line.slice(4))
-      }
-    } else if (line.startsWith('    ')) {
-      const content = line.slice(4)
-      if (content.startsWith('import ') || /^export .+ from/.test(content)) continue
-      if (content.startsWith('export namespace Injected')) {
-        (modules.koishi ||= []).push('    namespace ' + line.slice(29))
-      } else {
-        (modules.koishi ||= []).push(line)
-      }
+  const modules: Record<string, string[]> = { koishi: [] }
+  let target = ''
+  for (const line of content.split(EOL)) {
+    if (line.startsWith('///') || line.startsWith('import ')) {
+      if (!line.includes('@koishijs/core')) prolog.push(line)
+      continue
     }
+
+    if (target) {
+      if (line === '}') {
+        target = ''
+      } else {
+        modules[target].push(line)
+      }
+      continue
+    }
+
+    if (!line || line.match(/^export .+ from/)) continue
+    const cap = /^declare module ["'](.+)["'] \{$/.exec(line)
+    if (cap) {
+      target = cap[1] === '@koishijs/core' ? 'koishi' : cap[1]
+      modules[target] ||= []
+      continue
+    }
+
+    modules.koishi.push('    ' + line.replace('Injected', ''))
   }
+
   for (const name in modules) {
-    prolog.push(`declare module '${name}' {`, ...modules[name], '}')
+    prolog.push([`declare module '${name}' {`, ...modules[name], '}'].join(EOL))
   }
-  await fs.writeFile(
-    resolve(cwd, 'packages/koishi/lib/node.d.ts'),
-    prolog.join(EOL) + EOL,
-  )
+
+  await fs.writeFile(resolve(cwd, 'packages/koishi/lib/node.d.ts'), prolog.join(EOL) + EOL)
 }
 
 async function bundleAll(names: readonly string[]) {
@@ -213,7 +212,8 @@ async function bundleAll(names: readonly string[]) {
         bundleNode(),
       ])
     } else {
-      await bundle(name)
+      const content = await bundle(name)
+      await fs.writeFile(resolve(cwd, name, 'lib/index.d.ts'), content)
     }
   }
 }
