@@ -35,7 +35,7 @@ export abstract class Bot<T extends Bot.BaseConfig = Bot.BaseConfig> {
     }
   }
 
-  async connect() {
+  async start() {
     try {
       this.status = 'connect'
       await this.app.parallel('bot-connect', this)
@@ -45,7 +45,7 @@ export abstract class Bot<T extends Bot.BaseConfig = Bot.BaseConfig> {
     }
   }
 
-  async dispose() {
+  async stop() {
     try {
       await this.app.parallel('bot-dispose', this)
       await this.adapter.dispose(this)
@@ -55,7 +55,7 @@ export abstract class Bot<T extends Bot.BaseConfig = Bot.BaseConfig> {
     this.status = 'offline'
   }
 
-  start() {
+  connect() {
     const task = new Promise<this>((resolve, reject) => {
       this.resolve = () => {
         this.status = 'online'
@@ -69,7 +69,7 @@ export abstract class Bot<T extends Bot.BaseConfig = Bot.BaseConfig> {
     })
 
     if (this.app.isActive) {
-      this.connect()
+      this.start()
     }
     return task
   }

@@ -1,11 +1,11 @@
-import { Logger, defineProperty, makeArray, remove, Random, Schema, Promisify, Awaitable, Dict, MaybeArray } from '@koishijs/utils'
+import { Logger, makeArray, remove, Random, Schema, Promisify, Awaitable, Dict, MaybeArray } from '@koishijs/utils'
 import { Command } from './command'
 import { Session } from './session'
-import { User, Channel, Database, Modules } from './database'
+import { User, Channel, Modules } from './database'
 import { Argv } from './parser'
 import { App } from './app'
 import { Bot } from './bot'
-import { Adapter } from './adapter'
+import { Service } from './service'
 
 export type NextFunction = (next?: NextFunction) => Promise<void>
 export type Middleware = (session: Session, next: NextFunction) => any
@@ -78,7 +78,7 @@ interface Selection extends BaseSelection {
   $not?: Selection
 }
 
-export interface Context extends Context.Services {}
+export interface Context extends Service.Injection {}
 
 export class Context {
   static readonly middleware = Symbol('middleware')
@@ -540,43 +540,6 @@ export class Context {
   }
 }
 
-export namespace Context {
-  export interface Services {
-    database: Database
-    bots: Adapter.BotList
-  }
-
-  export const Services: string[] = []
-
-  export interface ServiceOptions {
-    dynamic?: boolean
-  }
-
-  export function service(key: keyof Services, options: ServiceOptions = {}) {
-    if (Object.prototype.hasOwnProperty.call(Context.prototype, key)) return
-    Services.push(key)
-    const privateKey = Symbol(key)
-    Object.defineProperty(Context.prototype, key, {
-      get() {
-        const value = this.app[privateKey]
-        if (!value) return
-        defineProperty(value, Context.current, this)
-        return value
-      },
-      set(value) {
-        if (this.app[privateKey] && !options.dynamic) {
-          this.logger(key).warn('service is overwritten')
-        }
-        defineProperty(this.app, privateKey, value)
-        this.emit('service/' + key)
-      },
-    })
-  }
-
-  service('database')
-  service('bots')
-}
-
 type FlattenEvents<T> = {
   [K in keyof T & string]: K | `${K}/${FlattenEvents<T[K]>}`
 }[keyof T & string]
@@ -590,7 +553,7 @@ type SessionEventMap = {
 }
 
 type DelegateEventMap = {
-  [K in keyof Context.Services as `service/${K}`]: () => void
+  [K in keyof Service.Injection as `service/${K}`]: () => void
 }
 
 type EventName = keyof EventMap

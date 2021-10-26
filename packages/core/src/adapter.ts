@@ -2,29 +2,28 @@ import { Logger, Schema, paramCase, Dict, Awaitable } from '@koishijs/utils'
 import { Session } from './session'
 import { App } from './app'
 import { Bot } from './bot'
+import { Service } from './service'
 import { Context, Plugin } from './context'
 
-export abstract class Adapter<S extends Bot.BaseConfig = Bot.BaseConfig, T = {}> {
+export abstract class Adapter<S extends Bot.BaseConfig = Bot.BaseConfig, T = {}> extends Service<T> {
   public bots: Bot<S>[] = []
   public platform: string
 
   abstract connect(bot: Bot): Awaitable<void>
-  abstract start(): Awaitable<void>
-  abstract stop(): Awaitable<void>
 
-  constructor(public ctx: Context, public config: T) {
-    ctx.on('connect', async () => {
-      await this.start()
+  constructor(ctx: Context, config: T) {
+    super(ctx, config)
+
+    ctx.on('connect', () => {
       for (const bot of this.bots) {
-        bot.connect()
+        bot.start()
       }
     })
 
-    ctx.on('disconnect', async () => {
+    ctx.on('disconnect', () => {
       for (const bot of this.bots) {
-        bot.dispose()
+        bot.stop()
       }
-      await this.stop()
     })
   }
 
@@ -138,7 +137,7 @@ export namespace Adapter {
       adapter.bots.push(bot)
       this.push(bot)
       this.app.emit('bot-added', bot)
-      return bot.start()
+      return bot.connect()
     }
 
     async remove(sid: string) {
@@ -146,7 +145,7 @@ export namespace Adapter {
       if (index < 0) return
       const [bot] = this.splice(index, 1)
       this.app.emit('bot-removed', bot)
-      return bot.dispose()
+      return bot.stop()
     }
 
     private resolve(platform: string, config: Bot.BaseConfig): Adapter {

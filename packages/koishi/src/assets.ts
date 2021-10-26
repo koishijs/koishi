@@ -1,16 +1,14 @@
-import { Context } from '@koishijs/core'
+import { Context, Service } from '@koishijs/core'
 import { segment } from '@koishijs/utils'
 
 const PROTOCOL_BASE64 = 'base64://'
 
-export abstract class Assets {
+export abstract class Assets<T = any> extends Service<T> {
   static types = ['image', 'audio', 'video']
   protected types: readonly string[] = Assets.types
 
   abstract upload(url: string, file: string): Promise<string>
   abstract stats(): Promise<Assets.Stats>
-
-  constructor(protected ctx: Context) {}
 
   public transform(content: string) {
     return segment.transformAsync(content, Object.fromEntries(this.types.map((type) => {
@@ -18,7 +16,7 @@ export abstract class Assets {
     })))
   }
 
-  protected async download(this: Assets, url: string) {
+  protected async download(url: string) {
     if (url.startsWith(PROTOCOL_BASE64)) {
       return Buffer.from(url.slice(PROTOCOL_BASE64.length), 'base64')
     }

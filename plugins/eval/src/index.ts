@@ -9,8 +9,8 @@ import { WorkerResponse } from './worker'
 export * from './main'
 
 declare module 'koishi' {
-  namespace Context {
-    interface Services {
+  namespace Service {
+    interface Injection {
       worker: EvalWorker
     }
   }
@@ -82,7 +82,7 @@ export const schema: Schema<Config> = Schema.object({
   }, '资源限制')
 })
 
-Context.service('worker')
+Service.register('worker')
 
 export function apply(ctx: Context, config: Config = {}) {
   const { prefix, authority } = config = { ...defaultConfig, ...config }

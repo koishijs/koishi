@@ -1,5 +1,5 @@
 import puppeteer, { Browser, ElementHandle, Page, Shooter, Viewport } from 'puppeteer-core'
-import { Context, Logger, hyphenate, noop, segment, Schema, Time } from 'koishi'
+import { Context, Logger, hyphenate, noop, segment, Schema, Time, Service } from 'koishi'
 import { PNG } from 'pngjs'
 import { resolve } from 'path'
 import {} from '@koishijs/plugin-eval'
@@ -34,8 +34,8 @@ declare module 'puppeteer-core/lib/types' {
 }
 
 declare module 'koishi' {
-  namespace Context {
-    interface Services {
+  namespace Service {
+    interface Injection {
       puppeteer: Puppeteer
     }
   }
@@ -153,7 +153,7 @@ export const defaultConfig: Config = {
   },
 }
 
-Context.service('puppeteer')
+Service.register('puppeteer')
 
 const logger = new Logger('puppeteer')
 
