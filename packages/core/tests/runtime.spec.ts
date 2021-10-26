@@ -278,7 +278,7 @@ describe('Runtime', () => {
       const cmd3 = app.command('cmd3').action(() => 'after cmd3')
       await session1.shouldReply('cmd3', 'after cmd3')
       let value = 'before cmd3'
-      cmd3.check(() => value)
+      cmd3.before(() => value)
       await session1.shouldReply('cmd3', 'before cmd3')
       value = ''
       await session1.shouldNotReply('cmd3')

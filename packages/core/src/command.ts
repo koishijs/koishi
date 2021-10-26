@@ -192,7 +192,7 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
     return typeof value === 'function' ? value(session.user) : value
   }
 
-  check(callback: Command.Action<U, G, A, O>, prepend = false) {
+  before(callback: Command.Action<U, G, A, O>, prepend = false) {
     if (prepend) {
       this._checkers.unshift(callback)
     } else {

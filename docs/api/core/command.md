@@ -68,7 +68,7 @@ type Awaitable<T> = T extends Promise<unknown> ? T : T | Promise<T>
 type CommandAction = (argv: Argv, ...args: any[]) => Awaitable<string | void>
 ```
 
-## cmd.check(action, append?)
+## cmd.before(action, append?)
 
 - **action:** `CommandAction` 执行函数
 - **append:** `boolean` 是否后置

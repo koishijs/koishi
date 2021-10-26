@@ -109,7 +109,7 @@ export function apply(ctx: Context, config: Config = {}) {
     .userFields(['authority'])
     .option('slient', '-s  不输出最后的结果')
     .option('restart', '-r  重启子线程', { authority: 3 })
-    .check(({ session }) => {
+    .before(({ session }) => {
       if (!session['_redirected'] && session.user?.authority < authority) return '权限不足。'
     })
     .action(async ({ options }) => {

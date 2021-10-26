@@ -30,7 +30,7 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
     .option('regexp', '-x  使用正则表达式匹配', { authority: config.authority.regExp })
     .option('regexp', '-X  取消使用正则表达式匹配', { value: false })
     .option('redirect', '=> <answer:string>  重定向到其他问答')
-    .check(({ options, args }) => {
+    .before(({ options, args }) => {
       function parseArgument() {
         if (!args.length) return ''
         const [arg] = args.splice(0, 1)
