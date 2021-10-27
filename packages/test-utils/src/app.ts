@@ -94,7 +94,7 @@ class MockedServer extends Adapter<BotConfig, AdapterConfig> {
         const headers = res.getHeaders()
         resolve({ code, body, headers })
       }
-      this.app._httpServer.emit('request', req, res)
+      this.ctx.app._httpServer.emit('request', req, res)
       req.emit('data', content)
       req.emit('end')
     })

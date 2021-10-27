@@ -1,4 +1,4 @@
-import { Adapter, App, Context, Logger, noop, remove, version, Dict } from 'koishi'
+import { Adapter, App, Context, Logger, noop, version, Dict, WebSocketLayer } from 'koishi'
 import { resolve, extname } from 'path'
 import { promises as fs, Stats, createReadStream } from 'fs'
 import { Logs, Market, Meta, Profile, Registry, Statistics } from './payload'
@@ -55,7 +55,7 @@ export class StatusServer extends Adapter {
   readonly platform = 'status'
 
   private vite: ViteDevServer
-  private readonly server: WebSocket.Server
+  private readonly server: WebSocketLayer
   private readonly [Context.current]: Context
 
   constructor(ctx: Context, public config: Config) {
@@ -70,10 +70,7 @@ export class StatusServer extends Adapter {
       config.root = resolve(filename, '..', devMode ? 'src' : 'dist')
     }
 
-    this.server = new WebSocket.Server({
-      path: apiPath,
-      server: ctx.app._httpServer,
-    })
+    this.server = ctx.router.ws(apiPath, this.onConnection)
 
     this.sources = {
       logs: new Logs(ctx),
@@ -124,7 +121,6 @@ export class StatusServer extends Adapter {
   connect() {}
 
   async start() {
-    this.server.on('connection', this.onConnection)
     if (!this.config.root) return
     if (this.config.devMode) await this.createVite()
     this.serveAssets()

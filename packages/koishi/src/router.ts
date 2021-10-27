@@ -1,8 +1,11 @@
 import { App, Context } from '@koishijs/core'
-import { defineProperty, MaybeArray, remove, Schema } from '@koishijs/utils'
-import { Server, createServer } from 'http'
+import { MaybeArray, remove, Schema } from '@koishijs/utils'
+import { Server, createServer, IncomingMessage } from 'http'
+import { pathToRegexp } from 'path-to-regexp'
+import parseUrl from 'parseurl'
+import WebSocket from 'ws'
 import KoaRouter from '@koa/router'
-import type Koa from 'koa'
+import Koa from 'koa'
 
 declare module 'koa' {
   // koa-bodyparser
@@ -15,6 +18,7 @@ declare module 'koa' {
 declare module '@koishijs/core' {
   interface App {
     _httpServer?: Server
+    _wsServer?: WebSocket.Server
   }
 
   namespace App {
@@ -37,24 +41,76 @@ App.Config.Network.dict = {
   ...App.Config.Network.dict,
 }
 
-export interface Router<S = Koa.DefaultState, C = Koa.DefaultContext> extends KoaRouter<S, C> {
-  websocket(path: MaybeArray<string | RegExp>, ...middleware: KoaRouter.Middleware<S, C>[]): Router<S, C>
+type WebSocketCallback = (socket: WebSocket, request: IncomingMessage) => void
+
+export class WebSocketLayer {
+  clients = new Set<WebSocket>()
+  regexp: RegExp
+
+  constructor(private router: Router, path: MaybeArray<string | RegExp>, public callback?: WebSocketCallback) {
+    this.regexp = pathToRegexp(path)
+  }
+
+  accept(socket: WebSocket, request: IncomingMessage) {
+    if (!this.regexp.test(parseUrl(request).pathname)) return
+    this.clients.add(socket)
+    socket.on('close', () => {
+      this.clients.delete(socket)
+    })
+    this.callback?.(socket, request)
+    return true
+  }
+
+  close() {
+    remove(this.router.wsStack, this)
+    for (const socket of this.clients) {
+      socket.close()
+    }
+  }
 }
 
-export namespace Router {
-  export function prepare(app: App) {
+export class Router extends KoaRouter {
+  wsStack: WebSocketLayer[] = []
+
+  /**
+   * hack into router methods to make sure that koa middlewares are disposable
+   */
+  register(...args: Parameters<KoaRouter['register']>) {
+    const layer = super.register(...args)
+    const context: Context = this[Context.current]
+    context?.state.disposables.push(() => {
+      remove(this.stack, layer)
+    })
+    return layer
+  }
+
+  ws(path: MaybeArray<string | RegExp>, callback?: WebSocketCallback) {
+    const layer = new WebSocketLayer(this, path, callback)
+    this.wsStack.push(layer)
+    const context: Context = this[Context.current]
+    context?.state.disposables.push(() => {
+      remove(this.wsStack, layer)
+    })
+    return layer
+  }
+
+  static prepare(app: App) {
     app.options.baseDir ||= process.cwd()
 
     const { port, host } = app.options
     if (!port) return
 
     // create server
-    const koa: Koa = new (require('koa'))()
-    app.router = new (require('@koa/router'))()
+    const koa = new Koa()
+    app.router = new Router()
     koa.use(require('koa-bodyparser')())
     koa.use(app.router.routes())
     koa.use(app.router.allowedMethods())
-    defineProperty(app, '_httpServer', createServer(koa.callback()))
+
+    app._httpServer = createServer(koa.callback())
+    app._wsServer = new WebSocket.Server({
+      server: app._httpServer,
+    })
 
     app.on('connect', () => {
       app._httpServer.listen(port, host)
@@ -63,19 +119,15 @@ export namespace Router {
 
     app.on('disconnect', () => {
       app.logger('app').info('http server closing')
+      app._wsServer?.close()
       app._httpServer?.close()
     })
-  }
-}
 
-// hack into router methods to make sure
-// that koa middlewares are disposable
-const register = KoaRouter.prototype.register
-KoaRouter.prototype.register = function (this: KoaRouter, ...args) {
-  const layer = register.apply(this, args)
-  const context: Context = this[Context.current]
-  context?.state.disposables.push(() => {
-    remove(this.stack, layer)
-  })
-  return layer
+    app._wsServer.on('connection', (socket, request) => {
+      for (const manager of app.router.wsStack) {
+        if (manager.accept(socket, request)) return
+      }
+      socket.close()
+    })
+  }
 }

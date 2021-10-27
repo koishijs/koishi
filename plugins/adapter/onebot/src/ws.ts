@@ -1,4 +1,4 @@
-import { Adapter, Logger, assertProperty, Time, Schema, Context } from 'koishi'
+import { Adapter, Logger, assertProperty, Time, Schema, Context, WebSocketLayer } from 'koishi'
 import { BotConfig, OneBotBot } from './bot'
 import { AdapterConfig, dispatchSession, adaptUser, Response } from './utils'
 import WebSocket from 'ws'
@@ -27,7 +27,7 @@ export class WebSocketServer extends Adapter<BotConfig, AdapterConfig> {
     selfId: Schema.string('机器人的账号。').required(),
   })
 
-  public wsServer?: WebSocket.Server
+  public wsServer?: WebSocketLayer
 
   protected accept = accept
 
@@ -35,16 +35,8 @@ export class WebSocketServer extends Adapter<BotConfig, AdapterConfig> {
     super(ctx, config)
     assertProperty(ctx.app.options, 'port')
     const { path = '/onebot' } = config
-    this.wsServer = new WebSocket.Server({
-      path,
-      server: ctx.app._httpServer,
-    })
-  }
 
-  connect() {}
-
-  async start() {
-    this.wsServer.on('connection', (socket, { headers }) => {
+    this.wsServer = ctx.router.ws(path, (socket, { headers }) => {
       logger.debug('connected with', headers)
       if (headers['x-client-role'] !== 'Universal') {
         return socket.close(1008, 'invalid x-client-role')
@@ -57,6 +49,10 @@ export class WebSocketServer extends Adapter<BotConfig, AdapterConfig> {
       this.accept(bot as OneBotBot)
     })
   }
+
+  connect() {}
+
+  start() {}
 
   stop() {
     logger.debug('ws server closing')
