@@ -300,7 +300,6 @@ export function bind(ctx: Context, config: BindConfig = {}) {
 
   async function bind(user: User.Observed<never>, platform: string, userId: string) {
     await ctx.database.remove('user', { [platform]: [userId] })
-    ctx.cache.set('user', userId, user)
     user[platform] = userId as never
     await user.$update()
   }

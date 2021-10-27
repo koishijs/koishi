@@ -33,7 +33,7 @@
     "pixiv"
   ],
   "peerDependencies": {
-    "koishi": "^4.0.0-alpha.11"
+    "koishi": "^4.0.0-alpha.12"
   },
   "dependencies": {
     "cheerio": "^1.0.0-rc.10",

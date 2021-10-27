@@ -36,7 +36,7 @@
     "@koishijs/test-utils": "^8.0.0-alpha.9"
   },
   "peerDependencies": {
-    "koishi": "^4.0.0-alpha.11"
+    "koishi": "^4.0.0-alpha.12"
   },
   "dependencies": {
     "@octokit/webhooks-types": "^4.4.0",

@@ -30,7 +30,7 @@
     "server"
   ],
   "peerDependencies": {
-    "koishi": "^4.0.0-alpha.11"
+    "koishi": "^4.0.0-alpha.12"
   },
   "devDependencies": {
     "@types/js-yaml": "^4.0.3",

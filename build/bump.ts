@@ -97,7 +97,12 @@ class Package {
 const packages: Record<string, Package> = {}
 
 function getPackage(name: string) {
-  return packages[`packages/${name}`] || packages[`plugins/${name}`]
+  return packages[`packages/${name}`]
+    || packages[`plugins/${name}`]
+    || packages[`plugins/adapter/${name}`]
+    || packages[`plugins/assets/${name}`]
+    || packages[`plugins/cache/${name}`]
+    || packages[`plugins/database/${name}`]
 }
 
 function each<T>(callback: (pkg: Package, name: string) => T) {

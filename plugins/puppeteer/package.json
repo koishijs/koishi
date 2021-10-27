@@ -32,11 +32,11 @@
     "@types/pngjs": "^6.0.1",
     "@types/react": "*",
     "@types/react-dom": "*",
-    "@koishijs/plugin-eval": "^4.0.0-alpha.6",
+    "@koishijs/plugin-eval": "^4.0.0-alpha.7",
     "@koishijs/test-utils": "^8.0.0-alpha.9"
   },
   "peerDependencies": {
-    "koishi": "^4.0.0-alpha.11"
+    "koishi": "^4.0.0-alpha.12"
   },
   "dependencies": {
     "chrome-finder": "^1.0.7",

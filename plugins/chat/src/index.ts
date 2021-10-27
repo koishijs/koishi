@@ -102,7 +102,7 @@ export function apply(ctx: Context, options: Config = {}) {
     ctx.on('connect', async () => {
       // create bot after connection
       // to prevent mysql from altering user table
-      const sandbox = ctx.bots.create('status', { platform: 'id' }, SandboxBot)
+      const sandbox = await ctx.bots.create('status', { platform: 'id' }, SandboxBot)
       status.Profile.initBot(sandbox)
 
       ctx.webui.addListener('chat', async function ({ content, platform, selfId, channelId, guildId }) {

@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-assets-s3",
   "description": "Assets provider based on s3 for Koishi",
-  "version": "1.0.0-alpha.4",
+  "version": "1.0.0-alpha.5",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -34,7 +34,7 @@
     "service:assets"
   ],
   "peerDependencies": {
-    "koishi": "^4.0.0-alpha.11"
+    "koishi": "^4.0.0-alpha.12"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.20.0"
