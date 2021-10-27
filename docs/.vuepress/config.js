@@ -94,7 +94,7 @@ module.exports = {
         text: '更多功能',
         isGroup: true,
         children: [
-          '/guide/service/service.md',
+          '/guide/service/index.md',
           '/guide/service/assets.md',
           '/guide/service/cache.md',
           '/guide/service/http.md',

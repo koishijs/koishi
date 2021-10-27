@@ -1,13 +1,11 @@
 import ChatMessage from './components/ChatMessage.vue'
 import PanelView from './components/PanelView.vue'
-import Terminal from './components/Terminal.vue'
 import { reactive, watch } from 'vue'
 import { defineClientAppEnhance } from '@vuepress/client'
 
 export default defineClientAppEnhance(({ app }) => {
   app.component('chat-message', ChatMessage)
   app.component('panel-view', PanelView)
-  app.component('terminal', Terminal)
   const key = 'koishi.docs.config'
   const data = {
     manager: 'yarn',

@@ -10,34 +10,6 @@ sidebarDepth: 2
 
 Koishi 提供了名为 `koishi` 的命令行工具，相信你已经在之前的介绍中看过它的使用方法了。本章就详细介绍 Koishi 与命令行相关的特性。
 
-## koishi init
-
-<terminal :content="[
-  { text: 'cd my-bot', type: 'input' },
-  { text: 'koishi init', type: 'input' },
-  { message: 'Connection Type',
-    hint: 'Use arrow-keys. Return to submit.',
-    type: 'select',
-    typeDelay: 500,
-    lineDelay: 500,
-    choices: ['HTTP', 'WebSocket'],
-    actions: '12' },
-  { message: 'Koishi Port', text: '8080', type: 'question' },
-  { message: 'HTTP Server', text: 'http://localhost:5700', type: 'question' },
-  { message: 'Bot\'s QQ Number', type: 'question', lineDelay: 300 },
-  { message: 'Secret for Koishi Server', type: 'question', lineDelay: 300 },
-  { message: 'Token for CoolQ Server', type: 'question', lineDelay: 300 },
-  { content: [{ text: 'success', class: 'success' }, ' created config file: my-bot/koishi.config.js'] },
-]"></terminal>
-
-koishi init 指令用于生成一个 koishi 配置文件，通常是 koishi.config.js。相信看过前几章的你已经对这个文件的结构足够熟悉了。这个指令的完整语法如下：
-
-```cli
-koishi init [file] [-f]
-```
-
-其中的 `file` 参数可以用于指定输出的文件位置（覆盖默认值 koishi.config.js）。如果要输出的位置已经有文件，则 Koishi 会提示你使用 `-f, --forced` 选项，这个选项将告诉 Koishi 覆盖已经存在的文件。
-
 ### 设置生成的文件类型
 
 除了 js 格式以外，Koishi 还支持其他几种格式的输出。只需向 `file` 参数传入具有相应后缀名的文件，Koishi 就会生成对应格式的输出。目前支持的类型有：
@@ -49,16 +21,7 @@ koishi init [file] [-f]
 
 ## koishi start
 
-<terminal :content="[
-  { text: 'koishi start', type: 'input' },
-  { content: [{ text: 'info', class: 'info' }, ' apply plugin ', { text: 'common', class: 'info' }] },
-  { content: [{ text: 'info', class: 'info' }, ' Koishi/1.8.1 CoolQ/Pro CQHTTP/4.12.3'] },
-  { content: [{ text: 'info', class: 'info' }, ' server listening at ', { text: '8080', class: 'info' }] },
-  { content: [{ text: 'info', class: 'info' }, ' connected to ', { text: 'http://localhost:5700', class: 'info' }] },
-  { content: [{ text: 'success', class: 'success' }, ' bot started successfully in 141 ms.'] },
-]"></terminal>
-
-koishi start（或 koishi run）指令用于运行一个配置文件。它的完整语法为：
+koishi start 指令用于运行一个配置文件。它的完整语法为：
 
 ```cli
 koishi start [file] [options]
