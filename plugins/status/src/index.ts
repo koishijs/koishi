@@ -1,4 +1,4 @@
-import { Context, template, Time, Tables, Awaitable, Schema, Service } from 'koishi'
+import { Context, template, Time, Tables, Awaitable, Schema } from 'koishi'
 import { Synchronizer } from './payload/stats'
 import { StatusServer, SocketHandle, Config } from './server'
 import Meta from './payload/meta'
@@ -12,8 +12,8 @@ export * from './server'
 export type Activity = Record<number, number>
 
 declare module 'koishi' {
-  namespace Service {
-    interface Injection {
+  namespace Context {
+    interface Services {
       webui: StatusServer
     }
   }
@@ -54,7 +54,7 @@ declare module 'koishi' {
   }
 }
 
-Service.register('webui')
+Context.service('webui')
 
 Tables.extend('user', {
   lastCall: 'timestamp',

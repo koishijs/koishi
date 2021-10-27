@@ -1,7 +1,7 @@
 import * as utils from '@koishijs/utils'
-import { MaybeArray, Dict, Get } from '@koishijs/utils'
+import { MaybeArray, Dict, Get, Awaitable } from '@koishijs/utils'
 import { Query } from './orm'
-import { Service } from './service'
+import { Context } from './context'
 
 export interface User {
   id: string
@@ -44,7 +44,15 @@ export interface Database extends Query.Methods {}
 
 type UserWithPlatform<T extends string, K extends string> = Pick<User, K & User.Field> & Record<T, string>
 
-export abstract class Database<T = any> extends Service<T> {
+export abstract class Database<T = any> {
+  protected abstract start(): Awaitable<void>
+  protected abstract stop(): Awaitable<void>
+
+  constructor(public ctx: Context, public config?: T) {
+    ctx.on('connect', () => this.start())
+    ctx.on('disconnect', () => this.stop())
+  }
+
   getUser<T extends string, K extends T | User.Field>(platform: T, id: string, modifier?: Query.Modifier<K>): Promise<UserWithPlatform<T, T | K>>
   getUser<T extends string, K extends T | User.Field>(platform: T, ids: string[], modifier?: Query.Modifier<K>): Promise<UserWithPlatform<T, K>[]>
   async getUser(platform: string, id: MaybeArray<string>, modifier?: Query.Modifier<User.Field>) {

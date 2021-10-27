@@ -1,4 +1,4 @@
-import { App, Modules, Service } from '@koishijs/core'
+import { App, Context, Modules } from '@koishijs/core'
 import { Cache } from './cache'
 import { Assets } from './assets'
 import { Quester } from './quester'
@@ -14,8 +14,8 @@ export * from '@koishijs/core'
 export * from '@koishijs/utils'
 
 declare module '@koishijs/core' {
-  namespace Service {
-    interface Injection {
+  namespace Context {
+    interface Services {
       assets: Assets
       cache: Cache
       http: Quester
@@ -28,10 +28,10 @@ declare module '@koishijs/core' {
 Modules.internal.require = require
 Modules.internal.resolve = require.resolve
 
-Service.register('assets')
-Service.register('cache')
-Service.register('http')
-Service.register('router')
+Context.service('assets')
+Context.service('cache')
+Context.service('http')
+Context.service('router')
 
 const prepare = App.prototype.prepare
 App.prototype.prepare = function (this: App, ...args) {

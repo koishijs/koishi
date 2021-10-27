@@ -2,28 +2,29 @@ import { Logger, Schema, paramCase, Dict, Awaitable } from '@koishijs/utils'
 import { Session } from './session'
 import { App } from './app'
 import { Bot } from './bot'
-import { Service } from './service'
 import { Context, Plugin } from './context'
 
-export abstract class Adapter<S extends Bot.BaseConfig = Bot.BaseConfig, T = {}> extends Service<T> {
+export abstract class Adapter<S extends Bot.BaseConfig = Bot.BaseConfig, T = {}> {
   public bots: Bot<S>[] = []
   public platform: string
 
+  protected abstract start(): Awaitable<void>
+  protected abstract stop(): Awaitable<void>
   abstract connect(bot: Bot): Awaitable<void>
 
-  constructor(ctx: Context, config: T) {
-    super(ctx, config)
-
-    ctx.on('connect', () => {
+  constructor(public ctx: Context, public config: T) {
+    ctx.on('connect', async () => {
+      await this.start()
       for (const bot of this.bots) {
         bot.start()
       }
     })
 
-    ctx.on('disconnect', () => {
+    ctx.on('disconnect', async () => {
       for (const bot of this.bots) {
         bot.stop()
       }
+      await this.stop()
     })
   }
 

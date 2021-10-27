@@ -1,4 +1,4 @@
-import { Context, Command, Argv, segment, Logger, defineProperty, noop, Awaitable, Schema, User, Channel, Service } from 'koishi'
+import { Context, Command, Argv, segment, Logger, defineProperty, noop, Awaitable, Schema, User, Channel } from 'koishi'
 import { EvalWorker, Trap, EvalConfig, Config } from './main'
 import { resolve } from 'path'
 import { load } from 'js-yaml'
@@ -9,8 +9,8 @@ import { WorkerResponse } from './worker'
 export * from './main'
 
 declare module 'koishi' {
-  namespace Service {
-    interface Injection {
+  namespace Context {
+    interface Services {
       worker: EvalWorker
     }
   }
@@ -82,7 +82,7 @@ export const schema: Schema<Config> = Schema.object({
   }, '资源限制')
 })
 
-Service.register('worker')
+Context.service('worker')
 
 export function apply(ctx: Context, config: Config = {}) {
   const { prefix, authority } = config = { ...defaultConfig, ...config }
