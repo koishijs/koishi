@@ -61,7 +61,11 @@ async function start(bot: onebot.Bot) {
       for (const line of data.split('\n')) {
         const text = line.slice(23)
         const [type] = text.split(']: ', 1)
-        logger[logLevelMap[type]](text.slice(type.length + 3))
+        if (type in logLevelMap) {
+          logger[logLevelMap[type]](text.slice(type.length + 3))
+        } else {
+          logger.info(line.trim())
+        }
         if (text.includes('アトリは、高性能ですから')) resolve()
       }
     })
