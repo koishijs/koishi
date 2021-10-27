@@ -1,7 +1,13 @@
 <template>
   <k-card class="page-market frameless">
-    <el-scrollbar>
-      <table>
+    <table class="table-header">
+      <colgroup>
+        <col width="auto">
+        <col width="160px">
+        <col width="120px">
+        <col width="120px">
+      </colgroup>
+      <thead>
         <tr>
           <th>
             插件名称
@@ -16,9 +22,21 @@
           <th>总体积</th>
           <th class="operation">操作</th>
         </tr>
-        <template v-for="data in market" :key="data.name">
-          <package-view :data="data"/>
-        </template>
+      </thead>
+    </table>
+    <el-scrollbar>
+      <table class="table-body">
+        <colgroup>
+          <col width="auto">
+          <col width="160px">
+          <col width="120px">
+          <col width="120px">
+        </colgroup>
+        <tbody>
+          <template v-for="data in market" :key="data.name">
+            <package-view :data="data"/>
+          </template>
+        </tbody>
       </table>
     </el-scrollbar>
   </k-card>
@@ -38,6 +56,8 @@ import { market } from '~/client'
 
   .k-card-body {
     height: 100%;
+    display: flex;
+    flex-direction: column;
   }
 
   table {

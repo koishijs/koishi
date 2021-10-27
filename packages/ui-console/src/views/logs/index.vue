@@ -35,7 +35,7 @@ function renderLine(line: string) {
     font-family: ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas, Liberation Mono, monospace;
   }
 
-  .logs:not(:first-child) .line.start {
+  .logs .line.start {
     margin-top: 1rem;
 
     &::before {
@@ -45,6 +45,14 @@ function renderLine(line: string) {
       right: 0;
       top: -0.5rem;
       border-top: 1px solid var(--terminal-separator);
+    }
+  }
+
+  .logs:first-child .line:first-child {
+    margin-top: 0;
+
+    &::before {
+      display: none;
     }
   }
 
