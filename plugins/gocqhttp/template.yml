@@ -4,7 +4,7 @@ account: # 账号相关
   # QQ账号
   uin: $$ bot.selfId
   # 密码为空时使用扫码登录
-  password: $$ bot.password
+  password: "$$ bot.password"
   # 是否开启密码加密
   encrypt: false
 
