@@ -29,10 +29,11 @@ dict['ws'].dict['password'] = Schema.string('机器人的密码。')
 dict['ws-reverse'].dict['password'] = Schema.string('机器人的密码。')
 
 const logLevelMap = {
-  INFO: 'debug',
   DEBUG: 'debug',
-  ERROR: 'error',
+  INFO: 'debug',
   WARNING: 'warn',
+  ERROR: 'error',
+  FATAL: 'error',
 }
 
 async function start(bot: onebot.Bot) {
