@@ -4,7 +4,7 @@ account: # 账号相关
   # QQ账号
   uin: $$ bot.selfId
   # 密码为空时使用扫码登录
-  password: "$$ bot.password"
+  password: '$$ bot.password'
   # 是否开启密码加密
   encrypt: false
 
@@ -54,7 +54,7 @@ output:
 # 默认中间件锚点
 default-middlewares: &default
   # 访问密钥, 强烈推荐在公网的服务器设置
-  access-token: $$ bot.token
+  access-token: '$$ bot.token'
   # 事件过滤器文件目录
   filter: ''
   # API限速设置
