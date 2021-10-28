@@ -29,10 +29,10 @@ dict['ws'].dict['password'] = Schema.string('机器人的密码。')
 dict['ws-reverse'].dict['password'] = Schema.string('机器人的密码。')
 
 const logLevelMap = {
-  INFO: 'debug',
   DEBUG: 'debug',
-  ERROR: 'error',
+  INFO: 'debug',
   WARNING: 'warn',
+  ERROR: 'error',
 }
 
 async function start(bot: onebot.Bot) {
@@ -50,7 +50,7 @@ async function start(bot: onebot.Bot) {
     adapter: bot.adapter.config,
     endpoint: bot.config.endpoint && new URL(bot.config.endpoint),
     selfUrl: `${host}:${port}${path}`,
-  }, /\$\$(.+)/g))
+  }, /<<(.+?)>>/g))
 
   // spawn go-cqhttp process
   bot.process = spawn('./go-cqhttp', ['faststart'], { cwd })
@@ -61,7 +61,11 @@ async function start(bot: onebot.Bot) {
       for (const line of data.split('\n')) {
         const text = line.slice(23)
         const [type] = text.split(']: ', 1)
-        logger[logLevelMap[type]](text.slice(type.length + 3))
+        if (type in logLevelMap) {
+          logger[logLevelMap[type]](text.slice(type.length + 3))
+        } else {
+          logger.info(line.trim())
+        }
         if (text.includes('アトリは、高性能ですから')) resolve()
       }
     })

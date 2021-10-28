@@ -2,9 +2,9 @@
 
 account: # 账号相关
   # QQ账号
-  uin: $$ bot.selfId
+  uin: << bot.selfId >>
   # 密码为空时使用扫码登录
-  password: $$ bot.password
+  password: '<< bot.password >>'
   # 是否开启密码加密
   encrypt: false
 
@@ -54,7 +54,7 @@ output:
 # 默认中间件锚点
 default-middlewares: &default
   # 访问密钥, 强烈推荐在公网的服务器设置
-  access-token: $$ bot.token
+  access-token: '<< bot.token >>'
   # 事件过滤器文件目录
   filter: ''
   # API限速设置
@@ -71,11 +71,11 @@ servers:
   # HTTP 通信设置
   - http:
       # 是否关闭正向HTTP服务器
-      disabled: $$ bot.protocol !== "http"
+      disabled: << bot.protocol !== "http" >>
       # 服务端监听地址
-      host: $$ endpoint.hostname
+      host: << endpoint.hostname >>
       # 服务端监听端口
-      port: $$ endpoint.port
+      port: << endpoint.port >>
       # 反向HTTP超时时间, 单位秒
       # 最小值为5，小于5将会忽略本项设置
       timeout: 5
@@ -83,25 +83,25 @@ servers:
         <<: *default # 引用默认中间件
       # 反向HTTP POST地址列表
       post:
-        - url: http://$$ selfUrl
-          secret: $$ adapter.secret
+        - url: 'http://<< selfUrl >>'
+          secret: '<< adapter.secret >>'
 
   # 正向WS设置
   - ws:
       # 是否禁用正向WS服务器
-      disabled: $$ bot.protocol !== "ws"
+      disabled: << bot.protocol !== "ws" >>
       # 正向WS服务器监听地址
-      host: $$ endpoint.hostname
+      host: << endpoint.hostname >>
       # 正向WS服务器监听端口
-      port: $$ endpoint.port
+      port: << endpoint.port >>
       middlewares:
         <<: *default # 引用默认中间件
 
   - ws-reverse:
       # 是否禁用当前反向WS服务
-      disabled: $$ bot.protocol !== "ws-reverse"
+      disabled: << bot.protocol !== "ws-reverse" >>
       # 反向WS Universal 地址
-      universal: ws://$$ selfUrl
+      universal: 'ws://<< selfUrl >>'
       # 重连间隔 单位毫秒
       reconnect-interval: 3000
       middlewares:
