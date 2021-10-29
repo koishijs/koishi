@@ -126,16 +126,16 @@ Koishi v3 的另一大亮点就是拥有官方的网页控制台插件。这个�
 - [koishi-plugin-forward](https://github.com/Anillc/forward): 将你的消息转发至其他平台！
 - [koishi-plugin-animal-picture](https://github.com/idlist/koishi-plugin-animal-picture): 发送各种动物图片
 - [koishi-plugin-shell](https://github.com/koishijs/koishi-plugin-shell): 使用 Koishi 执行终端命令
-- [koishi-plugin-eval-enhance](https://github.com/Anillc/koishi-plugin-eval-enhance): koishi-plugin-eval的增强！
+- [koishi-plugin-eval-enhance](https://github.com/Anillc/koishi-plugin-eval-enhance): koishi-plugin-eval 的增强！
 - [koishi-plugin-work](https://github.com/NWYLZW/koishi-plugin-work): 工作学习工具，已有功能 todos: 代办管理
 - [koishi-plugin-aircon](https://github.com/idlist/koishi-plugin-aircon): 群空调
 - [koishi-plugin-cryptocurrency](https://github.com/koishijs/plugin-cryptocurrency): 查看和订阅加密货币的市场价格
 - [koishi-plugin-jrrp](https://github.com/idlist/koishi-plugin-jrrp): 今日人品
 - [koishi-plugin-rpc](https://github.com/Anillc/koishi-plugin-rpc): 一个为其他插件提供 RPC 的插件
 - [koishi-plugin-text-dialogue](https://github.com/koishijs/koishi-plugin-developer/tree/master/packages/plugin-text-dialogue): 支持在 md 文档中和你的 bot 对话
-- [koishi-plugin-holiday](https://github.com/LolitaOT/koishi-plugin-holiday): 问问bot什么时候放假，什么时候休息
-- [koishi-plugin-duplicate-checker](https://github.com/idlist/koishi-plugin-duplicate-checker) 火星图文出警器
-- [@idlist/koishi-plugin-blive](https://github.com/idlist/koishi-plugin-blive) 另一个 B 站直播订阅
+- [koishi-plugin-holiday](https://github.com/LolitaOT/koishi-plugin-holiday): 问问 bot 什么时候放假，什么时候休息
+- [koishi-plugin-duplicate-checker](https://github.com/idlist/koishi-plugin-duplicate-checker): 火星图文出警器
+- [koishi-plugin-blive](https://github.com/idlist/koishi-plugin-blive): B 站直播订阅
 - [koishi-plugin-eval-purs-loader](https://github.com/Anillc/koishi-plugin-eval-purs-loader): 在 eval 中使用 purescript
 
 ### 社区项目
