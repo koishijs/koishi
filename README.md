@@ -136,6 +136,10 @@ Koishi v3 的另一大亮点就是拥有官方的网页控制台插件。这个�
 - [koishi-plugin-holiday](https://github.com/LolitaOT/koishi-plugin-holiday): 问问bot什么时候放假，什么时候休息
 - [koishi-plugin-duplicate-checker](https://github.com/idlist/koishi-plugin-duplicate-checker) 火星图文出警器
 - [@idlist/koishi-plugin-blive](https://github.com/idlist/koishi-plugin-blive) 另一个 B 站直播订阅
+- [koishi-plugin-fortune](https://github.com/koishijs/koishi-plugin-fortune) 算卦
+- [koishi-plugin-pics](https://github.com/koishijs/koishi-plugin-pics) 随机图片
+- [koishi-plugin-ygocard](https://code.mycard.moe/3rdeye/koishi-plugin-ygocard) [YGOPro](https://github.com/Fluorohydride/ygopro) 卡查
+- [koishi-plugin-srvpro-roomlist](https://code.mycard.moe/3rdeye/koishi-plugin-srvpro-roomlist) YGOPro 服务器房间列表查询
 
 ### 社区项目
 
@@ -147,6 +151,8 @@ Koishi v3 的另一大亮点就是拥有官方的网页控制台插件。这个�
 - [idlist/2bot-v3](https://github.com/idlist/2bot-v3): 2bot，一个很 2 的 FFXIV bot
 - [koishijs/koishi-plugin-developer](https://github.com/koishijs/koishi-plugin-developer): 使用 monorepo + ts + cli 开发你的 koishi 插件，已集成部分开发辅助功能。
 - [koishijs/koishi-bots](https://github.com/koishijs/koishi-bots): 用于部署生产环境的 bot，并集合已有的 koishi bot。
+- [koishijs/koishi-nestjs](https://github.com/koishijs/koishi-nestjs): 在 [Nest.js](https://nestjs.com/) 中使用 Koishi 开发规模化机器人应用。
+- [purerosefallen/onebot-lb](https://github.com/purerosefallen/onebot-lb): OneBot 负载均衡器
 
 ## 使用协议
 
