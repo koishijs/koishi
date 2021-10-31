@@ -12,7 +12,7 @@ import probability from './plugins/probability'
 import successor from './plugins/successor'
 import time from './plugins/time'
 import writer from './plugins/writer'
-import {} from '@koishijs/plugin-status'
+import {} from '@koishijs/plugin-console'
 import { resolve } from 'path'
 
 export * from './utils'
@@ -39,7 +39,7 @@ declare module 'koishi' {
   }
 }
 
-declare module '@koishijs/plugin-status' {
+declare module '@koishijs/plugin-console' {
   namespace Meta {
     interface Payload extends Dialogue.Stats {}
   }

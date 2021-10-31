@@ -1,6 +1,6 @@
 import { Bot, Context, Logger, Random, Schema, segment, Session, template, Time } from 'koishi'
 import { resolve } from 'path'
-import { StatusServer } from '@koishijs/plugin-status'
+import { StatusServer } from '@koishijs/plugin-console'
 import receiver, { Message, RefreshConfig } from './receiver'
 
 export * from './receiver'
@@ -15,7 +15,7 @@ declare module 'koishi' {
   }
 }
 
-declare module '@koishijs/plugin-status' {
+declare module '@koishijs/plugin-console' {
   interface ClientConfig extends ClientExtension {}
 }
 

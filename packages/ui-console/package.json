@@ -28,7 +28,7 @@
     "koishi"
   ],
   "peerDependencies": {
-    "@koishijs/plugin-status": "^5.0.0-alpha.10"
+    "@koishijs/plugin-console": "^5.0.0-alpha.10"
   },
   "devDependencies": {
     "@fortawesome/fontawesome-free": "^5.15.4",

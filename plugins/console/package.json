@@ -1,5 +1,5 @@
 {
-  "name": "@koishijs/plugin-status",
+  "name": "@koishijs/plugin-console",
   "description": "Create web user interface for Koishi",
   "version": "5.0.0-alpha.10",
   "main": "lib/index.js",

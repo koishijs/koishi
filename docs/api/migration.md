@@ -16,7 +16,10 @@ sidebarDepth: 2
 - **所有官方插件都改为 @koishijs/plugin-xxx**
 - **所有官方适配器也调整为插件**，名称与上一条一致
 - koishi-test-utils 更名为 @koishijs/test-utils
-- koishi-plugin-webui 更名为 @koishijs/plugin-status（~~我又改了回去~~
+- koishi-plugin-webui 被拆分为多个插件：
+  - @koishijs/plugin-console
+  - @koishijs/plugin-manager
+  - @koishijs/plugin-status
 
 ### 新增的包
 
