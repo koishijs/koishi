@@ -61,6 +61,7 @@ export class StatusServer extends Adapter {
   constructor(ctx: Context, public config: Config) {
     super(ctx.app, config)
 
+    this.ctx.bots.adapters.status = this
     const { apiPath, uiPath, devMode, selfUrl } = config
     const endpoint = selfUrl + apiPath
     this.global = { uiPath, endpoint, devMode, extensions: [], database: false, version }

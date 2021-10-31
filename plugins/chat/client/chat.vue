@@ -32,11 +32,11 @@
 
 <script lang="ts" setup>
 
-import { receive, storage, send, user } from '~/client'
+import { receive, storage, send } from '~/client'
 import { ref } from 'vue'
 import ChatPanel from './utils/panel.vue'
 import ChatMessage from './utils/message.vue'
-import type { Message } from '../src'
+import type { Message } from '@koishijs/plugin-chat'
 
 const pinned = ref(true)
 const index = ref<string>()
@@ -65,9 +65,8 @@ function handleClick(message: Message) {
 function handleSend(content: string) {
   if (!activeMessage.value) return
   pinned.value = false
-  const { platform, selfId, channelId, groupId } = activeMessage.value
-  const { token, id } = user.value
-  send('chat', { token, id, content, platform, selfId, channelId, groupId })
+  const { platform, selfId, channelId, guildId } = activeMessage.value
+  send('chat', { content, platform, selfId, channelId, guildId })
 }
 
 function onClickQuote(id: string) {

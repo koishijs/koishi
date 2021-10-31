@@ -9,6 +9,9 @@
     "types": [
       "vite/client",
     ],
+    "paths": {
+      "@koishijs/plugin-chat": ["@koishijs/plugin-chat/src"],
+    },
   },
   "include": [
     ".",
