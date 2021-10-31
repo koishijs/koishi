@@ -4,7 +4,7 @@
 
 <script lang="ts" setup>
 
-import { store } from '@koishijs/ui-console'
+import { shared } from '.'
 
 const props = defineProps<{ src: string }>()
 
@@ -16,7 +16,7 @@ function normalizeUrl(url: string) {
 function handleClick(ev: MouseEvent) {
   ev.preventDefault()
   if (ev.metaKey) return window.open(props.src, '_blank')
-  store.overlayImage = ev.target as HTMLImageElement
+  shared.overlayImage = ev.target as HTMLImageElement
 }
 
 </script>

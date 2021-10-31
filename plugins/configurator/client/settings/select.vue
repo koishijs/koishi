@@ -28,7 +28,7 @@
 
 <script lang="ts" setup>
 
-import { registry } from '~/client'
+import { store } from '~/client'
 import { ref, computed } from 'vue'
 import { available } from './shared'
 
@@ -37,6 +37,8 @@ const props = defineProps<{
 }>()
 
 const emits = defineEmits(['update:modelValue'])
+
+const registry = computed(() => store.value.registry)
 
 const model = computed({
   get: () => props.modelValue,

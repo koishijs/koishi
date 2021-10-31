@@ -6,7 +6,7 @@
 
 <script lang="ts" setup>
 
-import { stats } from '~/client'
+import { store } from '~/client'
 import { computed } from 'vue'
 
 const formatHour = (value: number) => `${(value - 0.5).toFixed()}:00-${(value + 0.5).toFixed()}:00`
@@ -19,7 +19,7 @@ const option = computed(() => ({
     },
     formatter(params) {
       const [{ data: [x], dataIndex, color }] = params
-      const source = stats.value.hours[dataIndex]
+      const source = store.value.stats.hours[dataIndex]
       const output = [
         `${formatHour(x)}`,
         `消息总量：${+(source.total || 0).toFixed(1)}`,
@@ -54,7 +54,7 @@ const option = computed(() => ({
   },
   series: [{
     name: '其他',
-    data: stats.value.hours.map((val, index) => [index + 0.5, val.total || 0]),
+    data: store.value.stats.hours.map((val, index) => [index + 0.5, val.total || 0]),
     type: 'bar',
     stack: 1,
     itemStyle: {
@@ -62,7 +62,7 @@ const option = computed(() => ({
     },
   }, {
     name: '教学',
-    data: stats.value.hours.map((val, index) => [index + 0.5, (val.command || 0) + (val.dialogue || 0)]),
+    data: store.value.stats.hours.map((val, index) => [index + 0.5, (val.command || 0) + (val.dialogue || 0)]),
     type: 'bar',
     stack: 1,
     itemStyle: {
@@ -70,7 +70,7 @@ const option = computed(() => ({
     },
   }, {
     name: '指令',
-    data: stats.value.hours.map((val, index) => [index + 0.5, val.command || 0]),
+    data: store.value.stats.hours.map((val, index) => [index + 0.5, val.command || 0]),
     type: 'bar',
     stack: 1,
     itemStyle: {

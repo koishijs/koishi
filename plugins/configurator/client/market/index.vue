@@ -43,8 +43,11 @@
 
 <script setup lang="ts">
 
+import { computed } from 'vue'
 import PackageView from './package.vue'
-import { market } from '~/client'
+import { store } from '@koishijs/ui-console'
+
+const market = computed(() => store.value.market)
 
 </script>
 

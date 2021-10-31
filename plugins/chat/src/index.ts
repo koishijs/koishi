@@ -1,7 +1,7 @@
-import { Bot, Context, Logger, Random, Schema, segment, Session, template, Time } from 'koishi'
+import { Context, Logger, Schema, template, Time } from 'koishi'
 import { resolve } from 'path'
-import { StatusServer } from '@koishijs/plugin-console'
 import receiver, { Message, RefreshConfig } from './receiver'
+import {} from '@koishijs/plugin-console'
 
 export * from './receiver'
 
@@ -33,27 +33,6 @@ template.set('chat', {
   send: '[{{ channelName || "私聊" }}] {{ abstract }}',
   receive: '[{{ channelName || "私聊" }}] {{ username }}: {{ abstract }}',
 })
-
-export class SandboxBot extends Bot {
-  username = 'sandbox'
-
-  constructor(public readonly adapter: StatusServer) {
-    super(adapter, {})
-    this.selfId = 'sandbox'
-    this.status = 'online'
-  }
-
-  async sendMessage(id: string, content: string) {
-    content = segment.transform(content, {
-      image(data) {
-        if (!data.url.startsWith('base64://')) return segment('image', data)
-        return segment.image('data:image/png;base64,' + data.url.slice(9))
-      },
-    })
-    this.adapter.handles[id]?.send('sandbox:bot', content)
-    return Random.id()
-  }
-}
 
 const builtinWhitelist = [
   'http://gchat.qpic.cn/',
@@ -90,7 +69,7 @@ export function apply(ctx: Context, options: Config = {}) {
     logger.debug(template('chat.' + (session.type === 'message' ? 'receive' : 'send'), message))
   })
 
-  ctx.with(['status'], (ctx, { status }) => {
+  ctx.with(['console'], (ctx) => {
     const { devMode, apiPath } = ctx.webui.config
     const filename = devMode ? '../client/index.ts' : '../dist/index.js'
     const whitelist = [...builtinWhitelist, ...options.whitelist || []]
@@ -100,40 +79,12 @@ export function apply(ctx: Context, options: Config = {}) {
     ctx.webui.addEntry(resolve(__dirname, filename))
 
     ctx.on('connect', async () => {
-      // create bot after connection
-      // to prevent mysql from altering user table
-      const sandbox = await ctx.bots.create('status', { platform: 'id' }, SandboxBot)
-
       ctx.webui.addListener('chat', async function ({ content, platform, selfId, channelId, guildId }) {
         if (await this.validate()) return this.send('unauthorized')
         if (ctx.assets) content = await ctx.assets.transform(content)
         ctx.bots.get(`${platform}:${selfId}`)?.sendMessage(channelId, content, guildId)
       })
-
-      ctx.webui.addListener('sandbox', async function ({ id, content }) {
-        if (await this.validate()) return this.send('unauthorized')
-        if (ctx.assets) content = await ctx.assets.transform(content)
-        this.send('sandbox:user', content)
-        ctx.webui.dispatch(new Session(sandbox, {
-          userId: id,
-          content,
-          channelId: this.id,
-          selfId: 'sandbox',
-          type: 'message',
-          subtype: 'private',
-          author: {
-            userId: 'id',
-            username: id,
-          },
-        }))
-      })
     })
-
-    ctx.self('sandbox')
-      .command('clear', '清空消息列表')
-      .action(({ session }) => {
-        ctx.webui.handles[session.channelId].send('sandbox:clear')
-      })
 
     ctx.on('chat/receive', async (message) => {
       Object.values(ctx.webui.handles).forEach((handle) => {

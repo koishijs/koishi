@@ -1,14 +1,14 @@
 <template>
   <k-card-aside class="page-database">
-    <template #aside v-if="meta.tables">
+    <template #aside v-if="store.meta.tables">
       <el-scrollbar>
         <div class="content">
-          <k-tab-group :data="meta.tables" v-model="current">数据</k-tab-group>
+          <k-tab-group :data="store.meta.tables" v-model="current">数据</k-tab-group>
         </div>
       </el-scrollbar>
     </template>
-    <div v-if="meta.tables">
-      {{ meta.tables[current] }}
+    <div v-if="store.meta.tables">
+      {{ store.meta.tables[current] }}
     </div>
     <el-empty v-else description="你还没有安装数据库支持">
       <k-button solid>安装数据库</k-button>
@@ -19,7 +19,7 @@
 <script lang="ts" setup>
 
 import { ElEmpty } from 'element-plus'
-import { meta } from '~/client'
+import { store } from '~/client'
 import { ref } from 'vue'
 
 const current = ref<string>('')

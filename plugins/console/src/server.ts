@@ -1,7 +1,7 @@
 import { Adapter, App, Context, Logger, noop, version, Dict, WebSocketLayer } from 'koishi'
 import { resolve, extname } from 'path'
 import { promises as fs, Stats, createReadStream } from 'fs'
-import { Logs, Market, Meta, Profile, Registry, Statistics } from './payload'
+import { Logs, Meta, Profile, Statistics } from './payload'
 import WebSocket from 'ws'
 import open from 'open'
 import { v4 } from 'uuid'
@@ -13,7 +13,7 @@ interface BaseConfig {
   uiPath?: string
 }
 
-export interface Config extends BaseConfig, Profile.Config, Meta.Config, Registry.Config, Statistics.Config {
+export interface Config extends BaseConfig, Profile.Config, Meta.Config, Statistics.Config {
   root?: string
   open?: boolean
   selfUrl?: string
@@ -47,8 +47,21 @@ export class SocketHandle {
   }
 }
 
+export interface DataSource<T = any> {
+  get(forced?: boolean): Promise<T>
+}
+
+export namespace DataSource {
+  export interface Library extends Dict<DataSource> {
+    logs: Logs
+    meta: Meta
+    stats: Statistics
+    profile: Profile
+  }
+}
+
 export class StatusServer extends Adapter {
-  readonly sources: StatusServer.Sources
+  readonly sources: DataSource.Library
   readonly global: ClientConfig
   readonly entries: Dict<string> = {}
   readonly handles: Dict<SocketHandle> = {}
@@ -75,10 +88,8 @@ export class StatusServer extends Adapter {
 
     this.sources = {
       logs: new Logs(ctx),
-      market: new Market(ctx, config),
       profile: new Profile(ctx, config),
       meta: new Meta(ctx, config),
-      registry: new Registry(ctx, config),
       stats: new Statistics(ctx, config),
     }
 
@@ -103,7 +114,6 @@ export class StatusServer extends Adapter {
   addEntry(filename: string) {
     const ctx = this[Context.current]
     let { state } = ctx
-    state[Registry.webExtension] = true
     while (state && !state.name) state = state.parent
     const hash = Math.floor(Math.random() * (16 ** 8)).toString(16).padStart(8, '0')
     const key = `${state?.name || 'entry'}-${hash}.js`
@@ -139,9 +149,9 @@ export class StatusServer extends Adapter {
   private onConnection = (socket: WebSocket) => {
     const channel = new SocketHandle(this, socket)
 
-    for (const type in this.sources) {
-      this.sources[type].get().then((body) => {
-        socket.send(JSON.stringify({ type, body }))
+    for (const key in this.sources) {
+      this.sources[key].get().then((value) => {
+        socket.send(JSON.stringify({ type: 'data', body: { key, value } }))
       })
     }
 
@@ -225,49 +235,6 @@ export class StatusServer extends Adapter {
 }
 
 export namespace StatusServer {
-  export interface DataSource<T = any> {
-    get(forced?: boolean): Promise<T>
-  }
-
-  export interface Sources extends Dict<DataSource> {
-    meta: Meta
-    market: Market
-    stats: Statistics
-    profile: Profile
-    registry: Registry
-  }
-
   export type Listener = (this: SocketHandle, payload: any) => Promise<void>
   export const listeners: Dict<Listener> = {}
-
-  // builtin listeners
-
-  listeners.install = async function ({ name }) {
-    if (await this.validate()) return this.send('unauthorized')
-    this.app.webui.sources.market.install(name)
-  }
-
-  listeners.switch = async function ({ plugin }) {
-    if (await this.validate()) return this.send('unauthorized')
-    this.app.webui.sources.registry.switch(plugin)
-  }
-
-  for (const event of ['install', 'dispose', 'reload', 'save'] as const) {
-    listeners[`plugin/${event}`] = async function ({ name, config }) {
-      if (await this.validate()) return this.send('unauthorized')
-      this.app.emit(`config/plugin-${event}`, name, config)
-    }
-  }
-
-  listeners[`bot/create`] = async function ({ platform, protocol, config }) {
-    if (await this.validate()) return this.send('unauthorized')
-    this.app.emit('config/bot-create', platform, { protocol, ...config })
-  }
-
-  for (const event of ['remove', 'start', 'stop'] as const) {
-    listeners[`bot/${event}`] = async function ({ id }) {
-      if (await this.validate()) return this.send('unauthorized')
-      this.app.emit(`config/bot-${event}`, id)
-    }
-  }
 }

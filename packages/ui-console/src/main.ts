@@ -16,7 +16,7 @@ import Collapse from './components/collapse.vue'
 import Numeric from './components/numeric.vue'
 import App from './views/layout/index.vue'
 
-import { ElTooltip, ElScrollbar } from 'element-plus'
+import { ElCascader, ElEmpty, ElTooltip, ElScrollbar } from 'element-plus'
 
 import '@fortawesome/fontawesome-free/css/fontawesome.css'
 import '@fortawesome/fontawesome-free/css/brands.css'
@@ -26,7 +26,7 @@ import '@fortawesome/fontawesome-free/css/solid.css'
 import './index.scss'
 import 'element-plus/dist/index.css'
 
-const { router, receive } = client
+const { router } = client
 
 self['Vue'] = Vue
 self['VueRouter'] = Router
@@ -34,6 +34,8 @@ self['KoishiClient'] = client
 
 const app = Vue.createApp(App)
 
+app.use(ElCascader)
+app.use(ElEmpty)
 app.use(ElTooltip)
 app.use(ElScrollbar)
 
@@ -51,27 +53,6 @@ router.addRoute({
   name: '数据库',
   meta: { icon: 'database', require: ['meta'] },
   component: () => import('./views/database/index.vue'),
-})
-
-router.addRoute({
-  path: '/bots',
-  name: '机器人',
-  meta: { icon: 'robot', require: ['profile', 'registry'] },
-  component: () => import('./views/bots/index.vue'),
-})
-
-router.addRoute({
-  path: '/settings',
-  name: '插件配置',
-  meta: { icon: 'tools', require: ['registry', 'market'] },
-  component: () => import('./views/settings/index.vue'),
-})
-
-router.addRoute({
-  path: '/market',
-  name: '插件市场',
-  meta: { icon: 'puzzle-piece', require: ['market'] },
-  component: () => import('./views/market/index.vue'),
 })
 
 router.addRoute({
@@ -111,15 +92,6 @@ router.afterEach((route) => {
   }
 })
 
-receive('logs', data => client.logs.value = data)
-receive('logs/data', data => client.logs.value += data)
-receive('meta', data => client.meta.value = data)
-receive('market', data => client.market.value = data)
-receive('profile', data => client.profile.value = data)
-receive('registry', data => client.registry.value = data)
-receive('stats', data => client.stats.value = data)
-receive('user', data => client.user.value = data)
-
 function connect() {
   const endpoint = new URL(KOISHI_CONFIG.endpoint, location.origin).toString()
   const socket = client.socket.value = new WebSocket(endpoint.replace(/^http/, 'ws'))
@@ -130,12 +102,6 @@ function connect() {
     if (data.type in client.listeners) {
       client.listeners[data.type](data.body)
     }
-  }
-
-  socket.onopen = () => {
-    if (!client.user.value) return
-    const { id, token } = client.user.value
-    client.send('validate', { id, token })
   }
 
   socket.onclose = () => {

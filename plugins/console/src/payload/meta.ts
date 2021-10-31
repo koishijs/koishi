@@ -1,7 +1,7 @@
 import { Argv, Assets, Context, Dict, noop } from 'koishi'
-import { StatusServer } from '../server'
+import { DataSource } from '../server'
 
-class Meta implements StatusServer.DataSource {
+class Meta implements DataSource<Meta.Payload> {
   timestamp = 0
   cached: Promise<Meta.Payload>
   callbacks: Meta.Extension[] = []
@@ -15,7 +15,7 @@ class Meta implements StatusServer.DataSource {
     })
   }
 
-  async get(): Promise<Meta.Payload> {
+  async get() {
     const now = Date.now()
     if (this.timestamp > now) return this.cached
     this.timestamp = now + this.config.metaInterval

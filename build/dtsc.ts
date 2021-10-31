@@ -230,7 +230,7 @@ const targets = [
   'plugins/database/mysql',
   'plugins/database/mongo',
   'plugins/database/sqlite',
-  'plugins/status',
+  'plugins/console',
   'plugins/teach',
   'community/adventure',
 ]

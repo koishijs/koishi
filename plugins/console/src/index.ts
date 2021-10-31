@@ -50,7 +50,7 @@ declare module 'koishi' {
   }
 
   interface Modules {
-    status: typeof import('.')
+    console: typeof import('.')
   }
 }
 

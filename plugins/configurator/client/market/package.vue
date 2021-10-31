@@ -32,8 +32,8 @@
 
 <script lang="ts" setup>
 
-import type { Market } from '~/server'
-import { send, user } from '~/client'
+import type { Market } from '@koishijs/plugin-configurator/src'
+import { send } from '@koishijs/ui-console'
 import { computed, ref, watch } from 'vue'
 
 const props = defineProps<{ data: Market.Data }>()
@@ -58,8 +58,7 @@ watch(() => props.data.local, () => {
 }, { deep: true })
 
 function toggle(data: Market.Data) {
-  const { id, token } = user.value
-  send('install', { name: `${data.name}@^${data.version}`, id, token })
+  send('install', { name: `${data.name}@^${data.version}` })
   downloading.value = true
 }
 

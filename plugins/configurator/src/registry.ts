@@ -1,13 +1,21 @@
 import { App, Context, hyphenate, omit, pick, Plugin, Schema, Modules, Dict, Adapter } from 'koishi'
 import { debounce } from 'throttle-debounce'
-import { StatusServer } from '../server'
+import { DataSource } from '@koishijs/plugin-console'
+import {} from '@koishijs/cli'
 
-class Registry implements StatusServer.DataSource {
+declare module '@koishijs/plugin-console' {
+  namespace DataSource {
+    interface Library {
+      registry: Registry
+    }
+  }
+}
+
+class Registry implements DataSource {
   cached: Promise<Registry.Payload>
   promise: Promise<void>
 
   static readonly placeholder = Symbol('status.registry.placeholder')
-  static readonly webExtension = Symbol('status.registry.web-extension')
 
   constructor(private ctx: Context, public config: Registry.Config) {
     ctx.on('plugin-added', this.update)
@@ -15,7 +23,10 @@ class Registry implements StatusServer.DataSource {
   }
 
   update = debounce(0, async () => {
-    this.ctx.webui.broadcast('registry', await this.get(true))
+    this.ctx.webui.broadcast('data', {
+      key: 'registry',
+      value: await this.get(true),
+    })
   })
 
   async get(forced = false) {

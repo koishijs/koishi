@@ -1,7 +1,7 @@
 <template>
   <k-card class="page-logs frameless" scrollbar>
     <div class="logs">
-      <div class="line" :class="{ start: line.includes(hint) }" v-for="line in logs.split('\n')">
+      <div class="line" :class="{ start: line.includes(hint) }" v-for="line in store.logs.split('\n')">
         <code v-html="renderLine(line)"></code>
       </div>
     </div>
@@ -10,7 +10,7 @@
 
 <script lang="ts" setup>
 
-import { logs } from '~/client'
+import { store } from '~/client'
 import Converter from 'ansi_up'
 
 const hint = `app\u001b[0m \u001b[38;5;15;1mKoishi/`

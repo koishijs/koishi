@@ -1,7 +1,7 @@
 import { Bot, Context, pick } from 'koishi'
 import { cpus } from 'os'
 import { mem } from 'systeminformation'
-import { StatusServer } from '../server'
+import { DataSource } from '../server'
 
 export type LoadRate = [app: number, total: number]
 export type MessageRate = [send: number, receive: number]
@@ -67,14 +67,17 @@ export async function BotData(bot: Bot) {
   } as BotData
 }
 
-class Profile implements StatusServer.DataSource {
+class Profile implements DataSource<Profile.Payload> {
   cached: Profile.Payload
 
   constructor(private ctx: Context, config: Profile.Config) {
     this.apply(ctx, config)
 
     ctx.on('status/tick', async () => {
-      this.ctx.webui.broadcast('profile', await this.get(true))
+      this.ctx.webui.broadcast('data', {
+        key: 'profile',
+        value: await this.get(true),
+      })
     })
   }
 

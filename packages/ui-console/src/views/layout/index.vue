@@ -4,18 +4,18 @@
     <router-view v-if="loaded"/>
     <p v-else>正在加载数据……</p>
   </main>
-  <component v-for="view in client.views" :is="view"/>
+  <component v-for="view in views" :is="view"/>
 </template>
 
 <script lang="ts" setup>
 
-import * as client from '~/client'
+import { store, views } from '~/client'
 import Sidebar from './sidebar.vue'
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 
 const route = useRoute()
-const loaded = computed(() => (route.meta.require || []).every((key) => client[key].value))
+const loaded = computed(() => (route.meta.require || []).every((key) => store.value[key]))
 
 </script>
 

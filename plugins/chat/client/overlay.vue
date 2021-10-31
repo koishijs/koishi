@@ -1,6 +1,6 @@
 <template>
   <transition name="fade">
-    <div class="image-viewer" v-if="store.overlayImage" @click="setImage(null)">
+    <div class="image-viewer" v-if="shared.overlayImage" @click="setImage(null)">
       <span class="button left" :class="{ disabled: !siblings.prev }" @click.stop="setImage(siblings.prev)">
         <i class="fas fa-chevron-left"/>
       </span>
@@ -15,7 +15,7 @@
         <i class="fas fa-redo" @click="rotate = (rotate + 90) % 180"/>
       </span>
       <transition appear :duration="1" @before-appear="moveToOrigin" @after-appear="moveToCenter">
-        <img ref="img" :style="{ transform }" :src="store.overlayImage.src"/>
+        <img ref="img" :style="{ transform }" :src="shared.overlayImage.src"/>
       </transition>
     </div>
   </transition>
@@ -23,7 +23,7 @@
 
 <script lang="ts" setup>
 
-import { store } from '@koishijs/ui-console'
+import { shared } from './utils'
 import { computed, watch, ref, onMounted, onBeforeUnmount } from 'vue'
 
 const scale = ref(1)
@@ -35,9 +35,9 @@ const transform = computed(() => {
 })
 
 const siblings = computed(() => {
-  if (!store.overlayImage) return
+  if (!shared.overlayImage) return
   const elements = Array.from(document.querySelectorAll<HTMLImageElement>('.k-image'))
-  const index = elements.indexOf(store.overlayImage)
+  const index = elements.indexOf(shared.overlayImage)
   return {
     prev: elements[index - 1],
     next: elements[index + 1],
@@ -45,13 +45,13 @@ const siblings = computed(() => {
 })
 
 const defaultScale = computed(() => {
-  const { naturalHeight, naturalWidth } = store.overlayImage
+  const { naturalHeight, naturalWidth } = shared.overlayImage
   const maxHeight = innerHeight - paddingVertical * 2
   const maxWidth = innerWidth - paddingHorizontal * 2
   return Math.min(1, maxHeight / naturalHeight, maxWidth / naturalWidth)
 })
 
-watch(() => store.overlayImage, (el, origin) => {
+watch(() => shared.overlayImage, (el, origin) => {
   scale.value = 1
   rotate.value = 0
   if (!el) return moveToOrigin(img.value, origin)
@@ -63,10 +63,10 @@ watch(() => store.overlayImage, (el, origin) => {
 
 function setImage(el: HTMLImageElement) {
   if (el === undefined) return
-  store.overlayImage = el
+  shared.overlayImage = el
 }
 
-function moveToOrigin(el: HTMLImageElement, origin = store.overlayImage) {
+function moveToOrigin(el: HTMLImageElement, origin = shared.overlayImage) {
   const { height, width } = origin
   const { left, top } = origin.getBoundingClientRect()
   el.style.width = width + 'px'
@@ -80,7 +80,7 @@ const paddingVertical = 0
 const paddingHorizontal = 0
 
 function moveToCenter(el: HTMLImageElement) {
-  const { naturalHeight, naturalWidth } = store.overlayImage
+  const { naturalHeight, naturalWidth } = shared.overlayImage
   const scale = defaultScale.value
   const width = naturalWidth * scale
   const height = naturalHeight * scale
@@ -99,7 +99,7 @@ onBeforeUnmount(() => {
 })
 
 function onKeyDown(ev: KeyboardEvent) {
-  if (!store.overlayImage) return
+  if (!shared.overlayImage) return
   ev.preventDefault()
   if (ev.key === 'ArrowUp' || ev.key === 'ArrowLeft') {
     setImage(siblings.value.prev)
@@ -108,7 +108,7 @@ function onKeyDown(ev: KeyboardEvent) {
   } else if (ev.key === 'Escape') {
     setImage(null)
   } else if (ev.key === 'Enter') {
-    store.overlayImage.offsetParent.scrollIntoView({ behavior: 'smooth' })
+    shared.overlayImage.offsetParent.scrollIntoView({ behavior: 'smooth' })
     setImage(null)
   }
 }

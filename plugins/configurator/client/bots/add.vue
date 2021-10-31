@@ -11,16 +11,18 @@
 
 <script lang="ts" setup>
 
-import { ElCascader } from 'element-plus'
 import { ref, computed } from 'vue'
-import { registry, send } from '~/client'
+import { store, send } from '~/client'
+import type { Registry } from '@koishijs/plugin-configurator/src'
 import type { Schema } from '~/server'
 
 const config = ref({})
 const selected = ref([])
 
+const appData = computed(() => store.value.registry[''] as Registry.AppData)
+
 const options = computed(() => {
-  const { protocols } = registry.value['']
+  const { protocols } = appData.value
   return Object.entries(protocols).map(([key, schema]) => ({
     value: key,
     label: key,
@@ -34,7 +36,7 @@ const options = computed(() => {
 const schema = computed<Schema>(() => {
   const [platform, protocol] = selected.value
   if (!platform) return
-  const schema = registry.value[''].protocols[platform]
+  const schema = appData.value.protocols[platform]
   if (schema.type !== 'decide') return schema
   if (protocol) return schema.dict[protocol]
 })

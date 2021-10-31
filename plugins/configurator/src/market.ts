@@ -3,8 +3,16 @@ import { dirname, resolve } from 'path'
 import { existsSync, promises as fs } from 'fs'
 import { spawn, StdioOptions } from 'child_process'
 import { satisfies } from 'semver'
-import { StatusServer } from '../server'
+import { DataSource } from '@koishijs/plugin-console'
 import { throttle } from 'throttle-debounce'
+
+declare module '@koishijs/plugin-console' {
+  namespace DataSource {
+    interface Library {
+      market: Market
+    }
+  }
+}
 
 interface PackageBase {
   name: string
@@ -61,7 +69,7 @@ const installArgs: Record<Manager, string[]> = {
   npm: ['install', '--loglevel', 'error'],
 }
 
-class Market implements StatusServer.DataSource {
+class Market implements DataSource {
   dataCache: Dict<Market.Data> = {}
   localCache: Dict<Promise<Market.Local>> = {}
   callbacks: ((data: Market.Data[]) => void)[] = []
@@ -132,7 +140,10 @@ class Market implements StatusServer.DataSource {
   }
 
   broadcast() {
-    this.ctx.webui.broadcast('market', Object.values(this.dataCache))
+    this.ctx.webui.broadcast('data', {
+      key: 'market',
+      value: Object.values(this.dataCache),
+    })
   }
 
   private getRegistry(name: string) {
@@ -190,7 +201,8 @@ class Market implements StatusServer.DataSource {
     const kind = await (_managerPromise ||= getManager())
     const args = [...installArgs[kind], name]
     await execute(kind, args)
-    this.ctx.webui.broadcast('market', await this.get(true))
+    await this.get(true)
+    this.broadcast()
   }
 }
 

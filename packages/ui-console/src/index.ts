@@ -1,9 +1,8 @@
 /// <reference types="./global"/>
 
-import { ref, watch, reactive, Ref, Component } from 'vue'
+import { ref, watch, computed, Component } from 'vue'
 import { createWebHistory, createRouter } from 'vue-router'
-import type { User, Registry, Profile, Meta, Statistics, Market } from '~/server'
-import * as client from '.'
+import type { DataSource } from '~/server'
 
 export const views: Component[] = []
 
@@ -12,20 +11,11 @@ export const router = createRouter({
   routes: [],
 })
 
-export const store = reactive({
-  showOverlay: false,
-  overlayImage: null as HTMLImageElement,
-})
-
-type Keys<O, T = any> = {
-  [K in keyof O]: O[K] extends T ? K : never
-}[keyof O]
-
 declare module 'vue-router' {
   interface RouteMeta {
     icon?: string
     hidden?: boolean
-    require?: Keys<typeof client, Ref>[]
+    require?: (keyof DataSource.Library)[]
   }
 }
 
@@ -65,14 +55,11 @@ interface Config {
   showPass?: boolean
 }
 
-export const user = storage.create<User>('user')
+export const store = ref<{
+  [K in keyof DataSource.Library]?: DataSource.Library[K] extends DataSource<infer T> ? T : never
+}>({})
+
 export const config = storage.create<Config>('config', { authType: 0 }, true)
-export const meta = ref<Meta.Payload>(null)
-export const profile = ref<Profile.Payload>(null)
-export const market = ref<Market.Data[]>(null)
-export const registry = ref<Registry.Payload>(null)
-export const stats = ref<Statistics.Payload>(null)
-export const logs = ref<string>('')
 export const socket = ref<WebSocket>(null)
 
 export const listeners: Record<string, (data: any) => void> = {}
@@ -84,6 +71,9 @@ export function send(type: string, body: any) {
 export function receive<T = any>(event: string, listener: (data: T) => void) {
   listeners[event] = listener
 }
+
+receive('data', ({ key, value }) => store.value[key] = value)
+receive('logs/data', data => store.value.logs += data)
 
 export async function sha256(password: string) {
   const data = new TextEncoder().encode(password)
