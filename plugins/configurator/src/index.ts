@@ -1,8 +1,14 @@
 import { Context } from 'koishi'
+import { resolve } from 'path'
 import { StatusServer } from '@koishijs/plugin-console'
 import Registry from './registry'
 import Market from './market'
-import { resolve } from 'path'
+
+declare module 'koishi' {
+  interface Modules {
+    configurator: typeof import('.')
+  }
+}
 
 export { Registry, Market }
 

@@ -1,12 +1,6 @@
-import { Context, template, Time, Tables, Awaitable, Schema } from 'koishi'
-import { Synchronizer } from './payload/stats'
+import { Context, template, Tables, Awaitable, Schema } from 'koishi'
 import { StatusServer, SocketHandle, Config } from './server'
-import Meta from './payload/meta'
 
-import './database/mongo'
-import './database/mysql'
-
-export * from './payload'
 export * from './server'
 
 export type Activity = Record<number, number>
@@ -16,11 +10,6 @@ declare module 'koishi' {
     interface Services {
       webui: StatusServer
     }
-  }
-
-  interface Database {
-    stats(): Promise<Meta.Stats>
-    createSynchronizer(): Synchronizer
   }
 
   interface Session {
@@ -83,9 +72,6 @@ const defaultConfig: Config = {
   apiPath: '/status',
   uiPath: '',
   selfUrl: '',
-  tickInterval: Time.second * 5,
-  statsInternal: Time.minute * 10,
-  metaInterval: Time.hour,
 }
 
 export const name = 'status'
@@ -99,7 +85,7 @@ export const schema: Schema<Config> = Schema.object({
 })
 
 export function apply(ctx: Context, config: Config = {}) {
-  config = Object.assign(defaultConfig, config)
+  config = { ...defaultConfig, ...config }
 
   ctx.webui = new StatusServer(ctx, config)
 

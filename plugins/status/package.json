@@ -1,7 +1,7 @@
 {
-  "name": "@koishijs/plugin-console",
-  "description": "A web user interface for Koishi",
-  "version": "1.0.0-alpha.0",
+  "name": "@koishijs/plugin-status",
+  "description": "Status view for Koishi",
+  "version": "5.0.0-alpha.10",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -17,7 +17,7 @@
   "bugs": {
     "url": "https://github.com/koishijs/koishi/issues"
   },
-  "homepage": "https://koishi.js.org/plugins/other/status.html",
+  "homepage": "https://koishi.js.org/plugins/other/status",
   "keywords": [
     "bot",
     "qqbot",
@@ -26,19 +26,20 @@
     "chatbot",
     "koishi",
     "plugin",
-    "webui"
+    "status",
+    "server"
   ],
   "peerDependencies": {
     "koishi": "^4.0.0-alpha.12"
   },
   "devDependencies": {
-    "@types/uuid": "^8.3.1",
-    "vite": "^2.5.10"
+    "@koishijs/cli": "^4.0.0-alpha.6",
+    "@koishijs/plugin-console": "^1.0.0-alpha.0",
+    "@koishijs/plugin-database-mongo": "^3.0.0-alpha.6",
+    "@koishijs/plugin-database-mysql": "^4.0.0-alpha.9",
+    "@koishijs/ui-console": "^1.0.0-alpha.7"
   },
   "dependencies": {
-    "@koishijs/ui-console": "^1.0.0-alpha.7",
-    "open": "^8.2.1",
-    "uuid": "^8.3.2",
-    "ws": "^8.2.1"
+    "systeminformation": "^5.8.7"
   }
 }

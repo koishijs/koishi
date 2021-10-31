@@ -10,9 +10,9 @@
 <script lang="ts" setup>
 
 import { store, views } from '~/client'
-import Sidebar from './sidebar.vue'
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
+import Sidebar from './sidebar.vue'
 
 const route = useRoute()
 const loaded = computed(() => (route.meta.require || []).every((key) => store.value[key]))

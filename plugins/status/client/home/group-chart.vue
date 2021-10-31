@@ -1,6 +1,6 @@
 <template>
   <k-card class="frameless" title="各群发言数量">
-    <k-chart v-if="store.stats.groups.length" :option="option" autoresize/>
+    <k-chart v-if="groups.length" :option="option" autoresize/>
     <p v-else>暂无数据。</p>
   </k-card>
 </template>
@@ -9,6 +9,8 @@
 
 import { store } from '~/client'
 import { computed } from 'vue'
+
+const groups = computed(() => store.value.stats.groups)
 
 const option = computed(() => ({
   tooltip: {
@@ -25,7 +27,7 @@ const option = computed(() => ({
   },
   series: [{
     type: 'pie',
-    data: store.value.stats.groups.sort((a, b) => b.value - a.value),
+    data: groups.value.sort((a, b) => b.value - a.value),
     radius: ['35%', '65%'],
     minShowLabelAngle: 3,
   }],

@@ -27,7 +27,7 @@ function isShown(meta: RouteMeta) {
 
 <style lang="scss">
 
-@import '../../index.scss';
+@import '../index.scss';
 
 aside.layout-aside {
   position: fixed;

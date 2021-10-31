@@ -1,5 +1,5 @@
 import { Database, Logger, Time, Dict } from 'koishi'
-import { RECENT_LENGTH, Synchronizer } from '../payload/stats'
+import { RECENT_LENGTH, Synchronizer } from '../stats'
 import type MongoDatabase from '@koishijs/plugin-database-mongo'
 
 const logger = new Logger('status')

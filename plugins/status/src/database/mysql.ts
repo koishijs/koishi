@@ -1,5 +1,5 @@
 import { Database, Logger, Tables, Time, Dict } from 'koishi'
-import { Synchronizer, RECENT_LENGTH } from '../payload/stats'
+import { Synchronizer, RECENT_LENGTH } from '../stats'
 import type MysqlDatabase from '@koishijs/plugin-database-mysql'
 
 const logger = new Logger('status')

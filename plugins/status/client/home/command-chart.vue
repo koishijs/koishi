@@ -1,6 +1,6 @@
 <template>
   <k-card class="frameless" title="指令调用频率">
-    <k-chart v-if="Object.keys(store.stats.commands).length" :option="option" autoresize/>
+    <k-chart v-if="Object.keys(commands).length" :option="option" autoresize/>
     <p v-else>暂无数据。</p>
   </k-card>
 </template>
@@ -9,6 +9,8 @@
 
 import { store } from '~/client'
 import { computed } from 'vue'
+
+const commands = computed(() => store.value.stats.commands)
 
 const option = computed(() => ({
   tooltip: {
@@ -21,7 +23,7 @@ const option = computed(() => ({
   },
   series: [{
     type: 'pie',
-    data: Object.entries(store.value.stats.commands)
+    data: Object.entries(commands.value)
       .sort((a, b) => b[1] - a[1])
       .map(([name, value]) => ({ name, value })),
     radius: ['35%', '65%'],

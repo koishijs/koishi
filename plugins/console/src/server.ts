@@ -1,7 +1,6 @@
 import { Adapter, App, Context, Logger, noop, version, Dict, WebSocketLayer } from 'koishi'
 import { resolve, extname } from 'path'
 import { promises as fs, Stats, createReadStream } from 'fs'
-import { Logs, Meta, Profile, Statistics } from './payload'
 import WebSocket from 'ws'
 import open from 'open'
 import { v4 } from 'uuid'
@@ -13,7 +12,7 @@ interface BaseConfig {
   uiPath?: string
 }
 
-export interface Config extends BaseConfig, Profile.Config, Meta.Config, Statistics.Config {
+export interface Config extends BaseConfig {
   root?: string
   open?: boolean
   selfUrl?: string
@@ -52,16 +51,11 @@ export interface DataSource<T = any> {
 }
 
 export namespace DataSource {
-  export interface Library extends Dict<DataSource> {
-    logs: Logs
-    meta: Meta
-    stats: Statistics
-    profile: Profile
-  }
+  export interface Library extends Dict<DataSource> {}
 }
 
 export class StatusServer extends Adapter {
-  readonly sources: DataSource.Library
+  readonly sources: DataSource.Library = {}
   readonly global: ClientConfig
   readonly entries: Dict<string> = {}
   readonly handles: Dict<SocketHandle> = {}
@@ -85,13 +79,6 @@ export class StatusServer extends Adapter {
     }
 
     this.server = ctx.router.ws(apiPath, this.onConnection)
-
-    this.sources = {
-      logs: new Logs(ctx),
-      profile: new Profile(ctx, config),
-      meta: new Meta(ctx, config),
-      stats: new Statistics(ctx, config),
-    }
 
     ctx.on('service/database', () => {
       this.global.database = !!ctx.database

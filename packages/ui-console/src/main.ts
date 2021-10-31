@@ -14,7 +14,7 @@ import CardAside from './components/layout/card-aside.vue'
 import Card from './components/card.vue'
 import Collapse from './components/collapse.vue'
 import Numeric from './components/numeric.vue'
-import App from './views/layout/index.vue'
+import App from './layout/index.vue'
 
 import { ElCascader, ElEmpty, ElTooltip, ElScrollbar } from 'element-plus'
 
@@ -38,29 +38,6 @@ app.use(ElCascader)
 app.use(ElEmpty)
 app.use(ElTooltip)
 app.use(ElScrollbar)
-
-const stats: 'stats'[] = KOISHI_CONFIG.database ? ['stats'] : []
-
-router.addRoute({
-  path: '/',
-  name: '仪表盘',
-  meta: { icon: 'tachometer-alt', require: [...stats, 'meta', 'profile'] },
-  component: () => import('./views/home/home.vue'),
-})
-
-router.addRoute({
-  path: '/database',
-  name: '数据库',
-  meta: { icon: 'database', require: ['meta'] },
-  component: () => import('./views/database/index.vue'),
-})
-
-router.addRoute({
-  path: '/logs',
-  name: '运行日志',
-  meta: { icon: 'clipboard-list' },
-  component: () => import('./views/logs/index.vue'),
-})
 
 // notice
 app.component('k-badge', Badge)

@@ -1,8 +1,8 @@
 import { Context } from 'koishi'
-import { DataSource } from '../server'
+import { DataSource } from '@koishijs/plugin-console'
 
 class Logs implements DataSource<string> {
-  constructor(private ctx: Context) {
+  constructor(private ctx: Context, private config: Logs.Config) {
     this.ctx.on('logger/data', (text) => {
       this.ctx.webui.broadcast('logs/data', text)
     })
@@ -13,6 +13,8 @@ class Logs implements DataSource<string> {
   }
 }
 
-namespace Logs {}
+namespace Logs {
+  export interface Config {}
+}
 
 export default Logs

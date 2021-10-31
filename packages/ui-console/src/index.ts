@@ -1,6 +1,6 @@
 /// <reference types="./global"/>
 
-import { ref, watch, computed, Component } from 'vue'
+import { ref, watch, Component } from 'vue'
 import { createWebHistory, createRouter } from 'vue-router'
 import type { DataSource } from '~/server'
 

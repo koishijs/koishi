@@ -1,7 +1,7 @@
 import { Bot, Context, pick } from 'koishi'
 import { cpus } from 'os'
 import { mem } from 'systeminformation'
-import { DataSource } from '../server'
+import { DataSource } from '@koishijs/plugin-console'
 
 export type LoadRate = [app: number, total: number]
 export type MessageRate = [send: number, receive: number]

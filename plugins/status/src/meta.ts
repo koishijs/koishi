@@ -1,5 +1,5 @@
 import { Argv, Assets, Context, Dict, noop } from 'koishi'
-import { DataSource } from '../server'
+import { DataSource } from '@koishijs/plugin-console'
 
 class Meta implements DataSource<Meta.Payload> {
   timestamp = 0

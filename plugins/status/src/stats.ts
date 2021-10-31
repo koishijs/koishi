@@ -1,5 +1,6 @@
 import { Context, Channel, noop, Session, Bot, Time, Dict } from 'koishi'
-import { DataSource } from '../server'
+import { DataSource } from '@koishijs/plugin-console'
+import {} from '@koishijs/cli'
 
 export interface Synchronizer {
   groups: Dict<number>
