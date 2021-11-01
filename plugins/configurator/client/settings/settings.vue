@@ -46,7 +46,7 @@
 <script setup lang="ts">
 
 import { computed } from 'vue'
-import type { Dict } from '~/server'
+import type { Dict } from 'koishi'
 import { store, send } from '~/client'
 import { Data, available } from './shared'
 import TButton from './button.vue'

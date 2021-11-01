@@ -222,15 +222,12 @@ const targets = [
   'packages/utils',
   'packages/core',
   'packages/koishi',
-  'packages/orm-utils',
   'packages/sql-utils',
-  'plugins/admin',
-  'plugins/database/level',
-  'plugins/database/memory',
   'plugins/database/mysql',
   'plugins/database/mongo',
-  'plugins/database/sqlite',
+  'plugins/admin',
   'plugins/console',
+  'plugins/status',
   'plugins/teach',
   'community/adventure',
 ]
@@ -244,6 +241,7 @@ const corePackages = [
   'plugins/eval',
   'plugins/puppeteer',
   'packages/orm-utils',
+  'packages/database/memory',
 ]
 
 function precedence(name: string) {

@@ -40,6 +40,7 @@
   },
   "devDependencies": {
     "@koishijs/plugin-console": "^1.0.0-alpha.0",
+    "@koishijs/plugin-status": "^5.0.0-alpha.10",
     "@koishijs/test-utils": "^8.0.0-alpha.9",
     "@koishijs/ui-console": "^1.0.0-alpha.7"
   },

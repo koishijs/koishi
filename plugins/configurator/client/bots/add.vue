@@ -14,7 +14,7 @@
 import { ref, computed } from 'vue'
 import { store, send } from '~/client'
 import type { Registry } from '@koishijs/plugin-configurator/src'
-import type { Schema } from '~/server'
+import type { Schema } from 'koishi'
 
 const config = ref({})
 const selected = ref([])

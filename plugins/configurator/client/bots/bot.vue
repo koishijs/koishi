@@ -25,7 +25,7 @@
 
 <script lang="ts" setup>
 
-import type { Bot, BotData } from '~/server'
+import type { Bot } from 'koishi'
 
 const statusNames: Record<Bot.Status, string> = {
   online: '运行中',

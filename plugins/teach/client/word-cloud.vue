@@ -1,5 +1,5 @@
 <template>
-  <k-card class="frameless word-cloud" v-if="stats.questions">
+  <k-card class="frameless word-cloud" v-if="store.stats.questions">
     <template #header>
       问答日均触发次数
       <k-button class="refresh" frameless @click="refresh">刷新</k-button>
@@ -13,13 +13,13 @@
 
 <script lang="ts" setup>
 
-import { stats } from '@koishijs/ui-console'
+import { store } from '@koishijs/ui-console'
 import { computed, ref } from 'vue'
 
-const questions = ref(stats.value.questions)
+const questions = ref(store.value.stats.questions)
 
 function refresh() {
-  questions.value = stats.value.questions
+  questions.value = store.value.stats.questions
 }
 
 const option = computed(() => ({

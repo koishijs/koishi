@@ -15,7 +15,7 @@
 
 <script lang="ts" setup>
 
-import type { LoadRate } from '~/server'
+import type { LoadRate } from '@koishijs/plugin-status/src'
 import { computed } from 'vue'
 
 const props = defineProps<{ rate: LoadRate, title: string }>()
