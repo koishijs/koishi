@@ -1,7 +1,7 @@
 import { Bot, segment, Adapter, Dict, Schema, Quester, Logger, camelize } from 'koishi'
 import * as OneBot from './utils'
 
-function renderText(source: string) {
+export function renderText(source: string) {
   return segment.parse(source).reduce((prev, { type, data }) => {
     if (type === 'at') {
       if (data.type === 'all') return prev + '[CQ:at,qq=all]'
