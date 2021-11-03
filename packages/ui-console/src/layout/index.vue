@@ -4,12 +4,12 @@
     <router-view v-if="loaded"/>
     <p v-else>正在加载数据……</p>
   </main>
-  <component v-for="view in views" :is="view"/>
+  <k-view name="global"></k-view>
 </template>
 
 <script lang="ts" setup>
 
-import { store, views } from '@koishijs/ui-console'
+import { store } from '@koishijs/ui-console'
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 import Sidebar from './sidebar.vue'

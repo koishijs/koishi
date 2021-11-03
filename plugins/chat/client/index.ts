@@ -1,8 +1,8 @@
-import { router, views } from '@koishijs/ui-console'
+import { router, addView } from '@koishijs/ui-console'
 import Chat from './chat.vue'
 import Overlay from './overlay.vue'
 
-views.push(Overlay)
+addView('global', Overlay)
 
 router.addRoute({
   path: '/chat',

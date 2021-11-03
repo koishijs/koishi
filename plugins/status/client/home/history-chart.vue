@@ -1,6 +1,6 @@
 <template>
   <k-card class="frameless" title="历史发言数量">
-    <k-chart v-if="Object.keys(store.stats.history).length" :option="option" autoresize/>
+    <k-chart v-if="Object.keys(history).length" :option="option" autoresize/>
     <p v-else>暂无数据。</p>
   </k-card>
 </template>
@@ -9,6 +9,8 @@
 
 import { store } from '~/client'
 import { computed } from 'vue'
+
+const history = computed(() => store.value.stats.history)
 
 const week = '日一二三四五六'
 
@@ -25,7 +27,7 @@ const option = computed(() => ({
   },
   xAxis: {
     type: 'category',
-    data: Object.keys(store.value.stats.history).reverse(),
+    data: Object.keys(history.value).reverse(),
   },
   yAxis: {
     type: 'value',
@@ -36,7 +38,7 @@ const option = computed(() => ({
   series: {
     type: 'line',
     smooth: true,
-    data: Object.values(store.value.stats.history).reverse(),
+    data: Object.values(history.value).reverse(),
   },
 }))
 

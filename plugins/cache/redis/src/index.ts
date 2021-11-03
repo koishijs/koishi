@@ -5,6 +5,7 @@ import { RedisClientOptions, RedisClientType } from 'redis/dist/lib/client'
 
 export default class RedisCache extends Cache {
   logger = new Logger('redis')
+
   pool = createPool<RedisClientType<{}, {}>>({
     create: async () => {
       const client = createClient(this.config)
@@ -16,8 +17,8 @@ export default class RedisCache extends Cache {
     },
   })
 
-  constructor(ctx: Context, private config: Config) {
-    super(ctx)
+  constructor(ctx: Context, config: Config) {
+    super(ctx, config)
   }
 
   private getRedisKey(table: keyof Cache.Tables, key: string) {

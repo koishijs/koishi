@@ -14,6 +14,7 @@ import CardAside from './components/layout/card-aside.vue'
 import Card from './components/card.vue'
 import Collapse from './components/collapse.vue'
 import Numeric from './components/numeric.vue'
+import View from './components/view'
 import App from './layout/index.vue'
 
 import { ElCascader, ElEmpty, ElTooltip, ElScrollbar } from 'element-plus'
@@ -49,9 +50,10 @@ app.use(form)
 app.component('k-content', Content)
 app.component('k-card-aside', CardAside)
 app.component('k-card', Card)
-app.component('k-chart', Vue.defineAsyncComponent(() => import('./components/echarts')))
+app.component('k-chart', Vue.defineAsyncComponent(() => import('./components/echarts') as any))
 app.component('k-collapse', Collapse)
 app.component('k-numeric', Numeric)
+app.component('k-view', View)
 
 app.provide('ecTheme', 'dark-blue')
 
@@ -69,25 +71,9 @@ router.afterEach((route) => {
   }
 })
 
-function connect() {
-  const endpoint = new URL(KOISHI_CONFIG.endpoint, location.origin).toString()
-  const socket = client.socket.value = new WebSocket(endpoint.replace(/^http/, 'ws'))
+const endpoint = new URL(KOISHI_CONFIG.endpoint, location.origin).toString()
 
-  socket.onmessage = (ev) => {
-    const data = JSON.parse(ev.data)
-    console.debug(data)
-    if (data.type in client.listeners) {
-      client.listeners[data.type](data.body)
-    }
-  }
-
-  socket.onclose = () => {
-    console.log('[koishi] websocket disconnected, will retry in 1s...')
-    setTimeout(connect, 1000)
-  }
-}
-
-connect()
+client.connect(endpoint.replace(/^http/, 'ws'))
 
 const loadingExtensions = Promise.all(KOISHI_CONFIG.extensions.map(path => {
   return import(/* @vite-ignore */ path)

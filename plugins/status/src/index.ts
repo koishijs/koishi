@@ -31,6 +31,11 @@ declare module '@koishijs/plugin-console' {
   }
 }
 
+export * from './logs'
+export * from './meta'
+export * from './profile'
+export * from './stats'
+
 export { Meta, Profile, Statistics }
 
 export interface Config extends Logs.Config, Meta.Config, Profile.Config, Statistics.Config {}

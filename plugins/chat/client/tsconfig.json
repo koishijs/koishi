@@ -1,7 +1,6 @@
 {
   "extends": "../../../tsconfig.base",
   "compilerOptions": {
-    "rootDir": ".",
     "noEmit": true,
     "target": "es2020",
     "module": "esnext",
@@ -9,9 +8,6 @@
     "types": [
       "vite/client",
     ],
-    "paths": {
-      "@koishijs/plugin-chat": ["@koishijs/plugin-chat/src"],
-    },
   },
   "include": [
     ".",
