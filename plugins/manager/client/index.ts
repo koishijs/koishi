@@ -1,5 +1,5 @@
 import { router } from '@koishijs/ui-console'
-import type {} from '@koishijs/plugin-configurator/src'
+import type {} from '@koishijs/plugin-manager/src'
 
 router.addRoute({
   path: '/bots',

@@ -16,7 +16,7 @@ declare module 'koishi' {
   }
 
   interface Modules {
-    configurator: typeof import('.')
+    manager: typeof import('.')
   }
 }
 

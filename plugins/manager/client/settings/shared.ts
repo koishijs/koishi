@@ -1,4 +1,4 @@
-import type { RegistryProvider } from '@koishijs/plugin-configurator/src'
+import type { RegistryProvider } from '@koishijs/plugin-manager/src'
 import type { Dict } from 'koishi'
 import { store } from '@koishijs/ui-console'
 import { computed } from 'vue'

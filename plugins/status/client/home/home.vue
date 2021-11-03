@@ -25,7 +25,7 @@ import GroupChart from './group-chart.vue'
 import HistoryChart from './history-chart.vue'
 import HourChart from './hour-chart.vue'
 import LoadChart from './load-chart.vue'
-import type {} from '@koishijs/plugin-configurator/src'
+import type {} from '@koishijs/plugin-manager/src'
 
 const config = KOISHI_CONFIG
 

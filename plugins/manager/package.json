@@ -1,6 +1,6 @@
 {
-  "name": "@koishijs/plugin-configurator",
-  "description": "Plugin market and configurator for Koishi",
+  "name": "@koishijs/plugin-manager",
+  "description": "Manager your bots and plugins with console",
   "version": "1.0.0-alpha.0",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
@@ -17,7 +17,7 @@
   "bugs": {
     "url": "https://github.com/koishijs/koishi/issues"
   },
-  "homepage": "https://koishi.js.org/plugins/other/configurator",
+  "homepage": "https://koishi.js.org/plugins/other/manager",
   "keywords": [
     "bot",
     "qqbot",
@@ -28,7 +28,7 @@
     "plugin",
     "manager",
     "market",
-    "configurator",
+    "manager",
     "server"
   ],
   "peerDependencies": {

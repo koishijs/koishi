@@ -32,7 +32,7 @@
 
 <script lang="ts" setup>
 
-import type { Market } from '@koishijs/plugin-configurator/src'
+import type { Market } from '@koishijs/plugin-manager/src'
 import { send } from '@koishijs/ui-console'
 import { computed, ref, watch } from 'vue'
 

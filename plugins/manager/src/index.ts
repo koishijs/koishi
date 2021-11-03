@@ -15,13 +15,13 @@ export * from './services'
 
 declare module 'koishi' {
   interface Modules {
-    configurator: typeof import('.')
+    manager: typeof import('.')
   }
 }
 
 export interface Config extends MarketProvider.Config {}
 
-export const name = 'configurator'
+export const name = 'manager'
 
 export function apply(ctx: Context, config: Config = {}) {
   ctx.with(['console'], (ctx) => {

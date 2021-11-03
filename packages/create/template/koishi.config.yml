@@ -7,4 +7,6 @@ allowWrite: true
 
 plugins:
   ./src/ping:
+  console:
+  manager:
   status:
