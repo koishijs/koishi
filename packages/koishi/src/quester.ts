@@ -97,6 +97,7 @@ export namespace Quester {
     instance.get.arraybuffer = (url, params, headers) => request('GET', url, { headers, params, responseType: 'arraybuffer' })
     instance.head = (url, params, headers) => request('HEAD', url, { headers, params })
     instance.options = (url, params, headers) => request('OPTIONS', url, { headers, params })
+    instance.delete = (url, params, headers) => request('DELETE', url, { headers, params })
     instance.post = (url, data, headers) => request('POST', url, { headers, data })
     instance.put = (url, data, headers) => request('PUT', url, { headers, data })
     instance.patch = (url, data, headers) => request('PATCH', url, { headers, data })
