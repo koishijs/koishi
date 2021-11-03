@@ -1,9 +1,7 @@
-import MongoDatabase, { Config } from './database'
-import { Tables, Database, Context, omit, TableType, Query, pick, makeArray, Eval, valueMap, Schema } from 'koishi'
-import { QuerySelector } from 'mongodb'
-
-export * from './database'
-export default MongoDatabase
+import { MongoClient, Db, Collection } from 'mongodb'
+import { Context, Channel, Database, User, Tables as KoishiTables, makeArray, Schema, valueMap, pick, omit, Query } from 'koishi'
+import { URLSearchParams } from 'url'
+import { createFilter, transformEval } from './utils'
 
 declare module 'koishi' {
   interface Database {
@@ -15,82 +13,102 @@ declare module 'koishi' {
   }
 }
 
-function transformFieldQuery(query: Query.FieldQuery, key: string) {
-  // shorthand syntax
-  if (typeof query === 'string' || typeof query === 'number' || query instanceof Date) {
-    return { $eq: query }
-  } else if (Array.isArray(query)) {
-    if (!query.length) return
-    return { $in: query }
-  } else if (query instanceof RegExp) {
-    return { $regex: query }
-  }
+type TableType = keyof Tables
 
-  // query operators
-  const result: QuerySelector<any> = {}
-  for (const prop in query) {
-    if (prop === '$el') {
-      result.$elemMatch = transformFieldQuery(query[prop], key)
-    } else if (prop === '$regexFor') {
-      result.$expr = {
-        body(data: string, value: string) {
-          return new RegExp(data, 'i').test(value)
-        },
-        args: ['$' + key, query],
-        lang: 'js',
-      }
-    } else {
-      result[prop] = query[prop]
+export interface Tables extends KoishiTables {}
+
+class MongoDatabase extends Database {
+  public config: MongoDatabase.Config
+  public client: MongoClient
+  public db: Db
+
+  mongo = this
+
+  user: Collection<User>
+  channel: Collection<Channel>
+
+  constructor(public ctx: Context, config?: MongoDatabase.Config) {
+    super(ctx)
+    this.config = {
+      host: 'localhost',
+      database: 'koishi',
+      protocol: 'mongodb',
+      ...config,
     }
   }
-  return result
-}
 
-function transformQuery(query: Query.Expr) {
-  const filter = {}
-  for (const key in query) {
-    const value = query[key]
-    if (key === '$and' || key === '$or') {
-      // MongoError: $and/$or/$nor must be a nonempty array
-      if (value.length) {
-        filter[key] = value.map(transformQuery)
-      } else if (key === '$or') {
-        return { $nor: [{}] }
-      }
-    } else if (key === '$not') {
-      // MongoError: unknown top level operator: $not
-      // https://stackoverflow.com/questions/25270396/mongodb-how-to-invert-query-with-not
-      filter['$nor'] = [transformQuery(value)]
-    } else if (key === '$expr') {
-      filter[key] = transformEval(value)
-    } else {
-      filter[key] = transformFieldQuery(value, key)
+  async start() {
+    const mongourl = this.config.uri || this.connectionStringFromConfig()
+    this.client = await MongoClient.connect(
+      mongourl, { useNewUrlParser: true, useUnifiedTopology: true },
+    )
+    this.db = this.client.db(this.config.database)
+    if (this.config.prefix) {
+      this.db.collection = ((func, prefix) => function collection<T extends TableType>(name: T) {
+        return func(`${prefix}.${name}`)
+      })(this.db.collection.bind(this.db), this.config.prefix)
+    }
+    this.user = this.db.collection('user')
+    this.channel = this.db.collection('channel')
+    await this.channel.createIndex({ type: 1, pid: 1 }, { unique: true })
+
+    for (const name in KoishiTables.config) {
+      const { primary } = KoishiTables.config[name]
+      const col = this.db.collection(name)
+      await col.createIndex(Object.fromEntries(makeArray(primary).map(K => [K, 1])), { unique: true })
     }
   }
-  return filter
-}
 
-function createFilter<T extends TableType>(name: T, query: Query<T>) {
-  const filter = transformQuery(Query.resolve(name, query))
-  return filter
-}
-
-function transformEval(expr: Eval.Numeric | Eval.Aggregation) {
-  if (typeof expr === 'string') {
-    return '$' + expr
-  } else if (typeof expr === 'number' || typeof expr === 'boolean') {
-    return expr
+  collection<T extends TableType>(name: T): Collection<Tables[T]> {
+    return this.db.collection(name)
   }
 
-  return valueMap(expr as any, (value) => {
-    if (Array.isArray(value)) {
-      return value.map(transformEval)
-    } else {
-      return transformEval(value)
+  stop() {
+    return this.client.close()
+  }
+
+  connectionStringFromConfig() {
+    const { authDatabase, connectOptions, host, database: name, password, port, protocol, username } = this.config
+    let mongourl = `${protocol}://`
+    if (username) mongourl += `${encodeURIComponent(username)}${password ? `:${encodeURIComponent(password)}` : ''}@`
+    mongourl += `${host}${port ? `:${port}` : ''}/${authDatabase || name}`
+    if (connectOptions) {
+      const params = new URLSearchParams(connectOptions)
+      mongourl += `?${params}`
     }
+    return mongourl
+  }
+}
+
+namespace MongoDatabase {
+  export const name = 'database-mongo'
+
+  export interface Config {
+    username?: string
+    password?: string
+    protocol?: string
+    host?: string
+    port?: number
+    /** database name */
+    database?: string
+    prefix?: string
+    /** default auth database */
+    authDatabase?: string
+    connectOptions?: ConstructorParameters<typeof URLSearchParams>[0]
+    /** connection string (will overwrite all configs except 'name' and 'prefix') */
+    uri?: string
+  }
+
+  export const schema: Schema<Config> = Schema.object({
+    protocol: Schema.string('要使用的协议名。').default('mongodb'),
+    host: Schema.string('要连接到的主机名。').default('localhost'),
+    port: Schema.number('要连接到的端口号。').default(3306),
+    username: Schema.string('要使用的用户名。'),
+    password: Schema.string('要使用的密码。'),
+    database: Schema.string('要访问的数据库名。').default('koishi'),
+    prefix: Schema.string('使用的表名前缀。当配置了这一项时，所有通过 Koishi 创建的表名都会以这个配置项为前缀。'),
   })
 }
-
 Database.extend(MongoDatabase, {
   async drop(table) {
     if (table) {
@@ -122,16 +140,16 @@ Database.extend(MongoDatabase, {
   },
 
   async create(name, data: any) {
-    const table = Tables.config[name]
+    const table = KoishiTables.config[name]
     const { primary, fields } = table
     if (!Array.isArray(primary) && table.autoInc && !(primary in data)) {
       const [latest] = await this.db.collection(name).find().sort(primary, -1).limit(1).toArray()
       data[primary] = latest ? latest[primary] + 1 : 1
-      if (Tables.Field.string.includes(fields[primary].type)) {
+      if (KoishiTables.Field.string.includes(fields[primary].type)) {
         data[primary] += ''
       }
     }
-    const copy = { ...Tables.create(name), ...data }
+    const copy = { ...KoishiTables.create(name), ...data }
     try {
       await this.db.collection(name).insertOne(copy)
       return copy
@@ -140,13 +158,13 @@ Database.extend(MongoDatabase, {
 
   async upsert(name, data: any[], keys: string | string[]) {
     if (!data.length) return
-    if (!keys) keys = Tables.config[name].primary
+    if (!keys) keys = KoishiTables.config[name].primary
     keys = makeArray(keys)
     const bulk = this.db.collection(name).initializeUnorderedBulkOp()
     for (const item of data) {
       bulk.find(pick(item, keys))
         .upsert()
-        .updateOne({ $set: omit(item, keys), $setOnInsert: omit(Tables.create(name), [...keys, ...Object.keys(item) as any]) })
+        .updateOne({ $set: omit(item, keys), $setOnInsert: omit(KoishiTables.create(name), [...keys, ...Object.keys(item) as any]) })
     }
     await bulk.execute()
   },
@@ -163,23 +181,4 @@ Database.extend(MongoDatabase, {
   },
 })
 
-export const name = 'database-mongo'
-
-export const schema: Schema<Config> = Schema.object({
-  protocol: Schema.string('要使用的协议名。').default('mongodb'),
-  host: Schema.string('要连接到的主机名。').default('localhost'),
-  port: Schema.number('要连接到的端口号。').default(3306),
-  username: Schema.string('要使用的用户名。'),
-  password: Schema.string('要使用的密码。'),
-  database: Schema.string('要访问的数据库名。').default('koishi'),
-  prefix: Schema.string('使用的表名前缀。当配置了这一项时，所有通过 Koishi 创建的表名都会以这个配置项为前缀。'),
-})
-
-export function apply(ctx: Context, config: Config) {
-  ctx.database = new MongoDatabase(ctx, {
-    host: 'localhost',
-    database: 'koishi',
-    protocol: 'mongodb',
-    ...config,
-  })
-}
+export default MongoDatabase

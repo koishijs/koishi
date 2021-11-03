@@ -1,16 +1,16 @@
-import { Database, Query, Tables, clone, makeArray, pick, Context, valueMap, Schema, Logger } from 'koishi'
+import { clone, Context, Database, Logger, makeArray, pick, Query, Schema, Tables, TableType, valueMap } from 'koishi'
 import { executeEval, executeQuery } from '@koishijs/orm-utils'
-import { LevelDatabase, Config } from './database'
+import { AbstractIteratorOptions } from 'abstract-leveldown'
+import { LevelUp } from 'levelup'
+import level from 'level'
+import sub from 'subleveldown'
+import { resolveLocation } from './runtime'
 
-export const logger = new Logger('level')
-
-/**
- * LevelDB database
- * storage format: sublevel(table) -> _makeKey(obj) -> obj
- * TODOs:
- * - support for unique indexes (using #index$table$field -> primary key map)
- * - optimize for indexed reads
- */
+declare module 'abstract-leveldown' {
+  export interface AbstractIterator<K, V> extends AbstractOptions {
+    [Symbol.asyncIterator](): AsyncIterator<[K, V]>
+  }
+}
 
 declare module 'koishi' {
   interface Database {
@@ -21,6 +21,124 @@ declare module 'koishi' {
     'database-level': typeof import('.')
   }
 }
+
+function createValueEncoding(table: string) {
+  const { fields } = Tables.config[table]
+  const dates = Object.keys(fields).filter(f => ['timestamp', 'date', 'time'].includes(fields[f].type))
+  if (!dates.length) {
+    return {
+      encode: JSON.stringify,
+      decode: JSON.parse,
+      buffer: false,
+      type: 'json',
+    }
+  } else {
+    return {
+      encode: JSON.stringify,
+      decode: (str: string) => {
+        const obj = JSON.parse(str)
+        dates.forEach(key => obj[key] = new Date(obj[key]))
+        return obj
+      },
+      buffer: false,
+      type: 'json-for-' + table,
+    }
+  }
+}
+
+class LevelDatabase extends Database {
+  public level = this
+
+  #level: LevelUp
+  #tables: Record<string, LevelUp>
+  #last: Promise<any>
+
+  constructor(public ctx: Context, public config: LevelDatabase.Config) {
+    super(ctx)
+    this.config = Schema.validate(config, LevelDatabase.schema)
+  }
+
+  async start() {
+    // LevelDB will automaticely open
+    this.#level = level(resolveLocation(this.config.location))
+    this.#tables = Object.create(null)
+  }
+
+  async stop() {
+    await this.#level.close()
+  }
+
+  table<K extends TableType>(table: K): LevelUp {
+    return this.#tables[table] ??= sub(this.#level, table, { valueEncoding: createValueEncoding(table) })
+  }
+
+  _tableIterator<K extends TableType>(table: K, options: AbstractIteratorOptions) {
+    return this.table(table).iterator(options)
+  }
+
+  async _dropAll() {
+    this.#tables = Object.create(null)
+    await this.#level.clear()
+  }
+
+  async _dropTable<K extends TableType>(table: K) {
+    await this.table(table).clear()
+    delete this.#tables[table]
+  }
+
+  async _maxKey<K extends TableType>(table: K) {
+    // @ts-ignore
+    // eslint-disable-next-line no-unreachable-loop
+    for await (const [key] of this._tableIterator(table, { reverse: true, limit: 1 })) {
+      return +key
+    }
+    return 0
+  }
+
+  async _exists<K extends TableType>(table: K, key: string) {
+    try {
+      // Avoid deserialize
+      await this.table(table).get(key, { valueEncoding: 'binary' })
+      return true
+    } catch {
+      return false
+    }
+  }
+
+  _makeKey(primary: string | string[], data: any) {
+    return (Array.isArray(primary)
+      ? primary.map(key => data[key]).join(this.config.separator)
+      : data[primary])
+  }
+
+  async queue<T>(factory: () => Promise<T>): Promise<T> {
+    return this.#last = this.#last.catch(() => {}).then(factory)
+  }
+}
+
+namespace LevelDatabase {
+  export const name = 'database-level'
+
+  export const schema: Schema<Config> = Schema.object({
+    location: Schema.string('数据保存的位置').default('.level'),
+    separator: Schema.string('主键分隔符').default('#'),
+  })
+
+  export interface Config {
+    location: string
+    separator?: string
+  }
+}
+
+export const logger = new Logger('level')
+
+/**
+ * LevelDB database
+ * storage format: sublevel(table) -> _makeKey(obj) -> obj
+ * TODOs:
+ * - support for unique indexes (using #index$table$field -> primary key map)
+ * - optimize for indexed reads
+ */
 
 function isDirectFieldQuery(q: Query.FieldQuery) {
   return typeof q === 'string' || typeof q === 'number'
@@ -200,14 +318,4 @@ Database.extend(LevelDatabase, {
   },
 })
 
-export const name = 'database-level'
-
-export const schema: Schema<Config> = Schema.object({
-  location: Schema.string('数据保存的位置').default('.level'),
-  separator: Schema.string('主键分隔符').default('#'),
-})
-
-export function apply(ctx: Context, config: Config) {
-  config = Schema.validate(config, schema)
-  ctx.database = new LevelDatabase(ctx, config)
-}
+export default LevelDatabase

@@ -1,4 +1,4 @@
-import { Context, Database, Query, Tables, TableType, clone, makeArray, pick, Dict, valueMap, Schema } from 'koishi'
+import { Context, Database, Query, Tables, TableType, clone, makeArray, pick, Dict, valueMap } from 'koishi'
 import { executeEval, executeQuery } from '@koishijs/orm-utils'
 import { Storage, Config } from './storage'
 
@@ -43,6 +43,10 @@ export class MemoryDatabase extends Database {
   $table<K extends TableType>(table: K) {
     return this.$store[table] ||= []
   }
+}
+
+export namespace MemoryDatabase {
+  export const name = 'database-memory'
 }
 
 Database.extend(MemoryDatabase, {
@@ -121,10 +125,4 @@ Database.extend(MemoryDatabase, {
   },
 })
 
-export const name = 'database-memory'
-
-export const schema: Schema<Config> = Schema.object({})
-
-export function apply(ctx: Context, config: Config = {}) {
-  ctx.database = new MemoryDatabase(ctx, config)
-}
+export default MemoryDatabase

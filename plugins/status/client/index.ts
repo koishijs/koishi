@@ -6,7 +6,7 @@ receive('logs/data', data => store.value.logs += data)
 router.addRoute({
   path: '/',
   name: '仪表盘',
-  meta: { icon: 'tachometer-alt', require: ['stats', 'meta', 'profile'] },
+  meta: { icon: 'tachometer-alt', require: ['stats', 'meta', 'profile', 'bots'] },
   component: () => import('./home/home.vue'),
 })
 

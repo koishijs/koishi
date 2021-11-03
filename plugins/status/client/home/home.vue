@@ -25,11 +25,12 @@ import GroupChart from './group-chart.vue'
 import HistoryChart from './history-chart.vue'
 import HourChart from './hour-chart.vue'
 import LoadChart from './load-chart.vue'
+import type {} from '@koishijs/plugin-configurator/src'
 
 const config = KOISHI_CONFIG
 
 const currentRate = computed(() => {
-  return store.value.profile.bots.reduce((sum, bot) => sum + bot.currentRate[0], 0)
+  return store.value.bots.reduce((sum, bot) => sum + bot.messageSent, 0)
 })
 
 const recentRate = computed(() => {
