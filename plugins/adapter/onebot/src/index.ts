@@ -14,23 +14,16 @@ declare module 'koishi' {
   }
 }
 
-const onebot = Adapter.define('onebot', OneBotBot, {
+export { OneBot }
+
+export * from './bot'
+export * from './ws'
+export * from './http'
+
+export default Adapter.define('onebot', OneBotBot, {
   'http': HttpServer,
   'ws': WebSocketClient,
   'ws-reverse': WebSocketServer,
 }, ({ endpoint }) => {
   return !endpoint ? 'ws-reverse' : endpoint.startsWith('ws') ? 'ws' : 'http'
 })
-
-type _HttpServer = HttpServer
-type _WebSocketClient = WebSocketClient
-type _WebSocketServer = WebSocketServer
-
-namespace onebot {
-  export type Bot = OneBotBot
-  export type HttpServer = _HttpServer
-  export type WebSocketClient = _WebSocketClient
-  export type WebSocketServer = _WebSocketServer
-}
-
-export = onebot

@@ -24,14 +24,14 @@ export interface Config extends MarketProvider.Config {}
 export const name = 'configurator'
 
 export function apply(ctx: Context, config: Config = {}) {
-  ctx.with(['console'], () => {
+  ctx.with(['console'], (ctx) => {
     const filename = ctx.webui.config.devMode ? '../client/index.ts' : '../dist/index.js'
     ctx.webui.addEntry(resolve(__dirname, filename))
-    new BotProvider(ctx)
-    new MarketProvider(ctx, config)
-    new AdapterProvider(ctx)
-    new RegistryProvider(ctx)
-    new ServiceProvider(ctx)
+    ctx.plugin(BotProvider)
+    ctx.plugin(MarketProvider, config)
+    ctx.plugin(AdapterProvider)
+    ctx.plugin(RegistryProvider)
+    ctx.plugin(ServiceProvider)
   })
 }
 

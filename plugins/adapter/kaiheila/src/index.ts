@@ -9,7 +9,7 @@ declare module 'koishi' {
   }
 }
 
-export = Adapter.define('kaiheila', KaiheilaBot, {
+export default Adapter.define('kaiheila', KaiheilaBot, {
   'http': HttpServer,
   'ws': WebSocketClient,
 }, config => config.verifyToken ? 'http' : 'ws')

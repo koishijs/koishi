@@ -8,4 +8,4 @@ declare module 'koishi' {
   }
 }
 
-export = Adapter.define('discord', DiscordBot, WebSocketClient)
+export default Adapter.define('discord', DiscordBot, WebSocketClient)

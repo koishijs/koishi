@@ -16,6 +16,7 @@ export type Plugin<T = any> = Plugin.Function<T> | Plugin.Object<T>
 
 export namespace Plugin {
   export type Function<T = any> = (ctx: Context, options: T) => void
+  export type Constructor<T = any> = new (ctx: Context, options: T) => void
 
   export interface Meta {
     name?: string
@@ -26,7 +27,11 @@ export namespace Plugin {
     apply: Function<T>
   }
 
-  export type Config<T extends Plugin> = T extends Function<infer U> ? U : T extends Object<infer U> ? U : never
+  export type Config<T extends Plugin> =
+    | T extends Constructor<infer U> ? U
+    : T extends Function<infer U> ? U
+    : T extends Object<infer U> ? U
+    : never
 
   export interface State<T = any> extends Meta {
     id?: string
@@ -63,6 +68,14 @@ export namespace Plugin {
 
 function isBailed(value: any) {
   return value !== null && value !== false && value !== undefined
+}
+
+function isConstrucor(func: Function) {
+  // async function or arrow function
+  if (!func.prototype) return false
+  // generator function or malformed definition
+  if (func.prototype.constructor !== func) return false
+  return true
 }
 
 type Filter = (session: Session) => boolean
@@ -264,7 +277,11 @@ export class Context {
     })
 
     if (typeof plugin === 'function') {
-      plugin(ctx, options)
+      if (isConstrucor(plugin)) {
+        new plugin(ctx, options)
+      } else {
+        plugin(ctx, options)
+      }
     } else if (plugin && typeof plugin === 'object' && typeof plugin.apply === 'function') {
       ctx.state.name = plugin.name
       ctx.state.schema = plugin.schema

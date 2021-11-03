@@ -8,4 +8,4 @@ declare module 'koishi' {
   }
 }
 
-export = Adapter.define('telegram', TelegramBot, HttpServer)
+export default Adapter.define('telegram', TelegramBot, HttpServer)

@@ -49,12 +49,12 @@ export const name = 'status'
 export function apply(ctx: Context, config: Config = {}) {
   config = { ...defaultConfig, ...config }
 
-  ctx.with(['console'], () => {
+  ctx.with(['console'], (ctx) => {
     const filename = ctx.webui.config.devMode ? '../client/index.ts' : '../dist/index.js'
     ctx.webui.addEntry(resolve(__dirname, filename))
-    new LogProvider(ctx)
-    new MetaProvider(ctx, config)
-    new ProfileProvider(ctx, config)
-    new StatisticsProvider(ctx, config)
+    ctx.plugin(LogProvider)
+    ctx.plugin(MetaProvider, config)
+    ctx.plugin(ProfileProvider, config)
+    ctx.plugin(StatisticsProvider, config)
   })
 }

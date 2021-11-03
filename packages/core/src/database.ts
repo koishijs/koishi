@@ -49,8 +49,15 @@ export abstract class Database<T = any> {
   protected abstract stop(): Awaitable<void>
 
   constructor(public ctx: Context, public config?: T) {
-    ctx.on('connect', () => this.start())
-    ctx.on('disconnect', () => this.stop())
+    ctx.on('connect', async () => {
+      await this.start()
+      ctx.database = this
+    })
+
+    ctx.on('disconnect', async () => {
+      await this.stop()
+      ctx.database = null
+    })
   }
 
   getUser<T extends string, K extends T | User.Field>(platform: T, id: string, modifier?: Query.Modifier<K>): Promise<UserWithPlatform<T, T | K>>

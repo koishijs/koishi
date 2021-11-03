@@ -1,5 +1,5 @@
 import { Context, Schema, interpolate, Logger } from 'koishi'
-import onebot from '@koishijs/plugin-adapter-onebot'
+import onebot, { OneBotBot } from '@koishijs/plugin-adapter-onebot'
 import { spawn } from 'cross-spawn'
 import { ChildProcess } from 'child_process'
 import { resolve } from 'path'
@@ -35,7 +35,7 @@ const logLevelMap = {
   ERROR: 'error',
 }
 
-async function start(bot: onebot.Bot) {
+async function start(bot: OneBotBot) {
   // create working folder
   const cwd = resolve('accounts/' + bot.selfId)
   await mkdir(cwd, { recursive: true })
@@ -80,12 +80,12 @@ export interface Config {
 export function apply(ctx: Context, config: Config = {}) {
   logger.level = config.logLevel || 2
 
-  ctx.on('bot-connect', async (bot: onebot.Bot) => {
+  ctx.on('bot-connect', async (bot: OneBotBot) => {
     if (bot.adapter.platform !== 'onebot') return
     return start(bot)
   })
 
-  ctx.on('bot-dispose', async (bot: onebot.Bot) => {
+  ctx.on('bot-dispose', async (bot: OneBotBot) => {
     if (bot.adapter.platform !== 'onebot') return
     bot.process?.kill()
   })
