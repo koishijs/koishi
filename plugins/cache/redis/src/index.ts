@@ -3,7 +3,7 @@ import { Cache, Context, Schema, Logger, isNullable } from 'koishi'
 import { createClient } from 'redis'
 import { RedisClientOptions, RedisClientType } from 'redis/dist/lib/client'
 
-export default class RedisCache extends Cache {
+class RedisCache extends Cache {
   logger = new Logger('redis')
 
   pool = createPool<RedisClientType<{}, {}>>({
@@ -17,9 +17,14 @@ export default class RedisCache extends Cache {
     },
   })
 
-  constructor(ctx: Context, config: Config) {
-    super(ctx, config)
+  constructor(ctx: Context, private config: RedisCache.Config) {
+    super(ctx)
+    this.config = Schema.validate(config, RedisCache.schema)
   }
+
+  start() {}
+
+  stop() {}
 
   private getRedisKey(table: keyof Cache.Tables, key: string) {
     return `${this.config.prefix}${table}:${key}`
@@ -99,17 +104,17 @@ export default class RedisCache extends Cache {
   }
 }
 
-export const name = 'cache-redis'
+namespace RedisCache {
+  export const name = 'cache-redis'
 
-export interface Config extends RedisClientOptions<{}, {}> {
-  prefix?: string
+  export interface Config extends RedisClientOptions<{}, {}> {
+    prefix?: string
+  }
+
+  export const schema: Schema<Config> = Schema.object({
+    url: Schema.string('Redis URL').default('redis://localhost:6379'),
+    prefix: Schema.string('Redis 数据 Key 的前缀').default('koishi:'),
+  }, true)
 }
 
-export const schema: Schema<Config> = Schema.object({
-  url: Schema.string('Redis URL').default('redis://localhost:6379'),
-  prefix: Schema.string('Redis 数据 Key 的前缀').default('koishi:'),
-}, true)
-
-export function apply(ctx: Context, config?: Config) {
-  ctx.cache = new RedisCache(ctx, Schema.validate(config, schema))
-}
+export default RedisCache

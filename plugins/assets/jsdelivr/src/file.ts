@@ -9,13 +9,13 @@ declare module 'koishi' {
   }
 }
 
-export interface FileBase {
+export interface FileInfo {
   hash: string
   name: string
   size: number
 }
 
-export interface File extends FileBase {
+export interface File extends FileInfo {
   id: number
   branch: number
 }
@@ -33,7 +33,7 @@ Tables.extend('jsdelivr', {
 export interface Task extends File {}
 
 export class Task {
-  constructor(private assets: JsdelivrAssets, file: FileBase) {
+  constructor(private assets: JsdelivrAssets, file: FileInfo) {
     Object.assign(this, file)
   }
 

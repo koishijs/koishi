@@ -9,32 +9,24 @@ declare module 'koishi' {
   }
 }
 
-export interface Config extends S3ClientConfig {
-  bucket: string
-  pathPrefix?: string
-  publicUrl?: string
-}
-
-const credentialsSchema: Schema<Credentials> = Schema.object({
-  accessKeyId: Schema.string().required(),
-  secretAccessKey: Schema.string().required(),
-}, true)
-
-export const schema: Schema<Config> = Schema.object({
-  region: Schema.string().default('none'),
-  endpoint: Schema.string(),
-  credentials: credentialsSchema,
-  bucket: Schema.string().required(),
-  pathPrefix: Schema.string().default(''),
-  publicUrl: Schema.string(),
-}, true)
-
 class S3Assets extends Assets {
   private s3: S3Client
 
-  constructor(ctx: Context, public config: Config) {
+  constructor(ctx: Context, private config: S3Assets.Config) {
     super(ctx)
+    config.region ||= 'none'
+    config.pathPrefix ||= ''
+    if (config.endpoint && !config.publicUrl) {
+      // MinIO style public URL
+      config.publicUrl = `${config.endpoint}/${config.bucket}/${config.pathPrefix}`
+    }
     this.s3 = new S3Client(config)
+  }
+
+  start() {}
+
+  stop() {
+    this.s3.destroy()
   }
 
   private async listObjects(path: string) {
@@ -93,15 +85,28 @@ class S3Assets extends Assets {
   }
 }
 
-export const name = 'assets-s3'
+namespace S3Assets {
+  export const name = 'assets-s3'
 
-export function apply(ctx: Context, config: Config) {
-  // config.apiVersion ||= '2'
-  config.region ||= 'none'
-  config.pathPrefix ||= ''
-  if (config.endpoint && !config.publicUrl) {
-    // MinIO style public URL
-    config.publicUrl = `${config.endpoint}/${config.bucket}/${config.pathPrefix}`
+  export interface Config extends S3ClientConfig {
+    bucket: string
+    pathPrefix?: string
+    publicUrl?: string
   }
-  ctx.assets = new S3Assets(ctx, config)
+
+  const credentialsSchema: Schema<Credentials> = Schema.object({
+    accessKeyId: Schema.string().required(),
+    secretAccessKey: Schema.string().required(),
+  }, true)
+
+  export const schema: Schema<Config> = Schema.object({
+    region: Schema.string().default('none'),
+    endpoint: Schema.string(),
+    credentials: credentialsSchema,
+    bucket: Schema.string().required(),
+    pathPrefix: Schema.string().default(''),
+    publicUrl: Schema.string(),
+  }, true)
 }
+
+export default S3Assets

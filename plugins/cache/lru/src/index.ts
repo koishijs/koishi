@@ -1,12 +1,16 @@
-import { Cache, Context, Dict, Schema, isNullable } from 'koishi'
+import { Cache, Context, Dict, isNullable } from 'koishi'
 import LRU from 'lru-cache'
 
-export default class LruCache extends Cache {
+class LruCache extends Cache {
   #store: Dict<LRU<string, any>> = Object.create(null)
 
-  constructor(ctx: Context, private config: Config) {
+  constructor(ctx: Context, private config: LruCache.Config) {
     super(ctx)
   }
+
+  start() {}
+
+  stop() {}
 
   private prepare(table: keyof Cache.Tables) {
     if (this.#store[table]) return
@@ -41,12 +45,10 @@ export default class LruCache extends Cache {
   }
 }
 
-export const name = 'cache-lru'
+namespace LruCache {
+  export const name = 'cache-lru'
 
-export interface Config {}
-
-export const schema: Schema<Config> = Schema.object({})
-
-export function apply(ctx: Context, config?: Config) {
-  ctx.cache = new LruCache(ctx, config)
+  export interface Config {}
 }
+
+export default LruCache

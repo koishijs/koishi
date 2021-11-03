@@ -9,20 +9,6 @@ declare module 'koishi' {
   }
 }
 
-export const schema = Schema.object({
-  root: Schema.string('本地存储资源文件的绝对路径。').required(),
-  path: Schema.string('静态图片暴露在服务器的路径。').default('/assets'),
-  selfUrl: Schema.string('Koishi 服务暴露在公网的地址。缺省时将使用全局配置。'),
-  secret: Schema.string('用于验证上传者的密钥，配合 assets-remote 使用。')
-})
-
-interface Config {
-  path?: string
-  root?: string
-  selfUrl?: string
-  secret?: string
-}
-
 class LocalAssets extends Assets {
   private _promise: Promise<void>
   private _stats: Assets.Stats = {
@@ -30,7 +16,7 @@ class LocalAssets extends Assets {
     assetSize: 0,
   }
 
-  constructor(ctx: Context, public config: Config) {
+  constructor(ctx: Context, private config: LocalAssets.Config) {
     super(ctx)
 
     config.path = sanitize(config.path || '/assets')
@@ -75,6 +61,10 @@ class LocalAssets extends Assets {
     this._promise = this.init()
   }
 
+  start() {}
+
+  stop() {}
+
   async init() {
     const root = this.config.root
     await fs.mkdir(root, { recursive: true })
@@ -115,8 +105,22 @@ class LocalAssets extends Assets {
   }
 }
 
-export const name = 'assets-local'
+namespace LocalAssets {
+  export const name = 'assets-local'
 
-export function apply(ctx: Context, config: Config) {
-  ctx.assets = new LocalAssets(ctx, config)
+  export interface Config {
+    path?: string
+    root?: string
+    secret?: string
+    selfUrl?: string
+  }
+
+  export const schema = Schema.object({
+    root: Schema.string('本地存储资源文件的绝对路径。').required(),
+    path: Schema.string('静态图片暴露在服务器的路径。').default('/assets'),
+    selfUrl: Schema.string('Koishi 服务暴露在公网的地址。缺省时将使用全局配置。'),
+    secret: Schema.string('用于验证上传者的密钥，配合 assets-remote 使用。')
+  })
 }
+
+export default LocalAssets

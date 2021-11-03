@@ -1,4 +1,4 @@
-import { Adapter, App, Context, Logger, noop, version, Dict, WebSocketLayer, Awaitable } from 'koishi'
+import { Adapter, App, Context, Logger, noop, version, Dict, WebSocketLayer } from 'koishi'
 import { resolve, extname } from 'path'
 import { promises as fs, Stats, createReadStream } from 'fs'
 import WebSocket from 'ws'

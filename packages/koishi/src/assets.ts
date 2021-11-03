@@ -1,16 +1,18 @@
-import { Context } from '@koishijs/core'
+import { Context, Service } from '@koishijs/core'
 import { segment } from '@koishijs/utils'
 
 const PROTOCOL_BASE64 = 'base64://'
 
-export abstract class Assets<T = any> {
+export abstract class Assets extends Service {
   static types = ['image', 'audio', 'video']
   protected types: readonly string[] = Assets.types
 
   abstract upload(url: string, file: string): Promise<string>
   abstract stats(): Promise<Assets.Stats>
 
-  constructor(public ctx: Context, public config?: T) {}
+  constructor(ctx: Context) {
+    super(ctx, 'assets')
+  }
 
   public transform(content: string) {
     return segment.transformAsync(content, Object.fromEntries(this.types.map((type) => {

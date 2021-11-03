@@ -40,24 +40,30 @@ export namespace Channel {
   export type Observed<K extends Field = Field> = utils.Observed<Pick<Channel, K>, Promise<void>>
 }
 
-export interface Database extends Query.Methods {}
-
-type UserWithPlatform<T extends string, K extends string> = Pick<User, K & User.Field> & Record<T, string>
-
-export abstract class Database<T = any> {
+export abstract class Service {
   protected abstract start(): Awaitable<void>
   protected abstract stop(): Awaitable<void>
 
-  constructor(public ctx: Context, public config?: T) {
+  constructor(protected ctx: Context, key: string) {
     ctx.on('connect', async () => {
       await this.start()
-      ctx.database = this
+      ctx[key] = this
     })
 
     ctx.on('disconnect', async () => {
       await this.stop()
-      ctx.database = null
+      ctx[key] = null
     })
+  }
+}
+
+export interface Database extends Query.Methods {}
+
+type UserWithPlatform<T extends string, K extends string> = Pick<User, K & User.Field> & Record<T, string>
+
+export abstract class Database extends Service {
+  constructor(ctx: Context) {
+    super(ctx, 'database')
   }
 
   getUser<T extends string, K extends T | User.Field>(platform: T, id: string, modifier?: Query.Modifier<K>): Promise<UserWithPlatform<T, T | K>>

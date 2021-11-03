@@ -8,23 +8,17 @@ declare module 'koishi' {
   }
 }
 
-export const schema = Schema.object({
-  endpoint: Schema.string('远程服务器地址。').required(),
-  secret: Schema.string('服务器设置的密钥，配合 assets-local 使用。')
-})
-
-interface Config extends Quester.Config {
-  endpoint: string
-  secret?: string
-}
-
 class RemoteAssets extends Assets {
   http: Quester
 
-  constructor(ctx: Context, public config: Config) {
+  constructor(ctx: Context, private config: RemoteAssets.Config) {
     super(ctx)
     this.http = ctx.http.extend(config)
   }
+
+  start() {}
+
+  stop() {}
 
   async upload(url: string, file: string) {
     const { secret } = this.config
@@ -42,8 +36,18 @@ class RemoteAssets extends Assets {
   }
 }
 
-export const name = 'assets-remote'
+namespace RemoteAssets {
+  export const name = 'assets-remote'
+  
+  export interface Config extends Quester.Config {
+    endpoint: string
+    secret?: string
+  }
 
-export function apply(ctx: Context, config: Config) {
-  ctx.assets = new RemoteAssets(ctx, config)
+  export const schema = Schema.object({
+    endpoint: Schema.string('远程服务器地址。').required(),
+    secret: Schema.string('服务器设置的密钥，配合 assets-local 使用。')
+  })
 }
+
+export default RemoteAssets

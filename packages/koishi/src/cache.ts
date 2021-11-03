@@ -1,10 +1,12 @@
 import { Dict } from '@koishijs/utils'
-import { Context } from '@koishijs/core'
+import { Context, Service } from '@koishijs/core'
 
-export abstract class Cache<T = any> {
+export abstract class Cache extends Service {
   private static kConfig = Symbol('cache.config')
 
-  constructor(public ctx: Context, public config?: T) {}
+  constructor(ctx: Context) {
+    super(ctx, 'cache')
+  }
 
   abstract clear<T extends keyof Cache.Tables>(table: T): Promise<void>
   abstract get<T extends keyof Cache.Tables>(table: T, key: string): Promise<Cache.Tables[T]>

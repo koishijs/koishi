@@ -3,7 +3,7 @@ import Git, { SimpleGit, SimpleGitOptions, ResetMode } from 'simple-git'
 import { access, mkdir, rename, writeFile } from 'fs/promises'
 import { join, resolve } from 'path'
 import { createHash } from 'crypto'
-import { File, Task, FileBase } from './file'
+import { File, Task, FileInfo } from './file'
 import { fromBuffer } from 'file-type'
 
 declare module 'koishi' {
@@ -21,59 +21,23 @@ function toBranchName(id: number) {
   return id.toString(36).padStart(8)
 }
 
-export interface GitHubConfig {
-  user: string
-  repo: string
-  token: string
-}
-
-export interface Config {
-  git: Partial<SimpleGitOptions>
-  github: GitHubConfig
-  tempDir?: string
-  flushInterval?: number
-  maxBranchSize?: number
-}
-
-const githubSchema: Schema<GitHubConfig> = Schema.object({
-  user: Schema.string().required(),
-  repo: Schema.string().required(),
-  token: Schema.string().required(),
-})
-
-export const schema: Schema<Config> = Schema.object({
-  github: githubSchema,
-  git: Schema.object({
-    baseDir: Schema.string().required(),
-  }, true),
-  tempDir: Schema.string().default(resolve(__dirname, '../.temp')),
-  flushInterval: Schema.number().default(Time.second * 3),
-  maxBranchSize: Schema.number().default(50 * 1024 * 1024),
-})
-
 const logger = new Logger('jsdelivr')
 
-export default class JsdelivrAssets extends Assets {
+class JsdelivrAssets extends Assets {
   git: SimpleGit
   taskQueue: Task[] = []
   taskMap = new Map<string, Task>()
   isActive = false
 
-  constructor(ctx: Context, public config: Config) {
+  constructor(ctx: Context, public config: JsdelivrAssets.Config) {
     super(ctx)
 
-    ctx.on('connect', async () => {
-      await this.initRepo()
-      this.isActive = true
-      this.start()
-    })
-
-    ctx.on('disconnect', () => {
-      this.isActive = false
-    })
+    this.config = Schema.validate(config, JsdelivrAssets.schema)
   }
 
   async start() {
+    await this.initRepo()
+    this.isActive = true
     while (this.isActive) {
       try {
         await this.mainLoop()
@@ -81,6 +45,10 @@ export default class JsdelivrAssets extends Assets {
         logger.warn(`Loop failed: ${e.toString()}`)
       }
     }
+  }
+
+  stop() {
+    this.isActive = false
   }
 
   private async initRepo() {
@@ -145,7 +113,7 @@ export default class JsdelivrAssets extends Assets {
     return res
   }
 
-  private async createTask(file: FileBase) {
+  private async createTask(file: FileInfo) {
     return new Promise<string>((resolve, reject) => {
       let task = this.taskMap.get(file.hash)
       if (!task) {
@@ -242,9 +210,38 @@ export default class JsdelivrAssets extends Assets {
   }
 }
 
-export const name = 'assets-jsdelivr'
+namespace JsdelivrAssets {
+  export const name = 'assets-jsdelivr'
 
-export function apply(ctx: Context, config: Config) {
-  config = Schema.validate(config, schema)
-  ctx.assets = new JsdelivrAssets(ctx, config)
+  export interface GitHubConfig {
+    user: string
+    repo: string
+    token: string
+  }
+
+  export interface Config {
+    git: Partial<SimpleGitOptions>
+    github: GitHubConfig
+    tempDir?: string
+    flushInterval?: number
+    maxBranchSize?: number
+  }
+
+  const githubSchema: Schema<GitHubConfig> = Schema.object({
+    user: Schema.string().required(),
+    repo: Schema.string().required(),
+    token: Schema.string().required(),
+  })
+
+  export const schema: Schema<Config> = Schema.object({
+    github: githubSchema,
+    git: Schema.object({
+      baseDir: Schema.string().required(),
+    }, true),
+    tempDir: Schema.string().default(resolve(__dirname, '../.temp')),
+    flushInterval: Schema.number().default(Time.second * 3),
+    maxBranchSize: Schema.number().default(50 * 1024 * 1024),
+  })
 }
+
+export default JsdelivrAssets
