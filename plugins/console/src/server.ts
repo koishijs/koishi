@@ -1,4 +1,4 @@
-import { Adapter, App, Context, Logger, noop, version, Dict, WebSocketLayer } from 'koishi'
+import { App, Context, Logger, noop, version, Dict, WebSocketLayer } from 'koishi'
 import { resolve, extname } from 'path'
 import { promises as fs, Stats, createReadStream } from 'fs'
 import WebSocket from 'ws'
@@ -32,9 +32,9 @@ export class SocketHandle {
   readonly app: App
   readonly id: string
 
-  constructor(webui: StatusServer, public socket: WebSocket) {
-    this.app = webui.ctx.app
-    webui.handles[this.id = v4()] = this
+  constructor(console: Console, public socket: WebSocket) {
+    this.app = console.ctx.app
+    console.handles[this.id = v4()] = this
   }
 
   send(type: string, body?: any) {
@@ -49,40 +49,40 @@ export class SocketHandle {
 export abstract class DataSource<T = any> {
   abstract get(forced?: boolean): Promise<T>
 
-  constructor(protected ctx: Context, protected type: string) {
-    ctx.webui.sources[type] = this
+  constructor(protected ctx: Context, protected type: keyof Console.Sources) {
+    ctx.console.sources[type] = this as never
     ctx.on('disconnect', () => {
-      delete ctx.webui.sources[type]
+      delete ctx.console.sources[type]
     })
   }
 
   async broadcast(value?: T) {
-    this.ctx.webui.broadcast('data', {
+    this.ctx.console.broadcast('data', {
       key: this.type,
       value: value || await this.get(true),
     })
   }
 }
 
-export namespace DataSource {
-  export interface Library {}
+export namespace Console {
+  export interface Sources {}
 }
 
-export class StatusServer extends Adapter {
-  readonly sources: DataSource.Library = {}
+export type Listener = (this: SocketHandle, payload: any) => Promise<void>
+
+export class Console {
+  readonly sources: Console.Sources = {}
   readonly global: ClientConfig
   readonly entries: Dict<string> = {}
   readonly handles: Dict<SocketHandle> = {}
   readonly platform = 'status'
+  readonly listeners: Dict<Listener> = {}
 
   private vite: ViteDevServer
   private readonly server: WebSocketLayer
   private readonly [Context.current]: Context
 
-  constructor(ctx: Context, public config: Config) {
-    super(ctx.app, config)
-
-    this.ctx.bots.adapters.status = this
+  constructor(public ctx: Context, public config: Config) {
     const { apiPath, uiPath, devMode, selfUrl } = config
     const endpoint = selfUrl + apiPath
     this.global = { uiPath, endpoint, devMode, extensions: [], database: false, version }
@@ -97,6 +97,9 @@ export class StatusServer extends Adapter {
     ctx.on('service/database', () => {
       this.global.database = !!ctx.database
     })
+
+    ctx.on('connect', () => this.start())
+    ctx.on('disconnect', () => this.stop())
   }
 
   broadcast(type: string, body: any) {
@@ -126,8 +129,8 @@ export class StatusServer extends Adapter {
     })
   }
 
-  addListener(event: string, listener: StatusServer.Listener) {
-    StatusServer.listeners[event] = listener
+  addListener(event: string, listener: Listener) {
+    this.listeners[event] = listener
   }
 
   connect() {}
@@ -158,7 +161,7 @@ export class StatusServer extends Adapter {
 
     socket.on('message', async (data) => {
       const { type, body } = JSON.parse(data.toString())
-      const method = StatusServer.listeners[type]
+      const method = this.listeners[type]
       if (method) {
         await method.call(channel, body)
       } else {
@@ -233,9 +236,4 @@ export class StatusServer extends Adapter {
 
     this.ctx.on('disconnect', () => this.vite.close())
   }
-}
-
-export namespace StatusServer {
-  export type Listener = (this: SocketHandle, payload: any) => Promise<void>
-  export const listeners: Dict<Listener> = {}
 }

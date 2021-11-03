@@ -70,16 +70,16 @@ export function apply(ctx: Context, options: Config = {}) {
   })
 
   ctx.with(['console'], (ctx) => {
-    const { devMode, apiPath } = ctx.webui.config
+    const { devMode, apiPath } = ctx.console.config
     const filename = devMode ? '../client/index.ts' : '../dist/index.js'
     const whitelist = [...builtinWhitelist, ...options.whitelist || []]
 
-    ctx.webui.global.whitelist = whitelist
-    ctx.webui.global.maxMessages = options.maxMessages
-    ctx.webui.addEntry(resolve(__dirname, filename))
+    ctx.console.global.whitelist = whitelist
+    ctx.console.global.maxMessages = options.maxMessages
+    ctx.console.addEntry(resolve(__dirname, filename))
 
     ctx.on('connect', async () => {
-      ctx.webui.addListener('chat', async function ({ content, platform, selfId, channelId, guildId }) {
+      ctx.console.addListener('chat', async function ({ content, platform, selfId, channelId, guildId }) {
         if (await this.validate()) return this.send('unauthorized')
         if (ctx.assets) content = await ctx.assets.transform(content)
         ctx.bots.get(`${platform}:${selfId}`)?.sendMessage(channelId, content, guildId)
@@ -87,7 +87,7 @@ export function apply(ctx: Context, options: Config = {}) {
     })
 
     ctx.on('chat/receive', async (message) => {
-      Object.values(ctx.webui.handles).forEach((handle) => {
+      Object.values(ctx.console.handles).forEach((handle) => {
         handle.socket.send(JSON.stringify({ type: 'chat', body: message }))
       })
     })

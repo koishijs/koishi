@@ -2,7 +2,7 @@
 
 import { ref, Component } from 'vue'
 import { createWebHistory, createRouter } from 'vue-router'
-import type { DataSource } from '@koishijs/plugin-console'
+import type { DataSource, Console } from '@koishijs/plugin-console'
 
 export const router = createRouter({
   history: createWebHistory(KOISHI_CONFIG.uiPath),
@@ -14,7 +14,7 @@ declare module 'vue-router' {
     icon?: string
     order?: number
     hidden?: boolean
-    require?: (keyof DataSource.Library)[]
+    require?: (keyof Console.Sources)[]
   }
 }
 
@@ -25,7 +25,7 @@ export function addView(name: string, component: Component) {
 }
 
 export const store = ref<{
-  [K in keyof DataSource.Library]?: DataSource.Library[K] extends DataSource<infer T> ? T : never
+  [K in keyof Console.Sources]?: Console.Sources[K] extends DataSource<infer T> ? T : never
 }>({})
 
 const socket = ref<WebSocket>(null)

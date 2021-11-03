@@ -596,6 +596,23 @@ export namespace Context {
   service('bots')
 }
 
+export abstract class Service {
+  protected abstract start(): Awaitable<void>
+  protected abstract stop(): Awaitable<void>
+
+  constructor(protected ctx: Context, key: keyof Context.Services) {
+    ctx.on('connect', async () => {
+      await this.start()
+      ctx[key] = this as never
+    })
+
+    ctx.on('disconnect', async () => {
+      await this.stop()
+      ctx[key] = null
+    })
+  }
+}
+
 type FlattenEvents<T> = {
   [K in keyof T & string]: K | `${K}/${FlattenEvents<T[K]>}`
 }[keyof T & string]

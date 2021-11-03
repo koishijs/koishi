@@ -1,35 +1,17 @@
-import { Context, Tables, Awaitable, Schema } from 'koishi'
-import { StatusServer, SocketHandle, Config } from './server'
+import { Context, Awaitable, Schema } from 'koishi'
+import { Console, SocketHandle, Config } from './server'
 
 export * from './server'
-
-export type Activity = Record<number, number>
 
 declare module 'koishi' {
   namespace Context {
     interface Services {
-      webui: StatusServer
+      console: Console
     }
-  }
-
-  interface Session {
-    _sendType?: 'command' | 'dialogue'
   }
 
   interface EventMap {
     'status/validate'(handle: SocketHandle): Awaitable<boolean>
-  }
-
-  interface User {
-    lastCall: Date
-    password: string
-    token: string
-    expire: number
-  }
-
-  interface Channel {
-    name: string
-    activity: Activity
   }
 
   interface Modules {
@@ -37,19 +19,7 @@ declare module 'koishi' {
   }
 }
 
-Context.service('webui')
-
-Tables.extend('user', {
-  lastCall: 'timestamp',
-  password: 'string(63)',
-  token: 'string(63)',
-  expire: 'unsigned(20)',
-})
-
-Tables.extend('channel', {
-  name: 'string(50)',
-  activity: 'json',
-})
+Context.service('console')
 
 const defaultConfig: Config = {
   apiPath: '/status',
@@ -70,5 +40,5 @@ export const schema: Schema<Config> = Schema.object({
 export function apply(ctx: Context, config: Config = {}) {
   config = { ...defaultConfig, ...config }
 
-  ctx.webui = new StatusServer(ctx, config)
+  ctx.console = new Console(ctx, config)
 }

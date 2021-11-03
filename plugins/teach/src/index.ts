@@ -41,11 +41,11 @@ declare module 'koishi' {
 }
 
 declare module '@koishijs/plugin-status' {
-  namespace Meta {
+  namespace MetaProvider {
     interface Payload extends Dialogue.Stats {}
   }
 
-  namespace Statistics {
+  namespace StatisticsProvider {
     interface Payload {
       questions: QuestionData[]
     }
@@ -238,7 +238,7 @@ export function apply(ctx: Context, config: Config = {}) {
   ctx.plugin(writer, config)
 
   ctx.with(['console'], (ctx) => {
-    const { stats, meta } = ctx.webui.sources
+    const { stats, meta } = ctx.console.sources
 
     ctx.on('dialogue/before-send', ({ session, dialogue }) => {
       session._sendType = 'dialogue'
@@ -267,7 +267,7 @@ export function apply(ctx: Context, config: Config = {}) {
       payload.questions = Object.values(questionMap)
     })
 
-    const filename = ctx.webui.config.devMode ? '../client/index.ts' : '../dist/index.js'
-    ctx.webui.addEntry(resolve(__dirname, filename))
+    const filename = ctx.console.config.devMode ? '../client/index.ts' : '../dist/index.js'
+    ctx.console.addEntry(resolve(__dirname, filename))
   })
 }

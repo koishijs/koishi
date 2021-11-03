@@ -87,7 +87,7 @@ const { resolve } = require(path)
 
 module.exports = (ctx) => {
   ctx.with('koishi-plugin-webui', () => {
-    ctx.webui.addEntry(resolve(__dirname, 'client-entry.js'))
+    ctx.console.addEntry(resolve(__dirname, 'client-entry.js'))
   })
 }
 ```
@@ -108,7 +108,7 @@ module.exports = (ctx) => {
   // 即使使用者没有安装 koishi-plugin-webui，你的插件也不会因此而报错
   ctx.with('koishi-plugin-webui', () => {
     // 生产环境和开发环境使用不同的入口文件
-    ctx.webui.addEntry(ctx.webui.config.devMode
+    ctx.console.addEntry(ctx.console.config.devMode
       ? resolve(__dirname, '../client/index.ts')
       : resolve(__dirname, '../dist/index.js'))
   })

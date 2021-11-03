@@ -9,8 +9,8 @@ declare module 'koishi' {
 }
 
 declare module '@koishijs/plugin-console' {
-  namespace DataSource {
-    interface Library {
+  namespace Console {
+    interface Sources {
       bots: BotProvider
     }
   }

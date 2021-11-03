@@ -1,5 +1,23 @@
-import { Argv, Assets, Context, Dict, noop } from 'koishi'
+import { Argv, Assets, Context, Dict, noop, Tables } from 'koishi'
 import { DataSource } from '@koishijs/plugin-console'
+
+declare module 'koishi' {
+  interface User {
+    lastCall: Date
+  }
+}
+
+declare module '@koishijs/plugin-console' {
+  namespace Console {
+    interface Sources {
+      meta: MetaProvider
+    }
+  }
+}
+
+Tables.extend('user', {
+  lastCall: 'timestamp',
+})
 
 export class MetaProvider extends DataSource<MetaProvider.Payload> {
   timestamp = 0

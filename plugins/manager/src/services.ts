@@ -2,8 +2,8 @@ import { Context } from 'koishi'
 import { DataSource } from '@koishijs/plugin-console'
 
 declare module '@koishijs/plugin-console' {
-  namespace DataSource {
-    interface Library {
+  namespace Console {
+    interface Sources {
       services: ServiceProvider
     }
   }

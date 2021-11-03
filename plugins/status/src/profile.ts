@@ -3,6 +3,14 @@ import { cpus } from 'os'
 import { mem } from 'systeminformation'
 import { DataSource } from '@koishijs/plugin-console'
 
+declare module '@koishijs/plugin-console' {
+  namespace Console {
+    interface Sources {
+      profile: ProfileProvider
+    }
+  }
+}
+
 export type LoadRate = [app: number, total: number]
 
 let usage = getCpuUsage()

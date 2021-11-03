@@ -7,8 +7,8 @@ import { DataSource } from '@koishijs/plugin-console'
 import { throttle } from 'throttle-debounce'
 
 declare module '@koishijs/plugin-console' {
-  namespace DataSource {
-    interface Library {
+  namespace Console {
+    interface Sources {
       market: MarketProvider
     }
   }
@@ -121,7 +121,7 @@ export class MarketProvider extends DataSource<MarketProvider.Data[]> {
     const oldLength = Object.keys(Adapter.library).length
     const { schema } = require(path)
     const newLength = Object.keys(Adapter.library).length
-    if (newLength > oldLength) this.ctx.webui.sources.registry.update()
+    if (newLength > oldLength) this.ctx.console.sources.registry.update()
 
     const devDeps = this.getPluginDeps(data.devDependencies)
     const peerDeps = this.getPluginDeps(data.peerDependencies)

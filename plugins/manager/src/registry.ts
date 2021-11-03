@@ -4,8 +4,8 @@ import { DataSource } from '@koishijs/plugin-console'
 import {} from '@koishijs/cli'
 
 declare module '@koishijs/plugin-console' {
-  namespace DataSource {
-    interface Library {
+  namespace Console {
+    interface Sources {
       registry: RegistryProvider
     }
   }

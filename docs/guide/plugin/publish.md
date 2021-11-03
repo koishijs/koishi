@@ -13,10 +13,10 @@ module.exports = (ctx) => {
   // 你在这里编写了与 webui 无关的代码，它们才是构成 teach 插件的主体
   ctx.command('teach').action(callback)
 
-  // 让我们假设 webui 插件暴露了一个 ctx.webui 接口
+  // 让我们假设 webui 插件暴露了一个 ctx.console 接口
   // 你通过这个接口得以访问 webui 插件，从而实现耦合功能
-  if (ctx.webui) {
-    ctx.webui.addEntry('/path/to/teach/extension')
+  if (ctx.console) {
+    ctx.console.addEntry('/path/to/teach/extension')
   }
 }
 ```
@@ -34,7 +34,7 @@ module.exports = (ctx) => {
   // 当列表中的所有插件都被注册时，回调函数所代表的插件即被注册
   // 当列表中的任意一个插件被卸载时，回调函数所代表的插件即被卸载
   ctx.with(['webui'], (ctx) => {
-    ctx.webui.addEntry('/path/to/teach/extension')
+    ctx.console.addEntry('/path/to/teach/extension')
   })
 }
 ```

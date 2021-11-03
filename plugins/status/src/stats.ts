@@ -2,6 +2,20 @@ import { Context, Channel, noop, Session, Bot, Time, Dict } from 'koishi'
 import { DataSource } from '@koishijs/plugin-console'
 import {} from '@koishijs/cli'
 
+declare module 'koishi' {
+  interface Session {
+    _sendType?: 'command' | 'dialogue'
+  }
+}
+
+declare module '@koishijs/plugin-console' {
+  namespace Console {
+    interface Sources {
+      stats: StatisticsProvider
+    }
+  }
+}
+
 export interface Synchronizer {
   groups: Dict<number>
   daily: Record<Synchronizer.DailyField, Dict<number>>
@@ -63,8 +77,8 @@ interface GroupData {
 
 const send = Session.prototype.send
 Session.prototype.send = function (this: Session, ...args) {
-  if (args[0] && this._sendType && this.app.webui) {
-    this.app.webui.sources.stats.sync.hourly[this._sendType] += 1
+  if (args[0] && this._sendType && this.app.console) {
+    this.app.console.sources.stats.sync.hourly[this._sendType] += 1
   }
   return send.apply(this, args)
 }

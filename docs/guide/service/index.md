@@ -37,8 +37,8 @@ Koishi 规范化了一系列内置服务。它们可以分为两种类型：
 Context.service('webui')
 
 // 假如你在某个上下文设置了这个值，其他的上下文也将拥有此属性
-app.group().webui = new WebUI()
-app.private().webui instanceof WebUI // true
+app.group().console = new WebUI()
+app.private().console instanceof WebUI // true
 ```
 
 这个静态方法不仅可以在全体上下文中共享某一个对象，还可以定义具有热重载性质的接口。还记得上面的 `webui.addEntry()` 方法吗？如果我希望当 teach 插件被卸载时，上面注册的 entry 也同时被移除，可以做到吗？这就要用到特殊的 `Context.current` 属性了，它只在被 `Context.service()` 声明的类中可用：

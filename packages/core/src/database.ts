@@ -1,7 +1,7 @@
 import * as utils from '@koishijs/utils'
-import { MaybeArray, Dict, Get, Awaitable } from '@koishijs/utils'
+import { MaybeArray, Dict, Get } from '@koishijs/utils'
 import { Query } from './orm'
-import { Context } from './context'
+import { Context, Service } from './context'
 
 export interface User {
   id: string
@@ -38,23 +38,6 @@ export namespace Channel {
   export type Field = keyof Channel
   export const fields: Field[] = []
   export type Observed<K extends Field = Field> = utils.Observed<Pick<Channel, K>, Promise<void>>
-}
-
-export abstract class Service {
-  protected abstract start(): Awaitable<void>
-  protected abstract stop(): Awaitable<void>
-
-  constructor(protected ctx: Context, key: string) {
-    ctx.on('connect', async () => {
-      await this.start()
-      ctx[key] = this
-    })
-
-    ctx.on('disconnect', async () => {
-      await this.stop()
-      ctx[key] = null
-    })
-  }
 }
 
 export interface Database extends Query.Methods {}
