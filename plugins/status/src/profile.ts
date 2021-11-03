@@ -43,11 +43,19 @@ function updateCpuUsage() {
   usage = newUsage
 }
 
-class Profile implements DataSource<Profile.Payload> {
-  cached: Profile.Payload
+export class ProfileProvider extends DataSource<ProfileProvider.Payload> {
+  cached: ProfileProvider.Payload
 
-  constructor(private ctx: Context, config: Profile.Config) {
-    this.apply(ctx, config)
+  constructor(ctx: Context, private config: ProfileProvider.Config) {
+    super(ctx, 'profile')
+
+    const { tickInterval } = config
+    ctx.on('connect', () => {
+      ctx.setInterval(() => {
+        updateCpuUsage()
+        this.broadcast()
+      }, tickInterval)
+    })
   }
 
   async get(forced = false) {
@@ -56,23 +64,9 @@ class Profile implements DataSource<Profile.Payload> {
     const cpu: LoadRate = [appRate, usedRate]
     return { memory, cpu }
   }
-
-  private apply(ctx: Context, config: Profile.Config = {}) {
-    const { tickInterval } = config
-
-    ctx.on('connect', async () => {
-      ctx.setInterval(async () => {
-        updateCpuUsage()
-        this.ctx.webui.broadcast('data', {
-          key: 'profile',
-          value: await this.get(true),
-        })
-      }, tickInterval)
-    })
-  }
 }
 
-namespace Profile {
+export namespace ProfileProvider {
   export interface Config {
     tickInterval?: number
   }
@@ -82,5 +76,3 @@ namespace Profile {
     cpu: LoadRate
   }
 }
-
-export default Profile

@@ -17,7 +17,6 @@ declare module 'koishi' {
   }
 
   interface EventMap {
-    'status/tick'(): void
     'status/validate'(handle: SocketHandle): Awaitable<boolean>
   }
 

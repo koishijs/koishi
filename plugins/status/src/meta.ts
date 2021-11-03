@@ -1,12 +1,14 @@
 import { Argv, Assets, Context, Dict, noop } from 'koishi'
 import { DataSource } from '@koishijs/plugin-console'
 
-class Meta implements DataSource<Meta.Payload> {
+export class MetaProvider extends DataSource<MetaProvider.Payload> {
   timestamp = 0
-  cached: Promise<Meta.Payload>
-  callbacks: Meta.Extension[] = []
+  cached: Promise<MetaProvider.Payload>
+  callbacks: MetaProvider.Extension[] = []
 
-  constructor(private ctx: Context, public config: Meta.Config) {
+  constructor(ctx: Context, private config: MetaProvider.Config) {
+    super(ctx, 'meta')
+
     this.extend(async () => ctx.assets?.stats())
     this.extend(async () => ctx.database?.stats())
 
@@ -24,13 +26,13 @@ class Meta implements DataSource<Meta.Payload> {
       .then(data => Object.assign({}, ...data))
   }
 
-  extend(callback: Meta.Extension) {
+  extend(callback: MetaProvider.Extension) {
     this.timestamp = 0
     this.callbacks.push(callback)
   }
 }
 
-namespace Meta {
+export namespace MetaProvider {
   export interface Config {
     metaInterval?: number
   }
@@ -50,5 +52,3 @@ namespace Meta {
 
   export type Extension = () => Promise<Partial<Payload>>
 }
-
-export default Meta

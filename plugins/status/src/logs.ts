@@ -1,20 +1,17 @@
 import { Context } from 'koishi'
 import { DataSource } from '@koishijs/plugin-console'
+import {} from '@koishijs/cli'
 
-class Logs implements DataSource<string> {
-  constructor(private ctx: Context, private config: Logs.Config) {
-    this.ctx.on('logger/data', (text) => {
-      this.ctx.webui.broadcast('logs/data', text)
+export class LogProvider extends DataSource<string> {
+  constructor(ctx: Context) {
+    super(ctx, 'logs')
+
+    ctx.on('logger/data', (text) => {
+      ctx.webui.broadcast('logs/data', text)
     })
   }
 
-  get() {
+  async get() {
     return this.ctx.serial('logger/read')
   }
 }
-
-namespace Logs {
-  export interface Config {}
-}
-
-export default Logs

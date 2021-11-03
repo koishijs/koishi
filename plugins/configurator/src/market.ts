@@ -9,7 +9,7 @@ import { throttle } from 'throttle-debounce'
 declare module '@koishijs/plugin-console' {
   namespace DataSource {
     interface Library {
-      market: MarketSource
+      market: MarketProvider
     }
   }
 }
@@ -69,43 +69,50 @@ const installArgs: Record<Manager, string[]> = {
   npm: ['install', '--loglevel', 'error'],
 }
 
-export class MarketSource implements DataSource<MarketSource.Data[]> {
-  dataCache: Dict<MarketSource.Data> = {}
-  localCache: Dict<Promise<MarketSource.Local>> = {}
-  callbacks: ((data: MarketSource.Data[]) => void)[] = []
+export class MarketProvider extends DataSource<MarketProvider.Data[]> {
+  dataCache: Dict<MarketProvider.Data> = {}
+  localCache: Dict<Promise<MarketProvider.Local>> = {}
+  callbacks: ((data: MarketProvider.Data[]) => void)[] = []
   flushData: throttle<() => void>
 
-  constructor(private ctx: Context, public config: MarketSource.Config) {
-    const logger = ctx.logger('status')
+  constructor(ctx: Context, private config: MarketProvider.Config) {
+    super(ctx, 'market')
+    
+    ctx.on('connect', () => this.start())
+  }
 
-    ctx.on('connect', () => {
-      this.start().catch(logger.warn)
-      this.flushData = throttle(100, () => this.broadcast())
+  start() {
+    const logger = this.ctx.logger('status')
+    this.prepare().catch(logger.warn)
+    this.flushData = throttle(100, () => this.broadcast())
 
-      ctx.on('plugin-added', async (plugin) => {
-        const entry = Object.entries(require.cache).find(([, { exports }]) => exports === plugin)
-        if (!entry) return
-        const state = this.ctx.app.registry.get(plugin)
-        const local = await this.localCache[entry[0]]
-        local.id = state.id
-        this.broadcast()
-      })
-
-      ctx.on('plugin-removed', async (plugin) => {
-        const entry = Object.entries(require.cache).find(([, { exports }]) => exports === plugin)
-        if (!entry) return
-        const local = await this.localCache[entry[0]]
-        delete local.id
-        this.broadcast()
-      })
+    this.ctx.on('plugin-added', async (plugin) => {
+      const entry = Object.entries(require.cache).find(([, { exports }]) => exports === plugin)
+      if (!entry) return
+      const state = this.ctx.app.registry.get(plugin)
+      const local = await this.localCache[entry[0]]
+      local.id = state.id
+      this.broadcast()
     })
+
+    this.ctx.on('plugin-removed', async (plugin) => {
+      const entry = Object.entries(require.cache).find(([, { exports }]) => exports === plugin)
+      if (!entry) return
+      const local = await this.localCache[entry[0]]
+      delete local.id
+      this.broadcast()
+    })
+  }
+
+  stop() {
+    this.flushData.cancel()
   }
 
   private getPluginDeps(deps: Dict<string> = {}) {
     return Object.keys(deps).filter(name => name.startsWith('@koishijs/plugin-') || name.startsWith('koishi-plugin-'))
   }
 
-  private async loadPackage(path: string, id?: string): Promise<MarketSource.Local> {
+  private async loadPackage(path: string, id?: string): Promise<MarketProvider.Local> {
     const data: PackageLocal = JSON.parse(await fs.readFile(path + '/package.json', 'utf8'))
     if (data.private) return null
     const workspace = !path.includes('node_modules')
@@ -139,13 +146,6 @@ export class MarketSource implements DataSource<MarketSource.Data[]> {
     } catch {}
   }
 
-  broadcast() {
-    this.ctx.webui.broadcast('data', {
-      key: 'market',
-      value: Object.values(this.dataCache),
-    })
-  }
-
   private getRegistry(name: string) {
     return this.ctx.http.get<Registry>(`https://registry.npmjs.org/${name}`)
   }
@@ -154,7 +154,7 @@ export class MarketSource implements DataSource<MarketSource.Data[]> {
     return this.ctx.http.get<PackageBase[]>('https://www.npmjs.com/search/suggestions?q=koishi+plugin&size=250')
   }
 
-  async start() {
+  async prepare() {
     const [data] = await Promise.all([
       this.getSuggestions(),
       Promise.all(Object.keys(require.cache).map(async (filename) => {
@@ -193,7 +193,7 @@ export class MarketSource implements DataSource<MarketSource.Data[]> {
     })
   }
 
-  get(forced = false) {
+  async get() {
     return Object.values(this.dataCache)
   }
 
@@ -201,12 +201,12 @@ export class MarketSource implements DataSource<MarketSource.Data[]> {
     const kind = await (_managerPromise ||= getManager())
     const args = [...installArgs[kind], name]
     await execute(kind, args)
-    this.get(true)
+    this.get()
     this.broadcast()
   }
 }
 
-export namespace MarketSource {
+export namespace MarketProvider {
   export interface Config {
     apiPath?: string
   }

@@ -1,4 +1,4 @@
-import { App, Context, hyphenate, omit, pick, Plugin, Schema, Modules, Dict, Adapter } from 'koishi'
+import { App, Context, hyphenate, omit, pick, Plugin, Schema, Modules, Dict } from 'koishi'
 import { debounce } from 'throttle-debounce'
 import { DataSource } from '@koishijs/plugin-console'
 import {} from '@koishijs/cli'
@@ -6,28 +6,25 @@ import {} from '@koishijs/cli'
 declare module '@koishijs/plugin-console' {
   namespace DataSource {
     interface Library {
-      registry: RegistrySource
+      registry: RegistryProvider
     }
   }
 }
 
-export class RegistrySource implements DataSource<Dict<RegistrySource.Data>> {
-  cached: Promise<Dict<RegistrySource.Data>>
+export class RegistryProvider extends DataSource<Dict<RegistryProvider.Data>> {
+  cached: Promise<Dict<RegistryProvider.Data>>
   promise: Promise<void>
+  update = debounce(0, () => this.broadcast())
 
   static readonly placeholder = Symbol('status.registry.placeholder')
 
-  constructor(private ctx: Context, public config: RegistrySource.Config) {
+  constructor(ctx: Context) {
+    super(ctx, 'registry')
+
     ctx.on('plugin-added', this.update)
     ctx.on('plugin-removed', this.update)
+    ctx.on('disconnect', this.update.cancel)
   }
-
-  update = debounce(0, async () => {
-    this.ctx.webui.broadcast('data', {
-      key: 'registry',
-      value: await this.get(true),
-    })
-  })
 
   async get(forced = false) {
     if (this.cached && !forced) return this.cached
@@ -39,7 +36,7 @@ export class RegistrySource implements DataSource<Dict<RegistrySource.Data>> {
   }
 
   private async getForced() {
-    const children: RegistrySource.Data[] = [{
+    const children: RegistryProvider.Data[] = [{
       id: null,
       name: '',
       schema: App.Config,
@@ -72,10 +69,10 @@ export class RegistrySource implements DataSource<Dict<RegistrySource.Data>> {
     await this.promise
     for (const [plugin, state] of this.ctx.app.registry) {
       if (id !== state.id) continue
-      const replacer = plugin[RegistrySource.placeholder] || {
+      const replacer = plugin[RegistryProvider.placeholder] || {
         name: state.name,
         apply: Object.assign(() => {}, {
-          [RegistrySource.placeholder]: state.plugin,
+          [RegistryProvider.placeholder]: state.plugin,
         }),
       }
       this.promise = this.ctx.dispose(plugin)
@@ -85,9 +82,7 @@ export class RegistrySource implements DataSource<Dict<RegistrySource.Data>> {
   }
 }
 
-export namespace RegistrySource {
-  export interface Config {}
-
+export namespace RegistryProvider {
   export interface Data {
     id?: string
     name?: string

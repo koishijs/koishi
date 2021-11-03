@@ -4,22 +4,21 @@ import { DataSource } from '@koishijs/plugin-console'
 declare module '@koishijs/plugin-console' {
   namespace DataSource {
     interface Library {
-      protocols: ProtocolSource
+      protocols: AdapterProvider
     }
   }
 }
 
-export class ProtocolSource implements DataSource<Dict<Schema>> {
-  constructor(private ctx: Context) {
-    ctx.on('adapter', async () => {
-      this.ctx.webui.broadcast('data', {
-        key: 'protocols',
-        value: this.get(),
-      })
+export class AdapterProvider extends DataSource<Dict<Schema>> {
+  constructor(ctx: Context) {
+    super(ctx, 'protocols')
+
+    ctx.on('adapter', () => {
+      this.broadcast()
     })
   }
 
-  get() {
+  async get() {
     const protocols: Dict<Schema> = {}
     for (const key in Adapter.library) {
       if (key.includes('.')) continue
@@ -27,4 +26,8 @@ export class ProtocolSource implements DataSource<Dict<Schema>> {
     }
     return protocols
   }
+
+  start() {}
+
+  stop() {}
 }

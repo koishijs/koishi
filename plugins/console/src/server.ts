@@ -46,8 +46,22 @@ export class SocketHandle {
   }
 }
 
-export interface DataSource<T = any> {
-  get(forced?: boolean): Awaitable<T>
+export abstract class DataSource<T = any> {
+  abstract get(forced?: boolean): Promise<T>
+
+  constructor(protected ctx: Context, protected type: string) {
+    ctx.webui.sources[type] = this
+    ctx.on('disconnect', () => {
+      delete ctx.webui.sources[type]
+    })
+  }
+
+  async broadcast(value?: T) {
+    this.ctx.webui.broadcast('data', {
+      key: this.type,
+      value: value || await this.get(true),
+    })
+  }
 }
 
 export namespace DataSource {

@@ -12,11 +12,11 @@
       <div class="cur-frequency">
         <span style="margin-right: 8px">
           <i class="fas fa-arrow-up"/>
-          <span>{{ data.currentRate[0] }}/min</span>
+          <span>{{ data.messageSent }}/min</span>
         </span>
         <span>
           <i class="fas fa-arrow-down"/>
-          <span>{{ data.currentRate[1] }}/min</span>
+          <span>{{ data.messageReceived }}/min</span>
         </span>
       </div>
     </div>
@@ -26,6 +26,7 @@
 <script lang="ts" setup>
 
 import type { Bot } from 'koishi'
+import type { BotProvider } from '@koishijs/plugin-configurator'
 
 const statusNames: Record<Bot.Status, string> = {
   online: '运行中',
@@ -35,7 +36,7 @@ const statusNames: Record<Bot.Status, string> = {
 }
 
 defineProps<{
-  data: BotData,
+  data: BotProvider.Data
   size?: 'large' | 'medium' | 'small'
 }>()
 

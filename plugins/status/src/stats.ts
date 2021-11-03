@@ -29,7 +29,7 @@ export namespace Synchronizer {
   ] as const
 
   export interface Data {
-    extension?: Statistics.Payload
+    extension?: StatisticsProvider.Payload
     groups: Pick<Channel, 'id' | 'name' | 'assignee'>[]
     daily: Record<DailyField, Dict<number>>[]
     hourly: ({ time: Date } & Record<HourlyField, number>)[]
@@ -72,16 +72,18 @@ Session.prototype.send = function (this: Session, ...args) {
 const customTag = Symbol('custom-send')
 Session.prototype.send[customTag] = send
 
-class Statistics implements DataSource<Statistics.Payload> {
+export class StatisticsProvider extends DataSource<StatisticsProvider.Payload> {
   sync: Synchronizer
   lastUpdate = new Date()
   updateHour = this.lastUpdate.getHours()
-  callbacks: Statistics.Extension[] = []
+  callbacks: StatisticsProvider.Extension[] = []
   cachedDate: number
-  cachedData: Promise<Statistics.Payload>
+  cachedData: Promise<StatisticsProvider.Payload>
   average = average
 
-  constructor(private ctx: Context, public config: Statistics.Config = {}) {
+  constructor(ctx: Context, private config: StatisticsProvider.Config = {}) {
+    super(ctx, 'stats')
+
     ctx.on('exit', () => this.upload(true))
 
     ctx.on('service/database', () => {
@@ -141,11 +143,11 @@ class Statistics implements DataSource<Statistics.Payload> {
     }
   }
 
-  extend(callback: Statistics.Extension) {
+  extend(callback: StatisticsProvider.Extension) {
     this.callbacks.push(callback)
   }
 
-  private extendBasic: Statistics.Extension = async (payload, data) => {
+  private extendBasic: StatisticsProvider.Extension = async (payload, data) => {
     // history
     payload.history = {}
     data.longterm.forEach((stat) => {
@@ -163,7 +165,7 @@ class Statistics implements DataSource<Statistics.Payload> {
     })
   }
 
-  private extendGroup: Statistics.Extension = async (payload, data) => {
+  private extendGroup: StatisticsProvider.Extension = async (payload, data) => {
     const groupSet = new Set<string>()
     payload.groups = []
     const groupMap = Object.fromEntries(data.groups.map(g => [g.id, g]))
@@ -210,7 +212,7 @@ class Statistics implements DataSource<Statistics.Payload> {
 
   async download() {
     const data = await this.sync.download()
-    const payload = {} as Statistics.Payload
+    const payload = {} as StatisticsProvider.Payload
     await Promise.all(this.callbacks.map(cb => cb(payload, data)))
     return payload
   }
@@ -227,7 +229,7 @@ class Statistics implements DataSource<Statistics.Payload> {
   }
 }
 
-namespace Statistics {
+export namespace StatisticsProvider {
   export interface Payload {
     history: Dict<number>
     commands: Dict<number>
@@ -243,5 +245,3 @@ namespace Statistics {
 
   export type Extension = (payload: Payload, data: Synchronizer.Data) => Promise<void>
 }
-
-export default Statistics

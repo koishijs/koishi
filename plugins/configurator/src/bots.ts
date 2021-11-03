@@ -11,13 +11,15 @@ declare module 'koishi' {
 declare module '@koishijs/plugin-console' {
   namespace DataSource {
     interface Library {
-      bots: BotSource
+      bots: BotProvider
     }
   }
 }
 
-export class BotSource implements DataSource<BotSource.Data[]> {
-  constructor(private ctx: Context) {
+export class BotProvider extends DataSource<BotProvider.Data[]> {
+  constructor(ctx: Context) {
+    super(ctx, 'bots')
+
     ctx.any().before('send', (session) => {
       session.bot._messageSent.add(1)
     })
@@ -26,28 +28,21 @@ export class BotSource implements DataSource<BotSource.Data[]> {
       session.bot._messageReceived.add(1)
     })
 
-    ctx.on('bot-updated', () => {
-      this.ctx.webui.broadcast('data', {
-        key: 'bots',
-        value: this.get(),
-      })
+    ctx.bots.forEach(bot => BotProvider.initialize(bot, ctx))
+    ctx.on('bot-added', bot => BotProvider.initialize(bot, ctx))
+
+    ctx.on('bot-removed', (bot) => {
+      bot._messageSent.stop()
+      bot._messageReceived.stop()
     })
 
-    ctx.on('connect', async () => {
-      ctx.bots.forEach(BotSource.initialize)
-      ctx.on('bot-added', BotSource.initialize)
-
-      ctx.setInterval(() => {
-        ctx.bots.forEach(({ _messageSent, _messageReceived }) => {
-          _messageSent.tick()
-          _messageReceived.tick()
-        })
-      }, Time.second)
+    ctx.on('bot-updated', () => {
+      this.broadcast()
     })
   }
 
-  get() {
-    return this.ctx.bots.map<BotSource.Data>((bot) => ({
+  async get() {
+    return this.ctx.bots.map<BotProvider.Data>((bot) => ({
       ...pick(bot, ['platform', 'selfId', 'avatar', 'username']),
       status: bot.status,
       error: bot.error?.message,
@@ -58,26 +53,32 @@ export class BotSource implements DataSource<BotSource.Data[]> {
 }
 
 class TickCounter {
+  public stop: () => void
+
   private data = new Array(60).fill(0)
 
-  add(value = 1) {
-    this.data[0] += value
-  }
-
-  tick() {
+  private tick = () => {
     this.data.unshift(0)
     this.data.splice(-1, 1)
   }
 
-  get() {
+  constructor(ctx: Context) {
+    this.stop = ctx.setInterval(() => this.tick(), Time.second)
+  }
+
+  public add(value = 1) {
+    this.data[0] += value
+  }
+
+  public get() {
     return this.data.reduce((prev, curr) => prev + curr, 0)
   }
 }
 
-export namespace BotSource {
-  export function initialize(bot: Bot) {
-    bot._messageSent = new TickCounter()
-    bot._messageReceived = new TickCounter()
+export namespace BotProvider {
+  export function initialize(bot: Bot, ctx: Context) {
+    bot._messageSent = new TickCounter(ctx)
+    bot._messageReceived = new TickCounter(ctx)
   }
 
   export interface Data {
