@@ -6,18 +6,18 @@ import {} from '@koishijs/cli'
 declare module '@koishijs/plugin-console' {
   namespace DataSource {
     interface Library {
-      registry: Registry
+      registry: RegistrySource
     }
   }
 }
 
-class Registry implements DataSource {
-  cached: Promise<Registry.Payload>
+export class RegistrySource implements DataSource<Dict<RegistrySource.Data>> {
+  cached: Promise<Dict<RegistrySource.Data>>
   promise: Promise<void>
 
   static readonly placeholder = Symbol('status.registry.placeholder')
 
-  constructor(private ctx: Context, public config: Registry.Config) {
+  constructor(private ctx: Context, public config: RegistrySource.Config) {
     ctx.on('plugin-added', this.update)
     ctx.on('plugin-removed', this.update)
   }
@@ -38,29 +38,13 @@ class Registry implements DataSource {
     return this.ctx.app.registry.get(plugin)
   }
 
-  private getAppData(): Registry.AppData {
-    // get protocols
-    const protocols: Dict<Schema> = {}
-    for (const key in Adapter.library) {
-      if (key.includes('.')) continue
-      protocols[key] = Adapter.library[key].schema
-    }
-
-    // get delegates
-    const delegates = Object.keys(Context.Services).filter(key => this.ctx[key])
-
-    return {
+  private async getForced() {
+    const children: RegistrySource.Data[] = [{
       id: null,
       name: '',
       schema: App.Config,
-      protocols,
-      delegates,
       config: omit(this.ctx.app.options, ['plugins' as any]),
-    }
-  }
-
-  private async getForced() {
-    const children: Registry.Data[] = [this.getAppData()]
+    }]
 
     for (const plugin of this.getState(null).children) {
       const state = this.getState(plugin)
@@ -88,10 +72,10 @@ class Registry implements DataSource {
     await this.promise
     for (const [plugin, state] of this.ctx.app.registry) {
       if (id !== state.id) continue
-      const replacer = plugin[Registry.placeholder] || {
+      const replacer = plugin[RegistrySource.placeholder] || {
         name: state.name,
         apply: Object.assign(() => {}, {
-          [Registry.placeholder]: state.plugin,
+          [RegistrySource.placeholder]: state.plugin,
         }),
       }
       this.promise = this.ctx.dispose(plugin)
@@ -101,12 +85,8 @@ class Registry implements DataSource {
   }
 }
 
-namespace Registry {
+export namespace RegistrySource {
   export interface Config {}
-
-  export interface Payload extends Dict<Data> {
-    ''?: AppData
-  }
 
   export interface Data {
     id?: string
@@ -114,11 +94,4 @@ namespace Registry {
     schema?: Schema
     config?: any
   }
-
-  export interface AppData extends Data {
-    delegates: string[]
-    protocols: Dict<Schema>
-  }
 }
-
-export default Registry

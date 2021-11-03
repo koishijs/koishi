@@ -87,7 +87,7 @@ function getFullname({ name, fullname, id }: Data) {
 }
 
 function getDelegateData(name: string, required: boolean): DelegateData {
-  const fulfilled = store.value.registry[''].delegates.includes(name)
+  const fulfilled = store.value.services.includes(name)
   if (fulfilled) return { required, fulfilled }
   return {
     required,
@@ -113,7 +113,7 @@ const delegates = computed(() => {
 
 const message = computed(() => {
   const required = getKeywords('required')
-  if (required.some(name => !store.value.registry[''].delegates.includes(name))) {
+  if (required.some(name => !store.value.services.includes(name))) {
     return '存在未安装的依赖接口。'
   }
 

@@ -9,7 +9,7 @@ import { throttle } from 'throttle-debounce'
 declare module '@koishijs/plugin-console' {
   namespace DataSource {
     interface Library {
-      market: Market
+      market: MarketSource
     }
   }
 }
@@ -69,13 +69,13 @@ const installArgs: Record<Manager, string[]> = {
   npm: ['install', '--loglevel', 'error'],
 }
 
-class Market implements DataSource {
-  dataCache: Dict<Market.Data> = {}
-  localCache: Dict<Promise<Market.Local>> = {}
-  callbacks: ((data: Market.Data[]) => void)[] = []
+export class MarketSource implements DataSource<MarketSource.Data[]> {
+  dataCache: Dict<MarketSource.Data> = {}
+  localCache: Dict<Promise<MarketSource.Local>> = {}
+  callbacks: ((data: MarketSource.Data[]) => void)[] = []
   flushData: throttle<() => void>
 
-  constructor(private ctx: Context, public config: Market.Config) {
+  constructor(private ctx: Context, public config: MarketSource.Config) {
     const logger = ctx.logger('status')
 
     ctx.on('connect', () => {
@@ -105,7 +105,7 @@ class Market implements DataSource {
     return Object.keys(deps).filter(name => name.startsWith('@koishijs/plugin-') || name.startsWith('koishi-plugin-'))
   }
 
-  private async loadPackage(path: string, id?: string): Promise<Market.Local> {
+  private async loadPackage(path: string, id?: string): Promise<MarketSource.Local> {
     const data: PackageLocal = JSON.parse(await fs.readFile(path + '/package.json', 'utf8'))
     if (data.private) return null
     const workspace = !path.includes('node_modules')
@@ -193,7 +193,7 @@ class Market implements DataSource {
     })
   }
 
-  async get(forced = false) {
+  get(forced = false) {
     return Object.values(this.dataCache)
   }
 
@@ -201,12 +201,12 @@ class Market implements DataSource {
     const kind = await (_managerPromise ||= getManager())
     const args = [...installArgs[kind], name]
     await execute(kind, args)
-    await this.get(true)
+    this.get(true)
     this.broadcast()
   }
 }
 
-namespace Market {
+export namespace MarketSource {
   export interface Config {
     apiPath?: string
   }
@@ -228,5 +228,3 @@ namespace Market {
     size: number
   }
 }
-
-export default Market

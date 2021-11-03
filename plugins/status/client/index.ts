@@ -1,4 +1,7 @@
-import { router } from '@koishijs/ui-console'
+import { router, store, receive } from '@koishijs/ui-console'
+import type {} from '@koishijs/plugin-status/src'
+
+receive('logs/data', data => store.value.logs += data)
 
 router.addRoute({
   path: '/',

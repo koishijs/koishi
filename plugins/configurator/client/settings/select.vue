@@ -1,7 +1,7 @@
 <template>
   <el-scrollbar class="plugin-select">
     <div class="content">
-      <k-tab-item class="k-tab-group-title" :label="registry[''].name" v-model="model">
+      <k-tab-item class="k-tab-group-title" label="" v-model="model">
         全局设置
       </k-tab-item>
       <k-tab-group :data="Object.values(registry).filter(item => item.id)" :label="getLabel" :readonly="getReadonly" v-model="model">

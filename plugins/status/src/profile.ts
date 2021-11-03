@@ -1,10 +1,9 @@
-import { Bot, Context, pick } from 'koishi'
+import { Context } from 'koishi'
 import { cpus } from 'os'
 import { mem } from 'systeminformation'
 import { DataSource } from '@koishijs/plugin-console'
 
 export type LoadRate = [app: number, total: number]
-export type MessageRate = [send: number, receive: number]
 
 let usage = getCpuUsage()
 let appRate: number
@@ -44,82 +43,30 @@ function updateCpuUsage() {
   usage = newUsage
 }
 
-export interface BotData {
-  username: string
-  selfId: string
-  platform: string
-  avatar: string
-  status: Bot.Status
-  error?: string
-  currentRate: MessageRate
-}
-
-function accumulate(record: number[]) {
-  return record.slice(1).reduce((prev, curr) => prev + curr, 0)
-}
-
-export async function BotData(bot: Bot) {
-  return {
-    ...pick(bot, ['platform', 'selfId', 'avatar', 'username']),
-    status: bot.status,
-    error: bot.error?.message,
-    currentRate: [accumulate(bot.messageSent), accumulate(bot.messageReceived)],
-  } as BotData
-}
-
 class Profile implements DataSource<Profile.Payload> {
   cached: Profile.Payload
 
   constructor(private ctx: Context, config: Profile.Config) {
     this.apply(ctx, config)
-
-    ctx.on('status/tick', async () => {
-      this.ctx.webui.broadcast('data', {
-        key: 'profile',
-        value: await this.get(true),
-      })
-    })
   }
 
   async get(forced = false) {
     if (this.cached && !forced) return this.cached
-    const [memory, bots] = await Promise.all([
-      memoryRate(),
-      Promise.all(this.ctx.bots.filter(bot => bot.platform !== 'web').map(BotData)),
-    ])
+    const memory = await memoryRate()
     const cpu: LoadRate = [appRate, usedRate]
-    return { bots, memory, cpu }
-  }
-
-  static initBot(bot: Bot) {
-    bot.messageSent = new Array(61).fill(0)
-    bot.messageReceived = new Array(61).fill(0)
+    return { memory, cpu }
   }
 
   private apply(ctx: Context, config: Profile.Config = {}) {
     const { tickInterval } = config
 
-    ctx.any().before('send', (session) => {
-      session.bot.messageSent[0] += 1
-    })
-
-    ctx.any().on('message', (session) => {
-      session.bot.messageReceived[0] += 1
-    })
-
     ctx.on('connect', async () => {
-      ctx.bots.forEach(Profile.initBot)
-      ctx.on('bot-added', Profile.initBot)
-
-      ctx.setInterval(() => {
+      ctx.setInterval(async () => {
         updateCpuUsage()
-        ctx.bots.forEach(({ messageSent, messageReceived }) => {
-          messageSent.unshift(0)
-          messageSent.splice(-1, 1)
-          messageReceived.unshift(0)
-          messageReceived.splice(-1, 1)
+        this.ctx.webui.broadcast('data', {
+          key: 'profile',
+          value: await this.get(true),
         })
-        ctx.emit('status/tick')
       }, tickInterval)
     })
   }
@@ -131,7 +78,6 @@ namespace Profile {
   }
 
   export interface Payload {
-    bots: BotData[]
     memory: LoadRate
     cpu: LoadRate
   }

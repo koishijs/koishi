@@ -1,9 +1,9 @@
-import type { Registry } from '@koishijs/plugin-configurator/src'
+import type { RegistrySource } from '@koishijs/plugin-configurator/src'
 import type { Dict } from 'koishi'
 import { store } from '@koishijs/ui-console'
 import { computed } from 'vue'
 
-export interface Data extends Registry.Data {
+export interface Data extends RegistrySource.Data {
   fullname?: string
   devDeps?: string[]
   peerDeps?: string[]

@@ -1,8 +1,17 @@
 import { Context } from 'koishi'
 import { resolve } from 'path'
 import { StatusServer } from '@koishijs/plugin-console'
-import Registry from './registry'
-import Market from './market'
+import { BotSource } from './bots'
+import { MarketSource } from './market'
+import { ProtocolSource } from './protocols'
+import { RegistrySource } from './registry'
+import { ServiceSource } from './services'
+
+export * from './bots'
+export * from './market'
+export * from './protocols'
+export * from './registry'
+export * from './services'
 
 declare module 'koishi' {
   interface Modules {
@@ -10,9 +19,7 @@ declare module 'koishi' {
   }
 }
 
-export { Registry, Market }
-
-export interface Config extends Registry.Config, Market.Config {}
+export interface Config extends RegistrySource.Config, MarketSource.Config {}
 
 export const name = 'configurator'
 
@@ -20,8 +27,11 @@ export function apply(ctx: Context, config: Config = {}) {
   ctx.with(['console'], () => {
     const filename = ctx.webui.config.devMode ? '../client/index.ts' : '../dist/index.js'
     ctx.webui.addEntry(resolve(__dirname, filename))
-    ctx.webui.sources.registry = new Registry(ctx, config)
-    ctx.webui.sources.market = new Market(ctx, config)
+    ctx.webui.sources.bots = new BotSource(ctx)
+    ctx.webui.sources.market = new MarketSource(ctx, config)
+    ctx.webui.sources.protocols = new ProtocolSource(ctx)
+    ctx.webui.sources.registry = new RegistrySource(ctx, config)
+    ctx.webui.sources.services = new ServiceSource(ctx)
   })
 }
 

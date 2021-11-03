@@ -1,4 +1,4 @@
-import { Adapter, App, Context, Logger, noop, version, Dict, WebSocketLayer } from 'koishi'
+import { Adapter, App, Context, Logger, noop, version, Dict, WebSocketLayer, Awaitable } from 'koishi'
 import { resolve, extname } from 'path'
 import { promises as fs, Stats, createReadStream } from 'fs'
 import WebSocket from 'ws'
@@ -47,11 +47,11 @@ export class SocketHandle {
 }
 
 export interface DataSource<T = any> {
-  get(forced?: boolean): Promise<T>
+  get(forced?: boolean): Awaitable<T>
 }
 
 export namespace DataSource {
-  export interface Library extends Dict<DataSource> {}
+  export interface Library {}
 }
 
 export class StatusServer extends Adapter {

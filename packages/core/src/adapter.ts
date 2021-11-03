@@ -107,6 +107,7 @@ export namespace Adapter {
     ])
 
     function apply(ctx: Context, config: PluginConfig = {}) {
+      ctx.emit('adapter')
       config = Schema.validate(config, adapterSchema)
       configMap[platform] = config
       for (const options of config.bots) {

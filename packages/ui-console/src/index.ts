@@ -40,7 +40,6 @@ export function receive<T = any>(event: string, listener: (data: T) => void) {
 }
 
 receive('data', ({ key, value }) => store.value[key] = value)
-receive('logs/data', data => store.value.logs += data)
 
 export async function connect(endpoint: string) {
   socket.value = new WebSocket(endpoint)

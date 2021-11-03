@@ -13,17 +13,13 @@
 
 import { ref, computed } from 'vue'
 import { store, send } from '~/client'
-import type { Registry } from '@koishijs/plugin-configurator/src'
 import type { Schema } from 'koishi'
 
 const config = ref({})
 const selected = ref([])
 
-const appData = computed(() => store.value.registry[''] as Registry.AppData)
-
 const options = computed(() => {
-  const { protocols } = appData.value
-  return Object.entries(protocols).map(([key, schema]) => ({
+  return Object.entries(store.value.protocols).map(([key, schema]) => ({
     value: key,
     label: key,
     children: schema.type === 'decide' ? Object.keys(schema.dict).map((key) => ({
@@ -36,7 +32,7 @@ const options = computed(() => {
 const schema = computed<Schema>(() => {
   const [platform, protocol] = selected.value
   if (!platform) return
-  const schema = appData.value.protocols[platform]
+  const schema = store.value.protocols[platform]
   if (schema.type !== 'decide') return schema
   if (protocol) return schema.dict[protocol]
 })

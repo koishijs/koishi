@@ -1,4 +1,4 @@
-import { Context, template, Tables, Awaitable, Schema } from 'koishi'
+import { Context, Tables, Awaitable, Schema } from 'koishi'
 import { StatusServer, SocketHandle, Config } from './server'
 
 export * from './server'
@@ -14,11 +14,6 @@ declare module 'koishi' {
 
   interface Session {
     _sendType?: 'command' | 'dialogue'
-  }
-
-  interface Bot {
-    messageSent: number[]
-    messageReceived: number[]
   }
 
   interface EventMap {
@@ -57,17 +52,6 @@ Tables.extend('channel', {
   activity: 'json',
 })
 
-template.set('status', {
-  // eslint-disable-next-line no-template-curly-in-string
-  bot: '{{ username }}：{{ code ? `无法连接` : `工作中（${currentRate[0]}/min）` }}',
-  output: [
-    '{{ bots }}',
-    '==========',
-    'CPU 使用率：{{ (cpu[0] * 100).toFixed() }}% / {{ (cpu[1] * 100).toFixed() }}%',
-    '内存使用率：{{ (memory[0] * 100).toFixed() }}% / {{ (memory[1] * 100).toFixed() }}%',
-  ].join('\n'),
-})
-
 const defaultConfig: Config = {
   apiPath: '/status',
   uiPath: '',
@@ -88,38 +72,4 @@ export function apply(ctx: Context, config: Config = {}) {
   config = { ...defaultConfig, ...config }
 
   ctx.webui = new StatusServer(ctx, config)
-
-  ctx.router.get(config.apiPath, async (ctx) => {
-    ctx.set('Access-Control-Allow-Origin', '*')
-    ctx.body = await getStatus()
-  })
-
-  ctx.command('status', '查看机器人运行状态')
-    .shortcut('你的状态', { prefix: true })
-    .shortcut('你的状况', { prefix: true })
-    .shortcut('运行情况', { prefix: true })
-    .shortcut('运行状态', { prefix: true })
-    .option('all', '-a  查看全部平台')
-    .action(async ({ session, options }) => {
-      const status = await getStatus()
-      if (!options.all) {
-        status.bots = status.bots.filter(bot => bot.platform === session.platform)
-      }
-      status.bots.toString = () => {
-        return status.bots.map(bot => {
-          let output = template('status.bot', bot)
-          if (options.all) output = `[${bot.platform}] ` + output
-          return output
-        }).join('\n')
-      }
-      return template('status.output', status)
-    })
-
-  async function getStatus() {
-    const [profile, meta] = await Promise.all([
-      ctx.webui.sources.profile.get(),
-      ctx.webui.sources.meta.get(),
-    ])
-    return { ...profile, ...meta }
-  }
 }

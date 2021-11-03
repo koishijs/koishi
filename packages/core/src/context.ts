@@ -569,6 +569,7 @@ export namespace Context {
           this.logger(key).warn('service is overwritten')
         }
         defineProperty(this.app, privateKey, value)
+        this.emit('service')
         this.emit('service/' + key)
       },
     })
@@ -624,6 +625,8 @@ export interface EventMap extends SessionEventMap, DelegateEventMap {
   'before-connect'(): Awaitable<void>
   'connect'(): Awaitable<void>
   'disconnect'(): Awaitable<void>
+  'service'(): void
+  'adapter'(): void
   'bot-added'(bot: Bot): void
   'bot-removed'(bot: Bot): void
   'bot-updated'(bot: Bot): void
