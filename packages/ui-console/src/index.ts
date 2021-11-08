@@ -1,8 +1,9 @@
 /// <reference types="./global"/>
 
-import { ref, Component } from 'vue'
-import { createWebHistory, createRouter } from 'vue-router'
+import { ref, h, Component, markRaw, defineComponent, resolveComponent } from 'vue'
+import { createWebHistory, createRouter, RouteRecordRaw } from 'vue-router'
 import type { DataSource, Console } from '@koishijs/plugin-console'
+import Home from './layout/home.vue'
 
 export const router = createRouter({
   history: createWebHistory(KOISHI_CONFIG.uiPath),
@@ -18,11 +19,53 @@ declare module 'vue-router' {
   }
 }
 
-export const views: Record<string, Component[]> = {}
-
-export function addView(name: string, component: Component) {
-  (views[name] ||= []).push(component)
+export interface View {
+  order: number
+  component: Component
 }
+
+export const views = ref<Record<string, View[]>>({})
+
+export function addView(name: string, component: Component, order = 0) {
+  const list = views.value[name] ||= []
+  const index = list.findIndex(a => a.order > order)
+  markRaw(component)
+  if (index >= 0) {
+    list.splice(index, 0, { order, component })
+  } else {
+    list.push({ order, component })
+  }
+}
+
+export interface HomeMeta {
+  icon: string
+  title: string
+  order?: number
+  type?: string
+  when?: () => any
+  content: () => any
+}
+
+export function addHomeMeta({ when, icon, title, type, order, content }: HomeMeta) {
+  const render = type ? () => h(resolveComponent('k-numeric'), {
+    icon, title, type, value: content(), fallback: '未安装',
+  }) : () => h(resolveComponent('k-numeric'), {
+    icon, title,
+  }, () => content())
+
+  addView('home-meta', defineComponent({
+    render: () => !when || when() ? render() : null,
+  }), order)
+}
+
+export const home: RouteRecordRaw = {
+  path: '/',
+  name: '仪表盘',
+  meta: { icon: 'tachometer-alt', require: [] as never[] },
+  component: Home,
+}
+
+router.addRoute(home)
 
 export const store = ref<{
   [K in keyof Console.Sources]?: Console.Sources[K] extends DataSource<infer T> ? T : never
@@ -61,3 +104,5 @@ export async function connect(endpoint: string) {
     socket.value.onopen = resolve
   })
 }
+
+export const config = KOISHI_CONFIG

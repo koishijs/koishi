@@ -1,14 +1,59 @@
-import { router, store, receive } from '@koishijs/ui-console'
+import { router, store, receive, addHomeMeta, addView } from '@koishijs/ui-console'
 import type {} from '@koishijs/plugin-status/src'
+import CommandChart from './home/command-chart.vue'
+import GroupChart from './home/group-chart.vue'
+import HistoryChart from './home/history-chart.vue'
+import HourChart from './home/hour-chart.vue'
+import LoadChart from './home/load-chart.vue'
 
 receive('logs/data', data => store.value.logs += data)
 
-router.addRoute({
-  path: '/',
-  name: '仪表盘',
-  meta: { icon: 'tachometer-alt', require: ['stats', 'meta', 'profile', 'bots'] },
-  component: () => import('./home/home.vue'),
+addHomeMeta({
+  title: '近期消息频率',
+  icon: 'history',
+  when: () => store.value.stats,
+  content() {
+    return Object.values(store.value.stats.botSend).reduce((sum, value) => sum + value, 0).toFixed(1) + ' / d'
+  },
 })
+
+addHomeMeta({
+  title: '数据库体积',
+  icon: 'database',
+  type: 'size',
+  when: () => store.value.stats,
+  content() {
+    // @ts-ignore
+    return Object.values(store.value.meta.tables || {}).reduce((prev, curr) => prev + curr.size, 0)
+  },
+})
+
+addHomeMeta({
+  title: '资源服务器',
+  icon: 'hdd',
+  type: 'size',
+  content: () => store.value.meta.assetSize,
+})
+
+addHomeMeta({
+  title: '活跃用户数量',
+  icon: 'heart',
+  when: () => store.value.stats,
+  content: () => store.value.meta.activeUsers,
+})
+
+addHomeMeta({
+  title: '活跃群数量',
+  icon: 'heart',
+  when: () => store.value.stats,
+  content: () => store.value.meta.activeGroups,
+})
+
+addView('home', LoadChart)
+addView('home-charts', HistoryChart)
+addView('home-charts', HourChart)
+addView('home-charts', GroupChart)
+addView('home-charts', CommandChart)
 
 router.addRoute({
   path: '/database',

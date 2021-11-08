@@ -6,6 +6,6 @@ export default defineComponent({
     name: String,
   },
   setup(props) {
-    return () => (views[props.name] || []).map(component => h(component))
+    return () => (views.value[props.name] || []).map(view => h(view.component))
   },
 })

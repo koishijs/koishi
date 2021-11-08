@@ -1,5 +1,14 @@
-import { router } from '@koishijs/ui-console'
+import { store, router, addHomeMeta, home } from '@koishijs/ui-console'
 import type {} from '@koishijs/plugin-manager/src'
+
+addHomeMeta({
+  order: -100,
+  title: '当前消息频率',
+  icon: 'paper-plane',
+  content: () => store.value.bots.reduce((sum, bot) => sum + bot.messageSent, 0) + ' / min',
+})
+
+home.meta.require.push('bots')
 
 router.addRoute({
   path: '/bots',
