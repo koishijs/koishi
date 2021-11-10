@@ -1,4 +1,4 @@
-import { addPage } from '@koishijs/ui-console'
+import { addPage } from '~/client'
 import Teach from './teach.vue'
 
 addPage({

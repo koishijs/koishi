@@ -32,7 +32,7 @@
 
 <script lang="ts" setup>
 
-import { receive, send } from '~/client'
+import { config, receive, send } from '~/client'
 import { ref, watch } from 'vue'
 import ChatPanel from './utils/panel.vue'
 import ChatMessage from './utils/message.vue'
@@ -71,7 +71,7 @@ const divs = ref<Record<string, HTMLElement>>({})
 
 receive('chat', (body) => {
   messages.value.push(body)
-  messages.value.splice(0, messages.value.length - KOISHI_CONFIG.maxMessages)
+  messages.value.splice(0, messages.value.length - config.maxMessages)
 })
 
 function isSuccessive({ quote, userId, channelId }: Message, index: number) {

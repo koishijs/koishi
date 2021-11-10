@@ -5,12 +5,13 @@
 <script lang="ts" setup>
 
 import { shared } from '.'
+import { config } from '~/client'
 
 const props = defineProps<{ src: string }>()
 
 function normalizeUrl(url: string) {
-  if (!KOISHI_CONFIG.whitelist.some(prefix => url.startsWith(prefix))) return url
-  return KOISHI_CONFIG.endpoint + '/assets/' + encodeURIComponent(url)
+  if (!config.whitelist.some(prefix => url.startsWith(prefix))) return url
+  return config.endpoint + '/assets/' + encodeURIComponent(url)
 }
 
 function handleClick(ev: MouseEvent) {

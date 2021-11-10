@@ -2,7 +2,7 @@
 
 import * as Vue from 'vue'
 import * as Router from 'vue-router'
-import * as client from './index'
+import * as client from './client'
 
 import form from './components/form'
 
@@ -27,7 +27,7 @@ import '@fortawesome/fontawesome-free/css/solid.css'
 import './index.scss'
 import 'element-plus/dist/index.css'
 
-const { router } = client
+const { router, config } = client
 
 self['Vue'] = Vue
 self['VueRouter'] = Router
@@ -71,11 +71,11 @@ router.afterEach((route) => {
   }
 })
 
-const endpoint = new URL(KOISHI_CONFIG.endpoint, location.origin).toString()
+const endpoint = new URL(config.endpoint, location.origin).toString()
 
 client.connect(endpoint.replace(/^http/, 'ws'))
 
-const loadingExtensions = Promise.all(KOISHI_CONFIG.extensions.map(path => {
+const loadingExtensions = Promise.all(config.extensions.map(path => {
   return import(/* @vite-ignore */ path)
 }))
 

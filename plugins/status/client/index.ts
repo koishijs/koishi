@@ -1,4 +1,4 @@
-import { addPage, store, addHomeMeta, addView } from '@koishijs/ui-console'
+import { addPage, store, addHomeMeta, addView } from '~/client'
 import type {} from '@koishijs/plugin-status/src'
 import CommandChart from './home/command-chart.vue'
 import GroupChart from './home/group-chart.vue'
@@ -57,16 +57,16 @@ addPage({
   path: '/database',
   name: '数据库',
   icon: 'database',
-  order: 200,
+  order: -410,
   require: ['meta'],
   component: () => import('./database/index.vue'),
 })
 
 addPage({
   path: '/logs',
-  name: '运行日志',
+  name: '日志',
   icon: 'clipboard-list',
-  order: 1000,
+  order: -400,
   require: ['logs'],
   component: () => import('./logs/index.vue'),
 })

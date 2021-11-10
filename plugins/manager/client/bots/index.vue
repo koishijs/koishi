@@ -25,7 +25,7 @@
 <script setup lang="ts">
 
 import { ref, computed } from 'vue'
-import { store } from '@koishijs/ui-console'
+import { store } from '~/client'
 import AddBot from './add.vue'
 import BotView from './bot.vue'
 

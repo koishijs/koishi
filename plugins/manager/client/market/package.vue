@@ -32,11 +32,11 @@
 
 <script lang="ts" setup>
 
-import type { Market } from '@koishijs/plugin-manager/src'
-import { send } from '@koishijs/ui-console'
+import type { MarketProvider } from '@koishijs/plugin-manager/src'
+import { send } from '~/client'
 import { computed, ref, watch } from 'vue'
 
-const props = defineProps<{ data: Market.Data }>()
+const props = defineProps<{ data: MarketProvider.Data }>()
 
 const hasUpdate = computed(() => {
   const { local, version } = props.data
@@ -57,7 +57,7 @@ watch(() => props.data.local, () => {
   downloading.value = false
 }, { deep: true })
 
-function toggle(data: Market.Data) {
+function toggle(data: MarketProvider.Data) {
   send('install', { name: `${data.name}@^${data.version}` })
   downloading.value = true
 }

@@ -34,7 +34,6 @@
   },
   "devDependencies": {
     "@koishijs/plugin-console": "^1.0.0-alpha.0",
-    "@koishijs/ui-console": "^1.0.0-alpha.7",
     "@vueuse/core": "^6.8.0"
   }
 }

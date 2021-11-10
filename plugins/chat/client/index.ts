@@ -1,4 +1,4 @@
-import { addPage, addView } from '@koishijs/ui-console'
+import { addPage, addView } from '~/client'
 import Chat from './chat.vue'
 import Overlay from './overlay.vue'
 

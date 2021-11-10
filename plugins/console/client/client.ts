@@ -1,9 +1,9 @@
-/// <reference types="./global"/>
-
 import { ref, h, Component, markRaw, defineComponent, resolveComponent } from 'vue'
-import { createWebHistory, createRouter, RouteRecordRaw } from 'vue-router'
-import type { DataSource, Console } from '@koishijs/plugin-console'
+import { createWebHistory, createRouter } from 'vue-router'
+import type { DataSource, Console, ClientConfig } from '@koishijs/plugin-console'
 import Home from './layout/home.vue'
+
+declare const KOISHI_CONFIG: ClientConfig
 
 export const router = createRouter({
   history: createWebHistory(KOISHI_CONFIG.uiPath),
@@ -86,6 +86,7 @@ addPage({
   path: '/',
   name: '仪表盘',
   icon: 'tachometer-alt',
+  order: -1000,
   component: Home,
 })
 

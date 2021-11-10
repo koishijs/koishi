@@ -6,7 +6,5 @@ declare module '*.vue' {
 }
 
 declare module '~/client' {
-  export * from '@koishijs/ui-console'
+  export * from '@koishijs/plugin-console/client'
 }
-
-declare const KOISHI_CONFIG: import('@koishijs/plugin-console').ClientConfig

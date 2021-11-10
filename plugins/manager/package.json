@@ -37,7 +37,6 @@
   "devDependencies": {
     "@koishijs/cli": "^4.0.0-alpha.6",
     "@koishijs/plugin-console": "^1.0.0-alpha.0",
-    "@koishijs/ui-console": "^1.0.0-alpha.7",
     "@types/throttle-debounce": "^2.1.0"
   },
   "dependencies": {

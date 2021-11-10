@@ -36,8 +36,7 @@
     "@koishijs/cli": "^4.0.0-alpha.6",
     "@koishijs/plugin-console": "^1.0.0-alpha.0",
     "@koishijs/plugin-database-mongo": "^3.0.0-alpha.6",
-    "@koishijs/plugin-database-mysql": "^4.0.0-alpha.9",
-    "@koishijs/ui-console": "^1.0.0-alpha.7"
+    "@koishijs/plugin-database-mysql": "^4.0.0-alpha.9"
   },
   "dependencies": {
     "systeminformation": "^5.8.7"

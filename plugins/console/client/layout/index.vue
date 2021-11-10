@@ -9,7 +9,7 @@
 
 <script lang="ts" setup>
 
-import { store } from '@koishijs/ui-console'
+import { store } from '~/client'
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 import Sidebar from './sidebar.vue'

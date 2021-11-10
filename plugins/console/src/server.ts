@@ -88,8 +88,7 @@ export class Console {
     this.global = { uiPath, endpoint, devMode, extensions: [], database: false, version }
 
     if (config.root === undefined) {
-      const filename = require.resolve('@koishijs/ui-console/package.json')
-      config.root = resolve(filename, '..', devMode ? 'src' : 'dist')
+      config.root = resolve(__dirname, '..', devMode ? 'client' : 'dist')
     }
 
     this.server = ctx.router.ws(apiPath, this.onConnection)
@@ -224,7 +223,7 @@ export class Console {
       plugins: [pluginVue()],
       resolve: {
         alias: {
-          '~/client': root,
+          '~/client': root + '/client.ts',
           '~/variables': root + '/index.scss',
         },
       },

@@ -5,9 +5,6 @@
     "target": "es2020",
     "module": "esnext",
     "emitDeclarationOnly": false,
-    "types": [
-      "vite/client",
-    ],
   },
   "include": [
     ".",

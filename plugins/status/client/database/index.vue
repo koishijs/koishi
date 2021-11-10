@@ -18,7 +18,7 @@
 
 <script lang="ts" setup>
 
-import { store } from '@koishijs/ui-console'
+import { store } from '~/client'
 import type {} from '@koishijs/plugin-status/src'
 import { ref, computed } from 'vue'
 
