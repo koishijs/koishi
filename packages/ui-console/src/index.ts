@@ -58,14 +58,36 @@ export function addHomeMeta({ when, icon, title, type, order, content }: HomeMet
   }), order)
 }
 
-export const home: RouteRecordRaw = {
-  path: '/',
-  name: '仪表盘',
-  meta: { icon: 'tachometer-alt', require: [] as never[] },
-  component: Home,
+export interface PageOptions {
+  path: string
+  name: string
+  component: Component
+  icon?: string
+  order?: number
+  hidden?: boolean
+  require?: (keyof Console.Sources)[]
 }
 
-router.addRoute(home)
+export function addPage(options: PageOptions) {
+  const { path, name, component, ...rest } = options
+  router.addRoute({
+    path,
+    name,
+    component,
+    meta: {
+      order: 0,
+      require: [] as any,
+      ...rest,
+    },
+  })
+}
+
+addPage({
+  path: '/',
+  name: '仪表盘',
+  icon: 'tachometer-alt',
+  component: Home,
+})
 
 export const store = ref<{
   [K in keyof Console.Sources]?: Console.Sources[K] extends DataSource<infer T> ? T : never

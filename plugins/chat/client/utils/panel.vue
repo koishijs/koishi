@@ -84,10 +84,10 @@ $padding: 1.5rem;
   .k-chat-message {
     position: relative;
     line-height: 1.5rem;
-    padding: 0.25rem 1rem;
+    padding: 2px 1rem;
 
     &:hover {
-      background-color: rgba(4, 4, 5, 0.2);
+      background-color: var(--bg1);
     }
   }
 

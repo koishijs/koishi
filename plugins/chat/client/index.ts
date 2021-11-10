@@ -1,12 +1,13 @@
-import { router, addView } from '@koishijs/ui-console'
+import { addPage, addView } from '@koishijs/ui-console'
 import Chat from './chat.vue'
 import Overlay from './overlay.vue'
 
 addView('global', Overlay)
 
-router.addRoute({
+addPage({
   path: '/chat',
   name: '聊天',
-  meta: { icon: 'comments', authority: 4 },
+  icon: 'comments',
   component: Chat,
+  order: 100,
 })

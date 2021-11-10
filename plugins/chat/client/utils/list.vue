@@ -128,7 +128,7 @@ function onScroll(ev: MouseEvent) {
   const clientLength = Math.ceil(root.value.clientHeight)
   const scrollLength = Math.ceil(root.value.scrollHeight)
 
-  // iOS scroll-spring-back behavior will make direction mistake
+  // iOS scroll-spring-back behavior will make direction mistake
   if (offset < 0 || (offset + clientLength > scrollLength + 1) || !scrollLength) {
     return
   }

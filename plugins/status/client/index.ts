@@ -1,12 +1,10 @@
-import { router, store, receive, addHomeMeta, addView } from '@koishijs/ui-console'
+import { addPage, store, addHomeMeta, addView } from '@koishijs/ui-console'
 import type {} from '@koishijs/plugin-status/src'
 import CommandChart from './home/command-chart.vue'
 import GroupChart from './home/group-chart.vue'
 import HistoryChart from './home/history-chart.vue'
 import HourChart from './home/hour-chart.vue'
 import LoadChart from './home/load-chart.vue'
-
-receive('logs/data', data => store.value.logs += data)
 
 addHomeMeta({
   title: '近期消息频率',
@@ -55,16 +53,20 @@ addView('home-charts', HourChart)
 addView('home-charts', GroupChart)
 addView('home-charts', CommandChart)
 
-router.addRoute({
+addPage({
   path: '/database',
   name: '数据库',
-  meta: { icon: 'database', require: ['meta'] },
+  icon: 'database',
+  order: 200,
+  require: ['meta'],
   component: () => import('./database/index.vue'),
 })
 
-router.addRoute({
+addPage({
   path: '/logs',
   name: '运行日志',
-  meta: { icon: 'clipboard-list', require: ['logs'] },
+  icon: 'clipboard-list',
+  order: 1000,
+  require: ['logs'],
   component: () => import('./logs/index.vue'),
 })

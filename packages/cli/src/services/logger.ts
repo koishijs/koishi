@@ -68,9 +68,9 @@ export function prepare(loader: Loader, config: App.Config.Logger = {}) {
           file.close()
           createLogFile()
         }
-        file.write(text + '\n')
+        file.write(text)
         if (loader.app?.isActive) {
-          loader.app.emit('logger/data', text + '\n')
+          loader.app.emit('logger/data', text)
         }
       },
     })
@@ -90,24 +90,25 @@ export function apply(ctx: App) {
 
 class FileWrapper {
   private task: Promise<FileHandle>
-  private text: string
+  private content: string[]
 
   constructor(path: string) {
     this.task = open(path, 'a+').then(async (handle) => {
-      this.text = await handle.readFile('utf-8')
+      const text = await handle.readFile('utf-8')
+      this.content = text.split(/\n(?=\S)/g)
       return handle
     })
   }
 
   async read() {
     await this.task
-    return this.text
+    return this.content
   }
 
   async write(text: string) {
     const handle = await this.task
-    await handle.write(text)
-    this.text += text
+    await handle.write(text + '\n')
+    this.content.push(text)
   }
 
   async close() {

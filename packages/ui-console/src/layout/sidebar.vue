@@ -2,8 +2,8 @@
   <aside class="layout-aside">
     <h1>Koishi 控制台</h1>
     <ul>
-      <template v-for="({ name, path, meta }) in $router.getRoutes()">
-        <li v-if="isShown(meta)" :class="{ current: name === $route.name }">
+      <template v-for="({ name, path, meta }) in routes">
+        <li v-if="!meta.hidden" :class="{ current: name === $route.name }">
           <router-link :to="path">
             <i :class="`fas fa-${meta.icon}`"/>
             {{ name }}
@@ -16,12 +16,14 @@
 
 <script lang="ts" setup>
 
-import type { RouteMeta } from 'vue-router'
+import { computed } from 'vue'
+import { useRouter } from 'vue-router'
 
-function isShown(meta: RouteMeta) {
-  if (meta.hidden) return false
-  return true
-}
+const router = useRouter()
+
+const routes = computed(() => {
+  return router.getRoutes().sort((a, b) => a.meta.order - b.meta.order)
+})
 
 </script>
 

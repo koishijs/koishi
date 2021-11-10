@@ -10,7 +10,7 @@ declare module '@koishijs/plugin-console' {
   }
 }
 
-export class LogProvider extends DataSource<string> {
+export class LogProvider extends DataSource<string[]> {
   constructor(ctx: Context) {
     super(ctx, 'logs')
 

@@ -39,6 +39,8 @@ sidebarDepth: 2
 
 - [更多功能 / 使用缓存数据](../service/cache.md)
 
+## 频道 (Channel)
+
 ## 指令 (Command)
 
 参考：
@@ -65,6 +67,8 @@ sidebarDepth: 2
 参考：
 
 - [API 文档 / 事件 (Events)](../../api/core/events.md)
+
+## 群组 (Guild)
 
 ## 输出日志 (Logger)
 
@@ -128,3 +132,5 @@ sidebarDepth: 2
 
 - [处理交互 / 监听会话事件](../message/session.md)
 - [API 文档 / 会话 (Session)](../../api/core/session.md)
+
+## 用户 (User)

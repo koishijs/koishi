@@ -1,5 +1,8 @@
-import { store, router, addHomeMeta, home } from '@koishijs/ui-console'
+import { store, addPage, addHomeMeta } from '@koishijs/ui-console'
 import type {} from '@koishijs/plugin-manager/src'
+import Bots from './bots/index.vue'
+import Settings from './settings/index.vue'
+import Market from './market/index.vue'
 
 addHomeMeta({
   order: -100,
@@ -8,25 +11,31 @@ addHomeMeta({
   content: () => store.value.bots.reduce((sum, bot) => sum + bot.messageSent, 0) + ' / min',
 })
 
-home.meta.require.push('bots')
+// home.meta.require.push('bots')
 
-router.addRoute({
+addPage({
   path: '/bots',
   name: '机器人',
-  meta: { icon: 'robot', require: ['bots', 'protocols', 'registry'] },
-  component: () => import('./bots/index.vue'),
+  icon: 'robot',
+  order: 100,
+  require: ['bots', 'protocols', 'registry'],
+  component: Bots,
 })
 
-router.addRoute({
+addPage({
   path: '/settings',
   name: '插件配置',
-  meta: { icon: 'tools', require: ['registry', 'market', 'services'] },
-  component: () => import('./settings/index.vue'),
+  icon: 'tools',
+  order: 110,
+  require: ['registry', 'market', 'services'],
+  component: Settings,
 })
 
-router.addRoute({
+addPage({
   path: '/market',
   name: '插件市场',
-  meta: { icon: 'puzzle-piece', require: ['market'] },
-  component: () => import('./market/index.vue'),
+  icon: 'puzzle-piece',
+  order: 120,
+  require: ['market'],
+  component: Market,
 })

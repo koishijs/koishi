@@ -125,8 +125,6 @@ $padding: $avatarSize + 1rem;
   position: relative;
 
   .successive {
-    margin-top: -0.5rem;
-
     .timestamp {
       position: absolute;
       visibility: hidden;
@@ -194,14 +192,13 @@ $padding: $avatarSize + 1rem;
 
   .header {
     margin-left: $padding;
-    color: #72767d;
+    margin-bottom: -2px;
     * + span {
       margin-left: 0.5rem;
     }
   }
 
   .username {
-    color: rgba(244, 244, 245, 0.8);
     font-weight: bold;
     line-height: 1.375rem;
   }
