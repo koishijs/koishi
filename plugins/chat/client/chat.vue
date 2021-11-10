@@ -123,6 +123,7 @@ $padding: $avatarSize + 1rem;
 
 .page-chat {
   position: relative;
+  height: calc(100vh - 4rem);
 
   .successive {
     .timestamp {
@@ -139,6 +140,10 @@ $padding: $avatarSize + 1rem;
         visibility: initial;
       }
     }
+  }
+
+  .k-chat-message:not(.successive):not(:first-child) {
+    margin-top: 0.5rem;
   }
 
   .avatar {
@@ -192,7 +197,6 @@ $padding: $avatarSize + 1rem;
 
   .header {
     margin-left: $padding;
-    margin-bottom: -2px;
     * + span {
       margin-left: 0.5rem;
     }

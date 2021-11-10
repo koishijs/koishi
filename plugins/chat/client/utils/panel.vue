@@ -61,8 +61,6 @@ async function onPaste(event: ClipboardEvent) {
 $padding: 1.5rem;
 
 .k-card.k-chat-panel {
-  height: 100%;
-
   .k-card-body {
     padding: 1rem 0;
     display: flex;
@@ -72,8 +70,6 @@ $padding: 1.5rem;
   }
 
   .k-chat-body {
-    overflow-x: visible;
-    overflow-y: auto;
     height: 100%;
   }
 

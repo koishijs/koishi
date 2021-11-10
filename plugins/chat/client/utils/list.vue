@@ -1,5 +1,5 @@
 <template>
-  <component ref="root" :is="tag" @scroll="onScroll">
+  <el-scrollbar ref="root" @scroll="onScroll">
     <virtual-item v-if="$slots.header" @resize="virtual.saveSize" uid="header">
       <slot name="header"/>
     </virtual-item>
@@ -14,7 +14,7 @@
       <slot name="footer"/>
     </virtual-item>
     <div ref="shepherd"/>
-  </component>
+  </el-scrollbar>
 </template>
 
 <script lang="ts" setup>
@@ -25,7 +25,6 @@ import Virtual from './virtual'
 const emit = defineEmits(['click', 'scroll', 'top', 'bottom', 'update:activeKey'])
 
 const props = defineProps({
-  tag: { default: 'div' },
   keyName: { type: String, required: true },
   data: { type: Array, required: true },
   count: { default: 50 },
@@ -45,10 +44,10 @@ function resolveItemClass(item: any, index: number) {
     : props.itemClass
 }
 
-const root = ref<HTMLElement>()
+const root = ref<{ wrap: HTMLElement }>()
 
 watch(() => props.data.length, () => {
-  const { scrollTop, clientHeight, scrollHeight } = root.value
+  const { scrollTop, clientHeight, scrollHeight } = root.value.wrap
   if (!props.pinned || Math.abs(scrollTop + clientHeight - scrollHeight) < 1) {
     nextTick(scrollToBottom)
   }
@@ -93,9 +92,9 @@ onMounted(() => {
 
 function scrollToOffset(offset: number, smooth = false) {
   if (smooth) {
-    root.value.scrollTo({ top: offset, behavior: 'smooth' })
+    root.value.wrap.scrollTo({ top: offset, behavior: 'smooth' })
   } else {
-    root.value.scrollTop = offset
+    root.value.wrap.scrollTop = offset
   }
 }
 
@@ -113,9 +112,9 @@ function scrollToBottom() {
     // maybe list doesn't render and calculate to last range
     // so we need retry in next event loop until it really at bottom
     setTimeout(() => {
-      const offset = Math.ceil(root.value.scrollTop)
-      const clientLength = Math.ceil(root.value.clientHeight)
-      const scrollLength = Math.ceil(root.value.scrollHeight)
+      const offset = Math.ceil(root.value.wrap.scrollTop)
+      const clientLength = Math.ceil(root.value.wrap.clientHeight)
+      const scrollLength = Math.ceil(root.value.wrap.scrollHeight)
       if (offset + clientLength < scrollLength) {
         scrollToBottom()
       }
@@ -124,9 +123,9 @@ function scrollToBottom() {
 }
 
 function onScroll(ev: MouseEvent) {
-  const offset = Math.ceil(root.value.scrollTop)
-  const clientLength = Math.ceil(root.value.clientHeight)
-  const scrollLength = Math.ceil(root.value.scrollHeight)
+  const offset = Math.ceil(root.value.wrap.scrollTop)
+  const clientLength = Math.ceil(root.value.wrap.clientHeight)
+  const scrollLength = Math.ceil(root.value.wrap.scrollHeight)
 
   // iOS scroll-spring-back behavior will make direction mistake
   if (offset < 0 || (offset + clientLength > scrollLength + 1) || !scrollLength) {
