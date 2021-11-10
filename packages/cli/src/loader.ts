@@ -13,11 +13,6 @@ Modules.internal.paths = function (name: string) {
   return oldPaths(name)
 }
 
-function requireDefault(path: string) {
-  const module = require(path)
-  return module.default || module
-}
-
 let cwd = process.cwd()
 
 export class Loader {
@@ -48,13 +43,13 @@ export class Loader {
     if (['.yaml', '.yml'].includes(this.extname)) {
       return load(readFileSync(this.filename, 'utf8')) as any
     } else {
-      return requireDefault(this.filename)
+      const module = require(this.filename)
+      return module.default || module
     }
   }
 
   resolvePlugin(name: string) {
-    const path = Modules.resolve(hyphenate(name))
-    return this.cache[name] = requireDefault(path)
+    return this.cache[name] = Modules.require(hyphenate(name))
   }
 
   loadPlugin(name: string, options?: any) {

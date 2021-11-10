@@ -116,12 +116,7 @@ export namespace Database {
   export function extend<K extends keyof Modules>(module: K, extension: Extension<Get<Modules[K], 'default'>>): void
   export function extend<T extends Constructor<unknown>>(module: T, extension: Extension<T>): void
   export function extend(module: any, extension: any) {
-    let Database: any
-    try {
-      Database = typeof module === 'string' ? Modules.require(module).default : module
-    } catch {
-      return
-    }
+    const Database = typeof module === 'string' ? Modules.require(module) : module
     if (!Database) return
 
     if (typeof extension === 'function') {
@@ -168,11 +163,14 @@ export namespace Modules {
     }
   }
 
-  export function require(name: string) {
+  export function require(name: string, silent = true) {
     try {
       const path = resolve(name)
-      return internal.require(path)
-    } catch {}
+      const module = internal.require(path)
+      return module.default || module
+    } catch (error) {
+      if (!silent) throw error
+    }
   }
 
   export function resolve(name: string) {

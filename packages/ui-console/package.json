@@ -35,7 +35,7 @@
     "@koishijs/utils": "^5.0.0-alpha.7",
     "@vitejs/plugin-vue": "^1.6.2",
     "ansi_up": "^5.0.1",
-    "echarts": "^5.2.0",
+    "echarts": "^5.2.2",
     "echarts-wordcloud": "^2.0.0",
     "element-plus": "^1.1.0-beta.24",
     "sass": "^1.39.0",

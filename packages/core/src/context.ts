@@ -33,6 +33,10 @@ export namespace Plugin {
     : T extends Object<infer U> ? U
     : never
 
+  export type ModuleConfig<T> = 'default' extends keyof T
+    ? Config<Extract<T['default'], Plugin>>
+    : Config<Extract<T, Plugin>>
+
   export interface State<T = any> extends Meta {
     id?: string
     parent?: State
@@ -255,10 +259,15 @@ export class Context {
     return this
   }
 
+  plugin<T extends keyof Modules>(plugin: T, options?: boolean | Plugin.ModuleConfig<Modules[T]>): this
   plugin<T extends Plugin>(plugin: T, options?: boolean | Plugin.Config<T>): this
   plugin(plugin: Plugin, options?: any) {
     if (options === false) return this
     if (options === true) options = undefined
+
+    if (typeof plugin === 'string') {
+      plugin = Modules.require(plugin, false)
+    }
 
     if (this.app.registry.has(plugin)) {
       this.logger('app').warn(new Error(`duplicate plugin <${Context.inspect(plugin)}> detected`))
