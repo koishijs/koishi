@@ -47,7 +47,7 @@ import { computed } from 'vue'
 import PackageView from './package.vue'
 import { store } from '~/client'
 
-const market = computed(() => store.value.market)
+const market = computed(() => store.market)
 
 </script>
 

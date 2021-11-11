@@ -12,14 +12,14 @@ export interface Data extends RegistryProvider.Data {
 
 export const available = computed(() => {
   const result: Dict<Data> = {}
-  for (const name in store.value.registry) {
-    const data = store.value.registry[name]
+  for (const name in store.registry) {
+    const data = store.registry[name]
     if (name && !data.id) {
       result[name] = data
     }
   }
 
-  for (const data of store.value.market.filter(data => data.local && !data.local.id)) {
+  for (const data of store.market.filter(data => data.local && !data.local.id)) {
     result[data.shortname] = {
       name: data.shortname,
       fullname: data.name,

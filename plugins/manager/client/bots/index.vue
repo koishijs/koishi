@@ -30,7 +30,7 @@ import AddBot from './add.vue'
 import BotView from './bot.vue'
 
 const current = ref<number>(null)
-const bots = computed(() => store.value.bots)
+const bots = computed(() => store.bots)
 
 </script>
 

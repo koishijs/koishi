@@ -23,7 +23,7 @@ import type {} from '@koishijs/plugin-status/src'
 import { ref, computed } from 'vue'
 
 const current = ref<string>('')
-const tables = computed(() => store.value.meta.tables)
+const tables = computed(() => store.meta.tables)
 
 </script>
 

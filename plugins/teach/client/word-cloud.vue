@@ -16,10 +16,10 @@
 import { store } from '~/client'
 import { computed, ref } from 'vue'
 
-const questions = ref(store.value.stats.questions)
+const questions = ref(store.stats.questions)
 
 function refresh() {
-  questions.value = store.value.stats.questions
+  questions.value = store.stats.questions
 }
 
 const option = computed(() => ({

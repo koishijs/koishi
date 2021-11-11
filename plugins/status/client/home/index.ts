@@ -48,7 +48,10 @@ registerView({
     title: '活跃用户数量',
     icon: 'heart',
     fields: ['meta'],
-    content: ({ meta }) => meta.activeUsers,
+    content: ({ meta }) => {
+      console.log(meta)
+      return meta.activeUsers
+    },
   }),
 })
 
@@ -56,7 +59,7 @@ registerView({
   type: 'numeric',
   component: Card.numeric({
     title: '活跃群数量',
-    icon: 'heart',
+    icon: 'users',
     fields: ['meta'],
     content: ({ meta }) => meta.activeGroups,
   }),

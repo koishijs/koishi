@@ -19,7 +19,7 @@ declare module '~/client' {
   }
 
   export const config: ClientConfig
-  export const store: Ref<Store>
+  export const store: Store
 
   export function send(type: string, body: any): void
   export function receive<T = any>(event: string, listener: (data: T) => void): void
@@ -49,21 +49,21 @@ declare module '~/client' {
   // component helper
 
   export namespace Card {
-    export interface NumericOptions {
+    export interface NumericOptions<T extends keyof Console.Sources> {
       icon: string
       title: string
       type?: string
-      fields?: (keyof Console.Sources)[]
-      content: (store: Store) => any
+      fields?: T[]
+      content: (store: Pick<Store, T>) => any
     }
 
-    export interface ChartOptions {
+    export interface ChartOptions<T extends keyof Console.Sources> {
       title: string
-      fields?: (keyof Console.Sources)[]
-      options: (store: Store) => EChartsOption
+      fields?: T[]
+      options: (store: Pick<Store, T>) => EChartsOption
     }
 
-    export function numeric(options: NumericOptions): Component
-    export function echarts(options: ChartOptions): Component
+    export function numeric<T extends keyof Console.Sources = never>(options: NumericOptions<T>): Component
+    export function echarts<T extends keyof Console.Sources = never>(options: ChartOptions<T>): Component
   }
 }

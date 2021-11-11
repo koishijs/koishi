@@ -57,12 +57,12 @@ const props = defineProps<{
 
 const data = computed<Data>(() => {
   return available.value.find(data => data.name === props.current)
-    || store.value.registry[props.current]
+    || store.registry[props.current]
 })
 
 function getDeps(type: 'peerDeps' | 'devDeps') {
   return Object.fromEntries((data.value[type] || [])
-    .map(name => [name, store.value.market.some(data => data.name === name && data.local?.id)]))
+    .map(name => [name, store.market.some(data => data.name === name && data.local?.id)]))
 }
 
 function getKeywords(prefix: string, keywords = data.value.keywords) {
@@ -81,18 +81,18 @@ interface DelegateData {
 
 function getFullname({ name, fullname, id }: Data) {
   if (fullname) return fullname
-  const item = store.value.market?.find(item => item.local?.id === id)
+  const item = store.market?.find(item => item.local?.id === id)
   if (item) return item.name
   return name
 }
 
 function getDelegateData(name: string, required: boolean): DelegateData {
-  const fulfilled = store.value.services.includes(name)
+  const fulfilled = store.services.includes(name)
   if (fulfilled) return { required, fulfilled }
   return {
     required,
     fulfilled,
-    available: store.value.market
+    available: store.market
       .filter(data => getKeywords('service', data.keywords).includes(name))
       .map(data => data.name),
   }
@@ -113,7 +113,7 @@ const delegates = computed(() => {
 
 const message = computed(() => {
   const required = getKeywords('required')
-  if (required.some(name => !store.value.services.includes(name))) {
+  if (required.some(name => !store.services.includes(name))) {
     return '存在未安装的依赖接口。'
   }
 

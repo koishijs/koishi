@@ -9,13 +9,13 @@
 
 <script lang="ts" setup>
 
-import { store } from '~/client'
+import { store } from '../client'
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 import Sidebar from './sidebar.vue'
 
 const route = useRoute()
-const loaded = computed(() => (route.meta.require || []).every((key) => store.value[key]))
+const loaded = computed(() => (route.meta.fields || []).every((key) => store[key]))
 
 </script>
 

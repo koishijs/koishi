@@ -14,7 +14,7 @@ import { computed } from 'vue'
 import { store, receive } from '~/client'
 import Converter from 'ansi_up'
 
-const lines = computed(() => store.value.logs)
+const lines = computed(() => store.logs)
 
 receive('logs/data', data => lines.value.push(data))
 

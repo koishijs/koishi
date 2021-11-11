@@ -38,7 +38,7 @@ const props = defineProps<{
 
 const emits = defineEmits(['update:modelValue'])
 
-const registry = computed(() => store.value.registry)
+const registry = computed(() => store.registry)
 
 const model = computed({
   get: () => props.modelValue,

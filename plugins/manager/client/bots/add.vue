@@ -19,7 +19,7 @@ const config = ref({})
 const selected = ref([])
 
 const options = computed(() => {
-  return Object.entries(store.value.protocols).map(([key, schema]) => ({
+  return Object.entries(store.protocols).map(([key, schema]) => ({
     value: key,
     label: key,
     children: schema.type === 'decide' ? Object.keys(schema.dict).map((key) => ({
@@ -32,7 +32,7 @@ const options = computed(() => {
 const schema = computed<Schema>(() => {
   const [platform, protocol] = selected.value
   if (!platform) return
-  const schema = store.value.protocols[platform]
+  const schema = store.protocols[platform]
   if (schema.type !== 'decide') return schema
   if (protocol) return schema.dict[protocol]
 })

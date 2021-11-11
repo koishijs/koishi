@@ -1,4 +1,4 @@
-import { ref, h, Component, markRaw, defineComponent, resolveComponent } from 'vue'
+import { ref, reactive, h, Component, markRaw, defineComponent, resolveComponent } from 'vue'
 import { createWebHistory, createRouter } from 'vue-router'
 import { DataSource, Console, ClientConfig } from '@koishijs/plugin-console'
 import { EChartsOption } from 'echarts'
@@ -14,7 +14,7 @@ type Store = {
   [K in keyof Console.Sources]?: Console.Sources[K] extends DataSource<infer T> ? T : never
 }
 
-export const store = ref<Store>({})
+export const store = reactive<Store>({})
 
 const socket = ref<WebSocket>(null)
 const listeners: Record<string, (data: any) => void> = {}
@@ -27,7 +27,7 @@ export function receive<T = any>(event: string, listener: (data: T) => void) {
   listeners[event] = listener
 }
 
-receive('data', ({ key, value }) => store.value[key] = value)
+receive('data', ({ key, value }) => store[key] = value)
 
 export async function connect(endpoint: string) {
   socket.value = new WebSocket(endpoint)
@@ -59,11 +59,11 @@ export interface ViewOptions {
   component: Component
 }
 
-export const views = ref<Record<string, ViewOptions[]>>({})
+export const views = reactive<Record<string, ViewOptions[]>>({})
 
 export function registerView(options: ViewOptions) {
   options.order ??= 0
-  const list = views.value[options.type] ||= []
+  const list = views[options.type] ||= []
   const index = list.findIndex(a => a.order < options.order)
   markRaw(options.component)
   if (index >= 0) {
@@ -73,14 +73,21 @@ export function registerView(options: ViewOptions) {
   }
 }
 
-export interface PageOptions {
-  path: string
-  name: string
+interface RouteMetaExtension {
   icon?: string
   order?: number
   hidden?: boolean
   fields?: (keyof Console.Sources)[]
+}
+
+export interface PageOptions extends RouteMetaExtension {
+  path: string
+  name: string
   component: Component
+}
+
+declare module 'vue-router' {
+  interface RouteMeta extends RouteMetaExtension {}
 }
 
 export const router = createRouter({
@@ -113,9 +120,9 @@ registerPage({
 // component helper
 
 export namespace Card {
-  function createFieldComponent(render: Function, fields?: (keyof Console.Sources)[]) {
+  function createFieldComponent(render: Function, fields: (keyof Console.Sources)[] = [] as any) {
     return defineComponent({
-      render: () => fields ? fields.every(key => store.value[key]) ? render() : null : render(),
+      render: () => fields.every(key => store[key]) ? render() : null,
     })
   }
 
@@ -129,10 +136,10 @@ export namespace Card {
 
   export function numeric({ type, icon, fields, title, content }: NumericOptions) {
     const render = type ? () => h(resolveComponent('k-numeric'), {
-      icon, title, type, value: content(store.value), fallback: '未安装',
+      icon, title, type, value: content(store), fallback: '未安装',
     }) : () => h(resolveComponent('k-numeric'), {
       icon, title,
-    }, () => content(store.value))
+    }, () => content(store))
   
     return createFieldComponent(render, fields)
   }
@@ -145,11 +152,11 @@ export namespace Card {
 
   export function echarts({ title, fields, options }: ChartOptions) {
     return createFieldComponent(() => {
-      const option = options(store.value)
+      const option = options(store)
       return h(resolveComponent('k-card'), {
         class: 'frameless',
         title,
-      }, option ? h(resolveComponent('k-chart'), {
+      }, () => option ? h(resolveComponent('k-chart'), {
         option,
         autoresize: true,
       }) : '暂无数据。')

@@ -76,7 +76,9 @@ const endpoint = new URL(config.endpoint, location.origin).toString()
 client.connect(endpoint.replace(/^http/, 'ws'))
 
 const loadingExtensions = Promise.all(config.extensions.map(path => {
-  return import(/* @vite-ignore */ path)
+  return import(/* @vite-ignore */ path).catch((error) => {
+    console.error(error)
+  })
 }))
 
 loadingExtensions.then(() => app.mount('#app'))

@@ -7,7 +7,7 @@ interface CommonData {
 
 export namespace Tooltip {
   type FormatterCallback<T> = (params: T) => string
-  type FormatterCallbackParams<T> = echarts.DefaultLabelFormatterCallbackParams & { data: T }
+  type FormatterCallbackParams<T> = Omit<echarts.DefaultLabelFormatterCallbackParams, 'data'> & { data: T }
 
   export const item = <T = CommonData>(formatter: FormatterCallback<FormatterCallbackParams<T>>) => ({
     trigger: 'item',

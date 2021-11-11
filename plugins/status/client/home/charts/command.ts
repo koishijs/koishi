@@ -5,7 +5,7 @@ registerView({
   type: 'chart',
   component: Card.echarts({
     title: '指令调用频率',
-  fields: ['stats'],
+    fields: ['stats'],
     options({ stats }) {
       const data = Object.entries(stats.commands)
         .sort((a, b) => b[1] - a[1])
