@@ -48,10 +48,7 @@ registerView({
     title: '活跃用户数量',
     icon: 'heart',
     fields: ['meta'],
-    content: ({ meta }) => {
-      console.log(meta)
-      return meta.activeUsers
-    },
+    content: ({ meta }) => meta.activeUsers,
   }),
 })
 

@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-adapter-discord",
   "description": "Discord adapter for Koishi",
-  "version": "2.0.0-alpha.7",
+  "version": "2.0.0-beta.0",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -28,12 +28,12 @@
     "koishi"
   ],
   "peerDependencies": {
-    "koishi": "^4.0.0-alpha.12"
+    "koishi": "^4.0.0-beta.0"
   },
   "devDependencies": {
     "@types/es-aggregate-error": "^1.0.2",
     "@types/ws": "^7.4.7",
-    "@koishijs/test-utils": "^8.0.0-alpha.9"
+    "@koishijs/test-utils": "^8.0.0-beta.0"
   },
   "dependencies": {
     "es-aggregate-error": "^1.0.5",

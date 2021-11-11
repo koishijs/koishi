@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-console",
   "description": "A web user interface for Koishi",
-  "version": "1.0.0-alpha.0",
+  "version": "1.0.0-beta.0",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -30,11 +30,11 @@
     "webui"
   ],
   "peerDependencies": {
-    "koishi": "^4.0.0-alpha.12"
+    "koishi": "^4.0.0-beta.0"
   },
   "devDependencies": {
     "@fortawesome/fontawesome-free": "^5.15.4",
-    "@koishijs/utils": "^5.0.0-alpha.7",
+    "@koishijs/utils": "^5.0.0-beta.0",
     "@types/uuid": "^8.3.1",
     "@vitejs/plugin-vue": "^1.9.4",
     "@vueuse/core": "^6.8.0",
