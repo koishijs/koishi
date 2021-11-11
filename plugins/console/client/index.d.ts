@@ -1,44 +1,69 @@
 /// <reference types="vite/client" />
-/// <reference path="./global.d.ts" />
 
-import { Component, Ref } from 'vue'
-import { Console, DataSource, ClientConfig } from '@koishijs/plugin-console'
+declare module '*.vue' {
+  import { Component } from 'vue'
 
-export interface View {
-  order: number
-  component: Component
+  const component: Component
+  export default component
 }
 
-export function addView(name: string, component: Component, order?: number): void
+declare module '~/client' {
+  import { Component, Ref } from 'vue'
+  import { EChartsOption } from 'echarts'
+  import { Console, DataSource, ClientConfig } from '@koishijs/plugin-console'
 
-export interface HomeMeta {
-  icon: string
-  title: string
-  order?: number
-  type?: string
-  when?: () => any
-  content: () => any
+  // data api
+
+  export type Store = {
+    [K in keyof Console.Sources]?: Console.Sources[K] extends DataSource<infer T> ? T : never
+  }
+
+  export const config: ClientConfig
+  export const store: Ref<Store>
+
+  export function send(type: string, body: any): void
+  export function receive<T = any>(event: string, listener: (data: T) => void): void
+
+  // layout api
+
+  export interface PageOptions {
+    path: string
+    name: string
+    icon?: string
+    order?: number
+    hidden?: boolean
+    fields?: (keyof Console.Sources)[]
+    component: Component
+  }
+
+  export interface ViewOptions {
+    id?: string
+    type: string
+    order?: number
+    component: Component
+  }
+
+  export function registerPage(options: PageOptions): void
+  export function registerView(options: ViewOptions): void
+
+  // component helper
+
+  export namespace Card {
+    export interface NumericOptions {
+      icon: string
+      title: string
+      type?: string
+      fields?: (keyof Console.Sources)[]
+      content: (store: Store) => any
+    }
+
+    export interface ChartOptions {
+      title: string
+      fields?: (keyof Console.Sources)[]
+      options: (store: Store) => EChartsOption
+    }
+
+    export function numeric(options: NumericOptions): Component
+    export function echarts(options: ChartOptions): Component
+  }
 }
-
-export function addHomeMeta(options: HomeMeta): void
-
-export interface PageOptions {
-  path: string
-  name: string
-  component: Component
-  icon?: string
-  order?: number
-  hidden?: boolean
-  require?: (keyof Console.Sources)[]
-}
-
-export function addPage(options: PageOptions): void
-
-export const config: ClientConfig
-
-export const store: Ref<{
-  [K in keyof Console.Sources]?: Console.Sources[K] extends DataSource<infer T> ? T : never
-}>
-
-export function send(type: string, body: any): void
-export function receive<T = any>(event: string, listener: (data: T) => void): void

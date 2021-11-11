@@ -1,10 +1,13 @@
-import { addPage, addView } from '~/client'
+import { registerPage, registerView } from '~/client'
 import Chat from './chat.vue'
 import Overlay from './overlay.vue'
 
-addView('global', Overlay)
+registerView({
+  type: 'global',
+  component: Overlay,
+})
 
-addPage({
+registerPage({
   path: '/chat',
   name: '聊天',
   icon: 'comments',

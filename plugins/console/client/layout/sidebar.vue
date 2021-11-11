@@ -22,7 +22,7 @@ import { useRouter } from 'vue-router'
 const router = useRouter()
 
 const routes = computed(() => {
-  return router.getRoutes().sort((a, b) => a.meta.order - b.meta.order)
+  return router.getRoutes().sort((a, b) => b.meta.order - a.meta.order)
 })
 
 </script>

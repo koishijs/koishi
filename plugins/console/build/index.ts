@@ -42,6 +42,7 @@ function build(root: string, config: vite.UserConfig) {
         'vue': root + '/vue.js',
         'vue-router': root + '/vue-router.js',
         '~/client': root + '/client.js',
+        '~/variables': '@koishijs/plugin-console/client/index.scss',
         ...config.resolve?.alias,
       },
     },
@@ -66,16 +67,11 @@ function buildExtension(name: string) {
 }
 
 ;(async () => {
-  const root = resolve(__dirname, '../src')
+  const root = resolve(__dirname, '../client')
   const dist = resolve(__dirname, '../dist')
 
   await build(root, {
     base: './',
-    resolve: {
-      alias: {
-        '~/variables': root + '/index.scss',
-      },
-    },
     plugins: [{
       // magic, don't touch
       name: 'fuck-echarts',
@@ -95,7 +91,7 @@ function buildExtension(name: string) {
       emptyOutDir: false,
       rollupOptions: {
         input: {
-          'client': root + '/index.ts',
+          'client': root + '/client.ts',
           'vue-router': findModulePath('vue-router') + '/dist/vue-router.esm-browser.js',
         },
         treeshake: false,
@@ -105,5 +101,7 @@ function buildExtension(name: string) {
   })
 
   await buildExtension('chat')
+  await buildExtension('manager')
+  await buildExtension('status')
   await buildExtension('teach')
 })()

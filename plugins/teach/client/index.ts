@@ -1,10 +1,10 @@
-import { addPage } from '~/client'
+import { registerPage } from '~/client'
 import Teach from './teach.vue'
 
-addPage({
+registerPage({
   path: '/teach',
   name: '问答',
   icon: 'book',
-  require: ['stats', 'meta'],
+  fields: ['stats', 'meta'],
   component: Teach,
 })

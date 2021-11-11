@@ -1,9 +1,9 @@
 <template>
   <div class="card-grid profile-grid">
-    <k-view name="home-meta"></k-view>
+    <k-view name="numeric"></k-view>
   </div>
   <k-view name="home"></k-view>
   <div class="card-grid chart-grid">
-    <k-view name="home-charts"></k-view>
+    <k-view name="chart"></k-view>
   </div>
 </template>

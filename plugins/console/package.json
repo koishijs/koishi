@@ -6,7 +6,8 @@
   "typings": "lib/index.d.ts",
   "files": [
     "lib",
-    "dist"
+    "dist",
+    "client/index.d.ts"
   ],
   "author": "Shigma <1700011071@pku.edu.cn>",
   "license": "MIT",
@@ -35,14 +36,14 @@
     "@fortawesome/fontawesome-free": "^5.15.4",
     "@koishijs/utils": "^5.0.0-alpha.7",
     "@types/uuid": "^8.3.1",
-    "@vitejs/plugin-vue": "^1.6.2",
+    "@vitejs/plugin-vue": "^1.9.4",
     "@vueuse/core": "^6.8.0",
     "ansi_up": "^5.0.1",
     "echarts": "^5.2.2",
     "echarts-wordcloud": "^2.0.0",
     "element-plus": "^1.1.0-beta.24",
     "sass": "^1.39.0",
-    "vite": "^2.6.14",
+    "vite": "~2.5.10",
     "vue": "^3.2.21",
     "vue-echarts": "^6.0.0",
     "vue-router": "^4.0.12"

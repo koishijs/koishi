@@ -67,10 +67,11 @@ export function average(stats: {}[]) {
   return result
 }
 
-interface GroupData {
+export interface GroupData {
   name: string
   platform: string
   assignee: string
+  memberCount?: number
   value: number
   last: number
 }

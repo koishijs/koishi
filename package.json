@@ -17,7 +17,8 @@
   "scripts": {
     "addons": "yarn workspace addons",
     "build": "yarn compile && yarn dtsc",
-    "build:web": "node -r ./build/register plugins/console/build",
+    "build:console": "node -r ./build/register plugins/console/build",
+    "console": "yarn workspace @koishijs/plugin-console",
     "dtsc": "node -r ./build/register build/dtsc",
     "bump": "node -r ./build/register build/bump",
     "compile": "node -r ./build/register build/compile",
@@ -32,8 +33,7 @@
     "pub": "node -r ./build/register build/publish",
     "scaffold": "yarn compile koishi && yarn create-koishi test",
     "start": "yarn compile && yarn workspace test koishi start",
-    "shiki": "yarn workspace bot-shiki",
-    "webui": "yarn workspace @koishijs/plugin-console"
+    "shiki": "yarn workspace bot-shiki"
   },
   "version": "1.0.0",
   "license": "MIT",
