@@ -1,3 +1,4 @@
+bin
 lib
 dist
 temp
@@ -7,6 +8,7 @@ temp
 
 tsconfig.temp.json
 
+/community
 /addons
 /public
 /atri
@@ -15,8 +17,6 @@ tsconfig.temp.json
 /shiki
 /test
 /utsuho
-
-/packages/plugin-cryptocurrency
 
 todo.md
 yarn.lock

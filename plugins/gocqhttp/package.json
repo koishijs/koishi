@@ -1,0 +1,47 @@
+{
+  "name": "@koishijs/plugin-gocqhttp",
+  "description": "go-cqhttp launcher for Koishi",
+  "version": "1.0.0-beta.0",
+  "main": "lib/index.js",
+  "typings": "lib/index.d.ts",
+  "files": [
+    "lib",
+    "install.js",
+    "template.yml"
+  ],
+  "scripts": {
+    "postinstall": "node install"
+  },
+  "author": "Shigma <1700011071@pku.edu.cn>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/koishijs/koishi.git"
+  },
+  "bugs": {
+    "url": "https://github.com/koishijs/koishi/issues"
+  },
+  "homepage": "https://koishi.js.org/plugin/gocqhttp.html",
+  "keywords": [
+    "bot",
+    "qqbot",
+    "cqhttp",
+    "coolq",
+    "chatbot",
+    "koishi"
+  ],
+  "peerDependencies": {
+    "@koishijs/plugin-adapter-onebot": "^4.0.0-beta.0",
+    "koishi": "^4.0.0-beta.0"
+  },
+  "devDependencies": {
+    "@octokit/openapi-types": "^10.6.4",
+    "@types/cross-spawn": "^6.0.2",
+    "@types/tar": "^4.0.5"
+  },
+  "dependencies": {
+    "axios": "^0.22.0",
+    "cross-spawn": "^7.0.3",
+    "tar": "^6.1.11"
+  }
+}

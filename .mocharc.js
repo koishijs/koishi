@@ -1,32 +1,32 @@
-const { readdirSync } = require('fs')
-
 process.env.TS_NODE_PROJECT = 'tsconfig.test.json'
 
-const prefixes = ['koishi-', 'adapter-', 'plugin-', '']
+const specs = [
+  'packages/core/tests/*.spec.ts',
+  'packages/utils/tests/*.spec.ts',
+  'packages/dev-utils/tests/*.spec.ts',
+  'packages/test-utils/tests/*.spec.ts',
+  'plugins/admin/tests/*.spec.ts',
+  'plugins/common/tests/*.spec.ts',
+  'plugins/database/level/tests/*.spec.ts',
+  'plugins/database/memory/tests/*.spec.ts',
+  'plugins/database/mongo/tests/*.spec.ts',
+  'plugins/database/mysql/tests/*.spec.ts',
+  'plugins/database/sqlite/tests/*.spec.ts',
+  'plugins/eval/tests/*.spec.ts',
+  'plugins/forward/tests/*.spec.ts',
+  'plugins/github/tests/*.spec.ts',
+  'plugins/repeater/tests/*.spec.ts',
+  'plugins/schedule/tests/*.spec.ts',
+  'plugins/teach/tests/*.spec.ts',
+  'plugins/verifier/tests/*.spec.ts',
+]
+
 const libraries = {}
 
-for (const name of readdirSync(__dirname + '/packages')) {
-  for (const prefix of prefixes) {
-    if (name.startsWith(prefix)) {
-      libraries[name.slice(prefix.length)] = name
-      break
-    }
-  }
+for (const path of specs) {
+  const [type, lib] = path.split('/')
+  libraries[lib] = type
 }
-
-const specs = [
-  'packages/koishi-core/tests/*.spec.ts',
-  'packages/koishi-dev-utils/tests/*.spec.ts',
-  'packages/koishi-test-utils/tests/*.spec.ts',
-  'packages/koishi-utils/tests/*.spec.ts',
-  'packages/plugin-common/tests/*.spec.ts',
-  'packages/plugin-eval/tests/*.spec.ts',
-  'packages/plugin-github/tests/*.spec.ts',
-  'packages/plugin-mongo/tests/*.spec.ts',
-  'packages/plugin-mysql/tests/*.spec.ts',
-  'packages/plugin-schedule/tests/*.spec.ts',
-  'packages/plugin-teach/tests/*.spec.ts',
-]
 
 function getSpecFromArgv() {
   if (!process.env.npm_config_argv) return specs
@@ -34,9 +34,9 @@ function getSpecFromArgv() {
   if (args.length === 1) return specs
   process.argv.splice(1 - args.length, Infinity)
   return args.slice(1).flatMap((path) => {
-    const [lib] = path.split('/')
-    const target = path.slice(lib.length)
-    const prefix = `packages/${libraries[lib]}/tests/`
+    const [name] = path.split('/')
+    const target = path.slice(name.length)
+    const prefix = `${libraries[name]}/${name}/tests/`
     if (target) return prefix + target + `.spec.ts`
     return specs.filter(name => name.startsWith(prefix))
   }, 1)

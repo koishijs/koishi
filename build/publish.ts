@@ -13,6 +13,14 @@ if (CI && (GITHUB_REF !== 'refs/heads/master' || GITHUB_EVENT_NAME !== 'push')) 
   process.exit(0)
 }
 
+function getVersion(name: string, isLatest = true) {
+  if (isLatest) {
+    return latest(name).catch(() => '0.0.1')
+  } else {
+    return latest(name, { version: 'next' }).catch(() => getVersion(name))
+  }
+}
+
 ;(async () => {
   let folders = await getWorkspaces()
   if (process.argv[2]) {
@@ -29,9 +37,7 @@ if (CI && (GITHUB_REF !== 'refs/heads/master' || GITHUB_EVENT_NAME !== 'push')) 
     try {
       meta = require(`../${name}/package.json`)
       if (!meta.private) {
-        const version = prerelease(meta.version)
-          ? await latest(meta.name, { version: 'next' }).catch(() => latest(meta.name))
-          : await latest(meta.name)
+        const version = await getVersion(meta.name, !prerelease(meta.version))
         if (gt(meta.version, version)) {
           bumpMap[name] = meta
         }
@@ -47,33 +53,20 @@ if (CI && (GITHUB_REF !== 'refs/heads/master' || GITHUB_EVENT_NAME !== 'push')) 
       'yarn', 'publish', folder,
       '--new-version', version,
       '--tag', tag,
+      '--access', 'public',
     ])
   }
 
   if (Object.keys(bumpMap).length) {
     for (const folder in bumpMap) {
-      const { name, version, dependencies, devDependencies } = bumpMap[folder]
+      const { name, version } = bumpMap[folder]
       await publish(folder, name, version, prerelease(version) ? 'next' : 'latest')
-      if (name === 'koishi-plugin-webui') {
-        const filename = cwd + '/packages/plugin-webui/package.json'
-        await writeJson(filename, {
-          ...bumpMap[folder],
-          version: version + '-dev',
-          files: ['lib', 'dist', 'client'],
-          dependencies: Object.fromEntries([
-            ...Object.entries(dependencies),
-            ...Object.entries(devDependencies).filter(([key]) => {
-              return !key.startsWith('@types') && !key.startsWith('koishi')
-            }),
-          ]),
-        }, { spaces: 2 })
-        await publish(folder, name, version + '-dev', 'dev')
-        await writeJson(filename, bumpMap[folder])
-      }
     }
   }
 
-  const { version } = require('../packages/koishi-core/package') as PackageJson
+  const { version } = require('../packages/koishi/package') as PackageJson
+  if (prerelease(version)) return
+
   const tags = spawnSync(['git', 'tag', '-l']).split(/\r?\n/)
   if (tags.includes(version)) {
     return console.log(`Tag ${version} already exists.`)

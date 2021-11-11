@@ -1,0 +1,38 @@
+{
+  "name": "@koishijs/plugin-schedule",
+  "description": "Create scheduled tasks for Koishi",
+  "version": "4.0.0-beta.0",
+  "main": "lib/index.js",
+  "typings": "lib/index.d.ts",
+  "files": [
+    "lib"
+  ],
+  "author": "Shigma <1700011071@pku.edu.cn>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/koishijs/koishi.git"
+  },
+  "bugs": {
+    "url": "https://github.com/koishijs/koishi/issues"
+  },
+  "homepage": "https://github.com/koishijs/koishi/packages/plugin-schedule#readme",
+  "keywords": [
+    "bot",
+    "qqbot",
+    "cqhttp",
+    "coolq",
+    "chatbot",
+    "koishi",
+    "plugin",
+    "schedule",
+    "task",
+    "required:database"
+  ],
+  "devDependencies": {
+    "@koishijs/test-utils": "^8.0.0-beta.0"
+  },
+  "peerDependencies": {
+    "koishi": "^4.0.0-beta.0"
+  }
+}

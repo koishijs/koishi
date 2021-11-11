@@ -1,0 +1,56 @@
+{
+  "name": "@koishijs/plugin-console",
+  "description": "A web user interface for Koishi",
+  "version": "1.0.0-beta.0",
+  "main": "lib/index.js",
+  "typings": "lib/index.d.ts",
+  "files": [
+    "lib",
+    "dist",
+    "client/index.d.ts"
+  ],
+  "author": "Shigma <1700011071@pku.edu.cn>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/koishijs/koishi.git"
+  },
+  "bugs": {
+    "url": "https://github.com/koishijs/koishi/issues"
+  },
+  "homepage": "https://koishi.js.org/plugins/other/status.html",
+  "keywords": [
+    "bot",
+    "qqbot",
+    "cqhttp",
+    "coolq",
+    "chatbot",
+    "koishi",
+    "plugin",
+    "webui"
+  ],
+  "peerDependencies": {
+    "koishi": "^4.0.0-beta.0"
+  },
+  "devDependencies": {
+    "@fortawesome/fontawesome-free": "^5.15.4",
+    "@koishijs/utils": "^5.0.0-beta.0",
+    "@types/uuid": "^8.3.1",
+    "@vitejs/plugin-vue": "^1.9.4",
+    "@vueuse/core": "^6.8.0",
+    "ansi_up": "^5.0.1",
+    "echarts": "^5.2.2",
+    "echarts-wordcloud": "^2.0.0",
+    "element-plus": "^1.1.0-beta.24",
+    "sass": "^1.39.0",
+    "vite": "~2.5.10",
+    "vue": "^3.2.21",
+    "vue-echarts": "^6.0.0",
+    "vue-router": "^4.0.12"
+  },
+  "dependencies": {
+    "open": "^8.2.1",
+    "uuid": "^8.3.2",
+    "ws": "^8.2.1"
+  }
+}

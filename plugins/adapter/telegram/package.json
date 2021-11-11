@@ -1,0 +1,40 @@
+{
+  "name": "@koishijs/plugin-adapter-telegram",
+  "description": "Telegram adapter for Koishi",
+  "version": "2.0.0-beta.0",
+  "main": "lib/index.js",
+  "typings": "lib/index.d.ts",
+  "files": [
+    "lib"
+  ],
+  "author": "undefined <i@undefined.moe>",
+  "maintainers": [
+    "Shigma <1700011071@pku.edu.cn>",
+    "undefined <i@undefined.moe>"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/koishijs/koishi.git"
+  },
+  "bugs": {
+    "url": "https://github.com/koishijs/koishi/issues"
+  },
+  "homepage": "https://koishi.js.org/api/adapter/telegram.html",
+  "keywords": [
+    "bot",
+    "telegram",
+    "chatbot",
+    "koishi"
+  ],
+  "peerDependencies": {
+    "koishi": "^4.0.0-beta.0"
+  },
+  "devDependencies": {
+    "@koishijs/test-utils": "^8.0.0-beta.0"
+  },
+  "dependencies": {
+    "axios": "^0.21.4",
+    "form-data": "^4.0.0"
+  }
+}

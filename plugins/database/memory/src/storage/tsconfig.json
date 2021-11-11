@@ -1,0 +1,10 @@
+{
+  "extends": "../../../../../tsconfig.base",
+  "compilerOptions": {
+    "rootDir": "..",
+    "outFile": "../../temp/serializer.d.ts",
+  },
+  "files": [
+    "index.ts"
+  ]
+}

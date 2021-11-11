@@ -1,7 +1,12 @@
-const { remove: removeDiacritics } = require('diacritics')
 const { resolve } = require('path')
+const { remove: removeDiacritics } = require('diacritics')
+
+function devOnly(value) {
+  return process.env.NODE_ENV === 'production' ? [] : [value]
+}
 
 module.exports = {
+  base: '/v4/',
   title: 'Koishi',
   theme: resolve(__dirname, 'theme'),
   bundler: '@vuepress/vite',
@@ -10,12 +15,6 @@ module.exports = {
     ['link', { rel: 'icon', href: `/koishi.png` }],
     ['link', { rel: 'manifest', href: '/manifest.json' }],
     ['meta', { name: 'theme-color', content: '#5546a3' }],
-    // ['meta', { name: 'apple-mobile-web-app-capable', content: 'yes' }],
-    // ['meta', { name: 'apple-mobile-web-app-status-bar-style', content: 'black' }],
-    // ['link', { rel: 'apple-touch-icon', href: `/icons/apple-touch-icon-152x152.png` }],
-    // ['link', { rel: 'mask-icon', href: '/icons/safari-pinned-tab.svg', color: '#5546a3' }],
-    // ['meta', { name: 'msapplication-TileImage', content: '/icons/msapplication-icon-144x144.png' }],
-    // ['meta', { name: 'msapplication-TileColor', content: '#000000' }]
   ],
 
   markdown: {
@@ -37,71 +36,123 @@ module.exports = {
   themeConfig: {
     logo: '/koishi.png',
     navbar: [
-      { text: '主页', link: '/' },
-      { text: '指南', link: '/guide/starter.html' },
+      { text: '指南', link: '/guide/introduction/' },
       { text: 'API', link: '/api/' },
       { text: '官方插件', link: '/plugins/' },
-      { text: 'GitHub', link: 'https://github.com/koishijs/koishi' },
+      // ...devOnly({ text: '演练场', link: '/playground.html' }),
     ],
     sidebar: {
       '/guide/': [{
         text: '入门',
         isGroup: true,
         children: [
-          '/guide/about.md',
-          '/guide/starter.md',
-          '/guide/cli.md',
-          '/guide/docker.md',
-          '/guide/faq.md',
+          '/guide/introduction/index.md',
+          '/guide/introduction/coding.md',
+          '/guide/introduction/console.md',
+          '/guide/introduction/glossary.md',
         ],
       }, {
-        text: '进阶',
+        text: '处理交互',
         isGroup: true,
         children: [
-          '/guide/message.md',
-          '/guide/context.md',
-          '/guide/command.md',
-          '/guide/execute.md',
-          '/guide/help.md',
-          '/guide/manage.md',
-          '/guide/database.md',
-          '/guide/lifecycle.md',
-          '/guide/adapter.md',
-          '/guide/logger.md',
-          '/guide/unit-tests.md',
-          '/guide/decorator.md',
+          '/guide/message/middleware.md',
+          '/guide/message/session.md',
+          '/guide/message/command.md',
+          '/guide/message/execution.md',
+          '/guide/message/help.md',
+          '/guide/message/message.md',
+        ],
+      }, {
+        text: '模块化',
+        isGroup: true,
+        children: [
+          '/guide/plugin/plugin.md',
+          '/guide/plugin/context.md',
+          '/guide/plugin/lifecycle.md',
+          '/guide/plugin/schema.md',
+          '/guide/plugin/publish.md',
+        ],
+      }, {
+        text: '数据库',
+        isGroup: true,
+        children: [
+          '/guide/database/database.md',
+          '/guide/database/builtin.md',
+          '/guide/database/observer.md',
+          '/guide/database/writing.md',
+        ],
+      }, {
+        text: '跨平台',
+        isGroup: true,
+        children: [
+          '/guide/adapter/adapter.md',
+          '/guide/adapter/binding.md',
+          '/guide/adapter/writing.md',
+          '/guide/adapter/for-everything.md',
+        ],
+      }, {
+        text: '更多功能',
+        isGroup: true,
+        children: [
+          '/guide/service/index.md',
+          '/guide/service/assets.md',
+          '/guide/service/cache.md',
+          '/guide/service/http.md',
+          '/guide/service/route.md',
+          '/guide/service/logger.md',
+        ],
+      }, {
+        text: '调试与部署',
+        isGroup: true,
+        children: [
+          '/guide/misc/cli.md',
+          '/guide/misc/unit-tests.md',
+          '/guide/misc/decorator.md',
+          '/guide/misc/docker.md',
+        ],
+      }, {
+        text: '贡献指南',
+        isGroup: true,
+        children: [
+          '/guide/contribution/structure.md',
+          '/guide/contribution/code.md',
+          '/guide/contribution/docs.md',
         ],
       }],
-      '/api': [{
+      '/api/': [{
         text: '总览',
         link: '/api/',
       }, {
         text: '核心 API',
         isGroup: true,
         children: [
-          '/api/context.md',
-          '/api/app.md',
-          '/api/bot.md',
-          '/api/events.md',
-          '/api/session.md',
-          '/api/command.md',
-          '/api/segment.md',
-          '/api/database.md',
-          '/api/adapter.md',
-          '/api/global.md',
+          '/api/core/context.md',
+          '/api/core/app.md',
+          '/api/core/bot.md',
+          '/api/core/events.md',
+          '/api/core/session.md',
+          '/api/core/command.md',
+          '/api/core/database.md',
+          '/api/core/adapter.md',
+        ],
+      }, {
+        text: '其他内置 API',
+        isGroup: true,
+        children: [
+          '/api/utils/segment.md',
+          '/api/utils/schema.md',
+          '/api/utils/observer.md',
+          '/api/utils/template.md',
+          '/api/utils/logger.md',
+          '/api/utils/misc.md',
         ],
       }, {
         text: '其他官方包',
         isGroup: true,
         children: [
-          '/api/utils.md',
-          '/api/test-utils.md',
-          '/api/adapter/onebot.md',
-          '/api/adapter/telegram.md',
-          '/api/adapter/discord.md',
-          '/api/adapter/kaiheila.md',
-          '/api/database/mongo.md',
-          '/api/database/mysql.md',
+          '/api/tools/cli.md',
+          '/api/tools/dev-utils.md',
+          '/api/tools/test-utils.md',
         ],
       }, {
         text: '更新与迁移',
@@ -114,6 +165,38 @@ module.exports = {
       '/plugins/': [{
         text: '总览',
         link: '/plugins/',
+      }, {
+        text: '适配器支持',
+        isGroup: true,
+        children: [
+          '/plugins/adapter/discord.md',
+          '/plugins/adapter/kaiheila.md',
+          '/plugins/adapter/onebot.md',
+          '/plugins/adapter/telegram.md',
+        ],
+      }, {
+        text: '数据库支持',
+        isGroup: true,
+        children: [
+          '/plugins/database/database.md',
+          '/plugins/database/mongo.md',
+          '/plugins/database/mysql.md',
+        ],
+      }, {
+        text: '资源存储支持',
+        isGroup: true,
+        children: [
+          '/plugins/assets/assets.md',
+          '/plugins/assets/jsdelivr.md',
+          '/plugins/assets/s3.md',
+        ],
+      }, {
+        text: '缓存支持',
+        isGroup: true,
+        children: [
+          '/plugins/cache/cache.md',
+          '/plugins/cache/redis.md',
+        ],
       }, {
         text: '常用功能 (Common)',
         isGroup: true,
@@ -148,18 +231,17 @@ module.exports = {
           '/plugins/eval/sandbox.md',
           '/plugins/eval/config.md',
         ],
-      }, ...process.env.NODE_ENV === 'production' ? [] : [{
+      }, ...devOnly({
         text: '冒险系统 (Adventure)',
         isGroup: true,
         children: [
           '/plugins/adventure/index.md',
           '/plugins/adventure/events.md',
         ],
-      }], {
+      }), {
         text: '其他官方插件',
         isGroup: true,
         children: [
-          '/plugins/other/assets.md',
           '/plugins/other/chat.md',
           '/plugins/other/chess.md',
           '/plugins/other/github.md',
@@ -175,7 +257,7 @@ module.exports = {
     lastUpdated: '上次更新',
     docsRepo: 'koishijs/koishi',
     docsDir: 'docs',
-    docsBranch: 'develop',
+    docsBranch: 'next',
     editLinks: true,
     editLinkText: '帮助我们改善此页面',
 
@@ -185,5 +267,24 @@ module.exports = {
     },
   },
 
-  evergreen: () => false,// !context.isProd,
+  bundlerConfig: {
+    viteOptions: {
+      plugins: [
+        require('@rollup/plugin-yaml')(),
+      ],
+      // build: {
+      //   // fix for monaco workers
+      //   // https://github.com/vitejs/vite/issues/1927#issuecomment-805803918
+      //   rollupOptions: {
+      //     output: {
+      //       inlineDynamicImports: false,
+      //       manualChunks: {
+      //         tsWorker: ['monaco-editor/esm/vs/language/typescript/ts.worker'],
+      //         editorWorker: ['monaco-editor/esm/vs/editor/editor.worker'],
+      //       },
+      //     },
+      //   },
+      // },
+    },
+  },
 }

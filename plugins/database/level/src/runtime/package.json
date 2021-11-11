@@ -1,0 +1,6 @@
+{
+  "name": "@koishijs/level-runtime",
+  "main": "node.ts",
+  "module": "browser.ts",
+  "typings": "index.ts"
+}

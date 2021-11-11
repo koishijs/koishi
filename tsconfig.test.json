@@ -3,10 +3,10 @@
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {
-      "koishi-plugin-*": ["packages/plugin-*/src"],
-      "koishi-plugin-eval/lib/worker": ["packages/plugin-eval/src/worker"],
-      "koishi-adapter-*": ["packages/adapter-*/src"],
-      "koishi-*": ["packages/koishi-*/src"],
+      "@koishijs/plugin-*": ["plugins/*/src"],
+      "@koishijs/plugin-eval/lib/worker": ["plugins/eval/src/worker"],
+      "@koishijs/*": ["packages/*/src"],
+      "koishi": ["packages/koishi/src"],
     },
   },
 }

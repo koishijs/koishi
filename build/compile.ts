@@ -1,11 +1,15 @@
 import { build, BuildFailure, BuildOptions, Message } from 'esbuild'
-import { readdir } from 'fs/promises'
 import { resolve } from 'path'
 import { cyan, yellow, red } from 'kleur'
+import { getPackages } from './utils'
+import cac from 'cac'
+
+const { args } = cac().help().parse()
 
 const ignored = [
   'This call to "require" will not be bundled because the argument is not a string literal',
   'Indirect calls to "require" will not be bundled',
+  'should be marked as external for use with "require.resolve"',
 ]
 
 function display(prefix: string) {
@@ -35,64 +39,50 @@ function bundle(options: BuildOptions) {
   })
 }
 
-const { version } = require('../packages/koishi-core/package.json')
+const { version } = require('../packages/core/package.json')
 const KOISHI_VERSION = JSON.stringify(version)
+const root = resolve(__dirname, '..') + '/'
+
+async function compile(name: string) {
+  if (name.includes('.') || name.includes('ui-')) return
+
+  const base = root + name
+  const entryPoints = [base + '/src/index.ts']
+
+  let filter = /^[@/\w-]+$/
+  const options: BuildOptions = {
+    entryPoints,
+    bundle: true,
+    platform: 'node',
+    target: 'node12.22',
+    charset: 'utf8',
+    outdir: base + '/lib',
+    logLevel: 'silent',
+    sourcemap: true,
+    keepNames: true,
+    define: {
+      KOISHI_VERSION,
+    },
+    plugins: [{
+      name: 'external library',
+      setup(build) {
+        build.onResolve({ filter }, () => ({ external: true }))
+      },
+    }],
+  }
+
+  try {
+    const helper = require(base + '/build/compile')
+    const result = await helper(base, options) as BuildOptions[]
+    if (result) return Promise.all(result.map(bundle)).then(() => {})
+  } catch {}
+
+  return bundle(options)
+}
 
 ;(async () => {
-  const root = resolve(__dirname, '../packages')
-  const workspaces = await readdir(root)
-  const tasks: Record<string, Promise<void>> = {}
-
-  await Promise.all(workspaces.map(async (name) => {
-    if (name.startsWith('.')) return
-
-    const base = `${root}/${name}`
-    const entryPoints = [base + '/src/index.ts']
-
-    let filter = /^[@/\w-]+$/
-    const options: BuildOptions = {
-      entryPoints,
-      bundle: true,
-      platform: 'node',
-      target: 'node12.19',
-      charset: 'utf8',
-      outdir: `${root}/${name}/lib`,
-      logLevel: 'silent',
-      sourcemap: true,
-      define: {
-        KOISHI_VERSION,
-      },
-      plugins: [{
-        name: 'external library',
-        setup(build) {
-          build.onResolve({ filter }, () => ({ external: true }))
-        },
-      }],
-    }
-
-    if (name === 'koishi' || name === 'plugin-puppeteer') {
-      entryPoints.push(base + '/src/worker.ts')
-    } else if (name === 'plugin-eval') {
-      const loaders = await readdir(base + '/src/loaders')
-      entryPoints.push(base + '/src/worker/index.ts')
-      entryPoints.push(base + '/src/transfer.ts')
-      entryPoints.push(...loaders.map(name => `${base}/src/loaders/${name}`))
-      options.define.BUILTIN_LOADERS = JSON.stringify(loaders.map(name => name.slice(0, -3)))
-    }
-
-    if (name !== 'plugin-eval') {
-      return tasks[name] = bundle(options)
-    }
-
-    filter = /^([@/\w-]+|.+\/transfer)$/
-    tasks[name] = Promise.all([options, {
-      ...options,
-      outdir: `${root}/${name}/lib/worker`,
-      entryPoints: [base + '/src/worker/internal.ts'],
-      banner: { js: '(function (host, exports, GLOBAL) {' },
-      footer: { js: '})' },
-    }].map(bundle)).then(() => {})
-  }))
+  const folders = await getPackages(args)
+  await Promise.all(folders.map(compile))
 
   process.exit(code)
 })()

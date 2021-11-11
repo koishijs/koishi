@@ -1,0 +1,39 @@
+{
+  "name": "@koishijs/plugin-dice",
+  "version": "1.0.0-beta.0",
+  "description": "COC / DND Tools for Koishi",
+  "main": "lib/index.js",
+  "typings": "lib/index.d.ts",
+  "engines": {
+    "node": ">=14.6.0"
+  },
+  "files": [
+    "lib"
+  ],
+  "license": "MIT",
+  "author": "Shigma <1700011071@pku.edu.cn>",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/koishijs/koishi.git"
+  },
+  "bugs": {
+    "url": "https://github.com/koishijs/koishi/issues"
+  },
+  "homepage": "https://koishi.js.org/plugins/dice.html",
+  "keywords": [
+    "bot",
+    "qqbot",
+    "cqhttp",
+    "coolq",
+    "chatbot",
+    "koishi",
+    "plugin",
+    "dice"
+  ],
+  "peerDependencies": {
+    "koishi": "^4.0.0-beta.0"
+  },
+  "devDependencies": {
+    "@koishijs/test-utils": "^8.0.0-beta.0"
+  }
+}

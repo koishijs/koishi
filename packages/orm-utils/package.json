@@ -1,0 +1,36 @@
+{
+  "name": "@koishijs/orm-utils",
+  "description": "ORM utilities for Koishi",
+  "version": "1.0.0-beta.0",
+  "main": "lib/index.js",
+  "typings": "lib/index.d.ts",
+  "engines": {
+    "node": ">=12.0.0"
+  },
+  "files": [
+    "lib"
+  ],
+  "author": "Shigma <1700011071@pku.edu.cn>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/koishijs/koishi.git"
+  },
+  "bugs": {
+    "url": "https://github.com/koishijs/koishi/issues"
+  },
+  "homepage": "https://github.com/koishijs/koishi/packages/orm-utils#readme",
+  "keywords": [
+    "bot",
+    "qqbot",
+    "cqhttp",
+    "coolq",
+    "chatbot",
+    "koishi",
+    "plugin",
+    "utilities"
+  ],
+  "peerDependencies": {
+    "koishi": "^4.0.0-beta.0"
+  }
+}

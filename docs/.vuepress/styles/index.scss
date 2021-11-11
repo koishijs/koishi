@@ -1,5 +1,9 @@
 @import '@vuepress/plugin-palette/palette';
 
+html {
+  background-color: var(--bg0);
+}
+
 #app {
   .navbar .logo {
     height: 2rem;
@@ -17,6 +21,20 @@
   a.header-anchor {
     transition: opacity 0.3s ease;
   }
+}
+
+.page {
+  strong {
+    color: var(--c-text-dark);
+  }
+
+  a {
+    font-weight: 600;
+  }
+}
+
+.sidebar-heading:not(:first-child) {
+  margin-top: 1rem;
 }
 
 .medium-zoom-image--opened {
