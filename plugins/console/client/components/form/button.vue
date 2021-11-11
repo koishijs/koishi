@@ -32,8 +32,6 @@ function onClick(event: MouseEvent) {
 
 <style lang="scss" scoped>
 
-@import '~/variables';
-
 @mixin apply-color($name) {
   &.#{$name} {
     background-color: var(--#{$name}) !important;

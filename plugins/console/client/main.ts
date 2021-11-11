@@ -24,8 +24,8 @@ import '@fortawesome/fontawesome-free/css/brands.css'
 import '@fortawesome/fontawesome-free/css/regular.css'
 import '@fortawesome/fontawesome-free/css/solid.css'
 
-import './index.scss'
 import 'element-plus/dist/index.css'
+import './index.scss'
 
 const { router, config } = client
 

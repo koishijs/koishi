@@ -3,6 +3,7 @@ import Database from './database/index.vue'
 import Logs from './logs/index.vue'
 
 import './home'
+import './index.scss'
 
 registerPage({
   path: '/database',

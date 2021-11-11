@@ -224,8 +224,12 @@ export class Console {
       resolve: {
         alias: {
           '~/client': root + '/client.ts',
-          '~/variables': root + '/index.scss',
         },
+      },
+      optimizeDeps: {
+        exclude: [
+          '@vueuse/core',
+        ],
       },
     })
 

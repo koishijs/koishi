@@ -92,6 +92,7 @@ declare module 'vue-router' {
 
 export const router = createRouter({
   history: createWebHistory(KOISHI_CONFIG.uiPath),
+  linkActiveClass: 'active',
   routes: [],
 })
 

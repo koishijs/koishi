@@ -8,11 +8,21 @@
         <i class="fas fa-chevron-right"/>
       </span>
       <span class="button bottom" @click.stop>
-        <i class="fas fa-search-minus" @click="scale -= 0.2"/>
-        <i class="fas fa-search-plus" @click="scale += 0.2"/>
-        <i class="fas fa-expand" @click="scale = 1, rotate = 0"/>
-        <i class="fas fa-undo" @click="rotate = (rotate - 90) % 180"/>
-        <i class="fas fa-redo" @click="rotate = (rotate + 90) % 180"/>
+        <el-tooltip placement="top" content="缩小" :offset="20">
+          <i class="fas fa-search-minus" @click="scale -= 0.2"/>
+        </el-tooltip>
+        <el-tooltip placement="top" content="放大" :offset="20">
+          <i class="fas fa-search-plus" @click="scale += 0.2"/>
+        </el-tooltip>
+        <el-tooltip placement="top" content="复原" :offset="20">
+          <i class="fas fa-expand" @click="scale = 1, rotate = 0"/>
+        </el-tooltip>
+        <el-tooltip placement="top" content="逆时针旋转" :offset="20">
+          <i class="fas fa-undo" @click="rotate -= 90"/>
+        </el-tooltip>
+        <el-tooltip placement="top" content="逆时针旋转" :offset="20">
+          <i class="fas fa-redo" @click="rotate += 90"/>
+        </el-tooltip>
       </span>
       <transition appear :duration="1" @before-appear="moveToOrigin" @after-appear="moveToCenter">
         <img ref="img" :style="{ transform }" :src="shared.overlayImage.src"/>
@@ -131,7 +141,7 @@ $buttonBg: #303133;
 }
 
 .image-viewer {
-  position: absolute;
+  position: fixed;
   left: 0;
   bottom: 0;
   top: 0;

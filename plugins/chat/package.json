@@ -33,7 +33,6 @@
     "koishi": "^4.0.0-beta.0"
   },
   "devDependencies": {
-    "@koishijs/plugin-console": "^1.0.0-beta.0",
-    "@vueuse/core": "^6.8.0"
+    "@koishijs/plugin-console": "^1.0.0-beta.0"
   }
 }

@@ -66,8 +66,6 @@ function toggle(data: MarketProvider.Data) {
 
 <style lang="scss">
 
-@import '~/variables';
-
 .package {
   text-align: left;
   padding-left: 3rem;

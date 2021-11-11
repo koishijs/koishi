@@ -2,7 +2,7 @@
   <k-card-aside class="page-bots">
     <template #aside v-if="bots.length || current === -1">
       <el-scrollbar>
-        <div class="add" :class="{ active: current === -1 }" @click="current = -1">添加机器人</div>
+        <div class="add k-menu-item" :class="{ active: current === -1 }" @click="current = -1">添加机器人</div>
         <div class="bots">
           <bot-view
             v-for="(bot, index) in bots" :data="bot"
@@ -36,8 +36,6 @@ const bots = computed(() => store.bots)
 
 <style lang="scss">
 
-@import '~/variables';
-
 section.page-bots {
   > aside {
     width: 20rem;
@@ -47,7 +45,6 @@ section.page-bots {
       padding: 1rem 0;
       font-weight: bold;
       border-bottom: 1px solid var(--border);
-      @include button-like;
     }
   }
 }

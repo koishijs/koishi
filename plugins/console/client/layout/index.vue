@@ -21,44 +21,27 @@ const loaded = computed(() => (route.meta.fields || []).every((key) => store[key
 
 <style lang="scss">
 
-@import '~/variables';
-
 body {
   margin: 0;
   min-height: 100vh;
   font-family: PingFang SC, Hiragino Sans GB, Microsoft YaHei, SimSun, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  color: var(--page-fg);
-  background: var(--page-bg);
+  color: var(--fg1);
+  background-color: var(--page-bg);
   position: relative;
+  transition: color 0.3s ease, background-color 0.3s ease;
 }
 
 a {
   color: var(--primary);
   text-decoration: none;
+  transition: color 0.3s ease;
 }
 
 main.layout-main {
   margin-left: var(--aside-width);
   padding: 2rem 2rem 0;
-}
-
-::-webkit-scrollbar {
-  height: 100%;
-  width: 0.6rem;
-}
-
-::-webkit-scrollbar-thumb {
-  background: var(--border);
-  &:hover {
-    background: var(--border-dark);
-  }
-}
-
-::-webkit-scrollbar-track {
-  border-radius: 0.6rem;
-  background: var(--bg0);
 }
 
 .card-grid {

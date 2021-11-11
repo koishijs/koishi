@@ -1,5 +1,5 @@
 <template>
-  <div class="bot" :class="[size]">
+  <div class="bot k-menu-item" :class="[size]">
     <div class="avatar" :style="{ backgroundImage: `url(${data.avatar})` }" @click="$emit('avatar-click')">
       <el-tooltip :content="statusNames[data.status]">
         <div :class="['status', data.status, { error: data.error }]"></div>
@@ -44,14 +44,10 @@ defineProps<{
 
 <style scoped lang="scss">
 
-@import '~/variables';
-
 div.bot {
   padding: 1rem 2rem;
   width: 16rem;
   display: flex;
-
-  @include button-like;
 
   &.active {
     > div.avatar {

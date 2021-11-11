@@ -12,21 +12,22 @@
 <style lang="scss">
 
 .k-card-aside {
+  display: flex;
   height: calc(100vh - 4rem);
   margin: 0 auto 2rem;
   width: 100%;
   border-radius: 8px;
   overflow: hidden;
-  color: var(--card-fg);
   background-color: var(--card-bg);
   box-shadow: var(--card-shadow);
-  display: flex;
+  transition: background-color 0.3s ease;
 
   > aside {
     overflow-y: auto;
     width: 16rem;
     flex-shrink: 0;
     border-right: 1px solid var(--border);
+    transition: border-color 0.3s ease;
   }
 
   > main {

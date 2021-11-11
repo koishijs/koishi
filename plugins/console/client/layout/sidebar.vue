@@ -1,16 +1,20 @@
 <template>
   <aside class="layout-aside">
-    <h1>Koishi 控制台</h1>
-    <ul>
-      <template v-for="({ name, path, meta }) in routes">
-        <li v-if="!meta.hidden" :class="{ current: name === $route.name }">
-          <router-link :to="path">
-            <i :class="`fas fa-${meta.icon}`"/>
-            {{ name }}
-          </router-link>
-        </li>
+    <div class="top">
+      <h1>Koishi 控制台</h1>
+      <template v-for="({ name, path, meta }) in routes" :key="name">
+        <router-link class="k-menu-item" :to="path">
+          <i :class="`fas fa-${meta.icon}`"/>
+          {{ name }}
+        </router-link>
       </template>
-    </ul>
+    </div>
+    <div class="bottom">
+      <div class="k-menu-item" @click="toggle">
+        <i :class="`fas fa-${isDark ? 'moon' : 'sun'}`"/>
+        {{ isDark ? '夜间模式' : '日间模式' }}
+      </div>
+    </div>
   </aside>
 </template>
 
@@ -18,18 +22,23 @@
 
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { useDark } from '@vueuse/core'
 
 const router = useRouter()
 
 const routes = computed(() => {
-  return router.getRoutes().sort((a, b) => b.meta.order - a.meta.order)
+  return router.getRoutes().filter(r => !r.meta.hidden).sort((a, b) => b.meta.order - a.meta.order)
 })
+
+const isDark = useDark()
+
+function toggle() {
+  isDark.value = !isDark.value
+}
 
 </script>
 
 <style lang="scss">
-
-@import '../index.scss';
 
 aside.layout-aside {
   position: fixed;
@@ -37,50 +46,51 @@ aside.layout-aside {
   width: var(--aside-width);
   background-color: var(--card-bg);
   box-shadow: var(--card-shadow);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: background-color 0.3s ease;
 
   h1 {
     font-size: 1.5rem;
     text-align: center;
+    margin: 1rem 0;
   }
 
-  ul {
-    list-style: none;
-    width: 100%;
-    padding-left: 0;
-    margin: 0;
+  .k-menu-item {
+    font-size: 1.05rem;
+    padding: 0 2rem;
+    line-height: 3rem;
   }
 
-  li {
-    transition: 0.3s ease;
+  $marker-width: 4px;
+
+  .k-menu-item.active::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 0;
+    width: $marker-width;
+    height: 2rem;
+    transform: translateY(-50%);
+    display: block;
+    border-radius: 0 $marker-width $marker-width 0;
+    background-color: var(--primary);
+    transition: background-color 0.3s ease;
   }
 
   i {
     width: 1.5rem;
-    margin-right: 0.5rem;
+    margin-right: 0.75rem;
     text-align: center;
   }
 
-  li a {
-    display: block;
-    font-size: 1.05rem;
-    text-decoration: none;
-    cursor: pointer;
-    color: var(--fg1);
-    line-height: 3rem;
-    padding: 0 2rem;
-    transition: 0.3s ease;
+  .top {
+    margin-top: 1rem;
   }
 
-  li:hover {
-    background-color: var(--bg1);
-    a {
-      color: var(--fg0);
-    }
-  }
-
-  li.current a {
-    font-weight: bolder;
-    color: var(--primary);
+  .bottom {
+    margin-bottom: 1rem;
   }
 }
 
