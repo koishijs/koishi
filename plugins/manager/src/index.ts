@@ -4,13 +4,13 @@ import { BotProvider } from './bots'
 import { MarketProvider } from './market'
 import { AdapterProvider } from './protocols'
 import { RegistryProvider } from './registry'
-import { ServiceProvider } from './services'
+import { ReleaseProvider } from './releases'
 
 export * from './bots'
 export * from './market'
 export * from './protocols'
 export * from './registry'
-export * from './services'
+export * from './releases'
 
 declare module 'koishi' {
   interface Modules {
@@ -28,7 +28,7 @@ export function apply(ctx: Context, config: Config = {}) {
     ctx.plugin(MarketProvider, config)
     ctx.plugin(AdapterProvider)
     ctx.plugin(RegistryProvider)
-    ctx.plugin(ServiceProvider)
+    ctx.plugin(ReleaseProvider)
 
     const filename = ctx.console.config.devMode ? '../client/index.ts' : '../dist/index.js'
     ctx.console.addEntry(resolve(__dirname, filename))

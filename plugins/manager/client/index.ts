@@ -3,6 +3,7 @@ import type {} from '@koishijs/plugin-manager/src'
 import Bots from './bots/index.vue'
 import Settings from './settings/index.vue'
 import Market from './market/index.vue'
+import Changelog from './changelog/index.vue'
 
 registerView({
   type: 'numeric',
@@ -40,4 +41,13 @@ registerPage({
   order: 600,
   fields: ['market'],
   component: Market,
+})
+
+registerPage({
+  path: '/changelog',
+  name: '更新日志',
+  icon: 'info-circle',
+  position: 'bottom',
+  fields: ['releases'],
+  component: Changelog,
 })

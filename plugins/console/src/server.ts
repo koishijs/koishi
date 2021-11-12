@@ -5,7 +5,7 @@ import WebSocket from 'ws'
 import open from 'open'
 import { v4 } from 'uuid'
 import type { ViteDevServer } from 'vite'
-import {} from '@koishijs/cli'
+import { ServiceProvider } from './provider'
 
 interface BaseConfig {
   devMode?: boolean
@@ -46,32 +46,16 @@ export class SocketHandle {
   }
 }
 
-export abstract class DataSource<T = any> {
-  abstract get(forced?: boolean): Promise<T>
-
-  constructor(protected ctx: Context, protected type: keyof Console.Sources) {
-    ctx.console.sources[type] = this as never
-    ctx.on('disconnect', () => {
-      delete ctx.console.sources[type]
-    })
-  }
-
-  async broadcast(value?: T) {
-    this.ctx.console.broadcast('data', {
-      key: this.type,
-      value: value || await this.get(true),
-    })
-  }
-}
-
 export namespace Console {
-  export interface Sources {}
+  export interface Sources {
+    services: ServiceProvider
+  }
 }
 
 export type Listener = (this: SocketHandle, payload: any) => Promise<void>
 
 export class Console {
-  readonly sources: Console.Sources = {}
+  readonly sources: Partial<Console.Sources> = {}
   readonly global: ClientConfig
   readonly entries: Dict<string> = {}
   readonly handles: Dict<SocketHandle> = {}
@@ -83,6 +67,8 @@ export class Console {
   private readonly [Context.current]: Context
 
   constructor(public ctx: Context, public config: Config) {
+    ctx.console = this
+
     const { apiPath, uiPath, devMode, selfUrl } = config
     const endpoint = selfUrl + apiPath
     this.global = { uiPath, endpoint, devMode, extensions: [], database: false, version }
@@ -99,6 +85,8 @@ export class Console {
 
     ctx.on('connect', () => this.start())
     ctx.on('disconnect', () => this.stop())
+
+    ctx.plugin(ServiceProvider)
   }
 
   broadcast(type: string, body: any) {

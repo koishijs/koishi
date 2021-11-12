@@ -30,7 +30,7 @@ function onClick(event: MouseEvent) {
 
 </script>
 
-<style lang="scss" scoped>
+<style lang="scss">
 
 @mixin apply-color($name) {
   &.#{$name} {
@@ -44,7 +44,7 @@ function onClick(event: MouseEvent) {
   }
 }
 
-button {
+.k-button {
   font-size: 1em;
   line-height: 1.2em;
   appearance: none;

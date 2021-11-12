@@ -111,6 +111,11 @@ main.layout-main {
   }
 }
 
+p, ul {
+  margin: 1rem 0;
+  line-height: 1.7;
+}
+
 table {
   text-align: center;
   width: 100%;

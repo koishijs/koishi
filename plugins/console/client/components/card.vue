@@ -1,5 +1,5 @@
 <template>
-  <section class="k-card" :class="{ scrollbar }">
+  <section class="k-card">
     <header v-if="title || $slots.header">
       <slot name="header">{{ title }}</slot>
     </header>
@@ -39,17 +39,20 @@ $paddingY: 1.5rem;
   header {
     font-size: 1.25rem;
     font-weight: bolder;
-    padding: $paddingX $paddingY 0;
+    margin: $paddingX 0;
+    padding: 0 $paddingY;
     transition: color 0.3s ease;
   }
 
   footer {
-    padding: 0 $paddingY $paddingX;
+    margin: $paddingX 0;
+    padding: 0 $paddingY;
   }
 
   .k-card-body {
     position: relative;
-    padding: $paddingX $paddingY;
+    margin: $paddingX 0;
+    padding: 0 $paddingY;
   }
 
   &.frameless .k-card-body {

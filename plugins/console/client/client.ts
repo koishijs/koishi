@@ -76,8 +76,8 @@ export function registerView(options: ViewOptions) {
 interface RouteMetaExtension {
   icon?: string
   order?: number
-  hidden?: boolean
   fields?: (keyof Console.Sources)[]
+  position?: 'top' | 'bottom' | 'hidden'
 }
 
 export interface PageOptions extends RouteMetaExtension {
@@ -104,7 +104,8 @@ export function registerPage(options: PageOptions) {
     component,
     meta: {
       order: 0,
-      fields: [] as any,
+      position: 'top',
+      fields: [],
       ...rest,
     },
   })
@@ -121,7 +122,7 @@ registerPage({
 // component helper
 
 export namespace Card {
-  function createFieldComponent(render: Function, fields: (keyof Console.Sources)[] = [] as any) {
+  function createFieldComponent(render: Function, fields: (keyof Console.Sources)[] = []) {
     return defineComponent({
       render: () => fields.every(key => store[key]) ? render() : null,
     })

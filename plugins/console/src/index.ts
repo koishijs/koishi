@@ -1,6 +1,7 @@
 import { Context, Awaitable, Schema } from 'koishi'
 import { Console, SocketHandle, Config } from './server'
 
+export * from './provider'
 export * from './server'
 
 declare module 'koishi' {
@@ -39,6 +40,5 @@ export const schema: Schema<Config> = Schema.object({
 
 export function apply(ctx: Context, config: Config = {}) {
   config = { ...defaultConfig, ...config }
-
-  ctx.console = new Console(ctx, config)
+  ctx.plugin(Console, config)
 }

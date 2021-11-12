@@ -31,7 +31,7 @@ declare module '~/client' {
     name: string
     icon?: string
     order?: number
-    hidden?: boolean
+    position?: 'top' | 'bottom' | 'hidden'
     fields?: (keyof Console.Sources)[]
     component: Component
   }

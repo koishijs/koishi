@@ -37,9 +37,8 @@ function getCpuUsage() {
   return {
     // microsecond values
     app: usage / 1000,
-    // use total value (do not know how to get the cpu on which the koishi is running)
-    used: (totalTick - totalIdle) / cpuInfo.length,
-    total: totalTick / cpuInfo.length,
+    used: totalTick - totalIdle,
+    total: totalTick,
   }
 }
 

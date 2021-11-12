@@ -2,7 +2,7 @@
   <aside class="layout-aside">
     <div class="top">
       <h1>Koishi 控制台</h1>
-      <template v-for="({ name, path, meta }) in routes" :key="name">
+      <template v-for="({ name, path, meta }) in getRoutes('top')" :key="name">
         <router-link class="k-menu-item" :to="path">
           <i :class="`fas fa-${meta.icon}`"/>
           {{ name }}
@@ -12,23 +12,28 @@
     <div class="bottom">
       <div class="k-menu-item" @click="toggle">
         <i :class="`fas fa-${isDark ? 'moon' : 'sun'}`"/>
-        {{ isDark ? '夜间模式' : '日间模式' }}
+        {{ isDark ? '夜间模式' : '明亮模式' }}
       </div>
+      <template v-for="({ name, path, meta }) in getRoutes('bottom')" :key="name">
+        <router-link class="k-menu-item" :to="path">
+          <i :class="`fas fa-${meta.icon}`"/>
+          {{ name }}
+        </router-link>
+      </template>
     </div>
   </aside>
 </template>
 
 <script lang="ts" setup>
 
-import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useDark } from '@vueuse/core'
 
 const router = useRouter()
 
-const routes = computed(() => {
-  return router.getRoutes().filter(r => !r.meta.hidden).sort((a, b) => b.meta.order - a.meta.order)
-})
+function getRoutes(position: 'top' | 'bottom') {
+  return router.getRoutes().filter(r => r.meta.position === position).sort((a, b) => b.meta.order - a.meta.order)
+}
 
 const isDark = useDark()
 
@@ -86,7 +91,7 @@ aside.layout-aside {
   }
 
   .top {
-    margin-top: 1rem;
+    margin-top: 0.5rem;
   }
 
   .bottom {

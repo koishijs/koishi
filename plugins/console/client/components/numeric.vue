@@ -49,6 +49,10 @@ const text = computed(() => {
   .content {
     float: right;
     text-align: right;
+    height: 3rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
   }
 
   p {
@@ -57,7 +61,6 @@ const text = computed(() => {
 
   .value {
     font-size: 1.2rem;
-    margin-top: 0.2rem;
   }
 }
 
