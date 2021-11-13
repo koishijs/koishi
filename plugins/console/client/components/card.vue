@@ -59,10 +59,6 @@ $paddingY: 1.5rem;
     margin: 0;
     padding: 0;
   }
-
-  .footer {
-    border-top: 1px solid var(--border);
-  }
 }
 
 </style>

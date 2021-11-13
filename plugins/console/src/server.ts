@@ -216,6 +216,11 @@ export class Console {
         exclude: [
           '@vueuse/core',
         ],
+        include: [
+          'ansi_up',
+          'marked',
+          'supports-color',
+        ],
       },
     })
 

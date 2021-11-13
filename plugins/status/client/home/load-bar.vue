@@ -58,6 +58,7 @@ const caption = computed(() => {
     background-color: var(--bg1);
     border-radius: 4px;
     overflow: hidden;
+    transition: color 0.3s ease, background-color 0.3s ease;
   }
 
   .bar {
@@ -70,6 +71,7 @@ const caption = computed(() => {
   .used {
     background-color: var(--default);
     color: white;
+    transition: color 0.3s ease, background-color 0.3s ease;
     &:hover {
       background-color: var(--default-light);
     }
@@ -77,6 +79,7 @@ const caption = computed(() => {
 
   .app {
     background-color: var(--warning);
+    transition: color 0.3s ease, background-color 0.3s ease;
     &:hover {
       background-color: var(--warning-light);
     }

@@ -44,6 +44,7 @@ section.page-bots {
       padding: 1rem 0;
       font-weight: bold;
       border-bottom: 1px solid var(--border);
+      transition: border-color 0.3s ease;
     }
   }
 }

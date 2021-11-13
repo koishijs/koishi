@@ -44,6 +44,7 @@ const text = computed(() => {
     width: 3rem;
     text-align: center;
     color: var(--fg2);
+    transition: color 0.3s ease;
   }
 
   .content {

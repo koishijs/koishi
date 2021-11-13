@@ -72,7 +72,6 @@ import { store } from '~/client'
   th {
     top: 0;
     position: sticky;
-    background-color: var(--bg0);
     z-index: 100;
 
     &::after {
@@ -82,6 +81,7 @@ import { store } from '~/client'
       right: 0;
       bottom: -1px;
       border-bottom: 1px solid var(--border);
+      transition: border-color 0.3s ease;
     }
   }
 }

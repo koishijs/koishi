@@ -30,7 +30,6 @@ class MongoDatabase extends Database {
   constructor(public ctx: Context, config?: MongoDatabase.Config) {
     super(ctx)
     this.config = {
-      port: 27017,
       host: 'localhost',
       database: 'koishi',
       protocol: 'mongodb',
@@ -103,7 +102,7 @@ namespace MongoDatabase {
   export const schema: Schema<Config> = Schema.object({
     protocol: Schema.string('要使用的协议名。').default('mongodb'),
     host: Schema.string('要连接到的主机名。').default('localhost'),
-    port: Schema.number('要连接到的端口号。').default(27017),
+    port: Schema.number('要连接到的端口号。'),
     username: Schema.string('要使用的用户名。'),
     password: Schema.string('要使用的密码。'),
     database: Schema.string('要访问的数据库名。').default('koishi'),

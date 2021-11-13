@@ -52,6 +52,7 @@ div.bot {
   &.active {
     > div.avatar {
       border: 2px solid var(--primary);
+      transition: border-color 0.3s ease;
     }
   }
 
@@ -65,16 +66,19 @@ div.bot {
     background-size: 100%;
     background-repeat: no-repeat;
     transition: 0.1s ease;
+    transition: border-color 0.3s ease;
+
+    $borderWidth: 4px;
 
     > div.status {
-      $border-width: 4px;
       position: absolute;
-      bottom: -$border-width;
-      right: -$border-width;
+      bottom: -$borderWidth;
+      right: -$borderWidth;
       width: 1rem;
       height: 1rem;
       border-radius: 100%;
-      border: $border-width solid var(--bg0);
+      border: $borderWidth solid var(--bg0);
+      transition: background-color 0.3s ease, border-color 0.3s ease;
 
       &.online {
         background-color: var(--success);
