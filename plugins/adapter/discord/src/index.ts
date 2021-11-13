@@ -4,7 +4,7 @@ import WebSocketClient from './ws'
 
 declare module 'koishi' {
   interface Modules {
-    'adaper-discord': typeof import('.')
+    'adapter-discord': typeof import('.')
   }
 }
 
