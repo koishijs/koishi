@@ -104,10 +104,8 @@ export class Console {
 
   addEntry(filename: string) {
     const ctx = this[Context.current]
-    let { state } = ctx
-    while (state && !state.name) state = state.parent
     const hash = Math.floor(Math.random() * (16 ** 8)).toString(16).padStart(8, '0')
-    const key = `${state?.name || 'entry'}-${hash}.js`
+    const key = `entry-${hash}.js`
     this.entries[key] = filename
     this.triggerReload()
     ctx.on('disconnect', () => {

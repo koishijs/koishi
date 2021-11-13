@@ -48,17 +48,14 @@
 import { computed } from 'vue'
 import type { Dict } from 'koishi'
 import { store, send } from '~/client'
-import { Data, available } from './shared'
+import { Data, plugins } from './shared'
 import TButton from './button.vue'
 
 const props = defineProps<{
   current: string
 }>()
 
-const data = computed<Data>(() => {
-  return available.value.find(data => data.name === props.current)
-    || store.registry[props.current]
-})
+const data = computed(() => plugins.value[props.current])
 
 function getDeps(type: 'peerDeps' | 'devDeps') {
   return Object.fromEntries((data.value[type] || [])

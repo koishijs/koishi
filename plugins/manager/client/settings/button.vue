@@ -13,7 +13,7 @@
 
 defineProps({
   message: String,
-  placement: { type: String, default: 'bottom-end' },
+  placement: { type: String, default: 'bottom' },
 })
 
 defineEmits(['click'])

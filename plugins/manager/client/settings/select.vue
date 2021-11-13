@@ -4,21 +4,21 @@
       <k-tab-item class="k-tab-group-title" label="" v-model="model">
         全局设置
       </k-tab-item>
-      <k-tab-group :data="Object.values(registry).filter(item => item.id)" :label="getLabel" :readonly="getReadonly" v-model="model">
+      <k-tab-group :data="active" :label="getLabel" :readonly="getReadonly" v-model="model">
         运行中的插件
         <k-hint placement="right">
           <b>为什么一些插件没有显示？</b>
-          <br>这里只展示直接从 app 注册的具名插件。换言之，在其他插件内部注册的插件或没有提供 name 的插件将不予显示。
+          <br>这里只展示直接从 app 注册的包形式的插件。换言之，在其他插件内部注册的插件或不是包的插件将不予显示。
         </k-hint>
       </k-tab-group>
-      <k-tab-group :data="available.filter(data => !filtered || data.schema)" :label="getLabel" :readonly="getReadonly" v-model="model">
+      <k-tab-group :data="inactive.filter(data => !filtered || data.schema)" :label="getLabel" :readonly="getReadonly" v-model="model">
         未运行的插件
         <k-hint placement="right" icon="fas fa-filter" :class="{ filtered }" @click="filtered = !filtered">
           <template v-if="filtered">
-            <b>筛选：开启</b><br>只显示支持在线配置的插件。
+            <b>筛选：已开启</b><br>只显示支持在线配置的插件。
           </template>
           <template v-else>
-            <b>筛选：关闭</b><br>显示所有可用插件。
+            <b>筛选：已关闭</b><br>显示所有可用插件。
           </template>
         </k-hint>
       </k-tab-group>
@@ -30,7 +30,7 @@
 
 import { store } from '~/client'
 import { ref, computed } from 'vue'
-import { available } from './shared'
+import { plugins, Data } from './shared'
 
 const props = defineProps<{
   modelValue: string
@@ -38,17 +38,23 @@ const props = defineProps<{
 
 const emits = defineEmits(['update:modelValue'])
 
-const registry = computed(() => store.registry)
-
 const model = computed({
   get: () => props.modelValue,
   set: val => emits('update:modelValue', val),
 })
 
-const filtered = ref(false)
+const filtered = ref(true)
 
-const getLabel = item => item.name
-const getReadonly = item => !item.schema
+const getLabel = (item: Data) => item.name
+const getReadonly = (item: Data) => !item.schema
+
+const active = computed(() => {
+  return Object.entries(plugins.value).filter(([, v]) => v.id).map(([, v]) => v)
+})
+
+const inactive = computed(() => {
+  return Object.entries(plugins.value).filter(([, v]) => !v.id).map(([, v]) => v)
+})
 
 </script>
 

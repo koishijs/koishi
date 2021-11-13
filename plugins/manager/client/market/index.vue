@@ -32,7 +32,7 @@
           <col width="120px">
         </colgroup>
         <tbody>
-          <template v-for="data in market" :key="data.name">
+          <template v-for="data in store.market" :key="data.name">
             <package-view :data="data"/>
           </template>
         </tbody>
@@ -43,11 +43,8 @@
 
 <script setup lang="ts">
 
-import { computed } from 'vue'
 import PackageView from './package.vue'
 import { store } from '~/client'
-
-const market = computed(() => store.market)
 
 </script>
 

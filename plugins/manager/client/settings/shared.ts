@@ -10,27 +10,43 @@ export interface Data extends RegistryProvider.Data {
   keywords?: string[]
 }
 
-export const available = computed(() => {
+function safeAssign(target: any, source: any) {
+  if (!target) return
+  Object.assign(target, source)
+}
+
+export const plugins = computed(() => {
   const result: Dict<Data> = {}
-  for (const name in store.registry) {
-    const data = store.registry[name]
-    if (name && !data.id) {
-      result[name] = data
-    }
-  }
+  const temp: Dict<Data> = {}
 
-  for (const data of store.market.filter(data => data.local && !data.local.id)) {
-    result[data.shortname] = {
-      name: data.shortname,
-      fullname: data.name,
+  // market
+  for (const meta of store.market) {
+    if (!meta.local) continue
+    const data = result[meta.shortname] = {
+      name: meta.shortname,
+      fullname: meta.name,
       config: {},
-      schema: data.local.schema,
-      devDeps: data.local.devDeps || [],
-      peerDeps: data.local.peerDeps || [],
-      keywords: data.local.keywords || [],
-      ...result[data.shortname],
+      schema: meta.local.schema,
+      devDeps: meta.local.devDeps || [],
+      peerDeps: meta.local.peerDeps || [],
+      keywords: meta.local.keywords || [],
+    }
+    if (meta.local.id) temp[meta.local.id] = data
+  }
+
+  // registry
+  for (const meta of store.registry) {
+    if (meta.id) {
+      // installed plugins
+      safeAssign(temp[meta.id], meta)
+    } else if (meta.name) {
+      // disabled plugins
+      safeAssign(result[meta.name], meta)
+    } else {
+      // app root
+      result[''] = meta
     }
   }
 
-  return Object.entries(result).sort(([a], [b]) => a > b ? 1 : -1).map(([, v]) => v)
+  return Object.fromEntries(Object.entries(result).sort(([a], [b]) => a > b ? 1 : -1))
 })

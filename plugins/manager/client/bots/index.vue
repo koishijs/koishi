@@ -1,17 +1,17 @@
 <template>
   <k-card-aside class="page-bots">
-    <template #aside v-if="bots.length || current === -1">
+    <template #aside v-if="store.bots.length || current === -1">
       <el-scrollbar>
         <div class="add k-menu-item" :class="{ active: current === -1 }" @click="current = -1">添加机器人</div>
         <div class="bots">
           <bot-view
-            v-for="(bot, index) in bots" :data="bot"
+            v-for="(bot, index) in store.bots" :data="bot"
             :class="{ active: current === index }" @click="current = index"/>
         </div>
       </el-scrollbar>
     </template>
     <template v-if="current === null">
-      <el-empty v-if="bots.length" description="当前未选择机器人"></el-empty>
+      <el-empty v-if="store.bots.length" description="当前未选择机器人"></el-empty>
       <el-empty v-else description="当前没有配置任何机器人">
         <k-button solid @click="current = -1">添加机器人</k-button>
       </el-empty>
@@ -24,13 +24,12 @@
 
 <script setup lang="ts">
 
-import { ref, computed } from 'vue'
+import { ref } from 'vue'
 import { store } from '~/client'
 import AddBot from './add.vue'
 import BotView from './bot.vue'
 
 const current = ref<number>(null)
-const bots = computed(() => store.bots)
 
 </script>
 

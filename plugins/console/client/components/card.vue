@@ -56,6 +56,7 @@ $paddingY: 1.5rem;
   }
 
   &.frameless .k-card-body {
+    margin: 0;
     padding: 0;
   }
 

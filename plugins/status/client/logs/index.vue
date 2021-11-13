@@ -1,7 +1,7 @@
 <template>
   <k-card class="page-logs frameless" scrollbar>
     <div class="logs">
-      <div class="line" :class="{ start: line.includes(hint) }" v-for="line in lines">
+      <div class="line" :class="{ start: line.includes(hint) }" v-for="line in store.logs">
         <code v-html="renderLine(line)"></code>
       </div>
     </div>
@@ -10,13 +10,10 @@
 
 <script lang="ts" setup>
 
-import { computed } from 'vue'
 import { store, receive } from '~/client'
 import Converter from 'ansi_up'
 
-const lines = computed(() => store.logs)
-
-receive('logs/data', data => lines.value.push(data))
+receive('logs/data', data => store.logs.push(data))
 
 const hint = `app\u001b[0m \u001b[38;5;15;1mKoishi/`
 

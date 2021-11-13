@@ -1,4 +1,4 @@
-import { App, Context, hyphenate, omit, pick, Plugin, Schema, Modules, Dict } from 'koishi'
+import { App, Context, hyphenate, omit, pick, Plugin, Schema, Modules } from 'koishi'
 import { debounce } from 'throttle-debounce'
 import { DataSource } from '@koishijs/plugin-console'
 import {} from '@koishijs/cli'
@@ -11,8 +11,8 @@ declare module '@koishijs/plugin-console' {
   }
 }
 
-export class RegistryProvider extends DataSource<Dict<RegistryProvider.Data>> {
-  cached: Promise<Dict<RegistryProvider.Data>>
+export class RegistryProvider extends DataSource<RegistryProvider.Data[]> {
+  cached: Promise<RegistryProvider.Data[]>
   promise: Promise<void>
   update = debounce(0, () => this.broadcast())
 
@@ -45,8 +45,7 @@ export class RegistryProvider extends DataSource<Dict<RegistryProvider.Data>> {
 
     for (const plugin of this.getState(null).children) {
       const state = this.getState(plugin)
-      if (!state.name) continue
-      children.push(pick(state, ['id', 'name', 'schema', 'config']))
+      children.push(pick(state, ['id', 'schema', 'config']))
     }
 
     const { plugins = {} } = this.ctx.app.options
@@ -62,7 +61,7 @@ export class RegistryProvider extends DataSource<Dict<RegistryProvider.Data>> {
       })
     }
 
-    return Object.fromEntries(children.map(data => [data.name, data]))
+    return children
   }
 
   async switch(id: string) {
@@ -70,7 +69,6 @@ export class RegistryProvider extends DataSource<Dict<RegistryProvider.Data>> {
     for (const [plugin, state] of this.ctx.app.registry) {
       if (id !== state.id) continue
       const replacer = plugin[RegistryProvider.placeholder] || {
-        name: state.name,
         apply: Object.assign(() => {}, {
           [RegistryProvider.placeholder]: state.plugin,
         }),

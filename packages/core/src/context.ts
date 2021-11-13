@@ -19,7 +19,6 @@ export namespace Plugin {
   export type Constructor<T = any> = new (ctx: Context, options: T) => void
 
   export interface Meta {
-    name?: string
     schema?: Schema
   }
 
@@ -74,7 +73,7 @@ function isBailed(value: any) {
   return value !== null && value !== false && value !== undefined
 }
 
-function isConstrucor(func: Function) {
+function isConstructor(func: Function) {
   // async function or arrow function
   if (!func.prototype) return false
   // generator function or malformed definition
@@ -103,14 +102,6 @@ export class Context {
   static readonly current = Symbol('source')
 
   protected constructor(public filter: Filter, public app?: App, private _plugin: Plugin = null) {}
-
-  private static inspect(plugin: Plugin) {
-    return !plugin ? 'root' : typeof plugin === 'object' && plugin.name || 'anonymous'
-  }
-
-  [Symbol.for('nodejs.util.inspect.custom')]() {
-    return `Context <${Context.inspect(this._plugin)}>`
-  }
 
   user(...values: string[]) {
     return this.select('userId', ...values)
@@ -270,7 +261,7 @@ export class Context {
     }
 
     if (this.app.registry.has(plugin)) {
-      this.logger('app').warn(new Error(`duplicate plugin <${Context.inspect(plugin)}> detected`))
+      this.logger('app').warn(new Error('duplicate plugin detected'))
       return this
     }
 
@@ -281,19 +272,18 @@ export class Context {
       context: this,
       config: options,
       parent: this.state,
+      schema: plugin['schema'],
       children: [],
       disposables: [],
     })
 
     if (typeof plugin === 'function') {
-      if (isConstrucor(plugin)) {
+      if (isConstructor(plugin)) {
         new plugin(ctx, options)
       } else {
         plugin(ctx, options)
       }
     } else if (plugin && typeof plugin === 'object' && typeof plugin.apply === 'function') {
-      ctx.state.name = plugin.name
-      ctx.state.schema = plugin.schema
       plugin.apply(ctx, options)
     } else {
       this.app.registry.delete(plugin)
