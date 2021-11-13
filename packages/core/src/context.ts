@@ -316,7 +316,11 @@ export class Context {
     const name = args.shift()
     for (const [context, callback] of this.app._hooks[name] || []) {
       if (!context.match(session)) continue
-      tasks.push(callback.apply(session, args))
+      tasks.push((async () => {
+        return callback.apply(session, args)
+      })().catch(((error) => {
+        this.logger('app').warn(error)
+      })))
     }
     await Promise.all(tasks)
   }
