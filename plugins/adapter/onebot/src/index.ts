@@ -6,7 +6,7 @@ import * as OneBot from './types'
 
 declare module 'koishi' {
   interface Modules {
-    'adaper-onebot': typeof import('.')
+    'adapter-onebot': typeof import('.')
   }
 
   interface Session {
