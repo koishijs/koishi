@@ -99,6 +99,7 @@ export function adaptSession(data: OneBot.Payload) {
   if (data.group_id) session.guildId = session.channelId = '' + data.group_id
   if (data.target_id) session.targetId = '' + data.target_id
   if (data.operator_id) session.operatorId = '' + data.operator_id
+  if (data.message_id) session.messageId = '' + data.message_id
 
   if (data.post_type === 'request') {
     session.content = data.comment
