@@ -49,7 +49,7 @@ export class Loader {
   }
 
   resolvePlugin(name: string) {
-    return this.cache[name] = Modules.require(hyphenate(name))
+    return this.cache[name] = Modules.require(hyphenate(name), true)
   }
 
   loadPlugin(name: string, options?: any) {

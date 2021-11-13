@@ -257,7 +257,7 @@ export class Context {
     if (options === true) options = undefined
 
     if (typeof plugin === 'string') {
-      plugin = Modules.require(plugin, false)
+      plugin = Modules.require(plugin, true)
     }
 
     if (this.app.registry.has(plugin)) {

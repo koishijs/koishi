@@ -163,13 +163,13 @@ export namespace Modules {
     }
   }
 
-  export function require(name: string, silent = true) {
+  export function require(name: string, forced = false) {
     try {
       const path = resolve(name)
       const module = internal.require(path)
       return module.default || module
     } catch (error) {
-      if (!silent) throw error
+      if (forced) throw error
     }
   }
 
