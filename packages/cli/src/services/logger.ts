@@ -17,11 +17,12 @@ App.Config.list.push(Schema.object({
 }))
 
 export function prepare(loader: Loader, config: App.Config.Logger = {}) {
+  const { levels, root = 'logs' } = config
   // configurate logger levels
-  if (typeof config.levels === 'object') {
-    Logger.levels = config.levels as any
-  } else if (typeof config.levels === 'number') {
-    Logger.levels.base = config.levels
+  if (typeof levels === 'object') {
+    Logger.levels = levels as any
+  } else if (typeof levels === 'number') {
+    Logger.levels.base = levels
   }
 
   let showTime = config.showTime
@@ -50,13 +51,13 @@ export function prepare(loader: Loader, config: App.Config.Logger = {}) {
     }
   }
 
-  if (config.root) {
-    const root = resolve(loader.dirname, config.root)
-    mkdirSync(root, { recursive: true })
+  if (root) {
+    const rootDir = resolve(loader.dirname, root)
+    mkdirSync(rootDir, { recursive: true })
 
     function createLogFile() {
       date = Time.template('yyyy-MM-dd')
-      file = new FileWrapper(`${root}/${date}.log`)
+      file = new FileWrapper(`${rootDir}/${date}.log`)
     }
 
     createLogFile()
@@ -84,7 +85,7 @@ let date: string, file: FileWrapper
 
 export function apply(ctx: App) {
   ctx.on('logger/read', () => {
-    return file.read()
+    return file?.read()
   })
 }
 
