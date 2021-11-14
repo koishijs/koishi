@@ -105,6 +105,30 @@ declare module './gateway' {
   }
 }
 
+export interface GetReactionsOptions {
+  /** get users after this user ID */
+  after?: snowflake
+  /** max number of users to return (1-100) */
+  limit?: integer
+}
+
+declare module './internal' {
+  interface Internal {
+    /** https://discord.com/developers/docs/resources/channel#create-reaction */
+    createReaction(channel_id: snowflake, message_id: snowflake, emoji: string): Promise<void>
+    /** https://discord.com/developers/docs/resources/channel#delete-own-reaction */
+    deleteOwnReaction(channel_id: snowflake, message_id: snowflake, emoji: string): Promise<void>
+    /** https://discord.com/developers/docs/resources/channel#delete-user-reaction */
+    deleteUserReaction(channel_id: snowflake, message_id: snowflake, emoji: string, user_id: snowflake): Promise<void>
+    /** https://discord.com/developers/docs/resources/channel#get-reactions */
+    getReactions(channel_id: snowflake, message_id: snowflake, emoji: string, options?: GetReactionsOptions): Promise<Reaction[]>
+    /** https://discord.com/developers/docs/resources/channel#delete-all-reactions */
+    deleteAllReactions(channel_id: snowflake, message_id: snowflake): Promise<void>
+    /** https://discord.com/developers/docs/resources/channel#delete-all-reactions-for-emoji */
+    deleteAllReactionsForEmoji(channel_id: snowflake, message_id: snowflake, emoji: string): Promise<void>
+  }
+}
+
 Internal.define({
   '/guilds/{guild.id}/emojis': {
     GET: 'listGuildEmojis',
@@ -114,5 +138,19 @@ Internal.define({
     GET: 'getGuildEmoji',
     PATCH: 'modifyGuildEmoji',
     DELETE: 'deleteGuildEmoji',
+  },
+  '/channels/{channel.id}/messages/{message.id}/reactions/{emoji}/@me': {
+    PUT: 'createReaction',
+    DELETE: 'deleteOwnReaction',
+  },
+  '/channels/{channel.id}/messages/{message.id}/reactions/{emoji}/{user.id}': {
+    DELETE: 'deleteUserReaction',
+  },
+  '/channels/{channel.id}/messages/{message.id}/reactions/{emoji}': {
+    GET: 'getReactions',
+    DELETE: 'deleteAllReactionsforEmoji',
+  },
+  '/channels/{channel.id}/messages/{message.id}/reactions': {
+    DELETE: 'deleteAllReactions',
   },
 })

@@ -229,6 +229,36 @@ declare module './gateway' {
   }
 }
 
+export interface ChannelPosition {
+  /** channel id */
+  channel_id: snowflake
+  /** sorting position of the channel */
+  position?: integer
+  /** syncs the permission overwrites with the new parent, if moving to a new category */
+  lock_permissions?: boolean
+  /** the new parent ID for the channel that is moved */
+  parent_id?: snowflake
+}
+
+declare module './internal' {
+  interface Internal {
+    /** https://discord.com/developers/docs/resources/guild#get-guild-channels */
+    getGuildChannels(guild_id: snowflake): Promise<Channel[]>
+    /** https://discord.com/developers/docs/resources/guild#create-guild-channel */
+    createGuildChannel(guild_id: snowflake, options: Partial<Channel>): Promise<Channel>
+    /** https://discord.com/developers/docs/resources/guild#modify-guild-channel-positions */
+    modifyGuildChannelPositions(guild_id: snowflake, positions: ChannelPosition[]): Promise<void>
+  }
+}
+
+Internal.define({
+  '/guilds/{guild.id}/channels': {
+    GET: 'getGuildChannels',
+    POST: 'createGuildChannel',
+    PATCH: 'modifyGuildChannelPositions',
+  },
+})
+
 declare module './internal' {
   interface Internal {
     /** https://discord.com/developers/docs/resources/channel#get-channel */
@@ -244,36 +274,7 @@ Internal.define({
   '/channels/{channel.id}': {
     GET: 'getChannel',
     PATCH: 'modifyChannel',
-    DELETE: 'delete/CloseChannel',
-  },
-  '/channels/{channel.id}/messages': {
-    GET: 'getChannelMessages',
-    POST: 'createMessage',
-  },
-  '/channels/{channel.id}/messages/{message.id}': {
-    GET: 'getChannelMessage',
-    PATCH: 'editMessage',
-    DELETE: 'deleteMessage',
-  },
-  '/channels/{channel.id}/messages/{message.id}/crosspost': {
-    POST: 'crosspostMessage',
-  },
-  '/channels/{channel.id}/messages/{message.id}/reactions/{emoji}/@me': {
-    PUT: 'createReaction',
-    DELETE: 'deleteOwnReaction',
-  },
-  '/channels/{channel.id}/messages/{message.id}/reactions/{emoji}/{user.id}': {
-    DELETE: 'deleteUserReaction',
-  },
-  '/channels/{channel.id}/messages/{message.id}/reactions/{emoji}': {
-    GET: 'getReactions',
-    DELETE: 'deleteAllReactionsforEmoji',
-  },
-  '/channels/{channel.id}/messages/{message.id}/reactions': {
-    DELETE: 'deleteAllReactions',
-  },
-  '/channels/{channel.id}/messages/bulk-delete': {
-    POST: 'bulkDeleteMessages',
+    DELETE: 'deleteChannel',
   },
   '/channels/{channel.id}/permissions/{overwrite.id}': {
     PUT: 'editChannelPermissions',

@@ -157,7 +157,7 @@ export async function adaptSession(bot: DiscordBot, input: DC.GatewayPayload) {
   } else if (input.t === 'MESSAGE_UPDATE') {
     session.type = 'message-updated'
     prepareMessageSession(session, input.d)
-    const msg = await bot.$getMessage(input.d.channel_id, input.d.id)
+    const msg = await bot.internal.getChannelMessage(input.d.channel_id, input.d.id)
     // Unlike creates, message updates may contain only a subset of the full message object payload
     // https://discord.com/developers/docs/topics/gateway#message-update
     adaptMessageSession(bot, msg, session)

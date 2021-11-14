@@ -1,7 +1,7 @@
 /* eslint-disable camelcase */
 
 import { Adapter, App, Bot, Schema, segment, Quester } from 'koishi'
-import { adaptChannel, adaptGroup, adaptMessage, adaptUser, AdapterConfig } from './utils'
+import { adaptChannel, adaptGroup as adaptGuild, adaptMessage, adaptUser, AdapterConfig } from './utils'
 import { Sender } from './sender'
 import * as Discord from './types'
 
@@ -76,8 +76,8 @@ export class DiscordBot extends Bot<BotConfig> {
     return this.sendMessage(channelId, content)
   }
 
-  deleteMessage(channelId: string, messageId: string) {
-    return this.request('DELETE', `/channels/${channelId}/messages/${messageId}`)
+  async deleteMessage(channelId: string, messageId: string) {
+    await this.internal.deleteMessage(channelId, messageId)
   }
 
   async editMessage(channelId: string, messageId: string, content: string) {
@@ -86,7 +86,7 @@ export class DiscordBot extends Bot<BotConfig> {
     if (image) {
       throw new Error("You can't include embed object(s) while editing message.")
     }
-    return this.request('PATCH', `/channels/${channelId}/messages/${messageId}`, {
+    await this.internal.editMessage(channelId, messageId, {
       content,
     })
   }
@@ -114,22 +114,22 @@ export class DiscordBot extends Bot<BotConfig> {
   }
 
   async getUser(userId: string) {
-    const data = await this.request<Discord.User>('GET', `/users/${userId}`)
+    const data = await this.internal.getUser(userId)
     return adaptUser(data)
   }
 
   async getGuildMemberList(guildId: string) {
-    const data = await this.$listGuildMembers(guildId)
+    const data = await this.internal.listGuildMembers(guildId)
     return data.map(v => adaptUser(v.user))
   }
 
   async getChannel(channelId: string) {
-    const data = await this.$getChannel(channelId)
+    const data = await this.internal.getChannel(channelId)
     return adaptChannel(data)
   }
 
   async getGuildMember(guildId: string, userId: string) {
-    const member = await this.$getGuildMember(guildId, userId)
+    const member = await this.internal.getGuildMember(guildId, userId)
     return {
       ...adaptUser(member.user),
       nickname: member.nick,
@@ -137,17 +137,13 @@ export class DiscordBot extends Bot<BotConfig> {
   }
 
   async getGuild(guildId: string) {
-    const data = await this.$getGuild(guildId)
-    return adaptGroup(data)
-  }
-
-  async $getUserGuilds() {
-    return this.request<Discord.PartialGuild[]>('GET', '/users/@me/guilds')
+    const data = await this.internal.getGuild(guildId)
+    return adaptGuild(data)
   }
 
   async getGuildList() {
-    const data = await this.$getUserGuilds()
-    return data.map(v => adaptGroup(v))
+    const data = await this.internal.getCurrentUserGuilds()
+    return data.map(v => adaptGuild(v))
   }
 
   $getGuildChannels(guildId: string) {

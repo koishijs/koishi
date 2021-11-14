@@ -1,4 +1,4 @@
-import { Application, Channel, ChannelType, Component, GuildMember, integer, MessageInteraction, Reaction, snowflake, Sticker, StickerItem, timestamp, User } from '.'
+import { Application, Channel, ChannelType, Component, GuildMember, integer, Internal, MessageInteraction, Reaction, snowflake, Sticker, StickerItem, timestamp, User } from '.'
 
 /** https://discord.com/developers/docs/resources/channel#message-object-message-structure */
 export interface Message {
@@ -320,9 +320,37 @@ declare module './gateway' {
 
 declare module './internal' {
   interface Internal {
-    getChannelMessages(channel_id: string): Promise<Message[]>
-    getChannelMessage(channel_id: string, message_id: string): Promise<Message>
-    createMessage(channel_id: string, data: Partial<Message>): Promise<Message>
-    crosspostMessage(channel_id: string, message_id: string): Promise<Message>
+    /** https://discord.com/developers/docs/resources/channel#get-channel-messages */
+    getChannelMessages(channel_id: snowflake): Promise<Message[]>
+    /** https://discord.com/developers/docs/resources/channel#get-channel-message */
+    getChannelMessage(channel_id: snowflake, message_id: snowflake): Promise<Message>
+    /** https://discord.com/developers/docs/resources/channel#create-message */
+    createMessage(channel_id: snowflake, data: Partial<Message>): Promise<Message>
+    /** https://discord.com/developers/docs/resources/channel#crosspost-message */
+    crosspostMessage(channel_id: snowflake, message_id: snowflake): Promise<Message>
+    /** https://discord.com/developers/docs/resources/channel#edit-message */
+    editMessage(channel_id: snowflake, message_id: snowflake, data: Partial<Message>): Promise<Message>
+    /** https://discord.com/developers/docs/resources/channel#delete-message */
+    deleteMessage(channel_id: snowflake, message_id: snowflake): Promise<void>
+    /** https://discord.com/developers/docs/resources/channel#bulk-delete-messages */
+    bulkDeleteMessages(channel_id: snowflake, message_ids: snowflake[]): Promise<void>
   }
 }
+
+Internal.define({
+  '/channels/{channel.id}/messages': {
+    GET: 'getChannelMessages',
+    POST: 'createMessage',
+  },
+  '/channels/{channel.id}/messages/{message.id}': {
+    GET: 'getChannelMessage',
+    PATCH: 'editMessage',
+    DELETE: 'deleteMessage',
+  },
+  '/channels/{channel.id}/messages/{message.id}/crosspost': {
+    POST: 'crosspostMessage',
+  },
+  '/channels/{channel.id}/messages/bulk-delete': {
+    POST: 'bulkDeleteMessages',
+  },
+})
