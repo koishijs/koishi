@@ -1,4 +1,4 @@
-import { Channel, Guild, integer, Internal, snowflake, User } from '.'
+import { Channel, Guild, integer, Internal, Message, snowflake, User } from '.'
 
 /** https://discord.com/developers/docs/resources/webhook#webhook-object-webhook-structure */
 export interface Webhook {
@@ -50,6 +50,44 @@ declare module './gateway' {
   interface GatewayEvents {
     /** guild channel webhook was created, update, or deleted */
     WEBHOOKS_UPDATE: WebhooksUpdateEvent
+  }
+}
+
+export interface ModifyWebhookParams {
+  /** the default name of the webhook */
+  name?: string
+  /** data	image for the default webhook avatar */
+  avatar?: string
+  /** the new channel id this webhook should be moved to */
+  channel_id?: snowflake
+}
+
+declare module './internal' {
+  interface Internal {
+    /** https://discord.com/developers/docs/resources/webhook#get-channel-webhooks */
+    getChannelWebhooks(channel_id: snowflake): Promise<Webhook[]>
+    /** https://discord.com/developers/docs/resources/webhook#get-guild-webhooks */
+    getGuildWebhooks(guild_id: snowflake): Promise<Webhook[]>
+    /** https://discord.com/developers/docs/resources/webhook#get-webhook */
+    getWebhook(webhook_id: snowflake): Promise<Webhook>
+    /** https://discord.com/developers/docs/resources/webhook#get-webhook-with-token */
+    getWebhookWithToken(webhook_id: snowflake, token: string): Promise<Webhook>
+    /** https://discord.com/developers/docs/resources/webhook#modify-webhook */
+    modifyWebhook(webhook_id: snowflake, options: ModifyWebhookParams): Promise<Webhook>
+    /** https://discord.com/developers/docs/resources/webhook#modify-webhook-with-token */
+    modifyWebhookWithToken(webhook_id: snowflake, token: string, options: ModifyWebhookParams): Promise<Webhook>
+    /** https://discord.com/developers/docs/resources/webhook#delete-webhook */
+    deleteWebhook(webhook_id: snowflake): Promise<void>
+    /** https://discord.com/developers/docs/resources/webhook#delete-webhook-with-token */
+    deleteWebhookWithToken(webhook_id: snowflake, token: string): Promise<void>
+    /** https://discord.com/developers/docs/resources/webhook#execute-webhook */
+    /** https://discord.com/developers/docs/resources/webhook#execute-slackcompatible-webhook */
+    /** https://discord.com/developers/docs/resources/webhook#execute-githubcompatible-webhook */
+    /** https://discord.com/developers/docs/resources/webhook#get-webhook-message */  
+    getWebhookMessage(webhook_id: snowflake, token: string, message_id: snowflake): Promise<Message>
+    /** https://discord.com/developers/docs/resources/webhook#edit-webhook-message */
+    /** https://discord.com/developers/docs/resources/webhook#delete-webhook-message */
+    deleteWebhookMessage(webhook_id: snowflake, token: string, message_id: snowflake): Promise<void>
   }
 }
 

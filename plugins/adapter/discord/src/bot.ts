@@ -33,16 +33,16 @@ export class DiscordBot extends Bot<BotConfig> {
   _ping: NodeJS.Timeout
   _sessionId: string
 
-  public request: Quester
   public internal: Discord.Internal
 
   constructor(adapter: Adapter, config: BotConfig) {
     super(adapter, config)
     this._d = 0
     this._sessionId = ''
-    this.request = adapter.http.extend({
+    const http = adapter.http.extend({
       headers: { Authorization: `Bot ${config.token}`, },
     })
+    this.internal = new Discord.Internal(http)
   }
 
   async getSelf() {
@@ -146,12 +146,8 @@ export class DiscordBot extends Bot<BotConfig> {
     return data.map(v => adaptGuild(v))
   }
 
-  $getGuildChannels(guildId: string) {
-    return this.request<Discord.Channel[]>('GET', `/guilds/${guildId}/channels`)
-  }
-
   async getChannelList(guildId: string) {
-    const data = await this.$getGuildChannels(guildId)
+    const data = await this.internal.getGuildChannels(guildId)
     return data.map(v => adaptChannel(v))
   }
 }

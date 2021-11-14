@@ -105,6 +105,45 @@ declare module './gateway' {
   }
 }
 
+export interface ModifyGuildEmojiOptions {
+  /** name of the emoji */
+  name?: string
+  /** array of snowflakes	roles allowed to use this emoji */
+  roles?: snowflake[]
+}
+
+export interface CreateGuildEmojiOptions extends ModifyGuildEmojiOptions {
+  /** the 128x128 emoji image */
+  image: string
+}
+
+declare module './internal' {
+  interface Internal {
+    /** https://discord.com/developers/docs/resources/emoji#list-guild-emojis */
+    listGuildEmojis(guild_id: snowflake): Promise<Emoji[]>
+    /** https://discord.com/developers/docs/resources/emoji#get-guild-emoji */
+    getGuildEmoji(guild_id: snowflake, emoji_id: snowflake): Promise<Emoji>
+    /** https://discord.com/developers/docs/resources/emoji#create-guild-emoji */
+    createGuildEmoji(guild_id: snowflake, options: CreateGuildEmojiOptions): Promise<Emoji>
+    /** https://discord.com/developers/docs/resources/emoji#modify-guild-emoji */
+    modifyGuildEmoji(guild_id: snowflake, emoji_id: snowflake, options: ModifyGuildEmojiOptions): Promise<Emoji>
+    /** https://discord.com/developers/docs/resources/emoji#delete-guild-emoji */
+    deleteGuildEmoji(guild_id: snowflake, emoji_id: snowflake): Promise<void>
+  }
+}
+
+Internal.define({
+  '/guilds/{guild.id}/emojis': {
+    GET: 'listGuildEmojis',
+    POST: 'createGuildEmoji',
+  },
+  '/guilds/{guild.id}/emojis/{emoji.id}': {
+    GET: 'getGuildEmoji',
+    PATCH: 'modifyGuildEmoji',
+    DELETE: 'deleteGuildEmoji',
+  },
+})
+
 export interface GetReactionsOptions {
   /** get users after this user ID */
   after?: snowflake
@@ -130,15 +169,6 @@ declare module './internal' {
 }
 
 Internal.define({
-  '/guilds/{guild.id}/emojis': {
-    GET: 'listGuildEmojis',
-    POST: 'createGuildEmoji',
-  },
-  '/guilds/{guild.id}/emojis/{emoji.id}': {
-    GET: 'getGuildEmoji',
-    PATCH: 'modifyGuildEmoji',
-    DELETE: 'deleteGuildEmoji',
-  },
   '/channels/{channel.id}/messages/{message.id}/reactions/{emoji}/@me': {
     PUT: 'createReaction',
     DELETE: 'deleteOwnReaction',
