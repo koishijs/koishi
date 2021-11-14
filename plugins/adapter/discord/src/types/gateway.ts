@@ -1,4 +1,4 @@
-import { Activity, integer, snowflake, StatusType } from '.'
+import { Activity, integer, Internal, snowflake, StatusType } from '.'
 
 /** https://discord.com/developers/docs/topics/gateway#payloads-gateway-payload-structure */
 export interface GatewayPayloadStructure<O extends GatewayOpcode, T extends keyof GatewayEvents, D> {
@@ -246,3 +246,21 @@ export interface SessionStartLimit {
   /** The number of identify requests allowed per 5 seconds */
   max_concurrency: integer
 }
+
+declare module './internal' {
+  interface Internal {
+    /** https://discord.com/developers/docs/topics/gateway#get-gateway */
+    getGateway(): Promise<any>
+    /** https://discord.com/developers/docs/topics/gateway#get-gateway-bot */
+    getGatewayBot(): Promise<any>
+  }
+}
+
+Internal.define({
+  '/gateway': {
+    GET: 'getGateway',
+  },
+  '/gateway/bot': {
+    GET: 'getGatewayBot',
+  },
+})

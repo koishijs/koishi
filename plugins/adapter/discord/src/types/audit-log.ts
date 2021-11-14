@@ -1,4 +1,4 @@
-import { Channel, Integration, snowflake, User, Webhook } from '.'
+import { Channel, Integration, Internal, snowflake, User, Webhook } from '.'
 
 /** https://discord.com/developers/docs/resources/audit-log#audit-log-object-audit-log-structure */
 export interface AuditLog {
@@ -109,3 +109,16 @@ export interface AuditLogChange {
   /** name of audit log change key */
   key: string
 }
+
+declare module './internal' {
+  interface Internal {
+    /** https://discord.com/developers/docs/resources/audit-log#get-guild-audit-log */
+    getGuildAuditLog(guildId: snowflake): Promise<AuditLog>
+  }
+}
+
+Internal.define({
+  '/guilds/{guild.id}/audit-logs': {
+    GET: 'getGuildAuditLog',
+  },
+})

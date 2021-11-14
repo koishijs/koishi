@@ -1,4 +1,4 @@
-import { integer, Integration, snowflake } from '.'
+import { integer, Integration, Internal, snowflake } from '.'
 
 /** https://discord.com/developers/docs/resources/user#user-object-user-structure */
 export interface User {
@@ -90,3 +90,40 @@ declare module './gateway' {
     USER_UPDATE: UserUpdateEvent
   }
 }
+
+export interface ModifyUserOptions {
+  /** user's username, if changed may cause the user's discriminator to be randomized. */
+  username?: string
+  /** if passed, modifies the user's avatar */
+  avatar?: string
+}
+
+declare module './internal' {
+  interface Internal {
+    /** https://discord.com/developers/docs/resources/user#get-current-user */
+    getCurrentUser(): Promise<User>
+    /** https://discord.com/developers/docs/resources/user#get-user */
+    getUser(id: snowflake): Promise<User>
+    /** https://discord.com/developers/docs/resources/user#modify-current-user */
+    modifyCurrentUser(options: ModifyUserOptions): Promise<User>
+    /** https://discord.com/developers/docs/resources/user#get-user-connections */
+    getUserConnections(): Promise<Connection[]>
+  }
+}
+
+Internal.define({
+  '/users/@me': {
+    GET: 'getCurrentUser',
+    PATCH: 'modifyCurrentUser',
+  },
+  '/users/{user.id}': {
+    GET: 'getUser',
+  },
+  '/users/@me/channels': {
+    POST: 'createDM',
+    // POST: 'createGroupDM',
+  },
+  '/users/@me/connections': {
+    GET: 'getUserConnections',
+  },
+})

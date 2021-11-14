@@ -1,4 +1,4 @@
-import { GuildMember, integer, snowflake, User } from '.'
+import { GuildMember, integer, Internal, snowflake, User } from '.'
 
 /** https://discord.com/developers/docs/resources/emoji#emoji-object-emoji-structure */
 export interface Emoji {
@@ -104,3 +104,15 @@ declare module './gateway' {
     MESSAGE_REACTION_REMOVE_EMOJI: MessageReactionRemoveEmojiEvent
   }
 }
+
+Internal.define({
+  '/guilds/{guild.id}/emojis': {
+    GET: 'listGuildEmojis',
+    POST: 'createGuildEmoji',
+  },
+  '/guilds/{guild.id}/emojis/{emoji.id}': {
+    GET: 'getGuildEmoji',
+    PATCH: 'modifyGuildEmoji',
+    DELETE: 'deleteGuildEmoji',
+  },
+})

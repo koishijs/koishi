@@ -1,4 +1,4 @@
-import { GuildMember, integer, snowflake, timestamp, User } from '.'
+import { GuildMember, integer, Internal, snowflake, timestamp, User } from '.'
 
 /** https://discord.com/developers/docs/resources/channel#channel-object-channel-structure */
 export interface Channel {
@@ -229,10 +229,105 @@ declare module './gateway' {
   }
 }
 
-declare module '.' {
+declare module './internal' {
   interface Internal {
+    /** https://discord.com/developers/docs/resources/channel#get-channel */
     getChannel(channel_id: string): Promise<Channel>
+    /** https://discord.com/developers/docs/resources/channel#modify-channel */
     modifyChannel(channel_id: string, data: Partial<Channel>): Promise<Channel>
+    /** https://discord.com/developers/docs/resources/channel#deleteclose-channel */
     deleteChannel(channel_id: string): Promise<Channel>
   }
 }
+
+Internal.define({
+  '/channels/{channel.id}': {
+    GET: 'getChannel',
+    PATCH: 'modifyChannel',
+    DELETE: 'delete/CloseChannel',
+  },
+  '/channels/{channel.id}/messages': {
+    GET: 'getChannelMessages',
+    POST: 'createMessage',
+  },
+  '/channels/{channel.id}/messages/{message.id}': {
+    GET: 'getChannelMessage',
+    PATCH: 'editMessage',
+    DELETE: 'deleteMessage',
+  },
+  '/channels/{channel.id}/messages/{message.id}/crosspost': {
+    POST: 'crosspostMessage',
+  },
+  '/channels/{channel.id}/messages/{message.id}/reactions/{emoji}/@me': {
+    PUT: 'createReaction',
+    DELETE: 'deleteOwnReaction',
+  },
+  '/channels/{channel.id}/messages/{message.id}/reactions/{emoji}/{user.id}': {
+    DELETE: 'deleteUserReaction',
+  },
+  '/channels/{channel.id}/messages/{message.id}/reactions/{emoji}': {
+    GET: 'getReactions',
+    DELETE: 'deleteAllReactionsforEmoji',
+  },
+  '/channels/{channel.id}/messages/{message.id}/reactions': {
+    DELETE: 'deleteAllReactions',
+  },
+  '/channels/{channel.id}/messages/bulk-delete': {
+    POST: 'bulkDeleteMessages',
+  },
+  '/channels/{channel.id}/permissions/{overwrite.id}': {
+    PUT: 'editChannelPermissions',
+    DELETE: 'deleteChannelPermission',
+  },
+  '/channels/{channel.id}/invites': {
+    GET: 'getChannelInvites',
+    POST: 'createChannelInvite',
+  },
+  '/channels/{channel.id}/followers': {
+    POST: 'followNewsChannel',
+  },
+  '/channels/{channel.id}/typing': {
+    POST: 'triggerTypingIndicator',
+  },
+  '/channels/{channel.id}/pins': {
+    GET: 'getPinnedMessages',
+  },
+  '/channels/{channel.id}/pins/{message.id}': {
+    PUT: 'pinMessage',
+    DELETE: 'unpinMessage',
+  },
+  '/channels/{channel.id}/recipients/{user.id}': {
+    PUT: 'groupDMAddRecipient',
+    DELETE: 'groupDMRemoveRecipient',
+  },
+  '/channels/{channel.id}/messages/{message.id}/threads': {
+    POST: 'startThreadwithMessage',
+  },
+  '/channels/{channel.id}/threads': {
+    POST: 'startThreadwithoutMessage',
+  },
+  '/channels/{channel.id}/thread-members/@me': {
+    PUT: 'joinThread',
+    DELETE: 'leaveThread',
+  },
+  '/channels/{channel.id}/thread-members/{user.id}': {
+    PUT: 'addThreadMember',
+    DELETE: 'removeThreadMember',
+    GET: 'getThreadMember',
+  },
+  '/channels/{channel.id}/thread-members': {
+    GET: 'listThreadMembers',
+  },
+  '/channels/{channel.id}/threads/active': {
+    GET: 'listActiveThreads',
+  },
+  '/channels/{channel.id}/threads/archived/public': {
+    GET: 'listPublicArchivedThreads',
+  },
+  '/channels/{channel.id}/threads/archived/private': {
+    GET: 'listPrivateArchivedThreads',
+  },
+  '/channels/{channel.id}/users/@me/threads/archived/private': {
+    GET: 'listJoinedPrivateArchivedThreads',
+  },
+})

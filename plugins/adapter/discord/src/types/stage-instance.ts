@@ -1,4 +1,4 @@
-import { integer, snowflake } from '.'
+import { integer, Internal, snowflake } from '.'
 
 /** https://discord.com/developers/docs/resources/stage-instance#stage-instance-object-stage-instance-structure */
 export interface StageInstance {
@@ -32,3 +32,14 @@ declare module './gateway' {
     STAGE_INSTANCE_UPDATE: StageInstanceUpdateEvent
   }
 }
+
+Internal.define({
+  '/stage-instances': {
+    POST: 'createStageInstance',
+  },
+  '/stage-instances/{channel.id}': {
+    GET: 'getStageInstance',
+    PATCH: 'modifyStageInstance',
+    DELETE: 'deleteStageInstance',
+  },
+})

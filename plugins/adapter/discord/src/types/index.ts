@@ -6,10 +6,11 @@ export * from './component'
 export * from './device'
 export * from './emoji'
 export * from './gateway'
-export * from './guild'
 export * from './guild-template'
+export * from './guild'
 export * from './integration'
 export * from './interaction'
+export * from './internal'
 export * from './invite'
 export * from './message'
 export * from './presence'
@@ -24,7 +25,3 @@ export * from './webhook'
 export type integer = number
 export type snowflake = string
 export type timestamp = string
-
-export interface Internal {}
-
-export class Internal {}

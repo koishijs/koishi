@@ -1,4 +1,4 @@
-import { AllowedMentions, ApplicationCommandInteractionDataOption, Channel, Component, Embed, GuildMember, integer, Message, Role, SelectOption, snowflake, User } from '.'
+import { AllowedMentions, ApplicationCommandInteractionDataOption, Channel, Component, Embed, GuildMember, integer, Internal, Message, Role, SelectOption, snowflake, User } from '.'
 
 /** https://discord.com/developers/docs/interactions/receiving-and-responding#interaction-object-interaction-structure */
 export interface Interaction {
@@ -133,3 +133,22 @@ declare module './gateway' {
     INTERACTION_CREATE: InteractionCreateEvent
   }
 }
+
+Internal.define({
+  '/interactions/{interaction.id}/{interaction.token}/callback': {
+    POST: 'createInteractionResponse',
+  },
+  '/webhooks/{application.id}/{interaction.token}/messages/@original': {
+    GET: 'getOriginalInteractionResponse',
+    PATCH: 'editOriginalInteractionResponse',
+    DELETE: 'deleteOriginalInteractionResponse',
+  },
+  '/webhooks/{application.id}/{interaction.token}': {
+    POST: 'createFollowupMessage',
+  },
+  '/webhooks/{application.id}/{interaction.token}/messages/{message.id}': {
+    GET: 'getFollowupMessage',
+    PATCH: 'editFollowupMessage',
+    DELETE: 'deleteFollowupMessage',
+  },
+})

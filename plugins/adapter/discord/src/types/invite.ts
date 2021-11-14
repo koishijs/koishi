@@ -1,4 +1,4 @@
-import { Application, Channel, Guild, GuildMember, integer, snowflake, timestamp, User } from '.'
+import { Application, Channel, Guild, GuildMember, integer, Internal, snowflake, timestamp, User } from '.'
 
 /** https://discord.com/developers/docs/resources/invite#invite-object-invite-structure */
 export interface Invite {
@@ -104,3 +104,26 @@ declare module './gateway' {
     INVITE_DELETE: InviteDeleteEvent
   }
 }
+
+export interface GetInviteOptions {
+  /** whether to include invite metadata */
+  with_counts?: boolean
+  /** whether to include invite expiration date */
+  with_expiration?: boolean
+}
+
+declare module './internal' {
+  interface Internal {
+    /** https://discord.com/developers/docs/resources/invite#get-invite */
+    getInvite(code: string, options?: GetInviteOptions): Promise<Invite>
+    /** https://discord.com/developers/docs/resources/invite#delete-invite */
+    deleteInvite(code: string): Promise<Invite>
+  }
+}
+
+Internal.define({
+  '/invites/{invite.code}': {
+    GET: 'getInvite',
+    DELETE: 'deleteInvite',
+  },
+})

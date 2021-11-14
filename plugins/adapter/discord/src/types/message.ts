@@ -318,7 +318,7 @@ declare module './gateway' {
   }
 }
 
-declare module '.' {
+declare module './internal' {
   interface Internal {
     getChannelMessages(channel_id: string): Promise<Message[]>
     getChannelMessage(channel_id: string, message_id: string): Promise<Message>

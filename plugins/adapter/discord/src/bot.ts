@@ -46,7 +46,7 @@ export class DiscordBot extends Bot<BotConfig> {
   }
 
   async getSelf() {
-    const data = await this.request<Discord.User>('GET', '/users/@me')
+    const data = await this.internal.getCurrentUser()
     return adaptUser(data)
   }
 

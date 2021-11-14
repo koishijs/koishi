@@ -1,4 +1,4 @@
-import { Guild, integer, snowflake, Team, User } from '.'
+import { Guild, integer, Internal, snowflake, Team, User } from '.'
 
 /** https://discord.com/developers/docs/resources/application#application-object-application-structure */
 export interface Application {
@@ -72,3 +72,21 @@ declare module './gateway' {
     READY: ReadyEvent
   }
 }
+
+declare module './internal' {
+  interface Internal {
+    /** https://discord.com/developers/docs/topics/oauth2#get-current-bot-application-information */
+    getCurrentBotApplicationInformation(): Promise<Application>
+    /** https://discord.com/developers/docs/topics/oauth2#get-current-authorization-information */
+    getCurrentAuthorizationInformation(): Promise<any>
+  }
+}
+
+Internal.define({
+  '/oauth2/applications/@me': {
+    GET: 'getCurrentBotApplicationInformation',
+  },
+  '/oauth2/@me': {
+    GET: 'getCurrentAuthorizationInformation',
+  },
+})

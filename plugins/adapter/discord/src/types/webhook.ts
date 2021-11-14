@@ -1,4 +1,4 @@
-import { Channel, Guild, integer, snowflake, User } from '.'
+import { Channel, Guild, integer, Internal, snowflake, User } from '.'
 
 /** https://discord.com/developers/docs/resources/webhook#webhook-object-webhook-structure */
 export interface Webhook {
@@ -52,3 +52,35 @@ declare module './gateway' {
     WEBHOOKS_UPDATE: WebhooksUpdateEvent
   }
 }
+
+Internal.define({
+  '/channels/{channel.id}/webhooks': {
+    POST: 'createWebhook',
+    GET: 'getChannelWebhooks',
+  },
+  '/guilds/{guild.id}/webhooks': {
+    GET: 'getGuildWebhooks',
+  },
+  '/webhooks/{webhook.id}': {
+    GET: 'getWebhook',
+    PATCH: 'modifyWebhook',
+    DELETE: 'deleteWebhook',
+  },
+  '/webhooks/{webhook.id}/{webhook.token}': {
+    GET: 'getWebhookwithToken',
+    PATCH: 'modifyWebhookwithToken',
+    DELETE: 'deleteWebhookwithToken',
+    POST: 'executeWebhook',
+  },
+  '/webhooks/{webhook.id}/{webhook.token}/slack': {
+    POST: 'executeSlackCompatibleWebhook',
+  },
+  '/webhooks/{webhook.id}/{webhook.token}/github': {
+    POST: 'executeGitHubCompatibleWebhook',
+  },
+  '/webhooks/{webhook.id}/{webhook.token}/messages/{message.id}': {
+    GET: 'getWebhookMessage',
+    PATCH: 'editWebhookMessage',
+    DELETE: 'deleteWebhookMessage',
+  },
+})

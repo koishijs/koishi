@@ -1,4 +1,4 @@
-import { ChannelType, snowflake } from '.'
+import { ChannelType, Internal, snowflake } from '.'
 
 /** https://discord.com/developers/docs/interactions/application-commands#application-command-object-application-command-structure */
 export interface ApplicationCommand {
@@ -116,23 +116,70 @@ export enum ApplicationCommandPermissionType {
   USER = 2,
 }
 
-declare module '.' {
+declare module './internal' {
   interface Internal {
+    /** https://discord.com/developers/docs/interactions/application-commands#get-global-application-commands */
     getGlobalApplicationCommands(application_id: snowflake): Promise<ApplicationCommand[]>
+    /** https://discord.com/developers/docs/interactions/application-commands#create-global-application-command */
     createGlobalApplicationCommand(application_id: snowflake, command: Partial<ApplicationCommand>): Promise<ApplicationCommand>
+    /** https://discord.com/developers/docs/interactions/application-commands#bulk-overwrite-global-application-commands */
     bulkOverwriteGlobalApplicationCommands(application_id: snowflake): Promise<ApplicationCommand[]>
+    /** https://discord.com/developers/docs/interactions/application-commands#get-global-application-command */
     getGlobalApplicationCommand(application_id: snowflake, command_id: snowflake): Promise<ApplicationCommand>
+    /** https://discord.com/developers/docs/interactions/application-commands#edit-global-application-command */
     editGlobalApplicationCommand(application_id: snowflake, command_id: snowflake, command: Partial<ApplicationCommand>): Promise<ApplicationCommand>
+    /** https://discord.com/developers/docs/interactions/application-commands#delete-global-application-command */
     deleteGlobalApplicationCommand(application_id: snowflake, command_id: snowflake): Promise<void>
+    /** https://discord.com/developers/docs/interactions/application-commands#get-guild-application-commands */
     getGuildApplicationCommands(application_id: snowflake, guild_id: snowflake): Promise<ApplicationCommand[]>
+    /** https://discord.com/developers/docs/interactions/application-commands#create-guild-application-command */
     createGuildApplicationCommand(application_id: snowflake, guild_id: snowflake, command: Partial<ApplicationCommand>): Promise<ApplicationCommand>
+    /** https://discord.com/developers/docs/interactions/application-commands#bulk-overwrite-guild-application-commands */
     bulkOverwriteGuildApplicationCommands(application_id: snowflake, guild_id: snowflake): Promise<void>
+    /** https://discord.com/developers/docs/interactions/application-commands#get-guild-application-command-permissions */
     getGuildApplicationCommandPermissions(application_id: snowflake, guild_id: snowflake): Promise<GuildApplicationCommandPermissions[]>
+    /** https://discord.com/developers/docs/interactions/application-commands#batch-edit-application-command-permissions */
     batchEditApplicationCommandPermissions(application_id: snowflake, guild_id: snowflake, permissions: Partial<GuildApplicationCommandPermissions>[]): Promise<void>
+    /** https://discord.com/developers/docs/interactions/application-commands#get-guild-application-command */
     getGuildApplicationCommand(application_id: snowflake, guild_id: snowflake, command_id: snowflake): Promise<ApplicationCommand>
+    /** https://discord.com/developers/docs/interactions/application-commands#edit-guild-application-command */
     editGuildApplicationCommand(application_id: snowflake, guild_id: snowflake, command_id: snowflake, command: Partial<ApplicationCommand>): Promise<ApplicationCommand>
+    /** https://discord.com/developers/docs/interactions/application-commands#delete-guild-application-command */
     deleteGuildApplicationCommand(application_id: snowflake, guild_id: snowflake, command_id: snowflake): Promise<void>
+    /** https://discord.com/developers/docs/interactions/application-commands#get-application-command-permissions */
     getApplicationCommandPermissions(application_id: snowflake, guild_id: snowflake, command_id: snowflake): Promise<GuildApplicationCommandPermissions>
+    /** https://discord.com/developers/docs/interactions/application-commands#edit-application-command-permissions */
     editApplicationCommandPermissions(application_id: snowflake, guild_id: snowflake, command_id: snowflake, permissions: ApplicationCommandPermissions[]): Promise<GuildApplicationCommandPermissions>
   }
 }
+
+Internal.define({
+  '/applications/{application.id}/commands': {
+    GET: 'getGlobalApplicationCommands',
+    POST: 'createGlobalApplicationCommand',
+    PUT: 'bulkOverwriteGlobalApplicationCommands',
+  },
+  '/applications/{application.id}/commands/{command.id}': {
+    GET: 'getGlobalApplicationCommand',
+    PATCH: 'editGlobalApplicationCommand',
+    DELETE: 'deleteGlobalApplicationCommand',
+  },
+  '/applications/{application.id}/guilds/{guild.id}/commands': {
+    GET: 'getGuildApplicationCommands',
+    POST: 'createGuildApplicationCommand',
+    PUT: 'bulkOverwriteGuildApplicationCommands',
+  },
+  '/applications/{application.id}/guilds/{guild.id}/commands/{command.id}': {
+    GET: 'getGuildApplicationCommand',
+    PATCH: 'editGuildApplicationCommand',
+    DELETE: 'deleteGuildApplicationCommand',
+  },
+  '/applications/{application.id}/guilds/{guild.id}/commands/permissions': {
+    GET: 'getGuildApplicationCommandPermissions',
+    PUT: 'batchEditApplicationCommandPermissions',
+  },
+  '/applications/{application.id}/guilds/{guild.id}/commands/{command.id}/permissions': {
+    GET: 'getApplicationCommandPermissions',
+    PUT: 'editApplicationCommandPermissions',
+  },
+})

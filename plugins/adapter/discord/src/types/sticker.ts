@@ -1,4 +1,4 @@
-import { integer, snowflake, User } from '.'
+import { integer, Internal, snowflake, User } from '.'
 
 /** https://discord.com/developers/docs/resources/sticker#sticker-object-sticker-structure */
 export interface Sticker {
@@ -85,3 +85,21 @@ declare module './gateway' {
     GUILD_STICKERS_UPDATE: GuildStickersUpdateEvent
   }
 }
+
+Internal.define({
+  '/stickers/{sticker.id}': {
+    GET: 'getSticker',
+  },
+  '/sticker-packs': {
+    GET: 'listNitroStickerPacks',
+  },
+  '/guilds/{guild.id}/stickers': {
+    GET: 'listGuildStickers',
+    POST: 'createGuildSticker',
+  },
+  '/guilds/{guild.id}/stickers/{sticker.id}': {
+    GET: 'getGuildSticker',
+    PATCH: 'modifyGuildSticker',
+    DELETE: 'deleteGuildSticker',
+  },
+})

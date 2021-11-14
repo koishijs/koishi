@@ -1,4 +1,4 @@
-import { GuildMember, snowflake, timestamp } from '.'
+import { GuildMember, Internal, snowflake, timestamp } from '.'
 
 /** https://discord.com/developers/docs/resources/voice#voice-state-object-voice-state-structure */
 export interface VoiceState {
@@ -64,3 +64,16 @@ declare module './gateway' {
     VOICE_SERVER_UPDATE: VoiceServerUpdateEvent
   }
 }
+
+declare module './internal' {
+  interface Internal {
+    /** https://discord.com/developers/docs/resources/voice#list-voice-regions */
+    listVoiceRegions(): Promise<VoiceRegion[]>
+  }
+}
+
+Internal.define({
+  '/voice/regions': {
+    GET: 'listVoiceRegions',
+  },
+})

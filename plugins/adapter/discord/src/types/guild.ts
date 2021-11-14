@@ -1,4 +1,4 @@
-import { Channel, Emoji, integer, PresenceUpdateEvent, PresenceUpdateParams, Role, snowflake, StageInstance, Sticker, timestamp, User, VoiceState } from '.'
+import { Channel, Emoji, integer, Internal, PresenceUpdateEvent, PresenceUpdateParams, Role, snowflake, StageInstance, Sticker, timestamp, User, VoiceState } from '.'
 
 /** https://discord.com/developers/docs/resources/guild#guild-object-guild-structure */
 export interface Guild {
@@ -346,3 +346,118 @@ declare module './gateway' {
     GUILD_MEMBERS_CHUNK: GuildMembersChunkEvent
   }
 }
+
+declare module './internal' {
+  interface Internal {
+    /** https://discord.com/developers/docs/resources/user#get-current-user-guilds */
+    getCurrentUserGuilds(): Promise<Guild[]>
+    /** https://discord.com/developers/docs/resources/user#leave-guild */
+    leaveGuild(guild_id: snowflake): Promise<void>
+  }
+}
+
+Internal.define({
+  '/users/@me/guilds': {
+    GET: 'getCurrentUserGuilds',
+  },
+  '/users/@me/guilds/{guild.id}': {
+    DELETE: 'leaveGuild',
+  },
+  '/guilds': {
+    POST: 'createGuild',
+  },
+  '/guilds/{guild.id}': {
+    GET: 'getGuild',
+    PATCH: 'modifyGuild',
+    DELETE: 'deleteGuild',
+  },
+  '/guilds/{guild.id}/preview': {
+    GET: 'getGuildPreview',
+  },
+  '/guilds/{guild.id}/channels': {
+    GET: 'getGuildChannels',
+    POST: 'createGuildChannel',
+    PATCH: 'modifyGuildChannelPositions',
+  },
+  '/guilds/{guild.id}/threads/active': {
+    GET: 'listActiveThreads',
+  },
+  '/guilds/{guild.id}/members/{user.id}': {
+    GET: 'getGuildMember',
+    PUT: 'addGuildMember',
+    PATCH: 'modifyGuildMember',
+    DELETE: 'removeGuildMember',
+  },
+  '/guilds/{guild.id}/members': {
+    GET: 'listGuildMembers',
+  },
+  '/guilds/{guild.id}/members/search': {
+    GET: 'searchGuildMembers',
+  },
+  '/guilds/{guild.id}/members/@me': {
+    PATCH: 'modifyCurrentMember',
+  },
+  '/guilds/{guild.id}/members/@me/nick': {
+    PATCH: 'modifyCurrentUserNick',
+  },
+  '/guilds/{guild.id}/members/{user.id}/roles/{role.id}': {
+    PUT: 'addGuildMemberRole',
+    DELETE: 'removeGuildMemberRole',
+  },
+  '/guilds/{guild.id}/bans': {
+    GET: 'getGuildBans',
+  },
+  '/guilds/{guild.id}/bans/{user.id}': {
+    GET: 'getGuildBan',
+    PUT: 'createGuildBan',
+    DELETE: 'removeGuildBan',
+  },
+  '/guilds/{guild.id}/roles': {
+    GET: 'getGuildRoles',
+    POST: 'createGuildRole',
+    PATCH: 'modifyGuildRolePositions',
+  },
+  '/guilds/{guild.id}/roles/{role.id}': {
+    PATCH: 'modifyGuildRole',
+    DELETE: 'deleteGuildRole',
+  },
+  '/guilds/{guild.id}/prune': {
+    GET: 'getGuildPruneCount',
+    POST: 'beginGuildPrune',
+  },
+  '/guilds/{guild.id}/regions': {
+    GET: 'getGuildVoiceRegions',
+  },
+  '/guilds/{guild.id}/invites': {
+    GET: 'getGuildInvites',
+  },
+  '/guilds/{guild.id}/integrations': {
+    GET: 'getGuildIntegrations',
+  },
+  '/guilds/{guild.id}/integrations/{integration.id}': {
+    DELETE: 'deleteGuildIntegration',
+  },
+  '/guilds/{guild.id}/widget': {
+    GET: 'getGuildWidgetSettings',
+    PATCH: 'modifyGuildWidget',
+  },
+  '/guilds/{guild.id}/widget.json': {
+    GET: 'getGuildWidget',
+  },
+  '/guilds/{guild.id}/vanity-url': {
+    GET: 'getGuildVanityURL',
+  },
+  '/guilds/{guild.id}/widget.png': {
+    GET: 'getGuildWidgetImage',
+  },
+  '/guilds/{guild.id}/welcome-screen': {
+    GET: 'getGuildWelcomeScreen',
+    PATCH: 'modifyGuildWelcomeScreen',
+  },
+  '/guilds/{guild.id}/voice-states/@me': {
+    PATCH: 'modifyCurrentUserVoiceState',
+  },
+  '/guilds/{guild.id}/voice-states/{user.id}': {
+    PATCH: 'modifyUserVoiceState',
+  },
+})

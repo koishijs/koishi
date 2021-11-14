@@ -1,4 +1,4 @@
-import { Guild, integer, snowflake, timestamp, User } from '.'
+import { Guild, integer, Internal, snowflake, timestamp, User } from '.'
 
 /** https://discord.com/developers/docs/resources/guild-template#guild-template-object-guild-template-structure */
 export interface GuildTemplate {
@@ -25,3 +25,19 @@ export interface GuildTemplate {
   /** whether the template has unsynced changes */
   is_dirty?: boolean
 }
+
+Internal.define({
+  '/guilds/templates/{template.code}': {
+    GET: 'getGuildTemplate',
+    POST: 'createGuildfromGuildTemplate',
+  },
+  '/guilds/{guild.id}/templates': {
+    GET: 'getGuildTemplates',
+    POST: 'createGuildTemplate',
+  },
+  '/guilds/{guild.id}/templates/{template.code}': {
+    PUT: 'syncGuildTemplate',
+    PATCH: 'modifyGuildTemplate',
+    DELETE: 'deleteGuildTemplate',
+  },
+})
