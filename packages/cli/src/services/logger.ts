@@ -1,7 +1,4 @@
-import { App, Logger, Schema, Time, version } from 'koishi'
-import { FileHandle, open } from 'fs/promises'
-import { mkdirSync } from 'fs'
-import { resolve } from 'path'
+import { App, Logger, Schema, version } from 'koishi'
 import { Loader } from '../loader'
 import {} from '../..'
 
@@ -9,7 +6,6 @@ const LoggerConfig = Schema.object({
   levels: Schema.any('默认的日志输出等级。'),
   showDiff: Schema.boolean('标注相邻两次日志输出的时间差。'),
   showTime: Schema.union([Schema.boolean(), Schema.string()], '输出日志所使用的时间格式。'),
-  root: Schema.string('输出日志所用的本地目录。'),
 }, '日志设置')
 
 App.Config.list.push(Schema.object({
@@ -17,7 +13,7 @@ App.Config.list.push(Schema.object({
 }))
 
 export function prepare(loader: Loader, config: App.Config.Logger = {}) {
-  const { levels, root = 'logs' } = config
+  const { levels } = config
   // configurate logger levels
   if (typeof levels === 'object') {
     Logger.levels = levels as any
@@ -51,69 +47,6 @@ export function prepare(loader: Loader, config: App.Config.Logger = {}) {
     }
   }
 
-  if (root) {
-    const rootDir = resolve(loader.dirname, root)
-    mkdirSync(rootDir, { recursive: true })
-
-    function createLogFile() {
-      date = Time.template('yyyy-MM-dd')
-      file = new FileWrapper(`${rootDir}/${date}.log`)
-    }
-
-    createLogFile()
-    Logger.targets.push({
-      colors: 3,
-      showTime: 'yyyy-MM-dd hh:mm:ss',
-      print(text) {
-        if (!text.startsWith(date)) {
-          file.close()
-          createLogFile()
-        }
-        file.write(text)
-        if (loader.app?.isActive) {
-          loader.app.emit('logger/data', text)
-        }
-      },
-    })
-  }
-
   new Logger('app').info('%C', `Koishi/${version}`)
   Logger.timestamp = Date.now()
-}
-
-let date: string, file: FileWrapper
-
-export function apply(ctx: App) {
-  ctx.on('logger/read', () => {
-    return file?.read()
-  })
-}
-
-class FileWrapper {
-  private task: Promise<FileHandle>
-  private content: string[]
-
-  constructor(path: string) {
-    this.task = open(path, 'a+').then(async (handle) => {
-      const text = await handle.readFile('utf-8')
-      this.content = text.split(/\n(?=\S)/g)
-      return handle
-    })
-  }
-
-  async read() {
-    await this.task
-    return this.content
-  }
-
-  async write(text: string) {
-    const handle = await this.task
-    await handle.write(text + '\n')
-    this.content.push(text)
-  }
-
-  async close() {
-    const handle = await this.task
-    await handle.close()
-  }
 }

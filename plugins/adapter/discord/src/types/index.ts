@@ -1,3 +1,5 @@
+export * from './internal'
+
 export * from './application'
 export * from './audit-log'
 export * from './channel'
@@ -11,7 +13,6 @@ export * from './guild-template'
 export * from './guild'
 export * from './integration'
 export * from './interaction'
-export * from './internal'
 export * from './invite'
 export * from './message'
 export * from './presence'

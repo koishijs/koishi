@@ -40,7 +40,6 @@ declare module 'koishi' {
         levels?: LogLevel
         showDiff?: boolean
         showTime?: string | boolean
-        root?: string
       }
     }
   }

@@ -37,7 +37,9 @@ export * from './meta'
 export * from './profile'
 export * from './stats'
 
-export interface Config extends MetaProvider.Config, ProfileProvider.Config, StatisticsProvider.Config {}
+export interface Config extends MetaProvider.Config, ProfileProvider.Config, StatisticsProvider.Config {
+  logger?: LogProvider.Config
+}
 
 const defaultConfig: Config = {
   tickInterval: Time.second * 5,
@@ -53,7 +55,7 @@ export function apply(ctx: Context, config: Config = {}) {
   ctx.with(['console'], (ctx) => {
     const filename = ctx.console.config.devMode ? '../client/index.ts' : '../dist/index.js'
     ctx.console.addEntry(resolve(__dirname, filename))
-    ctx.plugin(LogProvider)
+    ctx.plugin(LogProvider, config.logger)
     ctx.plugin(MetaProvider, config)
     ctx.plugin(ProfileProvider, config)
     ctx.plugin(StatisticsProvider, config)

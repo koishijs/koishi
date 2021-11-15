@@ -36,7 +36,6 @@ App.Config.list.push(Schema.object({
 const app = loader.createApp(config)
 
 app.plugin(deamon, config)
-app.plugin(logger)
 
 process.on('unhandledRejection', (error) => {
   new Logger('app').warn(error)
