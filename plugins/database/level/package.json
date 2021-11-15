@@ -31,7 +31,7 @@
     "leveldb"
   ],
   "peerDependencies": {
-    "koishi": "^4.0.0-beta.0"
+    "koishi": "^4.0.0-beta.1"
   },
   "devDependencies": {
     "@types/abstract-leveldown": "^5.0.2",

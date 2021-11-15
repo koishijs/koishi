@@ -39,7 +39,7 @@ export class Sender {
 
   async post(data?: any, headers?: any) {
     try {
-      const result = await this.bot.request('POST', this.url, data, headers)
+      const result = await this.bot.http('POST', this.url, data, headers)
       return result.id as string
     } catch (e) {
       this.errors.push(e)

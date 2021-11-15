@@ -2,7 +2,7 @@ import { App, Adapter, Session, Bot, pick, Dict, Schema } from 'koishi'
 import { assert } from 'chai'
 import { Socket } from 'net'
 import { format } from 'util'
-import * as database from '@koishijs/plugin-database-memory'
+import database from '@koishijs/plugin-database-memory'
 import * as http from 'http'
 
 export const BASE_SELF_ID = '514'

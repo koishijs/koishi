@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-adapter-kaiheila",
   "description": "Kaiheila adapter for Koishi",
-  "version": "2.0.0-beta.0",
+  "version": "2.0.0-beta.1",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -24,10 +24,10 @@
     "koishi"
   ],
   "peerDependencies": {
-    "koishi": "^4.0.0-beta.0"
+    "koishi": "^4.0.0-beta.1"
   },
   "devDependencies": {
-    "@koishijs/test-utils": "^8.0.0-beta.0"
+    "@koishijs/test-utils": "^8.0.0-beta.1"
   },
   "dependencies": {
     "axios": "^0.21.4",

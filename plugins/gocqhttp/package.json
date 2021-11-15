@@ -31,8 +31,8 @@
     "koishi"
   ],
   "peerDependencies": {
-    "@koishijs/plugin-adapter-onebot": "^4.0.0-beta.0",
-    "koishi": "^4.0.0-beta.0"
+    "@koishijs/plugin-adapter-onebot": "^4.0.0-beta.1",
+    "koishi": "^4.0.0-beta.1"
   },
   "devDependencies": {
     "@octokit/openapi-types": "^10.6.4",

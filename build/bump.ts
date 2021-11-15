@@ -103,6 +103,12 @@ function getPackage(name: string) {
     || packages[`plugins/assets/${name}`]
     || packages[`plugins/cache/${name}`]
     || packages[`plugins/database/${name}`]
+    || packages[`plugins/${name}`]
+    || packages[`community/adapter-${name}`]
+    || packages[`community/assets-${name}`]
+    || packages[`community/cache-${name}`]
+    || packages[`community/database-${name}`]
+    || packages[`community/${name}`]
 }
 
 function each<T>(callback: (pkg: Package, name: string) => T) {

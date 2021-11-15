@@ -33,16 +33,17 @@ export class DiscordBot extends Bot<BotConfig> {
   _ping: NodeJS.Timeout
   _sessionId: string
 
+  public http: Quester
   public internal: Discord.Internal
 
   constructor(adapter: Adapter, config: BotConfig) {
     super(adapter, config)
     this._d = 0
     this._sessionId = ''
-    const http = adapter.http.extend({
+    this.http = adapter.http.extend({
       headers: { Authorization: `Bot ${config.token}`, },
     })
-    this.internal = new Discord.Internal(http)
+    this.internal = new Discord.Internal(this.http)
   }
 
   async getSelf() {
