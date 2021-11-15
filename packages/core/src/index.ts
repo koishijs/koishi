@@ -1,3 +1,7 @@
+import Schema from 'schemastery'
+
+export { Schema }
+
 export * from '@koishijs/utils'
 export * from './adapter'
 export * from './app'

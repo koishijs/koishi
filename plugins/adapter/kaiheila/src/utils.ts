@@ -5,7 +5,7 @@ export interface AdapterConfig extends Adapter.WebSocketClient.Config, App.Confi
   path?: string
 }
 
-export const AdapterConfig: Schema<AdapterConfig> = Schema.merge([
+export const AdapterConfig: Schema<AdapterConfig> = Schema.intersect([
   Schema.object({
     path: Schema.string('服务器监听的路径，仅用于 http 协议。').default('/kaiheila'),
   }),

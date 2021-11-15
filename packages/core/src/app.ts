@@ -1,4 +1,4 @@
-import { defineProperty, Time, coerce, escapeRegExp, makeArray, template, trimSlash, merge, Dict, Schema, valueMap } from '@koishijs/utils'
+import { defineProperty, Time, coerce, escapeRegExp, makeArray, template, trimSlash, merge, Dict, valueMap } from '@koishijs/utils'
 import { Context, Middleware, NextFunction, Plugin } from './context'
 import { Argv } from './parser'
 import { Adapter } from './adapter'
@@ -6,38 +6,7 @@ import { Channel, User } from './database'
 import validate, { Command } from './command'
 import { Session } from './session'
 import help, { getCommandNames, HelpConfig } from './help'
-
-export namespace App {
-  export interface DelayConfig {
-    character?: number
-    message?: number
-    cancel?: number
-    broadcast?: number
-    prompt?: number
-  }
-
-  export interface Config extends Config.Network {
-    prefix?: string | string[] | ((session: Session.Message) => void | string | string[])
-    nickname?: string | string[]
-    maxListeners?: number
-    prettyErrors?: boolean
-    delay?: DelayConfig
-    help?: boolean | HelpConfig
-    autoAssign?: boolean | ((session: Session) => boolean)
-    autoAuthorize?: number | ((session: Session) => number)
-    minSimilarity?: number
-  }
-
-  export namespace Config {
-    export interface Static extends Schema<Config> {
-      Network?: Schema<Config.Network>
-    }
-
-    export interface Network {
-      selfUrl?: string
-    }
-  }
-}
+import Schema from 'schemastery'
 
 function createLeadingRE(patterns: string[], prefix = '', suffix = '') {
   return patterns.length ? new RegExp(`^${prefix}(${patterns.map(escapeRegExp).join('|')})${suffix}`) : /$^/
@@ -338,7 +307,37 @@ export class App extends Context {
 }
 
 export namespace App {
-  export const Config: Config.Static = Schema.merge([])
+  export interface DelayConfig {
+    character?: number
+    message?: number
+    cancel?: number
+    broadcast?: number
+    prompt?: number
+  }
+
+  export interface Config extends Config.Network {
+    prefix?: string | string[] | ((session: Session.Message) => void | string | string[])
+    nickname?: string | string[]
+    maxListeners?: number
+    prettyErrors?: boolean
+    delay?: DelayConfig
+    help?: boolean | HelpConfig
+    autoAssign?: boolean | ((session: Session) => boolean)
+    autoAuthorize?: number | ((session: Session) => number)
+    minSimilarity?: number
+  }
+
+  export namespace Config {
+    export interface Static extends Schema<Config> {
+      Network?: Schema<Config.Network>
+    }
+
+    export interface Network {
+      selfUrl?: string
+    }
+  }
+
+  export const Config: Config.Static = Schema.intersect([])
 
   const NetworkConfig: Schema<Config.Network> = Schema.object({
     selfUrl: Schema.string('Koishi 服务暴露在公网的地址。部分插件（例如 github 和 telegram）需要用到。'),

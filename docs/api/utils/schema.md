@@ -32,7 +32,7 @@ sidebarDepth: 2
 
 ## 高级数据类型
 
-### Schema.merge()
+### Schema.intersect()
 
 ### Schema.union()
 

@@ -21,7 +21,7 @@ export interface BotConfig extends Bot.BaseConfig, Quester.Config {
   token?: string
 }
 
-export const BotConfig: Schema<BotConfig> = Schema.merge([
+export const BotConfig: Schema<BotConfig> = Schema.intersect([
   Schema.object({
     selfId: Schema.string(),
     token: Schema.string(),

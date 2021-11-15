@@ -121,7 +121,7 @@ const cheatSheet = (session: Session<'authority'>, config: Config) => {
 
 export const name = 'teach'
 
-export const schema: Schema<Config> = Schema.merge([
+export const schema: Schema<Config> = Schema.intersect([
   Schema.object({
     prefix: Schema.string('教学指令的前缀。').default('#'),
     historyTimeout: Schema.number('教学操作在内存中的保存时间。').default(Time.minute * 10),

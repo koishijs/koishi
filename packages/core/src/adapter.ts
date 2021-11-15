@@ -1,8 +1,9 @@
-import { Logger, Schema, paramCase, Dict, Awaitable } from '@koishijs/utils'
+import { Logger, paramCase, Dict, Awaitable } from '@koishijs/utils'
 import { Session } from './session'
 import { App } from './app'
 import { Bot } from './bot'
 import { Context, Plugin } from './context'
+import Schema from 'schemastery'
 
 export abstract class Adapter<S extends Bot.BaseConfig = Bot.BaseConfig, T = {}> {
   public bots: Bot<S>[] = []
@@ -97,7 +98,7 @@ export namespace Adapter {
       }
     }
 
-    const adapterSchema = Schema.merge([
+    const adapterSchema = Schema.intersect([
       constructor.schema,
       Schema.adapt(
         Schema.object({ bots: Schema.array(botSchema).required().hidden() }),

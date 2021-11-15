@@ -1,5 +1,5 @@
-import { Adapter, Bot, Context } from '@koishijs/core'
-import { Logger, Time, Awaitable, Schema } from '@koishijs/utils'
+import { Adapter, Bot, Context, Schema } from '@koishijs/core'
+import { Logger, Time, Awaitable } from '@koishijs/utils'
 import WebSocket from 'ws'
 
 declare module '@koishijs/core' {

@@ -1,4 +1,4 @@
-import { Logger, makeArray, remove, Random, Schema, Promisify, Awaitable, Dict, MaybeArray, defineProperty } from '@koishijs/utils'
+import { Logger, makeArray, remove, Random, Promisify, Awaitable, Dict, MaybeArray, defineProperty } from '@koishijs/utils'
 import { Command } from './command'
 import { Session } from './session'
 import { User, Channel, Modules } from './database'
@@ -7,6 +7,7 @@ import { App } from './app'
 import { Bot } from './bot'
 import { Database } from './database'
 import { Adapter } from './adapter'
+import Schema from 'schemastery'
 
 export type NextFunction = (next?: NextFunction) => Promise<void>
 export type Middleware = (session: Session, next: NextFunction) => any
@@ -19,6 +20,7 @@ export namespace Plugin {
   export type Constructor<T = any> = new (ctx: Context, options: T) => void
 
   export interface Meta {
+    name?: string
     schema?: Schema
   }
 
@@ -272,6 +274,7 @@ export class Context {
       context: this,
       config: options,
       parent: this.state,
+      name: plugin['name'],
       schema: plugin['schema'],
       children: [],
       disposables: [],

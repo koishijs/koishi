@@ -11,7 +11,7 @@ export interface AdapterConfig extends Adapter.WebSocketClient.Config, App.Confi
   responseTimeout?: number
 }
 
-export const AdapterConfig: Schema<AdapterConfig> = Schema.merge([
+export const AdapterConfig: Schema<AdapterConfig> = Schema.intersect([
   Schema.object({
     path: Schema.string('服务器监听的路径，用于 http 和 ws-reverse 协议。').default('/onebot'),
     secret: Schema.string('接收事件推送时用于验证的字段，应该与 OneBot 的 secret 配置保持一致。'),

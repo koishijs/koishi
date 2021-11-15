@@ -19,7 +19,7 @@ async function mixedSearch(url: string, session: Session, config: Config) {
 
 export const name = 'search'
 
-export const schema = Schema.merge([
+export const schema = Schema.intersect([
   Schema.object({
     saucenaoApiKey: Schema.array(Schema.string(), '可用的 saucenao api key 列表。'),
   }),

@@ -9,7 +9,7 @@ export interface BotConfig extends Bot.BaseConfig, Sender.Config {
   token: string
 }
 
-export const BotConfig: Schema<BotConfig> = Schema.merge([
+export const BotConfig: Schema<BotConfig> = Schema.intersect([
   Schema.object({
     token: Schema.string('机器人的用户令牌。').required(),
     handleExternalAsset: Schema.select({

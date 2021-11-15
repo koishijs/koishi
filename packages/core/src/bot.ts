@@ -1,7 +1,8 @@
-import { Logger, sleep, Schema, Dict } from '@koishijs/utils'
+import { Logger, sleep, Dict } from '@koishijs/utils'
 import { Adapter } from './adapter'
 import { App } from './app'
 import { Session } from './session'
+import Schema from 'schemastery'
 
 export interface Bot extends Bot.BaseConfig, Bot.Methods, Bot.UserBase {}
 

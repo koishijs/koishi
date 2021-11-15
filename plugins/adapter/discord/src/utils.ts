@@ -5,7 +5,7 @@ import * as DC from './types'
 
 export interface AdapterConfig extends Adapter.WebSocketClient.Config, App.Config.Request {}
 
-export const AdapterConfig: Schema<AdapterConfig> = Schema.merge([
+export const AdapterConfig: Schema<AdapterConfig> = Schema.intersect([
   App.Config.Request,
   Adapter.WebSocketClient.Config,
 ])
