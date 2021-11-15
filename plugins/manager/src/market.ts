@@ -5,7 +5,7 @@ import { spawn, StdioOptions } from 'child_process'
 import { satisfies } from 'semver'
 import { DataSource } from '@koishijs/plugin-console'
 import { throttle } from 'throttle-debounce'
-import { PackageBase, PackageRegistry } from './shared'
+import { PackageBase, PackageRegistry, PackageResult, SearchResult } from './shared'
 
 declare module '@koishijs/plugin-console' {
   namespace Console {
@@ -72,39 +72,45 @@ export class MarketProvider extends DataSource<MarketProvider.Data[]> {
     this.flushData.cancel()
   }
 
-  private getRegistry(name: string) {
-    return this.http.get<PackageRegistry>(`/${name}`)
+  private async search(offset = 0) {
+    const { objects, total } = await this.http.get<SearchResult>('/-/v1/search', {
+      text: 'koishi+plugin',
+      size: 250,
+      from: offset,
+    })
+    objects.forEach(result => this.analyze(result))
+    return total
   }
 
-  private getSuggestions() {
-    return this.ctx.http.get<PackageBase[]>('https://www.npmjs.com/search/suggestions?q=koishi+plugin&size=250')
+  private async analyze({ package: item, score }: PackageResult) {
+    const { name, version } = item
+    const official = name.startsWith('@koishijs/plugin-')
+    const community = name.startsWith('koishi-plugin-')
+    if (!official && !community) return
+
+    const data = await this.http.get<PackageRegistry>(`/${name}`)
+    const { dependencies, peerDependencies, dist, keywords, description, deprecated } = data.versions[version]
+    const declaredVersion = { ...dependencies, ...peerDependencies }['koishi']
+    if (deprecated || !declaredVersion || !satisfies(currentVersion, declaredVersion)) return
+
+    const shortname = official ? name.slice(17) : name.slice(14)
+    this.dataCache[name] = {
+      ...item,
+      shortname,
+      official,
+      score: score.final,
+      description: description,
+      keywords: keywords || [],
+      size: dist.unpackedSize,
+    }
+    this.flushData()
   }
 
   async prepare() {
-    const data = await this.getSuggestions()
-
-    data.forEach(async (item) => {
-      const { name, version } = item
-      const official = name.startsWith('@koishijs/plugin-')
-      const community = name.startsWith('koishi-plugin-')
-      if (!official && !community) return
-
-      const data = await this.getRegistry(name)
-      const { dependencies, peerDependencies, dist, keywords, description, deprecated } = data.versions[version]
-      const declaredVersion = { ...dependencies, ...peerDependencies }['koishi']
-      if (deprecated || !declaredVersion || !satisfies(currentVersion, declaredVersion)) return
-
-      const shortname = official ? name.slice(17) : name.slice(14)
-      this.dataCache[name] = {
-        ...item,
-        shortname,
-        official,
-        description: description,
-        keywords: keywords || [],
-        size: dist.unpackedSize,
-      }
-      this.flushData()
-    })
+    const total = await this.search()
+    for (let offset = 250; offset < total; offset += 250) {
+      await this.search(offset)
+    }
   }
 
   async get() {
@@ -126,6 +132,7 @@ export namespace MarketProvider {
   }
 
   export const Config = Schema.object({
+    // https://github.com/npm/registry/blob/master/docs/REGISTRY-API.md
     endpoint: Schema.string('要使用的 npm registry 终结点。').default('https://registry.npmjs.org'),
   })
 
@@ -143,5 +150,6 @@ export namespace MarketProvider {
     official: boolean
     keywords: string[]
     size: number
+    score: number
   }
 }

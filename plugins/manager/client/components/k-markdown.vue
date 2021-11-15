@@ -1,14 +1,18 @@
 <template>
-  <div class="k-markdown" v-html="marked(source)"></div>
+  <component :is="tag" class="k-markdown" v-html="marked(source)"></component>
 </template>
 
 <script lang="ts" setup>
 
 import marked from 'marked'
 
-defineProps<{
-  source: string
-}>()
+defineProps({
+  source: String,
+  tag: {
+    type: String,
+    default: 'div'
+  },
+})
 
 </script>
 

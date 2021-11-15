@@ -10,7 +10,7 @@
 <script lang="ts" setup>
 
 import { store } from '~/client'
-import KMarkdown from '../markdown.vue'
+import { KMarkdown } from '../components'
 
 function transform(source: string) {
   return source

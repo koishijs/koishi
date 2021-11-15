@@ -8,19 +8,14 @@
         >{{ data.shortname }}</a>
         <span class="current" v-if="local">@{{ local.version }}</span>
         <k-badge type="success" v-if="data.official">官方</k-badge>
-        <k-badge type="primary" v-if="data.keywords.includes('service:adapter')">适配器</k-badge>
-        <k-badge type="primary" v-if="data.keywords.includes('service:database')">数据库</k-badge>
-        <k-badge type="primary" v-if="data.keywords.includes('service:assets')">资源存储</k-badge>
-        <k-badge type="primary" v-if="data.keywords.includes('service:cache')">缓存</k-badge>
         <k-badge type="default" v-if="local?.workspace">本地</k-badge>
         <k-badge type="warning" v-else-if="hasUpdate">可更新</k-badge>
       </div>
-      <div class="description">
-        {{ data.description }}
-      </div>
+      <k-markdown class="description" :source="local?.description || data.description"></k-markdown>
     </td>
     <td class="latest">{{ data.version }}</td>
     <td class="size">{{ formatSize(data.size) }}</td>
+    <td class="score">{{ data.score.toFixed(2) }}</td>
     <td class="operation">
       <span v-if="downloading">安装中</span>
       <k-button frameless v-else-if="!local || hasUpdate"
@@ -35,10 +30,13 @@
 import type { MarketProvider } from '@koishijs/plugin-manager/src'
 import { send, store } from '~/client'
 import { computed, ref, watch } from 'vue'
+import { KMarkdown } from '../components'
 
 const props = defineProps<{ data: MarketProvider.Data }>()
 
 const local = computed(() => store.packages[props.data.name])
+
+const keywords = computed(() => local.value?.keywords || props.data.keywords)
 
 const hasUpdate = computed(() => {
   if (!local.value) return false
@@ -76,17 +74,23 @@ function toggle(data: MarketProvider.Data) {
 
   .current {
     color: var(--fg2);
+    transition: color 0.3s ease;
   }
 
   a {
     font-weight: bold;
-    transition: 0.3s ease;
     color: var(--fg1);
+    transition: color 0.3s ease;
   }
 
   .description {
     margin-top: 0.15rem;
     font-size: 0.9rem;
+
+    p {
+      margin: 0;
+      line-height: 1.5;
+    }
   }
 
   &::before {
@@ -100,6 +104,7 @@ function toggle(data: MarketProvider.Data) {
     transform: translateY(-50%);
     transition: 0.3s ease;
     box-shadow: 1px 1px 2px #3333;
+    transition: background-color 0.3s ease;
   }
 
   &.active::before {

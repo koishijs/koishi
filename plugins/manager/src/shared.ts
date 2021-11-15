@@ -28,3 +28,22 @@ export interface PackageRemote extends PackageJson {
 export interface PackageRegistry extends PackageBase {
   versions: Dict<PackageRemote>
 }
+
+export interface PackageResult {
+  package: PackageBase
+  score: {
+    final: number
+    detail: {
+      quality: number
+      popularity: number
+      maintenance: number
+    }
+  }
+  searchScore: number
+}
+
+export interface SearchResult {
+  total: number
+  time: string
+  objects: PackageResult[]
+}
