@@ -1,4 +1,4 @@
-import { Logger, paramCase, Dict, Awaitable } from '@koishijs/utils'
+import { Logger, paramCase, Dict, Awaitable, capitalize } from '@koishijs/utils'
 import { Session } from './session'
 import { App } from './app'
 import { Bot } from './bot'
@@ -82,6 +82,7 @@ export namespace Adapter {
   ): Plugin.Object<PluginConfig<S, T>>
 
   export function define(platform: string, constructor: Bot.Constructor, ...args: CreatePluginRestParams) {
+    const name = capitalize(platform) + 'Adapter'
     Bot.library[platform] = constructor
 
     let botSchema: Schema
@@ -98,7 +99,7 @@ export namespace Adapter {
       }
     }
 
-    const adapterSchema = Schema.intersect([
+    const Config = Schema.intersect([
       constructor.schema,
       Schema.adapt(
         Schema.object({ bots: Schema.array(botSchema).required().hidden() }),
@@ -109,7 +110,6 @@ export namespace Adapter {
 
     function apply(ctx: Context, config: PluginConfig = {}) {
       ctx.emit('adapter')
-      config = Schema.validate(config, adapterSchema)
       configMap[platform] = config
       for (const options of config.bots) {
         ctx.bots.create(platform, options).then((bot) => {
@@ -120,7 +120,7 @@ export namespace Adapter {
       }
     }
 
-    return { name: 'adapter-' + platform, schema: adapterSchema, apply }
+    return { name, Config, apply }
   }
 
   export class BotList extends Array<Bot> {

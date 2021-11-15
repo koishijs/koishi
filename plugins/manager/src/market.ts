@@ -1,4 +1,4 @@
-import { Context, pick, Dict, version as currentVersion, Schema, Adapter } from 'koishi'
+import { Context, pick, Dict, version as currentVersion, Schema, Adapter, Quester } from 'koishi'
 import { dirname, resolve } from 'path'
 import { existsSync, promises as fs } from 'fs'
 import { spawn, StdioOptions } from 'child_process'
@@ -74,10 +74,15 @@ export class MarketProvider extends DataSource<MarketProvider.Data[]> {
   localCache: Dict<Promise<MarketProvider.Local>> = {}
   callbacks: ((data: MarketProvider.Data[]) => void)[] = []
   flushData: throttle<() => void>
+  http: Quester
 
   constructor(ctx: Context, private config: MarketProvider.Config) {
     super(ctx, 'market')
-    
+
+    this.http = ctx.http.extend({
+      endpoint: config.endpoint,
+    })
+
     ctx.on('connect', () => this.start())
   }
 
@@ -147,7 +152,7 @@ export class MarketProvider extends DataSource<MarketProvider.Data[]> {
   }
 
   private getRegistry(name: string) {
-    return this.ctx.http.get<Registry>(`https://registry.npmjs.org/${name}`)
+    return this.http.get<Registry>(`/${name}`)
   }
 
   private getSuggestions() {
@@ -208,8 +213,12 @@ export class MarketProvider extends DataSource<MarketProvider.Data[]> {
 
 export namespace MarketProvider {
   export interface Config {
-    apiPath?: string
+    endpoint?: string
   }
+
+  export const Config = Schema.object({
+    endpoint: Schema.string('要使用的 npm registry 终结点。').default('https://registry.npmjs.org'),
+  })
 
   export interface Local extends PackageBase {
     id?: string

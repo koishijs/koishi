@@ -18,10 +18,6 @@ const logger = new Logger('sqlite')
 
 export type TableType = keyof Tables
 
-export interface Config {
-  path?: string
-}
-
 function getTypeDefinition({ type }: Tables.Field) {
   switch (type) {
     case 'integer':
@@ -55,7 +51,7 @@ class SQLiteDatabase extends Database {
   sql: SQLBuilder
   caster: Caster
 
-  constructor(public ctx: Context, public config: Config) {
+  constructor(public ctx: Context, public config: SQLiteDatabase.Config) {
     super(ctx)
 
     this.config = { path: '.koishi.db', ...config }
@@ -217,9 +213,11 @@ class SQLiteDatabase extends Database {
 }
 
 namespace SQLiteDatabase {
-  export const name = 'database-sqlite'
+  export interface Config {
+    path?: string
+  }
 
-  export const schema: Schema<Config> = Schema.object({
+  export const Config = Schema.object({
     path: Schema.string('数据库路径').default('.koishi.db'),
   }, true)
 }

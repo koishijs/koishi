@@ -1,4 +1,4 @@
-import { Context } from 'koishi'
+import { Context, Schema } from 'koishi'
 import { resolve } from 'path'
 import { BotProvider } from './bots'
 import { MarketProvider } from './market'
@@ -20,7 +20,9 @@ declare module 'koishi' {
 
 export interface Config extends MarketProvider.Config {}
 
-export const name = 'manager'
+export const Config = Schema.intersect([
+  MarketProvider.Config,
+])
 
 export function apply(ctx: Context, config: Config = {}) {
   ctx.with(['console'], (ctx) => {

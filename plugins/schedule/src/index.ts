@@ -42,15 +42,12 @@ export interface Config {
   minInterval?: number
 }
 
-export const name = 'schedule'
-
-export const schema = Schema.object({
+export const Config = Schema.object({
   minInterval: Schema.number('允许的最小时间间隔。').default(Time.minute),
 })
 
-export function apply(ctx: Context, config: Config = {}) {
+export function apply(ctx: Context, { minInterval }: Config) {
   const { database } = ctx
-  const { minInterval } = Schema.validate(config, schema)
 
   async function hasSchedule(id: number) {
     const data = await database.get('schedule', [id])

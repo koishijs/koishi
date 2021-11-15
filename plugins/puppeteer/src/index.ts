@@ -64,7 +64,7 @@ export interface Config {
   bodyStyle?: Record<string, string>
 }
 
-export const schema: Schema<Config> = Schema.object({
+export const Config = Schema.object({
   browser: Schema.object({
     executablePath: Schema.string('Chromium 可执行文件的路径。缺省时将自动从系统中寻找。'),
     viewPort: Schema.object({
@@ -156,8 +156,6 @@ export const defaultConfig: Config = {
 Context.service('puppeteer')
 
 const logger = new Logger('puppeteer')
-
-export const name = 'puppeteer'
 
 export function apply(ctx: Context, config: Config = {}) {
   config = { ...defaultConfig, ...config }

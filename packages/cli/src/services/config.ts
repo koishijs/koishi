@@ -43,7 +43,7 @@ const handlers: Dict<(config: any, schema?: Schema) => string> = {
   },
   object(config, schema) {
     return Object.entries(schema.dict)
-      .filter(([key, value]) => key in config && !value._hidden)
+      .filter(([key, value]) => key in config && !value.meta.hidden)
       .map(([key, value]) => `${key}: ${codegenForDict(config[key], value)}`)
       .join('\n')
   },

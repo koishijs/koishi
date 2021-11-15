@@ -17,13 +17,11 @@ async function mixedSearch(url: string, session: Session, config: Config) {
   return await saucenao(url, session, config, true) && ascii2d(url, session)
 }
 
-export const name = 'search'
-
-export const schema = Schema.intersect([
+export const Config = Schema.intersect([
   Schema.object({
     saucenaoApiKey: Schema.array(Schema.string(), '可用的 saucenao api key 列表。'),
   }),
-  saucenao.schema,
+  saucenao.Config,
 ])
 
 export function apply(ctx: Context, config: Config = {}) {

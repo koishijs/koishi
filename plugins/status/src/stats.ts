@@ -1,4 +1,4 @@
-import { Context, Channel, noop, Session, Bot, Time, Dict } from 'koishi'
+import { Context, Channel, noop, Session, Bot, Time, Dict, Schema } from 'koishi'
 import { DataSource } from '@koishijs/plugin-console'
 import {} from '@koishijs/cli'
 
@@ -257,6 +257,10 @@ export namespace StatisticsProvider {
   export interface Config {
     statsInternal?: number
   }
+
+  export const Config = Schema.object({
+    statsInternal: Schema.number('统计数据推送的时间间隔。').default(Time.minute * 10),
+  })
 
   export type Extension = (payload: Payload, data: Synchronizer.Data) => Promise<void>
 }

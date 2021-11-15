@@ -18,11 +18,11 @@ declare module '@koishijs/plugin-adapter-onebot/lib/bot' {
 
 export const logger = new Logger('gocqhttp')
 
-export const name = 'gocqhttp'
+export interface Config {}
 
-export const schema = Schema.object({})
+export const Config = Schema.object({})
 
-const { dict } = onebot.schema.list[1].alt
+const { dict } = onebot.Config.list[1].alt
 
 dict['http'].dict['password'] = Schema.string('机器人的密码。')
 dict['ws'].dict['password'] = Schema.string('机器人的密码。')

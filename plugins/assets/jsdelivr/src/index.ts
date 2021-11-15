@@ -31,8 +31,6 @@ class JsdelivrAssets extends Assets {
 
   constructor(ctx: Context, public config: JsdelivrAssets.Config) {
     super(ctx)
-
-    this.config = Schema.validate(config, JsdelivrAssets.schema)
   }
 
   async start() {
@@ -211,13 +209,17 @@ class JsdelivrAssets extends Assets {
 }
 
 namespace JsdelivrAssets {
-  export const name = 'assets-jsdelivr'
-
   export interface GitHubConfig {
     user: string
     repo: string
     token: string
   }
+
+  const GitHubConfig = Schema.object({
+    user: Schema.string().required(),
+    repo: Schema.string().required(),
+    token: Schema.string().required(),
+  })
 
   export interface Config {
     git: Partial<SimpleGitOptions>
@@ -227,14 +229,8 @@ namespace JsdelivrAssets {
     maxBranchSize?: number
   }
 
-  const githubSchema: Schema<GitHubConfig> = Schema.object({
-    user: Schema.string().required(),
-    repo: Schema.string().required(),
-    token: Schema.string().required(),
-  })
-
-  export const schema: Schema<Config> = Schema.object({
-    github: githubSchema,
+  export const Config = Schema.object({
+    github: GitHubConfig,
     git: Schema.object({
       baseDir: Schema.string().required(),
     }, true),

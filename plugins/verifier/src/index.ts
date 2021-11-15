@@ -34,8 +34,6 @@ async function checkChannelAuthority(session: Session, authority: number): Promi
   }
 }
 
-export const name = 'verifier'
-
 export interface Config {
   onFriendRequest?: number | RequestHandler
   onGuildMemberRequest?: number | RequestHandler

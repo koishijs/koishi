@@ -1,4 +1,4 @@
-import { Context, Logger, Schema, template, Time } from 'koishi'
+import { Context, Logger, Schema, template } from 'koishi'
 import { resolve } from 'path'
 import receiver, { Message, RefreshConfig } from './receiver'
 import {} from '@koishijs/plugin-console'
@@ -24,11 +24,6 @@ interface ClientExtension {
   maxMessages?: number
 }
 
-export interface Config extends ClientExtension {
-  refresh?: RefreshConfig
-  logLevel?: number
-}
-
 template.set('chat', {
   send: '[{{ channelName || "私聊" }}] {{ abstract }}',
   receive: '[{{ channelName || "私聊" }}] {{ username }}: {{ abstract }}',
@@ -43,14 +38,16 @@ const defaultOptions: Config = {
   maxMessages: 1000,
 }
 
-export const name = 'chat'
+export interface Config extends ClientExtension {
+  refresh?: RefreshConfig
+  logLevel?: number
+}
 
-export const schema: Schema<Config> = Schema.object({
-  refresh: Schema.object({
-    user: Schema.number('刷新用户数据的时间间隔。').default(Time.hour),
-    guild: Schema.number('刷新群组数据的时间间隔。').default(Time.hour),
-    channel: Schema.number('刷新频道数据的时间间隔。').default(Time.hour),
-  }, '刷新选项'),
+export const Config = Schema.object({
+  refresh: RefreshConfig,
+  whitelist: Schema.array(Schema.string()),
+  maxMessages: Schema.number(),
+  logLevel: Schema.number(),
 })
 
 const logger = new Logger('message')

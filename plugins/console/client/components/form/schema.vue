@@ -5,7 +5,7 @@
     <slot></slot>
     <p>
       <span>{{ schema.desc }}</span>
-      <span v-if="schema._default">默认值：<code>{{ schema._default }}</code>。</span>
+      <span v-if="schema.meta.default">默认值：<code>{{ schema.meta.default }}</code>。</span>
     </p>
     <div class="control">
       <k-input v-model="config" style="width: 28rem"/>
@@ -29,7 +29,7 @@
 
   <schema-group v-else-if="schema.type === 'object'" :desc="!noDesc && schema.desc">
     <k-schema v-for="(item, key) in schema.dict" :schema="item" v-model="config[key]" :prefix="prefix + key + '.'">
-      <h3 :class="{ required: item._required }">
+      <h3 :class="{ required: item.meta.required }">
         <span>{{ prefix + key }}</span>
       </h3>
     </k-schema>
@@ -69,7 +69,7 @@
 
 import { computed, watch } from 'vue'
 import type { PropType } from 'vue'
-import { Schema } from '@koishijs/utils'
+import Schema from 'schemastery'
 import SchemaGroup from './schema-group.vue'
 
 const props = defineProps({

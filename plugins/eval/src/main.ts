@@ -1,4 +1,4 @@
-import { App, Command, Channel, Argv as IArgv, User, Context, Logger, Observed, pick, union } from 'koishi'
+import { App, Command, Channel, Argv as IArgv, User, Context, Logger, Observed, pick, union, Schema } from 'koishi'
 import { Worker, ResourceLimits } from 'worker_threads'
 import { WorkerHandle, WorkerConfig, WorkerData, SessionData, Loader } from './worker'
 import { expose, Remote, wrap } from './transfer'
@@ -20,6 +20,19 @@ export interface MainConfig extends Trap.Config {
 export interface EvalConfig extends MainConfig, WorkerData {}
 
 export interface Config extends MainConfig, WorkerConfig {}
+
+export const Config = Schema.object({
+  prefix: Schema.string('快捷调用的前缀字符。').default('>'),
+  serializer: Schema.select(['v8', 'yaml'], '要使用的序列化方法。此配置将会影响 storage 能够支持的类型。').default('v8'),
+  userFields: Schema.array(Schema.string(), '能够在 evaluate 指令中被访问的用户字段列表。').default(['id', 'authority']),
+  channelFields: Schema.array(Schema.string(), '能够在 evaluate 指令中被访问的频道字段列表。').default(['id']),
+  resourceLimits: Schema.object({
+    maxYoungGenerationSizeMb: Schema.number(),
+    maxOldGenerationSizeMb: Schema.number(),
+    codeRangeSizeMb: Schema.number(),
+    stackSizeMb: Schema.number(),
+  }, '资源限制')
+})
 
 export class Trap<O extends {}> {
   private traps: Record<string, Trap.Declaraion<O, any, any>> = {}

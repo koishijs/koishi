@@ -1,4 +1,4 @@
-import { Context, Command, Argv, segment, Logger, defineProperty, noop, Awaitable, Schema, User, Channel } from 'koishi'
+import { Context, Command, Argv, segment, Logger, defineProperty, noop, Awaitable } from 'koishi'
 import { EvalWorker, Trap, EvalConfig, Config } from './main'
 import { resolve } from 'path'
 import { load } from 'js-yaml'
@@ -66,21 +66,6 @@ const defaultConfig: EvalConfig = {
 }
 
 const logger = new Logger('eval')
-
-export const name = 'eval'
-
-export const schema: Schema<Config> = Schema.object({
-  prefix: Schema.string('快捷调用的前缀字符。').default('>'),
-  serializer: Schema.select(['v8', 'yaml'], '要使用的序列化方法。此配置将会影响 storage 能够支持的类型。').default('v8'),
-  userFields: Schema.array(Schema.string() as Schema<User.Field>, '能够在 evaluate 指令中被访问的用户字段列表。').default(['id', 'authority']),
-  channelFields: Schema.array(Schema.string() as Schema<Channel.Field>, '能够在 evaluate 指令中被访问的频道字段列表。').default(['id']),
-  resourceLimits: Schema.object({
-    maxYoungGenerationSizeMb: Schema.number(),
-    maxOldGenerationSizeMb: Schema.number(),
-    codeRangeSizeMb: Schema.number(),
-    stackSizeMb: Schema.number(),
-  }, '资源限制')
-})
 
 Context.service('worker')
 

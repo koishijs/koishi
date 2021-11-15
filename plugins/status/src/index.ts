@@ -1,4 +1,4 @@
-import { Context, Tables, Time } from 'koishi'
+import { Context, Schema, Tables } from 'koishi'
 import { resolve } from 'path'
 import {} from '@koishijs/plugin-console'
 import { LogProvider } from './logs'
@@ -41,17 +41,16 @@ export interface Config extends MetaProvider.Config, ProfileProvider.Config, Sta
   logger?: LogProvider.Config
 }
 
-const defaultConfig: Config = {
-  tickInterval: Time.second * 5,
-  statsInternal: Time.minute * 10,
-  metaInterval: Time.hour,
-}
+export const Config = Schema.intersect([
+  MetaProvider.Config,
+  ProfileProvider.Config,
+  StatisticsProvider.Config,
+  Schema.object({
+    logger: LogProvider.Config,
+  }, '日志选项'),
+])
 
-export const name = 'status'
-
-export function apply(ctx: Context, config: Config = {}) {
-  config = { ...defaultConfig, ...config }
-
+export function apply(ctx: Context, config: Config) {
   ctx.with(['console'], (ctx) => {
     const filename = ctx.console.config.devMode ? '../client/index.ts' : '../dist/index.js'
     ctx.console.addEntry(resolve(__dirname, filename))

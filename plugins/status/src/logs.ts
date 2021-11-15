@@ -1,4 +1,4 @@
-import { Context, Logger, Time } from 'koishi'
+import { Context, Logger, Schema, Time } from 'koishi'
 import { DataSource } from '@koishijs/plugin-console'
 import { resolve } from 'path'
 import { mkdirSync, readdirSync } from 'fs'
@@ -90,6 +90,11 @@ export namespace LogProvider {
     root?: string
     maxAge?: number
   }
+
+  export const Config = Schema.object({
+    root: Schema.string('存放输出日志的本地目录。'),
+    maxAge: Schema.number('日志文件保存的最大天数。'),
+  })
 }
 
 class FileWriter {

@@ -1,5 +1,5 @@
-import { App } from '@koishijs/core'
-import { Dict, Schema, defineProperty } from '@koishijs/utils'
+import { App, Schema } from '@koishijs/core'
+import { Dict, defineProperty } from '@koishijs/utils'
 import { Agent } from 'http'
 import ProxyAgent from 'proxy-agent'
 import axios, { AxiosRequestConfig, Method } from 'axios'

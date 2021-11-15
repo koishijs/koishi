@@ -106,8 +106,6 @@ class LocalAssets extends Assets {
 }
 
 namespace LocalAssets {
-  export const name = 'assets-local'
-
   export interface Config {
     path?: string
     root?: string
@@ -115,8 +113,8 @@ namespace LocalAssets {
     selfUrl?: string
   }
 
-  export const schema = Schema.object({
-    root: Schema.string('本地存储资源文件的绝对路径。').required(),
+  export const Config = Schema.object({
+    root: Schema.string('本地存储资源文件的绝对路径。'),
     path: Schema.string('静态图片暴露在服务器的路径。').default('/assets'),
     selfUrl: Schema.string('Koishi 服务暴露在公网的地址。缺省时将使用全局配置。'),
     secret: Schema.string('用于验证上传者的密钥，配合 assets-remote 使用。')

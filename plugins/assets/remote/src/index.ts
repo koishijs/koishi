@@ -37,14 +37,12 @@ class RemoteAssets extends Assets {
 }
 
 namespace RemoteAssets {
-  export const name = 'assets-remote'
-  
   export interface Config extends Quester.Config {
     endpoint: string
     secret?: string
   }
 
-  export const schema = Schema.object({
+  export const Config = Schema.object({
     endpoint: Schema.string('远程服务器地址。').required(),
     secret: Schema.string('服务器设置的密钥，配合 assets-local 使用。')
   })

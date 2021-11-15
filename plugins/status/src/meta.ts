@@ -1,4 +1,4 @@
-import { Argv, Assets, Context, Dict, noop, Tables } from 'koishi'
+import { Argv, Assets, Context, Dict, noop, Schema, Tables, Time } from 'koishi'
 import { DataSource } from '@koishijs/plugin-console'
 
 declare module 'koishi' {
@@ -54,6 +54,10 @@ export namespace MetaProvider {
   export interface Config {
     metaInterval?: number
   }
+
+  export const Config = Schema.object({
+    metaInternal: Schema.number('元数据推送的时间间隔。').default(Time.hour),
+  })
 
   export interface Stats {
     allUsers: number

@@ -2,7 +2,7 @@
 
 import { EventConfig } from './events'
 import axios, { AxiosError, Method } from 'axios'
-import { App, Session, Tables, segment, Logger, Dict, Quester } from 'koishi'
+import { App, Session, Tables, segment, Logger, Dict, Quester, Schema, Time } from 'koishi'
 import {} from '@koishijs/plugin-puppeteer'
 
 declare module 'koishi' {
@@ -57,6 +57,17 @@ export interface Config extends App.Config.Request {
   replyTimeout?: number
   requestTimeout?: number
 }
+
+export const Config = Schema.object({
+  path: Schema.string('GitHub 服务的路径。').default('/github'),
+  appId: Schema.string('GitHub OAuth App ID.'),
+  appSecret: Schema.string('GitHub OAuth App Secret.'),
+  redirect: Schema.string('授权成功后的跳转链接。'),
+  messagePrefix: Schema.string('推送消息的前缀。').default('[GitHub] '),
+  replyTimeout: Schema.number('等待用户回复消息进行快捷操作的时间。').default(Time.hour),
+  promptTimeout: Schema.number('等待用户键入用户名的时间。缺省时会使用全局设置。'),
+  requestTimeout: Schema.number('等待请求 GitHub 的时间，超时将提示操作失败。缺省时会使用全局设置。'),
+})
 
 export interface OAuth {
   access_token: string

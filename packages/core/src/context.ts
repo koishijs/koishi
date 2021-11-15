@@ -19,13 +19,10 @@ export namespace Plugin {
   export type Function<T = any> = (ctx: Context, options: T) => void
   export type Constructor<T = any> = new (ctx: Context, options: T) => void
 
-  export interface Meta {
+  export interface Object<T = any> {
     name?: string
-    schema?: Schema
-  }
-
-  export interface Object<T = any> extends Meta {
     apply: Function<T>
+    Config?: Schema
   }
 
   export type Config<T extends Plugin> =
@@ -38,11 +35,12 @@ export namespace Plugin {
     ? Config<Extract<T['default'], Plugin>>
     : Config<Extract<T, Plugin>>
 
-  export interface State<T = any> extends Meta {
+  export interface State<T = any> {
     id?: string
     parent?: State
     context?: Context
     config?: T
+    schema?: Schema
     plugin?: Plugin
     children: Plugin[]
     disposables: Disposable[]
@@ -268,14 +266,16 @@ export class Context {
     }
 
     const ctx = new Context(this.filter, this.app, plugin).select(options)
+    const schema = plugin['Config'] || plugin['schema']
+    if (schema) options = schema(options)
+
     this.app.registry.set(plugin, {
       plugin,
+      schema,
       id: Random.id(),
       context: this,
       config: options,
       parent: this.state,
-      name: plugin['name'],
-      schema: plugin['schema'],
       children: [],
       disposables: [],
     })

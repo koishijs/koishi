@@ -1,5 +1,5 @@
-import { App, Context } from '@koishijs/core'
-import { MaybeArray, remove, Schema } from '@koishijs/utils'
+import { App, Context, Schema } from '@koishijs/core'
+import { MaybeArray, remove } from '@koishijs/utils'
 import { Server, createServer, IncomingMessage } from 'http'
 import { pathToRegexp } from 'path-to-regexp'
 import parseUrl from 'parseurl'

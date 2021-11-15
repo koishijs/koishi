@@ -240,7 +240,7 @@ namespace saucenao {
     highSimilarity?: number
   }
 
-  export const schema: Schema<Config> = Schema.object({
+  export const Config = Schema.object({
     maxTrials: Schema.number('最大尝试访问次数。').default(3),
     lowSimilarity: Schema.number('相似度较低的认定标准（百分比）。当 saucenao 给出的相似度低于这个值时，将不会显示 saucenao 本身的搜索结果（但是 ascii2d 的结果会显示）。').default(40),
     highSimilarity: Schema.number('相似度较高的认定标准（百分比）。当 saucenao 给出的相似度高于这个值时，将不会使用 ascii2d 再次搜索。').default(60),

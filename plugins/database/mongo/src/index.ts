@@ -18,7 +18,6 @@ type TableType = keyof Tables
 export interface Tables extends KoishiTables {}
 
 class MongoDatabase extends Database {
-  public config: MongoDatabase.Config
   public client: MongoClient
   public db: Db
 
@@ -27,14 +26,8 @@ class MongoDatabase extends Database {
   user: Collection<User>
   channel: Collection<Channel>
 
-  constructor(public ctx: Context, config?: MongoDatabase.Config) {
+  constructor(public ctx: Context, private config: MongoDatabase.Config) {
     super(ctx)
-    this.config = {
-      host: 'localhost',
-      database: 'koishi',
-      protocol: 'mongodb',
-      ...config,
-    }
   }
 
   async start() {
@@ -99,7 +92,7 @@ namespace MongoDatabase {
     uri?: string
   }
 
-  export const schema: Schema<Config> = Schema.object({
+  export const Config = Schema.object({
     protocol: Schema.string('要使用的协议名。').default('mongodb'),
     host: Schema.string('要连接到的主机名。').default('localhost'),
     port: Schema.number('要连接到的端口号。'),

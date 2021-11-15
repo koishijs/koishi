@@ -1,4 +1,4 @@
-import { Context } from 'koishi'
+import { Context, Schema, Time } from 'koishi'
 import { cpus } from 'os'
 import { mem } from 'systeminformation'
 import { DataSource } from '@koishijs/plugin-console'
@@ -77,6 +77,10 @@ export namespace ProfileProvider {
   export interface Config {
     tickInterval?: number
   }
+
+  export const Config = Schema.object({
+    tickInterval: Schema.number('性能数据推送的时间间隔。').default(Time.second * 5),
+  })
 
   export interface Payload {
     memory: LoadRate

@@ -55,7 +55,6 @@ class LevelDatabase extends Database {
 
   constructor(public ctx: Context, public config: LevelDatabase.Config) {
     super(ctx)
-    this.config = Schema.validate(config, LevelDatabase.schema)
   }
 
   async start() {
@@ -117,17 +116,15 @@ class LevelDatabase extends Database {
 }
 
 namespace LevelDatabase {
-  export const name = 'database-level'
-
-  export const schema: Schema<Config> = Schema.object({
-    location: Schema.string('数据保存的位置').default('.level'),
-    separator: Schema.string('主键分隔符').default('#'),
-  })
-
   export interface Config {
     location: string
     separator?: string
   }
+
+  export const Config = Schema.object({
+    location: Schema.string('数据保存的位置').default('.level'),
+    separator: Schema.string('主键分隔符').default('#'),
+  })
 }
 
 export const logger = new Logger('level')

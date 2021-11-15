@@ -19,7 +19,6 @@ class RedisCache extends Cache {
 
   constructor(ctx: Context, private config: RedisCache.Config) {
     super(ctx)
-    this.config = Schema.validate(config, RedisCache.schema)
   }
 
   start() {}
@@ -105,13 +104,11 @@ class RedisCache extends Cache {
 }
 
 namespace RedisCache {
-  export const name = 'cache-redis'
-
   export interface Config extends RedisClientOptions<{}, {}> {
     prefix?: string
   }
 
-  export const schema: Schema<Config> = Schema.object({
+  export const Config = Schema.object({
     url: Schema.string('Redis URL').default('redis://localhost:6379'),
     prefix: Schema.string('Redis 数据 Key 的前缀').default('koishi:'),
   }, true)
