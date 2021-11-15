@@ -1,18 +1,18 @@
 <template>
-  <tr :class="{ workspace: data.local?.workspace }">
-    <td class="package" :class="data.local ? data.local.id ? 'active' : 'local' : 'remote'">
+  <tr :class="{ workspace: local?.workspace }">
+    <td class="package" :class="local ? local.id ? 'active' : 'local' : 'remote'">
       <div>
         <a
           :href="'http://npmjs.com/package/' + data.name"
           target="blank" rel="noopener noreferrer"
         >{{ data.shortname }}</a>
-        <span class="current" v-if="data.local">@{{ data.local.version }}</span>
+        <span class="current" v-if="local">@{{ local.version }}</span>
         <k-badge type="success" v-if="data.official">官方</k-badge>
         <k-badge type="primary" v-if="data.keywords.includes('service:adapter')">适配器</k-badge>
         <k-badge type="primary" v-if="data.keywords.includes('service:database')">数据库</k-badge>
         <k-badge type="primary" v-if="data.keywords.includes('service:assets')">资源存储</k-badge>
         <k-badge type="primary" v-if="data.keywords.includes('service:cache')">缓存</k-badge>
-        <k-badge type="default" v-if="data.local?.workspace">本地</k-badge>
+        <k-badge type="default" v-if="local?.workspace">本地</k-badge>
         <k-badge type="warning" v-else-if="hasUpdate">可更新</k-badge>
       </div>
       <div class="description">
@@ -23,9 +23,9 @@
     <td class="size">{{ formatSize(data.size) }}</td>
     <td class="operation">
       <span v-if="downloading">安装中</span>
-      <k-button frameless v-else-if="!data.local || hasUpdate"
+      <k-button frameless v-else-if="!local || hasUpdate"
         @click="toggle(data)"
-      >{{ data.local ? '更新' : '安装' }}</k-button>
+      >{{ local ? '更新' : '安装' }}</k-button>
     </td>
   </tr>
 </template>
@@ -33,14 +33,17 @@
 <script lang="ts" setup>
 
 import type { MarketProvider } from '@koishijs/plugin-manager/src'
-import { send } from '~/client'
+import { send, store } from '~/client'
 import { computed, ref, watch } from 'vue'
 
 const props = defineProps<{ data: MarketProvider.Data }>()
 
+const local = computed(() => store.packages[props.data.name])
+
 const hasUpdate = computed(() => {
-  const { local, version } = props.data
-  return local && !local.workspace && local.version !== version
+  if (!local.value) return false
+  const { workspace, version } = local.value
+  return !workspace && version !== props.data.version
 })
 
 function formatSize(size: number) {
@@ -53,9 +56,9 @@ function formatSize(size: number) {
 
 const downloading = ref(false)
 
-watch(() => props.data.local, () => {
+watch(() => local, () => {
   downloading.value = false
-}, { deep: true })
+})
 
 function toggle(data: MarketProvider.Data) {
   send('install', { name: `${data.name}@^${data.version}` })

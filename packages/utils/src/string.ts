@@ -19,8 +19,8 @@ function deepen(modifyString: (source: string) => string) {
 }
 
 export const camelCase = deepen(source => source.replace(/[_-][a-z]/g, str => str.slice(1).toUpperCase()))
-export const paramCase = deepen(source => source.replace(/_/g, '-').replace(/(?<!^)[A-Z]/g, str => '-' + str.toLowerCase()))
-export const snakeCase = deepen(source => source.replace(/-/g, '_').replace(/(?<!^)[A-Z]/g, str => '_' + str.toLowerCase()))
+export const paramCase = deepen(source => uncapitalize(source).replace(/_/g, '-').replace(/(?<!^)[A-Z]/g, str => '-' + str.toLowerCase()))
+export const snakeCase = deepen(source => uncapitalize(source).replace(/-/g, '_').replace(/(?<!^)[A-Z]/g, str => '_' + str.toLowerCase()))
 
 export const camelize = camelCase
 export const hyphenate = paramCase
@@ -52,6 +52,10 @@ export type hyphenate<S extends string> = S extends `${infer L}${infer R}` ? `${
 
 export function capitalize(source: string) {
   return source.charAt(0).toUpperCase() + source.slice(1)
+}
+
+export function uncapitalize(source: string) {
+  return source.charAt(0).toLowerCase() + source.slice(1)
 }
 
 // eslint-disable-next-line no-new-func

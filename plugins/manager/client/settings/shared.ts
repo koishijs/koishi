@@ -1,13 +1,10 @@
-import type { RegistryProvider } from '@koishijs/plugin-manager/src'
+import type { PackageProvider, RegistryProvider } from '@koishijs/plugin-manager/src'
 import type { Dict } from 'koishi'
 import { store } from '~/client'
 import { computed } from 'vue'
 
-export interface Data extends RegistryProvider.Data {
+export interface Data extends Partial<PackageProvider.Data>, RegistryProvider.Data {
   fullname?: string
-  devDeps?: string[]
-  peerDeps?: string[]
-  keywords?: string[]
 }
 
 function safeAssign(target: any, source: any) {
@@ -19,19 +16,19 @@ export const plugins = computed(() => {
   const result: Dict<Data> = {}
   const temp: Dict<Data> = {}
 
-  // market
-  for (const meta of store.market) {
-    if (!meta.local) continue
+  // packages
+  for (const name in store.packages) {
+    const meta = store.packages[name]
     const data = result[meta.shortname] = {
-      name: meta.shortname,
+      shortname: meta.shortname,
       fullname: meta.name,
       config: {},
-      schema: meta.local.schema,
-      devDeps: meta.local.devDeps || [],
-      peerDeps: meta.local.peerDeps || [],
-      keywords: meta.local.keywords || [],
+      schema: meta.schema,
+      devDeps: meta.devDeps || [],
+      peerDeps: meta.peerDeps || [],
+      keywords: meta.keywords || [],
     }
-    if (meta.local.id) temp[meta.local.id] = data
+    if (meta.id) temp[meta.id] = data
   }
 
   // registry

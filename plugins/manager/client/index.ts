@@ -21,7 +21,7 @@ registerPage({
   name: '机器人',
   icon: 'robot',
   order: 620,
-  fields: ['bots', 'protocols', 'registry'],
+  fields: ['bots', 'protocols'],
   component: Bots,
 })
 
@@ -30,7 +30,7 @@ registerPage({
   name: '插件配置',
   icon: 'tools',
   order: 610,
-  fields: ['registry', 'market', 'services'],
+  fields: ['registry', 'packages', 'services'],
   component: Settings,
 })
 
@@ -39,7 +39,7 @@ registerPage({
   name: '插件市场',
   icon: 'puzzle-piece',
   order: 600,
-  fields: ['market'],
+  fields: ['market', 'packages'],
   component: Market,
 })
 

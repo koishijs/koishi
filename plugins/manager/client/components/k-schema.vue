@@ -35,7 +35,7 @@
     </k-schema>
   </schema-group>
 
-  <template v-else-if="schema.type === 'merge'">
+  <template v-else-if="schema.type === 'intersect'">
     <k-schema v-for="item in schema.list" :schema="item" v-model="config" :prefix="prefix"/>
   </template>
 
@@ -70,7 +70,7 @@
 import { computed, watch } from 'vue'
 import type { PropType } from 'vue'
 import Schema from 'schemastery'
-import SchemaGroup from './schema-group.vue'
+import SchemaGroup from './k-schema-group.vue'
 
 const props = defineProps({
   schema: {} as PropType<Schema>,

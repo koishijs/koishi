@@ -1,4 +1,4 @@
-import { App, Context, hyphenate, omit, pick, Plugin, Schema, Modules } from 'koishi'
+import { App, Context, hyphenate, omit, Plugin, Schema } from 'koishi'
 import { debounce } from 'throttle-debounce'
 import { DataSource } from '@koishijs/plugin-console'
 import {} from '@koishijs/cli'
@@ -38,25 +38,29 @@ export class RegistryProvider extends DataSource<RegistryProvider.Data[]> {
   private async getForced() {
     const children: RegistryProvider.Data[] = [{
       id: null,
-      name: '',
+      name: null,
       schema: App.Config,
       config: omit(this.ctx.app.options, ['plugins' as any]),
     }]
 
     for (const plugin of this.getState(null).children) {
       const state = this.getState(plugin)
-      children.push(pick(state, ['id', 'schema', 'config']))
+      const name = hyphenate(plugin.name)
+      children.push({
+        name,
+        id: state.id,
+        schema: state.schema,
+        config: state.config,
+      })
     }
 
     const { plugins = {} } = this.ctx.app.options
     for (const key in plugins) {
       if (!key.startsWith('~')) continue
       const name = hyphenate(key.slice(1))
-      const { schema } = require(Modules.resolve(name))
       children.push({
         id: null,
         name,
-        schema,
         config: plugins[key],
       })
     }

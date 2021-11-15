@@ -1,4 +1,4 @@
-import { Logger, paramCase, Dict, Awaitable, capitalize } from '@koishijs/utils'
+import { Logger, paramCase, Dict, Awaitable } from '@koishijs/utils'
 import { Session } from './session'
 import { App } from './app'
 import { Bot } from './bot'
@@ -82,7 +82,7 @@ export namespace Adapter {
   ): Plugin.Object<PluginConfig<S, T>>
 
   export function define(platform: string, constructor: Bot.Constructor, ...args: CreatePluginRestParams) {
-    const name = capitalize(platform) + 'Adapter'
+    const name = platform + '-adapter'
     Bot.library[platform] = constructor
 
     let botSchema: Schema

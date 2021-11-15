@@ -1,6 +1,6 @@
 <template>
   <k-content class="plugin-view">
-    <template v-if="!data.name">
+    <template v-if="!data.shortname">
       <h1>
         全局设置
         <k-button solid>应用配置</k-button>
@@ -8,7 +8,7 @@
     </template>
     <template v-else>
       <h1>
-        {{ getFullname(data) }}
+        {{ data.fullname }}
         <template v-if="data.schema">
           <template v-if="data.id">
             <k-button solid type="error" @click="execute('dispose')">停用插件</k-button>
@@ -49,6 +49,7 @@ import { computed } from 'vue'
 import type { Dict } from 'koishi'
 import { store, send } from '~/client'
 import { Data, plugins } from './shared'
+import { KSchema } from '../components'
 import TButton from './button.vue'
 
 const props = defineProps<{
@@ -59,7 +60,7 @@ const data = computed(() => plugins.value[props.current])
 
 function getDeps(type: 'peerDeps' | 'devDeps') {
   return Object.fromEntries((data.value[type] || [])
-    .map(name => [name, store.market.some(data => data.name === name && data.local?.id)]))
+    .map(name => [name, store.packages[name]?.id]))
 }
 
 function getKeywords(prefix: string, keywords = data.value.keywords) {
@@ -76,13 +77,6 @@ interface DelegateData {
   available?: string[]
 }
 
-function getFullname({ name, fullname, id }: Data) {
-  if (fullname) return fullname
-  const item = store.market?.find(item => item.local?.id === id)
-  if (item) return item.name
-  return name
-}
-
 function getDelegateData(name: string, required: boolean): DelegateData {
   const fulfilled = store.services.includes(name)
   if (fulfilled) return { required, fulfilled }
@@ -90,7 +84,7 @@ function getDelegateData(name: string, required: boolean): DelegateData {
     required,
     fulfilled,
     available: store.market
-      .filter(data => getKeywords('service', data.keywords).includes(name))
+      ?.filter(data => getKeywords('service', data.keywords).includes(name))
       .map(data => data.name),
   }
 }

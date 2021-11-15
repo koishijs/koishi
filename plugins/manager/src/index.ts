@@ -2,12 +2,14 @@ import { Context, Schema } from 'koishi'
 import { resolve } from 'path'
 import { BotProvider } from './bots'
 import { MarketProvider } from './market'
+import { PackageProvider } from './packages'
 import { AdapterProvider } from './protocols'
 import { RegistryProvider } from './registry'
 import { ReleaseProvider } from './releases'
 
 export * from './bots'
 export * from './market'
+export * from './packages'
 export * from './protocols'
 export * from './registry'
 export * from './releases'
@@ -29,6 +31,7 @@ export function apply(ctx: Context, config: Config = {}) {
     ctx.plugin(BotProvider)
     ctx.plugin(MarketProvider, config)
     ctx.plugin(AdapterProvider)
+    ctx.plugin(PackageProvider)
     ctx.plugin(RegistryProvider)
     ctx.plugin(ReleaseProvider)
 

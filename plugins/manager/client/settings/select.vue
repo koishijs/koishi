@@ -28,7 +28,6 @@
 
 <script lang="ts" setup>
 
-import { store } from '~/client'
 import { ref, computed } from 'vue'
 import { plugins, Data } from './shared'
 
@@ -45,7 +44,7 @@ const model = computed({
 
 const filtered = ref(true)
 
-const getLabel = (item: Data) => item.name
+const getLabel = (item: Data) => item.shortname || ''
 const getReadonly = (item: Data) => !item.schema
 
 const active = computed(() => {
