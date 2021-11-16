@@ -9,6 +9,8 @@ declare module 'koishi' {
   }
 }
 
+export const name = 'common'
+
 export interface Config extends BasicConfig {}
 
 export const Config = Schema.object({

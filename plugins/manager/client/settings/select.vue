@@ -85,6 +85,14 @@ const filtered = ref(true)
       color: var(--fg0);
     }
   }
+
+  .readonly {
+    color: var(--fg3t);
+
+    &:hover, &.active {
+      color: var(--primary);
+    }
+  }
 }
 
 </style>

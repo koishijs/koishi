@@ -38,6 +38,8 @@ function formatContext(session: Partial<Session>) {
   return session.subtype === 'private' ? `私聊 ${session.userId}` : `群聊 ${session.guildId}`
 }
 
+export const name = 'schedule'
+
 export interface Config {
   minInterval?: number
 }

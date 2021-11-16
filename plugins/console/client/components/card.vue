@@ -34,7 +34,7 @@ $paddingY: 1.5rem;
   overflow: hidden;
   background-color: var(--card-bg);
   box-shadow: var(--card-shadow);
-  transition: background-color 0.3s ease;
+  transition: background-color 0.3 ease, box-shadow 0.3s ease;
 
   header {
     font-size: 1.25rem;

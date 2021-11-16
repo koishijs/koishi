@@ -18,6 +18,8 @@ declare module '@koishijs/plugin-adapter-onebot/lib/bot' {
 
 export const logger = new Logger('gocqhttp')
 
+export const name = 'go-cqhttp'
+
 export interface Config {}
 
 export const Config = Schema.object({})

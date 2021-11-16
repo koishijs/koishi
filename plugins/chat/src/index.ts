@@ -38,6 +38,8 @@ const defaultOptions: Config = {
   maxMessages: 1000,
 }
 
+export const name = 'chat'
+
 export interface Config extends ClientExtension {
   refresh?: RefreshConfig
   logLevel?: number

@@ -20,6 +20,8 @@ declare module 'koishi' {
   }
 }
 
+export const name = 'manager'
+
 export interface Config extends MarketProvider.Config {}
 
 export const Config = Schema.intersect([

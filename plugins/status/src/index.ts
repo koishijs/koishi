@@ -37,6 +37,8 @@ export * from './meta'
 export * from './profile'
 export * from './stats'
 
+export const name = 'status'
+
 export interface Config extends MetaProvider.Config, ProfileProvider.Config, StatisticsProvider.Config {
   logger?: LogProvider.Config
 }

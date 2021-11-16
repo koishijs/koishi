@@ -16,6 +16,8 @@ declare module 'koishi' {
   }
 }
 
+export const name = 'GitHub'
+
 const logger = new Logger('github')
 
 export function apply(ctx: Context, config: Config) {

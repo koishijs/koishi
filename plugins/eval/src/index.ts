@@ -69,6 +69,8 @@ const logger = new Logger('eval')
 
 Context.service('worker')
 
+export const name = 'eval'
+
 export function apply(ctx: Context, config: Config = {}) {
   const { prefix, authority } = config = { ...defaultConfig, ...config }
 

@@ -9,12 +9,10 @@ declare module 'koishi' {
   }
 }
 
+export const name = 'image-search'
+
 export interface Config extends saucenao.Config {
   saucenaoApiKey?: string | string[]
-}
-
-async function mixedSearch(url: string, session: Session, config: Config) {
-  return await saucenao(url, session, config, true) && ascii2d(url, session)
 }
 
 export const Config = Schema.intersect([
@@ -23,6 +21,10 @@ export const Config = Schema.intersect([
   }),
   saucenao.Config,
 ])
+
+async function mixedSearch(url: string, session: Session, config: Config) {
+  return await saucenao(url, session, config, true) && ascii2d(url, session)
+}
 
 export function apply(ctx: Context, config: Config = {}) {
   let index = 0

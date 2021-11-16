@@ -219,9 +219,9 @@ export class Context {
       if (!state) return
       states.push(state)
     }
-    const plugin = (ctx: Context) => callback(ctx, modules)
-    const dispose = () => this.dispose(plugin)
-    this.plugin(plugin)
+    const apply = (ctx: Context) => callback(ctx, modules)
+    const dispose = () => this.dispose(apply)
+    this.plugin(apply)
     states.every(state => state.disposables.push(dispose))
     this.on('disconnect', () => {
       states.every(state => remove(state.disposables, dispose))

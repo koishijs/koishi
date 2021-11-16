@@ -1,4 +1,4 @@
-import { App, Context, hyphenate, omit, Plugin, Schema } from 'koishi'
+import { camelize, capitalize, Context, Plugin } from 'koishi'
 import { debounce } from 'throttle-debounce'
 import { DataSource } from '@koishijs/plugin-console'
 import {} from '@koishijs/cli'
@@ -11,12 +11,12 @@ declare module '@koishijs/plugin-console' {
   }
 }
 
-export class RegistryProvider extends DataSource<RegistryProvider.Data[]> {
-  cached: Promise<RegistryProvider.Data[]>
+const placeholder = Symbol('status.registry.placeholder')
+
+export class RegistryProvider extends DataSource<PluginData> {
+  cached: PluginData
   promise: Promise<void>
   update = debounce(0, () => this.broadcast())
-
-  static readonly placeholder = Symbol('status.registry.placeholder')
 
   constructor(ctx: Context) {
     super(ctx, 'registry')
@@ -28,53 +28,31 @@ export class RegistryProvider extends DataSource<RegistryProvider.Data[]> {
 
   async get(forced = false) {
     if (this.cached && !forced) return this.cached
-    return this.cached = this.getForced()
+    return this.cached = this.traverse(null)
   }
 
-  private getState(plugin: Plugin) {
-    return this.ctx.app.registry.get(plugin)
-  }
-
-  private async getForced() {
-    const children: RegistryProvider.Data[] = [{
-      id: null,
-      name: null,
-      schema: App.Config,
-      config: omit(this.ctx.app.options, ['plugins' as any]),
-    }]
-
-    for (const plugin of this.getState(null).children) {
-      const state = this.getState(plugin)
-      const name = hyphenate(plugin.name)
-      children.push({
-        name,
-        id: state.id,
-        schema: state.schema,
-        config: state.config,
-      })
+  private traverse(plugin: Plugin): PluginData {
+    const state = this.ctx.app.registry.get(plugin)
+    let complexity = plugin?.[placeholder] ? 0 : 1 + state.disposables.length
+    const children: PluginData[] = []
+    for (const child of state.children) {
+      const data = this.traverse(child)
+      complexity += data.complexity
+      children.push(data)
     }
-
-    const { plugins = {} } = this.ctx.app.options
-    for (const key in plugins) {
-      if (!key.startsWith('~')) continue
-      const name = hyphenate(key.slice(1))
-      children.push({
-        id: null,
-        name,
-        config: plugins[key],
-      })
-    }
-
-    return children
+    const name = !plugin ? 'App'
+      : !plugin.name || plugin.name === 'apply' ? ''
+      : capitalize(camelize(plugin.name))
+    return { id: state.id || '', name, complexity, children }
   }
 
   async switch(id: string) {
     await this.promise
     for (const [plugin, state] of this.ctx.app.registry) {
       if (id !== state.id) continue
-      const replacer = plugin[RegistryProvider.placeholder] || {
+      const replacer = plugin[placeholder] || {
         apply: Object.assign(() => {}, {
-          [RegistryProvider.placeholder]: state.plugin,
+          [placeholder]: state.plugin,
         }),
       }
       this.promise = this.ctx.dispose(plugin)
@@ -84,11 +62,9 @@ export class RegistryProvider extends DataSource<RegistryProvider.Data[]> {
   }
 }
 
-export namespace RegistryProvider {
-  export interface Data {
-    id?: string
-    name?: string
-    schema?: Schema
-    config?: any
-  }
+export interface PluginData {
+  id: string
+  name: string
+  complexity: number
+  children: PluginData[]
 }

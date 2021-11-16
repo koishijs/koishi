@@ -1,6 +1,7 @@
 import { registerPage, registerView, Card } from '~/client'
 import type {} from '@koishijs/plugin-manager/src'
 import Bots from './bots/index.vue'
+import Registry from './registry/index.vue'
 import Settings from './settings/index.vue'
 import Market from './market/index.vue'
 import Changelog from './changelog/index.vue'
@@ -20,7 +21,7 @@ registerPage({
   path: '/bots',
   name: '机器人',
   icon: 'robot',
-  order: 620,
+  order: 630,
   fields: ['bots', 'protocols'],
   component: Bots,
 })
@@ -29,7 +30,7 @@ registerPage({
   path: '/settings',
   name: '插件配置',
   icon: 'tools',
-  order: 610,
+  order: 620,
   fields: ['packages', 'services'],
   component: Settings,
 })
@@ -38,9 +39,18 @@ registerPage({
   path: '/market',
   name: '插件市场',
   icon: 'puzzle-piece',
-  order: 600,
+  order: 610,
   fields: ['market', 'packages'],
   component: Market,
+})
+
+registerPage({
+  path: '/dependencies',
+  name: '依赖图',
+  icon: 'project-diagram',
+  order: 600,
+  fields: ['registry'],
+  component: Registry,
 })
 
 registerPage({

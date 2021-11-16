@@ -7,6 +7,8 @@ declare module 'koishi' {
   }
 }
 
+export const name = 'dice'
+
 export interface Config extends RollConfig {}
 
 export const Config = Schema.object({

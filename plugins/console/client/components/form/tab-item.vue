@@ -24,14 +24,6 @@ defineProps<{
   &.active {
     background-color: var(--menu-hover-bg);
   }
-
-  &.readonly {
-    color: var(--fg3t);
-
-    &:hover, &.active {
-      color: var(--primary);
-    }
-  }
 }
 
 </style>

@@ -54,6 +54,8 @@ type LaunchOptions = Parameters<typeof puppeteer.launch>[0]
 
 type RenderCallback = (page: Page, next: (handle?: ElementHandle) => Promise<string>) => Promise<string>
 
+export const name = 'puppeteer'
+
 export interface Config {
   browser?: LaunchOptions
   renderViewport?: Partial<Viewport>
