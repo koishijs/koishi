@@ -36,6 +36,16 @@ module.exports = {
   themeConfig: {
     logo: '/koishi.png',
     navbar: [
+      {
+        text: 'v4.x',
+        children: [{
+          text: 'v3.x',
+          link: 'https://koishi.js.org/v3/',
+        }, {
+          text: 'v1.x',
+          link: 'https://koishi.js.org/v1/',
+        }],
+      },
       { text: '指南', link: '/guide/introduction/' },
       { text: 'API', link: '/api/' },
       { text: '官方插件', link: '/plugins/' },
