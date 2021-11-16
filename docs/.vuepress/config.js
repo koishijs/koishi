@@ -6,7 +6,7 @@ function devOnly(value) {
 }
 
 module.exports = {
-  base: '/v4/',
+  base: '/',
   title: 'Koishi',
   theme: resolve(__dirname, 'theme'),
   bundler: '@vuepress/vite',

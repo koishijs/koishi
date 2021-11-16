@@ -1,5 +1,5 @@
-import { Context, Awaitable } from 'koishi'
-import { Console, SocketHandle, Config } from './server'
+import { Awaitable } from 'koishi'
+import { Console, SocketHandle } from './server'
 
 export * from './provider'
 export * from './server'

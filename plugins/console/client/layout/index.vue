@@ -121,20 +121,13 @@ table {
   width: 100%;
   border-collapse: collapse;
 
-  tr {
-    transition: 0.3s ease;
-  }
-
-  tr:not(:first-child):hover {
-    background-color: var(--bg1);
-  }
-
   td, th {
     padding: .5em 1em;
   }
 
   tr {
     border-top: 1px solid var(--border);
+    transition: border-color 0.3s ease;
   }
 
   tr:last-child {

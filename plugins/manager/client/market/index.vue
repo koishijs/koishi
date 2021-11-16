@@ -20,7 +20,7 @@
           </th>
           <th>最新版本</th>
           <th>总体积</th>
-          <th>评分</th>
+          <th>综合评分</th>
           <th class="operation">操作</th>
         </tr>
       </thead>
@@ -69,6 +69,16 @@ import { store } from '~/client'
 
     tr:last-child {
       border-bottom: none;
+    }
+  }
+
+  tbody {
+    tr {
+      transition: 0.3s ease;
+    }
+
+    tr:hover {
+      background-color: var(--bg1);
     }
   }
 

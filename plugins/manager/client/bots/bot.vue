@@ -26,7 +26,7 @@
 <script lang="ts" setup>
 
 import type { Bot } from 'koishi'
-import type { BotProvider } from '@koishijs/plugin-manager'
+import type { BotProvider } from '@koishijs/plugin-manager/src'
 
 const statusNames: Record<Bot.Status, string> = {
   online: '运行中',
