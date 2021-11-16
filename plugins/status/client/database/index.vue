@@ -3,7 +3,8 @@
     <template #aside v-if="tables">
       <el-scrollbar>
         <div class="content">
-          <k-tab-group :data="tables" v-model="current">数据</k-tab-group>
+          <div class="k-tab-group-title">数据</div>
+          <k-tab-group :data="tables" v-model="current"></k-tab-group>
         </div>
       </el-scrollbar>
     </template>

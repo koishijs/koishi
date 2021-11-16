@@ -1,4 +1,4 @@
-import { Adapter, Context, Dict, pick, Schema } from 'koishi'
+import { Adapter, App, Context, Dict, omit, pick, Schema } from 'koishi'
 import { DataSource } from '@koishijs/plugin-console'
 import { readdir, readFile } from 'fs/promises'
 import { dirname } from 'path'
@@ -78,20 +78,32 @@ export class PackageProvider extends DataSource<Dict<PackageProvider.Data>> {
       this.task = this.prepare()
     }
     await this.task
-    return Object.fromEntries((await Promise.all(Object.values(this.cache))).map(data => [data.name, data]))
+
+    // add app config
+    const packages = await Promise.all(Object.values(this.cache))
+    packages.unshift({
+      name: '',
+      shortname: '',
+      schema: App.Config,
+      config: omit(this.ctx.app.options, ['plugins' as any]),
+    })
+
+    return Object.fromEntries(packages.filter(x => x).map(data => [data.name, data]))
   }
 
   private getPluginDeps(deps: Dict<string> = {}) {
     return Object.keys(deps).filter(name => name.startsWith('@koishijs/plugin-') || name.startsWith('koishi-plugin-'))
   }
 
-  private async loadPackage(path: string): Promise<PackageProvider.Data> {
+  private async loadPackage(path: string) {
     const data: PackageLocal = JSON.parse(await readFile(path + '/package.json', 'utf8'))
     if (data.private) return null
 
+    const result = pick(data, ['name', 'version', 'keywords', 'description']) as PackageProvider.Data
+
     // workspace packages are followed by symlinks
-    const workspace = !require.resolve(path).includes('node_modules')
-    const shortname = data.name.replace(/(koishi-|^@koishijs\/)plugin-/, '')
+    result.workspace = !require.resolve(path).includes('node_modules')
+    result.shortname = data.name.replace(/(koishi-|^@koishijs\/)plugin-/, '')
 
     // check adapter
     const oldLength = Object.keys(Adapter.library).length
@@ -100,27 +112,36 @@ export class PackageProvider extends DataSource<Dict<PackageProvider.Data>> {
     if (newLength > oldLength) this.ctx.console.sources.protocols.broadcast()
 
     // check plugin dependencies
-    const devDeps = this.getPluginDeps(data.devDependencies)
-    const peerDeps = this.getPluginDeps(data.peerDependencies)
+    result.devDeps = this.getPluginDeps(data.devDependencies)
+    result.peerDeps = this.getPluginDeps(data.peerDependencies)
 
     // check plugin state
-    const id = this.ctx.app.registry.get(exports)?.id
-    const schema = exports?.Config
+    const state = this.ctx.app.registry.get(exports)
+    result.id = state?.id
+    result.config = state?.config
+    result.schema = exports?.Config
 
-    return { id, schema, workspace, shortname, devDeps, peerDeps, ...pick(data, ['name', 'version', 'keywords', 'description']) }
+    // get config for disabled plugins
+    if (!result.config) {
+      const { plugins = {} } = this.ctx.app.options
+      result.config = plugins['~' + result.shortname]
+    }
+
+    return result
   }
 }
 
 export namespace PackageProvider {
   export interface Config {}
 
-  export interface Data extends PackageBase {
+  export interface Data extends Partial<PackageBase> {
     id?: string
-    shortname: string
+    config?: any
+    shortname?: string
     schema?: Schema
-    devDeps: string[]
-    peerDeps: string[]
+    devDeps?: string[]
+    peerDeps?: string[]
     keywords?: string[]
-    workspace: boolean
+    workspace?: boolean
   }
 }

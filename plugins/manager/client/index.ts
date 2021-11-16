@@ -30,7 +30,7 @@ registerPage({
   name: '插件配置',
   icon: 'tools',
   order: 610,
-  fields: ['registry', 'packages', 'services'],
+  fields: ['packages', 'services'],
   component: Settings,
 })
 

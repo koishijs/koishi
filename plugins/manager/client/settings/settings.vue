@@ -8,7 +8,7 @@
     </template>
     <template v-else>
       <h1>
-        {{ data.fullname }}
+        {{ data.name }}
         <template v-if="data.schema">
           <template v-if="data.id">
             <k-button solid type="error" @click="execute('dispose')">停用插件</k-button>
@@ -48,7 +48,6 @@
 import { computed } from 'vue'
 import type { Dict } from 'koishi'
 import { store, send } from '~/client'
-import { Data, plugins } from './shared'
 import { KSchema } from '../components'
 import TButton from './button.vue'
 
@@ -56,7 +55,7 @@ const props = defineProps<{
   current: string
 }>()
 
-const data = computed(() => plugins.value[props.current])
+const data = computed(() => store.packages[props.current])
 
 function getDeps(type: 'peerDeps' | 'devDeps') {
   return Object.fromEntries((data.value[type] || [])

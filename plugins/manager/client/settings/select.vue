@@ -4,14 +4,21 @@
       <k-tab-item class="k-tab-group-title" label="" v-model="model">
         全局设置
       </k-tab-item>
-      <k-tab-group :data="active" :label="getLabel" :readonly="getReadonly" v-model="model">
+      <div class="k-tab-group-title">
         运行中的插件
         <k-hint placement="right">
           <b>为什么一些插件没有显示？</b>
           <br>这里只展示直接从 app 注册的包形式的插件。换言之，在其他插件内部注册的插件或不是包的插件将不予显示。
         </k-hint>
+      </div>
+      <k-tab-group
+        :data="store.packages" v-model="model"
+        :filter="data => data.id">
+        <template #="{ shortname, schema }">
+          <span :class="{ readonly: !schema }">{{ shortname }}</span>
+        </template>
       </k-tab-group>
-      <k-tab-group :data="inactive.filter(data => !filtered || data.schema)" :label="getLabel" :readonly="getReadonly" v-model="model">
+      <div class="k-tab-group-title">
         未运行的插件
         <k-hint placement="right" icon="fas fa-filter" :class="{ filtered }" @click="filtered = !filtered">
           <template v-if="filtered">
@@ -21,6 +28,13 @@
             <b>筛选：已关闭</b><br>显示所有可用插件。
           </template>
         </k-hint>
+      </div>
+      <k-tab-group
+        :data="store.packages" v-model="model"
+        :filter="data => !data.id && (!filtered || data.schema)">
+        <template #="{ shortname, schema }">
+          <span :class="{ readonly: !schema }">{{ shortname }}</span>
+        </template>
       </k-tab-group>
     </div>
   </el-scrollbar>
@@ -29,7 +43,7 @@
 <script lang="ts" setup>
 
 import { ref, computed } from 'vue'
-import { plugins, Data } from './shared'
+import { store } from '~/client'
 
 const props = defineProps<{
   modelValue: string
@@ -43,17 +57,6 @@ const model = computed({
 })
 
 const filtered = ref(true)
-
-const getLabel = (item: Data) => item.shortname || ''
-const getReadonly = (item: Data) => !item.schema
-
-const active = computed(() => {
-  return Object.entries(plugins.value).filter(([, v]) => v.id).map(([, v]) => v)
-})
-
-const inactive = computed(() => {
-  return Object.entries(plugins.value).filter(([, v]) => !v.id).map(([, v]) => v)
-})
 
 </script>
 

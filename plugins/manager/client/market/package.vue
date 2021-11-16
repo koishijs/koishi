@@ -36,8 +36,6 @@ const props = defineProps<{ data: MarketProvider.Data }>()
 
 const local = computed(() => store.packages[props.data.name])
 
-const keywords = computed(() => local.value?.keywords || props.data.keywords)
-
 const hasUpdate = computed(() => {
   if (!local.value) return false
   const { workspace, version } = local.value

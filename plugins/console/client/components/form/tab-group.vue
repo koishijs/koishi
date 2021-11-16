@@ -1,10 +1,10 @@
 <template>
-  <div class="k-tab-group-title">
-    <slot></slot>
-  </div>
-  <k-tab-item
-    v-for="(item, key) in data" :key="getLabel(item, key)"
-    :label="getLabel(item, key)" :readonly="readonly?.(item)" v-model="model"/>
+  <template v-for="(item, key) in data" :key="key">
+    <k-tab-item v-model="model" :label="key"
+      v-if="filter ? filter(item) : true">
+      <slot v-bind="item"></slot>
+    </k-tab-item>
+  </template>
 </template>
 
 <script lang="ts" setup>
@@ -14,8 +14,7 @@ import { computed } from 'vue'
 const props = defineProps<{
   data: object
   modelValue: string
-  label?: (item: any) => string
-  readonly?: (item: any) => boolean
+  filter?: (item: any) => boolean
 }>()
 
 const emits = defineEmits(['update:modelValue'])
@@ -24,11 +23,6 @@ const model = computed({
   get: () => props.modelValue,
   set: val => emits('update:modelValue', val),
 })
-
-function getLabel(item: any, key: string) {
-  if (props.label) return props.label(item)
-  return key
-}
 
 </script>
 
