@@ -1,14 +1,18 @@
 <template>
-  <div class="dependencies" :style="{ width: graph.width, height: graph.height }">
-    <div class="node-container">
-      <div class="node" v-for="node in graph.nodes" :style="getStyle(node)">
-        <div class="title">{{ node.data.name || 'Anonymous' }}</div>
-        <div>复杂度：{{ node.data.complexity }}</div>
+  <div class="dependencies" ref="container">
+    <div class="container" ref="root" :style="style">
+      <div class="node-container">
+        <div class="node" v-for="node in graph.nodes" :style="getStyle(node)">
+          <div class="title">{{ node.data.name || 'Anonymous' }}</div>
+          <div>复杂度：{{ node.data.complexity }}</div>
+          <screw v-if="node.x" placement="left"></screw>
+          <screw v-if="node.data.children.length" placement="right"></screw>
+        </div>
       </div>
+      <svg class="edge-container" width="1000rem" height="1000rem" viewBox="0 0 1000 1000">
+        <path v-for="edge in graph.edges" :d="getPath(edge)" stroke-width="0.125" fill="none"></path>
+      </svg>
     </div>
-    <svg class="edge-container" width="1000rem" height="1000rem" viewBox="0 0 1000 1000">
-      <path v-for="edge in graph.edges" :d="getPath(edge)" stroke-width="0.125" fill="none"></path>
-    </svg>
   </div>
 </template>
 
@@ -16,8 +20,18 @@
 
 import { PluginData } from '@koishijs/plugin-manager/src'
 import { store } from '~/client'
-import { computed } from 'vue'
+import { ref, computed } from 'vue'
+import { useDraggable } from './utils'
 import { Dict } from 'koishi'
+import screw from './screw.vue'
+
+const root = ref<HTMLElement>(null)
+const container = ref<HTMLElement>(null)
+
+const { position } = useDraggable(root, {
+  container,
+  padding: 48,
+})
 
 interface Node {
   x: number
@@ -59,11 +73,15 @@ const graph = computed(() => {
 
   traverse(store.registry, 0, 0)
 
-  const width = xMax * gridWidth + 18 + 'rem'
-  const height = yMax * gridHeight + 7 + 'rem'
-
-  return { nodes, edges, width, height }
+  return { nodes, edges, xMax, yMax }
 })
+
+const style = computed(() => ({
+  left: position.x + 'px',
+  top: position.y + 'px',
+  width: graph.value.xMax * gridWidth + nodeWidth + 'rem',
+  height: graph.value.yMax * gridHeight + nodeHeight + 'rem',
+}))
 
 function getStyle(node: Node) {
   return {
@@ -110,8 +128,16 @@ function getPath(edge: Edge) {
 <style lang="scss">
 
 .dependencies {
-  position: relative;
-  z-index: -1;
+  position: fixed;
+  left: var(--aside-width);
+  right: 0;
+  top: 0;
+  bottom: 0;
+}
+
+.dependencies .container {
+  position: fixed;
+  user-select: none;
   overflow: hidden;
 }
 
@@ -124,7 +150,6 @@ function getPath(edge: Edge) {
     height: 3rem;
     line-height: 1.5;
     border-radius: 8px;
-    overflow: hidden;
     background-color: var(--card-bg);
     box-shadow: var(--card-shadow);
     transition: background-color 0.3s ease, box-shadow 0.3s ease;
@@ -139,7 +164,7 @@ function getPath(edge: Edge) {
 
 .edge-container {
   path {
-    stroke: var(--border);
+    stroke: var(--bg4);
     transition: stroke 0.3s ease;
   }
 }

@@ -28,13 +28,12 @@ $paddingX: 1.25rem;
 $paddingY: 1.5rem;
 
 .k-card {
-  margin: 0 auto 2rem;
-  width: 100%;
+  margin: 2rem;
   border-radius: 8px;
   overflow: hidden;
   background-color: var(--card-bg);
   box-shadow: var(--card-shadow);
-  transition: background-color 0.3 ease, box-shadow 0.3s ease;
+  transition: background-color 0.3s ease, box-shadow 0.3s ease;
 
   header {
     font-size: 1.25rem;

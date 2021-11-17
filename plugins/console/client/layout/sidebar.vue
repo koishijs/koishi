@@ -48,6 +48,7 @@ function toggle() {
 aside.layout-aside {
   position: fixed;
   height: 100%;
+  z-index: 100;
   width: var(--aside-width);
   background-color: var(--card-bg);
   box-shadow: var(--card-shadow);

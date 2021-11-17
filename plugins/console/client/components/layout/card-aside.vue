@@ -14,8 +14,7 @@
 .k-card-aside {
   display: flex;
   height: calc(100vh - 4rem);
-  margin: 0 auto 2rem;
-  width: 100%;
+  margin: 2rem;
   border-radius: 8px;
   overflow: hidden;
   background-color: var(--card-bg);
