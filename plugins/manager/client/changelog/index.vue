@@ -17,8 +17,8 @@ function transform(source: string) {
     .replace(/^- .+@.+\r?\n/gm, '')
     .replace(/^#+ Other Changes[\s\S]+/gm, '')
     .replace(/^## /gm, '### ')
-    .replace(/\(#(\d+)\)/g, (_, id) => {
-      return `([#${id}](https://github.com/koishijs/koishi/issues/${id}))`
+    .replace(/#(\d+)\b/g, (_, id) => {
+      return `[#${id}](https://github.com/koishijs/koishi/issues/${id})`
     })
     .replace(/\(([0-9a-f]{40})\)/g, (_, hash) => {
       return `([\`${hash.slice(0, 7)}\`](https://github.com/koishijs/koishi/commit/${hash}))`

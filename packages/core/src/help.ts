@@ -15,7 +15,7 @@ export interface HelpConfig extends Command.Config {
   options?: boolean
 }
 
-export default function apply(ctx: Context, config: HelpConfig = {}) {
+export default function help(ctx: Context, config: HelpConfig = {}) {
   if (config.options !== false) {
     ctx.on('command-added', (cmd) => {
       cmd.option('help', '-h  显示此信息', { hidden: true })

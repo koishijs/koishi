@@ -20,7 +20,7 @@ export * from './bot'
 export * from './ws'
 export * from './http'
 
-export default Adapter.define('onebot', OneBotBot, {
+export default Adapter.define('OneBot', OneBotBot, {
   'http': HttpServer,
   'ws': WebSocketClient,
   'ws-reverse': WebSocketServer,

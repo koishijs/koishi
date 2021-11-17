@@ -298,7 +298,7 @@ Command.userFields(({ tokens, command, options = {} }, fields) => {
   }
 })
 
-export default function apply(ctx: Context) {
+export default function validate(ctx: Context) {
   // check user
   ctx.before('command', (argv: Argv<ValidationField>) => {
     const { session, options, command } = argv

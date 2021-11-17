@@ -75,7 +75,7 @@ async function getChannelName(bot: Bot, channelId: string) {
   }
 }
 
-export default function apply(ctx: Context, config: RefreshConfig = {}) {
+export default function receiver(ctx: Context, config: RefreshConfig = {}) {
   const {
     user: refreshUserName = Time.hour,
     guild: refreshGroupName = Time.hour,

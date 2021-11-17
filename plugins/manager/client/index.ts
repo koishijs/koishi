@@ -1,9 +1,9 @@
 import { registerPage, registerView, Card } from '~/client'
 import type {} from '@koishijs/plugin-manager/src'
 import Bots from './bots/index.vue'
-import Registry from './registry/index.vue'
 import Settings from './settings/index.vue'
 import Market from './market/index.vue'
+import Graph from './graph/index.vue'
 import Changelog from './changelog/index.vue'
 
 registerView({
@@ -45,12 +45,12 @@ registerPage({
 })
 
 registerPage({
-  path: '/dependencies',
+  path: '/graph',
   name: '依赖图',
   icon: 'project-diagram',
   order: 600,
   fields: ['registry'],
-  component: Registry,
+  component: Graph,
 })
 
 registerPage({

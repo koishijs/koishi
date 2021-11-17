@@ -12,6 +12,8 @@ interface Message {
   body: any
 }
 
+export const name = 'deamon'
+
 export function apply(ctx: Context, config: DeamonConfig = {}) {
   const { exitCommand, autoRestart = true } = config
 

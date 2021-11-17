@@ -83,6 +83,7 @@ export namespace Adapter {
 
   export function define(platform: string, constructor: Bot.Constructor, ...args: CreatePluginRestParams) {
     const name = platform + '-adapter'
+    platform = platform.toLowerCase()
     Bot.library[platform] = constructor
 
     let botSchema: Schema

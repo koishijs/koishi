@@ -1,5 +1,5 @@
 <template>
-  <k-card class="k-chat-panel">
+  <k-card class="k-chat-panel frameless">
     <virtual-list
       class="k-chat-body" :item-class="resolveItemClass"
       key-name="messageId" :data="messages" :pinned="pinned"
