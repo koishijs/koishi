@@ -27,10 +27,12 @@ $inner-size: 6px;
 
   &.left {
     left: 0;
+    border-left: 1px solid var(--border);
   }
 
   &.right {
     right: -1rem;
+    border-right: 1px solid var(--border);
   }
 
   &.above {
@@ -49,12 +51,23 @@ $inner-size: 6px;
     transform: translate(-50%, -50%);
     background-color: var(--bg4);
     transition: background-color 0.3s ease;
+
+    .node.active & {
+      background-color: var(--primary);
+    }
   }
 
   &.below {
     z-index: -10;
     box-shadow: var(--card-shadow);
     transition: background-color 0.3s ease, box-shadow 0.3s ease;
+  }
+
+  .node-container.active .node:not(.active) & {
+    background-color: var(--page-bg);
+    &.below {
+      box-shadow: unset;
+    }
   }
 }
 

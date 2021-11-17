@@ -1,73 +1,132 @@
-import { ref, unref, reactive, computed } from 'vue-demi'
-import { MaybeRef, toRefs, isClient } from '@vueuse/shared'
-import { useEventListener, Position } from '@vueuse/core'
+import { PluginData } from '@koishijs/plugin-manager/src'
+import { store } from '~/client'
+import { Dict } from 'koishi'
+import { computed } from 'vue'
 
-type Padding = number | [number, number?, number?, number?]
+type Bound = [number, number][]
 
-export interface UseDraggableOptions {
-  container?: MaybeRef<Element>
-  padding?: Padding
+export interface Node {
+  col: number
+  row: number
+  data: PluginData
+  parent?: Node
 }
 
-function resolvePadding(padding: Padding) {
-  if (typeof padding === 'number') padding = [padding]
-  padding[1] ??= padding[0]
-  padding[2] ??= padding[0]
-  padding[3] ??= padding[1]
-  return padding
+export interface Edge {
+  id: string
+  source: string
+  target: string
 }
 
-export function useDraggable(target: MaybeRef<Element>, options: UseDraggableOptions = {}) {
-  const container = options.container
-  const padding = resolvePadding(options.padding ?? 0)
-  const position = reactive<Position>({ x: 0, y: 0 })
-  const pressed = ref<Position>()
+const nodeWidth = 14
+const nodeHeight = 5
+const gridWidth = 20
+const gridHeight = 6
 
-  function start(e: PointerEvent) {
-    const rect = unref(target).getBoundingClientRect()
-    pressed.value = {
-      x: e.pageX - rect.left,
-      y: e.pageY - rect.top,
+export const graph = computed(() => {
+  const nodes: Dict<Node> = {}
+  const edges: Edge[] = []
+
+  function shift(data: PluginData, offset: number) {
+    nodes[data.id].row += offset
+    for (const child of data.children) {
+      shift(child, offset)
     }
   }
 
-  function restrict(val: number, min: number, max: number) {
-    if (min < max) return Math.max(min, Math.min(max, val))
-    if (val > min) return min
-    if (val < max) return max
-    return val
+  function traverse(data: PluginData, col: number): Bound {
+    const bound: Bound = []
+
+    data.children.forEach((child, index) => {
+      let offset = -Infinity
+      const temp = traverse(child, col + 1)
+      for (let index = 0; index < Math.min(temp.length, bound.length); index++) {
+        offset = Math.max(offset, bound[index][1] - temp[index][0])
+      }
+      if (offset === -Infinity) offset = 0
+      if (offset > 0) {
+        shift(child, offset)
+        for (let index = 0; index < temp.length; index++) {
+          temp[index][0] += offset
+          temp[index][1] += offset
+        }
+      } else if (offset < 0) {
+        while (index > 0) {
+          index -= 1
+          shift(data.children[index], -offset)
+        }
+        for (let index = 0; index < bound.length; index++) {
+          bound[index][0] -= offset
+          bound[index][1] -= offset
+        }
+      }
+      for (let index = 0; index < temp.length; index++) {
+        if (bound[index]) {
+          bound[index][1] = temp[index][1]
+        } else {
+          bound.push(temp[index])
+        }
+      }
+      edges.push({
+        source: data.id,
+        target: child.id,
+        id: data.id + '-' + child.id,
+      })
+    })
+
+    const row = bound.length
+      ? (bound[0][0] + bound[0][1] - 1) / 2
+      : 0
+    bound.unshift([row, row + 1])
+
+    const parent = nodes[data.id] = { col, row, data }
+    for (const child of data.children) {
+      nodes[child.id].parent = parent
+    }
+
+    return bound
   }
 
-  function move(e: PointerEvent) {
-    if (!pressed.value) return
-    const { width, height } = unref(target).getBoundingClientRect()
-    const rect = unref(container).getBoundingClientRect()
-    position.x = restrict(
-      e.pageX - pressed.value.x,
-      rect.left + padding[3],
-      rect.right - padding[1] - width,
-    )
-    position.y = restrict(
-      e.pageY - pressed.value.y,
-      rect.top + padding[0],
-      rect.bottom - padding[2] - height,
-    )
-  }
+  const result = traverse(store.registry, 0)
+  const rowMax = result.length
+  const colMax = Math.max(...result.map(p => p[1]))
+  const width = (rowMax - 1) * gridWidth + nodeWidth + 'rem'
+  const height = (colMax - 1) * gridHeight + nodeHeight + 'rem'
 
-  function end(e: PointerEvent) {
-    pressed.value = undefined
-  }
+  return { nodes, edges, width, height }
+})
 
-  if (isClient) {
-    useEventListener(container, 'pointerdown', start, true)
-    useEventListener(window, 'pointermove', move, true)
-    useEventListener(window, 'pointerup', end, true)
-  }
-
+export function getStyle(node: Node) {
   return {
-    ...toRefs(position),
-    position,
-    isDragging: computed(() => !!pressed.value),
+    left: `${node.col * gridWidth}rem`,
+    top: `${node.row * gridHeight}rem`,
   }
 }
 
+export function getPath(edge: Edge) {
+  const source = graph.value.nodes[edge.source]
+  const target = graph.value.nodes[edge.target]
+
+  const xSource = source.col * gridWidth + nodeWidth
+  const xTarget = target.col * gridWidth
+  const xMiddle = (xSource + xTarget) / 2
+  const ySource = source.row * gridHeight + nodeHeight / 2
+  const yTarget = target.row * gridHeight + nodeHeight / 2
+  if (ySource === yTarget) {
+    return `M ${xSource} ${ySource} H ${xTarget}`
+  }
+
+  const sign = Math.sign(yTarget - ySource)
+  const x1 = xMiddle - 2
+  const x2 = xMiddle
+  const x3 = xMiddle
+  const x4 = xMiddle + 2
+  const y1 = ySource
+  const y2 = ySource + 1.75 * sign
+  const y3 = yTarget - 1.75 * sign
+  const y4 = yTarget
+
+  const curve1 = `${x2} ${ySource} ${xMiddle} ${y1} ${xMiddle} ${y2}`
+  const curve2 = `${xMiddle} ${y4} ${x3} ${yTarget} ${x4} ${yTarget}`
+  return `M ${xSource} ${ySource} H ${x1} C ${curve1} V ${y3} C ${curve2} H ${xTarget}`
+}

@@ -1,145 +1,60 @@
 <template>
-  <div class="dependencies" ref="container">
-    <div class="container" ref="root" :style="style">
-      <div class="node-container">
-        <div class="node" v-for="node in graph.nodes" :style="getStyle(node)">
+  <draggable :width="graph.width" :height="graph.height" :padding="48">
+    <div class="node-container" :class="{ active: current }">
+      <div v-for="(node, id) in graph.nodes" :key="id"
+        :style="getStyle(node)" :class="getClass(node)"
+        @mouseenter="current = id" @mouseleave="current = null">
+        <div class="content">
           <div class="title">{{ node.data.name || 'Anonymous' }}</div>
           <div>复杂度：{{ node.data.complexity }}</div>
-          <screw v-if="node.x" placement="left"></screw>
-          <screw v-if="node.data.children.length" placement="right"></screw>
         </div>
+        <screw v-if="node.col" placement="left"></screw>
+        <screw v-if="node.data.children.length" placement="right"></screw>
       </div>
-      <svg class="edge-container" width="1000rem" height="1000rem" viewBox="0 0 1000 1000">
-        <path v-for="edge in graph.edges" :d="getPath(edge)" stroke-width="0.125" fill="none"></path>
-      </svg>
     </div>
-  </div>
+    <svg class="edge-container" :class="{ active: current }" width="1000rem" height="1000rem" viewBox="0 0 1000 1000">
+      <path v-for="edge in graph.edges" :key="edge.id"
+        :d="getPath(edge)" stroke-width="0.125" fill="none"></path>
+    </svg>
+    <svg class="edge-container highlight" width="1000rem" height="1000rem" viewBox="0 0 1000 1000">
+      <path v-for="edge in graph.edges" :key="edge.id"
+        :class="{ active: isActive(graph.nodes[edge.target]) }"
+        :d="getPath(edge)" stroke-width="0.125" fill="none"></path>
+    </svg>
+  </draggable>
 </template>
 
 <script lang="ts" setup>
 
-import { PluginData } from '@koishijs/plugin-manager/src'
-import { store } from '~/client'
-import { ref, computed } from 'vue'
-import { useDraggable } from './utils'
-import { Dict } from 'koishi'
+import { graph, getPath, getStyle, Node } from './utils'
+import { ref } from 'vue'
+import draggable from './draggable.vue'
 import screw from './screw.vue'
 
-const root = ref<HTMLElement>(null)
-const container = ref<HTMLElement>(null)
+const current = ref<string | number>(null)
 
-const { position } = useDraggable(root, {
-  container,
-  padding: 48,
-})
-
-interface Node {
-  x: number
-  y: number
-  data: PluginData
+function isActive(node: Node): boolean {
+  const selected = graph.value.nodes[current.value]
+  return isAncestor(selected, node) || isAncestor(node, selected)
 }
 
-interface Edge {
-  source: string
-  target: string
-}
-
-const graph = computed(() => {
-  const nodes: Dict<Node> = {}
-  const edges: Edge[] = []
-  let xMax = 0, yMax = 0
-
-  function traverse(data: PluginData, x: number, y: number): number {
-    const yInit = y
-    nodes[data.id] = { x, y, data }
-    xMax = Math.max(xMax, x)
-    yMax = Math.max(yMax, y)
-
-    data.children.forEach((child) => {
-      y = traverse(child, x + 1, y) + 1
-      edges.push({
-        source: data.id,
-        target: child.id,
-      })
-    })
-
-    if (data.children.length) {
-      y -= 1
-      nodes[data.id].y = (y + yInit) / 2
-    }
-
-    return y
+function isAncestor(ancestor: Node, node: Node): boolean {
+  while (node) {
+    if (node === ancestor) return true
+    node = node.parent
   }
+}
 
-  traverse(store.registry, 0, 0)
-
-  return { nodes, edges, xMax, yMax }
-})
-
-const style = computed(() => ({
-  left: position.x + 'px',
-  top: position.y + 'px',
-  width: graph.value.xMax * gridWidth + nodeWidth + 'rem',
-  height: graph.value.yMax * gridHeight + nodeHeight + 'rem',
-}))
-
-function getStyle(node: Node) {
+function getClass(node: Node) {
   return {
-    left: `${node.x * gridWidth}rem`,
-    top: `${node.y * gridHeight}rem`,
+    node: true,
+    active: isActive(node),
   }
-}
-
-const nodeWidth = 14
-const nodeHeight = 5
-const gridWidth = 20
-const gridHeight = 6
-
-function getPath(edge: Edge) {
-  const source = graph.value.nodes[edge.source]
-  const target = graph.value.nodes[edge.target]
-
-  const xSource = source.x * gridWidth + nodeWidth
-  const xTarget = target.x * gridWidth
-  const xMiddle = (xSource + xTarget) / 2
-  const ySource = source.y * gridHeight + nodeHeight / 2
-  const yTarget = target.y * gridHeight + nodeHeight / 2
-  if (ySource === yTarget) {
-    return `M ${xSource} ${ySource} H ${xTarget}`
-  }
-
-  const sign = Math.sign(yTarget - ySource)
-  const x1 = xMiddle - 2
-  const x2 = xMiddle
-  const x3 = xMiddle
-  const x4 = xMiddle + 2
-  const y1 = ySource
-  const y2 = ySource + 1.75 * sign
-  const y3 = yTarget - 1.75 * sign
-  const y4 = yTarget
-
-  const curve1 = `${x2} ${ySource} ${xMiddle} ${y1} ${xMiddle} ${y2}`
-  const curve2 = `${xMiddle} ${y4} ${x3} ${yTarget} ${x4} ${yTarget}`
-  return `M ${xSource} ${ySource} H ${x1} C ${curve1} V ${y3} C ${curve2} H ${xTarget}`
 }
 
 </script>
 
 <style lang="scss">
-
-.dependencies {
-  position: fixed;
-  left: var(--aside-width);
-  right: 0;
-  top: 0;
-  bottom: 0;
-}
-
-.dependencies .container {
-  position: fixed;
-  user-select: none;
-  overflow: hidden;
-}
 
 .node-container {
   .node {
@@ -152,6 +67,7 @@ function getPath(edge: Edge) {
     border-radius: 8px;
     background-color: var(--card-bg);
     box-shadow: var(--card-shadow);
+    border: 1px solid var(--border);
     transition: background-color 0.3s ease, box-shadow 0.3s ease;
 
     .title {
@@ -159,13 +75,43 @@ function getPath(edge: Edge) {
       font-weight: bolder;
       margin-bottom: 0.125rem;
     }
+
+    .content {
+      transition: opacity 0.3s ease;
+    }
+  }
+
+  &.active .node:not(.active) {
+    background-color: var(--page-bg);
+    box-shadow: unset;
+
+    .content {
+      opacity: 0.5;
+    }
   }
 }
 
 .edge-container {
+  z-index: -1;
+  position: absolute;
+
   path {
     stroke: var(--bg4);
     transition: stroke 0.3s ease;
+  }
+
+  &.active path {
+    stroke: var(--border);
+  }
+
+  &.highlight {
+    path {
+      stroke: transparent;
+    }
+
+    path.active {
+      stroke: var(--primary);
+    }
   }
 }
 
