@@ -88,10 +88,10 @@ export const graph = computed(() => {
   }
 
   const result = traverse(store.registry, 0)
-  const rowMax = result.length
-  const colMax = Math.max(...result.map(p => p[1]))
-  const width = (rowMax - 1) * gridWidth + nodeWidth + 'rem'
-  const height = (colMax - 1) * gridHeight + nodeHeight + 'rem'
+  const rowMax = result.length - 1
+  const colMax = Math.max(...result.map(p => p[1])) - 1
+  const width = (rowMax * gridWidth + nodeWidth) * 16
+  const height = (colMax * gridHeight + nodeHeight) * 16
 
   return { nodes, edges, width, height }
 })
