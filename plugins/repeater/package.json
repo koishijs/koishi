@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-repeater",
   "description": "Repeater plugins for Koishi",
-  "version": "1.0.0-beta.0",
+  "version": "1.0.0-beta.1",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -31,9 +31,9 @@
     "repeater"
   ],
   "peerDependencies": {
-    "koishi": "^4.0.0-beta.1"
+    "koishi": "^4.0.0-beta.2"
   },
   "devDependencies": {
-    "@koishijs/test-utils": "^8.0.0-beta.1"
+    "@koishijs/test-utils": "^8.0.0-beta.2"
   }
 }

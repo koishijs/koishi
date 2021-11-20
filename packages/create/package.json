@@ -1,7 +1,7 @@
 {
   "name": "create-koishi",
   "description": "Node runtime for Koishi",
-  "version": "4.0.5",
+  "version": "4.0.6",
   "main": "lib/index.js",
   "engines": {
     "node": ">=12.0.0"
