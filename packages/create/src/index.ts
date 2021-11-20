@@ -120,7 +120,7 @@ const compilers: Record<string, CompilerOptions> = {
 const devDeps: string[] = []
 
 const files: (string | [string, string])[] = [
-  '.gitignore',
+  ['_gitignore', '.gitignore'],
   'koishi.config.yml',
 ]
 
