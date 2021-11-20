@@ -47,7 +47,7 @@
     <div class="screen flex screen-5">
       <div class="introduction center">
         <h1>专为开发者打造</h1>
-        <p>不知道这里应该说什么，总之先编一段话。</p>
+        <p>Koishi 更为开发者提供了众多专业功能，使开发者得以在各种复杂需求中构建规模化的解决方案。</p>
       </div>
       <div class="advantages">
         <div class="advantage">

@@ -39,14 +39,14 @@ Koishi 支持多个聊天平台，对于不同的平台，你也需要做好相�
 npm init
 
 # 安装 koishi 和相关库
-npm i koishi @koishijs/plugin-adapter-onebot @koishijs/plugin-common
+npm i koishi@next @koishijs/plugin-adapter-onebot@next @koishijs/plugin-common@next
 ```
 ```yarn
 # 初始化项目
 yarn init
 
 # 安装 koishi 和相关库
-yarn add koishi @koishijs/plugin-adapter-onebot @koishijs/plugin-common
+yarn add koishi@next @koishijs/plugin-adapter-onebot@next @koishijs/plugin-common@next
 ```
 :::
 
@@ -113,10 +113,10 @@ app.middleware((session, next) => {
 
 ::: code-group manager
 ```npm
-npm i @koishijs/plugin-database-mysql
+npm i @koishijs/plugin-database-mysql@next
 ```
 ```yarn
-yarn add @koishijs/plugin-database-mysql
+yarn add @koishijs/plugin-database-mysql@next
 ```
 :::
 

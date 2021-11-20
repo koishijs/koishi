@@ -10,14 +10,29 @@ Koishi 官方实现了许多功能，但一个机器人很可能只会用到其�
 
 在之前的文档中，我们已经展示了如何通过配置文件和脚本调用两种方法使用插件，它们的写法略有不同。让我们先回顾一下：
 
-```js koishi.config.js
+::: code-group config koishi.config
+```yaml
+plugins:
+  ./my-plugin:  # 传给 my-plugin 的配置项
+  console:      # 传给 @koishijs/plugin-common 的配置项
+```
+```js
 module.exports = {
   plugins: {
-    './my-plugin': true, // true 和 {} 的效果等价
-    'common': { /* 传给 koishi-plugin-common 的选项 */ },
+    './my-plugin': {}, // 传给 my-plugin 的配置项
+    'common': {},      // 传给 @koishijs/plugin-common 的配置项
   },
 }
 ```
+```ts
+export default {
+  plugins: {
+    './my-plugin': {}, // 传给 my-plugin 的配置项
+    'common': {},      // 传给 @koishijs/plugin-common 的配置项
+  },
+}
+```
+:::
 
 `plugins` 是一个对象，其中的每一个键表示一个插件的路径。
 
@@ -29,7 +44,7 @@ module.exports = {
 ```js index.js
 app
   .plugin(require('./my-plugin'))
-  .plugin(require('koishi-plugin-common'), options)
+  .plugin(require('@koishijs/plugin-common'), options)
 ```
 
 ### 开发插件
@@ -57,7 +72,8 @@ ctx.plugin({
 
 除此以外，插件如果使用对象式，那么除了 `apply` 以外，你还可以提供一个 `name` 属性。如果提供了这个属性，命令行工具会将这个名字输出到控制台中。例如，下面给出了一个插件的例子，它实现了检测说话带空格的功能：
 
-```js detect-space.js
+::: code-group language detect-space
+```js
 module.exports.name = 'detect-space'
 
 module.exports.apply = (ctx) => {
@@ -70,6 +86,22 @@ module.exports.apply = (ctx) => {
   })
 }
 ```
+```ts
+import { Context } from 'koishi'
+
+export const name = 'detect-space'
+
+export function apply(ctx: Context) {
+  ctx.middleware((session, next) => {
+    if (session.content.match(/^\s*(\S +){2,}\S\s*$/g)) {
+      return session.send('在？为什么说话带空格？')
+    } else {
+      return next()
+    }
+  })
+}
+```
+:::
 
 把它放到你的机器人文件夹，接着向你的 `koishi.config.js` 添加一行：
 
@@ -122,7 +154,8 @@ Koishi 的官方插件 koishi-plugin-common 也使用了 [这种写法](https://
 
 通常来说一个插件的效应应该是永久的，但如果你想在运行时卸载一个插件，应该怎么做？你可以使用插件定义中的那个上下文的 `dispose` 方法来解决：
 
-```js my-plugin.js
+::: code-group language my-plugin
+```js
 module.exports = (ctx, options) => {
   // 编写你的插件逻辑
   ctx.on('message', someListener)
@@ -134,10 +167,26 @@ module.exports = (ctx, options) => {
   ctx.dispose()
 }
 ```
+```ts
+import { Context } from 'koishi'
+
+export default function (ctx: Context, options) {
+  // 编写你的插件逻辑
+  ctx.on('message', someListener)
+  ctx.command('foo').action(callback)
+  ctx.middleware(callback)
+  ctx.plugin(require('another-plugin'))
+
+  // 卸载这个插件，取消上面的全部操作
+  ctx.dispose()
+}
+```
+:::
 
 看起来很神奇，不过它的实现方式也非常简单。当一个插件被注册时，Koishi 会记录注册过程中定义的所有事件钩子、指令、中间件乃至子插件。当 `ctx.dispose()` 被调用时，再逐一取消上述操作的效应。因此，它的局限性也很明显：它并不能妥善处理除了 Context API 以外的**副作用**。不过，我们也准备了额外的解决办法：
 
-```js my-plugin.js
+::: code-group language my-plugin
+```js
 module.exports = (ctx, options) => {
   const server = createServer()
 
@@ -155,3 +204,24 @@ module.exports = (ctx, options) => {
   ctx.dispose()
 }
 ```
+```ts
+import { Context } from 'koishi'
+
+export default function (ctx: Context, options) {
+  const server = createServer()
+
+  ctx.on('connect', () => {
+    // ctx.dispose 无法消除 server.listen 带来的副作用
+    server.listen(1234)
+  })
+
+  // 添加一个特殊的回调函数来处理副作用
+  ctx.before('disconnect', () => {
+    server.close()
+  })
+
+  // 现在我们又可以愉快地使用 ctx.dispose() 啦
+  ctx.dispose()
+}
+```
+:::

@@ -31,15 +31,15 @@ Koishi 是一个现代、高效的跨平台聊天机器人框架。
 
 官方提供了大量插件和解决方案，覆盖了绝大多数常见需求的同时，也为开发提供了绝佳的范例。
 
-- @koishijs/plugin-schedule：管理计划任务
-- @koishijs/plugin-teach：教机器人说话
-- @koishijs/plugin-webui：网页控制台
+- @koishijs/plugin-console：网页控制台
+- @koishijs/plugin-schedule：计划任务
+- @koishijs/plugin-teach：问答教学
 
 除了这些官方插件以外，社区贡献者也编写了各种各样的第三方插件：
 
-- @koishijs/plugin-genshin：原神资料查询
-- @koishijs/plugin-ink：展示视觉小说
-- @koishijs/plugin-shell：执行终端命令
+- koishi-plugin-genshin：原神资料查询
+- koishi-plugin-ink：展示视觉小说
+- koishi-plugin-shell：执行终端命令
 
 这些插件共同组成了 Koishi 如今的生态。
 
@@ -47,7 +47,7 @@ Koishi 是一个现代、高效的跨平台聊天机器人框架。
 
 ### 专为开发者打造
 
-不知道这里应该说什么，总之先编一段话。
+Koishi 更为开发者提供了众多专业功能，使开发者得以在各种复杂需求中构建规模化的解决方案。
 
 #### 类型支持
 
