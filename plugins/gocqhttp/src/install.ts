@@ -40,7 +40,8 @@ export async function install() {
   const asset = data[0].assets.find(asset => asset.name === name)
   if (!asset) throw new Error(`target "${name}" is not found`)
 
-  const url = asset.browser_download_url.replace('https://github.com', 'https://download.fastgit.org')
+  const mirror = process.env.GITHUB_MIRROR || 'https://download.fastgit.org'
+  const url = asset.browser_download_url.replace('https://github.com', mirror)
   const [{ data: stream }] = await Promise.all([
     axios.get<NodeJS.ReadableStream>(url, { responseType: 'stream' }),
     mkdir(outDir, { recursive: true }),
