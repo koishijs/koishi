@@ -12,6 +12,10 @@ declare module '@koishijs/plugin-console' {
     interface Sources {
       market: MarketProvider
     }
+
+    interface Events {
+      install: { name: string }
+    }
   }
 }
 
@@ -41,10 +45,6 @@ const installArgs: Record<Manager, string[]> = {
   npm: ['install', '--loglevel', 'error'],
 }
 
-function unwrap(module: any) {
-  return module.default || module
-}
-
 export class MarketProvider extends DataSource<MarketProvider.Data[]> {
   dataCache: Dict<MarketProvider.Data> = {}
   localCache: Dict<Promise<MarketProvider.Local>> = {}
@@ -60,6 +60,10 @@ export class MarketProvider extends DataSource<MarketProvider.Data[]> {
     })
 
     ctx.on('connect', () => this.start())
+
+    ctx.console.addListener('install', async ({ name }) => {
+      this.install(name)
+    })
   }
 
   start() {

@@ -39,15 +39,17 @@ export class SocketHandle {
   }
 }
 
+export type Listener<T = any> = (payload: T, handle: SocketHandle) => Promise<void>
+
 export namespace Console {
   export interface Sources {
     services: ServiceProvider
   }
+
+  export interface Events {}
 }
 
 Context.service('console')
-
-export type Listener = (this: SocketHandle, payload: any) => Promise<void>
 
 export class Console {
   readonly sources: Partial<Console.Sources> = {}
@@ -109,8 +111,10 @@ export class Console {
     })
   }
 
-  addListener(event: string, listener: Listener) {
-    this.listeners[event] = listener
+  addListener<K extends keyof Console.Events>(event: K, callback: Listener<Console.Events[K]>): void
+  addListener(event: string, callback: Listener): void
+  addListener(event: string, callback: Listener) {
+    this.listeners[event] = callback
   }
 
   connect() {}
@@ -141,12 +145,16 @@ export class Console {
 
     socket.on('message', async (data) => {
       const { type, body } = JSON.parse(data.toString())
-      const method = this.listeners[type]
-      if (method) {
-        await method.call(channel, body)
-      } else {
-        logger.info(type, body)
+      const listener = this.listeners[type]
+      if (!listener) {
+        return logger.info('unknown message:', type, body)
       }
+
+      if (await channel.validate()) {
+        return channel.send('unauthorized')
+      }
+
+      await listener(body, channel)
     })
   }
 

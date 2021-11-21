@@ -21,6 +21,7 @@ declare module '~/client' {
   export const config: ClientConfig
   export const store: Store
 
+  export function send<K extends keyof Console.Events>(type: K, body: Console.Events[K]): void
   export function send(type: string, body: any): void
   export function receive<T = any>(event: string, listener: (data: T) => void): void
 

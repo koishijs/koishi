@@ -8,6 +8,10 @@ declare module '@koishijs/plugin-console' {
     interface Sources {
       registry: RegistryProvider
     }
+
+    interface Events {
+      switch: { name: string }
+    }
   }
 }
 
@@ -24,6 +28,10 @@ export class RegistryProvider extends DataSource<PluginData> {
     ctx.on('plugin-added', this.update)
     ctx.on('plugin-removed', this.update)
     ctx.on('disconnect', this.update.cancel)
+
+    ctx.console.addListener('switch', async ({ name }) => {
+      this.switch(name)
+    })
   }
 
   async get(forced = false) {

@@ -17,6 +17,18 @@ declare module 'koishi' {
 
 declare module '@koishijs/plugin-console' {
   interface ClientConfig extends ClientExtension {}
+
+  namespace Console {
+    interface Events {
+      chat: {
+        content: string
+        platform: string
+        selfId: string
+        channelId: string
+        guildId: string
+      }
+    }
+  }
 }
 
 interface ClientExtension {
@@ -77,12 +89,9 @@ export function apply(ctx: Context, options: Config = {}) {
     ctx.console.global.maxMessages = options.maxMessages
     ctx.console.addEntry(resolve(__dirname, filename))
 
-    ctx.on('connect', async () => {
-      ctx.console.addListener('chat', async function ({ content, platform, selfId, channelId, guildId }) {
-        if (await this.validate()) return this.send('unauthorized')
-        if (ctx.assets) content = await ctx.assets.transform(content)
-        ctx.bots.get(`${platform}:${selfId}`)?.sendMessage(channelId, content, guildId)
-      })
+    ctx.console.addListener('chat', async ({ content, platform, selfId, channelId, guildId }) => {
+      if (ctx.assets) content = await ctx.assets.transform(content)
+      ctx.bots.get(`${platform}:${selfId}`)?.sendMessage(channelId, content, guildId)
     })
 
     ctx.on('chat/receive', async (message) => {
