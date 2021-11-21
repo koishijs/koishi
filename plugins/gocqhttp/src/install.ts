@@ -28,16 +28,25 @@ function getPlatform() {
   throw new Error(`platform "${process.platform}" is not supported`)
 }
 
-export async function install() {
+export async function getLatestRelease(repo: string) {
+  const { data } = await axios.get<Release[]>(`https://api.github.com/repos/${repo}/releases`)
+  return data[0]
+}
+
+export async function getReleaseByTag(repo: string, tag: string) {
+  const { data } = await axios.get<Release[]>(`https://api.github.com/repos/${repo}/releases/tags/${tag}`)
+  return data
+}
+
+export async function downloadRelease(release: Release) {
   const arch = getArch()
   const platform = getPlatform()
   const outDir = resolve(__dirname, '../bin')
 
   if (existsSync(outDir)) return
 
-  const { data } = await axios.get<Release[]>('https://api.github.com/repos/Mrs4s/go-cqhttp/releases')
   const name = `go-cqhttp_${platform}_${arch}.${platform === 'windows' ? 'exe' : 'tar.gz'}`
-  const asset = data[0].assets.find(asset => asset.name === name)
+  const asset = release.assets.find(asset => asset.name === name)
   if (!asset) throw new Error(`target "${name}" is not found`)
 
   const mirror = process.env.GITHUB_MIRROR || 'https://download.fastgit.org'
@@ -48,7 +57,7 @@ export async function install() {
   ])
 
   await Promise.all([
-    writeFile(outDir + '/index.json', JSON.stringify({ ...data[0], assets: undefined })),
+    writeFile(outDir + '/index.json', JSON.stringify({ ...release, assets: undefined })),
     new Promise(async (resolve, reject) => {
       stream.on('end', resolve)
       stream.on('error', reject)
