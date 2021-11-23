@@ -29,6 +29,9 @@
     "chatbot",
     "koishi"
   ],
+  "devDependencies": {
+    "@types/cross-spawn": "^6.0.2"
+  },
   "dependencies": {
     "cross-spawn": "^7.0.3",
     "kleur": "^4.1.4",

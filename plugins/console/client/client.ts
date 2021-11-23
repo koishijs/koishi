@@ -18,16 +18,33 @@ export const store = reactive<Store>({})
 
 const socket = ref<WebSocket>(null)
 const listeners: Record<string, (data: any) => void> = {}
+const responseHooks: Record<string, (data: any) => void> = {}
 
-export function send(type: string, body: any) {
-  socket.value.send(JSON.stringify({ type, body }))
+export function send(type: string, ...args: any[]) {
+  const id = Math.random().toString(36).substr(2, 9)
+  socket.value.send(JSON.stringify({ id, type, args }))
+  return new Promise((resolve, reject) => {
+    responseHooks[id] = resolve
+    setTimeout(() => {
+      delete responseHooks[id]
+      reject(new Error('timeout'))
+    }, 60000)
+  })
 }
 
 export function receive<T = any>(event: string, listener: (data: T) => void) {
   listeners[event] = listener
 }
 
-receive('data', ({ key, value }) => store[key] = value)
+receive('data', ({ key, value }) => {
+  store[key] = value
+})
+
+receive('response', ({ id, value }) => {
+  const callback = responseHooks[id]
+  delete responseHooks[id]
+  callback?.(value)
+})
 
 export async function connect(endpoint: string) {
   socket.value = new WebSocket(endpoint)

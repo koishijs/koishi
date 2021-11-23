@@ -68,7 +68,7 @@ function getClass(node: Node) {
     background-color: var(--card-bg);
     box-shadow: var(--card-shadow);
     border: 1px solid var(--border);
-    transition: background-color 0.3s ease, box-shadow 0.3s ease;
+    transition: background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
 
     .title {
       font-size: 1rem;

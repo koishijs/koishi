@@ -38,9 +38,11 @@
     "@koishijs/cli": "^4.0.0-beta.2",
     "@koishijs/plugin-console": "^1.0.0-beta.2",
     "@octokit/openapi-types": "^10.6.4",
+    "@types/cross-spawn": "^6.0.2",
     "@types/throttle-debounce": "^2.1.0"
   },
   "dependencies": {
+    "cross-spawn": "^7.0.3",
     "semver": "^7.3.5",
     "throttle-debounce": "^3.0.1"
   }

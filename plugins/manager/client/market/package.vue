@@ -19,8 +19,9 @@
     <td class="operation">
       <span v-if="downloading">安装中</span>
       <k-button frameless v-else-if="!local || hasUpdate"
-        @click="toggle(data)"
+        @click="install(data)"
       >{{ local ? '更新' : '安装' }}</k-button>
+      <k-button frameless v-if="local">配置</k-button>
     </td>
   </tr>
 </template>
@@ -31,6 +32,7 @@ import type { MarketProvider } from '@koishijs/plugin-manager/src'
 import { send, store } from '~/client'
 import { computed, ref, watch } from 'vue'
 import { KMarkdown } from '../components'
+import { ElMessage } from 'element-plus'
 
 const props = defineProps<{ data: MarketProvider.Data }>()
 
@@ -56,9 +58,20 @@ watch(() => local, () => {
   downloading.value = false
 })
 
-function toggle(data: MarketProvider.Data) {
-  send('install', { name: `${data.name}@^${data.version}` })
+async function install(data: MarketProvider.Data) {
   downloading.value = true
+  try {
+    const code = await send('install', `${data.name}@^${data.version}`)
+    if (code === 0) {
+      ElMessage.success('安装成功！')
+    } else {
+      ElMessage.error('安装失败！')
+    }
+  } catch (err) {
+    ElMessage.error('安装超时！')
+  } finally {
+    downloading.value = false
+  }
 }
 
 </script>

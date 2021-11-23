@@ -10,7 +10,7 @@ declare module '@koishijs/plugin-console' {
     }
 
     interface Events {
-      switch: { name: string }
+      switch(name: string): Promise<void>
     }
   }
 }
@@ -29,8 +29,8 @@ export class RegistryProvider extends DataSource<PluginData> {
     ctx.on('plugin-removed', this.update)
     ctx.on('disconnect', this.update.cancel)
 
-    ctx.console.addListener('switch', async ({ name }) => {
-      this.switch(name)
+    ctx.console.addListener('switch', (name) => {
+      return this.switch(name)
     })
   }
 

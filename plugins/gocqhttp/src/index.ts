@@ -39,7 +39,7 @@ const logLevelMap = {
 
 async function start(bot: OneBotBot) {
   // create working folder
-  const cwd = resolve('accounts/' + bot.selfId)
+  const cwd = resolve(bot.app.options.baseDir, 'accounts/' + bot.selfId)
   await mkdir(cwd, { recursive: true })
   await copyFile(resolve(__dirname, '../bin/go-cqhttp'), cwd + '/go-cqhttp')
 

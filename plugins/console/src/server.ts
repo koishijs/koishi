@@ -1,4 +1,4 @@
-import { App, Context, Logger, noop, version, Dict, WebSocketLayer, Schema } from 'koishi'
+import { App, Context, Logger, noop, version, Dict, WebSocketLayer, Schema, Awaitable } from 'koishi'
 import { resolve, extname } from 'path'
 import { promises as fs, Stats, createReadStream } from 'fs'
 import WebSocket from 'ws'
@@ -30,8 +30,8 @@ export class SocketHandle {
     console.handles[this.id = v4()] = this
   }
 
-  send(type: string, body?: any) {
-    this.socket.send(JSON.stringify({ type, body }), noop)
+  send(payload: any) {
+    this.socket.send(JSON.stringify(payload), noop)
   }
 
   async validate() {
@@ -39,7 +39,7 @@ export class SocketHandle {
   }
 }
 
-export type Listener<T = any> = (payload: T, handle: SocketHandle) => Promise<void>
+export type Listener = (this: SocketHandle, ...args: any[]) => Awaitable<any>
 
 export namespace Console {
   export interface Sources {
@@ -111,7 +111,7 @@ export class Console {
     })
   }
 
-  addListener<K extends keyof Console.Events>(event: K, callback: Listener<Console.Events[K]>): void
+  addListener<K extends keyof Console.Events>(event: K, callback: Console.Events[K]): void
   addListener(event: string, callback: Listener): void
   addListener(event: string, callback: Listener) {
     this.listeners[event] = callback
@@ -144,17 +144,13 @@ export class Console {
     }
 
     socket.on('message', async (data) => {
-      const { type, body } = JSON.parse(data.toString())
+      if (await channel.validate()) return
+      const { type, args, id } = JSON.parse(data.toString())
       const listener = this.listeners[type]
-      if (!listener) {
-        return logger.info('unknown message:', type, body)
-      }
+      if (!listener) return logger.info('unknown message:', type, ...args)
 
-      if (await channel.validate()) {
-        return channel.send('unauthorized')
-      }
-
-      await listener(body, channel)
+      const value = await listener.call(channel, ...args)
+      return channel.send({ type: 'response', body: { id, value } })
     })
   }
 

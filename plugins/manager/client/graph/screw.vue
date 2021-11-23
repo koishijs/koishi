@@ -24,6 +24,7 @@ $inner-size: 6px;
   border-radius: 50%;
   transform: translate(-50%, -50%);
   background-color: var(--card-bg);
+  transition: background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
 
   &.left {
     left: 0;
@@ -37,7 +38,6 @@ $inner-size: 6px;
 
   &.above {
     z-index: 10;
-    transition: background-color 0.3s ease;
   }
 
   &.above::before {
@@ -60,7 +60,6 @@ $inner-size: 6px;
   &.below {
     z-index: -10;
     box-shadow: var(--card-shadow);
-    transition: background-color 0.3s ease, box-shadow 0.3s ease;
   }
 
   .node-container.active .node:not(.active) & {

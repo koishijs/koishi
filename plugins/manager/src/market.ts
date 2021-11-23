@@ -1,11 +1,11 @@
-import { Context, Dict, version as currentVersion, Schema, Quester } from 'koishi'
+import { Context, Dict, version as currentVersion, Schema, Quester, Logger } from 'koishi'
+import { PackageBase, PackageRegistry, PackageResult, SearchResult } from './shared'
 import { resolve } from 'path'
 import { existsSync } from 'fs'
-import { spawn, StdioOptions } from 'child_process'
 import { satisfies } from 'semver'
 import { DataSource } from '@koishijs/plugin-console'
 import { throttle } from 'throttle-debounce'
-import { PackageBase, PackageRegistry, PackageResult, SearchResult } from './shared'
+import spawn from 'cross-spawn'
 
 declare module '@koishijs/plugin-console' {
   namespace Console {
@@ -14,35 +14,25 @@ declare module '@koishijs/plugin-console' {
     }
 
     interface Events {
-      install: { name: string }
+      install(name: string): Promise<number>
     }
   }
 }
 
-type Manager = 'yarn' | 'npm'
+type Manager = 'yarn' | 'npm' | 'pnpm'
 
-const cwd = process.cwd()
+const logger = new Logger('market')
 
-function execute(bin: string, args: string[] = [], stdio: StdioOptions = 'inherit') {
-  // fix for #205
-  // https://stackoverflow.com/questions/43230346/error-spawn-npm-enoent
-  const child = spawn(bin + (process.platform === 'win32' ? '.cmd' : ''), args, { stdio })
-  return new Promise<number>((resolve) => {
-    child.on('close', resolve)
+function supports(command: string, args: string[] = []) {
+  return new Promise<boolean>((resolve) => {
+    const child = spawn(command, args, { stdio: 'ignore' })
+    child.on('exit', (code) => {
+      resolve(code ? false : true)
+    })
+    child.on('error', () => {
+      resolve(false)
+    })
   })
-}
-
-let _managerPromise: Promise<Manager>
-async function getManager(): Promise<Manager> {
-  if (existsSync(resolve(cwd, 'yarn.lock'))) return 'yarn'
-  if (existsSync(resolve(cwd, 'package-lock.json'))) return 'npm'
-  if (!await execute('yarn', ['--version'], 'ignore')) return 'yarn'
-  return 'npm'
-}
-
-const installArgs: Record<Manager, string[]> = {
-  yarn: ['add'],
-  npm: ['install', '--loglevel', 'error'],
 }
 
 export class MarketProvider extends DataSource<MarketProvider.Data[]> {
@@ -51,6 +41,7 @@ export class MarketProvider extends DataSource<MarketProvider.Data[]> {
   callbacks: ((data: MarketProvider.Data[]) => void)[] = []
   flushData: throttle<() => void>
   http: Quester
+  _agentCache: Promise<Manager>
 
   constructor(ctx: Context, private config: MarketProvider.Config) {
     super(ctx, 'market')
@@ -61,8 +52,8 @@ export class MarketProvider extends DataSource<MarketProvider.Data[]> {
 
     ctx.on('connect', () => this.start())
 
-    ctx.console.addListener('install', async ({ name }) => {
-      this.install(name)
+    ctx.console.addListener('install', (name) => {
+      return this.install(name)
     })
   }
 
@@ -121,12 +112,46 @@ export class MarketProvider extends DataSource<MarketProvider.Data[]> {
     return Object.values(this.dataCache)
   }
 
+  get cwd() {
+    return this.ctx.app.options.baseDir
+  }
+
+  async getAgent(): Promise<Manager> {
+    if (existsSync(resolve(this.cwd, 'yarn.lock'))) return 'yarn'
+    if (existsSync(resolve(this.cwd, 'pnpm-lock.yaml'))) return 'pnpm'
+    if (existsSync(resolve(this.cwd, 'package-lock.json'))) return 'npm'
+  
+    const { npm_execpath } = process.env
+    const isYarn = npm_execpath.includes('yarn')
+    if (isYarn) return 'yarn'
+  
+    const hasPnpm = !isYarn && supports('pnpm', ['--version'])
+    return hasPnpm ? 'pnpm' : 'npm'
+  }
+
   async install(name: string) {
-    const kind = await (_managerPromise ||= getManager())
-    const args = [...installArgs[kind], name]
-    await execute(kind, args)
-    this.get()
-    this.broadcast()
+    const agent = await (this._agentCache ||= this.getAgent())
+    return new Promise<number>((resolve) => {
+      const args = [name, '--loglevel', 'error']
+      if (agent === 'yarn') args.unshift('add')
+      const child = spawn(agent, args, { cwd: this.cwd })
+      child.on('exit', (code) => resolve(code))
+      child.on('error', () => resolve(-1))
+      child.stderr.on('data', (data) => {
+        data = data.toString().trim()
+        if (!data) return
+        for (const line of data.split('\n')) {
+          logger.warn(line)
+        }
+      })
+      child.stdout.on('data', (data) => {
+        data = data.toString().trim()
+        if (!data) return
+        for (const line of data.split('\n')) {
+          logger.info(line)
+        }
+      })
+    })
   }
 }
 

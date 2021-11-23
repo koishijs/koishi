@@ -15,18 +15,20 @@ declare module 'koishi' {
   }
 }
 
+interface ChatPayload {
+  content: string
+  platform: string
+  selfId: string
+  channelId: string
+  guildId: string
+}
+
 declare module '@koishijs/plugin-console' {
   interface ClientConfig extends ClientExtension {}
 
   namespace Console {
     interface Events {
-      chat: {
-        content: string
-        platform: string
-        selfId: string
-        channelId: string
-        guildId: string
-      }
+      chat(message: ChatPayload): Promise<void>
     }
   }
 }
