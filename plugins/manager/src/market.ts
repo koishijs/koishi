@@ -52,9 +52,7 @@ export class MarketProvider extends DataSource<MarketProvider.Data[]> {
 
     ctx.on('connect', () => this.start())
 
-    ctx.console.addListener('install', (name) => {
-      return this.install(name)
-    })
+    ctx.console.addListener('install', this.install)
   }
 
   start() {
@@ -129,9 +127,9 @@ export class MarketProvider extends DataSource<MarketProvider.Data[]> {
     return hasPnpm ? 'pnpm' : 'npm'
   }
 
-  async install(name: string) {
+  install = async (name: string) => {
     const agent = await (this._agentCache ||= this.getAgent())
-    return new Promise<number>((resolve) => {
+    await new Promise<number>((resolve) => {
       const args = [name, '--loglevel', 'error']
       if (agent === 'yarn') args.unshift('add')
       const child = spawn(agent, args, { cwd: this.cwd })
@@ -152,6 +150,7 @@ export class MarketProvider extends DataSource<MarketProvider.Data[]> {
         }
       })
     })
+    this.sources.packages.broadcast()
   }
 }
 

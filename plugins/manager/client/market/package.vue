@@ -19,9 +19,9 @@
     <td class="operation">
       <span v-if="downloading">安装中</span>
       <k-button frameless v-else-if="!local || hasUpdate"
-        @click="install(data)"
+        @click="install"
       >{{ local ? '更新' : '安装' }}</k-button>
-      <k-button frameless v-if="local">配置</k-button>
+      <k-button frameless v-if="local" @click="configurate">配置</k-button>
     </td>
   </tr>
 </template>
@@ -31,6 +31,7 @@
 import type { MarketProvider } from '@koishijs/plugin-manager/src'
 import { send, store } from '~/client'
 import { computed, ref, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import { KMarkdown } from '../components'
 import { ElMessage } from 'element-plus'
 
@@ -58,10 +59,11 @@ watch(() => local, () => {
   downloading.value = false
 })
 
-async function install(data: MarketProvider.Data) {
+async function install() {
+  const { name, version } = props.data
   downloading.value = true
   try {
-    const code = await send('install', `${data.name}@^${data.version}`)
+    const code = await send('install', `${name}@^${version}`)
     if (code === 0) {
       ElMessage.success('安装成功！')
     } else {
@@ -72,6 +74,13 @@ async function install(data: MarketProvider.Data) {
   } finally {
     downloading.value = false
   }
+}
+
+const router = useRouter()
+
+function configurate() {
+  const { name } = props.data
+  router.push({ path: '/settings', query: { name } })
 }
 
 </script>

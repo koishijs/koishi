@@ -29,9 +29,7 @@ export class RegistryProvider extends DataSource<PluginData> {
     ctx.on('plugin-removed', this.update)
     ctx.on('disconnect', this.update.cancel)
 
-    ctx.console.addListener('switch', (name) => {
-      return this.switch(name)
-    })
+    ctx.console.addListener('switch', this.switch)
   }
 
   async get(forced = false) {
@@ -54,7 +52,7 @@ export class RegistryProvider extends DataSource<PluginData> {
     return { id: state.id || '', name, complexity, children }
   }
 
-  async switch(id: string) {
+  switch = async (id: string) => {
     await this.promise
     for (const [plugin, state] of this.ctx.app.registry) {
       if (id !== state.id) continue

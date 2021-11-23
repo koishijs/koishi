@@ -5,10 +5,15 @@ export abstract class DataSource<T = any> {
   abstract get(forced?: boolean): Promise<T>
 
   constructor(protected ctx: Context, protected type: keyof Console.Sources) {
-    ctx.console.sources[type] = this as never
+    this.sources[type] = this as never
+
     ctx.on('disconnect', () => {
-      delete ctx.console.sources[type]
+      delete this.sources[type]
     })
+  }
+
+  get sources() {
+    return this.ctx.console.sources
   }
 
   async broadcast(value?: T) {

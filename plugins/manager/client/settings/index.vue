@@ -9,11 +9,27 @@
 
 <script setup lang="ts">
 
-import { ref } from 'vue'
+import { computed } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import PluginSelect from './select.vue'
 import PluginSettings from './settings.vue'
 
-const current = ref<string>('')
+function takeFirst(source: string | string[]) {
+  return Array.isArray(source) ? source[0] : source
+}
+
+const route = useRoute()
+const router = useRouter()
+
+const current = computed<string>({
+  get() {
+    return takeFirst(route.query.name) || ''
+  },
+  set(name) {
+    const query = name ? { name } : {}
+    router.replace({ query })
+  },
+})
 
 </script>
 
