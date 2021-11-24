@@ -13,10 +13,8 @@
       </div>
       <k-tab-group
         :data="store.packages" v-model="model"
-        :filter="data => data.id">
-        <template #="{ shortname, schema }">
-          <span :class="{ readonly: !schema }">{{ shortname }}</span>
-        </template>
+        :filter="data => data.id" #="{ shortname, schema }">
+        <span :class="{ readonly: !schema }">{{ shortname }}</span>
       </k-tab-group>
       <div class="k-tab-group-title">
         未运行的插件
@@ -31,11 +29,18 @@
       </div>
       <k-tab-group
         :data="store.packages" v-model="model"
-        :filter="data => !data.id && (!filtered || data.schema)">
-        <template #="{ shortname, schema }">
-          <span :class="{ readonly: !schema }">{{ shortname }}</span>
-        </template>
+        :filter="data => !data.id && (!filtered || data.schema)" #="{ shortname, schema }">
+        <span :class="{ readonly: !schema }">{{ shortname }}</span>
       </k-tab-group>
+      <template v-if="store.market">
+        <div class="k-tab-group-title">
+          待下载的插件
+        </div>
+        <k-tab-group :data="remote" v-model="model" #="{ name, shortname, schema }">
+          <span :class="{ readonly: !schema }">{{ shortname }}</span>
+          <i class="fas fa-times-circle" @click="remove(name)"></i>
+        </k-tab-group>
+      </template>
     </div>
   </el-scrollbar>
 </template>
@@ -44,6 +49,7 @@
 
 import { ref, computed } from 'vue'
 import { store } from '~/client'
+import { config } from '../utils'
 
 const props = defineProps<{
   modelValue: string
@@ -57,6 +63,17 @@ const model = computed({
 })
 
 const filtered = ref(true)
+
+const remote = computed(() => {
+  return Object.fromEntries(config.favorites.map(name => [name, store.market[name]]))
+})
+
+function remove(name: string) {
+  const index = config.favorites.indexOf(name)
+  if (index > -1) {
+    config.favorites.splice(index, 1)
+  }
+}
 
 </script>
 
@@ -92,6 +109,24 @@ const filtered = ref(true)
     &:hover, &.active {
       color: var(--primary);
     }
+
+    i {
+      position: absolute;
+      left: 2rem;
+      top: 50%;
+      opacity: 0;
+      color: var(--fg2);
+      transform: translateY(-50%);
+      transition: color 0.3s ease, opacity 0.3s ease;
+    }
+
+    i:hover {
+      opacity: 1 !important;
+    }
+  }
+
+  .k-tab-item:hover i {
+    opacity: 0.5;
   }
 }
 

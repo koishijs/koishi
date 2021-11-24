@@ -16,11 +16,7 @@
     <td class="latest">{{ data.version }}</td>
     <td class="score">{{ data.score.toFixed(2) }}</td>
     <td class="operation">
-      <span v-if="downloading">安装中</span>
-      <k-button frameless v-else-if="!local || hasUpdate"
-        @click="install"
-      >{{ local ? '更新' : '安装' }}</k-button>
-      <k-button frameless v-if="local" @click="configurate">配置</k-button>
+      <k-button frameless @click="configurate">{{ local ? '配置' : '添加' }}</k-button>
     </td>
   </tr>
 </template>
@@ -33,6 +29,7 @@ import { computed, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { KMarkdown } from '../components'
 import { ElMessage } from 'element-plus'
+import { config } from '../utils'
 
 const props = defineProps<{ data: MarketProvider.Data }>()
 
@@ -71,6 +68,9 @@ const router = useRouter()
 
 function configurate() {
   const { name } = props.data
+  if (!config.favorites.includes(name)) {
+    config.favorites.push(name)
+  }
   router.push({ path: '/settings', query: { name } })
 }
 

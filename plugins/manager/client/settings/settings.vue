@@ -50,12 +50,15 @@ import type { Dict } from 'koishi'
 import { store, send } from '~/client'
 import { KSchema } from '../components'
 import TButton from './button.vue'
+import { PackageProvider } from '../../src'
 
 const props = defineProps<{
   current: string
 }>()
 
-const data = computed(() => store.packages[props.current])
+const data = computed<PackageProvider.Data>(() => {
+  return store.packages[props.current] || store.market[props.current]
+})
 
 function getDeps(type: 'peerDeps' | 'devDeps') {
   return Object.fromEntries((data.value[type] || [])
@@ -82,8 +85,8 @@ function getDelegateData(name: string, required: boolean): DelegateData {
   return {
     required,
     fulfilled,
-    available: store.market
-      ?.filter(data => getKeywords('service', data.keywords).includes(name))
+    available: Object.values(store.market || {})
+      .filter(data => getKeywords('service', data.keywords).includes(name))
       .map(data => data.name),
   }
 }

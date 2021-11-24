@@ -20,6 +20,9 @@ defineProps<{
 .k-tab-item {
   line-height: 2.25rem;
   padding: 0 2rem 0 4rem;
+  white-space: nowrap;
+  overflow: auto;
+  text-overflow: ellipsis;
 
   &.active {
     background-color: var(--menu-hover-bg);

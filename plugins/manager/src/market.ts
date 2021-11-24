@@ -35,7 +35,7 @@ function supports(command: string, args: string[] = []) {
   })
 }
 
-export class MarketProvider extends DataSource<MarketProvider.Data[]> {
+export class MarketProvider extends DataSource<Dict<MarketProvider.Data>> {
   dataCache: Dict<MarketProvider.Data> = {}
   localCache: Dict<Promise<MarketProvider.Local>> = {}
   callbacks: ((data: MarketProvider.Data[]) => void)[] = []
@@ -107,7 +107,7 @@ export class MarketProvider extends DataSource<MarketProvider.Data[]> {
   }
 
   async get() {
-    return Object.values(this.dataCache)
+    return this.dataCache
   }
 
   get cwd() {
