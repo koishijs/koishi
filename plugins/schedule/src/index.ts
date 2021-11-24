@@ -49,10 +49,8 @@ export const Config = Schema.object({
 })
 
 export function apply(ctx: Context, { minInterval }: Config) {
-  const { database } = ctx
-
   async function hasSchedule(id: number) {
-    const data = await database.get('schedule', [id])
+    const data = await ctx.database.get('schedule', [id])
     return data.length
   }
 
@@ -65,12 +63,12 @@ export function apply(ctx: Context, { minInterval }: Config) {
       await session.execute(command)
       if (!lastCall || !interval) return
       lastCall = new Date()
-      await database.set('schedule', id, { lastCall })
+      await ctx.database.set('schedule', id, { lastCall })
     }
 
     if (!interval) {
       if (date < now) {
-        database.remove('schedule', [id])
+        ctx.database.remove('schedule', [id])
         if (lastCall) executeSchedule()
         return
       }
@@ -78,7 +76,7 @@ export function apply(ctx: Context, { minInterval }: Config) {
       logger.debug('prepare %d: %c at %s', id, command, time)
       return ctx.setTimeout(async () => {
         if (!await hasSchedule(id)) return
-        database.remove('schedule', [id])
+        ctx.database.remove('schedule', [id])
         executeSchedule()
       }, date - now)
     }
@@ -100,7 +98,7 @@ export function apply(ctx: Context, { minInterval }: Config) {
   }
 
   ctx.on('connect', async () => {
-    const schedules = await database.get('schedule', { assignee: ctx.bots.map(bot => bot.sid) })
+    const schedules = await ctx.database.get('schedule', { assignee: ctx.bots.map(bot => bot.sid) })
     schedules.forEach((schedule) => {
       const { session, assignee } = schedule
       const bot = ctx.bots.get(assignee)
@@ -119,12 +117,12 @@ export function apply(ctx: Context, { minInterval }: Config) {
     .option('delete', '-d <id>  删除已经设置的日程')
     .action(async ({ session, options }, ...dateSegments) => {
       if (options.delete) {
-        await database.remove('schedule', [options.delete])
+        await ctx.database.remove('schedule', [options.delete])
         return `日程 ${options.delete} 已删除。`
       }
 
       if (options.list) {
-        let schedules = await database.get('schedule', { assignee: [session.sid] })
+        let schedules = await ctx.database.get('schedule', { assignee: [session.sid] })
         if (!options.full) {
           schedules = schedules.filter(s => session.channelId === s.session.channelId)
         }
@@ -162,7 +160,7 @@ export function apply(ctx: Context, { minInterval }: Config) {
         return '时间间隔过短。'
       }
 
-      const schedule = await database.create('schedule', {
+      const schedule = await ctx.database.create('schedule', {
         time,
         assignee: session.sid,
         interval,
