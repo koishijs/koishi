@@ -1,7 +1,11 @@
 <template>
   <sidebar/>
   <main class="layout-main">
-    <router-view v-if="loaded"/>
+    <router-view v-if="loaded" #="{ Component }">
+      <keep-alive>
+        <component :is="Component"/>
+      </keep-alive>
+    </router-view>
     <p v-else>正在加载数据……</p>
   </main>
   <k-view name="global"></k-view>

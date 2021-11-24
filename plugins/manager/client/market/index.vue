@@ -6,7 +6,6 @@
         <col width="160px">
         <col width="120px">
         <col width="120px">
-        <col width="120px">
       </colgroup>
       <thead>
         <tr>
@@ -19,7 +18,6 @@
             </k-hint>
           </th>
           <th>最新版本</th>
-          <th>总体积</th>
           <th>综合评分</th>
           <th class="operation">操作</th>
         </tr>
@@ -30,7 +28,6 @@
         <colgroup>
           <col width="auto">
           <col width="160px">
-          <col width="120px">
           <col width="120px">
           <col width="120px">
         </colgroup>

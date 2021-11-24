@@ -14,7 +14,6 @@
       <k-markdown class="description" :source="local?.description || data.description"></k-markdown>
     </td>
     <td class="latest">{{ data.version }}</td>
-    <td class="size">{{ formatSize(data.size) }}</td>
     <td class="score">{{ data.score.toFixed(2) }}</td>
     <td class="operation">
       <span v-if="downloading">安装中</span>
@@ -44,14 +43,6 @@ const hasUpdate = computed(() => {
   const { workspace, version } = local.value
   return !workspace && version !== props.data.version
 })
-
-function formatSize(size: number) {
-  if (size >= 1024000) {
-    return Math.round(size / 1048576) + ' MB'
-  } else {
-    return Math.round(size / 1024) + ' KB'
-  }
-}
 
 const downloading = ref(false)
 

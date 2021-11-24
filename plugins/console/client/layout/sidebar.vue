@@ -3,7 +3,7 @@
     <div class="top">
       <h1>Koishi 控制台</h1>
       <template v-for="({ name, path, meta }) in getRoutes('top')" :key="name">
-        <router-link class="k-menu-item" :to="path">
+        <router-link class="k-menu-item" :to="{ path, query: queries[path] }">
           <i :class="`fas fa-${meta.icon}`"/>
           {{ name }}
         </router-link>
@@ -15,7 +15,7 @@
         {{ isDark ? '夜间模式' : '明亮模式' }}
       </div>
       <template v-for="({ name, path, meta }) in getRoutes('bottom')" :key="name">
-        <router-link class="k-menu-item" :to="path">
+        <router-link class="k-menu-item" :to="{ path, query: queries[path] }">
           <i :class="`fas fa-${meta.icon}`"/>
           {{ name }}
         </router-link>
@@ -28,8 +28,16 @@
 
 import { useRouter } from 'vue-router'
 import { useDark } from '@vueuse/core'
+import { reactive } from 'vue'
 
 const router = useRouter()
+
+const queries = reactive({})
+
+router.afterEach(() => {
+  const { path, query } = router.currentRoute.value
+  queries[path] = query
+})
 
 function getRoutes(position: 'top' | 'bottom') {
   return router.getRoutes().filter(r => r.meta.position === position).sort((a, b) => b.meta.order - a.meta.order)
