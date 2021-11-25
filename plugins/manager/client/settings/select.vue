@@ -1,5 +1,5 @@
 <template>
-  <el-scrollbar class="plugin-select">
+  <el-scrollbar class="plugin-select" ref="root">
     <div class="content">
       <k-tab-item class="k-tab-group-title" label="" v-model="model">
         全局设置
@@ -29,7 +29,7 @@
       </div>
       <k-tab-group
         :data="store.packages" v-model="model"
-        :filter="data => !data.id && (!filtered || data.schema)" #="{ shortname, schema }">
+        :filter="data => !data.id && data.name && (!filtered || data.schema)" #="{ shortname, schema }">
         <span :class="{ readonly: !schema }">{{ shortname }}</span>
       </k-tab-group>
       <template v-if="store.market">
@@ -47,7 +47,7 @@
 
 <script lang="ts" setup>
 
-import { ref, computed } from 'vue'
+import { ref, computed, onActivated } from 'vue'
 import { store } from '~/client'
 import { config } from '../utils'
 
@@ -62,6 +62,7 @@ const model = computed({
   set: val => emits('update:modelValue', val),
 })
 
+const root = ref<{ $el: HTMLElement }>(null)
 const filtered = ref(true)
 
 const favorites = computed(() => {
@@ -74,6 +75,12 @@ function remove(name: string) {
     config.favorites.splice(index, 1)
   }
 }
+
+onActivated(() => {
+  const container = root.value.$el
+  const element = container.querySelector('.k-tab-item.active') as HTMLElement
+  root.value['setScrollTop'](element.offsetTop - (container.offsetHeight - element.offsetHeight) / 2)
+})
 
 </script>
 

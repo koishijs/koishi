@@ -14,18 +14,18 @@
     <!-- market -->
     <template v-if="data.name">
       <!-- versions -->
-      <p v-if="data.versions && !data.workspace">
+      <p v-if="remote && !data.workspace">
         选择版本：
         <el-select v-model="version">
           <el-option
-            v-for="({ version }, index) in data.versions"
+            v-for="({ version }, index) in remote.versions"
             :key="version" :label="version + (index ? '' : ' (最新)')" :value="version"
           ></el-option>
         </el-select>
         <k-tip-button :tip="loadTip" type="error" @click="uninstall">卸载插件</k-tip-button>
         <k-tip-button :tip="loadTip" @click="install">
-          <template #content v-if="version === data.version && store.packages?.[data.name]">要安装的版本与当前版本一致。</template>
-          <template #default>{{ store.packages?.[data.name] ? '更新插件' : '安装插件' }}</template>
+          <template #content v-if="version === data.version && local">要安装的版本与当前版本一致。</template>
+          <template #default>{{ local ? '更新插件' : '安装插件' }}</template>
         </k-tip-button>
       </p>
 
@@ -34,17 +34,21 @@
         v-for="({ fulfilled, required, available }, key) in delegates" :key="key"
         :fulfilled="fulfilled" :required="required" :name="key" type="服务">
         <ul v-if="!fulfilled">
-          <li v-for="name in available" @click="configurate(name)">{{ name }}</li>
+          <li v-for="name in available" @click="configurate(name)">
+            <k-dep-link :name="name"></k-dep-link>
+          </li>
         </ul>
       </k-dep-alert>
       <k-dep-alert
         v-for="(fulfilled, name) in getDeps('peerDeps')" :key="name"
-        :fulfilled="fulfilled" :required="true" :name="name" type="依赖"
-      ></k-dep-alert>
+        :fulfilled="fulfilled" :required="true" type="依赖">
+        <template #name><k-dep-link :name="name"></k-dep-link></template>
+      </k-dep-alert>
       <k-dep-alert
         v-for="(fulfilled, name) in getDeps('devDeps')" :key="name"
-        :fulfilled="fulfilled" :required="false" :name="name" type="依赖"
-      ></k-dep-alert>
+        :fulfilled="fulfilled" :required="false" type="依赖">
+        <template #name><k-dep-link :name="name"></k-dep-link></template>
+      </k-dep-alert>
     </template>
 
     <!-- schema -->
@@ -72,19 +76,23 @@ import { useRouter } from 'vue-router'
 import type { Dict } from 'koishi'
 import { store, send } from '~/client'
 import { KSchema } from '../components'
-import KTipButton from './tip-button.vue'
-import KDepAlert from './dep-alert.vue'
 import { addFavorite, state } from '../utils'
-import { MarketProvider, PackageProvider } from '../../src'
+import { MarketProvider } from '../../src'
 import { ElMessage } from 'element-plus'
+import KDepAlert from './dep-alert.vue'
+import KDepLink from './dep-link.vue'
+import KTipButton from './tip-button.vue'
 
 const props = defineProps<{
   current: string
 }>()
 
-const data = computed<PackageProvider.Data & MarketProvider.Data>(() => ({
-  ...store.market[props.current],
-  ...store.packages[props.current],
+const local = computed(() => store.packages[props.current])
+const remote = computed(() => store.market[props.current])
+
+const data = computed(() => ({
+  ...remote.value,
+  ...local.value,
 }))
 
 const version = ref('')
@@ -112,8 +120,8 @@ interface DelegateData {
   available?: string[]
 }
 
-function isAvailable(name: string, data: MarketProvider.Data) {
-  const { keywords } = data.versions[0]
+function isAvailable(name: string, remote: MarketProvider.Data) {
+  const { keywords } = remote.versions[0]
   return getKeywords('service', keywords).includes(name)
 }
 
