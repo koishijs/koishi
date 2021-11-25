@@ -1,5 +1,5 @@
 import { Context, Dict, version as currentVersion, Schema, Quester, Logger } from 'koishi'
-import { PackageBase, PackageRegistry, PackageResult, SearchResult } from './shared'
+import { Package } from './shared'
 import { resolve } from 'path'
 import { existsSync } from 'fs'
 import { satisfies } from 'semver'
@@ -37,7 +37,6 @@ function supports(command: string, args: string[] = []) {
 
 export class MarketProvider extends DataSource<Dict<MarketProvider.Data>> {
   dataCache: Dict<MarketProvider.Data> = {}
-  localCache: Dict<Promise<MarketProvider.Local>> = {}
   callbacks: ((data: MarketProvider.Data[]) => void)[] = []
   flushData: throttle<() => void>
   http: Quester
@@ -53,6 +52,7 @@ export class MarketProvider extends DataSource<Dict<MarketProvider.Data>> {
     ctx.on('connect', () => this.start())
 
     ctx.console.addListener('install', this.install)
+    ctx.console.addListener('uninstall', this.uninstall)
   }
 
   start() {
@@ -66,7 +66,7 @@ export class MarketProvider extends DataSource<Dict<MarketProvider.Data>> {
   }
 
   private async search(offset = 0) {
-    const { objects, total } = await this.http.get<SearchResult>('/-/v1/search', {
+    const { objects, total } = await this.http.get<Package.SearchResult>('/-/v1/search', {
       text: 'koishi+plugin',
       size: 250,
       from: offset,
@@ -75,16 +75,19 @@ export class MarketProvider extends DataSource<Dict<MarketProvider.Data>> {
     return total
   }
 
-  private async analyze({ package: item, score }: PackageResult) {
-    const { name, version } = item
+  private async analyze({ package: item, score }: Package.SearchItem) {
+    const { name, description } = item
     const official = name.startsWith('@koishijs/plugin-')
     const community = name.startsWith('koishi-plugin-')
     if (!official && !community) return
 
-    const data = await this.http.get<PackageRegistry>(`/${name}`)
-    const { dependencies, peerDependencies, dist, keywords, description, deprecated } = data.versions[version]
-    const declaredVersion = { ...dependencies, ...peerDependencies }['koishi']
-    if (deprecated || !declaredVersion || !satisfies(currentVersion, declaredVersion)) return
+    const data = await this.http.get<Package.Registry>(`/${name}`)
+    const versions = Object.values(data.versions).filter((remote) => {
+      const { dependencies, peerDependencies, deprecated } = remote
+      const declaredVersion = { ...dependencies, ...peerDependencies }['koishi']
+      return !deprecated && declaredVersion && satisfies(currentVersion, declaredVersion)
+    }).map(Package.Meta.from).reverse()
+    if (!versions.length) return
 
     const shortname = official ? name.slice(17) : name.slice(14)
     this.dataCache[name] = {
@@ -92,9 +95,8 @@ export class MarketProvider extends DataSource<Dict<MarketProvider.Data>> {
       shortname,
       official,
       score: score.final,
-      description: description,
-      keywords: keywords || [],
-      size: dist.unpackedSize,
+      description,
+      versions,
     }
     this.flushData()
   }
@@ -127,11 +129,9 @@ export class MarketProvider extends DataSource<Dict<MarketProvider.Data>> {
     return hasPnpm ? 'pnpm' : 'npm'
   }
 
-  install = async (name: string) => {
+  async useAgent(args: string[]) {
     const agent = await (this._agentCache ||= this.getAgent())
-    await new Promise<number>((resolve) => {
-      const args = [name, '--loglevel', 'error']
-      if (agent === 'yarn') args.unshift('add')
+    return new Promise<number>((resolve) => {
       const child = spawn(agent, args, { cwd: this.cwd })
       child.on('exit', (code) => resolve(code))
       child.on('error', () => resolve(-1))
@@ -150,6 +150,15 @@ export class MarketProvider extends DataSource<Dict<MarketProvider.Data>> {
         }
       })
     })
+  }
+
+  install = async (name: string) => {
+    await this.useAgent(['install', name, '--loglevel', 'error'])
+    this.sources.packages.broadcast()
+  }
+
+  uninstall = async (name: string) => {
+    await this.useAgent(['remove', name, '--loglevel', 'error'])
     this.sources.packages.broadcast()
   }
 }
@@ -164,20 +173,10 @@ export namespace MarketProvider {
     endpoint: Schema.string('要使用的 npm registry 终结点。').default('https://registry.npmjs.org'),
   })
 
-  export interface Local extends PackageBase {
-    id?: string
-    schema?: Schema
-    devDeps: string[]
-    peerDeps: string[]
-    keywords?: string[]
-    workspace: boolean
-  }
-
-  export interface Data extends PackageBase {
+  export interface Data extends Package.Base {
+    versions: Package.Meta[]
     shortname: string
     official: boolean
-    keywords: string[]
-    size: number
     score: number
   }
 }

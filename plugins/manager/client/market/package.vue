@@ -16,7 +16,7 @@
     <td class="latest">{{ data.version }}</td>
     <td class="score">{{ data.score.toFixed(2) }}</td>
     <td class="operation">
-      <k-button frameless @click="configurate">{{ local ? '配置' : '添加' }}</k-button>
+      <k-button frameless @click="configurate">配置</k-button>
     </td>
   </tr>
 </template>
@@ -24,12 +24,11 @@
 <script lang="ts" setup>
 
 import type { MarketProvider } from '@koishijs/plugin-manager/src'
-import { send, store } from '~/client'
+import { store } from '~/client'
 import { computed, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { KMarkdown } from '../components'
-import { ElMessage } from 'element-plus'
-import { config } from '../utils'
+import { addFavorite } from '../utils'
 
 const props = defineProps<{ data: MarketProvider.Data }>()
 
@@ -47,30 +46,11 @@ watch(() => local, () => {
   downloading.value = false
 })
 
-async function install() {
-  const { name, version } = props.data
-  downloading.value = true
-  try {
-    const code = await send('install', `${name}@^${version}`)
-    if (code === 0) {
-      ElMessage.success('安装成功！')
-    } else {
-      ElMessage.error('安装失败！')
-    }
-  } catch (err) {
-    ElMessage.error('安装超时！')
-  } finally {
-    downloading.value = false
-  }
-}
-
 const router = useRouter()
 
 function configurate() {
   const { name } = props.data
-  if (!config.favorites.includes(name)) {
-    config.favorites.push(name)
-  }
+  addFavorite(name)
   router.push({ path: '/settings', query: { name } })
 }
 

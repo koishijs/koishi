@@ -13,6 +13,7 @@ export * from './packages'
 export * from './protocols'
 export * from './registry'
 export * from './releases'
+export * from './shared'
 
 declare module 'koishi' {
   interface Modules {

@@ -36,9 +36,9 @@
         <div class="k-tab-group-title">
           待下载的插件
         </div>
-        <k-tab-group :data="remote" v-model="model" #="{ name, shortname, schema }">
+        <k-tab-group :data="favorites" v-model="model" #="{ name, shortname, schema }">
           <span :class="{ readonly: !schema }">{{ shortname }}</span>
-          <i class="fas fa-times-circle" @click="remove(name)"></i>
+          <i class="remove fas fa-times-circle" @click="remove(name)"></i>
         </k-tab-group>
       </template>
     </div>
@@ -64,7 +64,7 @@ const model = computed({
 
 const filtered = ref(true)
 
-const remote = computed(() => {
+const favorites = computed(() => {
   return Object.fromEntries(config.favorites.map(name => [name, store.market[name]]))
 })
 
@@ -105,28 +105,28 @@ function remove(name: string) {
 
   .readonly {
     color: var(--fg3t);
-
-    &:hover, &.active {
-      color: var(--primary);
-    }
-
-    i {
-      position: absolute;
-      left: 2rem;
-      top: 50%;
-      opacity: 0;
-      color: var(--fg2);
-      transform: translateY(-50%);
-      transition: color 0.3s ease, opacity 0.3s ease;
-    }
-
-    i:hover {
-      opacity: 1 !important;
-    }
   }
 
-  .k-tab-item:hover i {
-    opacity: 0.5;
+  .k-menu-item.active .readonly {
+    color: inherit;
+  }
+
+  i.remove {
+    position: absolute;
+    left: 2.25rem;
+    top: 50%;
+    opacity: 0;
+    color: var(--fg3);
+    transform: translateY(-50%);
+    transition: color 0.3s ease, opacity 0.3s ease;
+  }
+
+  i.remove:hover {
+    opacity: 1 !important;
+  }
+
+  .k-tab-item:hover i.remove {
+    opacity: 0.4;
   }
 }
 

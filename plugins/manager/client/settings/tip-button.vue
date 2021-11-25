@@ -1,5 +1,6 @@
 <template>
-  <el-tooltip v-if="message" :content="message" :placement="placement">
+  <el-tooltip v-if="tip || $slots.content" :placement="placement">
+    <template #content><slot name="content">{{ tip }}</slot></template>
     <k-button solid disabled @click="$emit('click', $event)">
       <slot></slot>
     </k-button>
@@ -12,7 +13,7 @@
 <script lang="ts" setup>
 
 defineProps({
-  message: String,
+  tip: String,
   placement: { type: String, default: 'bottom' },
 })
 

@@ -17,7 +17,7 @@ import Numeric from './components/numeric.vue'
 import View from './components/view'
 import App from './layout/index.vue'
 
-import { ElCascader, ElEmpty, ElTooltip, ElScrollbar } from 'element-plus'
+import { ElCascader, ElEmpty, ElTooltip, ElScrollbar, ElSelect } from 'element-plus'
 
 import '@fortawesome/fontawesome-free/css/fontawesome.css'
 import '@fortawesome/fontawesome-free/css/brands.css'
@@ -38,6 +38,7 @@ const app = Vue.createApp(App)
 app.use(ElCascader)
 app.use(ElEmpty)
 app.use(ElTooltip)
+app.use(ElSelect)
 app.use(ElScrollbar)
 
 // notice

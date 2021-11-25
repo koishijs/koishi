@@ -1,68 +1,101 @@
 <template>
   <k-content class="plugin-view">
-    <template v-if="!data.shortname">
-      <h1>
-        全局设置
-        <k-button solid>应用配置</k-button>
-      </h1>
+    <!-- title -->
+    <h1 v-if="data.name">
+      {{ data.name }}
+      <span v-if="data.workspace">(工作区)</span>
+      <span v-else-if="data.id">({{ data.version }})</span>
+    </h1>
+    <h1 v-else>
+      全局设置
+      <k-button solid>应用配置</k-button>
+    </h1>
+
+    <!-- market -->
+    <template v-if="data.name">
+      <!-- versions -->
+      <p v-if="data.versions && !data.workspace">
+        选择版本：
+        <el-select v-model="version">
+          <el-option
+            v-for="({ version }, index) in data.versions"
+            :key="version" :label="version + (index ? '' : ' (最新)')" :value="version"
+          ></el-option>
+        </el-select>
+        <k-tip-button :tip="loadTip" type="error" @click="uninstall">卸载插件</k-tip-button>
+        <k-tip-button :tip="loadTip" @click="install">
+          <template #content v-if="version === data.version && store.packages?.[data.name]">要安装的版本与当前版本一致。</template>
+          <template #default>{{ store.packages?.[data.name] ? '更新插件' : '安装插件' }}</template>
+        </k-tip-button>
+      </p>
+
+      <!-- dependencies -->
+      <k-dep-alert
+        v-for="({ fulfilled, required, available }, key) in delegates" :key="key"
+        :fulfilled="fulfilled" :required="required" :name="key" type="服务">
+        <ul v-if="!fulfilled">
+          <li v-for="name in available" @click="configurate(name)">{{ name }}</li>
+        </ul>
+      </k-dep-alert>
+      <k-dep-alert
+        v-for="(fulfilled, name) in getDeps('peerDeps')" :key="name"
+        :fulfilled="fulfilled" :required="true" :name="name" type="依赖"
+      ></k-dep-alert>
+      <k-dep-alert
+        v-for="(fulfilled, name) in getDeps('devDeps')" :key="name"
+        :fulfilled="fulfilled" :required="false" :name="name" type="依赖"
+      ></k-dep-alert>
     </template>
-    <template v-else>
-      <h1>
-        {{ data.name }}
-        <template v-if="data.schema">
-          <template v-if="data.id">
-            <k-button solid type="error" @click="execute('dispose')">停用插件</k-button>
-            <t-button :message="message" @click="execute('reload')">重载配置</t-button>
-          </template>
-          <template v-else>
-            <t-button :message="message" @click="execute('install')">启用插件</t-button>
-            <k-button solid @click="execute('save')">保存配置</k-button>
-          </template>
+
+    <!-- schema -->
+    <template v-if="data.schema">
+      <h1 class="schema-header" v-if="data.shortname">
+        配置项
+        <template v-if="data.id">
+          <k-button solid type="error" @click="execute('dispose')">停用插件</k-button>
+          <k-tip-button :tip="depTip" @click="execute('reload')">重载配置</k-tip-button>
+        </template>
+        <template v-else>
+          <k-tip-button :tip="depTip" @click="execute('install')">启用插件</k-tip-button>
+          <k-button solid @click="execute('save')">保存配置</k-button>
         </template>
       </h1>
-      <k-comment v-for="key in getKeywords('service')" type="success">
-        <template #header>实现功能：{{ key }}</template>
-      </k-comment>
-      <k-comment v-for="(data, key) in delegates" :type="data.fulfilled ? 'success' : data.required ? 'warning' : 'default'">
-        <template #header>{{ data.required ? '依赖' : '可选' }}功能：{{ key }}</template>
-        <ul>
-          <li v-for="name in data.available">{{ name }}</li>
-        </ul>
-      </k-comment>
-      <k-comment v-for="(fulfilled, name) in getDeps('peerDeps')" :type="fulfilled ? 'success' : 'warning'">
-        <template #header>依赖插件：{{ name }}</template>
-      </k-comment>
-      <k-comment v-for="(fulfilled, name) in getDeps('devDeps')" :type="fulfilled ? 'success' : 'default'">
-        <template #header>可选插件：{{ name }}</template>
-      </k-comment>
-    </template>
-    <p v-if="!data.schema">此插件暂不支持在线配置。</p>
-    <template v-else>
-      <k-schema :schema="data.schema" v-model="data.config" prefix=""/>
+      <k-schema :schema="data.schema" v-model="data.config" prefix=""></k-schema>
     </template>
   </k-content>
 </template>
 
 <script setup lang="ts">
 
-import { computed } from 'vue'
+import { computed, ref, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import type { Dict } from 'koishi'
 import { store, send } from '~/client'
 import { KSchema } from '../components'
-import TButton from './button.vue'
-import { PackageProvider } from '../../src'
+import KTipButton from './tip-button.vue'
+import KDepAlert from './dep-alert.vue'
+import { addFavorite, state } from '../utils'
+import { MarketProvider, PackageProvider } from '../../src'
+import { ElMessage } from 'element-plus'
 
 const props = defineProps<{
   current: string
 }>()
 
-const data = computed<PackageProvider.Data>(() => {
-  return store.packages[props.current] || store.market[props.current]
-})
+const data = computed<PackageProvider.Data & MarketProvider.Data>(() => ({
+  ...store.market[props.current],
+  ...store.packages[props.current],
+}))
+
+const version = ref('')
+
+watch(data, (value) => {
+  version.value = value.version
+}, { immediate: true })
 
 function getDeps(type: 'peerDeps' | 'devDeps') {
   return Object.fromEntries((data.value[type] || [])
-    .map(name => [name, store.packages[name]?.id]))
+    .map(name => [name, !!store.packages[name]?.id]))
 }
 
 function getKeywords(prefix: string, keywords = data.value.keywords) {
@@ -79,6 +112,11 @@ interface DelegateData {
   available?: string[]
 }
 
+function isAvailable(name: string, data: MarketProvider.Data) {
+  const { keywords } = data.versions[0]
+  return getKeywords('service', keywords).includes(name)
+}
+
 function getDelegateData(name: string, required: boolean): DelegateData {
   const fulfilled = store.services.includes(name)
   if (fulfilled) return { required, fulfilled }
@@ -86,7 +124,7 @@ function getDelegateData(name: string, required: boolean): DelegateData {
     required,
     fulfilled,
     available: Object.values(store.market || {})
-      .filter(data => getKeywords('service', data.keywords).includes(name))
+      .filter(data => isAvailable(name, data))
       .map(data => data.name),
   }
 }
@@ -104,7 +142,7 @@ const delegates = computed(() => {
   return result
 })
 
-const message = computed(() => {
+const depTip = computed(() => {
   const required = getKeywords('required')
   if (required.some(name => !store.services.includes(name))) {
     return '存在未安装的依赖接口。'
@@ -115,9 +153,52 @@ const message = computed(() => {
   }
 })
 
+const loadTip = computed(() => {
+  if (state.downloading) return '请先等待未完成的任务。'
+})
+
 function execute(event: string) {
   const { name, config } = data.value
   send('plugin/' + event, { name, config })
+}
+
+const router = useRouter()
+
+function configurate(name: string) {
+  addFavorite(name)
+  router.replace({ query: { name } })
+}
+
+async function install() {
+  state.downloading = true
+  try {
+    const code = await send('install', `${data.value.name}@^${version.value}`)
+    if (code === 0) {
+      ElMessage.success('安装成功！')
+    } else {
+      ElMessage.error('安装失败！')
+    }
+  } catch (err) {
+    ElMessage.error('安装超时！')
+  } finally {
+    state.downloading = false
+  }
+}
+
+async function uninstall() {
+  state.downloading = true
+  try {
+    const code = await send('uninstall', data.value.name)
+    if (code === 0) {
+      ElMessage.success('卸载成功！')
+    } else {
+      ElMessage.error('卸载失败！')
+    }
+  } catch (err) {
+    ElMessage.error('卸载超时！')
+  } finally {
+    state.downloading = false
+  }
 }
 
 </script>
@@ -129,9 +210,14 @@ function execute(event: string) {
     margin: 0 0 2rem;
   }
 
-  h1 .k-button {
+  .k-button {
     float: right;
     font-size: 1rem;
+  }
+
+  h1.schema-header {
+    font-size: 1.375rem;
+    margin: 2rem 0;
   }
 }
 

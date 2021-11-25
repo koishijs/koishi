@@ -2,7 +2,7 @@ import { Adapter, App, Context, Dict, omit, pick, Schema } from 'koishi'
 import { DataSource } from '@koishijs/plugin-console'
 import { readdir, readFile } from 'fs/promises'
 import { dirname } from 'path'
-import { PackageBase, PackageLocal } from './shared'
+import { Package } from './shared'
 
 declare module '@koishijs/plugin-console' {
   namespace Console {
@@ -91,15 +91,11 @@ export class PackageProvider extends DataSource<Dict<PackageProvider.Data>> {
     return Object.fromEntries(packages.filter(x => x).map(data => [data.name, data]))
   }
 
-  private getPluginDeps(deps: Dict<string> = {}) {
-    return Object.keys(deps).filter(name => name.startsWith('@koishijs/plugin-') || name.startsWith('koishi-plugin-'))
-  }
-
   private async loadPackage(path: string) {
-    const data: PackageLocal = JSON.parse(await readFile(path + '/package.json', 'utf8'))
+    const data: Package.Local = JSON.parse(await readFile(path + '/package.json', 'utf8'))
     if (data.private) return null
 
-    const result = pick(data, ['name', 'version', 'keywords', 'description']) as PackageProvider.Data
+    const result = pick(data, ['name', 'version', 'description']) as PackageProvider.Data
 
     // workspace packages are followed by symlinks
     result.workspace = !require.resolve(path).includes('node_modules')
@@ -112,8 +108,7 @@ export class PackageProvider extends DataSource<Dict<PackageProvider.Data>> {
     if (newLength > oldLength) this.sources.protocols.broadcast()
 
     // check plugin dependencies
-    result.devDeps = this.getPluginDeps(data.devDependencies)
-    result.peerDeps = this.getPluginDeps(data.peerDependencies)
+    Object.assign(result, Package.Meta.from(data))
 
     // check plugin state
     const state = this.ctx.app.registry.get(exports)
@@ -134,7 +129,7 @@ export class PackageProvider extends DataSource<Dict<PackageProvider.Data>> {
 export namespace PackageProvider {
   export interface Config {}
 
-  export interface Data extends Partial<PackageBase> {
+  export interface Data extends Partial<Package.Base> {
     id?: string
     config?: any
     shortname?: string
