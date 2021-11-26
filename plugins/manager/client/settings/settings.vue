@@ -22,7 +22,7 @@
             :key="version" :label="version + (index ? '' : ' (最新)')" :value="version"
           ></el-option>
         </el-select>
-        <k-tip-button :tip="loadTip" type="error" @click="uninstall">卸载插件</k-tip-button>
+        <k-tip-button v-if="local" :tip="loadTip" type="error" @click="uninstall">卸载插件</k-tip-button>
         <k-tip-button :tip="loadTip" @click="install">
           <template #content v-if="version === data.version && local">要安装的版本与当前版本一致。</template>
           <template #default>{{ local ? '更新插件' : '安装插件' }}</template>
@@ -73,7 +73,7 @@
 
 import { computed, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import type { Dict } from 'koishi'
+import { Dict } from 'koishi'
 import { store, send } from '~/client'
 import { KSchema } from '../components'
 import { addFavorite, state } from '../utils'

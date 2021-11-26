@@ -1,4 +1,4 @@
-import { App, Adapter, Logger, assertProperty, sanitize, Schema, Context } from 'koishi'
+import { Adapter, Logger, assertProperty, sanitize, Schema, Context } from 'koishi'
 import { BotConfig, KaiheilaBot } from './bot'
 import { adaptSession, AdapterConfig } from './utils'
 

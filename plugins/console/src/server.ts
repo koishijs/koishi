@@ -19,7 +19,7 @@ export interface ClientConfig extends Required<BaseConfig> {
   extensions: string[]
 }
 
-const logger = new Logger('status')
+const logger = new Logger('console')
 
 export class SocketHandle {
   readonly app: App
@@ -35,7 +35,7 @@ export class SocketHandle {
   }
 
   async validate() {
-    return this.app.serial('status/validate', this)
+    return this.app.serial('console/validate', this)
   }
 }
 

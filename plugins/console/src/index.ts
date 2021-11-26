@@ -12,7 +12,7 @@ declare module 'koishi' {
   }
 
   interface EventMap {
-    'status/validate'(handle: SocketHandle): Awaitable<boolean>
+    'console/validate'(handle: SocketHandle): Awaitable<boolean>
   }
 
   interface Modules {

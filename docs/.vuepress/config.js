@@ -180,27 +180,38 @@ module.exports = {
         text: '数据库支持',
         isGroup: true,
         children: [
-          '/plugins/database/database.md',
+          '/plugins/database/memory.md',
           '/plugins/database/mongo.md',
           '/plugins/database/mysql.md',
+          '/plugins/database/sqlite.md',
         ],
       }, {
         text: '资源存储支持',
         isGroup: true,
         children: [
-          '/plugins/assets/assets.md',
           '/plugins/assets/jsdelivr.md',
+          '/plugins/assets/local.md',
+          '/plugins/assets/remote.md',
           '/plugins/assets/s3.md',
         ],
       }, {
         text: '缓存支持',
         isGroup: true,
         children: [
-          '/plugins/cache/cache.md',
+          '/plugins/cache/lru.md',
           '/plugins/cache/redis.md',
         ],
       }, {
-        text: '常用功能 (Common)',
+        text: '控制台开发',
+        isGroup: true,
+        children: [
+          '/plugins/console/index.md',
+          '/plugins/console/chat.md',
+          '/plugins/console/manager.md',
+          '/plugins/console/status.md',
+        ],
+      }, {
+        text: '交互功能',
         isGroup: true,
         children: [
           '/plugins/common/index.md',
@@ -244,12 +255,10 @@ module.exports = {
         text: '其他官方插件',
         isGroup: true,
         children: [
-          '/plugins/other/chat.md',
           '/plugins/other/chess.md',
           '/plugins/other/github.md',
           '/plugins/other/image-search.md',
           '/plugins/other/puppeteer.md',
-          // '/plugins/other/rss.md',
           '/plugins/other/schedule.md',
           '/plugins/other/tools.md',
           '/plugins/other/webui.md',
