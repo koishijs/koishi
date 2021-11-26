@@ -121,6 +121,7 @@ module.exports = {
           '/guide/misc/docker.md',
         ],
       }],
+
       '/api/': [{
         text: '总览',
         link: '/api/',
@@ -164,6 +165,7 @@ module.exports = {
           '/api/migration.md',
         ],
       }],
+
       '/plugins/': [{
         text: '总览',
         link: '/plugins/',
@@ -209,6 +211,8 @@ module.exports = {
           '/plugins/console/chat.md',
           '/plugins/console/manager.md',
           '/plugins/console/status.md',
+          '/plugins/console/server.md',
+          '/plugins/console/client.md',
         ],
       }, {
         text: '交互功能',
@@ -255,16 +259,14 @@ module.exports = {
         text: '其他官方插件',
         isGroup: true,
         children: [
-          '/plugins/other/chess.md',
           '/plugins/other/github.md',
           '/plugins/other/image-search.md',
           '/plugins/other/puppeteer.md',
           '/plugins/other/schedule.md',
-          '/plugins/other/tools.md',
-          '/plugins/other/webui.md',
         ],
       }],
     },
+
     lastUpdated: '上次更新',
     docsRepo: 'koishijs/koishi',
     docsDir: 'docs',
