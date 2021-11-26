@@ -374,6 +374,15 @@ export default {
 
 3. 这个方法名与 go-cqhttp 一致，并不是拼写错误
 
+### QQ 频道 API <Badge type="warning" text="meta"/>
+
+- [`onebot.getGuildServiceProfile()`](https://github.com/Mrs4s/go-cqhttp/blob/master/docs/guild.md#获取频道系统内BOT的资料) 获取频道系统内 BOT 的资料 
+- [`onebot.getGuildList()`](https://github.com/Mrs4s/go-cqhttp/blob/master/docs/guild.md#获取频道列表) 获取频道列表
+- [`onebot.getGuildMetaByGuest()`](https://github.com/Mrs4s/go-cqhttp/blob/master/docs/guild.md#通过访客获取频道元数据) 通过访客获取频道元数据
+- [`onebot.getGuildChannelList()`](https://github.com/Mrs4s/go-cqhttp/blob/master/docs/guild.md#获取子频道列表) 获取子频道列表
+- [`onebot.getGuildMembers()`](https://github.com/Mrs4s/go-cqhttp/blob/master/docs/guild.md#获取频道成员列表) 获取频道成员列表
+- [`onebot.sendGuildChannelMsg()`](https://github.com/Mrs4s/go-cqhttp/blob/master/docs/guild.md#发送信息到子频道) 发送信息到子频道
+
 ### 使用异步调用
 
 OneBot 提出了 **异步调用** 的概念，当 OneBot 服务器受到异步调用请求时，如果调用正确，将直接返回 200。这样做的好处是，如果某些操作有较长的耗时（例如发送含有大量图片的消息或清空数据目录等）或你不关心调用结果，使用异步调用可以有效防止阻塞。下面说明了异步调用和普通调用的关系：

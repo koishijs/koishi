@@ -278,6 +278,64 @@ export interface ModelVariant {
 
 export enum SafetyLevel { safe, unknown, danger }
 
+export interface GuildServiceProfile {
+  nickname: string
+  tiny_id: number
+  avatar_url: string
+}
+
+export interface GuildInfo {
+  guild_id: number
+  guild_name: string
+  guild_display_id: number
+}
+
+export interface GuildMeta {
+  guild_id: number
+  guild_name: string
+  guild_profile: string
+  create_time: number
+  max_member_count: number
+  max_robot_count: number
+  max_admin_count: number
+  member_count: number
+  owner_id: number
+}
+
+export interface ChannelInfo {
+  owner_guild_id: number
+  channel_id: number
+  channel_type: number
+  channel_name: string
+  create_time: number
+  creator_id: number
+  creator_tiny_id: number
+  talk_permission: number
+  visible_type: number
+  current_slow_mode: number
+  slow_modes: SlowModeInfo[]
+}
+
+export interface SlowModeInfo {
+  slow_mode_key: number
+  slow_mode_text: string
+  speak_frequency: number
+  slow_mode_circle: number
+}
+
+export interface GuildMemberInfo {
+  tiny_id: number
+  title: string
+  nickname: string
+  role: number
+}
+
+export interface GuildMembers {
+  members: GuildMemberInfo[]
+  bots: GuildMemberInfo[]
+  admins: GuildMemberInfo[]
+}
+
 export interface Payload extends Message {
   time: number
   self_id: number
@@ -386,4 +444,11 @@ export interface Internal {
   getVersionInfo(): Promise<VersionInfo>
   setRestart(delay?: number): Promise<void>
   reloadEventFilter(): Promise<void>
+
+  getGuildServiceProfile(): Promise<GuildServiceProfile>
+  getGuildList(): Promise<GuildInfo[]>
+  getGuildMetaByGuest(guild_id: id): Promise<GuildMeta>
+  getGuildChannelList(guild_id: id, no_cache: boolean): Promise<ChannelInfo[]>
+  getGuildMembers(guild_id: id): Promise<GuildMembers>
+  sendGuildChannelMsg(guild_id: id, channel_id: id, message: string): Promise<number>
 }
