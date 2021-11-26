@@ -55,6 +55,8 @@ export interface Message extends MessageId {
   message_type: 'private' | 'group'
   sender: SenderInfo
   group_id?: number
+  guild_id?: number
+  channel_id?: number
   message: string | any[]
   anonymous?: AnonymousInfo
 }
@@ -336,6 +338,15 @@ export interface GuildMembers {
   admins: GuildMemberInfo[]
 }
 
+export interface ReactionInfo {
+  emoji_id: string
+  emoji_index: number
+  emoji_type: number
+  emoji_name: string
+  count: number
+  clicked: boolean
+}
+
 export interface Payload extends Message {
   time: number
   self_id: number
@@ -353,6 +364,10 @@ export interface Payload extends Message {
   font: number
   comment: string
   flag: string
+  old_info: ChannelInfo
+  new_info: ChannelInfo
+  channel_info: ChannelInfo
+  current_reactions: ReactionInfo[]
 }
 
 type id = string | number

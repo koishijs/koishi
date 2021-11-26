@@ -12,6 +12,17 @@ declare module 'koishi' {
   interface Session {
     onebot?: OneBot.Payload & OneBot.Internal
   }
+
+  namespace Session {
+    interface Events {
+      onebot: {
+        'message-reactions-updated': {}
+        'channel-updated': {}
+        'channel-created': {}
+        'channel-destroyed': {}
+      }
+    }
+  }
 }
 
 export { OneBot }

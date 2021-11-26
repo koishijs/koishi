@@ -94,9 +94,10 @@ export function adaptSession(data: OneBot.Payload) {
     return session
   }
 
-  renameProperty(session, 'guildId', 'groupId')
   if (data.user_id) session.userId = '' + data.user_id
   if (data.group_id) session.guildId = session.channelId = '' + data.group_id
+  if (data.guild_id) session.guildId = '' + data.guild_id
+  if (data.channel_id) session.channelId = '' + data.channel_id
   if (data.target_id) session.targetId = '' + data.target_id
   if (data.operator_id) session.operatorId = '' + data.operator_id
   if (data.message_id) session.messageId = '' + data.message_id
@@ -158,6 +159,18 @@ export function adaptSession(data: OneBot.Payload) {
           session.subsubtype = paramCase(data.honor_type) as any
         }
         break
+      case 'message_reactions_updated':
+        session.type = 'onebot'
+        session.subtype = 'message-reactions-updated'
+      case 'channel_created':
+        session.type = 'onebot'
+        session.subtype = 'channel-created'
+      case 'channel_updated':
+        session.type = 'onebot'
+        session.subtype = 'channel-updated'
+      case 'channel_destroyed':
+        session.type = 'onebot'
+        session.subtype = 'channel-destroyed'
     }
   } else return
 
