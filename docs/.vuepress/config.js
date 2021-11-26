@@ -260,7 +260,6 @@ module.exports = {
         isGroup: true,
         children: [
           '/plugins/other/github.md',
-          '/plugins/other/image-search.md',
           '/plugins/other/puppeteer.md',
           '/plugins/other/schedule.md',
         ],
