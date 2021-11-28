@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-status",
   "description": "Status view for Koishi",
-  "version": "5.0.0-beta.2",
+  "version": "5.0.0-beta.3",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -30,13 +30,13 @@
     "server"
   ],
   "peerDependencies": {
-    "koishi": "^4.0.0-beta.2"
+    "koishi": "^4.0.0-beta.3"
   },
   "devDependencies": {
-    "@koishijs/cli": "^4.0.0-beta.2",
-    "@koishijs/plugin-console": "^1.0.0-beta.2",
-    "@koishijs/plugin-database-mongo": "^3.0.0-beta.1",
-    "@koishijs/plugin-database-mysql": "^4.0.0-beta.1",
+    "@koishijs/cli": "^4.0.0-beta.3",
+    "@koishijs/plugin-console": "^1.0.0-beta.3",
+    "@koishijs/plugin-database-mongo": "^3.0.0-beta.2",
+    "@koishijs/plugin-database-mysql": "^4.0.0-beta.2",
     "ansi_up": "^5.0.1"
   },
   "dependencies": {
