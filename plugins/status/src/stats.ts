@@ -259,7 +259,7 @@ export namespace StatisticsProvider {
   }
 
   export const Config = Schema.object({
-    statsInternal: Schema.number('统计数据推送的时间间隔。').default(Time.minute * 10),
+    statsInternal: Schema.number().description('统计数据推送的时间间隔。').default(Time.minute * 10),
   })
 
   export type Extension = (payload: Payload, data: Synchronizer.Data) => Promise<void>

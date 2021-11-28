@@ -6,8 +6,8 @@ const logger = new Logger('kaiheila')
 
 export default class HttpServer extends Adapter<BotConfig, AdapterConfig> {
   static schema = Schema.object({
-    token: Schema.string('机器人的用户令牌。').required(),
-    verifyToken: Schema.string('机器人的验证令牌。').required(),
+    token: Schema.string().description('机器人的用户令牌。').required(),
+    verifyToken: Schema.string().description('机器人的验证令牌。').required(),
   })
 
   constructor(ctx: Context, config: AdapterConfig) {

@@ -36,8 +36,8 @@ declare module '@koishijs/core' {
 }
 
 App.Config.Network.dict = {
-  host: Schema.string('要监听的 IP 地址。如果将此设置为 `0.0.0.0` 将监听所有地址，包括局域网和公网地址。'),
-  port: Schema.number('要监听的端口。'),
+  host: Schema.string().description('要监听的 IP 地址。如果将此设置为 `0.0.0.0` 将监听所有地址，包括局域网和公网地址。'),
+  port: Schema.number().description('要监听的端口。'),
   ...App.Config.Network.dict,
 }
 

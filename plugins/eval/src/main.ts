@@ -22,16 +22,16 @@ export interface EvalConfig extends MainConfig, WorkerData {}
 export interface Config extends MainConfig, WorkerConfig {}
 
 export const Config = Schema.object({
-  prefix: Schema.string('快捷调用的前缀字符。').default('>'),
-  serializer: Schema.select(['v8', 'yaml'], '要使用的序列化方法。此配置将会影响 storage 能够支持的类型。').default('v8'),
-  userFields: Schema.array(Schema.string(), '能够在 evaluate 指令中被访问的用户字段列表。').default(['id', 'authority']),
-  channelFields: Schema.array(Schema.string(), '能够在 evaluate 指令中被访问的频道字段列表。').default(['id']),
+  prefix: Schema.string().description('快捷调用的前缀字符。').default('>'),
+  serializer: Schema.select(['v8', 'yaml']).description('要使用的序列化方法。此配置将会影响 storage 能够支持的类型。').default('v8'),
+  userFields: Schema.array(Schema.string()).description('能够在 evaluate 指令中被访问的用户字段列表。').default(['id', 'authority']),
+  channelFields: Schema.array(Schema.string()).description('能够在 evaluate 指令中被访问的频道字段列表。').default(['id']),
   resourceLimits: Schema.object({
     maxYoungGenerationSizeMb: Schema.number(),
     maxOldGenerationSizeMb: Schema.number(),
     codeRangeSizeMb: Schema.number(),
     stackSizeMb: Schema.number(),
-  }, '资源限制')
+  }).description('资源限制'),
 })
 
 export class Trap<O extends {}> {

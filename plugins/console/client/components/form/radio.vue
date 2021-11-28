@@ -16,7 +16,7 @@ import { computed } from 'vue'
 
 const props = defineProps<{
   modelValue?: any
-  label?: string
+  label?: string | number
   disabled?: boolean
 }>()
 

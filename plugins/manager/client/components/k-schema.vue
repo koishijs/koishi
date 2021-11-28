@@ -4,7 +4,7 @@
   <div class="schema" v-else-if="schema.type === 'string' || schema.type === 'number'">
     <slot></slot>
     <p>
-      <span>{{ schema.desc }}</span>
+      <span>{{ schema.meta.description }}</span>
       <span v-if="schema.meta.default">默认值：<code>{{ schema.meta.default }}</code>。</span>
     </p>
     <div class="control">
@@ -15,19 +15,19 @@
   <div class="schema" v-else-if="schema.type === 'boolean'">
     <slot></slot>
     <div>
-      <k-checkbox v-model="config">{{ schema.desc }}</k-checkbox>
+      <k-checkbox v-model="config">{{ schema.meta.description }}</k-checkbox>
     </div>
   </div>
 
   <div class="schema" v-else-if="schema.type === 'array'">
     <slot></slot>
-    <p>{{ schema.desc }}</p>
+    <p>{{ schema.meta.description }}</p>
     <ul>
-      <li v-for="(item, index) in config">{{ item }}</li>
+      <li v-for="(item, index) in config" :key="index">{{ item }}</li>
     </ul>
   </div>
 
-  <schema-group v-else-if="schema.type === 'object'" :desc="!noDesc && schema.desc">
+  <schema-group v-else-if="schema.type === 'object'" :desc="!noDesc && schema.meta.description">
     <k-schema v-for="(item, key) in schema.dict" :schema="item" v-model="config[key]" :prefix="prefix + key + '.'">
       <h3 :class="{ required: item.meta.required }">
         <span>{{ prefix + key }}</span>
@@ -35,39 +35,32 @@
     </k-schema>
   </schema-group>
 
+  <template v-else-if="schema.type === 'const'"></template>
+
   <template v-else-if="schema.type === 'intersect'">
     <k-schema v-for="item in schema.list" :schema="item" v-model="config" :prefix="prefix"/>
   </template>
 
-  <div class="schema" v-else-if="schema.type === 'select'">
-    <slot></slot>
-    <p>{{ schema.desc }}</p>
-    <ul>
-      <li v-for="(label, key) in schema.sDict">
-        <k-radio :label="key" v-model="config">{{ label }}</k-radio>
-      </li>
-    </ul>
-  </div>
-
-  <template v-else-if="schema.type === 'decide'">
+  <template v-else-if="schema.type === 'union'">
     <div class="schema">
-      <h3 class="required">
-        <span>{{ prefix + schema.key }}</span>
-      </h3>
-      <p>{{ schema.desc }}</p>
+      <slot>
+        <h3 class="required">protocol</h3>
+      </slot>
+      <p>{{ schema.meta.description }}</p>
       <ul>
-        <li v-for="(item, key) in schema.dict">
-          <k-radio :label="key" v-model="config[schema.key]">{{ item.desc }}</k-radio>
+        <li v-for="(inner, key) in schema.list" :key="key">
+          <k-radio :label="key" v-model="selected">{{ inner.meta.description }}</k-radio>
         </li>
       </ul>
     </div>
-    <k-schema :schema="schema.dict[config[schema.key]]" v-model="config" :prefix="prefix" no-desc/>
+
+    <k-schema v-if="selected !== null" :schema="schema.list[selected]" v-model="config" :prefix="prefix"/>
   </template>
 </template>
 
 <script lang="ts" setup>
 
-import { computed, watch } from 'vue'
+import { computed, watch, ref } from 'vue'
 import type { PropType } from 'vue'
 import Schema from 'schemastery'
 import SchemaGroup from './k-schema-group.vue'
@@ -82,9 +75,10 @@ const props = defineProps({
 const emit = defineEmits(['update:modelValue'])
 
 function getFallback() {
-  if (props.schema.type === 'object') {
+  const { type } = props.schema
+  if (type === 'object' || type === 'dict') {
     return {}
-  } else if (props.schema.type === 'array') {
+  } else if (type === 'array' || type === 'tuple') {
     return []
   }
 }
@@ -97,6 +91,14 @@ const config = computed<any>({
 })
 
 watch(config, updateModelValue, { deep: true })
+
+watch(() => props.schema, (schema) => {
+  if (schema.type === 'const') {
+    updateModelValue(schema.value)
+  }
+}, { deep: true, immediate: true })
+
+const selected = ref<number>(null)
 
 </script>
 

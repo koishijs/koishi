@@ -122,8 +122,8 @@ namespace LevelDatabase {
   }
 
   export const Config = Schema.object({
-    location: Schema.string('数据保存的位置').default('.level'),
-    separator: Schema.string('主键分隔符').default('#'),
+    location: Schema.string().description('数据保存的位置').default('.level'),
+    separator: Schema.string().description('主键分隔符').default('#'),
   })
 }
 

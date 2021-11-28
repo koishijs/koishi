@@ -1,5 +1,5 @@
 import { Context, Schema, interpolate, Logger } from 'koishi'
-import onebot, { OneBotBot } from '@koishijs/plugin-adapter-onebot'
+import onebot, { OneBotBot, HttpServer, WebSocketClient, WebSocketServer } from '@koishijs/plugin-adapter-onebot'
 import { spawn } from 'cross-spawn'
 import { ChildProcess } from 'child_process'
 import { resolve } from 'path'
@@ -24,11 +24,11 @@ export interface Config {}
 
 export const Config = Schema.object({})
 
-const { dict } = onebot.Config.list[1].alt
+const password = Schema.string().description('机器人的密码。')
 
-dict['http'].dict['password'] = Schema.string('机器人的密码。')
-dict['ws'].dict['password'] = Schema.string('机器人的密码。')
-dict['ws-reverse'].dict['password'] = Schema.string('机器人的密码。')
+HttpServer.schema.dict.password = password
+WebSocketClient.schema.dict.password = password
+WebSocketServer.schema.dict.password = password
 
 const logLevelMap = {
   DEBUG: 'debug',

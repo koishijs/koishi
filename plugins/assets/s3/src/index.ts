@@ -89,7 +89,7 @@ namespace S3Assets {
   const Credentials = Schema.object({
     accessKeyId: Schema.string().required(),
     secretAccessKey: Schema.string().required(),
-  }, true)
+  })
 
   export interface Config extends S3ClientConfig {
     bucket: string
@@ -104,7 +104,7 @@ namespace S3Assets {
     bucket: Schema.string().required(),
     pathPrefix: Schema.string().default(''),
     publicUrl: Schema.string(),
-  }, true)
+  })
 }
 
 export default S3Assets

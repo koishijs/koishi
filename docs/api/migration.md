@@ -62,7 +62,7 @@ sidebarDepth: 2
 export const name = 'foo'
 
 export const Config: Schema<Config> = Schema.object({
-  bar: Schema.string('这是一个配置项').default('baz'),
+  bar: Schema.string().default('baz').description('这是一个配置项'),
 })
 
 export function apply(ctx: Context, config: Config) {

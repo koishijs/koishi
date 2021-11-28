@@ -79,7 +79,7 @@ export namespace ProfileProvider {
   }
 
   export const Config = Schema.object({
-    tickInterval: Schema.number('性能数据推送的时间间隔。').default(Time.second * 5),
+    tickInterval: Schema.number().description('性能数据推送的时间间隔。').default(Time.second * 5),
   })
 
   export interface Payload {

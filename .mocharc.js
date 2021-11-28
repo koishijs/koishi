@@ -1,6 +1,7 @@
 process.env.TS_NODE_PROJECT = 'tsconfig.test.json'
 
 const specs = [
+  'community/schemastery/tests/*.spec.ts',
   'packages/core/tests/*.spec.ts',
   'packages/utils/tests/*.spec.ts',
   'packages/dev-utils/tests/*.spec.ts',

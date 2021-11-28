@@ -109,9 +109,9 @@ namespace RedisCache {
   }
 
   export const Config = Schema.object({
-    url: Schema.string('Redis URL').default('redis://localhost:6379'),
-    prefix: Schema.string('Redis 数据 Key 的前缀').default('koishi:'),
-  }, true)
+    url: Schema.string().description('Redis URL').default('redis://localhost:6379'),
+    prefix: Schema.string().description('Redis 数据 Key 的前缀').default('koishi:'),
+  })
 }
 
 export default RedisCache

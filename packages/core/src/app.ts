@@ -340,8 +340,8 @@ export namespace App {
   export const Config: Config.Static = Schema.intersect([])
 
   const NetworkConfig: Schema<Config.Network> = Schema.object({
-    selfUrl: Schema.string('Koishi 服务暴露在公网的地址。部分插件（例如 github 和 telegram）需要用到。'),
-  }, '网络设置')
+    selfUrl: Schema.string().description('Koishi 服务暴露在公网的地址。部分插件（例如 github 和 telegram）需要用到。'),
+  }).description('网络设置')
 
   defineProperty(Config, 'Network', NetworkConfig)
 

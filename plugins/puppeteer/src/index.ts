@@ -68,16 +68,16 @@ export interface Config {
 
 export const Config = Schema.object({
   browser: Schema.object({
-    executablePath: Schema.string('Chromium 可执行文件的路径。缺省时将自动从系统中寻找。'),
+    executablePath: Schema.string().description('Chromium 可执行文件的路径。缺省时将自动从系统中寻找。'),
     viewPort: Schema.object({
-      width: Schema.number('默认的视图宽度。').default(800),
-      height: Schema.number('默认的视图高度。').default(600),
-      deviceScaleFactor: Schema.number('默认的设备缩放比率。').default(2),
+      width: Schema.number().description('默认的视图宽度。').default(800),
+      height: Schema.number().description('默认的视图高度。').default(600),
+      deviceScaleFactor: Schema.number().description('默认的设备缩放比率。').default(2),
     }),
-  }, true, '浏览器设置'),
-  maxSize: Schema.number('单张图片的最大尺寸，单位为字节。当截图尺寸超过这个值时会自动截取图片顶部的一段进行发送。').default(1000000),
-  loadTimeout: Schema.number('加载页面的最长时间。当一个页面等待时间超过这个值时，如果此页面主体已经加载完成，则会发送一条提示消息“正在加载中，请稍等片刻”并继续等待加载；否则会直接提示“无法打开页面”并终止加载。').default(Time.second * 10),
-  idleTimeout: Schema.number('等待页面空闲的最长时间。当一个页面等待时间超过这个值时，将停止进一步的加载并立即发送截图。').default(Time.second * 30),
+  }).description('浏览器设置'),
+  maxSize: Schema.number().description('单张图片的最大尺寸，单位为字节。当截图尺寸超过这个值时会自动截取图片顶部的一段进行发送。').default(1000000),
+  loadTimeout: Schema.number().description('加载页面的最长时间。当一个页面等待时间超过这个值时，如果此页面主体已经加载完成，则会发送一条提示消息“正在加载中，请稍等片刻”并继续等待加载；否则会直接提示“无法打开页面”并终止加载。').default(Time.second * 10),
+  idleTimeout: Schema.number().description('等待页面空闲的最长时间。当一个页面等待时间超过这个值时，将停止进一步的加载并立即发送截图。').default(Time.second * 30),
 })
 
 enum Status { close, opening, open, closing }

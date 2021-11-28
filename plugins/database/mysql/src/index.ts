@@ -282,12 +282,12 @@ namespace MysqlDatabase {
   export interface Config extends PoolConfig {}
 
   export const Config = Schema.object({
-    host: Schema.string('要连接到的主机名。').default('localhost'),
-    port: Schema.number('要连接到的端口号。').default(3306),
-    user: Schema.string('要使用的用户名。').default('root'),
-    password: Schema.string('要使用的密码。'),
-    database: Schema.string('要访问的数据库名。').default('koishi'),
-  }, true)
+    host: Schema.string().description('要连接到的主机名。').default('localhost'),
+    port: Schema.number().description('要连接到的端口号。').default(3306),
+    user: Schema.string().description('要使用的用户名。').default('root'),
+    password: Schema.string().description('要使用的密码。'),
+    database: Schema.string().description('要访问的数据库名。').default('koishi'),
+  })
 
   type Declarations = {
     [T in TableType]?: {

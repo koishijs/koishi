@@ -28,10 +28,10 @@ if (config.stackTraceLimit !== undefined) {
 }
 
 App.Config.list.push(Schema.object({
-  allowWrite: Schema.boolean('允许插件修改本地配置文件。'),
-  autoRestart: Schema.boolean('应用在运行时崩溃自动重启。').default(true),
+  allowWrite: Schema.boolean().description('允许插件修改本地配置文件。'),
+  autoRestart: Schema.boolean().description('应用在运行时崩溃自动重启。').default(true),
   plugins: Schema.any().hidden(),
-}, 'CLI 设置'))
+}).description('CLI 设置'))
 
 const app = loader.createApp(config)
 

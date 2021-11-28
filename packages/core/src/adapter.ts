@@ -86,27 +86,30 @@ export namespace Adapter {
     platform = platform.toLowerCase()
     Bot.library[platform] = constructor
 
-    let botSchema: Schema
+    let BotConfig: Schema
     if (typeof args[0] === 'function') {
       library[platform] = args[0]
-      botSchema = args[0].schema
+      BotConfig = args[0].schema
     } else {
-      const botSchemaDict: Dict<Schema> = {}
       library[platform] = { [redirect]: args[1] } as Constructor
-      botSchema = library[platform].schema = Schema.decide('protocol', botSchemaDict, args[1])
+      BotConfig = library[platform].schema = Schema.union([]).description('机器人要使用的协议。')
       for (const protocol in args[0]) {
         library[join(platform, protocol)] = args[0][protocol]
-        botSchemaDict[protocol] = args[0][protocol].schema
+        BotConfig.list.push(Schema.intersect([
+          Schema.object({
+            protocol: Schema.const(protocol).required(),
+          }),
+          args[0][protocol].schema,
+        ]).description(protocol))
       }
     }
 
     const Config = Schema.intersect([
       constructor.schema,
-      Schema.adapt(
-        Schema.object({ bots: Schema.array(botSchema).required().hidden() }),
-        botSchema,
-        config => ({ bots: [config] }),
-      ),
+      Schema.union([
+        Schema.object({ bots: Schema.array(BotConfig).required().hidden() }),
+        Schema.transform(BotConfig, config => ({ bots: [config] })),
+      ]),
     ])
 
     function apply(ctx: Context, config: PluginConfig = {}) {

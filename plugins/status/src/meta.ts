@@ -56,7 +56,7 @@ export namespace MetaProvider {
   }
 
   export const Config = Schema.object({
-    metaInternal: Schema.number('元数据推送的时间间隔。').default(Time.hour),
+    metaInternal: Schema.number().description('元数据推送的时间间隔。').default(Time.hour),
   })
 
   export interface Stats {

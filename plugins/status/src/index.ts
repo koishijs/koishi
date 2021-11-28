@@ -49,7 +49,7 @@ export const Config = Schema.intersect([
   StatisticsProvider.Config,
   Schema.object({
     logger: LogProvider.Config,
-  }, '日志选项'),
+  }).description('日志选项'),
 ])
 
 export function apply(ctx: Context, config: Config) {

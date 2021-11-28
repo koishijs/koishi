@@ -7,10 +7,10 @@ export interface RefreshConfig {
 }
 
 export const RefreshConfig = Schema.object({
-  user: Schema.number('刷新用户数据的时间间隔。').default(Time.hour),
-  guild: Schema.number('刷新群组数据的时间间隔。').default(Time.hour),
-  channel: Schema.number('刷新频道数据的时间间隔。').default(Time.hour),
-}, '刷新选项')
+  user: Schema.number().description('刷新用户数据的时间间隔。').default(Time.hour),
+  guild: Schema.number().description('刷新群组数据的时间间隔。').default(Time.hour),
+  channel: Schema.number().description('刷新频道数据的时间间隔。').default(Time.hour),
+}).description('刷新选项')
 
 const textSegmentTypes = ['text', 'header', 'section']
 

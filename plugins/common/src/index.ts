@@ -14,9 +14,9 @@ export const name = 'common'
 export interface Config extends BasicConfig {}
 
 export const Config = Schema.object({
-  echo: Schema.boolean('启用 echo 指令。').default(true),
-  broadcast: Schema.boolean('启用 broadcast 指令。').default(true),
-  contextify: Schema.boolean('启用 contextify 指令。').default(true),
+  echo: Schema.boolean().description('启用 echo 指令。').default(true),
+  broadcast: Schema.boolean().description('启用 broadcast 指令。').default(true),
+  contextify: Schema.boolean().description('启用 contextify 指令。').default(true),
 })
 
 export function apply(ctx: Context, config: Config) {

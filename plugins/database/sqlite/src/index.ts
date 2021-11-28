@@ -218,8 +218,8 @@ namespace SQLiteDatabase {
   }
 
   export const Config = Schema.object({
-    path: Schema.string('数据库路径').default('.koishi.db'),
-  }, true)
+    path: Schema.string().description('数据库路径').default('.koishi.db'),
+  })
 }
 
 Database.extend(SQLiteDatabase, {

@@ -143,7 +143,6 @@ module.exports = {
         isGroup: true,
         children: [
           '/api/utils/segment.md',
-          '/api/utils/schema.md',
           '/api/utils/observer.md',
           '/api/utils/template.md',
           '/api/utils/logger.md',

@@ -92,8 +92,8 @@ export namespace LogProvider {
   }
 
   export const Config = Schema.object({
-    root: Schema.string('存放输出日志的本地目录。'),
-    maxAge: Schema.number('日志文件保存的最大天数。'),
+    root: Schema.string().description('存放输出日志的本地目录。'),
+    maxAge: Schema.number().description('日志文件保存的最大天数。'),
   })
 }
 

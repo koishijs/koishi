@@ -1,18 +1,20 @@
-import { App, Logger, Schema, version } from 'koishi'
+import { App, defineProperty, Logger, Schema, version } from 'koishi'
 import { Loader } from '../loader'
-import {} from '../..'
+import { LoggerConfig } from '../..'
 
 const LoggerConfig = Schema.object({
-  levels: Schema.any('默认的日志输出等级。'),
-  showDiff: Schema.boolean('标注相邻两次日志输出的时间差。'),
-  showTime: Schema.union([Schema.boolean(), Schema.string()], '输出日志所使用的时间格式。'),
-}, '日志设置')
+  levels: Schema.any().description('默认的日志输出等级。'),
+  showDiff: Schema.boolean().description('标注相邻两次日志输出的时间差。'),
+  showTime: Schema.union([Schema.boolean(), Schema.string()]).description('输出日志所使用的时间格式。'),
+}).description('日志配置')
+
+defineProperty(App.Config, 'logger', LoggerConfig)
 
 App.Config.list.push(Schema.object({
   logger: LoggerConfig.hidden(),
 }))
 
-export function prepare(loader: Loader, config: App.Config.Logger = {}) {
+export function prepare(loader: Loader, config: LoggerConfig = {}) {
   const { levels } = config
   // configurate logger levels
   if (typeof levels === 'object') {

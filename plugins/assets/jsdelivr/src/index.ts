@@ -233,7 +233,7 @@ namespace JsdelivrAssets {
     github: GitHubConfig,
     git: Schema.object({
       baseDir: Schema.string().required(),
-    }, true),
+    }),
     tempDir: Schema.string().default(resolve(__dirname, '../.temp')),
     flushInterval: Schema.number().default(Time.second * 3),
     maxBranchSize: Schema.number().default(50 * 1024 * 1024),

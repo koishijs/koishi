@@ -6,6 +6,7 @@
       <el-cascader v-model="selected" :options="options"></el-cascader>
     </div>
     <k-schema v-if="schema" :schema="schema" v-model="config"></k-schema>
+    {{ config }}
   </div>
 </template>
 

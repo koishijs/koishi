@@ -1,5 +1,6 @@
 import { App, Plugin, Dict, camelize, Loader } from 'koishi'
 import { WatchOptions } from 'chokidar'
+import Schema from 'schemastery'
 
 export type PluginConfig = {
   [K in keyof Loader as camelize<K>]?: Loader[K] extends Plugin<infer T> ? T : never
@@ -19,6 +20,12 @@ export interface WatchConfig extends WatchOptions {
   fullReload?: boolean
 }
 
+export interface LoggerConfig {
+  levels?: LogLevel
+  showDiff?: boolean
+  showTime?: string | boolean
+}
+
 export interface DeamonConfig {
   exitCommand?: boolean | string
   autoRestart?: boolean
@@ -36,10 +43,9 @@ declare module 'koishi' {
     }
 
     namespace Config {
-      export interface Logger {
-        levels?: LogLevel
-        showDiff?: boolean
-        showTime?: string | boolean
+      interface Static {
+        Watch: Schema<WatchConfig>
+        Logger: Schema<LoggerConfig>
       }
     }
   }
