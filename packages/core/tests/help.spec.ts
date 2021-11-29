@@ -6,7 +6,7 @@ import { install } from '@sinonjs/fake-timers'
 
 template.set('internal.global-help-epilog', 'EPILOG')
 
-const app = new App({ mockDatabase: true })
+const app = new App()
 const session = app.session('123')
 const now = Date.now()
 

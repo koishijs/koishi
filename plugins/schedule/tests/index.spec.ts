@@ -2,15 +2,17 @@ import { App } from '@koishijs/test-utils'
 import { Time } from 'koishi'
 import { install, InstalledClock } from '@sinonjs/fake-timers'
 import * as schedule from '@koishijs/plugin-schedule'
+import memory from '@koishijs/plugin-database-memory'
 import jest from 'jest-mock'
 import { expect } from 'chai'
 
-const app = new App({ mockDatabase: true, mockStart: false })
+const app = new App({ mockStart: false })
 const sess = app.session('123', '456')
 const sess2 = app.session('123')
 
 const send = app.bots[0].sendMessage = jest.fn()
 
+app.plugin(memory)
 app.plugin(schedule)
 app.command('echo [content:text]').action((_, text) => text)
 

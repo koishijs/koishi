@@ -2,7 +2,6 @@ import { App, Adapter, Session, Bot, pick, Dict, Schema } from 'koishi'
 import { assert } from 'chai'
 import { Socket } from 'net'
 import { format } from 'util'
-import database from '@koishijs/plugin-database-memory'
 import * as http from 'http'
 
 export const BASE_SELF_ID = '514'
@@ -105,7 +104,6 @@ const mocker = Adapter.define('mock', MockedBot, MockedServer)
 
 interface MockedAppOptions extends App.Config {
   mockStart?: boolean
-  mockDatabase?: boolean
 }
 
 export class MockedApp extends App {
@@ -117,10 +115,6 @@ export class MockedApp extends App {
     this.plugin(mocker, {
       selfId: BASE_SELF_ID,
     })
-
-    if (options.mockDatabase) {
-      this.plugin(database)
-    }
 
     if (options.mockStart !== false) {
       this.start()

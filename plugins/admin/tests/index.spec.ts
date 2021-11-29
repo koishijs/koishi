@@ -3,8 +3,12 @@ import { User, Channel, defineEnumProperty } from 'koishi'
 import { install } from '@sinonjs/fake-timers'
 import * as admin from '@koishijs/plugin-admin'
 import { expect } from 'chai'
+import memory from '@koishijs/plugin-database-memory'
 
-const app = new App({ mockDatabase: true })
+const app = new App()
+
+app.plugin(memory)
+
 const session = app.session('123', '321')
 const session2 = app.session('123')
 

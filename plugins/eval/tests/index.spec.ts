@@ -3,13 +3,15 @@
 import { App } from '@koishijs/test-utils'
 import { resolve } from 'path'
 import { promises as fs } from 'fs'
+import memory from '@koishijs/plugin-database-memory'
 import * as eval from '@koishijs/plugin-eval'
 import * as teach from '@koishijs/plugin-teach'
 
 const app = new App({
   mockStart: false,
-  mockDatabase: true,
 })
+
+app.plugin(memory)
 
 app.plugin(eval, {
   root: resolve(__dirname, 'fixtures'),

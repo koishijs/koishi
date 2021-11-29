@@ -2,11 +2,13 @@ import { App } from '@koishijs/test-utils'
 import { expect } from 'chai'
 import jest from 'jest-mock'
 import * as common from '@koishijs/plugin-common'
+import memory from '@koishijs/plugin-database-memory'
 
 const app = new App({
-  mockDatabase: true,
   delay: { broadcast: 0 },
 })
+
+app.plugin(memory)
 
 const session1 = app.session('123')
 const session2 = app.session('123', '456')

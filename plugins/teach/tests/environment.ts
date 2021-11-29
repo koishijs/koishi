@@ -1,11 +1,13 @@
 import { Dialogue, apply } from '@koishijs/plugin-teach'
+import memory from '@koishijs/plugin-database-memory'
 import { App } from '@koishijs/test-utils'
 
 export default function (config: Dialogue.Config) {
   const app = new App({
     nickname: ['koishi', 'satori'],
-    mockDatabase: true,
   })
+
+  app.plugin(memory)
 
   const u2id = '200', u3id = '300', u4id = '400'
   const g1id = '100', g2id = '200'

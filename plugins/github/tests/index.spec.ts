@@ -6,15 +6,16 @@ import { resolve } from 'path'
 import nock from 'nock'
 import jest from 'jest-mock'
 import * as github from '@koishijs/plugin-github'
+import memory from '@koishijs/plugin-database-memory'
 import { Method } from 'axios'
 
 const app = new App({
   port: 10000,
   prefix: '.',
   mockStart: false,
-  mockDatabase: true,
 })
 
+app.plugin(memory)
 app.plugin(github)
 
 const ses = app.session('123', '999')

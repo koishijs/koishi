@@ -1,7 +1,11 @@
 import { App } from '@koishijs/test-utils'
 import * as _switch from '@koishijs/plugin-switch'
+import memory from '@koishijs/plugin-database-memory'
 
-const app = new App({ mockDatabase: true })
+const app = new App()
+
+app.plugin(memory)
+
 const session = app.session('123', '321')
 
 app.plugin(_switch)

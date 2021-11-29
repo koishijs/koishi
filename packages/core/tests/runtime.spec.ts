@@ -1,11 +1,13 @@
 import { App } from '@koishijs/test-utils'
 import { User, Channel, Command, sleep } from 'koishi'
 import { install } from '@sinonjs/fake-timers'
+import memory from '@koishijs/plugin-database-memory'
 
 const app = new App({
-  mockDatabase: true,
   minSimilarity: 0,
 })
+
+app.plugin(memory)
 
 // make coverage happy
 Command.channelFields([])
