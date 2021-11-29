@@ -255,6 +255,7 @@ export class Context {
   plugin(plugin: Plugin, options?: any) {
     if (options === false) return this
     if (options === true) options = undefined
+    options ??= {}
 
     if (typeof plugin === 'string') {
       plugin = Modules.require(plugin, true)

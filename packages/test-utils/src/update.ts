@@ -1,6 +1,5 @@
 import { App, omit, Tables } from 'koishi'
 import { expect } from 'chai'
-import '../../chai'
 
 interface Bar {
   id?: number

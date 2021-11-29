@@ -211,7 +211,7 @@ describe('Context API', () => {
         ctx.command('temp')
         ctx.on('attach', () => {})
         ctx.before('attach', () => {})
-        ctx.before('disconnect', () => {})
+        ctx.on('disconnect', () => {})
         ctx.middleware(() => {})
       }
 
@@ -231,14 +231,14 @@ describe('Context API', () => {
 
     it('root level dispose', async () => {
       // create a context without a plugin
-      const ctx = app.platform.except()
+      const ctx = app.except(app.platform())
       await expect(ctx.dispose()).to.be.rejected
     })
 
     it('dispose event', () => {
       const callback = jest.fn<void, []>()
       app.plugin(async (ctx) => {
-        ctx.before('disconnect', callback)
+        ctx.on('disconnect', callback)
         expect(callback.mock.calls).to.have.length(0)
         await ctx.dispose()
         expect(callback.mock.calls).to.have.length(1)

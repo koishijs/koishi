@@ -4,7 +4,7 @@ import { sleep } from 'koishi'
 describe('Session API', () => {
   describe('Command Execution', () => {
     const app = new App()
-    const sess = app.session('456')
+    const sess = app.client('456')
     app.command('echo [content:text]').action((_, text) => text)
     app.command('exec [command:text]').action(({ session }, text) => session.execute(text))
 

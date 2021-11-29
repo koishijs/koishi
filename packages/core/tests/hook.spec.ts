@@ -1,4 +1,4 @@
-import { App, createArray } from '@koishijs/test-utils'
+import { App } from '@koishijs/test-utils'
 import { Middleware, NextFunction, Context, sleep, noop, Logger } from 'koishi'
 import { expect } from 'chai'
 import jest from 'jest-mock'
@@ -9,6 +9,10 @@ const appLogger = new Logger('app')
 const appWarn = jest.spyOn(appLogger, 'warn')
 const midLogger = new Logger('session')
 const midWarn = jest.spyOn(midLogger, 'warn')
+
+export function createArray<T>(length: number, create: (index: number) => T) {
+  return [...new Array(length).keys()].map(create)
+}
 
 describe('Hook API', () => {
   before(() => Logger.levels.base = 1)

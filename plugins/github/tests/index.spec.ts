@@ -23,7 +23,7 @@ const ses2 = app.session('456', '999')
 const ses3 = app.session('123')
 
 // override start
-const start = jest.spyOn(app.server, 'start')
+const start = jest.spyOn(app.mocker, 'start')
 start.mockReturnValue(Promise.resolve())
 
 before(async () => {
@@ -53,13 +53,13 @@ describe('GitHub Plugin', () => {
   describe('Basic Support', () => {
     it('authorize server', async () => {
       tokenInterceptor.reply(200, payload)
-      await expect(app.server.get('/github/authorize')).to.eventually.have.property('code', 400)
-      await expect(app.server.get('/github/authorize?state=123')).to.eventually.have.property('code', 403)
-      await expect(app.server.get('/github/authorize?state=123&state=456')).to.eventually.have.property('code', 400)
+      await expect(app.mocker.get('/github/authorize')).to.eventually.have.property('code', 400)
+      await expect(app.mocker.get('/github/authorize?state=123')).to.eventually.have.property('code', 403)
+      await expect(app.mocker.get('/github/authorize?state=123&state=456')).to.eventually.have.property('code', 400)
     })
 
     it('webhook server', async () => {
-      await expect(app.server.post('/github/webhook', {})).to.eventually.have.property('code', 400)
+      await expect(app.mocker.post('/github/webhook', {})).to.eventually.have.property('code', 400)
     })
 
     it('github.authorize', async () => {
@@ -67,7 +67,7 @@ describe('GitHub Plugin', () => {
       uuid.mockReturnValue('foo-bar-baz')
       await ses.shouldReply('.github.authorize', '请输入用户名。')
       await ses.shouldReply('.github.authorize satori', /^请点击下面的链接继续操作：/)
-      await expect(app.server.get('/github/authorize?state=foo-bar-baz')).to.eventually.have.property('code', 200)
+      await expect(app.mocker.get('/github/authorize?state=foo-bar-baz')).to.eventually.have.property('code', 200)
       await expect(app.database.getUser('mock', '123')).to.eventually.have.shape({
         ghAccessToken,
         ghRefreshToken,

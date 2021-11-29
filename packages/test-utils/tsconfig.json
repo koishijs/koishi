@@ -4,13 +4,7 @@
     "outDir": "lib",
     "rootDir": "src",
   },
-  "references": [
-    { "path": "./chai" },
-  ],
   "include": [
     "src",
-  ],
-  "exclude": [
-    "lib",
   ],
 }

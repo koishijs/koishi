@@ -1,7 +1,6 @@
 import { App } from 'koishi'
 import { expect } from 'chai'
-import '../../chai'
-import '../app'
+import {} from '@koishijs/plugin-tester'
 
 export default function BuiltinMethods(app: App) {
   const { database: db } = app

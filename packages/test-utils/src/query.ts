@@ -1,6 +1,5 @@
 import { App, Tables } from 'koishi'
 import { expect } from 'chai'
-import '../../chai'
 
 interface Foo {
   id?: number

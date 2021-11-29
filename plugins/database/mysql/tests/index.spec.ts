@@ -1,5 +1,5 @@
 import { App, Tests } from '@koishijs/test-utils'
-import * as mysql from '@koishijs/plugin-database-mysql'
+import mysql from '@koishijs/plugin-database-mysql'
 import parse from 'yargs-parser'
 
 const { mysqlPorts } = parse(process.argv.slice(2), { string: ['mysql-ports'] })

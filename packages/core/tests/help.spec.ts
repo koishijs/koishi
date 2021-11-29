@@ -3,10 +3,12 @@
 import { App } from '@koishijs/test-utils'
 import { Time, template } from 'koishi'
 import { install } from '@sinonjs/fake-timers'
+import memory from '@koishijs/plugin-database-memory'
 
 template.set('internal.global-help-epilog', 'EPILOG')
 
 const app = new App()
+app.plugin(memory)
 const session = app.session('123')
 const now = Date.now()
 
