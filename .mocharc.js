@@ -1,6 +1,7 @@
 process.env.TS_NODE_PROJECT = 'tsconfig.test.json'
 
 const specs = [
+  'community/chai-shape/tests/*.spec.ts',
   'community/schemastery/tests/*.spec.ts',
   'packages/core/tests/*.spec.ts',
   'packages/utils/tests/*.spec.ts',
@@ -25,8 +26,12 @@ const specs = [
 const libraries = {}
 
 for (const path of specs) {
-  const [type, lib] = path.split('/')
-  libraries[lib] = type
+  const [seg1, seg2, seg3] = path.split('/')
+  if (seg2 === 'database') {
+    libraries[seg3] = seg1 + '/' + seg2
+  } else {
+    libraries[seg2] = seg1
+  }
 }
 
 function getSpecFromArgv() {
@@ -47,4 +52,8 @@ module.exports = {
   exit: true,
   timeout: 5000,
   spec: getSpecFromArgv(),
+  require: [
+    'build/register',
+    'build/setup',
+  ],
 }

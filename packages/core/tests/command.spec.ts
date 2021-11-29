@@ -3,8 +3,7 @@
 import { App, Session, Logger, noop } from 'koishi'
 import { inspect } from 'util'
 import { expect } from 'chai'
-import '@koishijs/test-utils'
-import tester from '@koishijs/plugin-tester'
+import mock from '@koishijs/plugin-mock'
 import jest from 'jest-mock'
 
 describe('Command API', () => {
@@ -173,8 +172,8 @@ describe('Command API', () => {
   })
 
   describe('Error Handling', () => {
-    const app = new App().plugin(tester)
-    const bot = app.tester.bot()
+    const app = new App().plugin(mock)
+    const bot = app.mock.bot()
     const command = app.command('test')
     const session = new Session(bot, {})
     const cmdWarn = jest.spyOn(new Logger('command'), 'warn')

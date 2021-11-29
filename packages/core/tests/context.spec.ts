@@ -1,10 +1,10 @@
-import { App } from '@koishijs/test-utils'
-import { Session, Context, noop } from 'koishi'
+import { App, Session, Context, noop } from 'koishi'
 import { expect } from 'chai'
 import { inspect } from 'util'
+import mock from '@koishijs/plugin-mock'
 import jest from 'jest-mock'
 
-const app = new App()
+const app = new App().plugin(mock)
 const guildSession = new Session(app.bots[0], { userId: '123', guildId: '456', subtype: 'group' })
 const privateSession = new Session(app.bots[0], { userId: '123', subtype: 'private' })
 

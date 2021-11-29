@@ -1,4 +1,6 @@
-import { App, Tests } from '@koishijs/test-utils'
+import { App } from 'koishi'
+import tests from '@koishijs/test-utils'
+import mock from '@koishijs/plugin-mock'
 import mysql from '@koishijs/plugin-database-mysql'
 import parse from 'yargs-parser'
 
@@ -8,6 +10,8 @@ for (const port of mysqlPorts ? mysqlPorts.split(',') : []) {
   describe(`MySQL Database (${port})`, () => {
     const app = new App()
 
+    app.plugin(mock)
+
     app.plugin(mysql, {
       host: 'localhost',
       port: +port,
@@ -16,7 +20,7 @@ for (const port of mysqlPorts ? mysqlPorts.split(',') : []) {
       database: 'koishi',
     })
 
-    Tests.database(app, {
+    tests.database(app, {
       query: {
         list: {
           elementQuery: false,

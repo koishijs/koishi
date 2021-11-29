@@ -4,7 +4,7 @@ import QueryOperators from './query'
 import UpdateOperators from './update'
 import './setup'
 
-export namespace Tests {
+namespace Tests {
   const Keywords = ['name']
   type Keywords = 'name'
 
@@ -62,3 +62,5 @@ export namespace Tests {
 
   export const database = createUnit(DatabaseTests, true)
 }
+
+export default Tests

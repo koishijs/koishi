@@ -26,7 +26,7 @@
     "docs": "yarn workspace docs",
     "draft": "node -r ./build/register build/release",
     "schema": "yarn workspace schemastery",
-    "test": "mocha --require ./build/register --no-warnings --experimental-vm-modules --enable-source-maps",
+    "test": "mocha --no-warnings --experimental-vm-modules --enable-source-maps",
     "test:json": "c8 -r json yarn test",
     "test:html": "rimraf coverage && c8 -r html yarn test",
     "test:text": "c8 -r text yarn test",
