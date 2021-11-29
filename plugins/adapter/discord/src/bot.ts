@@ -12,16 +12,16 @@ export interface BotConfig extends Bot.BaseConfig, Sender.Config {
 export const BotConfig = Schema.intersect([
   Schema.object({
     token: Schema.string().description('机器人的用户令牌。').required(),
-    handleExternalAsset: Schema.select({
-      download: '先下载后发送',
-      direct: '直接发送链接',
-      auto: '发送一个 HEAD 请求，如果返回的 Content-Type 正确，则直接发送链接，否则先下载后发送',
-    }).description('发送外链资源时采用的方式。').default('auto'),
-    handleMixedContent: Schema.select({
-      separate: '将每个不同形式的内容分开发送',
-      attach: '图片前如果有文本内容，则将文本作为图片的附带信息进行发送',
-      auto: '如果图片本身采用直接发送则与前面的文本分开，否则将文本作为图片的附带信息发送',
-    }).description('发送图文等混合内容时采用的方式。').default('auto'),
+    handleExternalAsset: Schema.union([
+      Schema.const('download').description('先下载后发送'),
+      Schema.const('direct').description('直接发送链接'),
+      Schema.const('auto').description('发送一个 HEAD 请求，如果返回的 Content-Type 正确，则直接发送链接，否则先下载后发送'),
+    ]).description('发送外链资源时采用的方式。').default('auto'),
+    handleMixedContent: Schema.union([
+      Schema.const('separate').description('将每个不同形式的内容分开发送'),
+      Schema.const('attach').description('图片前如果有文本内容，则将文本作为图片的附带信息进行发送'),
+      Schema.const('auto').description('如果图片本身采用直接发送则与前面的文本分开，否则将文本作为图片的附带信息发送'),
+    ]).description('发送图文等混合内容时采用的方式。').default('auto'),
   }),
   App.Config.Request,
 ])
