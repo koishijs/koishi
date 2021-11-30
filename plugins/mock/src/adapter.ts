@@ -1,12 +1,11 @@
 import { Adapter, App, Bot, Context, Schema, Session } from 'koishi'
 import { Client } from './client'
 import { Webhook } from './webhook'
-import memory from '@koishijs/plugin-database-memory'
 
 declare module 'koishi' {
   namespace Context {
     interface Services {
-      mock: Tester
+      mock: MockAdapter
     }
   }
 
@@ -21,8 +20,8 @@ interface BotConfig extends Bot.BaseConfig {
   selfId: string
 }
 
-export class TestBot extends Bot<BotConfig> {
-  constructor(adapter: Tester, config: BotConfig) {
+export class MockBot extends Bot<BotConfig> {
+  constructor(adapter: MockAdapter, config: BotConfig) {
     super(adapter, config)
     this.selfId = config.selfId
     this.status = 'online'
@@ -41,19 +40,20 @@ export class TestBot extends Bot<BotConfig> {
   }
 }
 
-export class Tester extends Adapter<BotConfig> {
+export class MockAdapter extends Adapter<BotConfig> {
   public app: App
   public webhook: Webhook
   public platform = 'mock'
 
-  constructor(ctx: Context, config: Tester.Config) {
+  constructor(ctx: Context, config: MockAdapter.Config) {
     super(ctx, config)
     this.app = ctx.app
+    this.app.isActive = true
     ctx.mock = this
     ctx.bots.adapters.mock = this
 
-    if (config.database) {
-      ctx.plugin(memory)
+    for (const selfId of config.selfIds) {
+      this.bot(selfId)
     }
   }
 
@@ -61,7 +61,7 @@ export class Tester extends Adapter<BotConfig> {
     const bot = this.bots.find(bot => bot.selfId === selfId)
     if (bot) return bot
 
-    this.ctx.bots.create('mock', { selfId }, TestBot)
+    this.ctx.bots.create('mock', { selfId }, MockBot)
     return this.bots.find(bot => bot.selfId === selfId)
   }
 
@@ -83,22 +83,24 @@ export class Tester extends Adapter<BotConfig> {
     return new Client(this, userId, channelId)
   }
 
+  session(meta: Partial<Session>) {
+    return new Session(this.bots[0], meta)
+  }
+
   receive(meta: Partial<Session>) {
-    const session = new Session(this.bots[0], meta)
+    const session = this.session(meta)
     this.dispatch(session)
     return session.id
   }
 }
 
-export namespace Tester {
+export namespace MockAdapter {
   export interface Config {
     selfIds?: string[]
-    database?: boolean
   }
   
   export const Config = Schema.object({
     selfIds: Schema.array(Schema.string()).default([DEFAULT_SELF_ID]),
-    database: Schema.boolean(),
   })
 }
 

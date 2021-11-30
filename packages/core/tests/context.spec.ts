@@ -1,12 +1,12 @@
-import { App, Session, Context, noop } from 'koishi'
+import { App, Context, noop } from 'koishi'
 import { expect } from 'chai'
 import { inspect } from 'util'
 import mock from '@koishijs/plugin-mock'
 import jest from 'jest-mock'
 
 const app = new App().plugin(mock)
-const guildSession = new Session(app.bots[0], { userId: '123', guildId: '456', subtype: 'group' })
-const privateSession = new Session(app.bots[0], { userId: '123', subtype: 'private' })
+const guildSession = app.mock.session({ userId: '123', guildId: '456', subtype: 'group' })
+const privateSession = app.mock.session({ userId: '123', subtype: 'private' })
 
 describe('Context API', () => {
   describe('Composition API', () => {
@@ -157,7 +157,7 @@ describe('Context API', () => {
       app.plugin(plugin, true)
 
       expect(callback.mock.calls).to.have.length(1)
-      expect(callback.mock.calls[0][1]).to.be.undefined
+      expect(callback.mock.calls[0][1]).to.have.shape({})
     })
 
     it('apply invalid plugin', () => {
@@ -170,7 +170,7 @@ describe('Context API', () => {
       expect(inspect(app)).to.equal('Context <root>')
 
       app.plugin(function foo(ctx) {
-        expect(inspect(ctx)).to.equal('Context <anonymous>')
+        expect(inspect(ctx)).to.equal('Context <foo>')
       })
 
       app.plugin({

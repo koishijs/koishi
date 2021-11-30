@@ -140,13 +140,13 @@ describe('Help Command', () => {
   it('no database', async () => {
     template.set('internal.global-help-epilog', '')
 
-    const app = new App()
+    const app = new App().plugin(mock)
     const session = app.mock.client('123')
     await session.shouldReply('help', '当前可用的指令有：\n    help  显示帮助信息')
   })
 
   it('disable help command', async () => {
-    const app = new App({ help: false })
+    const app = new App({ help: false }).plugin(mock)
     app.command('foo')
     const session = app.mock.client('123')
     await session.shouldNotReply('help')
@@ -154,7 +154,7 @@ describe('Help Command', () => {
   })
 
   it('disable help options', async () => {
-    const app = new App({ help: { options: false } })
+    const app = new App({ help: { options: false } }).plugin(mock)
     app.command('foo')
     const session = app.mock.client('123')
     await session.shouldReply('help')
@@ -162,7 +162,7 @@ describe('Help Command', () => {
   })
 
   it('disable help shortcut', async () => {
-    const app = new App({ help: { shortcut: false } })
+    const app = new App({ help: { shortcut: false } }).plugin(mock)
     const session = app.mock.client('123')
     await session.shouldReply('help')
     await session.shouldNotReply('帮助')

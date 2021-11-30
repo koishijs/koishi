@@ -14,17 +14,17 @@ export class Webhook {
   constructor(public app: App) {}
 
   get(path: string, headers?: Dict<any>) {
-    return this.request('GET', path, headers, '')
+    return this.receive('GET', path, headers, '')
   }
 
   post(path: string, body: any, headers?: Dict<any>) {
-    return this.request('POST', path, {
+    return this.receive('POST', path, {
       ...headers,
       'content-type': 'application/json',
     }, JSON.stringify(body))
   }
 
-  private request(method: string, path: string, headers: Dict<any>, content: string) {
+  private receive(method: string, path: string, headers: Dict<any>, content: string) {
     const socket = new Socket()
     const req = new http.IncomingMessage(socket)
     req.url = path

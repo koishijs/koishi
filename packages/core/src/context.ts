@@ -103,6 +103,10 @@ export class Context {
 
   protected constructor(public filter: Filter, public app?: App, private _plugin: Plugin = null) {}
 
+  [Symbol.for('nodejs.util.inspect.custom')]() {
+    return `Context <${this._plugin ? this._plugin.name : 'root'}>`
+  }
+
   user(...values: string[]) {
     return this.select('userId', ...values)
   }
@@ -266,40 +270,45 @@ export class Context {
       return this
     }
 
-    const ctx = new Context(this.filter, this.app, plugin).select(options)
-    const schema = plugin['Config'] || plugin['schema']
-    if (schema) options = schema(options)
-
-    this.app.registry.set(plugin, {
-      plugin,
-      schema,
-      id: Random.id(),
-      context: this,
-      config: options,
-      parent: this.state,
-      children: [],
-      disposables: [],
-    })
+    const createContext = () => {
+      const ctx = new Context(this.filter, this.app, plugin).select(options)
+      const schema = plugin['Config'] || plugin['schema']
+      if (schema) options = schema(options)
+      this.app.registry.set(plugin, {
+        plugin,
+        schema,
+        id: Random.id(),
+        context: this,
+        config: options,
+        parent: this.state,
+        children: [],
+        disposables: [],
+      })
+      this.state.children.push(plugin)
+      this.emit('plugin-added', plugin)
+      return ctx
+    }
 
     if (typeof plugin === 'function') {
+      const ctx = createContext()
       if (isConstructor(plugin)) {
         new plugin(ctx, options)
       } else {
         plugin(ctx, options)
       }
     } else if (plugin && typeof plugin === 'object' && typeof plugin.apply === 'function') {
+      const ctx = createContext()
       plugin.apply(ctx, options)
     } else {
       this.app.registry.delete(plugin)
       throw new Error('invalid plugin, expect function or object with an "apply" method')
     }
 
-    this.state.children.push(plugin)
-    this.emit('plugin-added', plugin)
     return this
   }
 
   async dispose(plugin = this._plugin) {
+    if (!plugin) throw new Error('root level context cannot be disposed')
     const state = this.app.registry.get(plugin)
     if (!state) return
     await Promise.allSettled([

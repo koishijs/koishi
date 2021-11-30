@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 
-import { App, Session, Logger, noop } from 'koishi'
+import { App, Logger, noop } from 'koishi'
 import { inspect } from 'util'
 import { expect } from 'chai'
 import mock from '@koishijs/plugin-mock'
@@ -173,9 +173,8 @@ describe('Command API', () => {
 
   describe('Error Handling', () => {
     const app = new App().plugin(mock)
-    const bot = app.mock.bot()
     const command = app.command('test')
-    const session = new Session(bot, {})
+    const session = app.mock.session({})
     const cmdWarn = jest.spyOn(new Logger('command'), 'warn')
     const argv = { command, session }
 

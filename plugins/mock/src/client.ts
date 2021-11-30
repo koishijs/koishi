@@ -1,7 +1,7 @@
 import { assert } from 'chai'
 import { App, pick, Session } from 'koishi'
 import { format } from 'util'
-import { Tester } from './adapter'
+import { MockAdapter } from './adapter'
 
 const RECEIVED_NOTHING = 'expected "%s" to be replied but received nothing'
 const RECEIVED_OTHERWISE = 'expected "%s" to be replied with %s but received "%s"'
@@ -12,7 +12,7 @@ export class Client {
 
   private replies: string[] = []
 
-  constructor(public mocker: Tester, public userId: string, public channelId?: string) {
+  constructor(public mocker: MockAdapter, public userId: string, public channelId?: string) {
     this.app = mocker.ctx.app
     this.meta = {
       platform: 'mock',

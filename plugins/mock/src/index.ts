@@ -1,7 +1,7 @@
-import { Tester } from './adapter'
+import { MockAdapter } from './adapter'
 
 export * from './adapter'
 export * from './client'
 export * from './webhook'
 
-export default Tester
+export default MockAdapter
