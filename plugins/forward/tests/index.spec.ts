@@ -1,17 +1,18 @@
-import { App } from '@koishijs/test-utils'
+import { App } from 'koishi'
 import { expect } from 'chai'
 import jest from 'jest-mock'
+import mock, { DEFAULT_SELF_ID } from '@koishijs/plugin-mock'
 import * as forward from '@koishijs/plugin-forward'
 
-const app = new App()
+const app = new App().plugin(mock)
 
-const session2 = app.session('123', '456')
-const session3 = app.session('789', '654')
+const session2 = app.mock.client('123', '456')
+const session3 = app.mock.client('789', '654')
 
 app.plugin(forward, [{
   source: 'mock:456',
   destination: 'mock:654',
-  selfId: app.selfId,
+  selfId: DEFAULT_SELF_ID,
 }])
 
 describe('Relay Plugin', () => {

@@ -1,6 +1,5 @@
 /* eslint-disable no-new-wrappers, max-len */
 
-import '@koishijs/test-utils'
 import { Sandbox } from '@koishijs/plugin-eval/src/worker/sandbox'
 import { inspect } from 'util'
 import { expect } from 'chai'

@@ -1,10 +1,10 @@
-import { App } from '@koishijs/test-utils'
-import { sleep } from 'koishi'
+import { App, sleep } from 'koishi'
+import mock from '@koishijs/plugin-mock'
 
 describe('Session API', () => {
   describe('Command Execution', () => {
-    const app = new App()
-    const sess = app.client('456')
+    const app = new App().plugin(mock)
+    const sess = app.mock.client('456')
     app.command('echo [content:text]').action((_, text) => text)
     app.command('exec [command:text]').action(({ session }, text) => session.execute(text))
 
@@ -27,9 +27,9 @@ describe('Session API', () => {
   })
 
   describe('Command Suggestion', () => {
-    const app = new App({ prefix: '/' })
-    const session1 = app.session('456')
-    const session2 = app.session('789', '987')
+    const app = new App({ prefix: '/' }).plugin(mock)
+    const session1 = app.mock.client('456')
+    const session2 = app.mock.client('789', '987')
 
     app.command('foo <text>', { checkArgCount: true })
       .action((_, bar) => 'foo' + bar)
@@ -81,8 +81,8 @@ describe('Session API', () => {
   })
 
   describe('Other Session Methods', () => {
-    const app = new App({ prefix: '.' })
-    const session = app.session('123', '456')
+    const app = new App({ prefix: '.' }).plugin(mock)
+    const session = app.mock.client('123', '456')
     const items = ['foo', 'bar']
     app.command('find [item]').action(({ session }, item) => {
       if (items.includes(item)) return 'found:' + item

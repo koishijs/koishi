@@ -1,5 +1,4 @@
-import { App } from '@koishijs/test-utils'
-import { Assets, Logger, Time } from 'koishi'
+import { App, Assets, Logger, Time } from 'koishi'
 import createEnvironment from './environment'
 import { install } from '@sinonjs/fake-timers'
 import * as teach from '@koishijs/plugin-teach'

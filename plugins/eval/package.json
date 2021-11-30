@@ -51,6 +51,6 @@
     "@types/babel__core": "^7.1.16",
     "@types/js-yaml": "^4.0.3",
     "@koishijs/plugin-database-memory": "^1.0.0-beta.2",
-    "@koishijs/test-utils": "^8.0.0-beta.3"
+    "@koishijs/plugin-mock": "^1.0.0-beta.0"
   }
 }

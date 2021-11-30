@@ -1,6 +1,5 @@
 import { segment } from 'koishi'
 import { expect } from 'chai'
-import '@koishijs/test-utils'
 
 describe('Segment API', () => {
   it('segment.escape()', () => {

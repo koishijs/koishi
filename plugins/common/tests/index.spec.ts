@@ -1,17 +1,19 @@
-import { App } from '@koishijs/test-utils'
+import { App } from 'koishi'
 import { expect } from 'chai'
 import jest from 'jest-mock'
 import * as common from '@koishijs/plugin-common'
 import memory from '@koishijs/plugin-database-memory'
+import mock from '@koishijs/plugin-mock'
 
 const app = new App({
   delay: { broadcast: 0 },
 })
 
 app.plugin(memory)
+app.plugin(mock)
 
-const session1 = app.session('123')
-const session2 = app.session('123', '456')
+const session1 = app.mock.client('123')
+const session2 = app.mock.client('123', '456')
 
 app.plugin(common, {
   operator: 'mock:999',
@@ -32,10 +34,10 @@ app.command('show-context')
   })
 
 before(async () => {
-  await app.initUser('123', 4)
-  await app.initUser('456', 3)
-  await app.initUser('789', 5)
-  await app.initChannel('456')
+  await app.mock.initUser('123', 4)
+  await app.mock.initUser('456', 3)
+  await app.mock.initUser('789', 5)
+  await app.mock.initChannel('456')
 })
 
 describe('Common Plugin - Basic', () => {
@@ -106,7 +108,7 @@ describe('Common Plugin - Basic', () => {
   it('recall', async () => {
     const del = app.bots[0].deleteMessage = jest.fn()
     await session2.shouldReply('recall', '近期没有发送消息。')
-    app.receive(app.bots[0].createSession({ messageId: '1234', channelId: '456', guildId: '456' }).toJSON())
+    app.mock.receive(app.bots[0].createSession({ messageId: '1234', channelId: '456', guildId: '456' }).toJSON())
     await session2.shouldNotReply('recall')
     expect(del.mock.calls).to.have.shape([[session2.meta.channelId, '1234']])
   })

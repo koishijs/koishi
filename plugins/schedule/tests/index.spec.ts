@@ -1,14 +1,14 @@
-import { App } from '@koishijs/test-utils'
-import { Time } from 'koishi'
+import { App, Time } from 'koishi'
 import { install, InstalledClock } from '@sinonjs/fake-timers'
 import * as schedule from '@koishijs/plugin-schedule'
 import memory from '@koishijs/plugin-database-memory'
+import mock from '@koishijs/plugin-mock'
 import jest from 'jest-mock'
 import { expect } from 'chai'
 
-const app = new App({ mockStart: false })
-const sess = app.session('123', '456')
-const sess2 = app.session('123')
+const app = new App().plugin(mock)
+const sess = app.mock.client('123', '456')
+const sess2 = app.mock.client('123')
 
 const send = app.bots[0].sendMessage = jest.fn()
 
@@ -20,8 +20,8 @@ let clock: InstalledClock
 
 before(async () => {
   app.database.memory.$store.schedule = []
-  await app.initUser('123', 4)
-  await app.initChannel('456')
+  await app.mock.initUser('123', 4)
+  await app.mock.initChannel('456')
   await app.database.create('schedule', {
     id: 1,
     time: new Date('2000-1-1 0:59'),

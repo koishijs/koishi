@@ -1,5 +1,5 @@
 import { Random } from 'koishi'
-import { TestSession } from '@koishijs/test-utils'
+import { Client } from '@koishijs/plugin-mock'
 import { install, InstalledClock } from '@sinonjs/fake-timers'
 import createEnvironment from './environment'
 import jest from 'jest-mock'
@@ -9,14 +9,14 @@ describe('Teach Plugin - Basic Support', () => {
     mergeThreshold: 1,
   })
 
-  const session1 = app.session('123', '456')
-  const session2 = app.session('321', '456')
+  const session1 = app.mock.client('123', '456')
+  const session2 = app.mock.client('321', '456')
 
   before(async () => {
     await app.start()
-    await app.initUser('123', 3)
-    await app.initUser('321', 2)
-    await app.initChannel('456')
+    await app.mock.initUser('123', 3)
+    await app.mock.initUser('321', 2)
+    await app.mock.initChannel('456')
   })
 
   it('create', async () => {
@@ -127,7 +127,7 @@ describe('Teach Plugin - Appellative', () => {
 })
 
 describe('Teach Plugin - Interpolate', () => {
-  function createTest(title: string, callback: (u3g1: TestSession) => Promise<void>) {
+  function createTest(title: string, callback: (u3g1: Client) => Promise<void>) {
     it(title, async () => {
       const { app, u3g1, start, stop } = createEnvironment({})
       app.command('bar').action(() => 'hello')

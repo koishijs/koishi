@@ -1,22 +1,22 @@
-import { App } from '@koishijs/test-utils'
 import { expect } from 'chai'
-import { sleep, Session } from 'koishi'
+import { App, sleep, Session } from 'koishi'
+import mock, { DEFAULT_SELF_ID } from '@koishijs/plugin-mock'
 import jest from 'jest-mock'
 import * as verifier from '@koishijs/plugin-verifier'
 
-const app = new App()
+const app = new App().plugin(mock)
 
 const options: verifier.Config = {}
 app.plugin(verifier, options)
 
 function receive(session: Partial<Session>) {
-  app.receive(session)
+  app.mock.receive(session)
   return sleep(0)
 }
 
 const receiveFriendRequest = (userId: string) => receive({
   platform: 'mock',
-  selfId: app.selfId,
+  selfId: DEFAULT_SELF_ID,
   type: 'friend-request',
   messageId: 'flag',
   userId,
@@ -24,7 +24,7 @@ const receiveFriendRequest = (userId: string) => receive({
 
 const receiveGroupRequest = (userId: string) => receive({
   platform: 'mock',
-  selfId: app.selfId,
+  selfId: DEFAULT_SELF_ID,
   type: 'guild-request',
   guildId: '10000',
   messageId: 'flag',
@@ -33,7 +33,7 @@ const receiveGroupRequest = (userId: string) => receive({
 
 const receiveGroupMemberRequest = (userId: string) => receive({
   platform: 'mock',
-  selfId: app.selfId,
+  selfId: DEFAULT_SELF_ID,
   type: 'guild-member-request',
   guildId: '10000',
   messageId: 'flag',

@@ -1,22 +1,23 @@
-import { App } from '@koishijs/test-utils'
-import { User, Channel, Command, sleep } from 'koishi'
+import { App, User, Channel, Command, sleep } from 'koishi'
 import { install } from '@sinonjs/fake-timers'
 import memory from '@koishijs/plugin-database-memory'
+import mock, { DEFAULT_SELF_ID } from '@koishijs/plugin-mock'
 
 const app = new App({
   minSimilarity: 0,
 })
 
 app.plugin(memory)
+app.plugin(mock)
 
 // make coverage happy
 Command.channelFields([])
 
-const session1 = app.session('123')
-const session2 = app.session('456')
-const session3 = app.session('789')
-const session4 = app.session('123', '321')
-const session5 = app.session('123', '654')
+const session1 = app.mock.client('123')
+const session2 = app.mock.client('456')
+const session3 = app.mock.client('789')
+const session4 = app.mock.client('123', '321')
+const session5 = app.mock.client('123', '654')
 
 const cmd1 = app.command('cmd1 <arg1>', { authority: 2 })
   .channelFields(['id'])
@@ -36,14 +37,14 @@ const cmd2 = app.command('cmd2')
 
 before(async () => {
   await app.start()
-  await app.initUser('123', 2)
-  await app.initUser('456', 1)
-  await app.initUser('789', 1)
+  await app.mock.initUser('123', 2)
+  await app.mock.initUser('456', 1)
+  await app.mock.initUser('789', 1)
   // make coverage happy (checkTimer)
   await app.database.setUser('mock', '456', { timers: { foo: 0 } })
   await app.database.setUser('mock', '789', { flag: User.Flag.ignore })
-  await app.initChannel('321')
-  await app.initChannel('654', '999')
+  await app.mock.initChannel('321')
+  await app.mock.initChannel('654', '999')
 })
 
 after(() => app.stop())
@@ -112,7 +113,7 @@ describe('Runtime', () => {
       await session4.shouldNotReply('cmd2')
       await session1.shouldReply('-cmd2', 'cmd2:123')
       await session4.shouldReply('-cmd2', 'cmd2:123')
-      await session4.shouldNotReply(`[CQ:reply,id=123] [CQ:at,id=${app.selfId}] cmd2`)
+      await session4.shouldNotReply(`[CQ:reply,id=123] [CQ:at,id=${DEFAULT_SELF_ID}] cmd2`)
     })
 
     it('single nickname', async () => {
@@ -169,13 +170,13 @@ describe('Runtime', () => {
 
     it('nickname prefix & fuzzy', async () => {
       await session4.shouldNotReply('foo3 -t baz')
-      await session4.shouldReply(`[CQ:at,id=${app.selfId}] foo3 -t baz`, 'cmd2:123')
+      await session4.shouldReply(`[CQ:at,id=${DEFAULT_SELF_ID}] foo3 -t baz`, 'cmd2:123')
     })
 
     it('one argument & fuzzy', async () => {
       await session4.shouldReply('foo4 bar baz', 'cmd1:bar')
       await session4.shouldNotReply('foo4bar baz')
-      await session4.shouldReply(`[CQ:at,id=${app.selfId}] foo4bar baz`, 'cmd1:bar')
+      await session4.shouldReply(`[CQ:at,id=${DEFAULT_SELF_ID}] foo4bar baz`, 'cmd1:bar')
     })
   })
 
@@ -193,7 +194,7 @@ describe('Runtime', () => {
       await session4.shouldReply('cmd1 test --baz', 'cmd1:test')
       await session4.shouldReply('mid', 'mid')
       await session5.shouldNotReply('cmd1 test --baz')
-      await session5.shouldReply(`[CQ:at,id=${app.selfId}] cmd1 test --baz`, 'cmd1:test')
+      await session5.shouldReply(`[CQ:at,id=${DEFAULT_SELF_ID}] cmd1 test --baz`, 'cmd1:test')
     })
 
     it('channel.flag.ignore', async () => {
@@ -201,7 +202,7 @@ describe('Runtime', () => {
       await sleep(0)
       await session4.shouldNotReply('mid')
       await session4.shouldNotReply('cmd1 --baz')
-      await session4.shouldNotReply(`[CQ:at,id=${app.selfId}] cmd1 --baz`)
+      await session4.shouldNotReply(`[CQ:at,id=${DEFAULT_SELF_ID}] cmd1 --baz`)
       await app.database.setChannel('mock', '321', { flag: 0 })
     })
   })

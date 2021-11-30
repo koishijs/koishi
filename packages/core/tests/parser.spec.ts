@@ -1,5 +1,4 @@
-import { Command } from 'koishi'
-import { App } from '@koishijs/test-utils'
+import { App, Command } from 'koishi'
 import { expect } from 'chai'
 
 const app = new App()

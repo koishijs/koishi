@@ -42,7 +42,7 @@ const mockedApp = new App()
 
 触发会话事件。
 
-### app.session(userId, channelId?)
+### app.mock.client(userId, channelId?)
 
 - **userId:** `string` 用户 ID
 - **channelId:** `string` 频道 ID
@@ -52,7 +52,7 @@ const mockedApp = new App()
 
 ## 类：TestSession
 
-**测试会话**是对发往同一上下文的多次消息的一个抽象。它使用 `app.session()` 方法创建，并借助 `app.receive()` 实现其功能。
+**测试会话**是对发往同一上下文的多次消息的一个抽象。它使用 `app.mock.client()` 方法创建，并借助 `app.receive()` 实现其功能。
 
 ::: warning
 这个类下的大部分方法的返回都基于 [session.send](./session.md#session-send) 方法和 [after-middleware](./events.md#事件：after-middleware) 事件。在提供了极大方便的同时，会话也存在一些限制。如果你的插件存在以下几种特殊情况之一：

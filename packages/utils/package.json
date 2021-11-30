@@ -28,8 +28,8 @@
     "utilities"
   ],
   "devDependencies": {
-    "@types/supports-color": "^8.1.1",
-    "@koishijs/test-utils": "^8.0.0-beta.3"
+    "@sinonjs/fake-timers": "^6.0.1",
+    "@types/supports-color": "^8.1.1"
   },
   "dependencies": {
     "supports-color": "^8.1.0"

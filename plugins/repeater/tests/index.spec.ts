@@ -1,10 +1,11 @@
-import { App } from '@koishijs/test-utils'
+import { App } from 'koishi'
+import mock from '@koishijs/plugin-mock'
 import * as repeater from '@koishijs/plugin-repeater'
 
-const app = new App()
-const session1 = app.session('123', '123')
-const session2 = app.session('456', '123')
-const session3 = app.session('789', '123')
+const app = new App().plugin(mock)
+const session1 = app.mock.client('123', '123')
+const session2 = app.mock.client('456', '123')
+const session3 = app.mock.client('789', '123')
 
 const options: repeater.Config = {}
 app.plugin(repeater, options)

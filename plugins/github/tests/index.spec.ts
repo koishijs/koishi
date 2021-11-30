@@ -1,5 +1,4 @@
-import { App } from '@koishijs/test-utils'
-import { Random } from 'koishi'
+import { App, Random } from 'koishi'
 import { expect } from 'chai'
 import { readdirSync } from 'fs-extra'
 import { resolve } from 'path'
@@ -7,20 +6,21 @@ import nock from 'nock'
 import jest from 'jest-mock'
 import * as github from '@koishijs/plugin-github'
 import memory from '@koishijs/plugin-database-memory'
+import mock from '@koishijs/plugin-mock'
 import { Method } from 'axios'
 
 const app = new App({
   port: 10000,
   prefix: '.',
-  mockStart: false,
 })
 
 app.plugin(memory)
+app.plugin(mock)
 app.plugin(github)
 
-const ses = app.session('123', '999')
-const ses2 = app.session('456', '999')
-const ses3 = app.session('123')
+const ses = app.mock.client('123', '999')
+const ses2 = app.mock.client('456', '999')
+const ses3 = app.mock.client('123')
 
 // override start
 const start = jest.spyOn(app.mocker, 'start')
@@ -28,8 +28,8 @@ start.mockReturnValue(Promise.resolve())
 
 before(async () => {
   app.database.memory.$store.github = []
-  await app.initUser('123', 3)
-  await app.initUser('456', 3)
+  await app.mock.initUser('123', 3)
+  await app.mock.initUser('456', 3)
   await app.database.createChannel('mock', '999', {
     assignee: app.bots[0].selfId,
     githubWebhooks: { 'koishijs/koishi': {} },

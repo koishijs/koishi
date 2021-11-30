@@ -1,9 +1,9 @@
-import { App } from '@koishijs/test-utils'
-import { Middleware, NextFunction, Context, sleep, noop, Logger } from 'koishi'
+import { App, Middleware, NextFunction, Context, sleep, noop, Logger } from 'koishi'
 import { expect } from 'chai'
+import mock from '@koishijs/plugin-mock'
 import jest from 'jest-mock'
 
-const app = new App()
+const app = new App().plugin(mock)
 
 const appLogger = new Logger('app')
 const appWarn = jest.spyOn(appLogger, 'warn')
@@ -59,7 +59,7 @@ describe('Hook API', () => {
       const mid2 = wrap<Middleware>((_, next) => next())
       app.middleware(mid1)
       app.middleware(mid2)
-      await app.session('123').receive('foo')
+      await app.mock.client('123').receive('foo')
       expect(callSequence).to.deep.equal([mid1, mid2])
     })
 
@@ -69,7 +69,7 @@ describe('Hook API', () => {
       app.middleware(mid1)
       app.middleware(mid2)
       expect(callSequence).to.deep.equal([])
-      await app.session('123').receive('foo')
+      await app.mock.client('123').receive('foo')
       expect(callSequence).to.deep.equal([mid1])
     })
 
@@ -80,7 +80,7 @@ describe('Hook API', () => {
       app.middleware(mid1)
       app.middleware(mid2, true)
       app.middleware(mid3, true)
-      await app.session('123').receive('foo')
+      await app.mock.client('123').receive('foo')
       expect(callSequence).to.deep.equal([mid3, mid2, mid1])
     })
 
@@ -92,7 +92,7 @@ describe('Hook API', () => {
       const mid5 = wrap<NextFunction>((next) => next())
       app.middleware(mid1)
       app.middleware(mid2)
-      await app.session('123').receive('foo')
+      await app.mock.client('123').receive('foo')
       expect(callSequence).to.deep.equal([mid1, mid2, mid3, mid4, mid5])
     })
 
@@ -100,7 +100,7 @@ describe('Hook API', () => {
       midWarn.mockClear()
       const errorMessage = 'error message'
       app.middleware(() => { throw new Error(errorMessage) })
-      await app.session('123').receive('foo')
+      await app.mock.client('123').receive('foo')
       expect(midWarn.mock.calls).to.have.length(1)
     })
 
@@ -108,7 +108,7 @@ describe('Hook API', () => {
       midWarn.mockClear()
       app.middleware((_, next) => (next(), undefined))
       app.middleware((_, next) => sleep(0).then(() => next()))
-      await app.session('123').receive('foo')
+      await app.mock.client('123').receive('foo')
       await sleep(0)
       expect(midWarn.mock.calls).to.have.length(1)
     })

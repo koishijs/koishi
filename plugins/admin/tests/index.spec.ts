@@ -1,18 +1,19 @@
-import { App } from '@koishijs/test-utils'
-import { User, Channel, defineEnumProperty } from 'koishi'
+import { App, User, Channel, defineEnumProperty } from 'koishi'
 import { install } from '@sinonjs/fake-timers'
 import * as admin from '@koishijs/plugin-admin'
 import { expect } from 'chai'
 import memory from '@koishijs/plugin-database-memory'
+import mock from '@koishijs/plugin-mock'
 
 const app = new App()
 
 app.plugin(memory)
-
-const session = app.session('123', '321')
-const session2 = app.session('123')
-
+app.plugin(mock)
 app.plugin(admin)
+
+const session = app.mock.client('123', '321')
+const session2 = app.mock.client('123')
+
 app.command('foo', { maxUsage: 10 }).action(() => 'bar')
 app.command('bar', { minInterval: 1000 }).action(() => 'foo')
 app.command('baz').action(() => 'zab')
@@ -35,11 +36,11 @@ defineEnumProperty(User.Flag, 'test', 1 << 4)
 defineEnumProperty(Channel.Flag, 'test', 1 << 4)
 
 before(async () => {
-  await app.initUser('123', 4)
-  await app.initUser('456', 3)
-  await app.initUser('789', 4)
-  await app.initChannel('321')
-  await app.initChannel('654')
+  await app.mock.initUser('123', 4)
+  await app.mock.initUser('456', 3)
+  await app.mock.initUser('789', 4)
+  await app.mock.initChannel('321')
+  await app.mock.initChannel('654')
 })
 
 describe('Admin Commands', () => {
@@ -96,7 +97,7 @@ describe('Admin Commands', () => {
   })
 
   it('channel/assign', async () => {
-    await app.session('123').shouldReply('assign', '当前不在群组上下文中，请使用 -t 参数指定目标频道。')
+    await app.mock.client('123').shouldReply('assign', '当前不在群组上下文中，请使用 -t 参数指定目标频道。')
     await session.shouldReply('assign -t nan', '选项 target 输入无效，请指定正确的频道。')
     await session.shouldReply('assign -t #321', '频道数据未改动。')
     await session.shouldReply('assign -t #321 nan', '参数 bot 输入无效，请指定正确的用户。')
