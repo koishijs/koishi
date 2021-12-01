@@ -29,15 +29,18 @@ abstract class TelegramAdapter extends Adapter<BotConfig, AdapterConfig> {
         payload.append(key, params[key].toString())
       }
       if (field) payload.append(field, content, filename)
-      const data = await bot.http.post(action, payload, payload.getHeaders()).then(res => {
-        return res.data
-      }).catch((e: AxiosError) => {
-        return e.response.data
-      })
-      return data
+      try {
+        return bot.http.post(`/${action}`, payload, payload.getHeaders())
+      } catch (e) {
+        return (e as AxiosError).response.data
+      }
     }
-    const { username } = await bot.getLoginInfo()
+    const { username, userId, avatar, nickname } = await bot.getLoginInfo()
     bot.username = username
+    bot.avatar = avatar
+    bot.selfId = userId
+    bot.nickname = nickname
+
     await this.listenUpdates(bot)
     logger.debug('connected to %c', 'telegram:' + bot.selfId)
     bot.resolve()
@@ -123,12 +126,12 @@ export class HttpServer extends TelegramAdapter {
   async listenUpdates(bot: TelegramBot) {
     const { token } = bot.config
     const { path, selfUrl } = this.config
-    const info = await bot.get<boolean>('/setWebhook', {
+    const info = await bot.get<boolean>('setWebhook', {
       url: selfUrl + path + '?token=' + token,
       dropPendingUpdates: true,
     })
     if (!info) throw new Error('Set webhook failed')
-    logger.debug('connected to %c', 'telegram: ' + bot.selfId, 'WebhookInfo: ', info)
+    logger.debug('listening updates %c', 'telegram: ' + bot.selfId)
   }
 
   async start() {
@@ -172,21 +175,21 @@ export class HttpPolling extends TelegramAdapter {
     const { selfId } = bot.config
     this.offset[selfId] = this.offset[selfId] || 0
 
-    const { url } = await bot.get<Telegram.WebhookInfo, GetUpdatesOptions>('/getWebhookInfo', {})
+    const { url } = await bot.get<Telegram.WebhookInfo, GetUpdatesOptions>('getWebhookInfo', {})
     if (url) {
       logger.warn('Bot currently has a webhook set up, trying to remove it...')
+      await bot.get<boolean>('setWebhook', { url: '' })
     }
-    await bot.get<boolean>('/setWebhook', { url: '' })
 
     // Test connection / init offset with 0 timeout polling
-    const previousUpdates = await bot.get<Telegram.Update[], GetUpdatesOptions>('/getUpdates', {
+    const previousUpdates = await bot.get<Telegram.Update[], GetUpdatesOptions>('getUpdates', {
       allowedUpdates: [],
       timeout: 0,
     })
     previousUpdates.forEach(e => this.offset[selfId] = Math.max(this.offset[selfId], e.updateId))
 
     const polling = async () => {
-      const updates = await bot.get<Telegram.Update[], GetUpdatesOptions>('/getUpdates', {
+      const updates = await bot.get<Telegram.Update[], GetUpdatesOptions>('getUpdates', {
         offset: this.offset[selfId] + 1,
         timeout: 30,
       })
@@ -200,6 +203,6 @@ export class HttpPolling extends TelegramAdapter {
       }
     }
     polling()
-    logger.debug('connected to %c', 'telegram: ' + bot.selfId)
+    logger.debug('listening updates %c', 'telegram: ' + bot.selfId)
   }
 }

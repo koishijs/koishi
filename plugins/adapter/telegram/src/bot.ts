@@ -102,7 +102,7 @@ export class TelegramBot extends Bot<BotConfig> {
         payload.caption += node.data.content
       } else if (node.type === 'image') {
         if (payload.photo) {
-          result = await this.get('/sendPhoto', ...maybeFile(payload, 'photo'))
+          result = await this.get('sendPhoto', ...maybeFile(payload, 'photo'))
           payload.caption = ''
           payload.photo = ''
         }
@@ -112,11 +112,11 @@ export class TelegramBot extends Bot<BotConfig> {
       }
     }
     if (payload.photo) {
-      result = await this.get('/sendPhoto', ...maybeFile(payload, 'photo'))
+      result = await this.get('sendPhoto', ...maybeFile(payload, 'photo'))
       payload.caption = ''
       payload.photo = ''
     } else if (payload.caption) {
-      result = await this.get('/sendMessage', { chatId, text: payload.caption })
+      result = await this.get('sendMessage', { chatId, text: payload.caption })
     }
     return result ? ('' + result.messageId) : null
   }
@@ -139,7 +139,7 @@ export class TelegramBot extends Bot<BotConfig> {
   }
 
   async deleteMessage(chatId: string, messageId: string) {
-    await this.get('/deleteMessage', { chatId, messageId })
+    await this.get('deleteMessage', { chatId, messageId })
   }
 
   static adaptGroup(data: Telegram.Chat & Bot.Guild): Bot.Guild {
@@ -149,7 +149,7 @@ export class TelegramBot extends Bot<BotConfig> {
   }
 
   async getGuild(chatId: string): Promise<Bot.Guild> {
-    const data = await this.get('/getChat', { chatId })
+    const data = await this.get('getChat', { chatId })
     return TelegramBot.adaptGroup(data)
   }
 
@@ -159,21 +159,21 @@ export class TelegramBot extends Bot<BotConfig> {
 
   async getGuildMember(chatId: string, userId: string): Promise<Bot.GuildMember> {
     if (Number.isNaN(+userId)) return null
-    const data = await this.get('/getChatMember', { chatId, userId })
+    const data = await this.get('getChatMember', { chatId, userId })
     return TelegramBot.adaptUser(data)
   }
 
   async getGuildMemberList(chatId: string): Promise<Bot.GuildMember[]> {
-    const data = await this.get('/getChatAdministrators', { chatId })
+    const data = await this.get('getChatAdministrators', { chatId })
     return data.map(TelegramBot.adaptUser)
   }
 
   setGroupLeave(chatId: string) {
-    return this.get('/leaveChat', { chatId })
+    return this.get('leaveChat', { chatId })
   }
 
   async getLoginInfo() {
-    const data = await this.get<Telegram.User>('/getMe')
+    const data = await this.get<Telegram.User>('getMe')
     return TelegramBot.adaptUser(data)
   }
 }
