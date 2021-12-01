@@ -5,7 +5,7 @@ import { LoggerConfig } from '../..'
 const LoggerConfig = Schema.object({
   levels: Schema.any().description('默认的日志输出等级。'),
   showDiff: Schema.boolean().description('标注相邻两次日志输出的时间差。'),
-  showTime: Schema.union([Schema.boolean(), Schema.string()]).description('输出日志所使用的时间格式。'),
+  showTime: Schema.union([Boolean, String]).description('输出日志所使用的时间格式。'),
 }).description('日志配置')
 
 defineProperty(App.Config, 'logger', LoggerConfig)
@@ -26,7 +26,7 @@ export function prepare(loader: Loader, config: LoggerConfig = {}) {
   let showTime = config.showTime
   if (showTime === true) showTime = 'yyyy-MM-dd hh:mm:ss'
   if (showTime) Logger.targets[0].showTime = showTime
-  Logger.targets[0].showDiff = config.showDiff ?? !showTime
+  Logger.targets[0].showDiff = config.showDiff
 
   // cli options have higher precedence
   if (process.env.KOISHI_LOG_LEVEL) {

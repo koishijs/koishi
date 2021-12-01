@@ -1,7 +1,7 @@
 import { resolve, extname, dirname, isAbsolute } from 'path'
 import { yellow } from 'kleur'
 import { readdirSync, readFileSync } from 'fs'
-import { App, Dict, hyphenate, Modules, Plugin } from 'koishi'
+import { App, Dict, hyphenate, Logger, Modules, Plugin } from 'koishi'
 import { load } from 'js-yaml'
 
 const oldPaths = Modules.internal.paths
@@ -14,6 +14,7 @@ Modules.internal.paths = function (name: string) {
 }
 
 let cwd = process.cwd()
+const logger = new Logger('app')
 
 export class Loader {
   dirname: string
@@ -67,6 +68,7 @@ export class Loader {
       if (name.startsWith('~')) {
         this.resolvePlugin(name.slice(1))
       } else {
+        logger.info(`apply plugin %c`, name)
         this.loadPlugin(name, plugins[name] ?? {})
       }
     }
