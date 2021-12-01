@@ -24,10 +24,12 @@ export interface TelegramResponse {
 export interface BotConfig extends Bot.BaseConfig {
   selfId?: string
   token?: string
+  pollingInterval?: number
 }
 
 export const BotConfig: Schema<BotConfig> = Schema.object({
   token: Schema.string().description('机器人的用户令牌。').required(),
+  pollingInterval: Schema.number().description('通过长轮询获取更新时间隔，单位为秒。设置即不使用 webhook 获取更新。'),
 })
 
 export interface TelegramBot {
@@ -82,9 +84,9 @@ export class TelegramBot extends Bot<BotConfig> {
    * @param content file stream
    * @returns Respond form telegram
    */
-  async get<T = any>(action: string, params = {}, field = '', content: Buffer = null): Promise<T> {
+  async get<T = any, P = any>(action: string, params: P = undefined, field = '', content: Buffer = null): Promise<T> {
     this.logger.debug('[request] %s %o', action, params)
-    const response = await this._request(action, snakeCase(params), field, content)
+    const response = await this._request(action, snakeCase(params || {}), field, content)
     this.logger.debug('[response] %o', response)
     const { ok, result } = response
     if (ok) return camelCase(result)

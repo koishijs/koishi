@@ -1,6 +1,6 @@
 import { Adapter } from 'koishi'
 import { TelegramBot } from './bot'
-import HttpServer from './http'
+import { HttpServer, HttpPolling } from './http'
 
 declare module 'koishi' {
   interface Modules {
@@ -8,4 +8,9 @@ declare module 'koishi' {
   }
 }
 
-export default Adapter.define('telegram', TelegramBot, HttpServer)
+export default Adapter.define('telegram', TelegramBot, {
+  webhook: HttpServer,
+  polling: HttpPolling,
+}, ({ pollingInterval }) => {
+  return pollingInterval !== undefined ? 'polling' : 'webhook'
+})
