@@ -42,6 +42,7 @@ export namespace Plugin {
     config?: T
     schema?: Schema
     plugin?: Plugin
+    services: Set<keyof Context.Services>
     children: Plugin[]
     disposables: Disposable[]
   }
@@ -281,6 +282,7 @@ export class Context {
         context: this,
         config: options,
         parent: this.state,
+        services: new Set(),
         children: [],
         disposables: [],
       })
@@ -525,11 +527,11 @@ export class Context {
 
   getSelfIds(type?: string, assignees?: string[]): Dict<string[]> {
     if (type) {
-      assignees ||= this.app.bots.filter(bot => bot.platform === type).map(bot => bot.selfId)
+      assignees ||= this.bots.filter(bot => bot.platform === type).map(bot => bot.selfId)
       return { [type]: assignees }
     }
     const platforms: Dict<string[]> = {}
-    for (const bot of this.app.bots) {
+    for (const bot of this.bots) {
       (platforms[bot.platform] ||= []).push(bot.selfId)
     }
     return platforms
@@ -591,19 +593,21 @@ export namespace Context {
     if (Object.prototype.hasOwnProperty.call(Context.prototype, key)) return
     const privateKey = Symbol(key)
     Object.defineProperty(Context.prototype, key, {
-      get() {
+      get(this: Context) {
         const value = this.app[privateKey]
         if (!value) return
+        this.state.services.add(key)
         defineProperty(value, Context.current, this)
         return value
       },
-      set(value) {
+      set(this: Context, value) {
         if (this.app[privateKey] && !Services[key].dynamic) {
           this.logger(key).warn('service is overwritten')
         }
         defineProperty(this.app, privateKey, value)
+        this.app._services[key] = this.state.id
         this.emit('service')
-        this.emit('service/' + key)
+        this.emit('service/' + key as any)
       },
     })
   }

@@ -6,6 +6,7 @@ import { PackageProvider } from './packages'
 import { AdapterProvider } from './protocols'
 import { RegistryProvider } from './registry'
 import { ReleaseProvider } from './releases'
+import { ServiceProvider } from './services'
 
 export * from './bots'
 export * from './market'
@@ -13,11 +14,26 @@ export * from './packages'
 export * from './protocols'
 export * from './registry'
 export * from './releases'
-export * from './shared'
+export * from './services'
+export * from './utils'
 
 declare module 'koishi' {
   interface Modules {
     manager: typeof import('.')
+  }
+}
+
+declare module '@koishijs/plugin-console' {
+  namespace Console {
+    interface Sources {
+      bots: BotProvider
+      market: MarketProvider
+      packages: PackageProvider
+      protocols: AdapterProvider
+      registry: RegistryProvider
+      releases: ReleaseProvider
+      services: ServiceProvider
+    }
   }
 }
 
@@ -37,6 +53,7 @@ export function apply(ctx: Context, config: Config = {}) {
     ctx.plugin(PackageProvider)
     ctx.plugin(RegistryProvider)
     ctx.plugin(ReleaseProvider)
+    ctx.plugin(ServiceProvider)
 
     const filename = ctx.console.config.devMode ? '../client/index.ts' : '../dist/index.js'
     ctx.console.addEntry(resolve(__dirname, filename))

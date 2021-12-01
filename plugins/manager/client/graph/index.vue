@@ -2,23 +2,22 @@
   <draggable :width="graph.width" :height="graph.height" :padding="48">
     <div class="node-container" :class="{ active: current }">
       <div v-for="(node, id) in graph.nodes" :key="id"
-        :style="getStyle(node)" :class="getClass(node)"
+        :style="getStyle(node)" :class="getNodeClass(node)"
         @mouseenter="current = id" @mouseleave="current = null">
         <div class="content">
-          <div class="title">{{ node.data.name || 'Anonymous' }}</div>
-          <div>复杂度：{{ node.data.complexity }}</div>
+          <div class="title">{{ node.name || 'Anonymous' }}</div>
+          <div>复杂度：{{ node.complexity }}</div>
         </div>
-        <screw v-if="node.col" placement="left"></screw>
-        <screw v-if="node.data.children.length" placement="right"></screw>
+        <screw v-if="node.prev.length" placement="left"></screw>
+        <screw v-if="node.next.length" placement="right"></screw>
       </div>
     </div>
     <svg class="edge-container" :class="{ active: current }" width="1000rem" height="1000rem" viewBox="0 0 1000 1000">
-      <path v-for="edge in graph.edges" :key="edge.id"
+      <path v-for="edge in graph.edges" :key="edge.id" :class="edge.type"
         :d="getPath(edge)" stroke-width="0.125" fill="none"></path>
     </svg>
     <svg class="edge-container highlight" width="1000rem" height="1000rem" viewBox="0 0 1000 1000">
-      <path v-for="edge in graph.edges" :key="edge.id"
-        :class="{ active: isActive(graph.nodes[edge.target]) }"
+      <path v-for="edge in graph.edges" :key="edge.id" :class="getEdgeClass(edge)"
         :d="getPath(edge)" stroke-width="0.125" fill="none"></path>
     </svg>
   </draggable>
@@ -26,26 +25,26 @@
 
 <script lang="ts" setup>
 
-import { graph, getPath, getStyle, Node } from './utils'
+import { graph, getPath, getStyle, Node, Edge, isAncestor } from './utils'
 import { ref } from 'vue'
 import draggable from './draggable.vue'
 import screw from './screw.vue'
 
 const current = ref<string | number>(null)
 
-function isActive(node: Node): boolean {
+function isActive(node: Node) {
   const selected = graph.value.nodes[current.value]
   return isAncestor(selected, node) || isAncestor(node, selected)
 }
 
-function isAncestor(ancestor: Node, node: Node): boolean {
-  while (node) {
-    if (node === ancestor) return true
-    node = node.parent
+function getEdgeClass(edge: Edge) {
+  return {
+    active: isActive(edge.source) && isActive(edge.target),
+    [edge.type]: true,
   }
 }
 
-function getClass(node: Node) {
+function getNodeClass(node: Node) {
   return {
     node: true,
     active: isActive(node),
@@ -98,6 +97,10 @@ function getClass(node: Node) {
   path {
     stroke: var(--bg4);
     transition: stroke 0.3s ease;
+  }
+
+  path.service {
+    stroke-dasharray: 0.5 0.5;
   }
 
   &.active path {

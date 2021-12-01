@@ -8,14 +8,6 @@ declare module 'koishi' {
   }
 }
 
-declare module '@koishijs/plugin-console' {
-  namespace Console {
-    interface Sources {
-      bots: BotProvider
-    }
-  }
-}
-
 export class BotProvider extends DataSource<BotProvider.Data[]> {
   constructor(ctx: Context) {
     super(ctx, 'bots')

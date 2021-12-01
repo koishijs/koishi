@@ -33,7 +33,7 @@ declare module '~/client' {
     icon?: string
     order?: number
     position?: 'top' | 'bottom' | 'hidden'
-    fields?: (keyof Console.Sources)[]
+    fields?: readonly (keyof Console.Sources)[]
     component: Component
   }
 

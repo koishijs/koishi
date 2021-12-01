@@ -5,7 +5,6 @@ import WebSocket from 'ws'
 import open from 'open'
 import { v4 } from 'uuid'
 import type { ViteDevServer } from 'vite'
-import { ServiceProvider } from './provider'
 
 interface BaseConfig {
   devMode?: boolean
@@ -42,9 +41,7 @@ export class SocketHandle {
 export type Listener = (this: SocketHandle, ...args: any[]) => Awaitable<any>
 
 export namespace Console {
-  export interface Sources {
-    services: ServiceProvider
-  }
+  export interface Sources {}
 
   export interface Events {}
 }
@@ -82,8 +79,6 @@ export class Console {
 
     ctx.on('connect', () => this.start())
     ctx.on('disconnect', () => this.stop())
-
-    ctx.plugin(ServiceProvider)
   }
 
   broadcast(type: string, body: any) {

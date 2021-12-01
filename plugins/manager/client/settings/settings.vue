@@ -126,7 +126,7 @@ function isAvailable(name: string, remote: MarketProvider.Data) {
 }
 
 function getDelegateData(name: string, required: boolean): DelegateData {
-  const fulfilled = store.services.includes(name)
+  const fulfilled = name in store.services
   if (fulfilled) return { required, fulfilled }
   return {
     required,
@@ -152,7 +152,7 @@ const delegates = computed(() => {
 
 const depTip = computed(() => {
   const required = getKeywords('required')
-  if (required.some(name => !store.services.includes(name))) {
+  if (required.some(name => !store.services[name])) {
     return '存在未安装的依赖接口。'
   }
 
