@@ -1,5 +1,5 @@
 import { createReadStream } from 'fs'
-import { Bot, Adapter, camelCase, snakeCase, renameProperty, segment, assertProperty, Dict, Schema, App, Quester } from 'koishi'
+import { Bot, Adapter, camelCase, snakeCase, renameProperty, segment, assertProperty, Dict, Schema, Quester } from 'koishi'
 import * as Telegram from './types'
 import { AdapterConfig } from './utils'
 
@@ -74,6 +74,14 @@ export class TelegramBot extends Bot<BotConfig> {
     })
   }
 
+  /**
+   * Request telegram API (using post method actually)
+   * @param action method of telegram API, leading with a '/'
+   * @param params params in camelCase
+   * @param field file field key in fromData
+   * @param content file stream
+   * @returns Respond form telegram
+   */
   async get<T = any>(action: string, params = {}, field = '', content: Buffer = null): Promise<T> {
     this.logger.debug('[request] %s %o', action, params)
     const response = await this._request(action, snakeCase(params), field, content)
