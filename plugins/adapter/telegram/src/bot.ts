@@ -187,7 +187,8 @@ export class TelegramBot extends Bot<BotConfig> {
           if (currAssetType) await sendAsset()
 
           // handel current asset
-          const assetUrl = seg.data.file || seg.data.url
+          const assetUrl = seg.data.url
+
           if (!assetUrl) {
             this.logger.warn('asset segment with no url')
             break

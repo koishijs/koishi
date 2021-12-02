@@ -126,11 +126,10 @@ abstract class TelegramAdapter extends Adapter<BotConfig, AdapterConfig> {
         // https://github.com/ed-asriyan/tgs-to-gif
         // Currently use thumb only
         segments.push({ type: 'text', data: { content: `[${message.sticker.setName || 'sticker'} ${message.sticker.emoji || ''}]` } })
-      }
-      if (message.animation) segments.push({ type: 'image', data: await getFileData(message.animation.fileId) })
-      if (message.voice) segments.push({ type: 'audio', data: await getFileData(message.voice.fileId) })
-      if (message.video) segments.push({ type: 'video', data: await getFileData(message.video.fileId) })
-      if (message.document) segments.push({ type: 'file', data: await getFileData(message.document.fileId) })
+      } else if (message.animation) segments.push({ type: 'image', data: await getFileData(message.animation.fileId) })
+      else if (message.voice) segments.push({ type: 'audio', data: await getFileData(message.voice.fileId) })
+      else if (message.video) segments.push({ type: 'video', data: await getFileData(message.video.fileId) })
+      else if (message.document) segments.push({ type: 'file', data: await getFileData(message.document.fileId) })
 
       const msgText: string = message.text || message.caption
       segments.push(...parseText(msgText, message.entities || []))
