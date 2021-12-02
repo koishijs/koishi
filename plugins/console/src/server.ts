@@ -40,7 +40,7 @@ export class SocketHandle {
 export type Listener = (this: SocketHandle, ...args: any[]) => Awaitable<any>
 
 export namespace Console {
-  export interface Sources {}
+  export interface Services {}
 
   export interface Events {}
 }
@@ -48,7 +48,6 @@ export namespace Console {
 Context.service('console')
 
 export class Console {
-  readonly sources: Partial<Console.Sources> = {}
   readonly global: ClientConfig
   readonly entries: Dict<string> = {}
   readonly handles: Dict<SocketHandle> = {}
@@ -107,6 +106,19 @@ export class Console {
     this.listeners[event] = callback
   }
 
+  get services(): Console.Services {
+    return new Proxy({}, {
+      get(target, name) {
+        if (typeof name === 'symbol') return Reflect.get(target, name)
+        return Reflect.get(this.ctx[Context.current], 'console/' + name)
+      },
+      set(target, name, value) {
+        if (typeof name === 'symbol') return Reflect.set(target, name, value)
+        return Reflect.set(this.ctx[Context.current], 'console/' + name, value)
+      },
+    })
+  }
+
   connect() {}
 
   async start() {
@@ -127,8 +139,9 @@ export class Console {
   private onConnection = (socket: WebSocket) => {
     const channel = new SocketHandle(this, socket)
 
-    for (const key in this.sources) {
-      this.sources[key].get().then((value) => {
+    for (const key in this.ctx.app._services) {
+      if (!key.startsWith('console/')) continue
+      this.ctx[key].get().then((value) => {
         socket.send(JSON.stringify({ type: 'data', body: { key, value } }))
       })
     }

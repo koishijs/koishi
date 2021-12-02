@@ -150,12 +150,12 @@ export class MarketProvider extends DataSource<Dict<MarketProvider.Data>> {
 
   install = async (name: string) => {
     await this.useAgent(['install', name, '--loglevel', 'error'])
-    this.sources.packages.broadcast()
+    this.ctx.console.services.packages.broadcast()
   }
 
   uninstall = async (name: string) => {
     await this.useAgent(['remove', name, '--loglevel', 'error'])
-    this.sources.packages.broadcast()
+    this.ctx.console.services.packages.broadcast()
   }
 }
 

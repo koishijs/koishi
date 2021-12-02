@@ -11,7 +11,7 @@ declare const KOISHI_CONFIG: ClientConfig
 export const config = KOISHI_CONFIG
 
 type Store = {
-  [K in keyof Console.Sources]?: Console.Sources[K] extends DataSource<infer T> ? T : never
+  [K in keyof Console.Services]?: Console.Services[K] extends DataSource<infer T> ? T : never
 }
 
 export const store = reactive<Store>({})
@@ -93,7 +93,7 @@ export function registerView(options: ViewOptions) {
 interface RouteMetaExtension {
   icon?: string
   order?: number
-  fields?: readonly (keyof Console.Sources)[]
+  fields?: readonly (keyof Console.Services)[]
   position?: 'top' | 'bottom' | 'hidden'
 }
 
@@ -139,7 +139,7 @@ registerPage({
 // component helper
 
 export namespace Card {
-  function createFieldComponent(render: Function, fields: readonly (keyof Console.Sources)[] = [] as const) {
+  function createFieldComponent(render: Function, fields: readonly (keyof Console.Services)[] = [] as const) {
     return defineComponent({
       render: () => fields.every(key => store[key]) ? render() : null,
     })
@@ -149,7 +149,7 @@ export namespace Card {
     icon: string
     title: string
     type?: string
-    fields?: (keyof Console.Sources)[]
+    fields?: (keyof Console.Services)[]
     content: (store: Store) => any
   }
 
@@ -165,7 +165,7 @@ export namespace Card {
 
   export interface ChartOptions {
     title: string
-    fields?: (keyof Console.Sources)[]
+    fields?: (keyof Console.Services)[]
     options: (store: Store) => EChartsOption
   }
 

@@ -562,14 +562,7 @@ export namespace Context {
     bots: Adapter.BotList
   }
 
-  export interface Options {
-    dynamic?: boolean
-  }
-
-  export const Services: Dict<Options> = {}
-
-  export function service(key: keyof Services, options: Options = {}) {
-    Services[key] = options
+  export function service(key: keyof Services) {
     if (Object.prototype.hasOwnProperty.call(Context.prototype, key)) return
     const privateKey = Symbol(key)
     Object.defineProperty(Context.prototype, key, {

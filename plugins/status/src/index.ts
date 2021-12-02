@@ -27,6 +27,17 @@ declare module 'koishi' {
   }
 }
 
+declare module '@koishijs/plugin-console' {
+  namespace Console {
+    interface Services {
+      logs: LogProvider
+      meta: MetaProvider
+      profile: ProfileProvider
+      stats: StatisticsProvider
+    }
+  }
+}
+
 Tables.extend('channel', {
   name: 'string(50)',
   activity: 'json',
@@ -38,6 +49,7 @@ export * from './profile'
 export * from './stats'
 
 export const name = 'status'
+export const using = ['console']
 
 export interface Config extends MetaProvider.Config, ProfileProvider.Config, StatisticsProvider.Config {
   logger?: LogProvider.Config
@@ -52,7 +64,10 @@ export const Config = Schema.intersect([
   }).description('日志选项'),
 ])
 
-export const using = ['console']
+Context.service('console/logs')
+Context.service('console/meta')
+Context.service('console/profile')
+Context.service('console/stats')
 
 export function apply(ctx: Context, config: Config) {
   const filename = ctx.console.config.devMode ? '../client/index.ts' : '../dist/index.js'
