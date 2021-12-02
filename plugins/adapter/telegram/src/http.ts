@@ -1,4 +1,4 @@
-import { AxiosError } from 'axios'
+import axios, { AxiosError } from 'axios'
 import { Adapter, Session, camelCase, Logger, segment, sanitize, trimSlash, assertProperty, Context } from 'koishi'
 import { BotConfig, TelegramBot } from './bot'
 import * as Telegram from './types'
@@ -17,6 +17,13 @@ type GetUpdatesOptions = {
 
 abstract class TelegramAdapter extends Adapter<BotConfig, AdapterConfig> {
   static schema = BotConfig
+  constructor(ctx: Context, config: AdapterConfig) {
+    super(ctx, config)
+    this.config.request = this.config.request || {}
+    this.config.request.endpoint = this.config.request.endpoint || 'https://api.telegram.org'
+    this.http = ctx.http.extend(config.request)
+  }
+
   abstract start(): void
   abstract stop(): void
   /** Init telegram updates listening */
@@ -28,9 +35,9 @@ abstract class TelegramAdapter extends Adapter<BotConfig, AdapterConfig> {
       for (const key in params) {
         payload.append(key, params[key].toString())
       }
-      if (field) payload.append(field, content, filename)
+      if (field && content) payload.append(field, content, filename)
       try {
-        return bot.http.post(`/${action}`, payload, payload.getHeaders())
+        return await bot.http.post(`/${action}`, payload, payload.getHeaders())
       } catch (e) {
         return (e as AxiosError).response.data
       }
@@ -50,56 +57,85 @@ abstract class TelegramAdapter extends Adapter<BotConfig, AdapterConfig> {
     logger.debug('receive %s', JSON.stringify(update))
     const { selfId, token } = bot.config
     const session: Partial<Session> = { selfId }
-    if (update.message) {
-      const message = update.message
-      session.messageId = message.messageId.toString()
-      session.type = 'message'
-      session.timestamp = message.date
-      let msg
-      if (message.text) {
-        msg = message.text
-      } else if (message.caption) {
-        msg = message.caption
-      } else {
-        msg = ''
-      }
-      if (message.photo) {
-        const fid = message.photo[0].fileId
-        const data = await bot.http.get(`/getFile?file_id=${fid}`)
-        msg += segment.image(`${this.config.request.endpoint}/file/bot${token}/${data.result.file_path}`)
-      } else if (message.sticker) {
-        const fid = message.sticker.fileId
-        const data = await bot.http.get(`/getFile?file_id=${fid}`)
-        msg += segment.image(`${this.config.request.endpoint}/file/bot${token}/${data.result.file_path}`)
-      } else if (message.animation) {
-        const fid = message.animation.fileId
-        const data = await bot.http.get(`/getFile?file_id=${fid}`)
-        msg += segment.image(`${this.config.request.endpoint}/file/bot${token}/${data.result.file_path}`)
-      } else if (message.video) {
-        const fid = message.video.fileId
-        const data = await bot.http.get(`/getFile?file_id=${fid}`)
-        msg += segment.video(`${this.config.request.endpoint}/file/bot${token}/${data.result.file_path}`)
-      } else if (!message.text) {
-        msg += '[Unsupported message]'
-      }
-      for (const entity of message.entities || []) {
-        if (entity.type === 'mention') {
-          const name = msg.substr(entity.offset, entity.length)
-          if (name === '@' + bot.username) msg = msg.replace(name, segment.at(selfId))
+
+    function parseText(text: string, entities: Telegram.MessageEntity[]): segment[] {
+      let curr = 0
+      const segs: segment[] = []
+      for (const e of entities) {
+        const eText = text.substr(e.offset, e.length)
+        let handleCurrent = true
+        if (e.type === 'mention') {
+          if (eText[0] !== '@') throw new Error('Telegram mention does not start with @: ' + eText)
+          const atName = eText.slice(1)
+          if (eText === '@' + bot.username) segs.push({ type: 'at', data: { id: bot.selfId, name: atName } })
           // TODO handle @others
-        } else if (entity.type === 'text_mention') {
-          msg = msg.replace(msg.substr(entity.offset, entity.length), segment.at(entity.user.id))
+        } else if (e.type === 'text_mention') {
+          segs.push({ type: 'at', data: { id: e.user.id } })
+        } else {
+          handleCurrent = false
+        }
+        if (handleCurrent && e.offset > curr) {
+          segs.push({ type: 'text', data: { content: text.slice(curr, e.offset) } })
+          curr = e.offset + e.length
         }
       }
-      session.content = msg
+      if (curr < text?.length || 0) {
+        segs.push({ type: 'text', data: { content: text.slice(curr) } })
+      }
+      return segs
+    }
+    const message = update.message || update.editedMessage || update.channelPost || update.editedChannelPost
+    if (message) {
+      session.messageId = message.messageId.toString()
+      session.type = (update.message || update.channelPost) ? 'message' : 'message-updated'
+      session.timestamp = message.date
+      const segments: segment[] = []
+      if (message.replyToMessage) {
+        const replayText = message.replyToMessage.text || message.replyToMessage.caption
+        const parsedReply = parseText(replayText, message.replyToMessage.entities || [])
+        session.quote = {
+          messageId: message.replyToMessage.messageId.toString(),
+          author: TelegramBot.adaptUser(message.replyToMessage.from),
+          content: replayText ? segment.join(parsedReply) : undefined,
+        }
+        segments.push({ type: 'quote', data: { id: message.replyToMessage.messageId } })
+      }
+      if (message.location) {
+        segments.push({
+          type: 'location',
+          data: { lat: message.location.latitude, lon: message.location.longitude },
+        })
+      }
+      const getFileData = async (fileId) => {
+        try {
+          const file = await bot.get<Telegram.File>('getFile', { fileId })
+          const downloadUrl = `${this.config.request.endpoint}/file/bot${token}/${file.filePath}`
+          const res = await axios.get(downloadUrl, { responseType: 'arraybuffer' })
+          const base64 = `base64://` + Buffer.from(res.data, 'binary').toString('base64')
+          return { url: base64 }
+        } catch (e) {
+          logger.warn('get file error', e)
+        }
+      }
+      if (message.photo) {
+        const photo = message.photo.sort((s1, s2) => s2.fileSize - s1.fileSize)[0]
+        segments.push({ type: 'image', data: await getFileData(photo.fileId) })
+      }
+      if (message.sticker) segments.push({ type: 'image', data: await getFileData(message.sticker.fileId) })
+      if (message.animation) segments.push({ type: 'image', data: await getFileData(message.animation.fileId) })
+      if (message.video) segments.push({ type: 'video', data: await getFileData(message.video.fileId) })
+
+      const msgText: string = message.text || message.caption
+      segments.push(...parseText(msgText, message.entities || []))
+
+      session.content = segment.join(segments)
       session.userId = message.from.id.toString()
-      session.channelId = message.chat.id.toString()
       session.author = TelegramBot.adaptUser(message.from)
       if (message.chat.type === 'private') {
         session.subtype = 'private'
       } else {
         session.subtype = 'group'
-        session.guildId = session.channelId
+        session.channelId = session.guildId = message.chat.id.toString()
       }
     }
     logger.debug('receive %o', session)
@@ -116,11 +152,6 @@ export class HttpServer extends TelegramAdapter {
     } else {
       config.selfUrl = assertProperty(ctx.app.options, 'selfUrl')
     }
-
-    this.http = ctx.http.extend({
-      endpoint: 'https://api.telegram.org',
-      ...config.request,
-    })
   }
 
   async listenUpdates(bot: TelegramBot) {
@@ -155,13 +186,6 @@ export class HttpServer extends TelegramAdapter {
 export class HttpPolling extends TelegramAdapter {
   private offset: Record<string, number> = {}
   private isStopped: boolean
-  constructor(ctx: Context, config: AdapterConfig) {
-    super(ctx, config)
-    this.http = ctx.http.extend({
-      endpoint: 'https://api.telegram.org',
-      ...config.request,
-    })
-  }
 
   start(): void {
     this.isStopped = false
