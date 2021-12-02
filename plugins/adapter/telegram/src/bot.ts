@@ -1,7 +1,19 @@
+import fileType from 'file-type'
 import { createReadStream } from 'fs'
-import { Bot, Adapter, camelCase, snakeCase, renameProperty, segment, assertProperty, Dict, Schema, Quester } from 'koishi'
+import { Adapter, assertProperty, Bot, camelCase, Dict, Logger, Quester, renameProperty, Schema, segment, snakeCase } from 'koishi'
 import * as Telegram from './types'
 import { AdapterConfig } from './utils'
+
+const logger = new Logger('telegram')
+
+const prefixTypes = ['quote', 'card', 'anonymous', 'markdown']
+
+type TLAssetType =
+  | 'photo'
+  | 'audio'
+  | 'document'
+  | 'video'
+  | 'animation'
 
 export class SenderError extends Error {
   constructor(args: Dict<any>, url: string, retcode: number, selfId: string) {
@@ -36,15 +48,35 @@ export interface TelegramBot {
   _request?(action: string, params: Dict<any>, field?: string, content?: Buffer, filename?: string): Promise<TelegramResponse>
 }
 
-function maybeFile(payload: Dict<any>, field: string) {
+async function maybeFile(payload: Dict<any>, field: TLAssetType): Promise<[any, string?, Buffer?, string?]> {
   if (!payload[field]) return [payload]
   let content
+  let filename = 'file'
   const [schema, data] = payload[field].split('://')
   if (['base64', 'file'].includes(schema)) {
     content = (schema === 'base64' ? Buffer.from(data, 'base64') : createReadStream(data))
     delete payload[field]
   }
-  return [payload, field, content]
+  // add file extension for base64 document (general file)
+  if (field === 'document' && schema === 'base64') {
+    const type = await fileType.fromBuffer(Buffer.from(data, 'base64'))
+    if (!type) {
+      logger.warn('Can not infer file mime')
+    } else filename = `file.${type.ext}`
+  }
+  return [payload, field, content, filename]
+}
+
+async function isGif(url: string) {
+  if (url.toLowerCase().endsWith('.gif')) return true
+  const [schema, data] = url.split('://')
+  if (schema === 'base64') {
+    const type = await fileType.fromBuffer(Buffer.from(data, 'base64'))
+    if (!type) {
+      logger.warn('Can not infer file mime')
+    } else if (type.ext === 'gif') return true
+  }
+  return false
 }
 
 export class TelegramBot extends Bot<BotConfig> {
@@ -84,9 +116,9 @@ export class TelegramBot extends Bot<BotConfig> {
    * @param content file stream
    * @returns Respond form telegram
    */
-  async get<T = any, P = any>(action: string, params: P = undefined, field = '', content: Buffer = null): Promise<T> {
+  async get<T = any, P = any>(action: string, params: P = undefined, field = '', content: Buffer = null, filename = 'file'): Promise<T> {
     this.logger.debug('[request] %s %o', action, params)
-    const response = await this._request(action, snakeCase(params || {}), field, content)
+    const response = await this._request(action, snakeCase(params || {}), field, content, filename)
     this.logger.debug('[response] %o', response)
     const { ok, result } = response
     if (ok) return camelCase(result)
@@ -94,31 +126,91 @@ export class TelegramBot extends Bot<BotConfig> {
   }
 
   private async _sendMessage(chatId: string, content: string) {
-    const chain = segment.parse(content)
-    const payload = { chatId, caption: '', photo: '' }
-    let result: Telegram.Message
-    for (const node of chain) {
-      if (node.type === 'text') {
-        payload.caption += node.data.content
-      } else if (node.type === 'image') {
-        if (payload.photo) {
-          result = await this.get('sendPhoto', ...maybeFile(payload, 'photo'))
-          payload.caption = ''
-          payload.photo = ''
+
+
+    const payload: Record<string, any> = { chatId, caption: '' }
+    let currAssetType: TLAssetType = null
+    let lastMsg: Telegram.Message = null
+
+    const segs = segment.parse(content)
+    let currIdx = 0
+    while (currIdx < segs.length && prefixTypes.includes(segs[currIdx].type)) {
+      if (segs[currIdx].type === 'quote') {
+        payload.replyToMessage = true
+      } else if (segs[currIdx].type === 'anonymous') {
+        if (segs[currIdx].data.ignore === 'false') return null
+      } else if (segs[currIdx].type === 'markdown') {
+        payload.parseMode = 'MarkdownV2'
+      }
+      // else if (segs[currIdx].type === 'card') {}
+      ++currIdx
+    }
+
+    const sendAsset = async () => {
+      const assetApi = {
+        photo: 'sendPhoto',
+        audio: 'sendAudio',
+        document: 'sendDocument',
+        video: 'sendVideo',
+        animation: 'sendAnimation',
+      }
+      lastMsg = await this.get(assetApi[currAssetType], ...await maybeFile(payload, currAssetType))
+      currAssetType = null
+      delete payload[currAssetType]
+      delete payload.replyToMessage
+      payload.caption = ''
+    }
+
+    for (const seg of segs.slice(currIdx)) {
+      switch (seg.type) {
+        case 'text':
+          payload.caption += seg.data.content
+          break
+        case 'at': {
+          const atTarget = seg.data.name || seg.data.id || seg.data.role || seg.data.type
+          if (!atTarget) break
+          payload.caption += `@${atTarget} `
+          break
         }
-        payload.photo = node.data.url || node.data.file
-      } else {
-        payload.caption += '[Unsupported message]'
+        case 'sharp': {
+          const sharpTarget = seg.data.name || seg.data.id
+          if (!sharpTarget) break
+          payload.caption += `#${sharpTarget} `
+          break
+        }
+        case 'face':
+          this.logger.info("Telegram don't support face")
+          break
+        case 'image':
+        case 'audio':
+        case 'video':
+        case 'file': {
+          // send previous asset if there is any
+          if (currAssetType) await sendAsset()
+
+          // handel current asset
+          const assetUrl = seg.data.file || seg.data.url
+          if (!assetUrl) {
+            this.logger.warn('asset segment with no url')
+            break
+          }
+          if (seg.type === 'image') currAssetType = await isGif(assetUrl) ? 'animation' : 'photo'
+          else if (seg.type === 'file') currAssetType = 'document'
+          else currAssetType = seg.type
+          payload[currAssetType] = assetUrl
+          break
+        }
+        default:
+          this.logger.warn(`Unexpected asset type: ${seg.type}`)
+          return
       }
     }
-    if (payload.photo) {
-      result = await this.get('sendPhoto', ...maybeFile(payload, 'photo'))
-      payload.caption = ''
-      payload.photo = ''
-    } else if (payload.caption) {
-      result = await this.get('sendMessage', { chatId, text: payload.caption })
-    }
-    return result ? ('' + result.messageId) : null
+
+    // if something left in payload
+    if (currAssetType) await sendAsset()
+    if (payload.caption) lastMsg = await this.get('sendMessage', { chatId, text: payload.caption })
+
+    return lastMsg ? lastMsg.messageId.toString() : null
   }
 
   async sendMessage(channelId: string, content: string) {

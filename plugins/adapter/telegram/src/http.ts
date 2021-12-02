@@ -1,8 +1,8 @@
 import axios, { AxiosError } from 'axios'
-import { Adapter, Session, camelCase, Logger, segment, sanitize, trimSlash, assertProperty, Context } from 'koishi'
+import FormData from 'form-data'
+import { Adapter, assertProperty, camelCase, Context, Logger, sanitize, segment, Session, trimSlash } from 'koishi'
 import { BotConfig, TelegramBot } from './bot'
 import * as Telegram from './types'
-import FormData from 'form-data'
 import { AdapterConfig } from './utils'
 
 const logger = new Logger('telegram')
@@ -30,7 +30,7 @@ abstract class TelegramAdapter extends Adapter<BotConfig, AdapterConfig> {
   abstract listenUpdates(bot: TelegramBot): Promise<void>
 
   async connect(bot: TelegramBot): Promise<void> {
-    bot._request = async (action, params, field, content, filename = 'file') => {
+    bot._request = async (action, params, field, content, filename) => {
       const payload = new FormData()
       for (const key in params) {
         payload.append(key, params[key].toString())
@@ -121,9 +121,15 @@ abstract class TelegramAdapter extends Adapter<BotConfig, AdapterConfig> {
         const photo = message.photo.sort((s1, s2) => s2.fileSize - s1.fileSize)[0]
         segments.push({ type: 'image', data: await getFileData(photo.fileId) })
       }
-      if (message.sticker) segments.push({ type: 'image', data: await getFileData(message.sticker.fileId) })
+      if (message.sticker) {
+        // TODO: Convert tgs to gif
+        // https://github.com/ed-asriyan/tgs-to-gif
+        // Currently use thumb only
+        segments.push({ type: 'text', data: { content: `[${message.sticker.setName || 'sticker'} ${message.sticker.emoji || ''}]` } })
+      }
       if (message.animation) segments.push({ type: 'image', data: await getFileData(message.animation.fileId) })
       if (message.video) segments.push({ type: 'video', data: await getFileData(message.video.fileId) })
+      if (message.document) segments.push({ type: 'file', data: await getFileData(message.document.fileId) })
 
       const msgText: string = message.text || message.caption
       segments.push(...parseText(msgText, message.entities || []))
