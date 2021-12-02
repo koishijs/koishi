@@ -30,8 +30,8 @@ export class RegistryProvider extends DataSource<Dict<PluginData>> {
         : !plugin.name || plugin.name === 'apply' ? ''
         : capitalize(camelize(plugin.name)),
       parent: state.parent?.id,
+      using: state.using,
       disposables: state.disposables.length,
-      services: [...state.services],
     }
     for (const child of state.children) {
       this.traverse(child)
@@ -42,6 +42,6 @@ export class RegistryProvider extends DataSource<Dict<PluginData>> {
 export interface PluginData {
   name: string
   parent: string
-  services: string[]
+  using: readonly string[]
   disposables: number
 }

@@ -78,7 +78,7 @@ ctx.router.get('/path', (ctx, next) => {
 
 ### ctx.self(...values)
 ### ctx.user(...values)
-### ctx.group(...values)
+### ctx.guild(...values)
 ### ctx.channel(...values)
 ### ctx.platform(...values)
 

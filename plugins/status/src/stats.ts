@@ -88,6 +88,8 @@ const customTag = Symbol('custom-send')
 Session.prototype.send[customTag] = send
 
 export class StatisticsProvider extends DataSource<StatisticsProvider.Payload> {
+  static using = ['database'] as const
+
   sync: Synchronizer
   lastUpdate = new Date()
   updateHour = this.lastUpdate.getHours()
@@ -101,9 +103,7 @@ export class StatisticsProvider extends DataSource<StatisticsProvider.Payload> {
 
     ctx.on('exit', () => this.upload(true))
 
-    ctx.on('service/database', () => {
-      this.sync = ctx.database.createSynchronizer()
-    })
+    this.sync = ctx.database.createSynchronizer()
 
     ctx.on('disconnect', async () => {
       // rollback to default implementation to prevent infinite call stack
@@ -112,8 +112,6 @@ export class StatisticsProvider extends DataSource<StatisticsProvider.Payload> {
       }
       await this.upload(true)
     })
-
-    ctx = ctx.select('database')
 
     ctx.before('command', ({ command, session }) => {
       if (command.parent?.name !== 'test') {
@@ -154,7 +152,7 @@ export class StatisticsProvider extends DataSource<StatisticsProvider.Payload> {
     if (forced || +date - +this.lastUpdate > this.config.statsInternal || dateHour !== this.updateHour) {
       this.lastUpdate = date
       this.updateHour = dateHour
-      await this.sync?.upload(date)
+      await this.sync.upload(date)
     }
   }
 
@@ -233,7 +231,6 @@ export class StatisticsProvider extends DataSource<StatisticsProvider.Payload> {
   }
 
   async get() {
-    if (!this.sync) return
     const date = new Date()
     const dateNumber = Time.getDateNumber(date, date.getTimezoneOffset())
     if (dateNumber !== this.cachedDate) {

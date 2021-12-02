@@ -1,4 +1,4 @@
-import { App, Context, noop } from 'koishi'
+import { App, Context, Dict, noop } from 'koishi'
 import { expect } from 'chai'
 import { inspect } from 'util'
 import mock from '@koishijs/plugin-mock'
@@ -216,9 +216,12 @@ describe('Context API', () => {
       }
 
       function getHookSnapshot() {
-        const lists: any[][] = Object.values(app._hooks)
-        lists.unshift(app.state.disposables)
-        return lists.map(list => list.length)
+        const result: Dict<number> = {}
+        for (const name in app._hooks) {
+          result[name] = app._hooks[name].length
+        }
+        result._ = app.state.disposables.length
+        return result
       }
 
       app.plugin(plugin)

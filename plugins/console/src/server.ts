@@ -13,7 +13,6 @@ interface BaseConfig {
 
 export interface ClientConfig extends Required<BaseConfig> {
   version: string
-  database: boolean
   endpoint: string
   extensions: string[]
 }
@@ -65,17 +64,13 @@ export class Console {
 
     const { apiPath, uiPath, devMode, selfUrl } = config
     const endpoint = selfUrl + apiPath
-    this.global = { uiPath, endpoint, devMode, extensions: [], database: false, version }
+    this.global = { uiPath, endpoint, devMode, extensions: [], version }
 
     if (config.root === undefined) {
       config.root = resolve(__dirname, '..', devMode ? 'client' : 'dist')
     }
 
     this.server = ctx.router.ws(apiPath, this.onConnection)
-
-    ctx.on('service/database', () => {
-      this.global.database = !!ctx.database
-    })
 
     ctx.on('connect', () => this.start())
     ctx.on('disconnect', () => this.stop())

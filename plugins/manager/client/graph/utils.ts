@@ -46,7 +46,7 @@ export const graph = computed(() => {
   for (const id in nodes) {
     const node = nodes[id]
     if (typeof node.parent === 'string') {
-      addEdge('parent', nodes[node.parent], node)
+      addEdge('innocation', nodes[node.parent], node)
     }
   }
 
@@ -116,11 +116,11 @@ export const graph = computed(() => {
 
   for (const id in nodes) {
     const target = nodes[id]
-    target.services.forEach((name) => {
+    target.using.forEach((name) => {
       const id = store.services[name]
       let node = target
       while (node = nodes[node.parent]) {
-        if (node.services.includes(name) || node.id === id) return
+        if (node.using.includes(name) || node.id === id) return
       }
       const source = nodes[id]
       if (isAncestor(source, target) || isAncestor(target, source)) return
@@ -128,7 +128,6 @@ export const graph = computed(() => {
     })
   }
 
-  console.log(nodes)
   return { nodes, edges, width, height }
 })
 

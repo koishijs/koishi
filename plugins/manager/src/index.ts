@@ -38,6 +38,7 @@ declare module '@koishijs/plugin-console' {
 }
 
 export const name = 'manager'
+export const using = ['console']
 
 export interface Config extends MarketProvider.Config {}
 
@@ -46,32 +47,30 @@ export const Config = Schema.intersect([
 ])
 
 export function apply(ctx: Context, config: Config = {}) {
-  ctx.with(['console'], (ctx) => {
-    ctx.plugin(BotProvider)
-    ctx.plugin(MarketProvider, config)
-    ctx.plugin(AdapterProvider)
-    ctx.plugin(PackageProvider)
-    ctx.plugin(RegistryProvider)
-    ctx.plugin(ReleaseProvider)
-    ctx.plugin(ServiceProvider)
+  ctx.plugin(BotProvider)
+  ctx.plugin(MarketProvider, config)
+  ctx.plugin(AdapterProvider)
+  ctx.plugin(PackageProvider)
+  ctx.plugin(RegistryProvider)
+  ctx.plugin(ReleaseProvider)
+  ctx.plugin(ServiceProvider)
 
-    const filename = ctx.console.config.devMode ? '../client/index.ts' : '../dist/index.js'
-    ctx.console.addEntry(resolve(__dirname, filename))
+  const filename = ctx.console.config.devMode ? '../client/index.ts' : '../dist/index.js'
+  ctx.console.addEntry(resolve(__dirname, filename))
 
-    for (const event of ['install', 'dispose', 'reload', 'save'] as const) {
-      ctx.console.addListener(`plugin/${event}`, async ({ name, config }) => {
-        ctx.emit(`config/plugin-${event}`, name, config)
-      })
-    }
-
-    ctx.console.addListener('bot/create', async ({ platform, protocol, config }) => {
-      ctx.emit('config/bot-create', platform, { protocol, ...config })
+  for (const event of ['install', 'dispose', 'reload', 'save'] as const) {
+    ctx.console.addListener(`plugin/${event}`, async ({ name, config }) => {
+      ctx.emit(`config/plugin-${event}`, name, config)
     })
+  }
 
-    for (const event of ['remove', 'start', 'stop'] as const) {
-      ctx.console.addListener(`bot/${event}`, async ({ id }) => {
-        ctx.emit(`config/bot-${event}`, id)
-      })
-    }
+  ctx.console.addListener('bot/create', async ({ platform, protocol, config }) => {
+    ctx.emit('config/bot-create', platform, { protocol, ...config })
   })
+
+  for (const event of ['remove', 'start', 'stop'] as const) {
+    ctx.console.addListener(`bot/${event}`, async ({ id }) => {
+      ctx.emit(`config/bot-${event}`, id)
+    })
+  }
 }

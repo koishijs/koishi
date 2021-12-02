@@ -55,9 +55,9 @@ export class App extends Context {
     this.options = merge(options, App.defaultConfig)
     this.registry.set(null, {
       id: '',
+      using: [],
       children: [],
       disposables: [],
-      services: new Set(),
     })
 
     this.bots = new Adapter.BotList(this)

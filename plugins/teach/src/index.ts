@@ -48,6 +48,8 @@ declare module 'koishi' {
 Context.service('teach')
 
 class Teach {
+  static using = ['database']
+
   history: Record<number, Dialogue> = {}
 
   constructor(private ctx: Context, public config: Config) {
