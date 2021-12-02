@@ -88,7 +88,7 @@ abstract class TelegramAdapter extends Adapter<BotConfig, AdapterConfig> {
     if (message) {
       session.messageId = message.messageId.toString()
       session.type = (update.message || update.channelPost) ? 'message' : 'message-updated'
-      session.timestamp = message.date
+      session.timestamp = message.date * 1000
       const segments: segment[] = []
       if (message.replyToMessage) {
         const replayText = message.replyToMessage.text || message.replyToMessage.caption
@@ -128,6 +128,7 @@ abstract class TelegramAdapter extends Adapter<BotConfig, AdapterConfig> {
         segments.push({ type: 'text', data: { content: `[${message.sticker.setName || 'sticker'} ${message.sticker.emoji || ''}]` } })
       }
       if (message.animation) segments.push({ type: 'image', data: await getFileData(message.animation.fileId) })
+      if (message.voice) segments.push({ type: 'audio', data: await getFileData(message.voice.fileId) })
       if (message.video) segments.push({ type: 'video', data: await getFileData(message.video.fileId) })
       if (message.document) segments.push({ type: 'file', data: await getFileData(message.document.fileId) })
 
@@ -143,6 +144,14 @@ abstract class TelegramAdapter extends Adapter<BotConfig, AdapterConfig> {
         session.subtype = 'group'
         session.channelId = session.guildId = message.chat.id.toString()
       }
+    } else if (update.chatJoinRequest) {
+      session.timestamp = update.chatJoinRequest.date * 1000
+      session.type = 'guild-member-request'
+      session.messageId = `${update.chatJoinRequest.chat.id}@${update.chatJoinRequest.from.id}`
+      // Telegram join request does not have text
+      session.content = ''
+      session.channelId = update.chatJoinRequest.chat.id.toString()
+      session.guildId = session.channelId
     }
     logger.debug('receive %o', session)
     this.dispatch(new Session(bot, session))

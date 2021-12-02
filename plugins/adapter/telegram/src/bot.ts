@@ -126,8 +126,6 @@ export class TelegramBot extends Bot<BotConfig> {
   }
 
   private async _sendMessage(chatId: string, content: string) {
-
-
     const payload: Record<string, any> = { chatId, caption: '' }
     let currAssetType: TLAssetType = null
     let lastMsg: Telegram.Message = null
@@ -213,9 +211,9 @@ export class TelegramBot extends Bot<BotConfig> {
     return lastMsg ? lastMsg.messageId.toString() : null
   }
 
-  async sendMessage(channelId: string, content: string) {
+  async sendMessage(channelId: string, content: string, subtype: 'group' | 'private' = 'group') {
     if (!content) return
-    const session = this.createSession({ content, channelId, subtype: 'group', guildId: channelId })
+    const session = this.createSession({ content, channelId, subtype, guildId: channelId })
     if (await this.app.serial(session, 'before-send', session)) return
     session.messageId = await this._sendMessage(channelId, session.content)
     this.app.emit(session, 'send', session)
@@ -223,7 +221,7 @@ export class TelegramBot extends Bot<BotConfig> {
   }
 
   async sendPrivateMessage(userId: string, content: string) {
-    return this.sendMessage(userId, content)
+    return this.sendMessage(userId, content, 'private')
   }
 
   async getMessage() {
@@ -234,14 +232,14 @@ export class TelegramBot extends Bot<BotConfig> {
     await this.get('deleteMessage', { chatId, messageId })
   }
 
-  static adaptGroup(data: Telegram.Chat & Bot.Guild): Bot.Guild {
-    renameProperty(data, 'guildId', 'id')
-    renameProperty(data, 'guildName', 'title')
-    return data
+  static adaptGroup(data: Telegram.Chat): Bot.Guild {
+    renameProperty(data as any, 'guildId', 'id')
+    renameProperty(data as any, 'guildName', 'title')
+    return data as any
   }
 
   async getGuild(chatId: string): Promise<Bot.Guild> {
-    const data = await this.get('getChat', { chatId })
+    const data = await this.get<Telegram.Chat>('getChat', { chatId })
     return TelegramBot.adaptGroup(data)
   }
 
@@ -262,6 +260,13 @@ export class TelegramBot extends Bot<BotConfig> {
 
   setGroupLeave(chatId: string) {
     return this.get('leaveChat', { chatId })
+  }
+
+  async handleGuildMemberRequest(messageId: string, approve: boolean, comment?: string): Promise<void> {
+    const [chatId, userId] = messageId.split('@')
+    const method = approve ? 'approveChatJoinRequest' : 'declineChatJoinRequest'
+    const success = await this.get<boolean>(method, { chatId, userId })
+    if (!success) throw new Error(`handel guild member request field ${success}`)
   }
 
   async getLoginInfo() {
