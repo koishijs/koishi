@@ -116,12 +116,7 @@ export const graph = computed(() => {
 
   for (const id in nodes) {
     const target = nodes[id]
-    target.using.forEach((name) => {
-      const id = store.services[name]
-      let node = target
-      while (node = nodes[node.parent]) {
-        if (node.using.includes(name) || node.id === id) return
-      }
+    target.dependencies.forEach((id) => {
       const source = nodes[id]
       if (isAncestor(source, target) || isAncestor(target, source)) return
       addEdge('service', nodes[id], target)

@@ -13,6 +13,7 @@ export class RegistryProvider extends DataSource<Dict<PluginData>> {
 
     ctx.on('plugin-added', this.update)
     ctx.on('plugin-removed', this.update)
+    ctx.on('service', this.update)
     ctx.on('disconnect', this.update.cancel)
   }
 
@@ -31,7 +32,7 @@ export class RegistryProvider extends DataSource<Dict<PluginData>> {
         : capitalize(camelize(plugin.name)),
       parent: state.parent?.id,
       disposables: state.disposables.length,
-      dependencies: state.using.map(name => this.ctx.app._services[name]),
+      dependencies: state.using.map(name => this.ctx.app._services[name]).filter(x => x),
     }
     for (const child of state.children) {
       this.traverse(child)

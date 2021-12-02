@@ -1,4 +1,4 @@
-import { App, Context, Logger, noop, version, Dict, WebSocketLayer, Schema, Awaitable } from 'koishi'
+import { App, Context, Logger, noop, version, Dict, WebSocketLayer, Schema, Awaitable, Service } from 'koishi'
 import { resolve, extname } from 'path'
 import { promises as fs, Stats, createReadStream } from 'fs'
 import WebSocket from 'ws'
@@ -47,7 +47,7 @@ export namespace Console {
 
 Context.service('console')
 
-export class Console {
+export class Console extends Service {
   readonly global: ClientConfig
   readonly entries: Dict<string> = {}
   readonly handles: Dict<SocketHandle> = {}
@@ -56,10 +56,9 @@ export class Console {
 
   private vite: ViteDevServer
   private readonly server: WebSocketLayer
-  private readonly [Context.current]: Context
 
   constructor(public ctx: Context, public config: Console.Config) {
-    ctx.console = this
+    super(ctx, 'console', true)
 
     const { apiPath, uiPath, devMode, selfUrl } = config
     const endpoint = selfUrl + apiPath
@@ -70,9 +69,6 @@ export class Console {
     }
 
     this.server = ctx.router.ws(apiPath, this.onConnection)
-
-    ctx.on('connect', () => this.start())
-    ctx.on('disconnect', () => this.stop())
   }
 
   broadcast(type: string, body: any) {
@@ -89,12 +85,11 @@ export class Console {
   }
 
   addEntry(filename: string) {
-    const ctx = this[Context.current]
     const hash = Math.floor(Math.random() * (16 ** 8)).toString(16).padStart(8, '0')
     const key = `entry-${hash}.js`
     this.entries[key] = filename
     this.triggerReload()
-    ctx.on('disconnect', () => {
+    this.caller.on('disconnect', () => {
       delete this.entries[key]
       this.triggerReload()
     })
@@ -108,13 +103,13 @@ export class Console {
 
   get services(): Console.Services {
     return new Proxy({}, {
-      get(target, name) {
+      get: (target, name) => {
         if (typeof name === 'symbol') return Reflect.get(target, name)
-        return Reflect.get(this.ctx[Context.current], 'console/' + name)
+        return Reflect.get(this.caller, 'console/' + name)
       },
-      set(target, name, value) {
+      set: (target, name, value) => {
         if (typeof name === 'symbol') return Reflect.set(target, name, value)
-        return Reflect.set(this.ctx[Context.current], 'console/' + name, value)
+        return Reflect.set(this.caller, 'console/' + name, value)
       },
     })
   }
@@ -139,9 +134,10 @@ export class Console {
   private onConnection = (socket: WebSocket) => {
     const channel = new SocketHandle(this, socket)
 
-    for (const key in this.ctx.app._services) {
-      if (!key.startsWith('console/')) continue
-      this.ctx[key].get().then((value) => {
+    for (const name in this.ctx.app._services) {
+      if (!name.startsWith('console/')) continue
+      this.ctx[name].get().then((value) => {
+        const key = name.slice(8)
         socket.send(JSON.stringify({ type: 'data', body: { key, value } }))
       })
     }
