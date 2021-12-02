@@ -52,13 +52,13 @@ export const Config = Schema.intersect([
   }).description('日志选项'),
 ])
 
+export const using = ['console']
+
 export function apply(ctx: Context, config: Config) {
-  ctx.with(['console'], (ctx) => {
-    const filename = ctx.console.config.devMode ? '../client/index.ts' : '../dist/index.js'
-    ctx.console.addEntry(resolve(__dirname, filename))
-    ctx.plugin(LogProvider, config.logger)
-    ctx.plugin(MetaProvider, config)
-    ctx.plugin(ProfileProvider, config)
-    ctx.plugin(StatisticsProvider, config)
-  })
+  const filename = ctx.console.config.devMode ? '../client/index.ts' : '../dist/index.js'
+  ctx.console.addEntry(resolve(__dirname, filename))
+  ctx.plugin(LogProvider, config.logger)
+  ctx.plugin(MetaProvider, config)
+  ctx.plugin(ProfileProvider, config)
+  ctx.plugin(StatisticsProvider, config)
 }

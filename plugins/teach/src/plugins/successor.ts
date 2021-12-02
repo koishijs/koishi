@@ -108,12 +108,12 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
     const { succOverwrite, successors, dialogues } = argv
     if (!successors) return
     const predecessors = dialogues.map(dialogue => '' + dialogue.id)
-    const successorDialogues = await Dialogue.get(ctx, successors)
+    const successorDialogues = await ctx.teach.get(successors)
     const newTargets = successorDialogues.map(d => d.id)
     argv.unknown = difference(successors, newTargets)
 
     if (succOverwrite) {
-      for (const dialogue of await Dialogue.get(ctx, { predecessors })) {
+      for (const dialogue of await ctx.teach.get({ predecessors })) {
         if (!newTargets.includes(dialogue.id)) {
           newTargets.push(dialogue.id)
           successorDialogues.push(dialogue)
@@ -131,7 +131,7 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
       }
     }
 
-    await Dialogue.update(targets, argv)
+    await ctx.teach.update(targets, argv)
   })
 
   ctx.on('dialogue/after-modify', async ({ options: { createSuccessor }, dialogues, session }) => {
@@ -155,7 +155,7 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
       }
     }
     const dialogueMap: Dict<Dialogue> = {}
-    for (const dialogue of await Dialogue.get(ctx, [...predecessors])) {
+    for (const dialogue of await ctx.teach.get([...predecessors])) {
       dialogueMap[dialogue.id] = dialogue
     }
     for (const dialogue of dialogues) {
@@ -199,7 +199,7 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
     }).map(d => d.id)
     if (!predecessors.length) return
 
-    const successors = (await Dialogue.get(ctx, {
+    const successors = (await ctx.teach.get({
       ...test,
       question: undefined,
       answer: undefined,

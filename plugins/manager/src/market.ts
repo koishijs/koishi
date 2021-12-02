@@ -1,5 +1,5 @@
 import { Context, Dict, version as currentVersion, Schema, Quester, Logger } from 'koishi'
-import { Package } from './shared'
+import { Package } from './utils'
 import { resolve } from 'path'
 import { existsSync } from 'fs'
 import { satisfies } from 'semver'
@@ -9,10 +9,6 @@ import spawn from 'cross-spawn'
 
 declare module '@koishijs/plugin-console' {
   namespace Console {
-    interface Sources {
-      market: MarketProvider
-    }
-
     interface Events {
       install(name: string): Promise<number>
     }

@@ -1,13 +1,6 @@
-import {
-  App, Context, Observed, Query, Session, Tables,
-  clone, defineProperty, isInteger, observe, difference, pick,
-} from 'koishi'
+import { App, Session, Tables, isInteger, observe, difference } from 'koishi'
 
 declare module 'koishi' {
-  interface App {
-    teachHistory: Record<number, Dialogue>
-  }
-
   interface EventMap {
     'dialogue/permit'(argv: Dialogue.Argv, dialogue: Dialogue): boolean
     'dialogue/flag'(flag: keyof typeof Dialogue.Flag): void
@@ -65,26 +58,7 @@ export namespace Dialogue {
   export type ModifyType = '添加' | '修改' | '删除'
   export type Field = keyof Dialogue
 
-  export interface AuthorityConfig {
-    /** 可访问教学系统，默认值为 2 */
-    base?: number
-    /** 可修改非自己创建的问答，默认值为 3 */
-    admin?: number
-    /** 可修改上下文设置，默认值为 3 */
-    context?: number
-    /** 可修改锁定的问答，默认值为 4 */
-    frozen?: number
-    /** 可使用正则表达式，默认值为 3 */
-    regExp?: number
-    /** 可设置作者或匿名，默认值为 2 */
-    writer?: number
-    /** 可触发教学问答，默认值为 1 */
-    receive?: number
-  }
-
   export interface Config {
-    prefix?: string
-    authority?: AuthorityConfig
     historyTimeout?: number
   }
 
@@ -104,91 +78,6 @@ export namespace Dialogue {
     substitute = 8,
     /** 补集：上下文匹配时取补集 */
     complement = 16,
-  }
-
-  export function get(ctx: Context, test: DialogueTest): Promise<Dialogue[]>
-  export function get<K extends Field>(ctx: Context, ids: number[], fields?: K[]): Promise<Pick<Dialogue, K>[]>
-  export async function get(ctx: Context, test: DialogueTest | number[], fields?: Field[]) {
-    if (Array.isArray(test)) {
-      const dialogues = await ctx.database.get('dialogue', test, fields)
-      dialogues.forEach(d => defineProperty(d, '_backup', clone(d)))
-      return dialogues
-    } else {
-      const query: Query.Expr<Dialogue> = { $and: [] }
-      ctx.emit('dialogue/test', test, query)
-      const dialogues = await ctx.database.get('dialogue', query)
-      dialogues.forEach(d => defineProperty(d, '_backup', clone(d)))
-      return dialogues.filter((data) => {
-        if (!test.groups || test.partial) return true
-        return !(data.flag & Flag.complement) === test.reversed || !equal(test.groups, data.groups)
-      })
-    }
-  }
-
-  export async function update(dialogues: Observed<Dialogue>[], argv: Argv) {
-    const data: Partial<Dialogue>[] = []
-    const fields = new Set<Field>(['id'])
-    for (const { $diff } of dialogues) {
-      for (const key in $diff) {
-        fields.add(key as Field)
-      }
-    }
-    for (const dialogue of dialogues) {
-      if (!Object.keys(dialogue.$diff).length) {
-        argv.skipped.push(dialogue.id)
-      } else {
-        dialogue.$diff = {}
-        argv.updated.push(dialogue.id)
-        data.push(pick(dialogue, fields))
-        addHistory(dialogue._backup, '修改', argv, false)
-      }
-    }
-    await argv.app.database.upsert('dialogue', data)
-  }
-
-  export async function stats(ctx: Context): Promise<Stats> {
-    return ctx.database.aggregate('dialogue', {
-      dialogues: { $count: 'id' },
-      questions: { $count: 'question' },
-    })
-  }
-
-  export async function remove(dialogues: Dialogue[], argv: Argv, revert = false) {
-    const ids = dialogues.map(d => d.id)
-    argv.app.database.remove('dialogue', ids)
-    for (const id of ids) {
-      addHistory(argv.dialogueMap[id], '删除', argv, revert)
-    }
-    return ids
-  }
-
-  export async function revert(dialogues: Dialogue[], argv: Argv) {
-    const created = dialogues.filter(d => d._type === '添加')
-    const edited = dialogues.filter(d => d._type !== '添加')
-    await remove(created, argv, true)
-    await recover(edited, argv)
-    return `问答 ${dialogues.map(d => d.id).sort((a, b) => a - b)} 已回退完成。`
-  }
-
-  export async function recover(dialogues: Dialogue[], argv: Argv) {
-    await argv.app.database.upsert('dialogue', dialogues)
-    for (const dialogue of dialogues) {
-      addHistory(dialogue, '修改', argv, true)
-    }
-  }
-
-  export function addHistory(dialogue: Dialogue, type: ModifyType, argv: Argv, revert: boolean) {
-    if (revert) return delete argv.app.teachHistory[dialogue.id]
-    argv.app.teachHistory[dialogue.id] = dialogue
-    const time = Date.now()
-    defineProperty(dialogue, '_timestamp', time)
-    defineProperty(dialogue, '_operator', argv.session.userId)
-    defineProperty(dialogue, '_type', type)
-    setTimeout(() => {
-      if (argv.app.teachHistory[dialogue.id]?._timestamp === time) {
-        delete argv.app.teachHistory[dialogue.id]
-      }
-    }, argv.config.historyTimeout ?? 600000)
   }
 
   export interface Argv {

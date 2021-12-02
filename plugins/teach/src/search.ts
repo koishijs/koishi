@@ -36,7 +36,7 @@ declare module './utils' {
 
 export default function apply(ctx: Context) {
   ctx.command('teach.status').action(async () => {
-    const { questions, dialogues } = await Dialogue.stats(ctx)
+    const { questions, dialogues } = await ctx.teach.stats()
     return `共收录了 ${questions} 个问题和 ${dialogues} 个回答。`
   })
 
@@ -82,7 +82,7 @@ export default function apply(ctx: Context) {
       const { original, parsed } = argv.config._stripQuestion(answer.slice(11, -1).trimStart())
       if (parsed in argv.questionMap) continue
       // TODO multiple tests in one query
-      const dialogues = argv.questionMap[parsed] = await Dialogue.get(ctx, {
+      const dialogues = argv.questionMap[parsed] = await ctx.teach.get({
         ...test,
         regexp: null,
         question: parsed,
@@ -161,7 +161,7 @@ async function showSearch(argv: Dialogue.Argv) {
 
   const test: DialogueTest = { question, answer, regexp, original }
   if (app.bail('dialogue/before-search', argv, test)) return
-  const dialogues = await Dialogue.get(app, test)
+  const dialogues = await argv.app.teach.get(test)
 
   if (pipe) {
     if (!dialogues.length) return '没有搜索到任何问答。'

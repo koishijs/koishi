@@ -22,6 +22,7 @@ export class App extends Context {
   _shortcuts: Command.Shortcut[] = []
   _hooks: Record<keyof any, [Context, (...args: any[]) => any][]> = {}
   _sessions: Dict<Session> = Object.create(null)
+  _services: Dict<string> = Object.create(null)
   _userCache = new SharedCache<User.Observed<any>>()
   _channelCache = new SharedCache<Channel.Observed<any>>()
 
@@ -29,7 +30,7 @@ export class App extends Context {
   public options: App.Config
   public isActive = false
   public registry = new Plugin.Registry()
-  public bots = new Adapter.BotList(this)
+  public bots: Adapter.BotList
 
   private _nameRE: RegExp
 
@@ -53,9 +54,13 @@ export class App extends Context {
     if (options.selfUrl) options.selfUrl = trimSlash(options.selfUrl)
     this.options = merge(options, App.defaultConfig)
     this.registry.set(null, {
+      id: '',
+      using: [],
       children: [],
       disposables: [],
     })
+
+    this.bots = new Adapter.BotList(this)
 
     this._commands.resolve = (key) => {
       if (!key) return

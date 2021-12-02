@@ -39,6 +39,7 @@ function formatContext(session: Partial<Session>) {
 }
 
 export const name = 'schedule'
+export const using = ['database']
 
 export interface Config {
   minInterval?: number

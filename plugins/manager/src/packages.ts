@@ -2,15 +2,7 @@ import { Adapter, App, Context, Dict, omit, pick, Schema } from 'koishi'
 import { DataSource } from '@koishijs/plugin-console'
 import { readdir, readFile } from 'fs/promises'
 import { dirname } from 'path'
-import { Package } from './shared'
-
-declare module '@koishijs/plugin-console' {
-  namespace Console {
-    interface Sources {
-      packages: PackageProvider
-    }
-  }
-}
+import { Package } from './utils'
 
 function unwrap(module: any) {
   return module.default || module

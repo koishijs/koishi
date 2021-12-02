@@ -14,7 +14,7 @@ declare module '../receiver' {
   }
 }
 
-export default function apply(ctx: Context, config: Dialogue.Config) {
+export default function probability(ctx: Context, config: Dialogue.Config) {
   const { appellationTimeout = 20000 } = config
 
   ctx.command('teach')

@@ -23,6 +23,7 @@ export namespace Plugin {
     name?: string
     apply: Function<T>
     Config?: Schema
+    using?: readonly (keyof Context.Services)[]
   }
 
   export type Config<T extends Plugin> =
@@ -40,6 +41,7 @@ export namespace Plugin {
     parent?: State
     context?: Context
     config?: T
+    using?: readonly (keyof Context.Services)[]
     schema?: Schema
     plugin?: Plugin
     children: Plugin[]
@@ -79,6 +81,10 @@ function isConstructor(func: Function) {
   // generator function or malformed definition
   if (func.prototype.constructor !== func) return false
   return true
+}
+
+function isApplicable(object: Plugin) {
+  return object && typeof object === 'object' && typeof object.apply === 'function'
 }
 
 type Filter = (session: Session) => boolean
@@ -216,42 +222,8 @@ export class Context {
     return this.app.registry.get(this._plugin)
   }
 
-  private teleport<T extends Dict>(modules: T, callback: Plugin.Function<T>) {
-    const states: Plugin.State[] = []
-    for (const key in modules) {
-      const state = this.app.registry.get(modules[key])
-      if (!state) return
-      states.push(state)
-    }
-    const apply = (ctx: Context) => callback(ctx, modules)
-    const dispose = () => this.dispose(apply)
-    this.plugin(apply)
-    states.every(state => state.disposables.push(dispose))
-    this.on('disconnect', () => {
-      states.every(state => remove(state.disposables, dispose))
-    })
-  }
-
-  private loadDeps<K extends keyof Modules>(deps: readonly K[]) {
-    const modules: Pick<Modules, K> = {}
-    for (const dep of deps) {
-      modules[dep] = Modules.require(dep)
-      if (!modules[dep]) return
-    }
-    return modules
-  }
-
-  with<K extends keyof Modules>(deps: readonly K[], callback: Plugin.Function<Pick<Modules, K>>) {
-    const modules = this.loadDeps(deps)
-    if (!modules) return
-    this.teleport(modules, callback)
-    this.on('plugin-added', (added) => {
-      const modules = this.loadDeps(deps)
-      if (Object.values(modules).includes(added)) {
-        this.teleport(modules, callback)
-      }
-    })
-    return this
+  with(using: readonly (keyof Context.Services)[], plugin: Plugin.Function<void>) {
+    return this.plugin({ using, apply: plugin })
   }
 
   plugin<T extends keyof Modules>(plugin: T, options?: boolean | Plugin.ModuleConfig<Modules[T]>): this
@@ -270,40 +242,49 @@ export class Context {
       return this
     }
 
-    const createContext = () => {
-      const ctx = new Context(this.filter, this.app, plugin).select(options)
-      const schema = plugin['Config'] || plugin['schema']
-      if (schema) options = schema(options)
-      this.app.registry.set(plugin, {
-        plugin,
-        schema,
-        id: Random.id(),
-        context: this,
-        config: options,
-        parent: this.state,
-        children: [],
-        disposables: [],
-      })
-      this.state.children.push(plugin)
-      this.emit('plugin-added', plugin)
-      return ctx
+    if (typeof plugin !== 'function' && !isApplicable(plugin)) {
+      throw new Error('invalid plugin, expect function or object with an "apply" method')
     }
 
-    if (typeof plugin === 'function') {
-      const ctx = createContext()
-      if (isConstructor(plugin)) {
+    const ctx = new Context(this.filter, this.app, plugin).select(options)
+    const schema = plugin['Config'] || plugin['schema']
+    const using = plugin['using'] || []
+    if (schema) options = schema(options)
+
+    this.app.registry.set(plugin, {
+      plugin,
+      schema,
+      using,
+      id: Random.id(),
+      context: this,
+      config: options,
+      parent: this.state,
+      children: [],
+      disposables: [],
+    })
+
+    const dispose = this.on('service', async (name) => {
+      if (!using.includes(name)) return
+      await Promise.allSettled(ctx.state.disposables.slice(1).map(dispose => dispose()))
+      callback()
+    })
+
+    this.state.children.push(plugin)
+    this.emit('plugin-added', plugin)
+    ctx.state.disposables.push(dispose)
+
+    const callback = () => {
+      if (using.some(name => !this[name])) return
+      if (typeof plugin !== 'function') {
+        plugin.apply(ctx, options)
+      } else if (isConstructor(plugin)) {
         new plugin(ctx, options)
       } else {
         plugin(ctx, options)
       }
-    } else if (plugin && typeof plugin === 'object' && typeof plugin.apply === 'function') {
-      const ctx = createContext()
-      plugin.apply(ctx, options)
-    } else {
-      this.app.registry.delete(plugin)
-      throw new Error('invalid plugin, expect function or object with an "apply" method')
     }
 
+    callback()
     return this
   }
 
@@ -313,7 +294,7 @@ export class Context {
     if (!state) return
     await Promise.allSettled([
       ...state.children.slice().map(plugin => this.dispose(plugin)),
-      ...state.disposables.map(dispose => dispose()),
+      ...state.disposables.slice().map(dispose => dispose()),
     ]).finally(() => {
       this.app.registry.delete(plugin)
       remove(state.parent.children, plugin)
@@ -404,8 +385,6 @@ export class Context {
     } else if (name === 'disconnect') {
       this.state.disposables[method](listener)
       return () => remove(this.state.disposables, listener)
-    } else if (typeof name === 'string' && name.startsWith('service/')) {
-      if (this[name.slice(9)]) return listener(), () => false
     }
 
     const hooks = this.app._hooks[name] ||= []
@@ -417,7 +396,10 @@ export class Context {
     }
 
     hooks[method]([this, listener])
-    const dispose = () => this.off(name, listener)
+    const dispose = () => {
+      remove(this.state.disposables, dispose)
+      return this.off(name, listener)
+    }
     this.state.disposables.push(dispose)
     return dispose
   }
@@ -525,11 +507,11 @@ export class Context {
 
   getSelfIds(type?: string, assignees?: string[]): Dict<string[]> {
     if (type) {
-      assignees ||= this.app.bots.filter(bot => bot.platform === type).map(bot => bot.selfId)
+      assignees ||= this.bots.filter(bot => bot.platform === type).map(bot => bot.selfId)
       return { [type]: assignees }
     }
     const platforms: Dict<string[]> = {}
-    for (const bot of this.app.bots) {
+    for (const bot of this.bots) {
       (platforms[bot.platform] ||= []).push(bot.selfId)
     }
     return platforms
@@ -591,19 +573,30 @@ export namespace Context {
     if (Object.prototype.hasOwnProperty.call(Context.prototype, key)) return
     const privateKey = Symbol(key)
     Object.defineProperty(Context.prototype, key, {
-      get() {
+      get(this: Context) {
         const value = this.app[privateKey]
         if (!value) return
         defineProperty(value, Context.current, this)
         return value
       },
-      set(value) {
-        if (this.app[privateKey] && !Services[key].dynamic) {
-          this.logger(key).warn('service is overwritten')
-        }
+      set(this: Context, value) {
+        if (this.app[privateKey] === value) return
         defineProperty(this.app, privateKey, value)
-        this.emit('service')
-        this.emit('service/' + key)
+        this.app._services[key] = this.state.id
+        this.emit('service', key)
+        if (value) {
+          const dispose = () => {
+            if (this.app[privateKey] !== value) return
+            this[key] = null
+            delete this.app._services[key]
+          }
+          this.state.disposables.push(dispose)
+          this.on('service', (name) => {
+            if (name !== key) return
+            dispose()
+            remove(this.state.disposables, dispose)
+          })
+        }
       },
     })
   }
@@ -624,17 +617,13 @@ type SessionEventMap = {
     : (session: Session.Payload<K>) => void
 }
 
-type DelegateEventMap = {
-  [K in keyof Context.Services as `service/${K}`]: () => void
-}
-
 type EventName = keyof EventMap
 type OmitSubstring<S extends string, T extends string> = S extends `${infer L}${T}${infer R}` ? `${L}${R}` : never
 type BeforeEventName = OmitSubstring<EventName & string, 'before-'>
 
 export type BeforeEventMap = { [E in EventName & string as OmitSubstring<E, 'before-'>]: EventMap[E] }
 
-export interface EventMap extends SessionEventMap, DelegateEventMap {
+export interface EventMap extends SessionEventMap {
   [Context.middleware]: Middleware
 
   // Koishi events
@@ -658,7 +647,7 @@ export interface EventMap extends SessionEventMap, DelegateEventMap {
   'before-connect'(): Awaitable<void>
   'connect'(): Awaitable<void>
   'disconnect'(): Awaitable<void>
-  'service'(): void
+  'service'(name: keyof Context.Services): void
   'adapter'(): void
   'bot-added'(bot: Bot): void
   'bot-removed'(bot: Bot): void

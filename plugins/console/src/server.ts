@@ -5,7 +5,6 @@ import WebSocket from 'ws'
 import open from 'open'
 import { v4 } from 'uuid'
 import type { ViteDevServer } from 'vite'
-import { ServiceProvider } from './provider'
 
 interface BaseConfig {
   devMode?: boolean
@@ -14,7 +13,6 @@ interface BaseConfig {
 
 export interface ClientConfig extends Required<BaseConfig> {
   version: string
-  database: boolean
   endpoint: string
   extensions: string[]
 }
@@ -42,9 +40,7 @@ export class SocketHandle {
 export type Listener = (this: SocketHandle, ...args: any[]) => Awaitable<any>
 
 export namespace Console {
-  export interface Sources {
-    services: ServiceProvider
-  }
+  export interface Sources {}
 
   export interface Events {}
 }
@@ -68,7 +64,7 @@ export class Console {
 
     const { apiPath, uiPath, devMode, selfUrl } = config
     const endpoint = selfUrl + apiPath
-    this.global = { uiPath, endpoint, devMode, extensions: [], database: false, version }
+    this.global = { uiPath, endpoint, devMode, extensions: [], version }
 
     if (config.root === undefined) {
       config.root = resolve(__dirname, '..', devMode ? 'client' : 'dist')
@@ -76,14 +72,8 @@ export class Console {
 
     this.server = ctx.router.ws(apiPath, this.onConnection)
 
-    ctx.on('service/database', () => {
-      this.global.database = !!ctx.database
-    })
-
     ctx.on('connect', () => this.start())
     ctx.on('disconnect', () => this.stop())
-
-    ctx.plugin(ServiceProvider)
   }
 
   broadcast(type: string, body: any) {

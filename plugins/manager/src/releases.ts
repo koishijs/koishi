@@ -2,14 +2,6 @@ import { Context } from 'koishi'
 import { DataSource } from '@koishijs/plugin-console'
 import { components } from '@octokit/openapi-types'
 
-declare module '@koishijs/plugin-console' {
-  namespace Console {
-    interface Sources {
-      releases: ReleaseProvider
-    }
-  }
-}
-
 type Release = components['schemas']['release']
 
 export class ReleaseProvider extends DataSource<Release[]> {

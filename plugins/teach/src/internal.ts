@@ -23,7 +23,6 @@ template.set('teach', {
 })
 
 export default function apply(ctx: Context, config: Dialogue.Config) {
-  defineProperty(ctx.app, 'teachHistory', {})
 
   ctx.command('teach')
     .option('ignoreHint', '-I  忽略智能提示')
