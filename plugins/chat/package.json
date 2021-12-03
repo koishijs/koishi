@@ -33,6 +33,6 @@
     "koishi": "^4.0.0-beta.3"
   },
   "devDependencies": {
-    "@koishijs/plugin-console": "^1.0.0-beta.3"
+    "@koishijs/plugin-console": "^1.0.0-beta.4"
   }
 }
