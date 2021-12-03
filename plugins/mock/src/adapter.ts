@@ -48,7 +48,6 @@ export class MockAdapter extends Adapter<BotConfig> {
   constructor(ctx: Context, config: MockAdapter.Config) {
     super(ctx, config)
     this.app = ctx.app
-    this.app.isActive = true
     ctx.mock = this
     ctx.bots.adapters.mock = this
 

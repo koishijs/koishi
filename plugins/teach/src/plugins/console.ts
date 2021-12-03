@@ -22,43 +22,39 @@ interface QuestionData {
 }
 
 export default class TeachConsole {
-  static using = ['console'] as const
+  static using = ['console/meta', 'console/stats'] as const
 
   constructor(ctx: Context, config: Dialogue.Config = {}) {
     const filename = ctx.console.config.devMode ? '../../client/index.ts' : '../../dist/index.js'
     ctx.console.addEntry(resolve(__dirname, filename))
 
-    ctx.with(['console/meta'], (ctx) => {
-      ctx.console.services.meta.extend(() => ctx.teach.stats())
+    const { stats, meta } = ctx.console.services
+
+    ctx.on('dialogue/before-send', ({ session, dialogue }) => {
+      session._sendType = 'dialogue'
+      stats.sync.addDaily('dialogue', dialogue.id)
+      stats.upload()
     })
 
-    ctx.with(['console/stats'], (ctx) => {
-      const { stats } = ctx.console.services
+    meta.extend(() => ctx.teach.stats())
 
-      ctx.on('dialogue/before-send', ({ session, dialogue }) => {
-        session._sendType = 'dialogue'
-        stats.sync.addDaily('dialogue', dialogue.id)
-        stats.upload()
-      })
-
-      stats.extend(async (payload, data) => {
-        const dialogueMap = stats.average(data.daily.map(data => data.dialogue))
-        const dialogues = await ctx.database.get('dialogue', Object.keys(dialogueMap).map(i => +i), ['id', 'original'])
-        const questionMap: Record<string, QuestionData> = {}
-        for (const dialogue of dialogues) {
-          const { id, original: name } = dialogue
-          if (name.includes('[CQ:') || name.startsWith('hook:')) continue
-          if (!questionMap[name]) {
-            questionMap[name] = {
-              name,
-              value: dialogueMap[id],
-            }
-          } else {
-            questionMap[name].value += dialogueMap[id]
+    stats.extend(async (payload, data) => {
+      const dialogueMap = stats.average(data.daily.map(data => data.dialogue))
+      const dialogues = await ctx.database.get('dialogue', Object.keys(dialogueMap).map(i => +i), ['id', 'original'])
+      const questionMap: Record<string, QuestionData> = {}
+      for (const dialogue of dialogues) {
+        const { id, original: name } = dialogue
+        if (name.includes('[CQ:') || name.startsWith('hook:')) continue
+        if (!questionMap[name]) {
+          questionMap[name] = {
+            name,
+            value: dialogueMap[id],
           }
+        } else {
+          questionMap[name].value += dialogueMap[id]
         }
-        payload.questions = Object.values(questionMap)
-      })
+      }
+      payload.questions = Object.values(questionMap)
     })
   }
 }

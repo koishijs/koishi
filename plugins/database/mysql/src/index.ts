@@ -112,7 +112,10 @@ class MysqlDatabase extends Database {
         if (meta?.type === 'string') {
           return field.string()
         } else if (meta?.type === 'json') {
-          return JSON.parse(field.string()) || meta.initial
+          const source = field.string()
+          return source
+            ? JSON.parse(source)
+            : meta.initial
         } else if (meta?.type === 'list') {
           const source = field.string()
           return source ? source.split(',') : []
