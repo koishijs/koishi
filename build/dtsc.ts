@@ -52,11 +52,14 @@ async function bundle(path: string) {
 
   let prolog = '', cap: RegExpExecArray
   let current: string, temporary: string[]
-  let identifier: string
+  let identifier: string, isExportDefault: boolean
   const platforms: Record<string, Record<string, string[]>> = {}
   const output = content.split(EOL).filter((line) => {
     // Phase 1: collect informations
-    if (temporary) {
+    if (isExportDefault) {
+      if (line === '    }') isExportDefault = false
+      return false
+    } else if (temporary) {
       if (line === '}') return temporary = null
       temporary.push(line)
     } else if (cap = /^declare module ["'](.+)["'] \{( \})?$/.exec(line)) {
@@ -104,7 +107,9 @@ async function bundle(path: string) {
     } else if (line.startsWith('///')) {
       if (!coreTargets.includes(path) && line !== referenceHack) prolog += line + EOL
     } else if (line.startsWith('    export default ')) {
-      return current === 'index'
+      if (current === 'index') return true
+      if (line.endsWith('{')) isExportDefault = true
+      return false
     } else {
       return line.trim() !== 'export {};'
     }
@@ -135,7 +140,7 @@ async function bundle(path: string) {
       return identifier ? identifier = '' : '}'
     } else {
       if (identifier) line = line.slice(4)
-      return line.replace(/^((class|namespace) .+ \{)$/, (_) => `export ${_}`)
+      return line.replace(/^((class|namespace|interface) .+ \{)$/, (_) => `export ${_}`)
     }
   }).filter(line => line).join(EOL)
 
