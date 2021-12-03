@@ -9,10 +9,10 @@ export interface Node extends PluginData {
   id: string
   col?: number
   row?: number
-  bound: Bound
   prev: Node[]
   next: Node[]
-  complexity: number
+  visited?: boolean
+  anchored?: boolean
 }
 
 export interface Edge {
@@ -35,18 +35,9 @@ export const graph = computed(() => {
     const data = store.registry[id]
     nodes[id] = {
       id,
-      bound: [],
+      ...data,
       prev: [],
       next: [],
-      complexity: data.disposables + 1,
-      ...data,
-    }
-  }
-
-  for (const id in nodes) {
-    const node = nodes[id]
-    if (typeof node.parent === 'string') {
-      addEdge('innocation', nodes[node.parent], node)
     }
   }
 
@@ -56,72 +47,74 @@ export const graph = computed(() => {
     target.prev.push(source)
   }
 
-  function translate(node: Node, offset: number) {
-    node.row += offset
-    for (const child of node.next) {
-      translate(child, offset)
+  for (const id in nodes) {
+    const node = nodes[id]
+    if (typeof node.parent === 'string') {
+      addEdge('invocation', nodes[node.parent], node)
+    }
+    for (const id of node.dependencies) {
+      addEdge('dependency', nodes[id], node)
     }
   }
 
-  function layout(node: Node) {
-    const parent = nodes[node.parent]
-    node.col = parent ? parent.col + 1 : 0
-
-    node.next.forEach((child, index) => {
-      layout(child)
-      node.complexity += child.complexity
-
-      // adjust position
-      let offset = -Infinity
-      for (let index = 0; index < Math.min(child.bound.length, node.bound.length); index++) {
-        offset = Math.max(offset, node.bound[index][1] - child.bound[index][0])
-      }
-      if (offset === -Infinity) offset = 0
-      if (offset > 0) {
-        translate(child, offset)
-        for (let index = 0; index < child.bound.length; index++) {
-          child.bound[index][0] += offset
-          child.bound[index][1] += offset
-        }
-      } else if (offset < 0) {
-        while (index > 0) {
-          index -= 1
-          translate(node.next[index], -offset)
-        }
-        for (let index = 0; index < node.bound.length; index++) {
-          node.bound[index][0] -= offset
-          node.bound[index][1] -= offset
-        }
-      }
-      for (let index = 0; index < child.bound.length; index++) {
-        if (node.bound[index]) {
-          node.bound[index][1] = child.bound[index][1]
-        } else {
-          node.bound.push(child.bound[index])
-        }
-      }
-    })
-
-    const row = node.bound.length ? (node.bound[0][0] + node.bound[0][1] - 1) / 2 : 0
-    node.bound.unshift([row, row + 1])
-    node.row = row
-  }
-
   const root = nodes['']
-  layout(root)
-  const rowMax = root.bound.length - 1
-  const colMax = Math.max(...root.bound.map(p => p[1])) - 1
-  const width = (rowMax * gridWidth + nodeWidth) * 16
-  const height = (colMax * gridHeight + nodeHeight) * 16
+  const queue: Node[] = [root]
+  const matrix: Node[][] = []
+  root.col = 0
+  let colMax = 0, rowMax = 0
 
-  for (const id in nodes) {
-    const target = nodes[id]
-    target.dependencies.forEach((id) => {
-      const source = nodes[id]
-      if (isAncestor(source, target) || isAncestor(target, source)) return
-      addEdge('service', nodes[id], target)
-    })
+  while (queue.length) {
+    const node = queue.shift()
+    const column = matrix[node.col] ||= []
+    node.visited = true
+    column.push(node)
+    colMax = Math.max(colMax, node.col)
+    rowMax = Math.max(rowMax, column.length - 1)
+    for (const child of node.next) {
+      if (child.col || child.prev.some(node => !node.visited)) continue
+      queue.push(child)
+      child.col = node.col + 1
+    }
   }
+
+  for (let index = matrix.length - 1; index >= 0; --index) {
+    const column = matrix[index]
+    const offset = (rowMax - column.length + 1) / 2
+    column.forEach((node, index) => {
+      if (!node.next.length) {
+        node.row = index + offset
+        return
+      }
+      let max = -Infinity
+      let min = Infinity
+      for (const child of node.next) {
+        max = Math.max(max, child.row)
+        min = Math.min(min, child.row)
+      }
+      node.anchored = true
+      node.row = (max + min) / 2
+    })
+    column.sort((a, b) => a.row - b.row)
+    console.log(column.map(node => `${node.name || 'Anonymous'} ${node.row}`).join('\n'))
+    let left = 0
+    while (left < column.length - 1) {
+      let right = left + 1
+      if (column[right].row - column[left].row >= 1) {
+        left++
+        continue
+      }
+      while (right < column.length - 1 && column[right + 1].row - column[right].row <= 1) right++
+      while (left > 0 && column[left].row - column[left - 1].row <= 1) left--
+      const middle = (column[left].row + column[right].row) / 2
+      for (let i = left; i <= right; ++i) {
+        column[i].row = middle - (left + right) / 2 + i
+      }
+    }
+  }
+
+  console.log(matrix)
+  const width = (colMax * gridWidth + nodeWidth) * 16
+  const height = (rowMax * gridHeight + nodeHeight) * 16
 
   return { nodes, edges, width, height }
 })
@@ -145,7 +138,7 @@ export function getPath(edge: Edge) {
 
   const xSource = source.col * gridWidth + nodeWidth
   const xTarget = target.col * gridWidth
-  const xMiddle = (xSource + xTarget) / 2
+  const xMiddle = xSource + (gridWidth - nodeWidth) / 2
   const ySource = source.row * gridHeight + nodeHeight / 2
   const yTarget = target.row * gridHeight + nodeHeight / 2
   if (ySource === yTarget) {
