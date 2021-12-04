@@ -36,12 +36,15 @@ export interface TelegramResponse {
 export interface BotConfig extends Bot.BaseConfig {
   selfId?: string
   token?: string
-  pollingInterval?: number
+  pollingTimeout?: number | true
 }
 
 export const BotConfig: Schema<BotConfig> = Schema.object({
   token: Schema.string().description('机器人的用户令牌。').required(),
-  pollingInterval: Schema.number().description('通过长轮询获取更新时间隔，单位为秒。设置即不使用 webhook 获取更新。'),
+  pollingTimeout: Schema.union([
+    Schema.number(),
+    Schema.const<true>(true),
+  ]).description('通过长轮询获取更新时请求的超时。单位为秒；true 为使用默认值 1 分钟。详情请见 Telegram API 中 getUpdate 的参数 timeout。不设置即使用 webhook 获取更新。'),
 })
 
 export interface TelegramBot {

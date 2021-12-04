@@ -229,7 +229,7 @@ export class HttpPolling extends TelegramAdapter {
     const polling = async () => {
       const updates = await bot.get<Telegram.Update[], GetUpdatesOptions>('getUpdates', {
         offset: this.offset[selfId] + 1,
-        timeout: 30,
+        timeout: bot.config.pollingTimeout === true ? 60 : bot.config.pollingTimeout,
       })
       for (const e of updates) {
         this.offset[selfId] = Math.max(this.offset[selfId], e.updateId)
