@@ -106,7 +106,7 @@ export class PackageProvider extends DataSource<Dict<PackageProvider.Data>> {
     const state = this.ctx.app.registry.get(exports)
     result.id = state?.id
     result.config = state?.config
-    result.schema = exports?.Config
+    result.schema = exports?.Config || exports?.schema
 
     // get config for disabled plugins
     if (!result.config) {

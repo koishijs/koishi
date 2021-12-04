@@ -1,6 +1,6 @@
 import { App, Dict } from 'koishi'
 import { Socket } from 'net'
-import * as http from 'http'
+import { ServerResponse, IncomingMessage } from 'http'
 
 export namespace Webhook {
   export interface Response {
@@ -26,13 +26,13 @@ export class Webhook {
 
   private receive(method: string, path: string, headers: Dict<any>, content: string) {
     const socket = new Socket()
-    const req = new http.IncomingMessage(socket)
+    const req = new IncomingMessage(socket)
     req.url = path
     req.method = method
     Object.assign(req.headers, headers)
     req.headers['content-length'] = '' + content.length
     return new Promise<Webhook.Response>((resolve) => {
-      const res = new http.ServerResponse(req)
+      const res = new ServerResponse(req)
       let body = ''
       res.write = (chunk: any) => {
         body += chunk
