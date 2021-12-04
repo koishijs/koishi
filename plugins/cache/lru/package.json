@@ -31,7 +31,7 @@
     "lru"
   ],
   "peerDependencies": {
-    "koishi": "^4.0.0-beta.3"
+    "koishi": "^4.0.0-beta.4"
   },
   "dependencies": {
     "lru-cache": "^6.0.0"

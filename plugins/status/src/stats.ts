@@ -8,14 +8,6 @@ declare module 'koishi' {
   }
 }
 
-declare module '@koishijs/plugin-console' {
-  namespace Console {
-    interface Sources {
-      stats: StatisticsProvider
-    }
-  }
-}
-
 export interface Synchronizer {
   groups: Dict<number>
   daily: Record<Synchronizer.DailyField, Dict<number>>
@@ -79,7 +71,7 @@ export interface GroupData {
 const send = Session.prototype.send
 Session.prototype.send = function (this: Session, ...args) {
   if (args[0] && this._sendType && this.app.console) {
-    this.app.console.sources.stats.sync.hourly[this._sendType] += 1
+    this.app.console.services.stats.sync.hourly[this._sendType] += 1
   }
   return send.apply(this, args)
 }

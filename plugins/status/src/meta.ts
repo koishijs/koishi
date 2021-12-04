@@ -7,14 +7,6 @@ declare module 'koishi' {
   }
 }
 
-declare module '@koishijs/plugin-console' {
-  namespace Console {
-    interface Sources {
-      meta: MetaProvider
-    }
-  }
-}
-
 Tables.extend('user', {
   lastCall: 'timestamp',
 })

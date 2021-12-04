@@ -33,15 +33,9 @@ Context.service('cache')
 Context.service('http')
 Context.service('router')
 
-function requireDefault(id: string) {
-  const module = require(id)
-  return module.default || module
-}
-
 const prepare = App.prototype.prepare
 App.prototype.prepare = function (this: App, ...args) {
   this.http = Quester.create(this.options.request)
-  this.plugin(requireDefault('@koishijs/plugin-cache-lru'))
   prepare.call(this, ...args)
   Router.prepare(this)
 }

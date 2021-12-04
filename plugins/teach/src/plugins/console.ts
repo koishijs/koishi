@@ -22,10 +22,13 @@ interface QuestionData {
 }
 
 export default class TeachConsole {
-  static using = ['console']
+  static using = ['console/meta', 'console/stats'] as const
 
   constructor(ctx: Context, config: Dialogue.Config = {}) {
-    const { stats, meta } = ctx.console.sources
+    const filename = ctx.console.config.devMode ? '../../client/index.ts' : '../../dist/index.js'
+    ctx.console.addEntry(resolve(__dirname, filename))
+
+    const { stats, meta } = ctx.console.services
 
     ctx.on('dialogue/before-send', ({ session, dialogue }) => {
       session._sendType = 'dialogue'
@@ -53,8 +56,5 @@ export default class TeachConsole {
       }
       payload.questions = Object.values(questionMap)
     })
-
-    const filename = ctx.console.config.devMode ? '../../client/index.ts' : '../../dist/index.js'
-    ctx.console.addEntry(resolve(__dirname, filename))
   }
 }

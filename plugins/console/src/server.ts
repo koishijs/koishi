@@ -1,4 +1,4 @@
-import { App, Context, Logger, noop, version, Dict, WebSocketLayer, Schema, Awaitable } from 'koishi'
+import { App, Context, Logger, noop, version, Dict, WebSocketLayer, Schema, Awaitable, Service } from 'koishi'
 import { resolve, extname } from 'path'
 import { promises as fs, Stats, createReadStream } from 'fs'
 import WebSocket from 'ws'
@@ -40,15 +40,14 @@ export class SocketHandle {
 export type Listener = (this: SocketHandle, ...args: any[]) => Awaitable<any>
 
 export namespace Console {
-  export interface Sources {}
+  export interface Services {}
 
   export interface Events {}
 }
 
 Context.service('console')
 
-export class Console {
-  readonly sources: Partial<Console.Sources> = {}
+export class Console extends Service {
   readonly global: ClientConfig
   readonly entries: Dict<string> = {}
   readonly handles: Dict<SocketHandle> = {}
@@ -57,10 +56,9 @@ export class Console {
 
   private vite: ViteDevServer
   private readonly server: WebSocketLayer
-  private readonly [Context.current]: Context
 
   constructor(public ctx: Context, public config: Console.Config) {
-    ctx.console = this
+    super(ctx, 'console', true)
 
     const { apiPath, uiPath, devMode, selfUrl } = config
     const endpoint = selfUrl + apiPath
@@ -71,9 +69,6 @@ export class Console {
     }
 
     this.server = ctx.router.ws(apiPath, this.onConnection)
-
-    ctx.on('connect', () => this.start())
-    ctx.on('disconnect', () => this.stop())
   }
 
   broadcast(type: string, body: any) {
@@ -90,12 +85,11 @@ export class Console {
   }
 
   addEntry(filename: string) {
-    const ctx = this[Context.current]
     const hash = Math.floor(Math.random() * (16 ** 8)).toString(16).padStart(8, '0')
     const key = `entry-${hash}.js`
     this.entries[key] = filename
     this.triggerReload()
-    ctx.on('disconnect', () => {
+    this.caller.on('disconnect', () => {
       delete this.entries[key]
       this.triggerReload()
     })
@@ -105,6 +99,19 @@ export class Console {
   addListener(event: string, callback: Listener): void
   addListener(event: string, callback: Listener) {
     this.listeners[event] = callback
+  }
+
+  get services(): Console.Services {
+    return new Proxy({}, {
+      get: (target, name) => {
+        if (typeof name === 'symbol') return Reflect.get(target, name)
+        return Reflect.get(this.caller, 'console/' + name)
+      },
+      set: (target, name, value) => {
+        if (typeof name === 'symbol') return Reflect.set(target, name, value)
+        return Reflect.set(this.caller, 'console/' + name, value)
+      },
+    })
   }
 
   connect() {}
@@ -127,8 +134,10 @@ export class Console {
   private onConnection = (socket: WebSocket) => {
     const channel = new SocketHandle(this, socket)
 
-    for (const key in this.sources) {
-      this.sources[key].get().then((value) => {
+    for (const name in this.ctx.app._services) {
+      if (!name.startsWith('console/')) continue
+      this.ctx[name].get().then((value) => {
+        const key = name.slice(8)
         socket.send(JSON.stringify({ type: 'data', body: { key, value } }))
       })
     }

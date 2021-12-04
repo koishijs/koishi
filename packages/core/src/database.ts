@@ -45,19 +45,24 @@ export interface Database extends Query.Methods {}
 type UserWithPlatform<T extends string, K extends string> = Pick<User, K & User.Field> & Record<T, string>
 
 export abstract class Service {
-  protected abstract start(): Awaitable<void>
-  protected abstract stop(): Awaitable<void>
+  protected start(): Awaitable<void> {}
+  protected stop(): Awaitable<void> {}
 
-  constructor(protected ctx: Context, key: keyof Context.Services) {
+  constructor(protected ctx: Context, key: keyof Context.Services, immediate?: boolean) {
+    if (immediate) ctx[key] = this as never
+
     ctx.on('connect', async () => {
       await this.start()
-      ctx[key] = this as never
+      if (!immediate) ctx[key] = this as never
     })
 
     ctx.on('disconnect', async () => {
       await this.stop()
-      ctx[key] = null
     })
+  }
+
+  get caller(): Context {
+    return this.ctx[Context.current] || this.ctx
   }
 }
 

@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/test-utils",
   "description": "Test utilities for Koishi",
-  "version": "8.0.0-beta.3",
+  "version": "8.0.0-beta.4",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "engines": {
@@ -42,6 +42,6 @@
     "chai": "^4.3.4",
     "chai-as-promised": "^7.1.1",
     "chai-shape": "^1.0.0",
-    "koishi": "^4.0.0-beta.3"
+    "koishi": "^4.0.0-beta.4"
   }
 }

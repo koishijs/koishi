@@ -112,7 +112,8 @@ class MysqlDatabase extends Database {
         if (meta?.type === 'string') {
           return field.string()
         } else if (meta?.type === 'json') {
-          return JSON.parse(field.string()) || meta.initial
+          const source = field.string()
+          return source ? JSON.parse(source) : meta.initial
         } else if (meta?.type === 'list') {
           const source = field.string()
           return source ? source.split(',') : []
@@ -161,7 +162,7 @@ class MysqlDatabase extends Database {
     // orm definitions
     for (const key in fields) {
       if (keys.includes(key)) continue
-      const { initial, nullable = initial === undefined || initial === null } = fields[key]
+      const { initial, nullable = true } = fields[key]
       let def = escapeId(key)
       if (key === primary && autoInc) {
         def += ' int unsigned not null auto_increment'

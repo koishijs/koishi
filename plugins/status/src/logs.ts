@@ -4,14 +4,6 @@ import { resolve } from 'path'
 import { mkdirSync, readdirSync } from 'fs'
 import { FileHandle, open, rm } from 'fs/promises'
 
-declare module '@koishijs/plugin-console' {
-  namespace Console {
-    interface Sources {
-      logs: LogProvider
-    }
-  }
-}
-
 export class LogProvider extends DataSource<string[]> {
   root: string
   date: string

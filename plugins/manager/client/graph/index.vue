@@ -6,7 +6,7 @@
         @mouseenter="current = id" @mouseleave="current = null">
         <div class="content">
           <div class="title">{{ node.name || 'Anonymous' }}</div>
-          <div>复杂度：{{ node.complexity }}</div>
+          <div>复杂度：{{ node.disposables }}</div>
         </div>
         <screw v-if="node.prev.length" placement="left"></screw>
         <screw v-if="node.next.length" placement="right"></screw>
@@ -32,22 +32,20 @@ import screw from './screw.vue'
 
 const current = ref<string | number>(null)
 
-function isActive(node: Node) {
-  const selected = graph.value.nodes[current.value]
-  return isAncestor(selected, node) || isAncestor(node, selected)
-}
-
 function getEdgeClass(edge: Edge) {
+  const selected = graph.value.nodes[current.value]
   return {
-    active: isActive(edge.source) && isActive(edge.target),
     [edge.type]: true,
+    active: isAncestor(selected, edge.source) && isAncestor(selected, edge.target)
+      || isAncestor(edge.source, selected) && isAncestor(edge.target, selected),
   }
 }
 
 function getNodeClass(node: Node) {
+  const selected = graph.value.nodes[current.value]
   return {
     node: true,
-    active: isActive(node),
+    active: isAncestor(selected, node) || isAncestor(node, selected),
   }
 }
 
@@ -81,6 +79,7 @@ function getNodeClass(node: Node) {
   }
 
   &.active .node:not(.active) {
+    z-index: -10;
     background-color: var(--page-bg);
     box-shadow: unset;
 
@@ -91,7 +90,7 @@ function getNodeClass(node: Node) {
 }
 
 .edge-container {
-  z-index: -1;
+  z-index: -20;
   position: absolute;
 
   path {
@@ -99,7 +98,7 @@ function getNodeClass(node: Node) {
     transition: stroke 0.3s ease;
   }
 
-  path.service {
+  path.dependency {
     stroke-dasharray: 0.5 0.5;
   }
 
@@ -108,6 +107,7 @@ function getNodeClass(node: Node) {
   }
 
   &.highlight {
+    z-index: -5;
     path {
       stroke: transparent;
     }

@@ -90,7 +90,8 @@ useEventListener(window, 'pointerup', (e: PointerEvent) => {
 }, true)
 
 useEventListener(draggable, 'wheel', (e: WheelEvent) => {
-  if (e.deltaX || !e.deltaY) return
+  if (e.deltaX || !e.deltaY || !e.ctrlKey) return
+  e.preventDefault()
   const index = Math.log2(scale.value)
   const newIndex = Math.min(1, Math.max(-1, index - e.deltaY / 100))
   const newScale = Math.pow(2, newIndex)

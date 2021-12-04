@@ -138,7 +138,7 @@ Database.extend(MongoDatabase, {
     const { primary, fields } = table
     if (!Array.isArray(primary) && table.autoInc && !(primary in data)) {
       const [latest] = await this.db.collection(name).find().sort(primary, -1).limit(1).toArray()
-      data[primary] = latest ? latest[primary] + 1 : 1
+      data[primary] = latest ? +latest[primary] + 1 : 1
       if (KoishiTables.Field.string.includes(fields[primary].type)) {
         data[primary] += ''
       }
