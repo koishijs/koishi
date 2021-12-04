@@ -97,9 +97,6 @@ export class Router extends KoaRouter {
   static prepare(app: App) {
     app.options.baseDir ||= process.cwd()
 
-    const { port, host } = app.options
-    if (!port) return
-
     // create server
     const koa = new Koa()
     app.router = new Router()
@@ -113,11 +110,15 @@ export class Router extends KoaRouter {
     })
 
     app.on('connect', () => {
+      const { port, host } = app.options
+      if (!port) return
+
       app._httpServer.listen(port, host)
       app.logger('app').info('server listening at %c', `http://${host || 'localhost'}:${port}`)
     })
 
     app.on('disconnect', () => {
+      if (!app.options.port) return
       app.logger('app').info('http server closing')
       app._wsServer?.close()
       app._httpServer?.close()
