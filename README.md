@@ -158,7 +158,7 @@ Koishi 完全基于 TypeScript 开发，拥有顶级的类型支持，丰富的�
 | [2bot](https://github.com/idlist/2bot-v4) | 一个很 2 的 FFXIV bot |
 | [koishi-nestjs](https://github.com/koishijs/koishi-nestjs) | 在 [Nest.js](https://nestjs.com/) 中使用 Koishi 开发规模化机器人应用 |
 | [onebot-lb](https://github.com/purerosefallen/onebot-lb) | OneBot 负载均衡器 |
-| [Afanyiyu/qa-bot](https://github.com/Afanyiyu/qa-bot) | 基于 plugin-teach 魔改的问答机器人，适用于客服/知识库等场景 |
+| [Afanyiyu/qa-bot](https://github.com/Afanyiyu/qa-bot) | 基于 plugin-teach 魔改的问答机器人，适用于客服 / 知识库等场景 |
 
 ## 使用协议
 
