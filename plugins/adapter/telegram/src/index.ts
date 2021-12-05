@@ -7,15 +7,13 @@ declare module 'koishi' {
     'adapter-telegram': typeof import('.')
   }
 }
+
+export { TelegramBot } from './bot'
 export const webhookAdapter = Adapter.define('telegram', TelegramBot, HttpServer)
 export const pollingAdapter = Adapter.define('telegram', TelegramBot, HttpPolling)
-export { TelegramBot } from './bot'
-export default webhookAdapter // TODO: remove this line and uncomment following lines
-
-// TODO: fix type error
-// export default Adapter.define('telegram', TelegramBot, {
-//   webhook: HttpServer,
-//   polling: HttpPolling,
-// }, ({ pollingTimeout }) => {
-//   return pollingTimeout !== undefined ? 'polling' : 'webhook'
-// })
+export default Adapter.define('telegram', TelegramBot, {
+  webhook: HttpServer,
+  polling: HttpPolling,
+}, ({ pollingTimeout }) => {
+  return pollingTimeout !== undefined ? 'polling' : 'webhook'
+})
