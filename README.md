@@ -148,6 +148,9 @@ Koishi 完全基于 TypeScript 开发，拥有顶级的类型支持，丰富的�
 | [tex](https://github.com/koishijs/koishi-plugin-tex) | TeX 渲染 |
 | [tools](https://github.com/koishijs/koishi-plugin-tools) | 小功能合集 |
 | [ygocard](https://code.mycard.moe/3rdeye/koishi-plugin-ygocard) | [YGOPro](https://github.com/Fluorohydride/ygopro) 卡查 |
+| [thesaurus](https://code.mycard.moe/3rdeye/koishi-plugin-thesaurus) | 基于 [AnimeThesaurus](https://github.com/Kyomotoi/AnimeThesaurus) 的机器人聊天插件 |
+| [ygotournament](https://code.mycard.moe/3rdeye/koishi-plugin-ygotournament) | [YGOPro](https://github.com/Fluorohydride/ygopro) 比赛主持辅助 |
+| [tabulate](https://code.mycard.moe/3rdeye/koishi-plugin-tabulate) | YGOCore 战队联盟友谊赛排表姬 |
 
 ### 社区项目
 
@@ -158,6 +161,8 @@ Koishi 完全基于 TypeScript 开发，拥有顶级的类型支持，丰富的�
 | [2bot](https://github.com/idlist/2bot-v4) | 一个很 2 的 FFXIV bot |
 | [koishi-nestjs](https://github.com/koishijs/koishi-nestjs) | 在 [Nest.js](https://nestjs.com/) 中使用 Koishi 开发规模化机器人应用 |
 | [onebot-lb](https://github.com/purerosefallen/onebot-lb) | OneBot 负载均衡器 |
+| [koishi-thirdeye](https://code.mycard.moe/3rdeye/koishi-thirdeye) | 装饰器以及 DI 风格的 Koishi 插件开发框架 |
+| [koishi-bootstrap](https://code.mycard.moe/3rdeye/koishi-bootstrap) | Koishi 的 Docker 启动器 |
 
 ## 使用协议
 
