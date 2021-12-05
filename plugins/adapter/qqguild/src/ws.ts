@@ -10,14 +10,14 @@ export interface AdapterConfig extends Adapter.WebSocketClient.Config, App.Confi
 
 export const AdapterConfig: Schema<AdapterConfig> = Schema.intersect([
   Schema.object({
-    env: Schema.union(['production', 'development'])
-      .description('环境')
-      .default('production'),
-    host: Schema.string()
-      .description('强制覆盖根路径')
+    sandbox: Schema.boolean()
+      .description('是否开启沙盒')
+      .default(true),
+    endpoint: Schema.string()
+      .description('api 入口地址')
       .default('https://api.sgroup.qq.com/'),
     authType: Schema.union(['bot', 'bearer'])
-      .description('验证方式，目前还不支持 bearer 验证方式。')
+      .description('验证方式')
       .default('bot'),
   }),
   Adapter.WebSocketClient.Config,
@@ -39,7 +39,7 @@ const createSession = (bot: QQGuildBot, msg: Message) => {
   session.channelId = msg.channelId
   session.subtype = 'group'
   session.content = msg.content
-    .replace(/<@(.+)>/, (_, $1) => segment.at($1))
+    .replace(/<@!(.+)>/, (_, $1) => segment.at($1))
     .replace(/<#(.+)>/, (_, $1) => segment.sharp($1))
   return new Session(bot, session)
 }
