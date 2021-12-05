@@ -41,11 +41,11 @@ QQ 频道官方 SDK 适配器，基于 `@qq-guild-sdk/core` 实现。
 
 ### bot.$innerBot
 
-该属性为 `qq-guild-sdk` 的 `Bot` 实例。
+该属性为 `qq-guild-sdk` 的 `Bot` 实例。详细可参考 [qq-guild-sdk 文档](https://nwylzw.github.io/qq-guild-sdk/api) 。
 
 ## 常见问题
 
-* Q: 如何申请测试频道?
-* A: [申请测试频道问卷](https://docs.qq.com/form/page/DZVF3RFJnTGF0Y3Nk?_w_tencentdocx_form=1)
-* Q: 如何申请测试(私域)频道不校验语料?
-* A: [私域频道问卷](https://wj.qq.com/s2/9379748/ed13/)
+- Q: 如何申请测试频道?
+- A: [申请测试频道问卷](https://docs.qq.com/form/page/DZVF3RFJnTGF0Y3Nk?_w_tencentdocx_form=1)
+- Q: 如何申请测试(私域)频道不校验语料?
+- A: [私域频道问卷](https://wj.qq.com/s2/9379748/ed13/)
