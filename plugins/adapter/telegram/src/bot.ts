@@ -48,7 +48,7 @@ export const BotConfig: Schema<BotConfig> = Schema.object({
 })
 
 export interface TelegramBot {
-  _request?(action: string, params: Dict<any>, field?: string, content?: Buffer, filename?: string): Promise<TelegramResponse>
+  _request?(action: `/${string}`, params: Dict<any>, field?: string, content?: Buffer, filename?: string): Promise<TelegramResponse>
 }
 
 async function maybeFile(payload: Dict<any>, field: TLAssetType): Promise<[any, string?, Buffer?, string?]> {
@@ -113,13 +113,13 @@ export class TelegramBot extends Bot<BotConfig> {
 
   /**
    * Request telegram API (using post method actually)
-   * @param action method of telegram API, leading with a '/'
+   * @param action method of telegram API. Starts with a '/'
    * @param params params in camelCase
    * @param field file field key in fromData
    * @param content file stream
    * @returns Respond form telegram
    */
-  async get<T = any, P = any>(action: string, params: P = undefined, field = '', content: Buffer = null, filename = 'file'): Promise<T> {
+  async get<T = any, P = any>(action: `/${string}`, params: P = undefined, field = '', content: Buffer = null, filename = 'file'): Promise<T> {
     this.logger.debug('[request] %s %o', action, params)
     const response = await this._request(action, snakeCase(params || {}), field, content, filename)
     this.logger.debug('[response] %o', response)
@@ -148,12 +148,12 @@ export class TelegramBot extends Bot<BotConfig> {
     }
 
     const sendAsset = async () => {
-      const assetApi = {
-        photo: 'sendPhoto',
-        audio: 'sendAudio',
-        document: 'sendDocument',
-        video: 'sendVideo',
-        animation: 'sendAnimation',
+      const assetApi: Dict<`/${string}`> = {
+        photo: '/sendPhoto',
+        audio: '/sendAudio',
+        document: '/sendDocument',
+        video: '/sendVideo',
+        animation: '/sendAnimation',
       }
       lastMsg = await this.get(assetApi[currAssetType], ...await maybeFile(payload, currAssetType))
       currAssetType = null
@@ -210,7 +210,7 @@ export class TelegramBot extends Bot<BotConfig> {
 
     // if something left in payload
     if (currAssetType) await sendAsset()
-    if (payload.caption) lastMsg = await this.get('sendMessage', { chatId, text: payload.caption })
+    if (payload.caption) lastMsg = await this.get('/sendMessage', { chatId, text: payload.caption })
 
     return lastMsg ? lastMsg.messageId.toString() : null
   }
@@ -233,7 +233,7 @@ export class TelegramBot extends Bot<BotConfig> {
   }
 
   async deleteMessage(chatId: string, messageId: string) {
-    await this.get('deleteMessage', { chatId, messageId })
+    await this.get('/deleteMessage', { chatId, messageId })
   }
 
   static adaptGroup(data: Telegram.Chat): Bot.Guild {
@@ -243,7 +243,7 @@ export class TelegramBot extends Bot<BotConfig> {
   }
 
   async getGuild(chatId: string): Promise<Bot.Guild> {
-    const data = await this.get<Telegram.Chat>('getChat', { chatId })
+    const data = await this.get<Telegram.Chat>('/getChat', { chatId })
     return TelegramBot.adaptGroup(data)
   }
 
@@ -253,28 +253,28 @@ export class TelegramBot extends Bot<BotConfig> {
 
   async getGuildMember(chatId: string, userId: string): Promise<Bot.GuildMember> {
     if (Number.isNaN(+userId)) return null
-    const data = await this.get('getChatMember', { chatId, userId })
+    const data = await this.get('/getChatMember', { chatId, userId })
     return TelegramBot.adaptUser(data)
   }
 
   async getGuildMemberList(chatId: string): Promise<Bot.GuildMember[]> {
-    const data = await this.get('getChatAdministrators', { chatId })
+    const data = await this.get('/getChatAdministrators', { chatId })
     return data.map(TelegramBot.adaptUser)
   }
 
   setGroupLeave(chatId: string) {
-    return this.get('leaveChat', { chatId })
+    return this.get('/leaveChat', { chatId })
   }
 
   async handleGuildMemberRequest(messageId: string, approve: boolean, comment?: string): Promise<void> {
     const [chatId, userId] = messageId.split('@')
-    const method = approve ? 'approveChatJoinRequest' : 'declineChatJoinRequest'
+    const method = approve ? '/approveChatJoinRequest' : '/declineChatJoinRequest'
     const success = await this.get<boolean>(method, { chatId, userId })
     if (!success) throw new Error(`handel guild member request field ${success}`)
   }
 
   async getLoginInfo() {
-    const data = await this.get<Telegram.User>('getMe')
+    const data = await this.get<Telegram.User>('/getMe')
     return TelegramBot.adaptUser(data)
   }
 }

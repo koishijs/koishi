@@ -37,7 +37,7 @@ abstract class TelegramAdapter extends Adapter<BotConfig, AdapterConfig> {
       }
       if (field && content) payload.append(field, content, filename)
       try {
-        return await bot.http.post(`/${action}`, payload, payload.getHeaders())
+        return await bot.http.post(action, payload, payload.getHeaders())
       } catch (e) {
         return (e as AxiosError).response.data
       }
@@ -108,7 +108,7 @@ abstract class TelegramAdapter extends Adapter<BotConfig, AdapterConfig> {
       }
       const getFileData = async (fileId) => {
         try {
-          const file = await bot.get<Telegram.File>('getFile', { fileId })
+          const file = await bot.get<Telegram.File>('/getFile', { fileId })
           const downloadUrl = `${this.config.request.endpoint}/file/bot${token}/${file.filePath}`
           const res = await axios.get(downloadUrl, { responseType: 'arraybuffer' })
           const base64 = `base64://` + Buffer.from(res.data, 'binary').toString('base64')
@@ -171,7 +171,7 @@ export class HttpServer extends TelegramAdapter {
   async listenUpdates(bot: TelegramBot) {
     const { token } = bot.config
     const { path, selfUrl } = this.config
-    const info = await bot.get<boolean>('setWebhook', {
+    const info = await bot.get<boolean>('/setWebhook', {
       url: selfUrl + path + '?token=' + token,
       dropPendingUpdates: true,
     })
@@ -213,21 +213,21 @@ export class HttpPolling extends TelegramAdapter {
     const { selfId } = bot.config
     this.offset[selfId] = this.offset[selfId] || 0
 
-    const { url } = await bot.get<Telegram.WebhookInfo, GetUpdatesOptions>('getWebhookInfo', {})
+    const { url } = await bot.get<Telegram.WebhookInfo, GetUpdatesOptions>('/getWebhookInfo', {})
     if (url) {
       logger.warn('Bot currently has a webhook set up, trying to remove it...')
-      await bot.get<boolean>('setWebhook', { url: '' })
+      await bot.get<boolean>('/setWebhook', { url: '' })
     }
 
     // Test connection / init offset with 0 timeout polling
-    const previousUpdates = await bot.get<Telegram.Update[], GetUpdatesOptions>('getUpdates', {
+    const previousUpdates = await bot.get<Telegram.Update[], GetUpdatesOptions>('/getUpdates', {
       allowedUpdates: [],
       timeout: 0,
     })
     previousUpdates.forEach(e => this.offset[selfId] = Math.max(this.offset[selfId], e.updateId))
 
     const polling = async () => {
-      const updates = await bot.get<Telegram.Update[], GetUpdatesOptions>('getUpdates', {
+      const updates = await bot.get<Telegram.Update[], GetUpdatesOptions>('/getUpdates', {
         offset: this.offset[selfId] + 1,
         timeout: bot.config.pollingTimeout === true ? 60 : bot.config.pollingTimeout,
       })
