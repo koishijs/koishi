@@ -159,10 +159,10 @@ Koishi 完全基于 TypeScript 开发，拥有顶级的类型支持，丰富的�
 | 名称 | 简介 |
 |:----|:----|
 | [2bot](https://github.com/idlist/2bot-v4) | 一个很 2 的 FFXIV bot |
-| [koishi-nestjs](https://github.com/koishijs/koishi-nestjs) | 在 [Nest.js](https://nestjs.com/) 中使用 Koishi 开发规模化机器人应用 |
-| [onebot-lb](https://github.com/purerosefallen/onebot-lb) | OneBot 负载均衡器 |
-| [koishi-thirdeye](https://code.mycard.moe/3rdeye/koishi-thirdeye) | 装饰器以及 DI 风格的 Koishi 插件开发框架 |
 | [koishi-bootstrap](https://code.mycard.moe/3rdeye/koishi-bootstrap) | Koishi 的 Docker 启动器 |
+| [koishi-nestjs](https://github.com/koishijs/koishi-nestjs) | 在 [Nest.js](https://nestjs.com/) 中使用 Koishi 开发规模化机器人应用 |
+| [koishi-thirdeye](https://code.mycard.moe/3rdeye/koishi-thirdeye) | 装饰器以及 DI 风格的 Koishi 插件开发框架 |
+| [onebot-lb](https://github.com/purerosefallen/onebot-lb) | OneBot 负载均衡器 |
 
 ## 使用协议
 
