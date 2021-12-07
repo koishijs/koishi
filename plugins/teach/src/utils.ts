@@ -1,4 +1,4 @@
-import { App, Session, Tables, isInteger, observe, difference } from 'koishi'
+import { App, Session, isInteger, observe, difference } from 'koishi'
 
 declare module 'koishi' {
   interface EventMap {
@@ -11,24 +11,6 @@ declare module 'koishi' {
     dialogue: Dialogue
   }
 }
-
-Tables.extend('dialogue', {
-  id: 'unsigned',
-  flag: 'unsigned(4)',
-  probS: { type: 'decimal', precision: 4, scale: 3, initial: 1 },
-  probA: { type: 'decimal', precision: 4, scale: 3, initial: 0 },
-  startTime: 'integer',
-  endTime: 'integer',
-  groups: 'list(255)',
-  original: 'string(255)',
-  question: 'string(255)',
-  answer: 'text',
-  predecessors: 'list(255)',
-  successorTimeout: 'unsigned',
-  writer: 'string(255)',
-}, {
-  autoInc: true,
-})
 
 export interface Dialogue {
   id?: number

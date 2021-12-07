@@ -93,6 +93,11 @@ export class StatisticsProvider extends DataSource<StatisticsProvider.Payload> {
   constructor(ctx: Context, private config: StatisticsProvider.Config = {}) {
     super(ctx, 'stats')
 
+    ctx.model.extend('channel', {
+      name: 'string(50)',
+      activity: 'json',
+    })
+
     ctx.on('exit', () => this.upload(true))
 
     this.sync = ctx.database.createSynchronizer()

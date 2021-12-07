@@ -1,4 +1,4 @@
-import { Context, Session, Time, Logger, Tables, Schema } from 'koishi'
+import { Context, Session, Time, Logger, Schema } from 'koishi'
 
 declare module 'koishi' {
   interface Tables {
@@ -20,18 +20,6 @@ export interface Schedule {
   session: Partial<Session>
 }
 
-Tables.extend('schedule', {
-  id: 'unsigned',
-  assignee: 'string',
-  time: 'timestamp',
-  lastCall: 'timestamp',
-  interval: 'integer',
-  command: 'text',
-  session: 'json',
-}, {
-  autoInc: true,
-})
-
 const logger = new Logger('schedule')
 
 function formatContext(session: Partial<Session>) {
@@ -50,6 +38,18 @@ export const Config = Schema.object({
 })
 
 export function apply(ctx: Context, { minInterval }: Config) {
+  ctx.model.extend('schedule', {
+    id: 'unsigned',
+    assignee: 'string',
+    time: 'timestamp',
+    lastCall: 'timestamp',
+    interval: 'integer',
+    command: 'text',
+    session: 'json',
+  }, {
+    autoInc: true,
+  })
+
   async function hasSchedule(id: number) {
     const data = await ctx.database.get('schedule', [id])
     return data.length

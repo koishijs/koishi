@@ -2,12 +2,18 @@
 
 import { EventConfig } from './events'
 import axios, { AxiosError, Method } from 'axios'
-import { App, Session, Tables, segment, Logger, Dict, Quester, Schema, Time } from 'koishi'
+import { App, Context, Session, segment, Logger, Dict, Quester, Schema, Time, Service } from 'koishi'
 import {} from '@koishijs/plugin-puppeteer'
 
 declare module 'koishi' {
   interface App {
     github?: GitHub
+  }
+
+  namespace Context {
+    interface Services {
+      github?: GitHub
+    }
   }
 
   interface User {
@@ -23,23 +29,6 @@ declare module 'koishi' {
     github: Repository
   }
 }
-
-Tables.extend('user', {
-  ghAccessToken: 'string(50)',
-  ghRefreshToken: 'string(50)',
-})
-
-Tables.extend('channel', {
-  githubWebhooks: 'json',
-})
-
-Tables.extend('github', {
-  id: 'integer',
-  name: 'string(50)',
-  secret: 'string(50)',
-}, {
-  primary: 'name',
-})
 
 interface Repository {
   name: string
@@ -82,11 +71,32 @@ export type ReplySession = Session<'ghAccessToken' | 'ghRefreshToken'>
 
 const logger = new Logger('github')
 
-export class GitHub {
-  http: Quester
+Context.service('github')
 
-  constructor(public app: App, public config: Config) {
-    this.http = app.http.extend(config.request)
+export class GitHub extends Service {
+  private http: Quester
+
+  constructor(public ctx: Context, public config: Config) {
+    super(ctx, 'github', true)
+
+    this.http = ctx.http.extend(config.request)
+
+    ctx.model.extend('user', {
+      ghAccessToken: 'string(50)',
+      ghRefreshToken: 'string(50)',
+    })
+    
+    ctx.model.extend('channel', {
+      githubWebhooks: 'json',
+    })
+    
+    ctx.model.extend('github', {
+      id: 'integer',
+      name: 'string(50)',
+      secret: 'string(50)',
+    }, {
+      primary: 'name',
+    })
   }
 
   async getTokens(params: any) {
@@ -172,8 +182,8 @@ export class ReplyHandler {
   }
 
   async transform(source: string) {
-    if (this.github.app.assets) {
-      source = await this.github.app.assets.transform(source)
+    if (this.github.ctx.assets) {
+      source = await this.github.ctx.assets.transform(source)
     }
     return segment.transform(source, {
       text: ({ content }) => content,
