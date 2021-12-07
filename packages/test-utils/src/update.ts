@@ -1,4 +1,4 @@
-import { App, omit, Tables } from 'koishi'
+import { App, omit } from 'koishi'
 import { expect } from 'chai'
 
 interface Bar {
@@ -23,28 +23,28 @@ declare module 'koishi' {
   }
 }
 
-Tables.extend('bar', {
-  id: 'unsigned',
-  text: 'string',
-  num: 'integer',
-  list: 'list',
-  date: 'timestamp',
-  meta: 'json',
-}, {
-  autoInc: true,
-})
-
-Tables.extend('baz', {
-  ida: 'unsigned',
-  idb: 'string',
-  value: 'string',
-}, {
-  primary: ['ida', 'idb'],
-})
+function UpdateOperators(app: App) {
+  app.model.extend('bar', {
+    id: 'unsigned',
+    text: 'string',
+    num: 'integer',
+    list: 'list',
+    date: 'timestamp',
+    meta: 'json',
+  }, {
+    autoInc: true,
+  })
+  
+  app.model.extend('baz', {
+    ida: 'unsigned',
+    idb: 'string',
+    value: 'string',
+  }, {
+    primary: ['ida', 'idb'],
+  })
+}
 
 namespace UpdateOperators {
-  export const name = 'UpdateOperators'
-
   export const insert = function Insert(app: App) {
     const magicBorn = new Date('1926/08/17')
 
@@ -72,7 +72,7 @@ namespace UpdateOperators {
         const bar = await app.database.create('bar', omit(barInsertions[i], ['id']))
         barInsertions[i].id = bar.id
       }
-      return barInsertions.map(bar => merge(Tables.create('bar'), bar))
+      return barInsertions.map(bar => merge(app.model.create('bar'), bar))
     }
 
     const setupBaz = async () => {
@@ -80,7 +80,7 @@ namespace UpdateOperators {
       for (const obj of bazInsertions) {
         await app.database.create('baz', obj)
       }
-      return bazInsertions.map(baz => merge(Tables.create('baz'), baz))
+      return bazInsertions.map(baz => merge(app.model.create('baz'), baz))
     }
 
     before(async () => {
@@ -89,7 +89,7 @@ namespace UpdateOperators {
     })
 
     it('create with autoInc primary key', async () => {
-      const barObjs = barInsertions.map(bar => merge(Tables.create('bar'), bar))
+      const barObjs = barInsertions.map(bar => merge(app.model.create('bar'), bar))
       for (const i in barInsertions) {
         const bar = await app.database.create('bar', omit(barInsertions[i], ['id']))
         barInsertions[i].id = bar.id
@@ -126,7 +126,7 @@ namespace UpdateOperators {
       await expect(app.database.get('bar', {})).eventually.shape(barObjs)
 
       const insertBar = [{ id: barObjs[5].id + 1, text: 'wmlake' }, { id: barObjs[5].id + 2, text: 'bytower' }]
-      barObjs.push(...insertBar.map(bar => merge(Tables.create('bar'), bar)))
+      barObjs.push(...insertBar.map(bar => merge(app.model.create('bar'), bar)))
       await expect(app.database.upsert('bar', insertBar)).eventually.fulfilled
       await expect(app.database.get('bar', {})).eventually.shape(barObjs)
     })

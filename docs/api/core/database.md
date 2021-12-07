@@ -27,7 +27,7 @@ sidebarDepth: 2
 
 所有用户 / 频道状态标签构成的枚举类型。参见 [状态标签](../../guide/manage.md#状态标签)。
 
-### Tables.extend(name, fields, config?) <Badge type="warning" text="beta"/>
+### ctx.model.extend(name, fields, config?) <Badge type="warning" text="beta"/>
 
 - **name:** `string` 数据表名
 - **fields:** `Field.Config` 字段信息
@@ -41,7 +41,7 @@ sidebarDepth: 2
 
 ## 数据类型
 
-数值类型会被用于 [`Tables.extend()`](#tables-extend-name-fields-config)，其定义如下：
+数值类型会被用于 [`ctx.model.extend()`](#tables-extend-name-fields-config)，其定义如下：
 
 ```ts
 export interface Field<T> {

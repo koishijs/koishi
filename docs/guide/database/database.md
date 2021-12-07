@@ -145,9 +145,7 @@ await ctx.database.update('user', rows, 'onebot')
 
 ::: code-group language
 ```js
-const { Tables } = require('koishi')
-
-Tables.extend('user', {
+ctx.model.extend('user', {
   // 向用户表中注入字符串字段 foo
   foo: 'string',
   // 你还可以配置默认值为 'bar'
@@ -155,8 +153,6 @@ Tables.extend('user', {
 })
 ```
 ```ts
-import { Tables } from 'koishi'
-
 // TypeScript 用户需要进行类型合并
 declare module 'koishi' {
   interface User {
@@ -164,7 +160,7 @@ declare module 'koishi' {
   }
 }
 
-Tables.extend('user', {
+ctx.model.extend('user', {
   // 向用户表中注入字符串字段 foo
   foo: 'string',
   // 你还可以配置默认值为 'bar'
@@ -177,13 +173,11 @@ Tables.extend('user', {
 
 ### 扩展表
 
-利用 `Tables.extend()` 的第三个参数，我们就可以定义新的数据表了：
+利用 `ctx.model.extend()` 的第三个参数，我们就可以定义新的数据表了：
 
 ::: code-group language
 ```js
-const { Tables } = require('koishi')
-
-Tables.extend('schedule', {
+ctx.model.extend('schedule', {
   // 各字段类型
   id: 'unsigned',
   assignee: 'string',
@@ -198,8 +192,6 @@ Tables.extend('schedule', {
 })
 ```
 ```ts
-import { Tables } from 'koishi'
-
 // TypeScript 用户需要进行类型合并
 declare module 'koishi' {
   interface Tables {
@@ -214,7 +206,7 @@ export interface Schedule {
   command: string
 }
 
-Tables.extend('schedule', {
+ctx.model.extend('schedule', {
   // 各字段类型
   id: 'unsigned',
   assignee: 'string',
@@ -235,9 +227,7 @@ Tables.extend('schedule', {
 我们还可以为数据库声明索引：
 
 ```ts
-import { Tables } from 'koishi'
-
-Tables.extend('foo', {}, {
+ctx.model.extend('foo', {}, {
   // 主键，默认为 'id'
   // 主键将会被用于 Query 的简写形式，如果传入的是原始类型或数组则会自行理解成主键的值
   primary: 'name',

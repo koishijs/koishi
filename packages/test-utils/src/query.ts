@@ -1,4 +1,4 @@
-import { App, Tables } from 'koishi'
+import { App } from 'koishi'
 import { expect } from 'chai'
 
 interface Foo {
@@ -15,19 +15,19 @@ declare module 'koishi' {
   }
 }
 
-Tables.extend('foo', {
-  id: 'unsigned',
-  text: 'string',
-  value: 'integer',
-  list: 'list',
-  date: 'timestamp',
-}, {
-  autoInc: true,
-})
+function QueryOperators(app: App) {
+  app.model.extend('foo', {
+    id: 'unsigned',
+    text: 'string',
+    value: 'integer',
+    list: 'list',
+    date: 'timestamp',
+  }, {
+    autoInc: true,
+  })
+}
 
 namespace QueryOperators {
-  export const name = 'QueryOperators'
-
   export const comparison = function Comparison(app: App) {
     before(async () => {
       await app.database.remove('foo', {})

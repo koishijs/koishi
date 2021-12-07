@@ -7,6 +7,7 @@ import { App } from './app'
 import { Bot } from './bot'
 import { Database } from './database'
 import { Adapter } from './adapter'
+import { Model } from './orm'
 import Schema from 'schemastery'
 
 export type NextFunction = (next?: NextFunction) => Promise<void>
@@ -558,8 +559,9 @@ export class Context {
 
 export namespace Context {
   export interface Services {
-    database: Database
     bots: Adapter.BotList
+    database: Database
+    model: Model
   }
 
   export function service(key: keyof Services) {
@@ -594,8 +596,9 @@ export namespace Context {
     })
   }
 
-  service('database')
   service('bots')
+  service('database')
+  service('model')
 }
 
 type FlattenEvents<T> = {

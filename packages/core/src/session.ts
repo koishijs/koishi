@@ -273,7 +273,7 @@ export class Session<
 
     // 确保匿名消息不会写回数据库
     if (this.author?.anonymous) {
-      const fallback = Tables.create('user')
+      const fallback = this.app.model.create('user')
       fallback[this.platform] = this.userId
       fallback.authority = this.resolveValue(this.app.options.autoAuthorize)
       const user = observe(fallback, () => Promise.resolve())

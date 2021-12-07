@@ -132,7 +132,7 @@ export default {
 - 数据结构变更
   - channel 表使用 `platform`+`id` 复合主键进行索引，这意味着 `channel.id` 语义将发生变化，同时新增了 `channel.platform`
 - 全局接口变更
-  - `Tables.extend()` 接口略有调整，具体参见文档
+  - ORM 相关接口现使用 `ctx.model` 实现
 
 ## 缓存机制变更
 
