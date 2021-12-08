@@ -2,59 +2,18 @@
 sidebarDepth: 2
 ---
 
-# 使用插件
+# 开发插件
 
-Koishi 官方实现了许多功能，但一个机器人很可能只会用到其中的一部分。因此我们采用了插件化的方式，将不同的功能解耦到了不同的包中。你可以在 [官方插件](../plugins/index.md) 中了解到各种不同的功能。
+在 [认识插件](../introduction/plugin.md) 一章中，我们已经学习了基础的插件开发范例。本章将介绍更多的插件编写方式，以及一些场景下的最佳实践。
 
-### 安装插件
+## 插件的基本形式
 
-在之前的文档中，我们已经展示了如何通过配置文件和脚本调用两种方法使用插件，它们的写法略有不同。让我们先回顾一下：
-
-::: code-group config koishi.config
-```yaml
-plugins:
-  ./my-plugin:  # 传给 my-plugin 的配置项
-  console:      # 传给 @koishijs/plugin-common 的配置项
-```
-```js
-module.exports = {
-  plugins: {
-    './my-plugin': {}, // 传给 my-plugin 的配置项
-    'common': {},      // 传给 @koishijs/plugin-common 的配置项
-  },
-}
-```
-```ts
-export default {
-  plugins: {
-    './my-plugin': {}, // 传给 my-plugin 的配置项
-    'common': {},      // 传给 @koishijs/plugin-common 的配置项
-  },
-}
-```
-:::
-
-`plugins` 是一个对象，其中的每一个键表示一个插件的路径。
-
-- 如果是一个绝对路径或者相对路径，我们会相对 koishi.config.js 所在的目录进行解析
-- 其他情况下我们将其视为包名，并允许省略 koishi-plugin- 这个前缀，并考虑 scope 带来的影响（例如对于 foo/bar，我们将尝试读取 koishi-plugin-foo/bar 和 foo/bar 两个包；对于 @foo/bar，我们将尝试读取 @foo/koishi-plugin-bar 和 @foo/bar 两个包）
-
-上面的写法使用 API 可以写成：
-
-```js index.js
-app
-  .plugin(require('./my-plugin'))
-  .plugin(require('@koishijs/plugin-common'), options)
-```
-
-### 开发插件
-
-一个**插件**的本质是以下两个之一：
+一个插件的本质是以下两个之一：
 
 - 一个接受两个参数的函数，第一个参数是所在的上下文，第二个参数是传入的选项
 - 一个对象，其中的 `apply` 方法是上面所说的函数
 
-因此，下面的三种写法是等价的：
+而一个插件在被加载时，则相当于进行了上述函数的调用。因此，下面的三种写法是基本等价的：
 
 ```js
 ctx.middleware(callback)
@@ -66,11 +25,58 @@ ctx.plugin({
 })
 ```
 
-插件化的写法能够帮助我们将多个逻辑组合在一起并模块化，同时可以在插件内部对所需的选项进行初始化，这些都能极大地提高了代码的可维护性。这是因为每个人都可以直接将代码以插件的形式导出成模块，之后插件名又可以被直接写在 `koishi.config.js` 文件中。
+看起来插件似乎只是将函数调用换了一种写法，但这种写法能够帮助我们将多个逻辑组合在一起并模块化，同时可以在插件内部对所需的选项进行初始化，这些都能极大地提高了代码的可维护性。
 
-### 具名插件
+## 类形式的插件
 
-除此以外，插件如果使用对象式，那么除了 `apply` 以外，你还可以提供一个 `name` 属性。如果提供了这个属性，命令行工具会将这个名字输出到控制台中。例如，下面给出了一个插件的例子，它实现了检测说话带空格的功能：
+由于 JavaScript 中类本身也是一种函数，因此我们也可以将插件写成类的形式。
+
+::: code-group language example-plugin
+```js
+class ExamplePlugin {
+  constructor(ctx, config) {
+    // 你可以保存插件的上下文和选项
+    this.ctx = ctx
+    this.config = config
+
+    // 上述插件的等价形式
+    ctx.middleware(this.callback.bind(this))
+  }
+
+  callback(session, next) {}
+}
+```
+```ts
+import { Context, NextFunction, Session } from 'koishi'
+
+interface Config {}
+
+class ExamplePlugin {
+  // 保存插件的上下文和选项
+  constructor(private ctx: Context, private config: Config) {
+    // 上述插件的等价形式
+    ctx.middleware(this.callback.bind(this))
+  }
+
+  callback(session: Session, next: NextFunction) {}
+}
+```
+:::
+
+## 模块化的插件
+
+一个模块可以作为插件被 Koishi 加载，其需要满足以下两条中的一条：
+
+- 此模块的默认导出是一个插件
+- 此模块的导出整体是一个插件
+
+这里第一条的优先级更高。因此，只要模块提供了默认导出，Koishi 就会尝试加载这个默认导出，而不是导出整体。在开发中请务必注意这一点。
+
+## 具名插件
+
+除此以外，插件如果使用对象式，那么除了 `apply` 以外，你还可以提供一个 `name` 属性，它便是插件的名称。对于函数和类形式的插件来说，插件名称便是函数名或类名。具名插件有助于更好地描述插件的功能，并被用于插件关系可视化中，实际上不会影响任何运行时的行为。
+
+例如，下面给出了一个插件的例子，它实现了检测说话带空格的功能：
 
 ::: code-group language detect-space
 ```js
@@ -89,9 +95,7 @@ module.exports.apply = (ctx) => {
 ```ts
 import { Context } from 'koishi'
 
-export const name = 'detect-space'
-
-export function apply(ctx: Context) {
+export default function detectSpace(ctx: Context) {
   ctx.middleware((session, next) => {
     if (session.content.match(/^\s*(\S +){2,}\S\s*$/g)) {
       return session.send('在？为什么说话带空格？')
@@ -103,83 +107,76 @@ export function apply(ctx: Context) {
 ```
 :::
 
-把它放到你的机器人文件夹，接着向你的 `koishi.config.js` 添加一行：
-
-```js koishi.config.js
-module.exports = {
-  plugins: {
-    './detect-space': true,
-  },
-}
-```
-
-调用 `koishi start`，你就可以看到这个插件在正常运行的提示了。
-
-### 嵌套插件
+## 嵌套插件
 
 Koishi 的插件也是可以嵌套的。你可以将你编写的插件解耦成多个独立的子插件，再用一个父插件作为入口，就像这样：
 
-```js koishi-plugin-foo/index.js
+::: code-group language nested-plugin
+```js
 // 在 a.js, b.js 中编写两个不同的插件
 const pluginA = require('./a')
 const pluginB = require('./b')
 
-// 将这两个插件输出
-module.exports.pluginA = pluginA
-module.exports.pluginB = pluginB
-
-// 在 apply 函数中安装 a, b 两个插件
 module.exports.apply = (ctx) => {
+  // 依次安装 a, b 两个插件
   ctx.plugin(pluginA)
   ctx.plugin(pluginB)
 }
 ```
+```ts
+// 在 a.ts, b.ts 中编写两个不同的插件
+import { Context } from 'koishi'
+import pluginA from './a'
+import pluginB from './b'
 
-这样别人就可以这样使用你的插件了：
-
-```js
-// 如果希望同时使用你的插件的全部功能
-ctx.plugin(require('koishi-plugin-foo'))
-
-// 如果只希望启用一部分功能
-ctx.plugin(require('koishi-plugin-foo').pluginA)
-
-// 或者等价的写法
-ctx.plugin(require('koishi-plugin-foo/a'))
+export default function (ctx: Context) {
+  // 依次安装 a, b 两个插件
+  ctx.plugin(pluginA)
+  ctx.plugin(pluginB)
+}
 ```
+:::
 
-Koishi 的官方插件 koishi-plugin-common 也使用了 [这种写法](https://github.com/koishijs/koishi/blob/master/packages/plugin-common/src/index.ts)。
+这样当你加载 nested-plugin 时，就相当于同时加载了 a 和 b 两个插件。
 
-### 卸载插件
+Koishi 的许多官方插件都采用了这种写法，例如 [@koishijs/plugin-common](https://github.com/koishijs/koishi/blob/master/plugins/common/src/index.ts)。
 
-通常来说一个插件的效应应该是永久的，但如果你想在运行时卸载一个插件，应该怎么做？你可以使用插件定义中的那个上下文的 `dispose` 方法来解决：
+## 卸载插件
 
-::: code-group language my-plugin
+通常来说一个插件的效应应该是永久的，但如果你想在运行时卸载一个插件，应该怎么做？你可以使用 `ctx.dispose()` 方法来解决：
+
+::: code-group language
 ```js
-module.exports = (ctx, options) => {
+function callback(ctx, options) {
   // 编写你的插件逻辑
   ctx.on('message', someListener)
   ctx.command('foo').action(callback)
   ctx.middleware(callback)
   ctx.plugin(require('another-plugin'))
-
-  // 卸载这个插件，取消上面的全部操作
-  ctx.dispose()
 }
+
+// 加载插件
+app.plugin(callback)
+
+// 卸载这个插件，取消上面的全部操作
+app.dispose()
 ```
 ```ts
 import { Context } from 'koishi'
 
-export default function (ctx: Context, options) {
+function callback(ctx: Context, options) {
   // 编写你的插件逻辑
   ctx.on('message', someListener)
   ctx.command('foo').action(callback)
   ctx.middleware(callback)
   ctx.plugin(require('another-plugin'))
-
-  // 卸载这个插件，取消上面的全部操作
-  ctx.dispose()
 }
+
+// 加载插件
+app.plugn(callback)
+
+// 卸载这个插件，取消上面的全部操作
+app.dispose()
 ```
 :::
 
@@ -196,12 +193,9 @@ module.exports = (ctx, options) => {
   })
 
   // 添加一个特殊的回调函数来处理副作用
-  ctx.before('disconnect', () => {
+  ctx.on('disconnect', () => {
     server.close()
   })
-
-  // 现在我们又可以愉快地使用 ctx.dispose() 啦
-  ctx.dispose()
 }
 ```
 ```ts
@@ -216,12 +210,9 @@ export default function (ctx: Context, options) {
   })
 
   // 添加一个特殊的回调函数来处理副作用
-  ctx.before('disconnect', () => {
+  ctx.on('disconnect', () => {
     server.close()
   })
-
-  // 现在我们又可以愉快地使用 ctx.dispose() 啦
-  ctx.dispose()
 }
 ```
 :::

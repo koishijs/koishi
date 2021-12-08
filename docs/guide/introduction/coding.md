@@ -1,16 +1,15 @@
 ---
-title: 编写第一段代码
 sidebarDepth: 2
 ---
 
-# 编写第一段 Koishi 代码
+# 代码上手
 
 Koishi 项目通常可以通过两种方式搭建：
 
-- **手动编写 js 代码并直接调用 Koishi 接口**
 - 通过官方脚手架快速搭建 Koishi 控制台项目
+- **手动编写 js 代码并直接调用 Koishi 接口**
 
-本节主要介绍第一种方式，也是最经典，最适合开发者的上手方式。
+本节主要介绍第二种方式，也是最经典，最适合开发者的上手方式。
 
 ::: tip
 这篇指南假设你已了解关于 JavaScript 和 Node.js 的中级知识。如果你刚开始学习 JS 开发或者对编写业务代码不感兴趣，或许 [控制台项目](./console.md) 会更加适合你。
@@ -66,13 +65,14 @@ app.plugin('adapter-onebot', {
 })
 
 // 安装 common 插件，你可以不传任何配置项
+// 这个插件提供了下面要用到的 echo 指令
 app.plugin('common')
 
 // 启动应用
 app.start()
 ```
 
-最后运行这个文件（在此之前别忘了先完成 [准备工作](#准备工作)）：
+最后运行这个文件 (在此之前别忘了先完成 [准备工作](#准备工作))：
 
 ```cli
 node .
@@ -109,7 +109,7 @@ app.middleware((session, next) => {
 
 ## 配置数据库
 
-数据库是机器人开发的常见需求，许多插件本身也要求你安装数据库。在 Koishi 这里，数据库支持也可以通过插件来安装！这里以 MySQL 为例。首先安装所需的依赖：
+数据库是机器人开发的常见需求，许多插件本身也要求你安装数据库。在 Koishi 这里，数据库支持也可以通过插件来安装。这里以 MySQL 为例。首先安装所需的依赖：
 
 ::: code-group manager
 ```npm
@@ -147,6 +147,7 @@ app.plugin('adapter-onebot', {
 })
 
 // 来自 discord 适配器的机器人
+// 别忘了在使用之前，先安装相应的插件和完成准备工作
 app.plugin('adapter-discord', {
   token: 'QwErTyUiOpAsDfGhJkLzXcVbNm',
 })
