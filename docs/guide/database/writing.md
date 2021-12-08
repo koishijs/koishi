@@ -8,27 +8,18 @@ sidebarDepth: 2
 
 由于数据库支持往往要被其他插件或用户所使用，有一个好的类型标注是非常重要的。因此这里我们就只提供 TypeScript 的范例了。
 
-```js
+## 代码示例
+
+```ts
 import { createPool, Pool, PoolConfig } from 'mysql'
-import { Database } from 'koishi'
+import { Context, Database } from 'koishi'
 
-// 类型注入
-declare module 'koishi' {
-  namespace Database {
-    interface Library {
-      // 别忘了加 typeof，不然就不对了~
-      mysql: typeof MysqlDatabase
-    }
-  }
-}
-
-// 防止下面产生类型报错
-interface MysqlDatabase extends Database {}
-
-class MysqlDatabase {
+// 从 Database 类派生出一个子类并将其默认导出
+export default class MysqlDatabase extends Database {
   private pool: Pool
 
-  constructor(config: PoolConfig = {}) {
+  constructor(ctx: Context, config: PoolConfig = {}) {
+    super(ctx)
     this.pool = createPool(config)
   }
 
@@ -43,21 +34,45 @@ class MysqlDatabase {
       })
     })
   }
-}
 
-// Database.extend 方法也可以直接传入一个数据库类
-Database.extend(MysqlDatabase, {
-  // 提供内置方法的实现（参见上一节）
-})
-
-export default MysqlDatabase
-
-export const name = 'mysql'
-
-export function apply(ctx: Context, config: PoolConfig = {}) {
-  const db = new MysqlDatabase(ctx.app, config)
-  ctx.database = db
+  // 实现内置方法
+  get() {}
+  set() {}
+  upsert() {}
+  remove() {}
 }
 ```
 
-当然，真正的 [@koishijs/plugin-database-mysql](../../api/core/database/mysql.md) 要比上面的例子复杂的多，我们还需要处理有关数据库的更多细节。你可以在 [这里](https://github.com/koishijs/koishi/tree/master/packages/plugin-mysql) 看到完整的源代码。
+当然，真正的 [@koishijs/plugin-database-mysql](../../plugins/database/mysql.md) 要比上面的例子复杂的多，我们还需要处理有关数据库的更多细节。你可以在 [这里](https://github.com/koishijs/koishi/tree/master/plugins/database/mysql) 看到完整的源代码。
+
+## 调用原始接口
+
+::: danger
+虽然 Koishi 提供了这种方案，但必须说明的是我们不推荐这种行为。这样做会使你的代码的耦合度增加，并且难以被其他人使用。
+:::
+
+如果用户需要调用原始的数据库接口而不是使用 ORM，他可以利用 Database 对象的特殊属性，它只在使用了特定的数据库插件的时候有效：
+
+```ts
+// TypeScript 用户需要手动引入模块，否则将产生类型错误
+import {} from '@koishijs/plugin-database-mysql'
+
+// 直接发送 SQL 语句
+ctx.database.mysql.query('select * from user')
+```
+
+对于其他数据库实现类似，例如 mongo 的原始接口可以通过 `ctx.database.mongo` 访问到。为了实现这一点，数据库插件的开发者需要在上面的示例代码中添加下面几行：
+
+```ts
+// 步骤 1: 注入属性
+declare module 'koishi' {
+  interface Database {
+    mysql: MysqlDatabase
+  }
+}
+
+// 步骤 2: 实现此属性
+export default class MysqlDatabase extends Database {
+  public mysql = this
+}
+```

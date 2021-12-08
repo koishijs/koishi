@@ -136,6 +136,7 @@ module.exports = {
           '/api/core/session.md',
           '/api/core/command.md',
           '/api/core/database.md',
+          '/api/core/model.md',
           '/api/core/adapter.md',
         ],
       }, {

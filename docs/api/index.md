@@ -17,6 +17,7 @@ sidebarDepth: 0
 - [会话 (Session)](./core/session.md)
 - [指令 (Command)](./core/command.md)
 - [数据库 (Database)](./core/database.md)
+- [数据模型 (Model)](./core/model.md)
 - [适配器 (Adapter)](./core/adapter.md)
 
 ## 其他内置 API
