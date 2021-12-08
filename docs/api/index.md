@@ -21,7 +21,7 @@ sidebarDepth: 0
 
 ## 其他内置 API
 
-由 @koishijs/utils 提供的 API：
+由其他官方库提供的 API：
 
 - [消息段 (Segment)](./utils/segment.md)
 - [配置模式 (Schema)](./utils/schema.md)
