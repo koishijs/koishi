@@ -30,11 +30,11 @@ app.plugin('adapter-onebot', {
 app.plugin('common')
 ```
 
-没错，配置文件中的 `plugins` 是一个对象，其中的每一个键表示一个插件的名称，而值则表示该插件的配置。而代码示例中的 `app.plugin()` 则接受最多两个参数，分别也是插件的名称和配置。
+没错，配置文件中的 `plugins` 是一个对象，其中的每一个键表示一个插件的名称，而值则表示该插件的配置。而代码示例中的 `app.plugin()` 则接受最多两个参数，分别也是插件的短名和配置。
 
 ## 从 npm 上获取插件
 
-添加插件最简单的途径就是从 [npm](https://www.npmjs.com/) 上获取。要下载的包名与实际书写的插件名并不完全一样，遵循以下的规则：
+添加插件最简单的途径就是从 [npm](https://www.npmjs.com/) 上获取。要下载的包名与实际书写的插件短名并不完全一样，遵循以下的规则：
 
 | npm 包名 | 插件名 |
 |:-----:|:-----:|
@@ -46,7 +46,7 @@ app.plugin('common')
 
 ## 传入插件对象
 
-对于 TypeScript 用户，`app.plugin()` 也支持传入完整的插件对象，这种写法虽然长了一些但是会有更好的类型支持：
+`app.plugin()` 也支持传入完整的插件对象，这种写法尽管长了一些，但是对于 TypeScript 用户会有更好的类型支持：
 
 ```ts
 import onebot from '@koishijs/plugin-adapter-onebot'
@@ -77,7 +77,7 @@ app.plugin(require('@koishijs/plugin-adapter-onebot').default, {
 app.plugin(require('@koishijs/plugin-common'))
 ```
 
-为了避免混淆，我们建议 cjs 的使用者直接使用插件的短名称安装插件。
+为了避免混淆，我们建议 cjs 的使用者直接使用插件的短名安装插件。
 
 ## 编写本地插件
 

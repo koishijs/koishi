@@ -115,12 +115,14 @@ sidebarDepth: 2
 
 参考：
 
+- [模块化 / 定义配置模式](../plugin/schema.md)
 - [API 文档 / 配置模式 (Schema)](../../api/utils/schema.md)
 
 ## 消息段 (Segment)
 
 参考：
 
+- [处理交互 / 使用消息段](../message/message.md#使用消息段)
 - [API 文档 / 消息段 (Segment)](../../api/utils/segment.md)
 
 ## 服务 (Service)
@@ -129,7 +131,7 @@ sidebarDepth: 2
 
 参考：
 
-- [更多功能 / 使用服务](../service/)
+- [模块化 / 服务与依赖](../plugin/service.md)
 
 ## 会话 (Session)
 

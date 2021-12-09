@@ -70,11 +70,15 @@ class ExamplePlugin {
 - 此模块的默认导出是一个插件
 - 此模块的导出整体是一个插件
 
-这里第一条的优先级更高。因此，只要模块提供了默认导出，Koishi 就会尝试加载这个默认导出，而不是导出整体。在开发中请务必注意这一点。
+这两种写法并无优劣之分，你完全可以按照自己的需求调整导出的形式。按照惯例，如果你的插件是一个函数，我们通常直接导出 apply 方法，并将导出整体作为一个插件；如果你的插件是一个类，那么我们通常使用默认导出的形式。
+
+::: tip
+这里默认导出的优先级更高。因此，只要模块提供了默认导出，Koishi 就会尝试加载这个默认导出，而不是导出整体。在开发中请务必注意这一点。
+:::
 
 ## 具名插件
 
-除此以外，插件如果使用对象式，那么除了 `apply` 以外，你还可以提供一个 `name` 属性，它便是插件的名称。对于函数和类形式的插件来说，插件名称便是函数名或类名。具名插件有助于更好地描述插件的功能，并被用于插件关系可视化中，实际上不会影响任何运行时的行为。
+插件如果使用对象式，那么除了 `apply` 以外，你还可以提供一个 `name` 属性，它便是插件的名称。对于函数和类形式的插件来说，插件名称便是函数名或类名。具名插件有助于更好地描述插件的功能，并被用于插件关系可视化中，实际上不会影响任何运行时的行为。
 
 例如，下面给出了一个插件的例子，它实现了检测说话带空格的功能：
 
@@ -149,9 +153,9 @@ Koishi 的许多官方插件都采用了这种写法，例如 [@koishijs/plugin-
 ```js
 function callback(ctx, options) {
   // 编写你的插件逻辑
-  ctx.on('message', someListener)
-  ctx.command('foo').action(callback)
-  ctx.middleware(callback)
+  ctx.on('message', eventCallback)
+  ctx.command('foo').action(commandCallback)
+  ctx.middleware(middlewareCallback)
   ctx.plugin(require('another-plugin'))
 }
 
@@ -159,24 +163,24 @@ function callback(ctx, options) {
 app.plugin(callback)
 
 // 卸载这个插件，取消上面的全部操作
-app.dispose()
+app.dispose(callback)
 ```
 ```ts
 import { Context } from 'koishi'
 
 function callback(ctx: Context, options) {
   // 编写你的插件逻辑
-  ctx.on('message', someListener)
-  ctx.command('foo').action(callback)
-  ctx.middleware(callback)
+  ctx.on('message', eventCallback)
+  ctx.command('foo').action(commandCallback)
+  ctx.middleware(middlewareCallback)  
   ctx.plugin(require('another-plugin'))
 }
 
 // 加载插件
-app.plugn(callback)
+app.plugin(callback)
 
 // 卸载这个插件，取消上面的全部操作
-app.dispose()
+app.dispose(callback)
 ```
 :::
 
