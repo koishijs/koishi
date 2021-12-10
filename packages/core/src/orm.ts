@@ -1,6 +1,6 @@
 import { MaybeArray, Dict, Get, Extract, clone } from '@koishijs/utils'
 import { Context } from './context'
-import { User, Channel, Service } from './database'
+import { User, Channel } from './database'
 
 export type TableType = keyof Tables
 
@@ -15,7 +15,7 @@ type Keys<O, T = any> = string & {
 export class Model {
   public config: Dict<Model.Config> = {}
 
-  constructor() {
+  constructor(private ctx: Context) {
     this.extend('user', {
       id: 'string(63)',
       name: 'string(63)',
@@ -37,8 +37,8 @@ export class Model {
     })
   }
 
-  extend<T extends TableType>(name: T, fields?: Model.Field.Extension<Tables[T]>, extension?: Model.Extension<Tables[T]>): void
-  extend(name: string, fields = {}, extension: Model.Extension = {}) {
+  extend<T extends keyof Tables>(name: T, fields?: Model.Field.Extension<Tables[T]>, extension?: Model.Extension<Tables[T]>): void
+  extend(name: keyof Tables, fields = {}, extension: Model.Extension = {}) {
     const { primary, autoInc, unique = [], foreign } = extension
     const table = this.config[name] ||= {
       primary: 'id',
@@ -55,6 +55,8 @@ export class Model {
     for (const key in fields) {
       table.fields[key] = Model.Field.parse(fields[key])
     }
+
+    this.ctx.emit('model', name)
   }
 
   create<T extends TableType>(name: T): Tables[T] {

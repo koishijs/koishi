@@ -60,7 +60,7 @@ export class App extends Context {
       disposables: [],
     })
 
-    this.model = new Model()
+    this.model = new Model(this)
     this.bots = new Adapter.BotList(this)
 
     this._commands.resolve = (key) => {

@@ -7,7 +7,7 @@ import { App } from './app'
 import { Bot } from './bot'
 import { Database } from './database'
 import { Adapter } from './adapter'
-import { Model } from './orm'
+import { Model, Tables } from './orm'
 import Schema from 'schemastery'
 
 export type NextFunction = (next?: NextFunction) => Promise<void>
@@ -575,11 +575,14 @@ export namespace Context {
         return value
       },
       set(this: Context, value) {
-        if (this.app[privateKey] === value) return
-        defineProperty(this.app, privateKey, value)
-        this.app._services[key] = this.state.id
+        const oldValue = this.app[privateKey]
+        if (oldValue === value) return
+        this.app[privateKey] = value
         this.emit('service', key)
+        const action = value ? oldValue ? 'changed' : 'enabled' : 'disabled'
+        this.logger('service').debug(key, action)
         if (value) {
+          this.app._services[key] = this.state.id
           const dispose = () => {
             if (this.app[privateKey] !== value) return
             this[key] = null
@@ -643,6 +646,7 @@ export interface EventMap extends SessionEventMap {
   'before-connect'(): Awaitable<void>
   'connect'(): Awaitable<void>
   'disconnect'(): Awaitable<void>
+  'model'(name: keyof Tables): void
   'service'(name: keyof Context.Services): void
   'adapter'(): void
   'bot-added'(bot: Bot): void
