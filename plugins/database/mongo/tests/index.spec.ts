@@ -4,7 +4,7 @@ import mock from '@koishijs/plugin-mock'
 import mongo from '@koishijs/plugin-database-mongo'
 import parse from 'yargs-parser'
 
-const { mongoPorts } = parse(process.argv.slice(2), { string: ['mongo-ports'] })
+const { mongoPorts = '27017' } = parse(process.argv.slice(2), { string: ['mongo-ports'] })
 
 for (const port of mongoPorts ? mongoPorts.split(',') : []) {
   describe(`Mongo Database (${port})`, () => {
@@ -14,7 +14,8 @@ for (const port of mongoPorts ? mongoPorts.split(',') : []) {
 
     app.plugin(mongo, {
       host: 'localhost',
-      port: port,
+      database: 'test',
+      port: +port,
     })
 
     tests.database(app, {

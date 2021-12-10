@@ -167,7 +167,7 @@ export interface Tables {
   channel: Channel
 }
 
-export type Query<T extends TableType> = Query.Expr<Tables[T]> | Query.Shorthand<Primitive>
+export type Query<T extends TableType = any> = Query.Expr<Tables[T]> | Query.Shorthand<Primitive>
 
 export namespace Query {
   export type Field<T extends TableType> = string & keyof Tables[T]
@@ -229,7 +229,7 @@ export namespace Query {
     fields?: K[]
   }
 
-  export type Modifier<T extends string> = T[] | ModifierExpr<T>
+  export type Modifier<T extends string = string> = T[] | ModifierExpr<T>
 
   export function resolveModifier<K extends string>(modifier: Modifier<K>): ModifierExpr<K> {
     if (Array.isArray(modifier)) return { fields: modifier }

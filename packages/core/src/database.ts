@@ -118,6 +118,7 @@ export namespace Database {
   type ExtensionMethods<T> = Methods<Database, T extends Constructor<infer I> ? I : never>
   type Extension<T> = ((Database: T) => void) | ExtensionMethods<T>
 
+  /** @deprecated */
   export function extend<K extends keyof Modules>(module: K, extension: Extension<Get<Modules[K], 'default'>>): void
   export function extend<T extends Constructor<unknown>>(module: T, extension: Extension<T>): void
   export function extend(module: any, extension: any) {

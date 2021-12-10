@@ -21,7 +21,7 @@ class MongoDatabase extends Database {
   public client: MongoClient
   public db: Db
   public mongo = this
-  public tasks: Dict<Promise<void>> = {}
+  public tasks: Dict<Promise<any>> = {}
 
   constructor(public ctx: Context, private config: MongoDatabase.Config) {
     super(ctx)
@@ -62,9 +62,10 @@ class MongoDatabase extends Database {
 
   private async prepare(name: string) {
     await this.tasks[name]
+    const col = await this.db.createCollection(name)
     const { primary, unique } = this.ctx.model.config[name]
     const newSpecs: IndexSpecification[] = []
-    const oldSpecs: IndexSpecification[] = await this.collection(name).indexes()
+    const oldSpecs: IndexSpecification[] = await col.indexes()
     ;[primary, ...unique].forEach((keys, index) => {
       keys = makeArray(keys)
       const name = (index ? 'unique:' : 'primary:') + keys.join('+')
@@ -73,17 +74,12 @@ class MongoDatabase extends Database {
       newSpecs.push({ name, key, unique: true })
     })
     if (!newSpecs.length) return
-    await this.collection(name).createIndexes(newSpecs)
-  }
-
-  private collection(name: string) {
-    if (this.config.prefix) name = this.config.prefix + '.' + name
-    return this.db.collection(name)
+    await col.createIndexes(newSpecs)
   }
 
   async drop(name: TableType) {
     if (name) {
-      await this.collection(name).drop()
+      await this.db.collection(name).drop()
     } else {
       const collections = await this.db.collections()
       await Promise.all(collections.map(c => c.drop()))
@@ -92,7 +88,7 @@ class MongoDatabase extends Database {
 
   async get(name: TableType, query: Query, modifier: Query.Modifier) {
     const filter = transformQuery(this.ctx.model.resolveQuery(name, query))
-    let cursor = this.collection(name).find(filter)
+    let cursor = this.db.collection(name).find(filter)
     const { fields, limit, offset = 0 } = Query.resolveModifier(modifier)
     cursor = cursor.project({ _id: 0, ...Object.fromEntries((fields ?? []).map(key => [key, 1])) })
     if (offset) cursor = cursor.skip(offset)
@@ -103,30 +99,34 @@ class MongoDatabase extends Database {
   async set(name: TableType, query: Query, data: any) {
     await this.tasks[name]
     const filter = transformQuery(this.ctx.model.resolveQuery(name, query))
-    await this.collection(name).updateMany(filter, { $set: data })
+    await this.db.collection(name).updateMany(filter, { $set: data })
   }
 
   async remove(name: TableType, query: Query) {
     const filter = transformQuery(this.ctx.model.resolveQuery(name, query))
-    await this.collection(name).deleteMany(filter)
+    await this.db.collection(name).deleteMany(filter)
+  }
+
+  private queue(name: TableType, callback: () => Promise<any>) {
+    return this.tasks[name] = Promise.resolve(this.tasks[name]).finally(callback)
   }
 
   async create(name: TableType, data: any) {
-    await this.tasks[name]
-    const table = this.ctx.model.config[name]
-    const { primary, fields } = table
-    if (!Array.isArray(primary) && table.autoInc && !(primary in data)) {
-      const [latest] = await this.collection(name).find().sort(primary, -1).limit(1).toArray()
-      data[primary] = latest ? +latest[primary] + 1 : 1
-      if (Model.Field.string.includes(fields[primary].type)) {
-        data[primary] += ''
+    return this.queue(name, async () => {
+      const { primary, fields, autoInc } = this.ctx.model.config[name]
+      if (autoInc && !Array.isArray(primary) && !(primary in data)) {
+        const [latest] = await this.db.collection(name).find().sort(primary, -1).limit(1).toArray()
+        data[primary] = latest ? +latest[primary] + 1 : 1
+        if (Model.Field.string.includes(fields[primary].type)) {
+          data[primary] += ''
+        }
       }
-    }
-    const copy = { ...this.ctx.model.create(name), ...data }
-    try {
-      await this.collection(name).insertOne(copy)
-      return copy
-    } catch {}
+      const copy = { ...this.ctx.model.create(name), ...data }
+      try {
+        await this.db.collection(name).insertOne(copy)
+        return copy
+      } catch {}
+    })
   }
 
   async upsert(name: TableType, data: any[], keys: string | string[]) {
@@ -134,7 +134,7 @@ class MongoDatabase extends Database {
     if (!keys) keys = this.ctx.model.config[name].primary
     keys = makeArray(keys)
     await this.tasks[name]
-    const bulk = this.collection(name).initializeUnorderedBulkOp()
+    const bulk = this.db.collection(name).initializeUnorderedBulkOp()
     for (const item of data) {
       bulk.find(pick(item, keys))
         .upsert()
@@ -145,7 +145,7 @@ class MongoDatabase extends Database {
 
   async aggregate(name: TableType, fields: {}, query: Query) {
     const $match = transformQuery(this.ctx.model.resolveQuery(name, query))
-    const [data] = await this.collection(name).aggregate([{ $match }, {
+    const [data] = await this.db.collection(name).aggregate([{ $match }, {
       $group: {
         _id: 1,
         ...valueMap(fields, transformEval),
@@ -166,11 +166,10 @@ namespace MongoDatabase {
     port?: number
     /** database name */
     database?: string
-    prefix?: string
     /** default auth database */
     authDatabase?: string
     connectOptions?: ConstructorParameters<typeof URLSearchParams>[0]
-    /** connection string (will overwrite all configs except 'name' and 'prefix') */
+    /** connection string (will overwrite all configs except 'name') */
     uri?: string
   }
 
@@ -181,7 +180,6 @@ namespace MongoDatabase {
     username: Schema.string().description('要使用的用户名。'),
     password: Schema.string().description('要使用的密码。'),
     database: Schema.string().description('要访问的数据库名。').default('koishi'),
-    prefix: Schema.string().description('使用的表名前缀。当配置了这一项时，所有通过 Koishi 创建的表名都会以这个配置项为前缀。'),
   })
 }
 
