@@ -82,10 +82,11 @@ Koishi 完全基于 TypeScript 开发，拥有顶级的类型支持，丰富的�
 
 ### 平台支持
 
-- [adapter-onebot](https://koishi.js.org/plugins/adapter/onebot.html): [OneBot](https://github.com/howmanybots/onebot) 协议支持，可用于 QQ
 - [adapter-discord](https://koishi.js.org/plugins/adapter/discord.html): [Discord](https://discord.com/) 平台支持
-- [adapter-telegram](https://koishi.js.org/plugins/adapter/telegram.html): [Telegram](https://telegram.org/) 平台支持
 - [adapter-kaiheila](https://koishi.js.org/plugins/adapter/kaiheila.html): [开黑啦](https://kaiheila.cn/) 平台支持
+- [adapter-onebot](https://koishi.js.org/plugins/adapter/onebot.html): [OneBot](https://github.com/howmanybots/onebot) 协议支持，可用于 QQ
+- [adapter-qqguild](https://koishi.js.org/plugins/adapter/qqguild.html): QQ 频道平台支持
+- [adapter-telegram](https://koishi.js.org/plugins/adapter/telegram.html): [Telegram](https://telegram.org/) 平台支持
 
 ### 静态资源存储
 

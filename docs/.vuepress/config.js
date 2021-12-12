@@ -177,6 +177,7 @@ module.exports = {
           '/plugins/adapter/discord.md',
           '/plugins/adapter/kaiheila.md',
           '/plugins/adapter/onebot.md',
+          '/plugins/adapter/qqguild.md',
           '/plugins/adapter/telegram.md',
         ],
       }, {
