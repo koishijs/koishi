@@ -46,7 +46,7 @@ function UpdateOperators(app: App) {
 
 namespace UpdateOperators {
   export const insert = function Insert(app: App) {
-    const magicBorn = new Date('1926/08/17')
+    const magicBorn = new Date('1970/08/17')
 
     const merge = <T>(a: T, b: Partial<T>): T => ({ ...a, ...b })
 
@@ -111,11 +111,11 @@ namespace UpdateOperators {
     })
 
     it('create with duplicate primary key', async () => {
-      await expect(app.database.create('temp2', { id: barInsertions[0].id })).eventually.not.to.be.ok
-      await expect(app.database.create('temp3', { ida: 1, idb: 'a' })).eventually.not.to.be.ok
+      await expect(app.database.create('temp2', { id: barInsertions[0].id })).eventually.rejected
+      await expect(app.database.create('temp3', { ida: 1, idb: 'a' })).eventually.rejected
     })
 
-    it('upsert', async () => {
+    it('upsert new record', async () => {
       const barObjs = await setupBar()
       const updateBar = [{ id: barObjs[0].id, text: 'thu' }, { id: barObjs[1].id, num: 1911 }]
       updateBar.forEach(update => {
@@ -124,7 +124,10 @@ namespace UpdateOperators {
       })
       await expect(app.database.upsert('temp2', updateBar)).eventually.fulfilled
       await expect(app.database.get('temp2', {})).eventually.shape(barObjs)
+    })
 
+    it('upsert duplicate records', async () => {
+      const barObjs = await setupBar()
       const insertBar = [{ id: barObjs[5].id + 1, text: 'wmlake' }, { id: barObjs[5].id + 2, text: 'bytower' }]
       barObjs.push(...insertBar.map(bar => merge(app.model.create('temp2'), bar)))
       await expect(app.database.upsert('temp2', insertBar)).eventually.fulfilled
@@ -133,16 +136,16 @@ namespace UpdateOperators {
 
     it('set', async () => {
       const barObjs = await setupBar()
-      const cond = {
-        $or: [
-          { id: { $in: [barObjs[0].id, barObjs[1].id] } },
-          { date: magicBorn },
-        ],
-      }
-      barObjs.filter(obj => [barObjs[0].id, barObjs[1].id].includes(obj.id) || obj.date === magicBorn).forEach(obj => {
+      const magicIds = [barObjs[0].id, barObjs[1].id]
+      barObjs.filter(obj => magicIds.includes(obj.id) || obj.date === magicBorn).forEach(obj => {
         obj.num = 514
       })
-      await expect(app.database.set('temp2', cond, { num: 514 })).eventually.fulfilled
+      await expect(app.database.set('temp2', {
+        $or: [
+          { id: magicIds },
+          { date: magicBorn },
+        ],
+      }, { num: 514 })).eventually.fulfilled
       await expect(app.database.get('temp2', {})).eventually.shape(barObjs)
     })
 

@@ -1,4 +1,4 @@
-import { Query, Eval, Tables, Dict } from 'koishi'
+import { Query, Eval, Dict, Model } from 'koishi'
 
 export type QueryOperators = {
   [K in keyof Query.FieldExpr]?: (key: string, value: Query.FieldExpr[K]) => string
@@ -184,7 +184,7 @@ export abstract class SQLBuilder {
 }
 
 export interface TypeCaster<S = any, T = any> {
-  types: Tables.Field.Type<S>[]
+  types: Model.Field.Type<S>[]
   dump: (value: S) => T
   load: (value: T, initial?: S) => S
 }
@@ -192,7 +192,7 @@ export interface TypeCaster<S = any, T = any> {
 export class Caster {
   protected types: Dict<TypeCaster>
 
-  constructor() {
+  constructor(private model: Model) {
     this.types = Object.create(null)
   }
 
@@ -201,7 +201,7 @@ export class Caster {
   }
 
   dump(table: string, obj: any): any {
-    const { fields } = Tables.config[table]
+    const { fields } = this.model.config[table]
     const result = {}
     for (const key in obj) {
       const { type } = fields[key]
@@ -212,7 +212,7 @@ export class Caster {
   }
 
   load(table: string, obj: any): any {
-    const { fields } = Tables.config[table]
+    const { fields } = this.model.config[table]
     const result = {}
     for (const key in obj) {
       const { type, initial } = fields[key]
