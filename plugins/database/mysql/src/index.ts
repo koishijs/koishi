@@ -198,16 +198,16 @@ class MysqlDatabase extends Database {
     this.pool = createPool(this.config)
 
     for (const name in this.ctx.model.config) {
-      this.tasks[name] = this._sync(name)
+      this.tasks[name] = this._syncTable(name)
     }
 
     this.ctx.on('model', (name) => {
-      this.tasks[name] = this._sync(name)
+      this.tasks[name] = this._syncTable(name)
     })
   }
 
   /** synchronize table schema */
-  private async _sync(name: string) {
+  private async _syncTable(name: string) {
     await this.tasks[name]
     const data = await this.query<any[]>('SELECT COLUMN_NAME from information_schema.columns WHERE TABLE_SCHEMA = ? && TABLE_NAME = ?', [this.config.database, name])
     const columns = data.map(row => row.COLUMN_NAME)

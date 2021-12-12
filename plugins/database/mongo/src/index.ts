@@ -21,7 +21,7 @@ class MongoDatabase extends Database {
   public client: MongoClient
   public db: Db
   public mongo = this
-  public tasks: Dict<Promise<any>> = {}
+  private tasks: Dict<Promise<any>> = {}
 
   constructor(public ctx: Context, private config: MongoDatabase.Config) {
     super(ctx)
@@ -48,11 +48,11 @@ class MongoDatabase extends Database {
     this.db = this.client.db(this.config.database)
 
     for (const name in this.ctx.model.config) {
-      this.tasks[name] = this.prepare(name)
+      this.tasks[name] = this._syncTable(name)
     }
 
     this.ctx.on('model', (name) => {
-      this.tasks[name] = this.prepare(name)
+      this.tasks[name] = this._syncTable(name)
     })
   }
 
@@ -60,9 +60,10 @@ class MongoDatabase extends Database {
     return this.client.close()
   }
 
-  private async prepare(name: string) {
+  /** synchronize table schema */
+  private async _syncTable(name: string) {
     await this.tasks[name]
-    const col = await this.db.createCollection(name)
+    const col = await this.db.createCollection(name).catch(() => this.db.collection(name))
     const { primary, unique } = this.ctx.model.config[name]
     const newSpecs: IndexSpecification[] = []
     const oldSpecs: IndexSpecification[] = await col.indexes()
