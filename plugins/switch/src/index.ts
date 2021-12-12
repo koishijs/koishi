@@ -1,4 +1,4 @@
-import { Command, Context, template, deduplicate, difference, intersection, Argv, Tables } from 'koishi'
+import { Command, Context, template, deduplicate, difference, intersection, Argv } from 'koishi'
 import {} from '@koishijs/plugin-admin'
 
 declare module 'koishi' {
@@ -17,10 +17,6 @@ template.set('switch', {
   'none': '当前没有禁用功能。',
 })
 
-Tables.extend('channel', {
-  disable: 'list',
-})
-
 Command.channelFields(['disable'])
 
 export interface Config {}
@@ -28,6 +24,10 @@ export interface Config {}
 export const name = 'switch'
 
 export function apply(ctx: Context, config: Config = {}) {
+  ctx.model.extend('channel', {
+    disable: 'list',
+  })
+
   // check channel
   ctx.before('command', ({ session, command }: Argv<never, 'disable'>) => {
     if (!session.channel) return

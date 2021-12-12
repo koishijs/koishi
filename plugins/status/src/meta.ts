@@ -1,4 +1,4 @@
-import { Argv, Assets, Context, Dict, noop, Schema, Tables, Time } from 'koishi'
+import { Argv, Assets, Context, Dict, noop, Schema, Time } from 'koishi'
 import { DataSource } from '@koishijs/plugin-console'
 
 declare module 'koishi' {
@@ -6,10 +6,6 @@ declare module 'koishi' {
     lastCall: Date
   }
 }
-
-Tables.extend('user', {
-  lastCall: 'timestamp',
-})
 
 export class MetaProvider extends DataSource<MetaProvider.Payload> {
   timestamp = 0
@@ -22,7 +18,12 @@ export class MetaProvider extends DataSource<MetaProvider.Payload> {
     this.extend(async () => ctx.assets?.stats())
     this.extend(async () => ctx.database?.stats())
 
+    ctx.model.extend('user', {
+      lastCall: 'timestamp',
+    })
+
     ctx.any().on('command', ({ session }: Argv<'lastCall'>) => {
+      if (!ctx.database) return
       session.user.lastCall = new Date()
     })
   }

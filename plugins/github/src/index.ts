@@ -26,7 +26,8 @@ export function apply(ctx: Context, config: Config) {
   const { app, database } = ctx
   const { appId, redirect } = config
   const subscriptions: Dict<Dict<EventConfig>> = {}
-  const github = app.github = new GitHub(app, config)
+
+  ctx.plugin(GitHub, config)
 
   ctx.command('github', 'GitHub 相关功能').alias('gh')
     .action(({ session }) => session.execute('help github', true))
@@ -40,7 +41,7 @@ export function apply(ctx: Context, config: Config) {
     if (!id) return ctx.status = 403
     delete tokens[token]
     const { code, state } = ctx.query
-    const data = await app.github.getTokens({ code, state, redirect_uri: redirect })
+    const data = await ctx.github.getTokens({ code, state, redirect_uri: redirect })
     await database.setUser('id', id, {
       ghAccessToken: data.access_token,
       ghRefreshToken: data.refresh_token,
@@ -77,7 +78,7 @@ export function apply(ctx: Context, config: Config) {
         if (!name) return '请输入仓库名。'
         if (!repoRegExp.test(name)) return '请输入正确的仓库名。'
         if (!session.user.ghAccessToken) {
-          return ctx.app.github.authorize(session, '要使用此功能，请对机器人进行授权。输入你的 GitHub 用户名。')
+          return ctx.github.authorize(session, '要使用此功能，请对机器人进行授权。输入你的 GitHub 用户名。')
         }
 
         name = name.toLowerCase()
@@ -88,7 +89,7 @@ export function apply(ctx: Context, config: Config) {
           const secret = Random.id()
           let data: any
           try {
-            data = await ctx.app.github.request('POST', url, session, {
+            data = await ctx.github.request('POST', url, session, {
               events: ['*'],
               config: {
                 secret,
@@ -116,7 +117,7 @@ export function apply(ctx: Context, config: Config) {
         } else {
           if (!repo) return `尚未添加过仓库 ${name}。`
           try {
-            await ctx.app.github.request('DELETE', `${url}/${repo.id}`, session)
+            await ctx.github.request('DELETE', `${url}/${repo.id}`, session)
           } catch (err) {
             if (!axios.isAxiosError(err)) throw err
             logger.warn(err)
@@ -196,7 +197,7 @@ export function apply(ctx: Context, config: Config) {
     })
 
   async function request(method: Method, url: string, session: ReplySession, body: any, message: string) {
-    return ctx.app.github.request(method, 'https://api.github.com' + url, session, body)
+    return ctx.github.request(method, 'https://api.github.com' + url, session, body)
       .then(() => message + '成功！')
       .catch((err) => {
         logger.warn(err)
@@ -211,7 +212,7 @@ export function apply(ctx: Context, config: Config) {
       if (!options.repo) return '请输入仓库名。'
       if (!repoRegExp.test(options.repo)) return '请输入正确的仓库名。'
       if (!session.user.ghAccessToken) {
-        return ctx.app.github.authorize(session, '要使用此功能，请对机器人进行授权。输入你的 GitHub 用户名。')
+        return ctx.github.authorize(session, '要使用此功能，请对机器人进行授权。输入你的 GitHub 用户名。')
       }
 
       return request('POST', `/repos/${options.repo}/issues`, session, {
@@ -227,7 +228,7 @@ export function apply(ctx: Context, config: Config) {
       if (!options.repo) return '请输入仓库名。'
       if (!repoRegExp.test(options.repo)) return '请输入正确的仓库名。'
       if (!session.user.ghAccessToken) {
-        return ctx.app.github.authorize(session, '要使用此功能，请对机器人进行授权。输入你的 GitHub 用户名。')
+        return ctx.github.authorize(session, '要使用此功能，请对机器人进行授权。输入你的 GitHub 用户名。')
       }
 
       return request('PUT', `/user/starred/${options.repo}`, session, null, '创建')
@@ -299,7 +300,7 @@ export function apply(ctx: Context, config: Config) {
 
     const payload = payloads[name]
     if (!payload) return next()
-    const handler = new ReplyHandler(github, session, message)
+    const handler = new ReplyHandler(ctx.github, session, message)
     return handler[name](...payload)
   })
 

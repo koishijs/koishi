@@ -4,7 +4,7 @@ import mock from '@koishijs/plugin-mock'
 import mysql from '@koishijs/plugin-database-mysql'
 import parse from 'yargs-parser'
 
-const { mysqlPorts } = parse(process.argv.slice(2), { string: ['mysql-ports'] })
+const { mysqlPorts = '3306' } = parse(process.argv.slice(2), { string: ['mysql-ports'] })
 
 for (const port of mysqlPorts ? mysqlPorts.split(',') : []) {
   describe(`MySQL Database (${port})`, () => {
@@ -17,7 +17,7 @@ for (const port of mysqlPorts ? mysqlPorts.split(',') : []) {
       port: +port,
       user: 'koishi',
       password: 'koishi@114514',
-      database: 'koishi',
+      database: 'test',
     })
 
     tests.database(app, {

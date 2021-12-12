@@ -97,6 +97,7 @@ export interface Update {
     callbackQuery?: CallbackQuery;
     shippingQuery?: ShippingQuery;
     preCheckoutQuery?: PreCheckoutQuery;
+    chatJoinRequest?: ChatJoinRequest;
 }
 
 export interface WebhookInfo {
@@ -794,4 +795,43 @@ export interface Metadata {
 export interface BotCommand {
     command: string;
     description: string;
+}
+
+/** Represents a join request sent to a chat. */
+export interface ChatJoinRequest {
+    /** Chat to which the request was sent */
+    chat: Chat
+    /** User that sent the join request */
+    from: User
+    /** Date the request was sent in Unix time */
+    date: number
+    /** Optional. Bio of the user. */
+    bio?: string
+    /** Optional. Chat invite link that was used by the user to send the join request */
+    inviteLink?: ChatInviteLink
+}
+
+/** Represents an invite link for a chat. */
+export interface ChatInviteLink {
+    /**
+     * The invite link. If the link was created by another chat administrator,
+     * then the second part of the link will be replaced with “…”.
+     */
+    inviteLink: string
+    /** Creator of the link */
+    creator: User
+    /** True, if users joining the chat via the link need to be approved by chat administrators */
+    createsJoinRequest: boolean
+    /** True, if the link is primary */
+    isPrimary: boolean
+    /** True, if the link is revoked */
+    isRevoked: boolean
+    /** Optional. Invite link name */
+    name: string
+    /** Optional. Point in time (Unix timestamp) when the link will expire or has been expired */
+    expireDate: number
+    /** Optional. Maximum number of users that can be members of the chat simultaneously after joining the chat via this invite link; 1-99999 */
+    memberLimit: number
+    /** Optional. Number of pending join requests created using this link */
+    pendingJoinRequestCount: number
 }

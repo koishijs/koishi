@@ -1,4 +1,5 @@
 import { MaybeArray, Dict, Get, Extract, clone } from '@koishijs/utils'
+import { Context } from './context'
 import { User, Channel } from './database'
 
 export type TableType = keyof Tables
@@ -11,12 +12,90 @@ type Keys<O, T = any> = string & {
   [K in keyof O]: O[K] extends T ? K : never
 }[keyof O]
 
-export interface Tables {
-  user: User
-  channel: Channel
+export class Model {
+  public config: Dict<Model.Config> = {}
+
+  constructor(private ctx: Context) {
+    this.extend('user', {
+      id: 'string(63)',
+      name: 'string(63)',
+      flag: 'unsigned(20)',
+      authority: 'unsigned(4)',
+      usage: 'json',
+      timers: 'json',
+    }, {
+      autoInc: true,
+    })
+
+    this.extend('channel', {
+      id: 'string(63)',
+      platform: 'string(63)',
+      flag: 'unsigned(20)',
+      assignee: 'string(63)',
+    }, {
+      primary: ['id', 'platform'],
+    })
+  }
+
+  extend<T extends keyof Tables>(name: T, fields?: Model.Field.Extension<Tables[T]>, extension?: Model.Extension<Tables[T]>): void
+  extend(name: keyof Tables, fields = {}, extension: Model.Extension = {}) {
+    const { primary, autoInc, unique = [], foreign } = extension
+    const table = this.config[name] ||= {
+      primary: 'id',
+      unique: [],
+      foreign: {},
+      fields: {},
+    }
+
+    table.primary = primary || table.primary
+    table.autoInc = autoInc || table.autoInc
+    table.unique.push(...unique)
+    Object.assign(table.foreign, foreign)
+
+    for (const key in fields) {
+      table.fields[key] = Model.Field.parse(fields[key])
+    }
+
+    this.ctx.emit('model', name)
+  }
+
+  create<T extends TableType>(name: T): Tables[T] {
+    const { fields, primary } = this.config[name]
+    const result = {} as Tables[T]
+    for (const key in fields) {
+      if (key !== primary && fields[key].initial !== undefined) {
+        result[key] = clone(fields[key].initial)
+      }
+    }
+    return result
+  }
+
+  resolveQuery<T extends TableType>(name: T, query: Query<T> = {}): Query.Expr<Tables[T]> {
+    if (Array.isArray(query) || query instanceof RegExp || ['string', 'number'].includes(typeof query)) {
+      const { primary } = this.config[name]
+      if (Array.isArray(primary)) {
+        throw new TypeError('invalid query syntax')
+      }
+      return { [primary]: query } as any
+    }
+    return query as any
+  }
 }
 
-export namespace Tables {
+export namespace Model {
+  export interface Extension<O = any> {
+    autoInc?: boolean
+    primary?: MaybeArray<Keys<O>>
+    unique?: MaybeArray<Keys<O>>[]
+    foreign?: {
+      [K in keyof O]?: [TableType, string]
+    }
+  }
+
+  export interface Config<O = any> extends Extension<O> {
+    fields?: Field.Config<O>
+  }
+
   export interface Field<T = any> {
     type: Field.Type<T>
     length?: number
@@ -81,75 +160,14 @@ export namespace Tables {
       return field
     }
   }
-
-  export interface Extension<O = any> {
-    autoInc?: boolean
-    primary?: MaybeArray<Keys<O>>
-    unique?: MaybeArray<Keys<O>>[]
-    foreign?: {
-      [K in keyof O]?: [TableType, string]
-    }
-  }
-
-  export interface Config<O = any> extends Extension<O> {
-    fields?: Field.Config<O>
-  }
-
-  export const config: Dict<Config> = {}
-
-  export function extend<T extends TableType>(name: T, fields?: Field.Extension<Tables[T]>, extension?: Extension<Tables[T]>): void
-  export function extend(name: string, fields = {}, extension: Extension = {}) {
-    const { primary, autoInc, unique = [], foreign } = extension
-    const table = config[name] ||= {
-      primary: 'id',
-      unique: [],
-      foreign: {},
-      fields: {},
-    }
-
-    table.primary = primary || table.primary
-    table.autoInc = autoInc || table.autoInc
-    table.unique.push(...unique)
-    Object.assign(table.foreign, foreign)
-
-    for (const key in fields) {
-      table.fields[key] = Field.parse(fields[key])
-    }
-  }
-
-  export function create<T extends TableType>(name: T): Tables[T] {
-    const { fields, primary } = Tables.config[name]
-    const result = {} as Tables[T]
-    for (const key in fields) {
-      if (key !== primary && fields[key].initial !== undefined) {
-        result[key] = clone(fields[key].initial)
-      }
-    }
-    return result
-  }
-
-  extend('user', {
-    id: 'string(63)',
-    name: 'string(63)',
-    flag: 'unsigned(20)',
-    authority: 'unsigned(4)',
-    usage: 'json',
-    timers: 'json',
-  }, {
-    autoInc: true,
-  })
-
-  extend('channel', {
-    id: 'string(63)',
-    platform: 'string(63)',
-    flag: 'unsigned(20)',
-    assignee: 'string(63)',
-  }, {
-    primary: ['id', 'platform'],
-  })
 }
 
-export type Query<T extends TableType> = Query.Expr<Tables[T]> | Query.Shorthand<Primitive>
+export interface Tables {
+  user: User
+  channel: Channel
+}
+
+export type Query<T extends TableType = any> = Query.Expr<Tables[T]> | Query.Shorthand<Primitive>
 
 export namespace Query {
   export type Field<T extends TableType> = string & keyof Tables[T]
@@ -205,24 +223,13 @@ export namespace Query {
     [K in keyof T]?: FieldQuery<T[K]>
   }
 
-  export function resolve<T extends TableType>(name: T, query: Query<T> = {}): Expr<Tables[T]> {
-    if (Array.isArray(query) || query instanceof RegExp || ['string', 'number'].includes(typeof query)) {
-      const { primary } = Tables.config[name]
-      if (Array.isArray(primary)) {
-        throw new TypeError('invalid query syntax')
-      }
-      return { [primary]: query } as any
-    }
-    return query as any
-  }
-
   export interface ModifierExpr<K extends string> {
     limit?: number
     offset?: number
     fields?: K[]
   }
 
-  export type Modifier<T extends string> = T[] | ModifierExpr<T>
+  export type Modifier<T extends string = string> = T[] | ModifierExpr<T>
 
   export function resolveModifier<K extends string>(modifier: Modifier<K>): ModifierExpr<K> {
     if (Array.isArray(modifier)) return { fields: modifier }
@@ -242,6 +249,7 @@ export namespace Query {
     remove<T extends TableType>(table: T, query: Query<T>): Promise<void>
     create<T extends TableType>(table: T, data: Partial<Tables[T]>): Promise<Tables[T]>
     upsert<T extends TableType>(table: T, data: Partial<Tables[T]>[], keys?: MaybeArray<Index<T>>): Promise<void>
+    /** @experimental */
     aggregate<T extends TableType, P extends Projection<T>>(table: T, fields: P, query?: Query<T>): Promise<MapEval<T, P>>
   }
 }

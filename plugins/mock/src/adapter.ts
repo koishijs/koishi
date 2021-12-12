@@ -1,5 +1,5 @@
 import { Adapter, App, Bot, Context, Schema, Session } from 'koishi'
-import { Client } from './client'
+import { MessageClient } from './client'
 import { Webhook } from './webhook'
 
 declare module 'koishi' {
@@ -52,11 +52,11 @@ export class MockAdapter extends Adapter<BotConfig> {
     ctx.bots.adapters.mock = this
 
     for (const selfId of config.selfIds) {
-      this.bot(selfId)
+      this.addBot(selfId)
     }
   }
 
-  bot(selfId = DEFAULT_SELF_ID) {
+  addBot(selfId = DEFAULT_SELF_ID) {
     const bot = this.bots.find(bot => bot.selfId === selfId)
     if (bot) return bot
 
@@ -79,11 +79,17 @@ export class MockAdapter extends Adapter<BotConfig> {
   }
 
   client(userId: string, channelId?: string) {
-    return new Client(this, userId, channelId)
+    return new MessageClient(this, userId, channelId)
   }
 
   session(meta: Partial<Session>) {
-    return new Session(this.bots[0], meta)
+    const bot = this.bots[0]
+    return new Session(bot, {
+      selfId: bot.selfId,
+      platform: bot.platform,
+      timestamp: Date.now(),
+      ...meta,
+    })
   }
 
   receive(meta: Partial<Session>) {
@@ -97,7 +103,7 @@ export namespace MockAdapter {
   export interface Config {
     selfIds?: string[]
   }
-  
+
   export const Config = Schema.object({
     selfIds: Schema.array(Schema.string()).default([DEFAULT_SELF_ID]),
   })

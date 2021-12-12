@@ -82,6 +82,13 @@ sidebarDepth: 2
 
 - [处理交互 / 接收和发送消息](../message/middleware.md)
 
+## 数据模型 (Model)
+
+参考：
+
+- [数据库 / 扩展数据模型](../database/database.md#扩展数据模型)
+- [API 文档 / 数据模型 (Model)](../../api/core/model.md)
+
 ## 观察者 (Observer)
 
 参考：
@@ -108,12 +115,14 @@ sidebarDepth: 2
 
 参考：
 
+- [模块化 / 定义配置模式](../plugin/schema.md)
 - [API 文档 / 配置模式 (Schema)](../../api/utils/schema.md)
 
 ## 消息段 (Segment)
 
 参考：
 
+- [处理交互 / 使用消息段](../message/message.md#使用消息段)
 - [API 文档 / 消息段 (Segment)](../../api/utils/segment.md)
 
 ## 服务 (Service)
@@ -122,7 +131,7 @@ sidebarDepth: 2
 
 参考：
 
-- [更多功能 / 使用服务](../service/)
+- [模块化 / 服务与依赖](../plugin/service.md)
 
 ## 会话 (Session)
 

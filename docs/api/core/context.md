@@ -214,7 +214,7 @@ type PluginObject<U> = { apply: PluginFunction<T, U> }
 type Plugin<U> = PluginFunction<T, U> | PluginObject<T, U>
 ```
 
-### ctx.with(deps, plugin)
+### ctx.using(deps, plugin)
 
 - **deps:** `string[]` 依赖列表
 - **plugin:** `Plugin` 要安装的插件

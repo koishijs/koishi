@@ -1,4 +1,4 @@
-import { TableType, Query, Eval, valueMap } from 'koishi'
+import { Query, Eval, valueMap } from 'koishi'
 import { QuerySelector } from 'mongodb'
 
 function transformFieldQuery(query: Query.FieldQuery, key: string) {
@@ -32,7 +32,7 @@ function transformFieldQuery(query: Query.FieldQuery, key: string) {
   return result
 }
 
-function transformQuery(query: Query.Expr) {
+export function transformQuery(query: Query.Expr) {
   const filter = {}
   for (const key in query) {
     const value = query[key]
@@ -54,10 +54,6 @@ function transformQuery(query: Query.Expr) {
     }
   }
   return filter
-}
-
-export function createFilter<T extends TableType>(name: T, query: Query<T>) {
-  return transformQuery(Query.resolve(name, query))
 }
 
 export function transformEval(expr: Eval.Numeric | Eval.Aggregation) {

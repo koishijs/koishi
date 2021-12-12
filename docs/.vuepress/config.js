@@ -57,8 +57,9 @@ module.exports = {
         isGroup: true,
         children: [
           '/guide/introduction/index.md',
-          '/guide/introduction/coding.md',
           '/guide/introduction/console.md',
+          '/guide/introduction/coding.md',
+          '/guide/introduction/plugin.md',
           '/guide/introduction/glossary.md',
         ],
       }, {
@@ -80,7 +81,7 @@ module.exports = {
           '/guide/plugin/context.md',
           '/guide/plugin/lifecycle.md',
           '/guide/plugin/schema.md',
-          '/guide/plugin/publish.md',
+          '/guide/plugin/service.md',
         ],
       }, {
         text: '数据库',
@@ -104,7 +105,6 @@ module.exports = {
         text: '更多功能',
         isGroup: true,
         children: [
-          '/guide/service/index.md',
           '/guide/service/assets.md',
           '/guide/service/cache.md',
           '/guide/service/http.md',
@@ -136,6 +136,7 @@ module.exports = {
           '/api/core/session.md',
           '/api/core/command.md',
           '/api/core/database.md',
+          '/api/core/model.md',
           '/api/core/adapter.md',
         ],
       }, {
@@ -143,6 +144,7 @@ module.exports = {
         isGroup: true,
         children: [
           '/api/utils/segment.md',
+          '/api/utils/schema.md',
           '/api/utils/observer.md',
           '/api/utils/template.md',
           '/api/utils/logger.md',

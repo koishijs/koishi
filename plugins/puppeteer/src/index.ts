@@ -260,7 +260,7 @@ export function apply(ctx: Context, config: Config = {}) {
       }).finally(() => page.close())
     })
 
-  ctx1.with(['worker'], (ctx) => {
+  ctx1.using(['worker'], (ctx) => {
     ctx.worker.config.loaderConfig.jsxFactory = 'jsxFactory'
     ctx.worker.config.loaderConfig.jsxFragment = 'jsxFragment'
     ctx.worker.config.setupFiles['puppeteer.ts'] = resolve(__dirname, 'worker')

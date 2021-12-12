@@ -1,4 +1,4 @@
-import { Context, Schema, Tables } from 'koishi'
+import { Context, Schema } from 'koishi'
 import { resolve } from 'path'
 import {} from '@koishijs/plugin-console'
 import { LogProvider } from './logs'
@@ -37,11 +37,6 @@ declare module '@koishijs/plugin-console' {
     }
   }
 }
-
-Tables.extend('channel', {
-  name: 'string(50)',
-  activity: 'json',
-})
 
 export * from './logs'
 export * from './meta'

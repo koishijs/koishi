@@ -24,6 +24,8 @@ function toBranchName(id: number) {
 const logger = new Logger('jsdelivr')
 
 class JsdelivrAssets extends Assets {
+  static using = ['database'] as const
+
   git: SimpleGit
   taskQueue: Task[] = []
   taskMap = new Map<string, Task>()
@@ -31,6 +33,16 @@ class JsdelivrAssets extends Assets {
 
   constructor(ctx: Context, public config: JsdelivrAssets.Config) {
     super(ctx)
+
+    ctx.model.extend('jsdelivr', {
+      id: 'integer',
+      hash: 'string',
+      name: 'string',
+      branch: 'integer',
+      size: 'integer',
+    }, {
+      autoInc: true,
+    })
   }
 
   async start() {
