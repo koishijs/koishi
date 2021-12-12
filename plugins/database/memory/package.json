@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-database-memory",
   "description": "A in-memory database implementation for Koishi",
-  "version": "1.0.0-beta.2",
+  "version": "1.0.0-beta.3",
   "main": "lib/node.js",
   "module": "lib/browser.js",
   "typings": "lib/index.d.ts",
@@ -30,15 +30,15 @@
     "server"
   ],
   "peerDependencies": {
-    "koishi": "^4.0.0-beta.4"
+    "koishi": "^4.0.0-beta.5"
   },
   "devDependencies": {
-    "@koishijs/plugin-mock": "^1.0.0-beta.0",
-    "@koishijs/test-utils": "^8.0.0-beta.4",
+    "@koishijs/plugin-mock": "^1.0.0-beta.1",
+    "@koishijs/test-utils": "^8.0.0-beta.5",
     "@types/js-yaml": "^4.0.3",
     "js-yaml": "^4.1.0"
   },
   "dependencies": {
-    "@koishijs/orm-utils": "^1.0.0-beta.2"
+    "@koishijs/orm-utils": "^1.0.0-beta.3"
   }
 }

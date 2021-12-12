@@ -58,7 +58,6 @@ namespace Stat {
   export class Recorded<K extends string> extends Stat<K, Dict<number>> {
     constructor(table: string, fields: readonly K[], preserve: boolean) {
       super(table, fields, preserve)
-      Tables.extend(table as any, {}, { primary: 'time' })
       Database.extend('database-mysql', ({ tables, Domain }) => {
         tables[table] = Object.fromEntries(fields.map(key => [key, new Domain.Json()]))
         tables[table].time = 'datetime'
@@ -85,7 +84,6 @@ namespace Stat {
   export class Numerical<K extends string> extends Stat<K, number> {
     constructor(table: string, fields: readonly K[], preserve: boolean) {
       super(table, fields, preserve)
-      Tables.extend(table as any, {}, { primary: 'time' })
       Database.extend('database-mysql', ({ tables }) => {
         tables[table] = Object.fromEntries(fields.map(key => [key, 'int unsigned']))
         tables[table].time = 'datetime'
@@ -117,7 +115,14 @@ class MysqlSynchronizer implements Synchronizer {
   hourly = this._hourly.data
   longterm = this._longterm.data
 
-  constructor(private db: MysqlDatabase) {}
+  constructor(private db: MysqlDatabase) {
+    // @ts-ignore
+    db.ctx.model.extend('stats_daily', {}, { primary: 'time' })
+    // @ts-ignore
+    db.ctx.model.extend('stats_hourly', {}, { primary: 'time' })
+    // @ts-ignore
+    db.ctx.model.extend('stats_longterm', {}, { primary: 'time' })
+  }
 
   addDaily(field: Synchronizer.DailyField, key: string | number) {
     const stat: Record<string, number> = this._daily.data[field]
