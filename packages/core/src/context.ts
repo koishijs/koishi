@@ -223,8 +223,8 @@ export class Context {
     return this.app.registry.get(this._plugin)
   }
 
-  with(using: readonly (keyof Context.Services)[], plugin: Plugin.Function<void>) {
-    return this.plugin({ using, apply: plugin })
+  using(using: readonly (keyof Context.Services)[], callback: Plugin.Function<void>) {
+    return this.plugin({ using, apply: callback })
   }
 
   plugin<T extends keyof Modules>(plugin: T, options?: boolean | Plugin.ModuleConfig<Modules[T]>): this

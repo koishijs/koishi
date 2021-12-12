@@ -102,6 +102,12 @@ export namespace Adapter {
           args[0][protocol].schema,
         ]).description(protocol))
       }
+      BotConfig.list.push(Schema.transform(Schema.dict(Schema.any()), (value) => {
+        if (value.protocol) throw new Error(`unknown protocol "${value.protocol}"`)
+        value.protocol = args[1](value) as never
+        logger.debug('infer type as %s', value.protocol)
+        return value
+      }))
     }
 
     const Config = Schema.intersect([
