@@ -1,4 +1,4 @@
-import { Database, Logger, Tables, Time, Dict } from 'koishi'
+import { Database, Logger, Time, Dict } from 'koishi'
 import { Synchronizer, RECENT_LENGTH } from '../stats'
 import type MysqlDatabase from '@koishijs/plugin-database-mysql'
 

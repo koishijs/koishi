@@ -12,7 +12,7 @@ sidebarDepth: 2
 const { resolve } = require(path)
 
 module.exports = (ctx) => {
-  ctx.with('webui', () => {
+  ctx.using('webui', () => {
     ctx.console.addEntry(resolve(__dirname, 'client-entry.js'))
   })
 }
@@ -32,7 +32,7 @@ const { resolve } = require(path)
 module.exports = (ctx) => {
   // 这个方法可以确保其中的内容仅当 webui 插件被载入时调用
   // 即使使用者没有安装 koishi-plugin-webui，你的插件也不会因此而报错
-  ctx.with('webui', () => {
+  ctx.using('webui', () => {
     // 生产环境和开发环境使用不同的入口文件
     ctx.console.addEntry(ctx.console.config.devMode
       ? resolve(__dirname, '../client/index.ts')

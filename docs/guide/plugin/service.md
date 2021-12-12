@@ -47,6 +47,18 @@ app.private().console instanceof Console // true
 
 这种做法的本质原理是修改了 Context 的原型链。
 
+对于 TypeScript 用户，你还需要进行声明合并，以便能够在上下文对象中获得类型提示：
+
+```ts
+declare module 'koishi' {
+  namespace Context {
+    interface Services {
+      console: Console
+    }
+  }
+}
+```
+
 ### 服务的生命周期
 
 相比直接赋值，我们更推荐你从 Service 派生子类来实现自定义服务：
