@@ -12,6 +12,7 @@ const adaptGuild = (guild: GGuild): Bot.Guild => ({
 
 export class QQGuildBot extends Bot<BotConfig> {
   $innerBot: GBot
+
   constructor(adapter: WebSocketClient, app: BotConfig) {
     super(adapter, app)
     this.$innerBot = new GBot({ app, ...adapter.config })

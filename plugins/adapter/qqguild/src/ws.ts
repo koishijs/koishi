@@ -1,7 +1,6 @@
 import { Bot as GBot, Message } from '@qq-guild-sdk/core'
-import { Adapter, Schema, Session } from 'koishi'
+import { Adapter, Logger, Schema, segment, Session } from 'koishi'
 import { BotConfig, QQGuildBot } from './bot'
-import { Logger, segment } from '@koishijs/utils'
 
 const logger = new Logger('qqguild')
 
@@ -24,9 +23,7 @@ export const AdapterConfig: Schema<AdapterConfig> = Schema.intersect([
 ])
 
 const createSession = (bot: QQGuildBot, msg: Message) => {
-  const {
-    id: messageId, guildId, channelId, timestamp,
-  } = msg
+  const { id: messageId, guildId, channelId, timestamp } = msg
   const session: Partial<Session> = {
     selfId: bot.selfId,
     guildId,
