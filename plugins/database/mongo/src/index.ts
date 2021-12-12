@@ -1,5 +1,5 @@
-import { MongoClient, Db, IndexSpecification } from 'mongodb'
-import { Context, Database, Tables as KoishiTables, makeArray, Schema, valueMap, pick, omit, Query, Model, Dict } from 'koishi'
+import { MongoClient, Db, IndexSpecification, MongoError } from 'mongodb'
+import { Context, Database, Tables as KoishiTables, makeArray, Schema, valueMap, pick, omit, Query, Model, Dict, noop } from 'koishi'
 import { URLSearchParams } from 'url'
 import { transformQuery, transformEval } from './utils'
 
@@ -108,7 +108,7 @@ class MongoDatabase extends Database {
   }
 
   private queue(name: TableType, callback: () => Promise<any>) {
-    return this.tasks[name] = Promise.resolve(this.tasks[name]).finally(callback)
+    return this.tasks[name] = Promise.resolve(this.tasks[name]).catch(noop).then(callback)
   }
 
   async create(name: TableType, data: any) {
@@ -125,7 +125,12 @@ class MongoDatabase extends Database {
       try {
         await this.db.collection(name).insertOne(copy)
         return copy
-      } catch {}
+      } catch (err) {
+        if (err instanceof MongoError && err.code === 11000) {
+          err[Symbol.for('koishi.error-type')] = 'duplicate-entry'
+        }
+        throw err
+      }
     })
   }
 

@@ -159,7 +159,7 @@ Database.extend('database-mysql', {
       'SELECT COUNT(*) as allUsers FROM `user`',
       'SELECT COUNT(*) as activeGroups FROM `channel` WHERE `assignee`',
       'SELECT COUNT(*) as allGroups FROM `channel`',
-      'SELECT TABLE_NAME as name, TABLE_ROWS as count, DATA_LENGTH as size from information_schema.TABLES where TABLE_SCHEMA = ' + this.escape(this.config.database),
+      'SELECT TABLE_NAME as name, TABLE_ROWS as count, DATA_LENGTH as size from information_schema.TABLES where TABLE_SCHEMA = ' + this.sql.escape(this.config.database),
     ])
     const tables = Object.fromEntries(tablesStats.map(({ name, ...data }) => [name, data]))
     return { activeUsers, allUsers, activeGroups, allGroups, tables }

@@ -1,4 +1,4 @@
-import { clone, Context, Database, Logger, makeArray, Model, pick, Query, Schema, Tables, TableType, valueMap } from 'koishi'
+import { clone, Context, Database, Logger, makeArray, Model, noop, pick, Query, Schema, Tables, TableType, valueMap } from 'koishi'
 import { executeEval, executeQuery } from '@koishijs/orm-utils'
 import { LevelUp } from 'levelup'
 import level from 'level'
@@ -26,7 +26,7 @@ class LevelDatabase extends Database {
 
   #level: LevelUp
   #tables: Record<string, LevelUp>
-  #last: Promise<any>
+  #last: Promise<any> = Promise.resolve()
 
   constructor(public ctx: Context, public config: LevelDatabase.Config) {
     super(ctx)
@@ -98,7 +98,7 @@ class LevelDatabase extends Database {
   }
 
   async queue<T>(factory: () => Promise<T>): Promise<T> {
-    return this.#last = this.#last.catch(() => {}).then(factory)
+    return this.#last = this.#last.catch(noop).then(factory)
   }
 
   async drop(name: keyof Tables) {
@@ -212,7 +212,12 @@ class LevelDatabase extends Database {
         }
       }
       const key = this._makeKey(primary, data)
-      if (!forced && await this._exists(name, key)) return
+      if (!forced && await this._exists(name, key)) {
+        const err = new Error('Duplicate key')
+        err[Symbol.for('koishi.error-type')] = 'duplicate-entry'
+        throw err
+      }
+
       const copy = { ...this.ctx.model.create(name), ...data }
       await this.table(name).put(key, copy)
       return copy
