@@ -32,132 +32,6 @@ Koishi 中的服务可以分为大致三种类型。对于每一种我都给出�
 - ctx.puppeteer
 - ctx.teach
 
-## 自定义服务
-
-如果你希望自己插件提供一些接口供其他插件使用，那么最好的办法便是提供自定义服务，就像这样：
-
-```js
-// 这个表达式定义了一个名为 console 的服务
-Context.service('console')
-
-// 假如你在某个上下文设置了这个值，其他的上下文也将拥有此属性
-app.guild().console = new Console()
-app.private().console instanceof Console // true
-```
-
-这种做法的本质原理是修改了 Context 的原型链。
-
-对于 TypeScript 用户，你还需要进行声明合并，以便能够在上下文对象中获得类型提示：
-
-```ts
-declare module 'koishi' {
-  namespace Context {
-    interface Services {
-      console: Console
-    }
-  }
-}
-```
-
-### 服务的生命周期
-
-相比直接赋值，我们更推荐你从 Service 派生子类来实现自定义服务：
-
-```js
-import { Service } from 'koishi'
-
-class Console extends Service {
-  constructor(ctx: Context) {
-    // 这样写你就不需要手动给 ctx 赋值了
-    super(ctx, 'console', true)
-  }
-}
-
-// 这样定义的好处在于，Console 本身也是一个插件
-app.plugin(Console)
-```
-
-Service 抽象类的构造函数支持三个参数：
-
-- ctx: 服务所在的上下文对象
-- name: 服务的名称 (即其在所有上下文中的属性名)
-- immediate: 是否立即注册到所有上下文中 (可选，默认为 `false`)
-
-以及两个可选的抽象方法：
-
-- start(): 在 connect 事件触发时调用
-- stop(): 在 disconnect 事件触发时调用
-
-默认情况下，一个自定义服务会先等待 connect 事件触发，然后调用可能存在的 `start()` 方法，最后才会被注册到全体上下文中。这种设计确保了服务在能够被访问的时候就已经是可用的。但如果你的服务不需要等待 connect 事件，那么只需传入第三个参数 `true` 就可以立即将服务注册到所有上下文中。
-
-此外，当注册了服务的插件被卸载时，其注册的服务也会被移除，其他插件不再可以访问到这项服务：
-
-```js
-app.console                 // falsy
-app.plugin(Console)         // 加载插件
-app.console                 // truthy
-app.dispose(Console)        // 卸载插件
-app.console                 // falsy
-app.plugin(Console)         // 重新加载插件
-app.console                 // truthy
-```
-
-### 支持热重载 <badge text="beta" type="warning"/>
-
-既然服务的作用是提供接口供其他插件调用，就自然会涉及一个热重载的问题。如果某个插件先调用了服务上的方法，然后被卸载，那么我们就需要处理调用所带来的副作用。让我们来看一段 console 插件的源码：
-
-```js
-class Console extends Service {
-  // 这个方法的作用是添加入口文件
-  addEntry(filename: string) {
-    this.entries.add(filename)
-    this.triggerReload()
-
-    // 注意这个地方，caller 属性会指向访问此方法的上下文
-    // 只需要在这个上下文上监听 disconnect 事件，就可以顺利处理副作用了
-    this.caller.on('disconnect', () => {
-      this.entries.delete(filename)
-      this.triggerReload()
-    })
-  }
-}
-```
-
-::: tip
-需要注意的是，这里的 `caller` 属性仅仅会在调用时进行赋值，因此如果你要提供的接口是异步的，那么请在一开始保存这个上下文的引用，因为它可能在后续的异步操作中被修改。下面的两种写法都是可以的：
-
-```js
-class Console extends Service {
-  async addEntry(filename: string) {
-    // 预先保存一下 caller，因为后面有异步操作
-    const ctx = this.caller
-    this.entries.add(filename)
-    await this.triggerReload()
-
-    ctx.on('disconnect', async () => {
-      this.entries.delete(filename)
-      await this.triggerReload()
-    })
-  }
-}
-```
-
-```js
-class Console extends Service {
-  async addEntry(filename: string) {
-    this.caller.on('disconnect', async () => {
-      this.entries.delete(filename)
-      await this.triggerReload()
-    })
-
-    // 或者将异步操作放到后面完成
-    this.entries.add(filename)
-    await this.triggerReload()
-  }
-}
-```
-:::
-
 ## 声明依赖关系
 
 前面从服务提供者的角度提供了解决方案，现在让我们把视角转换到服务的使用者上。假设你正在开发名为 teach 的教学系统，并且这个插件依赖多个服务：
@@ -303,6 +177,132 @@ export function apply(ctx: Context) {
   ctx.using(['console'], (ctx) => {
     ctx.console.addEntry('/path/to/teach/extension')
   })
+}
+```
+:::
+
+## 自定义服务
+
+如果你希望自己插件提供一些接口供其他插件使用，那么最好的办法便是提供自定义服务，就像这样：
+
+```js
+// 这个表达式定义了一个名为 console 的服务
+Context.service('console')
+
+// 假如你在某个上下文设置了这个值，其他的上下文也将拥有此属性
+app.guild().console = new Console()
+app.private().console instanceof Console // true
+```
+
+这种做法的本质原理是修改了 Context 的原型链。
+
+对于 TypeScript 用户，你还需要进行声明合并，以便能够在上下文对象中获得类型提示：
+
+```ts
+declare module 'koishi' {
+  namespace Context {
+    interface Services {
+      console: Console
+    }
+  }
+}
+```
+
+### 服务的生命周期
+
+相比直接赋值，我们更推荐你从 Service 派生子类来实现自定义服务：
+
+```js
+import { Service } from 'koishi'
+
+class Console extends Service {
+  constructor(ctx: Context) {
+    // 这样写你就不需要手动给 ctx 赋值了
+    super(ctx, 'console', true)
+  }
+}
+
+// 这样定义的好处在于，Console 本身也是一个插件
+app.plugin(Console)
+```
+
+Service 抽象类的构造函数支持三个参数：
+
+- ctx: 服务所在的上下文对象
+- name: 服务的名称 (即其在所有上下文中的属性名)
+- immediate: 是否立即注册到所有上下文中 (可选，默认为 `false`)
+
+以及两个可选的抽象方法：
+
+- start(): 在 connect 事件触发时调用
+- stop(): 在 disconnect 事件触发时调用
+
+默认情况下，一个自定义服务会先等待 connect 事件触发，然后调用可能存在的 `start()` 方法，最后才会被注册到全体上下文中。这种设计确保了服务在能够被访问的时候就已经是可用的。但如果你的服务不需要等待 connect 事件，那么只需传入第三个参数 `true` 就可以立即将服务注册到所有上下文中。
+
+此外，当注册了服务的插件被卸载时，其注册的服务也会被移除，其他插件不再可以访问到这项服务：
+
+```js
+app.console                 // falsy
+app.plugin(Console)         // 加载插件
+app.console                 // truthy
+app.dispose(Console)        // 卸载插件
+app.console                 // falsy
+app.plugin(Console)         // 重新加载插件
+app.console                 // truthy
+```
+
+### 支持热重载 <badge text="beta" type="warning"/>
+
+既然服务的作用是提供接口供其他插件调用，就自然会涉及一个热重载的问题。如果某个插件先调用了服务上的方法，然后被卸载，那么我们就需要处理调用所带来的副作用。让我们来看一段 console 插件的源码：
+
+```js
+class Console extends Service {
+  // 这个方法的作用是添加入口文件
+  addEntry(filename: string) {
+    this.entries.add(filename)
+    this.triggerReload()
+
+    // 注意这个地方，caller 属性会指向访问此方法的上下文
+    // 只需要在这个上下文上监听 disconnect 事件，就可以顺利处理副作用了
+    this.caller.on('disconnect', () => {
+      this.entries.delete(filename)
+      this.triggerReload()
+    })
+  }
+}
+```
+
+::: tip
+需要注意的是，这里的 `caller` 属性仅仅会在调用时进行赋值，因此如果你要提供的接口是异步的，那么请在一开始保存这个上下文的引用，因为它可能在后续的异步操作中被修改。下面的两种写法都是可以的：
+
+```js
+class Console extends Service {
+  async addEntry(filename: string) {
+    // 预先保存一下 caller，因为后面有异步操作
+    const ctx = this.caller
+    this.entries.add(filename)
+    await this.triggerReload()
+
+    ctx.on('disconnect', async () => {
+      this.entries.delete(filename)
+      await this.triggerReload()
+    })
+  }
+}
+```
+
+```js
+class Console extends Service {
+  async addEntry(filename: string) {
+    this.caller.on('disconnect', async () => {
+      this.entries.delete(filename)
+      await this.triggerReload()
+    })
+
+    // 或者将异步操作放到后面完成
+    this.entries.add(filename)
+    await this.triggerReload()
+  }
 }
 ```
 :::

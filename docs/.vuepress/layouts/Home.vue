@@ -2,7 +2,11 @@
   <div class="homepage">
     <div class="screen flex screen-1">
       <h1><span class="koi">Koi</span>shi.js</h1>
-      <p class="desc">CROSS-PLATFORM CHATBOT FRAMEWORK MADE WITH <span class="koi">LOVE</span></p>
+      <p class="desc">
+        CROSS-PLATFORM CHATBOT FRAMEWORK
+        <br v-if="width < 600">
+        MADE WITH <span class="koi">LOVE</span>
+      </p>
       <svg aria-hidden="true" focusable="false" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512" class="w-10 h-10">
         <g>
           <path fill="var(--c-love)" d="M160 256.14l-56.51 56.47-96.44-96.15a23.77 23.77.0 01-.18-33.61l.18-.18 22.59-22.51a23.94 23.94.0 0133.85.0z"></path>
@@ -72,16 +76,16 @@
     </div>
 
     <div class="screen screen-6">
-      <!-- <el-scrollbar> -->
-        <div class="navigation">
-          <div class="item" v-for="item in getSidebarItems('/guide/')" :key="item.link || item.text">
-            <sidebar-child :item="item"></sidebar-child>
-          </div>
-          <div class="item" v-for="item in getSidebarItems('/api/')" :key="item.link || item.text">
-            <sidebar-child :item="item"></sidebar-child>
-          </div>
+      <div class="navigation">
+        <div class="item guide" v-for="item in getSidebarItems('/guide/')" :key="item.link || item.text">
+          <sidebar-child :item="item"></sidebar-child>
         </div>
-      <!-- </el-scrollbar> -->
+        <template v-if="width >= 1200">
+          <div class="item api" v-for="item in getSidebarItems('/api/')" :key="item.link || item.text">
+            <sidebar-child :item="item"></sidebar-child>
+          </div>
+        </template>
+      </div>
     </div>
 
     <footer>
@@ -92,8 +96,11 @@
 
 <script setup lang="ts">
 
+import { useWindowSize } from '@vueuse/core'
 import { SidebarChild } from '@vuepress/theme-default/lib/client/components/SidebarChild'
 import { useThemeLocaleData, resolveArraySidebarItems } from '@vuepress/theme-default/lib/client/composables'
+
+const { width } = useWindowSize()
 
 function getSidebarItems(route: string) {
   const config = useThemeLocaleData().value
@@ -109,8 +116,11 @@ function getSidebarItems(route: string) {
   width: 100%;
   top: 0;
   left: 0;
+  height: 100vh;
+  overflow-y: auto;
   display: grid;
   grid-template-rows: repeat(5, 100vh);
+  scroll-snap-type: y mandatory;
 
   .koi {
     color: var(--c-love);
@@ -158,6 +168,7 @@ function getSidebarItems(route: string) {
   --c-text: var(--c-text-home);
   color: var(--c-text);
   transition: var(--t-color);
+  scroll-snap-align: start;
 }
 
 .screen-1 {
@@ -177,6 +188,7 @@ function getSidebarItems(route: string) {
     color: var(--c-text-lightest);
     text-transform: uppercase;
     text-align: center;
+    line-height: 2;
   }
 }
 
@@ -265,25 +277,18 @@ function getSidebarItems(route: string) {
 }
 
 .screen-6 {
-  --padding-horizontal: 4rem;
+  --nav-padding: 4rem;
+  --max-height: calc(100vh - var(--navbar-height) - 10rem);
 
-  padding: 2rem 0 2rem var(--padding-horizontal);
-  overflow-y: overlay;
+  padding: 2rem 0 2rem var(--nav-padding);
+  overflow-x: auto;
+  display: flex;
+  flex-direction: column;
+  height: var(--max-height);
 
   @media (max-width: 960px) {
-    --padding-horizontal: 2rem;
+    --nav-padding: 2rem;
   }
-
-  @media (max-width: 480px) {
-    --padding-horizontal: 1rem;
-  }
-}
-
-.home footer {
-  flex-shrink: 0;
-  padding: 2.5rem;
-  line-height: 1rem;
-  text-align: center;
 }
 
 .navigation {
@@ -293,14 +298,19 @@ function getSidebarItems(route: string) {
   flex-wrap: wrap;
   gap: 1rem;
   align-content: space-evenly;
-  height: calc(100vh - var(--navbar-height) - 10rem);
+  height: min-content;
+  width: 100%;
+  max-height: var(--max-height);
   transition: border-color var(--t-color);
+
+  @media (max-width: 1200px) {
+    max-height: min(var(--max-height), 600px);
+  }
 
   .item {
     width: 12.5rem;
     &:last-child {
-      margin-right: 1.5rem; // padding-left of sidebar-heading
-      padding-right: var(--padding-horizontal);
+      padding-right: var(--nav-padding);
     }
   }
 
@@ -309,6 +319,13 @@ function getSidebarItems(route: string) {
     margin: 0;
     list-style-type: none;
   }
+}
+
+.home footer {
+  flex-shrink: 0;
+  padding: calc(2.5rem - 1px);
+  line-height: 1rem;
+  text-align: center;
 }
 
 @keyframes bounce {
