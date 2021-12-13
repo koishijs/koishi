@@ -45,8 +45,6 @@ export class MarketProvider extends DataSource<Dict<MarketProvider.Data>> {
       endpoint: config.endpoint,
     })
 
-    ctx.on('connect', () => this.start())
-
     ctx.console.addListener('install', this.install)
     ctx.console.addListener('uninstall', this.uninstall)
   }
@@ -58,7 +56,7 @@ export class MarketProvider extends DataSource<Dict<MarketProvider.Data>> {
   }
 
   stop() {
-    this.flushData.cancel()
+    this.flushData?.cancel()
   }
 
   private async search(offset = 0) {

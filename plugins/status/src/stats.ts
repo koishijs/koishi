@@ -102,7 +102,7 @@ export class StatisticsProvider extends DataSource<StatisticsProvider.Payload> {
 
     this.sync = ctx.database.createSynchronizer()
 
-    ctx.on('disconnect', async () => {
+    ctx.on('dispose', async () => {
       // rollback to default implementation to prevent infinite call stack
       if (Session.prototype.send[customTag]) {
         Session.prototype.send = Session.prototype.send[customTag]

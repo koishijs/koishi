@@ -86,7 +86,7 @@ export default function receiver(ctx: Context, config: RefreshConfig = {}) {
   const groupMap: Dict<[Promise<string>, number]> = {}
   const userMap: Dict<[Promise<string>, number]> = {}
 
-  ctx.on('connect', () => {
+  ctx.on('ready', () => {
     const timestamp = Date.now()
     ctx.bots.forEach(bot => userMap[bot.sid] = [Promise.resolve(bot.username), timestamp])
   })

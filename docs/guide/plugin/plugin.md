@@ -191,13 +191,13 @@ app.dispose(callback)
 module.exports = (ctx, options) => {
   const server = createServer()
 
-  ctx.on('connect', () => {
+  ctx.on('ready', () => {
     // ctx.dispose 无法消除 server.listen 带来的副作用
     server.listen(1234)
   })
 
   // 添加一个特殊的回调函数来处理副作用
-  ctx.on('disconnect', () => {
+  ctx.on('dispose', () => {
     server.close()
   })
 }
@@ -208,13 +208,13 @@ import { Context } from 'koishi'
 export default function (ctx: Context, options) {
   const server = createServer()
 
-  ctx.on('connect', () => {
+  ctx.on('ready', () => {
     // ctx.dispose 无法消除 server.listen 带来的副作用
     server.listen(1234)
   })
 
   // 添加一个特殊的回调函数来处理副作用
-  ctx.on('disconnect', () => {
+  ctx.on('dispose', () => {
     server.close()
   })
 }

@@ -234,7 +234,7 @@ export function apply(ctx: Context, config: Config) {
       return request('PUT', `/user/starred/${options.repo}`, session, null, '创建')
     })
 
-  ctx.on('connect', async () => {
+  ctx.on('ready', async () => {
     const channels = await ctx.database.getAssignedChannels(['id', 'githubWebhooks'])
     for (const { id, githubWebhooks } of channels) {
       for (const repo in githubWebhooks) {

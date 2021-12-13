@@ -14,8 +14,6 @@ export class PackageProvider extends DataSource<Dict<PackageProvider.Data>> {
 
   constructor(ctx: Context, config: PackageProvider.Config) {
     super(ctx, 'packages')
-
-    ctx.on('connect', () => this.start())
   }
 
   start() {

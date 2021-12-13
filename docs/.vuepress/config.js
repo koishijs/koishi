@@ -80,8 +80,8 @@ module.exports = {
           '/guide/plugin/plugin.md',
           '/guide/plugin/context.md',
           '/guide/plugin/lifecycle.md',
-          '/guide/plugin/schema.md',
           '/guide/plugin/service.md',
+          '/guide/plugin/schema.md',
         ],
       }, {
         text: '数据库',

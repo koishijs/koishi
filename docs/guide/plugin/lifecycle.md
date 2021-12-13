@@ -13,7 +13,7 @@ sidebarDepth: 2
 ```js
 module.exports.apply = (ctx) => {
   // 当应用启动完成后发送消息到命令行
-  ctx.on('connect', () => {
+  ctx.on('ready', () => {
     console.log('App 正在运行')
   })
 }

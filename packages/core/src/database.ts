@@ -51,12 +51,12 @@ export abstract class Service {
   constructor(protected ctx: Context, key: keyof Context.Services, immediate?: boolean) {
     if (immediate) ctx[key] = this as never
 
-    ctx.on('connect', async () => {
+    ctx.on('ready', async () => {
       await this.start()
       if (!immediate) ctx[key] = this as never
     })
 
-    ctx.on('disconnect', async () => {
+    ctx.on('dispose', async () => {
       await this.stop()
     })
   }

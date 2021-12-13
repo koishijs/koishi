@@ -114,7 +114,7 @@ export class App extends Context {
 
   async start() {
     this.isActive = true
-    await this.parallel('connect')
+    await this.parallel('ready')
     this.logger('app').debug('started')
   }
 

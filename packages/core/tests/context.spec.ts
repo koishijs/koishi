@@ -211,7 +211,7 @@ describe('Context API', () => {
         ctx.command('temp')
         ctx.on('attach', () => {})
         ctx.before('attach', () => {})
-        ctx.on('disconnect', () => {})
+        ctx.on('dispose', () => {})
         ctx.middleware(() => {})
       }
 
@@ -241,7 +241,7 @@ describe('Context API', () => {
     it('dispose event', () => {
       const callback = jest.fn<void, []>()
       app.plugin(async (ctx) => {
-        ctx.on('disconnect', callback)
+        ctx.on('dispose', callback)
         expect(callback.mock.calls).to.have.length(0)
         await ctx.dispose()
         expect(callback.mock.calls).to.have.length(1)

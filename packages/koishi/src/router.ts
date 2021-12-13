@@ -119,12 +119,12 @@ export class Router extends KoaRouter {
     const { port,  host } = app.options
     if (!port) return
 
-    app.on('connect', () => {
+    app.on('ready', () => {
       app._httpServer.listen(port, host)
       app.logger('app').info('server listening at %c', `http://${host || 'localhost'}:${port}`)
     })
 
-    app.on('disconnect', () => {
+    app.on('dispose', () => {
       app.logger('app').info('http server closing')
       app._wsServer?.close()
       app._httpServer?.close()

@@ -163,7 +163,7 @@ export function apply(ctx: Context, config: Config = {}) {
   config = { ...defaultConfig, ...config }
   const { defaultViewport } = config.browser
 
-  ctx.on('connect', async () => {
+  ctx.on('ready', async () => {
     ctx.puppeteer = new Puppeteer(ctx, config)
     await ctx.puppeteer.launch().catch((error) => {
       logger.error(error)
@@ -171,7 +171,7 @@ export function apply(ctx: Context, config: Config = {}) {
     })
   })
 
-  ctx.on('disconnect', async () => {
+  ctx.on('dispose', async () => {
     await ctx.puppeteer?.close()
     delete ctx.puppeteer
   })

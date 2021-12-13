@@ -14,7 +14,7 @@ export class RegistryProvider extends DataSource<Dict<PluginData>> {
     ctx.on('plugin-added', this.update)
     ctx.on('plugin-removed', this.update)
     ctx.on('service', this.update)
-    ctx.on('disconnect', this.update.cancel)
+    ctx.on('dispose', this.update.cancel)
   }
 
   async get(forced = false) {

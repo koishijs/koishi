@@ -38,7 +38,7 @@ export function apply(ctx: Context, config: DeamonConfig = {}) {
       process.exit(114)
     })
 
-  ctx.on('connect', () => {
+  ctx.on('ready', () => {
     process.send({ type: 'start', body: { autoRestart } })
     process.on('SIGINT', handleSignal)
     process.on('SIGTERM', handleSignal)

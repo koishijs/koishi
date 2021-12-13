@@ -380,10 +380,18 @@ export class Context {
   on(name: string & EventName, listener: Disposable, prepend = false) {
     const method = prepend ? 'unshift' : 'push'
 
-    // handle special events
-    if (name === 'connect' && this.app.isActive) {
-      return listener(), () => false
+    if (name === 'connect') {
+      name = 'ready'
+      this.logger('context').warn('event "connect" is deprecated, use "ready" instead')
     } else if (name === 'disconnect') {
+      name = 'dispose'
+      this.logger('context').warn('event "disconnect" is deprecated, use "dispose" instead')
+    }
+
+    // handle special events
+    if (name === 'ready' && this.app.isActive) {
+      return listener(), () => false
+    } else if (name === 'dispose') {
       this.state.disposables[method](listener)
       return () => remove(this.state.disposables, listener)
     }
@@ -643,9 +651,10 @@ export interface EventMap extends SessionEventMap {
   'middleware'(session: Session): void
   'plugin-added'(plugin: Plugin): void
   'plugin-removed'(plugin: Plugin): void
-  'before-connect'(): Awaitable<void>
   'connect'(): Awaitable<void>
   'disconnect'(): Awaitable<void>
+  'ready'(): Awaitable<void>
+  'dispose'(): Awaitable<void>
   'model'(name: keyof Tables): void
   'service'(name: keyof Context.Services): void
   'adapter'(): void
