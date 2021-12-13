@@ -148,7 +148,7 @@ interface Selection {
 #### options.logger.showDiff
 
 - 类型：`boolean`
-- 默认值：初始未设置，在 connect 事件触发后修改为 `!options.logTime`
+- 默认值：初始未设置，在 ready 事件触发后修改为 `!options.logTime`
 
 是否标注相邻两次输出的时间差。参见 [输出时间](../../guide/logger.md#输出时间) 一节。
 

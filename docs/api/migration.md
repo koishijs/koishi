@@ -54,7 +54,7 @@ sidebarDepth: 2
 
 ## 插件变更
 
-- 移除了 before-connect 和 before-disconnect 事件，请直接使用 connect 和 disconnect 事件代替
+- 移除了 before-connect 和 before-disconnect 事件，请直接使用 ready 和 dispose 事件代替
 - 移除了 sideEffect 声明，现在所有插件都视为无副作用
 - 新增了 [Schema API](./schema.md)，用于描述插件的配置项，下面是一个例子：
 

@@ -58,13 +58,13 @@ sidebarDepth: 2
 
 - 返回值: `void | Promise<void>`
 
-启动适配器所需的操作，将作为 connect 事件的回调函数。
+启动适配器所需的操作，将作为 ready 事件的回调函数。
 
 ### adapter.stop() <Badge text="abstract"/>
 
 - 返回值: `void | Promise<void>`
 
-停止适配器所需的操作，将作为 disconnect 事件的回调函数。
+停止适配器所需的操作，将作为 dispose 事件的回调函数。
 
 ### adapter.connect(bot) <Badge text="abstract"/>
 
