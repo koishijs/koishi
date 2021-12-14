@@ -39,7 +39,7 @@ function getTypeDefinition({ type, length, precision, scale }: Model.Field) {
     case 'double':
     case 'date':
     case 'time': return type
-    case 'datetime': return 'datetime'
+    case 'timestamp': return 'datetime'
     case 'integer': return getIntegerType(length)
     case 'unsigned': return `${getIntegerType(length)} unsigned`
     case 'decimal': return `decimal(${precision}, ${scale}) unsigned`
