@@ -60,7 +60,7 @@ module.exports = {
           '/guide/introduction/console.md',
           '/guide/introduction/coding.md',
           '/guide/introduction/plugin.md',
-          '/guide/introduction/glossary.md',
+          // '/guide/introduction/glossary.md',
         ],
       }, {
         text: '处理交互',
@@ -129,15 +129,15 @@ module.exports = {
         text: '核心 API',
         isGroup: true,
         children: [
-          '/api/core/context.md',
+          '/api/core/adapter.md',
           '/api/core/app.md',
           '/api/core/bot.md',
-          '/api/core/events.md',
-          '/api/core/session.md',
           '/api/core/command.md',
+          '/api/core/context.md',
           '/api/core/database.md',
+          '/api/core/events.md',
           '/api/core/model.md',
-          '/api/core/adapter.md',
+          '/api/core/session.md',
         ],
       }, {
         text: '其他内置 API',

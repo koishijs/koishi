@@ -80,7 +80,7 @@
         <div class="item guide" v-for="item in getSidebarItems('/guide/')" :key="item.link || item.text">
           <sidebar-child :item="item"></sidebar-child>
         </div>
-        <template v-if="width >= 1200">
+        <template v-if="width >= 1200 && height >= 800">
           <div class="item api" v-for="item in getSidebarItems('/api/')" :key="item.link || item.text">
             <sidebar-child :item="item"></sidebar-child>
           </div>
@@ -100,7 +100,7 @@ import { useWindowSize } from '@vueuse/core'
 import { SidebarChild } from '@vuepress/theme-default/lib/client/components/SidebarChild'
 import { useThemeLocaleData, resolveArraySidebarItems } from '@vuepress/theme-default/lib/client/composables'
 
-const { width } = useWindowSize()
+const { width, height } = useWindowSize()
 
 function getSidebarItems(route: string) {
   const config = useThemeLocaleData().value
