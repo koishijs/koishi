@@ -56,18 +56,32 @@ export function transformQuery(query: Query.Expr) {
   return filter
 }
 
-export function transformEval(expr: Eval.Numeric | Eval.Aggregation) {
-  if (typeof expr === 'string') {
-    return '$' + expr
-  } else if (typeof expr === 'number' || typeof expr === 'boolean') {
-    return expr
-  }
+const aggrKeys = ['$sum', '$avg', '$min', '$max', '$count']
 
-  return valueMap(expr as any, (value) => {
+function transformEvalExpr(expr: any) {
+  return valueMap(expr as any, (value, key) => {
     if (Array.isArray(value)) {
       return value.map(transformEval)
-    } else {
+    } else if (aggrKeys.includes(key)) {
+      return transformAggr(value)
+    } {
       return transformEval(value)
     }
   })
+}
+
+function transformAggr(expr: any) {
+  if (typeof expr === 'string') {
+    return '$' + expr
+  }
+  return transformEvalExpr(expr)
+}
+
+export function transformEval(expr: any) {
+  if (typeof expr === 'number' || typeof expr === 'string' || typeof expr === 'boolean') {
+    return expr
+  } else if (expr.$) {
+    return '$' + expr.$
+  }
+  return transformEvalExpr(expr)
 }

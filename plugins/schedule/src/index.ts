@@ -64,7 +64,7 @@ export function apply(ctx: Context, { minInterval }: Config) {
       await session.execute(command)
       if (!lastCall || !interval) return
       lastCall = new Date()
-      await ctx.database.set('schedule', id, { lastCall })
+      await ctx.database.upsert('schedule', [{ id, lastCall }])
     }
 
     if (!interval) {

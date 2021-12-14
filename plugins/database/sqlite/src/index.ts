@@ -1,5 +1,5 @@
 import { Database, makeArray, Logger, Schema, Context, Query, difference, Model, TableType } from 'koishi'
-import { SQLBuilder, Caster } from '@koishijs/sql-utils'
+import { Builder, Caster } from '@koishijs/sql-utils'
 import sqlite, { Statement } from 'better-sqlite3'
 import { resolve } from 'path'
 import { escape as sqlEscape, escapeId } from 'sqlstring-sqlite'
@@ -46,7 +46,7 @@ export interface ISQLiteFieldInfo {
 class SQLiteDatabase extends Database {
   public db: sqlite.Database
   sqlite = this
-  sql: SQLBuilder
+  sql: Builder
   caster: Caster
 
   constructor(public ctx: Context, public config: SQLiteDatabase.Config) {
@@ -54,7 +54,7 @@ class SQLiteDatabase extends Database {
 
     this.config = { path: '.koishi.db', ...config }
 
-    this.sql = new class extends SQLBuilder {
+    this.sql = new class extends Builder {
       escapeId = escapeId
 
       escape(value: any) {

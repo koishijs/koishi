@@ -1,6 +1,6 @@
 import { createPool, Pool, PoolConfig, escape as mysqlEscape, escapeId, format, TypeCast } from 'mysql'
 import { Context, Database, difference, Logger, makeArray, Schema, Query, Model, Tables as KoishiTables, Dict, Time } from 'koishi'
-import { SQLBuilder } from '@koishijs/sql-utils'
+import { Builder } from '@koishijs/sql-utils'
 import { OkPacket } from 'mysql'
 
 declare module 'mysql' {
@@ -55,7 +55,7 @@ function createIndex(keys: string | string[]) {
   return makeArray(keys).map(key => escapeId(key)).join(', ')
 }
 
-class MySQLBuilder extends SQLBuilder {
+class MySQLBuilder extends Builder {
   constructor(private model: Model) {
     super()
   }

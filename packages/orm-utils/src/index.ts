@@ -42,6 +42,9 @@ type EvalOperators = {
 }
 
 const evalOperators: EvalOperators = {
+  // universal
+  $: (args, data) => data[args],
+
   // numeric
   $add: (args, data) => args.reduce<number>((prev, curr) => prev + executeEval(curr, data), 0),
   $multiply: (args, data) => args.reduce<number>((prev, curr) => prev * executeEval(curr, data), 1),
@@ -57,11 +60,11 @@ const evalOperators: EvalOperators = {
   $lte: ([left, right], data) => executeEval(left, data).valueOf() <= executeEval(right, data).valueOf(),
 
   // aggregation
-  $sum: (expr, table: any[]) => table.reduce((prev, curr) => prev + executeEval(expr, curr), 0),
-  $avg: (expr, table: any[]) => table.reduce((prev, curr) => prev + executeEval(expr, curr), 0) / table.length,
-  $min: (expr, table: any[]) => Math.min(...table.map(data => executeEval(expr, data))),
-  $max: (expr, table: any[]) => Math.max(...table.map(data => executeEval(expr, data))),
-  $count: (expr, table: any[]) => new Set(table.map(data => executeEval(expr, data))).size,
+  $sum: (expr, table: any[]) => table.reduce((prev, curr) => prev + executeAggr(expr, curr), 0),
+  $avg: (expr, table: any[]) => table.reduce((prev, curr) => prev + executeAggr(expr, curr), 0) / table.length,
+  $min: (expr, table: any[]) => Math.min(...table.map(data => executeAggr(expr, data))),
+  $max: (expr, table: any[]) => Math.max(...table.map(data => executeAggr(expr, data))),
+  $count: (expr, table: any[]) => new Set(table.map(data => executeAggr(expr, data))).size,
 }
 
 function executeFieldQuery(query: Query.FieldQuery, data: any) {
@@ -107,16 +110,24 @@ export function executeQuery(query: Query.Expr, data: any): boolean {
   })
 }
 
-export function executeEval(expr: Eval.Any | Eval.Aggregation, data: any) {
-  if (typeof expr === 'string') {
-    return data[expr]
-  } else if (typeof expr === 'number' || typeof expr === 'boolean') {
-    return expr
-  }
-
+function executeEvalExpr(expr: any, data: any) {
   for (const key in expr) {
     if (key in evalOperators) {
       return evalOperators[key](expr[key], data)
     }
   }
+}
+
+export function executeEval(expr: any, data: any) {
+  if (typeof expr === 'number' || typeof expr === 'string' || typeof expr === 'boolean') {
+    return expr
+  }
+  return executeEvalExpr(expr, data)
+}
+
+export function executeAggr(expr: any, data: any) {
+  if (typeof expr === 'string') {
+    return data[expr]
+  }
+  return executeEvalExpr(expr, data)
 }

@@ -8,7 +8,7 @@ export type EvaluationOperators = {
   [K in keyof Eval.GeneralExpr]?: (expr: Eval.GeneralExpr[K]) => string
 }
 
-export abstract class SQLBuilder {
+export abstract class Builder {
   protected createEqualQuery = this.comparator('=')
   protected queryOperators: QueryOperators
   protected evalOperators: EvaluationOperators
@@ -62,6 +62,9 @@ export abstract class SQLBuilder {
     }
 
     this.evalOperators = {
+      // universal
+      $: (key) => this.escapeId(key),
+
       // numeric
       $add: (args) => `(${args.map(this.parseEval.bind(this)).join(' + ')})`,
       $multiply: (args) => `(${args.map(this.parseEval.bind(this)).join(' * ')})`,
@@ -77,11 +80,11 @@ export abstract class SQLBuilder {
       $lte: this.binary('<='),
 
       // aggregation
-      $sum: (expr) => `ifnull(sum(${this.parseEval(expr)}), 0)`,
-      $avg: (expr) => `avg(${this.parseEval(expr)})`,
-      $min: (expr) => `min(${this.parseEval(expr)})`,
-      $max: (expr) => `max(${this.parseEval(expr)})`,
-      $count: (expr) => `count(distinct ${this.parseEval(expr)})`,
+      $sum: (expr) => `ifnull(sum(${this.parseAggr(expr)}), 0)`,
+      $avg: (expr) => `avg(${this.parseAggr(expr)})`,
+      $min: (expr) => `min(${this.parseAggr(expr)})`,
+      $max: (expr) => `max(${this.parseAggr(expr)})`,
+      $count: (expr) => `count(distinct ${this.parseAggr(expr)})`,
     }
   }
 
@@ -105,7 +108,7 @@ export abstract class SQLBuilder {
   }
 
   protected binary(operator: string) {
-    return function ([left, right]: [Eval.Any, Eval.Any]) {
+    return function ([left, right]) {
       return `(${this.parseEval(left)} ${operator} ${this.parseEval(right)})`
     }.bind(this)
   }
@@ -168,18 +171,26 @@ export abstract class SQLBuilder {
     return this.logicalAnd(conditions)
   }
 
-  parseEval(expr: Eval.Any | Eval.Aggregation): string {
-    if (typeof expr === 'string') {
-      return this.escapeId(expr)
-    } else if (typeof expr === 'number' || typeof expr === 'boolean') {
-      return this.escape(expr)
-    }
-
+  parseEvalExpr(expr: any) {
     for (const key in expr) {
       if (key in this.evalOperators) {
         return this.evalOperators[key](expr[key])
       }
     }
+  }
+
+  parseEval(expr: any): string {
+    if (typeof expr === 'string' || typeof expr === 'number' || typeof expr === 'boolean') {
+      return this.escape(expr)
+    }
+    return this.parseEvalExpr(expr)
+  }
+
+  parseAggr(expr: any) {
+    if (typeof expr === 'string') {
+      return this.escapeId(expr)
+    }
+    return this.parseEvalExpr(expr)
   }
 }
 

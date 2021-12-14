@@ -79,11 +79,11 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
     output.push(`${formatTime(dialogue.startTime)}-${formatTime(dialogue.endTime)}`)
   })
 
-  const getRangeProduct = (time: number): Eval.Numeric<Dialogue> => ({
+  const getRangeProduct = (time: number): Eval.Number<Dialogue> => ({
     $multiply: [
-      { $subtract: ['endTime', 'startTime'] },
-      { $subtract: ['startTime', time] },
-      { $subtract: [time, 'endTime'] },
+      { $subtract: [{ $: 'endTime' }, { $: 'startTime' }] },
+      { $subtract: [{ $: 'startTime' }, time] },
+      { $subtract: [time, { $: 'endTime' }] },
     ],
   })
 

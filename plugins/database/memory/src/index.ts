@@ -85,7 +85,11 @@ export class MemoryDatabase extends Database {
       }
     } else {
       const duplicated = await this.get(name, pick(data, makeArray(primary)))
-      if (duplicated.length) return
+      if (duplicated.length) {
+        const err = new Error('duplicated entry')
+        err[Symbol.for('koishi.error-type')] = 'duplicate-entry'
+        throw err
+      }
     }
     const copy = { ...this.ctx.model.create(name), ...data }
     store.push(copy)

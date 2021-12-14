@@ -227,7 +227,14 @@ namespace QueryOperators {
 
     it('arithmetic operators', async () => {
       await expect(app.database.get('temp1', {
-        $expr: { $eq: [9, { $add: ['id', 'value'] }] },
+        $expr: {
+          $eq: [9, {
+            $add: [
+              { $: 'id' },
+              { $: 'value' },
+            ],
+          }],
+        },
       })).eventually.to.have.length(2).with.shape([{ id: 1 }, { id: 2 }])
     })
   }
