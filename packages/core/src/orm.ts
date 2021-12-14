@@ -8,9 +8,13 @@ export type TableType = keyof Tables
 type Primitive = string | number
 type Comparable = Primitive | Date
 
-type Keys<O, T = any> = string & {
+type Keys<O, T = any> = {
   [K in keyof O]: O[K] extends T ? K : never
-}[keyof O]
+}[keyof O] & string
+
+type NestKeys<O, T = any, S = any[]> = O extends object ? O extends S ? never : {
+  [K in keyof O]: (O[K] extends T ? K : never) | `${K & string}.${NestKeys<O[K], T, S | O>}`
+}[keyof O] & string : never
 
 export class Model {
   public config: Dict<Model.Config> = {}
@@ -242,15 +246,16 @@ export namespace Query {
     [K in keyof P]: Eval<T, P[K]>
   }
 
-  type MapUneval<T, P = T> = {
-    [K in keyof P]?: Uneval<T, P[K]>
+  type NestGet<O, K extends string> = K extends `${infer L}.${infer R}` ? NestGet<Get<O, L>, R> : Get<O, K>
+
+  type MapUneval<T> = {
+    [K in NestKeys<T>]?: Uneval<T, NestGet<T, K>>
   }
 
   export interface Methods {
     drop(table?: TableType): Promise<void>
     get<T extends TableType, K extends Field<T>>(table: T, query: Query<T>, modifier?: Modifier<K>): Promise<Pick<Tables[T], K>[]>
-    /** @experimental */
-    set<T extends TableType>(table: T, query: Query<T>, updater: MapUneval<Tables[T]>): Promise<void>
+    set<T extends TableType>(table: T, query: Query<T>, data: MapUneval<Tables[T]>): Promise<void>
     remove<T extends TableType>(table: T, query: Query<T>): Promise<void>
     create<T extends TableType>(table: T, data: Partial<Tables[T]>): Promise<Tables[T]>
     upsert<T extends TableType>(table: T, data: MapUneval<Tables[T]>[], keys?: MaybeArray<Index<T>>): Promise<void>
@@ -283,7 +288,7 @@ export namespace Eval {
   export type Aggregation<T = any> = Number<{}, AggregationExpr<T>>
 
   export interface NumberExpr<T = any, A = never> {
-    $?: Keys<T, number>
+    $?: NestKeys<T, number>
     $add?: Number<T, A>[]
     $multiply?: Number<T, A>[]
     $subtract?: [Number<T, A>, Number<T, A>]
@@ -291,12 +296,12 @@ export namespace Eval {
   }
 
   export interface StringExpr<T = any, A = never> {
-    $?: Keys<T, string>
-    $join?: String<T, A>[]
+    $?: NestKeys<T, string>
+    $concat?: String<T, A>[]
   }
 
   export interface BooleanExpr<T = any, A = never> {
-    $?: Keys<T, boolean>
+    $?: NestKeys<T, boolean>
     $eq?: [Number<T, A>, Number<T, A>]
     $ne?: [Number<T, A>, Number<T, A>]
     $gt?: [Number<T, A>, Number<T, A>]
@@ -306,10 +311,10 @@ export namespace Eval {
   }
 
   export interface AggregationExpr<T = any> {
-    $sum?: Keys<T, number> | NumberExpr<T>
-    $avg?: Keys<T, number> | NumberExpr<T>
-    $max?: Keys<T, number> | NumberExpr<T>
-    $min?: Keys<T, number> | NumberExpr<T>
-    $count?: Keys<T> | NumberExpr<T> | StringExpr<T> | BooleanExpr<T>
+    $sum?: NestKeys<T, number> | NumberExpr<T>
+    $avg?: NestKeys<T, number> | NumberExpr<T>
+    $max?: NestKeys<T, number> | NumberExpr<T>
+    $min?: NestKeys<T, number> | NumberExpr<T>
+    $count?: NestKeys<T> | NumberExpr<T> | StringExpr<T> | BooleanExpr<T>
   }
 }

@@ -1,5 +1,5 @@
 import { clone, Context, Database, Logger, makeArray, Model, noop, pick, Query, Schema, Tables, TableType, valueMap } from 'koishi'
-import { executeEval, executeQuery } from '@koishijs/orm-utils'
+import { mapEvaluate, executeQuery } from '@koishijs/orm-utils'
 import { LevelUp } from 'levelup'
 import level from 'level'
 import sub from 'subleveldown'
@@ -155,7 +155,7 @@ class LevelDatabase extends Database {
       try {
         const value = await table.get(key)
         if (executeQuery(expr, value)) {
-          await table.put(key, Object.assign(value, data))
+          await table.put(key, Object.assign(value, mapEvaluate(data, value)))
         }
       } catch (e) {
         if (e.notFound !== true) throw e
@@ -166,7 +166,7 @@ class LevelDatabase extends Database {
     const batch = table.batch()
     for await (const [key, value] of table.iterator()) {
       if (executeQuery(expr, value)) {
-        batch.put(key, Object.assign(value, data))
+        batch.put(key, Object.assign(value, mapEvaluate(data, value)))
       }
     }
     await batch.write()
@@ -276,7 +276,7 @@ class LevelDatabase extends Database {
         result.push(value)
       }
     }
-    return valueMap(fields, expr => executeEval(expr, result)) as any
+    return mapEvaluate(fields, result) as any
   }
 }
 

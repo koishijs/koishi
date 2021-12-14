@@ -1,5 +1,5 @@
-import { Context, Database, Query, TableType, clone, makeArray, pick, Dict, valueMap, Model } from 'koishi'
-import { executeEval, executeQuery } from '@koishijs/orm-utils'
+import { Context, Database, Query, TableType, clone, makeArray, pick, Dict, valueMap, Model, noop } from 'koishi'
+import { executeQuery, mapEvaluate } from '@koishijs/orm-utils'
 import { Storage, Config } from './storage'
 
 declare module 'koishi' {
@@ -62,7 +62,7 @@ export class MemoryDatabase extends Database {
     const expr = this.ctx.model.resolveQuery(name, query)
     this.$table(name)
       .filter(row => executeQuery(expr, row))
-      .forEach(row => Object.assign(row, data))
+      .forEach(row => Object.assign(row, mapEvaluate(data, row)))
     this.$save(name)
   }
 
@@ -104,9 +104,10 @@ export class MemoryDatabase extends Database {
         return keys.every(key => row[key] === item[key])
       })
       if (row) {
-        Object.assign(row, clone(item))
+        Object.assign(row, mapEvaluate(item, row))
       } else {
-        await this.create(name, item)
+        const data = mapEvaluate(item, this.ctx.model.create(name))
+        await this.create(name, data).catch(noop)
       }
     }
     this.$save(name)
@@ -115,7 +116,7 @@ export class MemoryDatabase extends Database {
   async aggregate(name: TableType, fields: {}, query: Query) {
     const expr = this.ctx.model.resolveQuery(name, query)
     const table = this.$table(name).filter(row => executeQuery(expr, row))
-    return valueMap(fields, expr => executeEval(expr, table)) as any
+    return mapEvaluate(fields, table) as any
   }
 }
 

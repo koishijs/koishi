@@ -41,15 +41,27 @@ type EvalOperators = {
   [K in keyof Eval.GeneralExpr]?: (args: Eval.GeneralExpr[K], data: any) => any
 }
 
+function getRecursive(path: string, data: any) {
+  let value = data
+  for (const key of path.split('.')) {
+    if (!value) return
+    value = value[key]
+  }
+  return value
+}
+
 const evalOperators: EvalOperators = {
   // universal
-  $: (args, data) => data[args],
+  $: getRecursive,
 
-  // numeric
+  // number
   $add: (args, data) => args.reduce<number>((prev, curr) => prev + executeEval(curr, data), 0),
   $multiply: (args, data) => args.reduce<number>((prev, curr) => prev * executeEval(curr, data), 1),
   $subtract: ([left, right], data) => executeEval(left, data) - executeEval(right, data),
   $divide: ([left, right], data) => executeEval(left, data) - executeEval(right, data),
+
+  // string
+  $concat: (args, data) => args.map(arg => executeEval(arg, data)).join(''),
 
   // boolean
   $eq: ([left, right], data) => executeEval(left, data).valueOf() === executeEval(right, data).valueOf(),
@@ -118,16 +130,30 @@ function executeEvalExpr(expr: any, data: any) {
   }
 }
 
-export function executeEval(expr: any, data: any) {
+function executeAggr(expr: any, data: any) {
+  if (typeof expr === 'string') {
+    return getRecursive(expr, data)
+  }
+  return executeEvalExpr(expr, data)
+}
+
+function executeEval(expr: any, data: any) {
   if (typeof expr === 'number' || typeof expr === 'string' || typeof expr === 'boolean') {
     return expr
   }
   return executeEvalExpr(expr, data)
 }
 
-export function executeAggr(expr: any, data: any) {
-  if (typeof expr === 'string') {
-    return data[expr]
+export function mapEvaluate(update: any, data: any) {
+  const result = {}
+  for (const key in update) {
+    let root = result
+    const path = key.split('.')
+    const last = path.pop()
+    for (const key of path) {
+      root = root[key] ||= {}
+    }
+    root[last] = executeEval(update[key], data)
   }
-  return executeEvalExpr(expr, data)
+  return result
 }
