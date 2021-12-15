@@ -281,27 +281,30 @@ export type Eval<T, U> =
   : never
 
 export namespace Eval {
-  export type GeneralExpr = NumberExpr & StringExpr & BooleanExpr & AggregationExpr
+  export type GeneralExpr = UniveralExpr & NumberExpr & StringExpr & BooleanExpr & AggregationExpr
   export type Number<T = any, A = never> = A | number | NumberExpr<T, A>
   export type String<T = any, A = never> = string | StringExpr<T, A>
   export type Boolean<T = any, A = never> = boolean | BooleanExpr<T, A>
   export type Aggregation<T = any> = Number<{}, AggregationExpr<T>>
 
-  export interface NumberExpr<T = any, A = never> {
-    $?: NestKeys<T, number>
+  export interface UniveralExpr<T = any, U = any> {
+    $?: NestKeys<T, U>
+    $if?: [any, Uneval<T, U>, Uneval<T, U>]
+    $ifNull?: Uneval<T, U>[]
+  }
+
+  export interface NumberExpr<T = any, A = never> extends UniveralExpr<T, number> {
     $add?: Number<T, A>[]
     $multiply?: Number<T, A>[]
     $subtract?: [Number<T, A>, Number<T, A>]
     $divide?: [Number<T, A>, Number<T, A>]
   }
 
-  export interface StringExpr<T = any, A = never> {
-    $?: NestKeys<T, string>
+  export interface StringExpr<T = any, A = never> extends UniveralExpr<T, string> {
     $concat?: String<T, A>[]
   }
 
-  export interface BooleanExpr<T = any, A = never> {
-    $?: NestKeys<T, boolean>
+  export interface BooleanExpr<T = any, A = never> extends UniveralExpr<T, boolean> {
     $eq?: [Number<T, A>, Number<T, A>]
     $ne?: [Number<T, A>, Number<T, A>]
     $gt?: [Number<T, A>, Number<T, A>]

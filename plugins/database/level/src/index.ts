@@ -1,5 +1,5 @@
 import { clone, Context, Database, Logger, makeArray, Model, noop, pick, Query, Schema, Tables, TableType, valueMap } from 'koishi'
-import { mapEvaluate, executeQuery } from '@koishijs/orm-utils'
+import { applyUpdate, executeEval, executeQuery } from '@koishijs/orm-utils'
 import { LevelUp } from 'levelup'
 import level from 'level'
 import sub from 'subleveldown'
@@ -155,7 +155,7 @@ class LevelDatabase extends Database {
       try {
         const value = await table.get(key)
         if (executeQuery(expr, value)) {
-          await table.put(key, Object.assign(value, mapEvaluate(data, value)))
+          await table.put(key, applyUpdate(data, value))
         }
       } catch (e) {
         if (e.notFound !== true) throw e
@@ -166,7 +166,7 @@ class LevelDatabase extends Database {
     const batch = table.batch()
     for await (const [key, value] of table.iterator()) {
       if (executeQuery(expr, value)) {
-        batch.put(key, Object.assign(value, mapEvaluate(data, value)))
+        batch.put(key, applyUpdate(data, value))
       }
     }
     await batch.write()
@@ -235,12 +235,12 @@ class LevelDatabase extends Database {
         try {
           const value = await table.get(key)
           if (keys.every(key => value[key] === item[key])) {
-            await table.put(key, Object.assign(value, item))
+            await table.put(key, applyUpdate(item, value))
           }
         } catch (e) {
           if (e.notFound !== true) throw e
-          // @ts-ignore
-          await this.create(name, item, true)
+          const data = this.ctx.model.create(name)
+          await this.create(name, applyUpdate(item, data), true)
         }
         continue
       }
@@ -254,7 +254,7 @@ class LevelDatabase extends Database {
             logger.warn('Cannot update primary key')
             break
           }
-          await table.put(key, Object.assign(value, data))
+          await table.put(key, applyUpdate(data, value))
           // Match the behavior here
           // mongo/src/index.ts > upsert() > bulk.find(pick(item, keys)).updateOne({ $set: omit(item, keys) })
           break
@@ -270,13 +270,12 @@ class LevelDatabase extends Database {
     const expr = this.ctx.model.resolveQuery(name, query)
     const result: any[] = []
     const table = this.table(name)
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    for await (const [_, value] of table.iterator()) {
+    for await (const [, value] of table.iterator()) {
       if (executeQuery(expr, value)) {
         result.push(value)
       }
     }
-    return mapEvaluate(fields, result) as any
+    return valueMap(fields, value => executeEval(value, result)) as any
   }
 }
 

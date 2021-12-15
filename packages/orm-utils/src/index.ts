@@ -53,6 +53,8 @@ function getRecursive(path: string, data: any) {
 const evalOperators: EvalOperators = {
   // universal
   $: getRecursive,
+  $if: ([cond, vThen, vElse], data) => executeEval(cond, data) ? executeEval(vThen, data) : executeEval(vElse, data),
+  $ifNull: ([value, fallback], data) => executeEval(value, data) ?? executeEval(fallback, data),
 
   // number
   $add: (args, data) => args.reduce<number>((prev, curr) => prev + executeEval(curr, data), 0),
@@ -137,17 +139,16 @@ function executeAggr(expr: any, data: any) {
   return executeEvalExpr(expr, data)
 }
 
-function executeEval(expr: any, data: any) {
-  if (typeof expr === 'number' || typeof expr === 'string' || typeof expr === 'boolean') {
+export function executeEval(expr: any, data: any) {
+  if (typeof expr === 'number' || typeof expr === 'string' || typeof expr === 'boolean' || expr === null || expr === undefined) {
     return expr
   }
   return executeEvalExpr(expr, data)
 }
 
-export function mapEvaluate(update: any, data: any) {
-  const result = {}
+export function applyUpdate(update: any, data: any) {
   for (const key in update) {
-    let root = result
+    let root = data
     const path = key.split('.')
     const last = path.pop()
     for (const key of path) {
@@ -155,5 +156,5 @@ export function mapEvaluate(update: any, data: any) {
     }
     root[last] = executeEval(update[key], data)
   }
-  return result
+  return data
 }

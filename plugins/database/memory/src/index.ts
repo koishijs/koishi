@@ -1,5 +1,5 @@
 import { Context, Database, Query, TableType, clone, makeArray, pick, Dict, valueMap, Model, noop } from 'koishi'
-import { executeQuery, mapEvaluate } from '@koishijs/orm-utils'
+import { executeQuery, executeEval, applyUpdate } from '@koishijs/orm-utils'
 import { Storage, Config } from './storage'
 
 declare module 'koishi' {
@@ -49,20 +49,20 @@ export class MemoryDatabase extends Database {
     await this._storage?.drop(name)
   }
 
-  async get(name: TableType, query: Query, modifier?: Query.Modifier) {
+  $query(name: TableType, query: Query) {
     const expr = this.ctx.model.resolveQuery(name, query)
+    return this.$table(name).filter(row => executeQuery(expr, row))
+  }
+
+  async get(name: TableType, query: Query, modifier?: Query.Modifier) {
     const { fields, limit = Infinity, offset = 0 } = Query.resolveModifier(modifier)
-    return this.$table(name)
-      .filter(row => executeQuery(expr, row))
+    return this.$query(name, query)
       .map(row => clone(pick(row, fields)))
       .slice(offset, offset + limit)
   }
 
   async set(name: TableType, query: Query, data: {}) {
-    const expr = this.ctx.model.resolveQuery(name, query)
-    this.$table(name)
-      .filter(row => executeQuery(expr, row))
-      .forEach(row => Object.assign(row, mapEvaluate(data, row)))
+    this.$query(name, query).forEach(row => applyUpdate(data, row))
     this.$save(name)
   }
 
@@ -94,7 +94,7 @@ export class MemoryDatabase extends Database {
     const copy = { ...this.ctx.model.create(name), ...data }
     store.push(copy)
     this.$save(name)
-    return copy
+    return clone(copy)
   }
 
   async upsert(name: TableType, data: any[], key: string | string[]) {
@@ -104,19 +104,18 @@ export class MemoryDatabase extends Database {
         return keys.every(key => row[key] === item[key])
       })
       if (row) {
-        Object.assign(row, mapEvaluate(item, row))
+        applyUpdate(item, row)
       } else {
-        const data = mapEvaluate(item, this.ctx.model.create(name))
-        await this.create(name, data).catch(noop)
+        const data = this.ctx.model.create(name)
+        await this.create(name, applyUpdate(item, data)).catch(noop)
       }
     }
     this.$save(name)
   }
 
   async aggregate(name: TableType, fields: {}, query: Query) {
-    const expr = this.ctx.model.resolveQuery(name, query)
-    const table = this.$table(name).filter(row => executeQuery(expr, row))
-    return mapEvaluate(fields, table) as any
+    const table = this.$query(name, query)
+    return valueMap(fields, value => executeEval(value, table)) as any
   }
 }
 

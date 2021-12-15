@@ -7,7 +7,10 @@ interface Bar {
   num?: number
   list?: string[]
   date?: Date
-  meta?: { foo: string }
+  meta?: {
+    a?: string
+    b?: number
+  }
 }
 
 interface Baz {
@@ -55,7 +58,7 @@ namespace OrmOperations {
     { id: 3, num: 1989 },
     { id: 4, list: ['1', '1', '4'] },
     { id: 5, date: magicBorn },
-    { id: 6, meta: { foo: 'bar' } },
+    { id: 6, meta: { a: 'foo', b: 233 } },
   ]
 
   const bazTable: Baz[] = [
@@ -134,10 +137,9 @@ namespace OrmOperations {
 
     it('using expressions', async () => {
       const table = await setup(app, 'temp2', barTable)
-      expect(table[1].num).to.be.not.equal(table[2].num)
       table[1].num = table[1].id * 2
       table[2].num = table[2].id * 2
-      await expect(app.database.set('temp2', [table[1].id, table[2].id], {
+      await expect(app.database.set('temp2', [table[1].id, table[2].id, 9], {
         num: { $multiply: [2, { $: 'id' }] },
       })).eventually.fulfilled
       await expect(app.database.get('temp2', {})).eventually.shape(table)
@@ -145,10 +147,12 @@ namespace OrmOperations {
 
     it('nested property', async () => {
       const table = await setup(app, 'temp2', barTable)
-      const data = table.find(bar => bar.meta)
-      data.meta.foo = 'barbaz'
-      await expect(app.database.set('temp2', data.id, {
-        'meta.foo': { $concat: [{ $: 'meta.foo' }, 'baz'] },
+      const data1 = table.find(item => item.meta)
+      const data2 = table.find(item => !item.meta)
+      data1.meta.a = 'foobar'
+      data2.meta = { a: 'bar' }
+      await expect(app.database.set('temp2', [data1.id, data2.id, 9], {
+        'meta.a': { $concat: [{ $ifNull: [{ $: 'meta.a' }, ''] }, 'bar'] },
       })).eventually.fulfilled
       await expect(app.database.get('temp2', {})).eventually.shape(table)
     })
@@ -179,6 +183,40 @@ namespace OrmOperations {
       await expect(app.database.upsert('temp2', data)).eventually.fulfilled
       await expect(app.database.get('temp2', {})).eventually.shape(table)
     })
+
+    it('using expressions', async () => {
+      const table = await setup(app, 'temp2', barTable)
+      const data2 = table.find(item => item.id === 2)
+      const data3 = table.find(item => item.id === 3)
+      const data9 = table.find(item => item.id === 9)
+      data2.num = data2.id * 2
+      data3.num = data3.num + 3
+      expect(data9).to.be.undefined
+      table.push({ id: 9, num: 999 })
+      await expect(app.database.upsert('temp2', [
+        { id: 2, num: { $multiply: [2, { $: 'id' }] } },
+        { id: 3, num: { $add: [3, { $: 'num' }] } },
+        { id: 9, num: 999 },
+      ])).eventually.fulfilled
+      await expect(app.database.get('temp2', {})).eventually.shape(table)
+    })
+
+    it('nested property', async () => {
+      const table = await setup(app, 'temp2', barTable)
+      const data5 = table.find(item => item.id === 5)
+      const data6 = table.find(item => item.id === 6)
+      const data9 = table.find(item => item.id === 9)
+      data5.meta = { b: 555 }
+      data6.meta.b = 666
+      expect(data9).to.be.undefined
+      table.push({ id: 9, meta: { b: 999 } })
+      await expect(app.database.upsert('temp2', [
+        { id: 5, 'meta.b': 555 },
+        { id: 6, 'meta.b': 666 },
+        { id: 9, 'meta.b': 999 },
+      ])).eventually.fulfilled
+      await expect(app.database.get('temp2', {})).eventually.shape(table)
+    })
   }
 
   export const remove = function Remove(app: App) {
@@ -200,6 +238,33 @@ namespace OrmOperations {
       await expect(app.database.get('temp2', {})).eventually.length(2)
       await expect(app.database.remove('temp2', { id: { $lte: table[1].id } })).eventually.fulfilled
       await expect(app.database.get('temp2', {})).eventually.length(0)
+    })
+  }
+
+  export const aggregate = function Aggregate(app: App) {
+    it('basic support', async () => {
+      await setup(app, 'temp3', bazTable)
+      await expect(app.database.aggregate('temp3', {
+        a: { $sum: 'ida' },
+        b: { $count: 'idb' },
+      })).eventually.deep.equal({ a: 6, b: 2 })
+    })
+
+    it('inner expressions', async () => {
+      await setup(app, 'temp3', bazTable)
+      await expect(app.database.aggregate('temp3', {
+        inner: { $avg: { $multiply: [2, { $: 'ida' }, { $: 'ida' }] } },
+      })).eventually.deep.equal({ inner: 5 })
+    })
+
+    it('outer expressions', async () => {
+      await setup(app, 'temp3', bazTable)
+      await expect(app.database.aggregate('temp3', {
+        outer: { $subtract: [
+          { $sum: 'ida' },
+          { $count: 'idb' },
+        ]},
+      })).eventually.deep.equal({ outer: 4 })
     })
   }
 }
