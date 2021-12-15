@@ -1,4 +1,4 @@
-import { clone, Context, Database, Logger, makeArray, Model, noop, pick, Query, Schema, Tables, TableType, valueMap } from 'koishi'
+import { clone, Context, Database, KoishiError, Logger, makeArray, Model, noop, pick, Query, Schema, Tables, TableType, valueMap } from 'koishi'
 import { applyUpdate, executeEval, executeQuery } from '@koishijs/orm-utils'
 import { LevelUp } from 'levelup'
 import level from 'level'
@@ -213,9 +213,7 @@ class LevelDatabase extends Database {
       }
       const key = this._makeKey(primary, data)
       if (!forced && await this._exists(name, key)) {
-        const err = new Error('Duplicate key')
-        err[Symbol.for('koishi.error-type')] = 'duplicate-entry'
-        throw err
+        throw new KoishiError('duplicate entry', 'database.duplicate-entry')
       }
 
       const copy = { ...this.ctx.model.create(name), ...data }

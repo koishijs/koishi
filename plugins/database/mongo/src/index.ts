@@ -1,5 +1,5 @@
 import { MongoClient, Db, IndexSpecification, MongoError } from 'mongodb'
-import { Context, Database, Tables as KoishiTables, makeArray, Schema, valueMap, pick, omit, Query, Model, Dict, noop } from 'koishi'
+import { Context, Database, Tables as KoishiTables, makeArray, Schema, valueMap, pick, omit, Query, Model, Dict, noop, KoishiError } from 'koishi'
 import { URLSearchParams } from 'url'
 import { transformQuery, transformEval } from './utils'
 
@@ -128,7 +128,7 @@ class MongoDatabase extends Database {
         return copy
       } catch (err) {
         if (err instanceof MongoError && err.code === 11000) {
-          err[Symbol.for('koishi.error-type')] = 'duplicate-entry'
+          throw new KoishiError(err.message, 'database.duplicate-entry')
         }
         throw err
       }

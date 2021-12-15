@@ -1,6 +1,6 @@
 import {
   difference, observe, Time, enumKeys, Random, template, Dict,
-  Context, User, Channel, Command, Argv, Session, Extend, Awaitable,
+  Context, User, Channel, Command, Argv, Session, Extend, Awaitable, KoishiError,
 } from 'koishi'
 
 type AdminAction<U extends User.Field, G extends Channel.Field, A extends any[], O extends {}, T>
@@ -266,7 +266,7 @@ export function callme(ctx: Context) {
         await user.$update()
         return template('callme.updated', session.username)
       } catch (error) {
-        if (error[Symbol.for('koishi.error-type')] === 'duplicate-entry') {
+        if (KoishiError.check(error, 'database.duplicate-entry')) {
           return template('callme.duplicate')
         } else {
           ctx.logger('common').warn(error)

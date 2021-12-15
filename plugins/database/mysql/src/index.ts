@@ -257,9 +257,10 @@ class MysqlDatabase extends Database {
         logger.warn(sql)
         err.stack = err.message + error.stack.slice(7)
         if (err.code === 'ER_DUP_ENTRY') {
-          err[Symbol.for('koishi.error-type')] = 'duplicate-entry'
+          reject(new KoishiError(err.message, 'database.duplicate-entry'))
+        } else {
+          reject(err)
         }
-        reject(err)
       })
     })
   }

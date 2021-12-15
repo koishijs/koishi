@@ -1,4 +1,4 @@
-import { Context, Database, Query, TableType, clone, makeArray, pick, Dict, valueMap, Model, noop } from 'koishi'
+import { Context, Database, Query, TableType, clone, makeArray, pick, Dict, valueMap, Model, noop, KoishiError } from 'koishi'
 import { executeQuery, executeEval, applyUpdate } from '@koishijs/orm-utils'
 import { Storage, Config } from './storage'
 
@@ -86,9 +86,7 @@ export class MemoryDatabase extends Database {
     } else {
       const duplicated = await this.get(name, pick(data, makeArray(primary)))
       if (duplicated.length) {
-        const err = new Error('duplicated entry')
-        err[Symbol.for('koishi.error-type')] = 'duplicate-entry'
-        throw err
+        throw new KoishiError('duplicate entry', 'database.duplicate-entry')
       }
     }
     const copy = { ...this.ctx.model.create(name), ...data }
