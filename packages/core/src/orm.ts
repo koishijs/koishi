@@ -1,4 +1,5 @@
 import { MaybeArray, Dict, Get, Extract, clone } from '@koishijs/utils'
+import { KoishiError } from '.'
 import { Context } from './context'
 import { User, Channel } from './database'
 
@@ -78,7 +79,7 @@ export class Model {
     if (Array.isArray(query) || query instanceof RegExp || ['string', 'number'].includes(typeof query)) {
       const { primary } = this.config[name]
       if (Array.isArray(primary)) {
-        throw new TypeError('invalid query syntax')
+        throw new KoishiError('invalid shorthand for composite primary key', 'model.invalid-query')
       }
       return { [primary]: query } as any
     }
@@ -140,7 +141,7 @@ export namespace Model {
 
       // parse string definition
       const capture = regexp.exec(source)
-      if (!capture) throw new TypeError('invalid field definition')
+      if (!capture) throw new KoishiError('invalid field definition', 'model.invalid-field')
       const type = capture[1] as Type
       const args = (capture[2] || '').split(',')
       const field: Field = { type }

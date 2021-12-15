@@ -242,6 +242,11 @@ namespace OrmOperations {
   }
 
   export const aggregate = function Aggregate(app: App) {
+    it('empty aggregation', async () => {
+      await setup(app, 'temp3', bazTable)
+      await expect(app.database.aggregate('temp2', {})).eventually.deep.equal({})
+    })
+
     it('basic support', async () => {
       await setup(app, 'temp3', bazTable)
       await expect(app.database.aggregate('temp3', {
