@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-adapter-qqguild",
   "description": "qq guild adapter for Koishi",
-  "version": "1.0.0-beta.3",
+  "version": "1.0.0-beta.5",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -16,7 +16,7 @@
   "bugs": {
     "url": "https://github.com/koishijs/koishi/issues"
   },
-  "homepage": "https://koishi.js.org/api/adapter/onebot.html",
+  "homepage": "https://koishi.js.org/plugins/adapter/qqguild.html",
   "keywords": [
     "bot",
     "qqbot",
@@ -28,6 +28,6 @@
   },
   "dependencies": {
     "qface": "^1.2.0",
-    "@qq-guild-sdk/core": "^1.1.0"
+    "@qq-guild-sdk/core": "^1.1.3"
   }
 }
