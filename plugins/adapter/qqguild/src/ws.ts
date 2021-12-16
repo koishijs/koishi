@@ -6,7 +6,7 @@ import { adaptUser } from './utils'
 
 const logger = new Logger('qqguild')
 
-export interface AdapterConfig extends Adapter.WebSocketClient.Config, App.Config.Request, Omit<GBot.Options, 'app'> {
+export interface AdapterConfig extends Adapter.WebSocketClient.Config, Omit<GBot.Options, 'app'> {
 }
 
 export const AdapterConfig: Schema<AdapterConfig> = Schema.intersect([
@@ -22,7 +22,6 @@ export const AdapterConfig: Schema<AdapterConfig> = Schema.intersect([
       .default('bot'),
   }),
   Adapter.WebSocketClient.Config,
-  App.Config.Request,
 ])
 
 const createSession = (bot: QQGuildBot, msg: Message) => {
