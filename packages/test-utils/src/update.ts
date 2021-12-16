@@ -7,7 +7,10 @@ interface Bar {
   num?: number
   list?: string[]
   date?: Date
-  meta?: any
+  meta?: {
+    a?: string
+    b?: number
+  }
 }
 
 interface Baz {
@@ -18,163 +21,257 @@ interface Baz {
 
 declare module 'koishi' {
   interface Tables {
-    bar: Bar
-    baz: Baz
+    temp2: Bar
+    temp3: Baz
   }
 }
 
-Tables.extend('bar', {
-  id: 'unsigned',
-  text: 'string',
-  num: 'integer',
-  list: 'list',
-  date: 'timestamp',
-  meta: 'json',
-}, {
-  autoInc: true,
-})
+function OrmOperations(app: App) {
+  app.model.extend('temp2', {
+    id: 'unsigned',
+    text: 'string',
+    num: 'integer',
+    list: 'list',
+    date: 'timestamp',
+    meta: { type: 'json' },
+  }, {
+    autoInc: true,
+  })
 
-Tables.extend('baz', {
-  ida: 'unsigned',
-  idb: 'string',
-  value: 'string',
-}, {
-  primary: ['ida', 'idb'],
-})
+  app.model.extend('temp3', {
+    ida: 'unsigned',
+    idb: 'string',
+    value: 'string',
+  }, {
+    primary: ['ida', 'idb'],
+  })
+}
 
-namespace UpdateOperators {
-  export const name = 'UpdateOperators'
+namespace OrmOperations {
+  const merge = <T>(a: T, b: Partial<T>): T => ({ ...a, ...b })
 
-  export const insert = function Insert(app: App) {
-    const magicBorn = new Date('1926/08/17')
+  const magicBorn = new Date('1970/08/17')
 
-    const merge = <T>(a: T, b: Partial<T>): T => ({ ...a, ...b })
+  const barTable: Bar[] = [
+    { id: 1 },
+    { id: 2, text: 'pku' },
+    { id: 3, num: 1989 },
+    { id: 4, list: ['1', '1', '4'] },
+    { id: 5, date: magicBorn },
+    { id: 6, meta: { a: 'foo', b: 233 } },
+  ]
 
-    const barInsertions = [
-      { id: 1 },
-      { id: 2, text: 'pku' },
-      { id: 3, num: 1989 },
-      { id: 4, list: ['1', '1', '4'] },
-      { id: 5, date: magicBorn },
-      { id: 6, meta: { foo: 'bar' } },
-    ]
+  const bazTable: Baz[] = [
+    { ida: 1, idb: 'a', value: 'a' },
+    { ida: 2, idb: 'a', value: 'b' },
+    { ida: 1, idb: 'b', value: 'c' },
+    { ida: 2, idb: 'b', value: 'd' },
+  ]
 
-    const bazInsertions = [
-      { ida: 1, idb: 'a', value: 'a' },
-      { ida: 2, idb: 'a', value: 'b' },
-      { ida: 1, idb: 'b', value: 'c' },
-      { ida: 2, idb: 'b', value: 'd' },
-    ]
-
-    const setupBar = async () => {
-      await app.database.remove('bar', {})
-      for (const i in barInsertions) {
-        const bar = await app.database.create('bar', omit(barInsertions[i], ['id']))
-        barInsertions[i].id = bar.id
-      }
-      return barInsertions.map(bar => merge(Tables.create('bar'), bar))
+  async function setup<K extends keyof Tables>(app: App, name: K, table: Tables[K][]) {
+    await app.database.remove(name, {})
+    const result: Tables[K][] = []
+    for (const item of table) {
+      result.push(await app.database.create(name, item))
     }
+    return result
+  }
 
-    const setupBaz = async () => {
-      await app.database.remove('baz', {})
-      for (const obj of bazInsertions) {
-        await app.database.create('baz', obj)
+  export const create = function Create(app: App) {
+    it('auto increment primary key', async () => {
+      const table = barTable.map(bar => merge(app.model.create('temp2'), bar))
+      for (const index in barTable) {
+        const bar = await app.database.create('temp2', omit(barTable[index], ['id']))
+        barTable[index].id = bar.id
+        expect(bar).to.have.shape(table[index])
       }
-      return bazInsertions.map(baz => merge(Tables.create('baz'), baz))
-    }
-
-    before(async () => {
-      await app.database.remove('bar', {})
-      await app.database.remove('baz', {})
+      for (const obj of table) {
+        await expect(app.database.get('temp2', { id: obj.id })).eventually.shape([obj])
+      }
+      await expect(app.database.get('temp2', {})).eventually.shape(table)
     })
 
-    it('create with autoInc primary key', async () => {
-      const barObjs = barInsertions.map(bar => merge(Tables.create('bar'), bar))
-      for (const i in barInsertions) {
-        const bar = await app.database.create('bar', omit(barInsertions[i], ['id']))
-        barInsertions[i].id = bar.id
-        expect(bar).shape(barObjs[i])
+    it('specify primary key', async () => {
+      for (const obj of bazTable) {
+        await expect(app.database.create('temp3', obj)).eventually.shape(obj)
       }
-      for (const obj of barObjs) {
-        await expect(app.database.get('bar', { id: obj.id })).eventually.shape([obj])
-      }
-      await expect(app.database.get('bar', {})).eventually.shape(barObjs)
-    })
-
-    it('create with specified primary key', async () => {
-      for (const obj of bazInsertions) {
-        await expect(app.database.create('baz', obj)).eventually.shape(obj)
-      }
-      for (const obj of bazInsertions) {
-        await expect(app.database.get('baz', { ida: obj.ida, idb: obj.idb })).eventually.shape([obj])
+      for (const obj of bazTable) {
+        await expect(app.database.get('temp3', { ida: obj.ida, idb: obj.idb })).eventually.shape([obj])
       }
     })
 
-    it('create with duplicate primary key', async () => {
-      await expect(app.database.create('bar', { id: barInsertions[0].id })).eventually.not.to.be.ok
-      await expect(app.database.create('baz', { ida: 1, idb: 'a' })).eventually.not.to.be.ok
+    it('duplicate primary key', async () => {
+      await expect(app.database.create('temp2', { id: barTable[0].id })).eventually.rejected
+      await expect(app.database.create('temp3', { ida: 1, idb: 'a' })).eventually.rejected
     })
 
-    it('upsert', async () => {
-      const barObjs = await setupBar()
-      const updateBar = [{ id: barObjs[0].id, text: 'thu' }, { id: barObjs[1].id, num: 1911 }]
-      updateBar.forEach(update => {
-        const index = barObjs.findIndex(obj => obj.id === update.id)
-        barObjs[index] = merge(barObjs[index], update)
-      })
-      await expect(app.database.upsert('bar', updateBar)).eventually.fulfilled
-      await expect(app.database.get('bar', {})).eventually.shape(barObjs)
-
-      const insertBar = [{ id: barObjs[5].id + 1, text: 'wmlake' }, { id: barObjs[5].id + 2, text: 'bytower' }]
-      barObjs.push(...insertBar.map(bar => merge(Tables.create('bar'), bar)))
-      await expect(app.database.upsert('bar', insertBar)).eventually.fulfilled
-      await expect(app.database.get('bar', {})).eventually.shape(barObjs)
-    })
-
-    it('set', async () => {
-      const barObjs = await setupBar()
-      const cond = {
-        $or: [
-          { id: { $in: [barObjs[0].id, barObjs[1].id] } },
-          { date: magicBorn },
-        ],
-      }
-      barObjs.filter(obj => [barObjs[0].id, barObjs[1].id].includes(obj.id) || obj.date === magicBorn).forEach(obj => {
-        obj.num = 514
-      })
-      await expect(app.database.set('bar', cond, { num: 514 })).eventually.fulfilled
-      await expect(app.database.get('bar', {})).eventually.shape(barObjs)
-    })
-
-    it('remove', async () => {
-      await setupBaz()
-      await expect(app.database.remove('baz', { ida: 1, idb: 'a' })).eventually.fulfilled
-      await expect(app.database.get('baz', {})).eventually.length(3)
-      await expect(app.database.remove('baz', { ida: 1, idb: 'b', value: 'b' })).eventually.fulfilled
-      await expect(app.database.get('baz', {})).eventually.length(3)
-      await expect(app.database.remove('baz', { idb: 'b' })).eventually.fulfilled
-      await expect(app.database.get('baz', {})).eventually.length(1)
-      await expect(app.database.remove('baz', {})).eventually.fulfilled
-      await expect(app.database.get('baz', {})).eventually.length(0)
-      // Conditional
-      const barObjs = await setupBar()
-      await expect(app.database.remove('bar', { id: { $gt: barObjs[1].id } })).eventually.fulfilled
-      await expect(app.database.get('bar', {})).eventually.length(2)
-      await expect(app.database.remove('bar', { id: { $lte: barObjs[1].id } })).eventually.fulfilled
-      await expect(app.database.get('bar', {})).eventually.length(0)
-    })
-
-    it('parallel create with autoInc primary key', async () => {
-      await app.database.remove('bar', {})
-      await Promise.all([...Array(5)].map(() => app.database.create('bar', {})))
-      const result = await app.database.get('bar', {})
+    it('parallel create', async () => {
+      await app.database.remove('temp2', {})
+      await Promise.all([...Array(5)].map(() => app.database.create('temp2', {})))
+      const result = await app.database.get('temp2', {})
       expect(result).length(5)
       const ids = result.map(e => e.id).sort((a, b) => a - b)
       const min = Math.min(...ids)
       expect(ids.map(id => id - min + 1)).shape([1, 2, 3, 4, 5])
-      await app.database.remove('bar', {})
+      await app.database.remove('temp2', {})
+    })
+  }
+
+  export const set = function Set(app: App) {
+    it('basic support', async () => {
+      const table = await setup(app, 'temp2', barTable)
+      const data = table.find(bar => bar.date)
+      data.text = 'thu'
+      const magicIds = table.slice(0, 2).map((data) => {
+        data.text = 'thu'
+        return data.id
+      })
+      await expect(app.database.set('temp2', {
+        $or: [
+          { id: magicIds },
+          { date: magicBorn },
+        ],
+      }, { text: 'thu' })).eventually.fulfilled
+      await expect(app.database.get('temp2', {})).eventually.shape(table)
+    })
+
+    it('using expressions', async () => {
+      const table = await setup(app, 'temp2', barTable)
+      table[1].num = table[1].id * 2
+      table[2].num = table[2].id * 2
+      await expect(app.database.set('temp2', [table[1].id, table[2].id, 9], {
+        num: { $multiply: [2, { $: 'id' }] },
+      })).eventually.fulfilled
+      await expect(app.database.get('temp2', {})).eventually.shape(table)
+    })
+
+    it('nested property', async () => {
+      const table = await setup(app, 'temp2', barTable)
+      const data1 = table.find(item => item.meta)
+      const data2 = table.find(item => !item.meta)
+      data1.meta.a = 'foobar'
+      data2.meta = { a: 'bar' }
+      await expect(app.database.set('temp2', [data1.id, data2.id, 9], {
+        'meta.a': { $concat: [{ $ifNull: [{ $: 'meta.a' }, ''] }, 'bar'] },
+      })).eventually.fulfilled
+      await expect(app.database.get('temp2', {})).eventually.shape(table)
+    })
+  }
+
+  export const upsert = function Upsert(app: App) {
+    it('update existing records', async () => {
+      const table = await setup(app, 'temp2', barTable)
+      const data = [
+        { id: table[0].id, text: 'thu' },
+        { id: table[1].id, num: 1911 },
+      ]
+      data.forEach(update => {
+        const index = table.findIndex(obj => obj.id === update.id)
+        table[index] = merge(table[index], update)
+      })
+      await expect(app.database.upsert('temp2', data)).eventually.fulfilled
+      await expect(app.database.get('temp2', {})).eventually.shape(table)
+    })
+
+    it('insert new records', async () => {
+      const table = await setup(app, 'temp2', barTable)
+      const data = [
+        { id: table[5].id + 1, text: 'wmlake' },
+        { id: table[5].id + 2, text: 'bytower' },
+      ]
+      table.push(...data.map(bar => merge(app.model.create('temp2'), bar)))
+      await expect(app.database.upsert('temp2', data)).eventually.fulfilled
+      await expect(app.database.get('temp2', {})).eventually.shape(table)
+    })
+
+    it('using expressions', async () => {
+      const table = await setup(app, 'temp2', barTable)
+      const data2 = table.find(item => item.id === 2)
+      const data3 = table.find(item => item.id === 3)
+      const data9 = table.find(item => item.id === 9)
+      data2.num = data2.id * 2
+      data3.num = data3.num + 3
+      expect(data9).to.be.undefined
+      table.push({ id: 9, num: 999 })
+      await expect(app.database.upsert('temp2', [
+        { id: 2, num: { $multiply: [2, { $: 'id' }] } },
+        { id: 3, num: { $add: [3, { $: 'num' }] } },
+        { id: 9, num: 999 },
+      ])).eventually.fulfilled
+      await expect(app.database.get('temp2', {})).eventually.shape(table)
+    })
+
+    it('nested property', async () => {
+      const table = await setup(app, 'temp2', barTable)
+      const data5 = table.find(item => item.id === 5)
+      const data6 = table.find(item => item.id === 6)
+      const data9 = table.find(item => item.id === 9)
+      data5.meta = { b: 555 }
+      data6.meta.b = 666
+      expect(data9).to.be.undefined
+      table.push({ id: 9, meta: { b: 999 } })
+      await expect(app.database.upsert('temp2', [
+        { id: 5, 'meta.b': 555 },
+        { id: 6, 'meta.b': 666 },
+        { id: 9, 'meta.b': 999 },
+      ])).eventually.fulfilled
+      await expect(app.database.get('temp2', {})).eventually.shape(table)
+    })
+  }
+
+  export const remove = function Remove(app: App) {
+    it('basic support', async () => {
+      await setup(app, 'temp3', bazTable)
+      await expect(app.database.remove('temp3', { ida: 1, idb: 'a' })).eventually.fulfilled
+      await expect(app.database.get('temp3', {})).eventually.length(3)
+      await expect(app.database.remove('temp3', { ida: 1, idb: 'b', value: 'b' })).eventually.fulfilled
+      await expect(app.database.get('temp3', {})).eventually.length(3)
+      await expect(app.database.remove('temp3', { idb: 'b' })).eventually.fulfilled
+      await expect(app.database.get('temp3', {})).eventually.length(1)
+      await expect(app.database.remove('temp3', {})).eventually.fulfilled
+      await expect(app.database.get('temp3', {})).eventually.length(0)
+    })
+
+    it('advanced query', async () => {
+      const table = await setup(app, 'temp2', barTable)
+      await expect(app.database.remove('temp2', { id: { $gt: table[1].id } })).eventually.fulfilled
+      await expect(app.database.get('temp2', {})).eventually.length(2)
+      await expect(app.database.remove('temp2', { id: { $lte: table[1].id } })).eventually.fulfilled
+      await expect(app.database.get('temp2', {})).eventually.length(0)
+    })
+  }
+
+  export const aggregate = function Aggregate(app: App) {
+    it('empty aggregation', async () => {
+      await setup(app, 'temp3', bazTable)
+      await expect(app.database.aggregate('temp2', {})).eventually.deep.equal({})
+    })
+
+    it('basic support', async () => {
+      await setup(app, 'temp3', bazTable)
+      await expect(app.database.aggregate('temp3', {
+        a: { $sum: 'ida' },
+        b: { $count: 'idb' },
+      })).eventually.deep.equal({ a: 6, b: 2 })
+    })
+
+    it('inner expressions', async () => {
+      await setup(app, 'temp3', bazTable)
+      await expect(app.database.aggregate('temp3', {
+        inner: { $avg: { $multiply: [2, { $: 'ida' }, { $: 'ida' }] } },
+      })).eventually.deep.equal({ inner: 5 })
+    })
+
+    it('outer expressions', async () => {
+      await setup(app, 'temp3', bazTable)
+      await expect(app.database.aggregate('temp3', {
+        outer: { $subtract: [
+          { $sum: 'ida' },
+          { $count: 'idb' },
+        ]},
+      })).eventually.deep.equal({ outer: 4 })
     })
   }
 }
 
-export default UpdateOperators
+export default OrmOperations

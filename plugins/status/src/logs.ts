@@ -28,7 +28,7 @@ export class LogProvider extends DataSource<string[]> {
 
     this.createFile()
 
-    this.ctx.on('disconnect', () => {
+    this.ctx.on('dispose', () => {
       this.writer?.close()
       this.writer = null
     })
@@ -57,7 +57,7 @@ export class LogProvider extends DataSource<string[]> {
       print,
     })
 
-    this.ctx.on('disconnect', () => {
+    this.ctx.on('dispose', () => {
       const index = Logger.targets.findIndex(target => target.print === print)
       if (index >= 0) Logger.targets.splice(index, 1)
     })

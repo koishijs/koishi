@@ -54,7 +54,7 @@ sidebarDepth: 2
 
 ## 插件变更
 
-- 移除了 before-connect 和 before-disconnect 事件，请直接使用 connect 和 disconnect 事件代替
+- 移除了 before-connect 和 before-disconnect 事件，请直接使用 ready 和 dispose 事件代替
 - 移除了 sideEffect 声明，现在所有插件都视为无副作用
 - 新增了 [Schema API](./schema.md)，用于描述插件的配置项，下面是一个例子：
 
@@ -132,7 +132,7 @@ export default {
 - 数据结构变更
   - channel 表使用 `platform`+`id` 复合主键进行索引，这意味着 `channel.id` 语义将发生变化，同时新增了 `channel.platform`
 - 全局接口变更
-  - `Tables.extend()` 接口略有调整，具体参见文档
+  - ORM 相关接口现使用 `ctx.model` 实现
 
 ## 缓存机制变更
 

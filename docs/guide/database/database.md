@@ -8,7 +8,7 @@ sidebarDepth: 2
 本章所介绍的内容需要你安装一个数据库支持。如果你暂时不打算使用数据库，那么可以略过。
 :::
 
-对于几乎所有大型机器人项目，数据库的使用都是不可或缺的。但如果每个插件都使用了自己的数据库，这将导致插件之间的兼容性非常差——用户要么选择同时安装多个数据库，要么只能放弃一些功能或者重复造轮子。为此，Koishi 设计了一整套对象关系映射（ORM）接口，它易于扩展并广泛地运用于各种插件中。同时，我们也提供了一些常用数据库的官方插件，足以应对绝大部分使用场景。
+对于几乎所有大型机器人项目，数据库的使用都是不可或缺的。但如果每个插件都使用了自己的数据库，这将导致插件之间的兼容性非常差——用户要么选择同时安装多个数据库，要么只能放弃一些功能或者重复造轮子。为此，Koishi 设计了一整套对象关系映射 (ORM) 接口，它易于扩展并广泛地运用于各种插件中。同时，我们也提供了一些常用数据库的官方插件，足以应对绝大部分使用场景。
 
 ## 安装数据库
 
@@ -29,7 +29,7 @@ yarn add @koishijs/plugin-database-mysql -D
 
 ```yaml koishi.config.yaml
 plugins:
-  mysql:
+  database-mysql:
     host: host
     port: 3306
     user: root
@@ -137,7 +137,9 @@ await ctx.database.update('schedule', rows)
 await ctx.database.update('user', rows, 'onebot')
 ```
 
-## 扩展数据结构
+## 扩展数据模型
+
+如果你的插件需要声明新的字段或者表，你可以通过 `ctx.model` 来对数据模型进行扩展。请注意，数据模型的扩展一定要在使用前完成，不然后续数据库操作可能会失败。
 
 ### 扩展字段
 
@@ -145,9 +147,7 @@ await ctx.database.update('user', rows, 'onebot')
 
 ::: code-group language
 ```js
-const { Tables } = require('koishi')
-
-Tables.extend('user', {
+ctx.model.extend('user', {
   // 向用户表中注入字符串字段 foo
   foo: 'string',
   // 你还可以配置默认值为 'bar'
@@ -155,8 +155,6 @@ Tables.extend('user', {
 })
 ```
 ```ts
-import { Tables } from 'koishi'
-
 // TypeScript 用户需要进行类型合并
 declare module 'koishi' {
   interface User {
@@ -164,7 +162,7 @@ declare module 'koishi' {
   }
 }
 
-Tables.extend('user', {
+ctx.model.extend('user', {
   // 向用户表中注入字符串字段 foo
   foo: 'string',
   // 你还可以配置默认值为 'bar'
@@ -177,13 +175,11 @@ Tables.extend('user', {
 
 ### 扩展表
 
-利用 `Tables.extend()` 的第三个参数，我们就可以定义新的数据表了：
+利用 `ctx.model.extend()` 的第三个参数，我们就可以定义新的数据表了：
 
 ::: code-group language
 ```js
-const { Tables } = require('koishi')
-
-Tables.extend('schedule', {
+ctx.model.extend('schedule', {
   // 各字段类型
   id: 'unsigned',
   assignee: 'string',
@@ -198,8 +194,6 @@ Tables.extend('schedule', {
 })
 ```
 ```ts
-import { Tables } from 'koishi'
-
 // TypeScript 用户需要进行类型合并
 declare module 'koishi' {
   interface Tables {
@@ -214,7 +208,7 @@ export interface Schedule {
   command: string
 }
 
-Tables.extend('schedule', {
+ctx.model.extend('schedule', {
   // 各字段类型
   id: 'unsigned',
   assignee: 'string',
@@ -235,9 +229,8 @@ Tables.extend('schedule', {
 我们还可以为数据库声明索引：
 
 ```ts
-import { Tables } from 'koishi'
-
-Tables.extend('foo', {}, {
+// 注意这里配置的是第三个参数，也就是之前 autoInc 所在的参数
+ctx.model.extend('foo', {}, {
   // 主键，默认为 'id'
   // 主键将会被用于 Query 的简写形式，如果传入的是原始类型或数组则会自行理解成主键的值
   primary: 'name',
@@ -251,21 +244,3 @@ Tables.extend('foo', {}, {
   },
 })
 ```
-
-## 使用原始接口
-
-::: danger
-虽然 Koishi 预留了这种方案，但必须说明的是我们不推荐这种行为。这样做会使你的代码的耦合度增加，并且难以被其他人使用。
-:::
-
-如果你需要调用原始的数据库接口而不是使用 ORM，你可以利用 Database 对象的特殊属性，它只在你使用了特定的数据库插件的时候有效：
-
-```ts
-// TypeScript 用户需要手动引入模块，否则将产生类型错误
-import {} from '@koishijs/plugin-database-mysql'
-
-// 直接发送 SQL 语句
-ctx.database.mysql.query('select * from user')
-```
-
-对于其他数据库实现类似，例如 mongo 的原始接口可以通过 `ctx.database.mongo` 访问到。

@@ -14,14 +14,14 @@ export abstract class Adapter<S extends Bot.BaseConfig = Bot.BaseConfig, T = {}>
   abstract connect(bot: Bot): Awaitable<void>
 
   constructor(public ctx: Context, public config: T) {
-    ctx.on('connect', async () => {
+    ctx.on('ready', async () => {
       await this.start()
       for (const bot of this.bots) {
         bot.start()
       }
     })
 
-    ctx.on('disconnect', async () => {
+    ctx.on('dispose', async () => {
       for (const bot of this.bots) {
         bot.stop()
       }
@@ -102,6 +102,12 @@ export namespace Adapter {
           args[0][protocol].schema,
         ]).description(protocol))
       }
+      BotConfig.list.push(Schema.transform(Schema.dict(Schema.any()), (value) => {
+        if (value.protocol) throw new Error(`unknown protocol "${value.protocol}"`)
+        value.protocol = args[1](value) as never
+        logger.debug('infer type as %s', value.protocol)
+        return value
+      }))
     }
 
     const Config = Schema.intersect([

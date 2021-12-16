@@ -1,6 +1,6 @@
 import {
   difference, observe, Time, enumKeys, Random, template, Dict,
-  Context, User, Channel, Command, Argv, Session, Extend, Awaitable, Tables,
+  Context, User, Channel, Command, Argv, Session, Extend, Awaitable, KoishiError,
 } from 'koishi'
 
 type AdminAction<U extends User.Field, G extends Channel.Field, A extends any[], O extends {}, T>
@@ -153,7 +153,7 @@ Command.prototype.adminUser = function (this: Command, callback, autoCreate) {
         const data = await database.getUser(platform, userId, [...fields])
         if (!data) {
           if (!autoCreate) return template('admin.user-not-found')
-          const temp = Tables.create('user')
+          const temp = this.app.model.create('user')
           temp[platform] = userId
           const fallback = observe(temp, async () => {
             if (!fallback.authority) return
@@ -204,7 +204,7 @@ Command.prototype.adminChannel = function (this: Command, callback, autoCreate) 
       const data = await database.getChannel(platform, channelId, [...fields])
       if (!data) {
         if (!autoCreate) return template('admin.channel-not-found')
-        const temp = Tables.create('channel')
+        const temp = this.app.model.create('channel')
         temp.platform = platform
         temp.id = channelId
         const fallback = observe(temp, async () => {
@@ -266,7 +266,7 @@ export function callme(ctx: Context) {
         await user.$update()
         return template('callme.updated', session.username)
       } catch (error) {
-        if (error[Symbol.for('koishi.error-type')] === 'duplicate-entry') {
+        if (KoishiError.check(error, 'database.duplicate-entry')) {
           return template('callme.duplicate')
         } else {
           ctx.logger('common').warn(error)

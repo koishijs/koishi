@@ -15,9 +15,8 @@ module.exports = {
     ['medium-zoom', {
       selector: '.theme-default-content :not(a) > img:not(.no-zooming)',
     }],
-    ['@vuepress/pwa', {
-      skipWaiting: true,
-    }],
+    ['@vuepress/pwa'],
+    ['@vuepress/pwa-popup'],
     ['@vuepress/docsearch', {
       apiKey: '24a872e49e34cdb7736d132917a308c6',
       indexName: 'koishi',

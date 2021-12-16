@@ -55,6 +55,24 @@ class Teach {
   constructor(private ctx: Context, public config: Config) {
     ctx.teach = this
 
+    ctx.model.extend('dialogue', {
+      id: 'unsigned',
+      flag: 'unsigned(4)',
+      probS: { type: 'decimal', precision: 4, scale: 3, initial: 1 },
+      probA: { type: 'decimal', precision: 4, scale: 3, initial: 0 },
+      startTime: 'integer',
+      endTime: 'integer',
+      groups: 'list(255)',
+      original: 'string(255)',
+      question: 'string(255)',
+      answer: 'text',
+      predecessors: 'list(255)',
+      successorTimeout: 'unsigned',
+      writer: 'string(255)',
+    }, {
+      autoInc: true,
+    })
+
     // features
     ctx.plugin(command, config)
     ctx.plugin(receiver, config)

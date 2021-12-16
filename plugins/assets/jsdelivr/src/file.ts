@@ -1,4 +1,4 @@
-import { Tables, noop } from 'koishi'
+import { noop } from 'koishi'
 import { unlink } from 'fs/promises'
 import { join } from 'path'
 import JsdelivrAssets from './index'
@@ -19,16 +19,6 @@ export interface File extends FileInfo {
   id: number
   branch: number
 }
-
-Tables.extend('jsdelivr', {
-  id: 'integer',
-  hash: 'string',
-  name: 'string',
-  branch: 'integer',
-  size: 'integer',
-}, {
-  autoInc: true,
-})
 
 export interface Task extends File {}
 

@@ -6,7 +6,7 @@ sidebarDepth: 2
 
 **上下文 (Context)** 是 Koishi 的重要概念。你的每一个插件，中间件，监听器和指令都被绑定在上下文上。
 
-## 实例属性
+## 内置服务
 
 下面的属性为了访问方便而绑定，严格上它们对一个 App 实例下的所有上下文都是相同的。
 
@@ -87,20 +87,6 @@ ctx.router.get('/path', (ctx, next) => {
 
 选取当前上下文的子集，限定机器人 / 用户 / 群组 / 频道 / 平台名称为所给定的值。
 
-### ctx.{type}.except(...values)
-
-- **values:** `string[]` 禁止的机器人 / 用户 / 群组 / 频道 / 平台名称构成的数组
-- 返回值: `Context` 新的上下文
-
-选取当前上下文的子集，排除机器人 / 用户 / 群组 / 频道 / 平台名称为所给定的值。这里的 type 同上文。
-
-### ctx.select(key, ...values)
-
-- **values:** `string[]` 如果非空则表示允许的 key 属性可选值；否则只需 key 属性为 truthy 即可
-- 返回值: `Context` 新的上下文
-
-选取当前上下文的子集，限定会话对象的 key 属性所对应的值。
-
 ### ctx.union(filter)
 
 - **context:** `Context | ((session: Session) => boolean)` 另一个上下文或者过滤器函数
@@ -172,6 +158,14 @@ ctx.router.get('/path', (ctx, next) => {
 
 监听一个事件。
 
+### ctx.off(event, listener)
+
+- **event:** `string` 事件名称
+- **listener:** `Function` 回调函数
+- 返回值: `boolean` 是否有此回调函数
+
+取消监听一个事件。
+
 ### ctx.once(event, listener, prepend?)
 
 - **event:** `string` 事件名称
@@ -214,13 +208,13 @@ type PluginObject<U> = { apply: PluginFunction<T, U> }
 type Plugin<U> = PluginFunction<T, U> | PluginObject<T, U>
 ```
 
-### ctx.with(deps, plugin)
+### ctx.using(deps, plugin)
 
-- **deps:** `string[]` 依赖列表
+- **deps:** `string[]` 依赖的服务列表
 - **plugin:** `Plugin` 要安装的插件
 - 返回值: `this`
 
-安装一个存在依赖的插件，参见 [声明依赖关系](../../guide/context.md#声明依赖关系)。请注意：这里的依赖列表都应该是 node 模块名，并且都必须直接以插件的形式导出（如所有官方插件都具备这个特征）。
+安装一个存在依赖的插件，参见 [声明依赖关系](../../guide/plugin/service.md#声明依赖关系)。
 
 ### ctx.command(def, desc?, config?)
 
@@ -267,7 +261,7 @@ type Plugin<U> = PluginFunction<T, U> | PluginObject<T, U>
 - **plugin:** `Plugin` 要移除的插件
 - 返回值: `void`
 
-移除插件中所注册的钩子、中间件、指令和子插件等。`plugin` 是默认为当前上下文所在的插件。如果既没有提供 `plugin`，上下文也不是一个插件上下文的话，会抛出一个错误。参见 [卸载插件](../../guide/context.md#卸载插件)。
+移除插件中所注册的钩子、中间件、指令和子插件等。`plugin` 是默认为当前上下文所在的插件。如果既没有提供 `plugin`，上下文也不是一个插件上下文的话，会抛出一个错误。参见 [卸载插件](../../guide/plugin/plugin.md#卸载插件)。
 
 ## 静态属性和方法
 

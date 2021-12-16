@@ -1,4 +1,4 @@
-import { Context, Session, Time, Logger, Tables, Schema } from 'koishi'
+import { Context, Session, Time, Logger, Schema } from 'koishi'
 
 declare module 'koishi' {
   interface Tables {
@@ -17,24 +17,12 @@ export interface Schedule {
   lastCall: Date
   interval: number
   command: string
-  session: Partial<Session>
+  session: Session.General
 }
-
-Tables.extend('schedule', {
-  id: 'unsigned',
-  assignee: 'string',
-  time: 'timestamp',
-  lastCall: 'timestamp',
-  interval: 'integer',
-  command: 'text',
-  session: 'json',
-}, {
-  autoInc: true,
-})
 
 const logger = new Logger('schedule')
 
-function formatContext(session: Partial<Session>) {
+function formatContext(session: Session.General) {
   return session.subtype === 'private' ? `私聊 ${session.userId}` : `群聊 ${session.guildId}`
 }
 
@@ -50,12 +38,24 @@ export const Config = Schema.object({
 })
 
 export function apply(ctx: Context, { minInterval }: Config) {
+  ctx.model.extend('schedule', {
+    id: 'unsigned',
+    assignee: 'string',
+    time: 'timestamp',
+    lastCall: 'timestamp',
+    interval: 'integer',
+    command: 'text',
+    session: 'json',
+  }, {
+    autoInc: true,
+  })
+
   async function hasSchedule(id: number) {
     const data = await ctx.database.get('schedule', [id])
     return data.length
   }
 
-  async function prepareSchedule({ id, session, interval, command, time, lastCall }: Schedule) {
+  async function prepareSchedule({ id, interval, command, time, lastCall }: Schedule, session: Session) {
     const now = Date.now()
     const date = time.valueOf()
 
@@ -98,14 +98,13 @@ export function apply(ctx: Context, { minInterval }: Config) {
     }, timeout)
   }
 
-  ctx.on('connect', async () => {
+  ctx.on('ready', async () => {
     const schedules = await ctx.database.get('schedule', { assignee: ctx.bots.map(bot => bot.sid) })
     schedules.forEach((schedule) => {
       const { session, assignee } = schedule
       const bot = ctx.bots.get(assignee)
       if (!bot) return
-      schedule.session = new Session(bot, session)
-      prepareSchedule(schedule)
+      prepareSchedule(schedule, new Session(bot, session))
     })
   })
 
@@ -168,8 +167,7 @@ export function apply(ctx: Context, { minInterval }: Config) {
         command: options.rest,
         session: session.toJSON(),
       })
-      schedule.session = session
-      prepareSchedule(schedule)
+      prepareSchedule(schedule, session)
       return `日程已创建，编号为 ${schedule.id}。`
     })
 }

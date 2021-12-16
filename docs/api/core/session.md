@@ -6,6 +6,42 @@ sidebarDepth: 2
 
 会话来源于 Koishi v1 的元信息对象，并在后续的版本中发展成了专门的类并大幅扩展了功能。目前的会话已经参与到了 Koishi 的绝大部分工作。
 
+## 通用属性
+
+对于会话事件，我们抽象出了一套通用的属性：
+
+### session.type
+
+事件类型。它应当是 [通用会话事件](./events.md#通用会话事件) 中的某一个。
+
+### session.platform
+
+触发事件的机器人所在的平台。
+
+### session.selfId
+
+触发事件的机器人所在平台的编号。
+
+### session.userId
+
+事件相关用户的平台编号 (例如发送好友申请的人，发送消息的人等)。
+
+### session.guildId
+
+事件相关群组的平台编号 (如果不是群组相关事件则没有这一项)。
+
+### session.channelId
+
+事件相关频道的平台编号 (如果不是频道相关事件则没有这一项)。
+
+### session.messageId
+
+事件相关的消息编号 (例如在回复消息时需要用到)。
+
+### session.content
+
+事件的文本内容 (例如消息的文本等)。
+
 ## 实例属性
 
 你应该已经读过 [事件 (Events)](./events.md) 一章了。由于每个会话都必定表达了一个上报事件，因此上报事件中定义的属性也都可以在 Session 的实例中访问到。此外，也只有来自上报事件的属性才会在序列化中被保留。下面将介绍的实例属性都是无法被序列化的。
@@ -25,10 +61,6 @@ sidebarDepth: 2
 ### session.channel
 
 当前会话绑定的可观测 [Channel](./database.md#channel) 对象。
-
-### session.database
-
-当前应用的 [Database](./database.md#数据库对象) 对象。
 
 ## 实例方法
 

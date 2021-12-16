@@ -57,9 +57,10 @@ module.exports = {
         isGroup: true,
         children: [
           '/guide/introduction/index.md',
-          '/guide/introduction/coding.md',
           '/guide/introduction/console.md',
-          '/guide/introduction/glossary.md',
+          '/guide/introduction/coding.md',
+          '/guide/introduction/plugin.md',
+          // '/guide/introduction/glossary.md',
         ],
       }, {
         text: '处理交互',
@@ -79,8 +80,9 @@ module.exports = {
           '/guide/plugin/plugin.md',
           '/guide/plugin/context.md',
           '/guide/plugin/lifecycle.md',
+          '/guide/plugin/service.md',
           '/guide/plugin/schema.md',
-          '/guide/plugin/publish.md',
+          '/guide/plugin/release.md',
         ],
       }, {
         text: '数据库',
@@ -104,7 +106,6 @@ module.exports = {
         text: '更多功能',
         isGroup: true,
         children: [
-          '/guide/service/index.md',
           '/guide/service/assets.md',
           '/guide/service/cache.md',
           '/guide/service/http.md',
@@ -129,20 +130,22 @@ module.exports = {
         text: '核心 API',
         isGroup: true,
         children: [
-          '/api/core/context.md',
+          '/api/core/adapter.md',
           '/api/core/app.md',
           '/api/core/bot.md',
-          '/api/core/events.md',
-          '/api/core/session.md',
           '/api/core/command.md',
+          '/api/core/context.md',
           '/api/core/database.md',
-          '/api/core/adapter.md',
+          '/api/core/events.md',
+          '/api/core/model.md',
+          '/api/core/session.md',
         ],
       }, {
         text: '其他内置 API',
         isGroup: true,
         children: [
           '/api/utils/segment.md',
+          '/api/utils/schema.md',
           '/api/utils/observer.md',
           '/api/utils/template.md',
           '/api/utils/logger.md',
@@ -175,6 +178,7 @@ module.exports = {
           '/plugins/adapter/discord.md',
           '/plugins/adapter/kaiheila.md',
           '/plugins/adapter/onebot.md',
+          '/plugins/adapter/qqguild.md',
           '/plugins/adapter/telegram.md',
         ],
       }, {

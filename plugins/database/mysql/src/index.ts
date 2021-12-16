@@ -1,8 +1,7 @@
 import { createPool, Pool, PoolConfig, escape as mysqlEscape, escapeId, format, TypeCast } from 'mysql'
-import { Context, Database, difference, Logger, makeArray, Schema, Query } from 'koishi'
-import { SQLBuilder } from '@koishijs/sql-utils'
-import * as Koishi from 'koishi'
-import { types } from 'util'
+import { Context, Database, difference, Logger, makeArray, Schema, Query, Model, Tables as KoishiTables, Dict, Time, KoishiError, pick } from 'koishi'
+import { applyUpdate } from '@koishijs/orm-utils'
+import { Builder } from '@koishijs/sql-utils'
 import { OkPacket } from 'mysql'
 
 declare module 'mysql' {
@@ -25,25 +24,7 @@ const logger = new Logger('mysql')
 
 export type TableType = keyof Tables
 
-export interface Tables extends Koishi.Tables {}
-
-function stringify(value: any, table?: string, field?: string) {
-  const type = MysqlDatabase.tables[table]?.[field]
-  if (typeof type === 'object') return type.stringify(value)
-
-  const meta = Koishi.Tables.config[table]?.fields[field]
-  if (meta?.type === 'json') {
-    return JSON.stringify(value)
-  } else if (meta?.type === 'list') {
-    return value.join(',')
-  }
-
-  return value
-}
-
-function escape(value: any, table?: string, field?: string) {
-  return mysqlEscape(stringify(value, table, field))
-}
+export interface Tables extends KoishiTables {}
 
 function getIntegerType(length = 11) {
   if (length <= 4) return 'tinyint'
@@ -53,7 +34,7 @@ function getIntegerType(length = 11) {
   return 'bigint'
 }
 
-function getTypeDefinition({ type, length, precision, scale }: Koishi.Tables.Field) {
+function getTypeDefinition({ type, length, precision, scale }: Model.Field) {
   switch (type) {
     case 'float':
     case 'double':
@@ -75,15 +56,42 @@ function createIndex(keys: string | string[]) {
   return makeArray(keys).map(key => escapeId(key)).join(', ')
 }
 
+class MySQLBuilder extends Builder {
+  constructor(private model: Model) {
+    super()
+  }
+
+  escapeId = escapeId
+
+  stringify(value: any, table?: string, field?: string) {
+    const type = MysqlDatabase.tables[table]?.[field]
+    if (typeof type === 'object') return type.stringify(value)
+
+    const meta = this.model.config[table]?.fields[field]
+    if (meta?.type === 'json') {
+      return JSON.stringify(value)
+    } else if (meta?.type === 'list') {
+      return value.join(',')
+    } else if (Model.Field.date.includes(meta?.type)) {
+      return Time.template('yyyy-MM-dd hh:mm:ss', value)
+    }
+
+    return value
+  }
+
+  escape(value: any, table?: string, field?: string) {
+    return mysqlEscape(this.stringify(value, table, field))
+  }
+}
+
 class MysqlDatabase extends Database {
   public pool: Pool
   public config: MysqlDatabase.Config
 
   mysql = this
-  sql: SQLBuilder
+  sql: MySQLBuilder
 
-  escape: (value: any, table?: TableType, field?: string) => string
-  escapeId: (value: string) => string
+  private tasks: Dict<Promise<any>> = {}
 
   inferFields<T extends TableType>(table: T, keys: readonly string[]) {
     if (!keys) return
@@ -96,6 +104,7 @@ class MysqlDatabase extends Database {
 
   constructor(public ctx: Context, config?: MysqlDatabase.Config) {
     super(ctx)
+
     this.config = {
       host: 'localhost',
       port: 3306,
@@ -108,7 +117,7 @@ class MysqlDatabase extends Database {
         const type = MysqlDatabase.tables[orgTable]?.[orgName]
         if (typeof type === 'object') return type.parse(field)
 
-        const meta = Koishi.Tables.config[orgTable]?.fields[orgName]
+        const meta = this.ctx.model.config[orgTable]?.fields[orgName]
         if (meta?.type === 'string') {
           return field.string()
         } else if (meta?.type === 'json') {
@@ -128,20 +137,15 @@ class MysqlDatabase extends Database {
       ...config,
     }
 
-    this.sql = new class extends SQLBuilder {
-      escape = escape
-      escapeId = escapeId
-    }()
+    this.sql = new MySQLBuilder(this.ctx.model)
   }
 
-  private columns: Record<string, string[]> = {}
-
-  private getColDefs(name: string, cols: string[] = []) {
-    const table = Koishi.Tables.config[name]
+  private getColDefs(name: string, columns: string[]) {
+    const table = this.ctx.model.config[name]
     const { primary, foreign, autoInc } = table
     const fields = { ...table.fields }
     const unique = [...table.unique]
-    const keys = this.columns[name] || []
+    const result: string[] = []
 
     // create platform rows
     if (name === 'user') {
@@ -155,13 +159,13 @@ class MysqlDatabase extends Database {
     // mysql definitions (FIXME: remove in v4)
     for (const key in MysqlDatabase.tables[name]) {
       const value = MysqlDatabase.tables[name][key]
-      if (keys.includes(key) || typeof value === 'function') continue
-      cols.push(`${escapeId(key)} ${MysqlDatabase.Domain.definition(value)}`)
+      if (columns.includes(key) || typeof value === 'function') continue
+      result.push(`${escapeId(key)} ${MysqlDatabase.Domain.definition(value)}`)
     }
 
     // orm definitions
     for (const key in fields) {
-      if (keys.includes(key)) continue
+      if (columns.includes(key)) continue
       const { initial, nullable = true } = fields[key]
       let def = escapeId(key)
       if (key === primary && autoInc) {
@@ -171,43 +175,55 @@ class MysqlDatabase extends Database {
         def += ' ' + typedef + (nullable ? ' ' : ' not ') + 'null'
         // blob, text, geometry or json columns cannot have default values
         if (initial && !typedef.startsWith('text')) {
-          def += ' default ' + escape(initial, name, key)
+          def += ' default ' + this.sql.escape(initial, name, key)
         }
       }
-      cols.push(def)
+      result.push(def)
     }
 
-    if (!keys.length) {
-      cols.push(`primary key (${createIndex(primary)})`)
+    if (!columns.length) {
+      result.push(`primary key (${createIndex(primary)})`)
       for (const key of unique) {
-        cols.push(`unique index (${createIndex(key)})`)
+        result.push(`unique index (${createIndex(key)})`)
       }
       for (const key in foreign) {
         const [table, key2] = foreign[key]
-        cols.push(`foreign key (${escapeId(key)}) references ${escapeId(table)} (${escapeId(key2)})`)
+        result.push(`foreign key (${escapeId(key)}) references ${escapeId(table)} (${escapeId(key2)})`)
       }
     }
 
-    return cols
+    return result
   }
 
   async start() {
     this.pool = createPool(this.config)
-    const data = await this.query<any[]>('SELECT TABLE_NAME, COLUMN_NAME from information_schema.columns WHERE TABLE_SCHEMA = ?', [this.config.database])
-    for (const { TABLE_NAME, COLUMN_NAME } of data) {
-      (this.columns[TABLE_NAME] ||= []).push(COLUMN_NAME)
+
+    for (const name in this.ctx.model.config) {
+      this.tasks[name] = this._syncTable(name)
     }
 
-    for (const name in Koishi.Tables.config) {
-      const cols = this.getColDefs(name)
-      if (!this.columns[name]) {
-        logger.info('auto creating table %c', name)
-        await this.query(`CREATE TABLE ?? (${cols.join(',')}) COLLATE = ?`, [name, this.config.charset])
-      } else if (cols.length) {
-        logger.info('auto updating table %c', name)
-        await this.query(`ALTER TABLE ?? ${cols.map(def => 'ADD ' + def).join(',')}`, [name])
-      }
+    this.ctx.on('model', (name) => {
+      this.tasks[name] = this._syncTable(name)
+    })
+  }
+
+  /** synchronize table schema */
+  private async _syncTable(name: string) {
+    await this.tasks[name]
+    const data = await this.query<any[]>('SELECT COLUMN_NAME from information_schema.columns WHERE TABLE_SCHEMA = ? && TABLE_NAME = ?', [this.config.database, name])
+    const columns = data.map(row => row.COLUMN_NAME)
+    const result = this.getColDefs(name, columns)
+    if (!columns.length) {
+      logger.info('auto creating table %c', name)
+      await this.query(`CREATE TABLE ?? (${result.join(',')}) COLLATE = ?`, [name, this.config.charset])
+    } else if (result.length) {
+      logger.info('auto updating table %c', name)
+      await this.query(`ALTER TABLE ?? ${result.map(def => 'ADD ' + def).join(',')}`, [name])
     }
+  }
+
+  _createFilter(name: TableType, query: Query) {
+    return this.sql.parseQuery(this.ctx.model.resolveQuery(name, query))
   }
 
   joinKeys = (keys: readonly string[]) => {
@@ -215,18 +231,15 @@ class MysqlDatabase extends Database {
   }
 
   $in = (table: TableType, key: string, values: readonly any[]) => {
-    return `${this.escapeId(key)} IN (${values.map(val => this.escape(val, table, key)).join(', ')})`
+    return `${this.sql.escapeId(key)} IN (${values.map(val => this.sql.escape(val, table, key)).join(', ')})`
   }
 
   formatValues = (table: string, data: object, keys: readonly string[]) => {
-    return keys.map((key) => {
-      if (typeof data[key] !== 'object' || types.isDate(data[key])) return data[key]
-      return stringify(data[key], table as never, key)
-    })
+    return keys.map((key) => this.sql.stringify(data[key], table as never, key))
   }
 
-  query<T extends {}>(source: string, values?: any): Promise<T>
-  query<T extends {}>(source: string[], values?: any): Promise<T>
+  query<T = any>(source: string, values?: any): Promise<T>
+  query<T = any>(source: string[], values?: any): Promise<T>
   async query<T extends {}>(source: string | string[], values?: any): Promise<T> {
     if (Array.isArray(source)) {
       if (this.config.multipleStatements) {
@@ -249,9 +262,10 @@ class MysqlDatabase extends Database {
         logger.warn(sql)
         err.stack = err.message + error.stack.slice(7)
         if (err.code === 'ER_DUP_ENTRY') {
-          err[Symbol.for('koishi.error-type')] = 'duplicate-entry'
+          reject(new KoishiError(err.message, 'database.duplicate-entry'))
+        } else {
+          reject(err)
         }
-        reject(err)
       })
     })
   }
@@ -274,10 +288,137 @@ class MysqlDatabase extends Database {
   stop() {
     this.pool.end()
   }
-}
 
-MysqlDatabase.prototype.escape = escape
-MysqlDatabase.prototype.escapeId = escapeId
+  async drop(name: TableType) {
+    if (name) {
+      await this.query(`DROP TABLE ${this.sql.escapeId(name)}`)
+    } else {
+      const data = await this.select('information_schema.tables', ['TABLE_NAME'], 'TABLE_SCHEMA = ?', [this.config.database])
+      if (!data.length) return
+      await this.query(data.map(({ TABLE_NAME }) => `DROP TABLE ${this.sql.escapeId(TABLE_NAME)}`).join('; '))
+    }
+  }
+
+  async get(name: TableType, query: Query, modifier?: Query.Modifier) {
+    const filter = this._createFilter(name, query)
+    if (filter === '0') return []
+    const { fields, limit, offset } = Query.resolveModifier(modifier)
+    const keys = this.joinKeys(this.inferFields(name, fields))
+    let sql = `SELECT ${keys} FROM ${name} _${name} WHERE ${filter}`
+    if (limit) sql += ' LIMIT ' + limit
+    if (offset) sql += ' OFFSET ' + offset
+    return this.query(sql)
+  }
+
+  async set(name: TableType, query: Query, data: {}) {
+    await this.tasks[name]
+    const filter = this._createFilter(name, query)
+    if (filter === '0') return
+    const keys = Object.keys(data)
+    const update = keys.map((key) => {
+      const valueExpr = this.sql.parseEval(data[key], name, key)
+      const [field, ...rest] = key.split('.')
+      const keyExpr = this.sql.escapeId(field)
+      if (!rest.length) return `${keyExpr} = ${valueExpr}`
+      return `${keyExpr} = json_set(ifnull(${keyExpr}, '{}'), '$${rest.map(key => `."${key}"`).join('')}', ${valueExpr})`
+    }).join(', ')
+    await this.query(`UPDATE ${name} SET ${update} WHERE ${filter}`)
+  }
+
+  async remove(name: TableType, query: Query) {
+    const filter = this._createFilter(name, query)
+    if (filter === '0') return
+    await this.query('DELETE FROM ?? WHERE ' + filter, [name])
+  }
+
+  async create(name: TableType, data: {}) {
+    await this.tasks[name]
+    data = { ...this.ctx.model.create(name), ...data }
+    const keys = Object.keys(data)
+    const header = await this.query<OkPacket>(
+      `INSERT INTO ?? (${this.joinKeys(keys)}) VALUES (${keys.map(() => '?').join(', ')})`,
+      [name, ...this.formatValues(name, data, keys)],
+    )
+    return { ...data, id: header.insertId } as any
+  }
+
+  async upsert(name: TableType, data: any[], keys: string | string[]) {
+    if (!data.length) return
+    await this.tasks[name]
+
+    const { fields, primary } = this.ctx.model.config[name]
+    const merged = {}
+    const insertion = data.map((item) => {
+      Object.assign(merged, item)
+      return applyUpdate(item, this.ctx.model.create(name))
+    })
+    const indexFields = makeArray(keys || primary)
+    const dataFields = [...new Set(Object.keys(merged).map(key => key.split('.', 1)[0]))]
+    const updateFields = difference(dataFields, indexFields)
+
+    const createFilter = (item: any) => this.sql.parseQuery(pick(item, indexFields))
+    const createMultiFilter = (items: any[]) => {
+      if (items.length === 1) {
+        return createFilter(items[0])
+      } else if (indexFields.length === 1) {
+        const key = indexFields[0]
+        return this.sql.parseQuery({ [key]: items.map(item => item[key]) })
+      } else {
+        return items.map(createFilter).join(' OR ')
+      }
+    }
+
+    const update = updateFields.map((field) => {
+      const escaped = this.sql.escapeId(field)
+      const branches: Dict<string> = {}
+      const absent = data.filter((item) => {
+        // update directly
+        if (field in item) {
+          if (Object.keys(item[field]).some(key => key.startsWith('$'))) {
+            branches[createFilter(item)] = this.sql.parseEval(item[field], name, field)
+          }
+          return
+        }
+
+        // update with json_set
+        const valueInit = `ifnull(${escaped}, '{}')`
+        let value = valueInit
+        for (const key in item) {
+          const [first, ...rest] = key.split('.')
+          if (first !== field) continue
+          value = `json_set(${value}, '$${rest.map(key => `."${key}"`).join('')}', ${this.sql.parseEval(item[key])})`
+        }
+        if (value === valueInit) return true
+        branches[createFilter(item)] = value
+      })
+
+      if (absent.length) branches[createMultiFilter(absent)] = escaped
+      let value = `VALUES(${escaped})`
+      for (const condition in branches) {
+        value = `if(${condition}, ${branches[condition]}, ${value})`
+      }
+      return `${escaped} = ${value}`
+    }).join(', ')
+
+    const initFields = Object.keys(fields)
+    const placeholder = `(${initFields.map(() => '?').join(', ')})`
+    await this.query(
+      `INSERT INTO ${this.sql.escapeId(name)} (${this.joinKeys(initFields)}) VALUES ${data.map(() => placeholder).join(', ')}
+      ON DUPLICATE KEY UPDATE ${update}`,
+      [].concat(...insertion.map(item => this.formatValues(name, item, initFields))),
+    )
+  }
+
+  async aggregate(name: TableType, fields: {}, query: Query) {
+    const keys = Object.keys(fields)
+    if (!keys.length) return {}
+
+    const filter = this._createFilter(name, query)
+    const exprs = keys.map(key => `${this.sql.parseEval(fields[key])} AS ${this.sql.escapeId(key)}`).join(', ')
+    const [data] = await this.query(`SELECT ${exprs} FROM ${name} WHERE ${filter}`)
+    return data
+  }
+}
 
 namespace MysqlDatabase {
   export interface Config extends PoolConfig {}
@@ -359,84 +500,5 @@ namespace MysqlDatabase {
     }
   }
 }
-
-Database.extend(MysqlDatabase, {
-  async drop(name) {
-    if (name) {
-      await this.query(`DROP TABLE ${this.escapeId(name)}`)
-    } else {
-      const data = await this.select('information_schema.tables', ['TABLE_NAME'], 'TABLE_SCHEMA = ?', [this.config.database])
-      if (!data.length) return
-      await this.query(data.map(({ TABLE_NAME }) => `DROP TABLE ${this.escapeId(TABLE_NAME)}`).join('; '))
-    }
-  },
-
-  async get(name, query, modifier) {
-    const filter = this.sql.parseQuery(Query.resolve(name, query))
-    if (filter === '0') return []
-    const { fields, limit, offset } = Query.resolveModifier(modifier)
-    const keys = this.joinKeys(this.inferFields(name, fields))
-    let sql = `SELECT ${keys} FROM ${name} _${name} WHERE ${filter}`
-    if (limit) sql += ' LIMIT ' + limit
-    if (offset) sql += ' OFFSET ' + offset
-    return this.query(sql)
-  },
-
-  async set(name, query, data) {
-    const filter = this.sql.parseQuery(Query.resolve(name, query))
-    if (filter === '0') return
-    const keys = Object.keys(data)
-    const update = keys.map((key) => {
-      return `${this.escapeId(key)} = ${this.escape(data[key], name, key)}`
-    }).join(', ')
-    await this.query(`UPDATE ${name} SET ${update} WHERE ${filter}`)
-  },
-
-  async remove(name, query) {
-    const filter = this.sql.parseQuery(Query.resolve(name, query))
-    if (filter === '0') return
-    await this.query('DELETE FROM ?? WHERE ' + filter, [name])
-  },
-
-  async create(name, data) {
-    data = { ...Koishi.Tables.create(name), ...data }
-    const keys = Object.keys(data)
-    const header = await this.query<OkPacket>(
-      `INSERT INTO ?? (${this.joinKeys(keys)}) VALUES (${keys.map(() => '?').join(', ')})`,
-      [name, ...this.formatValues(name, data, keys)],
-    )
-    return { ...data, id: header.insertId } as any
-  },
-
-  async upsert(name, data, keys: string | string[]) {
-    if (!data.length) return
-    const { fields, primary } = Koishi.Tables.config[name]
-    const fallback = Koishi.Tables.create(name)
-    const initKeys = Object.keys(fields)
-    const updateKeys = Object.keys(data[0])
-    data = data.map(item => ({ ...fallback, ...item }))
-    keys = makeArray(keys || primary)
-    const placeholder = `(${initKeys.map(() => '?').join(', ')})`
-    const update = difference(updateKeys, keys).map((key) => {
-      key = this.escapeId(key)
-      return `${key} = VALUES(${key})`
-    }).join(', ')
-    await this.query(
-      `INSERT INTO ${this.escapeId(name)} (${this.joinKeys(initKeys)}) VALUES ${data.map(() => placeholder).join(', ')}
-      ON DUPLICATE KEY UPDATE ${update}`,
-      [].concat(...data.map(data => this.formatValues(name, data, initKeys))),
-    )
-  },
-
-  async aggregate(name, fields, query) {
-    const keys = Object.keys(fields)
-    if (!keys.length) return {}
-
-    const filter = this.sql.parseQuery(Query.resolve(name, query))
-    const exprs = keys.map(key => `${this.sql.parseEval(fields[key])} AS ${this.escapeId(key)}`).join(', ')
-    const [data] = await this.query(`SELECT ${exprs} FROM ${name} WHERE ${filter}`)
-    return data
-  },
-})
 
 export default MysqlDatabase

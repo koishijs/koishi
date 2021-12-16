@@ -163,7 +163,7 @@ export function apply(ctx: Context, config: Config = {}) {
   config = { ...defaultConfig, ...config }
   const { defaultViewport } = config.browser
 
-  ctx.on('connect', async () => {
+  ctx.on('ready', async () => {
     ctx.puppeteer = new Puppeteer(ctx, config)
     await ctx.puppeteer.launch().catch((error) => {
       logger.error(error)
@@ -171,7 +171,7 @@ export function apply(ctx: Context, config: Config = {}) {
     })
   })
 
-  ctx.on('disconnect', async () => {
+  ctx.on('dispose', async () => {
     await ctx.puppeteer?.close()
     delete ctx.puppeteer
   })
@@ -260,7 +260,7 @@ export function apply(ctx: Context, config: Config = {}) {
       }).finally(() => page.close())
     })
 
-  ctx1.with(['worker'], (ctx) => {
+  ctx1.using(['worker'], (ctx) => {
     ctx.worker.config.loaderConfig.jsxFactory = 'jsxFactory'
     ctx.worker.config.loaderConfig.jsxFragment = 'jsxFragment'
     ctx.worker.config.setupFiles['puppeteer.ts'] = resolve(__dirname, 'worker')

@@ -1,15 +1,16 @@
-import { Context } from 'koishi'
+import { Awaitable, Context } from 'koishi'
 import { Console } from './server'
 
 export abstract class DataSource<T = any> {
-  abstract get(forced?: boolean): Promise<T>
+  protected start(): Awaitable<void> {}
+  protected stop(): Awaitable<void> {}
+  protected abstract get(forced?: boolean): Promise<T>
 
   constructor(protected ctx: Context, protected name: keyof Console.Services) {
     ctx.console.services[name] = this as never
 
-    ctx.on('disconnect', () => {
-      delete ctx.console.services[name]
-    })
+    ctx.on('ready', () => this.start())
+    ctx.on('dispose', () => this.stop())
   }
 
   async broadcast(value?: T) {

@@ -49,7 +49,7 @@ export class ProfileProvider extends DataSource<ProfileProvider.Payload> {
     super(ctx, 'profile')
 
     const { tickInterval } = config
-    ctx.on('connect', () => {
+    ctx.on('ready', () => {
       ctx.setInterval(() => {
         updateCpuUsage()
         this.broadcast()

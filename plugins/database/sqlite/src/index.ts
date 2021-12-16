@@ -1,6 +1,7 @@
-import { Database, makeArray, Tables, Logger, Schema, Context, Query, difference } from 'koishi'
-import { SQLBuilder, Caster } from '@koishijs/sql-utils'
-import sqlite from 'better-sqlite3'
+import { Database, makeArray, Logger, Schema, Context, Query, Model, TableType, union, difference } from 'koishi'
+import { applyUpdate } from '@koishijs/orm-utils'
+import { Builder, Caster } from '@koishijs/sql-utils'
+import sqlite, { Statement } from 'better-sqlite3'
 import { resolve } from 'path'
 import { escape as sqlEscape, escapeId } from 'sqlstring-sqlite'
 
@@ -16,9 +17,7 @@ declare module 'koishi' {
 
 const logger = new Logger('sqlite')
 
-export type TableType = keyof Tables
-
-function getTypeDefinition({ type }: Tables.Field) {
+function getTypeDefinition({ type }: Model.Field) {
   switch (type) {
     case 'integer':
     case 'unsigned':
@@ -48,7 +47,7 @@ export interface ISQLiteFieldInfo {
 class SQLiteDatabase extends Database {
   public db: sqlite.Database
   sqlite = this
-  sql: SQLBuilder
+  sql: Builder
   caster: Caster
 
   constructor(public ctx: Context, public config: SQLiteDatabase.Config) {
@@ -56,7 +55,7 @@ class SQLiteDatabase extends Database {
 
     this.config = { path: '.koishi.db', ...config }
 
-    this.sql = new class extends SQLBuilder {
+    this.sql = new class extends Builder {
       escapeId = escapeId
 
       escape(value: any) {
@@ -71,7 +70,7 @@ class SQLiteDatabase extends Database {
       }
     }()
 
-    this.caster = new Caster()
+    this.caster = new Caster(ctx.model)
     this.caster.register<object, string>({
       types: ['json'],
       dump: value => JSON.stringify(value),
@@ -89,8 +88,8 @@ class SQLiteDatabase extends Database {
     })
   }
 
-  private getColumnDefinitionSQL(table: string, key: string) {
-    const config = Tables.config[table]
+  private _getColDefs(table: string, key: string) {
+    const config = this.ctx.model.config[table]
     const { initial, nullable = initial === undefined || initial === null } = config.fields[key]
     let def = this.sql.escapeId(key)
     if (key === config.primary && config.autoInc) {
@@ -105,11 +104,12 @@ class SQLiteDatabase extends Database {
     return def
   }
 
-  private syncTable(table: string) {
-    const info = this._getTableInfo(table)
+  /** synchronize table schema */
+  private _syncTable(table: string) {
+    const info = this.#exec('all', `PRAGMA table_info(${this.sql.escapeId(table)})`) as ISQLiteFieldInfo[]
     // FIXME: register platform columns before database initializion
     // WARN: side effecting Tables.config
-    const config = Tables.config[table]
+    const config = this.ctx.model.config[table]
     if (table === 'user') {
       new Set(this.ctx.bots.map(bot => bot.platform)).forEach(platform => {
         config.fields[platform] = { type: 'string', length: 63 }
@@ -124,22 +124,22 @@ class SQLiteDatabase extends Database {
         if (keys.includes(key) && info.some(({ name }) => name === key)) continue
         if (keys.includes(key)) {
           // Add column
-          const def = this.getColumnDefinitionSQL(table, key)
-          this.run(`ALTER TABLE ${this.sql.escapeId(table)} ADD COLUMN ${def}`)
+          const def = this._getColDefs(table, key)
+          this.#exec('run', `ALTER TABLE ${this.sql.escapeId(table)} ADD COLUMN ${def}`)
         } else {
           // Drop column
-          this.run(`ALTER TABLE ${this.sql.escapeId(table)} DROP COLUMN ${this.sql.escapeId(key)}`)
+          this.#exec('run', `ALTER TABLE ${this.sql.escapeId(table)} DROP COLUMN ${this.sql.escapeId(key)}`)
         }
       }
     } else {
       logger.info('auto creating table %c', table)
-      const defs = keys.map(key => this.getColumnDefinitionSQL(table, key))
+      const defs = keys.map(key => this._getColDefs(table, key))
       const constraints = []
       if (config.primary && !config.autoInc) {
-        constraints.push(`PRIMARY KEY (${this._joinKeys(makeArray(config.primary))})`)
+        constraints.push(`PRIMARY KEY (${this.#joinKeys(makeArray(config.primary))})`)
       }
       if (config.unique) {
-        constraints.push(...config.unique.map(keys => `UNIQUE (${this._joinKeys(makeArray(keys))})`))
+        constraints.push(...config.unique.map(keys => `UNIQUE (${this.#joinKeys(makeArray(keys))})`))
       }
       if (config.foreign) {
         constraints.push(
@@ -150,65 +150,140 @@ class SQLiteDatabase extends Database {
             ),
         )
       }
-      this.run(`CREATE TABLE ${this.sql.escapeId(table)} (${[...defs, ...constraints].join(',')})`)
+      this.#exec('run', `CREATE TABLE ${this.sql.escapeId(table)} (${[...defs, ...constraints].join(',')})`)
     }
   }
 
   async start() {
     this.db = sqlite(this.config.path === ':memory:' ? this.config.path : resolve(this.config.path))
     this.db.function('regexp', (pattern, str) => +new RegExp(pattern).test(str))
-    // Synchronize database schemas
-    for (const name in Tables.config) {
-      this.syncTable(name)
+
+    for (const name in this.ctx.model.config) {
+      this._syncTable(name)
     }
+
+    this.ctx.on('model', (name) => {
+      this._syncTable(name)
+    })
   }
 
-  _joinKeys(keys?: string[]) {
+  #joinKeys(keys?: string[]) {
     return keys ? keys.map(key => this.sql.escapeId(key)).join(',') : '*'
-  }
-
-  run(sql: string, params: any = []) {
-    logger.debug('SQL > %c', sql)
-    try {
-      return this.db.prepare(sql).run(params)
-    } catch (e) {
-      logger.warn('SQL Failed > %c', sql)
-      throw e
-    }
-  }
-
-  get(sql: string, params: any = []) {
-    logger.debug('SQL > %c', sql)
-    try {
-      return this.db.prepare(sql).get(params)
-    } catch (e) {
-      logger.warn('SQL Failed > %c', sql)
-      throw e
-    }
-  }
-
-  all(sql: string, params: any = []) {
-    logger.debug('SQL > %c', sql)
-    try {
-      return this.db.prepare(sql).all(params)
-    } catch (e) {
-      logger.warn('SQL Failed > %c', sql)
-      throw e
-    }
-  }
-
-  _getTables(): string[] {
-    const rows = this.all(`SELECT name FROM sqlite_master WHERE type='table'`)
-    return rows.map(({ name }) => name)
-  }
-
-  _getTableInfo(table: string): ISQLiteFieldInfo[] {
-    // eslint-disable-next-line @typescript-eslint/naming-convention
-    return this.all(`PRAGMA table_info(${this.sql.escapeId(table)})`)
   }
 
   stop() {
     this.db.close()
+  }
+
+  #exec<K extends 'get' | 'run' | 'all'>(action: K, sql: string, params: any = []) {
+    try {
+      const result = this.db.prepare(sql)[action](params) as ReturnType<Statement[K]>
+      logger.debug('SQL > %c', sql)
+      return result
+    } catch (e) {
+      logger.warn('SQL > %c', sql)
+      throw e
+    }
+  }
+
+  async drop(name: TableType) {
+    if (name) {
+      this.#exec('run', `DROP TABLE ${this.sql.escapeId(name)}`)
+    } else {
+      const tables = Object.keys(this.ctx.model.config)
+      for (const table of tables) {
+        this.#exec('run', `DROP TABLE ${this.sql.escapeId(table)}`)
+      }
+    }
+  }
+
+  async remove(name: TableType, query: Query) {
+    const filter = this.#query(name, query)
+    if (filter === '0') return
+    this.#exec('run', `DELETE FROM ${this.sql.escapeId(name)} WHERE ${filter}`)
+  }
+
+  #query(name: TableType, query: Query) {
+    return this.sql.parseQuery(this.ctx.model.resolveQuery(name, query))
+  }
+
+  #get(name: TableType, query: Query, modifier: Query.Modifier) {
+    const filter = this.#query(name, query)
+    if (filter === '0') return []
+    const { fields, limit, offset } = Query.resolveModifier(modifier)
+    let sql = `SELECT ${this.#joinKeys(fields)} FROM ${this.sql.escapeId(name)} WHERE ${filter}`
+    if (limit) sql += ' LIMIT ' + limit
+    if (offset) sql += ' OFFSET ' + offset
+    const rows = this.#exec('all', sql)
+    return rows.map(row => this.caster.load(name, row))
+  }
+
+  async get(name: TableType, query: Query, modifier: Query.Modifier) {
+    return this.#get(name, query, modifier)
+  }
+
+  #update(name: TableType, indexFields: string[], updateFields: string[], update: {}, data: {}) {
+    const row = this.caster.dump(name, applyUpdate(update, data))
+    const assignment = updateFields.map((key) => `${this.sql.escapeId(key)} = ${this.sql.escape(row[key])}`).join(',')
+    const query = Object.fromEntries(indexFields.map(key => [key, row[key]]))
+    const filter = this.#query(name, query)
+    this.#exec('run', `UPDATE ${this.sql.escapeId(name)} SET ${assignment} WHERE ${filter}`)
+  }
+
+  async set(name: TableType, query: Query, update: {}) {
+    const { primary } = this.ctx.model.config[name]
+    const updateFields = [...new Set(Object.keys(update).map(key => key.split('.', 1)[0]))]
+    const indexFields = makeArray(primary)
+    const fields = union(indexFields, updateFields)
+    const table = this.#get(name, query, fields)
+    for (const data of table) {
+      this.#update(name, indexFields, updateFields, update, data)
+    }
+  }
+
+  #create(name: TableType, data: {}) {
+    data = this.caster.dump(name, data)
+    const keys = Object.keys(data)
+    const sql = `INSERT INTO ${this.sql.escapeId(name)} (${this.#joinKeys(keys)}) VALUES (${keys.map(key => this.sql.escape(data[key])).join(', ')})`
+    return this.#exec('run', sql)
+  }
+
+  async create(name: TableType, data: {}) {
+    data = { ...this.ctx.model.create(name), ...data }
+    const result = this.#create(name, data)
+    const { autoInc, primary } = this.ctx.model.config[name]
+    if (!autoInc) return data as any
+    return { ...data, [primary as string]: result.lastInsertRowid }
+  }
+
+  async upsert(name: TableType, updates: any[], keys: string | string[]) {
+    if (!updates.length) return
+    const { primary } = this.ctx.model.config[name]
+    const merged = Object.assign({}, ...updates)
+    const dataFields = [...new Set(Object.keys(merged).map(key => key.split('.', 1)[0]))]
+    const indexFields = makeArray(keys || primary)
+    const fields = union(indexFields, dataFields)
+    const updateFields = difference(dataFields, indexFields)
+    const table = this.#get(name, {
+      $or: updates.map(item => Object.fromEntries(indexFields.map(key => [key, item[key]]))),
+    }, fields)
+    for (const item of updates) {
+      let data = table.find(row => indexFields.every(key => row[key] === item[key]))
+      if (data) {
+        this.#update(name, indexFields, updateFields, item, data)
+      } else {
+        this.#create(name, applyUpdate(item, this.ctx.model.create(name)))
+      }
+    }
+  }
+
+  async aggregate(name: TableType, fields: {}, query: Query) {
+    const keys = Object.keys(fields)
+    if (!keys.length) return {}
+
+    const filter = this.#query(name, query)
+    const exprs = keys.map(key => `${this.sql.parseEval(fields[key])} AS ${this.sql.escapeId(key)}`).join(', ')
+    return this.#exec('get', `SELECT ${exprs} FROM ${this.sql.escapeId(name)} WHERE ${filter}`)
   }
 }
 
@@ -221,89 +296,5 @@ namespace SQLiteDatabase {
     path: Schema.string().description('数据库路径').default('.koishi.db'),
   })
 }
-
-Database.extend(SQLiteDatabase, {
-  async drop(name) {
-    if (name) {
-      this.run(`DROP TABLE ${this.sql.escapeId(name)}`)
-    } else {
-      const tables = Object.keys(Tables.config)
-      for (const table of tables) {
-        this.run(`DROP TABLE ${this.sql.escapeId(table)}`)
-      }
-    }
-  },
-
-  async get(name, query, modifier) {
-    const filter = this.sql.parseQuery(Query.resolve(name, query))
-    if (filter === '0') return []
-    const { fields, limit, offset } = Query.resolveModifier(modifier)
-    let sql = `SELECT ${this._joinKeys(fields)} FROM ${this.sql.escapeId(name)} WHERE ${filter}`
-    if (limit) sql += ' LIMIT ' + limit
-    if (offset) sql += ' OFFSET ' + offset
-    const rows = this.all(sql)
-    return rows.map(row => this.caster.load(name, row))
-  },
-
-  async set(name, query, data) {
-    const filter = this.sql.parseQuery(Query.resolve(name, query))
-    if (filter === '0') return
-    data = this.caster.dump(name, data)
-    const update = Object.keys(data).map((key) => {
-      return `${this.sql.escapeId(key)} = ${this.sql.escape(data[key])}`
-    }).join(', ')
-    this.run(`UPDATE ${this.sql.escapeId(name)} SET ${update} WHERE ${filter}`)
-  },
-
-  async remove(name, query) {
-    const filter = this.sql.parseQuery(Query.resolve(name, query))
-    if (filter === '0') return
-    this.run(`DELETE FROM ${this.sql.escapeId(name)} WHERE ${filter}`)
-  },
-
-  async create(name, data) {
-    data = { ...Tables.create(name), ...data }
-    const dbData = this.caster.dump(name, data)
-    const keys = Object.keys(data)
-    try {
-      const result = this.run(
-      `INSERT INTO ${this.sql.escapeId(name)} (${this._joinKeys(keys)}) VALUES (${keys.map(key => this.sql.escape(dbData[key])).join(', ')})`,
-      )
-      const config = Tables.config[name]
-      if (config?.autoInc) {
-        return { ...data, [config.primary as string]: result.lastInsertRowid } as any
-      }
-      return data as any
-    } catch {}
-  },
-
-  async upsert(name, data, keys: string | string[]) {
-    if (!data.length) return
-    const { fields, primary } = Tables.config[name]
-    const fallback = Tables.create(name)
-    const initKeys = Object.keys(fields)
-    keys = makeArray(keys || primary)
-    for (const item of data) {
-      const updateKeys = Object.keys(item)
-      const dbItem = this.caster.dump(name, { ...fallback, ...item })
-      const update = difference(updateKeys, keys).map((key) => `${this.sql.escapeId(key)} = ${this.sql.escape(dbItem[key])}`).join(',')
-      this.run(
-        `INSERT INTO ${this.sql.escapeId(name)} (${this._joinKeys(initKeys)})
-        VALUES (${initKeys.map(key => this.sql.escape(dbItem[key])).join(', ')})
-        ON CONFLICT DO UPDATE SET ${update}`,
-      )
-    }
-  },
-
-  async aggregate(name, fields, query) {
-    const keys = Object.keys(fields)
-    if (!keys.length) return {}
-
-    const filter = this.sql.parseQuery(Query.resolve(name, query))
-    const exprs = keys.map(key => `${this.sql.parseEval(fields[key])} AS ${this.sql.escapeId(key)}`).join(', ')
-    const data = await this.get(`SELECT ${exprs} FROM ${this.sql.escapeId(name)} WHERE ${filter}`)
-    return data
-  },
-})
 
 export default SQLiteDatabase

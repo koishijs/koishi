@@ -1,5 +1,5 @@
 ---
-title: 适配器：Kaiheila
+title: 适配器：开黑啦
 sidebarDepth: 2
 ---
 

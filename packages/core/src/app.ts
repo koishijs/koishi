@@ -7,6 +7,7 @@ import validate, { Command } from './command'
 import { Session } from './session'
 import help, { getCommandNames, HelpConfig } from './help'
 import Schema from 'schemastery'
+import { Model } from './orm'
 
 function createLeadingRE(patterns: string[], prefix = '', suffix = '') {
   return patterns.length ? new RegExp(`^${prefix}(${patterns.map(escapeRegExp).join('|')})${suffix}`) : /$^/
@@ -30,7 +31,6 @@ export class App extends Context {
   public options: App.Config
   public isActive = false
   public registry = new Plugin.Registry()
-  public bots: Adapter.BotList
 
   private _nameRE: RegExp
 
@@ -60,6 +60,7 @@ export class App extends Context {
       disposables: [],
     })
 
+    this.model = new Model(this)
     this.bots = new Adapter.BotList(this)
 
     this._commands.resolve = (key) => {
@@ -112,8 +113,8 @@ export class App extends Context {
   }
 
   async start() {
-    await this.parallel('connect')
     this.isActive = true
+    await this.parallel('ready')
     this.logger('app').debug('started')
   }
 

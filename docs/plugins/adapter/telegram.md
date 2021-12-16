@@ -13,7 +13,7 @@ sidebarDepth: 2
 4. 使用 `/setprivacy` 开启 Privacy Mode（不然机器人只能收到特定消息）
 5. 创建完毕后，你会获得一个 token（请注意不要泄露），将其作为机器人配置项即可使用
 
-参考文档：[https://core.telegram.org/bots](https://core.telegram.org/bots)
+参考文档：<https://core.telegram.org/bots>
 
 ## 机器人选项
 

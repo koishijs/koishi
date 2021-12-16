@@ -7,6 +7,7 @@ import { App } from './app'
 import { Bot } from './bot'
 import { Database } from './database'
 import { Adapter } from './adapter'
+import { Model, Tables } from './orm'
 import Schema from 'schemastery'
 
 export type NextFunction = (next?: NextFunction) => Promise<void>
@@ -222,8 +223,8 @@ export class Context {
     return this.app.registry.get(this._plugin)
   }
 
-  with(using: readonly (keyof Context.Services)[], plugin: Plugin.Function<void>) {
-    return this.plugin({ using, apply: plugin })
+  using(using: readonly (keyof Context.Services)[], callback: Plugin.Function<void>) {
+    return this.plugin({ using, apply: callback })
   }
 
   plugin<T extends keyof Modules>(plugin: T, options?: boolean | Plugin.ModuleConfig<Modules[T]>): this
@@ -379,10 +380,18 @@ export class Context {
   on(name: string & EventName, listener: Disposable, prepend = false) {
     const method = prepend ? 'unshift' : 'push'
 
-    // handle special events
-    if (name === 'connect' && this.app.isActive) {
-      return listener(), () => false
+    if (name === 'connect') {
+      name = 'ready'
+      this.logger('context').warn('event "connect" is deprecated, use "ready" instead')
     } else if (name === 'disconnect') {
+      name = 'dispose'
+      this.logger('context').warn('event "disconnect" is deprecated, use "dispose" instead')
+    }
+
+    // handle special events
+    if (name === 'ready' && this.app.isActive) {
+      return listener(), () => false
+    } else if (name === 'dispose') {
       this.state.disposables[method](listener)
       return () => remove(this.state.disposables, listener)
     }
@@ -558,8 +567,9 @@ export class Context {
 
 export namespace Context {
   export interface Services {
-    database: Database
     bots: Adapter.BotList
+    database: Database
+    model: Model
   }
 
   export function service(key: keyof Services) {
@@ -573,11 +583,14 @@ export namespace Context {
         return value
       },
       set(this: Context, value) {
-        if (this.app[privateKey] === value) return
-        defineProperty(this.app, privateKey, value)
-        this.app._services[key] = this.state.id
+        const oldValue = this.app[privateKey]
+        if (oldValue === value) return
+        this.app[privateKey] = value
         this.emit('service', key)
+        const action = value ? oldValue ? 'changed' : 'enabled' : 'disabled'
+        this.logger('service').debug(key, action)
         if (value) {
+          this.app._services[key] = this.state.id
           const dispose = () => {
             if (this.app[privateKey] !== value) return
             this[key] = null
@@ -594,8 +607,9 @@ export namespace Context {
     })
   }
 
-  service('database')
   service('bots')
+  service('database')
+  service('model')
 }
 
 type FlattenEvents<T> = {
@@ -637,9 +651,11 @@ export interface EventMap extends SessionEventMap {
   'middleware'(session: Session): void
   'plugin-added'(plugin: Plugin): void
   'plugin-removed'(plugin: Plugin): void
-  'before-connect'(): Awaitable<void>
   'connect'(): Awaitable<void>
   'disconnect'(): Awaitable<void>
+  'ready'(): Awaitable<void>
+  'dispose'(): Awaitable<void>
+  'model'(name: keyof Tables): void
   'service'(name: keyof Context.Services): void
   'adapter'(): void
   'bot-added'(bot: Bot): void

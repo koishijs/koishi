@@ -82,7 +82,7 @@ export function apply(ctx: Context, options: Config = {}) {
     logger.debug(template('chat.' + (session.type === 'message' ? 'receive' : 'send'), message))
   })
 
-  ctx.with(['console'], (ctx) => {
+  ctx.using(['console'], (ctx) => {
     const { devMode, apiPath } = ctx.console.config
     const filename = devMode ? '../client/index.ts' : '../dist/index.js'
     const whitelist = [...builtinWhitelist, ...options.whitelist || []]

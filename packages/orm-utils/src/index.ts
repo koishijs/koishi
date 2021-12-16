@@ -41,12 +41,29 @@ type EvalOperators = {
   [K in keyof Eval.GeneralExpr]?: (args: Eval.GeneralExpr[K], data: any) => any
 }
 
+function getRecursive(path: string, data: any) {
+  let value = data
+  for (const key of path.split('.')) {
+    if (!value) return
+    value = value[key]
+  }
+  return value
+}
+
 const evalOperators: EvalOperators = {
-  // numeric
+  // universal
+  $: getRecursive,
+  $if: ([cond, vThen, vElse], data) => executeEval(cond, data) ? executeEval(vThen, data) : executeEval(vElse, data),
+  $ifNull: ([value, fallback], data) => executeEval(value, data) ?? executeEval(fallback, data),
+
+  // number
   $add: (args, data) => args.reduce<number>((prev, curr) => prev + executeEval(curr, data), 0),
   $multiply: (args, data) => args.reduce<number>((prev, curr) => prev * executeEval(curr, data), 1),
   $subtract: ([left, right], data) => executeEval(left, data) - executeEval(right, data),
   $divide: ([left, right], data) => executeEval(left, data) - executeEval(right, data),
+
+  // string
+  $concat: (args, data) => args.map(arg => executeEval(arg, data)).join(''),
 
   // boolean
   $eq: ([left, right], data) => executeEval(left, data).valueOf() === executeEval(right, data).valueOf(),
@@ -57,11 +74,11 @@ const evalOperators: EvalOperators = {
   $lte: ([left, right], data) => executeEval(left, data).valueOf() <= executeEval(right, data).valueOf(),
 
   // aggregation
-  $sum: (expr, table: any[]) => table.reduce((prev, curr) => prev + executeEval(expr, curr), 0),
-  $avg: (expr, table: any[]) => table.reduce((prev, curr) => prev + executeEval(expr, curr), 0) / table.length,
-  $min: (expr, table: any[]) => Math.min(...table.map(data => executeEval(expr, data))),
-  $max: (expr, table: any[]) => Math.max(...table.map(data => executeEval(expr, data))),
-  $count: (expr, table: any[]) => new Set(table.map(data => executeEval(expr, data))).size,
+  $sum: (expr, table: any[]) => table.reduce((prev, curr) => prev + executeAggr(expr, curr), 0),
+  $avg: (expr, table: any[]) => table.reduce((prev, curr) => prev + executeAggr(expr, curr), 0) / table.length,
+  $min: (expr, table: any[]) => Math.min(...table.map(data => executeAggr(expr, data))),
+  $max: (expr, table: any[]) => Math.max(...table.map(data => executeAggr(expr, data))),
+  $count: (expr, table: any[]) => new Set(table.map(data => executeAggr(expr, data))).size,
 }
 
 function executeFieldQuery(query: Query.FieldQuery, data: any) {
@@ -107,16 +124,37 @@ export function executeQuery(query: Query.Expr, data: any): boolean {
   })
 }
 
-export function executeEval(expr: Eval.Any | Eval.Aggregation, data: any) {
-  if (typeof expr === 'string') {
-    return data[expr]
-  } else if (typeof expr === 'number' || typeof expr === 'boolean') {
-    return expr
-  }
-
+function executeEvalExpr(expr: any, data: any) {
   for (const key in expr) {
     if (key in evalOperators) {
       return evalOperators[key](expr[key], data)
     }
   }
+}
+
+function executeAggr(expr: any, data: any) {
+  if (typeof expr === 'string') {
+    return getRecursive(expr, data)
+  }
+  return executeEvalExpr(expr, data)
+}
+
+export function executeEval(expr: any, data: any) {
+  if (typeof expr === 'number' || typeof expr === 'string' || typeof expr === 'boolean' || expr === null || expr === undefined) {
+    return expr
+  }
+  return executeEvalExpr(expr, data)
+}
+
+export function applyUpdate(update: any, data: any) {
+  for (const key in update) {
+    let root = data
+    const path = key.split('.')
+    const last = path.pop()
+    for (const key of path) {
+      root = root[key] ||= {}
+    }
+    root[last] = executeEval(update[key], data)
+  }
+  return data
 }

@@ -1,20 +1,20 @@
-import { Query, Eval, Tables, Dict } from 'koishi'
+import { Query, Eval, Dict, Model } from 'koishi'
 
 export type QueryOperators = {
   [K in keyof Query.FieldExpr]?: (key: string, value: Query.FieldExpr[K]) => string
 }
 
-export type EvaluationOperators = {
+export type EvalOperators = {
   [K in keyof Eval.GeneralExpr]?: (expr: Eval.GeneralExpr[K]) => string
 }
 
-export abstract class SQLBuilder {
+export abstract class Builder {
   protected createEqualQuery = this.comparator('=')
   protected queryOperators: QueryOperators
-  protected evalOperators: EvaluationOperators
+  protected evalOperators: EvalOperators
 
   abstract escapeId(value: any): string
-  abstract escape(value: any): string
+  abstract escape(value: any, table?: string, field?: string): string
 
   constructor() {
     this.queryOperators = {
@@ -62,11 +62,19 @@ export abstract class SQLBuilder {
     }
 
     this.evalOperators = {
-      // numeric
-      $add: (args) => `(${args.map(this.parseEval.bind(this)).join(' + ')})`,
-      $multiply: (args) => `(${args.map(this.parseEval.bind(this)).join(' * ')})`,
+      // universal
+      $: (key) => this.getRecursive(key),
+      $if: (args) => `IF(${args.map(arg => this.parseEval(arg)).join(', ')})`,
+      $ifNull: (args) => `IFNULL(${args.map(arg => this.parseEval(arg)).join(', ')})`,
+
+      // number
+      $add: (args) => `(${args.map(arg => this.parseEval(arg)).join(' + ')})`,
+      $multiply: (args) => `(${args.map(arg => this.parseEval(arg)).join(' * ')})`,
       $subtract: this.binary('-'),
       $divide: this.binary('/'),
+
+      // string
+      $concat: (args) => `concat(${args.map(arg => this.parseEval(arg)).join(', ')})`,
 
       // boolean
       $eq: this.binary('='),
@@ -77,25 +85,25 @@ export abstract class SQLBuilder {
       $lte: this.binary('<='),
 
       // aggregation
-      $sum: (expr) => `ifnull(sum(${this.parseEval(expr)}), 0)`,
-      $avg: (expr) => `avg(${this.parseEval(expr)})`,
-      $min: (expr) => `min(${this.parseEval(expr)})`,
-      $max: (expr) => `max(${this.parseEval(expr)})`,
-      $count: (expr) => `count(distinct ${this.parseEval(expr)})`,
+      $sum: (expr) => `ifnull(sum(${this.parseAggr(expr)}), 0)`,
+      $avg: (expr) => `avg(${this.parseAggr(expr)})`,
+      $min: (expr) => `min(${this.parseAggr(expr)})`,
+      $max: (expr) => `max(${this.parseAggr(expr)})`,
+      $count: (expr) => `count(distinct ${this.parseAggr(expr)})`,
     }
   }
 
   protected createMemberQuery(key: string, value: any[], notStr = '') {
     if (!value.length) return notStr ? '1' : '0'
-    return `${key}${notStr} IN (${value.map(val => this.escape(val)).join(', ')})`
+    return `${key}${notStr} in (${value.map(val => this.escape(val)).join(', ')})`
   }
 
   protected createRegExpQuery(key: string, value: RegExp) {
-    return `${key} REGEXP ${this.escape(value.source)}`
+    return `${key} regexp ${this.escape(value.source)}`
   }
 
   protected createElementQuery(key: string, value: any) {
-    return `FIND_IN_SET(${this.escape(value)}, ${key})`
+    return `find_in_set(${this.escape(value)}, ${key})`
   }
 
   protected comparator(operator: string) {
@@ -105,7 +113,7 @@ export abstract class SQLBuilder {
   }
 
   protected binary(operator: string) {
-    return function ([left, right]: [Eval.Any, Eval.Any]) {
+    return function ([left, right]) {
       return `(${this.parseEval(left)} ${operator} ${this.parseEval(right)})`
     }.bind(this)
   }
@@ -168,23 +176,37 @@ export abstract class SQLBuilder {
     return this.logicalAnd(conditions)
   }
 
-  parseEval(expr: Eval.Any | Eval.Aggregation): string {
-    if (typeof expr === 'string') {
-      return this.escapeId(expr)
-    } else if (typeof expr === 'number' || typeof expr === 'boolean') {
-      return this.escape(expr)
-    }
-
+  private parseEvalExpr(expr: any) {
     for (const key in expr) {
       if (key in this.evalOperators) {
         return this.evalOperators[key](expr[key])
       }
     }
   }
+
+  private parseAggr(expr: any) {
+    if (typeof expr === 'string') {
+      return this.getRecursive(expr)
+    }
+    return this.parseEvalExpr(expr)
+  }
+
+  private getRecursive(key: string) {
+    if (!key.includes('.')) return this.escapeId(key)
+    const [field, ...rest] = key.split('.')
+    return `json_unquote(json_extract(${this.escapeId(field)}, '$${rest.map(key => `."${key}"`).join('')}'))`
+  }
+
+  parseEval(expr: any, table?: string, field?: string): string {
+    if (typeof expr === 'string' || typeof expr === 'number' || typeof expr === 'boolean') {
+      return this.escape(expr, table, field)
+    }
+    return this.parseEvalExpr(expr)
+  }
 }
 
 export interface TypeCaster<S = any, T = any> {
-  types: Tables.Field.Type<S>[]
+  types: Model.Field.Type<S>[]
   dump: (value: S) => T
   load: (value: T, initial?: S) => S
 }
@@ -192,7 +214,7 @@ export interface TypeCaster<S = any, T = any> {
 export class Caster {
   protected types: Dict<TypeCaster>
 
-  constructor() {
+  constructor(private model: Model) {
     this.types = Object.create(null)
   }
 
@@ -201,18 +223,17 @@ export class Caster {
   }
 
   dump(table: string, obj: any): any {
-    const { fields } = Tables.config[table]
+    const { fields } = this.model.config[table]
     const result = {}
     for (const key in obj) {
-      const { type } = fields[key]
-      const converter = this.types[type]
+      const converter = this.types[fields[key]?.type]
       result[key] = converter ? converter.dump(obj[key]) : obj[key]
     }
     return result
   }
 
   load(table: string, obj: any): any {
-    const { fields } = Tables.config[table]
+    const { fields } = this.model.config[table]
     const result = {}
     for (const key in obj) {
       const { type, initial } = fields[key]

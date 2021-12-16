@@ -51,12 +51,12 @@ export abstract class Service {
   constructor(protected ctx: Context, key: keyof Context.Services, immediate?: boolean) {
     if (immediate) ctx[key] = this as never
 
-    ctx.on('connect', async () => {
+    ctx.on('ready', async () => {
       await this.start()
       if (!immediate) ctx[key] = this as never
     })
 
-    ctx.on('disconnect', async () => {
+    ctx.on('dispose', async () => {
       await this.stop()
     })
   }
@@ -118,6 +118,7 @@ export namespace Database {
   type ExtensionMethods<T> = Methods<Database, T extends Constructor<infer I> ? I : never>
   type Extension<T> = ((Database: T) => void) | ExtensionMethods<T>
 
+  /** @deprecated */
   export function extend<K extends keyof Modules>(module: K, extension: Extension<Get<Modules[K], 'default'>>): void
   export function extend<T extends Constructor<unknown>>(module: T, extension: Extension<T>): void
   export function extend(module: any, extension: any) {

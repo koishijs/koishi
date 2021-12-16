@@ -12,7 +12,9 @@ sidebarDepth: 2
 
 ```js
 // 定义一个 items 字段，用于存放物品列表
-User.extend(() => ({ items: [] }))
+ctx.model.extend('user', {
+  items: 'list',
+})
 
 ctx.command('lottery')
   .userFields(['items'])
@@ -29,7 +31,7 @@ ctx.command('lottery')
 
 这套机制不仅可以将多次更新合并成一次以提高程序性能，更能解决数据竞争的问题。如果两条信息先后被接收到，如果单纯地使用 getUser / setUser 进行处理，可能会发生后一次 getUser 在前一次 setUser 之前完成，导致本应获得 2 件物品，但实际只获得了 1 件的问题。而观察者会随时同步同源数据，数据安全得以保证。
 
-当然，如果你确实需要阻塞式地等待数据写入，我们也提供了 `user._update()` 方法。顺便一提，一旦成功执行了观察者的 `_update()` 方法，之前的缓冲区将会被清空，因此之后不会重复更新数据；对于缓冲区为空的观察者，`_update()` 方法也会直接返回，不会产生任何的数据库访问。这些都是我们优化的几个细节。
+当然，如果你确实需要阻塞式地等待数据写入，我们也提供了 `user.$update()` 方法。顺便一提，一旦成功执行了观察者的 `$update()` 方法，之前的缓冲区将会被清空，因此之后不会重复更新数据；对于缓冲区为空的观察者，`$update()` 方法也会直接返回，不会产生任何的数据库访问。这些都是我们优化的几个细节。
 
 你可以在 [这里](../../api/utils/observer.md) 看到完整的观察者 API。
 
@@ -54,7 +56,9 @@ app.before('command', ({ session, command }) => {
 
 ```js
 // 定义一个 msgCount 字段，用于存放收到的信息数量
-User.extend(() => ({ msgCount: '' }))
+ctx.model.extend('user', {
+  msgCount: 'integer',
+})
 
 // 手动添加要获取的字段，下面会介绍
 app.before('attach-user', fields => fields.add('msgCount'))

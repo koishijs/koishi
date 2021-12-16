@@ -197,8 +197,8 @@ export class EvalWorker {
 
     // wait for dependents to be executed
     process.nextTick(() => {
-      ctx.on('connect', () => this.start())
-      ctx.on('disconnect', () => this.stop())
+      ctx.on('ready', () => this.start())
+      ctx.on('dispose', () => this.stop())
     })
   }
 

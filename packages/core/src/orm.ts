@@ -1,4 +1,6 @@
 import { MaybeArray, Dict, Get, Extract, clone } from '@koishijs/utils'
+import { KoishiError } from '.'
+import { Context } from './context'
 import { User, Channel } from './database'
 
 export type TableType = keyof Tables
@@ -7,16 +9,98 @@ export type TableType = keyof Tables
 type Primitive = string | number
 type Comparable = Primitive | Date
 
-type Keys<O, T = any> = string & {
+type Keys<O, T = any> = {
   [K in keyof O]: O[K] extends T ? K : never
-}[keyof O]
+}[keyof O] & string
 
-export interface Tables {
-  user: User
-  channel: Channel
+type NestKeys<O, T = any, X = readonly any[] | ((...args: any) => any)> = O extends object ? {
+  [K in keyof O]: O[K] extends X ? never : (O[K] extends T ? K : never) | `${K & string}.${NestKeys<O[K], T, X | O>}`
+}[keyof O] & string : never
+
+export class Model {
+  public config: Dict<Model.Config> = {}
+
+  constructor(private ctx: Context) {
+    this.extend('user', {
+      id: 'string(63)',
+      name: 'string(63)',
+      flag: 'unsigned(20)',
+      authority: 'unsigned(4)',
+      usage: 'json',
+      timers: 'json',
+    }, {
+      autoInc: true,
+    })
+
+    this.extend('channel', {
+      id: 'string(63)',
+      platform: 'string(63)',
+      flag: 'unsigned(20)',
+      assignee: 'string(63)',
+    }, {
+      primary: ['id', 'platform'],
+    })
+  }
+
+  extend<T extends keyof Tables>(name: T, fields?: Model.Field.Extension<Tables[T]>, extension?: Model.Extension<Tables[T]>): void
+  extend(name: keyof Tables, fields = {}, extension: Model.Extension = {}) {
+    const { primary, autoInc, unique = [], foreign } = extension
+    const table = this.config[name] ||= {
+      primary: 'id',
+      unique: [],
+      foreign: {},
+      fields: {},
+    }
+
+    table.primary = primary || table.primary
+    table.autoInc = autoInc || table.autoInc
+    table.unique.push(...unique)
+    Object.assign(table.foreign, foreign)
+
+    for (const key in fields) {
+      table.fields[key] = Model.Field.parse(fields[key])
+    }
+
+    this.ctx.emit('model', name)
+  }
+
+  create<T extends TableType>(name: T): Tables[T] {
+    const { fields, primary } = this.config[name]
+    const result = {} as Tables[T]
+    for (const key in fields) {
+      if (key !== primary && fields[key].initial !== undefined) {
+        result[key] = clone(fields[key].initial)
+      }
+    }
+    return result
+  }
+
+  resolveQuery<T extends TableType>(name: T, query: Query<T> = {}): Query.Expr<Tables[T]> {
+    if (Array.isArray(query) || query instanceof RegExp || ['string', 'number'].includes(typeof query)) {
+      const { primary } = this.config[name]
+      if (Array.isArray(primary)) {
+        throw new KoishiError('invalid shorthand for composite primary key', 'model.invalid-query')
+      }
+      return { [primary]: query } as any
+    }
+    return query as any
+  }
 }
 
-export namespace Tables {
+export namespace Model {
+  export interface Extension<O = any> {
+    autoInc?: boolean
+    primary?: MaybeArray<Keys<O>>
+    unique?: MaybeArray<Keys<O>>[]
+    foreign?: {
+      [K in keyof O]?: [TableType, string]
+    }
+  }
+
+  export interface Config<O = any> extends Extension<O> {
+    fields?: Field.Config<O>
+  }
+
   export interface Field<T = any> {
     type: Field.Type<T>
     length?: number
@@ -57,7 +141,7 @@ export namespace Tables {
 
       // parse string definition
       const capture = regexp.exec(source)
-      if (!capture) throw new TypeError('invalid field definition')
+      if (!capture) throw new KoishiError('invalid field definition', 'model.invalid-field')
       const type = capture[1] as Type
       const args = (capture[2] || '').split(',')
       const field: Field = { type }
@@ -81,75 +165,14 @@ export namespace Tables {
       return field
     }
   }
-
-  export interface Extension<O = any> {
-    autoInc?: boolean
-    primary?: MaybeArray<Keys<O>>
-    unique?: MaybeArray<Keys<O>>[]
-    foreign?: {
-      [K in keyof O]?: [TableType, string]
-    }
-  }
-
-  export interface Config<O = any> extends Extension<O> {
-    fields?: Field.Config<O>
-  }
-
-  export const config: Dict<Config> = {}
-
-  export function extend<T extends TableType>(name: T, fields?: Field.Extension<Tables[T]>, extension?: Extension<Tables[T]>): void
-  export function extend(name: string, fields = {}, extension: Extension = {}) {
-    const { primary, autoInc, unique = [], foreign } = extension
-    const table = config[name] ||= {
-      primary: 'id',
-      unique: [],
-      foreign: {},
-      fields: {},
-    }
-
-    table.primary = primary || table.primary
-    table.autoInc = autoInc || table.autoInc
-    table.unique.push(...unique)
-    Object.assign(table.foreign, foreign)
-
-    for (const key in fields) {
-      table.fields[key] = Field.parse(fields[key])
-    }
-  }
-
-  export function create<T extends TableType>(name: T): Tables[T] {
-    const { fields, primary } = Tables.config[name]
-    const result = {} as Tables[T]
-    for (const key in fields) {
-      if (key !== primary && fields[key].initial !== undefined) {
-        result[key] = clone(fields[key].initial)
-      }
-    }
-    return result
-  }
-
-  extend('user', {
-    id: 'string(63)',
-    name: 'string(63)',
-    flag: 'unsigned(20)',
-    authority: 'unsigned(4)',
-    usage: 'json',
-    timers: 'json',
-  }, {
-    autoInc: true,
-  })
-
-  extend('channel', {
-    id: 'string(63)',
-    platform: 'string(63)',
-    flag: 'unsigned(20)',
-    assignee: 'string(63)',
-  }, {
-    primary: ['id', 'platform'],
-  })
 }
 
-export type Query<T extends TableType> = Query.Expr<Tables[T]> | Query.Shorthand<Primitive>
+export interface Tables {
+  user: User
+  channel: Channel
+}
+
+export type Query<T extends TableType = any> = Query.Expr<Tables[T]> | Query.Shorthand<Primitive>
 
 export namespace Query {
   export type Field<T extends TableType> = string & keyof Tables[T]
@@ -205,24 +228,13 @@ export namespace Query {
     [K in keyof T]?: FieldQuery<T[K]>
   }
 
-  export function resolve<T extends TableType>(name: T, query: Query<T> = {}): Expr<Tables[T]> {
-    if (Array.isArray(query) || query instanceof RegExp || ['string', 'number'].includes(typeof query)) {
-      const { primary } = Tables.config[name]
-      if (Array.isArray(primary)) {
-        throw new TypeError('invalid query syntax')
-      }
-      return { [primary]: query } as any
-    }
-    return query as any
-  }
-
   export interface ModifierExpr<K extends string> {
     limit?: number
     offset?: number
     fields?: K[]
   }
 
-  export type Modifier<T extends string> = T[] | ModifierExpr<T>
+  export type Modifier<T extends string = string> = T[] | ModifierExpr<T>
 
   export function resolveModifier<K extends string>(modifier: Modifier<K>): ModifierExpr<K> {
     if (Array.isArray(modifier)) return { fields: modifier }
@@ -235,54 +247,78 @@ export namespace Query {
     [K in keyof P]: Eval<T, P[K]>
   }
 
+  type NestGet<O, K extends string> = K extends `${infer L}.${infer R}` ? NestGet<Get<O, L>, R> : Get<O, K>
+
+  type MapUneval<T> = {
+    [K in NestKeys<T>]?: Uneval<T, NestGet<T, K>>
+  }
+
   export interface Methods {
     drop(table?: TableType): Promise<void>
     get<T extends TableType, K extends Field<T>>(table: T, query: Query<T>, modifier?: Modifier<K>): Promise<Pick<Tables[T], K>[]>
-    set<T extends TableType>(table: T, query: Query<T>, updater: Partial<Tables[T]>): Promise<void>
+    set<T extends TableType>(table: T, query: Query<T>, data: MapUneval<Tables[T]>): Promise<void>
     remove<T extends TableType>(table: T, query: Query<T>): Promise<void>
     create<T extends TableType>(table: T, data: Partial<Tables[T]>): Promise<Tables[T]>
-    upsert<T extends TableType>(table: T, data: Partial<Tables[T]>[], keys?: MaybeArray<Index<T>>): Promise<void>
+    upsert<T extends TableType>(table: T, data: MapUneval<Tables[T]>[], keys?: MaybeArray<Index<T>>): Promise<void>
     aggregate<T extends TableType, P extends Projection<T>>(table: T, fields: P, query?: Query<T>): Promise<MapEval<T, P>>
   }
 }
 
+export type Uneval<T, U> =
+  | U extends number ? Eval.Number<T>
+  : U extends string ? Eval.String<T>
+  : U extends boolean ? Eval.Boolean<T>
+  : any
+
 export type Eval<T, U> =
   | U extends number ? number
   : U extends boolean ? boolean
-  : U extends string ? Get<T, U>
-  : U extends Eval.NumericExpr ? number
+  : U extends string ? string
+  : U extends symbol ? any
+  : U extends Eval.NumberExpr ? number
+  : U extends Eval.StringExpr ? string
   : U extends Eval.BooleanExpr ? boolean
   : U extends Eval.AggregationExpr ? number
   : never
 
 export namespace Eval {
-  export type Any<T = any, A = never> = A | number | boolean | Keys<T> | NumericExpr<T, A> | BooleanExpr<T, A>
-  export type GeneralExpr = NumericExpr & BooleanExpr & AggregationExpr
-  export type Numeric<T = any, A = never> = A | number | Keys<T, number> | NumericExpr<T, A>
-  export type Boolean<T = any, A = never> = boolean | Keys<T, boolean> | BooleanExpr<T, A>
-  export type Aggregation<T = any> = Any<{}, AggregationExpr<T>>
+  export type GeneralExpr = UniveralExpr & NumberExpr & StringExpr & BooleanExpr & AggregationExpr
+  export type Number<T = any, A = never> = A | number | NumberExpr<T, A>
+  export type String<T = any, A = never> = string | StringExpr<T, A>
+  export type Boolean<T = any, A = never> = boolean | BooleanExpr<T, A>
+  export type Aggregation<T = any> = Number<{}, AggregationExpr<T>>
 
-  export interface NumericExpr<T = any, A = never> {
-    $add?: Numeric<T, A>[]
-    $multiply?: Numeric<T, A>[]
-    $subtract?: [Numeric<T, A>, Numeric<T, A>]
-    $divide?: [Numeric<T, A>, Numeric<T, A>]
+  export interface UniveralExpr<T = any, U = any> {
+    $?: NestKeys<T, U>
+    $if?: [any, Uneval<T, U>, Uneval<T, U>]
+    $ifNull?: Uneval<T, U>[]
   }
 
-  export interface BooleanExpr<T = any, A = never> {
-    $eq?: [Numeric<T, A>, Numeric<T, A>]
-    $ne?: [Numeric<T, A>, Numeric<T, A>]
-    $gt?: [Numeric<T, A>, Numeric<T, A>]
-    $gte?: [Numeric<T, A>, Numeric<T, A>]
-    $lt?: [Numeric<T, A>, Numeric<T, A>]
-    $lte?: [Numeric<T, A>, Numeric<T, A>]
+  export interface NumberExpr<T = any, A = never> extends UniveralExpr<T, number> {
+    $add?: Number<T, A>[]
+    $multiply?: Number<T, A>[]
+    $subtract?: [Number<T, A>, Number<T, A>]
+    $divide?: [Number<T, A>, Number<T, A>]
+  }
+
+  export interface StringExpr<T = any, A = never> extends UniveralExpr<T, string> {
+    $concat?: String<T, A>[]
+  }
+
+  export interface BooleanExpr<T = any, A = never> extends UniveralExpr<T, boolean> {
+    $eq?: [Number<T, A>, Number<T, A>]
+    $ne?: [Number<T, A>, Number<T, A>]
+    $gt?: [Number<T, A>, Number<T, A>]
+    $gte?: [Number<T, A>, Number<T, A>]
+    $lt?: [Number<T, A>, Number<T, A>]
+    $lte?: [Number<T, A>, Number<T, A>]
   }
 
   export interface AggregationExpr<T = any> {
-    $sum?: Any<T>
-    $avg?: Any<T>
-    $max?: Any<T>
-    $min?: Any<T>
-    $count?: Any<T>
+    $sum?: NestKeys<T, number> | NumberExpr<T>
+    $avg?: NestKeys<T, number> | NumberExpr<T>
+    $max?: NestKeys<T, number> | NumberExpr<T>
+    $min?: NestKeys<T, number> | NumberExpr<T>
+    $count?: NestKeys<T> | NumberExpr<T> | StringExpr<T> | BooleanExpr<T>
   }
 }

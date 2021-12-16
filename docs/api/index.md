@@ -17,11 +17,12 @@ sidebarDepth: 0
 - [会话 (Session)](./core/session.md)
 - [指令 (Command)](./core/command.md)
 - [数据库 (Database)](./core/database.md)
+- [数据模型 (Model)](./core/model.md)
 - [适配器 (Adapter)](./core/adapter.md)
 
 ## 其他内置 API
 
-由 @koishijs/utils 提供的 API：
+由其他官方库提供的 API：
 
 - [消息段 (Segment)](./utils/segment.md)
 - [配置模式 (Schema)](./utils/schema.md)

@@ -35,7 +35,7 @@ class MongoSynchronizer implements Synchronizer {
 
   async upload(date: Date): Promise<void> {
     logger.debug(this.hourly, this.daily, this.longterm, this.groups)
-    const coll = this.db.collection('plugin-status')
+    const coll = this.db.db.collection('plugin-status')
     const _date = new Date(date)
     _date.setMinutes(0)
     _date.setSeconds(0)
@@ -51,7 +51,7 @@ class MongoSynchronizer implements Synchronizer {
     if (Object.keys($inc).length) await coll.updateOne({ type: 'daily', time: _date }, { $inc }, { upsert: true })
     await coll.updateOne({ type: 'longterm', time: _date }, { $inc: this.longterm }, { upsert: true })
     for (const id in this.groups) {
-      await this.db.channel.updateOne({ id }, { $inc: { ['activity.' + Time.getDateNumber(date)]: this.groups[id] } } as any)
+      await this.db.db.collection('channel').updateOne({ id }, { $inc: { ['activity.' + Time.getDateNumber(date)]: this.groups[id] } } as any)
     }
     this.reset()
     logger.debug('stats updated')
@@ -59,11 +59,11 @@ class MongoSynchronizer implements Synchronizer {
 
   async download() {
     const time = { $lt: new Date() }
-    const coll = this.db.collection('plugin-status')
+    const coll = this.db.db.collection('plugin-status')
     const hourly = await coll.find({ type: 'hourly', time }).sort({ time: -1 }).limit(24 * RECENT_LENGTH).toArray()
     const daily = await coll.find({ type: 'daily', time }).sort({ time: -1 }).limit(RECENT_LENGTH).toArray()
     const longterm = await coll.find({ type: 'longterm', time }).sort({ time: -1 }).toArray()
-    const groups = await this.db.channel.find({}).project({ type: 1, id: 1, name: 1, assignee: 1 }).toArray()
+    const groups = await this.db.db.collection('channel').find({}).project({ type: 1, id: 1, name: 1, assignee: 1 }).toArray()
     return { daily, hourly, longterm, groups }
   }
 }
@@ -81,10 +81,10 @@ Database.extend('database-mongo', {
 
     const $gt = new Date(new Date().getTime() - 1000 * 3600 * 24)
     const [allGroups, activeGroups, allUsers, activeUsers, tables] = await Promise.all([
-      this.channel.countDocuments(),
-      this.channel.find({ assignee: { $ne: null } }).count(),
-      this.user.countDocuments(),
-      this.user.find({ lastCall: { $gt } }).count(),
+      this.db.collection('channel').countDocuments(),
+      this.db.collection('channel').find({ assignee: { $ne: null } }).count(),
+      this.db.collection('user').countDocuments(),
+      this.db.collection('user').find({ lastCall: { $gt } }).count(),
       getTableStats(),
     ])
     return { allGroups, activeGroups, allUsers, activeUsers, tables }

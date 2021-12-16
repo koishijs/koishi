@@ -182,7 +182,7 @@ function addon(ctx: Context, config: EvalConfig) {
       await session.execute('help addon')
     })
 
-  ctx.on('connect', async () => {
+  ctx.on('ready', async () => {
     const isRepo = await git.checkIsRepo(CheckRepoActions.IS_REPO_ROOT)
     if (!isRepo) return
     addon

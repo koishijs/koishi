@@ -1,4 +1,4 @@
-import { Database, Logger, Tables, Time, Dict } from 'koishi'
+import { Database, Logger, Time, Dict } from 'koishi'
 import { Synchronizer, RECENT_LENGTH } from '../stats'
 import type MysqlDatabase from '@koishijs/plugin-database-mysql'
 
@@ -58,7 +58,6 @@ namespace Stat {
   export class Recorded<K extends string> extends Stat<K, Dict<number>> {
     constructor(table: string, fields: readonly K[], preserve: boolean) {
       super(table, fields, preserve)
-      Tables.extend(table as any, {}, { primary: 'time' })
       Database.extend('database-mysql', ({ tables, Domain }) => {
         tables[table] = Object.fromEntries(fields.map(key => [key, new Domain.Json()]))
         tables[table].time = 'datetime'
@@ -85,7 +84,6 @@ namespace Stat {
   export class Numerical<K extends string> extends Stat<K, number> {
     constructor(table: string, fields: readonly K[], preserve: boolean) {
       super(table, fields, preserve)
-      Tables.extend(table as any, {}, { primary: 'time' })
       Database.extend('database-mysql', ({ tables }) => {
         tables[table] = Object.fromEntries(fields.map(key => [key, 'int unsigned']))
         tables[table].time = 'datetime'
@@ -117,7 +115,14 @@ class MysqlSynchronizer implements Synchronizer {
   hourly = this._hourly.data
   longterm = this._longterm.data
 
-  constructor(private db: MysqlDatabase) {}
+  constructor(private db: MysqlDatabase) {
+    // @ts-ignore
+    db.ctx.model.extend('stats_daily', {}, { primary: 'time' })
+    // @ts-ignore
+    db.ctx.model.extend('stats_hourly', {}, { primary: 'time' })
+    // @ts-ignore
+    db.ctx.model.extend('stats_longterm', {}, { primary: 'time' })
+  }
 
   addDaily(field: Synchronizer.DailyField, key: string | number) {
     const stat: Record<string, number> = this._daily.data[field]
@@ -159,7 +164,7 @@ Database.extend('database-mysql', {
       'SELECT COUNT(*) as allUsers FROM `user`',
       'SELECT COUNT(*) as activeGroups FROM `channel` WHERE `assignee`',
       'SELECT COUNT(*) as allGroups FROM `channel`',
-      'SELECT TABLE_NAME as name, TABLE_ROWS as count, DATA_LENGTH as size from information_schema.TABLES where TABLE_SCHEMA = ' + this.escape(this.config.database),
+      'SELECT TABLE_NAME as name, TABLE_ROWS as count, DATA_LENGTH as size from information_schema.TABLES where TABLE_SCHEMA = ' + this.sql.escape(this.config.database),
     ])
     const tables = Object.fromEntries(tablesStats.map(({ name, ...data }) => [name, data]))
     return { activeUsers, allUsers, activeGroups, allGroups, tables }

@@ -89,7 +89,7 @@ export class Console extends Service {
     const key = `entry-${hash}.js`
     this.entries[key] = filename
     this.triggerReload()
-    this.caller.on('disconnect', () => {
+    this.caller.on('dispose', () => {
       delete this.entries[key]
       this.triggerReload()
     })
@@ -226,7 +226,7 @@ export class Console extends Service {
       this.vite.middlewares(ctx.req, ctx.res, resolve)
     }))
 
-    this.ctx.on('disconnect', () => this.vite.close())
+    this.ctx.on('dispose', () => this.vite.close())
   }
 }
 

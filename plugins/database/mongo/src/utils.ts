@@ -1,4 +1,4 @@
-import { TableType, Query, Eval, valueMap } from 'koishi'
+import { Query, Eval, valueMap } from 'koishi'
 import { QuerySelector } from 'mongodb'
 
 function transformFieldQuery(query: Query.FieldQuery, key: string) {
@@ -32,7 +32,7 @@ function transformFieldQuery(query: Query.FieldQuery, key: string) {
   return result
 }
 
-function transformQuery(query: Query.Expr) {
+export function transformQuery(query: Query.Expr) {
   const filter = {}
   for (const key in query) {
     const value = query[key]
@@ -56,22 +56,32 @@ function transformQuery(query: Query.Expr) {
   return filter
 }
 
-export function createFilter<T extends TableType>(name: T, query: Query<T>) {
-  return transformQuery(Query.resolve(name, query))
-}
+const aggrKeys = ['$sum', '$avg', '$min', '$max', '$count']
 
-export function transformEval(expr: Eval.Numeric | Eval.Aggregation) {
-  if (typeof expr === 'string') {
-    return '$' + expr
-  } else if (typeof expr === 'number' || typeof expr === 'boolean') {
-    return expr
-  }
-
-  return valueMap(expr as any, (value) => {
+function transformEvalExpr(expr: any) {
+  return valueMap(expr as any, (value, key) => {
     if (Array.isArray(value)) {
       return value.map(transformEval)
-    } else {
+    } else if (aggrKeys.includes(key)) {
+      return transformAggr(value)
+    } {
       return transformEval(value)
     }
   })
+}
+
+function transformAggr(expr: any) {
+  if (typeof expr === 'string') {
+    return '$' + expr
+  }
+  return transformEvalExpr(expr)
+}
+
+export function transformEval(expr: any) {
+  if (typeof expr === 'number' || typeof expr === 'string' || typeof expr === 'boolean') {
+    return expr
+  } else if (expr.$) {
+    return '$' + expr.$
+  }
+  return transformEvalExpr(expr)
 }

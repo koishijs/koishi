@@ -4,25 +4,14 @@ sidebarDepth: 2
 
 # 事件 (Events)
 
-建议配套阅读：[事件与生命周期](../../guide/lifecycle.md)
+Koishi 封装了一套事件系统。其基本用法与 Node.js 自带的 [EventEmitter](https://nodejs.org/api/events.html#events_class_eventemitter) 类似，但支持更多的功能，比如多达 6 种的触发形式以及会话事件等。在了解下面的内容之前，建议你先阅读下面的章节：
 
-## 上报事件
+- [会话事件](../../guide/message/session.md#会话事件)
+- [事件系统](../../guide/plugin/lifecycle.md#事件系统)
 
-所有的上报事件都是通过 emit 方式在对应的上下文中触发的（即上下文选择器对这些事件有效，且回调函数的返回值不会影响后续行为）。
+## 通用会话事件
 
-### 通用会话属性
-
-以下属性对所有会话都有：
-
-- **type:** `string` 事件名称
-- **subtype:** `string` 一级子事件名称
-- **subsubtype:** `string` 二级子事件名称
-- **platform:** `string` 产生事件的平台
-- **selfId:** `string` 收到事件的机器人的平台 ID
-- **userId:** `string` 触发事件的用户的平台 ID
-- **groupId:** `string` 触发事件的群组的平台 ID
-- **channelId:** `string` 触发事件的频道的平台 ID
-- **timestamp:** `number` 收到事件的 UNIX 时间，单位为毫秒
+这里的会话事件都是通过 emit 方式在对应的上下文中触发的 (即上下文选择器对这些事件有效，且回调函数的返回值不会影响后续行为)。
 
 ### 消息类事件
 
@@ -33,12 +22,7 @@ sidebarDepth: 2
 - message-updated: 消息被修改
 - send: 机器人发出消息
 
-这些事件都还拥有以下的子事件：
-
-- private: 该消息是私聊消息
-- group: 该消息是群组消息
-
-与此类事件相关的属性有：
+与此类事件相关的会话属性有：
 
 - **messageId:** `string` 消息 ID
 - **content:** `string` 消息内容
@@ -62,11 +46,6 @@ sidebarDepth: 2
 - friend-added: 好友数量增加
 - friend-deleted: 好友数量减少
 - friend-request: 收到了好友请求
-
-形如 group(-member)?-(added|deleted) 的事件拥有以下的子事件：
-
-- active: 该操作是由加入或退出方发起的
-- passive: 该操作是群组方发起的
 
 形如 group(-member)?-(added|deleted) 的事件拥有以下的属性：
 
@@ -95,7 +74,7 @@ sidebarDepth: 2
 - removed
 - deleted
 
-### 群成员类事件
+<!-- ### 群成员类事件
 
 ### 通知类事件
 
@@ -108,23 +87,18 @@ sidebarDepth: 2
 与此类事件相关的属性有：
 
 - **targetId:** `string` 戳一戳的目标用户 ID，运气王的获得者 ID
-- **honorType:** `string` 荣誉类型，可能为 talkative, performer, emotion
+- **honorType:** `string` 荣誉类型，可能为 talkative, performer, emotion -->
 
-## 内部事件
+## 内置会话事件
 
-若非特别说明，这里的所有事件在全体上下文触发的（即上下文选择器对这些事件无效）。
+与上面介绍的通用会话事件不同，这里的事件都是 Koishi 自身实现的，它们有不同的触发方式，但是都会支持上下文选择器。
 
-### 事件：before-connect
+### 事件：middleware
 
-- **触发方式:** parallel
-
-开始连接到服务器时触发。
-
-### 事件：connect
-
+- **session:** `Session` 当前会话
 - **触发方式:** emit
 
-成功连接到服务器时触发。如果一个插件在注册时，应用已经处于连接状态，则会立即触发。
+在执行完全部中间件后会在对应的上下文触发。
 
 ### 事件：before-parse
 
@@ -183,21 +157,32 @@ sidebarDepth: 2
 
 指令调用完毕后会在对应的上下文触发。
 
-### 事件：middleware
+## 生命周期事件
 
-- **session:** `Session` 当前会话
-- **触发方式:** emit
+这里的所有事件在全体上下文触发的 (即上下文选择器对这些事件无效)。
 
-在执行完全部中间件后会在对应的上下文触发。
-
-### 事件：before-disconnect
+### 事件：ready
 
 - **触发方式:** parallel
 
-关闭服务器前，或所属插件被卸载时触发。参见 [可卸载的插件](../../guide/context.md#可卸载的插件)。
+应用启动时触发。如果一个插件在加载时，应用已经处于启动状态，则会立即触发。
 
-### 事件：disconnect
+### 事件：dispose
 
+- **触发方式:** parallel
+
+应用被关闭或插件被卸载时触发。
+
+### 事件：service
+
+- **name:** `string` 服务名称
 - **触发方式:** emit
 
-成功关闭服务器后触发。
+有服务被修改时触发。
+
+### 事件：model
+
+- **name:** `string` 被扩展的表名
+- **触发方式:** emit
+
+调用 `model.extend()` 时触发。
