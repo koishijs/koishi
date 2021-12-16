@@ -7,7 +7,7 @@ sidebarDepth: 2
 Koishi 封装了一套事件系统。其基本用法与 Node.js 自带的 [EventEmitter](https://nodejs.org/api/events.html#events_class_eventemitter) 类似，但支持更多的功能，比如多达 6 种的触发形式以及会话事件等。在了解下面的内容之前，建议你先阅读下面的章节：
 
 - [会话事件](../../guide/message/session.md#会话事件)
-- [生命周期事件](../../guide/plugin/lifecycle.md)
+- [事件系统](../../guide/plugin/lifecycle.md#事件系统)
 
 ## 通用会话事件
 
@@ -165,7 +165,7 @@ Koishi 封装了一套事件系统。其基本用法与 Node.js 自带的 [Event
 
 - **触发方式:** parallel
 
-应用启动时触发。如果一个插件在注册时，应用已经处于启动状态，则会立即触发。
+应用启动时触发。如果一个插件在加载时，应用已经处于启动状态，则会立即触发。
 
 ### 事件：dispose
 
