@@ -2,7 +2,7 @@
 sidebarDepth: 2
 ---
 
-# 代码上手
+# 代码起步
 
 Koishi 项目通常可以通过两种方式搭建：
 
@@ -27,11 +27,11 @@ Koishi 支持多个聊天平台，对于不同的平台，你也需要做好相�
 - [QQ 频道](../../plugins/adapter/qqguild.md)
 - [Telegram](../../plugins/adapter/telegram.md)
 
-如果你还没有准备好对接到哪些平台，也不用着急，Koishi 可以在不对接任何平台的情况直接启动（只不过没有机器人你就无法进行交互了）。
+如果你还没有准备好对接到哪些平台，也不用着急，Koishi 可以在不对接任何平台的情况直接启动 (只不过没有机器人你就无法进行交互了)。
 
 ## 初始化项目
 
-首先初始化你的机器人目录并安装 Koishi 和所需的插件（这里以官方插件 onebot 和 common 为例）：
+首先初始化你的机器人目录并安装 Koishi 和所需的插件 (这里以官方插件 onebot 和 common 为例)：
 
 ::: code-group manager
 ```npm

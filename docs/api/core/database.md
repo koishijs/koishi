@@ -76,7 +76,7 @@ interface QueryOptions<T extends string> {
 type QueryModifier<T extends string> = T[] | QueryOptions<T>
 ```
 
-下面是一些简单的示例
+下面是一些简单的示例：
 
 ```js
 // 获取名为 schedule 的表中 id 为 1 或者 2 的数据行
