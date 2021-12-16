@@ -150,6 +150,7 @@ class MongoDatabase extends Database {
   }
 
   async aggregate(name: TableType, fields: {}, query: Query) {
+    if (!Object.keys(fields).length) return {}
     const $match = transformQuery(this.ctx.model.resolveQuery(name, query))
     const [data] = await this.db.collection(name).aggregate([{ $match }, {
       $group: {

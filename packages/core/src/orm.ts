@@ -13,8 +13,8 @@ type Keys<O, T = any> = {
   [K in keyof O]: O[K] extends T ? K : never
 }[keyof O] & string
 
-type NestKeys<O, T = any, S = any[]> = O extends object ? O extends S ? never : {
-  [K in keyof O]: (O[K] extends T ? K : never) | `${K & string}.${NestKeys<O[K], T, S | O>}`
+type NestKeys<O, T = any, X = readonly any[] | ((...args: any) => any)> = O extends object ? {
+  [K in keyof O]: O[K] extends X ? never : (O[K] extends T ? K : never) | `${K & string}.${NestKeys<O[K], T, X | O>}`
 }[keyof O] & string : never
 
 export class Model {

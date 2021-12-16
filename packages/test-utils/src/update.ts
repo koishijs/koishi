@@ -158,7 +158,7 @@ namespace OrmOperations {
     })
   }
 
-  export const update = function Update(app: App) {
+  export const upsert = function Upsert(app: App) {
     it('update existing records', async () => {
       const table = await setup(app, 'temp2', barTable)
       const data = [

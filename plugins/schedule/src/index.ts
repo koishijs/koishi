@@ -17,12 +17,12 @@ export interface Schedule {
   lastCall: Date
   interval: number
   command: string
-  session: Partial<Session>
+  session: Session.General
 }
 
 const logger = new Logger('schedule')
 
-function formatContext(session: Partial<Session>) {
+function formatContext(session: Session.General) {
   return session.subtype === 'private' ? `私聊 ${session.userId}` : `群聊 ${session.guildId}`
 }
 
@@ -55,7 +55,7 @@ export function apply(ctx: Context, { minInterval }: Config) {
     return data.length
   }
 
-  async function prepareSchedule({ id, session, interval, command, time, lastCall }: Schedule) {
+  async function prepareSchedule({ id, interval, command, time, lastCall }: Schedule, session: Session) {
     const now = Date.now()
     const date = time.valueOf()
 
@@ -64,7 +64,7 @@ export function apply(ctx: Context, { minInterval }: Config) {
       await session.execute(command)
       if (!lastCall || !interval) return
       lastCall = new Date()
-      await ctx.database.upsert('schedule', [{ id, lastCall }])
+      await ctx.database.set('schedule', id, { lastCall })
     }
 
     if (!interval) {
@@ -104,8 +104,7 @@ export function apply(ctx: Context, { minInterval }: Config) {
       const { session, assignee } = schedule
       const bot = ctx.bots.get(assignee)
       if (!bot) return
-      schedule.session = new Session(bot, session)
-      prepareSchedule(schedule)
+      prepareSchedule(schedule, new Session(bot, session))
     })
   })
 
@@ -168,8 +167,7 @@ export function apply(ctx: Context, { minInterval }: Config) {
         command: options.rest,
         session: session.toJSON(),
       })
-      schedule.session = session
-      prepareSchedule(schedule)
+      prepareSchedule(schedule, session)
       return `日程已创建，编号为 ${schedule.id}。`
     })
 }

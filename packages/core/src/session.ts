@@ -14,11 +14,33 @@ type UnionToIntersection<U> = (U extends any ? (key: U) => void : never) extends
 type Flatten<T, K extends keyof T = keyof T> = UnionToIntersection<T[K]>
 type InnerKeys<T, K extends keyof T = keyof T> = keyof Flatten<T> & keyof Flatten<T, K>
 
-export interface Session extends Bot.MessageBase, Partial<Bot.Channel>, Partial<Bot.Guild> {}
+export interface Session extends Session.General {}
 
 export namespace Session {
   type Genres = 'friend' | 'channel' | 'group' | 'group-member' | 'group-role' | 'group-file' | 'group-emoji'
   type Actions = 'added' | 'deleted' | 'updated'
+
+  export interface General {
+    id?: string
+    platform?: string
+    selfId?: string
+    type?: string
+    subtype?: string
+    messageId?: string
+    channelId?: string
+    guildId?: string
+    userId?: string
+    content?: string
+    timestamp?: number
+    author?: Bot.Author
+    quote?: Bot.Message
+    channelName?: string
+    guildName?: string
+    operatorId?: string
+    targetId?: string
+    duration?: number
+    file?: FileInfo
+  }
 
   export interface Events extends Record<`${Genres}-${Actions}`, {}> {}
 
@@ -113,7 +135,7 @@ export class Session<
   private _hooks: (() => void)[]
   private _promise: Promise<string>
 
-  constructor(bot: Bot, session: Partial<Session>) {
+  constructor(bot: Bot, session: Session.General) {
     Object.assign(this, session)
     this.platform = bot.platform
     defineProperty(this, 'app', bot.app)
@@ -141,7 +163,7 @@ export class Session<
     return `${this.platform}:${this.selfId}`
   }
 
-  toJSON(): Partial<Session> {
+  toJSON(): Session.General {
     return Object.fromEntries(Object.entries(this).filter(([key]) => {
       return !key.startsWith('_') && !key.startsWith('$')
     }))
