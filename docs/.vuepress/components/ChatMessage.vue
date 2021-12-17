@@ -91,46 +91,46 @@ export default {
 
 <style lang="scss">
 
-.chat-message{
+$avatar-size: 2.8rem;
+$msgbox-left: 4.2rem;
+
+.chat-message {
   position: relative;
   margin: 1rem 0;
   opacity: 0;
   transform: translateX(-20%);
   transition: transform 0.3s ease-out, opacity 0.3s ease;
 
-  &.shown{
+  &.shown {
     opacity: 1;
     transform: translateX(0);
   }
+
+  .avatar {
+    width: $avatar-size;
+    height: $avatar-size;
+    position: absolute;
+    border-radius: 100%;
+    transform: translateY(-1px);
+    user-select: none;
+    pointer-events: none;
+    text-align: center;
+    line-height: $avatar-size;
+    font-size: 1.6rem;
+    color: white;
+    font-family: "Comic Sans MS";
+  }
+
+  .nickname {
+    user-select: none;
+    position: relative;
+    margin: 0 0 0.4rem $msgbox-left;
+    font-weight: bold;
+    font-size: 0.9rem;
+  }
 }
 
-$avatar-size: 2.8rem;
-$msgbox-left: 4.2rem;
-
-.avatar{
-  width: $avatar-size;
-  height: $avatar-size;
-  position: absolute;
-  border-radius: 100%;
-  transform: translateY(-1px);
-  user-select: none;
-  pointer-events: none;
-  text-align: center;
-  line-height: $avatar-size;
-  font-size: 1.6rem;
-  color: white;
-  font-family: "Comic Sans MS";
-}
-
-.nickname{
-  user-select: none;
-  position: relative;
-  margin: 0 0 0.4rem $msgbox-left;
-  font-weight: bold;
-  font-size: 0.9rem;
-}
-
-.message-box{
+.message-box {
   position: relative;
   margin-left: $msgbox-left;
   width: fit-content;
@@ -139,19 +139,19 @@ $msgbox-left: 4.2rem;
   word-break: break-all;
   transition: background-color ease 0.3s;
 
-  .chat-message:not(.no-padding) &{
+  .chat-message:not(.no-padding) & {
     padding: 0.5rem 0.7rem;
   }
 
-  > img{
+  > img {
     border-radius: 0.5rem;
   }
 
-  img{
+  img {
     vertical-align: middle;
   }
 
-  p > img{
+  p > img {
     margin: 0.2rem 0;
   }
 

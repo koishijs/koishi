@@ -10,104 +10,123 @@
 
 </div>
 
-Koishi 是一个在 [Node.js](https://nodejs.org/) 环境下运行的跨平台机器人框架，目前可支持 [QQ](https://im.qq.com/)，[开黑啦](https://kaiheila.cn/)，[Telegram](https://telegram.org/)，[Discord](https://discord.com/) 等多个平台。
+Koishi 是一个在 [Node.js](https://nodejs.org/) 环境下运行的跨平台机器人框架，目前可支持 [QQ](https://im.qq.com/)，[Telegram](https://telegram.org/)，[Discord](https://discord.com/) 等多个平台。
 
 这个项目的名字和图标来源于东方 Project 中的角色古明地恋 (Komeiji Koishi)。
 
-<div align="center">
-<img src="./.github/demo.png" alt="demo" width="640">
-</div>
-
 ## 快速上手
 
-```sh
-# 进入文件夹
-cd my-bot
-
-# 安装 Koishi
-yarn add koishi
-
-# 初始化配置文件
-yarn koishi init
-
-# 运行你的 Bot
-yarn koishi start
-```
-
-现在可以对你的机器人说话了：
+打开命令行，输入下面的指令，即可在当前目录下新建并启用一个带控制台的 Koishi 项目：
 
 ```sh
-> echo hello world
-< hello world
+npm init koishi
+# 或者
+yarn create koishi
 ```
 
-完整版文档：https://koishi.js.org/guide/starter.html
+项目启动成功后，会自动为你打开一个浏览器界面，你可以使用界面中的控制台进行一系列操作，包括修改配置、安装插件和添加机器人。
 
-## 优秀特性
+## 特性
 
-### 开箱即用的 CLI
+### 开箱即用的控制台
 
-Koishi 高度配置化的命令行工具可以让你无需写代码就搭建属于你的机器人。与此同时，CLI 还配备了丰富和人性化的提示，进一步提高调试体验。我们甚至还实现了**插件级别的 HMR（模块热替换）**，让你开发和调试插件也拥有如同前端开发一样的丝滑体验。
+高度便利的控制台让你无需基础让你在几分钟之内搭建自己的聊天机器人。
+
+- 提供在线插件市场，即使没有 js 编程基础，也能轻松在控制台中下载安装插件
+- 支持 QQ，Telegram，Discord 等主流聊天平台，支持多账户和跨平台数据互通
+- 随时随机通过控制面板监控运行状态，控制机器人的行为，甚至上号聊天
+
+参见：[创建控制台项目](https://koishi.js.org/guide/introduction/console.html)
 
 ### 功能强大的 API
 
-经过了几个版本的迭代，Koishi 已经发展出了丰富的 API，功能覆盖机器人领域的方方面面。从上层负责交互的指令、会话、中间件，再到中层负责控制的应用、上下文、插件，最后到底层的机器人和适配器，每一个部分都经过了精心的编写，可以让你轻松实现任何需求。如果担心在复杂的功能中迷失方向，我也准备了细致的文档来提供帮助。
+经过了几个版本的迭代，Koishi 已经发展出了丰富的 API，功能覆盖机器人领域的方方面面。从上层负责交互的指令、会话、中间件，再到中层负责控制的应用、上下文、插件，最后到底层的机器人和适配器，每一个部分都经过了精心的编写，可以让你轻松实现任何需求。如果担心在复杂的功能中迷失方向，我们也准备了细致的文档来提供帮助。
+
+参见：[API 文档](https://koishi.js.org/api/)
 
 ### 丰富的生态系统
 
-Koishi 在编写时，也同样编写了大量的官方插件作为补充。它们有些作为 Koishi 的基础功能，有些则为 Koishi 的使用提供了许多便利。更重要的是，这数十个插件都可以作为 Koishi 插件开发的极好示范。
+官方提供了大量插件和解决方案，覆盖了绝大多数常见需求的同时，也为开发提供了绝佳的范例。
 
-### 多账户与跨平台支持
+- @koishijs/plugin-console：网页控制台
+- @koishijs/plugin-schedule：计划任务
+- @koishijs/plugin-teach：问答教学
 
-Koishi 原生地支持了多账户与跨平台，同时为这些机器人之间互通数据、共用服务器、保证数据安全提供了原生的解决方案，这有助于在保持高性能的同时，将风控和迁移造成的影响降低到最小。Koishi 的用户甚至可以**在不同的平台间绑定数据**，使你无论切换到哪个平台，机器人都能记住你的用户信息。
+除了这些官方插件以外，社区贡献者也编写了各种各样的第三方插件：
 
-除此以外，Koishi 还内置了一套用户管理机制，不仅几乎能满足一切需求，还具有良好的扩展性，任何人都可以在插件中扩展用户的字段。Koishi 的模块化开发使得这套机制并不仅限于单一的平台或者数据库。目前支持的平台已经包括 QQ (OneBot)，Telegram，Discord 等等，支持的数据库包括 MySQL (mariadb) 和 MongoDB。
+- koishi-plugin-genshin：原神资料查询
+- koishi-plugin-ink：展示视觉小说
+- koishi-plugin-shell：执行终端命令
 
-### 便利的网页控制台
+这些插件共同组成了 Koishi 如今的生态。
 
-Koishi v3 的另一大亮点就是拥有官方的网页控制台插件。这个控制台包含了非常多的功能：查看机器人运行状态、收集并展示统计数据、管理你的插件和依赖……
+参见：[官方插件](https://koishi.js.org/plugins/)
 
-这个控制台本身的也提供了接口，允许其他插件来新增页面。当你安装了另一个插件 koishi-plugin-chat 之后，你甚至可以利用控制台，直接使用机器人的号进行聊天！
+### 专为开发者打造
 
-## 官方生态
+Koishi 更为开发者提供了众多专业功能，使开发者得以在各种复杂需求中构建规模化的解决方案。
+
+#### 类型支持
+
+Koishi 完全基于 TypeScript 开发，拥有顶级的类型支持，丰富的代码提示让你在编写代码的时候甚至无需查看文档。
+
+#### 单元测试
+
+所有核心功能均已经通过单元测试，既确保了可靠性，也为开发者提供了一套测试插件和定位问题的最佳实践。
+
+#### 模块热重载
+
+开发 Koishi 插件时，只需轻点保存即可热重载，无需频繁重启机器人，如同前端开发一样丝滑顺畅。
+
+## 官方插件
 
 ### 平台支持
 
-- koishi-adapter-onebot: [OneBot](https://github.com/howmanybots/onebot) 协议支持，可用于 QQ
-- koishi-adapter-discord: [Discord](https://discord.com/) 平台支持
-- koishi-adapter-telegram: [Telegram](https://telegram.org/) 平台支持
-- koishi-adapter-kaiheila: [开黑啦](https://kaiheila.cn/) 平台支持
+- [adapter-discord](https://koishi.js.org/plugins/adapter/discord.html): [Discord](https://discord.com/) 平台支持
+- [adapter-kaiheila](https://koishi.js.org/plugins/adapter/kaiheila.html): [开黑啦](https://kaiheila.cn/) 平台支持
+- [adapter-onebot](https://koishi.js.org/plugins/adapter/onebot.html): [OneBot](https://github.com/howmanybots/onebot) 协议支持，可用于 QQ
+- [adapter-qqguild](https://koishi.js.org/plugins/adapter/qqguild.html): QQ 频道平台支持
+- [adapter-telegram](https://koishi.js.org/plugins/adapter/telegram.html): [Telegram](https://telegram.org/) 平台支持
+
+### 静态资源存储
+
+- [assets-jsdelivr](https://koishi.js.org/plugins/assets/jsdelivr.html): 使用 jsDelivr 和 GitHub 存储静态资源
+- [assets-local](https://koishi.js.org/plugins/assets/local.html): 使用本地文件系统存储静态资源
+- [assets-remote](https://koishi.js.org/plugins/assets/remote.html): 使用远程 Koishi 服务器存储静态资源
+- [assets-s3](https://koishi.js.org/plugins/assets/s3.html): 使用 S3 存储静态资源
+
+### 缓存支持
+
+- [cache-lru](https://koishi.js.org/plugins/cache/lru.html): LRU 缓存支持
+- [cache-redis](https://koishi.js.org/plugins/cache/redis.html): Redis 缓存支持
 
 ### 数据库支持
 
-- koishi-plugin-mongo: MongoDB 支持
-- koishi-plugin-mysql: MySQL 5.7 / MariaDB 10.5 支持
+- [database-memory](https://koishi.js.org/plugins/database/memory.html): 测试用的内存数据库支持
+- [database-mongo](https://koishi.js.org/plugins/database/mongo.html): MongoDB 数据库支持
+- [database-mysql](https://koishi.js.org/plugins/database/mysql.html): MySQL 数据库支持
+- [database-sqlite](https://koishi.js.org/plugins/database/sqlite.html): SQLite 数据库支持
 
-### 核心插件
+### 网页控制台
 
-[koishi-plugin-common](https://koishi.js.org/plugins/common/) 是一个插件合集，包含了一些最常用功能：
-
-- 发送和广播消息
-- 管理用户和频道数据
-- 账号跨平台绑定
-- 消息跨频道转发
-- 输出聊天记录到控制台
-- 定制复读，处理申请，自定义回复……
-
-[koishi-plugin-eval](https://koishi.js.org/plugins/eval/) 允许用户直接使用机器人执行脚本。它利用了 Node.js 的 [vm](https://nodejs.org/api/vm.html) 和 [worker_threads](https://nodejs.org/api/worker_threads.html) 模块，在保护执行安全的前提下能够获得较快的响应速度。同时，插件还提供了一些内置的 API 供用户调用，并允许用户编写自己的模块并永久保存，甚至可以动态定义新的指令。
-
-[koishi-plugin-teach](https://koishi.js.org/plugins/teach/) 允许用户在运行时编写问答并由机器人触发。每个人都可以随时随地修改机器人的行为，大大提高了互动的灵活性。支持概率控制、称呼匹配、指令插值、权限管理、频道过滤、正则匹配、后继问答等多种功能，足以应对绝大部分使用场景。
+- [chat](https://koishi.js.org/plugins/console/chat.html): 使用机器人账号聊天
+- [console](https://koishi.js.org/plugins/console/): 网页控制台
+- [manager](https://koishi.js.org/plugins/console/manager.html): 管理插件和机器人
+- [status](https://koishi.js.org/plugins/console/status.html): 查看运行状态和统计数据
 
 ### 其他官方插件
 
-- [koishi-plugin-assets](https://koishi.js.org/plugins/other/assets.html) / 资源转存
-- [koishi-plugin-chess](https://koishi.js.org/plugins/other/chess.html) / 棋类游戏
-- [koishi-plugin-github](https://koishi.js.org/plugins/other/github.html) / 接入 GitHub
-- [koishi-plugin-image-search](https://koishi.js.org/plugins/other/image-search.html) / 图片搜索
-- [koishi-plugin-puppeteer](https://koishi.js.org/plugins/other/puppeteer.html) / 网页截图
-- [koishi-plugin-schedule](https://koishi.js.org/plugins/other/schedule.html) / 计划任务
-- [koishi-plugin-tools](https://koishi.js.org/plugins/other/tools.html) / 实用工具
-- [koishi-plugin-webui](https://koishi.js.org/plugins/other/webui.html) / 网页控制台
+- [admin](https://koishi.js.org/plugins/admin.html): 操作用户数据和频道数据
+- [common](https://koishi.js.org/plugins/common.html): 常用指令合集
+- [eval](https://koishi.js.org/plugins/eval.html): 对话机器人执行脚本
+- [forward](https://koishi.js.org/plugins/forward.html): 转发消息到其他频道
+- [github](https://koishi.js.org/plugins/github.html): GitHub 相关功能
+- [mock](https://koishi.js.org/plugins/mock.html): 模拟消息、会话、网络请求
+- [puppeteer](https://koishi.js.org/plugins/puppeteer.html): 网页截图和图片渲染
+- [repeater](https://koishi.js.org/plugins/repeater.html): 复读机相关功能
+- [schedule](https://koishi.js.org/plugins/schedule.html): 设置和执行计划任务
+- [teach](https://koishi.js.org/plugins/teach.html): 教学问答系统
+- [verifier](https://koishi.js.org/plugins/verifier.html): 处理好友和群组请求
 
 ## 应用案例
 
@@ -115,45 +134,47 @@ Koishi v3 的另一大亮点就是拥有官方的网页控制台插件。这个�
 
 ### 社区插件
 
-<!-- 左边填 npm 包名 -->
+<!-- 名称请链接到源码仓库，忽略 koishi-plugin- 前缀，按首字母排序 -->
 
-- [koishi-plugin-blame](https://github.com/ArilyChan/koishi-plugin-blame): 拦截崩溃错误，推送到私信或群
-- [koishi-plugin-gosen-choyen](https://github.com/idlist/koishi-plugin-gosen-choyen): 生成并发送“我想要五千兆元！”风格的图片
-- [koishi-plugin-genshin](https://github.com/koishijs/koishi-plugin-genshin): 查询原神国服玩家数据
-- [koishi-plugin-ink](https://github.com/idlist/koishi-plugin-ink): 通过 [ink](https://github.com/inkle/ink) 展示视觉小说
-- [koishi-plugin-bgp](https://github.com/Anillc/koishi-plugin-bgp): BGP 工具集！
-- [koishi-plugin-dcqq-relay](https://github.com/XxLittleCxX/koishi-plugin-dcqq-relay): 同步 Discord 与 QQ 间的消息
-- [koishi-plugin-forward](https://github.com/Anillc/forward): 将你的消息转发至其他平台！
-- [koishi-plugin-animal-picture](https://github.com/idlist/koishi-plugin-animal-picture): 发送各种动物图片
-- [koishi-plugin-shell](https://github.com/koishijs/koishi-plugin-shell): 使用 Koishi 执行终端命令
-- [koishi-plugin-eval-enhance](https://github.com/Anillc/koishi-plugin-eval-enhance): koishi-plugin-eval的增强！
-- [koishi-plugin-work](https://github.com/NWYLZW/koishi-plugin-work): 工作学习工具，已有功能 todos: 代办管理
-- [koishi-plugin-aircon](https://github.com/idlist/koishi-plugin-aircon): 群空调
-- [koishi-plugin-cryptocurrency](https://github.com/koishijs/plugin-cryptocurrency): 查看和订阅加密货币的市场价格
-- [koishi-plugin-jrrp](https://github.com/idlist/koishi-plugin-jrrp): 今日人品
-- [koishi-plugin-rpc](https://github.com/Anillc/koishi-plugin-rpc): 一个为其他插件提供 RPC 的插件
-- [koishi-plugin-text-dialogue](https://github.com/koishijs/koishi-plugin-developer/tree/master/packages/plugin-text-dialogue): 支持在 md 文档中和你的 bot 对话
+| 名称 | 简介 |
+|:----|:----|
+| [adapter-minecraft](https://github.com/koishijs/koishi-plugin-adapter-minecraft) | Minecraft 适配器 |
+| [assets-smms](https://github.com/koishijs/koishi-plugin-assets-smms) | 使用 sm.ms 存储静态资源文件 |
+| [chess](https://github.com/koishijs/koishi-plugin-chess) | 棋类游戏 |
+| [dice](https://github.com/koishijs/koishi-plugin-dice) | 掷骰 |
+| [image-search](https://github.com/koishijs/koishi-plugin-image-search) | 图源搜索 |
+| [pics](https://github.com/koishijs/koishi-plugin-pics) | 随机图片 |
+| [rss](https://github.com/koishijs/koishi-plugin-rss) | RSS 订阅 |
+| [srvpro-roomlist](https://code.mycard.moe/3rdeye/koishi-plugin-srvpro-roomlist) | [YGOPro](https://github.com/Fluorohydride/ygopro) 服务器房间列表查询 |
+| [tabulate](https://code.mycard.moe/3rdeye/koishi-plugin-tabulate) | YGOCore 战队联盟友谊赛排表姬 |
+| [tex](https://github.com/koishijs/koishi-plugin-tex) | TeX 渲染 |
+| [thesaurus](https://code.mycard.moe/3rdeye/koishi-plugin-thesaurus) | 基于 [AnimeThesaurus](https://github.com/Kyomotoi/AnimeThesaurus) 的机器人聊天插件 |
+| [tools](https://github.com/koishijs/koishi-plugin-tools) | 小功能合集 |
+| [ygocard](https://code.mycard.moe/3rdeye/koishi-plugin-ygocard) | [YGOPro](https://github.com/Fluorohydride/ygopro) 卡查 |
+| [ygotournament](https://code.mycard.moe/3rdeye/koishi-plugin-ygotournament) | [YGOPro](https://github.com/Fluorohydride/ygopro) 比赛主持辅助 |
 
 ### 社区项目
 
-<!-- 左边填 github 仓库 -->
+<!-- 名称请链接到源码仓库，新项目请添加到列表结尾 -->
 
-- [ArilyChan/qq-bot](https://github.com/ArilyChan/qq-bot): 小阿日
-- [hydro-dev/HydroBot](https://github.com/hydro-dev/HydroBot): A Simple QQ Robot
-- [Wjghj-Project/Chatbot-SILI](https://github.com/Wjghj-Project/Chatbot-SILI): 「即时通讯软件转接姬」SILI-t137-[Tumita]-Invoke-II@LD(A)
-- [idlist/2bot-v3](https://github.com/idlist/2bot-v3): 2bot，一个很 2 的 FFXIV bot
-- [koishijs/koishi-plugin-developer](https://github.com/koishijs/koishi-plugin-developer): 使用 monorepo + ts + cli 开发你的 koishi 插件，已集成部分开发辅助功能。
-- [koishijs/koishi-bots](https://github.com/koishijs/koishi-bots): 用于部署生产环境的 bot，并集合已有的 koishi bot。
+| 名称 | 简介 |
+|:----|:----|
+| [2bot](https://github.com/idlist/2bot-v4) | 一个很 2 的 FFXIV bot |
+| [koishi-bootstrap](https://code.mycard.moe/3rdeye/koishi-bootstrap) | Koishi 的 Docker 启动器 |
+| [koishi-nestjs](https://github.com/koishijs/koishi-nestjs) | 在 [Nest.js](https://nestjs.com/) 中使用 Koishi 开发规模化机器人应用 |
+| [koishi-thirdeye](https://code.mycard.moe/3rdeye/koishi-thirdeye) | 装饰器以及 DI 风格的 Koishi 插件开发框架 |
+| [onebot-lb](https://github.com/purerosefallen/onebot-lb) | OneBot 负载均衡器 |
+| [Afanyiyu/qa-bot](https://github.com/Afanyiyu/qa-bot) | 基于 plugin-teach 魔改的问答机器人，适用于客服 / 知识库等场景 |
 
 ## 使用协议
 
 Koishi 完全使用 [MIT](./LICENSE) 协议开源，维护良好的开源生态从我做起 (*>ω<)φ
 
-Copyright © 2019-present, Shigma
+Copyright © 2019-2022, Shigma
 
 ## 贡献指南
 
-[查看这里](./.github/contributing.md)
+[请看这里](./.github/contributing.md)
 
 ## 联系方式
 

@@ -1,0 +1,11 @@
+{
+  "extends": "../../tsconfig.base",
+  "compilerOptions": {
+    "module": "esnext",
+    "noEmit": true,
+    "emitDeclarationOnly": false,
+  },
+  "include": [
+    "src",
+  ],
+}

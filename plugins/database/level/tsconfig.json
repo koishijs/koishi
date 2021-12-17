@@ -1,0 +1,15 @@
+{
+  "extends": "../../../tsconfig.base",
+  "compilerOptions": {
+    "rootDir": "src",
+    "outDir": "lib",
+  },
+  "references": [
+    {
+      "path": "./src/runtime"
+    }
+  ],
+  "include": [
+    "src",
+  ],
+}

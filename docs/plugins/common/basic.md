@@ -42,7 +42,7 @@ broadcast 指令用于按照 [代理者](../guide/manage.md#平台相关字段) 
 broadcast foo bar baz     # 向所有频道发送 foo bar baz
 ```
 
-当一个机器人账号同时向多个频道发送广播消息时，为了避免风控，Koishi 会给每条消息发送后添加一段延迟，可以通过 [`delay.broadcast`](../../api/app.md#options-delay) 进行配置。
+当一个机器人账号同时向多个频道发送广播消息时，为了避免风控，Koishi 会给每条消息发送后添加一段延迟，可以通过 [`delay.broadcast`](../../api/core/app.md#options-delay) 进行配置。
 
 ## 指令：contextify <Badge text="数据库"/>
 
@@ -117,4 +117,4 @@ module.exports = {
 
 recall 指令用于撤回机器人在当前频道发送的最后几条消息。count 是要撤回的消息的数量，缺省时为 1。
 
-与 broadcast 类似，为了避免风控，每撤回一条消息后 Koishi 也会等待一段时间，同样可以通过 [`delay.broadcast`](../../api/app.md#options-delay) 进行配置。
+与 broadcast 类似，为了避免风控，每撤回一条消息后 Koishi 也会等待一段时间，同样可以通过 [`delay.broadcast`](../../api/core/app.md#options-delay) 进行配置。

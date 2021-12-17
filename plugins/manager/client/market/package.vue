@@ -1,0 +1,122 @@
+<template>
+  <tr :class="{ workspace: local?.workspace }">
+    <td class="package" :class="local ? local.id ? 'active' : 'local' : 'remote'">
+      <div>
+        <a
+          :href="'http://npmjs.com/package/' + data.name"
+          target="blank" rel="noopener noreferrer"
+        >{{ data.shortname }}</a>
+        <span class="current" v-if="local">@{{ local.version }}</span>
+        <k-badge type="success" v-if="data.official">官方</k-badge>
+        <k-badge type="default" v-if="local?.workspace">本地</k-badge>
+        <k-badge type="warning" v-else-if="hasUpdate">可更新</k-badge>
+      </div>
+      <k-markdown class="description" :source="local?.description || data.description"></k-markdown>
+    </td>
+    <td class="latest">{{ data.version }}</td>
+    <td class="score">{{ data.score.toFixed(2) }}</td>
+    <td class="operation">
+      <k-button frameless @click="configurate">配置</k-button>
+    </td>
+  </tr>
+</template>
+
+<script lang="ts" setup>
+
+import type { MarketProvider } from '@koishijs/plugin-manager/src'
+import { store } from '~/client'
+import { computed, ref, watch } from 'vue'
+import { useRouter } from 'vue-router'
+import { KMarkdown } from '../components'
+import { addFavorite } from '../utils'
+
+const props = defineProps<{ data: MarketProvider.Data }>()
+
+const local = computed(() => store.packages[props.data.name])
+
+const hasUpdate = computed(() => {
+  if (!local.value) return false
+  const { workspace, version } = local.value
+  return !workspace && version !== props.data.version
+})
+
+const downloading = ref(false)
+
+watch(() => local, () => {
+  downloading.value = false
+})
+
+const router = useRouter()
+
+function configurate() {
+  const { name } = props.data
+  addFavorite(name)
+  router.push({ path: '/settings', query: { name } })
+}
+
+</script>
+
+<style lang="scss">
+
+.package {
+  text-align: left;
+  padding-left: 3rem;
+  position: relative;
+
+  .current {
+    color: var(--fg2);
+    transition: color 0.3s ease;
+  }
+
+  a {
+    font-weight: bold;
+    color: var(--fg1);
+    transition: color 0.3s ease;
+  }
+
+  .description {
+    margin-top: 0.15rem;
+    font-size: 0.9rem;
+
+    p {
+      margin: 0;
+      line-height: 1.5;
+    }
+  }
+
+  &::before {
+    content: "";
+    position: absolute;
+    border-radius: 100%;
+    width: 0.5rem;
+    height: 0.5rem;
+    top: 50%;
+    left: 1.25rem;
+    transform: translateY(-50%);
+    transition: 0.3s ease;
+    box-shadow: 1px 1px 2px #3333;
+    transition: background-color 0.3s ease;
+  }
+
+  &.active::before {
+    background-color: var(--success);
+  }
+  &.local::before {
+    background-color: var(--warning);
+  }
+  &.remote::before {
+    background-color: var(--disabled);
+  }
+}
+
+.page-market td:not(.package) {
+  min-width: 4rem;
+}
+
+tr.workspace {
+  .latest, .size {
+    opacity: 0.25;
+  }
+}
+
+</style>

@@ -1,18 +1,41 @@
-#!/usr/bin/env node
+import { App, Context, Modules } from '@koishijs/core'
+import { Cache } from './cache'
+import { Assets } from './assets'
+import { Quester } from './quester'
+import { Router } from './router'
 
-import registerInitCommand from './init'
-import registerStartCommand from './start'
-import CAC from 'cac'
+export * from './adapter'
+export * from './assets'
+export * from './cache'
+export * from './quester'
+export * from './router'
 
-declare const KOISHI_VERSION: string
+export * from '@koishijs/core'
+export * from '@koishijs/utils'
 
-const cli = CAC('koishi').help().version(KOISHI_VERSION)
+declare module '@koishijs/core' {
+  namespace Context {
+    interface Services {
+      assets: Assets
+      cache: Cache
+      http: Quester
+      router: Router
+    }
+  }
+}
 
-registerInitCommand(cli)
-registerStartCommand(cli)
+// use node require
+Modules.internal.require = require
+Modules.internal.resolve = require.resolve
 
-cli.parse()
+Context.service('assets')
+Context.service('cache')
+Context.service('http')
+Context.service('router')
 
-if (!cli.matchedCommand) {
-  cli.outputHelp()
+const prepare = App.prototype.prepare
+App.prototype.prepare = function (this: App, ...args) {
+  this.http = Quester.create(this.options.request)
+  prepare.call(this, ...args)
+  Router.prepare(this)
 }

@@ -29,33 +29,33 @@ interface AuthorityConfig {
 }
 ```
 
-## historyAge
+## historyTimeout
 
 - 类型: `number`
 - 默认值: `60000`
 
-教学记录的保存时长，单位为毫秒。参见 [**查询近期操作**](./basic.md#查询近期操作)。
+教学记录的保存时长，单位为毫秒。参见 [查询近期操作](./basic.md#查询近期操作)。
 
 ## nickname
 
 - 类型: `string | string[]`
-- 默认值: [`app.options.nickname`](../../api/app.md#options-nickname)
+- 默认值: [`app.options.nickname`](../../api/core/app.md#options-nickname)
 
-问答中使用的昵称。参见 [**称呼匹配**](./prob.md#称呼匹配)。
+问答中使用的昵称。参见 [称呼匹配](./prob.md#称呼匹配)。
 
 ## appellationTimeout
 
 - 类型: `number`
 - 默认值: `60000`
 
-[**称呼本身作为问题触发**](./prob.md#称呼本身作为问题触发) 的后续效果持续时间，单位为毫秒。
+[称呼本身作为问题触发](./prob.md#称呼本身作为问题触发) 的后续效果持续时间，单位为毫秒。
 
 ## maxRedirections
 
 - 类型: `number`
 - 默认值: `3`
 
-[**问题重定向**](./interp.md#问题重定向) 的次数上限。
+[问题重定向](./interp.md#问题重定向) 的次数上限。
 
 ## previewDelay
 
@@ -87,7 +87,7 @@ interface AuthorityConfig {
 
 - 类型: `number | LoopConfig | LoopConfig[]`
 
-控制防循环行为，参见 [**防刷屏机制**](./misc.md#防刷屏机制)。
+控制防循环行为，参见 [防刷屏机制](./misc.md#防刷屏机制)。
 
 ```js
 export interface LoopConfig {
@@ -101,7 +101,7 @@ export interface LoopConfig {
 
 - 类型: `ThrottleConfig | ThrottleConfig[]`
 
-控制节流行为，参见 [**防刷屏机制**](./misc.md#防刷屏机制)。
+控制节流行为，参见 [防刷屏机制](./misc.md#防刷屏机制)。
 
 ```js
 export interface ThrottleConfig {

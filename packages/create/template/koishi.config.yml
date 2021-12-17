@@ -1,0 +1,12 @@
+port: 8080
+
+logger:
+  root: logs
+
+allowWrite: true
+
+plugins:
+  ./src/ping:
+  console:
+  manager:
+  status:

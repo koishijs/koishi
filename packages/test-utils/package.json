@@ -1,0 +1,47 @@
+{
+  "name": "@koishijs/test-utils",
+  "description": "Test utilities for Koishi",
+  "version": "8.0.0-beta.5",
+  "main": "lib/index.js",
+  "typings": "lib/index.d.ts",
+  "engines": {
+    "node": ">=12.0.0"
+  },
+  "files": [
+    "lib",
+    "chai/index.d.ts"
+  ],
+  "author": "Shigma <shigma10826@gmail.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/koishijs/koishi.git"
+  },
+  "bugs": {
+    "url": "https://github.com/koishijs/koishi/issues"
+  },
+  "homepage": "https://github.com/koishijs/koishi/packages/test-utils#readme",
+  "keywords": [
+    "bot",
+    "qqbot",
+    "cqhttp",
+    "coolq",
+    "chatbot",
+    "koishi",
+    "test",
+    "unit",
+    "utilities"
+  ],
+  "devDependencies": {
+    "@types/chai": "^4.2.21",
+    "@types/chai-as-promised": "^7.1.4",
+    "@types/node": "^16.7.13"
+  },
+  "dependencies": {
+    "@koishijs/plugin-database-memory": "^1.0.0-beta.3",
+    "chai": "^4.3.4",
+    "chai-as-promised": "^7.1.1",
+    "chai-shape": "^1.0.0",
+    "koishi": "^4.0.0-beta.5"
+  }
+}
