@@ -1,6 +1,7 @@
-import { MongoClient, Db, IndexSpecification, MongoError } from 'mongodb'
-import { Context, Database, Tables as KoishiTables, makeArray, Schema, valueMap, pick, omit, Query, Model, Dict, noop, KoishiError } from 'koishi'
+import { MongoClient, Db, MongoError, IndexDescription } from 'mongodb'
+import { Context, Database, Tables as KoishiTables, makeArray, Schema, pick, omit, Query, Model, Dict, noop, KoishiError, valueMap } from 'koishi'
 import { URLSearchParams } from 'url'
+import { executeEval } from '@koishijs/orm-utils'
 import { transformQuery, transformEval } from './utils'
 
 declare module 'koishi' {
@@ -41,10 +42,7 @@ class MongoDatabase extends Database {
 
   async start() {
     const mongourl = this.config.uri || this.connectionStringFromConfig()
-    this.client = await MongoClient.connect(mongourl, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    })
+    this.client = await MongoClient.connect(mongourl)
     this.db = this.client.db(this.config.database)
 
     for (const name in this.ctx.model.config) {
@@ -65,8 +63,8 @@ class MongoDatabase extends Database {
     await this.tasks[name]
     const col = await this.db.createCollection(name).catch(() => this.db.collection(name))
     const { primary, unique } = this.ctx.model.config[name]
-    const newSpecs: IndexSpecification[] = []
-    const oldSpecs: IndexSpecification[] = await col.indexes()
+    const newSpecs: IndexDescription[] = []
+    const oldSpecs = await col.indexes()
     ;[primary, ...unique].forEach((keys, index) => {
       keys = makeArray(keys)
       const name = (index ? 'unique:' : 'primary:') + keys.join('+')
@@ -94,7 +92,7 @@ class MongoDatabase extends Database {
     cursor = cursor.project({ _id: 0, ...Object.fromEntries((fields ?? []).map(key => [key, 1])) })
     if (offset) cursor = cursor.skip(offset)
     if (limit) cursor = cursor.limit(offset + limit)
-    return await cursor.toArray()
+    return await cursor.toArray() as any
   }
 
   async set(name: TableType, query: Query, data: any) {
@@ -125,6 +123,7 @@ class MongoDatabase extends Database {
       const copy = { ...this.ctx.model.create(name), ...data }
       try {
         await this.db.collection(name).insertOne(copy)
+        delete copy._id
         return copy
       } catch (err) {
         if (err instanceof MongoError && err.code === 11000) {
@@ -152,13 +151,16 @@ class MongoDatabase extends Database {
   async aggregate(name: TableType, fields: {}, query: Query) {
     if (!Object.keys(fields).length) return {}
     const $match = transformQuery(this.ctx.model.resolveQuery(name, query))
-    const [data] = await this.db.collection(name).aggregate([{ $match }, {
-      $group: {
-        _id: 1,
-        ...valueMap(fields, transformEval),
-      },
-    }]).toArray()
-    return data
+    const aggrs: any[][] = []
+    fields = valueMap(fields, value => transformEval(value, aggrs))
+    const stages = aggrs.map<any>((pipeline) => {
+      pipeline.unshift({ $match })
+      return { $unionWith: { coll: name, pipeline } }
+    })
+    stages.unshift({ $match: { _id: null } })
+    const results = await this.db.collection(name).aggregate(stages).toArray()
+    const data = Object.assign({}, ...results)
+    return valueMap(fields, value => executeEval(value, data)) as any
   }
 }
 

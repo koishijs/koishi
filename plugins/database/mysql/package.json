@@ -38,6 +38,7 @@
     "koishi": "^4.0.0-beta.5"
   },
   "dependencies": {
+    "@koishijs/orm-utils": "^1.0.0-beta.3",
     "@koishijs/sql-utils": "^1.0.0-beta.3",
     "@types/mysql": "^2.15.19",
     "mysql": "^2.18.1"
