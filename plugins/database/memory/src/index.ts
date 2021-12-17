@@ -1,5 +1,5 @@
 import { Context, Database, Query, TableType, clone, makeArray, pick, Dict, valueMap, Model, noop, KoishiError } from 'koishi'
-import { executeQuery, executeEval, applyUpdate } from '@koishijs/orm-utils'
+import { executeQuery, executeEval, executeUpdate } from '@koishijs/orm-utils'
 import { Storage, Config } from './storage'
 
 declare module 'koishi' {
@@ -62,7 +62,7 @@ export class MemoryDatabase extends Database {
   }
 
   async set(name: TableType, query: Query, data: {}) {
-    this.$query(name, query).forEach(row => applyUpdate(data, row))
+    this.$query(name, query).forEach(row => executeUpdate(data, row))
     this.$save(name)
   }
 
@@ -102,10 +102,10 @@ export class MemoryDatabase extends Database {
         return keys.every(key => row[key] === item[key])
       })
       if (row) {
-        applyUpdate(item, row)
+        executeUpdate(item, row)
       } else {
         const data = this.ctx.model.create(name)
-        await this.create(name, applyUpdate(item, data)).catch(noop)
+        await this.create(name, executeUpdate(item, data)).catch(noop)
       }
     }
     this.$save(name)

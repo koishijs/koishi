@@ -1,5 +1,5 @@
 import { Database, makeArray, Logger, Schema, Context, Query, Model, TableType, union, difference } from 'koishi'
-import { applyUpdate } from '@koishijs/orm-utils'
+import { executeUpdate } from '@koishijs/orm-utils'
 import { Builder, Caster } from '@koishijs/sql-utils'
 import sqlite, { Statement } from 'better-sqlite3'
 import { resolve } from 'path'
@@ -223,7 +223,7 @@ class SQLiteDatabase extends Database {
   }
 
   #update(name: TableType, indexFields: string[], updateFields: string[], update: {}, data: {}) {
-    const row = this.caster.dump(name, applyUpdate(update, data))
+    const row = this.caster.dump(name, executeUpdate(update, data))
     const assignment = updateFields.map((key) => `${this.sql.escapeId(key)} = ${this.sql.escape(row[key])}`).join(',')
     const query = Object.fromEntries(indexFields.map(key => [key, row[key]]))
     const filter = this.#query(name, query)
@@ -272,7 +272,7 @@ class SQLiteDatabase extends Database {
       if (data) {
         this.#update(name, indexFields, updateFields, item, data)
       } else {
-        this.#create(name, applyUpdate(item, this.ctx.model.create(name)))
+        this.#create(name, executeUpdate(item, this.ctx.model.create(name)))
       }
     }
   }

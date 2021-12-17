@@ -1,7 +1,7 @@
 import { MongoClient, Db, MongoError, IndexDescription } from 'mongodb'
 import { Context, Database, Tables as KoishiTables, makeArray, Schema, pick, omit, Query, Model, Dict, noop, KoishiError, valueMap } from 'koishi'
 import { URLSearchParams } from 'url'
-import { executeEval } from '@koishijs/orm-utils'
+import { executeUpdate, executeEval } from '@koishijs/orm-utils'
 import { transformQuery, transformEval } from './utils'
 
 declare module 'koishi' {
@@ -76,6 +76,10 @@ class MongoDatabase extends Database {
     await col.createIndexes(newSpecs)
   }
 
+  private _createFilter(name: string, query: Query) {
+    return transformQuery(this.ctx.model.resolveQuery(name, query))
+  }
+
   async drop(name: TableType) {
     if (name) {
       await this.db.collection(name).drop()
@@ -86,7 +90,7 @@ class MongoDatabase extends Database {
   }
 
   async get(name: TableType, query: Query, modifier: Query.Modifier) {
-    const filter = transformQuery(this.ctx.model.resolveQuery(name, query))
+    const filter = this._createFilter(name, query)
     let cursor = this.db.collection(name).find(filter)
     const { fields, limit, offset = 0 } = Query.resolveModifier(modifier)
     cursor = cursor.project({ _id: 0, ...Object.fromEntries((fields ?? []).map(key => [key, 1])) })
@@ -95,14 +99,24 @@ class MongoDatabase extends Database {
     return await cursor.toArray() as any
   }
 
-  async set(name: TableType, query: Query, data: any) {
+  async set(name: TableType, query: Query, update: {}) {
     await this.tasks[name]
-    const filter = transformQuery(this.ctx.model.resolveQuery(name, query))
-    await this.db.collection(name).updateMany(filter, { $set: data })
+    const { primary } = this.ctx.model.config[name]
+    const indexFields = makeArray(primary)
+    const updateFields = new Set(Object.keys(update).map(key => key.split('.', 1)[0]))
+    const filter = this._createFilter(name, query)
+    const col = this.db.collection(name)
+    const original = await col.find(filter).toArray()
+    if (!original.length) return
+    const bulk = col.initializeUnorderedBulkOp()
+    for (const item of original) {
+      bulk.find(pick(item, indexFields)).updateOne({ $set: pick(executeUpdate(update, item), updateFields) })
+    }
+    await bulk.execute()
   }
 
   async remove(name: TableType, query: Query) {
-    const filter = transformQuery(this.ctx.model.resolveQuery(name, query))
+    const filter = this._createFilter(name, query)
     await this.db.collection(name).deleteMany(filter)
   }
 
@@ -111,10 +125,11 @@ class MongoDatabase extends Database {
   }
 
   async create(name: TableType, data: any) {
+    const col = this.db.collection(name)
     return this.queue(name, async () => {
       const { primary, fields, autoInc } = this.ctx.model.config[name]
       if (autoInc && !Array.isArray(primary) && !(primary in data)) {
-        const [latest] = await this.db.collection(name).find().sort(primary, -1).limit(1).toArray()
+        const [latest] = await col.find().sort(primary, -1).limit(1).toArray()
         data[primary] = latest ? +latest[primary] + 1 : 1
         if (Model.Field.string.includes(fields[primary].type)) {
           data[primary] += ''
@@ -122,7 +137,7 @@ class MongoDatabase extends Database {
       }
       const copy = { ...this.ctx.model.create(name), ...data }
       try {
-        await this.db.collection(name).insertOne(copy)
+        await col.insertOne(copy)
         delete copy._id
         return copy
       } catch (err) {
@@ -137,20 +152,27 @@ class MongoDatabase extends Database {
   async upsert(name: TableType, data: any[], keys: string | string[]) {
     if (!data.length) return
     if (!keys) keys = this.ctx.model.config[name].primary
-    keys = makeArray(keys)
+    const indexFields = makeArray(keys)
     await this.tasks[name]
-    const bulk = this.db.collection(name).initializeUnorderedBulkOp()
-    for (const item of data) {
-      bulk.find(pick(item, keys))
-        .upsert()
-        .updateOne({ $set: omit(item, keys), $setOnInsert: omit(this.ctx.model.create(name), [...keys, ...Object.keys(item) as any]) })
+    const col = this.db.collection(name)
+    const original = await col.find({ $or: data.map(item => pick(item, indexFields)) }).toArray()
+    const bulk = col.initializeUnorderedBulkOp()
+    for (const update of data) {
+      const item = original.find(item => indexFields.every(key => item[key] === update[key]))
+      if (item) {
+        const updateFields = new Set(Object.keys(update).map(key => key.split('.', 1)[0]))
+        const override = omit(pick(executeUpdate(update, item), updateFields), indexFields)
+        bulk.find(pick(item, indexFields)).updateOne({ $set: override })
+      } else {
+        bulk.insert(executeUpdate(update, this.ctx.model.create(name)))
+      }
     }
     await bulk.execute()
   }
 
   async aggregate(name: TableType, fields: {}, query: Query) {
     if (!Object.keys(fields).length) return {}
-    const $match = transformQuery(this.ctx.model.resolveQuery(name, query))
+    const $match = this._createFilter(name, query)
     const aggrs: any[][] = []
     fields = valueMap(fields, value => transformEval(value, aggrs))
     const stages = aggrs.map<any>((pipeline) => {

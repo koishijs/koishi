@@ -146,7 +146,7 @@ export function executeEval(expr: any, data: any) {
   return executeEvalExpr(expr, data)
 }
 
-export function applyUpdate(update: any, data: any) {
+export function executeUpdate(update: any, data: any) {
   for (const key in update) {
     let root = data
     const path = key.split('.')

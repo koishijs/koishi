@@ -1,6 +1,6 @@
 import { createPool, Pool, PoolConfig, escape as mysqlEscape, escapeId, format, TypeCast } from 'mysql'
 import { Context, Database, difference, Logger, makeArray, Schema, Query, Model, Tables as KoishiTables, Dict, Time, KoishiError, pick } from 'koishi'
-import { applyUpdate } from '@koishijs/orm-utils'
+import { executeUpdate } from '@koishijs/orm-utils'
 import { Builder } from '@koishijs/sql-utils'
 import { OkPacket } from 'mysql'
 
@@ -350,7 +350,7 @@ class MysqlDatabase extends Database {
     const merged = {}
     const insertion = data.map((item) => {
       Object.assign(merged, item)
-      return applyUpdate(item, this.ctx.model.create(name))
+      return executeUpdate(item, this.ctx.model.create(name))
     })
     const indexFields = makeArray(keys || primary)
     const dataFields = [...new Set(Object.keys(merged).map(key => key.split('.', 1)[0]))]

@@ -1,5 +1,5 @@
 import { clone, Context, Database, KoishiError, Logger, makeArray, Model, noop, pick, Query, Schema, Tables, TableType, valueMap } from 'koishi'
-import { applyUpdate, executeEval, executeQuery } from '@koishijs/orm-utils'
+import { executeUpdate, executeEval, executeQuery } from '@koishijs/orm-utils'
 import { LevelUp } from 'levelup'
 import level from 'level'
 import sub from 'subleveldown'
@@ -155,7 +155,7 @@ class LevelDatabase extends Database {
       try {
         const value = await table.get(key)
         if (executeQuery(expr, value)) {
-          await table.put(key, applyUpdate(data, value))
+          await table.put(key, executeUpdate(data, value))
         }
       } catch (e) {
         if (e.notFound !== true) throw e
@@ -166,7 +166,7 @@ class LevelDatabase extends Database {
     const batch = table.batch()
     for await (const [key, value] of table.iterator()) {
       if (executeQuery(expr, value)) {
-        batch.put(key, applyUpdate(data, value))
+        batch.put(key, executeUpdate(data, value))
       }
     }
     await batch.write()
@@ -233,12 +233,12 @@ class LevelDatabase extends Database {
         try {
           const value = await table.get(key)
           if (keys.every(key => value[key] === item[key])) {
-            await table.put(key, applyUpdate(item, value))
+            await table.put(key, executeUpdate(item, value))
           }
         } catch (e) {
           if (e.notFound !== true) throw e
           const data = this.ctx.model.create(name)
-          await this.create(name, applyUpdate(item, data), true)
+          await this.create(name, executeUpdate(item, data), true)
         }
         continue
       }
@@ -252,7 +252,7 @@ class LevelDatabase extends Database {
             logger.warn('Cannot update primary key')
             break
           }
-          await table.put(key, applyUpdate(data, value))
+          await table.put(key, executeUpdate(data, value))
           // Match the behavior here
           // mongo/src/index.ts > upsert() > bulk.find(pick(item, keys)).updateOne({ $set: omit(item, keys) })
           break
