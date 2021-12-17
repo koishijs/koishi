@@ -111,22 +111,21 @@ export class MarketProvider extends DataSource<Dict<MarketProvider.Data>> {
   }
 
   async getAgent(): Promise<Manager> {
-    if (existsSync(resolve(this.cwd, 'yarn.lock'))) return 'yarn'
-    if (existsSync(resolve(this.cwd, 'pnpm-lock.yaml'))) return 'pnpm'
-    if (existsSync(resolve(this.cwd, 'package-lock.json'))) return 'npm'
-  
     const { npm_execpath } = process.env
     const isYarn = npm_execpath.includes('yarn')
     if (isYarn) return 'yarn'
-  
+
+    if (existsSync(resolve(this.cwd, 'yarn.lock'))) return 'yarn'
+    if (existsSync(resolve(this.cwd, 'pnpm-lock.yaml'))) return 'pnpm'
+    if (existsSync(resolve(this.cwd, 'package-lock.json'))) return 'npm'
+
     const hasPnpm = !isYarn && supports('pnpm', ['--version'])
     return hasPnpm ? 'pnpm' : 'npm'
   }
 
-  async useAgent(args: string[]) {
-    const agent = await (this._agentCache ||= this.getAgent())
+  async exec(command: string, args: string[]) {
     return new Promise<number>((resolve) => {
-      const child = spawn(agent, args, { cwd: this.cwd })
+      const child = spawn(command, args, { cwd: this.cwd })
       child.on('exit', (code) => resolve(code))
       child.on('error', () => resolve(-1))
       child.stderr.on('data', (data) => {
@@ -147,12 +146,14 @@ export class MarketProvider extends DataSource<Dict<MarketProvider.Data>> {
   }
 
   install = async (name: string) => {
-    await this.useAgent(['install', name, '--loglevel', 'error'])
+    const agent = await (this._agentCache ||= this.getAgent())
+    await this.exec(agent, [agent === 'yarn' ? 'add' : 'install', name, '--loglevel', 'error'])
     this.ctx.console.services.packages.broadcast()
   }
 
   uninstall = async (name: string) => {
-    await this.useAgent(['remove', name, '--loglevel', 'error'])
+    const agent = await (this._agentCache ||= this.getAgent())
+    await this.exec(agent, ['remove', name, '--loglevel', 'error'])
     this.ctx.console.services.packages.broadcast()
   }
 }
