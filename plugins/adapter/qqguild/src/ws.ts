@@ -2,6 +2,7 @@ import { Bot as GBot, Message } from '@qq-guild-sdk/core'
 import { Logger, segment } from '@koishijs/utils'
 import { Adapter, Schema, Session } from 'koishi'
 import { BotConfig, QQGuildBot } from './bot'
+import { adaptUser } from './utils'
 
 const logger = new Logger('qqguild')
 
@@ -34,6 +35,7 @@ const createSession = (bot: QQGuildBot, msg: Message) => {
     channelId,
     timestamp: +timestamp,
   }
+  session.author = adaptUser(msg.author)
   session.userId = author.id
   session.guildId = msg.guildId
   session.channelId = msg.channelId

@@ -1,23 +1,12 @@
-import { Bot as GBot, Guild as GGuild, User as GUser } from '@qq-guild-sdk/core'
+import { Bot as GBot } from '@qq-guild-sdk/core'
 import { Bot } from 'koishi'
 import { WebSocketClient } from './ws'
 import { renameProperty } from '@koishijs/utils'
+import { adaptGuild, adaptUser } from './utils'
 
 export interface BotConfig extends Bot.BaseConfig, GBot.AppConfig {
   indents: GBot.Intents | number
 }
-
-const adaptGuild = (guild: GGuild): Bot.Guild => ({
-  guildId: guild.id, guildName: guild.name,
-})
-
-const adaptUser = (user: GUser): Bot.User => ({
-  isBot: user.bot,
-  avatar: user.avatar,
-  userId: user.id,
-  username: user.username,
-  nickname: user.username,
-})
 
 export class QQGuildBot extends Bot<BotConfig> {
   $innerBot: GBot
