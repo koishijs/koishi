@@ -152,7 +152,7 @@ function executeAggr(expr: any, data: any) {
 }
 
 export function executeEval(data: any, expr: any) {
-  if (typeof expr === 'number' || typeof expr === 'string' || typeof expr === 'boolean' || expr === null || expr === undefined) {
+  if (typeof expr === 'number' || typeof expr === 'string' || typeof expr === 'boolean' || expr instanceof Date || expr === null || expr === undefined) {
     return expr
   }
   return executeEvalExpr(expr, data)

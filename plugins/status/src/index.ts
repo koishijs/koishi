@@ -4,17 +4,13 @@ import {} from '@koishijs/plugin-console'
 import { LogProvider } from './logs'
 import { MetaProvider } from './meta'
 import { ProfileProvider } from './profile'
-import { StatisticsProvider, Synchronizer } from './stats'
-
-import './database/mongo'
-import './database/mysql'
+import { StatisticsProvider } from './stats'
 
 export type Activity = Record<number, number>
 
 declare module 'koishi' {
   interface Database {
     stats(): Promise<MetaProvider.Stats>
-    createSynchronizer(): Synchronizer
   }
 
   interface Channel {

@@ -173,7 +173,7 @@ class MongoDatabase extends Database {
     const original = await coll.find({ $or: data.map(item => pick(item, indexFields)) }).toArray()
     const bulk = coll.initializeUnorderedBulkOp()
     for (const update of data) {
-      const item = original.find(item => indexFields.every(key => item[key] === update[key]))
+      const item = original.find(item => indexFields.every(key => item[key].valueOf() === update[key].valueOf()))
       if (item) {
         const updateFields = new Set(Object.keys(update).map(key => key.split('.', 1)[0]))
         const override = omit(pick(executeUpdate(item, update), updateFields), indexFields)

@@ -58,7 +58,7 @@ registerView({
     title: '活跃群数量',
     icon: 'users',
     fields: ['meta'],
-    content: ({ meta }) => meta.activeGroups,
+    content: ({ meta }) => meta.activeGuilds,
   }),
 })
 

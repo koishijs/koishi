@@ -43,7 +43,7 @@ template.set('status', {
     '{{ bots }}',
     '==========',
     '活跃用户数量：{{ activeUsers }}',
-    '活跃群数量：{{ activeGroups }}',
+    '活跃群数量：{{ activeGuilds }}',
     'CPU 使用率：{{ (cpu[0] * 100).toFixed() }}% / {{ (cpu[1] * 100).toFixed() }}%',
     '内存使用率：{{ (memory[0] * 100).toFixed() }}% / {{ (memory[1] * 100).toFixed() }}%',
   ].join('\n'),
