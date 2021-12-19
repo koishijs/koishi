@@ -232,6 +232,8 @@ export namespace Query {
     limit?: number
     offset?: number
     fields?: K[]
+    /** @experimental */
+    sort?: Dict<'asc' | 'desc'>
   }
 
   export type Modifier<T extends string = string> = T[] | ModifierExpr<T>

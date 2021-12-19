@@ -215,10 +215,11 @@ class SQLiteDatabase extends Database {
   #get(name: TableType, query: Query, modifier: Query.Modifier) {
     const filter = this.#query(name, query)
     if (filter === '0') return []
-    const { fields, limit, offset } = Query.resolveModifier(modifier)
+    const { fields, limit, offset, sort } = Query.resolveModifier(modifier)
     let sql = `SELECT ${this.#joinKeys(fields)} FROM ${this.sql.escapeId(name)} WHERE ${filter}`
     if (limit) sql += ' LIMIT ' + limit
     if (offset) sql += ' OFFSET ' + offset
+    if (sort) sql += ' ORDER BY ' + Object.entries(sort).map(([key, order]) => `${this.sql.escapeId(key)} ${order}`).join(', ')
     const rows = this.#exec('all', sql)
     return rows.map(row => this.caster.load(name, row))
   }
@@ -228,7 +229,7 @@ class SQLiteDatabase extends Database {
   }
 
   #update(name: TableType, indexFields: string[], updateFields: string[], update: {}, data: {}) {
-    const row = this.caster.dump(name, executeUpdate(update, data))
+    const row = this.caster.dump(name, executeUpdate(data, update))
     const assignment = updateFields.map((key) => `${this.sql.escapeId(key)} = ${this.sql.escape(row[key])}`).join(',')
     const query = Object.fromEntries(indexFields.map(key => [key, row[key]]))
     const filter = this.#query(name, query)
@@ -277,7 +278,7 @@ class SQLiteDatabase extends Database {
       if (data) {
         this.#update(name, indexFields, updateFields, item, data)
       } else {
-        this.#create(name, executeUpdate(item, this.ctx.model.create(name)))
+        this.#create(name, executeUpdate(this.ctx.model.create(name), item))
       }
     }
   }

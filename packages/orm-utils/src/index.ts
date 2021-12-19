@@ -1,4 +1,4 @@
-import { Query, Eval } from 'koishi'
+import { Query, Eval, Dict, isNullable } from 'koishi'
 
 type QueryOperators = {
   [K in keyof Query.FieldExpr]?: (query: Query.FieldExpr[K], data: any) => boolean
@@ -53,25 +53,25 @@ function getRecursive(path: string, data: any) {
 const evalOperators: EvalOperators = {
   // universal
   $: getRecursive,
-  $if: ([cond, vThen, vElse], data) => executeEval(cond, data) ? executeEval(vThen, data) : executeEval(vElse, data),
-  $ifNull: ([value, fallback], data) => executeEval(value, data) ?? executeEval(fallback, data),
+  $if: ([cond, vThen, vElse], data) => executeEval(data, cond) ? executeEval(data, vThen) : executeEval(data, vElse),
+  $ifNull: ([value, fallback], data) => executeEval(data, value) ?? executeEval(data, fallback),
 
   // number
-  $add: (args, data) => args.reduce<number>((prev, curr) => prev + executeEval(curr, data), 0),
-  $multiply: (args, data) => args.reduce<number>((prev, curr) => prev * executeEval(curr, data), 1),
-  $subtract: ([left, right], data) => executeEval(left, data) - executeEval(right, data),
-  $divide: ([left, right], data) => executeEval(left, data) - executeEval(right, data),
+  $add: (args, data) => args.reduce<number>((prev, curr) => prev + executeEval(data, curr), 0),
+  $multiply: (args, data) => args.reduce<number>((prev, curr) => prev * executeEval(data, curr), 1),
+  $subtract: ([left, right], data) => executeEval(data, left) - executeEval(data, right),
+  $divide: ([left, right], data) => executeEval(data, left) - executeEval(data, right),
 
   // string
-  $concat: (args, data) => args.map(arg => executeEval(arg, data)).join(''),
+  $concat: (args, data) => args.map(arg => executeEval(data, arg)).join(''),
 
   // boolean
-  $eq: ([left, right], data) => executeEval(left, data).valueOf() === executeEval(right, data).valueOf(),
-  $ne: ([left, right], data) => executeEval(left, data).valueOf() !== executeEval(right, data).valueOf(),
-  $gt: ([left, right], data) => executeEval(left, data).valueOf() > executeEval(right, data).valueOf(),
-  $gte: ([left, right], data) => executeEval(left, data).valueOf() >= executeEval(right, data).valueOf(),
-  $lt: ([left, right], data) => executeEval(left, data).valueOf() < executeEval(right, data).valueOf(),
-  $lte: ([left, right], data) => executeEval(left, data).valueOf() <= executeEval(right, data).valueOf(),
+  $eq: ([left, right], data) => executeEval(data, left).valueOf() === executeEval(data, right).valueOf(),
+  $ne: ([left, right], data) => executeEval(data, left).valueOf() !== executeEval(data, right).valueOf(),
+  $gt: ([left, right], data) => executeEval(data, left).valueOf() > executeEval(data, right).valueOf(),
+  $gte: ([left, right], data) => executeEval(data, left).valueOf() >= executeEval(data, right).valueOf(),
+  $lt: ([left, right], data) => executeEval(data, left).valueOf() < executeEval(data, right).valueOf(),
+  $lte: ([left, right], data) => executeEval(data, left).valueOf() <= executeEval(data, right).valueOf(),
 
   // aggregation
   $sum: (expr, table: any[]) => table.reduce((prev, curr) => prev + executeAggr(expr, curr), 0),
@@ -100,18 +100,18 @@ function executeFieldQuery(query: Query.FieldQuery, data: any) {
   return true
 }
 
-export function executeQuery(query: Query.Expr, data: any): boolean {
+export function executeQuery(data: any, query: Query.Expr): boolean {
   const entries: [string, any][] = Object.entries(query)
   return entries.every(([key, value]) => {
     // execute logical query
     if (key === '$and') {
-      return (value as Query.Expr[]).reduce((prev, query) => prev && executeQuery(query, data), true)
+      return (value as Query.Expr[]).reduce((prev, query) => prev && executeQuery(data, query), true)
     } else if (key === '$or') {
-      return (value as Query.Expr[]).reduce((prev, query) => prev || executeQuery(query, data), false)
+      return (value as Query.Expr[]).reduce((prev, query) => prev || executeQuery(data, query), false)
     } else if (key === '$not') {
-      return !executeQuery(value, data)
+      return !executeQuery(data, value)
     } else if (key === '$expr') {
-      return executeEval(value, data)
+      return executeEval(data, value)
     }
 
     // execute field query
@@ -121,6 +121,18 @@ export function executeQuery(query: Query.Expr, data: any): boolean {
     } catch {
       return false
     }
+  })
+}
+
+export function executeSort(data: any[], sort: Dict<'asc' | 'desc'>) {
+  return data.sort((a, b) => {
+    for (const key in sort) {
+      const dir = sort[key] === 'asc' ? 1 : -1
+      const x = a[key], y = b[key]
+      if (x < y) return -dir
+      if (x > y) return dir
+    }
+    return 0
   })
 }
 
@@ -139,14 +151,14 @@ function executeAggr(expr: any, data: any) {
   return executeEvalExpr(expr, data)
 }
 
-export function executeEval(expr: any, data: any) {
+export function executeEval(data: any, expr: any) {
   if (typeof expr === 'number' || typeof expr === 'string' || typeof expr === 'boolean' || expr === null || expr === undefined) {
     return expr
   }
   return executeEvalExpr(expr, data)
 }
 
-export function executeUpdate(update: any, data: any) {
+export function executeUpdate(data: any, update: any) {
   for (const key in update) {
     let root = data
     const path = key.split('.')
@@ -154,7 +166,7 @@ export function executeUpdate(update: any, data: any) {
     for (const key of path) {
       root = root[key] ||= {}
     }
-    root[last] = executeEval(update[key], data)
+    root[last] = executeEval(data, update[key])
   }
   return data
 }

@@ -106,10 +106,11 @@ class MongoDatabase extends Database {
   async get(name: TableType, query: Query, modifier: Query.Modifier) {
     const filter = this._createFilter(name, query)
     let cursor = this.db.collection(name).find(filter)
-    const { fields, limit, offset = 0 } = Query.resolveModifier(modifier)
+    const { fields, limit, offset = 0, sort } = Query.resolveModifier(modifier)
     cursor = cursor.project({ _id: 0, ...Object.fromEntries((fields ?? []).map(key => [key, 1])) })
     if (offset) cursor = cursor.skip(offset)
     if (limit) cursor = cursor.limit(offset + limit)
+    if (sort) cursor = cursor.sort(sort)
     return await cursor.toArray() as any
   }
 
@@ -124,7 +125,7 @@ class MongoDatabase extends Database {
     if (!original.length) return
     const bulk = coll.initializeUnorderedBulkOp()
     for (const item of original) {
-      bulk.find(pick(item, indexFields)).updateOne({ $set: pick(executeUpdate(update, item), updateFields) })
+      bulk.find(pick(item, indexFields)).updateOne({ $set: pick(executeUpdate(item, update), updateFields) })
     }
     await bulk.execute()
   }
@@ -175,10 +176,10 @@ class MongoDatabase extends Database {
       const item = original.find(item => indexFields.every(key => item[key] === update[key]))
       if (item) {
         const updateFields = new Set(Object.keys(update).map(key => key.split('.', 1)[0]))
-        const override = omit(pick(executeUpdate(update, item), updateFields), indexFields)
+        const override = omit(pick(executeUpdate(item, update), updateFields), indexFields)
         bulk.find(pick(item, indexFields)).updateOne({ $set: override })
       } else {
-        bulk.insert(executeUpdate(update, this.ctx.model.create(name)))
+        bulk.insert(executeUpdate(this.ctx.model.create(name), update))
       }
     }
     await bulk.execute()
@@ -196,7 +197,7 @@ class MongoDatabase extends Database {
     stages.unshift({ $match: { _id: null } })
     const results = await this.db.collection(name).aggregate(stages).toArray()
     const data = Object.assign({}, ...results)
-    return valueMap(fields, value => executeEval(value, data)) as any
+    return valueMap(fields, value => executeEval(data, value)) as any
   }
 }
 
