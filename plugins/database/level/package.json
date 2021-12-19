@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-database-level",
   "description": "Database implementation based on LevelDB for Koishi",
-  "version": "1.0.0-beta.3",
+  "version": "1.0.0-beta.4",
   "main": "lib/node.js",
   "module": "lib/browser.js",
   "typings": "lib/index.d.ts",
@@ -31,17 +31,17 @@
     "leveldb"
   ],
   "peerDependencies": {
-    "koishi": "^4.0.0-beta.5"
+    "koishi": "^4.0.0-beta.6"
   },
   "devDependencies": {
-    "@koishijs/plugin-mock": "^1.0.0-beta.1",
-    "@koishijs/test-utils": "^8.0.0-beta.5",
+    "@koishijs/plugin-mock": "^1.0.0-beta.2",
+    "@koishijs/test-utils": "^8.0.0-beta.6",
     "@types/abstract-leveldown": "^5.0.2",
     "@types/level": "^6.0.0",
     "@types/subleveldown": "^4.1.1"
   },
   "dependencies": {
-    "@koishijs/orm-utils": "^1.0.0-beta.3",
+    "@koishijs/orm-utils": "^1.0.0-beta.4",
     "level": "^7.0.1",
     "subleveldown": "^6.0.1"
   }

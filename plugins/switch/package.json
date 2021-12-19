@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-switch",
   "description": "Switch plugins for Koishi",
-  "version": "1.0.0-beta.3",
+  "version": "1.0.0-beta.4",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -33,10 +33,10 @@
     "required:database"
   ],
   "peerDependencies": {
-    "koishi": "^4.0.0-beta.5"
+    "koishi": "^4.0.0-beta.6"
   },
   "devDependencies": {
-    "@koishijs/plugin-database-memory": "^1.0.0-beta.3",
-    "@koishijs/plugin-mock": "^1.0.0-beta.1"
+    "@koishijs/plugin-database-memory": "^1.0.0-beta.4",
+    "@koishijs/plugin-mock": "^1.0.0-beta.2"
   }
 }
