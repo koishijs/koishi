@@ -4,6 +4,7 @@ import { Builder, Caster } from '@koishijs/sql-utils'
 import sqlite, { Statement } from 'better-sqlite3'
 import { resolve } from 'path'
 import { escape as sqlEscape, escapeId } from 'sqlstring-sqlite'
+import { stat } from 'fs/promises'
 
 declare module 'koishi' {
   interface Database {
@@ -50,10 +51,12 @@ class SQLiteDatabase extends Database {
   sql: Builder
   caster: Caster
 
+  #path: string
+
   constructor(public ctx: Context, public config: SQLiteDatabase.Config) {
     super(ctx)
 
-    this.config = { path: '.koishi.db', ...config }
+    this.#path = this.config.path === ':memory:' ? this.config.path : resolve(ctx.app.options.baseDir, this.config.path)
 
     this.sql = new class extends Builder {
       escapeId = escapeId
@@ -186,15 +189,17 @@ class SQLiteDatabase extends Database {
     }
   }
 
-  async drop(name: TableType) {
-    if (name) {
-      this.#exec('run', `DROP TABLE ${this.sql.escapeId(name)}`)
-    } else {
-      const tables = Object.keys(this.ctx.model.config)
-      for (const table of tables) {
-        this.#exec('run', `DROP TABLE ${this.sql.escapeId(table)}`)
-      }
+  async drop() {
+    const tables = Object.keys(this.ctx.model.config)
+    for (const table of tables) {
+      this.#exec('run', `DROP TABLE ${this.sql.escapeId(table)}`)
     }
+  }
+
+  async stats() {
+    if (this.#path === ':memory:') return {}
+    const { size } = await stat(this.#path)
+    return { size }
   }
 
   async remove(name: TableType, query: Query) {

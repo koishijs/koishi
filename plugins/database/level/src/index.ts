@@ -3,7 +3,7 @@ import { executeUpdate, executeEval, executeQuery } from '@koishijs/orm-utils'
 import { LevelUp } from 'levelup'
 import level from 'level'
 import sub from 'subleveldown'
-import { resolveLocation } from './runtime'
+import { resolveLocation, getStats } from './runtime'
 
 declare module 'abstract-leveldown' {
   export interface AbstractIterator<K, V> extends AbstractOptions {
@@ -24,17 +24,19 @@ declare module 'koishi' {
 class LevelDatabase extends Database {
   public level = this
 
+  #path: string
   #level: LevelUp
   #tables: Record<string, LevelUp>
   #last: Promise<any> = Promise.resolve()
 
   constructor(public ctx: Context, public config: LevelDatabase.Config) {
     super(ctx)
+    this.#path = resolveLocation(config.location)
   }
 
   async start() {
     // LevelDB will automatically open
-    this.#level = level(resolveLocation(this.config.location))
+    this.#level = level(this.#path)
     this.#tables = Object.create(null)
 
     this.ctx.on('model', (name) => {
@@ -101,14 +103,13 @@ class LevelDatabase extends Database {
     return this.#last = this.#last.catch(noop).then(factory)
   }
 
-  async drop(name: keyof Tables) {
-    if (name) {
-      await this.table(name).clear()
-      delete this.#tables[name]
-    } else {
-      this.#tables = Object.create(null)
-      await this.#level.clear()
-    }
+  async drop() {
+    this.#tables = Object.create(null)
+    await this.#level.clear()
+  }
+
+  async stats() {
+    return getStats(this.#path)
   }
 
   async get(name: keyof Tables, query: Query, modifier: Query.Modifier) {

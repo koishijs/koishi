@@ -272,6 +272,12 @@ namespace OrmOperations {
       })).eventually.deep.equal({ outer: 4 })
     })
   }
+
+  export const stats = function Stats(app: App) {
+    it('basic support', async () => {
+      await expect(app.database.stats()).to.eventually.ok
+    })
+  }
 }
 
 export default OrmOperations

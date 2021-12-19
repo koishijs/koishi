@@ -14,39 +14,39 @@ declare module 'koishi' {
 
 export class MemoryDatabase extends Database {
   public memory = this
-  public $store: Dict<any[]> = {}
 
-  private _storage: Storage
+  #store: Dict<any[]> = {}
+  #loader: Storage
 
   constructor(public ctx: Context, public config: Config = {}) {
     super(ctx)
 
     if (config.storage) {
-      this._storage = new Storage(ctx, config)
+      this.#loader = new Storage(ctx, config)
     }
   }
 
   async start() {
-    await this._storage?.start(this.$store)
+    await this.#loader?.start(this.#store)
   }
 
   async $save(name: string) {
-    await this._storage?.save(name, this.$store[name])
+    await this.#loader?.save(name, this.#store[name])
   }
 
   stop() {}
 
   $table<K extends TableType>(table: K) {
-    return this.$store[table] ||= []
+    return this.#store[table] ||= []
   }
 
-  async drop(name: TableType) {
-    if (name) {
-      delete this.$store[name]
-    } else {
-      this.$store = {}
-    }
-    await this._storage?.drop(name)
+  async drop() {
+    this.#store = {}
+    await this.#loader?.drop()
+  }
+
+  async stats() {
+    return {}
   }
 
   $query(name: TableType, query: Query) {
@@ -68,7 +68,7 @@ export class MemoryDatabase extends Database {
 
   async remove(name: TableType, query: Query) {
     const expr = this.ctx.model.resolveQuery(name, query)
-    this.$store[name] = this.$table(name)
+    this.#store[name] = this.$table(name)
       .filter(row => !executeQuery(expr, row))
     this.$save(name)
   }

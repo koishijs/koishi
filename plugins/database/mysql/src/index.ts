@@ -289,14 +289,20 @@ class MysqlDatabase extends Database {
     this.pool.end()
   }
 
-  async drop(name: TableType) {
-    if (name) {
-      await this.query(`DROP TABLE ${this.sql.escapeId(name)}`)
-    } else {
-      const data = await this.select('information_schema.tables', ['TABLE_NAME'], 'TABLE_SCHEMA = ?', [this.config.database])
-      if (!data.length) return
-      await this.query(data.map(({ TABLE_NAME }) => `DROP TABLE ${this.sql.escapeId(TABLE_NAME)}`).join('; '))
-    }
+  async drop() {
+    const data = await this.select('information_schema.tables', ['TABLE_NAME'], 'TABLE_SCHEMA = ?', [this.config.database])
+    if (!data.length) return
+    await this.query(data.map(({ TABLE_NAME }) => `DROP TABLE ${this.sql.escapeId(TABLE_NAME)}`).join('; '))
+  }
+
+  async stats() {
+    const data = await this.select('information_schema.tables', ['TABLE_NAME', 'TABLE_ROWS', 'DATA_LENGTH'], 'TABLE_SCHEMA = ?', [this.config.database])
+    const stats: Query.Stats = { size: 0 }
+    stats.tables = Object.fromEntries(data.map(({ TABLE_NAME: name, TABLE_ROWS: count, DATA_LENGTH: size }) => {
+      stats.size += size
+      return [name, { count, size }]
+    }))
+    return stats
   }
 
   async get(name: TableType, query: Query, modifier?: Query.Modifier) {
