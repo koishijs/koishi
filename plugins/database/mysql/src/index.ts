@@ -39,13 +39,13 @@ function getTypeDefinition({ type, length, precision, scale }: Model.Field) {
     case 'float':
     case 'double':
     case 'date':
-    case 'time':
-    case 'timestamp': return type
+    case 'time': return type
+    case 'timestamp': return 'datetime'
     case 'integer': return getIntegerType(length)
     case 'unsigned': return `${getIntegerType(length)} unsigned`
     case 'decimal': return `decimal(${precision}, ${scale}) unsigned`
     case 'char': return `char(${length || 255})`
-    case 'string': return `char(${length || 255})`
+    case 'string': return `varchar(${length || 255})`
     case 'text': return `text(${length || 65535})`
     case 'list': return `text(${length || 65535})`
     case 'json': return `text(${length || 65535})`
