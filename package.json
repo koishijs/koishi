@@ -12,12 +12,12 @@
     "plugins/assets/*",
     "plugins/cache/*",
     "plugins/database/*",
+    "plugins/frontend/*",
     "plugins/*"
   ],
   "scripts": {
     "build": "yarn compile && yarn dtsc",
-    "build:console": "node -r ./build/register plugins/console/build",
-    "console": "yarn workspace @koishijs/plugin-console",
+    "build:console": "node -r ./build/register plugins/frontend/console/build",
     "dtsc": "node -r ./build/register build/dtsc",
     "bump": "node -r ./build/register build/bump",
     "compile": "node -r ./build/register build/compile",

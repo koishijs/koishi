@@ -228,11 +228,9 @@ const targets = [
   'packages/core',
   'packages/koishi',
   'packages/sql-utils',
-  'plugins/database/mysql',
-  'plugins/database/mongo',
   'plugins/admin',
-  'plugins/console',
-  'plugins/status',
+  'plugins/frontend/console',
+  'plugins/frontend/status',
   'plugins/teach',
   'community/adventure',
 ]

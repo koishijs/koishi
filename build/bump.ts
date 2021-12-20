@@ -103,6 +103,7 @@ function getPackage(name: string) {
     || packages[`plugins/assets/${name}`]
     || packages[`plugins/cache/${name}`]
     || packages[`plugins/database/${name}`]
+    || packages[`plugins/frontend/${name}`]
     || packages[`plugins/${name}`]
     || packages[`community/adapter-${name}`]
     || packages[`community/assets-${name}`]
