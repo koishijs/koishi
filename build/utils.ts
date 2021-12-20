@@ -42,6 +42,8 @@ export type DependencyType = 'dependencies' | 'devDependencies' | 'peerDependenc
 
 export interface PackageJson extends Partial<Record<DependencyType, Record<string, string>>> {
   name?: string
+  main?: string
+  module?: string
   description?: string
   private?: boolean
   version?: string

@@ -15,7 +15,6 @@
     "plugins/*"
   ],
   "scripts": {
-    "addons": "yarn workspace addons",
     "build": "yarn compile && yarn dtsc",
     "build:console": "node -r ./build/register plugins/console/build",
     "console": "yarn workspace @koishijs/plugin-console",
@@ -25,7 +24,6 @@
     "dep": "node -r ./build/register build/dep",
     "docs": "yarn workspace docs",
     "draft": "node -r ./build/register build/release",
-    "schema": "yarn workspace schemastery",
     "test": "mocha --no-warnings --experimental-vm-modules --enable-source-maps",
     "test:json": "c8 -r json yarn test",
     "test:html": "rimraf coverage && c8 -r html yarn test",

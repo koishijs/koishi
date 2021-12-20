@@ -1,7 +1,9 @@
-import { build, BuildFailure, BuildOptions, Message } from 'esbuild'
+import { build, BuildFailure, BuildOptions, Message, Plugin, Platform } from 'esbuild'
 import { resolve } from 'path'
 import { cyan, yellow, red } from 'kleur'
-import { getPackages } from './utils'
+import { existsSync, readdir } from 'fs-extra'
+import escapeRegExp from 'escape-string-regexp'
+import { getPackages, PackageJson } from './utils'
 import cac from 'cac'
 
 const { args } = cac().help().parse()
@@ -44,12 +46,20 @@ const KOISHI_VERSION = JSON.stringify(version)
 const root = resolve(__dirname, '..') + '/'
 
 async function compile(name: string) {
-  if (name.includes('.') || name.includes('ui-')) return
+  if (name.includes('ui-')) return
 
+  const meta: PackageJson = require(`../${name}/package.json`)
   const base = root + name
   const entryPoints = [base + '/src/index.ts']
 
-  let filter = /^[@/\w-]+$/
+  const filter = /^[@/\w-]+$/
+  const externalPlugin: Plugin = {
+    name: 'external library',
+    setup(build) {
+      build.onResolve({ filter }, () => ({ external: true }))
+    },
+  }
+
   const options: BuildOptions = {
     entryPoints,
     bundle: true,
@@ -63,12 +73,54 @@ async function compile(name: string) {
     define: {
       KOISHI_VERSION,
     },
-    plugins: [{
-      name: 'external library',
+    plugins: [externalPlugin],
+  }
+
+  // node & browser
+  if (meta.module) {
+    delete options.outdir
+
+    const modules: string[] = []
+    for (const name of await readdir(base + '/src')) {
+      if (existsSync(base + '/src/' + name + '/package.json')) {
+        modules.push(name)
+      }
+    }
+
+    const filter = new RegExp(`^.+\\/(${modules.map(escapeRegExp).join('|')})$`)
+    const usePlatformPlugin = (platform: Platform): Plugin => ({
+      name: 'platform specific modules',
       setup(build) {
-        build.onResolve({ filter }, () => ({ external: true }))
+        build.onResolve({ filter }, ({ path, resolveDir }) => {
+          for (const module of modules) {
+            if (!path.includes(module)) continue
+            return { path: resolve(resolveDir, `${module}/${platform}.ts`) }
+          }
+        })
       },
-    }],
+    })
+
+    return Promise.all([
+      bundle({
+        ...options,
+        outfile: base + '/' + meta.main,
+        plugins: [
+          usePlatformPlugin('node'),
+          externalPlugin,
+        ],
+      }),
+      bundle({
+        ...options,
+        format: 'esm',
+        target: 'esnext',
+        platform: 'browser',
+        outfile: base + '/' + meta.module,
+        plugins: [
+          usePlatformPlugin('browser'),
+          externalPlugin,
+        ],
+      }),
+    ])
   }
 
   try {
