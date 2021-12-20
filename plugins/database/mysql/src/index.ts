@@ -1,6 +1,6 @@
 import { createPool, Pool, PoolConfig, escape as mysqlEscape, escapeId, format, TypeCast } from 'mysql'
 import { Context, Database, difference, Logger, makeArray, Schema, Query, Model, Tables as KoishiTables, Dict, Time, KoishiError, pick } from 'koishi'
-import { applyUpdate } from '@koishijs/orm-utils'
+import { executeUpdate } from '@koishijs/orm-utils'
 import { Builder } from '@koishijs/sql-utils'
 import { OkPacket } from 'mysql'
 
@@ -39,13 +39,13 @@ function getTypeDefinition({ type, length, precision, scale }: Model.Field) {
     case 'float':
     case 'double':
     case 'date':
-    case 'time':
-    case 'timestamp': return type
+    case 'time': return type
+    case 'timestamp': return 'datetime'
     case 'integer': return getIntegerType(length)
     case 'unsigned': return `${getIntegerType(length)} unsigned`
     case 'decimal': return `decimal(${precision}, ${scale}) unsigned`
     case 'char': return `char(${length || 255})`
-    case 'string': return `char(${length || 255})`
+    case 'string': return `varchar(${length || 255})`
     case 'text': return `text(${length || 65535})`
     case 'list': return `text(${length || 65535})`
     case 'json': return `text(${length || 65535})`
@@ -226,15 +226,11 @@ class MysqlDatabase extends Database {
     return this.sql.parseQuery(this.ctx.model.resolveQuery(name, query))
   }
 
-  joinKeys = (keys: readonly string[]) => {
+  _joinKeys = (keys: readonly string[]) => {
     return keys ? keys.map(key => key.includes('`') ? key : `\`${key}\``).join(',') : '*'
   }
 
-  $in = (table: TableType, key: string, values: readonly any[]) => {
-    return `${this.sql.escapeId(key)} IN (${values.map(val => this.sql.escape(val, table, key)).join(', ')})`
-  }
-
-  formatValues = (table: string, data: object, keys: readonly string[]) => {
+  _formatValues = (table: string, data: object, keys: readonly string[]) => {
     return keys.map((key) => this.sql.stringify(data[key], table as never, key))
   }
 
@@ -274,7 +270,7 @@ class MysqlDatabase extends Database {
   select(table: string, fields: string[], conditional?: string, values: readonly any[] = []) {
     logger.debug(`[select] ${table}: ${fields ? fields.join(', ') : '*'}`)
     const sql = 'SELECT '
-      + this.joinKeys(fields)
+      + this._joinKeys(fields)
       + (table.includes('.') ? `FROM ${table}` : ' FROM `' + table + `\` _${table}`)
       + (conditional ? ' WHERE ' + conditional : '')
     return this.query(sql, values)
@@ -289,24 +285,31 @@ class MysqlDatabase extends Database {
     this.pool.end()
   }
 
-  async drop(name: TableType) {
-    if (name) {
-      await this.query(`DROP TABLE ${this.sql.escapeId(name)}`)
-    } else {
-      const data = await this.select('information_schema.tables', ['TABLE_NAME'], 'TABLE_SCHEMA = ?', [this.config.database])
-      if (!data.length) return
-      await this.query(data.map(({ TABLE_NAME }) => `DROP TABLE ${this.sql.escapeId(TABLE_NAME)}`).join('; '))
-    }
+  async drop() {
+    const data = await this.select('information_schema.tables', ['TABLE_NAME'], 'TABLE_SCHEMA = ?', [this.config.database])
+    if (!data.length) return
+    await this.query(data.map(({ TABLE_NAME }) => `DROP TABLE ${this.sql.escapeId(TABLE_NAME)}`).join('; '))
+  }
+
+  async stats() {
+    const data = await this.select('information_schema.tables', ['TABLE_NAME', 'TABLE_ROWS', 'DATA_LENGTH'], 'TABLE_SCHEMA = ?', [this.config.database])
+    const stats: Query.Stats = { size: 0 }
+    stats.tables = Object.fromEntries(data.map(({ TABLE_NAME: name, TABLE_ROWS: count, DATA_LENGTH: size }) => {
+      stats.size += size
+      return [name, { count, size }]
+    }))
+    return stats
   }
 
   async get(name: TableType, query: Query, modifier?: Query.Modifier) {
     const filter = this._createFilter(name, query)
     if (filter === '0') return []
-    const { fields, limit, offset } = Query.resolveModifier(modifier)
-    const keys = this.joinKeys(this.inferFields(name, fields))
+    const { fields, limit, offset, sort } = Query.resolveModifier(modifier)
+    const keys = this._joinKeys(this.inferFields(name, fields))
     let sql = `SELECT ${keys} FROM ${name} _${name} WHERE ${filter}`
     if (limit) sql += ' LIMIT ' + limit
     if (offset) sql += ' OFFSET ' + offset
+    if (sort) sql += ' ORDER BY ' + Object.entries(sort).map(([key, order]) => `${this.sql.escapeId(key)} ${order}`).join(', ')
     return this.query(sql)
   }
 
@@ -336,8 +339,8 @@ class MysqlDatabase extends Database {
     data = { ...this.ctx.model.create(name), ...data }
     const keys = Object.keys(data)
     const header = await this.query<OkPacket>(
-      `INSERT INTO ?? (${this.joinKeys(keys)}) VALUES (${keys.map(() => '?').join(', ')})`,
-      [name, ...this.formatValues(name, data, keys)],
+      `INSERT INTO ?? (${this._joinKeys(keys)}) VALUES (${keys.map(() => '?').join(', ')})`,
+      [name, ...this._formatValues(name, data, keys)],
     )
     return { ...data, id: header.insertId } as any
   }
@@ -350,7 +353,7 @@ class MysqlDatabase extends Database {
     const merged = {}
     const insertion = data.map((item) => {
       Object.assign(merged, item)
-      return applyUpdate(item, this.ctx.model.create(name))
+      return executeUpdate(this.ctx.model.create(name), item)
     })
     const indexFields = makeArray(keys || primary)
     const dataFields = [...new Set(Object.keys(merged).map(key => key.split('.', 1)[0]))]
@@ -403,9 +406,9 @@ class MysqlDatabase extends Database {
     const initFields = Object.keys(fields)
     const placeholder = `(${initFields.map(() => '?').join(', ')})`
     await this.query(
-      `INSERT INTO ${this.sql.escapeId(name)} (${this.joinKeys(initFields)}) VALUES ${data.map(() => placeholder).join(', ')}
+      `INSERT INTO ${this.sql.escapeId(name)} (${this._joinKeys(initFields)}) VALUES ${data.map(() => placeholder).join(', ')}
       ON DUPLICATE KEY UPDATE ${update}`,
-      [].concat(...insertion.map(item => this.formatValues(name, item, initFields))),
+      [].concat(...insertion.map(item => this._formatValues(name, item, initFields))),
     )
   }
 

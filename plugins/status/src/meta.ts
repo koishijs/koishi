@@ -18,6 +18,18 @@ export class MetaProvider extends DataSource<MetaProvider.Payload> {
     this.extend(async () => ctx.assets?.stats())
     this.extend(async () => ctx.database?.stats())
 
+    this.extend(async () => ctx.database?.aggregate('user', {
+      activeUsers: { $count: 'id' },
+    }, {
+      lastCall: { $gt: new Date(new Date().getTime() - Time.day) },
+    }))
+
+    this.extend(async () => ctx.database?.aggregate('channel', {
+      activeGuilds: { $count: 'id' },
+    }, {
+      assignee: { $ne: null },
+    }))
+
     ctx.model.extend('user', {
       lastCall: 'timestamp',
     })
@@ -53,10 +65,9 @@ export namespace MetaProvider {
   })
 
   export interface Stats {
-    allUsers: number
+    size: number
     activeUsers: number
-    allGroups: number
-    activeGroups: number
+    activeGuilds: number
     tables: Dict<{
       count: number
       size: number

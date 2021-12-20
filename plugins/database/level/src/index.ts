@@ -1,9 +1,9 @@
 import { clone, Context, Database, KoishiError, Logger, makeArray, Model, noop, pick, Query, Schema, Tables, TableType, valueMap } from 'koishi'
-import { applyUpdate, executeEval, executeQuery } from '@koishijs/orm-utils'
+import { executeUpdate, executeEval, executeQuery, executeSort } from '@koishijs/orm-utils'
 import { LevelUp } from 'levelup'
 import level from 'level'
 import sub from 'subleveldown'
-import { resolveLocation } from './runtime'
+import { resolveLocation, getStats } from './runtime'
 
 declare module 'abstract-leveldown' {
   export interface AbstractIterator<K, V> extends AbstractOptions {
@@ -24,17 +24,19 @@ declare module 'koishi' {
 class LevelDatabase extends Database {
   public level = this
 
+  #path: string
   #level: LevelUp
   #tables: Record<string, LevelUp>
   #last: Promise<any> = Promise.resolve()
 
   constructor(public ctx: Context, public config: LevelDatabase.Config) {
     super(ctx)
+    this.#path = resolveLocation(config.location)
   }
 
   async start() {
     // LevelDB will automatically open
-    this.#level = level(resolveLocation(this.config.location))
+    this.#level = level(this.#path)
     this.#tables = Object.create(null)
 
     this.ctx.on('model', (name) => {
@@ -101,19 +103,18 @@ class LevelDatabase extends Database {
     return this.#last = this.#last.catch(noop).then(factory)
   }
 
-  async drop(name: keyof Tables) {
-    if (name) {
-      await this.table(name).clear()
-      delete this.#tables[name]
-    } else {
-      this.#tables = Object.create(null)
-      await this.#level.clear()
-    }
+  async drop() {
+    this.#tables = Object.create(null)
+    await this.#level.clear()
+  }
+
+  async stats() {
+    return getStats(this.#path)
   }
 
   async get(name: keyof Tables, query: Query, modifier: Query.Modifier) {
     const expr = this.ctx.model.resolveQuery(name, query)
-    const { fields, limit = Infinity, offset = 0 } = Query.resolveModifier(modifier)
+    const { fields, limit = Infinity, offset = 0, sort } = Query.resolveModifier(modifier)
 
     const { primary } = this.ctx.model.config[name]
     const table = this.table(name)
@@ -122,7 +123,7 @@ class LevelDatabase extends Database {
       const key = this._makeKey(primary, expr)
       try {
         const value = await table.get(key)
-        if (offset === 0 && limit > 0 && executeQuery(expr, value)) {
+        if (offset === 0 && limit > 0 && executeQuery(value, expr)) {
           return [pick(value, fields)]
         }
       } catch (e) {
@@ -133,10 +134,11 @@ class LevelDatabase extends Database {
 
     const result: any[] = []
     for await (const [, value] of table.iterator()) {
-      if (executeQuery(expr, value)) {
+      if (executeQuery(value, expr)) {
         result.push(pick(value, fields))
       }
     }
+    if (sort) executeSort(result, sort)
     return result.slice(offset, offset + limit)
   }
 
@@ -154,8 +156,8 @@ class LevelDatabase extends Database {
       const key = this._makeKey(primary, expr)
       try {
         const value = await table.get(key)
-        if (executeQuery(expr, value)) {
-          await table.put(key, applyUpdate(data, value))
+        if (executeQuery(value, expr)) {
+          await table.put(key, executeUpdate(value, data))
         }
       } catch (e) {
         if (e.notFound !== true) throw e
@@ -165,8 +167,8 @@ class LevelDatabase extends Database {
 
     const batch = table.batch()
     for await (const [key, value] of table.iterator()) {
-      if (executeQuery(expr, value)) {
-        batch.put(key, applyUpdate(data, value))
+      if (executeQuery(value, expr)) {
+        batch.put(key, executeUpdate(value, data))
       }
     }
     await batch.write()
@@ -182,7 +184,7 @@ class LevelDatabase extends Database {
       const key = this._makeKey(primary, expr)
       try {
         const value = await table.get(key)
-        if (executeQuery(expr, value)) {
+        if (executeQuery(value, expr)) {
           await table.del(key)
         }
       } catch (e) {
@@ -193,7 +195,7 @@ class LevelDatabase extends Database {
 
     const batch = table.batch()
     for await (const [key, value] of table.iterator()) {
-      if (executeQuery(expr, value)) {
+      if (executeQuery(value, expr)) {
         batch.del(key)
       }
     }
@@ -233,12 +235,12 @@ class LevelDatabase extends Database {
         try {
           const value = await table.get(key)
           if (keys.every(key => value[key] === item[key])) {
-            await table.put(key, applyUpdate(item, value))
+            await table.put(key, executeUpdate(value, item))
           }
         } catch (e) {
           if (e.notFound !== true) throw e
           const data = this.ctx.model.create(name)
-          await this.create(name, applyUpdate(item, data), true)
+          await this.create(name, executeUpdate(data, item), true)
         }
         continue
       }
@@ -252,7 +254,7 @@ class LevelDatabase extends Database {
             logger.warn('Cannot update primary key')
             break
           }
-          await table.put(key, applyUpdate(data, value))
+          await table.put(key, executeUpdate(value, data))
           // Match the behavior here
           // mongo/src/index.ts > upsert() > bulk.find(pick(item, keys)).updateOne({ $set: omit(item, keys) })
           break
@@ -269,11 +271,11 @@ class LevelDatabase extends Database {
     const result: any[] = []
     const table = this.table(name)
     for await (const [, value] of table.iterator()) {
-      if (executeQuery(expr, value)) {
+      if (executeQuery(value, expr)) {
         result.push(value)
       }
     }
-    return valueMap(fields, value => executeEval(value, result)) as any
+    return valueMap(fields, value => executeEval(result, value)) as any
   }
 }
 

@@ -1,4 +1,4 @@
-import { Context, Channel, noop, Session, Bot, Time, Dict, Schema } from 'koishi'
+import { Context, Channel, noop, Session, Bot, Time, Dict, Schema, Logger, valueMap } from 'koishi'
 import { DataSource } from '@koishijs/plugin-console'
 import {} from '@koishijs/cli'
 
@@ -6,42 +6,15 @@ declare module 'koishi' {
   interface Session {
     _sendType?: 'command' | 'dialogue'
   }
-}
 
-export interface Synchronizer {
-  groups: Dict<number>
-  daily: Record<Synchronizer.DailyField, Dict<number>>
-  hourly: Record<Synchronizer.HourlyField, number>
-  longterm: Record<Synchronizer.LongtermField, number>
-  addDaily(field: Synchronizer.DailyField, key: string | number): void
-  upload(date: Date): Promise<void>
-  download(): Promise<Synchronizer.Data>
-}
-
-export namespace Synchronizer {
-  export type DailyField = typeof dailyFields[number]
-  export const dailyFields = [
-    'command', 'dialogue', 'botSend', 'botReceive', 'group',
-  ] as const
-
-  export type HourlyField = typeof hourlyFields[number]
-  export const hourlyFields = [
-    'total', 'group', 'private', 'command', 'dialogue',
-  ] as const
-
-  export type LongtermField = typeof longtermFields[number]
-  export const longtermFields = [
-    'message',
-  ] as const
-
-  export interface Data {
-    extension?: StatisticsProvider.Payload
-    groups: Pick<Channel, 'id' | 'name' | 'assignee'>[]
-    daily: Record<DailyField, Dict<number>>[]
-    hourly: ({ time: Date } & Record<HourlyField, number>)[]
-    longterm: ({ time: Date } & Record<LongtermField, number>)[]
+  interface Tables {
+    stats_daily: Record<StatisticsProvider.DailyField, Dict<number>> & { time: Date }
+    stats_hourly: Record<StatisticsProvider.HourlyField, number> & { time: Date }
+    stats_longterm: Record<StatisticsProvider.LongtermField, number> & { time: Date }
   }
 }
+
+const logger = new Logger('stats')
 
 export const RECENT_LENGTH = 5
 
@@ -71,7 +44,7 @@ export interface GroupData {
 const send = Session.prototype.send
 Session.prototype.send = function (this: Session, ...args) {
   if (args[0] && this._sendType && this.app.console) {
-    this.app.console.services.stats.sync.hourly[this._sendType] += 1
+    this.app.console.services.stats.hourly[this._sendType] += 1
   }
   return send.apply(this, args)
 }
@@ -82,7 +55,6 @@ Session.prototype.send[customTag] = send
 export class StatisticsProvider extends DataSource<StatisticsProvider.Payload> {
   static using = ['database'] as const
 
-  sync: Synchronizer
   lastUpdate = new Date()
   updateHour = this.lastUpdate.getHours()
   callbacks: StatisticsProvider.Extension[] = []
@@ -90,17 +62,37 @@ export class StatisticsProvider extends DataSource<StatisticsProvider.Payload> {
   cachedData: Promise<StatisticsProvider.Payload>
   average = average
 
+  guilds: Dict<Dict<number>>
+  daily: Record<StatisticsProvider.DailyField, Dict<number>>
+  hourly: Record<StatisticsProvider.HourlyField, number>
+  longterm: Record<StatisticsProvider.LongtermField, number>
+
   constructor(ctx: Context, private config: StatisticsProvider.Config = {}) {
     super(ctx, 'stats')
+
+    this.clear()
 
     ctx.model.extend('channel', {
       name: 'string(50)',
       activity: 'json',
     })
 
-    ctx.on('exit', () => this.upload(true))
+    ctx.model.extend('stats_daily', {
+      time: 'date',
+      ...Object.fromEntries(StatisticsProvider.dailyFields.map((key) => [key, 'json'])),
+    }, { primary: 'time' })
 
-    this.sync = ctx.database.createSynchronizer()
+    ctx.model.extend('stats_hourly', {
+      time: 'date',
+      ...Object.fromEntries(StatisticsProvider.hourlyFields.map((key) => [key, { type: 'integer', initial: 0 }])),
+    }, { primary: 'time' })
+
+    ctx.model.extend('stats_longterm', {
+      time: 'date',
+      ...Object.fromEntries(StatisticsProvider.longtermFields.map((key) => [key, { type: 'integer', initial: 0 }])),
+    }, { primary: 'time' })
+
+    ctx.on('exit', () => this.upload(true))
 
     ctx.on('dispose', async () => {
       // rollback to default implementation to prevent infinite call stack
@@ -113,26 +105,27 @@ export class StatisticsProvider extends DataSource<StatisticsProvider.Payload> {
     ctx.before('command', ({ command, session }) => {
       if (command.parent?.name !== 'test') {
         const [name] = command.name.split('.', 1)
-        this.sync.addDaily('command', name)
+        this.addDaily('command', name)
         this.upload()
       }
       session._sendType = 'command'
     })
 
     const updateSendStats = async (session: Session) => {
-      this.sync.hourly.total += 1
-      this.sync.hourly[session.subtype] += 1
-      this.sync.longterm.message += 1
-      this.sync.addDaily('botSend', session.sid)
+      this.hourly.total += 1
+      this.hourly[session.subtype] += 1
+      this.longterm.message += 1
+      this.addDaily('botSend', session.sid)
       if (session.subtype === 'group') {
-        this.sync.addDaily('group', session.gid)
-        this.sync.groups[session.gid] = (this.sync.groups[session.gid] || 0) + 1
+        this.addDaily('group', session.gid)
+        const record = this.guilds[session.platform] ||= {}
+        record[session.guildId] = (record[session.guildId] || 0) + 1
       }
       this.upload()
     }
 
     ctx.on('message', (session) => {
-      this.sync.addDaily('botReceive', session.sid)
+      this.addDaily('botReceive', session.sid)
     })
 
     ctx.on('before-send', (session) => {
@@ -143,13 +136,76 @@ export class StatisticsProvider extends DataSource<StatisticsProvider.Payload> {
     this.extend(this.extendGroup)
   }
 
+  private clear() {
+    this.daily = Object.fromEntries(StatisticsProvider.dailyFields.map(i => [i, {}])) as any
+    this.hourly = Object.fromEntries(StatisticsProvider.hourlyFields.map(i => [i, 0])) as any
+    this.longterm = Object.fromEntries(StatisticsProvider.longtermFields.map(i => [i, 0])) as any
+    this.guilds = {}
+  }
+
+  addDaily(field: StatisticsProvider.DailyField, key: string | number) {
+    const stat: Record<string, number> = this.daily[field] ||= {}
+    stat[key] = (stat[key] || 0) + 1
+  }
+
+  private async _uploadDaily(date: Date) {
+    const time = new Date(date)
+    time.setHours(0, 0, 0, 0)
+    await this.ctx.database.upsert('stats_daily', [{
+      time,
+      ...Object.fromEntries(Object.entries(this.daily).flatMap(([type, record]) => {
+        return Object.entries(record).map(([key, value]) => {
+          const $ = `${type}.${key}`
+          return [$, { $add: [{ $ifNull: [{ $ }, 0] }, value] }]
+        })
+      })),
+    }])
+  }
+
+  private async _uploadHourly(date: Date) {
+    const time = new Date(date)
+    time.setMinutes(0, 0, 0)
+    await this.ctx.database.upsert('stats_hourly', [{
+      time,
+      ...valueMap(this.hourly, (value, $) => ({ $add: [{ $ }, value] })),
+    }])
+  }
+
+  private async _uploadLongterm(date: Date) {
+    const time = new Date(date)
+    time.setHours(0, 0, 0, 0)
+    await this.ctx.database.upsert('stats_longterm', [{
+      time,
+      ...valueMap(this.longterm, (value, $) => ({ $add: [{ $ }, value] })),
+    }])
+  }
+
+  private async _uploadGuilds(date: Date) {
+    // FIXME should be guilds
+    await this.ctx.database.upsert('channel', Object.entries(this.guilds).flatMap(([platform, record]) => {
+      const $ = 'activity.' + Time.getDateNumber(date)
+      return Object.entries(record).map(([id, value]) => ({
+        id,
+        platform,
+        [$]: { $add: [{ $ }, value] },
+      }))
+    }))
+  }
+
   async upload(forced = false) {
     const date = new Date()
     const dateHour = date.getHours()
     if (forced || +date - +this.lastUpdate > this.config.statsInternal || dateHour !== this.updateHour) {
       this.lastUpdate = date
       this.updateHour = dateHour
-      await this.sync.upload(date)
+      await Promise.all([
+        this._uploadDaily(date),
+        this._uploadHourly(date),
+        this._uploadLongterm(date),
+        this._uploadGuilds(date),
+      ])
+      this.clear()
+      logger.debug('stats updated')
     }
   }
 
@@ -221,7 +277,14 @@ export class StatisticsProvider extends DataSource<StatisticsProvider.Payload> {
   }
 
   async download() {
-    const data = await this.sync.download()
+    const time = { $lt: new Date() }, sort = { time: 'desc' as const }
+    const [daily, hourly, longterm, groups] = await Promise.all([
+      this.ctx.database.get('stats_daily', { time }, { sort, limit: RECENT_LENGTH }),
+      this.ctx.database.get('stats_hourly', { time }, { sort, limit: 24 * RECENT_LENGTH }),
+      this.ctx.database.get('stats_longterm', { time }, { sort }),
+      this.ctx.database.get('channel', {}, ['platform', 'id', 'name', 'assignee']),
+    ])
+    const data = { daily, hourly, longterm, groups }
     const payload = {} as StatisticsProvider.Payload
     await Promise.all(this.callbacks.map(cb => cb(payload, data)))
     return payload
@@ -239,6 +302,29 @@ export class StatisticsProvider extends DataSource<StatisticsProvider.Payload> {
 }
 
 export namespace StatisticsProvider {
+  export type DailyField = typeof dailyFields[number]
+  export const dailyFields = [
+    'command', 'dialogue', 'botSend', 'botReceive', 'group',
+  ] as const
+
+  export type HourlyField = typeof hourlyFields[number]
+  export const hourlyFields = [
+    'total', 'group', 'private', 'command', 'dialogue',
+  ] as const
+
+  export type LongtermField = typeof longtermFields[number]
+  export const longtermFields = [
+    'message',
+  ] as const
+
+  export interface Data {
+    extension?: StatisticsProvider.Payload
+    groups: Pick<Channel, 'id' | 'name' | 'assignee'>[]
+    daily: Record<DailyField, Dict<number>>[]
+    hourly: ({ time: Date } & Record<HourlyField, number>)[]
+    longterm: ({ time: Date } & Record<LongtermField, number>)[]
+  }
+
   export interface Payload {
     history: Dict<number>
     commands: Dict<number>
@@ -256,5 +342,5 @@ export namespace StatisticsProvider {
     statsInternal: Schema.number().description('统计数据推送的时间间隔。').default(Time.minute * 10),
   })
 
-  export type Extension = (payload: Payload, data: Synchronizer.Data) => Promise<void>
+  export type Extension = (payload: Payload, data: StatisticsProvider.Data) => Promise<void>
 }

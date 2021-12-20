@@ -117,6 +117,15 @@ namespace OrmOperations {
     })
   }
 
+  export const get = function Get(app: App) {
+    it('sort', async () => {
+      let table = await setup(app, 'temp3', bazTable)
+      expect(table.map(e => e.ida + e.idb)).to.deep.equal(['1a', '2a', '1b', '2b'])
+      table = await app.database.get('temp3', {}, { sort: { ida: 'desc', idb: 'asc' } })
+      expect(table.map(e => e.ida + e.idb)).to.deep.equal(['2a', '2b', '1a', '1b'])
+    })
+  }
+
   export const set = function Set(app: App) {
     it('basic support', async () => {
       const table = await setup(app, 'temp2', barTable)
@@ -270,6 +279,12 @@ namespace OrmOperations {
           { $count: 'idb' },
         ]},
       })).eventually.deep.equal({ outer: 4 })
+    })
+  }
+
+  export const stats = function Stats(app: App) {
+    it('basic support', async () => {
+      await expect(app.database.stats()).to.eventually.ok
     })
   }
 }

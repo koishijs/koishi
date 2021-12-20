@@ -1,9 +1,10 @@
 import { Database, makeArray, Logger, Schema, Context, Query, Model, TableType, union, difference } from 'koishi'
-import { applyUpdate } from '@koishijs/orm-utils'
+import { executeUpdate } from '@koishijs/orm-utils'
 import { Builder, Caster } from '@koishijs/sql-utils'
 import sqlite, { Statement } from 'better-sqlite3'
 import { resolve } from 'path'
 import { escape as sqlEscape, escapeId } from 'sqlstring-sqlite'
+import { stat } from 'fs/promises'
 
 declare module 'koishi' {
   interface Database {
@@ -50,10 +51,12 @@ class SQLiteDatabase extends Database {
   sql: Builder
   caster: Caster
 
+  #path: string
+
   constructor(public ctx: Context, public config: SQLiteDatabase.Config) {
     super(ctx)
 
-    this.config = { path: '.koishi.db', ...config }
+    this.#path = this.config.path === ':memory:' ? this.config.path : resolve(ctx.app.options.baseDir, this.config.path)
 
     this.sql = new class extends Builder {
       escapeId = escapeId
@@ -186,15 +189,17 @@ class SQLiteDatabase extends Database {
     }
   }
 
-  async drop(name: TableType) {
-    if (name) {
-      this.#exec('run', `DROP TABLE ${this.sql.escapeId(name)}`)
-    } else {
-      const tables = Object.keys(this.ctx.model.config)
-      for (const table of tables) {
-        this.#exec('run', `DROP TABLE ${this.sql.escapeId(table)}`)
-      }
+  async drop() {
+    const tables = Object.keys(this.ctx.model.config)
+    for (const table of tables) {
+      this.#exec('run', `DROP TABLE ${this.sql.escapeId(table)}`)
     }
+  }
+
+  async stats() {
+    if (this.#path === ':memory:') return {}
+    const { size } = await stat(this.#path)
+    return { size }
   }
 
   async remove(name: TableType, query: Query) {
@@ -210,10 +215,11 @@ class SQLiteDatabase extends Database {
   #get(name: TableType, query: Query, modifier: Query.Modifier) {
     const filter = this.#query(name, query)
     if (filter === '0') return []
-    const { fields, limit, offset } = Query.resolveModifier(modifier)
+    const { fields, limit, offset, sort } = Query.resolveModifier(modifier)
     let sql = `SELECT ${this.#joinKeys(fields)} FROM ${this.sql.escapeId(name)} WHERE ${filter}`
     if (limit) sql += ' LIMIT ' + limit
     if (offset) sql += ' OFFSET ' + offset
+    if (sort) sql += ' ORDER BY ' + Object.entries(sort).map(([key, order]) => `${this.sql.escapeId(key)} ${order}`).join(', ')
     const rows = this.#exec('all', sql)
     return rows.map(row => this.caster.load(name, row))
   }
@@ -223,7 +229,7 @@ class SQLiteDatabase extends Database {
   }
 
   #update(name: TableType, indexFields: string[], updateFields: string[], update: {}, data: {}) {
-    const row = this.caster.dump(name, applyUpdate(update, data))
+    const row = this.caster.dump(name, executeUpdate(data, update))
     const assignment = updateFields.map((key) => `${this.sql.escapeId(key)} = ${this.sql.escape(row[key])}`).join(',')
     const query = Object.fromEntries(indexFields.map(key => [key, row[key]]))
     const filter = this.#query(name, query)
@@ -272,7 +278,7 @@ class SQLiteDatabase extends Database {
       if (data) {
         this.#update(name, indexFields, updateFields, item, data)
       } else {
-        this.#create(name, applyUpdate(item, this.ctx.model.create(name)))
+        this.#create(name, executeUpdate(this.ctx.model.create(name), item))
       }
     }
   }

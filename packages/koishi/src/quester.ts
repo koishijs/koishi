@@ -95,7 +95,6 @@ export namespace Quester {
     instance.get = ((url, params, headers) => request('GET', url, { headers, params })) as Get
     instance.get.stream = (url, params, headers) => request('GET', url, { headers, params, responseType: 'stream' })
     instance.get.arraybuffer = (url, params, headers) => request('GET', url, { headers, params, responseType: 'arraybuffer' })
-    instance.head = (url, params, headers) => request('HEAD', url, { headers, params })
     instance.options = (url, params, headers) => request('OPTIONS', url, { headers, params })
     instance.delete = (url, params, headers) => request('DELETE', url, { headers, params })
     instance.post = (url, data, headers) => request('POST', url, { headers, data })
@@ -103,6 +102,21 @@ export namespace Quester {
     instance.patch = (url, data, headers) => request('PATCH', url, { headers, data })
     instance.extend = (newConfig) => create({ ...config, ...newConfig })
     instance.config = config
+
+    instance.head = async (url, params, _headers) => {
+      const response = await axios({
+        ...options,
+        params,
+        method: 'HEAD',
+        url: endpoint + url,
+        headers: {
+          ...options.headers,
+          ..._headers,
+        },
+      })
+      return response.headers
+    }
+
     return instance
   }
 }

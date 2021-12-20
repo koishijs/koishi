@@ -232,6 +232,8 @@ export namespace Query {
     limit?: number
     offset?: number
     fields?: K[]
+    /** @experimental */
+    sort?: Dict<'asc' | 'desc'>
   }
 
   export type Modifier<T extends string = string> = T[] | ModifierExpr<T>
@@ -253,13 +255,25 @@ export namespace Query {
     [K in NestKeys<T>]?: Uneval<T, NestGet<T, K>>
   }
 
+  export interface Stats {
+    size?: number
+    tables?: Dict<TableStats>
+  }
+
+  export interface TableStats {
+    count: number
+    size: number
+  }
+
   export interface Methods {
-    drop(table?: TableType): Promise<void>
+    drop(): Promise<void>
+    stats(): Promise<Stats>
     get<T extends TableType, K extends Field<T>>(table: T, query: Query<T>, modifier?: Modifier<K>): Promise<Pick<Tables[T], K>[]>
     set<T extends TableType>(table: T, query: Query<T>, data: MapUneval<Tables[T]>): Promise<void>
     remove<T extends TableType>(table: T, query: Query<T>): Promise<void>
     create<T extends TableType>(table: T, data: Partial<Tables[T]>): Promise<Tables[T]>
     upsert<T extends TableType>(table: T, data: MapUneval<Tables[T]>[], keys?: MaybeArray<Index<T>>): Promise<void>
+    /** @experimental */
     aggregate<T extends TableType, P extends Projection<T>>(table: T, fields: P, query?: Query<T>): Promise<MapEval<T, P>>
   }
 }

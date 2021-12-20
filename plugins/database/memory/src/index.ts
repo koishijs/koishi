@@ -1,5 +1,5 @@
 import { Context, Database, Query, TableType, clone, makeArray, pick, Dict, valueMap, Model, noop, KoishiError } from 'koishi'
-import { executeQuery, executeEval, applyUpdate } from '@koishijs/orm-utils'
+import { executeQuery, executeEval, executeUpdate, executeSort } from '@koishijs/orm-utils'
 import { Storage, Config } from './storage'
 
 declare module 'koishi' {
@@ -14,62 +14,62 @@ declare module 'koishi' {
 
 export class MemoryDatabase extends Database {
   public memory = this
-  public $store: Dict<any[]> = {}
 
-  private _storage: Storage
+  #store: Dict<any[]> = {}
+  #loader: Storage
 
   constructor(public ctx: Context, public config: Config = {}) {
     super(ctx)
 
     if (config.storage) {
-      this._storage = new Storage(ctx, config)
+      this.#loader = new Storage(ctx, config)
     }
   }
 
   async start() {
-    await this._storage?.start(this.$store)
+    await this.#loader?.start(this.#store)
   }
 
   async $save(name: string) {
-    await this._storage?.save(name, this.$store[name])
+    await this.#loader?.save(name, this.#store[name])
   }
 
   stop() {}
 
   $table<K extends TableType>(table: K) {
-    return this.$store[table] ||= []
+    return this.#store[table] ||= []
   }
 
-  async drop(name: TableType) {
-    if (name) {
-      delete this.$store[name]
-    } else {
-      this.$store = {}
-    }
-    await this._storage?.drop(name)
+  async drop() {
+    this.#store = {}
+    await this.#loader?.drop()
+  }
+
+  async stats() {
+    return {}
   }
 
   $query(name: TableType, query: Query) {
     const expr = this.ctx.model.resolveQuery(name, query)
-    return this.$table(name).filter(row => executeQuery(expr, row))
+    return this.$table(name).filter(row => executeQuery(row, expr))
   }
 
   async get(name: TableType, query: Query, modifier?: Query.Modifier) {
-    const { fields, limit = Infinity, offset = 0 } = Query.resolveModifier(modifier)
-    return this.$query(name, query)
+    const { fields, limit = Infinity, offset = 0, sort = {} } = Query.resolveModifier(modifier)
+    return executeSort(this.$query(name, query), sort)
       .map(row => clone(pick(row, fields)))
       .slice(offset, offset + limit)
   }
 
   async set(name: TableType, query: Query, data: {}) {
-    this.$query(name, query).forEach(row => applyUpdate(data, row))
+    this.$query(name, query).forEach(row => executeUpdate(row, data))
     this.$save(name)
   }
 
   async remove(name: TableType, query: Query) {
     const expr = this.ctx.model.resolveQuery(name, query)
-    this.$store[name] = this.$table(name)
-      .filter(row => !executeQuery(expr, row))
+    this.#store[name] = this.$table(name)
+      .filter(row => !executeQuery(row, expr))
     this.$save(name)
   }
 
@@ -102,10 +102,10 @@ export class MemoryDatabase extends Database {
         return keys.every(key => row[key] === item[key])
       })
       if (row) {
-        applyUpdate(item, row)
+        executeUpdate(row, item)
       } else {
         const data = this.ctx.model.create(name)
-        await this.create(name, applyUpdate(item, data)).catch(noop)
+        await this.create(name, executeUpdate(data, item)).catch(noop)
       }
     }
     this.$save(name)
@@ -113,7 +113,7 @@ export class MemoryDatabase extends Database {
 
   async aggregate(name: TableType, fields: {}, query: Query) {
     const table = this.$query(name, query)
-    return valueMap(fields, value => executeEval(value, table)) as any
+    return valueMap(fields, value => executeEval(table, value)) as any
   }
 }
 
