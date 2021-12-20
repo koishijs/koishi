@@ -1,4 +1,4 @@
-import { Adapter, Bot, Session, renameProperty, paramCase, segment, Schema, App, defineProperty } from 'koishi'
+import { Adapter, Bot, Session, paramCase, segment, Schema, App, defineProperty } from 'koishi'
 import * as qface from 'qface'
 import { OneBotBot } from './bot'
 import * as OneBot from './types'
@@ -55,7 +55,10 @@ export function adaptMessage(message: OneBot.Message): Bot.Message {
       reply: (data) => segment('quote', data),
     }),
   }
-  if (message.group_id) {
+  if (message.guild_id) {
+    result.guildId = message.guild_id.toString()
+    result.channelId = message.channel_id.toString()
+  } else if (message.group_id) {
     result.guildId = result.channelId = message.group_id.toString()
   } else {
     result.channelId = 'private:' + author.userId

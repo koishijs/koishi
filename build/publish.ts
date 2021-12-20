@@ -57,15 +57,21 @@ function getVersion(name: string, isLatest = true) {
     ])
   }
 
+  function isNext(version: string) {
+    const parts = prerelease(version)
+    if (!parts) return false
+    return parts[0] !== 'rc'
+  }
+
   if (Object.keys(bumpMap).length) {
     for (const folder in bumpMap) {
       const { name, version } = bumpMap[folder]
-      await publish(folder, name, version, prerelease(version) ? 'next' : 'latest')
+      await publish(folder, name, version, isNext(version) ? 'next' : 'latest')
     }
   }
 
   const { version } = require('../packages/koishi/package') as PackageJson
-  if (prerelease(version)) return
+  if (isNext(version)) return
 
   const tags = spawnSync(['git', 'tag', '-l']).split(/\r?\n/)
   if (tags.includes(version)) {
