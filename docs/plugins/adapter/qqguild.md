@@ -14,7 +14,34 @@ QQ 频道官方 SDK 适配器，基于 [@qq-guild-sdk/core](https://www.npmjs.co
 3. 创建完成后，在 [频道机器人开发设置](https://bot.q.qq.com/#/developer/developer-setting) 获取机器人基本数据 [id, token, key(secret)]
 4. 将上面的基本数据作为机器人配置项即可使用
 
-参考文档：<https://nwylzw.github.io/qq-guild-sdk/api>
+参考文档：<https://nwylzw.github.io/qq-guild-sdk/api/core/Bot.html#bot>
+
+## 机器人选项
+
+### options(.bots[]).indents
+
+- 类型: `GBot.Intents | number`
+- 默认值: `0`
+
+该机器人申请的 WS 监听事件权限。
+
+### options(.bots[]).id
+
+- 类型: `string`
+
+机器人 id。
+
+### options(.bots[]).key
+
+- 类型: `string`
+
+机器人密钥，管理端又称呼为 secret。
+
+### options(.bots[]).token
+
+- 类型: `string`
+
+机器人 token。
 
 ## 适配器选项
 

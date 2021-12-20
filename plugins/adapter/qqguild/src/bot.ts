@@ -1,14 +1,12 @@
-import { Bot as GBot, Guild as GGuild } from '@qq-guild-sdk/core'
+import { Bot as GBot } from '@qq-guild-sdk/core'
 import { Bot } from 'koishi'
 import { WebSocketClient } from './ws'
+import { renameProperty } from '@koishijs/utils'
+import { adaptGuild, adaptUser } from './utils'
 
 export interface BotConfig extends Bot.BaseConfig, GBot.AppConfig {
   indents: GBot.Intents | number
 }
-
-const adaptGuild = (guild: GGuild): Bot.Guild => ({
-  guildId: guild.id, guildName: guild.name,
-})
 
 export class QQGuildBot extends Bot<BotConfig> {
   $innerBot: GBot
@@ -16,6 +14,12 @@ export class QQGuildBot extends Bot<BotConfig> {
   constructor(adapter: WebSocketClient, app: BotConfig) {
     super(adapter, app)
     this.$innerBot = new GBot({ app, ...adapter.config })
+  }
+
+  async getSelf() {
+    const u = adaptUser(await this.$innerBot.me)
+    renameProperty(u, 'selfId' as never, 'userId')
+    return u
   }
 
   async sendMessage(channelId: string, content: string, guildId?: string): Promise<string> {

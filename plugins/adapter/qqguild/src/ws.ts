@@ -1,6 +1,8 @@
 import { Bot as GBot, Message } from '@qq-guild-sdk/core'
-import { Adapter, Logger, Schema, segment, Session } from 'koishi'
+import { Logger, segment } from '@koishijs/utils'
+import { Adapter, Schema, Session } from 'koishi'
 import { BotConfig, QQGuildBot } from './bot'
+import { adaptUser } from './utils'
 
 const logger = new Logger('qqguild')
 
@@ -23,7 +25,9 @@ export const AdapterConfig: Schema<AdapterConfig> = Schema.intersect([
 ])
 
 const createSession = (bot: QQGuildBot, msg: Message) => {
-  const { id: messageId, guildId, channelId, timestamp } = msg
+  const {
+    id: messageId, author, guildId, channelId, timestamp,
+  } = msg
   const session: Partial<Session> = {
     selfId: bot.selfId,
     guildId,
@@ -31,6 +35,8 @@ const createSession = (bot: QQGuildBot, msg: Message) => {
     channelId,
     timestamp: +timestamp,
   }
+  session.author = adaptUser(msg.author)
+  session.userId = author.id
   session.guildId = msg.guildId
   session.channelId = msg.channelId
   session.subtype = 'group'
@@ -42,11 +48,16 @@ const createSession = (bot: QQGuildBot, msg: Message) => {
 
 export class WebSocketClient extends Adapter<BotConfig, AdapterConfig> {
   async connect(bot: QQGuildBot) {
+    Object.assign(bot, await bot.getSelf())
+    bot.resolve()
     await bot.$innerBot.startClient(bot.config.indents)
     bot.$innerBot.on('ready', bot.resolve)
     bot.$innerBot.on('message', msg => {
       const session = createSession(bot, msg)
-      if (session) this.dispatch(session)
+      if (session) {
+        session.type = 'message'
+        this.dispatch(session)
+      }
     })
   }
 
