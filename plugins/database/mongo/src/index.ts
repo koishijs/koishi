@@ -1,5 +1,5 @@
 import { MongoClient, Db, MongoError, IndexDescription } from 'mongodb'
-import { Context, Database, Tables as KoishiTables, makeArray, Schema, pick, omit, Query, Model, Dict, noop, KoishiError, valueMap } from 'koishi'
+import { Context, Database, Tables, makeArray, Schema, pick, omit, Query, Model, Dict, noop, KoishiError, valueMap } from 'koishi'
 import { URLSearchParams } from 'url'
 import { executeUpdate, executeEval } from '@koishijs/orm-utils'
 import { transformQuery, transformEval } from './utils'
@@ -15,8 +15,6 @@ declare module 'koishi' {
 }
 
 type TableType = keyof Tables
-
-export interface Tables extends KoishiTables {}
 
 class MongoDatabase extends Database {
   public client: MongoClient

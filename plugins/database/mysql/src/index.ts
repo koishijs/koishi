@@ -1,5 +1,5 @@
-import { createPool, Pool, PoolConfig, escape as mysqlEscape, escapeId, format, TypeCast } from 'mysql'
-import { Context, Database, difference, Logger, makeArray, Schema, Query, Model, Tables as KoishiTables, Dict, Time, KoishiError, pick } from 'koishi'
+import { createPool, Pool, PoolConfig, escape as mysqlEscape, escapeId, format } from 'mysql'
+import { Context, Database, difference, Logger, makeArray, Schema, Query, Model, Tables, Dict, Time, KoishiError, pick } from 'koishi'
 import { executeUpdate } from '@koishijs/orm-utils'
 import { Builder } from '@koishijs/sql-utils'
 import { OkPacket } from 'mysql'
@@ -23,8 +23,6 @@ declare module 'koishi' {
 const logger = new Logger('mysql')
 
 export type TableType = keyof Tables
-
-export interface Tables extends KoishiTables {}
 
 function getIntegerType(length = 11) {
   if (length <= 4) return 'tinyint'
@@ -93,15 +91,6 @@ class MysqlDatabase extends Database {
 
   private tasks: Dict<Promise<any>> = {}
 
-  inferFields<T extends TableType>(table: T, keys: readonly string[]) {
-    if (!keys) return
-    const types = MysqlDatabase.tables[table] || {}
-    return keys.map((key) => {
-      const type = types[key]
-      return typeof type === 'function' ? `${type()} AS ${key}` : key
-    }) as (keyof Tables[T])[]
-  }
-
   constructor(public ctx: Context, config?: MysqlDatabase.Config) {
     super(ctx)
 
@@ -140,7 +129,28 @@ class MysqlDatabase extends Database {
     this.sql = new MySQLBuilder(this.ctx.model)
   }
 
-  private getColDefs(name: string, columns: string[]) {
+  async start() {
+    this.pool = createPool(this.config)
+
+    for (const name in this.ctx.model.config) {
+      this.tasks[name] = this._syncTable(name)
+    }
+
+    this.ctx.on('model', (name) => {
+      this.tasks[name] = this._syncTable(name)
+    })
+  }
+
+  private _inferFields<T extends TableType>(table: T, keys: readonly string[]) {
+    if (!keys) return
+    const types = MysqlDatabase.tables[table] || {}
+    return keys.map((key) => {
+      const type = types[key]
+      return typeof type === 'function' ? `${type()} AS ${key}` : key
+    }) as (keyof Tables[T])[]
+  }
+
+  private _getColDefs(name: string, columns: string[]) {
     const table = this.ctx.model.config[name]
     const { primary, foreign, autoInc } = table
     const fields = { ...table.fields }
@@ -154,13 +164,6 @@ class MysqlDatabase extends Database {
         fields[name] = { type: 'string', length: 63 }
         unique.push(name)
       }
-    }
-
-    // mysql definitions (FIXME: remove in v4)
-    for (const key in MysqlDatabase.tables[name]) {
-      const value = MysqlDatabase.tables[name][key]
-      if (columns.includes(key) || typeof value === 'function') continue
-      result.push(`${escapeId(key)} ${MysqlDatabase.Domain.definition(value)}`)
     }
 
     // orm definitions
@@ -195,24 +198,12 @@ class MysqlDatabase extends Database {
     return result
   }
 
-  async start() {
-    this.pool = createPool(this.config)
-
-    for (const name in this.ctx.model.config) {
-      this.tasks[name] = this._syncTable(name)
-    }
-
-    this.ctx.on('model', (name) => {
-      this.tasks[name] = this._syncTable(name)
-    })
-  }
-
   /** synchronize table schema */
   private async _syncTable(name: string) {
     await this.tasks[name]
     const data = await this.query<any[]>('SELECT COLUMN_NAME from information_schema.columns WHERE TABLE_SCHEMA = ? && TABLE_NAME = ?', [this.config.database, name])
     const columns = data.map(row => row.COLUMN_NAME)
-    const result = this.getColDefs(name, columns)
+    const result = this._getColDefs(name, columns)
     if (!columns.length) {
       logger.info('auto creating table %c', name)
       await this.query(`CREATE TABLE ?? (${result.join(',')}) COLLATE = ?`, [name, this.config.charset])
@@ -305,7 +296,7 @@ class MysqlDatabase extends Database {
     const filter = this._createFilter(name, query)
     if (filter === '0') return []
     const { fields, limit, offset, sort } = Query.resolveModifier(modifier)
-    const keys = this._joinKeys(this.inferFields(name, fields))
+    const keys = this._joinKeys(this._inferFields(name, fields))
     let sql = `SELECT ${keys} FROM ${name} _${name} WHERE ${filter}`
     if (limit) sql += ' LIMIT ' + limit
     if (offset) sql += ' OFFSET ' + offset
@@ -436,7 +427,7 @@ namespace MysqlDatabase {
 
   type Declarations = {
     [T in TableType]?: {
-      [K in keyof Tables[T]]?: string | (() => string) | Domain<Tables[T][K]>
+      [K in keyof Tables[T]]?: () => string
     }
   }
 
@@ -446,61 +437,6 @@ namespace MysqlDatabase {
   export const tables: Declarations = {
     user: {},
     channel: {},
-  }
-
-  type FieldInfo = Parameters<Exclude<TypeCast, boolean>>[0]
-
-  export interface Domain<T = any> {
-    definition: string
-    parse(source: FieldInfo): T
-    stringify(value: T): string
-  }
-
-  /**
-   * @deprecated use `import('koishi').Field` instead
-   */
-  export namespace Domain {
-    export function definition(domain: string | Domain) {
-      return typeof domain === 'string' ? domain : domain.definition
-    }
-
-    export class String implements Domain<string> {
-      constructor(public definition = 'TEXT') {}
-
-      parse(field: FieldInfo) {
-        return field.string()
-      }
-
-      stringify(value: any) {
-        return value
-      }
-    }
-
-    export class Array implements Domain<string[]> {
-      constructor(public definition = 'TEXT') {}
-
-      parse(field: FieldInfo) {
-        const source = field.string()
-        return source ? source.split(',') : []
-      }
-
-      stringify(value: string[]) {
-        return value.join(',')
-      }
-    }
-
-    export class Json implements Domain {
-      // mysql does not support text column with default value
-      constructor(public definition = 'text', private defaultValue?: any) {}
-
-      parse(field: FieldInfo) {
-        return JSON.parse(field.string()) || this.defaultValue
-      }
-
-      stringify(value: any) {
-        return JSON.stringify(value)
-      }
-    }
   }
 }
 
