@@ -193,10 +193,6 @@ export class Session<
     return this.app.chain('appellation', defaultName, this)
   }
 
-  get database() {
-    return this.app.database
-  }
-
   async send(message: string) {
     if (!message) return
     await this.bot.sendMessage(this.channelId, message, this.guildId).catch(noop)
@@ -233,9 +229,9 @@ export class Session<
   }
 
   async getChannel<K extends Channel.Field = never>(id = this.channelId, assignee = '', fields: K[] = []) {
-    const channel = await this.database.getChannel(this.platform, id, fields)
+    const channel = await this.app.database.getChannel(this.platform, id, fields)
     if (channel) return channel
-    return this.database.createChannel(this.platform, id, { assignee })
+    return this.app.database.createChannel(this.platform, id, { assignee })
   }
 
   /** 在当前会话上绑定一个可观测频道实例 */
@@ -264,15 +260,15 @@ export class Session<
     // 绑定一个新的可观测频道实例
     const assignee = this.resolveValue(this.app.options.autoAssign) ? this.selfId : ''
     const data = await this.getChannel(channelId, assignee, fieldArray)
-    const newChannel = observe(data, diff => this.database.setChannel(platform, channelId, diff), `channel ${this.cid}`)
+    const newChannel = observe(data, diff => this.app.database.setChannel(platform, channelId, diff), `channel ${this.cid}`)
     this.app._channelCache.set(this.id, this.cid, newChannel)
     return this.channel = newChannel
   }
 
   async getUser<K extends User.Field = never>(id = this.userId, authority = 0, fields: K[] = []) {
-    const user = await this.database.getUser(this.platform, id, fields)
+    const user = await this.app.database.getUser(this.platform, id, fields)
     if (user) return user
-    return this.database.createUser(this.platform, id, { authority })
+    return this.app.database.createUser(this.platform, id, { authority })
   }
 
   /** 在当前会话上绑定一个可观测用户实例 */
@@ -310,7 +306,7 @@ export class Session<
 
     // 绑定一个新的可观测用户实例
     const data = await this.getUser(userId, this.resolveValue(this.app.options.autoAuthorize), fieldArray)
-    const newUser = observe(data, diff => this.database.setUser(this.platform, userId, diff), `user ${this.uid}`)
+    const newUser = observe(data, diff => this.app.database.setUser(this.platform, userId, diff), `user ${this.uid}`)
     this.app._userCache.set(this.id, this.uid, newUser)
     return this.user = newUser
   }
@@ -375,7 +371,7 @@ export class Session<
 
     if (!argv.command.context.match(this)) return ''
 
-    if (this.database) {
+    if (this.app.database) {
       if (this.subtype === 'group') {
         await this.observeChannel(this.collect('channel', argv))
       }

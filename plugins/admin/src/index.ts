@@ -237,8 +237,6 @@ Command.prototype.adminChannel = function (this: Command, callback, autoCreate) 
 }
 
 export function callme(ctx: Context) {
-  ctx = ctx.select('database')
-
   ctx.command('common/callme [name:text]', '修改自己的称呼')
     .userFields(['id', 'name'])
     .shortcut('叫我', { prefix: true, fuzzy: true })
@@ -281,8 +279,6 @@ export interface BindConfig {
 }
 
 export function bind(ctx: Context, config: BindConfig = {}) {
-  ctx = ctx.select('database')
-
   // 1: group (1st step)
   // 0: private
   // -1: group (2nd step)
@@ -336,8 +332,6 @@ export function bind(ctx: Context, config: BindConfig = {}) {
 }
 
 export function admin(ctx: Context) {
-  ctx = ctx.select('database')
-
   ctx.command('common/user', '用户管理', { authority: 3 })
   ctx.command('common/channel', '频道管理', { authority: 3 })
 
@@ -448,6 +442,7 @@ export interface Config extends BindConfig {
 }
 
 export const name = 'admin'
+export const using = ['database']
 
 export function apply(ctx: Context, config: Config = {}) {
   if (config.admin !== false) ctx.plugin(admin)

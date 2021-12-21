@@ -18,8 +18,7 @@ template.set('common', {
 })
 
 export function broadcast(ctx: Context) {
-  ctx.select('database')
-    .command('common/broadcast <message:text>', '全服广播', { authority: 4 })
+  ctx.command('common/broadcast <message:text>', '全服广播', { authority: 4 })
     .option('forced', '-f  无视 silent 标签进行广播')
     .option('only', '-o  仅向当前账号负责的群进行广播')
     .action(async ({ options, session }, message) => {
@@ -40,8 +39,7 @@ export function broadcast(ctx: Context) {
 }
 
 export function contextify(ctx: Context) {
-  ctx.select('database')
-    .command('common/contextify <command:text>', '在特定上下文中触发指令', { authority: 3 })
+  ctx.command('common/contextify <command:text>', '在特定上下文中触发指令', { authority: 3 })
     .alias('ctxf')
     .userFields(['authority'])
     .option('user', '-u [id:user]  使用用户私聊上下文')
@@ -228,8 +226,8 @@ export interface BasicConfig extends RecallConfig {
 }
 
 export default function apply(ctx: Context, config: BasicConfig = {}) {
-  if (config.broadcast !== false) ctx.plugin(broadcast)
-  if (config.contextify !== false) ctx.plugin(contextify)
+  if (config.broadcast !== false) ctx.using(['database'], broadcast)
+  if (config.contextify !== false) ctx.using(['database'], contextify)
   if (config.echo !== false) ctx.plugin(echo)
   if (!(config.recall <= 0)) ctx.plugin(recall, config)
 
