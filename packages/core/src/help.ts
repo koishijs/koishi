@@ -49,7 +49,7 @@ export default function help(ctx: Context, config: HelpConfig = {}) {
     session.collect(key, { ...argv, command, args: [], options: { help: true } }, fields)
   }
 
-  const cmd = ctx.command('help [command]', '显示帮助信息', { authority: 0, ...config })
+  const cmd = ctx.command('help [command:string]', '显示帮助信息', { authority: 0, ...config })
     .userFields(['authority'])
     .userFields(createCollector('user'))
     .channelFields(createCollector('channel'))
