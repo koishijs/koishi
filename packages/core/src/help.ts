@@ -56,7 +56,7 @@ export default function help(ctx: Context, config: HelpConfig = {}) {
     .option('authority', '-a  显示权限设置')
     .option('showHidden', '-H  查看隐藏的选项和指令')
     .action(async ({ session, options }, target) => {
-      if (target == null) {
+      if (!target) {
         const commands = app._commandList.filter(cmd => cmd.parent === null)
         const output = formatCommands('internal.global-help-prolog', session, commands, options)
         const epilog = template('internal.global-help-epilog')
@@ -64,12 +64,10 @@ export default function help(ctx: Context, config: HelpConfig = {}) {
         return output.filter(Boolean).join('\n')
       }
 
-      const targetString = target.toString()
-
-      const command = findCommand(targetString)
+      const command = findCommand(target)
       if (!command?.context.match(session)) {
         session.suggest({
-          target: targetString,
+          target,
           items: getCommandNames(session),
           prefix: template('internal.help-suggestion-prefix'),
           suffix: template('internal.help-suggestion-suffix'),
