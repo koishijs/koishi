@@ -27,7 +27,7 @@ function formatContext(session: Session.General) {
 }
 
 export const name = 'schedule'
-export const using = ['database']
+export const using = ['database'] as const
 
 export interface Config {
   minInterval?: number

@@ -442,7 +442,7 @@ export interface Config extends BindConfig {
 }
 
 export const name = 'admin'
-export const using = ['database']
+export const using = ['database'] as const
 
 export function apply(ctx: Context, config: Config = {}) {
   if (config.admin !== false) ctx.plugin(admin)
