@@ -175,7 +175,12 @@ class MysqlDatabase extends Database {
         def += ' int unsigned not null auto_increment'
       } else {
         const typedef = getTypeDefinition(fields[key])
-        def += ' ' + typedef + (nullable ? ' ' : ' not ') + 'null'
+        def += ' ' + typedef
+        if (makeArray(primary).includes(key)) {
+          def += ' not null'
+        } else {
+          def += (nullable ? ' ' : ' not ') + 'null'
+        }
         // blob, text, geometry or json columns cannot have default values
         if (initial && !typedef.startsWith('text')) {
           def += ' default ' + this.sql.escape(initial, name, key)
