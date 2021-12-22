@@ -1,10 +1,10 @@
 import { Argv, Context, escapeRegExp, Session } from 'koishi'
-import { create } from '../update'
-import { Dialogue } from '../utils'
+import { create } from './update'
+import { Dialogue } from './utils'
 import {} from '@koishijs/plugin-console'
 import {} from '@koishijs/plugin-status'
 
-declare module '../utils' {
+declare module './utils' {
   export namespace Dialogue {
     export interface Config {
       prefix?: string

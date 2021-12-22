@@ -135,7 +135,7 @@ export async function update(argv: Dialogue.Argv) {
   argv.skipped = []
   const dialogues = argv.dialogues = revert || review
     ? Object.values(pick(app.teach.history, target)).filter(Boolean)
-    : await app.teach.get(target, null)
+    : await app.teach.get(target)
   argv.dialogueMap = Object.fromEntries(dialogues.map(d => [d.id, { ...d }]))
 
   if (search) {

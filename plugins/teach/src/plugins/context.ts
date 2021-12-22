@@ -3,13 +3,13 @@ import { Dialogue, equal } from '../utils'
 
 declare module '../utils' {
   interface DialogueTest {
-    groups?: string[]
+    guilds?: string[]
     reversed?: boolean
     partial?: boolean
   }
 
   interface Dialogue {
-    groups: string[]
+    guilds: string[]
   }
 
   namespace Dialogue {
@@ -30,7 +30,7 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
     .option('disableGlobal', '-D  在所有环境下禁用问答', { authority })
     .option('enable', '-e  在当前环境下启用问答')
     .option('enableGlobal', '-E  在所有环境下启用问答', { authority })
-    .option('groups', '-g <gids:string>  设置具体的生效环境', { authority, type: RE_GROUPS })
+    .option('guilds', '-g <gids:string>  设置具体的生效环境', { authority, type: RE_GROUPS })
     .option('global', '-G  无视上下文搜索')
     .action(({ options, session }) => {
       if (options.disable && options.enable) {
@@ -44,58 +44,58 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
       }
 
       let noContextOptions = false
-      let reversed: boolean, partial: boolean, groups: string[]
+      let reversed: boolean, partial: boolean, guilds: string[]
       if (options.disable) {
         reversed = true
         partial = !options.enableGlobal
-        groups = [session.cid]
+        guilds = [session.gid]
       } else if (options.disableGlobal) {
-        reversed = !!options.groups
+        reversed = !!options.guilds
         partial = false
-        groups = options.enable ? [session.cid] : []
+        guilds = options.enable ? [session.gid] : []
       } else if (options.enableGlobal) {
-        reversed = !options.groups
+        reversed = !options.guilds
         partial = false
-        groups = []
+        guilds = []
       } else {
         noContextOptions = !options.enable
         if (options['target'] ? options.enable : !options.global) {
           reversed = false
           partial = true
-          groups = [session.cid]
+          guilds = [session.gid]
         }
       }
 
       defineProperty(options, 'reversed', reversed)
       defineProperty(options, 'partial', partial)
-      if ('groups' in options) {
+      if ('guilds' in options) {
         if (noContextOptions) {
-          return '选项 -g, --groups 必须与 -d/-D/-e/-E 之一同时使用。'
+          return '选项 -g, --guilds 必须与 -d/-D/-e/-E 之一同时使用。'
         } else {
-          defineProperty(options, 'groups', options.groups ? options.groups.split(',').map(id => `${session.platform}:${id}`) : [])
+          defineProperty(options, 'guilds', options.guilds ? options.guilds.split(',').map(id => `${session.platform}:${id}`) : [])
         }
       } else if (session.subtype !== 'group' && options['partial']) {
-        return '非群聊上下文中请使用 -E/-D 进行操作或指定 -g, --groups 选项。'
+        return '非群聊上下文中请使用 -E/-D 进行操作或指定 -g, --guilds 选项。'
       } else {
-        defineProperty(options, 'groups', groups)
+        defineProperty(options, 'guilds', guilds)
       }
     })
 
   ctx.on('dialogue/modify', ({ options }, data) => {
-    const { groups, partial, reversed } = options
-    if (!groups) return
-    if (!data.groups) data.groups = []
+    const { guilds, partial, reversed } = options
+    if (!guilds) return
+    if (!data.guilds) data.guilds = []
     if (partial) {
       const newGroups = !(data.flag & Dialogue.Flag.complement) === reversed
-        ? difference(data.groups, groups)
-        : union(data.groups, groups)
-      if (!equal(data.groups, newGroups)) {
-        data.groups = newGroups.sort()
+        ? difference(data.guilds, guilds)
+        : union(data.guilds, guilds)
+      if (!equal(data.guilds, newGroups)) {
+        data.guilds = newGroups.sort()
       }
     } else {
       data.flag = data.flag & ~Dialogue.Flag.complement | (+reversed * Dialogue.Flag.complement)
-      if (!equal(data.groups, groups)) {
-        data.groups = groups.sort()
+      if (!equal(data.guilds, guilds)) {
+        data.guilds = guilds.sort()
       }
     }
   })
@@ -103,24 +103,24 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
   ctx.before('dialogue/search', ({ options }, test) => {
     test.partial = options.partial
     test.reversed = options.reversed
-    test.groups = options.groups
+    test.guilds = options.guilds
   })
 
-  ctx.on('dialogue/detail', ({ groups, flag }, output, { session }) => {
-    const thisGroup = session.subtype === 'group' && groups.includes(session.cid)
+  ctx.on('dialogue/detail', ({ guilds, flag }, output, { session }) => {
+    const thisGroup = session.subtype === 'group' && guilds.includes(session.gid)
     output.push(`生效环境：${flag & Dialogue.Flag.complement
       ? thisGroup
-        ? groups.length - 1 ? `除本群等 ${groups.length} 个群外的所有群` : '除本群'
-        : groups.length ? `除 ${groups.length} 个群外的所有群` : '全局'
+        ? guilds.length - 1 ? `除本群等 ${guilds.length} 个群外的所有群` : '除本群'
+        : guilds.length ? `除 ${guilds.length} 个群外的所有群` : '全局'
       : thisGroup
-        ? groups.length - 1 ? `本群等 ${groups.length} 个群` : '本群'
-        : groups.length ? `${groups.length} 个群` : '全局禁止'}`)
+        ? guilds.length - 1 ? `本群等 ${guilds.length} 个群` : '本群'
+        : guilds.length ? `${guilds.length} 个群` : '全局禁止'}`)
   })
 
-  ctx.on('dialogue/detail-short', ({ groups, flag }, output, { session, options }) => {
-    if (!options.groups && session.subtype === 'group') {
+  ctx.on('dialogue/detail-short', ({ guilds, flag }, output, { session, options }) => {
+    if (!options.guilds && session.subtype === 'group') {
       const isReversed = flag & Dialogue.Flag.complement
-      const hasGroup = groups.includes(session.cid)
+      const hasGroup = guilds.includes(session.gid)
       output.unshift(!isReversed === hasGroup ? isReversed ? 'E' : 'e' : isReversed ? 'd' : 'D')
     }
   })
@@ -128,18 +128,18 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
   ctx.on('dialogue/receive', ({ session, test }) => {
     test.partial = true
     test.reversed = false
-    test.groups = [session.cid]
+    test.guilds = [session.gid]
   })
 
   ctx.on('dialogue/test', (test, query) => {
-    if (!test.groups || !test.groups.length) return
+    if (!test.guilds || !test.guilds.length) return
     query.$and.push({
       $or: [{
         flag: { [test.reversed ? '$bitsAllSet' : '$bitsAllClear']: Dialogue.Flag.complement },
-        $and: test.groups.map($el => ({ groups: { $el } })),
+        $and: test.guilds.map($el => ({ guilds: { $el } })),
       }, {
         flag: { [test.reversed ? '$bitsAllClear' : '$bitsAllSet']: Dialogue.Flag.complement },
-        $not: { groups: { $el: test.groups } },
+        $not: { guilds: { $el: test.guilds } },
       }],
     })
   })

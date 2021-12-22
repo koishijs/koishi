@@ -1,5 +1,5 @@
 import { Random } from 'koishi'
-import { Client } from '@koishijs/plugin-mock'
+import { MessageClient } from '@koishijs/plugin-mock'
 import { install, InstalledClock } from '@sinonjs/fake-timers'
 import createEnvironment from './environment'
 import jest from 'jest-mock'
@@ -127,7 +127,7 @@ describe('Teach Plugin - Appellative', () => {
 })
 
 describe('Teach Plugin - Interpolate', () => {
-  function createTest(title: string, callback: (u3g1: Client) => Promise<void>) {
+  function createTest(title: string, callback: (u3g1: MessageClient) => Promise<void>) {
     it(title, async () => {
       const { app, u3g1, start, stop } = createEnvironment({})
       app.command('bar').action(() => 'hello')

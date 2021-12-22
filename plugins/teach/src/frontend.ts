@@ -1,6 +1,6 @@
 import { Context } from 'koishi'
 import { resolve } from 'path'
-import { Dialogue } from '../utils'
+import { Dialogue } from './utils'
 import {} from '@koishijs/plugin-console'
 import {} from '@koishijs/plugin-status'
 
@@ -32,7 +32,7 @@ export default class TeachConsole {
 
     ctx.on('dialogue/before-send', ({ session, dialogue }) => {
       session._sendType = 'dialogue'
-      stats.sync.addDaily('dialogue', dialogue.id)
+      stats.addDaily('dialogue', dialogue.id)
       stats.upload()
     })
 

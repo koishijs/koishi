@@ -1,9 +1,9 @@
 import { App } from 'koishi'
-import { Dialogue, apply } from '@koishijs/plugin-teach'
+import * as teach from '@koishijs/plugin-teach'
 import memory from '@koishijs/plugin-database-memory'
 import mock from '@koishijs/plugin-mock'
 
-export default function (config: Dialogue.Config) {
+export default function (config: teach.Config) {
   const app = new App({
     nickname: ['koishi', 'satori'],
   })
@@ -23,7 +23,7 @@ export default function (config: Dialogue.Config) {
   const u4g1 = app.mock.client(u4id, g1id)
   const u4g2 = app.mock.client(u4id, g2id)
 
-  app.plugin(apply, {
+  app.plugin(teach, {
     historyTimeout: 0,
     useContext: false,
     useTime: false,

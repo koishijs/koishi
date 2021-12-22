@@ -1,7 +1,7 @@
 import { Context, template, defineProperty, segment, Query } from 'koishi'
-import { Dialogue } from './utils'
-import { create, update } from './update'
-import { formatQuestionAnswers } from './search'
+import { Dialogue } from '../utils'
+import { create, update } from '../update'
+import { formatQuestionAnswers } from '../search'
 import { distance } from 'fastest-levenshtein'
 
 declare module 'koishi' {
