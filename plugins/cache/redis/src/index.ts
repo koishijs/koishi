@@ -1,7 +1,7 @@
 import { createPool } from 'generic-pool'
 import { Cache, Context, Schema, Logger, isNullable } from 'koishi'
 import { createClient } from 'redis'
-import { RedisClientOptions, RedisClientType } from 'redis/dist/lib/client'
+import { RedisClientOptions, RedisClientType } from '@node-redis/client'
 
 class RedisCache extends Cache {
   logger = new Logger('redis')
@@ -81,7 +81,7 @@ class RedisCache extends Cache {
       const command = client.multi()
         .set(redisKey, record)
       if (age) {
-        command.expire(redisKey, age)
+        command.pExpire(redisKey, age)
       }
       await command.exec()
     }, `set ${redisKey}`)
