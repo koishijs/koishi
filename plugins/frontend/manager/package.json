@@ -32,7 +32,7 @@
     "server"
   ],
   "peerDependencies": {
-    "koishi": "^4.0.0-beta.6"
+    "koishi": "^4.0.0-beta.7"
   },
   "devDependencies": {
     "@koishijs/cli": "^4.0.0-beta.7",

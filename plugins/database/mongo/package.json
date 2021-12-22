@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-database-mongo",
   "description": "MongoDB support for Koishi",
-  "version": "3.0.0-beta.6",
+  "version": "3.0.0-beta.7",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -36,10 +36,10 @@
     "@koishijs/test-utils": "^8.0.0-beta.6"
   },
   "peerDependencies": {
-    "koishi": "^4.0.0-beta.6"
+    "koishi": "^4.0.0-beta.7"
   },
   "dependencies": {
-    "@koishijs/orm-utils": "^1.0.0-beta.4",
+    "@koishijs/orm-utils": "^1.0.0-beta.5",
     "mongodb": "^4.2.2"
   }
 }

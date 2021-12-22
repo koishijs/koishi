@@ -31,7 +31,7 @@
     "leveldb"
   ],
   "peerDependencies": {
-    "koishi": "^4.0.0-beta.6"
+    "koishi": "^4.0.0-beta.7"
   },
   "devDependencies": {
     "@koishijs/plugin-mock": "^1.0.0-beta.2",
@@ -41,7 +41,7 @@
     "@types/subleveldown": "^4.1.1"
   },
   "dependencies": {
-    "@koishijs/orm-utils": "^1.0.0-beta.4",
+    "@koishijs/orm-utils": "^1.0.0-beta.5",
     "level": "^7.0.1",
     "subleveldown": "^6.0.1"
   }

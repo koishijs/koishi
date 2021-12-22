@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/orm-utils",
   "description": "ORM utilities for Koishi",
-  "version": "1.0.0-beta.4",
+  "version": "1.0.0-beta.5",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "engines": {
@@ -31,6 +31,6 @@
     "utilities"
   ],
   "peerDependencies": {
-    "koishi": "^4.0.0-beta.6"
+    "koishi": "^4.0.0-beta.7"
   }
 }

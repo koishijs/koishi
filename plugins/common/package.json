@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-common",
   "description": "Common plugins for Koishi",
-  "version": "5.0.0-beta.4",
+  "version": "5.0.0-beta.5",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -31,7 +31,7 @@
     "optional:database"
   ],
   "peerDependencies": {
-    "koishi": "^4.0.0-beta.6"
+    "koishi": "^4.0.0-beta.7"
   },
   "devDependencies": {
     "@koishijs/plugin-database-memory": "^1.0.0-beta.4",

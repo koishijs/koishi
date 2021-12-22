@@ -32,11 +32,11 @@
     "sqlite"
   ],
   "peerDependencies": {
-    "koishi": "^4.0.0-beta.6"
+    "koishi": "^4.0.0-beta.7"
   },
   "dependencies": {
-    "@koishijs/orm-utils": "^1.0.0-beta.4",
-    "@koishijs/sql-utils": "^1.0.0-beta.4",
+    "@koishijs/orm-utils": "^1.0.0-beta.5",
+    "@koishijs/sql-utils": "^1.0.0-beta.5",
     "better-sqlite3": "^7.4.3",
     "sqlstring-sqlite": "^0.1.1"
   },

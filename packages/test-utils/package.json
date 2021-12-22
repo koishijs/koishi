@@ -42,6 +42,6 @@
     "chai": "^4.3.4",
     "chai-as-promised": "^7.1.1",
     "chai-shape": "^1.0.0",
-    "koishi": "^4.0.0-beta.6"
+    "koishi": "^4.0.0-beta.7"
   }
 }

@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/core",
   "description": "Core features for Koishi",
-  "version": "4.0.0-beta.6",
+  "version": "4.0.0-beta.7",
   "main": "lib/node.js",
   "module": "lib/browser.js",
   "typings": "lib/index.d.ts",
@@ -36,6 +36,6 @@
   "dependencies": {
     "@koishijs/utils": "^5.0.0-beta.1",
     "fastest-levenshtein": "^1.0.12",
-    "schemastery": "^2.1.1"
+    "schemastery": "^2.1.2"
   }
 }

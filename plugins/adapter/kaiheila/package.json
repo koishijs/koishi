@@ -24,7 +24,7 @@
     "koishi"
   ],
   "peerDependencies": {
-    "koishi": "^4.0.0-beta.6"
+    "koishi": "^4.0.0-beta.7"
   },
   "devDependencies": {
     "@koishijs/plugin-mock": "^1.0.0-beta.2"

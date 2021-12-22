@@ -30,7 +30,7 @@
     "webui"
   ],
   "peerDependencies": {
-    "koishi": "^4.0.0-beta.6"
+    "koishi": "^4.0.0-beta.7"
   },
   "devDependencies": {
     "@fortawesome/fontawesome-free": "^5.15.4",
