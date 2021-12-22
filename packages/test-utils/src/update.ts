@@ -221,6 +221,23 @@ namespace OrmOperations {
       await expect(app.database.get('temp2', {})).eventually.shape(table)
     })
 
+    it('using object literals', async () => {
+      const table = await setup(app, 'temp2', barTable)
+      const data5 = table.find(item => item.id === 5)
+      const data6 = table.find(item => item.id === 6)
+      const data9 = table.find(item => item.id === 9)
+      data5.meta = { b: 114 }
+      data6.meta = { b: 514 }
+      expect(data9).to.be.undefined
+      table.push({ id: 9, meta: { b: 114514 } })
+      await expect(app.database.upsert('temp2', [
+        { id: 5, meta: { b: 114 } },
+        { id: 6, meta: { b: 514 } },
+        { id: 9, meta: { b: 114514 } },
+      ])).eventually.fulfilled
+      await expect(app.database.get('temp2', {})).eventually.shape(table)
+    })
+
     it('nested property', async () => {
       const table = await setup(app, 'temp2', barTable)
       const data5 = table.find(item => item.id === 5)

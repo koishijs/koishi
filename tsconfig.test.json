@@ -9,7 +9,7 @@
       "@koishijs/plugin-database-*": ["plugins/database/*/src"],
       "@koishijs/plugin-*": ["plugins/*/src"],
       "@koishijs/plugin-eval/lib/worker": ["plugins/eval/src/worker"],
-      "@koishijs/*": ["packages/*/src"],
+      "@koishijs/*": ["packages/*/src", "plugins/database/*/src"],
       "koishi": ["packages/koishi/src"],
       "chai-shape": ["community/chai-shape/src"],
     },

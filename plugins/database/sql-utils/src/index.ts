@@ -176,12 +176,13 @@ export abstract class Builder {
     return this.logicalAnd(conditions)
   }
 
-  private parseEvalExpr(expr: any) {
+  private parseEvalExpr(expr: any, table?: string, field?: string) {
     for (const key in expr) {
       if (key in this.evalOperators) {
         return this.evalOperators[key](expr[key])
       }
     }
+    return this.escape(expr, table, field)
   }
 
   private parseAggr(expr: any) {
@@ -198,10 +199,10 @@ export abstract class Builder {
   }
 
   parseEval(expr: any, table?: string, field?: string): string {
-    if (typeof expr === 'string' || typeof expr === 'number' || typeof expr === 'boolean') {
+    if (typeof expr === 'string' || typeof expr === 'number' || typeof expr === 'boolean' || expr instanceof Date) {
       return this.escape(expr, table, field)
     }
-    return this.parseEvalExpr(expr)
+    return this.parseEvalExpr(expr, table, field)
   }
 }
 

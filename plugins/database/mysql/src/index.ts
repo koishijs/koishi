@@ -141,7 +141,7 @@ class MysqlDatabase extends Database {
     })
   }
 
-  private _inferFields<T extends TableType>(table: T, keys: readonly string[]) {
+  _inferFields<T extends TableType>(table: T, keys: readonly string[]) {
     if (!keys) return
     const types = MysqlDatabase.tables[table] || {}
     return keys.map((key) => {
