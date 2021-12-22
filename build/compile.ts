@@ -46,11 +46,12 @@ const KOISHI_VERSION = JSON.stringify(version)
 const root = resolve(__dirname, '..') + '/'
 
 async function compile(name: string) {
-  if (name.includes('ui-')) return
-
   const meta: PackageJson = require(`../${name}/package.json`)
   const base = root + name
   const entryPoints = [base + '/src/index.ts']
+
+  // filter out private packages
+  if (meta.private) return
 
   const filter = /^[@/\w-]+$/
   const externalPlugin: Plugin = {
@@ -76,7 +77,7 @@ async function compile(name: string) {
     plugins: [externalPlugin],
   }
 
-  // node & browser
+  // bundle for both node and browser
   if (meta.module) {
     delete options.outdir
 
