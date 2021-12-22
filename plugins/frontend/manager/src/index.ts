@@ -24,16 +24,14 @@ declare module 'koishi' {
 }
 
 declare module '@koishijs/plugin-console' {
-  namespace Console {
-    interface Services {
-      bots: BotProvider
-      market: MarketProvider
-      packages: PackageProvider
-      protocols: AdapterProvider
-      registry: RegistryProvider
-      releases: ReleaseProvider
-      services: ServiceProvider
-    }
+  interface Services {
+    bots: BotProvider
+    market: MarketProvider
+    packages: PackageProvider
+    protocols: AdapterProvider
+    registry: RegistryProvider
+    releases: ReleaseProvider
+    services: ServiceProvider
   }
 }
 
@@ -46,13 +44,13 @@ export const Config = Schema.intersect([
   MarketProvider.Config,
 ])
 
-Context.service('console/bots')
-Context.service('console/market')
-Context.service('console/packages')
-Context.service('console/protocols')
-Context.service('console/registry')
-Context.service('console/releases')
-Context.service('console/services')
+Context.service('console.bots')
+Context.service('console.market')
+Context.service('console.packages')
+Context.service('console.protocols')
+Context.service('console.registry')
+Context.service('console.releases')
+Context.service('console.services')
 
 export function apply(ctx: Context, config: Config = {}) {
   ctx.plugin(BotProvider)

@@ -7,7 +7,7 @@ import { v4 } from 'uuid'
 import type { ViteDevServer } from 'vite'
 
 type ConsoleServices = {
-  [K in keyof Console.Services as `console/${K}`]: Console.Services[K]
+  [K in keyof Services as `console.${K}`]: Services[K]
 }
 
 declare module 'koishi' {
@@ -31,7 +31,7 @@ export abstract class DataSource<T = any> {
   protected stop(): Awaitable<void> {}
   protected abstract get(forced?: boolean): Promise<T>
 
-  constructor(protected ctx: Context, protected name: keyof Console.Services) {
+  constructor(protected ctx: Context, protected name: keyof Services) {
     ctx.console.services[name] = this as never
 
     ctx.on('ready', () => this.start())
@@ -129,21 +129,21 @@ class Console extends Service {
     })
   }
 
-  addListener<K extends keyof Console.Events>(event: K, callback: Console.Events[K]): void
+  addListener<K extends keyof Events>(event: K, callback: Events[K]): void
   addListener(event: string, callback: Listener): void
   addListener(event: string, callback: Listener) {
     this.listeners[event] = callback
   }
 
-  get services(): Console.Services {
+  get services(): Services {
     return new Proxy({}, {
       get: (target, name) => {
         if (typeof name === 'symbol') return Reflect.get(target, name)
-        return Reflect.get(this.caller, 'console/' + name)
+        return Reflect.get(this.caller, 'console.' + name)
       },
       set: (target, name, value) => {
         if (typeof name === 'symbol') return Reflect.set(target, name, value)
-        return Reflect.set(this.caller, 'console/' + name, value)
+        return Reflect.set(this.caller, 'console.' + name, value)
       },
     })
   }
@@ -169,7 +169,7 @@ class Console extends Service {
     const channel = new SocketHandle(this, socket)
 
     for (const name in this.ctx.app._services) {
-      if (!name.startsWith('console/')) continue
+      if (!name.startsWith('console.')) continue
       this.ctx[name].get().then((value) => {
         const key = name.slice(8)
         socket.send(JSON.stringify({ type: 'data', body: { key, value } }))
@@ -264,11 +264,11 @@ class Console extends Service {
   }
 }
 
+export interface Services {}
+
+export interface Events {}
+
 namespace Console {
-  export interface Services {}
-
-  export interface Events {}
-
   export interface Config extends BaseConfig {
     root?: string
     open?: boolean

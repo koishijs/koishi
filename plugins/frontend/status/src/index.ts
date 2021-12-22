@@ -24,13 +24,11 @@ declare module 'koishi' {
 }
 
 declare module '@koishijs/plugin-console' {
-  namespace Console {
-    interface Services {
-      logs: LogProvider
-      meta: MetaProvider
-      profile: ProfileProvider
-      stats: StatisticsProvider
-    }
+  interface Services {
+    logs: LogProvider
+    meta: MetaProvider
+    profile: ProfileProvider
+    stats: StatisticsProvider
   }
 }
 
@@ -55,10 +53,10 @@ export const Config = Schema.intersect([
   }).description('日志选项'),
 ])
 
-Context.service('console/logs')
-Context.service('console/meta')
-Context.service('console/profile')
-Context.service('console/stats')
+Context.service('console.logs')
+Context.service('console.meta')
+Context.service('console.profile')
+Context.service('console.stats')
 
 export function apply(ctx: Context, config: Config) {
   const filename = ctx.console.config.devMode ? '../client/index.ts' : '../dist/index.js'
