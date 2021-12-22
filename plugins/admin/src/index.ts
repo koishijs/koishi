@@ -140,7 +140,7 @@ Command.prototype.adminUser = function (this: Command, callback, autoCreate) {
     })
 
   command.action(async (argv) => {
-    const { options, args, session: { user, database } } = argv
+    const { options, args, session: { user, app } } = argv
     const fields = argv.session.collect('user', argv)
     let target: User.Observed, session = argv.session
     if (!options.target) {
@@ -150,20 +150,20 @@ Command.prototype.adminUser = function (this: Command, callback, autoCreate) {
       if (user[platform] === userId) {
         target = await argv.session.observeUser(fields)
       } else {
-        const data = await database.getUser(platform, userId, [...fields])
+        const data = await app.database.getUser(platform, userId, [...fields])
         if (!data) {
           if (!autoCreate) return template('admin.user-not-found')
-          const temp = this.app.model.create('user')
+          const temp = app.model.create('user')
           temp[platform] = userId
           const fallback = observe(temp, async () => {
             if (!fallback.authority) return
-            await database.createUser(platform, userId, fallback)
+            await app.database.createUser(platform, userId, fallback)
           })
           target = fallback
         } else if (user.authority <= data.authority) {
           return template('internal.low-authority')
         } else {
-          target = observe(data, diff => database.setUser(platform, userId, diff), `user ${options.target}`)
+          target = observe(data, diff => app.database.setUser(platform, userId, diff), `user ${options.target}`)
           if (!autoCreate) {
             session = Object.create(argv.session)
             session.user = target
@@ -194,26 +194,26 @@ Command.prototype.adminChannel = function (this: Command, callback, autoCreate) 
     .option('target', '-t [channel:channel]  指定目标频道', { authority: 3 })
 
   command.action(async (argv, ...args) => {
-    const { options, session: { cid, subtype, database } } = argv
+    const { options, session: { app, cid, subtype } } = argv
     const fields = argv.session.collect('channel', argv)
     let target: Channel.Observed, session = argv.session
     if ((!options.target || options.target === cid) && subtype === 'group') {
       target = await argv.session.observeChannel(fields)
     } else if (options.target) {
       const [platform, channelId] = parsePlatform(options.target)
-      const data = await database.getChannel(platform, channelId, [...fields])
+      const data = await app.database.getChannel(platform, channelId, [...fields])
       if (!data) {
         if (!autoCreate) return template('admin.channel-not-found')
-        const temp = this.app.model.create('channel')
+        const temp = app.model.create('channel')
         temp.platform = platform
         temp.id = channelId
         const fallback = observe(temp, async () => {
           if (!fallback.assignee) return
-          await database.createChannel(platform, channelId, fallback)
+          await app.database.createChannel(platform, channelId, fallback)
         })
         target = fallback
       } else {
-        target = observe(data, diff => database.setChannel(platform, channelId, diff), `channel ${options.target}`)
+        target = observe(data, diff => app.database.setChannel(platform, channelId, diff), `channel ${options.target}`)
         if (!autoCreate) {
           session = Object.create(argv.session)
           session.channel = target

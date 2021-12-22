@@ -142,6 +142,7 @@ function executeEvalExpr(expr: any, data: any) {
       return evalOperators[key](expr[key], data)
     }
   }
+  return expr
 }
 
 function executeAggr(expr: any, data: any) {
