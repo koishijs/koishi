@@ -8,19 +8,42 @@ import { Middleware, NextFunction } from './context'
 import { App } from './app'
 import { Bot } from './bot'
 
+type Genres = 'friend' | 'channel' | 'group' | 'group-member' | 'group-role' | 'group-file' | 'group-emoji'
+type Actions = 'added' | 'deleted' | 'updated'
+type SessionEventCallback = (session: Session) => void
+
+declare module './context' {
+  interface EventMap extends Record<`${Genres}-${Actions}`, SessionEventCallback> {
+    'message': SessionEventCallback
+    'message-deleted': SessionEventCallback
+    'message-updated': SessionEventCallback
+    'reaction-added': SessionEventCallback
+    'reaction-deleted': SessionEventCallback
+    'reaction-deleted/one': SessionEventCallback
+    'reaction-deleted/all': SessionEventCallback
+    'reaction-deleted/emoji': SessionEventCallback
+    'send': SessionEventCallback
+    'friend-request': SessionEventCallback
+    'guild-request': SessionEventCallback
+    'guild-member-request': SessionEventCallback
+    'group-member/role': SessionEventCallback
+    'group-member/ban': SessionEventCallback
+    'group-member/nickname': SessionEventCallback
+    'notice/poke': SessionEventCallback
+    'notice/lucky-king': SessionEventCallback
+    'notice/honor': SessionEventCallback
+    'notice/honor/talkative': SessionEventCallback
+    'notice/honor/performer': SessionEventCallback
+    'notice/honor/emotion': SessionEventCallback
+  }
+}
+
 const logger = new Logger('session')
 
-type UnionToIntersection<U> = (U extends any ? (key: U) => void : never) extends (key: infer I) => void ? I : never
-type Flatten<T, K extends keyof T = keyof T> = UnionToIntersection<T[K]>
-type InnerKeys<T, K extends keyof T = keyof T> = keyof Flatten<T> & keyof Flatten<T, K>
-
-export interface Session extends Session.General {}
+export interface Session extends Session.Payload {}
 
 export namespace Session {
-  type Genres = 'friend' | 'channel' | 'group' | 'group-member' | 'group-role' | 'group-file' | 'group-emoji'
-  type Actions = 'added' | 'deleted' | 'updated'
-
-  export interface General {
+  export interface Payload {
     id?: string
     platform?: string
     selfId?: string
@@ -41,61 +64,6 @@ export namespace Session {
     duration?: number
     file?: FileInfo
   }
-
-  export interface Events extends Record<`${Genres}-${Actions}`, {}> {}
-
-  export type MessageAction = 'message' | 'message-deleted' | 'message-updated' | 'send'
-  export type Message = Session<never, never, MessageAction>
-  export interface Events extends Record<MessageAction, MessageType> {}
-
-  export type RequestAction = 'friend-request' | 'guild-request' | 'guild-member-request'
-  export type Request = Session<never, never, RequestAction>
-  export interface Events extends Record<RequestAction, {}> {}
-
-  export interface Events {
-    'friend-request': {}
-    'guild-request': {}
-    'guild-member-request': {}
-    'group-added': GroupMemberChangeType
-    'group-member-added': GroupMemberChangeType
-    'group-deleted': GroupMemberChangeType
-    'group-member-deleted': GroupMemberChangeType
-    'group-member': {
-      'role': {}
-      'ban': {}
-      'nickname': {}
-    }
-    'notice': {
-      'poke': {}
-      'lucky-king': {}
-      'honor': {
-        'talkative': {}
-        'performer': {}
-        'emotion': {}
-      }
-    }
-    'reaction-added': {}
-    'reaction-deleted': {
-      'one': {}
-      'all': {}
-      'emoji': {}
-    }
-  }
-
-  export interface GroupMemberChangeType {
-    'active': {}
-    'passive': {}
-  }
-
-  export interface MessageType {
-    'private': {}
-    'group': {}
-  }
-
-  type ParamX<X> = Extract<keyof Events, X>
-  type ParamY<X, Y> = Extract<InnerKeys<Events, ParamX<X>>, Y>
-
-  export type Payload<X, Y = any> = Session<never, never, ParamX<X>, ParamY<X, Y>>
 }
 
 export interface Parsed {
@@ -104,15 +72,10 @@ export interface Parsed {
   appel: boolean
 }
 
-export class Session<
-  U extends User.Field = never,
-  G extends Channel.Field = never,
-  X extends keyof Session.Events = keyof Session.Events,
-  Y extends InnerKeys<Session.Events, X> = InnerKeys<Session.Events, X>,
-> {
-  type?: X
-  subtype?: Y
-  subsubtype?: InnerKeys<UnionToIntersection<Session.Events[X]>, Y>
+export class Session<U extends User.Field = never, G extends Channel.Field = never> {
+  type?: string
+  subtype?: string
+  subsubtype?: string
 
   bot: Bot
   app: App
@@ -135,7 +98,7 @@ export class Session<
   private _hooks: (() => void)[]
   private _promise: Promise<string>
 
-  constructor(bot: Bot, session: Session.General) {
+  constructor(bot: Bot, session: Session.Payload) {
     Object.assign(this, session)
     this.platform = bot.platform
     defineProperty(this, 'app', bot.app)
@@ -163,7 +126,7 @@ export class Session<
     return `${this.platform}:${this.selfId}`
   }
 
-  toJSON(): Session.General {
+  toJSON(): Session.Payload {
     return Object.fromEntries(Object.entries(this).filter(([key]) => {
       return !key.startsWith('_') && !key.startsWith('$')
     }))
