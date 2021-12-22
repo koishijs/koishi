@@ -24,7 +24,7 @@ declare module 'koishi' {
 }
 
 declare module '@koishijs/plugin-console' {
-  interface Services {
+  interface Sources {
     bots: BotProvider
     market: MarketProvider
     packages: PackageProvider

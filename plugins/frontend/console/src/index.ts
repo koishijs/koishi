@@ -6,13 +6,13 @@ import open from 'open'
 import { v4 } from 'uuid'
 import type { ViteDevServer } from 'vite'
 
-type ConsoleServices = {
-  [K in keyof Services as `console.${K}`]: Services[K]
+type SubServices = {
+  [K in keyof Sources as `console.${K}`]: Sources[K]
 }
 
 declare module 'koishi' {
   namespace Context {
-    interface Services extends ConsoleServices {
+    interface Services extends SubServices {
       console: Console
     }
   }
@@ -31,7 +31,7 @@ export abstract class DataSource<T = any> {
   protected stop(): Awaitable<void> {}
   protected abstract get(forced?: boolean): Promise<T>
 
-  constructor(protected ctx: Context, protected name: keyof Services) {
+  constructor(protected ctx: Context, protected name: keyof Sources) {
     ctx.console.services[name] = this as never
 
     ctx.on('ready', () => this.start())
@@ -135,7 +135,7 @@ class Console extends Service {
     this.listeners[event] = callback
   }
 
-  get services(): Services {
+  get services(): Sources {
     return new Proxy({}, {
       get: (target, name) => {
         if (typeof name === 'symbol') return Reflect.get(target, name)
@@ -264,7 +264,7 @@ class Console extends Service {
   }
 }
 
-export interface Services {}
+export interface Sources {}
 
 export interface Events {}
 

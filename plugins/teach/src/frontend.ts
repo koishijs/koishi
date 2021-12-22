@@ -22,7 +22,7 @@ interface QuestionData {
 }
 
 export default class TeachConsole {
-  static using = ['console/meta', 'console/stats'] as const
+  static using = ['console.meta', 'console.stats'] as const
 
   constructor(ctx: Context, config: Dialogue.Config = {}) {
     const filename = ctx.console.config.devMode ? '../../client/index.ts' : '../../dist/index.js'

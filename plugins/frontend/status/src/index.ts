@@ -24,7 +24,7 @@ declare module 'koishi' {
 }
 
 declare module '@koishijs/plugin-console' {
-  interface Services {
+  interface Sources {
     logs: LogProvider
     meta: MetaProvider
     profile: ProfileProvider
