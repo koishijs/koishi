@@ -40,9 +40,13 @@ export class OneBotBot extends Bot<BotConfig> {
     this.avatar = `http://q.qlogo.cn/headimg_dl?dst_uin=${options.selfId}&spec=640`
   }
 
+  private isQQGuildId(guildId: string) {
+    return guildId.length > 11
+  }
+
   sendMessage(channelId: string, content: string, guildId?: string) {
     content = renderText(content)
-    if (guildId && guildId.length > 11 && guildId !== channelId && !channelId.startsWith('private:')) {
+    if (guildId && this.isQQGuildId(guildId) && !channelId.startsWith('private:')) {
       return this.sendQQGuildMessage(guildId, channelId, content)
     }
     return channelId.startsWith('private:')
@@ -80,7 +84,7 @@ export class OneBotBot extends Bot<BotConfig> {
   }
 
   async getGuild(guildId: string) {
-    if (guildId.length > 11) {
+    if (this.isQQGuildId(guildId)) {
       const data = await this.internal.getGuildMetaByGuest(guildId)
       return OneBot.adaptGuild(data)
     } else {
@@ -95,7 +99,7 @@ export class OneBotBot extends Bot<BotConfig> {
   }
 
   async getGuildMember(guildId: string, userId: string) {
-    if (guildId.length > 11) {
+    if (this.isQQGuildId(guildId)) {
       const memberList = await this.getGuildMemberList(guildId)
       return memberList.find((member) => member.userId === userId)
     }
@@ -104,7 +108,7 @@ export class OneBotBot extends Bot<BotConfig> {
   }
 
   async getGuildMemberList(guildId: string) {
-    if (guildId.length > 11) {
+    if (this.isQQGuildId(guildId)) {
       const { members, bots, admins } = await this.internal.getGuildMembers(guildId)
       const allMembers = [...(members || []), ...(bots || []), ...(admins || [])]
       return allMembers.map(OneBot.adapterQQGuildMember)
