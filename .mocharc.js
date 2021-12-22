@@ -5,8 +5,6 @@ const specs = [
   'community/schemastery/tests/*.spec.ts',
   'packages/core/tests/*.spec.ts',
   'packages/utils/tests/*.spec.ts',
-  'packages/dev-utils/tests/*.spec.ts',
-  'packages/test-utils/tests/*.spec.ts',
   'plugins/admin/tests/*.spec.ts',
   'plugins/common/tests/*.spec.ts',
   'plugins/database/level/tests/*.spec.ts',

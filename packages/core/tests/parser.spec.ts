@@ -1,5 +1,6 @@
 import { App, Command } from 'koishi'
 import { expect } from 'chai'
+import {} from 'chai-shape'
 
 const app = new App()
 

@@ -2,6 +2,7 @@ import { App, defineProperty, Logger, Schema, version } from 'koishi'
 import { Loader } from '../loader'
 import { LoggerConfig } from '../..'
 
+// eslint-disable-next-line no-import-assign
 const LoggerConfig = Schema.object({
   levels: Schema.any().description('默认的日志输出等级。'),
   showDiff: Schema.boolean().description('标注相邻两次日志输出的时间差。'),

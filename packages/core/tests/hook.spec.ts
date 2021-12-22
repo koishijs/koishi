@@ -14,6 +14,8 @@ export function createArray<T>(length: number, create: (index: number) => T) {
   return [...new Array(length).keys()].map(create)
 }
 
+before(() => app.start())
+
 describe('Hook API', () => {
   before(() => Logger.levels.base = 1)
   after(() => Logger.levels.base = 2)
