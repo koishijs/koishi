@@ -40,8 +40,11 @@ export class OneBotBot extends Bot<BotConfig> {
     this.avatar = `http://q.qlogo.cn/headimg_dl?dst_uin=${options.selfId}&spec=640`
   }
 
-  sendMessage(channelId: string, content: string) {
+  sendMessage(channelId: string, content: string, guildId?: string) {
     content = renderText(content)
+    if (guildId && guildId.length > 11 && guildId !== channelId && !channelId.startsWith('private:')) {
+      return this.sendQQGuildMessage(guildId, channelId, content)
+    }
     return channelId.startsWith('private:')
       ? this.sendPrivateMessage(channelId.slice(8), content)
       : this.sendGuildMessage(channelId, content)
@@ -77,8 +80,13 @@ export class OneBotBot extends Bot<BotConfig> {
   }
 
   async getGuild(guildId: string) {
-    const data = await this.internal.getGroupInfo(guildId)
-    return OneBot.adaptGuild(data)
+    if (guildId.length > 11) {
+      const data = await this.internal.getGuildMetaByGuest(guildId)
+      return OneBot.adaptGuild(data)
+    } else {
+      const data = await this.internal.getGroupInfo(guildId)
+      return OneBot.adaptGuild(data)
+    }
   }
 
   async getGuildList() {
@@ -87,13 +95,32 @@ export class OneBotBot extends Bot<BotConfig> {
   }
 
   async getGuildMember(guildId: string, userId: string) {
+    if (guildId.length > 11) {
+      const memberList = await this.getGuildMemberList(guildId)
+      return memberList.find((member) => member.userId === userId)
+    }
     const data = await this.internal.getGroupMemberInfo(guildId, userId)
     return OneBot.adaptGuildMember(data)
   }
 
   async getGuildMemberList(guildId: string) {
-    const data = await this.internal.getGroupMemberList(guildId)
-    return data.map(OneBot.adaptGuildMember)
+    if (guildId.length > 11) {
+      const { members, bots, admins } = await this.internal.getGuildMembers(guildId)
+      const allMembers = [...(members || []), ...(bots || []), ...(admins || [])]
+      return allMembers.map(OneBot.adapterQQGuildMember)
+    } else {
+      const data = await this.internal.getGroupMemberList(guildId)
+      return data.map(OneBot.adaptGuildMember)
+    }
+  }
+
+  async sendQQGuildMessage(guildId: string, channelId: string, content: string) {
+    if (!content) return
+    const session = this.createSession({ content, subtype: 'group', guildId, channelId })
+    if (this.app.bail(session, 'before-send', session)) return
+    session.messageId = '' + await this.internal.sendGuildChannelMsg(guildId, channelId, content)
+    this.app.emit(session, 'send', session)
+    return session.messageId
   }
 
   async sendGuildMessage(guildId: string, content: string) {

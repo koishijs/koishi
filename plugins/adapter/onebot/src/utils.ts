@@ -32,6 +32,13 @@ export const adaptGuildMember = (user: OneBot.SenderInfo): Bot.GuildMember => ({
   roles: [user.role],
 })
 
+export const adapterQQGuildMember = (user: OneBot.GuildMemberInfo): Bot.GuildMember => ({
+  userId: user.tiny_id.toString(),
+  username: user.nickname,
+  nickname: user.nickname,
+  roles: [user.role.toString()],
+})
+
 export const adaptAuthor = (user: OneBot.SenderInfo, anonymous?: OneBot.AnonymousInfo): Bot.Author => ({
   ...adaptUser(user),
   nickname: anonymous?.name || user.card,
@@ -66,15 +73,37 @@ export function adaptMessage(message: OneBot.Message): Bot.Message {
   return result
 }
 
-export const adaptGuild = (group: OneBot.GroupInfo): Bot.Guild => ({
-  guildId: group.group_id.toString(),
-  guildName: group.group_name,
-})
+export const adaptGuild = (info: OneBot.GroupInfo | OneBot.GuildBaseInfo): Bot.Guild => {
+  if ((info as OneBot.GuildBaseInfo).guild_id) {
+    const guild = info as OneBot.GuildBaseInfo
+    return {
+      guildId: guild.guild_id.toString(),
+      guildName: guild.guild_name,
+    }
+  } else {
+    const group = info as OneBot.GroupInfo
+    return {
+      guildId: group.group_id.toString(),
+      guildName: group.group_name,
+    }
+  }
+}
 
-export const adaptChannel = (group: OneBot.GroupInfo): Bot.Channel => ({
-  channelId: group.group_id.toString(),
-  channelName: group.group_name,
-})
+export const adaptChannel = (info: OneBot.GroupInfo | OneBot.ChannelInfo): Bot.Channel => {
+  if ((info as OneBot.ChannelInfo).channel_id) {
+    const channel = info as OneBot.ChannelInfo
+    return {
+      channelId: channel.channel_id.toString(),
+      channelName: channel.channel_name,
+    }
+  } else {
+    const group = info as OneBot.GroupInfo
+    return {
+      channelId: group.group_id.toString(),
+      channelName: group.group_name,
+    }
+  }
+}
 
 export function dispatchSession(bot: OneBotBot, data: OneBot.Payload) {
   const payload = adaptSession(data)

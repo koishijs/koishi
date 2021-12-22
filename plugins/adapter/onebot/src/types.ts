@@ -286,15 +286,16 @@ export interface GuildServiceProfile {
   avatar_url: string
 }
 
-export interface GuildInfo {
+export interface GuildBaseInfo {
   guild_id: number
   guild_name: string
+}
+
+export interface GuildInfo extends GuildBaseInfo {
   guild_display_id: number
 }
 
-export interface GuildMeta {
-  guild_id: number
-  guild_name: string
+export interface GuildMeta extends GuildBaseInfo {
   guild_profile: string
   create_time: number
   max_member_count: number
