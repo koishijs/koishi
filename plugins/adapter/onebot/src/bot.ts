@@ -28,8 +28,7 @@ export class OneBotBot extends Bot<BotConfig> {
     this.avatar = `http://q.qlogo.cn/headimg_dl?dst_uin=${options.selfId}&spec=640`
   }
 
-  override async start() {
-    await super.start()
+  async initializeGuildServiceProfile() {
     try {
       this.guildServiceProfile = await this.internal.getGuildServiceProfile()
       this.logger.info(`${this.selfId}: Got service profile: ${this.guildServiceProfile.nickname}(${this.guildServiceProfile.tiny_id})`)

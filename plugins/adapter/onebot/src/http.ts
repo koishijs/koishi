@@ -38,6 +38,9 @@ export class HttpServer extends Adapter<BotConfig, AdapterConfig> {
 
     Object.assign(bot, await bot.getSelf())
     logger.info('connected to %c', http.config.endpoint)
+
+    await bot.initializeGuildServiceProfile()
+
     bot.resolve()
   }
 
