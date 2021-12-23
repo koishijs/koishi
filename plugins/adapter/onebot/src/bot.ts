@@ -1,20 +1,6 @@
 import { Bot, segment, Adapter, Dict, Schema, Quester, Logger, camelize } from 'koishi'
+import { GuildServiceProfile } from './types'
 import * as OneBot from './utils'
-
-export function renderText(source: string) {
-  return segment.parse(source).reduce((prev, { type, data }) => {
-    if (type === 'at') {
-      if (data.type === 'all') return prev + '[CQ:at,qq=all]'
-      return prev + `[CQ:at,qq=${data.id}]`
-    } else if (['video', 'audio', 'image'].includes(type)) {
-      if (type === 'audio') type = 'record'
-      if (!data.file) data.file = data.url
-    } else if (type === 'quote') {
-      type = 'reply'
-    }
-    return prev + segment(type, data)
-  }, '')
-}
 
 export interface BotConfig extends Bot.BaseConfig, Quester.Config {
   selfId?: string
@@ -34,10 +20,38 @@ export class OneBotBot extends Bot<BotConfig> {
 
   public internal = new Internal()
 
+  private guildServiceProfile: GuildServiceProfile
+
   constructor(adapter: Adapter, options: BotConfig) {
     super(adapter, options)
     this.selfId = options.selfId
     this.avatar = `http://q.qlogo.cn/headimg_dl?dst_uin=${options.selfId}&spec=640`
+  }
+
+  override async start() {
+    await super.start()
+    try {
+      this.guildServiceProfile = await this.internal.getGuildServiceProfile()
+      this.logger.info(`${this.selfId}: Got service profile: ${this.guildServiceProfile.nickname}(${this.guildServiceProfile.tiny_id})`)
+    } catch (e) {
+      this.logger.warn(`${this.selfId}: Failed to get guild service profile: ${e.message}`)
+    }
+  }
+
+  renderText(source: string) {
+    return segment.parse(source).reduce((prev, { type, data }) => {
+      if (type === 'at') {
+        if (data.type === 'all') return prev + '[CQ:at,qq=all]'
+        const targetDataId = data.id === this.guildServiceProfile?.tiny_id?.toString() ? this.selfId : data.id
+        return prev + `[CQ:at,qq=${targetDataId}]`
+      } else if (['video', 'audio', 'image'].includes(type)) {
+        if (type === 'audio') type = 'record'
+        if (!data.file) data.file = data.url
+      } else if (type === 'quote') {
+        type = 'reply'
+      }
+      return prev + segment(type, data)
+    }, '')
   }
 
   private isQQGuildId(guildId: string) {
@@ -45,7 +59,7 @@ export class OneBotBot extends Bot<BotConfig> {
   }
 
   sendMessage(channelId: string, content: string, guildId?: string) {
-    content = renderText(content)
+    content = this.renderText(content)
     if (guildId && this.isQQGuildId(guildId) && !channelId.startsWith('private:')) {
       return this.sendQQGuildMessage(guildId, channelId, content)
     }
@@ -106,7 +120,10 @@ export class OneBotBot extends Bot<BotConfig> {
   }
 
   async getGuildList() {
-    const [data, guildData] = await Promise.all([this.internal.getGroupList(), this.internal.getGuildList()])
+    const [data, guildData] = await Promise.all([
+      OneBot.runIfFailBlank(() => this.internal.getGroupList()),
+      OneBot.runIfFailBlank(() => this.internal.getGuildList()),
+    ])
     return [...data, ...guildData].map(OneBot.adaptGuild)
   }
 

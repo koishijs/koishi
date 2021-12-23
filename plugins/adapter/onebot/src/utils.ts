@@ -208,3 +208,11 @@ export function adaptSession(data: OneBot.Payload) {
 
   return session
 }
+
+export async function runIfFailBlank<T>(fun: () => Promise<T[]>): Promise<T[]> {
+  try {
+    return await fun()
+  } catch (e) {
+    return []
+  }
+}
