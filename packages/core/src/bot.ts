@@ -154,7 +154,7 @@ export namespace Bot {
     getGuildMemberList(guildId: string): Promise<GuildMember[]>
 
     // channel
-    getChannel(channelId: string): Promise<Channel>
+    getChannel(channelId: string, guildId?: string): Promise<Channel>
     getChannelList(guildId: string): Promise<Channel[]>
 
     // request
