@@ -2,6 +2,21 @@ import { Bot, segment, Adapter, Dict, Schema, Quester, Logger, camelize } from '
 import { GuildServiceProfile } from './types'
 import * as OneBot from './utils'
 
+export function renderText(source: string) {
+  return segment.parse(source).reduce((prev, { type, data }) => {
+    if (type === 'at') {
+      if (data.type === 'all') return prev + '[CQ:at,qq=all]'
+      return prev + `[CQ:at,qq=${data.id}]`
+    } else if (['video', 'audio', 'image'].includes(type)) {
+      if (type === 'audio') type = 'record'
+      if (!data.file) data.file = data.url
+    } else if (type === 'quote') {
+      type = 'reply'
+    }
+    return prev + segment(type, data)
+  }, '')
+}
+
 export interface BotConfig extends Bot.BaseConfig, Quester.Config {
   selfId?: string
   token?: string
@@ -43,30 +58,12 @@ export class OneBotBot extends Bot<BotConfig> {
     }
   }
 
-  renderText(source: string) {
-    return segment.parse(source).reduce((prev, { type, data }) => {
-      if (type === 'at') {
-        if (data.type === 'all') return prev + '[CQ:at,qq=all]'
-        const targetDataId = this.isGuildServiceAvailable() && data.id === this.guildServiceProfile.tiny_id.toString()
-          ? this.selfId
-          : data.id
-        return prev + `[CQ:at,qq=${targetDataId}]`
-      } else if (['video', 'audio', 'image'].includes(type)) {
-        if (type === 'audio') type = 'record'
-        if (!data.file) data.file = data.url
-      } else if (type === 'quote') {
-        type = 'reply'
-      }
-      return prev + segment(type, data)
-    }, '')
-  }
-
   private isQQGuildId(guildId: string) {
     return this.isGuildServiceAvailable() && guildId.length > 11
   }
 
   sendMessage(channelId: string, content: string, guildId?: string) {
-    content = this.renderText(content)
+    content = renderText(content)
     if (guildId && this.isQQGuildId(guildId) && !channelId.startsWith('private:')) {
       return this.sendQQGuildMessage(guildId, channelId, content)
     }
