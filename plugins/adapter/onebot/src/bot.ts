@@ -122,8 +122,11 @@ export class OneBotBot extends Bot<BotConfig> {
   async getGuildMemberList(guildId: string) {
     if (this.isQQGuildId(guildId)) {
       const { members, bots, admins } = await this.internal.getGuildMembers(guildId)
-      const allMembers = [...members || [], ...bots || [], ...admins || []]
-      return allMembers.map(OneBot.adapterQQGuildMember)
+      return [
+        ...(members || []).map((member) => OneBot.adapterQQGuildMember(member, 'member')),
+        ...(bots || []).map((member) => OneBot.adapterQQGuildMember(member, 'bot')),
+        ...(admins || []).map((member) => OneBot.adapterQQGuildMember(member, 'admin')),
+      ]
     } else {
       const data = await this.internal.getGroupMemberList(guildId)
       return data.map(OneBot.adaptGuildMember)
