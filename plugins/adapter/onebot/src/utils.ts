@@ -37,6 +37,7 @@ export const adapterQQGuildMember = (user: OneBot.GuildMemberInfo, presetRole?: 
   username: user.nickname,
   nickname: user.nickname,
   roles: [...(presetRole ? [presetRole] : []), user.role.toString()],
+  isBot: presetRole === 'bot',
 })
 
 export const adaptAuthor = (user: OneBot.SenderInfo, anonymous?: OneBot.AnonymousInfo): Bot.Author => ({
