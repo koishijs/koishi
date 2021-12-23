@@ -29,7 +29,7 @@ export class OneBotBot extends Bot<BotConfig> {
   }
 
   isGuildServiceAvailable() {
-    return !!this.guildServiceProfile
+    return !!this.guildServiceProfile && this.guildServiceProfile.tiny_id !== 0
   }
 
   async initializeGuildServiceProfile() {
