@@ -50,6 +50,8 @@ export class WebSocketServer extends Adapter<BotConfig, AdapterConfig> {
     })
   }
 
+  connect() {}
+
   start() {}
 
   stop() {
