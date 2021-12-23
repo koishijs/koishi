@@ -10,7 +10,7 @@
 
 </div>
 
-Koishi 是一个在 [Node.js](https://nodejs.org/) 环境下运行的跨平台机器人框架，目前可支持 [QQ](https://im.qq.com/)，[Telegram](https://telegram.org/)，[Discord](https://discord.com/) 等多个平台。
+Koishi 是一个现代化跨平台机器人框架，目前可支持 [QQ](https://im.qq.com/)，[Telegram](https://telegram.org/)，[Discord](https://discord.com/) 等多个平台。
 
 这个项目的名字和图标来源于东方 Project 中的角色古明地恋 (Komeiji Koishi)。
 

@@ -288,7 +288,7 @@ interface Layer {
       ...meta.peerDependencies,
     }
     for (const dep in deps) {
-      if (whitelist.includes(dep) && !meta.devDependencies[dep] || !nodes[dep]) continue
+      if (whitelist.includes(dep) && meta.devDependencies[dep] || !nodes[dep]) continue
       nodes[name].prev.push(dep)
       nodes[dep].next.add(name)
     }
@@ -308,7 +308,6 @@ interface Layer {
       for (const name of Object.keys(nodes)) {
         const node = nodes[name]
         if (node.bundle === bundle || node.next.size) continue
-  
         flag = true
         delete nodes[name]
         layer.nodes.unshift(node)
