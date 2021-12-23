@@ -12,6 +12,10 @@ export class WebSocketClient extends Adapter.WebSocketClient<BotConfig, AdapterC
     endpoint: Schema.string().description('要连接的 OneBot 服务器地址。').required(),
   })
 
+  async connect(bot: OneBotBot) {
+    await bot.initializeGuildServiceProfile()
+  }
+
   protected accept = accept
 
   prepare(bot: OneBotBot) {
