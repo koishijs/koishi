@@ -28,12 +28,16 @@ export class OneBotBot extends Bot<BotConfig> {
     this.avatar = `http://q.qlogo.cn/headimg_dl?dst_uin=${options.selfId}&spec=640`
   }
 
+  isGuildServiceAvailable() {
+    return !!this.guildServiceProfile
+  }
+
   async initializeGuildServiceProfile() {
     try {
       this.guildServiceProfile = await this.internal.getGuildServiceProfile()
-      this.logger.info(`${this.selfId}: Got service profile: ${this.guildServiceProfile.nickname}(${this.guildServiceProfile.tiny_id})`)
+      this.logger.info(`${this.username}(${this.selfId}): Got service profile: ${this.guildServiceProfile.nickname}(${this.guildServiceProfile.tiny_id})`)
     } catch (e) {
-      this.logger.warn(`${this.selfId}: Failed to get guild service profile: ${e.message}`)
+      this.logger.warn(`${this.username}(${this.selfId}): Failed to get guild service profile: ${e.message}`)
     }
   }
 
@@ -41,7 +45,9 @@ export class OneBotBot extends Bot<BotConfig> {
     return segment.parse(source).reduce((prev, { type, data }) => {
       if (type === 'at') {
         if (data.type === 'all') return prev + '[CQ:at,qq=all]'
-        const targetDataId = data.id === this.guildServiceProfile?.tiny_id?.toString() ? this.selfId : data.id
+        const targetDataId = this.isGuildServiceAvailable() && data.id === this.guildServiceProfile.tiny_id.toString()
+          ? this.selfId
+          : data.id
         return prev + `[CQ:at,qq=${targetDataId}]`
       } else if (['video', 'audio', 'image'].includes(type)) {
         if (type === 'audio') type = 'record'
@@ -54,7 +60,7 @@ export class OneBotBot extends Bot<BotConfig> {
   }
 
   private isQQGuildId(guildId: string) {
-    return guildId.length > 11
+    return this.isGuildServiceAvailable() && guildId.length > 11
   }
 
   sendMessage(channelId: string, content: string, guildId?: string) {
@@ -119,11 +125,16 @@ export class OneBotBot extends Bot<BotConfig> {
   }
 
   async getGuildList() {
-    const [data, guildData] = await Promise.all([
-      OneBot.runIfFailBlank(() => this.internal.getGroupList()),
-      OneBot.runIfFailBlank(() => this.internal.getGuildList()),
-    ])
-    return [...data, ...guildData].map(OneBot.adaptGuild)
+    if (this.isGuildServiceAvailable()) {
+      const [data, guildData] = await Promise.all([
+        OneBot.runIfFailBlank(() => this.internal.getGroupList()),
+        OneBot.runIfFailBlank(() => this.internal.getGuildList()),
+      ])
+      return [...data, ...guildData].map(OneBot.adaptGuild)
+    } else {
+      const data = await this.internal.getGroupList()
+      return data.map(OneBot.adaptGuild)
+    }
   }
 
   async getGuildMember(guildId: string, userId: string) {

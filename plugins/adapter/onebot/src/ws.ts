@@ -12,10 +12,6 @@ export class WebSocketClient extends Adapter.WebSocketClient<BotConfig, AdapterC
     endpoint: Schema.string().description('要连接的 OneBot 服务器地址。').required(),
   })
 
-  async connect(bot: OneBotBot) {
-    await bot.initializeGuildServiceProfile()
-  }
-
   protected accept = accept
 
   prepare(bot: OneBotBot) {
@@ -54,10 +50,6 @@ export class WebSocketServer extends Adapter<BotConfig, AdapterConfig> {
     })
   }
 
-  async connect(bot: OneBotBot) {
-    await bot.initializeGuildServiceProfile()
-  }
-
   start() {}
 
   stop() {
@@ -88,6 +80,7 @@ export function accept(this: Adapter<BotConfig, AdapterConfig>, bot: OneBotBot) 
     } else if (parsed.echo === -1) {
       Object.assign(bot, adaptUser(parsed.data))
       logger.debug('%d got self info', parsed.data)
+      bot.initializeGuildServiceProfile()
       bot.resolve()
     } else if (parsed.echo in listeners) {
       listeners[parsed.echo](parsed)
