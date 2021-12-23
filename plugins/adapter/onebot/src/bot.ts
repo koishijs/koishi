@@ -50,14 +50,15 @@ export class OneBotBot extends Bot<BotConfig> {
     }
   }
 
-  renderText(source: string) {
+  renderText(source: string, inGuild?: boolean) {
     return segment.parse(source).reduce((prev, { type, data }) => {
       if (type === 'at') {
         if (data.type === 'all') return prev + '[CQ:at,qq=all]'
-        const targetDataId = this.isGuildServiceAvailable() && data.id === this.guildServiceProfile.tiny_id.toString()
-          ? this.selfId
-          : data.id
-        return prev + `[CQ:at,qq=${targetDataId}]`
+        let atId = data.id
+        if (inGuild && this.isGuildServiceAvailable() && atId === this.selfId) {
+          atId = this.guildServiceProfile.userId
+        }
+        return prev + `[CQ:at,qq=${atId}]`
       } else if (['video', 'audio', 'image'].includes(type)) {
         if (type === 'audio') type = 'record'
         if (!data.file) data.file = data.url
@@ -73,9 +74,11 @@ export class OneBotBot extends Bot<BotConfig> {
   }
 
   sendMessage(channelId: string, content: string, guildId?: string) {
-    content = this.renderText(content)
     if (guildId && this.isQQGuildId(guildId) && !channelId.startsWith('private:')) {
+      content = this.renderText(content, true)
       return this.sendQQGuildMessage(guildId, channelId, content)
+    } else {
+      content = this.renderText(content, false)
     }
     return channelId.startsWith('private:')
       ? this.sendPrivateMessage(channelId.slice(8), content)
