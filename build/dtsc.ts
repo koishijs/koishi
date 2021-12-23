@@ -311,11 +311,15 @@ interface Layer {
   
         flag = true
         delete nodes[name]
-        layers[0].nodes.unshift(node)
+        layer.nodes.unshift(node)
         node.prev.forEach(dep => {
           nodes[dep].next.delete(name)
         })
       }
+    }
+    if (!layer.nodes.length) {
+      console.log(nodes)
+      throw new Error('circular dependency detected')
     }
   }
 
