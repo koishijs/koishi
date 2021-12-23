@@ -46,7 +46,7 @@ export const adaptAuthor = (user: OneBot.SenderInfo, anonymous?: OneBot.Anonymou
   roles: [user.role],
 })
 
-export function adaptMessage(message: OneBot.Message): Bot.Message {
+export function adaptMessage(message: OneBot.Message, bot?: OneBotBot): Bot.Message {
   const author = adaptAuthor(message.sender, message.anonymous)
   const result: Bot.Message = {
     author,
@@ -55,6 +55,9 @@ export function adaptMessage(message: OneBot.Message): Bot.Message {
     timestamp: message.time * 1000,
     content: segment.transform(message.message, {
       at({ qq }) {
+        if (bot?.isGuildServiceAvailable() && qq === bot.guildServiceProfile.userId) {
+          return segment.at(bot.selfId)
+        }
         if (qq !== 'all') return segment.at(qq)
         return segment('at', { type: 'all' })
       },
@@ -106,7 +109,7 @@ export const adaptChannel = (info: OneBot.GroupInfo | OneBot.ChannelInfo): Bot.C
 }
 
 export function dispatchSession(bot: OneBotBot, data: OneBot.Payload) {
-  const payload = adaptSession(data)
+  const payload = adaptSession(data, bot)
   if (!payload) return
   const session = new Session(bot, payload)
   defineProperty(session, 'onebot', Object.create(bot.internal))
@@ -114,14 +117,14 @@ export function dispatchSession(bot: OneBotBot, data: OneBot.Payload) {
   bot.adapter.dispatch(session)
 }
 
-export function adaptSession(data: OneBot.Payload) {
+export function adaptSession(data: OneBot.Payload, bot?: OneBotBot) {
   const session: Partial<Session> = {}
   session.selfId = '' + data.self_id
   session.type = data.post_type as any
   session.subtype = data.sub_type as any
 
   if (data.post_type === 'message') {
-    Object.assign(session, adaptMessage(data))
+    Object.assign(session, adaptMessage(data, bot))
     session.subtype = data.message_type
     return session
   }

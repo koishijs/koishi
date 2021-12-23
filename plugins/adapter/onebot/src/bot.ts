@@ -1,5 +1,4 @@
 import { Bot, segment, Adapter, Dict, Schema, Quester, Logger, camelize } from 'koishi'
-import { GuildServiceProfile } from './types'
 import * as OneBot from './utils'
 
 export function renderText(source: string) {
@@ -35,7 +34,7 @@ export class OneBotBot extends Bot<BotConfig> {
 
   public internal = new Internal()
 
-  private guildServiceProfile: GuildServiceProfile
+  guildServiceProfile: Bot.User
 
   constructor(adapter: Adapter, options: BotConfig) {
     super(adapter, options)
@@ -44,15 +43,23 @@ export class OneBotBot extends Bot<BotConfig> {
   }
 
   isGuildServiceAvailable() {
-    return !!this.guildServiceProfile && this.guildServiceProfile.tiny_id !== 0
+    return !!this.guildServiceProfile
   }
 
   async initializeGuildServiceProfile() {
     try {
-      this.guildServiceProfile = await this.internal.getGuildServiceProfile()
-      if (this.isGuildServiceAvailable()) {
-        this.logger.info(`${this.username}(${this.selfId}): Got service profile: ${this.guildServiceProfile.nickname}(${this.guildServiceProfile.tiny_id})`)
+      const profile = await this.internal.getGuildServiceProfile()
+      if (!profile.tiny_id) {
+        // Guild service is not supported in this account
+        return
       }
+      this.guildServiceProfile = {
+        userId: profile.tiny_id.toString(),
+        username: profile.nickname,
+        nickname: profile.nickname,
+        avatar: profile.avatar_url,
+      }
+      this.logger.info(`${this.username}(${this.selfId}): Got service profile: ${this.guildServiceProfile.nickname}(${this.guildServiceProfile.userId})`)
     } catch (e) {
       this.logger.warn(`${this.username}(${this.selfId}): Failed to get guild service profile: ${e.message}`)
     }
