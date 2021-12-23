@@ -125,13 +125,13 @@ export class App extends Context {
     this.logger('app').debug('stopped')
   }
 
-  private _resolvePrefixes(session: Session.Message) {
+  private _resolvePrefixes(session: Session) {
     const { prefix } = this.options
     const temp = typeof prefix === 'function' ? prefix(session) : prefix
     return Array.isArray(temp) ? temp : [temp || '']
   }
 
-  private async _process(session: Session.Message, next: NextFunction) {
+  private async _process(session: Session, next: NextFunction) {
     let capture: RegExpMatchArray
     let atSelf = false, appel = false, prefix: string = null
     const pattern = /^\[CQ:(\w+)((,\w+=[^,\]]*)*)\]/
@@ -322,7 +322,7 @@ export namespace App {
   }
 
   export interface Config extends Config.Network {
-    prefix?: string | string[] | ((session: Session.Message) => void | string | string[])
+    prefix?: string | string[] | ((session: Session) => void | string | string[])
     nickname?: string | string[]
     maxListeners?: number
     prettyErrors?: boolean

@@ -79,8 +79,8 @@ export abstract class Bot<T extends Bot.BaseConfig = Bot.BaseConfig> {
     return `${this.platform}:${this.selfId}`
   }
 
-  createSession(session: Partial<Session<never, never, 'send'>>) {
-    return new Session<never, never, 'send'>(this, {
+  createSession(session: Partial<Session>) {
+    return new Session(this, {
       ...session,
       type: 'send',
       selfId: this.selfId,
@@ -154,7 +154,7 @@ export namespace Bot {
     getGuildMemberList(guildId: string): Promise<GuildMember[]>
 
     // channel
-    getChannel(channelId: string): Promise<Channel>
+    getChannel(channelId: string, guildId?: string): Promise<Channel>
     getChannelList(guildId: string): Promise<Channel[]>
 
     // request
@@ -209,6 +209,6 @@ export namespace Bot {
   }
 
   export interface Message extends MessageBase {
-    subtype?: keyof Session.Events['message']
+    subtype?: 'private' | 'group'
   }
 }

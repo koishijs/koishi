@@ -101,7 +101,8 @@ module.exports.apply = (ctx) => {
 ```
 ```ts
 export const name = 'teach'
-export const using = ['database']
+export const using = ['database'] as const
+// 上面的 as const 的作用是固定 `using` 的内部类型
 
 export function apply(ctx: Context) {
   // 你可以立即访问数据库服务
@@ -165,7 +166,7 @@ module.exports.apply = (ctx) => {
 export const name = 'teach'
 
 // 对于整体依赖的服务，使用 using 属性声明依赖关系
-export const using = ['database']
+export const using = ['database'] as const
 
 export function apply(ctx: Context) {
   ctx.command('teach').action(() => {

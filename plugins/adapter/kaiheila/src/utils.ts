@@ -52,12 +52,13 @@ function adaptMessageSession(data: KHL.Data, meta: KHL.MessageMeta, session: Par
   adaptMessage(data, meta, session)
   session.messageId = data.msgId
   session.timestamp = data.msgTimestamp
-  session.subtype = data.channelType === 'GROUP' ? 'group' : 'private'
+  const subtype = data.channelType === 'GROUP' ? 'group' : 'private'
+  session.subtype = subtype
   if (meta.quote) {
     session.quote = adaptMessage(meta.quote, meta.quote)
     session.quote.messageId = meta.quote.id
     session.quote.channelId = session.channelId
-    session.quote.subtype = session.subtype
+    session.quote.subtype = subtype
   }
   return session
 }

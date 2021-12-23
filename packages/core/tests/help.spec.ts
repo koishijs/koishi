@@ -7,11 +7,16 @@ import memory from '@koishijs/plugin-database-memory'
 
 template.set('internal.global-help-epilog', 'EPILOG')
 
-const app = new App().plugin(mock).plugin(memory)
+const app = new App()
+
+app.plugin(mock)
+app.plugin(memory)
+
 const client = app.mock.client('123')
 const now = Date.now()
 
 before(async () => {
+  await app.start()
   await app.mock.initUser('123', 2)
   await app.database.setUser('mock', '123', {
     usage: { foo7: 1, $date: Time.getDateNumber() },
@@ -140,31 +145,43 @@ describe('Help Command', () => {
   it('no database', async () => {
     template.set('internal.global-help-epilog', '')
 
-    const app = new App().plugin(mock)
-    const session = app.mock.client('123')
-    await session.shouldReply('help', '当前可用的指令有：\n    help  显示帮助信息')
+    const app = new App()
+    app.plugin(mock)
+    await app.start()
+
+    const client = app.mock.client('123')
+    await client.shouldReply('help', '当前可用的指令有：\n    help  显示帮助信息')
   })
 
   it('disable help command', async () => {
-    const app = new App({ help: false }).plugin(mock)
+    const app = new App({ help: false })
+    app.plugin(mock)
     app.command('foo')
-    const session = app.mock.client('123')
-    await session.shouldNotReply('help')
-    await session.shouldNotReply('foo -h')
+    await app.start()
+
+    const client = app.mock.client('123')
+    await client.shouldNotReply('help')
+    await client.shouldNotReply('foo -h')
   })
 
   it('disable help options', async () => {
-    const app = new App({ help: { options: false } }).plugin(mock)
+    const app = new App({ help: { options: false } })
+    app.plugin(mock)
     app.command('foo')
-    const session = app.mock.client('123')
-    await session.shouldReply('help')
-    await session.shouldNotReply('foo -h')
+    await app.start()
+
+    const client = app.mock.client('123')
+    await client.shouldReply('help')
+    await client.shouldNotReply('foo -h')
   })
 
   it('disable help shortcut', async () => {
-    const app = new App({ help: { shortcut: false } }).plugin(mock)
-    const session = app.mock.client('123')
-    await session.shouldReply('help')
-    await session.shouldNotReply('帮助')
+    const app = new App({ help: { shortcut: false } })
+    app.plugin(mock)
+    await app.start()
+
+    const client = app.mock.client('123')
+    await client.shouldReply('help')
+    await client.shouldNotReply('帮助')
   })
 })

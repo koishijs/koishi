@@ -17,17 +17,17 @@ export interface Schedule {
   lastCall: Date
   interval: number
   command: string
-  session: Session.General
+  session: Session.Payload
 }
 
 const logger = new Logger('schedule')
 
-function formatContext(session: Session.General) {
+function formatContext(session: Session.Payload) {
   return session.subtype === 'private' ? `私聊 ${session.userId}` : `群聊 ${session.guildId}`
 }
 
 export const name = 'schedule'
-export const using = ['database']
+export const using = ['database'] as const
 
 export interface Config {
   minInterval?: number

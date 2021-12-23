@@ -17,7 +17,7 @@ declare module 'koishi' {
 }
 
 export const name = 'GitHub'
-export const using = ['database']
+export const using = ['database'] as const
 
 const logger = new Logger('github')
 

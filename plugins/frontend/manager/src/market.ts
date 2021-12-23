@@ -8,10 +8,8 @@ import { throttle } from 'throttle-debounce'
 import spawn from 'cross-spawn'
 
 declare module '@koishijs/plugin-console' {
-  namespace Console {
-    interface Events {
-      install(name: string): Promise<number>
-    }
+  interface Events {
+    install(name: string): Promise<number>
   }
 }
 

@@ -612,28 +612,16 @@ export namespace Context {
   service('model')
 }
 
-type FlattenEvents<T> = {
-  [K in keyof T & string]: K | `${K}/${FlattenEvents<T[K]>}`
-}[keyof T & string]
-
-type SessionEventMap = {
-  [K in FlattenEvents<Session.Events>]: K extends `${infer X}/${infer R}`
-    ? R extends `${infer Y}/${any}`
-      ? (session: Session.Payload<X, Y>) => void
-      : (session: Session.Payload<X, R>) => void
-    : (session: Session.Payload<K>) => void
-}
-
 type EventName = keyof EventMap
 type OmitSubstring<S extends string, T extends string> = S extends `${infer L}${T}${infer R}` ? `${L}${R}` : never
 type BeforeEventName = OmitSubstring<EventName & string, 'before-'>
 
 export type BeforeEventMap = { [E in EventName & string as OmitSubstring<E, 'before-'>]: EventMap[E] }
 
-export interface EventMap extends SessionEventMap {
+export interface EventMap {
   [Context.middleware]: Middleware
 
-  // Koishi events
+  // internal events
   'appellation'(name: string, session: Session): string
   'before-parse'(content: string, session: Session): Argv
   'parse'(argv: Argv, session: Session): string
@@ -643,7 +631,7 @@ export interface EventMap extends SessionEventMap {
   'attach-user'(session: Session): Awaitable<void | boolean>
   'before-attach'(session: Session): void
   'attach'(session: Session): void
-  'before-send'(session: Session<never, never, 'send'>): Awaitable<void | boolean>
+  'before-send'(session: Session): Awaitable<void | boolean>
   'before-command'(argv: Argv): Awaitable<void | string>
   'command'(argv: Argv): Awaitable<void>
   'command-added'(command: Command): void

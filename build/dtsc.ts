@@ -1,6 +1,6 @@
 /* eslint-disable no-cond-assign */
 
-import { spawnAsync, cwd, getPackages } from './utils'
+import { spawnAsync, cwd, getPackages, PackageJson } from './utils'
 import { EOL } from 'os'
 import { resolve } from 'path'
 import fs from 'fs-extra'
@@ -29,18 +29,20 @@ async function compile(path: string, filename: string) {
   return fs.readFile(filename, 'utf8')
 }
 
+interface TsConfig {
+  compilerOptions: ts.CompilerOptions
+}
+
 const referenceHack = '/// <reference types="koishi/lib" />'
 
-async function bundle(path: string) {
-  const fullpath = resolve(cwd, path)
-  const config = await readJson(fullpath + '/tsconfig.json')
-  const { outFile, rootDir } = config.compilerOptions as ts.CompilerOptions
-  if (!outFile) return
+async function bundle(node: Node) {
+  const fullpath = resolve(cwd, node.path)
+  const { outFile, rootDir } = node.config.compilerOptions
 
   const srcpath = `${fullpath.replace(/\\/g, '/')}/${rootDir}`
   const [files, content] = await Promise.all([
     getModules(srcpath),
-    compile(path, resolve(fullpath, outFile)),
+    compile(node.path, resolve(fullpath, outFile)),
   ])
 
   const moduleRE = `["'](${files.join('|')})["']`
@@ -55,7 +57,7 @@ async function bundle(path: string) {
   let identifier: string, isExportDefault: boolean
   const platforms: Record<string, Record<string, string[]>> = {}
   const output = content.split(EOL).filter((line) => {
-    // Phase 1: collect informations
+    // Step 1: collect informations
     if (isExportDefault) {
       if (line === '    }') isExportDefault = false
       return false
@@ -105,7 +107,7 @@ async function bundle(path: string) {
         }
       })
     } else if (line.startsWith('///')) {
-      if (!coreTargets.includes(path) && line !== referenceHack) prolog += line + EOL
+      if (!coreLibs.includes(node.path) && line !== referenceHack) prolog += line + EOL
     } else if (line.startsWith('    export default ')) {
       if (current === 'index') return true
       if (line.endsWith('{')) isExportDefault = true
@@ -114,7 +116,7 @@ async function bundle(path: string) {
       return line.trim() !== 'export {};'
     }
   }).map((line) => {
-    // Phase 2: flatten module declarations
+    // Step 2: flatten module declarations
     if (cap = /^declare module ["'](.+)["'] \{$/.exec(line)) {
       if (identifier = namespaceMap[cap[1]]) {
         return `declare namespace ${identifier} {`
@@ -170,8 +172,8 @@ async function wrapModule(name: string, source: string, target: string) {
   )
 }
 
-async function bundleNode() {
-  const content = await bundle('packages/koishi')
+async function bundleMain(node: Node) {
+  const content = await bundle(node)
   const prolog = [referenceHack]
   const modules: Record<string, string[]> = { koishi: [] }
   let target = ''
@@ -208,77 +210,131 @@ async function bundleNode() {
   await fs.writeFile(resolve(cwd, 'packages/koishi/lib/node.d.ts'), prolog.join(EOL) + EOL)
 }
 
-async function bundleAll(names: readonly string[]) {
-  for (const name of names) {
-    if (name === 'packages/koishi') {
+const coreLibs = [
+  'packages/utils',
+  'packages/core',
+]
+
+const whitelist = [
+  '@koishijs/plugin-mock',
+  '@koishijs/plugin-database-memory',
+  '@koishijs/test-utils',
+]
+
+async function prepareBuild(nodes: Node[]) {
+  if (!nodes.length) return
+  await fs.writeFile(cwd + '/tsconfig.temp.json', JSON.stringify({
+    files: [],
+    references: nodes.map(node => ({ path: './' + node.path })),
+  }, null, 2))
+}
+
+async function bundleNodes(nodes: Node[]) {
+  for (const node of nodes) {
+    if (node.path === 'packages/koishi') {
       await Promise.all([
         wrapModule('koishi', 'packages/core/lib/index.d.ts', 'index.d.ts'),
         wrapModule('@koishijs/utils', 'packages/utils/lib/index.d.ts', 'utils.d.ts'),
-        bundleNode(),
+        bundleMain(node),
       ])
     } else {
-      const content = await bundle(name)
-      await fs.writeFile(resolve(cwd, name, 'lib/index.d.ts'), content)
+      const content = await bundle(node)
+      await fs.writeFile(resolve(cwd, node.path, 'lib/index.d.ts'), content)
     }
   }
 }
 
-const targets = [
-  'packages/utils',
-  'packages/core',
-  'packages/koishi',
-  'packages/sql-utils',
-  'plugins/admin',
-  'plugins/frontend/console',
-  'plugins/frontend/status',
-  'plugins/teach',
-  'community/adventure',
-]
-
-const coreTargets = [
-  'packages/utils',
-  'packages/core',
-]
-
-const corePackages = [
-  'plugins/eval',
-  'plugins/puppeteer',
-  'packages/orm-utils',
-  'packages/database/memory',
-]
-
-function precedence(name: string) {
-  if (name.startsWith('packages/')) return 5
-  if (corePackages.includes(name)) return 1
-  return 4
+interface Node {
+  path?: string
+  meta?: PackageJson
+  prev?: string[]
+  next?: Set<string>
+  bundle?: boolean
+  config?: TsConfig
+  visited?: boolean
 }
 
-async function prepareConfig(folders: string[]) {
-  if (!folders.length) return
-  await fs.writeFile(cwd + '/tsconfig.temp.json', JSON.stringify({
-    files: [],
-    references: folders
-      .sort((a, b) => precedence(a) - precedence(b))
-      .map(name => ({ path: './' + name })),
-  }, null, 2))
+interface Layer {
+  bundle: boolean
+  nodes: Node[]
 }
 
-(async () => {
+;(async () => {
+  // Step 1: get relevant packages
   const folders = await getPackages(args)
   if (folders.includes('packages/koishi')) {
-    if (!folders.includes('packages/core')) folders.push('packages/core')
-    if (!folders.includes('packages/utils')) folders.push('packages/utils')
+    for (const name of coreLibs) {
+      if (!folders.includes(name)) folders.push(name)
+    }
   }
-  const buildTargets = folders.filter(name => !targets.includes(name) && !name.includes('ui-'))
-  const bundleTargets = targets.filter(name => folders.includes(name))
 
-  await Promise.all([
-    prepareConfig(buildTargets),
-    bundleAll(bundleTargets),
-  ])
+  // Step 2: initialize nodes
+  const nodes: Record<string, Node> = {}
+  await Promise.all(folders.map(async (path) => {
+    const fullpath = resolve(cwd, path)
+    const meta: PackageJson = require(fullpath + '/package.json')
+    const config: TsConfig = await readJson(fullpath + '/tsconfig.json')
+    if (meta.private) return
+    const bundle = !!config.compilerOptions.outFile
+    nodes[meta.name] = { path, meta, config, bundle, prev: [], next: new Set() }
+  }))
 
-  if (buildTargets.length) {
-    const code = await spawnAsync(['tsc', '-b', 'tsconfig.temp.json', ...tsArgs])
-    process.exit(code)
+  // Step 3: build dependency graph
+  for (const name in nodes) {
+    const { meta } = nodes[name]
+    const deps = {
+      ...meta.dependencies,
+      ...meta.devDependencies,
+      ...meta.peerDependencies,
+    }
+    for (const dep in deps) {
+      if (whitelist.includes(dep) && meta.devDependencies[dep] || !nodes[dep]) continue
+      nodes[name].prev.push(dep)
+      nodes[dep].next.add(name)
+    }
+    delete nodes[name].meta
+  }
+
+  // Step 4: generate bundle workflow
+  let bundle = false
+  const layers: Layer[] = []
+  while (Object.keys(nodes).length) {
+    const layer = { bundle, nodes: [] }
+    layers.unshift(layer)
+    bundle = !bundle
+    let flag = true
+    while (flag) {
+      flag = false
+      for (const name of Object.keys(nodes)) {
+        const node = nodes[name]
+        if (node.bundle === bundle || node.next.size) continue
+        flag = true
+        delete nodes[name]
+        layer.nodes.unshift(node)
+        node.prev.forEach(dep => {
+          nodes[dep].next.delete(name)
+        })
+      }
+    }
+    if (!layer.nodes.length) {
+      console.log(nodes)
+      throw new Error('circular dependency detected')
+    }
+  }
+
+  // Step 5: generate dts files
+  // make sure the number of layers is even
+  if (bundle) layers.unshift({ bundle, nodes: [] })
+  for (let i = 0; i < layers.length; i += 2) {
+    const bundleTargets = layers[i].nodes
+    const buildTargets = layers[i + 1].nodes
+    await Promise.all([
+      prepareBuild(buildTargets),
+      bundleNodes(bundleTargets),
+    ])
+    if (buildTargets.length) {
+      const code = await spawnAsync(['tsc', '-b', 'tsconfig.temp.json', ...tsArgs])
+      if (code) process.exit(code)
+    }
   }
 })()

@@ -26,10 +26,8 @@ interface ChatPayload {
 declare module '@koishijs/plugin-console' {
   interface ClientConfig extends ClientExtension {}
 
-  namespace Console {
-    interface Events {
-      chat(message: ChatPayload): Promise<void>
-    }
+  interface Events {
+    chat(message: ChatPayload): Promise<void>
   }
 }
 

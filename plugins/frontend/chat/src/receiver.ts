@@ -66,9 +66,9 @@ async function getGroupName(bot: Bot, guildId: string) {
   }
 }
 
-async function getChannelName(bot: Bot, channelId: string) {
+async function getChannelName(bot: Bot, channelId: string, guildId: string) {
   try {
-    const { channelName } = await bot.getChannel(channelId)
+    const { channelName } = await bot.getChannel(channelId, guildId)
     return channelName
   } catch {
     return channelId
@@ -99,7 +99,7 @@ export default function receiver(ctx: Context, config: RefreshConfig = {}) {
     }
     if (!guildId) return
     if (!channelMap[cid] || timestamp - channelMap[cid][1] >= refreshChannelName) {
-      channelMap[cid] = [getChannelName(session.bot, session.channelId), timestamp]
+      channelMap[cid] = [getChannelName(session.bot, session.channelId, session.guildId), timestamp]
     }
     params.channelName = await channelMap[cid][0]
   }

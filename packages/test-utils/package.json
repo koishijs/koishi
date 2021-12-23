@@ -37,11 +37,13 @@
     "@types/chai-as-promised": "^7.1.4",
     "@types/node": "^16.7.13"
   },
+  "peerDependencies": {
+    "@koishijs/plugin-mock": "^1.0.0-beta.2",
+    "koishi": "^4.0.0-beta.7"
+  },
   "dependencies": {
-    "@koishijs/plugin-database-memory": "^1.0.0-beta.4",
     "chai": "^4.3.4",
     "chai-as-promised": "^7.1.1",
-    "chai-shape": "^1.0.0",
-    "koishi": "^4.0.0-beta.7"
+    "chai-shape": "^1.0.0"
   }
 }
