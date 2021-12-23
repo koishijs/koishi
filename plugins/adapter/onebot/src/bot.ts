@@ -4,14 +4,12 @@ import * as OneBot from './utils'
 export interface BotConfig extends Bot.BaseConfig, Quester.Config {
   selfId?: string
   token?: string
-  enableGuild?: boolean
 }
 
 export const BotConfig: Schema<BotConfig> = Schema.intersect([
   Schema.object({
     selfId: Schema.string(),
     token: Schema.string(),
-    enableGuild: Schema.boolean(),
   }),
   Quester.Config,
 ])
@@ -21,13 +19,11 @@ export class OneBotBot extends Bot<BotConfig> {
 
   public internal = new Internal()
 
-  enableGuild: boolean
   guildProfile: Bot.User
 
   constructor(adapter: Adapter, options: BotConfig) {
     super(adapter, options)
     this.selfId = options.selfId
-    this.enableGuild = options.enableGuild
     this.avatar = `http://q.qlogo.cn/headimg_dl?dst_uin=${options.selfId}&spec=640`
   }
 
@@ -36,14 +32,10 @@ export class OneBotBot extends Bot<BotConfig> {
   }
 
   async initializeGuildServiceProfile() {
-    if (!this.enableGuild) {
-      return
-    }
     try {
       const profile = await this.internal.getGuildServiceProfile()
       if (!profile.tiny_id) {
         // Guild service is not supported in this account
-        this.logger.warn(`${this.username}(${this.selfId}): Guild service is not supported.`)
         return
       }
       this.guildProfile = {
@@ -54,7 +46,7 @@ export class OneBotBot extends Bot<BotConfig> {
       }
       this.logger.info(`${this.username}(${this.selfId}): Got guild profile: ${this.guildProfile.nickname}(${this.guildProfile.userId})`)
     } catch (e) {
-      this.logger.warn(`${this.username}(${this.selfId}): Failed to get guild profile: ${e.message}`)
+      // Not go-cqhttp. Do nothing.
     }
   }
 
