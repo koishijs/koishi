@@ -1,6 +1,6 @@
 /* eslint-disable quote-props */
 
-import { Bot, Session, camelize, segment, renameProperty, snakeCase, Adapter, Schema, App, Quester } from 'koishi'
+import { Bot, Session, camelize, segment, renameProperty, snakeCase, Adapter, Quester } from 'koishi'
 import { Method } from 'axios'
 import * as KHL from './types'
 import { adaptGroup, adaptAuthor, adaptUser, AdapterConfig } from './utils'
@@ -18,7 +18,7 @@ export interface KaiheilaMessageInfo {
 
 const attachmentTypes = ['image', 'video', 'audio', 'file']
 
-type SendHandle = [string, KHL.MessageParams, Session<never, never, 'send'>]
+type SendHandle = [string, KHL.MessageParams, Session]
 
 export interface BotConfig extends Bot.BaseConfig {
   token?: string

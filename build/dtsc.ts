@@ -218,6 +218,7 @@ const coreLibs = [
 const whitelist = [
   '@koishijs/plugin-mock',
   '@koishijs/plugin-database-memory',
+  '@koishijs/test-utils',
 ]
 
 async function prepareBuild(nodes: Node[]) {
@@ -287,7 +288,7 @@ interface Layer {
       ...meta.peerDependencies,
     }
     for (const dep in deps) {
-      if (whitelist.includes(dep) || !nodes[dep]) continue
+      if (whitelist.includes(dep) && !meta.devDependencies[dep] || !nodes[dep]) continue
       nodes[name].prev.push(dep)
       nodes[dep].next.add(name)
     }

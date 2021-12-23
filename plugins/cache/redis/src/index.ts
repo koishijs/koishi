@@ -1,7 +1,7 @@
 import { createPool } from 'generic-pool'
 import { Cache, Context, Schema, Logger, isNullable } from 'koishi'
 import { createClient } from 'redis'
-import { RedisClientOptions, RedisClientType } from 'redis/dist/lib/client'
+import { RedisClientOptions, RedisClientType } from '@node-redis/client'
 
 class RedisCache extends Cache {
   logger = new Logger('redis')
@@ -104,7 +104,7 @@ class RedisCache extends Cache {
 }
 
 namespace RedisCache {
-  export interface Config extends RedisClientOptions<{}, {}> {
+  export interface Config extends RedisClientOptions<never, {}> {
     prefix?: string
   }
 

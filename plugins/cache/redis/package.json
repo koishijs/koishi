@@ -39,6 +39,6 @@
   },
   "dependencies": {
     "generic-pool": "^3.8.2",
-    "redis": "^4.0.0-rc.2"
+    "redis": "^4.0.0-rc.4"
   }
 }
