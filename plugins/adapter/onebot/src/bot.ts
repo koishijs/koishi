@@ -34,7 +34,7 @@ export class OneBotBot extends Bot<BotConfig> {
   async initializeGuildServiceProfile() {
     try {
       const profile = await this.internal.getGuildServiceProfile()
-      if (!profile?.tiny_id) {
+      if (!profile?.tiny_id || profile.tiny_id === 0) {
         // Guild service is not supported in this account
         return
       }
