@@ -11,6 +11,7 @@ export interface MessageId {
 
 export interface AccountInfo {
   user_id: string
+  tiny_id?: string
   nickname: string
 }
 
@@ -55,8 +56,8 @@ export interface Message extends MessageId {
   message_type: 'private' | 'group'
   sender: SenderInfo
   group_id?: number
-  guild_id?: number
-  channel_id?: number
+  guild_id?: string
+  channel_id?: string
   message: string | any[]
   anonymous?: AnonymousInfo
 }
@@ -282,17 +283,17 @@ export enum SafetyLevel { safe, unknown, danger }
 
 export interface GuildServiceProfile {
   nickname: string
-  tiny_id: number
+  tiny_id: string
   avatar_url: string
 }
 
 export interface GuildBaseInfo {
-  guild_id: number
+  guild_id: string
   guild_name: string
 }
 
 export interface GuildInfo extends GuildBaseInfo {
-  guild_display_id: number
+  guild_display_id: string
 }
 
 export interface GuildMeta extends GuildBaseInfo {
@@ -302,17 +303,17 @@ export interface GuildMeta extends GuildBaseInfo {
   max_robot_count: number
   max_admin_count: number
   member_count: number
-  owner_id: number
+  owner_id: string
 }
 
 export interface ChannelInfo {
-  owner_guild_id: number
-  channel_id: number
+  owner_guild_id: string
+  channel_id: string
   channel_type: number
   channel_name: string
   create_time: number
-  creator_id: number
-  creator_tiny_id: number
+  creator_id: string
+  creator_tiny_id: string
   talk_permission: number
   visible_type: number
   current_slow_mode: number
@@ -327,7 +328,7 @@ export interface SlowModeInfo {
 }
 
 export interface GuildMemberInfo {
-  tiny_id: number
+  tiny_id: string
   title: string
   nickname: string
   role: number

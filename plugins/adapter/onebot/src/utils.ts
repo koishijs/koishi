@@ -21,8 +21,8 @@ export const AdapterConfig: Schema<AdapterConfig> = Schema.intersect([
 ])
 
 export const adaptUser = (user: OneBot.AccountInfo): Bot.User => ({
-  userId: user.user_id.toString(),
-  avatar: `http://q.qlogo.cn/headimg_dl?dst_uin=${user.user_id}&spec=640`,
+  userId: user.tiny_id || user.user_id.toString(),
+  avatar: user.user_id ? `http://q.qlogo.cn/headimg_dl?dst_uin=${user.user_id}&spec=640` : undefined,
   username: user.nickname,
 })
 
@@ -33,7 +33,7 @@ export const adaptGuildMember = (user: OneBot.SenderInfo): Bot.GuildMember => ({
 })
 
 export const adaptQQGuildMember = (user: OneBot.GuildMemberInfo, presetRole?: string): Bot.GuildMember => ({
-  userId: user.tiny_id.toString(),
+  userId: user.tiny_id,
   username: user.nickname,
   nickname: user.nickname,
   roles: [...(presetRole ? [presetRole] : []), user.role.toString()],
@@ -67,8 +67,8 @@ export function adaptMessage(message: OneBot.Message, bot?: OneBotBot): Bot.Mess
     }),
   }
   if (message.guild_id) {
-    result.guildId = message.guild_id.toString()
-    result.channelId = message.channel_id.toString()
+    result.guildId = message.guild_id
+    result.channelId = message.channel_id
   } else if (message.group_id) {
     result.guildId = result.channelId = message.group_id.toString()
   } else {
@@ -81,7 +81,7 @@ export const adaptGuild = (info: OneBot.GroupInfo | OneBot.GuildBaseInfo): Bot.G
   if ((info as OneBot.GuildBaseInfo).guild_id) {
     const guild = info as OneBot.GuildBaseInfo
     return {
-      guildId: guild.guild_id.toString(),
+      guildId: guild.guild_id,
       guildName: guild.guild_name,
     }
   } else {
