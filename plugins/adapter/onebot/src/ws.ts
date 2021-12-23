@@ -50,7 +50,9 @@ export class WebSocketServer extends Adapter<BotConfig, AdapterConfig> {
     })
   }
 
-  connect() {}
+  async connect(bot: OneBotBot) {
+    await bot.initializeGuildServiceProfile()
+  }
 
   start() {}
 
