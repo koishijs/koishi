@@ -78,9 +78,21 @@ export class OneBotBot extends Bot<BotConfig> {
     return data.map(OneBot.adaptUser)
   }
 
-  async getChannel(channelId: string) {
+  async getChannel(channelId: string, guildId?: string) {
+    if (guildId && this.isQQGuildId(guildId)) {
+      const channels = await this.getChannelList(guildId)
+      return channels.find((channel) => channel.channelId === channelId)
+    }
     const data = await this.internal.getGroupInfo(channelId)
     return OneBot.adaptChannel(data)
+  }
+
+  async getChannelList(guildId: string) {
+    if (!this.isQQGuildId(guildId)) {
+      return []
+    }
+    const data = await this.internal.getGuildChannelList(guildId, false)
+    return data.map(OneBot.adaptChannel)
   }
 
   async getGuild(guildId: string) {
@@ -94,8 +106,8 @@ export class OneBotBot extends Bot<BotConfig> {
   }
 
   async getGuildList() {
-    const data = await this.internal.getGroupList()
-    return data.map(OneBot.adaptGuild)
+    const [data, guildData] = await Promise.all([this.internal.getGroupList(), this.internal.getGuildList()])
+    return [...data, ...guildData].map(OneBot.adaptGuild)
   }
 
   async getGuildMember(guildId: string, userId: string) {
