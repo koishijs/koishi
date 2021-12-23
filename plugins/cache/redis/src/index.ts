@@ -81,7 +81,7 @@ class RedisCache extends Cache {
       const command = client.multi()
         .set(redisKey, record)
       if (age) {
-        command.expire(redisKey, age)
+        command.pExpire(redisKey, age)
       }
       await command.exec()
     }, `set ${redisKey}`)
