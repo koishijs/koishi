@@ -56,7 +56,7 @@ export function adaptMessage(message: OneBot.Message, bot?: OneBotBot): Bot.Mess
     timestamp: message.time * 1000,
     content: segment.transform(message.message, {
       at({ qq }) {
-        if (bot?.isGuildServiceAvailable() && qq === bot.guildServiceProfile.userId) {
+        if (bot?.isGuildServiceAvailable() && qq === bot.guildProfile.userId) {
           return segment.at(bot.selfId)
         }
         if (qq !== 'all') return segment.at(qq)
