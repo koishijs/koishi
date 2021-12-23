@@ -215,7 +215,7 @@ export function adaptSession(data: OneBot.Payload, bot?: OneBotBot) {
 
 export async function runIfFailBlank<T>(fun: () => Promise<T[]>): Promise<T[]> {
   try {
-    return await fun()
+    return (await fun()) || []
   } catch (e) {
     return []
   }

@@ -123,7 +123,7 @@ export class OneBotBot extends Bot<BotConfig> {
       return []
     }
     const data = await this.internal.getGuildChannelList(guildId, false)
-    return data.map(OneBot.adaptChannel)
+    return (data || []).map(OneBot.adaptChannel)
   }
 
   async getGuild(guildId: string) {
