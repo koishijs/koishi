@@ -32,7 +32,7 @@ export const adaptGuildMember = (user: OneBot.SenderInfo): Bot.GuildMember => ({
   roles: [user.role],
 })
 
-export const adapterQQGuildMember = (user: OneBot.GuildMemberInfo, presetRole?: string): Bot.GuildMember => ({
+export const adaptQQGuildMember = (user: OneBot.GuildMemberInfo, presetRole?: string): Bot.GuildMember => ({
   userId: user.tiny_id.toString(),
   username: user.nickname,
   nickname: user.nickname,
