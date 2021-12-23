@@ -35,7 +35,9 @@ export class OneBotBot extends Bot<BotConfig> {
   async initializeGuildServiceProfile() {
     try {
       this.guildServiceProfile = await this.internal.getGuildServiceProfile()
-      this.logger.info(`${this.username}(${this.selfId}): Got service profile: ${this.guildServiceProfile.nickname}(${this.guildServiceProfile.tiny_id})`)
+      if (this.isGuildServiceAvailable()) {
+        this.logger.info(`${this.username}(${this.selfId}): Got service profile: ${this.guildServiceProfile.nickname}(${this.guildServiceProfile.tiny_id})`)
+      }
     } catch (e) {
       this.logger.warn(`${this.username}(${this.selfId}): Failed to get guild service profile: ${e.message}`)
     }
