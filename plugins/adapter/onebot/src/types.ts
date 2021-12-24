@@ -53,7 +53,7 @@ export interface SenderInfo extends StrangerInfo {
 export interface Message extends MessageId {
   real_id?: number
   time: number
-  message_type: 'private' | 'group'
+  message_type: 'private' | 'group' | 'guild'
   sender: SenderInfo
   group_id?: number
   guild_id?: string
