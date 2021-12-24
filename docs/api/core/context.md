@@ -101,7 +101,7 @@ ctx.router.get('/path', (ctx, next) => {
 
 给出当前上下文和其他上下文的交集。
 
-### ctx.except(filter)
+### ctx.exclude(filter)
 
 - **context:** `Context | ((session: Session) => boolean)` 另一个上下文或者过滤器函数
 - 返回值: `Context` 新的上下文

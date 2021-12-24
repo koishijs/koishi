@@ -88,15 +88,14 @@ function isApplicable(object: Plugin) {
   return object && typeof object === 'object' && typeof object.apply === 'function'
 }
 
-type Filter = (session: Session) => boolean
-
 const selectors = ['user', 'guild', 'channel', 'self', 'private', 'platform'] as const
 
-type SelectorType = typeof selectors[number]
-type SelectorValue = boolean | MaybeArray<string | number>
-type BaseSelection = { [K in SelectorType as `$${K}`]?: SelectorValue }
+export type Filter = (session: Session) => boolean
+export type SelectorType = typeof selectors[number]
+export type SelectorValue = boolean | MaybeArray<string | number>
+export type BaseSelection = { [K in SelectorType as `$${K}`]?: SelectorValue }
 
-interface Selection extends BaseSelection {
+export interface Selection extends BaseSelection {
   $and?: Selection[]
   $or?: Selection[]
   $not?: Selection
@@ -114,42 +113,38 @@ export class Context {
     return `Context <${this._plugin ? this._plugin.name : 'root'}>`
   }
 
+  private _property<K extends keyof Session>(key: K, ...values: Session[K][]) {
+    return this.intersect((session) => {
+      return values.length ? values.includes(session[key]) : !!session[key]
+    })
+  }
+
   user(...values: string[]) {
-    return this.select('userId', ...values)
+    return this._property('userId', ...values)
   }
 
   self(...values: string[]) {
-    return this.select('selfId', ...values)
+    return this._property('selfId', ...values)
   }
 
   guild(...values: string[]) {
-    return this.select('guildId', ...values)
+    return this._property('guildId', ...values)
   }
 
   channel(...values: string[]) {
-    return this.select('channelId', ...values)
+    return this._property('channelId', ...values)
   }
 
   platform(...values: string[]) {
-    return this.select('platform', ...values)
+    return this._property('platform', ...values)
   }
 
   private(...values: string[]) {
-    return this.except(this.select('guildId')).select('userId', ...values)
+    return this.exclude(this._property('guildId'))._property('userId', ...values)
   }
 
-  select<K extends keyof Session>(key: K, ...values: Session[K][]): Context
-  select(options?: Selection): Context
-  select(...args: [Selection?] | [string, ...any[]]) {
-    if (typeof args[0] === 'string') {
-      const key = args.shift()
-      return this.intersect((session) => {
-        return args.length ? args.includes(session[key]) : !!session[key]
-      })
-    }
-
+  select(options: Selection) {
     let ctx: Context = this
-    const options = args[0] ?? {}
 
     // basic selectors
     for (const type of selectors) {
@@ -157,7 +152,7 @@ export class Context {
       if (value === true) {
         ctx = ctx[type]()
       } else if (value === false) {
-        ctx = ctx.except(ctx[type]())
+        ctx = ctx.exclude(ctx[type]())
       } else if (value !== undefined) {
         // we turn everything into string
         ctx = ctx[type](...makeArray(value).map(item => '' + item))
@@ -180,9 +175,9 @@ export class Context {
       ctx = ctx.intersect(ctx2)
     }
 
-    // except
+    // exclude
     if (options.$not) {
-      ctx = ctx.except(this.select(options.$not))
+      ctx = ctx.exclude(this.select(options.$not))
     }
 
     return ctx
@@ -210,9 +205,14 @@ export class Context {
     return new Context(s => this.filter(s) && filter(s), this.app, this._plugin)
   }
 
-  except(arg: Filter | Context) {
+  exclude(arg: Filter | Context) {
     const filter = typeof arg === 'function' ? arg : arg.filter
     return new Context(s => this.filter(s) && !filter(s), this.app, this._plugin)
+  }
+
+  /** @deprecated use `ctx.exclude()` instead */
+  except(arg: Filter | Context) {
+    return this.exclude(arg)
   }
 
   match(session?: Session) {
