@@ -4,6 +4,7 @@ import { mkdir, rm, writeFile } from 'fs/promises'
 import { components } from '@octokit/openapi-types'
 import { resolve } from 'path'
 import { extract } from 'tar'
+import internal from 'stream'
 
 type Release = components['schemas']['release']
 
@@ -52,13 +53,13 @@ export async function downloadRelease(release: Release) {
   const mirror = process.env.GITHUB_MIRROR || 'https://download.fastgit.org'
   const url = asset.browser_download_url.replace('https://github.com', mirror)
   const [{ data: stream }] = await Promise.all([
-    axios.get<NodeJS.ReadableStream>(url, { responseType: 'stream' }),
+    axios.get<internal.Readable>(url, { responseType: 'stream' }),
     mkdir(outDir, { recursive: true }),
   ])
 
   await Promise.all([
     writeFile(outDir + '/index.json', JSON.stringify({ ...release, assets: undefined })),
-    new Promise(async (resolve, reject) => {
+    new Promise((resolve, reject) => {
       stream.on('end', resolve)
       stream.on('error', reject)
       if (platform === 'windows') {
@@ -66,6 +67,6 @@ export async function downloadRelease(release: Release) {
       } else {
         stream.pipe(extract({ cwd: outDir, newer: true }, ['go-cqhttp']))
       }
-    })
+    }),
   ]).catch(() => rm(outDir, { force: true, recursive: true }))
 }

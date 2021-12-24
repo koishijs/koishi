@@ -3,6 +3,7 @@ import { Dict, defineProperty } from '@koishijs/utils'
 import { Agent } from 'http'
 import ProxyAgent from 'proxy-agent'
 import axios, { AxiosRequestConfig, Method } from 'axios'
+import internal from 'stream'
 
 declare module '@koishijs/core' {
   namespace App {
@@ -54,7 +55,7 @@ export namespace Quester {
 
   export interface Get {
     <T = any>(url: string, params?: Dict, headers?: Dict): Promise<T>
-    stream(url: string, params?: Dict, headers?: Dict): Promise<ReadableStream>
+    stream(url: string, params?: Dict, headers?: Dict): Promise<internal.Readable>
     arraybuffer(url: string, params?: Dict, headers?: Dict): Promise<ArrayBuffer>
   }
 
