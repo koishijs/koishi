@@ -48,7 +48,14 @@ export function apply(ctx: Context, config: DeamonConfig = {}) {
     if (data.type === 'send') {
       const { channelId, guildId, sid, message } = data.body
       const bot = ctx.bots.get(sid)
-      bot.sendMessage(channelId, message, guildId)
+      if (!bot) return
+      if (bot.status === 'online') {
+        bot.sendMessage(channelId, message, guildId)
+      } else {
+        ctx.once('bot-ready', (bot) => {
+          bot.sendMessage(channelId, message, guildId)
+        })
+      }
     }
   })
 }

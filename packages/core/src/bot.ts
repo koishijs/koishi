@@ -32,14 +32,14 @@ export abstract class Bot<T extends Bot.BaseConfig = Bot.BaseConfig> {
   set status(value) {
     this._status = value
     if (this.app.bots.includes(this)) {
-      this.app.emit('bot-updated', this)
+      this.app.emit('bot-status-updated', this)
     }
   }
 
   async start() {
     try {
       this.status = 'connect'
-      await this.app.parallel('bot-connect', this)
+      await this.app.parallel('bot-ready', this)
       await this.adapter.connect(this)
     } catch (error) {
       this.reject(error)

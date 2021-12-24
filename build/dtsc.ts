@@ -300,7 +300,6 @@ interface Layer {
   const layers: Layer[] = []
   while (Object.keys(nodes).length) {
     const layer = { bundle, nodes: [] }
-    layers.unshift(layer)
     bundle = !bundle
     let flag = true
     while (flag) {
@@ -316,10 +315,11 @@ interface Layer {
         })
       }
     }
-    if (!layer.nodes.length) {
+    if (layers.length && !layer.nodes.length) {
       console.log(nodes)
       throw new Error('circular dependency detected')
     }
+    layers.unshift(layer)
   }
 
   // Step 5: generate dts files

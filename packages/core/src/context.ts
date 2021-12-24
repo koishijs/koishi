@@ -648,7 +648,7 @@ export interface EventMap {
   'adapter'(): void
   'bot-added'(bot: Bot): void
   'bot-removed'(bot: Bot): void
-  'bot-updated'(bot: Bot): void
-  'bot-connect'(bot: Bot): Awaitable<void>
+  'bot-status-updated'(bot: Bot): void
+  'bot-ready'(bot: Bot): Awaitable<void>
   'bot-dispose'(bot: Bot): Awaitable<void>
 }
