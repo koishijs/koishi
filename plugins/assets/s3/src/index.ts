@@ -40,8 +40,9 @@ class S3Assets extends Assets {
   async upload(url: string, file: string) {
     const buffer = await this.download(url)
     const hash = createHash('sha1').update(buffer).digest('hex')
-    const s3Key = `${this.config.pathPrefix}${hash}`
-    const finalUrl = `${this.config.publicUrl}${hash}`
+    const fullFilename = file ? `${hash}-${file}` : hash
+    const s3Key = `${this.config.pathPrefix}${fullFilename}`
+    const finalUrl = `${this.config.publicUrl}${fullFilename}`
     try {
       const checkExisting = await this.listObjects(s3Key)
       if (checkExisting.Contents?.some((obj) => obj.Key === s3Key)) return finalUrl
