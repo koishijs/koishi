@@ -13,7 +13,9 @@ export class ReleaseProvider extends DataSource<Release[]> {
 
   async get(forced = false) {
     if (!forced && this.cache) return this.cache
-    return this.cache = this.ctx.http.get('https://api.github.com/repos/koishijs/koishi/releases', { per_page: 100 }).catch(() => {
+    return this.cache = this.ctx.http.get('https://api.github.com/repos/koishijs/koishi/releases', {
+      params: { per_page: 100 },
+    }).catch(() => {
       delete this.cache
     })
   }

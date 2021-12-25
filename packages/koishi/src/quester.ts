@@ -2,7 +2,7 @@ import { App, Schema } from '@koishijs/core'
 import { Dict, defineProperty } from '@koishijs/utils'
 import { Agent } from 'http'
 import ProxyAgent from 'proxy-agent'
-import axios, { AxiosRequestConfig, Method } from 'axios'
+import axios, { AxiosRequestConfig, AxiosResponse, Method } from 'axios'
 
 declare module '@koishijs/core' {
   namespace App {
@@ -25,16 +25,16 @@ declare module '@koishijs/core' {
 }
 
 export interface Quester {
-  <T = any>(method: Method, url: string, data?: any, headers?: Dict): Promise<T>
+  <T = any>(method: Method, url: string, config?: AxiosRequestConfig): Promise<T>
+  axios<T = any>(url: string, config?: AxiosRequestConfig): Promise<AxiosResponse<T>>
   extend(config: Quester.Config): Quester
   config: Quester.Config
-  get: Quester.Get
-  head(url: string, params?: Dict, headers?: Dict): Promise<Dict<string>>
-  delete(url: string, params?: Dict, headers?: Dict): Promise<Dict<string>>
-  options(url: string, params?: Dict, headers?: Dict): Promise<Dict<string>>
-  post<T = any>(url: string, data?: any, headers?: Dict): Promise<T>
-  put<T = any>(url: string, data?: any, headers?: Dict): Promise<T>
-  patch<T = any>(url: string, data?: any, headers?: Dict): Promise<T>
+  head(url: string, config?: AxiosRequestConfig): Promise<Dict<string>>
+  get<T = any>(url: string, config?: AxiosRequestConfig): Promise<T>
+  delete<T = any>(url: string, config?: AxiosRequestConfig): Promise<T>
+  post<T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T>
+  put<T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T>
+  patch<T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T>
 }
 
 export namespace Quester {
@@ -51,12 +51,6 @@ export namespace Quester {
     headers: Schema.dict(Schema.string()).description('要附加的额外请求头。'),
     timeout: Schema.number().description('等待连接建立的最长时间。'),
   }).description('请求设置')
-
-  export interface Get {
-    <T = any>(url: string, params?: Dict, headers?: Dict): Promise<T>
-    stream(url: string, params?: Dict, headers?: Dict): Promise<ReadableStream>
-    arraybuffer(url: string, params?: Dict, headers?: Dict): Promise<ArrayBuffer>
-  }
 
   const agents: Dict<Agent> = {}
 
@@ -77,47 +71,36 @@ export namespace Quester {
       options.httpsAgent = getAgent(config.proxyAgent)
     }
 
-    async function request<T>(method: Method, url: string, config?: AxiosRequestConfig) {
-      const response = await axios({
-        ...options,
-        ...config,
-        method,
-        url: endpoint + url,
-        headers: {
-          ...options.headers,
-          ...config.headers,
-        },
-      })
-      return response.data as T
-    }
+    const request = async (url: string, config?: AxiosRequestConfig) => axios({
+      ...options,
+      ...config,
+      url: endpoint + url,
+      headers: {
+        ...options.headers,
+        ...config.headers,
+      },
+    })
 
-    const instance = ((method, url, data, headers) => request(method, url, { headers, data })) as Quester
-    instance.get = ((url, params, headers) => request('GET', url, { headers, params })) as Get
-    instance.get.stream = (url, params, headers) => request('GET', url, { headers, params, responseType: 'stream' })
-    instance.get.arraybuffer = (url, params, headers) => request('GET', url, { headers, params, responseType: 'arraybuffer' })
-    instance.options = (url, params, headers) => request('OPTIONS', url, { headers, params })
-    instance.delete = (url, params, headers) => request('DELETE', url, { headers, params })
-    instance.post = (url, data, headers) => request('POST', url, { headers, data })
-    instance.put = (url, data, headers) => request('PUT', url, { headers, data })
-    instance.patch = (url, data, headers) => request('PATCH', url, { headers, data })
-    instance.extend = (newConfig) => create({ ...config, ...newConfig })
-    instance.config = config
+    const http = (async (method, url, config) => {
+      const response = await request(url, { ...config, method })
+      return response.data
+    }) as Quester
 
-    instance.head = async (url, params, _headers) => {
-      const response = await axios({
-        ...options,
-        params,
-        method: 'HEAD',
-        url: endpoint + url,
-        headers: {
-          ...options.headers,
-          ..._headers,
-        },
-      })
+    http.config = config
+    http.axios = request as any
+    http.extend = (newConfig) => create({ ...config, ...newConfig })
+
+    http.get = (url, config) => http('GET', url, config)
+    http.delete = (url, config) => http('DELETE', url, config)
+    http.post = (url, data, config) => http('POST', url, { ...config, data })
+    http.put = (url, data, config) => http('PUT', url, { ...config, data })
+    http.patch = (url, data, config) => http('PATCH', url, { ...config, data })
+    http.head = async (url, config) => {
+      const response = await request(url, { ...config, method: 'HEAD' })
       return response.headers
     }
 
-    return instance
+    return http
   }
 }
 

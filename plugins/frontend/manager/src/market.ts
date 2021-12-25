@@ -59,9 +59,11 @@ export class MarketProvider extends DataSource<Dict<MarketProvider.Data>> {
 
   private async search(offset = 0) {
     const { objects, total } = await this.http.get<Package.SearchResult>('/-/v1/search', {
-      text: 'koishi+plugin',
-      size: 250,
-      from: offset,
+      params: {
+        text: 'koishi+plugin',
+        size: 250,
+        from: offset,
+      },
     })
     objects.forEach(result => this.analyze(result))
     return total
