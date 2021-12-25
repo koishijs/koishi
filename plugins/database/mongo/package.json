@@ -1,0 +1,45 @@
+{
+  "name": "@koishijs/plugin-database-mongo",
+  "description": "MongoDB support for Koishi",
+  "version": "3.0.0-rc.0",
+  "main": "lib/index.js",
+  "typings": "lib/index.d.ts",
+  "files": [
+    "lib"
+  ],
+  "author": "undefined <masnn0@outlook.com>",
+  "maintainers": [
+    "Shigma <shigma10826@gmail.com>",
+    "undefined <masnn0@outlook.com>"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/koishijs/koishi.git"
+  },
+  "bugs": {
+    "url": "https://github.com/koishijs/koishi/issues"
+  },
+  "homepage": "https://koishi.js.org/api/database/mongo.html",
+  "keywords": [
+    "bot",
+    "qqbot",
+    "cqhttp",
+    "coolq",
+    "chatbot",
+    "koishi",
+    "database",
+    "mysql"
+  ],
+  "devDependencies": {
+    "@koishijs/plugin-mock": "^1.0.0-rc.0",
+    "@koishijs/test-utils": "^8.0.0-rc.0"
+  },
+  "peerDependencies": {
+    "koishi": "^4.0.0-rc.0"
+  },
+  "dependencies": {
+    "@koishijs/orm-utils": "^1.0.0-rc.0",
+    "mongodb": "^4.2.2"
+  }
+}

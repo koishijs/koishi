@@ -1,0 +1,26 @@
+{
+  "name": "@koishijs/ui-core",
+  "description": "UI components for Koishi",
+  "version": "0.1.0",
+  "private": true,
+  "main": "src/index.ts",
+  "files": [
+    "src"
+  ],
+  "author": "Shigma <shigma10826@gmail.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/koishijs/koishi.git"
+  },
+  "bugs": {
+    "url": "https://github.com/koishijs/koishi/issues"
+  },
+  "homepage": "https://koishi.js.org",
+  "peerDependencies": {
+    "vue": "^3.2.21"
+  },
+  "dependencies": {
+    "@koishijs/core": "^4.0.0-rc.0"
+  }
+}

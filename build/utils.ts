@@ -1,6 +1,7 @@
 import { resolve } from 'path'
 import globby from 'globby'
 import spawn from 'cross-spawn'
+import { readdir } from 'fs-extra'
 
 export const cwd = resolve(__dirname, '..')
 
@@ -13,10 +14,37 @@ export function getWorkspaces() {
   })
 }
 
+const categories = [
+  'packages',
+  'plugins',
+  'plugins/adapter',
+  'plugins/assets',
+  'plugins/cache',
+  'plugins/database',
+  'plugins/frontend',
+  'community',
+]
+
+export async function getPackages(args: readonly string[]) {
+  const folders = (await Promise.all(categories.map(async (seg) => {
+    const names = await readdir(`${cwd}/${seg}`).catch<string[]>(() => [])
+    return names.map(name => `${seg}/${name}`).filter(name => !name.includes('.') && !categories.includes(name))
+  }))).flat()
+
+  return args.length ? args.map((name) => {
+    for (const category of categories) {
+      const folder = category + '/' + name
+      if (folders.includes(folder)) return folder
+    }
+  }).filter(Boolean) : folders
+}
+
 export type DependencyType = 'dependencies' | 'devDependencies' | 'peerDependencies' | 'optionalDependencies'
 
 export interface PackageJson extends Partial<Record<DependencyType, Record<string, string>>> {
   name?: string
+  main?: string
+  module?: string
   description?: string
   private?: boolean
   version?: string

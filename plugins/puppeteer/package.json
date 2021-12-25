@@ -1,0 +1,48 @@
+{
+  "name": "@koishijs/plugin-puppeteer",
+  "description": "Take Screenshots in Koishi",
+  "version": "3.0.0-rc.0",
+  "main": "lib/index.js",
+  "typings": "lib/index.d.ts",
+  "files": [
+    "lib"
+  ],
+  "author": "Shigma <shigma10826@gmail.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/koishijs/koishi.git"
+  },
+  "bugs": {
+    "url": "https://github.com/koishijs/koishi/issues"
+  },
+  "homepage": "https://github.com/koishijs/koishi/packages/plugin-puppeteer#readme",
+  "keywords": [
+    "bot",
+    "qqbot",
+    "cqhttp",
+    "coolq",
+    "chatbot",
+    "koishi",
+    "plugin",
+    "screenshot",
+    "puppeteer"
+  ],
+  "devDependencies": {
+    "@types/pngjs": "^6.0.1",
+    "@types/react": "*",
+    "@types/react-dom": "*",
+    "@koishijs/plugin-eval": "^4.0.0-rc.0",
+    "@koishijs/plugin-mock": "^1.0.0-rc.0"
+  },
+  "peerDependencies": {
+    "koishi": "^4.0.0-rc.0"
+  },
+  "dependencies": {
+    "chrome-finder": "^1.0.7",
+    "pngjs": "^6.0.0",
+    "puppeteer-core": "^10.2.0",
+    "react": "^17.0.2",
+    "react-dom": "^17.0.2"
+  }
+}

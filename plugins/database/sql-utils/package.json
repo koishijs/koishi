@@ -1,0 +1,38 @@
+{
+  "name": "@koishijs/sql-utils",
+  "description": "SQL utilities for Koishi ORM",
+  "version": "1.0.0-rc.0",
+  "main": "lib/index.js",
+  "typings": "lib/index.d.ts",
+  "engines": {
+    "node": ">=12.0.0"
+  },
+  "files": [
+    "lib"
+  ],
+  "author": "Shigma <shigma10826@gmail.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/koishijs/koishi.git"
+  },
+  "bugs": {
+    "url": "https://github.com/koishijs/koishi/issues"
+  },
+  "homepage": "https://github.com/koishijs/koishi/packages/sql-utils#readme",
+  "keywords": [
+    "bot",
+    "qqbot",
+    "cqhttp",
+    "coolq",
+    "chatbot",
+    "koishi",
+    "plugin",
+    "utilities"
+  ],
+  "peerDependencies": {
+    "koishi": "^4.0.0-rc.0"
+  },
+  "devDependencies": {},
+  "dependencies": {}
+}

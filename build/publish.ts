@@ -1,10 +1,13 @@
-import { cwd, PackageJson, getWorkspaces, spawnAsync, spawnSync } from './utils'
+import { cwd, PackageJson, spawnAsync, spawnSync, getPackages } from './utils'
 import { gt, maxSatisfying, prerelease } from 'semver'
 import { Octokit } from '@octokit/rest'
 import { draft } from './release'
-import { writeJson } from 'fs-extra'
+import { copyFile } from 'fs-extra'
 import latest from 'latest-version'
 import ora from 'ora'
+import cac from 'cac'
+
+const { args } = cac().help().parse()
 
 const { CI, GITHUB_EVENT_NAME, GITHUB_REF, GITHUB_TOKEN } = process.env
 
@@ -13,12 +16,16 @@ if (CI && (GITHUB_REF !== 'refs/heads/master' || GITHUB_EVENT_NAME !== 'push')) 
   process.exit(0)
 }
 
-;(async () => {
-  let folders = await getWorkspaces()
-  if (process.argv[2]) {
-    folders = folders.filter(path => path.startsWith(process.argv[2]))
+function getVersion(name: string, isNext = false) {
+  if (isNext) {
+    return latest(name, { version: 'next' }).catch(() => getVersion(name))
+  } else {
+    return latest(name).catch(() => '0.0.1')
   }
+}
 
+;(async () => {
+  const folders = await getPackages(args)
   const spinner = ora()
   const bumpMap: Record<string, PackageJson> = {}
 
@@ -29,9 +36,7 @@ if (CI && (GITHUB_REF !== 'refs/heads/master' || GITHUB_EVENT_NAME !== 'push')) 
     try {
       meta = require(`../${name}/package.json`)
       if (!meta.private) {
-        const version = prerelease(meta.version)
-          ? await latest(meta.name, { version: 'next' }).catch(() => latest(meta.name))
-          : await latest(meta.name)
+        const version = await getVersion(meta.name, isNext(meta.version))
         if (gt(meta.version, version)) {
           bumpMap[name] = meta
         }
@@ -41,39 +46,35 @@ if (CI && (GITHUB_REF !== 'refs/heads/master' || GITHUB_EVENT_NAME !== 'push')) 
   }))
   spinner.succeed()
 
+  function isNext(version: string) {
+    const parts = prerelease(version)
+    if (!parts) return false
+    return parts[0] !== 'rc'
+  }
+
   function publish(folder: string, name: string, version: string, tag: string) {
     console.log(`publishing ${name}@${version} ...`)
     return spawnAsync([
       'yarn', 'publish', folder,
       '--new-version', version,
       '--tag', tag,
+      '--access', 'public',
     ])
   }
 
   if (Object.keys(bumpMap).length) {
     for (const folder in bumpMap) {
-      const { name, version, dependencies, devDependencies } = bumpMap[folder]
-      await publish(folder, name, version, prerelease(version) ? 'next' : 'latest')
-      if (name === 'koishi-plugin-webui') {
-        const filename = cwd + '/packages/plugin-webui/package.json'
-        await writeJson(filename, {
-          ...bumpMap[folder],
-          version: version + '-dev',
-          files: ['lib', 'dist', 'client'],
-          dependencies: Object.fromEntries([
-            ...Object.entries(dependencies),
-            ...Object.entries(devDependencies).filter(([key]) => {
-              return !key.startsWith('@types') && !key.startsWith('koishi')
-            }),
-          ]),
-        }, { spaces: 2 })
-        await publish(folder, name, version + '-dev', 'dev')
-        await writeJson(filename, bumpMap[folder])
+      const { name, version } = bumpMap[folder]
+      if (name === 'koishi') {
+        await copyFile(`${cwd}/README.md`, `${cwd}/${folder}/README.md`)
       }
+      await publish(folder, name, version, isNext(version) ? 'next' : 'latest')
     }
   }
 
-  const { version } = require('../packages/koishi-core/package') as PackageJson
+  const { version } = require('../packages/koishi/package') as PackageJson
+  if (isNext(version)) return
+
   const tags = spawnSync(['git', 'tag', '-l']).split(/\r?\n/)
   if (tags.includes(version)) {
     return console.log(`Tag ${version} already exists.`)
@@ -93,7 +94,7 @@ if (CI && (GITHUB_REF !== 'refs/heads/master' || GITHUB_EVENT_NAME !== 'push')) 
     owner: 'koishijs',
     tag_name: version,
     name: `Koishi ${version}`,
-    prerelease: !!prerelease(version),
+    prerelease: isNext(version),
     body,
   })
   console.log('Release created successfully.')

@@ -1,0 +1,48 @@
+{
+  "name": "@koishijs/plugin-database-sqlite",
+  "description": "SQLite support for Koishi",
+  "version": "1.0.0-rc.0",
+  "main": "lib/index.js",
+  "typings": "lib/index.d.ts",
+  "files": [
+    "lib"
+  ],
+  "author": "thezzisu <2100012732@stu.pku.edu.cn>",
+  "license": "MIT",
+  "scripts": {
+    "lint": "eslint src --ext .ts"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/koishijs/koishi.git"
+  },
+  "bugs": {
+    "url": "https://github.com/koishijs/koishi/issues"
+  },
+  "homepage": "https://koishi.js.org/api/database/mysql.html",
+  "keywords": [
+    "bot",
+    "qqbot",
+    "cqhttp",
+    "coolq",
+    "chatbot",
+    "koishi",
+    "plugin",
+    "database",
+    "sqlite"
+  ],
+  "peerDependencies": {
+    "koishi": "^4.0.0-rc.0"
+  },
+  "dependencies": {
+    "@koishijs/orm-utils": "^1.0.0-rc.0",
+    "@koishijs/sql-utils": "^1.0.0-rc.0",
+    "better-sqlite3": "^7.4.3",
+    "sqlstring-sqlite": "^0.1.1"
+  },
+  "devDependencies": {
+    "@koishijs/plugin-mock": "^1.0.0-rc.0",
+    "@koishijs/test-utils": "^8.0.0-rc.0",
+    "@types/better-sqlite3": "^7.4.0"
+  }
+}

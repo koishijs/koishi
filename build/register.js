@@ -38,10 +38,10 @@ function reportWarnings({ location, text }) {
 
 const globalInjections = {
   KOISHI_VERSION() {
-    return require('../packages/koishi-core/package.json').version
+    return require('../packages/core/package.json').version
   },
   BUILTIN_LOADERS() {
-    const loaders = readdirSync(resolve(__dirname, '../packages/plugin-eval/src/loaders'))
+    const loaders = readdirSync(resolve(__dirname, '../plugins/eval/src/loaders'))
     return loaders.map(name => name.slice(0, -3))
   },
 }

@@ -5,9 +5,6 @@ parser: '@typescript-eslint/parser'
 settings:
   import/parsers:
     '@typescript-eslint/parser': ['.ts']
-  import/resolver:
-    typescript:
-      alwaysTryTypes: true
 
 env:
   browser: true
@@ -16,6 +13,7 @@ env:
   es2020: true
 
 globals:
+  NodeJS: true
   KOISHI_CONFIG: true
 
 extends:
@@ -26,44 +24,50 @@ plugins:
   - '@typescript-eslint'
 
 rules:
-  array-callback-return: off
   comma-dangle:
-    - warn
+    - error
     - always-multiline
-  curly: warn
+
   dot-notation: off
+
   generator-star-spacing:
-    - warn
+    - error
     - after
+
   max-len:
     - warn
     - 160
+
   multiline-ternary: off
-  no-ex-assign: off
+
+  no-callback-literal: off
   no-mixed-operators: off
-  no-unused-expressions: off
   no-use-before-define: off
-  no-useless-escape: off
-  no-redeclare: off
   no-return-assign: off
   no-sequences: off
+  no-useless-escape: off
   one-var: off
-  operator-linebreak: off
+
+  operator-linebreak:
+    - error
+    - before
+
   quotes:
-    - warn
+    - error
     - single
     - avoidEscape: true
       allowTemplateLiterals: true
-  yield-star-spacing:
-    - warn
-    - after
-  yoda: off
 
-  # node
-  node/no-callback-literal: off
+  valid-typeof: off
+
+  yield-star-spacing:
+    - error
+    - after
 
   # typescript
   import/export: off
+
+  '@typescript-eslint/array-type': error
 
   default-param-last: off
   '@typescript-eslint/default-param-last': error
@@ -74,8 +78,35 @@ rules:
   keyword-spacing: off
   '@typescript-eslint/keyword-spacing': error
 
+  camelcase: off
+  '@typescript-eslint/naming-convention':
+    - error
+    
+    # group selectors
+    - selector: default
+      format: [camelCase, UPPER_CASE]
+      leadingUnderscore: allow
+    - selector: [variableLike, memberLike]
+      format: [camelCase, UPPER_CASE, PascalCase]
+      leadingUnderscore: allow
+    - selector: [typeLike]
+      format: [PascalCase]
+
+    # selectors
+    - selector: [function]
+      format: [camelCase, PascalCase]
+    - selector: [enum]
+      format: [UPPER_CASE, PascalCase]
+    - selector: [typeParameter]
+      format: [PascalCase]
+
+  # https://github.com/typescript-eslint/typescript-eslint/blob/master/packages/eslint-plugin/docs/rules/no-redeclare.md
+  no-redeclare: off
+
   no-unused-vars: off
-  '@typescript-eslint/no-unused-vars': warn
+  '@typescript-eslint/no-unused-vars':
+    - error
+    - args: none
 
   no-dupe-class-members: off
   '@typescript-eslint/no-dupe-class-members': error
@@ -85,6 +116,15 @@ rules:
 
   no-useless-constructor: off
   '@typescript-eslint/no-useless-constructor': warn
+
+  semi: off
+  '@typescript-eslint/semi':
+    - error
+    - never
+  '@typescript-eslint/member-delimiter-style':
+    - error
+    - multiline:
+        delimiter: none
 
   space-before-function-paren: off
   '@typescript-eslint/space-before-function-paren':

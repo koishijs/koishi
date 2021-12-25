@@ -1,0 +1,46 @@
+{
+  "name": "@koishijs/plugin-database-mysql",
+  "description": "MySQL support for Koishi",
+  "version": "4.0.0-rc.0",
+  "main": "lib/index.js",
+  "typings": "lib/index.d.ts",
+  "files": [
+    "lib"
+  ],
+  "author": "Shigma <shigma10826@gmail.com>",
+  "license": "MIT",
+  "scripts": {
+    "lint": "eslint src --ext .ts"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/koishijs/koishi.git"
+  },
+  "bugs": {
+    "url": "https://github.com/koishijs/koishi/issues"
+  },
+  "homepage": "https://koishi.js.org/api/database/mysql.html",
+  "keywords": [
+    "bot",
+    "qqbot",
+    "cqhttp",
+    "coolq",
+    "chatbot",
+    "koishi",
+    "database",
+    "mysql"
+  ],
+  "devDependencies": {
+    "@koishijs/plugin-mock": "^1.0.0-rc.0",
+    "@koishijs/test-utils": "^8.0.0-rc.0"
+  },
+  "peerDependencies": {
+    "koishi": "^4.0.0-rc.0"
+  },
+  "dependencies": {
+    "@koishijs/orm-utils": "^1.0.0-rc.0",
+    "@koishijs/sql-utils": "^1.0.0-rc.0",
+    "@types/mysql": "^2.15.19",
+    "mysql": "^2.18.1"
+  }
+}

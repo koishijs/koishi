@@ -7,6 +7,6 @@
     "coverage/**",
     "packages/*/tests/**",
     "packages/plugin-*/**/database/**",
-    "packages/plugin-webui/**"
+    "packages/plugin-status/**"
   ]
 }

@@ -11,6 +11,7 @@ const { args, options } = cac()
   .option('-1, --major', '')
   .option('-2, --minor', '')
   .option('-3, --patch', '')
+  .option('-p, --prerelease', '')
   .option('-a, --all', '')
   .option('-v, --version <ver>', '')
   .option('-l, --local', '')
@@ -18,7 +19,7 @@ const { args, options } = cac()
   .help()
   .parse()
 
-const bumpTypes = ['major', 'minor', 'patch', 'version'] as const
+const bumpTypes = ['major', 'minor', 'patch', 'prerelease', 'version'] as const
 type BumpType = typeof bumpTypes[number]
 
 class Package {
@@ -60,9 +61,18 @@ class Package {
       }
     } else if (flag === 'version') {
       ver = new SemVer(options.version)
+    } else if (flag === 'prerelease') {
+      if (ver.prerelease.length) {
+        ver.prerelease = [{
+          alpha: 'beta',
+          beta: 'rc',
+        }[ver.prerelease[0]], 0]
+      } else {
+        ver = new SemVer(`${ver.major + 1}.0.0-alpha.0`)
+      }
     } else {
       if (ver.prerelease.length) {
-        ver.prerelease = []
+      ver.prerelease = []
       } else {
         ver[flag] += 1
         if (flag !== 'patch') ver.patch = 0
@@ -88,9 +98,18 @@ const packages: Record<string, Package> = {}
 
 function getPackage(name: string) {
   return packages[`packages/${name}`]
-    || packages[`packages/koishi-${name}`]
-    || packages[`packages/adapter-${name}`]
-    || packages[`packages/plugin-${name}`]
+    || packages[`plugins/${name}`]
+    || packages[`plugins/adapter/${name}`]
+    || packages[`plugins/assets/${name}`]
+    || packages[`plugins/cache/${name}`]
+    || packages[`plugins/database/${name}`]
+    || packages[`plugins/frontend/${name}`]
+    || packages[`plugins/${name}`]
+    || packages[`community/adapter-${name}`]
+    || packages[`community/assets-${name}`]
+    || packages[`community/cache-${name}`]
+    || packages[`community/database-${name}`]
+    || packages[`community/${name}`]
 }
 
 function each<T>(callback: (pkg: Package, name: string) => T) {
@@ -120,7 +139,7 @@ function bump(source: Package, flag: BumpType, recursive = false) {
       })
   })
   if (!recursive) return
-  dependents.forEach(dep => bump(dep, flag))
+  dependents.forEach(dep => bump(dep, flag, recursive))
 }
 
 const flag = (() => {
@@ -136,6 +155,8 @@ if (!args.length && !options.all) {
 
 ;(async () => {
   const folders = await getWorkspaces()
+  folders.push('packages/create/template')
+
   const spinner = ora()
   let progress = 0
   spinner.start(`loading packages 0/${folders.length}`)
@@ -164,17 +185,4 @@ if (!args.length && !options.all) {
     }
     return pkg.save()
   }))
-
-  const beta = ['adventure', 'dice', 'monitor', 'rss', 'tomon']
-  const ecosystem: Record<string, Pick<PackageJson, 'version' | 'description'>> = {}
-
-  for (const path in packages) {
-    if (!path.startsWith('packages/')) continue
-    if (path.startsWith('packages/koishi')) continue
-    if (beta.some(name => path.endsWith(name))) continue
-    const { name, version, description } = packages[path].meta
-    ecosystem[name] = { version, description }
-  }
-
-  await writeJson(resolve(__dirname, '../packages/koishi/ecosystem.json'), ecosystem, { spaces: 2 })
 })()

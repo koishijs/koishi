@@ -1,0 +1,25 @@
+{
+  "name": "template",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "start": "koishi start"
+  },
+  "devDependencies": {
+    "esbuild": "^0.12.25",
+    "esbuild-register": "^2.6.0",
+    "ts-node": "^10.4.0",
+    "typescript": "^4.4.4"
+  },
+  "dependencies": {
+    "@koishijs/cli": "^4.0.0-rc.0",
+    "@koishijs/plugin-adapter-discord": "^2.0.0-rc.0",
+    "@koishijs/plugin-adapter-onebot": "^4.0.0-rc.0",
+    "@koishijs/plugin-adapter-telegram": "^2.0.0-rc.0",
+    "@koishijs/plugin-common": "^5.0.0-rc.0",
+    "@koishijs/plugin-console": "^1.0.0-rc.0",
+    "@koishijs/plugin-manager": "^1.0.0-rc.0",
+    "@koishijs/plugin-status": "^5.0.0-rc.0",
+    "koishi": "^4.0.0-rc.0"
+  }
+}

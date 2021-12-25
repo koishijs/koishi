@@ -1,0 +1,36 @@
+{
+  "name": "@koishijs/console-builder",
+  "description": "Building utilities for @koishijs/plugin-console",
+  "version": "1.0.0-beta.0",
+  "main": "lib/index.js",
+  "typings": "lib/index.d.ts",
+  "files": [
+    "lib"
+  ],
+  "author": "Shigma <shigma10826@gmail.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/koishijs/koishi.git"
+  },
+  "bugs": {
+    "url": "https://github.com/koishijs/koishi/issues"
+  },
+  "homepage": "https://koishi.js.org/plugins/other/status.html",
+  "keywords": [
+    "bot",
+    "qqbot",
+    "cqhttp",
+    "coolq",
+    "chatbot",
+    "koishi",
+    "plugin",
+    "webui",
+    "console",
+    "build"
+  ],
+  "dependencies": {
+    "@vitejs/plugin-vue": "^1.9.4",
+    "vite": "~2.5.10"
+  }
+}
