@@ -1,5 +1,8 @@
 import { Context, Service } from '@koishijs/core'
 import { segment } from '@koishijs/utils'
+import { createHash } from 'crypto'
+import { fileTypeFromBuffer } from 'file-type'
+import { basename } from 'path'
 
 const PROTOCOL_BASE64 = 'base64://'
 
@@ -27,12 +30,35 @@ export abstract class Assets extends Service {
     const data = await this.ctx.http.get.arraybuffer(url)
     return Buffer.from(data)
   }
+
+  protected async analyze(url: string, file?: string): Promise<Assets.AnalyzeResult> {
+    const buffer = await this.download(url)
+    const hash = createHash('sha1').update(buffer).digest('hex')
+    let filename: string
+    if (file) {
+      filename = `${hash}-${basename(file)}`
+    } else {
+      const fileType = await fileTypeFromBuffer(buffer)
+      if (fileType) {
+        filename = `${hash}.${fileType.ext}`
+      } else {
+        filename = hash
+      }
+    }
+    return { buffer, hash, filename }
+  }
 }
 
 export namespace Assets {
   export interface Stats {
     assetCount?: number
     assetSize?: number
+  }
+
+  export interface AnalyzeResult {
+    buffer: Buffer
+    hash: string
+    filename: string
   }
 }
 

@@ -202,8 +202,7 @@ class JsdelivrAssets extends Assets {
   }
 
   async upload(url: string, name?: string) {
-    const buffer = await this.download(url)
-    const hash = createHash('sha1').update(buffer).digest('hex')
+    const { buffer, hash } = await this.analyze(url, name)
     const [file] = await this.ctx.database.get('jsdelivr', { hash })
     if (file) return this.toPublicUrl(file)
 
