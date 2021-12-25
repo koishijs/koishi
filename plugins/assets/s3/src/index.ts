@@ -58,7 +58,7 @@ class S3Assets extends Assets {
     } catch (e) {
       this.ctx
         .logger('assets-s3')
-        .error(`Failed to upload file ${file} to ${s3Key}: ${e.toString()}`)
+        .error(`Failed to upload file ${fullFilename} to ${s3Key}: ${e.toString()}`)
       return Object.assign(new Error(e))
     }
   }
