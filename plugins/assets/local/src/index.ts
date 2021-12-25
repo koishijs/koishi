@@ -1,6 +1,6 @@
 import { Assets, Context, sanitize, trimSlash, Schema } from 'koishi'
 import { promises as fs, createReadStream, existsSync } from 'fs'
-import { extname, resolve } from 'path'
+import { extname, resolve, basename } from 'path'
 import { createHmac, createHash } from 'crypto'
 
 declare module 'koishi' {
@@ -37,7 +37,7 @@ class LocalAssets extends Assets {
     })
 
     ctx.router.get(config.path + '/:name', (ctx) => {
-      const filename = resolve(config.root, ctx.params.name)
+      const filename = resolve(config.root, basename(ctx.params.name))
       ctx.type = extname(filename)
       return ctx.body = createReadStream(filename)
     })
