@@ -82,12 +82,12 @@ export interface Config {
 export function apply(ctx: Context, config: Config = {}) {
   logger.level = config.logLevel || 2
 
-  ctx.on('bot-ready', async (bot: OneBotBot) => {
+  ctx.on('bot-connect', async (bot: OneBotBot) => {
     if (bot.adapter.platform !== 'onebot') return
     return start(bot)
   })
 
-  ctx.on('bot-dispose', async (bot: OneBotBot) => {
+  ctx.on('bot-disconnect', async (bot: OneBotBot) => {
     if (bot.adapter.platform !== 'onebot') return
     bot.process?.kill()
   })

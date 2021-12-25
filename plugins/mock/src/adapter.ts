@@ -60,11 +60,8 @@ export class MockAdapter extends Adapter<BotConfig> {
     const bot = this.bots.find(bot => bot.selfId === selfId)
     if (bot) return bot
 
-    this.ctx.bots.create('mock', { selfId }, MockBot)
-    return this.bots.find(bot => bot.selfId === selfId)
+    return this.ctx.bots.create('mock', { selfId }, MockBot)
   }
-
-  connect() {}
 
   stop() {}
 

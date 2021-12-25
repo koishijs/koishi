@@ -4,6 +4,8 @@ import { App } from './app'
 import { Session } from './session'
 import Schema from 'schemastery'
 
+const logger = new Logger('bot')
+
 export interface Bot extends Bot.BaseConfig, Bot.Methods, Bot.UserBase {}
 
 export abstract class Bot<T extends Bot.BaseConfig = Bot.BaseConfig> {
@@ -15,14 +17,15 @@ export abstract class Bot<T extends Bot.BaseConfig = Bot.BaseConfig> {
 
   selfId?: string
   error?: Error
-  resolve?: () => void
-  reject?: (error: Error) => void
 
   constructor(public adapter: Adapter, public config: T) {
     this.app = adapter.ctx.app
     this.platform = config.platform || adapter.platform
     this.logger = new Logger(adapter.platform)
     this._status = 'offline'
+
+    adapter.ctx.on('ready', () => this.start())
+    adapter.ctx.on('dispose', () => this.stop())
   }
 
   get status() {
@@ -36,10 +39,21 @@ export abstract class Bot<T extends Bot.BaseConfig = Bot.BaseConfig> {
     }
   }
 
+  resolve() {
+    this.status = 'online'
+    logger.success('logged in to %s as %c (%s)', this.platform, this.username, this.selfId)
+  }
+
+  reject(error: Error) {
+    this.error = error
+    this.status = 'offline'
+    logger.error(error)
+  }
+
   async start() {
     try {
       this.status = 'connect'
-      await this.app.parallel('bot-ready', this)
+      await this.app.parallel('bot-connect', this)
       await this.adapter.connect(this)
     } catch (error) {
       this.reject(error)
@@ -47,32 +61,14 @@ export abstract class Bot<T extends Bot.BaseConfig = Bot.BaseConfig> {
   }
 
   async stop() {
+    this.status = 'disconnect'
     try {
-      await this.app.parallel('bot-dispose', this)
-      await this.adapter.dispose(this)
+      await this.app.parallel('bot-disconnect', this)
+      await this.adapter.disconnect(this)
     } catch (error) {
       this.logger.warn(error)
     }
     this.status = 'offline'
-  }
-
-  connect() {
-    const task = new Promise<this>((resolve, reject) => {
-      this.resolve = () => {
-        this.status = 'online'
-        resolve(this)
-      }
-      this.reject = (error) => {
-        this.error = error
-        this.status = 'offline'
-        reject(error)
-      }
-    })
-
-    if (this.app.isActive) {
-      this.start()
-    }
-    return task
   }
 
   get sid() {
@@ -129,7 +125,7 @@ export namespace Bot {
     schema?: Schema
   }
 
-  export type Status = 'offline' | 'online' | 'connect' | 'reconnect'
+  export type Status = 'offline' | 'online' | 'connect' | 'disconnect' | 'reconnect'
 
   export interface Methods {
     // message

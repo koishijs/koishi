@@ -35,7 +35,7 @@ export function apply(ctx: Context, config: DeamonConfig = {}) {
       }
       process.send({ type: 'queue', body: { channelId, guildId, sid, message: template('deamon.restarted') } })
       await session.send(template('deamon.restarting')).catch(noop)
-      process.exit(114)
+      process.exit(51)
     })
 
   ctx.on('ready', () => {
@@ -47,15 +47,11 @@ export function apply(ctx: Context, config: DeamonConfig = {}) {
   process.on('message', (data: Message) => {
     if (data.type === 'send') {
       const { channelId, guildId, sid, message } = data.body
-      const bot = ctx.bots.get(sid)
-      if (!bot) return
-      if (bot.status === 'online') {
+      const dispose = ctx.on('bot-status-updated', (bot) => {
+        if (bot.sid !== sid || bot.status !== 'online') return
         bot.sendMessage(channelId, message, guildId)
-      } else {
-        ctx.once('bot-ready', (bot) => {
-          bot.sendMessage(channelId, message, guildId)
-        })
-      }
+        dispose()
+      })
     }
   })
 }
