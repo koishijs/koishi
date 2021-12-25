@@ -186,3 +186,24 @@ Koishi 封装了一套事件系统。其基本用法与 Node.js 自带的 [Event
 - **触发方式:** emit
 
 调用 `model.extend()` 时触发。
+
+### 事件：bot-added
+
+- **bot:** [`Bot`](./bot.md) 机器人实例
+- **触发方式:** emit
+
+添加机器人时触发。
+
+### 事件：bot-removed
+
+- **bot:** [`Bot`](./bot.md) 机器人实例
+- **触发方式:** emit
+
+移除机器人时触发。
+
+### 事件：bot-status-updated
+
+- **bot:** [`Bot`](./bot.md) 机器人实例
+- **触发方式:** emit
+
+[bot.status](./bot.md#bot-status) 发生改变时触发。

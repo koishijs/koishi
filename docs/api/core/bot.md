@@ -80,7 +80,7 @@ sidebarDepth: 2
 
 ### bot.status
 
-- 可选值: online, offline, connect, disconnect
+- 可选值: online, offline, connect, disconnect, reconnect
 
 当前 Bot 的运行状态。
 
