@@ -107,7 +107,7 @@ Koishi v3 的另一大亮点就是拥有官方的网页控制台插件。这个�
 - [koishi-plugin-puppeteer](https://koishi.js.org/plugins/other/puppeteer.html) / 网页截图
 - [koishi-plugin-schedule](https://koishi.js.org/plugins/other/schedule.html) / 计划任务
 - [koishi-plugin-tools](https://koishi.js.org/plugins/other/tools.html) / 实用工具
-- [koishi-plugin-webui](https://koishi.js.org/plugins/other/webui.html) / 网页控制台
+- [koishi-plugin-webui](https://koishi.js.org/plugins/console) / 网页控制台
 
 ## 应用案例
 
