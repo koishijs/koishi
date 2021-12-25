@@ -63,9 +63,9 @@ export class MockAdapter extends Adapter<BotConfig> {
     return this.ctx.bots.create('mock', { selfId }, MockBot)
   }
 
-  stop() {}
+  async stop() {}
 
-  start() {}
+  async start() {}
 
   async initUser(id: string, authority = 1) {
     await this.app.database.create('user', { mock: id, authority })
