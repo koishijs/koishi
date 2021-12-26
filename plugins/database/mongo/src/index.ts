@@ -1,5 +1,5 @@
 import { MongoClient, Db, MongoError, IndexDescription } from 'mongodb'
-import { Context, Database, Tables, makeArray, Schema, pick, omit, Query, Model, Dict, noop, KoishiError, valueMap } from 'koishi'
+import { Context, Database, Tables, makeArray, Schema, pick, omit, Query, Model, Dict, noop, KoishiError } from 'koishi'
 import { URLSearchParams } from 'url'
 import { executeUpdate, executeEval } from '@koishijs/orm-utils'
 import { transformQuery, transformEval } from './utils'
@@ -16,11 +16,20 @@ declare module 'koishi' {
 
 type TableType = keyof Tables
 
+interface EvalTask {
+  expr: any
+  table: TableType
+  query: Query
+  resolve: (value: any) => void
+  reject: (error: Error) => void
+}
+
 class MongoDatabase extends Database {
   public client: MongoClient
   public db: Db
   public mongo = this
-  private tasks: Dict<Promise<any>> = {}
+  private _tableTasks: Dict<Promise<any>> = {}
+  private _evalTasks: EvalTask[] = []
 
   constructor(public ctx: Context, private config: MongoDatabase.Config) {
     super(ctx)
@@ -44,11 +53,11 @@ class MongoDatabase extends Database {
     this.db = this.client.db(this.config.database)
 
     for (const name in this.ctx.model.config) {
-      this.tasks[name] = this._syncTable(name)
+      this._tableTasks[name] = this._syncTable(name)
     }
 
     this.ctx.on('model', (name) => {
-      this.tasks[name] = this._syncTable(name)
+      this._tableTasks[name] = this._syncTable(name)
     })
   }
 
@@ -58,7 +67,7 @@ class MongoDatabase extends Database {
 
   /** synchronize table schema */
   private async _syncTable(name: string) {
-    await this.tasks[name]
+    await this._tableTasks[name]
     const coll = await this.db.createCollection(name).catch(() => this.db.collection(name))
     const { primary, unique } = this.ctx.model.config[name]
     const newSpecs: IndexDescription[] = []
@@ -113,7 +122,7 @@ class MongoDatabase extends Database {
   }
 
   async set(name: TableType, query: Query, update: {}) {
-    await this.tasks[name]
+    await this._tableTasks[name]
     const { primary } = this.ctx.model.config[name]
     const indexFields = makeArray(primary)
     const updateFields = new Set(Object.keys(update).map(key => key.split('.', 1)[0]))
@@ -134,7 +143,7 @@ class MongoDatabase extends Database {
   }
 
   private queue(name: TableType, callback: () => Promise<any>) {
-    return this.tasks[name] = Promise.resolve(this.tasks[name]).catch(noop).then(callback)
+    return this._tableTasks[name] = Promise.resolve(this._tableTasks[name]).catch(noop).then(callback)
   }
 
   async create(name: TableType, data: any) {
@@ -166,7 +175,7 @@ class MongoDatabase extends Database {
     if (!data.length) return
     if (!keys) keys = this.ctx.model.config[name].primary
     const indexFields = makeArray(keys)
-    await this.tasks[name]
+    await this._tableTasks[name]
     const coll = this.db.collection(name)
     const original = await coll.find({ $or: data.map(item => pick(item, indexFields)) }).toArray()
     const bulk = coll.initializeUnorderedBulkOp()
@@ -183,19 +192,43 @@ class MongoDatabase extends Database {
     await bulk.execute()
   }
 
-  async aggregate(name: TableType, fields: {}, query: Query) {
-    if (!Object.keys(fields).length) return {}
-    const $match = this._createFilter(name, query)
-    const aggrs: any[][] = []
-    fields = valueMap(fields, value => transformEval(value, aggrs))
-    const stages = aggrs.map<any>((pipeline) => {
-      pipeline.unshift({ $match })
-      return { $unionWith: { coll: name, pipeline } }
+  evaluate(table: TableType, expr: any, query: Query) {
+    return new Promise<any>((resolve, reject) => {
+      this._evalTasks.push({ expr, table, query, resolve, reject })
+      process.nextTick(() => this._flushEvalTasks())
     })
-    stages.unshift({ $match: { _id: null } })
-    const results = await this.db.collection(name).aggregate(stages).toArray()
-    const data = Object.assign({}, ...results)
-    return valueMap(fields, value => executeEval(data, value)) as any
+  }
+
+  private async _flushEvalTasks() {
+    const tasks = this._evalTasks
+    if (!tasks.length) return
+    this._evalTasks = []
+
+    const stages: any[] = [{ $match: { _id: null } }]
+    for (const task of tasks) {
+      const { expr, table, query } = task
+      task.expr = transformEval(expr, (pipeline: any[]) => {
+        pipeline.unshift({ $match: this._createFilter(table, query) })
+        stages.push({ $unionWith: { coll: table, pipeline } })
+      })
+    }
+
+    let data: any
+    try {
+      const results = await this.db.collection('user').aggregate(stages).toArray()
+      data = Object.assign({}, ...results)
+    } catch (error) {
+      tasks.forEach(task => task.reject(error))
+      return
+    }
+
+    for (const { expr, resolve, reject } of tasks) {
+      try {
+        resolve(executeEval(data, expr))
+      } catch (error) {
+        reject(error)
+      }
+    }
   }
 }
 
