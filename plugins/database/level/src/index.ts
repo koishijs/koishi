@@ -1,4 +1,4 @@
-import { clone, Context, Database, KoishiError, Logger, makeArray, Model, noop, pick, Query, Schema, Tables, TableType, valueMap } from 'koishi'
+import { clone, Context, Database, KoishiError, Logger, makeArray, Model, noop, pick, Query, Schema, Tables, TableType } from 'koishi'
 import { executeUpdate, executeEval, executeQuery, executeSort } from '@koishijs/orm-utils'
 import { LevelUp } from 'levelup'
 import level from 'level'
@@ -266,16 +266,16 @@ class LevelDatabase extends Database {
     }
   }
 
-  async aggregate(name: keyof Tables, fields: {}, query: Query) {
-    const expr = this.ctx.model.resolveQuery(name, query)
+  async evaluate(name: keyof Tables, expr: any, query: Query) {
+    query = this.ctx.model.resolveQuery(name, query)
     const result: any[] = []
     const table = this.table(name)
     for await (const [, value] of table.iterator()) {
-      if (executeQuery(value, expr)) {
+      if (executeQuery(value, query)) {
         result.push(value)
       }
     }
-    return valueMap(fields, value => executeEval(result, value)) as any
+    return executeEval(result, expr)
   }
 }
 
