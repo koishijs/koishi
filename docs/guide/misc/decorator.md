@@ -333,6 +333,7 @@ export default class MyPlugin extends BasePlugin<MyPluginConfig> {
 
 ```ts
 import PluginCommon from '@koishijs/plugin-common';
+import { KoishiPlugin, BasePlugin, UsePlugin, PluginDef } from 'koishi-thirdeye';
 
 @KoishiPlugin({ name: 'my-plugin', schema: Config })
 export default class MyPlugin extends BasePlugin<MyPluginConfig> {
