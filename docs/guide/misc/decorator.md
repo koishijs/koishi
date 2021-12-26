@@ -11,7 +11,7 @@ sidebarDepth: 2
 koishi-thirdeye 允许你使用类装饰器开发 Koishi 插件。下面是一个最简单的例子：
 
 ```ts
-import { KoishiPlugin, SchemaProperty, CommandUsage, PutOption, UseCommand, OnApply, KoaContext, UseMiddleware, UseEvent, Get } from 'koishi-thirdeye';
+import { DefinePlugin, SchemaProperty, CommandUsage, PutOption, UseCommand, OnApply, KoaContext, UseMiddleware, UseEvent, Get } from 'koishi-thirdeye';
 import { Context, Session } from 'koishi';
 
 export class MyPluginConfig {
@@ -19,7 +19,7 @@ export class MyPluginConfig {
   foo: string;
 }
 
-@KoishiPlugin({ name: 'my-plugin', schema: MyPluginConfig })
+@DefinePlugin({ name: 'my-plugin', schema: MyPluginConfig })
 export default class MyPlugin extends BasePlugin<MyPluginConfig> implements OnApply {
   onApply() {
     // 该方法会在插件加载时调用，用于在上下文中注册事件等操作。
@@ -50,7 +50,7 @@ export default class MyPlugin extends BasePlugin<MyPluginConfig> implements OnAp
 
 ## 定义插件
 
-使用 koishi-thirdeye 的插件必须是类插件，且使用 `@KoishiPlugin(options: KoishiPluginRegistrationOptions)` 装饰器。
+使用 koishi-thirdeye 的插件必须是类插件，且使用 `@DefinePlugin(options: KoishiPluginRegistrationOptions)` 装饰器。
 
 您可以在参数中指定该插件的基本信息，初夏：
 
@@ -61,7 +61,7 @@ export default class MyPlugin extends BasePlugin<MyPluginConfig> implements OnAp
 ```ts
 // 在此处定义 Config 的 Schema 描述模式
 
-@KoishiPlugin({ name: 'my-plugin', schema: Config })
+@DefinePlugin({ name: 'my-plugin', schema: Config })
 export default class MyPlugin {
   constructor(private ctx: Context, private config: Partial<Config>) {} // 不建议在构造函数进行任何操作
 }
@@ -71,12 +71,12 @@ export default class MyPlugin {
 
 为了简化插件的半歇，插件基类 `BasePlugin<Config>` 实现了上面的构造函数定义。因此上面的代码可以简化为：
 
-> `@KoishiPlugin` 装饰器不可省略。
+> `@DefinePlugin` 装饰器不可省略。
 
 ```ts
 // 在此处定义 Config 的 Schema 描述模式
 
-@KoishiPlugin({ name: 'my-plugin', schema: Config })
+@DefinePlugin({ name: 'my-plugin', schema: Config })
 export default class MyPlugin extends BasePlugin<Config> {}
 ```
 
@@ -89,7 +89,7 @@ export default class MyPlugin extends BasePlugin<Config> {}
 > 请不要在构造函数中进行对这些字段对访问。
 
 ```ts
-@KoishiPlugin({ name: 'my-plugin', schema: Config })
+@DefinePlugin({ name: 'my-plugin', schema: Config })
 export default class MyPlugin {
   constructor(ctx: Context, config: Partial<Config>) {}
   
@@ -129,7 +129,7 @@ export default class MyPlugin {
 钩子方法会在特定的时机被调用。要使用钩子方法，只需要实现对应的接口，并编写相应的方法即可。
 
 ```ts
-@KoishiPlugin({ name: 'my-plugin', schema: Config })
+@DefinePlugin({ name: 'my-plugin', schema: Config })
 export default class MyPlugin extends BasePlugin<Config> implements OnApply, OnConnect, OnDisconnect { // 实现对应的钩子方法即可
   
   onApply() {}
@@ -211,7 +211,7 @@ export class Config {
 正如最开始的例子一样，我们可以使用以 `Use` 开头的装饰器进行事件和中间件的注册监听。
 
 ```ts
-import { KoishiPlugin, SchemaProperty, CommandUsage, PutOption, UseCommand, OnApply, KoaContext, UseMiddleware, UseEvent, Get } from 'koishi-thirdeye';
+import { DefinePlugin, SchemaProperty, CommandUsage, PutOption, UseCommand, OnApply, KoaContext, UseMiddleware, UseEvent, Get } from 'koishi-thirdeye';
 import { Context, Session } from 'koishi';
 
 export class MyPluginConfig {
@@ -219,7 +219,7 @@ export class MyPluginConfig {
   foo: string;
 }
 
-@KoishiPlugin({ name: 'my-plugin', schema: MyPluginConfig })
+@DefinePlugin({ name: 'my-plugin', schema: MyPluginConfig })
 export default class MyPlugin extends BasePlugin<MyPluginConfig> implements OnApply {
   onApply() {
     // 该方法会在插件加载时调用，用于在上下文中注册事件等操作。
@@ -302,7 +302,7 @@ koishi-thirdeye 中，子指令需要用完整的名称进行声明。
 * 对于没有回调的父指令，可以使用 `empty` 选项，使其不具有 action 字段。
 
 ```ts
-@KoishiPlugin({ name: 'my-plugin', schema: Config })
+@DefinePlugin({ name: 'my-plugin', schema: Config })
 export default class MyPlugin extends BasePlugin<Config> {
   @UseCommand('ygopro', 'YGOPro 相关指令', { empty: true })
   ygoproCommand() {
@@ -333,9 +333,9 @@ export default class MyPlugin extends BasePlugin<Config> {
 
 ```ts
 import PluginCommon from '@koishijs/plugin-common';
-import { KoishiPlugin, BasePlugin, UsePlugin, PluginDef } from 'koishi-thirdeye';
+import { DefinePlugin, BasePlugin, UsePlugin, PluginDef } from 'koishi-thirdeye';
 
-@KoishiPlugin({ name: 'my-plugin', schema: Config })
+@DefinePlugin({ name: 'my-plugin', schema: Config })
 export default class MyPlugin extends BasePlugin<Config> {
   @UsePlugin()
   registerPluginCommon() { // 会于插件注册时立即运行，并取返回值作为插件的嵌套插件
@@ -362,7 +362,7 @@ export default class MyPlugin extends BasePlugin<Config> {
 
 ```ts
 @OnPlatform('onebot')
-@KoishiPlugin({ name: 'my-plugin', schema: Config })
+@DefinePlugin({ name: 'my-plugin', schema: Config })
 export default class MyPlugin extends BasePlugin<Config> {
   // 类内的 this.context 现在只对 OneBot 平台有效
   
@@ -399,7 +399,7 @@ export default class MyPlugin extends BasePlugin<Config> {
 若该提供者需要立即生效，我们需要使用 `immediate` 属性，将其标记为立即加载的提供者。
 
 ```ts
-import { Provide, KoishiPlugin, BasePlugin } from 'koishi-thirdeye';
+import { Provide, DefinePlugin, BasePlugin } from 'koishi-thirdeye';
 
 // 类型合并定义不可省略
 declare module 'koishi' {
@@ -412,7 +412,7 @@ declare module 'koishi' {
 
 // `@Provide(name)` 装饰器会自动完成 `Context.service(name)` 的声明操作
 @Provide('myService', { immediate: true })
-@KoishiPlugin({ name: 'my-service' })
+@DefinePlugin({ name: 'my-service' })
 export class MyServicePlugin extends BasePlugin<Config> {
   // 该类会作为 Koishi 的 Service 供其他 Koishi 插件进行引用
 }
