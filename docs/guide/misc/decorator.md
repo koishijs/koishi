@@ -303,7 +303,7 @@ koishi-thirdeye 中，子指令需要用完整的名称进行声明。
 
 ```ts
 @KoishiPlugin({ name: 'my-plugin', schema: Config })
-export default class MyPlugin extends BasePlugin<MyPluginConfig> {
+export default class MyPlugin extends BasePlugin<Config> {
   @UseCommand('ygopro', 'YGOPro 相关指令', { empty: true })
   ygoproCommand() {
     // 该命令不会有 action，因此该方法不会被调用。
@@ -336,7 +336,7 @@ import PluginCommon from '@koishijs/plugin-common';
 import { KoishiPlugin, BasePlugin, UsePlugin, PluginDef } from 'koishi-thirdeye';
 
 @KoishiPlugin({ name: 'my-plugin', schema: Config })
-export default class MyPlugin extends BasePlugin<MyPluginConfig> {
+export default class MyPlugin extends BasePlugin<Config> {
   @UsePlugin()
   registerPluginCommon() { // 会于插件注册时立即运行，并取返回值作为插件的嵌套插件
     return PluginDef(PluginCommon, { echo: true })
@@ -363,7 +363,7 @@ export default class MyPlugin extends BasePlugin<MyPluginConfig> {
 ```ts
 @OnPlatform('onebot')
 @KoishiPlugin({ name: 'my-plugin', schema: Config })
-export default class MyPlugin extends BasePlugin<MyPluginConfig> {
+export default class MyPlugin extends BasePlugin<Config> {
   // 类内的 this.context 现在只对 OneBot 平台有效
   
   @OnGuild()
