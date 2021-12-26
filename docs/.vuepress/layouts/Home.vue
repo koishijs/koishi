@@ -78,11 +78,11 @@
     <div class="screen screen-6">
       <div class="navigation">
         <div class="item guide" v-for="item in getSidebarItems('/guide/')" :key="item.link || item.text">
-          <sidebar-child :item="item"></sidebar-child>
+          <sidebar-item :item="item"></sidebar-item>
         </div>
         <template v-if="width >= 1200 && height >= 800">
           <div class="item api" v-for="item in getSidebarItems('/api/')" :key="item.link || item.text">
-            <sidebar-child :item="item"></sidebar-child>
+            <sidebar-item :item="item"></sidebar-item>
           </div>
         </template>
       </div>
@@ -97,8 +97,8 @@
 <script setup lang="ts">
 
 import { useWindowSize } from '@vueuse/core'
-import { SidebarChild } from '@vuepress/theme-default/lib/client/components/SidebarChild'
 import { useThemeLocaleData, resolveArraySidebarItems } from '@vuepress/theme-default/lib/client/composables'
+import SidebarItem from '@vuepress/theme-default/lib/client/components/SidebarItem.vue'
 
 const { width, height } = useWindowSize()
 
