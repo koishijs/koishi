@@ -11,7 +11,7 @@ sidebarDepth: 2
 koishi-thirdeye 允许你使用类装饰器开发 Koishi 插件。下面是一个最简单的例子：
 
 ```ts
-import { DefinePlugin, SchemaProperty, CommandUsage, PutOption, UseCommand, OnApply, KoaContext, UseMiddleware, UseEvent, Get } from 'koishi-thirdeye';
+import { DefinePlugin, SchemaProperty, CommandUsage, PutOption, UseCommand, LifecycleEvents, KoaContext, UseMiddleware, UseEvent, Get } from 'koishi-thirdeye';
 import { Context, Session } from 'koishi';
 
 export class MyPluginConfig {
@@ -20,7 +20,7 @@ export class MyPluginConfig {
 }
 
 @DefinePlugin({ name: 'my-plugin', schema: MyPluginConfig })
-export default class MyPlugin extends BasePlugin<MyPluginConfig> implements OnApply {
+export default class MyPlugin extends BasePlugin<MyPluginConfig> implements LifecycleEvents {
   onApply() {
     // 该方法会在插件加载时调用，用于在上下文中注册事件等操作。
   }
@@ -126,11 +126,13 @@ export default class MyPlugin {
 
 ## 钩子方法
 
-钩子方法会在特定的时机被调用。要使用钩子方法，只需要实现对应的接口，并编写相应的方法即可。
+钩子方法会在特定的时机被调用。要使用钩子方法，只需要实现 `LifecycleEvents` 接口，并定义相应的方法即可。
 
 ```ts
 @DefinePlugin({ name: 'my-plugin', schema: Config })
-export default class MyPlugin extends BasePlugin<Config> implements OnApply, OnConnect, OnDisconnect { // 实现对应的钩子方法即可
+export default class MyPlugin extends BasePlugin<Config> implements LifecycleEvents {
+  
+  // 下列方法只实现需要使用的
   
   onApply() {}
 
