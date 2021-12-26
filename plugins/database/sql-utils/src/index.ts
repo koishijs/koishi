@@ -15,6 +15,7 @@ export abstract class Builder {
 
   abstract escapeId(value: any): string
   abstract escape(value: any, table?: string, field?: string): string
+  abstract format(sql: string, args?: object | any[]): string
 
   constructor() {
     this.queryOperators = {

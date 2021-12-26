@@ -79,10 +79,11 @@ export default class Teach {
   }
 
   async stats(): Promise<Dialogue.Stats> {
-    return this.ctx.database.aggregate('dialogue', {
-      dialogues: { $count: 'id' },
-      questions: { $count: 'question' },
-    })
+    const [dialogues, questions] = await Promise.all([
+      this.ctx.database.evaluate('dialogue', { $count: 'id' }),
+      this.ctx.database.evaluate('dialogue', { $count: 'question' }),
+    ])
+    return { dialogues, questions }
   }
 
   async remove(dialogues: Dialogue[], argv: Dialogue.Argv, revert = false) {
