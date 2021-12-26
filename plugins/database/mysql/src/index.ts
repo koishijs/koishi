@@ -59,7 +59,13 @@ class MySQLBuilder extends Builder {
     super()
   }
 
+  format = format
+
   escapeId = escapeId
+
+  escape(value: any, table?: string, field?: string) {
+    return mysqlEscape(this.stringify(value, table, field))
+  }
 
   stringify(value: any, table?: string, field?: string) {
     const type = MysqlDatabase.tables[table]?.[field]
@@ -76,10 +82,12 @@ class MySQLBuilder extends Builder {
 
     return value
   }
+}
 
-  escape(value: any, table?: string, field?: string) {
-    return mysqlEscape(this.stringify(value, table, field))
-  }
+interface QueryTask {
+  sql: string
+  resolve: (value: any) => void
+  reject: (error: Error) => void
 }
 
 class MysqlDatabase extends Database {
@@ -89,7 +97,8 @@ class MysqlDatabase extends Database {
   mysql = this
   sql: MySQLBuilder
 
-  private tasks: Dict<Promise<any>> = {}
+  private _tableTasks: Dict<Promise<any>> = {}
+  private _queryTasks: QueryTask[] = []
 
   constructor(public ctx: Context, config?: MysqlDatabase.Config) {
     super(ctx)
@@ -133,21 +142,16 @@ class MysqlDatabase extends Database {
     this.pool = createPool(this.config)
 
     for (const name in this.ctx.model.config) {
-      this.tasks[name] = this._syncTable(name)
+      this._tableTasks[name] = this._syncTable(name)
     }
 
     this.ctx.on('model', (name) => {
-      this.tasks[name] = this._syncTable(name)
+      this._tableTasks[name] = this._syncTable(name)
     })
   }
 
-  _inferFields<T extends TableType>(table: T, keys: readonly string[]) {
-    if (!keys) return
-    const types = MysqlDatabase.tables[table] || {}
-    return keys.map((key) => {
-      const type = types[key]
-      return typeof type === 'function' ? `${type()} AS ${key}` : key
-    }) as (keyof Tables[T])[]
+  stop() {
+    this.pool.end()
   }
 
   private _getColDefs(name: string, columns: string[]) {
@@ -205,17 +209,26 @@ class MysqlDatabase extends Database {
 
   /** synchronize table schema */
   private async _syncTable(name: string) {
-    await this.tasks[name]
-    const data = await this.query<any[]>('SELECT COLUMN_NAME from information_schema.columns WHERE TABLE_SCHEMA = ? && TABLE_NAME = ?', [this.config.database, name])
+    await this._tableTasks[name]
+    const data = await this.multiQuery<any[]>('SELECT COLUMN_NAME from information_schema.columns WHERE TABLE_SCHEMA = ? && TABLE_NAME = ?', [this.config.database, name])
     const columns = data.map(row => row.COLUMN_NAME)
     const result = this._getColDefs(name, columns)
     if (!columns.length) {
       logger.info('auto creating table %c', name)
-      await this.query(`CREATE TABLE ?? (${result.join(',')}) COLLATE = ?`, [name, this.config.charset])
+      await this.multiQuery(`CREATE TABLE ?? (${result.join(',')}) COLLATE = ?`, [name, this.config.charset])
     } else if (result.length) {
       logger.info('auto updating table %c', name)
-      await this.query(`ALTER TABLE ?? ${result.map(def => 'ADD ' + def).join(',')}`, [name])
+      await this.multiQuery(`ALTER TABLE ?? ${result.map(def => 'ADD ' + def).join(',')}`, [name])
     }
+  }
+
+  _inferFields<T extends TableType>(table: T, keys: readonly string[]) {
+    if (!keys) return
+    const types = MysqlDatabase.tables[table] || {}
+    return keys.map((key) => {
+      const type = types[key]
+      return typeof type === 'function' ? `${type()} AS ${key}` : key
+    }) as (keyof Tables[T])[]
   }
 
   _createFilter(name: TableType, query: Query) {
@@ -230,24 +243,10 @@ class MysqlDatabase extends Database {
     return keys.map((key) => this.sql.stringify(data[key], table as never, key))
   }
 
-  query<T = any>(source: string, values?: any): Promise<T>
-  query<T = any>(source: string[], values?: any): Promise<T>
-  async query<T extends {}>(source: string | string[], values?: any): Promise<T> {
-    if (Array.isArray(source)) {
-      if (this.config.multipleStatements) {
-        return this.query(source.join(';'), values)
-      } else {
-        const result: any = []
-        for (const sql of source) {
-          result.push(await this.query(sql, values))
-        }
-        return result
-      }
-    }
-
+  query<T = any>(sql: string, values?: any): Promise<T> {
     const error = new Error()
     return new Promise((resolve, reject) => {
-      const sql = format(source, values)
+      sql = format(sql, values)
       logger.debug('[sql]', sql)
       this.pool.query(sql, (err, results) => {
         if (!err) return resolve(results)
@@ -262,6 +261,34 @@ class MysqlDatabase extends Database {
     })
   }
 
+  multiQuery<T = any>(sql: string, values?: any): Promise<T> {
+    if (!this.config.multipleStatements) {
+      return this.query(sql)
+    }
+
+    sql = format(sql, values)
+    return new Promise<any>((resolve, reject) => {
+      this._queryTasks.push({ sql, resolve, reject })
+      process.nextTick(() => this._flushTasks())
+    })
+  }
+
+  private async _flushTasks() {
+    const tasks = this._queryTasks
+    if (!tasks.length) return
+    this._queryTasks = []
+
+    try {
+      let results = await this.query(tasks.map(task => task.sql).join('; '))
+      if (tasks.length === 1) results = [results]
+      tasks.forEach((task, index) => {
+        task.resolve(results[index])
+      })
+    } catch (error) {
+      tasks.forEach(task => task.reject(error))
+    }
+  }
+
   select<T extends {}>(table: string, fields: readonly (string & keyof T)[], conditional?: string, values?: readonly any[]): Promise<T[]>
   select(table: string, fields: string[], conditional?: string, values: readonly any[] = []) {
     logger.debug(`[select] ${table}: ${fields ? fields.join(', ') : '*'}`)
@@ -269,16 +296,7 @@ class MysqlDatabase extends Database {
       + this._joinKeys(fields)
       + (table.includes('.') ? `FROM ${table}` : ' FROM `' + table + `\` _${table}`)
       + (conditional ? ' WHERE ' + conditional : '')
-    return this.query(sql, values)
-  }
-
-  async count<K extends TableType>(table: K, conditional?: string) {
-    const [{ 'COUNT(*)': count }] = await this.query(`SELECT COUNT(*) FROM ?? ${conditional ? 'WHERE ' + conditional : ''}`, [table])
-    return count as number
-  }
-
-  stop() {
-    this.pool.end()
+    return this.multiQuery(sql, values)
   }
 
   async drop() {
@@ -306,11 +324,11 @@ class MysqlDatabase extends Database {
     if (limit) sql += ' LIMIT ' + limit
     if (offset) sql += ' OFFSET ' + offset
     if (sort) sql += ' ORDER BY ' + Object.entries(sort).map(([key, order]) => `${this.sql.escapeId(key)} ${order}`).join(', ')
-    return this.query(sql)
+    return this.multiQuery(sql)
   }
 
   async set(name: TableType, query: Query, data: {}) {
-    await this.tasks[name]
+    await this._tableTasks[name]
     const filter = this._createFilter(name, query)
     if (filter === '0') return
     const keys = Object.keys(data)
@@ -331,7 +349,7 @@ class MysqlDatabase extends Database {
   }
 
   async create(name: TableType, data: {}) {
-    await this.tasks[name]
+    await this._tableTasks[name]
     data = { ...this.ctx.model.create(name), ...data }
     const keys = Object.keys(data)
     const header = await this.query<OkPacket>(
@@ -343,7 +361,7 @@ class MysqlDatabase extends Database {
 
   async upsert(name: TableType, data: any[], keys: string | string[]) {
     if (!data.length) return
-    await this.tasks[name]
+    await this._tableTasks[name]
 
     const { fields, primary } = this.ctx.model.config[name]
     const merged = {}
@@ -408,14 +426,11 @@ class MysqlDatabase extends Database {
     )
   }
 
-  async aggregate(name: TableType, fields: {}, query: Query) {
-    const keys = Object.keys(fields)
-    if (!keys.length) return {}
-
+  async evaluate(name: TableType, expr: any, query: Query) {
     const filter = this._createFilter(name, query)
-    const exprs = keys.map(key => `${this.sql.parseEval(fields[key])} AS ${this.sql.escapeId(key)}`).join(', ')
-    const [data] = await this.query(`SELECT ${exprs} FROM ${name} WHERE ${filter}`)
-    return data
+    const output = this.sql.parseEval(expr)
+    const [data] = await this.multiQuery(`SELECT ${output} AS value FROM ${name} WHERE ${filter}`)
+    return data.value
   }
 }
 
