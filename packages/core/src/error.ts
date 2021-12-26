@@ -1,4 +1,6 @@
 export class KoishiError extends Error {
+  name = 'KoishiError'
+
   constructor(message: string, public code: KoishiError.Code) {
     super(message)
   }

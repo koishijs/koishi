@@ -66,7 +66,7 @@ function getVersion(name: string, isNext = false) {
     for (const folder in bumpMap) {
       const { name, version } = bumpMap[folder]
       if (name === 'koishi') {
-        await copyFile(`${cwd}/README.md`, `cwd/${folder}/README.md`)
+        await copyFile(`${cwd}/README.md`, `${cwd}/${folder}/README.md`)
       }
       await publish(folder, name, version, isNext(version) ? 'next' : 'latest')
     }

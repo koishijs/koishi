@@ -6,6 +6,7 @@ import * as KHL from './types'
 import { adaptGroup, adaptAuthor, adaptUser, AdapterConfig } from './utils'
 import FormData from 'form-data'
 import { createReadStream } from 'fs'
+import internal from 'stream'
 
 export interface KaiheilaMessageInfo {
   channelName?: string
@@ -47,7 +48,7 @@ export class KaiheilaBot extends Bot<BotConfig> {
 
   async request<T = any>(method: Method, path: string, data?: any, headers: any = {}): Promise<T> {
     data = data instanceof FormData ? data : JSON.stringify(snakeCase(data))
-    const response = await this.http(method, path, data, headers)
+    const response = await this.http(method, path, { data, headers })
     return camelize(response).data
   }
 
@@ -84,7 +85,10 @@ export class KaiheilaBot extends Bot<BotConfig> {
       const { url } = await this.request('POST', '/asset/create', payload, payload.getHeaders())
       data.url = url
     } else if (!data.url.includes('kaiheila')) {
-      const res = await this.app.http.get.stream(data.url, {}, { accept: type })
+      const res = await this.app.http.get<internal.Readable>(data.url, {
+        headers: { accept: type },
+        responseType: 'stream',
+      })
       const payload = new FormData()
       payload.append('file', res)
       const { url } = await this.request('POST', '/asset/create', payload, payload.getHeaders())

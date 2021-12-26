@@ -1,6 +1,5 @@
 import { Assets, Context, Random, Schema, Quester } from 'koishi'
 import { createHmac } from 'crypto'
-import { stringify } from 'querystring'
 
 declare module 'koishi' {
   interface Modules {
@@ -27,7 +26,7 @@ class RemoteAssets extends Assets {
       params.salt = Random.id()
       params.sign = createHmac('sha1', secret).update(file + params.salt).digest('hex')
     }
-    const data = await this.http('POST', '?' + stringify(params))
+    const data = await this.http.post('', null, { params })
     return data
   }
 

@@ -47,14 +47,14 @@ function createWorker(options: WorkerOptions) {
   /**
    * https://tldp.org/LDP/abs/html/exitcodes.html
    * - 0: exit manually
+   * - 51: restart (magic code)
    * - 130: SIGINT
    * - 137: SIGKILL
-   * - **114: exit and restart (Koishi)**
    */
   const closingCode = [0, 130, 137]
 
   child.on('exit', (code) => {
-    if (!config || closingCode.includes(code) || code !== 114 && !config.autoRestart) {
+    if (!config || closingCode.includes(code) || code !== 51 && !config.autoRestart) {
       process.exit(code)
     }
     createWorker(options)

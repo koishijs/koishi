@@ -17,6 +17,7 @@ type GetUpdatesOptions = {
 
 abstract class TelegramAdapter extends Adapter<BotConfig, AdapterConfig> {
   static schema = BotConfig
+
   constructor(ctx: Context, config: AdapterConfig) {
     super(ctx, config)
     this.config.request = this.config.request || {}
