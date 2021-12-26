@@ -192,7 +192,7 @@ class MongoDatabase extends Database {
     await bulk.execute()
   }
 
-  evaluate(table: TableType, expr: any, query: Query) {
+  eval(table: TableType, expr: any, query: Query) {
     return new Promise<any>((resolve, reject) => {
       this._evalTasks.push({ expr, table, query, resolve, reject })
       process.nextTick(() => this._flushEvalTasks())

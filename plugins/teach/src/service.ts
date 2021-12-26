@@ -80,8 +80,8 @@ export default class Teach {
 
   async stats(): Promise<Dialogue.Stats> {
     const [dialogues, questions] = await Promise.all([
-      this.ctx.database.evaluate('dialogue', { $count: 'id' }),
-      this.ctx.database.evaluate('dialogue', { $count: 'question' }),
+      this.ctx.database.eval('dialogue', { $count: 'id' }),
+      this.ctx.database.eval('dialogue', { $count: 'question' }),
     ])
     return { dialogues, questions }
   }

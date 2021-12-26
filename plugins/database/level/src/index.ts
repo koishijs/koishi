@@ -266,7 +266,7 @@ class LevelDatabase extends Database {
     }
   }
 
-  async evaluate(name: keyof Tables, expr: any, query: Query) {
+  async eval(name: keyof Tables, expr: any, query: Query) {
     query = this.ctx.model.resolveQuery(name, query)
     const result: any[] = []
     const table = this.table(name)

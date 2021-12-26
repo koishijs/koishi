@@ -111,7 +111,7 @@ export class MemoryDatabase extends Database {
     this.$save(name)
   }
 
-  async evaluate(name: TableType, expr: any, query: Query) {
+  async eval(name: TableType, expr: any, query: Query) {
     const table = this.$query(name, query)
     return executeEval(table, expr)
   }

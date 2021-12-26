@@ -210,15 +210,15 @@ class MysqlDatabase extends Database {
   /** synchronize table schema */
   private async _syncTable(name: string) {
     await this._tableTasks[name]
-    const data = await this.multiQuery<any[]>('SELECT COLUMN_NAME from information_schema.columns WHERE TABLE_SCHEMA = ? && TABLE_NAME = ?', [this.config.database, name])
+    const data = await this.queue<any[]>('SELECT COLUMN_NAME from information_schema.columns WHERE TABLE_SCHEMA = ? && TABLE_NAME = ?', [this.config.database, name])
     const columns = data.map(row => row.COLUMN_NAME)
     const result = this._getColDefs(name, columns)
     if (!columns.length) {
       logger.info('auto creating table %c', name)
-      await this.multiQuery(`CREATE TABLE ?? (${result.join(',')}) COLLATE = ?`, [name, this.config.charset])
+      await this.queue(`CREATE TABLE ?? (${result.join(',')}) COLLATE = ?`, [name, this.config.charset])
     } else if (result.length) {
       logger.info('auto updating table %c', name)
-      await this.multiQuery(`ALTER TABLE ?? ${result.map(def => 'ADD ' + def).join(',')}`, [name])
+      await this.queue(`ALTER TABLE ?? ${result.map(def => 'ADD ' + def).join(',')}`, [name])
     }
   }
 
@@ -261,7 +261,7 @@ class MysqlDatabase extends Database {
     })
   }
 
-  multiQuery<T = any>(sql: string, values?: any): Promise<T> {
+  queue<T = any>(sql: string, values?: any): Promise<T> {
     if (!this.config.multipleStatements) {
       return this.query(sql)
     }
@@ -296,7 +296,7 @@ class MysqlDatabase extends Database {
       + this._joinKeys(fields)
       + (table.includes('.') ? `FROM ${table}` : ' FROM `' + table + `\` _${table}`)
       + (conditional ? ' WHERE ' + conditional : '')
-    return this.multiQuery(sql, values)
+    return this.queue(sql, values)
   }
 
   async drop() {
@@ -324,7 +324,7 @@ class MysqlDatabase extends Database {
     if (limit) sql += ' LIMIT ' + limit
     if (offset) sql += ' OFFSET ' + offset
     if (sort) sql += ' ORDER BY ' + Object.entries(sort).map(([key, order]) => `${this.sql.escapeId(key)} ${order}`).join(', ')
-    return this.multiQuery(sql)
+    return this.queue(sql)
   }
 
   async set(name: TableType, query: Query, data: {}) {
@@ -426,10 +426,10 @@ class MysqlDatabase extends Database {
     )
   }
 
-  async evaluate(name: TableType, expr: any, query: Query) {
+  async eval(name: TableType, expr: any, query: Query) {
     const filter = this._createFilter(name, query)
     const output = this.sql.parseEval(expr)
-    const [data] = await this.multiQuery(`SELECT ${output} AS value FROM ${name} WHERE ${filter}`)
+    const [data] = await this.queue(`SELECT ${output} AS value FROM ${name} WHERE ${filter}`)
     return data.value
   }
 }

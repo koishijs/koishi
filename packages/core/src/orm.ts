@@ -267,8 +267,7 @@ export namespace Query {
     remove<T extends TableType>(table: T, query: Query<T>): Promise<void>
     create<T extends TableType>(table: T, data: Partial<Tables[T]>): Promise<Tables[T]>
     upsert<T extends TableType>(table: T, data: MapUneval<Tables[T]>[], keys?: MaybeArray<Index<T>>): Promise<void>
-    /** @deprecated */
-    evaluate<T extends TableType, E extends Eval.Aggregation<Tables[T]>>(table: T, expr: E, query?: Query<T>): Promise<Eval<T, E>>
+    eval<T extends TableType, E extends Eval.Aggregation<Tables[T]>>(table: T, expr: E, query?: Query<T>): Promise<Eval<T, E>>
   }
 }
 

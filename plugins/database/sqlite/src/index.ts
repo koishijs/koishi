@@ -285,7 +285,7 @@ class SQLiteDatabase extends Database {
     }
   }
 
-  async evaluate(name: TableType, expr: any, query: Query) {
+  async eval(name: TableType, expr: any, query: Query) {
     const filter = this.#query(name, query)
     const output = this.sql.parseEval(expr)
     const { value } = this.#exec('get', `SELECT ${output} AS value FROM ${this.sql.escapeId(name)} WHERE ${filter}`)

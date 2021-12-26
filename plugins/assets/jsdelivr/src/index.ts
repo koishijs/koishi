@@ -89,7 +89,7 @@ class JsdelivrAssets extends Assets {
     if (!file) return { branch: offset, size: 0 }
     const { branch } = file
     if (forceNew) return { branch: branch + offset, size: 0 }
-    const size = await this.ctx.database.evaluate('jsdelivr', { $sum: 'size' }, { branch: file.branch })
+    const size = await this.ctx.database.eval('jsdelivr', { $sum: 'size' }, { branch: file.branch })
     if (size >= this.config.maxBranchSize) {
       logger.debug(`will switch to branch ${toBranchName(branch)}`)
       return { branch: branch + offset, size: 0 }
@@ -212,8 +212,8 @@ class JsdelivrAssets extends Assets {
 
   async stats() {
     const [assetCount, assetSize] = await Promise.all([
-      this.ctx.database.evaluate('jsdelivr', { $count: 'id' }),
-      this.ctx.database.evaluate('jsdelivr', { $sum: 'size' }),
+      this.ctx.database.eval('jsdelivr', { $count: 'id' }),
+      this.ctx.database.eval('jsdelivr', { $sum: 'size' }),
     ])
     return { assetCount, assetSize }
   }
