@@ -81,7 +81,7 @@ class JsdelivrAssets extends Assets {
 
   private async getBranch(forceNew?: boolean, offset = 1): Promise<Branch> {
     const [file] = await this.ctx.database.get('jsdelivr', {}, {
-      order: { id: 'desc' },
+      sort: { id: 'desc' },
       fields: ['branch'],
       limit: 1,
     })
@@ -194,11 +194,11 @@ class JsdelivrAssets extends Assets {
   }
 
   async upload(url: string, _file?: string) {
-    const { buffer, hash, filename } = await this.analyze(url, _file)
+    const { buffer, hash, name } = await this.analyze(url, _file)
     const [file] = await this.ctx.database.get('jsdelivr', { hash })
     if (file) return this.toPublicUrl(file)
     await writeFile(join(this.config.tempDir, hash), buffer)
-    return this.createTask({ size: buffer.byteLength, hash, name: filename })
+    return this.createTask({ size: buffer.byteLength, hash, name })
   }
 
   async stats() {

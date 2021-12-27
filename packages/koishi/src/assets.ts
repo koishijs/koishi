@@ -31,26 +31,26 @@ export abstract class Assets extends Service {
     return Buffer.from(data)
   }
 
-  protected async analyze(url: string, file?: string): Promise<Assets.AnalyzeResult> {
+  protected async analyze(url: string, file?: string): Promise<Assets.FileInfo> {
     const buffer = await this.download(url)
     const hash = createHash('sha1').update(buffer).digest('hex')
-    let filename: string
+    let name: string
     if (file) {
       file = basename(file)
       if (file.startsWith('.')) {
-        filename = `${hash}${file}`
+        name = file
       } else {
-        filename = `${hash}-${file}`
+        name = `-${file}`
       }
     } else {
       const fileType = await FileType.fromBuffer(buffer)
       if (fileType) {
-        filename = `${hash}.${fileType.ext}`
+        name = `.${fileType.ext}`
       } else {
-        filename = hash
+        name = ''
       }
     }
-    return { buffer, hash, filename }
+    return { buffer, hash, name, filename: `${hash}${name}` }
   }
 }
 
@@ -60,9 +60,10 @@ export namespace Assets {
     assetSize?: number
   }
 
-  export interface AnalyzeResult {
+  export interface FileInfo {
     buffer: Buffer
     hash: string
+    name: string
     filename: string
   }
 }

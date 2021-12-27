@@ -31,7 +31,7 @@ export class Task {
   public rejectors: ((reason: any) => void)[]
 
   get filename() {
-    return this.name
+    return `${this.hash}${this.name}`
   }
 
   get tempPath() {
