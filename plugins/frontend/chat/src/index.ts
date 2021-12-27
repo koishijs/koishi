@@ -2,6 +2,7 @@ import { Context, Logger, Schema, template } from 'koishi'
 import { resolve } from 'path'
 import receiver, { Message, RefreshConfig } from './receiver'
 import {} from '@koishijs/plugin-console'
+import internal from 'stream'
 
 export * from './receiver'
 
@@ -106,7 +107,7 @@ export function apply(ctx: Context, options: Config = {}) {
         console.log(ctx.params.url)
         return ctx.status = 403
       }
-      return ctx.body = await get.stream(ctx.params.url)
+      return ctx.body = await get<internal.Readable>(ctx.params.url, { responseType: 'stream' })
     })
   })
 }
