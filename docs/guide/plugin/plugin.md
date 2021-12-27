@@ -47,7 +47,7 @@ class ExamplePlugin {
 }
 ```
 ```ts
-import { Context, NextFunction, Session } from 'koishi'
+import { Context, Next, Session } from 'koishi'
 
 interface Config {}
 
@@ -58,7 +58,7 @@ class ExamplePlugin {
     ctx.middleware(this.callback.bind(this))
   }
 
-  callback(session: Session, next: NextFunction) {}
+  callback(session: Session, next: Next) {}
 }
 ```
 :::
@@ -89,7 +89,7 @@ module.exports.name = 'detect-space'
 module.exports.apply = (ctx) => {
   ctx.middleware((session, next) => {
     if (session.content.match(/^\s*(\S +){2,}\S\s*$/g)) {
-      return session.send('在？为什么说话带空格？')
+      return '在？为什么说话带空格？'
     } else {
       return next()
     }
@@ -102,7 +102,7 @@ import { Context } from 'koishi'
 export default function detectSpace(ctx: Context) {
   ctx.middleware((session, next) => {
     if (session.content.match(/^\s*(\S +){2,}\S\s*$/g)) {
-      return session.send('在？为什么说话带空格？')
+      return '在？为什么说话带空格？'
     } else {
       return next()
     }
