@@ -1,8 +1,8 @@
 import { Context, Service } from '@koishijs/core'
 import { segment } from '@koishijs/utils'
 import { createHash } from 'crypto'
-import FileType from 'file-type'
 import { basename } from 'path'
+import FileType from 'file-type'
 
 const PROTOCOL_BASE64 = 'base64://'
 
