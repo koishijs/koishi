@@ -33,10 +33,6 @@ export namespace Plugin {
     : T extends Object<infer U> ? U
     : never
 
-  export type ModuleConfig<T> = 'default' extends keyof T
-    ? Config<Extract<T['default'], Plugin>>
-    : Config<Extract<T, Plugin>>
-
   export interface State<T = any> {
     id?: string
     parent?: State
@@ -227,17 +223,14 @@ export class Context {
     return this.plugin({ using, apply: callback })
   }
 
-  plugin<T extends keyof Modules>(plugin: T, options?: boolean | Plugin.ModuleConfig<Modules[T]>): this
+  plugin(name: string, options?: any): this
   plugin<T extends Plugin>(plugin: T, options?: boolean | Plugin.Config<T>): this
-  plugin(plugin: Plugin, options?: any) {
+  plugin(entry: string | Plugin, options?: any) {
     if (options === false) return this
     if (options === true) options = undefined
     options ??= {}
 
-    if (typeof plugin === 'string') {
-      plugin = Modules.require(plugin, true)
-    }
-
+    const plugin: Plugin = typeof entry === 'string' ? Modules.require(entry, true) : entry
     if (this.app.registry.has(plugin)) {
       this.logger('app').warn(new Error('duplicate plugin detected'))
       return this
@@ -377,15 +370,13 @@ export class Context {
   }
 
   on<K extends EventName>(name: K, listener: EventMap[K], prepend?: boolean): () => boolean
-  on(name: string & EventName, listener: Disposable, prepend = false) {
+  on(name: EventName, listener: Disposable, prepend = false) {
     const method = prepend ? 'unshift' : 'push'
 
-    if (name === 'connect') {
-      name = 'ready'
-      this.logger('context').warn('event "connect" is deprecated, use "ready" instead')
-    } else if (name === 'disconnect') {
-      name = 'dispose'
-      this.logger('context').warn('event "disconnect" is deprecated, use "dispose" instead')
+    if (typeof name === 'string' && name in Context.deprecatedEvents) {
+      const alternative = Context.deprecatedEvents[name]
+      this.logger('app').warn(`event "${name}" is deprecated, use "${alternative}" instead`)
+      name = alternative
     }
 
     // handle special events
@@ -419,7 +410,8 @@ export class Context {
     return this.on(seg.join('/') as EventName, listener, !append)
   }
 
-  once<K extends EventName>(name: K, listener: EventMap[K], prepend = false) {
+  once<K extends EventName>(name: K, listener: EventMap[K], prepend?: boolean): () => boolean
+  once(name: EventName, listener: Disposable, prepend = false) {
     const dispose = this.on(name, function (...args: any[]) {
       dispose()
       return listener.apply(this, args)
@@ -610,6 +602,11 @@ export namespace Context {
   service('bots')
   service('database')
   service('model')
+
+  export const deprecatedEvents: Dict<EventName & string> = {
+    connect: 'ready',
+    disconnect: 'dispose',
+  }
 }
 
 type EventName = keyof EventMap
