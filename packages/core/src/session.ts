@@ -344,7 +344,7 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
     let shouldEmit = true
     if (next === true) {
       shouldEmit = false
-      next = fallback => fallback()
+      next = undefined as NextFunction
     }
 
     const result = await argv.command.execute(argv, next)

@@ -246,7 +246,7 @@ export class App extends Context {
         if (prettyErrors) {
           const index = stack.indexOf(lastCall)
           if (index >= 0) stack = stack.slice(0, index)
-          stack += `Middleware stack:${midStack}`
+          stack += `\nMiddleware stack:${midStack}`
         }
         this.logger('session').warn(`${session.content}\n${stack}`)
       }

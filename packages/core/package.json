@@ -31,7 +31,10 @@
   ],
   "devDependencies": {
     "@koishijs/plugin-database-memory": "^1.0.0-rc.0",
-    "@koishijs/plugin-mock": "^1.0.0-rc.0"
+    "@koishijs/plugin-mock": "^1.0.0-rc.0",
+    "chai": "^4.3.4",
+    "chai-as-promised": "^7.1.1",
+    "chai-shape": "^1.0.0"
   },
   "dependencies": {
     "@koishijs/utils": "^5.0.0-rc.0",
