@@ -8,12 +8,13 @@ sidebarDepth: 2
 这里是**正在施工**的 koishi v4 的文档。要查看 v3 版本的文档，请前往[**这里**](/)。
 :::
 
-koishi-thirdeye 允许你使用类装饰器开发 Koishi 插件。下面是一个最简单的例子：
+koishi-thirdeye 允许你使用类装饰器开发 Koishi 插件。下面是一个一目了然的例子：
 
 ```ts
-import { DefinePlugin, SchemaProperty, CommandUsage, PutOption, UseCommand, LifecycleEvents, KoaContext, UseMiddleware, UseEvent, Get } from 'koishi-thirdeye';
+import { RegisterSchema, DefinePlugin, SchemaProperty, CommandUsage, PutOption, UseCommand, LifecycleEvents, KoaContext, UseMiddleware, UseEvent, Get } from 'koishi-thirdeye';
 import { Context, Session } from 'koishi';
 
+@RegisterSchema()
 export class MyPluginConfig {
   @SchemaProperty({ default: 'bar' })
   foo: string;
@@ -32,11 +33,13 @@ export default class MyPlugin extends BasePlugin<MyPluginConfig> implements Life
 
   @UseEvent('message')
   onMessage(session: Session) {
-
+    if(session.content === 'ping') {
+      return session.send('pong');
+    }
   }
 
-  @UseCommand('echo', '命令描述')
-  @CommandUsage('命令说明')
+  @UseCommand('echo', '返回指定内容')
+  @CommandUsage('没什么用的样子')
   onEcho(@PutOption('content', '-c <content:string>  命令参数') content: string) {
     return content;
   }
@@ -52,11 +55,10 @@ export default class MyPlugin extends BasePlugin<MyPluginConfig> implements Life
 
 使用 koishi-thirdeye 的插件必须是类插件，且使用 `@DefinePlugin(options: KoishiPluginRegistrationOptions)` 装饰器。
 
-您可以在参数中指定该插件的基本信息，初夏：
+您可以在参数中指定该插件的基本信息，如下：
 
-* `name` 插件名称。
-
-* `schema` 插件的配置描述模式。可以是一般的 Schema 描述模式，也可以是由 `schemastery-gen` 生成的 Schema 类。下面我们会对此进行叙述。
+- `name` 插件名称。
+- `schema` 插件的描述配置模式。可以是一般的 Schema 描述模式，也可以是由 `schemastery-gen` 生成的 Schema 类。下面我们会对此进行叙述。
 
 ```ts
 // 在此处定义 Config 的 Schema 描述模式
@@ -84,7 +86,7 @@ export default class MyPlugin extends BasePlugin<Config> {}
 
 ## 属性注入
 
-您可以在类成员变量中，使用装饰器进行注入成员变量。 **注入的变量在构造函数中无效。** 请在 `onApply` 等生命周期钩子函数中调用。
+您可以在类成员变量中，使用装饰器进行注入成员变量。 **注入的变量在构造函数中无效。**请在 `onApply` 等生命周期钩子函数中调用。
 
 > 请不要在构造函数中进行对这些字段对访问。
 
@@ -112,16 +114,11 @@ export default class MyPlugin {
 
 ### API
 
-* `@InjectContext(select?: Selection)` 注入上下文对象。 **注入的上下文对象会受全局选择器影响。**
-
-* `@InjectApp()` 注入 Koishi 实例对象。
-
-* `@InjectConfig()` 注入插件配置。
-
-* `@InjectLogger(name: string)` 注入 Koishi 日志记录器。
-
-* `@Inject(name?: string, addUsing?: boolean)` 在插件类某一属性注入特定上下文 Service 。 `name` 若为空则默认为类方法名。
-
+- `@InjectContext(select?: Selection)` 注入上下文对象。**注入的上下文对象会受全局选择器影响。**
+- `@InjectApp()` 注入 Koishi 实例对象。
+- `@InjectConfig()` 注入插件配置。
+- `@InjectLogger(name: string)` 注入 Koishi 日志记录器。
+- `@Inject(name?: string, addUsing?: boolean)` 在插件类某一属性注入特定上下文 Service 。 `name` 若为空则默认为类方法名。
   * `addUsing` 若为 `true` 则会为插件注册的 Service 。
 
 ## 钩子方法
@@ -133,7 +130,6 @@ export default class MyPlugin {
 export default class MyPlugin extends BasePlugin<Config> implements LifecycleEvents {
   
   // 下列方法只实现需要使用的
-  
   onApply() {}
 
   async onConnect() {}
@@ -144,17 +140,15 @@ export default class MyPlugin extends BasePlugin<Config> implements LifecycleEve
 
 ### API
 
-* `onApply` 只能是同步函数，会在插件加载时运行。
+- `onApply` 只能是同步函数，会在插件加载时运行。
+- `onConnect` 可以是异步函数，会在 Koishi 启动时运行。等价于 `ctx.on('ready', async () => {})`
+- `onDisconnect` 可以是异步函数，会在插件被卸载时运行。等价于 `ctx.on('dispose', async () => {})`
 
-* `onConnect` 可以是异步函数，会在 Koishi 启动时运行。等价于 `ctx.on('ready', async () => {})`
+## 描述配置模式
 
-* `onDisconnect` 可以是异步函数，会在插件被卸载时运行。等价于 `ctx.on('dispose', async () => {})`
+借助 schemastery-gen 这个包，我们可以使用装饰器进行编写描述配置模式。插件加载时，类将会自动实例化，并注入这些方法。
 
-## 配置描述模式
-
-借助 schemastery-gen 这个包，我们可以使用装饰器进行编写配置描述模式。插件加载时，类将会自动实例化，并注入这些方法。
-
-我们需要使用 `@DefineSchema` 装饰器对配置类进行修饰，使其成为一个配置描述。同时，需要对每个出现于配置的成员属性使用 `@SchemaProperty` 进行修饰。
+我们需要使用 `@DefineSchema` 装饰器对配置类进行修饰，使其成为一个描述配置。同时，需要对每个出现于配置的成员属性使用 `@SchemaProperty` 进行修饰。
 
 对于每一个成员字段，系统将会尝试推断这些字段类型，也可以使用 `type` 参数手动指定类型或另一个 Schema 对象。
 
@@ -176,7 +170,7 @@ export class Config {
   bar: number;
 
   @SchemaProperty({ type: String })
-  someArray: string[]; // 自动推断出 Schema.array(...)，但是无法推断内部类型，需要手动指定。
+  someArray: string[]; // 自动推断出 Schema.array(...)，但是无法推断内部类型，需要手动指定
 }
 ```
 
@@ -252,56 +246,41 @@ export default class MyPlugin extends BasePlugin<MyPluginConfig> implements OnAp
 
 ### 注册装饰器
 
-* `@UseMiddleware(prepend?: boolean)` 注册中间件，等价于 `ctx.middleware((session, next) => { }, prepend)`。
-
-* `@UseEvent(name: EventName, prepend?: boolean)` 注册事件监听器。等价于 `ctx.on(name, (session) => { }, prepend)`。
-* 
-* `@UseBeforeEvent(name: BeforeEventName, prepend?: boolean)` 注册事件监听器。等价于 `ctx.before(name, (session) => { }, prepend)`。
-
-* `@UseCommand(def: string, desc?: string, config?: Command.Config)` 注册指令。
-
+- `@UseMiddleware(prepend?: boolean)` 注册中间件。等价于 `ctx.middleware((session, next) => { }, prepend)`。
+- `@UseEvent(name: EventName, prepend?: boolean)` 注册事件监听器。等价于 `ctx.on(name, (session) => { }, prepend)`。
+- `@UseBeforeEvent(name: BeforeEventName, prepend?: boolean)` 注册事件监听器。等价于 `ctx.before(name, (session) => { }, prepend)`。
+- `@UseCommand(def: string, desc?: string, config?: Command.Config)` 注册指令。
   * 若指定 `config.empty` 则不会注册当前函数为 action，用于没有 action 的父指令。
-
-* `@Get(path: string)` `@Post(path: string)` 在 Koishi 的 Koa 路由中注册 GET/POST 路径。此外， PUT PATCH DELETE 等方法也有所支持。
+- `@Get(path: string)` `@Post(path: string)` 在 Koishi 的 Koa 路由中注册 GET/POST 路径。此外， PUT PATCH DELETE 等方法也有所支持。
 
 ### 指令描述装饰器
 
 koishi-thirdeye 使用一组装饰器进行描述指令的行为。这些装饰器需要和 `@UseCommand(def)` 装饰器一起使用。
 
-* `@CommandDescription(text: string)` 指令描述。等价于 `ctx.command(def, desc)` 中的描述。
-
-* `@CommandUsage(text: string)` 指令介绍。等价于 `cmd.usage(text)`。
-
-* `@CommandExample(text: string)` 指令示例。等价于 `cmd.example(text)`。
-
-* `@CommandAlias(def: string)` 指令别名。等价于 `cmd.alias(def)`。
-
-* `@CommandShortcut(def: string, config?: Command.Shortcut)` 指令快捷方式。等价于 `cmd.shortcut(def, config)`。
+- `@CommandDescription(text: string)` 指令描述。等价于 `ctx.command(def, desc)` 中的描述。
+- `@CommandUsage(text: string)` 指令介绍。等价于 `cmd.usage(text)`。
+- `@CommandExample(text: string)` 指令示例。等价于 `cmd.example(text)`。
+- `@CommandAlias(def: string)` 指令别名。等价于 `cmd.alias(def)`。
+- `@CommandShortcut(def: string, config?: Command.Shortcut)` 指令快捷方式。等价于 `cmd.shortcut(def, config)`。
 
 ### 指令参数
 
 指令参数也使用一组装饰器对指令参数进行注入。下列装饰器应对由 `@UseCommand` 配置的类成员方法参数进行操作。
 
-* `@PutArgv()` 注入 `Argv` 对象。
-
-* `@PutSession(field?: keyof Session)` 注入 `Session` 对象，或 `Session` 对象的指定字段。
-
-* `@PutArg(index: number)` 注入指令的第 n 个参数。
-
-* `@PutOption(name: string, desc: string, config: Argv.OptionConfig = {})` 给指令添加选项并注入到该参数。等价于 `cmd.option(name, desc, config)` 。
-
-* `@PutUser(fields: string[])` 添加一部分字段用于观测，并将 User 对象注入到该参数。
-
-* `@PutChannel(fields: string[])` 添加一部分字段用于观测，并将 Channel 对象注入到该参数。
-
-* `@PutUserName(useDatabase: boolean = true)` 注入当前用户的用户名。
+- `@PutArgv()` 注入 `Argv` 对象。
+- `@PutSession(field?: keyof Session)` 注入 `Session` 对象，或 `Session` 对象的指定字段。
+- `@PutArg(index: number)` 注入指令的第 n 个参数。
+- `@PutOption(name: string, desc: string, config: Argv.OptionConfig = {})` 给指令添加选项并注入到该参数。等价于 `cmd.option(name, desc, config)` 。
+- `@PutUser(fields: string[])` 添加一部分字段用于观测，并将 User 对象注入到该参数。
+- `@PutChannel(fields: string[])` 添加一部分字段用于观测，并将 Channel 对象注入到该参数。
+- `@PutUserName(useDatabase: boolean = true)` 注入当前用户的用户名。
   * `useDatabase` 是否尝试从数据库获取用户名。**会自动把 `name` 加入用户观察者属性中。**
 
 ### 子指令
 
 koishi-thirdeye 中，子指令需要用完整的名称进行声明。
 
-* 对于没有回调的父指令，可以使用 `empty` 选项，使其不具有 action 字段。
+- 对于没有回调的父指令，可以使用 `empty` 选项，使其不具有 action 字段。
 
 ```ts
 @DefinePlugin({ name: 'my-plugin', schema: Config })
@@ -378,25 +357,19 @@ export default class MyPlugin extends BasePlugin<Config> {
 
 ### API
 
-* `@OnUser(value)` 等价于 `ctx.user(value)`。
+- `@OnUser(value)` 等价于 `ctx.user(value)`。
+- `@OnSelf(value)` 等价于 `ctx.self(value)`。
+- `@OnGuild(value)` 等价于 `ctx.guild(value)`。
+- `@OnChannel(value)` 等价于 `ctx.channel(value)`。
+- `@OnPlatform(value)` 等价于 `ctx.platform(value)`。
+- `@OnPrivate(value)` 等价于 `ctx.private(value)`。
+- `@OnSelection(value)` 等价于 `ctx.select(value)`。
 
-* `@OnSelf(value)` 等价于 `ctx.self(value)`。
+## 提供服务
 
-* `@OnGuild(value)` 等价于 `ctx.guild(value)`。
+和 Service 基类不同的是，koishi-thirdeye 使用 `@Provide` 进行提供服务的声明，提供依赖注入 (DI) 风格的 IoC 的开发方式。
 
-* `@OnChannel(value)` 等价于 `ctx.channel(value)`。
-
-* `@OnPlatform(value)` 等价于 `ctx.platform(value)`。
-
-* `@OnPrivate(value)` 等价于 `ctx.private(value)`。
-
-* `@OnSelection(value)` 等价于 `ctx.select(value)`。
-
-## Service API 提供者
-
-和 Service 基类不同的是，koishi-thirdeye 使用 `@Provide` 进行 Service API 提供者声明，提供依赖注入 (DI) 风格的 IoC 的开发方式。
-
-`@Provide` 调用时会自动完成 `Context.service(serviceName)` 的声明，因此无需再额外使用 `Context.service` 进行声明 Service API 提供者。但是仍要进行类型合并定义。
+`@Provide` 调用时会自动完成 `Context.service(serviceName)` 的声明，因此无需再额外使用 `Context.service` 进行声明服务。但是仍要进行类型合并定义。
 
 若该提供者需要立即生效，我们需要使用 `immediate` 属性，将其标记为立即加载的提供者。
 
