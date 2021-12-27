@@ -182,7 +182,7 @@ describe('Runtime', () => {
 
   describe('Middleware Validation', () => {
     app.middleware((session) => {
-      if (session.content === 'mid') return session.send('mid')
+      if (session.content === 'mid') return 'mid'
     })
 
     it('user.flag.ignore', async () => {

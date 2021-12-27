@@ -251,17 +251,21 @@ export class App extends Context {
         this.logger('session').warn(`${session.content}\n${stack}`)
       }
     }
-    await next()
 
-    // update session map
-    delete this._sessions[session.id]
-    this.emit(session, 'middleware', session)
+    try {
+      const result = await next()
+      if (result) await session.send(result)
+    } finally {
+      // update session map
+      delete this._sessions[session.id]
+      this.emit(session, 'middleware', session)
 
-    // flush user & group data
-    this._userCache.delete(session.id)
-    this._channelCache.delete(session.id)
-    await session.user?.$update()
-    await session.channel?.$update()
+      // flush user & group data
+      this._userCache.delete(session.id)
+      this._channelCache.delete(session.id)
+      await session.user?.$update()
+      await session.channel?.$update()
+    }
   }
 
   private _handleArgv(content: string, session: Session) {

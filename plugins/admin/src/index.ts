@@ -314,18 +314,18 @@ export function bind(ctx: Context, config: BindConfig = {}) {
       const user = await sess.observeUser([session.platform as never])
       delete tokens[session.content]
       await bind(user, session.platform, session.userId)
-      return session.send(template('bind.success'))
+      return template('bind.success')
     } else {
       const user = await session.observeUser(['authority', data[0] as never])
-      if (!user.authority) return session.send(template('internal.low-authority'))
-      if (user[data[0]]) return session.send(template('bind.failed'))
+      if (!user.authority) return template('internal.low-authority')
+      if (user[data[0]]) return template('bind.failed')
       delete tokens[session.content]
       if (data[2]) {
         const token = generate(session, -1)
-        return session.send(template('bind.generated-2', token))
+        return template('bind.generated-2', token)
       } else {
         await bind(user, data[0], data[1])
-        return session.send(template('bind.success'))
+        return template('bind.success')
       }
     }
   }, true)

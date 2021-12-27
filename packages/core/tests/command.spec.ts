@@ -182,7 +182,7 @@ describe('Command API', () => {
     const command = app.command('test')
     const session = app.mock.session({})
     const warn = jest.spyOn(logger, 'warn')
-    const next = jest.fn((async fallback => fallback?.()) as NextFunction)
+    const next = jest.fn(NextFunction)
 
     beforeEach(() => {
       command['_actions'] = []

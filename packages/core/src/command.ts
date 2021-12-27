@@ -214,7 +214,7 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
     return this
   }
 
-  async execute(argv: Argv<U, G, A, O>, fallback: NextFunction = async fallback => fallback?.()): Promise<string> {
+  async execute(argv: Argv<U, G, A, O>, fallback = NextFunction): Promise<string> {
     argv.command ??= this
     argv.args ??= [] as any
     argv.options ??= {} as any

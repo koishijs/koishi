@@ -4,7 +4,7 @@ import { TableType, Tables } from './orm'
 import { Command } from './command'
 import { contain, observe, Logger, defineProperty, Random, template, remove, noop, segment } from '@koishijs/utils'
 import { Argv } from './parser'
-import { Middleware, NextFunction } from './context'
+import { Middleware, NextFunction, NextCallback } from './context'
 import { App } from './app'
 import { Bot } from './bot'
 
@@ -382,9 +382,14 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
       prefix = '',
       suffix,
       apply,
-      next = callback => callback(),
+      next = NextFunction,
       minSimilarity = this.app.options.minSimilarity,
     } = options
+
+    const sendNext = async (callback: NextCallback) => {
+      const result = await next(callback)
+      if (result) return this.send(result)
+    }
 
     let suggestions: string[], minDistance = Infinity
     for (const name of items) {
@@ -397,11 +402,11 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
         minDistance = dist
       }
     }
-    if (!suggestions) return next(() => this.send(prefix))
+    if (!suggestions) return sendNext(() => prefix)
 
-    return next(() => {
+    return sendNext(() => {
       const message = prefix + template('internal.suggestion', suggestions.map(template.quote).join(template.get('basic.or')))
-      if (suggestions.length > 1) return this.send(message)
+      if (suggestions.length > 1) return message
 
       const dispose = this.middleware((session, next) => {
         dispose()
@@ -410,7 +415,7 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
         return apply.call(session, suggestions[0], next)
       })
 
-      return this.send(message + suffix)
+      return message + suffix
     })
   }
 }
@@ -418,7 +423,7 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
 export interface SuggestOptions {
   target: string
   items: string[]
-  next?: NextFunction
+  next?: NextCallback
   prefix?: string
   suffix: string
   minSimilarity?: number

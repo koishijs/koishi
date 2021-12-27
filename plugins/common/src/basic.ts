@@ -158,12 +158,12 @@ export function feedback(ctx: Context, operators: string[]) {
       return template('common.feedback-success')
     })
 
-  ctx.middleware((session, next) => {
+  ctx.middleware(async (session, next) => {
     const { quote, parsed } = session
     if (!parsed.content || !quote) return next()
     const data = feedbacks[quote.messageId]
     if (!data) return next()
-    return ctx.bots.get(data[0]).sendMessage(data[1], parsed.content, data[2])
+    await ctx.bots.get(data[0]).sendMessage(data[1], parsed.content, data[2])
   })
 }
 
@@ -211,7 +211,7 @@ export function respondent(ctx: Context, respondents: Respondent[]) {
     const message = session.content.trim()
     for (const { match, reply } of respondents) {
       const capture = typeof match === 'string' ? message === match && [message] : message.match(match)
-      if (capture) return session.send(typeof reply === 'string' ? reply : reply(...capture))
+      if (capture) return typeof reply === 'string' ? reply : reply(...capture)
     }
     return next()
   })
