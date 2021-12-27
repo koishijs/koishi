@@ -1,7 +1,7 @@
 import { Context, Service } from '@koishijs/core'
 import { segment } from '@koishijs/utils'
 import { createHash } from 'crypto'
-import { fileTypeFromBuffer } from 'file-type'
+import { fromBuffer } from 'file-type'
 import { basename } from 'path'
 
 const PROTOCOL_BASE64 = 'base64://'
@@ -43,7 +43,7 @@ export abstract class Assets extends Service {
         filename = `${hash}-${file}`
       }
     } else {
-      const fileType = await fileTypeFromBuffer(buffer)
+      const fileType = await fromBuffer(buffer)
       if (fileType) {
         filename = `${hash}.${fileType.ext}`
       } else {
