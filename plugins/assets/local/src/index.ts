@@ -85,18 +85,10 @@ class LocalAssets extends Assets {
   async upload(url: string, file: string) {
     await this._promise
     const { selfUrl, path, root } = this.config
-    if (file) {
-      const filename = resolve(root, file)
-      if (!existsSync(filename)) {
-        const buffer = await this.download(url)
-        await this.write(buffer, filename)
-      }
-    } else {
-      const buffer = await this.download(url)
-      file = createHash('sha1').update(buffer).digest('hex')
-      await this.write(buffer, resolve(root, file))
-    }
-    return `${selfUrl}${path}/${file}`
+    const { buffer, filename } = await this.analyze(url, file)
+    const savePath = resolve(root, file)
+    await this.write(buffer, savePath)
+    return `${selfUrl}${path}/${filename}`
   }
 
   async stats() {
