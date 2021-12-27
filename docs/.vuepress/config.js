@@ -194,7 +194,7 @@ module.exports = {
         text: '资源存储支持',
         isGroup: true,
         children: [
-          '/plugins/assets/jsdelivr.md',
+          '/plugins/assets/git.md',
           '/plugins/assets/local.md',
           '/plugins/assets/remote.md',
           '/plugins/assets/s3.md',

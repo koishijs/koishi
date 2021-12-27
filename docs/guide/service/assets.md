@@ -19,9 +19,9 @@ sidebarDepth: 2
 
 ### 实现此服务的插件
 
+- [@koishijs/plugin-assets-git](../../plugins/assets/git.md)
 - [@koishijs/plugin-assets-local](../../plugins/assets/local.md)
 - [@koishijs/plugin-assets-remote](../../plugins/assets/local.md)
-- [@koishijs/plugin-assets-jsdelivr](../../plugins/assets/jsdelivr.md)
 - [@koishijs/plugin-assets-s3](../../plugins/assets/s3.md)
 - [koishi-plugin-assets-smms](https://github.com/koishijs/koishi-plugin-assets-smms)
 
