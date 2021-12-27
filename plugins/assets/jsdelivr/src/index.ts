@@ -81,8 +81,7 @@ class JsdelivrAssets extends Assets {
 
   private async getBranch(forceNew?: boolean, offset = 1): Promise<Branch> {
     const [file] = await this.ctx.database.get('jsdelivr', {}, {
-      // TODO support order
-      // order: { id: 'desc' },
+      order: { id: 'desc' },
       fields: ['branch'],
       limit: 1,
     })
@@ -189,24 +188,17 @@ class JsdelivrAssets extends Assets {
     }
   }
 
-  private async getFileName(buffer: Buffer) {
-    const { ext } = await fromBuffer(buffer)
-    return 'untitled.' + ext
-  }
-
   toPublicUrl(file: File) {
     const { user, repo } = this.config.github
     return `https://cdn.jsdelivr.net/gh/${user}/${repo}@${file.branch}/${file.hash}-${file.name}`
   }
 
-  async upload(url: string, name?: string) {
-    const { buffer, hash } = await this.analyze(url, name)
+  async upload(url: string, _file?: string) {
+    const { buffer, hash, filename } = await this.analyze(url, _file)
     const [file] = await this.ctx.database.get('jsdelivr', { hash })
     if (file) return this.toPublicUrl(file)
-
-    name ||= await this.getFileName(buffer)
     await writeFile(join(this.config.tempDir, hash), buffer)
-    return this.createTask({ size: buffer.byteLength, hash, name })
+    return this.createTask({ size: buffer.byteLength, hash, name: filename })
   }
 
   async stats() {
