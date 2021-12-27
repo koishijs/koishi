@@ -2,9 +2,7 @@ import { Context, Assets, Schema, Logger, Time, sleep } from 'koishi'
 import Git, { SimpleGit, SimpleGitOptions, ResetMode } from 'simple-git'
 import { access, mkdir, rename, writeFile } from 'fs/promises'
 import { join, resolve } from 'path'
-import { createHash } from 'crypto'
 import { File, Task, FileInfo } from './file'
-import { fromBuffer } from 'file-type'
 
 declare module 'koishi' {
   interface Modules {
