@@ -1,4 +1,4 @@
-import { App, Middleware, NextFunction, Context, sleep, noop, Logger } from 'koishi'
+import { App, Middleware, Context, sleep, noop, Logger, Next } from 'koishi'
 import { expect } from 'chai'
 import mock from '@koishijs/plugin-mock'
 import jest from 'jest-mock'
@@ -87,11 +87,13 @@ describe('Hook API', () => {
     })
 
     it('temporary middleware', async () => {
+      type NextCallback = Extract<Next.Callback, (...args: any[]) => any>
+
       const mid1 = wrap<Middleware>((_, next) => next(mid3))
       const mid2 = wrap<Middleware>((_, next) => next(mid4))
-      const mid3 = wrap<NextFunction>((next) => next(mid5))
-      const mid4 = wrap<NextFunction>((next) => next())
-      const mid5 = wrap<NextFunction>((next) => next())
+      const mid3 = wrap<NextCallback>((next) => next(mid5))
+      const mid4 = wrap<NextCallback>((next) => next())
+      const mid5 = wrap<NextCallback>((next) => next())
       app.middleware(mid1)
       app.middleware(mid2)
       await app.mock.client('123').receive('foo')

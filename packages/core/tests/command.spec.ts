@@ -1,10 +1,16 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 
-import { App, Logger, noop } from 'koishi'
+import { App, Logger, Next } from 'koishi'
 import { inspect } from 'util'
 import { expect } from 'chai'
+import {} from 'chai-shape'
 import mock from '@koishijs/plugin-mock'
 import jest from 'jest-mock'
+
+const logger = new Logger('command')
+
+before(() => logger.level = 1)
+after(() => logger.level = 2)
 
 describe('Command API', () => {
   describe('Register Commands', () => {
@@ -131,7 +137,7 @@ describe('Command API', () => {
     })
   })
 
-  describe('Disposable Commands', () => {
+  describe('Dispose Commands', () => {
     const app = new App()
     const foo = app.command('foo')
     const bar = foo.subcommand('bar')
@@ -171,34 +177,90 @@ describe('Command API', () => {
     })
   })
 
-  describe('Error Handling', () => {
+  describe('Execute Commands', () => {
     const app = new App().plugin(mock)
     const command = app.command('test')
     const session = app.mock.session({})
-    const cmdWarn = jest.spyOn(new Logger('command'), 'warn')
-    const argv = { command, session }
+    const warn = jest.spyOn(logger, 'warn')
+    const next = jest.fn(Next.compose)
 
-    it('throw in action', async () => {
-      command.action(async ({ next }) => {
-        await next(noop)
-        throw new Error('message')
-      })
-
-      await expect(command.execute(argv)).eventually.to.equal('')
-      expect(cmdWarn.mock.calls).to.have.length(1)
-      expect(cmdWarn.mock.calls[0][0]).to.match(/^executing command: test\nError: message/)
+    beforeEach(() => {
+      command['_actions'] = []
+      warn.mockClear()
+      next.mockClear()
     })
 
-    it('throw in next', async () => {
-      command.action(({ next }) => {
-        return next(() => {
-          throw new Error('message')
-        })
+    it('basic 1 (return undefined)', async () => {
+      command.action(() => {})
+
+      await expect(command.execute({ session }, next)).eventually.to.equal('')
+      expect(next.mock.calls).to.have.length(0)
+    })
+
+    it('basic 2 (return string)', async () => {
+      command.action(() => 'result')
+
+      await expect(command.execute({ session }, next)).eventually.to.equal('result')
+      expect(next.mock.calls).to.have.length(0)
+    })
+
+    it('compose 1 (return in next function)', async () => {
+      next.mockResolvedValueOnce('result')
+      command.action(({ next }) => next())
+
+      await expect(command.execute({ session }, next)).eventually.to.equal('result')
+      expect(next.mock.calls).to.have.length(1)
+    })
+
+    it('compose 2 (return in action)', async () => {
+      command.action(() => 'result')
+      command.action(({ next }, arg) => {
+        return arg === 'ping' ? 'pong' : next()
+      }, true)
+
+      await expect(command.execute({ session }, next)).eventually.to.equal('result')
+      await expect(command.execute({ session, args: ['ping'] }, next)).eventually.to.equal('pong')
+      expect(next.mock.calls).to.have.length(0)
+    })
+
+    it('compose 3 (return after next resolved)', async () => {
+      command.action(({ next }) => next().then(() => 'result'))
+
+      await expect(command.execute({ session }, next)).eventually.to.equal('result')
+      expect(next.mock.calls).to.have.length(1)
+    })
+
+    it('throw 1 (error in action)', async () => {
+      command.action(() => {
+        throw new Error('message 1')
       })
 
-      cmdWarn.mockClear()
-      await expect(command.execute(argv)).to.be.rejectedWith('message')
-      expect(cmdWarn.mock.calls).to.have.length(0)
+      await expect(command.execute({ session }, next)).eventually.to.equal('')
+      expect(warn.mock.calls).to.have.length(1)
+      expect(warn.mock.calls[0][0]).to.match(/^test\nError: message 1/)
+      expect(next.mock.calls).to.have.length(0)
+    })
+
+    it('throw 2 (error in next function)', async () => {
+      next.mockRejectedValueOnce(new Error('message 2'))
+      command.action(({ next }) => next())
+
+      await expect(command.execute({ session }, next)).to.be.rejected
+      expect(warn.mock.calls).to.have.length(0)
+      expect(next.mock.calls).to.have.length(1)
+    })
+
+    it('throw 3 (error handling)', async () => {
+      command.action(async ({ next }) => {
+        return next().catch(() => 'catched')
+      })
+      command.action(() => {
+        throw new Error('message 3')
+      })
+
+      await expect(command.execute({ session }, next)).eventually.to.equal('catched')
+      expect(warn.mock.calls).to.have.length(0)
+      expect(next.mock.calls).to.have.length(0)
     })
   })
 })

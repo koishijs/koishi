@@ -1,7 +1,7 @@
 {
-  "name": "@koishijs/plugin-assets-jsdelivr",
-  "description": "A github-jsdelivr assets provider for Koishi",
-  "version": "1.0.0-rc.0",
+  "name": "@koishijs/plugin-assets-git",
+  "description": "A git assets provider for Koishi",
+  "version": "1.0.0-rc.1",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -16,7 +16,7 @@
   "bugs": {
     "url": "https://github.com/koishijs/koishi/issues"
   },
-  "homepage": "https://koishi.js.org/plugins/other/jsdelivr",
+  "homepage": "https://koishi.js.org/plugins/other/git",
   "keywords": [
     "bot",
     "qqbot",
@@ -27,15 +27,15 @@
     "plugin",
     "github",
     "assets",
+    "git",
     "jsdelivr",
     "required:database",
     "service:assets"
   ],
   "peerDependencies": {
-    "koishi": "^4.0.0-rc.0"
+    "koishi": "^4.0.0-rc.1"
   },
   "dependencies": {
-    "file-type": "^16.5.3",
     "simple-git": "^2.45.1"
   }
 }

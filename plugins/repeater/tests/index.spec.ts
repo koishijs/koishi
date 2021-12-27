@@ -10,6 +10,8 @@ const session3 = app.mock.client('789', '123')
 const options: repeater.Config = {}
 app.plugin(repeater, options)
 
+before(() => app.start())
+
 describe('Repeater', () => {
   beforeEach(async () => {
     options.onRepeat = null

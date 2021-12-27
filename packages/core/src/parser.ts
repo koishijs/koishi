@@ -1,6 +1,5 @@
 import { camelCase, segment, escapeRegExp, paramCase, template, Time, Dict } from '@koishijs/utils'
 import { Command } from './command'
-import { NextFunction } from './context'
 import { Channel, User } from './database'
 import { Session } from './session'
 
@@ -26,7 +25,7 @@ export interface Argv<U extends User.Field = never, G extends Channel.Field = ne
   root?: boolean
   tokens?: Token[]
   name?: string
-  next?: NextFunction
+  next?: () => Promise<void | string>
 }
 
 const leftQuotes = `"'“‘`

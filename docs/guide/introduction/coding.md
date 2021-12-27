@@ -39,14 +39,14 @@ Koishi 支持多个聊天平台，对于不同的平台，你也需要做好相�
 npm init
 
 # 安装 koishi 和相关库
-npm i koishi@next @koishijs/plugin-adapter-onebot@next @koishijs/plugin-common@next
+npm i koishi @koishijs/plugin-adapter-onebot @koishijs/plugin-common
 ```
 ```yarn
 # 初始化项目
 yarn init
 
 # 安装 koishi 和相关库
-yarn add koishi@next @koishijs/plugin-adapter-onebot@next @koishijs/plugin-common@next
+yarn add koishi @koishijs/plugin-adapter-onebot @koishijs/plugin-common
 ```
 :::
 
@@ -94,7 +94,7 @@ node .
 // 如果收到“天王盖地虎”，就回应“宝塔镇河妖”
 app.middleware((session, next) => {
   if (session.content === '天王盖地虎') {
-    return session.send('宝塔镇河妖')
+    return '宝塔镇河妖'
   } else {
     return next()
   }
@@ -114,10 +114,10 @@ app.middleware((session, next) => {
 
 ::: code-group manager
 ```npm
-npm i @koishijs/plugin-database-mysql@next
+npm i @koishijs/plugin-database-mysql
 ```
 ```yarn
-yarn add @koishijs/plugin-database-mysql@next
+yarn add @koishijs/plugin-database-mysql
 ```
 :::
 

@@ -12,7 +12,7 @@ sidebarDepth: 2
 // 如果收到“天王盖地虎”，就回应“宝塔镇河妖”
 ctx.middleware((session, next) => {
   if (session.content === '天王盖地虎') {
-    return session.send('宝塔镇河妖')
+    return '宝塔镇河妖'
   } else {
     return next()
   }
@@ -34,8 +34,9 @@ ctx.middleware((session, next) => {
 中间件的本质是下面的函数。看起来挺简单的，不是吗？我们将在下面详细介绍它的运作方式。
 
 ```js
-type NextFunction = (next?: NextFunction) => any
-type Middleware = (session: Session, next: NextFunction) => any
+type Next = (next?: Callback) => Promise<void | string>
+type Callback = void | string | ((next?: Next) => Awaitable<void | string>)
+type Middleware = (session: Session, next: Next) => Promise<void | string>
 ```
 
 ## 注册和取消中间件
@@ -46,7 +47,7 @@ type Middleware = (session: Session, next: NextFunction) => any
 ctx.middleware((session, next) => {
   // 仅当接收到的消息包含了对机器人的称呼时才继续处理（比如消息以 @机器人 开头）
   if (session.parsed.appel) {
-    return session.send('是你在叫我吗？')
+    return '是你在叫我吗？'
   } else {
     // 如果去掉这一行，那么不满足上述条件的消息就不会进入下一个中间件了
     return next()
@@ -71,7 +72,7 @@ ctx.middleware(async (session, next) => {
   // 这里只是示例，事实上 Koishi 会自动获取数据库中的信息并存放在 session.user 中
   const user = await session.getUser(session.userId)
   if (user.authority === 0) {
-    return session.send('抱歉，你没有权限访问机器人。')
+    return '抱歉，你没有权限访问机器人。'
   } else {
     return next()
   }
@@ -134,7 +135,7 @@ ctx.middleware((session, next) => {
 ctx.middleware((session, next) => {
   if (session.content === 'hlep') {
     // 如果该 session 没有被截获，则这里的回调函数将会被执行
-    return next(() => session.send('你想说的是 help 吗？'))
+    return next('你想说的是 help 吗？')
   } else {
     return next()
   }
@@ -150,7 +151,7 @@ let message = '' // 当前消息
 ctx.middleware((session, next) => {
   if (session.content === message) {
     times += 1
-    if (times === 3) return next(() => session.send(message))
+    if (times === 3) return next(message)
   } else {
     times = 0
     message = session.content

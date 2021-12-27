@@ -182,7 +182,7 @@ describe('Runtime', () => {
 
   describe('Middleware Validation', () => {
     app.middleware((session) => {
-      if (session.content === 'mid') return session.send('mid')
+      if (session.content === 'mid') return 'mid'
     })
 
     it('user.flag.ignore', async () => {
@@ -277,7 +277,7 @@ describe('Runtime', () => {
       cmd3.dispose()
     })
 
-    it('command.check', async () => {
+    it('command.before()', async () => {
       const cmd3 = app.command('cmd3').action(() => 'after cmd3')
       await client1.shouldReply('cmd3', 'after cmd3')
       let value = 'before cmd3'
