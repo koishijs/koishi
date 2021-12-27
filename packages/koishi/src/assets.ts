@@ -36,11 +36,11 @@ export abstract class Assets extends Service {
     const hash = createHash('sha1').update(buffer).digest('hex')
     let filename: string
     if (file) {
-      const fileBasename = basename(file)
-      if (fileBasename.startsWith('.')) {
-        filename = `${hash}${fileBasename}`
+      file = basename(file)
+      if (file.startsWith('.')) {
+        filename = `${hash}${file}`
       } else {
-        filename = `${hash}-${fileBasename}`
+        filename = `${hash}-${file}`
       }
     } else {
       const fileType = await fileTypeFromBuffer(buffer)
