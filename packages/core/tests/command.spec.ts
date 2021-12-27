@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 
-import { App, Logger, NextFunction } from 'koishi'
+import { App, Logger, Next } from 'koishi'
 import { inspect } from 'util'
 import { expect } from 'chai'
 import {} from 'chai-shape'
@@ -182,7 +182,7 @@ describe('Command API', () => {
     const command = app.command('test')
     const session = app.mock.session({})
     const warn = jest.spyOn(logger, 'warn')
-    const next = jest.fn(NextFunction)
+    const next = jest.fn(Next.compose)
 
     beforeEach(() => {
       command['_actions'] = []
@@ -223,8 +223,8 @@ describe('Command API', () => {
       expect(next.mock.calls).to.have.length(0)
     })
 
-    it('compose 3 (return in next callback)', async () => {
-      command.action(({ next }) => next(() => 'result'))
+    it('compose 3 (return after next resolved)', async () => {
+      command.action(({ next }) => next().then(() => 'result'))
 
       await expect(command.execute({ session }, next)).eventually.to.equal('result')
       expect(next.mock.calls).to.have.length(1)
@@ -241,21 +241,8 @@ describe('Command API', () => {
       expect(next.mock.calls).to.have.length(0)
     })
 
-    it('throw 2 (error in next callback)', async () => {
-      command.action(({ next }) => {
-        return next(() => {
-          throw new Error('message 2')
-        })
-      })
-
-      await expect(command.execute({ session }, next)).eventually.to.equal('')
-      expect(warn.mock.calls).to.have.length(1)
-      expect(warn.mock.calls[0][0]).to.match(/^test\nError: message 2/)
-      expect(next.mock.calls).to.have.length(1)
-    })
-
-    it('throw 3 (error in next function)', async () => {
-      next.mockRejectedValueOnce(new Error('message 3'))
+    it('throw 2 (error in next function)', async () => {
+      next.mockRejectedValueOnce(new Error('message 2'))
       command.action(({ next }) => next())
 
       await expect(command.execute({ session }, next)).to.be.rejected
@@ -263,12 +250,12 @@ describe('Command API', () => {
       expect(next.mock.calls).to.have.length(1)
     })
 
-    it('throw 4 (error handling)', async () => {
+    it('throw 3 (error handling)', async () => {
       command.action(async ({ next }) => {
         return next().catch(() => 'catched')
       })
       command.action(() => {
-        throw new Error('message 4')
+        throw new Error('message 3')
       })
 
       await expect(command.execute({ session }, next)).eventually.to.equal('catched')

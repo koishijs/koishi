@@ -1,6 +1,6 @@
 import { Logger, coerce, Time, template, remove, Awaitable, Dict } from '@koishijs/utils'
 import { Argv } from './parser'
-import { Context, Disposable, NextFunction } from './context'
+import { Context, Disposable, Next } from './context'
 import { User, Channel } from './database'
 import { FieldCollector, Session } from './session'
 
@@ -214,7 +214,7 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
     return this
   }
 
-  async execute(argv: Argv<U, G, A, O>, fallback = NextFunction): Promise<string> {
+  async execute(argv: Argv<U, G, A, O>, fallback = Next.compose): Promise<string> {
     argv.command ??= this
     argv.args ??= [] as any
     argv.options ??= {} as any
@@ -230,19 +230,20 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
     }
 
     let index = 0
-    const actions = this._actions.slice()
-    const final: Command.Action = ({ next }) => fallback(next)
-    actions.push(final)
-    argv.next = async (fallback?: NextFunction) => {
-      if (fallback) actions.push((_, next) => fallback(next))
-      return await actions[index++]?.call(this, argv, ...args)
+    const queue: Next.Queue = this._actions.map((action) => async (next) => {
+      return action.call(this, { ...argv, next }, ...args)
+    })
+    queue.push(fallback)
+    const length = queue.length
+    const next: Next = async () => {
+      return await queue[index++]?.(next)
     }
 
     try {
-      const result = await argv.next()
+      const result = await next()
       if (typeof result === 'string') return result
     } catch (error) {
-      if (actions[index - 1] === final) throw error
+      if (index === length) throw error
       let stack = coerce(error)
       logger.warn(`${argv.source ||= this.stringify(args, options)}\n${stack}`)
     }

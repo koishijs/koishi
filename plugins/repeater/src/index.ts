@@ -68,7 +68,7 @@ export function apply(ctx: Context, config: Config = {}) {
     const state = getState(session.cid)
     const check = (handle: StateCallback) => {
       const text = handle?.(state, session)
-      return text && next(() => text)
+      return text && next(text)
     }
 
     // duplicate repeating & normal repeating

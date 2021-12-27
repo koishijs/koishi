@@ -4,7 +4,7 @@ import { TableType, Tables } from './orm'
 import { Command } from './command'
 import { contain, observe, Logger, defineProperty, Random, template, remove, noop, segment } from '@koishijs/utils'
 import { Argv } from './parser'
-import { Middleware, NextFunction, NextCallback } from './context'
+import { Middleware, Next } from './context'
 import { App } from './app'
 import { Bot } from './bot'
 
@@ -304,9 +304,9 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
     return argv.command
   }
 
-  async execute(content: string, next?: true | NextFunction): Promise<string>
-  async execute(argv: Argv, next?: true | NextFunction): Promise<string>
-  async execute(argv: string | Argv, next?: true | NextFunction): Promise<string> {
+  async execute(content: string, next?: true | Next): Promise<string>
+  async execute(argv: Argv, next?: true | Next): Promise<string>
+  async execute(argv: string | Argv, next?: true | Next): Promise<string> {
     if (typeof argv === 'string') argv = Argv.parse(argv)
 
     argv.session = this
@@ -344,7 +344,7 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
     let shouldEmit = true
     if (next === true) {
       shouldEmit = false
-      next = undefined as NextFunction
+      next = undefined as Next
     }
 
     const result = await argv.command.execute(argv, next)
@@ -382,11 +382,11 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
       prefix = '',
       suffix,
       apply,
-      next = NextFunction,
+      next = Next.compose,
       minSimilarity = this.app.options.minSimilarity,
     } = options
 
-    const sendNext = async (callback: NextCallback) => {
+    const sendNext = async (callback: Next) => {
       const result = await next(callback)
       if (result) return this.send(result)
     }
@@ -402,9 +402,9 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
         minDistance = dist
       }
     }
-    if (!suggestions) return sendNext(() => prefix)
+    if (!suggestions) return sendNext(async () => prefix)
 
-    return sendNext(() => {
+    return sendNext(async () => {
       const message = prefix + template('internal.suggestion', suggestions.map(template.quote).join(template.get('basic.or')))
       if (suggestions.length > 1) return message
 
@@ -423,11 +423,11 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
 export interface SuggestOptions {
   target: string
   items: string[]
-  next?: NextCallback
+  next?: Next
   prefix?: string
   suffix: string
   minSimilarity?: number
-  apply: (this: Session, suggestion: string, next: NextFunction) => void
+  apply: (this: Session, suggestion: string, next: Next) => void
 }
 
 export function getSessionId(session: Session) {

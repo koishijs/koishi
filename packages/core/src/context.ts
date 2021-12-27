@@ -10,14 +10,18 @@ import { Adapter } from './adapter'
 import { Model, Tables } from './orm'
 import Schema from 'schemastery'
 
-export async function NextFunction(next: NextCallback) {
-  return next()
-}
-
-export type NextCallback = (next?: NextCallback) => Awaitable<void | string>
-export type NextFunction = (next?: NextCallback) => Promise<void | string>
-export type Middleware = (session: Session, next: NextFunction) => Awaitable<void | string>
+export type Next = (next?: Next.Callback) => Promise<void | string>
+export type Middleware = (session: Session, next: Next) => Awaitable<void | string>
 export type Disposable = () => void
+
+export namespace Next {
+  export type Queue = ((next?: Next) => Promise<void | string>)[]
+  export type Callback = void | string | ((next?: Next) => Awaitable<void | string>)
+
+  export async function compose(callback: Callback, next?: Next) {
+    return typeof callback === 'function' ? callback(next) : callback
+  }
+}
 
 export type Plugin<T = any> = Plugin.Function<T> | Plugin.Object<T>
 
