@@ -31,23 +31,18 @@ export abstract class Assets extends Service {
     return Buffer.from(data)
   }
 
-  protected async analyze(url: string, file?: string): Promise<Assets.FileInfo> {
+  protected async analyze(url: string, name = ''): Promise<Assets.FileInfo> {
     const buffer = await this.download(url)
     const hash = createHash('sha1').update(buffer).digest('hex')
-    let name: string
-    if (file) {
-      file = basename(file)
-      if (file.startsWith('.')) {
-        name = file
-      } else {
-        name = `-${file}`
+    if (name) {
+      name = basename(name)
+      if (!name.startsWith('.')) {
+        name = `-${name}`
       }
     } else {
       const fileType = await FileType.fromBuffer(buffer)
       if (fileType) {
         name = `.${fileType.ext}`
-      } else {
-        name = ''
       }
     }
     return { buffer, hash, name, filename: `${hash}${name}` }
