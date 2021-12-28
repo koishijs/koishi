@@ -1,8 +1,10 @@
 import fileType from 'file-type'
 import { createReadStream } from 'fs'
+import FormData from 'form-data'
 import { Adapter, assertProperty, Bot, camelCase, Dict, Logger, Quester, renameProperty, Schema, segment, snakeCase } from 'koishi'
 import * as Telegram from './types'
 import { AdapterConfig } from './utils'
+import { AxiosError } from 'axios'
 
 const logger = new Logger('telegram')
 
@@ -46,10 +48,6 @@ export const BotConfig: Schema<BotConfig> = Schema.object({
     Schema.const<true>(true),
   ]).description('通过长轮询获取更新时请求的超时。单位为秒；true 为使用默认值 1 分钟。详情请见 Telegram API 中 getUpdate 的参数 timeout。不设置即使用 webhook 获取更新。'),
 })
-
-export interface TelegramBot {
-  _request?(action: `/${string}`, params: Dict<any>, field?: string, content?: Buffer, filename?: string): Promise<TelegramResponse>
-}
 
 async function maybeFile(payload: Dict<any>, field: TLAssetType): Promise<[any, string?, Buffer?, string?]> {
   if (!payload[field]) return [payload]
@@ -112,16 +110,45 @@ export class TelegramBot extends Bot<BotConfig> {
   }
 
   /**
-   * Request telegram API (using post method actually)
+   * Request telegram API
+   * @param action method of telegram API. Starts with a '/'
+   * @param params params in camelCase
+   * @returns Respond form telegram
+   */
+  async get<T = any, P = any>(action: `/${string}`, params: P = undefined): Promise<T> {
+    this.logger.debug('[request] %s %o', action, params)
+    const response = await this.http.get(action, {
+      params: snakeCase(params || {})
+    })
+    this.logger.debug('[response] %o', response)
+    const { ok, result } = response
+    if (ok) return camelCase(result)
+    throw new SenderError(params, action, -1, this.selfId)
+  }
+
+  /**
+   * Request telegram API
    * @param action method of telegram API. Starts with a '/'
    * @param params params in camelCase
    * @param field file field key in fromData
    * @param content file stream
    * @returns Respond form telegram
    */
-  async get<T = any, P = any>(action: `/${string}`, params: P = undefined, field = '', content: Buffer = null, filename = 'file'): Promise<T> {
+  async post<T = any, P = any>(action: `/${string}`, params: P = undefined, field = '', content: Buffer = null, filename = 'file'): Promise<T> {
     this.logger.debug('[request] %s %o', action, params)
-    const response = await this._request(action, snakeCase(params || {}), field, content, filename)
+    const payload = new FormData()
+    for (const key in params) {
+      payload.append(snakeCase(key), params[key].toString())
+    }
+    if (field && content) payload.append(field, content, filename)
+    let response: any
+    try {
+      response = await this.http.post(action, payload, {
+        headers: payload.getHeaders()
+      })
+    } catch (e) {
+      response = (e as AxiosError).response.data
+    }
     this.logger.debug('[response] %o', response)
     const { ok, result } = response
     if (ok) return camelCase(result)
@@ -155,7 +182,7 @@ export class TelegramBot extends Bot<BotConfig> {
         video: '/sendVideo',
         animation: '/sendAnimation',
       }
-      lastMsg = await this.get(assetApi[currAssetType], ...await maybeFile(payload, currAssetType))
+      lastMsg = await this.post(assetApi[currAssetType], ...await maybeFile(payload, currAssetType))
       currAssetType = null
       delete payload[currAssetType]
       delete payload.replyToMessage
@@ -215,17 +242,26 @@ export class TelegramBot extends Bot<BotConfig> {
     return lastMsg ? lastMsg.messageId.toString() : null
   }
 
-  async sendMessage(channelId: string, content: string, subtype: 'group' | 'private' = 'group') {
+  async sendMessage(channelId: string, content: string) {
     if (!content) return
-    const session = this.createSession({ content, channelId, subtype, guildId: channelId })
+    let subtype: string
+    let chatId: string
+    if (channelId.startsWith('private:')) {
+      subtype = 'private'
+      chatId = channelId.slice(8)
+    } else {
+      subtype = 'group'
+      chatId = channelId
+    }
+    const session = this.createSession({ content, channelId, guildId: channelId })
     if (await this.app.serial(session, 'before-send', session)) return
-    session.messageId = await this._sendMessage(channelId, session.content)
+    session.messageId = await this._sendMessage(chatId, session.content)
     this.app.emit(session, 'send', session)
     return session.messageId
   }
 
   async sendPrivateMessage(userId: string, content: string) {
-    return this.sendMessage(userId, content, 'private')
+    return this.sendMessage(userId, content)
   }
 
   async getMessage() {

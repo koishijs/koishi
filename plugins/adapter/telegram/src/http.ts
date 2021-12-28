@@ -1,4 +1,3 @@
-import axios, { AxiosError } from 'axios'
 import FormData from 'form-data'
 import { Adapter, assertProperty, camelCase, Context, Logger, sanitize, segment, Session, trimSlash } from 'koishi'
 import { BotConfig, TelegramBot } from './bot'
@@ -31,18 +30,6 @@ abstract class TelegramAdapter extends Adapter<BotConfig, AdapterConfig> {
   abstract listenUpdates(bot: TelegramBot): Promise<void>
 
   async connect(bot: TelegramBot): Promise<void> {
-    bot._request = async (action, params, field, content, filename) => {
-      const payload = new FormData()
-      for (const key in params) {
-        payload.append(key, params[key].toString())
-      }
-      if (field && content) payload.append(field, content, filename)
-      try {
-        return await bot.http.post(action, payload, payload.getHeaders())
-      } catch (e) {
-        return (e as AxiosError).response.data
-      }
-    }
     const { username, userId, avatar, nickname } = await bot.getLoginInfo()
     bot.username = username
     bot.avatar = avatar
@@ -111,8 +98,8 @@ abstract class TelegramAdapter extends Adapter<BotConfig, AdapterConfig> {
         try {
           const file = await bot.get<Telegram.File>('/getFile', { fileId })
           const downloadUrl = `${this.config.request.endpoint}/file/bot${token}/${file.filePath}`
-          const res = await axios.get(downloadUrl, { responseType: 'arraybuffer' })
-          const base64 = `base64://` + Buffer.from(res.data, 'binary').toString('base64')
+          const res = await this.ctx.http.get(downloadUrl, { responseType: 'arraybuffer' })
+          const base64 = `base64://` + res.toString('base64')
           return { url: base64 }
         } catch (e) {
           logger.warn('get file error', e)
@@ -140,6 +127,7 @@ abstract class TelegramAdapter extends Adapter<BotConfig, AdapterConfig> {
       session.author = TelegramBot.adaptUser(message.from)
       if (message.chat.type === 'private') {
         session.subtype = 'private'
+        session.channelId = session.guildId = `private:${session.userId}`
       } else {
         session.subtype = 'group'
         session.channelId = session.guildId = message.chat.id.toString()
