@@ -12,7 +12,7 @@ Argv 对象会作为 `cmd.action()`, `cmd.userFields()` 等方法的回调函数
 
 - **args:** `any[]` 参数列表
 - **options:** `{}` 选项列表
-- **next:** `NextFunction` 中间件的 next 回调函数
+- **next:** `Next` 中间件的 next 回调函数
 - **session:** [`Session`](./session.md) 所在的会话对象
 
 ## 实例方法
@@ -142,7 +142,7 @@ type FieldCollector<K extends string> =
   - **argv.args:** `any[]` 指令的参数列表
   - **argv.options:** `Record<string, any>` 指令的选项
   - **argv.session:** [`Session`](./session.md) 当前的会话对象
-- **next:** [`NextFunction`](../../guide/message.md#使用中间件) 所处的中间件的 `next` 回调函数
+- **next:** [`Next`](../../guide/message.md#使用中间件) 所处的中间件的 `next` 回调函数
 - 返回值: `Promise<string>` 执行函数的返回结果，可用于指令插值
 
 执行当前指令。

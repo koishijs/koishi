@@ -2,9 +2,7 @@ import { Context, Assets, Schema, Logger, Time, sleep } from 'koishi'
 import Git, { SimpleGit, SimpleGitOptions, ResetMode } from 'simple-git'
 import { access, mkdir, rename, writeFile } from 'fs/promises'
 import { join, resolve } from 'path'
-import { createHash } from 'crypto'
 import { File, Task, FileInfo } from './file'
-import { fromBuffer } from 'file-type'
 
 declare module 'koishi' {
   interface Modules {
@@ -81,17 +79,14 @@ class JsdelivrAssets extends Assets {
 
   private async getBranch(forceNew?: boolean, offset = 1): Promise<Branch> {
     const [file] = await this.ctx.database.get('jsdelivr', {}, {
-      // TODO support order
-      // order: { id: 'desc' },
+      sort: { id: 'desc' },
       fields: ['branch'],
       limit: 1,
     })
     if (!file) return { branch: offset, size: 0 }
     const { branch } = file
     if (forceNew) return { branch: branch + offset, size: 0 }
-    const { size } = await this.ctx.database.aggregate('jsdelivr', {
-      size: { $sum: 'size' },
-    }, { branch: file.branch })
+    const size = await this.ctx.database.eval('jsdelivr', { $sum: 'size' }, { branch: file.branch })
     if (size >= this.config.maxBranchSize) {
       logger.debug(`will switch to branch ${toBranchName(branch)}`)
       return { branch: branch + offset, size: 0 }
@@ -191,32 +186,25 @@ class JsdelivrAssets extends Assets {
     }
   }
 
-  private async getFileName(buffer: Buffer) {
-    const { ext } = await fromBuffer(buffer)
-    return 'untitled.' + ext
-  }
-
   toPublicUrl(file: File) {
     const { user, repo } = this.config.github
     return `https://cdn.jsdelivr.net/gh/${user}/${repo}@${file.branch}/${file.hash}-${file.name}`
   }
 
-  async upload(url: string, name?: string) {
-    const buffer = await this.download(url)
-    const hash = createHash('sha1').update(buffer).digest('hex')
+  async upload(url: string, _file?: string) {
+    const { buffer, hash, name } = await this.analyze(url, _file)
     const [file] = await this.ctx.database.get('jsdelivr', { hash })
     if (file) return this.toPublicUrl(file)
-
-    name ||= await this.getFileName(buffer)
     await writeFile(join(this.config.tempDir, hash), buffer)
     return this.createTask({ size: buffer.byteLength, hash, name })
   }
 
   async stats() {
-    return this.ctx.database.aggregate('jsdelivr', {
-      assetCount: { $count: 'id' },
-      assetSize: { $sum: 'size' },
-    })
+    const [assetCount, assetSize] = await Promise.all([
+      this.ctx.database.eval('jsdelivr', { $count: 'id' }),
+      this.ctx.database.eval('jsdelivr', { $sum: 'size' }),
+    ])
+    return { assetCount, assetSize }
   }
 }
 

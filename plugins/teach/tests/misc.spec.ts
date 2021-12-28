@@ -1,4 +1,4 @@
-import { App, Assets, Logger, Time } from 'koishi'
+import { App, Assets, Context, Logger, Time } from 'koishi'
 import createEnvironment from './environment'
 import { install } from '@sinonjs/fake-timers'
 import * as teach from '@koishijs/plugin-teach'
@@ -44,11 +44,11 @@ describe('Teach Plugin - Miscellaneous', () => {
     const { app, u3g1 } = createEnvironment({})
     const upload = jest.fn(async (url: string) => url)
 
-    app.assets = new class MockAssets implements Assets {
-      types = ['image'] as const
-      stats = async () => ({})
+    app.plugin(class MockAssets extends Assets {
+      types = ['image']
       upload = upload
-    }()
+      stats = async () => ({})
+    })
 
     it('upload succeed', async () => {
       upload.mockResolvedValue('https://127.0.0.1/image/baz')

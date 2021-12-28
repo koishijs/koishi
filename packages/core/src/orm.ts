@@ -243,12 +243,6 @@ export namespace Query {
     return modifier || {}
   }
 
-  type Projection<T extends TableType> = Dict<Eval.Aggregation<Tables[T]>>
-
-  type MapEval<T, P> = {
-    [K in keyof P]: Eval<T, P[K]>
-  }
-
   type NestGet<O, K extends string> = K extends `${infer L}.${infer R}` ? NestGet<Get<O, L>, R> : Get<O, K>
 
   type MapUneval<T> = {
@@ -273,8 +267,7 @@ export namespace Query {
     remove<T extends TableType>(table: T, query: Query<T>): Promise<void>
     create<T extends TableType>(table: T, data: Partial<Tables[T]>): Promise<Tables[T]>
     upsert<T extends TableType>(table: T, data: MapUneval<Tables[T]>[], keys?: MaybeArray<Index<T>>): Promise<void>
-    /** @experimental */
-    aggregate<T extends TableType, P extends Projection<T>>(table: T, fields: P, query?: Query<T>): Promise<MapEval<T, P>>
+    eval<T extends TableType, E extends Eval.Aggregation<Tables[T]>>(table: T, expr: E, query?: Query<T>): Promise<Eval<T, E>>
   }
 }
 

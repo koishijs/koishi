@@ -1,5 +1,6 @@
 import { App } from 'koishi'
 import { expect } from 'chai'
+import {} from 'chai-shape'
 import jest from 'jest-mock'
 import mock, { DEFAULT_SELF_ID } from '@koishijs/plugin-mock'
 import * as forward from '@koishijs/plugin-forward'
@@ -14,6 +15,8 @@ app.plugin(forward, [{
   destination: 'mock:654',
   selfId: DEFAULT_SELF_ID,
 }])
+
+before(() => app.start())
 
 describe('Relay Plugin', () => {
   it('basic support', async () => {

@@ -1,5 +1,5 @@
 import {
-  Context, User, Session, NextFunction, Channel, Argv,
+  Context, User, Session, Channel, Argv, Next,
   segment, noop, escapeRegExp, Random, makeArray, Awaitable,
 } from 'koishi'
 import { Dialogue, DialogueTest } from './utils'
@@ -59,7 +59,7 @@ export interface SessionState {
   test?: DialogueTest
   dialogue?: Dialogue
   dialogues?: Dialogue[]
-  next?: NextFunction
+  next?: Next
   isSearch?: boolean
 }
 
@@ -170,7 +170,7 @@ const halfWidth = ',,.~?!()[]'
 const fullWidth = '，、。～？！（）【】'
 const fullWidthRegExp = new RegExp(`[${fullWidth}]`)
 
-export async function triggerDialogue(ctx: Context, session: Session, next: NextFunction = noop) {
+export async function triggerDialogue(ctx: Context, session: Session, next: Next = noop) {
   const state = ctx.getSessionState(session)
   state.next = next
   state.test = {}

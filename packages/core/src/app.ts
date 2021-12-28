@@ -1,5 +1,5 @@
 import { defineProperty, Time, coerce, escapeRegExp, makeArray, template, trimSlash, merge, Dict, valueMap } from '@koishijs/utils'
-import { Context, Middleware, NextFunction, Plugin } from './context'
+import { Context, Next, Plugin } from './context'
 import { Argv } from './parser'
 import { Adapter } from './adapter'
 import { Channel, User } from './database'
@@ -131,7 +131,7 @@ export class App extends Context {
     return Array.isArray(temp) ? temp : [temp || '']
   }
 
-  private async _process(session: Session, next: NextFunction) {
+  private async _process(session: Session, next: Next) {
     let capture: RegExpMatchArray
     let atSelf = false, appel = false, prefix: string = null
     const pattern = /^\[CQ:(\w+)((,\w+=[^,\]]*)*)\]/
@@ -195,7 +195,7 @@ export class App extends Context {
     return session.execute(session.argv, next)
   }
 
-  private _suggest(session: Session, next: NextFunction) {
+  private _suggest(session: Session, next: Next) {
     // use `!prefix` instead of `prefix === null` to prevent from blocking other middlewares
     // we need to make sure that the user truly has the intension to call a command
     const { argv, quote, subtype, parsed: { content, prefix, appel } } = session
@@ -219,14 +219,14 @@ export class App extends Context {
   private async _handleMessage(session: Session) {
     // preparation
     this._sessions[session.id] = session
-    const middlewares: Middleware[] = this._hooks[Context.middleware]
+    const queue: Next.Queue = this._hooks[Context.middleware]
       .filter(([context]) => context.match(session))
-      .map(([, middleware]) => middleware)
+      .map(([, middleware]) => middleware.bind(null, session))
 
     // execute middlewares
     let index = 0, midStack = '', lastCall = ''
     const { prettyErrors } = this.options
-    const next = async (fallback?: NextFunction) => {
+    const next: Next = async (callback) => {
       if (prettyErrors) {
         lastCall = new Error().stack.split('\n', 3)[2]
         if (index) {
@@ -239,29 +239,35 @@ export class App extends Context {
         if (!this._sessions[session.id]) {
           throw new Error('isolated next function detected')
         }
-        if (fallback) middlewares.push((_, next) => fallback(next))
-        return await middlewares[index++]?.(session, next)
+        if (callback !== undefined) {
+          queue.push(next => Next.compose(callback, next))
+        }
+        return await queue[index++]?.(next)
       } catch (error) {
         let stack = coerce(error)
         if (prettyErrors) {
           const index = stack.indexOf(lastCall)
           if (index >= 0) stack = stack.slice(0, index)
-          stack += `Middleware stack:${midStack}`
+          stack += `\nMiddleware stack:${midStack}`
         }
         this.logger('session').warn(`${session.content}\n${stack}`)
       }
     }
-    await next()
 
-    // update session map
-    delete this._sessions[session.id]
-    this.emit(session, 'middleware', session)
+    try {
+      const result = await next()
+      if (result) await session.send(result)
+    } finally {
+      // update session map
+      delete this._sessions[session.id]
+      this.emit(session, 'middleware', session)
 
-    // flush user & group data
-    this._userCache.delete(session.id)
-    this._channelCache.delete(session.id)
-    await session.user?.$update()
-    await session.channel?.$update()
+      // flush user & group data
+      this._userCache.delete(session.id)
+      this._channelCache.delete(session.id)
+      await session.user?.$update()
+      await session.channel?.$update()
+    }
   }
 
   private _handleArgv(content: string, session: Session) {

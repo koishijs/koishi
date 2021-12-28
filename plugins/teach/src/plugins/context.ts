@@ -32,7 +32,7 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
     .option('enableGlobal', '-E  在所有环境下启用问答', { authority })
     .option('guilds', '-g <gids:string>  设置具体的生效环境', { authority, type: RE_GROUPS })
     .option('global', '-G  无视上下文搜索')
-    .action(({ options, session }) => {
+    .before(({ options, session }) => {
       if (options.disable && options.enable) {
         return '选项 -d, -e 不能同时使用。'
       } else if (options.disableGlobal && options.enableGlobal) {
@@ -72,30 +72,30 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
         if (noContextOptions) {
           return '选项 -g, --guilds 必须与 -d/-D/-e/-E 之一同时使用。'
         } else {
-          defineProperty(options, 'guilds', options.guilds ? options.guilds.split(',').map(id => `${session.platform}:${id}`) : [])
+          defineProperty(options, '_guilds', options.guilds ? options.guilds.split(',').map(id => `${session.platform}:${id}`) : [])
         }
       } else if (session.subtype !== 'group' && options['partial']) {
         return '非群聊上下文中请使用 -E/-D 进行操作或指定 -g, --guilds 选项。'
       } else {
-        defineProperty(options, 'guilds', guilds)
+        defineProperty(options, '_guilds', guilds)
       }
     })
 
   ctx.on('dialogue/modify', ({ options }, data) => {
-    const { guilds, partial, reversed } = options
-    if (!guilds) return
+    const { _guilds, partial, reversed } = options
+    if (!_guilds) return
     if (!data.guilds) data.guilds = []
     if (partial) {
       const newGroups = !(data.flag & Dialogue.Flag.complement) === reversed
-        ? difference(data.guilds, guilds)
-        : union(data.guilds, guilds)
+        ? difference(data.guilds, _guilds)
+        : union(data.guilds, _guilds)
       if (!equal(data.guilds, newGroups)) {
         data.guilds = newGroups.sort()
       }
     } else {
       data.flag = data.flag & ~Dialogue.Flag.complement | (+reversed * Dialogue.Flag.complement)
-      if (!equal(data.guilds, guilds)) {
-        data.guilds = guilds.sort()
+      if (!equal(data.guilds, _guilds)) {
+        data.guilds = _guilds.sort()
       }
     }
   })
@@ -103,7 +103,7 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
   ctx.before('dialogue/search', ({ options }, test) => {
     test.partial = options.partial
     test.reversed = options.reversed
-    test.guilds = options.guilds
+    test.guilds = options._guilds
   })
 
   ctx.on('dialogue/detail', ({ guilds, flag }, output, { session }) => {
@@ -118,7 +118,7 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
   })
 
   ctx.on('dialogue/detail-short', ({ guilds, flag }, output, { session, options }) => {
-    if (!options.guilds && session.subtype === 'group') {
+    if (!options._guilds && session.subtype === 'group') {
       const isReversed = flag & Dialogue.Flag.complement
       const hasGroup = guilds.includes(session.gid)
       output.unshift(!isReversed === hasGroup ? isReversed ? 'E' : 'e' : isReversed ? 'd' : 'D')

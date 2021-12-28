@@ -90,7 +90,7 @@ Koishi 完全基于 TypeScript 开发，拥有顶级的类型支持，丰富的�
 
 ### 静态资源存储
 
-- [assets-jsdelivr](https://koishi.js.org/plugins/assets/jsdelivr.html): 使用 jsDelivr 和 GitHub 存储静态资源
+- [assets-git](https://koishi.js.org/plugins/assets/git.html): 使用 git 仓库存储静态资源
 - [assets-local](https://koishi.js.org/plugins/assets/local.html): 使用本地文件系统存储静态资源
 - [assets-remote](https://koishi.js.org/plugins/assets/remote.html): 使用远程 Koishi 服务器存储静态资源
 - [assets-s3](https://koishi.js.org/plugins/assets/s3.html): 使用 S3 存储静态资源

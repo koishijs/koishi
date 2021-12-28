@@ -36,7 +36,7 @@
     "@koishijs/plugin-mock": "^1.0.0-rc.0"
   },
   "peerDependencies": {
-    "koishi": "^4.0.0-rc.0"
+    "koishi": "^4.0.0-rc.1"
   },
   "dependencies": {
     "chrome-finder": "^1.0.7",

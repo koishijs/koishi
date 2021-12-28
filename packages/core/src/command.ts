@@ -1,6 +1,6 @@
 import { Logger, coerce, Time, template, remove, Awaitable, Dict } from '@koishijs/utils'
 import { Argv } from './parser'
-import { Context, Disposable, NextFunction } from './context'
+import { Context, Disposable, Next } from './context'
 import { User, Channel } from './database'
 import { FieldCollector, Session } from './session'
 
@@ -66,8 +66,10 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
 
   private _userFields: FieldCollector<'user'>[] = []
   private _channelFields: FieldCollector<'channel'>[] = []
-  private _actions: Command.Action<U, G, A, O>[] = []
-  private _checkers: Command.Action<U, G, A, O>[] = []
+  private _actions: Command.Action[] = []
+  private _checkers: Command.Action[] = [async (argv) => {
+    return this.app.serial(argv.session, 'before-command', argv)
+  }]
 
   static defaultConfig: Command.Config = {
     authority: 1,
@@ -192,69 +194,61 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
     return typeof value === 'function' ? value(session.user) : value
   }
 
-  before(callback: Command.Action<U, G, A, O>, prepend = false) {
-    if (prepend) {
-      this._checkers.unshift(callback)
-    } else {
+  before(callback: Command.Action<U, G, A, O>, append = false) {
+    if (append) {
       this._checkers.push(callback)
+    } else {
+      this._checkers.unshift(callback)
     }
     this._disposables?.push(() => remove(this._checkers, callback))
     return this
   }
 
-  action(callback: Command.Action<U, G, A, O>, append = false) {
-    if (append) {
-      this._actions.push(callback)
-    } else {
+  action(callback: Command.Action<U, G, A, O>, prepend = false) {
+    if (prepend) {
       this._actions.unshift(callback)
+    } else {
+      this._actions.push(callback)
     }
     this._disposables?.push(() => remove(this._actions, callback))
     return this
   }
 
-  async execute(argv0: Argv<U, G, A, O>, next: NextFunction = fallback => fallback?.()): Promise<string> {
-    const argv = argv0 as Argv<U, G, A, O>
-    if (!argv.args) argv.args = [] as any
-    if (!argv.options) argv.options = {} as any
+  async execute(argv: Argv<U, G, A, O>, fallback = Next.compose): Promise<string> {
+    argv.command ??= this
+    argv.args ??= [] as any
+    argv.options ??= {} as any
 
-    // bypass next function
-    let state = 'before command'
-    argv.next = async (fallback) => {
-      const oldState = state
-      state = ''
-      await next(fallback)
-      state = oldState
-    }
-
-    const { args, options, session, error } = argv
+    const { args, options, error } = argv
     if (error) return error
     if (logger.level >= 3) logger.debug(argv.source ||= this.stringify(args, options))
-    const lastCall = this.app.options.prettyErrors && new Error().stack.split('\n', 4)[3]
-    try {
-      for (const validator of this._checkers) {
-        const result = await validator.call(this, argv, ...args)
-        if (typeof result === 'string') return result
-      }
-      const result = await this.app.serial(session, 'before-command', argv)
+
+    // before hooks
+    for (const validator of this._checkers) {
+      const result = await validator.call(this, argv, ...args)
       if (typeof result === 'string') return result
-      state = 'executing command'
-      for (const action of this._actions) {
-        const result = await action.call(this, argv, ...args)
-        if (typeof result === 'string') return result
-      }
-      state = 'after command'
-      await this.app.parallel(session, 'command', argv)
-      return ''
-    } catch (error) {
-      if (!state) throw error
-      let stack = coerce(error)
-      if (lastCall) {
-        const index = error.stack.indexOf(lastCall)
-        stack = stack.slice(0, index - 1)
-      }
-      logger.warn(`${state}: ${argv.source ||= this.stringify(args, options)}\n${stack}`)
-      return ''
     }
+
+    let index = 0
+    const queue: Next.Queue = this._actions.map((action) => async (next) => {
+      return action.call(this, { ...argv, next }, ...args)
+    })
+    queue.push(fallback)
+    const length = queue.length
+    const next: Next = async () => {
+      return await queue[index++]?.(next)
+    }
+
+    try {
+      const result = await next()
+      if (typeof result === 'string') return result
+    } catch (error) {
+      if (index === length) throw error
+      let stack = coerce(error)
+      logger.warn(`${argv.source ||= this.stringify(args, options)}\n${stack}`)
+    }
+
+    return ''
   }
 
   dispose() {

@@ -109,8 +109,6 @@ const rows = await ctx.database.get('schedule', 1, ['id', 'command'])
 
 ### database.upsert(table, data, keys?)
 
-### database.aggregate(table, fields, query?)
-
 ## 内置实例方法
 
 下列实例方法直接由 @koishijs/core 提供实现。

@@ -42,7 +42,7 @@
     "chokidar": "^3.5.2",
     "js-yaml": "^4.1.0",
     "kleur": "^4.1.4",
-    "koishi": "^4.0.0-rc.0",
+    "koishi": "^4.0.0-rc.1",
     "prompts": "^2.4.1"
   }
 }
