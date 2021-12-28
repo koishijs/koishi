@@ -216,7 +216,7 @@ export class MyPluginConfig {
 }
 
 @DefinePlugin({ name: 'my-plugin', schema: MyPluginConfig })
-export default class MyPlugin extends BasePlugin<MyPluginConfig> implements OnApply {
+export default class MyPlugin extends BasePlugin<MyPluginConfig> implements LifecycleEvents {
   onApply() {
     // 该方法会在插件加载时调用，用于在上下文中注册事件等操作。
   }
@@ -253,15 +253,45 @@ export default class MyPlugin extends BasePlugin<MyPluginConfig> implements OnAp
   * 若指定 `config.empty` 则不会注册当前函数为 action，用于没有 action 的父指令。
 - `@Get(path: string)` `@Post(path: string)` 在 Koishi 的 Koa 路由中注册 GET/POST 路径。此外， PUT PATCH DELETE 等方法也有所支持。
 
-### 指令描述装饰器
+### 指令描述
 
 koishi-thirdeye 使用一组装饰器进行描述指令的行为。这些装饰器需要和 `@UseCommand(def)` 装饰器一起使用。
+
+特别的，可以把这些装饰器定义在插件顶部，使得该类插件中所有指令均应用这一指令描述。
+
+我们来看一个例子。
+
+```ts
+@CommandUsage('乒乓球真好玩！') // 会适用于 ping 和 pang 两个指令
+@DefinePlugin()
+export default class MyPlugin extends BasePlugin<MyPluginConfig> {
+
+  @UseCommand('ping', 'Ping!')
+  @CommandShortcut('枰！') // 只适用于 ping 指令
+  onPing() {
+    return 'pong';
+  }
+  
+  @UseCommand('pang', 'Pang!')
+  @CommandShortcut('乓！') // 只适用于 pang 指令
+  onPang() {
+    return 'peng';
+  }
+  
+}
+```
+
+####　API
 
 - `@CommandDescription(text: string)` 指令描述。等价于 `ctx.command(def, desc)` 中的描述。
 - `@CommandUsage(text: string)` 指令介绍。等价于 `cmd.usage(text)`。
 - `@CommandExample(text: string)` 指令示例。等价于 `cmd.example(text)`。
 - `@CommandAlias(def: string)` 指令别名。等价于 `cmd.alias(def)`。
 - `@CommandShortcut(def: string, config?: Command.Shortcut)` 指令快捷方式。等价于 `cmd.shortcut(def, config)`。
+- `@CommandBefore(callback: Command.Action, append = false)` 等价于 `cmd.before(callback, append)`。
+- `@CommandAction(callback: Command.Action, prepend = false)` 等价于 `cmd.action(callback, append)`。
+
+> 装饰器的执行顺序为由下到上。`@CommandBefore` 会从上到下执行，而 `@CommandAction` 会从下到上执行。而作为类成员方法的回调函数会**最后**执行。 
 
 ### 指令参数
 
@@ -270,11 +300,13 @@ koishi-thirdeye 使用一组装饰器进行描述指令的行为。这些装饰�
 - `@PutArgv()` 注入 `Argv` 对象。
 - `@PutSession(field?: keyof Session)` 注入 `Session` 对象，或 `Session` 对象的指定字段。
 - `@PutArg(index: number)` 注入指令的第 n 个参数。
+- `@PutArgs()` 注入包含指令全部参数的数组。
 - `@PutOption(name: string, desc: string, config: Argv.OptionConfig = {})` 给指令添加选项并注入到该参数。等价于 `cmd.option(name, desc, config)` 。
 - `@PutUser(fields: string[])` 添加一部分字段用于观测，并将 User 对象注入到该参数。
 - `@PutChannel(fields: string[])` 添加一部分字段用于观测，并将 Channel 对象注入到该参数。
 - `@PutUserName(useDatabase: boolean = true)` 注入当前用户的用户名。
   * `useDatabase` 是否尝试从数据库获取用户名。**会自动把 `name` 加入用户观察者属性中。**
+- `@PutNext()` 注入 `argv.next` 方法。
 
 ### 子指令
 
