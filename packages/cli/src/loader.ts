@@ -1,7 +1,7 @@
 import { resolve, extname, dirname, isAbsolute } from 'path'
 import { yellow } from 'kleur'
 import { readdirSync, readFileSync } from 'fs'
-import { App, Dict, hyphenate, Logger, Modules, Plugin } from 'koishi'
+import { App, Dict, Logger, Modules, Plugin } from 'koishi'
 import { load } from 'js-yaml'
 
 const oldPaths = Modules.internal.paths
@@ -50,7 +50,7 @@ export class Loader {
   }
 
   resolvePlugin(name: string) {
-    return this.cache[name] = Modules.require(hyphenate(name), true)
+    return this.cache[name] = Modules.require(name, true)
   }
 
   loadPlugin(name: string, options?: any) {
