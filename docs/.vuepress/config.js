@@ -59,6 +59,7 @@ module.exports = {
           '/guide/introduction/index.md',
           '/guide/introduction/console.md',
           '/guide/introduction/coding.md',
+          '/guide/introduction/cli.md',
           // '/guide/introduction/comparison.md',
           '/guide/introduction/workspace.md',
           // '/guide/introduction/glossary.md',
@@ -69,10 +70,15 @@ module.exports = {
         children: [
           '/guide/message/middleware.md',
           '/guide/message/session.md',
-          '/guide/message/command.md',
-          '/guide/message/execution.md',
-          '/guide/message/help.md',
           '/guide/message/message.md',
+        ],
+      }, {
+        text: '指令系统',
+        isGroup: true,
+        children: [
+          '/guide/command/command.md',
+          '/guide/command/execution.md',
+          '/guide/command/help.md',
         ],
       }, {
         text: '模块化',
@@ -116,7 +122,6 @@ module.exports = {
         text: '调试与部署',
         isGroup: true,
         children: [
-          '/guide/misc/cli.md',
           '/guide/misc/unit-tests.md',
           '/guide/misc/decorator.md',
           '/guide/misc/docker.md',

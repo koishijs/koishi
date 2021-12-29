@@ -204,8 +204,11 @@ declare module 'koishi' {
 export interface Schedule {
   id: number
   assignee: string
+  time: Date
   lastCall: Date
+  interval: number
   command: string
+  session: Session
 }
 
 ctx.model.extend('schedule', {

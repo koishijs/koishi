@@ -4,11 +4,7 @@ sidebarDepth: 2
 
 # 命令行工具
 
-::: danger 注意
-这里是**正在施工**的 koishi v4 的文档。要查看 v3 版本的文档，请前往[**这里**](/)。
-:::
-
-Koishi 提供了名为 `koishi` 的命令行工具，相信你已经在之前的介绍中看过它的使用方法了。本章就详细介绍 Koishi 与命令行相关的特性。
+<!-- Koishi 提供了名为 `koishi` 的命令行工具，相信你已经在之前的介绍中看过它的使用方法了。本章就详细介绍 Koishi 与命令行相关的特性。
 
 ### 设置生成的文件类型
 
@@ -119,4 +115,4 @@ yarn koishi start -- -- -r coffeescript/register
 ```
 :::
 
-这样你就可以直接使用 koishi.config.coffee，或在 koishi.config.js 中引用 coffee 文件作为插件了。
+这样你就可以直接使用 koishi.config.coffee，或在 koishi.config.js 中引用 coffee 文件作为插件了。 -->
