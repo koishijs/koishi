@@ -52,7 +52,8 @@ yarn add koishi @koishijs/plugin-adapter-onebot @koishijs/plugin-common
 
 新建入口文件 `index.js`，并写下这段代码：
 
-```js index.js
+::: code-group language index
+```js
 const { App } = require('koishi')
 
 // 创建一个 Koishi 应用
@@ -72,6 +73,27 @@ app.plugin('common')
 // 启动应用
 app.start()
 ```
+```ts
+import { App } from 'koishi'
+
+// 创建一个 Koishi 应用
+const app = new App()
+
+// 安装 onebot 适配器插件，并配置机器人
+app.plugin('adapter-onebot', {
+  protocol: 'ws',
+  selfId: '123456789',
+  endpoint: 'ws://127.0.0.1:6700',
+})
+
+// 安装 common 插件，你可以不传任何配置项
+// 这个插件提供了下面要用到的 echo 指令
+app.plugin('common')
+
+// 启动应用
+app.start()
+```
+:::
 
 最后运行这个文件 (在此之前别忘了先完成 [准备工作](#准备工作))：
 
@@ -85,6 +107,51 @@ node .
 <chat-message nickname="Alice" color="#cc0066">echo 你好</chat-message>
 <chat-message nickname="Koishi" avatar="/koishi.png">你好</chat-message>
 </panel-view>
+
+## 添加更多插件
+
+Koishi 插件可以在 [npm](https://www.npmjs.com/) 上获取。要下载的包名与实际书写的插件短名并不完全一样，遵循以下的规则：
+
+| npm 包名 | 插件名 |
+|:-----:|:-----:|
+| koishi-plugin-**foo** | foo |
+| @koishijs/plugin-**foo** | foo |
+| **@bar**/koishi-plugin-**foo** | @bar/foo |
+
+简单来说就是，从 npm 包名中删去 `koishi-plugin-` 和 `@koishijs/plugin-` 两种前缀，剩下的部分就是你要书写的插件名。这样既保证了用户书写简便，又防止了发布的插件污染命名空间。
+
+`app.plugin()` 也支持传入完整的插件对象，这种写法尽管长了一些，但是对于 TypeScript 用户会有更好的类型支持：
+
+```ts
+import onebot from '@koishijs/plugin-adapter-onebot'
+import * as common from '@koishijs/plugin-common'
+
+app.plugin(onebot, {
+  protocol: 'ws',
+  selfId: '123456789',
+  endpoint: 'ws://127.0.0.1:6700',
+})
+
+app.plugin(common)
+```
+
+请注意到上面的两个插件的导入方式的微妙差异。onebot 插件使用了默认导出，而 common 插件使用了导出的命名空间。这两种写法存在本质的区别，不能混用。虽然这可能产生一些困扰，但对 TypeScript 用户来说，只需注意到写代码时的类型提示就足以确定自己应该采用的写法。
+
+同理，对于 cjs 的使用者，如果要使用 `require` 来获取插件对象，也应注意到这种区别：
+
+```js
+// 注意这里的 .default 是不可省略的
+app.plugin(require('@koishijs/plugin-adapter-onebot').default, {
+  protocol: 'ws',
+  selfId: '123456789',
+  endpoint: 'ws://127.0.0.1:6700',
+})
+
+// 这里则不能写上 .default
+app.plugin(require('@koishijs/plugin-common'))
+```
+
+为了避免混淆，我们建议 cjs 的使用者直接使用插件的短名安装插件。
 
 ## 添加交互逻辑
 
@@ -107,6 +174,56 @@ app.middleware((session, next) => {
 <chat-message nickname="Alice" color="#cc0066">天王盖地虎</chat-message>
 <chat-message nickname="Koishi" avatar="/koishi.png">宝塔镇河妖</chat-message>
 </panel-view>
+
+不过这样写可能并不好，因为一旦功能变多，你的 `index.js` 就会变得臃肿。我们推荐将上面的逻辑写在一个单独的文件里，并将它作为一个插件来加载：
+
+::: code-group language ping
+```js
+module.exports.name = 'ping'
+
+module.exports.apply = (ctx) => {
+  // 如果收到“天王盖地虎”，就回应“宝塔镇河妖”
+  ctx.middleware(async (session, next) => {
+    if (session.content === '天王盖地虎') {
+      return '宝塔镇河妖'
+    } else {
+      return next()
+    }
+  })
+}
+```
+```ts
+import { Context } from 'koishi'
+
+export function apply(ctx: Context) {
+  // 如果收到“天王盖地虎”，就回应“宝塔镇河妖”
+  ctx.middleware(async (session, next) => {
+    if (session.content === '天王盖地虎') {
+      return '宝塔镇河妖'
+    } else {
+      return next()
+    }
+  })
+}
+```
+:::
+
+::: code-group language
+```js
+// 这里的 ./ping 是相对于 index.js 的路径
+app.plugin(require('./ping'))
+```
+```ts
+// 这里的 ./ping 是相对于 index.js 的路径
+import * as ping from './ping'
+
+app.plugin(ping)
+```
+:::
+
+::: warning
+注意：直接写相对于根目录的路径来加载插件的做法只对配置文件生效。在实际编写的代码中加载本地插件时，由于我们无法确定相对路径是基于哪个文件，你还是需要写全 `require`。
+:::
 
 ## 配置数据库
 

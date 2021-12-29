@@ -59,7 +59,8 @@ module.exports = {
           '/guide/introduction/index.md',
           '/guide/introduction/console.md',
           '/guide/introduction/coding.md',
-          '/guide/introduction/plugin.md',
+          // '/guide/introduction/comparison.md',
+          '/guide/introduction/workspace.md',
           // '/guide/introduction/glossary.md',
         ],
       }, {
@@ -82,7 +83,6 @@ module.exports = {
           '/guide/plugin/lifecycle.md',
           '/guide/plugin/service.md',
           '/guide/plugin/schema.md',
-          '/guide/plugin/release.md',
         ],
       }, {
         text: '数据库',
@@ -98,9 +98,9 @@ module.exports = {
         isGroup: true,
         children: [
           '/guide/adapter/adapter.md',
+          '/guide/adapter/bot.md',
           '/guide/adapter/binding.md',
           '/guide/adapter/writing.md',
-          '/guide/adapter/for-everything.md',
         ],
       }, {
         text: '更多功能',
