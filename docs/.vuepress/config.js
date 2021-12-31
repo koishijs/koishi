@@ -140,10 +140,18 @@ module.exports = {
           '/api/core/bot.md',
           '/api/core/command.md',
           '/api/core/context.md',
-          '/api/core/database.md',
           '/api/core/events.md',
-          '/api/core/model.md',
           '/api/core/session.md',
+        ],
+      }, {
+        text: '数据库 API',
+        isGroup: true,
+        children: [
+          '/api/database/built-in.md',
+          '/api/database/database.md',
+          '/api/database/model.md',
+          '/api/database/query.md',
+          '/api/database/evaluation.md',
         ],
       }, {
         text: '其他内置 API',

@@ -35,7 +35,7 @@ module.exports = {
     }],
   ],
 
-  extendsPageData(page) {
+  extendsPage(page) {
     adjustSidebarItems(page.headers)
   },
 }
