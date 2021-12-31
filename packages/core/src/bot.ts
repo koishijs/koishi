@@ -15,6 +15,7 @@ export abstract class Bot<T extends Bot.BaseConfig = Bot.BaseConfig> {
 
   private _status: Bot.Status
 
+  internal?: any
   selfId?: string
   error?: Error
 

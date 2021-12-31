@@ -4,6 +4,7 @@ import { Context, Disposable, Next } from './context'
 import { User, Channel } from './database'
 import { FieldCollector, Session, Computed } from './session'
 import { KoishiError } from './error'
+import * as internal from './internal'
 
 const logger = new Logger('command')
 
@@ -68,6 +69,9 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
   private _checkers: Command.Action[] = [async (argv) => {
     return this.app.serial(argv.session, 'before-command', argv)
   }]
+
+  public static enableHelp: typeof internal.enableHelp
+  public static handleError: typeof internal.handleError
 
   static defaultConfig: Command.Config = {
     authority: 1,

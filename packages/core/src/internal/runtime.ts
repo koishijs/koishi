@@ -3,7 +3,7 @@ import { Argv } from '../parser'
 import { Context } from '../context'
 import { getCommandNames } from './help'
 
-export default function command(ctx: Context) {
+export default function runtime(ctx: Context) {
   ctx.before('parse', (content, session) => {
     const argv = Argv.parse(content)
     if (session.quote) {

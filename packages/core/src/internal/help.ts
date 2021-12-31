@@ -2,6 +2,7 @@ import { template } from '@koishijs/utils'
 import { Argv } from '../parser'
 import { Command } from '../command'
 import { Context } from '../context'
+import { User, Channel } from '../database'
 import { TableType } from '../orm'
 import { FieldCollector, Session } from '../session'
 import { getUsage, getUsageName, ValidationField } from './validate'
@@ -16,19 +17,32 @@ export interface HelpConfig extends Command.Config {
   options?: boolean
 }
 
-export default function Help(ctx: Context, config: HelpConfig = {}) {
-  if (config.options !== false) {
-    ctx.on('command-added', (cmd) => {
-      cmd
-        .option('help', '-h  显示此信息', { hidden: true })
-        .before(async ({ session, options }, ...args) => {
-          if (cmd['_actions'].length && !options['help']) return
-          return session.execute({
-            name: 'help',
-            args: [cmd.name],
-          })
-        })
+/** @experimental */
+export function handleError<U extends User.Field, G extends Channel.Field, A extends any[], O extends {}>(cmd: Command<U, G, A, O>) {
+  return cmd.action(async ({ next }, ...args) => {
+    try {
+      return await next()
+    } catch (error) {
+      return template('internal.error-encountered', error.message)
+    }
+  }, true)
+}
+
+export function enableHelp<U extends User.Field, G extends Channel.Field, A extends any[], O extends {}>(cmd: Command<U, G, A, O>) {
+  return cmd
+    .option('help', '-h  显示此信息', { hidden: true })
+    .before(async ({ session, options }, ...args) => {
+      if (cmd['_actions'].length && !options['help']) return
+      return session.execute({
+        name: 'help',
+        args: [cmd.name],
+      })
     })
+}
+
+export default function help(ctx: Context, config: HelpConfig = {}) {
+  if (config.options !== false) {
+    ctx.on('command-added', cmd => cmd.use(enableHelp))
   }
 
   const app = ctx.app
@@ -214,6 +228,7 @@ template.set('internal', {
   'unknown-option': '存在未知选项 {0}，输入帮助以查看用法。',
   'invalid-option': '选项 {0} 输入无效，{1}',
   'check-syntax': '输入帮助以查看用法。',
+  'error-encountered': '发生未知错误。',
 
   // parser
   'invalid-number': '请提供一个数字。',
