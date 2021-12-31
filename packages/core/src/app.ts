@@ -4,10 +4,10 @@ import { Argv } from './parser'
 import { Adapter } from './adapter'
 import { Channel, User } from './database'
 import validate, { Command } from './command'
-import { Session } from './session'
+import { Session, Computed } from './session'
+import { Model } from './orm'
 import help, { getCommandNames, HelpConfig } from './help'
 import Schema from 'schemastery'
-import { Model } from './orm'
 
 function createLeadingRE(patterns: string[], prefix = '', suffix = '') {
   return patterns.length ? new RegExp(`^${prefix}(${patterns.map(escapeRegExp).join('|')})${suffix}`) : /$^/
@@ -334,8 +334,8 @@ export namespace App {
     prettyErrors?: boolean
     delay?: DelayConfig
     help?: boolean | HelpConfig
-    autoAssign?: boolean | ((session: Session) => boolean)
-    autoAuthorize?: number | ((session: Session) => number)
+    autoAssign?: Computed<boolean>
+    autoAuthorize?: Computed<number>
     minSimilarity?: number
   }
 

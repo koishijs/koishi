@@ -2,11 +2,9 @@ import { Logger, coerce, Time, template, remove, Awaitable, Dict } from '@koishi
 import { Argv } from './parser'
 import { Context, Disposable, Next } from './context'
 import { User, Channel } from './database'
-import { FieldCollector, Session } from './session'
+import { FieldCollector, Session, Computed } from './session'
 
 const logger = new Logger('command')
-
-export type UserType<T, U extends User.Field = User.Field> = T | ((user: Pick<User, U>) => T)
 
 export type Extend<O extends {}, K extends string, T> = {
   [P in K | keyof O]?: (P extends keyof O ? O[P] : unknown) & (P extends K ? T : unknown)
@@ -19,7 +17,7 @@ export namespace Command {
     /** hide command */
     hidden?: boolean
     /** min authority */
-    authority?: number
+    authority?: Computed<number>
     /** disallow unknown options */
     checkUnknown?: boolean
     /** check argument count */
@@ -29,9 +27,9 @@ export namespace Command {
     /** usage identifier */
     usageName?: string
     /** max usage per day */
-    maxUsage?: UserType<number>
+    maxUsage?: Computed<number>
     /** min interval */
-    minInterval?: UserType<number>
+    minInterval?: Computed<number>
     /** depend on existing commands */
     patch?: boolean
   }
@@ -39,7 +37,6 @@ export namespace Command {
   export interface Shortcut {
     name?: string | RegExp
     command?: Command
-    authority?: number
     prefix?: boolean
     fuzzy?: boolean
     args?: string[]
@@ -148,7 +145,6 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
     if (this._disposed) return this
     config.name = name
     config.command = this
-    config.authority ||= this.config.authority
     this.app._shortcuts.push(config)
     this._disposables?.push(() => remove(this.app._shortcuts, config))
     return this
@@ -189,9 +185,9 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
     return this.context.match(session) && this.config.authority <= authority
   }
 
-  getConfig<K extends keyof Command.Config>(key: K, session: Session): Exclude<Command.Config[K], (user: User) => any> {
+  getConfig<K extends keyof Command.Config>(key: K, session: Session): Exclude<Command.Config[K], (session: Session) => any> {
     const value = this.config[key] as any
-    return typeof value === 'function' ? value(session.user) : value
+    return typeof value === 'function' ? value(session) : value
   }
 
   before(callback: Command.Action<U, G, A, O>, append = false) {
@@ -305,8 +301,11 @@ export default function validate(ctx: Context) {
     let isUsage = true
 
     // check authority
-    if (command.config.authority > session.user.authority) {
-      return sendHint('internal.low-authority')
+    if (session.user.authority) {
+      const authority = command.getConfig('authority', session)
+      if (authority > session.user.authority) {
+        return sendHint('internal.low-authority')
+      }
     }
     for (const option of Object.values(command._options)) {
       if (option.name in options) {

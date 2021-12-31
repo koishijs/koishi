@@ -72,6 +72,8 @@ export interface Parsed {
   appel: boolean
 }
 
+export type Computed<T> = T | ((session: Session) => T)
+
 export class Session<U extends User.Field = never, G extends Channel.Field = never> {
   type?: string
   subtype?: string
