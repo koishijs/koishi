@@ -1,9 +1,10 @@
-import { Command, getUsage, getUsageName, ValidationField } from './command'
-import { TableType } from './orm'
-import { Session, FieldCollector } from './session'
 import { template } from '@koishijs/utils'
-import { Context } from './context'
-import { Argv } from './parser'
+import { Argv } from '../parser'
+import { Command } from '../command'
+import { Context } from '../context'
+import { TableType } from '../orm'
+import { FieldCollector, Session } from '../session'
+import { getUsage, getUsageName, ValidationField } from './validate'
 
 interface HelpOptions {
   showHidden?: boolean
@@ -15,20 +16,18 @@ export interface HelpConfig extends Command.Config {
   options?: boolean
 }
 
-export default function help(ctx: Context, config: HelpConfig = {}) {
+export default function Help(ctx: Context, config: HelpConfig = {}) {
   if (config.options !== false) {
     ctx.on('command-added', (cmd) => {
-      cmd.option('help', '-h  显示此信息', { hidden: true })
-    })
-
-    // show help when use `-h, --help` or when there is no action
-    ctx.before('command', async ({ command, session, options }) => {
-      if (command['_actions'].length && !options['help']) return
-      await session.execute({
-        name: 'help',
-        args: [command.name],
-      })
-      return ''
+      cmd
+        .option('help', '-h  显示此信息', { hidden: true })
+        .before(async ({ session, options }, ...args) => {
+          if (cmd['_actions'].length && !options['help']) return
+          return session.execute({
+            name: 'help',
+            args: [cmd.name],
+          })
+        })
     })
   }
 

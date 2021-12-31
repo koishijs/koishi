@@ -1,13 +1,14 @@
-import { defineProperty, Time, coerce, escapeRegExp, makeArray, template, trimSlash, merge, Dict, valueMap } from '@koishijs/utils'
+import { defineProperty, Time, coerce, escapeRegExp, makeArray, trimSlash, merge, Dict } from '@koishijs/utils'
 import { Context, Next, Plugin } from './context'
-import { Argv } from './parser'
 import { Adapter } from './adapter'
 import { Channel, User } from './database'
-import validate, { Command } from './command'
+import { Command } from './command'
 import { Session, Computed } from './session'
 import { KoishiError } from './error'
 import { Model } from './orm'
-import help, { getCommandNames, HelpConfig } from './help'
+import runtime from './internal/runtime'
+import validate from './internal/validate'
+import help, { HelpConfig } from './internal/help'
 import Schema from 'schemastery'
 
 function createLeadingRE(patterns: string[], prefix = '', suffix = '') {
@@ -78,22 +79,7 @@ export class App extends Context {
 
     // bind built-in event listeners
     this.middleware(this._process.bind(this))
-    this.middleware(this._suggest.bind(this))
     this.on('message', this._handleMessage.bind(this))
-    this.before('parse', this._handleArgv.bind(this))
-    this.before('parse', this._handleShortcut.bind(this))
-
-    this.on('parse', (argv: Argv, session: Session) => {
-      const { parsed, subtype } = session
-      // group message should have prefix or appel to be interpreted as a command call
-      if (argv.root && subtype !== 'private' && parsed.prefix === null && !parsed.appel) return
-      if (!argv.tokens.length) return
-      const cmd = this._commands.resolve(argv.tokens[0].content)
-      if (cmd) {
-        argv.tokens.shift()
-        return cmd.name
-      }
-    })
 
     this.before('attach-user', (session, fields) => {
       session.collect('user', session.argv, fields)
@@ -103,6 +89,8 @@ export class App extends Context {
       session.collect('channel', session.argv, fields)
     })
 
+    // install internal plugins
+    this.plugin(runtime)
     this.plugin(validate)
     this.plugin(help, options.help)
   }
@@ -158,10 +146,6 @@ export class App extends Context {
     defineProperty(session, 'parsed', { content, appel, prefix })
     this.emit(session, 'before-attach', session)
 
-    defineProperty(session, 'argv', this.bail('before-parse', content, session))
-    session.argv.root = true
-    session.argv.session = session
-
     if (this.database) {
       if (session.subtype === 'group') {
         // attach group data
@@ -190,31 +174,8 @@ export class App extends Context {
       if (user.flag & User.Flag.ignore) return
     }
 
-    // execute command
     this.emit(session, 'attach', session)
-    if (!session.resolve(session.argv)) return next()
-    return session.execute(session.argv, next)
-  }
-
-  private _suggest(session: Session, next: Next) {
-    // use `!prefix` instead of `prefix === null` to prevent from blocking other middlewares
-    // we need to make sure that the user truly has the intension to call a command
-    const { argv, quote, subtype, parsed: { content, prefix, appel } } = session
-    if (argv.command || subtype !== 'private' && !prefix && !appel) return next()
-    const target = content.split(/\s/, 1)[0].toLowerCase()
-    if (!target) return next()
-
-    return session.suggest({
-      target,
-      next,
-      items: getCommandNames(session),
-      prefix: template('internal.command-suggestion-prefix'),
-      suffix: template('internal.command-suggestion-suffix'),
-      async apply(suggestion, next) {
-        const newMessage = suggestion + content.slice(target.length) + (quote ? ' ' + quote.content : '')
-        return this.execute(newMessage, next)
-      },
-    })
+    return next()
   }
 
   private async _handleMessage(session: Session) {
@@ -275,53 +236,6 @@ export class App extends Context {
       this._channelCache.delete(session.id)
       await session.user?.$update()
       await session.channel?.$update()
-    }
-  }
-
-  private _handleArgv(content: string, session: Session) {
-    const argv = Argv.parse(content)
-    if (session.quote) {
-      argv.tokens.push({
-        content: session.quote.content,
-        quoted: true,
-        inters: [],
-        terminator: '',
-      })
-    }
-    return argv
-  }
-
-  private _handleShortcut(content: string, session: Session) {
-    const { parsed, quote } = session
-    if (parsed.prefix || quote) return
-    for (const shortcut of this._shortcuts) {
-      const { name, fuzzy, command, prefix, options = {}, args = [] } = shortcut
-      if (prefix && !parsed.appel || !command.context.match(session)) continue
-      if (typeof name === 'string') {
-        if (!fuzzy && content !== name || !content.startsWith(name)) continue
-        const message = content.slice(name.length)
-        if (fuzzy && !parsed.appel && message.match(/^\S/)) continue
-        const argv = command.parse(message.trim(), '', [...args], { ...options })
-        argv.command = command
-        return argv
-      } else {
-        const capture = name.exec(content)
-        if (!capture) continue
-        function escape(source: any) {
-          if (typeof source !== 'string') return source
-          source = source.replace(/\$\$/g, '@@__PLACEHOLDER__@@')
-          capture.forEach((segment, index) => {
-            if (!index || index > 9) return
-            source = source.replace(new RegExp(`\\$${index}`, 'g'), (segment || '').replace(/\$/g, '@@__PLACEHOLDER__@@'))
-          })
-          return source.replace(/@@__PLACEHOLDER__@@/g, '$')
-        }
-        return {
-          command,
-          args: args.map(escape),
-          options: valueMap(options, escape),
-        }
-      }
     }
   }
 }
