@@ -14,6 +14,7 @@ export class KoishiError extends Error {
 export namespace KoishiError {
   export type Code =
     | 'database.duplicate-entry'
-    | 'model.invalid-field'
+    | 'model.missing-field-definition'
+    | 'model.invalid-field-definition'
     | 'model.invalid-query'
 }
