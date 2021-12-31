@@ -1,5 +1,5 @@
 <template>
-  <div class="homepage">
+  <div class="homepage" ref="root">
     <div class="screen flex screen-1">
       <h1><span class="koi">Koi</span>shi.js</h1>
       <p class="desc">
@@ -96,7 +96,8 @@
 
 <script setup lang="ts">
 
-import { useWindowSize } from '@vueuse/core'
+import { ref } from 'vue'
+import { useWindowSize, useEventListener } from '@vueuse/core'
 import { useThemeLocaleData, resolveArraySidebarItems } from '@vuepress/theme-default/lib/client/composables'
 import SidebarItem from '@vuepress/theme-default/lib/client/components/SidebarItem.vue'
 
@@ -106,6 +107,17 @@ function getSidebarItems(route: string) {
   const config = useThemeLocaleData().value
   return resolveArraySidebarItems(config.sidebar[route].filter(item => item.isGroup), 1)
 }
+
+const root = ref<HTMLElement>()
+
+useEventListener('wheel', (event) => {
+  if (Math.abs(event.deltaY) < 100 || event.ctrlKey || event.shiftKey) return
+  event.preventDefault()
+  root.value.scrollBy({
+    top: innerHeight * Math.sign(event.deltaY),
+    behavior: 'smooth',
+  })
+}, { passive: false })
 
 </script>
 

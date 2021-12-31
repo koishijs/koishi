@@ -10,15 +10,21 @@ sidebarDepth: 0
 
 由 @koishijs/core 提供的 API：
 
-- [上下文 (Context)](./core/context.md)
+- [适配器 (Adapter)](./core/adapter.md)
 - [应用 (App)](./core/app.md)
 - [机器人 (Bot)](./core/bot.md)
+- [指令 (Command)](./core/command.md)
+- [上下文 (Context)](./core/context.md)
 - [事件 (Events)](./core/events.md)
 - [会话 (Session)](./core/session.md)
-- [指令 (Command)](./core/command.md)
-- [数据库 (Database)](./core/database.md)
-- [数据模型 (Model)](./core/model.md)
-- [适配器 (Adapter)](./core/adapter.md)
+
+## 数据库 API
+
+- [内置数据结构](./database/built-in.md)
+- [数据库操作 (Database)](./database/database.md)
+- [数据模型 (Model)](./database/model.md)
+- [查询表达式 (Query)](./database/query.md)
+- [求值表达式 (Evaluation)](./database/evaluation.md)
 
 ## 其他内置 API
 
