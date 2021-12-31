@@ -5,6 +5,7 @@ import { Adapter } from './adapter'
 import { Channel, User } from './database'
 import validate, { Command } from './command'
 import { Session, Computed } from './session'
+import { KoishiError } from './error'
 import { Model } from './orm'
 import help, { getCommandNames, HelpConfig } from './help'
 import Schema from 'schemastery'
@@ -241,14 +242,21 @@ export class App extends Context {
         }
         if (callback !== undefined) {
           queue.push(next => Next.compose(callback, next))
+          if (queue.length > Next.MAX_DEPTH) {
+            throw new KoishiError(`middleware stack exceeded ${Next.MAX_DEPTH}`, 'runtime.max-depth-exceeded')
+          }
         }
         return await queue[index++]?.(next)
       } catch (error) {
         let stack = coerce(error)
         if (prettyErrors) {
           const index = stack.indexOf(lastCall)
-          if (index >= 0) stack = stack.slice(0, index)
-          stack += `\nMiddleware stack:${midStack}`
+          if (index >= 0) {
+            stack = stack.slice(0, index)
+          } else {
+            stack += '\n'
+          }
+          stack += `Middleware stack:${midStack}`
         }
         this.logger('session').warn(`${session.content}\n${stack}`)
       }

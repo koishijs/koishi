@@ -3,6 +3,7 @@ import { Argv } from './parser'
 import { Context, Disposable, Next } from './context'
 import { User, Channel } from './database'
 import { FieldCollector, Session, Computed } from './session'
+import { KoishiError } from './error'
 
 const logger = new Logger('command')
 
@@ -225,23 +226,33 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
       if (typeof result === 'string') return result
     }
 
+    // empty actions will cause infinite loop
+    if (!this._actions.length) return ''
+
     let index = 0
-    const queue: Next.Queue = this._actions.map((action) => async (next) => {
-      return action.call(this, { ...argv, next }, ...args)
+    const queue: Next.Queue = this._actions.map((action) => async () => {
+      return action.call(this, argv, ...args)
     })
     queue.push(fallback)
     const length = queue.length
-    const next: Next = async () => {
-      return await queue[index++]?.(next)
+    argv.next = async (callback) => {
+      if (callback !== undefined) {
+        queue.push(next => Next.compose(callback, next))
+        if (queue.length > Next.MAX_DEPTH) {
+          throw new KoishiError(`middleware call stack exceeded ${Next.MAX_DEPTH}`, 'runtime.max-depth-exceeded')
+        }
+      }
+      return queue[index++]?.(argv.next)
     }
 
     try {
-      const result = await next()
+      const result = await argv.next()
       if (typeof result === 'string') return result
     } catch (error) {
       if (index === length) throw error
       let stack = coerce(error)
       logger.warn(`${argv.source ||= this.stringify(args, options)}\n${stack}`)
+      this.app.emit(argv.session, 'command-error', argv, error)
     }
 
     return ''
