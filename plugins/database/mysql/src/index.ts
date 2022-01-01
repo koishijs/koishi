@@ -1,8 +1,7 @@
-import { createPool, Pool, PoolConfig, escape as mysqlEscape, escapeId, format } from 'mysql'
+import { createPool, Pool, PoolConfig, escape as mysqlEscape, escapeId, format, OkPacket } from 'mysql'
 import { Context, Database, difference, Logger, makeArray, Schema, Query, Model, Tables, Dict, Time, KoishiError, pick } from 'koishi'
 import { executeUpdate } from '@koishijs/orm-utils'
 import { Builder } from '@koishijs/sql-utils'
-import { OkPacket } from 'mysql'
 
 declare module 'mysql' {
   interface UntypedFieldInfo {
@@ -321,9 +320,9 @@ class MysqlDatabase extends Database {
     const { fields, limit, offset, sort } = Query.resolveModifier(modifier)
     const keys = this._joinKeys(this._inferFields(name, fields))
     let sql = `SELECT ${keys} FROM ${name} _${name} WHERE ${filter}`
+    if (sort) sql += ' ORDER BY ' + Object.entries(sort).map(([key, order]) => `${this.sql.escapeId(key)} ${order}`).join(', ')
     if (limit) sql += ' LIMIT ' + limit
     if (offset) sql += ' OFFSET ' + offset
-    if (sort) sql += ' ORDER BY ' + Object.entries(sort).map(([key, order]) => `${this.sql.escapeId(key)} ${order}`).join(', ')
     return this.queue(sql)
   }
 
