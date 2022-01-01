@@ -1,4 +1,4 @@
-import { Adapter, App, Context, Dict, omit, pick, Schema } from 'koishi'
+import { Adapter, App, Context, Dict, omit, pick, Plugin, Schema } from 'koishi'
 import { DataSource } from '@koishijs/plugin-console'
 import { readdir, readFile } from 'fs/promises'
 import { dirname } from 'path'
@@ -18,21 +18,23 @@ export class PackageProvider extends DataSource<Dict<PackageProvider.Data>> {
 
   start() {
     this.ctx.on('plugin-added', async (plugin) => {
-      const entry = Object.entries(require.cache).find(([, { exports }]) => unwrap(exports) === plugin)
-      if (!entry) return
       const state = this.ctx.app.registry.get(plugin)
-      const local = await this.cache[entry[0]]
-      local.id = state.id
-      this.broadcast()
+      this.updatePackage(plugin, state.id)
     })
 
     this.ctx.on('plugin-removed', async (plugin) => {
-      const entry = Object.entries(require.cache).find(([, { exports }]) => unwrap(exports) === plugin)
-      if (!entry) return
-      const local = await this.cache[entry[0]]
-      delete local.id
-      this.broadcast()
+      this.updatePackage(plugin, null)
     })
+  }
+
+  private async updatePackage(plugin: Plugin, id: string) {
+    const entry = Object.keys(require.cache).find((key) => {
+      return unwrap(require.cache[key].exports) === plugin
+    })
+    if (!entry) return
+    const local = await this.cache[entry]
+    local.id = id
+    this.broadcast()
   }
 
   async prepare() {
@@ -47,13 +49,12 @@ export class PackageProvider extends DataSource<Dict<PackageProvider.Data>> {
           const files = await readdir(base2).catch(() => [])
           for (const name2 of files) {
             if (name === '@koishijs' && name2.startsWith('plugin-') || name2.startsWith('koishi-plugin-')) {
-              const fullname = name + '/' + name2
-              this.cache[fullname] = this.loadPackage(base + '/' + fullname)
+              this.loadPackage(base2 + '/' + name2)
             }
           }
         } else {
           if (name.startsWith('koishi-plugin-')) {
-            this.cache[name] = this.loadPackage(base2)
+            this.loadPackage(base2)
           }
         }
       }
@@ -81,10 +82,12 @@ export class PackageProvider extends DataSource<Dict<PackageProvider.Data>> {
     return Object.fromEntries(packages.filter(x => x).map(data => [data.name, data]))
   }
 
-  private async loadPackage(path: string) {
-    const data: Package.Local = JSON.parse(await readFile(path + '/package.json', 'utf8'))
-    if (data.private) return null
+  private loadPackage(path: string) {
+    this.cache[require.resolve(path)] = this.parsePackage(path)
+  }
 
+  private async parsePackage(path: string) {
+    const data: Package.Local = JSON.parse(await readFile(path + '/package.json', 'utf8'))
     const result = pick(data, ['name', 'version', 'description']) as PackageProvider.Data
 
     // workspace packages are followed by symlinks
