@@ -27,7 +27,7 @@ let buffer = null
 
 function createWorker(options: WorkerOptions) {
   child = fork(resolve(__dirname, 'worker'), [], {
-    execArgv: options['--'],
+    execArgv: ['--enable-source-maps', ...options['--']],
   })
 
   let config: { autoRestart: boolean }

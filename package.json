@@ -31,7 +31,7 @@
     "lint": "eslint packages/**/src/**/*.ts --fix --cache",
     "pub": "node -r ./build/register build/publish",
     "scaffold": "yarn compile koishi && yarn create-koishi test",
-    "start": "yarn compile && yarn workspace test koishi start --enable-source-maps",
+    "start": "yarn compile && yarn workspace test koishi start",
     "shiki": "yarn workspace bot-shiki"
   },
   "version": "1.0.0",
