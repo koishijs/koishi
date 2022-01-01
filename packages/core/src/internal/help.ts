@@ -1,4 +1,4 @@
-import { template } from '@koishijs/utils'
+import { Awaitable, template } from '@koishijs/utils'
 import { Argv } from '../parser'
 import { Command } from '../command'
 import { Context } from '../context'
@@ -17,12 +17,12 @@ export interface HelpConfig extends Command.Config {
   options?: boolean
 }
 
-/** @experimental */
-export function handleError<U extends User.Field, G extends Channel.Field, A extends any[], O extends {}>(cmd: Command<U, G, A, O>) {
-  return cmd.action(async ({ next }, ...args) => {
+export function handleError<U extends User.Field, G extends Channel.Field, A extends any[], O extends {}>(cmd: Command<U, G, A, O>, handler: (error: Error, argv: Argv<U, G, A, O>) => Awaitable<void | string>) {
+  return cmd.action(async (argv, ...args) => {
     try {
-      return await next()
+      return await argv.next()
     } catch (error) {
+      if (handler) return handler(error, argv)
       return template('internal.error-encountered', error.message)
     }
   }, true)
