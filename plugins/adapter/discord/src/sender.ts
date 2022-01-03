@@ -99,7 +99,7 @@ export class Sender {
     }
 
     // auto mode
-    await this.bot.app.http.head(data.url, {
+    return await this.bot.app.http.head(data.url, {
       headers: { accept: type + '/*' },
     }).then((headers) => {
       if (headers['content-type'].startsWith(type)) {
