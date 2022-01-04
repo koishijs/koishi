@@ -56,7 +56,7 @@ class SQLiteDatabase extends Database {
   constructor(public ctx: Context, public config: SQLiteDatabase.Config) {
     super(ctx)
 
-    this.#path = this.config.path === ':memory:' ? this.config.path : resolve(ctx.app.options.baseDir, this.config.path)
+    this.#path = this.config.path === ':memory:' ? this.config.path : resolve(ctx.app.baseDir, this.config.path)
 
     this.sql = new class extends Builder {
       format = format

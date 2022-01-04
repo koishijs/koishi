@@ -1,7 +1,7 @@
 import { resolve, extname, dirname, isAbsolute } from 'path'
 import { yellow } from 'kleur'
 import { readdirSync, readFileSync } from 'fs'
-import { App, defineProperty, Dict, Logger, Modules, Plugin, Schema } from 'koishi'
+import { App, Dict, Logger, Modules, Plugin, Schema } from 'koishi'
 import { load } from 'js-yaml'
 
 declare module 'koishi' {
@@ -73,8 +73,9 @@ export class Loader {
   }
 
   createApp(config: App.Config) {
-    defineProperty(config, 'baseDir', this.dirname)
     const app = this.app = new App(config)
+    app.loader = this
+    app.baseDir = this.dirname
     const plugins = app.options.plugins ||= {}
     for (const name in plugins) {
       if (name.startsWith('~')) {
@@ -84,7 +85,6 @@ export class Loader {
         this.loadPlugin(name, plugins[name] ?? {})
       }
     }
-    app.loader = this
     return app
   }
 }

@@ -14,6 +14,10 @@ export * from '@koishijs/core'
 export * from '@koishijs/utils'
 
 declare module '@koishijs/core' {
+  interface App {
+    baseDir: string
+  }
+
   namespace Context {
     interface Services {
       assets: Assets
@@ -35,6 +39,7 @@ Context.service('router')
 
 const prepare = App.prototype.prepare
 App.prototype.prepare = function (this: App, ...args) {
+  this.baseDir ??= process.cwd()
   this.http = Quester.create(this.options.request)
   prepare.call(this, ...args)
   Router.prepare(this)

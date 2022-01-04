@@ -101,9 +101,9 @@ export class App extends Context {
     this._nameRE = createLeadingRE(this.options.nickname, '@?', '([,，]\\s*|\\s+)')
   }
 
-  async start() {
+  start() {
     this.isActive = true
-    await this.parallel('ready')
+    this.emit('ready')
     this.logger('app').debug('started')
   }
 
