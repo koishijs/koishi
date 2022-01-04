@@ -18,7 +18,7 @@ export class LogProvider extends DataSource<string[]> {
   }
 
   prepareWriter() {
-    this.root = resolve(this.ctx.app.options.baseDir, this.config.root || 'logs')
+    this.root = resolve(this.ctx.app.baseDir, this.config.root || 'logs')
     mkdirSync(this.root, { recursive: true })
 
     for (const filename of readdirSync(this.root)) {

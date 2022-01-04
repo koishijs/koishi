@@ -14,7 +14,7 @@ export interface Config {
 export class Storage {
   constructor(ctx: Context, private config: Config) {
     config.loader ||= 'json'
-    config.root ||= resolve(ctx.app.options.baseDir, '.koishi/database')
+    config.root ||= resolve(ctx.app.baseDir, '.koishi/database')
     if (!loaders.includes(config.loader)) {
       throw new Error(`unsupported loader "${config.loader}"`)
     }

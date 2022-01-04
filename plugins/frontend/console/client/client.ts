@@ -21,7 +21,7 @@ const listeners: Record<string, (data: any) => void> = {}
 const responseHooks: Record<string, (data: any) => void> = {}
 
 export function send(type: string, ...args: any[]) {
-  const id = Math.random().toString(36).substr(2, 9)
+  const id = Math.random().toString(36).slice(2, 9)
   socket.value.send(JSON.stringify({ id, type, args }))
   return new Promise((resolve, reject) => {
     responseHooks[id] = resolve

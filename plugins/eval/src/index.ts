@@ -172,7 +172,7 @@ export function apply(ctx: Context, config: Config = {}) {
 
 function addon(ctx: Context, config: EvalConfig) {
   const logger = ctx.logger('eval:addons')
-  const root = config.root = resolve(ctx.app.options.baseDir, config.root)
+  const root = config.root = resolve(ctx.app.baseDir, config.root)
   config.dataKeys.push('addonNames', 'root')
 
   const git = Git(root)

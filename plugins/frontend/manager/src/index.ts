@@ -17,13 +17,15 @@ export * from './releases'
 export * from './services'
 export * from './utils'
 
-declare module 'koishi' {
-  interface Modules {
-    manager: typeof import('.')
-  }
-}
-
 declare module '@koishijs/plugin-console' {
+  interface Events {
+    'plugin/load'(name: string, config: any): void
+    'plugin/unload'(name: string): void
+    'plugin/reload'(name: string, config: any): void
+    'plugin/save'(name: string, config: any): void
+    'bot/create'(platform: string, config: any): void
+  }
+
   interface Sources {
     bots: BotProvider
     market: MarketProvider
@@ -64,19 +66,25 @@ export function apply(ctx: Context, config: Config = {}) {
   const filename = ctx.console.config.devMode ? '../client/index.ts' : '../dist/index.js'
   ctx.console.addEntry(resolve(__dirname, filename))
 
-  for (const event of ['install', 'dispose', 'reload', 'save'] as const) {
-    ctx.console.addListener(`plugin/${event}`, async ({ name, config }) => {
-      ctx.emit(`config/plugin-${event}`, name, config)
+  ctx.using(['configWriter'], (ctx) => {
+    ctx.console.addListener('plugin/load', (name, config) => {
+      ctx.configWriter.loadPlugin(name, config)
     })
-  }
 
-  ctx.console.addListener('bot/create', async ({ platform, protocol, config }) => {
-    ctx.emit('config/bot-create', platform, { protocol, ...config })
+    ctx.console.addListener('plugin/unload', (name) => {
+      ctx.configWriter.unloadPlugin(name)
+    })
+
+    ctx.console.addListener('plugin/reload', (name, config) => {
+      ctx.configWriter.reloadPlugin(name, config)
+    })
+
+    ctx.console.addListener('plugin/save', (name, config) => {
+      ctx.configWriter.savePlugin(name, config)
+    })
+
+    ctx.console.addListener('bot/create', (platform, config) => {
+      ctx.configWriter.createBot(platform, config)
+    })
   })
-
-  for (const event of ['remove', 'start', 'stop'] as const) {
-    ctx.console.addListener(`bot/${event}`, async ({ id }) => {
-      ctx.emit(`config/bot-${event}`, id)
-    })
-  }
 }

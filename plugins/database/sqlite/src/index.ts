@@ -56,7 +56,7 @@ class SQLiteDatabase extends Database {
   constructor(public ctx: Context, public config: SQLiteDatabase.Config) {
     super(ctx)
 
-    this.#path = this.config.path === ':memory:' ? this.config.path : resolve(ctx.app.options.baseDir, this.config.path)
+    this.#path = this.config.path === ':memory:' ? this.config.path : resolve(ctx.app.baseDir, this.config.path)
 
     this.sql = new class extends Builder {
       format = format
@@ -219,9 +219,9 @@ class SQLiteDatabase extends Database {
     if (filter === '0') return []
     const { fields, limit, offset, sort } = Query.resolveModifier(modifier)
     let sql = `SELECT ${this.#joinKeys(fields)} FROM ${this.sql.escapeId(name)} WHERE ${filter}`
+    if (sort) sql += ' ORDER BY ' + Object.entries(sort).map(([key, order]) => `${this.sql.escapeId(key)} ${order}`).join(', ')
     if (limit) sql += ' LIMIT ' + limit
     if (offset) sql += ' OFFSET ' + offset
-    if (sort) sql += ' ORDER BY ' + Object.entries(sort).map(([key, order]) => `${this.sql.escapeId(key)} ${order}`).join(', ')
     const rows = this.#exec('all', sql)
     return rows.map(row => this.caster.load(name, row))
   }
@@ -276,7 +276,7 @@ class SQLiteDatabase extends Database {
       $or: updates.map(item => Object.fromEntries(indexFields.map(key => [key, item[key]]))),
     }, fields)
     for (const item of updates) {
-      let data = table.find(row => indexFields.every(key => row[key] === item[key]))
+      const data = table.find(row => indexFields.every(key => row[key] === item[key]))
       if (data) {
         this.#update(name, indexFields, updateFields, item, data)
       } else {

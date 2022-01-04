@@ -1,9 +1,21 @@
 import { App, defineProperty, Logger, Schema, version } from 'koishi'
-import { Loader } from '../loader'
-import { LoggerConfig } from '../..'
 
-// eslint-disable-next-line no-import-assign
-const LoggerConfig = Schema.object({
+interface LogLevelConfig {
+  // a little different from koishi-utils
+  // we don't enforce user to provide a base here
+  base?: number
+  [K: string]: LogLevel
+}
+
+type LogLevel = number | LogLevelConfig
+
+export interface LoggerConfig {
+  levels?: LogLevel
+  showDiff?: boolean
+  showTime?: string | boolean
+}
+
+export const LoggerConfig = Schema.object({
   levels: Schema.any().description('默认的日志输出等级。'),
   showDiff: Schema.boolean().description('标注相邻两次日志输出的时间差。'),
   showTime: Schema.union([Boolean, String]).description('输出日志所使用的时间格式。'),
@@ -15,7 +27,7 @@ App.Config.list.push(Schema.object({
   logger: LoggerConfig.hidden(),
 }))
 
-export function prepare(loader: Loader, config: LoggerConfig = {}) {
+export function prepareLogger(config: LoggerConfig = {}) {
   const { levels } = config
   // configurate logger levels
   if (typeof levels === 'object') {

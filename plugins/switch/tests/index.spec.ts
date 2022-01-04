@@ -5,12 +5,19 @@ import mock from '@koishijs/plugin-mock'
 
 const app = new App()
 
-app.plugin(memory).plugin(mock)
+app.plugin(memory)
+app.plugin(mock)
 
 const client = app.mock.client('123', '321')
 
 app.plugin(_switch)
+app.command('foo', { authority: 4 })
 app.command('baz').action(() => 'zab')
+
+before(async () => {
+  await app.start()
+  await app.mock.initUser('123', 3)
+})
 
 describe('Switch Plugin', () => {
   it('basic support', async () => {
@@ -22,6 +29,6 @@ describe('Switch Plugin', () => {
     await client.shouldNotReply('baz')
     await client.shouldReply('switch baz', '已启用 baz 功能。')
     await client.shouldReply('baz', 'zab')
-    await client.shouldReply('switch assign', '您无权修改 assign 功能。')
+    await client.shouldReply('switch foo', '您无权修改 foo 功能。')
   })
 })
