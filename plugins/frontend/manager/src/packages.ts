@@ -3,6 +3,7 @@ import { DataSource } from '@koishijs/plugin-console'
 import { readdir, readFile } from 'fs/promises'
 import { dirname } from 'path'
 import { Package } from './utils'
+import {} from '@koishijs/cli'
 
 function unwrap(module: any) {
   return module.default || module
