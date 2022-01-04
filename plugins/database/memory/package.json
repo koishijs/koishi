@@ -30,7 +30,7 @@
     "server"
   ],
   "peerDependencies": {
-    "koishi": "^4.0.0-rc.1"
+    "koishi": "^4.0.0-rc.2"
   },
   "devDependencies": {
     "@koishijs/plugin-mock": "^1.0.0-rc.0",

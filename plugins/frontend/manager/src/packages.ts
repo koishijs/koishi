@@ -40,7 +40,7 @@ export class PackageProvider extends DataSource<Dict<PackageProvider.Data>> {
 
   async prepare() {
     // load local packages
-    let { baseDir } = this.ctx.app.options
+    let { baseDir } = this.ctx.app
     while (1) {
       const base = baseDir + '/node_modules'
       const files = await readdir(base).catch(() => [])
