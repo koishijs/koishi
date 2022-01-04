@@ -17,6 +17,7 @@ const specs = [
   // 'plugins/github/tests/*.spec.ts',
   'plugins/repeater/tests/*.spec.ts',
   // 'plugins/schedule/tests/*.spec.ts',
+  'plugins/switch/tests/*.spec.ts',
   'plugins/teach/tests/*.spec.ts',
   // 'plugins/verifier/tests/*.spec.ts',
 ]
