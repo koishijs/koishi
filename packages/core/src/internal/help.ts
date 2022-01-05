@@ -1,9 +1,11 @@
-import { Command, getUsage, getUsageName, ValidationField } from './command'
-import { TableType } from './orm'
-import { Session, FieldCollector } from './session'
-import { template } from '@koishijs/utils'
-import { Context } from './context'
-import { Argv } from './parser'
+import { Awaitable, template } from '@koishijs/utils'
+import { Argv } from '../parser'
+import { Command } from '../command'
+import { Context } from '../context'
+import { User, Channel } from '../database'
+import { TableType } from '../orm'
+import { FieldCollector, Session } from '../session'
+import { getUsage, getUsageName, ValidationField } from './validate'
 
 interface HelpOptions {
   showHidden?: boolean
@@ -15,21 +17,32 @@ export interface HelpConfig extends Command.Config {
   options?: boolean
 }
 
+export function handleError<U extends User.Field, G extends Channel.Field, A extends any[], O extends {}>(cmd: Command<U, G, A, O>, handler: (error: Error, argv: Argv<U, G, A, O>) => Awaitable<void | string>) {
+  return cmd.action(async (argv, ...args) => {
+    try {
+      return await argv.next()
+    } catch (error) {
+      if (handler) return handler(error, argv)
+      return template('internal.error-encountered', error.message)
+    }
+  }, true)
+}
+
+export function enableHelp<U extends User.Field, G extends Channel.Field, A extends any[], O extends {}>(cmd: Command<U, G, A, O>) {
+  return cmd
+    .option('help', '-h  显示此信息', { hidden: true })
+    .before(async ({ session, options }, ...args) => {
+      if (cmd['_actions'].length && !options['help']) return
+      return session.execute({
+        name: 'help',
+        args: [cmd.name],
+      })
+    })
+}
+
 export default function help(ctx: Context, config: HelpConfig = {}) {
   if (config.options !== false) {
-    ctx.on('command-added', (cmd) => {
-      cmd.option('help', '-h  显示此信息', { hidden: true })
-    })
-
-    // show help when use `-h, --help` or when there is no action
-    ctx.before('command', async ({ command, session, options }) => {
-      if (command['_actions'].length && !options['help']) return
-      await session.execute({
-        name: 'help',
-        args: [command.name],
-      })
-      return ''
-    })
+    ctx.on('command-added', cmd => cmd.use(enableHelp))
   }
 
   const app = ctx.app
@@ -215,6 +228,7 @@ template.set('internal', {
   'unknown-option': '存在未知选项 {0}，输入帮助以查看用法。',
   'invalid-option': '选项 {0} 输入无效，{1}',
   'check-syntax': '输入帮助以查看用法。',
+  'error-encountered': '发生未知错误。',
 
   // parser
   'invalid-number': '请提供一个数字。',

@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-database-level",
   "description": "Database implementation based on LevelDB for Koishi",
-  "version": "1.0.0-rc.1",
+  "version": "1.0.0-rc.2",
   "main": "lib/node.js",
   "module": "lib/browser.js",
   "typings": "lib/index.d.ts",
@@ -31,7 +31,7 @@
     "leveldb"
   ],
   "peerDependencies": {
-    "koishi": "^4.0.0-rc.1"
+    "koishi": "^4.0.0-rc.2"
   },
   "devDependencies": {
     "@koishijs/plugin-mock": "^1.0.0-rc.0",

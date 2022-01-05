@@ -15,6 +15,8 @@ export type Middleware = (session: Session, next: Next) => Awaitable<void | stri
 export type Disposable = () => void
 
 export namespace Next {
+  export const MAX_DEPTH = 64
+
   export type Queue = ((next?: Next) => Promise<void | string>)[]
   export type Callback = void | string | ((next?: Next) => Awaitable<void | string>)
 
@@ -642,6 +644,7 @@ export interface EventMap {
   'command'(argv: Argv): Awaitable<void>
   'command-added'(command: Command): void
   'command-removed'(command: Command): void
+  'command-error'(argv: Argv, error: any): void
   'middleware'(session: Session): void
   'plugin-added'(plugin: Plugin): void
   'plugin-removed'(plugin: Plugin): void

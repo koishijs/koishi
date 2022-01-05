@@ -107,7 +107,7 @@ export class MarketProvider extends DataSource<Dict<MarketProvider.Data>> {
   }
 
   get cwd() {
-    return this.ctx.app.options.baseDir
+    return this.ctx.app.baseDir
   }
 
   async getAgent(): Promise<Manager> {

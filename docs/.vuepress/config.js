@@ -59,7 +59,9 @@ module.exports = {
           '/guide/introduction/index.md',
           '/guide/introduction/console.md',
           '/guide/introduction/coding.md',
-          '/guide/introduction/plugin.md',
+          '/guide/introduction/cli.md',
+          // '/guide/introduction/comparison.md',
+          '/guide/introduction/workspace.md',
           // '/guide/introduction/glossary.md',
         ],
       }, {
@@ -68,10 +70,15 @@ module.exports = {
         children: [
           '/guide/message/middleware.md',
           '/guide/message/session.md',
-          '/guide/message/command.md',
-          '/guide/message/execution.md',
-          '/guide/message/help.md',
           '/guide/message/message.md',
+        ],
+      }, {
+        text: '指令系统',
+        isGroup: true,
+        children: [
+          '/guide/command/command.md',
+          '/guide/command/execution.md',
+          '/guide/command/help.md',
         ],
       }, {
         text: '模块化',
@@ -82,7 +89,6 @@ module.exports = {
           '/guide/plugin/lifecycle.md',
           '/guide/plugin/service.md',
           '/guide/plugin/schema.md',
-          '/guide/plugin/release.md',
         ],
       }, {
         text: '数据库',
@@ -98,9 +104,9 @@ module.exports = {
         isGroup: true,
         children: [
           '/guide/adapter/adapter.md',
+          '/guide/adapter/bot.md',
           '/guide/adapter/binding.md',
           '/guide/adapter/writing.md',
-          '/guide/adapter/for-everything.md',
         ],
       }, {
         text: '更多功能',
@@ -116,7 +122,6 @@ module.exports = {
         text: '调试与部署',
         isGroup: true,
         children: [
-          '/guide/misc/cli.md',
           '/guide/misc/unit-tests.md',
           '/guide/misc/decorator.md',
           '/guide/misc/docker.md',
@@ -135,10 +140,18 @@ module.exports = {
           '/api/core/bot.md',
           '/api/core/command.md',
           '/api/core/context.md',
-          '/api/core/database.md',
           '/api/core/events.md',
-          '/api/core/model.md',
           '/api/core/session.md',
+        ],
+      }, {
+        text: '数据库 API',
+        isGroup: true,
+        children: [
+          '/api/database/built-in.md',
+          '/api/database/database.md',
+          '/api/database/model.md',
+          '/api/database/query.md',
+          '/api/database/evaluation.md',
         ],
       }, {
         text: '其他内置 API',

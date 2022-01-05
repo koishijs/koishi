@@ -1,6 +1,6 @@
 /* eslint-disable no-cond-assign */
 
-import { spawnAsync, cwd, getPackages, PackageJson } from './utils'
+import { spawnAsync, cwd, getPackages, PackageJson, requireSafe } from './utils'
 import { EOL } from 'os'
 import { resolve } from 'path'
 import fs from 'fs-extra'
@@ -272,9 +272,9 @@ interface Layer {
   const nodes: Record<string, Node> = {}
   await Promise.all(folders.map(async (path) => {
     const fullpath = resolve(cwd, path)
-    const meta: PackageJson = require(fullpath + '/package.json')
+    const meta: PackageJson = requireSafe(fullpath + '/package.json')
+    if (!meta || meta.private) return
     const config: TsConfig = await readJson(fullpath + '/tsconfig.json')
-    if (meta.private) return
     const bundle = !!config.compilerOptions.outFile
     nodes[meta.name] = { path, meta, config, bundle, prev: [], next: new Set() }
   }))

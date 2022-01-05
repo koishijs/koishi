@@ -223,9 +223,24 @@ describe('Command API', () => {
       expect(next.mock.calls).to.have.length(0)
     })
 
-    it('compose 3 (return after next resolved)', async () => {
-      command.action(({ next }) => next().then(() => 'result'))
+    it('compose 3 (return in next callback)', async () => {
+      command.action(({ next }) => next('result'))
 
+      await expect(command.execute({ session }, async () => {})).eventually.to.equal('')
+      await expect(command.execute({ session }, next)).eventually.to.equal('result')
+      expect(next.mock.calls).to.have.length(1)
+    })
+
+    it('compose 4 (nested next callbacks)', async () => {
+      command.action(({ next }) => {
+        return next((next) => {
+          return next((next) => {
+            return next('result')
+          })
+        })
+      })
+
+      await expect(command.execute({ session }, async () => {})).eventually.to.equal('')
       await expect(command.execute({ session }, next)).eventually.to.equal('result')
       expect(next.mock.calls).to.have.length(1)
     })
@@ -241,8 +256,21 @@ describe('Command API', () => {
       expect(next.mock.calls).to.have.length(0)
     })
 
-    it('throw 2 (error in next function)', async () => {
-      next.mockRejectedValueOnce(new Error('message 2'))
+    it('throw 2 (error in next callback)', async () => {
+      command.action(({ next }) => {
+        return next(() => {
+          throw new Error('message 2')
+        })
+      })
+
+      await expect(command.execute({ session }, next)).eventually.to.equal('')
+      expect(warn.mock.calls).to.have.length(1)
+      expect(warn.mock.calls[0][0]).to.match(/^test\nError: message 2/)
+      expect(next.mock.calls).to.have.length(1)
+    })
+
+    it('throw 3 (error in next function)', async () => {
+      next.mockRejectedValueOnce(new Error('message 3'))
       command.action(({ next }) => next())
 
       await expect(command.execute({ session }, next)).to.be.rejected
@@ -250,17 +278,42 @@ describe('Command API', () => {
       expect(next.mock.calls).to.have.length(1)
     })
 
-    it('throw 3 (error handling)', async () => {
+    it('throw 4 (error handling)', async () => {
       command.action(async ({ next }) => {
         return next().catch(() => 'catched')
       })
       command.action(() => {
-        throw new Error('message 3')
+        throw new Error('message 4')
       })
 
       await expect(command.execute({ session }, next)).eventually.to.equal('catched')
       expect(warn.mock.calls).to.have.length(0)
       expect(next.mock.calls).to.have.length(0)
+    })
+  })
+
+  describe('Bypass Middleware', async () => {
+    const app = new App().plugin(mock)
+    const client = app.mock.client('123')
+
+    app.middleware((session, next) => {
+      if (session.content.includes('escape')) return 'early'
+      return next()
+    })
+
+    it('basic support', async () => {
+      app.command('test1').action(({ next }) => next('final'))
+
+      await app.start()
+      await client.shouldReply('test1 foo', 'final')
+      await client.shouldReply('test1 escape', 'early')
+    })
+
+    it('infinite loop', async () => {
+      app.command('test2').action(({ next }) => next(Next.compose))
+
+      await app.start()
+      await client.shouldNotReply('test2')
     })
   })
 })

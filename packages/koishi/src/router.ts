@@ -22,10 +22,6 @@ declare module '@koishijs/core' {
   }
 
   namespace App {
-    interface Config {
-      baseDir?: string
-    }
-
     namespace Config {
       interface Network {
         port?: number
@@ -95,8 +91,6 @@ export class Router extends KoaRouter {
   }
 
   static prepare(app: App) {
-    app.options.baseDir ||= process.cwd()
-
     // create server
     const koa = new Koa()
     app.router = new Router()
@@ -108,7 +102,7 @@ export class Router extends KoaRouter {
     app._wsServer = new WebSocket.Server({
       server: app._httpServer,
     })
-    
+
     app._wsServer.on('connection', (socket, request) => {
       for (const manager of app.router.wsStack) {
         if (manager.accept(socket, request)) return

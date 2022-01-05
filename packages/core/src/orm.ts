@@ -1,5 +1,5 @@
-import { MaybeArray, Dict, Get, Extract, clone } from '@koishijs/utils'
-import { KoishiError } from '.'
+import { MaybeArray, makeArray, Dict, Get, Extract, clone } from '@koishijs/utils'
+import { KoishiError } from './error'
 import { Context } from './context'
 import { User, Channel } from './database'
 
@@ -62,6 +62,18 @@ export class Model {
     }
 
     this.ctx.emit('model', name)
+
+    // check index
+    this.checkIndex(table, table.primary)
+    table.unique.forEach(index => this.checkIndex(table, index))
+  }
+
+  private checkIndex(table: Model.Config, index: MaybeArray<string>) {
+    for (const key of makeArray(index)) {
+      if (!table.fields[key]) {
+        throw new KoishiError(`missing field definition for index key "${key}"`, 'model.missing-field-definition')
+      }
+    }
   }
 
   create<T extends TableType>(name: T): Tables[T] {
@@ -141,7 +153,7 @@ export namespace Model {
 
       // parse string definition
       const capture = regexp.exec(source)
-      if (!capture) throw new KoishiError('invalid field definition', 'model.invalid-field')
+      if (!capture) throw new KoishiError('invalid field definition', 'model.invalid-field-definition')
       const type = capture[1] as Type
       const args = (capture[2] || '').split(',')
       const field: Field = { type }

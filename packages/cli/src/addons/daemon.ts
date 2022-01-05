@@ -1,7 +1,11 @@
 import { Context, noop, template } from 'koishi'
-import { DeamonConfig } from '../..'
 
-template.set('deamon', {
+export interface Config {
+  exitCommand?: boolean | string
+  autoRestart?: boolean
+}
+
+template.set('daemon', {
   exiting: '正在关机……',
   restarting: '正在重启……',
   restarted: '已成功重启。',
@@ -12,9 +16,9 @@ interface Message {
   body: any
 }
 
-export const name = 'deamon'
+export const name = 'daemon'
 
-export function apply(ctx: Context, config: DeamonConfig = {}) {
+export function apply(ctx: Context, config: Config = {}) {
   const { exitCommand, autoRestart = true } = config
 
   function handleSignal(signal: NodeJS.Signals) {
@@ -30,11 +34,11 @@ export function apply(ctx: Context, config: DeamonConfig = {}) {
     .action(async ({ options, session }) => {
       const { channelId, guildId, sid } = session
       if (!options.restart) {
-        await session.send(template('deamon.exiting')).catch(noop)
+        await session.send(template('daemon.exiting')).catch(noop)
         process.exit()
       }
-      process.send({ type: 'queue', body: { channelId, guildId, sid, message: template('deamon.restarted') } })
-      await session.send(template('deamon.restarting')).catch(noop)
+      process.send({ type: 'queue', body: { channelId, guildId, sid, message: template('daemon.restarted') } })
+      await session.send(template('daemon.restarting')).catch(noop)
       process.exit(51)
     })
 
