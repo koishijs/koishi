@@ -1,13 +1,15 @@
-import { defineProperty, Time, coerce, escapeRegExp, makeArray, template, trimSlash, merge, Dict, valueMap } from '@koishijs/utils'
-import { Context, Middleware, NextFunction, Plugin } from './context'
-import { Argv } from './parser'
+import { defineProperty, Time, coerce, escapeRegExp, makeArray, trimSlash, merge, Dict } from '@koishijs/utils'
+import { Context, Next, Plugin } from './context'
 import { Adapter } from './adapter'
 import { Channel, User } from './database'
-import validate, { Command } from './command'
-import { Session } from './session'
-import help, { getCommandNames, HelpConfig } from './help'
-import Schema from 'schemastery'
+import { Command } from './command'
+import { Session, Computed } from './session'
+import { KoishiError } from './error'
 import { Model } from './orm'
+import runtime from './internal/runtime'
+import validate from './internal/validate'
+import help, { HelpConfig } from './internal/help'
+import Schema from 'schemastery'
 
 function createLeadingRE(patterns: string[], prefix = '', suffix = '') {
   return patterns.length ? new RegExp(`^${prefix}(${patterns.map(escapeRegExp).join('|')})${suffix}`) : /$^/
@@ -77,22 +79,7 @@ export class App extends Context {
 
     // bind built-in event listeners
     this.middleware(this._process.bind(this))
-    this.middleware(this._suggest.bind(this))
     this.on('message', this._handleMessage.bind(this))
-    this.before('parse', this._handleArgv.bind(this))
-    this.before('parse', this._handleShortcut.bind(this))
-
-    this.on('parse', (argv: Argv, session: Session) => {
-      const { parsed, subtype } = session
-      // group message should have prefix or appel to be interpreted as a command call
-      if (argv.root && subtype !== 'private' && parsed.prefix === null && !parsed.appel) return
-      if (!argv.tokens.length) return
-      const cmd = this._commands.resolve(argv.tokens[0].content)
-      if (cmd) {
-        argv.tokens.shift()
-        return cmd.name
-      }
-    })
 
     this.before('attach-user', (session, fields) => {
       session.collect('user', session.argv, fields)
@@ -102,6 +89,8 @@ export class App extends Context {
       session.collect('channel', session.argv, fields)
     })
 
+    // install internal plugins
+    this.plugin(runtime)
     this.plugin(validate)
     this.plugin(help, options.help)
   }
@@ -131,7 +120,7 @@ export class App extends Context {
     return Array.isArray(temp) ? temp : [temp || '']
   }
 
-  private async _process(session: Session, next: NextFunction) {
+  private async _process(session: Session, next: Next) {
     let capture: RegExpMatchArray
     let atSelf = false, appel = false, prefix: string = null
     const pattern = /^\[CQ:(\w+)((,\w+=[^,\]]*)*)\]/
@@ -156,10 +145,6 @@ export class App extends Context {
     // store parsed message
     defineProperty(session, 'parsed', { content, appel, prefix })
     this.emit(session, 'before-attach', session)
-
-    defineProperty(session, 'argv', this.bail('before-parse', content, session))
-    session.argv.root = true
-    session.argv.session = session
 
     if (this.database) {
       if (session.subtype === 'group') {
@@ -189,44 +174,21 @@ export class App extends Context {
       if (user.flag & User.Flag.ignore) return
     }
 
-    // execute command
     this.emit(session, 'attach', session)
-    if (!session.resolve(session.argv)) return next()
-    return session.execute(session.argv, next)
-  }
-
-  private _suggest(session: Session, next: NextFunction) {
-    // use `!prefix` instead of `prefix === null` to prevent from blocking other middlewares
-    // we need to make sure that the user truly has the intension to call a command
-    const { argv, quote, subtype, parsed: { content, prefix, appel } } = session
-    if (argv.command || subtype !== 'private' && !prefix && !appel) return next()
-    const target = content.split(/\s/, 1)[0].toLowerCase()
-    if (!target) return next()
-
-    return session.suggest({
-      target,
-      next,
-      items: getCommandNames(session),
-      prefix: template('internal.command-suggestion-prefix'),
-      suffix: template('internal.command-suggestion-suffix'),
-      async apply(suggestion, next) {
-        const newMessage = suggestion + content.slice(target.length) + (quote ? ' ' + quote.content : '')
-        return this.execute(newMessage, next)
-      },
-    })
+    return next()
   }
 
   private async _handleMessage(session: Session) {
     // preparation
     this._sessions[session.id] = session
-    const middlewares: Middleware[] = this._hooks[Context.middleware]
+    const queue: Next.Queue = this._hooks[Context.middleware]
       .filter(([context]) => context.match(session))
-      .map(([, middleware]) => middleware)
+      .map(([, middleware]) => middleware.bind(null, session))
 
     // execute middlewares
     let index = 0, midStack = '', lastCall = ''
     const { prettyErrors } = this.options
-    const next = async (fallback?: NextFunction) => {
+    const next: Next = async (callback) => {
       if (prettyErrors) {
         lastCall = new Error().stack.split('\n', 3)[2]
         if (index) {
@@ -239,75 +201,41 @@ export class App extends Context {
         if (!this._sessions[session.id]) {
           throw new Error('isolated next function detected')
         }
-        if (fallback) middlewares.push((_, next) => fallback(next))
-        return await middlewares[index++]?.(session, next)
+        if (callback !== undefined) {
+          queue.push(next => Next.compose(callback, next))
+          if (queue.length > Next.MAX_DEPTH) {
+            throw new KoishiError(`middleware stack exceeded ${Next.MAX_DEPTH}`, 'runtime.max-depth-exceeded')
+          }
+        }
+        return await queue[index++]?.(next)
       } catch (error) {
         let stack = coerce(error)
         if (prettyErrors) {
           const index = stack.indexOf(lastCall)
-          if (index >= 0) stack = stack.slice(0, index)
+          if (index >= 0) {
+            stack = stack.slice(0, index)
+          } else {
+            stack += '\n'
+          }
           stack += `Middleware stack:${midStack}`
         }
         this.logger('session').warn(`${session.content}\n${stack}`)
       }
     }
-    await next()
 
-    // update session map
-    delete this._sessions[session.id]
-    this.emit(session, 'middleware', session)
+    try {
+      const result = await next()
+      if (result) await session.send(result)
+    } finally {
+      // update session map
+      delete this._sessions[session.id]
+      this.emit(session, 'middleware', session)
 
-    // flush user & group data
-    this._userCache.delete(session.id)
-    this._channelCache.delete(session.id)
-    await session.user?.$update()
-    await session.channel?.$update()
-  }
-
-  private _handleArgv(content: string, session: Session) {
-    const argv = Argv.parse(content)
-    if (session.quote) {
-      argv.tokens.push({
-        content: session.quote.content,
-        quoted: true,
-        inters: [],
-        terminator: '',
-      })
-    }
-    return argv
-  }
-
-  private _handleShortcut(content: string, session: Session) {
-    const { parsed, quote } = session
-    if (parsed.prefix || quote) return
-    for (const shortcut of this._shortcuts) {
-      const { name, fuzzy, command, prefix, options = {}, args = [] } = shortcut
-      if (prefix && !parsed.appel || !command.context.match(session)) continue
-      if (typeof name === 'string') {
-        if (!fuzzy && content !== name || !content.startsWith(name)) continue
-        const message = content.slice(name.length)
-        if (fuzzy && !parsed.appel && message.match(/^\S/)) continue
-        const argv = command.parse(message.trim(), '', [...args], { ...options })
-        argv.command = command
-        return argv
-      } else {
-        const capture = name.exec(content)
-        if (!capture) continue
-        function escape(source: any) {
-          if (typeof source !== 'string') return source
-          source = source.replace(/\$\$/g, '@@__PLACEHOLDER__@@')
-          capture.forEach((segment, index) => {
-            if (!index || index > 9) return
-            source = source.replace(new RegExp(`\\$${index}`, 'g'), (segment || '').replace(/\$/g, '@@__PLACEHOLDER__@@'))
-          })
-          return source.replace(/@@__PLACEHOLDER__@@/g, '$')
-        }
-        return {
-          command,
-          args: args.map(escape),
-          options: valueMap(options, escape),
-        }
-      }
+      // flush user & group data
+      this._userCache.delete(session.id)
+      this._channelCache.delete(session.id)
+      await session.user?.$update()
+      await session.channel?.$update()
     }
   }
 }
@@ -328,8 +256,8 @@ export namespace App {
     prettyErrors?: boolean
     delay?: DelayConfig
     help?: boolean | HelpConfig
-    autoAssign?: boolean | ((session: Session) => boolean)
-    autoAuthorize?: number | ((session: Session) => number)
+    autoAssign?: Computed<boolean>
+    autoAuthorize?: Computed<number>
     minSimilarity?: number
   }
 

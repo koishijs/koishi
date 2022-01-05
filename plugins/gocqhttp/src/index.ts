@@ -39,7 +39,7 @@ const logLevelMap = {
 
 async function start(bot: OneBotBot) {
   // create working folder
-  const cwd = resolve(bot.app.options.baseDir, 'accounts/' + bot.selfId)
+  const cwd = resolve(bot.app.baseDir, 'accounts/' + bot.selfId)
   await mkdir(cwd, { recursive: true })
   await copyFile(resolve(__dirname, '../bin/go-cqhttp'), cwd + '/go-cqhttp')
 
@@ -87,7 +87,7 @@ export function apply(ctx: Context, config: Config = {}) {
     return start(bot)
   })
 
-  ctx.on('bot-dispose', async (bot: OneBotBot) => {
+  ctx.on('bot-disconnect', async (bot: OneBotBot) => {
     if (bot.adapter.platform !== 'onebot') return
     bot.process?.kill()
   })

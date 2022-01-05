@@ -1,4 +1,4 @@
-import { Context, Database, Query, TableType, clone, makeArray, pick, Dict, valueMap, Model, noop, KoishiError } from 'koishi'
+import { Context, Database, Query, TableType, clone, makeArray, pick, Dict, Model, noop, KoishiError } from 'koishi'
 import { executeQuery, executeEval, executeUpdate, executeSort } from '@koishijs/orm-utils'
 import { Storage, Config } from './storage'
 
@@ -111,9 +111,9 @@ export class MemoryDatabase extends Database {
     this.$save(name)
   }
 
-  async aggregate(name: TableType, fields: {}, query: Query) {
+  async eval(name: TableType, expr: any, query: Query) {
     const table = this.$query(name, query)
-    return valueMap(fields, value => executeEval(table, value)) as any
+    return executeEval(table, expr)
   }
 }
 

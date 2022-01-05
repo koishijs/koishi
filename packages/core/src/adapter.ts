@@ -11,25 +11,14 @@ export abstract class Adapter<S extends Bot.BaseConfig = Bot.BaseConfig, T = {}>
 
   protected abstract start(): Awaitable<void>
   protected abstract stop(): Awaitable<void>
-  abstract connect(bot: Bot): Awaitable<void>
 
   constructor(public ctx: Context, public config: T) {
-    ctx.on('ready', async () => {
-      await this.start()
-      for (const bot of this.bots) {
-        bot.start()
-      }
-    })
-
-    ctx.on('dispose', async () => {
-      for (const bot of this.bots) {
-        bot.stop()
-      }
-      await this.stop()
-    })
+    ctx.on('ready', () => this.start())
+    ctx.on('dispose', () => this.stop())
   }
 
-  dispose(bot: Bot): Awaitable<void> {}
+  connect(bot: Bot): Awaitable<void> {}
+  disconnect(bot: Bot): Awaitable<void> {}
 
   dispatch(session: Session) {
     if (!this.ctx.app.isActive) return
@@ -122,11 +111,7 @@ export namespace Adapter {
       ctx.emit('adapter')
       configMap[platform] = config
       for (const options of config.bots) {
-        ctx.bots.create(platform, options).then((bot) => {
-          logger.success('logged in to %s as %c (%s)', bot.platform, bot.username, bot.selfId)
-        }, (error: Error) => {
-          logger.error(error)
-        })
+        ctx.bots.create(platform, options)
       }
     }
 
@@ -150,7 +135,7 @@ export namespace Adapter {
       adapter.bots.push(bot)
       this.push(bot)
       this.app.emit('bot-added', bot)
-      return bot.connect()
+      return bot
     }
 
     async remove(sid: string) {

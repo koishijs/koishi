@@ -1,12 +1,12 @@
-import { Logger, coerce, Time, template, remove, Awaitable, Dict } from '@koishijs/utils'
+import { Logger, coerce, template, remove, Awaitable, Dict } from '@koishijs/utils'
 import { Argv } from './parser'
-import { Context, Disposable, NextFunction } from './context'
+import { Context, Disposable, Next } from './context'
 import { User, Channel } from './database'
-import { FieldCollector, Session } from './session'
+import { FieldCollector, Session, Computed } from './session'
+import { KoishiError } from './error'
+import * as internal from './internal'
 
 const logger = new Logger('command')
-
-export type UserType<T, U extends User.Field = User.Field> = T | ((user: Pick<User, U>) => T)
 
 export type Extend<O extends {}, K extends string, T> = {
   [P in K | keyof O]?: (P extends keyof O ? O[P] : unknown) & (P extends K ? T : unknown)
@@ -19,7 +19,7 @@ export namespace Command {
     /** hide command */
     hidden?: boolean
     /** min authority */
-    authority?: number
+    authority?: Computed<number>
     /** disallow unknown options */
     checkUnknown?: boolean
     /** check argument count */
@@ -29,9 +29,9 @@ export namespace Command {
     /** usage identifier */
     usageName?: string
     /** max usage per day */
-    maxUsage?: UserType<number>
+    maxUsage?: Computed<number>
     /** min interval */
-    minInterval?: UserType<number>
+    minInterval?: Computed<number>
     /** depend on existing commands */
     patch?: boolean
   }
@@ -39,7 +39,6 @@ export namespace Command {
   export interface Shortcut {
     name?: string | RegExp
     command?: Command
-    authority?: number
     prefix?: boolean
     fuzzy?: boolean
     args?: string[]
@@ -66,8 +65,13 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
 
   private _userFields: FieldCollector<'user'>[] = []
   private _channelFields: FieldCollector<'channel'>[] = []
-  private _actions: Command.Action<U, G, A, O>[] = []
-  private _checkers: Command.Action<U, G, A, O>[] = []
+  private _actions: Command.Action[] = []
+  private _checkers: Command.Action[] = [async (argv) => {
+    return this.app.serial(argv.session, 'before-command', argv)
+  }]
+
+  public static enableHelp: typeof internal.enableHelp
+  public static handleError: typeof internal.handleError
 
   static defaultConfig: Command.Config = {
     authority: 1,
@@ -83,11 +87,13 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
   private static _userFields: FieldCollector<'user'>[] = []
   private static _channelFields: FieldCollector<'channel'>[] = []
 
+  /** @deprecated use `command-added` event instead */
   static userFields(fields: FieldCollector<'user'>) {
     this._userFields.push(fields)
     return this
   }
 
+  /** @deprecated use `command-added` event instead */
   static channelFields(fields: FieldCollector<'channel'>) {
     this._channelFields.push(fields)
     return this
@@ -146,7 +152,6 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
     if (this._disposed) return this
     config.name = name
     config.command = this
-    config.authority ||= this.config.authority
     this.app._shortcuts.push(config)
     this._disposables?.push(() => remove(this.app._shortcuts, config))
     return this
@@ -187,74 +192,80 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
     return this.context.match(session) && this.config.authority <= authority
   }
 
-  getConfig<K extends keyof Command.Config>(key: K, session: Session): Exclude<Command.Config[K], (user: User) => any> {
+  getConfig<K extends keyof Command.Config>(key: K, session: Session): Exclude<Command.Config[K], (session: Session) => any> {
     const value = this.config[key] as any
-    return typeof value === 'function' ? value(session.user) : value
+    return typeof value === 'function' ? value(session) : value
   }
 
-  before(callback: Command.Action<U, G, A, O>, prepend = false) {
-    if (prepend) {
-      this._checkers.unshift(callback)
-    } else {
+  before(callback: Command.Action<U, G, A, O>, append = false) {
+    if (append) {
       this._checkers.push(callback)
+    } else {
+      this._checkers.unshift(callback)
     }
     this._disposables?.push(() => remove(this._checkers, callback))
     return this
   }
 
-  action(callback: Command.Action<U, G, A, O>, append = false) {
-    if (append) {
-      this._actions.push(callback)
-    } else {
+  action(callback: Command.Action<U, G, A, O>, prepend = false) {
+    if (prepend) {
       this._actions.unshift(callback)
+    } else {
+      this._actions.push(callback)
     }
     this._disposables?.push(() => remove(this._actions, callback))
     return this
   }
 
-  async execute(argv0: Argv<U, G, A, O>, next: NextFunction = fallback => fallback?.()): Promise<string> {
-    const argv = argv0 as Argv<U, G, A, O>
-    if (!argv.args) argv.args = [] as any
-    if (!argv.options) argv.options = {} as any
+  use<T extends Command, R extends any[]>(callback: (command: this, ...args: R) => T, ...args: R): T {
+    return callback(this, ...args)
+  }
 
-    // bypass next function
-    let state = 'before command'
-    argv.next = async (fallback) => {
-      const oldState = state
-      state = ''
-      await next(fallback)
-      state = oldState
-    }
+  async execute(argv: Argv<U, G, A, O>, fallback = Next.compose): Promise<string> {
+    argv.command ??= this
+    argv.args ??= [] as any
+    argv.options ??= {} as any
 
-    const { args, options, session, error } = argv
+    const { args, options, error } = argv
     if (error) return error
     if (logger.level >= 3) logger.debug(argv.source ||= this.stringify(args, options))
-    const lastCall = this.app.options.prettyErrors && new Error().stack.split('\n', 4)[3]
-    try {
-      for (const validator of this._checkers) {
-        const result = await validator.call(this, argv, ...args)
-        if (typeof result === 'string') return result
-      }
-      const result = await this.app.serial(session, 'before-command', argv)
+
+    // before hooks
+    for (const validator of this._checkers) {
+      const result = await validator.call(this, argv, ...args)
       if (typeof result === 'string') return result
-      state = 'executing command'
-      for (const action of this._actions) {
-        const result = await action.call(this, argv, ...args)
-        if (typeof result === 'string') return result
-      }
-      state = 'after command'
-      await this.app.parallel(session, 'command', argv)
-      return ''
-    } catch (error) {
-      if (!state) throw error
-      let stack = coerce(error)
-      if (lastCall) {
-        const index = error.stack.indexOf(lastCall)
-        stack = stack.slice(0, index - 1)
-      }
-      logger.warn(`${state}: ${argv.source ||= this.stringify(args, options)}\n${stack}`)
-      return ''
     }
+
+    // empty actions will cause infinite loop
+    if (!this._actions.length) return ''
+
+    let index = 0
+    const queue: Next.Queue = this._actions.map((action) => async () => {
+      return action.call(this, argv, ...args)
+    })
+    queue.push(fallback)
+    const length = queue.length
+    argv.next = async (callback) => {
+      if (callback !== undefined) {
+        queue.push(next => Next.compose(callback, next))
+        if (queue.length > Next.MAX_DEPTH) {
+          throw new KoishiError(`middleware call stack exceeded ${Next.MAX_DEPTH}`, 'runtime.max-depth-exceeded')
+        }
+      }
+      return queue[index++]?.(argv.next)
+    }
+
+    try {
+      const result = await argv.next()
+      if (typeof result === 'string') return result
+    } catch (error) {
+      if (index === length) throw error
+      let stack = coerce(error)
+      logger.warn(`${argv.source ||= this.stringify(args, options)}\n${stack}`)
+      this.app.emit(argv.session, 'command-error', argv, error)
+    }
+
+    return ''
   }
 
   dispose() {
@@ -269,132 +280,5 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
     if (this.parent) {
       remove(this.parent.children, this)
     }
-  }
-}
-
-export function getUsageName(command: Command) {
-  return command.config.usageName || command.name
-}
-
-export type ValidationField = 'authority' | 'usage' | 'timers'
-
-Command.userFields(({ tokens, command, options = {} }, fields) => {
-  if (!command) return
-  const { maxUsage, minInterval, authority } = command.config
-  let shouldFetchAuthority = authority > 0
-  let shouldFetchUsage = !!(maxUsage || minInterval)
-  for (const { name, authority, notUsage } of Object.values(command._options)) {
-    if (name in options) {
-      if (authority > 0) shouldFetchAuthority = true
-      if (notUsage) shouldFetchUsage = false
-    } else if (tokens) {
-      if (authority > 0) shouldFetchAuthority = true
-    }
-  }
-  if (shouldFetchAuthority) fields.add('authority')
-  if (shouldFetchUsage) {
-    if (maxUsage) fields.add('usage')
-    if (minInterval) fields.add('timers')
-  }
-})
-
-export default function validate(ctx: Context) {
-  // check user
-  ctx.before('command', (argv: Argv<ValidationField>) => {
-    const { session, options, command } = argv
-    if (!session.user) return
-
-    function sendHint(message: string, ...param: any[]) {
-      return command.config.showWarning ? template(message, param) : ''
-    }
-
-    let isUsage = true
-
-    // check authority
-    if (command.config.authority > session.user.authority) {
-      return sendHint('internal.low-authority')
-    }
-    for (const option of Object.values(command._options)) {
-      if (option.name in options) {
-        if (option.authority > session.user.authority) {
-          return sendHint('internal.low-authority')
-        }
-        if (option.notUsage) isUsage = false
-      }
-    }
-
-    // check usage
-    if (isUsage) {
-      const name = getUsageName(command)
-      const minInterval = command.getConfig('minInterval', session)
-      const maxUsage = command.getConfig('maxUsage', session)
-
-      if (maxUsage < Infinity && checkUsage(name, session.user, maxUsage)) {
-        return sendHint('internal.usage-exhausted')
-      }
-
-      if (minInterval > 0 && checkTimer(name, session.user, minInterval)) {
-        return sendHint('internal.too-frequent')
-      }
-    }
-  })
-
-  // check argv
-  ctx.before('command', (argv: Argv) => {
-    const { args, options, command } = argv
-    function sendHint(message: string, ...param: any[]) {
-      return command.config.showWarning ? template(message, param) : ''
-    }
-
-    // check argument count
-    if (command.config.checkArgCount) {
-      const nextArg = command._arguments[args.length] || {}
-      if (nextArg.required) {
-        return sendHint('internal.insufficient-arguments')
-      }
-      const finalArg = command._arguments[command._arguments.length - 1] || {}
-      if (args.length > command._arguments.length && finalArg.type !== 'text' && !finalArg.variadic) {
-        return sendHint('internal.redunant-arguments')
-      }
-    }
-
-    // check unknown options
-    if (command.config.checkUnknown) {
-      const unknown = Object.keys(options).filter(key => !command._options[key])
-      if (unknown.length) {
-        return sendHint('internal.unknown-option', unknown.join(', '))
-      }
-    }
-  })
-}
-
-export function getUsage(name: string, user: Pick<User, 'usage'>) {
-  const $date = Time.getDateNumber()
-  if (user.usage.$date !== $date) {
-    user.usage = { $date }
-  }
-  return user.usage[name] || 0
-}
-
-export function checkUsage(name: string, user: Pick<User, 'usage'>, maxUsage?: number) {
-  if (!user.usage) return
-  const count = getUsage(name, user)
-  if (count >= maxUsage) return true
-  if (maxUsage) {
-    user.usage[name] = count + 1
-  }
-}
-
-export function checkTimer(name: string, { timers }: Pick<User, 'timers'>, offset?: number) {
-  const now = Date.now()
-  if (!(now <= timers.$date)) {
-    for (const key in timers) {
-      if (now > timers[key]) delete timers[key]
-    }
-    timers.$date = now + Time.day
-  }
-  if (now <= timers[name]) return true
-  if (offset !== undefined) {
-    timers[name] = now + offset
   }
 }

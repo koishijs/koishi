@@ -56,11 +56,11 @@
       <h1 class="schema-header" v-if="data.shortname">
         配置项
         <template v-if="data.id">
-          <k-button solid type="error" @click="execute('dispose')">停用插件</k-button>
+          <k-button solid type="error" @click="execute('unload')">停用插件</k-button>
           <k-tip-button :tip="depTip" @click="execute('reload')">重载配置</k-tip-button>
         </template>
         <template v-else>
-          <k-tip-button :tip="depTip" @click="execute('install')">启用插件</k-tip-button>
+          <k-tip-button :tip="depTip" @click="execute('load')">启用插件</k-tip-button>
           <k-button solid @click="execute('save')">保存配置</k-button>
         </template>
       </h1>
@@ -167,7 +167,7 @@ const loadTip = computed(() => {
 
 function execute(event: string) {
   const { name, config } = data.value
-  send('plugin/' + event, { name, config })
+  send('plugin/' + event, name, config)
 }
 
 const router = useRouter()

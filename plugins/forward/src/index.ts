@@ -42,7 +42,7 @@ export function apply(ctx: Context, tunnels: ForwardOptions[]) {
     setTimeout(() => delete relayMap[id], lifespan)
   }
 
-  ctx.middleware((session, next) => {
+  ctx.middleware(async (session, next) => {
     const { quote = {} } = session
     const data = relayMap[quote.messageId]
     if (data) return sendRelay(session, data)
@@ -51,7 +51,7 @@ export function apply(ctx: Context, tunnels: ForwardOptions[]) {
       if (session.cid !== options.source) continue
       tasks.push(sendRelay(session, options).catch())
     }
-    tasks.push(next())
-    return Promise.all(tasks)
+    const [result] = await Promise.all([next(), ...tasks])
+    return result
   })
 }

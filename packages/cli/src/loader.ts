@@ -1,8 +1,14 @@
 import { resolve, extname, dirname, isAbsolute } from 'path'
 import { yellow } from 'kleur'
 import { readdirSync, readFileSync } from 'fs'
-import { App, Dict, hyphenate, Logger, Modules, Plugin } from 'koishi'
+import { App, Dict, Logger, Modules, Plugin, Schema } from 'koishi'
 import { load } from 'js-yaml'
+
+declare module 'koishi' {
+  interface App {
+    loader: Loader
+  }
+}
 
 const oldPaths = Modules.internal.paths
 Modules.internal.paths = function (name: string) {
@@ -12,6 +18,12 @@ Modules.internal.paths = function (name: string) {
   }
   return oldPaths(name)
 }
+
+App.Config.list.push(Schema.object({
+  allowWrite: Schema.boolean().description('允许插件修改本地配置文件。'),
+  autoRestart: Schema.boolean().description('应用在运行时崩溃自动重启。').default(true),
+  plugins: Schema.any().hidden(),
+}).description('CLI 设置'))
 
 let cwd = process.cwd()
 const logger = new Logger('app')
@@ -40,7 +52,7 @@ export class Loader {
     }
   }
 
-  loadConfig() {
+  loadConfig(): App.Config {
     if (['.yaml', '.yml'].includes(this.extname)) {
       return load(readFileSync(this.filename, 'utf8')) as any
     } else {
@@ -50,7 +62,7 @@ export class Loader {
   }
 
   resolvePlugin(name: string) {
-    return this.cache[name] = Modules.require(hyphenate(name), true)
+    return this.cache[name] = Modules.require(name, true)
   }
 
   loadPlugin(name: string, options?: any) {
@@ -61,8 +73,9 @@ export class Loader {
   }
 
   createApp(config: App.Config) {
-    config.baseDir = this.dirname
     const app = this.app = new App(config)
+    app.loader = this
+    app.baseDir = this.dirname
     const plugins = app.options.plugins ||= {}
     for (const name in plugins) {
       if (name.startsWith('~')) {

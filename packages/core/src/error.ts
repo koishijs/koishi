@@ -1,4 +1,6 @@
 export class KoishiError extends Error {
+  name = 'KoishiError'
+
   constructor(message: string, public code: KoishiError.Code) {
     super(message)
   }
@@ -11,7 +13,9 @@ export class KoishiError extends Error {
 
 export namespace KoishiError {
   export type Code =
+    | 'runtime.max-depth-exceeded'
     | 'database.duplicate-entry'
-    | 'model.invalid-field'
+    | 'model.missing-field-definition'
+    | 'model.invalid-field-definition'
     | 'model.invalid-query'
 }

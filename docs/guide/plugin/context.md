@@ -55,7 +55,7 @@ ctx.intersect(session => session.content === '啦啦啦')
 ctx.union(session => session.content === '啦啦啦')
 
 // 满足当前上下文条件，且消息内容不为“啦啦啦”
-ctx.except(session => session.content === '啦啦啦')
+ctx.exclude(session => session.content === '啦啦啦')
 ```
 
 上述方法也可以传入一个上下文作为参数，分别表示两个上下文的交集、并集和差集：
@@ -68,7 +68,7 @@ app.guild('112233').intersect(app.user('445566'))
 app.guild('112233').union(app.user('445566'))
 
 // 选择来自群组 1122233 的会话，但来自用户 445566 的会话除外
-app.guild('112233').except(app.user('445566'))
+app.guild('112233').exclude(app.user('445566'))
 ```
 
 与选择器方法类似，过滤器方法也会返回一个新的上下文，你可以在其上自由的添加监听器、中间件、指令和插件。
@@ -112,9 +112,9 @@ ctx
 plugins:
   eval:
     # 禁止 discord 平台触发，除非是特定调用者访问
-    $union:
+    $or:
       - $user: '123456789'
-      - $except:
+      - $not:
           $platform: 'discord'
 
     # 插件的配置
@@ -125,9 +125,9 @@ export default {
   plugins: {
     eval: {
       // 禁止 discord 平台触发，除非是特定调用者访问
-      $union: [
+      $or: [
         { $user: '123456789' },
-        { $except: { $platform: 'discord' } },
+        { $not: { $platform: 'discord' } },
       ],
 
       // 插件的配置
@@ -143,7 +143,7 @@ export default {
 ```js
 app
   .user('123456789')
-  .union(app.except(app.platform('discord')))
+  .union(app.exclude(app.platform('discord')))
   .plugin('eval', {
     scriptLoader: 'esbuild',
   })

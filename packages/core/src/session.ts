@@ -4,7 +4,7 @@ import { TableType, Tables } from './orm'
 import { Command } from './command'
 import { contain, observe, Logger, defineProperty, Random, template, remove, noop, segment } from '@koishijs/utils'
 import { Argv } from './parser'
-import { Middleware, NextFunction } from './context'
+import { Middleware, Next } from './context'
 import { App } from './app'
 import { Bot } from './bot'
 
@@ -71,6 +71,8 @@ export interface Parsed {
   prefix: string
   appel: boolean
 }
+
+export type Computed<T> = T | ((session: Session) => T)
 
 export class Session<U extends User.Field = never, G extends Channel.Field = never> {
   type?: string
@@ -304,9 +306,9 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
     return argv.command
   }
 
-  async execute(content: string, next?: true | NextFunction): Promise<string>
-  async execute(argv: Argv, next?: true | NextFunction): Promise<string>
-  async execute(argv: string | Argv, next?: true | NextFunction): Promise<string> {
+  async execute(content: string, next?: true | Next): Promise<string>
+  async execute(argv: Argv, next?: true | Next): Promise<string>
+  async execute(argv: string | Argv, next?: true | Next): Promise<string> {
     if (typeof argv === 'string') argv = Argv.parse(argv)
 
     argv.session = this
@@ -344,7 +346,7 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
     let shouldEmit = true
     if (next === true) {
       shouldEmit = false
-      next = fallback => fallback()
+      next = undefined as Next
     }
 
     const result = await argv.command.execute(argv, next)
@@ -382,9 +384,14 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
       prefix = '',
       suffix,
       apply,
-      next = callback => callback(),
+      next = Next.compose,
       minSimilarity = this.app.options.minSimilarity,
     } = options
+
+    const sendNext = async (callback: Next) => {
+      const result = await next(callback)
+      if (result) return this.send(result)
+    }
 
     let suggestions: string[], minDistance = Infinity
     for (const name of items) {
@@ -397,11 +404,11 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
         minDistance = dist
       }
     }
-    if (!suggestions) return next(() => this.send(prefix))
+    if (!suggestions) return sendNext(async () => prefix)
 
-    return next(() => {
+    return sendNext(async () => {
       const message = prefix + template('internal.suggestion', suggestions.map(template.quote).join(template.get('basic.or')))
-      if (suggestions.length > 1) return this.send(message)
+      if (suggestions.length > 1) return message
 
       const dispose = this.middleware((session, next) => {
         dispose()
@@ -410,7 +417,7 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
         return apply.call(session, suggestions[0], next)
       })
 
-      return this.send(message + suffix)
+      return message + suffix
     })
   }
 }
@@ -418,11 +425,11 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
 export interface SuggestOptions {
   target: string
   items: string[]
-  next?: NextFunction
+  next?: Next
   prefix?: string
   suffix: string
   minSimilarity?: number
-  apply: (this: Session, suggestion: string, next: NextFunction) => void
+  apply: (this: Session, suggestion: string, next: Next) => void
 }
 
 export function getSessionId(session: Session) {

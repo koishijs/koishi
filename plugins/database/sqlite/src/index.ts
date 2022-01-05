@@ -3,7 +3,7 @@ import { executeUpdate } from '@koishijs/orm-utils'
 import { Builder, Caster } from '@koishijs/sql-utils'
 import sqlite, { Statement } from 'better-sqlite3'
 import { resolve } from 'path'
-import { escape as sqlEscape, escapeId } from 'sqlstring-sqlite'
+import { escape as sqlEscape, escapeId, format } from 'sqlstring-sqlite'
 import { stat } from 'fs/promises'
 
 declare module 'koishi' {
@@ -56,9 +56,11 @@ class SQLiteDatabase extends Database {
   constructor(public ctx: Context, public config: SQLiteDatabase.Config) {
     super(ctx)
 
-    this.#path = this.config.path === ':memory:' ? this.config.path : resolve(ctx.app.options.baseDir, this.config.path)
+    this.#path = this.config.path === ':memory:' ? this.config.path : resolve(ctx.app.baseDir, this.config.path)
 
     this.sql = new class extends Builder {
+      format = format
+
       escapeId = escapeId
 
       escape(value: any) {
@@ -217,9 +219,9 @@ class SQLiteDatabase extends Database {
     if (filter === '0') return []
     const { fields, limit, offset, sort } = Query.resolveModifier(modifier)
     let sql = `SELECT ${this.#joinKeys(fields)} FROM ${this.sql.escapeId(name)} WHERE ${filter}`
+    if (sort) sql += ' ORDER BY ' + Object.entries(sort).map(([key, order]) => `${this.sql.escapeId(key)} ${order}`).join(', ')
     if (limit) sql += ' LIMIT ' + limit
     if (offset) sql += ' OFFSET ' + offset
-    if (sort) sql += ' ORDER BY ' + Object.entries(sort).map(([key, order]) => `${this.sql.escapeId(key)} ${order}`).join(', ')
     const rows = this.#exec('all', sql)
     return rows.map(row => this.caster.load(name, row))
   }
@@ -274,7 +276,7 @@ class SQLiteDatabase extends Database {
       $or: updates.map(item => Object.fromEntries(indexFields.map(key => [key, item[key]]))),
     }, fields)
     for (const item of updates) {
-      let data = table.find(row => indexFields.every(key => row[key] === item[key]))
+      const data = table.find(row => indexFields.every(key => row[key] === item[key]))
       if (data) {
         this.#update(name, indexFields, updateFields, item, data)
       } else {
@@ -283,13 +285,11 @@ class SQLiteDatabase extends Database {
     }
   }
 
-  async aggregate(name: TableType, fields: {}, query: Query) {
-    const keys = Object.keys(fields)
-    if (!keys.length) return {}
-
+  async eval(name: TableType, expr: any, query: Query) {
     const filter = this.#query(name, query)
-    const exprs = keys.map(key => `${this.sql.parseEval(fields[key])} AS ${this.sql.escapeId(key)}`).join(', ')
-    return this.#exec('get', `SELECT ${exprs} FROM ${this.sql.escapeId(name)} WHERE ${filter}`)
+    const output = this.sql.parseEval(expr)
+    const { value } = this.#exec('get', `SELECT ${output} AS value FROM ${this.sql.escapeId(name)} WHERE ${filter}`)
+    return value
   }
 }
 

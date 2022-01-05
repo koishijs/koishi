@@ -26,9 +26,9 @@ sidebarDepth: 2
 - create-koishi：可结合 npm init 或 yarn create 使用，用于快速搭建项目
 - @koishijs/plugin-database：一个内存数据库实现，支持输出到本地文件
 - @koishijs/plugin-ink：使用机器人展示视觉小说（计划中）
-- @koishijs/plugin-jsdelivr：使用 jsdelivr 和 GitHub 存放资源文件（计划中）
+- @koishijs/plugin-git：使用 git 仓库存放资源文件
 - @koishijs/plugin-minecraft：在 Minecraft 中使用机器人
-- @koishijs/plugin-s3：使用 s3 云存储存放资源文件（计划中）
+- @koishijs/plugin-s3：使用 s3 云存储存放资源文件
 
 ### 移除的包
 

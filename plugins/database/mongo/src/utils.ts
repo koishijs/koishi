@@ -1,4 +1,4 @@
-import { Query, valueMap } from 'koishi'
+import { Query, Random, valueMap } from 'koishi'
 import { Filter, FilterOperators } from 'mongodb'
 
 function transformFieldQuery(query: Query.FieldQuery, key: string) {
@@ -56,12 +56,12 @@ export function transformQuery(query: Query.Expr) {
   return filter
 }
 
-function transformEvalExpr(expr: any, aggrs?: any[][]) {
-  return valueMap(expr as any, (value, key) => {
+function transformEvalExpr(expr: any, onAggr?: (pipeline: any[]) => void) {
+  return valueMap(expr as any, (value) => {
     if (Array.isArray(value)) {
-      return value.map(val => transformEval(val, aggrs))
+      return value.map(val => transformEval(val, onAggr))
     } else {
-      return transformEval(value, aggrs)
+      return transformEval(value, onAggr)
     }
   })
 }
@@ -75,7 +75,7 @@ function transformAggr(expr: any) {
 
 const aggrKeys = ['$sum', '$avg', '$min', '$max', '$count']
 
-export function transformEval(expr: any, aggrs?: any[][]) {
+export function transformEval(expr: any, onAggr?: (pipeline: any[]) => void) {
   if (typeof expr === 'number' || typeof expr === 'string' || typeof expr === 'boolean') {
     return expr
   } else if (expr.$) {
@@ -85,17 +85,17 @@ export function transformEval(expr: any, aggrs?: any[][]) {
   for (const key of aggrKeys) {
     if (!expr[key]) continue
     const value = transformAggr(expr[key])
-    const $ = 'temp' + aggrs.length
+    const $ = Random.id()
     if (key === '$count') {
-      aggrs.push([
+      onAggr([
         { $group: { _id: value } },
         { $group: { _id: null, [$]: { $count: {} } } }
       ])
     } else {
-      aggrs.push([{ $group: { _id: null, [$]: { [key]: value } } }])
+      onAggr([{ $group: { _id: null, [$]: { [key]: value } } }])
     }
     return { $ }
   }
 
-  return transformEvalExpr(expr, aggrs)
+  return transformEvalExpr(expr, onAggr)
 }

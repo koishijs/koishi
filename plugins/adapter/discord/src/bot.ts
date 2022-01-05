@@ -41,7 +41,7 @@ export class DiscordBot extends Bot<BotConfig> {
     this._d = 0
     this._sessionId = ''
     this.http = adapter.http.extend({
-      headers: { Authorization: `Bot ${config.token}`, },
+      headers: { Authorization: `Bot ${config.token}` },
     })
     this.internal = new Discord.Internal(this.http)
   }

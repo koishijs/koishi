@@ -23,11 +23,10 @@ const ses2 = app.mock.client('456', '999')
 const ses3 = app.mock.client('123')
 
 // override start
-const start = jest.spyOn(app.mocker, 'start')
+const start = jest.spyOn(app.mock, 'start')
 start.mockReturnValue(Promise.resolve())
 
 before(async () => {
-  app.database.memory.$store.github = []
   await app.mock.initUser('123', 3)
   await app.mock.initUser('456', 3)
   await app.database.createChannel('mock', '999', {
@@ -53,13 +52,13 @@ describe('GitHub Plugin', () => {
   describe('Basic Support', () => {
     it('authorize server', async () => {
       tokenInterceptor.reply(200, payload)
-      await expect(app.mocker.get('/github/authorize')).to.eventually.have.property('code', 400)
-      await expect(app.mocker.get('/github/authorize?state=123')).to.eventually.have.property('code', 403)
-      await expect(app.mocker.get('/github/authorize?state=123&state=456')).to.eventually.have.property('code', 400)
+      await expect(app.mock.webhook.get('/github/authorize')).to.eventually.have.property('code', 400)
+      await expect(app.mock.webhook.get('/github/authorize?state=123')).to.eventually.have.property('code', 403)
+      await expect(app.mock.webhook.get('/github/authorize?state=123&state=456')).to.eventually.have.property('code', 400)
     })
 
     it('webhook server', async () => {
-      await expect(app.mocker.post('/github/webhook', {})).to.eventually.have.property('code', 400)
+      await expect(app.mock.webhook.post('/github/webhook', {})).to.eventually.have.property('code', 400)
     })
 
     it('github.authorize', async () => {
@@ -67,7 +66,7 @@ describe('GitHub Plugin', () => {
       uuid.mockReturnValue('foo-bar-baz')
       await ses.shouldReply('.github.authorize', '请输入用户名。')
       await ses.shouldReply('.github.authorize satori', /^请点击下面的链接继续操作：/)
-      await expect(app.mocker.get('/github/authorize?state=foo-bar-baz')).to.eventually.have.property('code', 200)
+      await expect(app.mock.webhook.get('/github/authorize?state=foo-bar-baz')).to.eventually.have.property('code', 200)
       await expect(app.database.getUser('mock', '123')).to.eventually.have.shape({
         ghAccessToken,
         ghRefreshToken,

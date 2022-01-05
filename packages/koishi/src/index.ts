@@ -14,6 +14,10 @@ export * from '@koishijs/core'
 export * from '@koishijs/utils'
 
 declare module '@koishijs/core' {
+  interface App {
+    baseDir: string
+  }
+
   namespace Context {
     interface Services {
       assets: Assets
@@ -35,7 +39,23 @@ Context.service('router')
 
 const prepare = App.prototype.prepare
 App.prototype.prepare = function (this: App, ...args) {
+  this.baseDir ??= process.cwd()
   this.http = Quester.create(this.options.request)
   prepare.call(this, ...args)
   Router.prepare(this)
+}
+
+const start = App.prototype.start
+App.prototype.start = function (this: App, ...args) {
+  const { port, host = 'localhost' } = this.options
+  if (port) {
+    this._httpServer.listen(port, host)
+    this.logger('app').info('server listening at %c', `http://${host}:${port}`)
+    this.on('dispose', () => {
+      this.logger('app').info('http server closing')
+      this._wsServer?.close()
+      this._httpServer?.close()
+    })
+  }
+  return start.call(this, ...args)
 }

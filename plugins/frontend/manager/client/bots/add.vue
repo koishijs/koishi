@@ -1,12 +1,11 @@
 <template>
   <div class="add-bot">
-    <k-button solid @click="send('bot/create', { platform: selected[0], protocol: selected[1], config })">启动</k-button>
+    <k-button solid @click="send('bot/create', selected[0], { protocol: selected[1], ...config })">启动</k-button>
     <h3 class="required">选择适配器</h3>
     <div class="platform-select">
       <el-cascader v-model="selected" :options="options"></el-cascader>
     </div>
     <k-schema v-if="schema" :schema="schema" v-model="config"></k-schema>
-    {{ config }}
   </div>
 </template>
 

@@ -10,9 +10,20 @@ import { Adapter } from './adapter'
 import { Model, Tables } from './orm'
 import Schema from 'schemastery'
 
-export type NextFunction = (next?: NextFunction) => Promise<void>
-export type Middleware = (session: Session, next: NextFunction) => any
+export type Next = (next?: Next.Callback) => Promise<void | string>
+export type Middleware = (session: Session, next: Next) => Awaitable<void | string>
 export type Disposable = () => void
+
+export namespace Next {
+  export const MAX_DEPTH = 64
+
+  export type Queue = ((next?: Next) => Promise<void | string>)[]
+  export type Callback = void | string | ((next?: Next) => Awaitable<void | string>)
+
+  export async function compose(callback: Callback, next?: Next) {
+    return typeof callback === 'function' ? callback(next) : callback
+  }
+}
 
 export type Plugin<T = any> = Plugin.Function<T> | Plugin.Object<T>
 
@@ -32,10 +43,6 @@ export namespace Plugin {
     : T extends Function<infer U> ? U
     : T extends Object<infer U> ? U
     : never
-
-  export type ModuleConfig<T> = 'default' extends keyof T
-    ? Config<Extract<T['default'], Plugin>>
-    : Config<Extract<T, Plugin>>
 
   export interface State<T = any> {
     id?: string
@@ -88,15 +95,14 @@ function isApplicable(object: Plugin) {
   return object && typeof object === 'object' && typeof object.apply === 'function'
 }
 
-type Filter = (session: Session) => boolean
-
 const selectors = ['user', 'guild', 'channel', 'self', 'private', 'platform'] as const
 
-type SelectorType = typeof selectors[number]
-type SelectorValue = boolean | MaybeArray<string | number>
-type BaseSelection = { [K in SelectorType as `$${K}`]?: SelectorValue }
+export type Filter = (session: Session) => boolean
+export type SelectorType = typeof selectors[number]
+export type SelectorValue = boolean | MaybeArray<string | number>
+export type BaseSelection = { [K in SelectorType as `$${K}`]?: SelectorValue }
 
-interface Selection extends BaseSelection {
+export interface Selection extends BaseSelection {
   $and?: Selection[]
   $or?: Selection[]
   $not?: Selection
@@ -114,42 +120,38 @@ export class Context {
     return `Context <${this._plugin ? this._plugin.name : 'root'}>`
   }
 
+  private _property<K extends keyof Session>(key: K, ...values: Session[K][]) {
+    return this.intersect((session) => {
+      return values.length ? values.includes(session[key]) : !!session[key]
+    })
+  }
+
   user(...values: string[]) {
-    return this.select('userId', ...values)
+    return this._property('userId', ...values)
   }
 
   self(...values: string[]) {
-    return this.select('selfId', ...values)
+    return this._property('selfId', ...values)
   }
 
   guild(...values: string[]) {
-    return this.select('guildId', ...values)
+    return this._property('guildId', ...values)
   }
 
   channel(...values: string[]) {
-    return this.select('channelId', ...values)
+    return this._property('channelId', ...values)
   }
 
   platform(...values: string[]) {
-    return this.select('platform', ...values)
+    return this._property('platform', ...values)
   }
 
   private(...values: string[]) {
-    return this.except(this.select('guildId')).select('userId', ...values)
+    return this.exclude(this._property('guildId'))._property('userId', ...values)
   }
 
-  select<K extends keyof Session>(key: K, ...values: Session[K][]): Context
-  select(options?: Selection): Context
-  select(...args: [Selection?] | [string, ...any[]]) {
-    if (typeof args[0] === 'string') {
-      const key = args.shift()
-      return this.intersect((session) => {
-        return args.length ? args.includes(session[key]) : !!session[key]
-      })
-    }
-
+  select(options: Selection) {
     let ctx: Context = this
-    const options = args[0] ?? {}
 
     // basic selectors
     for (const type of selectors) {
@@ -157,7 +159,7 @@ export class Context {
       if (value === true) {
         ctx = ctx[type]()
       } else if (value === false) {
-        ctx = ctx.except(ctx[type]())
+        ctx = ctx.exclude(ctx[type]())
       } else if (value !== undefined) {
         // we turn everything into string
         ctx = ctx[type](...makeArray(value).map(item => '' + item))
@@ -180,9 +182,9 @@ export class Context {
       ctx = ctx.intersect(ctx2)
     }
 
-    // except
+    // exclude
     if (options.$not) {
-      ctx = ctx.except(this.select(options.$not))
+      ctx = ctx.exclude(this.select(options.$not))
     }
 
     return ctx
@@ -210,9 +212,14 @@ export class Context {
     return new Context(s => this.filter(s) && filter(s), this.app, this._plugin)
   }
 
-  except(arg: Filter | Context) {
+  exclude(arg: Filter | Context) {
     const filter = typeof arg === 'function' ? arg : arg.filter
     return new Context(s => this.filter(s) && !filter(s), this.app, this._plugin)
+  }
+
+  /** @deprecated use `ctx.exclude()` instead */
+  except(arg: Filter | Context) {
+    return this.exclude(arg)
   }
 
   match(session?: Session) {
@@ -227,17 +234,14 @@ export class Context {
     return this.plugin({ using, apply: callback })
   }
 
-  plugin<T extends keyof Modules>(plugin: T, options?: boolean | Plugin.ModuleConfig<Modules[T]>): this
+  plugin(name: string, options?: any): this
   plugin<T extends Plugin>(plugin: T, options?: boolean | Plugin.Config<T>): this
-  plugin(plugin: Plugin, options?: any) {
+  plugin(entry: string | Plugin, options?: any) {
     if (options === false) return this
     if (options === true) options = undefined
     options ??= {}
 
-    if (typeof plugin === 'string') {
-      plugin = Modules.require(plugin, true)
-    }
-
+    const plugin: Plugin = typeof entry === 'string' ? Modules.require(entry, true) : entry
     if (this.app.registry.has(plugin)) {
       this.logger('app').warn(new Error('duplicate plugin detected'))
       return this
@@ -377,15 +381,13 @@ export class Context {
   }
 
   on<K extends EventName>(name: K, listener: EventMap[K], prepend?: boolean): () => boolean
-  on(name: string & EventName, listener: Disposable, prepend = false) {
+  on(name: EventName, listener: Disposable, prepend = false) {
     const method = prepend ? 'unshift' : 'push'
 
-    if (name === 'connect') {
-      name = 'ready'
-      this.logger('context').warn('event "connect" is deprecated, use "ready" instead')
-    } else if (name === 'disconnect') {
-      name = 'dispose'
-      this.logger('context').warn('event "disconnect" is deprecated, use "dispose" instead')
+    if (typeof name === 'string' && name in Context.deprecatedEvents) {
+      const alternative = Context.deprecatedEvents[name]
+      this.logger('app').warn(`event "${name}" is deprecated, use "${alternative}" instead`)
+      name = alternative
     }
 
     // handle special events
@@ -419,7 +421,8 @@ export class Context {
     return this.on(seg.join('/') as EventName, listener, !append)
   }
 
-  once<K extends EventName>(name: K, listener: EventMap[K], prepend = false) {
+  once<K extends EventName>(name: K, listener: EventMap[K], prepend?: boolean): () => boolean
+  once(name: EventName, listener: Disposable, prepend = false) {
     const dispose = this.on(name, function (...args: any[]) {
       dispose()
       return listener.apply(this, args)
@@ -610,6 +613,11 @@ export namespace Context {
   service('bots')
   service('database')
   service('model')
+
+  export const deprecatedEvents: Dict<EventName & string> = {
+    connect: 'ready',
+    disconnect: 'dispose',
+  }
 }
 
 type EventName = keyof EventMap
@@ -636,6 +644,7 @@ export interface EventMap {
   'command'(argv: Argv): Awaitable<void>
   'command-added'(command: Command): void
   'command-removed'(command: Command): void
+  'command-error'(argv: Argv, error: any): void
   'middleware'(session: Session): void
   'plugin-added'(plugin: Plugin): void
   'plugin-removed'(plugin: Plugin): void
@@ -648,7 +657,7 @@ export interface EventMap {
   'adapter'(): void
   'bot-added'(bot: Bot): void
   'bot-removed'(bot: Bot): void
-  'bot-updated'(bot: Bot): void
+  'bot-status-updated'(bot: Bot): void
   'bot-connect'(bot: Bot): Awaitable<void>
-  'bot-dispose'(bot: Bot): Awaitable<void>
+  'bot-disconnect'(bot: Bot): Awaitable<void>
 }

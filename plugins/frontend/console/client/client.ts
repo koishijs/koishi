@@ -1,6 +1,6 @@
 import { ref, reactive, h, Component, markRaw, defineComponent, resolveComponent } from 'vue'
 import { createWebHistory, createRouter } from 'vue-router'
-import { DataSource, Console, ClientConfig } from '@koishijs/plugin-console'
+import { DataSource, ClientConfig, Sources } from '@koishijs/plugin-console'
 import { EChartsOption } from 'echarts'
 import Home from './layout/home.vue'
 
@@ -11,7 +11,7 @@ declare const KOISHI_CONFIG: ClientConfig
 export const config = KOISHI_CONFIG
 
 type Store = {
-  [K in keyof Console.Services]?: Console.Services[K] extends DataSource<infer T> ? T : never
+  [K in keyof Sources]?: Sources[K] extends DataSource<infer T> ? T : never
 }
 
 export const store = reactive<Store>({})
@@ -21,7 +21,7 @@ const listeners: Record<string, (data: any) => void> = {}
 const responseHooks: Record<string, (data: any) => void> = {}
 
 export function send(type: string, ...args: any[]) {
-  const id = Math.random().toString(36).substr(2, 9)
+  const id = Math.random().toString(36).slice(2, 9)
   socket.value.send(JSON.stringify({ id, type, args }))
   return new Promise((resolve, reject) => {
     responseHooks[id] = resolve
@@ -93,7 +93,7 @@ export function registerView(options: ViewOptions) {
 interface RouteMetaExtension {
   icon?: string
   order?: number
-  fields?: readonly (keyof Console.Services)[]
+  fields?: readonly (keyof Sources)[]
   position?: 'top' | 'bottom' | 'hidden'
 }
 
@@ -139,7 +139,7 @@ registerPage({
 // component helper
 
 export namespace Card {
-  function createFieldComponent(render: Function, fields: readonly (keyof Console.Services)[] = [] as const) {
+  function createFieldComponent(render: Function, fields: readonly (keyof Sources)[] = [] as const) {
     return defineComponent({
       render: () => fields.every(key => store[key]) ? render() : null,
     })
@@ -149,7 +149,7 @@ export namespace Card {
     icon: string
     title: string
     type?: string
-    fields?: (keyof Console.Services)[]
+    fields?: (keyof Sources)[]
     content: (store: Store) => any
   }
 
@@ -165,7 +165,7 @@ export namespace Card {
 
   export interface ChartOptions {
     title: string
-    fields?: (keyof Console.Services)[]
+    fields?: (keyof Sources)[]
     options: (store: Store) => EChartsOption
   }
 

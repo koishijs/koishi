@@ -72,8 +72,8 @@ jobs:
         run: yarn compile
       - name: Build DTS
         run: yarn dtsc --listEmittedFiles
-      - name: Build for WebUI
-        run: yarn build:web
+      - name: Build Frontend
+        run: yarn fe
       - name: Upload
         uses: actions/upload-artifact@v2
         with:

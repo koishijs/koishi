@@ -2,8 +2,7 @@
   "extends": "../../tsconfig.base",
   "compilerOptions": {
     "rootDir": "src",
-    "noEmit": true,
-    "emitDeclarationOnly": false,
+    "outDir": "lib"
   },
   "include": [
     "src",

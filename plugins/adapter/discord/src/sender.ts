@@ -39,7 +39,7 @@ export class Sender {
 
   async post(data?: any, headers?: any) {
     try {
-      const result = await this.bot.http('POST', this.url, data, headers)
+      const result = await this.bot.http.post(this.url, data, { headers })
       return result.id as string
     } catch (e) {
       this.errors.push(e)
@@ -84,8 +84,9 @@ export class Sender {
 
     const sendDownload = async () => {
       const filename = basename(data.url)
-      const buffer = await this.bot.app.http.get.arraybuffer(data.url, {}, {
-        accept: type + '/*',
+      const buffer = await this.bot.app.http.get<ArrayBuffer>(data.url, {
+        headers: { accept: type + '/*' },
+        responseType: 'arraybuffer',
       })
       return this.sendEmbed(buffer, addition, data.file || filename)
     }
@@ -98,8 +99,8 @@ export class Sender {
     }
 
     // auto mode
-    await this.bot.app.http.head(data.url, {}, {
-      accept: type + '/*',
+    return await this.bot.app.http.head(data.url, {
+      headers: { accept: type + '/*' },
     }).then((headers) => {
       if (headers['content-type'].startsWith(type)) {
         return sendDirect()

@@ -28,7 +28,7 @@ export class BotProvider extends DataSource<BotProvider.Data[]> {
       bot._messageReceived.stop()
     })
 
-    ctx.on('bot-updated', () => {
+    ctx.on('bot-status-updated', () => {
       this.broadcast()
     })
   }

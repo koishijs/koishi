@@ -35,6 +35,11 @@ const cmd2 = app.command('cmd2')
   .option('--baz', '', { notUsage: true })
   .action(({ session }) => session.send('cmd2:' + session.userId))
 
+app.middleware((session, next) => {
+  if (session.content.includes('escape')) return 'early'
+  return next()
+})
+
 before(async () => {
   await app.start()
   await app.mock.initUser('123', 2)
@@ -181,10 +186,6 @@ describe('Runtime', () => {
   })
 
   describe('Middleware Validation', () => {
-    app.middleware((session) => {
-      if (session.content === 'mid') return session.send('mid')
-    })
-
     it('user.flag.ignore', async () => {
       await client1.shouldReply('cmd2', 'cmd2:123')
       await client3.shouldNotReply('cmd2')
@@ -192,7 +193,7 @@ describe('Runtime', () => {
 
     it('channel.assignee', async () => {
       await client4.shouldReply('cmd1 test --baz', 'cmd1:test')
-      await client4.shouldReply('mid', 'mid')
+      await client4.shouldReply('escape', 'early')
       await client5.shouldNotReply('cmd1 test --baz')
       await client5.shouldReply(`[CQ:at,id=${DEFAULT_SELF_ID}] cmd1 test --baz`, 'cmd1:test')
     })
@@ -200,7 +201,7 @@ describe('Runtime', () => {
     it('channel.flag.ignore', async () => {
       await app.database.setChannel('mock', '321', { flag: Channel.Flag.ignore })
       await sleep(0)
-      await client4.shouldNotReply('mid')
+      await client4.shouldNotReply('escape')
       await client4.shouldNotReply('cmd1 --baz')
       await client4.shouldNotReply(`[CQ:at,id=${DEFAULT_SELF_ID}] cmd1 --baz`)
       await app.database.setChannel('mock', '321', { flag: 0 })
@@ -277,7 +278,7 @@ describe('Runtime', () => {
       cmd3.dispose()
     })
 
-    it('command.check', async () => {
+    it('command.before()', async () => {
       const cmd3 = app.command('cmd3').action(() => 'after cmd3')
       await client1.shouldReply('cmd3', 'after cmd3')
       let value = 'before cmd3'

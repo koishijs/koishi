@@ -24,7 +24,7 @@ Koishi 官方提供了许多插件。为了更好地模块化开发，它们被�
 
 ## 资源存储支持
 
-- [@koishijs/plugin-assets-jsdelivr](./assets/jsdelivr.md)
+- [@koishijs/plugin-assets-git](./assets/git.md)
 - [@koishijs/plugin-assets-local](./assets/local.md)
 - [@koishijs/plugin-assets-remote](./assets/remote.md)
 - [@koishijs/plugin-assets-s3](./assets/s3.md)

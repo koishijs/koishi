@@ -101,18 +101,24 @@ export class GitHub extends Service {
 
   async getTokens(params: any) {
     return this.http.post<OAuth>('https://github.com/login/oauth/access_token', {
-      client_id: this.config.appId,
-      client_secret: this.config.appSecret,
-      ...params,
-    }, { Accept: 'application/json' })
+      params: {
+        client_id: this.config.appId,
+        client_secret: this.config.appSecret,
+        ...params,
+      },
+      headers: { Accept: 'application/json' },
+    })
   }
 
   private async _request(method: Method, url: string, session: ReplySession, data?: any, headers?: Dict) {
     logger.debug(method, url, data)
-    return this.http(method, url, data, {
-      accept: 'application/vnd.github.v3+json',
-      authorization: `token ${session.user.ghAccessToken}`,
-      ...headers,
+    return this.http(method, url, {
+      data,
+      headers: {
+        accept: 'application/vnd.github.v3+json',
+        authorization: `token ${session.user.ghAccessToken}`,
+        ...headers,
+      },
     })
   }
 

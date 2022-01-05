@@ -1,6 +1,6 @@
 import { Assets, Context, sanitize, trimSlash, Schema } from 'koishi'
 import { promises as fs, createReadStream, existsSync } from 'fs'
-import { extname, resolve } from 'path'
+import { extname, resolve, basename } from 'path'
 import { createHmac, createHash } from 'crypto'
 
 declare module 'koishi' {
@@ -21,7 +21,7 @@ class LocalAssets extends Assets {
 
     config.path = sanitize(config.path || '/assets')
     if (config.root) {
-      config.root = resolve(ctx.app.options.baseDir, config.root)
+      config.root = resolve(ctx.app.baseDir, config.root)
     } else {
       config.root = resolve(__dirname, '../public')
     }
@@ -37,7 +37,7 @@ class LocalAssets extends Assets {
     })
 
     ctx.router.get(config.path + '/:name', (ctx) => {
-      const filename = resolve(config.root, ctx.params.name)
+      const filename = resolve(config.root, basename(ctx.params.name))
       ctx.type = extname(filename)
       return ctx.body = createReadStream(filename)
     })
@@ -85,18 +85,10 @@ class LocalAssets extends Assets {
   async upload(url: string, file: string) {
     await this._promise
     const { selfUrl, path, root } = this.config
-    if (file) {
-      const filename = resolve(root, file)
-      if (!existsSync(filename)) {
-        const buffer = await this.download(url)
-        await this.write(buffer, filename)
-      }
-    } else {
-      const buffer = await this.download(url)
-      file = createHash('sha1').update(buffer).digest('hex')
-      await this.write(buffer, resolve(root, file))
-    }
-    return `${selfUrl}${path}/${file}`
+    const { buffer, filename } = await this.analyze(url, file)
+    const savePath = resolve(root, file)
+    await this.write(buffer, savePath)
+    return `${selfUrl}${path}/${filename}`
   }
 
   async stats() {

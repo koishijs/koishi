@@ -84,13 +84,13 @@ Koishi 完全基于 TypeScript 开发，拥有顶级的类型支持，丰富的�
 
 - [adapter-discord](https://koishi.js.org/plugins/adapter/discord.html): [Discord](https://discord.com/) 平台支持
 - [adapter-kaiheila](https://koishi.js.org/plugins/adapter/kaiheila.html): [开黑啦](https://kaiheila.cn/) 平台支持
-- [adapter-onebot](https://koishi.js.org/plugins/adapter/onebot.html): [OneBot](https://github.com/howmanybots/onebot) 协议支持，可用于 QQ
+- [adapter-onebot](https://koishi.js.org/plugins/adapter/onebot.html): [OneBot](https://github.com/howmanybots/onebot) 协议支持 (可用于 QQ)
 - [adapter-qqguild](https://koishi.js.org/plugins/adapter/qqguild.html): QQ 频道平台支持
 - [adapter-telegram](https://koishi.js.org/plugins/adapter/telegram.html): [Telegram](https://telegram.org/) 平台支持
 
 ### 静态资源存储
 
-- [assets-jsdelivr](https://koishi.js.org/plugins/assets/jsdelivr.html): 使用 jsDelivr 和 GitHub 存储静态资源
+- [assets-git](https://koishi.js.org/plugins/assets/git.html): 使用 git 仓库存储静态资源
 - [assets-local](https://koishi.js.org/plugins/assets/local.html): 使用本地文件系统存储静态资源
 - [assets-remote](https://koishi.js.org/plugins/assets/remote.html): 使用远程 Koishi 服务器存储静态资源
 - [assets-s3](https://koishi.js.org/plugins/assets/s3.html): 使用 S3 存储静态资源
@@ -134,7 +134,7 @@ Koishi 完全基于 TypeScript 开发，拥有顶级的类型支持，丰富的�
 
 ### 社区插件
 
-<!-- 名称请链接到源码仓库，忽略 koishi-plugin- 前缀，按首字母排序 -->
+名称请链接到源码仓库，忽略前缀，按首字母排序。
 
 | 名称 | 简介 |
 |:----|:----|
@@ -155,7 +155,7 @@ Koishi 完全基于 TypeScript 开发，拥有顶级的类型支持，丰富的�
 
 ### 社区项目
 
-<!-- 名称请链接到源码仓库，新项目请添加到列表结尾 -->
+名称请链接到源码仓库，新项目请添加到列表结尾。
 
 | 名称 | 简介 |
 |:----|:----|

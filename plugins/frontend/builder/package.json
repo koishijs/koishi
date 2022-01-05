@@ -1,7 +1,7 @@
 {
-  "name": "@koishijs/plugin-assets-jsdelivr",
-  "description": "A github-jsdelivr assets provider for Koishi",
-  "version": "1.0.0-beta.4",
+  "name": "@koishijs/console-builder",
+  "description": "Building utilities for @koishijs/plugin-console",
+  "version": "1.0.0-beta.0",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -16,7 +16,7 @@
   "bugs": {
     "url": "https://github.com/koishijs/koishi/issues"
   },
-  "homepage": "https://koishi.js.org/plugins/other/jsdelivr",
+  "homepage": "https://koishi.js.org/plugins/other/status.html",
   "keywords": [
     "bot",
     "qqbot",
@@ -25,17 +25,12 @@
     "chatbot",
     "koishi",
     "plugin",
-    "github",
-    "assets",
-    "jsdelivr",
-    "required:database",
-    "service:assets"
+    "webui",
+    "console",
+    "build"
   ],
-  "peerDependencies": {
-    "koishi": "^4.0.0-beta.7"
-  },
   "dependencies": {
-    "file-type": "^16.5.3",
-    "simple-git": "^2.45.1"
+    "@vitejs/plugin-vue": "^1.9.4",
+    "vite": "~2.5.10"
   }
 }

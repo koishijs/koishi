@@ -3,6 +3,7 @@ import { expect } from 'chai'
 import { inspect } from 'util'
 import mock from '@koishijs/plugin-mock'
 import jest from 'jest-mock'
+import {} from 'chai-shape'
 
 const app = new App().plugin(mock)
 const guildSession = app.mock.session({ userId: '123', guildId: '456', subtype: 'group' })
@@ -234,7 +235,7 @@ describe('Context API', () => {
 
     it('root level dispose', async () => {
       // create a context without a plugin
-      const ctx = app.except(app.platform())
+      const ctx = app.exclude(app.platform())
       await expect(ctx.dispose()).to.be.rejected
     })
 

@@ -19,7 +19,7 @@ import { useRoute } from 'vue-router'
 import Sidebar from './sidebar.vue'
 
 const route = useRoute()
-const loaded = computed(() => (route.meta.fields || []).every((key) => store[key]))
+const loaded = computed(() => route.meta.fields?.every((key) => store[key]))
 
 </script>
 

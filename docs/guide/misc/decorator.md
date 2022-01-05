@@ -118,6 +118,6 @@ function apply(ctx) {
   const ctx2 = ctx.select('database')
   ctx2.command().action(callback2.bind(ctx2))
 
-  callback3.call(ctx.channel.except('456', '789'))
+  callback3.call(ctx.channel.exclude('456', '789'))
 }
 ```

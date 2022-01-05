@@ -118,11 +118,11 @@ sidebarDepth: 2
 
 - **options.target:** `string` 目标字符串
 - **options.items:** `string[]` 源字符串列表
-- **options.next:** [`NextFunction?`](../../guide/message.md#使用中间件) 回调函数
+- **options.next:** [`Next?`](../../guide/message.md#使用中间件) 回调函数
 - **options.prefix:** `string?` 显示在候选输入前的文本
 - **options.suffix:** `string` 当只有一个选项时，显示在候选输入后的文本
 - **options.coefficient:** `number` 用于模糊匹配的相似系数，缺省时会使用 [`app.options.minSimilarity`](./app.md#options-minsimilarity)
-- **options.apply:** `(suggestion: string, next: NextFunction) => void` 确认后执行的操作
+- **options.apply:** `(suggestion: string, next: Next) => void` 确认后执行的操作
 - 返回值: `Promise<void>`
 
 尝试显示候选输入。
@@ -146,7 +146,7 @@ sidebarDepth: 2
 ### session.execute(argv, next?)
 
 - **argv:** `string | Argv` 指令文本或运行时参数对象
-- **next:** [`NextFunction`](../../guide/message.md#使用中间件) 回调函数
+- **next:** [`Next`](../../guide/message.md#使用中间件) 回调函数
 - 返回值: `Promise<void>`
 
 执行一个指令。可以传入一个 argv 对象或者指令对应的文本。

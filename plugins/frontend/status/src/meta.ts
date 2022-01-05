@@ -18,17 +18,19 @@ export class MetaProvider extends DataSource<MetaProvider.Payload> {
     this.extend(async () => ctx.assets?.stats())
     this.extend(async () => ctx.database?.stats())
 
-    this.extend(async () => ctx.database?.aggregate('user', {
-      activeUsers: { $count: 'id' },
-    }, {
-      lastCall: { $gt: new Date(new Date().getTime() - Time.day) },
-    }))
+    this.extend(async () => {
+      const activeUsers = await ctx.database?.eval('user', { $count: 'id' }, {
+        lastCall: { $gt: new Date(new Date().getTime() - Time.day) },
+      })
+      return { activeUsers }
+    })
 
-    this.extend(async () => ctx.database?.aggregate('channel', {
-      activeGuilds: { $count: 'id' },
-    }, {
-      assignee: { $ne: null },
-    }))
+    this.extend(async () => {
+      const activeGuilds = await ctx.database?.eval('channel', { $count: 'id' }, {
+        assignee: { $ne: null },
+      })
+      return { activeGuilds }
+    })
 
     ctx.model.extend('user', {
       lastCall: 'timestamp',
