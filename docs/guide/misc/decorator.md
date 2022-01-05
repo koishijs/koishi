@@ -290,6 +290,7 @@ export default class MyPlugin extends BasePlugin<MyPluginConfig> {
 - `@CommandShortcut(def: string, config?: Command.Shortcut)` 指令快捷方式。等价于 `cmd.shortcut(def, config)`。
 - `@CommandBefore(callback: Command.Action, append = false)` 等价于 `cmd.before(callback, append)`。
 - `@CommandAction(callback: Command.Action, prepend = false)` 等价于 `cmd.action(callback, append)`。
+- `@CommandUse(callback, ...args)` 指令功能配置。等价于 `cmd.use(callback, ...args)` 。
 
 > 装饰器的执行顺序为由下到上。`@CommandBefore` 会从上到下执行，而 `@CommandAction` 会从下到上执行。而作为类成员方法的回调函数会**最后**执行。 
 
@@ -297,7 +298,7 @@ export default class MyPlugin extends BasePlugin<MyPluginConfig> {
 
 指令参数也使用一组装饰器对指令参数进行注入。下列装饰器应对由 `@UseCommand` 配置的类成员方法参数进行操作。
 
-- `@PutArgv()` 注入 `Argv` 对象。
+- `@PutArgv(field?: keyof Argv)` 注入 `Argv` 对象，或 `Argv` 对象的指定字段。
 - `@PutSession(field?: keyof Session)` 注入 `Session` 对象，或 `Session` 对象的指定字段。
 - `@PutArg(index: number)` 注入指令的第 n 个参数。
 - `@PutArgs()` 注入包含指令全部参数的数组。
