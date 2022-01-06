@@ -35,19 +35,19 @@ export function apply(ctx: Context, config: Config) {
 
   const tokens: Dict<string> = {}
 
-  ctx.router.get(config.path + '/authorize', async (ctx) => {
-    const token = ctx.query.state
-    if (!token || Array.isArray(token)) return ctx.status = 400
+  ctx.router.get(config.path + '/authorize', async (koaCtx) => {
+    const token = koaCtx.query.state
+    if (!token || Array.isArray(token)) return koaCtx.status = 400
     const id = tokens[token]
-    if (!id) return ctx.status = 403
+    if (!id) return koaCtx.status = 403
     delete tokens[token]
-    const { code, state } = ctx.query
+    const { code, state } = koaCtx.query
     const data = await ctx.github.getTokens({ code, state, redirect_uri: redirect })
     await database.setUser('id', id, {
       ghAccessToken: data.access_token,
       ghRefreshToken: data.refresh_token,
     })
-    return ctx.status = 200
+    return koaCtx.status = 200
   })
 
   ctx.command('github.authorize <user>', 'GitHub 授权')

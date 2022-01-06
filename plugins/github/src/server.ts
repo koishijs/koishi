@@ -100,7 +100,7 @@ export class GitHub extends Service {
   }
 
   async getTokens(params: any) {
-    return this.http.post<OAuth>('https://github.com/login/oauth/access_token', {
+    return this.http.post<OAuth>('https://github.com/login/oauth/access_token', {}, {
       params: {
         client_id: this.config.appId,
         client_secret: this.config.appSecret,
