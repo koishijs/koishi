@@ -122,11 +122,12 @@ export function adaptSession(data: OneBot.Payload, bot?: OneBotBot) {
   const session: Partial<Session> = {}
   session.selfId = '' + data.self_id
   session.type = data.post_type as any
-  session.subtype = data.sub_type as any
+  session.subtype = ['channel', 'guild'].includes(data.sub_type) ? 'group' : data.sub_type as any
 
   if (data.post_type === 'message') {
     Object.assign(session, adaptMessage(data, bot))
-    session.subtype = data.message_type
+    session.subsubtype = data.message_type
+    session.subtype = data.message_type === 'guild' ? 'group' : data.message_type
     return session
   }
 
