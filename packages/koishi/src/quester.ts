@@ -77,7 +77,7 @@ export namespace Quester {
       url: endpoint + url,
       headers: {
         ...options.headers,
-        ...config.headers,
+        ...config?.headers,
       },
     })
 
