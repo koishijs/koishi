@@ -231,7 +231,7 @@ export class Context {
   }
 
   using(using: readonly (keyof Context.Services)[], callback: Plugin.Function<void>) {
-    return this.plugin({ using, apply: callback })
+    return this.plugin({ using, apply: callback, name: callback.name })
   }
 
   plugin(name: string, options?: any): this
