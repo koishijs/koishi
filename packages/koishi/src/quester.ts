@@ -71,13 +71,13 @@ export namespace Quester {
       options.httpsAgent = getAgent(config.proxyAgent)
     }
 
-    const request = async (url: string, config?: AxiosRequestConfig) => axios({
+    const request = async (url: string, config: AxiosRequestConfig = {}) => axios({
       ...options,
       ...config,
       url: endpoint + url,
       headers: {
         ...options.headers,
-        ...config?.headers,
+        ...config.headers,
       },
     })
 
