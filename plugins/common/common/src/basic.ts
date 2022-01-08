@@ -1,4 +1,4 @@
-import { Context, Channel, Session, noop, sleep, segment, template, makeArray, Dict, parsePlatform } from 'koishi'
+import { Context, Channel, Session, noop, sleep, segment, template, makeArray, parsePlatform } from 'koishi'
 
 template.set('common', {
   'expect-text': '请输入要发送的文本。',
@@ -160,40 +160,6 @@ export function feedback(ctx: Context, operators: string[]) {
   })
 }
 
-export interface RecallConfig {
-  recall?: number
-}
-
-export function recall(ctx: Context, { recall = 10 }: RecallConfig) {
-  ctx = ctx.guild()
-  const recent: Dict<string[]> = {}
-
-  ctx.on('send', (session) => {
-    const list = recent[session.channelId] ||= []
-    list.unshift(session.messageId)
-    if (list.length > recall) {
-      list.pop()
-    }
-  })
-
-  ctx.command('common/recall [count:number]', '撤回 bot 发送的消息', { authority: 2 })
-    .action(async ({ session }, count = 1) => {
-      const list = recent[session.channelId]
-      if (!list) return '近期没有发送消息。'
-      const removal = list.splice(0, count)
-      const delay = ctx.app.options.delay.broadcast
-      if (!list.length) delete recent[session.channelId]
-      for (let index = 0; index < removal.length; index++) {
-        if (index && delay) await sleep(delay)
-        try {
-          await session.bot.deleteMessage(session.channelId, removal[index])
-        } catch (error) {
-          ctx.logger('bot').warn(error)
-        }
-      }
-    })
-}
-
 export interface Respondent {
   match: string | RegExp
   reply: string | ((...capture: string[]) => string)
@@ -210,7 +176,7 @@ export function respondent(ctx: Context, respondents: Respondent[]) {
   })
 }
 
-export interface BasicConfig extends RecallConfig {
+export interface BasicConfig {
   echo?: boolean
   broadcast?: boolean
   contextify?: boolean
@@ -222,7 +188,6 @@ export default function apply(ctx: Context, config: BasicConfig = {}) {
   if (config.broadcast !== false) ctx.using(['database'], broadcast)
   if (config.contextify !== false) ctx.using(['database'], contextify)
   if (config.echo !== false) ctx.plugin(echo)
-  if (!(config.recall <= 0)) ctx.plugin(recall, config)
 
   const operators = makeArray(config.operator)
   if (operators.length) ctx.plugin(feedback, operators)

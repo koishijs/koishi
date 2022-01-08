@@ -92,11 +92,6 @@ describe('Common Plugin - Basic', () => {
   })
 
   it('recall', async () => {
-    const del = app.bots[0].deleteMessage = jest.fn()
-    await client2.shouldReply('recall', '近期没有发送消息。')
-    app.mock.receive(app.bots[0].createSession({ messageId: '1234', channelId: '456', guildId: '456' }).toJSON())
-    await client2.shouldNotReply('recall')
-    expect(del.mock.calls).to.have.shape([[client2.meta.channelId, '1234']])
   })
 
   it('respondents', async () => {
