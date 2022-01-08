@@ -18,8 +18,7 @@ const client2 = app.mock.client('456')
 
 before(async () => {
   await app.start()
-  await app.mock.initUser('123', 4)
-  await app.database.setUser('mock', '123', {
+  await app.mock.initUser('123', 4, {
     usage: { foo: 1, $date: Time.getDateNumber() },
     timers: { bar: now + Time.minute, $date: now + Time.day },
   })

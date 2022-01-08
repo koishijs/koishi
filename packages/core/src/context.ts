@@ -543,30 +543,28 @@ export class Context {
     if (!content) return []
 
     const data = this.database
-      ? await this.database.getAssignedChannels(['id', 'assignee', 'flag'])
+      ? await this.database.getAssignedChannels(['id', 'assignee', 'flag', 'platform'])
       : channels.map((id) => {
         const [platform] = id.split(':')
         const bot = this.bots.find(bot => bot.platform === platform)
-        return bot && { id, assignee: bot.selfId, flag: 0 }
+        return bot && { id, assignee: bot.selfId, flag: 0, platform }
       }).filter(Boolean)
 
     const assignMap: Dict<Dict<string[]>> = {}
-    for (const { id, assignee, flag } of data) {
-      if (channels && !channels.includes(id)) continue
+    for (const { id, assignee, flag, platform } of data) {
+      if (channels && !channels.includes(`${platform}:${id}`)) continue
       if (!forced && (flag & Channel.Flag.silent)) continue
-      const [type] = id.split(':')
-      const cid = id.slice(type.length + 1)
-      const map = assignMap[type] ||= {}
+      const map = assignMap[platform] ||= {}
       if (map[assignee]) {
-        map[assignee].push(cid)
+        map[assignee].push(id)
       } else {
-        map[assignee] = [cid]
+        map[assignee] = [id]
       }
     }
 
-    return (await Promise.all(Object.entries(assignMap).flatMap(([type, map]) => {
+    return (await Promise.all(Object.entries(assignMap).flatMap(([platform, map]) => {
       return this.bots.map((bot) => {
-        if (bot.platform !== type) return Promise.resolve([])
+        if (bot.platform !== platform) return Promise.resolve([])
         return bot.broadcast(map[bot.selfId] || [], content)
       })
     }))).flat(1)

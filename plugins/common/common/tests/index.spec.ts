@@ -6,9 +6,7 @@ import memory from '@koishijs/plugin-database-memory'
 import mock from '@koishijs/plugin-mock'
 import {} from 'chai-shape'
 
-const app = new App({
-  delay: { broadcast: 0 },
-})
+const app = new App()
 
 app.plugin(memory)
 app.plugin(mock)
@@ -43,18 +41,6 @@ before(async () => {
 })
 
 describe('Common Plugin - Basic', () => {
-  it('broadcast', async () => {
-    const send = app.bots[0].sendMessage = jest.fn()
-    await client1.shouldReply('broadcast', '请输入要发送的文本。')
-    expect(send.mock.calls).to.have.length(0)
-    await client1.shouldNotReply('broadcast foo')
-    expect(send.mock.calls).to.have.length(1)
-    await client1.shouldNotReply('broadcast -o foo')
-    expect(send.mock.calls).to.have.length(2)
-    await client1.shouldNotReply('broadcast -of foo')
-    expect(send.mock.calls).to.have.length(4)
-  })
-
   describe('contextify', () => {
     it('check input', async () => {
       await client1.shouldReply('ctxf -u @456', '请输入要触发的指令。')
@@ -89,9 +75,6 @@ describe('Common Plugin - Basic', () => {
     await client1.shouldNotReply(`[CQ:quote,id=1000] bar`)
     expect(send2.mock.calls).to.have.length(1)
     expect(send2.mock.calls).to.have.shape([['private:123', 'bar']])
-  })
-
-  it('recall', async () => {
   })
 
   it('respondents', async () => {

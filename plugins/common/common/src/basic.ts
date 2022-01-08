@@ -1,4 +1,4 @@
-import { Context, Channel, Session, noop, sleep, segment, template, makeArray, parsePlatform } from 'koishi'
+import { Context, Session, noop, sleep, template, makeArray, parsePlatform } from 'koishi'
 
 template.set('common', {
   'expect-text': '请输入要发送的文本。',
@@ -9,27 +9,6 @@ template.set('common', {
   'feedback-receive': '收到来自 {0} 的反馈信息：\n{1}',
   'feedback-success': '反馈信息发送成功！',
 })
-
-export function broadcast(ctx: Context) {
-  ctx.command('common/broadcast <message:text>', '全服广播', { authority: 4 })
-    .option('forced', '-f  无视 silent 标签进行广播')
-    .option('only', '-o  仅向当前账号负责的群进行广播')
-    .action(async ({ options, session }, message) => {
-      if (!message) return template('common.expect-text')
-      if (!options.only) {
-        await ctx.broadcast(message, options.forced)
-        return
-      }
-
-      const fields: ('id' | 'flag')[] = ['id']
-      if (!options.forced) fields.push('flag')
-      let channels = await ctx.database.getAssignedChannels(fields, { [session.platform]: [session.selfId] })
-      if (!options.forced) {
-        channels = channels.filter(g => !(g.flag & Channel.Flag.silent))
-      }
-      await session.bot.broadcast(channels.map(channel => channel.id), message)
-    })
-}
 
 export function contextify(ctx: Context) {
   ctx.command('common/contextify <command:text>', '在特定上下文中触发指令', { authority: 3 })
@@ -89,44 +68,6 @@ export function contextify(ctx: Context) {
     })
 }
 
-export function echo(ctx: Context) {
-  ctx.command('common/echo <message:text>', '向当前上下文发送消息', { authority: 2 })
-    .option('anonymous', '-a  匿名发送消息', { authority: 3 })
-    .option('forceAnonymous', '-A  匿名发送消息', { authority: 3 })
-    .option('escape', '-e  发送转义消息', { authority: 3 })
-    .option('user', '-u [user:user]  发送到用户', { authority: 3 })
-    .option('channel', '-c [channel:channel]  发送到频道', { authority: 3 })
-    .action(async ({ options }, message) => {
-      if (!message) return template('common.expect-text')
-
-      if (options.escape) {
-        message = segment.unescape(message)
-      }
-
-      if (options.forceAnonymous) {
-        message = segment('anonymous') + message
-      } else if (options.anonymous) {
-        message = segment('anonymous', { ignore: true }) + message
-      }
-
-      const target = options.user || options.channel
-      if (target) {
-        const [platform, id] = parsePlatform(target)
-        const bot = ctx.bots.find(bot => bot.platform === platform)
-        if (!bot) {
-          return template('common.platform-not-found')
-        } else if (options.user) {
-          await bot.sendPrivateMessage(id, message)
-        } else {
-          await bot.sendMessage(id, message, 'unknown')
-        }
-        return
-      }
-
-      return message
-    })
-}
-
 export function feedback(ctx: Context, operators: string[]) {
   type FeedbackData = [sid: string, channelId: string, guildId: string]
   const feedbacks: Record<number, FeedbackData> = {}
@@ -177,17 +118,13 @@ export function respondent(ctx: Context, respondents: Respondent[]) {
 }
 
 export interface BasicConfig {
-  echo?: boolean
-  broadcast?: boolean
   contextify?: boolean
   operator?: string | string[]
   respondent?: Respondent | Respondent[]
 }
 
 export default function apply(ctx: Context, config: BasicConfig = {}) {
-  if (config.broadcast !== false) ctx.using(['database'], broadcast)
   if (config.contextify !== false) ctx.using(['database'], contextify)
-  if (config.echo !== false) ctx.plugin(echo)
 
   const operators = makeArray(config.operator)
   if (operators.length) ctx.plugin(feedback, operators)

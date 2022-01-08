@@ -8,7 +8,6 @@ export const name = 'common'
 export interface Config extends BasicConfig {}
 
 export const Config = Schema.object({
-  broadcast: Schema.boolean().description('启用 broadcast 指令。').default(true),
   contextify: Schema.boolean().description('启用 contextify 指令。').default(true),
 })
 
