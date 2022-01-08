@@ -293,11 +293,23 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
     return fields
   }
 
-  resolve(argv: Argv) {
-    if (!argv.command) {
-      const { name = this.app.bail('parse', argv, this) } = argv
-      if (!(argv.command = this.app._commands.get(name))) return
+  private inferCommand(argv: Argv) {
+    if (argv.command) return argv.command
+    if (argv.name) return argv.command = this.app._commands.resolve(argv.name)
+
+    const { parsed, subtype } = this
+    // guild message should have prefix or appel to be interpreted as a command call
+    if (argv.root && subtype !== 'private' && parsed.prefix === null && !parsed.appel) return
+    if (!argv.tokens.length) return
+    const cmd = this.app._commands.resolve(argv.tokens[0].content)
+    if (cmd) {
+      argv.tokens.shift()
+      return argv.command = cmd
     }
+  }
+
+  resolve(argv: Argv) {
+    if (!this.inferCommand(argv)) return
     if (argv.tokens?.every(token => !token.inters.length)) {
       const { options, args, error } = argv.command.parse(argv)
       argv.options = { ...argv.options, ...options }
