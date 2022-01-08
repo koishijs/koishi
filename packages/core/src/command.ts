@@ -26,12 +26,6 @@ export namespace Command {
     checkArgCount?: boolean
     /** show command warnings */
     showWarning?: boolean
-    /** usage identifier */
-    usageName?: string
-    /** max usage per day */
-    maxUsage?: Computed<number>
-    /** min interval */
-    minInterval?: Computed<number>
     /** depend on existing commands */
     patch?: boolean
   }
@@ -76,8 +70,6 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
   static defaultConfig: Command.Config = {
     authority: 1,
     showWarning: true,
-    maxUsage: Infinity,
-    minInterval: 0,
   }
 
   static defaultOptionConfig: Argv.OptionConfig = {

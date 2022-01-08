@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 
-import { App, Time, template } from 'koishi'
-import { install } from '@sinonjs/fake-timers'
+import { App, template } from 'koishi'
 import mock from '@koishijs/plugin-mock'
 import memory from '@koishijs/plugin-database-memory'
 
@@ -13,15 +12,10 @@ app.plugin(mock)
 app.plugin(memory)
 
 const client = app.mock.client('123')
-const now = Date.now()
 
 before(async () => {
   await app.start()
   await app.mock.initUser('123', 2)
-  await app.database.setUser('mock', '123', {
-    usage: { foo7: 1, $date: Time.getDateNumber() },
-    timers: { foo8: now + Time.minute, $date: now + Time.day },
-  })
 })
 
 let message: string
@@ -57,11 +51,6 @@ describe('Help Command', () => {
     app.command('foo4', 'DESCRIPTION').usage('USAGE TEXT')
     app.command('foo5', 'DESCRIPTION').usage(({ userId }) => '' + userId)
     app.command('foo6', 'DESCRIPTION').example('EXAMPLE TEXT')
-    app.command('foo7', 'DESCRIPTION', { maxUsage: 3 })
-    app.command('foo8', 'DESCRIPTION', { minInterval: 3 * Time.minute })
-    app.command('foo9', 'DESCRIPTION', { minInterval: 3 * Time.minute })
-
-    const clock = install({ now })
 
     await client.shouldReply('help foo1', 'foo1\nDESCRIPTION\n别名：foo。')
     await client.shouldReply('help foo2', 'foo2\nDESCRIPTION\n最低权限：2 级。')
@@ -69,22 +58,16 @@ describe('Help Command', () => {
     await client.shouldReply('help foo4', 'foo4\nDESCRIPTION\nUSAGE TEXT')
     await client.shouldReply('help foo5', 'foo5\nDESCRIPTION\n123')
     await client.shouldReply('help foo6', 'foo6\nDESCRIPTION\n使用示例：\n    EXAMPLE TEXT')
-    await client.shouldReply('help foo7', 'foo7\nDESCRIPTION\n已调用次数：1/3。')
-    await client.shouldReply('help foo8', 'foo8\nDESCRIPTION\n距离下次调用还需：60/180 秒。')
-    await client.shouldReply('help foo9', 'foo9\nDESCRIPTION\n距离下次调用还需：0/180 秒。')
-
-    clock.uninstall()
   })
 
   it('command options', async () => {
     const bar = app
-      .command('bar <arg:number>', 'DESCRIPTION', { maxUsage: 2, hideOptions: true })
+      .command('bar <arg:number>', 'DESCRIPTION', { hideOptions: true })
       .option('opt1', '选项1', { authority: 2 })
-      .option('opt2', '选项2', { notUsage: true })
-      .option('opt3', '[arg:boolean]  选项3', { hidden: true })
-      .option('opt4', '-o [arg:boolean]', { hidden: true })
+      .option('opt2', '[arg:boolean]  选项3')
+      .option('opt3', '-o [arg:boolean]', { hidden: true })
 
-    await client.shouldReply('help bar', message = 'bar <arg>\nDESCRIPTION\n已调用次数：0/2。')
+    await client.shouldReply('help bar', message = 'bar <arg>\nDESCRIPTION')
 
     bar.config.hideOptions = false
 
@@ -92,7 +75,7 @@ describe('Help Command', () => {
       message,
       '可用的选项有：',
       '    --opt1  选项1',
-      '    --opt2  选项2（不计入总次数）',
+      '    --opt2 [arg]  选项3',
     ].join('\n'))
 
     await client.shouldReply('help bar -H', [
@@ -100,16 +83,15 @@ describe('Help Command', () => {
       '可用的选项有：',
       '    -h, --help  显示此信息',
       '    --opt1  选项1',
-      '    --opt2  选项2（不计入总次数）',
-      '    --opt3 [arg]  选项3',
-      '    -o, --opt4 [arg]',
+      '    --opt2 [arg]  选项3',
+      '    -o, --opt3 [arg]',
     ].join('\n'))
 
     await client.shouldReply('help bar -a', [
       message,
       '可用的选项有（括号内为额外要求的权限等级）：',
       '    (2) --opt1  选项1',
-      '    --opt2  选项2（不计入总次数）',
+      '    --opt2 [arg]  选项3',
     ].join('\n'))
   })
 

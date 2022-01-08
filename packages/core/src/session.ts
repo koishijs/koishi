@@ -276,7 +276,7 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
     return this.user = newUser
   }
 
-  collect<T extends TableType>(key: T, argv: Argv, fields = new Set<keyof Tables[T]>()) {
+  collect<T extends 'user' | 'channel'>(key: T, argv: Argv, fields = new Set<keyof Tables[T]>()) {
     const collect = (argv: Argv) => {
       argv.session = this
       if (argv.tokens) {
@@ -285,6 +285,7 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
         }
       }
       if (!this.resolve(argv)) return
+      this.app.emit(argv.session, `command/before-attach-${key}` as any, argv, fields)
       collectFields(argv, Command[`_${key}Fields`] as any, fields)
       collectFields(argv, argv.command[`_${key}Fields`] as any, fields)
     }

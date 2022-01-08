@@ -645,7 +645,11 @@ export interface EventMap {
   'command-added'(command: Command): void
   'command-removed'(command: Command): void
   'command-error'(argv: Argv, error: any): void
+  'command/before-attach-channel'(argv: Argv, fields: Set<Channel.Field>): void
+  'command/before-attach-user'(argv: Argv, fields: Set<User.Field>): void
   'middleware'(session: Session): void
+  'help/command'(output: string[], command: Command, session: Session): void
+  'help/option'(output: string, option: Argv.OptionDeclaration, command: Command, session: Session): string
   'plugin-added'(plugin: Plugin): void
   'plugin-removed'(plugin: Plugin): void
   'connect'(): Awaitable<void>

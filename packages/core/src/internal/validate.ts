@@ -1,8 +1,6 @@
-import { template, Time } from '@koishijs/utils'
+import { template } from '@koishijs/utils'
 import { Argv } from '../parser'
-import { Command } from '../command'
 import { Context } from '../context'
-import { User } from '../database'
 
 export type ValidationField = 'authority' | 'usage' | 'timers'
 
@@ -11,35 +9,27 @@ export default function validate(ctx: Context) {
   ctx.on('command-added', (cmd) => {
     cmd.userFields(({ tokens, command, options = {} }, fields) => {
       if (!command) return
-      const { maxUsage, minInterval, authority } = command.config
+      const { authority } = command.config
       let shouldFetchAuthority = authority > 0
-      let shouldFetchUsage = !!(maxUsage || minInterval)
-      for (const { name, authority, notUsage } of Object.values(command._options)) {
+      for (const { name, authority } of Object.values(command._options)) {
         if (name in options) {
           if (authority > 0) shouldFetchAuthority = true
-          if (notUsage) shouldFetchUsage = false
         } else if (tokens) {
           if (authority > 0) shouldFetchAuthority = true
         }
       }
       if (shouldFetchAuthority) fields.add('authority')
-      if (shouldFetchUsage) {
-        if (maxUsage) fields.add('usage')
-        if (minInterval) fields.add('timers')
-      }
     })
   })
 
   // check user
-  ctx.before('command', (argv: Argv<ValidationField>) => {
+  ctx.before('command', (argv: Argv<'authority'>) => {
     const { session, options, command } = argv
     if (!session.user) return
 
     function sendHint(message: string, ...param: any[]) {
       return command.config.showWarning ? template(message, param) : ''
     }
-
-    let isUsage = true
 
     // check authority
     if (session.user.authority) {
@@ -53,22 +43,6 @@ export default function validate(ctx: Context) {
         if (option.authority > session.user.authority) {
           return sendHint('internal.low-authority')
         }
-        if (option.notUsage) isUsage = false
-      }
-    }
-
-    // check usage
-    if (isUsage) {
-      const name = getUsageName(command)
-      const minInterval = command.getConfig('minInterval', session)
-      const maxUsage = command.getConfig('maxUsage', session)
-
-      if (maxUsage < Infinity && checkUsage(name, session.user, maxUsage)) {
-        return sendHint('internal.usage-exhausted')
-      }
-
-      if (minInterval > 0 && checkTimer(name, session.user, minInterval)) {
-        return sendHint('internal.too-frequent')
       }
     }
   })
@@ -100,39 +74,4 @@ export default function validate(ctx: Context) {
       }
     }
   })
-}
-
-export function getUsageName(command: Command) {
-  return command.config.usageName || command.name
-}
-
-export function getUsage(name: string, user: Pick<User, 'usage'>) {
-  const $date = Time.getDateNumber()
-  if (user.usage.$date !== $date) {
-    user.usage = { $date }
-  }
-  return user.usage[name] || 0
-}
-
-export function checkUsage(name: string, user: Pick<User, 'usage'>, maxUsage?: number) {
-  if (!user.usage) return
-  const count = getUsage(name, user)
-  if (count >= maxUsage) return true
-  if (maxUsage) {
-    user.usage[name] = count + 1
-  }
-}
-
-export function checkTimer(name: string, { timers }: Pick<User, 'timers'>, offset?: number) {
-  const now = Date.now()
-  if (!(now <= timers.$date)) {
-    for (const key in timers) {
-      if (now > timers[key]) delete timers[key]
-    }
-    timers.$date = now + Time.day
-  }
-  if (now <= timers[name]) return true
-  if (offset !== undefined) {
-    timers[name] = now + offset
-  }
 }
