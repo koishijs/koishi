@@ -134,8 +134,8 @@ export function apply(ctx: Context, config: Config) {
       return repos.map(repo => repo.name).join('\n')
     })
 
-  function subscribe(repo: string, id: string, meta: EventConfig) {
-    (subscriptions[repo] ||= {})[id] = meta
+  function subscribe(repo: string, cid: string, meta: EventConfig) {
+    (subscriptions[repo] ||= {})[cid] = meta
   }
 
   function unsubscribe(repo: string, id: string) {
@@ -247,6 +247,7 @@ export function apply(ctx: Context, config: Config) {
   const reactions = ['+1', '-1', 'laugh', 'confused', 'heart', 'hooray', 'rocket', 'eyes']
 
   const history: Dict<ReplyPayloads> = {}
+
   function safeParse(source: string) {
     try {
       return JSON.parse(source)
