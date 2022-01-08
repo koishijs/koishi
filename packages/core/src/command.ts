@@ -26,12 +26,6 @@ export namespace Command {
     checkArgCount?: boolean
     /** show command warnings */
     showWarning?: boolean
-    /** usage identifier */
-    usageName?: string
-    /** max usage per day */
-    maxUsage?: Computed<number>
-    /** min interval */
-    minInterval?: Computed<number>
     /** depend on existing commands */
     patch?: boolean
   }
@@ -65,9 +59,9 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
 
   private _userFields: FieldCollector<'user'>[] = []
   private _channelFields: FieldCollector<'channel'>[] = []
-  private _actions: Command.Action[] = []
+  private _actions: Command.Action[] = [null]
   private _checkers: Command.Action[] = [async (argv) => {
-    return this.app.serial(argv.session, 'before-command', argv)
+    return this.app.serial(argv.session, 'command/check', argv)
   }]
 
   public static enableHelp: typeof internal.enableHelp
@@ -76,8 +70,6 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
   static defaultConfig: Command.Config = {
     authority: 1,
     showWarning: true,
-    maxUsage: Infinity,
-    minInterval: 0,
   }
 
   static defaultOptionConfig: Argv.OptionConfig = {
@@ -104,7 +96,6 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
     this.config = { ...Command.defaultConfig }
     this._registerAlias(this.name)
     context.app._commandList.push(this)
-    context.app.emit('command-added', this)
   }
 
   get app() {
@@ -197,6 +188,10 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
     return typeof value === 'function' ? value(session) : value
   }
 
+  check(callback: Command.Action<U, G, A, O>, append = false) {
+    return this.before(callback, append)
+  }
+
   before(callback: Command.Action<U, G, A, O>, append = false) {
     if (append) {
       this._checkers.push(callback)
@@ -236,13 +231,18 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
       if (typeof result === 'string') return result
     }
 
-    // empty actions will cause infinite loop
-    if (!this._actions.length) return ''
-
     let index = 0
-    const queue: Next.Queue = this._actions.map((action) => async () => {
-      return action.call(this, argv, ...args)
-    })
+    const queue: Next.Queue = []
+    for (const action of this._actions) {
+      if (action) {
+        queue.push(async () => action.call(this, argv, ...args))
+      } else {
+        queue.push(...this.app.getHooks('command/action', argv.session))
+      }
+    }
+
+    // FIXME empty actions will cause infinite loop
+    if (!queue.length) return ''
     queue.push(fallback)
     const length = queue.length
     argv.next = async (callback) => {

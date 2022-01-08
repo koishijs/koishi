@@ -231,7 +231,7 @@ export class Context {
   }
 
   using(using: readonly (keyof Context.Services)[], callback: Plugin.Function<void>) {
-    return this.plugin({ using, apply: callback })
+    return this.plugin({ using, apply: callback, name: callback.name })
   }
 
   plugin(name: string, options?: any): this
@@ -307,14 +307,20 @@ export class Context {
     })
   }
 
+  * getHooks(name: EventName, session?: Session) {
+    for (const [context, callback] of this.app._hooks[name] || []) {
+      if (!context.match(session)) continue
+      yield callback
+    }
+  }
+
   async parallel<K extends EventName>(name: K, ...args: Parameters<EventMap[K]>): Promise<void>
   async parallel<K extends EventName>(session: Session, name: K, ...args: Parameters<EventMap[K]>): Promise<void>
   async parallel(...args: any[]) {
     const tasks: Promise<any>[] = []
     const session = typeof args[0] === 'object' ? args.shift() : null
     const name = args.shift()
-    for (const [context, callback] of this.app._hooks[name] || []) {
-      if (!context.match(session)) continue
+    for (const callback of this.getHooks(name, session)) {
       tasks.push((async () => {
         return callback.apply(session, args)
       })().catch(((error) => {
@@ -335,8 +341,7 @@ export class Context {
   async waterfall(...args: [any, ...any[]]) {
     const session = typeof args[0] === 'object' ? args.shift() : null
     const name = args.shift()
-    for (const [context, callback] of this.app._hooks[name] || []) {
-      if (!context.match(session)) continue
+    for (const callback of this.getHooks(name, session)) {
       const result = await callback.apply(session, args)
       args[0] = result
     }
@@ -348,8 +353,7 @@ export class Context {
   chain(...args: [any, ...any[]]) {
     const session = typeof args[0] === 'object' ? args.shift() : null
     const name = args.shift()
-    for (const [context, callback] of this.app._hooks[name] || []) {
-      if (!context.match(session)) continue
+    for (const callback of this.getHooks(name, session)) {
       const result = callback.apply(session, args)
       args[0] = result
     }
@@ -361,8 +365,7 @@ export class Context {
   async serial(...args: any[]) {
     const session = typeof args[0] === 'object' ? args.shift() : null
     const name = args.shift()
-    for (const [context, callback] of this.app._hooks[name] || []) {
-      if (!context.match(session)) continue
+    for (const callback of this.getHooks(name, session)) {
       const result = await callback.apply(session, args)
       if (isBailed(result)) return result
     }
@@ -373,8 +376,7 @@ export class Context {
   bail(...args: any[]) {
     const session = typeof args[0] === 'object' ? args.shift() : null
     const name = args.shift()
-    for (const [context, callback] of this.app._hooks[name] || []) {
-      if (!context.match(session)) continue
+    for (const callback of this.getHooks(name, session)) {
       const result = callback.apply(session, args)
       if (isBailed(result)) return result
     }
@@ -474,6 +476,7 @@ export class Context {
     const segments = path.split(/(?=[./])/g)
 
     let parent: Command, root: Command
+    const list: Command[] = []
     segments.forEach((segment, index) => {
       const code = segment.charCodeAt(0)
       const name = code === 46 ? parent.name + segment : code === 47 ? segment.slice(1) : segment
@@ -495,6 +498,7 @@ export class Context {
         return parent = command
       }
       command = new Command(name, decl, index === segments.length - 1 ? desc : '', this)
+      list.push(command)
       if (!root) root = command
       if (parent) {
         command.parent = parent
@@ -506,6 +510,7 @@ export class Context {
 
     if (desc) parent.description = desc
     Object.assign(parent.config, config)
+    list.forEach(command => this.emit('command-added', command))
     if (!config?.patch) {
       if (root) this.state.disposables.unshift(() => root.dispose())
       return parent
@@ -549,8 +554,6 @@ export class Context {
     for (const { id, assignee, flag, platform } of data) {
       if (channels && !channels.includes(`${platform}:${id}`)) continue
       if (!forced && (flag & Channel.Flag.silent)) continue
-      
-      // id = cid
       const map = assignMap[platform] ||= {}
       if (map[assignee]) {
         map[assignee].push(id)
@@ -558,9 +561,10 @@ export class Context {
         map[assignee] = [id]
       }
     }
-    return (await Promise.all(Object.entries(assignMap).flatMap(([type, map]) => {
+
+    return (await Promise.all(Object.entries(assignMap).flatMap(([platform, map]) => {
       return this.bots.map((bot) => {
-        if (bot.platform !== type) return Promise.resolve([])
+        if (bot.platform !== platform) return Promise.resolve([])
         return bot.broadcast(map[bot.selfId] || [], content)
       })
     }))).flat(1)
@@ -614,8 +618,9 @@ export namespace Context {
   service('model')
 
   export const deprecatedEvents: Dict<EventName & string> = {
-    connect: 'ready',
-    disconnect: 'dispose',
+    'connect': 'ready',
+    'disconnect': 'dispose',
+    'before-command': 'command/check',
   }
 }
 
@@ -631,7 +636,6 @@ export interface EventMap {
   // internal events
   'appellation'(name: string, session: Session): string
   'before-parse'(content: string, session: Session): Argv
-  'parse'(argv: Argv, session: Session): string
   'before-attach-channel'(session: Session, fields: Set<Channel.Field>): void
   'attach-channel'(session: Session): Awaitable<void | boolean>
   'before-attach-user'(session: Session, fields: Set<User.Field>): void
@@ -639,16 +643,18 @@ export interface EventMap {
   'before-attach'(session: Session): void
   'attach'(session: Session): void
   'before-send'(session: Session): Awaitable<void | boolean>
-  'before-command'(argv: Argv): Awaitable<void | string>
-  'command'(argv: Argv): Awaitable<void>
   'command-added'(command: Command): void
   'command-removed'(command: Command): void
   'command-error'(argv: Argv, error: any): void
+  'command/check'(argv: Argv): Awaitable<void | string>
+  'command/action'(argv: Argv): Awaitable<void | string>
+  'command/before-attach-channel'(argv: Argv, fields: Set<Channel.Field>): void
+  'command/before-attach-user'(argv: Argv, fields: Set<User.Field>): void
   'middleware'(session: Session): void
+  'help/command'(output: string[], command: Command, session: Session): void
+  'help/option'(output: string, option: Argv.OptionDeclaration, command: Command, session: Session): string
   'plugin-added'(plugin: Plugin): void
   'plugin-removed'(plugin: Plugin): void
-  'connect'(): Awaitable<void>
-  'disconnect'(): Awaitable<void>
   'ready'(): Awaitable<void>
   'dispose'(): Awaitable<void>
   'model'(name: keyof Tables): void
@@ -659,4 +665,9 @@ export interface EventMap {
   'bot-status-updated'(bot: Bot): void
   'bot-connect'(bot: Bot): Awaitable<void>
   'bot-disconnect'(bot: Bot): Awaitable<void>
+
+  // deprecated events
+  'connect'(): Awaitable<void>
+  'disconnect'(): Awaitable<void>
+  'before-command'(argv: Argv): Awaitable<void | string>
 }
