@@ -1,4 +1,5 @@
 import { Argv, Command, Context, Dict, Session, template, Time, User } from 'koishi'
+import {} from '@koishijs/plugin-admin'
 
 declare module 'koishi' {
   namespace Command {
@@ -24,6 +25,19 @@ template.set('internal', {
   'option-not-usage': '（不计入总次数）',
   'command-max-usage': '已调用次数：{0}/{1}。',
   'command-min-interval': '距离下次调用还需：{0}/{1} 秒。',
+})
+
+template.set('usage', {
+  'present': '今日 {0} 功能的调用次数为：{1}',
+  'list': '今日各功能的调用次数为：',
+  'none': '今日没有调用过消耗次数的功能。',
+})
+
+template.set('timer', {
+  'present': '定时器 {0} 的生效时间为：剩余 {1}',
+  'absent': '定时器 {0} 当前并未生效。',
+  'list': '各定时器的生效时间为：',
+  'none': '当前没有生效的定时器。',
 })
 
 export const name = 'rate-limit'
@@ -107,6 +121,67 @@ export function apply(ctx: Context) {
     }
     return output
   })
+
+  ctx.command('user.usage [key] [value:posint]', '调用次数信息', { authority: 1, adminUser: true })
+    .userFields(['usage'])
+    .option('set', '-s  设置调用次数', { authority: 4 })
+    .option('clear', '-c  清空调用次数', { authority: 4 })
+    .action(({ session, options }, name, count) => {
+      const { user } = session
+      if (options.clear) {
+        name ? delete user.usage[name] : user.usage = {}
+        return
+      }
+
+      if (options.set) {
+        if (!count) return template('internal.insufficient-arguments')
+        user.usage[name] = count
+        return
+      }
+
+      if (name) return template('usage.present', name, user.usage[name] || 0)
+      const output: string[] = []
+      for (const name of Object.keys(user.usage).sort()) {
+        if (name.startsWith('$')) continue
+        output.push(`${name}：${user.usage[name]}`)
+      }
+      if (!output.length) return template('usage.none')
+      output.unshift(template('usage.list'))
+      return output.join('\n')
+    })
+
+  ctx.command('user.timer [key] [value:date]', '定时器信息', { authority: 1, adminUser: true })
+    .userFields(['timers'])
+    .option('set', '-s  设置定时器', { authority: 4 })
+    .option('clear', '-c  清空定时器', { authority: 4 })
+    .action(({ session, options }, name, value) => {
+      const { user } = session
+      if (options.clear) {
+        name ? delete user.timers[name] : user.timers = {}
+        return
+      }
+
+      if (options.set) {
+        if (!value) return template('internal.insufficient-arguments')
+        user.timers[name] = +value
+        return
+      }
+
+      const now = Date.now()
+      if (name) {
+        const delta = user.timers[name] - now
+        if (delta > 0) return template('timer.present', name, Time.formatTime(delta))
+        return template('timer.absent', name)
+      }
+      const output: string[] = []
+      for (const name of Object.keys(user.timers).sort()) {
+        if (name.startsWith('$')) continue
+        output.push(`${name}：剩余 ${Time.formatTime(user.timers[name] - now)}`)
+      }
+      if (!output.length) return template('timer.none')
+      output.unshift(template('timer.list'))
+      return output.join('\n')
+    })
 }
 
 export function getUsageName(command: Command) {

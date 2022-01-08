@@ -476,6 +476,7 @@ export class Context {
     const segments = path.split(/(?=[./])/g)
 
     let parent: Command, root: Command
+    const list: Command[] = []
     segments.forEach((segment, index) => {
       const code = segment.charCodeAt(0)
       const name = code === 46 ? parent.name + segment : code === 47 ? segment.slice(1) : segment
@@ -497,6 +498,7 @@ export class Context {
         return parent = command
       }
       command = new Command(name, decl, index === segments.length - 1 ? desc : '', this)
+      list.push(command)
       if (!root) root = command
       if (parent) {
         command.parent = parent
@@ -508,6 +510,7 @@ export class Context {
 
     if (desc) parent.description = desc
     Object.assign(parent.config, config)
+    list.forEach(command => this.emit('command-added', command))
     if (!config?.patch) {
       if (root) this.state.disposables.unshift(() => root.dispose())
       return parent

@@ -96,7 +96,6 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
     this.config = { ...Command.defaultConfig }
     this._registerAlias(this.name)
     context.app._commandList.push(this)
-    context.app.emit('command-added', this)
   }
 
   get app() {
