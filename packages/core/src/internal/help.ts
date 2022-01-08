@@ -34,7 +34,7 @@ export function enableHelp<U extends User.Field, G extends Channel.Field, A exte
   return cmd
     .option('help', '-h  显示此信息', { hidden: true })
     .before(async ({ session, options }, ...args) => {
-      if (cmd['_actions'].length && !options['help']) return
+      if (cmd['_actions'].length > 1 && !options['help']) return
       return session.execute({
         name: 'help',
         args: [cmd.name],

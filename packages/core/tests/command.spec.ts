@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 
-import { App, Logger, Next } from 'koishi'
+import { App, Command, Logger, Next } from 'koishi'
 import { inspect } from 'util'
 import { expect } from 'chai'
 import {} from 'chai-shape'
@@ -179,16 +179,17 @@ describe('Command API', () => {
 
   describe('Execute Commands', () => {
     const app = new App().plugin(mock)
-    const command = app.command('test')
     const session = app.mock.session({})
     const warn = jest.spyOn(logger, 'warn')
     const next = jest.fn(Next.compose)
 
+    let command: Command
     beforeEach(() => {
-      command['_actions'] = []
+      command = app.command('test')
       warn.mockClear()
       next.mockClear()
     })
+    afterEach(() => command?.dispose())
 
     it('basic 1 (return undefined)', async () => {
       command.action(() => {})

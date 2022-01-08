@@ -307,14 +307,20 @@ export class Context {
     })
   }
 
+  * getHooks(name: EventName, session?: Session) {
+    for (const [context, callback] of this.app._hooks[name] || []) {
+      if (!context.match(session)) continue
+      yield callback
+    }
+  }
+
   async parallel<K extends EventName>(name: K, ...args: Parameters<EventMap[K]>): Promise<void>
   async parallel<K extends EventName>(session: Session, name: K, ...args: Parameters<EventMap[K]>): Promise<void>
   async parallel(...args: any[]) {
     const tasks: Promise<any>[] = []
     const session = typeof args[0] === 'object' ? args.shift() : null
     const name = args.shift()
-    for (const [context, callback] of this.app._hooks[name] || []) {
-      if (!context.match(session)) continue
+    for (const callback of this.getHooks(name, session)) {
       tasks.push((async () => {
         return callback.apply(session, args)
       })().catch(((error) => {
@@ -335,8 +341,7 @@ export class Context {
   async waterfall(...args: [any, ...any[]]) {
     const session = typeof args[0] === 'object' ? args.shift() : null
     const name = args.shift()
-    for (const [context, callback] of this.app._hooks[name] || []) {
-      if (!context.match(session)) continue
+    for (const callback of this.getHooks(name, session)) {
       const result = await callback.apply(session, args)
       args[0] = result
     }
@@ -348,8 +353,7 @@ export class Context {
   chain(...args: [any, ...any[]]) {
     const session = typeof args[0] === 'object' ? args.shift() : null
     const name = args.shift()
-    for (const [context, callback] of this.app._hooks[name] || []) {
-      if (!context.match(session)) continue
+    for (const callback of this.getHooks(name, session)) {
       const result = callback.apply(session, args)
       args[0] = result
     }
@@ -361,8 +365,7 @@ export class Context {
   async serial(...args: any[]) {
     const session = typeof args[0] === 'object' ? args.shift() : null
     const name = args.shift()
-    for (const [context, callback] of this.app._hooks[name] || []) {
-      if (!context.match(session)) continue
+    for (const callback of this.getHooks(name, session)) {
       const result = await callback.apply(session, args)
       if (isBailed(result)) return result
     }
@@ -373,8 +376,7 @@ export class Context {
   bail(...args: any[]) {
     const session = typeof args[0] === 'object' ? args.shift() : null
     const name = args.shift()
-    for (const [context, callback] of this.app._hooks[name] || []) {
-      if (!context.match(session)) continue
+    for (const callback of this.getHooks(name, session)) {
       const result = callback.apply(session, args)
       if (isBailed(result)) return result
     }
@@ -615,8 +617,9 @@ export namespace Context {
   service('model')
 
   export const deprecatedEvents: Dict<EventName & string> = {
-    connect: 'ready',
-    disconnect: 'dispose',
+    'connect': 'ready',
+    'disconnect': 'dispose',
+    'before-command': 'command/check',
   }
 }
 
@@ -640,11 +643,11 @@ export interface EventMap {
   'before-attach'(session: Session): void
   'attach'(session: Session): void
   'before-send'(session: Session): Awaitable<void | boolean>
-  'before-command'(argv: Argv): Awaitable<void | string>
-  'command'(argv: Argv): Awaitable<void>
   'command-added'(command: Command): void
   'command-removed'(command: Command): void
   'command-error'(argv: Argv, error: any): void
+  'command/check'(argv: Argv): Awaitable<void | string>
+  'command/action'(argv: Argv): Awaitable<void | string>
   'command/before-attach-channel'(argv: Argv, fields: Set<Channel.Field>): void
   'command/before-attach-user'(argv: Argv, fields: Set<User.Field>): void
   'middleware'(session: Session): void
@@ -652,8 +655,6 @@ export interface EventMap {
   'help/option'(output: string, option: Argv.OptionDeclaration, command: Command, session: Session): string
   'plugin-added'(plugin: Plugin): void
   'plugin-removed'(plugin: Plugin): void
-  'connect'(): Awaitable<void>
-  'disconnect'(): Awaitable<void>
   'ready'(): Awaitable<void>
   'dispose'(): Awaitable<void>
   'model'(name: keyof Tables): void
@@ -664,4 +665,9 @@ export interface EventMap {
   'bot-status-updated'(bot: Bot): void
   'bot-connect'(bot: Bot): Awaitable<void>
   'bot-disconnect'(bot: Bot): Awaitable<void>
+
+  // deprecated events
+  'connect'(): Awaitable<void>
+  'disconnect'(): Awaitable<void>
+  'before-command'(argv: Argv): Awaitable<void | string>
 }

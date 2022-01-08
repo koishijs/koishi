@@ -23,7 +23,7 @@ export default function validate(ctx: Context) {
   })
 
   // check user
-  ctx.before('command', (argv: Argv<'authority'>) => {
+  ctx.on('command/check', (argv: Argv<'authority'>) => {
     const { session, options, command } = argv
     if (!session.user) return
 
@@ -48,7 +48,7 @@ export default function validate(ctx: Context) {
   })
 
   // check argv
-  ctx.before('command', (argv: Argv) => {
+  ctx.on('command/check', (argv: Argv) => {
     const { args, options, command } = argv
     function sendHint(message: string, ...param: any[]) {
       return command.config.showWarning ? template(message, param) : ''

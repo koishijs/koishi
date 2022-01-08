@@ -50,7 +50,7 @@ export function apply(ctx: Context) {
   })
 
   // check user
-  ctx.before('command', (argv: Argv<'usage' | 'timers'>) => {
+  ctx.on('command/check', (argv: Argv<'usage' | 'timers'>) => {
     const { session, options, command } = argv
     if (!session.user) return
 
