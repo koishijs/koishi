@@ -1,4 +1,4 @@
-import { Argv, difference, observe, enumKeys, template, Context, User, Channel, Command, Extend } from 'koishi'
+import { Argv, difference, observe, enumKeys, template, Context, User, Channel, Command, Extend, parsePlatform } from 'koishi'
 
 declare module 'koishi' {
   namespace Command {
@@ -28,13 +28,6 @@ template.set('admin', {
   'invalid-assignee-platform': '代理者应与目标频道属于同一平台。',
   'not-in-group': '当前不在群组上下文中，请使用 -c 参数指定目标频道。',
 })
-
-function parsePlatform(target: string): [platform: string, id: string] {
-  const index = target.indexOf(':')
-  const platform = target.slice(0, index)
-  const id = target.slice(index + 1)
-  return [platform, id] as any
-}
 
 function adminFlag<U extends User.Field, G extends Channel.Field, A extends any[], O extends {}>(cmd: Command<U, G, A, O>, map: any, key: 'user' | 'channel') {
   return cmd

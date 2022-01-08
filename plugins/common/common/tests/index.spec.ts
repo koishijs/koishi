@@ -75,22 +75,6 @@ describe('Common Plugin - Basic', () => {
     })
   })
 
-  it('echo', async () => {
-    await client1.shouldReply('echo', '请输入要发送的文本。')
-    await client1.shouldReply('echo foo', 'foo')
-    await client1.shouldReply('echo -e &#91;&#93;', '[]')
-    await client1.shouldReply('echo -A foo', '[CQ:anonymous]foo')
-    await client1.shouldReply('echo -a foo', '[CQ:anonymous,ignore=true]foo')
-
-    const send1 = app.bots[0].sendPrivateMessage = jest.fn()
-    await client1.shouldNotReply('echo -u @100 foo')
-    expect(send1.mock.calls).to.have.shape([['100', 'foo']])
-
-    const send2 = app.bots[0].sendMessage = jest.fn()
-    await client1.shouldNotReply('echo -c #200 foo')
-    expect(send2.mock.calls).to.have.shape([['200', 'foo']])
-  })
-
   it('feedback', async () => {
     const send1 = app.bots[0].sendPrivateMessage = jest.fn(async () => '1000')
     await client1.shouldReply('feedback', '请输入要发送的文本。')

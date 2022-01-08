@@ -1,7 +1,7 @@
 {
-  "name": "@koishijs/plugin-forward",
-  "description": "Forward plugin for Koishi",
-  "version": "1.0.0-rc.1",
+  "name": "@koishijs/plugin-echo",
+  "description": "Echo plugin for Koishi",
+  "version": "1.0.0",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -19,7 +19,7 @@
   "bugs": {
     "url": "https://github.com/koishijs/koishi/issues"
   },
-  "homepage": "https://koishi.js.org/plugins/forward/",
+  "homepage": "https://koishi.js.org/plugins/echo/",
   "keywords": [
     "bot",
     "qqbot",
@@ -28,9 +28,7 @@
     "chatbot",
     "koishi",
     "plugin",
-    "relay",
-    "forward",
-    "optional:database"
+    "echo"
   ],
   "peerDependencies": {
     "koishi": "^4.0.0-rc.2"

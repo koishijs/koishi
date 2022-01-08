@@ -7,6 +7,7 @@ const specs = [
   'packages/utils/tests/*.spec.ts',
   'plugins/common/admin/tests/*.spec.ts',
   // 'plugins/common/common/tests/*.spec.ts',
+  'plugins/common/echo/tests/*.spec.ts',
   'plugins/common/forward/tests/*.spec.ts',
   'plugins/common/rate-limit/tests/*.spec.ts',
   'plugins/common/repeater/tests/*.spec.ts',
