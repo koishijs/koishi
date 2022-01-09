@@ -169,8 +169,6 @@ module.exports = {
         isGroup: true,
         children: [
           '/api/tools/cli.md',
-          '/api/tools/dev-utils.md',
-          '/api/tools/test-utils.md',
         ],
       }, {
         text: '更新与迁移',
@@ -211,13 +209,6 @@ module.exports = {
           '/plugins/assets/local.md',
           '/plugins/assets/remote.md',
           '/plugins/assets/s3.md',
-        ],
-      }, {
-        text: '缓存支持',
-        isGroup: true,
-        children: [
-          '/plugins/cache/lru.md',
-          '/plugins/cache/redis.md',
         ],
       }, {
         text: '控制台开发',
@@ -276,6 +267,7 @@ module.exports = {
         isGroup: true,
         children: [
           '/plugins/other/github.md',
+          '/plugins/other/mock.md',
           '/plugins/other/puppeteer.md',
           '/plugins/other/schedule.md',
         ],
