@@ -73,7 +73,9 @@ export default class MyPlugin {
 
 为了简化插件的半歇，插件基类 `BasePlugin<Config>` 实现了上面的构造函数定义。因此上面的代码可以简化为：
 
-> `@DefinePlugin` 装饰器不可省略。
+::: warning
+`@DefinePlugin` 装饰器不可省略。
+:::
 
 ```ts
 // 在此处定义 Config 的 Schema 描述模式
@@ -86,9 +88,11 @@ export default class MyPlugin extends BasePlugin<Config> {}
 
 ## 属性注入
 
-您可以在类成员变量中，使用装饰器进行注入成员变量。**注入的变量在构造函数中无效。**请在 `onApply` 等生命周期钩子函数中调用。
+您可以在类成员变量中，使用装饰器进行注入成员变量。**注入的变量在构造函数中无效**。请在 `onApply` 等生命周期钩子函数中调用。
 
-> 请不要在构造函数中进行对这些字段对访问。
+::: warning
+请不要在构造函数中进行对这些字段对访问。
+:::
 
 ```ts
 @DefinePlugin({ name: 'my-plugin', schema: Config })
@@ -114,12 +118,12 @@ export default class MyPlugin {
 
 ### API
 
-- `@InjectContext(select?: Selection)` 注入上下文对象。**注入的上下文对象会受全局选择器影响。**
+- `@InjectContext(select?: Selection)` 注入上下文对象。**注入的上下文对象会受全局选择器影响**。
 - `@InjectApp()` 注入 Koishi 实例对象。
 - `@InjectConfig()` 注入插件配置。
 - `@InjectLogger(name: string)` 注入 Koishi 日志记录器。
-- `@Inject(name?: string, addUsing?: boolean)` 在插件类某一属性注入特定上下文 Service 。 `name` 若为空则默认为类方法名。
-  * `addUsing` 若为 `true` 则会为插件注册的 Service 。
+- `@Inject(name?: string, addUsing?: boolean)` 在插件类某一属性注入特定上下文 Service。`name` 若为空则默认为类方法名。
+  * `addUsing` 若为 `true` 则会为插件注册的 Service。
 
 ## 钩子方法
 
@@ -152,7 +156,7 @@ export default class MyPlugin extends BasePlugin<Config> implements LifecycleEve
 
 对于每一个成员字段，系统将会尝试推断这些字段类型，也可以使用 `type` 参数手动指定类型或另一个 Schema 对象。
 
-特别的，系统可以推断出某一字段是否为数组，但是无法推断数组内部的类型。因此下例中我们**必须**手动指定 `someArray` 的内部类型为 `string` 。
+特别的，系统可以推断出某一字段是否为数组，但是无法推断数组内部的类型。因此下例中我们**必须**手动指定 `someArray` 的内部类型为 `string`。
 
 ```ts
 @DefineSchema() // Config 类本身会成为 Schema 对象
@@ -290,9 +294,11 @@ export default class MyPlugin extends BasePlugin<MyPluginConfig> {
 - `@CommandShortcut(def: string, config?: Command.Shortcut)` 指令快捷方式。等价于 `cmd.shortcut(def, config)`。
 - `@CommandBefore(callback: Command.Action, append = false)` 等价于 `cmd.before(callback, append)`。
 - `@CommandAction(callback: Command.Action, prepend = false)` 等价于 `cmd.action(callback, append)`。
-- `@CommandUse(callback, ...args)` 指令功能配置。等价于 `cmd.use(callback, ...args)` 。
+- `@CommandUse(callback, ...args)` 指令功能配置。等价于 `cmd.use(callback, ...args)`。
 
-> 装饰器的执行顺序为由下到上。`@CommandBefore` 会从上到下执行，而 `@CommandAction` 会从下到上执行。而作为类成员方法的回调函数会**最后**执行。 
+::: tip
+装饰器的执行顺序为由下到上。`@CommandBefore` 会从上到下执行，而 `@CommandAction` 会从下到上执行。而作为类成员方法的回调函数会**最后**执行。
+:::
 
 ### 指令参数
 
@@ -302,11 +308,11 @@ export default class MyPlugin extends BasePlugin<MyPluginConfig> {
 - `@PutSession(field?: keyof Session)` 注入 `Session` 对象，或 `Session` 对象的指定字段。
 - `@PutArg(index: number)` 注入指令的第 n 个参数。
 - `@PutArgs()` 注入包含指令全部参数的数组。
-- `@PutOption(name: string, desc: string, config: Argv.OptionConfig = {})` 给指令添加选项并注入到该参数。等价于 `cmd.option(name, desc, config)` 。
+- `@PutOption(name: string, desc: string, config: Argv.OptionConfig = {})` 给指令添加选项并注入到该参数。等价于 `cmd.option(name, desc, config)`。
 - `@PutUser(fields: string[])` 添加一部分字段用于观测，并将 User 对象注入到该参数。
 - `@PutChannel(fields: string[])` 添加一部分字段用于观测，并将 Channel 对象注入到该参数。
 - `@PutUserName(useDatabase: boolean = true)` 注入当前用户的用户名。
-  * `useDatabase` 是否尝试从数据库获取用户名。**会自动把 `name` 加入用户观察者属性中。**
+  * `useDatabase` 是否尝试从数据库获取用户名。**会自动把 `name` 加入用户观察者属性中**。
 - `@PutNext()` 注入 `argv.next` 方法。
 
 ### 子指令
