@@ -155,6 +155,7 @@ class MongoDatabase extends Database {
         data[primary] = latest ? +latest[primary] + 1 : 1
         if (Model.Field.string.includes(fields[primary].type)) {
           data[primary] += ''
+          data[primary] = data[primary].padStart(8, '0')
         }
       }
       const copy = { ...this.ctx.model.create(name), ...data }
