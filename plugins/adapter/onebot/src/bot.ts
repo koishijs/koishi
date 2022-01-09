@@ -1,19 +1,6 @@
 import { Bot, segment, Adapter, Dict, Schema, Quester, Logger, camelize, noop } from 'koishi'
 import * as OneBot from './utils'
 
-export interface BotConfig extends Bot.BaseConfig, Quester.Config {
-  selfId?: string
-  token?: string
-}
-
-export const BotConfig: Schema<BotConfig> = Schema.intersect([
-  Schema.object({
-    selfId: Schema.string(),
-    token: Schema.string(),
-  }),
-  Quester.Config,
-])
-
 export function renderText(source: string) {
   return segment.parse(source).reduce((prev, { type, data }) => {
     if (type === 'at') {
@@ -28,6 +15,19 @@ export function renderText(source: string) {
     return prev + segment(type, data)
   }, '')
 }
+
+export interface BotConfig extends Bot.BaseConfig, Quester.Config {
+  selfId?: string
+  token?: string
+}
+
+export const BotConfig: Schema<BotConfig> = Schema.intersect([
+  Schema.object({
+    selfId: Schema.string(),
+    token: Schema.string(),
+  }),
+  Quester.Config,
+])
 
 export class OneBotBot extends Bot<BotConfig> {
   static schema = OneBot.AdapterConfig
