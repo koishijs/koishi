@@ -1,9 +1,11 @@
 import { Adapter, App, Context, Dict, omit, pick, Plugin, Schema } from 'koishi'
 import { DataSource } from '@koishijs/plugin-console'
-import { readdir, readFile } from 'fs/promises'
+import { promises as fsp } from 'fs'
 import { dirname } from 'path'
 import { Package } from './utils'
 import {} from '@koishijs/cli'
+
+const { readdir, readFile } = fsp
 
 function unwrap(module: any) {
   return module.default || module
