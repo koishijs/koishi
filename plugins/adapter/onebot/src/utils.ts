@@ -47,7 +47,7 @@ export const adaptAuthor = (user: OneBot.SenderInfo, anonymous?: OneBot.Anonymou
   roles: [user.role],
 })
 
-export function adaptMessage(message: OneBot.Message, bot?: OneBotBot): Bot.Message {
+export function adaptMessage(message: OneBot.Message): Bot.Message {
   const author = adaptAuthor(message.sender, message.anonymous)
   const result: Bot.Message = {
     author,
@@ -56,9 +56,6 @@ export function adaptMessage(message: OneBot.Message, bot?: OneBotBot): Bot.Mess
     timestamp: message.time * 1000,
     content: segment.transform(message.message, {
       at({ qq }) {
-        if (bot?.isGuildServiceAvailable() && qq === bot.guildProfile.userId) {
-          return segment.at(bot.selfId)
-        }
         if (qq !== 'all') return segment.at(qq)
         return segment('at', { type: 'all' })
       },
@@ -109,28 +106,36 @@ export const adaptChannel = (info: OneBot.GroupInfo | OneBot.ChannelInfo): Bot.C
   }
 }
 
+const useGuildBot = Symbol('onebot.useGuildBot')
+
 export function dispatchSession(bot: OneBotBot, data: OneBot.Payload) {
-  const payload = adaptSession(data, bot)
+  const payload = adaptSession(data)
   if (!payload) return
+  if (payload[useGuildBot]) bot = bot.guildBot
   const session = new Session(bot, payload)
   defineProperty(session, 'onebot', Object.create(bot.internal))
   Object.assign(session.onebot, data)
   bot.adapter.dispatch(session)
 }
 
-export function adaptSession(data: OneBot.Payload, bot?: OneBotBot) {
+export function adaptSession(data: OneBot.Payload) {
   const session: Partial<Session> = {}
   session.selfId = '' + data.self_id
-  session.type = data.post_type as any
-  session.subtype = ['channel', 'guild'].includes(data.sub_type) ? 'group' : data.sub_type as any
+  session.type = data.post_type
 
   if (data.post_type === 'message') {
-    Object.assign(session, adaptMessage(data, bot))
+    Object.assign(session, adaptMessage(data))
     session.subsubtype = data.message_type
-    session.subtype = data.message_type === 'guild' ? 'group' : data.message_type
+    if (data.message_type === 'guild') {
+      session[useGuildBot] = true
+      session.subtype = 'group'
+    } else {
+      session.subtype = data.message_type
+    }
     return session
   }
 
+  session.subtype = data.sub_type
   if (data.user_id) session.userId = '' + data.user_id
   if (data.group_id) session.guildId = session.channelId = '' + data.group_id
   if (data.guild_id) session.guildId = '' + data.guild_id
@@ -199,25 +204,26 @@ export function adaptSession(data: OneBot.Payload, bot?: OneBotBot) {
       case 'message_reactions_updated':
         session.type = 'onebot'
         session.subtype = 'message-reactions-updated'
+        session[useGuildBot] = true
+        break
       case 'channel_created':
         session.type = 'onebot'
         session.subtype = 'channel-created'
+        session[useGuildBot] = true
+        break
       case 'channel_updated':
         session.type = 'onebot'
         session.subtype = 'channel-updated'
+        session[useGuildBot] = true
+        break
       case 'channel_destroyed':
         session.type = 'onebot'
         session.subtype = 'channel-destroyed'
+        session[useGuildBot] = true
+        break
+      default: return
     }
   } else return
 
   return session
-}
-
-export async function runIfFailBlank<T>(fun: () => Promise<T[]>): Promise<T[]> {
-  try {
-    return (await fun()) || []
-  } catch (e) {
-    return []
-  }
 }
