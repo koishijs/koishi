@@ -5,6 +5,7 @@ import { User, Channel } from './database'
 import { FieldCollector, Session, Computed } from './session'
 import { KoishiError } from './error'
 import * as internal from './internal'
+import Schema from 'schemastery'
 
 const logger = new Logger('command')
 
@@ -281,4 +282,13 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
       remove(this.parent.children, this)
     }
   }
+}
+
+export namespace Command {
+  export const Config: Schema<Config> = Schema.object({
+    authority: Schema.number(),
+    hidden: Schema.boolean(),
+    checkArgCount: Schema.boolean(),
+    checkUnknown: Schema.boolean(),
+  })
 }

@@ -1,13 +1,24 @@
-import { Command, Context, Dict } from 'koishi'
+import { Command, Context, Dict, Schema } from 'koishi'
 
 export interface Override extends Command.Config {
   name?: string
 }
 
+export const Override: Schema<Override> = Schema.intersect([
+  Schema.object({
+    name: Schema.string(),
+  }),
+  Command.Config,
+])
+
+export type Config = Dict<Override>
+
+export const Config = Schema.dict(Override)
+
 export const name = 'override'
 
-export function apply(ctx: Context, config: Dict<Override>) {
-  const legacy: Dict<Override> = {}
+export function apply(ctx: Context, config: Config) {
+  const legacy: Config = {}
 
   function override(cmd: Command, config: Override) {
     const { name, ...options } = config
