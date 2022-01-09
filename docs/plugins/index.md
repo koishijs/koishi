@@ -29,11 +29,6 @@ Koishi 官方提供了许多插件。为了更好地模块化开发，它们被�
 - [@koishijs/plugin-assets-remote](./assets/remote.md)
 - [@koishijs/plugin-assets-s3](./assets/s3.md)
 
-## 缓存支持
-
-- [@koishijs/plugin-cache-lru](./cache/lru.md)
-- [@koishijs/plugin-cache-redis](./cache/redis.md)
-
 ## 控制台开发
 
 - [@koishijs/plugin-console](./console/console.md)
@@ -54,5 +49,6 @@ Koishi 官方提供了许多插件。为了更好地模块化开发，它们被�
 
 - [@koishijs/plugin-common](./common/)：常用指令
 - [@koishijs/plugin-github](./other/github.md)：接入 GitHub
+- [@koishijs/plugin-mock](./other/mock.md)：测试工具
 - [@koishijs/plugin-puppeteer](./other/puppeteer.md)：网页截图
 - [@koishijs/plugin-schedule](./other/schedule.md)：计划任务

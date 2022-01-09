@@ -4,7 +4,7 @@ import { Builder, Caster } from '@koishijs/sql-utils'
 import sqlite, { Statement } from 'better-sqlite3'
 import { resolve } from 'path'
 import { escape as sqlEscape, escapeId, format } from 'sqlstring-sqlite'
-import { stat } from 'fs/promises'
+import { promises as fsp } from 'fs'
 
 declare module 'koishi' {
   interface Database {
@@ -200,7 +200,7 @@ class SQLiteDatabase extends Database {
 
   async stats() {
     if (this.#path === ':memory:') return {}
-    const { size } = await stat(this.#path)
+    const { size } = await fsp.stat(this.#path)
     return { size }
   }
 

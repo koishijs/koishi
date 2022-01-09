@@ -8,8 +8,6 @@ export interface User {
   flag: number
   authority: number
   name: string
-  usage: Dict<number>
-  timers: Dict<number>
 }
 
 export namespace User {

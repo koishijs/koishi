@@ -1,0 +1,42 @@
+{
+  "name": "@koishijs/plugin-rate-limit",
+  "description": "Set rate limits for commands in Koishi",
+  "version": "1.0.0",
+  "main": "lib/index.js",
+  "typings": "lib/index.d.ts",
+  "files": [
+    "lib"
+  ],
+  "author": "Shigma <shigma10826@gmail.com>",
+  "license": "MIT",
+  "scripts": {
+    "lint": "eslint src --ext .ts"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/koishijs/koishi.git"
+  },
+  "bugs": {
+    "url": "https://github.com/koishijs/koishi/issues"
+  },
+  "homepage": "https://koishi.js.org/plugins/rate-limit/",
+  "keywords": [
+    "bot",
+    "qqbot",
+    "cqhttp",
+    "coolq",
+    "chatbot",
+    "koishi",
+    "plugin",
+    "rate-limit"
+  ],
+  "peerDependencies": {
+    "koishi": "^4.0.0-rc.2"
+  },
+  "devDependencies": {
+    "@koishijs/plugin-mock": "^1.0.0-rc.0"
+  },
+  "dependencies": {
+    "@koishijs/command-utils": "^1.0.0"
+  }
+}

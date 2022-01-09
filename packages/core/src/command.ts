@@ -5,6 +5,7 @@ import { User, Channel } from './database'
 import { FieldCollector, Session, Computed } from './session'
 import { KoishiError } from './error'
 import * as internal from './internal'
+import Schema from 'schemastery'
 
 const logger = new Logger('command')
 
@@ -26,12 +27,6 @@ export namespace Command {
     checkArgCount?: boolean
     /** show command warnings */
     showWarning?: boolean
-    /** usage identifier */
-    usageName?: string
-    /** max usage per day */
-    maxUsage?: Computed<number>
-    /** min interval */
-    minInterval?: Computed<number>
     /** depend on existing commands */
     patch?: boolean
   }
@@ -65,19 +60,16 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
 
   private _userFields: FieldCollector<'user'>[] = []
   private _channelFields: FieldCollector<'channel'>[] = []
-  private _actions: Command.Action[] = []
+  private _actions: Command.Action[] = [null]
   private _checkers: Command.Action[] = [async (argv) => {
-    return this.app.serial(argv.session, 'before-command', argv)
+    return this.app.serial(argv.session, 'command/check', argv)
   }]
 
   public static enableHelp: typeof internal.enableHelp
-  public static handleError: typeof internal.handleError
 
   static defaultConfig: Command.Config = {
     authority: 1,
     showWarning: true,
-    maxUsage: Infinity,
-    minInterval: 0,
   }
 
   static defaultOptionConfig: Argv.OptionConfig = {
@@ -102,9 +94,8 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
   constructor(name: string, decl: string, desc: string, public context: Context) {
     super(name, decl, desc)
     this.config = { ...Command.defaultConfig }
-    this._registerAlias(this.name)
+    this._registerAlias(name.toLowerCase())
     context.app._commandList.push(this)
-    context.app.emit('command-added', this)
   }
 
   get app() {
@@ -112,7 +103,6 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
   }
 
   private _registerAlias(name: string) {
-    name = name.toLowerCase()
     this._aliases.push(name)
     const previous = this.app._commands.get(name)
     if (!previous) {
@@ -138,7 +128,9 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
 
   alias(...names: string[]) {
     if (this._disposed) return this
-    for (const name of names) {
+    for (const _name of names) {
+      const name = _name.toLowerCase()
+      if (this._aliases.includes(name)) continue
       this._registerAlias(name)
       this._disposables?.push(() => {
         remove(this._aliases, name)
@@ -197,6 +189,10 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
     return typeof value === 'function' ? value(session) : value
   }
 
+  check(callback: Command.Action<U, G, A, O>, append = false) {
+    return this.before(callback, append)
+  }
+
   before(callback: Command.Action<U, G, A, O>, append = false) {
     if (append) {
       this._checkers.push(callback)
@@ -236,13 +232,18 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
       if (typeof result === 'string') return result
     }
 
-    // empty actions will cause infinite loop
-    if (!this._actions.length) return ''
-
     let index = 0
-    const queue: Next.Queue = this._actions.map((action) => async () => {
-      return action.call(this, argv, ...args)
-    })
+    const queue: Next.Queue = []
+    for (const action of this._actions) {
+      if (action) {
+        queue.push(async () => action.call(this, argv, ...args))
+      } else {
+        queue.push(...this.app.getHooks('command/action', argv.session))
+      }
+    }
+
+    // FIXME empty actions will cause infinite loop
+    if (!queue.length) return ''
     queue.push(fallback)
     const length = queue.length
     argv.next = async (callback) => {
@@ -281,4 +282,13 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
       remove(this.parent.children, this)
     }
   }
+}
+
+export namespace Command {
+  export const Config: Schema<Config> = Schema.object({
+    authority: Schema.number(),
+    hidden: Schema.boolean(),
+    checkArgCount: Schema.boolean(),
+    checkUnknown: Schema.boolean(),
+  })
 }

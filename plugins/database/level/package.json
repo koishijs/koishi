@@ -36,7 +36,7 @@
   "devDependencies": {
     "@koishijs/plugin-mock": "^1.0.0-rc.0",
     "@koishijs/test-utils": "^8.0.0-rc.1",
-    "@types/abstract-leveldown": "^5.0.2",
+    "@types/abstract-leveldown": "^7.2.0",
     "@types/level": "^6.0.0",
     "@types/subleveldown": "^4.1.1"
   },

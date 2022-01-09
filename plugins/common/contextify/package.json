@@ -1,0 +1,43 @@
+{
+  "name": "@koishijs/plugin-contextify",
+  "description": "Simulate other contexts in Koishi",
+  "version": "1.0.0",
+  "main": "lib/index.js",
+  "typings": "lib/index.d.ts",
+  "files": [
+    "lib"
+  ],
+  "author": "Shigma <shigma10826@gmail.com>",
+  "license": "MIT",
+  "scripts": {
+    "lint": "eslint src --ext .ts"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/koishijs/koishi.git"
+  },
+  "bugs": {
+    "url": "https://github.com/koishijs/koishi/issues"
+  },
+  "homepage": "https://koishi.js.org/plugins/contextify/",
+  "keywords": [
+    "bot",
+    "qqbot",
+    "cqhttp",
+    "coolq",
+    "chatbot",
+    "koishi",
+    "plugin",
+    "contextify"
+  ],
+  "peerDependencies": {
+    "koishi": "^4.0.0-rc.2"
+  },
+  "devDependencies": {
+    "@koishijs/plugin-database-memory": "^1.0.0-rc.1",
+    "@koishijs/plugin-mock": "^1.0.0-rc.0"
+  },
+  "dependencies": {
+    "@koishijs/command-utils": "^1.0.0"
+  }
+}
