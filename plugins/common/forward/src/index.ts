@@ -1,19 +1,7 @@
 import { Context, Session, Dict, Time, template } from 'koishi'
-
-declare module 'koishi' {
-  interface Modules {
-    forward: typeof import('.')
-  }
-}
+import { parsePlatform } from '@koishijs/command-utils'
 
 template.set('forward', '{0}: {1}')
-
-function parsePlatform(target: string): [platform: string, id: string] {
-  const index = target.indexOf(':')
-  const platform = target.slice(0, index)
-  const id = target.slice(index + 1)
-  return [platform, id] as any
-}
 
 export interface ForwardOptions {
   source: string

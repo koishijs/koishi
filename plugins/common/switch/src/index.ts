@@ -1,5 +1,5 @@
-import { Command, Context, template, deduplicate, difference, intersection, Argv } from 'koishi'
-import { adminChannel } from '@koishijs/plugin-admin'
+import { Context, template, deduplicate, difference, intersection, Argv } from 'koishi'
+import { adminChannel } from '@koishijs/command-utils'
 
 declare module 'koishi' {
   interface Channel {
@@ -43,7 +43,8 @@ export function apply(ctx: Context, config: Config = {}) {
     .channelFields(['disable'])
     .userFields(['authority'])
     .use(adminChannel)
-    .action(async ({ session, channel }, ...names: string[]) => {
+    .action(async ({ session }, ...names: string[]) => {
+      const channel = session.channel
       if (!names.length) {
         if (!channel.disable.length) return template('switch.none')
         return template('switch.list', channel.disable.join(', '))

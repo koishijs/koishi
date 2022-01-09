@@ -37,5 +37,8 @@
   },
   "devDependencies": {
     "@koishijs/plugin-mock": "^1.0.0-rc.0"
+  },
+  "dependencies": {
+    "@koishijs/command-utils": "^1.0.0"
   }
 }

@@ -1,7 +1,7 @@
 {
-  "name": "@koishijs/plugin-common",
-  "description": "Common plugins for Koishi",
-  "version": "5.0.0-rc.1",
+  "name": "@koishijs/command-utils",
+  "description": "Command utilities for Koishi",
+  "version": "1.0.0",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -19,7 +19,7 @@
   "bugs": {
     "url": "https://github.com/koishijs/koishi/issues"
   },
-  "homepage": "https://koishi.js.org/plugins/common/",
+  "homepage": "https://koishi.js.org/plugins/echo/",
   "keywords": [
     "bot",
     "qqbot",
@@ -27,17 +27,12 @@
     "coolq",
     "chatbot",
     "koishi",
-    "plugin",
-    "optional:database"
+    "command"
   ],
   "peerDependencies": {
     "koishi": "^4.0.0-rc.2"
   },
   "devDependencies": {
-    "@koishijs/plugin-database-memory": "^1.0.0-rc.1",
     "@koishijs/plugin-mock": "^1.0.0-rc.0"
-  },
-  "dependencies": {
-    "@koishijs/command-utils": "^1.0.0"
   }
 }

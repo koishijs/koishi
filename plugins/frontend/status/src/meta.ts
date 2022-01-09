@@ -36,7 +36,7 @@ export class MetaProvider extends DataSource<MetaProvider.Payload> {
       lastCall: 'timestamp',
     })
 
-    ctx.any().on('command', ({ session }: Argv<'lastCall'>) => {
+    ctx.any().before('command', ({ session }: Argv<'lastCall'>) => {
       if (!ctx.database) return
       session.user.lastCall = new Date()
     })

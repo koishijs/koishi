@@ -65,7 +65,6 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
   }]
 
   public static enableHelp: typeof internal.enableHelp
-  public static handleError: typeof internal.handleError
 
   static defaultConfig: Command.Config = {
     authority: 1,

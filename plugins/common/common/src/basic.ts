@@ -1,4 +1,5 @@
-import { Context, Session, noop, sleep, template, makeArray, parsePlatform } from 'koishi'
+import { Context, Session, noop, sleep, template, makeArray } from 'koishi'
+import { parsePlatform } from '@koishijs/command-utils'
 
 template.set('common', {
   'expect-text': '请输入要发送的文本。',

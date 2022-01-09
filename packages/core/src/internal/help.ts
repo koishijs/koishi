@@ -1,4 +1,4 @@
-import { Awaitable, template } from '@koishijs/utils'
+import { template } from '@koishijs/utils'
 import { Argv } from '../parser'
 import { Command } from '../command'
 import { Context } from '../context'
@@ -14,20 +14,6 @@ interface HelpOptions {
 export interface HelpConfig extends Command.Config {
   shortcut?: boolean
   options?: boolean
-}
-
-export function handleError<U extends User.Field, G extends Channel.Field, A extends any[], O extends {}>(
-  cmd: Command<U, G, A, O>,
-  handler: (error: Error, argv: Argv<U, G, A, O>) => Awaitable<void | string>,
-) {
-  return cmd.action(async (argv, ...args) => {
-    try {
-      return await argv.next()
-    } catch (error) {
-      if (handler) return handler(error, argv)
-      return template('internal.error-encountered', error.message)
-    }
-  }, true)
 }
 
 export function enableHelp<U extends User.Field, G extends Channel.Field, A extends any[], O extends {}>(cmd: Command<U, G, A, O>) {
@@ -213,7 +199,6 @@ template.set('internal', {
   'unknown-option': '存在未知选项 {0}，输入帮助以查看用法。',
   'invalid-option': '选项 {0} 输入无效，{1}',
   'check-syntax': '输入帮助以查看用法。',
-  'error-encountered': '发生未知错误。',
 
   // parser
   'invalid-number': '请提供一个数字。',

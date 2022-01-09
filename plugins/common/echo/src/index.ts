@@ -1,4 +1,5 @@
-import { Context, parsePlatform, segment, template } from 'koishi'
+import { Context, segment, template } from 'koishi'
+import { parsePlatform } from '@koishijs/command-utils'
 
 template.set('echo', {
   'expect-text': '请输入要发送的文本。',

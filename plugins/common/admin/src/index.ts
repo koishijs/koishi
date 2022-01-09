@@ -3,8 +3,6 @@ import * as admin from './admin'
 import * as bind from './bind'
 import * as callme from './callme'
 
-export { adminChannel, adminUser } from './admin'
-
 export interface Config extends bind.Config {
   admin?: boolean
   bind?: boolean

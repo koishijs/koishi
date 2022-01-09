@@ -15,6 +15,7 @@
       ],
       "@koishijs/*": [
         "packages/*/src",
+        "plugins/common/*/src",
         "plugins/database/*/src",
       ],
       "koishi": ["packages/koishi/src"],
