@@ -158,9 +158,11 @@ async function showHelp(command: Command, session: Session<'authority'>, config:
   if (session.app.database) {
     const argv: Argv = { command, args: [], options: { help: true } }
     const userFields = session.collect('user', argv)
-    const channelFields = session.collect('channel', argv)
     await session.observeUser(userFields)
-    await session.observeChannel(channelFields)
+    if (session.subtype === 'group') {
+      const channelFields = session.collect('channel', argv)
+      await session.observeChannel(channelFields)
+    }
   }
 
   if (command._aliases.length > 1) {
