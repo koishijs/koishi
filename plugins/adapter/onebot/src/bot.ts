@@ -35,8 +35,6 @@ export class OneBotBot extends Bot<BotConfig> {
   public internal = new Internal()
   public guildBot: QQGuildBot
 
-  guildProfile: Bot.User
-
   constructor(adapter: Adapter, config: BotConfig) {
     super(adapter, config)
     this.selfId = config.selfId
