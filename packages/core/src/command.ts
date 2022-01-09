@@ -93,7 +93,7 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
   constructor(name: string, decl: string, desc: string, public context: Context) {
     super(name, decl, desc)
     this.config = { ...Command.defaultConfig }
-    this._registerAlias(this.name)
+    this._registerAlias(name.toLowerCase())
     context.app._commandList.push(this)
   }
 
@@ -102,7 +102,6 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
   }
 
   private _registerAlias(name: string) {
-    name = name.toLowerCase()
     this._aliases.push(name)
     const previous = this.app._commands.get(name)
     if (!previous) {
@@ -128,7 +127,9 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
 
   alias(...names: string[]) {
     if (this._disposed) return this
-    for (const name of names) {
+    for (const _name of names) {
+      const name = _name.toLowerCase()
+      if (this._aliases.includes(name)) continue
       this._registerAlias(name)
       this._disposables?.push(() => {
         remove(this._aliases, name)
