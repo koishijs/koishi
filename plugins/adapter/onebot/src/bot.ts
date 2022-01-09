@@ -57,7 +57,7 @@ export class OneBotBot extends Bot<BotConfig> {
     this.guildBot.selfId = profile.tiny_id
     this.guildBot.avatar = profile.avatar_url
     this.guildBot.username = profile.nickname
-    this.guildBot.resolve()
+    this.guildBot.internal = this.internal
   }
 
   sendMessage(channelId: string, content: string, guildId?: string) {
@@ -152,6 +152,18 @@ export class OneBotBot extends Bot<BotConfig> {
 }
 
 export class QQGuildBot extends OneBotBot {
+  get status() {
+    return super.status
+  }
+
+  set status(status: Bot.Status) {
+    super.status = status
+  }
+
+  async start() {}
+
+  async stop() {}
+
   async sendGuildMessage(guildId: string, channelId: string, content: string) {
     if (!content) return
     const session = this.createSession({ content, subtype: 'group', guildId, channelId })
