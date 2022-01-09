@@ -1,5 +1,5 @@
 {
-  "name": "@koishijs/plugin-common",
+  "name": "@koishijs/plugin-respondent",
   "description": "Common plugins for Koishi",
   "version": "5.0.0-rc.1",
   "main": "lib/index.js",
@@ -19,7 +19,7 @@
   "bugs": {
     "url": "https://github.com/koishijs/koishi/issues"
   },
-  "homepage": "https://koishi.js.org/plugins/common/",
+  "homepage": "https://koishi.js.org/plugins/respondent/",
   "keywords": [
     "bot",
     "qqbot",
@@ -34,7 +34,6 @@
     "koishi": "^4.0.0-rc.2"
   },
   "devDependencies": {
-    "@koishijs/plugin-database-memory": "^1.0.0-rc.1",
     "@koishijs/plugin-mock": "^1.0.0-rc.0"
   },
   "dependencies": {

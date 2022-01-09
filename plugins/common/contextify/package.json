@@ -1,7 +1,7 @@
 {
-  "name": "@koishijs/plugin-switch",
-  "description": "Switch plugins for Koishi",
-  "version": "1.0.0-rc.1",
+  "name": "@koishijs/plugin-contextify",
+  "description": "Simulate other contexts in Koishi",
+  "version": "1.0.0",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -19,7 +19,7 @@
   "bugs": {
     "url": "https://github.com/koishijs/koishi/issues"
   },
-  "homepage": "https://koishi.js.org/plugins/switch/",
+  "homepage": "https://koishi.js.org/plugins/contextify/",
   "keywords": [
     "bot",
     "qqbot",
@@ -28,9 +28,7 @@
     "chatbot",
     "koishi",
     "plugin",
-    "relay",
-    "switch",
-    "required:database"
+    "contextify"
   ],
   "peerDependencies": {
     "koishi": "^4.0.0-rc.2"

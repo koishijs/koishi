@@ -16,7 +16,6 @@
     "@koishijs/plugin-adapter-discord": "^2.0.0-rc.1",
     "@koishijs/plugin-adapter-onebot": "^4.0.0-rc.0",
     "@koishijs/plugin-adapter-telegram": "^2.0.0-rc.0",
-    "@koishijs/plugin-common": "^5.0.0-rc.1",
     "@koishijs/plugin-console": "^1.0.0-rc.1",
     "@koishijs/plugin-manager": "^1.0.0-rc.1",
     "@koishijs/plugin-status": "^5.0.0-rc.2",
