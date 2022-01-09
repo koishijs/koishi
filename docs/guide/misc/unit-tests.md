@@ -97,7 +97,10 @@ app.middleware(({ content }, next) => {
   }
 })
 
-it('example', () => {
+// 这一句不能少，要等待 app 启动完成
+before(() => app.start())
+
+it('example 1', () => {
   // 将“天王盖地虎”发送给机器人将会获得“宝塔镇河妖”的回复
   await client.shouldReply('天王盖地虎', '宝塔镇河妖')
 
@@ -121,4 +124,28 @@ import memory from '@koishijs/plugin-database-memory'
 const app = new App()
 app.plugin(mock)
 app.plugin(memory)
+
+// 这次我们来测试一下这个指令
+app.command('foo', { authority: 2 }).action(() => 'bar')
+
+// 创建两个来自不同用户的客户端对象
+const client1 = app.mock.client('123')
+const client2 = app.mock.client('456')
+
+before(async () => {
+  await app.start()
+
+  // 在数据库中初始化两个用户，userId 分别为 123 和 456，权限等级分别为 1 和 2
+  // app.mock.initUser() 方法本质上只是 app.database.createUser() 的语法糖
+  await app.mock.initUser('123', 1)
+  await app.mock.initUser('456', 2)
+})
+
+it('example 2', () => {
+  // 用户 123 尝试调用 foo 指令，但是权限不足
+  await client1.shouldReply('foo', '权限不足。')
+
+  // 用户 456 得以正常调用 foo 指令
+  await client2.shouldReply('foo', 'bar')
+})
 ```

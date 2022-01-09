@@ -29,6 +29,22 @@ sidebarDepth: 2
 
 触发会话事件。
 
+### mock.initUser(id, authority?, data?)
+
+- **id:** `string` 用户 ID
+- **authority:** `number` 权限等级
+- **data:** `Partial<User>` 其他用户数据
+
+在数据库中初始化一个用户。等价于 `database.create('user', { mock: id, authority, ...data })`。
+
+### mock.initChannel(id, assignee?, data?)
+
+- **id:** `string` 频道 ID
+- **assignee:** `string` 频道代理人
+- **data:** `Partial<Channel>` 其他频道数据
+
+在数据库中初始化一个频道。等价于 `database.create('channel', { platform: 'mock', id, assignee, ...data })`。
+
 ## 类：Client
 
 **客户端 (Client)** 是对发往同一上下文的多次消息的一个抽象。它使用 `mock.client()` 方法创建，并借助 `mock.receive()` 实现其功能。
