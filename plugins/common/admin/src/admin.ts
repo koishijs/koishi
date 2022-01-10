@@ -11,14 +11,7 @@ template.set('admin', {
 
   // admin helper
   'user-expected': '请指定目标用户。',
-  'user-not-found': '未找到指定的用户。',
-  'user-unchanged': '用户数据未改动。',
-  'user-updated': '用户数据已修改。',
-  'channel-not-found': '未找到指定的频道。',
-  'channel-unchanged': '频道数据未改动。',
-  'channel-updated': '频道数据已修改。',
   'invalid-assignee-platform': '代理者应与目标频道属于同一平台。',
-  'not-in-group': '当前不在群组上下文中，请使用 -c 参数指定目标频道。',
 })
 
 function adminFlag<U extends User.Field, G extends Channel.Field, A extends any[], O extends {}>(cmd: Command<U, G, A, O>, map: any, key: 'user' | 'channel') {
