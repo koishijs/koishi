@@ -42,7 +42,26 @@ export class OneBotBot extends Bot<BotConfig> {
     this.selfId = config.selfId
     this.avatar = `http://q.qlogo.cn/headimg_dl?dst_uin=${config.selfId}&spec=640`
   }
-  
+
+  get status() {
+    return super.status
+  }
+
+  set status(status) {
+    super.status = status
+    if (this.guildBot && this.app.bots.includes(this.guildBot)) {
+      this.app.emit('bot-status-updated', this.guildBot)
+    }
+  }
+
+  async stop() {
+    if (this.guildBot) {
+      // QQGuild stub bot should also be removed
+      await this.app.bots.remove(this.guildBot.sid)
+    }
+    await super.stop()
+  }
+
   async initialize() {
     await Promise.all([
       this.getSelf().then(data => Object.assign(this, data)),
@@ -55,6 +74,8 @@ export class OneBotBot extends Bot<BotConfig> {
     // guild service is not supported in this account
     if (!profile?.tiny_id || profile.tiny_id === '0') return
     this.guildBot = this.app.bots.create('onebot', this.config, QQGuildBot)
+    this.guildBot.internal = this.internal
+    this.guildBot.parentBot = this
     this.guildBot.platform = 'qqguild'
     this.guildBot.selfId = profile.tiny_id
     this.guildBot.avatar = profile.avatar_url
@@ -154,6 +175,31 @@ export class OneBotBot extends Bot<BotConfig> {
 }
 
 export class QQGuildBot extends OneBotBot {
+  parentBot: OneBotBot
+
+  get status() {
+    if (!this.parentBot) {
+      return 'offline'
+    }
+    return this.parentBot.status
+  }
+
+  set status(status) {
+    // cannot change status here
+  }
+
+  async start() {
+    await this.app.parallel('bot-connect', this)
+  }
+
+  async stop() {
+    // Don't stop this bot twice
+    if (!this.parentBot) return
+    await this.app.parallel('bot-disconnect', this)
+    // prevent circular reference and use this as already disposed
+    this.parentBot = undefined
+  }
+
   async sendGuildMessage(guildId: string, channelId: string, content: string) {
     if (!content) return
     const session = this.createSession({ content, subtype: 'group', guildId, channelId })
