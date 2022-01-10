@@ -32,7 +32,7 @@
     "@types/pngjs": "^6.0.1",
     "@types/react": "*",
     "@types/react-dom": "*",
-    "@koishijs/plugin-eval": "^4.0.0-rc.1",
+    "@koishijs/plugin-eval": "^4.0.0-rc.2",
     "@koishijs/plugin-mock": "^1.0.0"
   },
   "peerDependencies": {

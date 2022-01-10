@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-respondent",
   "description": "Common plugins for Koishi",
-  "version": "5.0.0-rc.1",
+  "version": "5.0.0",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
