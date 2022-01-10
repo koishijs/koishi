@@ -11,7 +11,6 @@ const specs = [
   'plugins/common/echo/tests/*.spec.ts',
   'plugins/common/feedback/tests/*.spec.ts',
   'plugins/common/forward/tests/*.spec.ts',
-  'plugins/common/override/tests/*.spec.ts',
   'plugins/common/rate-limit/tests/*.spec.ts',
   'plugins/common/recall/tests/*.spec.ts',
   'plugins/common/repeater/tests/*.spec.ts',
@@ -24,12 +23,13 @@ const specs = [
   'plugins/database/mysql/tests/*.spec.ts',
   'plugins/database/sqlite/tests/*.spec.ts',
   // 'plugins/eval/tests/*.spec.ts',
+  'plugins/frontend/commands/tests/*.spec.ts',
   // 'plugins/github/tests/*.spec.ts',
   // 'plugins/schedule/tests/*.spec.ts',
   'plugins/teach/tests/*.spec.ts',
 ]
 
-const folders = ['common', 'database']
+const folders = ['common', 'database', 'frontend']
 
 const libraries = {}
 
