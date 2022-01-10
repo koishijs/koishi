@@ -1,4 +1,8 @@
 import { Command, Context, Dict, pick, remove, Schema } from 'koishi'
+import { resolve } from 'path'
+import CommandProvider from './service'
+
+export * from './service'
 
 interface Override {
   name?: string
@@ -39,7 +43,7 @@ export function apply(ctx: Context, config: Dict<Config>) {
     parent?.children.push(command)
   }
 
-  function resolve(command: Command, name: string) {
+  function locate(command: Command, name: string) {
     const capture = name.match(/.*(?=[./])/)
     if (!capture) return name
     const parent = ctx.app._commands.resolve(capture[0])
@@ -64,7 +68,7 @@ export function apply(ctx: Context, config: Dict<Config>) {
     }
 
     if (name) {
-      const _name = resolve(target, name)
+      const _name = locate(target, name)
       if (!_name) return
       // directly modify name of prototype
       target.name = _name
@@ -104,5 +108,12 @@ export function apply(ctx: Context, config: Dict<Config>) {
       teleport(cmd, parent)
       cmd.name = name
     }
+  })
+
+  ctx.using(['console'], (ctx) => {
+    ctx.plugin(CommandProvider)
+  
+    const filename = ctx.console.config.devMode ? '../client/index.ts' : '../dist/index.js'
+    ctx.console.addEntry(resolve(__dirname, filename))
   })
 }
