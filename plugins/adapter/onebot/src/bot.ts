@@ -1,19 +1,6 @@
 import { Bot, segment, Adapter, Dict, Schema, Quester, Logger, camelize, noop } from 'koishi'
 import * as OneBot from './utils'
 
-export interface BotConfig extends Bot.BaseConfig, Quester.Config {
-  selfId?: string
-  token?: string
-}
-
-export const BotConfig: Schema<BotConfig> = Schema.intersect([
-  Schema.object({
-    selfId: Schema.string(),
-    token: Schema.string(),
-  }),
-  Quester.Config,
-])
-
 export function renderText(source: string) {
   return segment.parse(source).reduce((prev, { type, data }) => {
     if (type === 'at') {
@@ -29,13 +16,24 @@ export function renderText(source: string) {
   }, '')
 }
 
+export interface BotConfig extends Bot.BaseConfig, Quester.Config {
+  selfId?: string
+  token?: string
+}
+
+export const BotConfig: Schema<BotConfig> = Schema.intersect([
+  Schema.object({
+    selfId: Schema.string(),
+    token: Schema.string(),
+  }),
+  Quester.Config,
+])
+
 export class OneBotBot extends Bot<BotConfig> {
   static schema = OneBot.AdapterConfig
 
   public internal = new Internal()
   public guildBot: QQGuildBot
-
-  guildProfile: Bot.User
 
   constructor(adapter: Adapter, config: BotConfig) {
     super(adapter, config)
@@ -83,7 +81,6 @@ export class OneBotBot extends Bot<BotConfig> {
     // this.guildBot.selfId = profile.tiny_id
     this.guildBot.avatar = profile.avatar_url
     this.guildBot.username = profile.nickname
-    this.guildBot.resolve()
   }
 
   sendMessage(channelId: string, content: string, guildId?: string) {
