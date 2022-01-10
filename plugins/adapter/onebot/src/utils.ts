@@ -106,12 +106,10 @@ export const adaptChannel = (info: OneBot.GroupInfo | OneBot.ChannelInfo): Bot.C
   }
 }
 
-const useGuildBot = Symbol('onebot.useGuildBot')
-
 export function dispatchSession(bot: OneBotBot, data: OneBot.Payload) {
   const payload = adaptSession(data)
   if (!payload) return
-  if (payload[useGuildBot]) bot = bot.guildBot
+  if (data.self_tiny_id) bot = bot.guildBot
   const session = new Session(bot, payload)
   defineProperty(session, 'onebot', Object.create(bot.internal))
   Object.assign(session.onebot, data)
@@ -122,7 +120,6 @@ export function adaptSession(data: OneBot.Payload) {
   const session: Partial<Session> = {}
   session.selfId = '' + data.self_id
   if (data.self_tiny_id) {
-    session[useGuildBot] = true
     session.selfId = data.self_tiny_id
   }
   session.type = data.post_type
