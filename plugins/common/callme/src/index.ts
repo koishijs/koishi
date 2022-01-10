@@ -18,9 +18,10 @@ template.set('callme', {
 })
 
 export const name = 'callme'
+export const using = ['database'] as const
 
 export function apply(ctx: Context) {
-  ctx.command('common/callme [name:text]', '修改自己的称呼')
+  ctx.command('callme [name:text]', '修改自己的称呼')
     .userFields(['id', 'name'])
     .shortcut('叫我', { prefix: true, fuzzy: true })
     .action(async ({ session }, name) => {

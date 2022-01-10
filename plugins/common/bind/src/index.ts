@@ -22,6 +22,7 @@ export interface Config {
 }
 
 export const name = 'bind'
+export const using = ['database'] as const
 
 export function apply(ctx: Context, config: Config = {}) {
   // 1: group (1st step)
