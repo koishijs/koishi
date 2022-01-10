@@ -60,9 +60,9 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
 
   private _userFields: FieldCollector<'user'>[] = []
   private _channelFields: FieldCollector<'channel'>[] = []
-  private _actions: Command.Action[] = [null]
+  private _actions: Command.Action[] = []
   private _checkers: Command.Action[] = [async (argv) => {
-    return this.app.serial(argv.session, 'command/check', argv)
+    return this.app.serial(argv.session, 'command/before-execute', argv)
   }]
 
   public static enableHelp: typeof internal.enableHelp
@@ -232,18 +232,14 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
       if (typeof result === 'string') return result
     }
 
-    let index = 0
-    const queue: Next.Queue = []
-    for (const action of this._actions) {
-      if (action) {
-        queue.push(async () => action.call(this, argv, ...args))
-      } else {
-        queue.push(...this.app.getHooks('command/action', argv.session))
-      }
-    }
-
     // FIXME empty actions will cause infinite loop
-    if (!queue.length) return ''
+    if (!this._actions.length) return ''
+
+    let index = 0
+    const queue: Next.Queue = this._actions.map(action => async () => {
+      return await action.call(this, argv, ...args)
+    })
+
     queue.push(fallback)
     const length = queue.length
     argv.next = async (callback) => {

@@ -102,7 +102,7 @@ export class StatisticsProvider extends DataSource<StatisticsProvider.Payload> {
       await this.upload(true)
     })
 
-    ctx.on('command/check', ({ command, session }) => {
+    ctx.before('command/execute', ({ command, session }) => {
       if (command.parent?.name !== 'test') {
         const [name] = command.name.split('.', 1)
         this.addDaily('command', name)

@@ -31,7 +31,7 @@ export function apply(ctx: Context, config: Config = {}) {
   })
 
   // check channel
-  ctx.on('command/check', ({ session, command }: Argv<never, 'disable'>) => {
+  ctx.before('command/execute', ({ session, command }: Argv<never, 'disable'>) => {
     if (!session.channel) return
     while (command) {
       if (session.channel.disable.includes(command.name)) return ''

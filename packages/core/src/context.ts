@@ -628,7 +628,7 @@ export namespace Context {
   export const deprecatedEvents: Dict<EventName & string> = {
     'connect': 'ready',
     'disconnect': 'dispose',
-    'before-command': 'command/check',
+    'before-command': 'command/before-execute',
   }
 }
 
@@ -654,8 +654,7 @@ export interface EventMap {
   'command-added'(command: Command): void
   'command-removed'(command: Command): void
   'command-error'(argv: Argv, error: any): void
-  'command/check'(argv: Argv): Awaitable<void | string>
-  'command/action'(argv: Argv): Awaitable<void | string>
+  'command/before-execute'(argv: Argv): Awaitable<void | string>
   'command/before-attach-channel'(argv: Argv, fields: Set<Channel.Field>): void
   'command/before-attach-user'(argv: Argv, fields: Set<User.Field>): void
   'middleware'(session: Session): void

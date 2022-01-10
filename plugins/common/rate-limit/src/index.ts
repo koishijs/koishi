@@ -1,5 +1,5 @@
 import { Argv, Command, Context, Dict, Session, template, Time, User } from 'koishi'
-import { adminChannel, adminUser } from '@koishijs/command-utils'
+import { adminUser } from '@koishijs/command-utils'
 
 declare module 'koishi' {
   namespace Command {
@@ -64,7 +64,7 @@ export function apply(ctx: Context) {
   })
 
   // check user
-  ctx.on('command/check', (argv: Argv<'usage' | 'timers'>) => {
+  ctx.before('command/execute', (argv: Argv<'usage' | 'timers'>) => {
     const { session, options, command } = argv
     if (!session.user) return
 

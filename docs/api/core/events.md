@@ -154,7 +154,7 @@ Koishi 封装了一套事件系统。其基本用法与 Node.js 自带的 [Event
 
 即将发送信息时会在对应的上下文触发。调用时会传入一个事件类型为 [send](#消息类事件) 的会话实例。由于该消息还未发送，这个会话并没有 `messageId` 属性。你可以通过修改 `session.content` 改变发送的内容，或者返回一个 truthy 值以取消该消息的发送。
 
-### 事件：command/check
+### 事件：command/before-execute
 
 - **argv:** `Argv` 运行时参数
 - **触发方式:** serial

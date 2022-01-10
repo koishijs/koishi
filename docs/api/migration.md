@@ -138,7 +138,7 @@ export default {
 - before-connect → ready
 - disconnect → dispose (原命名依然可用)
 - before-disconnect → dispose
-- before-command → command/check (原命名依然可用)
+- before-command → command/before-execute (原命名依然可用)
 
 ## 其他变更
 

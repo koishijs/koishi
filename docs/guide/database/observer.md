@@ -47,7 +47,7 @@ const { Command } = require('koishi')
 // 注意这不是实例方法，而是类上的静态方法
 Command.userFields(['name'])
 
-app.on('command/check', ({ session, command }) => {
+app.before('command/execute', ({ session, command }) => {
   console.log('%s calls command %s', session.user.name, command.name)
 })
 ```
