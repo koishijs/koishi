@@ -1,25 +1,39 @@
-import { Context, Session, Dict, Time, template } from 'koishi'
+import { Context, Session, Dict, Time, template, Schema } from 'koishi'
 import { parsePlatform } from '@koishijs/command-utils'
 
 template.set('forward', '{0}: {1}')
 
-export interface ForwardOptions {
+export interface Rule {
   source: string
   destination: string
   selfId?: string
   lifespan?: number
 }
 
+export const Rule = Schema.object({
+  source: Schema.string().required(),
+  destination: Schema.string().required(),
+  selfId: Schema.string(),
+  lifespan: Schema.number(),
+})
+
 export const name = 'forward'
 
 export interface Config {
-  tunnels: ForwardOptions[]
+  rules: Rule[]
 }
 
-export function apply(ctx: Context, tunnels: ForwardOptions[]) {
-  const relayMap: Dict<ForwardOptions> = {}
+export const schema = Schema.union([
+  Schema.object({
+    rules: Schema.array(Rule),
+  }),
+  Schema.transform(Schema.array(Rule), (rules) => ({ rules })),
+])
 
-  async function sendRelay(session: Session, { destination, selfId, lifespan = Time.hour }: ForwardOptions) {
+export function apply(ctx: Context, { rules }: Config) {
+  const relayMap: Dict<Rule> = {}
+
+  async function sendRelay(session: Session, { destination, selfId, lifespan = Time.hour }: Rule) {
     const [platform, channelId] = parsePlatform(destination)
     const bot = ctx.bots.get(`${platform}:${selfId}`)
     const { author, parsed } = session
@@ -35,7 +49,7 @@ export function apply(ctx: Context, tunnels: ForwardOptions[]) {
     const data = relayMap[quote.messageId]
     if (data) return sendRelay(session, data)
     const tasks: Promise<void>[] = []
-    for (const options of tunnels) {
+    for (const options of rules) {
       if (session.cid !== options.source) continue
       tasks.push(sendRelay(session, options).catch())
     }
