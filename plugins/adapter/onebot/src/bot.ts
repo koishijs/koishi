@@ -192,9 +192,9 @@ export class QQGuildBot extends OneBotBot {
   async stop() {
     // Don't stop this bot twice
     if (!this.parentBot) return
+    this.parentBot = undefined
     await this.app.parallel('bot-disconnect', this)
     // prevent circular reference and use this as already disposed
-    this.parentBot = undefined
   }
 
   async sendGuildMessage(guildId: string, channelId: string, content: string) {
