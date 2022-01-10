@@ -1,7 +1,9 @@
 import { noop } from 'koishi'
-import { unlink } from 'fs/promises'
+import { promises as fsp } from 'fs'
 import { join } from 'path'
 import JsdelivrAssets from './index'
+
+const { unlink } = fsp
 
 declare module 'koishi' {
   interface Tables {

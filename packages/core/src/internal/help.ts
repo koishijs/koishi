@@ -1,11 +1,10 @@
-import { Awaitable, template } from '@koishijs/utils'
+import { template } from '@koishijs/utils'
 import { Argv } from '../parser'
 import { Command } from '../command'
 import { Context } from '../context'
 import { User, Channel } from '../database'
 import { TableType } from '../orm'
 import { FieldCollector, Session } from '../session'
-import { getUsage, getUsageName, ValidationField } from './validate'
 
 interface HelpOptions {
   showHidden?: boolean
@@ -15,17 +14,6 @@ interface HelpOptions {
 export interface HelpConfig extends Command.Config {
   shortcut?: boolean
   options?: boolean
-}
-
-export function handleError<U extends User.Field, G extends Channel.Field, A extends any[], O extends {}>(cmd: Command<U, G, A, O>, handler: (error: Error, argv: Argv<U, G, A, O>) => Awaitable<void | string>) {
-  return cmd.action(async (argv, ...args) => {
-    try {
-      return await argv.next()
-    } catch (error) {
-      if (handler) return handler(error, argv)
-      return template('internal.error-encountered', error.message)
-    }
-  }, true)
 }
 
 export function enableHelp<U extends User.Field, G extends Channel.Field, A extends any[], O extends {}>(cmd: Command<U, G, A, O>) {
@@ -85,7 +73,6 @@ export default function help(ctx: Context, config: HelpConfig = {}) {
           prefix: template('internal.help-suggestion-prefix'),
           suffix: template('internal.help-suggestion-suffix'),
           async apply(suggestion) {
-            await this.observeUser(['authority', 'usage', 'timers'])
             const output = await showHelp(app._commands.get(suggestion), this as any, options)
             return session.send(output)
           },
@@ -116,7 +103,7 @@ function* getCommands(session: Session<'authority'>, commands: Command[], showHi
   }
 }
 
-function formatCommands(path: string, session: Session<ValidationField>, children: Command[], options: HelpOptions) {
+function formatCommands(path: string, session: Session<'authority'>, children: Command[], options: HelpOptions) {
   const commands = Array
     .from(getCommands(session, children, options.showHidden))
     .sort((a, b) => a.name > b.name ? 1 : -1)
@@ -138,12 +125,12 @@ function formatCommands(path: string, session: Session<ValidationField>, childre
   return output
 }
 
-function getOptionVisibility(option: Argv.OptionDeclaration, session: Session<ValidationField>) {
+function getOptionVisibility(option: Argv.OptionDeclaration, session: Session<'authority'>) {
   if (session.user && option.authority > session.user.authority) return false
   return !session.resolveValue(option.hidden)
 }
 
-function getOptions(command: Command, session: Session<ValidationField>, maxUsage: number, config: HelpOptions) {
+function getOptions(command: Command, session: Session<'authority'>, config: HelpOptions) {
   if (command.config.hideOptions && !config.showHidden) return []
   const options = config.showHidden
     ? Object.values(command._options)
@@ -156,48 +143,36 @@ function getOptions(command: Command, session: Session<ValidationField>, maxUsag
 
   options.forEach((option) => {
     const authority = option.authority && config.authority ? `(${option.authority}) ` : ''
-    let line = `    ${authority}${option.description}`
-    if (option.notUsage && maxUsage !== Infinity) {
-      line += template('internal.option-not-usage')
-    }
-    output.push(line)
+    const line = command.app.chain('help/option', `${authority}${option.description}`, option, command, session)
+    output.push('    ' + line)
   })
 
   return output
 }
 
-async function showHelp(command: Command, session: Session<ValidationField>, config: HelpOptions) {
+async function showHelp(command: Command, session: Session<'authority'>, config: HelpOptions) {
   const output = [command.name + command.declaration]
 
   if (command.description) output.push(command.description)
 
-  if (command.context.database) {
-    await session.observeUser(['authority', 'timers', 'usage'])
+  if (session.app.database) {
+    const argv: Argv = { command, args: [], options: { help: true } }
+    const userFields = session.collect('user', argv)
+    await session.observeUser(userFields)
+    if (session.subtype === 'group') {
+      const channelFields = session.collect('channel', argv)
+      await session.observeChannel(channelFields)
+    }
   }
 
   if (command._aliases.length > 1) {
     output.push(template('internal.command-aliases', Array.from(command._aliases.slice(1)).join('，')))
   }
 
-  const maxUsage = command.getConfig('maxUsage', session)
-  if (session.user) {
-    const name = getUsageName(command)
-    const minInterval = command.getConfig('minInterval', session)
-    const count = getUsage(name, session.user)
+  session.app.emit(session, 'help/command', output, command, session)
 
-    if (maxUsage < Infinity) {
-      output.push(template('internal.command-max-usage', Math.min(count, maxUsage), maxUsage))
-    }
-
-    const due = session.user.timers[name]
-    if (minInterval > 0) {
-      const nextUsage = due ? (Math.max(0, due - Date.now()) / 1000).toFixed() : 0
-      output.push(template('internal.command-min-interval', nextUsage, minInterval / 1000))
-    }
-
-    if (command.config.authority > 1) {
-      output.push(template('internal.command-authority', command.config.authority))
-    }
+  if (session.user && command.config.authority > 1) {
+    output.push(template('internal.command-authority', command.config.authority))
   }
 
   const usage = command._usage
@@ -205,7 +180,7 @@ async function showHelp(command: Command, session: Session<ValidationField>, con
     output.push(typeof usage === 'string' ? usage : await usage.call(command, session))
   }
 
-  output.push(...getOptions(command, session, maxUsage, config))
+  output.push(...getOptions(command, session, config))
 
   if (command._examples.length) {
     output.push(template('internal.command-examples'), ...command._examples.map(example => '    ' + example))
@@ -220,15 +195,12 @@ async function showHelp(command: Command, session: Session<ValidationField>, con
 template.set('internal', {
   // command
   'low-authority': '权限不足。',
-  'usage-exhausted': '调用次数已达上限。',
-  'too-frequent': '调用过于频繁，请稍后再试。',
   'insufficient-arguments': '缺少参数，输入帮助以查看用法。',
   'redunant-arguments': '存在多余参数，输入帮助以查看用法。',
   'invalid-argument': '参数 {0} 输入无效，{1}',
   'unknown-option': '存在未知选项 {0}，输入帮助以查看用法。',
   'invalid-option': '选项 {0} 输入无效，{1}',
   'check-syntax': '输入帮助以查看用法。',
-  'error-encountered': '发生未知错误。',
 
   // parser
   'invalid-number': '请提供一个数字。',
@@ -252,12 +224,9 @@ template.set('internal', {
   'global-help-epilog': '输入“帮助 指令名”查看特定指令的语法和使用示例。',
   'available-options': '可用的选项有：',
   'available-options-with-authority': '可用的选项有（括号内为额外要求的权限等级）：',
-  'option-not-usage': '（不计入总次数）',
   'hint-authority': '括号内为对应的最低权限等级',
   'hint-subcommand': '标有星号的表示含有子指令',
   'command-aliases': '别名：{0}。',
   'command-examples': '使用示例：',
   'command-authority': '最低权限：{0} 级。',
-  'command-max-usage': '已调用次数：{0}/{1}。',
-  'command-min-interval': '距离下次调用还需：{0}/{1} 秒。',
 })

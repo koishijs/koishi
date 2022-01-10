@@ -77,13 +77,7 @@ class RedisCache extends Cache {
     const age: number = maxAge || tableConfig.maxAge
     const redisKey = this.getRedisKey(table, key)
     return this.doInPool(async (client) => {
-      const record = this.encode(value)
-      const command = client.multi()
-        .set(redisKey, record)
-      if (age) {
-        command.pExpire(redisKey, age)
-      }
-      await command.exec()
+      await client.set(redisKey, this.encode(value), age ? { PX: age } : undefined)
     }, `set ${redisKey}`)
   }
 

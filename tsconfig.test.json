@@ -3,15 +3,23 @@
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {
+      "@koishijs/plugin-eval/lib/worker": ["plugins/eval/src/worker"],
       "@koishijs/plugin-adapter-*": ["plugins/adapter/*/src"],
       "@koishijs/plugin-assets-*": ["plugins/assets/*/src"],
       "@koishijs/plugin-cache-*": ["plugins/cache/*/src"],
       "@koishijs/plugin-database-*": ["plugins/database/*/src"],
-      "@koishijs/plugin-*": ["plugins/*/src"],
-      "@koishijs/plugin-eval/lib/worker": ["plugins/eval/src/worker"],
-      "@koishijs/*": ["packages/*/src", "plugins/database/*/src"],
+      "@koishijs/plugin-*": [
+        "plugins/common/*/src",
+        "plugins/frontend/*/src",
+        "plugins/*/src",
+      ],
+      "@koishijs/*": [
+        "packages/*/src",
+        "plugins/common/*/src",
+        "plugins/database/*/src",
+      ],
       "koishi": ["packages/koishi/src"],
-      "chai-shape": ["community/chai-shape/src"],
+      "*": ["community/*/src"],
     },
   },
 }

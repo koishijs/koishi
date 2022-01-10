@@ -79,7 +79,7 @@ export function apply(ctx: Context, config: Config = {}) {
   // addons are registered in another plugin
   if (config.root) ctx.plugin(addon, config)
 
-  ctx.before('command', ({ command, session }) => {
+  ctx.before('command/execute', ({ command, session }) => {
     if (command.config.noEval && session._isEval) {
       return `不能在 evaluate 指令中调用 ${command.name} 指令。`
     }

@@ -24,10 +24,10 @@
     "koishi"
   ],
   "peerDependencies": {
-    "koishi": "^4.0.0-rc.2"
+    "koishi": "^4.0.0-rc.3"
   },
   "devDependencies": {
-    "@koishijs/plugin-mock": "^1.0.0-rc.0"
+    "@koishijs/plugin-mock": "^1.0.0"
   },
   "dependencies": {
     "axios": "^0.21.4",

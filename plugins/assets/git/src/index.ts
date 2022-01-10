@@ -1,14 +1,10 @@
 import { Context, Assets, Schema, Logger, Time, sleep } from 'koishi'
 import Git, { SimpleGit, SimpleGitOptions, ResetMode } from 'simple-git'
-import { access, mkdir, rename, writeFile } from 'fs/promises'
+import { promises as fsp } from 'fs'
 import { join, resolve } from 'path'
 import { File, Task, FileInfo } from './file'
 
-declare module 'koishi' {
-  interface Modules {
-    'assets-jsdelivr': typeof import('.')
-  }
-}
+const { access, mkdir, rename, writeFile } = fsp
 
 export interface Branch {
   branch: number

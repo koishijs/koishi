@@ -124,7 +124,7 @@ Koishi 封装了一套事件系统。其基本用法与 Node.js 自带的 [Event
 
 当 Koishi 试图从数据库获取频道 / 用户信息前触发。你可以在回调函数中通过 `fields.add()` 修改传入的字段集合，增加的字段将可以被指令以及之后的中间件获取到。
 
-如果没有配置数据库，则两个事件都不会触发；如果不是群聊消息，则 before-attach-channel 事件不会触发。
+这两个事件的触发于内置中间件中。如果没有配置数据库，则两个事件都不会触发；如果不是群聊消息，则 before-attach-channel 事件不会触发。
 
 ### 事件：attach-channel
 ### 事件：attach-user
@@ -136,6 +136,17 @@ Koishi 封装了一套事件系统。其基本用法与 Node.js 自带的 [Event
 
 如果没有配置数据库，则两个事件都不会触发；如果不是群聊消息，则 attach-channel 事件不会触发。
 
+### 事件：command/before-attach-channel
+### 事件：command/before-attach-user
+
+- **session:** `Argv` 运行时参数
+- **fields:** `Set<string>` 要获取的字段列表
+- **触发方式:** emit
+
+当 Koishi 试图从数据库获取频道 / 用户信息前触发。你可以在回调函数中通过 `fields.add()` 修改传入的字段集合，增加的字段将可以被指令以及之后的中间件获取到。
+
+这两个事件触发于任意指令调用前。如果没有配置数据库，则两个事件都不会触发；如果不是群聊消息，则 before-attach-channel 事件不会触发。
+
 ### 事件：before-send
 
 - **session:** `Session` 消息会话
@@ -143,7 +154,7 @@ Koishi 封装了一套事件系统。其基本用法与 Node.js 自带的 [Event
 
 即将发送信息时会在对应的上下文触发。调用时会传入一个事件类型为 [send](#消息类事件) 的会话实例。由于该消息还未发送，这个会话并没有 `messageId` 属性。你可以通过修改 `session.content` 改变发送的内容，或者返回一个 truthy 值以取消该消息的发送。
 
-### 事件：before-command
+### 事件：command/before-execute
 
 - **argv:** `Argv` 运行时参数
 - **触发方式:** serial

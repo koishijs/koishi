@@ -217,32 +217,6 @@ describe('Runtime', () => {
       await client1.shouldNotReply('cmd1 --bar')
     })
 
-    it('check usage', async () => {
-      cmd1.config.maxUsage = 1
-      cmd1.config.showWarning = true
-      await client4.shouldReply('cmd1 test', 'cmd1:test')
-      await client4.shouldReply('cmd1 test --baz', 'cmd1:test')
-      await client1.shouldReply('cmd1 test', '调用次数已达上限。')
-      await client4.shouldReply('cmd1 test --baz', 'cmd1:test')
-      cmd1.config.showWarning = false
-      await client1.shouldNotReply('cmd1')
-      delete cmd1.config.maxUsage
-    })
-
-    it('check frequency', async () => {
-      const clock = install()
-      cmd2.config.minInterval = () => 1000
-      cmd2.config.showWarning = true
-      await client2.shouldReply('cmd2', 'cmd2:456')
-      await client2.shouldReply('cmd2 --baz', 'cmd2:456')
-      await client2.shouldReply('cmd2', '调用过于频繁，请稍后再试。')
-      await client2.shouldReply('cmd2 --baz', 'cmd2:456')
-      cmd2.config.showWarning = false
-      await client2.shouldNotReply('cmd2')
-      delete cmd2.config.minInterval
-      clock.uninstall()
-    })
-
     it('check arg count', async () => {
       cmd1.config.checkArgCount = true
       cmd1.config.showWarning = true

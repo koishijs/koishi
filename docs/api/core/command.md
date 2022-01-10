@@ -164,17 +164,3 @@ type FieldCollector<K extends string> =
 ### Command.defaultOptionConfig
 
 默认的选项配置。
-
-### Command.userFields(fields)
-
-- **fields:** `FieldCollector<UserField>` 要请求的用户字段
-
-如果所有指令都需要用到用户数据，你可以提前声明，这样有助于合并多次请求，从而提高性能。
-参见[按需加载](../../guide/manage.md#声明所需字段)章节。
-
-### Command.channelFields(fields)
-
-- **fields:** `FieldCollector<ChannelField>` 要请求的频道字段
-
-如果所有指令都需要用到频道数据，你可以提前声明，这样有助于合并多次请求，从而提高性能。
-参见[按需加载](../../guide/manage.md#声明所需字段)章节。

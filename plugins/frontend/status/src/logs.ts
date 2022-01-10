@@ -1,8 +1,10 @@
 import { Context, Logger, Schema, Time } from 'koishi'
 import { DataSource } from '@koishijs/plugin-console'
 import { resolve } from 'path'
-import { mkdirSync, readdirSync } from 'fs'
-import { FileHandle, open, rm } from 'fs/promises'
+import { mkdirSync, readdirSync, promises as fsp } from 'fs'
+import { FileHandle } from 'fs/promises'
+
+const { open, rm } = fsp
 
 export class LogProvider extends DataSource<string[]> {
   root: string

@@ -46,6 +46,7 @@ function findModulePath(id: string) {
 
   // build for extensions
   await buildExtension(resolve(__dirname, '../../chat'))
+  await buildExtension(resolve(__dirname, '../../commands'))
   await buildExtension(resolve(__dirname, '../../manager'))
   await buildExtension(resolve(__dirname, '../../status'))
   await buildExtension(resolve(__dirname, '../../../teach'))
