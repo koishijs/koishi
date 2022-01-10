@@ -1,6 +1,6 @@
 import { Adapter, Logger, assertProperty, Time, Schema, Context, WebSocketLayer } from 'koishi'
 import { BotConfig, OneBotBot } from './bot'
-import { AdapterConfig, dispatchSession, adaptUser, Response } from './utils'
+import { AdapterConfig, dispatchSession, Response } from './utils'
 import WebSocket from 'ws'
 
 const logger = new Logger('onebot')
@@ -79,10 +79,6 @@ export function accept(this: Adapter<BotConfig, AdapterConfig>, bot: OneBotBot) 
     if ('post_type' in parsed) {
       logger.debug('receive %o', parsed)
       dispatchSession(bot, parsed)
-    } else if (parsed.echo === -1) {
-      Object.assign(bot, adaptUser(parsed.data))
-      logger.debug('%d got self info', parsed.data)
-      bot.resolve()
     } else if (parsed.echo in listeners) {
       listeners[parsed.echo](parsed)
       delete listeners[parsed.echo]
@@ -91,13 +87,6 @@ export function accept(this: Adapter<BotConfig, AdapterConfig>, bot: OneBotBot) 
 
   bot.socket.on('close', () => {
     delete bot.internal._request
-  })
-
-  bot.socket.send(JSON.stringify({
-    action: 'get_login_info',
-    echo: -1,
-  }), (error) => {
-    if (error) bot.reject(error)
   })
 
   bot.internal._request = (action, params) => {
@@ -114,4 +103,6 @@ export function accept(this: Adapter<BotConfig, AdapterConfig>, bot: OneBotBot) 
       })
     })
   }
+
+  bot.initialize()
 }

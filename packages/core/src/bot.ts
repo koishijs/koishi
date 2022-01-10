@@ -9,14 +9,14 @@ const logger = new Logger('bot')
 export interface Bot extends Bot.BaseConfig, Bot.Methods, Bot.UserBase {}
 
 export abstract class Bot<T extends Bot.BaseConfig = Bot.BaseConfig> {
-  readonly app: App
-  readonly logger: Logger
-  readonly platform: string
+  public app: App
+  public platform: string
+  public internal?: any
+  public selfId?: string
+  public logger: Logger
 
   private _status: Bot.Status
 
-  internal?: any
-  selfId?: string
   error?: Error
 
   constructor(public adapter: Adapter, public config: T) {
