@@ -1,5 +1,5 @@
 {
-  "name": "@koishijs/plugin-override",
+  "name": "@koishijs/plugin-commands",
   "description": "Override command config for Koishi",
   "version": "1.0.0",
   "main": "lib/index.js",
@@ -19,7 +19,7 @@
   "bugs": {
     "url": "https://github.com/koishijs/koishi/issues"
   },
-  "homepage": "https://koishi.js.org/plugins/override/",
+  "homepage": "https://koishi.js.org/plugins/commands/",
   "keywords": [
     "bot",
     "qqbot",

@@ -1,6 +1,6 @@
 import { App } from 'koishi'
 import mock from '@koishijs/plugin-mock'
-import * as override from '@koishijs/plugin-override'
+import * as commands from '@koishijs/plugin-commands'
 
 const app = new App({
   minSimilarity: 0,
@@ -18,7 +18,7 @@ describe('@koishijs/plugin-override', () => {
     await client.shouldReply('bar', 'foo')
     await client.shouldNotReply('baz')
 
-    app.plugin(override, {
+    app.plugin(commands, {
       bar: { name: 'baz' },
     })
 

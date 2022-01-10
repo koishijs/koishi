@@ -15,7 +15,7 @@ export type Config = Dict<Override>
 
 export const Config = Schema.dict(Override)
 
-export const name = 'override'
+export const name = 'commands'
 
 export function apply(ctx: Context, config: Config) {
   const legacy: Config = {}
