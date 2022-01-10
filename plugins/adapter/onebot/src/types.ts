@@ -352,6 +352,7 @@ export interface ReactionInfo {
 export interface Payload extends Message {
   time: number
   self_id: number
+  self_tiny_id?: string
   post_type: string
   request_type: string
   notice_type: string

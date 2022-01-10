@@ -121,17 +121,16 @@ export function dispatchSession(bot: OneBotBot, data: OneBot.Payload) {
 export function adaptSession(data: OneBot.Payload) {
   const session: Partial<Session> = {}
   session.selfId = '' + data.self_id
+  if (data.self_tiny_id) {
+    session[useGuildBot] = true
+    session.selfId = data.self_tiny_id
+  }
   session.type = data.post_type
 
   if (data.post_type === 'message') {
     Object.assign(session, adaptMessage(data))
+    session.subtype = data.message_type === 'guild' ? 'group' : data.message_type
     session.subsubtype = data.message_type
-    if (data.message_type === 'guild') {
-      session[useGuildBot] = true
-      session.subtype = 'group'
-    } else {
-      session.subtype = data.message_type
-    }
     return session
   }
 
@@ -204,22 +203,18 @@ export function adaptSession(data: OneBot.Payload) {
       case 'message_reactions_updated':
         session.type = 'onebot'
         session.subtype = 'message-reactions-updated'
-        session[useGuildBot] = true
         break
       case 'channel_created':
         session.type = 'onebot'
         session.subtype = 'channel-created'
-        session[useGuildBot] = true
         break
       case 'channel_updated':
         session.type = 'onebot'
         session.subtype = 'channel-updated'
-        session[useGuildBot] = true
         break
       case 'channel_destroyed':
         session.type = 'onebot'
         session.subtype = 'channel-destroyed'
-        session[useGuildBot] = true
         break
       default: return
     }
