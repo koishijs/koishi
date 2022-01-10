@@ -33,7 +33,7 @@
     "@types/react": "*",
     "@types/react-dom": "*",
     "@koishijs/plugin-eval": "^4.0.0-rc.1",
-    "@koishijs/plugin-mock": "^1.0.0-rc.0"
+    "@koishijs/plugin-mock": "^1.0.0"
   },
   "peerDependencies": {
     "koishi": "^4.0.0-rc.2"

@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-admin",
   "description": "Admin plugins for Koishi",
-  "version": "1.0.0-rc.2",
+  "version": "1.0.0",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -35,7 +35,7 @@
     "koishi": "^4.0.0-rc.2"
   },
   "devDependencies": {
-    "@koishijs/plugin-mock": "^1.0.0-rc.0"
+    "@koishijs/plugin-mock": "^1.0.0"
   },
   "dependencies": {
     "@koishijs/command-utils": "^1.0.0"

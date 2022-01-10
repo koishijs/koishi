@@ -50,7 +50,7 @@
   "devDependencies": {
     "@types/babel__core": "^7.1.16",
     "@types/js-yaml": "^4.0.3",
-    "@koishijs/plugin-database-memory": "^1.0.0-rc.1",
-    "@koishijs/plugin-mock": "^1.0.0-rc.0"
+    "@koishijs/plugin-database-memory": "^1.0.0",
+    "@koishijs/plugin-mock": "^1.0.0"
   }
 }

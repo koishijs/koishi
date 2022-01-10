@@ -40,9 +40,9 @@
   },
   "devDependencies": {
     "@koishijs/plugin-console": "^1.0.0-rc.1",
-    "@koishijs/plugin-database-memory": "^1.0.0-rc.1",
+    "@koishijs/plugin-database-memory": "^1.0.0",
     "@koishijs/plugin-status": "^5.0.0-rc.2",
-    "@koishijs/plugin-mock": "^1.0.0-rc.0"
+    "@koishijs/plugin-mock": "^1.0.0"
   },
   "dependencies": {
     "fastest-levenshtein": "^1.0.12",
