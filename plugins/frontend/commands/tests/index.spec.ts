@@ -22,7 +22,7 @@ describe('@koishijs/plugin-override', () => {
       await client.shouldNotReply('baz')
 
       app.plugin(commands, {
-        bar: { name: 'baz' },
+        bar: 'baz',
       })
 
       await client.shouldReply('bar', 'test')
@@ -38,7 +38,7 @@ describe('@koishijs/plugin-override', () => {
 
     it('dispose plugin', async () => {
       app.plugin(commands, {
-        bar: { name: 'baz' },
+        bar: 'baz',
       })
 
       await client.shouldNotReply('bar')
@@ -65,9 +65,7 @@ describe('@koishijs/plugin-override', () => {
       expect(foo.children).to.have.length(1)
 
       app.plugin(commands, {
-        'foo.bar': {
-          name: '/baz',
-        },
+        'foo.bar': '/baz',
       })
 
       expect(foo.children).to.have.length(0)
@@ -89,9 +87,7 @@ describe('@koishijs/plugin-override', () => {
       expect(foo.children).to.have.length(0)
 
       app.plugin(commands, {
-        bar: {
-          name: 'foo/baz',
-        },
+        bar: 'foo/baz',
       })
 
       expect(foo.children).to.have.length(1)
@@ -115,9 +111,7 @@ describe('@koishijs/plugin-override', () => {
       expect(baz.children).to.have.length(0)
 
       app.plugin(commands, {
-        foo: {
-          name: 'baz/foo',
-        },
+        foo: 'baz/foo',
       })
 
       expect(bar.children).to.have.length(0)
@@ -131,6 +125,7 @@ describe('@koishijs/plugin-override', () => {
 
       foo.dispose()
       bar.dispose()
+      baz.dispose()
     })
   })
 })

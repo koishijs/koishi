@@ -25,7 +25,7 @@ export namespace Next {
   }
 }
 
-export type Plugin<T = any> = Plugin.Function<T> | Plugin.Object<T>
+export type Plugin = Plugin.Function | Plugin.Object
 
 export namespace Plugin {
   export type Function<T = any> = (ctx: Context, options: T) => void
@@ -38,9 +38,17 @@ export namespace Plugin {
     using?: readonly (keyof Context.Services)[]
   }
 
+  export interface ObjectWithSchema<T = any> {
+    name?: string
+    apply: Function
+    schema?: Schema<T, any>
+    using?: readonly (keyof Context.Services)[]
+  }
+
   export type Config<T extends Plugin> =
     | T extends Constructor<infer U> ? U
     : T extends Function<infer U> ? U
+    : T extends ObjectWithSchema<infer U> ? U
     : T extends Object<infer U> ? U
     : never
 

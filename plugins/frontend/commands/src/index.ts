@@ -18,7 +18,10 @@ interface Snapshot extends Command.Config {
 }
 
 interface Config extends Override, Command.Config {}
-const Config = Schema.intersect([Override, Command.Config])
+const Config: Schema<string | Config, Config> = Schema.union([
+  Schema.intersect([Override, Command.Config]),
+  Schema.transform(Schema.string(), (name) => ({ name, alias: [] })),
+])
 
 export const schema = Schema.dict(Config)
 
