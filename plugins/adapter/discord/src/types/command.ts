@@ -1,4 +1,4 @@
-import { ChannelType, Internal, snowflake } from '.'
+import { Channel, Internal, snowflake } from '.'
 
 /** https://discord.com/developers/docs/interactions/application-commands#application-command-object-application-command-structure */
 export interface ApplicationCommand {
@@ -47,7 +47,7 @@ export interface ApplicationCommandOption {
   /** if the option is a subcommand or subcommand group type, this nested options will be the parameters */
   options?: ApplicationCommandOption[]
   /** if the option is a channel type, the channels shown will be restricted to these types */
-  channel_types?: ChannelType[]
+  channel_types?: Channel.Type[]
 }
 
 /** https://discord.com/developers/docs/interactions/application-commands#application-command-object-application-command-option-type */

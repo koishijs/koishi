@@ -5,7 +5,7 @@ export interface Channel {
   /** the id of this channel */
   id: snowflake
   /** the type of channel */
-  type: integer
+  type: Channel.Type
   /** the id of the guild (may be missing for some channel objects received over gateway guild dispatches) */
   guild_id?: snowflake
   /** sorting position of the channel */
@@ -42,44 +42,121 @@ export interface Channel {
   rtc_region?: string
   /** the camera video quality mode of the voice channel, 1 when not present */
   video_quality_mode?: integer
-  /** an approximate count of messages in a thread, stops counting at 50 */
-  message_count?: integer
-  /** an approximate count of users in a thread, stops counting at 50 */
-  member_count?: integer
-  /** thread-specific fields not needed by other channels */
-  thread_metadata?: ThreadMetadata
-  /** thread member object for the current user, if they have joined the thread, only included on certain API endpoints */
-  member?: ThreadMember
-  /** default duration for newly created threads, in minutes, to automatically archive the thread after recent activity, can be set to: 60, 1440, 4320, 10080 */
-  default_auto_archive_duration?: integer
   /** computed permissions for the invoking user in the channel, including overwrites, only included when part of the resolved data received on a slash command interaction */
   permissions?: string
 }
 
-/** https://discord.com/developers/docs/resources/channel#channel-object-channel-types */
-export enum ChannelType {
-  /** a text channel within a server */
-  GUILD_TEXT = 0,
-  /** a direct message between users */
-  DM = 1,
-  /** a voice channel within a server */
-  GUILD_VOICE = 2,
-  /** a direct message between multiple users */
-  GROUP_DM = 3,
-  /** an organizational category that contains up to 50 channels */
-  GUILD_CATEGORY = 4,
-  /** a channel that users can follow and crosspost into their own server */
-  GUILD_NEWS = 5,
-  /** a channel in which game developers can sell their game on Discord */
-  GUILD_STORE = 6,
-  /** a temporary sub-channel within a GUILD_NEWS channel */
-  GUILD_NEWS_THREAD = 10,
-  /** a temporary sub-channel within a GUILD_TEXT channel */
-  GUILD_PUBLIC_THREAD = 11,
-  /** a temporary sub-channel within a GUILD_TEXT channel that is only viewable by those invited and those with the MANAGE_THREADS permission */
-  GUILD_PRIVATE_THREAD = 12,
-  /** a voice channel for hosting events with an audience */
-  GUILD_STAGE_VOICE = 13,
+export namespace Channel {
+  /** https://discord.com/developers/docs/resources/channel#channel-object-channel-types */
+  export enum Type {
+    /** a text channel within a server */
+    GUILD_TEXT = 0,
+    /** a direct message between users */
+    DM = 1,
+    /** a voice channel within a server */
+    GUILD_VOICE = 2,
+    /** a direct message between multiple users */
+    GROUP_DM = 3,
+    /** an organizational category that contains up to 50 channels */
+    GUILD_CATEGORY = 4,
+    /** a channel that users can follow and crosspost into their own server */
+    GUILD_NEWS = 5,
+    /** a channel in which game developers can sell their game on Discord */
+    GUILD_STORE = 6,
+    /** a temporary sub-channel within a GUILD_NEWS channel */
+    GUILD_NEWS_THREAD = 10,
+    /** a temporary sub-channel within a GUILD_TEXT channel */
+    GUILD_PUBLIC_THREAD = 11,
+    /** a temporary sub-channel within a GUILD_TEXT channel that is only viewable by those invited and those with the MANAGE_THREADS permission */
+    GUILD_PRIVATE_THREAD = 12,
+    /** a voice channel for hosting events with an audience */
+    GUILD_STAGE_VOICE = 13,
+  }
+
+  export type ModifyParams =
+    | ModifyParams.GroupDM
+    | ModifyParams.GuildChannel
+    | ModifyParams.Thread
+
+  export namespace ModifyParams {
+    /** https://discord.com/developers/docs/resources/channel#modify-channel-json-params-group-dm */
+    export interface GroupDM {
+      /** 1-100 character channel name */
+      name: string
+      /** base64 encoded icon */
+      icon: string
+    }
+
+    /** https://discord.com/developers/docs/resources/channel#modify-channel-json-params-guild-channel */
+    export interface GuildChannel {
+      /** 1-100 character channel name */
+      name: string
+      /** the type of channel; only conversion between text and news is supported and only in guilds with the "NEWS" feature */
+      type: integer
+      /** the position of the channel in the left-hand listing */
+      position?: integer
+      /** 0-1024 character channel topic */
+      topic?: string
+      /** whether the channel is nsfw */
+      nsfw?: boolean
+      /** amount of seconds a user has to wait before sending another message (0-21600); bots, as well as users with the permission manage_messages or manage_channel, are unaffected */
+      rate_limit_per_user?: integer
+      /** the bitrate (in bits) of the voice channel; 8000 to 96000 (128000 for VIP servers) */
+      bitrate?: integer
+      /** the user limit of the voice channel; 0 refers to no limit, 1 to 99 refers to a user limit */
+      user_limit?: integer
+      /** channel or category-specific permissions */
+      permission_overwrites?: Overwrite[]
+      /** id of the new parent category for a channel */
+      parent_id?: snowflake
+      /** channel voice region id, automatic when set to null */
+      rtc_region?: string
+      /** the camera video quality mode of the voice channel */
+      video_quality_mode?: integer
+      /** the default duration that the clients use (not the API) for newly created threads in the channel, in minutes, to automatically archive the thread after recent activity */
+      default_auto_archive_duration?: integer
+    }
+
+    /** https://discord.com/developers/docs/resources/channel#modify-channel-json-params-thread */
+    export interface Thread {
+      /** 1-100 character channel name */
+      name: string
+      /** whether the thread is archived */
+      archived: boolean
+      /** duration in minutes to automatically archive the thread after recent activity, can be set to: 60, 1440, 4320, 10080 */
+      auto_archive_duration: integer
+      /** whether the thread is locked; when a thread is locked, only users with MANAGE_THREADS can unarchive it */
+      locked: boolean
+      /** whether non-moderators can add other non-moderators to a thread; only available on private threads */
+      invitable: boolean
+      /** amount of seconds a user has to wait before sending another message (0-21600); bots, as well as users with the permission manage_messages, manage_thread, or manage_channel, are unaffected */
+      rate_limit_per_user?: integer
+    }
+  }
+
+  /** https://discord.com/developers/docs/resources/channel#edit-channel-permissions-json-params */
+  export interface EditPermissionsParams {
+    /** the bitwise value of all allowed permissions */
+    allow: string
+    /** the bitwise value of all disallowed permissions */
+    deny: string
+    /** 0 for a role or 1 for a member */
+    type: integer
+  }
+
+  /** https://discord.com/developers/docs/resources/channel#follow-news-channel-json-params */
+  export interface FollowParams {
+    /** id of target channel */
+    webhook_channel_id: snowflake
+  }
+
+  /** https://discord.com/developers/docs/resources/channel#group-dm-add-recipient-json-params */
+  export interface AddRecipientParams {
+    /** access token of a user that has granted your app the gdm.join scope */
+    access_token: string
+    /** nickname of the user being added */
+    nick: string
+  }
 }
 
 /** https://discord.com/developers/docs/resources/channel#followed-channel-object-followed-channel-structure */
@@ -100,32 +177,6 @@ export interface Overwrite {
   allow: string
   /** permission bit set */
   deny: string
-}
-
-/** https://discord.com/developers/docs/resources/channel#thread-metadata-object-thread-metadata-structure */
-export interface ThreadMetadata {
-  /** whether the thread is archived */
-  archived: boolean
-  /** duration in minutes to automatically archive the thread after recent activity, can be set to: 60, 1440, 4320, 10080 */
-  auto_archive_duration: integer
-  /** timestamp when the thread's archive status was last changed, used for calculating recent activity */
-  archive_timestamp: timestamp
-  /** whether the thread is locked; when a thread is locked, only users with MANAGE_THREADS can unarchive it */
-  locked: boolean
-  /** whether non-moderators can add other non-moderators to a thread; only available on private threads */
-  invitable?: boolean
-}
-
-/** https://discord.com/developers/docs/resources/channel#thread-member-object-thread-member-structure */
-export interface ThreadMember {
-  /** the id of the thread */
-  id?: snowflake
-  /** the id of the user */
-  user_id?: snowflake
-  /** the time the current user last joined the thread */
-  join_timestamp: timestamp
-  /** any user-thread settings, currently only used for notifications */
-  flags: integer
 }
 
 /** https://discord.com/developers/docs/resources/channel#allowed-mentions-object-allowed-mention-types */
@@ -166,34 +217,6 @@ export interface ChannelPinsUpdateEvent {
   last_pin_timestamp?: timestamp
 }
 
-/** https://discord.com/developers/docs/topics/gateway#thread-list-sync-thread-list-sync-event-fields */
-export interface ThreadListSyncEvent {
-  /** the id of the guild */
-  guild_id: snowflake
-  /** the parent channel ids whose threads are being synced.  If omitted, then threads were synced for the entire guild.  This array may contain channel_ids that have no active threads as well, so you know to clear that data. */
-  channel_ids?: snowflake[]
-  /** all active threads in the given channels that the current user can access */
-  threads: Channel[]
-  /** all thread member objects from the synced threads for the current user, indicating which threads the current user has been added to */
-  members: ThreadMember[]
-}
-
-export interface ThreadMemberUpdateEvent extends ThreadMember {}
-
-/** https://discord.com/developers/docs/topics/gateway#thread-members-update-thread-members-update-event-fields */
-export interface ThreadMembersUpdateEvent {
-  /** the id of the thread */
-  id: snowflake
-  /** the id of the guild */
-  guild_id: snowflake
-  /** the approximate number of members in the thread, capped at 50 */
-  member_count: integer
-  /** the users who were added to the thread */
-  added_members?: ThreadMember[]
-  /** the id of the users who were removed from the thread */
-  removed_member_ids?: snowflake[]
-}
-
 /** https://discord.com/developers/docs/topics/gateway#typing-start-typing-start-event-fields */
 export interface TypingStartEvent {
   /** id of the channel */
@@ -218,12 +241,6 @@ declare module './gateway' {
     CHANNEL_DELETE: ChannelDeleteEvent
     /** message was pinned or unpinned */
     CHANNEL_PINS_UPDATE: ChannelPinsUpdateEvent
-    /** sent when gaining access to a channel, contains all active threads in that channel */
-    THREAD_LIST_SYNC: ThreadListSyncEvent
-    /** thread member for the current user was updated */
-    THREAD_MEMBER_UPDATE: ThreadMemberUpdateEvent
-    /** some user(s) were added to or removed from a thread */
-    THREAD_MEMBERS_UPDATE: ThreadMembersUpdateEvent
     /** user started typing in a channel */
     TYPING_START: TypingStartEvent
   }
@@ -261,12 +278,51 @@ Internal.define({
 
 declare module './internal' {
   interface Internal {
-    /** https://discord.com/developers/docs/resources/channel#get-channel */
+    /**
+     * Get a channel by ID. Returns a channel object. If the channel is a thread, a thread member object is included in the returned result.
+     * @see https://discord.com/developers/docs/resources/channel#get-channel
+     */
     getChannel(channel_id: string): Promise<Channel>
-    /** https://discord.com/developers/docs/resources/channel#modify-channel */
-    modifyChannel(channel_id: string, data: Partial<Channel>): Promise<Channel>
-    /** https://discord.com/developers/docs/resources/channel#deleteclose-channel */
+    /**
+     * Update a channel's settings. Returns a channel on success, and a 400 BAD REQUEST on invalid parameters. All JSON parameters are optional.
+     * @see https://discord.com/developers/docs/resources/channel#modify-channel
+     */
+    modifyChannel(channel_id: string, params: Channel.ModifyParams): Promise<Channel>
+    /**
+     * Delete a channel, or close a private message. Requires the MANAGE_CHANNELS permission for the guild, or MANAGE_THREADS if the channel is a thread. Deleting a category does not delete its child channels; they will have their parent_id removed and a Channel Update Gateway event will fire for each of them. Returns a channel object on success. Fires a Channel Delete Gateway event (or Thread Delete if the channel was a thread).
+     * @see https://discord.com/developers/docs/resources/channel#deleteclose-channel
+     */
     deleteChannel(channel_id: string): Promise<Channel>
+    /**
+     * Edit the channel permission overwrites for a user or role in a channel. Only usable for guild channels. Requires the MANAGE_ROLES permission. Only permissions your bot has in the guild or channel can be allowed/denied (unless your bot has a MANAGE_ROLES overwrite in the channel). Returns a 204 empty response on success. For more information about permissions, see permissions.
+     * @see https://discord.com/developers/docs/resources/channel#edit-channel-permissions
+     */
+    editChannelPermissions(channel_id: string, overwrite_id: string, params: Channel.EditPermissionsParams): Promise<void>
+    /**
+     * Delete a channel permission overwrite for a user or role in a channel. Only usable for guild channels. Requires the MANAGE_ROLES permission. Returns a 204 empty response on success. For more information about permissions, see permissions
+     * @see https://discord.com/developers/docs/resources/channel#delete-channel-permission
+     */
+    deleteChannelPermission(channel_id: string, overwrite_id: string): Promise<void>
+    /**
+     * Follow a News Channel to send messages to a target channel. Requires the MANAGE_WEBHOOKS permission in the target channel. Returns a followed channel object.
+     * @see https://discord.com/developers/docs/resources/channel#follow-news-channel
+     */
+    followNewsChannel(channel_id: string, params: Channel.FollowParams): Promise<void>
+    /**
+     * Post a typing indicator for the specified channel. Generally bots should not implement this route. However, if a bot is responding to a command and expects the computation to take a few seconds, this endpoint may be called to let the user know that the bot is processing their message. Returns a 204 empty response on success. Fires a Typing Start Gateway event.
+     * @see https://discord.com/developers/docs/resources/channel#trigger-typing-indicator
+     */
+    triggerTypingIndicator(channel_id: string): Promise<void>
+    /**
+     * Adds a recipient to a Group DM using their access token.
+     * @see https://discord.com/developers/docs/resources/channel#group-dm-add-recipient
+     */
+    groupDMAddRecipient(channel_id: snowflake, user_id: snowflake, params: Channel.AddRecipientParams): Promise<void>
+    /**
+     * Removes a recipient from a Group DM.
+     * @see https://discord.com/developers/docs/resources/channel#group-dm-remove-recipient
+     */
+    groupDMRemoveRecipient(channel_id: snowflake, user_id: snowflake): Promise<void>
   }
 }
 
@@ -280,55 +336,14 @@ Internal.define({
     PUT: 'editChannelPermissions',
     DELETE: 'deleteChannelPermission',
   },
-  '/channels/{channel.id}/invites': {
-    GET: 'getChannelInvites',
-    POST: 'createChannelInvite',
-  },
   '/channels/{channel.id}/followers': {
     POST: 'followNewsChannel',
   },
   '/channels/{channel.id}/typing': {
     POST: 'triggerTypingIndicator',
   },
-  '/channels/{channel.id}/pins': {
-    GET: 'getPinnedMessages',
-  },
-  '/channels/{channel.id}/pins/{message.id}': {
-    PUT: 'pinMessage',
-    DELETE: 'unpinMessage',
-  },
   '/channels/{channel.id}/recipients/{user.id}': {
     PUT: 'groupDMAddRecipient',
     DELETE: 'groupDMRemoveRecipient',
-  },
-  '/channels/{channel.id}/messages/{message.id}/threads': {
-    POST: 'startThreadwithMessage',
-  },
-  '/channels/{channel.id}/threads': {
-    POST: 'startThreadwithoutMessage',
-  },
-  '/channels/{channel.id}/thread-members/@me': {
-    PUT: 'joinThread',
-    DELETE: 'leaveThread',
-  },
-  '/channels/{channel.id}/thread-members/{user.id}': {
-    PUT: 'addThreadMember',
-    DELETE: 'removeThreadMember',
-    GET: 'getThreadMember',
-  },
-  '/channels/{channel.id}/thread-members': {
-    GET: 'listThreadMembers',
-  },
-  '/channels/{channel.id}/threads/active': {
-    GET: 'listActiveThreads',
-  },
-  '/channels/{channel.id}/threads/archived/public': {
-    GET: 'listPublicArchivedThreads',
-  },
-  '/channels/{channel.id}/threads/archived/private': {
-    GET: 'listPrivateArchivedThreads',
-  },
-  '/channels/{channel.id}/users/@me/threads/archived/private': {
-    GET: 'listJoinedPrivateArchivedThreads',
   },
 })
