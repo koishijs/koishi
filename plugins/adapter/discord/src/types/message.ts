@@ -1,4 +1,4 @@
-import { AllowedMentions, Application, Channel, Component, GuildMember, integer, Internal, MessageInteraction, Reaction, snowflake, Sticker, StickerItem, timestamp, User } from '.'
+import { AllowedMentions, Application, Channel, Component, GuildMember, integer, Internal, MessageInteraction, Reaction, snowflake, Sticker, timestamp, User } from '.'
 
 /** https://discord.com/developers/docs/resources/channel#message-object-message-structure */
 export interface Message {
@@ -61,9 +61,7 @@ export interface Message {
   /** sent if the message contains components like buttons, action rows, or other interactive components */
   components?: Component[]
   /** sent if the message contains stickers */
-  sticker_items?: StickerItem[]
-  /** Deprecated the stickers sent with the message */
-  stickers?: Sticker[]
+  sticker_items?: Sticker.Item[]
 }
 
 export namespace Message {

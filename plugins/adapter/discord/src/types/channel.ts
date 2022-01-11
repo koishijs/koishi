@@ -282,37 +282,37 @@ declare module './internal' {
      * Get a channel by ID. Returns a channel object. If the channel is a thread, a thread member object is included in the returned result.
      * @see https://discord.com/developers/docs/resources/channel#get-channel
      */
-    getChannel(channel_id: string): Promise<Channel>
+    getChannel(channel_id: snowflake): Promise<Channel>
     /**
      * Update a channel's settings. Returns a channel on success, and a 400 BAD REQUEST on invalid parameters. All JSON parameters are optional.
      * @see https://discord.com/developers/docs/resources/channel#modify-channel
      */
-    modifyChannel(channel_id: string, params: Channel.ModifyParams): Promise<Channel>
+    modifyChannel(channel_id: snowflake, params: Channel.ModifyParams): Promise<Channel>
     /**
      * Delete a channel, or close a private message. Requires the MANAGE_CHANNELS permission for the guild, or MANAGE_THREADS if the channel is a thread. Deleting a category does not delete its child channels; they will have their parent_id removed and a Channel Update Gateway event will fire for each of them. Returns a channel object on success. Fires a Channel Delete Gateway event (or Thread Delete if the channel was a thread).
      * @see https://discord.com/developers/docs/resources/channel#deleteclose-channel
      */
-    deleteChannel(channel_id: string): Promise<Channel>
+    deleteChannel(channel_id: snowflake): Promise<Channel>
     /**
      * Edit the channel permission overwrites for a user or role in a channel. Only usable for guild channels. Requires the MANAGE_ROLES permission. Only permissions your bot has in the guild or channel can be allowed/denied (unless your bot has a MANAGE_ROLES overwrite in the channel). Returns a 204 empty response on success. For more information about permissions, see permissions.
      * @see https://discord.com/developers/docs/resources/channel#edit-channel-permissions
      */
-    editChannelPermissions(channel_id: string, overwrite_id: string, params: Channel.EditPermissionsParams): Promise<void>
+    editChannelPermissions(channel_id: snowflake, overwrite_id: string, params: Channel.EditPermissionsParams): Promise<void>
     /**
      * Delete a channel permission overwrite for a user or role in a channel. Only usable for guild channels. Requires the MANAGE_ROLES permission. Returns a 204 empty response on success. For more information about permissions, see permissions
      * @see https://discord.com/developers/docs/resources/channel#delete-channel-permission
      */
-    deleteChannelPermission(channel_id: string, overwrite_id: string): Promise<void>
+    deleteChannelPermission(channel_id: snowflake, overwrite_id: string): Promise<void>
     /**
      * Follow a News Channel to send messages to a target channel. Requires the MANAGE_WEBHOOKS permission in the target channel. Returns a followed channel object.
      * @see https://discord.com/developers/docs/resources/channel#follow-news-channel
      */
-    followNewsChannel(channel_id: string, params: Channel.FollowParams): Promise<void>
+    followNewsChannel(channel_id: snowflake, params: Channel.FollowParams): Promise<void>
     /**
      * Post a typing indicator for the specified channel. Generally bots should not implement this route. However, if a bot is responding to a command and expects the computation to take a few seconds, this endpoint may be called to let the user know that the bot is processing their message. Returns a 204 empty response on success. Fires a Typing Start Gateway event.
      * @see https://discord.com/developers/docs/resources/channel#trigger-typing-indicator
      */
-    triggerTypingIndicator(channel_id: string): Promise<void>
+    triggerTypingIndicator(channel_id: snowflake): Promise<void>
     /**
      * Adds a recipient to a Group DM using their access token.
      * @see https://discord.com/developers/docs/resources/channel#group-dm-add-recipient

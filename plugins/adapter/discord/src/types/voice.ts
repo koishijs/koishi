@@ -67,7 +67,10 @@ declare module './gateway' {
 
 declare module './internal' {
   interface Internal {
-    /** https://discord.com/developers/docs/resources/voice#list-voice-regions */
+    /**
+     * Returns an array of voice region objects that can be used when setting a voice or stage channel's rtc_region.
+     * @see https://discord.com/developers/docs/resources/voice#list-voice-regions
+     */
     listVoiceRegions(): Promise<VoiceRegion[]>
   }
 }
