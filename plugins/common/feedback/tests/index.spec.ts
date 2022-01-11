@@ -8,9 +8,7 @@ import 'chai-shape'
 const app = new App()
 
 app.plugin(mock)
-app.plugin(feedback, {
-  operators: ['mock:999'],
-})
+app.plugin(feedback, ['mock:999'])
 
 const client = app.mock.client('123')
 

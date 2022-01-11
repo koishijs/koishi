@@ -1,4 +1,4 @@
-import { Context, noop, sleep, template } from 'koishi'
+import { Context, noop, Schema, sleep, template } from 'koishi'
 import { parsePlatform } from '@koishijs/command-utils'
 
 template.set('feedback', {
@@ -10,6 +10,13 @@ template.set('feedback', {
 export interface Config {
   operators?: string[]
 }
+
+export const schema: Schema<string[] | Config, Config> = Schema.union([
+  Schema.object({
+    operators: Schema.array(Schema.string()),
+  }),
+  Schema.transform(Schema.array(Schema.string()), (operators) => ({ operators })),
+])
 
 export const name = 'feedback'
 
