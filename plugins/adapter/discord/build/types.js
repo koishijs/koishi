@@ -105,7 +105,6 @@ function generateDecls() {
     const type = segments.pop()
 
     if (type === 'Structure') {
-      if (header.textContent === 'Response Structure') continue
       addDecl(`interface ${segments.join('')}`, toFieldDecl)
     } else if (type === 'Object' || type === 'Fields') {
       addDecl(`interface ${segments.join('')}`, toFieldDecl)
@@ -119,6 +118,8 @@ function generateDecls() {
     } else if (type === 'Enum') {
       const callback = table.querySelector('th').textContent === 'Value' ? toValueDecl1 : toValueDecl2
       addDecl(`enum ${header.textContent.replace(/ /g, '')}`, callback)
+    } else {
+      addDecl(`interface ${segments.join('') + type}`, toFieldDecl)
     }
 
     function addDecl(fullname, callback) {
