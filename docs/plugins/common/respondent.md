@@ -9,18 +9,16 @@ sidebarDepth: 2
 ```js koishi.config.js
 module.exports = {
   plugins: {
-    common: {
-      respondent: [{
-        match: 'awsl',
-        reply: '爱我苏联',
-      }, {
-        match: /^\s*(\S +){2,}\S\s*$/,
-        reply: '空格警察，出动！',
-      }, {
-        match: /^(.+)一时爽$/,
-        reply: (_, str) => `一直${str}一直爽`,
-      }],
-    },
+    respondent: [{
+      match: 'awsl',
+      reply: '爱我苏联',
+    }, {
+      match: /^\s*(\S +){2,}\S\s*$/,
+      reply: '空格警察，出动！',
+    }, {
+      match: /^(.+)一时爽$/,
+      reply: (_, str) => `一直${str}一直爽`,
+    }],
   },
 }
 ```

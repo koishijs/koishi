@@ -31,7 +31,7 @@ Koishi 支持多个聊天平台，对于不同的平台，你也需要做好相�
 
 ## 初始化项目
 
-首先初始化你的机器人目录并安装 Koishi 和所需的插件 (这里以官方插件 onebot 和 common 为例)：
+首先初始化你的机器人目录并安装 Koishi 和所需的插件 (这里以官方插件 onebot 和 echo 为例)：
 
 ::: code-group manager
 ```npm

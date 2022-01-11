@@ -24,7 +24,7 @@ export function apply(ctx: Context, { operators = [] }: Config) {
   type FeedbackData = [sid: string, channelId: string, guildId: string]
   const feedbacks: Record<number, FeedbackData> = {}
 
-  ctx.command('common/feedback <message:text>', '发送反馈信息给作者')
+  ctx.command('feedback <message:text>', '发送反馈信息给作者')
     .userFields(['name', 'id'])
     .action(async ({ session }, text) => {
       if (!text) return template('feedback.expect-text')
