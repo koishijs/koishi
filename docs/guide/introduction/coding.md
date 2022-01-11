@@ -39,14 +39,14 @@ Koishi 支持多个聊天平台，对于不同的平台，你也需要做好相�
 npm init
 
 # 安装 koishi 和相关库
-npm i koishi @koishijs/plugin-adapter-onebot @koishijs/plugin-common
+npm i koishi @koishijs/plugin-adapter-onebot @koishijs/plugin-echo
 ```
 ```yarn
 # 初始化项目
 yarn init
 
 # 安装 koishi 和相关库
-yarn add koishi @koishijs/plugin-adapter-onebot @koishijs/plugin-common
+yarn add koishi @koishijs/plugin-adapter-onebot @koishijs/plugin-echo
 ```
 :::
 
@@ -66,9 +66,8 @@ app.plugin('adapter-onebot', {
   endpoint: 'ws://127.0.0.1:6700',
 })
 
-// 安装 common 插件，你可以不传任何配置项
-// 这个插件提供了下面要用到的 echo 指令
-app.plugin('common')
+// 安装 echo 插件
+app.plugin('echo')
 
 // 启动应用
 app.start()
@@ -86,9 +85,8 @@ app.plugin('adapter-onebot', {
   endpoint: 'ws://127.0.0.1:6700',
 })
 
-// 安装 common 插件，你可以不传任何配置项
-// 这个插件提供了下面要用到的 echo 指令
-app.plugin('common')
+// 安装 echo 插件
+app.plugin('echo')
 
 // 启动应用
 app.start()
@@ -124,7 +122,7 @@ Koishi 插件可以在 [npm](https://www.npmjs.com/) 上获取。要下载的包
 
 ```ts
 import onebot from '@koishijs/plugin-adapter-onebot'
-import * as common from '@koishijs/plugin-common'
+import * as echo from '@koishijs/plugin-echo'
 
 app.plugin(onebot, {
   protocol: 'ws',
@@ -132,15 +130,15 @@ app.plugin(onebot, {
   endpoint: 'ws://127.0.0.1:6700',
 })
 
-app.plugin(common)
+app.plugin(echo)
 ```
 
-请注意到上面的两个插件的导入方式的微妙差异。onebot 插件使用了默认导出，而 common 插件使用了导出的命名空间。这两种写法存在本质的区别，不能混用。虽然这可能产生一些困扰，但对 TypeScript 用户来说，只需注意到写代码时的类型提示就足以确定自己应该采用的写法。
+请注意到上面的两个插件的导入方式的微妙差异。onebot 插件使用了默认导出，而 echo 插件使用了导出的命名空间。这两种写法存在本质的区别，不能混用。虽然这可能产生一些困扰，但对 TypeScript 用户来说，只需注意到写代码时的类型提示就足以确定自己应该采用的写法。
 
-同理，对于 cjs 的使用者，如果要使用 `require` 来获取插件对象，也应注意到这种区别：
+同理，对于 commonjs 的使用者，如果要使用 `require` 来获取插件对象，也应注意到这种区别：
 
 ```js
-// 注意这里的 .default 是不可省略的
+// 这里的 .default 是不可省略的
 app.plugin(require('@koishijs/plugin-adapter-onebot').default, {
   protocol: 'ws',
   selfId: '123456789',
@@ -148,10 +146,10 @@ app.plugin(require('@koishijs/plugin-adapter-onebot').default, {
 })
 
 // 这里则不能写上 .default
-app.plugin(require('@koishijs/plugin-common'))
+app.plugin(require('@koishijs/plugin-echo'))
 ```
 
-为了避免混淆，我们建议 cjs 的使用者直接使用插件的短名安装插件。
+为了避免混淆，我们建议 commonjs 的使用者直接使用插件的短名安装插件。
 
 ## 添加交互逻辑
 
