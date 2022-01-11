@@ -1,5 +1,5 @@
 {
-  "name": "@koishijs/plugin-contextify",
+  "name": "@koishijs/plugin-sudo",
   "description": "Simulate other contexts in Koishi",
   "version": "1.0.0",
   "main": "lib/index.js",
@@ -19,7 +19,7 @@
   "bugs": {
     "url": "https://github.com/koishijs/koishi/issues"
   },
-  "homepage": "https://koishi.js.org/plugins/contextify/",
+  "homepage": "https://koishi.js.org/plugins/accessibility/sudo/",
   "keywords": [
     "bot",
     "qqbot",
@@ -28,7 +28,7 @@
     "chatbot",
     "koishi",
     "plugin",
-    "contextify"
+    "sudo"
   ],
   "peerDependencies": {
     "koishi": "^4.0.0-rc.3"

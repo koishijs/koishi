@@ -1,35 +1,34 @@
 import { Context, Session, template } from 'koishi'
 import { parsePlatform } from '@koishijs/command-utils'
 
-template.set('contextify', {
+template.set('sudo', {
   'expect-command': '请输入要触发的指令。',
   'expect-context': '请提供新的上下文。',
   'invalid-private-member': '无法在私聊上下文使用 --member 选项。',
 })
 
-export const name = 'contextify'
+export const name = 'sudo'
 export const using = ['database'] as const
 
 export function apply(ctx: Context) {
-  ctx.command('contextify <command:text>', '在特定上下文中触发指令', { authority: 3 })
-    .alias('ctxf')
+  ctx.command('sudo <command:text>', '在特定上下文中触发指令', { authority: 3 })
     .userFields(['authority'])
     .option('user', '-u [id:user]  使用用户私聊上下文')
     .option('member', '-m [id:user]  使用当前频道成员上下文')
     .option('channel', '-c [id:channel]  使用群聊上下文')
     .action(async ({ session, options }, message) => {
-      if (!message) return template('contextify.expect-command')
+      if (!message) return template('sudo.expect-command')
 
       if (options.member) {
         if (session.subtype === 'private') {
-          return template('contextify.invalid-private-member')
+          return template('sudo.invalid-private-member')
         }
         options.channel = session.cid
         options.user = options.member
       }
 
       if (!options.user && !options.channel) {
-        return template('contextify.expect-context')
+        return template('sudo.expect-context')
       }
 
       const sess = new Session(session.bot, session)
