@@ -73,89 +73,141 @@ export namespace Channel {
     GUILD_STAGE_VOICE = 13,
   }
 
-  export type ModifyParams =
-    | ModifyParams.GroupDM
-    | ModifyParams.GuildChannel
-    | ModifyParams.Thread
-
-  export namespace ModifyParams {
-    /** https://discord.com/developers/docs/resources/channel#modify-channel-json-params-group-dm */
-    export interface GroupDM {
-      /** 1-100 character channel name */
-      name: string
-      /** base64 encoded icon */
-      icon: string
+  export namespace Params {
+    /** https://discord.com/developers/docs/resources/user#create-dm-json-params */
+    export interface CreateDM {
+      /** the recipient to open a DM channel with */
+      recipient_id: snowflake
     }
 
-    /** https://discord.com/developers/docs/resources/channel#modify-channel-json-params-guild-channel */
-    export interface GuildChannel {
-      /** 1-100 character channel name */
+    /** https://discord.com/developers/docs/resources/user#create-group-dm-json-params */
+    export interface CreateGroupDM {
+      /** access tokens of users that have granted your app the gdm.join scope */
+      access_tokens: string[]
+      /** a dictionary of user ids to their respective nicknames */
+      nicks: Record<string, string>
+    }
+
+    /** https://discord.com/developers/docs/resources/guild#create-guild-channel-json-params */
+    export interface Create {
+      /** channel name (1-100 characters) */
       name: string
-      /** the type of channel; only conversion between text and news is supported and only in guilds with the "NEWS" feature */
+      /** the type of channel */
       type: integer
-      /** the position of the channel in the left-hand listing */
-      position?: integer
-      /** 0-1024 character channel topic */
-      topic?: string
-      /** whether the channel is nsfw */
-      nsfw?: boolean
+      /** channel topic (0-1024 characters) */
+      topic: string
+      /** the bitrate (in bits) of the voice channel (voice only) */
+      bitrate: integer
+      /** the user limit of the voice channel (voice only) */
+      user_limit: integer
       /** amount of seconds a user has to wait before sending another message (0-21600); bots, as well as users with the permission manage_messages or manage_channel, are unaffected */
-      rate_limit_per_user?: integer
-      /** the bitrate (in bits) of the voice channel; 8000 to 96000 (128000 for VIP servers) */
-      bitrate?: integer
-      /** the user limit of the voice channel; 0 refers to no limit, 1 to 99 refers to a user limit */
-      user_limit?: integer
-      /** channel or category-specific permissions */
-      permission_overwrites?: Overwrite[]
-      /** id of the new parent category for a channel */
+      rate_limit_per_user: integer
+      /** sorting position of the channel */
+      position: integer
+      /** the channel's permission overwrites */
+      permission_overwrites: Overwrite[]
+      /** id of the parent category for a channel */
+      parent_id: snowflake
+      /** whether the channel is nsfw */
+      nsfw: boolean
+    }
+
+    /** https://discord.com/developers/docs/resources/guild#modify-guild-channel-positions-json-params */
+    export interface ModifyPositions {
+      /** channel id */
+      id: snowflake
+      /** sorting position of the channel */
+      position?: integer
+      /** syncs the permission overwrites with the new parent, if moving to a new category */
+      lock_permissions?: boolean
+      /** the new parent ID for the channel that is moved */
       parent_id?: snowflake
-      /** channel voice region id, automatic when set to null */
-      rtc_region?: string
-      /** the camera video quality mode of the voice channel */
-      video_quality_mode?: integer
-      /** the default duration that the clients use (not the API) for newly created threads in the channel, in minutes, to automatically archive the thread after recent activity */
-      default_auto_archive_duration?: integer
     }
 
-    /** https://discord.com/developers/docs/resources/channel#modify-channel-json-params-thread */
-    export interface Thread {
-      /** 1-100 character channel name */
-      name: string
-      /** whether the thread is archived */
-      archived: boolean
-      /** duration in minutes to automatically archive the thread after recent activity, can be set to: 60, 1440, 4320, 10080 */
-      auto_archive_duration: integer
-      /** whether the thread is locked; when a thread is locked, only users with MANAGE_THREADS can unarchive it */
-      locked: boolean
-      /** whether non-moderators can add other non-moderators to a thread; only available on private threads */
-      invitable: boolean
-      /** amount of seconds a user has to wait before sending another message (0-21600); bots, as well as users with the permission manage_messages, manage_thread, or manage_channel, are unaffected */
-      rate_limit_per_user?: integer
+    export type Modify =
+      | Modify.GroupDM
+      | Modify.GuildChannel
+      | Modify.Thread
+
+    export namespace Modify {
+      /** https://discord.com/developers/docs/resources/channel#modify-channel-json-params-group-dm */
+      export interface GroupDM {
+        /** 1-100 character channel name */
+        name: string
+        /** base64 encoded icon */
+        icon: string
+      }
+
+      /** https://discord.com/developers/docs/resources/channel#modify-channel-json-params-guild-channel */
+      export interface GuildChannel {
+        /** 1-100 character channel name */
+        name: string
+        /** the type of channel; only conversion between text and news is supported and only in guilds with the "NEWS" feature */
+        type: integer
+        /** the position of the channel in the left-hand listing */
+        position?: integer
+        /** 0-1024 character channel topic */
+        topic?: string
+        /** whether the channel is nsfw */
+        nsfw?: boolean
+        /** amount of seconds a user has to wait before sending another message (0-21600); bots, as well as users with the permission manage_messages or manage_channel, are unaffected */
+        rate_limit_per_user?: integer
+        /** the bitrate (in bits) of the voice channel; 8000 to 96000 (128000 for VIP servers) */
+        bitrate?: integer
+        /** the user limit of the voice channel; 0 refers to no limit, 1 to 99 refers to a user limit */
+        user_limit?: integer
+        /** channel or category-specific permissions */
+        permission_overwrites?: Overwrite[]
+        /** id of the new parent category for a channel */
+        parent_id?: snowflake
+        /** channel voice region id, automatic when set to null */
+        rtc_region?: string
+        /** the camera video quality mode of the voice channel */
+        video_quality_mode?: integer
+        /** the default duration that the clients use (not the API) for newly created threads in the channel, in minutes, to automatically archive the thread after recent activity */
+        default_auto_archive_duration?: integer
+      }
+
+      /** https://discord.com/developers/docs/resources/channel#modify-channel-json-params-thread */
+      export interface Thread {
+        /** 1-100 character channel name */
+        name: string
+        /** whether the thread is archived */
+        archived: boolean
+        /** duration in minutes to automatically archive the thread after recent activity, can be set to: 60, 1440, 4320, 10080 */
+        auto_archive_duration: integer
+        /** whether the thread is locked; when a thread is locked, only users with MANAGE_THREADS can unarchive it */
+        locked: boolean
+        /** whether non-moderators can add other non-moderators to a thread; only available on private threads */
+        invitable: boolean
+        /** amount of seconds a user has to wait before sending another message (0-21600); bots, as well as users with the permission manage_messages, manage_thread, or manage_channel, are unaffected */
+        rate_limit_per_user?: integer
+      }
     }
-  }
 
-  /** https://discord.com/developers/docs/resources/channel#edit-channel-permissions-json-params */
-  export interface EditPermissionsParams {
-    /** the bitwise value of all allowed permissions */
-    allow: string
-    /** the bitwise value of all disallowed permissions */
-    deny: string
-    /** 0 for a role or 1 for a member */
-    type: integer
-  }
+    /** https://discord.com/developers/docs/resources/channel#edit-channel-permissions-json-params */
+    export interface EditPermissions {
+      /** the bitwise value of all allowed permissions */
+      allow: string
+      /** the bitwise value of all disallowed permissions */
+      deny: string
+      /** 0 for a role or 1 for a member */
+      type: integer
+    }
 
-  /** https://discord.com/developers/docs/resources/channel#follow-news-channel-json-params */
-  export interface FollowParams {
-    /** id of target channel */
-    webhook_channel_id: snowflake
-  }
+    /** https://discord.com/developers/docs/resources/channel#follow-news-channel-json-params */
+    export interface Follow {
+      /** id of target channel */
+      webhook_channel_id: snowflake
+    }
 
-  /** https://discord.com/developers/docs/resources/channel#group-dm-add-recipient-json-params */
-  export interface AddRecipientParams {
-    /** access token of a user that has granted your app the gdm.join scope */
-    access_token: string
-    /** nickname of the user being added */
-    nick: string
+    /** https://discord.com/developers/docs/resources/channel#group-dm-add-recipient-json-params */
+    export interface AddRecipient {
+      /** access token of a user that has granted your app the gdm.join scope */
+      access_token: string
+      /** nickname of the user being added */
+      nick: string
+    }
   }
 }
 
@@ -259,12 +311,42 @@ export interface ChannelPosition {
 
 declare module './internal' {
   interface Internal {
-    /** https://discord.com/developers/docs/resources/guild#get-guild-channels */
+    /**
+     * Create a new DM channel with a user. Returns a DM channel object.
+     * @see https://discord.com/developers/docs/resources/user#create-dm
+     */
+    createDM(params: Channel.Params.CreateDM): Promise<void>
+    /**
+     * Create a new group DM channel with multiple users. Returns a DM channel object. This endpoint was intended to be used with the now-deprecated GameBridge SDK. DMs created with this endpoint will not be shown in the Discord client
+     * @see https://discord.com/developers/docs/resources/user#create-group-dm
+     */
+    createGroupDM(params: Channel.Params.CreateGroupDM): Promise<void>
+  }
+}
+
+Internal.define({
+  '/users/@me/channels': {
+    POST: ['createDM', 'createGroupDM'],
+  },
+})
+
+declare module './internal' {
+  interface Internal {
+    /**
+     * Returns a list of guild channel objects. Does not include threads.
+     * @see https://discord.com/developers/docs/resources/guild#get-guild-channels
+     */
     getGuildChannels(guild_id: snowflake): Promise<Channel[]>
-    /** https://discord.com/developers/docs/resources/guild#create-guild-channel */
-    createGuildChannel(guild_id: snowflake, options: Partial<Channel>): Promise<Channel>
-    /** https://discord.com/developers/docs/resources/guild#modify-guild-channel-positions */
-    modifyGuildChannelPositions(guild_id: snowflake, positions: ChannelPosition[]): Promise<void>
+    /**
+     * Create a new channel object for the guild. Requires the MANAGE_CHANNELS permission. If setting permission overwrites, only permissions your bot has in the guild can be allowed/denied. Setting MANAGE_ROLES permission in channels is only possible for guild administrators. Returns the new channel object on success. Fires a Channel Create Gateway event.
+     * @see https://discord.com/developers/docs/resources/guild#create-guild-channel
+     */
+    createGuildChannel(guild_id: snowflake, params: Channel.Params.Create): Promise<Channel>
+    /**
+     * Modify the positions of a set of channel objects for the guild. Requires MANAGE_CHANNELS permission. Returns a 204 empty response on success. Fires multiple Channel Update Gateway events.
+     * @see https://discord.com/developers/docs/resources/guild#modify-guild-channel-positions
+     */
+    modifyGuildChannelPositions(guild_id: snowflake, params: Channel.Params.ModifyPositions): Promise<void>
   }
 }
 
@@ -287,7 +369,7 @@ declare module './internal' {
      * Update a channel's settings. Returns a channel on success, and a 400 BAD REQUEST on invalid parameters. All JSON parameters are optional.
      * @see https://discord.com/developers/docs/resources/channel#modify-channel
      */
-    modifyChannel(channel_id: snowflake, params: Channel.ModifyParams): Promise<Channel>
+    modifyChannel(channel_id: snowflake, params: Channel.Params.Modify): Promise<Channel>
     /**
      * Delete a channel, or close a private message. Requires the MANAGE_CHANNELS permission for the guild, or MANAGE_THREADS if the channel is a thread. Deleting a category does not delete its child channels; they will have their parent_id removed and a Channel Update Gateway event will fire for each of them. Returns a channel object on success. Fires a Channel Delete Gateway event (or Thread Delete if the channel was a thread).
      * @see https://discord.com/developers/docs/resources/channel#deleteclose-channel
@@ -297,7 +379,7 @@ declare module './internal' {
      * Edit the channel permission overwrites for a user or role in a channel. Only usable for guild channels. Requires the MANAGE_ROLES permission. Only permissions your bot has in the guild or channel can be allowed/denied (unless your bot has a MANAGE_ROLES overwrite in the channel). Returns a 204 empty response on success. For more information about permissions, see permissions.
      * @see https://discord.com/developers/docs/resources/channel#edit-channel-permissions
      */
-    editChannelPermissions(channel_id: snowflake, overwrite_id: string, params: Channel.EditPermissionsParams): Promise<void>
+    editChannelPermissions(channel_id: snowflake, overwrite_id: string, params: Channel.Params.EditPermissions): Promise<void>
     /**
      * Delete a channel permission overwrite for a user or role in a channel. Only usable for guild channels. Requires the MANAGE_ROLES permission. Returns a 204 empty response on success. For more information about permissions, see permissions
      * @see https://discord.com/developers/docs/resources/channel#delete-channel-permission
@@ -307,7 +389,7 @@ declare module './internal' {
      * Follow a News Channel to send messages to a target channel. Requires the MANAGE_WEBHOOKS permission in the target channel. Returns a followed channel object.
      * @see https://discord.com/developers/docs/resources/channel#follow-news-channel
      */
-    followNewsChannel(channel_id: snowflake, params: Channel.FollowParams): Promise<void>
+    followNewsChannel(channel_id: snowflake, params: Channel.Params.Follow): Promise<void>
     /**
      * Post a typing indicator for the specified channel. Generally bots should not implement this route. However, if a bot is responding to a command and expects the computation to take a few seconds, this endpoint may be called to let the user know that the bot is processing their message. Returns a 204 empty response on success. Fires a Typing Start Gateway event.
      * @see https://discord.com/developers/docs/resources/channel#trigger-typing-indicator
@@ -317,7 +399,7 @@ declare module './internal' {
      * Adds a recipient to a Group DM using their access token.
      * @see https://discord.com/developers/docs/resources/channel#group-dm-add-recipient
      */
-    groupDMAddRecipient(channel_id: snowflake, user_id: snowflake, params: Channel.AddRecipientParams): Promise<void>
+    groupDMAddRecipient(channel_id: snowflake, user_id: snowflake, params: Channel.Params.AddRecipient): Promise<void>
     /**
      * Removes a recipient from a Group DM.
      * @see https://discord.com/developers/docs/resources/channel#group-dm-remove-recipient

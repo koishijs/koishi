@@ -2,6 +2,7 @@ export * from './internal'
 
 export * from './application'
 export * from './audit-log'
+export * from './ban'
 export * from './channel'
 export * from './command'
 export * from './component'

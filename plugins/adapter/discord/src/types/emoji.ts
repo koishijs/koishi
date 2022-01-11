@@ -1,4 +1,4 @@
-import { GuildMember, integer, Internal, snowflake, User } from '.'
+import { Internal, snowflake, User } from '.'
 
 /** https://discord.com/developers/docs/resources/emoji#emoji-object-emoji-structure */
 export interface Emoji {

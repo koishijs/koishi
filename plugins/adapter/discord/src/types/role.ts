@@ -1,4 +1,4 @@
-import { integer, snowflake } from '.'
+import { integer, Internal, snowflake } from '.'
 
 /** https://discord.com/developers/docs/topics/permissions#permissions-bitwise-permission-flags */
 export enum Permission {
@@ -108,6 +108,54 @@ export interface Role {
   tags?: RoleTags
 }
 
+export namespace Role {
+  export namespace Params {
+    /** https://discord.com/developers/docs/resources/guild#create-guild-role-json-params */
+    export interface Create {
+      /** name of the role */
+      name: string
+      /** bitwise value of the enabled/disabled permissions */
+      permissions: string
+      /** RGB color value */
+      color: integer
+      /** whether the role should be displayed separately in the sidebar */
+      hoist: boolean
+      /** the role's icon image (if the guild has the ROLE_ICONS feature) */
+      icon: string
+      /** the role's unicode emoji as a standard emoji (if the guild has the ROLE_ICONS feature) */
+      unicode_emoji: string
+      /** whether the role should be mentionable */
+      mentionable: boolean
+    }
+
+    /** https://discord.com/developers/docs/resources/guild#modify-guild-role-positions-json-params */
+    export interface ModifyPositions {
+      /** role */
+      id: snowflake
+      /** sorting position of the role */
+      position?: integer
+    }
+
+    /** https://discord.com/developers/docs/resources/guild#modify-guild-role-json-params */
+    export interface Modify {
+      /** name of the role */
+      name: string
+      /** bitwise value of the enabled/disabled permissions */
+      permissions: string
+      /** RGB color value */
+      color: integer
+      /** whether the role should be displayed separately in the sidebar */
+      hoist: boolean
+      /** the role's icon image (if the guild has the ROLE_ICONS feature) */
+      icon: string
+      /** the role's unicode emoji as a standard emoji (if the guild has the ROLE_ICONS feature) */
+      unicode_emoji: string
+      /** whether the role should be mentionable */
+      mentionable: boolean
+    }
+  }
+}
+
 /** https://discord.com/developers/docs/topics/permissions#role-object-role-tags-structure */
 export interface RoleTags {
   /** the id of the bot this role belongs to */
@@ -152,3 +200,45 @@ declare module './gateway' {
     GUILD_ROLE_DELETE: GuildRoleDeleteEvent
   }
 }
+
+declare module './internal' {
+  interface Internal {
+    /**
+     * Returns a list of role objects for the guild.
+     * @see https://discord.com/developers/docs/resources/guild#get-guild-roles
+     */
+    getGuildRoles(guild_id: snowflake): Promise<Role[]>
+    /**
+     * Create a new role for the guild. Requires the MANAGE_ROLES permission. Returns the new role object on success. Fires a Guild Role Create Gateway event. All JSON params are optional.
+     * @see https://discord.com/developers/docs/resources/guild#create-guild-role
+     */
+    createGuildRole(guild_id: snowflake, param: Role.Params.Create): Promise<Role>
+    /**
+     * Modify the positions of a set of role objects for the guild. Requires the MANAGE_ROLES permission. Returns a list of all of the guild's role objects on success. Fires multiple Guild Role Update Gateway events.
+     * @see https://discord.com/developers/docs/resources/guild#modify-guild-role-positions
+     */
+    modifyGuildRolePositions(guild_id: snowflake, param: Role.Params.ModifyPositions): Promise<Role[]>
+    /**
+     * Modify a guild role. Requires the MANAGE_ROLES permission. Returns the updated role on success. Fires a Guild Role Update Gateway event.
+     * @see https://discord.com/developers/docs/resources/guild#modify-guild-role
+     */
+    modifyGuildRole(guild_id: snowflake, role_id: snowflake, param: Role.Params.Modify): Promise<Role>
+    /**
+     * Delete a guild role. Requires the MANAGE_ROLES permission. Returns a 204 empty response on success. Fires a Guild Role Delete Gateway event.
+     * @see https://discord.com/developers/docs/resources/guild#delete-guild-role
+     */
+    deleteGuildRole(guild_id: snowflake, role_id: snowflake): Promise<void>
+  }
+}
+
+Internal.define({
+  '/guilds/{guild.id}/roles': {
+    GET: 'getGuildRoles',
+    POST: 'createGuildRole',
+    PATCH: 'modifyGuildRolePositions',
+  },
+  '/guilds/{guild.id}/roles/{role.id}': {
+    PATCH: 'modifyGuildRole',
+    DELETE: 'deleteGuildRole',
+  },
+})

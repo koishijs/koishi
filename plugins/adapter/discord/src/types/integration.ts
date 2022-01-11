@@ -1,4 +1,4 @@
-import { integer, snowflake, timestamp, User } from '.'
+import { integer, Internal, snowflake, timestamp, User } from '.'
 
 /** https://discord.com/developers/docs/resources/guild#integration-object-integration-structure */
 export interface Integration {
@@ -104,3 +104,27 @@ declare module './gateway' {
     INTEGRATION_DELETE: IntegrationDeleteEvent
   }
 }
+
+declare module './internal' {
+  interface Internal {
+    /**
+     * Returns a list of integration objects for the guild. Requires the MANAGE_GUILD permission.
+     * @see https://discord.com/developers/docs/resources/guild#get-guild-integrations
+     */
+    getGuildIntegrations(guild_id: snowflake): Promise<Integration[]>
+    /**
+     * Delete the attached integration object for the guild. Deletes any associated webhooks and kicks the associated bot if there is one. Requires the MANAGE_GUILD permission. Returns a 204 empty response on success. Fires a Guild Integrations Update Gateway event.
+     * @see https://discord.com/developers/docs/resources/guild#delete-guild-integration
+     */
+    deleteGuildIntegration(guild_id: snowflake, integration_id: snowflake): Promise<void>
+  }
+}
+
+Internal.define({
+  '/guilds/{guild.id}/integrations': {
+    GET: 'getGuildIntegrations',
+  },
+  '/guilds/{guild.id}/integrations/{integration.id}': {
+    DELETE: 'deleteGuildIntegration',
+  },
+})

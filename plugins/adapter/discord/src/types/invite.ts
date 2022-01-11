@@ -150,6 +150,16 @@ declare module './internal' {
      */
     deleteInvite(code: string): Promise<Invite>
     /**
+     * Returns a list of invite objects (with invite metadata) for the guild. Requires the MANAGE_GUILD permission.
+     * @see https://discord.com/developers/docs/resources/guild#get-guild-invites
+     */
+    getGuildInvites(guild_id: snowflake): Promise<Invite.Metadata[]>
+    /**
+     * Returns a partial invite object for guilds with that feature enabled. Requires the MANAGE_GUILD permission. code will be null if a vanity url for the guild is not set.
+     * @see https://discord.com/developers/docs/resources/guild#get-guild-vanity-url
+     */
+    getGuildVanityURL(guild_id: snowflake): Promise<Partial<Invite>>
+    /**
      * Returns a list of invite objects (with invite metadata) for the channel. Only usable for guild channels. Requires the MANAGE_CHANNELS permission.
      * @see https://discord.com/developers/docs/resources/channel#get-channel-invites
      */
@@ -166,6 +176,12 @@ Internal.define({
   '/invites/{invite.code}': {
     GET: 'getInvite',
     DELETE: 'deleteInvite',
+  },
+  '/guilds/{guild.id}/invites': {
+    GET: 'getGuildInvites',
+  },
+  '/guilds/{guild.id}/vanity-url': {
+    GET: 'getGuildVanityURL',
   },
   '/channels/{channel.id}/invites': {
     GET: 'getChannelInvites',
