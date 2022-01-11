@@ -17,6 +17,7 @@ Koishi 官方提供了许多插件。为了更好地模块化开发，它们被�
 
 ## 数据库支持
 
+- [@koishijs/plugin-database-level](./database/level.md)
 - [@koishijs/plugin-database-memory](./database/memory.md)
 - [@koishijs/plugin-database-mongo](./database/mongo.md)
 - [@koishijs/plugin-database-mysql](./database/mysql.md)
@@ -28,6 +29,8 @@ Koishi 官方提供了许多插件。为了更好地模块化开发，它们被�
 - [@koishijs/plugin-assets-local](./assets/local.md)
 - [@koishijs/plugin-assets-remote](./assets/remote.md)
 - [@koishijs/plugin-assets-s3](./assets/s3.md)
+
+## 常用功能
 
 ## 控制台开发
 

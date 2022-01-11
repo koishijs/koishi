@@ -113,7 +113,6 @@ module.exports = {
         isGroup: true,
         children: [
           '/guide/service/assets.md',
-          '/guide/service/cache.md',
           '/guide/service/http.md',
           '/guide/service/route.md',
           '/guide/service/logger.md',
@@ -165,12 +164,6 @@ module.exports = {
           '/api/utils/misc.md',
         ],
       }, {
-        text: '其他官方包',
-        isGroup: true,
-        children: [
-          '/api/tools/cli.md',
-        ],
-      }, {
         text: '更新与迁移',
         isGroup: true,
         children: [
@@ -211,6 +204,30 @@ module.exports = {
           '/plugins/assets/s3.md',
         ],
       }, {
+        text: '交互功能',
+        isGroup: true,
+        children: [
+          '/plugins/message/broadcast.md',
+          '/plugins/message/echo.md',
+          '/plugins/message/feedback.md',
+          '/plugins/message/forward.md',
+          '/plugins/message/recall.md',
+          '/plugins/message/repeater.md',
+          '/plugins/message/respondent.md',
+        ],
+      }, {
+        text: '辅助功能',
+        isGroup: true,
+        children: [
+          '/plugins/accessibility/admin.md',
+          '/plugins/accessibility/bind.md',
+          '/plugins/accessibility/callme.md',
+          '/plugins/accessibility/rate-limit.md',
+          '/plugins/accessibility/schedule.md',
+          '/plugins/accessibility/sudo.md',
+          '/plugins/accessibility/verifier.md',
+        ],
+      }, {
         text: '控制台开发',
         isGroup: true,
         children: [
@@ -220,16 +237,6 @@ module.exports = {
           '/plugins/console/status.md',
           '/plugins/console/server.md',
           '/plugins/console/client.md',
-        ],
-      }, {
-        text: '交互功能',
-        isGroup: true,
-        children: [
-          '/plugins/common/index.md',
-          '/plugins/common/basic.md',
-          '/plugins/common/handler.md',
-          '/plugins/common/repeater.md',
-          '/plugins/common/admin.md',
         ],
       }, {
         text: '教学系统 (Teach)',
@@ -269,7 +276,6 @@ module.exports = {
           '/plugins/other/github.md',
           '/plugins/other/mock.md',
           '/plugins/other/puppeteer.md',
-          '/plugins/other/schedule.md',
         ],
       }],
     },

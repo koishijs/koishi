@@ -4,16 +4,16 @@ sidebarDepth: 2
 
 # 计划任务 (Schedule)
 
-::: warning
-要使用本插件，你需要安装 mysql 或 mongo 数据库支持。
+::: tip
+要使用本插件，你需要安装数据库支持。
 :::
 
-koishi-plugin-schedule 用于设置和触发计划任务。
+@koishijs/plugin-schedule 用于设置和触发计划任务。
 
 <panel-view title="聊天记录">
-<chat-message nickname="Alice" color="#cc0066">.schedule 1m -- echo 233</chat-message>
+<chat-message nickname="Alice" color="#cc0066">schedule 1m -- echo 233</chat-message>
 <chat-message nickname="Koishi" avatar="/koishi.png">日程已创建，编号为 1。</chat-message>
-<chat-message nickname="Alice" color="#cc0066">.schedule -l</chat-message>
+<chat-message nickname="Alice" color="#cc0066">schedule -l</chat-message>
 <chat-message nickname="Koishi" avatar="/koishi.png">1. 今天 10:01：echo 233</chat-message>
 <p>——— 1 分钟后 ———</p>
 <chat-message nickname="Koishi" avatar="/koishi.png">233</chat-message>
