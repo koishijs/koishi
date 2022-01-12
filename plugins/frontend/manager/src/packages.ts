@@ -40,31 +40,37 @@ export class PackageProvider extends DataSource<Dict<PackageProvider.Data>> {
     this.broadcast()
   }
 
+  private async loadDirectory(baseDir: string) {
+    const base = baseDir + '/node_modules'
+    const files = await readdir(base).catch(() => [])
+    for (const name of files) {
+      const base2 = base + '/' + name
+      if (name.startsWith('@')) {
+        const files = await readdir(base2).catch(() => [])
+        for (const name2 of files) {
+          if (name === '@koishijs' && name2.startsWith('plugin-') || name2.startsWith('koishi-plugin-')) {
+            this.loadPackage(name + '/' + name2, base2 + '/' + name2)
+          }
+        }
+      } else {
+        if (name.startsWith('koishi-plugin-')) {
+          this.loadPackage(name, base2)
+        }
+      }
+    }
+  }
+
   async prepare() {
     // load local packages
     let { baseDir } = this.ctx.app
+    const tasks: Promise<void>[] = []
     while (1) {
-      const base = baseDir + '/node_modules'
-      const files = await readdir(base).catch(() => [])
-      for (const name of files) {
-        const base2 = base + '/' + name
-        if (name.startsWith('@')) {
-          const files = await readdir(base2).catch(() => [])
-          for (const name2 of files) {
-            if (name === '@koishijs' && name2.startsWith('plugin-') || name2.startsWith('koishi-plugin-')) {
-              this.loadPackage(base2 + '/' + name2)
-            }
-          }
-        } else {
-          if (name.startsWith('koishi-plugin-')) {
-            this.loadPackage(base2)
-          }
-        }
-      }
+      tasks.push(this.loadDirectory(baseDir))
       const parent = dirname(baseDir)
       if (baseDir === parent) break
       baseDir = parent
     }
+    await Promise.all(tasks)
   }
 
   async get(forced = false) {
@@ -85,8 +91,10 @@ export class PackageProvider extends DataSource<Dict<PackageProvider.Data>> {
     return Object.fromEntries(packages.filter(x => x).map(data => [data.name, data]))
   }
 
-  private loadPackage(path: string) {
-    this.cache[require.resolve(path)] = this.parsePackage(path)
+  private loadPackage(name: string, path: string) {
+    // require.resolve(name) may be different from require.resolve(path)
+    // because tsconfig-paths may resolve the path differently
+    this.cache[require.resolve(name)] = this.parsePackage(path)
   }
 
   private async parsePackage(path: string) {

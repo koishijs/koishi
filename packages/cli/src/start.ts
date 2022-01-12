@@ -30,7 +30,7 @@ function createWorker(options: Dict<any>) {
   execArgv.push(...options['--'])
 
   child = fork(resolve(__dirname, 'worker'), [], {
-    execArgv: Object.entries(options).flatMap(([key, value]) => [toArg(key), value]),
+    execArgv,
   })
 
   let config: { autoRestart: boolean }
