@@ -12,7 +12,7 @@ const session3 = app.mock.client('789', '654')
 
 app.plugin(forward, [{
   source: 'mock:456',
-  destination: 'mock:654',
+  target: 'mock:654',
   selfId: DEFAULT_SELF_ID,
 }])
 
