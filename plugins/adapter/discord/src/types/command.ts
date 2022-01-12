@@ -77,18 +77,6 @@ export namespace ApplicationCommand {
     value: string | number
   }
 
-  /** https://discord.com/developers/docs/interactions/application-commands#application-command-object-application-command-interaction-data-option-structure */
-  export interface InteractionDataOption {
-    /** the name of the parameter */
-    name: string
-    /** value of application command option type */
-    type: OptionType
-    /** the value of the pair */
-    value?: OptionType
-    /** present if this option is a group or subcommand */
-    options?: InteractionDataOption[]
-  }
-
   /** https://discord.com/developers/docs/interactions/application-commands#application-command-permissions-object-guild-application-command-permissions-structure */
   export interface GuildPermissions {
     /** the id of the command */

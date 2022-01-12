@@ -1,4 +1,4 @@
-import { AllowedMentions, ApplicationCommandInteractionDataOption, Channel, Component, Embed, GuildMember, integer, Internal, Message, Role, SelectOption, snowflake, User } from '.'
+import { AllowedMentions, ApplicationCommand, Channel, Component, Embed, GuildMember, integer, Internal, Message, Role, SelectOption, snowflake, User } from '.'
 
 /** https://discord.com/developers/docs/interactions/receiving-and-responding#interaction-object-interaction-structure */
 export interface Interaction {
@@ -33,6 +33,20 @@ export enum InteractionType {
   MESSAGE_COMPONENT = 3,
 }
 
+/** https://discord.com/developers/docs/interactions/application-commands#application-command-object-application-command-interaction-data-option-structure */
+export interface InteractionDataOption {
+  /** the name of the parameter */
+  name: string
+  /** value of application command option type */
+  type: ApplicationCommand.OptionType
+  /** the value of the pair */
+  value?: any
+  /** present if this option is a group or subcommand */
+  options?: InteractionDataOption[]
+  /** true if this option is the currently focused option for autocomplete */
+  focused?: boolean
+}
+
 /** https://discord.com/developers/docs/interactions/receiving-and-responding#interaction-object-interaction-data-structure */
 export interface InteractionData {
   /** the ID of the invoked command */
@@ -44,7 +58,7 @@ export interface InteractionData {
   /** converted users + roles + channels */
   resolved?: ResolvedData
   /** the params + values from the user */
-  options?: ApplicationCommandInteractionDataOption[]
+  options?: InteractionDataOption[]
   /** the custom_id of the component */
   custom_id?: string
   /** the type of the component */
@@ -131,6 +145,51 @@ declare module './gateway' {
   interface GatewayEvents {
     /** user used an interaction, such as an Application Command */
     INTERACTION_CREATE: InteractionCreateEvent
+  }
+}
+
+declare module './internal' {
+  interface Internal {
+    /**
+     * Create a response to an Interaction from the gateway. Takes an interaction response. This endpoint also supports file attachments similar to the webhook endpoints. Refer to Uploading Files for details on uploading files and multipart/form-data requests.
+     * @see https://discord.com/developers/docs/interactions/receiving-and-responding#create-interaction-response
+     */
+    createInteractionResponse(interaction_id: snowflake, token: string, params: InteractionResponse): Promise<void>
+    /**
+     * Returns the initial Interaction response. Functions the same as Get Webhook Message.
+     * @see https://discord.com/developers/docs/interactions/receiving-and-responding#get-original-interaction-response
+     */
+    getOriginalInteractionResponse(application_id: snowflake, token: string): Promise<InteractionResponse>
+    /**
+     * Edits the initial Interaction response. Functions the same as Edit Webhook Message.
+     * @see https://discord.com/developers/docs/interactions/receiving-and-responding#edit-original-interaction-response
+     */
+    editOriginalInteractionResponse(application_id: snowflake, token: string): Promise<InteractionResponse>
+    /**
+     * Deletes the initial Interaction response. Returns 204 No Content on success.
+     * @see https://discord.com/developers/docs/interactions/receiving-and-responding#delete-original-interaction-response
+     */
+    deleteOriginalInteractionResponse(application_id: snowflake, token: string): Promise<void>
+    /**
+     * Create a followup message for an Interaction. Functions the same as Execute Webhook, but wait is always true, and flags can be set to 64 in the body to send an ephemeral message. The thread_id, avatar_url, and username parameters are not supported when using this endpoint for interaction followups.
+     * @see https://discord.com/developers/docs/interactions/receiving-and-responding#create-followup-message
+     */
+    createFollowupMessage(application_id: snowflake, token: string): Promise<any>
+    /**
+     * Returns a followup message for an Interaction. Functions the same as Get Webhook Message. Does not support ephemeral followups.
+     * @see https://discord.com/developers/docs/interactions/receiving-and-responding#get-followup-message
+     */
+    getFollowupMessage(application_id: snowflake, token: string, message_id: snowflake): Promise<any>
+    /**
+     * Edits a followup message for an Interaction. Functions the same as Edit Webhook Message. Does not support ephemeral followups.
+     * @see https://discord.com/developers/docs/interactions/receiving-and-responding#edit-followup-message
+     */
+    editFollowupMessage(application_id: snowflake, token: string, message_id: snowflake): Promise<any>
+    /**
+     * Deletes a followup message for an Interaction. Returns 204 No Content on success. Does not support ephemeral followups.
+     * @see https://discord.com/developers/docs/interactions/receiving-and-responding#delete-followup-message
+     */
+    deleteFollowupMessage(application_id: snowflake, token: string, message_id: snowflake): Promise<void>
   }
 }
 

@@ -21,7 +21,10 @@ export class Internal {
               } else {
                 config.data = args[0]
               }
-            } else if (args.length > 1) {
+            } else if (args.length === 2 && method !== 'GET' && method !== 'DELETE') {
+              config.data = args[0]
+              config.params = args[1]
+            } else {
               throw new Error('too many arguments')
             }
             return this.http(method, url, config)
