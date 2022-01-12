@@ -247,15 +247,14 @@ class MysqlDatabase extends Database {
     return new Promise((resolve, reject) => {
       sql = format(sql, values)
       logger.debug('[sql]', sql)
-      this.pool.query(sql, (err, results) => {
+      this.pool.query(sql, (err: Error, results) => {
         if (!err) return resolve(results)
         logger.warn(sql)
-        err.stack = err.message + error.stack.slice(5)
-        if (err.code === 'ER_DUP_ENTRY') {
-          reject(new KoishiError(err.message, 'database.duplicate-entry'))
-        } else {
-          reject(err)
+        if (err['code'] === 'ER_DUP_ENTRY') {
+          err = new KoishiError(err.message, 'database.duplicate-entry')
         }
+        err.stack = err.message + error.stack.slice(5)
+        reject(err)
       })
     })
   }
