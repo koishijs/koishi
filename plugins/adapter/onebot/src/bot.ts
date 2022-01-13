@@ -142,7 +142,7 @@ export class OneBotBot extends Bot<BotConfig> {
     if (this.app.bail(session, 'before-send', session)) return
     session.messageId = '' + await this.internal.sendGroupMsg(channelId, content)
     this.app.emit(session, 'send', session)
-    return session.messageId
+    return [session.messageId]
   }
 
   async sendPrivateMessage(userId: string, content: string) {
@@ -151,7 +151,7 @@ export class OneBotBot extends Bot<BotConfig> {
     if (this.app.bail(session, 'before-send', session)) return
     session.messageId = '' + await this.internal.sendPrivateMsg(userId, content)
     this.app.emit(session, 'send', session)
-    return session.messageId
+    return [session.messageId]
   }
 
   async handleFriendRequest(messageId: string, approve: boolean, comment?: string) {
@@ -203,7 +203,7 @@ export class QQGuildBot extends OneBotBot {
     if (this.app.bail(session, 'before-send', session)) return
     session.messageId = '' + await this.internal.sendGuildChannelMsg(guildId, channelId, content)
     this.app.emit(session, 'send', session)
-    return session.messageId
+    return [session.messageId]
   }
 
   async getChannel(channelId: string, guildId?: string) {
