@@ -16,7 +16,7 @@ before(() => app.start())
 
 describe('@koishijs/plugin-feedback', () => {
   it('basic support', async () => {
-    const send1 = app.bots[0].sendPrivateMessage = jest.fn(async () => '1000')
+    const send1 = app.bots[0].sendPrivateMessage = jest.fn(async () => ['1000'])
     await client.shouldReply('feedback', '请输入要发送的文本。')
     expect(send1.mock.calls).to.have.length(0)
     await client.shouldReply('feedback foo', '反馈信息发送成功！')

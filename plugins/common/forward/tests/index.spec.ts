@@ -18,9 +18,9 @@ app.plugin(forward, [{
 
 before(() => app.start())
 
-describe('Relay Plugin', () => {
+describe('@koishijs/plugin-forward', () => {
   it('basic support', async () => {
-    const send = app.bots[0].sendMessage = jest.fn(async () => '2000')
+    const send = app.bots[0].sendMessage = jest.fn(async () => ['2000'])
     await session2.shouldNotReply('hello')
     expect(send.mock.calls).to.have.length(1)
     expect(send.mock.calls).to.have.shape([['654', '123: hello']])
@@ -33,7 +33,7 @@ describe('Relay Plugin', () => {
     expect(send.mock.calls).to.have.shape([['456', '789: hello']])
     send.mockClear()
 
-    send.mockImplementation(async () => '3000')
+    send.mockImplementation(async () => ['3000'])
     await session2.shouldNotReply('[CQ:quote,id=3000] hello')
     expect(send.mock.calls).to.have.length(1)
     expect(send.mock.calls).to.have.shape([['654', '123: hello']])

@@ -5,6 +5,7 @@ import memory from '@koishijs/plugin-database-memory'
 import mock from '@koishijs/plugin-mock'
 import jest from 'jest-mock'
 import { expect } from 'chai'
+import 'chai-shape'
 
 const app = new App().plugin(mock)
 const client1 = app.mock.client('123', '456')

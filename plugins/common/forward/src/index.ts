@@ -7,33 +7,33 @@ export interface Rule {
   source: string
   target: string
   selfId?: string
-  lifespan?: number
 }
 
 export const Rule = Schema.object({
   source: Schema.string().required(),
   target: Schema.string().required(),
   selfId: Schema.string(),
-  lifespan: Schema.number(),
 })
 
 export const name = 'forward'
 
 export interface Config {
   rules: Rule[]
+  lifespan?: number
 }
 
 export const schema = Schema.union([
   Schema.object({
     rules: Schema.array(Rule),
+    lifespan: Schema.number(),
   }),
   Schema.transform(Schema.array(Rule), (rules) => ({ rules })),
 ])
 
-export function apply(ctx: Context, { rules }: Config) {
+export function apply(ctx: Context, { rules, lifespan = Time.hour }: Config) {
   const relayMap: Dict<Rule> = {}
 
-  async function sendRelay(session: Session, { target, selfId, lifespan = Time.hour }: Rule) {
+  async function sendRelay(session: Session, { target, selfId }: Rule) {
     const { author, parsed } = session
     if (!parsed.content) return
 
@@ -48,9 +48,14 @@ export function apply(ctx: Context, { rules }: Config) {
 
     const bot = ctx.bots.get(`${platform}:${selfId}`)
     const content = template('forward', author.nickname || author.username, parsed.content)
-    const id = await bot.sendMessage(channelId, content, 'unknown')
-    relayMap[id] = { source: target, target: session.cid, selfId: session.selfId, lifespan }
-    setTimeout(() => delete relayMap[id], lifespan)
+    await bot.sendMessage(channelId, content).then((ids) => {
+      for (const id of ids) {
+        relayMap[id] = { source: target, target: session.cid, selfId: session.selfId }
+        ctx.setTimeout(() => delete relayMap[id], lifespan)
+      }
+    }, (error) => {
+      ctx.logger('bot').warn(error)
+    })
   }
 
   ctx.middleware(async (session, next) => {
