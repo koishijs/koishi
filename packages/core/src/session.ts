@@ -261,7 +261,7 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
     if (this.author?.anonymous) {
       const fallback = this.app.model.create('user')
       fallback[this.platform] = this.userId
-      fallback.authority = this.resolveValue(this.app.options.autoAuthorize)
+      fallback.authority = await this.resolveValue(this.app.options.autoAuthorize)
       const user = observe(fallback, () => Promise.resolve())
       return this.user = user
     }
@@ -273,7 +273,7 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
     if (hasActiveCache) return this.user = cache as any
 
     // 绑定一个新的可观测用户实例
-    const data = await this.getUser(userId, this.resolveValue(this.app.options.autoAuthorize), fieldArray)
+    const data = await this.getUser(userId, await this.resolveValue(this.app.options.autoAuthorize), fieldArray)
     const newUser = observe(data, diff => this.app.database.setUser(this.platform, userId, diff), `user ${this.uid}`)
     this.app._userCache.set(this.id, this.uid, newUser)
     return this.user = newUser
