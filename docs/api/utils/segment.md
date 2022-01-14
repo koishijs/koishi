@@ -19,6 +19,14 @@ interface segment {
 }
 ```
 
+而通过解析获得的消息段包含一些额外属性：
+```js
+interface segment.Parsed extends segment {
+  data: Dict<string>
+  capture?: RegExpExecArray
+}
+```
+
 ### segment(type, data)
 
 - **type:** `string` 消息段类型
@@ -52,16 +60,45 @@ interface segment {
 ### segment.from(source)
 
 - **source:** `string` 源文本
-- 返回值: `segment` 消息段的类型和参数
+- 返回值: `segment.Parsed` 消息段的类型和参数
 
 将一个消息段文本解析成对象。
 
 ### segment.parse(source)
 
 - **source:** `string` 源文本
-- 返回值: `segment[]` 消息段数组
+- 返回值: `segment.Parsed[]` 消息段数组
 
 解析一段文本内的全部消息段。其中的纯文本将会解析成 text 类型。
+
+
+### segment.transform(source, rules, dropOthers?)
+
+- **source:** `string | segment.Parsed[]` 源文本或其解析成的消息段
+- **rules:** `Records<string, Transformer>` 转换规则，以消息段类型未键
+- **dropOthers:** `boolean` 丢弃未指定转换规则的消息段类型，否则使用 [`segment(type, data)`](#segment-type-data) 的输出
+- 返回值: `string` 转换后的文本
+
+将一段文本或其解析结果的所有消息段按照规则进行转换。转换规则的定义方式如下（若为字符串类型则一律将消息段转换为该字符串）：
+
+```js
+type Transformer =
+  | string
+  | ((data: Record<string, string>, index: number, chain: segment.Parsed[]) => string)
+```
+
+### segment.transformAsync(source, rules)
+
+- **source:** `string | segment.Parsed[]` 源文本或其解析成的消息段
+- **rules:** `Records<string, AsyncTransformer>` 转换规则，以消息段类型未键
+
+与 [`segment.transform(source, rules, dropOthers?)`](#segment-transform-source-rules-dropothers) 类似但实现略有不同。未定义转换规则的消息段类型一律使用 [`segment(type, data)`](#segment-type-data) 的输出。
+
+```js
+type AsyncTransformer =
+  | string
+  | ((data: Dict<string>, index: number, chain: segment.Parsed[]) => Awaitable<string>)
+```
 
 ## 元素消息段
 
