@@ -5,7 +5,7 @@ sidebarDepth: 2
 # 查看和编写帮助
 
 ::: tip
-下面的 echo 指令是为了理解方便而举的例子，与 @koishijs/plugin-common 中实际的 echo 指令并不相同。
+下面的 echo 指令是为了理解方便而举的例子，与 @koishijs/plugin-echo 中实际的 echo 指令并不相同。
 :::
 
 ## 查看帮助

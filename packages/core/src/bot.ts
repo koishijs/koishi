@@ -103,7 +103,7 @@ export abstract class Bot<T extends Bot.BaseConfig = Bot.BaseConfig> {
     for (let index = 0; index < channels.length; index++) {
       if (index && delay) await sleep(delay)
       try {
-        messageIds.push(await this.sendMessage(channels[index], content, 'unknown'))
+        messageIds.push(...await this.sendMessage(channels[index], content, 'unknown'))
       } catch (error) {
         this.app.logger('bot').warn(error)
       }
@@ -130,8 +130,8 @@ export namespace Bot {
 
   export interface Methods {
     // message
-    sendMessage(channelId: string, content: string, guildId?: string): Promise<string>
-    sendPrivateMessage(userId: string, content: string): Promise<string>
+    sendMessage(channelId: string, content: string, guildId?: string): Promise<string[]>
+    sendPrivateMessage(userId: string, content: string): Promise<string[]>
     getMessage(channelId: string, messageId: string): Promise<Message>
     editMessage(channelId: string, messageId: string, content: string): Promise<void>
     deleteMessage(channelId: string, messageId: string): Promise<void>

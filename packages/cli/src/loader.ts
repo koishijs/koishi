@@ -62,7 +62,8 @@ export class Loader {
   }
 
   resolvePlugin(name: string) {
-    return this.cache[name] = Modules.require(name, true)
+    const path = Modules.resolve(name)
+    return this.cache[path] = Modules.require(name, true)
   }
 
   loadPlugin(name: string, options?: any) {

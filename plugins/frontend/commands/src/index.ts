@@ -56,10 +56,15 @@ export function apply(ctx: Context, config: Dict<Config>) {
     return rest[0] === '.' ? name : rest.slice(1)
   }
 
-  function accept(target: Command, config: Config) {
-    const { name, alias, create, ...options } = config
+  function patch(target: Command) {
     const command: Command = Object.create(target)
     command._disposables = ctx.state.disposables
+    return command
+  }
+
+  function accept(target: Command, config: Config) {
+    const { name, alias, create, ...options } = config
+    const command = create ? target : patch(target)
 
     const snapshot: Snapshot = pick(target, ['name', 'parent'])
     for (const key in options) {
@@ -84,8 +89,13 @@ export function apply(ctx: Context, config: Dict<Config>) {
   }
 
   for (const key in config) {
-    const cmd = ctx.app._commands.resolve(key)
-    if (cmd) accept(cmd, config[key])
+    const command = ctx.app._commands.resolve(key)
+    if (command) {
+      accept(command, config[key])
+    } else if (config[key].create) {
+      const command = ctx.command(key)
+      accept(command, config[key])
+    }
   }
 
   ctx.on('command-added', (cmd) => {
@@ -108,7 +118,7 @@ export function apply(ctx: Context, config: Dict<Config>) {
       teleport(cmd, parent)
       cmd.name = name
     }
-  })
+  }, true)
 
   ctx.using(['console'], (ctx) => {
     ctx.plugin(CommandProvider)

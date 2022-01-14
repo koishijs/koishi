@@ -143,7 +143,7 @@ export default function (ctx: Context) {
 
 这样当你加载 nested-plugin 时，就相当于同时加载了 a 和 b 两个插件。
 
-Koishi 的许多官方插件都采用了这种写法，例如 [@koishijs/plugin-common](https://github.com/koishijs/koishi/blob/master/plugins/common/src/index.ts)。
+Koishi 的许多插件都采用了这种写法，例如 [koishi-plugin-tools](https://github.com/koishijs/koishi-plugin-tools)。
 
 ## 卸载插件
 

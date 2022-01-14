@@ -44,7 +44,7 @@ plugins:
     protocol: 'ws'
     selfId: '123456789'
     endpoint: 'ws://127.0.0.1:6700'
-  common:
+  echo:
 ```
 
 让我们对比一下代码示例中的 `index.js` 文件，不难发现它们之间的相似：
@@ -56,7 +56,7 @@ app.plugin('adapter-onebot', {
   endpoint: 'ws://127.0.0.1:6700',
 })
 
-app.plugin('common')
+app.plugin('echo')
 ```
 
 没错，配置文件中的 `plugins` 是一个对象，其中的每一个键表示一个插件的名称，而值则表示该插件的配置。而代码示例中的 `app.plugin()` 则接受最多两个参数，分别也是插件的短名和配置。

@@ -101,7 +101,7 @@ export default class FileWatcher extends Service {
     const declined = new Set(this.externals)
     const visited = new Set<string>()
 
-    function traverse(filename: string) {
+    const traverse = (filename: string) => {
       if (declined.has(filename) || filename.includes('/node_modules/')) return
       visited.add(filename)
       const { children } = require.cache[filename]

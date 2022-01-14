@@ -1,6 +1,6 @@
 /* eslint-disable no-irregular-whitespace */
 
-import { Context, Schema, Time } from 'koishi'
+import { Awaitable, Context, Schema, Time } from 'koishi'
 import { Dialogue } from './utils'
 
 // features
@@ -34,7 +34,7 @@ export * from './plugins/writer'
 declare module 'koishi' {
   interface EventMap {
     'dialogue/validate'(argv: Dialogue.Argv): void | string
-    'dialogue/execute'(argv: Dialogue.Argv): void | Promise<void | string>
+    'dialogue/execute'(argv: Dialogue.Argv): Awaitable<void | string>
   }
 
   interface Modules {

@@ -73,8 +73,7 @@ export default function help(ctx: Context, config: HelpConfig = {}) {
           prefix: template('internal.help-suggestion-prefix'),
           suffix: template('internal.help-suggestion-suffix'),
           async apply(suggestion) {
-            const output = await showHelp(app._commands.get(suggestion), this as any, options)
-            return session.send(output)
+            return showHelp(app._commands.get(suggestion), this as any, options)
           },
         })
         return

@@ -107,9 +107,15 @@ export const adaptChannel = (info: OneBot.GroupInfo | OneBot.ChannelInfo): Bot.C
 }
 
 export function dispatchSession(bot: OneBotBot, data: OneBot.Payload) {
+  if (data.self_tiny_id) {
+    // don't dispatch any guild message without guild initialization
+    if (!bot.guildBot) return
+    bot = bot.guildBot
+  }
+
   const payload = adaptSession(data)
   if (!payload) return
-  if (data.self_tiny_id) bot = bot.guildBot
+
   const session = new Session(bot, payload)
   defineProperty(session, 'onebot', Object.create(bot.internal))
   Object.assign(session.onebot, data)
@@ -118,10 +124,7 @@ export function dispatchSession(bot: OneBotBot, data: OneBot.Payload) {
 
 export function adaptSession(data: OneBot.Payload) {
   const session: Partial<Session> = {}
-  session.selfId = '' + data.self_id
-  if (data.self_tiny_id) {
-    session.selfId = data.self_tiny_id
-  }
+  session.selfId = data.self_tiny_id ? data.self_tiny_id : '' + data.self_id
   session.type = data.post_type
 
   if (data.post_type === 'message') {

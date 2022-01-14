@@ -1,4 +1,4 @@
-import { defineProperty, Time, coerce, escapeRegExp, makeArray, trimSlash, merge, Dict } from '@koishijs/utils'
+import { Awaitable, defineProperty, Time, coerce, escapeRegExp, makeArray, trimSlash, merge, Dict } from '@koishijs/utils'
 import { Context, Next, Plugin } from './context'
 import { Adapter } from './adapter'
 import { Channel, User } from './database'
@@ -115,8 +115,7 @@ export class App extends Context {
   }
 
   private _resolvePrefixes(session: Session) {
-    const { prefix } = this.options
-    const temp = typeof prefix === 'function' ? prefix(session) : prefix
+    const temp = session.resolveValue(this.options.prefix)
     return Array.isArray(temp) ? temp : [temp || '']
   }
 
@@ -250,14 +249,14 @@ export namespace App {
   }
 
   export interface Config extends Config.Network {
-    prefix?: string | string[] | ((session: Session) => void | string | string[])
+    prefix?: Computed<string | string[]>
     nickname?: string | string[]
     maxListeners?: number
     prettyErrors?: boolean
     delay?: DelayConfig
     help?: boolean | HelpConfig
-    autoAssign?: Computed<boolean>
-    autoAuthorize?: Computed<number>
+    autoAssign?: Computed<Awaitable<boolean>>
+    autoAuthorize?: Computed<Awaitable<number>>
     minSimilarity?: number
   }
 

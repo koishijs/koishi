@@ -1,4 +1,4 @@
-import { Context, Command, Argv, segment, Logger, defineProperty, noop, Awaitable } from 'koishi'
+import { Context, Command, Argv, segment, Logger, defineProperty, noop, Awaitable, escapeRegExp } from 'koishi'
 import { EvalWorker, Trap, EvalConfig, Config } from './main'
 import { resolve } from 'path'
 import { load } from 'js-yaml'
@@ -149,8 +149,8 @@ export function apply(ctx: Context, config: Config = {}) {
   })
 
   if (prefix) {
-    command.shortcut(prefix, { fuzzy: true })
-    command.shortcut(prefix + prefix[prefix.length - 1], { fuzzy: true, options: { slient: true } })
+    command.shortcut(new RegExp(`^${escapeRegExp(prefix)} (.+)$`), { args: ['$1'] })
+    command.shortcut(new RegExp(`^${escapeRegExp(prefix + prefix[prefix.length - 1])} (.+)$`), { args: ['$1'], options: { slient: true } })
   }
 
   Argv.interpolate('${', '}', (raw) => {

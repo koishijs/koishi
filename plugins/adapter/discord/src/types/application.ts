@@ -75,9 +75,15 @@ declare module './gateway' {
 
 declare module './internal' {
   interface Internal {
-    /** https://discord.com/developers/docs/topics/oauth2#get-current-bot-application-information */
+    /**
+     * Returns the bot's application object.
+     * @see https://discord.com/developers/docs/topics/oauth2#get-current-bot-application-information
+     */
     getCurrentBotApplicationInformation(): Promise<Application>
-    /** https://discord.com/developers/docs/topics/oauth2#get-current-authorization-information */
+    /**
+     * Returns info about the current authorization. Requires authentication with a bearer token.
+     * @see https://discord.com/developers/docs/topics/oauth2#get-current-authorization-information
+     */
     getCurrentAuthorizationInformation(): Promise<any>
   }
 }

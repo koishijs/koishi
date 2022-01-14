@@ -1,4 +1,4 @@
-import { App, Context, Logger, noop, version, Dict, WebSocketLayer, Schema, Awaitable, Service } from 'koishi'
+import { App, Context, Logger, noop, version, Dict, WebSocketLayer, Schema, Awaitable, Service, sleep } from 'koishi'
 import { resolve, extname } from 'path'
 import { promises as fs, Stats, createReadStream } from 'fs'
 import WebSocket from 'ws'
@@ -34,8 +34,10 @@ export abstract class DataSource<T = any> {
   constructor(protected ctx: Context, protected name: keyof Sources) {
     ctx.console.services[name] = this as never
 
-    ctx.on('ready', () => this.start())
-    ctx.on('dispose', () => this.stop())
+    sleep(0).then(() => {
+      ctx.on('ready', () => this.start())
+      ctx.on('dispose', () => this.stop())
+    })
   }
 
   async broadcast(value?: T) {

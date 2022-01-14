@@ -29,6 +29,18 @@ export default class WebSocketClient extends Adapter.WebSocketClient<BotConfig, 
     }))
   }
 
+  private getIntents() {
+    let intents = 0
+      | GatewayIntent.GUILD_MESSAGES
+      | GatewayIntent.GUILD_MESSAGE_REACTIONS
+      | GatewayIntent.DIRECT_MESSAGES
+      | GatewayIntent.DIRECT_MESSAGE_REACTIONS
+    if (this.config.intents.members !== false) {
+      intents |= GatewayIntent.GUILD_MEMBERS
+    }
+    return intents
+  }
+
   accept(bot: DiscordBot) {
     if (bot._sessionId) {
       logger.debug('resuming')
@@ -65,11 +77,7 @@ export default class WebSocketClient extends Adapter.WebSocketClient<BotConfig, 
             token: bot.config.token,
             properties: {},
             compress: false,
-            intents: GatewayIntent.GUILD_MEMBERS
-              | GatewayIntent.GUILD_MESSAGES
-              | GatewayIntent.GUILD_MESSAGE_REACTIONS
-              | GatewayIntent.DIRECT_MESSAGES
-              | GatewayIntent.DIRECT_MESSAGE_REACTIONS,
+            intents: this.getIntents(),
           },
         }))
       }

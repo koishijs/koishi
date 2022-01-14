@@ -125,7 +125,6 @@ export default {
 
 - 接口变更
   - 新增了方法 `db.set(table, query, updates)`
-  - 废弃了方法 `db.getAssignedChannels()`（目前暂无替代品，原接口仍然可用）
   - `db.update()` 更名为 `db.upsert()`，语法不变
 - 数据结构变更
   - channel 表使用 `platform`+`id` 复合主键进行索引，这意味着 `channel.id` 语义将发生变化，同时新增了 `channel.platform`

@@ -128,4 +128,27 @@ describe('@koishijs/plugin-override', () => {
       baz.dispose()
     })
   })
+
+  describe('create', () => {
+    it('basic usage', async () => {
+      const bar = app.command('bar').action(() => 'test')
+
+      app.plugin(commands, {
+        foo: { create: true },
+        bar: 'foo/baz',
+      })
+
+      const foo = app.command('foo')
+      expect(foo.children).to.have.length(1)
+      await client.shouldReply('foo', /baz/)
+      await client.shouldReply('baz', 'test')
+
+      await app.dispose(commands)
+      await client.shouldNotReply('foo')
+      await client.shouldNotReply('baz')
+      await client.shouldReply('bar', 'test')
+
+      bar.dispose()
+    })
+  })
 })

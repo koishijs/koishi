@@ -1,4 +1,4 @@
-import { Context, noop, sleep, template } from 'koishi'
+import { Context, Dict, Schema, sleep, template, Time } from 'koishi'
 import { parsePlatform } from '@koishijs/command-utils'
 
 template.set('feedback', {
@@ -9,15 +9,23 @@ template.set('feedback', {
 
 export interface Config {
   operators?: string[]
+  replyTimeout?: number
 }
+
+export const schema: Schema<string[] | Config, Config> = Schema.union([
+  Schema.object({
+    operators: Schema.array(Schema.string()),
+  }),
+  Schema.transform(Schema.array(Schema.string()), (operators) => ({ operators })),
+])
 
 export const name = 'feedback'
 
-export function apply(ctx: Context, { operators = [] }: Config) {
+export function apply(ctx: Context, { operators = [], replyTimeout = Time.day }: Config) {
   type FeedbackData = [sid: string, channelId: string, guildId: string]
-  const feedbacks: Record<number, FeedbackData> = {}
+  const feedbacks: Dict<FeedbackData> = {}
 
-  ctx.command('common/feedback <message:text>', '发送反馈信息给作者')
+  ctx.command('feedback <message:text>', '发送反馈信息给作者')
     .userFields(['name', 'id'])
     .action(async ({ session }, text) => {
       if (!text) return template('feedback.expect-text')
@@ -30,9 +38,14 @@ export function apply(ctx: Context, { operators = [] }: Config) {
         if (index && delay) await sleep(delay)
         const [platform, userId] = parsePlatform(operators[index])
         const bot = ctx.bots.find(bot => bot.platform === platform)
-        await bot
-          .sendPrivateMessage(userId, message)
-          .then(id => feedbacks[id] = data, noop)
+        await bot.sendPrivateMessage(userId, message).then((ids) => {
+          for (const id of ids) {
+            feedbacks[id] = data
+            ctx.setTimeout(() => delete feedbacks[id], replyTimeout)
+          }
+        }, (error) => {
+          ctx.logger('bot').warn(error)
+        })
       }
       return template('feedback.success')
     })

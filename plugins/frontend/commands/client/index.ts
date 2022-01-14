@@ -4,7 +4,7 @@ import Commands from './commands.vue'
 
 registerPage({
   path: '/commands',
-  name: '指令',
+  name: '指令管理',
   icon: 'tools',
   order: 500,
   fields: ['commands'],

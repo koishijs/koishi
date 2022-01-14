@@ -1,12 +1,12 @@
 import { Context, difference, deduplicate, sleep, pick, Time, Awaitable } from 'koishi'
-import { Dialogue, prepareTargets, sendResult, split, RE_DIALOGUES, isPositiveInteger } from './utils'
+import { Dialogue, prepareTargets, split, RE_DIALOGUES, isPositiveInteger } from './utils'
 import { getDetails, formatDetails, formatAnswer, formatQuestionAnswers } from './search'
 
 declare module 'koishi' {
   interface EventMap {
     'dialogue/before-modify'(argv: Dialogue.Argv): Awaitable<void | string>
     'dialogue/modify'(argv: Dialogue.Argv, dialogue: Dialogue): void
-    'dialogue/after-modify'(argv: Dialogue.Argv): Awaitable<void>
+    'dialogue/after-modify'(argv: Dialogue.Argv): void
     'dialogue/before-detail'(argv: Dialogue.Argv): Awaitable<void>
     'dialogue/detail'(dialogue: Dialogue, output: string[], argv: Dialogue.Argv): Awaitable<void>
   }
@@ -39,7 +39,7 @@ export default function apply(ctx: Context) {
       return update(argv)
     } catch (err) {
       ctx.logger('teach').warn(err)
-      return argv.session.send(`${revert ? '回退' : remove ? '删除' : '修改'}问答时出现问题。`)
+      return `${revert ? '回退' : remove ? '删除' : '修改'}问答时出现问题。`
     }
   })
 
@@ -60,7 +60,7 @@ export default function apply(ctx: Context) {
       return true
     })
 
-    if (!dialogues.length) return session.send('没有搜索到满足条件的教学操作。')
+    if (!dialogues.length) return '没有搜索到满足条件的教学操作。'
     return options.review ? review(dialogues, argv) : revert(dialogues, argv)
   }, true)
 
@@ -108,15 +108,15 @@ function review(dialogues: Dialogue[], argv: Dialogue.Argv) {
     return `${formatDetails(d, details)}${questionType}：${original}，${answerType}：${formatAnswer(answer, argv.config)}`
   })
   output.unshift('近期执行的教学操作有：')
-  return session.send(output.join('\n'))
+  return output.join('\n')
 }
 
 async function revert(dialogues: Dialogue[], argv: Dialogue.Argv) {
   try {
-    return argv.session.send(await argv.app.teach.revert(dialogues, argv))
+    return await argv.app.teach.revert(dialogues, argv)
   } catch (err) {
     argv.app.logger('teach').warn(err)
-    return argv.session.send('回退问答中出现问题。')
+    return '回退问答中出现问题。'
   }
 }
 
@@ -127,7 +127,7 @@ export async function update(argv: Dialogue.Argv) {
 
   options.modify = !review && !search && (Object.keys(options).length || args.length)
   if (!options.modify && !search && target.length > maxPreviews) {
-    return session.send(`一次最多同时预览 ${maxPreviews} 个问答。`)
+    return `一次最多同时预览 ${maxPreviews} 个问答。`
   }
 
   argv.uneditable = []
@@ -139,7 +139,7 @@ export async function update(argv: Dialogue.Argv) {
   argv.dialogueMap = Object.fromEntries(dialogues.map(d => [d.id, { ...d }]))
 
   if (search) {
-    return session.send(formatQuestionAnswers(argv, dialogues).join('\n'))
+    return formatQuestionAnswers(argv, dialogues).join('\n')
   }
 
   const actualIds = argv.dialogues.map(d => d.id)
@@ -156,7 +156,7 @@ export async function update(argv: Dialogue.Argv) {
       if (index) await sleep(previewDelay)
       await session.send(output.join('\n'))
     }
-    return
+    return ''
   }
 
   const targets = prepareTargets(argv)
@@ -225,7 +225,7 @@ export async function create(argv: Dialogue.Argv) {
 
   const dialogue = { flag: 0 } as Dialogue
   if (app.bail('dialogue/permit', argv, dialogue)) {
-    return argv.session.send('该问答因权限过低无法添加。')
+    return '该问答因权限过低无法添加。'
   }
 
   try {
@@ -240,4 +240,25 @@ export async function create(argv: Dialogue.Argv) {
     await argv.session.send('添加问答时遇到错误。')
     throw err
   }
+}
+
+export function sendResult(argv: Dialogue.Argv, prefix?: string, suffix?: string) {
+  const { options, uneditable, unknown, skipped, updated, target, config } = argv
+  const { remove, revert, create } = options
+  const output = []
+  if (prefix) output.push(prefix)
+  if (updated.length) {
+    output.push(create ? `修改了已存在的问答，编号为 ${updated.join(', ')}。` : `问答 ${updated.join(', ')} 已成功修改。`)
+  }
+  if (skipped.length) {
+    output.push(create ? `问答已存在，编号为 ${target.join(', ')}，如要修改请尝试使用 ${config.prefix}${skipped.join(',')} 指令。` : `问答 ${skipped.join(', ')} 没有发生改动。`)
+  }
+  if (uneditable.length) {
+    output.push(`问答 ${uneditable.join(', ')} 因权限过低无法${revert ? '回退' : remove ? '删除' : '修改'}。`)
+  }
+  if (unknown.length) {
+    output.push(`${revert ? '最近无人修改过' : '没有搜索到'}编号为 ${unknown.join(', ')} 的问答。`)
+  }
+  if (suffix) output.push(suffix)
+  return output.join('\n')
 }

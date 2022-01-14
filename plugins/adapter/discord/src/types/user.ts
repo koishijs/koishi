@@ -34,6 +34,18 @@ export interface User {
   public_flags?: integer
 }
 
+export namespace User {
+  export namespace Params {
+    /** https://discord.com/developers/docs/resources/user#modify-current-user-json-params */
+    export interface Modify {
+      /** user's username, if changed may cause the user's discriminator to be randomized. */
+      username: string
+      /** if passed, modifies the user's avatar */
+      avatar?: string
+    }
+  }
+}
+
 /** https://discord.com/developers/docs/resources/user#user-object-user-flags */
 export enum UserFlag {
   NONE = 0,
@@ -91,22 +103,27 @@ declare module './gateway' {
   }
 }
 
-export interface ModifyUserOptions {
-  /** user's username, if changed may cause the user's discriminator to be randomized. */
-  username?: string
-  /** if passed, modifies the user's avatar */
-  avatar?: string
-}
-
 declare module './internal' {
   interface Internal {
-    /** https://discord.com/developers/docs/resources/user#get-current-user */
+    /**
+     * Returns the user object of the requester's account. For OAuth2, this requires the identify scope, which will return the object without an email, and optionally the email scope, which returns the object with an email.
+     * @see https://discord.com/developers/docs/resources/user#get-current-user
+     */
     getCurrentUser(): Promise<User>
-    /** https://discord.com/developers/docs/resources/user#get-user */
+    /**
+     * Returns a user object for a given user ID.
+     * @see https://discord.com/developers/docs/resources/user#get-user
+     */
     getUser(id: snowflake): Promise<User>
-    /** https://discord.com/developers/docs/resources/user#modify-current-user */
-    modifyCurrentUser(options: ModifyUserOptions): Promise<User>
-    /** https://discord.com/developers/docs/resources/user#get-user-connections */
+    /**
+     * Modify the requester's user account settings. Returns a user object on success.
+     * @see https://discord.com/developers/docs/resources/user#modify-current-user
+     */
+    modifyCurrentUser(params: User.Params.Modify): Promise<User>
+    /**
+     * Returns a list of connection objects. Requires the connections OAuth2 scope.
+     * @see https://discord.com/developers/docs/resources/user#get-user-connections
+     */
     getUserConnections(): Promise<Connection[]>
   }
 }
@@ -118,10 +135,6 @@ Internal.define({
   },
   '/users/{user.id}': {
     GET: 'getUser',
-  },
-  '/users/@me/channels': {
-    POST: 'createDM',
-    // POST: 'createGroupDM',
   },
   '/users/@me/connections': {
     GET: 'getUserConnections',
