@@ -159,8 +159,10 @@ export function apply(ctx: Context, config: Config = {}) {
   const { defaultViewport } = config.browser
 
   ctx.on('ready', async () => {
-    ctx.puppeteer = new Puppeteer(ctx, config)
-    await ctx.puppeteer.launch().catch((error) => {
+    const puppeteer = new Puppeteer(ctx, config)
+    await puppeteer.launch().then(() => {
+      ctx.puppeteer = puppeteer
+    }, (error) => {
       logger.error(error)
       ctx.dispose()
     })

@@ -32,7 +32,7 @@
     "sqlite"
   ],
   "peerDependencies": {
-    "koishi": "^4.0.0-rc.3"
+    "koishi": "^4.0.0"
   },
   "dependencies": {
     "@koishijs/orm-utils": "^1.0.0",
