@@ -116,7 +116,7 @@ let message = '' // 当前消息
 ctx.middleware((session, next) => {
   if (session.content === message) {
     times += 1
-    if (times === 3) return session.send(message)
+    if (times === 3) return message
   } else {
     times = 0
     message = session.content

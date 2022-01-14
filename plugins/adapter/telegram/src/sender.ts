@@ -150,6 +150,6 @@ export class Sender {
     }
 
     if (!this.errors.length) return this.results.map(result => '' + result.messageId)
-    return new AggregateError(this.errors)
+    throw new AggregateError(this.errors)
   }
 }

@@ -2,7 +2,7 @@ import { distance } from 'fastest-levenshtein'
 import { User, Channel } from './database'
 import { TableType, Tables } from './orm'
 import { Command } from './command'
-import { contain, observe, Logger, defineProperty, Random, template, remove, noop, segment } from '@koishijs/utils'
+import { Awaitable, contain, observe, Logger, defineProperty, Random, template, remove, segment } from '@koishijs/utils'
 import { Argv } from './parser'
 import { Middleware, Next } from './context'
 import { App } from './app'
@@ -161,9 +161,12 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
     return this.app.chain('appellation', defaultName, this)
   }
 
-  async send(message: string) {
-    if (!message) return
-    await this.bot.sendMessage(this.channelId, message, this.guildId).catch(noop)
+  async send(content: string) {
+    if (!content) return
+    return this.bot.sendMessage(this.channelId, content, this.guildId).catch<string[]>((error) => {
+      logger.warn(error)
+      return []
+    })
   }
 
   cancelQueued(delay = this.app.options.delay.cancel) {
@@ -406,7 +409,7 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
 
     const sendNext = async (callback: Next) => {
       const result = await next(callback)
-      if (result) return this.send(result)
+      if (result) await this.send(result)
     }
 
     let suggestions: string[], minDistance = Infinity
@@ -445,7 +448,7 @@ export interface SuggestOptions {
   prefix?: string
   suffix: string
   minSimilarity?: number
-  apply: (this: Session, suggestion: string, next: Next) => void
+  apply: (this: Session, suggestion: string, next: Next) => Awaitable<void | string>
 }
 
 export function getSessionId(session: Session) {
