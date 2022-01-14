@@ -219,7 +219,7 @@ export class KaiheilaBot extends Bot<BotConfig> {
       await this._sendSeparate(handle, chain, useMarkdown)
     }
 
-    return session.messageId
+    return [session.messageId]
   }
 
   async sendPrivateMessage(targetId: string, content: string) {

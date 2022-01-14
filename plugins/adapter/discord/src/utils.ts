@@ -3,9 +3,20 @@ import { Adapter, App, Bot, Schema, segment, Session } from 'koishi'
 import { DiscordBot } from './bot'
 import * as DC from './types'
 
-export interface AdapterConfig extends Adapter.WebSocketClient.Config, App.Config.Request {}
+interface PrivilegedIntents {
+  members?: boolean
+}
+
+export interface AdapterConfig extends Adapter.WebSocketClient.Config, App.Config.Request {
+  intents?: PrivilegedIntents
+}
 
 export const AdapterConfig: Schema<AdapterConfig> = Schema.intersect([
+  Schema.object({
+    intents: Schema.object({
+      members: Schema.boolean(),
+    }),
+  }),
   App.Config.Request,
   Adapter.WebSocketClient.Config,
 ])
