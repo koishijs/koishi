@@ -152,7 +152,9 @@ Koishi 完全基于 TypeScript 开发，拥有顶级的类型支持，丰富的�
 | [adapter-minecraft](https://github.com/koishijs/koishi-plugin-adapter-minecraft) | Minecraft 适配器 |
 | [assets-smms](https://github.com/koishijs/koishi-plugin-assets-smms) | 使用 sm.ms 存储静态资源文件 |
 | [chess](https://github.com/koishijs/koishi-plugin-chess) | 棋类游戏 |
+| [crazy-thursday](https://github.com/koishijs/koishi-plugin-crazy-thursday) | 输出 KFC 疯狂星期四段子 |
 | [dice](https://github.com/koishijs/koishi-plugin-dice) | 掷骰 |
+| [eval-react-jsx](https://github.com/koishijs/koishi-plugin-eval-react-jsx) | 在 Eval 环境支持 React JSX |
 | [gocqhttp](https://github.com/koishijs/koishi-plugin-gocqhttp) | [gocqhttp](https://github.com/Mrs4s/go-cqhttp) 启动器 |
 | [image-search](https://github.com/koishijs/koishi-plugin-image-search) | 图源搜索 |
 | [pics](https://github.com/koishijs/koishi-plugin-pics) | 随机图片 |
