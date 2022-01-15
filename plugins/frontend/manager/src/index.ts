@@ -38,7 +38,7 @@ declare module '@koishijs/plugin-console' {
 }
 
 export const name = 'manager'
-export const using = ['console']
+export const using = ['console'] as const
 
 export interface Config extends MarketProvider.Config {}
 

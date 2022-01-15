@@ -40,13 +40,8 @@
         </ul>
       </k-dep-alert>
       <k-dep-alert
-        v-for="(fulfilled, name) in getDeps('peerDeps')" :key="name"
+        v-for="(fulfilled, name) in deps" :key="name"
         :fulfilled="fulfilled" :required="true" type="依赖">
-        <template #name><k-dep-link :name="name"></k-dep-link></template>
-      </k-dep-alert>
-      <k-dep-alert
-        v-for="(fulfilled, name) in getDeps('devDeps')" :key="name"
-        :fulfilled="fulfilled" :required="false" type="依赖">
         <template #name><k-dep-link :name="name"></k-dep-link></template>
       </k-dep-alert>
     </template>
@@ -101,10 +96,11 @@ watch(data, (value) => {
   version.value = value.version
 }, { immediate: true })
 
-function getDeps(type: 'peerDeps' | 'devDeps') {
-  return Object.fromEntries((data.value[type] || [])
+const deps = computed(() => {
+  return Object
+    .fromEntries((data.value.peerDeps || [])
     .map(name => [name, !!store.packages[name]?.id]))
-}
+})
 
 function getKeywords(prefix: string, keywords = data.value.keywords) {
   if (!keywords) return []
@@ -156,7 +152,7 @@ const depTip = computed(() => {
     return '存在未安装的依赖接口。'
   }
 
-  if (!Object.values(getDeps('peerDeps')).every(v => v)) {
+  if (!Object.values(deps.value).every(v => v)) {
     return '存在未安装的依赖插件。'
   }
 })

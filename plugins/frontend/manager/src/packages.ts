@@ -20,6 +20,8 @@ export class PackageProvider extends DataSource<Dict<PackageProvider.Data>> {
   }
 
   start() {
+    this.task = this.prepare()
+
     this.ctx.on('plugin-added', async (plugin) => {
       const state = this.ctx.app.registry.get(plugin)
       this.updatePackage(plugin, state.id)
@@ -34,10 +36,38 @@ export class PackageProvider extends DataSource<Dict<PackageProvider.Data>> {
     const entry = Object.keys(require.cache).find((key) => {
       return unwrap(require.cache[key].exports) === plugin
     })
-    if (!entry) return
+    if (!this.cache[entry]) return
     const local = await this.cache[entry]
     local.id = id
     this.broadcast()
+  }
+
+  async prepare() {
+    // load local packages
+    let { baseDir } = this.ctx.app
+    const tasks: Promise<void>[] = []
+    while (1) {
+      tasks.push(this.loadDirectory(baseDir))
+      const parent = dirname(baseDir)
+      if (baseDir === parent) break
+      baseDir = parent
+    }
+    await Promise.all(tasks)
+  }
+
+  async get() {
+    await this.task
+
+    // add app config
+    const packages = await Promise.all(Object.values(this.cache))
+    packages.unshift({
+      name: '',
+      shortname: '',
+      schema: App.Config,
+      config: omit(this.ctx.app.options, ['plugins' as any]),
+    })
+
+    return Object.fromEntries(packages.filter(x => x).map(data => [data.name, data]))
   }
 
   private async loadDirectory(baseDir: string) {
@@ -60,44 +90,13 @@ export class PackageProvider extends DataSource<Dict<PackageProvider.Data>> {
     }
   }
 
-  async prepare() {
-    // load local packages
-    let { baseDir } = this.ctx.app
-    const tasks: Promise<void>[] = []
-    while (1) {
-      tasks.push(this.loadDirectory(baseDir))
-      const parent = dirname(baseDir)
-      if (baseDir === parent) break
-      baseDir = parent
-    }
-    await Promise.all(tasks)
-  }
-
-  async get(forced = false) {
-    if (forced || !this.task) {
-      this.task = this.prepare()
-    }
-    await this.task
-
-    // add app config
-    const packages = await Promise.all(Object.values(this.cache))
-    packages.unshift({
-      name: '',
-      shortname: '',
-      schema: App.Config,
-      config: omit(this.ctx.app.options, ['plugins' as any]),
-    })
-
-    return Object.fromEntries(packages.filter(x => x).map(data => [data.name, data]))
-  }
-
   private loadPackage(name: string, path: string) {
     // require.resolve(name) may be different from require.resolve(path)
     // because tsconfig-paths may resolve the path differently
-    this.cache[require.resolve(name)] = this.parsePackage(path)
+    this.cache[require.resolve(name)] = this.parsePackage(name, path)
   }
 
-  private async parsePackage(path: string) {
+  private async parsePackage(name: string, path: string) {
     const data: Package.Local = JSON.parse(await readFile(path + '/package.json', 'utf8'))
     const result = pick(data, ['name', 'version', 'description']) as PackageProvider.Data
 
@@ -107,7 +106,7 @@ export class PackageProvider extends DataSource<Dict<PackageProvider.Data>> {
 
     // check adapter
     const oldLength = Object.keys(Adapter.library).length
-    const exports = unwrap(require(path))
+    const exports = unwrap(require(name))
     const newLength = Object.keys(Adapter.library).length
     if (newLength > oldLength) this.ctx.console.services.protocols.broadcast()
 
