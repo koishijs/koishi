@@ -30,7 +30,7 @@
     "build"
   ],
   "dependencies": {
-    "@vitejs/plugin-vue": "^1.9.4",
+    "@vitejs/plugin-vue": "^2.0.1",
     "vite": "~2.5.10"
   }
 }

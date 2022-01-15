@@ -37,12 +37,12 @@
   "dependencies": {
     "@koishijs/orm-utils": "^1.0.0",
     "@koishijs/sql-utils": "^1.0.0",
-    "better-sqlite3": "^7.4.3",
+    "better-sqlite3": "^7.4.6",
     "sqlstring-sqlite": "^0.1.1"
   },
   "devDependencies": {
     "@koishijs/plugin-mock": "^1.0.0",
     "@koishijs/test-utils": "^8.0.0-rc.1",
-    "@types/better-sqlite3": "^7.4.0"
+    "@types/better-sqlite3": "^7.4.2"
   }
 }

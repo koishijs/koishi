@@ -36,6 +36,6 @@
     "koishi": "^4.0.0"
   },
   "dependencies": {
-    "simple-git": "^2.45.1"
+    "simple-git": "^2.48.0"
   }
 }

@@ -31,7 +31,7 @@
     "koishi": "^4.0.0"
   },
   "dependencies": {
-    "@qq-guild-sdk/core": "^1.1.0",
+    "@qq-guild-sdk/core": "^1.1.4",
     "qface": "^1.2.0"
   }
 }

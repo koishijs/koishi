@@ -35,9 +35,9 @@
   "devDependencies": {
     "@koishijs/cli": "^4.0.0",
     "@koishijs/plugin-console": "^1.0.0",
-    "ansi_up": "^5.0.1"
+    "ansi_up": "^5.1.0"
   },
   "dependencies": {
-    "systeminformation": "^5.8.7"
+    "systeminformation": "^5.10.0"
   }
 }

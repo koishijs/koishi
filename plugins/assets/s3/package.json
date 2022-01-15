@@ -37,6 +37,6 @@
     "koishi": "^4.0.0"
   },
   "dependencies": {
-    "@aws-sdk/client-s3": "^3.20.0"
+    "@aws-sdk/client-s3": "^3.47.0"
   }
 }

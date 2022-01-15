@@ -31,10 +31,10 @@
   },
   "devDependencies": {
     "@koishijs/plugin-mock": "^1.0.0",
-    "@types/ws": "^7.4.7"
+    "@types/ws": "^8.2.2"
   },
   "dependencies": {
     "qface": "^1.2.0",
-    "ws": "^8.2.1"
+    "ws": "^8.4.2"
   }
 }
