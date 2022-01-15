@@ -55,10 +55,9 @@ export default class WebSocketClient extends Adapter.WebSocketClient<BotConfig, 
     }
 
     bot.socket.on('message', async (data) => {
-      data = data.toString()
       let parsed: GatewayPayload
       try {
-        parsed = JSON.parse(data)
+        parsed = JSON.parse(data.toString())
       } catch (error) {
         return logger.warn('cannot parse message', data)
       }

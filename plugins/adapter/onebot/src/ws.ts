@@ -68,10 +68,9 @@ const listeners: Record<number, (response: Response) => void> = {}
 
 export function accept(this: Adapter<BotConfig, AdapterConfig>, bot: OneBotBot) {
   bot.socket.on('message', (data) => {
-    data = data.toString()
     let parsed: any
     try {
-      parsed = JSON.parse(data)
+      parsed = JSON.parse(data.toString())
     } catch (error) {
       return logger.warn('cannot parse message', data)
     }
