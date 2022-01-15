@@ -54,6 +54,7 @@ export class MessageClient {
         session.content = content
         this.app.emit(session as any, 'before-send', session)
         this.replies.push(content)
+        return []
       }
       const dispose = this.app.on('middleware', (session) => {
         if (session.id === uuid) process.nextTick(_resolve)

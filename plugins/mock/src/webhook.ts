@@ -64,11 +64,12 @@ export class Webhook {
         body += chunk
         return true
       }
-      res.end = (chunk: any) => {
-        res.write(chunk)
+      res.end = (callback: () => void) => {
         const code = res.statusCode
         const headers = res.getHeaders()
         resolve({ code, body, headers })
+        callback?.()
+        return res
       }
       this.app._httpServer.emit('request', req, res)
       req.emit('data', body)
