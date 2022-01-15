@@ -4,7 +4,7 @@
 
 <script lang="ts" setup>
 
-import marked from 'marked'
+import { marked } from 'marked'
 
 defineProps({
   source: String,
