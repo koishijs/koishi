@@ -18,7 +18,7 @@ function loadDependencies(filename: string, ignored: Set<string>) {
   return dependencies
 }
 
-const logger = new Logger('app:watcher')
+const logger = new Logger('watch')
 
 export default class FileWatcher extends Service {
   private root: string

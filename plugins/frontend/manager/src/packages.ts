@@ -1,4 +1,4 @@
-import { Adapter, App, Context, Dict, omit, pick, Plugin, Schema } from 'koishi'
+import { Adapter, App, Context, Dict, omit, pick, Plugin, remove, Schema } from 'koishi'
 import { DataSource } from '@koishijs/plugin-console'
 import { promises as fsp } from 'fs'
 import { dirname } from 'path'
@@ -9,6 +9,19 @@ const { readdir, readFile } = fsp
 
 function unwrap(module: any) {
   return module.default || module
+}
+
+/** require without affecting the dependency tree */
+function getExports(id: string) {
+  const path = require.resolve(id)
+  let result = require.cache[path]
+  if (!result) {
+    require(path)
+    result = require.cache[path]
+    remove(module.children, result)
+    delete require.cache[path]
+  }
+  return unwrap(result.exports)
 }
 
 export class PackageProvider extends DataSource<Dict<PackageProvider.Data>> {
@@ -101,12 +114,12 @@ export class PackageProvider extends DataSource<Dict<PackageProvider.Data>> {
     const result = pick(data, ['name', 'version', 'description']) as PackageProvider.Data
 
     // workspace packages are followed by symlinks
-    result.workspace = !require.resolve(path).includes('node_modules')
+    result.workspace = !require.resolve(name).includes('node_modules')
     result.shortname = data.name.replace(/(koishi-|^@koishijs\/)plugin-/, '')
 
     // check adapter
     const oldLength = Object.keys(Adapter.library).length
-    const exports = unwrap(require(name))
+    const exports = getExports(name)
     const newLength = Object.keys(Adapter.library).length
     if (newLength > oldLength) this.ctx.console.services.protocols.broadcast()
 
