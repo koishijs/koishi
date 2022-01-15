@@ -1,5 +1,5 @@
 import { Context, Dict, Schema, sleep, template, Time } from 'koishi'
-import { parsePlatform } from '@koishijs/command-utils'
+import { parsePlatform } from '@koishijs/helpers'
 
 template.set('feedback', {
   'expect-text': '请输入要发送的文本。',

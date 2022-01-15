@@ -1,5 +1,5 @@
 import { Argv, Command, Context, Dict, Session, template, Time, User } from 'koishi'
-import { adminUser } from '@koishijs/command-utils'
+import { adminUser } from '@koishijs/helpers'
 
 declare module 'koishi' {
   namespace Command {

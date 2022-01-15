@@ -1,5 +1,5 @@
 import { difference, enumKeys, template, Context, User, Channel, Command } from 'koishi'
-import { adminChannel, adminUser, parsePlatform } from '@koishijs/command-utils'
+import { adminChannel, adminUser, parsePlatform } from '@koishijs/helpers'
 
 /* eslint-disable quote-props */
 template.set('admin', {

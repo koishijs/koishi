@@ -1,5 +1,5 @@
 import { Context, template, deduplicate, difference, intersection, Argv } from 'koishi'
-import { adminChannel } from '@koishijs/command-utils'
+import { adminChannel } from '@koishijs/helpers'
 
 declare module 'koishi' {
   interface Channel {

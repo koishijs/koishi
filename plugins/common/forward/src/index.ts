@@ -1,5 +1,5 @@
 import { Context, Session, Dict, Time, template, Schema } from 'koishi'
-import { parsePlatform } from '@koishijs/command-utils'
+import { parsePlatform } from '@koishijs/helpers'
 
 template.set('forward', '{0}: {1}')
 

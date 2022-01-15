@@ -37,6 +37,6 @@
     "@koishijs/plugin-mock": "^1.0.0"
   },
   "dependencies": {
-    "@koishijs/command-utils": "^1.0.0"
+    "@koishijs/helpers": "^1.0.0"
   }
 }

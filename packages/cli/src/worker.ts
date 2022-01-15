@@ -15,6 +15,7 @@ declare module 'koishi' {
 
   interface EventMap {
     'exit'(signal: NodeJS.Signals): Promise<void>
+    'reload'(path: string): Promise<void>
     'logger/read'(date?: string): Promise<string[]>
     'logger/data'(text: string): void
   }

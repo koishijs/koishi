@@ -1,5 +1,5 @@
 import { Context, Session, template } from 'koishi'
-import { parsePlatform } from '@koishijs/command-utils'
+import { parsePlatform } from '@koishijs/helpers'
 
 template.set('sudo', {
   'expect-command': '请输入要触发的指令。',

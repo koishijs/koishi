@@ -60,7 +60,7 @@ export function apply(ctx: Context, config: Config = {}) {
   ctx.plugin(AdapterProvider)
   ctx.plugin(PackageProvider)
   ctx.plugin(RegistryProvider)
-  ctx.plugin(ReleaseProvider)
+  // ctx.plugin(ReleaseProvider)
   ctx.plugin(ServiceProvider)
 
   const filename = ctx.console.config.devMode ? '../client/index.ts' : '../dist/index.js'
