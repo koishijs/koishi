@@ -89,7 +89,7 @@ export function transformEval(expr: any, onAggr?: (pipeline: any[]) => void) {
     if (key === '$count') {
       onAggr([
         { $group: { _id: value } },
-        { $group: { _id: null, [$]: { $count: {} } } }
+        { $group: { _id: null, [$]: { $count: {} } } },
       ])
     } else {
       onAggr([{ $group: { _id: null, [$]: { [key]: value } } }])
