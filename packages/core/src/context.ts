@@ -1,11 +1,10 @@
 import { Logger, makeArray, remove, Random, Promisify, Awaitable, Dict, MaybeArray, defineProperty } from '@koishijs/utils'
 import { Command } from './command'
 import { Session } from './session'
-import { User, Channel, Modules } from './database'
+import { User, Channel, Modules, Database } from './database'
 import { Argv } from './parser'
 import { App } from './app'
 import { Bot } from './bot'
-import { Database } from './database'
 import { Adapter } from './adapter'
 import { Model, Tables } from './orm'
 import Schema from 'schemastery'
@@ -291,6 +290,7 @@ export class Context {
       if (typeof plugin !== 'function') {
         plugin.apply(ctx, options)
       } else if (isConstructor(plugin)) {
+        // eslint-disable-next-line no-new, new-cap
         new plugin(ctx, options)
       } else {
         plugin(ctx, options)
@@ -331,9 +331,9 @@ export class Context {
     for (const callback of this.getHooks(name, session)) {
       tasks.push((async () => {
         return callback.apply(session, args)
-      })().catch(((error) => {
+      })().catch((error) => {
         this.logger('app').warn(error)
-      })))
+      }))
     }
     await Promise.all(tasks)
   }

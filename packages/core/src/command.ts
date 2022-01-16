@@ -214,6 +214,7 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
   }
 
   use<T extends Command, R extends any[]>(callback: (command: this, ...args: R) => T, ...args: R): T {
+    // eslint-disable-next-line node/no-callback-literal
     return callback(this, ...args)
   }
 
@@ -257,7 +258,7 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
       if (typeof result === 'string') return result
     } catch (error) {
       if (index === length) throw error
-      let stack = coerce(error)
+      const stack = coerce(error)
       logger.warn(`${argv.source ||= this.stringify(args, options)}\n${stack}`)
       this.app.emit(argv.session, 'command-error', argv, error)
     }
@@ -281,6 +282,7 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
 }
 
 export namespace Command {
+  // eslint-disable-next-line no-undef
   export const Config: Schema<Config> = Schema.object({
     authority: Schema.number(),
     hidden: Schema.boolean(),

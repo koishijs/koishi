@@ -287,6 +287,7 @@ export type Uneval<T, U> =
   : U extends boolean ? Eval.Boolean<T>
   : any
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export type Eval<T, U> =
   | U extends number ? number
   : U extends boolean ? boolean

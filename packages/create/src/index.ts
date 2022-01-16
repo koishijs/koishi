@@ -28,7 +28,7 @@ function supports(command: string, args: string[] = []) {
   return new Promise<boolean>((resolve) => {
     const child = spawn(command, args, { stdio: 'ignore' })
     child.on('exit', (code) => {
-      resolve(code ? false : true)
+      resolve(!code)
     })
     child.on('error', () => {
       resolve(false)
