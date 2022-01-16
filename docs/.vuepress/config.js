@@ -189,6 +189,7 @@ module.exports = {
         text: '数据库支持',
         isGroup: true,
         children: [
+          '/plugins/database/level.md',
           '/plugins/database/memory.md',
           '/plugins/database/mongo.md',
           '/plugins/database/mysql.md',

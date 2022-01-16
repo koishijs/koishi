@@ -32,13 +32,13 @@ Koishi 官方提供了许多插件。为了更好地模块化开发，它们被�
 
 ## 常用功能
 
-- [@koishijs/plugin-broadcast](./accessibility/broadcast.md)：发送广播
-- [@koishijs/plugin-echo](./accessibility/echo.md)：发送消息
-- [@koishijs/plugin-feedback](./accessibility/feedback.md)：发送反馈
-- [@koishijs/plugin-forward](./accessibility/forward.md)：转发消息
-- [@koishijs/plugin-recall](./accessibility/recall.md)：撤回消息
-- [@koishijs/plugin-repeater](./accessibility/repeater.md)：复读机
-- [@koishijs/plugin-respondent](./accessibility/respondent.md)：快捷回复
+- [@koishijs/plugin-broadcast](./common/broadcast.md)：发送广播
+- [@koishijs/plugin-echo](./common/echo.md)：发送消息
+- [@koishijs/plugin-feedback](./common/feedback.md)：发送反馈
+- [@koishijs/plugin-forward](./common/forward.md)：转发消息
+- [@koishijs/plugin-recall](./common/recall.md)：撤回消息
+- [@koishijs/plugin-repeater](./common/repeater.md)：复读机
+- [@koishijs/plugin-respondent](./common/respondent.md)：快捷回复
 
 ## 辅助功能
 
