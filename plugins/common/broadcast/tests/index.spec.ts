@@ -26,7 +26,7 @@ before(async () => {
 
 describe('@koishijs/plugin-broadcast', () => {
   it('basic support', async () => {
-    const send = jest.fn<any, any[]>()
+    const send = jest.fn<Promise<string[]>, [string, string, string?]>(async () => [])
     app.bots.forEach(bot => bot.sendMessage = send)
 
     await client.shouldReply('broadcast', '请输入要发送的文本。')

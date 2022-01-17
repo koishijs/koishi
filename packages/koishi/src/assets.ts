@@ -17,8 +17,8 @@ export abstract class Assets extends Service {
     super(ctx, 'assets')
   }
 
-  public transform(content: string) {
-    return segment.transformAsync(content, Object.fromEntries(this.types.map((type) => {
+  public async transform(content: string) {
+    return await segment.transformAsync(content, Object.fromEntries(this.types.map((type) => {
       return [type, async (data) => segment(type, { url: await this.upload(data.url, data.file) })]
     })))
   }
@@ -61,16 +61,4 @@ export namespace Assets {
     name: string
     filename: string
   }
-}
-
-const { broadcast } = Context.prototype
-Context.prototype.broadcast = async function (this: Context, ...args: any[]) {
-  const index = Array.isArray(args[0]) ? 1 : 0
-  args[index] = await segment.transformAsync(args[index], Object.fromEntries(Assets.types.map((type) => {
-    return [type, async (data) => {
-      const buffer = await this.http.get<ArrayBuffer>(data.url, { responseType: 'arraybuffer' })
-      return segment(type, { url: 'base64://' + Buffer.from(buffer).toString('base64') })
-    }]
-  })))
-  return broadcast.apply(this, args)
 }
