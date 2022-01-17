@@ -122,7 +122,7 @@ export function apply(ctx: Context) {
     return output
   })
 
-  ctx.command('user.usage [key] [value:posint]', '调用次数信息', { authority: 1 })
+  ctx.command('usage [key] [value:posint]', '调用次数信息', { authority: 1 })
     .userFields(['usage'])
     .option('set', '-s  设置调用次数', { authority: 4 })
     .option('clear', '-c  清空调用次数', { authority: 4 })
@@ -151,7 +151,7 @@ export function apply(ctx: Context) {
       return output.join('\n')
     })
 
-  ctx.command('user.timer [key] [value:date]', '定时器信息', { authority: 1 })
+  ctx.command('timer [key] [value:date]', '定时器信息', { authority: 1 })
     .userFields(['timers'])
     .option('set', '-s  设置定时器', { authority: 4 })
     .option('clear', '-c  清空定时器', { authority: 4 })
