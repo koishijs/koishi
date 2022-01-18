@@ -15,7 +15,7 @@ sidebarDepth: 2
 ```js
 interface segment {
   type: string
-  data: Record<string, string | number | boolean>
+  data: Dict<string | number | boolean>
 }
 ```
 
@@ -62,6 +62,35 @@ interface segment {
 - 返回值: `segment[]` 消息段数组
 
 解析一段文本内的全部消息段。其中的纯文本将会解析成 text 类型。
+
+
+### segment.transform(source, rules, dropOthers?)
+
+- **source:** `string` 源文本或其解析成的消息段
+- **rules:** `Dict<Transformer>` 转换规则，以消息段类型未键
+- **dropOthers:** `boolean` 丢弃未指定转换规则的消息段类型，否则使用 [`segment(type, data)`](#segment-type-data) 的输出
+- 返回值: `string` 转换后的文本
+
+将一段文本或其解析结果的所有消息段按照规则进行转换。转换规则的定义方式如下（若为字符串类型则一律将消息段转换为该字符串）：
+
+```js
+type Transformer =
+  | string
+  | ((data: Dict<string>, index: number, chain: segment[]) => string)
+```
+
+### segment.transformAsync(source, rules)
+
+- **source:** `string` 源文本或其解析成的消息段
+- **rules:** `Dict<AsyncTransformer>` 转换规则，以消息段类型未键
+
+与 [`segment.transform()`](#segment-transform-source-rules-dropothers) 类似但实现略有不同。未定义转换规则的消息段类型一律使用 [`segment()`](#segment-type-data) 的输出。
+
+```js
+type AsyncTransformer =
+  | string
+  | ((data: Dict<string>, index: number, chain: segment[]) => Awaitable<string>)
+```
 
 ## 元素消息段
 
