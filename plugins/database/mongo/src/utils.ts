@@ -1,7 +1,7 @@
 import { Query, Random, valueMap } from 'koishi'
 import { Filter, FilterOperators } from 'mongodb'
 
-function transformFieldQuery(query: Query.FieldQuery, key: string) {
+function transformFieldQuery(query: Query.FieldQuery, key: string, exprs: any[]) {
   // shorthand syntax
   if (typeof query === 'string' || typeof query === 'number' || query instanceof Date) {
     return { $eq: query }
@@ -16,15 +16,17 @@ function transformFieldQuery(query: Query.FieldQuery, key: string) {
   const result: FilterOperators<any> = {}
   for (const prop in query) {
     if (prop === '$el') {
-      result.$elemMatch = transformFieldQuery(query[prop], key)
+      result.$elemMatch = transformFieldQuery(query[prop], key, exprs)
     } else if (prop === '$regexFor') {
-      result.$expr = {
-        body(data: string, value: string) {
-          return new RegExp(data, 'i').test(value)
+      exprs.push({
+        $function: {
+          body: function (data: string, value: string) {
+            return new RegExp(data, 'i').test(value)
+          }.toString(),
+          args: ['$' + key, query.$regexFor],
+          lang: 'js',
         },
-        args: ['$' + key, query],
-        lang: 'js',
-      }
+      })
     } else {
       result[prop] = query[prop]
     }
@@ -34,6 +36,7 @@ function transformFieldQuery(query: Query.FieldQuery, key: string) {
 
 export function transformQuery(query: Query.Expr) {
   const filter: Filter<any> = {}
+  const exprs: any[] = []
   for (const key in query) {
     const value = query[key]
     if (key === '$and' || key === '$or') {
@@ -49,12 +52,18 @@ export function transformQuery(query: Query.Expr) {
       // MongoError: unknown top level operator: $not
       // https://stackoverflow.com/questions/25270396/mongodb-how-to-invert-query-with-not
       // this may solve this problem but lead to performance degradation
-      filter.$nor = [transformQuery(value)]
+      const query = transformQuery(value)
+      if (query) filter.$nor = [query]
     } else if (key === '$expr') {
-      filter[key] = transformEval(value)
+      exprs.push(transformEval(value))
     } else {
-      filter[key] = transformFieldQuery(value, key)
+      const query = transformFieldQuery(value, key, exprs)
+      if (!query) return
+      if (Object.keys(query).length) filter[key] = query
     }
+  }
+  if (exprs.length) {
+    (filter.$and ||= []).push(...exprs.map($expr => ({ $expr })))
   }
   return filter
 }

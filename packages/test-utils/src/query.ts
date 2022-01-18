@@ -7,6 +7,7 @@ interface Foo {
   value?: number
   list?: number[]
   date?: Date
+  regex?: string
 }
 
 declare module 'koishi' {
@@ -22,6 +23,7 @@ function QueryOperators(app: App) {
     value: 'integer',
     list: 'list',
     date: 'timestamp',
+    regex: 'string',
   }, {
     autoInc: true,
   })
@@ -128,13 +130,23 @@ namespace QueryOperators {
   }
 
   export const regexp = function RegularExpression(app: App, options: RegExpOptions = {}) {
-    const { regexBy = true } = options
+    const { regexBy = true, regexFor = true } = options
 
     before(async () => {
       await app.database.remove('temp1', {})
-      await app.database.create('temp1', { text: 'awesome foo' })
-      await app.database.create('temp1', { text: 'awesome bar' })
-      await app.database.create('temp1', { text: 'awesome foo bar' })
+      await app.database.create('temp1', { text: 'awesome foo', regex: 'foo' })
+      await app.database.create('temp1', { text: 'awesome bar', regex: 'bar' })
+      await app.database.create('temp1', { text: 'awesome foo bar', regex: 'baz' })
+    })
+
+    regexFor && it('$regexFor', async () => {
+      await expect(app.database.get('temp1', {
+        regex: { $regexFor: 'foo bar' },
+      })).eventually.to.have.length(2)
+
+      await expect(app.database.get('temp1', {
+        regex: { $regexFor: 'baz' },
+      })).eventually.to.have.length(1)
     })
 
     regexBy && it('$regexBy', async () => {
