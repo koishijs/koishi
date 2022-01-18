@@ -1,5 +1,5 @@
 import { App } from 'koishi'
-import tests from '@koishijs/test-utils'
+import tests from '@koishijs/database-tests'
 import mock from '@koishijs/plugin-mock'
 import mysql from '@koishijs/plugin-database-mysql'
 import parse from 'yargs-parser'

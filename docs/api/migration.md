@@ -15,7 +15,9 @@ sidebarDepth: 2
 - 新增了 create-koishi，可使用 yarn create 或 npm init 一键启动
 - **所有官方插件都改为 @koishijs/plugin-xxx**
 - **所有官方适配器也调整为插件**，名称与上一条一致
-- koishi-test-utils 更名为 @koishijs/test-utils
+- koishi-test-utils 被拆分为多个部分：
+  - 数据库测试相关代码移至 @koishijs/database-tests
+  - 测试工具重构后成为 @koishijs/plugin-mock
 - koishi-plugin-webui 被拆分为多个插件：
   - @koishijs/plugin-console
   - @koishijs/plugin-manager

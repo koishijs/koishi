@@ -31,8 +31,8 @@
     "mysql"
   ],
   "devDependencies": {
-    "@koishijs/plugin-mock": "^1.0.0",
-    "@koishijs/test-utils": "^8.0.0-rc.1"
+    "@koishijs/database-tests": "^1.0.0",
+    "@koishijs/plugin-mock": "^1.0.0"
   },
   "peerDependencies": {
     "koishi": "^4.0.0"

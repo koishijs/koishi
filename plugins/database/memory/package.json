@@ -33,8 +33,8 @@
     "koishi": "^4.0.0"
   },
   "devDependencies": {
+    "@koishijs/database-tests": "^1.0.0",
     "@koishijs/plugin-mock": "^1.0.0",
-    "@koishijs/test-utils": "^8.0.0-rc.1",
     "@types/js-yaml": "^4.0.5",
     "js-yaml": "^4.1.0"
   },
