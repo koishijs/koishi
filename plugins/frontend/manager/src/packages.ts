@@ -24,7 +24,7 @@ function getExports(id: string) {
   return unwrap(result.exports)
 }
 
-export class PackageProvider extends DataSource<Dict<PackageProvider.Data>> {
+class PackageProvider extends DataSource<Dict<PackageProvider.Data>> {
   cache: Dict<Promise<PackageProvider.Data>> = {}
   task: Promise<void>
 
@@ -142,7 +142,7 @@ export class PackageProvider extends DataSource<Dict<PackageProvider.Data>> {
   }
 }
 
-export namespace PackageProvider {
+namespace PackageProvider {
   export interface Config {}
 
   export interface Data extends Partial<Package.Base> {
@@ -156,3 +156,5 @@ export namespace PackageProvider {
     workspace?: boolean
   }
 }
+
+export default PackageProvider

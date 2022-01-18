@@ -8,7 +8,30 @@ declare module 'koishi' {
   }
 }
 
-export class BotProvider extends DataSource<BotProvider.Data[]> {
+class TickCounter {
+  public stop: () => void
+
+  private data = new Array(60).fill(0)
+
+  private tick = () => {
+    this.data.unshift(0)
+    this.data.splice(-1, 1)
+  }
+
+  constructor(ctx: Context) {
+    this.stop = ctx.setInterval(() => this.tick(), Time.second)
+  }
+
+  public add(value = 1) {
+    this.data[0] += value
+  }
+
+  public get() {
+    return this.data.reduce((prev, curr) => prev + curr, 0)
+  }
+}
+
+class BotProvider extends DataSource<BotProvider.Data[]> {
   constructor(ctx: Context) {
     super(ctx, 'bots')
 
@@ -44,30 +67,7 @@ export class BotProvider extends DataSource<BotProvider.Data[]> {
   }
 }
 
-class TickCounter {
-  public stop: () => void
-
-  private data = new Array(60).fill(0)
-
-  private tick = () => {
-    this.data.unshift(0)
-    this.data.splice(-1, 1)
-  }
-
-  constructor(ctx: Context) {
-    this.stop = ctx.setInterval(() => this.tick(), Time.second)
-  }
-
-  public add(value = 1) {
-    this.data[0] += value
-  }
-
-  public get() {
-    return this.data.reduce((prev, curr) => prev + curr, 0)
-  }
-}
-
-export namespace BotProvider {
+namespace BotProvider {
   export function initialize(bot: Bot, ctx: Context) {
     bot._messageSent = new TickCounter(ctx)
     bot._messageReceived = new TickCounter(ctx)
@@ -84,3 +84,5 @@ export namespace BotProvider {
     messageReceived: number
   }
 }
+
+export default BotProvider

@@ -1,12 +1,12 @@
 import { Context, Schema } from 'koishi'
 import { resolve } from 'path'
-import { BotProvider } from './bots'
-import { MarketProvider } from './market'
-import { PackageProvider } from './packages'
-import { AdapterProvider } from './protocols'
-import { RegistryProvider } from './registry'
-import { ReleaseProvider } from './releases'
-import { ServiceProvider } from './services'
+import BotProvider from './bots'
+import MarketProvider from './market'
+import PackageProvider from './packages'
+import AdapterProvider from './protocols'
+import RegistryProvider from './registry'
+import ReleaseProvider from './releases'
+import ServiceProvider from './services'
 
 export * from './bots'
 export * from './market'
@@ -16,6 +16,16 @@ export * from './registry'
 export * from './releases'
 export * from './services'
 export * from './utils'
+
+export {
+  BotProvider,
+  MarketProvider,
+  PackageProvider,
+  AdapterProvider,
+  RegistryProvider,
+  ReleaseProvider,
+  ServiceProvider,
+}
 
 declare module '@koishijs/plugin-console' {
   interface Events {

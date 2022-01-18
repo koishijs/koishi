@@ -1,4 +1,4 @@
-import { coerce, Context, Logger, Plugin, Service } from 'koishi'
+import { coerce, Context, Dict, Logger, Plugin, Service } from 'koishi'
 import { FSWatcher, watch, WatchOptions } from 'chokidar'
 import { relative, resolve } from 'path'
 
@@ -18,12 +18,16 @@ function loadDependencies(filename: string, ignored: Set<string>) {
   return dependencies
 }
 
+function unwrap(module: any) {
+  return module.default || module
+}
+
 const logger = new Logger('watch')
 
 export default class FileWatcher extends Service {
   private root: string
   private watcher: FSWatcher
-  private currentUpdate: Promise<void>
+  private currentUpdate: Promise<void[]>
 
   /**
    * changes from externals E will always trigger a full reload
@@ -33,10 +37,7 @@ export default class FileWatcher extends Service {
   private externals: Set<string>
 
   /**
-   * files X that should not be marked as declined
-   *
-   * - including all changes C
-   * - some change C -> file X -> some change D
+   * stashed files that will trigger a partial reload
    */
   private stashed = new Set<string>()
 
@@ -80,63 +81,99 @@ export default class FileWatcher extends Service {
   }
 
   private flushChanges() {
-    const tasks: Promise<void>[] = []
     const reloads = new Map<Plugin.State, string>()
 
     /**
      * files X that should be reloaded
      *
+     * - including all stashed files S
      * - some plugin P -> file X -> some change C
-     * - file X -> none of plugin Q -> some change D
      */
-    const accepted = new Set<string>()
+    const accepted = new Set<string>(this.stashed)
 
     /**
      * files X that should not be reloaded
      *
      * - including all externals E
-     * - some change C -> file X
-     * - file X -> none of change D
+     * - some change C -> file X -> none of change D
      */
     const declined = new Set(this.externals)
-    const visited = new Set<string>()
 
-    const traverse = (filename: string) => {
-      if (declined.has(filename) || filename.includes('/node_modules/')) return
-      visited.add(filename)
+    /**
+     * files X that will be classified as accepted or declined
+     */
+    const pending: string[] = []
+
+    this.stashed.forEach((filename) => {
       const { children } = require.cache[filename]
-      let isActive = this.stashed.has(filename)
-      for (const module of children) {
-        if (visited.has(filename)) continue
-        if (traverse(module.filename)) {
-          this.stashed.add(filename)
-          isActive = true
+      for (const { filename } of children) {
+        if (accepted.has(filename) || declined.has(filename) || filename.includes('/node_modules/')) continue
+        pending.push(filename)
+      }
+    })
+
+    while (pending.length) {
+      let index = 0, hasUpdate = false
+      while (index < pending.length) {
+        const filename = pending[index]
+        const { children } = require.cache[filename]
+        let isDeclined = true, isAccepted = false
+        for (const { filename } of children) {
+          if (declined.has(filename) || filename.includes('/node_modules/')) continue
+          if (accepted.has(filename)) {
+            isAccepted = true
+            break
+          } else {
+            isDeclined = false
+            if (!pending.includes(filename)) {
+              hasUpdate = true
+              pending.push(filename)
+            }
+          }
+        }
+        if (isAccepted || isDeclined) {
+          hasUpdate = true
+          pending.splice(index, 1)
+          if (isAccepted) {
+            accepted.add(filename)
+          } else {
+            declined.add(filename)
+          }
+        } else {
+          index++
         }
       }
-      if (isActive) return isActive
+      // infinite loop
+      if (!hasUpdate) break
+    }
+
+    for (const filename of pending) {
       declined.add(filename)
     }
-    Array.from(this.stashed).forEach(traverse)
+
+    /**
+     * a map from filename to plugin state
+     */
+    const plugins = new Map<string, Plugin.State>()
 
     for (const filename in require.cache) {
       // we only detect reloads at plugin level
       const module = require.cache[filename]
-      const state = this.ctx.app.registry.get(module.exports)
+      const state = this.ctx.app.registry.get(unwrap(module.exports))
       if (!state) continue
+      plugins.set(filename, state)
+      declined.add(filename)
+    }
 
+    for (const [filename, state] of plugins) {
       // check if it is a dependent of the changed file
+      declined.delete(filename)
       const dependencies = [...loadDependencies(filename, declined)]
-      if (!dependencies.some(dep => this.stashed.has(dep))) continue
+      declined.add(filename)
+      if (!dependencies.some(dep => accepted.has(dep))) continue
 
       // accept dependencies to be reloaded
       dependencies.forEach(dep => accepted.add(dep))
-      const plugin = require(filename)
-
-      // dispose installed plugin
-      tasks.push(this.ctx.dispose(plugin).catch((err) => {
-        const displayName = plugin.name || relative(this.root, filename)
-        logger.warn('failed to dispose plugin %c\n' + coerce(err), displayName)
-      }))
 
       // prepare for reload
       let ancestor = state, isMarked = false
@@ -144,25 +181,73 @@ export default class FileWatcher extends Service {
       if (!isMarked) reloads.set(state, filename)
     }
 
-    this.stashed = new Set()
-    this.currentUpdate = Promise.all(tasks).then(() => {
-      // delete module cache before re-require
-      accepted.forEach((path) => {
-        logger.debug('cache deleted:', path)
-        delete require.cache[path]
-      })
+    // save require.cache for recovery
+    const backup: Dict<NodeJS.Module> = {}
+    for (const filename of accepted) {
+      backup[filename] = require.cache[filename]
+    }
 
-      // reload all dependent plugins
-      for (const [state, filename] of reloads) {
-        try {
-          const plugin = require(filename)
-          state.context.plugin(plugin, state.config)
-          const displayName = plugin.name || relative(this.root, filename)
-          logger.info('reload plugin %c', displayName)
-        } catch (err) {
-          logger.warn('failed to reload plugin at %c\n' + coerce(err), relative(this.root, filename))
-        }
+    // delete module cache before re-require
+    accepted.forEach((path) => {
+      logger.debug('cache deleted:', path)
+      delete require.cache[path]
+    })
+
+    // attempt to load entry files
+    const attempts = {}
+    try {
+      for (const [_, filename] of reloads) {
+        attempts[filename] = unwrap(require(filename))
       }
+    } catch (err) {
+      logger.warn(err)
+      this.currentUpdate = null
+      return rollback()
+    }
+
+    function rollback() {
+      for (const filename in backup) {
+        require.cache[filename] = backup[filename]
+      }
+    }
+
+    // reload all associated plugins
+    const tasks = Array.from(reloads).map(async ([state, filename]) => {
+      try {
+        await this.ctx.dispose(state.plugin)
+      } catch (err) {
+        const displayName = state.plugin.name || relative(this.root, filename)
+        logger.warn('failed to dispose plugin %c\n' + coerce(err), displayName)
+      }
+
+      try {
+        const plugin = attempts[filename]
+        state.context.plugin(plugin, state.config)
+        const displayName = plugin.name || relative(this.root, filename)
+        logger.info('reload plugin %c', displayName)
+      } catch (err) {
+        logger.warn('failed to reload plugin at %c\n' + coerce(err), relative(this.root, filename))
+        throw err
+      }
+    })
+
+    this.stashed = new Set()
+    this.currentUpdate = Promise.all(tasks).catch(() => {
+      rollback()
+      // rollback require.cache and plugin states
+      return Promise.all(Array.from(reloads).map(async ([state, filename]) => {
+        try {
+          await this.ctx.dispose(attempts[filename])
+        } catch (err) {
+          logger.warn(err)
+        }
+
+        try {
+          state.context.plugin(state.plugin, state.config)
+        } catch (err) {
+          logger.warn(err)
+        }
+      }))
     })
   }
 }

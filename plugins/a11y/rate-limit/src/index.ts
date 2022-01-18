@@ -122,7 +122,7 @@ export function apply(ctx: Context) {
     return output
   })
 
-  ctx.command('user.usage [key] [value:posint]', '调用次数信息', { authority: 1 })
+  ctx.command('usage [key] [value:posint]', '调用次数信息', { authority: 1 })
     .userFields(['usage'])
     .option('set', '-s  设置调用次数', { authority: 4 })
     .option('clear', '-c  清空调用次数', { authority: 4 })
@@ -143,7 +143,7 @@ export function apply(ctx: Context) {
       if (name) return template('usage.present', name, user.usage[name] || 0)
       const output: string[] = []
       for (const name of Object.keys(user.usage).sort()) {
-        if (name.startsWith('$')) continue
+        if (name.startsWith('_')) continue
         output.push(`${name}：${user.usage[name]}`)
       }
       if (!output.length) return template('usage.none')
@@ -151,7 +151,7 @@ export function apply(ctx: Context) {
       return output.join('\n')
     })
 
-  ctx.command('user.timer [key] [value:date]', '定时器信息', { authority: 1 })
+  ctx.command('timer [key] [value:date]', '定时器信息', { authority: 1 })
     .userFields(['timers'])
     .option('set', '-s  设置定时器', { authority: 4 })
     .option('clear', '-c  清空定时器', { authority: 4 })
@@ -177,7 +177,7 @@ export function apply(ctx: Context) {
       }
       const output: string[] = []
       for (const name of Object.keys(user.timers).sort()) {
-        if (name.startsWith('$')) continue
+        if (name.startsWith('_')) continue
         output.push(`${name}：剩余 ${Time.formatTime(user.timers[name] - now)}`)
       }
       if (!output.length) return template('timer.none')
@@ -191,9 +191,9 @@ export function getUsageName(command: Command) {
 }
 
 export function getUsage(name: string, user: Pick<User, 'usage'>) {
-  const $date = Time.getDateNumber()
-  if (user.usage.$date !== $date) {
-    user.usage = { $date }
+  const _date = Time.getDateNumber()
+  if (user.usage._date !== _date) {
+    user.usage = { _date }
   }
   return user.usage[name] || 0
 }
@@ -209,11 +209,11 @@ export function checkUsage(name: string, user: Pick<User, 'usage'>, maxUsage?: n
 
 export function checkTimer(name: string, { timers }: Pick<User, 'timers'>, offset?: number) {
   const now = Date.now()
-  if (!(now <= timers.$date)) {
+  if (!(now <= timers._date)) {
     for (const key in timers) {
       if (now > timers[key]) delete timers[key]
     }
-    timers.$date = now + Time.day
+    timers._date = now + Time.day
   }
   if (now <= timers[name]) return true
   if (offset !== undefined) {

@@ -1,4 +1,4 @@
-import { Context, Session, Time, Logger, Schema } from 'koishi'
+import { Context, Session, Time, Logger, Schema, Dict } from 'koishi'
 
 declare module 'koishi' {
   interface Tables {
@@ -99,12 +99,27 @@ export function apply(ctx: Context, { minInterval }: Config) {
   }
 
   ctx.on('ready', async () => {
-    const schedules = await ctx.database.get('schedule', { assignee: ctx.bots.map(bot => bot.sid) })
-    schedules.forEach((schedule) => {
+    const data = await ctx.database.get('schedule', {})
+    const schedules: Dict<Schedule[]> = {}
+
+    data.forEach((schedule) => {
       const { session, assignee } = schedule
       const bot = ctx.bots.get(assignee)
-      if (!bot) return
-      prepareSchedule(schedule, new Session(bot, session))
+      if (bot) {
+        prepareSchedule(schedule, new Session(bot, session))
+      } else {
+        (schedules[assignee] ||= []).push(schedule)
+      }
+    })
+
+    ctx.on('bot-status-updated', (bot) => {
+      if (bot.status !== 'online') return
+      const items = schedules[bot.sid]
+      if (!items) return
+      delete schedules[bot.sid]
+      items.forEach((schedule) => {
+        prepareSchedule(schedule, new Session(bot, schedule.session))
+      })
     })
   })
 
