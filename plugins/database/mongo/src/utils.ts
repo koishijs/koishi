@@ -38,14 +38,17 @@ export function transformQuery(query: Query.Expr) {
     const value = query[key]
     if (key === '$and' || key === '$or') {
       // MongoError: $and/$or/$nor must be a nonempty array
+      // { $and: [] } matches everything
+      // { $or: [] } matches nothing
       if (value.length) {
         filter[key] = value.map(transformQuery)
       } else if (key === '$or') {
-        return { $nor: [{}] }
+        return
       }
     } else if (key === '$not') {
       // MongoError: unknown top level operator: $not
       // https://stackoverflow.com/questions/25270396/mongodb-how-to-invert-query-with-not
+      // this may solve this problem but lead to performance degradation
       filter.$nor = [transformQuery(value)]
     } else if (key === '$expr') {
       filter[key] = transformEval(value)

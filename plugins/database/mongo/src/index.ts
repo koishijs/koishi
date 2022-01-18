@@ -8,10 +8,6 @@ declare module 'koishi' {
   interface Database {
     mongo: MongoDatabase
   }
-
-  interface Modules {
-    'database-mongo': typeof import('.')
-  }
 }
 
 type TableType = keyof Tables
@@ -112,6 +108,7 @@ class MongoDatabase extends Database {
 
   async get(name: TableType, query: Query, modifier: Query.Modifier) {
     const filter = this._createFilter(name, query)
+    if (!filter) return []
     let cursor = this.db.collection(name).find(filter)
     const { fields, limit, offset = 0, sort } = Query.resolveModifier(modifier)
     cursor = cursor.project({ _id: 0, ...Object.fromEntries((fields ?? []).map(key => [key, 1])) })
@@ -122,11 +119,12 @@ class MongoDatabase extends Database {
   }
 
   async set(name: TableType, query: Query, update: {}) {
+    const filter = this._createFilter(name, query)
+    if (!filter) return
     await this._tableTasks[name]
     const { primary } = this.ctx.model.config[name]
     const indexFields = makeArray(primary)
     const updateFields = new Set(Object.keys(update).map(key => key.split('.', 1)[0]))
-    const filter = this._createFilter(name, query)
     const coll = this.db.collection(name)
     const original = await coll.find(filter).toArray()
     if (!original.length) return
@@ -139,6 +137,7 @@ class MongoDatabase extends Database {
 
   async remove(name: TableType, query: Query) {
     const filter = this._createFilter(name, query)
+    if (!filter) return
     await this.db.collection(name).deleteMany(filter)
   }
 
@@ -208,8 +207,9 @@ class MongoDatabase extends Database {
     const stages: any[] = [{ $match: { _id: null } }]
     for (const task of tasks) {
       const { expr, table, query } = task
-      task.expr = transformEval(expr, (pipeline: any[]) => {
-        pipeline.unshift({ $match: this._createFilter(table, query) })
+      task.expr = transformEval(expr, (pipeline) => {
+        const filter = this._createFilter(table, query) || { _id: null }
+        pipeline.unshift({ $match: filter })
         stages.push({ $unionWith: { coll: table, pipeline } })
       })
     }
