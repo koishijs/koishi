@@ -7,6 +7,7 @@ const specs = [
   'packages/utils/tests/*.spec.ts',
   'plugins/a11y/admin/tests/*.spec.ts',
   'plugins/a11y/rate-limit/tests/*.spec.ts',
+  'plugins/a11y/schedule/tests/*.spec.ts',
   // 'plugins/a11y/switch/tests/*.spec.ts',
   'plugins/a11y/sudo/tests/*.spec.ts',
   // 'plugins/a11y/verifier/tests/*.spec.ts',
@@ -25,7 +26,6 @@ const specs = [
   // 'plugins/eval/tests/*.spec.ts',
   'plugins/frontend/commands/tests/*.spec.ts',
   // 'plugins/github/tests/*.spec.ts',
-  // 'plugins/schedule/tests/*.spec.ts',
   'plugins/teach/tests/*.spec.ts',
 ]
 
