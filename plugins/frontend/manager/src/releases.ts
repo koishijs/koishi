@@ -4,7 +4,7 @@ import { components } from '@octokit/openapi-types'
 
 type Release = components['schemas']['release']
 
-export class ReleaseProvider extends DataSource<Release[]> {
+export default class ReleaseProvider extends DataSource<Release[]> {
   cache: Promise<Release[]>
 
   constructor(ctx: Context) {

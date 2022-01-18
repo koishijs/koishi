@@ -1,7 +1,7 @@
 import { Adapter, Context, Dict, Schema } from 'koishi'
 import { DataSource } from '@koishijs/plugin-console'
 
-export class AdapterProvider extends DataSource<Dict<Schema>> {
+export default class AdapterProvider extends DataSource<Dict<Schema>> {
   constructor(ctx: Context) {
     super(ctx, 'protocols')
 
