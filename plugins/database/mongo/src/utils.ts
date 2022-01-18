@@ -1,12 +1,23 @@
 import { Query, Random, valueMap } from 'koishi'
 import { Filter, FilterOperators } from 'mongodb'
 
-function transformFieldQuery(query: Query.FieldQuery, key: string, exprs: any[]) {
+function createFieldFilter(query: Query.FieldQuery, key: string) {
+  const filters: Filter<any>[] = []
+  const result: Filter<any> = {}
+  const child = transformFieldQuery(query, key, filters)
+  if (child === false) return false
+  if (child !== true) result[key] = child
+  if (filters.length) result.$and = filters
+  if (Object.keys(result).length) return result
+  return true
+}
+
+function transformFieldQuery(query: Query.FieldQuery, key: string, filters: Filter<any>[]) {
   // shorthand syntax
   if (typeof query === 'string' || typeof query === 'number' || query instanceof Date) {
     return { $eq: query }
   } else if (Array.isArray(query)) {
-    if (!query.length) return
+    if (!query.length) return false
     return { $in: query }
   } else if (query instanceof RegExp) {
     return { $regex: query }
@@ -15,28 +26,52 @@ function transformFieldQuery(query: Query.FieldQuery, key: string, exprs: any[])
   // query operators
   const result: FilterOperators<any> = {}
   for (const prop in query) {
-    if (prop === '$el') {
-      result.$elemMatch = transformFieldQuery(query[prop], key, exprs)
+    if (prop === '$and') {
+      for (const item of query[prop]) {
+        const child = createFieldFilter(item, key)
+        if (child === false) return false
+        if (child !== true) filters.push(child)
+      }
+    } else if (prop === '$or') {
+      const $or: Filter<any>[] = []
+      if (!query[prop].length) return false
+      const always = query[prop].some((item) => {
+        const child = createFieldFilter(item, key)
+        if (typeof child === 'boolean') return child
+        $or.push(child)
+      })
+      if (!always) filters.push({ $or })
+    } else if (prop === '$not') {
+      const child = createFieldFilter(query[prop], key)
+      if (child === true) return false
+      if (child !== false) filters.push({ $nor: [child] })
+    } else if (prop === '$el') {
+      const child = transformFieldQuery(query[prop], key, filters)
+      if (child === false) return false
+      if (child !== true) result.$elemMatch = child
     } else if (prop === '$regexFor') {
-      exprs.push({
-        $function: {
-          body: function (data: string, value: string) {
-            return new RegExp(data, 'i').test(value)
-          }.toString(),
-          args: ['$' + key, query.$regexFor],
-          lang: 'js',
+      filters.push({
+        $expr: {
+          $function: {
+            body: function (data: string, value: string) {
+              return new RegExp(data, 'i').test(value)
+            }.toString(),
+            args: ['$' + key, query.$regexFor],
+            lang: 'js',
+          },
         },
       })
     } else {
       result[prop] = query[prop]
     }
   }
+  if (!Object.keys(result).length) return true
   return result
 }
 
 export function transformQuery(query: Query.Expr) {
   const filter: Filter<any> = {}
-  const exprs: any[] = []
+  const additional: Filter<any>[] = []
   for (const key in query) {
     const value = query[key]
     if (key === '$and' || key === '$or') {
@@ -55,15 +90,15 @@ export function transformQuery(query: Query.Expr) {
       const query = transformQuery(value)
       if (query) filter.$nor = [query]
     } else if (key === '$expr') {
-      exprs.push(transformEval(value))
+      additional.push({ $expr: transformEval(value) })
     } else {
-      const query = transformFieldQuery(value, key, exprs)
-      if (!query) return
-      if (Object.keys(query).length) filter[key] = query
+      const query = transformFieldQuery(value, key, additional)
+      if (query === false) return
+      if (query !== true) filter[key] = query
     }
   }
-  if (exprs.length) {
-    (filter.$and ||= []).push(...exprs.map($expr => ({ $expr })))
+  if (additional.length) {
+    (filter.$and ||= []).push(...additional)
   }
   return filter
 }
