@@ -31,7 +31,7 @@
     "callme"
   ],
   "peerDependencies": {
-    "koishi": "^4.0.0"
+    "koishi": "^4.0.1"
   },
   "devDependencies": {
     "@koishijs/plugin-database-memory": "^1.0.0",

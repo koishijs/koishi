@@ -28,7 +28,7 @@
     "koishi"
   ],
   "peerDependencies": {
-    "koishi": "^4.0.0"
+    "koishi": "^4.0.1"
   },
   "dependencies": {
     "@qq-guild-sdk/core": "^1.1.4",

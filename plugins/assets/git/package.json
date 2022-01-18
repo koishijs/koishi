@@ -33,7 +33,7 @@
     "service:assets"
   ],
   "peerDependencies": {
-    "koishi": "^4.0.0"
+    "koishi": "^4.0.1"
   },
   "dependencies": {
     "simple-git": "^2.48.0"

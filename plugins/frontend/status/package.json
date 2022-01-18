@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-status",
   "description": "Status view for Koishi",
-  "version": "5.0.0",
+  "version": "5.0.1",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -30,10 +30,10 @@
     "server"
   ],
   "peerDependencies": {
-    "koishi": "^4.0.0"
+    "koishi": "^4.0.1"
   },
   "devDependencies": {
-    "@koishijs/cli": "^4.0.0",
+    "@koishijs/cli": "^4.0.1",
     "@koishijs/plugin-console": "^1.0.0",
     "ansi_up": "^5.1.0"
   },
