@@ -7,7 +7,7 @@ const specs = [
   'packages/utils/tests/*.spec.ts',
   'plugins/a11y/admin/tests/*.spec.ts',
   'plugins/a11y/rate-limit/tests/*.spec.ts',
-  'plugins/a11y/switch/tests/*.spec.ts',
+  // 'plugins/a11y/switch/tests/*.spec.ts',
   'plugins/a11y/sudo/tests/*.spec.ts',
   // 'plugins/a11y/verifier/tests/*.spec.ts',
   'plugins/common/broadcast/tests/*.spec.ts',
@@ -29,7 +29,7 @@ const specs = [
   'plugins/teach/tests/*.spec.ts',
 ]
 
-const folders = ['common', 'database', 'frontend']
+const folders = ['a11y', 'common', 'database', 'frontend']
 
 const libraries = {}
 
