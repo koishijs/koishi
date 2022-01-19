@@ -114,7 +114,7 @@ module.exports = {
         children: [
           '/guide/service/assets.md',
           '/guide/service/http.md',
-          '/guide/service/route.md',
+          '/guide/service/router.md',
           '/guide/service/logger.md',
         ],
       }, {
