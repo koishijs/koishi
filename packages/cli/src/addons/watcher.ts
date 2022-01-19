@@ -159,10 +159,11 @@ export default class FileWatcher extends Service {
     for (const filename in require.cache) {
       // we only detect reloads at plugin level
       const module = require.cache[filename]
-      const state = this.ctx.app.registry.get(unwrap(module.exports))
+      const plugin = unwrap(module.exports)
+      const state = this.ctx.app.registry.get(plugin)
       if (!state) continue
       plugins.set(filename, state)
-      declined.add(filename)
+      if (!plugin.sideEffect) declined.add(filename)
     }
 
     for (const [filename, state] of plugins) {
