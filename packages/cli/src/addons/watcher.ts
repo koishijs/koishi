@@ -25,6 +25,8 @@ function unwrap(module: any) {
 const logger = new Logger('watch')
 
 export default class FileWatcher extends Service {
+  public suspend = false
+
   private root: string
   private watcher: FSWatcher
   private currentUpdate: Promise<void[]>
@@ -62,11 +64,14 @@ export default class FileWatcher extends Service {
     }
 
     this.watcher.on('change', (path) => {
-      if (!require.cache[path]) return
+      if (this.suspend) return
       logger.debug('change detected:', path)
 
+      const isEntry = path === this.ctx.app.loader.filename
+      if (!require.cache[path] && !isEntry) return
+
       // files independent from any plugins will trigger a full reload
-      if (path === this.ctx.app.loader.filename || this.externals.has(path)) {
+      if (isEntry || this.externals.has(path)) {
         return triggerFullReload()
       }
 
@@ -190,7 +195,6 @@ export default class FileWatcher extends Service {
 
     // delete module cache before re-require
     accepted.forEach((path) => {
-      logger.debug('cache deleted:', path)
       delete require.cache[path]
     })
 

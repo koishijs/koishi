@@ -19,7 +19,11 @@ export default class ConfigWriter extends Service {
 
   writeConfig() {
     if (!this.allowWrite) return
+    // prevent hot reload when it's being written
+    const fileWatcher = this.ctx.fileWatcher
+    fileWatcher && (fileWatcher.suspend = true)
     writeFileSync(this.loader.filename, dump(this.config))
+    fileWatcher && (fileWatcher.suspend = false)
   }
 
   async loadPlugin(name: string, config: any) {

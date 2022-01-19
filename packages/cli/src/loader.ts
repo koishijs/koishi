@@ -55,6 +55,9 @@ export class Loader {
   loadConfig(): App.Config {
     if (['.yaml', '.yml'].includes(this.extname)) {
       return load(readFileSync(this.filename, 'utf8')) as any
+    } else if (['.json'].includes(this.extname)) {
+      // we do not use require here because it will pollute require.cache
+      return JSON.parse(readFileSync(this.filename, 'utf8')) as any
     } else {
       const module = require(this.filename)
       return module.default || module
