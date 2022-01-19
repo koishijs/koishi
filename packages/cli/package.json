@@ -35,7 +35,8 @@
   ],
   "devDependencies": {
     "@types/js-yaml": "^4.0.5",
-    "@types/prompts": "^2.0.14"
+    "@types/prompts": "^2.0.14",
+    "@types/throttle-debounce": "^2.1.0"
   },
   "dependencies": {
     "cac": "^6.7.12",
@@ -43,6 +44,7 @@
     "js-yaml": "^4.1.0",
     "kleur": "^4.1.4",
     "koishi": "^4.0.1",
-    "prompts": "^2.4.2"
+    "prompts": "^2.4.2",
+    "throttle-debounce": "^3.0.1"
   }
 }
