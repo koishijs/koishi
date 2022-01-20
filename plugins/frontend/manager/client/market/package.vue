@@ -27,7 +27,6 @@ import type { MarketProvider } from '@koishijs/plugin-manager/src'
 import { store } from '~/client'
 import { computed, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { KMarkdown } from '../components'
 import { addFavorite } from '../utils'
 
 const props = defineProps<{ data: MarketProvider.Data }>()

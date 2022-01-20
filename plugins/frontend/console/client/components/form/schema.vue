@@ -63,7 +63,7 @@
 import { computed, watch, ref } from 'vue'
 import type { PropType } from 'vue'
 import Schema from 'schemastery'
-import SchemaGroup from './k-schema-group.vue'
+import SchemaGroup from './schema-group.vue'
 
 const props = defineProps({
   schema: {} as PropType<Schema>,

@@ -37,7 +37,6 @@
   "devDependencies": {
     "@koishijs/cli": "^4.0.1",
     "@koishijs/plugin-console": "^1.0.0",
-    "@octokit/openapi-types": "^11.2.0",
     "@types/cross-spawn": "^6.0.2",
     "@types/marked": "^4.0.1",
     "@types/throttle-debounce": "^2.1.0",

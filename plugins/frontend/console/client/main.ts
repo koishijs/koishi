@@ -13,6 +13,7 @@ import Content from './components/layout/content.vue'
 import CardAside from './components/layout/card-aside.vue'
 import Card from './components/layout/card.vue'
 import Collapse from './components/collapse.vue'
+import Markdown from './components/markdown.vue'
 import Numeric from './components/numeric.vue'
 import View from './components/view'
 import App from './layout/index.vue'
@@ -54,6 +55,7 @@ app.component('k-card-aside', CardAside)
 app.component('k-card', Card)
 app.component('k-chart', Vue.defineAsyncComponent(() => import('./components/echarts') as any))
 app.component('k-collapse', Collapse)
+app.component('k-markdown', Markdown)
 app.component('k-numeric', Numeric)
 app.component('k-view', View)
 
