@@ -11,6 +11,7 @@ export interface WatchConfig extends WatchOptions {
 export const WatchConfig = Schema.object({
   root: Schema.string().description('要监听的根目录，相对于当前工作路径。'),
   debounce: Schema.number().default(100).description('延迟触发更新的等待时间。'),
+  ignored: Schema.array(Schema.string()).description('要忽略的文件或目录。'),
 }).default(null).description('热重载设置')
 
 App.Config.list.push(Schema.object({

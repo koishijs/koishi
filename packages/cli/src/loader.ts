@@ -34,6 +34,7 @@ export class Loader {
   app: App
   config: App.Config
   cache: Dict<Plugin> = {}
+  enableWriter = true
 
   constructor() {
     const basename = 'koishi.config'
@@ -50,6 +51,7 @@ export class Loader {
       this.dirname = cwd
       this.filename = cwd + '/' + basename + this.extname
     }
+    this.enableWriter = ['.json', '.yaml', '.yml'].includes(this.extname)
   }
 
   loadConfig(): App.Config {

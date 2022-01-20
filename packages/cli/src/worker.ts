@@ -1,5 +1,4 @@
 import { Dict, Logger, Time } from 'koishi'
-import { LoggerConfig, prepareLogger } from './logger'
 import { Loader } from './loader'
 import * as addons from './addons'
 
@@ -7,7 +6,6 @@ declare module 'koishi' {
   namespace App {
     interface Config {
       plugins?: Dict
-      logger?: LoggerConfig
       timezoneOffset?: number
       stackTraceLimit?: number
     }
@@ -16,8 +14,6 @@ declare module 'koishi' {
   interface EventMap {
     'exit'(signal: NodeJS.Signals): Promise<void>
     'reload'(path: string): Promise<void>
-    'logger/read'(date?: string): Promise<string[]>
-    'logger/data'(text: string): void
   }
 }
 
@@ -35,7 +31,7 @@ process.on('unhandledRejection', (error) => {
 const loader = new Loader()
 const config = loader.loadConfig()
 
-prepareLogger(config.logger)
+addons.prepare(config)
 
 if (config.timezoneOffset !== undefined) {
   Time.setTimezoneOffset(config.timezoneOffset)
@@ -47,5 +43,5 @@ if (config.stackTraceLimit !== undefined) {
 
 const app = loader.createApp()
 
-app.plugin(addons, config)
+app.plugin(addons, app.options)
 app.start()

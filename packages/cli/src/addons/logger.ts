@@ -1,4 +1,4 @@
-import { App, defineProperty, Logger, Schema, version } from 'koishi'
+import { App, Context, defineProperty, Logger, remove, Schema, version } from 'koishi'
 
 interface LogLevelConfig {
   // a little different from koishi-utils
@@ -9,25 +9,33 @@ interface LogLevelConfig {
 
 type LogLevel = number | LogLevelConfig
 
-export interface LoggerConfig {
+export interface Config {
   levels?: LogLevel
   showDiff?: boolean
   showTime?: string | boolean
 }
 
-export const LoggerConfig = Schema.object({
+export const Config: Schema<Config> = Schema.object({
   levels: Schema.any().description('默认的日志输出等级。'),
   showDiff: Schema.boolean().description('标注相邻两次日志输出的时间差。'),
   showTime: Schema.union([Boolean, String]).description('输出日志所使用的时间格式。'),
 }).description('日志设置')
 
-defineProperty(App.Config, 'logger', LoggerConfig)
+defineProperty(App.Config, 'logger', Config)
 
 App.Config.list.push(Schema.object({
-  logger: LoggerConfig,
+  logger: Config,
 }))
 
-export function prepareLogger(config: LoggerConfig = {}) {
+let prolog: string[] = []
+
+const target: Logger.Target = {
+  colors: 3,
+  showTime: 'yyyy-MM-dd hh:mm:ss',
+  print: text => prolog.push(text),
+}
+
+export function prepare(config: Config = {}) {
   const { levels } = config
   // configurate logger levels
   if (typeof levels === 'object') {
@@ -62,6 +70,17 @@ export function prepareLogger(config: LoggerConfig = {}) {
     }
   }
 
+  Logger.targets.push(target)
+
   new Logger('app').info('%C', `Koishi/${version}`)
   Logger.timestamp = Date.now()
+}
+
+export const name = 'logger'
+
+export function apply(ctx: Context) {
+  ctx.app._prolog = prolog
+  ctx.on('ready', () => {
+    remove(Logger.targets, target)
+  })
 }
