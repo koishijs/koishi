@@ -1,12 +1,23 @@
-import { Context, Logger, Schema, Time } from 'koishi'
+import { Context, Logger, remove, Schema, Time } from 'koishi'
 import { DataSource } from '@koishijs/plugin-console'
 import { resolve } from 'path'
 import { mkdirSync, readdirSync, promises as fsp } from 'fs'
 import { FileHandle } from 'fs/promises'
+import {} from '@koishijs/cli'
 
 const { open, rm } = fsp
 
-export class LogProvider extends DataSource<string[]> {
+declare module '@koishijs/plugin-console' {
+  interface Sources {
+    logs: LogProvider
+  }
+}
+
+Context.service('console.logs')
+
+class LogProvider extends DataSource<string[]> {
+  static using = ['console'] as const
+
   root: string
   date: string
   files: number[] = []
@@ -15,12 +26,17 @@ export class LogProvider extends DataSource<string[]> {
   constructor(ctx: Context, private config: LogProvider.Config = {}) {
     super(ctx, 'logs')
 
-    this.prepareWriter()
-    this.prepareLogger()
+    const filename = ctx.console.config.devMode ? '../client/index.ts' : '../dist/index.js'
+    ctx.console.addEntry(resolve(__dirname, filename))
+
+    this.ctx.on('ready', () => {
+      this.prepareWriter()
+      this.prepareLogger()
+    }, true)
   }
 
   prepareWriter() {
-    this.root = resolve(this.ctx.app.baseDir, this.config.root || 'logs')
+    this.root = resolve(this.ctx.app.baseDir, this.config.root)
     mkdirSync(this.root, { recursive: true })
 
     for (const filename of readdirSync(this.root)) {
@@ -40,7 +56,7 @@ export class LogProvider extends DataSource<string[]> {
     this.date = Time.template('yyyy-MM-dd')
     this.writer = new FileWriter(`${this.root}/${this.date}.log`)
 
-    const { maxAge = 30 } = this.config
+    const { maxAge } = this.config
     if (!maxAge) return
 
     const current = Time.getDateNumber(new Date(), 0)
@@ -51,17 +67,23 @@ export class LogProvider extends DataSource<string[]> {
   }
 
   prepareLogger() {
-    const print = this.printText.bind(this)
+    if (this.ctx.app._prolog) {
+      for (const line of this.ctx.app._prolog) {
+        this.printText(line)
+      }
+      this.ctx.app._prolog = null
+    }
 
-    Logger.targets.push({
+    const target: Logger.Target = {
       colors: 3,
       showTime: 'yyyy-MM-dd hh:mm:ss',
-      print,
-    })
+      print: this.printText.bind(this),
+    }
+
+    Logger.targets.push(target)
 
     this.ctx.on('dispose', () => {
-      const index = Logger.targets.findIndex(target => target.print === print)
-      if (index >= 0) Logger.targets.splice(index, 1)
+      remove(Logger.targets, target)
     })
   }
 
@@ -79,17 +101,19 @@ export class LogProvider extends DataSource<string[]> {
   }
 }
 
-export namespace LogProvider {
+namespace LogProvider {
   export interface Config {
     root?: string
     maxAge?: number
   }
 
   export const Config = Schema.object({
-    root: Schema.string().description('存放输出日志的本地目录。'),
-    maxAge: Schema.number().description('日志文件保存的最大天数。'),
+    root: Schema.string().default('logs').description('存放输出日志的本地目录。'),
+    maxAge: Schema.number().default(30).description('日志文件保存的最大天数。'),
   })
 }
+
+export default LogProvider
 
 class FileWriter {
   private task: Promise<FileHandle>
