@@ -117,12 +117,12 @@ export default LogProvider
 
 class FileWriter {
   private task: Promise<FileHandle>
-  private content: string[]
+  private content: string[] = []
 
   constructor(path: string) {
     this.task = open(path, 'a+').then(async (handle) => {
       const text = await handle.readFile('utf-8')
-      this.content = text.split(/\n(?=\S)/g)
+      if (text) this.content = text.split(/\n(?=\S)/g)
       return handle
     })
   }

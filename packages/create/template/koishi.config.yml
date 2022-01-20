@@ -8,5 +8,6 @@ allowWrite: true
 plugins:
   ./src/ping:
   console:
+  logs:
   manager:
   status:
