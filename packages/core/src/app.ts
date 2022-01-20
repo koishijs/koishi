@@ -36,25 +36,9 @@ export class App extends Context {
 
   private _nameRE: RegExp
 
-  static defaultConfig: App.Config = {
-    maxListeners: 64,
-    prettyErrors: true,
-    autoAssign: true,
-    autoAuthorize: 1,
-    minSimilarity: 0.4,
-    delay: {
-      character: 0,
-      cancel: 0,
-      message: 0.1 * Time.second,
-      broadcast: 0.5 * Time.second,
-      prompt: Time.minute,
-    },
-  }
-
   constructor(options: App.Config = {}) {
     super(() => true)
-    if (options.selfUrl) options.selfUrl = trimSlash(options.selfUrl)
-    this.options = merge(options, App.defaultConfig)
+    this.options = new App.Config(options)
     this.registry.set(null, {
       id: '',
       using: [],
@@ -248,7 +232,7 @@ export namespace App {
     prompt?: number
   }
 
-  export interface Config extends Config.Network {
+  export interface Config {
     prefix?: Computed<string | string[]>
     nickname?: string | string[]
     maxListeners?: number
@@ -260,25 +244,30 @@ export namespace App {
     minSimilarity?: number
   }
 
-  export namespace Config {
-    export interface Static extends Schema<Config> {
-      Network?: Schema<Config.Network>
-    }
+  const BasicConfig = Schema.object({
+    prefix: Schema.string().description('指令前缀字符，可以是字符串或字符串数组。将用于指令前缀的匹配。例如，如果配置该选项为 `.`，则你可以通过 `.help` 来进行 help 指令的调用。'),
+    nickname: Schema.union([
+      Schema.array(Schema.string()),
+      Schema.transform(Schema.string(), (nickname) => [nickname]),
+    ]).description('机器人的昵称，可以是字符串或字符串数组。将用于指令前缀的匹配。例如，如果配置该选项为 `Koishi`，则你可以通过 `Koishi, help` 来进行 help 指令的调用。'),
+    autoAuthorize: Schema.number().default(1).description('当获取不到用户数据时默认使用的权限等级。'),
+    autoAssign: Schema.boolean().default(true).description('当获取不到频道数据时，是否使用接受者作为代理者。'),
+    maxListeners: Schema.number().default(64).description('每种监听器的最大数量。如果超过这个数量，Koishi 会认定为发生了内存泄漏，将产生一个警告。'),
+    prettyErrors: Schema.boolean().default(true).description('启用报错优化模式。在此模式下 Koishi 会对程序抛出的异常进行整理，过滤掉框架内部的调用记录，输出更易读的提示信息。'),
+    minSimilarity: Schema.number().default(0.4).description('用于模糊匹配的相似系数，应该是一个 0 到 1 之间的数值。数值越高，模糊匹配越严格。设置为 1 可以完全禁用模糊匹配。'),
+  }).description('基础设置')
 
-    export interface Network {
-      selfUrl?: string
-    }
-  }
+  const AdvancedConfig = Schema.object({
+    delay: Schema.object({
+      character: Schema.number().default(0).description('调用 `session.sendQueued()` 是消息间发送的最小延迟，按前一条消息的字数计算'),
+      message: Schema.number().default(0.1 * Time.second).description('调用 `session.sendQueued()` 时消息间发送的最小延迟，按固定值计算'),
+      cancel: Schema.number().default(0).description('调用 `session.cancelQueued()` 时默认的延迟'),
+      broadcast: Schema.number().default(0.5 * Time.second).description('调用 `bot.broadcast()` 时默认的延迟'),
+      prompt: Schema.number().default(Time.minute).description('调用 `session.prompt()` 是默认的等待时间'),
+    }),
+  }).description('高级设置')
 
-  export const Config: Config.Static = Schema.intersect([])
-
-  const NetworkConfig: Schema<Config.Network> = Schema.object({
-    selfUrl: Schema.string().description('Koishi 服务暴露在公网的地址。部分插件（例如 github 和 telegram）需要用到。'),
-  }).description('网络设置')
-
-  defineProperty(Config, 'Network', NetworkConfig)
-
-  Config.list.push(NetworkConfig)
+  export const Config: Schema<Config> = Schema.intersect([BasicConfig, AdvancedConfig])
 }
 
 export namespace SharedCache {

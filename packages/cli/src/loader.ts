@@ -20,7 +20,6 @@ Modules.internal.paths = function (name: string) {
 }
 
 App.Config.list.push(Schema.object({
-  allowWrite: Schema.boolean().description('允许插件修改本地配置文件。'),
   autoRestart: Schema.boolean().description('应用在运行时崩溃自动重启。').default(true),
   plugins: Schema.any().hidden(),
 }).description('CLI 设置'))
@@ -33,6 +32,7 @@ export class Loader {
   filename: string
   extname: string
   app: App
+  config: App.Config
   cache: Dict<Plugin> = {}
 
   constructor() {
@@ -54,13 +54,13 @@ export class Loader {
 
   loadConfig(): App.Config {
     if (['.yaml', '.yml'].includes(this.extname)) {
-      return load(readFileSync(this.filename, 'utf8')) as any
+      return this.config = load(readFileSync(this.filename, 'utf8')) as any
     } else if (['.json'].includes(this.extname)) {
       // we do not use require here because it will pollute require.cache
-      return JSON.parse(readFileSync(this.filename, 'utf8')) as any
+      return this.config = JSON.parse(readFileSync(this.filename, 'utf8')) as any
     } else {
       const module = require(this.filename)
-      return module.default || module
+      return this.config = module.default || module
     }
   }
 
@@ -76,8 +76,8 @@ export class Loader {
     return plugin
   }
 
-  createApp(config: App.Config) {
-    const app = this.app = new App(config)
+  createApp() {
+    const app = this.app = new App(this.config)
     app.loader = this
     app.baseDir = this.dirname
     const plugins = app.options.plugins ||= {}

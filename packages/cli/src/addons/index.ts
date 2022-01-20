@@ -13,7 +13,6 @@ declare module 'koishi' {
 
   namespace App {
     interface Config extends daemon.Config {
-      allowWrite?: boolean
       watch?: WatchConfig
     }
   }

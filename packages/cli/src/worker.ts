@@ -45,7 +45,7 @@ if (config.stackTraceLimit !== undefined) {
   Error.stackTraceLimit = config.stackTraceLimit
 }
 
-const app = loader.createApp(config)
+const app = loader.createApp()
 
 app.plugin(addons, config)
 app.start()

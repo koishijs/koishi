@@ -19,12 +19,12 @@ export const LoggerConfig = Schema.object({
   levels: Schema.any().description('默认的日志输出等级。'),
   showDiff: Schema.boolean().description('标注相邻两次日志输出的时间差。'),
   showTime: Schema.union([Boolean, String]).description('输出日志所使用的时间格式。'),
-}).description('日志配置')
+}).description('日志设置')
 
 defineProperty(App.Config, 'logger', LoggerConfig)
 
 App.Config.list.push(Schema.object({
-  logger: LoggerConfig.hidden(),
+  logger: LoggerConfig,
 }))
 
 export function prepareLogger(config: LoggerConfig = {}) {

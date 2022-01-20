@@ -1,4 +1,5 @@
 import { App, Context, Modules } from '@koishijs/core'
+import { trimSlash } from '@koishijs/utils'
 import { Cache } from './cache'
 import { Assets } from './assets'
 import { Quester } from './quester'
@@ -47,7 +48,8 @@ App.prototype.prepare = function (this: App, ...args) {
 
 const start = App.prototype.start
 App.prototype.start = function (this: App, ...args) {
-  const { port, host = 'localhost' } = this.options
+  const { host = 'localhost', port, selfUrl } = this.options
+  if (selfUrl) this.options.selfUrl = trimSlash(selfUrl)
   if (port) {
     this._httpServer.listen(port, host)
     this.logger('app').info('server listening at %c', `http://${host}:${port}`)

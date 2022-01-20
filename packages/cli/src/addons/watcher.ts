@@ -1,4 +1,4 @@
-import { coerce, Context, Dict, Logger, Plugin, Service } from 'koishi'
+import { App, coerce, Context, Dict, Logger, Plugin, Schema, Service } from 'koishi'
 import { FSWatcher, watch, WatchOptions } from 'chokidar'
 import { relative, resolve } from 'path'
 import { debounce } from 'throttle-debounce'
@@ -6,8 +6,16 @@ import { debounce } from 'throttle-debounce'
 export interface WatchConfig extends WatchOptions {
   root?: string
   debounce?: number
-  fullReload?: boolean
 }
+
+export const WatchConfig = Schema.object({
+  root: Schema.string().description('要监听的根目录，相对于当前工作路径。'),
+  debounce: Schema.number().default(100).description('延迟触发更新的等待时间。'),
+}).default(null).description('热重载设置')
+
+App.Config.list.push(Schema.object({
+  watch: WatchConfig,
+}))
 
 function loadDependencies(filename: string, ignored: Set<string>) {
   const dependencies = new Set<string>()
@@ -64,7 +72,6 @@ export default class FileWatcher extends Service {
   }
 
   private triggerFullReload() {
-    if (this.config.fullReload === false) return
     logger.info('trigger full reload')
     process.exit(51)
   }

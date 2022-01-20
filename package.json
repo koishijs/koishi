@@ -33,7 +33,7 @@
     "lint": "eslint packages/**/src/**/*.ts --fix --cache",
     "pub": "node -r ./build/register build/publish",
     "scaffold": "yarn compile koishi && yarn create-koishi test",
-    "start": "yarn compile && cross-env TS_NODE_PROJECT=../tsconfig.test.json yarn workspace test koishi start --watch .. -r ../build/register",
+    "start": "yarn compile && cross-env TS_NODE_PROJECT=../tsconfig.test.json yarn workspace test koishi start -r ../build/register",
     "shiki": "yarn workspace bot-shiki"
   },
   "version": "1.0.0",

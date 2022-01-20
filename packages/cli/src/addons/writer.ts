@@ -13,8 +13,8 @@ export default class ConfigWriter extends Service {
   constructor(ctx: Context) {
     super(ctx, 'configWriter')
     this.loader = ctx.app.loader
-    this.config = ctx.app.options
-    this.allowWrite = this.config.allowWrite && ['.yml', '.yaml'].includes(this.loader.extname)
+    this.config = this.loader.config
+    this.allowWrite = ['.yml', '.yaml'].includes(this.loader.extname)
   }
 
   writeConfig() {
