@@ -46,7 +46,7 @@
     "@types/cross-spawn": "^6.0.2",
     "@types/fs-extra": "^9.0.13",
     "@types/mocha": "^9.0.0",
-    "@types/node": "^17.0.8",
+    "@types/node": "^17.0.10",
     "@types/rimraf": "^3.0.2",
     "@types/semver": "^7.3.9",
     "@types/sinonjs__fake-timers": "^6.0.3",
