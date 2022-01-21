@@ -23,8 +23,6 @@ function traverse(command: Command): CommandData {
   }
 }
 
-Context.service('console.commands')
-
 export default class CommandProvider extends DataSource<CommandData[]> {
   cached: CommandData[]
   update = debounce(0, () => this.broadcast())

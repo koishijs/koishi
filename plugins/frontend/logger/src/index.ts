@@ -13,8 +13,6 @@ declare module '@koishijs/plugin-console' {
   }
 }
 
-Context.service('console.logs')
-
 class LogProvider extends DataSource<string[]> {
   static using = ['console'] as const
 

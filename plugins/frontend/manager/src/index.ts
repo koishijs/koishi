@@ -48,12 +48,6 @@ export const Config = Schema.intersect([
   MarketProvider.Config,
 ])
 
-Context.service('console.bots')
-Context.service('console.market')
-Context.service('console.packages')
-Context.service('console.protocols')
-Context.service('console.services')
-
 export function apply(ctx: Context, config: Config = {}) {
   ctx.plugin(BotProvider)
   ctx.plugin(MarketProvider, config)

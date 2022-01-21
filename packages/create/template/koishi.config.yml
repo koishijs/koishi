@@ -5,7 +5,7 @@ plugins:
   ./src/ping:
   console:
   insight:
-  logs:
+  logger:
     root: logs
   manager:
   status:

@@ -32,6 +32,7 @@ export abstract class DataSource<T = any> {
   protected abstract get(forced?: boolean): Promise<T>
 
   constructor(protected ctx: Context, protected name: keyof Sources) {
+    Context.service(`console.${name}`)
     ctx.console.services[name] = this as never
 
     sleep(0).then(() => {

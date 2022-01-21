@@ -45,10 +45,6 @@ export const Config = Schema.intersect([
   StatisticsProvider.Config,
 ])
 
-Context.service('console.meta')
-Context.service('console.profile')
-Context.service('console.stats')
-
 export function apply(ctx: Context, config: Config) {
   const filename = ctx.console.config.devMode ? '../client/index.ts' : '../dist/index.js'
   ctx.console.addEntry(resolve(__dirname, filename))
