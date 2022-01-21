@@ -111,7 +111,7 @@ export default class MyPlugin {
   private logger: Logger;
 
   @Inject('cache', true)
-  private cache: Cache; // 注入 Service API 中的 Cache，并加入 using 列表
+  private cache: Cache; // 注入 Service API 中的 Cache，并声明为依赖
 
   @Inject()
   private database: Database; // 根据属性名称判别 Service API 名称
@@ -125,7 +125,7 @@ export default class MyPlugin {
 - `@InjectConfig()` 注入插件配置。
 - `@InjectLogger(name: string)` 注入 Koishi 日志记录器。
 - `@Inject(name?: string, addUsing?: boolean)` 在插件类某一属性注入特定上下文 Service。`name` 若为空则默认为类方法名。
-  * `addUsing` 若为 `true` 则会为插件注册的 Service。
+  - `addUsing` 若为 `true` 则会将该服务声明为本插件的依赖。
 
 ## 钩子方法
 
@@ -291,7 +291,7 @@ export default class MyPlugin extends BasePlugin<MyPluginConfig> implements Life
 - `@UseEvent(name: EventName, prepend?: boolean)` 注册事件监听器。等价于 `ctx.on(name, (session) => { }, prepend)`。
 - `@UseBeforeEvent(name: BeforeEventName, prepend?: boolean)` 注册事件监听器。等价于 `ctx.before(name, (session) => { }, prepend)`。
 - `@UseCommand(def: string, desc?: string, config?: Command.Config)` 注册指令。
-  * 若指定 `config.empty` 则不会注册当前函数为 action，用于没有 action 的父指令。
+  - 若指定 `config.empty` 则不会注册当前函数为 action，用于没有 action 的父指令。
 - `@Get(path: string)` `@Post(path: string)` 在 Koishi 的 Koa 路由中注册 GET/POST 路径。此外， PUT PATCH DELETE 等方法也有所支持。
 - `@Ws(path: string)` 注册 Koishi 的 WebSocket 监听器。
 
@@ -307,7 +307,6 @@ koishi-thirdeye 使用一组装饰器进行描述指令的行为。这些装饰�
 @CommandUsage('乒乓球真好玩！') // 会适用于 ping 和 pang 两个指令
 @DefinePlugin()
 export default class MyPlugin extends BasePlugin<MyPluginConfig> {
-
   @UseCommand('ping', 'Ping!')
   @CommandShortcut('枰！') // 只适用于 ping 指令
   onPing() {
@@ -319,7 +318,6 @@ export default class MyPlugin extends BasePlugin<MyPluginConfig> {
   onPang() {
     return 'peng';
   }
-  
 }
 ```
 
@@ -350,7 +348,7 @@ export default class MyPlugin extends BasePlugin<MyPluginConfig> {
 - `@PutUser(fields: string[])` 添加一部分字段用于观测，并将 User 对象注入到该参数。
 - `@PutChannel(fields: string[])` 添加一部分字段用于观测，并将 Channel 对象注入到该参数。
 - `@PutUserName(useDatabase: boolean = true)` 注入当前用户的用户名。
-  * `useDatabase` 是否尝试从数据库获取用户名。**会自动把 `name` 加入用户观察者属性中**。
+  - `useDatabase` 是否尝试从数据库获取用户名。**会自动把 `name` 加入用户观察者属性中**。
 - `@PutNext()` 注入 `argv.next` 方法。
 
 ### 子指令
@@ -441,6 +439,58 @@ export default class MyPlugin extends BasePlugin<Config> {
 - `@OnPlatform(value)` 等价于 `ctx.platform(value)`。
 - `@OnPrivate(value)` 等价于 `ctx.private(value)`。
 - `@OnSelection(value)` 等价于 `ctx.select(value)`。
+
+## 声明依赖关系
+
+koishi-thirdeye 支持自动管理插件的关系依赖列表。
+
+### 全局依赖
+
+声明全局依赖有下面几种方法。
+
+- 使用 `@Inject` 装饰器注入服务对象时，将最后一个参数赋值为 `true`。
+
+```ts
+@DefinePlugin({ name: 'my-plugin', schema: Config })
+export default class MyPlugin extends BasePlugin<Config> {
+  @Inject('database', true)
+  private database: Database; // 注入 Service API 中的 Cache，并声明为依赖
+}
+
+MyPlugin.using // ['database']
+```
+
+- 使用 `@UsingService(...services)` 装饰器。
+
+```ts
+@UsingService('database', 'assets')
+@DefinePlugin({ name: 'my-plugin', schema: Config })
+export default class MyPlugin extends BasePlugin<Config> {
+  
+}
+
+MyPlugin.using // ['database', 'assets']
+```
+
+### 部分依赖
+
+您也可以使用 `@UsingService` 装饰器对插件类中某一个方法函数单独声明依赖。这时候该方法注册的注册的中间件、事件监听器、指令等在该类方法绑定的事件只有在该依赖存在时生效。
+
+```ts
+@DefinePlugin({ name: 'my-plugin', schema: MyPluginConfig })
+export default class MyPlugin extends BasePlugin<MyPluginConfig> implements LifecycleEvents {
+  @Inject()
+  private database: Database;
+  
+  // 该指令仅在数据库被安装时生效
+  @UsingService('database')
+  @UseCommand('dress', '获取自己的裙子信息')
+  async getDresses(@PutSession('userId') userId: string) {
+    const dresses = await this.database.get('dress', { userId });
+    return dresses.map((dress) => dress.name).join('\n');
+  }
+}
+```
 
 ## 提供服务
 
