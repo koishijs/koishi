@@ -82,7 +82,7 @@ export default class FileWatcher extends Service {
     this.root = resolve(this.ctx.app.loader.dirname, root)
     this.watcher = watch(this.root, {
       ...this.config,
-      ignored: ['**/node_modules/**', '**/.git/**', ...ignored],
+      ignored: ['**/node_modules/**', '**/.git/**', '**/logs/**', ...ignored],
     })
 
     this.externals = loadDependencies(__filename, new Set(Object.keys(this.ctx.app.loader.cache)))
