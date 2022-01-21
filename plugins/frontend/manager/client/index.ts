@@ -3,7 +3,6 @@ import type {} from '@koishijs/plugin-manager/src'
 import Bots from './bots/index.vue'
 import Settings from './settings/index.vue'
 import Market from './market/index.vue'
-import Graph from './graph/index.vue'
 
 registerView({
   type: 'numeric',
@@ -41,13 +40,4 @@ registerPage({
   order: 610,
   fields: ['market', 'packages'],
   component: Market,
-})
-
-registerPage({
-  path: '/graph',
-  name: '依赖图',
-  icon: 'project-diagram',
-  order: 600,
-  fields: ['registry'],
-  component: Graph,
 })

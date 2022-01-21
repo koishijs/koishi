@@ -4,14 +4,12 @@ import BotProvider from './bots'
 import MarketProvider from './market'
 import PackageProvider from './packages'
 import AdapterProvider from './protocols'
-import RegistryProvider from './registry'
 import ServiceProvider from './services'
 
 export * from './bots'
 export * from './market'
 export * from './packages'
 export * from './protocols'
-export * from './registry'
 export * from './services'
 export * from './utils'
 
@@ -20,7 +18,6 @@ export {
   MarketProvider,
   PackageProvider,
   AdapterProvider,
-  RegistryProvider,
   ServiceProvider,
 }
 
@@ -38,7 +35,6 @@ declare module '@koishijs/plugin-console' {
     market: MarketProvider
     packages: PackageProvider
     protocols: AdapterProvider
-    registry: RegistryProvider
     services: ServiceProvider
   }
 }
@@ -56,7 +52,6 @@ Context.service('console.bots')
 Context.service('console.market')
 Context.service('console.packages')
 Context.service('console.protocols')
-Context.service('console.registry')
 Context.service('console.services')
 
 export function apply(ctx: Context, config: Config = {}) {
@@ -64,7 +59,6 @@ export function apply(ctx: Context, config: Config = {}) {
   ctx.plugin(MarketProvider, config)
   ctx.plugin(AdapterProvider)
   ctx.plugin(PackageProvider)
-  ctx.plugin(RegistryProvider)
   ctx.plugin(ServiceProvider)
 
   const filename = ctx.console.config.devMode ? '../client/index.ts' : '../dist/index.js'

@@ -2,10 +2,21 @@ import { camelize, capitalize, Context, Dict, Plugin } from 'koishi'
 import { debounce } from 'throttle-debounce'
 import { DataSource } from '@koishijs/plugin-console'
 
+declare module '@koishijs/plugin-console' {
+  interface Sources {
+    registry: RegistryProvider
+  }
+}
+
 export default class RegistryProvider extends DataSource<Dict<PluginData>> {
-  cached: Dict<PluginData>
-  promise: Promise<void>
-  update = debounce(0, () => this.broadcast())
+  static using = ['console'] as const
+
+  private cache: Dict<PluginData>
+  private timer = setInterval(() => this.update(), 1000)
+  private update = debounce(0, () => {
+    this.broadcast()
+    this.timer.refresh()
+  })
 
   constructor(ctx: Context) {
     super(ctx, 'registry')
@@ -13,19 +24,23 @@ export default class RegistryProvider extends DataSource<Dict<PluginData>> {
     ctx.on('plugin-added', this.update)
     ctx.on('plugin-removed', this.update)
     ctx.on('service', this.update)
-    ctx.on('dispose', this.update.cancel)
+  }
+
+  stop() {
+    this.update.cancel()
+    clearInterval(this.timer)
   }
 
   async get(forced = false) {
-    if (this.cached && !forced) return this.cached
-    this.cached = {}
+    if (this.cache && !forced) return this.cache
+    this.cache = {}
     this.traverse(null)
-    return this.cached
+    return this.cache
   }
 
   private traverse(plugin: Plugin) {
     const state = this.ctx.app.registry.get(plugin)
-    this.cached[state.id] = {
+    this.cache[state.id] = {
       name: !plugin ? 'App'
         : !plugin.name || plugin.name === 'apply' ? ''
         : capitalize(camelize(plugin.name)),

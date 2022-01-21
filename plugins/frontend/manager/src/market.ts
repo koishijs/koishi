@@ -4,7 +4,6 @@ import { resolve } from 'path'
 import { existsSync } from 'fs'
 import { satisfies } from 'semver'
 import { DataSource } from '@koishijs/plugin-console'
-import { throttle } from 'throttle-debounce'
 import spawn from 'cross-spawn'
 
 declare module '@koishijs/plugin-console' {
@@ -31,9 +30,8 @@ function supports(command: string, args: string[] = []) {
 
 class MarketProvider extends DataSource<Dict<MarketProvider.Data>> {
   dataCache: Dict<MarketProvider.Data> = {}
-  callbacks: ((data: MarketProvider.Data[]) => void)[] = []
-  flushData: throttle<() => void>
   http: Quester
+  _timestamp = 0
   _agentCache: Promise<Manager>
 
   constructor(ctx: Context, private config: MarketProvider.Config) {
@@ -50,11 +48,13 @@ class MarketProvider extends DataSource<Dict<MarketProvider.Data>> {
   start() {
     const logger = this.ctx.logger('status')
     this.prepare().catch(logger.warn)
-    this.flushData = throttle(100, () => this.broadcast())
   }
 
-  stop() {
-    this.flushData?.cancel()
+  flushData() {
+    const now = Date.now()
+    if (now - this._timestamp < 100) return
+    this._timestamp = now
+    this.broadcast()
   }
 
   private async search(offset = 0) {
