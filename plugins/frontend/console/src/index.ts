@@ -170,9 +170,9 @@ class Console extends Service {
   private onConnection = (socket: WebSocket) => {
     const channel = new SocketHandle(this, socket)
 
-    for (const name in this.ctx.app._services) {
+    for (const name of Context.Services) {
       if (!name.startsWith('console.')) continue
-      this.ctx[name].get().then((value) => {
+      this.ctx[name]?.['get']().then((value) => {
         const key = name.slice(8)
         socket.send(JSON.stringify({ type: 'data', body: { key, value } }))
       })

@@ -586,8 +586,11 @@ export namespace Context {
     model: Model
   }
 
+  export const Services: (keyof Services)[] = []
+
   export function service(key: keyof Services) {
     if (Object.prototype.hasOwnProperty.call(Context.prototype, key)) return
+    Services.push(key)
     const privateKey = Symbol(key)
     Object.defineProperty(Context.prototype, key, {
       get(this: Context) {
@@ -604,16 +607,13 @@ export namespace Context {
         const action = value ? oldValue ? 'changed' : 'enabled' : 'disabled'
         this.logger('service').debug(key, action)
         if (value) {
-          this.app._services[key] = this.state.id
           const dispose = () => {
             if (this.app[privateKey] !== value) return
             this[key] = null
-            delete this.app._services[key]
           }
           this.state.disposables.push(dispose)
           this.on('service', (name) => {
             if (name !== key) return
-            dispose()
             remove(this.state.disposables, dispose)
           })
         }

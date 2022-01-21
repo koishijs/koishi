@@ -31,7 +31,7 @@ export default class RegistryProvider extends DataSource<Dict<PluginData>> {
         : capitalize(camelize(plugin.name)),
       parent: state.parent?.id,
       disposables: state.disposables.length,
-      dependencies: state.using.map(name => this.ctx.app._services[name]).filter(x => x),
+      dependencies: state.using.map(name => this.ctx[name]?.['ctx']?.state.id).filter(x => x),
     }
     for (const child of state.children) {
       this.traverse(child)

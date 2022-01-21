@@ -9,6 +9,11 @@ export default class ServiceProvider extends DataSource<Dict<string>> {
   }
 
   async get() {
-    return this.ctx.app._services
+    const result: Dict<string> = {}
+    for (const name of Context.Services) {
+      const value = this.ctx[name]?.['ctx']?.state.id
+      if (value) result[name] = value
+    }
+    return result
   }
 }

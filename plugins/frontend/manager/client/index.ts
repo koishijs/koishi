@@ -48,6 +48,6 @@ registerPage({
   name: '依赖图',
   icon: 'project-diagram',
   order: 600,
-  fields: ['registry', 'services'],
+  fields: ['registry'],
   component: Graph,
 })
