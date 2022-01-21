@@ -87,7 +87,7 @@ export class Sender {
     let currIdx = 0
     while (currIdx < segs.length && prefixTypes.includes(segs[currIdx].type)) {
       if (segs[currIdx].type === 'quote') {
-        this.payload.replyToMessage = true
+        this.payload.replyToMessageId = segs[currIdx].data.id
       } else if (segs[currIdx].type === 'anonymous') {
         if (segs[currIdx].data.ignore === 'false') return null
       } else if (segs[currIdx].type === 'markdown') {
@@ -146,7 +146,11 @@ export class Sender {
     // if something left in payload
     if (this.currAssetType) await this.sendAsset()
     if (this.payload.caption) {
-      this.results.push(await this.bot.get('/sendMessage', { chatId: this.chatId, text: this.payload.caption }))
+      this.results.push(await this.bot.get('/sendMessage', {
+        chatId: this.chatId,
+        text: this.payload.caption,
+        replyToMessageId: this.payload.replyToMessageId,
+      }))
     }
 
     if (!this.errors.length) return this.results.map(result => '' + result.messageId)
