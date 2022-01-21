@@ -60,7 +60,7 @@ export abstract class Service {
   }
 
   get caller(): Context {
-    return this.ctx[Context.current] || this.ctx
+    return this[Context.current] || this.ctx
   }
 }
 
