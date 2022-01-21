@@ -41,11 +41,16 @@ export abstract class DataSource<T = any> {
     })
   }
 
-  async broadcast(value?: T) {
-    this.ctx.console.broadcast('data', {
-      key: this.name,
-      value: value || await this.get(true),
-    })
+  protected broadcast(type: string, value: any) {
+    this.ctx.console.broadcast(type, { key: this.name, value })
+  }
+
+  async refresh() {
+    this.broadcast('data', await this.get(true))
+  }
+
+  patch(value: T) {
+    this.broadcast('patch', value)
   }
 }
 

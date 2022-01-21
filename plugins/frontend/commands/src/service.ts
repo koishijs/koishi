@@ -25,7 +25,7 @@ function traverse(command: Command): CommandData {
 
 export default class CommandProvider extends DataSource<CommandData[]> {
   cached: CommandData[]
-  update = debounce(0, () => this.broadcast())
+  update = debounce(0, () => this.refresh())
 
   constructor(ctx: Context) {
     super(ctx, 'commands')

@@ -52,7 +52,7 @@ export class ProfileProvider extends DataSource<ProfileProvider.Payload> {
     ctx.on('ready', () => {
       ctx.setInterval(() => {
         updateCpuUsage()
-        this.broadcast()
+        this.refresh()
       }, tickInterval)
     })
   }

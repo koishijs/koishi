@@ -216,7 +216,7 @@ export default class FileWatcher extends Service {
     // attempt to load entry files
     const attempts = {}
     try {
-      for (const [_, filename] of reloads) {
+      for (const [, filename] of reloads) {
         attempts[filename] = unwrap(require(filename))
       }
     } catch (err) {

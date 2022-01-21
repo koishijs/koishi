@@ -91,7 +91,7 @@ class LogProvider extends DataSource<string[]> {
       this.createFile()
     }
     this.writer.write(text)
-    this.ctx.console.broadcast('logs/data', text)
+    this.patch([text])
   }
 
   async get() {

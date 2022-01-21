@@ -13,8 +13,6 @@
 import { store, receive } from '~/client'
 import Converter from 'ansi_up'
 
-receive('logs/data', data => store.logs.push(data))
-
 const hint = `app\u001b[0m \u001b[38;5;15;1mKoishi/`
 
 const converter = new Converter()

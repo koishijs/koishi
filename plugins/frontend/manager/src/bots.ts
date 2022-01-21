@@ -52,7 +52,7 @@ class BotProvider extends DataSource<BotProvider.Data[]> {
     })
 
     ctx.on('bot-status-updated', () => {
-      this.broadcast()
+      this.refresh()
     })
   }
 
