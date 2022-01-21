@@ -276,15 +276,16 @@ export class Context {
       disposables: [],
     })
 
-    const dispose = this.on('service', async (name) => {
-      if (!using.includes(name)) return
-      await Promise.allSettled(ctx.state.disposables.slice(1).map(dispose => dispose()))
-      callback()
-    })
-
     this.state.children.push(plugin)
     this.emit('plugin-added', plugin)
-    ctx.state.disposables.push(dispose)
+
+    if (using.length) {
+      ctx.on('service', async (name) => {
+        if (!using.includes(name)) return
+        await Promise.allSettled(ctx.state.disposables.slice(1).map(dispose => dispose()))
+        callback()
+      })
+    }
 
     const callback = () => {
       if (using.some(name => !this[name])) return
@@ -606,23 +607,11 @@ export namespace Context {
         this.emit('service', key)
         const action = value ? oldValue ? 'changed' : 'enabled' : 'disabled'
         this.logger('service').debug(key, action)
-        if (value) {
-          const dispose = () => {
-            if (this.app[privateKey] !== value) return
-            this[key] = null
-          }
-          this.state.disposables.push(dispose)
-          this.on('service', (name) => {
-            if (name !== key) return
-            remove(this.state.disposables, dispose)
-          })
-        }
       },
     })
   }
 
   service('bots')
-  service('database')
   service('model')
 
   export const deprecatedEvents: Dict<EventName & string> = {

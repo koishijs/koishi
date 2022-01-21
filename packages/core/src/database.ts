@@ -47,6 +47,7 @@ export abstract class Service {
   protected stop(): Awaitable<void> {}
 
   constructor(protected ctx: Context, key: keyof Context.Services, immediate?: boolean) {
+    Context.service(key)
     if (immediate) ctx[key] = this as never
 
     ctx.on('ready', async () => {
@@ -55,6 +56,7 @@ export abstract class Service {
     })
 
     ctx.on('dispose', async () => {
+      if (ctx[key] === this as never) ctx[key] = null
       await this.stop()
     })
   }
