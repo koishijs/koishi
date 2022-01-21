@@ -478,7 +478,7 @@ MyPlugin.using // ['database', 'assets']
 
 ```ts
 @DefinePlugin({ name: 'my-plugin', schema: MyPluginConfig })
-export default class MyPlugin extends BasePlugin<MyPluginConfig> implements LifecycleEvents {
+export default class MyPlugin extends BasePlugin<MyPluginConfig> {
   @Inject()
   private database: Database;
   
