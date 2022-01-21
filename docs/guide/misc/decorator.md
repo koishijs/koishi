@@ -26,36 +26,38 @@ export default class MyPlugin extends BasePlugin<MyPluginConfig> implements Life
     // 该方法会在插件加载时调用，用于在上下文中注册事件等操作。
   }
 
+  // 注册中间件
   @UseMiddleware()
   simpleMiddleware(session: Session, next: NextFunction) {
+    if (session.content === 'pang') {
+      return 'peng';
+    }
     return next();
   }
 
+  // 注册事件监听器
   @UseEvent('message')
-  onMessage(session: Session) {
-    if(session.content === 'ping') {
-      return session.send('pong');
+  async onMessage(session: Session.Payload<'message'>) {
+    if (session.content === 'ping') {
+      await session.send('pong');
     }
   }
 
-  @UseCommand('echo', '返回指定内容')
-  @CommandUsage('没什么用的样子')
-  onEcho(@PutOption('content', '-c <content:string>  命令参数') content: string) {
-    return content;
-  }
-
-  @Get('/ping')
-  onPing(ctx: KoaContext) {
-    ctx.body = 'pong';
+  // 注册指令
+  @UseCommand('echo <content:string>', '指令描述')
+  @CommandUsage('指令说明')
+  onEcho(
+    @PutArg(0) content: string,
+    @PutOption('name', '-n <name:string>  指令的参数，名称', { fallback: '有人' }) name: string
+  ) {
+    return `${name}说了: ${content}`;
   }
 }
 ```
 
 ## 定义插件
 
-使用 koishi-thirdeye 的插件必须是类插件，且使用 `@DefinePlugin(options: KoishiPluginRegistrationOptions)` 装饰器。
-
-您可以在参数中指定该插件的基本信息，如下：
+koishi-thirdeye 允许你使用 `@DefinePlugin(options: KoishiPluginRegistrationOptions)` 装饰器定义类插件。您可以向装饰器中传入插件的基本信息：
 
 - `name` 插件名称。
 - `schema` 插件的描述配置模式。可以是一般的 Schema 描述模式，也可以是由 `schemastery-gen` 生成的 Schema 类。下面我们会对此进行叙述。
@@ -71,7 +73,7 @@ export default class MyPlugin {
 
 ### 插件基类
 
-为了简化插件的半歇，插件基类 `BasePlugin<Config>` 实现了上面的构造函数定义。因此上面的代码可以简化为：
+为了简化插件的编写，插件基类 `BasePlugin<Config>` 实现了上面的构造函数定义。因此上面的代码可以简化为：
 
 ::: warning
 `@DefinePlugin` 装饰器不可省略。
@@ -156,7 +158,7 @@ export default class MyPlugin extends BasePlugin<Config> implements LifecycleEve
 
 对于每一个成员字段，系统将会尝试推断这些字段类型，也可以使用 `type` 参数手动指定类型或另一个 Schema 对象。
 
-特别的，系统可以推断出某一字段是否为数组，但是无法推断数组内部的类型。因此下例中我们**必须**手动指定 `someArray` 的内部类型为 `string`。
+特别地，系统可以推断出某一字段是否为数组，但是无法推断数组内部的类型。因此下例中我们**必须**手动指定 `someArray` 的内部类型为 `string`。
 
 ```ts
 @DefineSchema() // Config 类本身会成为 Schema 对象
@@ -211,39 +213,74 @@ export class Config {
 正如最开始的例子一样，我们可以使用以 `Use` 开头的装饰器进行事件和中间件的注册监听。
 
 ```ts
-import { DefinePlugin, SchemaProperty, CommandUsage, PutOption, UseCommand, OnApply, KoaContext, UseMiddleware, UseEvent, Get } from 'koishi-thirdeye';
+import {
+  DefinePlugin,
+  SchemaProperty,
+  CommandUsage,
+  PutOption,
+  UseCommand,
+  OnApply,
+  KoaContext,
+  UseMiddleware,
+  UseEvent,
+  Get
+} from 'koishi-thirdeye';
 import { Context, Session } from 'koishi';
+import { WebSocket } from 'ws';
+import { IncomingMessage } from 'http';
 
 export class MyPluginConfig {
   @SchemaProperty({ default: 'bar' })
   foo: string;
 }
 
-@DefinePlugin({ name: 'my-plugin', schema: MyPluginConfig })
+@DefinePlugin({
+  name: 'my-plugin',
+  schema: MyPluginConfig
+})
 export default class MyPlugin extends BasePlugin<MyPluginConfig> implements LifecycleEvents {
   onApply() {
     // 该方法会在插件加载时调用，用于在上下文中注册事件等操作。
   }
 
+  // 注册中间件
   @UseMiddleware()
   simpleMiddleware(session: Session, next: NextFunction) {
+    if (session.content === 'pang') {
+      return 'peng';
+    }
     return next();
   }
 
+  // 注册事件监听器
   @UseEvent('message')
-  onMessage(session: Session.Payload<'message'>) {
-
+  async onMessage(session: Session.Payload<'message'>) {
+    if (session.content === 'ping') {
+      await session.send('pong');
+    }
   }
 
-  @UseCommand('echo', '命令描述')
-  @CommandUsage('命令说明')
-  onEcho(@PutOption('content', '-c <content:string>  命令参数') content: string) {
-    return content;
+  // 注册指令
+  @UseCommand('echo <content:string>', '指令描述')
+  @CommandUsage('指令说明')
+  onEcho(
+          @PutArg(0) content: string,
+          @PutOption('name', '-n <name:string>  指令的参数，名称', { fallback: '有人' }) name: string
+  ) {
+    return `${name}说了: ${content}`;
   }
 
+  // 注册 Koa 路由
   @Get('/ping')
-  onPing(ctx: KoaContext) {
-    ctx.body = 'pong';
+  onPing(koaCtx: KoaContext) {
+    koaCtx.body = 'pong';
+  }
+
+  // 注册 WebSocket 监听器
+  @Ws('/my-ws')
+  onWsClientConnect(socket: WebSocket, req: IncomingMessage) {
+    socket.write('Hello!');
+    socket.close();
   }
 }
 ```
@@ -256,12 +293,13 @@ export default class MyPlugin extends BasePlugin<MyPluginConfig> implements Life
 - `@UseCommand(def: string, desc?: string, config?: Command.Config)` 注册指令。
   * 若指定 `config.empty` 则不会注册当前函数为 action，用于没有 action 的父指令。
 - `@Get(path: string)` `@Post(path: string)` 在 Koishi 的 Koa 路由中注册 GET/POST 路径。此外， PUT PATCH DELETE 等方法也有所支持。
+- `@Ws(path: string)` 注册 Koishi 的 WebSocket 监听器。
 
 ### 指令描述
 
 koishi-thirdeye 使用一组装饰器进行描述指令的行为。这些装饰器需要和 `@UseCommand(def)` 装饰器一起使用。
 
-特别的，可以把这些装饰器定义在插件顶部，使得该类插件中所有指令均应用这一指令描述。
+特别地，可以把这些装饰器定义在插件顶部，使得该类插件中所有指令均应用这一指令描述。
 
 我们来看一个例子。
 
@@ -326,7 +364,7 @@ koishi-thirdeye 中，子指令需要用完整的名称进行声明。
 export default class MyPlugin extends BasePlugin<Config> {
   @UseCommand('ygopro', 'YGOPro 相关指令', { empty: true })
   ygoproCommand() {
-    // 该命令不会有 action，因此该方法不会被调用。
+    // 该指令不会有 action，因此该方法不会被调用。
   }
 
   @UseCommand('ygopro.rank', 'YGOPro 排名')
@@ -429,5 +467,38 @@ declare module 'koishi' {
 @DefinePlugin({ name: 'my-service' })
 export class MyServicePlugin extends BasePlugin<Config> {
   // 该类会作为 Koishi 的 Service 供其他 Koishi 插件进行引用
+}
+```
+
+::: warning
+`@Provide` 装饰器中已经提供了完整的服务提供者的逻辑，因此 `@Provide` 与 Service 基类二者取其一即可。如果您在编写数据库等 Koishi 内置服务的实现，请**不要**使用 `@Provide` 装饰器。
+:::
+
+### `@Caller` 装饰器
+
+与 Koishi 的 `Service` 基类的 `caller` 字段对应，我们可以使用 `@Caller` 装饰器修饰的成员变量来获取访问该插件的上下文。
+
+下面是一个例子，确保注册 Photo 的插件卸载时，Photo 正常被删除。
+
+```ts
+import { Provide, DefinePlugin, BasePlugin, Caller } from 'koishi-thirdeye';
+
+@Provide('MyPhotoRegistry', { immediate: true })
+@DefinePlugin({ name: 'my-photo-registry' })
+export class MyPhotoRegistry extends BasePlugin<Config> {
+  private photos = new Set<Photo>();
+  
+  @Caller()
+  private caller: Context;
+  
+  addPhoto(photo: Photo) {
+    // 预先保存一下正在访问该方法的上下文，预防以后发生变化。
+    const ctx = this.caller;
+    
+    // 注册来源插件上下文的卸载监听器，使得来源插件卸载时该 Photo 自动被删除。
+    ctx.on('dispose', () => this.photos.delete(photo));
+    
+    this.photos.add(photo);
+  }
 }
 ```
