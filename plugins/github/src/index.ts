@@ -35,19 +35,19 @@ export function apply(ctx: Context, config: Config) {
 
   const tokens: Dict<string> = {}
 
-  ctx.router.get(config.path + '/authorize', async (ctx) => {
-    const token = ctx.query.state
-    if (!token || Array.isArray(token)) return ctx.status = 400
+  ctx.router.get(config.path + '/authorize', async (_ctx) => {
+    const token = _ctx.query.state
+    if (!token || Array.isArray(token)) return _ctx.status = 400
     const id = tokens[token]
-    if (!id) return ctx.status = 403
+    if (!id) return _ctx.status = 403
     delete tokens[token]
-    const { code, state } = ctx.query
+    const { code, state } = _ctx.query
     const data = await ctx.github.getTokens({ code, state, redirect_uri: redirect })
     await database.setUser('id', id, {
       ghAccessToken: data.access_token,
       ghRefreshToken: data.refresh_token,
     })
-    return ctx.status = 200
+    return _ctx.status = 200
   })
 
   ctx.command('github.authorize <user>', 'GitHub 授权')
@@ -134,8 +134,8 @@ export function apply(ctx: Context, config: Config) {
       return repos.map(repo => repo.name).join('\n')
     })
 
-  function subscribe(repo: string, id: string, meta: EventConfig) {
-    (subscriptions[repo] ||= {})[id] = meta
+  function subscribe(repo: string, cid: string, meta: EventConfig) {
+    (subscriptions[repo] ||= {})[cid] = meta
   }
 
   function unsubscribe(repo: string, id: string) {
@@ -236,10 +236,10 @@ export function apply(ctx: Context, config: Config) {
     })
 
   ctx.on('ready', async () => {
-    const channels = await ctx.database.getAssignedChannels(['id', 'githubWebhooks'])
-    for (const { id, githubWebhooks } of channels) {
+    const channels = await ctx.database.getAssignedChannels(['id', 'platform', 'githubWebhooks'])
+    for (const { id, platform, githubWebhooks } of channels) {
       for (const repo in githubWebhooks) {
-        subscribe(repo, id, githubWebhooks[repo])
+        subscribe(repo, `${platform}:${id}`, githubWebhooks[repo])
       }
     }
   })
@@ -254,22 +254,22 @@ export function apply(ctx: Context, config: Config) {
     } catch {}
   }
 
-  ctx.router.post(config.path + '/webhook', async (ctx) => {
-    const event = ctx.headers['x-github-event']
-    const signature = ctx.headers['x-hub-signature-256']
-    const id = ctx.headers['x-github-delivery']
-    const payload = safeParse(ctx.request.body.payload)
-    if (!payload) return ctx.status = 400
+  ctx.router.post(config.path + '/webhook', async (_ctx) => {
+    const event = _ctx.headers['x-github-event']
+    const signature = _ctx.headers['x-hub-signature-256']
+    const id = _ctx.headers['x-github-delivery']
+    const payload = safeParse(_ctx.request.body.payload)
+    if (!payload) return _ctx.status = 400
     const fullEvent = payload.action ? `${event}/${payload.action}` : event
     logger.debug('received %s (%s)', fullEvent, id)
     const [data] = await database.get('github', [payload.repository.full_name.toLowerCase()])
     // 202：服务器已接受请求，但尚未处理
     // 在 github.repos -a 时确保获得一个 2xx 的状态码
-    if (!data) return ctx.status = 202
-    if (signature !== `sha256=${createHmac('sha256', data.secret).update(ctx.request.rawBody).digest('hex')}`) {
-      return ctx.status = 403
+    if (!data) return _ctx.status = 202
+    if (signature !== `sha256=${createHmac('sha256', data.secret).update(_ctx.request.rawBody).digest('hex')}`) {
+      return _ctx.status = 403
     }
-    ctx.status = 200
+    _ctx.status = 200
     if (payload.action) {
       app.emit(`github/${fullEvent}` as any, payload)
     }

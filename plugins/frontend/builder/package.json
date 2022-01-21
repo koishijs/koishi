@@ -1,7 +1,7 @@
 {
-  "name": "@koishijs/console-builder",
+  "name": "@koishijs/builder",
   "description": "Building utilities for @koishijs/plugin-console",
-  "version": "1.0.0-beta.0",
+  "version": "1.0.0",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -30,7 +30,7 @@
     "build"
   ],
   "dependencies": {
-    "@vitejs/plugin-vue": "^1.9.4",
+    "@vitejs/plugin-vue": "^2.0.1",
     "vite": "~2.5.10"
   }
 }

@@ -90,7 +90,7 @@ sidebarDepth: 2
 
 - **channelId:** `string` 频道 ID
 - **content:** `string` 要发送的内容
-- 返回值: `Promise<string>` 发送的消息 ID
+- 返回值: `Promise<string[]>` 发送的消息 ID
 
 向特定频道发送消息。
 
@@ -98,7 +98,7 @@ sidebarDepth: 2
 
 - **userId:** `string` 对方 ID
 - **content:** `string` 要发送的内容
-- 返回值: `Promise<string>` 发送的消息 ID
+- 返回值: `Promise<string[]>` 发送的消息 ID
 
 向特定用户发送私聊消息。
 

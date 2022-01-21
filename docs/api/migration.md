@@ -15,7 +15,9 @@ sidebarDepth: 2
 - 新增了 create-koishi，可使用 yarn create 或 npm init 一键启动
 - **所有官方插件都改为 @koishijs/plugin-xxx**
 - **所有官方适配器也调整为插件**，名称与上一条一致
-- koishi-test-utils 更名为 @koishijs/test-utils
+- koishi-test-utils 被拆分为多个部分：
+  - 数据库测试相关代码移至 @koishijs/database-tests
+  - 测试工具重构后成为 @koishijs/plugin-mock
 - koishi-plugin-webui 被拆分为多个插件：
   - @koishijs/plugin-console
   - @koishijs/plugin-manager
@@ -24,11 +26,9 @@ sidebarDepth: 2
 ### 新增的包
 
 - create-koishi：可结合 npm init 或 yarn create 使用，用于快速搭建项目
-- @koishijs/plugin-database：一个内存数据库实现，支持输出到本地文件
-- @koishijs/plugin-ink：使用机器人展示视觉小说（计划中）
+- @koishijs/plugin-database-memory：一个内存数据库实现，支持输出到本地文件
 - @koishijs/plugin-git：使用 git 仓库存放资源文件
-- @koishijs/plugin-minecraft：在 Minecraft 中使用机器人
-- @koishijs/plugin-s3：使用 s3 云存储存放资源文件
+- @koishijs/plugin-assets-s3：使用 s3 云存储存放资源文件
 
 ### 移除的包
 
@@ -120,32 +120,33 @@ export default {
 
 除此以外，如果你使用 @koishijs/cli，那么有一些额外的配置项变更：
 
-- 新增 `allowWrite` 配置项，支持在运行时修改配置项本身的内容（只支持 yaml 格式）
 - 新增 `logger` 配置项，包含了过去的 `logLevel` 等一系列配置，同时支持将输出日志写入本地文件
 
 ## 数据库变更
 
 - 接口变更
   - 新增了方法 `db.set(table, query, updates)`
-  - 废弃了方法 `db.getAssignedChannels()`（目前暂无替代品，原接口仍然可用）
   - `db.update()` 更名为 `db.upsert()`，语法不变
 - 数据结构变更
   - channel 表使用 `platform`+`id` 复合主键进行索引，这意味着 `channel.id` 语义将发生变化，同时新增了 `channel.platform`
 - 全局接口变更
   - ORM 相关接口现使用 `ctx.model` 实现
 
-## 缓存机制变更
+## 事件变更
 
-- 新增了 Cache API
-- 移除了内置于 koishi-core 中的数据缓存逻辑（目前暂无替代品）
+- connect → ready (原命名依然可用)
+- before-connect → ready
+- disconnect → dispose (原命名依然可用)
+- before-disconnect → dispose
+- before-command → command/before-execute (原命名依然可用)
 
 ## 其他变更
 
 ### @koishijs/core
 
 - `ctx.all()` 更名为 `ctx.any()`，同时新增了 `ctx.never()`
-- `cmd.check()` 更名为 `cmd.before()`
 - 移除了 `processMessage` 配置项，即取消了内置的将中文字符替换为简体字的机制
+- 废弃了 `Command.userFields()` 和 `Command.channelFields()` 方法，请使用对应的事件 `command/before-attach-user` 和 `command/before-attach-channel` (注意这里废弃的只是静态方法，实例方法依然可用)
 
 ### @koishijs/utils
 

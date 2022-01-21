@@ -100,7 +100,7 @@ export class GitHub extends Service {
   }
 
   async getTokens(params: any) {
-    return this.http.post<OAuth>('https://github.com/login/oauth/access_token', {
+    return this.http.post<OAuth>('https://github.com/login/oauth/access_token', {}, {
       params: {
         client_id: this.config.appId,
         client_secret: this.config.appSecret,
@@ -125,8 +125,11 @@ export class GitHub extends Service {
   async authorize(session: Session, message: string) {
     await session.send(message)
     const name = await session.prompt(this.config.promptTimeout)
-    if (!name) return session.send('输入超时。')
-    await session.execute({ name: 'github.authorize', args: [name] })
+    if (name) {
+      await session.execute({ name: 'github.authorize', args: [name] })
+    } else {
+      await session.send('输入超时。')
+    }
   }
 
   async request(method: Method, url: string, session: ReplySession, body?: any, headers?: Dict) {

@@ -247,15 +247,14 @@ class MysqlDatabase extends Database {
     return new Promise((resolve, reject) => {
       sql = format(sql, values)
       logger.debug('[sql]', sql)
-      this.pool.query(sql, (err, results) => {
+      this.pool.query(sql, (err: Error, results) => {
         if (!err) return resolve(results)
         logger.warn(sql)
-        err.stack = err.message + error.stack.slice(7)
-        if (err.code === 'ER_DUP_ENTRY') {
-          reject(new KoishiError(err.message, 'database.duplicate-entry'))
-        } else {
-          reject(err)
+        if (err['code'] === 'ER_DUP_ENTRY') {
+          err = new KoishiError(err.message, 'database.duplicate-entry')
         }
+        err.stack = err.message + error.stack.slice(5)
+        reject(err)
       })
     })
   }
@@ -315,6 +314,7 @@ class MysqlDatabase extends Database {
   }
 
   async get(name: TableType, query: Query, modifier?: Query.Modifier) {
+    await this._tableTasks[name]
     const filter = this._createFilter(name, query)
     if (filter === '0') return []
     const { fields, limit, offset, sort } = Query.resolveModifier(modifier)
@@ -342,6 +342,7 @@ class MysqlDatabase extends Database {
   }
 
   async remove(name: TableType, query: Query) {
+    await this._tableTasks[name]
     const filter = this._createFilter(name, query)
     if (filter === '0') return
     await this.query('DELETE FROM ?? WHERE ' + filter, [name])
@@ -426,6 +427,7 @@ class MysqlDatabase extends Database {
   }
 
   async eval(name: TableType, expr: any, query: Query) {
+    await this._tableTasks[name]
     const filter = this._createFilter(name, query)
     const output = this.sql.parseEval(expr)
     const [data] = await this.queue(`SELECT ${output} AS value FROM ${name} WHERE ${filter}`)

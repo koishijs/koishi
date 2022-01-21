@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-teach",
   "description": "Teach plugin for Koishi",
-  "version": "3.0.0-rc.1",
+  "version": "3.0.0",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "engines": {
@@ -36,13 +36,13 @@
     "optional:assets"
   ],
   "peerDependencies": {
-    "koishi": "^4.0.0-rc.2"
+    "koishi": "^4.0.1"
   },
   "devDependencies": {
-    "@koishijs/plugin-console": "^1.0.0-rc.1",
-    "@koishijs/plugin-database-memory": "^1.0.0-rc.1",
-    "@koishijs/plugin-status": "^5.0.0-rc.2",
-    "@koishijs/plugin-mock": "^1.0.0-rc.0"
+    "@koishijs/plugin-console": "^1.0.0",
+    "@koishijs/plugin-database-memory": "^1.0.0",
+    "@koishijs/plugin-status": "^5.0.1",
+    "@koishijs/plugin-mock": "^1.0.0"
   },
   "dependencies": {
     "fastest-levenshtein": "^1.0.12",

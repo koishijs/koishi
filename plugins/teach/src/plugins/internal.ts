@@ -160,7 +160,7 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
     })
   })
 
-  ctx.before('command', ({ command, session }) => {
+  ctx.before('command/execute', ({ command, session }) => {
     if (command.config.noInterp && session._redirected) {
       return template('teach.prohibited-command', command.name)
     }

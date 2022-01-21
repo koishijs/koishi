@@ -104,6 +104,136 @@ export interface Guild {
   stickers?: Sticker[]
 }
 
+export namespace Guild {
+  export namespace Event {
+    export interface Create extends Guild {}
+
+    export interface Update extends Guild {}
+
+    export interface Delete extends Guild {}
+  }
+
+  export namespace Params {
+    /** https://discord.com/developers/docs/resources/user#get-current-user-guilds-query-string-params */
+    export interface List {
+      /** get guilds before this guild ID */
+      before: snowflake
+      /** get guilds after this guild ID */
+      after: snowflake
+      /** max number of guilds to return (1-200) */
+      limit: integer
+    }
+
+    /** https://discord.com/developers/docs/resources/guild#create-guild-json-params */
+    export interface Create {
+      /** name of the guild (2-100 characters) */
+      name: string
+      /** voice region id (deprecated) */
+      region?: string
+      /** base64 128x128 image for the guild icon */
+      icon?: string
+      /** verification level */
+      verification_level?: integer
+      /** default message notification level */
+      default_message_notifications?: integer
+      /** explicit content filter level */
+      explicit_content_filter?: integer
+      /** new guild roles */
+      roles?: Role[]
+      /** new guild's channels */
+      channels?: Partial<Channel>[]
+      /** id for afk channel */
+      afk_channel_id?: snowflake
+      /** afk timeout in seconds */
+      afk_timeout?: integer
+      /** the id of the channel where guild notices such as welcome messages and boost events are posted */
+      system_channel_id?: snowflake
+      /** system channel flags */
+      system_channel_flags?: integer
+    }
+
+    /** https://discord.com/developers/docs/resources/guild#get-guild-query-string-params */
+    export interface Get {
+      /** when true, will return approximate member and presence counts for the guild */
+      with_counts?: boolean
+    }
+
+    /** https://discord.com/developers/docs/resources/guild#modify-guild-json-params */
+    export interface Modify {
+      /** guild name */
+      name: string
+      /** guild voice region id (deprecated) */
+      region?: string
+      /** verification level */
+      verification_level?: integer
+      /** default message notification level */
+      default_message_notifications?: integer
+      /** explicit content filter level */
+      explicit_content_filter?: integer
+      /** id for afk channel */
+      afk_channel_id?: snowflake
+      /** afk timeout in seconds */
+      afk_timeout: integer
+      /** base64 1024x1024 png/jpeg/gif image for the guild icon (can be animated gif when the server has the ANIMATED_ICON feature) */
+      icon?: string
+      /** user id to transfer guild ownership to (must be owner) */
+      owner_id: snowflake
+      /** base64 16:9 png/jpeg image for the guild splash (when the server has the INVITE_SPLASH feature) */
+      splash?: string
+      /** base64 16:9 png/jpeg image for the guild discovery splash (when the server has the DISCOVERABLE feature) */
+      discovery_splash?: string
+      /** base64 16:9 png/jpeg image for the guild banner (when the server has the BANNER feature) */
+      banner?: string
+      /** the id of the channel where guild notices such as welcome messages and boost events are posted */
+      system_channel_id?: snowflake
+      /** system channel flags */
+      system_channel_flags: integer
+      /** the id of the channel where Community guilds display rules and/or guidelines */
+      rules_channel_id?: snowflake
+      /** the id of the channel where admins and moderators of Community guilds receive notices from Discord */
+      public_updates_channel_id?: snowflake
+      /** the preferred locale of a Community guild used in server discovery and notices from Discord; defaults to "en-US" */
+      preferred_locale?: string
+      /** enabled guild features */
+      features: GuildFeature[]
+      /** the description for the guild, if the guild is discoverable */
+      description?: string
+      /** whether the guild's boost progress bar should be enabled. */
+      premium_progress_bar_enabled: boolean
+    }
+
+    /** https://discord.com/developers/docs/resources/guild#get-guild-widget-image-query-string-params */
+    export interface GetWidgetImage {
+      /** style of the widget image returned (see below) */
+      style: WidgetStyleOptions
+    }
+    
+    /** https://discord.com/developers/docs/resources/guild#get-guild-widget-image-widget-style-options */
+    export enum WidgetStyleOptions {
+      /** shield style widget with Discord icon and guild members online count */
+      shield = 'shield',
+      /** large image with guild icon, name and online count. "POWERED BY DISCORD" as the footer of the widget */
+      banner1 = 'banner1',
+      /** smaller widget style with guild icon, name and online count. Split on the right with Discord logo */
+      banner2 = 'banner2',
+      /** large image with guild icon, name and online count. In the footer, Discord logo on the left and "Chat Now" on the right */
+      banner3 = 'banner3',
+      /** large Discord logo at the top of the widget. Guild icon, name and online count in the middle portion of the widget and a "JOIN MY SERVER" button at the bottom */
+      banner4 = 'banner4',
+    }
+    
+    /** https://discord.com/developers/docs/resources/guild#modify-guild-welcome-screen-json-params */
+    export interface ModifyWelcomeScreen {
+      /** whether the welcome screen is enabled */
+      enabled: boolean
+      /** channels linked in the welcome screen and their display options */
+      welcome_channels: WelcomeScreenChannel[]
+      /** the server description to show in the welcome screen */
+      description: string
+    }
+  }
+}
+
 /** https://discord.com/developers/docs/resources/guild#guild-object-system-channel-flags */
 export enum SystemChannelFlag {
   /** Suppress member join notifications */
@@ -194,14 +324,6 @@ export interface GuildWidget {
   channel_id?: snowflake
 }
 
-/** https://discord.com/developers/docs/resources/guild#ban-object-ban-structure */
-export interface Ban {
-  /** the reason for the ban */
-  reason?: string
-  /** the banned user */
-  user: User
-}
-
 /** https://discord.com/developers/docs/resources/guild#welcome-screen-object-welcome-screen-structure */
 export interface WelcomeScreen {
   /** the server description shown in the welcome screen */
@@ -222,48 +344,33 @@ export interface WelcomeScreenChannel {
   emoji_name?: string
 }
 
-export interface GuildCreateEvent extends Guild {}
-
-export interface GuildUpdateEvent extends Guild {}
-
-export interface GuildDeleteEvent extends Guild {}
-
-/** https://discord.com/developers/docs/topics/gateway#guild-ban-add-guild-ban-add-event-fields */
-export interface GuildBanAddEvent {
-  /** id of the guild */
-  guild_id: snowflake
-  /** the banned user */
-  user: User
-}
-
-/** https://discord.com/developers/docs/topics/gateway#guild-ban-remove-guild-ban-remove-event-fields */
-export interface GuildBanRemoveEvent {
-  /** id of the guild */
-  guild_id: snowflake
-  /** the unbanned user */
-  user: User
-}
-
 declare module './gateway' {
   interface GatewayEvents {
     /** lazy-load for unavailable guild, guild became available, or user joined a new guild */
-    GUILD_CREATE: GuildCreateEvent
+    GUILD_CREATE: Guild.Event.Create
     /** guild was updated */
-    GUILD_UPDATE: GuildUpdateEvent
+    GUILD_UPDATE: Guild.Event.Update
     /** guild became unavailable, or user left/was removed from a guild */
-    GUILD_DELETE: GuildDeleteEvent
-    /** user was banned from a guild */
-    GUILD_BAN_ADD: GuildBanAddEvent
-    /** user was unbanned from a guild */
-    GUILD_BAN_REMOVE: GuildBanRemoveEvent
+    GUILD_DELETE: Guild.Event.Delete
   }
 }
 
 declare module './internal' {
   interface Internal {
-    /** https://discord.com/developers/docs/resources/user#get-current-user-guilds */
-    getCurrentUserGuilds(): Promise<Guild[]>
-    /** https://discord.com/developers/docs/resources/user#leave-guild */
+    /**
+     * Returns a list of partial guild objects the current user is a member of. Requires the guilds OAuth2 scope.
+     * @see https://discord.com/developers/docs/resources/user#get-current-user-guilds
+     */
+    getCurrentUserGuilds(params?: Guild.Params.List): Promise<Guild[]>
+    /**
+     * Returns a guild member object for the current user. Requires the guilds.members.read OAuth2 scope.
+     * @see https://discord.com/developers/docs/resources/user#get-current-user-guild-member
+     */
+    getCurrentUserGuildMember(guild_id: snowflake): Promise<GuildMember>
+    /**
+     * Leave a guild. Returns a 204 empty response on success.
+     * @see https://discord.com/developers/docs/resources/user#leave-guild
+     */
     leaveGuild(guild_id: snowflake): Promise<void>
   }
 }
@@ -272,6 +379,9 @@ Internal.define({
   '/users/@me/guilds': {
     GET: 'getCurrentUserGuilds',
   },
+  '/users/@me/guilds/{guild.id}/member': {
+    GET: 'getCurrentUserGuildMember',
+  },
   '/users/@me/guilds/{guild.id}': {
     DELETE: 'leaveGuild',
   },
@@ -279,12 +389,61 @@ Internal.define({
 
 declare module './internal' {
   interface Internal {
-    /** https://discord.com/developers/docs/resources/guild#get-guild */
-    getGuild(guild_id: snowflake): Promise<Guild>
-    /** https://discord.com/developers/docs/resources/guild#get-guild-preview */
+    /**
+     * Create a new guild. Returns a guild object on success. Fires a Guild Create Gateway event.
+     * @see https://discord.com/developers/docs/resources/guild#create-guild
+     */
+    createGuild(params: Guild.Params.Create): Promise<Guild>
+    /**
+     * Returns the guild object for the given id. If with_counts is set to true, this endpoint will also return approximate_member_count and approximate_presence_count for the guild.
+     * @see https://discord.com/developers/docs/resources/guild#get-guild
+     */
+    getGuild(guild_id: snowflake, params?: Guild.Params.Get): Promise<Guild>
+    /**
+     * Returns the guild preview object for the given id. If the user is not in the guild, then the guild must be lurkable.
+     * @see https://discord.com/developers/docs/resources/guild#get-guild-preview
+     */
     getGuildPreview(guild_id: snowflake): Promise<GuildPreview>
-    /** https://discord.com/developers/docs/resources/guild#modify-guild */
-    modifyGuild(guild_id: snowflake, options: Partial<Guild>): Promise<Guild>
+    /**
+     * Modify a guild's settings. Requires the MANAGE_GUILD permission. Returns the updated guild object on success. Fires a Guild Update Gateway event.
+     * @see https://discord.com/developers/docs/resources/guild#modify-guild
+     */
+    modifyGuild(guild_id: snowflake, params: Guild.Params.Modify): Promise<void>
+    /**
+     * Delete a guild permanently. User must be owner. Returns 204 No Content on success. Fires a Guild Delete Gateway event.
+     * @see https://discord.com/developers/docs/resources/guild#delete-guild
+     */
+    deleteGuild(guild_id: snowflake): Promise<void>
+    /**
+     * Returns a guild widget object. Requires the MANAGE_GUILD permission.
+     * @see https://discord.com/developers/docs/resources/guild#get-guild-widget-settings
+     */
+    getGuildWidgetSettings(guild_id: snowflake): Promise<GuildWidget>
+    /**
+     * Modify a guild widget object for the guild. All attributes may be passed in with JSON and modified. Requires the MANAGE_GUILD permission. Returns the updated guild widget object.
+     * @see https://discord.com/developers/docs/resources/guild#modify-guild-widget
+     */
+    modifyGuildWidget(guild_id: snowflake, params: Partial<GuildWidget>): Promise<GuildWidget>
+    /**
+     * Returns the widget for the guild.
+     * @see https://discord.com/developers/docs/resources/guild#get-guild-widget
+     */
+    getGuildWidget(guild_id: snowflake): Promise<any>
+    /**
+     * Returns a PNG image widget for the guild. Requires no permissions or authentication.
+     * @see https://discord.com/developers/docs/resources/guild#get-guild-widget-image
+     */
+    getGuildWidgetImage(guild_id: snowflake, params?: Guild.Params.GetWidgetImage): Promise<any>
+    /**
+     * Returns the Welcome Screen object for the guild.
+     * @see https://discord.com/developers/docs/resources/guild#get-guild-welcome-screen
+     */
+    getGuildWelcomeScreen(guild_id: snowflake): Promise<WelcomeScreen>
+    /**
+     * Modify the guild's Welcome Screen. Requires the MANAGE_GUILD permission. Returns the updated Welcome Screen object.
+     * @see https://discord.com/developers/docs/resources/guild#modify-guild-welcome-screen
+     */
+    modifyGuildWelcomeScreen(guild_id: snowflake, params: Guild.Params.ModifyWelcomeScreen): Promise<WelcomeScreen>
   }
 }
 
@@ -300,42 +459,6 @@ Internal.define({
   '/guilds/{guild.id}/preview': {
     GET: 'getGuildPreview',
   },
-  '/guilds/{guild.id}/threads/active': {
-    GET: 'listActiveThreads',
-  },
-  '/guilds/{guild.id}/bans': {
-    GET: 'getGuildBans',
-  },
-  '/guilds/{guild.id}/bans/{user.id}': {
-    GET: 'getGuildBan',
-    PUT: 'createGuildBan',
-    DELETE: 'removeGuildBan',
-  },
-  '/guilds/{guild.id}/roles': {
-    GET: 'getGuildRoles',
-    POST: 'createGuildRole',
-    PATCH: 'modifyGuildRolePositions',
-  },
-  '/guilds/{guild.id}/roles/{role.id}': {
-    PATCH: 'modifyGuildRole',
-    DELETE: 'deleteGuildRole',
-  },
-  '/guilds/{guild.id}/prune': {
-    GET: 'getGuildPruneCount',
-    POST: 'beginGuildPrune',
-  },
-  '/guilds/{guild.id}/regions': {
-    GET: 'getGuildVoiceRegions',
-  },
-  '/guilds/{guild.id}/invites': {
-    GET: 'getGuildInvites',
-  },
-  '/guilds/{guild.id}/integrations': {
-    GET: 'getGuildIntegrations',
-  },
-  '/guilds/{guild.id}/integrations/{integration.id}': {
-    DELETE: 'deleteGuildIntegration',
-  },
   '/guilds/{guild.id}/widget': {
     GET: 'getGuildWidgetSettings',
     PATCH: 'modifyGuildWidget',
@@ -343,20 +466,11 @@ Internal.define({
   '/guilds/{guild.id}/widget.json': {
     GET: 'getGuildWidget',
   },
-  '/guilds/{guild.id}/vanity-url': {
-    GET: 'getGuildVanityURL',
-  },
   '/guilds/{guild.id}/widget.png': {
     GET: 'getGuildWidgetImage',
   },
   '/guilds/{guild.id}/welcome-screen': {
     GET: 'getGuildWelcomeScreen',
     PATCH: 'modifyGuildWelcomeScreen',
-  },
-  '/guilds/{guild.id}/voice-states/@me': {
-    PATCH: 'modifyCurrentUserVoiceState',
-  },
-  '/guilds/{guild.id}/voice-states/{user.id}': {
-    PATCH: 'modifyUserVoiceState',
   },
 })

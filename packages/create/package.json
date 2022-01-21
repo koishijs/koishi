@@ -1,7 +1,7 @@
 {
   "name": "create-koishi",
   "description": "Node runtime for Koishi",
-  "version": "4.1.1",
+  "version": "4.1.2",
   "main": "lib/index.js",
   "engines": {
     "node": ">=12.0.0"
@@ -35,7 +35,7 @@
   "dependencies": {
     "cross-spawn": "^7.0.3",
     "kleur": "^4.1.4",
-    "prompts": "^2.4.1",
-    "yargs-parser": "^20.2.9"
+    "prompts": "^2.4.2",
+    "yargs-parser": "^21.0.0"
   }
 }

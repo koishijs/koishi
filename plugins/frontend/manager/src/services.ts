@@ -1,7 +1,7 @@
 import { DataSource } from '@koishijs/plugin-console'
 import { Context, Dict } from 'koishi'
 
-export class ServiceProvider extends DataSource<Dict<string>> {
+export default class ServiceProvider extends DataSource<Dict<string>> {
   constructor(ctx: Context) {
     super(ctx, 'services')
 

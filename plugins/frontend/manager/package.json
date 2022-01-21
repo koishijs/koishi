@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-manager",
   "description": "Manage your bots and plugins with console",
-  "version": "1.0.0-rc.1",
+  "version": "1.0.1",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -32,14 +32,15 @@
     "server"
   ],
   "peerDependencies": {
-    "koishi": "^4.0.0-rc.2"
+    "koishi": "^4.0.1"
   },
   "devDependencies": {
-    "@koishijs/cli": "^4.0.0-rc.1",
-    "@koishijs/plugin-console": "^1.0.0-rc.1",
-    "@octokit/openapi-types": "^10.6.4",
+    "@koishijs/cli": "^4.0.1",
+    "@koishijs/plugin-console": "^1.0.0",
     "@types/cross-spawn": "^6.0.2",
-    "@types/throttle-debounce": "^2.1.0"
+    "@types/marked": "^4.0.1",
+    "@types/throttle-debounce": "^2.1.0",
+    "marked": "^4.0.10"
   },
   "dependencies": {
     "cross-spawn": "^7.0.3",

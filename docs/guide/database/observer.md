@@ -47,7 +47,7 @@ const { Command } = require('koishi')
 // 注意这不是实例方法，而是类上的静态方法
 Command.userFields(['name'])
 
-app.before('command', ({ session, command }) => {
+app.before('command/execute', ({ session, command }) => {
   console.log('%s calls command %s', session.user.name, command.name)
 })
 ```
@@ -61,7 +61,9 @@ ctx.model.extend('user', {
 })
 
 // 手动添加要获取的字段，下面会介绍
-app.before('attach-user', fields => fields.add('msgCount'))
+app.before('attach-user', (session, fields) => {
+  fields.add('msgCount')
+})
 
 app.middleware((session, next) => {
   // 这里更新了 msgCount 数据

@@ -105,7 +105,7 @@ jobs:
         options: --health-cmd "mysqladmin ping" --health-interval 10s --health-timeout 5s --health-retries 5
         env:
           MYSQL_USER: koishi
-          MYSQL_DATABASE: koishi
+          MYSQL_DATABASE: test
           MYSQL_PASSWORD: koishi@114514
           MYSQL_ROOT_PASSWORD: password
       maria10:
@@ -115,7 +115,7 @@ jobs:
         options: --health-cmd "mysqladmin ping" --health-interval 10s --health-timeout 5s --health-retries 5
         env:
           MYSQL_USER: koishi
-          MYSQL_DATABASE: koishi
+          MYSQL_DATABASE: test
           MYSQL_PASSWORD: koishi@114514
           MYSQL_ROOT_PASSWORD: password
       mysql8:
@@ -125,7 +125,7 @@ jobs:
         options: --health-cmd "mysqladmin ping" --health-interval 10s --health-timeout 5s --health-retries 5
         env:
           MYSQL_USER: koishi
-          MYSQL_DATABASE: koishi
+          MYSQL_DATABASE: test
           MYSQL_PASSWORD: koishi@114514
           MYSQL_ROOT_PASSWORD: password
 
@@ -153,7 +153,7 @@ jobs:
       - name: Build JS
         run: yarn compile
       - name: Unit Test
-        run: yarn test:json --mongo-ports=27017 --mysql-ports=3306,3307
+        run: yarn test:json --mongo-ports=27017 --mysql-ports=3306,3307,3308
       - name: Report Coverage
         if: ${{ matrix.node-version == 14 }}
         uses: codecov/codecov-action@v1

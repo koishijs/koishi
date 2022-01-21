@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-adapter-onebot",
   "description": "CQHTTP adapter for Koishi",
-  "version": "4.0.0-rc.0",
+  "version": "4.0.0",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -27,14 +27,14 @@
     "koishi"
   ],
   "peerDependencies": {
-    "koishi": "^4.0.0-rc.2"
+    "koishi": "^4.0.1"
   },
   "devDependencies": {
-    "@koishijs/plugin-mock": "^1.0.0-rc.0",
-    "@types/ws": "^7.4.7"
+    "@koishijs/plugin-mock": "^1.0.0",
+    "@types/ws": "^8.2.2"
   },
   "dependencies": {
     "qface": "^1.2.0",
-    "ws": "^8.2.1"
+    "ws": "^8.4.2"
   }
 }

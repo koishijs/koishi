@@ -17,6 +17,7 @@ Koishi 官方提供了许多插件。为了更好地模块化开发，它们被�
 
 ## 数据库支持
 
+- [@koishijs/plugin-database-level](./database/level.md)
 - [@koishijs/plugin-database-memory](./database/memory.md)
 - [@koishijs/plugin-database-mongo](./database/mongo.md)
 - [@koishijs/plugin-database-mysql](./database/mysql.md)
@@ -29,17 +30,33 @@ Koishi 官方提供了许多插件。为了更好地模块化开发，它们被�
 - [@koishijs/plugin-assets-remote](./assets/remote.md)
 - [@koishijs/plugin-assets-s3](./assets/s3.md)
 
-## 缓存支持
+## 常用功能
 
-- [@koishijs/plugin-cache-lru](./cache/lru.md)
-- [@koishijs/plugin-cache-redis](./cache/redis.md)
+- [@koishijs/plugin-broadcast](./common/broadcast.md)：发送广播
+- [@koishijs/plugin-echo](./common/echo.md)：发送消息
+- [@koishijs/plugin-feedback](./common/feedback.md)：发送反馈
+- [@koishijs/plugin-forward](./common/forward.md)：转发消息
+- [@koishijs/plugin-recall](./common/recall.md)：撤回消息
+- [@koishijs/plugin-repeater](./common/repeater.md)：复读机
+- [@koishijs/plugin-respondent](./common/respondent.md)：快捷回复
+
+## 辅助功能
+
+- [@koishijs/plugin-admin](./accessibility/admin.md)：数据管理
+- [@koishijs/plugin-bind](./accessibility/bind.md)：账号绑定
+- [@koishijs/plugin-callme](./accessibility/callme.md)：设置昵称
+- [@koishijs/plugin-rate-limit](./accessibility/rate-limit.md)：速率控制
+- [@koishijs/plugin-schedule](./accessibility/schedule.md)：计划任务
+- [@koishijs/plugin-sudo](./accessibility/sudo.md)：模拟调用
+- [@koishijs/plugin-verifier](./accessibility/verifier.md)：处理申请
 
 ## 控制台开发
 
-- [@koishijs/plugin-console](./console/console.md)
-- [@koishijs/plugin-chat](./console/chat.md)
-- [@koishijs/plugin-manager](./console/manager.md)
-- [@koishijs/plugin-status](./console/status.md)
+- [@koishijs/plugin-console](./console/console.md)：控制台
+- [@koishijs/plugin-chat](./console/chat.md)：聊天工具
+- [@koishijs/plugin-manager](./console/manager.md)：插件管理
+- [@koishijs/plugin-commands](./console/commands.md)：指令管理
+- [@koishijs/plugin-status](./console/status.md)：运行状态
 
 ## 大型插件
 
@@ -52,7 +69,6 @@ Koishi 官方提供了许多插件。为了更好地模块化开发，它们被�
 
 此外，官方还维护了其他大量功能插件，它们同样会在本栏有介绍：
 
-- [@koishijs/plugin-common](./common/)：常用指令
 - [@koishijs/plugin-github](./other/github.md)：接入 GitHub
+- [@koishijs/plugin-mock](./other/mock.md)：测试工具
 - [@koishijs/plugin-puppeteer](./other/puppeteer.md)：网页截图
-- [@koishijs/plugin-schedule](./other/schedule.md)：计划任务

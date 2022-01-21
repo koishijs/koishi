@@ -51,7 +51,7 @@ export async function connect(endpoint: string) {
 
   socket.value.onmessage = (ev) => {
     const data = JSON.parse(ev.data)
-    console.debug(data)
+    console.debug('%c', 'color:purple', data.type, data.body)
     if (data.type in listeners) {
       listeners[data.type](data.body)
     }

@@ -26,8 +26,6 @@ export class Model {
       name: 'string(63)',
       flag: 'unsigned(20)',
       authority: 'unsigned(4)',
-      usage: 'json',
-      timers: 'json',
     }, {
       autoInc: true,
     })

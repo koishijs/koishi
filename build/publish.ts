@@ -73,7 +73,7 @@ function getVersion(name: string, isNext = false) {
   }
 
   const { version } = require('../packages/koishi/package') as PackageJson
-  if (isNext(version)) return
+  if (!CI || isNext(version)) return
 
   const tags = spawnSync(['git', 'tag', '-l']).split(/\r?\n/)
   if (tags.includes(version)) {

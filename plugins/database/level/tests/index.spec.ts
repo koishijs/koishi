@@ -1,6 +1,6 @@
 import { App } from 'koishi'
 import { resolve } from 'path'
-import tests from '@koishijs/test-utils'
+import tests from '@koishijs/database-tests'
 import level from '@koishijs/plugin-database-level'
 import mock from '@koishijs/plugin-mock'
 

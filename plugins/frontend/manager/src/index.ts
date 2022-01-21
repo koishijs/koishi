@@ -1,21 +1,28 @@
 import { Context, Schema } from 'koishi'
 import { resolve } from 'path'
-import { BotProvider } from './bots'
-import { MarketProvider } from './market'
-import { PackageProvider } from './packages'
-import { AdapterProvider } from './protocols'
-import { RegistryProvider } from './registry'
-import { ReleaseProvider } from './releases'
-import { ServiceProvider } from './services'
+import BotProvider from './bots'
+import MarketProvider from './market'
+import PackageProvider from './packages'
+import AdapterProvider from './protocols'
+import RegistryProvider from './registry'
+import ServiceProvider from './services'
 
 export * from './bots'
 export * from './market'
 export * from './packages'
 export * from './protocols'
 export * from './registry'
-export * from './releases'
 export * from './services'
 export * from './utils'
+
+export {
+  BotProvider,
+  MarketProvider,
+  PackageProvider,
+  AdapterProvider,
+  RegistryProvider,
+  ServiceProvider,
+}
 
 declare module '@koishijs/plugin-console' {
   interface Events {
@@ -32,13 +39,12 @@ declare module '@koishijs/plugin-console' {
     packages: PackageProvider
     protocols: AdapterProvider
     registry: RegistryProvider
-    releases: ReleaseProvider
     services: ServiceProvider
   }
 }
 
 export const name = 'manager'
-export const using = ['console']
+export const using = ['console'] as const
 
 export interface Config extends MarketProvider.Config {}
 
@@ -51,7 +57,6 @@ Context.service('console.market')
 Context.service('console.packages')
 Context.service('console.protocols')
 Context.service('console.registry')
-Context.service('console.releases')
 Context.service('console.services')
 
 export function apply(ctx: Context, config: Config = {}) {
@@ -60,7 +65,6 @@ export function apply(ctx: Context, config: Config = {}) {
   ctx.plugin(AdapterProvider)
   ctx.plugin(PackageProvider)
   ctx.plugin(RegistryProvider)
-  ctx.plugin(ReleaseProvider)
   ctx.plugin(ServiceProvider)
 
   const filename = ctx.console.config.devMode ? '../client/index.ts' : '../dist/index.js'

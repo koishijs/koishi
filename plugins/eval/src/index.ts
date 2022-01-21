@@ -1,4 +1,4 @@
-import { Context, Command, Argv, segment, Logger, defineProperty, noop, Awaitable } from 'koishi'
+import { Context, Command, Argv, segment, Logger, defineProperty, noop, Awaitable, escapeRegExp } from 'koishi'
 import { EvalWorker, Trap, EvalConfig, Config } from './main'
 import { resolve } from 'path'
 import { load } from 'js-yaml'
@@ -79,7 +79,7 @@ export function apply(ctx: Context, config: Config = {}) {
   // addons are registered in another plugin
   if (config.root) ctx.plugin(addon, config)
 
-  ctx.before('command', ({ command, session }) => {
+  ctx.before('command/execute', ({ command, session }) => {
     if (command.config.noEval && session._isEval) {
       return `不能在 evaluate 指令中调用 ${command.name} 指令。`
     }
@@ -149,8 +149,8 @@ export function apply(ctx: Context, config: Config = {}) {
   })
 
   if (prefix) {
-    command.shortcut(prefix, { fuzzy: true })
-    command.shortcut(prefix + prefix[prefix.length - 1], { fuzzy: true, options: { slient: true } })
+    command.shortcut(new RegExp(`^${escapeRegExp(prefix)} (.+)$`), { args: ['$1'] })
+    command.shortcut(new RegExp(`^${escapeRegExp(prefix + prefix[prefix.length - 1])} (.+)$`), { args: ['$1'], options: { slient: true } })
   }
 
   Argv.interpolate('${', '}', (raw) => {

@@ -2,7 +2,7 @@ import { distance } from 'fastest-levenshtein'
 import { User, Channel } from './database'
 import { TableType, Tables } from './orm'
 import { Command } from './command'
-import { contain, observe, Logger, defineProperty, Random, template, remove, noop, segment } from '@koishijs/utils'
+import { Awaitable, contain, observe, Logger, defineProperty, Random, template, remove, segment } from '@koishijs/utils'
 import { Argv } from './parser'
 import { Middleware, Next } from './context'
 import { App } from './app'
@@ -140,7 +140,10 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
     // eslint-disable-next-line no-cond-assign
     if (node = segment.from(content, { type: 'quote', caret: true })) {
       content = content.slice(node.capture[0].length).trimStart()
-      this.quote = await this.bot.getMessage(node.data.channelId || this.channelId, node.data.id).catch(noop)
+      this.quote = await this.bot.getMessage(node.data.channelId || this.channelId, node.data.id).catch((error) => {
+        logger.warn(error)
+        return null
+      })
     }
     return content
   }
@@ -158,9 +161,12 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
     return this.app.chain('appellation', defaultName, this)
   }
 
-  async send(message: string) {
-    if (!message) return
-    await this.bot.sendMessage(this.channelId, message, this.guildId).catch(noop)
+  async send(content: string) {
+    if (!content) return
+    return this.bot.sendMessage(this.channelId, content, this.guildId).catch<string[]>((error) => {
+      logger.warn(error)
+      return []
+    })
   }
 
   cancelQueued(delay = this.app.options.delay.cancel) {
@@ -258,7 +264,7 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
     if (this.author?.anonymous) {
       const fallback = this.app.model.create('user')
       fallback[this.platform] = this.userId
-      fallback.authority = this.resolveValue(this.app.options.autoAuthorize)
+      fallback.authority = await this.resolveValue(this.app.options.autoAuthorize)
       const user = observe(fallback, () => Promise.resolve())
       return this.user = user
     }
@@ -270,13 +276,13 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
     if (hasActiveCache) return this.user = cache as any
 
     // 绑定一个新的可观测用户实例
-    const data = await this.getUser(userId, this.resolveValue(this.app.options.autoAuthorize), fieldArray)
+    const data = await this.getUser(userId, await this.resolveValue(this.app.options.autoAuthorize), fieldArray)
     const newUser = observe(data, diff => this.app.database.setUser(this.platform, userId, diff), `user ${this.uid}`)
     this.app._userCache.set(this.id, this.uid, newUser)
     return this.user = newUser
   }
 
-  collect<T extends TableType>(key: T, argv: Argv, fields = new Set<keyof Tables[T]>()) {
+  collect<T extends 'user' | 'channel'>(key: T, argv: Argv, fields = new Set<keyof Tables[T]>()) {
     const collect = (argv: Argv) => {
       argv.session = this
       if (argv.tokens) {
@@ -285,6 +291,7 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
         }
       }
       if (!this.resolve(argv)) return
+      this.app.emit(argv.session, `command/before-attach-${key}` as any, argv, fields)
       collectFields(argv, Command[`_${key}Fields`] as any, fields)
       collectFields(argv, argv.command[`_${key}Fields`] as any, fields)
     }
@@ -292,11 +299,23 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
     return fields
   }
 
-  resolve(argv: Argv) {
-    if (!argv.command) {
-      const { name = this.app.bail('parse', argv, this) } = argv
-      if (!(argv.command = this.app._commands.get(name))) return
+  private inferCommand(argv: Argv) {
+    if (argv.command) return argv.command
+    if (argv.name) return argv.command = this.app._commands.resolve(argv.name)
+
+    const { parsed, subtype } = this
+    // guild message should have prefix or appel to be interpreted as a command call
+    if (argv.root && subtype !== 'private' && parsed.prefix === null && !parsed.appel) return
+    if (!argv.tokens.length) return
+    const cmd = this.app._commands.resolve(argv.tokens[0].content)
+    if (cmd) {
+      argv.tokens.shift()
+      return argv.command = cmd
     }
+  }
+
+  resolve(argv: Argv) {
+    if (!this.inferCommand(argv)) return
     if (argv.tokens?.every(token => !token.inters.length)) {
       const { options, args, error } = argv.command.parse(argv)
       argv.options = { ...argv.options, ...options }
@@ -390,7 +409,7 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
 
     const sendNext = async (callback: Next) => {
       const result = await next(callback)
-      if (result) return this.send(result)
+      if (result) await this.send(result)
     }
 
     let suggestions: string[], minDistance = Infinity
@@ -429,7 +448,7 @@ export interface SuggestOptions {
   prefix?: string
   suffix: string
   minSimilarity?: number
-  apply: (this: Session, suggestion: string, next: Next) => void
+  apply: (this: Session, suggestion: string, next: Next) => Awaitable<void | string>
 }
 
 export function getSessionId(session: Session) {

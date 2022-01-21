@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/cli",
   "description": "CLI for Koishi",
-  "version": "4.0.0-rc.1",
+  "version": "4.0.1",
   "main": "index.js",
   "typings": "index.d.ts",
   "engines": {
@@ -34,15 +34,17 @@
     "koishi"
   ],
   "devDependencies": {
-    "@types/js-yaml": "^4.0.3",
-    "@types/prompts": "^2.0.14"
+    "@types/js-yaml": "^4.0.5",
+    "@types/prompts": "^2.0.14",
+    "@types/throttle-debounce": "^2.1.0"
   },
   "dependencies": {
-    "cac": "^6.7.3",
+    "cac": "^6.7.12",
     "chokidar": "^3.5.2",
     "js-yaml": "^4.1.0",
     "kleur": "^4.1.4",
-    "koishi": "^4.0.0-rc.2",
-    "prompts": "^2.4.1"
+    "koishi": "^4.0.1",
+    "prompts": "^2.4.2",
+    "throttle-debounce": "^3.0.1"
   }
 }

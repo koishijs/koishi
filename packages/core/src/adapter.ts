@@ -129,6 +129,8 @@ export namespace Adapter {
       return this.find(bot => bot.sid === sid)
     }
 
+    create(platform: string, options: any): Bot
+    create<T extends Bot>(platform: string, options: any, constructor: new (adapter: Adapter, config: any) => T): T
     create(platform: string, options: any, constructor: Bot.Constructor = Bot.library[platform]) {
       const adapter = this.resolve(platform, options)
       const bot = new constructor(adapter, options)

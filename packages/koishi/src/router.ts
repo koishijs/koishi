@@ -22,20 +22,23 @@ declare module '@koishijs/core' {
   }
 
   namespace App {
-    namespace Config {
-      interface Network {
-        port?: number
-        host?: string
-      }
-    }
+    interface Config extends NetworkConfig {}
   }
 }
 
-App.Config.Network.dict = {
+interface NetworkConfig {
+  host?: string
+  port?: number
+  selfUrl?: string
+}
+
+const NetworkConfig = Schema.object({
   host: Schema.string().description('要监听的 IP 地址。如果将此设置为 `0.0.0.0` 将监听所有地址，包括局域网和公网地址。'),
   port: Schema.number().description('要监听的端口。'),
-  ...App.Config.Network.dict,
-}
+  selfUrl: Schema.string().description('应用暴露在公网的地址。部分插件 (例如 github 和 telegram) 需要用到。'),
+}).description('网络设置')
+
+App.Config.list.push(NetworkConfig)
 
 type WebSocketCallback = (socket: WebSocket, request: IncomingMessage) => void
 

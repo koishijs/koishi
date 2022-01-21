@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/sql-utils",
   "description": "SQL utilities for Koishi ORM",
-  "version": "1.0.0-rc.1",
+  "version": "1.0.0",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "engines": {
@@ -31,7 +31,7 @@
     "utilities"
   ],
   "peerDependencies": {
-    "koishi": "^4.0.0-rc.2"
+    "koishi": "^4.0.1"
   },
   "devDependencies": {},
   "dependencies": {}

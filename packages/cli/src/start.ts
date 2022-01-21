@@ -1,12 +1,8 @@
-import { isInteger } from '@koishijs/utils'
+import { Dict, hyphenate, isInteger } from '@koishijs/utils'
 import { fork, ChildProcess } from 'child_process'
 import { resolve } from 'path'
 import { CAC } from 'cac'
 import kleur from 'kleur'
-
-interface WorkerOptions {
-  '--'?: string[]
-}
 
 let child: ChildProcess
 
@@ -25,9 +21,16 @@ interface Message {
 
 let buffer = null
 
-function createWorker(options: WorkerOptions) {
+function toArg(key: string) {
+  return key.length === 1 ? `-${key}` : `--${hyphenate(key)}`
+}
+
+function createWorker(options: Dict<any>) {
+  const execArgv = Object.entries(options).flatMap<string>(([key, value]) => key === '--' ? [] : [toArg(key), value])
+  execArgv.push(...options['--'])
+
   child = fork(resolve(__dirname, 'worker'), [], {
-    execArgv: ['--enable-source-maps', ...options['--']],
+    execArgv,
   })
 
   let config: { autoRestart: boolean }
@@ -72,21 +75,22 @@ function setEnvArg(name: string, value: string | boolean) {
 export default function (cli: CAC) {
   cli.command('start [file]', 'start a koishi bot')
     .alias('run')
+    .allowUnknownOptions()
     .option('--debug [namespace]', 'specify debug namespace')
     .option('--log-level [level]', 'specify log level (default: 2)')
     .option('--log-time [format]', 'show timestamp in logs')
     .option('--watch [path]', 'watch and reload at change')
     .action((file, options) => {
-      const { logLevel } = options
+      const { logLevel, debug, logTime, watch, ...rest } = options
       if (logLevel !== undefined && (!isInteger(logLevel) || logLevel < 0)) {
         console.warn(`${kleur.red('error')} log level should be a positive integer.`)
         process.exit(1)
       }
-      setEnvArg('KOISHI_WATCH_ROOT', options.watch)
-      setEnvArg('KOISHI_LOG_TIME', options.logTime)
+      setEnvArg('KOISHI_WATCH_ROOT', watch)
+      setEnvArg('KOISHI_LOG_TIME', logTime)
       process.env.KOISHI_LOG_LEVEL = logLevel || ''
-      process.env.KOISHI_DEBUG = options.debug || ''
+      process.env.KOISHI_DEBUG = debug || ''
       process.env.KOISHI_CONFIG_FILE = file || ''
-      createWorker(options)
+      createWorker(rest)
     })
 }

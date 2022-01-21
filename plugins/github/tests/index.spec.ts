@@ -8,6 +8,7 @@ import * as github from '@koishijs/plugin-github'
 import memory from '@koishijs/plugin-database-memory'
 import mock from '@koishijs/plugin-mock'
 import { Method } from 'axios'
+import 'chai-shape'
 
 const app = new App({
   port: 10000,
@@ -62,7 +63,7 @@ describe('GitHub Plugin', () => {
     })
 
     it('github.authorize', async () => {
-      const uuid = jest.spyOn(Random, 'uuid')
+      const uuid = jest.spyOn(Random, 'id')
       uuid.mockReturnValue('foo-bar-baz')
       await ses.shouldReply('.github.authorize', '请输入用户名。')
       await ses.shouldReply('.github.authorize satori', /^请点击下面的链接继续操作：/)
@@ -151,7 +152,7 @@ describe('GitHub Plugin', () => {
       it(title, async () => {
         sendMessage.mockClear()
         sendMessage.mockImplementation(() => {
-          return Promise.resolve(idMap[title] = Random.id())
+          return Promise.resolve([idMap[title] = Random.id()])
         })
 
         const payload = require(`./fixtures/${title}`)

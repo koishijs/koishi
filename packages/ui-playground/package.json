@@ -21,8 +21,8 @@
     "vue": "^3.2.21"
   },
   "dependencies": {
-    "@koishijs/core": "^4.0.0-rc.2",
-    "@vueuse/core": "^6.8.0",
-    "monaco-editor": "^0.27.0"
+    "@koishijs/core": "^4.0.1",
+    "@vueuse/core": "^7.5.3",
+    "monaco-editor": "^0.31.1"
   }
 }

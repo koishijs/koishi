@@ -67,10 +67,14 @@ export class DiscordBot extends Bot<BotConfig> {
     } : undefined
 
     const send = Sender.from(this, `/channels/${channelId}/messages`)
-    session.messageId = await send(session.content, { message_reference })
+    const results = await send(session.content, { message_reference })
 
-    this.app.emit(session, 'send', session)
-    return session.messageId
+    for (const id of results) {
+      session.messageId = id
+      this.app.emit(session, 'send', session)
+    }
+
+    return results
   }
 
   async sendPrivateMessage(channelId: string, content: string) {

@@ -21,8 +21,8 @@ export const AdapterConfig: Schema<AdapterConfig> = Schema.intersect([
 ])
 
 export const adaptUser = (user: OneBot.AccountInfo): Bot.User => ({
-  userId: user.user_id.toString(),
-  avatar: `http://q.qlogo.cn/headimg_dl?dst_uin=${user.user_id}&spec=640`,
+  userId: user.tiny_id || user.user_id.toString(),
+  avatar: user.user_id ? `http://q.qlogo.cn/headimg_dl?dst_uin=${user.user_id}&spec=640` : undefined,
   username: user.nickname,
 })
 
@@ -30,6 +30,14 @@ export const adaptGuildMember = (user: OneBot.SenderInfo): Bot.GuildMember => ({
   ...adaptUser(user),
   nickname: user.card,
   roles: [user.role],
+})
+
+export const adaptQQGuildMember = (user: OneBot.GuildMemberInfo, presetRole?: string): Bot.GuildMember => ({
+  userId: user.tiny_id,
+  username: user.nickname,
+  nickname: user.nickname,
+  roles: [...(presetRole ? [presetRole] : []), user.role.toString()],
+  isBot: presetRole === 'bot',
 })
 
 export const adaptAuthor = (user: OneBot.SenderInfo, anonymous?: OneBot.AnonymousInfo): Bot.Author => ({
@@ -56,8 +64,8 @@ export function adaptMessage(message: OneBot.Message): Bot.Message {
     }),
   }
   if (message.guild_id) {
-    result.guildId = message.guild_id.toString()
-    result.channelId = message.channel_id.toString()
+    result.guildId = message.guild_id
+    result.channelId = message.channel_id
   } else if (message.group_id) {
     result.guildId = result.channelId = message.group_id.toString()
   } else {
@@ -66,19 +74,48 @@ export function adaptMessage(message: OneBot.Message): Bot.Message {
   return result
 }
 
-export const adaptGuild = (group: OneBot.GroupInfo): Bot.Guild => ({
-  guildId: group.group_id.toString(),
-  guildName: group.group_name,
-})
+export const adaptGuild = (info: OneBot.GroupInfo | OneBot.GuildBaseInfo): Bot.Guild => {
+  if ((info as OneBot.GuildBaseInfo).guild_id) {
+    const guild = info as OneBot.GuildBaseInfo
+    return {
+      guildId: guild.guild_id,
+      guildName: guild.guild_name,
+    }
+  } else {
+    const group = info as OneBot.GroupInfo
+    return {
+      guildId: group.group_id.toString(),
+      guildName: group.group_name,
+    }
+  }
+}
 
-export const adaptChannel = (group: OneBot.GroupInfo): Bot.Channel => ({
-  channelId: group.group_id.toString(),
-  channelName: group.group_name,
-})
+export const adaptChannel = (info: OneBot.GroupInfo | OneBot.ChannelInfo): Bot.Channel => {
+  if ((info as OneBot.ChannelInfo).channel_id) {
+    const channel = info as OneBot.ChannelInfo
+    return {
+      channelId: channel.channel_id.toString(),
+      channelName: channel.channel_name,
+    }
+  } else {
+    const group = info as OneBot.GroupInfo
+    return {
+      channelId: group.group_id.toString(),
+      channelName: group.group_name,
+    }
+  }
+}
 
 export function dispatchSession(bot: OneBotBot, data: OneBot.Payload) {
+  if (data.self_tiny_id) {
+    // don't dispatch any guild message without guild initialization
+    if (!bot.guildBot) return
+    bot = bot.guildBot
+  }
+
   const payload = adaptSession(data)
   if (!payload) return
+
   const session = new Session(bot, payload)
   defineProperty(session, 'onebot', Object.create(bot.internal))
   Object.assign(session.onebot, data)
@@ -87,16 +124,17 @@ export function dispatchSession(bot: OneBotBot, data: OneBot.Payload) {
 
 export function adaptSession(data: OneBot.Payload) {
   const session: Partial<Session> = {}
-  session.selfId = '' + data.self_id
-  session.type = data.post_type as any
-  session.subtype = data.sub_type as any
+  session.selfId = data.self_tiny_id ? data.self_tiny_id : '' + data.self_id
+  session.type = data.post_type
 
   if (data.post_type === 'message') {
     Object.assign(session, adaptMessage(data))
-    session.subtype = data.message_type
+    session.subtype = data.message_type === 'guild' ? 'group' : data.message_type
+    session.subsubtype = data.message_type
     return session
   }
 
+  session.subtype = data.sub_type
   if (data.user_id) session.userId = '' + data.user_id
   if (data.group_id) session.guildId = session.channelId = '' + data.group_id
   if (data.guild_id) session.guildId = '' + data.guild_id
@@ -165,15 +203,20 @@ export function adaptSession(data: OneBot.Payload) {
       case 'message_reactions_updated':
         session.type = 'onebot'
         session.subtype = 'message-reactions-updated'
+        break
       case 'channel_created':
         session.type = 'onebot'
         session.subtype = 'channel-created'
+        break
       case 'channel_updated':
         session.type = 'onebot'
         session.subtype = 'channel-updated'
+        break
       case 'channel_destroyed':
         session.type = 'onebot'
         session.subtype = 'channel-destroyed'
+        break
+      default: return
     }
   } else return
 

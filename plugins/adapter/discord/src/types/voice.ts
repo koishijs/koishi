@@ -30,6 +30,24 @@ export interface VoiceState {
   request_to_speak_timestamp?: timestamp
 }
 
+export namespace VoiceState {
+  export namespace Params {
+    /** https://discord.com/developers/docs/resources/guild#modify-current-user-voice-state-json-params */
+    export interface ModifyCurrent extends Modify {
+      /** sets the user's request to speak */
+      request_to_speak_timestamp?: timestamp
+    }
+
+    /** https://discord.com/developers/docs/resources/guild#modify-user-voice-state-json-params */
+    export interface Modify {
+      /** the id of the channel the user is currently in */
+      channel_id: snowflake
+      /** toggles the user's suppress state */
+      suppress?: boolean
+    }
+  }
+}
+
 /** https://discord.com/developers/docs/resources/voice#voice-region-object-voice-region-structure */
 export interface VoiceRegion {
   /** unique ID for the region */
@@ -67,13 +85,40 @@ declare module './gateway' {
 
 declare module './internal' {
   interface Internal {
-    /** https://discord.com/developers/docs/resources/voice#list-voice-regions */
+    /**
+     * Returns an array of voice region objects that can be used when setting a voice or stage channel's rtc_region.
+     * @see https://discord.com/developers/docs/resources/voice#list-voice-regions
+     */
     listVoiceRegions(): Promise<VoiceRegion[]>
+    /**
+     * Returns a list of voice region objects for the guild. Unlike the similar /voice route, this returns VIP servers when the guild is VIP-enabled.
+     * @see https://discord.com/developers/docs/resources/guild#get-guild-voice-regions
+     */
+    getGuildVoiceRegions(guild_id: snowflake): Promise<VoiceRegion[]>
+    /**
+     * Updates the current user's voice state.
+     * @see https://discord.com/developers/docs/resources/guild#modify-current-user-voice-state
+     */
+    modifyCurrentUserVoiceState(guild_id: snowflake, params: VoiceState.Params.ModifyCurrent): Promise<VoiceState>
+    /**
+     * Updates another user's voice state.
+     * @see https://discord.com/developers/docs/resources/guild#modify-user-voice-state
+     */
+    modifyUserVoiceState(guild_id: snowflake, user_id: snowflake, params: VoiceState.Params.Modify): Promise<VoiceState>
   }
 }
 
 Internal.define({
   '/voice/regions': {
     GET: 'listVoiceRegions',
+  },
+  '/guilds/{guild.id}/regions': {
+    GET: 'getGuildVoiceRegions',
+  },
+  '/guilds/{guild.id}/voice-states/@me': {
+    PATCH: 'modifyCurrentUserVoiceState',
+  },
+  '/guilds/{guild.id}/voice-states/{user.id}': {
+    PATCH: 'modifyUserVoiceState',
   },
 })

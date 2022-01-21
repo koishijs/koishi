@@ -36,9 +36,7 @@ export class HttpServer extends Adapter<BotConfig, AdapterConfig> {
       return http.post('/' + action, params)
     }
 
-    Object.assign(bot, await bot.getSelf())
-    logger.info('connected to %c', http.config.endpoint)
-    bot.resolve()
+    return bot.initialize()
   }
 
   async start() {

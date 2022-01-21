@@ -29,18 +29,20 @@ export namespace Sender {
 }
 
 export class Sender {
+  private results: string[] = []
   private errors: Error[] = []
 
   private constructor(private bot: DiscordBot, private url: string) {}
 
   static from(bot: DiscordBot, url: string) {
-    return new Sender(bot, url).sendMessage
+    const sender = new Sender(bot, url)
+    return sender.sendMessage.bind(sender)
   }
 
   async post(data?: any, headers?: any) {
     try {
       const result = await this.bot.http.post(this.url, data, { headers })
-      return result.id as string
+      this.results.push(result.id)
     } catch (e) {
       this.errors.push(e)
     }
@@ -69,7 +71,7 @@ export class Sender {
 
     if (data.url.startsWith('file://')) {
       const filename = basename(data.url.slice(7))
-      return this.sendEmbed(readFileSync(data.url.slice(7)), addition, data.file || filename)
+      return await this.sendEmbed(readFileSync(data.url.slice(7)), addition, data.file || filename)
     } else if (data.url.startsWith('base64://')) {
       const a = Buffer.from(data.url.slice(9), 'base64')
       return await this.sendEmbed(a, addition, data.file)
@@ -110,16 +112,15 @@ export class Sender {
     }, sendDownload)
   }
 
-  sendMessage = async (content: string, addition: Dict = {}) => {
+  async sendMessage(content: string, addition: Dict = {}) {
     const chain = segment.parse(content)
-    let messageId = '0'
     let textBuffer = ''
     delete addition.content
 
     const sendBuffer = async () => {
       const content = textBuffer.trim()
       if (!content) return
-      messageId = await this.post({ ...addition, content })
+      await this.post({ ...addition, content })
       textBuffer = ''
     }
 
@@ -138,14 +139,14 @@ export class Sender {
       } else if (type === 'face' && data.name && data.id) {
         textBuffer += `<:${data.name}:${data.id}>`
       } else if ((type === 'image' || type === 'video') && data.url) {
-        messageId = await this.sendAsset(type, data, {
+        await this.sendAsset(type, data, {
           ...addition,
           content: textBuffer.trim(),
         })
         textBuffer = ''
       } else if (type === 'share') {
         await sendBuffer()
-        messageId = await this.post({
+        await this.post({
           ...addition,
           embeds: [{ ...data }],
         })
@@ -159,7 +160,7 @@ export class Sender {
     }
 
     await sendBuffer()
-    if (!this.errors.length) return messageId
+    if (!this.errors.length) return this.results
 
     throw new AggregateError(this.errors)
   }

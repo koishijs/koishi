@@ -29,7 +29,7 @@ function supports(command: string, args: string[] = []) {
   })
 }
 
-export class MarketProvider extends DataSource<Dict<MarketProvider.Data>> {
+class MarketProvider extends DataSource<Dict<MarketProvider.Data>> {
   dataCache: Dict<MarketProvider.Data> = {}
   callbacks: ((data: MarketProvider.Data[]) => void)[] = []
   flushData: throttle<() => void>
@@ -158,7 +158,7 @@ export class MarketProvider extends DataSource<Dict<MarketProvider.Data>> {
   }
 }
 
-export namespace MarketProvider {
+namespace MarketProvider {
   export interface Config {
     endpoint?: string
   }
@@ -175,3 +175,5 @@ export namespace MarketProvider {
     score: number
   }
 }
+
+export default MarketProvider

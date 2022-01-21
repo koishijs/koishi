@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-cache-redis",
   "description": "Redis cache support for Koishi",
-  "version": "1.0.0-rc.0",
+  "version": "1.0.0-rc.1",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -35,10 +35,10 @@
     "lru"
   ],
   "peerDependencies": {
-    "koishi": "^4.0.0-rc.2"
+    "koishi": "^4.0.1"
   },
   "dependencies": {
     "generic-pool": "^3.8.2",
-    "redis": "^4.0.0-rc.4"
+    "redis": "^4.0.2"
   }
 }

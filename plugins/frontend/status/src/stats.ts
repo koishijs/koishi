@@ -102,7 +102,7 @@ export class StatisticsProvider extends DataSource<StatisticsProvider.Payload> {
       await this.upload(true)
     })
 
-    ctx.before('command', ({ command, session }) => {
+    ctx.before('command/execute', ({ command, session }) => {
       if (command.parent?.name !== 'test') {
         const [name] = command.name.split('.', 1)
         this.addDaily('command', name)
@@ -149,6 +149,7 @@ export class StatisticsProvider extends DataSource<StatisticsProvider.Payload> {
   }
 
   private async _uploadDaily(date: Date) {
+    if (!Object.values(this.daily).some(data => Object.keys(data).length)) return
     const time = new Date(date)
     time.setHours(0, 0, 0, 0)
     await this.ctx.database.upsert('stats_daily', [{
@@ -163,6 +164,7 @@ export class StatisticsProvider extends DataSource<StatisticsProvider.Payload> {
   }
 
   private async _uploadHourly(date: Date) {
+    if (!Object.values(this.hourly).some(value => value)) return
     const time = new Date(date)
     time.setMinutes(0, 0, 0)
     await this.ctx.database.upsert('stats_hourly', [{
@@ -172,6 +174,7 @@ export class StatisticsProvider extends DataSource<StatisticsProvider.Payload> {
   }
 
   private async _uploadLongterm(date: Date) {
+    if (!Object.values(this.longterm).some(value => value)) return
     const time = new Date(date)
     time.setHours(0, 0, 0, 0)
     await this.ctx.database.upsert('stats_longterm', [{
@@ -182,8 +185,9 @@ export class StatisticsProvider extends DataSource<StatisticsProvider.Payload> {
 
   private async _uploadGuilds(date: Date) {
     // FIXME should be guilds
+    if (!Object.values(this.guilds).some(data => Object.keys(data).length)) return
+    const $ = 'activity.' + Time.getDateNumber(date)
     await this.ctx.database.upsert('channel', Object.entries(this.guilds).flatMap(([platform, record]) => {
-      const $ = 'activity.' + Time.getDateNumber(date)
       return Object.entries(record).map(([id, value]) => ({
         id,
         platform,

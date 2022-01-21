@@ -17,14 +17,14 @@ export class QQGuildBot extends Bot<BotConfig> {
   }
 
   async getSelf() {
-    const u = adaptUser(await this.$innerBot.me)
-    renameProperty(u, 'selfId' as never, 'userId')
-    return u
+    const user = adaptUser(await this.$innerBot.me)
+    renameProperty(user, 'selfId' as never, 'userId')
+    return user
   }
 
-  async sendMessage(channelId: string, content: string, guildId?: string): Promise<string> {
+  async sendMessage(channelId: string, content: string, guildId?: string) {
     const resp = await this.$innerBot.send.channel(channelId, content)
-    return resp.id
+    return [resp.id]
   }
 
   async getGuildList() {

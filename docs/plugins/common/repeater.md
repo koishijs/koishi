@@ -2,7 +2,7 @@
 sidebarDepth: 2
 ---
 
-# 配置复读机
+# 复读机 (Repeater)
 
 复读功能一直是很多机器人的传统艺能，但是 Koishi 敢说自己能做得更多。利用内置的复读插件，你的机器人不仅可以实现概率复读，还可以概率打断，甚至可以检测他人重复复读或打断复读的行为并做出回应。让我们开始吧！
 
@@ -13,7 +13,7 @@ sidebarDepth: 2
 ```js koishi.config.js
 module.exports = {
   plugins: {
-    common: {
+    repeater: {
       onRepeat: {
         minTimes: 3,
         probability: 0.5,
@@ -44,7 +44,7 @@ module.exports = {
 ```js koishi.config.js
 module.exports = {
   plugins: {
-    common: {
+    repeater: {
       onRepeat: (state) =>
         state.times >= 2 &&
         state.content === "这机器人又开始复读了" &&
@@ -67,7 +67,7 @@ module.exports = {
 ```js koishi.config.js
 module.exports = {
   plugins: {
-    common: {
+    repeater: {
       onRepeat: (state) =>
         state.users[session.userId] > 1 &&
         segment.at(session.userId) + "不许重复复读！"
@@ -92,7 +92,7 @@ module.exports = {
 ```js koishi.config.js
 module.exports = {
   plugins: {
-    common: {
+    repeater: {
       onRepeat:{
         minTimes: 2
       },

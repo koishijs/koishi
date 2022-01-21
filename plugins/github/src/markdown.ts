@@ -1,5 +1,5 @@
 import { segment } from 'koishi'
-import marked, { Token, lexer } from 'marked'
+import { marked } from 'marked'
 
 declare module 'marked' {
   namespace Tokens {
@@ -13,7 +13,7 @@ declare module 'marked' {
   }
 }
 
-function renderToken(token: Token) {
+function renderToken(token: marked.Token) {
   if (token.type === 'code') {
     return token.text + '\n'
   } else if (token.type === 'paragraph') {
@@ -26,11 +26,11 @@ function renderToken(token: Token) {
   return token.raw
 }
 
-function render(tokens: Token[]) {
+function render(tokens: marked.Token[]) {
   return tokens.map(renderToken).join('')
 }
 
 export function transform(source: string) {
   source = source.replace(/^<!--(.*)-->$/gm, '')
-  return render(lexer(source)).trim().replace(/\n\s*\n/g, '\n')
+  return render(marked.lexer(source)).trim().replace(/\n\s*\n/g, '\n')
 }

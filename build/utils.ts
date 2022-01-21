@@ -17,9 +17,11 @@ export function getWorkspaces() {
 const categories = [
   'packages',
   'plugins',
+  'plugins/a11y',
   'plugins/adapter',
   'plugins/assets',
   'plugins/cache',
+  'plugins/common',
   'plugins/database',
   'plugins/frontend',
   'community',

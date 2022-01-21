@@ -100,13 +100,14 @@ function registerPrefix(ctx: Context, prefix: string) {
   const teachRegExp = new RegExp(`^${p}(${l}?)((${g}(?:,${g})*)?|${l}?)$`)
   //                                   $1     $2
 
-  ctx.on('parse', (argv, session) => {
+  ctx.before('parse', (content, session) => {
+    const argv = Argv.parse(content)
     if (argv.root && session.quote || !argv.tokens.length) return
-    let { content } = argv.tokens[0]
+    let { content: prefix } = argv.tokens[0]
     if (argv.root && session.parsed.prefix) {
-      content = session.parsed.prefix + content
+      prefix = session.parsed.prefix + prefix
     }
-    const capture = teachRegExp.exec(content)
+    const capture = teachRegExp.exec(prefix)
     if (!capture) return
 
     argv.tokens.shift()
@@ -116,7 +117,8 @@ function registerPrefix(ctx: Context, prefix: string) {
     const { length } = argv.tokens
     if (capture[1] === last) {
       if (!argv.tokens.length) {
-        return 'teach.status'
+        argv.name = 'teach.status'
+        return argv
       }
       argv.options['search'] = true
       if (capture[2] === last) {
@@ -131,7 +133,8 @@ function registerPrefix(ctx: Context, prefix: string) {
       argv.options['target'] = capture[2]
     }
 
-    return 'teach'
+    argv.name = 'teach'
+    return argv
   })
 }
 

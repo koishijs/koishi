@@ -1,6 +1,6 @@
 import { App } from 'koishi'
 import { join } from 'path'
-import tests from '@koishijs/test-utils'
+import tests from '@koishijs/database-tests'
 import mock from '@koishijs/plugin-mock'
 import sqlite from '@koishijs/plugin-database-sqlite'
 

@@ -13,7 +13,6 @@
 
 import { ref, computed } from 'vue'
 import { store, send } from '~/client'
-import { KSchema } from '../components'
 import type { Schema } from 'koishi'
 
 const config = ref({})

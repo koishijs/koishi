@@ -13,13 +13,17 @@ export default class ConfigWriter extends Service {
   constructor(ctx: Context) {
     super(ctx, 'configWriter')
     this.loader = ctx.app.loader
-    this.config = ctx.app.options
-    this.allowWrite = this.config.allowWrite && ['.yml', '.yaml'].includes(this.loader.extname)
+    this.config = this.loader.config
+    this.allowWrite = ['.yml', '.yaml'].includes(this.loader.extname)
   }
 
   writeConfig() {
     if (!this.allowWrite) return
+    // prevent hot reload when it's being written
+    const fileWatcher = this.ctx.fileWatcher
+    fileWatcher && (fileWatcher.suspend = true)
     writeFileSync(this.loader.filename, dump(this.config))
+    fileWatcher && (fileWatcher.suspend = false)
   }
 
   async loadPlugin(name: string, config: any) {
@@ -30,7 +34,7 @@ export default class ConfigWriter extends Service {
   }
 
   async unloadPlugin(name: string) {
-    const plugin = this.loader.cache[name]
+    const plugin = this.loader.resolvePlugin(name)
     await this.ctx.dispose(plugin)
     this.config.plugins['~' + name] = this.config.plugins[name]
     delete this.config.plugins[name]
@@ -38,7 +42,7 @@ export default class ConfigWriter extends Service {
   }
 
   async reloadPlugin(name: string, config: any) {
-    const plugin = this.loader.cache[name]
+    const plugin = this.loader.resolvePlugin(name)
     const state = this.ctx.app.registry.get(plugin)
     await this.ctx.dispose(plugin)
     state.context.plugin(plugin, config)

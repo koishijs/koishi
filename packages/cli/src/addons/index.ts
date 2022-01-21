@@ -1,5 +1,6 @@
 import { App, Context } from 'koishi'
 import * as daemon from './daemon'
+import * as logger from './logger'
 import FileWatcher, { WatchConfig } from './watcher'
 import ConfigWriter from './writer'
 
@@ -11,9 +12,13 @@ declare module 'koishi' {
     }
   }
 
+  interface App {
+    _prolog: string[]
+  }
+
   namespace App {
     interface Config extends daemon.Config {
-      allowWrite?: boolean
+      logger?: logger.Config
       watch?: WatchConfig
     }
   }
@@ -21,13 +26,18 @@ declare module 'koishi' {
 
 export const name = 'CLI'
 
+export function prepare(config: App.Config) {
+  logger.prepare(config.logger)
+}
+
 export function apply(ctx: Context, config: App.Config) {
+  ctx.plugin(logger)
   ctx.plugin(daemon, config)
-  ctx.plugin(ConfigWriter)
 
   if (process.env.KOISHI_WATCH_ROOT !== undefined) {
     (config.watch ??= {}).root = process.env.KOISHI_WATCH_ROOT
   }
 
+  if (ctx.app.loader.enableWriter) ctx.plugin(ConfigWriter)
   if (config.watch) ctx.plugin(FileWatcher, config.watch)
 }

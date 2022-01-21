@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-adapter-kaiheila",
   "description": "Kaiheila adapter for Koishi",
-  "version": "2.0.0-rc.0",
+  "version": "2.0.0",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -24,14 +24,14 @@
     "koishi"
   ],
   "peerDependencies": {
-    "koishi": "^4.0.0-rc.2"
+    "koishi": "^4.0.1"
   },
   "devDependencies": {
-    "@koishijs/plugin-mock": "^1.0.0-rc.0"
+    "@koishijs/plugin-mock": "^1.0.0"
   },
   "dependencies": {
-    "axios": "^0.21.4",
+    "axios": "^0.24.0",
     "form-data": "^4.0.0",
-    "ws": "^8.2.1"
+    "ws": "^8.4.2"
   }
 }

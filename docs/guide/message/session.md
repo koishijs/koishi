@@ -142,11 +142,11 @@ export default {
 await session.send('请输入用户名：')
 
 const name = await session.prompt()
-if (!name) return session.send('输入超时。')
+if (!name) return '输入超时。'
 
 // 执行后续操作
 await ctx.database.setUser(session.platform, session.userId, { name })
-return session.send(`${name}，请多指教！`)
+return `${name}，请多指教！`
 ```
 
 你可以给这个方法传入一个 `timeout` 参数，或使用 `delay.prompt` 配置项，来作为等待的时间。

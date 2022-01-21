@@ -1,15 +1,30 @@
-import { Adapter, App, Context, Dict, omit, pick, Plugin, Schema } from 'koishi'
+import { Adapter, App, Context, Dict, omit, pick, Plugin, remove, Schema } from 'koishi'
 import { DataSource } from '@koishijs/plugin-console'
-import { readdir, readFile } from 'fs/promises'
+import { promises as fsp } from 'fs'
 import { dirname } from 'path'
 import { Package } from './utils'
 import {} from '@koishijs/cli'
+
+const { readdir, readFile } = fsp
 
 function unwrap(module: any) {
   return module.default || module
 }
 
-export class PackageProvider extends DataSource<Dict<PackageProvider.Data>> {
+/** require without affecting the dependency tree */
+function getExports(id: string) {
+  const path = require.resolve(id)
+  let result = require.cache[path]
+  if (!result) {
+    require(path)
+    result = require.cache[path]
+    remove(module.children, result)
+    delete require.cache[path]
+  }
+  return unwrap(result.exports)
+}
+
+class PackageProvider extends DataSource<Dict<PackageProvider.Data>> {
   cache: Dict<Promise<PackageProvider.Data>> = {}
   task: Promise<void>
 
@@ -18,6 +33,8 @@ export class PackageProvider extends DataSource<Dict<PackageProvider.Data>> {
   }
 
   start() {
+    this.task = this.prepare()
+
     this.ctx.on('plugin-added', async (plugin) => {
       const state = this.ctx.app.registry.get(plugin)
       this.updatePackage(plugin, state.id)
@@ -32,7 +49,7 @@ export class PackageProvider extends DataSource<Dict<PackageProvider.Data>> {
     const entry = Object.keys(require.cache).find((key) => {
       return unwrap(require.cache[key].exports) === plugin
     })
-    if (!entry) return
+    if (!this.cache[entry]) return
     const local = await this.cache[entry]
     local.id = id
     this.broadcast()
@@ -41,34 +58,17 @@ export class PackageProvider extends DataSource<Dict<PackageProvider.Data>> {
   async prepare() {
     // load local packages
     let { baseDir } = this.ctx.app
+    const tasks: Promise<void>[] = []
     while (1) {
-      const base = baseDir + '/node_modules'
-      const files = await readdir(base).catch(() => [])
-      for (const name of files) {
-        const base2 = base + '/' + name
-        if (name.startsWith('@')) {
-          const files = await readdir(base2).catch(() => [])
-          for (const name2 of files) {
-            if (name === '@koishijs' && name2.startsWith('plugin-') || name2.startsWith('koishi-plugin-')) {
-              this.loadPackage(base2 + '/' + name2)
-            }
-          }
-        } else {
-          if (name.startsWith('koishi-plugin-')) {
-            this.loadPackage(base2)
-          }
-        }
-      }
+      tasks.push(this.loadDirectory(baseDir))
       const parent = dirname(baseDir)
       if (baseDir === parent) break
       baseDir = parent
     }
+    await Promise.all(tasks)
   }
 
-  async get(forced = false) {
-    if (forced || !this.task) {
-      this.task = this.prepare()
-    }
+  async get() {
     await this.task
 
     // add app config
@@ -83,21 +83,43 @@ export class PackageProvider extends DataSource<Dict<PackageProvider.Data>> {
     return Object.fromEntries(packages.filter(x => x).map(data => [data.name, data]))
   }
 
-  private loadPackage(path: string) {
-    this.cache[require.resolve(path)] = this.parsePackage(path)
+  private async loadDirectory(baseDir: string) {
+    const base = baseDir + '/node_modules'
+    const files = await readdir(base).catch(() => [])
+    for (const name of files) {
+      const base2 = base + '/' + name
+      if (name.startsWith('@')) {
+        const files = await readdir(base2).catch(() => [])
+        for (const name2 of files) {
+          if (name === '@koishijs' && name2.startsWith('plugin-') || name2.startsWith('koishi-plugin-')) {
+            this.loadPackage(name + '/' + name2, base2 + '/' + name2)
+          }
+        }
+      } else {
+        if (name.startsWith('koishi-plugin-')) {
+          this.loadPackage(name, base2)
+        }
+      }
+    }
   }
 
-  private async parsePackage(path: string) {
+  private loadPackage(name: string, path: string) {
+    // require.resolve(name) may be different from require.resolve(path)
+    // because tsconfig-paths may resolve the path differently
+    this.cache[require.resolve(name)] = this.parsePackage(name, path)
+  }
+
+  private async parsePackage(name: string, path: string) {
     const data: Package.Local = JSON.parse(await readFile(path + '/package.json', 'utf8'))
     const result = pick(data, ['name', 'version', 'description']) as PackageProvider.Data
 
     // workspace packages are followed by symlinks
-    result.workspace = !require.resolve(path).includes('node_modules')
+    result.workspace = !require.resolve(name).includes('node_modules')
     result.shortname = data.name.replace(/(koishi-|^@koishijs\/)plugin-/, '')
 
     // check adapter
     const oldLength = Object.keys(Adapter.library).length
-    const exports = unwrap(require(path))
+    const exports = getExports(name)
     const newLength = Object.keys(Adapter.library).length
     if (newLength > oldLength) this.ctx.console.services.protocols.broadcast()
 
@@ -120,7 +142,7 @@ export class PackageProvider extends DataSource<Dict<PackageProvider.Data>> {
   }
 }
 
-export namespace PackageProvider {
+namespace PackageProvider {
   export interface Config {}
 
   export interface Data extends Partial<Package.Base> {
@@ -134,3 +156,5 @@ export namespace PackageProvider {
     workspace?: boolean
   }
 }
+
+export default PackageProvider

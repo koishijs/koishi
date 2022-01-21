@@ -55,7 +55,7 @@ class MyBot extends Bot {
   async sendMessage(channelId, content) {
     // 这里应该执行发送操作
     this.logger.debug('send:', content)
-    return Random.uuid()
+    return []
   }
 }
 
@@ -84,7 +84,7 @@ class MyBot extends Bot {
   async sendMessage(channelId: string, content: string) {
     // 这里应该执行发送操作
     this.logger.debug('send:', content)
-    return Random.uuid()
+    return []
   }
 }
 

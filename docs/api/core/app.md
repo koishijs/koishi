@@ -42,7 +42,7 @@ sidebarDepth: 2
 ```js
 // 所有配置项的单位均为毫秒
 interface DelayOptions {
-  // 调用 session.sendQueued() 是消息间发送的最小延迟，按前一条消息的字数计算，默认值为 0
+  // 调用 session.sendQueued() 时消息间发送的最小延迟，按前一条消息的字数计算，默认值为 0
   character?: number
   // 调用 session.sendQueued() 时消息间发送的最小延迟，按固定值计算，默认值为 100
   message?: number
@@ -94,7 +94,7 @@ Koishi 服务暴露在公网的地址。部分功能（例如 [adapter-telegram]
 
 用于模糊匹配的相似系数，应该是一个 0 到 1 之间的数值。数值越高，模糊匹配越严格。设置为 1 可以完全禁用模糊匹配。参见 [模糊匹配](../../guide/command.md#模糊匹配) 一节。
 
-### options.proxyAgent
+### options.request.proxyAgent
 
 - 类型: `string`
 
@@ -156,11 +156,9 @@ interface Selection {
 
 - 类型：[`WatchOptions`](https://github.com/paulmillr/chokidar#api) 外加下面的属性：
   - **watch.root:** `string` 要监听的根目录，相对于工作路径
-  - **watch.fullReload:** `boolean` 当检测到非插件变更时，是否重载整个应用
+  - **watch.debounce:** `number` 延迟触发更新的等待时间，默认为 `100`
 
 监听文件变化的选项。参见 [插件热重载](../../guide/cli.md#插件热重载) 一节。
-
-### options.allowWrite
 
 ### options.timezoneOffset
 

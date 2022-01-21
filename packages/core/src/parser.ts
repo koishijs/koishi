@@ -115,7 +115,7 @@ export namespace Argv {
 
     stringify(argv: Argv) {
       const output = argv.tokens.reduce((prev, token) => {
-        if (token.quoted) prev += leftQuotes[rightQuotes.indexOf(token.terminator[0])]
+        if (token.quoted) prev += leftQuotes[rightQuotes.indexOf(token.terminator[0])] || ''
         return prev + token.content + token.terminator
       }, '')
       if (argv.rest && !rightQuotes.includes(output[output.length - 1]) || argv.initiator) {

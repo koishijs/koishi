@@ -1,0 +1,42 @@
+{
+  "name": "@koishijs/plugin-logs",
+  "description": "Dump log files for Koishi",
+  "version": "1.0.0",
+  "main": "lib/index.js",
+  "typings": "lib/index.d.ts",
+  "files": [
+    "lib",
+    "dist"
+  ],
+  "author": "Shigma <shigma10826@gmail.com>",
+  "license": "MIT",
+  "scripts": {
+    "lint": "eslint src --ext .ts"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/koishijs/koishi.git"
+  },
+  "bugs": {
+    "url": "https://github.com/koishijs/koishi/issues"
+  },
+  "homepage": "https://koishi.js.org/plugins/logs/",
+  "keywords": [
+    "bot",
+    "qqbot",
+    "cqhttp",
+    "coolq",
+    "chatbot",
+    "koishi",
+    "plugin",
+    "logs"
+  ],
+  "peerDependencies": {
+    "@koishijs/plugin-console": "^1.0.0",
+    "koishi": "^4.0.1"
+  },
+  "devDependencies": {
+    "@koishijs/cli": "^4.0.1",
+    "ansi_up": "^5.1.0"
+  }
+}

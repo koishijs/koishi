@@ -80,7 +80,7 @@ Koishi 完全基于 TypeScript 开发，拥有顶级的类型支持，丰富的�
 
 ## 官方插件
 
-### 平台支持
+### 适配器支持
 
 - [adapter-discord](https://koishi.js.org/plugins/adapter/discord.html): [Discord](https://discord.com/) 平台支持
 - [adapter-kaiheila](https://koishi.js.org/plugins/adapter/kaiheila.html): [开黑啦](https://kaiheila.cn/) 平台支持
@@ -95,38 +95,49 @@ Koishi 完全基于 TypeScript 开发，拥有顶级的类型支持，丰富的�
 - [assets-remote](https://koishi.js.org/plugins/assets/remote.html): 使用远程 Koishi 服务器存储静态资源
 - [assets-s3](https://koishi.js.org/plugins/assets/s3.html): 使用 S3 存储静态资源
 
-### 缓存支持
-
-- [cache-lru](https://koishi.js.org/plugins/cache/lru.html): LRU 缓存支持
-- [cache-redis](https://koishi.js.org/plugins/cache/redis.html): Redis 缓存支持
-
 ### 数据库支持
 
+- [database-level](https://koishi.js.org/plugins/database/level.html): LevelDB 数据库支持
 - [database-memory](https://koishi.js.org/plugins/database/memory.html): 测试用的内存数据库支持
 - [database-mongo](https://koishi.js.org/plugins/database/mongo.html): MongoDB 数据库支持
 - [database-mysql](https://koishi.js.org/plugins/database/mysql.html): MySQL 数据库支持
 - [database-sqlite](https://koishi.js.org/plugins/database/sqlite.html): SQLite 数据库支持
 
+## 常用功能
+
+- [broadcast](https://koishi.js.org/plugins/common/broadcast.html)：发送广播
+- [echo](https://koishi.js.org/plugins/common/echo.html)：发送消息
+- [feedback](https://koishi.js.org/plugins/common/feedback.html)：发送反馈
+- [forward](https://koishi.js.org/plugins/common/forward.html)：转发消息
+- [recall](https://koishi.js.org/plugins/common/recall.html)：撤回消息
+- [repeater](https://koishi.js.org/plugins/common/repeater.html)：复读机
+- [respondent](https://koishi.js.org/plugins/common/respondent.html)：快捷回复
+
+## 辅助功能
+
+- [admin](https://koishi.js.org/plugins/accessibility/admin.html)：数据管理
+- [bind](https://koishi.js.org/plugins/accessibility/bind.html)：账号绑定
+- [callme](https://koishi.js.org/plugins/accessibility/callme.html)：设置昵称
+- [rate-limit](https://koishi.js.org/plugins/accessibility/rate-limit.html)：速率控制
+- [schedule](https://koishi.js.org/plugins/accessibility//schedule.html)：计划任务
+- [sudo](https://koishi.js.org/plugins/accessibility/sudo.html)：模拟调用
+- [verifier](https://koishi.js.org/plugins/accessibility/verifier.html)：处理申请
+
 ### 网页控制台
 
-- [chat](https://koishi.js.org/plugins/console/chat.html): 使用机器人账号聊天
+- [chat](https://koishi.js.org/plugins/console/chat.html): 聊天工具
 - [console](https://koishi.js.org/plugins/console/): 网页控制台
-- [manager](https://koishi.js.org/plugins/console/manager.html): 管理插件和机器人
-- [status](https://koishi.js.org/plugins/console/status.html): 查看运行状态和统计数据
+- [commands](https://koishi.js.org/plugins/console/commands.html): 指令管理
+- [manager](https://koishi.js.org/plugins/console/manager.html): 插件管理
+- [status](https://koishi.js.org/plugins/console/status.html): 运行状态
 
 ### 其他官方插件
 
-- [admin](https://koishi.js.org/plugins/admin.html): 操作用户数据和频道数据
-- [common](https://koishi.js.org/plugins/common.html): 常用指令合集
-- [eval](https://koishi.js.org/plugins/eval.html): 对话机器人执行脚本
-- [forward](https://koishi.js.org/plugins/forward.html): 转发消息到其他频道
+- [eval](https://koishi.js.org/plugins/eval/): 对话机器人执行脚本
 - [github](https://koishi.js.org/plugins/github.html): GitHub 相关功能
 - [mock](https://koishi.js.org/plugins/mock.html): 模拟消息、会话、网络请求
 - [puppeteer](https://koishi.js.org/plugins/puppeteer.html): 网页截图和图片渲染
-- [repeater](https://koishi.js.org/plugins/repeater.html): 复读机相关功能
-- [schedule](https://koishi.js.org/plugins/schedule.html): 设置和执行计划任务
-- [teach](https://koishi.js.org/plugins/teach.html): 教学问答系统
-- [verifier](https://koishi.js.org/plugins/verifier.html): 处理好友和群组请求
+- [teach](https://koishi.js.org/plugins/teach/): 教学问答系统
 
 ## 应用案例
 
@@ -141,7 +152,10 @@ Koishi 完全基于 TypeScript 开发，拥有顶级的类型支持，丰富的�
 | [adapter-minecraft](https://github.com/koishijs/koishi-plugin-adapter-minecraft) | Minecraft 适配器 |
 | [assets-smms](https://github.com/koishijs/koishi-plugin-assets-smms) | 使用 sm.ms 存储静态资源文件 |
 | [chess](https://github.com/koishijs/koishi-plugin-chess) | 棋类游戏 |
+| [crazy-thursday](https://github.com/koishijs/koishi-plugin-crazy-thursday) | 输出 KFC 疯狂星期四段子 |
 | [dice](https://github.com/koishijs/koishi-plugin-dice) | 掷骰 |
+| [eval-react-jsx](https://github.com/koishijs/koishi-plugin-eval-react-jsx) | 在 Eval 环境支持 React JSX |
+| [gocqhttp](https://github.com/koishijs/koishi-plugin-gocqhttp) | [gocqhttp](https://github.com/Mrs4s/go-cqhttp) 启动器 |
 | [image-search](https://github.com/koishijs/koishi-plugin-image-search) | 图源搜索 |
 | [pics](https://github.com/koishijs/koishi-plugin-pics) | 随机图片 |
 | [rss](https://github.com/koishijs/koishi-plugin-rss) | RSS 订阅 |

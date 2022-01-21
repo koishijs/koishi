@@ -2,7 +2,7 @@ import { camelize, capitalize, Context, Dict, Plugin } from 'koishi'
 import { debounce } from 'throttle-debounce'
 import { DataSource } from '@koishijs/plugin-console'
 
-export class RegistryProvider extends DataSource<Dict<PluginData>> {
+export default class RegistryProvider extends DataSource<Dict<PluginData>> {
   cached: Dict<PluginData>
   promise: Promise<void>
   update = debounce(0, () => this.broadcast())

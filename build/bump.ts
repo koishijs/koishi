@@ -99,9 +99,11 @@ const packages: Record<string, Package> = {}
 function getPackage(name: string) {
   return packages[`packages/${name}`]
     || packages[`plugins/${name}`]
+    || packages[`plugins/a11y/${name}`]
     || packages[`plugins/adapter/${name}`]
     || packages[`plugins/assets/${name}`]
     || packages[`plugins/cache/${name}`]
+    || packages[`plugins/common/${name}`]
     || packages[`plugins/database/${name}`]
     || packages[`plugins/frontend/${name}`]
     || packages[`plugins/${name}`]

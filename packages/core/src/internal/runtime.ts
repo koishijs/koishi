@@ -51,18 +51,6 @@ export default function runtime(ctx: Context) {
     }
   })
 
-  ctx.on('parse', (argv, session) => {
-    const { parsed, subtype } = session
-    // guild message should have prefix or appel to be interpreted as a command call
-    if (argv.root && subtype !== 'private' && parsed.prefix === null && !parsed.appel) return
-    if (!argv.tokens.length) return
-    const cmd = ctx.app._commands.resolve(argv.tokens[0].content)
-    if (cmd) {
-      argv.tokens.shift()
-      return cmd.name
-    }
-  })
-
   ctx.before('attach', (session) => {
     defineProperty(session, 'argv', ctx.bail('before-parse', session.parsed.content, session))
     session.argv.root = true
