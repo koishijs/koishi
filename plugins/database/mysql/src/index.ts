@@ -160,15 +160,6 @@ class MysqlDatabase extends Database {
     const unique = [...table.unique]
     const result: string[] = []
 
-    // create platform rows
-    if (name === 'user') {
-      const platforms = new Set<string>(this.ctx.bots.map(bot => bot.platform))
-      for (const name of platforms) {
-        fields[name] = { type: 'string', length: 63 }
-        unique.push(name)
-      }
-    }
-
     // orm definitions
     for (const key in fields) {
       if (columns.includes(key)) continue

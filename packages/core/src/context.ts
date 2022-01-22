@@ -655,7 +655,7 @@ export interface EventMap {
   'dispose'(): Awaitable<void>
   'model'(name: keyof Tables): void
   'service'(name: keyof Context.Services): void
-  'adapter'(): void
+  'adapter'(name: string): void
   'bot-added'(bot: Bot): void
   'bot-removed'(bot: Bot): void
   'bot-status-updated'(bot: Bot): void
