@@ -78,7 +78,7 @@ export function prepare(config: Config = {}) {
 
 export function apply(app: App) {
   app._prolog = prolog
-  app.once('ready', () => {
+  app.on('ready', () => {
     remove(Logger.targets, target)
   })
 }

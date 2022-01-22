@@ -1,4 +1,4 @@
-import { Logger, sleep, Dict } from '@koishijs/utils'
+import { Logger, sleep } from '@koishijs/utils'
 import { Adapter } from './adapter'
 import { App } from './app'
 import { Session } from './session'

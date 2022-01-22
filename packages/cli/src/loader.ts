@@ -82,7 +82,11 @@ export class Loader {
   writeConfig() {
     // prevent hot reload when it's being written
     if (this.app.watcher) this.app.watcher.suspend = true
-    writeFileSync(this.filename, dump(this.config))
+    if (this.extname === '.json') {
+      writeFileSync(this.filename, JSON.stringify(this.config, null, 2))
+    } else {
+      writeFileSync(this.filename, dump(this.config))
+    }
   }
 
   createApp() {

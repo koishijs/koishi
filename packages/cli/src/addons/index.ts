@@ -20,6 +20,8 @@ declare module 'koishi' {
 
 export const name = 'CLI'
 
+Context.service('loader')
+
 export function prepare(config: App.Config) {
   logger.prepare(config.logger)
 }

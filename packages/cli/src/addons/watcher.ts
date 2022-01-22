@@ -41,7 +41,6 @@ class Watcher {
    */
   private accepted: Set<string>
 
-
   /**
    * files X that should not be reloaded
    *
@@ -55,6 +54,8 @@ class Watcher {
 
   constructor(private ctx: Context, private config: Watcher.Config) {
     ctx.app.watcher = this
+    ctx.on('ready', () => this.start())
+    ctx.on('dispose', () => this.stop())
   }
 
   private triggerFullReload() {
@@ -79,7 +80,7 @@ class Watcher {
         return
       }
 
-      logger.debug('change detected:', path)
+      logger.debug('change detected:', relative(this.root, path))
 
       const isEntry = path === this.ctx.loader.filename
       if (!require.cache[path] && !isEntry) return
