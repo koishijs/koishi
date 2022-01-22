@@ -40,6 +40,14 @@ receive('data', ({ key, value }) => {
   store[key] = value
 })
 
+receive('patch', ({ key, value }) => {
+  if (Array.isArray(store[key])) {
+    store[key].push(...value)
+  } else {
+    Object.assign(store[key], value)
+  }
+})
+
 receive('response', ({ id, value }) => {
   const callback = responseHooks[id]
   delete responseHooks[id]

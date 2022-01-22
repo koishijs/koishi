@@ -32,6 +32,7 @@ export abstract class DataSource<T = any> {
   protected abstract get(forced?: boolean): Promise<T>
 
   constructor(protected ctx: Context, protected name: keyof Sources) {
+    Context.service(`console.${name}`)
     ctx.console.services[name] = this as never
 
     sleep(0).then(() => {
@@ -40,11 +41,16 @@ export abstract class DataSource<T = any> {
     })
   }
 
-  async broadcast(value?: T) {
-    this.ctx.console.broadcast('data', {
-      key: this.name,
-      value: value || await this.get(true),
-    })
+  protected broadcast(type: string, value: any) {
+    this.ctx.console.broadcast(type, { key: this.name, value })
+  }
+
+  async refresh() {
+    this.broadcast('data', await this.get(true))
+  }
+
+  patch(value: T) {
+    this.broadcast('patch', value)
   }
 }
 
@@ -170,9 +176,9 @@ class Console extends Service {
   private onConnection = (socket: WebSocket) => {
     const channel = new SocketHandle(this, socket)
 
-    for (const name in this.ctx.app._services) {
+    for (const name of Context.Services) {
       if (!name.startsWith('console.')) continue
-      this.ctx[name].get().then((value) => {
+      this.ctx[name]?.['get']().then((value) => {
         const key = name.slice(8)
         socket.send(JSON.stringify({ type: 'data', body: { key, value } }))
       })

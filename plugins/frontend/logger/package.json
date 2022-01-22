@@ -1,5 +1,5 @@
 {
-  "name": "@koishijs/plugin-logs",
+  "name": "@koishijs/plugin-logger",
   "description": "Dump log files for Koishi",
   "version": "1.0.0",
   "main": "lib/index.js",
@@ -20,7 +20,7 @@
   "bugs": {
     "url": "https://github.com/koishijs/koishi/issues"
   },
-  "homepage": "https://koishi.js.org/plugins/logs/",
+  "homepage": "https://koishi.js.org/plugins/logger/",
   "keywords": [
     "bot",
     "qqbot",

@@ -3,8 +3,6 @@ import { store } from '~/client'
 import { Dict } from 'koishi'
 import { computed } from 'vue'
 
-type Bound = [number, number][]
-
 export interface Node extends PluginData {
   id: string
   col?: number

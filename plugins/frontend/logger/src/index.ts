@@ -13,8 +13,6 @@ declare module '@koishijs/plugin-console' {
   }
 }
 
-Context.service('console.logs')
-
 class LogProvider extends DataSource<string[]> {
   static using = ['console'] as const
 
@@ -93,7 +91,7 @@ class LogProvider extends DataSource<string[]> {
       this.createFile()
     }
     this.writer.write(text)
-    this.ctx.console.broadcast('logs/data', text)
+    this.patch([text])
   }
 
   async get() {

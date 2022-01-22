@@ -52,7 +52,7 @@ Session.prototype.send = function (this: Session, ...args) {
 const customTag = Symbol('custom-send')
 Session.prototype.send[customTag] = send
 
-export class StatisticsProvider extends DataSource<StatisticsProvider.Payload> {
+class StatisticsProvider extends DataSource<StatisticsProvider.Payload> {
   static using = ['database'] as const
 
   lastUpdate = new Date()
@@ -305,7 +305,7 @@ export class StatisticsProvider extends DataSource<StatisticsProvider.Payload> {
   }
 }
 
-export namespace StatisticsProvider {
+namespace StatisticsProvider {
   export type DailyField = typeof dailyFields[number]
   export const dailyFields = [
     'command', 'dialogue', 'botSend', 'botReceive', 'group',
@@ -348,3 +348,5 @@ export namespace StatisticsProvider {
 
   export type Extension = (payload: Payload, data: StatisticsProvider.Data) => Promise<void>
 }
+
+export default StatisticsProvider

@@ -4,7 +4,6 @@ import { resolve } from 'path'
 import { existsSync } from 'fs'
 import { satisfies } from 'semver'
 import { DataSource } from '@koishijs/plugin-console'
-import { throttle } from 'throttle-debounce'
 import spawn from 'cross-spawn'
 
 declare module '@koishijs/plugin-console' {
@@ -30,11 +29,11 @@ function supports(command: string, args: string[] = []) {
 }
 
 class MarketProvider extends DataSource<Dict<MarketProvider.Data>> {
-  dataCache: Dict<MarketProvider.Data> = {}
-  callbacks: ((data: MarketProvider.Data[]) => void)[] = []
-  flushData: throttle<() => void>
-  http: Quester
-  _agentCache: Promise<Manager>
+  private http: Quester
+  private timestamp = 0
+  private agentTask: Promise<Manager>
+  private fullCache: Dict<MarketProvider.Data> = {}
+  private tempCache: Dict<MarketProvider.Data> = {}
 
   constructor(ctx: Context, private config: MarketProvider.Config) {
     super(ctx, 'market')
@@ -50,11 +49,14 @@ class MarketProvider extends DataSource<Dict<MarketProvider.Data>> {
   start() {
     const logger = this.ctx.logger('status')
     this.prepare().catch(logger.warn)
-    this.flushData = throttle(100, () => this.broadcast())
   }
 
-  stop() {
-    this.flushData?.cancel()
+  flushData() {
+    const now = Date.now()
+    if (now - this.timestamp < 100) return
+    this.timestamp = now
+    this.patch(this.tempCache)
+    this.tempCache = {}
   }
 
   private async search(offset = 0) {
@@ -75,8 +77,8 @@ class MarketProvider extends DataSource<Dict<MarketProvider.Data>> {
     const community = name.startsWith('koishi-plugin-')
     if (!official && !community) return
 
-    const data = await this.http.get<Package.Registry>(`/${name}`)
-    const versions = Object.values(data.versions).filter((remote) => {
+    const registry = await this.http.get<Package.Registry>(`/${name}`)
+    const versions = Object.values(registry.versions).filter((remote) => {
       const { dependencies, peerDependencies, deprecated } = remote
       const declaredVersion = { ...dependencies, ...peerDependencies }['koishi']
       return !deprecated && declaredVersion && satisfies(currentVersion, declaredVersion)
@@ -84,7 +86,7 @@ class MarketProvider extends DataSource<Dict<MarketProvider.Data>> {
     if (!versions.length) return
 
     const shortname = official ? name.slice(17) : name.slice(14)
-    this.dataCache[name] = {
+    this.tempCache[name] = this.fullCache[name] = {
       ...item,
       shortname,
       official,
@@ -103,7 +105,7 @@ class MarketProvider extends DataSource<Dict<MarketProvider.Data>> {
   }
 
   async get() {
-    return this.dataCache
+    return this.fullCache
   }
 
   get cwd() {
@@ -146,15 +148,15 @@ class MarketProvider extends DataSource<Dict<MarketProvider.Data>> {
   }
 
   install = async (name: string) => {
-    const agent = await (this._agentCache ||= this.getAgent())
+    const agent = await (this.agentTask ||= this.getAgent())
     await this.exec(agent, [agent === 'yarn' ? 'add' : 'install', name, '--loglevel', 'error'])
-    this.ctx.console.services.packages.broadcast()
+    this.ctx.console.services.packages.refresh()
   }
 
   uninstall = async (name: string) => {
-    const agent = await (this._agentCache ||= this.getAgent())
+    const agent = await (this.agentTask ||= this.getAgent())
     await this.exec(agent, ['remove', name, '--loglevel', 'error'])
-    this.ctx.console.services.packages.broadcast()
+    this.ctx.console.services.packages.refresh()
   }
 }
 

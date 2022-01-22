@@ -52,7 +52,7 @@ class PackageProvider extends DataSource<Dict<PackageProvider.Data>> {
     if (!this.cache[entry]) return
     const local = await this.cache[entry]
     local.id = id
-    this.broadcast()
+    this.refresh()
   }
 
   async prepare() {
@@ -121,7 +121,7 @@ class PackageProvider extends DataSource<Dict<PackageProvider.Data>> {
     const oldLength = Object.keys(Adapter.library).length
     const exports = getExports(name)
     const newLength = Object.keys(Adapter.library).length
-    if (newLength > oldLength) this.ctx.console.services.protocols.broadcast()
+    if (newLength > oldLength) this.ctx.console.services.protocols.refresh()
 
     // check plugin dependencies
     Object.assign(result, Package.Meta.from(data))

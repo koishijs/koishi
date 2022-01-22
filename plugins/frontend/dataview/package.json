@@ -1,7 +1,7 @@
 {
-  "name": "@koishijs/plugin-manager",
-  "description": "Manage your bots and plugins with console",
-  "version": "1.0.1",
+  "name": "@koishijs/plugin-dataview",
+  "description": "View Database in Koishi Console",
+  "version": "1.0.0",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -10,6 +10,9 @@
   ],
   "author": "Shigma <shigma10826@gmail.com>",
   "license": "MIT",
+  "scripts": {
+    "lint": "eslint src --ext .ts"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/koishijs/koishi.git"
@@ -17,7 +20,7 @@
   "bugs": {
     "url": "https://github.com/koishijs/koishi/issues"
   },
-  "homepage": "https://koishi.js.org/plugins/other/manager",
+  "homepage": "https://koishi.js.org/plugins/dataview/",
   "keywords": [
     "bot",
     "qqbot",
@@ -26,21 +29,10 @@
     "chatbot",
     "koishi",
     "plugin",
-    "manager",
-    "market",
-    "manager",
-    "server"
+    "database"
   ],
   "peerDependencies": {
-    "@koishijs/cli": "^4.0.1",
     "@koishijs/plugin-console": "^1.0.0",
     "koishi": "^4.0.1"
-  },
-  "devDependencies": {
-    "@types/cross-spawn": "^6.0.2"
-  },
-  "dependencies": {
-    "cross-spawn": "^7.0.3",
-    "semver": "^7.3.5"
   }
 }

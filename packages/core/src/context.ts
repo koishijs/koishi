@@ -276,15 +276,16 @@ export class Context {
       disposables: [],
     })
 
-    const dispose = this.on('service', async (name) => {
-      if (!using.includes(name)) return
-      await Promise.allSettled(ctx.state.disposables.slice(1).map(dispose => dispose()))
-      callback()
-    })
-
     this.state.children.push(plugin)
     this.emit('plugin-added', plugin)
-    ctx.state.disposables.push(dispose)
+
+    if (using.length) {
+      ctx.on('service', async (name) => {
+        if (!using.includes(name)) return
+        await Promise.allSettled(ctx.state.disposables.slice(1).map(dispose => dispose()))
+        callback()
+      })
+    }
 
     const callback = () => {
       if (using.some(name => !this[name])) return
@@ -305,14 +306,14 @@ export class Context {
     if (!plugin) throw new Error('root level context cannot be disposed')
     const state = this.app.registry.get(plugin)
     if (!state) return
-    await Promise.allSettled([
+    const task = Promise.allSettled([
       ...state.children.slice().map(plugin => this.dispose(plugin)),
       ...state.disposables.slice().map(dispose => dispose()),
-    ]).finally(() => {
-      this.app.registry.delete(plugin)
-      remove(state.parent.children, plugin)
-      this.emit('plugin-removed', plugin)
-    })
+    ])
+    this.app.registry.delete(plugin)
+    remove(state.parent.children, plugin)
+    this.emit('plugin-removed', plugin)
+    await task
   }
 
   * getHooks(name: EventName, session?: Session) {
@@ -586,8 +587,11 @@ export namespace Context {
     model: Model
   }
 
+  export const Services: (keyof Services)[] = []
+
   export function service(key: keyof Services) {
     if (Object.prototype.hasOwnProperty.call(Context.prototype, key)) return
+    Services.push(key)
     const privateKey = Symbol(key)
     Object.defineProperty(Context.prototype, key, {
       get(this: Context) {
@@ -603,26 +607,11 @@ export namespace Context {
         this.emit('service', key)
         const action = value ? oldValue ? 'changed' : 'enabled' : 'disabled'
         this.logger('service').debug(key, action)
-        if (value) {
-          this.app._services[key] = this.state.id
-          const dispose = () => {
-            if (this.app[privateKey] !== value) return
-            this[key] = null
-            delete this.app._services[key]
-          }
-          this.state.disposables.push(dispose)
-          this.on('service', (name) => {
-            if (name !== key) return
-            dispose()
-            remove(this.state.disposables, dispose)
-          })
-        }
       },
     })
   }
 
   service('bots')
-  service('database')
   service('model')
 
   export const deprecatedEvents: Dict<EventName & string> = {
@@ -666,7 +655,7 @@ export interface EventMap {
   'dispose'(): Awaitable<void>
   'model'(name: keyof Tables): void
   'service'(name: keyof Context.Services): void
-  'adapter'(): void
+  'adapter'(name: string): void
   'bot-added'(bot: Bot): void
   'bot-removed'(bot: Bot): void
   'bot-status-updated'(bot: Bot): void

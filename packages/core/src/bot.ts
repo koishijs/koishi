@@ -119,8 +119,6 @@ export namespace Bot {
     platform?: string
   }
 
-  export const library: Dict<Constructor> = {}
-
   export interface Constructor<S extends Bot.BaseConfig = Bot.BaseConfig> {
     new (adapter: Adapter, config: S): Bot<S>
     schema?: Schema

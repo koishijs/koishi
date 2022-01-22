@@ -6,7 +6,7 @@ export default class AdapterProvider extends DataSource<Dict<Schema>> {
     super(ctx, 'protocols')
 
     ctx.on('adapter', () => {
-      this.broadcast()
+      this.refresh()
     })
   }
 
