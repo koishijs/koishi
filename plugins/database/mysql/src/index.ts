@@ -1,13 +1,8 @@
-import { createPool, Pool, PoolConfig, escape as mysqlEscape, escapeId, format, OkPacket } from 'mysql'
+import { createPool, escape as mysqlEscape, escapeId, format } from '@vlasky/mysql'
+import type { Pool, PoolConfig, OkPacket } from 'mysql'
 import { Context, Database, difference, Logger, makeArray, Schema, Query, Model, Tables, Dict, Time, KoishiError, pick } from 'koishi'
 import { executeUpdate } from '@koishijs/orm-utils'
 import { Builder } from '@koishijs/sql-utils'
-
-declare module 'mysql' {
-  interface UntypedFieldInfo {
-    packet: UntypedFieldInfo
-  }
-}
 
 declare module 'koishi' {
   interface Database {
@@ -58,9 +53,13 @@ class MySQLBuilder extends Builder {
     super()
   }
 
-  format = format
+  format(sql: string, values: any[], stringifyObjects?: boolean, timeZone?: string) {
+    return format(sql, values, stringifyObjects, timeZone)
+  }
 
-  escapeId = escapeId
+  escapeId(value: string, forbidQualified?: boolean) {
+    return escapeId(value, forbidQualified)
+  }
 
   escape(value: any, table?: string, field?: string) {
     return mysqlEscape(this.stringify(value, table, field))
