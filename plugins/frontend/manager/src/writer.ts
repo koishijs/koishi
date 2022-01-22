@@ -32,19 +32,11 @@ export default class ConfigWriter {
     })
   }
 
-  writeConfig() {
-    // prevent hot reload when it's being written
-    const fileWatcher = this.ctx.fileWatcher
-    fileWatcher && (fileWatcher.suspend = true)
-    writeFileSync(this.loader.filename, dump(this.loader.config))
-    fileWatcher && (fileWatcher.suspend = false)
-  }
-
   async loadPlugin(name: string, config: any) {
     this.loader.loadPlugin(name, config)
     this.plugins[name] = config
     delete this.plugins['~' + name]
-    this.writeConfig()
+    this.loader.writeConfig()
   }
 
   async unloadPlugin(name: string) {
@@ -52,7 +44,7 @@ export default class ConfigWriter {
     await this.ctx.dispose(plugin)
     this.plugins['~' + name] = this.plugins[name]
     delete this.plugins[name]
-    this.writeConfig()
+    this.loader.writeConfig()
   }
 
   async reloadPlugin(name: string, config: any) {
@@ -61,13 +53,13 @@ export default class ConfigWriter {
     await this.ctx.dispose(plugin)
     state.context.plugin(plugin, config)
     this.plugins[name] = config
-    this.writeConfig()
+    this.loader.writeConfig()
   }
 
   async savePlugin(name: string, config: any) {
     this.loader.resolvePlugin(name)
     this.plugins['~' + name] = config
-    this.writeConfig()
+    this.loader.writeConfig()
   }
 
   async createBot(platform: string, config: any) {
@@ -81,7 +73,7 @@ export default class ConfigWriter {
     const adapterConfig = this.plugins[name]
     adapterConfig['bots'].push(config)
     this.loader.loadPlugin(name, adapterConfig)
-    this.writeConfig()
+    this.loader.writeConfig()
   }
 
   async removeBot() {}

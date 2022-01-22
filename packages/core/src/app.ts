@@ -243,6 +243,10 @@ export namespace App {
     minSimilarity?: number
   }
 
+  export namespace Config {
+    export interface Static extends Schema<Config> {}
+  }
+
   const BasicConfig = Schema.object({
     prefix: Schema.string().description('指令前缀字符，可以是字符串或字符串数组。将用于指令前缀的匹配。例如，如果配置该选项为 `.`，则你可以通过 `.help` 来进行 help 指令的调用。'),
     nickname: Schema.union([
@@ -266,7 +270,7 @@ export namespace App {
     }),
   }).description('高级设置')
 
-  export const Config: Schema<Config> = Schema.intersect([BasicConfig, AdvancedConfig])
+  export const Config: Config.Static = Schema.intersect([BasicConfig, AdvancedConfig])
 }
 
 export namespace SharedCache {

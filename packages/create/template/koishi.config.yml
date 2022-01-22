@@ -4,9 +4,8 @@ allowWrite: true
 plugins:
   ./src/ping:
   console:
-  insight:
   dataview:
+  insight:
   logger:
-    root: logs
   manager:
   status:
