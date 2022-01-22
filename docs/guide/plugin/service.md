@@ -255,7 +255,6 @@ app.console                 // truthy
 ### 支持热重载 <badge text="beta" type="warning"/>
 
 既然服务的作用是提供接口供其他插件调用，就自然会涉及一个热重载的问题。如果某个插件先调用了服务上的方法，然后被卸载，那么我们就需要处理调用所带来的副作用。让我们来看一段 console 插件的源码：
-
 ```js
 class Console extends Service {
   // 这个方法的作用是添加入口文件
@@ -263,8 +262,7 @@ class Console extends Service {
     this.entries.add(filename)
     this.triggerReload()
 
-    // 注意这个地方，caller 属性会指向访问此方法的上下文
-    // 只需要在这个上下文上监听 disconnect 事件，就可以顺利处理副作用了
+    // 注意这个地方的[this.caller]
     this.caller.on('dispose', () => {
       this.entries.delete(filename)
       this.triggerReload()
@@ -272,9 +270,31 @@ class Console extends Service {
   }
 }
 ```
-
+在某个插件调用时：
+```javascript
+module.exports = {
+  name: 'some-plugin',
+  apply(ctx1) {
+    ctx1.using(['console'], (ctx2) => {
+    // 上面的[this.caller]对应的上下文是这里的ctx2
+    ctx2.console.addEntry('some file')
+    })
+  }
+}
+```
+`this.caller` 会指向访问此方法的[上下文](./context.md)。只需要在这个上下文上监听 [dispose 事件](./lifecycle.md#dispose-事件)，就可以顺利处理副作用了。
 ::: tip
-需要注意的是，这里的 `caller` 属性仅仅会在调用时进行赋值，因此如果你要提供的接口是异步的，那么请在一开始保存这个上下文的引用，因为它可能在后续的异步操作中被修改。下面的两种写法都是可以的：
+需要特别注意：当插件使用 [`ctx.using`](#using-属性) 方法依赖服务时，koishi会为using的回调创建新的[上下文](./context.md)。
+:::
+你可以一并参考 [上下文](./context.md)，[事件](./lifecycle.md#事件) 以及 [Context API](../../api/core/context.md) 来理解上面的代码。
+
+#### 异步下 `caller` 的表现，以及 当前上下文
+
+`caller` 属性其实是 `this[Context.current]` 的快捷方式，也就是`当前上下文`。而`当前上下文`会随koishi正在处理的上下文变动而指向其他上下文。
+ 
+所以，当你使用 `await` 或 `.then()` 运行异步代码时，`this.caller` 将不再指向`访问此方法的上下文`。
+
+因此，如果你要提供的接口是异步的，并且在后续代码中需要用到`访问此方法的上下文`，那么你需要在执行异步代码前将`当前上下文`保存到其他变量。下面的两种写法都是可以的：
 
 ```js
 class Console extends Service {
@@ -306,4 +326,3 @@ class Console extends Service {
   }
 }
 ```
-:::
