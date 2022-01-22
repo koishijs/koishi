@@ -174,8 +174,8 @@ module.exports = {
         text: '更新与迁移',
         isGroup: true,
         children: [
-          '/api/changelog.md',
           '/api/migration.md',
+          '/api/releases/v4.1.md',
         ],
       }],
 
