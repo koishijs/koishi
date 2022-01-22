@@ -161,8 +161,8 @@ const loadTip = computed(() => {
 })
 
 function execute(event: string) {
-  const { name, config } = data.value
-  send('plugin/' + event, name, config)
+  const { shortname, config } = data.value
+  send('plugin/' + event, shortname, config)
 }
 
 const router = useRouter()
