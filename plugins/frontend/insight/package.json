@@ -32,8 +32,8 @@
     "insight"
   ],
   "peerDependencies": {
-    "@koishijs/plugin-console": "^1.0.0",
-    "koishi": "^4.0.1"
+    "@koishijs/plugin-console": "^1.1.0",
+    "koishi": "^4.1.0"
   },
   "devDependencies": {
     "@types/throttle-debounce": "^2.1.0"

@@ -36,7 +36,7 @@
     "@koishijs/plugin-mock": "^1.0.0"
   },
   "peerDependencies": {
-    "koishi": "^4.0.1"
+    "koishi": "^4.1.0"
   },
   "dependencies": {
     "@koishijs/orm-utils": "^1.0.0",

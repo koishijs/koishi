@@ -36,12 +36,12 @@
     "optional:assets"
   ],
   "peerDependencies": {
-    "koishi": "^4.0.1"
+    "koishi": "^4.1.0"
   },
   "devDependencies": {
-    "@koishijs/plugin-console": "^1.0.0",
+    "@koishijs/plugin-console": "^1.1.0",
     "@koishijs/plugin-database-memory": "^1.0.0",
-    "@koishijs/plugin-status": "^5.0.1",
+    "@koishijs/plugin-status": "^5.1.0",
     "@koishijs/plugin-mock": "^1.0.0"
   },
   "dependencies": {
