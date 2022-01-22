@@ -42,7 +42,7 @@ function updateCpuUsage() {
   usage = newUsage
 }
 
-export class ProfileProvider extends DataSource<ProfileProvider.Payload> {
+class ProfileProvider extends DataSource<ProfileProvider.Payload> {
   cached: ProfileProvider.Payload
 
   constructor(ctx: Context, private config: ProfileProvider.Config) {
@@ -65,7 +65,7 @@ export class ProfileProvider extends DataSource<ProfileProvider.Payload> {
   }
 }
 
-export namespace ProfileProvider {
+namespace ProfileProvider {
   export interface Config {
     tickInterval?: number
   }
@@ -79,3 +79,5 @@ export namespace ProfileProvider {
     cpu: LoadRate
   }
 }
+
+export default ProfileProvider
