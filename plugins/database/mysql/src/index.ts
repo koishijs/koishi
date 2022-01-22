@@ -14,6 +14,12 @@ declare module 'koishi' {
   }
 }
 
+declare module 'mysql' {
+  interface UntypedFieldInfo {
+    packet: UntypedFieldInfo
+  }
+}
+
 const logger = new Logger('mysql')
 
 export type TableType = keyof Tables
