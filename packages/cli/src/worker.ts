@@ -13,7 +13,6 @@ declare module 'koishi' {
 
   interface EventMap {
     'exit'(signal: NodeJS.Signals): Promise<void>
-    'reload'(path: string): Promise<void>
   }
 }
 

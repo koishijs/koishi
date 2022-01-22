@@ -1,4 +1,4 @@
-import { App, Context, defineProperty, Logger, remove, Schema, version } from 'koishi'
+import { App, defineProperty, Logger, remove, Schema, version } from 'koishi'
 
 interface LogLevelConfig {
   // a little different from koishi-utils
@@ -76,11 +76,9 @@ export function prepare(config: Config = {}) {
   Logger.timestamp = Date.now()
 }
 
-export const name = 'logger'
-
-export function apply(ctx: Context) {
-  ctx.app._prolog = prolog
-  ctx.on('ready', () => {
+export function apply(app: App) {
+  app._prolog = prolog
+  app.once('ready', () => {
     remove(Logger.targets, target)
   })
 }

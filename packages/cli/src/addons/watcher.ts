@@ -1,22 +1,7 @@
-import { App, coerce, Context, Dict, Logger, Plugin, Schema, Service } from 'koishi'
+import { App, coerce, Context, Dict, Logger, Plugin, Schema } from 'koishi'
 import { FSWatcher, watch, WatchOptions } from 'chokidar'
 import { relative, resolve } from 'path'
 import { debounce } from 'throttle-debounce'
-
-export interface WatchConfig extends WatchOptions {
-  root?: string
-  debounce?: number
-}
-
-export const WatchConfig = Schema.object({
-  root: Schema.string().description('要监听的根目录，相对于当前工作路径。'),
-  debounce: Schema.number().default(100).description('延迟触发更新的等待时间。'),
-  ignored: Schema.array(Schema.string()).description('要忽略的文件或目录。'),
-}).default(null).description('热重载设置')
-
-App.Config.list.push(Schema.object({
-  watch: WatchConfig,
-}))
 
 function loadDependencies(filename: string, ignored: Set<string>) {
   const dependencies = new Set<string>()
@@ -35,7 +20,7 @@ function unwrap(module: any) {
 
 const logger = new Logger('watch')
 
-export default class FileWatcher extends Service {
+class Watcher {
   public suspend = false
 
   private root: string
@@ -68,8 +53,8 @@ export default class FileWatcher extends Service {
   /** stashed changes */
   private stashed = new Set<string>()
 
-  constructor(ctx: Context, private config: WatchConfig) {
-    super(ctx, 'fileWatcher')
+  constructor(private ctx: Context, private config: Watcher.Config) {
+    ctx.app.watcher = this
   }
 
   private triggerFullReload() {
@@ -79,20 +64,24 @@ export default class FileWatcher extends Service {
 
   start() {
     const { root = '', ignored = [] } = this.config
-    this.root = resolve(this.ctx.app.loader.dirname, root)
+    this.root = resolve(this.ctx.loader.dirname, root)
     this.watcher = watch(this.root, {
       ...this.config,
       ignored: ['**/node_modules/**', '**/.git/**', '**/logs/**', ...ignored],
     })
 
-    this.externals = loadDependencies(__filename, new Set(Object.keys(this.ctx.app.loader.cache)))
+    this.externals = loadDependencies(__filename, new Set(Object.keys(this.ctx.loader.cache)))
     const flushChanges = debounce(this.config.debounce || 100, () => this.flushChanges())
 
     this.watcher.on('change', (path) => {
-      if (this.suspend) return
+      if (this.suspend) {
+        this.suspend = false
+        return
+      }
+
       logger.debug('change detected:', path)
 
-      const isEntry = path === this.ctx.app.loader.filename
+      const isEntry = path === this.ctx.loader.filename
       if (!require.cache[path] && !isEntry) return
 
       // files independent from any plugins will trigger a full reload
@@ -268,3 +257,22 @@ export default class FileWatcher extends Service {
     this.stashed = new Set()
   }
 }
+
+namespace Watcher {
+  export interface Config extends WatchOptions {
+    root?: string
+    debounce?: number
+  }
+
+  export const Config = Schema.object({
+    root: Schema.string().description('要监听的根目录，相对于当前工作路径。'),
+    debounce: Schema.number().default(100).description('延迟触发更新的等待时间。'),
+    ignored: Schema.array(Schema.string()).description('要忽略的文件或目录。'),
+  }).default(null).description('热重载设置')
+
+  App.Config.list.push(Schema.object({
+    watch: Config,
+  }))
+}
+
+export default Watcher

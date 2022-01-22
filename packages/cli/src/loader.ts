@@ -1,12 +1,14 @@
 import { resolve, extname, dirname, isAbsolute } from 'path'
 import { yellow } from 'kleur'
-import { readdirSync, readFileSync } from 'fs'
+import { readdirSync, readFileSync, writeFileSync } from 'fs'
 import { App, Dict, Logger, Modules, Plugin, Schema } from 'koishi'
-import { load } from 'js-yaml'
+import { dump, load } from 'js-yaml'
 
 declare module 'koishi' {
-  interface App {
-    loader: Loader
+  namespace Context {
+    interface Services {
+      loader: Loader
+    }
   }
 }
 
@@ -20,6 +22,7 @@ Modules.internal.paths = function (name: string) {
 }
 
 App.Config.list.push(Schema.object({
+  allowWrite: Schema.boolean().description('允许在运行时修改配置文件。').default(true),
   autoRestart: Schema.boolean().description('应用在运行时崩溃自动重启。').default(true),
   plugins: Schema.any().hidden(),
 }).description('CLI 设置'))
@@ -34,7 +37,6 @@ export class Loader {
   app: App
   config: App.Config
   cache: Dict<Plugin> = {}
-  enableWriter = true
 
   constructor() {
     const basename = 'koishi.config'
@@ -51,7 +53,6 @@ export class Loader {
       this.dirname = cwd
       this.filename = cwd + '/' + basename + this.extname
     }
-    this.enableWriter = ['.json', '.yaml', '.yml'].includes(this.extname)
   }
 
   loadConfig(): App.Config {
@@ -78,6 +79,12 @@ export class Loader {
     return plugin
   }
 
+  writeConfig() {
+    // prevent hot reload when it's being written
+    if (this.app.watcher) this.app.watcher.suspend = true
+    writeFileSync(this.filename, dump(this.config))
+  }
+
   createApp() {
     const app = this.app = new App(this.config)
     app.loader = this
@@ -90,6 +97,9 @@ export class Loader {
         logger.info(`apply plugin %c`, name)
         this.loadPlugin(name, plugins[name] ?? {})
       }
+    }
+    if (!['.json', '.yaml', '.yml'].includes(this.extname)) {
+      app.options.allowWrite = false
     }
     return app
   }
