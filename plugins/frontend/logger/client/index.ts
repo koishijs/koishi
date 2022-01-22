@@ -1,6 +1,6 @@
 import { registerPage } from '~/client'
 import type {} from '@koishijs/plugin-logger/src'
-import Logs from './logs.vue'
+import Logs from './index.vue'
 import './index.scss'
 
 registerPage({

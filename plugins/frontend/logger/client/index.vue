@@ -1,6 +1,6 @@
 <template>
   <k-card class="page-logs frameless" scrollbar>
-    <div class="logs">
+    <div ref="root" class="logs">
       <div class="line" :class="{ start: line.includes(hint) }" v-for="line in store.logs">
         <code v-html="renderLine(line)"></code>
       </div>
@@ -10,8 +10,11 @@
 
 <script lang="ts" setup>
 
+import { watch, ref, nextTick, onMounted } from 'vue'
 import { store, receive } from '~/client'
 import Converter from 'ansi_up'
+
+const root = ref<HTMLElement>()
 
 const hint = `app\u001b[0m \u001b[38;5;15;1mKoishi/`
 
@@ -20,6 +23,20 @@ const converter = new Converter()
 function renderLine(line: string) {
   return converter.ansi_to_html(line)
 }
+
+onMounted(() => {
+  const wrapper = root.value.parentElement.parentElement.parentElement
+  wrapper.scrollTop = wrapper.scrollHeight
+})
+
+watch(() => store.logs.length, async () => {
+  const wrapper = root.value.parentElement.parentElement.parentElement
+  const { scrollTop, clientHeight, scrollHeight } = wrapper
+  if (Math.abs(scrollTop + clientHeight - scrollHeight) < 1) {
+    await nextTick()
+    wrapper.scrollTop = scrollHeight
+  }
+})
 
 </script>
 
