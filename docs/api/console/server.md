@@ -4,7 +4,7 @@ sidebarDepth: 2
 
 # 服务端 API
 
-## 添加前端入口文件
+<!-- ## 添加前端入口文件
 
 你可以使用 `webui.addEntry()` 方法添加入口文件。下面是一个例子：
 
@@ -51,4 +51,4 @@ router.addRoute({
   name: '扩展页面',
   component: MyPage,
 })
-```
+``` -->

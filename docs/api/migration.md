@@ -60,9 +60,9 @@ sidebarDepth: 2
   - [@koishijs/plugin-assets-s3](../plugins/assets/s3.md)：使用 s3 云存储存放资源文件
 - 控制台相关 (部分插件也可脱离控制台使用)：
   - [@koishijs/plugin-commands](../plugins/console/commands.md)：指令管理
-  - [@koishijs/plugin-dataview](../plugins/console/dataview.md)：查看数据库
-  - [@koishijs/plugin-insight](../plugins/console/insight.md)：查看依赖图
-  - [@koishijs/plugin-logger](../plugins/console/logger.md)：查看日志
+  - [@koishijs/plugin-dataview](../plugins/console/dataview.md)：数据库操作
+  - [@koishijs/plugin-insight](../plugins/console/insight.md)：插件依赖图
+  - [@koishijs/plugin-logger](../plugins/console/logger.md)：日志管理
   - [@koishijs/plugin-manager](../plugins/console/manager.md)：插件管理
 
 ### 移除的包

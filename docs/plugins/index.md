@@ -52,10 +52,13 @@ Koishi 官方提供了许多插件。为了更好地模块化开发，它们被�
 
 ## 控制台开发
 
-- [@koishijs/plugin-console](./console/console.md)：控制台
+- [@koishijs/plugin-console](./console/index.md)：控制台
 - [@koishijs/plugin-chat](./console/chat.md)：聊天工具
-- [@koishijs/plugin-manager](./console/manager.md)：插件管理
 - [@koishijs/plugin-commands](./console/commands.md)：指令管理
+- [@koishijs/plugin-dataview](./console/dataview.md)：数据库操作
+- [@koishijs/plugin-insight](./console/insight.md)：插件依赖图
+- [@koishijs/plugin-logger](./console/logger.md)：日志管理
+- [@koishijs/plugin-manager](./console/manager.md)：插件管理
 - [@koishijs/plugin-status](./console/status.md)：运行状态
 
 ## 大型插件

@@ -164,6 +164,13 @@ module.exports = {
           '/api/utils/misc.md',
         ],
       }, {
+        text: '控制台开发',
+        isGroup: true,
+        children: [
+          '/api/console/server.md',
+          '/api/console/client.md',
+        ],
+      }, {
         text: '更新与迁移',
         isGroup: true,
         children: [
@@ -229,16 +236,17 @@ module.exports = {
           '/plugins/accessibility/verifier.md',
         ],
       }, {
-        text: '控制台开发',
+        text: '控制台功能',
         isGroup: true,
         children: [
           '/plugins/console/index.md',
           '/plugins/console/chat.md',
-          '/plugins/console/manager.md',
           '/plugins/console/commands.md',
+          '/plugins/console/dataview.md',
+          '/plugins/console/insight.md',
+          '/plugins/console/logger.md',
+          '/plugins/console/manager.md',
           '/plugins/console/status.md',
-          '/plugins/console/server.md',
-          '/plugins/console/client.md',
         ],
       }, {
         text: '教学系统 (Teach)',
