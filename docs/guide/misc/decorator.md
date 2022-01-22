@@ -37,7 +37,7 @@ export default class MyPlugin extends BasePlugin<MyPluginConfig> implements Life
 
   // 注册事件监听器
   @UseEvent('message')
-  async onMessage(session: Session.Payload<'message'>) {
+  async onMessage(session: Session) {
     if (session.content === 'ping') {
       await session.send('pong');
     }
@@ -254,7 +254,7 @@ export default class MyPlugin extends BasePlugin<MyPluginConfig> implements Life
 
   // 注册事件监听器
   @UseEvent('message')
-  async onMessage(session: Session.Payload<'message'>) {
+  async onMessage(session: Session) {
     if (session.content === 'ping') {
       await session.send('pong');
     }
@@ -424,7 +424,7 @@ export default class MyPlugin extends BasePlugin<Config> {
   
   @OnGuild()
   @UseEvent('message') // 只对 OneBot 平台的群组有效
-  onMessage(session: Session.Payload<'message'>) {
+  onMessage(session: Session) {
     return;
   }
 }
