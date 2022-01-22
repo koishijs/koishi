@@ -6,38 +6,78 @@ sidebarDepth: 2
 
 ## 包名变更
 
-**重要：请开发者直接依赖 koishi 而非 @koishijs/core 进行开发。**
+::: tip 重要
+请开发者直接依赖 koishi 而非 @koishijs/core 进行开发。
+:::
 
 - koishi-core 与 node 解耦后更名为 @koishijs/core
 - koishi-utils 与 node 解耦后更名为 @koishijs/utils
 - koishi 为上述库加上 node 相关代码的整合
 - 原来的 koishi 现在更名为 @koishijs/cli
-- 新增了 create-koishi，可使用 yarn create 或 npm init 一键启动
-- **所有官方插件都改为 @koishijs/plugin-xxx**
+- **现存的官方插件都改为 @koishijs/plugin-xxx**
 - **所有官方适配器也调整为插件**，名称与上一条一致
 - koishi-test-utils 被拆分为多个部分：
   - 数据库测试相关代码移至 @koishijs/database-tests
   - 测试工具重构后成为 @koishijs/plugin-mock
+
+### 插件拆分
+
+为了提供更细粒度的插件功能，我们将部分插件拆分为了多个包进行发布。
+
+- koishi-plugin-assets 被拆分为多个插件：
+  - [@koishijs/plugin-assets-local](../plugins/assets/local.md)
+  - [@koishijs/plugin-assets-remote](../plugins/assets/remote.md)
+  - [koishi-plugin-assets-smms](https://github.com/koishijs/koishi-plugin-assets-smms) (社区维护)
+  - 由于这些插件实现了同一个服务，你只需安装其中的一个即可
+- koishi-plugin-common 被拆分为多个插件：
+  - [@koishijs/plugin-admin](../plugins/accessibility/admin.md)
+  - [@koishijs/plugin-bind](../plugins/accessibility/bind.md)
+  - [@koishijs/plugin-broadcast](../plugins/common/broadcast.md)
+  - [@koishijs/plugin-callme](../plugins/accessibility/callme.md)
+  - [@koishijs/plugin-echo](../plugins/common/echo.md)
+  - [@koishijs/plugin-feedback](../plugins/common/feedback.md)
+  - [@koishijs/plugin-forward](../plugins/common/forward.md)
+  - [@koishijs/plugin-recall](../plugins/common/recall.md)
+  - [@koishijs/plugin-sudo](../plugins/accessibility/sudo.md)
+  - [@koishijs/plugin-repeater](../plugins/common/repeater.md)
+  - [@koishijs/plugin-respondent](../plugins/common/respondent.md)
+  - [@koishijs/plugin-verifier](../plugins/accessibility/verifier.md)
 - koishi-plugin-webui 被拆分为多个插件：
-  - @koishijs/plugin-console
-  - @koishijs/plugin-manager
-  - @koishijs/plugin-status
+  - @koishijs/builder (构建工具)
+  - [@koishijs/plugin-console](../plugins/console/index.md)
+  - [@koishijs/plugin-status](../plugins/console/status.md)
+  - 我们还引入了更多控制台插件，请继续阅读下面的介绍
 
 ### 新增的包
 
 - create-koishi：可结合 npm init 或 yarn create 使用，用于快速搭建项目
-- @koishijs/plugin-database-memory：一个内存数据库实现，支持输出到本地文件
-- @koishijs/plugin-git：使用 git 仓库存放资源文件
-- @koishijs/plugin-assets-s3：使用 s3 云存储存放资源文件
+- 数据库相关：
+  - [@koishijs/plugin-database-level](../plugins/database/level.md)：LevelDB 数据库实现
+  - [@koishijs/plugin-database-memory](../plugins/database/memory.md)：基于内存的数据库实现
+  - [@koishijs/plugin-database-sqlite](../plugins/database/sqlite.md)：SQLite 数据库实现
+- 资源存储相关：
+  - [@koishijs/plugin-assets-git](../plugins/assets/git.md)：使用 git 仓库存放资源文件
+  - [@koishijs/plugin-assets-s3](../plugins/assets/s3.md)：使用 s3 云存储存放资源文件
+- 控制台相关 (部分插件也可脱离控制台使用)：
+  - [@koishijs/plugin-commands](../plugins/console/commands.md)：指令管理
+  - [@koishijs/plugin-dataview](../plugins/console/dataview.md)：查看数据库
+  - [@koishijs/plugin-insight](../plugins/console/insight.md)：查看依赖图
+  - [@koishijs/plugin-logger](../plugins/console/logger.md)：查看日志
+  - [@koishijs/plugin-manager](../plugins/console/manager.md)：插件管理
 
 ### 移除的包
 
-下列包由于使用场景和用途的限制，不再考虑进行官方维护。这些包会放入一个专门的仓库 koishijs/legacy-plugins 中。
+下列包由于使用场景和用途的限制，不再进行官方维护。这些包会继续留在 Koishi 组织中。
 
-- koishi-plugin-tomon
-- koishi-plugin-monitor
+- [koishi-plugin-chess](https://github.com/koishijs/koishi-plugin-chess) (社区维护)
+- [koishi-plugin-image-search](https://github.com/koishijs/koishi-plugin-image-search) (社区维护)
+- ~~[koishi-plugin-tomon](https://github.com/koishijs/koishi-plugin-tomon)~~ (已归档)
+- [koishi-plugin-tools](https://github.com/koishijs/koishi-plugin-tools) (社区维护)
+- ~~[koishi-plugin-monitor](https://github.com/koishijs/koishi-plugin-monitor)~~ (已归档)
 
-## 概念用词变更
+## 核心功能变更
+
+### 概念用词变更
 
 所有涉及「群组」的概念，对应英文单词从 group 更改为 guild。下面是一些例子：
 
@@ -52,10 +92,9 @@ sidebarDepth: 2
 
 这样修改是为了提供更好的兼容性，减轻 group 本身在多种场合使用所带来的二义性。
 
-## 插件变更
+### 插件变更
 
 - 移除了 before-connect 和 before-disconnect 事件，请直接使用 ready 和 dispose 事件代替
-- 移除了 sideEffect 声明，现在所有插件都视为无副作用
 - 新增了 [Schema API](./schema.md)，用于描述插件的配置项，下面是一个例子：
 
 ```ts
@@ -75,7 +114,7 @@ export function apply(ctx: Context, config: Config) {
 1. 能够在插件被加载前就对插件的配置项进行类型检查，并提供缺省值和更多预处理
 2. 如果你希望自己的插件能够**在插件市场被动态安装**，那 schema 会作为网页控制台中呈现的配置表单
 
-## 适配器变更
+### 适配器变更
 
 适配器现在通过插件的形式导入了：
 
@@ -113,7 +152,7 @@ export default {
 }
 ```
 
-## 应用变更
+### 应用变更
 
 - 调整了 app.bots 接口的部分用法（参见文档）
 - 新增了 `ctx.http` 接口，移除了所有的 `axiosConfig` 配置
@@ -122,7 +161,7 @@ export default {
 
 - 新增 `logger` 配置项，包含了过去的 `logLevel` 等一系列配置，同时支持将输出日志写入本地文件
 
-## 数据库变更
+### 数据库变更
 
 - 接口变更
   - 新增了方法 `db.set(table, query, updates)`
@@ -132,7 +171,7 @@ export default {
 - 全局接口变更
   - ORM 相关接口现使用 `ctx.model` 实现
 
-## 事件变更
+### 事件变更
 
 - connect → ready (原命名依然可用)
 - before-connect → ready
