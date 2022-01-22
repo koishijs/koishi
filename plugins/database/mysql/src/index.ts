@@ -261,7 +261,7 @@ class MysqlDatabase extends Database {
 
   queue<T = any>(sql: string, values?: any): Promise<T> {
     if (!this.config.multipleStatements) {
-      return this.query(sql)
+      return this.query(sql, values)
     }
 
     sql = format(sql, values)
