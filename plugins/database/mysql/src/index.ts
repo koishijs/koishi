@@ -4,6 +4,12 @@ import { Context, Database, difference, Logger, makeArray, Schema, Query, Model,
 import { executeUpdate } from '@koishijs/orm-utils'
 import { Builder } from '@koishijs/sql-utils'
 
+declare module 'mysql' {
+  interface UntypedFieldInfo {
+    packet: UntypedFieldInfo
+  }
+}
+
 declare module 'koishi' {
   interface Database {
     mysql: MysqlDatabase
@@ -11,12 +17,6 @@ declare module 'koishi' {
 
   interface Modules {
     'database-mysql': typeof import('.')
-  }
-}
-
-declare module 'mysql' {
-  interface UntypedFieldInfo {
-    packet: UntypedFieldInfo
   }
 }
 
