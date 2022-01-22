@@ -17,8 +17,9 @@
     "@koishijs/plugin-adapter-onebot": "^4.0.0",
     "@koishijs/plugin-adapter-telegram": "^2.0.0",
     "@koishijs/plugin-console": "^1.0.0",
+    "@koishijs/plugin-dataview": "^1.0.0",
     "@koishijs/plugin-insight": "^1.0.0",
-    "@koishijs/plugin-logs": "^1.0.0",
+    "@koishijs/plugin-logger": "^1.0.0",
     "@koishijs/plugin-manager": "^1.0.1",
     "@koishijs/plugin-status": "^5.0.1",
     "koishi": "^4.0.1"

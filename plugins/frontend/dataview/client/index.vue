@@ -20,11 +20,11 @@
 <script lang="ts" setup>
 
 import { store } from '~/client'
-import type {} from '@koishijs/plugin-status/src'
+import type {} from '@koishijs/plugin-dataview/src'
 import { ref, computed } from 'vue'
 
 const current = ref<string>('')
-const tables = computed(() => store.meta.tables)
+const tables = computed(() => store.tables)
 
 </script>
 

@@ -5,6 +5,7 @@ plugins:
   ./src/ping:
   console:
   insight:
+  dataview:
   logger:
     root: logs
   manager:
