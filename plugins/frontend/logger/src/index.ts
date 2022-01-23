@@ -65,11 +65,11 @@ class LogProvider extends DataSource<string[]> {
   }
 
   prepareLogger() {
-    if (this.ctx.app._prolog) {
-      for (const line of this.ctx.app._prolog) {
+    if (this.ctx.app.prologue) {
+      for (const line of this.ctx.app.prologue) {
         this.printText(line)
       }
-      this.ctx.app._prolog = null
+      this.ctx.app.prologue = null
     }
 
     const target: Logger.Target = {

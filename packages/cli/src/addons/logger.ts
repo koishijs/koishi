@@ -27,12 +27,12 @@ App.Config.list.push(Schema.object({
   logger: Config,
 }))
 
-let prolog: string[] = []
+let prologue: string[] = []
 
 const target: Logger.Target = {
   colors: 3,
   showTime: 'yyyy-MM-dd hh:mm:ss',
-  print: text => prolog.push(text),
+  print: text => prologue.push(text),
 }
 
 export function prepare(config: Config = {}) {
@@ -77,7 +77,7 @@ export function prepare(config: Config = {}) {
 }
 
 export function apply(app: App) {
-  app._prolog = prolog
+  app.prologue = prologue
   app.on('ready', () => {
     remove(Logger.targets, target)
   })

@@ -5,7 +5,7 @@ import Watcher from './watcher'
 
 declare module 'koishi' {
   interface App {
-    _prolog: string[]
+    prologue: string[]
     watcher: Watcher
   }
 
