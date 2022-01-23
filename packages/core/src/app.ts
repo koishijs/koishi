@@ -248,11 +248,14 @@ export namespace App {
   }
 
   const BasicConfig = Schema.object({
-    prefix: Schema.string().description('指令前缀字符，可以是字符串或字符串数组。将用于指令前缀的匹配。例如，如果配置该选项为 `.`，则你可以通过 `.help` 来进行 help 指令的调用。'),
+    prefix: Schema.union([
+      Schema.array(Schema.string()),
+      Schema.transform(Schema.string(), (prefix) => [prefix]),
+    ] as const).description('指令前缀字符，可以是字符串或字符串数组。将用于指令前缀的匹配。例如，如果配置该选项为 `.`，则你可以通过 `.help` 来进行 help 指令的调用。'),
     nickname: Schema.union([
       Schema.array(Schema.string()),
       Schema.transform(Schema.string(), (nickname) => [nickname]),
-    ]).description('机器人的昵称，可以是字符串或字符串数组。将用于指令前缀的匹配。例如，如果配置该选项为 `Koishi`，则你可以通过 `Koishi, help` 来进行 help 指令的调用。'),
+    ] as const).description('机器人的昵称，可以是字符串或字符串数组。将用于指令前缀的匹配。例如，如果配置该选项为 `Koishi`，则你可以通过 `Koishi, help` 来进行 help 指令的调用。'),
     autoAuthorize: Schema.number().default(1).description('当获取不到用户数据时默认使用的权限等级。'),
     autoAssign: Schema.boolean().default(true).description('当获取不到频道数据时，是否使用接受者作为代理者。'),
     maxListeners: Schema.number().default(64).description('每种监听器的最大数量。如果超过这个数量，Koishi 会认定为发生了内存泄漏，将产生一个警告。'),
