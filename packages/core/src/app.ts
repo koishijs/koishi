@@ -1,4 +1,4 @@
-import { Awaitable, defineProperty, Time, coerce, escapeRegExp, makeArray, trimSlash, merge, Dict } from '@koishijs/utils'
+import { Awaitable, coerce, defineProperty, Dict, escapeRegExp, Logger, makeArray, Time } from '@koishijs/utils'
 import { Context, Next, Plugin } from './context'
 import { Adapter } from './adapter'
 import { Channel, User } from './database'
@@ -19,10 +19,13 @@ interface CommandMap extends Map<string, Command> {
   resolve(key: string): Command
 }
 
+const logger = new Logger('app')
+
 export class App extends Context {
   _commandList: Command[] = []
   _commands: CommandMap = new Map<string, Command>() as never
   _shortcuts: Command.Shortcut[] = []
+  _tasks = new TaskQueue()
   _hooks: Record<keyof any, [Context, (...args: any[]) => any][]> = {}
   _sessions: Dict<Session> = Object.create(null)
   _userCache = new SharedCache<User.Observed<any>>()
@@ -86,15 +89,18 @@ export class App extends Context {
 
   async start() {
     this.isActive = true
-    await this.parallel('ready')
-    this.logger('app').debug('started')
+    logger.debug('started')
+    for (const callback of this.getHooks('ready')) {
+      this._tasks.execute(callback)
+    }
+    await this._tasks.tillIdle()
   }
 
   async stop() {
     this.isActive = false
-    // `disconnect` event is handled by ctx.disposables
+    logger.debug('stopped')
+    // `dispose` event is handled by ctx.disposables
     await Promise.all(this.state.disposables.map(dispose => dispose()))
-    this.logger('app').debug('stopped')
   }
 
   private _resolvePrefixes(session: Session) {
@@ -274,6 +280,23 @@ export namespace App {
   }).description('高级设置')
 
   export const Config: Config.Static = Schema.intersect([BasicConfig, AdvancedConfig])
+}
+
+class TaskQueue {
+  #internal = new Set<Promise<void>>()
+
+  execute(callback: () => any) {
+    const task = Promise.resolve(callback())
+      .catch(err => logger.warn(err))
+      .then(() => this.#internal.delete(task))
+    this.#internal.add(task)
+  }
+
+  async tillIdle() {
+    while (this.#internal.size) {
+      await Promise.all(Array.from(this.#internal))
+    }
+  }
 }
 
 export namespace SharedCache {

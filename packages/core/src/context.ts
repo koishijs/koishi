@@ -328,7 +328,8 @@ export class Context {
   }
 
   * getHooks(name: EventName, session?: Session) {
-    for (const [context, callback] of this.app._hooks[name] || []) {
+    const hooks = this.app._hooks[name] || []
+    for (const [context, callback] of hooks.slice()) {
       if (!context.match(session)) continue
       yield callback
     }
@@ -341,9 +342,7 @@ export class Context {
     const session = typeof args[0] === 'object' ? args.shift() : null
     const name = args.shift()
     for (const callback of this.getHooks(name, session)) {
-      tasks.push((async () => {
-        return callback.apply(session, args)
-      })().catch(((error) => {
+      tasks.push(Promise.resolve(callback.apply(session, args)).catch(((error) => {
         this.logger('app').warn(error)
       })))
     }
@@ -414,7 +413,8 @@ export class Context {
 
     // handle special events
     if (name === 'ready' && this.app.isActive) {
-      return listener(), () => false
+      this.app._tasks.execute(listener)
+      return () => false
     } else if (name === 'dispose') {
       this.state.disposables[method](listener)
       return () => remove(this.state.disposables, listener)

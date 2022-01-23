@@ -1,6 +1,6 @@
 import { resolve, extname, dirname, isAbsolute } from 'path'
 import { readdirSync, readFileSync, writeFileSync } from 'fs'
-import { App, Dict, Logger, interpolate, Modules, Schema, unwrapExports, valueMap } from 'koishi'
+import { App, Dict, Logger, interpolate, Modules, unwrapExports, valueMap } from 'koishi'
 import * as yaml from 'js-yaml'
 
 declare module 'koishi' {
@@ -19,12 +19,6 @@ Modules.internal.paths = function (name: string) {
   }
   return oldPaths(name)
 }
-
-App.Config.list.push(Schema.object({
-  allowWrite: Schema.boolean().description('允许在运行时修改配置文件。').default(true),
-  autoRestart: Schema.boolean().description('应用在运行时崩溃自动重启。').default(true),
-  plugins: Schema.any().hidden(),
-}).description('CLI 设置'))
 
 let cwd = process.cwd()
 const logger = new Logger('app')
@@ -96,7 +90,6 @@ export class Loader {
       resolved.allowWrite = false
     }
 
-    config.plugins ||= {}
     this.config = config
     return resolved
   }

@@ -1,5 +1,11 @@
 import { Context, noop, template } from 'koishi'
 
+declare module 'koishi' {
+  interface EventMap {
+    'exit'(signal: NodeJS.Signals): Promise<void>
+  }
+}
+
 export interface Config {
   exitCommand?: boolean | string
   autoRestart?: boolean
