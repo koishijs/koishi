@@ -87,8 +87,6 @@ export class SocketHandle {
 
 export type Listener = (this: SocketHandle, ...args: any[]) => Awaitable<any>
 
-Context.service('console')
-
 class Console extends Service {
   readonly global: ClientConfig
   readonly entries: Dict<string> = {}

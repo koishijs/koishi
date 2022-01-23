@@ -77,6 +77,7 @@ export const schema: Schema<Config> = Schema.intersect([
 ])
 
 export const name = 'teach'
+export const using = ['database'] as const
 
 export function apply(ctx: Context, config: Config) {
   // features

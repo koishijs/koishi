@@ -1,4 +1,4 @@
-import { clone, Context, defineProperty, Observed, pick, Query } from 'koishi'
+import { clone, Context, defineProperty, Observed, pick, Query, Service } from 'koishi'
 import { Dialogue, DialogueTest, equal } from './utils'
 
 declare module 'koishi' {
@@ -9,15 +9,11 @@ declare module 'koishi' {
   }
 }
 
-Context.service('teach')
-
-export default class Teach {
-  static using = ['database'] as const
-
+export default class Teach extends Service {
   history: Record<number, Dialogue> = {}
 
-  constructor(private ctx: Context, public config: Dialogue.Config) {
-    ctx.teach = this
+  constructor(ctx: Context, public config: Dialogue.Config) {
+    super(ctx, 'teach', true)
 
     ctx.model.extend('dialogue', {
       id: 'unsigned',
