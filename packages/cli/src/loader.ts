@@ -1,7 +1,6 @@
 import { resolve, extname, dirname, isAbsolute } from 'path'
-import { yellow } from 'kleur'
 import { readdirSync, readFileSync, writeFileSync } from 'fs'
-import { App, Dict, Logger, Modules, Plugin, Schema } from 'koishi'
+import { App, Dict, Logger, interpolate, Modules, Schema, unwrapExports, valueMap } from 'koishi'
 import * as yaml from 'js-yaml'
 
 declare module 'koishi' {
@@ -30,13 +29,21 @@ App.Config.list.push(Schema.object({
 let cwd = process.cwd()
 const logger = new Logger('app')
 
+const writableExts = ['.json', '.yml', '.yaml']
+const supportedExts = ['.js', '.json', '.ts', '.coffee', '.yaml', '.yml']
+
+const context = {
+  env: process.env,
+}
+
 export class Loader {
   dirname: string
   filename: string
   extname: string
   app: App
   config: App.Config
-  cache: Dict<Plugin> = {}
+  cache: Dict<string> = {}
+  isWritable: boolean
 
   constructor() {
     const basename = 'koishi.config'
@@ -46,12 +53,25 @@ export class Loader {
       this.dirname = cwd = dirname(this.filename)
     } else {
       const files = readdirSync(cwd)
-      this.extname = ['.js', '.json', '.ts', '.coffee', '.yaml', '.yml'].find(ext => files.includes(basename + ext))
+      this.extname = supportedExts.find(ext => files.includes(basename + ext))
       if (!this.extname) {
-        throw new Error(`config file not found. use ${yellow('koishi init')} command to initialize a config file.`)
+        throw new Error(`config file not found`)
       }
       this.dirname = cwd
       this.filename = cwd + '/' + basename + this.extname
+    }
+    this.isWritable = writableExts.includes(this.extname)
+  }
+
+  interpolate(source: any) {
+    if (typeof source === 'string') {
+      return interpolate(source, context, /\$\{\{(.+?)\}\}/g)
+    } else if (!source || typeof source !== 'object') {
+      return source
+    } else if (Array.isArray(source)) {
+      return source.map(item => this.interpolate(item))
+    } else {
+      return valueMap(source, item => this.interpolate(item))
     }
   }
 
@@ -67,8 +87,16 @@ export class Loader {
       config = module.default || module
     }
 
-    // validate config before saving
-    const resolved = new App.Config(config)
+    let resolved = new App.Config(config)
+    if (this.isWritable) {
+      // schemastery may change original config
+      // so we need to validate config twice
+      resolved = new App.Config(this.interpolate(config))
+    } else {
+      resolved.allowWrite = false
+    }
+
+    config.plugins ||= {}
     this.config = config
     return resolved
   }
@@ -83,27 +111,43 @@ export class Loader {
     }
   }
 
-  resolve(name: string) {
-    const path = Modules.resolve(name)
-    return this.cache[path] = Modules.require(name, true)
+  resolvePlugin(name: string) {
+    try {
+      this.cache[name] ||= Modules.resolve(name)
+    } catch (err) {
+      logger.error(err.message)
+      return
+    }
+    return unwrapExports(require(this.cache[name]))
+  }
+
+  unloadPlugin(name: string) {
+    const plugin = this.resolvePlugin(name)
+    if (!plugin) return
+
+    const state = this.app.dispose(plugin)
+    if (state) logger.info(`dispose plugin %c`, name)
+  }
+
+  reloadPlugin(name: string) {
+    const plugin = this.resolvePlugin(name)
+    if (!plugin) return
+
+    const state = this.app.dispose(plugin)
+    const config = this.config.plugins[name]
+    logger.info(`%s plugin %c`, state ? 'reload' : 'apply', name)
+    this.app.validate(plugin, config)
+    this.app.plugin(plugin, this.interpolate(config))
   }
 
   createApp() {
     const app = this.app = new App(this.config)
     app.loader = this
     app.baseDir = this.dirname
-    const plugins = app.options.plugins ||= {}
+    const { plugins } = this.config
     for (const name in plugins) {
-      if (name.startsWith('~')) {
-        this.resolve(name.slice(1))
-      } else {
-        logger.info(`apply plugin %c`, name)
-        const plugin = this.resolve(name)
-        this.app.plugin(plugin, plugins[name])
-      }
-    }
-    if (!['.json', '.yaml', '.yml'].includes(this.extname)) {
-      app.options.allowWrite = false
+      if (name.startsWith('~')) continue
+      this.reloadPlugin(name)
     }
     return app
   }

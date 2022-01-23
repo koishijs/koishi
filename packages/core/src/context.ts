@@ -242,27 +242,40 @@ export class Context {
     return this.plugin({ using, apply: callback, name: callback.name })
   }
 
-  plugin(name: string, options?: any): this
-  plugin<T extends Plugin>(plugin: T, options?: boolean | Plugin.Config<T>): this
-  plugin(entry: string | Plugin, options?: any) {
-    if (options === false) return this
-    if (options === true) options = undefined
-    options ??= {}
+  validate<T extends Plugin>(plugin: T, config: any) {
+    if (config === false) return
+    if (config === true) config = undefined
+    config ??= {}
 
+    const schema = plugin['Config'] || plugin['schema']
+    if (schema) config = schema(config)
+    return config
+  }
+
+  plugin(name: string, config?: any): this
+  plugin<T extends Plugin>(plugin: T, config?: boolean | Plugin.Config<T>): this
+  plugin(entry: string | Plugin, config?: any) {
+    // load plugin by name
     const plugin: Plugin = typeof entry === 'string' ? Modules.require(entry, true) : entry
+
+    // check duplication
     if (this.app.registry.has(plugin)) {
       this.logger('app').warn(new Error('duplicate plugin detected'))
       return this
     }
 
+    // check if it's a valid plugin
     if (typeof plugin !== 'function' && !isApplicable(plugin)) {
       throw new Error('invalid plugin, expect function or object with an "apply" method')
     }
 
-    const ctx = new Context(this.filter, this.app, plugin).select(options)
+    // validate plugin config
+    config = this.validate(plugin, config)
+    if (!config) return this
+
+    const ctx = new Context(this.filter, this.app, plugin).select(config)
     const schema = plugin['Config'] || plugin['schema']
     const using = plugin['using'] || []
-    if (schema) options = schema(options)
 
     this.app.registry.set(plugin, {
       plugin,
@@ -270,7 +283,7 @@ export class Context {
       using,
       id: Random.id(),
       context: this,
-      config: options,
+      config: config,
       parent: this.state,
       children: [],
       disposables: [],
@@ -290,11 +303,11 @@ export class Context {
     const callback = () => {
       if (using.some(name => !this[name])) return
       if (typeof plugin !== 'function') {
-        plugin.apply(ctx, options)
+        plugin.apply(ctx, config)
       } else if (isConstructor(plugin)) {
-        new plugin(ctx, options)
+        new plugin(ctx, config)
       } else {
-        plugin(ctx, options)
+        plugin(ctx, config)
       }
     }
 

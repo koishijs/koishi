@@ -1,6 +1,4 @@
 import { Context } from 'koishi'
-import { writeFileSync } from 'fs'
-import { dump } from 'js-yaml'
 import { Loader } from '@koishijs/cli'
 
 export default class ConfigWriter {
@@ -8,8 +6,8 @@ export default class ConfigWriter {
   private plugins: {}
 
   constructor(private ctx: Context) {
-    this.loader = ctx.app.loader
-    this.plugins = this.loader.config.plugins
+    this.loader = ctx.loader
+    this.plugins = ctx.loader.config.plugins
 
     ctx.console.addListener('plugin/load', (name, config) => {
       this.loadPlugin(name, config)
@@ -25,24 +23,17 @@ export default class ConfigWriter {
   }
 
   loadPlugin(name: string, config: any) {
-    const plugin = this.loader.resolvePlugin(name)
-    const state = this.ctx.dispose(plugin)
-    if (state) {
-      state.context.plugin(plugin, config)
-    } else {
-      this.ctx.app.plugin(plugin, config)
-    }
     delete this.plugins['~' + name]
     this.plugins[name] = config
     this.loader.writeConfig()
+    this.loader.reloadPlugin(name)
   }
 
   unloadPlugin(name: string, config: any) {
-    const plugin = this.loader.resolvePlugin(name)
-    this.ctx.dispose(plugin)
     delete this.plugins[name]
     this.plugins['~' + name] = config
     this.loader.writeConfig()
+    this.loader.unloadPlugin(name)
   }
 
   async createBot(platform: string, config: any) {
@@ -53,10 +44,9 @@ export default class ConfigWriter {
     } else if (!this.plugins[name]) {
       this.plugins[name] = { bots: [] }
     }
-    const adapterConfig = this.plugins[name]
-    adapterConfig['bots'].push(config)
-    this.loader.loadPlugin(name, adapterConfig)
+    this.plugins[name].bots.push(config)
     this.loader.writeConfig()
+    this.loader.reloadPlugin(name)
   }
 
   async removeBot() {}

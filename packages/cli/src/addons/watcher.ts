@@ -1,4 +1,4 @@
-import { App, coerce, Context, Dict, Logger, Plugin, Schema } from 'koishi'
+import { App, coerce, Context, Dict, Logger, Plugin, Schema, unwrapExports } from 'koishi'
 import { FSWatcher, watch, WatchOptions } from 'chokidar'
 import { relative, resolve } from 'path'
 import { debounce } from 'throttle-debounce'
@@ -12,10 +12,6 @@ function loadDependencies(filename: string, ignored: Set<string>) {
   }
   traverse(require.cache[filename])
   return dependencies
-}
-
-function unwrap(module: any) {
-  return module.default || module
 }
 
 function deepEqual(a: any, b: any) {
@@ -136,27 +132,15 @@ class Watcher {
     }
 
     // check plugin changes
-    const oldPlugins = oldConfig.plugins ||= {}
-    const newPlugins = newConfig.plugins ||= {}
+    const oldPlugins = oldConfig.plugins
+    const newPlugins = newConfig.plugins
     for (const name in { ...oldPlugins, ...newPlugins }) {
-      if (name.startsWith('~') || deepEqual(oldPlugins[name], newPlugins[name])) continue
-
-      // resolve plugin
-      let plugin: any
-      try {
-        plugin = this.ctx.loader.resolve(name)
-      } catch (err) {
-        logger.warn(err.message)
-        continue
-      }
-
-      // reload plugin
-      const state = this.ctx.dispose(plugin)
+      if (name.startsWith('~')) continue
+      if (deepEqual(oldPlugins[name], newPlugins[name])) continue
       if (name in newPlugins) {
-        logger.info(`%s plugin %c`, state ? 'reload' : 'apply', name)
-        this.ctx.app.plugin(plugin, newPlugins[name])
-      } else if (state) {
-        logger.info(`dispose plugin %c`, name)
+        this.ctx.loader.reloadPlugin(name)
+      } else {
+        this.ctx.loader.unloadPlugin(name)
       }
     }
   }
@@ -229,7 +213,7 @@ class Watcher {
     // that is, reloading them will not cause any other reloads
     for (const filename in require.cache) {
       const module = require.cache[filename]
-      const plugin = unwrap(module.exports)
+      const plugin = unwrapExports(module.exports)
       const state = this.ctx.app.registry.get(plugin)
       if (!state || this.declined.has(filename)) continue
       pending.set(filename, state)
@@ -268,7 +252,7 @@ class Watcher {
     const attempts = {}
     try {
       for (const [, filename] of reloads) {
-        attempts[filename] = unwrap(require(filename))
+        attempts[filename] = unwrapExports(require(filename))
       }
     } catch (err) {
       // rollback require.cache

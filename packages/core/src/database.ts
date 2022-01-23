@@ -133,6 +133,10 @@ export namespace Database {
   }
 }
 
+export function unwrapExports(module: any) {
+  return module.default || module
+}
+
 export interface Modules {}
 
 export namespace Modules {
@@ -172,8 +176,8 @@ export namespace Modules {
   export function require(name: string, forced = false) {
     try {
       const path = resolve(name)
-      const module = internal.require(path)
-      return module.default || module
+      const exports = internal.require(path)
+      return unwrapExports(exports)
     } catch (error) {
       if (forced) throw error
     }

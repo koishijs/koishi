@@ -25,9 +25,7 @@ export {
 declare module '@koishijs/plugin-console' {
   interface Events {
     'plugin/load'(name: string, config: any): void
-    'plugin/unload'(name: string): void
-    'plugin/reload'(name: string, config: any): void
-    'plugin/save'(name: string, config: any): void
+    'plugin/unload'(name: string, config: any): void
     'bot/create'(platform: string, config: any): void
   }
 

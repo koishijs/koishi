@@ -37,12 +37,10 @@
     "koishi": "^4.1.0"
   },
   "devDependencies": {
-    "@types/cross-spawn": "^6.0.2",
-    "@types/js-yaml": "^4.0.5"
+    "@types/cross-spawn": "^6.0.2"
   },
   "dependencies": {
     "cross-spawn": "^7.0.3",
-    "js-yaml": "^4.1.0",
     "semver": "^7.3.5"
   }
 }
