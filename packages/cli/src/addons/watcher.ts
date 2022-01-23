@@ -18,6 +18,23 @@ function unwrap(module: any) {
   return module.default || module
 }
 
+function deepEqual(a: any, b: any) {
+  if (a === b) return true
+  if (typeof a !== typeof b) return false
+  if (typeof a !== 'object') return false
+
+  // check array
+  if (Array.isArray(a)) {
+    if (!Array.isArray(b) || a.length !== b.length) return false
+    return a.every((item, index) => deepEqual(item, b[index]))
+  } else if (Array.isArray(b)) {
+    return false
+  }
+
+  // check object
+  return Object.keys({ ...a, ...b }).every(key => deepEqual(a[key], b[key]))
+}
+
 const logger = new Logger('watch')
 
 class Watcher {
@@ -58,11 +75,6 @@ class Watcher {
     ctx.on('dispose', () => this.stop())
   }
 
-  private triggerFullReload() {
-    logger.info('trigger full reload')
-    process.exit(51)
-  }
-
   start() {
     const { root = '', ignored = [] } = this.config
     this.root = resolve(this.ctx.loader.dirname, root)
@@ -71,28 +83,33 @@ class Watcher {
       ignored: ['**/node_modules/**', '**/.git/**', '**/logs/**', ...ignored],
     })
 
+    // files independent from any plugins will trigger a full reload
     this.externals = loadDependencies(__filename, new Set(Object.keys(this.ctx.loader.cache)))
-    const flushChanges = debounce(this.config.debounce || 100, () => this.flushChanges())
+    const triggerLocalReload = debounce(this.config.debounce, () => this.triggerLocalReload())
 
     this.watcher.on('change', (path) => {
-      if (this.suspend) {
+      const isEntry = path === this.ctx.loader.filename
+      if (this.suspend && isEntry) {
         this.suspend = false
         return
       }
 
       logger.debug('change detected:', relative(this.root, path))
 
-      const isEntry = path === this.ctx.loader.filename
-      if (!require.cache[path] && !isEntry) return
-
-      // files independent from any plugins will trigger a full reload
-      if (isEntry || this.externals.has(path)) {
-        return this.triggerFullReload()
+      if (isEntry) {
+        if (require.cache[path]) {
+          this.triggerFullReload()
+        } else {
+          this.triggerEntryReload()
+        }
+      } else {
+        if (this.externals.has(path)) {
+          this.triggerFullReload()
+        } else if (require.cache[path]) {
+          this.stashed.add(path)
+          triggerLocalReload()
+        }
       }
-
-      // do not trigger another reload during one reload
-      this.stashed.add(path)
-      flushChanges()
     })
   }
 
@@ -100,7 +117,51 @@ class Watcher {
     return this.watcher.close()
   }
 
-  private prepareReload() {
+  private triggerFullReload() {
+    logger.info('trigger full reload')
+    process.exit(51)
+  }
+
+  private triggerEntryReload() {
+    // use original config
+    const oldConfig = this.ctx.loader.config
+    this.ctx.loader.loadConfig()
+    const newConfig = this.ctx.loader.config
+
+    // check non-plugin changes
+    const merged = { ...oldConfig, ...newConfig }
+    delete merged.plugins
+    if (Object.keys(merged).some(key => !deepEqual(oldConfig[key], newConfig[key]))) {
+      return this.triggerFullReload()
+    }
+
+    // check plugin changes
+    const oldPlugins = oldConfig.plugins ||= {}
+    const newPlugins = newConfig.plugins ||= {}
+    for (const name in { ...oldPlugins, ...newPlugins }) {
+      if (name.startsWith('~') || deepEqual(oldPlugins[name], newPlugins[name])) continue
+
+      // resolve plugin
+      let plugin: any
+      try {
+        plugin = this.ctx.loader.resolve(name)
+      } catch (err) {
+        logger.warn(err.message)
+        continue
+      }
+
+      // reload plugin
+      const state = this.ctx.dispose(plugin)
+      if (name in newPlugins) {
+        logger.info(`%s plugin %c`, state ? 'reload' : 'apply', name)
+        this.ctx.app.plugin(plugin, newPlugins[name])
+      } else if (state) {
+        logger.info(`dispose plugin %c`, name)
+      }
+    }
+  }
+
+  private analyzeChanges() {
     /** files pending classification */
     const pending: string[] = []
 
@@ -155,8 +216,8 @@ class Watcher {
     }
   }
 
-  private flushChanges() {
-    this.prepareReload()
+  private triggerLocalReload() {
+    this.analyzeChanges()
 
     /** plugins pending classification */
     const pending = new Map<string, Plugin.State>()

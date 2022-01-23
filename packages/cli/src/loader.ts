@@ -56,15 +56,21 @@ export class Loader {
   }
 
   loadConfig(): App.Config {
+    let config: App.Config
     if (['.yaml', '.yml'].includes(this.extname)) {
-      return this.config = yaml.load(readFileSync(this.filename, 'utf8')) as any
+      config = yaml.load(readFileSync(this.filename, 'utf8')) as any
     } else if (['.json'].includes(this.extname)) {
       // we do not use require here because it will pollute require.cache
-      return this.config = JSON.parse(readFileSync(this.filename, 'utf8')) as any
+      config = JSON.parse(readFileSync(this.filename, 'utf8')) as any
     } else {
       const module = require(this.filename)
-      return this.config = module.default || module
+      config = module.default || module
     }
+
+    // validate config before saving
+    const resolved = new App.Config(config)
+    this.config = config
+    return resolved
   }
 
   writeConfig() {
@@ -93,7 +99,7 @@ export class Loader {
       } else {
         logger.info(`apply plugin %c`, name)
         const plugin = this.resolve(name)
-        this.app.plugin(plugin, plugins[name] ?? {})
+        this.app.plugin(plugin, plugins[name])
       }
     }
     if (!['.json', '.yaml', '.yml'].includes(this.extname)) {
