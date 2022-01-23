@@ -1,4 +1,4 @@
-import { Adapter, App, Context, Dict, omit, pick, Plugin, remove, Schema } from 'koishi'
+import { Adapter, App, Context, Dict, omit, pick, Plugin, remove, Schema, unwrapExports } from 'koishi'
 import { DataSource } from '@koishijs/plugin-console'
 import { promises as fsp } from 'fs'
 import { dirname } from 'path'
@@ -6,10 +6,6 @@ import { Package } from './utils'
 import {} from '@koishijs/cli'
 
 const { readdir, readFile } = fsp
-
-function unwrap(module: any) {
-  return module.default || module
-}
 
 /** require without affecting the dependency tree */
 function getExports(id: string) {
@@ -21,7 +17,7 @@ function getExports(id: string) {
     remove(module.children, result)
     delete require.cache[path]
   }
-  return unwrap(result.exports)
+  return unwrapExports(result.exports)
 }
 
 class PackageProvider extends DataSource<Dict<PackageProvider.Data>> {
@@ -47,7 +43,7 @@ class PackageProvider extends DataSource<Dict<PackageProvider.Data>> {
 
   private async updatePackage(plugin: Plugin, id: string) {
     const entry = Object.keys(require.cache).find((key) => {
-      return unwrap(require.cache[key].exports) === plugin
+      return unwrapExports(require.cache[key].exports) === plugin
     })
     if (!this.cache[entry]) return
     const local = await this.cache[entry]

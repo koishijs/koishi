@@ -72,19 +72,20 @@ class Watcher {
   }
 
   start() {
+    const { loader } = this.ctx
     const { root = '', ignored = [] } = this.config
-    this.root = resolve(this.ctx.loader.dirname, root)
+    this.root = resolve(loader.dirname, root)
     this.watcher = watch(this.root, {
       ...this.config,
       ignored: ['**/node_modules/**', '**/.git/**', '**/logs/**', ...ignored],
     })
 
     // files independent from any plugins will trigger a full reload
-    this.externals = loadDependencies(__filename, new Set(Object.keys(this.ctx.loader.cache)))
+    this.externals = loadDependencies(__filename, new Set(Object.values(loader.cache)))
     const triggerLocalReload = debounce(this.config.debounce, () => this.triggerLocalReload())
 
     this.watcher.on('change', (path) => {
-      const isEntry = path === this.ctx.loader.filename
+      const isEntry = path === loader.filename
       if (this.suspend && isEntry) {
         this.suspend = false
         return
@@ -120,9 +121,10 @@ class Watcher {
 
   private triggerEntryReload() {
     // use original config
-    const oldConfig = this.ctx.loader.config
-    this.ctx.loader.loadConfig()
-    const newConfig = this.ctx.loader.config
+    const { loader } = this.ctx
+    const oldConfig = loader.config
+    loader.loadConfig()
+    const newConfig = loader.config
 
     // check non-plugin changes
     const merged = { ...oldConfig, ...newConfig }
@@ -138,9 +140,9 @@ class Watcher {
       if (name.startsWith('~')) continue
       if (deepEqual(oldPlugins[name], newPlugins[name])) continue
       if (name in newPlugins) {
-        this.ctx.loader.reloadPlugin(name)
+        loader.reloadPlugin(name)
       } else {
-        this.ctx.loader.unloadPlugin(name)
+        loader.unloadPlugin(name)
       }
     }
   }
