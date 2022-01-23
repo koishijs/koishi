@@ -26,19 +26,11 @@ declare module 'koishi' {
   }
 }
 
-export abstract class DataSource<T = any> {
-  protected start(): Awaitable<void> {}
-  protected stop(): Awaitable<void> {}
+export abstract class DataSource<T = any> extends Service {
   protected abstract get(forced?: boolean): Promise<T>
 
   constructor(protected ctx: Context, protected name: keyof Sources) {
-    Context.service(`console.${name}`)
-    ctx.console.services[name] = this as never
-
-    sleep(0).then(() => {
-      ctx.on('ready', () => this.start())
-      ctx.on('dispose', () => this.stop())
-    })
+    super(ctx, `console.${name}`, true)
   }
 
   protected broadcast(type: string, value: any) {

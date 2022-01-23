@@ -1,4 +1,4 @@
-import { Logger, makeArray, remove, Random, Promisify, Awaitable, Dict, MaybeArray, defineProperty } from '@koishijs/utils'
+import { Logger, makeArray, remove, sleep, Random, Promisify, Awaitable, Dict, MaybeArray, defineProperty } from '@koishijs/utils'
 import { Command } from './command'
 import { Session } from './session'
 import { User, Channel, Modules } from './database'
@@ -413,7 +413,7 @@ export class Context {
 
     // handle special events
     if (name === 'ready' && this.app.isActive) {
-      this.app._tasks.execute(listener)
+      this.app._tasks.queue(sleep(0).then(() => listener()))
       return () => false
     } else if (name === 'dispose') {
       this.state.disposables[method](listener)

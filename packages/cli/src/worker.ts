@@ -21,4 +21,8 @@ addons.prepare(config)
 const app = loader.createApp()
 
 app.plugin(addons, app.options)
-app.start()
+app.start().then(() => {
+  for (const name in loader.cache) {
+    loader.diagnose(name)
+  }
+})

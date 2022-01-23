@@ -91,9 +91,10 @@ export class App extends Context {
     this.isActive = true
     logger.debug('started')
     for (const callback of this.getHooks('ready')) {
-      this._tasks.execute(callback)
+      this._tasks.queue(callback())
     }
-    await this._tasks.tillIdle()
+    delete this._hooks.ready
+    await this._tasks.flush()
   }
 
   async stop() {
@@ -285,14 +286,14 @@ export namespace App {
 class TaskQueue {
   #internal = new Set<Promise<void>>()
 
-  execute(callback: () => any) {
-    const task = Promise.resolve(callback())
+  queue(value: any) {
+    const task = Promise.resolve(value)
       .catch(err => logger.warn(err))
       .then(() => this.#internal.delete(task))
     this.#internal.add(task)
   }
 
-  async tillIdle() {
+  async flush() {
     while (this.#internal.size) {
       await Promise.all(Array.from(this.#internal))
     }

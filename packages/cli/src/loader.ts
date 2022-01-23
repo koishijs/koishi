@@ -118,13 +118,27 @@ export class Loader {
     const plugin = this.resolvePlugin(name)
     if (!plugin) return
 
+    const names = Object.keys(this.cache).filter((name) => {
+      const plugin = this.resolvePlugin(name)
+      const state = this.app.registry.get(plugin)
+      return state?.using.every(key => this.app[key])
+    })
+
     const state = this.app.dispose(plugin)
     if (state) logger.info(`dispose plugin %c`, name)
+
+    for (const name of names) {
+      this.diagnose(name)
+    }
   }
 
   reloadPlugin(name: string) {
     const plugin = this.resolvePlugin(name)
     if (!plugin) return
+
+    if (this.app.isActive) {
+      this.app._tasks.flush().then(() => this.diagnose(name))
+    }
 
     const state = this.app.dispose(plugin)
     const config = this.config.plugins[name]
@@ -143,5 +157,15 @@ export class Loader {
       this.reloadPlugin(name)
     }
     return app
+  }
+
+  diagnose(name: string) {
+    const plugin = this.resolvePlugin(name)
+    const state = this.app.registry.get(plugin)
+    if (!state) return
+
+    let missing = state.using.filter(key => !this.app[key])
+    if (!missing.length) return
+    this.app.logger('diagnostic').warn('plugin %c is missing required service %c', name, missing.join(', '))
   }
 }
