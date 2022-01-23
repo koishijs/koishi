@@ -52,11 +52,11 @@
         配置项
         <template v-if="data.id">
           <k-button solid type="error" @click="execute('unload')">停用插件</k-button>
-          <k-tip-button :tip="depTip" @click="execute('reload')">重载配置</k-tip-button>
+          <k-tip-button :tip="depTip" @click="execute('load')">重载配置</k-tip-button>
         </template>
         <template v-else>
           <k-tip-button :tip="depTip" @click="execute('load')">启用插件</k-tip-button>
-          <k-button solid @click="execute('save')">保存配置</k-button>
+          <k-button solid @click="execute('unload')">保存配置</k-button>
         </template>
       </h1>
       <k-schema :schema="data.schema" v-model="data.config" prefix=""></k-schema>

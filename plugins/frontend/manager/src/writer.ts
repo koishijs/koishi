@@ -15,16 +15,8 @@ export default class ConfigWriter {
       this.loadPlugin(name, config)
     })
 
-    ctx.console.addListener('plugin/unload', (name) => {
-      this.unloadPlugin(name)
-    })
-
-    ctx.console.addListener('plugin/reload', (name, config) => {
-      this.reloadPlugin(name, config)
-    })
-
-    ctx.console.addListener('plugin/save', (name, config) => {
-      this.savePlugin(name, config)
+    ctx.console.addListener('plugin/unload', (name, config) => {
+      this.unloadPlugin(name, config)
     })
 
     ctx.console.addListener('bot/create', (platform, config) => {
@@ -32,32 +24,23 @@ export default class ConfigWriter {
     })
   }
 
-  async loadPlugin(name: string, config: any) {
-    this.loader.loadPlugin(name, config)
-    this.plugins[name] = config
+  loadPlugin(name: string, config: any) {
+    const plugin = this.loader.resolvePlugin(name)
+    const state = this.ctx.dispose(plugin)
+    if (state) {
+      state.context.plugin(plugin, config)
+    } else {
+      this.ctx.app.plugin(plugin, config)
+    }
     delete this.plugins['~' + name]
-    this.loader.writeConfig()
-  }
-
-  async unloadPlugin(name: string) {
-    const plugin = this.loader.resolvePlugin(name)
-    await this.ctx.dispose(plugin)
-    this.plugins['~' + name] = this.plugins[name]
-    delete this.plugins[name]
-    this.loader.writeConfig()
-  }
-
-  async reloadPlugin(name: string, config: any) {
-    const plugin = this.loader.resolvePlugin(name)
-    const state = this.ctx.app.registry.get(plugin)
-    await this.ctx.dispose(plugin)
-    state.context.plugin(plugin, config)
     this.plugins[name] = config
     this.loader.writeConfig()
   }
 
-  async savePlugin(name: string, config: any) {
-    this.loader.resolvePlugin(name)
+  unloadPlugin(name: string, config: any) {
+    const plugin = this.loader.resolvePlugin(name)
+    this.ctx.dispose(plugin)
+    delete this.plugins[name]
     this.plugins['~' + name] = config
     this.loader.writeConfig()
   }

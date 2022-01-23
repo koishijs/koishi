@@ -302,18 +302,16 @@ export class Context {
     return this
   }
 
-  async dispose(plugin = this._plugin) {
+  dispose(plugin = this._plugin) {
     if (!plugin) throw new Error('root level context cannot be disposed')
     const state = this.app.registry.get(plugin)
     if (!state) return
-    const task = Promise.allSettled([
-      ...state.children.slice().map(plugin => this.dispose(plugin)),
-      ...state.disposables.slice().map(dispose => dispose()),
-    ])
+    state.children.slice().map(plugin => this.dispose(plugin))
+    state.disposables.slice().map(dispose => dispose())
     this.app.registry.delete(plugin)
     remove(state.parent.children, plugin)
     this.emit('plugin-removed', plugin)
-    await task
+    return state
   }
 
   * getHooks(name: EventName, session?: Session) {

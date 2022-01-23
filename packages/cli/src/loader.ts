@@ -2,7 +2,7 @@ import { resolve, extname, dirname, isAbsolute } from 'path'
 import { yellow } from 'kleur'
 import { readdirSync, readFileSync, writeFileSync } from 'fs'
 import { App, Dict, Logger, Modules, Plugin, Schema } from 'koishi'
-import { dump, load } from 'js-yaml'
+import * as yaml from 'js-yaml'
 
 declare module 'koishi' {
   namespace Context {
@@ -57,7 +57,7 @@ export class Loader {
 
   loadConfig(): App.Config {
     if (['.yaml', '.yml'].includes(this.extname)) {
-      return this.config = load(readFileSync(this.filename, 'utf8')) as any
+      return this.config = yaml.load(readFileSync(this.filename, 'utf8')) as any
     } else if (['.json'].includes(this.extname)) {
       // we do not use require here because it will pollute require.cache
       return this.config = JSON.parse(readFileSync(this.filename, 'utf8')) as any
@@ -67,26 +67,19 @@ export class Loader {
     }
   }
 
-  resolvePlugin(name: string) {
-    const path = Modules.resolve(name)
-    return this.cache[path] = Modules.require(name, true)
-  }
-
-  loadPlugin(name: string, options?: any) {
-    const plugin = this.resolvePlugin(name)
-    if (this.app.registry.has(plugin)) return plugin
-    this.app.plugin(plugin, options)
-    return plugin
-  }
-
   writeConfig() {
     // prevent hot reload when it's being written
     if (this.app.watcher) this.app.watcher.suspend = true
     if (this.extname === '.json') {
       writeFileSync(this.filename, JSON.stringify(this.config, null, 2))
     } else {
-      writeFileSync(this.filename, dump(this.config))
+      writeFileSync(this.filename, yaml.dump(this.config))
     }
+  }
+
+  resolve(name: string) {
+    const path = Modules.resolve(name)
+    return this.cache[path] = Modules.require(name, true)
   }
 
   createApp() {
@@ -96,10 +89,11 @@ export class Loader {
     const plugins = app.options.plugins ||= {}
     for (const name in plugins) {
       if (name.startsWith('~')) {
-        this.resolvePlugin(name.slice(1))
+        this.resolve(name.slice(1))
       } else {
         logger.info(`apply plugin %c`, name)
-        this.loadPlugin(name, plugins[name] ?? {})
+        const plugin = this.resolve(name)
+        this.app.plugin(plugin, plugins[name] ?? {})
       }
     }
     if (!['.json', '.yaml', '.yml'].includes(this.extname)) {
