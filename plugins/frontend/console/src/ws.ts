@@ -31,9 +31,9 @@ export class SocketHandle {
 export type Listener = (this: SocketHandle, ...args: any[]) => Awaitable<any>
 
 class WsService extends DataService {
-  private readonly handles: Dict<SocketHandle> = {}
-  private readonly listeners: Dict<Listener> = {}
-  private readonly layer: WebSocketLayer
+  readonly handles: Dict<SocketHandle> = {}
+  readonly listeners: Dict<Listener> = {}
+  readonly layer: WebSocketLayer
 
   constructor(public ctx: Context, private config: WsService.Config) {
     super(ctx, 'ws')

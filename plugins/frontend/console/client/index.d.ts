@@ -8,9 +8,8 @@ declare module '*.vue' {
 }
 
 declare module '~/client' {
-  import { Component } from 'vue'
-  import { EChartsOption } from 'echarts'
-  import Console, { Events, DataService, ClientConfig } from '@koishijs/plugin-console'
+  import { App, Component } from 'vue'
+  import { Console, Events, DataService, ClientConfig } from '@koishijs/plugin-console'
 
   // data api
 
@@ -55,6 +54,7 @@ declare module '~/client' {
   export type Extension = (ctx: Context) => void
 
   export class Context {
+    static app: App
     disposables: Disposable[] = []
 
     addPage(options: PageOptions): void
@@ -75,13 +75,7 @@ declare module '~/client' {
       content: (store: Pick<Store, T>) => any
     }
 
-    export interface ChartOptions<T extends keyof Console.Services> {
-      title: string
-      fields?: T[]
-      options: (store: Pick<Store, T>) => EChartsOption
-    }
-
+    export function create(render: Function, fields: (keyof Console.Services)[] = []): Component
     export function numeric<T extends keyof Console.Services = never>(options: NumericOptions<T>): Component
-    export function echarts<T extends keyof Console.Services = never>(options: ChartOptions<T>): Component
   }
 }

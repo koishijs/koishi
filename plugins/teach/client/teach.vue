@@ -4,15 +4,15 @@
     <k-numeric title="总问答数量" icon="quote-right">{{ store.meta.dialogues }}</k-numeric>
     <k-numeric title="图片服务器" icon="hdd" type="size" :value="store.meta.assetSize" fallback="暂无数据"/>
   </div>
-  <div class="card-grid chart-grid">
+  <!-- <div class="card-grid chart-grid">
     <word-cloud/>
-  </div>
+  </div> -->
 </template>
 
 <script lang="ts" setup>
 
 import { store } from '~/client'
-import WordCloud from './word-cloud.vue'
+// import WordCloud from './word-cloud.vue'
 
 </script>
 

@@ -1,10 +1,10 @@
-import { Card, Context } from '~/client'
-import { Tooltip } from './utils'
+import { Context } from '~/client'
+import { createChart, Tooltip } from './utils'
 
 export default (ctx: Context) => {
   ctx.addView({
     type: 'chart',
-    component: Card.echarts({
+    component: createChart({
       title: '指令调用频率',
       fields: ['stats'],
       options({ stats }) {

@@ -33,7 +33,7 @@ class HttpService extends DataService<string[]> {
 
   addEntry(filename: string) {
     const hash = Math.floor(Math.random() * (16 ** 8)).toString(16).padStart(8, '0')
-    const key = `entry-${hash}.js`
+    const key = `entry-${hash}${extname(filename)}`
     this.data[key] = filename
     this.refresh()
     this.caller.on('dispose', () => {
@@ -43,8 +43,9 @@ class HttpService extends DataService<string[]> {
   }
 
   async get() {
+    const { devMode, uiPath } = this.config
     return Object.entries(this.data).map(([name, filename]) => {
-      return this.config.devMode ? '/vite/@fs/' + filename : `./${name}`
+      return devMode ? '/vite/@fs/' + filename : `${uiPath}/assets/${name}`
     })
   }
 

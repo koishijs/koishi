@@ -18,8 +18,12 @@ export default class DatabaseProvider extends DataService<Dict<Query.TableStats>
   constructor(ctx: Context) {
     super(ctx, 'tables')
 
-    const filename = ctx.console.config.devMode ? '../client/index.ts' : '../dist/index.js'
-    ctx.console.addEntry(resolve(__dirname, filename))
+    if (ctx.console.config.devMode) {
+      ctx.console.addEntry(resolve(__dirname, '../client/index.ts'))
+    } else {
+      ctx.console.addEntry(resolve(__dirname, '../dist/index.js'))
+      ctx.console.addEntry(resolve(__dirname, '../dist/style.css'))
+    }
   }
 
   get(forced = false) {

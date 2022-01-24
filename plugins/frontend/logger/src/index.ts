@@ -26,8 +26,12 @@ class LogProvider extends DataService<string[]> {
   constructor(ctx: Context, private config: LogProvider.Config = {}) {
     super(ctx, 'logs')
 
-    const filename = ctx.console.config.devMode ? '../client/index.ts' : '../dist/index.js'
-    ctx.console.addEntry(resolve(__dirname, filename))
+    if (ctx.console.config.devMode) {
+      ctx.console.addEntry(resolve(__dirname, '../client/index.ts'))
+    } else {
+      ctx.console.addEntry(resolve(__dirname, '../dist/index.js'))
+      ctx.console.addEntry(resolve(__dirname, '../dist/style.css'))
+    }
 
     this.ctx.on('ready', () => {
       this.prepareWriter()

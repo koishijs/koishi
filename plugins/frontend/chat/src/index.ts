@@ -83,12 +83,17 @@ export function apply(ctx: Context, options: Config = {}) {
 
   ctx.using(['console'], (ctx) => {
     const { devMode, apiPath } = ctx.console.config
-    const filename = devMode ? '../client/index.ts' : '../dist/index.js'
     const whitelist = [...builtinWhitelist, ...options.whitelist || []]
 
     ctx.console.global.whitelist = whitelist
     ctx.console.global.maxMessages = options.maxMessages
-    ctx.console.addEntry(resolve(__dirname, filename))
+
+    if (devMode) {
+      ctx.console.addEntry(resolve(__dirname, '../client/index.ts'))
+    } else {
+      ctx.console.addEntry(resolve(__dirname, '../dist/index.js'))
+      ctx.console.addEntry(resolve(__dirname, '../dist/style.css'))
+    }
 
     ctx.console.addListener('chat', async ({ content, platform, selfId, channelId, guildId }) => {
       if (ctx.assets) content = await ctx.assets.transform(content)
@@ -96,7 +101,7 @@ export function apply(ctx: Context, options: Config = {}) {
     })
 
     ctx.on('chat/receive', async (message) => {
-      Object.values(ctx.console.handles).forEach((handle) => {
+      Object.values(ctx.console.ws.handles).forEach((handle) => {
         handle.socket.send(JSON.stringify({ type: 'chat', body: message }))
       })
     })

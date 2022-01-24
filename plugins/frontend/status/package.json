@@ -34,7 +34,9 @@
   },
   "devDependencies": {
     "@koishijs/cli": "^4.1.0",
-    "@koishijs/plugin-console": "^1.1.0"
+    "@koishijs/plugin-console": "^1.1.0",
+    "echarts": "^5.2.2",
+    "vue-echarts": "^6.0.2"
   },
   "dependencies": {
     "systeminformation": "^5.10.0"

@@ -1,12 +1,12 @@
-import { Card, Context } from '~/client'
-import { Tooltip } from './utils'
+import { Context } from '~/client'
+import { createChart, Tooltip } from './utils'
 
 const formatHour = (value: number) => `${(value - 0.5).toFixed()}:00-${(value + 0.5).toFixed()}:00`
 
 export default (ctx: Context) => {
   ctx.addView({
     type: 'chart',
-    component: Card.echarts({
+    component: createChart({
       title: '每小时发言数量',
       fields: ['stats'],
       options({ stats }) {

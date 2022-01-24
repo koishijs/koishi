@@ -1,8 +1,7 @@
 /* eslint-disable no-undef */
 
-import * as Vue from 'vue'
-import * as Router from 'vue-router'
-import * as client from './client'
+import { createApp } from 'vue'
+import { connect, router, config } from './client'
 
 import form from './components/form'
 
@@ -29,13 +28,7 @@ import '@fortawesome/fontawesome-free/css/solid.css'
 import 'element-plus/dist/index.css'
 import './index.scss'
 
-const { router, config } = client
-
-self['Vue'] = Vue
-self['VueRouter'] = Router
-self['KoishiClient'] = client
-
-const app = Vue.createApp(App)
+const app = createApp(App)
 
 app.use(ElCascader)
 app.use(ElEmpty)
@@ -54,7 +47,6 @@ app.use(form)
 app.component('k-content', Content)
 app.component('k-card-aside', CardAside)
 app.component('k-card', Card)
-app.component('k-chart', Vue.defineAsyncComponent(() => import('./components/echarts') as any))
 app.component('k-collapse', Collapse)
 app.component('k-markdown', Markdown)
 app.component('k-numeric', Numeric)
@@ -78,6 +70,6 @@ router.afterEach((route) => {
 
 const endpoint = new URL(config.endpoint, location.origin).toString()
 
-client.connect(endpoint.replace(/^http/, 'ws'))
+connect(endpoint.replace(/^http/, 'ws'))
 
 app.mount('#app')

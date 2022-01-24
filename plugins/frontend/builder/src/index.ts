@@ -1,57 +1,41 @@
 /* eslint-disable quote-props */
 
-import * as vite from 'vite'
-import pluginVue from '@vitejs/plugin-vue'
+import { build, mergeConfig, UserConfig } from 'vite'
+import { existsSync } from 'fs'
+import vue from '@vitejs/plugin-vue'
 
-export async function build(root: string, config: vite.UserConfig) {
-  const { rollupOptions } = config.build || {}
-  await vite.build({
-    ...config,
+export async function buildExtension(root: string, config: UserConfig = {}) {
+  if (!existsSync(root + '/client')) return
+
+  return build(mergeConfig({
     root,
     build: {
-      outDir: '../dist',
-      minify: 'esbuild',
-      emptyOutDir: true,
-      ...config.build,
-      rollupOptions: {
-        ...rollupOptions,
-        external: [root + '/vue.js', root + '/vue-router.js', root + '/client.js'],
-        output: rollupOptions?.input ? {
-          format: 'module',
-          entryFileNames: '[name].js',
-          globals: {
-            [root + '/vue.js']: 'Vue',
-            [root + '/vue-router.js']: 'VueRouter',
-            [root + '/client.js']: 'KoishiClient',
-          },
-          ...rollupOptions.output,
-        } : undefined,
-      },
-    },
-    plugins: [pluginVue(), ...config.plugins || []],
-    resolve: {
-      alias: {
-        'vue': root + '/vue.js',
-        'vue-router': root + '/vue-router.js',
-        '~/client': root + '/client.js',
-        ...config.resolve?.alias,
-      },
-    },
-  })
-}
-
-export function buildExtension(root: string) {
-  return build(root, {
-    build: {
       outDir: 'dist',
-      assetsDir: '',
       minify: 'esbuild',
+      assetsDir: '',
+      emptyOutDir: true,
+      lib: {
+        entry: root + '/client/index.ts',
+        formats: ['es'],
+      },
       rollupOptions: {
-        input: root + '/client/index.ts',
+        external: [
+          root + '/vue.js',
+          root + '/vue-router.js',
+          root + '/client.js',
+        ],
         output: {
           format: 'iife',
         },
       },
     },
-  })
+    plugins: [vue()],
+    resolve: {
+      alias: {
+        'vue': root + '/vue.js',
+        'vue-router': root + '/vue-router.js',
+        '~/client': root + '/client.js',
+      },
+    },
+  }, config))
 }

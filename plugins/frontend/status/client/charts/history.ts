@@ -1,12 +1,12 @@
-import { Card, Context } from '~/client'
-import { Tooltip } from './utils'
+import { Context } from '~/client'
+import { createChart, Tooltip } from './utils'
 
 const week = '日一二三四五六'
 
 export default (ctx: Context) => {
   ctx.addView({
     type: 'chart',
-    component: Card.echarts({
+    component: createChart({
       title: '历史发言数量',
       fields: ['stats'],
       options({ stats }) {

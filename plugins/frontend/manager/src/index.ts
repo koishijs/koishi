@@ -57,6 +57,10 @@ export function apply(ctx: Context, config: Config = {}) {
   ctx.plugin(ServiceProvider)
   ctx.plugin(ConfigWriter, ctx.app.options.allowWrite)
 
-  const filename = ctx.console.config.devMode ? '../client/index.ts' : '../dist/index.js'
-  ctx.console.addEntry(resolve(__dirname, filename))
+  if (ctx.console.config.devMode) {
+    ctx.console.addEntry(resolve(__dirname, '../client/index.ts'))
+  } else {
+    ctx.console.addEntry(resolve(__dirname, '../dist/index.js'))
+    ctx.console.addEntry(resolve(__dirname, '../dist/style.css'))
+  }
 }

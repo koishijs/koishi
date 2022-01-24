@@ -1,11 +1,11 @@
 import type { GroupData } from '@koishijs/plugin-status/src'
-import { Card, Context } from '~/client'
-import { Tooltip } from './utils'
+import { Context } from '~/client'
+import { createChart, Tooltip } from './utils'
 
 export default (ctx: Context) => {
   ctx.addView({
     type: 'chart',
-    component: Card.echarts({
+    component: createChart({
       title: '各群发言数量',
       fields: ['stats'],
       options({ stats }) {

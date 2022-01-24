@@ -2,16 +2,10 @@ import { Card, Context } from '~/client'
 import {} from '@koishijs/plugin-status/src'
 import LoadChart from './components/load-chart.vue'
 import Home from './index.vue'
-import CommandChart from './charts/command'
-import GuildChart from './charts/guild'
-import HistoryChart from './charts/history'
-import HourChart from './charts/hour'
+import Charts from './charts'
 
 export default (ctx: Context) => {
-  ctx.install(HistoryChart)
-  ctx.install(HourChart)
-  ctx.install(GuildChart)
-  ctx.install(CommandChart)
+  ctx.install(Charts)
 
   ctx.addPage({
     path: '/',
