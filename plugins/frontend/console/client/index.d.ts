@@ -27,13 +27,20 @@ declare module '~/client' {
 
   // layout api
 
-  export interface PageOptions {
-    path: string
-    name: string
+  declare module 'vue-router' {
+    interface RouteMeta extends RouteMetaExtension {}
+  }
+
+  interface RouteMetaExtension {
     icon?: string
     order?: number
-    position?: 'top' | 'bottom' | 'hidden'
     fields?: readonly (keyof Sources)[]
+    position?: 'top' | 'bottom' | 'hidden'
+  }
+
+  export interface PageOptions extends RouteMetaExtension {
+    path: string
+    name: string
     component: Component
   }
 
@@ -44,8 +51,18 @@ declare module '~/client' {
     component: Component
   }
 
-  export function registerPage(options: PageOptions): void
-  export function registerView(options: ViewOptions): void
+  export type Disposable = () => void
+  export type Extension = (ctx: Context) => void
+
+  export class Context {
+    disposables: Disposable[] = []
+
+    registerPage(options: PageOptions): void
+    registerView(options: ViewOptions): void
+    install(extension: Extension): void
+  }
+
+  export function defineExtension(extension: Extension): Extension
 
   // component helper
 

@@ -17,6 +17,7 @@ import Markdown from './components/markdown.vue'
 import Numeric from './components/numeric.vue'
 import View from './components/view'
 import App from './layout/index.vue'
+import Blank from './layout/blank.vue'
 
 import { ElCascader, ElEmpty, ElTooltip, ElScrollbar, ElSelect, ElTree } from 'element-plus'
 
@@ -61,13 +62,13 @@ app.component('k-view', View)
 
 app.provide('ecTheme', 'dark-blue')
 
-app.use(router)
-
-router.beforeEach((route, from) => {
-  if (from === Router.START_LOCATION && !route.matched.length) {
-    loadingExtensions.then(() => router.replace(route))
-  }
+router.addRoute({
+  path: '/blank',
+  component: Blank,
+  meta: { fields: [], position: 'hidden' },
 })
+
+app.use(router)
 
 router.afterEach((route) => {
   if (typeof route.name === 'string') {
@@ -79,10 +80,4 @@ const endpoint = new URL(config.endpoint, location.origin).toString()
 
 client.connect(endpoint.replace(/^http/, 'ws'))
 
-const loadingExtensions = Promise.all(config.extensions.map(path => {
-  return import(/* @vite-ignore */ path).catch((error) => {
-    console.error(error)
-  })
-}))
-
-loadingExtensions.then(() => app.mount('#app'))
+app.mount('#app')

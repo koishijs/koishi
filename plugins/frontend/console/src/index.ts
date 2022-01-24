@@ -2,6 +2,10 @@ import { Context, Schema, Service } from 'koishi'
 import HttpService from './http'
 import WsService, { Listener } from './ws'
 
+export * from './service'
+export * from './http'
+export * from './ws'
+
 type SubServices = {
   [K in keyof Sources as `console.${K}`]: Sources[K]
 }

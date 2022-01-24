@@ -1,7 +1,6 @@
 import { Awaitable, Context, Dict, Logger, WebSocketLayer } from 'koishi'
 import { v4 } from 'uuid'
 import { DataSource } from './service'
-import { Events } from '.'
 import WebSocket from 'ws'
 
 declare module 'koishi' {
@@ -65,9 +64,8 @@ class WsService extends DataSource {
 
     for (const name of Context.Services) {
       if (!name.startsWith('console.')) continue
-      const service = this.ctx[name]
-      if (typeof service['get'] !== 'function') continue
-      Promise.resolve(service['get']()).then((value) => {
+      Promise.resolve(this.ctx[name]?.['get']?.()).then((value) => {
+        if (!value) return
         const key = name.slice(8)
         socket.send(JSON.stringify({ type: 'data', body: { key, value } }))
       })
