@@ -24,9 +24,19 @@ export abstract class Bot<T extends Bot.BaseConfig = Bot.BaseConfig> {
     this.platform = config.platform || adapter.platform
     this.logger = new Logger(adapter.platform)
     this._status = 'offline'
+    this.extendModel()
 
     adapter.ctx.on('ready', () => this.start())
     adapter.ctx.on('dispose', () => this.stop())
+  }
+
+  private extendModel() {
+    if (this.platform in this.app.model.config.user.fields) return
+    this.app.model.extend('user', {
+      [this.platform]: 'string',
+    }, {
+      unique: [this.platform as never],
+    })
   }
 
   get status() {

@@ -50,11 +50,6 @@ export class MockAdapter extends Adapter<BotConfig> {
     this.app = ctx.app
     ctx.mock = this
     ctx.bots.adapters.mock = this
-    ctx.model.extend('user', {
-      mock: 'string',
-    }, {
-      unique: ['mock'],
-    })
 
     for (const selfId of config.selfIds) {
       this.addBot(selfId)

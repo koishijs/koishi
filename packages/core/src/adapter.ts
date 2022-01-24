@@ -109,11 +109,6 @@ export namespace Adapter {
     function apply(ctx: Context, config: PluginConfig = {}) {
       ctx.emit('adapter', platform)
       configMap[platform] = config
-      ctx.model.extend('user', {
-        [platform]: 'string',
-      }, {
-        unique: [platform as never],
-      })
 
       for (const options of config.bots) {
         ctx.bots.create(platform, options, constructor)
