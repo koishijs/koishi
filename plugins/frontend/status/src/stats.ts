@@ -44,7 +44,7 @@ export interface GroupData {
 const send = Session.prototype.send
 Session.prototype.send = function (this: Session, ...args) {
   if (args[0] && this._sendType && this.app.console) {
-    this.app.console.services.stats.hourly[this._sendType] += 1
+    this.app.console.stats.hourly[this._sendType] += 1
   }
   return send.apply(this, args)
 }

@@ -117,7 +117,7 @@ class PackageProvider extends DataSource<Dict<PackageProvider.Data>> {
     const oldLength = Object.keys(Adapter.library).length
     const exports = getExports(name)
     const newLength = Object.keys(Adapter.library).length
-    if (newLength > oldLength) this.ctx.console.services.protocols.refresh()
+    if (newLength > oldLength) this.ctx.console.protocols.refresh()
 
     // check plugin dependencies
     Object.assign(result, Package.Meta.from(data))

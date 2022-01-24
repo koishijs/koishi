@@ -150,13 +150,13 @@ class MarketProvider extends DataSource<Dict<MarketProvider.Data>> {
   install = async (name: string) => {
     const agent = await (this.agentTask ||= this.getAgent())
     await this.exec(agent, [agent === 'yarn' ? 'add' : 'install', name, '--loglevel', 'error'])
-    this.ctx.console.services.packages.refresh()
+    this.ctx.console.packages.refresh()
   }
 
   uninstall = async (name: string) => {
     const agent = await (this.agentTask ||= this.getAgent())
     await this.exec(agent, ['remove', name, '--loglevel', 'error'])
-    this.ctx.console.services.packages.refresh()
+    this.ctx.console.packages.refresh()
   }
 }
 

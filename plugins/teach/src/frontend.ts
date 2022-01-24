@@ -28,7 +28,7 @@ export default class TeachConsole {
     const filename = ctx.console.config.devMode ? '../../client/index.ts' : '../../dist/index.js'
     ctx.console.addEntry(resolve(__dirname, filename))
 
-    const { stats, meta } = ctx.console.services
+    const { stats, meta } = ctx.console
 
     ctx.on('dialogue/before-send', ({ session, dialogue }) => {
       session._sendType = 'dialogue'

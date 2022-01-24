@@ -117,8 +117,11 @@ class Context {
         ...rest,
       },
     })
-    this.disposables.push(dispose)
     routes.value = router.getRoutes()
+    this.disposables.push(() => {
+      dispose()
+      routes.value = router.getRoutes()
+    })
   }
 
   install(extension: Extension) {
@@ -169,7 +172,9 @@ router.beforeEach(async (to, from) => {
     if (to.matched.length) return to
   }
 
-  const routes = router.getRoutes().filter(item => item.meta.position === 'top')
+  const routes = router.getRoutes()
+    .filter(item => item.meta.position === 'top')
+    .sort((a, b) => b.meta.order - a.meta.order)
   const path = routes[0]?.path || '/blank'
   return {
     path,
