@@ -4,7 +4,7 @@ import { Tooltip } from './utils'
 const formatHour = (value: number) => `${(value - 0.5).toFixed()}:00-${(value + 0.5).toFixed()}:00`
 
 export default (ctx: Context) => {
-  ctx.registerView({
+  ctx.addView({
     type: 'chart',
     component: Card.echarts({
       title: '每小时发言数量',

@@ -3,7 +3,7 @@ import { Card, Context } from '~/client'
 import { Tooltip } from './utils'
 
 export default (ctx: Context) => {
-  ctx.registerView({
+  ctx.addView({
     type: 'chart',
     component: Card.echarts({
       title: '各群发言数量',

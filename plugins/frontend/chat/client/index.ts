@@ -3,12 +3,12 @@ import Chat from './chat.vue'
 import Overlay from './overlay.vue'
 
 export default (ctx: Context) => {
-  ctx.registerView({
+  ctx.addView({
     type: 'global',
     component: Overlay,
   })
 
-  ctx.registerPage({
+  ctx.addPage({
     path: '/chat',
     name: '聊天',
     icon: 'comments',

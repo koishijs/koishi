@@ -5,7 +5,7 @@ import Settings from './settings/index.vue'
 import Market from './market/index.vue'
 
 export default (ctx: Context) => {
-  ctx.registerView({
+  ctx.addView({
     type: 'numeric',
     order: 100,
     component: Card.numeric({
@@ -16,7 +16,7 @@ export default (ctx: Context) => {
     }),
   })
 
-  ctx.registerPage({
+  ctx.addPage({
     path: '/bots',
     name: '机器人',
     icon: 'robot',
@@ -25,7 +25,7 @@ export default (ctx: Context) => {
     component: Bots,
   })
 
-  ctx.registerPage({
+  ctx.addPage({
     path: '/settings',
     name: '插件配置',
     icon: 'tools',
@@ -34,7 +34,7 @@ export default (ctx: Context) => {
     component: Settings,
   })
 
-  ctx.registerPage({
+  ctx.addPage({
     path: '/market',
     name: '插件市场',
     icon: 'puzzle-piece',

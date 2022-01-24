@@ -57,8 +57,8 @@ declare module '~/client' {
   export class Context {
     disposables: Disposable[] = []
 
-    registerPage(options: PageOptions): void
-    registerView(options: ViewOptions): void
+    addPage(options: PageOptions): void
+    addView(options: ViewOptions): void
     install(extension: Extension): void
   }
 

@@ -4,7 +4,7 @@ import { Tooltip } from './utils'
 const week = '日一二三四五六'
 
 export default (ctx: Context) => {
-  ctx.registerView({
+  ctx.addView({
     type: 'chart',
     component: Card.echarts({
       title: '历史发言数量',

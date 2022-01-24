@@ -2,7 +2,7 @@ import { Card, Context } from '~/client'
 import { Tooltip } from './utils'
 
 export default (ctx: Context) => {
-  ctx.registerView({
+  ctx.addView({
     type: 'chart',
     component: Card.echarts({
       title: '指令调用频率',

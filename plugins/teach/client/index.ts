@@ -2,7 +2,7 @@ import { Context } from '~/client'
 import Teach from './teach.vue'
 
 export default (ctx: Context) => {
-  ctx.registerPage({
+  ctx.addPage({
     path: '/teach',
     name: '问答',
     icon: 'book',

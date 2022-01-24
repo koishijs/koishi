@@ -4,7 +4,7 @@ import Logs from './index.vue'
 import './index.scss'
 
 export default (ctx: Context) => {
-  ctx.registerPage({
+  ctx.addPage({
     path: '/logs',
     name: '日志',
     icon: 'clipboard-list',

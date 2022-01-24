@@ -13,7 +13,7 @@ export default (ctx: Context) => {
   ctx.install(GuildChart)
   ctx.install(CommandChart)
 
-  ctx.registerPage({
+  ctx.addPage({
     path: '/',
     name: '仪表盘',
     icon: 'tachometer-alt',
@@ -21,7 +21,7 @@ export default (ctx: Context) => {
     component: Home,
   })
 
-  ctx.registerView({
+  ctx.addView({
     type: 'numeric',
     component: Card.numeric({
       title: '近期消息频率',
@@ -33,7 +33,7 @@ export default (ctx: Context) => {
     }),
   })
 
-  ctx.registerView({
+  ctx.addView({
     id: 'database',
     type: 'numeric',
     component: Card.numeric({
@@ -45,7 +45,7 @@ export default (ctx: Context) => {
     }),
   })
 
-  ctx.registerView({
+  ctx.addView({
     id: 'assets',
     type: 'numeric',
     component: Card.numeric({
@@ -57,7 +57,7 @@ export default (ctx: Context) => {
     }),
   })
 
-  ctx.registerView({
+  ctx.addView({
     type: 'numeric',
     component: Card.numeric({
       title: '活跃用户数量',
@@ -67,7 +67,7 @@ export default (ctx: Context) => {
     }),
   })
 
-  ctx.registerView({
+  ctx.addView({
     type: 'numeric',
     component: Card.numeric({
       title: '活跃群数量',
@@ -77,7 +77,7 @@ export default (ctx: Context) => {
     }),
   })
 
-  ctx.registerView({
+  ctx.addView({
     type: 'home',
     component: LoadChart,
   })

@@ -88,7 +88,7 @@ export const routes: Ref<RouteRecordNormalized[]> = ref([])
 class Context {
   disposables: Disposable[] = []
 
-  registerView(options: ViewOptions) {
+  addView(options: ViewOptions) {
     options.order ??= 0
     const list = views[options.type] ||= []
     const index = list.findIndex(a => a.order < options.order)
@@ -104,7 +104,7 @@ class Context {
     })
   }
 
-  registerPage(options: PageOptions) {
+  addPage(options: PageOptions) {
     const { path, name, component, ...rest } = options
     const dispose = router.addRoute({
       path,
