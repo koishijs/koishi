@@ -33,7 +33,7 @@ export abstract class Bot<T extends Bot.BaseConfig = Bot.BaseConfig> {
   private extendModel() {
     if (this.platform in this.app.model.config.user.fields) return
     this.app.model.extend('user', {
-      [this.platform]: 'string',
+      [this.platform]: { type: 'string', length: 63 },
     }, {
       unique: [this.platform as never],
     })
