@@ -1,11 +1,11 @@
 import { Context, Dict, noop } from 'koishi'
 import { resolve, extname } from 'path'
 import { promises as fs, Stats, createReadStream } from 'fs'
-import { DataSource } from './service'
+import { DataService } from './service'
 import { ViteDevServer } from 'vite'
 import open from 'open'
 
-class HttpService extends DataSource<string[]> {
+class HttpService extends DataService<string[]> {
   private vite: ViteDevServer
   private data: Dict<string> = {}
 

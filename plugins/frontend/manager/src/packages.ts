@@ -1,5 +1,5 @@
 import { Adapter, App, Context, Dict, omit, pick, Plugin, remove, Schema, unwrapExports } from 'koishi'
-import { DataSource } from '@koishijs/plugin-console'
+import { DataService } from '@koishijs/plugin-console'
 import { promises as fsp } from 'fs'
 import { dirname } from 'path'
 import { Package } from './utils'
@@ -20,7 +20,7 @@ function getExports(id: string) {
   return unwrapExports(result.exports)
 }
 
-class PackageProvider extends DataSource<Dict<PackageProvider.Data>> {
+class PackageProvider extends DataService<Dict<PackageProvider.Data>> {
   cache: Dict<Promise<PackageProvider.Data>> = {}
   task: Promise<void>
 

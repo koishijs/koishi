@@ -1,5 +1,5 @@
 import { Bot, Context, pick, Time } from 'koishi'
-import { DataSource } from '@koishijs/plugin-console'
+import { DataService } from '@koishijs/plugin-console'
 
 declare module 'koishi' {
   interface Bot {
@@ -31,7 +31,7 @@ class TickCounter {
   }
 }
 
-class BotProvider extends DataSource<BotProvider.Data[]> {
+class BotProvider extends DataService<BotProvider.Data[]> {
   constructor(ctx: Context) {
     super(ctx, 'bots')
 

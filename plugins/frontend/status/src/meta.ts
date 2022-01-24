@@ -1,5 +1,5 @@
 import { Argv, Assets, Context, noop, Schema, Time } from 'koishi'
-import { DataSource } from '@koishijs/plugin-console'
+import { DataService } from '@koishijs/plugin-console'
 
 declare module 'koishi' {
   interface User {
@@ -7,7 +7,7 @@ declare module 'koishi' {
   }
 }
 
-class MetaProvider extends DataSource<MetaProvider.Payload> {
+class MetaProvider extends DataService<MetaProvider.Payload> {
   timestamp = 0
   cached: Promise<MetaProvider.Payload>
   callbacks: MetaProvider.Extension[] = []

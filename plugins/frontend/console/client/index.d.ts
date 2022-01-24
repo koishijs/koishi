@@ -10,12 +10,12 @@ declare module '*.vue' {
 declare module '~/client' {
   import { Component } from 'vue'
   import { EChartsOption } from 'echarts'
-  import { Sources, Events, DataSource, ClientConfig } from '@koishijs/plugin-console'
+  import Console, { Events, DataService, ClientConfig } from '@koishijs/plugin-console'
 
   // data api
 
   export type Store = {
-    [K in keyof Sources]?: Sources[K] extends DataSource<infer T> ? T : never
+    [K in keyof Console.Services]?: Console.Services[K] extends DataService<infer T> ? T : never
   }
 
   export const config: ClientConfig
@@ -34,7 +34,7 @@ declare module '~/client' {
   interface RouteMetaExtension {
     icon?: string
     order?: number
-    fields?: readonly (keyof Sources)[]
+    fields?: readonly (keyof Console.Services)[]
     position?: 'top' | 'bottom' | 'hidden'
   }
 
@@ -67,7 +67,7 @@ declare module '~/client' {
   // component helper
 
   export namespace Card {
-    export interface NumericOptions<T extends keyof Sources> {
+    export interface NumericOptions<T extends keyof Console.Services> {
       icon: string
       title: string
       type?: string
@@ -75,13 +75,13 @@ declare module '~/client' {
       content: (store: Pick<Store, T>) => any
     }
 
-    export interface ChartOptions<T extends keyof Sources> {
+    export interface ChartOptions<T extends keyof Console.Services> {
       title: string
       fields?: T[]
       options: (store: Pick<Store, T>) => EChartsOption
     }
 
-    export function numeric<T extends keyof Sources = never>(options: NumericOptions<T>): Component
-    export function echarts<T extends keyof Sources = never>(options: ChartOptions<T>): Component
+    export function numeric<T extends keyof Console.Services = never>(options: NumericOptions<T>): Component
+    export function echarts<T extends keyof Console.Services = never>(options: ChartOptions<T>): Component
   }
 }

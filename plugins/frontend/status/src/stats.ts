@@ -1,5 +1,5 @@
 import { Context, Channel, noop, Session, Bot, Time, Dict, Schema, Logger, valueMap } from 'koishi'
-import { DataSource } from '@koishijs/plugin-console'
+import { DataService } from '@koishijs/plugin-console'
 import {} from '@koishijs/cli'
 
 declare module 'koishi' {
@@ -52,7 +52,7 @@ Session.prototype.send = function (this: Session, ...args) {
 const customTag = Symbol('custom-send')
 Session.prototype.send[customTag] = send
 
-class StatisticsProvider extends DataSource<StatisticsProvider.Payload> {
+class StatisticsProvider extends DataService<StatisticsProvider.Payload> {
   static using = ['database'] as const
 
   lastUpdate = new Date()

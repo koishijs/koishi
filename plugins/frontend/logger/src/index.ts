@@ -1,5 +1,5 @@
 import { Context, Logger, remove, Schema, Time } from 'koishi'
-import { DataSource } from '@koishijs/plugin-console'
+import { DataService } from '@koishijs/plugin-console'
 import { resolve } from 'path'
 import { mkdirSync, readdirSync, promises as fsp } from 'fs'
 import { FileHandle } from 'fs/promises'
@@ -8,12 +8,14 @@ import {} from '@koishijs/cli'
 const { open, rm } = fsp
 
 declare module '@koishijs/plugin-console' {
-  interface Sources {
-    logs: LogProvider
+  namespace Console {
+    interface Services {
+      logs: LogProvider
+    }
   }
 }
 
-class LogProvider extends DataSource<string[]> {
+class LogProvider extends DataService<string[]> {
   static using = ['console'] as const
 
   root: string

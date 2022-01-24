@@ -6,13 +6,13 @@ export * from './service'
 export * from './http'
 export * from './ws'
 
-type SubServices = {
-  [K in keyof Sources as `console.${K}`]: Sources[K]
+type NestedServices = {
+  [K in keyof Console.Services as `console.${K}`]: Console.Services[K]
 }
 
 declare module 'koishi' {
   namespace Context {
-    interface Services extends SubServices {
+    interface Services extends NestedServices {
       console: Console
     }
   }
@@ -24,9 +24,9 @@ export interface ClientConfig {
   endpoint: string
 }
 
-interface Console extends Sources {}
+export interface Console extends Console.Services {}
 
-class Console extends Service {
+export class Console extends Service {
   public global = {} as ClientConfig
 
   constructor(public ctx: Context, public config: Console.Config) {
@@ -47,14 +47,9 @@ class Console extends Service {
   }
 }
 
-export interface Sources {
-  http?: HttpService
-  ws?: WsService
-}
-
 export interface Events {}
 
-namespace Console {
+export namespace Console {
   export interface Config extends HttpService.Config, WsService.Config {}
 
   export const Config = Schema.object({
@@ -64,6 +59,11 @@ namespace Console {
     open: Schema.boolean().description('在应用启动后自动在浏览器中打开控制台。'),
     devMode: Schema.boolean().description('启用调试模式（仅供开发者使用）。'),
   })
+
+  export interface Services {
+    http?: HttpService
+    ws?: WsService
+  }
 }
 
 export default Console

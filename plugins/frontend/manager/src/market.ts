@@ -3,7 +3,7 @@ import { Package } from './utils'
 import { resolve } from 'path'
 import { existsSync } from 'fs'
 import { satisfies } from 'semver'
-import { DataSource } from '@koishijs/plugin-console'
+import { DataService } from '@koishijs/plugin-console'
 import spawn from 'cross-spawn'
 
 declare module '@koishijs/plugin-console' {
@@ -28,7 +28,7 @@ function supports(command: string, args: string[] = []) {
   })
 }
 
-class MarketProvider extends DataSource<Dict<MarketProvider.Data>> {
+class MarketProvider extends DataService<Dict<MarketProvider.Data>> {
   private http: Quester
   private timestamp = 0
   private agentTask: Promise<Manager>

@@ -29,12 +29,14 @@ declare module '@koishijs/plugin-console' {
     'bot/create'(platform: string, config: any): void
   }
 
-  interface Sources {
-    bots: BotProvider
-    market: MarketProvider
-    packages: PackageProvider
-    protocols: AdapterProvider
-    services: ServiceProvider
+  namespace Console {
+    interface Services {
+      bots: BotProvider
+      market: MarketProvider
+      packages: PackageProvider
+      protocols: AdapterProvider
+      services: ServiceProvider
+    }
   }
 }
 

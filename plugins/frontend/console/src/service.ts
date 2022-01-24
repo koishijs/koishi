@@ -1,8 +1,8 @@
 import { Context, Service } from 'koishi'
-import Console, { Sources } from '.'
+import Console from '.'
 
-export abstract class DataSource<T = any> extends Service {
-  static define(name: keyof Sources) {
+export abstract class DataService<T = never> extends Service {
+  static define(name: keyof Console.Services) {
     if (Object.prototype.hasOwnProperty.call(Console.prototype, name)) return
     const key = `console.${name}`
     Object.defineProperty(Console.prototype, name, {
@@ -19,9 +19,9 @@ export abstract class DataSource<T = any> extends Service {
     return null
   }
 
-  constructor(protected ctx: Context, protected name: keyof Sources) {
+  constructor(protected ctx: Context, protected name: keyof Console.Services) {
     super(ctx, `console.${name}`, true)
-    DataSource.define(name)
+    DataService.define(name)
   }
 
   protected broadcast(type: string, value: any) {

@@ -1,6 +1,6 @@
 import { Awaitable, Context, Dict, Logger, WebSocketLayer } from 'koishi'
 import { v4 } from 'uuid'
-import { DataSource } from './service'
+import { DataService } from './service'
 import WebSocket from 'ws'
 
 declare module 'koishi' {
@@ -30,7 +30,7 @@ export class SocketHandle {
 
 export type Listener = (this: SocketHandle, ...args: any[]) => Awaitable<any>
 
-class WsService extends DataSource {
+class WsService extends DataService {
   private readonly handles: Dict<SocketHandle> = {}
   private readonly listeners: Dict<Listener> = {}
   private readonly layer: WebSocketLayer

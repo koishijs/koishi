@@ -15,10 +15,12 @@ declare module 'koishi' {
 }
 
 declare module '@koishijs/plugin-console' {
-  interface Sources {
-    meta: MetaProvider
-    profile: ProfileProvider
-    stats: StatisticsProvider
+  namespace Console {
+    interface Services {
+      meta: MetaProvider
+      profile: ProfileProvider
+      stats: StatisticsProvider
+    }
   }
 }
 
