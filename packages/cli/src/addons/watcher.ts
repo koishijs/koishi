@@ -18,6 +18,7 @@ function deepEqual(a: any, b: any) {
   if (a === b) return true
   if (typeof a !== typeof b) return false
   if (typeof a !== 'object') return false
+  if (!a || !b) return false
 
   // check array
   if (Array.isArray(a)) {
