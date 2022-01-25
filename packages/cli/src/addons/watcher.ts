@@ -1,4 +1,4 @@
-import { App, coerce, Context, Dict, Logger, Plugin, Schema, unwrapExports } from 'koishi'
+import { App, coerce, Context, Dict, Logger, makeArray, Plugin, Schema, unwrapExports } from 'koishi'
 import { FSWatcher, watch, WatchOptions } from 'chokidar'
 import { relative, resolve } from 'path'
 import { debounce } from 'throttle-debounce'
@@ -78,7 +78,7 @@ class Watcher {
     this.root = resolve(loader.dirname, root)
     this.watcher = watch(this.root, {
       ...this.config,
-      ignored: ['**/node_modules/**', '**/.git/**', '**/logs/**', ...ignored],
+      ignored: ['**/node_modules/**', '**/.git/**', '**/logs/**', ...makeArray(ignored)],
     })
 
     // files independent from any plugins will trigger a full reload
@@ -316,7 +316,10 @@ namespace Watcher {
   export const Config = Schema.object({
     root: Schema.string().description('要监听的根目录，相对于当前工作路径。'),
     debounce: Schema.number().default(100).description('延迟触发更新的等待时间。'),
-    ignored: Schema.array(Schema.string()).description('要忽略的文件或目录。'),
+    ignored: Schema.union([
+      Schema.array(Schema.string()),
+      Schema.transform(Schema.string(), (value) => [value]),
+    ]).description('要忽略的文件或目录。'),
   }).default(null).description('热重载设置')
 
   App.Config.list.push(Schema.object({

@@ -19,18 +19,18 @@ export const name = 'forward'
 
 export interface Config {
   rules: Rule[]
-  lifespan?: number
+  interval?: number
 }
 
 export const schema = Schema.union([
   Schema.object({
     rules: Schema.array(Rule),
-    lifespan: Schema.number(),
+    interval: Schema.number().default(Time.hour),
   }),
   Schema.transform(Schema.array(Rule), (rules) => ({ rules })),
 ])
 
-export function apply(ctx: Context, { rules, lifespan = Time.hour }: Config) {
+export function apply(ctx: Context, { rules, interval }: Config) {
   const relayMap: Dict<Rule> = {}
 
   async function sendRelay(session: Session, { target, selfId }: Rule) {
@@ -51,7 +51,7 @@ export function apply(ctx: Context, { rules, lifespan = Time.hour }: Config) {
     await bot.sendMessage(channelId, content).then((ids) => {
       for (const id of ids) {
         relayMap[id] = { source: target, target: session.cid, selfId: session.selfId }
-        ctx.setTimeout(() => delete relayMap[id], lifespan)
+        ctx.setTimeout(() => delete relayMap[id], interval)
       }
     }, (error) => {
       ctx.logger('bot').warn(error)
