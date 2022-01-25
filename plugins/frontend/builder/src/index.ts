@@ -16,6 +16,7 @@ export async function buildExtension(root: string, config: UserConfig = {}) {
       emptyOutDir: true,
       lib: {
         entry: root + '/client/index.ts',
+        fileName: 'index',
         formats: ['es'],
       },
       rollupOptions: {

@@ -91,7 +91,7 @@ export function apply(ctx: Context, options: Config = {}) {
     if (devMode) {
       ctx.console.addEntry(resolve(__dirname, '../client/index.ts'))
     } else {
-      ctx.console.addEntry(resolve(__dirname, '../dist/index.js'))
+      ctx.console.addEntry(resolve(__dirname, '../dist/index.es.js'))
       ctx.console.addEntry(resolve(__dirname, '../dist/style.css'))
     }
 
