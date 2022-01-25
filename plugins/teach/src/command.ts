@@ -102,9 +102,9 @@ function registerPrefix(ctx: Context, prefix: string) {
 
   ctx.before('parse', (content, session) => {
     const argv = Argv.parse(content)
-    if (argv.root && session.quote || !argv.tokens.length) return
-    let { content: prefix } = argv.tokens[0]
-    if (argv.root && session.parsed.prefix) {
+    if (session.quote || !argv.tokens.length) return
+    let prefix = argv.tokens[0].content
+    if (session.parsed.prefix) {
       prefix = session.parsed.prefix + prefix
     }
     const capture = teachRegExp.exec(prefix)
