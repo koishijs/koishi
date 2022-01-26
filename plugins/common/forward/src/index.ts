@@ -1,6 +1,12 @@
 import { Context, Session, Dict, Time, template, Schema } from 'koishi'
 import { parsePlatform } from '@koishijs/helpers'
 
+declare module 'koishi' {
+  interface Channel {
+    forward: string[]
+  }
+}
+
 template.set('forward', '{0}: {1}')
 
 export interface Rule {
@@ -69,5 +75,55 @@ export function apply(ctx: Context, { rules, interval }: Config) {
     }
     const [result] = await Promise.all([next(), Promise.allSettled(tasks)])
     return result
+  })
+
+  ctx.model.extend('channel', {
+    forward: 'list',
+  })
+
+  ctx.using(['database'], (ctx) => {
+    ctx.command('forward <channel:channel>', '设置消息转发', { authority: 3, checkUnknown: true })
+      .channelFields(['forward'])
+      .option('add', '-a  添加目标频道')
+      .option('delete', '-d  移除目标频道')
+      .option('clear', '-c  移除全部目标频道')
+      .option('list', '-l  查看目标频道列表')
+      .usage(session => `当前频道 ID：${session.cid}`)
+      .before(async ({ session, options }, id) => {
+        if (options.add || options.delete) {
+          return id ? null : '请提供目标频道。'
+        } else if (Object.keys(options).length) {
+          return
+        }
+        return session.execute({
+          name: 'help',
+          args: ['forward'],
+        })
+      })
+      .action(async ({ session, options }, id) => {
+        const { forward } = session.channel
+        if (options.add) {
+          if (forward.includes(id)) {
+            return `${id} 已经是当前频道的目标频道。`
+          } else {
+            forward.push(id)
+            return `已成功添加目标频道 ${id}。`
+          }
+        } else if (options.delete) {
+          const index = forward.indexOf(id)
+          if (index >= 0) {
+            forward.splice(index, 1)
+            return `已成功移除目标频道 ${id}。`
+          } else {
+            return `${id} 不是当前频道的目标频道。`
+          }
+        } else if (options.clear) {
+          session.channel.forward = []
+          return '已成功移除全部目标频道。'
+        } else if (options.list) {
+          if (!forward.length) return '当前频道没有设置目标频道。'
+          return ['当前频道的目标频道列表为：', ...forward].join('\n')
+        }
+      })
   })
 }
