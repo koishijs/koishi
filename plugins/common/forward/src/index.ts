@@ -73,7 +73,7 @@ export function apply(ctx: Context, { rules, interval }: Config) {
       if (session.cid !== options.source) continue
       tasks.push(sendRelay(session, options))
     }
-    const [result] = await Promise.all([next(), Promise.allSettled(tasks)])
+    const [result] = await Promise.all([next(), ...tasks])
     return result
   })
 
