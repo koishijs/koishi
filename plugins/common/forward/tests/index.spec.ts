@@ -9,7 +9,6 @@ import * as forward from '@koishijs/plugin-forward'
 const app = new App()
 
 app.plugin(mock)
-app.plugin(memory)
 
 const session2 = app.mock.client('123', '456')
 const session3 = app.mock.client('789', '654')
@@ -22,7 +21,6 @@ app.plugin(forward, [{
 
 before(async () => {
   await app.start()
-  await app.mock.initUser('123', 3)
 })
 
 describe('@koishijs/plugin-forward', () => {
@@ -47,6 +45,10 @@ describe('@koishijs/plugin-forward', () => {
   })
 
   it('command usage', async () => {
+    app.plugin(memory)
+    await app._tasks.flush()
+    await app.mock.initUser('123', 3)
+
     await session2.shouldReply('forward', /设置消息转发/)
     await session2.shouldReply('forward -a #123', '已成功添加目标频道 mock:123。')
     await session2.shouldReply('forward -l', '当前频道的目标频道列表为：\nmock:123')

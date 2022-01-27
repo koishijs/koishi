@@ -38,6 +38,7 @@ export const schema = Schema.union([
 
 export function apply(ctx: Context, { rules, interval }: Config) {
   const relayMap: Dict<Rule> = {}
+  let dbRules: Rule[] = []
 
   async function sendRelay(session: Session, { target, selfId }: Rule) {
     const { author, parsed } = session
@@ -68,10 +69,11 @@ export function apply(ctx: Context, { rules, interval }: Config) {
     const { quote = {} } = session
     const data = relayMap[quote.messageId]
     if (data) return sendRelay(session, data)
+
     const tasks: Promise<void>[] = []
-    for (const options of rules) {
-      if (session.cid !== options.source) continue
-      tasks.push(sendRelay(session, options))
+    for (const rule of ctx.database ? dbRules : rules) {
+      if (session.cid !== rule.source) continue
+      tasks.push(sendRelay(session, rule))
     }
     const [result] = await Promise.all([next(), Promise.allSettled(tasks)])
     return result
@@ -82,6 +84,17 @@ export function apply(ctx: Context, { rules, interval }: Config) {
   })
 
   ctx.using(['database'], (ctx) => {
+    ctx.on('ready', async () => {
+      const data = await ctx.database.get('channel', {}, ['id', 'platform', 'forward'])
+      dbRules = data.flatMap(({ id, platform, forward }) => {
+        return forward.map((target) => ({ source: `${platform}:${id}`, target }))
+      })
+    })
+
+    ctx.on('dispose', async () => {
+      dbRules = []
+    })
+
     ctx.command('forward <channel:channel>', '设置消息转发', { authority: 3, checkUnknown: true })
       .channelFields(['forward'])
       .option('add', '-a  添加目标频道')
