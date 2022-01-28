@@ -200,6 +200,7 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
   }
 
   async getChannel<K extends Channel.Field = never>(id = this.channelId, fields: K[] = []) {
+    if (!fields.length) return { platform: this.platform, id }
     const channel = await this.app.database.getChannel(this.platform, id, fields)
     if (channel) return channel
     const assignee = await this.resolveValue(this.app.options.autoAssign) ? this.selfId : ''
@@ -233,6 +234,7 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
   }
 
   async getUser<K extends User.Field = never>(id = this.userId, fields: K[] = []) {
+    if (!fields.length) return { [this.platform]: id }
     const user = await this.app.database.getUser(this.platform, id, fields)
     if (user) return user
     const authority = await this.resolveValue(this.app.options.autoAuthorize)
