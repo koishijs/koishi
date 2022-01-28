@@ -2,13 +2,13 @@
 sidebarDepth: 2
 ---
 
-# 使用装饰器 <Badge text="beta" type="warning"/>
+# 使用装饰器 <Badge text="社区" type="warning"/>
 
-::: danger 注意
-这里是**正在施工**的 koishi v4 的文档。要查看 v3 版本的文档，请前往[**这里**](/)。
+::: danger
+请注意：koishi-thirdeye 并不是官方维护的库。如果对这个库的使用或本文档的说明有任何疑问，请前往 [这个仓库](https://github.com/koishijs/koishi-thirdeye) 而非官方仓库提交 issue。
 :::
 
-koishi-thirdeye 允许你使用类装饰器开发 Koishi 插件。下面是一个一目了然的例子：
+[koishi-thirdeye](https://www.npmjs.com/package/koishi-thirdeye) 允许你使用类装饰器开发 Koishi 插件。下面是一个一目了然的例子：
 
 ```ts
 import { RegisterSchema, DefinePlugin, SchemaProperty, CommandUsage, PutOption, UseCommand, LifecycleEvents, KoaContext, UseMiddleware, UseEvent, Get } from 'koishi-thirdeye';
@@ -57,14 +57,14 @@ export default class MyPlugin extends BasePlugin<MyPluginConfig> implements Life
 
 ## 定义插件
 
-koishi-thirdeye 允许你使用 `@DefinePlugin(options: KoishiPluginRegistrationOptions)` 装饰器定义类插件。您可以向装饰器中传入插件的基本信息：
+koishi-thirdeye 允许你使用 `@DefinePlugin()` 装饰器定义类插件。您可以向装饰器中传入插件的基本信息：
 
-- `name` 插件名称。
-- `schema` 插件的描述配置模式。可以是一般的 Schema 描述模式，也可以是由 `schemastery-gen` 生成的 Schema 类。下面我们会对此进行叙述。
+- `name` 插件名称
+- `schema` 插件的描述配置模式
+  - 既可以是传统的 Schema 描述模式，也可以是由 `schemastery-gen` 生成的 Schema 类
 
 ```ts
 // 在此处定义 Config 的 Schema 描述模式
-
 @DefinePlugin({ name: 'my-plugin', schema: Config })
 export default class MyPlugin {
   constructor(private ctx: Context, private config: Partial<Config>) {} // 不建议在构造函数进行任何操作
@@ -75,46 +75,46 @@ export default class MyPlugin {
 
 为了简化插件的编写，插件基类 `BasePlugin<Config>` 实现了上面的构造函数定义。因此上面的代码可以简化为：
 
-::: warning
-`@DefinePlugin` 装饰器不可省略。
-:::
-
 ```ts
 // 在此处定义 Config 的 Schema 描述模式
-
 @DefinePlugin({ name: 'my-plugin', schema: Config })
 export default class MyPlugin extends BasePlugin<Config> {}
 ```
 
-在插件内分别可以使用 `this.config` `this.ctx` 访问配置和上下文对象。
+在插件内分别可以使用 `this.config` 和 `this.ctx` 访问配置和上下文对象。
 
 ## 属性注入
 
-您可以在类成员变量中，使用装饰器进行注入成员变量。**注入的变量在构造函数中无效**。请在 `onApply` 等生命周期钩子函数中调用。
+您可以在类成员变量中，使用装饰器进行注入成员变量。
 
 ::: warning
-请不要在构造函数中进行对这些字段对访问。
+注入的变量在构造函数中无法访问。你只能在 `onApply` 等生命周期钩子函数中调用。
 :::
 
 ```ts
 @DefinePlugin({ name: 'my-plugin', schema: Config })
 export default class MyPlugin {
   constructor(ctx: Context, config: Partial<Config>) {}
-  
+
+  // 建议如此使用 Context，而不是构造函数中的
   @InjectContext()
-  private ctx: Context; // 建议如此使用 Context，而不是构造函数中的
+  private ctx: Context;
 
+  // 建议如此使用 Config，而不是构造函数中的
   @InjectConfig()
-  private config: Config; // 建议如此使用 Config，而不是构造函数中的
+  private config: Config;
 
-  @InjectLogger('my-plugin') // Logger 名称默认为插件名称
+  // Logger 名称默认为插件名称
+  @InjectLogger('my-plugin')
   private logger: Logger;
 
+  // 注入 Service API 中的 Cache，并声明为依赖
   @Inject('cache', true)
-  private cache: Cache; // 注入 Service API 中的 Cache，并声明为依赖
+  private cache: Cache;
 
+  // 根据属性名称判别 Service API 名称
   @Inject()
-  private database: Database; // 根据属性名称判别 Service API 名称
+  private database: Database;
 }
 ```
 
@@ -134,7 +134,6 @@ export default class MyPlugin {
 ```ts
 @DefinePlugin({ name: 'my-plugin', schema: Config })
 export default class MyPlugin extends BasePlugin<Config> implements LifecycleEvents {
-  
   // 下列方法只实现需要使用的
   onApply() {}
 
@@ -146,9 +145,9 @@ export default class MyPlugin extends BasePlugin<Config> implements LifecycleEve
 
 ### API
 
-- `onApply` 只能是同步函数，会在插件加载时运行。
-- `onConnect` 可以是异步函数，会在 Koishi 启动时运行。等价于 `ctx.on('ready', async () => {})`
-- `onDisconnect` 可以是异步函数，会在插件被卸载时运行。等价于 `ctx.on('dispose', async () => {})`
+- `onApply` 只能是同步函数，会在插件加载时运行
+- `onConnect` 可以是异步函数，会在 Koishi 启动时运行，相当于 ready 事件的回调函数
+- `onDisconnect` 可以是异步函数，会在插件被卸载时运行，相当于 dispose 事件的回调函数
 
 ## 描述配置模式
 
@@ -196,15 +195,18 @@ export class ChildConfig {
   bar: number;
 }
 
-@DefineSchema() // Config 类本身会成为 Schema 对象
+// Config 类本身会成为 Schema 对象
+@DefineSchema()
 export class Config {
   constructor(_config: any) {}
 
+  // 自动推断出 ChildConfig
   @SchemaProperty()
-  child: ChildConfig; // 自动推断出 ChildConfig
+  child: ChildConfig;
 
+  // 无法自动推断 ChildConfig，需要手动指定。但是可以推断出外层的 Schema.array(...)
   @SchemaProperty({ type: ChildConfig })
-  children: ChildConfig[]; // 无法自动推断 ChildConfig，需要手动指定。但是可以推断出外层的 Schema.array(...)
+  children: ChildConfig[];
 }
 ```
 
@@ -234,10 +236,7 @@ export class MyPluginConfig {
   foo: string;
 }
 
-@DefinePlugin({
-  name: 'my-plugin',
-  schema: MyPluginConfig
-})
+@DefinePlugin({ name: 'my-plugin', schema: MyPluginConfig })
 export default class MyPlugin extends BasePlugin<MyPluginConfig> implements LifecycleEvents {
   onApply() {
     // 该方法会在插件加载时调用，用于在上下文中注册事件等操作。
@@ -264,8 +263,8 @@ export default class MyPlugin extends BasePlugin<MyPluginConfig> implements Life
   @UseCommand('echo <content:string>', '指令描述')
   @CommandUsage('指令说明')
   onEcho(
-          @PutArg(0) content: string,
-          @PutOption('name', '-n <name:string>  指令的参数，名称', { fallback: '有人' }) name: string
+    @PutArg(0) content: string,
+    @PutOption('name', '-n <name:string>  指令的参数，名称', { fallback: '有人' }) name: string
   ) {
     return `${name}说了: ${content}`;
   }
@@ -287,9 +286,9 @@ export default class MyPlugin extends BasePlugin<MyPluginConfig> implements Life
 
 ### 注册装饰器
 
-- `@UseMiddleware(prepend?: boolean)` 注册中间件。等价于 `ctx.middleware((session, next) => { }, prepend)`。
-- `@UseEvent(name: EventName, prepend?: boolean)` 注册事件监听器。等价于 `ctx.on(name, (session) => { }, prepend)`。
-- `@UseBeforeEvent(name: BeforeEventName, prepend?: boolean)` 注册事件监听器。等价于 `ctx.before(name, (session) => { }, prepend)`。
+- `@UseMiddleware(prepend?: boolean)` 注册中间件。等价于 `ctx.middleware(callback, prepend)`。
+- `@UseEvent(name: EventName, prepend?: boolean)` 注册事件监听器。等价于 `ctx.on(name, callback, prepend)`。
+- `@UseBeforeEvent(name: BeforeEventName, prepend?: boolean)` 注册事件监听器。等价于 `ctx.before(name, callback, prepend)`。
 - `@UseCommand(def: string, desc?: string, config?: Command.Config)` 注册指令。
   - 若指定 `config.empty` 则不会注册当前函数为 action，用于没有 action 的父指令。
 - `@Get(path: string)` `@Post(path: string)` 在 Koishi 的 Koa 路由中注册 GET/POST 路径。此外， PUT PATCH DELETE 等方法也有所支持。
@@ -297,7 +296,7 @@ export default class MyPlugin extends BasePlugin<MyPluginConfig> implements Life
 
 ### 指令描述
 
-koishi-thirdeye 使用一组装饰器进行描述指令的行为。这些装饰器需要和 `@UseCommand(def)` 装饰器一起使用。
+koishi-thirdeye 使用一组装饰器进行描述指令的行为。这些装饰器需要和 `@UseCommand()` 装饰器一起使用。
 
 特别地，可以把这些装饰器定义在插件顶部，使得该类插件中所有指令均应用这一指令描述。
 
@@ -321,7 +320,7 @@ export default class MyPlugin extends BasePlugin<MyPluginConfig> {
 }
 ```
 
-####　API
+#### API
 
 - `@CommandDescription(text: string)` 指令描述。等价于 `ctx.command(def, desc)` 中的描述。
 - `@CommandUsage(text: string)` 指令介绍。等价于 `cmd.usage(text)`。
@@ -381,7 +380,7 @@ export default class MyPlugin extends BasePlugin<Config> {
 
 ## 嵌套插件与异步插件
 
-我们可以使用 `@UsePlugin()` 装饰器进行注册子插件。在插件加载时方法会自动被调用。该方法需要返回插件定义，可以使用 `PluginDef(plugin, options)` 方法生成。
+我们可以使用 `@UsePlugin()` 装饰器进行注册子插件。在插件加载时方法会自动被调用。该方法需要返回插件定义，可以使用 `PluginDef()` 方法生成。
 
 成员方法内返回的插件定义可以是同步也可以是异步的。
 
@@ -421,7 +420,6 @@ export default class MyPlugin extends BasePlugin<Config> {
 @DefinePlugin({ name: 'my-plugin', schema: Config })
 export default class MyPlugin extends BasePlugin<Config> {
   // 类内的 this.context 现在只对 OneBot 平台有效
-  
   @OnGuild()
   @UseEvent('message') // 只对 OneBot 平台的群组有效
   onMessage(session: Session) {
@@ -460,13 +458,13 @@ export default class MyPlugin extends BasePlugin<Config> {
 MyPlugin.using // ['database']
 ```
 
-- 使用 `@UsingService(...services)` 装饰器。
+- 使用 `@UsingService()` 装饰器。
 
 ```ts
 @UsingService('database', 'assets')
 @DefinePlugin({ name: 'my-plugin', schema: Config })
 export default class MyPlugin extends BasePlugin<Config> {
-  
+  // 业务代码
 }
 
 MyPlugin.using // ['database', 'assets']
@@ -474,7 +472,7 @@ MyPlugin.using // ['database', 'assets']
 
 ### 部分依赖
 
-您也可以使用 `@UsingService` 装饰器对插件类中某一个方法函数单独声明依赖。这时候该方法注册的注册的中间件、事件监听器、指令等在该类方法绑定的事件只有在该依赖存在时生效。
+您也可以使用 `@UsingService()` 装饰器对插件类中某一个方法函数单独声明依赖。这时候该方法注册的注册的中间件、事件监听器、指令等在该类方法绑定的事件只有在该依赖存在时生效。
 
 ```ts
 @DefinePlugin({ name: 'my-plugin', schema: MyPluginConfig })
@@ -496,8 +494,6 @@ export default class MyPlugin extends BasePlugin<MyPluginConfig> {
 
 和 Service 基类不同的是，koishi-thirdeye 使用 `@Provide` 进行提供服务的声明，提供依赖注入 (DI) 风格的 IoC 的开发方式。
 
-`@Provide` 调用时会自动完成 `Context.service(serviceName)` 的声明，因此无需再额外使用 `Context.service` 进行声明服务。但是仍要进行类型合并定义。
-
 若该提供者需要立即生效，我们需要使用 `immediate` 属性，将其标记为立即加载的提供者。
 
 ```ts
@@ -512,7 +508,6 @@ declare module 'koishi' {
   }
 }
 
-// `@Provide(name)` 装饰器会自动完成 `Context.service(name)` 的声明操作
 @Provide('myService', { immediate: true })
 @DefinePlugin({ name: 'my-service' })
 export class MyServicePlugin extends BasePlugin<Config> {
