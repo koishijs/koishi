@@ -94,6 +94,7 @@ class MongoDatabase extends Database {
   /** synchronize table schema */
   private async _syncTable(name: string) {
     await this._tableTasks[name]
+    await this.db.createCollection(name).catch(noop)
     await Promise.all([
       this._createIndexes(name),
       this._createFields(name),
