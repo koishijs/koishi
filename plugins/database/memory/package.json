@@ -30,11 +30,11 @@
     "server"
   ],
   "peerDependencies": {
-    "koishi": "^4.1.0"
+    "koishi": "^4.1.1"
   },
   "devDependencies": {
     "@koishijs/database-tests": "^1.0.0",
-    "@koishijs/plugin-mock": "^1.0.0",
+    "@koishijs/plugin-mock": "^1.0.1",
     "@types/js-yaml": "^4.0.5",
     "js-yaml": "^4.1.0"
   },

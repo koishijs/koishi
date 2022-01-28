@@ -28,11 +28,11 @@
     "koishi"
   ],
   "peerDependencies": {
-    "koishi": "^4.1.0"
+    "koishi": "^4.1.1"
   },
   "devDependencies": {
     "@types/es-aggregate-error": "^1.0.2",
-    "@koishijs/plugin-mock": "^1.0.0"
+    "@koishijs/plugin-mock": "^1.0.1"
   },
   "dependencies": {
     "axios": "^0.24.0",
