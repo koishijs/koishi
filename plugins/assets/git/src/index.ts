@@ -214,7 +214,7 @@ namespace JsdelivrAssets {
   const GitHubConfig = Schema.object({
     user: Schema.string().required(),
     repo: Schema.string().required(),
-    token: Schema.string().required(),
+    token: Schema.string().role('secret').required(),
   })
 
   export interface Config {

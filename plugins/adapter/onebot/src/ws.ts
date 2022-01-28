@@ -8,7 +8,7 @@ const logger = new Logger('onebot')
 export class WebSocketClient extends Adapter.WebSocketClient<BotConfig, AdapterConfig> {
   static schema: Schema<BotConfig> = Schema.object({
     selfId: Schema.string().description('机器人的账号。').required(),
-    token: Schema.string().description('发送信息时用于验证的字段，应与 OneBot 的 access_token 配置保持一致。'),
+    token: Schema.string().description('发送信息时用于验证的字段，应与 OneBot 的 access_token 配置保持一致。').role('secret'),
     endpoint: Schema.string().description('要连接的 OneBot 服务器地址。').required(),
   })
 

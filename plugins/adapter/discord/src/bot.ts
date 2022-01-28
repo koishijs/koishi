@@ -11,7 +11,7 @@ export interface BotConfig extends Bot.BaseConfig, Sender.Config {
 
 export const BotConfig = Schema.intersect([
   Schema.object({
-    token: Schema.string().description('机器人的用户令牌。').required(),
+    token: Schema.string().description('机器人的用户令牌。').role('secret').required(),
     handleExternalAsset: Schema.union([
       Schema.const('download').description('先下载后发送'),
       Schema.const('direct').description('直接发送链接'),

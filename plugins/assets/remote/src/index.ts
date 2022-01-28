@@ -43,7 +43,7 @@ namespace RemoteAssets {
 
   export const Config = Schema.object({
     endpoint: Schema.string().description('远程服务器地址。').required(),
-    secret: Schema.string().description('服务器设置的密钥，配合 assets-local 使用。'),
+    secret: Schema.string().description('服务器设置的密钥，配合 assets-local 使用。').role('secret'),
   })
 }
 
