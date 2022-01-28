@@ -124,6 +124,7 @@ module.exports = {
           '/guide/misc/unit-tests.md',
           '/guide/misc/decorator.md',
           '/guide/misc/docker.md',
+          '/guide/misc/nest.md',
         ],
       }],
 
