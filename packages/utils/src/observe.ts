@@ -58,6 +58,7 @@ function observeObject<T extends object>(target: T, label: string, update?: () =
         update()
       } else {
         delete diff[key]
+        delete getters[key]
       }
       return Reflect.deleteProperty(target, key)
     },

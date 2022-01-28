@@ -1,33 +1,33 @@
 import { Context, Schema } from 'koishi'
 import { resolve } from 'path'
 import {} from '@koishijs/plugin-console'
-import { MetaProvider } from './meta'
-import { ProfileProvider } from './profile'
-import { StatisticsProvider } from './stats'
+import MetaProvider from './meta'
+import ProfileProvider from './profile'
+import StatisticsProvider from './stats'
 
 export type Activity = Record<number, number>
 
 declare module 'koishi' {
-  interface Database {
-    stats(): Promise<MetaProvider.Stats>
-  }
-
   interface Channel {
     name: string
     activity: Activity
   }
-
-  interface Modules {
-    manager: typeof import('.')
-  }
 }
 
 declare module '@koishijs/plugin-console' {
-  interface Sources {
-    meta: MetaProvider
-    profile: ProfileProvider
-    stats: StatisticsProvider
+  namespace Console {
+    interface Services {
+      meta: MetaProvider
+      profile: ProfileProvider
+      stats: StatisticsProvider
+    }
   }
+}
+
+export {
+  MetaProvider,
+  ProfileProvider,
+  StatisticsProvider,
 }
 
 export * from './meta'
@@ -45,13 +45,13 @@ export const Config = Schema.intersect([
   StatisticsProvider.Config,
 ])
 
-Context.service('console.meta')
-Context.service('console.profile')
-Context.service('console.stats')
-
 export function apply(ctx: Context, config: Config) {
-  const filename = ctx.console.config.devMode ? '../client/index.ts' : '../dist/index.js'
-  ctx.console.addEntry(resolve(__dirname, filename))
+  if (ctx.console.config.devMode) {
+    ctx.console.addEntry(resolve(__dirname, '../client/index.ts'))
+  } else {
+    ctx.console.addEntry(resolve(__dirname, '../dist'))
+  }
+
   ctx.plugin(MetaProvider, config)
   ctx.plugin(ProfileProvider, config)
   ctx.plugin(StatisticsProvider, config)

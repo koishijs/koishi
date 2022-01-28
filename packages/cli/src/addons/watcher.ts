@@ -1,22 +1,7 @@
-import { App, coerce, Context, Dict, Logger, Plugin, Schema, Service } from 'koishi'
+import { App, coerce, Context, Dict, Logger, makeArray, Plugin, Schema, unwrapExports } from 'koishi'
 import { FSWatcher, watch, WatchOptions } from 'chokidar'
 import { relative, resolve } from 'path'
 import { debounce } from 'throttle-debounce'
-
-export interface WatchConfig extends WatchOptions {
-  root?: string
-  debounce?: number
-}
-
-export const WatchConfig = Schema.object({
-  root: Schema.string().description('要监听的根目录，相对于当前工作路径。'),
-  debounce: Schema.number().default(100).description('延迟触发更新的等待时间。'),
-  ignored: Schema.array(Schema.string()).description('要忽略的文件或目录。'),
-}).default(null).description('热重载设置')
-
-App.Config.list.push(Schema.object({
-  watch: WatchConfig,
-}))
 
 function loadDependencies(filename: string, ignored: Set<string>) {
   const dependencies = new Set<string>()
@@ -29,13 +14,27 @@ function loadDependencies(filename: string, ignored: Set<string>) {
   return dependencies
 }
 
-function unwrap(module: any) {
-  return module.default || module
+function deepEqual(a: any, b: any) {
+  if (a === b) return true
+  if (typeof a !== typeof b) return false
+  if (typeof a !== 'object') return false
+  if (!a || !b) return false
+
+  // check array
+  if (Array.isArray(a)) {
+    if (!Array.isArray(b) || a.length !== b.length) return false
+    return a.every((item, index) => deepEqual(item, b[index]))
+  } else if (Array.isArray(b)) {
+    return false
+  }
+
+  // check object
+  return Object.keys({ ...a, ...b }).every(key => deepEqual(a[key], b[key]))
 }
 
 const logger = new Logger('watch')
 
-export default class FileWatcher extends Service {
+class Watcher {
   public suspend = false
 
   private root: string
@@ -56,7 +55,6 @@ export default class FileWatcher extends Service {
    */
   private accepted: Set<string>
 
-
   /**
    * files X that should not be reloaded
    *
@@ -68,41 +66,48 @@ export default class FileWatcher extends Service {
   /** stashed changes */
   private stashed = new Set<string>()
 
-  constructor(ctx: Context, private config: WatchConfig) {
-    super(ctx, 'fileWatcher')
-  }
-
-  private triggerFullReload() {
-    logger.info('trigger full reload')
-    process.exit(51)
+  constructor(private ctx: Context, private config: Watcher.Config) {
+    ctx.app.watcher = this
+    ctx.on('ready', () => this.start())
+    ctx.on('dispose', () => this.stop())
   }
 
   start() {
+    const { loader } = this.ctx
     const { root = '', ignored = [] } = this.config
-    this.root = resolve(this.ctx.app.loader.dirname, root)
+    this.root = resolve(loader.dirname, root)
     this.watcher = watch(this.root, {
       ...this.config,
-      ignored: ['**/node_modules/**', '**/.git/**', ...ignored],
+      ignored: ['**/node_modules/**', '**/.git/**', '**/logs/**', ...makeArray(ignored)],
     })
 
-    this.externals = loadDependencies(__filename, new Set(Object.keys(this.ctx.app.loader.cache)))
-    const flushChanges = debounce(this.config.debounce || 100, () => this.flushChanges())
+    // files independent from any plugins will trigger a full reload
+    this.externals = loadDependencies(__filename, new Set(Object.values(loader.cache)))
+    const triggerLocalReload = debounce(this.config.debounce, () => this.triggerLocalReload())
 
     this.watcher.on('change', (path) => {
-      if (this.suspend) return
-      logger.debug('change detected:', path)
-
-      const isEntry = path === this.ctx.app.loader.filename
-      if (!require.cache[path] && !isEntry) return
-
-      // files independent from any plugins will trigger a full reload
-      if (isEntry || this.externals.has(path)) {
-        return this.triggerFullReload()
+      const isEntry = path === loader.filename
+      if (this.suspend && isEntry) {
+        this.suspend = false
+        return
       }
 
-      // do not trigger another reload during one reload
-      this.stashed.add(path)
-      flushChanges()
+      logger.debug('change detected:', relative(this.root, path))
+
+      if (isEntry) {
+        if (require.cache[path]) {
+          this.triggerFullReload()
+        } else {
+          this.triggerEntryReload()
+        }
+      } else {
+        if (this.externals.has(path)) {
+          this.triggerFullReload()
+        } else if (require.cache[path]) {
+          this.stashed.add(path)
+          triggerLocalReload()
+        }
+      }
     })
   }
 
@@ -110,7 +115,40 @@ export default class FileWatcher extends Service {
     return this.watcher.close()
   }
 
-  private prepareReload() {
+  private triggerFullReload() {
+    logger.info('trigger full reload')
+    process.exit(51)
+  }
+
+  private triggerEntryReload() {
+    // use original config
+    const { loader } = this.ctx
+    const oldConfig = loader.config
+    loader.loadConfig()
+    const newConfig = loader.config
+
+    // check non-plugin changes
+    const merged = { ...oldConfig, ...newConfig }
+    delete merged.plugins
+    if (Object.keys(merged).some(key => !deepEqual(oldConfig[key], newConfig[key]))) {
+      return this.triggerFullReload()
+    }
+
+    // check plugin changes
+    const oldPlugins = oldConfig.plugins
+    const newPlugins = newConfig.plugins
+    for (const name in { ...oldPlugins, ...newPlugins }) {
+      if (name.startsWith('~')) continue
+      if (deepEqual(oldPlugins[name], newPlugins[name])) continue
+      if (name in newPlugins) {
+        loader.reloadPlugin(name)
+      } else {
+        loader.unloadPlugin(name)
+      }
+    }
+  }
+
+  private analyzeChanges() {
     /** files pending classification */
     const pending: string[] = []
 
@@ -165,8 +203,8 @@ export default class FileWatcher extends Service {
     }
   }
 
-  private flushChanges() {
-    this.prepareReload()
+  private triggerLocalReload() {
+    this.analyzeChanges()
 
     /** plugins pending classification */
     const pending = new Map<string, Plugin.State>()
@@ -178,7 +216,7 @@ export default class FileWatcher extends Service {
     // that is, reloading them will not cause any other reloads
     for (const filename in require.cache) {
       const module = require.cache[filename]
-      const plugin = unwrap(module.exports)
+      const plugin = unwrapExports(module.exports)
       const state = this.ctx.app.registry.get(plugin)
       if (!state || this.declined.has(filename)) continue
       pending.set(filename, state)
@@ -216,8 +254,8 @@ export default class FileWatcher extends Service {
     // attempt to load entry files
     const attempts = {}
     try {
-      for (const [_, filename] of reloads) {
-        attempts[filename] = unwrap(require(filename))
+      for (const [, filename] of reloads) {
+        attempts[filename] = unwrapExports(require(filename))
       }
     } catch (err) {
       // rollback require.cache
@@ -268,3 +306,25 @@ export default class FileWatcher extends Service {
     this.stashed = new Set()
   }
 }
+
+namespace Watcher {
+  export interface Config extends WatchOptions {
+    root?: string
+    debounce?: number
+  }
+
+  export const Config = Schema.object({
+    root: Schema.string().description('要监听的根目录，相对于当前工作路径。'),
+    debounce: Schema.number().default(100).description('延迟触发更新的等待时间。'),
+    ignored: Schema.union([
+      Schema.array(Schema.string()),
+      Schema.transform(Schema.string(), (value) => [value]),
+    ]).description('要忽略的文件或目录。'),
+  }).default(null).description('热重载设置')
+
+  App.Config.list.push(Schema.object({
+    watch: Config,
+  }))
+}
+
+export default Watcher

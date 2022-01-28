@@ -71,8 +71,6 @@ export type ReplySession = Session<'ghAccessToken' | 'ghRefreshToken'>
 
 const logger = new Logger('github')
 
-Context.service('github')
-
 export class GitHub extends Service {
   private http: Quester
 

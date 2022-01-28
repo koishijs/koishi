@@ -1,10 +1,12 @@
-import { DataSource } from '@koishijs/plugin-console'
+import { DataService } from '@koishijs/plugin-console'
 import { debounce } from 'throttle-debounce'
 import { Command, Context } from 'koishi'
 
 declare module '@koishijs/plugin-console' {
-  interface Sources {
-    commands: CommandProvider
+  namespace Console {
+    interface Services {
+      commands: CommandProvider
+    }
   }
 }
 
@@ -23,11 +25,9 @@ function traverse(command: Command): CommandData {
   }
 }
 
-Context.service('console.commands')
-
-export default class CommandProvider extends DataSource<CommandData[]> {
+export default class CommandProvider extends DataService<CommandData[]> {
   cached: CommandData[]
-  update = debounce(0, () => this.broadcast())
+  update = debounce(0, () => this.refresh())
 
   constructor(ctx: Context) {
     super(ctx, 'commands')

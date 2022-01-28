@@ -227,7 +227,7 @@ describe('Context API', () => {
 
       app.plugin(plugin)
       const shot1 = getHookSnapshot()
-      await app.dispose(plugin)
+      app.dispose(plugin)
       app.plugin(plugin)
       const shot2 = getHookSnapshot()
       expect(shot1).to.deep.equal(shot2)
@@ -236,7 +236,7 @@ describe('Context API', () => {
     it('root level dispose', async () => {
       // create a context without a plugin
       const ctx = app.exclude(app.platform())
-      await expect(ctx.dispose()).to.be.rejected
+      expect(() => ctx.dispose()).to.throw
     })
 
     it('dispose event', () => {
@@ -244,10 +244,10 @@ describe('Context API', () => {
       app.plugin(async (ctx) => {
         ctx.on('dispose', callback)
         expect(callback.mock.calls).to.have.length(0)
-        await ctx.dispose()
+        ctx.dispose()
         expect(callback.mock.calls).to.have.length(1)
         // callback should only be called once
-        await ctx.dispose()
+        ctx.dispose()
         expect(callback.mock.calls).to.have.length(1)
       })
     })

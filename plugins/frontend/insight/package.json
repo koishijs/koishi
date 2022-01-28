@@ -1,0 +1,44 @@
+{
+  "name": "@koishijs/plugin-insight",
+  "description": "Show plugin dependency tree for Koishi",
+  "version": "1.1.0",
+  "main": "lib/index.js",
+  "typings": "lib/index.d.ts",
+  "files": [
+    "lib",
+    "dist"
+  ],
+  "author": "Shigma <shigma10826@gmail.com>",
+  "license": "MIT",
+  "scripts": {
+    "lint": "eslint src --ext .ts"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/koishijs/koishi.git"
+  },
+  "bugs": {
+    "url": "https://github.com/koishijs/koishi/issues"
+  },
+  "homepage": "https://koishi.js.org/plugins/insight/",
+  "keywords": [
+    "bot",
+    "qqbot",
+    "cqhttp",
+    "coolq",
+    "chatbot",
+    "koishi",
+    "plugin",
+    "insight"
+  ],
+  "peerDependencies": {
+    "@koishijs/plugin-console": "^2.0.0",
+    "koishi": "^4.1.1"
+  },
+  "devDependencies": {
+    "@types/throttle-debounce": "^2.1.0"
+  },
+  "dependencies": {
+    "throttle-debounce": "^3.0.1"
+  }
+}

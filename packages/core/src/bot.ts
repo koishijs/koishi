@@ -1,4 +1,4 @@
-import { Logger, sleep, Dict } from '@koishijs/utils'
+import { Logger, sleep } from '@koishijs/utils'
 import { Adapter } from './adapter'
 import { App } from './app'
 import { Session } from './session'
@@ -24,9 +24,19 @@ export abstract class Bot<T extends Bot.BaseConfig = Bot.BaseConfig> {
     this.platform = config.platform || adapter.platform
     this.logger = new Logger(adapter.platform)
     this._status = 'offline'
+    this.extendModel()
 
     adapter.ctx.on('ready', () => this.start())
     adapter.ctx.on('dispose', () => this.stop())
+  }
+
+  private extendModel() {
+    if (this.platform in this.app.model.config.user.fields) return
+    this.app.model.extend('user', {
+      [this.platform]: { type: 'string', length: 63 },
+    }, {
+      unique: [this.platform as never],
+    })
   }
 
   get status() {
@@ -118,8 +128,6 @@ export namespace Bot {
     protocol?: string
     platform?: string
   }
-
-  export const library: Dict<Constructor> = {}
 
   export interface Constructor<S extends Bot.BaseConfig = Bot.BaseConfig> {
     new (adapter: Adapter, config: S): Bot<S>

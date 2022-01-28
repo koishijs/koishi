@@ -31,9 +31,9 @@
   ],
   "devDependencies": {
     "@koishijs/plugin-database-memory": "^1.0.0",
-    "@koishijs/plugin-mock": "^1.0.0"
+    "@koishijs/plugin-mock": "^1.0.1"
   },
   "peerDependencies": {
-    "koishi": "^4.0.1"
+    "koishi": "^4.1.1"
   }
 }

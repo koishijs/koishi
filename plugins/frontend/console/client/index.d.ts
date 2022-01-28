@@ -8,14 +8,13 @@ declare module '*.vue' {
 }
 
 declare module '~/client' {
-  import { Component } from 'vue'
-  import { EChartsOption } from 'echarts'
-  import { Sources, Events, DataSource, ClientConfig } from '@koishijs/plugin-console'
+  import { App, Component } from 'vue'
+  import { Console, Events, DataService, ClientConfig } from '@koishijs/plugin-console'
 
   // data api
 
   export type Store = {
-    [K in keyof Sources]?: Sources[K] extends DataSource<infer T> ? T : never
+    [K in keyof Console.Services]?: Console.Services[K] extends DataService<infer T> ? T : never
   }
 
   export const config: ClientConfig
@@ -27,13 +26,20 @@ declare module '~/client' {
 
   // layout api
 
-  export interface PageOptions {
-    path: string
-    name: string
+  declare module 'vue-router' {
+    interface RouteMeta extends RouteMetaExtension {}
+  }
+
+  interface RouteMetaExtension {
     icon?: string
     order?: number
+    fields?: readonly (keyof Console.Services)[]
     position?: 'top' | 'bottom' | 'hidden'
-    fields?: readonly (keyof Sources)[]
+  }
+
+  export interface PageOptions extends RouteMetaExtension {
+    path: string
+    name: string
     component: Component
   }
 
@@ -44,13 +50,24 @@ declare module '~/client' {
     component: Component
   }
 
-  export function registerPage(options: PageOptions): void
-  export function registerView(options: ViewOptions): void
+  export type Disposable = () => void
+  export type Extension = (ctx: Context) => void
+
+  export class Context {
+    static app: App
+    disposables: Disposable[] = []
+
+    addPage(options: PageOptions): void
+    addView(options: ViewOptions): void
+    install(extension: Extension): void
+  }
+
+  export function defineExtension(extension: Extension): Extension
 
   // component helper
 
   export namespace Card {
-    export interface NumericOptions<T extends keyof Sources> {
+    export interface NumericOptions<T extends keyof Console.Services> {
       icon: string
       title: string
       type?: string
@@ -58,13 +75,7 @@ declare module '~/client' {
       content: (store: Pick<Store, T>) => any
     }
 
-    export interface ChartOptions<T extends keyof Sources> {
-      title: string
-      fields?: T[]
-      options: (store: Pick<Store, T>) => EChartsOption
-    }
-
-    export function numeric<T extends keyof Sources = never>(options: NumericOptions<T>): Component
-    export function echarts<T extends keyof Sources = never>(options: ChartOptions<T>): Component
+    export function create(render: Function, fields: (keyof Console.Services)[] = []): Component
+    export function numeric<T extends keyof Console.Services = never>(options: NumericOptions<T>): Component
   }
 }

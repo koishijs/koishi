@@ -29,6 +29,7 @@
 import { useRouter } from 'vue-router'
 import { useDark } from '@vueuse/core'
 import { reactive } from 'vue'
+import { routes } from '../client'
 
 const router = useRouter()
 
@@ -40,7 +41,7 @@ router.afterEach(() => {
 })
 
 function getRoutes(position: 'top' | 'bottom') {
-  return router.getRoutes().filter(r => r.meta.position === position).sort((a, b) => b.meta.order - a.meta.order)
+  return routes.value.filter(r => r.meta.position === position).sort((a, b) => b.meta.order - a.meta.order)
 }
 
 const isDark = useDark()
