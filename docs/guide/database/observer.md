@@ -79,9 +79,7 @@ app.middleware((session, next) => {
 ```js
 // 中间增加了一个第二参数，表示默认情况下的权限等级
 // 如果找到该用户，则返回该用户本身
-// 否则创建一个新的用户数据，权限为 authority
-// 如果 authority 大于 0，则将新的用户数据添加到表中
-session.getUser(id, authority, fields)
+session.getUser(id, fields)
 
 // 在当前会话上绑定一个可观测用户实例
 // 也就是所谓的 session.user
@@ -89,9 +87,7 @@ session.observeUser(fields)
 
 // 中间增加了一个第二参数，表示默认情况下的 assignee
 // 如果找到该频道，则不修改任何数据，返回该频道本身
-// 如果未找到该频道，则创建一个新的频道，代理者为 selfId
-// 如果 selfId 大于 0，则将新的频道数据添加到表中
-session.getChannel(id, selfId, fields)
+session.getChannel(id, fields)
 
 // 在当前会话上绑定一个可观测频道实例
 // 也就是所谓的 session.channel
