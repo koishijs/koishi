@@ -122,7 +122,7 @@ module.exports = {
         isGroup: true,
         children: [
           '/guide/misc/unit-tests.md',
-          '/guide/misc/decorator.md',
+          '/guide/misc/decorators.md',
           '/guide/misc/docker.md',
         ],
       }],
