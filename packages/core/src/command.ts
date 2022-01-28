@@ -104,7 +104,7 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
 
   private _registerAlias(name: string) {
     this._aliases.push(name)
-    const previous = this.app._commands.get(name)
+    const previous = this.app.getCommand(name)
     if (!previous) {
       this.app._commands.set(name, this)
     } else if (previous !== this) {

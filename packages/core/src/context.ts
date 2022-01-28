@@ -486,6 +486,10 @@ export class Context {
     return this.createTimerDispose(setInterval(callback, ms, ...args))
   }
 
+  getCommand(name: string) {
+    return this.app._commands.get(name)
+  }
+
   command<D extends string>(def: D, config?: Command.Config): Command<never, never, Argv.ArgumentType<D>>
   command<D extends string>(def: D, desc: string, config?: Command.Config): Command<never, never, Argv.ArgumentType<D>>
   command(def: string, ...args: [Command.Config?] | [string, Command.Config?]) {
@@ -500,7 +504,7 @@ export class Context {
     segments.forEach((segment, index) => {
       const code = segment.charCodeAt(0)
       const name = code === 46 ? parent.name + segment : code === 47 ? segment.slice(1) : segment
-      let command = this.app._commands.get(name)
+      let command = this.getCommand(name)
       if (command) {
         if (parent) {
           if (command === parent) {

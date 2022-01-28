@@ -340,7 +340,7 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
       }
       if (!this.resolve(argv)) return ''
     } else {
-      argv.command ||= this.app._commands.get(argv.name)
+      argv.command ||= this.app.getCommand(argv.name)
       if (!argv.command) {
         logger.warn(new Error(`cannot find command ${argv.name}`))
         return ''

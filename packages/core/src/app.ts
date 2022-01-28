@@ -55,7 +55,7 @@ export class App extends Context {
       if (!key) return
       const segments = key.split('.')
       let i = 1, name = segments[0], cmd: Command
-      while ((cmd = this._commands.get(name)) && i < segments.length) {
+      while ((cmd = this.getCommand(name)) && i < segments.length) {
         name = cmd.name + '.' + segments[i++]
       }
       return cmd
