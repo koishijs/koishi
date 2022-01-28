@@ -12,13 +12,13 @@ template.set('forward', '{0}: {1}')
 export interface Rule {
   source: string
   target: string
-  selfId?: string
+  selfId: string
 }
 
 export const Rule = Schema.object({
   source: Schema.string().required(),
   target: Schema.string().required(),
-  selfId: Schema.string(),
+  selfId: Schema.string().required(),
 })
 
 export const name = 'forward'
@@ -38,16 +38,14 @@ export const schema = Schema.union([
 
 export function apply(ctx: Context, { rules, interval }: Config) {
   const relayMap: Dict<Rule> = {}
-  let dbRules: Rule[] = []
 
-  async function sendRelay(session: Session, { target, selfId }: Rule) {
+  async function sendRelay(session: Session, target: string, selfId?: string) {
     const { author, parsed } = session
     if (!parsed.content) return
 
     // get selfId
     const [platform, channelId] = parsePlatform(target)
     if (!selfId) {
-      if (!ctx.database) throw new Error('database service is required when selfId is not specified')
       const channel = await ctx.database.getChannel(platform, channelId, ['assignee'])
       if (!channel || !channel.assignee) return
       selfId = channel.assignee
@@ -60,22 +58,35 @@ export function apply(ctx: Context, { rules, interval }: Config) {
         relayMap[id] = { source: target, target: session.cid, selfId: session.selfId }
         ctx.setTimeout(() => delete relayMap[id], interval)
       }
-    }, (error) => {
-      ctx.logger('bot').warn(error)
     })
   }
 
-  ctx.middleware(async (session, next) => {
-    const { quote = {} } = session
+  function handleError(error: any) {
+    ctx.logger('forward').warn(error)
+  }
+
+  ctx.before('attach-channel', (session, fields) => {
+    fields.add('forward')
+  })
+
+  ctx.middleware(async (session: Session<never, 'forward'>, next) => {
+    const { quote = {}, subtype } = session
+    if (subtype !== 'group') return
     const data = relayMap[quote.messageId]
-    if (data) return sendRelay(session, data)
+    if (data) return sendRelay(session, data.target, data.selfId)
 
     const tasks: Promise<void>[] = []
-    for (const rule of ctx.database ? dbRules : rules) {
-      if (session.cid !== rule.source) continue
-      tasks.push(sendRelay(session, rule))
+    if (ctx.database) {
+      for (const target of session.channel.forward) {
+        tasks.push(sendRelay(session, target).catch(handleError))
+      }
+    } else {
+      for (const rule of rules) {
+        if (session.cid !== rule.source) continue
+        tasks.push(sendRelay(session, rule.target, rule.selfId).catch(handleError))
+      }
     }
-    const [result] = await Promise.all([next(), Promise.allSettled(tasks)])
+    const [result] = await Promise.all([next(), ...tasks])
     return result
   })
 
@@ -84,17 +95,6 @@ export function apply(ctx: Context, { rules, interval }: Config) {
   })
 
   ctx.using(['database'], (ctx) => {
-    ctx.on('ready', async () => {
-      const data = await ctx.database.get('channel', {}, ['id', 'platform', 'forward'])
-      dbRules = data.flatMap(({ id, platform, forward }) => {
-        return forward.map((target) => ({ source: `${platform}:${id}`, target }))
-      })
-    })
-
-    ctx.on('dispose', async () => {
-      dbRules = []
-    })
-
     ctx.command('forward <channel:channel>', '设置消息转发', { authority: 3, checkUnknown: true })
       .channelFields(['forward'])
       .option('add', '-a  添加目标频道')
