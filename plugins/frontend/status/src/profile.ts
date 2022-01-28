@@ -1,7 +1,7 @@
 import { Context, Schema, Time } from 'koishi'
 import { cpus } from 'os'
 import { mem } from 'systeminformation'
-import { DataSource } from '@koishijs/plugin-console'
+import { DataService } from '@koishijs/plugin-console'
 
 export type LoadRate = [app: number, total: number]
 
@@ -42,7 +42,7 @@ function updateCpuUsage() {
   usage = newUsage
 }
 
-class ProfileProvider extends DataSource<ProfileProvider.Payload> {
+class ProfileProvider extends DataService<ProfileProvider.Payload> {
   cached: ProfileProvider.Payload
 
   constructor(ctx: Context, private config: ProfileProvider.Config) {

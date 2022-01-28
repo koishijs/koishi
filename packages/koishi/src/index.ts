@@ -47,11 +47,11 @@ App.prototype.prepare = function (this: App, ...args) {
 }
 
 const start = App.prototype.start
-App.prototype.start = function (this: App, ...args) {
+App.prototype.start = async function (this: App, ...args) {
   const { host = 'localhost', port, selfUrl } = this.options
   if (selfUrl) this.options.selfUrl = trimSlash(selfUrl)
   if (port) {
-    this._httpServer.listen(port, host)
+    await new Promise<void>(resolve => this._httpServer.listen(port, host, resolve))
     this.logger('app').info('server listening at %c', `http://${host}:${port}`)
     this.on('dispose', () => {
       this.logger('app').info('http server closing')

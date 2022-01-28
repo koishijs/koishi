@@ -138,7 +138,7 @@ describe('Help Command', () => {
   it('disable help command', async () => {
     const app = new App({ help: false })
     app.plugin(mock)
-    app.command('foo')
+    app.command('foo').action(() => {})
     await app.start()
 
     const client = app.mock.client('123')
@@ -149,7 +149,7 @@ describe('Help Command', () => {
   it('disable help options', async () => {
     const app = new App({ help: { options: false } })
     app.plugin(mock)
-    app.command('foo')
+    app.command('foo').action(() => {})
     await app.start()
 
     const client = app.mock.client('123')

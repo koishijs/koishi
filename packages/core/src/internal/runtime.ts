@@ -1,6 +1,7 @@
 import { defineProperty, template, valueMap } from '@koishijs/utils'
 import { Argv } from '../parser'
 import { Context } from '../context'
+import { Session } from '../session'
 import { getCommandNames } from './help'
 
 export default function runtime(ctx: Context) {
@@ -82,5 +83,29 @@ export default function runtime(ctx: Context) {
         return this.execute(newMessage, next)
       },
     })
+  })
+
+  function executeHelp(session: Session, name: string) {
+    if (!ctx.getCommand('help')) return
+    return session.execute({
+      name: 'help',
+      args: [name],
+    })
+  }
+
+  ctx.before('command/execute', (argv) => {
+    const { args, command, options, session } = argv
+    if (options['help'] && command._options.help) {
+      return executeHelp(session, command.name)
+    }
+
+    if (command['_actions'].length) return
+    const arg0 = args.shift() || ''
+    const subcommand = ctx.getCommand(command.name + '.' + arg0)
+    if (subcommand) {
+      return session.execute({ ...argv, command: subcommand })
+    } else {
+      return executeHelp(session, command.name)
+    }
   })
 }

@@ -1,5 +1,5 @@
 import { MongoClient, Db, MongoError, IndexDescription } from 'mongodb'
-import { Context, Database, Tables, makeArray, Schema, pick, omit, Query, Model, Dict, noop, KoishiError } from 'koishi'
+import { Context, Database, Tables, makeArray, Schema, pick, omit, Query, Model, Dict, noop, KoishiError, isNullable } from 'koishi'
 import { URLSearchParams } from 'url'
 import { executeUpdate, executeEval } from '@koishijs/orm-utils'
 import { transformQuery, transformEval } from './utils'
@@ -61,22 +61,44 @@ class MongoDatabase extends Database {
     return this.client.close()
   }
 
-  /** synchronize table schema */
-  private async _syncTable(name: string) {
-    await this._tableTasks[name]
-    const coll = await this.db.createCollection(name).catch(() => this.db.collection(name))
+  private async _createIndexes(name: string) {
     const { primary, unique } = this.ctx.model.config[name]
+    const coll = this.db.collection(name)
     const newSpecs: IndexDescription[] = []
     const oldSpecs = await coll.indexes()
     ;[primary, ...unique].forEach((keys, index) => {
       keys = makeArray(keys)
       const name = (index ? 'unique:' : 'primary:') + keys.join('+')
       if (oldSpecs.find(spec => spec.name === name)) return
-      const key = Object.fromEntries(keys.map(key => [key, 1]))
-      newSpecs.push({ name, key, unique: true })
+      newSpecs.push({
+        name,
+        key: Object.fromEntries(keys.map(key => [key, 1])),
+        unique: true,
+        // https://docs.mongodb.com/manual/core/index-partial/#std-label-partial-index-with-unique-constraints
+        partialFilterExpression: Object.fromEntries(keys.map(key => [key, { $exists: true }])),
+      })
     })
     if (!newSpecs.length) return
     await coll.createIndexes(newSpecs)
+  }
+
+  private async _createFields(name: string) {
+    const { fields } = this.ctx.model.config[name]
+    const coll = this.db.collection(name)
+    await Promise.all(Object.keys(fields).map((key) => {
+      if (isNullable(fields[key].initial)) return
+      return coll.updateMany({ [key]: { $exists: false } }, { $set: { [key]: fields[key].initial } })
+    }))
+  }
+
+  /** synchronize table schema */
+  private async _syncTable(name: string) {
+    await this._tableTasks[name]
+    await this.db.createCollection(name).catch(noop)
+    await Promise.all([
+      this._createIndexes(name),
+      this._createFields(name),
+    ])
   }
 
   private _createFilter(name: string, query: Query) {
@@ -109,6 +131,7 @@ class MongoDatabase extends Database {
   async get(name: TableType, query: Query, modifier: Query.Modifier) {
     const filter = this._createFilter(name, query)
     if (!filter) return []
+    await this._tableTasks[name]
     let cursor = this.db.collection(name).find(filter)
     const { fields, limit, offset = 0, sort } = Query.resolveModifier(modifier)
     cursor = cursor.project({ _id: 0, ...Object.fromEntries((fields ?? []).map(key => [key, 1])) })

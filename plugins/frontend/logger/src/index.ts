@@ -1,5 +1,5 @@
 import { Context, Logger, remove, Schema, Time } from 'koishi'
-import { DataSource } from '@koishijs/plugin-console'
+import { DataService } from '@koishijs/plugin-console'
 import { resolve } from 'path'
 import { mkdirSync, readdirSync, promises as fsp } from 'fs'
 import { FileHandle } from 'fs/promises'
@@ -8,12 +8,14 @@ import {} from '@koishijs/cli'
 const { open, rm } = fsp
 
 declare module '@koishijs/plugin-console' {
-  interface Sources {
-    logs: LogProvider
+  namespace Console {
+    interface Services {
+      logs: LogProvider
+    }
   }
 }
 
-class LogProvider extends DataSource<string[]> {
+class LogProvider extends DataService<string[]> {
   static using = ['console'] as const
 
   root: string
@@ -24,8 +26,11 @@ class LogProvider extends DataSource<string[]> {
   constructor(ctx: Context, private config: LogProvider.Config = {}) {
     super(ctx, 'logs')
 
-    const filename = ctx.console.config.devMode ? '../client/index.ts' : '../dist/index.js'
-    ctx.console.addEntry(resolve(__dirname, filename))
+    if (ctx.console.config.devMode) {
+      ctx.console.addEntry(resolve(__dirname, '../client/index.ts'))
+    } else {
+      ctx.console.addEntry(resolve(__dirname, '../dist'))
+    }
 
     this.ctx.on('ready', () => {
       this.prepareWriter()
@@ -65,11 +70,11 @@ class LogProvider extends DataSource<string[]> {
   }
 
   prepareLogger() {
-    if (this.ctx.app._prolog) {
-      for (const line of this.ctx.app._prolog) {
+    if (this.ctx.app.prologue) {
+      for (const line of this.ctx.app.prologue) {
         this.printText(line)
       }
-      this.ctx.app._prolog = null
+      this.ctx.app.prologue = null
     }
 
     const target: Logger.Target = {

@@ -1,4 +1,25 @@
-import * as echarts from 'echarts'
+import { h, defineAsyncComponent, resolveComponent } from 'vue'
+import { Console } from '@koishijs/plugin-console'
+import { Card, Store, store } from '~/client'
+import type * as echarts from 'echarts'
+
+const VChart = defineAsyncComponent(() => import('./echarts'))
+
+export interface ChartOptions {
+  title: string
+  fields?: (keyof Console.Services)[]
+  options: (store: Store) => echarts.EChartsOption
+}
+
+export function createChart({ title, fields, options }: ChartOptions) {
+  return Card.create(() => {
+    const option = options(store)
+    return h(resolveComponent('k-card'), { class: 'frameless', title }, () => {
+      if (!option) return '暂无数据。'
+      return h(VChart, { option, autoresize: true })
+    })
+  }, fields)
+}
 
 interface CommonData {
   name: string

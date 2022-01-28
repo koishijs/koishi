@@ -17,15 +17,7 @@ export interface HelpConfig extends Command.Config {
 }
 
 export function enableHelp<U extends User.Field, G extends Channel.Field, A extends any[], O extends {}>(cmd: Command<U, G, A, O>) {
-  return cmd
-    .option('help', '-h  显示此信息', { hidden: true })
-    .before(async ({ session, options }, ...args) => {
-      if (cmd['_actions'].length && !options['help']) return
-      return session.execute({
-        name: 'help',
-        args: [cmd.name],
-      })
-    })
+  return cmd.option('help', '-h  显示此信息', { hidden: true })
 }
 
 export default function help(ctx: Context, config: HelpConfig = {}) {
@@ -73,7 +65,7 @@ export default function help(ctx: Context, config: HelpConfig = {}) {
           prefix: template('internal.help-suggestion-prefix'),
           suffix: template('internal.help-suggestion-suffix'),
           async apply(suggestion) {
-            return showHelp(app._commands.get(suggestion), this as any, options)
+            return showHelp(ctx.getCommand(suggestion), this as any, options)
           },
         })
         return

@@ -1,6 +1,6 @@
 <template>
-  <sidebar/>
-  <main class="layout-main">
+  <sidebar v-if="!sidebarHidden"/>
+  <main class="layout-main" :class="{ 'sidebar-hidden': sidebarHidden }">
     <router-view v-if="loaded" #="{ Component }">
       <keep-alive>
         <component :is="Component"/>
@@ -19,7 +19,15 @@ import { useRoute } from 'vue-router'
 import Sidebar from './sidebar.vue'
 
 const route = useRoute()
-const loaded = computed(() => route.meta.fields?.every((key) => store[key]))
+
+const loaded = computed(() => {
+  if (!route.meta.fields) return true
+  return route.meta.fields.every((key) => store[key])
+})
+
+const sidebarHidden = computed(() => {
+  return route.meta.position === 'hidden'
+})
 
 </script>
 
@@ -46,6 +54,10 @@ a {
 main.layout-main {
   margin-left: var(--aside-width);
   overflow-y: hidden;
+
+  &.sidebar-hidden {
+    margin-left: 0;
+  }
 }
 
 p, ul {

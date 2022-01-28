@@ -25,10 +25,13 @@ export default class TeachConsole {
   static using = ['console.meta', 'console.stats'] as const
 
   constructor(ctx: Context, config: Dialogue.Config = {}) {
-    const filename = ctx.console.config.devMode ? '../../client/index.ts' : '../../dist/index.js'
-    ctx.console.addEntry(resolve(__dirname, filename))
+    if (ctx.console.config.devMode) {
+      ctx.console.addEntry(resolve(__dirname, '../client/index.ts'))
+    } else {
+      ctx.console.addEntry(resolve(__dirname, '../dist'))
+    }
 
-    const { stats, meta } = ctx.console.services
+    const { stats, meta } = ctx.console
 
     ctx.on('dialogue/before-send', ({ session, dialogue }) => {
       session._sendType = 'dialogue'

@@ -3,7 +3,7 @@ import { Package } from './utils'
 import { resolve } from 'path'
 import { existsSync } from 'fs'
 import { satisfies } from 'semver'
-import { DataSource } from '@koishijs/plugin-console'
+import { DataService } from '@koishijs/plugin-console'
 import spawn from 'cross-spawn'
 
 declare module '@koishijs/plugin-console' {
@@ -28,7 +28,7 @@ function supports(command: string, args: string[] = []) {
   })
 }
 
-class MarketProvider extends DataSource<Dict<MarketProvider.Data>> {
+class MarketProvider extends DataService<Dict<MarketProvider.Data>> {
   private http: Quester
   private timestamp = 0
   private agentTask: Promise<Manager>
@@ -150,13 +150,13 @@ class MarketProvider extends DataSource<Dict<MarketProvider.Data>> {
   install = async (name: string) => {
     const agent = await (this.agentTask ||= this.getAgent())
     await this.exec(agent, [agent === 'yarn' ? 'add' : 'install', name, '--loglevel', 'error'])
-    this.ctx.console.services.packages.refresh()
+    this.ctx.console.packages.refresh()
   }
 
   uninstall = async (name: string) => {
     const agent = await (this.agentTask ||= this.getAgent())
     await this.exec(agent, ['remove', name, '--loglevel', 'error'])
-    this.ctx.console.services.packages.refresh()
+    this.ctx.console.packages.refresh()
   }
 }
 

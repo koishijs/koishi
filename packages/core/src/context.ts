@@ -1,4 +1,4 @@
-import { Logger, makeArray, remove, Random, Promisify, Awaitable, Dict, MaybeArray, defineProperty } from '@koishijs/utils'
+import { Logger, makeArray, remove, sleep, Random, Promisify, Awaitable, Dict, MaybeArray, defineProperty } from '@koishijs/utils'
 import { Command } from './command'
 import { Session } from './session'
 import { User, Channel, Modules } from './database'
@@ -242,27 +242,40 @@ export class Context {
     return this.plugin({ using, apply: callback, name: callback.name })
   }
 
-  plugin(name: string, options?: any): this
-  plugin<T extends Plugin>(plugin: T, options?: boolean | Plugin.Config<T>): this
-  plugin(entry: string | Plugin, options?: any) {
-    if (options === false) return this
-    if (options === true) options = undefined
-    options ??= {}
+  validate<T extends Plugin>(plugin: T, config: any) {
+    if (config === false) return
+    if (config === true) config = undefined
+    config ??= {}
 
+    const schema = plugin['Config'] || plugin['schema']
+    if (schema) config = schema(config)
+    return config
+  }
+
+  plugin(name: string, config?: any): this
+  plugin<T extends Plugin>(plugin: T, config?: boolean | Plugin.Config<T>): this
+  plugin(entry: string | Plugin, config?: any) {
+    // load plugin by name
     const plugin: Plugin = typeof entry === 'string' ? Modules.require(entry, true) : entry
+
+    // check duplication
     if (this.app.registry.has(plugin)) {
       this.logger('app').warn(new Error('duplicate plugin detected'))
       return this
     }
 
+    // check if it's a valid plugin
     if (typeof plugin !== 'function' && !isApplicable(plugin)) {
       throw new Error('invalid plugin, expect function or object with an "apply" method')
     }
 
-    const ctx = new Context(this.filter, this.app, plugin).select(options)
+    // validate plugin config
+    config = this.validate(plugin, config)
+    if (!config) return this
+
+    const ctx = new Context(this.filter, this.app, plugin).select(config)
     const schema = plugin['Config'] || plugin['schema']
     const using = plugin['using'] || []
-    if (schema) options = schema(options)
 
     this.app.registry.set(plugin, {
       plugin,
@@ -270,7 +283,7 @@ export class Context {
       using,
       id: Random.id(),
       context: this,
-      config: options,
+      config: config,
       parent: this.state,
       children: [],
       disposables: [],
@@ -290,11 +303,11 @@ export class Context {
     const callback = () => {
       if (using.some(name => !this[name])) return
       if (typeof plugin !== 'function') {
-        plugin.apply(ctx, options)
+        plugin.apply(ctx, config)
       } else if (isConstructor(plugin)) {
-        new plugin(ctx, options)
+        new plugin(ctx, config)
       } else {
-        plugin(ctx, options)
+        plugin(ctx, config)
       }
     }
 
@@ -302,22 +315,21 @@ export class Context {
     return this
   }
 
-  async dispose(plugin = this._plugin) {
+  dispose(plugin = this._plugin) {
     if (!plugin) throw new Error('root level context cannot be disposed')
     const state = this.app.registry.get(plugin)
     if (!state) return
-    const task = Promise.allSettled([
-      ...state.children.slice().map(plugin => this.dispose(plugin)),
-      ...state.disposables.slice().map(dispose => dispose()),
-    ])
+    state.children.slice().map(plugin => this.dispose(plugin))
+    state.disposables.slice().map(dispose => dispose())
     this.app.registry.delete(plugin)
     remove(state.parent.children, plugin)
     this.emit('plugin-removed', plugin)
-    await task
+    return state
   }
 
   * getHooks(name: EventName, session?: Session) {
-    for (const [context, callback] of this.app._hooks[name] || []) {
+    const hooks = this.app._hooks[name] || []
+    for (const [context, callback] of hooks.slice()) {
       if (!context.match(session)) continue
       yield callback
     }
@@ -330,9 +342,7 @@ export class Context {
     const session = typeof args[0] === 'object' ? args.shift() : null
     const name = args.shift()
     for (const callback of this.getHooks(name, session)) {
-      tasks.push((async () => {
-        return callback.apply(session, args)
-      })().catch(((error) => {
+      tasks.push(Promise.resolve(callback.apply(session, args)).catch(((error) => {
         this.logger('app').warn(error)
       })))
     }
@@ -403,7 +413,8 @@ export class Context {
 
     // handle special events
     if (name === 'ready' && this.app.isActive) {
-      return listener(), () => false
+      this.app._tasks.queue(sleep(0).then(() => listener()))
+      return () => false
     } else if (name === 'dispose') {
       this.state.disposables[method](listener)
       return () => remove(this.state.disposables, listener)
@@ -475,6 +486,10 @@ export class Context {
     return this.createTimerDispose(setInterval(callback, ms, ...args))
   }
 
+  getCommand(name: string) {
+    return this.app._commands.get(name)
+  }
+
   command<D extends string>(def: D, config?: Command.Config): Command<never, never, Argv.ArgumentType<D>>
   command<D extends string>(def: D, desc: string, config?: Command.Config): Command<never, never, Argv.ArgumentType<D>>
   command(def: string, ...args: [Command.Config?] | [string, Command.Config?]) {
@@ -489,7 +504,7 @@ export class Context {
     segments.forEach((segment, index) => {
       const code = segment.charCodeAt(0)
       const name = code === 46 ? parent.name + segment : code === 47 ? segment.slice(1) : segment
-      let command = this.app._commands.get(name)
+      let command = this.getCommand(name)
       if (command) {
         if (parent) {
           if (command === parent) {

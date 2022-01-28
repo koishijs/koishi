@@ -1,66 +1,78 @@
-import { Card, registerView } from '~/client'
+import { Card, Context } from '~/client'
 import {} from '@koishijs/plugin-status/src'
 import LoadChart from './components/load-chart.vue'
+import Home from './index.vue'
+import Charts from './charts'
 
-import './charts'
+export default (ctx: Context) => {
+  ctx.install(Charts)
 
-registerView({
-  type: 'numeric',
-  component: Card.numeric({
-    title: '近期消息频率',
-    icon: 'history',
-    fields: ['stats'],
-    content({ stats }) {
-      return Object.values(stats.botSend).reduce((sum, value) => sum + value, 0).toFixed(1) + ' / d'
-    },
-  }),
-})
+  ctx.addPage({
+    path: '/',
+    name: '仪表盘',
+    icon: 'tachometer-alt',
+    order: 1000,
+    component: Home,
+  })
 
-registerView({
-  id: 'database',
-  type: 'numeric',
-  component: Card.numeric({
-    title: '数据库体积',
-    icon: 'database',
-    type: 'size',
-    fields: ['meta'],
-    content: ({ meta }) => meta.databaseSize,
-  }),
-})
+  ctx.addView({
+    type: 'numeric',
+    component: Card.numeric({
+      title: '近期消息频率',
+      icon: 'history',
+      fields: ['stats'],
+      content({ stats }) {
+        return Object.values(stats.botSend).reduce((sum, value) => sum + value, 0).toFixed(1) + ' / d'
+      },
+    }),
+  })
 
-registerView({
-  id: 'assets',
-  type: 'numeric',
-  component: Card.numeric({
-    title: '资源服务器',
-    icon: 'hdd',
-    type: 'size',
-    fields: ['meta'],
-    content: ({ meta }) => meta.assetSize,
-  }),
-})
+  ctx.addView({
+    id: 'database',
+    type: 'numeric',
+    component: Card.numeric({
+      title: '数据库体积',
+      icon: 'database',
+      type: 'size',
+      fields: ['meta'],
+      content: ({ meta }) => meta.databaseSize,
+    }),
+  })
 
-registerView({
-  type: 'numeric',
-  component: Card.numeric({
-    title: '活跃用户数量',
-    icon: 'heart',
-    fields: ['meta'],
-    content: ({ meta }) => meta.activeUsers,
-  }),
-})
+  ctx.addView({
+    id: 'assets',
+    type: 'numeric',
+    component: Card.numeric({
+      title: '资源服务器',
+      icon: 'hdd',
+      type: 'size',
+      fields: ['meta'],
+      content: ({ meta }) => meta.assetSize,
+    }),
+  })
 
-registerView({
-  type: 'numeric',
-  component: Card.numeric({
-    title: '活跃群数量',
-    icon: 'users',
-    fields: ['meta'],
-    content: ({ meta }) => meta.activeGuilds,
-  }),
-})
+  ctx.addView({
+    type: 'numeric',
+    component: Card.numeric({
+      title: '活跃用户数量',
+      icon: 'heart',
+      fields: ['meta'],
+      content: ({ meta }) => meta.activeUsers,
+    }),
+  })
 
-registerView({
-  type: 'home',
-  component: LoadChart,
-})
+  ctx.addView({
+    type: 'numeric',
+    component: Card.numeric({
+      title: '活跃群数量',
+      icon: 'users',
+      fields: ['meta'],
+      content: ({ meta }) => meta.activeGuilds,
+    }),
+  })
+
+  ctx.addView({
+    type: 'home',
+    component: LoadChart,
+  })
+}

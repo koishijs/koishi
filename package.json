@@ -25,7 +25,7 @@
     "dep": "node -r ./build/register build/dep",
     "docs": "yarn workspace docs",
     "draft": "node -r ./build/register build/release",
-    "fe": "node -r ./build/register plugins/frontend/builder/src/build",
+    "fe": "node -r ./build/register build/frontend",
     "test": "mocha --no-warnings --experimental-vm-modules --enable-source-maps",
     "test:json": "c8 -r json yarn test",
     "test:html": "rimraf coverage && c8 -r html yarn test",

@@ -1,15 +1,17 @@
 import { camelize, capitalize, Context, Dict, Plugin } from 'koishi'
 import { debounce } from 'throttle-debounce'
-import { DataSource } from '@koishijs/plugin-console'
+import { DataService } from '@koishijs/plugin-console'
 import { resolve } from 'path'
 
 declare module '@koishijs/plugin-console' {
-  interface Sources {
-    registry: RegistryProvider
+  namespace Console {
+    interface Services {
+      registry: RegistryProvider
+    }
   }
 }
 
-export default class RegistryProvider extends DataSource<Dict<PluginData>> {
+export default class RegistryProvider extends DataService<Dict<PluginData>> {
   static using = ['console'] as const
 
   private cache: Dict<PluginData>
@@ -17,8 +19,11 @@ export default class RegistryProvider extends DataSource<Dict<PluginData>> {
   constructor(ctx: Context) {
     super(ctx, 'registry')
 
-    const filename = ctx.console.config.devMode ? '../client/index.ts' : '../dist/index.js'
-    ctx.console.addEntry(resolve(__dirname, filename))
+    if (ctx.console.config.devMode) {
+      ctx.console.addEntry(resolve(__dirname, '../client/index.ts'))
+    } else {
+      ctx.console.addEntry(resolve(__dirname, '../dist'))
+    }
 
     ctx.on('plugin-added', this.update)
     ctx.on('plugin-removed', this.update)

@@ -33,7 +33,7 @@
     "code"
   ],
   "peerDependencies": {
-    "koishi": "^4.0.1"
+    "koishi": "^4.1.1"
   },
   "optionalDependencies": {
     "@babel/core": "^7.16.7",
@@ -51,6 +51,6 @@
     "@types/babel__core": "^7.1.18",
     "@types/js-yaml": "^4.0.5",
     "@koishijs/plugin-database-memory": "^1.0.0",
-    "@koishijs/plugin-mock": "^1.0.0"
+    "@koishijs/plugin-mock": "^1.0.1"
   }
 }

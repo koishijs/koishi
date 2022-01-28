@@ -1,14 +1,16 @@
 import { Context, Dict, Query } from 'koishi'
-import { DataSource } from '@koishijs/plugin-console'
+import { DataService } from '@koishijs/plugin-console'
 import { resolve } from 'path'
 
 declare module '@koishijs/plugin-console' {
-  interface Sources {
-    tables: DatabaseProvider
+  namespace Console {
+    interface Services {
+      tables: DatabaseProvider
+    }
   }
 }
 
-export default class DatabaseProvider extends DataSource<Dict<Query.TableStats>> {
+export default class DatabaseProvider extends DataService<Dict<Query.TableStats>> {
   static using = ['console', 'database'] as const
 
   cache: Promise<Dict<Query.TableStats>>
@@ -16,8 +18,11 @@ export default class DatabaseProvider extends DataSource<Dict<Query.TableStats>>
   constructor(ctx: Context) {
     super(ctx, 'tables')
 
-    const filename = ctx.console.config.devMode ? '../client/index.ts' : '../dist/index.js'
-    ctx.console.addEntry(resolve(__dirname, filename))
+    if (ctx.console.config.devMode) {
+      ctx.console.addEntry(resolve(__dirname, '../client/index.ts'))
+    } else {
+      ctx.console.addEntry(resolve(__dirname, '../dist'))
+    }
   }
 
   get(forced = false) {

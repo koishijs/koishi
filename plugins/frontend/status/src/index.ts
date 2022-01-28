@@ -15,10 +15,12 @@ declare module 'koishi' {
 }
 
 declare module '@koishijs/plugin-console' {
-  interface Sources {
-    meta: MetaProvider
-    profile: ProfileProvider
-    stats: StatisticsProvider
+  namespace Console {
+    interface Services {
+      meta: MetaProvider
+      profile: ProfileProvider
+      stats: StatisticsProvider
+    }
   }
 }
 
@@ -44,8 +46,11 @@ export const Config = Schema.intersect([
 ])
 
 export function apply(ctx: Context, config: Config) {
-  const filename = ctx.console.config.devMode ? '../client/index.ts' : '../dist/index.js'
-  ctx.console.addEntry(resolve(__dirname, filename))
+  if (ctx.console.config.devMode) {
+    ctx.console.addEntry(resolve(__dirname, '../client/index.ts'))
+  } else {
+    ctx.console.addEntry(resolve(__dirname, '../dist'))
+  }
 
   ctx.plugin(MetaProvider, config)
   ctx.plugin(ProfileProvider, config)

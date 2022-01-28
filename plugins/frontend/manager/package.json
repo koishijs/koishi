@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-manager",
   "description": "Manage your bots and plugins with console",
-  "version": "1.0.1",
+  "version": "1.2.0",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -32,9 +32,9 @@
     "server"
   ],
   "peerDependencies": {
-    "@koishijs/cli": "^4.0.1",
-    "@koishijs/plugin-console": "^1.0.0",
-    "koishi": "^4.0.1"
+    "@koishijs/cli": "^4.1.1",
+    "@koishijs/plugin-console": "^2.0.0",
+    "koishi": "^4.1.1"
   },
   "devDependencies": {
     "@types/cross-spawn": "^6.0.2"
