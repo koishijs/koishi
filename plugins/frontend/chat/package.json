@@ -30,9 +30,9 @@
     "server"
   ],
   "peerDependencies": {
-    "koishi": "^4.0.1"
+    "koishi": "^4.1.0"
   },
   "devDependencies": {
-    "@koishijs/plugin-console": "^1.0.0"
+    "@koishijs/plugin-console": "^1.1.0"
   }
 }

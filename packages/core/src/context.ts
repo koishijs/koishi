@@ -1,4 +1,4 @@
-import { Logger, makeArray, remove, Random, Promisify, Awaitable, Dict, MaybeArray, defineProperty } from '@koishijs/utils'
+import { Logger, makeArray, remove, sleep, Random, Promisify, Awaitable, Dict, MaybeArray, defineProperty } from '@koishijs/utils'
 import { Command } from './command'
 import { Session } from './session'
 import { User, Channel, Modules } from './database'
@@ -242,27 +242,40 @@ export class Context {
     return this.plugin({ using, apply: callback, name: callback.name })
   }
 
-  plugin(name: string, options?: any): this
-  plugin<T extends Plugin>(plugin: T, options?: boolean | Plugin.Config<T>): this
-  plugin(entry: string | Plugin, options?: any) {
-    if (options === false) return this
-    if (options === true) options = undefined
-    options ??= {}
+  validate<T extends Plugin>(plugin: T, config: any) {
+    if (config === false) return
+    if (config === true) config = undefined
+    config ??= {}
 
+    const schema = plugin['Config'] || plugin['schema']
+    if (schema) config = schema(config)
+    return config
+  }
+
+  plugin(name: string, config?: any): this
+  plugin<T extends Plugin>(plugin: T, config?: boolean | Plugin.Config<T>): this
+  plugin(entry: string | Plugin, config?: any) {
+    // load plugin by name
     const plugin: Plugin = typeof entry === 'string' ? Modules.require(entry, true) : entry
+
+    // check duplication
     if (this.app.registry.has(plugin)) {
       this.logger('app').warn(new Error('duplicate plugin detected'))
       return this
     }
 
+    // check if it's a valid plugin
     if (typeof plugin !== 'function' && !isApplicable(plugin)) {
       throw new Error('invalid plugin, expect function or object with an "apply" method')
     }
 
-    const ctx = new Context(this.filter, this.app, plugin).select(options)
+    // validate plugin config
+    config = this.validate(plugin, config)
+    if (!config) return this
+
+    const ctx = new Context(this.filter, this.app, plugin).select(config)
     const schema = plugin['Config'] || plugin['schema']
     const using = plugin['using'] || []
-    if (schema) options = schema(options)
 
     this.app.registry.set(plugin, {
       plugin,
@@ -270,30 +283,31 @@ export class Context {
       using,
       id: Random.id(),
       context: this,
-      config: options,
+      config: config,
       parent: this.state,
       children: [],
       disposables: [],
     })
 
-    const dispose = this.on('service', async (name) => {
-      if (!using.includes(name)) return
-      await Promise.allSettled(ctx.state.disposables.slice(1).map(dispose => dispose()))
-      callback()
-    })
-
     this.state.children.push(plugin)
     this.emit('plugin-added', plugin)
-    ctx.state.disposables.push(dispose)
+
+    if (using.length) {
+      ctx.on('service', async (name) => {
+        if (!using.includes(name)) return
+        await Promise.allSettled(ctx.state.disposables.slice(1).map(dispose => dispose()))
+        callback()
+      })
+    }
 
     const callback = () => {
       if (using.some(name => !this[name])) return
       if (typeof plugin !== 'function') {
-        plugin.apply(ctx, options)
+        plugin.apply(ctx, config)
       } else if (isConstructor(plugin)) {
-        new plugin(ctx, options)
+        new plugin(ctx, config)
       } else {
-        plugin(ctx, options)
+        plugin(ctx, config)
       }
     }
 
@@ -301,22 +315,21 @@ export class Context {
     return this
   }
 
-  async dispose(plugin = this._plugin) {
+  dispose(plugin = this._plugin) {
     if (!plugin) throw new Error('root level context cannot be disposed')
     const state = this.app.registry.get(plugin)
     if (!state) return
-    await Promise.allSettled([
-      ...state.children.slice().map(plugin => this.dispose(plugin)),
-      ...state.disposables.slice().map(dispose => dispose()),
-    ]).finally(() => {
-      this.app.registry.delete(plugin)
-      remove(state.parent.children, plugin)
-      this.emit('plugin-removed', plugin)
-    })
+    state.children.slice().map(plugin => this.dispose(plugin))
+    state.disposables.slice().map(dispose => dispose())
+    this.app.registry.delete(plugin)
+    remove(state.parent.children, plugin)
+    this.emit('plugin-removed', plugin)
+    return state
   }
 
   * getHooks(name: EventName, session?: Session) {
-    for (const [context, callback] of this.app._hooks[name] || []) {
+    const hooks = this.app._hooks[name] || []
+    for (const [context, callback] of hooks.slice()) {
       if (!context.match(session)) continue
       yield callback
     }
@@ -329,9 +342,7 @@ export class Context {
     const session = typeof args[0] === 'object' ? args.shift() : null
     const name = args.shift()
     for (const callback of this.getHooks(name, session)) {
-      tasks.push((async () => {
-        return callback.apply(session, args)
-      })().catch(((error) => {
+      tasks.push(Promise.resolve(callback.apply(session, args)).catch(((error) => {
         this.logger('app').warn(error)
       })))
     }
@@ -402,7 +413,8 @@ export class Context {
 
     // handle special events
     if (name === 'ready' && this.app.isActive) {
-      return listener(), () => false
+      this.app._tasks.queue(sleep(0).then(() => listener()))
+      return () => false
     } else if (name === 'dispose') {
       this.state.disposables[method](listener)
       return () => remove(this.state.disposables, listener)
@@ -586,8 +598,11 @@ export namespace Context {
     model: Model
   }
 
+  export const Services: (keyof Services)[] = []
+
   export function service(key: keyof Services) {
     if (Object.prototype.hasOwnProperty.call(Context.prototype, key)) return
+    Services.push(key)
     const privateKey = Symbol(key)
     Object.defineProperty(Context.prototype, key, {
       get(this: Context) {
@@ -603,26 +618,11 @@ export namespace Context {
         this.emit('service', key)
         const action = value ? oldValue ? 'changed' : 'enabled' : 'disabled'
         this.logger('service').debug(key, action)
-        if (value) {
-          this.app._services[key] = this.state.id
-          const dispose = () => {
-            if (this.app[privateKey] !== value) return
-            this[key] = null
-            delete this.app._services[key]
-          }
-          this.state.disposables.push(dispose)
-          this.on('service', (name) => {
-            if (name !== key) return
-            dispose()
-            remove(this.state.disposables, dispose)
-          })
-        }
       },
     })
   }
 
   service('bots')
-  service('database')
   service('model')
 
   export const deprecatedEvents: Dict<EventName & string> = {
@@ -666,7 +666,7 @@ export interface EventMap {
   'dispose'(): Awaitable<void>
   'model'(name: keyof Tables): void
   'service'(name: keyof Context.Services): void
-  'adapter'(): void
+  'adapter'(name: string): void
   'bot-added'(bot: Bot): void
   'bot-removed'(bot: Bot): void
   'bot-status-updated'(bot: Bot): void

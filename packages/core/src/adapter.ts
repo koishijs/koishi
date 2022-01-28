@@ -73,7 +73,6 @@ export namespace Adapter {
   export function define(platform: string, constructor: Bot.Constructor, ...args: CreatePluginRestParams) {
     const name = platform + '-adapter'
     platform = platform.toLowerCase()
-    Bot.library[platform] = constructor
 
     let BotConfig: Schema
     if (typeof args[0] === 'function') {
@@ -108,10 +107,11 @@ export namespace Adapter {
     ])
 
     function apply(ctx: Context, config: PluginConfig = {}) {
-      ctx.emit('adapter')
+      ctx.emit('adapter', platform)
       configMap[platform] = config
+
       for (const options of config.bots) {
-        ctx.bots.create(platform, options)
+        ctx.bots.create(platform, options, constructor)
       }
     }
 
@@ -129,9 +129,7 @@ export namespace Adapter {
       return this.find(bot => bot.sid === sid)
     }
 
-    create(platform: string, options: any): Bot
-    create<T extends Bot>(platform: string, options: any, constructor: new (adapter: Adapter, config: any) => T): T
-    create(platform: string, options: any, constructor: Bot.Constructor = Bot.library[platform]) {
+    create<T extends Bot>(platform: string, options: any, constructor: new (adapter: Adapter, config: any) => T): T {
       const adapter = this.resolve(platform, options)
       const bot = new constructor(adapter, options)
       adapter.bots.push(bot)
@@ -152,7 +150,7 @@ export namespace Adapter {
       const type = join(platform, config.protocol)
       if (this.adapters[type]) return this.adapters[type]
 
-      const constructor = library[type]
+      const constructor = Adapter.library[type]
       if (!constructor) {
         throw new Error(`unsupported protocol "${type}"`)
       }

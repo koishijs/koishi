@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-feedback",
   "description": "Feedback plugin for Koishi",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -31,7 +31,7 @@
     "feedback"
   ],
   "peerDependencies": {
-    "koishi": "^4.0.1"
+    "koishi": "^4.1.0"
   },
   "devDependencies": {
     "@koishijs/plugin-mock": "^1.0.0"

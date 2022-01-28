@@ -47,6 +47,7 @@ export abstract class Service {
   protected stop(): Awaitable<void> {}
 
   constructor(protected ctx: Context, key: keyof Context.Services, immediate?: boolean) {
+    Context.service(key)
     if (immediate) ctx[key] = this as never
 
     ctx.on('ready', async () => {
@@ -55,12 +56,13 @@ export abstract class Service {
     })
 
     ctx.on('dispose', async () => {
+      if (ctx[key] === this as never) ctx[key] = null
       await this.stop()
     })
   }
 
   get caller(): Context {
-    return this.ctx[Context.current] || this.ctx
+    return this[Context.current] || this.ctx
   }
 }
 
@@ -131,6 +133,10 @@ export namespace Database {
   }
 }
 
+export function unwrapExports(module: any) {
+  return module.default || module
+}
+
 export interface Modules {}
 
 export namespace Modules {
@@ -170,8 +176,8 @@ export namespace Modules {
   export function require(name: string, forced = false) {
     try {
       const path = resolve(name)
-      const module = internal.require(path)
-      return module.default || module
+      const exports = internal.require(path)
+      return unwrapExports(exports)
     } catch (error) {
       if (forced) throw error
     }

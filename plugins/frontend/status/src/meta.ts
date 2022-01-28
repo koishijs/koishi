@@ -1,5 +1,5 @@
-import { Argv, Assets, Context, Dict, noop, Schema, Time } from 'koishi'
-import { DataSource } from '@koishijs/plugin-console'
+import { Argv, Assets, Context, noop, Schema, Time } from 'koishi'
+import { DataService } from '@koishijs/plugin-console'
 
 declare module 'koishi' {
   interface User {
@@ -7,7 +7,7 @@ declare module 'koishi' {
   }
 }
 
-export class MetaProvider extends DataSource<MetaProvider.Payload> {
+class MetaProvider extends DataService<MetaProvider.Payload> {
   timestamp = 0
   cached: Promise<MetaProvider.Payload>
   callbacks: MetaProvider.Extension[] = []
@@ -16,7 +16,10 @@ export class MetaProvider extends DataSource<MetaProvider.Payload> {
     super(ctx, 'meta')
 
     this.extend(async () => ctx.assets?.stats())
-    this.extend(async () => ctx.database?.stats())
+    this.extend(async () => {
+      const stats = await ctx.database?.stats()
+      return { databaseSize: stats.size }
+    })
 
     this.extend(async () => {
       const activeUsers = await ctx.database?.eval('user', { $count: 'id' }, {
@@ -57,7 +60,7 @@ export class MetaProvider extends DataSource<MetaProvider.Payload> {
   }
 }
 
-export namespace MetaProvider {
+namespace MetaProvider {
   export interface Config {
     metaInterval?: number
   }
@@ -66,17 +69,13 @@ export namespace MetaProvider {
     metaInternal: Schema.number().description('元数据推送的时间间隔。').default(Time.hour),
   })
 
-  export interface Stats {
-    size: number
+  export interface Payload extends Assets.Stats {
     activeUsers: number
     activeGuilds: number
-    tables: Dict<{
-      count: number
-      size: number
-    }>
+    databaseSize: number
   }
-
-  export interface Payload extends Stats, Assets.Stats {}
 
   export type Extension = () => Promise<Partial<Payload>>
 }
+
+export default MetaProvider

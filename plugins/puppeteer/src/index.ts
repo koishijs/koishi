@@ -44,8 +44,6 @@ export const Config = Schema.object({
 
 const logger = new Logger('puppeteer')
 
-Context.service('puppeteer')
-
 export default class Puppeteer extends Service {
   browser: Browser
 

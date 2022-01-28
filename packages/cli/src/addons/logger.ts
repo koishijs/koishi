@@ -1,4 +1,4 @@
-import { App, Context, defineProperty, Logger, remove, Schema, version } from 'koishi'
+import { App, defineProperty, Logger, remove, Schema, version } from 'koishi'
 
 interface LogLevelConfig {
   // a little different from koishi-utils
@@ -27,12 +27,12 @@ App.Config.list.push(Schema.object({
   logger: Config,
 }))
 
-let prolog: string[] = []
+let prologue: string[] = []
 
 const target: Logger.Target = {
   colors: 3,
   showTime: 'yyyy-MM-dd hh:mm:ss',
-  print: text => prolog.push(text),
+  print: text => prologue.push(text),
 }
 
 export function prepare(config: Config = {}) {
@@ -76,11 +76,9 @@ export function prepare(config: Config = {}) {
   Logger.timestamp = Date.now()
 }
 
-export const name = 'logger'
-
-export function apply(ctx: Context) {
-  ctx.app._prolog = prolog
-  ctx.on('ready', () => {
+export function apply(app: App) {
+  app.prologue = prologue
+  app.on('ready', () => {
     remove(Logger.targets, target)
   })
 }

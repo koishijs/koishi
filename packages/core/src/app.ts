@@ -1,4 +1,4 @@
-import { Awaitable, defineProperty, Time, coerce, escapeRegExp, makeArray, trimSlash, merge, Dict } from '@koishijs/utils'
+import { Awaitable, coerce, defineProperty, Dict, escapeRegExp, Logger, makeArray, Time } from '@koishijs/utils'
 import { Context, Next, Plugin } from './context'
 import { Adapter } from './adapter'
 import { Channel, User } from './database'
@@ -19,13 +19,15 @@ interface CommandMap extends Map<string, Command> {
   resolve(key: string): Command
 }
 
+const logger = new Logger('app')
+
 export class App extends Context {
   _commandList: Command[] = []
   _commands: CommandMap = new Map<string, Command>() as never
   _shortcuts: Command.Shortcut[] = []
+  _tasks = new TaskQueue()
   _hooks: Record<keyof any, [Context, (...args: any[]) => any][]> = {}
   _sessions: Dict<Session> = Object.create(null)
-  _services: Dict<string> = Object.create(null)
   _userCache = new SharedCache<User.Observed<any>>()
   _channelCache = new SharedCache<Channel.Observed<any>>()
 
@@ -87,15 +89,19 @@ export class App extends Context {
 
   async start() {
     this.isActive = true
-    await this.parallel('ready')
-    this.logger('app').debug('started')
+    logger.debug('started')
+    for (const callback of this.getHooks('ready')) {
+      this._tasks.queue(callback())
+    }
+    delete this._hooks.ready
+    await this._tasks.flush()
   }
 
   async stop() {
     this.isActive = false
-    // `disconnect` event is handled by ctx.disposables
+    logger.debug('stopped')
+    // `dispose` event is handled by ctx.disposables
     await Promise.all(this.state.disposables.map(dispose => dispose()))
-    this.logger('app').debug('stopped')
   }
 
   private _resolvePrefixes(session: Session) {
@@ -244,12 +250,19 @@ export namespace App {
     minSimilarity?: number
   }
 
+  export namespace Config {
+    export interface Static extends Schema<Config> {}
+  }
+
   const BasicConfig = Schema.object({
-    prefix: Schema.string().description('指令前缀字符，可以是字符串或字符串数组。将用于指令前缀的匹配。例如，如果配置该选项为 `.`，则你可以通过 `.help` 来进行 help 指令的调用。'),
+    prefix: Schema.union([
+      Schema.array(Schema.string()),
+      Schema.transform(Schema.string(), (prefix) => [prefix]),
+    ] as const).description('指令前缀字符，可以是字符串或字符串数组。将用于指令前缀的匹配。例如，如果配置该选项为 `.`，则你可以通过 `.help` 来进行 help 指令的调用。'),
     nickname: Schema.union([
       Schema.array(Schema.string()),
       Schema.transform(Schema.string(), (nickname) => [nickname]),
-    ]).description('机器人的昵称，可以是字符串或字符串数组。将用于指令前缀的匹配。例如，如果配置该选项为 `Koishi`，则你可以通过 `Koishi, help` 来进行 help 指令的调用。'),
+    ] as const).description('机器人的昵称，可以是字符串或字符串数组。将用于指令前缀的匹配。例如，如果配置该选项为 `Koishi`，则你可以通过 `Koishi, help` 来进行 help 指令的调用。'),
     autoAuthorize: Schema.number().default(1).description('当获取不到用户数据时默认使用的权限等级。'),
     autoAssign: Schema.boolean().default(true).description('当获取不到频道数据时，是否使用接受者作为代理者。'),
     maxListeners: Schema.number().default(64).description('每种监听器的最大数量。如果超过这个数量，Koishi 会认定为发生了内存泄漏，将产生一个警告。'),
@@ -267,7 +280,24 @@ export namespace App {
     }),
   }).description('高级设置')
 
-  export const Config: Schema<Config> = Schema.intersect([BasicConfig, AdvancedConfig])
+  export const Config: Config.Static = Schema.intersect([BasicConfig, AdvancedConfig])
+}
+
+class TaskQueue {
+  #internal = new Set<Promise<void>>()
+
+  queue(value: any) {
+    const task = Promise.resolve(value)
+      .catch(err => logger.warn(err))
+      .then(() => this.#internal.delete(task))
+    this.#internal.add(task)
+  }
+
+  async flush() {
+    while (this.#internal.size) {
+      await Promise.all(Array.from(this.#internal))
+    }
+  }
 }
 
 export namespace SharedCache {

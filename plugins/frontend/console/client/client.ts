@@ -1,18 +1,13 @@
-import { ref, reactive, h, Component, markRaw, defineComponent, resolveComponent } from 'vue'
-import { createWebHistory, createRouter } from 'vue-router'
-import { DataSource, ClientConfig, Sources } from '@koishijs/plugin-console'
-import { EChartsOption } from 'echarts'
-import Home from './layout/home.vue'
+import { App, ref, reactive, h, markRaw, defineComponent, resolveComponent, watch, Ref } from 'vue'
+import { createWebHistory, createRouter, START_LOCATION, RouteRecordNormalized } from 'vue-router'
+import { ClientConfig, Console } from '@koishijs/plugin-console'
+import { Disposable, Extension, PageOptions, Store, ViewOptions } from '~/client'
 
 // data api
 
 declare const KOISHI_CONFIG: ClientConfig
 
 export const config = KOISHI_CONFIG
-
-type Store = {
-  [K in keyof Sources]?: Sources[K] extends DataSource<infer T> ? T : never
-}
 
 export const store = reactive<Store>({})
 
@@ -38,6 +33,14 @@ export function receive<T = any>(event: string, listener: (data: T) => void) {
 
 receive('data', ({ key, value }) => {
   store[key] = value
+})
+
+receive('patch', ({ key, value }) => {
+  if (Array.isArray(store[key])) {
+    store[key].push(...value)
+  } else {
+    Object.assign(store[key], value)
+  }
 })
 
 receive('response', ({ id, value }) => {
@@ -69,77 +72,134 @@ export async function connect(endpoint: string) {
 
 // layout api
 
-export interface ViewOptions {
-  id?: string
-  type: string
-  order?: number
-  component: Component
-}
-
 export const views = reactive<Record<string, ViewOptions[]>>({})
 
-export function registerView(options: ViewOptions) {
-  options.order ??= 0
-  const list = views[options.type] ||= []
-  const index = list.findIndex(a => a.order < options.order)
-  markRaw(options.component)
-  if (index >= 0) {
-    list.splice(index, 0, options)
-  } else {
-    list.push(options)
-  }
-}
-
-interface RouteMetaExtension {
-  icon?: string
-  order?: number
-  fields?: readonly (keyof Sources)[]
-  position?: 'top' | 'bottom' | 'hidden'
-}
-
-export interface PageOptions extends RouteMetaExtension {
-  path: string
-  name: string
-  component: Component
-}
-
-declare module 'vue-router' {
-  interface RouteMeta extends RouteMetaExtension {}
-}
-
 export const router = createRouter({
-  history: createWebHistory(KOISHI_CONFIG.uiPath),
+  history: createWebHistory(config.uiPath),
   linkActiveClass: 'active',
   routes: [],
 })
 
-export function registerPage(options: PageOptions) {
-  const { path, name, component, ...rest } = options
-  router.addRoute({
-    path,
-    name,
-    component,
-    meta: {
-      order: 0,
-      position: 'top',
-      fields: [] as const,
-      ...rest,
-    },
-  })
+export const extensions = reactive<Record<string, Context>>({})
+
+export const routes: Ref<RouteRecordNormalized[]> = ref([])
+
+export class Context {
+  static app: App
+
+  public disposables: Disposable[] = []
+
+  addView(options: ViewOptions) {
+    options.order ??= 0
+    const list = views[options.type] ||= []
+    const index = list.findIndex(a => a.order < options.order)
+    markRaw(options.component)
+    if (index >= 0) {
+      list.splice(index, 0, options)
+    } else {
+      list.push(options)
+    }
+    this.disposables.push(() => {
+      const index = list.findIndex(item => item === options)
+      if (index >= 0) list.splice(index, 1)
+    })
+  }
+
+  addPage(options: PageOptions) {
+    const { path, name, component, ...rest } = options
+    const dispose = router.addRoute({
+      path,
+      name,
+      component,
+      meta: {
+        order: 0,
+        position: 'top',
+        fields: [],
+        ...rest,
+      },
+    })
+    routes.value = router.getRoutes()
+    this.disposables.push(() => {
+      dispose()
+      routes.value = router.getRoutes()
+    })
+  }
+
+  install(extension: Extension) {
+    extension(this)
+  }
+
+  dispose() {
+    this.disposables.forEach(dispose => dispose())
+  }
 }
 
-registerPage({
-  path: '/',
-  name: '仪表盘',
-  icon: 'tachometer-alt',
-  order: 1000,
-  component: Home,
+export function defineExtension(callback: Extension) {
+  return callback
+}
+
+const initTask = new Promise<void>((resolve) => {
+  watch(() => store.http, async (newValue, oldValue) => {
+    for (const path in extensions) {
+      if (newValue.includes(path)) continue
+      extensions[path].dispose()
+      delete extensions[path]
+    }
+
+    const { redirect } = router.currentRoute.value.query
+    const tasks = newValue.map(async (path) => {
+      if (extensions[path]) return
+      extensions[path] = new Context()
+
+      if (path.endsWith('.css')) {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = path
+        document.head.appendChild(link)
+        extensions[path].disposables.push(() => {
+          document.head.removeChild(link)
+        })
+        return
+      }
+
+      const exports = await import(/* @vite-ignore */ path)
+      exports.default?.(extensions[path])
+      if (typeof redirect === 'string') {
+        const location = router.resolve(redirect)
+        if (location.matched.length) {
+          router.replace(location)
+        }
+      }
+    })
+
+    await Promise.allSettled(tasks)
+    if (!oldValue) resolve()
+  }, { deep: true })
+})
+
+router.beforeEach(async (to, from) => {
+  if (to.matched.length) return
+
+  if (from === START_LOCATION) {
+    await initTask
+    to = router.resolve(to.path)
+    if (to.matched.length) return to
+  }
+
+  const routes = router.getRoutes()
+    .filter(item => item.meta.position === 'top')
+    .sort((a, b) => b.meta.order - a.meta.order)
+  const path = routes[0]?.path || '/blank'
+  return {
+    path,
+    query: { redirect: to.fullPath },
+  }
 })
 
 // component helper
 
 export namespace Card {
-  function createFieldComponent(render: Function, fields: readonly (keyof Sources)[] = [] as const) {
+  export function create(render: Function, fields: readonly (keyof Console.Services)[] = []) {
     return defineComponent({
       render: () => fields.every(key => store[key]) ? render() : null,
     })
@@ -149,7 +209,7 @@ export namespace Card {
     icon: string
     title: string
     type?: string
-    fields?: (keyof Sources)[]
+    fields?: (keyof Console.Services)[]
     content: (store: Store) => any
   }
 
@@ -160,25 +220,6 @@ export namespace Card {
       icon, title,
     }, () => content(store))
   
-    return createFieldComponent(render, fields)
-  }
-
-  export interface ChartOptions {
-    title: string
-    fields?: (keyof Sources)[]
-    options: (store: Store) => EChartsOption
-  }
-
-  export function echarts({ title, fields, options }: ChartOptions) {
-    return createFieldComponent(() => {
-      const option = options(store)
-      return h(resolveComponent('k-card'), {
-        class: 'frameless',
-        title,
-      }, () => option ? h(resolveComponent('k-chart'), {
-        option,
-        autoresize: true,
-      }) : '暂无数据。')
-    }, fields)
+    return create(render, fields)
   }
 }

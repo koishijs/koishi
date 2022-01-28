@@ -1,25 +1,23 @@
-import { Context, Dict, Schema, sleep } from 'koishi'
+import { Context, Dict, remove, Schema, sleep, Time } from 'koishi'
 
 export interface Config {
-  recall?: number
+  timeout?: number
 }
 
 export const Config = Schema.object({
-  recall: Schema.number().default(10),
+  timeout: Schema.number().default(Time.hour).description('消息保留的时间。'),
 })
 
 export const name = 'recall'
 
-export function apply(ctx: Context, { recall }: Config) {
+export function apply(ctx: Context, { timeout }: Config) {
   ctx = ctx.guild()
   const recent: Dict<string[]> = {}
 
   ctx.on('send', (session) => {
     const list = recent[session.channelId] ||= []
-    list.unshift(session.messageId)
-    if (list.length > recall) {
-      list.pop()
-    }
+    list.push(session.messageId)
+    ctx.setTimeout(() => remove(list, session.messageId), timeout)
   })
 
   ctx.command('recall [count:number]', '撤回 bot 发送的消息', { authority: 2 })

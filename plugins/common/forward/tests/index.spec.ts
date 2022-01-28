@@ -2,10 +2,13 @@ import { App } from 'koishi'
 import { expect } from 'chai'
 import {} from 'chai-shape'
 import jest from 'jest-mock'
+import memory from '@koishijs/plugin-database-memory'
 import mock, { DEFAULT_SELF_ID } from '@koishijs/plugin-mock'
 import * as forward from '@koishijs/plugin-forward'
 
-const app = new App().plugin(mock)
+const app = new App()
+
+app.plugin(mock)
 
 const session2 = app.mock.client('123', '456')
 const session3 = app.mock.client('789', '654')
@@ -16,7 +19,9 @@ app.plugin(forward, [{
   selfId: DEFAULT_SELF_ID,
 }])
 
-before(() => app.start())
+before(async () => {
+  await app.start()
+})
 
 describe('@koishijs/plugin-forward', () => {
   it('basic support', async () => {
@@ -37,5 +42,18 @@ describe('@koishijs/plugin-forward', () => {
     await session2.shouldNotReply('[CQ:quote,id=3000] hello')
     expect(send.mock.calls).to.have.length(1)
     expect(send.mock.calls).to.have.shape([['654', '123: hello']])
+  })
+
+  it('command usage', async () => {
+    app.plugin(memory)
+    await app._tasks.flush()
+    await app.mock.initUser('123', 3)
+
+    await session2.shouldReply('forward', /设置消息转发/)
+    await session2.shouldReply('forward -a #123', '已成功添加目标频道 mock:123。')
+    await session2.shouldReply('forward -l', '当前频道的目标频道列表为：\nmock:123')
+    await session2.shouldReply('forward -d #123', '已成功移除目标频道 mock:123。')
+    await session2.shouldReply('forward -l', '当前频道没有设置目标频道。')
+    await session2.shouldReply('forward -c', '已成功移除全部目标频道。')
   })
 })

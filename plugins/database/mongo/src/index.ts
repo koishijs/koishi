@@ -72,8 +72,13 @@ class MongoDatabase extends Database {
       keys = makeArray(keys)
       const name = (index ? 'unique:' : 'primary:') + keys.join('+')
       if (oldSpecs.find(spec => spec.name === name)) return
-      const key = Object.fromEntries(keys.map(key => [key, 1]))
-      newSpecs.push({ name, key, unique: true })
+      newSpecs.push({
+        name,
+        key: Object.fromEntries(keys.map(key => [key, 1])),
+        unique: true,
+        // https://docs.mongodb.com/manual/core/index-partial/#std-label-partial-index-with-unique-constraints
+        partialFilterExpression: Object.fromEntries(keys.map(key => [key, { $exists: true }])),
+      })
     })
     if (!newSpecs.length) return
     await coll.createIndexes(newSpecs)

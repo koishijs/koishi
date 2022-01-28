@@ -47,5 +47,5 @@ sidebarDepth: 0
 
 ## 更新与迁移
 
-- [更新日志](./changelog.md)
-- [从旧版本迁移](./migration.md)
+- [从 v3 迁移](./migration.md)
+- [v4.1 版本介绍](./releases/v4.1.md)

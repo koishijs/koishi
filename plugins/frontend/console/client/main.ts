@@ -1,8 +1,7 @@
 /* eslint-disable no-undef */
 
-import * as Vue from 'vue'
-import * as Router from 'vue-router'
-import * as client from './client'
+import { createApp } from 'vue'
+import { connect, router, config } from './client'
 
 import form from './components/form'
 
@@ -17,6 +16,7 @@ import Markdown from './components/markdown.vue'
 import Numeric from './components/numeric.vue'
 import View from './components/view'
 import App from './layout/index.vue'
+import Blank from './layout/blank.vue'
 
 import { ElCascader, ElEmpty, ElTooltip, ElScrollbar, ElSelect, ElTree } from 'element-plus'
 
@@ -28,13 +28,7 @@ import '@fortawesome/fontawesome-free/css/solid.css'
 import 'element-plus/dist/index.css'
 import './index.scss'
 
-const { router, config } = client
-
-self['Vue'] = Vue
-self['VueRouter'] = Router
-self['KoishiClient'] = client
-
-const app = Vue.createApp(App)
+const app = createApp(App)
 
 app.use(ElCascader)
 app.use(ElEmpty)
@@ -53,7 +47,6 @@ app.use(form)
 app.component('k-content', Content)
 app.component('k-card-aside', CardAside)
 app.component('k-card', Card)
-app.component('k-chart', Vue.defineAsyncComponent(() => import('./components/echarts') as any))
 app.component('k-collapse', Collapse)
 app.component('k-markdown', Markdown)
 app.component('k-numeric', Numeric)
@@ -61,13 +54,13 @@ app.component('k-view', View)
 
 app.provide('ecTheme', 'dark-blue')
 
-app.use(router)
-
-router.beforeEach((route, from) => {
-  if (from === Router.START_LOCATION && !route.matched.length) {
-    loadingExtensions.then(() => router.replace(route))
-  }
+router.addRoute({
+  path: '/blank',
+  component: Blank,
+  meta: { fields: [], position: 'hidden' },
 })
+
+app.use(router)
 
 router.afterEach((route) => {
   if (typeof route.name === 'string') {
@@ -77,12 +70,6 @@ router.afterEach((route) => {
 
 const endpoint = new URL(config.endpoint, location.origin).toString()
 
-client.connect(endpoint.replace(/^http/, 'ws'))
+connect(endpoint.replace(/^http/, 'ws'))
 
-const loadingExtensions = Promise.all(config.extensions.map(path => {
-  return import(/* @vite-ignore */ path).catch((error) => {
-    console.error(error)
-  })
-}))
-
-loadingExtensions.then(() => app.mount('#app'))
+app.mount('#app')

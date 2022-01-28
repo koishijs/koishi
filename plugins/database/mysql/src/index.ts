@@ -1,4 +1,5 @@
-import { createPool, Pool, PoolConfig, escape as mysqlEscape, escapeId, format, OkPacket } from 'mysql'
+import { createPool, escape as mysqlEscape, escapeId, format } from '@vlasky/mysql'
+import type { Pool, PoolConfig, OkPacket } from 'mysql'
 import { Context, Database, difference, Logger, makeArray, Schema, Query, Model, Tables, Dict, Time, KoishiError, pick } from 'koishi'
 import { executeUpdate } from '@koishijs/orm-utils'
 import { Builder } from '@koishijs/sql-utils'
@@ -58,9 +59,13 @@ class MySQLBuilder extends Builder {
     super()
   }
 
-  format = format
+  format(sql: string, values: any[], stringifyObjects?: boolean, timeZone?: string) {
+    return format(sql, values, stringifyObjects, timeZone)
+  }
 
-  escapeId = escapeId
+  escapeId(value: string, forbidQualified?: boolean) {
+    return escapeId(value, forbidQualified)
+  }
 
   escape(value: any, table?: string, field?: string) {
     return mysqlEscape(this.stringify(value, table, field))
@@ -160,15 +165,6 @@ class MysqlDatabase extends Database {
     const unique = [...table.unique]
     const result: string[] = []
 
-    // create platform rows
-    if (name === 'user') {
-      const platforms = new Set<string>(this.ctx.bots.map(bot => bot.platform))
-      for (const name of platforms) {
-        fields[name] = { type: 'string', length: 63 }
-        unique.push(name)
-      }
-    }
-
     // orm definitions
     for (const key in fields) {
       if (columns.includes(key)) continue
@@ -261,7 +257,7 @@ class MysqlDatabase extends Database {
 
   queue<T = any>(sql: string, values?: any): Promise<T> {
     if (!this.config.multipleStatements) {
-      return this.query(sql)
+      return this.query(sql, values)
     }
 
     sql = format(sql, values)
