@@ -22,8 +22,7 @@ export default class RegistryProvider extends DataService<Dict<PluginData>> {
     if (ctx.console.config.devMode) {
       ctx.console.addEntry(resolve(__dirname, '../client/index.ts'))
     } else {
-      ctx.console.addEntry(resolve(__dirname, '../dist/index.es.js'))
-      ctx.console.addEntry(resolve(__dirname, '../dist/style.css'))
+      ctx.console.addEntry(resolve(__dirname, '../dist'))
     }
 
     ctx.on('plugin-added', this.update)

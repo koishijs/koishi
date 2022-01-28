@@ -1,9 +1,13 @@
-import { Context, Dict, noop } from 'koishi'
+import { Context, Dict, noop, Random } from 'koishi'
 import { resolve, extname } from 'path'
-import { promises as fs, Stats, createReadStream } from 'fs'
+import { promises as fsp, Stats, createReadStream, existsSync } from 'fs'
 import { DataService } from './service'
 import { ViteDevServer } from 'vite'
 import open from 'open'
+
+class FileEntry {
+
+}
 
 class HttpService extends DataService<string[]> {
   private vite: ViteDevServer
@@ -32,8 +36,7 @@ class HttpService extends DataService<string[]> {
   }
 
   addEntry(filename: string) {
-    const hash = Math.floor(Math.random() * (16 ** 8)).toString(16).padStart(8, '0')
-    const key = `entry-${hash}${extname(filename)}`
+    const key = 'extension-' + Random.id()
     this.data[key] = filename
     this.refresh()
     this.caller.on('dispose', () => {
@@ -44,9 +47,19 @@ class HttpService extends DataService<string[]> {
 
   async get() {
     const { devMode, uiPath } = this.config
-    return Object.entries(this.data).map(([name, filename]) => {
-      return devMode ? '/vite/@fs/' + filename : `${uiPath}/assets/${name}`
-    })
+    if (devMode) {
+      return Object.values(this.data).map(filename => '/vite/@fs/' + filename)
+    }
+    const filenames: string[] = []
+    for (const name in this.data) {
+      const baseDir = uiPath + '/' + name
+      const localDir = this.data[name]
+      filenames.push(baseDir + '/index.js')
+      if (existsSync(localDir + '/style.css')) {
+        filenames.push(baseDir + '/style.css')
+      }
+    }
+    return filenames
   }
 
   private serveAssets() {
@@ -62,19 +75,19 @@ class HttpService extends DataService<string[]> {
         ctx.type = extname(filename)
         return ctx.body = createReadStream(filename)
       }
-      if (name.startsWith('assets/')) {
-        const key = name.slice(7)
-        if (this.data[key]) return sendFile(this.data[key])
+      if (name.startsWith('extension-')) {
+        const key = name.slice(0, 18)
+        if (this.data[key]) return sendFile(this.data[key] + name.slice(18))
       }
       const filename = resolve(root, name)
       if (!filename.startsWith(root) && !filename.includes('node_modules')) {
         return ctx.status = 403
       }
-      const stats = await fs.stat(filename).catch<Stats>(noop)
+      const stats = await fsp.stat(filename).catch<Stats>(noop)
       if (stats?.isFile()) return sendFile(filename)
       const ext = extname(filename)
       if (ext && ext !== '.html') return next()
-      const template = await fs.readFile(resolve(root, 'index.html'), 'utf8')
+      const template = await fsp.readFile(resolve(root, 'index.html'), 'utf8')
       ctx.type = 'html'
       ctx.body = await this.transformHtml(template)
     })
