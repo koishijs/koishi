@@ -3,11 +3,11 @@
     <slot></slot>
   </k-schema>
 
-  <div class="schema" v-else>
+  <div class="schema-item" v-else>
     <slot></slot>
     <ul v-if="choices.every(item => item.type === 'const')">
       <li v-for="item in choices" :key="item.value">
-        <k-radio :label="item.value" v-model="selected">{{ item.meta.description }}</k-radio>
+        <k-radio :label="item.value" v-model="selected">{{ item.meta.description || item.value }}</k-radio>
       </li>
     </ul>
   </div>

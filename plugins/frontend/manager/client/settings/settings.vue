@@ -34,7 +34,7 @@
         v-for="({ fulfilled, required, available }, key) in delegates" :key="key"
         :fulfilled="fulfilled" :required="required" :name="key" type="服务">
         <ul v-if="!fulfilled">
-          <li v-for="name in available" @click="configurate(name)">
+          <li v-for="name in available">
             <k-dep-link :name="name"></k-dep-link>
           </li>
         </ul>
@@ -42,7 +42,7 @@
       <k-dep-alert
         v-for="(fulfilled, name) in deps" :key="name"
         :fulfilled="fulfilled" :required="true" type="依赖">
-        <template #name><k-dep-link :name="name"></k-dep-link></template>
+        <template #name><k-dep-link :name="name.toString()"></k-dep-link></template>
       </k-dep-alert>
     </template>
 
@@ -70,7 +70,7 @@ import { computed, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { Dict } from 'koishi'
 import { store, send } from '~/client'
-import { addFavorite, state } from '../utils'
+import { state } from '../utils'
 import { MarketProvider } from '../../src'
 import { ElMessage } from 'element-plus'
 import KDepAlert from './dep-alert.vue'
@@ -163,13 +163,6 @@ const loadTip = computed(() => {
 function execute(event: string) {
   const { shortname, config } = data.value
   send('plugin/' + event, shortname, config)
-}
-
-const router = useRouter()
-
-function configurate(name: string) {
-  addFavorite(name)
-  router.replace({ query: { name } })
 }
 
 async function install() {

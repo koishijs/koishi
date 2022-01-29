@@ -2,7 +2,7 @@
   <template v-if="!schema || schema.meta.hidden"/>
 
   <!-- primitive values -->
-  <div class="schema" v-else-if="['string', 'number', 'boolean'].includes(schema.type)">
+  <div class="schema-item" v-else-if="['string', 'number', 'boolean'].includes(schema.type)">
     <div class="schema-header">
       <div class="left">
         <slot></slot>
@@ -18,7 +18,7 @@
     </div>
   </div>
 
-  <div class="schema" v-else-if="schema.type === 'array'">
+  <div class="schema-item" v-else-if="schema.type === 'array'">
     <div class="schema-header">
       <div class="left">
         <slot></slot>
@@ -54,7 +54,7 @@
     <slot></slot>
   </schema-union>
 
-  <div class="schema" v-else>
+  <div class="schema-item" v-else>
     <slot></slot>
   </div>
 </template>
@@ -106,12 +106,12 @@ const selected = ref<number>(null)
 
 <style lang="scss">
 
-.schema {
+.schema-item {
   padding: 0.5rem 1rem;
   border-bottom: 1px solid var(--border);
   transition: 0.3s ease;
 
-  &:first-child {
+  &:first-child, :not(.schema-item) + & {
     border-top: 1px solid var(--border);
   }
 

@@ -66,7 +66,13 @@ const root = ref<{ $el: HTMLElement }>(null)
 const filtered = ref(true)
 
 const favorites = computed(() => {
-  return Object.fromEntries(config.favorites.map(name => [name, store.market[name]]))
+  const result = {}
+  config.favorites = config.favorites.filter((name) => {
+    if (!store.market[name]) return false
+    result[name] = store.market[name]
+    return true
+  })
+  return result
 })
 
 function remove(name: string) {
