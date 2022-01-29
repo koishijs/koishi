@@ -73,7 +73,7 @@ class PackageProvider extends DataService<Dict<PackageProvider.Data>> {
       name: '',
       shortname: '',
       schema: App.Config,
-      config: omit(this.ctx.app.options, ['plugins' as any]),
+      config: omit(this.ctx.app.options, ['plugins']),
     })
 
     return Object.fromEntries(packages.filter(x => x).map(data => [data.name, data]))

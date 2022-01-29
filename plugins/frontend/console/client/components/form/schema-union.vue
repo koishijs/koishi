@@ -3,16 +3,14 @@
     <slot></slot>
   </k-schema>
 
-  <!-- <template v-else-if="choices.length">
-    <div class="schema">
-      <div class="schema-header">
-        <div class="left">
-          <slot></slot>
-          <p>{{ schema.meta.description }}</p>
-        </div>
-      </div>
-    </div>
-  </template> -->
+  <div class="schema" v-else>
+    <slot></slot>
+    <ul v-if="choices.every(item => item.type === 'const')">
+      <li v-for="item in choices" :key="item.value">
+        <k-radio :label="item.value" v-model="selected">{{ item.meta.description }}</k-radio>
+      </li>
+    </ul>
+  </div>
 </template>
 
 <script lang="ts" setup>
@@ -30,6 +28,6 @@ const choices = computed(() => {
   return props.schema.list.filter(item => item.type !== 'transform')
 })
 
-const selected = ref<number>(null)
+const selected = ref(props.schema.meta.default)
 
 </script>

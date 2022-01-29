@@ -1,7 +1,7 @@
 <template>
   <div class="add-bot">
     <k-button solid @click="send('bot/create', selected[0], { protocol: selected[1], ...config })">启动</k-button>
-    <h3 class="required">选择适配器</h3>
+    <h3 class="adapter required">选择适配器</h3>
     <div class="platform-select">
       <el-cascader v-model="selected" :options="options"></el-cascader>
     </div>
@@ -42,13 +42,13 @@ const schema = computed<Schema>(() => {
 <style lang="scss">
 
 .add-bot {
-  h3 {
+  h3.adapter {
     font-size: 1.125em;
     margin: 0.25rem 0;
     position: relative;
   }
 
-  h3.required::before {
+  h3.adapter.required::before {
     content: '*';
     position: absolute;
     left: -1.25rem;

@@ -5,10 +5,6 @@ import { DataService } from './service'
 import { ViteDevServer } from 'vite'
 import open from 'open'
 
-class FileEntry {
-
-}
-
 class HttpService extends DataService<string[]> {
   private vite: ViteDevServer
   private data: Dict<string> = {}

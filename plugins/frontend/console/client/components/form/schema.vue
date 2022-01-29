@@ -53,6 +53,10 @@
   <schema-union v-else-if="schema.type === 'union'" :schema="schema" v-model="config">
     <slot></slot>
   </schema-union>
+
+  <div class="schema" v-else>
+    <slot></slot>
+  </div>
 </template>
 
 <script lang="ts" setup>
@@ -104,11 +108,14 @@ const selected = ref<number>(null)
 
 .schema {
   padding: 0.5rem 1rem;
-  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
   transition: 0.3s ease;
 
+  &:first-child {
+    border-top: 1px solid var(--border);
+  }
+
   &:last-child {
-    border-bottom: 1px solid var(--border);
     margin-bottom: 2rem;
   }
 
@@ -158,6 +165,15 @@ const selected = ref<number>(null)
     width: 100%;
     padding-left: 1rem;
     margin: 0;
+    font-size: 0.875rem;
+
+    li:first-child {
+      margin-top: 0.25rem;
+    }
+
+    li:last-child {
+      margin-bottom: 0.25rem;
+    }
 
     .remove {
       color: var(--fg3);
