@@ -1,5 +1,5 @@
 <template>
-  <div class="k-input" :class="{ focused, disabled }">
+  <div class="k-input" :class="{ focused, disabled, hidden }">
     <i v-if="prefix" :class="'fas fa-' + prefix" class="prefix" @click="$emit('clickPrefix')"/>
     <input
       :value="modelValue"
@@ -36,6 +36,7 @@ const props = defineProps({
   disabled: Boolean,
   validate: Function,
   tabindex: Number,
+  hidden: Boolean,
   roundLeft: Boolean,
   roundRight: Boolean,
   orthoLeft: Boolean,
@@ -135,6 +136,10 @@ function onBlur(event) {
   }
   &.ortho > input {
     border-radius: 0;
+  }
+
+  &.hidden > input {
+    border: none;
   }
 }
 

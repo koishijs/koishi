@@ -1,37 +1,46 @@
 <template>
-  <template v-if="!schema"/>
+  <template v-if="!schema || schema.meta.hidden"/>
 
-  <div class="schema" v-else-if="schema.type === 'string' || schema.type === 'number'">
-    <slot></slot>
-    <p>
-      <span>{{ schema.meta.description }}</span>
-      <span v-if="schema.meta.default">默认值：<code>{{ schema.meta.default }}</code>。</span>
-    </p>
-    <div class="control">
-      <k-input v-model="config" style="width: 28rem"/>
-    </div>
-  </div>
-
-  <div class="schema" v-else-if="schema.type === 'boolean'">
-    <slot></slot>
-    <div>
-      <k-checkbox v-model="config">{{ schema.meta.description }}</k-checkbox>
+  <!-- primitive values -->
+  <div class="schema" v-else-if="['string', 'number', 'boolean'].includes(schema.type)">
+    <div class="schema-header">
+      <div class="left">
+        <slot></slot>
+      </div>
+      <div class="right">
+        <k-input
+          v-if="schema.type === 'string' || schema.type === 'number'"
+          v-model="config" style="width: 12rem"
+          :type="schema.type === 'number' ? 'number' : schema.meta.role === 'secret' ? 'password' : 'text'"
+        ></k-input>
+        <el-switch v-else v-model="config"/>
+      </div>
     </div>
   </div>
 
   <div class="schema" v-else-if="schema.type === 'array'">
-    <slot></slot>
-    <p>{{ schema.meta.description }}</p>
+    <div class="schema-header">
+      <div class="left">
+        <slot></slot>
+      </div>
+      <div class="right">
+        <k-button solid @click="config.push(null)">添加项</k-button>
+      </div>
+    </div>
     <ul>
-      <li v-for="(item, index) in config" :key="index">{{ item }}</li>
+      <li v-for="(_, index) in config" :key="index">
+        <i class="remove fas fa-times-circle" @click="config.splice(index, 1)"></i>
+        <k-input v-model="config[index]" class="hidden"></k-input>
+      </li>
     </ul>
   </div>
 
   <schema-group v-else-if="schema.type === 'object'" :desc="!noDesc && schema.meta.description">
-    <k-schema v-for="(item, key) in schema.dict" :schema="item" v-model="config[key]" :prefix="prefix + key + '.'">
+    <k-schema v-for="(item, key) in schema.dict" :key="key" :schema="item" v-model="config[key]" :prefix="prefix + key + '.'">
       <h3 :class="{ required: item.meta.required }">
         <span>{{ prefix + key }}</span>
       </h3>
+      <p>{{ item.meta.description }}</p>
     </k-schema>
   </schema-group>
 
@@ -41,21 +50,9 @@
     <k-schema v-for="item in schema.list" :schema="item" v-model="config" :prefix="prefix"/>
   </template>
 
-  <template v-else-if="schema.type === 'union'">
-    <div class="schema">
-      <slot>
-        <h3 class="required">protocol</h3>
-      </slot>
-      <p>{{ schema.meta.description }}</p>
-      <ul>
-        <li v-for="(inner, key) in schema.list" :key="key">
-          <k-radio :label="key" v-model="selected">{{ inner.meta.description }}</k-radio>
-        </li>
-      </ul>
-    </div>
-
-    <k-schema v-if="selected !== null" :schema="schema.list[selected]" v-model="config" :prefix="prefix"/>
-  </template>
+  <schema-union v-else-if="schema.type === 'union'" :schema="schema" v-model="config">
+    <slot></slot>
+  </schema-union>
 </template>
 
 <script lang="ts" setup>
@@ -64,6 +61,7 @@ import { computed, watch, ref } from 'vue'
 import type { PropType } from 'vue'
 import Schema from 'schemastery'
 import SchemaGroup from './schema-group.vue'
+import SchemaUnion from './schema-union.vue'
 
 const props = defineProps({
   schema: {} as PropType<Schema>,
@@ -105,11 +103,31 @@ const selected = ref<number>(null)
 <style lang="scss">
 
 .schema {
-  margin: 2rem 0;
+  padding: 0.5rem 1rem;
+  border-top: 1px solid var(--border);
+  transition: 0.3s ease;
+
+  &:last-child {
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 2rem;
+  }
+
+  &:hover {
+    background: var(--bg2);
+  }
+
+  .schema-header {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    column-gap: 1rem;
+  }
 
   h3 {
+    margin: 0;
     font-size: 1.125em;
-    margin: 0.25rem 0;
+    line-height: 1.7;
     position: relative;
   }
 
@@ -123,17 +141,35 @@ const selected = ref<number>(null)
   p {
     margin: 0;
     line-height: 1.7;
+    font-size: 0.875rem;
   }
 
-  .control {
+  .left {
+    display: inline-block;
+  }
+
+  .right {
     margin: 0.5rem 0;
+    float: right;
   }
 
   ul {
     list-style: none;
     width: 100%;
-    padding-left: 0;
-    margin: 0.25rem 0;
+    padding-left: 1rem;
+    margin: 0;
+
+    .remove {
+      color: var(--fg3);
+      opacity: 0.4;
+      transition: 0.3s ease;
+      font-size: 0.875rem;
+      margin-right: 0.25rem;
+
+      &:hover {
+        opacity: 1;
+      }
+    }
   }
 }
 

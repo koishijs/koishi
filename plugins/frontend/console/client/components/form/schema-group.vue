@@ -21,12 +21,7 @@ defineProps<{
 .schema-group {
   h2 {
     font-size: 1.25em;
-    margin: 0 0 -1.25rem;
   }
-}
-
-.schema-group-body {
-  padding-left: 1.5rem;
 }
 
 </style>

@@ -18,7 +18,7 @@ import View from './components/view'
 import App from './layout/index.vue'
 import Blank from './layout/blank.vue'
 
-import { ElCascader, ElEmpty, ElTooltip, ElScrollbar, ElSelect, ElTree } from 'element-plus'
+import { ElCascader, ElEmpty, ElTooltip, ElScrollbar, ElSelect, ElSwitch, ElTree } from 'element-plus'
 
 import '@fortawesome/fontawesome-free/css/fontawesome.css'
 import '@fortawesome/fontawesome-free/css/brands.css'
@@ -35,6 +35,7 @@ app.use(ElEmpty)
 app.use(ElTooltip)
 app.use(ElSelect)
 app.use(ElScrollbar)
+app.use(ElSwitch)
 app.use(ElTree)
 
 // notice
