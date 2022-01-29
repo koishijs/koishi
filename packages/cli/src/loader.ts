@@ -86,8 +86,6 @@ export class Loader {
       // schemastery may change original config
       // so we need to validate config twice
       resolved = new App.Config(this.interpolate(config))
-    } else {
-      resolved.allowWrite = false
     }
 
     this.config = config
@@ -149,7 +147,7 @@ export class Loader {
 
   createApp() {
     const app = this.app = new App(this.config)
-    app.loader = this
+    if (this.isWritable) app.loader = this
     app.baseDir = this.dirname
     const { plugins } = this.config
     for (const name in plugins) {

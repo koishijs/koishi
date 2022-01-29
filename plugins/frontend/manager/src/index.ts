@@ -55,7 +55,7 @@ export function apply(ctx: Context, config: Config = {}) {
   ctx.plugin(AdapterProvider)
   ctx.plugin(PackageProvider)
   ctx.plugin(ServiceProvider)
-  ctx.plugin(ConfigWriter, ctx.app.options.allowWrite)
+  ctx.plugin(ConfigWriter)
 
   if (ctx.console.config.devMode) {
     ctx.console.addEntry(resolve(__dirname, '../client/index.ts'))

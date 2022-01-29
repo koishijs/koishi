@@ -1,5 +1,5 @@
 import { App, Context, Schema } from '@koishijs/core'
-import { MaybeArray, remove } from '@koishijs/utils'
+import { defineProperty, MaybeArray, remove } from '@koishijs/utils'
 import { Server, createServer, IncomingMessage } from 'http'
 import { pathToRegexp } from 'path-to-regexp'
 import parseUrl from 'parseurl'
@@ -22,23 +22,29 @@ declare module '@koishijs/core' {
   }
 
   namespace App {
-    interface Config extends NetworkConfig {}
+    interface Config extends Config.Network {}
+
+    namespace Config {
+      interface Static {
+        Network: Schema<Network>
+      }
+
+      interface Network {
+        host?: string
+        port?: number
+        selfUrl?: string
+      }
+    }
   }
 }
 
-interface NetworkConfig {
-  host?: string
-  port?: number
-  selfUrl?: string
-}
-
-const NetworkConfig = Schema.object({
-  host: Schema.string().description('要监听的 IP 地址。如果将此设置为 `0.0.0.0` 将监听所有地址，包括局域网和公网地址。'),
+defineProperty(App.Config, 'Network', Schema.object({
+  host: Schema.string().default('localhost').description('要监听的 IP 地址。如果将此设置为 `0.0.0.0` 将监听所有地址，包括局域网和公网地址。'),
   port: Schema.number().description('要监听的端口。'),
   selfUrl: Schema.string().description('应用暴露在公网的地址。部分插件 (例如 github 和 telegram) 需要用到。'),
-}).description('网络设置')
+}).description('网络设置'))
 
-App.Config.list.push(NetworkConfig)
+App.Config.list.unshift(App.Config.Network)
 
 type WebSocketCallback = (socket: WebSocket, request: IncomingMessage) => void
 
