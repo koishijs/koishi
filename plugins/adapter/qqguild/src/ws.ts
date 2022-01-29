@@ -14,8 +14,8 @@ export const AdapterConfig: Schema<AdapterConfig> = Schema.intersect([
     sandbox: Schema.boolean()
       .description('是否开启沙盒')
       .default(true),
-    endpoint: Schema.string()
-      .description('api 入口地址')
+    endpoint: Schema.string().role('url')
+      .description('API 入口地址')
       .default('https://api.sgroup.qq.com/'),
     authType: Schema.union(['bot', 'bearer'])
       .description('验证方式')

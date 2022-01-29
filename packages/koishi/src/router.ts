@@ -41,7 +41,7 @@ declare module '@koishijs/core' {
 defineProperty(App.Config, 'Network', Schema.object({
   host: Schema.string().default('localhost').description('要监听的 IP 地址。如果将此设置为 `0.0.0.0` 将监听所有地址，包括局域网和公网地址。'),
   port: Schema.number().description('要监听的端口。'),
-  selfUrl: Schema.string().description('应用暴露在公网的地址。部分插件 (例如 github 和 telegram) 需要用到。'),
+  selfUrl: Schema.string().role('url').description('应用暴露在公网的地址。部分插件 (例如 github 和 telegram) 需要用到。'),
 }).description('网络设置'))
 
 App.Config.list.unshift(App.Config.Network)
