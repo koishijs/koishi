@@ -167,7 +167,7 @@ namespace MarketProvider {
 
   export const Config = Schema.object({
     // https://github.com/npm/registry/blob/master/docs/REGISTRY-API.md
-    endpoint: Schema.string().description('要使用的 npm registry 终结点。').default('https://registry.npmjs.org'),
+    endpoint: Schema.string().role('url').description('要使用的 npm registry 终结点。').default('https://registry.npmjs.org'),
   })
 
   export interface Data extends Package.Base {

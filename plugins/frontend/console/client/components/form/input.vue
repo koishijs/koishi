@@ -1,6 +1,10 @@
 <template>
   <div class="k-input" :class="{ focused, disabled, hidden }">
-    <i v-if="prefix" :class="'fas fa-' + prefix" class="prefix" @click="$emit('clickPrefix')"/>
+    <span class="prefix">
+      <slot name="prefix">
+        <i v-if="prefix" :class="'fas fa-' + prefix" @click="$emit('clickPrefix')"/>
+      </slot>
+    </span>
     <input
       :value="modelValue"
       :type="type"
@@ -21,7 +25,11 @@
       @paste="$emit('paste', $event)"
       @keydown.enter.stop="$emit('enter', $event)"
     />
-    <i v-if="suffix" :class="'fas fa-' + suffix" class="suffix" @click="$emit('clickSuffix')"/>
+    <span class="suffix">
+      <slot name="suffix">
+        <i v-if="suffix" :class="'fas fa-' + suffix" @click="$emit('clickSuffix')"/>
+      </slot>
+    </span>
   </div>
 </template>
 
@@ -85,16 +93,18 @@ function onBlur(event) {
   position: relative;
   display: inline-block;
 
-  > i.prefix, > i.suffix {
-    color: var(--fg2);
+  > .prefix, > .suffix {
+    color: var(--fg3);
     top: 50%;
     position: absolute;
-    margin-top: -0.5em;
+    transform: translateY(-50%);
+    transition: 0.3s ease;
+    line-height: 1;
   }
-  > i.prefix {
+  > .prefix {
     left: 10px;
   }
-  > i.suffix {
+  > .suffix {
     right: 10px;
   }
 

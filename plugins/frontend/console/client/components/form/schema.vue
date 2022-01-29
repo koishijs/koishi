@@ -8,12 +8,18 @@
         <slot></slot>
       </div>
       <div class="right">
-        <k-input
-          v-if="schema.type === 'string' || schema.type === 'number'"
-          v-model="config" style="width: 12rem"
-          :type="schema.type === 'number' ? 'number' : schema.meta.role === 'secret' ? 'password' : 'text'"
-        ></k-input>
-        <el-switch v-else v-model="config"/>
+        <el-switch v-if="schema.type === 'boolean'" v-model="config"></el-switch>
+        <template v-else>
+          <k-input v-model="config"
+            :style="{ width: schema.meta.role === 'url' ? '18rem' : '12rem' }"
+            :type="schema.type === 'number' ? 'number' : schema.meta.role === 'secret' ? 'password' : 'text'">
+            <template #suffix v-if="schema.meta.role === 'url'">
+              <a :href="config" target="_blank" rel="noopener noreferrer">
+                <k-icon-link></k-icon-link>
+              </a>
+            </template>
+          </k-input>
+        </template>
       </div>
     </div>
   </div>
@@ -87,20 +93,9 @@ function getFallback() {
 
 const updateModelValue = emit.bind(null, 'update:modelValue')
 
-const config = computed<any>({
-  get: () => props.modelValue ?? getFallback(),
-  set: updateModelValue,
-})
+const config = ref<any>(props.modelValue ?? getFallback())
 
-watch(config, updateModelValue, { deep: true })
-
-watch(() => props.schema, (schema) => {
-  if (schema.type === 'const') {
-    updateModelValue(schema.value)
-  }
-}, { deep: true, immediate: true })
-
-const selected = ref<number>(null)
+watch(config, updateModelValue, { deep: true, immediate: true })
 
 </script>
 
@@ -158,6 +153,16 @@ const selected = ref<number>(null)
   .right {
     margin: 0.5rem 0;
     float: right;
+  }
+
+  .k-input .k-icon {
+    color: var(--fg3);
+    transition: 0.3s ease;
+
+    &:hover {
+      color: var(--fg1);
+      cursor: pointer;
+    }
   }
 
   ul {

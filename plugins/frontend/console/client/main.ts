@@ -3,6 +3,7 @@
 import { createApp } from 'vue'
 import { connect, router, config } from './client'
 
+import icons from './components/icons'
 import form from './components/form'
 
 import Badge from './components/notice/badge.vue'
@@ -43,6 +44,7 @@ app.component('k-badge', Badge)
 app.component('k-comment', Comment)
 app.component('k-hint', Hint)
 
+app.use(icons)
 app.use(form)
 
 app.component('k-content', Content)

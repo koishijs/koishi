@@ -67,7 +67,6 @@
 <script setup lang="ts">
 
 import { computed, ref, watch } from 'vue'
-import { useRouter } from 'vue-router'
 import { Dict } from 'koishi'
 import { store, send } from '~/client'
 import { state } from '../utils'
