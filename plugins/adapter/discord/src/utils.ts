@@ -1,23 +1,13 @@
 /* eslint-disable camelcase */
-import { Adapter, App, Bot, Schema, segment, Session } from 'koishi'
+import { Adapter, Bot, Schema, segment, Session } from 'koishi'
+import { Sender } from './sender'
 import { DiscordBot } from './bot'
 import * as DC from './types'
 
-interface PrivilegedIntents {
-  members?: boolean
-}
-
-export interface AdapterConfig extends Adapter.WebSocketClient.Config, App.Config.Request {
-  intents?: PrivilegedIntents
-}
+export interface AdapterConfig extends Sender.Config, Adapter.WebSocketClient.Config {}
 
 export const AdapterConfig: Schema<AdapterConfig> = Schema.intersect([
-  Schema.object({
-    intents: Schema.object({
-      members: Schema.boolean(),
-    }),
-  }),
-  App.Config.Request,
+  Sender.Config,
   Adapter.WebSocketClient.Config,
 ])
 

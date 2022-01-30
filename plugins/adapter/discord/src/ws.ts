@@ -1,5 +1,5 @@
-import { Adapter, Context, Logger, renameProperty } from 'koishi'
-import { GatewayOpcode, GatewayPayload, GatewayIntent } from './types'
+import { Adapter, Logger, renameProperty } from 'koishi'
+import { GatewayOpcode, GatewayPayload } from './types'
 import { adaptSession, adaptUser, AdapterConfig } from './utils'
 import { BotConfig, DiscordBot } from './bot'
 import WebSocket from 'ws'
@@ -9,16 +9,8 @@ const logger = new Logger('discord')
 export default class WebSocketClient extends Adapter.WebSocketClient<BotConfig, AdapterConfig> {
   static schema = BotConfig
 
-  constructor(ctx: Context, config: AdapterConfig) {
-    super(ctx, config)
-    this.http = ctx.http.extend({
-      endpoint: 'https://discord.com/api/v8',
-      ...config.request,
-    })
-  }
-
-  prepare() {
-    return new WebSocket('wss://gateway.discord.gg/?v=8&encoding=json')
+  prepare(bot: DiscordBot) {
+    return new WebSocket(bot.config.gateway)
   }
 
   heartbeat(bot: DiscordBot) {
@@ -27,18 +19,6 @@ export default class WebSocketClient extends Adapter.WebSocketClient<BotConfig, 
       op: GatewayOpcode.HEARTBEAT,
       d: bot._d,
     }))
-  }
-
-  private getIntents() {
-    let intents = 0
-      | GatewayIntent.GUILD_MESSAGES
-      | GatewayIntent.GUILD_MESSAGE_REACTIONS
-      | GatewayIntent.DIRECT_MESSAGES
-      | GatewayIntent.DIRECT_MESSAGE_REACTIONS
-    if (this.config.intents.members !== false) {
-      intents |= GatewayIntent.GUILD_MEMBERS
-    }
-    return intents
   }
 
   accept(bot: DiscordBot) {
@@ -76,7 +56,7 @@ export default class WebSocketClient extends Adapter.WebSocketClient<BotConfig, 
             token: bot.config.token,
             properties: {},
             compress: false,
-            intents: this.getIntents(),
+            intents: bot.getIntents(),
           },
         }))
       }

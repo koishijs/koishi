@@ -11,10 +11,6 @@ export * from './utils'
 export * from './ws'
 
 declare module 'koishi' {
-  interface Modules {
-    'adapter-discord': typeof import('.')
-  }
-
   interface Session {
     discord?: Discord.GatewayPayload & Discord.Internal
   }
