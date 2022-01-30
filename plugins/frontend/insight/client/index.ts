@@ -6,7 +6,7 @@ export default (ctx: Context) => {
   ctx.addPage({
     path: '/graph',
     name: '依赖图',
-    icon: 'project-diagram',
+    icon: 'diagram',
     order: 600,
     fields: ['registry'],
     component: Graph,

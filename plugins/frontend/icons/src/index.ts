@@ -10,7 +10,9 @@ import ChevronLeft from './svg/chevron-left.vue'
 import ChevronRight from './svg/chevron-right.vue'
 import ChevronUp from './svg/chevron-up.vue'
 import ClipboardList from './svg/clipboard-list.vue'
+import Cog from './svg/cog.vue'
 import CommentsFull from './svg/comments-full.vue'
+import Database from './svg/database.vue'
 import Diagram from './svg/diagram.vue'
 import ExclamationFull from './svg/exclamation-full.vue'
 import Expand from './svg/expand.vue'
@@ -18,13 +20,17 @@ import External from './svg/external.vue'
 import EyeSlash from './svg/eye-slash.vue'
 import Eye from './svg/eye.vue'
 import Filter from './svg/filter.vue'
+import Flask from './svg/flask.vue'
+import Hdd from './svg/hdd.vue'
 import HeartEmpty from './svg/heart-empty.vue'
 import HeartFull from './svg/heart-full.vue'
+import History from './svg/history.vue'
 import InfoFull from './svg/info-full.vue'
 import LayerGroup from './svg/layer-group.vue'
 import Link from './svg/link.vue'
 import Moon from './svg/moon.vue'
-import Puzzle from './svg/puzzle.vue'
+import PaperPlane from './svg/paper-plane.vue'
+import PuzzlePiece from './svg/puzzle-piece.vue'
 import QuestionEmpty from './svg/question-empty.vue'
 import Redo from './svg/redo.vue'
 import Robot from './svg/robot.vue'
@@ -34,9 +40,11 @@ import SearchPlus from './svg/search-plus.vue'
 import StarEmpty from './svg/star-empty.vue'
 import StarFull from './svg/star-full.vue'
 import Sun from './svg/sun.vue'
+import Tachometer from './svg/tachometer.vue'
 import TimesFull from './svg/times-full.vue'
 import Tools from './svg/tools.vue'
 import Undo from './svg/undo.vue'
+import Users from './svg/users.vue'
 
 import './style.scss'
 
@@ -53,7 +61,9 @@ register('chevron-left', ChevronLeft)
 register('chevron-right', ChevronRight)
 register('chevron-up', ChevronUp)
 register('clipboard-list', ClipboardList)
+register('cog', Cog)
 register('comments-full', CommentsFull)
+register('database', Database)
 register('diagram', Diagram)
 register('exclamation-full', ExclamationFull)
 register('expand', Expand)
@@ -61,13 +71,17 @@ register('external', External)
 register('eye-slash', EyeSlash)
 register('eye', Eye)
 register('filter', Filter)
+register('flask', Flask)
+register('hdd', Hdd)
 register('heart-empty', HeartEmpty)
 register('heart-full', HeartFull)
+register('history', History)
 register('info-full', InfoFull)
 register('layer-group', LayerGroup)
 register('link', Link)
 register('moon', Moon)
-register('puzzle', Puzzle)
+register('paper-plane', PaperPlane)
+register('puzzle-piece', PuzzlePiece)
 register('question-empty', QuestionEmpty)
 register('redo', Redo)
 register('robot', Robot)
@@ -77,9 +91,11 @@ register('search-plus', SearchPlus)
 register('star-empty', StarEmpty)
 register('star-full', StarFull)
 register('sun', Sun)
+register('tachometer', Tachometer)
 register('times-full', TimesFull)
 register('tools', Tools)
 register('undo', Undo)
+register('users', Users)
 
 export function register(name: string, component: Component) {
   icons[name] = component

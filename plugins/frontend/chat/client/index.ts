@@ -11,7 +11,7 @@ export default (ctx: Context) => {
   ctx.addPage({
     path: '/chat',
     name: '聊天',
-    icon: 'comments',
+    icon: 'comments-full',
     component: Chat,
     order: 100,
   })

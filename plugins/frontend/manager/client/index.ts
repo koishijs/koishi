@@ -28,7 +28,7 @@ export default (ctx: Context) => {
   ctx.addPage({
     path: '/settings',
     name: '插件配置',
-    icon: 'tools',
+    icon: 'cog',
     order: 620,
     fields: ['packages', 'services'],
     component: Settings,

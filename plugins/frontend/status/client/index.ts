@@ -10,7 +10,7 @@ export default (ctx: Context) => {
   ctx.addPage({
     path: '/',
     name: '仪表盘',
-    icon: 'tachometer-alt',
+    icon: 'tachometer',
     order: 1000,
     component: Home,
   })
@@ -55,7 +55,7 @@ export default (ctx: Context) => {
     type: 'numeric',
     component: Card.numeric({
       title: '活跃用户数量',
-      icon: 'heart',
+      icon: 'heart-full',
       fields: ['meta'],
       content: ({ meta }) => meta.activeUsers,
     }),

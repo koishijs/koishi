@@ -4,19 +4,19 @@
       <h1>Koishi 控制台</h1>
       <template v-for="({ name, path, meta }) in getRoutes('top')" :key="name">
         <router-link class="k-menu-item" :to="{ path, query: queries[path] }">
-          <i :class="`fas fa-${meta.icon}`"/>
+          <k-icon :name="meta.icon"/>
           {{ name }}
         </router-link>
       </template>
     </div>
     <div class="bottom">
       <div class="k-menu-item" @click="toggle">
-        <i :class="`fas fa-${isDark ? 'moon' : 'sun'}`"/>
+        <k-icon :name="isDark ? 'moon' : 'sun'"/>
         {{ isDark ? '夜间模式' : '明亮模式' }}
       </div>
       <template v-for="({ name, path, meta }) in getRoutes('bottom')" :key="name">
         <router-link class="k-menu-item" :to="{ path, query: queries[path] }">
-          <i :class="`fas fa-${meta.icon}`"/>
+          <k-icon :name="meta.icon"/>
           {{ name }}
         </router-link>
       </template>
@@ -94,10 +94,12 @@ aside.layout-aside {
     transition: background-color 0.3s ease;
   }
 
-  i {
+  .k-menu-item .k-icon {
     width: 1.5rem;
+    height: 1.25rem;
     margin-right: 0.75rem;
     text-align: center;
+    vertical-align: -4px;
   }
 
   .top {

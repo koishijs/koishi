@@ -1,6 +1,6 @@
 <template>
   <k-card class="k-card-numeric">
-    <i :class="`fas fa-${icon}`"/>
+    <k-icon :name="icon"/>
     <div class="content">
       <p class="title">{{ title }}</p>
       <p class="value"><slot>{{ text }}</slot></p>
@@ -38,8 +38,8 @@ const text = computed(() => {
 <style lang="scss" scoped>
 
 .k-card-numeric {
-  i {
-    font-size: 2.4rem;
+  .k-icon {
+    height: 2.4rem;
     padding: 0.3rem 0;
     width: 3rem;
     text-align: center;

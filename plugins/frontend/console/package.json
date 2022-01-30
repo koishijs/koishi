@@ -33,7 +33,6 @@
     "koishi": "^4.1.1"
   },
   "devDependencies": {
-    "@fortawesome/fontawesome-free": "^5.15.4",
     "@types/uuid": "^8.3.4",
     "@types/marked": "^4.0.1",
     "@vitejs/plugin-vue": "^2.0.1",

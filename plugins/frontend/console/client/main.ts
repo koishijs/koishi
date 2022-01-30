@@ -21,11 +21,6 @@ import Blank from './layout/blank.vue'
 
 import { ElCascader, ElEmpty, ElTooltip, ElScrollbar, ElSelect, ElSwitch, ElTree } from 'element-plus'
 
-import '@fortawesome/fontawesome-free/css/fontawesome.css'
-import '@fortawesome/fontawesome-free/css/brands.css'
-import '@fortawesome/fontawesome-free/css/regular.css'
-import '@fortawesome/fontawesome-free/css/solid.css'
-
 import 'element-plus/dist/index.css'
 import './index.scss'
 
