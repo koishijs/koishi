@@ -30,9 +30,6 @@ export function apply(ctx: Context, config: Config) {
 
   ctx.plugin(GitHub, config)
 
-  ctx.command('github', 'GitHub 相关功能').alias('gh')
-    .action(({ session }) => session.execute('help github', true))
-
   const tokens: Dict<string> = {}
 
   ctx.router.get(config.path + '/authorize', async (_ctx) => {
@@ -120,9 +117,19 @@ export function apply(ctx: Context, config: Config) {
           try {
             await ctx.github.request('DELETE', `${url}/${repo.id}`, session)
           } catch (err) {
-            if (!axios.isAxiosError(err)) throw err
-            logger.warn(err)
-            return '移除仓库失败。'
+            if (err.response.status !== 404) {
+              if (!axios.isAxiosError(err)) throw err
+              logger.warn(err)
+              return '移除仓库失败。'
+            }
+          }
+
+          const channels = await ctx.database.getAssignedChannels(['id', 'platform', 'githubWebhooks'])
+          for (const { id, platform, githubWebhooks } of channels) {
+            if (!githubWebhooks[name]) continue
+            unsubscribe(name, `${platform}:${id}`)
+            delete githubWebhooks[name]
+            await ctx.app.database.setChannel(platform, id, { githubWebhooks })
           }
           await ctx.database.remove('github', [name])
           return '移除仓库成功！'

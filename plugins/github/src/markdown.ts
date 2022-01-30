@@ -31,6 +31,7 @@ function render(tokens: marked.Token[]) {
 }
 
 export function transform(source: string) {
+  if (!source) return ''
   source = source.replace(/^<!--(.*)-->$/gm, '')
   return render(marked.lexer(source)).trim().replace(/\n\s*\n/g, '\n')
 }
