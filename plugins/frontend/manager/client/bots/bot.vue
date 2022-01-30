@@ -1,21 +1,20 @@
 <template>
-  <div class="bot k-menu-item" :class="[size]">
+  <div class="bot k-menu-item">
     <div class="avatar" :style="{ backgroundImage: `url(${data.avatar})` }" @click="$emit('avatar-click')">
       <el-tooltip :content="statusNames[data.status]">
         <div :class="['status', data.status, { error: data.error }]"></div>
       </el-tooltip>
     </div>
     <div class="content">
-      <div><i class="fas fa-robot"/>{{ data.username }}</div>
-      <div><i class="fas fa-boxes"/>{{ data.platform }}</div>
-      <div v-if="size === 'large'"><i class="fas fa-robot"/> {{ data.selfId }}</div>
+      <div><k-icon name="robot"/>{{ data.username }}</div>
+      <div><k-icon name="layer-group"/>{{ data.platform }}</div>
       <div class="cur-frequency">
         <span style="margin-right: 8px">
-          <i class="fas fa-arrow-up"/>
+          <k-icon name="arrow-up"/>
           <span>{{ data.messageSent }}/min</span>
         </span>
         <span>
-          <i class="fas fa-arrow-down"/>
+          <k-icon name="arrow-down"/>
           <span>{{ data.messageReceived }}/min</span>
         </span>
       </div>
@@ -26,18 +25,18 @@
 <script lang="ts" setup>
 
 import type { Bot } from 'koishi'
-import type { BotProvider } from '@koishijs/plugin-manager/src'
+import type { BotProvider } from '@koishijs/plugin-manager'
 
 const statusNames: Record<Bot.Status, string> = {
   online: '运行中',
   offline: '离线',
   connect: '正在连接',
   reconnect: '正在重连',
+  disconnect: '正在断开',
 }
 
 defineProps<{
   data: BotProvider.Data
-  size?: 'large' | 'medium' | 'small'
 }>()
 
 </script>

@@ -5,7 +5,7 @@
         <slot/>
       </div>
     </template>
-    <i :class="icon" class="k-hint" @click="$emit('click', $event)"/>
+    <k-icon :name="name" class="k-hint" @click="$emit('click', $event)"/>
   </el-tooltip>
 </template>
 
@@ -13,7 +13,7 @@
 
 defineProps({
   placement: String,
-  icon: { type: String, default: 'far fa-question-circle' },
+  name: { type: String, default: 'question-empty' },
 })
 
 defineEmits(['click'])
@@ -27,6 +27,7 @@ defineEmits(['click'])
   color: var(--fg2);
   margin-left: 0.25rem;
   transition: 0.3s ease;
+  vertical-align: -2px;
 
   &:hover {
     opacity: 1;

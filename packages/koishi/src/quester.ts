@@ -47,7 +47,7 @@ export namespace Quester {
 
   export const Config: Schema<Config> = Schema.object({
     endpoint: Schema.string().description('要连接的端点。'),
-    proxyAgent: Schema.string().description('使用的代理服务器地址。'),
+    proxyAgent: Schema.string().role('url').description('使用的代理服务器地址。'),
     headers: Schema.dict(Schema.string()).description('要附加的额外请求头。'),
     timeout: Schema.number().description('等待连接建立的最长时间。'),
   }).description('请求设置')

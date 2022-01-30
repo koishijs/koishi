@@ -38,7 +38,7 @@
     </div>
     <ul>
       <li v-for="(_, index) in config" :key="index">
-        <k-icon name="times-circle" class="remove" @click="config.splice(index, 1)"></k-icon>
+        <k-icon name="times-full" class="remove" @click="config.splice(index, 1)"></k-icon>
         <k-input v-model="config[index]" class="hidden"></k-input>
       </li>
     </ul>

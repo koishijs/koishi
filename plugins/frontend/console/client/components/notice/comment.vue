@@ -19,10 +19,10 @@ const props = defineProps({
 
 const icon = computed(() => {
   switch (props.type) {
-    case 'success': return 'check-circle'
-    case 'error': return 'times-circle'
-    case 'warning': return 'exclamation-circle'
-    default: return 'info-circle'
+    case 'success': return 'check-full'
+    case 'error': return 'times-full'
+    case 'warning': return 'exclamation-full'
+    default: return 'info-full'
   }
 })
 

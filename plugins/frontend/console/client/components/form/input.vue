@@ -1,9 +1,7 @@
 <template>
   <div class="k-input" :class="{ focused, disabled, hidden }">
     <span class="prefix">
-      <slot name="prefix">
-        <i v-if="prefix" :class="'fas fa-' + prefix" @click="$emit('clickPrefix')"/>
-      </slot>
+      <slot name="prefix"></slot>
     </span>
     <input
       :value="modelValue"
@@ -26,9 +24,7 @@
       @keydown.enter.stop="$emit('enter', $event)"
     />
     <span class="suffix">
-      <slot name="suffix">
-        <i v-if="suffix" :class="'fas fa-' + suffix" @click="$emit('clickSuffix')"/>
-      </slot>
+      <slot name="suffix"></slot>
     </span>
   </div>
 </template>
@@ -63,7 +59,7 @@ const inputStyle = computed(() => ({
   paddingRight: +!!(props.suffix) + 1 + 'em',
 }))
 
-const emit = defineEmits(['update:modelValue', 'paste', 'focus', 'blur', 'enter', 'clickPrefix', 'clickSuffix'])
+const emit = defineEmits(['update:modelValue', 'paste', 'focus', 'blur', 'enter'])
 
 function onInput(event) {
   if (props.validate) {

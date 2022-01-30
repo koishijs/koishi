@@ -2,26 +2,26 @@
   <transition name="fade">
     <div class="image-viewer" v-if="shared.overlayImage" @click="setImage(null)">
       <span class="button left" :class="{ disabled: !siblings.prev }" @click.stop="setImage(siblings.prev)">
-        <i class="fas fa-chevron-left"/>
+        <k-icon name="chevron-left"/>
       </span>
       <span class="button right" :class="{ disabled: !siblings.next }" @click.stop="setImage(siblings.next)">
-        <i class="fas fa-chevron-right"/>
+        <k-icon name="chevron-right"/>
       </span>
       <span class="button bottom" @click.stop>
         <el-tooltip placement="top" content="缩小" :offset="20">
-          <i class="fas fa-search-minus" @click="scale -= 0.2"/>
+          <k-icon name="search-minus" @click="scale -= 0.2"/>
         </el-tooltip>
         <el-tooltip placement="top" content="放大" :offset="20">
-          <i class="fas fa-search-plus" @click="scale += 0.2"/>
+          <k-icon name="search-plus" @click="scale += 0.2"/>
         </el-tooltip>
         <el-tooltip placement="top" content="复原" :offset="20">
-          <i class="fas fa-expand" @click="scale = 1, rotate = 0"/>
+          <k-icon name="expand" @click="scale = 1, rotate = 0"/>
         </el-tooltip>
         <el-tooltip placement="top" content="逆时针旋转" :offset="20">
-          <i class="fas fa-undo" @click="rotate -= 90"/>
+          <k-icon name="undo" @click="rotate -= 90"/>
         </el-tooltip>
         <el-tooltip placement="top" content="逆时针旋转" :offset="20">
-          <i class="fas fa-redo" @click="rotate += 90"/>
+          <k-icon name="redo" @click="rotate += 90"/>
         </el-tooltip>
       </span>
       <transition appear :duration="1" @before-appear="moveToOrigin" @after-appear="moveToCenter">
@@ -165,15 +165,16 @@ $buttonBg: #303133;
     justify-content: space-evenly;
     transition: 0.4s ease;
 
-    i {
+    .k-icon {
       transition: 0.4s ease;
+      height: 1.25rem;
     }
 
     &:not(.disabled):hover {
       opacity: 0.8;
     }
 
-    &:not(.disabled) i:hover {
+    &:not(.disabled) .k-icon:hover {
       color: rgba(244, 244, 245, .8);
     }
 
@@ -184,7 +185,7 @@ $buttonBg: #303133;
         transform: translateY(-50%);
         width: $buttonSize;
         #{$tag}: $buttonSize;
-        i {
+        .k-icon {
           margin-#{$tag}: -3px;
         }
       }

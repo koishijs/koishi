@@ -18,7 +18,7 @@
       </k-tab-group>
       <div class="k-tab-group-title">
         未运行的插件
-        <k-hint placement="right" icon="fas fa-filter" :class="{ filtered }" @click="filtered = !filtered">
+        <k-hint placement="right" class="filter" name="filter" :class="{ filtered }" @click="filtered = !filtered">
           <template v-if="filtered">
             <b>筛选：已开启</b><br>只显示支持在线配置的插件。
           </template>
@@ -38,7 +38,7 @@
         </div>
         <k-tab-group :data="favorites" v-model="model" #="{ name, shortname, schema }">
           <span :class="{ readonly: !schema }">{{ shortname }}</span>
-          <i class="remove fas fa-times-circle" @click="remove(name)"></i>
+          <k-icon class="remove" name="times-full" @click="remove(name)"/>
         </k-tab-group>
       </template>
     </div>
@@ -103,7 +103,7 @@ onActivated(() => {
     line-height: 2.25rem;
   }
 
-  .fa-filter {
+  .filter {
     font-size: 0.9em;
     cursor: pointer;
 
@@ -124,7 +124,7 @@ onActivated(() => {
     color: inherit;
   }
 
-  i.remove {
+  .k-icon.remove {
     position: absolute;
     left: 2.25rem;
     top: 50%;
@@ -134,7 +134,7 @@ onActivated(() => {
     transition: color 0.3s ease, opacity 0.3s ease;
   }
 
-  i.remove:hover {
+  .k-icon.remove:hover {
     opacity: 1 !important;
   }
 
