@@ -15,12 +15,11 @@
             :type="schema.type === 'number' ? 'number' : schema.meta.role === 'secret' && !showPass ? 'password' : 'text'">
             <template #suffix v-if="schema.meta.role === 'url'">
               <a :href="config" target="_blank" rel="noopener noreferrer">
-                <k-icon-external-link></k-icon-external-link>
+                <k-icon name="external"></k-icon>
               </a>
             </template>
             <template #suffix v-else-if="schema.meta.role === 'secret'">
-              <k-icon-eye v-if="showPass" @click="showPass = !showPass"></k-icon-eye>
-              <k-icon-eye-slash v-else @click="showPass = !showPass"></k-icon-eye-slash>
+              <k-icon :name="showPass ? 'eye' : 'eye-slash'" @click="showPass = !showPass"></k-icon>
             </template>
           </k-input>
         </template>
@@ -39,7 +38,7 @@
     </div>
     <ul>
       <li v-for="(_, index) in config" :key="index">
-        <i class="remove fas fa-times-circle" @click="config.splice(index, 1)"></i>
+        <k-icon name="times-circle" class="remove" @click="config.splice(index, 1)"></k-icon>
         <k-input v-model="config[index]" class="hidden"></k-input>
       </li>
     </ul>
@@ -191,7 +190,7 @@ watch(config, (value) => {
       color: var(--fg3);
       opacity: 0.4;
       transition: 0.3s ease;
-      font-size: 0.875rem;
+      height: 0.875rem;
       margin-right: 0.25rem;
 
       &:hover {

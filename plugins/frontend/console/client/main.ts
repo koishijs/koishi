@@ -3,7 +3,7 @@
 import { createApp } from 'vue'
 import { connect, router, config } from './client'
 
-import icons from './components/icons'
+import icons from '@koishijs/icons'
 import form from './components/form'
 
 import Badge from './components/notice/badge.vue'

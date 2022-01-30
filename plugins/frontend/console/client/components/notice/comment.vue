@@ -1,7 +1,9 @@
 <template>
   <div class="k-comment" :class="type">
-    <i :class="icon"></i>
-    <h4 class="k-comment-header"><slot name="header">{{ title }}</slot></h4>
+    <k-icon :name="icon"></k-icon>
+    <h4 class="k-comment-header">
+      <slot name="header">{{ title }}</slot>
+    </h4>
     <slot/>
   </div>
 </template>
@@ -17,10 +19,10 @@ const props = defineProps({
 
 const icon = computed(() => {
   switch (props.type) {
-    case 'success': return 'fas fa-check-circle'
-    case 'error': return 'fas fa-times-circle'
-    case 'warning': return 'fas fa-exclamation-circle'
-    default: return 'fas fa-info-circle'
+    case 'success': return 'check-circle'
+    case 'error': return 'times-circle'
+    case 'warning': return 'exclamation-circle'
+    default: return 'info-circle'
   }
 })
 
@@ -31,7 +33,7 @@ const icon = computed(() => {
 @mixin apply-color($name) {
   &.#{$name} {
     border-left-color: var(--#{$name});
-    i {
+    .k-icon {
       color: var(--#{$name});
     }
   }
@@ -50,7 +52,7 @@ const icon = computed(() => {
     margin: 1rem 0;
   }
 
-  > i {
+  > .k-icon {
     position: absolute;
     top: 20px;
     left: -12px;
