@@ -4,8 +4,8 @@
       <el-scrollbar>
         <div class="add k-menu-item" :class="{ active: current === -1 }" @click="current = -1">添加机器人</div>
         <div class="bots">
-          <bot-view
-            v-for="(bot, index) in store.bots" :data="bot"
+          <bot-preview
+            v-for="(bot, index) in store.bots" :key="index" :data="bot"
             :class="{ active: current === index }" @click="current = index"/>
         </div>
       </el-scrollbar>
@@ -18,6 +18,7 @@
     </template>
     <k-content v-else class="bot-profile">
       <add-bot v-if="current === -1"></add-bot>
+      <bot-settings v-else :current="current"></bot-settings>
     </k-content>
   </k-card-aside>
 </template>
@@ -27,7 +28,8 @@
 import { ref } from 'vue'
 import { store } from '~/client'
 import AddBot from './add.vue'
-import BotView from './bot.vue'
+import BotPreview from './preview.vue'
+import BotSettings from './settings.vue'
 
 const current = ref<number>(null)
 

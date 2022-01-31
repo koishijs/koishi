@@ -16,15 +16,21 @@ export interface BotConfig extends Bot.BaseConfig, Quester.Config {
   intents?: PrivilegedIntents
 }
 
-export const BotConfig = Schema.object({
-  token: Schema.string().description('机器人的用户令牌。').role('secret').required(),
-  intents: Schema.object({
-    members: Schema.boolean().description('启用 GUILD_MEMBERS 推送。').default(true),
-    presence: Schema.boolean().description('启用 GUILD_PRESENCES 推送。').default(false),
+export const BotConfig = Schema.intersect([
+  Schema.object({
+    token: Schema.string().description('机器人的用户令牌。').role('secret').required(),
   }),
-  gateway: Schema.string().role('url').default('wss://gateway.discord.gg/?v=8&encoding=json').description('要连接的 WebSocket 网关。'),
-  endpoint: Schema.string().role('url').default('https://discord.com/api/v8').description('要请求的 API 网址。'),
-})
+  Schema.object({
+    gateway: Schema.string().role('url').default('wss://gateway.discord.gg/?v=8&encoding=json').description('要连接的 WebSocket 网关。'),
+    intents: Schema.object({
+      members: Schema.boolean().description('启用 GUILD_MEMBERS 推送。').default(true),
+      presence: Schema.boolean().description('启用 GUILD_PRESENCES 推送。').default(false),
+    }),
+  }).description('推送设置'),
+  Quester.createSchema({
+    endpoint: 'https://discord.com/api/v8',
+  }),
+])
 
 export class DiscordBot extends Bot<BotConfig> {
   static schema = AdapterConfig

@@ -1,4 +1,4 @@
-import { Bot, Context, pick, Time } from 'koishi'
+import { Adapter, Bot, Context, pick, Time } from 'koishi'
 import { DataService } from '@koishijs/plugin-console'
 
 declare module 'koishi' {
@@ -58,9 +58,9 @@ class BotProvider extends DataService<BotProvider.Data[]> {
 
   async get() {
     return this.ctx.bots.map<BotProvider.Data>((bot) => ({
-      ...pick(bot, ['platform', 'selfId', 'avatar', 'username']),
-      status: bot.status,
+      ...pick(bot, ['platform', 'protocol', 'selfId', 'avatar', 'username', 'status', 'config']),
       error: bot.error?.message,
+      adapter: bot.adapter.platform,
       messageSent: bot._messageSent.get(),
       messageReceived: bot._messageReceived.get(),
     }))
@@ -73,13 +73,9 @@ namespace BotProvider {
     bot._messageReceived = new TickCounter(ctx)
   }
 
-  export interface Data {
-    username?: string
-    selfId?: string
-    platform?: string
-    avatar?: string
-    status: Bot.Status
+  export interface Data extends Pick<Bot, 'platform' | 'protocol' | 'selfId' | 'avatar' | 'username' | 'status' | 'config'> {
     error?: string
+    adapter: string
     messageSent: number
     messageReceived: number
   }

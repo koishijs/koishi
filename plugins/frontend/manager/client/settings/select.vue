@@ -38,7 +38,7 @@
         </div>
         <k-tab-group :data="favorites" v-model="model" #="{ name, shortname, schema }">
           <span :class="{ readonly: !schema }">{{ shortname }}</span>
-          <k-icon class="remove" name="times-full" @click="remove(name)"/>
+          <k-icon class="remove" name="times-full" @click="removeFavorite(name)"/>
         </k-tab-group>
       </template>
     </div>
@@ -47,9 +47,9 @@
 
 <script lang="ts" setup>
 
-import { ref, computed, onActivated } from 'vue'
+import { ref, computed, onActivated, nextTick } from 'vue'
 import { store } from '~/client'
-import { config } from '../utils'
+import { config, removeFavorite } from '../utils'
 
 const props = defineProps<{
   modelValue: string
@@ -67,6 +67,7 @@ const filtered = ref(true)
 
 const favorites = computed(() => {
   const result = {}
+  console.log(config.favorites)
   config.favorites = config.favorites.filter((name) => {
     if (!store.market[name]) return false
     result[name] = store.market[name]
@@ -75,15 +76,9 @@ const favorites = computed(() => {
   return result
 })
 
-function remove(name: string) {
-  const index = config.favorites.indexOf(name)
-  if (index > -1) {
-    config.favorites.splice(index, 1)
-  }
-}
-
-onActivated(() => {
+onActivated(async () => {
   const container = root.value.$el
+  await nextTick()
   const element = container.querySelector('.k-tab-item.active') as HTMLElement
   root.value['setScrollTop'](element.offsetTop - (container.offsetHeight - element.offsetHeight) / 2)
 })

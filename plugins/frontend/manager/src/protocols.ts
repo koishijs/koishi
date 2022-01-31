@@ -13,8 +13,9 @@ export default class AdapterProvider extends DataService<Dict<Schema>> {
   async get() {
     const protocols: Dict<Schema> = {}
     for (const key in Adapter.library) {
-      if (key.includes('.')) continue
-      protocols[key] = Adapter.library[key].schema
+      const constructor = Adapter.library[key]
+      if (constructor[Adapter.redirect]) continue
+      protocols[key] = constructor.schema
     }
     return protocols
   }

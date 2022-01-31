@@ -1,12 +1,12 @@
 <template>
   <k-content class="plugin-view">
     <!-- title -->
-    <h1 v-if="data.name">
+    <h1 class="config-header" v-if="data.name">
       {{ data.name }}
       <span v-if="data.workspace">(工作区)</span>
       <span v-else-if="data.id">({{ data.version }})</span>
     </h1>
-    <h1 v-else>
+    <h1 class="config-header" v-else>
       全局设置
       <k-button solid>应用配置</k-button>
     </h1>
@@ -48,7 +48,7 @@
 
     <!-- schema -->
     <template v-if="data.schema">
-      <h1 class="schema-header" v-if="data.shortname">
+      <h1 class="config-header" v-if="data.shortname">
         配置项
         <template v-if="data.id">
           <k-button solid type="error" @click="execute('unload')">停用插件</k-button>
@@ -70,7 +70,7 @@ import { computed, ref, watch } from 'vue'
 import { Dict } from 'koishi'
 import { store, send } from '~/client'
 import { state } from '../utils'
-import { MarketProvider } from '../../src'
+import { MarketProvider } from '@koishijs/plugin-manager'
 import { ElMessage } from 'element-plus'
 import KDepAlert from './dep-alert.vue'
 import KDepLink from './dep-link.vue'
@@ -199,21 +199,5 @@ async function uninstall() {
 </script>
 
 <style lang="scss">
-
-.plugin-view {
-  h1 {
-    margin: 0 0 2rem;
-  }
-
-  .k-button {
-    float: right;
-    font-size: 1rem;
-  }
-
-  h1.schema-header {
-    font-size: 1.375rem;
-    margin: 2rem 0;
-  }
-}
 
 </style>

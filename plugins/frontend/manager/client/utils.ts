@@ -33,3 +33,10 @@ export function addFavorite(name: string) {
   if (config.favorites.includes(name) || store.packages[name]) return
   config.favorites.push(name)
 }
+
+export function removeFavorite(name: string) {
+  const index = config.favorites.indexOf(name)
+  if (index > -1) {
+    config.favorites.splice(index, 1)
+  }
+}

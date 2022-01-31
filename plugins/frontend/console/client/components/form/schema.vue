@@ -1,7 +1,6 @@
 <template>
   <template v-if="!schema || schema.meta.hidden"/>
 
-  <!-- primitive values -->
   <div class="schema-item" v-else-if="['string', 'number', 'boolean'].includes(schema.type)">
     <div class="schema-header">
       <div class="left">
@@ -119,6 +118,10 @@ watch(config, (value) => {
     margin-bottom: 2rem;
   }
 
+  & + :not(.schema-item) {
+    margin-top: 2rem;
+  }
+
   &:hover {
     background: var(--bg2);
   }
@@ -192,6 +195,7 @@ watch(config, (value) => {
       transition: 0.3s ease;
       height: 0.875rem;
       margin-right: 0.25rem;
+      cursor: pointer;
 
       &:hover {
         opacity: 1;

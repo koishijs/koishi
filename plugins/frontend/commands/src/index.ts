@@ -1,5 +1,4 @@
 import { Command, Context, Dict, pick, remove, Schema } from 'koishi'
-import { resolve } from 'path'
 import CommandProvider from './service'
 
 export * from './service'
@@ -120,13 +119,5 @@ export function apply(ctx: Context, config: Dict<Config>) {
     }
   }, true)
 
-  ctx.using(['console'], (ctx) => {
-    ctx.plugin(CommandProvider)
-  
-    if (ctx.console.config.devMode) {
-      ctx.console.addEntry(resolve(__dirname, '../client/index.ts'))
-    } else {
-      ctx.console.addEntry(resolve(__dirname, '../dist'))
-    }
-  })
+  ctx.plugin(CommandProvider)
 }

@@ -31,7 +31,7 @@
 
 <script lang="ts" setup>
 
-import { ref, computed } from 'vue'
+import { ref, computed, useSlots } from 'vue'
 
 const props = defineProps({
   prefix: String,
@@ -53,10 +53,12 @@ const props = defineProps({
 const focused = ref(false)
 const invalid = ref(false)
 
+const slots = useSlots()
+
 const inputStyle = computed(() => ({
   fontSize: props.size + 'em',
-  paddingLeft: +!!(props.prefix) + 1 + 'em',
-  paddingRight: +!!(props.suffix) + 1 + 'em',
+  paddingLeft: +!!slots.prefix + 1 + 'em',
+  paddingRight: +!!slots.suffix + 1 + 'em',
 }))
 
 const emit = defineEmits(['update:modelValue', 'paste', 'focus', 'blur', 'enter'])

@@ -45,12 +45,16 @@ export namespace Quester {
     proxyAgent?: string
   }
 
-  export const Config: Schema<Config> = Schema.object({
-    endpoint: Schema.string().description('要连接的端点。'),
-    proxyAgent: Schema.string().role('url').description('使用的代理服务器地址。'),
-    headers: Schema.dict(Schema.string()).description('要附加的额外请求头。'),
-    timeout: Schema.number().description('等待连接建立的最长时间。'),
-  }).description('请求设置')
+  export const Config = createSchema()
+
+  export function createSchema(config: Config = {}): Schema<Config> {
+    return Schema.object({
+      endpoint: Schema.string().role('url').description('要连接的端点。').default(config.endpoint),
+      proxyAgent: Schema.string().role('url').description('使用的代理服务器地址。').default(config.proxyAgent),
+      headers: Schema.dict(Schema.string()).description('要附加的额外请求头。').default(config.headers),
+      timeout: Schema.number().description('等待连接建立的最长时间。').default(config.timeout),
+    }).description('请求设置')
+  }
 
   const agents: Dict<Agent> = {}
 

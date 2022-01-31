@@ -4,6 +4,8 @@ import Bots from './bots/index.vue'
 import Settings from './settings/index.vue'
 import Market from './market/index.vue'
 
+import './style.scss'
+
 export default (ctx: Context) => {
   ctx.addView({
     type: 'numeric',

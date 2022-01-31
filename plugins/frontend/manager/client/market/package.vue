@@ -16,14 +16,14 @@
     <td class="latest">{{ data.version }}</td>
     <td class="score">{{ data.score.toFixed(2) }}</td>
     <td class="operation">
-      <k-button frameless @click="configurate">配置</k-button>
+      <k-button frameless @click="configurate">{{ local ? '配置' : '添加' }}</k-button>
     </td>
   </tr>
 </template>
 
 <script lang="ts" setup>
 
-import type { MarketProvider } from '@koishijs/plugin-manager/src'
+import type { MarketProvider } from '@koishijs/plugin-manager'
 import { store } from '~/client'
 import { computed, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'

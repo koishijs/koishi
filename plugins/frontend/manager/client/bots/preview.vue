@@ -5,7 +5,7 @@
         <div :class="['status', data.status, { error: data.error }]"></div>
       </el-tooltip>
     </div>
-    <div class="content">
+    <div class="info">
       <div><k-icon name="robot"/>{{ data.username }}</div>
       <div><k-icon name="layer-group"/>{{ data.platform }}</div>
       <div class="cur-frequency">
@@ -50,8 +50,7 @@ div.bot {
 
   &.active {
     > div.avatar {
-      border: 2px solid var(--primary);
-      transition: border-color 0.3s ease;
+      border-color: var(--primary);
     }
   }
 
@@ -60,12 +59,12 @@ div.bot {
     width: 80px;
     height: 80px;
     box-sizing: border-box;
-    border: 1px solid var(--border);
+    border: 2px solid var(--border);
+    transition: border 0.3s ease;
     border-radius: 100%;
     background-size: 100%;
     background-repeat: no-repeat;
     transition: 0.1s ease;
-    transition: border-color 0.3s ease;
 
     $borderWidth: 4px;
 
@@ -94,7 +93,7 @@ div.bot {
     }
   }
 
-  > div.content {
+  > div.info {
     flex-grow: 1;
 
     margin-left: 1.25rem;
@@ -103,10 +102,11 @@ div.bot {
     flex-direction: column;
     justify-content: space-around;
 
-    i {
+    .k-icon {
       width: 20px;
-      margin-right: 8px;
+      margin-right: 6px;
       text-align: center;
+      vertical-align: -2px;
     }
   }
 
@@ -115,4 +115,5 @@ div.bot {
     width: 600px; height: 360px;
   }
 }
+
 </style>
