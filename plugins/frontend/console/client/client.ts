@@ -146,8 +146,7 @@ const initTask = new Promise<void>((resolve) => {
       delete extensions[path]
     }
 
-    const { redirect } = router.currentRoute.value.query
-    const tasks = newValue.map(async (path) => {
+    async function loadExtension(path: string) {
       if (extensions[path]) return
       extensions[path] = new Context()
 
@@ -170,9 +169,13 @@ const initTask = new Promise<void>((resolve) => {
           router.replace(location)
         }
       }
-    })
+    }
 
-    await Promise.allSettled(tasks)
+    const { redirect } = router.currentRoute.value.query
+    await Promise.all(newValue.map((path) => {
+      return loadExtension(path).catch(console.error)
+    }))
+
     if (!oldValue) resolve()
   }, { deep: true })
 })

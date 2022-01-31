@@ -1,4 +1,4 @@
-import { Logger, sleep } from '@koishijs/utils'
+import { Logger, Random, sleep } from '@koishijs/utils'
 import { Adapter } from './adapter'
 import { App } from './app'
 import { Session } from './session'
@@ -14,6 +14,7 @@ export abstract class Bot<T extends Bot.BaseConfig = Bot.BaseConfig> {
   public internal?: any
   public selfId?: string
   public logger: Logger
+  public id = Random.id()
 
   private _status: Bot.Status
 

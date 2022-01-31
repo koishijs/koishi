@@ -23,12 +23,6 @@ export {
 }
 
 declare module '@koishijs/plugin-console' {
-  interface Events {
-    'plugin/load'(name: string, config: any): void
-    'plugin/unload'(name: string, config: any): void
-    'bot/create'(platform: string, config: any): void
-  }
-
   namespace Console {
     interface Services {
       bots: BotProvider

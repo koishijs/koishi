@@ -1,30 +1,9 @@
 <template>
   <template v-if="!schema || schema.meta.hidden"/>
 
-  <div class="schema-item" v-else-if="['string', 'number', 'boolean'].includes(schema.type)">
-    <div class="schema-header">
-      <div class="left">
-        <slot></slot>
-      </div>
-      <div class="right">
-        <el-switch v-if="schema.type === 'boolean'" v-model="config"></el-switch>
-        <template v-else>
-          <k-input v-model="config"
-            :style="{ width: schema.meta.role === 'url' ? '18rem' : '12rem' }"
-            :type="schema.type === 'number' ? 'number' : schema.meta.role === 'secret' && !showPass ? 'password' : 'text'">
-            <template #suffix v-if="schema.meta.role === 'url'">
-              <a :href="config" target="_blank" rel="noopener noreferrer">
-                <k-icon name="external"></k-icon>
-              </a>
-            </template>
-            <template #suffix v-else-if="schema.meta.role === 'secret'">
-              <k-icon :name="showPass ? 'eye' : 'eye-slash'" @click="showPass = !showPass"></k-icon>
-            </template>
-          </k-input>
-        </template>
-      </div>
-    </div>
-  </div>
+  <schema-primitive v-else-if="['string', 'number', 'boolean'].includes(schema.type)" :schema="schema" v-model="config">
+    <slot></slot>
+  </schema-primitive>
 
   <div class="schema-item" v-else-if="schema.type === 'array'">
     <div class="schema-header">
@@ -43,14 +22,15 @@
     </ul>
   </div>
 
-  <schema-group v-else-if="schema.type === 'object'" :desc="!noDesc && schema.meta.description">
+  <template v-else-if="schema.type === 'object'">
+    <h2 v-if="!noDesc && schema.meta.description">{{ schema.meta.description }}</h2>
     <k-schema v-for="(item, key) in schema.dict" :key="key" :schema="item" v-model="config[key]" :prefix="prefix + key + '.'">
       <h3 :class="{ required: item.meta.required }">
         <span>{{ prefix + key }}</span>
       </h3>
       <p>{{ item.meta.description }}</p>
     </k-schema>
-  </schema-group>
+  </template>
 
   <template v-else-if="schema.type === 'const'"></template>
 
@@ -58,7 +38,7 @@
     <k-schema v-for="item in schema.list" :schema="item" v-model="config" :prefix="prefix"/>
   </template>
 
-  <schema-union v-else-if="schema.type === 'union'" :schema="schema" v-model="config">
+  <schema-union v-else-if="schema.type === 'union'" :schema="schema" :prefix="prefix" v-model="config">
     <slot></slot>
   </schema-union>
 
@@ -72,8 +52,8 @@
 import { watch, ref } from 'vue'
 import type { PropType } from 'vue'
 import Schema from 'schemastery'
-import SchemaGroup from './schema-group.vue'
-import SchemaUnion from './schema-union.vue'
+import SchemaPrimitive from './primitive.vue'
+import SchemaUnion from './union.vue'
 
 const props = defineProps({
   schema: {} as PropType<Schema>,
@@ -93,13 +73,20 @@ function getFallback() {
   }
 }
 
-const showPass = ref(false)
+const config = ref<any>()
 
-const config = ref<any>(props.modelValue ?? getFallback())
+watch(() => props.modelValue, (value) => {
+  if (value !== null && value !== undefined) {
+    config.value = value
+  } else {
+    config.value = getFallback()
+    emit('update:modelValue', config.value)
+  }
+}, { immediate: true })
 
 watch(config, (value) => {
   emit('update:modelValue', value)
-}, { deep: true, immediate: true })
+}, { deep: true })
 
 </script>
 
@@ -108,7 +95,7 @@ watch(config, (value) => {
 .schema-item {
   padding: 0.5rem 1rem;
   border-bottom: 1px solid var(--border);
-  transition: 0.3s ease;
+  transition: border-color 0.3s ease;
 
   &:first-child, :not(.schema-item) + & {
     border-top: 1px solid var(--border);
@@ -166,7 +153,7 @@ watch(config, (value) => {
   .k-input .k-icon {
     height: 0.75rem;
     color: var(--fg3);
-    transition: 0.3s ease;
+    transition: color 0.3s ease;
 
     &:hover {
       color: var(--fg1);
@@ -192,7 +179,7 @@ watch(config, (value) => {
     .remove {
       color: var(--fg3);
       opacity: 0.4;
-      transition: 0.3s ease;
+      transition: opacity 0.3s ease;
       height: 0.875rem;
       margin-right: 0.25rem;
       cursor: pointer;

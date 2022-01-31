@@ -1,4 +1,4 @@
-import { Adapter, Bot, Context, pick, Time } from 'koishi'
+import { Bot, Context, Dict, pick, Time } from 'koishi'
 import { DataService } from '@koishijs/plugin-console'
 
 declare module 'koishi' {
@@ -31,7 +31,7 @@ class TickCounter {
   }
 }
 
-class BotProvider extends DataService<BotProvider.Data[]> {
+class BotProvider extends DataService<Dict<BotProvider.Data>> {
   constructor(ctx: Context) {
     super(ctx, 'bots')
 
@@ -57,13 +57,13 @@ class BotProvider extends DataService<BotProvider.Data[]> {
   }
 
   async get() {
-    return this.ctx.bots.map<BotProvider.Data>((bot) => ({
+    return Object.fromEntries(this.ctx.bots.map((bot) => [bot.id, {
       ...pick(bot, ['platform', 'protocol', 'selfId', 'avatar', 'username', 'status', 'config']),
       error: bot.error?.message,
       adapter: bot.adapter.platform,
       messageSent: bot._messageSent.get(),
       messageReceived: bot._messageReceived.get(),
-    }))
+    }] as const))
   }
 }
 

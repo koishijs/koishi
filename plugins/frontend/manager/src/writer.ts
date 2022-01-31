@@ -1,6 +1,15 @@
 import { Context } from 'koishi'
 import { Loader } from '@koishijs/cli'
 
+declare module '@koishijs/plugin-console' {
+  interface Events {
+    'plugin/load'(name: string, config: any): void
+    'plugin/unload'(name: string, config: any): void
+    'bot/login'(id: string, adapter: string, config: any): void
+    'bot/logout'(id: string, adapter: string, config: any): void
+  }
+}
+
 export default class ConfigWriter {
   private loader: Loader
   private plugins: {}
