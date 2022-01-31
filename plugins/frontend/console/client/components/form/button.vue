@@ -1,6 +1,6 @@
 <template>
   <button
-    @click="onClick"
+    @click.prevent="onClick"
     :title="disabled ? '' : title"
     :class="['k-button', type, { disabled, solid, round, frameless }]">
     <slot/>

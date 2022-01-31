@@ -3,16 +3,14 @@
     配置项
     <template v-if="data.config.disabled">
       <k-button solid @click="execute('login')">登陆账号</k-button>
-      <k-button solid @click="execute('logout')">保存配置</k-button>
     </template>
     <template v-else>
       <k-button solid type="error" @click="execute('logout')">登出账号</k-button>
       <k-button solid @click="execute('login')">重载配置</k-button>
     </template>
   </h1>
-  {{ data }}
-  <form>
-    <template v-if="!current">
+  <k-form :schema="store.protocols[key]" v-model="data.config">
+    <template #header v-if="!current">
       <k-schema :schema="adapterSchema" v-model="data.adapter">
         <h3 class="required">adapter</h3>
         <p>选择要使用的适配器。</p>
@@ -22,8 +20,7 @@
         <p>选择要使用的协议。</p>
       </k-schema>
     </template>
-    <k-schema :schema="store.protocols[key]" v-model="data.config"></k-schema>
-  </form>
+  </k-form>
 </template>
 
 <script lang="ts" setup>
@@ -64,16 +61,16 @@ const protocolSchema = computed(() => {
 
 const data = computed<Partial<BotProvider.Data>>(() => store.bots[props.current] || reactive({
   adapter: '',
-  config: {},
+  config: { disabled: true },
 }))
 
 watch(() => data.value.adapter, () => {
-  data.value.config = { protocol: '' }
+  data.value.config = { protocol: '', disabled: true }
 })
 
 watch(() => data.value.config.protocol, (protocol) => {
   if (!protocol) return
-  data.value.config = { protocol }
+  data.value.config = { protocol, disabled: true }
 }, { flush: 'post' })
 
 const key = computed(() => {

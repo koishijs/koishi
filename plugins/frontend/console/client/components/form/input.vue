@@ -4,6 +4,8 @@
       <slot name="prefix"></slot>
     </span>
     <input
+      autocomplete="off"
+      step="0.00001"
       :value="modelValue"
       :type="type"
       :style="inputStyle"

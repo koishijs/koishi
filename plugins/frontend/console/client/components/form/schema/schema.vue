@@ -1,11 +1,11 @@
 <template>
   <template v-if="!schema || schema.meta.hidden"/>
 
-  <schema-primitive v-else-if="['string', 'number', 'boolean'].includes(schema.type)" :schema="schema" v-model="config">
+  <schema-primitive v-else-if="isPrimitive(schema)" :schema="schema" v-model="config">
     <slot></slot>
   </schema-primitive>
 
-  <div class="schema-item" v-else-if="schema.type === 'array'">
+  <div class="schema-item" v-else-if="schema.type === 'array' && isPrimitive(schema.inner)">
     <div class="schema-header">
       <div class="left">
         <slot></slot>
@@ -22,6 +22,24 @@
     </ul>
   </div>
 
+  <div class="schema-item" v-else-if="schema.type === 'dict' && isPrimitive(schema.inner)">
+    <div class="schema-header">
+      <div class="left">
+        <slot></slot>
+      </div>
+      <div class="right">
+        <k-button solid @click="config[''] = null">添加项</k-button>
+      </div>
+    </div>
+    <ul>
+      <li v-for="(_, key) in config">
+        <k-icon name="times-full" class="remove" @click="delete config[key]"></k-icon>
+        <k-input :model-value="key" @update:model-value="v => (config[v] = config[key], delete config[key])" class="hidden"></k-input>
+        <k-input v-model="config[key]" class="hidden"></k-input>
+      </li>
+    </ul>
+  </div>
+
   <template v-else-if="schema.type === 'object'">
     <h2 v-if="!noDesc && schema.meta.description">{{ schema.meta.description }}</h2>
     <k-schema v-for="(item, key) in schema.dict" :key="key" :schema="item" v-model="config[key]" :prefix="prefix + key + '.'">
@@ -31,8 +49,6 @@
       <p>{{ item.meta.description }}</p>
     </k-schema>
   </template>
-
-  <template v-else-if="schema.type === 'const'"></template>
 
   <template v-else-if="schema.type === 'intersect'">
     <k-schema v-for="item in schema.list" :schema="item" v-model="config" :prefix="prefix"/>
@@ -87,6 +103,10 @@ watch(() => props.modelValue, (value) => {
 watch(config, (value) => {
   emit('update:modelValue', value)
 }, { deep: true })
+
+function isPrimitive(schema: Schema) {
+  return ['string', 'number', 'boolean'].includes(schema.type)
+}
 
 </script>
 

@@ -59,9 +59,7 @@
           <k-button solid @click="execute('unload')">保存配置</k-button>
         </template>
       </h1>
-      <form>
-        <k-schema :schema="data.schema" v-model="data.config" prefix=""></k-schema>
-      </form>
+      <k-form :schema="data.schema" v-model="data.config"></k-form>
     </template>
   </k-content>
 </template>
