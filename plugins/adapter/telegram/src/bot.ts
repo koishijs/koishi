@@ -1,9 +1,11 @@
 import FormData from 'form-data'
-import { Adapter, assertProperty, Bot, camelCase, Dict, Quester, renameProperty, Schema, snakeCase } from 'koishi'
+import { Adapter, assertProperty, Bot, camelCase, Dict, Logger, Quester, renameProperty, Schema, snakeCase } from 'koishi'
 import * as Telegram from './types'
 import { AdapterConfig } from './utils'
 import { AxiosError } from 'axios'
 import { Sender } from './sender'
+
+const logger = new Logger('telegram')
 
 export class SenderError extends Error {
   constructor(args: Dict<any>, url: string, retcode: number, selfId: string) {
@@ -24,17 +26,16 @@ export interface TelegramResponse {
 }
 
 export interface BotConfig extends Bot.BaseConfig {
-  selfId?: string
   token?: string
-  pollingTimeout?: number | true
+  request?: Quester.Config
+  pollingTimeout?: number
 }
 
 export const BotConfig: Schema<BotConfig> = Schema.object({
   token: Schema.string().description('机器人的用户令牌。').role('secret').required(),
-  pollingTimeout: Schema.union([
-    Schema.number(),
-    Schema.const<true>(true),
-  ]).description('通过长轮询获取更新时请求的超时。单位为秒；true 为使用默认值 1 分钟。详情请见 Telegram API 中 getUpdate 的参数 timeout。不设置即使用 webhook 获取更新。'),
+  request: Quester.createSchema({
+    endpoint: 'https://api.telegram.org',
+  }),
 })
 
 export class TelegramBot extends Bot<BotConfig> {
@@ -49,20 +50,17 @@ export class TelegramBot extends Bot<BotConfig> {
 
   static schema = AdapterConfig
 
-  http: Quester
+  http: Quester & { file?: Quester }
 
   constructor(adapter: Adapter, config: BotConfig) {
     assertProperty(config, 'token')
-    if (!config.selfId) {
-      if (config.token.includes(':')) {
-        config.selfId = config.token.split(':')[0]
-      } else {
-        assertProperty(config, 'selfId')
-      }
-    }
     super(adapter, config)
-    this.http = adapter.http.extend({
-      endpoint: `${adapter.http.config.endpoint}/bot${config.token}`,
+    this.selfId = config.token.split(':')[0]
+    this.http = this.app.http.extend({
+      endpoint: `${config.request.endpoint}/bot${config.token}`,
+    })
+    this.http.file = this.app.http.extend({
+      endpoint: `${config.request.endpoint}/file/bot${config.token}`,
     })
   }
 
@@ -190,5 +188,20 @@ export class TelegramBot extends Bot<BotConfig> {
   async getLoginInfo() {
     const data = await this.get<Telegram.User>('/getMe')
     return TelegramBot.adaptUser(data)
+  }
+
+  async $getFileData(fileId: string) {
+    try {
+      const file = await this.get<Telegram.File>('/getFile', { fileId })
+      return await this.$getFileContent(file.filePath)
+    } catch (e) {
+      logger.warn('get file error', e)
+    }
+  }
+
+  async $getFileContent(filePath: string) {
+    const res = await this.http.file.get(`/${filePath}`, { responseType: 'arraybuffer' })
+    const base64 = `base64://` + res.toString('base64')
+    return { url: base64 }
   }
 }

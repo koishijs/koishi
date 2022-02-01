@@ -1,6 +1,6 @@
-import { App, Schema } from 'koishi'
+import { Schema } from 'koishi'
 
-export interface AdapterConfig extends App.Config.Request {
+export interface AdapterConfig {
   path?: string
   selfUrl?: string
 }
