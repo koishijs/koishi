@@ -39,6 +39,6 @@
   "dependencies": {
     "@koishijs/utils": "^5.0.0",
     "fastest-levenshtein": "^1.0.12",
-    "schemastery": "^2.2.0"
+    "schemastery": "^2.3.0"
   }
 }

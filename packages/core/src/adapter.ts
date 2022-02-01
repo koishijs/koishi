@@ -81,8 +81,23 @@ export namespace Adapter {
     } else {
       library[platform] = { [redirect]: args[1] } as Constructor
       BotConfig = library[platform].schema = Schema.union([]).description('机器人要使用的协议。')
+      const FlatConfig = Schema.object({ protocol: Schema.string() })
+      function flatten(schema: Schema) {
+        if (schema.type === 'union' || schema.type === 'intersect') {
+          schema.list.forEach(flatten)
+        } else if (schema.type === 'object') {
+          for (const key in schema.dict) {
+            FlatConfig.dict[key] = new Schema(schema.dict[key])
+            FlatConfig.dict[key].meta = { ...schema.dict[key].meta, required: false }
+          }
+        } else {
+          throw new Error('cannot flatten bot schema')
+        }
+      }
+
       for (const protocol in args[0]) {
         library[join(platform, protocol)] = args[0][protocol]
+        flatten(args[0][protocol].schema)
         BotConfig.list.push(Schema.intersect([
           Schema.object({
             protocol: Schema.const(protocol).required(),
@@ -90,7 +105,7 @@ export namespace Adapter {
           args[0][protocol].schema,
         ]).description(protocol))
       }
-      BotConfig.list.push(Schema.transform(Schema.dict(Schema.any()), (value) => {
+      BotConfig.list.push(Schema.transform(FlatConfig, (value) => {
         if (value.protocol) throw new Error(`unknown protocol "${value.protocol}"`)
         value.protocol = args[1](value) as never
         logger.debug('infer type as %s', value.protocol)

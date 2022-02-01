@@ -186,10 +186,7 @@ export class HttpPolling extends TelegramAdapter {
   static schema = Schema.intersect([
     BotConfig,
     Schema.object({
-      pollingTimeout: Schema.union([
-        Schema.number(),
-        Schema.transform(Schema.const(true as const), () => Time.minute),
-      ]).description('通过长轮询获取更新时请求的超时 (单位为秒)。'),
+      pollingTimeout: Schema.number().default(Time.minute).description('通过长轮询获取更新时请求的超时 (单位为秒)。'),
     }),
   ])
 

@@ -52,11 +52,11 @@ export namespace Plugin {
     : T extends Object<infer U> ? U
     : never
 
-  export interface State<T = any> {
+  export interface State {
     id?: string
     parent?: State
     context?: Context
-    config?: T
+    config?: any
     using?: readonly (keyof Context.Services)[]
     schema?: Schema
     plugin?: Plugin
