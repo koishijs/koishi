@@ -1,6 +1,6 @@
 <template>
   <sidebar v-if="!sidebarHidden"/>
-  <main class="layout-main" :class="{ 'sidebar-hidden': sidebarHidden }">
+  <main :class="mainClasses">
     <router-view v-if="loaded" #="{ Component }">
       <keep-alive>
         <component :is="Component"/>
@@ -23,6 +23,13 @@ const route = useRoute()
 const loaded = computed(() => {
   if (!route.meta.fields) return true
   return route.meta.fields.every((key) => store[key])
+})
+
+const mainClasses = computed(() => {
+  const result = ['layout-main']
+  result.push('route-' + route.path.slice(1).split('/', 1)[0])
+  if (sidebarHidden.value) result.push('sidebar-hidden')
+  return result
 })
 
 const sidebarHidden = computed(() => {

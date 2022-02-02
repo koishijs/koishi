@@ -42,8 +42,11 @@ section.page-bots {
       text-align: center;
       padding: 1rem 0;
       font-weight: bold;
+    }
+
+    .k-menu-item {
+      transition: 0.3s ease;
       border-bottom: 1px solid var(--border);
-      transition: border-color 0.3s ease;
     }
   }
 }

@@ -90,9 +90,10 @@ class MarketProvider extends DataService<Dict<MarketProvider.Data>> {
       ...item,
       shortname,
       official,
-      score: score.final,
+      score: score.detail.popularity * 100,
       description,
       versions,
+      readme: registry.readme,
     }
     this.flushData()
   }
@@ -175,6 +176,7 @@ namespace MarketProvider {
     shortname: string
     official: boolean
     score: number
+    readme: string
   }
 }
 

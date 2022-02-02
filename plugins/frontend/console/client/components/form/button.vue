@@ -65,13 +65,12 @@ function onClick(event: MouseEvent) {
     cursor: default;
   }
   // default: transparent & framed
-  color: var(--default);
+  color: var(--fg2);
   border: 1px solid var(--border);
-  background-color: transparent;
+  background-color: var(--bg0);
   &.disabled {
     color: var(--disabled);
     border-color: var(--border);
-    background-color: transparent;
   }
   &:hover:not(.disabled) {
     color: var(--fg1);
@@ -82,18 +81,15 @@ function onClick(event: MouseEvent) {
   &.solid {
     color: #ffffff !important;
     border-color: transparent !important;
-  }
-
-  &.solid.disabled {
-    background-color: var(--disabled) !important;
-  }
-
-  &.solid:not(.disabled) {
-
-    @include apply-color(default);
-    @include apply-color(warning);
-    @include apply-color(success);
-    @include apply-color(error);
+    &.disabled {
+      background-color: var(--disabled) !important;
+    }
+    &:not(.disabled) {
+      @include apply-color(default);
+      @include apply-color(warning);
+      @include apply-color(success);
+      @include apply-color(error);
+    }
   }
 
   // frameless
@@ -116,7 +112,15 @@ function onClick(event: MouseEvent) {
     }
   }
 
-  & + & {
+  .k-group > &:not(:first-child) {
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+  }
+  .k-group > &:not(:last-child) {
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+  }
+  *:not(.k-group) > & + & {
     margin: 0 1rem;
   }
 }

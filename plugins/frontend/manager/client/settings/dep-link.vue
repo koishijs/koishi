@@ -17,7 +17,7 @@ const router = useRouter()
 
 function configurate(name: string) {
   addFavorite(name)
-  router.replace({ query: { name } })
+  router.push('/market')
 }
 
 </script>

@@ -4,6 +4,7 @@ import ArrowLeft from './svg/arrow-left.vue'
 import ArrowRight from './svg/arrow-right.vue'
 import ArrowUp from './svg/arrow-up.vue'
 import Book from './svg/book.vue'
+import BoxOpen from './svg/box-open.vue'
 import CheckFull from './svg/check-full.vue'
 import ChevronDown from './svg/chevron-down.vue'
 import ChevronLeft from './svg/chevron-left.vue'
@@ -55,6 +56,7 @@ register('arrow-left', ArrowLeft)
 register('arrow-right', ArrowRight)
 register('arrow-up', ArrowUp)
 register('book', Book)
+register('box-open', BoxOpen)
 register('check-full', CheckFull)
 register('chevron-down', ChevronDown)
 register('chevron-left', ChevronLeft)

@@ -50,6 +50,13 @@ export namespace Package {
 
   export interface Registry extends Base {
     versions: Dict<Remote>
+    time: {
+      created: string
+      modified: string
+    }
+    license: string
+    readme: string
+    readmeFilename: string
   }
 
   export interface SearchItem {

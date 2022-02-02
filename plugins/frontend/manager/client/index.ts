@@ -1,7 +1,8 @@
 import { Card, Context } from '~/client'
-import type {} from '@koishijs/plugin-manager/src'
+import type {} from '@koishijs/plugin-manager'
 import Bots from './bots/index.vue'
 import Settings from './settings/index.vue'
+import Dependencies from './dependencies/index.vue'
 import Market from './market/index.vue'
 
 import './style.scss'
@@ -14,7 +15,7 @@ export default (ctx: Context) => {
       title: '当前消息频率',
       icon: 'paper-plane',
       fields: ['bots'],
-      content: ({ bots }) => bots.reduce((sum, bot) => sum + bot.messageSent, 0) + ' / min',
+      content: ({ bots }) => Object.values(bots).reduce((sum, bot) => sum + bot.messageSent, 0) + ' / min',
     }),
   })
 
@@ -22,7 +23,7 @@ export default (ctx: Context) => {
     path: '/bots',
     name: '机器人',
     icon: 'robot',
-    order: 630,
+    order: 640,
     fields: ['bots', 'protocols'],
     component: Bots,
   })
@@ -31,9 +32,18 @@ export default (ctx: Context) => {
     path: '/settings',
     name: '插件配置',
     icon: 'cog',
-    order: 620,
+    order: 630,
     fields: ['packages', 'services'],
     component: Settings,
+  })
+
+  ctx.addPage({
+    path: '/dependencies',
+    name: '依赖管理',
+    icon: 'box-open',
+    order: 620,
+    fields: ['market', 'packages'],
+    component: Dependencies,
   })
 
   ctx.addPage({

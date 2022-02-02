@@ -1,4 +1,5 @@
 import { useStorage } from '@vueuse/core'
+import { Dict } from 'koishi'
 import { reactive, watch } from 'vue'
 import { store } from '~/client'
 
@@ -11,16 +12,16 @@ export function useVersionStorage<T extends object>(key: string, version: string
 }
 
 interface ManagerConfig {
-  favorites: string[]
+  override: Dict<string>
 }
 
-export const config = useVersionStorage<ManagerConfig>('managerConfig', '1.0', () => ({
-  favorites: [],
+export const config = useVersionStorage<ManagerConfig>('managerConfig', '2.0', () => ({
+  override: {},
 }))
 
 watch(store.packages, (value) => {
   if (!value) return
-  config.favorites = config.favorites.filter(name => !value[name])
+  config.override = Object.fromEntries(Object.entries(config.override).filter(([key]) => !value[key]))
 })
 
 interface ManagerState {
@@ -30,13 +31,10 @@ interface ManagerState {
 export const state = reactive<ManagerState>({})
 
 export function addFavorite(name: string) {
-  if (config.favorites.includes(name) || store.packages[name]) return
-  config.favorites.push(name)
+  if (config.override[name] || store.packages[name]) return
+  config.override[name] = store.market[name].version
 }
 
 export function removeFavorite(name: string) {
-  const index = config.favorites.indexOf(name)
-  if (index > -1) {
-    config.favorites.splice(index, 1)
-  }
+  delete config.override[name]
 }

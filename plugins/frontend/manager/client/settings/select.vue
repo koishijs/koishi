@@ -6,10 +6,6 @@
       </k-tab-item>
       <div class="k-tab-group-title">
         运行中的插件
-        <k-hint placement="right">
-          <b>为什么一些插件没有显示？</b>
-          <br>这里只展示直接从 app 注册的包形式的插件。换言之，在其他插件内部注册的插件或不是包的插件将不予显示。
-        </k-hint>
       </div>
       <k-tab-group
         :data="store.packages" v-model="model"
@@ -20,10 +16,10 @@
         未运行的插件
         <k-hint placement="right" class="filter" name="filter" :class="{ filtered }" @click="filtered = !filtered">
           <template v-if="filtered">
-            <b>筛选：已开启</b><br>只显示支持在线配置的插件。
+            <b>筛选：已开启</b><br>只显示可在线配置的插件。
           </template>
           <template v-else>
-            <b>筛选：已关闭</b><br>显示所有可用插件。
+            <b>筛选：已关闭</b><br>显示所有已安装的插件。
           </template>
         </k-hint>
       </div>
@@ -71,11 +67,11 @@ function isReadonly(data: any) {
 
 const favorites = computed(() => {
   const result = {}
-  config.favorites = config.favorites.filter((name) => {
-    if (!store.market[name]) return false
-    result[name] = store.market[name]
-    return true
-  })
+  // config.favorites = config.override.filter((name) => {
+  //   if (!store.market[name]) return false
+  //   result[name] = store.market[name]
+  //   return true
+  // })
   return result
 })
 
