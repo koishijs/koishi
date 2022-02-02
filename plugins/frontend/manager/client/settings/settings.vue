@@ -13,25 +13,9 @@
 
     <!-- market -->
     <template v-if="data.name">
-      <!-- versions -->
-      <p v-if="remote && !data.workspace">
-        选择版本：
-        <el-select v-model="version">
-          <el-option
-            v-for="({ version }, index) in remote.versions"
-            :key="version" :label="version + (index ? '' : ' (最新)')" :value="version"
-          ></el-option>
-        </el-select>
-        <k-tip-button v-if="local" :tip="loadTip" type="error" @click="uninstall">卸载插件</k-tip-button>
-        <k-tip-button :tip="loadTip" @click="install">
-          <template #content v-if="version === data.version && local">要安装的版本与当前版本一致。</template>
-          <template #default>{{ local ? '更新插件' : '安装插件' }}</template>
-        </k-tip-button>
-      </p>
-
       <!-- dependencies -->
       <k-dep-alert
-        v-for="({ fulfilled, required, available }, key) in delegates" :key="key"
+        v-for="({ fulfilled, required, available }, key) in services" :key="key"
         :fulfilled="fulfilled" :required="required" :name="key" type="服务">
         <ul v-if="!fulfilled">
           <li v-for="name in available">
@@ -52,10 +36,10 @@
         配置项
         <template v-if="data.id">
           <k-button solid type="error" @click="execute('unload')">停用插件</k-button>
-          <k-tip-button :tip="depTip" @click="execute('load')">重载配置</k-tip-button>
+          <k-button solid :disabled="depTip" @click="execute('load')">重载配置</k-button>
         </template>
         <template v-else>
-          <k-tip-button :tip="depTip" @click="execute('load')">启用插件</k-tip-button>
+          <k-button solid :disabled="depTip" @click="execute('load')">启用插件</k-button>
           <k-button solid @click="execute('unload')">保存配置</k-button>
         </template>
       </h1>
@@ -74,9 +58,7 @@
 import { computed, ref, watch } from 'vue'
 import { Dict } from 'koishi'
 import { store, send } from '~/client'
-import { state } from '../utils'
 import { MarketProvider } from '@koishijs/plugin-manager'
-import { ElMessage } from 'element-plus'
 import KDepAlert from './dep-alert.vue'
 import KDepLink from './dep-link.vue'
 import KTipButton from './tip-button.vue'
@@ -136,7 +118,7 @@ function getDelegateData(name: string, required: boolean): DelegateData {
   }
 }
 
-const delegates = computed(() => {
+const services = computed(() => {
   const required = getKeywords('required')
   const optional = getKeywords('optional')
   const result: Dict<DelegateData> = {}
@@ -160,45 +142,9 @@ const depTip = computed(() => {
   }
 })
 
-const loadTip = computed(() => {
-  if (state.downloading) return '请先等待未完成的任务。'
-})
-
 function execute(event: string) {
   const { shortname, config } = data.value
   send('plugin/' + event, shortname, config)
-}
-
-async function install() {
-  state.downloading = true
-  try {
-    const code = await send('install', `${data.value.name}@^${version.value}`)
-    if (code === 0) {
-      ElMessage.success('安装成功！')
-    } else {
-      ElMessage.error('安装失败！')
-    }
-  } catch (err) {
-    ElMessage.error('安装超时！')
-  } finally {
-    state.downloading = false
-  }
-}
-
-async function uninstall() {
-  state.downloading = true
-  try {
-    const code = await send('uninstall', data.value.name)
-    if (code === 0) {
-      ElMessage.success('卸载成功！')
-    } else {
-      ElMessage.error('卸载失败！')
-    }
-  } catch (err) {
-    ElMessage.error('卸载超时！')
-  } finally {
-    state.downloading = false
-  }
 }
 
 </script>

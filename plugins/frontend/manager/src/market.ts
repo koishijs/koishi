@@ -1,37 +1,11 @@
-import { Context, Dict, version as currentVersion, Schema, Quester, Logger } from 'koishi'
+import { Context, Dict, version as currentVersion, Schema, Quester } from 'koishi'
 import { Package } from './utils'
-import { resolve } from 'path'
-import { existsSync } from 'fs'
 import { satisfies } from 'semver'
 import { DataService } from '@koishijs/plugin-console'
-import spawn from 'cross-spawn'
-
-declare module '@koishijs/plugin-console' {
-  interface Events {
-    install(name: string): Promise<number>
-  }
-}
-
-type Manager = 'yarn' | 'npm' | 'pnpm'
-
-const logger = new Logger('market')
-
-function supports(command: string, args: string[] = []) {
-  return new Promise<boolean>((resolve) => {
-    const child = spawn(command, args, { stdio: 'ignore' })
-    child.on('exit', (code) => {
-      resolve(code ? false : true)
-    })
-    child.on('error', () => {
-      resolve(false)
-    })
-  })
-}
 
 class MarketProvider extends DataService<Dict<MarketProvider.Data>> {
   private http: Quester
   private timestamp = 0
-  private agentTask: Promise<Manager>
   private fullCache: Dict<MarketProvider.Data> = {}
   private tempCache: Dict<MarketProvider.Data> = {}
 
@@ -41,9 +15,6 @@ class MarketProvider extends DataService<Dict<MarketProvider.Data>> {
     this.http = ctx.http.extend({
       endpoint: config.endpoint,
     })
-
-    ctx.console.addListener('install', this.install)
-    ctx.console.addListener('uninstall', this.uninstall)
   }
 
   start() {
@@ -107,57 +78,6 @@ class MarketProvider extends DataService<Dict<MarketProvider.Data>> {
 
   async get() {
     return this.fullCache
-  }
-
-  get cwd() {
-    return this.ctx.app.baseDir
-  }
-
-  async getAgent(): Promise<Manager> {
-    const { npm_execpath } = process.env
-    const isYarn = npm_execpath.includes('yarn')
-    if (isYarn) return 'yarn'
-
-    if (existsSync(resolve(this.cwd, 'yarn.lock'))) return 'yarn'
-    if (existsSync(resolve(this.cwd, 'pnpm-lock.yaml'))) return 'pnpm'
-    if (existsSync(resolve(this.cwd, 'package-lock.json'))) return 'npm'
-
-    const hasPnpm = !isYarn && supports('pnpm', ['--version'])
-    return hasPnpm ? 'pnpm' : 'npm'
-  }
-
-  async exec(command: string, args: string[]) {
-    return new Promise<number>((resolve) => {
-      const child = spawn(command, args, { cwd: this.cwd })
-      child.on('exit', (code) => resolve(code))
-      child.on('error', () => resolve(-1))
-      child.stderr.on('data', (data) => {
-        data = data.toString().trim()
-        if (!data) return
-        for (const line of data.split('\n')) {
-          logger.warn(line)
-        }
-      })
-      child.stdout.on('data', (data) => {
-        data = data.toString().trim()
-        if (!data) return
-        for (const line of data.split('\n')) {
-          logger.info(line)
-        }
-      })
-    })
-  }
-
-  install = async (name: string) => {
-    const agent = await (this.agentTask ||= this.getAgent())
-    await this.exec(agent, [agent === 'yarn' ? 'add' : 'install', name, '--loglevel', 'error'])
-    this.ctx.console.packages.refresh()
-  }
-
-  uninstall = async (name: string) => {
-    const agent = await (this.agentTask ||= this.getAgent())
-    await this.exec(agent, ['remove', name, '--loglevel', 'error'])
-    this.ctx.console.packages.refresh()
   }
 }
 

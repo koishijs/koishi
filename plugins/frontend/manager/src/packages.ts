@@ -64,7 +64,8 @@ class PackageProvider extends DataService<Dict<PackageProvider.Data>> {
     await Promise.all(tasks)
   }
 
-  async get() {
+  async get(forced = false) {
+    if (forced) this.task = this.prepare()
     await this.task
 
     // add app config

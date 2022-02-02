@@ -6,6 +6,7 @@
         <router-link class="k-menu-item" :to="{ path, query: queries[path] }">
           <k-icon :name="meta.icon"/>
           {{ name }}
+          <span class="badge" v-if="meta.badge?.()">{{ meta.badge?.() }}</span>
         </router-link>
       </template>
     </div>
@@ -18,6 +19,7 @@
         <router-link class="k-menu-item" :to="{ path, query: queries[path] }">
           <k-icon :name="meta.icon"/>
           {{ name }}
+          <span class="badge" v-if="meta.badge?.()">{{ meta.badge?.() }}</span>
         </router-link>
       </template>
     </div>
@@ -100,6 +102,21 @@ aside.layout-aside {
     margin-right: 0.75rem;
     text-align: center;
     vertical-align: -4px;
+  }
+
+  .k-menu-item .badge {
+    position: absolute;
+    border-radius: 1rem;
+    background-color: var(--error);
+    top: 50%;
+    right: 1.5rem;
+    transform: translateY(-50%);
+    line-height: 1;
+    padding: 4px 8px;
+    font-size: 0.875rem;
+    font-weight: normal;
+    color: var(--bg0);
+    transition: 0.3s ease;
   }
 
   .top {

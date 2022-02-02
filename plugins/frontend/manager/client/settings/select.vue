@@ -28,15 +28,6 @@
         :filter="data => !data.id && data.name && (!filtered || !isReadonly(data))" #="data">
         <span :class="{ readonly: isReadonly(data) }">{{ data.shortname }}</span>
       </k-tab-group>
-      <template v-if="store.market">
-        <div class="k-tab-group-title">
-          待下载的插件
-        </div>
-        <k-tab-group :data="favorites" v-model="model" #="data">
-          <span :class="{ readonly: isReadonly(data) }">{{ data.shortname }}</span>
-          <k-icon class="remove" name="times-full" @click="removeFavorite(data.name)"/>
-        </k-tab-group>
-      </template>
     </div>
   </el-scrollbar>
 </template>
@@ -45,7 +36,6 @@
 
 import { ref, computed, onActivated, nextTick } from 'vue'
 import { store } from '~/client'
-import { config, removeFavorite } from '../utils'
 
 const props = defineProps<{
   modelValue: string
@@ -64,16 +54,6 @@ const filtered = ref(true)
 function isReadonly(data: any) {
   return !data.root && data.id
 }
-
-const favorites = computed(() => {
-  const result = {}
-  // config.favorites = config.override.filter((name) => {
-  //   if (!store.market[name]) return false
-  //   result[name] = store.market[name]
-  //   return true
-  // })
-  return result
-})
 
 onActivated(async () => {
   const container = root.value.$el

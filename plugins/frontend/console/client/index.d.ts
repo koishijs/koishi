@@ -35,6 +35,7 @@ declare module '~/client' {
     order?: number
     fields?: readonly (keyof Console.Services)[]
     position?: 'top' | 'bottom' | 'hidden'
+    badge?: () => string | number
   }
 
   export interface PageOptions extends RouteMetaExtension {

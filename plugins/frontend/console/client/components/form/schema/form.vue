@@ -1,7 +1,7 @@
 <template>
   <form class="schema-form">
     <slot name="header"></slot>
-    <k-schema :schema="schema" :disabled="disabled" v-model="config"></k-schema>
+    <k-schema v-if="schema" :schema="schema" :disabled="disabled" v-model="config"></k-schema>
     <slot name="footer"></slot>
   </form>
 </template>

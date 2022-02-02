@@ -1,6 +1,6 @@
 import { useStorage } from '@vueuse/core'
 import { Dict } from 'koishi'
-import { reactive, watch } from 'vue'
+import { reactive, watch, computed } from 'vue'
 import { store } from '~/client'
 
 export function useVersionStorage<T extends object>(key: string, version: string, fallback?: () => T) {
@@ -19,10 +19,20 @@ export const config = useVersionStorage<ManagerConfig>('managerConfig', '2.0', (
   override: {},
 }))
 
+export const overrideCount = computed(() => {
+  return Object.values(config.override).filter(value => value !== undefined).length
+})
+
 watch(store.packages, (value) => {
   if (!value) return
-  config.override = Object.fromEntries(Object.entries(config.override).filter(([key]) => !value[key]))
-})
+  for (const key in config.override) {
+    if (!config.override[key]) {
+      if (!value[key]) delete config.override[key]
+    } else if (value[key]?.version === config.override[key]) {
+      delete config.override[key]
+    }
+  }
+}, { immediate: true })
 
 interface ManagerState {
   downloading?: boolean
