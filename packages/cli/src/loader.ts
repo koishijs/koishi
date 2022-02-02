@@ -1,6 +1,6 @@
 import { resolve, extname, dirname, isAbsolute } from 'path'
 import { readdirSync, readFileSync, writeFileSync } from 'fs'
-import { App, Dict, Logger, interpolate, Modules, unwrapExports, valueMap } from 'koishi'
+import { App, Dict, Logger, interpolate, Modules, unwrapExports, valueMap, isNullable } from 'koishi'
 import * as yaml from 'js-yaml'
 
 declare module 'koishi' {

@@ -73,7 +73,7 @@ class PackageProvider extends DataService<Dict<PackageProvider.Data>> {
       name: '',
       shortname: '',
       schema: App.Config,
-      config: omit(this.ctx.app.options, ['plugins']),
+      config: omit(this.ctx.loader.config, ['plugins']),
     })
 
     return Object.fromEntries(packages.filter(x => x).map(data => [data.name, data]))
@@ -123,16 +123,12 @@ class PackageProvider extends DataService<Dict<PackageProvider.Data>> {
     Object.assign(result, Package.Meta.from(data))
 
     // check plugin state
+    const { plugins } = this.ctx.loader.config
     const state = this.ctx.app.registry.get(exports)
     result.id = state?.id
-    result.config = state?.config
+    result.root = result.shortname in plugins
     result.schema = exports?.Config || exports?.schema
-
-    // get config for disabled plugins
-    if (!result.config) {
-      const { plugins = {} } = this.ctx.app.options
-      result.config = plugins['~' + result.shortname]
-    }
+    result.config = plugins[result.shortname] || plugins['~' + result.shortname]
 
     return result
   }
@@ -143,6 +139,7 @@ namespace PackageProvider {
 
   export interface Data extends Partial<Package.Base> {
     id?: string
+    root?: boolean
     config?: any
     shortname?: string
     schema?: Schema

@@ -6,7 +6,7 @@
     <input
       autocomplete="off"
       step="0.00001"
-      :value="modelValue"
+      :value="value"
       :type="type"
       :style="inputStyle"
       :tabindex="tabindex"
@@ -47,10 +47,13 @@ const props = defineProps({
   roundRight: Boolean,
   orthoLeft: Boolean,
   orthoRight: Boolean,
-  modelValue: [ String, Number ],
+  initial: [String, Number],
+  modelValue: [String, Number],
   type: { default: 'text' },
   size: { default: 1 },
 })
+
+const value = computed(() => props.modelValue ?? props.initial)
 
 const focused = ref(false)
 const invalid = ref(false)

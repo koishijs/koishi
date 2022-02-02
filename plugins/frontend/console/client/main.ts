@@ -19,7 +19,7 @@ import View from './components/view'
 import App from './layout/index.vue'
 import Blank from './layout/blank.vue'
 
-import { ElCascader, ElEmpty, ElTooltip, ElScrollbar, ElSelect, ElSwitch, ElTree } from 'element-plus'
+import { ElCascader, ElEmpty, ElTooltip, ElScrollbar, ElSelect, ElTree } from 'element-plus'
 
 import 'element-plus/dist/index.css'
 import './index.scss'
@@ -31,7 +31,6 @@ app.use(ElEmpty)
 app.use(ElTooltip)
 app.use(ElSelect)
 app.use(ElScrollbar)
-app.use(ElSwitch)
 app.use(ElTree)
 
 // notice

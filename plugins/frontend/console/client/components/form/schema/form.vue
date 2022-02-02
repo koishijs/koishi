@@ -1,7 +1,7 @@
 <template>
   <form class="schema-form">
     <slot name="header"></slot>
-    <k-schema :schema="schema" v-model="config"></k-schema>
+    <k-schema :schema="schema" :disabled="disabled" v-model="config"></k-schema>
     <slot name="footer"></slot>
   </form>
 </template>
@@ -14,6 +14,7 @@ import Schema from 'schemastery'
 const props = defineProps({
   schema: {} as PropType<Schema>,
   modelValue: {},
+  disabled: Boolean,
 })
 
 const emit = defineEmits(['update:modelValue'])

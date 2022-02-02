@@ -13,8 +13,8 @@
       </div>
       <k-tab-group
         :data="store.packages" v-model="model"
-        :filter="data => data.id" #="{ shortname, schema }">
-        <span :class="{ readonly: !schema }">{{ shortname }}</span>
+        :filter="data => data.id" #="data">
+        <span :class="{ readonly: isReadonly(data) }">{{ data.shortname }}</span>
       </k-tab-group>
       <div class="k-tab-group-title">
         未运行的插件
@@ -29,16 +29,16 @@
       </div>
       <k-tab-group
         :data="store.packages" v-model="model"
-        :filter="data => !data.id && data.name && (!filtered || data.schema)" #="{ shortname, schema }">
-        <span :class="{ readonly: !schema }">{{ shortname }}</span>
+        :filter="data => !data.id && data.name && (!filtered || !isReadonly(data))" #="data">
+        <span :class="{ readonly: isReadonly(data) }">{{ data.shortname }}</span>
       </k-tab-group>
       <template v-if="store.market">
         <div class="k-tab-group-title">
           待下载的插件
         </div>
-        <k-tab-group :data="favorites" v-model="model" #="{ name, shortname, schema }">
-          <span :class="{ readonly: !schema }">{{ shortname }}</span>
-          <k-icon class="remove" name="times-full" @click="removeFavorite(name)"/>
+        <k-tab-group :data="favorites" v-model="model" #="data">
+          <span :class="{ readonly: isReadonly(data) }">{{ data.shortname }}</span>
+          <k-icon class="remove" name="times-full" @click="removeFavorite(data.name)"/>
         </k-tab-group>
       </template>
     </div>
@@ -65,9 +65,12 @@ const model = computed({
 const root = ref<{ $el: HTMLElement }>(null)
 const filtered = ref(true)
 
+function isReadonly(data: any) {
+  return !data.root && data.id
+}
+
 const favorites = computed(() => {
   const result = {}
-  console.log(config.favorites)
   config.favorites = config.favorites.filter((name) => {
     if (!store.market[name]) return false
     result[name] = store.market[name]

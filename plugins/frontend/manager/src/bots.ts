@@ -58,7 +58,8 @@ class BotProvider extends DataService<Dict<BotProvider.Data>> {
 
   async get() {
     return Object.fromEntries(this.ctx.bots.map((bot) => [bot.id, {
-      ...pick(bot, ['platform', 'protocol', 'selfId', 'avatar', 'username', 'status', 'config']),
+      ...pick(bot, ['platform', 'protocol', 'selfId', 'avatar', 'username', 'status']),
+      config: this.ctx.loader.config.plugins['adapter-' + bot.adapter.platform].bots[bot.adapter.bots.indexOf(bot)],
       error: bot.error?.message,
       adapter: bot.adapter.platform,
       messageSent: bot._messageSent.get(),

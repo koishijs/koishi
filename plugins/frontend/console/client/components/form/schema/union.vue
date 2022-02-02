@@ -1,5 +1,5 @@
 <template>
-  <k-schema v-if="choices.length === 1" :schema="choices[0]" :prefix="prefix" v-model="config">
+  <k-schema v-if="choices.length === 1" :schema="choices[0]" :prefix="prefix" v-model="config" :disabled="disabled">
     <slot></slot>
   </k-schema>
 
@@ -9,7 +9,7 @@
         <slot></slot>
       </div>
       <div class="right">
-        <el-select v-model="config">
+        <el-select v-model="config" :disabled="disabled">
           <el-option
             v-for="item in choices"
             :key="item.value"
@@ -25,7 +25,7 @@
     <slot></slot>
     <ul v-if="choices.every(item => item.type === 'const')">
       <li v-for="item in choices" :key="item.value">
-        <k-radio :label="item.value" v-model="selected">{{ item.meta.description || item.value }}</k-radio>
+        <k-radio :disabled="disabled" :label="item.value" v-model="selected">{{ item.meta.description || item.value }}</k-radio>
       </li>
     </ul>
   </div>
@@ -43,6 +43,7 @@ const props = defineProps({
   schema: {} as PropType<Schema>,
   modelValue: {},
   prefix: String,
+  disabled: Boolean,
 })
 
 const config = computed({

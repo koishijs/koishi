@@ -47,7 +47,7 @@
     </template>
 
     <!-- schema -->
-    <template v-if="data.schema">
+    <template v-if="data.root || !data.id">
       <h1 class="config-header" v-if="data.shortname">
         配置项
         <template v-if="data.id">
@@ -60,6 +60,11 @@
         </template>
       </h1>
       <k-form :schema="data.schema" v-model="data.config"></k-form>
+    </template>
+    <template v-else>
+      <k-comment type="warning">
+        <template #header>此插件已被加载，但并非是在配置文件中。你无法修改其配置。</template>
+      </k-comment>
     </template>
   </k-content>
 </template>

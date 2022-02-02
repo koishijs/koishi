@@ -1,6 +1,7 @@
 import Button from './button.vue'
 import Checkbox from './checkbox.vue'
-import Input from './input.vue'
+import Input from './general/input.vue'
+import Switch from './general/switch.vue'
 import TabItem from './tab-item.vue'
 import TabGroup from './tab-group.vue'
 import Radio from './radio.vue'
@@ -15,6 +16,7 @@ export default function (app: App) {
   app.component('k-input', Input)
   app.component('k-radio', Radio)
   app.component('k-schema', Schema)
+  app.component('k-switch', Switch)
   app.component('k-tab-item', TabItem)
   app.component('k-tab-group', TabGroup)
 }

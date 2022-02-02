@@ -1,7 +1,7 @@
 <template>
   <template v-if="!schema || schema.meta.hidden"/>
 
-  <schema-primitive v-else-if="isPrimitive(schema)" :schema="schema" v-model="config">
+  <schema-primitive v-else-if="isPrimitive(schema)" :schema="schema" :disabled="disabled" v-model="config">
     <slot></slot>
   </schema-primitive>
 
@@ -11,7 +11,7 @@
         <slot></slot>
       </div>
       <div class="right">
-        <k-button solid @click="config.push(null)">添加项</k-button>
+        <k-button solid @click="config.push(null)" :disabled="disabled">添加项</k-button>
       </div>
     </div>
     <ul>
@@ -28,7 +28,7 @@
         <slot></slot>
       </div>
       <div class="right">
-        <k-button solid @click="config[''] = null">添加项</k-button>
+        <k-button solid @click="config[''] = null" :disabled="disabled">添加项</k-button>
       </div>
     </div>
     <ul>
@@ -42,7 +42,7 @@
 
   <template v-else-if="schema.type === 'object'">
     <h2 v-if="!noDesc && schema.meta.description">{{ schema.meta.description }}</h2>
-    <k-schema v-for="(item, key) in schema.dict" :key="key" :schema="item" v-model="config[key]" :prefix="prefix + key + '.'">
+    <k-schema v-for="(item, key) in schema.dict" :key="key" :schema="item" :disabled="disabled" v-model="config[key]" :prefix="prefix + key + '.'">
       <h3 :class="{ required: item.meta.required }">
         <span>{{ prefix + key }}</span>
       </h3>
@@ -51,10 +51,10 @@
   </template>
 
   <template v-else-if="schema.type === 'intersect'">
-    <k-schema v-for="item in schema.list" :schema="item" v-model="config" :prefix="prefix"/>
+    <k-schema v-for="item in schema.list" :schema="item" v-model="config" :disabled="disabled" :prefix="prefix"/>
   </template>
 
-  <schema-union v-else-if="schema.type === 'union'" :schema="schema" :prefix="prefix" v-model="config">
+  <schema-union v-else-if="schema.type === 'union'" :schema="schema" :disabled="disabled" :prefix="prefix" v-model="config">
     <slot></slot>
   </schema-union>
 
@@ -74,8 +74,9 @@ import SchemaUnion from './union.vue'
 const props = defineProps({
   schema: {} as PropType<Schema>,
   modelValue: {},
+  disabled: Boolean,
+  noDesc: Boolean,
   prefix: { type: String, default: '' },
-  noDesc: { type: Boolean, required: false },
 })
 
 const emit = defineEmits(['update:modelValue'])
@@ -89,15 +90,10 @@ function getFallback() {
   }
 }
 
-const config = ref<any>()
+const config = ref()
 
 watch(() => props.modelValue, (value) => {
-  if (value !== null && value !== undefined) {
-    config.value = value
-  } else {
-    config.value = getFallback()
-    emit('update:modelValue', config.value)
-  }
+  config.value = value ?? getFallback()
 }, { immediate: true })
 
 watch(config, (value) => {
