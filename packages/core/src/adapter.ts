@@ -1,4 +1,4 @@
-import { Logger, paramCase, Dict, Awaitable } from '@koishijs/utils'
+import { Logger, paramCase, Dict, Awaitable, remove } from '@koishijs/utils'
 import { Session } from './session'
 import { App } from './app'
 import { Bot } from './bot'
@@ -51,7 +51,7 @@ export namespace Adapter {
   export type BotConfig<R> = R & { bots?: R[] }
   export type PluginConfig<S = any, R = any> = S & BotConfig<R>
 
-  function join(platform: string, protocol: string) {
+  export function join(platform: string, protocol: string) {
     return protocol ? `${platform}.${protocol}` : platform
   }
 
@@ -73,6 +73,7 @@ export namespace Adapter {
   export function define(platform: string, constructor: Bot.Constructor, ...args: CreatePluginRestParams) {
     const name = platform + '-adapter'
     platform = platform.toLowerCase()
+    Bot.library[platform] = constructor
 
     let BotConfig: Schema
     if (typeof args[0] === 'function') {
@@ -144,7 +145,8 @@ export namespace Adapter {
       return this.find(bot => bot.sid === sid)
     }
 
-    create<T extends Bot>(platform: string, options: any, constructor: new (adapter: Adapter, config: any) => T): T {
+    create<T extends Bot>(platform: string, options: any, constructor?: new (adapter: Adapter, config: any) => T): T {
+      constructor ||= Bot.library[platform] as any
       const adapter = this.resolve(platform, options)
       const bot = new constructor(adapter, options)
       adapter.bots.push(bot)
@@ -153,10 +155,12 @@ export namespace Adapter {
       return bot
     }
 
-    async remove(sid: string) {
-      const index = this.findIndex(bot => bot.sid === sid)
+    async remove(id: string) {
+      const index = this.findIndex(bot => bot.id === id)
       if (index < 0) return
       const [bot] = this.splice(index, 1)
+      remove(bot.adapter.bots, bot)
+      bot.config.disabled = true
       this.app.emit('bot-removed', bot)
       return bot.stop()
     }

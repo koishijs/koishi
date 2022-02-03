@@ -1,4 +1,4 @@
-import { Logger, Random, sleep } from '@koishijs/utils'
+import { Dict, Logger, Random, sleep } from '@koishijs/utils'
 import { Adapter } from './adapter'
 import { App } from './app'
 import { Session } from './session'
@@ -63,8 +63,10 @@ export abstract class Bot<T extends Bot.BaseConfig = Bot.BaseConfig> {
   }
 
   async start() {
+    if (this.config.disabled) return
+    if (['connect', 'reconnect', 'online'].includes(this.status)) return
+    this.status = 'connect'
     try {
-      this.status = 'connect'
       await this.app.parallel('bot-connect', this)
       await this.adapter.connect(this)
     } catch (error) {
@@ -73,6 +75,7 @@ export abstract class Bot<T extends Bot.BaseConfig = Bot.BaseConfig> {
   }
 
   async stop() {
+    if (['disconnect', 'offline'].includes(this.status)) return
     this.status = 'disconnect'
     try {
       await this.app.parallel('bot-disconnect', this)
@@ -124,6 +127,8 @@ export abstract class Bot<T extends Bot.BaseConfig = Bot.BaseConfig> {
 }
 
 export namespace Bot {
+  export const library: Dict<Bot.Constructor> = {}
+
   export interface BaseConfig {
     disabled?: boolean
     protocol?: string

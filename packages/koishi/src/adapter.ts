@@ -55,7 +55,7 @@ export namespace InjectedAdapter {
         socket.on('close', (code, reason) => {
           bot.socket = null
           logger.debug(`websocket closed with ${code}`)
-          if (!this.isListening) return bot.status = 'offline'
+          if (!this.isListening || bot.config.disabled) return bot.status = 'offline'
 
           // remove query args to protect privacy
           const message = reason.toString() || `failed to connect to ${url}`
@@ -72,7 +72,7 @@ export namespace InjectedAdapter {
           bot.status = 'reconnect'
           logger.warn(`${message}, will retry in ${Time.formatTimeShort(timeout)}...`)
           setTimeout(() => {
-            if (this.isListening) reconnect()
+            if (this.isListening && !bot.config.disabled) reconnect()
           }, timeout)
         })
 
@@ -85,6 +85,10 @@ export namespace InjectedAdapter {
       }
 
       reconnect(true)
+    }
+
+    disconnect(bot: Bot) {
+      bot.socket?.close()
     }
 
     start() {
