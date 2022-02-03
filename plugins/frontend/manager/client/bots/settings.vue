@@ -2,7 +2,7 @@
   <h1 class="config-header">
     配置项
     <template v-if="data.config.disabled">
-      <k-button solid @click="update(false)">登陆账号</k-button>
+      <k-button solid @click="update(false)">登录账号</k-button>
       <k-button solid v-if="current" type="error" @click="send('manager/bot-remove', current)">移除实例</k-button>
     </template>
     <template v-else>

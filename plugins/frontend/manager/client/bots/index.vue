@@ -22,13 +22,19 @@
 
 <script setup lang="ts">
 
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { store } from '~/client'
 import BotPreview from './preview.vue'
 import BotSettings from './settings.vue'
 
 const current = ref<string | number>(null)
 const botCount = computed(() => Object.keys(store.bots).length)
+
+watch(() => store.bots, () => {
+  if (current.value && !store.bots[current.value]) {
+    current.value = null
+  }
+})
 
 </script>
 

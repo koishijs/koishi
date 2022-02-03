@@ -4,7 +4,7 @@
       <h1>Koishi 控制台</h1>
       <template v-for="({ name, path, meta }) in getRoutes('top')" :key="name">
         <router-link class="k-menu-item" :to="{ path, query: queries[path] }">
-          <k-icon :name="meta.icon"/>
+          <k-icon :name="meta.icon || 'application'"/>
           {{ name }}
           <span class="badge" v-if="meta.badge?.()">{{ meta.badge?.() }}</span>
         </router-link>
@@ -17,7 +17,7 @@
       </div>
       <template v-for="({ name, path, meta }) in getRoutes('bottom')" :key="name">
         <router-link class="k-menu-item" :to="{ path, query: queries[path] }">
-          <k-icon :name="meta.icon"/>
+          <k-icon :name="meta.icon || 'application'"/>
           {{ name }}
           <span class="badge" v-if="meta.badge?.()">{{ meta.badge?.() }}</span>
         </router-link>
