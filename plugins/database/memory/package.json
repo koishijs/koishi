@@ -30,7 +30,7 @@
     "server"
   ],
   "peerDependencies": {
-    "koishi": "^4.1.1"
+    "koishi": "^4.1.2"
   },
   "devDependencies": {
     "@koishijs/database-tests": "^1.0.0",
