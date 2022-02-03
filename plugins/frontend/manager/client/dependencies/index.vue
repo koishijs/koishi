@@ -11,7 +11,7 @@
       </colgroup>
       <thead>
         <tr>
-          <th>插件名称</th>
+          <th>依赖名称</th>
           <th>当前版本</th>
           <th>目标版本</th>
         </tr>
@@ -20,7 +20,6 @@
         <package-view v-for="name in names" :key="name" :name="name"></package-view>
       </tbody>
     </table>
-    {{ config.override }}
   </k-card>
 </template>
 

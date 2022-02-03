@@ -44,9 +44,14 @@ class BotProvider extends DataService<Dict<BotProvider.Data>> {
     })
 
     ctx.bots.forEach(bot => BotProvider.initialize(bot, ctx))
-    ctx.on('bot-added', bot => BotProvider.initialize(bot, ctx))
+
+    ctx.on('bot-added', (bot) => {
+      BotProvider.initialize(bot, ctx)
+      this.refresh()
+    })
 
     ctx.on('bot-removed', (bot) => {
+      this.refresh()
       bot._messageSent.stop()
       bot._messageReceived.stop()
     })

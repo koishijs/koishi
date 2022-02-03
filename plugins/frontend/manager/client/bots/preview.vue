@@ -66,7 +66,7 @@ div.bot {
     background-repeat: no-repeat;
     transition: 0.1s ease;
 
-    $borderWidth: 4px;
+    $borderWidth: 2px;
 
     > div.status {
       position: absolute;

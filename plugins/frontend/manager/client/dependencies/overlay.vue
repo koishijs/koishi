@@ -1,6 +1,6 @@
 <template>
   <transition name="fade">
-    <div class="loading-overlay" v-if="!state.downloading">
+    <div class="loading-overlay" v-if="state.downloading">
       <div class="spinner">
         <svg class="circular" viewBox="25 25 50 50">
           <circle class="path" cx="50" cy="50" r="20" fill="none"></circle>

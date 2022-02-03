@@ -1,4 +1,5 @@
 import { App, Component, defineComponent, h } from 'vue'
+import Application from './svg/application.vue'
 import ArrowDown from './svg/arrow-down.vue'
 import ArrowLeft from './svg/arrow-left.vue'
 import ArrowRight from './svg/arrow-right.vue'
@@ -51,6 +52,7 @@ import './style.scss'
 
 const icons: Record<string, Component> = {}
 
+register('application', Application)
 register('arrow-down', ArrowDown)
 register('arrow-left', ArrowLeft)
 register('arrow-right', ArrowRight)

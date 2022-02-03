@@ -2,11 +2,12 @@
   <h1 class="config-header">
     配置项
     <template v-if="data.config.disabled">
-      <k-button solid @click="execute('login')">登陆账号</k-button>
+      <k-button solid @click="update(false)">登陆账号</k-button>
+      <k-button solid v-if="current" type="error" @click="send('manager/bot-remove', current)">移除实例</k-button>
     </template>
     <template v-else>
-      <k-button solid type="error" @click="execute('logout')">登出账号</k-button>
-      <k-button solid @click="execute('login')">重载配置</k-button>
+      <k-button solid @click="update(true)">退出账号</k-button>
+      <k-button solid type="error" @click="send('manager/bot-remove', current)">移除实例</k-button>
     </template>
   </h1>
   <k-form :schema="store.protocols[key]" v-model="data.config">
@@ -79,8 +80,11 @@ const key = computed(() => {
   return store.protocols[key] ? key : adapter
 })
 
-function execute(action: string) {
-  send('bot/' + action, props.current, data.value.adapter, data.value.config)
+function update(disabled: boolean) {
+  send('manager/bot-update', props.current, data.value.adapter, {
+    ...data.value.config,
+    disabled,
+  })
 }
 
 </script>

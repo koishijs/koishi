@@ -36,10 +36,10 @@
         配置项
         <template v-if="data.id">
           <k-button solid type="error" @click="execute('unload')">停用插件</k-button>
-          <k-button solid :disabled="depTip" @click="execute('load')">重载配置</k-button>
+          <k-button solid :disabled="depTip" @click="execute('reload')">重载配置</k-button>
         </template>
         <template v-else>
-          <k-button solid :disabled="depTip" @click="execute('load')">启用插件</k-button>
+          <k-button solid :disabled="depTip" @click="execute('reload')">启用插件</k-button>
           <k-button solid @click="execute('unload')">保存配置</k-button>
         </template>
       </h1>
@@ -144,7 +144,7 @@ const depTip = computed(() => {
 
 function execute(event: string) {
   const { shortname, config } = data.value
-  send('plugin/' + event, shortname, config)
+  send('manager/plugin-' + event, shortname, config)
 }
 
 </script>
