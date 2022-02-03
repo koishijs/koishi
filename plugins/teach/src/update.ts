@@ -100,7 +100,6 @@ function isIntegerOrInterval(source: string) {
 }
 
 function review(dialogues: Dialogue[], argv: Dialogue.Argv) {
-  const { session } = argv
   const output = dialogues.map((d) => {
     const details = getDetails(argv, d)
     const { questionType = '问题', answerType = '回答' } = details
