@@ -81,10 +81,14 @@ async function compile(name: string) {
     delete options.outdir
 
     const modules: string[] = []
-    for (const name of await readdir(base + '/src')) {
-      if (existsSync(base + '/src/' + name + '/package.json')) {
-        modules.push(name)
+    try {
+      for (const name of await readdir(base + '/src')) {
+        if (existsSync(base + '/src/' + name + '/package.json')) {
+          modules.push(name)
+        }
       }
+    } catch {
+      return
     }
 
     const filter = new RegExp(`^.+\\/(${modules.map(escapeRegExp).join('|')})$`)

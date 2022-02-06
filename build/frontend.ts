@@ -28,10 +28,12 @@ export async function build(root: string, config: vite.UserConfig) {
           root + '/vue.js',
           root + '/vue-router.js',
           root + '/client.js',
+          root + '/components.js',
         ],
         output: rollupOptions?.input ? {
           format: 'module',
           entryFileNames: '[name].js',
+          assetFileNames: '[name][extname]',
           ...rollupOptions.output,
         } : undefined,
       },
@@ -41,6 +43,7 @@ export async function build(root: string, config: vite.UserConfig) {
       alias: {
         'vue': root + '/vue.js',
         'vue-router': root + '/vue-router.js',
+        '~/components': root + '/components.js',
         './client': root + '/client.js',
         '../client': root + '/client.js',
       },
@@ -66,6 +69,7 @@ async function buildConsole(folder: string) {
         input: {
           'client': root + '/client.ts',
           'vue-router': findModulePath('vue-router') + '/dist/vue-router.esm-browser.js',
+          'components': cwd + '/plugins/frontend/components/client/index.ts',
         },
         treeshake: false,
         preserveEntrySignatures: 'strict',
@@ -80,6 +84,8 @@ async function buildConsole(folder: string) {
   for (const folder of folders) {
     if (folder === 'plugins/frontend/console') {
       await buildConsole(folder)
+    } else if (folder === 'plugins/frontend/components') {
+      continue
     } else {
       await buildExtension(cwd + '/' + folder, {
         plugins: [{

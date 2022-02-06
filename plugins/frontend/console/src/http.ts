@@ -46,7 +46,7 @@ class HttpService extends DataService<string[]> {
     if (devMode) {
       return Object.values(this.data).map(filename => '/vite/@fs/' + filename)
     }
-    const filenames: string[] = []
+    const filenames: string[] = ['/components.css']
     for (const name in this.data) {
       const baseDir = uiPath + '/' + name
       const localDir = this.data[name]

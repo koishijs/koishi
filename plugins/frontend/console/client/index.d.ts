@@ -7,6 +7,13 @@ declare module '*.vue' {
   export default component
 }
 
+declare module '~/components' {
+  import client from '@koishijs/components'
+
+  export default client
+  export * from '@koishijs/components'
+}
+
 declare module '~/client' {
   import { App, Component } from 'vue'
   import { Console, Events, DataService, ClientConfig } from '@koishijs/plugin-console'
@@ -33,7 +40,7 @@ declare module '~/client' {
     }
   }
 
-  interface PageExtension {
+  export interface PageExtension {
     name: string
     fields?: (keyof Console.Services)[]
     badge?: () => number
