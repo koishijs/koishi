@@ -27,20 +27,26 @@ declare module '~/client' {
   // layout api
 
   declare module 'vue-router' {
-    interface RouteMeta extends RouteMetaExtension {}
+    interface RouteMeta extends RouteMetaExtension {
+      fields?: (keyof Console.Services)[]
+      badge?: (() => number)[]
+    }
+  }
+
+  interface PageExtension {
+    name: string
+    fields?: (keyof Console.Services)[]
+    badge?: () => number
   }
 
   interface RouteMetaExtension {
     icon?: string
     order?: number
-    fields?: readonly (keyof Console.Services)[]
     position?: 'top' | 'bottom' | 'hidden'
-    badge?: () => string | number
   }
 
-  export interface PageOptions extends RouteMetaExtension {
+  export interface PageOptions extends RouteMetaExtension, PageExtension {
     path: string
-    name: string
     component: Component
   }
 
@@ -59,6 +65,7 @@ declare module '~/client' {
     disposables: Disposable[] = []
 
     addPage(options: PageOptions): void
+    extendsPage(options: PageExtension): void
     addView(options: ViewOptions): void
     install(extension: Extension): void
   }
