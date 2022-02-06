@@ -46,7 +46,7 @@ class HttpService extends DataService<string[]> {
     if (devMode) {
       return Object.values(this.data).map(filename => '/vite/@fs/' + filename)
     }
-    const filenames: string[] = ['/components.css']
+    const filenames: string[] = []
     for (const name in this.data) {
       const baseDir = uiPath + '/' + name
       const localDir = this.data[name]
@@ -113,6 +113,7 @@ class HttpService extends DataService<string[]> {
       resolve: {
         alias: {
           '~/client': root + '/client.ts',
+          '~/components': '@koishijs/components',
         },
       },
       optimizeDeps: {

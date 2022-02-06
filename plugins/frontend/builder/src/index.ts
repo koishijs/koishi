@@ -11,7 +11,6 @@ export async function buildExtension(root: string, config: UserConfig = {}) {
     root,
     build: {
       outDir: 'dist',
-      minify: 'esbuild',
       assetsDir: '',
       emptyOutDir: true,
       lib: {
