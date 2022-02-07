@@ -170,18 +170,16 @@ const status = computed({
   get: () => props.mStatus,
   set: v => emits('update:mStatus', v),
 })
-status.value.pageSize = status.value.pageSize || props.pageSizes[0]
+watchEffect(() => {
+  status.value.pageSize = status.value.pageSize || props.pageSizes[0]
+})
 watch(() => status.value.pageSize, (v) => {
-  console.log(status.value.newRow)
   status.value.offset = Math.floor(status.value.offset / v) * v
 }, {})
 watch(() => props.tableModel.fields, (v) => {
-  console.log(status.value.newRow)
   for (const fName in props.tableModel.fields)
-    if (!(fName in status.value.newRow)) {
-      console.log(fName)
+    if (!(fName in status.value.newRow))
       status.value.newRow[fName] = ''
-    }
 }, { immediate: true })
 
 // used as async computed
