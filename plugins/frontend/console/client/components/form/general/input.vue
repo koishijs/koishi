@@ -5,7 +5,7 @@
     </span>
     <input
       autocomplete="off"
-      step="0.00001"
+      :step="step"
       :value="value"
       :type="type"
       :style="inputStyle"
@@ -49,6 +49,7 @@ const props = defineProps({
   orthoRight: Boolean,
   initial: [String, Number],
   modelValue: [String, Number],
+  step: { default: 0.00001 },
   type: { default: 'text' },
   size: { default: 1 },
 })
@@ -88,7 +89,6 @@ function onBlur(event) {
 </script>
 
 <style lang="scss" scoped>
-
 .k-input {
   height: 2em;
   position: relative;
@@ -96,7 +96,8 @@ function onBlur(event) {
   position: relative;
   display: inline-block;
 
-  > .prefix, > .suffix {
+  > .prefix,
+  > .suffix {
     color: var(--fg3);
     top: 50%;
     position: absolute;
@@ -134,6 +135,9 @@ function onBlur(event) {
       border-color: var(--primary);
       background-color: var(--bg1);
     }
+    &.invalid:not(:disabled) {
+      border-color: var(--error);
+    }
 
     &::-webkit-input-placeholder {
       color: var(--fg2);
@@ -155,5 +159,4 @@ function onBlur(event) {
     border: none;
   }
 }
-
 </style>

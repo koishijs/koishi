@@ -19,7 +19,20 @@ import View from './components/view'
 import App from './layout/index.vue'
 import Blank from './layout/blank.vue'
 
-import { ElCascader, ElEmpty, ElTooltip, ElScrollbar, ElSelect, ElTree } from 'element-plus'
+import {
+  ElCascader,
+  ElEmpty,
+  ElTooltip,
+  ElScrollbar,
+  ElSelect,
+  ElTree,
+  ElTable,
+  ElTableColumn,
+  ElPagination,
+  ElLoading,
+  ElButton,
+  ElPopconfirm,
+} from 'element-plus'
 
 import 'element-plus/dist/index.css'
 import './index.scss'
@@ -32,6 +45,12 @@ app.use(ElTooltip)
 app.use(ElSelect)
 app.use(ElScrollbar)
 app.use(ElTree)
+app.use(ElTable)
+app.use(ElTableColumn)
+app.use(ElPagination)
+app.use(ElButton)
+app.use(ElLoading)
+app.use(ElPopconfirm)
 
 // notice
 app.component('k-badge', Badge)
