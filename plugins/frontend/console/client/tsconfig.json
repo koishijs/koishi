@@ -8,6 +8,7 @@
     "emitDeclarationOnly": false,
     "types": [
       "vite/client",
+      "element-plus/global",
     ],
   },
   "include": [

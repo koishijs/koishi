@@ -277,14 +277,8 @@ export namespace App {
       Schema.array(Schema.string()),
       Schema.transform(Schema.string(), (nickname) => [nickname]),
     ] as const).description('机器人的昵称，可以是字符串或字符串数组。将用于指令前缀的匹配。'),
-    autoAssign: Schema.union([
-      Schema.boolean(),
-      Schema.function(),
-    ] as const).default(true).description('当获取不到频道数据时，是否使用接受者作为代理者。'),
-    autoAuthorize: Schema.union([
-      Schema.natural(),
-      Schema.function(),
-    ] as const).default(1).description('当获取不到用户数据时默认使用的权限等级。'),
+    autoAssign: Schema.union([Boolean, Function]).default(true).description('当获取不到频道数据时，是否使用接受者作为代理者。'),
+    autoAuthorize: Schema.union([Schema.natural(), Function]).default(1).description('当获取不到用户数据时默认使用的权限等级。'),
     minSimilarity: Schema.percent().default(0.4).description('用于模糊匹配的相似系数，应该是一个 0 到 1 之间的数值。数值越高，模糊匹配越严格。设置为 1 可以完全禁用模糊匹配。'),
   }).description('基础设置'))
 

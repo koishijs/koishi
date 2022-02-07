@@ -47,7 +47,7 @@ const props = defineProps({
 })
 
 const config = computed({
-  get: () => props.modelValue,
+  get: () => props.modelValue ?? props.schema.meta.default,
   set: emit.bind(null, 'update:modelValue'),
 })
 

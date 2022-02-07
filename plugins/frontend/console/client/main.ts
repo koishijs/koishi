@@ -8,19 +8,11 @@ import App from './layout/index.vue'
 import Blank from './layout/blank.vue'
 import client from '~/components'
 
-import { ElCascader, ElEmpty, ElTooltip, ElScrollbar, ElSelect, ElTree } from 'element-plus'
-
 import 'element-plus/dist/index.css'
 import './index.scss'
 
 const app = createApp(App)
 
-app.use(ElCascader)
-app.use(ElEmpty)
-app.use(ElTooltip)
-app.use(ElSelect)
-app.use(ElScrollbar)
-app.use(ElTree)
 app.use(client)
 
 app.component('k-collapse', Collapse)
