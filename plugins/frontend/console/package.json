@@ -33,10 +33,12 @@
     "koishi": "^4.1.2"
   },
   "devDependencies": {
+    "@types/marked": "^4.0.1",
     "@types/uuid": "^8.3.4",
     "@vitejs/plugin-vue": "^2.0.1",
     "@vueuse/core": "^7.5.3",
     "element-plus": "^1.3.0-beta.5",
+    "marked": "^4.0.10",
     "sass": "^1.48.0",
     "vite": "~2.5.10",
     "vue": "^3.2.21",

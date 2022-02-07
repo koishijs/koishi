@@ -23,8 +23,6 @@
     "vue": "^3.2.21"
   },
   "devDependencies": {
-    "@types/marked": "^4.0.1",
-    "marked": "^4.0.10",
-    "schemastery": "^2.3.0"
+    "schemastery": "^2.4.0"
   }
 }

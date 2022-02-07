@@ -1,6 +1,6 @@
 /* eslint-disable no-undef */
 
-import { createApp } from 'vue'
+import { createApp, defineAsyncComponent } from 'vue'
 import { connect, router, config } from './client'
 import Collapse from './components/collapse.vue'
 import View from './components/view'
@@ -25,6 +25,7 @@ app.use(client)
 
 app.component('k-collapse', Collapse)
 app.component('k-view', View)
+app.component('k-markdown', defineAsyncComponent(() => import('./components/markdown.vue')))
 
 app.provide('ecTheme', 'dark-blue')
 

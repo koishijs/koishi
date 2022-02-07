@@ -20,6 +20,7 @@ export async function build(root: string, config: vite.UserConfig) {
     build: {
       outDir: '../dist',
       emptyOutDir: true,
+      cssCodeSplit: false,
       ...config.build,
       rollupOptions: {
         ...rollupOptions,
