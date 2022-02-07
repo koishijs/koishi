@@ -1,5 +1,5 @@
 import { buildExtension } from '@koishijs/builder/src'
-import { copyFile } from 'fs/promises'
+import { createReadStream, createWriteStream } from 'fs'
 import { cwd, getPackages } from './utils'
 import vue from '@vitejs/plugin-vue'
 import vite from 'vite'
@@ -14,12 +14,11 @@ function findModulePath(id: string) {
 }
 
 export async function build(root: string, config: vite.UserConfig) {
-  const { rollupOptions } = config.build || {}
+  const { rollupOptions = {} } = config.build || {}
   await vite.build({
     root,
     build: {
       outDir: '../dist',
-      minify: 'esbuild',
       emptyOutDir: true,
       ...config.build,
       rollupOptions: {
@@ -28,12 +27,15 @@ export async function build(root: string, config: vite.UserConfig) {
           root + '/vue.js',
           root + '/vue-router.js',
           root + '/client.js',
+          root + '/components.js',
         ],
-        output: rollupOptions?.input ? {
+        output: {
           format: 'module',
           entryFileNames: '[name].js',
+          chunkFileNames: '[name].js',
+          assetFileNames: '[name].[ext]',
           ...rollupOptions.output,
-        } : undefined,
+        },
       },
     },
     plugins: [vue()],
@@ -41,10 +43,22 @@ export async function build(root: string, config: vite.UserConfig) {
       alias: {
         'vue': root + '/vue.js',
         'vue-router': root + '/vue-router.js',
+        '~/components': root + '/components.js',
         './client': root + '/client.js',
         '../client': root + '/client.js',
       },
     },
+  })
+}
+
+function pipe(src: string, dest: string) {
+  return new Promise<void>((resolve, reject) => {
+    const readStream = createReadStream(src)
+    const writeStream = createWriteStream(dest, { flags: 'a' })
+    readStream.on('error', reject)
+    writeStream.on('error', reject)
+    writeStream.on('close', resolve)
+    readStream.pipe(writeStream)
   })
 }
 
@@ -55,23 +69,24 @@ async function buildConsole(folder: string) {
   // build for console main
   await build(root, { base: './' })
 
-  await copyFile(findModulePath('vue') + '/dist/vue.runtime.esm-browser.prod.js', dist + '/vue.js')
-
-  // build for console client entry
-  await build(cwd, {
-    build: {
-      outDir: dist,
-      emptyOutDir: false,
-      rollupOptions: {
-        input: {
-          'client': root + '/client.ts',
-          'vue-router': findModulePath('vue-router') + '/dist/vue-router.esm-browser.js',
+  await Promise.all([
+    pipe(findModulePath('vue') + '/dist/vue.runtime.esm-browser.prod.js', dist + '/vue.js'),
+    pipe(cwd + '/plugins/frontend/components/dist/index.js', dist + '/components.js'),
+    pipe(cwd + '/plugins/frontend/components/dist/style.css', dist + '/index.css'),
+    build(cwd, {
+      build: {
+        outDir: dist,
+        emptyOutDir: false,
+        rollupOptions: {
+          input: {
+            'client': root + '/client.ts',
+            'vue-router': findModulePath('vue-router') + '/dist/vue-router.esm-browser.js',
+          },
+          preserveEntrySignatures: 'strict',
         },
-        treeshake: false,
-        preserveEntrySignatures: 'strict',
       },
-    },
-  })
+    }),
+  ])
 }
 
 ;(async () => {

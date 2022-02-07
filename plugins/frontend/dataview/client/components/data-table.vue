@@ -119,7 +119,7 @@
 import { } from '@koishijs/plugin-console';
 import { ElMessage, ElPagination, ElPopconfirm, ElTable, ElTableColumn } from 'element-plus';
 import { Dict, Model, Query } from 'koishi';
-import { computed, ComputedRef, reactive, ref, Ref, watchEffect, watch } from 'vue';
+import { computed, ComputedRef, reactive, ref, watch, watchEffect } from 'vue';
 import { formatSize, handleError, sendFallible } from '../utils';
 
 export type TableStatus = {

@@ -1,7 +1,8 @@
 import { App, ref, reactive, h, markRaw, defineComponent, resolveComponent, watch, Ref } from 'vue'
 import { createWebHistory, createRouter, START_LOCATION, RouteRecordNormalized } from 'vue-router'
+import { Disposable, Extension, PageExtension, PageOptions, Store, ViewOptions } from '~/client'
 import { ClientConfig, Console } from '@koishijs/plugin-console'
-import { Disposable, Extension, PageOptions, Store, ViewOptions } from '~/client'
+import { Dict } from '@koishijs/utils'
 
 // data api
 
@@ -84,8 +85,20 @@ export const extensions = reactive<Record<string, Context>>({})
 
 export const routes: Ref<RouteRecordNormalized[]> = ref([])
 
+export const queries = reactive({})
+
+router.afterEach(() => {
+  const { path, query } = router.currentRoute.value
+  queries[path] = query
+})
+
+interface DisposableExtension extends PageExtension {
+  ctx: Context
+}
+
 export class Context {
   static app: App
+  static pending: Dict<DisposableExtension[]> = {}
 
   public disposables: Disposable[] = []
 
@@ -106,7 +119,7 @@ export class Context {
   }
 
   addPage(options: PageOptions) {
-    const { path, name, component, ...rest } = options
+    const { path, name, component, badge, ...rest } = options
     const dispose = router.addRoute({
       path,
       name,
@@ -115,6 +128,7 @@ export class Context {
         order: 0,
         position: 'top',
         fields: [],
+        badge: badge ? [badge] : [],
         ...rest,
       },
     })
@@ -123,6 +137,31 @@ export class Context {
       dispose()
       routes.value = router.getRoutes()
     })
+    const route = routes.value.find(r => r.name === name)
+    for (const options of Context.pending[name] || []) {
+      this.mergeMeta(route, options)
+    }
+  }
+
+  private mergeMeta(route: RouteRecordNormalized, options: DisposableExtension) {
+    const { ctx, fields, badge } = options
+    if (fields) route.meta.fields.push(...fields)
+    if (badge) route.meta.badge.push(badge)
+    ctx.disposables.push(() => {
+      const index = route.meta.badge.indexOf(badge)
+      if (index >= 0) route.meta.badge.splice(index, 1)
+    })
+  }
+
+  extendsPage(options: DisposableExtension) {
+    const { name } = options
+    options.ctx = this
+    const route = router.getRoutes().find(r => r.name === name)
+    if (route) {
+      this.mergeMeta(route, options)
+    } else {
+      (Context.pending[name] ||= []).push(options)
+    }
   }
 
   install(extension: Extension) {

@@ -2,22 +2,11 @@
 
 import { createApp } from 'vue'
 import { connect, router, config } from './client'
-
-import icons from '@koishijs/icons'
-import form from './components/form'
-
-import Badge from './components/notice/badge.vue'
-import Comment from './components/notice/comment.vue'
-import Hint from './components/notice/hint.vue'
-import Content from './components/layout/content.vue'
-import CardAside from './components/layout/card-aside.vue'
-import Card from './components/layout/card.vue'
 import Collapse from './components/collapse.vue'
-import Markdown from './components/markdown.vue'
-import Numeric from './components/numeric.vue'
 import View from './components/view'
 import App from './layout/index.vue'
 import Blank from './layout/blank.vue'
+import client from '~/components'
 
 import {
   ElCascader,
@@ -51,21 +40,9 @@ app.use(ElPagination)
 app.use(ElButton)
 app.use(ElLoading)
 app.use(ElPopconfirm)
+app.use(client)
 
-// notice
-app.component('k-badge', Badge)
-app.component('k-comment', Comment)
-app.component('k-hint', Hint)
-
-app.use(icons)
-app.use(form)
-
-app.component('k-content', Content)
-app.component('k-card-aside', CardAside)
-app.component('k-card', Card)
 app.component('k-collapse', Collapse)
-app.component('k-markdown', Markdown)
-app.component('k-numeric', Numeric)
 app.component('k-view', View)
 
 app.provide('ecTheme', 'dark-blue')

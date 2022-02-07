@@ -113,6 +113,7 @@ class HttpService extends DataService<string[]> {
       resolve: {
         alias: {
           '~/client': root + '/client.ts',
+          '~/components': '@koishijs/components',
         },
       },
       optimizeDeps: {

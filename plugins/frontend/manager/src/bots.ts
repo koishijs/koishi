@@ -32,6 +32,8 @@ class TickCounter {
 }
 
 class BotProvider extends DataService<Dict<BotProvider.Data>> {
+  callbacks: BotProvider.Extension[] = []
+
   constructor(ctx: Context) {
     super(ctx, 'bots')
 
@@ -59,17 +61,25 @@ class BotProvider extends DataService<Dict<BotProvider.Data>> {
     ctx.on('bot-status-updated', () => {
       this.refresh()
     })
-  }
 
-  async get() {
-    return Object.fromEntries(this.ctx.bots.map((bot) => [bot.id, {
+    this.extend((bot) => ({
       ...pick(bot, ['platform', 'protocol', 'selfId', 'avatar', 'username', 'status']),
       config: this.ctx.loader.config.plugins['adapter-' + bot.adapter.platform].bots[bot.adapter.bots.indexOf(bot)],
       error: bot.error?.message,
       adapter: bot.adapter.platform,
       messageSent: bot._messageSent.get(),
       messageReceived: bot._messageReceived.get(),
-    }] as const))
+    }))
+  }
+
+  extend(callback: BotProvider.Extension) {
+    this.callbacks.push(callback)
+  }
+
+  async get() {
+    return Object.fromEntries(this.ctx.bots.map((bot) => {
+      return [bot.id, Object.assign({}, ...this.callbacks.map(cb => cb(bot)))] as [string, BotProvider.Data]
+    }))
   }
 }
 
@@ -78,6 +88,8 @@ namespace BotProvider {
     bot._messageSent = new TickCounter(ctx)
     bot._messageReceived = new TickCounter(ctx)
   }
+
+  export type Extension = (bot: Bot) => Partial<Data>
 
   export interface Data extends Pick<Bot, 'platform' | 'protocol' | 'selfId' | 'avatar' | 'username' | 'status' | 'config'> {
     error?: string

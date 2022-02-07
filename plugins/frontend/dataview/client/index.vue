@@ -32,9 +32,9 @@
 
 <script lang="ts" setup>
 
-import type { } from '@koishijs/plugin-dataview/src';
+import type { } from '@koishijs/plugin-dataview';
 import { Dict } from 'koishi';
-import { computed, ref, Ref, reactive } from 'vue';
+import { computed, ref, Ref } from 'vue';
 import { store } from '~/client';
 import KDataTable, { TableStatus } from './components/data-table.vue';
 import { formatSize } from './utils';

@@ -2,45 +2,23 @@
   <aside class="layout-aside">
     <div class="top">
       <h1>Koishi 控制台</h1>
-      <template v-for="({ name, path, meta }) in getRoutes('top')" :key="name">
-        <router-link class="k-menu-item" :to="{ path, query: queries[path] }">
-          <k-icon :name="meta.icon || 'application'"/>
-          {{ name }}
-          <span class="badge" v-if="meta.badge?.()">{{ meta.badge?.() }}</span>
-        </router-link>
-      </template>
+      <sidebar-item v-for="route in getRoutes('top')" :key="route.name" :route="route"></sidebar-item>
     </div>
     <div class="bottom">
       <div class="k-menu-item" @click="toggle">
         <k-icon :name="isDark ? 'moon' : 'sun'"/>
         {{ isDark ? '夜间模式' : '明亮模式' }}
       </div>
-      <template v-for="({ name, path, meta }) in getRoutes('bottom')" :key="name">
-        <router-link class="k-menu-item" :to="{ path, query: queries[path] }">
-          <k-icon :name="meta.icon || 'application'"/>
-          {{ name }}
-          <span class="badge" v-if="meta.badge?.()">{{ meta.badge?.() }}</span>
-        </router-link>
-      </template>
+      <sidebar-item v-for="route in getRoutes('bottom')" :key="route.name" :route="route"></sidebar-item>
     </div>
   </aside>
 </template>
 
 <script lang="ts" setup>
 
-import { useRouter } from 'vue-router'
 import { useDark } from '@vueuse/core'
-import { reactive } from 'vue'
 import { routes } from '../client'
-
-const router = useRouter()
-
-const queries = reactive({})
-
-router.afterEach(() => {
-  const { path, query } = router.currentRoute.value
-  queries[path] = query
-})
+import SidebarItem from './sidebar-item.vue'
 
 function getRoutes(position: 'top' | 'bottom') {
   return routes.value.filter(r => r.meta.position === position).sort((a, b) => b.meta.order - a.meta.order)
@@ -114,7 +92,7 @@ aside.layout-aside {
     line-height: 1;
     padding: 4px 8px;
     font-size: 0.875rem;
-    font-weight: normal;
+    font-weight: bolder;
     color: var(--bg0);
     transition: 0.3s ease;
   }

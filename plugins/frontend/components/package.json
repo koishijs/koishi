@@ -1,11 +1,13 @@
 {
-  "name": "@koishijs/icons",
-  "description": "Icon components for Koishi",
+  "name": "@koishijs/components",
+  "description": "Components for Koishi Console",
   "version": "1.0.0",
-  "private": true,
-  "main": "src/index.ts",
+  "module": "client/index.ts",
+  "typings": "index.d.ts",
   "files": [
-    "src"
+    "client",
+    "index.d.ts",
+    "global.d.ts"
   ],
   "author": "Shigma <shigma10826@gmail.com>",
   "license": "MIT",
@@ -19,5 +21,10 @@
   "homepage": "https://koishi.js.org",
   "peerDependencies": {
     "vue": "^3.2.21"
+  },
+  "devDependencies": {
+    "@types/marked": "^4.0.1",
+    "marked": "^4.0.10",
+    "schemastery": "^2.3.0"
   }
 }
