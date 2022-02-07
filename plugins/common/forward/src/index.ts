@@ -31,7 +31,7 @@ export interface Config {
 export const schema = Schema.union([
   Schema.object({
     rules: Schema.array(Rule),
-    interval: Schema.number().default(Time.hour),
+    interval: Schema.natural().role('ms').default(Time.hour),
   }),
   Schema.transform(Schema.array(Rule), (rules) => ({ rules })),
 ])

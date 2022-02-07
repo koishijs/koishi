@@ -8,7 +8,7 @@ import TabItem from './tab-item.vue'
 
 export default function (app: App) {
   app.component('k-card-aside', CardAside)
-  app.component('k-card-numeric', CardNumeric)
+  app.component('k-numeric', CardNumeric)
   app.component('k-card', Card)
   app.component('k-content', Content)
   app.component('k-tab-group', TabGroup)

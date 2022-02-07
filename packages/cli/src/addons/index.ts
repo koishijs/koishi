@@ -23,7 +23,7 @@ declare module 'koishi' {
 Object.assign(App.Config.Advanced.dict, {
   autoRestart: Schema.boolean().description('应用在运行时崩溃自动重启。').default(true).hidden(),
   timezoneOffset: Schema.number().description('时区偏移量 (分钟)。').default(new Date().getTimezoneOffset()),
-  stackTraceLimit: Schema.number().description('报错的调用堆栈深度。').default(10),
+  stackTraceLimit: Schema.natural().description('报错的调用堆栈深度。').default(10),
   plugins: Schema.object({}).hidden(),
 })
 

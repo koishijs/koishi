@@ -22,9 +22,9 @@ type LaunchOptions = Parameters<typeof puppeteer.launch>[0]
 const LaunchOptions = Schema.object({
   executablePath: Schema.string().description('Chromium 可执行文件的路径。缺省时将自动从系统中寻找。'),
   viewPort: Schema.object({
-    width: Schema.number().description('默认的视图宽度。').default(800),
-    height: Schema.number().description('默认的视图高度。').default(600),
-    deviceScaleFactor: Schema.number().description('默认的设备缩放比率。').default(2),
+    width: Schema.natural().description('默认的视图宽度。').default(800),
+    height: Schema.natural().description('默认的视图高度。').default(600),
+    deviceScaleFactor: Schema.number().min(0).description('默认的设备缩放比率。').default(2),
   }),
 }).description('浏览器设置')
 

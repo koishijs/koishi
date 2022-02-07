@@ -5,7 +5,7 @@ export interface Config {
 }
 
 export const Config = Schema.object({
-  timeout: Schema.number().default(Time.hour).description('消息保留的时间。'),
+  timeout: Schema.natural().role('ms').default(Time.hour).description('消息保留的时间。'),
 })
 
 export const name = 'recall'

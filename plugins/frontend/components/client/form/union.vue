@@ -52,7 +52,7 @@ const config = computed({
 })
 
 const choices = computed(() => {
-  return props.schema.list.filter(item => item.type !== 'transform')
+  return props.schema.list.filter(item => !['function', 'transform'].includes(item.type))
 })
 
 const isSelect = computed(() => {
