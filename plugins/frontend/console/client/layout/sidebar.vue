@@ -70,7 +70,7 @@ aside.layout-aside {
     transform: translateY(-50%);
     display: block;
     border-radius: 0 $marker-width $marker-width 0;
-    background-color: var(--primary);
+    background-color: var(--active);
     transition: background-color 0.3s ease;
   }
 

@@ -28,7 +28,7 @@
 import { computed } from 'vue'
 import { store, send } from '~/client'
 import { config, state, overrideCount } from '../utils'
-import { ElMessage } from 'element-plus'
+import { message } from '~/components'
 import PackageView from './package.vue'
 
 const names = computed(() => {
@@ -44,12 +44,12 @@ async function install() {
   try {
     const code = await send('install', config.override)
     if (code === 0) {
-      ElMessage.success('安装成功！')
+      message.success('安装成功！')
     } else {
-      ElMessage.error('安装失败！')
+      message.error('安装失败！')
     }
   } catch (err) {
-    ElMessage.error('安装超时！')
+    message.error('安装超时！')
   } finally {
     state.downloading = false
   }

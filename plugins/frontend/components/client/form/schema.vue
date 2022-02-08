@@ -111,7 +111,7 @@ function isPrimitive(schema: Schema) {
 .schema-item {
   padding: 0.5rem 1rem;
   border-bottom: 1px solid var(--border);
-  transition: border-color 0.3s ease, background-color 0.3s ease;
+  transition: 0.3s ease;
 
   &:first-child, :not(.schema-item) + & {
     border-top: 1px solid var(--border);
@@ -126,7 +126,7 @@ function isPrimitive(schema: Schema) {
   }
 
   &:hover {
-    background-color: var(--bg1);
+    background-color: var(--hover-bg);
   }
 
   .schema-header {
@@ -149,6 +149,7 @@ function isPrimitive(schema: Schema) {
     position: absolute;
     left: -1.25rem;
     color: var(--error);
+    transition: 0.3s ease;
   }
 
   p {
@@ -195,7 +196,7 @@ function isPrimitive(schema: Schema) {
     .remove {
       color: var(--fg3);
       opacity: 0.4;
-      transition: opacity 0.3s ease;
+      transition: 0.3s ease;
       height: 0.875rem;
       margin-right: 0.25rem;
       cursor: pointer;

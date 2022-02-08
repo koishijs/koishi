@@ -98,7 +98,7 @@ class HttpService extends DataService<string[]> {
   private async createVite() {
     const { root } = this.config
     const { createServer } = require('vite') as typeof import('vite')
-    const { default: pluginVue } = require('@vitejs/plugin-vue') as typeof import('@vitejs/plugin-vue')
+    const { default: vue } = require('@vitejs/plugin-vue') as typeof import('@vitejs/plugin-vue')
 
     this.vite = await createServer({
       root,
@@ -109,7 +109,7 @@ class HttpService extends DataService<string[]> {
           strict: true,
         },
       },
-      plugins: [pluginVue()],
+      plugins: [vue()],
       resolve: {
         alias: {
           '~/client': root + '/client.ts',

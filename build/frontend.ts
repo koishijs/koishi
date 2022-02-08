@@ -73,7 +73,7 @@ async function buildConsole(folder: string) {
   await Promise.all([
     pipe(findModulePath('vue') + '/dist/vue.runtime.esm-browser.prod.js', dist + '/vue.js'),
     pipe(cwd + '/plugins/frontend/components/dist/index.js', dist + '/components.js'),
-    pipe(cwd + '/plugins/frontend/components/dist/style.css', dist + '/index.css'),
+    pipe(cwd + '/plugins/frontend/components/dist/style.css', dist + '/style.css'),
     build(cwd, {
       build: {
         outDir: dist,

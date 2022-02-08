@@ -50,7 +50,7 @@ div.bot {
 
   &.active {
     > div.avatar {
-      border-color: var(--primary);
+      border-color: var(--active);
     }
   }
 

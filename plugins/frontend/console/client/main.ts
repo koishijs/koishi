@@ -8,7 +8,6 @@ import App from './layout/index.vue'
 import Blank from './layout/blank.vue'
 import client from '~/components'
 
-import 'element-plus/dist/index.css'
 import './index.scss'
 
 const app = createApp(App)

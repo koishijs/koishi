@@ -1,5 +1,63 @@
+$black: #000000;
+$white: #ffffff;
 
+:root {
+  --active: #506ae6;
+  --border: #e2e2e4;
+  --border-dark: #c8c9cc;
+  --card-bg: #ffffff;
+
+  @mixin apply-color($name, $base) {
+    --#{$name}: #{$base};
+    --#{$name}-shade: #{mix($base, $black, 90%)};
+    --#{$name}-tint: #{mix($base, $white, 80%)};
+  }
+
+  @include apply-color(primary, #409eff);
+  @include apply-color(success, #67c23a);
+  @include apply-color(warning, #e49400);
+  @include apply-color(error, #f56c6c);
+}
+
+html.dark {
+  --active: #ffffff;
+  --border: #4f515cbf;
+  --card-bg: #2f3034;
+
+  @mixin apply-color($name, $base) {
+    --#{$name}: #{$base};
+    --#{$name}-shade: #{mix($base, $black, 80%)};
+    --#{$name}-tint: #{mix($base, $white, 90%)};
+  }
+
+  @include apply-color(primary, #7459ff);
+  @include apply-color(success, #67c23a);
+  @include apply-color(warning, #e49400);
+  @include apply-color(error, #f56c6c);
+}
+
+:root {
+  --el-text-color-regular: var(--fg1);
+  --el-input-text-color: var(--el-text-color-regular);
+  --el-border-color-base: var(--border);
+  --el-color-primary: var(--primary);
+  --el-color-success: var(--success);
+  --el-color-warning: var(--warning);
+  --el-color-error: var(--error);
+}
+
+.el-input-number__decrease, .el-input-number__increase {
+  --el-bg-color: transparent;
+}
+
+.el-input__inner {
+  --el-input-bg-color: transparent;
+}
 
 .el-scrollbar__bar {
   z-index: 500;
+}
+
+html.dark .el-switch {
+  --el-switch-off-color: #72767d;
 }
