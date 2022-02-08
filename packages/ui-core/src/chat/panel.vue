@@ -44,7 +44,7 @@ import KChatMessage from './message.vue'
 
 type Type = 'compact' | 'modern' | 'casual'
 
-export interface Message {
+interface Message {
   avatar?: string
   content?: string
   abstract?: string

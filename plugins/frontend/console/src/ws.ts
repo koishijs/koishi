@@ -1,4 +1,4 @@
-import { Awaitable, Context, Dict, Logger, WebSocketLayer } from 'koishi'
+import { Awaitable, coerce, Context, Dict, Logger, WebSocketLayer } from 'koishi'
 import { v4 } from 'uuid'
 import { DataService } from './service'
 import WebSocket from 'ws'
@@ -75,10 +75,18 @@ class WsService extends DataService {
       if (await handle.validate()) return
       const { type, args, id } = JSON.parse(data.toString())
       const listener = this.listeners[type]
-      if (!listener) return logger.info('unknown message:', type, ...args)
+      if (!listener) {
+        logger.info('unknown message:', type, ...args)
+        return handle.send({ type: 'response', body: { id } })
+      }
 
-      const value = await listener.call(handle, ...args)
-      return handle.send({ type: 'response', body: { id, value } })
+      try {
+        const value = await listener.call(handle, ...args)
+        return handle.send({ type: 'response', body: { id, value } })
+      } catch (error) {
+        error = coerce(error)
+        return handle.send({ type: 'response', body: { id, error } })
+      }
     })
   }
 }
