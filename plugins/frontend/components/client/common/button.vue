@@ -45,8 +45,9 @@ function onClick(event: MouseEvent) {
 }
 
 .k-button {
-  font-size: 1em;
-  line-height: 1.2em;
+  font-size: 14px;
+  font-weight: bolder;
+  line-height: 20px;
   appearance: none;
   user-select: none;
   border: none;

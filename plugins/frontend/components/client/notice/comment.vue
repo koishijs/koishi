@@ -13,7 +13,7 @@
 import { computed } from 'vue'
 
 const props = defineProps({
-  type: { type: String, default: 'default' },
+  type: { type: String, default: 'primary' },
   title: { type: String, required: false },
 })
 
@@ -33,6 +33,7 @@ const icon = computed(() => {
 @mixin apply-color($name) {
   &.#{$name} {
     border-left-color: var(--#{$name});
+    background-color: var(--#{$name}-fade);
     .k-icon {
       color: var(--#{$name});
     }
@@ -44,9 +45,9 @@ const icon = computed(() => {
   margin: 2rem 0;
   border-left-width: 4px !important;
   border-left-style: solid;
-  background-color: var(--bg1);
   position: relative;
   line-height: 1.7;
+  transition: 0.3s ease;
 
   h4 {
     margin: 1rem 0;
@@ -64,7 +65,7 @@ const icon = computed(() => {
     background-color: var(--bg0);
   }
 
-  @include apply-color(default);
+  @include apply-color(primary);
   @include apply-color(warning);
   @include apply-color(success);
   @include apply-color(error);

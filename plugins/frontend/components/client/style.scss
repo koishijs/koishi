@@ -1,3 +1,5 @@
+@use 'sass:color';
+
 $black: #000000;
 $white: #ffffff;
 
@@ -11,12 +13,14 @@ $white: #ffffff;
     --#{$name}: #{$base};
     --#{$name}-shade: #{mix($base, $black, 90%)};
     --#{$name}-tint: #{mix($base, $white, 80%)};
+    --#{$name}-fade: #{fade-out($base, 0.9)};
   }
 
   @include apply-color(primary, #409eff);
   @include apply-color(success, #67c23a);
   @include apply-color(warning, #e49400);
   @include apply-color(error, #f56c6c);
+  @include apply-color(info, #909399);
 }
 
 html.dark {
@@ -28,17 +32,19 @@ html.dark {
     --#{$name}: #{$base};
     --#{$name}-shade: #{mix($base, $black, 80%)};
     --#{$name}-tint: #{mix($base, $white, 90%)};
+    --#{$name}-fade: #{fade-out($base, 0.9)};
   }
 
   @include apply-color(primary, #7459ff);
-  @include apply-color(success, #67c23a);
-  @include apply-color(warning, #e49400);
-  @include apply-color(error, #f56c6c);
+  @include apply-color(success, #3ba55e);
+  @include apply-color(warning, #f9af1b);
+  @include apply-color(error, #ff595a);
+  @include apply-color(info, #4f545c);
 }
 
 :root {
   --el-text-color-regular: var(--fg1);
-  --el-input-text-color: var(--el-text-color-regular);
+  --el-input-text-color: var(--fg1);
   --el-border-color-base: var(--border);
   --el-color-primary: var(--primary);
   --el-color-success: var(--success);
@@ -52,6 +58,15 @@ html.dark {
 
 .el-input__inner {
   --el-input-bg-color: transparent;
+}
+
+.el-radio {
+  height: 1.2rem;
+}
+
+.el-radio__label {
+  --el-color-primary: var(--active);
+  padding-top: 1px;
 }
 
 .el-scrollbar__bar {

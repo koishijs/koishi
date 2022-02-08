@@ -25,7 +25,7 @@
     <slot></slot>
     <ul v-if="choices.every(item => item.type === 'const')">
       <li v-for="item in choices" :key="item.value">
-        <k-radio :disabled="disabled" :label="item.value" v-model="selected">{{ item.meta.description || item.value }}</k-radio>
+        <el-radio :disabled="disabled" :label="item.value" v-model="selected">{{ item.meta.description || item.value }}</el-radio>
       </li>
     </ul>
   </div>
