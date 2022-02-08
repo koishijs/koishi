@@ -5,7 +5,7 @@
     </span>
     <input
       autocomplete="off"
-      :step="step"
+      step="any"
       :value="value"
       :type="type"
       :style="inputStyle"

@@ -25,7 +25,7 @@
     <slot></slot>
     <ul v-if="choices.every(item => item.type === 'const')">
       <li v-for="item in choices" :key="item.value">
-        <k-radio :disabled="disabled" :label="item.value" v-model="selected">{{ item.meta.description || item.value }}</k-radio>
+        <el-radio :disabled="disabled" :label="item.value" v-model="selected">{{ item.meta.description || item.value }}</el-radio>
       </li>
     </ul>
   </div>
@@ -47,12 +47,12 @@ const props = defineProps({
 })
 
 const config = computed({
-  get: () => props.modelValue,
+  get: () => props.modelValue ?? props.schema.meta.default,
   set: emit.bind(null, 'update:modelValue'),
 })
 
 const choices = computed(() => {
-  return props.schema.list.filter(item => item.type !== 'transform')
+  return props.schema.list.filter(item => !['function', 'transform'].includes(item.type))
 })
 
 const isSelect = computed(() => {

@@ -5,18 +5,21 @@
         <slot></slot>
       </div>
       <div class="right">
-        <k-switch v-if="schema.type === 'boolean'" v-model="config" :initial="schema.meta.default" :disabled="disabled"></k-switch>
-        <k-input v-else v-model="config" :disabled="disabled"
-          :style="{ width: schema.meta.role === 'url' ? '18rem' : '12rem' }"
-          :type="type" :initial="schema.meta.default">
-          <template #suffix v-if="schema.meta.role === 'url'">
-            <a :href="config" target="_blank" rel="noopener noreferrer">
-              <k-icon name="external"></k-icon>
-            </a>
-          </template>
-          <template #suffix v-else-if="schema.meta.role === 'secret'">
-            <k-icon :name="showPass ? 'eye' : 'eye-slash'" @click="showPass = !showPass"></k-icon>
-          </template>
+        <el-switch v-if="schema.type === 'boolean'" v-model="value" :disabled="disabled"></el-switch>
+        <template v-else-if="schema.type === 'number'">
+          <el-slider v-if="schema.meta.role === 'slider'" style="width: 200px"
+            v-model="value" :disabled="disabled" :max="schema.meta.max" :min="schema.meta.min" :step="schema.meta.step"
+          ></el-slider>
+          <el-input-number v-else
+            v-model="value" :disabled="disabled" :max="schema.meta.max" :min="schema.meta.min" :step="schema.meta.step"
+          ></el-input-number>
+        </template>
+        <k-input v-else v-model="value" :disabled="disabled" #suffix
+          :style="{ width: schema.meta.role === 'url' ? '18rem' : '12rem' }" :type="type">
+          <a v-if="schema.meta.role === 'url'" :href="value" target="_blank" rel="noopener noreferrer">
+            <k-icon name="external"></k-icon>
+          </a>
+          <k-icon v-else-if="schema.meta.role === 'secret'" :name="showPass ? 'eye' : 'eye-slash'" @click="showPass = !showPass"></k-icon>
         </k-input>
       </div>
     </div>
@@ -38,8 +41,8 @@ const props = defineProps({
 
 const showPass = ref(false)
 
-const config = computed({
-  get: () => props.modelValue,
+const value = computed({
+  get: () => props.modelValue ?? props.schema.meta.default,
   set: emit.bind(null, 'update:modelValue'),
 })
 

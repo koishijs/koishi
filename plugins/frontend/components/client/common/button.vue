@@ -12,7 +12,7 @@
 const props = defineProps({
   type: {
     type: String,
-    default: 'default',
+    default: 'primary',
   },
   solid: Boolean,
   frameless: Boolean,
@@ -35,17 +35,18 @@ function onClick(event: MouseEvent) {
   &.#{$name} {
     background-color: var(--#{$name}) !important;
     &:hover {
-      background-color: var(--#{$name}-light) !important;
+      background-color: var(--#{$name}-tint) !important;
     }
     &:active {
-      background-color: var(--#{$name}-dark) !important;
+      background-color: var(--#{$name}-shade) !important;
     }
   }
 }
 
 .k-button {
-  font-size: 1em;
-  line-height: 1.2em;
+  font-size: 14px;
+  font-weight: bolder;
+  line-height: 20px;
   appearance: none;
   user-select: none;
   border: none;
@@ -84,7 +85,7 @@ function onClick(event: MouseEvent) {
       background-color: var(--disabled) !important;
     }
     &:not(.disabled) {
-      @include apply-color(default);
+      @include apply-color(primary);
       @include apply-color(warning);
       @include apply-color(success);
       @include apply-color(error);
@@ -100,14 +101,14 @@ function onClick(event: MouseEvent) {
       border-color: transparent;
       background-color: transparent;
     }
-    &.default {
-      color: var(--default);
+    &.primary {
+      color: var(--el-color-primary);
     }
     &.error {
-      color: var(--error);
+      color: var(--el-color-error);
     }
     &.success {
-      color: var(--success);
+      color: var(--el-color-success);
     }
     &.disabled {
       color: var(--disabled);

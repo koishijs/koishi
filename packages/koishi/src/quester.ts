@@ -52,7 +52,7 @@ export namespace Quester {
       endpoint: Schema.string().role('url').description('要连接的端点。').default(config.endpoint),
       proxyAgent: Schema.string().role('url').description('使用的代理服务器地址。').default(config.proxyAgent),
       headers: Schema.dict(Schema.string()).description('要附加的额外请求头。').default(config.headers),
-      timeout: Schema.number().description('等待连接建立的最长时间。').default(config.timeout),
+      timeout: Schema.natural().role('ms').description('等待连接建立的最长时间。').default(config.timeout),
     }).description('请求设置')
   }
 

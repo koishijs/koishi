@@ -1,5 +1,5 @@
 <template>
-  <k-comment :type="fulfilled ? 'success' : required ? 'warning' : 'default'">
+  <k-comment :type="fulfilled ? 'success' : required ? 'warning' : 'primary'">
     <template #header>{{ required ? '必需' : '可选' }}{{ type }}：<slot name="name">{{ name }}</slot> ({{ fulfilled ? '已加载' : '未加载' }})</template>
     <slot></slot>
   </k-comment>

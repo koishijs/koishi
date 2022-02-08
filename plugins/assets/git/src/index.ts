@@ -231,8 +231,8 @@ namespace JsdelivrAssets {
       baseDir: Schema.string().required(),
     }),
     tempDir: Schema.string().default(resolve(__dirname, '../.temp')),
-    flushInterval: Schema.number().default(Time.second * 3),
-    maxBranchSize: Schema.number().default(50 * 1024 * 1024),
+    flushInterval: Schema.natural().role('ms').default(Time.second * 3),
+    maxBranchSize: Schema.natural().role('byte').default(50 * 1024 * 1024),
   })
 }
 

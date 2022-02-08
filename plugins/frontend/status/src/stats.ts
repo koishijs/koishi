@@ -343,7 +343,7 @@ namespace StatisticsProvider {
   }
 
   export const Config = Schema.object({
-    statsInternal: Schema.number().description('统计数据推送的时间间隔。').default(Time.minute * 10),
+    statsInternal: Schema.natural().role('ms').description('统计数据推送的时间间隔。').default(Time.minute * 10),
   })
 
   export type Extension = (payload: Payload, data: StatisticsProvider.Data) => Promise<void>

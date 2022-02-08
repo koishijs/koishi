@@ -282,7 +282,7 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
 
 export namespace Command {
   export const Config: Schema<Config> = Schema.object({
-    authority: Schema.number(),
+    authority: Schema.natural(),
     hidden: Schema.boolean(),
     checkArgCount: Schema.boolean(),
     checkUnknown: Schema.boolean(),

@@ -53,9 +53,9 @@ export const Config = Schema.object({
   appSecret: Schema.string().description('GitHub OAuth App Secret.'),
   redirect: Schema.string().description('授权成功后的跳转链接。'),
   messagePrefix: Schema.string().description('推送消息的前缀。').default('[GitHub] '),
-  replyTimeout: Schema.number().description('等待用户回复消息进行快捷操作的时间。').default(Time.hour),
-  promptTimeout: Schema.number().description('等待用户键入用户名的时间。缺省时会使用全局设置。'),
-  requestTimeout: Schema.number().description('等待请求 GitHub 的时间，超时将提示操作失败。缺省时会使用全局设置。'),
+  replyTimeout: Schema.natural().role('ms').description('等待用户回复消息进行快捷操作的时间。').default(Time.hour),
+  promptTimeout: Schema.natural().role('ms').description('等待用户键入用户名的时间。缺省时会使用全局设置。'),
+  requestTimeout: Schema.natural().role('ms').description('等待请求 GitHub 的时间，超时将提示操作失败。缺省时会使用全局设置。'),
 })
 
 export interface OAuth {
