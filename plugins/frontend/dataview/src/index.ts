@@ -2,30 +2,9 @@ import { Context, Dict, Model, Query } from 'koishi'
 import { DataService } from '@koishijs/plugin-console'
 import { resolve } from 'path'
 
-export type AsyncFallible<T extends (...args: unknown[]) => Promise<R>, R = unknown>
-  = (...args: Parameters<T>) =>
-    Promise<{ success: R } | { failed: any }>
-
-export type A = (...args: unknown[]) => Promise<unknown>
-export let a: Awaited<ReturnType<A>>
-
-// export type DbEvents = {
-//   [M in keyof Query.Methods as `dataview/db-${M}`]: AsyncFallible<Query.Methods[M]>
-// }
 export type DbEvents = {
-  [M in keyof Query.Methods as `dataview/db-${M}`]: (...args: Parameters<Query.Methods[M]>) => Promise<{
-    ok: true
-    success: Awaited<ReturnType<Query.Methods[M]>>
-  } | {
-    ok: false
-    failed: Error
-  }>
+  [M in keyof Query.Methods as `dataview/db-${M}`]: Query.Methods[M]
 }
-export type B = Query.Methods['eval']
-
-export type C = DbEvents['dataview/db-eval']
-
-export let b: ReturnType<DbEvents['dataview/db-set']>
 declare module '@koishijs/plugin-console' {
   namespace Console {
     interface Services {
@@ -33,17 +12,6 @@ declare module '@koishijs/plugin-console' {
     }
   }
   interface Events extends DbEvents { }
-}
-
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-function addDbListener<M extends keyof Query.Methods>(ctx: Context, methodName: M) {
-  ctx.console.addListener<`dataview/db-${M}`>(`dataview/db-${methodName}`, async (...args) => {
-    try {
-      return { ok: true as const, success: await (ctx.database[methodName] as any)(...args) }
-    } catch (e) {
-      return { ok: false as const, failed: { stack: e.stack, ...e } }
-    }
-  })
 }
 
 export type DatabaseInfo = Query.Stats & { model: Dict<Model.Config<any>> }
@@ -61,14 +29,14 @@ export default class DatabaseProvider extends DataService<DatabaseInfo> {
       ctx.console.addEntry(resolve(__dirname, '../dist'))
     }
 
-    addDbListener(ctx, 'drop')
-    addDbListener(ctx, 'stats')
-    addDbListener(ctx, 'get')
-    addDbListener(ctx, 'set')
-    addDbListener(ctx, 'remove')
-    addDbListener(ctx, 'create')
-    addDbListener(ctx, 'upsert')
-    addDbListener(ctx, 'eval')
+    ctx.console.addListener('dataview/db-create', (...args) => ctx.database.create(...args))
+    ctx.console.addListener('dataview/db-drop', (...args) => ctx.database.drop(...args))
+    ctx.console.addListener('dataview/db-eval', (...args) => ctx.database.eval(...args))
+    ctx.console.addListener('dataview/db-get', (...args) => ctx.database.get(...args))
+    ctx.console.addListener('dataview/db-remove', (...args) => ctx.database.remove(...args))
+    ctx.console.addListener('dataview/db-set', (...args) => ctx.database.set(...args))
+    ctx.console.addListener('dataview/db-stats', (...args) => ctx.database.stats(...args))
+    ctx.console.addListener('dataview/db-upsert', (...args) => ctx.database.upsert(...args))
 
     ctx.on('model', () => this.refresh())
   }

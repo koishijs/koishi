@@ -44,15 +44,24 @@ html.dark {
 
 :root {
   --el-text-color-regular: var(--fg1);
+  --el-text-color-primary: var(--fg3);
   --el-input-text-color: var(--fg1);
   --el-border-color-base: var(--border);
+  --el-border-color-light: var(--border);
+  --el-border-color-lighter: var(--border);
+  --el-border-color-extra-light: var(--border);
   --el-color-primary: var(--primary);
+  --el-color-primary-light-9: var(--bg1);
   --el-color-success: var(--success);
   --el-color-warning: var(--warning);
   --el-color-error: var(--error);
+  --el-color-white: var(--bg1);
+  --el-color-black: var(--fg1);
+  --el-bg-color: var(--bg0)
 }
 
-.el-input-number__decrease, .el-input-number__increase {
+.el-input-number__decrease,
+.el-input-number__increase {
   --el-bg-color: transparent;
 }
 
@@ -75,4 +84,40 @@ html.dark {
 
 html.dark .el-switch {
   --el-switch-off-color: #72767d;
+}
+
+.el-table__body-wrapper,
+.el-table__footer-wrapper,
+.el-table__header-wrapper {
+  --el-table-tr-bg-color: var(--card-bg);
+  --el-table-header-bg-color: var(--bg2);
+  tr {
+    td,
+    th {
+      &.hover-row {
+        background-color: var(--el-table-row-hover-bg-color);
+      }
+      &.el-table-fixed-column--left,
+      &.el-table-fixed-column--right {
+        background-color: var(--el-table-tr-bg-color);
+      }
+      &.el-table-fixed-column--left:is(th),
+      &.el-table-fixed-column--right:is(th) {
+        background-color: var(--el-table-header-bg-color);
+      }
+      &.is-first-column,
+      &.is-last-column {
+        &.el-table-fixed-column--left {
+          &::before {
+            box-shadow: inset 10px 0 10px -10px var(--bg0);
+          }
+        }
+        &.el-table-fixed-column--right {
+          &::before {
+            box-shadow: inset -10px 0 10px -10px var(--bg0);
+          }
+        }
+      }
+    }
+  }
 }

@@ -1,5 +1,5 @@
 import { Context } from '~/client'
-import type {} from '@koishijs/plugin-dataview/src'
+import type {} from '@koishijs/plugin-dataview'
 import Database from './index.vue'
 
 export default (ctx: Context) => {

@@ -48,25 +48,27 @@
       <template #header="{ column }">
         {{ column.label }}
         <div class="insertion">
-          <k-input
+          <el-input
             @click.stop
             v-model="status.newRow[column.label]"
             v-bind="columnInputAttr[column.label]"
-          ></k-input>
+            size="small"
+          ></el-input>
         </div>
       </template>
       <template #default="scope">
         <template v-if="isCellChanged(scope, false)">
-          <k-input
+          <el-input
             v-model="status.changes[scope.$index][scope.column.label].model"
             v-bind="columnInputAttr[scope.column.label]"
+            size="small"
           >
             <template #suffix>
               <k-button frameless type="error" @click="onCancelInput(scope)">
                 <k-icon name="times-full"></k-icon>
               </k-button>
             </template>
-          </k-input>
+          </el-input>
         </template>
         <div v-else @parent-dblclick="onCellDblClick(scope)" class="inner-cell">
           {{
@@ -117,10 +119,12 @@
 <script lang="ts" setup>
 
 import { } from '@koishijs/plugin-console';
-import { ElMessage, ElPagination, ElPopconfirm, ElTable, ElTableColumn } from 'element-plus';
+import { ElPagination, ElPopconfirm, ElTable, ElTableColumn } from 'element-plus';
 import { Dict, Model, Query } from 'koishi';
-import { computed, ComputedRef, reactive, ref, watch, watchEffect } from 'vue';
-import { formatSize, handleError, sendFallible } from '../utils';
+import { computed, ComputedRef, nextTick, reactive, ref, watch, watchEffect } from 'vue';
+import { send } from '~/client';
+import { message } from '~/components';
+import { formatSize, handleError } from '../utils';
 
 export type TableStatus = {
   loading: boolean
@@ -199,7 +203,8 @@ async function updateData() {
     sort: querySort,
   }
   // await new Promise((res) => setInterval(() => res(0), 1000))
-  tableData.value = await sendFallible<'get'>('dataview/db-get', props.name as never, {}, modifier)
+  tableData.value = await send<'dataview/db-get'>('dataview/db-get', props.name as never, {}, modifier)
+  await nextTick()
   status.value.loading = false
 }
 watchEffect(updateData)
@@ -342,7 +347,7 @@ async function onSubmitChanges() {
       data[field] = validChanges.value[idx][field].model
     try {
       // await new Promise(res => setInterval(() => res(1), 1000))
-      await sendFallible<'set'>('dataview/db-set', props.name as never, row, data)
+      await send<'dataview/db-set'>('dataview/db-set', props.name as never, row, data)
 
       for (const field in validChanges.value[idx])
         submitted.push({ idx, field })
@@ -360,16 +365,16 @@ async function onSubmitChanges() {
       delete status.value.changes[idx]
   await updateData()
   if (submitted.length)
-    ElMessage.success(`成功修改 ${submitted.length} 项数据`)
+    message.success(`成功修改 ${submitted.length} 项数据`)
   status.value.loading = false
 }
 
 async function onDeleteRow({ row, $index }) {
   status.value.loading = true
   try {
-    await sendFallible<'remove'>('dataview/db-remove', props.name as never, row)
+    await send<'dataview/db-remove'>('dataview/db-remove', props.name as never, row)
     await updateData()
-    ElMessage.success(`成功删除数据`)
+    message.success(`成功删除数据`)
   } catch (e) {
     handleError(e, '数据删除失败')
   }
@@ -383,10 +388,10 @@ async function onInsertRow() {
     return o
   }, {})
   try {
-    const res = await sendFallible<'create'>('dataview/db-create', props.name as never, row)
+    const res = await send<'dataview/db-create'>('dataview/db-create', props.name as never, row)
     if ('failed' in res) throw new Error()
     await updateData()
-    ElMessage.success(`成功添加数据`)
+    message.success(`成功添加数据`)
     for (const field in status.value.newRow)
       status.value.newRow[field] = ''
   } catch (e) {
@@ -440,13 +445,9 @@ async function onInsertRow() {
     }
   }
 
-  .k-input {
-    height: unset;
+  .el-input {
     .k-icon {
       display: block;
-    }
-    input {
-      padding-left: 10px !important;
     }
   }
 }
