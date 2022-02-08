@@ -150,13 +150,18 @@ Koishi 完全基于 TypeScript 开发，拥有顶级的类型支持，丰富的�
 | 名称 | 简介 |
 |:----|:----|
 | [adapter-minecraft](https://github.com/koishijs/koishi-plugin-adapter-minecraft) | Minecraft 适配器 |
+| [animal-picture](https://github.com/idlist/koishi-plugin-animal-picture) | 动物图 |
 | [assets-smms](https://github.com/koishijs/koishi-plugin-assets-smms) | 使用 sm.ms 存储静态资源文件 |
+| [blive](https://github.com/idlist/koishi-plugin-blive) | Bilibili 直播订阅 |
 | [chess](https://github.com/koishijs/koishi-plugin-chess) | 棋类游戏 |
 | [crazy-thursday](https://github.com/koishijs/koishi-plugin-crazy-thursday) | 输出 KFC 疯狂星期四段子 |
 | [dice](https://github.com/koishijs/koishi-plugin-dice) | 掷骰 |
+| [duplicate-checker](https://github.com/idlist/koishi-plugin-duplicate-checker) | 出警火星图文 |
 | [eval-react-jsx](https://github.com/koishijs/koishi-plugin-eval-react-jsx) | 在 Eval 环境支持 React JSX |
 | [gocqhttp](https://github.com/koishijs/koishi-plugin-gocqhttp) | [gocqhttp](https://github.com/Mrs4s/go-cqhttp) 启动器 |
+| [gosen-choyen](https://github.com/idlist/koishi-plugin-gosen-choyen) | 生成五千兆円图 |
 | [image-search](https://github.com/koishijs/koishi-plugin-image-search) | 图源搜索 |
+| [jrrp](https://github.com/idlist/koishi-plugin-jrrp) | 今日人品 |
 | [pics](https://github.com/koishijs/koishi-plugin-pics) | 随机图片 |
 | [rss](https://github.com/koishijs/koishi-plugin-rss) | RSS 订阅 |
 | [srvpro-roomlist](https://code.mycard.moe/3rdeye/koishi-plugin-srvpro-roomlist) | [YGOPro](https://github.com/Fluorohydride/ygopro) 服务器房间列表查询 |
