@@ -1,7 +1,7 @@
 import { DataService } from '@koishijs/plugin-console'
 import { Context, Dict } from 'koishi'
 
-export default class ServiceProvider extends DataService<Dict<string>> {
+class ServiceProvider extends DataService<Dict<string>> {
   private cache: Dict<string>
 
   constructor(ctx: Context) {
@@ -20,3 +20,5 @@ export default class ServiceProvider extends DataService<Dict<string>> {
     return this.cache
   }
 }
+
+export default ServiceProvider

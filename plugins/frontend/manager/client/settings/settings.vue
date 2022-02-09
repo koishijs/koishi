@@ -36,10 +36,10 @@
         配置项
         <template v-if="data.id">
           <k-button solid type="error" @click="execute('unload')">停用插件</k-button>
-          <k-button solid :disabled="depTip" @click="execute('reload')">重载配置</k-button>
+          <k-button solid :disabled="!!depTip" @click="execute('reload')">重载配置</k-button>
         </template>
         <template v-else>
-          <k-button solid :disabled="depTip" @click="execute('reload')">启用插件</k-button>
+          <k-button solid :disabled="!!depTip" @click="execute('reload')">启用插件</k-button>
           <k-button solid @click="execute('unload')">保存配置</k-button>
         </template>
       </h1>

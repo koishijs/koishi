@@ -42,7 +42,7 @@ export const using = ['console', 'loader'] as const
 
 export interface Config extends MarketProvider.Config {}
 
-export const Config = Schema.intersect([
+export const Config: Schema<Config> = Schema.intersect([
   MarketProvider.Config,
 ])
 

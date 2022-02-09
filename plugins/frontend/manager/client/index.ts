@@ -30,7 +30,7 @@ export default (ctx: Context) => {
   })
 
   ctx.addPage({
-    path: '/settings',
+    path: '/settings/:name*',
     name: '插件配置',
     icon: 'cog',
     order: 630,
