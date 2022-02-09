@@ -35,7 +35,6 @@ watch(store.packages, (value) => {
 }, { immediate: true })
 
 interface ManagerState {
-  downloading?: boolean
 }
 
 export const state = reactive<ManagerState>({})

@@ -6,7 +6,7 @@
         <component :is="Component"/>
       </keep-alive>
     </router-view>
-    <p v-else>正在加载数据……</p>
+    <div class="loading" v-else v-loading="true" element-loading-text="正在加载数据……"></div>
   </main>
   <k-view name="global"></k-view>
 </template>
@@ -64,6 +64,10 @@ main.layout-main {
 
   &.sidebar-hidden {
     margin-left: 0;
+  }
+
+  .loading {
+    height: 100vh;
   }
 }
 

@@ -28,6 +28,7 @@ import HeartEmpty from './svg/heart-empty.vue'
 import HeartFull from './svg/heart-full.vue'
 import History from './svg/history.vue'
 import InfoFull from './svg/info-full.vue'
+import Koishi from './svg/koishi.vue'
 import LayerGroup from './svg/layer-group.vue'
 import Link from './svg/link.vue'
 import Moon from './svg/moon.vue'
@@ -81,6 +82,7 @@ registerIcon('heart-empty', HeartEmpty)
 registerIcon('heart-full', HeartFull)
 registerIcon('history', History)
 registerIcon('info-full', InfoFull)
+registerIcon('koishi', Koishi)
 registerIcon('layer-group', LayerGroup)
 registerIcon('link', Link)
 registerIcon('moon', Moon)

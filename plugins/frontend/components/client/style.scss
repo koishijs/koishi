@@ -8,6 +8,8 @@ $white: #ffffff;
   --border: #e2e2e4;
   --border-dark: #c8c9cc;
   --card-bg: #ffffff;
+  --page-bg: #f2f3f5;
+  --loading-mask-bg: #f2f3f5bf;
 
   @mixin apply-color($name, $base) {
     --#{$name}: #{$base};
@@ -27,6 +29,8 @@ html.dark {
   --active: #ffffff;
   --border: #4f515cbf;
   --card-bg: #2f3034;
+  --page-bg: #202225;
+  --loading-mask-bg: #202225bf;
 
   @mixin apply-color($name, $base) {
     --#{$name}: #{$base};
@@ -58,6 +62,11 @@ html.dark {
 
 .el-input__inner {
   --el-input-bg-color: transparent;
+}
+
+.el-loading-mask {
+  background-color: var(--loading-mask-bg);
+  transition: 0.3s ease;
 }
 
 .el-radio {

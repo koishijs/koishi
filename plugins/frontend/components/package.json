@@ -23,7 +23,7 @@
     "vue": "^3.2.21"
   },
   "devDependencies": {
-    "schemastery": "^2.4.0",
+    "schemastery": "^2.4.1",
     "unplugin-element-plus": "^0.2.0"
   }
 }

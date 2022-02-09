@@ -11,9 +11,10 @@
     <div v-if="tables">
       {{ tables[current] }}
     </div>
-    <el-empty v-else description="你还没有安装数据库支持">
+    <k-empty v-else>
+      <div>你还没有安装数据库支持</div>
       <k-button solid>安装数据库</k-button>
-    </el-empty>
+    </k-empty>
   </k-card-aside>
 </template>
 

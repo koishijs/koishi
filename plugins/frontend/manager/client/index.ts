@@ -4,17 +4,11 @@ import Bots from './bots/index.vue'
 import Settings from './settings/index.vue'
 import Dependencies from './dependencies/index.vue'
 import Market from './market/index.vue'
-import Overlay from './dependencies/overlay.vue'
 import { overrideCount } from './utils'
 
 import './style.scss'
 
 export default (ctx: Context) => {
-  ctx.addView({
-    type: 'global',
-    component: Overlay,
-  })
-
   ctx.addView({
     type: 'numeric',
     order: 100,
