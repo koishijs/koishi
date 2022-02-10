@@ -227,7 +227,7 @@ export class QQGuildBot extends OneBotBot {
   }
 
   async getGuildMember(guildId: string, userId: string) {
-    const profile = await this.getGuildMember(guildId, userId)
+    const profile = await this.internal.getGuildMemberProile(guildId, userId)
     return OneBot.adaptQQGuildMemberProfile(profile)
   }
 
