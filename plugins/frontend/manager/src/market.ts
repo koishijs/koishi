@@ -65,7 +65,6 @@ class MarketProvider extends DataService<Dict<MarketProvider.Data>> {
       score: score.detail.popularity * 100,
       description,
       versions,
-      author: latest.author.name,
       size: latest.dist.unpackedSize,
       license: latest.license,
     }
@@ -94,12 +93,11 @@ namespace MarketProvider {
     endpoint: Schema.string().role('url').description('要使用的 npm registry 终结点。').default('https://registry.npmjs.org'),
   })
 
-  export interface Data extends Package.Base {
+  export interface Data extends Package.SearchPackage {
     versions: Package.Meta[]
     shortname: string
     official: boolean
     score: number
-    author: string
     size: number
     license: string
   }

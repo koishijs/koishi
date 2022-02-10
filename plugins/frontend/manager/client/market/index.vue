@@ -4,40 +4,47 @@
       <k-icon name="search"></k-icon>
     </el-input>
   </div>
+  <div class="market-filter">
+    共搜索到 {{ plugins.length }} 个插件。
+    <el-checkbox v-model="config.showInstalled">已下载的插件</el-checkbox>
+  </div>
   <div class="market-container">
-    <k-card class="market-view" v-for="data in packages" :key="data.name">
-      <template #header>
-        {{ data.shortname }}<k-icon v-if="data.official" name="check-full"></k-icon>
-        <k-button v-if="!config.override[data.name]" solid class="right" @click="addFavorite(data.name)">添加</k-button>
-        <k-button v-else solid type="warning" class="right" @click="removeFavorite(data.name)">取消</k-button>
-      </template>
-      <k-markdown inline tag="p" class="desc" :source="data.description"></k-markdown>
-      <template #footer>
-        <div class="info">
-          <span><k-icon name="user"></k-icon>{{ data.author }}</span>
-          <span><k-icon name="balance"></k-icon>{{ data.license }}</span>
-          <span><k-icon name="tag"></k-icon>{{ data.version }}</span>
-          <span><k-icon name="file-archive"></k-icon>{{ Math.ceil(data.size / 1000) }} KB</span>
-        </div>
-      </template>
-    </k-card>
+    <package-view v-for="data in packages" :key="data.name" :data="data"></package-view>
   </div>
 </template>
 
 <script setup lang="ts">
 
 import { store } from '~/client'
-import { ref, computed } from 'vue'
-import { addFavorite, removeFavorite, config } from '../utils'
+import { computed } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { config } from '../utils'
+import PackageView from './package.vue'
 
-const keyword = ref('')
+const route = useRoute()
+const router = useRouter()
+
+function join(source: string | string[]) {
+  return Array.isArray(source) ? source.join(' ') : source || ''
+}
+
+const keyword = computed<string>({
+  get() {
+    return join(route.query.keyword)
+  },
+  set(keyword) {
+    router.replace({ query: { keyword } })
+  },
+})
+
+const plugins = computed(() => {
+  return Object.values(store.market).filter(item => item.shortname.includes(keyword.value))
+})
 
 const packages = computed(() => {
-  return Object.values(store.market)
-    .filter(item => item.shortname.includes(keyword.value))
-    .filter(item => !store.packages[item.name])
+  return plugins.value
+    .filter(item => config.showInstalled || !store.packages[item.name])
     .sort((a, b) => b.score - a.score)
-    .sort((a, b) => +b.official - +a.official)
 })
 
 </script>
@@ -45,7 +52,48 @@ const packages = computed(() => {
 <style lang="scss">
 
 .market-search {
-  margin: 2rem;
+  margin: 2rem 2rem 0;
+  display: flex;
+  justify-content: center;
+
+  .el-input {
+    max-width: 600px;
+    line-height: 3rem;
+  }
+
+  .el-input__inner {
+    height: 3rem;
+    border-radius: 2rem;
+    font-size: 1.25rem;
+    padding: 0 3rem 0 1.25rem;
+    background-color: var(--card-bg);
+    transition: background-color 0.3s ease;
+  }
+
+  .el-input__suffix {
+    right: 1.25rem;
+
+    .k-icon {
+      height: 1.25rem;
+    }
+  }
+}
+
+.market-filter {
+  width: 100%;
+  margin: 0.5rem 0 -0.5rem;
+  text-align: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--el-text-color-regular);
+  font-size: var(--el-font-size-base);
+  font-weight: var(--el-font-weight-primary);
+  transition: color 0.3s ease;
+
+  .el-checkbox {
+    margin-left: 1.5rem;
+  }
 }
 
 .market-container {
@@ -54,48 +102,6 @@ const packages = computed(() => {
   gap: 2rem;
   margin: 2rem;
   justify-items: center;
-}
-
-.market-view {
-  width: 100%;
-  height: 200px;
-  margin: 0;
-  display: flex;
-  flex-direction: column;
-
-  .k-card-body {
-    margin: 0;
-    height: 100%;
-  }
-
-  .desc {
-    margin: -0.5rem 0;
-  }
-
-  header, footer {
-    flex-shrink: 0;
-  }
-
-  .right {
-    position: absolute;
-    right: 1rem;
-    top: -4px;
-  }
-
-  .info {
-    font-size: 14px;
-    color: var(--el-text-color-regular);
-
-    .k-icon {
-      height: 12px;
-      margin-right: 8px;
-      vertical-align: -1px;
-    }
-
-    span + span {
-      margin-left: 1.5rem;
-    }
-  }
 }
 
 </style>

@@ -59,6 +59,14 @@ html.dark {
   --el-color-error: var(--error);
 }
 
+.k-icon {
+  transition: color 0.3s ease, background-color 0.3s ease;
+}
+
+.el-checkbox__label {
+  transition: color 0.3s ease;
+}
+
 .el-input-number__decrease, .el-input-number__increase {
   --el-bg-color: transparent;
 }

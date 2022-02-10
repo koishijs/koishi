@@ -25,6 +25,8 @@ import Eye from './svg/eye.vue'
 import FileArchive from './svg/file-archive.vue'
 import Filter from './svg/filter.vue'
 import Flask from './svg/flask.vue'
+import GitHub from './svg/github.vue'
+import GitLab from './svg/gitlab.vue'
 import Hdd from './svg/hdd.vue'
 import HeartEmpty from './svg/heart-empty.vue'
 import HeartFull from './svg/heart-full.vue'
@@ -83,6 +85,8 @@ registerIcon('eye', Eye)
 registerIcon('file-archive', FileArchive)
 registerIcon('filter', Filter)
 registerIcon('flask', Flask)
+registerIcon('github', GitHub)
+registerIcon('gitlab', GitLab)
 registerIcon('hdd', Hdd)
 registerIcon('heart-empty', HeartEmpty)
 registerIcon('heart-full', HeartFull)
@@ -121,7 +125,7 @@ export default function (app: App) {
       name: String,
     },
     render(props) {
-      return h(icons[props.name])
+      return props.name && h(icons[props.name])
     },
   }))
 }

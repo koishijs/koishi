@@ -44,6 +44,7 @@ export namespace Package {
   export interface User {
     name: string
     email: string
+    username?: string
   }
 
   export interface Remote extends Json {
@@ -73,8 +74,17 @@ export namespace Package {
     readmeFilename: string
   }
 
+  export interface SearchPackage extends Base {
+    date: string
+    keywords: string[]
+    links: Dict<string>
+    author: User
+    publisher: User
+    maintainers: User[]
+  }
+
   export interface SearchItem {
-    package: Base
+    package: SearchPackage
     score: {
       final: number
       detail: {

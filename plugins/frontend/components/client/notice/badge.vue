@@ -21,16 +21,16 @@ defineProps<{ type?: 'warning' }>()
 .k-badge {
   display: inline-block;
   font-size: 14px;
-  height: 20px;
-  line-height: 22px;
+  height: 24px;
+  line-height: 24px;
   border-radius: 4px;
   padding: 0 6px;
-  margin-left: 8px;
+  margin-right: 0.5rem;
   color: white;
+  font-weight: 500;
   vertical-align: baseline;
 
   @include apply-color(primary);
-  @include apply-color(default);
   @include apply-color(warning);
   @include apply-color(success);
   @include apply-color(error);
