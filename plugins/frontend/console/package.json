@@ -27,7 +27,8 @@
     "chatbot",
     "koishi",
     "plugin",
-    "webui"
+    "webui",
+    "impl:console"
   ],
   "peerDependencies": {
     "koishi": "^4.1.2"

@@ -28,7 +28,8 @@
     "chatbot",
     "koishi",
     "plugin",
-    "callme"
+    "callme",
+    "required:database"
   ],
   "peerDependencies": {
     "koishi": "^4.1.2"

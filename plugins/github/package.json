@@ -28,7 +28,8 @@
     "github",
     "webhook",
     "required:database",
-    "optional:assets"
+    "optional:assets",
+    "impl:github"
   ],
   "devDependencies": {
     "@types/marked": "^4.0.1",

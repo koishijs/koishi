@@ -31,7 +31,7 @@
     "coolq",
     "chatbot",
     "koishi",
-    "service:cache",
+    "impl:cache",
     "lru"
   ],
   "peerDependencies": {

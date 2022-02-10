@@ -29,7 +29,8 @@
     "manager",
     "market",
     "manager",
-    "server"
+    "server",
+    "required:console"
   ],
   "peerDependencies": {
     "@koishijs/cli": "^4.1.2",

@@ -28,7 +28,8 @@
     "chatbot",
     "koishi",
     "plugin",
-    "sudo"
+    "sudo",
+    "required:database"
   ],
   "peerDependencies": {
     "koishi": "^4.1.2"

@@ -29,7 +29,8 @@
     "chatbot",
     "koishi",
     "plugin",
-    "command"
+    "command",
+    "optional:console"
   ],
   "peerDependencies": {
     "koishi": "^4.1.2"

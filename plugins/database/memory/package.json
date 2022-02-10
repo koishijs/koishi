@@ -27,7 +27,8 @@
     "koishi",
     "plugin",
     "database",
-    "server"
+    "server",
+    "impl:database"
   ],
   "peerDependencies": {
     "koishi": "^4.1.2"

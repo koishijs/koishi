@@ -28,7 +28,8 @@
     "chatbot",
     "koishi",
     "cache",
-    "lru"
+    "lru",
+    "impl:cache"
   ],
   "peerDependencies": {
     "koishi": "^4.1.2"

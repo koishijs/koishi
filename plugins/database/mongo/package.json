@@ -29,7 +29,8 @@
     "chatbot",
     "koishi",
     "database",
-    "mysql"
+    "mysql",
+    "impl:database"
   ],
   "devDependencies": {
     "@koishijs/database-tests": "^1.0.0",

@@ -26,7 +26,8 @@
     "koishi",
     "plugin",
     "screenshot",
-    "puppeteer"
+    "puppeteer",
+    "impl:puppeteer"
   ],
   "devDependencies": {
     "@types/pngjs": "^6.0.1"

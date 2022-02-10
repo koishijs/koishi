@@ -29,7 +29,9 @@
     "chatbot",
     "koishi",
     "plugin",
-    "database"
+    "database",
+    "required:console",
+    "required:database"
   ],
   "peerDependencies": {
     "@koishijs/plugin-console": "^2.1.0",

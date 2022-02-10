@@ -27,7 +27,8 @@
     "koishi",
     "plugin",
     "chat",
-    "server"
+    "server",
+    "optional:console"
   ],
   "peerDependencies": {
     "koishi": "^4.1.2"
