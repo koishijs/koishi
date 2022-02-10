@@ -327,17 +327,30 @@ export interface SlowModeInfo {
   slow_mode_circle: number
 }
 
-export interface GuildMemberInfo {
+export interface GuildMemberListData {
+  members: GuildMemberInfo[]
+  finished: boolean
+  next_token: string
+}
+
+export interface GuildMemberRole {
+  role_id: string
+  role_name: string
+}
+
+export interface GuildMemberInfo extends GuildMemberRole {
   tiny_id: string
   title: string
   nickname: string
   role: number
 }
 
-export interface GuildMembers {
-  members: GuildMemberInfo[]
-  bots: GuildMemberInfo[]
-  admins: GuildMemberInfo[]
+export interface GuildMemberProfile {
+  tiny_id: string
+  nickname: string
+  avatar_url: string
+  join_time: number
+  roles: GuildMemberRole[]
 }
 
 export interface ReactionInfo {
@@ -467,6 +480,7 @@ export interface Internal {
   getGuildList(): Promise<GuildInfo[]>
   getGuildMetaByGuest(guild_id: id): Promise<GuildMeta>
   getGuildChannelList(guild_id: id, no_cache: boolean): Promise<ChannelInfo[]>
-  getGuildMembers(guild_id: id): Promise<GuildMembers>
+  getGuildMemberList(guild_id: id, next_token?: string): Promise<GuildMemberListData>
+  getGuildMemberProile(guild_id: id, user_id: id): Promise<GuildMemberProfile>
   sendGuildChannelMsg(guild_id: id, channel_id: id, message: string): Promise<number>
 }
