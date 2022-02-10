@@ -41,11 +41,25 @@ export namespace Package {
     private?: boolean
   }
 
+  export interface User {
+    name: string
+    email: string
+  }
+
   export interface Remote extends Json {
     deprecated?: string
+    author: User
+    maintainers: User[]
+    license: string
     dist: {
+      shasum: string
+      integrity: string
+      tarball: string
+      fileCount: number
       unpackedSize: number
+      'npm-signature': string
     }
+    _npmUser: User
   }
 
   export interface Registry extends Base {

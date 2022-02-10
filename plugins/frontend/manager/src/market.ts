@@ -57,6 +57,7 @@ class MarketProvider extends DataService<Dict<MarketProvider.Data>> {
     if (!versions.length) return
 
     const shortname = official ? name.slice(17) : name.slice(14)
+    const latest = registry.versions[versions[0].version]
     this.tempCache[name] = this.fullCache[name] = {
       ...item,
       shortname,
@@ -64,7 +65,9 @@ class MarketProvider extends DataService<Dict<MarketProvider.Data>> {
       score: score.detail.popularity * 100,
       description,
       versions,
-      readme: registry.readme,
+      author: latest.author.name,
+      size: latest.dist.unpackedSize,
+      license: latest.license,
     }
     this.flushData()
   }
@@ -96,7 +99,9 @@ namespace MarketProvider {
     shortname: string
     official: boolean
     score: number
-    readme: string
+    author: string
+    size: number
+    license: string
   }
 }
 

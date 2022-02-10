@@ -1,37 +1,35 @@
 <template>
-  <k-card-aside class="page-market">
-    <template #aside>
-      <div class="search">
-        <k-input v-model="keyword" #suffix>
-          <k-icon name="search"></k-icon>
-        </k-input>
-      </div>
-      <el-scrollbar>
-        <div class="content">
-          <div
-            v-for="data in packages" :key="data.name"
-            :class="['k-menu-item', { active: data.name === current }]"
-            @click="current = data.name">
-            {{ data.shortname }}
-            <k-icon v-if="data.official" name="check-full"></k-icon>
-          </div>
+  <div class="market-search">
+    <el-input v-model="keyword" #suffix>
+      <k-icon name="search"></k-icon>
+    </el-input>
+  </div>
+  <div class="market-container">
+    <k-card class="market-view" v-for="data in packages" :key="data.name">
+      <template #header>
+        {{ data.shortname }}<k-icon v-if="data.official" name="check-full"></k-icon>
+        <k-button v-if="!config.override[data.name]" solid class="right" @click="addFavorite(data.name)">添加</k-button>
+        <k-button v-else solid type="warning" class="right" @click="removeFavorite(data.name)">取消</k-button>
+      </template>
+      <k-markdown inline tag="p" class="desc" :source="data.description"></k-markdown>
+      <template #footer>
+        <div class="info">
+          <span><k-icon name="user"></k-icon>{{ data.author }}</span>
+          <span><k-icon name="balance"></k-icon>{{ data.license }}</span>
+          <span><k-icon name="tag"></k-icon>{{ data.version }}</span>
+          <span><k-icon name="file-archive"></k-icon>{{ Math.ceil(data.size / 1000) }} KB</span>
         </div>
-      </el-scrollbar>
-    </template>
-    <k-content v-if="current">
-      <k-button solid @click="addFavorite(current)">添加插件</k-button>
-      <k-markdown :source="store.market[current].readme"></k-markdown>
-    </k-content>
-  </k-card-aside>
+      </template>
+    </k-card>
+  </div>
 </template>
 
 <script setup lang="ts">
 
 import { store } from '~/client'
 import { ref, computed } from 'vue'
-import { addFavorite } from '../utils'
+import { addFavorite, removeFavorite, config } from '../utils'
 
-const current = ref<string>(null)
 const keyword = ref('')
 
 const packages = computed(() => {
@@ -46,38 +44,56 @@ const packages = computed(() => {
 
 <style lang="scss">
 
-.page-market {
-  height: calc(100vh - 4rem);
+.market-search {
+  margin: 2rem;
+}
+
+.market-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+  gap: 2rem;
+  margin: 2rem;
+  justify-items: center;
+}
+
+.market-view {
+  width: 100%;
+  height: 200px;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
 
   .k-card-body {
+    margin: 0;
     height: 100%;
-    display: flex;
-    flex-direction: column;
   }
 
-  aside {
-    display: flex;
-    flex-direction: column;
+  .desc {
+    margin: -0.5rem 0;
   }
 
-  .search {
-    padding: 1rem 2rem;
+  header, footer {
+    flex-shrink: 0;
   }
 
-  .content {
-    padding: 0 0 1rem;
-    line-height: 2.25rem;
+  .right {
+    position: absolute;
+    right: 1rem;
+    top: -4px;
   }
 
-  .k-menu-item {
-    padding: 0 2rem;
-    white-space: nowrap;
-    overflow: auto;
-    text-overflow: ellipsis;
+  .info {
+    font-size: 14px;
+    color: var(--el-text-color-regular);
 
     .k-icon {
-      color: var(--success);
-      vertical-align: -2px;
+      height: 12px;
+      margin-right: 8px;
+      vertical-align: -1px;
+    }
+
+    span + span {
+      margin-left: 1.5rem;
     }
   }
 }
