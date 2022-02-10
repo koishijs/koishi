@@ -2,7 +2,6 @@ import { Adapter, Bot, Session, paramCase, segment, Schema, App, defineProperty 
 import * as qface from 'qface'
 import { OneBotBot } from './bot'
 import * as OneBot from './types'
-import { GuildMemberInfo } from './types'
 
 export * from './types'
 
