@@ -1,6 +1,5 @@
 import { Bot, segment, Adapter, Dict, Schema, Quester, Logger, camelize, noop } from 'koishi'
 import * as OneBot from './utils'
-import { GuildMemberInfo } from './utils'
 
 export function renderText(source: string) {
   return segment.parse(source).reduce((prev, { type, data }) => {
