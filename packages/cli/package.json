@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/cli",
   "description": "CLI for Koishi",
-  "version": "4.1.2",
+  "version": "4.2.0",
   "main": "index.js",
   "typings": "index.d.ts",
   "engines": {
@@ -43,7 +43,7 @@
     "chokidar": "^3.5.3",
     "js-yaml": "^4.1.0",
     "kleur": "^4.1.4",
-    "koishi": "^4.1.2",
+    "koishi": "^4.2.0",
     "prompts": "^2.4.2",
     "throttle-debounce": "^3.0.1"
   }

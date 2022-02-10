@@ -31,10 +31,10 @@
     "feedback"
   ],
   "peerDependencies": {
-    "koishi": "^4.1.2"
+    "koishi": "^4.2.0"
   },
   "devDependencies": {
-    "@koishijs/plugin-mock": "^1.0.1"
+    "@koishijs/plugin-mock": "^1.0.2"
   },
   "dependencies": {
     "@koishijs/helpers": "^1.0.0"

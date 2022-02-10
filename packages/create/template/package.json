@@ -12,16 +12,16 @@
     "typescript": "^4.4.4"
   },
   "dependencies": {
-    "@koishijs/cli": "^4.1.2",
-    "@koishijs/plugin-adapter-discord": "^2.0.1",
-    "@koishijs/plugin-adapter-onebot": "^4.0.1",
-    "@koishijs/plugin-adapter-telegram": "^2.1.0",
-    "@koishijs/plugin-console": "^2.1.0",
-    "@koishijs/plugin-dataview": "^1.1.1",
-    "@koishijs/plugin-insight": "^1.1.1",
-    "@koishijs/plugin-logger": "^1.1.1",
-    "@koishijs/plugin-manager": "^1.3.0",
-    "@koishijs/plugin-status": "^5.2.1",
-    "koishi": "^4.1.2"
+    "@koishijs/cli": "^4.2.0",
+    "@koishijs/plugin-adapter-discord": "^2.0.2",
+    "@koishijs/plugin-adapter-onebot": "^4.0.2",
+    "@koishijs/plugin-adapter-telegram": "^2.1.1",
+    "@koishijs/plugin-console": "^2.2.0",
+    "@koishijs/plugin-dataview": "^1.1.2",
+    "@koishijs/plugin-insight": "^1.1.2",
+    "@koishijs/plugin-logger": "^1.1.2",
+    "@koishijs/plugin-manager": "^1.4.0",
+    "@koishijs/plugin-status": "^5.2.2",
+    "koishi": "^4.2.0"
   }
 }

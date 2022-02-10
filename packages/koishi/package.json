@@ -1,7 +1,7 @@
 {
   "name": "koishi",
   "description": "A QQ bot framework based on CQHTTP",
-  "version": "4.1.2",
+  "version": "4.2.0",
   "main": "lib/index.js",
   "typings": "lib/node.d.ts",
   "engines": {
@@ -33,7 +33,7 @@
   },
   "dependencies": {
     "@koa/router": "^10.1.1",
-    "@koishijs/core": "^4.1.2",
+    "@koishijs/core": "^4.2.0",
     "@koishijs/utils": "^5.0.0",
     "@types/koa": "*",
     "@types/koa__router": "*",
