@@ -33,8 +33,13 @@ const query = computed<string>({
   get() {
     return join(route.query.keyword)
   },
-  set(keyword) {
-    router.replace({ query: { keyword } })
+  set(value) {
+    const { keyword, ...rest } = route.query
+    if (value) {
+      router.replace({ query: { keyword: value, ...rest } })
+    } else {
+      router.replace({ query: rest })
+    }
   },
 })
 
