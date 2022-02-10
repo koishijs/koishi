@@ -21,13 +21,11 @@
 
 .profile-grid {
   grid-template-columns: repeat(3, 1fr);
-  grid-template-rows: auto;
   grid-gap: 2rem;
 }
 
 .chart-grid {
   grid-template-columns: repeat(2, 1fr);
-  grid-template-rows: repeat(2, auto);
   grid-gap: 2rem;
 
   .echarts {
@@ -37,7 +35,6 @@
 
   @media (min-width: 1400px) {
     grid-template-columns: repeat(2, 1fr);
-    grid-template-rows: repeat(2, auto);
 
     @media (min-width: 1600px) {
       .echarts {
@@ -58,7 +55,6 @@
 
   @media (max-width: 1440px) {
     grid-template-columns: 1fr;
-    grid-template-rows: repeat(4, auto);
 
     @media (min-width: 1200px) {
       .echarts {

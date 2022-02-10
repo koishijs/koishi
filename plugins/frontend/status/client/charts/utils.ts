@@ -14,10 +14,8 @@ export interface ChartOptions {
 export function createChart({ title, fields, options }: ChartOptions) {
   return Card.create(() => {
     const option = options(store)
-    return h(resolveComponent('k-card'), { class: 'frameless', title }, () => {
-      if (!option) return '暂无数据。'
-      return h(VChart, { option, autoresize: true })
-    })
+    if (!option) return
+    return h(resolveComponent('k-card'), { class: 'frameless', title }, h(VChart, { option, autoresize: true }))
   }, fields)
 }
 
