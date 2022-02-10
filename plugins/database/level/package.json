@@ -1,6 +1,6 @@
 {
   "name": "@koishijs/plugin-database-level",
-  "description": "Database implementation based on LevelDB for Koishi",
+  "description": "LevelDB implementation for Koishi",
   "version": "1.0.0",
   "main": "lib/node.js",
   "module": "lib/browser.js",

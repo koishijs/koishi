@@ -9,17 +9,34 @@
       <k-button v-else-if="!config.override[data.name]" solid class="right" @click="addFavorite(data.name)">添加</k-button>
       <k-button v-else solid type="warning" class="right" @click="removeFavorite(data.name)">取消</k-button>
     </template>
-    <k-markdown inline tag="p" class="desc" :source="data.description"></k-markdown>
+    <k-markdown inline tag="p" class="desc" :source="meta.description"></k-markdown>
     <div class="badges">
-      <k-badge v-if="data.official" type="success">官方</k-badge>
-      <k-badge v-if="keywords.includes('impl:database')" type="primary">数据库</k-badge>
-      <k-badge v-if="keywords.includes('impl:adapter')" type="primary">适配器</k-badge>
-      <k-badge v-if="keywords.includes('impl:assets')" type="primary">资源存储</k-badge>
-      <k-badge v-if="keywords.includes('required:console') || keywords.includes('optional:console')" type="primary">控制台</k-badge>
+      <k-badge type="success"
+        v-if="data.official"
+        @click="$emit('query', 'is:official')"
+      >官方</k-badge>
+      <k-badge type="primary"
+        v-if="meta.keywords.includes('impl:database')"
+        @click="$emit('query', 'impl:database')"
+      >数据库</k-badge>
+      <k-badge type="primary"
+        v-if="meta.keywords.includes('impl:adapter')"
+        @click="$emit('query', 'impl:adapter')"
+      >适配器</k-badge>
+      <k-badge type="primary"
+        v-if="meta.keywords.includes('impl:assets')"
+        @click="$emit('query', 'impl:assets')"
+      >资源存储</k-badge>
+      <k-badge type="primary"
+        v-if="meta.keywords.includes('required:console') || meta.keywords.includes('optional:console')"
+        @click="$emit('query', 'using:console')"
+      >控制台</k-badge>
     </div>
     <template #footer>
       <div class="info">
-        <span><k-icon name="user"></k-icon>{{ data.author.name }}</span>
+        <span :class="{ pointer: author }" @click="author && $emit('query', 'author:' + author)">
+          <k-icon name="user"></k-icon>{{ data.author.name }}
+        </span>
         <span><k-icon name="balance"></k-icon>{{ data.license }}</span>
         <span><k-icon name="tag"></k-icon>{{ data.version }}</span>
         <span><k-icon name="file-archive"></k-icon>{{ Math.ceil(data.size / 1000) }} KB</span>
@@ -34,14 +51,15 @@ import { computed, PropType } from 'vue'
 import { MarketProvider } from '@koishijs/plugin-manager'
 import { store } from '~/client'
 import { config, addFavorite, removeFavorite } from '../utils'
+import { getMixedMeta } from './utils'
+
+defineEmits(['query'])
 
 const props = defineProps({
   data: {} as PropType<MarketProvider.Data>,
 })
 
-const keywords = computed(() => {
-  return store.packages[props.data.name]?.keywords || props.data.keywords || []
-})
+const meta = computed(() => getMixedMeta(props.data.name))
 
 const repo = computed(() => {
   const { repository = '' } = props.data.links
@@ -49,6 +67,8 @@ const repo = computed(() => {
     return 'github'
   }
 })
+
+const author = computed(() => props.data.author.username)
 
 </script>
 
@@ -76,14 +96,21 @@ const repo = computed(() => {
     margin-top: 1.5rem;
   }
 
+  .k-badge {
+    cursor: pointer;
+    user-select: none;
+  }
+
   header, footer {
     flex-shrink: 0;
   }
 
   header .k-icon {
+    color: var(--fg1);
     margin-left: 0.5rem;
     height: 1.25rem;
-    vertical-align: -2px;
+    vertical-align: -3px;
+    transition: color 0.3s ease;
   }
 
   .right {
@@ -93,9 +120,14 @@ const repo = computed(() => {
   }
 
   .info {
+    cursor: default;
     font-size: 14px;
     color: var(--el-text-color-regular);
     transition: color 0.3s ease;
+
+    .pointer {
+      cursor: pointer;
+    }
 
     .k-icon {
       height: 12px;

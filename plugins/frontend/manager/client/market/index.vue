@@ -1,6 +1,6 @@
 <template>
   <div class="market-search">
-    <el-input v-model="keyword" #suffix>
+    <el-input v-model="query" #suffix>
       <k-icon name="search"></k-icon>
     </el-input>
   </div>
@@ -9,7 +9,7 @@
     <el-checkbox v-model="config.showInstalled">已下载的插件</el-checkbox>
   </div>
   <div class="market-container">
-    <package-view v-for="data in packages" :key="data.name" :data="data"></package-view>
+    <package-view v-for="data in packages" :key="data.name" :data="data" @query="query = $event"></package-view>
   </div>
 </template>
 
@@ -19,16 +19,17 @@ import { store } from '~/client'
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { config } from '../utils'
+import { validate } from './utils'
 import PackageView from './package.vue'
-
-const route = useRoute()
-const router = useRouter()
 
 function join(source: string | string[]) {
   return Array.isArray(source) ? source.join(' ') : source || ''
 }
 
-const keyword = computed<string>({
+const route = useRoute()
+const router = useRouter()
+
+const query = computed<string>({
   get() {
     return join(route.query.keyword)
   },
@@ -38,7 +39,7 @@ const keyword = computed<string>({
 })
 
 const plugins = computed(() => {
-  return Object.values(store.market).filter(item => item.shortname.includes(keyword.value))
+  return Object.values(store.market).filter(data => validate(data, query.value))
 })
 
 const packages = computed(() => {
@@ -67,7 +68,7 @@ const packages = computed(() => {
     font-size: 1.25rem;
     padding: 0 3rem 0 1.25rem;
     background-color: var(--card-bg);
-    transition: background-color 0.3s ease;
+    transition: background-color 0.3s ease, border-color 0.3s ease;
   }
 
   .el-input__suffix {
