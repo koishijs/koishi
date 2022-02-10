@@ -25,6 +25,7 @@ export interface Channel {
   platform: string
   flag: number
   assignee: string
+  guildId: string
 }
 
 export namespace Channel {
