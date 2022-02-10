@@ -191,7 +191,7 @@ class StatisticsProvider extends DataService<StatisticsProvider.Payload> {
       return Object.entries(record).map(([id, value]) => ({
         id,
         platform,
-        [$]: { $add: [{ $ }, value] },
+        [$]: { $add: [{ $ifNull: [{ $ }, 0] }, value] },
       }))
     }))
   }
