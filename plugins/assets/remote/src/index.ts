@@ -20,6 +20,7 @@ class RemoteAssets extends Assets {
   stop() {}
 
   async upload(url: string, file: string) {
+    if (url.startsWith(this.config.endpoint)) return url
     const { secret } = this.config
     const params = { url, file } as any
     if (secret) {
