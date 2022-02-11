@@ -77,6 +77,7 @@ class LocalAssets extends Assets {
   }
 
   async upload(url: string, file: string) {
+    if (url.startsWith(this.config.selfUrl)) return url
     await this._promise
     const { selfUrl, path, root } = this.config
     const { buffer, filename } = await this.analyze(url, file)
