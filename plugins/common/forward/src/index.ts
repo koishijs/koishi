@@ -27,17 +27,19 @@ export const name = 'forward'
 export interface Config {
   rules: Rule[]
   interval?: number
+  useAssets?: boolean
 }
 
 export const schema = Schema.union([
   Schema.object({
     rules: Schema.array(Rule),
     interval: Schema.natural().role('ms').default(Time.hour),
+    useAssets: Schema.boolean().default(false),
   }),
   Schema.transform(Schema.array(Rule), (rules) => ({ rules })),
 ])
 
-export function apply(ctx: Context, { rules, interval }: Config) {
+export function apply(ctx: Context, { rules, interval, useAssets }: Config) {
   const relayMap: Dict<Rule> = {}
 
   async function sendRelay(session: Session, rule: Partial<Rule>) {
@@ -55,7 +57,10 @@ export function apply(ctx: Context, { rules, interval }: Config) {
       }
 
       const bot = ctx.bots.get(`${platform}:${rule.selfId}`)
-      const content = template('forward', author.nickname || author.username, parsed.content)
+      let content = template('forward', author.nickname || author.username, parsed.content)
+      if (ctx.assets && useAssets) {
+        content = await ctx.assets.transform(content)
+      }
       await bot.sendMessage(channelId, content, rule.guildId).then((ids) => {
         for (const id of ids) {
           relayMap[id] = {

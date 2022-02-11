@@ -30,7 +30,8 @@
     "plugin",
     "relay",
     "forward",
-    "optional:database"
+    "optional:database",
+    "optional:assets"
   ],
   "peerDependencies": {
     "koishi": "^4.2.0"
