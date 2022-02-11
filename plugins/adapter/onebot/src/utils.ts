@@ -32,12 +32,20 @@ export const adaptGuildMember = (user: OneBot.SenderInfo): Bot.GuildMember => ({
   roles: [user.role],
 })
 
-export const adaptQQGuildMember = (user: OneBot.GuildMemberInfo, presetRole?: string): Bot.GuildMember => ({
+export const adaptQQGuildMemberInfo = (user: OneBot.GuildMemberInfo): Bot.GuildMember => ({
   userId: user.tiny_id,
   username: user.nickname,
   nickname: user.nickname,
-  roles: [...(presetRole ? [presetRole] : []), user.role.toString()],
-  isBot: presetRole === 'bot',
+  roles: user.role_name ? [user.role_name] : [],
+  isBot: user.role_name === '机器人',
+})
+
+export const adaptQQGuildMemberProfile = (user: OneBot.GuildMemberProfile): Bot.GuildMember => ({
+  userId: user.tiny_id,
+  username: user.nickname,
+  nickname: user.nickname,
+  roles: user.roles?.map(r => r.role_name) || [],
+  isBot: user.roles?.some(r => r.role_name === '机器人'),
 })
 
 export const adaptAuthor = (user: OneBot.SenderInfo, anonymous?: OneBot.AnonymousInfo): Bot.Author => ({
@@ -159,11 +167,19 @@ export function adaptSession(data: OneBot.Payload) {
       case 'group_recall':
         session.type = 'message-deleted'
         session.subtype = 'group'
+        session.subsubtype = 'group'
         break
       case 'friend_recall':
         session.type = 'message-deleted'
         session.subtype = 'private'
         session.channelId = `private:${session.userId}`
+        session.subsubtype = 'private'
+        break
+      // from go-cqhttp source code, but not mentioned in official docs
+      case 'guild_channel_recall':
+        session.type = 'message-deleted'
+        session.subtype = 'group'
+        session.subsubtype = 'guild'
         break
       case 'friend_add':
         session.type = 'friend-added'
