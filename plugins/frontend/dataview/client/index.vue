@@ -8,8 +8,6 @@
             <span v-if="dbInfo?.size">({{ formatSize(dbInfo.size) }})</span>
           </div>
           <k-tab-group :data="dbInfo.model" v-model="currTable"></k-tab-group>
-
-          <!-- <k-tab-group :data="dbInfo.model" v-model="currTable"></k-tab-group> -->
         </div>
       </el-scrollbar>
     </template>

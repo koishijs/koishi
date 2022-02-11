@@ -71,11 +71,14 @@ export class OneBotBot extends Bot<BotConfig> {
     const profile = await this.internal.getGuildServiceProfile()
     // guild service is not supported in this account
     if (!profile?.tiny_id || profile.tiny_id === '0') return
-    this.guildBot = this.app.bots.create('onebot', this.config, QQGuildBot)
+    const guildBotConfig: BotConfig = {
+      ...this.config,
+      platform: 'qqguild',
+      selfId: profile.tiny_id,
+    }
+    this.guildBot = this.app.bots.create('onebot', guildBotConfig, QQGuildBot)
     this.guildBot.internal = this.internal
     this.guildBot.parentBot = this
-    this.guildBot.platform = 'qqguild'
-    this.guildBot.selfId = profile.tiny_id
     this.guildBot.avatar = profile.avatar_url
     this.guildBot.username = profile.nickname
   }
@@ -227,17 +230,21 @@ export class QQGuildBot extends OneBotBot {
   }
 
   async getGuildMember(guildId: string, userId: string) {
-    const memberList = await this.getGuildMemberList(guildId)
-    return memberList.find((member) => member.userId === userId)
+    const profile = await this.internal.getGuildMemberProfile(guildId, userId)
+    return OneBot.adaptQQGuildMemberProfile(profile)
   }
 
   async getGuildMemberList(guildId: string) {
-    const { members, bots, admins } = await this.internal.getGuildMembers(guildId)
-    return [
-      ...(members || []).map((member) => OneBot.adaptQQGuildMember(member, 'member')),
-      ...(bots || []).map((member) => OneBot.adaptQQGuildMember(member, 'bot')),
-      ...(admins || []).map((member) => OneBot.adaptQQGuildMember(member, 'admin')),
-    ]
+    let nextToken: string | undefined
+    let list: Bot.GuildMember[] = []
+    while (true) {
+      const data = await this.internal.getGuildMemberList(guildId, nextToken)
+      if (!data.members?.length) break
+      list = list.concat(data.members.map(OneBot.adaptQQGuildMemberInfo))
+      if (data.finished) break
+      nextToken = data.next_token
+    }
+    return list
   }
 }
 
@@ -382,5 +389,6 @@ Internal.define('get_guild_service_profile')
 Internal.define('get_guild_list')
 Internal.define('get_guild_meta_by_guest', 'guild_id')
 Internal.define('get_guild_channel_list', 'guild_id', 'no_cache')
-Internal.define('get_guild_members', 'guild_id')
+Internal.define('get_guild_member_list', 'guild_id', 'next_token')
+Internal.define('get_guild_member_profile', 'guild_id', 'user_id')
 Internal.defineExtract('send_guild_channel_msg', 'message_id', 'guild_id', 'channel_id', 'message')
