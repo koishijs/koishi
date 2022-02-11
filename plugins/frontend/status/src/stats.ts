@@ -238,11 +238,11 @@ class StatisticsProvider extends DataService<StatisticsProvider.Payload> {
   private extendGuilds: StatisticsProvider.Extension = async (payload, data) => {
     const groupSet = new Set<string>()
     payload.guilds = []
-    const groupMap = Object.fromEntries(data.guilds.map(g => [g.id, g]))
+    const groupMap = Object.fromEntries(data.guilds.map(g => [`${g.platform}:${g.id}`, g]))
     const messageMap = average(data.daily.map(data => data.group))
     const updateList: Pick<Channel, 'id' | 'platform' | 'name'>[] = []
 
-    async function getGroupInfo(bot: Bot) {
+    async function getGuildInfo(bot: Bot) {
       const { platform } = bot
       const guilds = await bot.getGuildList()
       for (const { guildId, guildName: name } of guilds) {
@@ -261,7 +261,10 @@ class StatisticsProvider extends DataService<StatisticsProvider.Payload> {
       }
     }
 
-    await Promise.all(this.ctx.bots.map(bot => getGroupInfo(bot).catch(noop)))
+    await Promise.all(this.ctx.bots.map(async (bot) => {
+      if (bot.status !== 'online') return
+      await getGuildInfo(bot).catch(logger.warn)
+    }))
 
     for (const key in messageMap) {
       if (!groupSet.has(key) && groupMap[key]) {
@@ -286,7 +289,9 @@ class StatisticsProvider extends DataService<StatisticsProvider.Payload> {
       this.ctx.database.get('stats_daily', { time }, { sort, limit: RECENT_LENGTH }),
       this.ctx.database.get('stats_hourly', { time }, { sort, limit: 24 * RECENT_LENGTH }),
       this.ctx.database.get('stats_longterm', { time }, { sort }),
-      this.ctx.database.get('channel', {}, ['platform', 'id', 'name', 'assignee']),
+      this.ctx.database.get('channel', {
+        $expr: { $eq: [{ $: 'id' }, { $: 'guildId' }] },
+      }, ['platform', 'id', 'name', 'assignee']),
     ])
     const data = { daily, hourly, longterm, guilds }
     const payload = {} as StatisticsProvider.Payload
@@ -323,7 +328,7 @@ namespace StatisticsProvider {
 
   export interface Data {
     extension?: StatisticsProvider.Payload
-    guilds: Pick<Channel, 'id' | 'name' | 'assignee'>[]
+    guilds: Pick<Channel, 'id' | 'platform' | 'name' | 'assignee'>[]
     daily: Record<DailyField, Dict<number>>[]
     hourly: ({ time: Date } & Record<HourlyField, number>)[]
     longterm: ({ time: Date } & Record<LongtermField, number>)[]

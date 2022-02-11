@@ -324,8 +324,8 @@ export namespace Eval {
   }
 
   export interface BooleanExpr<T = any, A = never> extends UniveralExpr<T, boolean> {
-    $eq?: [Number<T, A>, Number<T, A>]
-    $ne?: [Number<T, A>, Number<T, A>]
+    $eq?: [Number<T, A>, Number<T, A>] | [String<T, A>, String<T, A>] | [Boolean<T, A>, Boolean<T, A>]
+    $ne?: [Number<T, A>, Number<T, A>] | [String<T, A>, String<T, A>] | [Boolean<T, A>, Boolean<T, A>]
     $gt?: [Number<T, A>, Number<T, A>]
     $gte?: [Number<T, A>, Number<T, A>]
     $lt?: [Number<T, A>, Number<T, A>]
