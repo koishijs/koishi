@@ -71,13 +71,14 @@ export class OneBotBot extends Bot<BotConfig> {
     const profile = await this.internal.getGuildServiceProfile()
     // guild service is not supported in this account
     if (!profile?.tiny_id || profile.tiny_id === '0') return
-    this.guildBot = this.app.bots.create('onebot', {
+    const guildBotConfig: BotConfig = {
       ...this.config,
       platform: 'qqguild',
-    }, QQGuildBot)
+      selfId: profile.tiny_id,
+    }
+    this.guildBot = this.app.bots.create('onebot', guildBotConfig, QQGuildBot)
     this.guildBot.internal = this.internal
     this.guildBot.parentBot = this
-    this.guildBot.selfId = profile.tiny_id
     this.guildBot.avatar = profile.avatar_url
     this.guildBot.username = profile.nickname
   }
