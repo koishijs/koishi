@@ -252,15 +252,17 @@ const columnInputAttr: ComputedRef<Dict<{
   switch (fieldConfig.type) {
     case 'integer':
     case 'unsigned':
-    case 'timestamp':
       step = 1
 
     case 'float':
     case 'double':
     case 'decimal':
       type = 'number'
-
       break
+
+    case 'timestamp':
+      type = 'datetime'
+
     case 'date':
     case 'time':
       type = fieldConfig.type
@@ -276,13 +278,13 @@ const columnInputAttr: ComputedRef<Dict<{
     if (type.value === 'number') val = parseFloat(val)
     switch (fieldConfig.type) {
       case 'unsigned':
-      case 'timestamp':
         if (val < 0)
           return false
       case 'integer':
         if (val % 1 != 0) return false
         break
       case 'json':
+        if (val === '') return true
         if (!(val as string).startsWith('{') || !(val as string).endsWith('}'))
           return false
         break
@@ -320,7 +322,7 @@ function onCellDblClick({ row, column, $index }) {
   if (status.value.changes[$index] === undefined)
     status.value.changes[$index] = {}
   status.value.changes[$index][column.label] = reactive({
-    model: row[column.label],
+    model: JSON.stringify(row[column.label]),
   })
 }
 /** Discard current change */
@@ -341,11 +343,15 @@ async function onSubmitChanges() {
     field: string
   }[] = []
   for (const idx in validChanges.value) {
-    const row = tableData.value[idx]
-    const data: Dict = {}
-    for (const field in validChanges.value[idx])
-      data[field] = validChanges.value[idx][field].model
     try {
+      const row = tableData.value[idx]
+      const data: Dict = {}
+      for (const field in validChanges.value[idx]) {
+        data[field] = validChanges.value[idx][field].model
+        if (props.tableModel.fields[field].type === 'json')
+          data[field] = JSON.parse(data[field])
+      }
+      console.log('Update row: ', data)
       // await new Promise(res => setInterval(() => res(1), 1000))
       await send<'dataview/db-set'>('dataview/db-set', props.name as never, row, data)
 
@@ -383,13 +389,17 @@ async function onDeleteRow({ row, $index }) {
 
 async function onInsertRow() {
   status.value.loading = true
-  const row = Object.keys(status.value.newRow).reduce((o, field) => {
-    o[field] = status.value.newRow[field]
-    return o
-  }, {})
   try {
-    const res = await send<'dataview/db-create'>('dataview/db-create', props.name as never, row)
-    if ('failed' in res) throw new Error()
+    const row = Object.keys(status.value.newRow).reduce((o, field) => {
+      if (status.value.newRow[field]) {
+        o[field] = status.value.newRow[field]
+        if (props.tableModel.fields[field].type === 'json')
+          o[field] = JSON.parse(o[field])
+      }
+      return o
+    }, {})
+    console.log('Create row: ', row)
+    await send<'dataview/db-create'>('dataview/db-create', props.name as never, row)
     await updateData()
     message.success(`成功添加数据`)
     for (const field in status.value.newRow)
