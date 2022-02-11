@@ -93,6 +93,7 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
   argv?: Argv<U, G>
   user?: User.Observed<U>
   channel?: Channel.Observed<G>
+  guild?: Channel.Observed<G>
   parsed?: Parsed
 
   private _delay?: number
@@ -204,16 +205,17 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
     const channel = await this.app.database.getChannel(this.platform, id, fields)
     if (channel) return channel
     const assignee = await this.resolveValue(this.app.options.autoAssign) ? this.selfId : ''
-    return this.app.database.createChannel(this.platform, id, { assignee })
+    return this.app.database.createChannel(this.platform, id, { assignee, guildId: this.guildId })
   }
 
   /** 在当前会话上绑定一个可观测频道实例 */
-  async observeChannel<T extends Channel.Field = never>(fields: Iterable<T> = []): Promise<Channel.Observed<T | G>> {
+  async _observeChannelLike<T extends Channel.Field = never>(channelId: string, fields: Iterable<T> = []) {
     const fieldSet = new Set<Channel.Field>(fields)
-    const { platform, channelId } = this
+    const { platform } = this
+    const key = `${platform}:${channelId}`
 
     // 如果存在满足可用的缓存数据，使用缓存代替数据获取
-    let cache = this.app._channelCache.get(this.id, this.cid)
+    let cache = this.app._channelCache.get(this.id, key)
     if (cache) {
       for (const key in cache) {
         fieldSet.delete(key as any)
@@ -223,14 +225,25 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
 
     // 绑定一个新的可观测频道实例
     const data = await this.getChannel(channelId, [...fieldSet])
-    cache = this.app._channelCache.get(this.id, this.cid)
+    cache = this.app._channelCache.get(this.id, key)
     if (cache) {
       cache.$merge(data)
     } else {
-      cache = observe(data, diff => this.app.database.setChannel(platform, channelId, diff), `channel ${this.cid}`)
-      this.app._channelCache.set(this.id, this.cid, cache)
+      cache = observe(data, diff => this.app.database.setChannel(platform, channelId, diff), `channel ${key}`)
+      this.app._channelCache.set(this.id, key, cache)
     }
     return this.channel = cache
+  }
+
+  async observeChannel<T extends Channel.Field = never>(fields: Iterable<T> = []): Promise<Channel.Observed<T | G>> {
+    const tasks = [this._observeChannelLike(this.channelId, fields)]
+    if (this.channelId !== this.guildId) {
+      tasks.push(this._observeChannelLike(this.guildId, fields))
+    }
+    const [channel, guild = channel] = await Promise.all(tasks)
+    this.guild = guild
+    this.channel = channel
+    return channel
   }
 
   async getUser<K extends User.Field = never>(id = this.userId, fields: K[] = []) {
@@ -266,7 +279,7 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
 
     // 绑定一个新的可观测用户实例
     const data = await this.getUser(userId, [...fieldSet])
-    cache = this.app._userCache.get(this.id, this.cid)
+    cache = this.app._userCache.get(this.id, this.uid)
     if (cache) {
       cache.$merge(data)
     } else {
