@@ -90,13 +90,6 @@ export const extensions = reactive<Record<string, Context>>({})
 
 export const routes: Ref<RouteRecordNormalized[]> = ref([])
 
-export const queries = reactive({})
-
-router.afterEach(() => {
-  const { path, query } = router.currentRoute.value
-  queries[path] = query
-})
-
 interface DisposableExtension extends PageExtension {
   ctx: Context
 }

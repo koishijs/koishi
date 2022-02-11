@@ -15,7 +15,7 @@ import PluginSelect from './select.vue'
 import PluginSettings from './settings.vue'
 
 function join(source: string | string[]) {
-  return Array.isArray(source) ? source.join('/') : source
+  return Array.isArray(source) ? source.join('/') : source || ''
 }
 
 const route = useRoute()
