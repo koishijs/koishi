@@ -36,7 +36,7 @@ class S3Assets extends Assets {
   }
 
   async upload(url: string, file: string) {
-    if (url.startsWith(this.config.publicUrl) || typeof this.config.endpoint === 'string' && url.startsWith(this.config.endpoint)) {
+    if (url.startsWith(this.config.publicUrl)) {
       return url
     }
     const { buffer, filename } = await this.analyze(url, file)
