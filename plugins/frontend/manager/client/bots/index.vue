@@ -9,10 +9,13 @@
       </el-scrollbar>
     </template>
     <template v-if="current === null">
-      <el-empty v-if="botCount" description="当前未选择机器人"></el-empty>
-      <el-empty v-else description="当前没有配置任何机器人">
+      <k-empty v-if="botCount">
+        <div>当前未选择机器人</div>
+      </k-empty>
+      <k-empty v-else>
+        <div>当前没有配置任何机器人</div>
         <k-button solid @click="current = ''">添加机器人</k-button>
-      </el-empty>
+      </k-empty>
     </template>
     <k-content v-else class="bot-profile">
       <bot-settings :current="current" :key="current"></bot-settings>

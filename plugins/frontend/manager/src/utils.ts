@@ -41,11 +41,26 @@ export namespace Package {
     private?: boolean
   }
 
+  export interface User {
+    name: string
+    email: string
+    username?: string
+  }
+
   export interface Remote extends Json {
     deprecated?: string
+    author: User
+    maintainers: User[]
+    license: string
     dist: {
+      shasum: string
+      integrity: string
+      tarball: string
+      fileCount: number
       unpackedSize: number
+      'npm-signature': string
     }
+    _npmUser: User
   }
 
   export interface Registry extends Base {
@@ -59,8 +74,17 @@ export namespace Package {
     readmeFilename: string
   }
 
+  export interface SearchPackage extends Base {
+    date: string
+    keywords: string[]
+    links: Dict<string>
+    author: User
+    publisher: User
+    maintainers: User[]
+  }
+
   export interface SearchItem {
-    package: Base
+    package: SearchPackage
     score: {
       final: number
       detail: {

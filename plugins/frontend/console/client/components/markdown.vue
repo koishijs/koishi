@@ -1,18 +1,27 @@
 <template>
-  <component :is="tag" class="k-markdown" v-html="marked(source)"></component>
+  <component :is="tag" class="k-markdown" v-html="render()"></component>
 </template>
 
 <script lang="ts" setup>
 
 import { marked } from 'marked'
 
-defineProps({
+const props = defineProps({
   source: String,
+  inline: Boolean,
   tag: {
     type: String,
     default: 'div'
   },
 })
+
+function render() {
+  if (props.inline) {
+    return marked.parseInline(props.source)
+  } else {
+    return marked(props.source)
+  }
+}
 
 </script>
 

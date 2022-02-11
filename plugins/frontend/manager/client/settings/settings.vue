@@ -36,10 +36,10 @@
         配置项
         <template v-if="data.id">
           <k-button solid type="error" @click="execute('unload')">停用插件</k-button>
-          <k-button solid :disabled="depTip" @click="execute('reload')">重载配置</k-button>
+          <k-button solid :disabled="!!depTip" @click="execute('reload')">重载配置</k-button>
         </template>
         <template v-else>
-          <k-button solid :disabled="depTip" @click="execute('reload')">启用插件</k-button>
+          <k-button solid :disabled="!!depTip" @click="execute('reload')">启用插件</k-button>
           <k-button solid @click="execute('unload')">保存配置</k-button>
         </template>
       </h1>
@@ -61,7 +61,6 @@ import { store, send } from '~/client'
 import { MarketProvider } from '@koishijs/plugin-manager'
 import KDepAlert from './dep-alert.vue'
 import KDepLink from './dep-link.vue'
-import KTipButton from './tip-button.vue'
 
 const props = defineProps<{
   current: string
@@ -95,7 +94,7 @@ function getKeywords(prefix: string, keywords = data.value.keywords) {
     .map(name => name.slice(prefix.length))
 }
 
-interface DelegateData {
+interface ServiceData {
   required: boolean
   fulfilled: boolean
   available?: string[]
@@ -106,7 +105,7 @@ function isAvailable(name: string, remote: MarketProvider.Data) {
   return getKeywords('service', keywords).includes(name)
 }
 
-function getDelegateData(name: string, required: boolean): DelegateData {
+function getServiceData(name: string, required: boolean): ServiceData {
   const fulfilled = name in store.services
   if (fulfilled) return { required, fulfilled }
   return {
@@ -121,12 +120,12 @@ function getDelegateData(name: string, required: boolean): DelegateData {
 const services = computed(() => {
   const required = getKeywords('required')
   const optional = getKeywords('optional')
-  const result: Dict<DelegateData> = {}
+  const result: Dict<ServiceData> = {}
   for (const name of required) {
-    result[name] = getDelegateData(name, true)
+    result[name] = getServiceData(name, true)
   }
   for (const name of optional) {
-    result[name] = getDelegateData(name, false)
+    result[name] = getServiceData(name, false)
   }
   return result
 })

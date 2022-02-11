@@ -67,7 +67,7 @@ function onClick(event: MouseEvent) {
   // default: transparent & framed
   color: var(--fg2);
   border: 1px solid var(--border);
-  background-color: var(--bg0);
+  background-color: transparent;
   &.disabled {
     color: var(--disabled);
     border-color: var(--border);

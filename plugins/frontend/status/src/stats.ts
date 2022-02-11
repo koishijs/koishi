@@ -32,7 +32,7 @@ export function average(stats: {}[]) {
   return result
 }
 
-export interface GroupData {
+export interface GuildData {
   name: string
   platform: string
   assignee: string
@@ -133,7 +133,7 @@ class StatisticsProvider extends DataService<StatisticsProvider.Payload> {
     })
 
     this.extend(this.extendBasic)
-    this.extend(this.extendGroup)
+    this.extend(this.extendGuilds)
   }
 
   private clear() {
@@ -191,7 +191,7 @@ class StatisticsProvider extends DataService<StatisticsProvider.Payload> {
       return Object.entries(record).map(([id, value]) => ({
         id,
         platform,
-        [$]: { $add: [{ $ }, value] },
+        [$]: { $add: [{ $ifNull: [{ $ }, 0] }, value] },
       }))
     }))
   }
@@ -235,23 +235,23 @@ class StatisticsProvider extends DataService<StatisticsProvider.Payload> {
     })
   }
 
-  private extendGroup: StatisticsProvider.Extension = async (payload, data) => {
+  private extendGuilds: StatisticsProvider.Extension = async (payload, data) => {
     const groupSet = new Set<string>()
-    payload.groups = []
-    const groupMap = Object.fromEntries(data.groups.map(g => [g.id, g]))
+    payload.guilds = []
+    const groupMap = Object.fromEntries(data.guilds.map(g => [g.id, g]))
     const messageMap = average(data.daily.map(data => data.group))
     const updateList: Pick<Channel, 'id' | 'platform' | 'name'>[] = []
 
     async function getGroupInfo(bot: Bot) {
       const { platform } = bot
-      const groups = await bot.getGuildList()
-      for (const { guildId, guildName: name } of groups) {
+      const guilds = await bot.getGuildList()
+      for (const { guildId, guildName: name } of guilds) {
         const id = `${platform}:${guildId}`
         if (!messageMap[id] || !groupMap[id] || groupSet.has(id)) continue
         groupSet.add(id)
         const { name: oldName, assignee } = groupMap[id]
         if (name !== oldName) updateList.push({ platform, id: guildId, name })
-        payload.groups.push({
+        payload.guilds.push({
           name,
           platform,
           assignee,
@@ -267,7 +267,7 @@ class StatisticsProvider extends DataService<StatisticsProvider.Payload> {
       if (!groupSet.has(key) && groupMap[key]) {
         const { name, assignee } = groupMap[key]
         const [platform] = key.split(':') as [never]
-        payload.groups.push({
+        payload.guilds.push({
           platform,
           name: name || key,
           value: messageMap[key],
@@ -282,13 +282,13 @@ class StatisticsProvider extends DataService<StatisticsProvider.Payload> {
 
   async download() {
     const time = { $lt: new Date() }, sort = { time: 'desc' as const }
-    const [daily, hourly, longterm, groups] = await Promise.all([
+    const [daily, hourly, longterm, guilds] = await Promise.all([
       this.ctx.database.get('stats_daily', { time }, { sort, limit: RECENT_LENGTH }),
       this.ctx.database.get('stats_hourly', { time }, { sort, limit: 24 * RECENT_LENGTH }),
       this.ctx.database.get('stats_longterm', { time }, { sort }),
       this.ctx.database.get('channel', {}, ['platform', 'id', 'name', 'assignee']),
     ])
-    const data = { daily, hourly, longterm, groups }
+    const data = { daily, hourly, longterm, guilds }
     const payload = {} as StatisticsProvider.Payload
     await Promise.all(this.callbacks.map(cb => cb(payload, data)))
     return payload
@@ -323,7 +323,7 @@ namespace StatisticsProvider {
 
   export interface Data {
     extension?: StatisticsProvider.Payload
-    groups: Pick<Channel, 'id' | 'name' | 'assignee'>[]
+    guilds: Pick<Channel, 'id' | 'name' | 'assignee'>[]
     daily: Record<DailyField, Dict<number>>[]
     hourly: ({ time: Date } & Record<HourlyField, number>)[]
     longterm: ({ time: Date } & Record<LongtermField, number>)[]
@@ -333,7 +333,7 @@ namespace StatisticsProvider {
     history: Dict<number>
     commands: Dict<number>
     hours: Dict<number>[]
-    groups: GroupData[]
+    guilds: GuildData[]
     botSend: Dict<number>
     botReceive: Dict<number>
   }

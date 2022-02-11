@@ -13,6 +13,7 @@ export interface Rule {
   source: string
   target: string
   selfId: string
+  guildId?: string
 }
 
 export const Rule = Schema.object({
@@ -39,30 +40,36 @@ export const schema = Schema.union([
 export function apply(ctx: Context, { rules, interval }: Config) {
   const relayMap: Dict<Rule> = {}
 
-  async function sendRelay(session: Session, target: string, selfId?: string) {
+  async function sendRelay(session: Session, rule: Partial<Rule>) {
     const { author, parsed } = session
     if (!parsed.content) return
 
-    // get selfId
-    const [platform, channelId] = parsePlatform(target)
-    if (!selfId) {
-      const channel = await ctx.database.getChannel(platform, channelId, ['assignee'])
-      if (!channel || !channel.assignee) return
-      selfId = channel.assignee
-    }
-
-    const bot = ctx.bots.get(`${platform}:${selfId}`)
-    const content = template('forward', author.nickname || author.username, parsed.content)
-    await bot.sendMessage(channelId, content).then((ids) => {
-      for (const id of ids) {
-        relayMap[id] = { source: target, target: session.cid, selfId: session.selfId }
-        ctx.setTimeout(() => delete relayMap[id], interval)
+    try {
+      // get selfId
+      const [platform, channelId] = parsePlatform(rule.target)
+      if (!rule.selfId) {
+        const channel = await ctx.database.getChannel(platform, channelId, ['assignee', 'guildId'])
+        if (!channel || !channel.assignee) return
+        rule.selfId = channel.assignee
+        rule.guildId = channel.guildId
       }
-    })
-  }
 
-  function handleError(error: any) {
-    ctx.logger('forward').warn(error)
+      const bot = ctx.bots.get(`${platform}:${rule.selfId}`)
+      const content = template('forward', author.nickname || author.username, parsed.content)
+      await bot.sendMessage(channelId, content, rule.guildId).then((ids) => {
+        for (const id of ids) {
+          relayMap[id] = {
+            source: rule.target,
+            target: session.cid,
+            selfId: session.selfId,
+            guildId: session.guildId,
+          }
+          ctx.setTimeout(() => delete relayMap[id], interval)
+        }
+      })
+    } catch (error) {
+      ctx.logger('forward').warn(error)
+    }
   }
 
   ctx.before('attach-channel', (session, fields) => {
@@ -73,17 +80,17 @@ export function apply(ctx: Context, { rules, interval }: Config) {
     const { quote = {}, subtype } = session
     if (subtype !== 'group') return
     const data = relayMap[quote.messageId]
-    if (data) return sendRelay(session, data.target, data.selfId)
+    if (data) return sendRelay(session, data)
 
     const tasks: Promise<void>[] = []
     if (ctx.database) {
       for (const target of session.channel.forward) {
-        tasks.push(sendRelay(session, target).catch(handleError))
+        tasks.push(sendRelay(session, { target }))
       }
     } else {
       for (const rule of rules) {
         if (session.cid !== rule.source) continue
-        tasks.push(sendRelay(session, rule.target, rule.selfId).catch(handleError))
+        tasks.push(sendRelay(session, rule))
       }
     }
     const [result] = await Promise.all([next(), ...tasks])

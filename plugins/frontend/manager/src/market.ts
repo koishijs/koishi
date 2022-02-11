@@ -57,6 +57,7 @@ class MarketProvider extends DataService<Dict<MarketProvider.Data>> {
     if (!versions.length) return
 
     const shortname = official ? name.slice(17) : name.slice(14)
+    const latest = registry.versions[versions[0].version]
     this.tempCache[name] = this.fullCache[name] = {
       ...item,
       shortname,
@@ -64,7 +65,8 @@ class MarketProvider extends DataService<Dict<MarketProvider.Data>> {
       score: score.detail.popularity * 100,
       description,
       versions,
-      readme: registry.readme,
+      size: latest.dist.unpackedSize,
+      license: latest.license,
     }
     this.flushData()
   }
@@ -91,12 +93,13 @@ namespace MarketProvider {
     endpoint: Schema.string().role('url').description('要使用的 npm registry 终结点。').default('https://registry.npmjs.org'),
   })
 
-  export interface Data extends Package.Base {
+  export interface Data extends Package.SearchPackage {
     versions: Package.Meta[]
     shortname: string
     official: boolean
     score: number
-    readme: string
+    size: number
+    license: string
   }
 }
 

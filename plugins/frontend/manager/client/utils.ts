@@ -13,10 +13,12 @@ export function useVersionStorage<T extends object>(key: string, version: string
 
 interface ManagerConfig {
   override: Dict<string>
+  showInstalled: boolean
 }
 
 export const config = useVersionStorage<ManagerConfig>('managerConfig', '2.0', () => ({
   override: {},
+  showInstalled: false,
 }))
 
 export const overrideCount = computed(() => {
@@ -35,7 +37,6 @@ watch(store.packages, (value) => {
 }, { immediate: true })
 
 interface ManagerState {
-  downloading?: boolean
 }
 
 export const state = reactive<ManagerState>({})

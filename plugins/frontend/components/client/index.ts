@@ -1,11 +1,12 @@
 import { App } from 'vue'
 import {
   ElButton,
+  ElCheckbox,
   ElInput,
   ElInputNumber,
-  ElEmpty,
+  ElLoading,
+  ElMessage,
   ElRadio,
-  ElRadioGroup,
   ElScrollbar,
   ElSelect,
   ElSlider,
@@ -16,7 +17,6 @@ import {
   ElTableColumn,
   ElPagination,
   ElPopconfirm,
-  ElLoading,
 } from 'element-plus'
 
 import common from './common'
@@ -27,11 +27,11 @@ import notice from './notice'
 
 import 'element-plus/es/components/message/style/css'
 import 'element-plus/es/components/button/style/css'
+import 'element-plus/es/components/checkbox/style/css'
 import 'element-plus/es/components/input/style/css'
 import 'element-plus/es/components/input-number/style/css'
-import 'element-plus/es/components/empty/style/css'
+import 'element-plus/es/components/loading/style/css'
 import 'element-plus/es/components/radio/style/css'
-import 'element-plus/es/components/radio-group/style/css'
 import 'element-plus/es/components/scrollbar/style/css'
 import 'element-plus/es/components/select/style/css'
 import 'element-plus/es/components/slider/style/css'
@@ -42,10 +42,10 @@ import 'element-plus/es/components/table/style/css'
 import 'element-plus/es/components/table-column/style/css'
 import 'element-plus/es/components/pagination/style/css'
 import 'element-plus/es/components/popconfirm/style/css'
-import 'element-plus/es/components/loading/style/css'
 import './style.scss'
 
-export { ElMessage as message } from 'element-plus'
+export const loading = ElLoading.service
+export const message = ElMessage
 
 export * from './common'
 export * from './form'
@@ -55,9 +55,10 @@ export * from './notice'
 
 export default function (app: App) {
   app.use(ElButton)
+  app.use(ElCheckbox)
   app.use(ElInput)
   app.use(ElInputNumber)
-  app.use(ElEmpty)
+  app.use(ElLoading)
   app.use(ElRadio)
   app.use(ElScrollbar)
   app.use(ElSelect)

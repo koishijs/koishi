@@ -2,19 +2,13 @@ import { Card, Context } from '~/client'
 import type {} from '@koishijs/plugin-manager'
 import Bots from './bots/index.vue'
 import Settings from './settings/index.vue'
-import Dependencies from './dependencies/index.vue'
+import Dependencies from './deps/index.vue'
 import Market from './market/index.vue'
-import Overlay from './dependencies/overlay.vue'
 import { overrideCount } from './utils'
 
 import './style.scss'
 
 export default (ctx: Context) => {
-  ctx.addView({
-    type: 'global',
-    component: Overlay,
-  })
-
   ctx.addView({
     type: 'numeric',
     order: 100,
@@ -36,7 +30,7 @@ export default (ctx: Context) => {
   })
 
   ctx.addPage({
-    path: '/settings',
+    path: '/settings/:name*',
     name: '插件配置',
     icon: 'cog',
     order: 630,
@@ -45,21 +39,21 @@ export default (ctx: Context) => {
   })
 
   ctx.addPage({
-    path: '/dependencies',
-    name: '依赖管理',
-    icon: 'box-open',
-    order: 620,
-    fields: ['market', 'packages'],
-    component: Dependencies,
-    badge: () => overrideCount.value,
-  })
-
-  ctx.addPage({
     path: '/market',
     name: '插件市场',
     icon: 'puzzle-piece',
-    order: 610,
+    order: 620,
     fields: ['market', 'packages'],
     component: Market,
+  })
+
+  ctx.addPage({
+    path: '/dependencies',
+    name: '依赖管理',
+    icon: 'box-open',
+    order: 610,
+    fields: ['market', 'packages'],
+    component: Dependencies,
+    badge: () => overrideCount.value,
   })
 }

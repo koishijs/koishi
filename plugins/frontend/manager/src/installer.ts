@@ -26,7 +26,7 @@ function supports(command: string, args: string[] = []) {
   })
 }
 
-export default class Installer extends DataService {
+class Installer extends DataService {
   private agentTask: Promise<Manager>
 
   constructor(public ctx: Context) {
@@ -103,3 +103,5 @@ export default class Installer extends DataService {
     return code
   }
 }
+
+export default Installer

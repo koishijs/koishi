@@ -15,6 +15,7 @@ export function apply(ctx: Context) {
     .option('escape', '-e  发送转义消息', { authority: 3 })
     .option('user', '-u [user:user]  发送到用户', { authority: 3 })
     .option('channel', '-c [channel:channel]  发送到频道', { authority: 3 })
+    .option('guild', '-g [guild:string]  指定群组编号', { authority: 3 })
     .action(async ({ options }, message) => {
       if (!message) return template('echo.expect-text')
 
@@ -37,7 +38,7 @@ export function apply(ctx: Context) {
         } else if (options.user) {
           await bot.sendPrivateMessage(id, message)
         } else {
-          await bot.sendMessage(id, message, 'unknown')
+          await bot.sendMessage(id, message, options.guild)
         }
         return
       }

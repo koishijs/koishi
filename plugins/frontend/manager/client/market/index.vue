@@ -1,85 +1,113 @@
 <template>
-  <k-card-aside class="page-market">
-    <template #aside>
-      <div class="search">
-        <k-input v-model="keyword" #suffix>
-          <k-icon name="search"></k-icon>
-        </k-input>
-      </div>
-      <el-scrollbar>
-        <div class="content">
-          <div
-            v-for="data in packages" :key="data.name"
-            :class="['k-menu-item', { active: data.name === current }]"
-            @click="current = data.name">
-            {{ data.shortname }}
-            <k-icon v-if="data.official" name="check-full"></k-icon>
-          </div>
-        </div>
-      </el-scrollbar>
-    </template>
-    <k-content v-if="current">
-      <k-button solid @click="addFavorite(current)">添加插件</k-button>
-      <k-markdown :source="store.market[current].readme"></k-markdown>
-    </k-content>
-  </k-card-aside>
+  <div class="market-search">
+    <el-input v-model="query" #suffix>
+      <k-icon name="search"></k-icon>
+    </el-input>
+  </div>
+  <div class="market-filter">
+    共搜索到 {{ plugins.length }} 个插件。
+    <el-checkbox v-model="config.showInstalled">已下载的插件</el-checkbox>
+  </div>
+  <div class="market-container">
+    <package-view v-for="data in packages" :key="data.name" :data="data" @query="query = $event"></package-view>
+  </div>
 </template>
 
 <script setup lang="ts">
 
 import { store } from '~/client'
-import { ref, computed } from 'vue'
-import { addFavorite } from '../utils'
+import { computed } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { config } from '../utils'
+import { validate } from './utils'
+import PackageView from './package.vue'
 
-const current = ref<string>(null)
-const keyword = ref('')
+function join(source: string | string[]) {
+  return Array.isArray(source) ? source.join(' ') : source || ''
+}
+
+const route = useRoute()
+const router = useRouter()
+
+const query = computed<string>({
+  get() {
+    return join(route.query.keyword)
+  },
+  set(value) {
+    const { keyword, ...rest } = route.query
+    if (value) {
+      router.replace({ query: { keyword: value, ...rest } })
+    } else {
+      router.replace({ query: rest })
+    }
+  },
+})
+
+const plugins = computed(() => {
+  return Object.values(store.market).filter(data => validate(data, query.value))
+})
 
 const packages = computed(() => {
-  return Object.values(store.market)
-    .filter(item => item.shortname.includes(keyword.value))
-    .filter(item => !store.packages[item.name])
+  return plugins.value
+    .filter(item => config.showInstalled || !store.packages[item.name])
     .sort((a, b) => b.score - a.score)
-    .sort((a, b) => +b.official - +a.official)
 })
 
 </script>
 
 <style lang="scss">
 
-.page-market {
-  height: calc(100vh - 4rem);
+.market-search {
+  margin: 2rem 2rem 0;
+  display: flex;
+  justify-content: center;
 
-  .k-card-body {
-    height: 100%;
-    display: flex;
-    flex-direction: column;
+  .el-input {
+    max-width: 600px;
+    line-height: 3rem;
   }
 
-  aside {
-    display: flex;
-    flex-direction: column;
+  .el-input__inner {
+    height: 3rem;
+    border-radius: 2rem;
+    font-size: 1.25rem;
+    padding: 0 3rem 0 1.25rem;
+    background-color: var(--card-bg);
+    transition: background-color 0.3s ease, border-color 0.3s ease;
   }
 
-  .search {
-    padding: 1rem 2rem;
-  }
-
-  .content {
-    padding: 0 0 1rem;
-    line-height: 2.25rem;
-  }
-
-  .k-menu-item {
-    padding: 0 2rem;
-    white-space: nowrap;
-    overflow: auto;
-    text-overflow: ellipsis;
+  .el-input__suffix {
+    right: 1.25rem;
 
     .k-icon {
-      color: var(--success);
-      vertical-align: -2px;
+      height: 1.25rem;
     }
   }
+}
+
+.market-filter {
+  width: 100%;
+  margin: 0.5rem 0 -0.5rem;
+  text-align: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--el-text-color-regular);
+  font-size: var(--el-font-size-base);
+  font-weight: var(--el-font-weight-primary);
+  transition: color 0.3s ease;
+
+  .el-checkbox {
+    margin-left: 1.5rem;
+  }
+}
+
+.market-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+  gap: 2rem;
+  margin: 2rem;
+  justify-items: center;
 }
 
 </style>

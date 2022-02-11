@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-teach",
   "description": "Teach plugin for Koishi",
-  "version": "3.1.1",
+  "version": "3.1.2",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "engines": {
@@ -33,16 +33,18 @@
     "dialogue",
     "conversation",
     "required:database",
-    "optional:assets"
+    "optional:assets",
+    "optional:console",
+    "impl:teach"
   ],
   "peerDependencies": {
-    "koishi": "^4.1.2"
+    "koishi": "^4.2.0"
   },
   "devDependencies": {
-    "@koishijs/plugin-console": "^2.1.0",
-    "@koishijs/plugin-database-memory": "^1.0.0",
-    "@koishijs/plugin-status": "^5.2.1",
-    "@koishijs/plugin-mock": "^1.0.1"
+    "@koishijs/plugin-console": "^2.2.0",
+    "@koishijs/plugin-database-memory": "^1.0.1",
+    "@koishijs/plugin-status": "^5.2.2",
+    "@koishijs/plugin-mock": "^1.0.2"
   },
   "dependencies": {
     "fastest-levenshtein": "^1.0.12",

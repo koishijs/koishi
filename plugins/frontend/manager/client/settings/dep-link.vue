@@ -7,6 +7,7 @@
 <script lang="ts" setup>
 
 import { useRouter } from 'vue-router'
+import { store } from '~/client'
 import { addFavorite } from '../utils'
 
 defineProps<{
@@ -17,7 +18,11 @@ const router = useRouter()
 
 function configurate(name: string) {
   addFavorite(name)
-  router.push('/market')
+  if (store.packages[name]) {
+    router.push('/settings/' + name)
+  } else {
+    router.push('/market?keyword=' + name)
+  }
 }
 
 </script>

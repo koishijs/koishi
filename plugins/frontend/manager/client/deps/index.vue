@@ -27,8 +27,8 @@
 
 import { computed } from 'vue'
 import { store, send } from '~/client'
-import { config, state, overrideCount } from '../utils'
-import { message } from '~/components'
+import { config, overrideCount } from '../utils'
+import { message, loading } from '~/components'
 import PackageView from './package.vue'
 
 const names = computed(() => {
@@ -40,7 +40,9 @@ const names = computed(() => {
 })
 
 async function install() {
-  state.downloading = true
+  const instance = loading({
+    text: '正在更新依赖……',
+  })
   try {
     const code = await send('install', config.override)
     if (code === 0) {
@@ -51,7 +53,7 @@ async function install() {
   } catch (err) {
     message.error('安装超时！')
   } finally {
-    state.downloading = false
+    instance.close()
   }
 }
 

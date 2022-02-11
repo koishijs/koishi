@@ -38,8 +38,8 @@
     "@types/node": "^17.0.10"
   },
   "peerDependencies": {
-    "@koishijs/plugin-mock": "^1.0.1",
-    "koishi": "^4.1.2"
+    "@koishijs/plugin-mock": "^1.0.2",
+    "koishi": "^4.2.0"
   },
   "dependencies": {
     "chai": "^4.3.4",
