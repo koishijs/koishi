@@ -1,21 +1,13 @@
-import { App, Schema } from '@koishijs/core'
-import { Dict, defineProperty } from '@koishijs/utils'
+import { Schema } from '@koishijs/core'
+import { Dict } from '@koishijs/utils'
 import { Agent } from 'http'
 import ProxyAgent from 'proxy-agent'
 import axios, { AxiosRequestConfig, AxiosResponse, Method } from 'axios'
 
 declare module '@koishijs/core' {
   namespace App {
-    interface Config extends Config.Request {}
-
-    namespace Config {
-      interface Static {
-        Request?: Schema<Config.Request>
-      }
-
-      interface Request {
-        request?: Quester.Config
-      }
+    interface Config {
+      request?: Quester.Config
     }
   }
 
@@ -107,11 +99,3 @@ export namespace Quester {
     return http
   }
 }
-
-const RequestConfig: Schema<App.Config.Request> = Schema.object({
-  request: Quester.Config,
-})
-
-defineProperty(App.Config, 'Request', RequestConfig)
-
-App.Config.list.push(RequestConfig)
