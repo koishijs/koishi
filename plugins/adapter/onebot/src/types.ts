@@ -482,6 +482,6 @@ export interface Internal {
   getGuildMetaByGuest(guild_id: id): Promise<GuildMeta>
   getGuildChannelList(guild_id: id, no_cache: boolean): Promise<ChannelInfo[]>
   getGuildMemberList(guild_id: id, next_token?: string): Promise<GuildMemberListData>
-  getGuildMemberProile(guild_id: id, user_id: id): Promise<GuildMemberProfile>
+  getGuildMemberProfile(guild_id: id, user_id: id): Promise<GuildMemberProfile>
   sendGuildChannelMsg(guild_id: id, channel_id: id, message: string): Promise<number>
 }
