@@ -9,6 +9,8 @@ $white: #ffffff;
   --border-dark: #c8c9cc;
   --card-bg: #ffffff;
   --page-bg: #f2f3f5;
+  --card-border: var(--card-bg);
+  --card-shadow: 0 6px 10px -4px rgb(0 0 0 / 15%);
   --loading-mask-bg: #f2f3f5bf;
 
   @mixin apply-color($name, $base) {
@@ -30,6 +32,7 @@ html.dark {
   --border: #4f515cbf;
   --card-bg: #2f3034;
   --page-bg: #202225;
+  --card-border: var(--border);
   --loading-mask-bg: #202225bf;
 
   @mixin apply-color($name, $base) {
@@ -56,12 +59,24 @@ html.dark {
   --el-color-error: var(--error);
 }
 
+.k-icon {
+  transition: color 0.3s ease, background-color 0.3s ease;
+}
+
+.el-checkbox__label {
+  transition: color 0.3s ease;
+}
+
 .el-input-number__decrease, .el-input-number__increase {
   --el-bg-color: transparent;
 }
 
 .el-input__inner {
   --el-input-bg-color: transparent;
+}
+
+.el-input__prefix-inner, .el-input__suffix-inner {
+  align-items: center;
 }
 
 .el-loading-mask {

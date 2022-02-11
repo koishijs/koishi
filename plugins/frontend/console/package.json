@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-console",
   "description": "A web user interface for Koishi",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -27,10 +27,11 @@
     "chatbot",
     "koishi",
     "plugin",
-    "webui"
+    "webui",
+    "impl:console"
   ],
   "peerDependencies": {
-    "koishi": "^4.1.2"
+    "koishi": "^4.2.0"
   },
   "devDependencies": {
     "@types/marked": "^4.0.1",

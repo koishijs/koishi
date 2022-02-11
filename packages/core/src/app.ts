@@ -138,9 +138,10 @@ export class App extends Context {
     if (this.database) {
       if (session.subtype === 'group') {
         // attach group data
-        const channelFields = new Set<Channel.Field>(['flag', 'assignee'])
+        const channelFields = new Set<Channel.Field>(['flag', 'assignee', 'guildId'])
         this.emit('before-attach-channel', session, channelFields)
         const channel = await session.observeChannel(channelFields)
+        channel.guildId = session.guildId
 
         // emit attach event
         if (await this.serial(session, 'attach-channel', session)) return

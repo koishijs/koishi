@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-database-mysql",
   "description": "MySQL support for Koishi",
-  "version": "4.1.1",
+  "version": "4.1.2",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -28,14 +28,15 @@
     "chatbot",
     "koishi",
     "database",
-    "mysql"
+    "mysql",
+    "impl:database"
   ],
   "devDependencies": {
     "@koishijs/database-tests": "^1.0.0",
-    "@koishijs/plugin-mock": "^1.0.1"
+    "@koishijs/plugin-mock": "^1.0.2"
   },
   "peerDependencies": {
-    "koishi": "^4.1.2"
+    "koishi": "^4.2.0"
   },
   "dependencies": {
     "@koishijs/orm-utils": "^1.0.0",

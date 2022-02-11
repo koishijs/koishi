@@ -4,6 +4,7 @@ import ArrowDown from './svg/arrow-down.vue'
 import ArrowLeft from './svg/arrow-left.vue'
 import ArrowRight from './svg/arrow-right.vue'
 import ArrowUp from './svg/arrow-up.vue'
+import Balance from './svg/balance.vue'
 import Book from './svg/book.vue'
 import BoxOpen from './svg/box-open.vue'
 import CheckFull from './svg/check-full.vue'
@@ -21,8 +22,11 @@ import Expand from './svg/expand.vue'
 import External from './svg/external.vue'
 import EyeSlash from './svg/eye-slash.vue'
 import Eye from './svg/eye.vue'
+import FileArchive from './svg/file-archive.vue'
 import Filter from './svg/filter.vue'
 import Flask from './svg/flask.vue'
+import GitHub from './svg/github.vue'
+import GitLab from './svg/gitlab.vue'
 import Hdd from './svg/hdd.vue'
 import HeartEmpty from './svg/heart-empty.vue'
 import HeartFull from './svg/heart-full.vue'
@@ -44,10 +48,12 @@ import StarEmpty from './svg/star-empty.vue'
 import StarFull from './svg/star-full.vue'
 import Sun from './svg/sun.vue'
 import Tachometer from './svg/tachometer.vue'
+import Tag from './svg/tag.vue'
 import TimesFull from './svg/times-full.vue'
 import Tools from './svg/tools.vue'
 import Undo from './svg/undo.vue'
 import Users from './svg/users.vue'
+import User from './svg/user.vue'
 
 import './style.scss'
 
@@ -58,6 +64,7 @@ registerIcon('arrow-down', ArrowDown)
 registerIcon('arrow-left', ArrowLeft)
 registerIcon('arrow-right', ArrowRight)
 registerIcon('arrow-up', ArrowUp)
+registerIcon('balance', Balance)
 registerIcon('book', Book)
 registerIcon('box-open', BoxOpen)
 registerIcon('check-full', CheckFull)
@@ -75,8 +82,11 @@ registerIcon('expand', Expand)
 registerIcon('external', External)
 registerIcon('eye-slash', EyeSlash)
 registerIcon('eye', Eye)
+registerIcon('file-archive', FileArchive)
 registerIcon('filter', Filter)
 registerIcon('flask', Flask)
+registerIcon('github', GitHub)
+registerIcon('gitlab', GitLab)
 registerIcon('hdd', Hdd)
 registerIcon('heart-empty', HeartEmpty)
 registerIcon('heart-full', HeartFull)
@@ -98,10 +108,12 @@ registerIcon('star-empty', StarEmpty)
 registerIcon('star-full', StarFull)
 registerIcon('sun', Sun)
 registerIcon('tachometer', Tachometer)
+registerIcon('tag', Tag)
 registerIcon('times-full', TimesFull)
 registerIcon('tools', Tools)
 registerIcon('undo', Undo)
 registerIcon('users', Users)
+registerIcon('user', User)
 
 export function registerIcon(name: string, component: Component) {
   icons[name] = component
@@ -113,7 +125,7 @@ export default function (app: App) {
       name: String,
     },
     render(props) {
-      return h(icons[props.name])
+      return props.name && h(icons[props.name])
     },
   }))
 }

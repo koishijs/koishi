@@ -32,10 +32,12 @@ $paddingY: 1.5rem;
   border-radius: 8px;
   overflow: hidden;
   background-color: var(--card-bg);
+  border: 1px solid var(--card-border);
   box-shadow: var(--card-shadow);
-  transition: background-color 0.3s ease, box-shadow 0.3s ease;
+  transition: border-color 0.3s ease, background-color 0.3s ease, box-shadow 0.3s ease;
 
   header {
+    position: relative;
     font-size: 1.25rem;
     font-weight: bolder;
     margin: $paddingX 0;
@@ -44,6 +46,7 @@ $paddingY: 1.5rem;
   }
 
   footer {
+    position: relative;
     margin: $paddingX 0;
     padding: 0 $paddingY;
   }

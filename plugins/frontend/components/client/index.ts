@@ -1,6 +1,7 @@
 import { App } from 'vue'
 import {
   ElButton,
+  ElCheckbox,
   ElInput,
   ElInputNumber,
   ElLoading,
@@ -21,6 +22,7 @@ import layout from './layout'
 import notice from './notice'
 
 import 'element-plus/es/components/button/style/css'
+import 'element-plus/es/components/checkbox/style/css'
 import 'element-plus/es/components/input/style/css'
 import 'element-plus/es/components/input-number/style/css'
 import 'element-plus/es/components/loading/style/css'
@@ -44,6 +46,7 @@ export * from './notice'
 
 export default function (app: App) {
   app.use(ElButton)
+  app.use(ElCheckbox)
   app.use(ElInput)
   app.use(ElInputNumber)
   app.use(ElLoading)

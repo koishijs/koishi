@@ -53,7 +53,7 @@ body {
 }
 
 a {
-  color: var(--primary);
+  color: var(--active);
   text-decoration: none;
   transition: color 0.3s ease;
 }

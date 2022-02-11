@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-adapter-kaiheila",
   "description": "Kaiheila adapter for Koishi",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -21,13 +21,14 @@
     "bot",
     "kaiheila",
     "chatbot",
-    "koishi"
+    "koishi",
+    "impl:adapter"
   ],
   "peerDependencies": {
-    "koishi": "^4.1.2"
+    "koishi": "^4.2.0"
   },
   "devDependencies": {
-    "@koishijs/plugin-mock": "^1.0.1"
+    "@koishijs/plugin-mock": "^1.0.2"
   },
   "dependencies": {
     "axios": "^0.24.0",

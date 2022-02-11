@@ -35,6 +35,7 @@ export class Model {
       platform: 'string(63)',
       flag: 'unsigned(20)',
       assignee: 'string(63)',
+      guildId: 'string(63)',
     }, {
       primary: ['id', 'platform'],
     })

@@ -229,7 +229,7 @@ router.beforeEach(async (to, from) => {
 
   if (from === START_LOCATION) {
     await initTask
-    to = router.resolve(to.path)
+    to = router.resolve(to)
     if (to.matched.length) return to
   }
 
