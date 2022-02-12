@@ -17,11 +17,10 @@ defineProps<{
 const router = useRouter()
 
 function configurate(name: string) {
-  addFavorite(name)
   if (store.packages[name]) {
     router.push('/settings/' + name)
   } else {
-    router.push('/market?keyword=' + name)
+    addFavorite(name)
   }
 }
 
