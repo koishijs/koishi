@@ -74,7 +74,7 @@ class WsService extends DataService {
 
     socket.on('message', async (data) => {
       if (await handle.validate()) return
-      const { type, args, id } = deserialize(data as unknown as Buffer)
+      const { type, args, id } = deserialize(Array.isArray(data) ? Buffer.concat(data) : data)
       const listener = this.listeners[type]
       if (!listener) {
         logger.info('unknown message:', type, ...args)
