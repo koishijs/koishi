@@ -31,17 +31,17 @@
 
 <script lang="ts" setup>
 
-import type { } from '@koishijs/plugin-dataview';
-import { Dict } from 'koishi';
-import { computed, ref, Ref } from 'vue';
-import { store } from '~/client';
-import KDataTable, { TableStatus } from './components/data-table.vue';
-import { formatSize } from './utils';
+import type { } from '@koishijs/plugin-dataview'
+import { Dict } from 'koishi'
+import { computed, ref, Ref } from 'vue'
+import { store } from '~/client'
+import KDataTable, { TableStatus } from './components/data-table.vue'
+import { formatSize } from './utils'
 
 const dbInfo = computed(() => store.dbInfo)
 
-const loading = ref(false);
-const currTable = ref<string>('');
+const loading = ref(false)
+const currTable = ref<string>('')
 const tableStatus: Dict<Ref<TableStatus>> = {}
 const tableStatusInit = () => {
   if (!tableStatus[currTable.value])

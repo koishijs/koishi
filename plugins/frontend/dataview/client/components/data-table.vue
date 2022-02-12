@@ -118,13 +118,13 @@
 
 <script lang="ts" setup>
 
-import { } from '@koishijs/plugin-console';
-import { ElPagination, ElPopconfirm, ElTable, ElTableColumn } from 'element-plus';
-import { Dict, Model, Query } from 'koishi';
-import { computed, ComputedRef, nextTick, reactive, ref, watch, watchEffect } from 'vue';
-import { send } from '~/client';
-import { message } from '~/components';
-import { formatSize, handleError, timeStr } from '../utils';
+import { } from '@koishijs/plugin-console'
+import { ElPagination, ElPopconfirm, ElTable, ElTableColumn } from 'element-plus'
+import { Dict, Model, Query } from 'koishi'
+import { computed, ComputedRef, nextTick, reactive, ref, watch, watchEffect } from 'vue'
+import { send } from '~/client'
+import { message } from '~/components'
+import { formatSize, handleError, timeStr } from '../utils'
 
 export type TableStatus = {
   loading: boolean
