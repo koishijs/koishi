@@ -1,4 +1,4 @@
-import { difference, enumKeys, template, Context, User, Channel, Command } from 'koishi'
+import { difference, enumKeys, template, Context, User, Channel, Command, Schema } from 'koishi'
 import { adminChannel, adminUser, parsePlatform } from '@koishijs/helpers'
 
 /* eslint-disable quote-props */
@@ -47,8 +47,11 @@ function adminFlag<U extends User.Field, G extends Channel.Field, A extends any[
     })
 }
 
+export interface Config {}
+
 export const name = 'admin'
 export const using = ['database'] as const
+export const Config: Schema<Config> = Schema.object({})
 
 export function apply(ctx: Context) {
   ctx.command('user', '用户管理', { authority: 3 })

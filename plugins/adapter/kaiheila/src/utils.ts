@@ -1,7 +1,7 @@
 import { Adapter, Bot, Session, segment, camelCase, Schema, App } from 'koishi'
 import * as KHL from './types'
 
-export interface AdapterConfig extends Adapter.WebSocketClient.Config, App.Config.Request {
+export interface AdapterConfig extends Adapter.WebSocketClient.Config {
   path?: string
 }
 
@@ -10,7 +10,6 @@ export const AdapterConfig: Schema<AdapterConfig> = Schema.intersect([
     path: Schema.string().description('服务器监听的路径，仅用于 http 协议。').default('/kaiheila'),
   }),
   Adapter.WebSocketClient.Config,
-  App.Config.Request,
 ])
 
 export const adaptGroup = (data: KHL.Guild): Bot.Guild => ({

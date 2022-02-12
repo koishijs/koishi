@@ -1,4 +1,4 @@
-import { Context, Dict, Random, Session, template, Time, User } from 'koishi'
+import { Context, Dict, Random, Schema, Session, template, Time, User } from 'koishi'
 
 template.set('bind', {
   'generated-1': [
@@ -23,6 +23,9 @@ export interface Config {
 
 export const name = 'bind'
 export const using = ['database'] as const
+export const Config: Schema<Config> = Schema.object({
+  generateToken: Schema.function().hidden(),
+})
 
 export function apply(ctx: Context, config: Config = {}) {
   // 1: group (1st step)

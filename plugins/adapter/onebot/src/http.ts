@@ -19,14 +19,13 @@ export class HttpServer extends Adapter<BotConfig, AdapterConfig> {
   constructor(ctx: Context, config: AdapterConfig = {}) {
     super(ctx, config)
     assertProperty(ctx.app.options, 'port')
-    this.http = ctx.http.extend(config.request)
   }
 
   async connect(bot: OneBotBot) {
     const { endpoint, token } = bot.config
     if (!endpoint) return
 
-    const http = this.http.extend(bot.config).extend({
+    const http = this.ctx.http.extend(bot.config).extend({
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Token ${token}`,

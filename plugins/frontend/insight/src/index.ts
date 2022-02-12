@@ -1,4 +1,4 @@
-import { camelize, capitalize, Context, Dict, Plugin } from 'koishi'
+import { camelize, capitalize, Context, Dict, Plugin, Schema } from 'koishi'
 import { debounce } from 'throttle-debounce'
 import { DataService } from '@koishijs/plugin-console'
 import { resolve } from 'path'
@@ -11,8 +11,11 @@ declare module '@koishijs/plugin-console' {
   }
 }
 
+export interface Config {}
+
 export default class RegistryProvider extends DataService<Dict<PluginData>> {
   static using = ['console'] as const
+  static schema: Schema<Config> = Schema.object({})
 
   private cache: Dict<PluginData>
 

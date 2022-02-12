@@ -6,7 +6,7 @@
     部分配置项无法正常显示，这可能并非预期行为，请联系插件作者。
   </k-comment>
   <form class="k-form">
-    <h2 v-if="showHeader ?? isHeadless(schema)">基础设置</h2>
+    <h2 v-if="showHeader ?? !hasTitle(schema)">基础设置</h2>
     <slot name="header"></slot>
     <k-schema v-if="schema" :schema="schema" :disabled="disabled" v-model="config"></k-schema>
     <slot name="footer"></slot>
@@ -32,11 +32,18 @@ const config = computed({
   set: emit.bind(null, 'update:modelValue'),
 })
 
-function isHeadless(schema: Schema) {
-  if (!schema) return false
-  if (schema.type === 'object') return Object.keys(schema.dict).length && !schema.meta.description
-  if (schema.type === 'intersect') return isHeadless(schema.list[0])
-  return true
+function hasTitle(schema: Schema) {
+  if (!schema) return true
+  if (schema.type === 'object') {
+    if (schema.meta.description) return true
+    const keys = Object.keys(schema.dict)
+    if (!keys.length) return true
+    return hasTitle(schema.dict[keys[0]])
+  } else if (schema.type === 'intersect') {
+    return hasTitle(schema.list[0])
+  } else {
+    return false
+  }
 }
 
 const primitive = ['string', 'number', 'boolean']

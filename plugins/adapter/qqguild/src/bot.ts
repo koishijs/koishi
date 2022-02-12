@@ -2,13 +2,11 @@ import { Bot as GBot } from '@qq-guild-sdk/core'
 import { Bot } from 'koishi'
 import { WebSocketClient } from './ws'
 import { renameProperty } from '@koishijs/utils'
-import { adaptGuild, adaptUser } from './utils'
-
-export interface BotConfig extends Bot.BaseConfig, GBot.AppConfig {
-  indents: GBot.Intents | number
-}
+import { AdapterConfig, adaptGuild, adaptUser, BotConfig } from './utils'
 
 export class QQGuildBot extends Bot<BotConfig> {
+  static schema = AdapterConfig
+
   $innerBot: GBot
 
   constructor(adapter: WebSocketClient, app: BotConfig) {

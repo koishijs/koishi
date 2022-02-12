@@ -3,13 +3,13 @@ import CommandProvider from './service'
 
 export * from './service'
 
-interface Override {
+export interface Override {
   name?: string
   alias?: string[]
   create?: boolean
 }
 
-const Override: Schema<Override> = Schema.object({
+export const Override: Schema<Override> = Schema.object({
   name: Schema.string(),
   alias: Schema.array(Schema.string()),
   create: Schema.boolean(),
@@ -21,6 +21,7 @@ interface Snapshot extends Command.Config {
 }
 
 interface Config extends Override, Command.Config {}
+
 const Config: Schema<string | Config, Config> = Schema.union([
   Schema.intersect([Override, Command.Config]),
   Schema.transform(Schema.string(), (name) => ({ name, alias: [] })),
