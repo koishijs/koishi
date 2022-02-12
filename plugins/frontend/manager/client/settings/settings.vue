@@ -43,7 +43,7 @@
         v-for="({ fulfilled, required, local, name }) in env.deps" :key="name"
         :type="fulfilled ? 'success' : required ? 'error' : 'primary'">
         {{ required ? '必需' : '可选' }}依赖：<k-dep-link :name="name"></k-dep-link>
-        ({{ local ? `${fulfilled ? '已' : '未'}启用，点击配置` : '未安装，点击添加' }})
+        ({{ local ? `${fulfilled ? '已' : '未'}启用` : '未安装，点击添加' }})
       </k-comment>
     </template>
 

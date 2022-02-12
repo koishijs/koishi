@@ -26,7 +26,6 @@ const emit = defineEmits(['update:modelValue'])
 const pointer = computed(() => props.modelValue !== undefined)
 
 function onClick() {
-  console.log(props)
   if (!pointer.value) return
   emit('update:modelValue', !props.modelValue)
 }

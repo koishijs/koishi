@@ -1,5 +1,7 @@
 <template>
-  <div class="k-tab-item k-menu-item" :class="{ active: label === modelValue }" @click="$emit('update:modelValue', label)">
+  <div class="k-tab-item k-menu-item"
+    :class="{ active: label === modelValue }"
+    @click="$emit('update:modelValue', label)">
     <slot>{{ label }}</slot>
   </div>
 </template>
