@@ -55,10 +55,10 @@ export interface Config extends ClientExtension {
 }
 
 export const Config = Schema.object({
-  refresh: RefreshConfig,
   whitelist: Schema.array(Schema.string()),
   maxMessages: Schema.natural(),
   logLevel: Schema.natural().max(3),
+  refresh: RefreshConfig,
 })
 
 const logger = new Logger('message')
