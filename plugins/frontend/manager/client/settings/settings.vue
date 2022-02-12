@@ -14,23 +14,25 @@
     <!-- market -->
     <template v-if="data.name">
       <!-- impl -->
-      <k-comment
-        v-for="name in env.impl" :key="name"
-        :type="data.id ? 'success' : 'primary'" #header>
-        此插件{{ data.id ? '提供了' : '将会提供' }} {{ name }} 服务。
-      </k-comment>
+      <template v-for="name in env.impl" :key="name">
+        <k-comment v-if="name in store.services && !data.id" type="error">
+          此插件将会提供 {{ name }} 服务，但此服务已被其他插件实现。
+        </k-comment>
+        <k-comment v-else :type="data.id ? 'success' : 'primary'">
+          此插件{{ data.id ? '提供了' : '将会提供' }} {{ name }} 服务。
+        </k-comment>
+      </template>
 
       <!-- using -->
       <k-comment
         v-for="({ fulfilled, required, available, name }) in env.using" :key="name"
-        :type="fulfilled ? 'success' : required ? 'warning' : 'primary'" #header>
+        :type="fulfilled ? 'success' : required ? 'error' : 'primary'">
         {{ required ? '必需' : '可选' }}服务：{{ name }}
-        <template v-if="fulfilled">(已加载)</template>
-        <template v-else>
-          (未加载，启用下列任一插件可实现此服务)
-          <ul v-if="!fulfilled">
+        {{ fulfilled ? '(已加载)' : '(未加载，启用下列任一插件可实现此服务)' }}
+        <template v-if="!fulfilled" #body>
+          <ul>
             <li v-for="name in available">
-              <k-dep-link :name="name"></k-dep-link>
+              <k-dep-link :name="name"></k-dep-link> (点击{{ name in store.packages ? '配置' : '添加' }})
             </li>
           </ul>
         </template>
@@ -39,7 +41,7 @@
       <!-- dep -->
       <k-comment
         v-for="({ fulfilled, required, local, name }) in env.deps" :key="name"
-        :type="fulfilled ? 'success' : required ? 'warning' : 'primary'" #header>
+        :type="fulfilled ? 'success' : required ? 'error' : 'primary'">
         {{ required ? '必需' : '可选' }}依赖：<k-dep-link :name="name"></k-dep-link>
         ({{ local ? `${fulfilled ? '已' : '未'}启用，点击配置` : '未安装，点击添加' }})
       </k-comment>
@@ -51,10 +53,10 @@
         配置项
         <template v-if="data.id">
           <k-button solid type="error" @click="execute('unload')">停用插件</k-button>
-          <k-button solid :disabled="!env.ready" @click="execute('reload')">重载配置</k-button>
+          <k-button solid :disabled="env.invalid" @click="execute('reload')">重载配置</k-button>
         </template>
         <template v-else>
-          <k-button solid :disabled="!env.ready" @click="execute('reload')">启用插件</k-button>
+          <k-button solid :disabled="env.invalid" @click="execute('reload')">启用插件</k-button>
           <k-button solid @click="execute('unload')">保存配置</k-button>
         </template>
       </h1>
@@ -74,7 +76,6 @@ import { computed, ref, watch } from 'vue'
 import { Dict } from 'koishi'
 import { store, send } from '~/client'
 import { MarketProvider, Package } from '@koishijs/plugin-manager'
-import KDepAlert from './dep-alert.vue'
 import KDepLink from './dep-link.vue'
 import { getMixedMeta } from '../utils'
 
@@ -97,19 +98,25 @@ function getKeywords(prefix: string, meta: Package.Meta = data.value) {
     .map(name => name.slice(prefix.length))
 }
 
-interface ServiceData {
+interface DepInfo {
   name: string
   required: boolean
   fulfilled: boolean
+}
+
+interface ServiceDepInfo extends DepInfo {
   available?: string[]
+}
+
+interface PluginDepInfo extends DepInfo {
   local?: boolean
 }
 
 interface EnvInfo {
   impl: string[]
-  deps: Dict<ServiceData>
-  using: Dict<ServiceData>
-  ready?: boolean
+  deps: Dict<PluginDepInfo>
+  using: Dict<ServiceDepInfo>
+  invalid?: boolean
   console?: boolean
 }
 
@@ -128,7 +135,7 @@ const env = computed(() => {
     }
 
     const fulfilled = name in store.services
-    if (required && !fulfilled) result.ready = false
+    if (required && !fulfilled) result.invalid = true
     result.using[name] = { name, required, fulfilled }
     if (!fulfilled) {
       result.using[name].available = Object.values(store.market || {})
@@ -141,6 +148,9 @@ const env = computed(() => {
   for (const name of getKeywords('impl')) {
     if (name === 'adapter') continue
     result.impl.push(name)
+    if (name in store.services && !data.value.id) {
+      result.invalid = true
+    }
   }
   for (const name of getKeywords('required')) {
     setService(name, true)
@@ -150,10 +160,10 @@ const env = computed(() => {
   }
   for (const name of data.value.peerDeps) {
     if (name === '@koishijs/plugin-console') continue
-    const local = name in store.packages
+    const available = name in store.packages
     const fulfilled = !!store.packages[name]?.id
-    if (!fulfilled) result.ready = false
-    result.deps[name] = { name, required: true, fulfilled, local }
+    if (!fulfilled) result.invalid = true
+    result.deps[name] = { name, required: true, fulfilled, local: available }
     for (const impl of getKeywords('impl', getMixedMeta(name))) {
       delete result.using[impl]
     }

@@ -2,21 +2,34 @@
   <el-tooltip :placement="placement">
     <template #content>
       <div class="k-hint-content">
-        <slot/>
+        <slot></slot>
       </div>
     </template>
-    <k-icon :name="name" class="k-hint" @click="$emit('click', $event)"/>
+    <span class="k-hint" :class="{ active: modelValue, pointer }" @click="onClick">
+      <k-icon :name="name"/>
+    </span>
   </el-tooltip>
 </template>
 
 <script lang="ts" setup>
 
-defineProps({
+import { computed } from 'vue'
+
+const props = defineProps({
   placement: String,
+  modelValue: {},
   name: { type: String, default: 'question-empty' },
 })
 
-defineEmits(['click'])
+const emit = defineEmits(['update:modelValue'])
+
+const pointer = computed(() => props.modelValue !== undefined)
+
+function onClick() {
+  console.log(props)
+  if (!pointer.value) return
+  emit('update:modelValue', !props.modelValue)
+}
 
 </script>
 
@@ -29,9 +42,13 @@ defineEmits(['click'])
   transition: 0.3s ease;
   vertical-align: -2px;
 
-  &:hover {
+  &:hover, &.active {
     opacity: 1;
   }
+}
+
+.k-hint.pointer {
+  cursor: pointer;
 }
 
 .k-hint-content {

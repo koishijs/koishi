@@ -14,7 +14,7 @@
       </k-tab-group>
       <div class="k-tab-group-title">
         未运行的插件
-        <k-hint placement="right" class="filter" name="filter" :class="{ filtered }" @click="filtered = !filtered">
+        <k-hint placement="right" name="filter" v-model="filtered">
           <template v-if="filtered">
             <b>筛选：已开启</b><br>只显示可在线配置的插件。
           </template>
@@ -77,17 +77,8 @@ onActivated(async () => {
     line-height: 2.25rem;
   }
 
-  .filter {
-    font-size: 0.9em;
-    cursor: pointer;
-
-    &:active, &.filtered {
-      opacity: 1;
-    }
-
-    &:active {
-      color: var(--fg0);
-    }
+  .k-icon-filter {
+    height: 15px;
   }
 
   .readonly {
