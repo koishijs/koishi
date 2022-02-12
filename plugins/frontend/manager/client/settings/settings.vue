@@ -2,9 +2,16 @@
   <k-content class="plugin-view">
     <!-- title -->
     <h1 class="config-header" v-if="data.name">
-      {{ data.name }}
-      <span v-if="data.workspace">(工作区)</span>
-      <span v-else-if="data.id">({{ data.version }})</span>
+      {{ data.shortname }}
+      <span class="version">({{ data.workspace ? '工作区' : data.version }})</span>
+      <template v-if="data.id">
+        <k-button solid type="error" @click="execute('unload')">停用插件</k-button>
+        <k-button solid :disabled="env.invalid" @click="execute('reload')">重载配置</k-button>
+      </template>
+      <template v-else>
+        <k-button solid :disabled="env.invalid" @click="execute('reload')">启用插件</k-button>
+        <k-button solid @click="execute('unload')">保存配置</k-button>
+      </template>
     </h1>
     <h1 class="config-header" v-else>
       全局设置
@@ -49,17 +56,6 @@
 
     <!-- schema -->
     <template v-if="data.root || !data.id">
-      <h1 class="config-header" v-if="data.shortname">
-        配置项
-        <template v-if="data.id">
-          <k-button solid type="error" @click="execute('unload')">停用插件</k-button>
-          <k-button solid :disabled="env.invalid" @click="execute('reload')">重载配置</k-button>
-        </template>
-        <template v-else>
-          <k-button solid :disabled="env.invalid" @click="execute('reload')">启用插件</k-button>
-          <k-button solid @click="execute('unload')">保存配置</k-button>
-        </template>
-      </h1>
       <k-form :schema="data.schema" v-model="data.config"></k-form>
     </template>
     <template v-else>
