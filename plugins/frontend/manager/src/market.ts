@@ -18,7 +18,7 @@ class MarketProvider extends DataService<Dict<MarketProvider.Data>> {
   }
 
   start() {
-    const logger = this.ctx.logger('status')
+    const logger = this.ctx.logger('market')
     this.prepare().catch(logger.warn)
   }
 

@@ -141,6 +141,7 @@ export class App extends Context {
         const channelFields = new Set<Channel.Field>(['flag', 'assignee', 'guildId'])
         this.emit('before-attach-channel', session, channelFields)
         const channel = await session.observeChannel(channelFields)
+        // for backwards compatibility (TODO remove in v5)
         channel.guildId = session.guildId
 
         // emit attach event
@@ -226,6 +227,7 @@ export class App extends Context {
       this._channelCache.delete(session.id)
       await session.user?.$update()
       await session.channel?.$update()
+      await session.guild?.$update()
     }
   }
 }
