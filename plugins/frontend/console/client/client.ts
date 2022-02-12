@@ -1,6 +1,6 @@
 import { App, ref, reactive, h, markRaw, defineComponent, resolveComponent, watch, Ref } from 'vue'
 import { createWebHistory, createRouter, START_LOCATION, RouteRecordNormalized } from 'vue-router'
-import { Disposable, Extension, PageExtension, PageOptions, Store, ViewOptions } from '~/client'
+import { Computed, Disposable, Extension, PageExtension, PageOptions, Store, ViewOptions } from '~/client'
 import { ClientConfig, Console } from '@koishijs/plugin-console'
 import { Dict } from '@koishijs/utils'
 
@@ -94,6 +94,10 @@ interface DisposableExtension extends PageExtension {
   ctx: Context
 }
 
+export function getValue<T>(computed: Computed<T>): T {
+  return typeof computed === 'function' ? (computed as any)() : computed
+}
+
 export class Context {
   static app: App
   static pending: Dict<DisposableExtension[]> = {}
@@ -124,6 +128,7 @@ export class Context {
       component,
       meta: {
         order: 0,
+        authority: 0,
         position: 'top',
         fields: [],
         badge: badge ? [badge] : [],

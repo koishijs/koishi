@@ -17,11 +17,14 @@
 <script lang="ts" setup>
 
 import { useDark } from '@vueuse/core'
-import { routes } from '../client'
+import { routes, getValue } from '../client'
 import SidebarItem from './sidebar-item.vue'
 
 function getRoutes(position: 'top' | 'bottom') {
-  return routes.value.filter(r => r.meta.position === position).sort((a, b) => b.meta.order - a.meta.order)
+  const scale = position === 'top' ? 1 : -1
+  return routes.value
+    .filter(r => getValue(r.meta.position) === position)
+    .sort((a, b) => scale * (b.meta.order - a.meta.order))
 }
 
 const isDark = useDark()

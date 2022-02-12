@@ -33,6 +33,8 @@ declare module '~/client' {
 
   // layout api
 
+  export type Computed<T> = T | (() => T)
+
   declare module 'vue-router' {
     interface RouteMeta extends RouteMetaExtension {
       fields?: (keyof Console.Services)[]
@@ -49,7 +51,8 @@ declare module '~/client' {
   interface RouteMetaExtension {
     icon?: string
     order?: number
-    position?: 'top' | 'bottom' | 'hidden'
+    authority?: number
+    position?: Computed<'top' | 'bottom' | 'hidden'>
   }
 
   export interface PageOptions extends RouteMetaExtension, PageExtension {
