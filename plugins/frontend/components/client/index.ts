@@ -17,6 +17,8 @@ import {
   ElTableColumn,
   ElPagination,
   ElPopconfirm,
+  ElDatePicker,
+  ElTimePicker,
 } from 'element-plus'
 
 import common from './common'
@@ -42,6 +44,8 @@ import 'element-plus/es/components/table/style/css'
 import 'element-plus/es/components/table-column/style/css'
 import 'element-plus/es/components/pagination/style/css'
 import 'element-plus/es/components/popconfirm/style/css'
+import 'element-plus/es/components/date-picker/style/css'
+import 'element-plus/es/components/time-picker/style/css'
 import './style.scss'
 
 export const loading = ElLoading.service
@@ -71,6 +75,8 @@ export default function (app: App) {
   app.use(ElPagination)
   app.use(ElPopconfirm)
   app.use(ElLoading)
+  app.use(ElDatePicker)
+  app.use(ElTimePicker)
 
   app.use(common)
   app.use(form)

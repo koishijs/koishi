@@ -47,20 +47,22 @@
     >
       <template #header="{ column }">
         {{ column.label }}
-        <div class="insertion">
-          <el-input
+        <div class="insertion" @click.stop>
+          <component
+            :is="columnInputAttr[column.label].is"
             @click.stop
             v-model="status.newRow[column.label]"
-            v-bind="columnInputAttr[column.label]"
+            v-bind="columnInputAttr[column.label].attrs || {}"
             size="small"
-          ></el-input>
+          ></component>
         </div>
       </template>
       <template #default="scope">
         <template v-if="isCellChanged(scope, false)">
-          <el-input
+          <component
+            :is="columnInputAttr[scope.column.label].is"
             v-model="status.changes[scope.$index][scope.column.label].model"
-            v-bind="columnInputAttr[scope.column.label]"
+            v-bind="columnInputAttr[scope.column.label].attrs || {}"
             size="small"
           >
             <template #suffix>
@@ -68,13 +70,11 @@
                 <k-icon name="times-full"></k-icon>
               </k-button>
             </template>
-          </el-input>
+          </component>
         </template>
         <div v-else @parent-dblclick="onCellDblClick(scope)" class="inner-cell">
           {{
-            field.type === 'json'
-              ? JSON.stringify(scope.row[fName])
-              : scope.row[fName]?.toString()
+            renderCell(fName, scope)
           }}
         </div>
       </template>
@@ -218,8 +218,9 @@ const validChanges: ComputedRef<ChangesState> = computed(() => {
   const result = {}
   for (const i in status.value.changes || {}) {
     for (const field in status.value.changes[i]) {
-      if (columnInputAttr.value[field].validate)
-        if (!columnInputAttr.value[field].validate(status.value.changes[i][field].model))
+      const column = columnInputAttr.value[field]
+      if (column.attrs?.validate)
+        if (!column.attrs.validate(status.value.changes[i][field].model))
           continue // skip invalid changes
       if (!result[i]) result[i] = {}
       result[i][field] = status.value.changes[i][field]
@@ -232,8 +233,9 @@ const existChanges = computed(() => !!Object.keys(status.value.changes || {}).le
 const existValidChanges = computed(() => !!Object.keys(validChanges.value || {}).length)
 const newRowValid = computed(() => {
   for (const field in props.tableModel.fields) {
-    if (columnInputAttr.value[field].validate)
-      if (!columnInputAttr.value[field].validate(status.value.newRow[field])) {
+    const column = columnInputAttr.value[field]
+    if (column.attrs?.validate)
+      if (!column.attrs.validate(status.value.newRow[field])) {
         console.log(field)
         return false
       }
@@ -242,14 +244,24 @@ const newRowValid = computed(() => {
 })
 
 const columnInputAttr: ComputedRef<Dict<{
-  type: string
-  validate: Function
-  step?: number
+  is: 'el-input' | 'el-date-picker' | 'el-time-picker'
+  attrs?: {
+    type: string
+    validate: Function
+    step?: number
+  }
 }>> = computed(() => Object.keys(props.tableModel.fields).reduce((o, fName) => {
   const fieldConfig = props.tableModel.fields[fName]
 
   let type, step
   switch (fieldConfig.type) {
+    case 'time':
+      return { ...o, [fName]: { is: 'el-time-picker' } }
+    case 'date':
+      return { ...o, [fName]: { is: 'el-date-picker', attrs: { type: 'date' } } }
+    case 'timestamp':
+      return { ...o, [fName]: { is: 'el-date-picker', attrs: { type: 'datetime' } } }
+
     case 'integer':
     case 'unsigned':
       step = 1
@@ -258,14 +270,6 @@ const columnInputAttr: ComputedRef<Dict<{
     case 'double':
     case 'decimal':
       type = 'number'
-      break
-
-    case 'timestamp':
-      type = 'datetime'
-
-    case 'date':
-    case 'time':
-      type = fieldConfig.type
       break
 
     default:
@@ -292,7 +296,7 @@ const columnInputAttr: ComputedRef<Dict<{
     return true
   }
 
-  o[fName] = { type, validate, step }
+  o[fName] = { is: 'el-input', attrs: { type, validate, step } }
   return o
 }, {}))
 
@@ -304,6 +308,40 @@ function onSort(e) {
       field: e.prop,
       order: e.order,
     }
+}
+
+function renderCell(field: string, { row, column, $index }) {
+  const fType = props.tableModel.fields[field].type
+  const data = row[field]
+  switch (fType) {
+    case 'json':
+      return JSON.stringify(data)
+    case 'date':
+      if (data instanceof Date)
+        return data.toJSON().slice(0, 10)
+      break
+  }
+  return data
+}
+
+/** convert cell data to model value */
+function toModelValue(field: string, data) {
+  const fType = props.tableModel.fields[field].type
+  switch (fType) {
+    case 'json':
+      return JSON.stringify(data)
+  }
+  return data
+}
+
+/** convert model value data to cell */
+function fromModelValue(field: string, data) {
+  const fType = props.tableModel.fields[field].type
+  switch (fType) {
+    case 'json':
+      return JSON.parse(data)
+  }
+  return data
 }
 
 /** Check if a table cell has pending changes */
@@ -322,7 +360,7 @@ function onCellDblClick({ row, column, $index }) {
   if (status.value.changes[$index] === undefined)
     status.value.changes[$index] = {}
   status.value.changes[$index][column.label] = reactive({
-    model: JSON.stringify(row[column.label]),
+    model: toModelValue(column.label, row[column.label]),
   })
 }
 /** Discard current change */
@@ -348,8 +386,7 @@ async function onSubmitChanges() {
       const data: Dict = {}
       for (const field in validChanges.value[idx]) {
         data[field] = validChanges.value[idx][field].model
-        if (props.tableModel.fields[field].type === 'json')
-          data[field] = JSON.parse(data[field])
+        data[field] = fromModelValue(field, data[field])
       }
       console.log('Update row: ', data)
       // await new Promise(res => setInterval(() => res(1), 1000))
@@ -393,8 +430,7 @@ async function onInsertRow() {
     const row = Object.keys(status.value.newRow).reduce((o, field) => {
       if (status.value.newRow[field]) {
         o[field] = status.value.newRow[field]
-        if (props.tableModel.fields[field].type === 'json')
-          o[field] = JSON.parse(o[field])
+        o[field] = fromModelValue(field, o[field])
       }
       return o
     }, {})
@@ -436,6 +472,10 @@ async function onInsertRow() {
 
 <style lang="scss">
 .data-table {
+  .el-date-editor.el-input,
+  .el-date-editor.el-input__inner {
+    width: 100%;
+  }
   .el-table__cell {
     padding: 4px 0;
   }
