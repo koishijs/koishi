@@ -124,7 +124,7 @@ import { Dict, Model, Query } from 'koishi';
 import { computed, ComputedRef, nextTick, reactive, ref, watch, watchEffect } from 'vue';
 import { send } from '~/client';
 import { message } from '~/components';
-import { formatSize, handleError } from '../utils';
+import { formatSize, handleError, timeStr } from '../utils';
 
 export type TableStatus = {
   loading: boolean
@@ -252,15 +252,16 @@ const columnInputAttr: ComputedRef<Dict<{
   }
 }>> = computed(() => Object.keys(props.tableModel.fields).reduce((o, fName) => {
   const fieldConfig = props.tableModel.fields[fName]
+  const dateAttrs = { clearable: false}
 
   let type, step
   switch (fieldConfig.type) {
     case 'time':
-      return { ...o, [fName]: { is: 'el-time-picker' } }
+      return { ...o, [fName]: { is: 'el-time-picker', attrs: dateAttrs} }
     case 'date':
-      return { ...o, [fName]: { is: 'el-date-picker', attrs: { type: 'date' } } }
+      return { ...o, [fName]: { is: 'el-date-picker', attrs: {...dateAttrs,  type: 'date' } } }
     case 'timestamp':
-      return { ...o, [fName]: { is: 'el-date-picker', attrs: { type: 'datetime' } } }
+      return { ...o, [fName]: { is: 'el-date-picker', attrs: {...dateAttrs,  type: 'datetime' } } }
 
     case 'integer':
     case 'unsigned':
@@ -320,6 +321,14 @@ function renderCell(field: string, { row, column, $index }) {
       if (data instanceof Date)
         return data.toJSON().slice(0, 10)
       break
+    case 'time':
+      if (data instanceof Date)
+        return timeStr(data)
+      break
+    case 'timestamp':
+      if (data instanceof Date)
+        return `${data.toJSON().slice(0, 10)} ${timeStr(data)}`
+      break
   }
   return data
 }
@@ -330,6 +339,12 @@ function toModelValue(field: string, data) {
   switch (fType) {
     case 'json':
       return JSON.stringify(data)
+    case 'time':
+      if (typeof data !== 'string') return data
+      const [h, m, s] = data.split(':')
+      const time = new Date()
+      time.setHours(parseInt(h), parseInt(m), parseInt(s))
+      return time
   }
   return data
 }
