@@ -15,16 +15,16 @@
       <k-tab-group
         :data="packages" v-model="model"
         :filter="data => data.id" #="data">
-        <span :class="{ readonly: isReadonly(data) }">{{ data.shortname }}</span>
+        <span>{{ data.shortname }}</span>
       </k-tab-group>
       <div class="k-tab-group-title">
         未运行的插件
         <k-hint placement="right" name="filter" v-model="filtered">
           <template v-if="filtered">
-            <b>筛选：已开启</b><br>只显示可在线配置的插件。
+            <b>筛选：已开启</b><br>只显示当前可启用的插件。
           </template>
           <template v-else>
-            <b>筛选：已关闭</b><br>显示所有已安装的插件。
+            <b>筛选：已关闭</b><br>显示所有已下载的插件。
           </template>
         </k-hint>
       </div>
@@ -41,6 +41,7 @@
 
 import { ref, computed, onActivated, nextTick } from 'vue'
 import { store } from '~/client'
+import { envMap } from './utils'
 
 const props = defineProps<{
   modelValue: string
@@ -65,7 +66,7 @@ const filtered = ref(false)
 const keyword = ref('')
 
 function isReadonly(data: any) {
-  return !data.root && data.id
+  return envMap.value[data.name].invalid
 }
 
 onActivated(async () => {

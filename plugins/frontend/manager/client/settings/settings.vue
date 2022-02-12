@@ -69,103 +69,23 @@
 <script setup lang="ts">
 
 import { computed, ref, watch } from 'vue'
-import { Dict } from 'koishi'
 import { store, send } from '~/client'
-import { MarketProvider, Package } from '@koishijs/plugin-manager'
-import KDepLink from './dep-link.vue'
+import { envMap } from './utils'
 import { getMixedMeta } from '../utils'
+import KDepLink from './dep-link.vue'
 
 const props = defineProps<{
   current: string
 }>()
 
 const data = computed(() => getMixedMeta(props.current))
+const env = computed(() => envMap.value[props.current])
 
 const version = ref('')
 
 watch(data, (value) => {
   version.value = value.version
 }, { immediate: true })
-
-function getKeywords(prefix: string, meta: Package.Meta = data.value) {
-  prefix += ':'
-  return meta.keywords
-    .filter(name => name.startsWith(prefix))
-    .map(name => name.slice(prefix.length))
-}
-
-interface DepInfo {
-  name: string
-  required: boolean
-  fulfilled: boolean
-}
-
-interface ServiceDepInfo extends DepInfo {
-  available?: string[]
-}
-
-interface PluginDepInfo extends DepInfo {
-  local?: boolean
-}
-
-interface EnvInfo {
-  impl: string[]
-  deps: Dict<PluginDepInfo>
-  using: Dict<ServiceDepInfo>
-  invalid?: boolean
-  console?: boolean
-}
-
-function isAvailable(name: string, remote: MarketProvider.Data) {
-  return getKeywords('impl', {
-    ...remote.versions[0],
-    ...store.packages[remote.name],
-  }).includes(name)
-}
-
-const env = computed(() => {
-  function setService(name: string, required: boolean) {
-    if (name === 'console') {
-      result.console = true
-      return
-    }
-
-    const fulfilled = name in store.services
-    if (required && !fulfilled) result.invalid = true
-    result.using[name] = { name, required, fulfilled }
-    if (!fulfilled) {
-      result.using[name].available = Object.values(store.market || {})
-        .filter(data => isAvailable(name, data))
-        .map(data => data.name)
-    }
-  }
-
-  const result: EnvInfo = { impl: [], using: {}, deps: {} }
-  for (const name of getKeywords('impl')) {
-    if (name === 'adapter') continue
-    result.impl.push(name)
-    if (name in store.services && !data.value.id) {
-      result.invalid = true
-    }
-  }
-  for (const name of getKeywords('required')) {
-    setService(name, true)
-  }
-  for (const name of getKeywords('optional')) {
-    setService(name, false)
-  }
-  for (const name of data.value.peerDeps) {
-    if (name === '@koishijs/plugin-console') continue
-    const available = name in store.packages
-    const fulfilled = !!store.packages[name]?.id
-    if (!fulfilled) result.invalid = true
-    result.deps[name] = { name, required: true, fulfilled, local: available }
-    for (const impl of getKeywords('impl', getMixedMeta(name))) {
-      delete result.using[impl]
-    }
-  }
-  return result
-})
 
 function execute(event: string) {
   const { shortname, config } = data.value

@@ -3,7 +3,7 @@
     <template #aside>
       <plugin-select v-model="current"></plugin-select>
     </template>
-    <plugin-settings :current="current"></plugin-settings>
+    <plugin-settings :key="current" :current="current"></plugin-settings>
   </k-card-aside>
 </template>
 
