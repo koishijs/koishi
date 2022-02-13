@@ -5,7 +5,7 @@
         <div class="add k-menu-item" :class="{ active: current === '' }" @click="current = ''">添加机器人</div>
         <bot-preview
           v-for="(bot, key) in store.bots" :key="key" :data="bot"
-          :class="{ active: current === key }" @click="current = key"/>
+          :class="{ active: current === key }" @click="current = key.toString()"/>
       </el-scrollbar>
     </template>
     <template v-if="current === null">
@@ -30,7 +30,7 @@ import { store } from '~/client'
 import BotPreview from './preview.vue'
 import BotSettings from './settings.vue'
 
-const current = ref<string | number>(null)
+const current = ref<string>(null)
 const botCount = computed(() => Object.keys(store.bots).length)
 
 watch(() => store.bots, () => {

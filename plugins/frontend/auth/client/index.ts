@@ -17,9 +17,14 @@ export default (ctx: Context) => {
   }
 
   ctx.disposables.push(router.beforeEach((route) => {
-    // handle router.back()
     if ((route.meta.authority || route.meta.fields.includes('user')) && !store.user) {
+      // handle router.back()
       return history.state.forward === '/login' ? '/' : '/login'
+    }
+
+    if (route.meta.authority && route.meta.authority > store.user.authority) {
+      message.error('权限不足。')
+      return false
     }
   }))
 

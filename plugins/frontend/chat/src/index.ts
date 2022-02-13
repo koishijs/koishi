@@ -93,7 +93,7 @@ export function apply(ctx: Context, options: Config = {}) {
     ctx.console.addListener('chat', async ({ content, platform, selfId, channelId, guildId }) => {
       if (ctx.assets) content = await ctx.assets.transform(content)
       ctx.bots.get(`${platform}:${selfId}`)?.sendMessage(channelId, content, guildId)
-    })
+    }, { authority: 3 })
 
     ctx.on('chat/receive', async (message) => {
       Object.values(ctx.console.ws.handles).forEach((handle) => {

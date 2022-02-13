@@ -20,19 +20,19 @@ export default class ConfigWriter {
 
     ctx.console.addListener('manager/plugin-reload', (name, config) => {
       this.reloadPlugin(name, config)
-    })
+    }, { authority: 4 })
 
     ctx.console.addListener('manager/plugin-unload', (name, config) => {
       this.unloadPlugin(name, config)
-    })
+    }, { authority: 4 })
 
     ctx.console.addListener('manager/bot-update', (id, adapter, config) => {
       this.updateBot(id, adapter, config)
-    })
+    }, { authority: 4 })
 
     ctx.console.addListener('manager/bot-remove', (id) => {
       this.removeBot(id)
-    })
+    }, { authority: 4 })
   }
 
   reloadPlugin(name: string, config: any) {

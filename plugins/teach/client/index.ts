@@ -6,6 +6,7 @@ export default (ctx: Context) => {
     path: '/teach',
     name: '问答',
     icon: 'book',
+    authority: 3,
     fields: ['stats', 'meta'],
     component: Teach,
   })

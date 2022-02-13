@@ -8,6 +8,7 @@ export default (ctx: Context) => {
     name: '数据库',
     icon: 'database',
     order: 410,
+    authority: 4,
     fields: ['dbInfo'],
     component: Database,
   })

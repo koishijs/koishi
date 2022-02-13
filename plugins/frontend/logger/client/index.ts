@@ -9,6 +9,7 @@ export default (ctx: Context) => {
     name: '日志',
     icon: 'clipboard-list',
     order: 400,
+    authority: 4,
     fields: ['logs'],
     component: Logs,
   })

@@ -34,7 +34,7 @@ import { store, send } from '~/client'
 import { BotProvider } from '@koishijs/plugin-manager'
 
 const props = defineProps<{
-  current: string | number
+  current: string
 }>()
 
 const createSchema = (values: string[]) => ({

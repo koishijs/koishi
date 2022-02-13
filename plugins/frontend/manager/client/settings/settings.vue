@@ -87,9 +87,9 @@ watch(data, (value) => {
   version.value = value.version
 }, { immediate: true })
 
-function execute(event: string) {
+function execute(event: 'unload' | 'reload') {
   const { shortname, config } = data.value
-  send('manager/plugin-' + event, shortname, config)
+  send(`manager/plugin-${event}`, shortname, config)
 }
 
 </script>

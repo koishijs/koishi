@@ -32,7 +32,7 @@ class Installer extends DataService {
   constructor(public ctx: Context) {
     super(ctx, 'installer')
 
-    ctx.console.addListener('install', this.install)
+    ctx.console.addListener('install', this.install, { authority: 4 })
   }
 
   get cwd() {

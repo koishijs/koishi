@@ -8,6 +8,7 @@ export default (ctx: Context) => {
     name: '指令管理',
     icon: 'tools',
     order: 500,
+    authority: 4,
     fields: ['commands'],
     component: Commands,
   })

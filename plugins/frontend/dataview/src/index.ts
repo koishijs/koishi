@@ -23,13 +23,11 @@ export default class DatabaseProvider extends DataService<DatabaseInfo> {
   cache: Promise<DatabaseInfo>
 
   addListener<K extends keyof Query.Methods>(name: K, refresh = false) {
-    return this.ctx.console.addListener(`database/${name}`, async (...args) => {
+    this.ctx.console.addListener(`database/${name}`, async (...args) => {
       const result = await (this.ctx.database[name] as any)(...args)
-      if (refresh) {
-        this.refresh()
-      }
+      if (refresh) this.refresh()
       return result
-    })
+    }, { authority: 4 })
   }
 
   constructor(ctx: Context) {

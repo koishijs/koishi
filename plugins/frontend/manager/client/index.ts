@@ -25,6 +25,7 @@ export default (ctx: Context) => {
     name: '机器人',
     icon: 'robot',
     order: 640,
+    authority: 4,
     fields: ['bots', 'protocols'],
     component: Bots,
   })
@@ -34,6 +35,7 @@ export default (ctx: Context) => {
     name: '插件配置',
     icon: 'cog',
     order: 630,
+    authority: 4,
     fields: ['packages', 'services'],
     component: Settings,
   })
@@ -43,6 +45,7 @@ export default (ctx: Context) => {
     name: '插件市场',
     icon: 'puzzle-piece',
     order: 620,
+    authority: 4,
     fields: ['market', 'packages'],
     component: Market,
   })
@@ -52,6 +55,7 @@ export default (ctx: Context) => {
     name: '依赖管理',
     icon: 'box-open',
     order: 610,
+    authority: 4,
     fields: ['market', 'packages'],
     component: Dependencies,
     badge: () => overrideCount.value,
