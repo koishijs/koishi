@@ -57,9 +57,15 @@ function getEnvInfo(name: string) {
     }
   }
 
-  // check implementations
   const data = getMixedMeta(name)
   const result: EnvInfo = { impl: [], using: {}, deps: {} }
+
+  // nested plugins
+  if (!data.root && data.id) {
+    result.invalid = true
+  }
+
+  // check implementations
   for (const name of getKeywords('impl', data)) {
     if (name === 'adapter') continue
     result.impl.push(name)

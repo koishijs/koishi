@@ -55,13 +55,16 @@
     </template>
 
     <!-- schema -->
-    <template v-if="data.root || !data.id">
-      <k-form :schema="data.schema" v-model="data.config"></k-form>
-    </template>
+    <k-comment v-if="!data.root && data.id" type="warning">
+      此插件已被加载，但并非是在配置文件中。你无法修改其配置。
+    </k-comment>
     <template v-else>
-      <k-comment type="warning">
-        <template #header>此插件已被加载，但并非是在配置文件中。你无法修改其配置。</template>
+      <k-comment v-if="!data.schema" type="warning">
+        此插件未声明配置项，这可能并非预期行为{{ hint }}。
       </k-comment>
+      <k-form :schema="data.schema" v-model="data.config">
+        <template #hint>{{ hint }}</template>
+      </k-form>
     </template>
   </k-content>
 </template>
@@ -80,6 +83,7 @@ const props = defineProps<{
 
 const data = computed(() => getMixedMeta(props.current))
 const env = computed(() => envMap.value[props.current])
+const hint = computed(() => data.value.workspace ? '，请检查源代码' : '，请联系插件作者')
 
 const version = ref('')
 

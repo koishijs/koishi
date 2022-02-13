@@ -11,18 +11,16 @@
     </template>
   </h1>
   <k-view name="manager:bot-prolog" :data="data"></k-view>
-  <k-form :schema="store.protocols[key]" v-model="data.config" :show-header="true">
-    <template #header>
-      <k-schema :schema="adapterSchema" v-model="data.adapter" :disabled="!!current">
-        <h3 class="required">adapter</h3>
-        <p>选择要使用的适配器。</p>
-      </k-schema>
-      <k-schema :schema="protocolSchema" v-model="data.config.protocol">
-        <h3 class="required">protocol</h3>
-        <p>选择要使用的协议。</p>
-      </k-schema>
-      <k-view name="manager:bot-config" :data="data"></k-view>
-    </template>
+  <k-form :schema="store.protocols[key]" v-model="data.config" :show-header="true" #prolog>
+    <k-schema :schema="adapterSchema" v-model="data.adapter" :disabled="!!current">
+      <h3 class="required">adapter</h3>
+      <p>选择要使用的适配器。</p>
+    </k-schema>
+    <k-schema :schema="protocolSchema" v-model="data.config.protocol">
+      <h3 class="required">protocol</h3>
+      <p>选择要使用的协议。</p>
+    </k-schema>
+    <k-view name="manager:bot-config" :data="data"></k-view>
   </k-form>
   <k-view name="manager:bot-epilog" :data="data"></k-view>
 </template>
