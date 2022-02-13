@@ -1,7 +1,7 @@
 $black: #000000;
 $white: #ffffff;
 
-:root {
+:root, *::before, *::after {
   --bg0: #ffffff;
   --bg1: #f7f7f8;
   --bg2: #f2f3f5;

@@ -1,5 +1,5 @@
 import { Context } from '~/client'
-import type {} from '@koishijs/plugin-dataview/src'
+import type {} from '@koishijs/plugin-dataview'
 import Database from './index.vue'
 
 export default (ctx: Context) => {
@@ -8,7 +8,7 @@ export default (ctx: Context) => {
     name: '数据库',
     icon: 'database',
     order: 410,
-    fields: ['tables'],
+    fields: ['dbInfo'],
     component: Database,
   })
 }

@@ -1,9 +1,10 @@
-import { App, ref, reactive, h, markRaw, defineComponent, resolveComponent, watch, Ref } from 'vue'
-import { createWebHistory, createRouter, START_LOCATION, RouteRecordNormalized } from 'vue-router'
-import { Computed, Disposable, Extension, PageExtension, PageOptions, Store, ViewOptions } from '~/client'
 import { ClientConfig, Console } from '@koishijs/plugin-console'
 import { Dict } from '@koishijs/utils'
 import { useLocalStorage } from '@vueuse/core'
+import { deserialize, serialize } from 'bson'
+import { App, defineComponent, h, markRaw, reactive, ref, Ref, resolveComponent, watch } from 'vue'
+import { createRouter, createWebHistory, RouteRecordNormalized, START_LOCATION } from 'vue-router'
+import { Computed, Disposable, Extension, PageExtension, PageOptions, Store, ViewOptions } from '~/client'
 
 // data api
 
@@ -19,7 +20,7 @@ const responseHooks: Record<string, [Function, Function]> = {}
 
 export function send(type: string, ...args: any[]) {
   const id = Math.random().toString(36).slice(2, 9)
-  socket.value.send(JSON.stringify({ id, type, args }))
+  socket.value.send(serialize({ id, type, args }))
   return new Promise((resolve, reject) => {
     responseHooks[id] = [resolve, reject]
     setTimeout(() => {
@@ -59,8 +60,8 @@ receive('response', ({ id, value, error }) => {
 export async function connect(endpoint: string) {
   socket.value = new WebSocket(endpoint)
 
-  socket.value.onmessage = (ev) => {
-    const data = JSON.parse(ev.data)
+  socket.value.onmessage = async (ev) => {
+    const data = deserialize(await ev.data.arrayBuffer())
     console.debug('%c', 'color:purple', data.type, data.body)
     if (data.type in listeners) {
       listeners[data.type](data.body)
@@ -273,7 +274,6 @@ export namespace Card {
     }) : () => h(resolveComponent('k-numeric'), {
       icon, title,
     }, () => content(store))
-  
     return create(render, fields)
   }
 }

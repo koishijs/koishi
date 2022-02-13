@@ -31,7 +31,6 @@ function onClick(event: MouseEvent) {
 </script>
 
 <style lang="scss">
-
 @mixin apply-color($name) {
   &.#{$name} {
     background-color: var(--#{$name}) !important;
@@ -111,6 +110,9 @@ function onClick(event: MouseEvent) {
     &.success {
       color: var(--el-color-success);
     }
+    &.disabled {
+      color: var(--disabled);
+    }
   }
 
   .k-group > &:not(:first-child) {
@@ -125,5 +127,4 @@ function onClick(event: MouseEvent) {
     margin: 0 1rem;
   }
 }
-
 </style>
