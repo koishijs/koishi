@@ -1,4 +1,4 @@
-import { Context, segment, template } from 'koishi'
+import { Context, Schema, segment, template } from 'koishi'
 import { parsePlatform } from '@koishijs/helpers'
 
 template.set('echo', {
@@ -6,7 +6,10 @@ template.set('echo', {
   'platform-not-found': '找不到指定的平台。',
 })
 
+export interface Config {}
+
 export const name = 'echo'
+export const Config: Schema<Config> = Schema.object({})
 
 export function apply(ctx: Context) {
   ctx.command('echo <message:text>', '向当前上下文发送消息', { authority: 2 })

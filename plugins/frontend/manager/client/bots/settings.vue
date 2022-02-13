@@ -11,7 +11,7 @@
     </template>
   </h1>
   <k-view name="manager:bot-prolog" :data="data"></k-view>
-  <k-form :schema="store.protocols[key]" v-model="data.config">
+  <k-form :schema="store.protocols[key]" v-model="data.config" :show-header="true">
     <template #header>
       <k-schema :schema="adapterSchema" v-model="data.adapter" :disabled="!!current">
         <h3 class="required">adapter</h3>

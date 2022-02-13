@@ -32,13 +32,17 @@ class PackageProvider extends DataService<Dict<PackageProvider.Data>> {
     this.task = this.prepare()
 
     this.ctx.on('plugin-added', async (plugin) => {
-      const state = this.ctx.app.registry.get(plugin)
+      const state = this.registry.get(plugin)
       this.updatePackage(plugin, state.id)
     })
 
     this.ctx.on('plugin-removed', async (plugin) => {
       this.updatePackage(plugin, null)
     })
+  }
+
+  get registry() {
+    return this.ctx.app.registry
   }
 
   private async updatePackage(plugin: Plugin, id: string) {
@@ -125,7 +129,7 @@ class PackageProvider extends DataService<Dict<PackageProvider.Data>> {
 
     // check plugin state
     const { plugins } = this.ctx.loader.config
-    const state = this.ctx.app.registry.get(exports)
+    const state = this.registry.get(exports)
     result.id = state?.id
     result.root = result.shortname in plugins
     result.schema = exports?.Config || exports?.schema

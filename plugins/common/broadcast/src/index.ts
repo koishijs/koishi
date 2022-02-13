@@ -1,11 +1,14 @@
-import { Channel, Context, template } from 'koishi'
+import { Channel, Context, Schema, template } from 'koishi'
 
 template.set('broadcast', {
   'expect-text': '请输入要发送的文本。',
 })
 
+export interface Config {}
+
 export const name = 'broadcast'
 export const using = ['database'] as const
+export const Config: Schema<Config> = Schema.object({})
 
 export function apply(ctx: Context) {
   ctx.command('broadcast <message:text>', '全服广播', { authority: 4 })

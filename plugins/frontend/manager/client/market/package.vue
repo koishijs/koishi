@@ -5,7 +5,7 @@
       <a v-if="repo" :href="data.links.repository" target="_blank" rel="noopener noreferrer">
         <k-icon :name="repo"></k-icon>
       </a>
-      <k-button v-if="store.packages[data.name]" type="success" class="right" disabled>本地</k-button>
+      <k-button v-if="store.packages[data.name]" solid type="success" class="right" @click="router.push('/settings/' + data.name)">配置</k-button>
       <k-button v-else-if="!config.override[data.name]" solid class="right" @click="addFavorite(data.name)">添加</k-button>
       <k-button v-else solid type="warning" class="right" @click="removeFavorite(data.name)">取消</k-button>
     </template>
@@ -48,10 +48,10 @@
 <script lang="ts" setup>
 
 import { computed, PropType } from 'vue'
+import { useRouter } from 'vue-router'
 import { MarketProvider } from '@koishijs/plugin-manager'
 import { store } from '~/client'
-import { config, addFavorite, removeFavorite } from '../utils'
-import { getMixedMeta } from './utils'
+import { config, addFavorite, removeFavorite, getMixedMeta } from '../utils'
 
 defineEmits(['query'])
 
@@ -69,6 +69,8 @@ const repo = computed(() => {
 })
 
 const author = computed(() => props.data.author.username)
+
+const router = useRouter()
 
 </script>
 

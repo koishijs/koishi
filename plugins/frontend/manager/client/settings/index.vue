@@ -3,7 +3,7 @@
     <template #aside>
       <plugin-select v-model="current"></plugin-select>
     </template>
-    <plugin-settings :current="current"></plugin-settings>
+    <plugin-settings :key="current" :current="current"></plugin-settings>
   </k-card-aside>
 </template>
 
@@ -15,7 +15,7 @@ import PluginSelect from './select.vue'
 import PluginSettings from './settings.vue'
 
 function join(source: string | string[]) {
-  return Array.isArray(source) ? source.join('/') : source
+  return Array.isArray(source) ? source.join('/') : source || ''
 }
 
 const route = useRoute()

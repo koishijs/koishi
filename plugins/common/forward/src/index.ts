@@ -17,9 +17,10 @@ export interface Rule {
 }
 
 export const Rule = Schema.object({
-  source: Schema.string().required(),
-  target: Schema.string().required(),
-  selfId: Schema.string().required(),
+  source: Schema.string().required().description('来源频道'),
+  target: Schema.string().required().description('目标频道'),
+  selfId: Schema.string().required().description('负责推送的机器人账号'),
+  guildId: Schema.string().description('目标频道的群组编号'),
 })
 
 export const name = 'forward'
@@ -31,8 +32,8 @@ export interface Config {
 
 export const schema = Schema.union([
   Schema.object({
-    rules: Schema.array(Rule),
-    interval: Schema.natural().role('ms').default(Time.hour),
+    rules: Schema.array(Rule).description('转发规则'),
+    interval: Schema.natural().role('ms').default(Time.hour).description('推送消息不再响应回复的时间。'),
   }),
   Schema.transform(Schema.array(Rule), (rules) => ({ rules })),
 ])

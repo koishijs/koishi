@@ -1,28 +1,10 @@
-import { Bot as GBot, Message } from '@qq-guild-sdk/core'
+import { Message } from '@qq-guild-sdk/core'
 import { Logger, segment } from '@koishijs/utils'
-import { Adapter, Schema, Session } from 'koishi'
-import { BotConfig, QQGuildBot } from './bot'
-import { adaptUser } from './utils'
+import { Adapter, Session } from 'koishi'
+import { QQGuildBot } from './bot'
+import { adaptUser, AdapterConfig, BotConfig } from './utils'
 
 const logger = new Logger('qqguild')
-
-export interface AdapterConfig extends Adapter.WebSocketClient.Config, Omit<GBot.Options, 'app'> {
-}
-
-export const AdapterConfig: Schema<AdapterConfig> = Schema.intersect([
-  Schema.object({
-    sandbox: Schema.boolean()
-      .description('是否开启沙盒')
-      .default(true),
-    endpoint: Schema.string().role('url')
-      .description('API 入口地址')
-      .default('https://api.sgroup.qq.com/'),
-    authType: Schema.union(['bot', 'bearer'])
-      .description('验证方式')
-      .default('bot'),
-  }),
-  Adapter.WebSocketClient.Config,
-])
 
 const createSession = (bot: QQGuildBot, msg: Message) => {
   const {
@@ -47,6 +29,8 @@ const createSession = (bot: QQGuildBot, msg: Message) => {
 }
 
 export class WebSocketClient extends Adapter<BotConfig, AdapterConfig> {
+  static schema = BotConfig
+
   async connect(bot: QQGuildBot) {
     Object.assign(bot, await bot.getSelf())
     bot.resolve()

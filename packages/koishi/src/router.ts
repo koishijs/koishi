@@ -44,8 +44,6 @@ defineProperty(App.Config, 'Network', Schema.object({
   selfUrl: Schema.string().role('url').description('应用暴露在公网的地址。部分插件 (例如 github 和 telegram) 需要用到。'),
 }).description('网络设置'))
 
-App.Config.list.unshift(App.Config.Network)
-
 type WebSocketCallback = (socket: WebSocket, request: IncomingMessage) => void
 
 export class WebSocketLayer {

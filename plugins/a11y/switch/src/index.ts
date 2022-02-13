@@ -1,4 +1,4 @@
-import { Context, template, deduplicate, difference, intersection, Argv } from 'koishi'
+import { Context, template, deduplicate, difference, intersection, Argv, Schema } from 'koishi'
 import { adminChannel } from '@koishijs/helpers'
 
 declare module 'koishi' {
@@ -20,6 +20,8 @@ template.set('switch', {
 export interface Config {}
 
 export const name = 'switch'
+export const using = ['database'] as const
+export const Config: Schema<Config> = Schema.object({})
 
 export function apply(ctx: Context, config: Config = {}) {
   ctx.model.extend('channel', {

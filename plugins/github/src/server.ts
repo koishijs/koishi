@@ -36,7 +36,7 @@ interface Repository {
   id: number
 }
 
-export interface Config extends App.Config.Request {
+export interface Config {
   path?: string
   appId?: string
   appSecret?: string
@@ -77,7 +77,7 @@ export class GitHub extends Service {
   constructor(public ctx: Context, public config: Config) {
     super(ctx, 'github', true)
 
-    this.http = ctx.http.extend(config.request)
+    this.http = ctx.http.extend({})
 
     ctx.model.extend('user', {
       ghAccessToken: 'string(50)',
@@ -105,6 +105,7 @@ export class GitHub extends Service {
         ...params,
       },
       headers: { Accept: 'application/json' },
+      timeout: this.config.requestTimeout,
     })
   }
 
@@ -117,6 +118,7 @@ export class GitHub extends Service {
         authorization: `token ${session.user.ghAccessToken}`,
         ...headers,
       },
+      timeout: this.config.requestTimeout,
     })
   }
 

@@ -5,7 +5,7 @@ import * as OneBot from './types'
 
 export * from './types'
 
-export interface AdapterConfig extends Adapter.WebSocketClient.Config, App.Config.Request {
+export interface AdapterConfig extends Adapter.WebSocketClient.Config {
   path?: string
   secret?: string
   responseTimeout?: number
@@ -17,7 +17,6 @@ export const AdapterConfig: Schema<AdapterConfig> = Schema.intersect([
     secret: Schema.string().description('接收事件推送时用于验证的字段，应该与 OneBot 的 secret 配置保持一致。').role('secret'),
   }),
   Adapter.WebSocketClient.Config,
-  App.Config.Request,
 ])
 
 export const adaptUser = (user: OneBot.AccountInfo): Bot.User => ({

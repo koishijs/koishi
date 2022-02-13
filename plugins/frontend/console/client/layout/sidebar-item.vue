@@ -1,5 +1,5 @@
 <template>
-  <router-link class="k-menu-item" :to="{ path: route.path, query: queries[route.path] }">
+  <router-link class="k-menu-item" :to="target">
     <k-icon :name="route.meta.icon || 'application'"/>
     {{ route.name }}
     <span class="badge" v-if="badge">{{ badge }}</span>
@@ -10,10 +10,14 @@
 
 import { computed, PropType } from 'vue'
 import { RouteRecordNormalized } from 'vue-router'
-import { queries } from '../client'
+import { routeCache } from './utils'
 
 const props = defineProps({
   route: {} as PropType<RouteRecordNormalized>,
+})
+
+const target = computed(() => {
+  return routeCache[props.route.name] || props.route.path.replace(/:.+/, '')
 })
 
 const badge = computed(() => {

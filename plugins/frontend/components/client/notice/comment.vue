@@ -2,9 +2,9 @@
   <div class="k-comment" :class="type">
     <k-icon :name="icon"></k-icon>
     <h4 class="k-comment-header">
-      <slot name="header">{{ title }}</slot>
+      <slot>{{ title }}</slot>
     </h4>
-    <slot/>
+    <slot name="body"></slot>
   </div>
 </template>
 
@@ -62,7 +62,7 @@ const icon = computed(() => {
     border-radius: 100%;
     font-weight: 700;
     font-size: 20px;
-    background-color: var(--bg0);
+    background-color: var(--card-bg);
   }
 
   @include apply-color(primary);

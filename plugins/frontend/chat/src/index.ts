@@ -10,10 +10,6 @@ declare module 'koishi' {
   interface EventMap {
     'chat/receive'(message: Message, session: Session): void
   }
-
-  interface Modules {
-    chat: typeof import('.')
-  }
 }
 
 interface ChatPayload {

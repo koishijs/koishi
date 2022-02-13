@@ -1,6 +1,11 @@
 <template>
   <el-scrollbar class="plugin-select" ref="root">
     <div class="content">
+      <div class="search">
+        <el-input v-model="keyword" #suffix>
+          <k-icon name="search"></k-icon>
+        </el-input>
+      </div>
       <k-tab-item class="k-tab-group-title" label="" v-model="model">
         全局设置
       </k-tab-item>
@@ -8,23 +13,23 @@
         运行中的插件
       </div>
       <k-tab-group
-        :data="store.packages" v-model="model"
+        :data="packages" v-model="model"
         :filter="data => data.id" #="data">
-        <span :class="{ readonly: isReadonly(data) }">{{ data.shortname }}</span>
+        <span>{{ data.shortname }}</span>
       </k-tab-group>
       <div class="k-tab-group-title">
         未运行的插件
-        <k-hint placement="right" class="filter" name="filter" :class="{ filtered }" @click="filtered = !filtered">
+        <k-hint placement="right" name="filter" v-model="filtered">
           <template v-if="filtered">
-            <b>筛选：已开启</b><br>只显示可在线配置的插件。
+            <b>筛选：已开启</b><br>只显示当前可启用的插件。
           </template>
           <template v-else>
-            <b>筛选：已关闭</b><br>显示所有已安装的插件。
+            <b>筛选：已关闭</b><br>显示所有已下载的插件。
           </template>
         </k-hint>
       </div>
       <k-tab-group
-        :data="store.packages" v-model="model"
+        :data="packages" v-model="model"
         :filter="data => !data.id && data.name && (!filtered || !isReadonly(data))" #="data">
         <span :class="{ readonly: isReadonly(data) }">{{ data.shortname }}</span>
       </k-tab-group>
@@ -36,6 +41,7 @@
 
 import { ref, computed, onActivated, nextTick } from 'vue'
 import { store } from '~/client'
+import { envMap } from './utils'
 
 const props = defineProps<{
   modelValue: string
@@ -48,11 +54,19 @@ const model = computed({
   set: val => emits('update:modelValue', val),
 })
 
+const packages = computed(() => {
+  return Object.fromEntries(Object.values(store.packages)
+    .filter(data => data.shortname.includes(keyword.value))
+    .sort((a, b) => a.shortname < b.shortname ? -1 : 1)
+    .map(data => [data.name, data]))
+})
+
 const root = ref<{ $el: HTMLElement }>(null)
-const filtered = ref(true)
+const filtered = ref(false)
+const keyword = ref('')
 
 function isReadonly(data: any) {
-  return !data.root && data.id
+  return envMap.value[data.name].invalid
 }
 
 onActivated(async () => {
@@ -77,17 +91,12 @@ onActivated(async () => {
     line-height: 2.25rem;
   }
 
-  .filter {
-    font-size: 0.9em;
-    cursor: pointer;
+  .search {
+    padding: 0 1.5rem;
+  }
 
-    &:active, &.filtered {
-      opacity: 1;
-    }
-
-    &:active {
-      color: var(--fg0);
-    }
+  .k-icon-filter {
+    height: 15px;
   }
 
   .readonly {

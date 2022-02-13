@@ -1,15 +1,10 @@
 import { store } from '~/client'
 import { MarketProvider } from '@koishijs/plugin-manager'
+import { getMixedMeta } from '../utils'
 
 export function getKeywords(name: string) {
   return store.packages[name]?.keywords || store.market[name].keywords || []
 }
-
-export const getMixedMeta = (name: string) => ({
-  keywords: [],
-  ...store.market[name],
-  ...store.packages[name],
-})
 
 export function validate(data: MarketProvider.Data, query: string) {
   const words = query.toLowerCase().split(/\s+/g)

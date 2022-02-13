@@ -49,3 +49,11 @@ export function addFavorite(name: string) {
 export function removeFavorite(name: string) {
   delete config.override[name]
 }
+
+export const getMixedMeta = (name: string) => ({
+  keywords: [],
+  devDeps: [],
+  peerDeps: [],
+  ...store.market[name],
+  ...store.packages[name],
+})

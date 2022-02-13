@@ -1,4 +1,4 @@
-import { Argv, Command, Context, Dict, Session, template, Time, User } from 'koishi'
+import { Argv, Command, Context, Dict, Schema, Session, template, Time, User } from 'koishi'
 import { adminUser } from '@koishijs/helpers'
 
 declare module 'koishi' {
@@ -40,8 +40,11 @@ template.set('timer', {
   'none': '当前没有生效的定时器。',
 })
 
+export interface Config {}
+
 export const name = 'rate-limit'
 export const using = ['database'] as const
+export const Config: Schema<Config> = Schema.object({})
 
 export function apply(ctx: Context) {
   ctx.model.extend('user', {

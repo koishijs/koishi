@@ -1,4 +1,4 @@
-import { Context, Session, Random, Dict } from 'koishi'
+import { Context, Session, Random, Dict, Schema } from 'koishi'
 
 declare module 'koishi' {
   interface Modules {
@@ -16,13 +16,18 @@ interface RepeatState {
 type StateCallback = (state: RepeatState, session: Session) => void | string
 
 interface RepeatHandler {
-  minTimes: number
+  minTimes?: number
   probability?: number
 }
 
+const RepeatHandler: Schema<RepeatHandler> = Schema.object({
+  minTimes: Schema.natural().min(2).default(2).required().description('最少重复次数。'),
+  probability: Schema.percent().default(1).description('复读发生概率。'),
+})
+
 function onRepeat(options: RepeatHandler | StateCallback): StateCallback {
   if (!options || typeof options !== 'object') return options as StateCallback
-  const { minTimes, probability = 1 } = options
+  const { minTimes = 2, probability = 1 } = options
   return ({ repeated, times, content }) => times >= minTimes && !repeated && Random.bool(probability) ? content : ''
 }
 
@@ -32,6 +37,10 @@ export interface Config {
 }
 
 export const name = 'repeater'
+export const Config: Schema<Config> = Schema.object({
+  onRepeat: Schema.union([RepeatHandler, Function]).description('响应复读消息'),
+  onInterrupt: Schema.function().hidden().description('响应打断复读'),
+})
 
 export function apply(ctx: Context, config: Config = {}) {
   ctx = ctx.guild()

@@ -30,24 +30,12 @@ const LaunchOptions = Schema.object({
 
 type RenderCallback = (page: Page, next: (handle?: ElementHandle) => Promise<string>) => Promise<string>
 
-export const name = 'puppeteer'
-
-export interface Config {
-  browser?: LaunchOptions
-  screenshot?: screenshot.Config
-}
-
-export const Config = Schema.object({
-  browser: LaunchOptions,
-  screenshot: screenshot.Config,
-})
-
 const logger = new Logger('puppeteer')
 
-export default class Puppeteer extends Service {
+class Puppeteer extends Service {
   browser: Browser
 
-  constructor(ctx: Context, public config: Config) {
+  constructor(ctx: Context, public config: Puppeteer.Config) {
     super(ctx, 'puppeteer')
     if (!config.browser.executablePath) {
       const findChrome = require('chrome-finder')
@@ -84,3 +72,17 @@ export default class Puppeteer extends Service {
     return output
   }
 }
+
+namespace Puppeteer {
+  export interface Config {
+    browser?: LaunchOptions
+    screenshot?: screenshot.Config
+  }
+
+  export const Config: Schema<Config> = Schema.object({
+    browser: LaunchOptions,
+    screenshot: screenshot.Config,
+  })
+}
+
+export default Puppeteer
