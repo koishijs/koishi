@@ -55,7 +55,7 @@ export function adaptMessage(bot: DiscordBot, meta: DC.Message, session: Partial
         if (meta.mention_roles.includes(id)) {
           return segment('at', { role: id })
         } else {
-          const user = meta.mentions?.find(u => u.id === id)
+          const user = meta.mentions?.find(u => u.id === id || `${u.username}#${u.discriminator}` === id)
           return segment.at(id, { name: user?.username })
         }
       })
