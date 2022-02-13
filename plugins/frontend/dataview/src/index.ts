@@ -3,14 +3,16 @@ import { DataService } from '@koishijs/plugin-console'
 import { resolve } from 'path'
 
 export type DbEvents = {
-  [M in keyof Query.Methods as `dataview/db-${M}`]: Query.Methods[M]
+  [M in keyof Query.Methods as `database/${M}`]: Query.Methods[M]
 }
+
 declare module '@koishijs/plugin-console' {
   namespace Console {
     interface Services {
       dbInfo: DatabaseProvider
     }
   }
+
   interface Events extends DbEvents { }
 }
 
@@ -20,9 +22,9 @@ export default class DatabaseProvider extends DataService<DatabaseInfo> {
 
   cache: Promise<DatabaseInfo>
 
-  addListener<M extends keyof Query.Methods>(m: M, refresh = false) {
-    return this.ctx.console.addListener(`dataview/db-${m}`, async (...args) => {
-      const result = await (this.ctx.database[m] as any)(...args)
+  addListener<K extends keyof Query.Methods>(name: K, refresh = false) {
+    return this.ctx.console.addListener(`database/${name}`, async (...args) => {
+      const result = await (this.ctx.database[name] as any)(...args)
       if (refresh) {
         this.refresh()
       }

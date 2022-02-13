@@ -10,16 +10,7 @@
     <div class="operations">
       <span v-if="existChanges">
         <k-button solid :disabled="!existValidChanges" @click="onSubmitChanges">应用修改</k-button>
-        <el-popconfirm
-          @confirm="onCancelChanges()"
-          title="真的要取消所有修改吗？"
-          confirm-button-text="是"
-          cancel-button-text="否"
-        >
-          <template #reference>
-            <k-button solid type="error">取消修改</k-button>
-          </template>
-        </el-popconfirm>
+        <k-button solid type="error" @click="onCancelChanges">取消修改</k-button>
       </span>
       <span v-else>双击单元格修改数据</span>
     </div>
@@ -119,7 +110,6 @@
 <script lang="ts" setup>
 
 import { } from '@koishijs/plugin-console'
-import { ElPagination, ElPopconfirm, ElTable, ElTableColumn } from 'element-plus'
 import { Dict, Model, Query } from 'koishi'
 import { computed, ComputedRef, nextTick, reactive, ref, watch, watchEffect } from 'vue'
 import { send } from '~/client'
@@ -203,7 +193,7 @@ async function updateData() {
     sort: querySort,
   }
   // await new Promise((res) => setInterval(() => res(0), 1000))
-  tableData.value = await send<'dataview/db-get'>('dataview/db-get', props.name as never, {}, modifier)
+  tableData.value = await send('database/get', props.name as never, {}, modifier)
   await nextTick()
   status.value.loading = false
 }
@@ -405,7 +395,7 @@ async function onSubmitChanges() {
       }
       console.log('Update row: ', data)
       // await new Promise(res => setInterval(() => res(1), 1000))
-      await send<'dataview/db-set'>('dataview/db-set', props.name as never, row, data)
+      await send('database/set', props.name as never, row, data)
 
       for (const field in validChanges.value[idx])
         submitted.push({ idx, field })
@@ -430,7 +420,7 @@ async function onSubmitChanges() {
 async function onDeleteRow({ row, $index }) {
   status.value.loading = true
   try {
-    await send<'dataview/db-remove'>('dataview/db-remove', props.name as never, row)
+    await send('database/remove', props.name as never, row)
     await updateData()
     message.success(`成功删除数据`)
   } catch (e) {
@@ -450,7 +440,7 @@ async function onInsertRow() {
       return o
     }, {})
     console.log('Create row: ', row)
-    await send<'dataview/db-create'>('dataview/db-create', props.name as never, row)
+    await send('database/create', props.name as never, row)
     await updateData()
     message.success(`成功添加数据`)
     for (const field in status.value.newRow)
