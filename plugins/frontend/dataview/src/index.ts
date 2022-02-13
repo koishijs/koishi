@@ -20,6 +20,16 @@ export default class DatabaseProvider extends DataService<DatabaseInfo> {
 
   cache: Promise<DatabaseInfo>
 
+  addListener<M extends keyof Query.Methods>(m: M, refresh = false) {
+    return this.ctx.console.addListener(`dataview/db-${m}`, async (...args) => {
+      const result = await (this.ctx.database[m] as any)(...args)
+      if (refresh) {
+        this.refresh()
+      }
+      return result
+    })
+  }
+
   constructor(ctx: Context) {
     super(ctx, 'dbInfo')
 
@@ -29,14 +39,14 @@ export default class DatabaseProvider extends DataService<DatabaseInfo> {
       ctx.console.addEntry(resolve(__dirname, '../dist'))
     }
 
-    ctx.console.addListener('dataview/db-create', (...args) => ctx.database.create(...args))
-    ctx.console.addListener('dataview/db-drop', (...args) => ctx.database.drop(...args))
-    ctx.console.addListener('dataview/db-eval', (...args) => ctx.database.eval(...args))
-    ctx.console.addListener('dataview/db-get', (...args) => ctx.database.get(...args))
-    ctx.console.addListener('dataview/db-remove', (...args) => ctx.database.remove(...args))
-    ctx.console.addListener('dataview/db-set', (...args) => ctx.database.set(...args))
-    ctx.console.addListener('dataview/db-stats', (...args) => ctx.database.stats(...args))
-    ctx.console.addListener('dataview/db-upsert', (...args) => ctx.database.upsert(...args))
+    this.addListener('create', true)
+    this.addListener('drop', true)
+    this.addListener('eval', true)
+    this.addListener('get')
+    this.addListener('remove', true)
+    this.addListener('set')
+    this.addListener('stats')
+    this.addListener('upsert', true)
 
     ctx.on('model', () => this.refresh())
   }
