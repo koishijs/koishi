@@ -28,10 +28,11 @@ declare module '~/client' {
 
   export const config: ClientConfig
   export const store: Store
+  export const router: Router
 
   export function send<K extends keyof Events>(type: K, ...args: Parameters<Events[K]>): Promisify<ReturnType<Events[K]>>
-  export function send(type: string, ...args: any[]): Promise<any>
   export function receive<T = any>(event: string, listener: (data: T) => void): void
+  export function createStorage<T extends object>(key: string, version: string, fallback?: () => T): T
 
   // layout api
 

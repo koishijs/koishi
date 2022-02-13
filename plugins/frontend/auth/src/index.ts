@@ -1,4 +1,4 @@
-import { Awaitable, Context, pick, Schema, Time, User } from 'koishi'
+import { Awaitable, Context, omit, pick, Schema, Time, User } from 'koishi'
 import { DataService, SocketHandle } from '@koishijs/plugin-console'
 import { resolve } from 'path'
 import { v4 } from 'uuid'
@@ -13,7 +13,7 @@ declare module 'koishi' {
 
 declare module '@koishijs/plugin-console' {
   interface SocketHandle {
-    user?: AuthUser
+    user?: UserAuth
   }
 
   namespace Console {
@@ -23,24 +23,26 @@ declare module '@koishijs/plugin-console' {
   }
 
   interface Events {
-    'login/platform'(this: SocketHandle, platform: string, userId: string): Awaitable<LoginUser>
+    'login/platform'(this: SocketHandle, platform: string, userId: string): Awaitable<UserLogin>
     'login/password'(this: SocketHandle, name: string, password: string): void
     'login/token'(this: SocketHandle, id: string, token: string): void
-    'user/modify'(this: SocketHandle, data: Partial<Pick<User, 'name' | 'password'>>): void
+    'user/update'(this: SocketHandle, data: UserUpdate): void
+    'user/logout'(this: SocketHandle): void
   }
 }
 
-export type AuthUser = Pick<User, 'id' | 'name' | 'password' | 'authority' | 'token' | 'expire'>
-export type LoginUser = Pick<User, 'id' | 'name' | 'token' | 'expire'>
+export type UserAuth = Pick<User, 'id' | 'name' | 'authority' | 'token' | 'expire'>
+export type UserLogin = Pick<User, 'id' | 'name' | 'token' | 'expire'>
+export type UserUpdate = Partial<Pick<User, 'name' | 'password'>>
 
-const authFields = ['name', 'password', 'authority', 'id', 'expire', 'token'] as (keyof AuthUser)[]
+const authFields = ['name', 'authority', 'id', 'expire', 'token'] as (keyof UserAuth)[]
 
-function initAuth(handle: SocketHandle, value: AuthUser) {
+function setAuthUser(handle: SocketHandle, value: UserAuth) {
   handle.user = value
   handle.send({ type: 'data', body: { key: 'user', value } })
 }
 
-class AuthService extends DataService<AuthUser> {
+class AuthService extends DataService<UserAuth> {
   static using = ['console', 'database'] as const
 
   constructor(ctx: Context, private config: AuthService.Config) {
@@ -66,19 +68,19 @@ class AuthService extends DataService<AuthUser> {
     const states: Record<string, [string, number, SocketHandle]> = {}
 
     ctx.console.addListener('login/password', async function (name, password) {
-      const user = await ctx.database.getUser('name', name, authFields)
+      const user = await ctx.database.getUser('name', name, ['password', ...authFields])
       if (!user || user.password !== password) throw new Error('用户名或密码错误。')
       user.token = v4()
       user.expire = Date.now() + config.authTokenExpire
       await ctx.database.setUser('name', name, pick(user, ['token', 'expire']))
-      initAuth(this, user)
+      setAuthUser(this, omit(user, ['password']))
     })
 
     ctx.console.addListener('login/token', async function (id, token) {
       const user = await ctx.database.getUser('id', id, authFields)
       if (!user) throw new Error('用户不存在。')
       if (user.token !== token || user.expire <= Date.now()) throw new Error('令牌已失效。')
-      initAuth(this, user)
+      setAuthUser(this, user)
     })
   
     ctx.console.addListener('login/platform', async function (platform, userId) {
@@ -108,7 +110,7 @@ class AuthService extends DataService<AuthUser> {
         const user = await session.observeUser(authFields)
         user.token = v4()
         user.expire = Date.now() + config.authTokenExpire
-        return initAuth(state[2], user)
+        return setAuthUser(state[2], user)
       }
       return next()
     }, true)
@@ -119,11 +121,14 @@ class AuthService extends DataService<AuthUser> {
       if (handle.user.expire <= Date.now()) return true
       return handle.user.authority < listener.authority
     })
+
+    ctx.console.addListener('user/logout', async function () {
+      setAuthUser(this, null)
+    })
   
-    ctx.console.addListener('user/modify', async function ({ name, password }) {
-      // const user = await ctx.database.getUser('id', id, ['token', 'expire', 'authority', 'password'])
-      // if (!user || password === user.password) return
-      // await ctx.database.setUser('id', id, { password })
+    ctx.console.addListener('user/update', async function (data) {
+      if (!this.user) throw new Error('请先登录。')
+      await ctx.database.setUser('id', this.user.id, data)
     })
   }
 }

@@ -72,6 +72,8 @@ function isValid(schema: Schema) {
 <style lang="scss">
 
 .k-form {
+  margin-bottom: 2rem;
+
   h2 {
     font-size: 1.25rem;
   }

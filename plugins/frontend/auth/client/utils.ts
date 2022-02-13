@@ -1,29 +1,33 @@
-import { useStorage } from '@vueuse/core'
-import { reactive, ref } from 'vue'
-import {} from '@koishijs/plugin-auth'
+import { watch } from 'vue'
+import { router, store, createStorage } from '~/client'
+import { UserAuth } from '@koishijs/plugin-auth'
+import { message } from '~/components'
 
-export function useVersionStorage<T extends object>(key: string, version: string, fallback?: () => T) {
-  const storage = useStorage('koishi.console.' + key, {})
-  if (storage.value['version'] !== version) {
-    storage.value = { version, data: fallback() }
-  }
-  return reactive<T>(storage.value['data'])
-}
-
-interface AuthConfig {
+interface AuthConfig extends Partial<UserAuth> {
   authType: 0 | 1
-  username?: string
-  password?: string
   platform?: string
   userId?: string
   showPass?: boolean
-  token?: string
-  expire?: number
 }
 
-export const config = useVersionStorage<AuthConfig>('auth', '1.0', () => ({
+export const config = createStorage<AuthConfig>('auth', '1.1', () => ({
   authType: 0,
 }))
+
+watch(() => store.user, (value) => {
+  if (!value) {
+    return router.push('/login')
+  }
+
+  message.success(`欢迎回来，${value.name || 'Koishi 用户'}！`)
+  Object.assign(config, value)
+  const from = router.currentRoute.value.redirectedFrom
+  if (from && !from.path.startsWith('/login')) {
+    router.push(from)
+  } else {
+    router.push('/profile')
+  }
+})
 
 export async function sha256(password: string) {
   const data = new TextEncoder().encode(password)

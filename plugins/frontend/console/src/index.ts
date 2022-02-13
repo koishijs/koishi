@@ -40,9 +40,7 @@ export class Console extends Service {
     this.http.addEntry(filename)
   }
 
-  addListener<K extends keyof Events>(event: K, callback: Events[K], options?: Listener.Options): void
-  addListener(event: string, callback: Listener.Callback, options?: Listener.Options): void
-  addListener(event: string, callback: Listener.Callback, options: Listener.Options = {}) {
+  addListener<K extends keyof Events>(event: K, callback: Events[K], options?: Listener.Options) {
     this.ws.addListener(event, { callback, ...options })
   }
 }

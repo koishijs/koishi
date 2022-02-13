@@ -100,3 +100,7 @@ html.dark {
 html.dark .el-switch {
   --el-switch-off-color: #72767d;
 }
+
+body > .el-message {
+  transform: translateX(-50%) translateX(8rem);
+}

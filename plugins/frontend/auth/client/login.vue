@@ -18,16 +18,16 @@
       <h1 v-else><span>平台账户登录</span></h1>
       <template v-if="config.authType === 0">
         <k-input prefix="at" placeholder="平台名" v-model="config.platform"/>
-        <k-input prefix="user" placeholder="账号" v-model="config.userId" @enter="enter"/>
+        <k-input prefix="user" placeholder="账号" v-model="config.userId" @enter="loginWithAccount"/>
         <p class="error" v-if="message">{{ message }}</p>
         <div class="control">
           <k-button @click="$router.back()">返回</k-button>
-          <k-button @click="enter">获取验证码</k-button>
+          <k-button @click="loginWithAccount">获取验证码</k-button>
         </div>
       </template>
       <template v-else>
-        <k-input prefix="user" placeholder="用户名" v-model="config.username"/>
-        <k-input prefix="lock" placeholder="密码" v-model="config.password" @enter="login"
+        <k-input prefix="user" placeholder="用户名" v-model="config.name"/>
+        <k-input prefix="lock" placeholder="密码" v-model="config.password" @enter="loginWithPassword"
           :type="config.showPass ? 'text' : 'password'"
           :suffix="config.showPass ? 'eye' : 'eye-slash'"
           @click-suffix="config.showPass = !config.showPass"
@@ -35,7 +35,7 @@
         <p class="error" v-if="message">{{ message }}</p>
         <div class="control">
           <k-button @click="$router.back()">返回</k-button>
-          <k-button @click="login">登录</k-button>
+          <k-button @click="loginWithPassword">登录</k-button>
         </div>
       </template>
     </template>
@@ -44,32 +44,19 @@
 
 <script lang="ts" setup>
 
-import { ref, watch } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
+import { ref } from 'vue'
 import { config, sha256 } from './utils'
-import { send, store } from '~/client'
-import { LoginUser } from '@koishijs/plugin-auth'
+import { send } from '~/client'
+import { UserLogin } from '@koishijs/plugin-auth'
 
 const secure = isSecureContext
 if (!secure) config.authType = 0
 
-const router = useRouter()
-
-watch(() => store.user, (value) => {
-  if (!value) return
-  const from = router.currentRoute.value.redirectedFrom
-  if (from && from.name !== '登录') {
-    router.push(from)
-  } else {
-    router.push('/profile')
-  }
-})
-
 const message = ref<string>()
-const user = ref<LoginUser>()
+const user = ref<UserLogin>()
 
 let timestamp = 0
-async function enter() {
+async function loginWithAccount() {
   const now = Date.now()
   if (now < timestamp) return
   const { platform, userId } = config
@@ -82,10 +69,10 @@ async function enter() {
   }
 }
 
-async function login() {
-  const { username, password } = config
+async function loginWithPassword() {
+  const { name, password } = config
   try {
-    await send('login/password', username, await sha256(password))
+    await send('login/password', name, await sha256(password))
   } catch (e) {
     message.value = e.message
   }
