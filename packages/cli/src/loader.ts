@@ -2,6 +2,7 @@ import { resolve, extname, dirname, isAbsolute } from 'path'
 import { readdirSync, readFileSync, writeFileSync } from 'fs'
 import { App, Dict, Logger, interpolate, Modules, unwrapExports, valueMap } from 'koishi'
 import * as yaml from 'js-yaml'
+import * as dotenv from 'dotenv'
 
 declare module 'koishi' {
   namespace Context {
@@ -80,6 +81,11 @@ export class Loader {
       const module = require(this.filename)
       config = module.default || module
     }
+
+    // load .env file into process.env
+    dotenv.config({
+      path: resolve(this.dirname, '.env'),
+    })
 
     let resolved = new App.Config(config)
     if (this.isWritable) {

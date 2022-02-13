@@ -41,6 +41,7 @@
   "dependencies": {
     "cac": "^6.7.12",
     "chokidar": "^3.5.3",
+    "dotenv": "^16.0.0",
     "js-yaml": "^4.1.0",
     "kleur": "^4.1.4",
     "koishi": "^4.2.0",
