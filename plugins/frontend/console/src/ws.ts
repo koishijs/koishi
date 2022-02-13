@@ -1,34 +1,40 @@
-import { Awaitable, coerce, Context, Dict, Logger, WebSocketLayer } from 'koishi'
+import { App, Awaitable, coerce, Context, Dict, Logger, WebSocketLayer } from 'koishi'
 import { v4 } from 'uuid'
 import { DataService } from './service'
 import WebSocket from 'ws'
 
 declare module 'koishi' {
   interface EventMap {
-    'console/validate'(handle: SocketHandle): Awaitable<boolean>
+    'console/intercept'(handle: SocketHandle, listener: Listener): Awaitable<boolean>
   }
 }
 
 const logger = new Logger('console')
 
 export class SocketHandle {
-  readonly ctx: Context
+  readonly app: App
   readonly id: string = v4()
 
   constructor(service: WsService, public socket: WebSocket) {
-    this.ctx = service.ctx
+    this.app = service.ctx.app
   }
 
   send(payload: any) {
     this.socket.send(JSON.stringify(payload))
   }
-
-  async validate() {
-    return this.ctx.serial('console/validate', this)
-  }
 }
 
-export type Listener = (this: SocketHandle, ...args: any[]) => Awaitable<any>
+export interface Listener extends Listener.Options {
+  callback: Listener.Callback
+}
+
+export namespace Listener {
+  export type Callback = (this: SocketHandle, ...args: any[]) => Awaitable<any>
+
+  export interface Options {
+    authority?: number
+  }
+}
 
 class WsService extends DataService {
   readonly handles: Dict<SocketHandle> = {}
@@ -50,8 +56,8 @@ class WsService extends DataService {
     this.layer.clients.forEach((socket) => socket.send(data))
   }
 
-  addListener(event: string, callback: Listener) {
-    this.listeners[event] = callback
+  addListener(event: string, listener: Listener) {
+    this.listeners[event] = listener
   }
 
   stop() {
@@ -72,16 +78,19 @@ class WsService extends DataService {
     }
 
     socket.on('message', async (data) => {
-      if (await handle.validate()) return
       const { type, args, id } = JSON.parse(data.toString())
       const listener = this.listeners[type]
       if (!listener) {
         logger.info('unknown message:', type, ...args)
-        return handle.send({ type: 'response', body: { id } })
+        return handle.send({ type: 'response', body: { id, error: 'not implemented' } })
+      }
+
+      if (await this.ctx.serial('console/intercept', handle, listener)) {
+        return handle.send({ type: 'response', body: { id, error: 'unauthorized' } })
       }
 
       try {
-        const value = await listener.call(handle, ...args)
+        const value = await listener.callback.call(handle, ...args)
         return handle.send({ type: 'response', body: { id, value } })
       } catch (error) {
         error = coerce(error)

@@ -1,15 +1,14 @@
 import { useStorage } from '@vueuse/core'
 import { reactive, ref } from 'vue'
+import {} from '@koishijs/plugin-auth'
 
 export function useVersionStorage<T extends object>(key: string, version: string, fallback?: () => T) {
-  const storage = useStorage('koishi.' + key, {})
+  const storage = useStorage('koishi.console.' + key, {})
   if (storage.value['version'] !== version) {
     storage.value = { version, data: fallback() }
   }
   return reactive<T>(storage.value['data'])
 }
-
-export const user = ref()
 
 interface AuthConfig {
   authType: 0 | 1
@@ -18,9 +17,11 @@ interface AuthConfig {
   platform?: string
   userId?: string
   showPass?: boolean
+  token?: string
+  expire?: number
 }
 
-export const config = useVersionStorage<AuthConfig>('managerConfig', '2.0', () => ({
+export const config = useVersionStorage<AuthConfig>('auth', '1.0', () => ({
   authType: 0,
 }))
 

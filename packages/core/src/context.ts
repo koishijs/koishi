@@ -468,6 +468,7 @@ export class Context {
   private createTimerDispose(timer: NodeJS.Timeout) {
     const dispose = () => {
       clearTimeout(timer)
+      if (!this.state) return
       return remove(this.state.disposables, dispose)
     }
     this.state.disposables.push(dispose)

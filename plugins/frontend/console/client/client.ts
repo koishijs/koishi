@@ -100,6 +100,7 @@ export function getValue<T>(computed: Computed<T>): T {
 
 export class Context {
   static app: App
+  static router = router
   static pending: Dict<DisposableExtension[]> = {}
 
   public disposables: Disposable[] = []

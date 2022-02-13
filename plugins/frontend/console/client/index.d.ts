@@ -16,6 +16,8 @@ declare module '~/components' {
 
 declare module '~/client' {
   import { App, Component } from 'vue'
+  import { Router } from 'vue-router'
+  import { Promisify } from 'koishi'
   import { Console, Events, DataService, ClientConfig } from '@koishijs/plugin-console'
 
   // data api
@@ -27,7 +29,7 @@ declare module '~/client' {
   export const config: ClientConfig
   export const store: Store
 
-  export function send<K extends keyof Events>(type: K, ...args: Parameters<Events[K]>): ReturnType<Events[K]>
+  export function send<K extends keyof Events>(type: K, ...args: Parameters<Events[K]>): Promisify<ReturnType<Events[K]>>
   export function send(type: string, ...args: any[]): Promise<any>
   export function receive<T = any>(event: string, listener: (data: T) => void): void
 
@@ -72,6 +74,7 @@ declare module '~/client' {
 
   export class Context {
     static app: App
+    static router: Router
     disposables: Disposable[] = []
 
     addPage(options: PageOptions): void

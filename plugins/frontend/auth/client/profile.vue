@@ -1,7 +1,7 @@
 <template>
   <k-card title="基本资料">
-    <p>用户名：{{ user.name }}</p>
-    <p>权限等级：{{ user.authority }}</p>
+    <p>用户名：{{ store.user.name }}</p>
+    <p>权限等级：{{ store.user.authority }}</p>
   </k-card>
   <k-card title="设置密码" v-if="secure">
     <k-input v-model="password" @enter="enter"
@@ -17,8 +17,8 @@
 
 <script lang="ts" setup>
 
-import { send } from '~/client'
-import { sha256, config, user } from './utils'
+import { send, store } from '~/client'
+import { sha256, config } from './utils'
 import { ref } from 'vue'
 
 const secure = isSecureContext
@@ -26,8 +26,7 @@ const password = ref(config.password)
 
 async function enter() {
   if (!password.value) return
-  const { id, token } = user.value
-  send('password', { id, token, password: await sha256(password.value) })
+  send('user/modify', { password: await sha256(password.value) })
   config.password = password.value
 }
 

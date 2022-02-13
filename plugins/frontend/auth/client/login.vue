@@ -1,12 +1,12 @@
 <template>
   <k-card class="login">
-    <template v-if="data.token">
+    <template v-if="user">
       <h1><span>平台账户登录</span></h1>
-      <p class="hint">欢迎你，{{ data.name || 'Koishi 用户' }}！</p>
+      <p class="hint">欢迎你，{{ user.name || 'Koishi 用户' }}！</p>
       <p class="hint">请用上述账号将下面的验证码私聊发送给任意机器人</p>
-      <p class="token">{{ data.token }}</p>
+      <p class="token">{{ user.token }}</p>
       <div class="control">
-        <k-button @click="data.token = null">返回上一步</k-button>
+        <k-button @click="user.token = null">返回上一步</k-button>
       </div>
     </template>
     <template v-else>
@@ -19,7 +19,7 @@
       <template v-if="config.authType === 0">
         <k-input prefix="at" placeholder="平台名" v-model="config.platform"/>
         <k-input prefix="user" placeholder="账号" v-model="config.userId" @enter="enter"/>
-        <p class="error" v-if="data.message">{{ data.message }}</p>
+        <p class="error" v-if="message">{{ message }}</p>
         <div class="control">
           <k-button @click="$router.back()">返回</k-button>
           <k-button @click="enter">获取验证码</k-button>
@@ -32,7 +32,7 @@
           :suffix="config.showPass ? 'eye' : 'eye-slash'"
           @click-suffix="config.showPass = !config.showPass"
         />
-        <p class="error" v-if="data.message">{{ data.message }}</p>
+        <p class="error" v-if="message">{{ message }}</p>
         <div class="control">
           <k-button @click="$router.back()">返回</k-button>
           <k-button @click="login">登录</k-button>
@@ -45,27 +45,28 @@
 <script lang="ts" setup>
 
 import { ref, watch } from 'vue'
-import { useRouter } from 'vue-router'
-import { config, sha256, user } from './utils'
-import { send, receive } from '~/client'
-
-interface LoginData {
-  token?: string
-  name?: string
-  message?: string
-}
+import { useRouter, useRoute } from 'vue-router'
+import { config, sha256 } from './utils'
+import { send, store } from '~/client'
+import { LoginUser } from '@koishijs/plugin-auth'
 
 const secure = isSecureContext
 if (!secure) config.authType = 0
-const data = ref<LoginData>({})
 
 const router = useRouter()
-receive('login', body => data.value = body)
 
-watch(user, (value) => {
+watch(() => store.user, (value) => {
   if (!value) return
-  router.push(router.currentRoute.value.redirectedFrom?.fullPath || '/profile')
+  const from = router.currentRoute.value.redirectedFrom
+  if (from && from.name !== '登录') {
+    router.push(from)
+  } else {
+    router.push('/profile')
+  }
 })
+
+const message = ref<string>()
+const user = ref<LoginUser>()
 
 let timestamp = 0
 async function enter() {
@@ -74,12 +75,20 @@ async function enter() {
   const { platform, userId } = config
   if (!platform || !userId) return
   timestamp = now + 1000
-  send('token', { platform, userId })
+  try {
+    user.value = await send('login/platform', platform, userId)
+  } catch (e) {
+    message.value = e.message
+  }
 }
 
 async function login() {
   const { username, password } = config
-  send('login', { username, password: await sha256(password) })
+  try {
+    await send('login/password', username, await sha256(password))
+  } catch (e) {
+    message.value = e.message
+  }
 }
 
 </script>

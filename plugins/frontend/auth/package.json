@@ -30,6 +30,7 @@
     "authentication",
     "login",
     "console",
+    "required:database",
     "required:console"
   ],
   "peerDependencies": {
