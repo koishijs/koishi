@@ -1,22 +1,13 @@
-import { useStorage } from '@vueuse/core'
 import { Dict } from 'koishi'
 import { reactive, watch, computed } from 'vue'
-import { store } from '~/client'
-
-export function useVersionStorage<T extends object>(key: string, version: string, fallback?: () => T) {
-  const storage = useStorage('koishi.' + key, {})
-  if (storage.value['version'] !== version) {
-    storage.value = { version, data: fallback() }
-  }
-  return reactive<T>(storage.value['data'])
-}
+import { store, createStorage } from '~/client'
 
 interface ManagerConfig {
   override: Dict<string>
   showInstalled: boolean
 }
 
-export const config = useVersionStorage<ManagerConfig>('managerConfig', '2.0', () => ({
+export const config = createStorage<ManagerConfig>('manager', '2.0', () => ({
   override: {},
   showInstalled: false,
 }))

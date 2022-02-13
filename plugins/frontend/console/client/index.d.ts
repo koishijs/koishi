@@ -16,6 +16,8 @@ declare module '~/components' {
 
 declare module '~/client' {
   import { App, Component } from 'vue'
+  import { Router } from 'vue-router'
+  import { Promisify } from 'koishi'
   import { Console, Events, DataService, ClientConfig } from '@koishijs/plugin-console'
 
   // data api
@@ -26,12 +28,15 @@ declare module '~/client' {
 
   export const config: ClientConfig
   export const store: Store
+  export const router: Router
 
-  export function send<K extends keyof Events>(type: K, ...args: Parameters<Events[K]>): ReturnType<Events[K]>
-  export function send(type: string, ...args: any[]): Promise<any>
+  export function send<K extends keyof Events>(type: K, ...args: Parameters<Events[K]>): Promisify<ReturnType<Events[K]>>
   export function receive<T = any>(event: string, listener: (data: T) => void): void
+  export function createStorage<T extends object>(key: string, version: string, fallback?: () => T): T
 
   // layout api
+
+  export type Computed<T> = T | (() => T)
 
   declare module 'vue-router' {
     interface RouteMeta extends RouteMetaExtension {
@@ -49,7 +54,8 @@ declare module '~/client' {
   interface RouteMetaExtension {
     icon?: string
     order?: number
-    position?: 'top' | 'bottom' | 'hidden'
+    authority?: number
+    position?: Computed<'top' | 'bottom' | 'hidden'>
   }
 
   export interface PageOptions extends RouteMetaExtension, PageExtension {
@@ -69,6 +75,7 @@ declare module '~/client' {
 
   export class Context {
     static app: App
+    static router: Router
     disposables: Disposable[] = []
 
     addPage(options: PageOptions): void

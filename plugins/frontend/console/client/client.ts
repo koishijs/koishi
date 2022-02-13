@@ -1,9 +1,10 @@
 import { ClientConfig, Console } from '@koishijs/plugin-console'
 import { Dict } from '@koishijs/utils'
+import { useLocalStorage } from '@vueuse/core'
 import { deserialize, serialize } from 'bson'
 import { App, defineComponent, h, markRaw, reactive, ref, Ref, resolveComponent, watch } from 'vue'
 import { createRouter, createWebHistory, RouteRecordNormalized, START_LOCATION } from 'vue-router'
-import { Disposable, Extension, PageExtension, PageOptions, Store, ViewOptions } from '~/client'
+import { Computed, Disposable, Extension, PageExtension, PageOptions, Store, ViewOptions } from '~/client'
 
 // data api
 
@@ -95,6 +96,10 @@ interface DisposableExtension extends PageExtension {
   ctx: Context
 }
 
+export function getValue<T>(computed: Computed<T>): T {
+  return typeof computed === 'function' ? (computed as any)() : computed
+}
+
 export class Context {
   static app: App
   static pending: Dict<DisposableExtension[]> = {}
@@ -125,6 +130,7 @@ export class Context {
       component,
       meta: {
         order: 0,
+        authority: 0,
         position: 'top',
         fields: [],
         badge: badge ? [badge] : [],
@@ -170,6 +176,14 @@ export class Context {
   dispose() {
     this.disposables.forEach(dispose => dispose())
   }
+}
+
+export function createStorage<T extends object>(key: string, version: string, fallback?: () => T) {
+  const storage = useLocalStorage('koishi.console.' + key, {})
+  if (storage.value['version'] !== version) {
+    storage.value = { version, data: fallback() }
+  }
+  return reactive<T>(storage.value['data'])
 }
 
 export function defineExtension(callback: Extension) {

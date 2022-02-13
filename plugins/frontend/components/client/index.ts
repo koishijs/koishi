@@ -23,7 +23,7 @@ import {
 
 import common from './common'
 import form from './form'
-import icons from './icons'
+import * as Icons from './icons'
 import layout from './layout'
 import notice from './notice'
 
@@ -33,6 +33,7 @@ import 'element-plus/es/components/checkbox/style/css'
 import 'element-plus/es/components/input/style/css'
 import 'element-plus/es/components/input-number/style/css'
 import 'element-plus/es/components/loading/style/css'
+import 'element-plus/es/components/message/style/css'
 import 'element-plus/es/components/radio/style/css'
 import 'element-plus/es/components/scrollbar/style/css'
 import 'element-plus/es/components/select/style/css'
@@ -53,9 +54,10 @@ export const message = ElMessage
 
 export * from './common'
 export * from './form'
-export * from './icons'
 export * from './layout'
 export * from './notice'
+
+export { Icons }
 
 export default function (app: App) {
   app.use(ElButton)
@@ -80,7 +82,7 @@ export default function (app: App) {
 
   app.use(common)
   app.use(form)
-  app.use(icons)
+  app.use(Icons)
   app.use(layout)
   app.use(notice)
 }

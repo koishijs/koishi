@@ -7,7 +7,7 @@ import FileType from 'file-type'
 declare module '@koishijs/core' {
   namespace App {
     interface Config {
-      assets: Config.Assets
+      assets?: Config.Assets
     }
 
     namespace Config {

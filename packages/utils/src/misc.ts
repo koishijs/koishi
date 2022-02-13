@@ -140,6 +140,6 @@ export type Dict<T = any> = { [key: string]: T }
 export type Get<T extends {}, K> = K extends keyof T ? T[K] : never
 export type Extract<S, T, U = S> = S extends T ? U : never
 export type MaybeArray<T> = [T] extends [unknown[]] ? T : T | T[]
-export type Promisify<T> = [T] extends [Promise<unknown>] ? T : Promise<T>
+export type Promisify<T> = Promise<T extends Promise<infer S> ? S : T>
 export type Awaitable<T> = [T] extends [Promise<unknown>] ? T : T | Promise<T>
 export type Intersect<U> = (U extends any ? (arg: U) => void : never) extends ((arg: infer I) => void) ? I : never

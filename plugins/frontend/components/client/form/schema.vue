@@ -117,10 +117,6 @@ function isPrimitive(schema: Schema) {
     border-top: 1px solid var(--border);
   }
 
-  &:last-child {
-    margin-bottom: 2rem;
-  }
-
   & + :not(.schema-item) {
     margin-top: 2rem;
   }
