@@ -17,9 +17,11 @@ tsconfig.temp.json
 /shiki
 /test
 /utsuho
+/.yalc
 
 todo.md
 yarn.lock
+yalc.lock
 node_modules/
 npm-debug.log
 yarn-debug.log
