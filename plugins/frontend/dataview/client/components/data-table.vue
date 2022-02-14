@@ -113,9 +113,9 @@
 
 import { Dict } from 'koishi'
 import { computed, ComputedRef, nextTick, reactive, ref, watch, watchEffect } from 'vue'
-import { send, store } from '~/client'
+import { store } from '~/client'
 import { message } from '~/components'
-import { formatSize, handleError, timeStr } from '../utils'
+import { formatSize, handleError, sendQuery, timeStr } from '../utils'
 
 export interface TableStatus {
   loading: boolean
@@ -182,7 +182,7 @@ async function updateData() {
     sort: querySort,
   }
   // await new Promise((res) => setInterval(() => res(0), 1000))
-  tableData.value = await send('database/get', props.name as never, {}, modifier)
+  tableData.value = await sendQuery('get', props.name as never, {}, modifier)
   await nextTick()
   state.loading = false
 }
@@ -384,7 +384,7 @@ async function onSubmitChanges() {
       }
       console.log('Update row: ', data)
       // await new Promise(res => setInterval(() => res(1), 1000))
-      await send('database/set', props.name as never, row, data)
+      await sendQuery('set', props.name as never, row, data)
 
       for (const field in validChanges.value[idx])
         submitted.push({ idx, field })
@@ -409,7 +409,7 @@ async function onSubmitChanges() {
 async function onDeleteRow({ row, $index }) {
   state.loading = true
   try {
-    await send('database/remove', props.name as never, row)
+    await sendQuery('remove', props.name as never, row)
     await updateData()
     message.success(`成功删除数据`)
   } catch (e) {
@@ -429,7 +429,7 @@ async function onInsertRow() {
       return o
     }, {})
     console.log('Create row: ', row)
-    await send('database/create', props.name as never, row)
+    await sendQuery('create', props.name as never, row)
     await updateData()
     message.success(`成功添加数据`)
     for (const field in state.newRow)

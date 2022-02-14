@@ -1,4 +1,3 @@
-import { deserialize, serialize } from 'bson'
 import { App, Awaitable, coerce, Context, Dict, Logger, WebSocketLayer } from 'koishi'
 import { v4 } from 'uuid'
 import WebSocket from 'ws'
@@ -21,7 +20,7 @@ export class SocketHandle {
   }
 
   send(payload: any) {
-    this.socket.send(serialize(payload))
+    this.socket.send(JSON.stringify(payload))
   }
 }
 
@@ -53,7 +52,7 @@ class WsService extends DataService {
 
   broadcast(type: string, body: any) {
     if (!this?.layer.clients.size) return
-    const data = serialize({ type, body })
+    const data = JSON.stringify({ type, body })
     this.layer.clients.forEach((socket) => socket.send(data))
   }
 
@@ -74,12 +73,12 @@ class WsService extends DataService {
       Promise.resolve(this.ctx[name]?.['get']?.()).then((value) => {
         if (!value) return
         const key = name.slice(8)
-        socket.send(serialize({ type: 'data', body: { key, value } }))
+        socket.send(JSON.stringify({ type: 'data', body: { key, value } }))
       })
     }
 
     socket.on('message', async (data) => {
-      const { type, args, id } = deserialize(Array.isArray(data) ? Buffer.concat(data) : data)
+      const { type, args, id } = JSON.parse(data.toString())
       const listener = this.listeners[type]
       if (!listener) {
         logger.info('unknown message:', type, ...args)
@@ -94,6 +93,7 @@ class WsService extends DataService {
         const value = await listener.callback.call(handle, ...args)
         return handle.send({ type: 'response', body: { id, value } })
       } catch (e) {
+        logger.debug(e)
         const error = coerce(e)
         return handle.send({ type: 'response', body: { id, error } })
       }
