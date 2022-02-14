@@ -2,6 +2,7 @@ import { Context, Dict, Model, Query, Schema } from 'koishi'
 import { DataService } from '@koishijs/plugin-console'
 import { resolve } from 'path'
 import { deserialize, serialize } from './utils'
+import { existsSync } from 'fs'
 
 export type DbEvents = {
   [M in keyof Query.Methods as `database/${M}`]: (...args: string[]) => Promise<string>
@@ -39,11 +40,10 @@ class DatabaseProvider extends DataService<DatabaseInfo> {
   constructor(ctx: Context) {
     super(ctx, 'dbInfo')
 
-    if (ctx.console.config.devMode) {
-      ctx.console.addEntry(resolve(__dirname, '../client/index.ts'))
-    } else {
-      ctx.console.addEntry(resolve(__dirname, '../dist'))
-    }
+    ctx.console.addEntry({
+      dev: resolve(__dirname, '../client/index.ts'),
+      prod: resolve(__dirname, '../dist'),
+    })
 
     this.addListener('create', true)
     this.addListener('drop', true)

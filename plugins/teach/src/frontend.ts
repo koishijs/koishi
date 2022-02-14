@@ -25,11 +25,10 @@ export default class TeachConsole {
   static using = ['console.meta', 'console.stats'] as const
 
   constructor(ctx: Context, config: Dialogue.Config = {}) {
-    if (ctx.console.config.devMode) {
-      ctx.console.addEntry(resolve(__dirname, '../client/index.ts'))
-    } else {
-      ctx.console.addEntry(resolve(__dirname, '../dist'))
-    }
+    ctx.console.addEntry({
+      dev: resolve(__dirname, '../client/index.ts'),
+      prod: resolve(__dirname, '../dist'),
+    })
 
     const { stats, meta } = ctx.console
 

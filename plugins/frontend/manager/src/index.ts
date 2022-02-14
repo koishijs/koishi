@@ -55,9 +55,8 @@ export function apply(ctx: Context, config: Config = {}) {
   ctx.plugin(ServiceProvider)
   ctx.plugin(ConfigWriter)
 
-  if (ctx.console.config.devMode) {
-    ctx.console.addEntry(resolve(__dirname, '../client/index.ts'))
-  } else {
-    ctx.console.addEntry(resolve(__dirname, '../dist'))
-  }
+  ctx.console.addEntry({
+    dev: resolve(__dirname, '../client/index.ts'),
+    prod: resolve(__dirname, '../dist'),
+  })
 }

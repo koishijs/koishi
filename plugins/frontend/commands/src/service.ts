@@ -38,12 +38,11 @@ export default class CommandProvider extends DataService<CommandData[]> {
     ctx.on('command-added', this.update)
     ctx.on('command-removed', this.update)
     ctx.on('dispose', this.update.cancel)
-  
-    if (ctx.console.config.devMode) {
-      ctx.console.addEntry(resolve(__dirname, '../client/index.ts'))
-    } else {
-      ctx.console.addEntry(resolve(__dirname, '../dist'))
-    }
+
+    ctx.console.addEntry({
+      dev: resolve(__dirname, '../client/index.ts'),
+      prod: resolve(__dirname, '../dist'),
+    })
   }
 
   async get(forced = false) {

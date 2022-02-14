@@ -5,7 +5,8 @@
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
-    "lib"
+    "lib",
+    "client"
   ],
   "author": "Shigma <shigma10826@gmail.com>",
   "license": "MIT",
@@ -30,7 +31,14 @@
     "build"
   ],
   "dependencies": {
+    "@koishijs/components": "^1.0.0",
+    "@types/marked": "^4.0.1",
     "@vitejs/plugin-vue": "^2.0.1",
-    "vite": "~2.5.10"
+    "@vueuse/core": "^7.5.3",
+    "marked": "^4.0.10",
+    "sass": "^1.48.0",
+    "vite": "~2.5.10",
+    "vue": "^3.2.21",
+    "vue-router": "^4.0.12"
   }
 }

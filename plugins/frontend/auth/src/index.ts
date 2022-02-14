@@ -54,11 +54,10 @@ class AuthService extends DataService<UserAuth> {
       expire: 'unsigned(20)',
     })
 
-    if (ctx.console.config.devMode) {
-      ctx.console.addEntry(resolve(__dirname, '../client/index.ts'))
-    } else {
-      ctx.console.addEntry(resolve(__dirname, '../dist'))
-    }
+    ctx.console.addEntry({
+      dev: resolve(__dirname, '../client/index.ts'),
+      prod: resolve(__dirname, '../dist'),
+    })
 
     this.initLogin()
   }

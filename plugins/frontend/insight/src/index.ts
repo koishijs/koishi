@@ -22,11 +22,10 @@ export default class RegistryProvider extends DataService<Dict<PluginData>> {
   constructor(ctx: Context) {
     super(ctx, 'registry')
 
-    if (ctx.console.config.devMode) {
-      ctx.console.addEntry(resolve(__dirname, '../client/index.ts'))
-    } else {
-      ctx.console.addEntry(resolve(__dirname, '../dist'))
-    }
+    ctx.console.addEntry({
+      dev: resolve(__dirname, '../client/index.ts'),
+      prod: resolve(__dirname, '../dist'),
+    })
 
     ctx.on('plugin-added', this.update)
     ctx.on('plugin-removed', this.update)

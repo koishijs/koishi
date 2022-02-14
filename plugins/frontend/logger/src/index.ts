@@ -26,11 +26,10 @@ class LogProvider extends DataService<string[]> {
   constructor(ctx: Context, private config: LogProvider.Config = {}) {
     super(ctx, 'logs')
 
-    if (ctx.console.config.devMode) {
-      ctx.console.addEntry(resolve(__dirname, '../client/index.ts'))
-    } else {
-      ctx.console.addEntry(resolve(__dirname, '../dist'))
-    }
+    ctx.console.addEntry({
+      dev: resolve(__dirname, '../client/index.ts'),
+      prod: resolve(__dirname, '../dist'),
+    })
 
     this.ctx.on('ready', () => {
       this.prepareWriter()

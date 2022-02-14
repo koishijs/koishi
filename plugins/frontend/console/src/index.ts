@@ -1,10 +1,10 @@
 import { Context, Schema, Service } from 'koishi'
-import HttpService from './http'
-import WsService, { Listener } from './ws'
+import HttpService, { Entry } from './http'
+import WsService, { Listener } from './socket'
 
 export * from './service'
 export * from './http'
-export * from './ws'
+export * from './socket'
 
 type NestedServices = {
   [K in keyof Console.Services as `console.${K}`]: Console.Services[K]
@@ -36,7 +36,7 @@ export class Console extends Service {
     ctx.plugin(WsService, config)
   }
 
-  addEntry(filename: string) {
+  addEntry(filename: string | Entry) {
     this.http.addEntry(filename)
   }
 

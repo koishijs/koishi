@@ -18,7 +18,7 @@ export async function build(root: string, config: vite.UserConfig) {
   await vite.build({
     root,
     build: {
-      outDir: '../dist',
+      outDir: cwd + '/plugins/frontend/console/dist',
       emptyOutDir: true,
       cssCodeSplit: false,
       ...config.build,
@@ -63,9 +63,9 @@ function pipe(src: string, dest: string) {
   })
 }
 
-async function buildConsole(folder: string) {
-  const root = cwd + '/' + folder + '/client'
-  const dist = cwd + '/' + folder + '/dist'
+async function buildConsole() {
+  const root = cwd + '/plugins/frontend/builder/client'
+  const dist = cwd + '/plugins/frontend/console/dist'
 
   // build for console main
   await build(root, { base: './' })
@@ -93,20 +93,24 @@ async function buildConsole(folder: string) {
 ;(async () => {
   const folders = await getPackages(args)
 
+  let builder = false
   for (const folder of folders) {
-    if (folder === 'plugins/frontend/console') {
-      await buildConsole(folder)
-    } else {
-      await buildExtension(cwd + '/' + folder, {
-        plugins: [{
-          name: 'fuck-echarts',
-          renderChunk(code, chunk) {
-            if (chunk.fileName.includes('echarts')) {
-              return code.replace(/\bSymbol(?!\.toStringTag)/g, 'FuckSymbol')
-            }
-          },
-        }],
-      })
+    if (folder === 'plugins/frontend/builder') {
+      builder = true
+      continue
     }
+
+    await buildExtension(cwd + '/' + folder, {
+      plugins: [{
+        name: 'fuck-echarts',
+        renderChunk(code, chunk) {
+          if (chunk.fileName.includes('echarts')) {
+            return code.replace(/\bSymbol(?!\.toStringTag)/g, 'FuckSymbol')
+          }
+        },
+      }],
+    })
   }
+
+  if (builder) await buildConsole()
 })()
