@@ -1,9 +1,10 @@
 import { Context, Dict, Model, Query, Schema } from 'koishi'
 import { DataService } from '@koishijs/plugin-console'
 import { resolve } from 'path'
+import { deserialize, serialize } from './utils'
 
 export type DbEvents = {
-  [M in keyof Query.Methods as `database/${M}`]: Query.Methods[M]
+  [M in keyof Query.Methods as `database/${M}`]: (...args: string[]) => Promise<string>
 }
 
 declare module '@koishijs/plugin-console' {
@@ -29,9 +30,9 @@ class DatabaseProvider extends DataService<DatabaseInfo> {
 
   addListener<K extends keyof Query.Methods>(name: K, refresh = false) {
     this.ctx.console.addListener(`database/${name}`, async (...args) => {
-      const result = await (this.ctx.database[name] as any)(...args)
+      const result = await (this.ctx.database[name] as any)(...args.map(deserialize))
       if (refresh) this.refresh()
-      return result
+      return result === undefined ? result : serialize(result)
     }, { authority: 4 })
   }
 
@@ -81,3 +82,4 @@ namespace DatabaseProvider {
 }
 
 export default DatabaseProvider
+export * from './utils'
