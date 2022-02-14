@@ -93,6 +93,7 @@ class WsService extends DataService {
         const value = await listener.callback.call(handle, ...args)
         return handle.send({ type: 'response', body: { id, value } })
       } catch (e) {
+        logger.debug(e)
         const error = coerce(e)
         return handle.send({ type: 'response', body: { id, error } })
       }
