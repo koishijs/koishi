@@ -125,7 +125,7 @@ class PackageProvider extends DataService<Dict<PackageProvider.Data>> {
     if (newLength > oldLength) this.ctx.console.protocols.refresh()
 
     // check plugin dependencies
-    Object.assign(result, Package.Meta.from(data))
+    Object.assign(result, Package.getMeta(data))
 
     // check plugin state
     const { plugins } = this.ctx.loader.config
@@ -142,15 +142,12 @@ class PackageProvider extends DataService<Dict<PackageProvider.Data>> {
 namespace PackageProvider {
   export interface Config {}
 
-  export interface Data extends Partial<Package.Base> {
+  export interface Data extends Partial<Package.Base>, Partial<Package.Meta> {
     id?: string
     root?: boolean
     config?: any
     shortname?: string
     schema?: Schema
-    devDeps?: string[]
-    peerDeps?: string[]
-    keywords?: string[]
     workspace?: boolean
   }
 }

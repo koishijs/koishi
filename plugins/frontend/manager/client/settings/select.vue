@@ -15,22 +15,22 @@
       <k-tab-group
         :data="packages" v-model="model"
         :filter="data => data.id" #="data">
-        <span>{{ data.shortname }}</span>
+        <span :class="{ readonly: isReadonly(data) }">{{ data.shortname }}</span>
       </k-tab-group>
       <div class="k-tab-group-title">
         未运行的插件
-        <k-hint placement="right" name="filter" v-model="filtered">
-          <template v-if="filtered">
-            <b>筛选：已开启</b><br>只显示当前可启用的插件。
+        <k-hint placement="right" name="filter" v-model="config.showDepsOnly">
+          <template v-if="config.showDepsOnly">
+            <b>筛选：已开启</b><br>只显示依赖的插件。
           </template>
           <template v-else>
-            <b>筛选：已关闭</b><br>显示所有已下载的插件。
+            <b>筛选：已关闭</b><br>显示本地的全部插件。
           </template>
         </k-hint>
       </div>
       <k-tab-group
         :data="packages" v-model="model"
-        :filter="data => !data.id && data.name && (!filtered || !isReadonly(data))" #="data">
+        :filter="data => !data.id && data.name && (!config.showDepsOnly || store.dependencies[data.name])" #="data">
         <span :class="{ readonly: isReadonly(data) }">{{ data.shortname }}</span>
       </k-tab-group>
     </div>
@@ -42,6 +42,7 @@
 import { ref, computed, onActivated, nextTick } from 'vue'
 import { store } from '~/client'
 import { envMap } from './utils'
+import { config } from '../utils'
 
 const props = defineProps<{
   modelValue: string
@@ -62,7 +63,6 @@ const packages = computed(() => {
 })
 
 const root = ref<{ $el: HTMLElement }>(null)
-const filtered = ref(false)
 const keyword = ref('')
 
 function isReadonly(data: any) {

@@ -1,15 +1,17 @@
 import { Dict } from 'koishi'
-import { reactive, watch, computed } from 'vue'
+import { watch, computed } from 'vue'
 import { store, createStorage } from '~/client'
 
 interface ManagerConfig {
   override: Dict<string>
-  showInstalled: boolean
+  showInstalled?: boolean
+  showDepsOnly?: boolean
 }
 
 export const config = createStorage<ManagerConfig>('manager', '2.0', () => ({
   override: {},
   showInstalled: false,
+  showDepsOnly: false,
 }))
 
 export const overrideCount = computed(() => {
@@ -26,11 +28,6 @@ watch(store.packages, (value) => {
     }
   }
 }, { immediate: true })
-
-interface ManagerState {
-}
-
-export const state = reactive<ManagerState>({})
 
 export function addFavorite(name: string) {
   if (config.override[name] || store.packages[name]) return

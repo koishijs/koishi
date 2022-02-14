@@ -2,8 +2,8 @@
   <k-card class="profile-basic">
     <h1>
       基本资料
-      <k-button solid type="error" @click="logout">退出登录</k-button>
-      <k-button solid :disabled="!Object.keys(diff).length" @click="update">应用更改</k-button>
+      <k-button class="float-right" solid type="error" @click="logout">退出登录</k-button>
+      <k-button class="float-right" solid :disabled="!Object.keys(diff).length" @click="update">应用更改</k-button>
     </h1>
     <k-form :schema="schema" v-model="diff" :show-header="false"></k-form>
   </k-card>
@@ -64,10 +64,6 @@ async function update() {
     font-size: 1.375rem;
     margin: 1.5rem 0;
     line-height: 2rem;
-
-    .k-button {
-      float: right;
-    }
   }
 }
 

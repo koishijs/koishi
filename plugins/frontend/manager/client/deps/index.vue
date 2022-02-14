@@ -1,13 +1,18 @@
 <template>
   <k-card class="page-deps">
-    <div class="operation">
-      <k-button solid @click="install" :disabled="!overrideCount">更新依赖</k-button>
+    <div class="controls">
+      <el-checkbox v-model="config.showDepsOnly">只显示依赖的插件</el-checkbox>
+      <span class="float-right" v-if="!overrideCount">当前没有变更的依赖</span>
+      <template v-else>
+        <k-button class="float-right" solid @click="install">更新依赖</k-button>
+        <k-button class="float-right" solid type="error" @click="config.override = {}">放弃变更</k-button>
+      </template>
     </div>
-    <table class="table-body">
+    <table>
       <colgroup>
         <col width="auto">
-        <col width="200px">
-        <col width="200px">
+        <col width="30%">
+        <col width="30%">
       </colgroup>
       <thead>
         <tr>
@@ -16,10 +21,19 @@
           <th>目标版本</th>
         </tr>
       </thead>
-      <tbody>
-        <package-view v-for="name in names" :key="name" :name="name"></package-view>
-      </tbody>
     </table>
+    <el-scrollbar>
+      <table class="table-body">
+        <colgroup>
+          <col width="auto">
+          <col width="30%">
+          <col width="30%">
+        </colgroup>
+        <tbody>
+          <package-view v-for="name in names" :key="name" :name="name"></package-view>
+        </tbody>
+      </table>
+    </el-scrollbar>
   </k-card>
 </template>
 
@@ -32,7 +46,9 @@ import { message, loading } from '~/components'
 import PackageView from './package.vue'
 
 const names = computed(() => {
-  const data = Object.values(store.packages).filter(item => !item.workspace && store.market[item.name]).map(item => item.name)
+  const data = config.showDepsOnly
+    ? Object.keys(store.dependencies).filter(name => store.packages[name])
+    : Object.values(store.packages).map(item => item.name).filter(Boolean)
   for (const key in config.override) {
     if (!data.includes(key) && store.market[key] && config.override[key]) data.push(key)
   }
@@ -65,13 +81,18 @@ async function install() {
   height: calc(100vh - 4rem);
 
   .k-card-body {
-    height: 100%;
+    padding: 0;
+    margin: 0;
+    height: calc(100vh - 4rem + 1px);
     display: flex;
     flex-direction: column;
   }
 
-  .operation {
-    margin-bottom: 1.5rem;
+  .controls {
+    height: 2rem;
+    padding: 0 2rem;
+    line-height: 2rem;
+    margin: 1rem 0;
   }
 
   tbody {
@@ -81,6 +102,10 @@ async function install() {
 
     tr:hover {
       background-color: var(--bg1);
+    }
+
+    tr:first-child {
+      border-top: none;
     }
   }
 }

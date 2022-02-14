@@ -88,15 +88,15 @@ aside.layout-aside {
   .k-menu-item .badge {
     position: absolute;
     border-radius: 1rem;
+    color: #ffffff;
     background-color: var(--error);
     top: 50%;
     right: 1.5rem;
     transform: translateY(-50%);
     line-height: 1;
     padding: 4px 8px;
-    font-size: 0.875rem;
+    font-size: 0.75rem;
     font-weight: bolder;
-    color: var(--bg0);
     transition: 0.3s ease;
   }
 
