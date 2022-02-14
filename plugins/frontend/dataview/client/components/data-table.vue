@@ -1,122 +1,123 @@
-<template v-loading="loading">
-  <div class="header">
-    <span class="table-title">
-      {{ name }} {{
-        table.size
-          ? `(${formatSize(table.size)})`
-          : ''
-      }}
-    </span>
-    <div class="operations">
-      <span v-if="existChanges">
-        <k-button solid :disabled="!existValidChanges" @click="onSubmitChanges">应用修改</k-button>
-        <k-button solid type="error" @click="onCancelChanges">取消修改</k-button>
+<template>
+  <div class="content-right" v-loading="state.loading">
+    <div class="header">
+      <span class="table-title">
+        {{ name }} {{
+          table.size
+            ? `(${formatSize(table.size)})`
+            : ''
+        }}
       </span>
-      <span v-else>双击单元格修改数据</span>
+      <div class="operations">
+        <span v-if="existChanges">
+          <k-button solid :disabled="!existValidChanges" @click="onSubmitChanges">应用修改</k-button>
+          <k-button solid type="error" @click="onCancelChanges">取消修改</k-button>
+        </span>
+        <span v-else>双击单元格修改数据</span>
+      </div>
     </div>
-  </div>
-  <el-table
-    :data="tableData"
-    class="data-table"
-    style="width: 100%"
-    height="100%"
-    :border="true"
-    :cell-class-name="({ row, column, rowIndex, columnIndex }) => isCellChanged({ row, column, $index: rowIndex }, false)
-      ? 'cell-changed'
-      : ''
-    "
-    @sort-change="onSort"
-    @cell-dblclick="onOuterCellClick"
-  >
-    <el-table-column
-      v-for="fName in Object.keys(table.fields)"
-      :sortable="existChanges ? false : 'custom'"
-      :prop="fName"
-      :label="fName"
-      :fixed="[table.primary || []].flat().includes(fName)"
-      :resizable="true"
+    <el-table
+      :data="tableData"
+      class="data-table"
+      style="width: 100%"
+      height="100%"
+      :border="true"
+      :cell-class-name="({ row, column, rowIndex, columnIndex }) => isCellChanged({ row, column, $index: rowIndex }, false)
+        ? 'cell-changed'
+        : ''
+      "
+      @sort-change="onSort"
+      @cell-dblclick="onOuterCellClick"
     >
-      <template #header="{ column }">
-        {{ column.label }}
-        <div class="insertion" @click.stop>
-          <component
-            :is="columnInputAttr[column.label].is"
-            @click.stop
-            v-model="status.newRow[column.label]"
-            v-bind="columnInputAttr[column.label].attrs || {}"
-            size="small"
-          ></component>
-        </div>
-      </template>
-      <template #default="scope">
-        <template v-if="isCellChanged(scope, false)">
-          <component
-            :is="columnInputAttr[scope.column.label].is"
-            v-model="status.changes[scope.$index][scope.column.label].model"
-            v-bind="columnInputAttr[scope.column.label].attrs || {}"
-            size="small"
+      <el-table-column
+        v-for="fName in Object.keys(table.fields)"
+        :sortable="existChanges ? false : 'custom'"
+        :prop="fName"
+        :label="fName"
+        :fixed="[table.primary || []].flat().includes(fName)"
+        :resizable="true"
+      >
+        <template #header="{ column }">
+          {{ column.label }}
+          <div class="insertion" @click.stop>
+            <component
+              :is="columnInputAttr[column.label].is"
+              @click.stop
+              v-model="state.newRow[column.label]"
+              v-bind="columnInputAttr[column.label].attrs || {}"
+              size="small"
+            ></component>
+          </div>
+        </template>
+        <template #default="scope">
+          <template v-if="isCellChanged(scope, false)">
+            <component
+              :is="columnInputAttr[scope.column.label].is"
+              v-model="state.changes[scope.$index][scope.column.label].model"
+              v-bind="columnInputAttr[scope.column.label].attrs || {}"
+              size="small"
+            >
+              <template #suffix>
+                <k-button frameless type="error" @click="onCancelInput(scope)">
+                  <k-icon name="times-full"></k-icon>
+                </k-button>
+              </template>
+            </component>
+          </template>
+          <div v-else @parent-dblclick="onCellDblClick(scope)" class="inner-cell">
+            {{
+              renderCell(fName, scope)
+            }}
+          </div>
+        </template>
+      </el-table-column>
+      <el-table-column label="操作" width="60" fixed="right" align="center">
+        <template #header="{ column }">
+          {{ column.label }}
+          <div class="insertion" @click.stop>
+            <k-button frameless :disabled="!newRowValid || existChanges" @click="onInsertRow">插入</k-button>
+          </div>
+        </template>
+
+        <template #default="scope">
+          <el-popconfirm
+            @confirm="onDeleteRow(scope)"
+            title="真的要删除这条数据吗？"
+            confirm-button-text="是"
+            cancel-button-text="否"
           >
-            <template #suffix>
-              <k-button frameless type="error" @click="onCancelInput(scope)">
+            <template #reference>
+              <k-button frameless type="error" :disabled="existChanges">
                 <k-icon name="times-full"></k-icon>
               </k-button>
             </template>
-          </component>
+          </el-popconfirm>
         </template>
-        <div v-else @parent-dblclick="onCellDblClick(scope)" class="inner-cell">
-          {{
-            renderCell(fName, scope)
-          }}
-        </div>
-      </template>
-    </el-table-column>
-    <el-table-column label="操作" width="60" fixed="right" align="center">
-      <template #header="{ column }">
-        {{ column.label }}
-        <div class="insertion" @click.stop>
-          <k-button frameless :disabled="!newRowValid || existChanges" @click="onInsertRow">插入</k-button>
-        </div>
-      </template>
-
-      <template #default="scope">
-        <el-popconfirm
-          @confirm="onDeleteRow(scope)"
-          title="真的要删除这条数据吗？"
-          confirm-button-text="是"
-          cancel-button-text="否"
-        >
-          <template #reference>
-            <k-button frameless type="error" :disabled="existChanges">
-              <k-icon name="times-full"></k-icon>
-            </k-button>
-          </template>
-        </el-popconfirm>
-      </template>
-    </el-table-column>
-  </el-table>
-  <el-pagination
-    layout="total, sizes, prev, pager, next, jumper"
-    :small="true"
-    :total="table.count"
-    :page-sizes="pageSizes"
-    :default-page-size="pageSizes[0]"
-    v-model:page-size="status.pageSize"
-    :default-current-page="1"
-    v-model:current-page="currPage"
-    :disabled="existChanges"
-  ></el-pagination>
+      </el-table-column>
+    </el-table>
+    <el-pagination
+      layout="total, sizes, prev, pager, next, jumper"
+      :small="true"
+      :total="table.count"
+      :page-sizes="pageSizes"
+      :default-page-size="pageSizes[0]"
+      v-model:page-size="state.pageSize"
+      :default-current-page="1"
+      v-model:current-page="currPage"
+      :disabled="existChanges"
+    ></el-pagination>
+  </div>
 </template>
 
 <script lang="ts" setup>
 
-import { TableInfo } from '@koishijs/plugin-dataview'
-import { Dict, Model, Query } from 'koishi'
+import { Dict } from 'koishi'
 import { computed, ComputedRef, nextTick, reactive, ref, watch, watchEffect } from 'vue'
-import { send } from '~/client'
+import { send, store } from '~/client'
 import { message } from '~/components'
 import { formatSize, handleError, timeStr } from '../utils'
 
-export type TableStatus = {
+export interface TableStatus {
   loading: boolean
   pageSize: number
   offset: number
@@ -135,83 +136,85 @@ export type ChangesState = Record<number, Record<string, {
 
 export type newRowState = Dict<any> // field => input model
 
+const state = reactive<TableStatus>({
+  loading: true,
+  pageSize: undefined,
+  offset: 0,
+  sort: null,
+  changes: {},
+  newRow: {},
+})
+
 const pageSizes = [30, 50, 100, 150, 200, 500, 1000]
 
 const props = defineProps<{
   name: string
-  table: TableInfo
-  mStatus: TableStatus
 }>()
 
-const emits = defineEmits([
-  'update:mStatus',
-])
-const status = computed({
-  get: () => props.mStatus,
-  set: v => emits('update:mStatus', v),
-})
+const table = computed(() => store.dbInfo.tables[props.name])
+
 watchEffect(() => {
-  status.value.pageSize = status.value.pageSize || pageSizes[0]
+  state.pageSize = state.pageSize || pageSizes[0]
 })
-watch(() => status.value.pageSize, (v) => {
-  status.value.offset = Math.floor(status.value.offset / v) * v
+watch(() => state.pageSize, (v) => {
+  state.offset = Math.floor(state.offset / v) * v
 }, {})
-watch(() => props.table.fields, (v) => {
-  for (const fName in props.table.fields)
-    if (!(fName in status.value.newRow))
-      status.value.newRow[fName] = ''
+watch(() => table.value.fields, (v) => {
+  for (const fName in table.value.fields)
+    if (!(fName in state.newRow))
+      state.newRow[fName] = ''
 }, { immediate: true })
 
 // used as async computed
 const tableData = ref([])
 async function updateData() {
   if (!props.name) return
-  status.value.loading = true
-  const querySort = status.value.sort && {
-    [status.value.sort.field]: {
+  state.loading = true
+  const querySort = state.sort && {
+    [state.sort.field]: {
       ascending: 'asc' as const,
       descending: 'desc' as const
-    }[status.value.sort.order]
+    }[state.sort.order]
   }
   const modifier = {
-    offset: status.value.offset,
-    limit: status.value.pageSize,
+    offset: state.offset,
+    limit: state.pageSize,
     sort: querySort,
   }
   // await new Promise((res) => setInterval(() => res(0), 1000))
   tableData.value = await send('database/get', props.name as never, {}, modifier)
   await nextTick()
-  status.value.loading = false
+  state.loading = false
 }
 watchEffect(updateData)
 
 const currPage = computed({
-  get: () => Math.floor(status.value.offset / status.value.pageSize) + 1,
-  set: p => status.value.offset = (p - 1) * status.value.pageSize
+  get: () => Math.floor(state.offset / state.pageSize) + 1,
+  set: p => state.offset = (p - 1) * state.pageSize
 })
 
 const validChanges: ComputedRef<ChangesState> = computed(() => {
   const result = {}
-  for (const i in status.value.changes || {}) {
-    for (const field in status.value.changes[i]) {
+  for (const i in state.changes || {}) {
+    for (const field in state.changes[i]) {
       const column = columnInputAttr.value[field]
       if (column.attrs?.validate)
-        if (!column.attrs.validate(status.value.changes[i][field].model))
+        if (!column.attrs.validate(state.changes[i][field].model))
           continue // skip invalid changes
       if (!result[i]) result[i] = {}
-      result[i][field] = status.value.changes[i][field]
+      result[i][field] = state.changes[i][field]
     }
   }
   return result
 })
 
-const existChanges = computed(() => !!Object.keys(status.value.changes || {}).length)
+const existChanges = computed(() => !!Object.keys(state.changes || {}).length)
 const existValidChanges = computed(() => !!Object.keys(validChanges.value || {}).length)
 const newRowValid = computed(() => {
-  for (const field in props.table.fields) {
+  for (const field in table.value.fields) {
     const column = columnInputAttr.value[field]
     if (column.attrs?.validate)
-      if (!column.attrs.validate(status.value.newRow[field])) {
+      if (!column.attrs.validate(state.newRow[field])) {
         console.log(field)
         return false
       }
@@ -226,8 +229,8 @@ const columnInputAttr: ComputedRef<Dict<{
     validate: Function
     step?: number
   }
-}>> = computed(() => Object.keys(props.table.fields).reduce((o, fName) => {
-  const fieldConfig = props.table.fields[fName]
+}>> = computed(() => Object.keys(table.value.fields).reduce((o, fName) => {
+  const fieldConfig = table.value.fields[fName]
   const dateAttrs = { clearable: false}
 
   let type, step
@@ -279,16 +282,16 @@ const columnInputAttr: ComputedRef<Dict<{
 
 function onSort(e) {
   if (e.order === null)
-    status.value.sort = null
+    state.sort = null
   else
-    status.value.sort = {
+    state.sort = {
       field: e.prop,
       order: e.order,
     }
 }
 
 function renderCell(field: string, { row, column, $index }) {
-  const fType = props.table.fields[field].type
+  const fType = table.value.fields[field].type
   const data = row[field]
   switch (fType) {
     case 'json':
@@ -311,7 +314,7 @@ function renderCell(field: string, { row, column, $index }) {
 
 /** convert cell data to model value */
 function toModelValue(field: string, data) {
-  const fType = props.table.fields[field].type
+  const fType = table.value.fields[field].type
   switch (fType) {
     case 'json':
       return JSON.stringify(data)
@@ -327,7 +330,7 @@ function toModelValue(field: string, data) {
 
 /** convert model value data to cell */
 function fromModelValue(field: string, data) {
-  const fType = props.table.fields[field].type
+  const fType = table.value.fields[field].type
   switch (fType) {
     case 'json':
       return JSON.parse(data)
@@ -337,9 +340,9 @@ function fromModelValue(field: string, data) {
 
 /** Check if a table cell has pending changes */
 function isCellChanged({ row, column, $index }, checkValue = true) {
-  if (status.value.changes?.[$index]?.[column.label] === undefined) return false
+  if (state.changes?.[$index]?.[column.label] === undefined) return false
   if (!checkValue) return true
-  return status.value.changes?.[row.id]?.[column.label].model.value !== row[column.label]
+  return state.changes?.[row.id]?.[column.label].model.value !== row[column.label]
 }
 
 /* Just to get $index */
@@ -348,25 +351,25 @@ function onOuterCellClick(_row, _column, element) {
 }
 function onCellDblClick({ row, column, $index }) {
   if (isCellChanged({ row, column, $index }, false)) return // Change record exists
-  if (status.value.changes[$index] === undefined)
-    status.value.changes[$index] = {}
-  status.value.changes[$index][column.label] = reactive({
+  if (state.changes[$index] === undefined)
+    state.changes[$index] = {}
+  state.changes[$index][column.label] = reactive({
     model: toModelValue(column.label, row[column.label]),
   })
 }
 /** Discard current change */
 function onCancelInput({ column, $index }) {
-  delete status.value.changes[$index][column.label]
-  if (!Object.keys(status.value.changes[$index]).length)
-    delete status.value.changes[$index]
+  delete state.changes[$index][column.label]
+  if (!Object.keys(state.changes[$index]).length)
+    delete state.changes[$index]
 }
 /** Discard all changes */
 function onCancelChanges() {
-  status.value.changes = {}
+  state.changes = {}
 }
 
 async function onSubmitChanges() {
-  status.value.loading = true
+  state.loading = true
   const submitted: {
     idx: string
     field: string
@@ -393,18 +396,18 @@ async function onSubmitChanges() {
 
   // clear current changes
   for (const c of submitted)
-    delete status.value.changes[c.idx][c.field]
-  for (const idx in status.value.changes)
-    if (!Object.keys(status.value.changes[idx]).length)
-      delete status.value.changes[idx]
+    delete state.changes[c.idx][c.field]
+  for (const idx in state.changes)
+    if (!Object.keys(state.changes[idx]).length)
+      delete state.changes[idx]
   await updateData()
   if (submitted.length)
     message.success(`成功修改 ${submitted.length} 项数据`)
-  status.value.loading = false
+  state.loading = false
 }
 
 async function onDeleteRow({ row, $index }) {
-  status.value.loading = true
+  state.loading = true
   try {
     await send('database/remove', props.name as never, row)
     await updateData()
@@ -412,15 +415,15 @@ async function onDeleteRow({ row, $index }) {
   } catch (e) {
     handleError(e, '数据删除失败')
   }
-  status.value.loading = false
+  state.loading = false
 }
 
 async function onInsertRow() {
-  status.value.loading = true
+  state.loading = true
   try {
-    const row = Object.keys(status.value.newRow).reduce((o, field) => {
-      if (status.value.newRow[field]) {
-        o[field] = status.value.newRow[field]
+    const row = Object.keys(state.newRow).reduce((o, field) => {
+      if (state.newRow[field]) {
+        o[field] = state.newRow[field]
         o[field] = fromModelValue(field, o[field])
       }
       return o
@@ -429,16 +432,29 @@ async function onInsertRow() {
     await send('database/create', props.name as never, row)
     await updateData()
     message.success(`成功添加数据`)
-    for (const field in status.value.newRow)
-      status.value.newRow[field] = ''
+    for (const field in state.newRow)
+      state.newRow[field] = ''
   } catch (e) {
     handleError(e, '添加数据失败')
   }
-  status.value.loading = false
+  state.loading = false
 }
 </script>
 
 <style lang="scss" scoped>
+
+.content-right {
+  display: flex;
+  gap: 1em;
+  align-items: center;
+  flex-direction: column;
+  padding: 2rem;
+  max-width: 100%;
+  max-height: 100%;
+  height: 100%;
+  box-sizing: border-box;
+}
+
 .header {
   display: flex;
   align-items: center;

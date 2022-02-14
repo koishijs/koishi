@@ -1,85 +1,54 @@
 <template>
   <k-card-aside class="page-database">
     <template #aside>
-      <el-scrollbar>
-        <div class="content-left">
-          <div class="k-tab-group-title">
-            数据库
-            <span v-if="dbInfo?.size">({{ formatSize(dbInfo.size) }})</span>
-          </div>
-          <k-tab-group :data="dbInfo.tables" v-model="currTable"></k-tab-group>
+      <el-scrollbar class="content-left">
+        <div class="k-tab-group-title">
+          数据库
+          <span v-if="store.dbInfo?.size">({{ formatSize(store.dbInfo.size) }})</span>
         </div>
+        <k-tab-group :data="store.dbInfo.tables" v-model="current"></k-tab-group>
       </el-scrollbar>
     </template>
-    <k-empty v-if="!currTable">
-      <div>在左侧选择要访问的数据表</div>
-    </k-empty>
-    <div v-else class="content-right" v-loading="loading">
-      <k-data-table
-        v-if="currTable"
-        :name="currTable"
-        :table="dbInfo.tables[currTable]"
-        v-model:m-status="currTableStatus"
-      ></k-data-table>
-    </div>
+    <keep-alive>
+      <k-empty v-if="!current">
+        <div>在左侧选择要访问的数据表</div>
+      </k-empty>
+      <table-view v-else :key="current" :name="current"></table-view>
+    </keep-alive>
   </k-card-aside>
 </template>
 
 <script lang="ts" setup>
 
-import type { } from '@koishijs/plugin-dataview'
-import { Dict } from 'koishi'
-import { computed, ref, Ref } from 'vue'
-import { store } from '~/client'
-import KDataTable, { TableStatus } from './components/data-table.vue'
+import { computed } from 'vue'
+import { useRoute } from 'vue-router'
+import { router, store } from '~/client'
 import { formatSize } from './utils'
+import TableView from './components/data-table.vue'
 
-const dbInfo = computed(() => store.dbInfo)
-
-const loading = ref(false)
-const currTable = ref('')
-const tableStatus: Dict<Ref<TableStatus>> = {}
-const tableStatusInit = () => {
-  if (!tableStatus[currTable.value])
-    tableStatus[currTable.value] = ref({
-      loading: true,
-      pageSize: undefined,
-      offset: 0,
-      sort: null,
-      changes: {},
-      newRow: {},
-    })
+function join(source: string | string[]) {
+  return Array.isArray(source) ? source.join('/') : source || ''
 }
-const currTableStatus = computed({
+
+const route = useRoute()
+
+const current = computed<string>({
   get() {
-    if (!currTable.value) return
-    tableStatusInit()
-    return tableStatus[currTable.value].value
+    return join(route.params.name)
   },
-  set(val: TableStatus) {
-    if (!currTable.value) return
-    tableStatusInit()
-    tableStatus[currTable.value].value = val
-  }
+  set(name) {
+    if (!store.dbInfo.tables[name]) name = ''
+    router.replace('/database/' + name)
+  },
 })
+
 </script>
 
 <style lang="scss">
-.page-database {
-  .content-left {
-    padding: 1rem 0;
-    line-height: 2.25rem;
-  }
-  .content-right {
-    display: flex;
-    gap: 1em;
-    align-items: center;
-    flex-direction: column;
-    padding: 2rem;
-    max-width: 100%;
-    max-height: 100%;
-    height: 100%;
-    box-sizing: border-box;
-  }
+
+.page-database aside .el-scrollbar__view {
+  padding: 1rem 0;
+  line-height: 2.25rem;
 }
+
 </style>
