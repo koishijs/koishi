@@ -53,7 +53,7 @@ body {
 }
 
 a {
-  color: var(--active);
+  color: inherit;
   text-decoration: none;
   transition: color 0.3s ease;
 }

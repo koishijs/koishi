@@ -1,39 +1,37 @@
 <template>
   <el-scrollbar class="plugin-select" ref="root">
-    <div class="content">
-      <div class="search">
-        <el-input v-model="keyword" #suffix>
-          <k-icon name="search"></k-icon>
-        </el-input>
-      </div>
-      <k-tab-item class="k-tab-group-title" label="" v-model="model">
-        全局设置
-      </k-tab-item>
-      <div class="k-tab-group-title">
-        运行中的插件
-      </div>
-      <k-tab-group
-        :data="packages" v-model="model"
-        :filter="data => data.id" #="data">
-        <span>{{ data.shortname }}</span>
-      </k-tab-group>
-      <div class="k-tab-group-title">
-        未运行的插件
-        <k-hint placement="right" name="filter" v-model="filtered">
-          <template v-if="filtered">
-            <b>筛选：已开启</b><br>只显示当前可启用的插件。
-          </template>
-          <template v-else>
-            <b>筛选：已关闭</b><br>显示所有已下载的插件。
-          </template>
-        </k-hint>
-      </div>
-      <k-tab-group
-        :data="packages" v-model="model"
-        :filter="data => !data.id && data.name && (!filtered || !isReadonly(data))" #="data">
-        <span :class="{ readonly: isReadonly(data) }">{{ data.shortname }}</span>
-      </k-tab-group>
+    <div class="search">
+      <el-input v-model="keyword" #suffix>
+        <k-icon name="search"></k-icon>
+      </el-input>
     </div>
+    <k-tab-item class="k-tab-group-title" label="" v-model="model">
+      全局设置
+    </k-tab-item>
+    <div class="k-tab-group-title">
+      运行中的插件
+    </div>
+    <k-tab-group
+      :data="packages" v-model="model"
+      :filter="data => data.id" #="data">
+      <span :class="{ readonly: isReadonly(data) }">{{ data.shortname }}</span>
+    </k-tab-group>
+    <div class="k-tab-group-title">
+      未运行的插件
+      <k-hint placement="right" name="filter" v-model="config.showDepsOnly">
+        <template v-if="config.showDepsOnly">
+          <b>筛选：已开启</b><br>只显示依赖的插件。
+        </template>
+        <template v-else>
+          <b>筛选：已关闭</b><br>显示本地的全部插件。
+        </template>
+      </k-hint>
+    </div>
+    <k-tab-group
+      :data="packages" v-model="model"
+      :filter="data => !data.id && data.name && (!config.showDepsOnly || store.dependencies[data.name])" #="data">
+      <span :class="{ readonly: isReadonly(data) }">{{ data.shortname }}</span>
+    </k-tab-group>
   </el-scrollbar>
 </template>
 
@@ -42,6 +40,7 @@
 import { ref, computed, onActivated, nextTick } from 'vue'
 import { store } from '~/client'
 import { envMap } from './utils'
+import { config } from '../utils'
 
 const props = defineProps<{
   modelValue: string
@@ -62,7 +61,6 @@ const packages = computed(() => {
 })
 
 const root = ref<{ $el: HTMLElement }>(null)
-const filtered = ref(false)
 const keyword = ref('')
 
 function isReadonly(data: any) {
@@ -86,7 +84,7 @@ onActivated(async () => {
   border-right: 1px solid var(--border);
   overflow: auto;
 
-  .content {
+  .el-scrollbar__view {
     padding: 1rem 0;
     line-height: 2.25rem;
   }

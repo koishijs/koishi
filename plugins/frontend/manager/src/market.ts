@@ -53,7 +53,7 @@ class MarketProvider extends DataService<Dict<MarketProvider.Data>> {
       const { dependencies, peerDependencies, deprecated } = remote
       const declaredVersion = { ...dependencies, ...peerDependencies }['koishi']
       return !deprecated && declaredVersion && satisfies(currentVersion, declaredVersion)
-    }).map(Package.Meta.from).reverse()
+    }).map(Package.getMeta).reverse()
     if (!versions.length) return
 
     const shortname = official ? name.slice(17) : name.slice(14)

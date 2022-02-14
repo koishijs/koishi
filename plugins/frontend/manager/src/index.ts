@@ -27,7 +27,7 @@ export {
 declare module '@koishijs/plugin-console' {
   namespace Console {
     interface Services {
-      installer: Installer
+      dependencies: Installer
       bots: BotProvider
       market: MarketProvider
       packages: PackageProvider

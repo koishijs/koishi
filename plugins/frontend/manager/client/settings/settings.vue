@@ -20,6 +20,16 @@
 
     <!-- market -->
     <template v-if="data.name">
+      <!-- latest -->
+      <k-comment v-if="hasUpdate">
+        当前的插件版本不是最新，<router-link to="/dependencies">点击前往依赖管理</router-link>。
+      </k-comment>
+
+      <!-- external -->
+      <k-comment type="warning" v-if="!store.dependencies[current]">
+        尚未将当前插件列入依赖，<a @click="send('market/patch', current, data.version)">点击添加</a>。
+      </k-comment>
+
       <!-- impl -->
       <template v-for="name in env.impl" :key="name">
         <k-comment v-if="name in store.services && !data.id" type="error">
@@ -71,10 +81,10 @@
 
 <script setup lang="ts">
 
-import { computed, ref, watch } from 'vue'
+import { computed } from 'vue'
 import { store, send } from '~/client'
 import { envMap } from './utils'
-import { getMixedMeta } from '../utils'
+import { getMixedMeta, config } from '../utils'
 import KDepLink from './dep-link.vue'
 
 const props = defineProps<{
@@ -85,19 +95,31 @@ const data = computed(() => getMixedMeta(props.current))
 const env = computed(() => envMap.value[props.current])
 const hint = computed(() => data.value.workspace ? '，请检查源代码' : '，请联系插件作者')
 
-const version = ref('')
-
-watch(data, (value) => {
-  version.value = value.version
-}, { immediate: true })
+const hasUpdate = computed(() => {
+  if (!data.value.versions || data.value.workspace) return
+  return data.value.versions[0].version !== data.value.version
+})
 
 function execute(event: 'unload' | 'reload') {
   const { shortname, config } = data.value
   send(`manager/plugin-${event}`, shortname, config)
 }
 
+function update() {
+  config.override[props.current] = data.value.versions[0].version
+}
+
 </script>
 
 <style lang="scss">
+
+.plugin-view {
+  a {
+    cursor: pointer;
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+}
 
 </style>

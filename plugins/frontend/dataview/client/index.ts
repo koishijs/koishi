@@ -4,7 +4,7 @@ import Database from './index.vue'
 
 export default (ctx: Context) => {
   ctx.addPage({
-    path: '/database',
+    path: '/database/:name*',
     name: '数据库',
     icon: 'database',
     order: 410,

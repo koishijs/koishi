@@ -26,15 +26,13 @@ export namespace Package {
     keywords: string[]
   }
 
-  export namespace Meta {
-    export function from(pkg: Json) {
-      const meta = {} as Meta
-      meta.version = pkg.version
-      meta.keywords = pkg.keywords || []
-      meta.devDeps = getDeps(pkg.devDependencies || {})
-      meta.peerDeps = getDeps(pkg.peerDependencies || {})
-      return meta
-    }
+  export function getMeta(pkg: Json) {
+    const meta = {} as Meta
+    meta.version = pkg.version
+    meta.keywords = pkg.keywords || []
+    meta.devDeps = getDeps(pkg.devDependencies || {})
+    meta.peerDeps = getDeps(pkg.peerDependencies || {})
+    return meta
   }
 
   export interface Local extends Json {
