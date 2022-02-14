@@ -60,10 +60,12 @@ class DatabaseProvider extends DataService<DatabaseInfo> {
   async getInfo() {
     const stats = await this.ctx.database.stats()
     const result = { tables: {}, ...stats } as DatabaseInfo
+    const tableStats = result.tables
+    result.tables = {}
     for (const name in this.ctx.model.config) {
       result.tables[name] = {
         ...this.ctx.model.config[name],
-        ...result.tables[name],
+        ...tableStats[name],
       }
     }
     return result
