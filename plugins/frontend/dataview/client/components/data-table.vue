@@ -1,9 +1,9 @@
 <template v-loading="loading">
   <div class="header">
     <span class="table-title">
-      {{ props.name }} {{
-        props.tableStats.size
-          ? `(${formatSize(props.tableStats.size)})`
+      {{ name }} {{
+        table.size
+          ? `(${formatSize(table.size)})`
           : ''
       }}
     </span>
@@ -29,11 +29,11 @@
     @cell-dblclick="onOuterCellClick"
   >
     <el-table-column
-      v-for="(field, fName) in props.tableModel.fields"
+      v-for="fName in Object.keys(table.fields)"
       :sortable="existChanges ? false : 'custom'"
       :prop="fName"
       :label="fName"
-      :fixed="[props.tableModel.primary || []].flat().includes(fName)"
+      :fixed="[table.primary || []].flat().includes(fName)"
       :resizable="true"
     >
       <template #header="{ column }">
@@ -97,9 +97,9 @@
   <el-pagination
     layout="total, sizes, prev, pager, next, jumper"
     :small="true"
-    :total="props.tableStats.count"
-    :page-sizes="props.pageSizes"
-    :default-page-size="props.pageSizes[0]"
+    :total="table.count"
+    :page-sizes="pageSizes"
+    :default-page-size="pageSizes[0]"
     v-model:page-size="status.pageSize"
     :default-current-page="1"
     v-model:current-page="currPage"
@@ -109,7 +109,7 @@
 
 <script lang="ts" setup>
 
-import { } from '@koishijs/plugin-console'
+import { TableInfo } from '@koishijs/plugin-dataview'
 import { Dict, Model, Query } from 'koishi'
 import { computed, ComputedRef, nextTick, reactive, ref, watch, watchEffect } from 'vue'
 import { send } from '~/client'
@@ -135,28 +135,14 @@ export type ChangesState = Record<number, Record<string, {
 
 export type newRowState = Dict<any> // field => input model
 
-const props: Readonly<{
-  name: string,
-  tableModel: Model.Config<Record<string, any>>,
-  tableStats: Query.TableStats,
-  pageSizes: number[]
-  // model values below
+const pageSizes = [30, 50, 100, 150, 200, 500, 1000]
+
+const props = defineProps<{
+  name: string
+  table: TableInfo
   mStatus: TableStatus
-}> = defineProps({
-  name: { required: true, type: String, },
-  tableModel: { required: true },
-  tableStats: {
-    required: true,
-    default: {} as Query.TableStats
-  },
-  pageSizes: {
-    default: [30, 50, 100, 150, 200, 500, 1000]
-  },
-  mStatus: {
-    required: true,
-    default: undefined as TableStatus
-  },
-})
+}>()
+
 const emits = defineEmits([
   'update:mStatus',
 ])
@@ -165,13 +151,13 @@ const status = computed({
   set: v => emits('update:mStatus', v),
 })
 watchEffect(() => {
-  status.value.pageSize = status.value.pageSize || props.pageSizes[0]
+  status.value.pageSize = status.value.pageSize || pageSizes[0]
 })
 watch(() => status.value.pageSize, (v) => {
   status.value.offset = Math.floor(status.value.offset / v) * v
 }, {})
-watch(() => props.tableModel.fields, (v) => {
-  for (const fName in props.tableModel.fields)
+watch(() => props.table.fields, (v) => {
+  for (const fName in props.table.fields)
     if (!(fName in status.value.newRow))
       status.value.newRow[fName] = ''
 }, { immediate: true })
@@ -222,7 +208,7 @@ const validChanges: ComputedRef<ChangesState> = computed(() => {
 const existChanges = computed(() => !!Object.keys(status.value.changes || {}).length)
 const existValidChanges = computed(() => !!Object.keys(validChanges.value || {}).length)
 const newRowValid = computed(() => {
-  for (const field in props.tableModel.fields) {
+  for (const field in props.table.fields) {
     const column = columnInputAttr.value[field]
     if (column.attrs?.validate)
       if (!column.attrs.validate(status.value.newRow[field])) {
@@ -240,8 +226,8 @@ const columnInputAttr: ComputedRef<Dict<{
     validate: Function
     step?: number
   }
-}>> = computed(() => Object.keys(props.tableModel.fields).reduce((o, fName) => {
-  const fieldConfig = props.tableModel.fields[fName]
+}>> = computed(() => Object.keys(props.table.fields).reduce((o, fName) => {
+  const fieldConfig = props.table.fields[fName]
   const dateAttrs = { clearable: false}
 
   let type, step
@@ -302,7 +288,7 @@ function onSort(e) {
 }
 
 function renderCell(field: string, { row, column, $index }) {
-  const fType = props.tableModel.fields[field].type
+  const fType = props.table.fields[field].type
   const data = row[field]
   switch (fType) {
     case 'json':
@@ -325,7 +311,7 @@ function renderCell(field: string, { row, column, $index }) {
 
 /** convert cell data to model value */
 function toModelValue(field: string, data) {
-  const fType = props.tableModel.fields[field].type
+  const fType = props.table.fields[field].type
   switch (fType) {
     case 'json':
       return JSON.stringify(data)
@@ -341,7 +327,7 @@ function toModelValue(field: string, data) {
 
 /** convert model value data to cell */
 function fromModelValue(field: string, data) {
-  const fType = props.tableModel.fields[field].type
+  const fType = props.table.fields[field].type
   switch (fType) {
     case 'json':
       return JSON.parse(data)

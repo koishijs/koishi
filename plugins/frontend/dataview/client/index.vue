@@ -1,31 +1,27 @@
 <template>
   <k-card-aside class="page-database">
-    <template #aside v-if="dbInfo?.model">
+    <template #aside>
       <el-scrollbar>
         <div class="content-left">
           <div class="k-tab-group-title">
-            数据
+            数据库
             <span v-if="dbInfo?.size">({{ formatSize(dbInfo.size) }})</span>
           </div>
-          <k-tab-group :data="dbInfo.model" v-model="currTable"></k-tab-group>
+          <k-tab-group :data="dbInfo.tables" v-model="currTable"></k-tab-group>
         </div>
       </el-scrollbar>
     </template>
-    <template v-if="dbInfo?.model">
-      <div class="content-right" v-loading="loading">
-        <k-data-table
-          v-if="currTable"
-          :name="currTable"
-          :table-model="dbInfo.model[currTable]"
-          :table-stats="dbInfo.tables[currTable]"
-          v-model:m-status="currTableStatus"
-        ></k-data-table>
-      </div>
-    </template>
-    <k-empty v-else>
-      <div>你还没有安装数据库支持</div>
-      <k-button solid>安装数据库</k-button>
+    <k-empty v-if="!currTable">
+      <div>在左侧选择要访问的数据表</div>
     </k-empty>
+    <div v-else class="content-right" v-loading="loading">
+      <k-data-table
+        v-if="currTable"
+        :name="currTable"
+        :table="dbInfo.tables[currTable]"
+        v-model:m-status="currTableStatus"
+      ></k-data-table>
+    </div>
   </k-card-aside>
 </template>
 
@@ -41,7 +37,7 @@ import { formatSize } from './utils'
 const dbInfo = computed(() => store.dbInfo)
 
 const loading = ref(false)
-const currTable = ref<string>('')
+const currTable = ref('')
 const tableStatus: Dict<Ref<TableStatus>> = {}
 const tableStatusInit = () => {
   if (!tableStatus[currTable.value])

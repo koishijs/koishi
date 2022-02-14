@@ -1,4 +1,4 @@
-import { Context, Dict, Model, Query } from 'koishi'
+import { Context, Dict, Model, Query, Schema } from 'koishi'
 import { DataService } from '@koishijs/plugin-console'
 import { resolve } from 'path'
 
@@ -13,14 +13,19 @@ declare module '@koishijs/plugin-console' {
     }
   }
 
-  interface Events extends DbEvents { }
+  interface Events extends DbEvents {}
 }
 
-export type DatabaseInfo = Query.Stats & { model: Dict<Model.Config<any>> }
-export default class DatabaseProvider extends DataService<DatabaseInfo> {
+export interface TableInfo extends Query.TableStats, Model.Config {}
+
+export interface DatabaseInfo extends Query.Stats {
+  tables: Dict<TableInfo>
+}
+
+class DatabaseProvider extends DataService<DatabaseInfo> {
   static using = ['console', 'database'] as const
 
-  cache: Promise<DatabaseInfo>
+  task: Promise<DatabaseInfo>
 
   addListener<K extends keyof Query.Methods>(name: K, refresh = false) {
     this.ctx.console.addListener(`database/${name}`, async (...args) => {
@@ -51,8 +56,28 @@ export default class DatabaseProvider extends DataService<DatabaseInfo> {
     ctx.on('model', () => this.refresh())
   }
 
+  async getInfo() {
+    const stats = await this.ctx.database.stats()
+    const result = { tables: {}, ...stats } as DatabaseInfo
+    for (const name in this.ctx.model.config) {
+      result.tables[name] = {
+        ...this.ctx.model.config[name],
+        ...result.tables[name],
+      }
+    }
+    return result
+  }
+
   get(forced = false) {
-    if (this.cache && !forced) return this.cache
-    return this.cache = this.ctx.database.stats().then(stats => ({ ...stats, model: this.ctx.model.config }))
+    if (forced) delete this.task
+    return this.task ||= this.getInfo()
   }
 }
+
+namespace DatabaseProvider {
+  export interface Config {}
+
+  export const Config: Schema<Config> = Schema.object({})
+}
+
+export default DatabaseProvider
