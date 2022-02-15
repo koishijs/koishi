@@ -108,9 +108,9 @@ export default class MyPlugin {
   @InjectLogger('my-plugin')
   private logger: Logger;
 
-  // 注入 Service API 中的 Cache，并声明为依赖
-  @Inject('cache', true)
-  private cache: Cache;
+  // 注入 Service API 中的 Assets，并声明为依赖
+  @Inject('assets', true)
+  private assets: Assets;
 
   // 根据属性名称判别 Service API 名称
   @Inject()
@@ -346,6 +346,7 @@ export default class MyPlugin extends BasePlugin<MyPluginConfig> {
 - `@PutOption(name: string, desc: string, config: Argv.OptionConfig = {})` 给指令添加选项并注入到该参数。等价于 `cmd.option(name, desc, config)`。
 - `@PutUser(fields: string[])` 添加一部分字段用于观测，并将 User 对象注入到该参数。
 - `@PutChannel(fields: string[])` 添加一部分字段用于观测，并将 Channel 对象注入到该参数。
+- `@PutGuild(fields: string[])` 添加一部分字段用于观测，并将 Guild 对象注入到该参数。
 - `@PutUserName(useDatabase: boolean = true)` 注入当前用户的用户名。
   - `useDatabase` 是否尝试从数据库获取用户名。**会自动把 `name` 加入用户观察者属性中**。
 - `@PutNext()` 注入 `argv.next` 方法。
@@ -444,7 +445,7 @@ koishi-thirdeye 支持自动管理插件的关系依赖列表。
 
 ### 全局依赖
 
-声明全局依赖有下面几种方法。
+声明全局依赖有下面几种方法。您也可以把下面几种方法组合使用。
 
 - 使用 `@Inject` 装饰器注入服务对象时，将最后一个参数赋值为 `true`。
 
@@ -452,7 +453,7 @@ koishi-thirdeye 支持自动管理插件的关系依赖列表。
 @DefinePlugin({ name: 'my-plugin', schema: Config })
 export default class MyPlugin extends BasePlugin<Config> {
   @Inject('database', true)
-  private database: Database; // 注入 Service API 中的 Cache，并声明为依赖
+  private database: Database; // 注入数据库服务，并声明为依赖
 }
 
 MyPlugin.using // ['database']
