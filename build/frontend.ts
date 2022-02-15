@@ -20,7 +20,6 @@ export async function build(root: string, config: vite.UserConfig = {}) {
   const { rollupOptions = {} } = config.build || {}
   return vite.build({
     root,
-    base: './',
     build: {
       outDir: cwd + '/plugins/frontend/console/dist',
       emptyOutDir: true,
