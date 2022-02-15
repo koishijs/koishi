@@ -35,6 +35,7 @@
     "koishi": "^4.2.0"
   },
   "devDependencies": {
+    "@koishijs/client": "^2.0.0",
     "@koishijs/cli": "^4.2.0",
     "echarts": "^5.2.2",
     "vue-echarts": "^6.0.2"

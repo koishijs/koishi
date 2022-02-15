@@ -37,6 +37,7 @@
     "koishi": "^4.2.0"
   },
   "devDependencies": {
+    "@koishijs/client": "^2.0.0",
     "@koishijs/cli": "^4.2.0",
     "ansi_up": "^5.1.0"
   }
