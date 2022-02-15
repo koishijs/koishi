@@ -1,4 +1,4 @@
-import { Card, Context } from '~/client'
+import { Card, Context } from '@koishijs/client'
 import {} from '@koishijs/plugin-status/src'
 import LoadChart from './components/load-chart.vue'
 import Home from './index.vue'

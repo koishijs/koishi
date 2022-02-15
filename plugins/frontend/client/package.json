@@ -1,12 +1,12 @@
 {
-  "name": "@koishijs/builder",
-  "description": "Building utilities for @koishijs/plugin-console",
+  "name": "@koishijs/client",
+  "description": "Koishi Console Client",
   "version": "2.0.0",
-  "main": "lib/index.js",
-  "typings": "lib/index.d.ts",
+  "main": "client/index.ts",
   "files": [
     "lib",
-    "client"
+    "client",
+    "app"
   ],
   "author": "Shigma <shigma10826@gmail.com>",
   "license": "MIT",
@@ -35,6 +35,7 @@
     "@types/marked": "^4.0.1",
     "@vitejs/plugin-vue": "^2.0.1",
     "@vueuse/core": "^7.5.3",
+    "element-plus": "^2.0.2",
     "marked": "^4.0.10",
     "sass": "^1.48.0",
     "vite": "~2.5.10",

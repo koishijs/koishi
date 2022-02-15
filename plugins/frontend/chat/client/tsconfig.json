@@ -1,13 +1,9 @@
 {
-  "extends": "../../../../tsconfig.base",
+  "extends": "../../tsconfig.base",
   "compilerOptions": {
-    "noEmit": true,
-    "target": "es2020",
-    "module": "esnext",
-    "emitDeclarationOnly": false,
+    "rootDir": ".",
   },
   "include": [
     ".",
-    "../src",
   ],
 }

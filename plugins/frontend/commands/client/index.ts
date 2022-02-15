@@ -1,5 +1,5 @@
-import { Context } from '~/client'
-import type {} from '@koishijs/plugin-commands/src'
+import { Context } from '@koishijs/client'
+import {} from '@koishijs/plugin-commands'
 import Commands from './commands.vue'
 
 export default (ctx: Context) => {

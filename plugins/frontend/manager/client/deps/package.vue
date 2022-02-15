@@ -28,7 +28,7 @@
 <script lang="ts" setup>
 
 import { computed } from 'vue'
-import { send, store } from '~/client'
+import { send, store } from '@koishijs/client'
 import { config } from '../utils'
 
 const props = defineProps({

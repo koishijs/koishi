@@ -28,7 +28,7 @@
 <script lang="ts" setup>
 
 import { computed, watch, reactive } from 'vue'
-import { store, send } from '~/client'
+import { store, send } from '@koishijs/client'
 import { BotProvider } from '@koishijs/plugin-manager'
 
 const props = defineProps<{

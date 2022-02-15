@@ -1,5 +1,5 @@
-import { Context } from '~/client'
-import type {} from '@koishijs/plugin-logger/src'
+import { Context } from '@koishijs/client'
+import {} from '@koishijs/plugin-logger'
 import Logs from './index.vue'
 import './index.scss'
 

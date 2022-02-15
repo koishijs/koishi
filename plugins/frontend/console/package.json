@@ -34,7 +34,7 @@
     "koishi": "^4.2.0"
   },
   "devDependencies": {
-    "@koishijs/builder": "^2.0.0",
+    "@koishijs/client": "^2.0.0",
     "@types/uuid": "^8.3.4"
   },
   "dependencies": {

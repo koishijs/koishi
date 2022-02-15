@@ -1,4 +1,4 @@
-import { Context } from '~/client'
+import { Context } from '@koishijs/client'
 import { createChart, Tooltip } from './utils'
 
 export default (ctx: Context) => {

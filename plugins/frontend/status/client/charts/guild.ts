@@ -1,5 +1,5 @@
 import type { GuildData } from '@koishijs/plugin-status/src'
-import { Context } from '~/client'
+import { Context } from '@koishijs/client'
 import { createChart, Tooltip } from './utils'
 
 export default (ctx: Context) => {

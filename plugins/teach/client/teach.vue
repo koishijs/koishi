@@ -11,7 +11,7 @@
 
 <script lang="ts" setup>
 
-import { store } from '~/client'
+import { store } from '@koishijs/client'
 // import WordCloud from './word-cloud.vue'
 
 </script>

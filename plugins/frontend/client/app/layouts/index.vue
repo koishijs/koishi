@@ -13,7 +13,7 @@
 
 <script lang="ts" setup>
 
-import { store } from '../client'
+import { store } from '@koishijs/client'
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 import Sidebar from './sidebar.vue'

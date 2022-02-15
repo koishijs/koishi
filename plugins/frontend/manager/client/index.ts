@@ -1,4 +1,4 @@
-import { Card, Context } from '~/client'
+import { Card, Context } from '@koishijs/client'
 import type {} from '@koishijs/plugin-manager'
 import Bots from './bots/index.vue'
 import Settings from './settings/index.vue'

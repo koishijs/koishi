@@ -1,5 +1,4 @@
-import { Context, router, send, store } from '~/client'
-import { Icons, message } from '~/components'
+import { Context, icons, message, router, send, store } from '@koishijs/client'
 import { config } from './utils'
 import Login from './login.vue'
 import Profile from './profile.vue'
@@ -7,9 +6,9 @@ import SignIn from './icons/sign-in.vue'
 import SignOut from './icons/sign-out.vue'
 import UserFull from './icons/user-full.vue'
 
-Icons.register('sign-in', SignIn)
-Icons.register('sign-out', SignOut)
-Icons.register('user-full', UserFull)
+icons.register('sign-in', SignIn)
+icons.register('sign-out', SignOut)
+icons.register('user-full', UserFull)
 
 export default (ctx: Context) => {
   if (config.token && config.expire > Date.now()) {

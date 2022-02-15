@@ -1,22 +1,29 @@
-import { ClientConfig, Console } from '@koishijs/plugin-console'
-import { Dict } from '@koishijs/utils'
+import { ClientConfig, Console, DataService, Events } from '@koishijs/plugin-console'
 import { useLocalStorage } from '@vueuse/core'
-import { App, defineComponent, h, markRaw, reactive, ref, Ref, resolveComponent, watch } from 'vue'
+import { Dict, Promisify } from 'koishi'
+import { App, Component, defineComponent, h, markRaw, reactive, ref, Ref, resolveComponent, watch } from 'vue'
 import { createRouter, createWebHistory, RouteRecordNormalized, START_LOCATION } from 'vue-router'
-import { Computed, Disposable, Extension, PageExtension, PageOptions, Store, ViewOptions } from '~/client'
+import install from './components'
+
+export * from './components'
+
+export default install
 
 // data api
 
+export type Store = {
+  [K in keyof Console.Services]?: Console.Services[K] extends DataService<infer T> ? T : never
+}
+
 declare const KOISHI_CONFIG: ClientConfig
-
 export const config = KOISHI_CONFIG
-
 export const store = reactive<Store>({})
 
 const socket = ref<WebSocket>(null)
 const listeners: Record<string, (data: any) => void> = {}
 const responseHooks: Record<string, [Function, Function]> = {}
 
+export function send<T extends keyof Events>(type: T, ...args: Parameters<Events[T]>): Promisify<ReturnType<Events[T]>>
 export function send(type: string, ...args: any[]) {
   const id = Math.random().toString(36).slice(2, 9)
   socket.value.send(JSON.stringify({ id, type, args }))
@@ -79,6 +86,40 @@ export async function connect(endpoint: string) {
 
 // layout api
 
+export type Computed<T> = T | (() => T)
+
+export interface ViewOptions {
+  id?: string
+  type: string
+  order?: number
+  component: Component
+}
+
+export interface PageExtension {
+  name: string
+  fields?: (keyof Console.Services)[]
+  badge?: () => number
+}
+
+interface RouteMetaExtension {
+  icon?: string
+  order?: number
+  authority?: number
+  position?: Computed<'top' | 'bottom' | 'hidden'>
+}
+
+export interface PageOptions extends RouteMetaExtension, PageExtension {
+  path: string
+  component: Component
+}
+
+declare module 'vue-router' {
+  interface RouteMeta extends RouteMetaExtension {
+    fields?: (keyof Console.Services)[]
+    badge?: (() => number)[]
+  }
+}
+
 export const views = reactive<Record<string, ViewOptions[]>>({})
 
 export const router = createRouter({
@@ -90,6 +131,9 @@ export const router = createRouter({
 export const extensions = reactive<Record<string, Context>>({})
 
 export const routes: Ref<RouteRecordNormalized[]> = ref([])
+
+export type Disposable = () => void
+export type Extension = (ctx: Context) => void
 
 interface DisposableExtension extends PageExtension {
   ctx: Context
@@ -157,6 +201,7 @@ export class Context {
     })
   }
 
+  extendsPage(options: PageExtension): void
   extendsPage(options: DisposableExtension) {
     const { name } = options
     options.ctx = this

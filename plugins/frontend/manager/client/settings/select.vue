@@ -38,7 +38,7 @@
 <script lang="ts" setup>
 
 import { ref, computed, onActivated, nextTick } from 'vue'
-import { store } from '~/client'
+import { store } from '@koishijs/client'
 import { envMap } from './utils'
 import { config } from '../utils'
 

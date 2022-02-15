@@ -1,22 +1,15 @@
 /* eslint-disable no-undef */
 
-import { createApp, defineAsyncComponent } from 'vue'
-import { connect, router, config } from './client'
-import Collapse from './components/collapse.vue'
-import View from './components/view'
-import App from './layout/index.vue'
-import Blank from './layout/blank.vue'
-import client from '~/components'
+import { createApp } from 'vue'
+import client, { connect, router, config } from '@koishijs/client'
+import App from './layouts/index.vue'
+import Blank from './layouts/blank.vue'
 
 import './index.scss'
 
 const app = createApp(App)
 
 app.use(client)
-
-app.component('k-collapse', Collapse)
-app.component('k-view', View)
-app.component('k-markdown', defineAsyncComponent(() => import('./components/markdown.vue')))
 
 app.provide('ecTheme', 'dark-blue')
 

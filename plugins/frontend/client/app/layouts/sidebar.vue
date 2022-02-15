@@ -16,8 +16,8 @@
 
 <script lang="ts" setup>
 
+import { routes, getValue } from '@koishijs/client'
 import { useDark } from '@vueuse/core'
-import { routes, getValue } from '../client'
 import SidebarItem from './sidebar-item.vue'
 
 function getRoutes(position: 'top' | 'bottom') {

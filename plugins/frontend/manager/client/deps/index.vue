@@ -40,9 +40,9 @@
 <script lang="ts" setup>
 
 import { computed } from 'vue'
-import { store, send } from '~/client'
+import { store, send } from '@koishijs/client'
 import { config, overrideCount } from '../utils'
-import { message, loading } from '~/components'
+import { message, loading } from '@koishijs/client'
 import PackageView from './package.vue'
 
 const names = computed(() => {

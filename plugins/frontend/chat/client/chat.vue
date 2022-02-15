@@ -32,7 +32,7 @@
 
 <script lang="ts" setup>
 
-import { config, receive, send } from '~/client'
+import { config, receive, send } from '@koishijs/client'
 import { ref, watch } from 'vue'
 import ChatPanel from './utils/panel.vue'
 import ChatMessage from './utils/message.vue'

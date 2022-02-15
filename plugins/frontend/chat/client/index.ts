@@ -1,4 +1,4 @@
-import { Context } from '~/client'
+import { Context } from '@koishijs/client'
 import Chat from './chat.vue'
 import Overlay from './overlay.vue'
 

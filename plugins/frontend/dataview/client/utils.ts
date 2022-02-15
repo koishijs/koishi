@@ -1,6 +1,6 @@
 import { Query } from 'koishi'
-import { send } from '~/client'
-import { message } from '~/components'
+import { send } from '@koishijs/client'
+import { message } from '@koishijs/client'
 
 export function serialize(obj: unknown): string {
   if (obj instanceof Date) return `"d${obj.toJSON()}"`
@@ -37,7 +37,7 @@ export function deserialize(str: string): unknown {
 }
 
 export async function sendQuery<K extends keyof Query.Methods>(name: K, ...args: Parameters<Query.Methods[K]>): Promise<ReturnType<Query.Methods[K]>> {
-  return deserialize(await send(`database/${name}`, ...args.map(serialize) as any))
+  return deserialize(await send(`database/${name}`, ...args.map(serialize) as any) as any)
 }
 
 export function formatSize(size: number) {

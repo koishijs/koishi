@@ -1,1 +1,1 @@
-/// <reference types="@koishijs/builder/client" />
+/// <reference types="@koishijs/client" />

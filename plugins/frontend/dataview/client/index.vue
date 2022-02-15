@@ -22,7 +22,7 @@
 
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
-import { router, store } from '~/client'
+import { router, store } from '@koishijs/client'
 import { formatSize } from './utils'
 import TableView from './components/data-table.vue'
 

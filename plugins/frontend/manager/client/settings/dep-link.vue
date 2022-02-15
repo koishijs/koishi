@@ -7,7 +7,7 @@
 <script lang="ts" setup>
 
 import { useRouter } from 'vue-router'
-import { store } from '~/client'
+import { store } from '@koishijs/client'
 import { addFavorite } from '../utils'
 
 defineProps<{

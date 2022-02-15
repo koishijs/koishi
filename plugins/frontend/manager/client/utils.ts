@@ -1,6 +1,6 @@
 import { Dict } from 'koishi'
 import { watch, computed } from 'vue'
-import { store, createStorage } from '~/client'
+import { store, createStorage } from '@koishijs/client'
 
 interface ManagerConfig {
   override: Dict<string>

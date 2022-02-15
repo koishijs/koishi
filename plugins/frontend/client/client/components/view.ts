@@ -1,4 +1,4 @@
-import { views } from '../client'
+import { views } from '..'
 import { defineComponent, h } from 'vue'
 
 export default defineComponent({

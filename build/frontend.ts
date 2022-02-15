@@ -1,6 +1,7 @@
-import { buildExtension } from '@koishijs/builder/src'
-import { createReadStream, createWriteStream } from 'fs'
+import { buildExtension } from '@koishijs/client/src'
 import { cwd, getPackages } from './utils'
+import { RollupOutput } from 'rollup'
+import { appendFile, copyFile } from 'fs-extra'
 import vue from '@vitejs/plugin-vue'
 import vite from 'vite'
 import cac from 'cac'
@@ -13,10 +14,13 @@ function findModulePath(id: string) {
   return path.slice(0, path.indexOf(keyword)) + keyword.slice(0, -1)
 }
 
-export async function build(root: string, config: vite.UserConfig) {
+const dist = cwd + '/plugins/frontend/console/dist'
+
+export async function build(root: string, config: vite.UserConfig = {}) {
   const { rollupOptions = {} } = config.build || {}
-  await vite.build({
+  return vite.build({
     root,
+    base: './',
     build: {
       outDir: cwd + '/plugins/frontend/console/dist',
       emptyOutDir: true,
@@ -28,7 +32,7 @@ export async function build(root: string, config: vite.UserConfig) {
           root + '/vue.js',
           root + '/vue-router.js',
           root + '/client.js',
-          root + '/components.js',
+          root + '/vueuse.js',
         ],
         output: {
           format: 'module',
@@ -44,59 +48,77 @@ export async function build(root: string, config: vite.UserConfig) {
       alias: {
         'vue': root + '/vue.js',
         'vue-router': root + '/vue-router.js',
-        '~/components': root + '/components.js',
-        './client': root + '/client.js',
-        '../client': root + '/client.js',
+        '@vueuse/core': root + '/vueuse.js',
+        '@koishijs/client': root + '/client.js',
       },
     },
   })
 }
 
-function pipe(src: string, dest: string) {
-  return new Promise<void>((resolve, reject) => {
-    const readStream = createReadStream(src)
-    const writeStream = createWriteStream(dest, { flags: 'a' })
-    readStream.on('error', reject)
-    writeStream.on('error', reject)
-    writeStream.on('close', resolve)
-    readStream.pipe(writeStream)
-  })
-}
-
 async function buildConsole() {
-  const root = cwd + '/plugins/frontend/builder/client'
-  const dist = cwd + '/plugins/frontend/console/dist'
 
   // build for console main
-  await build(root, { base: './' })
+  const { output } = await build(cwd + '/plugins/frontend/client/app') as RollupOutput
 
   await Promise.all([
-    pipe(findModulePath('vue') + '/dist/vue.runtime.esm-browser.prod.js', dist + '/vue.js'),
-    pipe(cwd + '/plugins/frontend/components/dist/index.js', dist + '/components.js'),
-    pipe(cwd + '/plugins/frontend/components/dist/style.css', dist + '/style.css'),
-    build(cwd, {
+    copyFile(findModulePath('vue') + '/dist/vue.runtime.esm-browser.prod.js', dist + '/vue.js'),
+    build(findModulePath('vue-router') + '/dist', {
       build: {
         outDir: dist,
         emptyOutDir: false,
         rollupOptions: {
           input: {
-            'client': root + '/client.ts',
             'vue-router': findModulePath('vue-router') + '/dist/vue-router.esm-browser.js',
           },
           preserveEntrySignatures: 'strict',
         },
       },
     }),
+    build(findModulePath('@vueuse/core'), {
+      build: {
+        outDir: dist,
+        emptyOutDir: false,
+        rollupOptions: {
+          input: {
+            'vueuse': findModulePath('@vueuse/core') + '/index.mjs',
+          },
+          preserveEntrySignatures: 'strict',
+        },
+      },
+    }),
   ])
+
+  await build(cwd + '/plugins/frontend/client/client', {
+    build: {
+      outDir: dist,
+      emptyOutDir: false,
+      rollupOptions: {
+        input: {
+          'client': cwd + '/plugins/frontend/client/client/index.ts',
+        },
+        output: {
+          manualChunks: {
+            element: ['element-plus'],
+          },
+        },
+        preserveEntrySignatures: 'strict',
+      },
+    },
+  })
+
+  for (const file of output) {
+    if (file.type === 'asset' && file.name === 'style.css') {
+      await appendFile(dist + '/style.css', file.source)
+    }
+  }
 }
 
 ;(async () => {
   const folders = await getPackages(args)
 
-  let builder = false
   for (const folder of folders) {
-    if (folder === 'plugins/frontend/builder') {
-      builder = true
+    if (folder === 'plugins/frontend/client') {
+      await buildConsole()
       continue
     }
 
@@ -111,6 +133,4 @@ async function buildConsole() {
       }],
     })
   }
-
-  if (builder) await buildConsole()
 })()

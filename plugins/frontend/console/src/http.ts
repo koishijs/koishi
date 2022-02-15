@@ -6,7 +6,7 @@ import { ViteDevServer } from 'vite'
 import open from 'open'
 
 export interface Entry {
-  dev?: string
+  dev: string
   prod: string
 }
 
@@ -21,7 +21,7 @@ class HttpService extends DataService<string[]> {
     ctx.console.global.devMode = devMode
     ctx.console.global.uiPath = uiPath
     config.root ||= devMode
-      ? dirname(require.resolve('@koishijs/builder/package.json')) + '/client'
+      ? dirname(require.resolve('@koishijs/client/package.json')) + '/app'
       : resolve(__dirname, '../dist')
   }
 
@@ -39,7 +39,7 @@ class HttpService extends DataService<string[]> {
   private resolveEntry(entry: string | Entry) {
     if (typeof entry === 'string') return entry
     if (!this.config.devMode) return entry.prod
-    if (!entry.dev || !existsSync(entry.dev)) return entry.prod
+    if (!existsSync(entry.dev)) return entry.prod
     return entry.dev
   }
 
@@ -125,12 +125,10 @@ class HttpService extends DataService<string[]> {
       plugins: [vue()],
       resolve: {
         alias: {
-          '~/client': root + '/client.ts',
-          '~/components': '@koishijs/components',
-          '../client.js': root + '/client.ts',
-          '../components.js': '@koishijs/components',
+          '../client.js': '@koishijs/client',
           '../vue.js': 'vue',
           '../vue-router.js': 'vue-router',
+          '../vueuse.js': '@vueuse/core',
         },
       },
       optimizeDeps: {

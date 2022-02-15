@@ -23,9 +23,10 @@ import {
 
 import common from './common'
 import form from './form'
-import * as Icons from './icons'
+import * as icons from './icons'
 import layout from './layout'
 import notice from './notice'
+import View from './view'
 
 import 'element-plus/es/components/message/style/css'
 import 'element-plus/es/components/button/style/css'
@@ -57,7 +58,7 @@ export * from './form'
 export * from './layout'
 export * from './notice'
 
-export { Icons }
+export { icons }
 
 export default function (app: App) {
   app.use(ElButton)
@@ -82,7 +83,9 @@ export default function (app: App) {
 
   app.use(common)
   app.use(form)
-  app.use(Icons)
+  app.use(icons)
   app.use(layout)
   app.use(notice)
+
+  app.component('k-view', View)
 }

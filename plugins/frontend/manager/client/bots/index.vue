@@ -26,7 +26,7 @@
 <script setup lang="ts">
 
 import { ref, computed, watch } from 'vue'
-import { store } from '~/client'
+import { store } from '@koishijs/client'
 import BotPreview from './preview.vue'
 import BotSettings from './settings.vue'
 

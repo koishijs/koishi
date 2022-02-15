@@ -50,7 +50,7 @@
 import { computed, PropType } from 'vue'
 import { useRouter } from 'vue-router'
 import { MarketProvider } from '@koishijs/plugin-manager'
-import { store } from '~/client'
+import { store } from '@koishijs/client'
 import { config, addFavorite, removeFavorite, getMixedMeta } from '../utils'
 
 defineEmits(['query'])

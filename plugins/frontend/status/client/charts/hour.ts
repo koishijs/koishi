@@ -1,4 +1,4 @@
-import { Context } from '~/client'
+import { Context } from '@koishijs/client'
 import { createChart, Tooltip } from './utils'
 
 const formatHour = (value: number) => `${(value - 0.5).toFixed()}:00-${(value + 0.5).toFixed()}:00`

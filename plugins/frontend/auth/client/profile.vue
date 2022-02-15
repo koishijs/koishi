@@ -11,10 +11,10 @@
 
 <script lang="ts" setup>
 
-import { send, store } from '~/client'
+import { send, store } from '@koishijs/client'
 import { sha256, config } from './utils'
 import { computed, ref } from 'vue'
-import { message, Schema } from '~/components'
+import { message, Schema } from '@koishijs/client'
 import { UserUpdate } from '@koishijs/plugin-auth'
 
 const diff = ref<UserUpdate>({})

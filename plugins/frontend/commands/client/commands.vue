@@ -9,6 +9,6 @@
 
 <script lang="ts" setup>
 
-import { store } from '~/client'
+import { store } from '@koishijs/client'
 
 </script>

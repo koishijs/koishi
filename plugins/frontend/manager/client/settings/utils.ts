@@ -1,7 +1,7 @@
 import { Dict } from 'koishi'
 import { computed } from 'vue'
 import { MarketProvider, Package } from '@koishijs/plugin-manager'
-import { store } from '~/client'
+import { store } from '@koishijs/client'
 import { getMixedMeta } from '../utils'
 
 interface DepInfo {

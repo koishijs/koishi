@@ -82,7 +82,7 @@
 <script setup lang="ts">
 
 import { computed } from 'vue'
-import { store, send } from '~/client'
+import { store, send } from '@koishijs/client'
 import { envMap } from './utils'
 import { getMixedMeta, config } from '../utils'
 import KDepLink from './dep-link.vue'

@@ -1,4 +1,4 @@
-import { store } from '~/client'
+import { store } from '@koishijs/client'
 import { MarketProvider } from '@koishijs/plugin-manager'
 import { getMixedMeta } from '../utils'
 

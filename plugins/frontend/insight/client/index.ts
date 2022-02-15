@@ -1,5 +1,5 @@
-import { Context } from '~/client'
-import {} from '@koishijs/plugin-insight/src'
+import { Context } from '@koishijs/client'
+import {} from '@koishijs/plugin-insight'
 import Graph from './index.vue'
 
 export default (ctx: Context) => {

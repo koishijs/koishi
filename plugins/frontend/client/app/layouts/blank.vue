@@ -1,5 +1,5 @@
 <template>
-  <div class="page-blank">
+  <div class="blank">
     <h1>404</h1>
     <p>如果你看到了这个页面，说明控制台插件已经加载成功，但你尚未安装任何控制台扩展。</p>
   </div>
@@ -7,7 +7,7 @@
 
 <style lang="scss" scoped>
 
-.page-blank {
+.blank {
   position: fixed;
   top: 0;
   left: 0;

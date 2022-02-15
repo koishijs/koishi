@@ -11,7 +11,7 @@
 <script lang="ts" setup>
 
 import { watch, ref, nextTick, onMounted } from 'vue'
-import { store, receive } from '~/client'
+import { store, receive } from '@koishijs/client'
 import Converter from 'ansi_up'
 
 const root = ref<HTMLElement>()

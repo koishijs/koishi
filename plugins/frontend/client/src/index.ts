@@ -22,8 +22,8 @@ export async function buildExtension(root: string, config: UserConfig = {}) {
         external: [
           root + '/vue.js',
           root + '/vue-router.js',
+          root + '/vueuse.js',
           root + '/client.js',
-          root + '/components.js',
         ],
         output: {
           format: 'iife',
@@ -35,8 +35,8 @@ export async function buildExtension(root: string, config: UserConfig = {}) {
       alias: {
         'vue': root + '/vue.js',
         'vue-router': root + '/vue-router.js',
-        '~/client': root + '/client.js',
-        '~/components': root + '/components.js',
+        '@useuse/core': root + '/useuse.js',
+        '@koishijs/client': root + '/client.js',
       },
     },
   }, config))

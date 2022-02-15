@@ -46,7 +46,7 @@
 
 import { ref } from 'vue'
 import { config, sha256 } from './utils'
-import { send } from '~/client'
+import { send } from '@koishijs/client'
 import { UserLogin } from '@koishijs/plugin-auth'
 
 const secure = isSecureContext

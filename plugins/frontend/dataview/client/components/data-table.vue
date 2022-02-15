@@ -113,8 +113,8 @@
 
 import { Dict } from 'koishi'
 import { computed, ComputedRef, nextTick, reactive, ref, watch, watchEffect } from 'vue'
-import { store } from '~/client'
-import { message } from '~/components'
+import { store } from '@koishijs/client'
+import { message } from '@koishijs/client'
 import { formatSize, handleError, sendQuery, timeStr } from '../utils'
 
 export interface TableStatus {

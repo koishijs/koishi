@@ -15,7 +15,7 @@
 
 <script setup lang="ts">
 
-import { store } from '~/client'
+import { store } from '@koishijs/client'
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { config } from '../utils'
