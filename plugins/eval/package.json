@@ -34,7 +34,7 @@
     "impl:worker"
   ],
   "peerDependencies": {
-    "koishi": "^4.2.0"
+    "koishi": "^4.2.1"
   },
   "optionalDependencies": {
     "@babel/core": "^7.16.7",

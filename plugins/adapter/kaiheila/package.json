@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-adapter-kaiheila",
   "description": "Kaiheila adapter for Koishi",
-  "version": "2.0.2",
+  "version": "2.0.3",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -25,7 +25,7 @@
     "impl:adapter"
   ],
   "peerDependencies": {
-    "koishi": "^4.2.0"
+    "koishi": "^4.2.1"
   },
   "devDependencies": {
     "@koishijs/plugin-mock": "^1.0.2"

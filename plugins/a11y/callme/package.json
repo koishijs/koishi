@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-callme",
   "description": "Set user nickname in Koishi",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -32,7 +32,7 @@
     "required:database"
   ],
   "peerDependencies": {
-    "koishi": "^4.2.0"
+    "koishi": "^4.2.1"
   },
   "devDependencies": {
     "@koishijs/plugin-database-memory": "^1.0.1",
