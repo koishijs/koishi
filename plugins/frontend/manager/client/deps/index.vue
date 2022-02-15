@@ -60,7 +60,7 @@ async function install() {
     text: '正在更新依赖……',
   })
   try {
-    const code = await send('install', config.override)
+    const code = await send('market/install', config.override)
     if (code === 0) {
       message.success('安装成功！')
     } else {
