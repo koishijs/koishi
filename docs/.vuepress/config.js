@@ -118,6 +118,14 @@ module.exports = {
           '/guide/service/logger.md',
         ],
       }, {
+        text: '控制台开发',
+        isGroup: true,
+        children: [
+          '/guide/console/index.md',
+          '/guide/console/extension.md',
+          '/guide/console/data.md',
+        ],
+      }, {
         text: '调试与部署',
         isGroup: true,
         children: [
