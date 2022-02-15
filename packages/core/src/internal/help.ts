@@ -2,7 +2,7 @@ import { template } from '@koishijs/utils'
 import { Argv } from '../parser'
 import { Command } from '../command'
 import { Context } from '../context'
-import { User, Channel } from '../database'
+import { Channel, User } from '../database'
 import { TableType } from '../orm'
 import { FieldCollector, Session } from '../session'
 
@@ -182,7 +182,6 @@ async function showHelp(command: Command, session: Session<'authority'>, config:
   return output.filter(Boolean).join('\n')
 }
 
-/* eslint-disable quote-props */
 template.set('internal', {
   // command
   'low-authority': '权限不足。',

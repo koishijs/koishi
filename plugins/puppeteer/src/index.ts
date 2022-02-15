@@ -1,5 +1,5 @@
 import puppeteer, { Browser, ElementHandle, Page } from 'puppeteer-core'
-import { Context, segment, Schema, Service, Logger } from 'koishi'
+import { Context, Logger, Schema, segment, Service } from 'koishi'
 import { SVG, SVGOptions } from './svg'
 import * as screenshot from './screenshot'
 

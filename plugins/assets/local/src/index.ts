@@ -1,6 +1,6 @@
-import { Assets, Context, sanitize, trimSlash, Schema } from 'koishi'
-import { promises as fs, createReadStream } from 'fs'
-import { extname, resolve, basename } from 'path'
+import { Assets, Context, sanitize, Schema, trimSlash } from 'koishi'
+import { createReadStream, promises as fs } from 'fs'
+import { basename, extname, resolve } from 'path'
 import { createHmac } from 'crypto'
 
 class LocalAssets extends Assets {

@@ -1,7 +1,7 @@
-import { MaybeArray, makeArray, Dict, Get, Extract, clone } from '@koishijs/utils'
+import { clone, Dict, Extract, Get, makeArray, MaybeArray } from '@koishijs/utils'
 import { KoishiError } from './error'
 import { Context } from './context'
-import { User, Channel } from './database'
+import { Channel, User } from './database'
 
 export type TableType = keyof Tables
 
@@ -278,7 +278,7 @@ export namespace Query {
     remove<T extends TableType>(table: T, query: Query<T>): Promise<void>
     create<T extends TableType>(table: T, data: Partial<Tables[T]>): Promise<Tables[T]>
     upsert<T extends TableType>(table: T, data: MapUneval<Tables[T]>[], keys?: MaybeArray<Index<T>>): Promise<void>
-    eval<T extends TableType, E extends Eval.Aggregation<Tables[T]>>(table: T, expr: E, query?: Query<T>): Promise<Eval<T, E>>
+    eval<T extends TableType, E extends Eval.Aggregation<Tables[T]>>(table: T, expr: E, query?: Query<T>): Promise<Eval<E>>
   }
 }
 
@@ -288,7 +288,7 @@ export type Uneval<T, U> =
   : U extends boolean ? Eval.Boolean<T>
   : any
 
-export type Eval<T, U> =
+export type Eval<U> =
   | U extends number ? number
   : U extends boolean ? boolean
   : U extends string ? string

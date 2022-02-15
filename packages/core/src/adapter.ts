@@ -1,4 +1,4 @@
-import { Logger, paramCase, Dict, Awaitable, remove } from '@koishijs/utils'
+import { Awaitable, Dict, Logger, paramCase, remove } from '@koishijs/utils'
 import { Session } from './session'
 import { App } from './app'
 import { Bot } from './bot'

@@ -1,6 +1,5 @@
 import { Query } from 'koishi'
-import { send } from '@koishijs/client'
-import { message } from '@koishijs/client'
+import { message, send } from '@koishijs/client'
 
 export function serialize(obj: unknown): string {
   if (obj instanceof Date) return `"d${obj.toJSON()}"`

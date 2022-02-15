@@ -1,7 +1,7 @@
 import { config, context, internal } from '.'
-import { resolve, posix, dirname, extname } from 'path'
+import { dirname, extname, posix, resolve } from 'path'
 import { promises as fs } from 'fs'
-import { Awaitable, Logger, Dict } from '@koishijs/utils'
+import { Awaitable, Dict, Logger } from '@koishijs/utils'
 import * as yaml from 'js-yaml'
 import * as v8 from 'v8'
 

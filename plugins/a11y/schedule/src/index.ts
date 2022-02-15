@@ -1,4 +1,4 @@
-import { Context, Session, Time, Logger, Schema, Dict } from 'koishi'
+import { Context, Dict, Logger, Schema, Session, Time } from 'koishi'
 
 declare module 'koishi' {
   interface Tables {

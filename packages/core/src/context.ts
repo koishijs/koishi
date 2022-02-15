@@ -1,11 +1,10 @@
-import { Logger, makeArray, remove, sleep, Random, Promisify, Awaitable, Dict, MaybeArray, defineProperty } from '@koishijs/utils'
+import { Awaitable, defineProperty, Dict, Logger, makeArray, MaybeArray, Promisify, Random, remove, sleep } from '@koishijs/utils'
 import { Command } from './command'
 import { Session } from './session'
-import { User, Channel, Modules } from './database'
+import { Channel, Database, Modules, User } from './database'
 import { Argv } from './parser'
 import { App } from './app'
 import { Bot } from './bot'
-import { Database } from './database'
 import { Adapter } from './adapter'
 import { Model, Tables } from './orm'
 import Schema from 'schemastery'
@@ -305,6 +304,7 @@ export class Context {
       if (typeof plugin !== 'function') {
         plugin.apply(ctx, config)
       } else if (isConstructor(plugin)) {
+        // eslint-disable-next-line no-new, new-cap
         new plugin(ctx, config)
       } else {
         plugin(ctx, config)
@@ -342,9 +342,9 @@ export class Context {
     const session = typeof args[0] === 'object' ? args.shift() : null
     const name = args.shift()
     for (const callback of this.getHooks(name, session)) {
-      tasks.push(Promise.resolve(callback.apply(session, args)).catch(((error) => {
+      tasks.push(Promise.resolve(callback.apply(session, args)).catch((error) => {
         this.logger('app').warn(error)
-      })))
+      }))
     }
     await Promise.all(tasks)
   }

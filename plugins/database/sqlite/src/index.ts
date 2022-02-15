@@ -1,9 +1,9 @@
-import { Database, makeArray, Logger, Schema, Context, Query, Model, TableType, union, difference } from 'koishi'
+import { Context, Database, difference, Logger, makeArray, Model, Query, Schema, TableType, union } from 'koishi'
 import { executeUpdate } from '@koishijs/orm-utils'
 import { Builder, Caster } from '@koishijs/sql-utils'
 import sqlite, { Statement } from 'better-sqlite3'
 import { resolve } from 'path'
-import { escape as sqlEscape, escapeId, format } from 'sqlstring-sqlite'
+import { escapeId, format, escape as sqlEscape } from 'sqlstring-sqlite'
 import { promises as fsp } from 'fs'
 
 declare module 'koishi' {
@@ -20,19 +20,19 @@ const logger = new Logger('sqlite')
 
 function getTypeDefinition({ type }: Model.Field) {
   switch (type) {
-    case 'integer':
-    case 'unsigned':
-    case 'date':
-    case 'time':
-    case 'timestamp': return `INTEGER`
-    case 'float':
-    case 'double':
-    case 'decimal': return `REAL`
-    case 'char':
-    case 'string':
-    case 'text':
-    case 'list':
-    case 'json': return `TEXT`
+  case 'integer':
+  case 'unsigned':
+  case 'date':
+  case 'time':
+  case 'timestamp': return `INTEGER`
+  case 'float':
+  case 'double':
+  case 'decimal': return `REAL`
+  case 'char':
+  case 'string':
+  case 'text':
+  case 'list':
+  case 'json': return `TEXT`
   }
 }
 

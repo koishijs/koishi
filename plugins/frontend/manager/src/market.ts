@@ -1,4 +1,4 @@
-import { Context, Dict, version as currentVersion, Schema, Quester } from 'koishi'
+import { Context, version as currentVersion, Dict, Quester, Schema } from 'koishi'
 import { Package } from './utils'
 import { satisfies } from 'semver'
 import { DataService } from '@koishijs/plugin-console'

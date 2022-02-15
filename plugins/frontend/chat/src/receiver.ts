@@ -1,4 +1,4 @@
-import { Bot, Context, Session, Time, pick, segment, Dict, Schema } from 'koishi'
+import { Bot, Context, Dict, pick, Schema, segment, Session, Time } from 'koishi'
 
 export interface RefreshConfig {
   user?: number

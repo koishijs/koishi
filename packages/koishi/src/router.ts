@@ -1,6 +1,6 @@
 import { App, Context, Schema } from '@koishijs/core'
 import { defineProperty, MaybeArray, remove } from '@koishijs/utils'
-import { Server, createServer, IncomingMessage } from 'http'
+import { createServer, IncomingMessage, Server } from 'http'
 import { pathToRegexp } from 'path-to-regexp'
 import parseUrl from 'parseurl'
 import WebSocket from 'ws'

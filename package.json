@@ -32,7 +32,7 @@
     "test:json": "c8 -r json yarn test",
     "test:html": "rimraf coverage && c8 -r html yarn test",
     "test:text": "c8 -r text yarn test",
-    "lint": "eslint packages/**/src/**/*.ts --fix --cache",
+    "lint": "eslint packages plugins --ext=ts --cache",
     "pub": "node -r ./build/register build/publish",
     "scaffold": "yarn compile koishi && yarn create-koishi test",
     "start": "yarn compile && cross-env TS_NODE_PROJECT=../tsconfig.test.json yarn workspace test koishi start --watch .. -r ../build/register",

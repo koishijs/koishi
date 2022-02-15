@@ -1,4 +1,4 @@
-import { noop, defineProperty, isType } from './misc'
+import { defineProperty, isType, noop } from './misc'
 import { Logger } from './logger'
 
 const logger = new Logger('observer')

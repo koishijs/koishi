@@ -1,7 +1,6 @@
-import { difference, enumKeys, template, Context, User, Channel, Command, Schema } from 'koishi'
+import { Channel, Command, Context, difference, enumKeys, Schema, template, User } from 'koishi'
 import { adminChannel, adminUser, parsePlatform } from '@koishijs/helpers'
 
-/* eslint-disable quote-props */
 template.set('admin', {
   // flag
   'unknown-flag': '未找到标记 {0}。',

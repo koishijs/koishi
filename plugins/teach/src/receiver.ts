@@ -1,6 +1,6 @@
 import {
-  Context, User, Session, Channel, Argv, Next,
-  segment, noop, escapeRegExp, Random, makeArray, Awaitable,
+  Argv, Awaitable, Channel, Context, escapeRegExp, makeArray,
+  Next, noop, Random, segment, Session, User,
 } from 'koishi'
 import { Dialogue, DialogueTest } from './utils'
 import { simplify } from 'simplify-chinese'
@@ -217,7 +217,7 @@ export async function triggerDialogue(ctx: Context, session: Session, next: Next
     // which will lead to incorrect matches
     // TODO enhance emojis in regexp tests
     if (!capture) return
-    capture.map((segment, index) => {
+    capture.forEach((segment, index) => {
       if (index && index <= 9) {
         state.answer = state.answer.replace(new RegExp(`\\$${index}`, 'g'), escapeAnswer(segment || ''))
       }

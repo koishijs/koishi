@@ -1,8 +1,6 @@
-/* eslint-disable camelcase */
-
 import { EventConfig } from './events'
 import axios, { AxiosError, Method } from 'axios'
-import { App, Context, Session, segment, Logger, Dict, Quester, Schema, Time, Service } from 'koishi'
+import { Context, Dict, Logger, Quester, Schema, segment, Service, Session, Time } from 'koishi'
 import {} from '@koishijs/plugin-puppeteer'
 
 declare module 'koishi' {
@@ -83,11 +81,11 @@ export class GitHub extends Service {
       ghAccessToken: 'string(50)',
       ghRefreshToken: 'string(50)',
     })
-    
+
     ctx.model.extend('channel', {
       githubWebhooks: 'json',
     })
-    
+
     ctx.model.extend('github', {
       id: 'integer',
       name: 'string(50)',

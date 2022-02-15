@@ -1,6 +1,6 @@
 import { Adapter, Logger, renameProperty } from 'koishi'
 import { GatewayOpcode, GatewayPayload } from './types'
-import { adaptSession, adaptUser, AdapterConfig } from './utils'
+import { AdapterConfig, adaptSession, adaptUser } from './utils'
 import { BotConfig, DiscordBot } from './bot'
 import WebSocket from 'ws'
 

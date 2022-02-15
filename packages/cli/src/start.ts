@@ -1,5 +1,5 @@
 import { Dict, hyphenate, isInteger } from '@koishijs/utils'
-import { fork, ChildProcess } from 'child_process'
+import { ChildProcess, fork } from 'child_process'
 import { resolve } from 'path'
 import { CAC } from 'cac'
 import kleur from 'kleur'

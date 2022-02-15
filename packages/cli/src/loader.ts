@@ -1,6 +1,6 @@
-import { resolve, extname, dirname, isAbsolute } from 'path'
+import { dirname, extname, isAbsolute, resolve } from 'path'
 import { readdirSync, readFileSync, writeFileSync } from 'fs'
-import { App, Dict, Logger, interpolate, Modules, unwrapExports, valueMap } from 'koishi'
+import { App, Dict, interpolate, Logger, Modules, unwrapExports, valueMap } from 'koishi'
 import * as yaml from 'js-yaml'
 import * as dotenv from 'dotenv'
 
@@ -168,7 +168,7 @@ export class Loader {
     const state = this.app.registry.get(plugin)
     if (!state) return
 
-    let missing = state.using.filter(key => !this.app[key])
+    const missing = state.using.filter(key => !this.app[key])
     if (!missing.length) return
     this.app.logger('diagnostic').warn('plugin %c is missing required service %c', name, missing.join(', '))
   }

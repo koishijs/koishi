@@ -1,7 +1,5 @@
-/* eslint-disable camelcase */
-
-import { Adapter, Bot, Schema, segment, Quester } from 'koishi'
-import { adaptChannel, adaptGroup as adaptGuild, adaptMessage, adaptUser, AdapterConfig } from './utils'
+import { Adapter, Bot, Quester, Schema, segment } from 'koishi'
+import { adaptChannel, AdapterConfig, adaptGroup as adaptGuild, adaptMessage, adaptUser } from './utils'
 import { Sender } from './sender'
 import { GatewayIntent, Internal } from './types'
 

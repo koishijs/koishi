@@ -107,7 +107,7 @@ export namespace Message {
     LISTEN = 3,
     JOIN_REQUEST = 5,
   }
-  
+
   /** https://discord.com/developers/docs/resources/channel#message-object-message-flags */
   export enum Flag {
     /** this message has been published to subscribed channels (via Channel Following) */
@@ -127,7 +127,7 @@ export namespace Message {
     /** this message is an Interaction Response and the bot is "thinking" */
     LOADING = 1 << 7,
   }
-  
+
   /** https://discord.com/developers/docs/resources/channel#message-reference-object-message-reference-structure */
   export interface Reference {
     /** id of the originating message */

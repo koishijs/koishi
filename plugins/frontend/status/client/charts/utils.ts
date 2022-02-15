@@ -1,4 +1,4 @@
-import { h, defineAsyncComponent, resolveComponent } from 'vue'
+import { defineAsyncComponent, h, resolveComponent } from 'vue'
 import { Console } from '@koishijs/plugin-console'
 import { Card, Store, store } from '@koishijs/client'
 import type * as echarts from 'echarts'

@@ -1,4 +1,4 @@
-import { Assets, Context, Random, Schema, Quester } from 'koishi'
+import { Assets, Context, Quester, Random, Schema } from 'koishi'
 import { createHmac } from 'crypto'
 
 declare module 'koishi' {

@@ -1,6 +1,6 @@
 import { App, Dict } from 'koishi'
 import { Socket } from 'net'
-import { ServerResponse, IncomingMessage } from 'http'
+import { IncomingMessage, ServerResponse } from 'http'
 
 export namespace Webhook {
   export interface Response {

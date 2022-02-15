@@ -1,20 +1,11 @@
-/* eslint-disable camelcase */
-/* eslint-disable quote-props */
-
 import { createHmac } from 'crypto'
 import { encode } from 'querystring'
-import { Context, camelize, Random, sanitize, Logger, Session, Dict } from 'koishi'
-import { CommonPayload, addListeners, defaultEvents, EventConfig } from './events'
-import { Config, GitHub, ReplyHandler, ReplySession, ReplyPayloads } from './server'
+import { camelize, Context, Dict, Logger, Random, sanitize, Session } from 'koishi'
+import { addListeners, CommonPayload, defaultEvents, EventConfig } from './events'
+import { Config, GitHub, ReplyHandler, ReplyPayloads, ReplySession } from './server'
 import axios, { Method } from 'axios'
 
 export * from './server'
-
-declare module 'koishi' {
-  interface Modules {
-    github: typeof import('.')
-  }
-}
 
 export const name = 'GitHub'
 export const using = ['database'] as const

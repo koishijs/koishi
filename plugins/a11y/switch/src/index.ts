@@ -1,4 +1,4 @@
-import { Context, template, deduplicate, difference, intersection, Argv, Schema } from 'koishi'
+import { Argv, Context, deduplicate, difference, intersection, Schema, template } from 'koishi'
 import { adminChannel } from '@koishijs/helpers'
 
 declare module 'koishi' {
@@ -27,7 +27,7 @@ export function apply(ctx: Context, config: Config = {}) {
   ctx.model.extend('channel', {
     disable: 'list',
   })
-  
+
   ctx.before('attach-channel', (session, fields) => {
     if (session.argv) fields.add('disable')
   })

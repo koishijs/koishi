@@ -1,6 +1,6 @@
-import { Context, difference, deduplicate, sleep, pick, Time, Awaitable } from 'koishi'
-import { Dialogue, prepareTargets, split, RE_DIALOGUES, isPositiveInteger } from './utils'
-import { getDetails, formatDetails, formatAnswer, formatQuestionAnswers } from './search'
+import { Awaitable, Context, deduplicate, difference, pick, sleep, Time } from 'koishi'
+import { Dialogue, isPositiveInteger, prepareTargets, RE_DIALOGUES, split } from './utils'
+import { formatAnswer, formatDetails, formatQuestionAnswers, getDetails } from './search'
 
 declare module 'koishi' {
   interface EventMap {

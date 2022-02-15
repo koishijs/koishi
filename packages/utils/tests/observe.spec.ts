@@ -14,7 +14,6 @@ describe('Observer API', () => {
     expect(() => observe(Symbol.for('foo') as never)).to.throw()
     expect(() => observe(null as never)).to.throw()
     expect(() => observe(undefined as never)).to.throw()
-    // eslint-disable-next-line no-array-constructor
     expect(() => observe(new Array())).to.throw()
     expect(() => observe(new Date())).to.throw()
     expect(() => observe(new Set())).to.throw()

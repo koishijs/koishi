@@ -1,5 +1,3 @@
-/* eslint-disable no-irregular-whitespace */
-
 import { Awaitable, Context, Schema, Time } from 'koishi'
 import { Dialogue } from './utils'
 

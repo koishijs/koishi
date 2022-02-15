@@ -73,7 +73,7 @@ export class TelegramBot extends Bot<BotConfig> {
   async get<T = any, P = any>(action: string, params: P = undefined): Promise<T> {
     this.logger.debug('[request] %s %o', action, params)
     const response = await this.http.get(action, {
-      params: snakeCase(params || {})
+      params: snakeCase(params || {}),
     })
     this.logger.debug('[response] %o', response)
     const { ok, result } = response
@@ -99,7 +99,7 @@ export class TelegramBot extends Bot<BotConfig> {
     let response: any
     try {
       response = await this.http.post(action, payload, {
-        headers: payload.getHeaders()
+        headers: payload.getHeaders(),
       })
     } catch (e) {
       response = (e as AxiosError).response.data
@@ -122,7 +122,7 @@ export class TelegramBot extends Bot<BotConfig> {
       chatId = channelId
     }
 
-    const session = this.createSession({ content, channelId, guildId: channelId })
+    const session = this.createSession({ subtype, content, channelId, guildId: channelId })
     if (await this.app.serial(session, 'before-send', session)) return
 
     const send = Sender.from(this, chatId)

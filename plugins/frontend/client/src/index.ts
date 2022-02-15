@@ -1,5 +1,3 @@
-/* eslint-disable quote-props */
-
 import { build, mergeConfig, UserConfig } from 'vite'
 import { existsSync, promises as fsp } from 'fs'
 import vue from '@vitejs/plugin-vue'

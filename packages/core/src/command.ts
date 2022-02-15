@@ -1,8 +1,8 @@
-import { Logger, coerce, template, remove, Awaitable, Dict } from '@koishijs/utils'
+import { Awaitable, coerce, Dict, Logger, remove, template } from '@koishijs/utils'
 import { Argv } from './parser'
 import { Context, Disposable, Next } from './context'
-import { User, Channel } from './database'
-import { FieldCollector, Session, Computed } from './session'
+import { Channel, User } from './database'
+import { Computed, FieldCollector, Session } from './session'
 import { KoishiError } from './error'
 import * as internal from './internal'
 import Schema from 'schemastery'
@@ -14,23 +14,6 @@ export type Extend<O extends {}, K extends string, T> = {
 }
 
 export namespace Command {
-  export interface Config {
-    /** hide all options by default */
-    hideOptions?: boolean
-    /** hide command */
-    hidden?: boolean
-    /** min authority */
-    authority?: Computed<number>
-    /** disallow unknown options */
-    checkUnknown?: boolean
-    /** check argument count */
-    checkArgCount?: boolean
-    /** show command warnings */
-    showWarning?: boolean
-    /** depend on existing commands */
-    patch?: boolean
-  }
-
   export interface Shortcut {
     name?: string | RegExp
     command?: Command
@@ -257,7 +240,7 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
       if (typeof result === 'string') return result
     } catch (error) {
       if (index === length) throw error
-      let stack = coerce(error)
+      const stack = coerce(error)
       logger.warn(`${argv.source ||= this.stringify(args, options)}\n${stack}`)
       this.app.emit(argv.session, 'command-error', argv, error)
     }
@@ -281,6 +264,23 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
 }
 
 export namespace Command {
+  export interface Config {
+    /** hide all options by default */
+    hideOptions?: boolean
+    /** hide command */
+    hidden?: boolean
+    /** min authority */
+    authority?: Computed<number>
+    /** disallow unknown options */
+    checkUnknown?: boolean
+    /** check argument count */
+    checkArgCount?: boolean
+    /** show command warnings */
+    showWarning?: boolean
+    /** depend on existing commands */
+    patch?: boolean
+  }
+
   export const Config: Schema<Config> = Schema.object({
     authority: Schema.natural(),
     hidden: Schema.boolean(),

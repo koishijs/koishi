@@ -20,7 +20,7 @@ function supports(command: string, args: string[] = []) {
   return new Promise<boolean>((resolve) => {
     const child = spawn(command, args, { stdio: 'ignore' })
     child.on('exit', (code) => {
-      resolve(code ? false : true)
+      resolve(!code)
     })
     child.on('error', () => {
       resolve(false)
@@ -44,6 +44,7 @@ class Installer extends DataService<Dict<string>> {
   }
 
   async _getAgent(): Promise<Agent> {
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     const { npm_execpath } = process.env
     const isYarn = npm_execpath.includes('yarn')
     if (isYarn) return 'yarn'

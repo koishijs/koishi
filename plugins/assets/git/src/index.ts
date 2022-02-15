@@ -1,8 +1,8 @@
-import { Context, Assets, Schema, Logger, Time, sleep } from 'koishi'
-import Git, { SimpleGit, SimpleGitOptions, ResetMode } from 'simple-git'
+import { Assets, Context, Logger, Schema, sleep, Time } from 'koishi'
+import Git, { ResetMode, SimpleGit, SimpleGitOptions } from 'simple-git'
 import { promises as fsp } from 'fs'
 import { join, resolve } from 'path'
-import { File, Task, FileInfo } from './file'
+import { File, FileInfo, Task } from './file'
 
 const { access, mkdir, rename, writeFile } = fsp
 

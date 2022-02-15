@@ -1,6 +1,6 @@
 import { Adapter } from 'koishi'
 import { TelegramBot } from './bot'
-import { HttpServer, HttpPolling } from './http'
+import { HttpPolling, HttpServer } from './http'
 
 export * as Telegram from './types'
 export * from './bot'

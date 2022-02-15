@@ -1,4 +1,4 @@
-import { Adapter, Bot, Session, paramCase, segment, Schema, App, defineProperty } from 'koishi'
+import { Adapter, Bot, defineProperty, paramCase, Schema, segment, Session } from 'koishi'
 import * as qface from 'qface'
 import { OneBotBot } from './bot'
 import * as OneBot from './types'
@@ -163,75 +163,75 @@ export function adaptSession(data: OneBot.Payload) {
     }
   } else if (data.post_type === 'notice') {
     switch (data.notice_type) {
-      case 'group_recall':
-        session.type = 'message-deleted'
-        session.subtype = 'group'
-        session.subsubtype = 'group'
-        break
-      case 'friend_recall':
-        session.type = 'message-deleted'
-        session.subtype = 'private'
-        session.channelId = `private:${session.userId}`
-        session.subsubtype = 'private'
-        break
+    case 'group_recall':
+      session.type = 'message-deleted'
+      session.subtype = 'group'
+      session.subsubtype = 'group'
+      break
+    case 'friend_recall':
+      session.type = 'message-deleted'
+      session.subtype = 'private'
+      session.channelId = `private:${session.userId}`
+      session.subsubtype = 'private'
+      break
       // from go-cqhttp source code, but not mentioned in official docs
-      case 'guild_channel_recall':
-        session.type = 'message-deleted'
-        session.subtype = 'group'
-        session.subsubtype = 'guild'
-        break
-      case 'friend_add':
-        session.type = 'friend-added'
-        break
-      case 'group_upload':
-        session.type = 'group-file-added'
-        break
-      case 'group_admin':
-        session.type = 'group-member'
-        session.subtype = 'role'
-        break
-      case 'group_ban':
-        session.type = 'group-member'
-        session.subtype = 'ban'
-        break
-      case 'group_decrease':
-        session.type = session.userId === session.selfId ? 'group-deleted' : 'group-member-deleted'
-        session.subtype = session.userId === session.operatorId ? 'active' : 'passive'
-        break
-      case 'group_increase':
-        session.type = session.userId === session.selfId ? 'group-added' : 'group-member-added'
-        session.subtype = session.userId === session.operatorId ? 'active' : 'passive'
-        break
-      case 'group_card':
-        session.type = 'group-member'
-        session.subtype = 'nickname'
-        break
-      case 'notify':
-        session.type = 'notice'
-        session.subtype = paramCase(data.sub_type) as any
-        if (session.subtype === 'poke') {
-          session.channelId ||= `private:${session.userId}`
-        } else if (session.subtype === 'honor') {
-          session.subsubtype = paramCase(data.honor_type) as any
-        }
-        break
-      case 'message_reactions_updated':
-        session.type = 'onebot'
-        session.subtype = 'message-reactions-updated'
-        break
-      case 'channel_created':
-        session.type = 'onebot'
-        session.subtype = 'channel-created'
-        break
-      case 'channel_updated':
-        session.type = 'onebot'
-        session.subtype = 'channel-updated'
-        break
-      case 'channel_destroyed':
-        session.type = 'onebot'
-        session.subtype = 'channel-destroyed'
-        break
-      default: return
+    case 'guild_channel_recall':
+      session.type = 'message-deleted'
+      session.subtype = 'group'
+      session.subsubtype = 'guild'
+      break
+    case 'friend_add':
+      session.type = 'friend-added'
+      break
+    case 'group_upload':
+      session.type = 'group-file-added'
+      break
+    case 'group_admin':
+      session.type = 'group-member'
+      session.subtype = 'role'
+      break
+    case 'group_ban':
+      session.type = 'group-member'
+      session.subtype = 'ban'
+      break
+    case 'group_decrease':
+      session.type = session.userId === session.selfId ? 'group-deleted' : 'group-member-deleted'
+      session.subtype = session.userId === session.operatorId ? 'active' : 'passive'
+      break
+    case 'group_increase':
+      session.type = session.userId === session.selfId ? 'group-added' : 'group-member-added'
+      session.subtype = session.userId === session.operatorId ? 'active' : 'passive'
+      break
+    case 'group_card':
+      session.type = 'group-member'
+      session.subtype = 'nickname'
+      break
+    case 'notify':
+      session.type = 'notice'
+      session.subtype = paramCase(data.sub_type) as any
+      if (session.subtype === 'poke') {
+        session.channelId ||= `private:${session.userId}`
+      } else if (session.subtype === 'honor') {
+        session.subsubtype = paramCase(data.honor_type) as any
+      }
+      break
+    case 'message_reactions_updated':
+      session.type = 'onebot'
+      session.subtype = 'message-reactions-updated'
+      break
+    case 'channel_created':
+      session.type = 'onebot'
+      session.subtype = 'channel-created'
+      break
+    case 'channel_updated':
+      session.type = 'onebot'
+      session.subtype = 'channel-updated'
+      break
+    case 'channel_destroyed':
+      session.type = 'onebot'
+      session.subtype = 'channel-destroyed'
+      break
+    default: return
     }
   } else return
 

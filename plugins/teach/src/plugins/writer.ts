@@ -1,4 +1,4 @@
-import { Context, User, Dict } from 'koishi'
+import { Context, Dict, User } from 'koishi'
 import { Dialogue } from '../utils'
 
 declare module '../utils' {
@@ -104,6 +104,7 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
   ctx.on('dialogue/permit', ({ session, target, options, authMap }, { writer, flag }) => {
     const { substitute, writer: newWriter } = options
     const { id, authority } = session.user
+    /* eslint-disable operator-linebreak */
     return (
       (newWriter && authority <= authMap[newWriter] && newWriter !== id) ||
       ((flag & Dialogue.Flag.frozen) && authority < config.authority.frozen) ||
@@ -114,6 +115,7 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
         )
       ))
     )
+    /* eslint-enable operator-linebreak */
   })
 
   ctx.on('dialogue/detail-short', ({ flag }, output) => {

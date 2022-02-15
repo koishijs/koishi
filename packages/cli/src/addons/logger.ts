@@ -27,7 +27,7 @@ App.Config.list.push(Schema.object({
   logger: Config,
 }))
 
-let prologue: string[] = []
+const prologue: string[] = []
 
 const target: Logger.Target = {
   colors: 3,

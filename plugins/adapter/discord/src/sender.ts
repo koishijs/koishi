@@ -61,7 +61,7 @@ export class Sender {
     }
   }
 
-  async sendEmbed(fileBuffer: ArrayBuffer, payload_json: Dict = {}, filename: string) {
+  async sendEmbed(fileBuffer: ArrayBuffer, payload_json: Dict, filename: string) {
     const fd = new FormData()
     const type = await fromBuffer(fileBuffer)
     filename ||= 'file.' + type.ext
@@ -163,7 +163,7 @@ export class Sender {
           ...addition,
           embeds: [{ ...data }],
         })
-      } else if (type === 'record'){
+      } else if (type === 'record') {
         await this.sendAsset('file', data, {
           ...addition,
           content: textBuffer.trim(),

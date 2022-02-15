@@ -1,5 +1,5 @@
-import { Context, contain, union, difference, Query, Dict } from 'koishi'
-import { equal, split, prepareTargets, RE_DIALOGUES, isPositiveInteger, Dialogue } from '../utils'
+import { contain, Context, Dict, difference, Query, union } from 'koishi'
+import { Dialogue, equal, isPositiveInteger, prepareTargets, RE_DIALOGUES, split } from '../utils'
 import { formatQuestionAnswers } from '../search'
 
 declare module '../receiver' {

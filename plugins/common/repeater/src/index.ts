@@ -1,4 +1,4 @@
-import { Context, Session, Random, Dict, Schema } from 'koishi'
+import { Context, Dict, Random, Schema, Session } from 'koishi'
 
 declare module 'koishi' {
   interface Modules {

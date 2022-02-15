@@ -81,7 +81,7 @@ class AuthService extends DataService<UserAuth> {
       if (user.token !== token || user.expire <= Date.now()) throw new Error('令牌已失效。')
       setAuthUser(this, user)
     })
-  
+
     ctx.console.addListener('login/platform', async function (platform, userId) {
       const user = await ctx.database.getUser(platform, userId, ['name'])
       if (!user) throw new Error('找不到此账户。')
@@ -124,7 +124,7 @@ class AuthService extends DataService<UserAuth> {
     ctx.console.addListener('user/logout', async function () {
       setAuthUser(this, null)
     })
-  
+
     ctx.console.addListener('user/update', async function (data) {
       if (!this.user) throw new Error('请先登录。')
       await ctx.database.setUser('id', this.user.id, data)

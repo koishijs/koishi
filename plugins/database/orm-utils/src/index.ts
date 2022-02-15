@@ -1,4 +1,4 @@
-import { Query, Eval, Dict, isNullable } from 'koishi'
+import { Dict, Eval, Query } from 'koishi'
 
 type QueryOperators = {
   [K in keyof Query.FieldExpr]?: (query: Query.FieldExpr[K], data: any) => boolean

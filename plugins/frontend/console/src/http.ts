@@ -1,6 +1,6 @@
 import { Context, Dict, noop, Random } from 'koishi'
-import { resolve, extname, dirname } from 'path'
-import { promises as fsp, Stats, createReadStream, existsSync } from 'fs'
+import { dirname, extname, resolve } from 'path'
+import { createReadStream, existsSync, promises as fsp, Stats } from 'fs'
 import { DataService } from './service'
 import { ViteDevServer } from 'vite'
 import open from 'open'

@@ -1,4 +1,3 @@
-/* eslint-disable camelcase */
 import { Adapter, Bot, Schema, segment, Session } from 'koishi'
 import { Sender } from './sender'
 import { DiscordBot } from './bot'

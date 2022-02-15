@@ -1,7 +1,5 @@
-/* eslint-disable no-undef */
-
 import { createApp } from 'vue'
-import client, { connect, router, config } from '@koishijs/client'
+import client, { config, connect, router } from '@koishijs/client'
 import App from './layouts/index.vue'
 import Blank from './layouts/blank.vue'
 

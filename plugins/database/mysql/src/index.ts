@@ -1,6 +1,6 @@
-import { createPool, escape as mysqlEscape, escapeId, format } from '@vlasky/mysql'
-import type { Pool, PoolConfig, OkPacket } from 'mysql'
-import { Context, Database, difference, Logger, makeArray, Schema, Query, Model, Tables, Dict, Time, KoishiError, pick } from 'koishi'
+import { createPool, escapeId, format, escape as mysqlEscape } from '@vlasky/mysql'
+import type { OkPacket, Pool, PoolConfig } from 'mysql'
+import { Context, Database, Dict, difference, KoishiError, Logger, makeArray, Model, pick, Query, Schema, Tables, Time } from 'koishi'
 import { executeUpdate } from '@koishijs/orm-utils'
 import { Builder } from '@koishijs/sql-utils'
 
@@ -36,19 +36,19 @@ function getIntegerType(length = 11) {
 
 function getTypeDefinition({ type, length, precision, scale }: Model.Field) {
   switch (type) {
-    case 'float':
-    case 'double':
-    case 'date':
-    case 'time': return type
-    case 'timestamp': return 'datetime'
-    case 'integer': return getIntegerType(length)
-    case 'unsigned': return `${getIntegerType(length)} unsigned`
-    case 'decimal': return `decimal(${precision}, ${scale}) unsigned`
-    case 'char': return `char(${length || 255})`
-    case 'string': return `varchar(${length || 255})`
-    case 'text': return `text(${length || 65535})`
-    case 'list': return `text(${length || 65535})`
-    case 'json': return `text(${length || 65535})`
+  case 'float':
+  case 'double':
+  case 'date':
+  case 'time': return type
+  case 'timestamp': return 'datetime'
+  case 'integer': return getIntegerType(length)
+  case 'unsigned': return `${getIntegerType(length)} unsigned`
+  case 'decimal': return `decimal(${precision}, ${scale}) unsigned`
+  case 'char': return `char(${length || 255})`
+  case 'string': return `varchar(${length || 255})`
+  case 'text': return `text(${length || 65535})`
+  case 'list': return `text(${length || 65535})`
+  case 'json': return `text(${length || 65535})`
   }
 }
 
@@ -216,6 +216,7 @@ class MysqlDatabase extends Database {
   /** synchronize table schema */
   private async _syncTable(name: string) {
     await this._tableTasks[name]
+    // eslint-disable-next-line max-len
     const data = await this.queue<any[]>('SELECT COLUMN_NAME from information_schema.columns WHERE TABLE_SCHEMA = ? && TABLE_NAME = ?', [this.config.database, name])
     const columns = data.map(row => row.COLUMN_NAME)
     const result = this._getColDefs(name, columns)

@@ -2,23 +2,23 @@ import { App } from 'vue'
 import {
   ElButton,
   ElCheckbox,
+  ElDatePicker,
   ElInput,
   ElInputNumber,
   ElLoading,
   ElMessage,
+  ElPagination,
+  ElPopconfirm,
   ElRadio,
   ElScrollbar,
   ElSelect,
   ElSlider,
   ElSwitch,
-  ElTooltip,
-  ElTree,
   ElTable,
   ElTableColumn,
-  ElPagination,
-  ElPopconfirm,
-  ElDatePicker,
   ElTimePicker,
+  ElTooltip,
+  ElTree,
 } from 'element-plus'
 
 import common from './common'
@@ -28,7 +28,6 @@ import layout from './layout'
 import notice from './notice'
 import View from './view'
 
-import 'element-plus/es/components/message/style/css'
 import 'element-plus/es/components/button/style/css'
 import 'element-plus/es/components/checkbox/style/css'
 import 'element-plus/es/components/input/style/css'

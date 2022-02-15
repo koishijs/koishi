@@ -1,6 +1,6 @@
-import { Adapter, Logger, assertProperty, Schema, Quester, omit, Context } from 'koishi'
+import { Adapter, assertProperty, Context, Logger, omit, Quester, Schema } from 'koishi'
 import { BotConfig, OneBotBot } from './bot'
-import { dispatchSession, AdapterConfig } from './utils'
+import { AdapterConfig, dispatchSession } from './utils'
 import { createHmac } from 'crypto'
 
 const logger = new Logger('onebot')

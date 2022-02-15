@@ -99,47 +99,47 @@ export class Sender {
 
     for (const seg of segs.slice(currIdx)) {
       switch (seg.type) {
-        case 'text':
-          this.payload.caption += seg.data.content
-          break
-        case 'at': {
-          const atTarget = seg.data.name || seg.data.id || seg.data.role || seg.data.type
-          if (!atTarget) break
-          this.payload.caption += `@${atTarget} `
-          break
-        }
-        case 'sharp': {
-          const sharpTarget = seg.data.name || seg.data.id
-          if (!sharpTarget) break
-          this.payload.caption += `#${sharpTarget} `
-          break
-        }
-        case 'face':
-          logger.warn("Telegram don't support face")
-          break
-        case 'image':
-        case 'audio':
-        case 'video':
-        case 'file': {
-          // send previous asset if there is any
-          if (this.currAssetType) await this.sendAsset()
+      case 'text':
+        this.payload.caption += seg.data.content
+        break
+      case 'at': {
+        const atTarget = seg.data.name || seg.data.id || seg.data.role || seg.data.type
+        if (!atTarget) break
+        this.payload.caption += `@${atTarget} `
+        break
+      }
+      case 'sharp': {
+        const sharpTarget = seg.data.name || seg.data.id
+        if (!sharpTarget) break
+        this.payload.caption += `#${sharpTarget} `
+        break
+      }
+      case 'face':
+        logger.warn("Telegram don't support face")
+        break
+      case 'image':
+      case 'audio':
+      case 'video':
+      case 'file': {
+        // send previous asset if there is any
+        if (this.currAssetType) await this.sendAsset()
 
-          // handel current asset
-          const assetUrl = seg.data.url
+        // handel current asset
+        const assetUrl = seg.data.url
 
-          if (!assetUrl) {
-            logger.warn('asset segment with no url')
-            break
-          }
-          if (seg.type === 'image') this.currAssetType = await isGif(assetUrl) ? 'animation' : 'photo'
-          else if (seg.type === 'file') this.currAssetType = 'document'
-          else this.currAssetType = seg.type
-          this.payload[this.currAssetType] = assetUrl
+        if (!assetUrl) {
+          logger.warn('asset segment with no url')
           break
         }
-        default:
-          logger.warn(`Unexpected asset type: ${seg.type}`)
-          return
+        if (seg.type === 'image') this.currAssetType = await isGif(assetUrl) ? 'animation' : 'photo'
+        else if (seg.type === 'file') this.currAssetType = 'document'
+        else this.currAssetType = seg.type
+        this.payload[this.currAssetType] = assetUrl
+        break
+      }
+      default:
+        logger.warn(`Unexpected asset type: ${seg.type}`)
+        return
       }
     }
 

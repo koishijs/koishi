@@ -1,4 +1,4 @@
-import { Context, Session, Dict, Time, template, Schema, Command } from 'koishi'
+import { Command, Context, Dict, Schema, Session, template, Time } from 'koishi'
 import { parsePlatform } from '@koishijs/helpers'
 
 declare module 'koishi' {

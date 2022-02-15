@@ -2,7 +2,7 @@ import { Message } from '@qq-guild-sdk/core'
 import { Logger, segment } from '@koishijs/utils'
 import { Adapter, Session } from 'koishi'
 import { QQGuildBot } from './bot'
-import { adaptUser, AdapterConfig, BotConfig } from './utils'
+import { AdapterConfig, adaptUser, BotConfig } from './utils'
 
 const logger = new Logger('qqguild')
 

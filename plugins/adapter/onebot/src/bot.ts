@@ -1,4 +1,4 @@
-import { Bot, segment, Adapter, Dict, Schema, Quester, Logger, camelize, noop } from 'koishi'
+import { Adapter, Bot, camelize, Dict, Logger, noop, Quester, Schema, segment } from 'koishi'
 import * as OneBot from './utils'
 
 export function renderText(source: string) {

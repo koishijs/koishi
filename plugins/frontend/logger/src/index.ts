@@ -1,7 +1,7 @@
 import { Context, Logger, remove, Schema, Time } from 'koishi'
 import { DataService } from '@koishijs/plugin-console'
 import { resolve } from 'path'
-import { mkdirSync, readdirSync, promises as fsp } from 'fs'
+import { promises as fsp, mkdirSync, readdirSync } from 'fs'
 import { FileHandle } from 'fs/promises'
 import {} from '@koishijs/cli'
 

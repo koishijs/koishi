@@ -1,4 +1,4 @@
-import { Adapter, assertProperty, camelCase, Context, Dict, Logger, sanitize, Schema, segment, Session, Time, trimSlash } from 'koishi'
+import { Adapter, assertProperty, camelCase, Context, Dict, Logger, sanitize, Schema, segment, Session, trimSlash } from 'koishi'
 import { BotConfig, TelegramBot } from './bot'
 import * as Telegram from './types'
 import { AdapterConfig } from './utils'
@@ -14,10 +14,6 @@ type GetUpdatesOptions = {
 }
 
 abstract class TelegramAdapter extends Adapter<BotConfig, AdapterConfig> {
-  constructor(ctx: Context, config: AdapterConfig) {
-    super(ctx, config)
-  }
-
   /** Init telegram updates listening */
   abstract listenUpdates(bot: TelegramBot): Promise<void>
 
@@ -96,7 +92,7 @@ abstract class TelegramAdapter extends Adapter<BotConfig, AdapterConfig> {
         try {
           const file = await bot.get<Telegram.File>('/getFile', { fileId: message.sticker.fileId })
           if (file.filePath.endsWith('.tgs')) {
-            throw 'tgs is not supported now'
+            throw new Error('tgs is not supported now')
           }
           segments.push({ type: 'image', data: await bot.$getFileContent(file.filePath) })
         } catch (e) {

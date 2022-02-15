@@ -1,5 +1,5 @@
-import { Context, Command, Argv, segment, Logger, defineProperty, noop, Awaitable, escapeRegExp } from 'koishi'
-import { EvalWorker, Trap, EvalConfig, Config } from './main'
+import { Argv, Awaitable, Command, Context, defineProperty, escapeRegExp, Logger, noop, segment } from 'koishi'
+import { Config, EvalConfig, EvalWorker, Trap } from './main'
 import { resolve } from 'path'
 import { load } from 'js-yaml'
 import { promises as fs } from 'fs'

@@ -1,9 +1,7 @@
-/* eslint-disable quote-props */
-
-import { Bot, Session, camelize, segment, renameProperty, snakeCase, Adapter, Quester } from 'koishi'
+import { Adapter, Bot, camelize, Quester, renameProperty, segment, Session, snakeCase } from 'koishi'
 import { Method } from 'axios'
 import * as KHL from './types'
-import { adaptGroup, adaptAuthor, adaptUser, AdapterConfig } from './utils'
+import { adaptAuthor, AdapterConfig, adaptGroup, adaptUser } from './utils'
 import FormData from 'form-data'
 import { createReadStream } from 'fs'
 import internal from 'stream'

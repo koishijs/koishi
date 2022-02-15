@@ -1,6 +1,6 @@
 import { Adapter, Logger, Schema, Time } from 'koishi'
 import { BotConfig, KaiheilaBot } from './bot'
-import { adaptSession, AdapterConfig } from './utils'
+import { AdapterConfig, adaptSession } from './utils'
 import { Payload, Signal } from './types'
 import WebSocket from 'ws'
 

@@ -1,0 +1,4 @@
+rules:
+  max-len: off
+
+  '@typescript-eslint/naming-convention': off

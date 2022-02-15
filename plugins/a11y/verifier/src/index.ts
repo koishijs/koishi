@@ -1,4 +1,4 @@
-import { Context, Session, Awaitable, Schema } from 'koishi'
+import { Awaitable, Context, Schema, Session } from 'koishi'
 
 type RequestHandler = string | boolean | ((session: Session) => Awaitable<string | boolean | void>)
 type Response = [boolean, string?]

@@ -2,7 +2,6 @@ import { Context, Dict, Model, Query, Schema } from 'koishi'
 import { DataService } from '@koishijs/plugin-console'
 import { resolve } from 'path'
 import { deserialize, serialize } from './utils'
-import { existsSync } from 'fs'
 
 export type DbEvents = {
   [M in keyof Query.Methods as `database/${M}`]: (...args: string[]) => Promise<string>

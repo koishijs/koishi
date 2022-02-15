@@ -1,5 +1,6 @@
 import { App, Model, omit, Tables } from 'koishi'
 import { expect } from 'chai'
+
 export const DEFAULT_DATE = new Date('1970-01-01')
 
 interface Bar {

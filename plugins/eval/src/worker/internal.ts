@@ -1,7 +1,7 @@
+/* eslint-disable @typescript-eslint/naming-convention */
+
 // modified from vm2@3.9.2
 // https://github.com/patriksimek/vm2
-
-/* global Host */
 
 import type { Host } from './sandbox'
 import { InspectOptions } from 'util'
@@ -161,6 +161,7 @@ local.VMError = VMError
  */
 function throwCallerCalleeArgumentsAccess(key) {
   'use strict'
+  // eslint-disable-next-line no-unused-expressions
   throwCallerCalleeArgumentsAccess[key] // lgtm[js/useless-expression]
   return new VMError('Unreachable')
 }

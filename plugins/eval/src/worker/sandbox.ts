@@ -3,7 +3,7 @@
 
 import { resolve } from 'path'
 import { readFileSync } from 'fs'
-import { Script, createContext, ScriptOptions } from 'vm'
+import { createContext, Script, ScriptOptions } from 'vm'
 import { INSPECT_MAX_BYTES } from 'buffer'
 import { inspect } from 'util'
 import { Logger } from '@koishijs/utils'

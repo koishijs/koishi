@@ -1,5 +1,5 @@
 import { createPool } from 'generic-pool'
-import { Cache, Context, Schema, Logger, isNullable } from 'koishi'
+import { Cache, Context, isNullable, Logger, Schema } from 'koishi'
 import { createClient } from 'redis'
 import { RedisClientOptions, RedisClientType } from '@node-redis/client'
 

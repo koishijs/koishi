@@ -1,4 +1,6 @@
-import { Context, Channel, noop, Session, Bot, Time, Dict, Schema, Logger, valueMap } from 'koishi'
+/* eslint-disable @typescript-eslint/naming-convention */
+
+import { Bot, Channel, Context, Dict, Logger, Schema, Session, Time, valueMap } from 'koishi'
 import { DataService } from '@koishijs/plugin-console'
 import {} from '@koishijs/cli'
 

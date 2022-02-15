@@ -1,3 +1,5 @@
+/* eslint-disable no-irregular-whitespace */
+
 import { Argv, Context, escapeRegExp, Session } from 'koishi'
 import { create } from './update'
 import { Dialogue } from './utils'

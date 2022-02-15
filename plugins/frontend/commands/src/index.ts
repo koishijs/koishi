@@ -63,7 +63,7 @@ export function apply(ctx: Context, config: Dict<Config>) {
   }
 
   function accept(target: Command, config: Config) {
-    const { name, alias, create, ...options } = config
+    const { name, create, ...options } = config
     const command = create ? target : patch(target)
 
     const snapshot: Snapshot = pick(target, ['name', 'parent'])

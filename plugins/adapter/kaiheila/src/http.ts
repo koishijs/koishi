@@ -1,6 +1,6 @@
-import { Adapter, Logger, assertProperty, sanitize, Schema, Context, Quester } from 'koishi'
+import { Adapter, assertProperty, Context, Logger, Quester, sanitize, Schema } from 'koishi'
 import { BotConfig, KaiheilaBot } from './bot'
-import { adaptSession, AdapterConfig } from './utils'
+import { AdapterConfig, adaptSession } from './utils'
 
 const logger = new Logger('kaiheila')
 

@@ -66,9 +66,11 @@ export default class RegistryProvider extends DataService<Dict<PluginData>> {
   private traverse(plugin: Plugin) {
     const state = this.ctx.app.registry.get(plugin)
     this.cache[state.id] = {
-      name: !plugin ? 'App'
-        : !plugin.name || plugin.name === 'apply' ? ''
-        : capitalize(camelize(plugin.name)),
+      name: !plugin
+        ? 'App'
+        : !plugin.name || plugin.name === 'apply'
+          ? ''
+          : capitalize(camelize(plugin.name)),
       parent: state.parent?.id,
       disposables: state.disposables.length,
       dependencies: state.using.map(name => this.ctx[name]?.['ctx']?.state.id).filter(x => x),
