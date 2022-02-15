@@ -22,6 +22,8 @@ declare module 'koishi' {
 
 const logger = new Logger('mysql')
 
+const DEFAULT_DATE = new Date('1970-01-01')
+
 export type TableType = keyof Tables
 
 function getIntegerType(length = 11) {
@@ -128,6 +130,15 @@ class MysqlDatabase extends Database {
         } else if (meta?.type === 'list') {
           const source = field.string()
           return source ? source.split(',') : []
+        } else if (meta?.type === 'time') {
+          const source = field.string()
+          if (!source) return meta.initial
+          const time = new Date(DEFAULT_DATE)
+          const [h, m, s] = source.split(':')
+          time.setHours(parseInt(h))
+          time.setMinutes(parseInt(m))
+          time.setSeconds(parseInt(s))
+          return time
         }
 
         if (field.type === 'BIT') {

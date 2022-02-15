@@ -6,7 +6,9 @@ interface Foo {
   text?: string
   value?: number
   list?: number[]
+  timestamp?: Date
   date?: Date
+  time?: Date
   regex?: string
 }
 
@@ -22,7 +24,9 @@ function QueryOperators(app: App) {
     text: 'string',
     value: 'integer',
     list: 'list',
-    date: 'timestamp',
+    timestamp: 'timestamp',
+    date: 'date',
+    time: 'time',
     regex: 'string',
   }, {
     autoInc: true,
@@ -33,7 +37,12 @@ namespace QueryOperators {
   export const comparison = function Comparison(app: App) {
     before(async () => {
       await app.database.remove('temp1', {})
-      await app.database.create('temp1', { text: 'awesome foo', date: new Date('2000-01-01') })
+      await app.database.create('temp1', {
+        text: 'awesome foo',
+        timestamp: new Date('2000-01-01'),
+        date: new Date('2020-01-01'),
+        time: new Date('2020-01-01 12:00:00'),
+      })
       await app.database.create('temp1', { text: 'awesome bar' })
       await app.database.create('temp1', { text: 'awesome baz' })
     })
@@ -64,6 +73,16 @@ namespace QueryOperators {
       })).eventually.to.have.length(2).with.nested.property('0.text').equal('awesome foo')
     })
 
+    it('timestamp comparisons', async () => {
+      await expect(app.database.get('temp1', {
+        timestamp: { $gt: new Date('1999-01-01') },
+      })).eventually.to.have.length(1).with.nested.property('0.text').equal('awesome foo')
+
+      await expect(app.database.get('temp1', {
+        timestamp: { $lte: new Date('1999-01-01') },
+      })).eventually.to.have.length(0)
+    })
+
     it('date comparisons', async () => {
       await expect(app.database.get('temp1', {
         date: { $gt: new Date('1999-01-01') },
@@ -74,13 +93,24 @@ namespace QueryOperators {
       })).eventually.to.have.length(0)
     })
 
+    it('time comparisons', async () => {
+      await expect(app.database.get('temp1', {
+        // date should not matter
+        time: { $gt: new Date('2022-01-01 11:00:00') },
+      })).eventually.to.have.length(1).with.nested.property('0.text').equal('awesome foo')
+
+      await expect(app.database.get('temp1', {
+        time: { $lte: new Date('2022-01-01 11:00:00') },
+      })).eventually.to.have.length(0)
+    })
+
     it('shorthand syntax', async () => {
       await expect(app.database.get('temp1', {
         id: 2,
       })).eventually.to.have.length(1).with.nested.property('0.text').equal('awesome bar')
 
       await expect(app.database.get('temp1', {
-        date: new Date('2000-01-01'),
+        timestamp: new Date('2000-01-01'),
       })).eventually.to.have.length(1).with.nested.property('0.text').equal('awesome foo')
     })
   }
