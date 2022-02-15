@@ -26,10 +26,10 @@ module.exports = {
 
     md.options.highlight = (code, lang) => {
       if (!lang) {
-        return `<pre><code>${escapeHtml(code)}</code></pre>`
+        return `<pre v-pre><code>${escapeHtml(code)}</code></pre>`
       }
       const h = lang === 'cli' || cliAliases.includes(lang) ? highlighter2 : highlighter1
-      return h.codeToHtml(code, lang)
+      return h.codeToHtml(code, lang).replace('<pre', '<pre v-pre')
     }
 
     const fence = md.renderer.rules.fence

@@ -44,13 +44,13 @@ export default (ctx: Context) => {
 }
 ```
 
-```vue custom-page.vue
+```vue client/custom-page.vue
 <template>
   <k-card>扩展内容</k-card>
 </template>
 ```
 
-```json tsconfig.json
+```json client/tsconfig.json
 {
   "compilerOptions": {
     "rootDir": ".",
