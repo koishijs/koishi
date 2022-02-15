@@ -108,21 +108,27 @@ export function apply(ctx: Context, config: Config) {
           try {
             await ctx.github.request('DELETE', `${url}/${repo.id}`, session)
           } catch (err) {
+            if (!axios.isAxiosError(err)) throw err
             if (err.response.status !== 404) {
-              if (!axios.isAxiosError(err)) throw err
               logger.warn(err)
               return '移除仓库失败。'
             }
           }
 
-          const channels = await ctx.database.getAssignedChannels(['id', 'platform', 'githubWebhooks'])
-          for (const { id, platform, githubWebhooks } of channels) {
-            if (!githubWebhooks[name]) continue
-            unsubscribe(name, `${platform}:${id}`)
-            delete githubWebhooks[name]
-            await ctx.app.database.setChannel(platform, id, { githubWebhooks })
+          async function updateChannels() {
+            const channels = await ctx.database.get('channel', {}, ['id', 'platform', 'githubWebhooks'])
+            return ctx.database.upsert('channel', channels.filter(({ githubWebhooks }) => {
+              const shouldUpdate = githubWebhooks[name]
+              delete githubWebhooks[name]
+              return shouldUpdate
+            }))
           }
-          await ctx.database.remove('github', [name])
+
+          unsubscribe(name)
+          await Promise.all([
+            updateChannels(),
+            ctx.database.remove('github', [name]),
+          ])
           return '移除仓库成功！'
         }
       }
@@ -136,7 +142,8 @@ export function apply(ctx: Context, config: Config) {
     (subscriptions[repo] ||= {})[cid] = meta
   }
 
-  function unsubscribe(repo: string, id: string) {
+  function unsubscribe(repo: string, id?: string) {
+    if (!id) return delete subscriptions[repo]
     delete subscriptions[repo][id]
     if (!Object.keys(subscriptions[repo]).length) {
       delete subscriptions[repo]
@@ -193,6 +200,8 @@ export function apply(ctx: Context, config: Config) {
           return '移除订阅成功！'
         }
       }
+
+      return session.execute('help github')
     })
 
   async function request(method: Method, url: string, session: ReplySession, body: any, message: string) {
