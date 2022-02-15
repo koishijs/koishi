@@ -41,9 +41,9 @@ ctx.router.get('/path', (ctx, next) => {
 
 使用 sid 获取机器人实例。
 
-#### ctx.bots.remove(sid)
+#### ctx.bots.remove(id)
 
-- **sid:** `string` 机器人的 sid
+- **sid:** `string` 机器人的 id
 - 返回值: `boolean` 机器人实例是否存在
 
 移除一个机器人实例。

@@ -13,7 +13,7 @@
 
 <script lang="ts" setup>
 
-import { store } from '~/client'
+import { store } from '@koishijs/client'
 import { computed, ref } from 'vue'
 
 const questions = ref(store.stats.questions)

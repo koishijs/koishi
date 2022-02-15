@@ -1,5 +1,6 @@
 import { Context, Schema } from 'koishi'
 import { resolve } from 'path'
+import Installer from './installer'
 import BotProvider from './bots'
 import MarketProvider from './market'
 import PackageProvider from './packages'
@@ -15,6 +16,7 @@ export * from './services'
 export * from './utils'
 
 export {
+  Installer,
   BotProvider,
   MarketProvider,
   PackageProvider,
@@ -23,14 +25,9 @@ export {
 }
 
 declare module '@koishijs/plugin-console' {
-  interface Events {
-    'plugin/load'(name: string, config: any): void
-    'plugin/unload'(name: string, config: any): void
-    'bot/create'(platform: string, config: any): void
-  }
-
   namespace Console {
     interface Services {
+      dependencies: Installer
       bots: BotProvider
       market: MarketProvider
       packages: PackageProvider
@@ -45,21 +42,21 @@ export const using = ['console', 'loader'] as const
 
 export interface Config extends MarketProvider.Config {}
 
-export const Config = Schema.intersect([
+export const Config: Schema<Config> = Schema.intersect([
   MarketProvider.Config,
 ])
 
 export function apply(ctx: Context, config: Config = {}) {
+  ctx.plugin(Installer)
   ctx.plugin(BotProvider)
   ctx.plugin(MarketProvider, config)
   ctx.plugin(AdapterProvider)
   ctx.plugin(PackageProvider)
   ctx.plugin(ServiceProvider)
-  ctx.plugin(ConfigWriter, ctx.app.options.allowWrite)
+  ctx.plugin(ConfigWriter)
 
-  if (ctx.console.config.devMode) {
-    ctx.console.addEntry(resolve(__dirname, '../client/index.ts'))
-  } else {
-    ctx.console.addEntry(resolve(__dirname, '../dist'))
-  }
+  ctx.console.addEntry({
+    dev: resolve(__dirname, '../client/index.ts'),
+    prod: resolve(__dirname, '../dist'),
+  })
 }

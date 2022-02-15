@@ -66,7 +66,7 @@ namespace MetaProvider {
   }
 
   export const Config = Schema.object({
-    metaInternal: Schema.number().description('元数据推送的时间间隔。').default(Time.hour),
+    metaInternal: Schema.natural().role('ms').description('元数据推送的时间间隔。').default(Time.hour),
   })
 
   export interface Payload extends Assets.Stats {

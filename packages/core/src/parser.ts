@@ -1,4 +1,4 @@
-import { camelCase, segment, escapeRegExp, paramCase, template, Time, Dict } from '@koishijs/utils'
+import { camelCase, Dict, escapeRegExp, paramCase, segment, template, Time } from '@koishijs/utils'
 import { Command } from './command'
 import { Next } from './context'
 import { Channel, User } from './database'

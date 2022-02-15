@@ -1,4 +1,4 @@
-import { isPositiveInteger, Dialogue, DialogueTest } from './utils'
+import { Dialogue, DialogueTest, isPositiveInteger } from './utils'
 import { Context, Dict } from 'koishi'
 import { getTotalWeight } from './receiver'
 

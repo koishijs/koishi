@@ -5,10 +5,6 @@ import { HttpServer } from './http'
 import * as OneBot from './types'
 
 declare module 'koishi' {
-  interface Modules {
-    'adapter-onebot': typeof import('.')
-  }
-
   interface Session {
     onebot?: OneBot.Payload & OneBot.Internal
   }

@@ -1,4 +1,4 @@
-import { transformSync, transform, Message, TransformOptions } from 'esbuild'
+import { Message, transform, TransformOptions, transformSync } from 'esbuild'
 import { LoaderConfig } from '../worker'
 
 export const name = 'typescript'

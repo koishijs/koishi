@@ -1,4 +1,4 @@
-import { Bot, Context, pick, Time } from 'koishi'
+import { Bot, Context, Dict, pick, Time } from 'koishi'
 import { DataService } from '@koishijs/plugin-console'
 
 declare module 'koishi' {
@@ -31,7 +31,9 @@ class TickCounter {
   }
 }
 
-class BotProvider extends DataService<BotProvider.Data[]> {
+class BotProvider extends DataService<Dict<BotProvider.Data>> {
+  callbacks: BotProvider.Extension[] = []
+
   constructor(ctx: Context) {
     super(ctx, 'bots')
 
@@ -44,9 +46,14 @@ class BotProvider extends DataService<BotProvider.Data[]> {
     })
 
     ctx.bots.forEach(bot => BotProvider.initialize(bot, ctx))
-    ctx.on('bot-added', bot => BotProvider.initialize(bot, ctx))
+
+    ctx.on('bot-added', (bot) => {
+      BotProvider.initialize(bot, ctx)
+      this.refresh()
+    })
 
     ctx.on('bot-removed', (bot) => {
+      this.refresh()
       bot._messageSent.stop()
       bot._messageReceived.stop()
     })
@@ -54,15 +61,24 @@ class BotProvider extends DataService<BotProvider.Data[]> {
     ctx.on('bot-status-updated', () => {
       this.refresh()
     })
+
+    this.extend((bot) => ({
+      ...pick(bot, ['platform', 'protocol', 'selfId', 'avatar', 'username', 'status']),
+      config: this.ctx.loader.config.plugins['adapter-' + bot.adapter.platform].bots[bot.adapter.bots.indexOf(bot)],
+      error: bot.error?.message,
+      adapter: bot.adapter.platform,
+      messageSent: bot._messageSent.get(),
+      messageReceived: bot._messageReceived.get(),
+    }))
+  }
+
+  extend(callback: BotProvider.Extension) {
+    this.callbacks.push(callback)
   }
 
   async get() {
-    return this.ctx.bots.map<BotProvider.Data>((bot) => ({
-      ...pick(bot, ['platform', 'selfId', 'avatar', 'username']),
-      status: bot.status,
-      error: bot.error?.message,
-      messageSent: bot._messageSent.get(),
-      messageReceived: bot._messageReceived.get(),
+    return Object.fromEntries(this.ctx.bots.map((bot) => {
+      return [bot.id, Object.assign({}, ...this.callbacks.map(cb => cb(bot)))] as [string, BotProvider.Data]
     }))
   }
 }
@@ -73,13 +89,11 @@ namespace BotProvider {
     bot._messageReceived = new TickCounter(ctx)
   }
 
-  export interface Data {
-    username?: string
-    selfId?: string
-    platform?: string
-    avatar?: string
-    status: Bot.Status
+  export type Extension = (bot: Bot) => Partial<Data>
+
+  export interface Data extends Pick<Bot, 'platform' | 'protocol' | 'selfId' | 'avatar' | 'username' | 'status' | 'config'> {
     error?: string
+    adapter: string
     messageSent: number
     messageReceived: number
   }

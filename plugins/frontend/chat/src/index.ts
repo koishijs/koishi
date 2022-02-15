@@ -10,10 +10,6 @@ declare module 'koishi' {
   interface EventMap {
     'chat/receive'(message: Message, session: Session): void
   }
-
-  interface Modules {
-    chat: typeof import('.')
-  }
 }
 
 interface ChatPayload {
@@ -59,10 +55,10 @@ export interface Config extends ClientExtension {
 }
 
 export const Config = Schema.object({
-  refresh: RefreshConfig,
   whitelist: Schema.array(Schema.string()),
-  maxMessages: Schema.number(),
-  logLevel: Schema.number(),
+  maxMessages: Schema.natural(),
+  logLevel: Schema.natural().max(3),
+  refresh: RefreshConfig,
 })
 
 const logger = new Logger('message')
@@ -97,7 +93,7 @@ export function apply(ctx: Context, options: Config = {}) {
     ctx.console.addListener('chat', async ({ content, platform, selfId, channelId, guildId }) => {
       if (ctx.assets) content = await ctx.assets.transform(content)
       ctx.bots.get(`${platform}:${selfId}`)?.sendMessage(channelId, content, guildId)
-    })
+    }, { authority: 3 })
 
     ctx.on('chat/receive', async (message) => {
       Object.values(ctx.console.ws.handles).forEach((handle) => {

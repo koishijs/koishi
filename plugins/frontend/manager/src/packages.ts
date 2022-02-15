@@ -32,13 +32,17 @@ class PackageProvider extends DataService<Dict<PackageProvider.Data>> {
     this.task = this.prepare()
 
     this.ctx.on('plugin-added', async (plugin) => {
-      const state = this.ctx.app.registry.get(plugin)
+      const state = this.registry.get(plugin)
       this.updatePackage(plugin, state.id)
     })
 
     this.ctx.on('plugin-removed', async (plugin) => {
       this.updatePackage(plugin, null)
     })
+  }
+
+  get registry() {
+    return this.ctx.app.registry
   }
 
   private async updatePackage(plugin: Plugin, id: string) {
@@ -64,7 +68,8 @@ class PackageProvider extends DataService<Dict<PackageProvider.Data>> {
     await Promise.all(tasks)
   }
 
-  async get() {
+  async get(forced = false) {
+    if (forced) this.task = this.prepare()
     await this.task
 
     // add app config
@@ -73,7 +78,7 @@ class PackageProvider extends DataService<Dict<PackageProvider.Data>> {
       name: '',
       shortname: '',
       schema: App.Config,
-      config: omit(this.ctx.app.options, ['plugins' as any]),
+      config: omit(this.ctx.loader.config, ['plugins']),
     })
 
     return Object.fromEntries(packages.filter(x => x).map(data => [data.name, data]))
@@ -120,19 +125,15 @@ class PackageProvider extends DataService<Dict<PackageProvider.Data>> {
     if (newLength > oldLength) this.ctx.console.protocols.refresh()
 
     // check plugin dependencies
-    Object.assign(result, Package.Meta.from(data))
+    Object.assign(result, Package.getMeta(data))
 
     // check plugin state
-    const state = this.ctx.app.registry.get(exports)
+    const { plugins } = this.ctx.loader.config
+    const state = this.registry.get(exports)
     result.id = state?.id
-    result.config = state?.config
+    result.root = result.shortname in plugins
     result.schema = exports?.Config || exports?.schema
-
-    // get config for disabled plugins
-    if (!result.config) {
-      const { plugins = {} } = this.ctx.app.options
-      result.config = plugins['~' + result.shortname]
-    }
+    result.config = plugins[result.shortname] || plugins['~' + result.shortname]
 
     return result
   }
@@ -141,14 +142,12 @@ class PackageProvider extends DataService<Dict<PackageProvider.Data>> {
 namespace PackageProvider {
   export interface Config {}
 
-  export interface Data extends Partial<Package.Base> {
+  export interface Data extends Partial<Package.Base>, Partial<Package.Meta> {
     id?: string
+    root?: boolean
     config?: any
     shortname?: string
     schema?: Schema
-    devDeps?: string[]
-    peerDeps?: string[]
-    keywords?: string[]
     workspace?: boolean
   }
 }

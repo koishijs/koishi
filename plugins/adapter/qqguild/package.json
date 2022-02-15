@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-adapter-qqguild",
   "description": "QQ guild adapter for Koishi",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -25,10 +25,11 @@
     "bot",
     "qqbot",
     "qqguild",
-    "koishi"
+    "koishi",
+    "impl:adapter"
   ],
   "peerDependencies": {
-    "koishi": "^4.1.1"
+    "koishi": "^4.2.1"
   },
   "dependencies": {
     "@qq-guild-sdk/core": "^1.1.4",

@@ -31,11 +31,11 @@
     "coolq",
     "chatbot",
     "koishi",
-    "service:cache",
+    "impl:cache",
     "lru"
   ],
   "peerDependencies": {
-    "koishi": "^4.1.1"
+    "koishi": "^4.2.1"
   },
   "dependencies": {
     "generic-pool": "^3.8.2",

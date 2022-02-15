@@ -1,4 +1,4 @@
-import { Query, Eval, Dict, Model } from 'koishi'
+import { Dict, Eval, Model, Query } from 'koishi'
 
 export type QueryOperators = {
   [K in keyof Query.FieldExpr]?: (key: string, value: Query.FieldExpr[K]) => string

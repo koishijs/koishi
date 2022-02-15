@@ -1,5 +1,14 @@
-import { Context } from 'koishi'
+import { Adapter, Bot, Context } from 'koishi'
 import { Loader } from '@koishijs/cli'
+
+declare module '@koishijs/plugin-console' {
+  interface Events {
+    'manager/plugin-reload'(name: string, config: any): void
+    'manager/plugin-unload'(name: string, config: any): void
+    'manager/bot-update'(id: string, adapter: string, config: any): void
+    'manager/bot-remove'(id: string): void
+  }
+}
 
 export default class ConfigWriter {
   private loader: Loader
@@ -9,20 +18,24 @@ export default class ConfigWriter {
     this.loader = ctx.loader
     this.plugins = ctx.loader.config.plugins
 
-    ctx.console.addListener('plugin/load', (name, config) => {
-      this.loadPlugin(name, config)
-    })
+    ctx.console.addListener('manager/plugin-reload', (name, config) => {
+      this.reloadPlugin(name, config)
+    }, { authority: 4 })
 
-    ctx.console.addListener('plugin/unload', (name, config) => {
+    ctx.console.addListener('manager/plugin-unload', (name, config) => {
       this.unloadPlugin(name, config)
-    })
+    }, { authority: 4 })
 
-    ctx.console.addListener('bot/create', (platform, config) => {
-      this.createBot(platform, config)
-    })
+    ctx.console.addListener('manager/bot-update', (id, adapter, config) => {
+      this.updateBot(id, adapter, config)
+    }, { authority: 4 })
+
+    ctx.console.addListener('manager/bot-remove', (id) => {
+      this.removeBot(id)
+    }, { authority: 4 })
   }
 
-  loadPlugin(name: string, config: any) {
+  reloadPlugin(name: string, config: any) {
     delete this.plugins['~' + name]
     this.plugins[name] = config
     this.loader.writeConfig()
@@ -36,22 +49,37 @@ export default class ConfigWriter {
     this.loader.unloadPlugin(name)
   }
 
-  async createBot(platform: string, config: any) {
-    const name = 'adapter-' + platform
-    if (this.plugins['~' + name]) {
-      this.plugins[name] = this.plugins['~' + name]
-      delete this.plugins['~' + name]
-    } else if (!this.plugins[name]) {
-      this.plugins[name] = { bots: [] }
+  updateBot(id: string, adapter: string, config: any) {
+    let bot: Bot
+    const name = 'adapter-' + adapter
+    if (id) {
+      bot = this.ctx.bots.find(bot => bot.id === id)
+      const index = bot.adapter.bots.indexOf(bot)
+      this.plugins[name].bots[index] = config
+    } else {
+      if (!this.plugins[name]) {
+        this.plugins[name] = { ...this.plugins['~' + name] }
+        delete this.plugins['~' + name]
+        this.loader.reloadPlugin(name)
+      }
+      this.plugins[name].bots.push(config)
+      bot = this.ctx.bots.create(adapter, config)
     }
-    this.plugins[name].bots.push(config)
     this.loader.writeConfig()
-    this.loader.reloadPlugin(name)
+    bot.config = Adapter.library[Adapter.join(adapter, bot.protocol)].schema(config)
+    if (config.disabled) {
+      bot.stop()
+    } else {
+      bot.start()
+    }
   }
 
-  async removeBot() {}
-
-  async startBot() {}
-
-  async stopBot() {}
+  removeBot(id: string) {
+    const bot = this.ctx.bots.find(bot => bot.id === id)
+    const index = bot.adapter.bots.indexOf(bot)
+    const name = 'adapter-' + bot.adapter.platform
+    this.plugins[name].bots.splice(index, 1)
+    this.loader.writeConfig()
+    return this.ctx.bots.remove(id)
+  }
 }

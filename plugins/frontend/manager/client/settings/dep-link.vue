@@ -1,14 +1,28 @@
 <template>
-  <span class="k-dep-link" @click.stop="$router.replace({ query: { name } })">
+  <span class="k-dep-link" @click.stop="configurate(name)">
     {{ name }}
   </span>
 </template>
 
 <script lang="ts" setup>
 
+import { useRouter } from 'vue-router'
+import { store } from '@koishijs/client'
+import { addFavorite } from '../utils'
+
 defineProps<{
-  name: string | number
+  name: string
 }>()
+
+const router = useRouter()
+
+function configurate(name: string) {
+  if (store.packages[name]) {
+    router.push('/settings/' + name)
+  } else {
+    addFavorite(name)
+  }
+}
 
 </script>
 

@@ -1,7 +1,7 @@
 import { Context, Logger, remove, Schema, Time } from 'koishi'
 import { DataService } from '@koishijs/plugin-console'
 import { resolve } from 'path'
-import { mkdirSync, readdirSync, promises as fsp } from 'fs'
+import { promises as fsp, mkdirSync, readdirSync } from 'fs'
 import { FileHandle } from 'fs/promises'
 import {} from '@koishijs/cli'
 
@@ -26,11 +26,10 @@ class LogProvider extends DataService<string[]> {
   constructor(ctx: Context, private config: LogProvider.Config = {}) {
     super(ctx, 'logs')
 
-    if (ctx.console.config.devMode) {
-      ctx.console.addEntry(resolve(__dirname, '../client/index.ts'))
-    } else {
-      ctx.console.addEntry(resolve(__dirname, '../dist'))
-    }
+    ctx.console.addEntry({
+      dev: resolve(__dirname, '../client/index.ts'),
+      prod: resolve(__dirname, '../dist'),
+    })
 
     this.ctx.on('ready', () => {
       this.prepareWriter()
@@ -112,7 +111,7 @@ namespace LogProvider {
 
   export const Config = Schema.object({
     root: Schema.string().default('logs').description('存放输出日志的本地目录。'),
-    maxAge: Schema.number().default(30).description('日志文件保存的最大天数。'),
+    maxAge: Schema.natural().default(30).description('日志文件保存的最大天数。'),
   })
 }
 

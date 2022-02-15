@@ -1,120 +1,145 @@
 <template>
-  <tr :class="{ workspace: local?.workspace }">
-    <td class="package" :class="local ? local.id ? 'active' : 'local' : 'remote'">
-      <div>
-        <a
-          :href="'http://npmjs.com/package/' + data.name"
-          target="blank" rel="noopener noreferrer"
-        >{{ data.shortname }}</a>
-        <span class="current" v-if="local">@{{ local.version }}</span>
-        <k-badge type="success" v-if="data.official">官方</k-badge>
-        <k-badge type="default" v-if="local?.workspace">本地</k-badge>
-        <k-badge type="warning" v-else-if="hasUpdate">可更新</k-badge>
+  <k-card class="market-view">
+    <template #header>
+      {{ data.shortname }}
+      <a v-if="repo" :href="data.links.repository" target="_blank" rel="noopener noreferrer">
+        <k-icon :name="repo"></k-icon>
+      </a>
+      <k-button v-if="store.packages[data.name]" solid type="success" class="right" @click="router.push('/settings/' + data.name)">配置</k-button>
+      <k-button v-else-if="!config.override[data.name]" solid class="right" @click="addFavorite(data.name)">添加</k-button>
+      <k-button v-else solid type="warning" class="right" @click="removeFavorite(data.name)">取消</k-button>
+    </template>
+    <k-markdown inline tag="p" class="desc" :source="meta.description"></k-markdown>
+    <div class="badges">
+      <k-badge type="success"
+        v-if="data.official"
+        @click="$emit('query', 'is:official')"
+      >官方</k-badge>
+      <k-badge type="primary"
+        v-if="meta.keywords.includes('impl:database')"
+        @click="$emit('query', 'impl:database')"
+      >数据库</k-badge>
+      <k-badge type="primary"
+        v-if="meta.keywords.includes('impl:adapter')"
+        @click="$emit('query', 'impl:adapter')"
+      >适配器</k-badge>
+      <k-badge type="primary"
+        v-if="meta.keywords.includes('impl:assets')"
+        @click="$emit('query', 'impl:assets')"
+      >资源存储</k-badge>
+      <k-badge type="primary"
+        v-if="meta.keywords.includes('required:console') || meta.keywords.includes('optional:console')"
+        @click="$emit('query', 'using:console')"
+      >控制台</k-badge>
+    </div>
+    <template #footer>
+      <div class="info">
+        <span :class="{ pointer: author }" @click="author && $emit('query', 'author:' + author)">
+          <k-icon name="user"></k-icon>{{ data.author.name }}
+        </span>
+        <span><k-icon name="balance"></k-icon>{{ data.license }}</span>
+        <span><k-icon name="tag"></k-icon>{{ data.version }}</span>
+        <span><k-icon name="file-archive"></k-icon>{{ Math.ceil(data.size / 1000) }} KB</span>
       </div>
-      <k-markdown class="description" :source="local?.description || data.description"></k-markdown>
-    </td>
-    <td class="latest">{{ data.version }}</td>
-    <td class="score">{{ data.score.toFixed(2) }}</td>
-    <td class="operation">
-      <k-button frameless @click="configurate">配置</k-button>
-    </td>
-  </tr>
+    </template>
+  </k-card>
 </template>
 
 <script lang="ts" setup>
 
-import type { MarketProvider } from '@koishijs/plugin-manager/src'
-import { store } from '~/client'
-import { computed, ref, watch } from 'vue'
+import { computed, PropType } from 'vue'
 import { useRouter } from 'vue-router'
-import { addFavorite } from '../utils'
+import { MarketProvider } from '@koishijs/plugin-manager'
+import { store } from '@koishijs/client'
+import { config, addFavorite, removeFavorite, getMixedMeta } from '../utils'
 
-const props = defineProps<{ data: MarketProvider.Data }>()
+defineEmits(['query'])
 
-const local = computed(() => store.packages[props.data.name])
-
-const hasUpdate = computed(() => {
-  if (!local.value) return false
-  const { workspace, version } = local.value
-  return !workspace && version !== props.data.version
+const props = defineProps({
+  data: {} as PropType<MarketProvider.Data>,
 })
 
-const downloading = ref(false)
+const meta = computed(() => getMixedMeta(props.data.name))
 
-watch(() => local, () => {
-  downloading.value = false
+const repo = computed(() => {
+  const { repository = '' } = props.data.links
+  if (repository.startsWith('https://github.com')) {
+    return 'github'
+  }
 })
+
+const author = computed(() => props.data.author.username)
 
 const router = useRouter()
-
-function configurate() {
-  const { name } = props.data
-  addFavorite(name)
-  router.push({ path: '/settings', query: { name } })
-}
 
 </script>
 
 <style lang="scss">
 
-.package {
-  text-align: left;
-  padding-left: 3rem;
-  position: relative;
+.market-view {
+  width: 100%;
+  height: 192px;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
 
-  .current {
-    color: var(--fg2);
-    transition: color 0.3s ease;
+  .k-card-body {
+    margin: 0;
+    flex-grow: 1;
+    overflow: hidden;
   }
 
-  a {
-    font-weight: bold;
+  .desc {
+    margin: -6px 0;
+    font-size: 15px;
+  }
+
+  .badges {
+    margin-top: 1.5rem;
+  }
+
+  .k-badge {
+    cursor: pointer;
+    user-select: none;
+  }
+
+  header, footer {
+    flex-shrink: 0;
+  }
+
+  header .k-icon {
     color: var(--fg1);
+    margin-left: 0.5rem;
+    height: 1.25rem;
+    vertical-align: -3px;
     transition: color 0.3s ease;
   }
 
-  .description {
-    margin-top: 0.15rem;
-    font-size: 0.9rem;
-
-    p {
-      margin: 0;
-      line-height: 1.5;
-    }
-  }
-
-  &::before {
-    content: "";
+  .right {
     position: absolute;
-    border-radius: 100%;
-    width: 0.5rem;
-    height: 0.5rem;
-    top: 50%;
-    left: 1.25rem;
-    transform: translateY(-50%);
-    transition: 0.3s ease;
-    box-shadow: 1px 1px 2px #3333;
-    transition: background-color 0.3s ease;
+    right: 1rem;
+    top: -2px;
   }
 
-  &.active::before {
-    background-color: var(--success);
-  }
-  &.local::before {
-    background-color: var(--warning);
-  }
-  &.remote::before {
-    background-color: var(--disabled);
-  }
-}
+  .info {
+    cursor: default;
+    font-size: 14px;
+    color: var(--el-text-color-regular);
+    transition: color 0.3s ease;
 
-.page-market td:not(.package) {
-  min-width: 4rem;
-}
+    .pointer {
+      cursor: pointer;
+    }
 
-tr.workspace {
-  .latest, .size {
-    opacity: 0.25;
+    .k-icon {
+      height: 12px;
+      margin-right: 8px;
+      vertical-align: -1px;
+    }
+
+    span + span {
+      margin-left: 1.5rem;
+    }
   }
 }
 

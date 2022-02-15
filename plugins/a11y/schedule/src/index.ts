@@ -1,4 +1,4 @@
-import { Context, Session, Time, Logger, Schema, Dict } from 'koishi'
+import { Context, Dict, Logger, Schema, Session, Time } from 'koishi'
 
 declare module 'koishi' {
   interface Tables {
@@ -33,8 +33,8 @@ export interface Config {
   minInterval?: number
 }
 
-export const Config = Schema.object({
-  minInterval: Schema.number().description('允许的最小时间间隔。').default(Time.minute),
+export const Config: Schema<Config> = Schema.object({
+  minInterval: Schema.natural().role('ms').description('允许的最小时间间隔。').default(Time.minute),
 })
 
 export function apply(ctx: Context, { minInterval }: Config) {

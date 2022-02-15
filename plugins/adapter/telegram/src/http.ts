@@ -1,5 +1,4 @@
-import FormData from 'form-data'
-import { Adapter, assertProperty, camelCase, Context, Logger, sanitize, segment, Session, trimSlash } from 'koishi'
+import { Adapter, assertProperty, camelCase, Context, Dict, Logger, sanitize, Schema, segment, Session, trimSlash } from 'koishi'
 import { BotConfig, TelegramBot } from './bot'
 import * as Telegram from './types'
 import { AdapterConfig } from './utils'
@@ -15,17 +14,6 @@ type GetUpdatesOptions = {
 }
 
 abstract class TelegramAdapter extends Adapter<BotConfig, AdapterConfig> {
-  static schema = BotConfig
-
-  constructor(ctx: Context, config: AdapterConfig) {
-    super(ctx, config)
-    this.config.request = this.config.request || {}
-    this.config.request.endpoint = this.config.request.endpoint || 'https://api.telegram.org'
-    this.http = ctx.http.extend(config.request)
-  }
-
-  abstract start(): void
-  abstract stop(): void
   /** Init telegram updates listening */
   abstract listenUpdates(bot: TelegramBot): Promise<void>
 
@@ -43,8 +31,7 @@ abstract class TelegramAdapter extends Adapter<BotConfig, AdapterConfig> {
 
   async onUpdate(update: Telegram.Update, bot: TelegramBot) {
     logger.debug('receive %s', JSON.stringify(update))
-    const { selfId, token } = bot.config
-    const session: Partial<Session> = { selfId }
+    const session: Partial<Session> = { selfId: bot.selfId }
 
     function parseText(text: string, entities: Telegram.MessageEntity[]): segment[] {
       let curr = 0
@@ -94,23 +81,9 @@ abstract class TelegramAdapter extends Adapter<BotConfig, AdapterConfig> {
           data: { lat: message.location.latitude, lon: message.location.longitude },
         })
       }
-      const getFileData = async (fileId) => {
-        try {
-          const file = await bot.get<Telegram.File>('/getFile', { fileId })
-          return await getFileContent(file.filePath)
-        } catch (e) {
-          logger.warn('get file error', e)
-        }
-      }
-      const getFileContent = async (filePath) => {
-          const downloadUrl = `${this.config.request.endpoint}/file/bot${token}/${filePath}`
-          const res = await this.ctx.http.get(downloadUrl, { responseType: 'arraybuffer' })
-          const base64 = `base64://` + res.toString('base64')
-          return { url: base64 }
-      }
       if (message.photo) {
         const photo = message.photo.sort((s1, s2) => s2.fileSize - s1.fileSize)[0]
-        segments.push({ type: 'image', data: await getFileData(photo.fileId) })
+        segments.push({ type: 'image', data: await bot.$getFileData(photo.fileId) })
       }
       if (message.sticker) {
         // TODO: Convert tgs to gif
@@ -119,17 +92,22 @@ abstract class TelegramAdapter extends Adapter<BotConfig, AdapterConfig> {
         try {
           const file = await bot.get<Telegram.File>('/getFile', { fileId: message.sticker.fileId })
           if (file.filePath.endsWith('.tgs')) {
-            throw 'tgs is not supported now'
+            throw new Error('tgs is not supported now')
           }
-          segments.push({ type: 'image', data: await getFileContent(file.filePath) })
+          segments.push({ type: 'image', data: await bot.$getFileContent(file.filePath) })
         } catch (e) {
           logger.warn('get file error', e)
           segments.push({ type: 'text', data: { content: `[${message.sticker.setName || 'sticker'} ${message.sticker.emoji || ''}]` } })
         }
-      } else if (message.animation) segments.push({ type: 'image', data: await getFileData(message.animation.fileId) })
-      else if (message.voice) segments.push({ type: 'audio', data: await getFileData(message.voice.fileId) })
-      else if (message.video) segments.push({ type: 'video', data: await getFileData(message.video.fileId) })
-      else if (message.document) segments.push({ type: 'file', data: await getFileData(message.document.fileId) })
+      } else if (message.animation) {
+        segments.push({ type: 'image', data: await bot.$getFileData(message.animation.fileId) })
+      } else if (message.voice) {
+        segments.push({ type: 'audio', data: await bot.$getFileData(message.voice.fileId) })
+      } else if (message.video) {
+        segments.push({ type: 'video', data: await bot.$getFileData(message.video.fileId) })
+      } else if (message.document) {
+        segments.push({ type: 'file', data: await bot.$getFileData(message.document.fileId) })
+      }
 
       const msgText: string = message.text || message.caption
       segments.push(...parseText(msgText, message.entities || []))
@@ -159,6 +137,8 @@ abstract class TelegramAdapter extends Adapter<BotConfig, AdapterConfig> {
 }
 
 export class HttpServer extends TelegramAdapter {
+  static schema = BotConfig
+
   constructor(ctx: Context, config: AdapterConfig) {
     super(ctx, config)
     config.path = sanitize(config.path || '/telegram')
@@ -199,19 +179,29 @@ export class HttpServer extends TelegramAdapter {
 }
 
 export class HttpPolling extends TelegramAdapter {
-  private offset: Record<string, number> = {}
+  static schema = Schema.intersect([
+    BotConfig,
+    Schema.object({
+      pollingTimeout: Schema.union([
+        Schema.natural(),
+        Schema.transform(Schema.const(true as const), () => 60),
+      ]).default(60).description('通过长轮询获取更新时请求的超时 (单位为秒)。'),
+    }),
+  ])
+
+  private offset: Dict<number> = {}
   private isStopped: boolean
 
-  start(): void {
+  start() {
     this.isStopped = false
   }
 
-  stop(): void {
+  stop() {
     this.isStopped = true
   }
 
   async listenUpdates(bot: TelegramBot): Promise<void> {
-    const { selfId } = bot.config
+    const { selfId } = bot
     this.offset[selfId] = this.offset[selfId] || 0
 
     const { url } = await bot.get<Telegram.WebhookInfo, GetUpdatesOptions>('/getWebhookInfo', {})
@@ -230,7 +220,7 @@ export class HttpPolling extends TelegramAdapter {
     const polling = async () => {
       const updates = await bot.get<Telegram.Update[], GetUpdatesOptions>('/getUpdates', {
         offset: this.offset[selfId] + 1,
-        timeout: bot.config.pollingTimeout === true ? 60 : bot.config.pollingTimeout,
+        timeout: bot.config.pollingTimeout,
       })
       for (const e of updates) {
         this.offset[selfId] = Math.max(this.offset[selfId], e.updateId)

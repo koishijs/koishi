@@ -1,8 +1,8 @@
-import { MongoClient, Db, MongoError, IndexDescription } from 'mongodb'
-import { Context, Database, Tables, makeArray, Schema, pick, omit, Query, Model, Dict, noop, KoishiError, isNullable } from 'koishi'
+import { Db, IndexDescription, MongoClient, MongoError } from 'mongodb'
+import { Context, Database, Dict, isNullable, KoishiError, makeArray, Model, noop, omit, pick, Query, Schema, Tables } from 'koishi'
 import { URLSearchParams } from 'url'
-import { executeUpdate, executeEval } from '@koishijs/orm-utils'
-import { transformQuery, transformEval } from './utils'
+import { executeEval, executeUpdate } from '@koishijs/orm-utils'
+import { transformEval, transformQuery } from './utils'
 
 declare module 'koishi' {
   interface Database {
@@ -277,9 +277,9 @@ namespace MongoDatabase {
   export const Config = Schema.object({
     protocol: Schema.string().description('要使用的协议名。').default('mongodb'),
     host: Schema.string().description('要连接到的主机名。').default('localhost'),
-    port: Schema.number().description('要连接到的端口号。'),
+    port: Schema.natural().max(65535).description('要连接到的端口号。'),
     username: Schema.string().description('要使用的用户名。'),
-    password: Schema.string().description('要使用的密码。'),
+    password: Schema.string().description('要使用的密码。').role('secret'),
     database: Schema.string().description('要访问的数据库名。').default('koishi'),
   })
 }

@@ -1,4 +1,4 @@
-import { App, Context, Modules } from '@koishijs/core'
+import { App, Context, Modules, Schema } from '@koishijs/core'
 import { trimSlash } from '@koishijs/utils'
 import { Cache } from './cache'
 import { Assets } from './assets'
@@ -29,6 +29,12 @@ declare module '@koishijs/core' {
   }
 }
 
+App.Config.list.unshift(App.Config.Network)
+App.Config.list.push(Schema.object({
+  request: Quester.Config,
+  assets: App.Config.Assets,
+}))
+
 // use node require
 Modules.internal.require = require
 Modules.internal.resolve = require.resolve
@@ -48,7 +54,7 @@ App.prototype.prepare = function (this: App, ...args) {
 
 const start = App.prototype.start
 App.prototype.start = async function (this: App, ...args) {
-  const { host = 'localhost', port, selfUrl } = this.options
+  const { host, port, selfUrl } = this.options
   if (selfUrl) this.options.selfUrl = trimSlash(selfUrl)
   if (port) {
     await new Promise<void>(resolve => this._httpServer.listen(port, host, resolve))

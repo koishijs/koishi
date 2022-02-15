@@ -1,1 +1,1 @@
-/// <reference types="@koishijs/plugin-console/client" />
+/// <reference types="@koishijs/client" />

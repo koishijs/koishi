@@ -1,7 +1,7 @@
-import { Adapter, Bot, Session, segment, camelCase, Schema, App } from 'koishi'
+import { Adapter, Bot, camelCase, Schema, segment, Session } from 'koishi'
 import * as KHL from './types'
 
-export interface AdapterConfig extends Adapter.WebSocketClient.Config, App.Config.Request {
+export interface AdapterConfig extends Adapter.WebSocketClient.Config {
   path?: string
 }
 
@@ -10,7 +10,6 @@ export const AdapterConfig: Schema<AdapterConfig> = Schema.intersect([
     path: Schema.string().description('服务器监听的路径，仅用于 http 协议。').default('/kaiheila'),
   }),
   Adapter.WebSocketClient.Config,
-  App.Config.Request,
 ])
 
 export const adaptGroup = (data: KHL.Guild): Bot.Guild => ({
@@ -97,27 +96,27 @@ export function adaptSession(bot: Bot, input: any) {
   if (data.type === KHL.Type.system) {
     const { type, body } = data.extra as KHL.Notice
     switch (type) {
-      case 'updated_message':
-      case 'updated_private_message':
-        session.type = 'message-updated'
-        adaptMessageModify(data, body, session)
-        break
-      case 'deleted_message':
-      case 'deleted_private_message':
-        session.type = 'message-deleted'
-        adaptMessageModify(data, body, session)
-        break
-      case 'added_reaction':
-      case 'private_added_reaction':
-        session.type = 'reaction-added'
-        adaptReaction(body, session)
-        break
-      case 'deleted_reaction':
-      case 'private_deleted_reaction':
-        session.type = 'reaction-deleted'
-        adaptReaction(body, session)
-        break
-      default: return
+    case 'updated_message':
+    case 'updated_private_message':
+      session.type = 'message-updated'
+      adaptMessageModify(data, body, session)
+      break
+    case 'deleted_message':
+    case 'deleted_private_message':
+      session.type = 'message-deleted'
+      adaptMessageModify(data, body, session)
+      break
+    case 'added_reaction':
+    case 'private_added_reaction':
+      session.type = 'reaction-added'
+      adaptReaction(body, session)
+      break
+    case 'deleted_reaction':
+    case 'private_deleted_reaction':
+      session.type = 'reaction-deleted'
+      adaptReaction(body, session)
+      break
+    default: return
     }
   } else {
     session.type = 'message'

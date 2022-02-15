@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
-
 import { App, Command, Logger, Next } from 'koishi'
 import { inspect } from 'util'
 import { expect } from 'chai'

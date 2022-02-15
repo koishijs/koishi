@@ -1,9 +1,7 @@
-/* eslint-disable quote-props */
-
-import { Bot, Session, camelize, segment, renameProperty, snakeCase, Adapter, Quester } from 'koishi'
+import { Adapter, Bot, camelize, Quester, renameProperty, segment, Session, snakeCase } from 'koishi'
 import { Method } from 'axios'
 import * as KHL from './types'
-import { adaptGroup, adaptAuthor, adaptUser, AdapterConfig } from './utils'
+import { adaptAuthor, AdapterConfig, adaptGroup, adaptUser } from './utils'
 import FormData from 'form-data'
 import { createReadStream } from 'fs'
 import internal from 'stream'
@@ -21,7 +19,7 @@ const attachmentTypes = ['image', 'video', 'audio', 'file']
 
 type SendHandle = [string, KHL.MessageParams, Session]
 
-export interface BotConfig extends Bot.BaseConfig {
+export interface BotConfig extends Bot.BaseConfig, Quester.Config {
   token?: string
   verifyToken?: string
   attachMode?: 'separate' | 'card' | 'mixed'
@@ -38,12 +36,13 @@ export class KaiheilaBot extends Bot<BotConfig> {
   constructor(adapter: Adapter, config: BotConfig) {
     super(adapter, config)
     this._sn = 0
-    this.http = adapter.http.extend({
+    this.http = adapter.ctx.http.extend({
+      endpoint: 'https://www.kaiheila.cn/api/v3',
       headers: {
         'Authorization': `Bot ${config.token}`,
         'Content-Type': 'application/json',
       },
-    })
+    }).extend(config)
   }
 
   async request<T = any>(method: Method, path: string, data?: any, headers: any = {}): Promise<T> {

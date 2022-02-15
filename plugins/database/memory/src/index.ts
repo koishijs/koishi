@@ -1,6 +1,6 @@
-import { Context, Database, Query, TableType, clone, makeArray, pick, Dict, Model, noop, KoishiError } from 'koishi'
-import { executeQuery, executeEval, executeUpdate, executeSort } from '@koishijs/orm-utils'
-import { Storage, Config } from './storage'
+import { clone, Context, Database, Dict, KoishiError, makeArray, Model, noop, pick, Query, TableType } from 'koishi'
+import { executeEval, executeQuery, executeSort, executeUpdate } from '@koishijs/orm-utils'
+import { Config, Storage } from './storage'
 
 declare module 'koishi' {
   interface Database {

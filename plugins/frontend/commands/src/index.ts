@@ -1,16 +1,15 @@
 import { Command, Context, Dict, pick, remove, Schema } from 'koishi'
-import { resolve } from 'path'
 import CommandProvider from './service'
 
 export * from './service'
 
-interface Override {
+export interface Override {
   name?: string
   alias?: string[]
   create?: boolean
 }
 
-const Override: Schema<Override> = Schema.object({
+export const Override: Schema<Override> = Schema.object({
   name: Schema.string(),
   alias: Schema.array(Schema.string()),
   create: Schema.boolean(),
@@ -22,6 +21,7 @@ interface Snapshot extends Command.Config {
 }
 
 interface Config extends Override, Command.Config {}
+
 const Config: Schema<string | Config, Config> = Schema.union([
   Schema.intersect([Override, Command.Config]),
   Schema.transform(Schema.string(), (name) => ({ name, alias: [] })),
@@ -63,7 +63,7 @@ export function apply(ctx: Context, config: Dict<Config>) {
   }
 
   function accept(target: Command, config: Config) {
-    const { name, alias, create, ...options } = config
+    const { name, create, ...options } = config
     const command = create ? target : patch(target)
 
     const snapshot: Snapshot = pick(target, ['name', 'parent'])
@@ -120,13 +120,5 @@ export function apply(ctx: Context, config: Dict<Config>) {
     }
   }, true)
 
-  ctx.using(['console'], (ctx) => {
-    ctx.plugin(CommandProvider)
-  
-    if (ctx.console.config.devMode) {
-      ctx.console.addEntry(resolve(__dirname, '../client/index.ts'))
-    } else {
-      ctx.console.addEntry(resolve(__dirname, '../dist'))
-    }
-  })
+  ctx.plugin(CommandProvider)
 }

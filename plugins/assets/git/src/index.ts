@@ -1,8 +1,8 @@
-import { Context, Assets, Schema, Logger, Time, sleep } from 'koishi'
-import Git, { SimpleGit, SimpleGitOptions, ResetMode } from 'simple-git'
+import { Assets, Context, Logger, Schema, sleep, Time } from 'koishi'
+import Git, { ResetMode, SimpleGit, SimpleGitOptions } from 'simple-git'
 import { promises as fsp } from 'fs'
 import { join, resolve } from 'path'
-import { File, Task, FileInfo } from './file'
+import { File, FileInfo, Task } from './file'
 
 const { access, mkdir, rename, writeFile } = fsp
 
@@ -214,7 +214,7 @@ namespace JsdelivrAssets {
   const GitHubConfig = Schema.object({
     user: Schema.string().required(),
     repo: Schema.string().required(),
-    token: Schema.string().required(),
+    token: Schema.string().role('secret').required(),
   })
 
   export interface Config {
@@ -231,8 +231,8 @@ namespace JsdelivrAssets {
       baseDir: Schema.string().required(),
     }),
     tempDir: Schema.string().default(resolve(__dirname, '../.temp')),
-    flushInterval: Schema.number().default(Time.second * 3),
-    maxBranchSize: Schema.number().default(50 * 1024 * 1024),
+    flushInterval: Schema.natural().role('ms').default(Time.second * 3),
+    maxBranchSize: Schema.natural().role('byte').default(50 * 1024 * 1024),
   })
 }
 

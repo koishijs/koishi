@@ -1,4 +1,4 @@
-import { Context, KoishiError, template } from 'koishi'
+import { Context, KoishiError, Schema, template } from 'koishi'
 
 declare module 'koishi' {
   interface EventMap {
@@ -17,8 +17,11 @@ template.set('callme', {
   'failed': '修改称呼失败。',
 })
 
+export interface Config {}
+
 export const name = 'callme'
 export const using = ['database'] as const
+export const Config: Schema<Config> = Schema.object({})
 
 export function apply(ctx: Context) {
   ctx.command('callme [name:text]', '修改自己的称呼')

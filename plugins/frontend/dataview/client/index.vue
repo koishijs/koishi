@@ -1,40 +1,54 @@
 <template>
   <k-card-aside class="page-database">
-    <template #aside v-if="tables">
-      <el-scrollbar>
-        <div class="content">
-          <div class="k-tab-group-title">数据</div>
-          <k-tab-group :data="tables" v-model="current"></k-tab-group>
+    <template #aside>
+      <el-scrollbar class="content-left">
+        <div class="k-tab-group-title">
+          数据库
+          <span v-if="store.dbInfo?.size">({{ formatSize(store.dbInfo.size) }})</span>
         </div>
+        <k-tab-group :data="store.dbInfo.tables" v-model="current"></k-tab-group>
       </el-scrollbar>
     </template>
-    <div v-if="tables">
-      {{ tables[current] }}
-    </div>
-    <el-empty v-else description="你还没有安装数据库支持">
-      <k-button solid>安装数据库</k-button>
-    </el-empty>
+    <keep-alive>
+      <k-empty v-if="!current">
+        <div>在左侧选择要访问的数据表</div>
+      </k-empty>
+      <table-view v-else :key="current" :name="current"></table-view>
+    </keep-alive>
   </k-card-aside>
 </template>
 
 <script lang="ts" setup>
 
-import { store } from '~/client'
-import type {} from '@koishijs/plugin-dataview/src'
-import { ref, computed } from 'vue'
+import { computed } from 'vue'
+import { useRoute } from 'vue-router'
+import { router, store } from '@koishijs/client'
+import { formatSize } from './utils'
+import TableView from './components/data-table.vue'
 
-const current = ref<string>('')
-const tables = computed(() => store.tables)
+function join(source: string | string[]) {
+  return Array.isArray(source) ? source.join('/') : source || ''
+}
+
+const route = useRoute()
+
+const current = computed<string>({
+  get() {
+    return join(route.params.name)
+  },
+  set(name) {
+    if (!store.dbInfo.tables[name]) name = ''
+    router.replace('/database/' + name)
+  },
+})
 
 </script>
 
 <style lang="scss">
 
-.page-database {
-  .content {
-    padding: 1rem 0;
-    line-height: 2.25rem;
-  }
+.page-database aside .el-scrollbar__view {
+  padding: 1rem 0;
+  line-height: 2.25rem;
 }
 
 </style>

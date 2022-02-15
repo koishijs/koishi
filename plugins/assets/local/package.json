@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-assets-local",
   "description": "A classic assets provider for Koishi",
-  "version": "2.0.0",
+  "version": "2.0.3",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -27,9 +27,9 @@
     "plugin",
     "assets",
     "server",
-    "service:assets"
+    "impl:assets"
   ],
   "peerDependencies": {
-    "koishi": "^4.1.1"
+    "koishi": "^4.2.1"
   }
 }

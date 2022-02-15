@@ -1,9 +1,9 @@
 import { clone, Context, Database, KoishiError, Logger, makeArray, Model, noop, pick, Query, Schema, Tables, TableType } from 'koishi'
-import { executeUpdate, executeEval, executeQuery, executeSort } from '@koishijs/orm-utils'
+import { executeEval, executeQuery, executeSort, executeUpdate } from '@koishijs/orm-utils'
 import { LevelUp } from 'levelup'
 import level from 'level'
 import sub from 'subleveldown'
-import { resolveLocation, getStats } from './runtime'
+import { getStats, resolveLocation } from './runtime'
 
 declare module 'abstract-leveldown' {
   export interface AbstractIterator<K, V> extends AbstractOptions {
@@ -77,6 +77,7 @@ class LevelDatabase extends Database {
   }
 
   private async _maxKey<K extends TableType>(table: K) {
+    // eslint-disable-next-line no-unreachable-loop
     for await (const [key] of this.table(table).iterator({ reverse: true, limit: 1 })) {
       return +key
     }

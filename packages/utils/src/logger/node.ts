@@ -1,4 +1,4 @@
-import { inspect, format } from 'util'
+import { format, inspect } from 'util'
 import { stderr } from 'supports-color'
 import { Time } from '../time'
 import { Dict } from '../misc'

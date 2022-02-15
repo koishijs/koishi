@@ -1,12 +1,13 @@
 import { Context, Dict, noop, Random } from 'koishi'
-import { resolve, extname } from 'path'
-import { promises as fsp, Stats, createReadStream, existsSync } from 'fs'
+import { dirname, extname, resolve } from 'path'
+import { createReadStream, existsSync, promises as fsp, Stats } from 'fs'
 import { DataService } from './service'
 import { ViteDevServer } from 'vite'
 import open from 'open'
 
-class FileEntry {
-
+export interface Entry {
+  dev: string
+  prod: string
 }
 
 class HttpService extends DataService<string[]> {
@@ -19,9 +20,9 @@ class HttpService extends DataService<string[]> {
     const { devMode, uiPath } = config
     ctx.console.global.devMode = devMode
     ctx.console.global.uiPath = uiPath
-    if (config.root === undefined) {
-      config.root = resolve(__dirname, '..', devMode ? 'client' : 'dist')
-    }
+    config.root ||= devMode
+      ? dirname(require.resolve('@koishijs/client/package.json')) + '/app'
+      : resolve(__dirname, '../dist')
   }
 
   async start() {
@@ -35,9 +36,16 @@ class HttpService extends DataService<string[]> {
     }
   }
 
-  addEntry(filename: string) {
+  private resolveEntry(entry: string | Entry) {
+    if (typeof entry === 'string') return entry
+    if (!this.config.devMode) return entry.prod
+    if (!existsSync(entry.dev)) return entry.prod
+    return entry.dev
+  }
+
+  addEntry(entry: string | Entry) {
     const key = 'extension-' + Random.id()
-    this.data[key] = filename
+    this.data[key] = this.resolveEntry(entry)
     this.refresh()
     this.caller.on('dispose', () => {
       delete this.data[key]
@@ -47,16 +55,17 @@ class HttpService extends DataService<string[]> {
 
   async get() {
     const { devMode, uiPath } = this.config
-    if (devMode) {
-      return Object.values(this.data).map(filename => '/vite/@fs/' + filename)
-    }
     const filenames: string[] = []
-    for (const name in this.data) {
-      const baseDir = uiPath + '/' + name
-      const localDir = this.data[name]
-      filenames.push(baseDir + '/index.js')
-      if (existsSync(localDir + '/style.css')) {
-        filenames.push(baseDir + '/style.css')
+    for (const key in this.data) {
+      const local = this.data[key]
+      const filename = devMode ? '/vite/@fs/' + local : uiPath + '/' + key
+      if (extname(local)) {
+        filenames.push(filename)
+      } else {
+        filenames.push(filename + '/index.js')
+        if (existsSync(local + '/style.css')) {
+          filenames.push(filename + '/style.css')
+        }
       }
     }
     return filenames
@@ -102,7 +111,7 @@ class HttpService extends DataService<string[]> {
   private async createVite() {
     const { root } = this.config
     const { createServer } = require('vite') as typeof import('vite')
-    const { default: pluginVue } = require('@vitejs/plugin-vue') as typeof import('@vitejs/plugin-vue')
+    const { default: vue } = require('@vitejs/plugin-vue') as typeof import('@vitejs/plugin-vue')
 
     this.vite = await createServer({
       root,
@@ -113,10 +122,13 @@ class HttpService extends DataService<string[]> {
           strict: true,
         },
       },
-      plugins: [pluginVue()],
+      plugins: [vue()],
       resolve: {
         alias: {
-          '~/client': root + '/client.ts',
+          '../client.js': '@koishijs/client',
+          '../vue.js': 'vue',
+          '../vue-router.js': 'vue-router',
+          '../vueuse.js': '@vueuse/core',
         },
       },
       optimizeDeps: {

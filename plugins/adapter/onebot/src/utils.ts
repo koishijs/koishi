@@ -1,11 +1,11 @@
-import { Adapter, Bot, Session, paramCase, segment, Schema, App, defineProperty } from 'koishi'
+import { Adapter, Bot, defineProperty, paramCase, Schema, segment, Session } from 'koishi'
 import * as qface from 'qface'
 import { OneBotBot } from './bot'
 import * as OneBot from './types'
 
 export * from './types'
 
-export interface AdapterConfig extends Adapter.WebSocketClient.Config, App.Config.Request {
+export interface AdapterConfig extends Adapter.WebSocketClient.Config {
   path?: string
   secret?: string
   responseTimeout?: number
@@ -14,10 +14,9 @@ export interface AdapterConfig extends Adapter.WebSocketClient.Config, App.Confi
 export const AdapterConfig: Schema<AdapterConfig> = Schema.intersect([
   Schema.object({
     path: Schema.string().description('服务器监听的路径，用于 http 和 ws-reverse 协议。').default('/onebot'),
-    secret: Schema.string().description('接收事件推送时用于验证的字段，应该与 OneBot 的 secret 配置保持一致。'),
+    secret: Schema.string().description('接收事件推送时用于验证的字段，应该与 OneBot 的 secret 配置保持一致。').role('secret'),
   }),
   Adapter.WebSocketClient.Config,
-  App.Config.Request,
 ])
 
 export const adaptUser = (user: OneBot.AccountInfo): Bot.User => ({
@@ -32,12 +31,20 @@ export const adaptGuildMember = (user: OneBot.SenderInfo): Bot.GuildMember => ({
   roles: [user.role],
 })
 
-export const adaptQQGuildMember = (user: OneBot.GuildMemberInfo, presetRole?: string): Bot.GuildMember => ({
+export const adaptQQGuildMemberInfo = (user: OneBot.GuildMemberInfo): Bot.GuildMember => ({
   userId: user.tiny_id,
   username: user.nickname,
   nickname: user.nickname,
-  roles: [...(presetRole ? [presetRole] : []), user.role.toString()],
-  isBot: presetRole === 'bot',
+  roles: user.role_name ? [user.role_name] : [],
+  isBot: user.role_name === '机器人',
+})
+
+export const adaptQQGuildMemberProfile = (user: OneBot.GuildMemberProfile): Bot.GuildMember => ({
+  userId: user.tiny_id,
+  username: user.nickname,
+  nickname: user.nickname,
+  roles: user.roles?.map(r => r.role_name) || [],
+  isBot: user.roles?.some(r => r.role_name === '机器人'),
 })
 
 export const adaptAuthor = (user: OneBot.SenderInfo, anonymous?: OneBot.AnonymousInfo): Bot.Author => ({
@@ -156,67 +163,75 @@ export function adaptSession(data: OneBot.Payload) {
     }
   } else if (data.post_type === 'notice') {
     switch (data.notice_type) {
-      case 'group_recall':
-        session.type = 'message-deleted'
-        session.subtype = 'group'
-        break
-      case 'friend_recall':
-        session.type = 'message-deleted'
-        session.subtype = 'private'
-        session.channelId = `private:${session.userId}`
-        break
-      case 'friend_add':
-        session.type = 'friend-added'
-        break
-      case 'group_upload':
-        session.type = 'group-file-added'
-        break
-      case 'group_admin':
-        session.type = 'group-member'
-        session.subtype = 'role'
-        break
-      case 'group_ban':
-        session.type = 'group-member'
-        session.subtype = 'ban'
-        break
-      case 'group_decrease':
-        session.type = session.userId === session.selfId ? 'group-deleted' : 'group-member-deleted'
-        session.subtype = session.userId === session.operatorId ? 'active' : 'passive'
-        break
-      case 'group_increase':
-        session.type = session.userId === session.selfId ? 'group-added' : 'group-member-added'
-        session.subtype = session.userId === session.operatorId ? 'active' : 'passive'
-        break
-      case 'group_card':
-        session.type = 'group-member'
-        session.subtype = 'nickname'
-        break
-      case 'notify':
-        session.type = 'notice'
-        session.subtype = paramCase(data.sub_type) as any
-        if (session.subtype === 'poke') {
-          session.channelId ||= `private:${session.userId}`
-        } else if (session.subtype === 'honor') {
-          session.subsubtype = paramCase(data.honor_type) as any
-        }
-        break
-      case 'message_reactions_updated':
-        session.type = 'onebot'
-        session.subtype = 'message-reactions-updated'
-        break
-      case 'channel_created':
-        session.type = 'onebot'
-        session.subtype = 'channel-created'
-        break
-      case 'channel_updated':
-        session.type = 'onebot'
-        session.subtype = 'channel-updated'
-        break
-      case 'channel_destroyed':
-        session.type = 'onebot'
-        session.subtype = 'channel-destroyed'
-        break
-      default: return
+    case 'group_recall':
+      session.type = 'message-deleted'
+      session.subtype = 'group'
+      session.subsubtype = 'group'
+      break
+    case 'friend_recall':
+      session.type = 'message-deleted'
+      session.subtype = 'private'
+      session.channelId = `private:${session.userId}`
+      session.subsubtype = 'private'
+      break
+      // from go-cqhttp source code, but not mentioned in official docs
+    case 'guild_channel_recall':
+      session.type = 'message-deleted'
+      session.subtype = 'group'
+      session.subsubtype = 'guild'
+      break
+    case 'friend_add':
+      session.type = 'friend-added'
+      break
+    case 'group_upload':
+      session.type = 'group-file-added'
+      break
+    case 'group_admin':
+      session.type = 'group-member'
+      session.subtype = 'role'
+      break
+    case 'group_ban':
+      session.type = 'group-member'
+      session.subtype = 'ban'
+      break
+    case 'group_decrease':
+      session.type = session.userId === session.selfId ? 'group-deleted' : 'group-member-deleted'
+      session.subtype = session.userId === session.operatorId ? 'active' : 'passive'
+      break
+    case 'group_increase':
+      session.type = session.userId === session.selfId ? 'group-added' : 'group-member-added'
+      session.subtype = session.userId === session.operatorId ? 'active' : 'passive'
+      break
+    case 'group_card':
+      session.type = 'group-member'
+      session.subtype = 'nickname'
+      break
+    case 'notify':
+      session.type = 'notice'
+      session.subtype = paramCase(data.sub_type) as any
+      if (session.subtype === 'poke') {
+        session.channelId ||= `private:${session.userId}`
+      } else if (session.subtype === 'honor') {
+        session.subsubtype = paramCase(data.honor_type) as any
+      }
+      break
+    case 'message_reactions_updated':
+      session.type = 'onebot'
+      session.subtype = 'message-reactions-updated'
+      break
+    case 'channel_created':
+      session.type = 'onebot'
+      session.subtype = 'channel-created'
+      break
+    case 'channel_updated':
+      session.type = 'onebot'
+      session.subtype = 'channel-updated'
+      break
+    case 'channel_destroyed':
+      session.type = 'onebot'
+      session.subtype = 'channel-destroyed'
+      break
+    default: return
     }
   } else return
 

@@ -1,8 +1,8 @@
-import { Channel, User, Logger, escapeRegExp, observe, difference, Time, segment, Random, Awaitable, Dict } from 'koishi'
+import { Awaitable, Channel, Dict, difference, escapeRegExp, Logger, observe, Random, segment, Time, User } from 'koishi'
 import { parentPort, workerData } from 'worker_threads'
-import { InspectOptions, formatWithOptions } from 'util'
+import { formatWithOptions, InspectOptions } from 'util'
 import { findSourceMap } from 'module'
-import { resolve, dirname, sep } from 'path'
+import { dirname, resolve, sep } from 'path'
 
 /* eslint-disable import/first */
 
@@ -19,7 +19,7 @@ export const config: WorkerData = {
   },
 }
 
-import prepare, { synthetize, LoaderConfig, system } from './loader'
+import prepare, { LoaderConfig, synthetize, system } from './loader'
 import { expose, wrap } from '../transfer'
 import { Sandbox } from './sandbox'
 import { MainHandle } from '..'

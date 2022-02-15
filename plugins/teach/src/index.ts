@@ -1,5 +1,3 @@
-/* eslint-disable no-irregular-whitespace */
-
 import { Awaitable, Context, Schema, Time } from 'koishi'
 import { Dialogue } from './utils'
 
@@ -47,32 +45,32 @@ export type Config = Dialogue.Config
 export const schema: Schema<Config> = Schema.intersect([
   Schema.object({
     prefix: Schema.string().description('教学指令的前缀。').default('#'),
-    historyTimeout: Schema.number().description('教学操作在内存中的保存时间。').default(Time.minute * 10),
+    historyTimeout: Schema.natural().role('ms').description('教学操作在内存中的保存时间。').default(Time.minute * 10),
   }).description('通用设置'),
 
   Schema.object({
     authority: Schema.object({
-      base: Schema.number().description('可访问教学系统的权限等级。').default(2),
-      admin: Schema.number().description('可修改非自己创建的问答的权限等级。').default(3),
-      context: Schema.number().description('可修改上下文设置的权限等级。').default(3),
-      frozen: Schema.number().description('可修改锁定的问答的权限等级。').default(4),
-      regExp: Schema.number().description('可使用正则表达式的权限等级。').default(3),
-      writer: Schema.number().description('可设置作者或匿名的权限等级。').default(2),
+      base: Schema.natural().description('可访问教学系统的权限等级。').default(2),
+      admin: Schema.natural().description('可修改非自己创建的问答的权限等级。').default(3),
+      context: Schema.natural().description('可修改上下文设置的权限等级。').default(3),
+      frozen: Schema.natural().description('可修改锁定的问答的权限等级。').default(4),
+      regExp: Schema.natural().description('可使用正则表达式的权限等级。').default(3),
+      writer: Schema.natural().description('可设置作者或匿名的权限等级。').default(2),
     }),
   }).description('权限设置'),
 
   Schema.object({
-    maxRedirections: Schema.number().description('问题重定向的次数上限。').default(3),
-    successorTimeout: Schema.number().description('问答触发后继问答的持续时间。').default(Time.second * 20),
-    appellationTimeout: Schema.number().description('称呼作为问题触发的后续效果持续时间。').default(Time.minute * 10),
+    maxRedirections: Schema.natural().description('问题重定向的次数上限。').default(3),
+    successorTimeout: Schema.natural().role('ms').description('问答触发后继问答的持续时间。').default(Time.second * 20),
+    appellationTimeout: Schema.natural().role('ms').description('称呼作为问题触发的后续效果持续时间。').default(Time.minute * 10),
   }).description('触发设置'),
 
   Schema.object({
-    maxPreviews: Schema.number().description('同时查看的最大问答数量。').default(10),
-    previewDelay: Schema.number().description('显示两个问答之间的时间间隔。').default(Time.second * 0.5),
-    itemsPerPage: Schema.number().description('搜索结果每一页显示的最大数量。').default(30),
-    maxAnswerLength: Schema.number().description('搜索结果中回答显示的长度限制。').default(100),
-    mergeThreshold: Schema.number().description('合并搜索模式中，相同的问题和回答被合并的最小数量。').default(5),
+    maxPreviews: Schema.natural().description('同时查看的最大问答数量。').default(10),
+    previewDelay: Schema.natural().role('ms').description('显示两个问答之间的时间间隔。').default(Time.second * 0.5),
+    itemsPerPage: Schema.natural().description('搜索结果每一页显示的最大数量。').default(30),
+    maxAnswerLength: Schema.natural().description('搜索结果中回答显示的长度限制。').default(100),
+    mergeThreshold: Schema.natural().description('合并搜索模式中，相同的问题和回答被合并的最小数量。').default(5),
   }).description('显示设置'),
 ])
 

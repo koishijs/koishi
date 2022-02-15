@@ -1,6 +1,6 @@
-import { App, Command, Channel, Argv as IArgv, User, Context, Logger, Observed, pick, union, Schema } from 'koishi'
-import { Worker, ResourceLimits } from 'worker_threads'
-import { WorkerHandle, WorkerConfig, WorkerData, SessionData, Loader } from './worker'
+import { App, Channel, Command, Context, Argv as IArgv, Logger, Observed, pick, Schema, union, User } from 'koishi'
+import { ResourceLimits, Worker } from 'worker_threads'
+import { Loader, SessionData, WorkerConfig, WorkerData, WorkerHandle } from './worker'
 import { expose, Remote, wrap } from './transfer'
 import { resolve } from 'path'
 

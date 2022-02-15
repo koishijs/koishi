@@ -1,5 +1,5 @@
 import * as utils from '@koishijs/utils'
-import { Awaitable, MaybeArray, Dict, Get } from '@koishijs/utils'
+import { Awaitable, Dict, Get, MaybeArray } from '@koishijs/utils'
 import { Query } from './orm'
 import { Context } from './context'
 
@@ -25,6 +25,7 @@ export interface Channel {
   platform: string
   flag: number
   assignee: string
+  guildId: string
 }
 
 export namespace Channel {

@@ -3,7 +3,7 @@ import { Context, Next, Plugin } from './context'
 import { Adapter } from './adapter'
 import { Channel, User } from './database'
 import { Command } from './command'
-import { Session, Computed } from './session'
+import { Computed, Session } from './session'
 import { KoishiError } from './error'
 import { Model } from './orm'
 import runtime from './internal/runtime'
@@ -138,9 +138,11 @@ export class App extends Context {
     if (this.database) {
       if (session.subtype === 'group') {
         // attach group data
-        const channelFields = new Set<Channel.Field>(['flag', 'assignee'])
+        const channelFields = new Set<Channel.Field>(['flag', 'assignee', 'guildId'])
         this.emit('before-attach-channel', session, channelFields)
         const channel = await session.observeChannel(channelFields)
+        // for backwards compatibility (TODO remove in v5)
+        channel.guildId = session.guildId
 
         // emit attach event
         if (await this.serial(session, 'attach-channel', session)) return
@@ -225,6 +227,7 @@ export class App extends Context {
       this._channelCache.delete(session.id)
       await session.user?.$update()
       await session.channel?.$update()
+      await session.guild?.$update()
     }
   }
 }
@@ -238,49 +241,66 @@ export namespace App {
     prompt?: number
   }
 
-  export interface Config {
-    prefix?: Computed<string | string[]>
-    nickname?: string | string[]
-    maxListeners?: number
-    prettyErrors?: boolean
-    delay?: DelayConfig
-    help?: boolean | HelpConfig
-    autoAssign?: Computed<Awaitable<boolean>>
-    autoAuthorize?: Computed<Awaitable<number>>
-    minSimilarity?: number
-  }
+  export interface Config extends Config.Basic, Config.Features, Config.Advanced {}
 
   export namespace Config {
-    export interface Static extends Schema<Config> {}
+    export interface Basic {
+      prefix?: Computed<string | string[]>
+      nickname?: string | string[]
+      autoAssign?: Computed<Awaitable<boolean>>
+      autoAuthorize?: Computed<Awaitable<number>>
+      minSimilarity?: number
+    }
+
+    export interface Features {
+      help?: false | HelpConfig
+      delay?: DelayConfig
+    }
+
+    export interface Advanced {
+      maxListeners?: number
+      prettyErrors?: boolean
+    }
+
+    export interface Static extends Schema<Config> {
+      Basic: Schema<Basic>
+      Features: Schema<Features>
+      Advanced: Schema<Advanced>
+    }
   }
 
-  const BasicConfig = Schema.object({
+  export const Config = Schema.intersect([]) as Config.Static
+
+  defineProperty(Config, 'Basic', Schema.object({
     prefix: Schema.union([
       Schema.array(Schema.string()),
       Schema.transform(Schema.string(), (prefix) => [prefix]),
-    ] as const).description('指令前缀字符，可以是字符串或字符串数组。将用于指令前缀的匹配。例如，如果配置该选项为 `.`，则你可以通过 `.help` 来进行 help 指令的调用。'),
+    ] as const).description('指令前缀字符，可以是字符串或字符串数组。将用于指令前缀的匹配。'),
     nickname: Schema.union([
       Schema.array(Schema.string()),
       Schema.transform(Schema.string(), (nickname) => [nickname]),
-    ] as const).description('机器人的昵称，可以是字符串或字符串数组。将用于指令前缀的匹配。例如，如果配置该选项为 `Koishi`，则你可以通过 `Koishi, help` 来进行 help 指令的调用。'),
-    autoAuthorize: Schema.number().default(1).description('当获取不到用户数据时默认使用的权限等级。'),
-    autoAssign: Schema.boolean().default(true).description('当获取不到频道数据时，是否使用接受者作为代理者。'),
-    maxListeners: Schema.number().default(64).description('每种监听器的最大数量。如果超过这个数量，Koishi 会认定为发生了内存泄漏，将产生一个警告。'),
-    prettyErrors: Schema.boolean().default(true).description('启用报错优化模式。在此模式下 Koishi 会对程序抛出的异常进行整理，过滤掉框架内部的调用记录，输出更易读的提示信息。'),
-    minSimilarity: Schema.number().default(0.4).description('用于模糊匹配的相似系数，应该是一个 0 到 1 之间的数值。数值越高，模糊匹配越严格。设置为 1 可以完全禁用模糊匹配。'),
-  }).description('基础设置')
+    ] as const).description('机器人的昵称，可以是字符串或字符串数组。将用于指令前缀的匹配。'),
+    autoAssign: Schema.union([Boolean, Function]).default(true).description('当获取不到频道数据时，是否使用接受者作为代理者。'),
+    autoAuthorize: Schema.union([Schema.natural(), Function]).default(1).description('当获取不到用户数据时默认使用的权限等级。'),
+    minSimilarity: Schema.percent().default(0.4).description('用于模糊匹配的相似系数，应该是一个 0 到 1 之间的数值。数值越高，模糊匹配越严格。设置为 1 可以完全禁用模糊匹配。'),
+  }).description('基础设置'))
 
-  const AdvancedConfig = Schema.object({
+  defineProperty(Config, 'Features', Schema.object({
     delay: Schema.object({
-      character: Schema.number().default(0).description('调用 `session.sendQueued()` 是消息间发送的最小延迟，按前一条消息的字数计算'),
-      message: Schema.number().default(0.1 * Time.second).description('调用 `session.sendQueued()` 时消息间发送的最小延迟，按固定值计算'),
-      cancel: Schema.number().default(0).description('调用 `session.cancelQueued()` 时默认的延迟'),
-      broadcast: Schema.number().default(0.5 * Time.second).description('调用 `bot.broadcast()` 时默认的延迟'),
-      prompt: Schema.number().default(Time.minute).description('调用 `session.prompt()` 是默认的等待时间'),
+      character: Schema.natural().role('ms').default(0).description('调用 `session.sendQueued()` 时消息间发送的最小延迟，按前一条消息的字数计算。'),
+      message: Schema.natural().role('ms').default(0.1 * Time.second).description('调用 `session.sendQueued()` 时消息间发送的最小延迟，按固定值计算。'),
+      cancel: Schema.natural().role('ms').default(0).description('调用 `session.cancelQueued()` 时默认的延迟。'),
+      broadcast: Schema.natural().role('ms').default(0.5 * Time.second).description('调用 `bot.broadcast()` 时默认的延迟。'),
+      prompt: Schema.natural().role('ms').default(Time.minute).description('调用 `session.prompt()` 是默认的等待时间。'),
     }),
-  }).description('高级设置')
+  }).description('消息设置'))
 
-  export const Config: Config.Static = Schema.intersect([BasicConfig, AdvancedConfig])
+  defineProperty(Config, 'Advanced', Schema.object({
+    prettyErrors: Schema.boolean().default(true).description('启用报错优化模式。在此模式下 Koishi 会对程序抛出的异常进行整理，过滤掉框架内部的调用记录，输出更易读的提示信息。'),
+    maxListeners: Schema.natural().default(64).description('每种监听器的最大数量。如果超过这个数量，Koishi 会认定为发生了内存泄漏，将产生一个警告。'),
+  }).description('高级设置'))
+
+  Config.list.push(Config.Basic, Config.Features, Config.Advanced)
 }
 
 class TaskQueue {

@@ -1,4 +1,4 @@
-import { Context } from '~/client'
+import { Context } from '@koishijs/client'
 import Teach from './teach.vue'
 
 export default (ctx: Context) => {
@@ -6,6 +6,7 @@ export default (ctx: Context) => {
     path: '/teach',
     name: '问答',
     icon: 'book',
+    authority: 3,
     fields: ['stats', 'meta'],
     component: Teach,
   })

@@ -1,4 +1,4 @@
-import { Context, segment, template } from 'koishi'
+import { Context, Schema, segment, template } from 'koishi'
 import { parsePlatform } from '@koishijs/helpers'
 
 template.set('echo', {
@@ -6,7 +6,10 @@ template.set('echo', {
   'platform-not-found': '找不到指定的平台。',
 })
 
+export interface Config {}
+
 export const name = 'echo'
+export const Config: Schema<Config> = Schema.object({})
 
 export function apply(ctx: Context) {
   ctx.command('echo <message:text>', '向当前上下文发送消息', { authority: 2 })
@@ -15,6 +18,7 @@ export function apply(ctx: Context) {
     .option('escape', '-e  发送转义消息', { authority: 3 })
     .option('user', '-u [user:user]  发送到用户', { authority: 3 })
     .option('channel', '-c [channel:channel]  发送到频道', { authority: 3 })
+    .option('guild', '-g [guild:string]  指定群组编号', { authority: 3 })
     .action(async ({ options }, message) => {
       if (!message) return template('echo.expect-text')
 
@@ -37,7 +41,7 @@ export function apply(ctx: Context) {
         } else if (options.user) {
           await bot.sendPrivateMessage(id, message)
         } else {
-          await bot.sendMessage(id, message, 'unknown')
+          await bot.sendMessage(id, message, options.guild)
         }
         return
       }

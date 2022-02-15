@@ -1,8 +1,6 @@
-/* eslint-disable camelcase */
-
 import { EventConfig } from './events'
 import axios, { AxiosError, Method } from 'axios'
-import { App, Context, Session, segment, Logger, Dict, Quester, Schema, Time, Service } from 'koishi'
+import { Context, Dict, Logger, Quester, Schema, segment, Service, Session, Time } from 'koishi'
 import {} from '@koishijs/plugin-puppeteer'
 
 declare module 'koishi' {
@@ -36,7 +34,7 @@ interface Repository {
   id: number
 }
 
-export interface Config extends App.Config.Request {
+export interface Config {
   path?: string
   appId?: string
   appSecret?: string
@@ -53,9 +51,9 @@ export const Config = Schema.object({
   appSecret: Schema.string().description('GitHub OAuth App Secret.'),
   redirect: Schema.string().description('授权成功后的跳转链接。'),
   messagePrefix: Schema.string().description('推送消息的前缀。').default('[GitHub] '),
-  replyTimeout: Schema.number().description('等待用户回复消息进行快捷操作的时间。').default(Time.hour),
-  promptTimeout: Schema.number().description('等待用户键入用户名的时间。缺省时会使用全局设置。'),
-  requestTimeout: Schema.number().description('等待请求 GitHub 的时间，超时将提示操作失败。缺省时会使用全局设置。'),
+  replyTimeout: Schema.natural().role('ms').description('等待用户回复消息进行快捷操作的时间。').default(Time.hour),
+  promptTimeout: Schema.natural().role('ms').description('等待用户键入用户名的时间。缺省时会使用全局设置。'),
+  requestTimeout: Schema.natural().role('ms').description('等待请求 GitHub 的时间，超时将提示操作失败。缺省时会使用全局设置。'),
 })
 
 export interface OAuth {
@@ -77,17 +75,17 @@ export class GitHub extends Service {
   constructor(public ctx: Context, public config: Config) {
     super(ctx, 'github', true)
 
-    this.http = ctx.http.extend(config.request)
+    this.http = ctx.http.extend({})
 
     ctx.model.extend('user', {
       ghAccessToken: 'string(50)',
       ghRefreshToken: 'string(50)',
     })
-    
+
     ctx.model.extend('channel', {
       githubWebhooks: 'json',
     })
-    
+
     ctx.model.extend('github', {
       id: 'integer',
       name: 'string(50)',
@@ -105,6 +103,7 @@ export class GitHub extends Service {
         ...params,
       },
       headers: { Accept: 'application/json' },
+      timeout: this.config.requestTimeout,
     })
   }
 
@@ -117,6 +116,7 @@ export class GitHub extends Service {
         authorization: `token ${session.user.ghAccessToken}`,
         ...headers,
       },
+      timeout: this.config.requestTimeout,
     })
   }
 

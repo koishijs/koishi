@@ -43,7 +43,7 @@ sidebarDepth: 2
   - [@koishijs/plugin-respondent](../plugins/common/respondent.md)
   - [@koishijs/plugin-verifier](../plugins/accessibility/verifier.md)
 - koishi-plugin-webui 被拆分为多个插件：
-  - @koishijs/builder (构建工具)
+  - @koishijs/client (构建工具)
   - [@koishijs/plugin-console](../plugins/console/index.md)
   - [@koishijs/plugin-status](../plugins/console/status.md)
   - 我们还引入了更多控制台插件，请继续阅读下面的介绍

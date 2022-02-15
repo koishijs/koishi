@@ -14,7 +14,7 @@ export interface Config {
 
 export const schema: Schema<string[] | Config, Config> = Schema.union([
   Schema.object({
-    operators: Schema.array(Schema.string()),
+    operators: Schema.array(Schema.string()).description('接收反馈信息的管理员。'),
   }),
   Schema.transform(Schema.array(Schema.string()), (operators) => ({ operators })),
 ])

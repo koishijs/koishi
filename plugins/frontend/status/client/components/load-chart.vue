@@ -8,6 +8,6 @@
 <script setup lang="ts">
 
 import LoadBar from './load-bar.vue'
-import { store } from '~/client'
+import { store } from '@koishijs/client'
 
 </script>

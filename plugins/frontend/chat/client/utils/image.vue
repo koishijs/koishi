@@ -5,7 +5,7 @@
 <script lang="ts" setup>
 
 import { shared } from '.'
-import { config } from '~/client'
+import { config } from '@koishijs/client'
 
 const props = defineProps<{ src: string }>()
 

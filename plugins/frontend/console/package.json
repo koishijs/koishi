@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-console",
   "description": "A web user interface for Koishi",
-  "version": "2.0.0",
+  "version": "3.0.1",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -27,23 +27,15 @@
     "chatbot",
     "koishi",
     "plugin",
-    "webui"
+    "webui",
+    "impl:console"
   ],
   "peerDependencies": {
-    "koishi": "^4.1.1"
+    "koishi": "^4.2.1"
   },
   "devDependencies": {
-    "@fortawesome/fontawesome-free": "^5.15.4",
-    "@types/uuid": "^8.3.4",
-    "@types/marked": "^4.0.1",
-    "@vitejs/plugin-vue": "^2.0.1",
-    "@vueuse/core": "^7.5.3",
-    "element-plus": "^1.3.0-beta.5",
-    "marked": "^4.0.10",
-    "sass": "^1.48.0",
-    "vite": "~2.5.10",
-    "vue": "^3.2.21",
-    "vue-router": "^4.0.12"
+    "@koishijs/client": "^3.0.1",
+    "@types/uuid": "^8.3.4"
   },
   "dependencies": {
     "open": "^8.4.0",

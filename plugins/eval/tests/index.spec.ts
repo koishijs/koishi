@@ -1,5 +1,3 @@
-/* eslint-disable no-template-curly-in-string */
-
 import { App } from 'koishi'
 import { resolve } from 'path'
 import { promises as fs } from 'fs'

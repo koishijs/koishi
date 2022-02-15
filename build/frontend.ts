@@ -1,6 +1,7 @@
-import { buildExtension } from '@koishijs/builder/src'
-import { copyFile } from 'fs/promises'
+import { buildExtension } from '@koishijs/client/src'
 import { cwd, getPackages } from './utils'
+import { RollupOutput } from 'rollup'
+import { appendFile, copyFile } from 'fs-extra'
 import vue from '@vitejs/plugin-vue'
 import vite from 'vite'
 import cac from 'cac'
@@ -13,14 +14,16 @@ function findModulePath(id: string) {
   return path.slice(0, path.indexOf(keyword)) + keyword.slice(0, -1)
 }
 
-export async function build(root: string, config: vite.UserConfig) {
-  const { rollupOptions } = config.build || {}
-  await vite.build({
+const dist = cwd + '/plugins/frontend/console/dist'
+
+export async function build(root: string, config: vite.UserConfig = {}) {
+  const { rollupOptions = {} } = config.build || {}
+  return vite.build({
     root,
     build: {
-      outDir: '../dist',
-      minify: 'esbuild',
+      outDir: cwd + '/plugins/frontend/console/dist',
       emptyOutDir: true,
+      cssCodeSplit: false,
       ...config.build,
       rollupOptions: {
         ...rollupOptions,
@@ -28,12 +31,15 @@ export async function build(root: string, config: vite.UserConfig) {
           root + '/vue.js',
           root + '/vue-router.js',
           root + '/client.js',
+          root + '/vueuse.js',
         ],
-        output: rollupOptions?.input ? {
+        output: {
           format: 'module',
           entryFileNames: '[name].js',
+          chunkFileNames: '[name].js',
+          assetFileNames: '[name].[ext]',
           ...rollupOptions.output,
-        } : undefined,
+        },
       },
     },
     plugins: [vue()],
@@ -41,56 +47,89 @@ export async function build(root: string, config: vite.UserConfig) {
       alias: {
         'vue': root + '/vue.js',
         'vue-router': root + '/vue-router.js',
-        './client': root + '/client.js',
-        '../client': root + '/client.js',
+        '@vueuse/core': root + '/vueuse.js',
+        '@koishijs/client': root + '/client.js',
       },
     },
   })
 }
 
-async function buildConsole(folder: string) {
-  const root = cwd + '/' + folder + '/client'
-  const dist = cwd + '/' + folder + '/dist'
+async function buildConsole() {
 
   // build for console main
-  await build(root, { base: './' })
+  const { output } = await build(cwd + '/plugins/frontend/client/app') as RollupOutput
 
-  await copyFile(findModulePath('vue') + '/dist/vue.runtime.esm-browser.prod.js', dist + '/vue.js')
+  await Promise.all([
+    copyFile(findModulePath('vue') + '/dist/vue.runtime.esm-browser.prod.js', dist + '/vue.js'),
+    build(findModulePath('vue-router') + '/dist', {
+      build: {
+        outDir: dist,
+        emptyOutDir: false,
+        rollupOptions: {
+          input: {
+            'vue-router': findModulePath('vue-router') + '/dist/vue-router.esm-browser.js',
+          },
+          preserveEntrySignatures: 'strict',
+        },
+      },
+    }),
+    build(findModulePath('@vueuse/core'), {
+      build: {
+        outDir: dist,
+        emptyOutDir: false,
+        rollupOptions: {
+          input: {
+            'vueuse': findModulePath('@vueuse/core') + '/index.mjs',
+          },
+          preserveEntrySignatures: 'strict',
+        },
+      },
+    }),
+  ])
 
-  // build for console client entry
-  await build(cwd, {
+  await build(cwd + '/plugins/frontend/client/client', {
     build: {
       outDir: dist,
       emptyOutDir: false,
       rollupOptions: {
         input: {
-          'client': root + '/client.ts',
-          'vue-router': findModulePath('vue-router') + '/dist/vue-router.esm-browser.js',
+          'client': cwd + '/plugins/frontend/client/client/index.ts',
         },
-        treeshake: false,
+        output: {
+          manualChunks: {
+            element: ['element-plus'],
+          },
+        },
         preserveEntrySignatures: 'strict',
       },
     },
   })
+
+  for (const file of output) {
+    if (file.type === 'asset' && file.name === 'style.css') {
+      await appendFile(dist + '/style.css', file.source)
+    }
+  }
 }
 
 ;(async () => {
   const folders = await getPackages(args)
 
   for (const folder of folders) {
-    if (folder === 'plugins/frontend/console') {
-      await buildConsole(folder)
-    } else {
-      await buildExtension(cwd + '/' + folder, {
-        plugins: [{
-          name: 'fuck-echarts',
-          renderChunk(code, chunk) {
-            if (chunk.fileName.includes('echarts')) {
-              return code.replace(/\bSymbol(?!\.toStringTag)/g, 'FuckSymbol')
-            }
-          },
-        }],
-      })
+    if (folder === 'plugins/frontend/client') {
+      await buildConsole()
+      continue
     }
+
+    await buildExtension(cwd + '/' + folder, {
+      plugins: [{
+        name: 'fuck-echarts',
+        renderChunk(code, chunk) {
+          if (chunk.fileName.includes('echarts')) {
+            return code.replace(/\bSymbol(?!\.toStringTag)/g, 'FuckSymbol')
+          }
+        },
+      }],
+    })
   }
 })()

@@ -1,35 +1,47 @@
-import { useStorage } from '@vueuse/core'
-import { reactive, watch } from 'vue'
-import { store } from '~/client'
-
-export function useVersionStorage<T extends object>(key: string, version: string, fallback?: () => T) {
-  const storage = useStorage('koishi.' + key, {})
-  if (storage.value['version'] !== version) {
-    storage.value = { version, data: fallback() }
-  }
-  return reactive<T>(storage.value['data'])
-}
+import { Dict } from 'koishi'
+import { computed, watch } from 'vue'
+import { createStorage, store } from '@koishijs/client'
 
 interface ManagerConfig {
-  favorites: string[]
+  override: Dict<string>
+  showInstalled?: boolean
+  showDepsOnly?: boolean
 }
 
-export const config = useVersionStorage<ManagerConfig>('managerConfig', '1.0', () => ({
-  favorites: [],
+export const config = createStorage<ManagerConfig>('manager', '2.0', () => ({
+  override: {},
+  showInstalled: false,
+  showDepsOnly: false,
 }))
+
+export const overrideCount = computed(() => {
+  return Object.values(config.override).filter(value => value !== undefined).length
+})
 
 watch(store.packages, (value) => {
   if (!value) return
-  config.favorites = config.favorites.filter(name => !value[name])
-})
-
-interface ManagerState {
-  downloading?: boolean
-}
-
-export const state = reactive<ManagerState>({})
+  for (const key in config.override) {
+    if (!config.override[key]) {
+      if (!value[key]) delete config.override[key]
+    } else if (value[key]?.version === config.override[key]) {
+      delete config.override[key]
+    }
+  }
+}, { immediate: true })
 
 export function addFavorite(name: string) {
-  if (config.favorites.includes(name) || store.packages[name]) return
-  config.favorites.push(name)
+  if (config.override[name] || store.packages[name]) return
+  config.override[name] = store.market[name].version
 }
+
+export function removeFavorite(name: string) {
+  delete config.override[name]
+}
+
+export const getMixedMeta = (name: string) => ({
+  keywords: [],
+  devDeps: [],
+  peerDeps: [],
+  ...store.market[name],
+  ...store.packages[name],
+})

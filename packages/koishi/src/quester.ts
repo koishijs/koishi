@@ -1,21 +1,13 @@
-import { App, Schema } from '@koishijs/core'
-import { Dict, defineProperty } from '@koishijs/utils'
+import { Schema } from '@koishijs/core'
+import { Dict } from '@koishijs/utils'
 import { Agent } from 'http'
 import ProxyAgent from 'proxy-agent'
 import axios, { AxiosRequestConfig, AxiosResponse, Method } from 'axios'
 
 declare module '@koishijs/core' {
   namespace App {
-    interface Config extends Config.Request {}
-
-    namespace Config {
-      interface Static {
-        Request?: Schema<Config.Request>
-      }
-
-      interface Request {
-        request?: Quester.Config
-      }
+    interface Config {
+      request?: Quester.Config
     }
   }
 
@@ -45,12 +37,16 @@ export namespace Quester {
     proxyAgent?: string
   }
 
-  export const Config: Schema<Config> = Schema.object({
-    endpoint: Schema.string().description('要连接的端点。'),
-    proxyAgent: Schema.string().description('使用的代理服务器地址。'),
-    headers: Schema.dict(Schema.string()).description('要附加的额外请求头。'),
-    timeout: Schema.number().description('等待连接建立的最长时间。'),
-  }).description('请求设置')
+  export const Config = createSchema()
+
+  export function createSchema(config: Config = {}): Schema<Config> {
+    return Schema.object({
+      endpoint: Schema.string().role('url').description('要连接的端点。').default(config.endpoint),
+      proxyAgent: Schema.string().role('url').description('使用的代理服务器地址。').default(config.proxyAgent),
+      headers: Schema.dict(Schema.string()).description('要附加的额外请求头。').default(config.headers),
+      timeout: Schema.natural().role('ms').description('等待连接建立的最长时间。').default(config.timeout),
+    }).description('请求设置')
+  }
 
   const agents: Dict<Agent> = {}
 
@@ -103,11 +99,3 @@ export namespace Quester {
     return http
   }
 }
-
-const RequestConfig: Schema<App.Config.Request> = Schema.object({
-  request: Quester.Config,
-})
-
-defineProperty(App.Config, 'Request', RequestConfig)
-
-App.Config.list.push(RequestConfig)

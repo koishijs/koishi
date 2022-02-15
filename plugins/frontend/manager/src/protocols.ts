@@ -1,7 +1,7 @@
 import { Adapter, Context, Dict, Schema } from 'koishi'
 import { DataService } from '@koishijs/plugin-console'
 
-export default class AdapterProvider extends DataService<Dict<Schema>> {
+class AdapterProvider extends DataService<Dict<Schema>> {
   constructor(ctx: Context) {
     super(ctx, 'protocols')
 
@@ -13,8 +13,9 @@ export default class AdapterProvider extends DataService<Dict<Schema>> {
   async get() {
     const protocols: Dict<Schema> = {}
     for (const key in Adapter.library) {
-      if (key.includes('.')) continue
-      protocols[key] = Adapter.library[key].schema
+      const constructor = Adapter.library[key]
+      if (constructor[Adapter.redirect]) continue
+      protocols[key] = constructor.schema
     }
     return protocols
   }
@@ -23,3 +24,5 @@ export default class AdapterProvider extends DataService<Dict<Schema>> {
 
   stop() {}
 }
+
+export default AdapterProvider

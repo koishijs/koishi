@@ -1,5 +1,5 @@
 import { PluginData } from '@koishijs/plugin-manager/src'
-import { store } from '~/client'
+import { store } from '@koishijs/client'
 import { Dict } from 'koishi'
 import { computed } from 'vue'
 

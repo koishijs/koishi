@@ -1,4 +1,4 @@
-import { Cache, Context, Dict, isNullable } from 'koishi'
+import { Cache, Context, Dict, isNullable, Schema } from 'koishi'
 import LRU from 'lru-cache'
 
 class LruCache extends Cache {
@@ -49,6 +49,8 @@ namespace LruCache {
   export const name = 'cache-lru'
 
   export interface Config {}
+
+  export const Config: Schema<Config> = Schema.object({})
 }
 
 export default LruCache

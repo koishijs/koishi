@@ -1,5 +1,3 @@
-/* eslint-disable no-new-wrappers */
-
 import { internal } from '@koishijs/plugin-eval/lib/worker'
 
 internal.setGlobal('test', {

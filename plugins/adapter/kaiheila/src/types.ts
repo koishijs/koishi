@@ -1,5 +1,3 @@
-/* eslint-disable camelcase */
-
 export enum Signal { event, hello, ping, pong, reconnect, resume }
 
 export interface Payload {

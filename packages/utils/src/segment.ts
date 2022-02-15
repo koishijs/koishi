@@ -1,4 +1,4 @@
-import { isType, Awaitable, Dict } from './misc'
+import { Awaitable, Dict, isType } from './misc'
 
 // eslint-disable-next-line @typescript-eslint/naming-convention
 export interface segment {

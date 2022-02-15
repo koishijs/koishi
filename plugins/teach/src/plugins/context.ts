@@ -1,4 +1,4 @@
-import { Context, union, difference, defineProperty } from 'koishi'
+import { Context, defineProperty, difference, union } from 'koishi'
 import { Dialogue, equal } from '../utils'
 
 declare module '../utils' {

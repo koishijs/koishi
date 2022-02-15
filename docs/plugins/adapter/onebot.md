@@ -77,8 +77,7 @@ sidebarDepth: 2
 
 几个可用的镜像源：
 
-- `https://hub.fastgit.org`
-- `https://github.com.cnpmjs.org`
+- `https://hub.fastgit.xyz`
 - `https://github.bajins.com`
 - `https://github.rc1844.workers.dev`
 

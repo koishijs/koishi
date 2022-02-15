@@ -1,4 +1,4 @@
-import { Context } from '~/client'
+import { Context } from '@koishijs/client'
 import { createChart, Tooltip } from './utils'
 
 const formatHour = (value: number) => `${(value - 0.5).toFixed()}:00-${(value + 0.5).toFixed()}:00`
@@ -21,7 +21,7 @@ export default (ctx: Context) => {
             params.reverse().forEach(({ seriesName, marker }, index) => {
               const value = index === 0 ? source.command
                 : index === 1 ? source.dialogue
-                : Math.max(0, source.total - source.command - source.dialogue)
+                  : Math.max(0, source.total - source.command - source.dialogue)
               if (!value) return
               output.push(`${marker}${seriesName}：${+value.toFixed(1)}`)
             })

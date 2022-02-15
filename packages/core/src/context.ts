@@ -1,11 +1,10 @@
-import { Logger, makeArray, remove, sleep, Random, Promisify, Awaitable, Dict, MaybeArray, defineProperty } from '@koishijs/utils'
+import { Awaitable, defineProperty, Dict, Logger, makeArray, MaybeArray, Promisify, Random, remove, sleep } from '@koishijs/utils'
 import { Command } from './command'
 import { Session } from './session'
-import { User, Channel, Modules } from './database'
+import { Channel, Database, Modules, User } from './database'
 import { Argv } from './parser'
 import { App } from './app'
 import { Bot } from './bot'
-import { Database } from './database'
 import { Adapter } from './adapter'
 import { Model, Tables } from './orm'
 import Schema from 'schemastery'
@@ -52,11 +51,11 @@ export namespace Plugin {
     : T extends Object<infer U> ? U
     : never
 
-  export interface State<T = any> {
+  export interface State {
     id?: string
     parent?: State
     context?: Context
-    config?: T
+    config?: any
     using?: readonly (keyof Context.Services)[]
     schema?: Schema
     plugin?: Plugin
@@ -305,6 +304,7 @@ export class Context {
       if (typeof plugin !== 'function') {
         plugin.apply(ctx, config)
       } else if (isConstructor(plugin)) {
+        // eslint-disable-next-line no-new, new-cap
         new plugin(ctx, config)
       } else {
         plugin(ctx, config)
@@ -342,9 +342,9 @@ export class Context {
     const session = typeof args[0] === 'object' ? args.shift() : null
     const name = args.shift()
     for (const callback of this.getHooks(name, session)) {
-      tasks.push(Promise.resolve(callback.apply(session, args)).catch(((error) => {
+      tasks.push(Promise.resolve(callback.apply(session, args)).catch((error) => {
         this.logger('app').warn(error)
-      })))
+      }))
     }
     await Promise.all(tasks)
   }
@@ -468,6 +468,7 @@ export class Context {
   private createTimerDispose(timer: NodeJS.Timeout) {
     const dispose = () => {
       clearTimeout(timer)
+      if (!this.state) return
       return remove(this.state.disposables, dispose)
     }
     this.state.disposables.push(dispose)
@@ -566,24 +567,12 @@ export class Context {
     const [content, forced] = args as [string, boolean]
     if (!content) return []
 
-    const data = this.database
-      ? await this.database.getAssignedChannels(['id', 'assignee', 'flag', 'platform'])
-      : channels.map((id) => {
-        const [platform] = id.split(':')
-        const bot = this.bots.find(bot => bot.platform === platform)
-        return bot && { id, assignee: bot.selfId, flag: 0, platform }
-      }).filter(Boolean)
-
-    const assignMap: Dict<Dict<string[]>> = {}
-    for (const { id, assignee, flag, platform } of data) {
+    const data = await this.database.getAssignedChannels(['id', 'assignee', 'flag', 'platform', 'guildId'])
+    const assignMap: Dict<Dict<[string, string][]>> = {}
+    for (const { id, assignee, flag, platform, guildId } of data) {
       if (channels && !channels.includes(`${platform}:${id}`)) continue
       if (!forced && (flag & Channel.Flag.silent)) continue
-      const map = assignMap[platform] ||= {}
-      if (map[assignee]) {
-        map[assignee].push(id)
-      } else {
-        map[assignee] = [id]
-      }
+      ((assignMap[platform] ||= {})[assignee] ||= []).push([id, guildId])
     }
 
     return (await Promise.all(Object.entries(assignMap).flatMap(([platform, map]) => {

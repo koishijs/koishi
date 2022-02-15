@@ -1,7 +1,8 @@
-import { resolve, extname, dirname, isAbsolute } from 'path'
+import { dirname, extname, isAbsolute, resolve } from 'path'
 import { readdirSync, readFileSync, writeFileSync } from 'fs'
-import { App, Dict, Logger, interpolate, Modules, unwrapExports, valueMap } from 'koishi'
+import { App, Dict, interpolate, Logger, Modules, unwrapExports, valueMap } from 'koishi'
 import * as yaml from 'js-yaml'
+import * as dotenv from 'dotenv'
 
 declare module 'koishi' {
   namespace Context {
@@ -81,13 +82,16 @@ export class Loader {
       config = module.default || module
     }
 
+    // load .env file into process.env
+    dotenv.config({
+      path: resolve(this.dirname, '.env'),
+    })
+
     let resolved = new App.Config(config)
     if (this.isWritable) {
       // schemastery may change original config
       // so we need to validate config twice
       resolved = new App.Config(this.interpolate(config))
-    } else {
-      resolved.allowWrite = false
     }
 
     this.config = config
@@ -149,7 +153,7 @@ export class Loader {
 
   createApp() {
     const app = this.app = new App(this.config)
-    app.loader = this
+    if (this.isWritable) app.loader = this
     app.baseDir = this.dirname
     const { plugins } = this.config
     for (const name in plugins) {
@@ -164,7 +168,7 @@ export class Loader {
     const state = this.app.registry.get(plugin)
     if (!state) return
 
-    let missing = state.using.filter(key => !this.app[key])
+    const missing = state.using.filter(key => !this.app[key])
     if (!missing.length) return
     this.app.logger('diagnostic').warn('plugin %c is missing required service %c', name, missing.join(', '))
   }

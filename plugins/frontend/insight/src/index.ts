@@ -1,4 +1,4 @@
-import { camelize, capitalize, Context, Dict, Plugin } from 'koishi'
+import { camelize, capitalize, Context, Dict, Plugin, Schema } from 'koishi'
 import { debounce } from 'throttle-debounce'
 import { DataService } from '@koishijs/plugin-console'
 import { resolve } from 'path'
@@ -11,19 +11,21 @@ declare module '@koishijs/plugin-console' {
   }
 }
 
+export interface Config {}
+
 export default class RegistryProvider extends DataService<Dict<PluginData>> {
   static using = ['console'] as const
+  static schema: Schema<Config> = Schema.object({})
 
   private cache: Dict<PluginData>
 
   constructor(ctx: Context) {
     super(ctx, 'registry')
 
-    if (ctx.console.config.devMode) {
-      ctx.console.addEntry(resolve(__dirname, '../client/index.ts'))
-    } else {
-      ctx.console.addEntry(resolve(__dirname, '../dist'))
-    }
+    ctx.console.addEntry({
+      dev: resolve(__dirname, '../client/index.ts'),
+      prod: resolve(__dirname, '../dist'),
+    })
 
     ctx.on('plugin-added', this.update)
     ctx.on('plugin-removed', this.update)
@@ -64,9 +66,11 @@ export default class RegistryProvider extends DataService<Dict<PluginData>> {
   private traverse(plugin: Plugin) {
     const state = this.ctx.app.registry.get(plugin)
     this.cache[state.id] = {
-      name: !plugin ? 'App'
-        : !plugin.name || plugin.name === 'apply' ? ''
-        : capitalize(camelize(plugin.name)),
+      name: !plugin
+        ? 'App'
+        : !plugin.name || plugin.name === 'apply'
+          ? ''
+          : capitalize(camelize(plugin.name)),
       parent: state.parent?.id,
       disposables: state.disposables.length,
       dependencies: state.using.map(name => this.ctx[name]?.['ctx']?.state.id).filter(x => x),

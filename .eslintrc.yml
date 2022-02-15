@@ -24,6 +24,8 @@ plugins:
   - '@typescript-eslint'
 
 rules:
+  array-callback-return: off
+
   comma-dangle:
     - error
     - always-multiline
@@ -57,6 +59,11 @@ rules:
     - single
     - avoidEscape: true
       allowTemplateLiterals: true
+
+  sort-imports:
+    - warn
+    - ignoreCase: true
+      ignoreDeclarationSort: true
 
   valid-typeof: off
 
@@ -103,6 +110,14 @@ rules:
   # https://github.com/typescript-eslint/typescript-eslint/blob/master/packages/eslint-plugin/docs/rules/no-redeclare.md
   no-redeclare: off
 
+  # https://typescript-eslint.io/docs/linting/troubleshooting/#i-get-errors-from-the-no-undef-rule-about-global-variables-not-being-defined-even-though-there-are-no-typescript-errors
+  no-undef: off
+
+  indent:
+    - warn
+    - 2
+    - offsetTernaryExpressions: false
+
   no-unused-vars: off
   '@typescript-eslint/no-unused-vars':
     - error
@@ -116,6 +131,10 @@ rules:
 
   no-useless-constructor: off
   '@typescript-eslint/no-useless-constructor': warn
+
+  node/no-callback-literal: off
+
+  quote-props: off
 
   semi: off
   '@typescript-eslint/semi':

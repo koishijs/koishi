@@ -2,7 +2,7 @@
 
 import parse from 'yargs-parser'
 import prompts from 'prompts'
-import { bold, blue, yellow, green, dim } from 'kleur'
+import { blue, bold, dim, green, yellow } from 'kleur'
 import { basename, join, relative } from 'path'
 import spawn from 'cross-spawn'
 import * as fs from 'fs'
@@ -28,7 +28,7 @@ function supports(command: string, args: string[] = []) {
   return new Promise<boolean>((resolve) => {
     const child = spawn(command, args, { stdio: 'ignore' })
     child.on('exit', (code) => {
-      resolve(code ? false : true)
+      resolve(!code)
     })
     child.on('error', () => {
       resolve(false)

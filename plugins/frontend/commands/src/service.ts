@@ -1,6 +1,7 @@
 import { DataService } from '@koishijs/plugin-console'
 import { debounce } from 'throttle-debounce'
 import { Command, Context } from 'koishi'
+import { resolve } from 'path'
 
 declare module '@koishijs/plugin-console' {
   namespace Console {
@@ -26,6 +27,8 @@ function traverse(command: Command): CommandData {
 }
 
 export default class CommandProvider extends DataService<CommandData[]> {
+  static using = ['console'] as const
+
   cached: CommandData[]
   update = debounce(0, () => this.refresh())
 
@@ -35,6 +38,11 @@ export default class CommandProvider extends DataService<CommandData[]> {
     ctx.on('command-added', this.update)
     ctx.on('command-removed', this.update)
     ctx.on('dispose', this.update.cancel)
+
+    ctx.console.addEntry({
+      dev: resolve(__dirname, '../client/index.ts'),
+      prod: resolve(__dirname, '../dist'),
+    })
   }
 
   async get(forced = false) {

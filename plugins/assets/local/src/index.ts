@@ -1,13 +1,7 @@
-import { Assets, Context, sanitize, trimSlash, Schema } from 'koishi'
-import { promises as fs, createReadStream, existsSync } from 'fs'
-import { extname, resolve, basename } from 'path'
-import { createHmac, createHash } from 'crypto'
-
-declare module 'koishi' {
-  interface Modules {
-    'assets-local': typeof import('.')
-  }
-}
+import { Assets, Context, sanitize, Schema, trimSlash } from 'koishi'
+import { createReadStream, promises as fs } from 'fs'
+import { basename, extname, resolve } from 'path'
+import { createHmac } from 'crypto'
 
 class LocalAssets extends Assets {
   private _promise: Promise<void>
@@ -83,6 +77,7 @@ class LocalAssets extends Assets {
   }
 
   async upload(url: string, file: string) {
+    if (url.startsWith(this.config.selfUrl)) return url
     await this._promise
     const { selfUrl, path, root } = this.config
     const { buffer, filename } = await this.analyze(url, file)
@@ -107,9 +102,9 @@ namespace LocalAssets {
 
   export const Config = Schema.object({
     root: Schema.string().description('本地存储资源文件的绝对路径。'),
-    path: Schema.string().description('静态图片暴露在服务器的路径。').default('/assets'),
-    selfUrl: Schema.string().description('Koishi 服务暴露在公网的地址。缺省时将使用全局配置。'),
-    secret: Schema.string().description('用于验证上传者的密钥，配合 assets-remote 使用。'),
+    path: Schema.string().default('/files').description('静态图片暴露在服务器的路径。'),
+    selfUrl: Schema.string().role('url').description('Koishi 服务暴露在公网的地址。缺省时将使用全局配置。'),
+    secret: Schema.string().description('用于验证上传者的密钥，配合 assets-remote 使用。').role('secret'),
   })
 }
 

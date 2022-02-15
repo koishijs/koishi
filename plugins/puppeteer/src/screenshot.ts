@@ -41,10 +41,25 @@ export interface Config {
 }
 
 export const Config: Schema<Config> = Schema.object({
-  protocols: Schema.array(Schema.string()).description('允许的协议列表。').default(['http', 'https']),
-  maxSize: Schema.number().description('单张图片的最大尺寸，单位为字节。当截图尺寸超过这个值时会自动截取图片顶部的一段进行发送。').default(1000000),
-  loadTimeout: Schema.number().description('加载页面的最长时间。当一个页面等待时间超过这个值时，如果此页面主体已经加载完成，则会发送一条提示消息“正在加载中，请稍等片刻”并继续等待加载；否则会直接提示“无法打开页面”并终止加载。').default(Time.second * 5),
-  idleTimeout: Schema.number().description('等待页面空闲的最长时间。当一个页面等待时间超过这个值时，将停止进一步的加载并立即发送截图。').default(Time.second * 30),
+  protocols: Schema
+    .array(Schema.string())
+    .description('允许的协议列表。')
+    .default(['http', 'https']),
+  maxSize: Schema
+    .natural()
+    .role('byte')
+    .description('单张图片的最大尺寸，单位为字节。当截图尺寸超过这个值时会自动截取图片顶部的一段进行发送。')
+    .default(1024 * 1024),
+  loadTimeout: Schema
+    .natural()
+    .role('ms')
+    .description('加载页面的最长时间。当一个页面等待时间超过这个值时，如果此页面主体已经加载完成，则会发送一条提示消息“正在加载中，请稍等片刻”并继续等待加载；否则会直接提示“无法打开页面”并终止加载。')
+    .default(Time.second * 5),
+  idleTimeout: Schema
+    .natural()
+    .role('ms')
+    .description('等待页面空闲的最长时间。当一个页面等待时间超过这个值时，将停止进一步的加载并立即发送截图。')
+    .default(Time.second * 30),
 }).description('截图设置')
 
 export function apply(ctx: Context, config: Config) {

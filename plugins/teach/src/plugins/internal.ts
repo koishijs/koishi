@@ -1,4 +1,4 @@
-import { Context, template, defineProperty, segment, Query } from 'koishi'
+import { Context, defineProperty, Query, segment, template } from 'koishi'
 import { Dialogue } from '../utils'
 import { create, update } from '../update'
 import { formatQuestionAnswers } from '../search'
@@ -23,7 +23,6 @@ template.set('teach', {
 })
 
 export default function apply(ctx: Context, config: Dialogue.Config) {
-
   ctx.command('teach')
     .option('ignoreHint', '-I  忽略智能提示')
     .option('regexp', '-x  使用正则表达式匹配', { authority: config.authority.regExp })

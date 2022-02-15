@@ -1,6 +1,6 @@
-import { createPool, escape as mysqlEscape, escapeId, format } from '@vlasky/mysql'
-import type { Pool, PoolConfig, OkPacket } from 'mysql'
-import { Context, Database, difference, Logger, makeArray, Schema, Query, Model, Tables, Dict, Time, KoishiError, pick } from 'koishi'
+import { createPool, escapeId, format, escape as mysqlEscape } from '@vlasky/mysql'
+import type { OkPacket, Pool, PoolConfig } from 'mysql'
+import { Context, Database, Dict, difference, KoishiError, Logger, makeArray, Model, pick, Query, Schema, Tables, Time } from 'koishi'
 import { executeUpdate } from '@koishijs/orm-utils'
 import { Builder } from '@koishijs/sql-utils'
 
@@ -22,6 +22,8 @@ declare module 'koishi' {
 
 const logger = new Logger('mysql')
 
+const DEFAULT_DATE = new Date('1970-01-01')
+
 export type TableType = keyof Tables
 
 function getIntegerType(length = 11) {
@@ -34,19 +36,19 @@ function getIntegerType(length = 11) {
 
 function getTypeDefinition({ type, length, precision, scale }: Model.Field) {
   switch (type) {
-    case 'float':
-    case 'double':
-    case 'date':
-    case 'time': return type
-    case 'timestamp': return 'datetime'
-    case 'integer': return getIntegerType(length)
-    case 'unsigned': return `${getIntegerType(length)} unsigned`
-    case 'decimal': return `decimal(${precision}, ${scale}) unsigned`
-    case 'char': return `char(${length || 255})`
-    case 'string': return `varchar(${length || 255})`
-    case 'text': return `text(${length || 65535})`
-    case 'list': return `text(${length || 65535})`
-    case 'json': return `text(${length || 65535})`
+  case 'float':
+  case 'double':
+  case 'date':
+  case 'time': return type
+  case 'timestamp': return 'datetime'
+  case 'integer': return getIntegerType(length)
+  case 'unsigned': return `${getIntegerType(length)} unsigned`
+  case 'decimal': return `decimal(${precision}, ${scale}) unsigned`
+  case 'char': return `char(${length || 255})`
+  case 'string': return `varchar(${length || 255})`
+  case 'text': return `text(${length || 65535})`
+  case 'list': return `text(${length || 65535})`
+  case 'json': return `text(${length || 65535})`
   }
 }
 
@@ -128,6 +130,15 @@ class MysqlDatabase extends Database {
         } else if (meta?.type === 'list') {
           const source = field.string()
           return source ? source.split(',') : []
+        } else if (meta?.type === 'time') {
+          const source = field.string()
+          if (!source) return meta.initial
+          const time = new Date(DEFAULT_DATE)
+          const [h, m, s] = source.split(':')
+          time.setHours(parseInt(h))
+          time.setMinutes(parseInt(m))
+          time.setSeconds(parseInt(s))
+          return time
         }
 
         if (field.type === 'BIT') {
@@ -205,6 +216,7 @@ class MysqlDatabase extends Database {
   /** synchronize table schema */
   private async _syncTable(name: string) {
     await this._tableTasks[name]
+    // eslint-disable-next-line max-len
     const data = await this.queue<any[]>('SELECT COLUMN_NAME from information_schema.columns WHERE TABLE_SCHEMA = ? && TABLE_NAME = ?', [this.config.database, name])
     const columns = data.map(row => row.COLUMN_NAME)
     const result = this._getColDefs(name, columns)
@@ -436,9 +448,9 @@ namespace MysqlDatabase {
 
   export const Config = Schema.object({
     host: Schema.string().description('要连接到的主机名。').default('localhost'),
-    port: Schema.number().description('要连接到的端口号。').default(3306),
+    port: Schema.natural().max(65535).description('要连接到的端口号。').default(3306),
     user: Schema.string().description('要使用的用户名。').default('root'),
-    password: Schema.string().description('要使用的密码。'),
+    password: Schema.string().description('要使用的密码。').role('secret'),
     database: Schema.string().description('要访问的数据库名。').default('koishi'),
   })
 

@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-commands",
   "description": "Override command config for Koishi",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -29,14 +29,16 @@
     "chatbot",
     "koishi",
     "plugin",
-    "command"
+    "command",
+    "optional:console"
   ],
   "peerDependencies": {
-    "koishi": "^4.1.1"
+    "koishi": "^4.2.1"
   },
   "devDependencies": {
-    "@koishijs/plugin-console": "^2.0.0",
-    "@koishijs/plugin-mock": "^1.0.1",
+    "@koishijs/client": "^3.0.1",
+    "@koishijs/plugin-console": "^3.0.1",
+    "@koishijs/plugin-mock": "^1.0.2",
     "@types/throttle-debounce": "^2.1.0"
   },
   "dependencies": {

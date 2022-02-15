@@ -41,7 +41,7 @@ export namespace Emoji {
   export interface ModifyParams {
     /** name of the emoji */
     name?: string
-    /** array of snowflakes	roles allowed to use this emoji */
+    /** array of snowflakes roles allowed to use this emoji */
     roles?: snowflake[]
   }
 }

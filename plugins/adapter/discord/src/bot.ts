@@ -1,29 +1,33 @@
-/* eslint-disable camelcase */
-
-import { Adapter, App, Bot, Schema, segment, Quester } from 'koishi'
-import { adaptChannel, adaptGroup as adaptGuild, adaptMessage, adaptUser, AdapterConfig } from './utils'
+import { Adapter, Bot, Quester, Schema, segment } from 'koishi'
+import { adaptChannel, AdapterConfig, adaptGroup as adaptGuild, adaptMessage, adaptUser } from './utils'
 import { Sender } from './sender'
-import * as Discord from './types'
+import { GatewayIntent, Internal } from './types'
 
-export interface BotConfig extends Bot.BaseConfig, Sender.Config {
+interface PrivilegedIntents {
+  members?: boolean
+  presence?: boolean
+}
+
+export interface BotConfig extends Bot.BaseConfig, Quester.Config {
   token: string
+  gateway?: string
+  intents?: PrivilegedIntents
 }
 
 export const BotConfig = Schema.intersect([
   Schema.object({
-    token: Schema.string().description('机器人的用户令牌。').required(),
-    handleExternalAsset: Schema.union([
-      Schema.const('download').description('先下载后发送'),
-      Schema.const('direct').description('直接发送链接'),
-      Schema.const('auto').description('发送一个 HEAD 请求，如果返回的 Content-Type 正确，则直接发送链接，否则先下载后发送'),
-    ]).description('发送外链资源时采用的方式。').default('auto'),
-    handleMixedContent: Schema.union([
-      Schema.const('separate').description('将每个不同形式的内容分开发送'),
-      Schema.const('attach').description('图片前如果有文本内容，则将文本作为图片的附带信息进行发送'),
-      Schema.const('auto').description('如果图片本身采用直接发送则与前面的文本分开，否则将文本作为图片的附带信息发送'),
-    ]).description('发送图文等混合内容时采用的方式。').default('auto'),
+    token: Schema.string().description('机器人的用户令牌。').role('secret').required(),
   }),
-  App.Config.Request,
+  Schema.object({
+    gateway: Schema.string().role('url').default('wss://gateway.discord.gg/?v=8&encoding=json').description('要连接的 WebSocket 网关。'),
+    intents: Schema.object({
+      members: Schema.boolean().description('启用 GUILD_MEMBERS 推送。').default(true),
+      presence: Schema.boolean().description('启用 GUILD_PRESENCES 推送。').default(false),
+    }),
+  }).description('推送设置'),
+  Quester.createSchema({
+    endpoint: 'https://discord.com/api/v8',
+  }),
 ])
 
 export class DiscordBot extends Bot<BotConfig> {
@@ -34,16 +38,35 @@ export class DiscordBot extends Bot<BotConfig> {
   _sessionId: string
 
   public http: Quester
-  public internal: Discord.Internal
+  public internal: Internal
 
   constructor(adapter: Adapter, config: BotConfig) {
     super(adapter, config)
     this._d = 0
     this._sessionId = ''
-    this.http = adapter.http.extend({
-      headers: { Authorization: `Bot ${config.token}` },
+    this.http = adapter.ctx.http.extend({
+      ...config,
+      headers: {
+        Authorization: `Bot ${config.token}`,
+        ...config.headers,
+      },
     })
-    this.internal = new Discord.Internal(this.http)
+    this.internal = new Internal(this.http)
+  }
+
+  getIntents() {
+    let intents = 0
+      | GatewayIntent.GUILD_MESSAGES
+      | GatewayIntent.GUILD_MESSAGE_REACTIONS
+      | GatewayIntent.DIRECT_MESSAGES
+      | GatewayIntent.DIRECT_MESSAGE_REACTIONS
+    if (this.config.intents.members) {
+      intents |= GatewayIntent.GUILD_MEMBERS
+    }
+    if (this.config.intents.presence) {
+      intents |= GatewayIntent.GUILD_PRESENCES
+    }
+    return intents
   }
 
   async getSelf() {

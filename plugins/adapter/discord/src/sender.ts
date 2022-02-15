@@ -4,7 +4,7 @@ import { fromBuffer } from 'file-type'
 import FormData from 'form-data'
 import AggregateError from 'es-aggregate-error'
 import { DiscordBot } from './bot'
-import { segment, Dict } from 'koishi'
+import { Dict, Schema, segment } from 'koishi'
 
 export type HandleExternalAsset = 'auto' | 'download' | 'direct'
 export type HandleMixedContent = 'auto' | 'separate' | 'attach'
@@ -29,6 +29,19 @@ export namespace Sender {
 }
 
 export class Sender {
+  static Config: Schema<Sender.Config> = Schema.object({
+    handleExternalAsset: Schema.union([
+      Schema.const('download' as const).description('先下载后发送'),
+      Schema.const('direct' as const).description('直接发送链接'),
+      Schema.const('auto' as const).description('发送一个 HEAD 请求，根据返回的 Content-Type 决定发送方式'),
+    ]).description('发送外链资源时采用的方式。').default('auto'),
+    handleMixedContent: Schema.union([
+      Schema.const('separate' as const).description('将每个不同形式的内容分开发送'),
+      Schema.const('attach' as const).description('图片前如果有文本内容，则将文本作为图片的附带信息进行发送'),
+      Schema.const('auto' as const).description('如果图片本身采用直接发送则与前面的文本分开，否则将文本作为图片的附带信息发送'),
+    ]).description('发送图文等混合内容时采用的方式。').default('auto'),
+  }).description('发送设置')
+
   private results: string[] = []
   private errors: Error[] = []
 
@@ -48,7 +61,7 @@ export class Sender {
     }
   }
 
-  async sendEmbed(fileBuffer: ArrayBuffer, payload_json: Dict = {}, filename: string) {
+  async sendEmbed(fileBuffer: ArrayBuffer, payload_json: Dict, filename: string) {
     const fd = new FormData()
     const type = await fromBuffer(fileBuffer)
     filename ||= 'file.' + type.ext
@@ -62,7 +75,7 @@ export class Sender {
   }
 
   async sendAsset(type: string, data: Dict<string>, addition: Dict) {
-    const { handleMixedContent, handleExternalAsset } = this.bot.config
+    const { handleMixedContent, handleExternalAsset } = this.bot.adapter.config as Sender.Config
 
     if (handleMixedContent === 'separate' && addition.content) {
       await this.post(addition)
@@ -150,7 +163,7 @@ export class Sender {
           ...addition,
           embeds: [{ ...data }],
         })
-      } else if (type === 'record'){
+      } else if (type === 'record') {
         await this.sendAsset('file', data, {
           ...addition,
           content: textBuffer.trim(),

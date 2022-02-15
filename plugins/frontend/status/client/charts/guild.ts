@@ -1,5 +1,5 @@
-import type { GroupData } from '@koishijs/plugin-status/src'
-import { Context } from '~/client'
+import type { GuildData } from '@koishijs/plugin-status/src'
+import { Context } from '@koishijs/client'
 import { createChart, Tooltip } from './utils'
 
 export default (ctx: Context) => {
@@ -9,10 +9,10 @@ export default (ctx: Context) => {
       title: '各群发言数量',
       fields: ['stats'],
       options({ stats }) {
-        if (!stats.groups.length) return
+        if (!stats.guilds.length) return
 
         return {
-          tooltip: Tooltip.item<GroupData>(({ data }) => {
+          tooltip: Tooltip.item<GuildData>(({ data }) => {
             const output = [data.name]
             output.push(`平台：${data.platform}`)
             if (data.memberCount) output.push(`人数：${data.memberCount}`)
@@ -23,7 +23,7 @@ export default (ctx: Context) => {
           }),
           series: [{
             type: 'pie',
-            data: stats.groups.sort((a, b) => b.value - a.value),
+            data: stats.guilds.sort((a, b) => b.value - a.value),
             radius: ['35%', '65%'],
             minShowLabelAngle: 3,
           }],

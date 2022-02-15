@@ -1,5 +1,5 @@
-import { Context } from '~/client'
-import type {} from '@koishijs/plugin-logger/src'
+import { Context } from '@koishijs/client'
+import {} from '@koishijs/plugin-logger'
 import Logs from './index.vue'
 import './index.scss'
 
@@ -9,6 +9,7 @@ export default (ctx: Context) => {
     name: '日志',
     icon: 'clipboard-list',
     order: 400,
+    authority: 4,
     fields: ['logs'],
     component: Logs,
   })

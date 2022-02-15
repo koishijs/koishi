@@ -1,4 +1,4 @@
-import { Bot, Context, Session, Time, pick, segment, Dict, Schema } from 'koishi'
+import { Bot, Context, Dict, pick, Schema, segment, Session, Time } from 'koishi'
 
 export interface RefreshConfig {
   user?: number
@@ -7,9 +7,9 @@ export interface RefreshConfig {
 }
 
 export const RefreshConfig = Schema.object({
-  user: Schema.number().description('刷新用户数据的时间间隔。').default(Time.hour),
-  guild: Schema.number().description('刷新群组数据的时间间隔。').default(Time.hour),
-  channel: Schema.number().description('刷新频道数据的时间间隔。').default(Time.hour),
+  user: Schema.natural().role('ms').description('刷新用户数据的时间间隔。').default(Time.hour),
+  guild: Schema.natural().role('ms').description('刷新群组数据的时间间隔。').default(Time.hour),
+  channel: Schema.natural().role('ms').description('刷新频道数据的时间间隔。').default(Time.hour),
 }).description('刷新选项')
 
 const textSegmentTypes = ['text', 'header', 'section']

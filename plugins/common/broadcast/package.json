@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-broadcast",
   "description": "Broadcast messages in Koishi",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -28,13 +28,14 @@
     "chatbot",
     "koishi",
     "plugin",
-    "broadcast"
+    "broadcast",
+    "optional:database"
   ],
   "peerDependencies": {
-    "koishi": "^4.1.1"
+    "koishi": "^4.2.1"
   },
   "devDependencies": {
-    "@koishijs/plugin-database-memory": "^1.0.0",
-    "@koishijs/plugin-mock": "^1.0.1"
+    "@koishijs/plugin-database-memory": "^1.0.1",
+    "@koishijs/plugin-mock": "^1.0.2"
   }
 }

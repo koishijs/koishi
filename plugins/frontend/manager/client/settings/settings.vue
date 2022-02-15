@@ -1,207 +1,112 @@
 <template>
   <k-content class="plugin-view">
     <!-- title -->
-    <h1 v-if="data.name">
-      {{ data.name }}
-      <span v-if="data.workspace">(工作区)</span>
-      <span v-else-if="data.id">({{ data.version }})</span>
+    <h1 class="config-header" v-if="data.name">
+      {{ data.shortname }}
+      <span class="version">({{ data.workspace ? '工作区' : data.version }})</span>
+      <template v-if="data.id">
+        <k-button solid type="error" @click="execute('unload')">停用插件</k-button>
+        <k-button solid :disabled="env.invalid" @click="execute('reload')">重载配置</k-button>
+      </template>
+      <template v-else>
+        <k-button solid :disabled="env.invalid" @click="execute('reload')">启用插件</k-button>
+        <k-button solid @click="execute('unload')">保存配置</k-button>
+      </template>
     </h1>
-    <h1 v-else>
+    <h1 class="config-header" v-else>
       全局设置
       <k-button solid>应用配置</k-button>
     </h1>
 
     <!-- market -->
     <template v-if="data.name">
-      <!-- versions -->
-      <p v-if="remote && !data.workspace">
-        选择版本：
-        <el-select v-model="version">
-          <el-option
-            v-for="({ version }, index) in remote.versions"
-            :key="version" :label="version + (index ? '' : ' (最新)')" :value="version"
-          ></el-option>
-        </el-select>
-        <k-tip-button v-if="local" :tip="loadTip" type="error" @click="uninstall">卸载插件</k-tip-button>
-        <k-tip-button :tip="loadTip" @click="install">
-          <template #content v-if="version === data.version && local">要安装的版本与当前版本一致。</template>
-          <template #default>{{ local ? '更新插件' : '安装插件' }}</template>
-        </k-tip-button>
-      </p>
+      <!-- latest -->
+      <k-comment v-if="hasUpdate">
+        当前的插件版本不是最新，<router-link to="/dependencies">点击前往依赖管理</router-link>。
+      </k-comment>
 
-      <!-- dependencies -->
-      <k-dep-alert
-        v-for="({ fulfilled, required, available }, key) in delegates" :key="key"
-        :fulfilled="fulfilled" :required="required" :name="key" type="服务">
-        <ul v-if="!fulfilled">
-          <li v-for="name in available" @click="configurate(name)">
-            <k-dep-link :name="name"></k-dep-link>
-          </li>
-        </ul>
-      </k-dep-alert>
-      <k-dep-alert
-        v-for="(fulfilled, name) in deps" :key="name"
-        :fulfilled="fulfilled" :required="true" type="依赖">
-        <template #name><k-dep-link :name="name"></k-dep-link></template>
-      </k-dep-alert>
+      <!-- external -->
+      <k-comment type="warning" v-if="!store.dependencies[current]">
+        尚未将当前插件列入依赖，<a @click="send('market/patch', current, data.version)">点击添加</a>。
+      </k-comment>
+
+      <!-- impl -->
+      <template v-for="name in env.impl" :key="name">
+        <k-comment v-if="name in store.services && !data.id" type="error">
+          此插件将会提供 {{ name }} 服务，但此服务已被其他插件实现。
+        </k-comment>
+        <k-comment v-else :type="data.id ? 'success' : 'primary'">
+          此插件{{ data.id ? '提供了' : '将会提供' }} {{ name }} 服务。
+        </k-comment>
+      </template>
+
+      <!-- using -->
+      <k-comment
+        v-for="({ fulfilled, required, available, name }) in env.using" :key="name"
+        :type="fulfilled ? 'success' : required ? 'error' : 'primary'">
+        {{ required ? '必需' : '可选' }}服务：{{ name }}
+        {{ fulfilled ? '(已加载)' : '(未加载，启用下列任一插件可实现此服务)' }}
+        <template v-if="!fulfilled" #body>
+          <ul>
+            <li v-for="name in available">
+              <k-dep-link :name="name"></k-dep-link> (点击{{ name in store.packages ? '配置' : '添加' }})
+            </li>
+          </ul>
+        </template>
+      </k-comment>
+
+      <!-- dep -->
+      <k-comment
+        v-for="({ fulfilled, required, local, name }) in env.deps" :key="name"
+        :type="fulfilled ? 'success' : required ? 'error' : 'primary'">
+        {{ required ? '必需' : '可选' }}依赖：<k-dep-link :name="name"></k-dep-link>
+        ({{ local ? `${fulfilled ? '已' : '未'}启用` : '未安装，点击添加' }})
+      </k-comment>
     </template>
 
     <!-- schema -->
-    <template v-if="data.schema">
-      <h1 class="schema-header" v-if="data.shortname">
-        配置项
-        <template v-if="data.id">
-          <k-button solid type="error" @click="execute('unload')">停用插件</k-button>
-          <k-tip-button :tip="depTip" @click="execute('load')">重载配置</k-tip-button>
-        </template>
-        <template v-else>
-          <k-tip-button :tip="depTip" @click="execute('load')">启用插件</k-tip-button>
-          <k-button solid @click="execute('unload')">保存配置</k-button>
-        </template>
-      </h1>
-      <k-schema :schema="data.schema" v-model="data.config" prefix=""></k-schema>
+    <k-comment v-if="!data.root && data.id" type="warning">
+      此插件已被加载，但并非是在配置文件中。你无法修改其配置。
+    </k-comment>
+    <template v-else>
+      <k-comment v-if="!data.schema" type="warning">
+        此插件未声明配置项，这可能并非预期行为{{ hint }}。
+      </k-comment>
+      <k-form :schema="data.schema" v-model="data.config">
+        <template #hint>{{ hint }}</template>
+      </k-form>
     </template>
   </k-content>
 </template>
 
 <script setup lang="ts">
 
-import { computed, ref, watch } from 'vue'
-import { useRouter } from 'vue-router'
-import { Dict } from 'koishi'
-import { store, send } from '~/client'
-import { addFavorite, state } from '../utils'
-import { MarketProvider } from '../../src'
-import { ElMessage } from 'element-plus'
-import KDepAlert from './dep-alert.vue'
+import { computed } from 'vue'
+import { store, send } from '@koishijs/client'
+import { envMap } from './utils'
+import { getMixedMeta, config } from '../utils'
 import KDepLink from './dep-link.vue'
-import KTipButton from './tip-button.vue'
 
 const props = defineProps<{
   current: string
 }>()
 
-const local = computed(() => store.packages[props.current])
-const remote = computed(() => store.market[props.current])
+const data = computed(() => getMixedMeta(props.current))
+const env = computed(() => envMap.value[props.current])
+const hint = computed(() => data.value.workspace ? '，请检查源代码' : '，请联系插件作者')
 
-const data = computed(() => ({
-  ...remote.value,
-  ...local.value,
-}))
-
-const version = ref('')
-
-watch(data, (value) => {
-  version.value = value.version
-}, { immediate: true })
-
-const deps = computed(() => {
-  return Object
-    .fromEntries((data.value.peerDeps || [])
-    .map(name => [name, !!store.packages[name]?.id]))
+const hasUpdate = computed(() => {
+  if (!data.value.versions || data.value.workspace) return
+  return data.value.versions[0].version !== data.value.version
 })
 
-function getKeywords(prefix: string, keywords = data.value.keywords) {
-  if (!keywords) return []
-  prefix += ':'
-  return keywords
-    .filter(name => name.startsWith(prefix))
-    .map(name => name.slice(prefix.length))
-}
-
-interface DelegateData {
-  required: boolean
-  fulfilled: boolean
-  available?: string[]
-}
-
-function isAvailable(name: string, remote: MarketProvider.Data) {
-  const { keywords } = remote.versions[0]
-  return getKeywords('service', keywords).includes(name)
-}
-
-function getDelegateData(name: string, required: boolean): DelegateData {
-  const fulfilled = name in store.services
-  if (fulfilled) return { required, fulfilled }
-  return {
-    required,
-    fulfilled,
-    available: Object.values(store.market || {})
-      .filter(data => isAvailable(name, data))
-      .map(data => data.name),
-  }
-}
-
-const delegates = computed(() => {
-  const required = getKeywords('required')
-  const optional = getKeywords('optional')
-  const result: Dict<DelegateData> = {}
-  for (const name of required) {
-    result[name] = getDelegateData(name, true)
-  }
-  for (const name of optional) {
-    result[name] = getDelegateData(name, false)
-  }
-  return result
-})
-
-const depTip = computed(() => {
-  const required = getKeywords('required')
-  if (required.some(name => !store.services[name])) {
-    return '存在未安装的依赖接口。'
-  }
-
-  if (!Object.values(deps.value).every(v => v)) {
-    return '存在未安装的依赖插件。'
-  }
-})
-
-const loadTip = computed(() => {
-  if (state.downloading) return '请先等待未完成的任务。'
-})
-
-function execute(event: string) {
+function execute(event: 'unload' | 'reload') {
   const { shortname, config } = data.value
-  send('plugin/' + event, shortname, config)
+  send(`manager/plugin-${event}`, shortname, config)
 }
 
-const router = useRouter()
-
-function configurate(name: string) {
-  addFavorite(name)
-  router.replace({ query: { name } })
-}
-
-async function install() {
-  state.downloading = true
-  try {
-    const code = await send('install', `${data.value.name}@^${version.value}`)
-    if (code === 0) {
-      ElMessage.success('安装成功！')
-    } else {
-      ElMessage.error('安装失败！')
-    }
-  } catch (err) {
-    ElMessage.error('安装超时！')
-  } finally {
-    state.downloading = false
-  }
-}
-
-async function uninstall() {
-  state.downloading = true
-  try {
-    const code = await send('uninstall', data.value.name)
-    if (code === 0) {
-      ElMessage.success('卸载成功！')
-    } else {
-      ElMessage.error('卸载失败！')
-    }
-  } catch (err) {
-    ElMessage.error('卸载超时！')
-  } finally {
-    state.downloading = false
-  }
+function update() {
+  config.override[props.current] = data.value.versions[0].version
 }
 
 </script>
@@ -209,18 +114,11 @@ async function uninstall() {
 <style lang="scss">
 
 .plugin-view {
-  h1 {
-    margin: 0 0 2rem;
-  }
-
-  .k-button {
-    float: right;
-    font-size: 1rem;
-  }
-
-  h1.schema-header {
-    font-size: 1.375rem;
-    margin: 2rem 0;
+  a {
+    cursor: pointer;
+    &:hover {
+      text-decoration: underline;
+    }
   }
 }
 

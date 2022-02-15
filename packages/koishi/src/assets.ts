@@ -1,8 +1,30 @@
-import { Context, Service } from '@koishijs/core'
-import { segment } from '@koishijs/utils'
+import { App, Context, Schema, Service } from '@koishijs/core'
+import { defineProperty, segment } from '@koishijs/utils'
 import { createHash } from 'crypto'
 import { basename } from 'path'
 import FileType from 'file-type'
+
+declare module '@koishijs/core' {
+  namespace App {
+    interface Config {
+      assets?: Config.Assets
+    }
+
+    namespace Config {
+      interface Static {
+        Assets?: Schema<Assets>
+      }
+
+      interface Assets {
+        whitelist?: string[]
+      }
+    }
+  }
+}
+
+defineProperty(App.Config, 'Assets', Schema.object({
+  whitelist: Schema.array(Schema.string().role('url')).description('不处理的白名单 URL 列表。'),
+}).description('资源设置'))
 
 const PROTOCOL_BASE64 = 'base64://'
 
@@ -19,7 +41,13 @@ export abstract class Assets extends Service {
 
   public async transform(content: string) {
     return await segment.transformAsync(content, Object.fromEntries(this.types.map((type) => {
-      return [type, async (data) => segment(type, { url: await this.upload(data.url, data.file) })]
+      return [type, async (data) => {
+        if (this.ctx.app.options.assets.whitelist.some(prefix => data.url.startsWith(prefix))) {
+          return segment(type, data)
+        } else {
+          return segment(type, { url: await this.upload(data.url, data.file) })
+        }
+      }]
     })))
   }
 

@@ -14,20 +14,18 @@ declare module 'koishi' {
       plugins?: Dict
       timezoneOffset?: number
       stackTraceLimit?: number
-      allowWrite?: boolean
       logger?: logger.Config
       watch?: Watcher.Config
     }
   }
 }
 
-App.Config.list.push(Schema.object({
+Object.assign(App.Config.Advanced.dict, {
   autoRestart: Schema.boolean().description('应用在运行时崩溃自动重启。').default(true).hidden(),
-  allowWrite: Schema.boolean().description('允许在运行时修改配置文件。').default(true),
-  timezoneOffset: Schema.number().description('时区偏移量 (分钟)。'),
-  stackTraceLimit: Schema.number().description('报错的调用堆栈深度。').default(10),
+  timezoneOffset: Schema.number().description('时区偏移量 (分钟)。').default(new Date().getTimezoneOffset()),
+  stackTraceLimit: Schema.natural().description('报错的调用堆栈深度。').default(10),
   plugins: Schema.object({}).hidden(),
-}).description('CLI 设置'))
+})
 
 export const name = 'CLI'
 

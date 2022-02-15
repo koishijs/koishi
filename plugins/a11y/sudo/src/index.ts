@@ -1,4 +1,4 @@
-import { Context, Session, template } from 'koishi'
+import { Context, Schema, Session, template } from 'koishi'
 import { parsePlatform } from '@koishijs/helpers'
 
 template.set('sudo', {
@@ -7,8 +7,11 @@ template.set('sudo', {
   'invalid-private-member': '无法在私聊上下文使用 --member 选项。',
 })
 
+export interface Config {}
+
 export const name = 'sudo'
 export const using = ['database'] as const
+export const Config: Schema<Config> = Schema.object({})
 
 export function apply(ctx: Context) {
   ctx.command('sudo <command:text>', '在特定上下文中触发指令', { authority: 3 })

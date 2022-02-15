@@ -1,4 +1,4 @@
-import { Channel, Emoji, GuildMember, integer, Internal, PresenceUpdateEvent, Role, snowflake, StageInstance, Sticker, timestamp, User, VoiceState } from '.'
+import { Channel, Emoji, GuildMember, integer, Internal, PresenceUpdateEvent, Role, snowflake, StageInstance, Sticker, timestamp, VoiceState } from '.'
 
 /** https://discord.com/developers/docs/resources/guild#guild-object-guild-structure */
 export interface Guild {
@@ -207,7 +207,7 @@ export namespace Guild {
       /** style of the widget image returned (see below) */
       style: WidgetStyleOptions
     }
-    
+
     /** https://discord.com/developers/docs/resources/guild#get-guild-widget-image-widget-style-options */
     export enum WidgetStyleOptions {
       /** shield style widget with Discord icon and guild members online count */
@@ -221,7 +221,7 @@ export namespace Guild {
       /** large Discord logo at the top of the widget. Guild icon, name and online count in the middle portion of the widget and a "JOIN MY SERVER" button at the bottom */
       banner4 = 'banner4',
     }
-    
+
     /** https://discord.com/developers/docs/resources/guild#modify-guild-welcome-screen-json-params */
     export interface ModifyWelcomeScreen {
       /** whether the welcome screen is enabled */
