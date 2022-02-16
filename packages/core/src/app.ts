@@ -275,7 +275,7 @@ export namespace App {
     prefix: Schema.union([
       Schema.array(Schema.string()),
       Schema.transform(Schema.string(), (prefix) => [prefix]),
-    ] as const).description('指令前缀字符，可以是字符串或字符串数组。将用于指令前缀的匹配。'),
+    ] as const).default(['']).description('指令前缀字符，可以是字符串或字符串数组。将用于指令前缀的匹配。'),
     nickname: Schema.union([
       Schema.array(Schema.string()),
       Schema.transform(Schema.string(), (nickname) => [nickname]),
