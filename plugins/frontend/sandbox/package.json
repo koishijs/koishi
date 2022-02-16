@@ -1,11 +1,12 @@
 {
-  "name": "@koishijs/plugin-mock",
-  "description": "Tester for Koishi",
-  "version": "1.0.2",
+  "name": "@koishijs/plugin-sandbox",
+  "description": "Test Your Virtual Bot in Console",
+  "version": "1.0.0",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
-    "lib"
+    "lib",
+    "dist"
   ],
   "author": "Shigma <shigma10826@gmail.com>",
   "license": "MIT",
@@ -19,7 +20,7 @@
   "bugs": {
     "url": "https://github.com/koishijs/koishi/issues"
   },
-  "homepage": "https://koishi.js.org/plugins/test/",
+  "homepage": "https://koishi.js.org/plugins/frontend/sandbox/",
   "keywords": [
     "bot",
     "qqbot",
@@ -30,11 +31,14 @@
     "plugin",
     "test",
     "tester",
-    "unit",
-    "mock",
-    "impl:mock"
+    "sandbox",
+    "mock"
   ],
   "peerDependencies": {
     "koishi": "^4.2.1"
+  },
+  "devDependencies": {
+    "@koishijs/client": "^3.0.1",
+    "@koishijs/plugin-console": "^3.0.1"
   }
 }

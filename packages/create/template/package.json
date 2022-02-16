@@ -20,7 +20,7 @@
     "@koishijs/plugin-dataview": "^1.2.0",
     "@koishijs/plugin-insight": "^1.2.0",
     "@koishijs/plugin-logger": "^1.2.0",
-    "@koishijs/plugin-manager": "^1.5.0",
+    "@koishijs/plugin-manager": "^1.5.1",
     "@koishijs/plugin-status": "^5.3.0",
     "koishi": "^4.2.1"
   }
