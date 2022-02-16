@@ -103,7 +103,12 @@ class HttpService extends DataService<string[]> {
   }
 
   private async transformHtml(template: string) {
-    if (this.vite) template = await this.vite.transformIndexHtml(this.config.uiPath, template)
+    const { uiPath } = this.config
+    if (this.vite) {
+      template = await this.vite.transformIndexHtml(uiPath, template)
+    } else {
+      template = template.replace(/(href|src)="(?=\/)/g, (_, $1) => `${$1}="${uiPath}`)
+    }
     const headInjection = `<script>KOISHI_CONFIG = ${JSON.stringify(this.ctx.console.global)}</script>`
     return template.replace('</title>', '</title>' + headInjection)
   }

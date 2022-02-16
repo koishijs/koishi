@@ -1,12 +1,13 @@
 {
   "name": "@koishijs/client",
   "description": "Koishi Console Client",
-  "version": "3.0.1",
+  "version": "3.0.2",
   "main": "client/index.ts",
   "files": [
-    "lib",
+    "app",
     "client",
-    "app"
+    "lib",
+    "global.d.ts"
   ],
   "bin": {
     "koishi-console": "lib/bin.js"
