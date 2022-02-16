@@ -21,9 +21,6 @@ export function apply(ctx: Context, config: Config) {
 
   ctx.plugin(GitHub, config)
 
-  ctx.command('github', 'GitHub 相关功能').alias('gh')
-    .action(({ session }) => session.execute('help github', true))
-
   const tokens: Dict<string> = {}
 
   ctx.router.get(config.path + '/authorize', async (_ctx) => {
@@ -112,10 +109,26 @@ export function apply(ctx: Context, config: Config) {
             await ctx.github.request('DELETE', `${url}/${repo.id}`, session)
           } catch (err) {
             if (!axios.isAxiosError(err)) throw err
-            logger.warn(err)
-            return '移除仓库失败。'
+            if (err.response.status !== 404) {
+              logger.warn(err)
+              return '移除仓库失败。'
+            }
           }
-          await ctx.database.remove('github', [name])
+
+          async function updateChannels() {
+            const channels = await ctx.database.get('channel', {}, ['id', 'platform', 'githubWebhooks'])
+            return ctx.database.upsert('channel', channels.filter(({ githubWebhooks }) => {
+              const shouldUpdate = githubWebhooks[name]
+              delete githubWebhooks[name]
+              return shouldUpdate
+            }))
+          }
+
+          unsubscribe(name)
+          await Promise.all([
+            updateChannels(),
+            ctx.database.remove('github', [name]),
+          ])
           return '移除仓库成功！'
         }
       }
@@ -129,7 +142,8 @@ export function apply(ctx: Context, config: Config) {
     (subscriptions[repo] ||= {})[cid] = meta
   }
 
-  function unsubscribe(repo: string, id: string) {
+  function unsubscribe(repo: string, id?: string) {
+    if (!id) return delete subscriptions[repo]
     delete subscriptions[repo][id]
     if (!Object.keys(subscriptions[repo]).length) {
       delete subscriptions[repo]
@@ -186,6 +200,8 @@ export function apply(ctx: Context, config: Config) {
           return '移除订阅成功！'
         }
       }
+
+      return session.execute('help github')
     })
 
   async function request(method: Method, url: string, session: ReplySession, body: any, message: string) {
