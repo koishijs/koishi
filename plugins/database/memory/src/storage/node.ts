@@ -26,11 +26,11 @@ export class Storage {
     const files = await fs.readdir(root)
     await Promise.all(files.map(async (filename) => {
       const extension = extname(filename)
-      if (extension !== loader) return
-      const buffer = await fs.readFile(filename)
+      if (extension !== `.${loader}`) return
+      const buffer = await fs.readFile(resolve(root, filename))
       try {
         const data = await this.load(buffer, loader)
-        const name = filename.slice(0, -1 - extension.length)
+        const name = filename.slice(0, filename.length - extension.length)
         tables[name] = data
       } catch {}
     }))
