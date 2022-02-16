@@ -222,10 +222,18 @@ export class Context {
   }
 }
 
-export function createStorage<T extends object>(key: string, version: string, fallback?: () => T) {
-  const storage = useLocalStorage('koishi.console.' + key, {})
+interface StorageData<T> {
+  version: number
+  data: T
+}
+
+export function createStorage<T extends object>(key: string, version: number, fallback?: () => T) {
+  const storage = useLocalStorage('koishi.console.' + key, {} as StorageData<T>)
+  const initial = fallback ? fallback() : {} as T
   if (storage.value['version'] !== version) {
-    storage.value = { version, data: fallback() }
+    storage.value = { version, data: initial }
+  } else {
+    storage.value.data = { ...initial, ...storage.value.data }
   }
   return reactive<T>(storage.value['data'])
 }

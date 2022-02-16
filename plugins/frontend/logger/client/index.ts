@@ -8,7 +8,7 @@ export default (ctx: Context) => {
     path: '/logs',
     name: '日志',
     icon: 'clipboard-list',
-    order: 400,
+    order: 0,
     authority: 4,
     fields: ['logs'],
     component: Logs,

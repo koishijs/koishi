@@ -8,7 +8,7 @@ interface ManagerConfig {
   showDepsOnly?: boolean
 }
 
-export const config = createStorage<ManagerConfig>('manager', '2.0', () => ({
+export const config = createStorage<ManagerConfig>('manager', 1, () => ({
   override: {},
   showInstalled: false,
   showDepsOnly: false,

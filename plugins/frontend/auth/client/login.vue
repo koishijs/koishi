@@ -11,9 +11,7 @@
     </template>
     <template v-else>
       <h1 v-if="secure">
-        <span :class="{ inactive: config.authType === 1 }" @click="config.authType = 0">平台账户登录</span>
-        /
-        <span :class="{ inactive: config.authType === 0 }" @click="config.authType = 1">用户名密码登录</span>
+        <k-choose :data="['平台账户登录', '用户名密码登录']" v-model="config.authType"></k-choose>
       </h1>
       <h1 v-else><span>平台账户登录</span></h1>
       <template v-if="config.authType === 0">
@@ -106,16 +104,6 @@ section.login {
     font-size: 1.5rem;
     margin: 2.5rem auto;
     cursor: default;
-    span {
-      transition: 0.3s ease;
-    }
-    span.inactive:hover {
-      cursor: pointer;
-      color: rgba(244, 244, 245, .8);
-    }
-    span:not(.inactive) {
-      color: rgba(244, 244, 245);
-    }
   }
 
   .token {

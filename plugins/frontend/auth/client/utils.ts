@@ -9,7 +9,7 @@ interface AuthConfig extends Partial<UserAuth> {
   showPass?: boolean
 }
 
-export const config = createStorage<AuthConfig>('auth', '1.1', () => ({
+export const config = createStorage<AuthConfig>('auth', 1, () => ({
   authType: 0,
 }))
 

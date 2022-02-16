@@ -95,9 +95,7 @@ div.bot {
 
   > div.info {
     flex-grow: 1;
-
     margin-left: 1.25rem;
-
     display: flex;
     flex-direction: column;
     justify-content: space-around;
@@ -108,11 +106,6 @@ div.bot {
       text-align: center;
       vertical-align: -2px;
     }
-  }
-
-  &.large {
-    padding: 10px;
-    width: 600px; height: 360px;
   }
 }
 
