@@ -201,11 +201,18 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
   }
 
   async getChannel<K extends Channel.Field = never>(id = this.channelId, fields: K[] = []) {
-    if (!fields.length) return { platform: this.platform, id }
-    const channel = await this.app.database.getChannel(this.platform, id, fields)
+    const { app, platform, guildId } = this
+    if (!fields.length) return { platform, id, guildId }
+    const channel = await app.database.getChannel(platform, id, fields)
     if (channel) return channel
-    const assignee = await this.resolveValue(this.app.options.autoAssign) ? this.selfId : ''
-    return this.app.database.createChannel(this.platform, id, { assignee, guildId: this.guildId })
+    const assignee = await this.resolveValue(app.options.autoAssign) ? this.selfId : ''
+    if (assignee) {
+      return app.database.createChannel(platform, id, { assignee, guildId })
+    } else {
+      const channel = app.model.create('channel')
+      Object.assign(channel, { platform, id, guildId })
+      return channel
+    }
   }
 
   /** 在当前会话上绑定一个可观测频道实例 */
@@ -247,11 +254,18 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
   }
 
   async getUser<K extends User.Field = never>(id = this.userId, fields: K[] = []) {
-    if (!fields.length) return { [this.platform]: id }
-    const user = await this.app.database.getUser(this.platform, id, fields)
+    const { app, platform } = this
+    if (!fields.length) return { [platform]: id }
+    const user = await app.database.getUser(platform, id, fields)
     if (user) return user
-    const authority = await this.resolveValue(this.app.options.autoAuthorize)
-    return this.app.database.createUser(this.platform, id, { authority })
+    const authority = await this.resolveValue(app.options.autoAuthorize)
+    if (authority) {
+      return app.database.createUser(platform, id, { authority })
+    } else {
+      const user = app.model.create('user')
+      Object.assign(user, { [platform]: id, authority })
+      return user
+    }
   }
 
   /** 在当前会话上绑定一个可观测用户实例 */
