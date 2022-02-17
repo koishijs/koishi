@@ -16,7 +16,7 @@
     "@koishijs/plugin-adapter-discord": "^2.0.3",
     "@koishijs/plugin-adapter-onebot": "^4.1.1",
     "@koishijs/plugin-adapter-telegram": "^2.1.1",
-    "@koishijs/plugin-console": "^3.1.0",
+    "@koishijs/plugin-console": "^3.1.1",
     "@koishijs/plugin-dataview": "^1.2.1",
     "@koishijs/plugin-insight": "^1.2.0",
     "@koishijs/plugin-logger": "^1.2.1",
