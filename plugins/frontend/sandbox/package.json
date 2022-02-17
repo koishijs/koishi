@@ -35,10 +35,10 @@
     "mock"
   ],
   "peerDependencies": {
-    "koishi": "^4.2.1"
+    "koishi": "^4.2.2"
   },
   "devDependencies": {
-    "@koishijs/client": "^3.0.1",
-    "@koishijs/plugin-console": "^3.0.1"
+    "@koishijs/client": "^3.1.0",
+    "@koishijs/plugin-console": "^3.1.0"
   }
 }

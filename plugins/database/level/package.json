@@ -32,7 +32,7 @@
     "impl:database"
   ],
   "peerDependencies": {
-    "koishi": "^4.2.1"
+    "koishi": "^4.2.2"
   },
   "devDependencies": {
     "@koishijs/database-tests": "^1.0.0",
