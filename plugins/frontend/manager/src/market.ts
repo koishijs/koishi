@@ -12,14 +12,13 @@ class MarketProvider extends DataService<Dict<MarketProvider.Data>> {
   constructor(ctx: Context, private config: MarketProvider.Config) {
     super(ctx, 'market')
 
-    this.http = ctx.http.extend({
-      endpoint: config.endpoint,
-    })
+    this.http = ctx.http.extend(config)
   }
 
-  start() {
+  async start() {
     const logger = this.ctx.logger('market')
-    this.prepare().catch(logger.warn)
+    await this.prepare().catch(logger.warn)
+    this.refresh()
   }
 
   flushData() {

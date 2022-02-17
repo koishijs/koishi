@@ -26,10 +26,6 @@ class PackageProvider extends DataService<Dict<PackageProvider.Data>> {
 
   constructor(ctx: Context, config: PackageProvider.Config) {
     super(ctx, 'packages')
-  }
-
-  start() {
-    this.task = this.prepare()
 
     this.ctx.on('plugin-added', async (plugin) => {
       const state = this.registry.get(plugin)
@@ -56,7 +52,7 @@ class PackageProvider extends DataService<Dict<PackageProvider.Data>> {
   }
 
   async prepare() {
-    // load local packages
+    this.cache = {}
     let { baseDir } = this.ctx.app
     const tasks: Promise<void>[] = []
     while (1) {
@@ -69,8 +65,8 @@ class PackageProvider extends DataService<Dict<PackageProvider.Data>> {
   }
 
   async get(forced = false) {
-    if (forced) this.task = this.prepare()
-    await this.task
+    if (forced) delete this.task
+    await (this.task ||= this.prepare())
 
     // add app config
     const packages = await Promise.all(Object.values(this.cache))

@@ -19,10 +19,6 @@ class AdapterProvider extends DataService<Dict<Schema>> {
     }
     return protocols
   }
-
-  start() {}
-
-  stop() {}
 }
 
 export default AdapterProvider

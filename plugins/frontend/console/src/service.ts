@@ -24,6 +24,10 @@ export abstract class DataService<T = never> extends Service {
     DataService.define(name)
   }
 
+  start() {
+    this.refresh()
+  }
+
   protected broadcast(type: string, value: any) {
     this.ctx.console.ws.broadcast(type, { key: this.name, value })
   }

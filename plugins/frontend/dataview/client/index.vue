@@ -34,7 +34,8 @@ const route = useRoute()
 
 const current = computed<string>({
   get() {
-    return join(route.params.name)
+    const name = join(route.params.name)
+    return store.dbInfo.tables[name] ? name : ''
   },
   set(name) {
     if (!store.dbInfo.tables[name]) name = ''
