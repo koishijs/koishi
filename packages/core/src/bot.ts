@@ -11,6 +11,7 @@ export interface Bot extends Bot.BaseConfig, Bot.Methods, Bot.UserBase {}
 export abstract class Bot<T extends Bot.BaseConfig = Bot.BaseConfig> {
   public app: App
   public platform: string
+  public hidden?: boolean
   public internal?: any
   public selfId?: string
   public logger: Logger

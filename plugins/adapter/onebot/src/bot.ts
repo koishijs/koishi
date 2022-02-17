@@ -77,6 +77,7 @@ export class OneBotBot extends Bot<BotConfig> {
       selfId: profile.tiny_id,
     }
     this.guildBot = this.app.bots.create('onebot', guildBotConfig, QQGuildBot)
+    this.guildBot.hidden = true
     this.guildBot.internal = this.internal
     this.guildBot.parentBot = this
     this.guildBot.avatar = profile.avatar_url

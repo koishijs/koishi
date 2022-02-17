@@ -29,6 +29,7 @@ interface BotConfig extends Bot.BaseConfig {
 export class SandboxBot extends Bot<BotConfig> {
   username = 'koishi'
   selfId = 'koishi'
+  hidden = true
   handle: SocketHandle
 
   constructor(adapter: Sandbox, config: BotConfig) {
