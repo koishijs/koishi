@@ -1,6 +1,6 @@
 /* eslint-disable no-cond-assign */
 
-import { spawnAsync, cwd, getPackages, PackageJson, requireSafe } from './utils'
+import { cwd, getPackages, PackageJson, requireSafe, spawnAsync } from './utils'
 import { EOL } from 'os'
 import { resolve } from 'path'
 import fs from 'fs-extra'

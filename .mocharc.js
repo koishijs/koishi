@@ -4,6 +4,7 @@ const specs = [
   'community/chai-shape/tests/*.spec.ts',
   'community/schemastery/tests/*.spec.ts',
   'packages/core/tests/*.spec.ts',
+  'packages/segment/tests/*.spec.ts',
   'packages/utils/tests/*.spec.ts',
   'plugins/a11y/admin/tests/*.spec.ts',
   'plugins/a11y/rate-limit/tests/*.spec.ts',

@@ -1,12 +1,26 @@
-import { Awaitable, Dict, isType } from './misc'
+type Dict<T = any> = { [key: string]: T }
+type Awaitable<T> = [T] extends [Promise<unknown>] ? T : T | Promise<T>
+
+type Global = NodeJS.Global & Window & typeof globalThis
+
+type GlobalClass = {
+  [K in keyof Global]: Global[K] extends new (...args: any[]) => infer T ? T : never
+}
+
+const root: any = typeof self !== 'undefined' ? self : global
+
+function isType<K extends keyof GlobalClass>(type: K, value: any): value is GlobalClass[K] {
+  return type in root && value instanceof root[type]
+    || Object.prototype.toString.call(value).slice(8, -1) === type
+}
 
 // eslint-disable-next-line @typescript-eslint/naming-convention
-export interface segment {
+interface segment {
   type: string
   data: segment.Data
 }
 
-export function segment(type: string, data: segment.Data = {}) {
+function segment(type: string, data: segment.Data = {}) {
   if (type === 'text') return segment.escape(String(data.content))
   let output = '[CQ:' + type
   for (const key in data) {
@@ -18,7 +32,7 @@ export function segment(type: string, data: segment.Data = {}) {
 // eslint-disable-next-line @typescript-eslint/naming-convention
 type primitive = string | number | boolean
 
-export namespace segment {
+namespace segment {
   export type Chain = segment.Parsed[]
   export type Data = Dict<primitive>
   export type Transformer = string | ((data: Dict<string>, index: number, chain: Chain) => string)
@@ -134,4 +148,4 @@ export namespace segment {
   export const file = createAssetFactory('file')
 }
 
-export { segment as s }
+export = segment

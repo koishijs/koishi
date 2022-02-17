@@ -34,7 +34,7 @@
   "dependencies": {
     "@koa/router": "^10.1.1",
     "@koishijs/core": "^4.2.2",
-    "@koishijs/utils": "^5.0.1",
+    "@koishijs/utils": "^5.1.0",
     "@types/koa": "*",
     "@types/koa__router": "*",
     "@types/ws": "^8.2.2",

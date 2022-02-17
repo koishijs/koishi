@@ -35,7 +35,7 @@
     "build"
   ],
   "dependencies": {
-    "@koishijs/components": "^1.0.0",
+    "@koishijs/segments": "^1.0.0",
     "@types/marked": "^4.0.1",
     "@vitejs/plugin-vue": "^2.0.1",
     "@vueuse/core": "^7.5.3",

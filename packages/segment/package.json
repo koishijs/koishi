@@ -1,7 +1,7 @@
 {
-  "name": "@koishijs/utils",
-  "description": "Utilities for Koishi",
-  "version": "5.1.0",
+  "name": "@koishijs/segment",
+  "description": "Segment Manipulation",
+  "version": "1.0.0",
   "main": "lib/node.js",
   "module": "lib/browser.js",
   "typings": "lib/index.d.ts",
@@ -26,13 +26,5 @@
     "chatbot",
     "koishi",
     "utilities"
-  ],
-  "devDependencies": {
-    "@sinonjs/fake-timers": "^6.0.1",
-    "@types/supports-color": "^8.1.1"
-  },
-  "dependencies": {
-    "@koishijs/segment": "^1.0.0",
-    "supports-color": "^8.1.0"
-  }
+  ]
 }
