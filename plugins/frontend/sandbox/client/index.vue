@@ -1,12 +1,15 @@
 <template>
   <k-card-aside class="page-sandbox">
     <template #aside>
-      <div class="header k-menu-item" :class="{ active: user === '' }" @click="user = ''">添加用户</div>
+      <div class="header k-menu-item" @click="createUser">添加用户</div>
       <div class="user-container">
         <el-scrollbar>
-          <k-tab-group :data="data" v-model="user" #="{ name }">
+          <k-tab-group :data="userMap" v-model="config.user" #="{ name }">
             <div class="avatar">{{ name[0] }}</div>
-            <div class="info">{{ name }}</div>
+            <div class="nick">{{ name }}</div>
+            <div class="close" @click="removeUser(name)">
+              <k-icon name="times-full"></k-icon>
+            </div>
           </k-tab-group>
         </el-scrollbar>
       </div>
@@ -16,7 +19,10 @@
       <span class="k-choose-item" :class="{ active: !config.isPrivate }" @click="config.isPrivate = false">群聊模式</span>
     </div>
     <keep-alive>
-      <k-chat-panel class="sandbox" :key="channel" :messages="config.messages[channel] || []" @send="sendMessage" #="data">
+      <k-empty v-if="!users.length">
+        <div>点击「添加用户」开始体验</div>
+      </k-empty>
+      <k-chat-panel v-else class="sandbox" :key="channel" :messages="config.messages[channel] || []" @send="sendMessage" #="data">
         <chat-message :data="data"></chat-message>
       </k-chat-panel>
     </keep-alive>
@@ -25,18 +31,49 @@
 
 <script lang="ts" setup>
 
-import { send } from '@koishijs/client'
-import { computed, ref } from 'vue'
-import { config, names } from './utils'
+import { message, send } from '@koishijs/client'
+import { computed } from 'vue'
+import { config, words } from './utils'
 import ChatMessage from './message.vue'
 
-const data = Object.fromEntries(names.map(name => [name, {name}]))
+const users = computed(() => {
+  return Object
+    .keys(config.messages)
+    .filter(key => key.startsWith('@'))
+    .map((key) => key.slice(1))
+})
 
-const user = ref<string>('')
-const channel = computed(() => config.isPrivate ? user.value : '#')
+const userMap = computed(() => {
+  return Object.fromEntries(users.value.map((name) => [name, { name }]))
+})
+
+const channel = computed(() => config.isPrivate ? '@' + config.user : '#')
+
+const length = 10
+
+function createUser() {
+  if (users.value.length >= length) {
+    return message.error('可创建的用户数量已达上限。')
+  }
+  let name: string
+  do {
+    name = words[config.index++]
+    config.index %= length
+  } while (users.value.includes(name))
+  config.user = name
+  config.messages['@' + name] = []
+}
+
+function removeUser(name: string) {
+  const index = users.value.indexOf(name)
+  delete config.messages['@' + name]
+  if (config.user === name) {
+    config.user = users.value[index] || ''
+  }
+}
 
 function sendMessage(content: string) {
-  send('sandbox/message', user.value, channel.value, content)
+  send('sandbox/message', config.user, channel.value, content)
 }
 
 </script>
@@ -90,17 +127,30 @@ function sendMessage(content: string) {
   }
 
   .k-tab-item {
-    padding: 0.75rem 2rem;
+    padding: 0.75rem 1.5rem;
     display: flex;
+    border-bottom: 1px solid var(--border);
 
-    > .info {
+    > .nick {
       line-height: 2.5rem;
       margin-left: 1.25rem;
       font-weight: 500;
+      flex-grow: 1;
     }
 
-    & + .k-tab-item {
-      border-top: 1px solid var(--border);
+    > .close {
+      opacity: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      transition: opacity 0.3s ease;
+    }
+
+    &:hover > .close {
+      opacity: 0.5;
+      &:hover {
+        opacity: 1;
+      }
     }
   }
 }
