@@ -1,14 +1,8 @@
 import { Adapter, Bot, Context, Random, Schema, segment, Session } from 'koishi'
-import { SocketHandle } from '@koishijs/plugin-console'
+import {} from '@koishijs/plugin-console'
 import { resolve } from 'path'
 
 declare module '@koishijs/plugin-console' {
-  // namespace Console {
-  //   interface Services {
-  //     sandbox: SandboxService
-  //   }
-  // }
-
   interface SocketHandle {
     sandbox: SandboxBot
   }
@@ -22,27 +16,13 @@ export interface Config {}
 
 export const Config: Schema<Config> = Schema.object({})
 
-interface BotConfig extends Bot.BaseConfig {
-  handle: SocketHandle
-}
-
-export class SandboxBot extends Bot<BotConfig> {
+export class SandboxBot extends Bot {
   username = 'koishi'
   selfId = 'koishi'
   hidden = true
-  handle: SocketHandle
 
-  constructor(adapter: Sandbox, config: BotConfig) {
+  constructor(public adapter: Sandbox, config: Bot.BaseConfig) {
     super(adapter, config)
-    this.handle = config.handle
-    this.handle.socket.on('close', () => {
-      delete this.handle.sandbox
-      adapter.ctx.bots.remove(this.id)
-    })
-  }
-
-  sync(body: Message) {
-    this.handle.send({ type: 'sandbox', body })
   }
 
   async sendMessage(channel: string, content: string) {
@@ -52,7 +32,7 @@ export class SandboxBot extends Bot<BotConfig> {
         return segment.image('data:image/png;base64,' + data.url.slice(9))
       },
     })
-    this.sync({ content, user: 'Koishi', channel })
+    this.adapter.broadcast({ content, user: 'Koishi', channel })
     return [Random.id()]
   }
 }
@@ -69,20 +49,19 @@ export default class Sandbox extends Adapter {
 
   constructor(ctx: Context, config: Config) {
     super(ctx, config)
-    const self = this
 
     this.platform = 'sandbox'
     ctx.bots.adapters.sandbox = this
+    const bot = ctx.bots.create('sandbox', {}, SandboxBot)
 
     ctx.console.addEntry({
       dev: resolve(__dirname, '../client/index.ts'),
       prod: resolve(__dirname, '../dist'),
     })
 
-    ctx.console.addListener('sandbox/message', async function (user, channel, content) {
-      const bot = this.sandbox ||= ctx.bots.create('sandbox', { handle: this }, SandboxBot)
-      bot.sync({ content, user, channel })
-      self.dispatch(new Session(bot, {
+    ctx.console.addListener('sandbox/message', async (user, channel, content) => {
+      this.broadcast({ content, user, channel })
+      this.dispatch(new Session(bot, {
         platform: 'sandbox',
         userId: user,
         content,
@@ -99,11 +78,11 @@ export default class Sandbox extends Adapter {
     }, { authority: 4 })
   }
 
-  async stop() {
-    for (const bot of this.bots) {
-      delete (bot as SandboxBot).handle.sandbox
-    }
+  broadcast(body: Message) {
+    this.ctx.console.ws.broadcast('sandbox', body)
   }
 
   async start() {}
+
+  async stop() {}
 }

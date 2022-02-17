@@ -69,9 +69,6 @@ function getEnvInfo(name: string) {
   for (const name of getKeywords('impl', data)) {
     if (name === 'adapter') continue
     result.impl.push(name)
-    if (name in store.services && !data.id) {
-      result.invalid = true
-    }
   }
 
   // check services

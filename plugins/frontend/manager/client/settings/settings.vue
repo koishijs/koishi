@@ -32,7 +32,7 @@
 
       <!-- impl -->
       <template v-for="name in env.impl" :key="name">
-        <k-comment v-if="name in store.services && !data.id" type="error">
+        <k-comment v-if="name in store.services && !data.id" type="warning">
           此插件将会提供 {{ name }} 服务，但此服务已被其他插件实现。
         </k-comment>
         <k-comment v-else :type="data.id ? 'success' : 'primary'">
