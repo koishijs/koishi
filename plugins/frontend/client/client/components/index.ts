@@ -21,6 +21,7 @@ import {
   ElTree,
 } from 'element-plus'
 
+import chat from './chat'
 import common from './common'
 import form from './form'
 import * as icons from './icons'
@@ -80,6 +81,7 @@ export default function (app: App) {
   app.use(ElDatePicker)
   app.use(ElTimePicker)
 
+  app.use(chat)
   app.use(common)
   app.use(form)
   app.use(icons)

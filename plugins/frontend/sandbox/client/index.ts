@@ -3,9 +3,11 @@ import Sandbox from './index.vue'
 
 export default (ctx: Context) => {
   ctx.addPage({
-    name: '模拟调试',
+    name: '沙盒',
     path: '/sandbox',
+    icon: 'flask',
     order: 300,
+    authority: 4,
     component: Sandbox,
   })
 }

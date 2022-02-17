@@ -77,7 +77,7 @@ class BotProvider extends DataService<Dict<BotProvider.Data>> {
   }
 
   async get() {
-    return Object.fromEntries(this.ctx.bots.map((bot) => {
+    return Object.fromEntries(this.ctx.bots.filter(bot => !bot.hidden).map((bot) => {
       return [bot.id, Object.assign({}, ...this.callbacks.map(cb => cb(bot)))] as [string, BotProvider.Data]
     }))
   }

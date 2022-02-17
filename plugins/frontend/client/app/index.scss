@@ -56,7 +56,7 @@ html.dark {
   cursor: pointer;
   user-select: none;
   color: var(--menu-fg);
-  transition: color 0.3s ease, background-color 0.3s ease;
+  transition: color 0.3s ease, border-color 0.3s ease, background-color 0.3s ease;
 
   &:hover {
     color: var(--fg0);
