@@ -7,6 +7,7 @@ interface AuthConfig extends Partial<UserAuth> {
   platform?: string
   userId?: string
   showPass?: boolean
+  password?: string
 }
 
 export const config = createStorage<AuthConfig>('auth', 1, () => ({

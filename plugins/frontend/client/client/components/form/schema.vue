@@ -17,7 +17,7 @@
     <ul>
       <li v-for="(_, index) in config" :key="index">
         <k-icon name="times-full" class="remove" @click="config.splice(index, 1)"></k-icon>
-        <k-input v-model="config[index]" class="hidden"></k-input>
+        <el-input v-model="config[index]"></el-input>
       </li>
     </ul>
   </div>
@@ -34,8 +34,8 @@
     <ul>
       <li v-for="(_, key) in config">
         <k-icon name="times-full" class="remove" @click="delete config[key]"></k-icon>
-        <k-input :model-value="key" @update:model-value="v => (config[v] = config[key], delete config[key])" class="hidden"></k-input>
-        <k-input v-model="config[key]" class="hidden"></k-input>
+        <el-input :model-value="key" @update:model-value="v => (config[v] = config[key], delete config[key])"></el-input>
+        <el-input v-model="config[key]"></el-input>
       </li>
     </ul>
   </div>
@@ -163,14 +163,11 @@ function isPrimitive(schema: Schema) {
     float: right;
   }
 
-  .k-input .k-icon {
-    height: 0.75rem;
-    color: var(--fg3);
-    transition: color 0.3s ease;
-
-    &:hover {
-      color: var(--fg1);
-      cursor: pointer;
+  li .el-input {
+    display: inline;
+    > input {
+      border: none;
+      max-width: 200px;
     }
   }
 

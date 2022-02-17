@@ -69,11 +69,11 @@ const caption = computed(() => {
   }
 
   .used {
-    background-color: var(--default);
+    background-color: var(--primary);
     color: white;
     transition: color 0.3s ease, background-color 0.3s ease;
     &:hover {
-      background-color: var(--default-light);
+      background-color: var(--primary-tint);
     }
   }
 
@@ -81,7 +81,7 @@ const caption = computed(() => {
     background-color: var(--warning);
     transition: color 0.3s ease, background-color 0.3s ease;
     &:hover {
-      background-color: var(--warning-light);
+      background-color: var(--warning-tint);
     }
   }
 

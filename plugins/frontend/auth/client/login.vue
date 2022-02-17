@@ -15,8 +15,12 @@
       </h1>
       <h1 v-else><span>平台账户登录</span></h1>
       <template v-if="config.authType === 0">
-        <k-input prefix="at" placeholder="平台名" v-model="config.platform"/>
-        <k-input prefix="user" placeholder="账号" v-model="config.userId" @enter="loginWithAccount"/>
+        <el-input placeholder="平台名" v-model="config.platform" #prefix>
+          <k-icon name="at"></k-icon>
+        </el-input>
+        <el-input placeholder="账号" v-model="config.userId" @keypress.enter.stop="loginWithAccount" #prefix>
+          <k-icon name="user"></k-icon>
+        </el-input>
         <p class="error" v-if="message">{{ message }}</p>
         <div class="control">
           <k-button @click="$router.back()">返回</k-button>
@@ -24,12 +28,16 @@
         </div>
       </template>
       <template v-else>
-        <k-input prefix="user" placeholder="用户名" v-model="config.name"/>
-        <k-input prefix="lock" placeholder="密码" v-model="config.password" @enter="loginWithPassword"
-          :type="config.showPass ? 'text' : 'password'"
-          :suffix="config.showPass ? 'eye' : 'eye-slash'"
-          @click-suffix="config.showPass = !config.showPass"
-        />
+        <el-input placeholder="用户名" v-model="config.name" #prefix>
+          <k-icon name="user"></k-icon>
+        </el-input>
+        <el-input placeholder="密码" v-model="config.password" @keypress.enter.stop="loginWithPassword"
+          :type="config.showPass ? 'text' : 'password'">
+          <template #prefix><k-icon name="lock"></k-icon></template>
+          <template #suffix>
+            <k-icon :name="config.showPass ? 'eye' : 'eye-slash'" @click="config.showPass = !config.showPass"></k-icon>
+          </template>
+        </el-input>
         <p class="error" v-if="message">{{ message }}</p>
         <div class="control">
           <k-button @click="$router.back()">返回</k-button>
@@ -110,7 +118,7 @@ section.login {
     font-weight: bold;
   }
 
-  .k-input {
+  .el-input {
     display: block;
     max-width: 400px;
     margin: 1rem auto;

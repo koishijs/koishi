@@ -14,13 +14,15 @@
             v-model="value" :disabled="disabled" :max="schema.meta.max" :min="schema.meta.min" :step="schema.meta.step"
           ></el-input-number>
         </template>
-        <k-input v-else v-model="value" :disabled="disabled" #suffix
+        <el-input v-else v-model="value" :disabled="disabled"
           :style="{ width: schema.meta.role === 'url' ? '18rem' : '12rem' }" :type="type">
-          <a v-if="schema.meta.role === 'url'" :href="value" target="_blank" rel="noopener noreferrer">
-            <k-icon name="external"></k-icon>
-          </a>
-          <k-icon v-else-if="schema.meta.role === 'secret'" :name="showPass ? 'eye' : 'eye-slash'" @click="showPass = !showPass"></k-icon>
-        </k-input>
+          <template #suffix v-if="schema.meta.role === 'url'">
+            <k-icon name="external" @click="onClickExternal(value)"></k-icon>
+          </template>
+          <template #suffix v-else-if="schema.meta.role === 'secret'">
+            <k-icon :name="showPass ? 'eye' : 'eye-slash'" @click="showPass = !showPass"></k-icon>
+          </template>
+        </el-input>
       </div>
     </div>
   </div>
@@ -51,4 +53,27 @@ const type = computed(() => {
   return type === 'number' ? 'number' : meta.role === 'secret' && !showPass.value ? 'password' : 'text'
 })
 
+function onClickExternal(value: string) {
+  if (!value) return
+  open(value, '', 'noopener=yes,noreferrer=yes')
+}
+
 </script>
+
+<style lang="scss">
+
+.schema-item {
+  .el-input {
+    .k-icon {
+      color: var(--fg3);
+      transition: color 0.3s ease;
+      cursor: pointer;
+
+      &:hover {
+        color: var(--fg1);
+      }
+    }
+  }
+}
+
+</style>
