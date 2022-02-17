@@ -1,5 +1,5 @@
 <template>
-  <div class="k-chat-panel">
+  <component :is="tag || 'div'" class="k-chat-panel">
     <virtual-list
       class="k-chat-body" :item-class="resolveItemClass"
       key-name="messageId" :data="messages" :pinned="pinned"
@@ -17,7 +17,7 @@
         @keydown.enter.stop="onEnter"
       />
     </div>
-  </div>
+  </component>
 </template>
 
 <script lang="ts" setup>
@@ -29,6 +29,7 @@ import VirtualList from './list.vue'
 const emit = defineEmits(['send', 'click', 'paste', 'update:activeKey'])
 
 const props = defineProps<{
+  tag?: string
   messages: any[],
   pinned?: boolean,
   itemClass?: Function,
@@ -81,12 +82,17 @@ $padding: 1.5rem;
       outline: none;
       font-size: 1em;
       height: inherit;
+      color: inherit;
       display: inline-block;
       border-radius: 0.3em;
       transition: 0.3s ease;
       box-sizing: border-box;
       background-color: transparent;
     }
+  }
+
+  .k-chat-message {
+    position: relative;
   }
 }
 

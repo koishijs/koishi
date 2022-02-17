@@ -3,7 +3,7 @@
     <virtual-item v-if="$slots.header" @resize="virtual.saveSize" uid="header">
       <slot name="header"/>
     </virtual-item>
-    <div :style="wrapperStyle">
+    <div class="k-virtual-list-wrapper" :style="wrapperStyle">
       <virtual-item v-for="(item, index) in dataShown"
         :tag="itemTag" :class="resolveItemClass(item, index)" :uid="item[keyName]"
         @click.stop="emit('click', item, $event)" @resize="virtual.saveSize">

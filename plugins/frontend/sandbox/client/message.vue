@@ -21,7 +21,6 @@ defineProps<{
 .page-sandbox .k-chat-message {
   --avatar-size: 2.8rem;
 
-  position: relative;
   margin: 1rem 1.5rem;
 
   .nickname {

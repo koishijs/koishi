@@ -1,8 +1,8 @@
 <template>
-  <chat-panel class="page-chat" :messages="messages" pinned
+  <k-chat-panel class="k-card page-chat" :messages="messages" pinned
     v-model:active-key="index" :item-class="getItemClass"
     @click="handleClick" @send="handleSend">
-    <template #default="message">
+    <template #="message">
       <div class="quote" v-if="message.quote" @click="onClickQuote(message.quote.messageId)">
         <img class="quote-avatar" :src="message.quote.author.avatar"/>
         <span class="username">{{ message.quote.author.username }}</span>
@@ -19,7 +19,7 @@
           <span class="timestamp">{{ formatDateTime(new Date(message.timestamp)) }}</span>
         </div>
       </template>
-      <chat-message :content="message.content"/>
+      <k-message-content :content="message.content"/>
     </template>
     <template #footer>
       <p class="hint">
@@ -27,15 +27,13 @@
         <template v-else>点击消息已选择要发送的频道。</template>
       </p>
     </template>
-  </chat-panel>
+  </k-chat-panel>
 </template>
 
 <script lang="ts" setup>
 
 import { config, receive, send } from '@koishijs/client'
 import { ref, watch } from 'vue'
-import ChatPanel from './utils/panel.vue'
-import ChatMessage from './utils/message.vue'
 import type { Message } from '@koishijs/plugin-chat/src'
 
 namespace storage {
@@ -125,6 +123,10 @@ $padding: $avatarSize + 1rem;
   position: relative;
   height: calc(100vh - 4rem);
 
+  .k-virtual-list-wrapper {
+    margin: 1rem 0;
+  }
+
   .successive {
     .timestamp {
       position: absolute;
@@ -140,10 +142,6 @@ $padding: $avatarSize + 1rem;
         visibility: initial;
       }
     }
-  }
-
-  .k-chat-message:not(.successive):not(:first-child) {
-    margin-top: 0.5rem;
   }
 
   .avatar {
@@ -212,8 +210,21 @@ $padding: $avatarSize + 1rem;
     font-size: 0.75rem;
   }
 
-  .k-message {
+  .k-message-content {
     margin-left: $padding;
+  }
+
+  .k-chat-message {
+    padding: 0 1.5rem;
+    word-break: break-word;
+
+    &:hover {
+      background-color: var(--hover-bg);;
+    }
+
+    &:not(.successive) {
+      margin-top: 0.5rem;
+    }
   }
 
   p.hint {

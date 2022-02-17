@@ -4,6 +4,7 @@ import { Dict, Promisify } from 'koishi'
 import { App, Component, defineComponent, h, markRaw, reactive, ref, Ref, resolveComponent, watch } from 'vue'
 import { createRouter, createWebHistory, RouteRecordNormalized, START_LOCATION } from 'vue-router'
 import install from './components'
+import Overlay from './components/chat/overlay.vue'
 
 export * from './components'
 
@@ -221,6 +222,13 @@ export class Context {
     this.disposables.forEach(dispose => dispose())
   }
 }
+
+const root = new Context()
+
+root.addView({
+  type: 'global',
+  component: Overlay,
+})
 
 interface StorageData<T> {
   version: number
