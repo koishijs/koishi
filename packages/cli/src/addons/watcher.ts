@@ -96,13 +96,13 @@ class Watcher {
 
       if (isEntry) {
         if (require.cache[path]) {
-          this.triggerFullReload()
+          this.ctx.loader.fullReload()
         } else {
           this.triggerEntryReload()
         }
       } else {
         if (this.externals.has(path)) {
-          this.triggerFullReload()
+          this.ctx.loader.fullReload()
         } else if (require.cache[path]) {
           this.stashed.add(path)
           triggerLocalReload()
@@ -113,11 +113,6 @@ class Watcher {
 
   stop() {
     return this.watcher.close()
-  }
-
-  private triggerFullReload() {
-    logger.info('trigger full reload')
-    process.exit(51)
   }
 
   private triggerEntryReload() {
@@ -131,7 +126,7 @@ class Watcher {
     const merged = { ...oldConfig, ...newConfig }
     delete merged.plugins
     if (Object.keys(merged).some(key => !deepEqual(oldConfig[key], newConfig[key]))) {
-      return this.triggerFullReload()
+      return this.ctx.loader.fullReload()
     }
 
     // check plugin changes

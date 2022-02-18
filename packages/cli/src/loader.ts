@@ -172,4 +172,9 @@ export class Loader {
     if (!missing.length) return
     this.app.logger('diagnostic').warn('plugin %c is missing required service %c', name, missing.join(', '))
   }
+
+  fullReload() {
+    logger.info('trigger full reload')
+    process.exit(51)
+  }
 }

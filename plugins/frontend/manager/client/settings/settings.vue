@@ -15,7 +15,7 @@
     </h1>
     <h1 class="config-header" v-else>
       全局设置
-      <k-button solid>应用配置</k-button>
+      <k-button solid @click="send('manager/app-reload', data.config)">应用配置</k-button>
     </h1>
 
     <!-- market -->
@@ -84,7 +84,7 @@
 import { computed } from 'vue'
 import { store, send } from '@koishijs/client'
 import { envMap } from './utils'
-import { getMixedMeta, config } from '../utils'
+import { getMixedMeta } from '../utils'
 import KDepLink from './dep-link.vue'
 
 const props = defineProps<{
@@ -103,10 +103,6 @@ const hasUpdate = computed(() => {
 function execute(event: 'unload' | 'reload') {
   const { shortname, config } = data.value
   send(`manager/plugin-${event}`, shortname, config)
-}
-
-function update() {
-  config.override[props.current] = data.value.versions[0].version
 }
 
 </script>

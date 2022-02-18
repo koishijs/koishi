@@ -3,6 +3,7 @@ import { Loader } from '@koishijs/cli'
 
 declare module '@koishijs/plugin-console' {
   interface Events {
+    'manager/app-reload'(config: any): void
     'manager/plugin-reload'(name: string, config: any): void
     'manager/plugin-unload'(name: string, config: any): void
     'manager/bot-update'(id: string, adapter: string, config: any): void
@@ -17,6 +18,11 @@ export default class ConfigWriter {
   constructor(private ctx: Context) {
     this.loader = ctx.loader
     this.plugins = ctx.loader.config.plugins
+
+    ctx.console.addListener('manager/app-reload', (config) => {
+      console.log(1111, config)
+      this.reloadApp(config)
+    }, { authority: 4 })
 
     ctx.console.addListener('manager/plugin-reload', (name, config) => {
       this.reloadPlugin(name, config)
@@ -33,6 +39,14 @@ export default class ConfigWriter {
     ctx.console.addListener('manager/bot-remove', (id) => {
       this.removeBot(id)
     }, { authority: 4 })
+  }
+
+  reloadApp(config: any) {
+    this.loader.config = config
+    this.loader.config.plugins = this.plugins
+    this.loader.writeConfig()
+    this.loader.fullReload()
+    console.log(1111, config)
   }
 
   reloadPlugin(name: string, config: any) {
