@@ -47,6 +47,10 @@ export const Config: Schema<Config> = Schema.intersect([
 ])
 
 export function apply(ctx: Context, config: Config = {}) {
+  if (ctx.loader.readonly) {
+    return ctx.logger('manager').warn('manager is only available for json/yaml config file')
+  }
+
   ctx.plugin(Installer)
   ctx.plugin(BotProvider)
   ctx.plugin(MarketProvider, config)

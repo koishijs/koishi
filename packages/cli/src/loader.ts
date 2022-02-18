@@ -38,7 +38,7 @@ export class Loader {
   app: App
   config: App.Config
   cache: Dict<string> = {}
-  isWritable: boolean
+  readonly: boolean
 
   constructor() {
     const basename = 'koishi.config'
@@ -55,7 +55,7 @@ export class Loader {
       this.dirname = cwd
       this.filename = cwd + '/' + basename + this.extname
     }
-    this.isWritable = writableExts.includes(this.extname)
+    this.readonly = !writableExts.includes(this.extname)
   }
 
   interpolate(source: any) {
@@ -88,7 +88,7 @@ export class Loader {
     })
 
     let resolved = new App.Config(config)
-    if (this.isWritable) {
+    if (!this.readonly) {
       // schemastery may change original config
       // so we need to validate config twice
       resolved = new App.Config(this.interpolate(config))
@@ -153,7 +153,7 @@ export class Loader {
 
   createApp() {
     const app = this.app = new App(this.config)
-    if (this.isWritable) app.loader = this
+    app.loader = this
     app.baseDir = this.dirname
     const { plugins } = this.config
     for (const name in plugins) {
