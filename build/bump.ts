@@ -1,8 +1,8 @@
 import { writeJson } from 'fs-extra'
 import { resolve } from 'path'
-import { SemVer, gt, prerelease } from 'semver'
+import { gt, prerelease, SemVer } from 'semver'
 import { cyan, green } from 'kleur'
-import { PackageJson, getWorkspaces } from './utils'
+import { getWorkspaces, PackageJson } from './utils'
 import latest from 'latest-version'
 import cac from 'cac'
 import ora from 'ora'
@@ -72,7 +72,7 @@ class Package {
       }
     } else {
       if (ver.prerelease.length) {
-      ver.prerelease = []
+        ver.prerelease = []
       } else {
         ver[flag] += 1
         if (flag !== 'patch') ver.patch = 0

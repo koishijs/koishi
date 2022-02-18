@@ -55,7 +55,6 @@ export async function build(root: string, config: vite.UserConfig = {}) {
 }
 
 async function buildConsole() {
-
   // build for console main
   const { output } = await build(cwd + '/plugins/frontend/client/app') as RollupOutput
 

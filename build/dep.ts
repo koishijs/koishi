@@ -1,4 +1,4 @@
-import { cwd, getWorkspaces, PackageJson, DependencyType } from './utils'
+import { cwd, DependencyType, getWorkspaces, PackageJson } from './utils'
 import { cyan, green, yellow } from 'kleur'
 import { writeJson } from 'fs-extra'
 import { gt, satisfies } from 'semver'

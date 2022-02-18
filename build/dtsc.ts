@@ -211,6 +211,7 @@ async function bundleMain(node: Node) {
 }
 
 const coreLibs = [
+  'packages/segment',
   'packages/utils',
   'packages/core',
 ]

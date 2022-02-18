@@ -1,4 +1,4 @@
-import { cwd, PackageJson, spawnAsync, spawnSync, getPackages } from './utils'
+import { cwd, getPackages, PackageJson, spawnAsync, spawnSync } from './utils'
 import { gt, maxSatisfying, prerelease } from 'semver'
 import { Octokit } from '@octokit/rest'
 import { draft } from './release'

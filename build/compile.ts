@@ -1,6 +1,6 @@
-import { build, BuildFailure, BuildOptions, Message, Plugin, Platform } from 'esbuild'
+import { build, BuildFailure, BuildOptions, Message, Platform, Plugin } from 'esbuild'
 import { resolve } from 'path'
-import { cyan, yellow, red } from 'kleur'
+import { cyan, red, yellow } from 'kleur'
 import { existsSync, readdir } from 'fs-extra'
 import escapeRegExp from 'escape-string-regexp'
 import { getPackages, PackageJson, requireSafe } from './utils'
