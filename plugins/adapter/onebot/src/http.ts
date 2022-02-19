@@ -16,10 +16,6 @@ export class HttpServer extends Adapter<BotConfig, AdapterConfig> {
 
   public bots: OneBotBot[]
 
-  constructor(ctx: Context, config: AdapterConfig = {}) {
-    super(ctx, config)
-  }
-
   async connect(bot: OneBotBot) {
     const { endpoint, token } = bot.config
     if (!endpoint) return
