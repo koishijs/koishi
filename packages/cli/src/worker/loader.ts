@@ -1,6 +1,6 @@
 import { dirname, extname, isAbsolute, resolve } from 'path'
 import { readdirSync, readFileSync, writeFileSync } from 'fs'
-import { App, Dict, interpolate, Logger, Modules, unwrapExports, valueMap } from 'koishi'
+import { App, Context, Dict, interpolate, Logger, Modules, unwrapExports, valueMap } from 'koishi'
 import * as yaml from 'js-yaml'
 import * as dotenv from 'dotenv'
 
@@ -11,6 +11,8 @@ declare module 'koishi' {
     }
   }
 }
+
+Context.service('loader')
 
 const oldPaths = Modules.internal.paths
 Modules.internal.paths = function (name: string) {
@@ -31,7 +33,7 @@ const context = {
   env: process.env,
 }
 
-export class Loader {
+export default class Loader {
   dirname: string
   filename: string
   extname: string

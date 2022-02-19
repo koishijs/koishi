@@ -1,7 +1,8 @@
 import { clone, Context, Dict, Logger } from 'koishi'
 import { DataService } from '@koishijs/plugin-console'
 import { resolve } from 'path'
-import { existsSync, promises as fsp } from 'fs'
+import { promises as fsp } from 'fs'
+import { getAgent } from '@koishijs/cli'
 import { Package } from './utils'
 import spawn from 'cross-spawn'
 
@@ -12,24 +13,9 @@ declare module '@koishijs/plugin-console' {
   }
 }
 
-type Agent = 'yarn' | 'npm' | 'pnpm'
-
 const logger = new Logger('market')
 
-function supports(command: string, args: string[] = []) {
-  return new Promise<boolean>((resolve) => {
-    const child = spawn(command, args, { stdio: 'ignore' })
-    child.on('exit', (code) => {
-      resolve(!code)
-    })
-    child.on('error', () => {
-      resolve(false)
-    })
-  })
-}
-
 class Installer extends DataService<Dict<string>> {
-  private agentTask: Promise<Agent>
   private metaTask: Promise<Package.Json>
 
   constructor(public ctx: Context) {
@@ -41,24 +27,6 @@ class Installer extends DataService<Dict<string>> {
 
   get cwd() {
     return this.ctx.app.baseDir
-  }
-
-  async _getAgent(): Promise<Agent> {
-    // eslint-disable-next-line @typescript-eslint/naming-convention
-    const { npm_execpath } = process.env
-    const isYarn = npm_execpath.includes('yarn')
-    if (isYarn) return 'yarn'
-
-    if (existsSync(resolve(this.cwd, 'yarn.lock'))) return 'yarn'
-    if (existsSync(resolve(this.cwd, 'pnpm-lock.yaml'))) return 'pnpm'
-    if (existsSync(resolve(this.cwd, 'package-lock.json'))) return 'npm'
-
-    const hasPnpm = !isYarn && supports('pnpm', ['--version'])
-    return hasPnpm ? 'pnpm' : 'npm'
-  }
-
-  getAgent() {
-    return this.agentTask ||= this._getAgent()
   }
 
   async _loadDeps() {
@@ -119,7 +87,7 @@ class Installer extends DataService<Dict<string>> {
 
   installDep = async (deps: Dict<string>) => {
     const [agent, meta] = await Promise.all([
-      this.getAgent(),
+      getAgent(),
       this.override(deps),
     ])
     const args: string[] = agent === 'yarn' ? [] : ['install']

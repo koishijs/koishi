@@ -303,6 +303,10 @@ export namespace App {
   Config.list.push(Config.Basic, Config.Features, Config.Advanced)
 }
 
+export function defineConfig(config: App.Config) {
+  return config
+}
+
 class TaskQueue {
   #internal = new Set<Promise<void>>()
 
