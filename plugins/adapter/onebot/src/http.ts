@@ -1,4 +1,4 @@
-import { Adapter, Context, Logger, omit, Quester, Schema } from 'koishi'
+import { Adapter, Logger, omit, Quester, Schema } from 'koishi'
 import { BotConfig, OneBotBot } from './bot'
 import { AdapterConfig, dispatchSession } from './utils'
 import { createHmac } from 'crypto'
