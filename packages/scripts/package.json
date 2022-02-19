@@ -11,7 +11,7 @@
     "lib"
   ],
   "bin": {
-    "monopoly": "lib/bin.js"
+    "koishi-scripts": "lib/bin.js"
   },
   "author": "Shigma <shigma10826@gmail.com>",
   "license": "MIT",
@@ -32,12 +32,19 @@
     "koishi"
   ],
   "devDependencies": {
-    "@types/cross-spawn": "^6.0.2"
+    "@types/cross-spawn": "^6.0.2",
+    "@types/fs-extra": "^9.0.13",
+    "@types/semver": "^7.3.9"
   },
   "dependencies": {
     "@koishijs/cli": "^4.2.2",
     "cac": "^6.7.12",
     "cross-spawn": "^7.0.3",
-    "prompts": "^2.4.2"
+    "fs-extra": "^10.0.0",
+    "globby": "^11.0.4",
+    "latest-version": "^5.1.0",
+    "ora": "^5.4.1",
+    "prompts": "^2.4.2",
+    "semver": "^7.3.5"
   }
 }
