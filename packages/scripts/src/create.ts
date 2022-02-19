@@ -1,16 +1,16 @@
 import { CAC } from 'cac'
 import { promises as fsp } from 'fs'
 import { resolve } from 'path'
-import { getAgent } from './utils'
+import { getAgent } from '@koishijs/cli'
 import spawn from 'cross-spawn'
-import kleur from 'kleur'
 import prompts from 'prompts'
 
 class Runner {
-  meta: any
   root: string
   name: string
   fullname: string
+
+  constructor(public meta: any) {}
 
   async init(name: string) {
     this.name = name || await this.getName()
@@ -96,13 +96,9 @@ class Runner {
 }
 
 export default function (cli: CAC) {
-  cli.command('create [name]', 'create a plugin')
+  cli.command('create [name]', 'create a new plugin')
     .action(async (name: string, options) => {
       const meta = require(process.cwd() + '/package.json')
-      if (!meta.workspaces) {
-        console.log(kleur.red('error') + ' koishi create is only supported in workspaces.')
-      } else {
-        new Runner().start(name)
-      }
+      new Runner(meta).start(name)
     })
 }
