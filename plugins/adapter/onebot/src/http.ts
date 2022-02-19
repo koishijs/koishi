@@ -1,4 +1,4 @@
-import { Adapter, assertProperty, Context, Logger, omit, Quester, Schema } from 'koishi'
+import { Adapter, Logger, omit, Quester, Schema } from 'koishi'
 import { BotConfig, OneBotBot } from './bot'
 import { AdapterConfig, dispatchSession } from './utils'
 import { createHmac } from 'crypto'
@@ -15,11 +15,6 @@ export class HttpServer extends Adapter<BotConfig, AdapterConfig> {
   })
 
   public bots: OneBotBot[]
-
-  constructor(ctx: Context, config: AdapterConfig = {}) {
-    super(ctx, config)
-    assertProperty(ctx.app.options, 'port')
-  }
 
   async connect(bot: OneBotBot) {
     const { endpoint, token } = bot.config
