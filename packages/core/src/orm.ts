@@ -282,10 +282,13 @@ export namespace Query {
   }
 }
 
+type $Date = Date
+
 export type Uneval<T, U> =
   | U extends number ? Eval.Number<T>
   : U extends string ? Eval.String<T>
   : U extends boolean ? Eval.Boolean<T>
+  : U extends $Date ? Eval.Date<T>
   : any
 
 export type Eval<U> =
@@ -304,6 +307,7 @@ export namespace Eval {
   export type Number<T = any, A = never> = A | number | NumberExpr<T, A>
   export type String<T = any, A = never> = string | StringExpr<T, A>
   export type Boolean<T = any, A = never> = boolean | BooleanExpr<T, A>
+  export type Date<T = any> = $Date | DateExpr<T>
   export type Aggregation<T = any> = Number<{}, AggregationExpr<T>>
 
   export interface UniveralExpr<T = any, U = any> {
@@ -323,14 +327,22 @@ export namespace Eval {
     $concat?: String<T, A>[]
   }
 
+  type ComparableBinary<T, A> =
+    | [Number<T, A>, Number<T, A>]
+    | [String<T, A>, String<T, A>]
+    | [Boolean<T, A>, Boolean<T, A>]
+    | [Date<T>, Date<T>]
+
   export interface BooleanExpr<T = any, A = never> extends UniveralExpr<T, boolean> {
-    $eq?: [Number<T, A>, Number<T, A>] | [String<T, A>, String<T, A>] | [Boolean<T, A>, Boolean<T, A>]
-    $ne?: [Number<T, A>, Number<T, A>] | [String<T, A>, String<T, A>] | [Boolean<T, A>, Boolean<T, A>]
-    $gt?: [Number<T, A>, Number<T, A>]
-    $gte?: [Number<T, A>, Number<T, A>]
-    $lt?: [Number<T, A>, Number<T, A>]
-    $lte?: [Number<T, A>, Number<T, A>]
+    $eq?: ComparableBinary<T, A>
+    $ne?: ComparableBinary<T, A>
+    $gt?: ComparableBinary<T, A>
+    $gte?: ComparableBinary<T, A>
+    $lt?: ComparableBinary<T, A>
+    $lte?: ComparableBinary<T, A>
   }
+
+  export interface DateExpr<T = any> extends UniveralExpr<T, $Date> {}
 
   export interface AggregationExpr<T = any> {
     $sum?: NestKeys<T, number> | NumberExpr<T>
