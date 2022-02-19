@@ -14,7 +14,6 @@ export default class HttpServer extends Adapter<BotConfig, AdapterConfig> {
   ])
 
   constructor(ctx: Context, config: AdapterConfig) {
-    assertProperty(ctx.app.options, 'port')
     config.path = sanitize(config.path || '/kaiheila')
     super(ctx, config)
   }

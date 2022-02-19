@@ -18,7 +18,6 @@ export class HttpServer extends Adapter<BotConfig, AdapterConfig> {
 
   constructor(ctx: Context, config: AdapterConfig = {}) {
     super(ctx, config)
-    assertProperty(ctx.app.options, 'port')
   }
 
   async connect(bot: OneBotBot) {

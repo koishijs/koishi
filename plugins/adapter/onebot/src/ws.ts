@@ -35,7 +35,6 @@ export class WebSocketServer extends Adapter<BotConfig, AdapterConfig> {
 
   constructor(ctx: Context, config: AdapterConfig) {
     super(ctx, config)
-    assertProperty(ctx.app.options, 'port')
     const { path = '/onebot' } = config
 
     this.wsServer = ctx.router.ws(path, (socket, { headers }) => {
