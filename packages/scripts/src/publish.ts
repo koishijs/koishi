@@ -31,8 +31,9 @@ function publish(folder: string, name: string, version: string, tag: string) {
 
 export default function (cli: CAC) {
   cli.command('publish [...name]', 'publish packages')
+    .alias('pub')
     .action(async (names: string[], options) => {
-      const entries = Object.entries(await getPackages(names))
+      const entries = Object.entries(await getPackages(names, { ignorePrivate: true }))
       const spinner = ora()
       const bumpMap: Record<string, PackageJson> = {}
 
@@ -49,12 +50,12 @@ export default function (cli: CAC) {
       }))
       spinner.succeed()
 
-      for (const folder in bumpMap) {
-        const { name, version } = bumpMap[folder]
+      for (const path in bumpMap) {
+        const { name, version } = bumpMap[path]
         if (name === 'koishi') {
-          await copyFile(`${cwd}/README.md`, `${cwd}/${folder}/README.md`)
+          await copyFile(`${cwd}/README.md`, `${cwd}${path}/README.md`)
         }
-        await publish(folder, name, version, isNext(version) ? 'next' : 'latest')
+        await publish(path, name, version, isNext(version) ? 'next' : 'latest')
       }
 
       spinner.succeed('All workspaces are up to date.')

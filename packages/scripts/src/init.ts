@@ -2,24 +2,14 @@ import { CAC } from 'cac'
 import { promises as fsp } from 'fs'
 import { resolve } from 'path'
 import { getAgent } from '@koishijs/cli'
+import { cwd, meta } from './utils'
 import spawn from 'cross-spawn'
 import prompts from 'prompts'
 
-class Runner {
+class Initiator {
   root: string
   name: string
   fullname: string
-
-  constructor(public meta: any) {}
-
-  async init(name: string) {
-    this.name = name || await this.getName()
-    this.fullname = name.includes('/')
-      ? name.replace('/', '/koishi-plugin-')
-      : 'koishi-plugin-' + name
-    this.root = resolve(process.cwd(), 'plugins', name)
-    await this.write()
-  }
 
   async start(name: string) {
     const [agent] = await Promise.all([
@@ -28,6 +18,15 @@ class Runner {
     ])
     const args: string[] = agent === 'yarn' ? [] : ['install']
     spawn.sync(agent, args, { stdio: 'inherit' })
+  }
+
+  async init(name: string) {
+    this.name = name || await this.getName()
+    this.fullname = name.includes('/')
+      ? name.replace('/', '/koishi-plugin-')
+      : 'koishi-plugin-' + name
+    this.root = resolve(cwd, 'plugins', name)
+    await this.write()
   }
 
   async getName() {
@@ -66,7 +65,7 @@ class Runner {
         'plugin',
       ],
       peerDependencies: {
-        koishi: this.meta.dependencies.koishi,
+        koishi: meta.dependencies.koishi,
       },
     }, null, 2))
   }
@@ -100,7 +99,6 @@ export default function (cli: CAC) {
   cli.command('init [name]', 'init a new plugin')
     .alias('create')
     .action(async (name: string, options) => {
-      const meta = require(process.cwd() + '/package.json')
-      new Runner(meta).start(name)
+      new Initiator().start(name)
     })
 }

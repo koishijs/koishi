@@ -1,5 +1,6 @@
 import { CAC } from 'cac'
 import { writeFile } from 'fs-extra'
+import { buildExtension } from '@koishijs/client/lib'
 import { cwd, getPackages, PackageJson, spawnAsync, TsConfig } from './utils'
 
 interface Node {
@@ -9,12 +10,11 @@ interface Node {
   next?: Set<string>
 }
 
-function initGraph(names: string[]) {
-  const packages = getPackages(names)
+function initGraph(packages: Record<string, PackageJson>) {
   const nodes: Record<string, Node> = {}
   for (const path in packages) {
     const meta = packages[path]
-    if (!meta || meta.private) return
+    if (!meta.main) return
     nodes[meta.name] = { path, meta, prev: [], next: new Set() }
   }
 
@@ -41,7 +41,7 @@ async function buildGraph(nodes: Record<string, Node>) {
     const node = nodes[name]
     if (node.next.size) return true
     delete nodes[name]
-    config.references.unshift({ path: './' + node.path })
+    config.references.unshift({ path: '.' + node.path })
     node.prev.forEach(dep => {
       nodes[dep].next.delete(name)
     })
@@ -68,7 +68,11 @@ async function buildGraph(nodes: Record<string, Node>) {
 export default function (cli: CAC) {
   cli.command('build [...name]', 'build packages')
     .action(async (names: string[], options) => {
-      const nodes = initGraph(names)
+      const packages = await getPackages(names)
+      const nodes = initGraph(packages)
       await buildGraph(nodes)
+      for (const path in packages) {
+        await buildExtension(cwd + path)
+      }
     })
 }
