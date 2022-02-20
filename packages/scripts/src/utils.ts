@@ -1,5 +1,6 @@
 import spawn from 'cross-spawn'
 import globby from 'globby'
+import ts from 'typescript'
 
 export const cwd = process.cwd()
 export const meta: PackageJson = require(cwd + '/package.json')
@@ -49,6 +50,16 @@ export interface PackageJson extends Partial<Record<DependencyType, Record<strin
   private?: boolean
   version?: string
   workspaces: string[]
+}
+
+interface Reference {
+  path: string
+}
+
+export interface TsConfig {
+  files?: string[]
+  references?: Reference[]
+  compilerOptions?: ts.CompilerOptions
 }
 
 export function spawnAsync(args: string[]) {

@@ -51,6 +51,7 @@ class Runner {
   async writeManifest() {
     await fsp.writeFile(this.root + '/package.json', JSON.stringify({
       name: this.fullname,
+      private: true,
       version: '1.0.0',
       main: 'lib/index.js',
       typings: 'lib/index.d.ts',
@@ -96,7 +97,8 @@ class Runner {
 }
 
 export default function (cli: CAC) {
-  cli.command('create [name]', 'create a new plugin')
+  cli.command('init [name]', 'init a new plugin')
+    .alias('create')
     .action(async (name: string, options) => {
       const meta = require(process.cwd() + '/package.json')
       new Runner(meta).start(name)

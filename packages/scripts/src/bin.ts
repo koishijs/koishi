@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
-import registerCreateCommand from './create'
+import registerBuildCommand from './build'
+import registerInitCommand from './init'
 import registerPublishCommand from './publish'
 import CAC from 'cac'
 
@@ -8,7 +9,8 @@ const { version } = require('../package.json')
 
 const cli = CAC('koishi-scripts').help().version(version)
 
-registerCreateCommand(cli)
+registerBuildCommand(cli)
+registerInitCommand(cli)
 registerPublishCommand(cli)
 
 cli.parse()
