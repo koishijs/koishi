@@ -19,7 +19,8 @@
 
 <script lang="ts" setup>
 
-import { ref, computed, watch, nextTick, onMounted, onUpdated, onBeforeUnmount, defineComponent, h } from 'vue'
+import { ref, computed, watch, nextTick, onActivated, onMounted, onUpdated, onBeforeUnmount, defineComponent, h } from 'vue'
+import { ElScrollbar } from 'element-plus'
 import Virtual from './virtual'
 
 const emit = defineEmits(['click', 'scroll', 'top', 'bottom', 'update:activeKey'])
@@ -44,7 +45,7 @@ function resolveItemClass(item: any, index: number) {
     : props.itemClass
 }
 
-const root = ref<{ wrap$: HTMLElement }>()
+const root = ref<typeof ElScrollbar>()
 
 watch(() => props.data.length, () => {
   const { scrollTop, clientHeight, scrollHeight } = root.value.wrap$
@@ -122,8 +123,14 @@ function scrollToBottom() {
   }
 }
 
+let scrollTop = 0
+
+onActivated(() => {
+  root.value.setScrollTop(scrollTop)
+})
+
 function onScroll(ev: MouseEvent) {
-  const offset = Math.ceil(root.value.wrap$.scrollTop)
+  const offset = Math.ceil(scrollTop = root.value.wrap$.scrollTop)
   const clientLength = Math.ceil(root.value.wrap$.clientHeight)
   const scrollLength = Math.ceil(root.value.wrap$.scrollHeight)
 
