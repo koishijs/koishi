@@ -6,7 +6,7 @@
   </div>
   <div class="market-filter">
     共搜索到 {{ plugins.length }} 个插件。
-    <el-checkbox v-model="config.showInstalled">已下载的插件</el-checkbox>
+    <el-checkbox v-model="config.showInstalled">显示已下载的插件</el-checkbox>
   </div>
   <div class="market-container">
     <package-view v-for="data in packages" :key="data.name" :data="data" @query="query = $event"></package-view>

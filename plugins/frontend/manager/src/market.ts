@@ -2,8 +2,10 @@ import { Context, version as currentVersion, Dict, Quester, Schema } from 'koish
 import { Package } from './utils'
 import { satisfies } from 'semver'
 import { DataService } from '@koishijs/plugin-console'
+import spawn from 'cross-spawn'
 
 class MarketProvider extends DataService<Dict<MarketProvider.Data>> {
+  /** https://github.com/npm/registry/blob/master/docs/REGISTRY-API.md */
   private http: Quester
   private timestamp = 0
   private fullCache: Dict<MarketProvider.Data> = {}
@@ -11,8 +13,6 @@ class MarketProvider extends DataService<Dict<MarketProvider.Data>> {
 
   constructor(ctx: Context, private config: MarketProvider.Config) {
     super(ctx, 'market')
-
-    this.http = ctx.http.extend(config)
   }
 
   async start() {
@@ -71,6 +71,22 @@ class MarketProvider extends DataService<Dict<MarketProvider.Data>> {
   }
 
   async prepare() {
+    const registry = await new Promise<string>((resolve, reject) => {
+      let stdout = ''
+      const child = spawn('npm', ['config', 'get', 'registry'], { cwd: this.ctx.app.baseDir })
+      child.on('exit', (code) => {
+        if (!code) return resolve(stdout)
+        reject(new Error(`child process failed with code ${code}`))
+      })
+      child.on('error', reject)
+      child.stdout.on('data', (data) => {
+        stdout += data.toString()
+      })
+    })
+    this.http = this.ctx.http.extend({
+      endpoint: registry.trim(),
+    })
+
     const total = await this.search()
     for (let offset = 250; offset < total; offset += 250) {
       await this.search(offset)
@@ -83,14 +99,9 @@ class MarketProvider extends DataService<Dict<MarketProvider.Data>> {
 }
 
 namespace MarketProvider {
-  export interface Config {
-    endpoint?: string
-  }
+  export interface Config {}
 
-  export const Config = Schema.object({
-    // https://github.com/npm/registry/blob/master/docs/REGISTRY-API.md
-    endpoint: Schema.string().role('url').description('要使用的 npm registry 终结点。').default('https://registry.npmjs.org'),
-  })
+  export const Config = Schema.object({})
 
   export interface Data extends Package.SearchPackage {
     versions: Package.Meta[]
