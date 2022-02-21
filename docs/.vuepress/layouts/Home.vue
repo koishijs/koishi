@@ -8,8 +8,8 @@
         MADE WITH <span class="koi">LOVE</span>
       </p>
       <div class="actions">
-        <router-link class="action-button primary" to="/guide/introduction/console">快速上手</router-link>
-        <a class="action-button secondary" @click="scrollDown">了解更多</a>
+        <router-link class="action-button primary" to="/guide/introduction/console">Get Started</router-link>
+        <a class="action-button secondary" @click="scroll(1)">Learn More</a>
       </div>
       <svg aria-hidden="true" focusable="false" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512" class="w-10 h-10">
         <g>
@@ -31,7 +31,9 @@
           </ul>
           <p>查看指南：<router-link to="/guide/introduction/console">创建 Koishi 控制台项目</router-link></p>
         </div>
-        <div class="image">此处应该有一张图</div>
+        <div class="image">
+          <carousel></carousel>
+        </div>
       </div>
     </div>
 
@@ -104,6 +106,7 @@ import { ref } from 'vue'
 import { useWindowSize, useEventListener } from '@vueuse/core'
 import { useThemeLocaleData, resolveArraySidebarItems } from '@vuepress/theme-default/lib/client/composables'
 import SidebarItem from '@vuepress/theme-default/lib/client/components/SidebarItem.vue'
+import Carousel from './Carousel.vue'
 
 const { width, height } = useWindowSize()
 
@@ -117,15 +120,12 @@ const root = ref<HTMLElement>()
 useEventListener('wheel', (event) => {
   if (Math.abs(event.deltaY) < 100 || event.ctrlKey || event.shiftKey) return
   event.preventDefault()
-  root.value.scrollBy({
-    top: innerHeight * Math.sign(event.deltaY),
-    behavior: 'smooth',
-  })
+  scroll(Math.sign(event.deltaY))
 }, { passive: false })
 
-function scrollDown() {
+function scroll(scale = 1) {
   root.value.scrollBy({
-    top: innerHeight,
+    top: innerHeight * scale,
     behavior: 'smooth',
   })
 }
@@ -176,6 +176,7 @@ function scrollDown() {
   }
 
   h2 {
+    font-size: 1.5rem;
     font-weight: 400;
   }
 
@@ -221,14 +222,15 @@ function scrollDown() {
     gap: 2.2rem;
     justify-content: center;
 
-    @media (max-width: 720px) {
-      margin: 8rem 0 0 0;
+    @media (max-width: 600px) {
+      margin: 4rem 0 0 0;
       flex-direction: column;
     }
 
     .action-button {
       display: inline-block;
-      font-size: 1.2rem;
+      font-size: 1.05rem;
+      line-height: 1.4;
       padding: 0.5rem 2.2rem;
       border-width: 2px;
       border-style: solid;
@@ -237,7 +239,7 @@ function scrollDown() {
       box-sizing: border-box;
       cursor: pointer;
 
-      @media (max-width: 720px) {
+      @media (max-width: 600px) {
         padding: 0.5rem 4rem;
       }
 
@@ -277,6 +279,12 @@ function scrollDown() {
     .image {
       display: none;
     }
+  }
+
+  img {
+    border: 1px solid var(--c-border);
+    max-height: 100%;
+    max-width: 640px;
   }
 }
 
