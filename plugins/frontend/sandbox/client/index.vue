@@ -82,7 +82,6 @@ function sendMessage(content: string) {
 
 .page-sandbox {
   --avatar-size: 2.5rem;
-  overflow-y: auto;
 
   aside, main {
     display: flex;
@@ -106,6 +105,7 @@ function sendMessage(content: string) {
 
   .k-chat-panel {
     height: 100%;
+    overflow-y: auto;
   }
 
   .header, .footer {
