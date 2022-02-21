@@ -2,7 +2,7 @@
   "name": "@koishijs/segment",
   "description": "Segment Manipulation",
   "version": "1.0.0",
-  "main": "lib/node.js",
+  "main": "index.js",
   "module": "lib/browser.js",
   "typings": "lib/index.d.ts",
   "files": [

@@ -148,4 +148,4 @@ namespace segment {
   export const file = createAssetFactory('file')
 }
 
-export = segment
+export default segment
