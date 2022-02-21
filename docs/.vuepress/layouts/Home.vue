@@ -7,6 +7,10 @@
         <br v-if="width < 600">
         MADE WITH <span class="koi">LOVE</span>
       </p>
+      <div class="actions">
+        <router-link class="action-button primary" to="/guide/introduction/console">快速上手</router-link>
+        <a class="action-button secondary" @click="scrollDown">了解更多</a>
+      </div>
       <svg aria-hidden="true" focusable="false" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512" class="w-10 h-10">
         <g>
           <path fill="var(--c-love)" d="M160 256.14l-56.51 56.47-96.44-96.15a23.77 23.77.0 01-.18-33.61l.18-.18 22.59-22.51a23.94 23.94.0 0133.85.0z"></path>
@@ -119,6 +123,13 @@ useEventListener('wheel', (event) => {
   })
 }, { passive: false })
 
+function scrollDown() {
+  root.value.scrollBy({
+    top: innerHeight,
+    behavior: 'smooth',
+  })
+}
+
 </script>
 
 <style lang="scss">
@@ -201,6 +212,54 @@ useEventListener('wheel', (event) => {
     text-transform: uppercase;
     text-align: center;
     line-height: 2;
+  }
+
+  .actions {
+    margin: 2rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2.2rem;
+    justify-content: center;
+
+    @media (max-width: 720px) {
+      margin: 8rem 0 0 0;
+      flex-direction: column;
+    }
+
+    .action-button {
+      display: inline-block;
+      font-size: 1.2rem;
+      padding: 0.5rem 2.2rem;
+      border-width: 2px;
+      border-style: solid;
+      border-radius: 2rem;
+      transition: background-color var(--t-color), border-color var(--t-color);
+      box-sizing: border-box;
+      cursor: pointer;
+
+      @media (max-width: 720px) {
+        padding: 0.5rem 4rem;
+      }
+
+      &.primary {
+        color: var(--c-bg);
+        background-color: var(--c-brand);
+        border-color: var(--c-brand);
+        &:hover {
+          background-color: var(--c-brand-light);
+          border-color: var(--c-brand-light);
+        }
+      }
+
+      &.secondary {
+        color: var(--c-brand);
+        border-color: var(--c-brand);
+        &:hover {
+          color: var(--c-bg);
+          background-color: var(--c-brand);
+        }
+      }
+    }
   }
 }
 
