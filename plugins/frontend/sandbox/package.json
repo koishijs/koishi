@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-sandbox",
   "description": "Test Your Virtual Bot in Console",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -35,10 +35,10 @@
     "mock"
   ],
   "peerDependencies": {
-    "koishi": "^4.2.2"
+    "koishi": "^4.3.1"
   },
   "devDependencies": {
-    "@koishijs/client": "^3.1.1",
-    "@koishijs/plugin-console": "^3.1.1"
+    "@koishijs/client": "^3.1.2",
+    "@koishijs/plugin-console": "^3.1.2"
   }
 }

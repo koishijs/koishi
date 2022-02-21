@@ -107,7 +107,7 @@ async function compile(name: string) {
     return Promise.all([
       bundle({
         ...options,
-        outfile: base + '/' + meta.main,
+        outfile: base + '/' + meta.module.replace('browser', 'node'),
         plugins: [
           usePlatformPlugin('node'),
           externalPlugin,

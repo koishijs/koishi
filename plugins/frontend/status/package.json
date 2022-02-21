@@ -31,12 +31,12 @@
     "required:console"
   ],
   "peerDependencies": {
-    "@koishijs/plugin-console": "^3.1.1",
-    "koishi": "^4.2.2"
+    "@koishijs/plugin-console": "^3.1.2",
+    "koishi": "^4.3.1"
   },
   "devDependencies": {
-    "@koishijs/client": "^3.1.1",
-    "@koishijs/cli": "^4.2.2",
+    "@koishijs/client": "^3.1.2",
+    "@koishijs/cli": "^4.3.1",
     "echarts": "^5.2.2",
     "vue-echarts": "^6.0.2"
   },

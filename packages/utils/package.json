@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/utils",
   "description": "Utilities for Koishi",
-  "version": "5.1.0",
+  "version": "5.1.2",
   "main": "lib/node.js",
   "module": "lib/browser.js",
   "typings": "lib/index.d.ts",
@@ -32,7 +32,7 @@
     "@types/supports-color": "^8.1.1"
   },
   "dependencies": {
-    "@koishijs/segment": "^1.0.0",
+    "@koishijs/segment": "^1.1.1",
     "supports-color": "^8.1.0"
   }
 }
