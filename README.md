@@ -36,7 +36,7 @@ yarn create koishi
 - 支持 QQ，Telegram，Discord 等主流聊天平台，支持多账户和跨平台数据互通
 - 随时随机通过控制面板监控运行状态，控制机器人的行为，甚至上号聊天
 
-参见：[创建控制台项目](https://koishi.js.org/guide/introduction/console.html)
+参见：[创建模板项目](https://koishi.js.org/guide/introduction/template.html)
 
 ### 功能强大的 API
 

@@ -48,7 +48,8 @@ module.exports = {
       },
       { text: '指南', link: '/guide/introduction/' },
       { text: 'API', link: '/api/' },
-      { text: '官方插件', link: '/plugins/' },
+      { text: '插件', link: '/plugins/' },
+      { text: '更多', link: '/about/glossary' },
       // ...devOnly({ text: '演练场', link: '/playground.html' }),
     ],
     sidebar: {
@@ -57,12 +58,10 @@ module.exports = {
         isGroup: true,
         children: [
           '/guide/introduction/index.md',
-          '/guide/introduction/console.md',
-          '/guide/introduction/coding.md',
+          '/guide/introduction/direct.md',
+          '/guide/introduction/template.md',
           '/guide/introduction/cli.md',
-          // '/guide/introduction/comparison.md',
           '/guide/introduction/workspace.md',
-          // '/guide/introduction/glossary.md',
         ],
       }, {
         text: '处理交互',
@@ -296,6 +295,11 @@ module.exports = {
           '/plugins/other/puppeteer.md',
         ],
       }],
+
+      '/about/': [
+        '/about/glossary.md',
+        '/about/history.md',
+      ],
     },
 
     lastUpdated: '上次更新',

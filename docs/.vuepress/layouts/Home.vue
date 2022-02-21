@@ -8,7 +8,7 @@
         MADE WITH <span class="koi">LOVE</span>
       </p>
       <div class="actions">
-        <router-link class="action-button primary" to="/guide/introduction/console">Get Started</router-link>
+        <router-link class="action-button primary" to="/guide/introduction/template">Get Started</router-link>
         <a class="action-button secondary" @click="scroll(1)">Learn More</a>
       </div>
       <svg aria-hidden="true" focusable="false" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512" class="w-10 h-10">
@@ -29,7 +29,7 @@
             <li>支持 QQ，Telegram，Discord 等主流聊天平台</li>
             <li>随时随机通过控制面板监控运行状态，甚至上号聊天</li>
           </ul>
-          <p>查看指南：<router-link to="/guide/introduction/console">创建 Koishi 控制台项目</router-link></p>
+          <p>查看指南：<router-link to="/guide/introduction/template">创建 Koishi 模板项目</router-link></p>
         </div>
         <div class="image">
           <carousel></carousel>

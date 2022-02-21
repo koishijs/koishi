@@ -4,7 +4,7 @@ sidebarDepth: 2
 
 # 命令行工具
 
-@koishijs/cli 提供了名为 `koishi` 的命令行工具。如果你之前已经搭建了 [控制台应用](./console.md)，这套命令行工具就已经被集成在其中了。但如果你刚刚完成 [代码上手](./coding.md)，那么你需要手动安装这个包：
+@koishijs/cli 提供了名为 `koishi` 的命令行工具。如果你之前已经搭建了 [控制台应用](./template.md)，这套命令行工具就已经被集成在其中了。但如果你刚刚完成 [代码上手](./direct.md)，那么你需要手动安装这个包：
 
 ::: code-group manager
 ```npm
