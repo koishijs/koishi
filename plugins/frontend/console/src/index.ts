@@ -70,6 +70,7 @@ export namespace Console {
     devMode: Schema
       .boolean()
       .description('启用调试模式（仅供开发者使用）。')
+      .default(process.env.NODE_ENV === 'development')
       .hidden(),
   })
 

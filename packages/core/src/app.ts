@@ -291,7 +291,7 @@ export namespace App {
       message: Schema.natural().role('ms').default(0.1 * Time.second).description('调用 `session.sendQueued()` 时消息间发送的最小延迟，按固定值计算。'),
       cancel: Schema.natural().role('ms').default(0).description('调用 `session.cancelQueued()` 时默认的延迟。'),
       broadcast: Schema.natural().role('ms').default(0.5 * Time.second).description('调用 `bot.broadcast()` 时默认的延迟。'),
-      prompt: Schema.natural().role('ms').default(Time.minute).description('调用 `session.prompt()` 是默认的等待时间。'),
+      prompt: Schema.natural().role('ms').default(Time.minute).description('调用 `session.prompt()` 时默认的等待时间。'),
     }),
   }).description('消息设置'))
 
