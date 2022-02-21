@@ -46,7 +46,7 @@
       <h3 :class="{ required: item.meta.required }">
         <span>{{ prefix + key }}</span>
       </h3>
-      <p>{{ item.meta.description }}</p>
+      <k-markdown tag="p" inline :source="item.meta.description"></k-markdown>
     </k-schema>
   </template>
 
