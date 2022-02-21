@@ -17,6 +17,8 @@ const cwd = process.cwd()
 const argv = parse(process.argv.slice(2), {
   alias: {
     forced: ['f'],
+    mirror: ['m'],
+    template: ['t'],
   },
 })
 
@@ -90,8 +92,9 @@ async function prepare() {
 async function scaffold() {
   console.log(dim('  Scaffolding project in ') + project + dim(' ...'))
 
-  const mirror = process.env.GITHUB_MIRROR || 'https://hub.fastgit.xyz'
-  const url = `${mirror}/koishijs/boilerplate/archive/refs/heads/master.tar.gz`
+  const mirror = argv.mirror || 'https://github.com'
+  const template = argv.template || 'koishijs/boilerplate'
+  const url = `${mirror}/${template}/archive/refs/heads/master.tar.gz`
 
   try {
     const { data } = await axios.get<NodeJS.ReadableStream>(url, { responseType: 'stream' })
