@@ -1,9 +1,11 @@
-import { cwd, getPackages, PackageJson, spawnAsync } from './utils'
+import { cwd, exit, getPackages, PackageJson, spawnAsync } from './utils'
+import { Agent, getAgent } from '@koishijs/cli'
 import { gt, prerelease } from 'semver'
-import { copyFile } from 'fs-extra'
+import { copyFile, writeFile } from 'fs-extra'
 import { CAC } from 'cac'
 import latest from 'latest-version'
 import ora from 'ora'
+import prompts from 'prompts'
 
 function getVersion(name: string, isNext = false) {
   if (isNext) {
@@ -19,11 +21,10 @@ function isNext(version: string) {
   return parts[0] !== 'rc'
 }
 
-function publish(folder: string, name: string, version: string, tag: string) {
+function publish(agent: Agent, path: string, name: string, version: string, tag: string) {
   console.log(`publishing ${name}@${version} ...`)
   return spawnAsync([
-    'yarn', 'publish', folder,
-    '--new-version', version,
+    agent, 'publish', path.slice(1),
     '--tag', tag,
     '--access', 'public',
   ])
@@ -33,29 +34,49 @@ export default function (cli: CAC) {
   cli.command('publish [...name]', 'publish packages')
     .alias('pub')
     .action(async (names: string[], options) => {
-      const entries = Object.entries(await getPackages(names, { ignorePrivate: true }))
+      const packages: Record<string, PackageJson> = {}
       const spinner = ora()
-      const bumpMap: Record<string, PackageJson> = {}
+      const agentTask = getAgent()
+      if (names.length) {
+        Object.assign(packages, await getPackages(names))
+        const pending = Object.keys(packages).filter(path => packages[path].private)
+        if (pending.length) {
+          const { value } = await prompts({
+            name: 'value',
+            type: 'confirm',
+            message: `workspace ${pending.join(', ')} ${pending.length > 1 ? 'are' : 'is'} private, switch to public?`,
+          })
+          if (!value) exit('operation cancelled.')
 
-      let progress = 0
-      spinner.start(`Loading workspaces (0/${entries.length})`)
-      await Promise.all(entries.map(async ([name, meta]) => {
-        if (!meta.private) {
-          const version = await getVersion(meta.name, isNext(meta.version))
-          if (gt(meta.version, version)) {
-            bumpMap[name] = meta
-          }
+          await Promise.all(pending.map(async (path) => {
+            const meta = packages[path]
+            delete meta.private
+            await writeFile(`${cwd}${path}/package.json`, JSON.stringify(meta, null, 2))
+          }))
         }
-        spinner.text = `Loading workspaces (${++progress}/${entries.length})`
-      }))
-      spinner.succeed()
+      } else {
+        const entries = Object.entries(await getPackages([]))
+        let progress = 0
+        spinner.start(`Loading workspaces (0/${entries.length})`)
+        await Promise.all(entries.map(async ([name, meta]) => {
+          if (!meta.private) {
+            const version = await getVersion(meta.name, isNext(meta.version))
+            if (gt(meta.version, version)) {
+              packages[name] = meta
+            }
+          }
+          spinner.text = `Loading workspaces (${++progress}/${entries.length})`
+        }))
+        spinner.succeed()
+      }
 
-      for (const path in bumpMap) {
-        const { name, version } = bumpMap[path]
+      const agent = await agentTask
+      for (const path in packages) {
+        const { name, version } = packages[path]
         if (name === 'koishi') {
           await copyFile(`${cwd}/README.md`, `${cwd}${path}/README.md`)
         }
-        await publish(path, name, version, isNext(version) ? 'next' : 'latest')
+        await publish(agent, path, name, version, isNext(version) ? 'next' : 'latest')
       }
 
       spinner.succeed('All workspaces are up to date.')

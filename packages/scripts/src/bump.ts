@@ -9,54 +9,55 @@ type BumpType = typeof bumpTypes[number]
 
 class Package {
   meta: PackageJson
-  version: SemVer
+  version: string
   dirty: boolean
 
   constructor(public path: string) {
     this.meta = require(`${cwd}/${path}/package.json`)
-    this.version = new SemVer(this.meta.version)
+    this.version = this.meta.version
   }
 
   bump(flag: BumpType, options: any) {
     if (this.meta.private) return
-    let verion = new SemVer(this.meta.version)
+    let version = new SemVer(this.meta.version)
     if (!flag) {
-      if (verion.prerelease.length) {
-        const prerelease = verion.prerelease.slice() as [string, number]
+      if (version.prerelease.length) {
+        const prerelease = version.prerelease.slice() as [string, number]
         prerelease[1] += 1
-        verion.prerelease = prerelease
+        version.prerelease = prerelease
       } else {
-        verion.patch += 1
+        version.patch += 1
       }
     } else if (flag === 'version') {
-      verion = new SemVer(options.version)
+      version = new SemVer(options.version)
     } else if (flag === 'prerelease') {
-      if (verion.prerelease.length) {
-        verion.prerelease = [{
+      if (version.prerelease.length) {
+        version.prerelease = [{
           alpha: 'beta',
           beta: 'rc',
-        }[verion.prerelease[0]], 0]
+        }[version.prerelease[0]], 0]
       } else {
-        verion = new SemVer(`${verion.major + 1}.0.0-alpha.0`)
+        version = new SemVer(`${version.major + 1}.0.0-alpha.0`)
       }
     } else {
-      if (verion.prerelease.length) {
-        verion.prerelease = []
+      if (version.prerelease.length) {
+        version.prerelease = []
       } else {
-        verion[flag] += 1
-        if (flag !== 'patch') verion.patch = 0
-        if (flag === 'major') verion.minor = 0
+        version[flag] += 1
+        if (flag !== 'patch') version.patch = 0
+        if (flag === 'major') version.minor = 0
       }
     }
-    if (gt(verion, this.version)) {
+    const formatted = version.format()
+    if (gt(formatted, this.version)) {
       this.dirty = true
-      this.version = verion
-      return verion.format()
+      this.version = formatted
+      return formatted
     }
   }
 
   save() {
-    this.meta.version = this.version.format()
+    this.meta.version = this.version
     return writeFile(`${cwd}/${this.path}/package.json`, JSON.stringify(this.meta, null, 2))
   }
 }
@@ -107,8 +108,8 @@ class Graph {
   async save() {
     await Promise.all(this.each((node) => {
       if (!node.dirty) return
-      if (node.version.format() === node.meta.version) {
-        console.log(`- ${node.meta.name}: updated`)
+      if (node.version === node.meta.version) {
+        console.log(`- ${node.meta.name}: dependency updated`)
       } else {
         console.log(`- ${node.meta.name}: ${cyan(node.meta.version)} => ${green(node.meta.version)}`)
       }

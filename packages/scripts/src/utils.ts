@@ -1,4 +1,3 @@
-import { writeFile } from 'fs-extra'
 import spawn from 'cross-spawn'
 import globby from 'globby'
 import ts from 'typescript'
@@ -31,7 +30,6 @@ export function exit(message: string) {
 
 interface FallbackOptions {
   workspaces?: Record<string, PackageJson>
-  ignorePrivate?: boolean
 }
 
 async function getWorkspaces() {
@@ -53,13 +51,7 @@ async function getWorkspaces() {
 
 export async function getPackages(args: readonly string[], options: FallbackOptions = {}) {
   const workspaces = options.workspaces || await getWorkspaces()
-
-  if (!args.length) {
-    return Object.fromEntries(Object.entries(workspaces).filter(([, meta]) => {
-      if (options.ignorePrivate && meta.private) return false
-      return true
-    }))
-  }
+  if (!args.length) return workspaces
 
   const privates: string[] = []
   const result = Object.fromEntries(args.map((name) => {
@@ -77,21 +69,6 @@ export async function getPackages(args: readonly string[], options: FallbackOpti
     if (meta.private) privates.push(path)
     return [path, meta] as const
   }))
-
-  if (options.ignorePrivate && privates.length) {
-    const { value } = await prompts({
-      name: 'value',
-      type: 'confirm',
-      message: `workspace ${privates.join(', ')} ${privates.length > 1 ? 'are' : 'is'} private, switch to public?`,
-    })
-    if (!value) exit('operation cancelled.')
-
-    await Promise.all(privates.map(async (path) => {
-      const meta = result[path]
-      delete meta.private
-      await writeFile(`${cwd}${path}/package.json`, JSON.stringify(meta, null, 2))
-    }))
-  }
 
   return result
 }
@@ -119,7 +96,7 @@ export interface TsConfig {
 }
 
 export function spawnAsync(args: string[]) {
-  const child = spawn(args[0], args.slice(1), { cwd, stdio: 'inherit' })
+  const child = spawn(args[0], args.slice(1), { cwd, stdio: 'pipe' })
   return new Promise<number>((resolve) => {
     child.on('close', resolve)
   })

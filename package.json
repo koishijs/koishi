@@ -22,7 +22,7 @@
   "scripts": {
     "build": "yarn compile && yarn dtsc && yarn fe",
     "dtsc": "node -r ./build/register build/dtsc",
-    "bump": "koishi-scripts bump",
+    "bump": "yarn compile scripts && koishi-scripts bump",
     "compile": "node -r ./build/register build/compile",
     "dep": "node -r ./build/register build/dep",
     "docs": "yarn workspace docs",
@@ -33,7 +33,7 @@
     "test:html": "rimraf coverage && c8 -r html yarn test",
     "test:text": "c8 -r text yarn test",
     "lint": "eslint packages plugins --ext=ts --cache",
-    "pub": "koishi-scripts publish",
+    "pub": "yarn compile scripts && koishi-scripts pub",
     "scaffold": "yarn compile koishi && yarn create-koishi test",
     "start": "yarn compile && cross-env TS_NODE_PROJECT=../tsconfig.test.json yarn workspace test koishi start --watch .. -r ../build/register",
     "shiki": "yarn workspace bot-shiki"

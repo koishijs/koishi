@@ -31,14 +31,16 @@
     "chatbot",
     "koishi"
   ],
+  "peerDependencies": {
+    "@koishijs/cli": "^4.2.2",
+    "@koishijs/client": "^3.1.1"
+  },
   "devDependencies": {
     "@types/cross-spawn": "^6.0.2",
     "@types/fs-extra": "^9.0.13",
     "@types/semver": "^7.3.9"
   },
   "dependencies": {
-    "@koishijs/cli": "^4.2.2",
-    "@koishijs/client": "^3.1.1",
     "cac": "^6.7.12",
     "cross-spawn": "^7.0.3",
     "fs-extra": "^10.0.0",
