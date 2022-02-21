@@ -26,7 +26,15 @@ function toArg(key: string) {
 }
 
 function createWorker(options: Dict<any>) {
-  const execArgv = Object.entries(options).flatMap<string>(([key, value]) => key === '--' ? [] : [toArg(key), value])
+  const execArgv = Object.entries(options).flatMap<string>(([key, value]) => {
+    if (key === '--') return []
+    key = toArg(key)
+    if (Array.isArray(value)) {
+      return value.flatMap(value => [key, value])
+    } else {
+      return [key, value]
+    }
+  })
   execArgv.push(...options['--'])
 
   child = fork(resolve(__dirname, 'worker'), [], {
