@@ -2,17 +2,17 @@
 
 import parse from 'yargs-parser'
 import prompts from 'prompts'
-import { blue, bold, dim, green, yellow } from 'kleur'
-import { basename, join, relative } from 'path'
 import spawn from 'cross-spawn'
+import axios from 'axios'
+import { blue, bold, dim, green, red, yellow } from 'kleur'
+import { basename, join, relative } from 'path'
+import { extract } from 'tar'
 import * as fs from 'fs'
 
 let project: string
 let rootDir: string
 
 const cwd = process.cwd()
-const tempDir = join(__dirname, '..', 'template')
-const meta = require(join(tempDir, 'package.json'))
 
 const argv = parse(process.argv.slice(2), {
   alias: {
@@ -41,7 +41,7 @@ async function getName() {
   const { name } = await prompts({
     type: 'text',
     name: 'name',
-    message: 'Project Name:',
+    message: 'Project name:',
     initial: 'koishi-app',
   })
   return name.trim() as string
@@ -56,20 +56,6 @@ function emptyDir(root: string) {
       fs.rmdirSync(abs)
     } else {
       fs.unlinkSync(abs)
-    }
-  }
-}
-
-function copy(src: string, dest: string) {
-  const stat = fs.statSync(src)
-  if (!stat.isDirectory()) {
-    fs.copyFileSync(src, dest)
-  } else {
-    fs.mkdirSync(dest, { recursive: true })
-    for (const file of fs.readdirSync(src)) {
-      const srcFile = join(src, file)
-      const destFile = join(dest, file)
-      copy(srcFile, destFile)
     }
   }
 }
@@ -101,68 +87,31 @@ async function prepare() {
   emptyDir(rootDir)
 }
 
-interface CompilerOptions {
-  dependencies: string[]
-  register: string
-}
-
-const compilers: Record<string, CompilerOptions> = {
-  'tsc': {
-    dependencies: ['ts-node'],
-    register: 'ts-node/register/transpile-only',
-  },
-  'esbuild': {
-    dependencies: ['esbuild', 'esbuild-register'],
-    register: 'esbuild-register',
-  },
-}
-
-const devDeps: string[] = []
-
-const files: (string | [string, string])[] = [
-  ['_gitignore', '.gitignore'],
-  'koishi.config.yml',
-]
-
-async function getCompiler() {
-  const keys = ['', ...Object.keys(compilers)]
-  const { name } = await prompts({
-    type: 'select',
-    name: 'name',
-    message: 'Choose a typescript compiler:',
-    choices: keys.map(value => ({ title: value || 'none', value })),
-  })
-
-  if (!name) {
-    files.push(['src-js', 'src'])
-    return
-  }
-
-  files.push('src', 'tsconfig.json')
-  const compiler = compilers[name]
-  devDeps.push('typescript', ...compiler.dependencies)
-  meta.scripts.start += ' -- -r ' + compiler.register
-}
-
 async function scaffold() {
   console.log(dim('  Scaffolding project in ') + project + dim(' ...'))
 
-  for (const name of files) {
-    const [src, dest] = typeof name === 'string' ? [name, name] : name
-    copy(join(tempDir, src), join(rootDir, dest))
+  const mirror = process.env.GITHUB_MIRROR || 'https://hub.fastgit.xyz'
+  const url = `${mirror}/koishijs/boilerplate/archive/refs/heads/master.tar.gz`
+
+  try {
+    const { data } = await axios.get<NodeJS.ReadableStream>(url, { responseType: 'stream' })
+
+    await new Promise<void>((resolve, reject) => {
+      const stream = data.pipe(extract({ cwd: rootDir, newer: true, strip: 1 }))
+      stream.on('finish', resolve)
+      stream.on('error', reject)
+    })
+  } catch (err) {
+    if (!axios.isAxiosError(err) || !err.response) throw err
+    const { status, statusText } = err.response
+    console.log(`${red('error')} request failed with status code ${status} ${statusText}`)
+    process.exit(1)
   }
 
-  for (const key in meta.devDependencies) {
-    if (!devDeps.includes(key)) {
-      delete meta.devDependencies[key]
-    }
-  }
-
-  // place "name" on the top of package.json
-  fs.writeFileSync(join(rootDir, 'package.json'), JSON.stringify({
-    name: project,
-    ...meta,
-  }, null, 2))
+  const filename = join(rootDir, 'package.json')
+  const meta = require(filename)
+  meta.name = project
+  fs.writeFileSync(filename, JSON.stringify(meta, null, 2))
 
   console.log(green('  Done.\n'))
 }
@@ -210,7 +159,6 @@ async function start() {
   project = basename(rootDir)
 
   await prepare()
-  await getCompiler()
   await scaffold()
   await install()
 }

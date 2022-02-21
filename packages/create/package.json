@@ -30,12 +30,15 @@
     "koishi"
   ],
   "devDependencies": {
-    "@types/cross-spawn": "^6.0.2"
+    "@types/cross-spawn": "^6.0.2",
+    "@types/tar": "^6.1.1"
   },
   "dependencies": {
+    "axios": "^0.24.0",
     "cross-spawn": "^7.0.3",
     "kleur": "^4.1.4",
     "prompts": "^2.4.2",
+    "tar": "^6.1.11",
     "yargs-parser": "^21.0.0"
   }
 }
