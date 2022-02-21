@@ -317,6 +317,7 @@ useEventListener('wheel', (event) => {
 
   @media (max-width: 1200px) {
     max-height: min(var(--max-height), 600px);
+    align-content: stretch;
   }
 
   .item {
