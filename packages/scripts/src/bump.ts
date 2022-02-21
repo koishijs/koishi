@@ -111,7 +111,7 @@ class Graph {
       if (node.version === node.meta.version) {
         console.log(`- ${node.meta.name}: dependency updated`)
       } else {
-        console.log(`- ${node.meta.name}: ${cyan(node.meta.version)} => ${green(node.meta.version)}`)
+        console.log(`- ${node.meta.name}: ${cyan(node.meta.version)} => ${green(node.version)}`)
       }
       return node.save()
     }))
