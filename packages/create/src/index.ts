@@ -25,6 +25,7 @@ const argv = parse(process.argv.slice(2), {
 const { npm_execpath: execpath = '' } = process.env
 const isYarn = execpath.includes('yarn')
 const hasPnpm = !isYarn && supports('pnpm', ['--version'])
+const hasGit = supports('git', ['--version'])
 
 function supports(command: string, args: string[] = []) {
   return new Promise<boolean>((resolve) => {
@@ -119,10 +120,19 @@ async function scaffold() {
   console.log(green('  Done.\n'))
 }
 
+async function initGit() {
+  if (!await hasGit) return
+  const yes = await confirm('Initialize Git for version control?')
+  if (!yes) return
+  spawn.sync('git', ['init'], { stdio: 'ignore', cwd: rootDir })
+  console.log(green('  Done.\n'))
+}
+
 async function getAgent() {
   if (isYarn) return 'yarn'
   const agents = ['npm']
   if (await hasPnpm) agents.push('pnpm')
+  if (agents.length === 1) return agents[0]
   const { agent } = await prompts({
     type: 'select',
     name: 'agent',
@@ -163,6 +173,7 @@ async function start() {
 
   await prepare()
   await scaffold()
+  await initGit()
   await install()
 }
 
