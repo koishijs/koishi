@@ -172,7 +172,7 @@ watch(() => props.modelValue, (value) => {
 }, { immediate: true })
 
 watch(config, (value) => {
-  if (props.initial === undefined && deepEqual(value, props.schema.meta.default)) {
+  if (props.schema && props.initial === undefined && deepEqual(value, props.schema.meta.default)) {
     emit('update:modelValue', undefined)
   } else {
     emit('update:modelValue', value)

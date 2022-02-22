@@ -27,7 +27,7 @@
 
 <script lang="ts" setup>
 
-import { computed, watch, ref } from 'vue'
+import { computed, watch, ref, reactive } from 'vue'
 import { store, send, clone } from '@koishijs/client'
 import { BotProvider } from '@koishijs/plugin-manager'
 
@@ -79,12 +79,13 @@ watch(bot, (value) => {
 }, { immediate: true })
 
 watch(() => data.value.adapter, () => {
-  data.value.config = { protocol: '', disabled: true }
+  dict[key.value] = data.value.config = { ...dict[key.value], protocol: '', disabled: true }
 })
 
 watch(() => data.value.config.protocol, (protocol) => {
   if (!protocol) return
-  data.value.config = { protocol, disabled: true }
+  const { disabled } = data.value.config
+  dict[key.value] = data.value.config = { ...dict[key.value], protocol, disabled }
 }, { flush: 'post' })
 
 const key = computed(() => {
@@ -92,6 +93,8 @@ const key = computed(() => {
   const key = adapter + (config.protocol ? '.' + config.protocol : '')
   return store.protocols[key] ? key : adapter
 })
+
+const dict = reactive({ [key.value]: data.value.config })
 
 function update(disabled: boolean) {
   send('manager/bot-update', props.current, data.value.adapter, {
