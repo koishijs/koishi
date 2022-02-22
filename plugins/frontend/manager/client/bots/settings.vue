@@ -1,7 +1,7 @@
 <template>
   <h1 class="config-header">
     配置项
-    <template v-if="data.config.disabled">
+    <template v-if="data.disabled">
       <k-button solid @click="update(false)">登录账号</k-button>
       <k-button solid v-if="current" type="error" @click="send('manager/bot-remove', current)">移除实例</k-button>
     </template>
@@ -13,11 +13,11 @@
   <k-view name="manager:bot-prolog" :data="data"></k-view>
   <k-form :schema="store.protocols[key]" :initial="initial" v-model="data.config" :show-header="true" #prolog>
     <k-schema :initial="(bot ?? data).adapter" :schema="adapterSchema" v-model="data.adapter" :disabled="!!current">
-      <h3 class="required">adapter</h3>
+      <h3>adapter</h3>
       <p>选择要使用的适配器。</p>
     </k-schema>
-    <k-schema :initial="(bot ?? data).config.protocol" :schema="protocolSchema" v-model="data.config.protocol">
-      <h3 class="required">protocol</h3>
+    <k-schema :initial="(bot ?? data).protocol" :schema="protocolSchema" v-model="data.protocol">
+      <h3>protocol</h3>
       <p>选择要使用的协议。</p>
     </k-schema>
     <k-view name="manager:bot-config" :data="data"></k-view>
@@ -37,7 +37,7 @@ const props = defineProps<{
 
 const createSchema = (values: string[]) => ({
   type: 'union',
-  meta: {},
+  meta: { required: true },
   list: values.map((value) => ({
     type: 'const',
     value,
@@ -64,41 +64,43 @@ const protocolSchema = computed(() => {
 const data = ref<Partial<BotProvider.Data>>()
 const bot = computed(() => store.bots[props.current])
 const initial = computed(() => {
-  if (!bot.value) return
-  const { protocol } = bot.value.config
-  if (protocol !== data.value.config.protocol) return
+  if (!bot.value) return {}
+  if (bot.value.protocol !== data.value.protocol) return {}
   return bot.value.config
 })
 
 watch(bot, (value) => {
-  data.value = {
-    adapter: '',
-    ...value,
-    config: value ? clone(value.config) : { disabled: true },
+  if (value) {
+    data.value = { ...value, config: clone(value.config) }
+  } else {
+    data.value = { disabled: true, config: {} }
   }
 }, { immediate: true })
 
-watch(() => data.value.adapter, () => {
-  dict[key.value] = data.value.config = { ...dict[key.value], protocol: '', disabled: true }
+watch(() => data.value.adapter, (adapter) => {
+  data.value.protocol = protocolMap[adapter]
+  data.value.config = configMap[key.value] ||= {}
 })
 
-watch(() => data.value.config.protocol, (protocol) => {
+watch(() => data.value.protocol, (protocol) => {
   if (!protocol) return
-  const { disabled } = data.value.config
-  dict[key.value] = data.value.config = { ...dict[key.value], protocol, disabled }
+  data.value.config = configMap[key.value] ||= {}
+  protocolMap[data.value.adapter] = protocol
 }, { flush: 'post' })
 
 const key = computed(() => {
-  const { adapter, config } = data.value
-  const key = adapter + (config.protocol ? '.' + config.protocol : '')
+  const { adapter = '', protocol } = data.value
+  const key = adapter + (protocol ? '.' + protocol : '')
   return store.protocols[key] ? key : adapter
 })
 
-const dict = reactive({ [key.value]: data.value.config })
+const protocolMap = reactive({})
+const configMap = reactive({ [key.value]: data.value.config })
 
 function update(disabled: boolean) {
   send('manager/bot-update', props.current, data.value.adapter, {
     ...data.value.config,
+    protocol: data.value.protocol,
     disabled,
   })
 }

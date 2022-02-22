@@ -1,4 +1,4 @@
-import { Bot, Context, Dict, pick, Time } from 'koishi'
+import { Bot, Context, Dict, omit, pick, Time } from 'koishi'
 import { DataService } from '@koishijs/plugin-console'
 
 declare module 'koishi' {
@@ -62,14 +62,19 @@ class BotProvider extends DataService<Dict<BotProvider.Data>> {
       this.refresh()
     })
 
-    this.extend((bot) => ({
-      ...pick(bot, ['platform', 'protocol', 'selfId', 'avatar', 'username', 'status']),
-      config: this.ctx.loader.config.plugins['adapter-' + bot.adapter.platform].bots[bot.adapter.bots.indexOf(bot)],
-      error: bot.error?.message,
-      adapter: bot.adapter.platform,
-      messageSent: bot._messageSent.get(),
-      messageReceived: bot._messageReceived.get(),
-    }))
+    this.extend((bot) => {
+      const name = 'adapter-' + bot.adapter.platform
+      const config = this.ctx.loader.config.plugins[name].bots[bot.adapter.bots.indexOf(bot)]
+      return {
+        ...pick(bot, ['platform', 'selfId', 'avatar', 'username', 'status']),
+        ...pick(config, ['disabled', 'protocol']),
+        config: omit(config, ['disabled', 'platform', 'protocol']),
+        error: bot.error?.message,
+        adapter: bot.adapter.platform,
+        messageSent: bot._messageSent.get(),
+        messageReceived: bot._messageReceived.get(),
+      }
+    })
   }
 
   extend(callback: BotProvider.Extension) {
@@ -91,7 +96,9 @@ namespace BotProvider {
 
   export type Extension = (bot: Bot) => Partial<Data>
 
-  export interface Data extends Pick<Bot, 'platform' | 'protocol' | 'selfId' | 'avatar' | 'username' | 'status' | 'config'> {
+  export interface Data extends
+    Pick<Bot.BaseConfig, 'disabled' | 'platform' | 'protocol'>,
+    Pick<Bot, 'selfId' | 'avatar' | 'username' | 'status' | 'config'> {
     error?: string
     adapter: string
     messageSent: number
