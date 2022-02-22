@@ -1,6 +1,6 @@
 <template>
   <div class="schema-item">
-    <div class="actions" :class="{ changed }"></div>
+    <div class="actions"></div>
     <div class="header">
       <div class="left">
         <slot name="left"></slot>
@@ -15,17 +15,13 @@
 
 <script lang="ts" setup>
 
-defineProps({
-  changed: Boolean,
-})
-
 </script>
 
 <style lang="scss" scoped>
 
 .schema-item {
   position: relative;
-  padding: 0.5rem 1rem;
+  padding: 0.5rem 1.25rem;
   border-bottom: 1px solid var(--border);
   transition: var(--color-transition);
 
@@ -65,10 +61,14 @@ defineProps({
     left: -10px;
     width: 10px;
     transition: var(--color-transition);
+  }
 
-    &.changed {
-      border-right: 2px solid var(--primary);
-    }
+  &.required .actions {
+    border-right: 2px solid var(--error);
+  }
+
+  &.changed .actions {
+    border-right: 2px solid var(--primary);
   }
 }
 

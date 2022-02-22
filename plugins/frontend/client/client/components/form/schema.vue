@@ -9,7 +9,7 @@
       :initial="initial?.[key]"
       :disabled="disabled"
       :prefix="prefix + key + '.'">
-      <h3 :class="{ required: item.meta.required }">
+      <h3>
         <span>{{ prefix + key }}</span>
       </h3>
       <k-markdown tag="p" inline :source="item.meta.description"></k-markdown>
@@ -36,7 +36,7 @@
       <slot></slot>
     </k-schema>
 
-    <schema-item v-else :changed="hasChange">
+    <schema-item v-else :class="{ changed, required }">
       <template #left>
         <slot></slot>
       </template>
@@ -64,7 +64,7 @@
     </schema-item>
   </template>
 
-  <schema-item :changed="hasChange" v-else>
+  <schema-item v-else :class="{ changed, required }">
     <template #left>
       <slot></slot>
     </template>
@@ -142,8 +142,12 @@ function deepEqual(a: any, b: any) {
   return Object.keys({ ...a, ...b }).every(key => deepEqual(a[key], b[key]))
 }
 
-const hasChange = computed(() => {
+const changed = computed(() => {
   return !deepEqual(props.initial, props.modelValue)
+})
+
+const required = computed(() => {
+  return props.schema.meta.required && props.modelValue === undefined
 })
 
 const choices = computed(() => {
@@ -172,7 +176,8 @@ watch(() => props.modelValue, (value) => {
 }, { immediate: true })
 
 watch(config, (value) => {
-  if (props.schema && props.initial === undefined && deepEqual(value, props.schema.meta.default)) {
+  if (!props.schema) return
+  if (props.initial === undefined && deepEqual(value, props.schema.meta.default)) {
     emit('update:modelValue', undefined)
   } else {
     emit('update:modelValue', value)
