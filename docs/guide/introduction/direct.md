@@ -4,30 +4,16 @@ sidebarDepth: 2
 
 # 直接调用 Koishi
 
-Koishi 项目通常可以通过两种方式搭建：
-
-- 通过官方脚手架快速搭建 Koishi 控制台项目
-- **手动编写 js 代码并直接调用 Koishi 接口**
-
-本节主要介绍第二种方式，也是最经典，最适合开发者的上手方式。
-
 ::: tip
-这篇指南假设你已了解关于 JavaScript 和 Node.js 的中级知识。如果你刚开始学习 JS 开发或者对编写业务代码不感兴趣，或许 [控制台项目](./template.md) 会更加适合你。
+这篇指南假设你已了解关于 JavaScript 和 Node.js 的中级知识。如果你刚开始学习 JS 开发或者对编写业务代码不感兴趣，建议跳过本章，直接前往 [创建模板项目](./template.md) 章节。
 :::
 
-## 准备工作
+Koishi 项目通常可以通过两种方式搭建：
 
-Koishi 需要 [NodeJS](https://nodejs.org/) (最低 v12，推荐使用 LTS) 运行环境，你需要自己安装它。同时，我们还强烈建议您安装 [yarn](https://classic.yarnpkg.com/lang/en/) 作为包管理器。在下面的文档中，我们将默认使用 yarn。
+- 通过官方脚手架快速搭建模板项目
+- 手动编写 js 代码并直接调用 Koishi
 
-Koishi 支持多个聊天平台，对于不同的平台，你也需要做好相应的准备工作。
-
-- [Discord](../../plugins/adapter/discord.md)
-- [开黑啦](../../plugins/adapter/kaiheila.md)
-- [OneBot](../../plugins/adapter/onebot.md)
-- [QQ 频道](../../plugins/adapter/qqguild.md)
-- [Telegram](../../plugins/adapter/telegram.md)
-
-如果你还没有准备好对接到哪些平台，也不用着急，Koishi 可以在不对接任何平台的情况直接启动 (只不过没有机器人你就无法进行交互了)。
+虽然现在我们更推荐使用前一种方式，但直接调用作为最经典的写法，能够加深你对 Koishi 的理解。另一方面，如果你希望将 Koishi 嵌入更复杂的程序中，那么直接调用将会成为更具有灵活性的选择。
 
 ## 初始化项目
 
@@ -93,7 +79,7 @@ app.start()
 ```
 :::
 
-最后运行这个文件 (在此之前别忘了先完成 [准备工作](#准备工作))：
+最后运行这个文件：
 
 ```cli
 node .
@@ -217,10 +203,6 @@ import * as ping from './ping'
 
 app.plugin(ping)
 ```
-:::
-
-::: warning
-注意：直接写相对于根目录的路径来加载插件的做法只对配置文件生效。在实际编写的代码中加载本地插件时，由于我们无法确定相对路径是基于哪个文件，你还是需要写全 `require`。
 :::
 
 ## 配置数据库
