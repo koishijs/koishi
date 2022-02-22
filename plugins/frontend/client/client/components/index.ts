@@ -3,6 +3,9 @@ import {
   ElButton,
   ElCheckbox,
   ElDatePicker,
+  ElDropdown,
+  ElDropdownItem,
+  ElDropdownMenu,
   ElInput,
   ElInputNumber,
   ElLoading,
@@ -31,6 +34,9 @@ import View from './view'
 
 import 'element-plus/es/components/button/style/css'
 import 'element-plus/es/components/checkbox/style/css'
+import 'element-plus/es/components/dropdown/style/css'
+import 'element-plus/es/components/dropdown-item/style/css'
+import 'element-plus/es/components/dropdown-menu/style/css'
 import 'element-plus/es/components/input/style/css'
 import 'element-plus/es/components/input-number/style/css'
 import 'element-plus/es/components/loading/style/css'
@@ -63,9 +69,15 @@ export { icons }
 export default function (app: App) {
   app.use(ElButton)
   app.use(ElCheckbox)
+  app.use(ElDatePicker)
+  app.use(ElDropdown)
+  app.use(ElDropdownItem)
+  app.use(ElDropdownMenu)
   app.use(ElInput)
   app.use(ElInputNumber)
   app.use(ElLoading)
+  app.use(ElPagination)
+  app.use(ElPopconfirm)
   app.use(ElRadio)
   app.use(ElScrollbar)
   app.use(ElSelect)
@@ -75,10 +87,6 @@ export default function (app: App) {
   app.use(ElTree)
   app.use(ElTable)
   app.use(ElTableColumn)
-  app.use(ElPagination)
-  app.use(ElPopconfirm)
-  app.use(ElLoading)
-  app.use(ElDatePicker)
   app.use(ElTimePicker)
 
   app.use(chat)

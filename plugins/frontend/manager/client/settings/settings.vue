@@ -15,7 +15,7 @@
     </h1>
     <h1 class="config-header" v-else>
       全局设置
-      <k-button solid @click="send('manager/app-reload', data.config)">应用配置</k-button>
+      <k-button solid @click="send('manager/app-reload', config)">应用配置</k-button>
     </h1>
 
     <!-- market -->
@@ -72,7 +72,7 @@
       <k-comment v-if="!data.schema" type="warning">
         此插件未声明配置项，这可能并非预期行为{{ hint }}。
       </k-comment>
-      <k-form :schema="data.schema" v-model="data.config">
+      <k-form :schema="data.schema" :initial="data.config" v-model="config">
         <template #hint>{{ hint }}</template>
       </k-form>
     </template>
@@ -81,8 +81,8 @@
 
 <script setup lang="ts">
 
-import { computed } from 'vue'
-import { store, send } from '@koishijs/client'
+import { computed, ref, watch } from 'vue'
+import { store, send, clone } from '@koishijs/client'
 import { envMap } from './utils'
 import { getMixedMeta } from '../utils'
 import KDepLink from './dep-link.vue'
@@ -95,14 +95,19 @@ const data = computed(() => getMixedMeta(props.current))
 const env = computed(() => envMap.value[props.current])
 const hint = computed(() => data.value.workspace ? '，请检查源代码' : '，请联系插件作者')
 
+const config = ref()
+
+watch(() => data.value.config, (value) => {
+  config.value = clone(value)
+}, { immediate: true })
+
 const hasUpdate = computed(() => {
   if (!data.value.versions || data.value.workspace) return
   return data.value.versions[0].version !== data.value.version
 })
 
 function execute(event: 'unload' | 'reload') {
-  const { shortname, config } = data.value
-  send(`manager/plugin-${event}`, shortname, config)
+  send(`manager/plugin-${event}`, data.value.shortname, config.value)
 }
 
 </script>

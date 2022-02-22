@@ -5,7 +5,12 @@
   <form class="k-form">
     <h2 v-if="showHeader ?? !hasTitle(schema)">基础设置</h2>
     <slot name="prolog"></slot>
-    <k-schema v-if="schema" :schema="schema" :disabled="disabled" v-model="config"></k-schema>
+    <k-schema
+      v-model="config"
+      :initial="initial"
+      :schema="schema"
+      :disabled="disabled"
+    ></k-schema>
     <slot name="epilog"></slot>
   </form>
 </template>
@@ -17,6 +22,7 @@ import Schema from 'schemastery'
 
 const props = defineProps({
   schema: {} as PropType<Schema>,
+  initial: {},
   modelValue: {},
   disabled: Boolean,
   showHeader: {},

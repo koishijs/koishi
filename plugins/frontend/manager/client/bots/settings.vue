@@ -11,12 +11,12 @@
     </template>
   </h1>
   <k-view name="manager:bot-prolog" :data="data"></k-view>
-  <k-form :schema="store.protocols[key]" v-model="data.config" :show-header="true" #prolog>
-    <k-schema :schema="adapterSchema" v-model="data.adapter" :disabled="!!current">
+  <k-form :schema="store.protocols[key]" :initial="initial" v-model="data.config" :show-header="true" #prolog>
+    <k-schema :initial="(bot ?? data).adapter" :schema="adapterSchema" v-model="data.adapter" :disabled="!!current">
       <h3 class="required">adapter</h3>
       <p>选择要使用的适配器。</p>
     </k-schema>
-    <k-schema :schema="protocolSchema" v-model="data.config.protocol">
+    <k-schema :initial="(bot ?? data).config.protocol" :schema="protocolSchema" v-model="data.config.protocol">
       <h3 class="required">protocol</h3>
       <p>选择要使用的协议。</p>
     </k-schema>
@@ -27,8 +27,8 @@
 
 <script lang="ts" setup>
 
-import { computed, watch, reactive } from 'vue'
-import { store, send } from '@koishijs/client'
+import { computed, watch, ref } from 'vue'
+import { store, send, clone } from '@koishijs/client'
 import { BotProvider } from '@koishijs/plugin-manager'
 
 const props = defineProps<{
@@ -61,10 +61,22 @@ const protocolSchema = computed(() => {
   return values.length && createSchema(values)
 })
 
-const data = computed<Partial<BotProvider.Data>>(() => store.bots[props.current] || reactive({
-  adapter: '',
-  config: { disabled: true },
-}))
+const data = ref<Partial<BotProvider.Data>>()
+const bot = computed(() => store.bots[props.current])
+const initial = computed(() => {
+  if (!bot.value) return
+  const { protocol } = bot.value.config
+  if (protocol !== data.value.config.protocol) return
+  return bot.value.config
+})
+
+watch(bot, (value) => {
+  data.value = {
+    adapter: '',
+    ...value,
+    config: value ? clone(value.config) : { disabled: true },
+  }
+}, { immediate: true })
 
 watch(() => data.value.adapter, () => {
   data.value.config = { protocol: '', disabled: true }

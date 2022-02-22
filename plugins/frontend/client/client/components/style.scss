@@ -12,6 +12,7 @@ $white: #ffffff;
   --card-border: var(--card-bg);
   --card-shadow: 0 6px 10px -4px rgb(0 0 0 / 15%);
   --loading-mask-bg: #f2f3f5bf;
+  --color-transition: color 0.3s ease, border-color 0.3s ease, background-color 0.3s ease;
 
   @mixin apply-color($name, $base) {
     --#{$name}: #{$base};
