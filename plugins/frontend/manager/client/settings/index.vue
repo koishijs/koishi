@@ -9,6 +9,7 @@
 
 <script setup lang="ts">
 
+import { store } from '@koishijs/client'
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import PluginSelect from './select.vue'
@@ -23,9 +24,11 @@ const router = useRouter()
 
 const current = computed<string>({
   get() {
-    return join(route.params.name)
+    const name = join(route.params.name)
+    return store.packages[name] ? name : ''
   },
   set(name) {
+    if (!store.packages[name]) name = ''
     router.replace('/settings/' + name)
   },
 })
