@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-manager",
   "description": "Manage your bots and plugins with console",
-  "version": "1.5.3",
+  "version": "1.5.4",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [

@@ -18,12 +18,12 @@ export const overrideCount = computed(() => {
   return Object.values(config.override).filter(value => value !== undefined).length
 })
 
-watch(store.packages, (value) => {
+watch(store.dependencies, (value) => {
   if (!value) return
   for (const key in config.override) {
     if (!config.override[key]) {
       if (!value[key]) delete config.override[key]
-    } else if (value[key]?.version === config.override[key]) {
+    } else if (value[key] === config.override[key]) {
       delete config.override[key]
     }
   }
