@@ -65,9 +65,8 @@ namespace addons {
 
     if (process.env.KOISHI_WATCH_ROOT !== undefined) {
       (config.watch ??= {}).root = process.env.KOISHI_WATCH_ROOT
+      ctx.plugin(Watcher, config.watch)
     }
-
-    if (config.watch) ctx.plugin(Watcher, config.watch)
   }
 }
 

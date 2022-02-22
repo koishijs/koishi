@@ -315,7 +315,7 @@ namespace Watcher {
       Schema.array(Schema.string()),
       Schema.transform(Schema.string(), (value) => [value]),
     ]).description('要忽略的文件或目录。'),
-  }).default(null).description('热重载设置')
+  }).description('热重载设置')
 
   App.Config.list.push(Schema.object({
     watch: Config,
