@@ -60,8 +60,7 @@ module.exports = {
           '/guide/introduction/index.md',
           '/guide/introduction/direct.md',
           '/guide/introduction/template.md',
-          '/guide/introduction/cli.md',
-          '/guide/introduction/workspace.md',
+          '/guide/introduction/development.md',
         ],
       }, {
         text: '处理交互',
