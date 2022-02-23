@@ -16,55 +16,20 @@
     </k-schema>
   </template>
 
-  <template v-else-if="schema.type === 'intersect'">
-    <k-schema v-for="(item, index) in schema.list" :key="index"
+  <template v-else-if="schema.type === 'intersect' || schema.type === 'union' && choices.length === 1">
+    <k-schema v-for="(item, index) in choices" :key="index"
       v-model="config"
       :initial="initial"
       :schema="item"
       :disabled="disabled"
-      :prefix="prefix"
-    ></k-schema>
-  </template>
-
-  <template v-else-if="schema.type === 'union'">
-    <k-schema v-if="choices.length === 1"
-      v-model="config"
-      :schema="choices[0]"
-      :prefix="prefix"
-      :initial="initial"
-      :disabled="disabled">
-      <slot></slot>
+      :prefix="prefix">
+      <slot v-if="schema.type === 'union'"></slot>
     </k-schema>
-
-    <schema-item v-else :class="{ changed, required }">
-      <template #left>
-        <slot></slot>
-      </template>
-
-      <template #right v-if="isSelect">
-        <el-select v-model="config" :disabled="disabled">
-          <el-option
-            v-for="item in choices"
-            :key="item.value"
-            :label="item.value"
-            :value="item.value"
-          ></el-option>
-        </el-select>
-      </template>
-
-      <ul v-if="isRadio">
-        <li v-for="item in choices" :key="item.value">
-          <el-radio
-            v-model="config"
-            :disabled="disabled"
-            :label="item.value"
-          >{{ item.meta.description }}</el-radio>
-        </li>
-      </ul>
-    </schema-item>
   </template>
 
-  <schema-item v-else :class="{ changed, required }">
+  <schema-item v-else :disabled="disabled" :class="{ changed, required }"
+    @discard="$emit('update:modelValue', clone(initial))"
+    @default="$emit('update:modelValue', undefined)">
     <template #left>
       <slot></slot>
     </template>
@@ -82,26 +47,43 @@
       <template v-else-if="(schema.type === 'array' || schema.type === 'dict') && isPrimitive(schema.inner)">
         <k-button solid @click="config.push(null)" :disabled="disabled">添加项</k-button>
       </template>
+
+      <template v-else-if="isSelect">
+        <el-select v-model="config" :disabled="disabled">
+          <el-option
+            v-for="item in choices"
+            :key="item.value"
+            :label="item.value"
+            :value="item.value"
+          ></el-option>
+        </el-select>
+      </template>
     </template>
 
-    <template v-if="schema.type === 'array' && isPrimitive(schema.inner)">
-      <ul>
-        <li v-for="(_, index) in config" :key="index">
-          <k-icon name="times-full" class="remove" @click="config.splice(index, 1)"></k-icon>
-          <el-input v-model="config[index]"></el-input>
-        </li>
-      </ul>
-    </template>
+    <ul v-if="schema.type === 'array' && isPrimitive(schema.inner)">
+      <li v-for="(_, index) in config" :key="index">
+        <k-icon name="times-full" class="remove" @click="config.splice(index, 1)"></k-icon>
+        <el-input v-model="config[index]"></el-input>
+      </li>
+    </ul>
 
-    <template v-else-if="schema.type === 'dict' && isPrimitive(schema.inner)">
-      <ul>
-        <li v-for="(_, key) in config">
-          <k-icon name="times-full" class="remove" @click="delete config[key]"></k-icon>
-          <el-input :model-value="key" @update:model-value="v => (config[v] = config[key], delete config[key])"></el-input>
-          <el-input v-model="config[key]"></el-input>
-        </li>
-      </ul>
-    </template>
+    <ul v-else-if="schema.type === 'dict' && isPrimitive(schema.inner)">
+      <li v-for="(_, key) in config">
+        <k-icon name="times-full" class="remove" @click="delete config[key]"></k-icon>
+        <el-input :model-value="key" @update:model-value="v => (config[v] = config[key], delete config[key])"></el-input>
+        <el-input v-model="config[key]"></el-input>
+      </li>
+    </ul>
+
+    <ul v-if="isRadio">
+      <li v-for="item in choices" :key="item.value">
+        <el-radio
+          v-model="config"
+          :disabled="disabled"
+          :label="item.value"
+        >{{ item.meta.description }}</el-radio>
+      </li>
+    </ul>
   </schema-item>
 </template>
 
@@ -117,6 +99,7 @@ const props = defineProps({
   schema: {} as PropType<Schema>,
   initial: {},
   modelValue: {},
+  instant: Boolean,
   disabled: Boolean,
   noDesc: Boolean,
   prefix: { type: String, default: '' },
@@ -143,7 +126,7 @@ function deepEqual(a: any, b: any) {
 }
 
 const changed = computed(() => {
-  return !deepEqual(props.initial, props.modelValue)
+  return !props.instant && !deepEqual(props.initial, props.modelValue)
 })
 
 const required = computed(() => {
@@ -155,12 +138,14 @@ const choices = computed(() => {
 })
 
 const isSelect = computed(() => {
-  return choices.value.every(item => item.type === 'const')
+  return props.schema.type === 'union'
+    && choices.value.every(item => item.type === 'const')
     && choices.value.some(item => !item.meta.description)
 })
 
 const isRadio = computed(() => {
-  return choices.value.every(item => item.type === 'const')
+  return props.schema.type === 'union'
+    && choices.value.every(item => item.type === 'const')
     && choices.value.every(item => item.meta.description)
 })
 
@@ -198,14 +183,6 @@ function isPrimitive(schema: Schema) {
     font-size: 1.125em;
     line-height: 1.7;
     position: relative;
-  }
-
-  h3.required::before {
-    content: '*';
-    position: absolute;
-    left: -1.25rem;
-    color: var(--error);
-    transition: 0.3s ease;
   }
 
   p {

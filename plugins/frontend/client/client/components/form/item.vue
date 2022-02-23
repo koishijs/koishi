@@ -1,6 +1,16 @@
 <template>
   <div class="schema-item">
-    <div class="actions"></div>
+    <div class="actions">
+      <el-dropdown placement="bottom-start">
+        <k-icon name="cog"></k-icon>
+        <template #dropdown>
+          <el-dropdown-menu>
+            <el-dropdown-item :disabled="disabled" @click="$emit('discard')">撤销更改</el-dropdown-item>
+            <el-dropdown-item :disabled="disabled" @click="$emit('default')">恢复默认值</el-dropdown-item>
+          </el-dropdown-menu>
+        </template>
+      </el-dropdown>
+    </div>
     <div class="header">
       <div class="left">
         <slot name="left"></slot>
@@ -15,14 +25,21 @@
 
 <script lang="ts" setup>
 
+defineProps<{
+  disabled?: boolean
+}>()
+
+defineEmits(['discard', 'default'])
+
 </script>
 
-<style lang="scss" scoped>
+<style lang="scss">
 
 .schema-item {
   position: relative;
-  padding: 0.5rem 1.25rem;
+  padding: 0.5rem 1rem;
   border-bottom: 1px solid var(--border);
+  border-left: 2px solid transparent;
   transition: var(--color-transition);
 
   &:first-child, :not(.schema-item) + & {
@@ -35,6 +52,14 @@
 
   &:hover {
     background-color: var(--hover-bg);
+  }
+
+  &.changed {
+    border-left-color: var(--primary);
+  }
+
+  &.required {
+    border-left-color: var(--error);
   }
 
   .header {
@@ -54,21 +79,33 @@
     float: right;
   }
 
+  $actions-width: 3rem;
+
   .actions {
     position: absolute;
+    text-align: center;
+    padding: 0.875rem 0;
     top: 0;
     height: 100%;
-    left: -10px;
-    width: 10px;
+    left: -$actions-width;
+    width: $actions-width;
+    opacity: 0;
     transition: var(--color-transition);
+
+    .k-icon {
+      padding: 0 5px;
+      cursor: pointer;
+      color: var(--disabled);
+      transition: var(--color-transition);
+    }
+
+    .k-icon:hover {
+      color: var(--fg1);
+    }
   }
 
-  &.required .actions {
-    border-right: 2px solid var(--error);
-  }
-
-  &.changed .actions {
-    border-right: 2px solid var(--primary);
+  &:hover .actions {
+    opacity: 1;
   }
 }
 

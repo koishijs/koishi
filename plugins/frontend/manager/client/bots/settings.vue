@@ -12,11 +12,11 @@
   </h1>
   <k-view name="manager:bot-prolog" :data="data"></k-view>
   <k-form :schema="store.protocols[key]" :initial="initial" v-model="data.config" :show-header="true" #prolog>
-    <k-schema :initial="(bot ?? data).adapter" :schema="adapterSchema" v-model="data.adapter" :disabled="!!current">
+    <k-schema :instant="!bot" :initial="bot?.adapter" :schema="adapterSchema" v-model="data.adapter" :disabled="!!current">
       <h3>adapter</h3>
       <p>选择要使用的适配器。</p>
     </k-schema>
-    <k-schema :initial="(bot ?? data).protocol" :schema="protocolSchema" v-model="data.protocol">
+    <k-schema :instant="!bot" :initial="bot?.protocol" :schema="protocolSchema" v-model="data.protocol">
       <h3>protocol</h3>
       <p>选择要使用的协议。</p>
     </k-schema>

@@ -12,7 +12,7 @@ $white: #ffffff;
   --card-border: var(--card-bg);
   --card-shadow: 0 6px 10px -4px rgb(0 0 0 / 15%);
   --loading-mask-bg: #f2f3f5bf;
-  --color-transition: color 0.3s ease, border-color 0.3s ease, background-color 0.3s ease;
+  --color-transition: color 0.3s ease, border-color 0.3s ease, background-color 0.3s ease, opacity 0.3s ease;
 
   @mixin apply-color($name, $base) {
     --#{$name}: #{$base};
@@ -65,7 +65,7 @@ html.dark {
   --el-color-error: var(--error);
   --el-color-white: var(--bg1);
   --el-color-black: var(--fg1);
-  --el-bg-color: var(--bg0)
+  --el-bg-color: var(--bg0);
 }
 
 .k-icon {
@@ -74,6 +74,14 @@ html.dark {
 
 .el-checkbox__label {
   transition: color 0.3s ease;
+}
+
+.el-dropdown-menu {
+  background-color: var(--el-color-white);
+}
+
+.el-dropdown__popper.el-popper[role=tooltip] {
+  background-color: var(--el-color-white);
 }
 
 .el-input-number__decrease, .el-input-number__increase {
