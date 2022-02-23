@@ -1,5 +1,5 @@
 <template>
-  <k-comment v-if="!isValid(schema)" type="warning">
+  <k-comment v-if="!validate(schema)" type="warning">
     部分配置项无法正常显示，这可能并非预期行为<slot name="hint"></slot>。
   </k-comment>
   <form class="k-form">
@@ -18,7 +18,7 @@
 <script lang="ts" setup>
 
 import { computed, PropType } from 'vue'
-import Schema from 'schemastery'
+import { hasTitle, Schema, validate } from './utils'
 
 const props = defineProps({
   schema: {} as PropType<Schema>,
@@ -34,41 +34,6 @@ const config = computed({
   get: () => props.modelValue,
   set: emit.bind(null, 'update:modelValue'),
 })
-
-function hasTitle(schema: Schema) {
-  if (!schema) return true
-  if (schema.type === 'object') {
-    if (schema.meta.description) return true
-    const keys = Object.keys(schema.dict)
-    if (!keys.length) return true
-    return hasTitle(schema.dict[keys[0]])
-  } else if (schema.type === 'intersect') {
-    return hasTitle(schema.list[0])
-  } else {
-    return false
-  }
-}
-
-const primitive = ['string', 'number', 'boolean']
-const dynamic = ['function', 'transform']
-
-function isValid(schema: Schema) {
-  if (!schema || schema.meta.hidden) return true
-  if (primitive.includes(schema.type)) {
-    return true
-  } else if (['array', 'dict'].includes(schema.type)) {
-    return primitive.includes(schema.inner.type)
-  } else if (schema.type === 'object') {
-    return Object.values(schema.dict).every(isValid)
-  } else if (schema.type === 'intersect') {
-    return schema.list.every(isValid)
-  } else if (schema.type === 'union') {
-    const choices = schema.list.filter(item => !dynamic.includes(item.type))
-    return choices.length === 1 && isValid(choices[0]) || choices.every(item => item.type === 'const')
-  } else {
-    return false
-  }
-}
 
 </script>
 

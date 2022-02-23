@@ -1,12 +1,11 @@
 <template>
   <div class="schema-item">
-    <div class="actions">
-      <el-dropdown placement="bottom-start">
+    <div class="actions" v-if="!disabled">
+      <el-dropdown placement="bottom-start" @command="$emit('command', $event)">
         <k-icon name="cog"></k-icon>
         <template #dropdown>
           <el-dropdown-menu>
-            <el-dropdown-item :disabled="disabled" @click="$emit('discard')">撤销更改</el-dropdown-item>
-            <el-dropdown-item :disabled="disabled" @click="$emit('default')">恢复默认值</el-dropdown-item>
+            <slot name="menu"></slot>
           </el-dropdown-menu>
         </template>
       </el-dropdown>
@@ -19,7 +18,6 @@
         <slot name="right"></slot>
       </div>
     </div>
-    <slot></slot>
   </div>
 </template>
 
@@ -29,7 +27,7 @@ defineProps<{
   disabled?: boolean
 }>()
 
-defineEmits(['discard', 'default'])
+defineEmits(['command'])
 
 </script>
 
@@ -39,27 +37,18 @@ defineEmits(['discard', 'default'])
   position: relative;
   padding: 0.5rem 1rem;
   border-bottom: 1px solid var(--border);
-  border-left: 2px solid transparent;
   transition: var(--color-transition);
 
-  &:first-child, :not(.schema-item) + & {
+  &:first-child, :not(.schema-item):not(.k-schema-group) + & {
     border-top: 1px solid var(--border);
   }
 
-  & + :not(.schema-item) {
+  & + h2 {
     margin-top: 2rem;
   }
 
   &:hover {
     background-color: var(--hover-bg);
-  }
-
-  &.changed {
-    border-left-color: var(--primary);
-  }
-
-  &.required {
-    border-left-color: var(--error);
   }
 
   .header {
@@ -68,6 +57,7 @@ defineEmits(['discard', 'default'])
     justify-content: space-between;
     align-items: center;
     column-gap: 1rem;
+    min-height: 3rem;
   }
 
   .left {
@@ -82,19 +72,22 @@ defineEmits(['discard', 'default'])
   $actions-width: 3rem;
 
   .actions {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
     position: absolute;
-    text-align: center;
-    padding: 0.875rem 0;
     top: 0;
     height: 100%;
     left: -$actions-width;
     width: $actions-width;
-    opacity: 0;
+    border-right: 2px solid transparent;
     transition: var(--color-transition);
 
     .k-icon {
       padding: 0 5px;
       cursor: pointer;
+      opacity: 0;
       color: var(--disabled);
       transition: var(--color-transition);
     }
@@ -104,8 +97,20 @@ defineEmits(['discard', 'default'])
     }
   }
 
-  &:hover .actions {
+  &:hover .actions .k-icon {
     opacity: 1;
+  }
+
+  &.changed .actions {
+    border-right-color: var(--primary);
+  }
+
+  &.required .actions {
+    border-right-color: var(--error);
+  }
+
+  &.invalid .actions {
+    border-right-color: var(--warning);
   }
 }
 

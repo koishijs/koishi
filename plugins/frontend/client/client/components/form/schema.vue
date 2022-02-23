@@ -2,7 +2,7 @@
   <template v-if="!schema || schema.meta.hidden"/>
 
   <template v-else-if="schema.type === 'object'">
-    <h2 v-if="!noDesc && schema.meta.description">{{ schema.meta.description }}</h2>
+    <h2 v-if="schema.meta.description">{{ schema.meta.description }}</h2>
     <k-schema v-for="(item, key) in schema.dict" :key="key"
       v-model="config[key]"
       :schema="item"
@@ -12,7 +12,7 @@
       <h3>
         <span>{{ prefix + key }}</span>
       </h3>
-      <k-markdown tag="p" inline :source="item.meta.description"></k-markdown>
+      <k-markdown inline :source="item.meta.description"></k-markdown>
     </k-schema>
   </template>
 
@@ -23,13 +23,17 @@
       :schema="item"
       :disabled="disabled"
       :prefix="prefix">
-      <slot v-if="schema.type === 'union'"></slot>
+      <slot></slot>
     </k-schema>
   </template>
 
-  <schema-item v-else :disabled="disabled" :class="{ changed, required }"
-    @discard="$emit('update:modelValue', clone(initial))"
-    @default="$emit('update:modelValue', undefined)">
+  <schema-item v-else :disabled="disabled" :class="{ changed, required, invalid }" @command="handleCommand">
+    <template #menu>
+      <el-dropdown-item command="discard">撤销更改</el-dropdown-item>
+      <el-dropdown-item command="default">恢复默认值</el-dropdown-item>
+      <slot name="menu"></slot>
+    </template>
+
     <template #left>
       <slot></slot>
     </template>
@@ -44,8 +48,8 @@
         ></schema-primitive>
       </template>
 
-      <template v-else-if="(schema.type === 'array' || schema.type === 'dict') && isPrimitive(schema.inner)">
-        <k-button solid @click="config.push(null)" :disabled="disabled">添加项</k-button>
+      <template v-else-if="isComposite">
+        <k-button solid @click="signal = true" :disabled="disabled">添加项</k-button>
       </template>
 
       <template v-else-if="isSelect">
@@ -60,21 +64,6 @@
       </template>
     </template>
 
-    <ul v-if="schema.type === 'array' && isPrimitive(schema.inner)">
-      <li v-for="(_, index) in config" :key="index">
-        <k-icon name="times-full" class="remove" @click="config.splice(index, 1)"></k-icon>
-        <el-input v-model="config[index]"></el-input>
-      </li>
-    </ul>
-
-    <ul v-else-if="schema.type === 'dict' && isPrimitive(schema.inner)">
-      <li v-for="(_, key) in config">
-        <k-icon name="times-full" class="remove" @click="delete config[key]"></k-icon>
-        <el-input :model-value="key" @update:model-value="v => (config[v] = config[key], delete config[key])"></el-input>
-        <el-input v-model="config[key]"></el-input>
-      </li>
-    </ul>
-
     <ul v-if="isRadio">
       <li v-for="item in choices" :key="item.value">
         <el-radio
@@ -85,14 +74,19 @@
       </li>
     </ul>
   </schema-item>
+
+  <schema-group ref="group" v-if="!schema.meta.hidden && isComposite" v-model:signal="signal"
+    :schema="schema" v-model="config" :prefix="prefix" :disabled="disabled" :initial="initial">
+  </schema-group>
 </template>
 
 <script lang="ts" setup>
 
 import { watch, ref, computed } from 'vue'
 import type { PropType } from 'vue'
-import Schema, { clone } from 'schemastery'
+import { clone, deepEqual, getChoices, getFallback, Schema, validate } from './utils'
 import SchemaItem from './item.vue'
+import SchemaGroup from './group.vue'
 import SchemaPrimitive from './primitive.vue'
 
 const props = defineProps({
@@ -100,30 +94,12 @@ const props = defineProps({
   initial: {},
   modelValue: {},
   instant: Boolean,
+  invalid: Boolean,
   disabled: Boolean,
-  noDesc: Boolean,
   prefix: { type: String, default: '' },
 })
 
-const emit = defineEmits(['update:modelValue'])
-
-function deepEqual(a: any, b: any) {
-  if (a === b) return true
-  if (typeof a !== typeof b) return false
-  if (typeof a !== 'object') return false
-  if (!a || !b) return false
-
-  // check array
-  if (Array.isArray(a)) {
-    if (!Array.isArray(b) || a.length !== b.length) return false
-    return a.every((item, index) => deepEqual(item, b[index]))
-  } else if (Array.isArray(b)) {
-    return false
-  }
-
-  // check object
-  return Object.keys({ ...a, ...b }).every(key => deepEqual(a[key], b[key]))
-}
+const emit = defineEmits(['update:modelValue', 'command'])
 
 const changed = computed(() => {
   return !props.instant && !deepEqual(props.initial, props.modelValue)
@@ -133,9 +109,7 @@ const required = computed(() => {
   return props.schema.meta.required && props.modelValue === undefined
 })
 
-const choices = computed(() => {
-  return props.schema.list.filter(item => !['function', 'transform'].includes(item.type))
-})
+const choices = computed(() => getChoices(props.schema))
 
 const isSelect = computed(() => {
   return props.schema.type === 'union'
@@ -149,15 +123,15 @@ const isRadio = computed(() => {
     && choices.value.every(item => item.meta.description)
 })
 
-const config = ref()
+const isComposite = computed(() => {
+  return ['array', 'dict'].includes(props.schema.type) && validate(props.schema.inner)
+})
 
-function getFallback() {
-  if (!props.schema || props.schema.type === 'union' && choices.value.length === 1) return
-  return clone(props.schema.meta.default)
-}
+const config = ref()
+const signal = ref(false)
 
 watch(() => props.modelValue, (value) => {
-  config.value = value ?? getFallback()
+  config.value = value ?? getFallback(props.schema)
 }, { immediate: true })
 
 watch(config, (value) => {
@@ -173,9 +147,37 @@ function isPrimitive(schema: Schema) {
   return ['string', 'number', 'boolean'].includes(schema.type)
 }
 
+function handleCommand(action: string) {
+  if (action === 'discard') {
+    emit('update:modelValue', clone(props.initial))
+  } else if (action === 'default') {
+    emit('update:modelValue', undefined)
+  } else {
+    emit('command', action)
+  }
+}
+
 </script>
 
 <style lang="scss">
+
+.k-schema-group {
+  position: relative;
+  padding-left: 1rem;
+  border-bottom: 1px solid var(--border);
+
+  &:empty {
+    border-bottom: none;
+  }
+
+  > :first-child {
+    border-top: none;
+  }
+
+  > :last-child {
+    border-bottom: none;
+  }
+}
 
 .schema-item {
   h3 {
@@ -183,6 +185,7 @@ function isPrimitive(schema: Schema) {
     font-size: 1.125em;
     line-height: 1.7;
     position: relative;
+    user-select: none;
   }
 
   p {

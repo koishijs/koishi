@@ -1,5 +1,5 @@
 <template>
-  <component :is="tag" class="k-markdown" v-html="render()"></component>
+  <component :is="tag ?? (inline ? 'p' : 'div')" class="k-markdown" v-html="render()"></component>
 </template>
 
 <script lang="ts" setup>
@@ -9,10 +9,7 @@ import { marked } from 'marked'
 const props = defineProps({
   source: String,
   inline: Boolean,
-  tag: {
-    type: String,
-    default: 'div'
-  },
+  tag: String,
 })
 
 function render() {

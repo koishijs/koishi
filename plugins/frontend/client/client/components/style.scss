@@ -84,6 +84,16 @@ html.dark {
   background-color: var(--el-color-white);
 }
 
+.el-dropdown-menu__item.is-disabled {
+  pointer-events: none;
+}
+
+.el-dropdown-menu__item--divided {
+  &:first-child, &:last-child {
+    display: none;
+  }
+}
+
 .el-input-number__decrease, .el-input-number__increase {
   --el-bg-color: transparent;
 }
