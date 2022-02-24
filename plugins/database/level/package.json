@@ -32,11 +32,11 @@
     "impl:database"
   ],
   "peerDependencies": {
-    "koishi": "^4.3.1"
+    "koishi": "^4.3.2"
   },
   "devDependencies": {
     "@koishijs/database-tests": "^1.0.0",
-    "@koishijs/plugin-mock": "^1.0.2",
+    "@koishijs/plugin-mock": "^1.0.3",
     "@types/abstract-leveldown": "^7.2.0",
     "@types/level": "^6.0.0",
     "@types/subleveldown": "^4.1.1"

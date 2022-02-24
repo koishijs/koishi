@@ -28,10 +28,10 @@
     "impl:adapter"
   ],
   "peerDependencies": {
-    "koishi": "^4.3.1"
+    "koishi": "^4.3.2"
   },
   "devDependencies": {
-    "@koishijs/plugin-mock": "^1.0.2",
+    "@koishijs/plugin-mock": "^1.0.3",
     "@types/ws": "^8.2.2"
   },
   "dependencies": {

@@ -32,7 +32,7 @@
     "impl:cache"
   ],
   "peerDependencies": {
-    "koishi": "^4.3.1"
+    "koishi": "^4.3.2"
   },
   "dependencies": {
     "lru-cache": "^6.0.0"
