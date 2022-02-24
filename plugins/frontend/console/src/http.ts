@@ -21,7 +21,7 @@ class HttpService extends DataService<string[]> {
     ctx.console.global.devMode = devMode
     ctx.console.global.uiPath = uiPath
     config.root ||= devMode
-      ? dirname(require.resolve('@koishijs/client/package.json')) + '/app'
+      ? resolve(dirname(require.resolve('@koishijs/client/package.json')), 'app')
       : resolve(__dirname, '../dist')
   }
 
