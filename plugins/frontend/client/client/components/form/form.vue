@@ -3,7 +3,7 @@
     部分配置项无法正常显示，这可能并非预期行为<slot name="hint"></slot>。
   </k-comment>
   <form class="k-form">
-    <h2 v-if="showHeader ?? !hasTitle(schema)">基础设置</h2>
+    <h2 v-if="showHeader ?? !hasTitle(schema, true)">基础设置</h2>
     <slot name="prolog"></slot>
     <k-schema
       v-model="config"
@@ -44,6 +44,11 @@ const config = computed({
 
   h2 {
     font-size: 1.25rem;
+
+    .k-button {
+      float: right;
+      transform: translateY(-3px);
+    }
   }
 }
 

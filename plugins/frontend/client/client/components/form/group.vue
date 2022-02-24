@@ -1,58 +1,56 @@
 <template>
-  <div class="k-schema-group">
-    <template v-for="([key, _], index) in entries" :key="index">
-      <template v-if="isObjectSchema(schema.inner)">
-        <schema-item @command="handleCommand($event, index)"
-          :class="{ invalid: entries.filter(e => e[0] === key).length > 1 }">
-          <template #left>
-            <h3>
-              <span>{{ prefix }}</span>
-              <el-input v-if="schema.type === 'dict'" v-model="entries[index][0]"></el-input>
-              <span v-else>{{ key }}</span>
-            </h3>
-          </template>
-          <template #menu>
-            <el-dropdown-item divided :disabled="!index" command="up">上移</el-dropdown-item>
-            <el-dropdown-item :disabled="index === entries.length - 1" command="down">下移</el-dropdown-item>
-            <el-dropdown-item command="delete">删除</el-dropdown-item>
-          </template>
-        </schema-item>
-
-        <div class="k-schema-group">
-          <k-schema
-            v-model="entries[index][1]"
-            :initial="initial?.[key]"
-            :schema="schema.inner"
-            :disabled="disabled"
-            :prefix="prefix + key + '.'">
-            <h3>
-              <span>{{ prefix + key }}</span>
-            </h3>
-          </k-schema>
-        </div>
-      </template>
-
-      <k-schema v-else
-        v-model="entries[index][1]"
-        :invalid="entries.filter(e => e[0] === key).length > 1"
-        :initial="initial?.[key]"
-        :schema="schema.inner"
-        :disabled="disabled"
-        :prefix="prefix + key + '.'"
-        @command="handleCommand($event, index)">
+  <template v-for="([key, _], index) in entries" :key="index">
+    <template v-if="isObjectSchema(schema.inner)">
+      <schema-item @command="handleCommand($event, index)"
+        :class="{ invalid: entries.filter(e => e[0] === key).length > 1 }">
+        <template #left>
+          <h3>
+            <span>{{ prefix }}</span>
+            <el-input v-if="schema.type === 'dict'" v-model="entries[index][0]"></el-input>
+            <span v-else>{{ key }}</span>
+          </h3>
+        </template>
         <template #menu>
           <el-dropdown-item divided :disabled="!index" command="up">上移</el-dropdown-item>
           <el-dropdown-item :disabled="index === entries.length - 1" command="down">下移</el-dropdown-item>
           <el-dropdown-item command="delete">删除</el-dropdown-item>
         </template>
-        <h3>
-          <span>{{ prefix }}</span>
-          <el-input v-if="schema.type === 'dict'" v-model="entries[index][0]"></el-input>
-          <span v-else>{{ key }}</span>
-        </h3>
-      </k-schema>
+      </schema-item>
+
+      <div class="k-schema-group">
+        <k-schema
+          v-model="entries[index][1]"
+          :initial="initial?.[key]"
+          :schema="schema.inner"
+          :disabled="disabled"
+          :prefix="prefix + key + '.'">
+          <h3>
+            <span>{{ prefix + key }}</span>
+          </h3>
+        </k-schema>
+      </div>
     </template>
-  </div>
+
+    <k-schema v-else
+      v-model="entries[index][1]"
+      :invalid="entries.filter(e => e[0] === key).length > 1"
+      :initial="initial?.[key]"
+      :schema="schema.inner"
+      :disabled="disabled"
+      :prefix="prefix + key + '.'"
+      @command="handleCommand($event, index)">
+      <template #menu>
+        <el-dropdown-item divided :disabled="!index" command="up">上移</el-dropdown-item>
+        <el-dropdown-item :disabled="index === entries.length - 1" command="down">下移</el-dropdown-item>
+        <el-dropdown-item command="delete">删除</el-dropdown-item>
+      </template>
+      <h3>
+        <span>{{ prefix }}</span>
+        <el-input v-if="schema.type === 'dict'" v-model="entries[index][0]"></el-input>
+        <span v-else>{{ key }}</span>
+      </h3>
+    </k-schema>
+  </template>
 </template>
 
 <script lang="ts" setup>

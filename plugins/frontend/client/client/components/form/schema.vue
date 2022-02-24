@@ -27,7 +27,7 @@
     </k-schema>
   </template>
 
-  <schema-item v-else :disabled="disabled" :class="{ changed, required, invalid }" @command="handleCommand">
+  <schema-item v-else-if="prefix || !isComposite" :disabled="disabled" :class="{ changed, required, invalid }" @command="handleCommand">
     <template #menu>
       <el-dropdown-item command="discard">撤销更改</el-dropdown-item>
       <el-dropdown-item command="default">恢复默认值</el-dropdown-item>
@@ -75,9 +75,23 @@
     </ul>
   </schema-item>
 
-  <schema-group v-if="!schema.meta.hidden && isComposite" v-model:signal="signal"
-    :schema="schema" v-model="config" :prefix="prefix" :disabled="disabled" :initial="initial">
-  </schema-group>
+  <template v-if="!schema.meta.hidden && isComposite">
+    <div class="k-schema-group" v-if="prefix">
+      <schema-group v-if="!schema.meta.hidden && isComposite" v-model:signal="signal"
+        :schema="schema" v-model="config" :prefix="prefix" :disabled="disabled" :initial="initial">
+      </schema-group>
+    </div>
+
+    <template v-else>
+      <h2>
+        {{ schema.meta.description || '配置列表' }}
+        <k-button solid @click="signal = true" :disabled="disabled">添加项</k-button>
+      </h2>
+      <schema-group v-if="!schema.meta.hidden && isComposite" v-model:signal="signal"
+        :schema="schema" v-model="config" :prefix="prefix" :disabled="disabled" :initial="initial">
+      </schema-group>
+    </template>
+  </template>
 </template>
 
 <script lang="ts" setup>

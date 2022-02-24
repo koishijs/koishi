@@ -45,7 +45,7 @@ export function validate(schema: Schema): boolean {
   }
 }
 
-export function hasTitle(schema: Schema) {
+export function hasTitle(schema: Schema, root?: boolean) {
   if (!schema) return true
   if (schema.type === 'object') {
     if (schema.meta.description) return true
@@ -57,6 +57,8 @@ export function hasTitle(schema: Schema) {
   } else if (schema.type === 'union') {
     const choices = schema.list.filter(item => !dynamic.includes(item.type))
     return choices.length === 1 ? hasTitle(choices[0]) : false
+  } else if (root && composite.includes(schema.type) && validate(schema.inner)) {
+    return true
   } else {
     return false
   }
