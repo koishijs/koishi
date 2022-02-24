@@ -25,7 +25,7 @@ class PackageProvider extends DataService<Dict<PackageProvider.Data>> {
   task: Promise<void>
 
   constructor(ctx: Context, config: PackageProvider.Config) {
-    super(ctx, 'packages')
+    super(ctx, 'packages', { authority: 4 })
 
     this.ctx.on('plugin-added', async (plugin) => {
       const state = this.registry.get(plugin)

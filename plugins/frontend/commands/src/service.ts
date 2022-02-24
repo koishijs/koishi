@@ -33,7 +33,7 @@ export default class CommandProvider extends DataService<CommandData[]> {
   update = debounce(0, () => this.refresh())
 
   constructor(ctx: Context) {
-    super(ctx, 'commands')
+    super(ctx, 'commands', { authority: 4 })
 
     ctx.on('command-added', this.update)
     ctx.on('command-removed', this.update)

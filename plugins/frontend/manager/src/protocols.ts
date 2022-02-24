@@ -3,7 +3,7 @@ import { DataService } from '@koishijs/plugin-console'
 
 class AdapterProvider extends DataService<Dict<Schema>> {
   constructor(ctx: Context) {
-    super(ctx, 'protocols')
+    super(ctx, 'protocols', { authority: 4 })
 
     ctx.on('adapter', () => {
       this.refresh()

@@ -40,6 +40,7 @@ const authFields = ['name', 'authority', 'id', 'expire', 'token'] as (keyof User
 function setAuthUser(handle: SocketHandle, value: UserAuth) {
   handle.user = value
   handle.send({ type: 'data', body: { key: 'user', value } })
+  handle.refresh()
 }
 
 class AuthService extends DataService<UserAuth> {
@@ -114,7 +115,7 @@ class AuthService extends DataService<UserAuth> {
       return next()
     }, true)
 
-    ctx.on('console/intercept', async (handle, listener) => {
+    ctx.on('console/intercept', (handle, listener) => {
       if (!listener.authority) return false
       if (!handle.user) return true
       if (handle.user.expire <= Date.now()) return true

@@ -5,7 +5,7 @@ class ServiceProvider extends DataService<Dict<string>> {
   private cache: Dict<string>
 
   constructor(ctx: Context) {
-    super(ctx, 'services')
+    super(ctx, 'services', { authority: 4 })
 
     ctx.on('service', () => this.refresh())
   }

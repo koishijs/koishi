@@ -35,7 +35,7 @@ class BotProvider extends DataService<Dict<BotProvider.Data>> {
   callbacks: BotProvider.Extension[] = []
 
   constructor(ctx: Context) {
-    super(ctx, 'bots')
+    super(ctx, 'bots', { authority: 4 })
 
     ctx.any().before('send', (session) => {
       session.bot._messageSent.add(1)

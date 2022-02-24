@@ -1,6 +1,12 @@
 import { Context, Service } from 'koishi'
 import Console from '.'
 
+export namespace DataService {
+  export interface Options {
+    authority?: number
+  }
+}
+
 export abstract class DataService<T = never> extends Service {
   static define(name: keyof Console.Services) {
     if (Object.prototype.hasOwnProperty.call(Console.prototype, name)) return
@@ -15,11 +21,11 @@ export abstract class DataService<T = never> extends Service {
     })
   }
 
-  protected get(forced?: boolean): Promise<T> {
+  public get(forced?: boolean): Promise<T> {
     return null
   }
 
-  constructor(protected ctx: Context, protected name: keyof Console.Services) {
+  constructor(protected ctx: Context, protected name: keyof Console.Services, public options: DataService.Options = {}) {
     super(ctx, `console.${name}`, true)
     DataService.define(name)
   }
@@ -29,7 +35,7 @@ export abstract class DataService<T = never> extends Service {
   }
 
   protected broadcast(type: string, value: any) {
-    this.ctx.console.ws.broadcast(type, { key: this.name, value })
+    this.ctx.console.ws.broadcast(type, { key: this.name, value }, this.options)
   }
 
   async refresh() {

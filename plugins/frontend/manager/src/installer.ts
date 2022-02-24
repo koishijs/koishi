@@ -19,7 +19,7 @@ class Installer extends DataService<Dict<string>> {
   private metaTask: Promise<Package.Json>
 
   constructor(public ctx: Context) {
-    super(ctx, 'dependencies')
+    super(ctx, 'dependencies', { authority: 4 })
 
     ctx.console.addListener('market/install', this.installDep, { authority: 4 })
     ctx.console.addListener('market/patch', this.patchDep, { authority: 4 })

@@ -24,7 +24,7 @@ class LogProvider extends DataService<string[]> {
   writer: FileWriter
 
   constructor(ctx: Context, private config: LogProvider.Config = {}) {
-    super(ctx, 'logs')
+    super(ctx, 'logs', { authority: 4 })
 
     ctx.console.addEntry({
       dev: resolve(__dirname, '../client/index.ts'),

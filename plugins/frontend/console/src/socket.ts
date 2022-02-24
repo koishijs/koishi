@@ -5,7 +5,7 @@ import { DataService } from './service'
 
 declare module 'koishi' {
   interface EventMap {
-    'console/intercept'(handle: SocketHandle, listener: Listener): Awaitable<boolean>
+    'console/intercept'(handle: SocketHandle, listener: DataService.Options): Awaitable<boolean>
   }
 }
 
@@ -17,23 +17,34 @@ export class SocketHandle {
 
   constructor(service: WsService, public socket: WebSocket) {
     this.app = service.ctx.app
+    this.refresh()
   }
 
   send(payload: any) {
     this.socket.send(JSON.stringify(payload))
   }
+
+  refresh() {
+    Context.Services.forEach(async (name) => {
+      const service = this.app[name] as DataService
+      if (!name.startsWith('console.') || !service) return
+      const key = name.slice(8)
+      if (await this.app.serial('console/intercept', this, service.options)) {
+        return this.send({ type: 'data', body: { key, value: null } })
+      }
+      const value = await service.get()
+      if (!value) return
+      this.send({ type: 'data', body: { key, value } })
+    })
+  }
 }
 
-export interface Listener extends Listener.Options {
+export interface Listener extends DataService.Options {
   callback: Listener.Callback
 }
 
 export namespace Listener {
   export type Callback = (this: SocketHandle, ...args: any[]) => Awaitable<any>
-
-  export interface Options {
-    authority?: number
-  }
 }
 
 class WsService extends DataService {
@@ -50,10 +61,14 @@ class WsService extends DataService {
     this.layer = ctx.router.ws(apiPath, this.onConnection)
   }
 
-  broadcast(type: string, body: any) {
-    if (!this?.layer.clients.size) return
+  broadcast(type: string, body: any, options: DataService.Options = {}) {
+    const handles = Object.values(this.handles)
+    if (!handles.length) return
     const data = JSON.stringify({ type, body })
-    this.layer.clients.forEach((socket) => socket.send(data))
+    Promise.all(Object.values(this.handles).map(async (handle) => {
+      if (await this.ctx.serial('console/intercept', handle, options)) return
+      handle.socket.send(data)
+    }))
   }
 
   addListener(event: string, listener: Listener) {
@@ -67,15 +82,6 @@ class WsService extends DataService {
   private onConnection = (socket: WebSocket) => {
     const handle = new SocketHandle(this, socket)
     this.handles[handle.id] = handle
-
-    for (const name of Context.Services) {
-      if (!name.startsWith('console.')) continue
-      Promise.resolve(this.ctx[name]?.['get']?.()).then((value) => {
-        if (!value) return
-        const key = name.slice(8)
-        socket.send(JSON.stringify({ type: 'data', body: { key, value } }))
-      })
-    }
 
     socket.on('message', async (data) => {
       const { type, args, id } = JSON.parse(data.toString())

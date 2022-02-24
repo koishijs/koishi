@@ -1,6 +1,7 @@
 import { Context, Schema, Service } from 'koishi'
 import HttpService, { Entry } from './http'
-import WsService, { Listener } from './socket'
+import WsService from './socket'
+import { DataService } from './service'
 
 export * from './service'
 export * from './http'
@@ -40,7 +41,7 @@ export class Console extends Service {
     this.http.addEntry(filename)
   }
 
-  addListener<K extends keyof Events>(event: K, callback: Events[K], options?: Listener.Options) {
+  addListener<K extends keyof Events>(event: K, callback: Events[K], options?: DataService.Options) {
     this.ws.addListener(event, { callback, ...options })
   }
 }

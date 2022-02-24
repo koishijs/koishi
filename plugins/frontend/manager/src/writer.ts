@@ -20,7 +20,6 @@ export default class ConfigWriter {
     this.plugins = ctx.loader.config.plugins
 
     ctx.console.addListener('manager/app-reload', (config) => {
-      console.log(1111, config)
       this.reloadApp(config)
     }, { authority: 4 })
 

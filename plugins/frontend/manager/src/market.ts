@@ -12,7 +12,7 @@ class MarketProvider extends DataService<Dict<MarketProvider.Data>> {
   private tempCache: Dict<MarketProvider.Data> = {}
 
   constructor(ctx: Context, private config: MarketProvider.Config) {
-    super(ctx, 'market')
+    super(ctx, 'market', { authority: 4 })
   }
 
   async start() {

@@ -8,6 +8,7 @@
 
 <script lang="ts" setup>
 
+import { store } from '@koishijs/client'
 import { computed, PropType } from 'vue'
 import { RouteRecordNormalized } from 'vue-router'
 import { routeCache } from './utils'
@@ -21,7 +22,13 @@ const target = computed(() => {
 })
 
 const badge = computed(() => {
+  if (!loaded.value) return 0
   return props.route.meta.badge.reduce((prev, curr) => prev + curr(), 0)
+})
+
+const loaded = computed(() => {
+  if (!props.route.meta.fields) return true
+  return props.route.meta.fields.every((key) => store[key])
 })
 
 </script>
