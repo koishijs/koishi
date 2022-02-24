@@ -152,6 +152,7 @@ Koishi 完全基于 TypeScript 开发，拥有顶级的类型支持，丰富的�
 | [adapter-minecraft](https://github.com/koishijs/koishi-plugin-adapter-minecraft) | Minecraft 适配器 |
 | [animal-picture](https://github.com/idlist/koishi-plugin-animal-picture) | 动物图 |
 | [assets-smms](https://github.com/koishijs/koishi-plugin-assets-smms) | 使用 sm.ms 存储静态资源文件 |
+| [beian](https://github.com/ilharp/koishi-plugin-beian) | 在控制台底部显示备案信息 |
 | [blive](https://github.com/idlist/koishi-plugin-blive) | Bilibili 直播订阅 |
 | [chess](https://github.com/koishijs/koishi-plugin-chess) | 棋类游戏 |
 | [crazy-thursday](https://github.com/koishijs/koishi-plugin-crazy-thursday) | 输出 KFC 疯狂星期四段子 |
