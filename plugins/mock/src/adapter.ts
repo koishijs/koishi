@@ -102,7 +102,7 @@ export namespace MockAdapter {
   }
 
   export const Config = Schema.object({
-    selfIds: Schema.array(Schema.string()).default([DEFAULT_SELF_ID]),
+    selfIds: Schema.array(String).default([DEFAULT_SELF_ID]),
   })
 }
 

@@ -23,7 +23,7 @@ declare module '@koishijs/core' {
 }
 
 defineProperty(App.Config, 'Assets', Schema.object({
-  whitelist: Schema.array(Schema.string().role('url')).description('不处理的白名单 URL 列表。'),
+  whitelist: Schema.array(Schema.string().required().role('url')).description('不处理的白名单 URL 列表。'),
 }).description('资源设置'))
 
 const PROTOCOL_BASE64 = 'base64://'

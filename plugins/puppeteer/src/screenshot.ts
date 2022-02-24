@@ -42,7 +42,7 @@ export interface Config {
 
 export const Config: Schema<Config> = Schema.object({
   protocols: Schema
-    .array(Schema.string())
+    .array(String)
     .description('允许的协议列表。')
     .default(['http', 'https']),
   maxSize: Schema

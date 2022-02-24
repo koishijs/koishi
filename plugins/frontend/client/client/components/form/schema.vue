@@ -20,7 +20,7 @@
     <k-schema v-for="(item, index) in choices" :key="index"
       v-model="config"
       :initial="initial"
-      :schema="item"
+      :schema="{ ...item, meta: { default: schema.meta.default, ...item.meta } }"
       :disabled="disabled"
       :prefix="prefix">
       <slot></slot>
@@ -75,7 +75,7 @@
     </ul>
   </schema-item>
 
-  <schema-group ref="group" v-if="!schema.meta.hidden && isComposite" v-model:signal="signal"
+  <schema-group v-if="!schema.meta.hidden && isComposite" v-model:signal="signal"
     :schema="schema" v-model="config" :prefix="prefix" :disabled="disabled" :initial="initial">
   </schema-group>
 </template>
@@ -84,7 +84,7 @@
 
 import { watch, ref, computed } from 'vue'
 import type { PropType } from 'vue'
-import { clone, deepEqual, getChoices, getFallback, Schema, validate } from './utils'
+import { clone, deepEqual, getChoices, getFallback, isNullable, Schema, validate } from './utils'
 import SchemaItem from './item.vue'
 import SchemaGroup from './group.vue'
 import SchemaPrimitive from './primitive.vue'
@@ -106,7 +106,9 @@ const changed = computed(() => {
 })
 
 const required = computed(() => {
-  return props.schema.meta.required && props.modelValue === undefined
+  return props.schema.meta.required
+    && isNullable(props.schema.meta.default)
+    && isNullable(props.modelValue)
 })
 
 const choices = computed(() => getChoices(props.schema))

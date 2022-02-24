@@ -55,7 +55,7 @@ export interface Config extends ClientExtension {
 }
 
 export const Config = Schema.object({
-  whitelist: Schema.array(Schema.string()),
+  whitelist: Schema.array(String),
   maxMessages: Schema.natural(),
   logLevel: Schema.natural().max(3),
   refresh: RefreshConfig,

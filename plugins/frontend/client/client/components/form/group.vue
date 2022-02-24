@@ -81,7 +81,7 @@ function handleCommand(action: string, index?: number) {
   } else if (action === 'delete') {
     entries.value.splice(index, 1)
   } else if (action === 'add') {
-    entries.value.push(['', getFallback(props.schema.inner)])
+    entries.value.push(['', getFallback(props.schema.inner) ?? null])
   }
 }
 
@@ -121,7 +121,6 @@ function doWatch() {
         result[key] = value
       }
       emit('update:modelValue', result)
-      console.log(result)
     } else {
       emit('update:modelValue', entries.value.map(([, value]) => value))
     }

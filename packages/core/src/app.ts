@@ -273,12 +273,12 @@ export namespace App {
 
   defineProperty(Config, 'Basic', Schema.object({
     prefix: Schema.union([
-      Schema.array(Schema.string()),
-      Schema.transform(Schema.string(), (prefix) => [prefix]),
+      Schema.array(String),
+      Schema.transform(String, (prefix) => [prefix]),
     ] as const).default(['']).description('指令前缀字符，可以是字符串或字符串数组。将用于指令前缀的匹配。'),
     nickname: Schema.union([
-      Schema.array(Schema.string()),
-      Schema.transform(Schema.string(), (nickname) => [nickname]),
+      Schema.array(String),
+      Schema.transform(String, (nickname) => [nickname]),
     ] as const).description('机器人的昵称，可以是字符串或字符串数组。将用于指令前缀的匹配。'),
     autoAssign: Schema.union([Boolean, Function]).default(true).description('当获取不到频道数据时，是否使用接受者作为代理者。'),
     autoAuthorize: Schema.union([Schema.natural(), Function]).default(1).description('当获取不到用户数据时默认使用的权限等级。'),

@@ -11,7 +11,7 @@ export interface Override {
 
 export const Override: Schema<Override> = Schema.object({
   name: Schema.string(),
-  alias: Schema.array(Schema.string()),
+  alias: Schema.array(String),
   create: Schema.boolean(),
 })
 
@@ -24,7 +24,7 @@ interface Config extends Override, Command.Config {}
 
 const Config: Schema<string | Config, Config> = Schema.union([
   Schema.intersect([Override, Command.Config]),
-  Schema.transform(Schema.string(), (name) => ({ name, alias: [] })),
+  Schema.transform(String, (name) => ({ name, alias: [] })),
 ])
 
 export const schema = Schema.dict(Config)
