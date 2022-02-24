@@ -246,12 +246,14 @@ module.exports = {
         isGroup: true,
         children: [
           '/plugins/console/index.md',
+          '/plugins/console/auth.md',
           '/plugins/console/chat.md',
           '/plugins/console/commands.md',
           '/plugins/console/dataview.md',
           '/plugins/console/insight.md',
           '/plugins/console/logger.md',
           '/plugins/console/manager.md',
+          '/plugins/console/sandbox.md',
           '/plugins/console/status.md',
         ],
       }, {
