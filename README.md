@@ -163,6 +163,7 @@ Koishi 完全基于 TypeScript 开发，拥有顶级的类型支持，丰富的�
 | [gosen-choyen](https://github.com/idlist/koishi-plugin-gosen-choyen) | 生成五千兆円图 |
 | [image-search](https://github.com/koishijs/koishi-plugin-image-search) | 图源搜索 |
 | [jrrp](https://github.com/idlist/koishi-plugin-jrrp) | 今日人品 |
+| [libvirt](https://code.mycard.moe/3rdeye/koishi-plugin-libvirt) | libvirt (KVM) 虚拟机管理 |
 | [pics](https://github.com/koishijs/koishi-plugin-pics) | 随机图片 |
 | [rss](https://github.com/koishijs/koishi-plugin-rss) | RSS 订阅 |
 | [shadowban](https://code.mycard.moe/3rdeye/koishi-plugin-shadowban) | Twitter 账号限流查询 |
