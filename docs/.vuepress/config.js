@@ -182,6 +182,7 @@ module.exports = {
         children: [
           '/api/migration.md',
           '/api/releases/v4.1.md',
+          '/api/releases/v4.2.md',
         ],
       }],
 
