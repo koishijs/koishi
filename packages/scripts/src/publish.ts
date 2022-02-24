@@ -41,10 +41,11 @@ export default function (cli: CAC) {
         Object.assign(packages, await getPackages(names))
         const pending = Object.keys(packages).filter(path => packages[path].private)
         if (pending.length) {
+          const paths = pending.map(path => packages[path].name).join(', ')
           const { value } = await prompts({
             name: 'value',
             type: 'confirm',
-            message: `workspace ${pending.join(', ')} ${pending.length > 1 ? 'are' : 'is'} private, switch to public?`,
+            message: `workspace ${paths} ${pending.length > 1 ? 'are' : 'is'} private, switch to public?`,
           })
           if (!value) exit('operation cancelled.')
 
