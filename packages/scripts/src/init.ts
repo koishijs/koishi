@@ -86,14 +86,14 @@ class Initiator {
     const filename = `/src/index.${this.options.console ? 'console' : 'default'}.ts`
     const source = await readFile(this.source + filename, 'utf8')
     await writeFile(this.target + '/src/index.ts', source
-      .replace('{{name}}', this.name.replace(/^@\w+\//, '')))
+      .replace(/\{\{name\}\}/g, this.name.replace(/^@\w+\//, '')))
   }
 
   async writeReadme() {
     const source = await readFile(this.source + '/readme.md', 'utf8')
     await writeFile(this.target + '/readme.md', source
-      .replace('{{name}}', this.fullname)
-      .replace('{{desc}}', this.desc))
+      .replace(/\{\{name\}\}/g, this.fullname)
+      .replace(/\{\{desc\}\}/g, this.desc))
   }
 
   async writeClient() {
