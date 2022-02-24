@@ -1,12 +1,12 @@
 import { createPool } from 'generic-pool'
 import { Cache, Context, isNullable, Logger, Schema } from 'koishi'
-import { createClient } from 'redis'
-import { RedisClientOptions, RedisClientType } from '@node-redis/client'
+import { createClient, RedisClientOptions } from 'redis'
+import { RedisClientType } from '@node-redis/client'
 
 class RedisCache extends Cache {
   logger = new Logger('redis')
 
-  pool = createPool<RedisClientType<{}, {}>>({
+  pool = createPool<RedisClientType>({
     create: async () => {
       const client = createClient(this.config)
       await client.connect()
@@ -37,8 +37,8 @@ class RedisCache extends Cache {
     return JSON.parse(record)
   }
 
-  private async doInPool<T>(action: (client: RedisClientType<{}, {}>) => Promise<T>, errActionMessage = 'perform unknown action'): Promise<T> {
-    let client: RedisClientType<{}, {}>
+  private async doInPool<T>(action: (client: RedisClientType) => Promise<T>, errActionMessage = 'perform unknown action'): Promise<T> {
+    let client: RedisClientType
     try {
       client = await this.pool.acquire()
     } catch (e) {
@@ -98,7 +98,7 @@ class RedisCache extends Cache {
 }
 
 namespace RedisCache {
-  export interface Config extends RedisClientOptions<never, {}> {
+  export interface Config extends RedisClientOptions {
     prefix?: string
   }
 
