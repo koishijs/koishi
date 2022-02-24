@@ -136,6 +136,16 @@ class HttpService extends DataService<string[]> {
           '../vueuse.js': '@vueuse/core',
         },
       },
+      optimizeDeps: {
+        include: [
+          'element-plus',
+        ],
+      },
+      build: {
+        rollupOptions: {
+          input: this.config.root + '/index.html',
+        },
+      },
     })
 
     this.ctx.router.all('/vite(/.+)*', (ctx) => new Promise((resolve) => {
