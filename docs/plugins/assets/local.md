@@ -18,7 +18,7 @@ sidebarDepth: 2
 ### path
 
 - 类型: `string`
-- 默认值: `'/assets'`
+- 默认值: `'/files'`
 
 静态图片暴露在服务器的路径。
 

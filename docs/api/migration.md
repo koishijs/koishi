@@ -50,7 +50,9 @@ sidebarDepth: 2
 
 ### 新增的包
 
-- create-koishi：可结合 npm init 或 yarn create 使用，用于快速搭建项目
+- 命令行相关：
+  - create-koishi：可结合 npm init 或 yarn create 使用，用于快速搭建项目
+  - @koishijs/scripts：用于模板项目的命令行工具
 - 数据库相关：
   - [@koishijs/plugin-database-level](../plugins/database/level.md)：LevelDB 数据库实现
   - [@koishijs/plugin-database-memory](../plugins/database/memory.md)：基于内存的数据库实现
@@ -59,11 +61,13 @@ sidebarDepth: 2
   - [@koishijs/plugin-assets-git](../plugins/assets/git.md)：使用 git 仓库存放资源文件
   - [@koishijs/plugin-assets-s3](../plugins/assets/s3.md)：使用 s3 云存储存放资源文件
 - 控制台相关 (部分插件也可脱离控制台使用)：
+  - [@koishijs/plugin-auth](../plugins/console/auth.md)：用户登录
   - [@koishijs/plugin-commands](../plugins/console/commands.md)：指令管理
   - [@koishijs/plugin-dataview](../plugins/console/dataview.md)：数据库操作
   - [@koishijs/plugin-insight](../plugins/console/insight.md)：插件依赖图
   - [@koishijs/plugin-logger](../plugins/console/logger.md)：日志管理
   - [@koishijs/plugin-manager](../plugins/console/manager.md)：插件管理
+  - [@koishijs/plugin-sandbox](../plugins/console/sandbox.md)：沙盒调试
 
 ### 移除的包
 
