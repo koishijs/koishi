@@ -7,6 +7,15 @@ import prompts from 'prompts'
 export const cwd = process.cwd()
 export const meta: PackageJson = require(cwd + '/package.json')
 
+export interface Config {
+  mode?: 'monorepo' | 'separate' | 'submodule'
+}
+
+export const config: Config = {
+  mode: 'monorepo',
+  ...meta['koishi-scripts'],
+}
+
 export function requireSafe(id: string) {
   try {
     return require(id)
@@ -90,6 +99,7 @@ interface Reference {
 }
 
 export interface TsConfig {
+  extends?: string
   files?: string[]
   references?: Reference[]
   compilerOptions?: ts.CompilerOptions

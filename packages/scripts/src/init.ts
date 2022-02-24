@@ -2,7 +2,7 @@ import { CAC } from 'cac'
 import { copyFile, mkdir, readFile, readJson, writeFile, writeJson } from 'fs-extra'
 import { resolve } from 'path'
 import { getAgent } from '@koishijs/cli'
-import { cwd, meta, PackageJson } from './utils'
+import { config, cwd, meta, PackageJson } from './utils'
 import spawn from 'cross-spawn'
 import prompts from 'prompts'
 
@@ -61,6 +61,7 @@ class Initiator {
       this.writeReadme(),
       this.writeClient(),
     ])
+    await this.initGit()
   }
 
   async writeManifest() {
@@ -77,7 +78,7 @@ class Initiator {
   }
 
   async writeTsConfig() {
-    await copyFile(this.source + '/tsconfig.snap.json', this.target + '/tsconfig.json')
+    await copyFile(this.source + '/tsconfig.json', this.target + '/tsconfig.json')
   }
 
   async writeIndex() {
@@ -103,6 +104,17 @@ class Initiator {
       copyFile(this.source + '/client/page.vue', this.target + '/client/page.vue'),
       copyFile(this.source + '/client/tsconfig.json', this.target + '/client/tsconfig.json'),
     ])
+  }
+
+  async initGit() {
+    if (config.mode === 'monorepo') return
+    await Promise.all([
+      copyFile(this.source + '/.editorconfig', this.target + '/.editorconfig'),
+      copyFile(this.source + '/.gitignore', this.target + '/.gitignore'),
+    ])
+    spawn.sync('git', ['init'], { cwd: this.target, stdio: 'inherit' })
+    spawn.sync('git', ['add', '.'], { cwd: this.target, stdio: 'inherit' })
+    spawn.sync('git', ['commit', '-m', 'initial commit'], { cwd: this.target, stdio: 'inherit' })
   }
 }
 
