@@ -8,6 +8,7 @@ import prompts from 'prompts'
 
 class Initiator {
   name: string
+  desc: string
   fullname: string
   target: string
   source = resolve(__dirname, '../template')
@@ -25,6 +26,7 @@ class Initiator {
 
   async init(name: string) {
     this.name = name || await this.getName()
+    this.desc = await this.getDesc()
     this.fullname = name.includes('/')
       ? name.replace('/', '/koishi-plugin-')
       : 'koishi-plugin-' + name
@@ -41,12 +43,22 @@ class Initiator {
     return name.trim() as string
   }
 
+  async getDesc() {
+    const { desc } = await prompts({
+      type: 'text',
+      name: 'desc',
+      message: 'description:',
+    })
+    return desc as string
+  }
+
   async write() {
     await mkdir(this.target, { recursive: true })
     await Promise.all([
       this.writeManifest(),
       this.writeTsConfig(),
       this.writeIndex(),
+      this.writeReadme(),
       this.writeClient(),
     ])
   }
@@ -59,6 +71,7 @@ class Initiator {
     source.peerDependencies['koishi'] = meta.dependencies['koishi']
     await writeJson(this.target + '/package.json', {
       name: this.fullname,
+      description: this.desc,
       ...source,
     }, { spaces: 2 })
   }
@@ -72,7 +85,14 @@ class Initiator {
     const filename = `/src/index.${this.options.console ? 'console' : 'default'}.ts`
     const source = await readFile(this.source + filename, 'utf8')
     await writeFile(this.target + '/src/index.ts', source
-      .replace('{{ name }}', this.name.replace(/^@\w+\//, '')))
+      .replace('{{name}}', this.name.replace(/^@\w+\//, '')))
+  }
+
+  async writeReadme() {
+    const source = await readFile(this.source + '/readme.md', 'utf8')
+    await writeFile(this.target + '/readme.md', source
+      .replace('{{name}}', this.fullname)
+      .replace('{{desc}}', this.desc))
   }
 
   async writeClient() {

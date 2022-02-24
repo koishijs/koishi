@@ -2,7 +2,7 @@ import { Context } from 'koishi'
 import { resolve } from 'path'
 import {} from '@koishijs/plugin-console'
 
-export const name = '{{ name }}'
+export const name = '{{name}}'
 
 export function apply(ctx: Context) {
   ctx.using(['console'], (ctx) => {
