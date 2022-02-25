@@ -198,6 +198,8 @@ Koishi 完全使用 [MIT](./LICENSE) 协议开源，维护良好的开源生态�
 
 Copyright © 2019-2022, Shigma
 
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fkoishijs%2Fkoishi.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2Fkoishijs%2Fkoishi?ref=badge_large)
+
 ## 贡献指南
 
 [请看这里](./.github/contributing.md)
