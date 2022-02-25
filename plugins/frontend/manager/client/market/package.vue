@@ -34,7 +34,7 @@
     </div>
     <template #footer>
       <div class="info">
-        <span :class="{ pointer: author }" @click="author && $emit('query', 'author:' + author)">
+        <span v-if="data.author" :class="{ pointer: author }" @click="author && $emit('query', 'author:' + author)">
           <k-icon name="user"></k-icon>{{ data.author.name }}
         </span>
         <span><k-icon name="balance"></k-icon>{{ data.license }}</span>
@@ -68,7 +68,7 @@ const repo = computed(() => {
   }
 })
 
-const author = computed(() => props.data.author.username)
+const author = computed(() => props.data.author?.username)
 
 const router = useRouter()
 
