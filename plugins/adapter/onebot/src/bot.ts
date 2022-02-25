@@ -144,6 +144,10 @@ export class OneBotBot extends Bot<BotConfig> {
     if (!content) return
     const session = this.createSession({ content, subtype: 'group', guildId, channelId })
     if (this.app.bail(session, 'before-send', session)) return
+    // override content with possibly altered content
+    content = session?.content || content
+    // do not send in case for any reason the content is now empty (again)
+    if (!content) return
     session.messageId = '' + await this.internal.sendGroupMsg(channelId, content)
     this.app.emit(session, 'send', session)
     return [session.messageId]
@@ -153,6 +157,10 @@ export class OneBotBot extends Bot<BotConfig> {
     if (!content) return
     const session = this.createSession({ content, subtype: 'private', userId, channelId: 'private:' + userId })
     if (this.app.bail(session, 'before-send', session)) return
+    // override content with possibly altered content
+    content = session?.content || content
+    // do not send in case for any reason the content is now empty (again)
+    if (!content) return
     session.messageId = '' + await this.internal.sendPrivateMsg(userId, content)
     this.app.emit(session, 'send', session)
     return [session.messageId]
@@ -205,6 +213,10 @@ export class QQGuildBot extends OneBotBot {
     if (!content) return
     const session = this.createSession({ content, subtype: 'group', guildId, channelId })
     if (this.app.bail(session, 'before-send', session)) return
+    // override content with possibly altered content
+    content = session?.content || content
+    // do not send in case for any reason the content is now empty (again)
+    if (!content) return
     session.messageId = '' + await this.internal.sendGuildChannelMsg(guildId, channelId, content)
     this.app.emit(session, 'send', session)
     return [session.messageId]
