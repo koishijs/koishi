@@ -15,8 +15,8 @@ export function validate(data: MarketProvider.Data, query: string) {
     } else if (word.startsWith('using:')) {
       const name = word.slice(6)
       if (!keywords.includes('required:' + name) && !keywords.includes('optional:' + name)) return false
-    } else if (word.startsWith('author:')) {
-      if (data.author?.username !== word.slice(7)) return false
+    } else if (word.startsWith('email:')) {
+      if (data.author?.email !== word.slice(6)) return false
     } else if (word.startsWith('is:')) {
       if (word === 'is:official') {
         if (!data.official) return false

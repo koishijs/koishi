@@ -34,7 +34,7 @@
     </div>
     <template #footer>
       <div class="info">
-        <span v-if="data.author" :class="{ pointer: author }" @click="author && $emit('query', 'author:' + author)">
+        <span v-if="data.author" :class="{ pointer: email }" @click="email && $emit('query', 'email:' + email)">
           <k-icon name="user"></k-icon>{{ data.author.name }}
         </span>
         <span><k-icon name="balance"></k-icon>{{ data.license }}</span>
@@ -68,7 +68,7 @@ const repo = computed(() => {
   }
 })
 
-const author = computed(() => props.data.author?.username)
+const email = computed(() => props.data.author?.email)
 
 const router = useRouter()
 
@@ -83,19 +83,23 @@ const router = useRouter()
   display: flex;
   flex-direction: column;
 
+  header, footer {
+    margin: 1rem 0;
+  }
+
   .k-card-body {
     margin: 0;
     flex-grow: 1;
-    overflow: visible;
+    overflow: hidden;
   }
 
   .desc {
-    margin: -6px 0;
+    margin: 0;
     font-size: 15px;
   }
 
   .badges {
-    margin-top: 1.5rem;
+    margin-top: 1.25rem;
   }
 
   .k-badge {
