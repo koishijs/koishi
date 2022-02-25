@@ -165,6 +165,7 @@ Koishi 完全基于 TypeScript 开发，拥有顶级的类型支持，丰富的�
 | [image-search](https://github.com/koishijs/koishi-plugin-image-search) | 图源搜索 |
 | [jrrp](https://github.com/idlist/koishi-plugin-jrrp) | 今日人品 |
 | [libvirt](https://code.mycard.moe/3rdeye/koishi-plugin-libvirt) | libvirt (KVM) 虚拟机管理 |
+| [meme](https://github.com/ONI-Wiki-zh/koishi-plugin-meme) | 基于 [Inkscape](https://inkscape.org/) 或 [GIMP](https://www.gimp.org/) 的梗图生成器 |
 | [pics](https://github.com/koishijs/koishi-plugin-pics) | 随机图片 |
 | [rss](https://github.com/koishijs/koishi-plugin-rss) | RSS 订阅 |
 | [shadowban](https://code.mycard.moe/3rdeye/koishi-plugin-shadowban) | Twitter 账号限流查询 |
@@ -189,6 +190,7 @@ Koishi 完全基于 TypeScript 开发，拥有顶级的类型支持，丰富的�
 | [koishi-thirdeye](https://code.mycard.moe/3rdeye/koishi-thirdeye) | 装饰器以及 DI 风格的 Koishi 插件开发框架 |
 | [onebot-lb](https://github.com/purerosefallen/onebot-lb) | OneBot 负载均衡器 |
 | [ilharp/qa-bot](https://github.com/ilharp/qa-bot) | 基于 plugin-teach 魔改的问答机器人，适用于客服 / 知识库等场景 |
+| [ONIChat](https://github.com/ONI-Wiki-zh/ONIChat/tree/v4) | [缺氧 Wiki](https://oni.fandom.com/zh) 的编辑者们使用和维护的群聊机器人 |
 
 ## 使用协议
 
