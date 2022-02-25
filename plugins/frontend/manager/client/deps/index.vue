@@ -77,6 +77,10 @@ async function install() {
 
 <style lang="scss">
 
+main.route-dependencies {
+  height: 100vh;
+}
+
 .page-deps {
   height: calc(100vh - 4rem);
 

@@ -23,6 +23,7 @@
 
   --aside-width: 16rem; 
   > aside {
+    overflow-x: hidden;
     overflow-y: auto;
     width: var(--aside-width);
     flex-shrink: 0;
@@ -31,7 +32,7 @@
   }
 
   > main {
-    width: calc(100% - var(--aside-width));
+    width: 100%;
   }
 }
 

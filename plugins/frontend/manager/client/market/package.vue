@@ -86,7 +86,7 @@ const router = useRouter()
   .k-card-body {
     margin: 0;
     flex-grow: 1;
-    overflow: hidden;
+    overflow: visible;
   }
 
   .desc {
