@@ -10,7 +10,7 @@ sidebarDepth: 2
 
 参考：
 
-- [跨平台 / 使用适配器](../adapter/adapter.md)
+- [跨平台 / 使用适配器](../adapter/)
 - [API 文档 / 适配器 (Adapter)](../../api/core/adapter.md)
 
 ## 应用 (App)
@@ -59,7 +59,7 @@ sidebarDepth: 2
 
 参考：
 
-- [数据库 / 使用数据库](../database/database.md)
+- [数据库 / 使用数据库](../database/)
 - [API 文档 / 数据库 (Database)](../../api/core/database.md)
 
 ## 事件 (Events)
@@ -101,7 +101,7 @@ sidebarDepth: 2
 
 参考：
 
-- [复用性 / 使用插件](../plugin/plugin.md)
+- [复用性 / 使用插件](../plugin/)
 
 ## 协议 (Protocol)
 
@@ -122,7 +122,7 @@ sidebarDepth: 2
 
 参考：
 
-- [处理交互 / 使用消息段](../message/message.md#使用消息段)
+- [处理交互 / 使用消息段](../message/segment.md)
 - [API 文档 / 消息段 (Segment)](../../api/utils/segment.md)
 
 ## 服务 (Service)

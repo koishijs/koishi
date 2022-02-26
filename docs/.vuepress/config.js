@@ -68,13 +68,13 @@ module.exports = {
         children: [
           '/guide/message/middleware.md',
           '/guide/message/session.md',
-          '/guide/message/message.md',
+          '/guide/message/segment.md',
         ],
       }, {
         text: '指令系统',
         isGroup: true,
         children: [
-          '/guide/command/command.md',
+          '/guide/command/index.md',
           '/guide/command/execution.md',
           '/guide/command/help.md',
         ],
@@ -82,7 +82,7 @@ module.exports = {
         text: '模块化',
         isGroup: true,
         children: [
-          '/guide/plugin/plugin.md',
+          '/guide/plugin/index.md',
           '/guide/plugin/context.md',
           '/guide/plugin/lifecycle.md',
           '/guide/plugin/service.md',
@@ -92,7 +92,7 @@ module.exports = {
         text: '数据库',
         isGroup: true,
         children: [
-          '/guide/database/database.md',
+          '/guide/database/index.md',
           '/guide/database/builtin.md',
           '/guide/database/observer.md',
           '/guide/database/writing.md',
@@ -101,7 +101,7 @@ module.exports = {
         text: '跨平台',
         isGroup: true,
         children: [
-          '/guide/adapter/adapter.md',
+          '/guide/adapter/index.md',
           '/guide/adapter/bot.md',
           '/guide/adapter/binding.md',
           '/guide/adapter/writing.md',

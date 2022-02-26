@@ -258,7 +258,7 @@ type Plugin<U> = PluginFunction<T, U> | PluginObject<T, U>
 - **plugin:** `Plugin` 要移除的插件
 - 返回值: `void`
 
-移除插件中所注册的钩子、中间件、指令和子插件等。`plugin` 是默认为当前上下文所在的插件。如果既没有提供 `plugin`，上下文也不是一个插件上下文的话，会抛出一个错误。参见 [卸载插件](../../guide/plugin/plugin.md#卸载插件)。
+移除插件中所注册的钩子、中间件、指令和子插件等。`plugin` 是默认为当前上下文所在的插件。如果既没有提供 `plugin`，上下文也不是一个插件上下文的话，会抛出一个错误。参见 [卸载插件](../../guide/plugin/#卸载插件)。
 
 ## 静态属性和方法
 
