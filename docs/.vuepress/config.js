@@ -49,7 +49,7 @@ module.exports = {
       { text: '指南', link: '/guide/introduction/' },
       { text: 'API', link: '/api/' },
       { text: '插件', link: '/plugins/' },
-      { text: '更多', link: '/about/glossary' },
+      { text: '更多', link: '/about/migration.md' },
       // ...devOnly({ text: '演练场', link: '/playground.html' }),
     ],
     sidebar: {
@@ -137,6 +137,9 @@ module.exports = {
         text: '总览',
         link: '/api/',
       }, {
+        text: '术语表',
+        link: '/api/glossary.md',
+      }, {
         text: '核心 API',
         isGroup: true,
         children: [
@@ -175,14 +178,6 @@ module.exports = {
         children: [
           '/api/console/server.md',
           '/api/console/client.md',
-        ],
-      }, {
-        text: '更新与迁移',
-        isGroup: true,
-        children: [
-          '/api/migration.md',
-          '/api/releases/v4.1.md',
-          '/api/releases/v4.2.md',
         ],
       }],
 
@@ -298,10 +293,17 @@ module.exports = {
         ],
       }],
 
-      '/about/': [
-        '/about/glossary.md',
-        '/about/history.md',
-      ],
+      '/about/': [{
+        text: '更新与迁移',
+        isGroup: true,
+        children: [
+          '/about/history.md',
+          '/about/migration.md',
+          '/about/releases/v4.1.md',
+          '/about/releases/v4.2.md',
+          '/about/releases/v4.3.md',
+        ],
+      }],
     },
 
     lastUpdated: '上次更新',
