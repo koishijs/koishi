@@ -81,7 +81,7 @@ class LocalAssets extends Assets {
     await this._promise
     const { selfUrl, path, root } = this.config
     const { buffer, filename } = await this.analyze(url, file)
-    const savePath = resolve(root, file)
+    const savePath = resolve(root, filename)
     await this.write(buffer, savePath)
     return `${selfUrl}${path}/${filename}`
   }
