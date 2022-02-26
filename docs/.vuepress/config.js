@@ -303,6 +303,13 @@ module.exports = {
           '/about/releases/v4.2.md',
           '/about/releases/v4.3.md',
         ],
+      }, {
+        text: '贡献指南',
+        isGroup: true,
+        children: [
+          '/about/contribute/structure.md',
+          '/about/contribute/docs.md',
+        ],
       }],
     },
 
