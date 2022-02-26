@@ -33,8 +33,21 @@ html {
   }
 }
 
-.sidebar-heading:not(:first-child) {
-  margin-top: 1rem;
+body {
+  font-size: 15px;
+}
+
+aside.sidebar {
+  font-size: 15px;
+
+  li:not(:first-child) .sidebar-heading {
+    margin-top: 1rem;
+  }
+}
+
+.sidebar-item {
+  padding-top: 5px !important;
+  padding-bottom: 5px !important;
 }
 
 .medium-zoom-image--opened {
