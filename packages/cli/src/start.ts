@@ -29,7 +29,11 @@ function createWorker(options: Dict<any>) {
   const execArgv = Object.entries(options).flatMap<string>(([key, value]) => {
     if (key === '--') return []
     key = toArg(key)
-    if (Array.isArray(value)) {
+    if (value === true) {
+      return [key]
+    } else if (value === false) {
+      return ['--no-' + key.slice(2)]
+    } else if (Array.isArray(value)) {
       return value.flatMap(value => [key, value])
     } else {
       return [key, value]
