@@ -91,6 +91,7 @@ export abstract class Bot<T extends Bot.BaseConfig = Bot.BaseConfig> {
     return `${this.platform}:${this.selfId}`
   }
 
+  /** @deprecated using `bot.session()` instead */
   createSession(session: Partial<Session>) {
     return new Session(this, {
       ...session,
@@ -106,6 +107,12 @@ export abstract class Bot<T extends Bot.BaseConfig = Bot.BaseConfig> {
         isBot: true,
       },
     })
+  }
+
+  async session(data: Partial<Session>) {
+    const session = this.createSession(data)
+    if (await this.app.serial(session, 'before-send', session)) return
+    return session
   }
 
   async getGuildMemberMap(guildId: string) {

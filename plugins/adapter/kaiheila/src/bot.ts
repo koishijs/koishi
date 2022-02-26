@@ -51,20 +51,21 @@ export class KaiheilaBot extends Bot<BotConfig> {
     return camelize(response).data
   }
 
-  private _prepareHandle(channelId: string, content: string, guildId: string): SendHandle {
+  private async _prepareHandle(channelId: string, content: string, guildId: string) {
     let path: string
     const params = {} as KHL.MessageParams
-    const session = this.createSession({ channelId, content, guildId })
+    const data = { channelId, content, guildId } as Partial<Session>
     if (channelId.length > 30) {
       params.chatCode = channelId
-      session.subtype = 'private'
+      data.subtype = 'private'
       path = '/user-chat/create-msg'
     } else {
       params.targetId = channelId
-      session.subtype = 'group'
+      data.subtype = 'group'
       path = '/message/create'
     }
-    return [path, params, session]
+    const session = await this.session(data)
+    return [path, params, session] as SendHandle
   }
 
   private async _sendHandle([path, params, session]: SendHandle, type: KHL.Type, content: string) {
@@ -194,12 +195,12 @@ export class KaiheilaBot extends Bot<BotConfig> {
   }
 
   async sendMessage(channelId: string, content: string, guildId?: string) {
-    const handle = this._prepareHandle(channelId, content, guildId)
+    const handle = await this._prepareHandle(channelId, content, guildId)
     const [, params, session] = handle
-    if (await this.app.serial(session, 'before-send', session)) return
+    if (!session?.content) return []
 
     let useMarkdown = false
-    const chain = segment.parse(content)
+    const chain = segment.parse(session.content)
     if (chain[0].type === 'quote') {
       params.quote = chain.shift().data.id
     }

@@ -111,7 +111,7 @@ export class TelegramBot extends Bot<BotConfig> {
   }
 
   async sendMessage(channelId: string, content: string) {
-    if (!content) return
+    if (!content) return []
     let subtype: string
     let chatId: string
     if (channelId.startsWith('private:')) {
@@ -122,8 +122,8 @@ export class TelegramBot extends Bot<BotConfig> {
       chatId = channelId
     }
 
-    const session = this.createSession({ subtype, content, channelId, guildId: channelId })
-    if (await this.app.serial(session, 'before-send', session)) return
+    const session = await this.session({ subtype, content, channelId, guildId: channelId })
+    if (!session?.content) return []
 
     const send = Sender.from(this, chatId)
     const results = await send(session.content)

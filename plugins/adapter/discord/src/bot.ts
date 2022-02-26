@@ -80,8 +80,8 @@ export class DiscordBot extends Bot<BotConfig> {
   }
 
   async sendMessage(channelId: string, content: string, guildId?: string) {
-    const session = this.createSession({ channelId, content, guildId, subtype: guildId ? 'group' : 'private' })
-    if (await this.app.serial(session, 'before-send', session)) return
+    const session = await this.session({ channelId, content, guildId, subtype: guildId ? 'group' : 'private' })
+    if (!session?.content) return []
 
     const chain = segment.parse(session.content)
     const quote = this.parseQuote(chain)

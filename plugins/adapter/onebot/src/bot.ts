@@ -141,19 +141,17 @@ export class OneBotBot extends Bot<BotConfig> {
   }
 
   protected async sendGuildMessage(guildId: string, channelId: string, content: string) {
-    if (!content) return
-    const session = this.createSession({ content, subtype: 'group', guildId, channelId })
-    if (this.app.bail(session, 'before-send', session)) return
-    session.messageId = '' + await this.internal.sendGroupMsg(channelId, content)
+    const session = await this.session({ content, subtype: 'group', guildId, channelId })
+    if (!session?.content) return []
+    session.messageId = '' + await this.internal.sendGroupMsg(channelId, session.content)
     this.app.emit(session, 'send', session)
     return [session.messageId]
   }
 
   async sendPrivateMessage(userId: string, content: string) {
-    if (!content) return
-    const session = this.createSession({ content, subtype: 'private', userId, channelId: 'private:' + userId })
-    if (this.app.bail(session, 'before-send', session)) return
-    session.messageId = '' + await this.internal.sendPrivateMsg(userId, content)
+    const session = await this.session({ content, subtype: 'private', userId, channelId: 'private:' + userId })
+    if (!session?.content) return []
+    session.messageId = '' + await this.internal.sendPrivateMsg(userId, session.content)
     this.app.emit(session, 'send', session)
     return [session.messageId]
   }
@@ -202,10 +200,9 @@ export class QQGuildBot extends OneBotBot {
   }
 
   async sendGuildMessage(guildId: string, channelId: string, content: string) {
-    if (!content) return
-    const session = this.createSession({ content, subtype: 'group', guildId, channelId })
-    if (this.app.bail(session, 'before-send', session)) return
-    session.messageId = '' + await this.internal.sendGuildChannelMsg(guildId, channelId, content)
+    const session = await this.session({ content, subtype: 'group', guildId, channelId })
+    if (!session?.content) return []
+    session.messageId = '' + await this.internal.sendGuildChannelMsg(guildId, channelId, session.content)
     this.app.emit(session, 'send', session)
     return [session.messageId]
   }

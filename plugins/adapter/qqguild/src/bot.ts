@@ -21,7 +21,11 @@ export class QQGuildBot extends Bot<BotConfig> {
   }
 
   async sendMessage(channelId: string, content: string, guildId?: string) {
-    const resp = await this.$innerBot.send.channel(channelId, content)
+    const session = await this.session({ channelId, content, guildId, subtype: 'group' })
+    if (!session?.content) return []
+    const resp = await this.$innerBot.send.channel(channelId, session.content)
+    session.messageId = resp.id
+    this.app.emit(session, 'send', session)
     return [resp.id]
   }
 

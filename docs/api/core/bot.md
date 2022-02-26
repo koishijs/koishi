@@ -275,9 +275,9 @@ export interface ChannelInfo {
 
 ## 其他方法
 
-### bot.createSession(session) <Badge text="内置"/>
+### bot.session(session) <Badge text="内置"/>
 
 - **session:** `Partial<Session>` 会话数据
-- 返回值: `Session` 新会话
+- 返回值: `Promise<Session>` 新会话
 
 创建一个 send 类型的会话，供 `bot.sendMessage()` 等 API 使用。
