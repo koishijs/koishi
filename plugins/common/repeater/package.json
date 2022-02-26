@@ -31,7 +31,7 @@
     "repeater"
   ],
   "peerDependencies": {
-    "koishi": "^4.3.2"
+    "koishi": "^4.3.3"
   },
   "devDependencies": {
     "@koishijs/plugin-mock": "^1.0.3"

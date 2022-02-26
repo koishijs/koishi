@@ -31,6 +31,6 @@
     "utilities"
   ],
   "peerDependencies": {
-    "koishi": "^4.3.2"
+    "koishi": "^4.3.3"
   }
 }
