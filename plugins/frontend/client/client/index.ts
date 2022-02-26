@@ -78,6 +78,7 @@ export class Context {
 
   addView(options: ViewOptions) {
     options.order ??= 0
+    options.id ??= Math.random().toString(36).slice(2)
     const list = views[options.type] ||= []
     const index = list.findIndex(a => a.order < options.order)
     markRaw(options.component)
@@ -87,7 +88,7 @@ export class Context {
       list.push(options)
     }
     this.disposables.push(() => {
-      const index = list.findIndex(item => item === options)
+      const index = list.findIndex(item => item.id === options.id)
       if (index >= 0) list.splice(index, 1)
     })
   }
@@ -160,40 +161,42 @@ export function defineExtension(callback: Extension) {
   return callback
 }
 
+async function loadExtension(path: string) {
+  if (extensions[path]) return
+  extensions[path] = new Context()
+
+  if (path.endsWith('.css')) {
+    const link = document.createElement('link')
+    link.rel = 'stylesheet'
+    link.href = path
+    document.head.appendChild(link)
+    extensions[path].disposables.push(() => {
+      document.head.removeChild(link)
+    })
+    return
+  }
+
+  const exports = await import(/* @vite-ignore */ path)
+  exports.default?.(extensions[path])
+
+  const { redirect } = router.currentRoute.value.query
+  if (typeof redirect === 'string') {
+    const location = router.resolve(redirect)
+    if (location.matched.length) {
+      router.replace(location)
+    }
+  }
+}
+
 const initTask = new Promise<void>((resolve) => {
   watch(() => store.http, async (newValue, oldValue) => {
+    newValue ||= []
     for (const path in extensions) {
       if (newValue.includes(path)) continue
       extensions[path].dispose()
       delete extensions[path]
     }
 
-    async function loadExtension(path: string) {
-      if (extensions[path]) return
-      extensions[path] = new Context()
-
-      if (path.endsWith('.css')) {
-        const link = document.createElement('link')
-        link.rel = 'stylesheet'
-        link.href = path
-        document.head.appendChild(link)
-        extensions[path].disposables.push(() => {
-          document.head.removeChild(link)
-        })
-        return
-      }
-
-      const exports = await import(/* @vite-ignore */ path)
-      exports.default?.(extensions[path])
-      if (typeof redirect === 'string') {
-        const location = router.resolve(redirect)
-        if (location.matched.length) {
-          router.replace(location)
-        }
-      }
-    }
-
-    const { redirect } = router.currentRoute.value.query
     await Promise.all(newValue.map((path) => {
       return loadExtension(path).catch(console.error)
     }))

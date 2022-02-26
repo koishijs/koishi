@@ -85,6 +85,9 @@ export async function connect(endpoint: string) {
 
   socket.value.onclose = (ev) => {
     socket.value = null
+    for (const key in store) {
+      store[key] = undefined
+    }
     console.log('[koishi] websocket disconnected, will retry in 1s...')
     setTimeout(() => connect(endpoint), 1000)
   }
