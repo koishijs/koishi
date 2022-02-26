@@ -114,6 +114,26 @@ describe('Observer API', () => {
     })
   })
 
+  it('deep observe new property', () => {
+    const object = observe<any>({
+      a: [],
+    })
+    expect(object.$diff).to.deep.equal({})
+
+    object.a.push({ b: 1 })
+    expect(object.$diff).to.deep.equal({
+      a: [{ b: 1 }],
+    })
+
+    object.$update()
+    expect(object.$diff).to.deep.equal({})
+
+    object.a[0].b = 2
+    expect(object.$diff).to.deep.equal({
+      a: [{ b: 2 }],
+    })
+  })
+
   it('observe date', () => {
     const object = observe({ foo: new Date() })
     object.foo.getFullYear()
