@@ -41,11 +41,11 @@ describe('Observer API', () => {
 
     delete object.b
     expect(object).to.deep.equal({ a: 2, c: 3 })
-    expect(object.$diff).to.deep.equal({ a: 2, c: 3 })
+    expect(object.$diff).to.deep.equal({ a: 2, b: undefined, c: 3 })
 
     delete object.c
     expect(object).to.deep.equal({ a: 2 })
-    expect(object.$diff).to.deep.equal({ a: 2 })
+    expect(object.$diff).to.deep.equal({ a: 2, b: undefined, c: undefined })
   })
 
   it('deep observe', () => {
@@ -53,7 +53,7 @@ describe('Observer API', () => {
       a: { b: 1 },
       c: [{ d: 2 }],
       x: [{ y: 3 }],
-    }, 'foo')
+    })
     expect(object.$diff).to.deep.equal({})
 
     object.a.e = 3
