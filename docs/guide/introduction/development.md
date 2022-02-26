@@ -81,10 +81,10 @@ koishi start [file] [options]
 
 ::: code-group manager
 ```npm
-npm run init [name] [-c]
+npm run new [name] [-c]
 ```
 ```yarn
-yarn init [name] [-c]
+yarn new [name] [-c]
 ```
 :::
 
@@ -151,6 +151,23 @@ yarn build [...folder]
 
 - 后端代码将输出到 `plugins/foo/lib` 目录
 - 前端代码将输出到 `plugins/foo/dist` 目录 (如果存在)
+
+### 清除构建输出
+
+如果在构建时遇到了一些问题，你可能需要手动移除构建输出目录。
+
+::: code-group manager
+```npm
+npm run clean [...folder]
+```
+```yarn
+yarn clean [...folder]
+```
+:::
+
+上述指令将清除相应插件的构建输出，包括后端 + 前端。
+
+- **folder:** 要清除的插件列表，缺省时表示全部
 
 ### 更新版本号
 
