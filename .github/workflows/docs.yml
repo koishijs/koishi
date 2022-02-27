@@ -6,6 +6,8 @@ on:
       - master
     paths:
       - docs/**
+  schedule:
+    - cron: '0 0,12 * * *'
 
 jobs:
   deploy:
@@ -28,6 +30,8 @@ jobs:
           restore-keys: ${{ runner.os }}-yarn-
       - name: Install
         run: yarn
+      - name: Compile
+        run: yarn compile
       - name: Build
         run: yarn docs build
       - name: Deploy
