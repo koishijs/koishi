@@ -23,7 +23,7 @@
 
 <script setup lang="ts">
 
-import HomePage from './Home.vue'
+import HomePage from './home/index.vue'
 import { usePageFrontmatter } from '@vuepress/client'
 import { useDarkMode } from '@vuepress/theme-default/lib/client/composables'
 import ParentLayout from '@vuepress/theme-default/lib/client/layouts/Layout.vue'
