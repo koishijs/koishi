@@ -1,6 +1,13 @@
 <template>
-  <div class="market">在做了</div>
+  <div class="market">{{ market }}</div>
 </template>
+
+<script lang="ts" setup>
+
+import market from '../../.data/market.json'
+import { onMounted } from 'vue'
+
+</script>
 
 <style lang="scss">
 

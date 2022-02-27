@@ -5,6 +5,7 @@ temp
 .koishi
 .temp
 .cache
+.data
 
 tsconfig.temp.json
 
