@@ -18,12 +18,16 @@
     <template #page v-if="frontmatter.home">
       <home-page></home-page>
     </template>
+    <template #page v-else-if="frontmatter.market">
+      <market-page></market-page>
+    </template>
   </parent-layout>
 </template>
 
 <script setup lang="ts">
 
 import HomePage from './home/index.vue'
+import MarketPage from './market/index.vue'
 import { usePageFrontmatter } from '@vuepress/client'
 import { useDarkMode } from '@vuepress/theme-default/lib/client/composables'
 import ParentLayout from '@vuepress/theme-default/lib/client/layouts/Layout.vue'

@@ -35,23 +35,30 @@ module.exports = {
 
   themeConfig: {
     logo: '/koishi.png',
-    navbar: [
-      {
-        text: 'v4.x',
-        children: [{
-          text: 'v3.x',
-          link: 'https://koishi.js.org/v3/',
-        }, {
-          text: 'v1.x',
-          link: 'https://koishi.js.org/v1/',
-        }],
-      },
-      { text: '指南', link: '/guide/introduction/' },
-      { text: 'API', link: '/api/' },
-      { text: '插件', link: '/plugins/' },
-      { text: '更多', link: '/about/migration.md' },
-      // ...devOnly({ text: '演练场', link: '/playground.html' }),
-    ],
+    navbar: [{
+      text: 'v4.x',
+      children: [{
+        text: 'v3.x',
+        link: 'https://koishi.js.org/v3/',
+      }, {
+        text: 'v1.x',
+        link: 'https://koishi.js.org/v1/',
+      }],
+    }, {
+      text: '指南',
+      link: '/guide/introduction/',
+    }, {
+      text: 'API',
+      link: '/api/',
+    }, {
+      text: '插件',
+      children: ['/market.md', '/plugins/'],
+    }, {
+      text: '更多',
+      link: '/about/faq.md',
+      activeMatch: '/about/',
+    }],
+
     sidebar: {
       '/guide/': [{
         text: '入门',
@@ -294,6 +301,9 @@ module.exports = {
       }],
 
       '/about/': [{
+        text: '常见问题',
+        link: '/about/faq.md',
+      }, {
         text: '更新与迁移',
         isGroup: true,
         children: [
@@ -317,8 +327,8 @@ module.exports = {
     docsRepo: 'koishijs/koishi',
     docsDir: 'docs',
     docsBranch: 'next',
-    editLinks: true,
     editLinkText: '帮助我们改善此页面',
+    contributors: false,
 
     themePlugins: {
       // only enable git plugin in production mode

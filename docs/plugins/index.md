@@ -1,6 +1,5 @@
 ---
 sidebarDepth: 0
-noOutboundLinks: true
 ---
 
 # 官方插件
