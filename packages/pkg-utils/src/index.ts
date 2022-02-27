@@ -83,6 +83,7 @@ export interface SearchResult {
 
 export interface AnalyzedPackage extends BasePackage, ScoreDetail {
   author: User
+  links: Dict<string>
   keywords: string[]
   shortname: string
   official: boolean
@@ -110,7 +111,7 @@ export class Scanner extends EventEmitter {
   }
 
   private async analyze(object: SearchObject) {
-    const { name } = object.package
+    const { name, links } = object.package
     const official = name.startsWith('@koishijs/plugin-')
     const community = name.startsWith('koishi-plugin-')
     if (!official && !community) return
@@ -127,8 +128,9 @@ export class Scanner extends EventEmitter {
 
     const latest = registry.versions[versions[0].version]
     const shortname = official ? name.slice(17) : name.slice(14)
-    this.emit('data', {
+    this.emit('item', {
       name,
+      links,
       shortname,
       official,
       size: latest.dist.unpackedSize,
