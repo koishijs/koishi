@@ -41,6 +41,10 @@ code {
   font-size: 0.9em;
 }
 
+.badge + .badge {
+  margin-left: 0.5rem;
+}
+
 aside.sidebar {
   font-size: 15px;
 

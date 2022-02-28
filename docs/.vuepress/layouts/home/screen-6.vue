@@ -23,6 +23,8 @@ import { useWindowSize } from '@vueuse/core'
 import { useThemeLocaleData, resolveArraySidebarItems } from '@vuepress/theme-default/lib/client/composables'
 import SidebarItem from '@vuepress/theme-default/lib/client/components/SidebarItem.vue'
 
+defineEmits(['scroll-screen'])
+
 const { width, height } = useWindowSize()
 
 function getSidebarItems(route: string) {

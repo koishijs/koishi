@@ -7,7 +7,7 @@
       </a> -->
     </div>
     <p class="desc" v-html="data.description"></p>
-    <div class="badges">
+    <div class="badge-container">
       <badge type="tip"
         v-if="data.official"
         @click="$emit('update:query', 'is:official')"
@@ -84,6 +84,49 @@ const email = computed(() => props.data.author?.email)
 
 <style lang="scss">
 
+:root {
+  --c-card-bg: #ffffff;
+  --c-card-border: transparent;
+  --c-card-badge: #ffffff;
+}
+
+html.dark {
+  --c-card-bg: #1F1D26;
+  --c-card-border: var(--c-border);
+  --c-card-badge: var(--c-text);
+}
+
+html:not(.dark) {
+  .package-view {
+    --shadow-left-1: -1px 2px 4px hsl(250deg 40% 40% / 12%);
+    --shadow-left-2: -2px 4px 8px hsl(250deg 40% 40% / 12%);
+    --shadow-left-3: -4px 8px 16px hsl(250deg 40% 40% / 6%);
+    --shadow-left-4: -6px 12px 24px hsl(250deg 40% 40% / 6%);
+    --shadow-right-1: 2px 2px 4px hsl(250deg 40% 40% / 12%);
+    --shadow-right-2: 4px 4px 8px hsl(250deg 40% 40% / 12%);
+    --shadow-right-3: 8px 8px 16px hsl(250deg 40% 40% / 6%);
+    --shadow-right-4: 12px 12px 24px hsl(250deg 40% 40% / 6%);
+
+    &:nth-child(2n) {
+      box-shadow: var(--shadow-right-1), var(--shadow-right-2);
+    }
+
+    &:nth-child(2n + 1) {
+      box-shadow: var(--shadow-left-1), var(--shadow-left-2);
+    }
+
+    &:hover {
+      &:nth-child(2n) {
+        box-shadow: var(--shadow-right-3), var(--shadow-right-4);
+      }
+
+      &:nth-child(2n + 1) {
+        box-shadow: var(--shadow-left-3), var(--shadow-left-4);
+      }
+    }
+  }
+}
+
 .package-view {
   width: 100%;
   height: 12rem;
@@ -91,10 +134,9 @@ const email = computed(() => props.data.author?.email)
   flex-direction: column;
   border-radius: 8px;
   overflow: hidden;
-  background-color: #1F1D26;
-  border: 1px solid #4f515cbf;
-  box-shadow: 0 6px 10px -4px rgb(0 0 0 / 15%);
-  transition: color 0.3s ease, border-color 0.3s ease, background-color 0.3s ease, box-shadow 0.3s ease, opacity 0.3s ease;
+  background-color: var(--c-card-bg);
+  border: 1px solid var(--c-card-border);
+  transition: var(--color-transition);
 
   > * {
     padding: 0 1.5rem;
@@ -115,16 +157,23 @@ const email = computed(() => props.data.author?.email)
   .desc {
     margin: 0;
     font-size: 15px;
+    flex-grow: 3;
+  }
+
+  .badge-container {
     flex-grow: 1;
   }
 
-  .badges {
-    flex-grow: 0.5;
-  }
-
-  .k-badge {
+  .badge {
     cursor: pointer;
     user-select: none;
+    padding: 2px 6px;
+    color: var(--c-card-badge);
+    font-weight: 500;
+  }
+
+  .badge.primary {
+    background-color: var(--c-primary);
   }
 
   .info {
@@ -139,7 +188,7 @@ const email = computed(() => props.data.author?.email)
 
     svg {
       height: 12px;
-      margin-right: 8px;
+      margin-right: 6px;
       vertical-align: -1px;
     }
 

@@ -7,9 +7,6 @@ module.exports = {
   },
 
   plugins: [
-    ['@vuepress/palette', {
-      preset: 'sass',
-    }],
     [require('./markdown/highlight')],
     [require('./markdown/github')],
     ['medium-zoom', {

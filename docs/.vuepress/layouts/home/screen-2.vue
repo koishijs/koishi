@@ -22,4 +22,6 @@
 
 import Carousel from './Carousel.vue'
 
+defineEmits(['scroll-screen'])
+
 </script>

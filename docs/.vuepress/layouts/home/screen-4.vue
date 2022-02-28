@@ -6,3 +6,9 @@
     </div>
   </div>
 </template>
+
+<script lang="ts" setup>
+
+defineEmits(['scroll-screen'])
+
+</script>

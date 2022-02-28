@@ -27,6 +27,12 @@
   </div>
 </template>
 
+<script lang="ts" setup>
+
+defineEmits(['scroll-screen'])
+
+</script>
+
 <style lang="scss" scoped>
 
 .advantages {
