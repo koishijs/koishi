@@ -2,7 +2,7 @@
   <div class="market-container">
     <h1 class="banner">插件市场</h1>
     <div class="banner info">
-      当前共有 {{ market.packages.length }} 个兼容 v4 版本的插件
+      当前共有 {{ market.packages.length }} 个可用于 v4 版本的插件
       <span class="timestamp">({{ new Date(market.timestamp).toLocaleString() }})</span>
     </div>
     <div class="banner card search-box">
@@ -14,9 +14,12 @@
         @keydown.escape="onEscape"
         @keydown.backspace="onBackspace"
         @keypress.enter.prevent="onEnter"
-        @keypress.space.prevent="onEnter">
+        @keypress.space.prevent="onEnter"/>
     </div>
-    <package-view class="card" v-for="data in packages" :key="data.name" :data="data" @query="onQuery"></package-view>
+    <package-view class="card"
+      v-for="data in packages"
+      :key="data.name"
+      :data="data" @query="onQuery"/>
   </div>
 </template>
 
@@ -180,41 +183,47 @@ html.dark {
       margin: 2rem 0;
     }
 
-    > .card {
-      border-top: 1px solid var(--c-card-border);
+    > .package-view {
+      border-top: 1px solid var(--c-border);
 
       &:last-child {
-        border-bottom: 1px solid var(--c-card-border);
+        border-bottom: 1px solid var(--c-border);
       }
     }
   }
 }
 
-html:not(.dark) {
-  .market-container > .card {
-    --shadow-left-1: 0 2px 4px hsl(250deg 40% 40% / 12%);
-    --shadow-left-2: 0 4px 8px hsl(250deg 40% 40% / 12%);
-    --shadow-left-3: 0 8px 16px hsl(250deg 40% 40% / 6%);
-    --shadow-left-4: 0 12px 24px hsl(250deg 40% 40% / 6%);
-    --shadow-right-1: 1px 2px 4px hsl(250deg 40% 40% / 12%);
-    --shadow-right-2: 2px 4px 8px hsl(250deg 40% 40% / 12%);
-    --shadow-right-3: 4px 8px 16px hsl(250deg 40% 40% / 6%);
-    --shadow-right-4: 6px 12px 24px hsl(250deg 40% 40% / 6%);
+html:not(.dark) .market-container > .card {
+  --shadow-left-1: 0 2px 4px hsl(250deg 40% 40% / 12%);
+  --shadow-left-2: 0 4px 8px hsl(250deg 40% 40% / 12%);
+  --shadow-left-3: 0 8px 16px hsl(250deg 40% 40% / 6%);
+  --shadow-left-4: 0 12px 24px hsl(250deg 40% 40% / 6%);
+  --shadow-right-1: 1px 2px 4px hsl(250deg 40% 40% / 12%);
+  --shadow-right-2: 2px 4px 8px hsl(250deg 40% 40% / 12%);
+  --shadow-right-3: 4px 8px 16px hsl(250deg 40% 40% / 6%);
+  --shadow-right-4: 6px 12px 24px hsl(250deg 40% 40% / 6%);
 
+  @media (min-width: $breakpoint) {
     box-shadow: var(--shadow-right-1), var(--shadow-right-2);
 
     &:hover {
       box-shadow: var(--shadow-right-3), var(--shadow-right-4);
     }
 
-    @media (min-width: $breakpoint) {
-      &:nth-child(2n) {
-        box-shadow: var(--shadow-left-1), var(--shadow-left-2);
+    &:nth-child(2n) {
+      box-shadow: var(--shadow-left-1), var(--shadow-left-2);
 
-        &:hover {
-          box-shadow: var(--shadow-left-3), var(--shadow-left-4);
-        }
+      &:hover {
+        box-shadow: var(--shadow-left-3), var(--shadow-left-4);
       }
+    }
+  }
+
+  &.search-box {
+    box-shadow: var(--shadow-right-1), var(--shadow-right-2);
+
+    &:hover {
+      box-shadow: var(--shadow-right-3), var(--shadow-right-4);
     }
   }
 }
