@@ -22,9 +22,6 @@
   "homepage": "https://koishi.js.org/plugins/rate-limit/",
   "keywords": [
     "bot",
-    "qqbot",
-    "cqhttp",
-    "coolq",
     "chatbot",
     "koishi",
     "plugin",

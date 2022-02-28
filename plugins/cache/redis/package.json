@@ -26,9 +26,6 @@
   "homepage": "https://koishi.js.org/api/cache/redis.html",
   "keywords": [
     "bot",
-    "qqbot",
-    "cqhttp",
-    "coolq",
     "chatbot",
     "koishi",
     "impl:cache",

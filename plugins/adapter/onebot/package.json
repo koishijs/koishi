@@ -25,6 +25,7 @@
     "coolq",
     "chatbot",
     "koishi",
+    "plugin",
     "impl:adapter"
   ],
   "peerDependencies": {
