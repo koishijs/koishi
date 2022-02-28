@@ -1,6 +1,6 @@
 {
   "name": "@koishijs/plugin-schedule",
-  "description": "Create scheduled tasks for Koishi",
+  "description": "Create Scheduled Tasks for Koishi",
   "version": "4.0.3",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",

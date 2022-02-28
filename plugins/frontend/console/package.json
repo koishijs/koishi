@@ -1,6 +1,6 @@
 {
   "name": "@koishijs/plugin-console",
-  "description": "A web user interface for Koishi",
+  "description": "Web User Interface for Koishi",
   "version": "3.2.1",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
