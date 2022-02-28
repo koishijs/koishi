@@ -10,23 +10,23 @@
     <div class="badge-container">
       <badge type="tip"
         v-if="data.official"
-        @click="$emit('update:query', 'is:official')"
+        @click="$emit('query', 'is:official')"
       >官方</badge>
       <badge type="primary"
         v-if="data.keywords.includes('impl:database')"
-        @click="$emit('update:query', 'impl:database')"
+        @click="$emit('query', 'impl:database')"
       >数据库</badge>
       <badge type="primary"
         v-if="data.keywords.includes('impl:adapter')"
-        @click="$emit('update:query', 'impl:adapter')"
+        @click="$emit('query', 'impl:adapter')"
       >适配器</badge>
       <badge type="primary"
         v-if="data.keywords.includes('impl:assets')"
-        @click="$emit('update:query', 'impl:assets')"
+        @click="$emit('query', 'impl:assets')"
       >资源存储</badge>
       <badge type="primary"
         v-if="data.keywords.includes('required:console') || data.keywords.includes('optional:console')"
-        @click="$emit('update:query', 'using:console')"
+        @click="$emit('query', 'using:console')"
       >控制台</badge>
     </div>
     <div class="footer">
@@ -65,7 +65,7 @@
 import { computed, PropType } from 'vue'
 import { AnalyzedPackage } from '@koishijs/pkg-utils'
 
-defineEmits(['update:query'])
+defineEmits(['query'])
 
 const props = defineProps({
   data: {} as PropType<AnalyzedPackage>,
@@ -84,59 +84,12 @@ const email = computed(() => props.data.author?.email)
 
 <style lang="scss">
 
-:root {
-  --c-card-bg: #ffffff;
-  --c-card-border: transparent;
-  --c-card-badge: #ffffff;
-}
-
-html.dark {
-  --c-card-bg: #1F1D26;
-  --c-card-border: var(--c-border);
-  --c-card-badge: var(--c-text);
-}
-
-html:not(.dark) {
-  .package-view {
-    --shadow-left-1: -1px 2px 4px hsl(250deg 40% 40% / 12%);
-    --shadow-left-2: -2px 4px 8px hsl(250deg 40% 40% / 12%);
-    --shadow-left-3: -4px 8px 16px hsl(250deg 40% 40% / 6%);
-    --shadow-left-4: -6px 12px 24px hsl(250deg 40% 40% / 6%);
-    --shadow-right-1: 2px 2px 4px hsl(250deg 40% 40% / 12%);
-    --shadow-right-2: 4px 4px 8px hsl(250deg 40% 40% / 12%);
-    --shadow-right-3: 8px 8px 16px hsl(250deg 40% 40% / 6%);
-    --shadow-right-4: 12px 12px 24px hsl(250deg 40% 40% / 6%);
-
-    &:nth-child(2n) {
-      box-shadow: var(--shadow-right-1), var(--shadow-right-2);
-    }
-
-    &:nth-child(2n + 1) {
-      box-shadow: var(--shadow-left-1), var(--shadow-left-2);
-    }
-
-    &:hover {
-      &:nth-child(2n) {
-        box-shadow: var(--shadow-right-3), var(--shadow-right-4);
-      }
-
-      &:nth-child(2n + 1) {
-        box-shadow: var(--shadow-left-3), var(--shadow-left-4);
-      }
-    }
-  }
-}
-
 .package-view {
   width: 100%;
   height: 12rem;
   display: flex;
   flex-direction: column;
-  border-radius: 8px;
   overflow: hidden;
-  background-color: var(--c-card-bg);
-  border: 1px solid var(--c-card-border);
-  transition: var(--color-transition);
 
   > * {
     padding: 0 1.5rem;
@@ -166,10 +119,6 @@ html:not(.dark) {
 
   .badge {
     cursor: pointer;
-    user-select: none;
-    padding: 2px 6px;
-    color: var(--c-card-badge);
-    font-weight: 500;
   }
 
   .badge.primary {
