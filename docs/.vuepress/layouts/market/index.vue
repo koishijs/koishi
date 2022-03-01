@@ -132,6 +132,12 @@ html.dark {
       border-radius: 8px;
       margin-top: 2rem;
     }
+
+    .package-view {
+      height: 12rem;
+      display: flex;
+      flex-direction: column;
+    }
   }
 
   > .search-box {
@@ -188,10 +194,15 @@ html.dark {
     }
 
     > .package-view {
+      padding: 0.25rem 0;
       border-top: 1px solid var(--c-border);
 
       &:last-child {
         border-bottom: 1px solid var(--c-border);
+      }
+
+      .badge-container {
+        margin: 1rem 0 1.25rem;
       }
     }
   }

@@ -81,9 +81,6 @@ const email = computed(() => props.data.author?.email)
 
 .package-view {
   width: 100%;
-  height: 12rem;
-  display: flex;
-  flex-direction: column;
   overflow: hidden;
 
   > * {
@@ -93,8 +90,6 @@ const email = computed(() => props.data.author?.email)
   .header {
     font-size: 1.3rem;
     font-weight: 500;
-    margin: 1.25rem 0 1rem;
-    flex-shrink: 0;
 
     .right {
       float: right;
@@ -109,8 +104,8 @@ const email = computed(() => props.data.author?.email)
     }
   }
 
-  .footer {
-    margin: 1.25rem 0;
+  .header, .footer {
+    margin: 1rem 0;
     flex-shrink: 0;
   }
 
