@@ -33,10 +33,12 @@ import PackageView from './package.vue'
 const words = reactive([''])
 
 function onEnter(event: KeyboardEvent) {
-  words[words.length - 1] = words[words.length - 1].trim()
-  if (words[words.length - 1]) {
-    words.push('')
+  const last = words[words.length - 1]
+  if (!last) return
+  if (words.slice(0, -1).includes(last)) {
+    words.pop()
   }
+  words.push('')
 }
 
 function onEscape(event: KeyboardEvent) {
@@ -52,7 +54,8 @@ function onBackspace(event: KeyboardEvent) {
 
 function onQuery(word: string) {
   if (!words[words.length - 1]) words.pop()
-  words.push(word, '')
+  if (!words.includes(word)) words.push(word)
+  words.push('')
 }
 
 function validate(data: AnalyzedPackage) {
@@ -161,6 +164,7 @@ html.dark {
   }
 
   .badge {
+    cursor: pointer;
     user-select: none;
     padding: 2px 6px;
     color: var(--c-card-badge);

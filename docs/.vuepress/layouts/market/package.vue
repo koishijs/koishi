@@ -124,10 +124,6 @@ const email = computed(() => props.data.author?.email)
     flex-grow: 1;
   }
 
-  .badge {
-    cursor: pointer;
-  }
-
   .badge.primary {
     background-color: var(--c-primary);
   }
