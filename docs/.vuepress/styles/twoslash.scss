@@ -61,6 +61,10 @@ pre.twoslash data-lsp:hover::before {
   z-index: 100;
 }
 
+pre .code-title {
+  display: none;
+}
+
 pre .code-container {
   overflow: auto;
 }
