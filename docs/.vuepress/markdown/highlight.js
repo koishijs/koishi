@@ -8,13 +8,18 @@ const cliAliases = ['npm', 'yarn']
 const twoslashSupportedList = ['ts', 'js', 'twoslash']
 const typeHeader = `
 import {
-  Schema,
-  Context,
+  App,
   Session,
+  Context,
   Service,
+  Schema,
   Argv,
   Awaitable
 } from 'koishi'
+
+const app = new App()
+const ctx = app
+const cmd = ctx.command()
 
 // ---cut---
 
