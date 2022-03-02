@@ -19,7 +19,7 @@ import {
 
 const app = new App()
 const ctx = app
-const cmd = ctx.command()
+const cmd = ctx.command('koishi-docs-preserve')
 
 // ---cut---
 
