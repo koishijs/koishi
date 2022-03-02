@@ -12,7 +12,8 @@ import {
   Context,
   Session,
   Service,
-  Argv
+  Argv,
+  Awaitable
 } from 'koishi'
 
 // ---cut---
