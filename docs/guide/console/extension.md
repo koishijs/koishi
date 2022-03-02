@@ -30,6 +30,7 @@ yarn add @koishijs/client @koishijs/plugin-console -D
 ```
 
 ```ts title="client/index.ts"
+// @koishiDocsNoHeader
 import { Context } from '@koishijs/client'
 import Page from './custom-page.vue'
 

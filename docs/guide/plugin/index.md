@@ -33,6 +33,7 @@ ctx.plugin({
 
 ::: code-group language example-plugin
 ```js
+// @koishiDocsNoHeader
 class ExamplePlugin {
   constructor(ctx, config) {
     // 你可以保存插件的上下文和选项
@@ -47,6 +48,7 @@ class ExamplePlugin {
 }
 ```
 ```ts
+// @koishiDocsNoHeader
 import { Context, Next, Session } from 'koishi'
 
 interface Config {}
@@ -84,6 +86,7 @@ class ExamplePlugin {
 
 ::: code-group language detect-space
 ```js
+// @koishiDocsNoHeader
 module.exports.name = 'detect-space'
 
 module.exports.apply = (ctx) => {
@@ -97,6 +100,7 @@ module.exports.apply = (ctx) => {
 }
 ```
 ```ts
+// @koishiDocsNoHeader
 import { Context } from 'koishi'
 
 export default function detectSpace(ctx: Context) {
@@ -117,6 +121,7 @@ Koishi 的插件也是可以嵌套的。你可以将你编写的插件解耦成�
 
 ::: code-group language nested-plugin
 ```js
+// @koishiDocsNoHeader
 // 在 a.js, b.js 中编写两个不同的插件
 const pluginA = require('./a')
 const pluginB = require('./b')
@@ -128,6 +133,7 @@ module.exports.apply = (ctx) => {
 }
 ```
 ```ts
+// @koishiDocsNoHeader
 // 在 a.ts, b.ts 中编写两个不同的插件
 import { Context } from 'koishi'
 import pluginA from './a'
@@ -151,6 +157,7 @@ Koishi 的许多插件都采用了这种写法，例如 [koishi-plugin-tools](ht
 
 ::: code-group language
 ```js
+// @koishiDocsNoHeader
 function callback(ctx, options) {
   // 编写你的插件逻辑
   ctx.on('message', eventCallback)
@@ -166,6 +173,7 @@ app.plugin(callback)
 app.dispose(callback)
 ```
 ```ts
+// @koishiDocsNoHeader
 import { Context } from 'koishi'
 
 function callback(ctx: Context, options) {
@@ -188,6 +196,7 @@ app.dispose(callback)
 
 ::: code-group language my-plugin
 ```js
+// @koishiDocsNoHeader
 module.exports = (ctx, options) => {
   const server = createServer()
 
@@ -203,6 +212,7 @@ module.exports = (ctx, options) => {
 }
 ```
 ```ts
+// @koishiDocsNoHeader
 import { Context } from 'koishi'
 
 export default function (ctx: Context, options) {

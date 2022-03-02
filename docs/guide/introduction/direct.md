@@ -163,6 +163,7 @@ app.middleware((session, next) => {
 
 ::: code-group language ping
 ```js
+// @koishiDocsNoHeader
 module.exports.name = 'ping'
 
 module.exports.apply = (ctx) => {
@@ -177,6 +178,7 @@ module.exports.apply = (ctx) => {
 }
 ```
 ```ts
+// @koishiDocsNoHeader
 import { Context } from 'koishi'
 
 export function apply(ctx: Context) {

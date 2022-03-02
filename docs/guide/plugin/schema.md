@@ -18,6 +18,7 @@ sidebarDepth: 2
 
 ::: code-group language
 ```js
+// @koishiDocsNoHeader
 const { Schema } = require('koishi')
 
 module.exports.name = 'example'
@@ -35,6 +36,7 @@ module.exports.apply = (ctx, config) => {
 }
 ```
 ```ts
+// @koishiDocsNoHeader
 import { Context, Schema } from 'koishi'
 
 export const name = 'example'

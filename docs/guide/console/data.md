@@ -11,6 +11,7 @@ sidebarDepth: 2
 后端代码：
 
 ```ts title="src/index.ts"
+// @koishiDocsNoHeader
 import { Context } from 'koishi'
 import { DataService } from '@koishijs/plugin-console'
 
@@ -48,6 +49,7 @@ export function apply(ctx: Context) {
 前端代码：
 
 ```ts title="client/index.ts"
+// @koishiDocsNoHeader
 import { Context } from '@koishijs/client'
 import Page from './custom-page.vue'
 
@@ -78,6 +80,7 @@ import { store } from '@koishijs/client'
 后端代码：
 
 ```ts title="src/index.ts"
+// @koishiDocsNoHeader
 import { Context } from 'koishi'
 import { DataService } from '@koishijs/plugin-console'
 
