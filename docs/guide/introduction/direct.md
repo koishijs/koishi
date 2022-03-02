@@ -40,6 +40,7 @@ yarn add koishi @koishijs/plugin-adapter-onebot @koishijs/plugin-echo
 
 ::: code-group language index
 ```js
+// @koishiDocsNoHeader
 const { App } = require('koishi')
 
 // 创建一个 Koishi 应用
@@ -59,6 +60,7 @@ app.plugin('echo')
 app.start()
 ```
 ```ts
+// @koishiDocsNoHeader
 import { App } from 'koishi'
 
 // 创建一个 Koishi 应用
