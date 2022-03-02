@@ -5,6 +5,17 @@ const { setupForFile, transformAttributesToHTML } = require('remark-shiki-twosla
 
 const cliAliases = ['npm', 'yarn']
 
+const twoslashSupportedList = ['ts', 'js', 'twoslash']
+const typeHeader = `
+import {
+  Schema,
+  Context
+} from 'koishi'
+
+// ---cut---
+
+`
+
 module.exports = {
   name: 'enhanced-highlight',
 
@@ -33,13 +44,26 @@ module.exports = {
       if (!lang) {
         return `<pre v-pre><code>${escapeHtml(code)}</code></pre>`
       }
-      if (lang === 'js' || lang === 'ts') {
-        code = code.replace(/\r?\n$/, '')
-        return transformAttributesToHTML(
-          code,
-          [lang, 'twoslash', attrs].join(' '),
-          twoslashHighlighters
-        )
+      try {
+        if (twoslashSupportedList.includes(lang)) {
+          let twoslashCode = code.includes('// @koishiDocsNoHeader')
+            ? code.replace('// @koishiDocsNoHeader', '')
+            : typeHeader + code
+          twoslashCode = twoslashCode.replace(/\r?\n$/, '')
+          return transformAttributesToHTML(
+            twoslashCode,
+            [lang, 'twoslash', attrs].join(' '),
+            twoslashHighlighters,
+            {}
+          )
+        }
+      } catch (e) {
+        console.log('Code block:')
+        console.log(e.code)
+        console.log()
+        console.log('Message:')
+        console.log(e.message)
+        console.log()
       }
       const h = lang === 'cli' || cliAliases.includes(lang) ? highlighter2 : highlighter1
       return h.codeToHtml(code, lang).replace('<pre', '<pre v-pre')
@@ -51,9 +75,8 @@ module.exports = {
       const token = tokens[index]
       if (!token.title) {
         const rawInfo = token.info || ''
-        const [langName, title = ''] = rawInfo.split(/\s+/)
-        token.info = langName
-        token.title = title.trim()
+        const titleExec = /title="(.*)"/g.exec(rawInfo)
+        token.title = titleExec && titleExec[1] ? titleExec[1] : ''
       }
       const rawCode = fence(...args)
       while ((temp = tokens[--index])?.type === 'fence');
@@ -62,7 +85,7 @@ module.exports = {
         return `<template #${token.info}>${rawCode}</template>`
       }
       let style = ''
-      if (token.info === 'cli') style += `; background-color: ${tomorrow.bg}`
+      if (token.info.startsWith('cli')) style += `; background-color: ${tomorrow.bg}`
       return `<panel-view class="code" title=${JSON.stringify(token.title)} style="${style.slice(2)}">${rawCode}</panel-view>`
     }
   },
