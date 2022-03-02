@@ -46,9 +46,13 @@ module.exports = {
       }
       try {
         if (twoslashSupportedList.includes(lang)) {
-          let twoslashCode = code.includes('// @koishiDocsNoHeader')
-            ? code.replace('// @koishiDocsNoHeader', '')
-            : typeHeader + code
+          let noHeader = false
+          if (code.includes('// @koishiDocsNoHeader')) {
+            noHeader = true
+            // Prevent flag escape
+            code = code.replace('// @koishiDocsNoHeader', '')
+          }
+          let twoslashCode = noHeader ? code : typeHeader + code
           twoslashCode = twoslashCode.replace(/\r?\n$/, '')
           return transformAttributesToHTML(
             twoslashCode,
