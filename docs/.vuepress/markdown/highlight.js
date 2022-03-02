@@ -1,6 +1,7 @@
 const { getHighlighter, loadTheme } = require('shiki')
 const { escapeHtml } = require('markdown-it/lib/common/utils')
 const { resolve } = require('path')
+const { setupForFile, transformAttributesToHTML } = require('remark-shiki-twoslash')
 
 const cliAliases = ['npm', 'yarn']
 
@@ -9,6 +10,10 @@ module.exports = {
 
   async extendsMarkdown(md) {
     const tomorrow = await loadTheme(resolve(__dirname, 'tomorrow.json'))
+
+    const { highlighters: twoslashHighlighters } = await setupForFile({
+      theme: 'monokai',
+    })
 
     const highlighter1 = await getHighlighter({
       theme: 'monokai',
@@ -24,9 +29,17 @@ module.exports = {
       }],
     })
 
-    md.options.highlight = (code, lang) => {
+    md.options.highlight = (code, lang, attrs) => {
       if (!lang) {
         return `<pre v-pre><code>${escapeHtml(code)}</code></pre>`
+      }
+      if (lang === 'js' || lang === 'ts') {
+        code = code.replace(/\r?\n$/, '')
+        return transformAttributesToHTML(
+          code,
+          [lang, 'twoslash', attrs].join(' '),
+          twoslashHighlighters
+        )
       }
       const h = lang === 'cli' || cliAliases.includes(lang) ? highlighter2 : highlighter1
       return h.codeToHtml(code, lang).replace('<pre', '<pre v-pre')
