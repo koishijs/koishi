@@ -141,7 +141,7 @@ app.plugin(require('@koishijs/plugin-echo'))
 
 现在让我们在上面的代码中添加一段自己的交互逻辑：
 
-```js index.js
+```js title="index.js"
 // 如果收到“天王盖地虎”，就回应“宝塔镇河妖”
 app.middleware((session, next) => {
   if (session.content === '天王盖地虎') {
@@ -220,7 +220,7 @@ yarn add @koishijs/plugin-database-mysql
 
 然后继续修改你的代码，在应用中配置 MySQL 数据库插件：
 
-```js index.js
+```js title="index.js"
 app.plugin('database-mysql', {
   host: '[your-host]',
   port: 3306,
@@ -236,7 +236,7 @@ app.plugin('database-mysql', {
 
 如果你要同时运行来自多个平台的机器人，你只需要同时安装着多个平台的适配器插件即可：
 
-```js index.js
+```js title="index.js"
 // 来自 onebot 适配器的机器人
 app.plugin('adapter-onebot', {
   protocol: 'ws',
@@ -253,7 +253,7 @@ app.plugin('adapter-discord', {
 
 如果你要同时运行来自同一个平台的多个机器人，只需将上述配置写进一个 `bots` 数组即可：
 
-```js index.js
+```js title="index.js"
 app.plugin('adapter-onebot', {
   bots: [{
     // 这里配置你的第一个机器人

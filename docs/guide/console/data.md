@@ -10,7 +10,7 @@ sidebarDepth: 2
 
 后端代码：
 
-```ts src/index.ts
+```ts title="src/index.ts"
 import { Context } from 'koishi'
 import { DataService } from '@koishijs/plugin-console'
 
@@ -47,7 +47,7 @@ export function apply(ctx: Context) {
 
 前端代码：
 
-```ts client/index.ts
+```ts title="client/index.ts"
 import { Context } from '@koishijs/client'
 import Page from './custom-page.vue'
 
@@ -77,7 +77,7 @@ import { store } from '@koishijs/client'
 
 后端代码：
 
-```ts src/index.ts
+```ts title="src/index.ts"
 import { Context } from 'koishi'
 import { DataService } from '@koishijs/plugin-console'
 
@@ -102,7 +102,7 @@ export function apply(ctx: Context) {
 }
 ```
 
-```vue client/custom-page.vue
+```vue title="client/custom-page.vue"
 <template>
   <k-card>{{ greeting }}</k-card>
 </template>
@@ -130,7 +130,7 @@ ctx.console.addListener('get-greeting', () => {
 }, { authority: 3 })
 ```
 
-```ts client/index.ts
+```ts title="client/index.ts"
 ctx.addPage({
   name: '页面标题',
   path: '/custom-page',

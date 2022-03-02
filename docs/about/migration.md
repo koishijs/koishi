@@ -102,6 +102,8 @@ sidebarDepth: 2
 - 新增了 [Schema API](./schema.md)，用于描述插件的配置项，下面是一个例子：
 
 ```ts
+// @errors: 2749
+
 export const name = 'foo'
 
 export const Config: Schema<Config> = Schema.object({
@@ -122,7 +124,9 @@ export function apply(ctx: Context, config: Config) {
 
 适配器现在通过插件的形式导入了：
 
-```ts koishi.config.ts
+```ts title="koishi.config.ts"
+// @errors: 2528
+
 // before
 export default {
   bots: [ /* 机器人配置项 */ ],
@@ -142,7 +146,7 @@ export default {
 
 同时我们也调整了一些机器人配置项，并支持了一些全新的特性。下面举一些例子：
 
-```ts koishi.config.ts
+```ts title="koishi.config.ts"
 export default {
   plugins: {
     onebot: {

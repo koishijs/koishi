@@ -12,7 +12,7 @@ sidebarDepth: 2
 
 一个消息段对象的结构如下：
 
-```js
+```ts
 interface segment {
   type: string
   data: Dict<string | number | boolean>
@@ -73,7 +73,7 @@ interface segment {
 
 将一段文本或其解析结果的所有消息段按照规则进行转换。转换规则的定义方式如下（若为字符串类型则一律将消息段转换为该字符串）：
 
-```js
+```ts
 type Transformer =
   | string
   | ((data: Dict<string>, index: number, chain: segment[]) => string)
@@ -86,7 +86,7 @@ type Transformer =
 
 与 [`segment.transform()`](#segment-transform-source-rules-dropothers) 类似但实现略有不同。未定义转换规则的消息段类型一律使用 [`segment()`](#segment-type-data) 的输出。
 
-```js
+```ts
 type AsyncTransformer =
   | string
   | ((data: Dict<string>, index: number, chain: segment[]) => Awaitable<string>)

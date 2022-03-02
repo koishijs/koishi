@@ -110,7 +110,10 @@ sidebarDepth: 2
 
 获取特定消息。
 
-```js
+```ts
+type AuthorInfo = any
+
+// ---cut---
 export interface MessageInfo {
   messageId: string
   subtype: 'private' | 'group'
@@ -154,7 +157,7 @@ export interface MessageInfo {
 
 获取机器人自己的信息。
 
-```js
+```ts
 export interface UserInfo {
   userId: string
   username: string
@@ -182,7 +185,7 @@ export interface UserInfo {
 
 获取群组信息。
 
-```js
+```ts
 export interface GuildInfo {
   guildId: string
   guildName: string
@@ -203,7 +206,15 @@ export interface GuildInfo {
 
 获取群成员信息。
 
-```js
+```ts
+// @koishiDocsNoHeader
+export interface UserInfo {
+  userId: string
+  username: string
+  avatar?: string
+}
+
+// ---cut---
 export interface GuildMemberInfo extends UserInfo {
   nickname: string
 }
@@ -230,7 +241,7 @@ export interface GuildMemberInfo extends UserInfo {
 
 获取频道信息。
 
-```js
+```ts
 export interface ChannelInfo {
   channelId: string
   channelName: string

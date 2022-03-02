@@ -82,7 +82,7 @@ sidebarDepth: 2
 
 创建一个 WebSocketClient 适配器实例。
 
-```js
+```ts
 export interface WebSocketClientOptions {
   retryLazy?: number
   retryTimes?: number

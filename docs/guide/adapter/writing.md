@@ -175,7 +175,7 @@ Adapter.types['another-adapter'] = MyAdapter2
 
 如果你嫌 onebot:http, onebot:ws 的写法太麻烦，不如试试下面的写法：
 
-```js koishi.config.js
+```js title="koishi.config.js"
 module.exports = {
   type: 'onebot',
   server: 'ws://localhost:6700',

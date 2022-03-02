@@ -65,7 +65,7 @@ sidebarDepth: 2
 
 这个数据类型将被用于 [`userFields`](./config.md#userfield) 等配置项，以及扩展功能的 manifest.yml 中。其中 readable 表示可读的字段，writable 表示可写的字段。如果直接传入一个数组，则表示所有这些字段都是只读的。
 
-```js
+```ts
 export interface AccessObject<T> {
   readable?: T[]
   writable?: T[]

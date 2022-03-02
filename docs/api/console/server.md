@@ -8,7 +8,7 @@ sidebarDepth: 2
 
 你可以使用 `console.addEntry()` 方法添加入口文件。下面是一个例子：
 
-```js my-plugin.js
+```js title="my-plugin.js"
 const { resolve } = require(path)
 
 module.exports = (ctx) => {
@@ -18,7 +18,7 @@ module.exports = (ctx) => {
 }
 ```
 
-```js client-entry.js
+```js title="client-entry.js"
 console.log(window) // 你现在可以操作客户端了！
 ```
 
@@ -26,7 +26,7 @@ console.log(window) // 你现在可以操作客户端了！
 
 调试模式将允许你使用 SFC, HMR 等特性，便于开发自己的功能。
 
-```js src/index.js
+```js title="src/index.js"
 const { resolve } = require(path)
 
 module.exports = (ctx) => {
@@ -41,7 +41,7 @@ module.exports = (ctx) => {
 }
 ```
 
-```js client/index.ts
+```js title="client/index.ts"
 // 支持 typescript 和 esmodule，同时这里也有类型标注
 import { router } from 'koishi-plugin-console/client'
 import MyPage from './my-page.vue'

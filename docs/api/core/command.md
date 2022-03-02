@@ -32,7 +32,7 @@ Argv 对象会作为 `cmd.action()`, `cmd.userFields()` 等方法的回调函数
 
 为指令添加一个选项。
 
-```js
+```ts
 type DomainType = string | RegExp | ((source: string) => any)
 ```
 
@@ -65,7 +65,7 @@ type DomainType = string | RegExp | ((source: string) => any)
 
 为指令添加执行函数。
 
-```js
+```ts
 type Awaitable<T> = T extends Promise<unknown> ? T : T | Promise<T>
 type CommandAction = (argv: Argv, ...args: any[]) => Awaitable<string | void>
 ```
@@ -86,7 +86,7 @@ type CommandAction = (argv: Argv, ...args: any[]) => Awaitable<string | void>
 如果指令需要用到用户数据，你可以提前声明，这样有助于合并多次请求，从而提高性能。
 参见[按需加载](../../guide/manage.md#声明所需字段)章节。
 
-```js
+```ts
 type FieldCollector<K extends string> =
   | Iterable<K>
   | ((argv: Argv, fields: Set<K>) => void)

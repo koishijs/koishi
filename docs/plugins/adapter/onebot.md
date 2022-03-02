@@ -105,7 +105,7 @@ apt install -y ffmpeg
 
 ```cli
 # Centos7 及之前
-yum install ffmpeg ffmpeg-devel 
+yum install ffmpeg ffmpeg-devel
 
 # CentOS8 及之后
 dnf install ffmpeg ffmpeg-devel
@@ -150,7 +150,7 @@ dnf install ffmpeg ffmpeg-devel
 
 首先下面的配置是与通信方式无关的：
 
-```yaml config.yml
+```yaml title="config.yml"
 account:
   uin: 123456     # 必填，QQ 账号
   password: ''    # 推荐，密码为空时将使用扫码登录
@@ -160,7 +160,7 @@ account:
 
 ### HTTP
 
-```yaml config.yml
+```yaml title="config.yml"
 servers:
   - http:
       host: 127.0.0.1
@@ -197,7 +197,7 @@ export default {
 
 ### 正向 WebSocket
 
-```yaml config.yml
+```yaml title="config.yml"
 servers:
   - ws:
       host: 127.0.0.1
@@ -227,7 +227,7 @@ export default {
 
 ### 反向 WebSocket
 
-```yaml config.yml
+```yaml title="config.yml"
 servers:
   - ws-reverse:
       universal: ws://127.0.0.1:8080/onebot
@@ -256,7 +256,7 @@ export default {
 
 ### 配置 `path` 和 `selfUrl`
 
-```yaml config.yml
+```yaml title="config.yml"
 servers:
   # 这里同时列出了 http 和 ws-reverse 中需要做的修改
   # 实际情况下你可能只需要用到其中一份配置
@@ -375,7 +375,7 @@ export default {
 
 ### QQ 频道 API <Badge type="warning" text="meta"/>
 
-- [`onebot.getGuildServiceProfile()`](https://github.com/Mrs4s/go-cqhttp/blob/master/docs/guild.md#获取频道系统内BOT的资料) 获取频道系统内 BOT 的资料 
+- [`onebot.getGuildServiceProfile()`](https://github.com/Mrs4s/go-cqhttp/blob/master/docs/guild.md#获取频道系统内BOT的资料) 获取频道系统内 BOT 的资料
 - [`onebot.getGuildList()`](https://github.com/Mrs4s/go-cqhttp/blob/master/docs/guild.md#获取频道列表) 获取频道列表
 - [`onebot.getGuildMetaByGuest()`](https://github.com/Mrs4s/go-cqhttp/blob/master/docs/guild.md#通过访客获取频道元数据) 通过访客获取频道元数据
 - [`onebot.getGuildChannelList()`](https://github.com/Mrs4s/go-cqhttp/blob/master/docs/guild.md#获取子频道列表) 获取子频道列表

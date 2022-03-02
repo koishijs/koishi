@@ -6,7 +6,7 @@ sidebarDepth: 2
 
 @koishijs/plugin-verifier 可用于配置机器人接收到各类申请时的行为。
 
-```js koishi.config.js
+```js title="koishi.config.js"
 module.exports = {
   plugins: {
     verifier: {

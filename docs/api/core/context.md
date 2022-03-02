@@ -202,7 +202,7 @@ ctx.router.get('/path', (ctx, next) => {
 
 当前上下文中安装一个插件。
 
-```js
+```ts
 type PluginFunction<U> = (ctx: Context, options: U) => void
 type PluginObject<U> = { apply: PluginFunction<T, U> }
 type Plugin<U> = PluginFunction<T, U> | PluginObject<T, U>

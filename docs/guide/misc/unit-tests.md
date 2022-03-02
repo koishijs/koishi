@@ -64,7 +64,7 @@ yarn add typescript ts-node @types/node @types/mocha @types/chai -D
 
 接着编辑你的 `.mocharc.js` 文件：
 
-```js .mocharc.js
+```js title=".mocharc.js"
 module.exports = {
   extension: ['ts'],
   require: [

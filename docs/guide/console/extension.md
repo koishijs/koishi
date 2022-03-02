@@ -29,7 +29,7 @@ yarn add @koishijs/client @koishijs/plugin-console -D
     └── tsconfig.json
 ```
 
-```ts client/index.ts
+```ts title="client/index.ts"
 import { Context } from '@koishijs/client'
 import Page from './custom-page.vue'
 
@@ -44,13 +44,13 @@ export default (ctx: Context) => {
 }
 ```
 
-```vue client/custom-page.vue
+```vue title="client/custom-page.vue"
 <template>
   <k-card>扩展内容</k-card>
 </template>
 ```
 
-```json client/tsconfig.json
+```json title="client/tsconfig.json"
 {
   "compilerOptions": {
     "rootDir": ".",
@@ -68,7 +68,7 @@ export default (ctx: Context) => {
 
 接着修改你的入口文件：
 
-```ts src/index.ts
+```ts title="src/index.ts"
 import { resolve } from 'path'
 
 export const name = 'my-plugin'
@@ -101,7 +101,7 @@ plugins:
 
 调试好你的扩展后，下一步就是构建了。修改你的 package.json：
 
-```json package.json
+```json title="package.json"
 {
   "files": [
     "lib",    // 我们假设 src 目录编译到 lib 目录
