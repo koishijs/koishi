@@ -43,21 +43,29 @@ export default class Loader {
   readonly: boolean
 
   constructor() {
-    const basename = 'koishi.config'
     if (process.env.KOISHI_CONFIG_FILE) {
       this.filename = resolve(cwd, process.env.KOISHI_CONFIG_FILE)
       this.extname = extname(this.filename)
-      this.dirname = cwd = dirname(this.filename)
+      cwd = dirname(this.filename)
     } else {
-      const files = readdirSync(cwd)
-      this.extname = supportedExts.find(ext => files.includes(basename + ext))
-      if (!this.extname) {
-        throw new Error(`config file not found`)
-      }
-      this.dirname = cwd
-      this.filename = cwd + '/' + basename + this.extname
+      this.findConfig()
     }
+    this.dirname = cwd
     this.readonly = !writableExts.includes(this.extname)
+  }
+
+  findConfig() {
+    const files = readdirSync(cwd)
+    for (const basename of ['koishi.config', 'koishi']) {
+      for (const extname of supportedExts) {
+        if (files.includes(basename + extname)) {
+          this.extname = extname
+          this.filename = cwd + '/' + basename + extname
+          return
+        }
+      }
+    }
+    throw new Error(`config file not found`)
   }
 
   interpolate(source: any) {
