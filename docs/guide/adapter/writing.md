@@ -49,6 +49,7 @@ class Bot {
 
 ::: code-group language adapter
 ```js
+// @koishiDocsNoHeader
 const { Adapter, Bot, Session } = require('koishi')
 
 class MyBot extends Bot {
@@ -78,7 +79,8 @@ class MyAdapter extends Adapter {
 Adapter.types['my-adapter'] = MyAdapter
 ```
 ```ts
-import { Adapter, Bot, Session } from 'koishi'
+// @koishiDocsNoHeader
+import { App, Adapter, Bot, Session } from 'koishi'
 
 class MyBot extends Bot {
   async sendMessage(channelId: string, content: string) {

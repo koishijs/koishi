@@ -9,7 +9,10 @@ const twoslashSupportedList = ['ts', 'js', 'twoslash']
 const typeHeader = `
 import {
   Schema,
-  Context
+  Context,
+  Session,
+  Service,
+  Argv
 } from 'koishi'
 
 // ---cut---

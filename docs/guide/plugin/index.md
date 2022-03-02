@@ -134,6 +134,8 @@ module.exports.apply = (ctx) => {
 ```
 ```ts
 // @koishiDocsNoHeader
+// @errors: 2307
+
 // 在 a.ts, b.ts 中编写两个不同的插件
 import { Context } from 'koishi'
 import pluginA from './a'
@@ -180,7 +182,7 @@ function callback(ctx: Context, options) {
   // 编写你的插件逻辑
   ctx.on('message', eventCallback)
   ctx.command('foo').action(commandCallback)
-  ctx.middleware(middlewareCallback)  
+  ctx.middleware(middlewareCallback)
   ctx.plugin(require('another-plugin'))
 }
 

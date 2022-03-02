@@ -213,9 +213,7 @@ declare module 'koishi' {
 
 相比直接赋值，我们更推荐你从 Service 派生子类来实现自定义服务：
 
-```js
-import { Service } from 'koishi'
-
+```ts
 class Console extends Service {
   constructor(ctx: Context) {
     // 这样写你就不需要手动给 ctx 赋值了
@@ -256,7 +254,7 @@ app.console                 // truthy
 
 既然服务的作用是提供接口供其他插件调用，就自然会涉及一个热重载的问题。如果某个插件先调用了服务上的方法，然后被卸载，那么我们就需要处理调用所带来的副作用。让我们来看一段 console 插件的源码：
 
-```js
+```ts
 class Console extends Service {
   // 这个方法的作用是添加入口文件
   addEntry(filename: string) {
@@ -276,7 +274,7 @@ class Console extends Service {
 ::: tip
 需要注意的是，这里的 `caller` 属性仅仅会在调用时进行赋值，因此如果你要提供的接口是异步的，那么请在一开始保存这个上下文的引用，因为它可能在后续的异步操作中被修改。下面的两种写法都是可以的：
 
-```js
+```ts
 class Console extends Service {
   async addEntry(filename: string) {
     // 预先保存一下 caller，因为后面有异步操作
@@ -292,7 +290,7 @@ class Console extends Service {
 }
 ```
 
-```js
+```ts
 class Console extends Service {
   async addEntry(filename: string) {
     this.caller.on('dispose', async () => {

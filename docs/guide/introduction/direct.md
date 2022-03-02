@@ -196,10 +196,26 @@ export function apply(ctx: Context) {
 
 ::: code-group language
 ```js
+// @koishiDocsNoHeader
+// @errors: 2307
+
+import { App } from 'koishi'
+
+const app = new App({})
+
+// ---cut---
 // 这里的 ./ping 是相对于 index.js 的路径
 app.plugin(require('./ping'))
 ```
 ```ts
+// @koishiDocsNoHeader
+// @errors: 2307
+
+import { App } from 'koishi'
+
+const app = new App({})
+
+// ---cut---
 // 这里的 ./ping 是相对于 index.js 的路径
 import * as ping from './ping'
 

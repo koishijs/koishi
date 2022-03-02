@@ -84,7 +84,7 @@ const { App } = require('koishi')
 require('@koishijs/plugin-onebot')
 require('@koishijs/plugin-kaiheila')
 
-new App({ /* 同上述配置 */ })
+const app = new App({ /* 同上述配置 */ })
 
 // 启动应用
 app.start()
@@ -96,7 +96,7 @@ import { App } from 'koishi'
 import '@koishijs/plugin-onebot'
 import '@koishijs/plugin-kaiheila'
 
-new App({ /* 同上述配置 */ })
+const app = new App({ /* 同上述配置 */ })
 
 // 启动应用
 app.start()

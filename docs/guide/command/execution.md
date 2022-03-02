@@ -42,6 +42,12 @@ echo hello
 你可以为一条指令添加别名：
 
 ```js
+// @koishiDocsNoHeader
+import { App } from 'koishi'
+
+const app = new App({})
+
+// ---cut---
 app.command('echo').alias('say')
 ```
 

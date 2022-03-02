@@ -73,7 +73,8 @@ module.exports = (ctx) => {
 
 上面的这个 Logger 对象有下面的方法，它们的函数签名与 `console.log` 一致：
 
-```js
+```ts
+// @koishiDocsNoHeader
 export interface Logger {
   warn(format: any, ...param: any[]): void
   info(format: any, ...param: any[]): void
