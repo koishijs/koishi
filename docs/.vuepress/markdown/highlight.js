@@ -41,6 +41,7 @@ module.exports = {
     md.renderer.rules.fence = (...args) => {
       let [tokens, index] = args, temp
       const token = tokens[index]
+      if (args[3].frontmatter.noTwoslash) token.info += ' no-twoslash'
       if (!token.title) {
         const rawInfo = token.info || ''
         let titleMatch = rawInfo

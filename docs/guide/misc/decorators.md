@@ -1,5 +1,6 @@
 ---
 sidebarDepth: 2
+noTwoslash: true
 ---
 
 # 使用装饰器 <Badge text="社区" type="warning"/>
@@ -10,7 +11,7 @@ sidebarDepth: 2
 
 [koishi-thirdeye](https://www.npmjs.com/package/koishi-thirdeye) 允许你使用类装饰器开发 Koishi 插件。下面是一个一目了然的例子：
 
-```ts no-extra-header
+```ts
 import { RegisterSchema, DefinePlugin, SchemaProperty, CommandUsage, PutOption, UseCommand, LifecycleEvents, KoaContext, UseMiddleware, UseEvent, Get } from 'koishi-thirdeye';
 import { Context, Session } from 'koishi';
 
@@ -214,7 +215,7 @@ export class Config {
 
 正如最开始的例子一样，我们可以使用以 `Use` 开头的装饰器进行事件和中间件的注册监听。
 
-```ts no-extra-header
+```ts
 import {
   DefinePlugin,
   SchemaProperty,
