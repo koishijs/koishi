@@ -205,8 +205,6 @@ const app = new App({})
 app.plugin(require('./ping'))
 ```
 ```ts no-extra-header
-// @errors: 2307
-
 import { App } from 'koishi'
 
 const app = new App({})
