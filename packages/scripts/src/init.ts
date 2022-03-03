@@ -1,8 +1,8 @@
 import { CAC } from 'cac'
 import { copyFile, mkdir, readFile, readJson, writeFile, writeJson } from 'fs-extra'
 import { resolve } from 'path'
-import { getAgent } from '@koishijs/cli'
 import { config, cwd, meta, PackageJson } from './utils'
+import which from 'which-pm-runs'
 import spawn from 'cross-spawn'
 import prompts from 'prompts'
 
@@ -16,10 +16,8 @@ class Initiator {
   constructor(private options: Options) {}
 
   async start(name: string) {
-    const [agent] = await Promise.all([
-      getAgent(),
-      this.init(name),
-    ])
+    const agent = which().name
+    await this.init(name)
     const args: string[] = agent === 'yarn' ? [] : ['install']
     spawn.sync(agent, args, { stdio: 'inherit' })
   }

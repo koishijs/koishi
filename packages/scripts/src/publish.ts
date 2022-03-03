@@ -1,8 +1,8 @@
 import { cwd, exit, getPackages, PackageJson, spawnAsync } from './utils'
-import { Agent, getAgent } from '@koishijs/cli'
 import { gt, prerelease } from 'semver'
 import { copyFile, writeFile } from 'fs-extra'
 import { CAC } from 'cac'
+import which from 'which-pm-runs'
 import latest from 'latest-version'
 import ora from 'ora'
 import prompts from 'prompts'
@@ -21,7 +21,7 @@ function isNext(version: string) {
   return parts[0] !== 'rc'
 }
 
-function publish(agent: Agent, path: string, name: string, version: string, tag: string) {
+function publish(agent: string, path: string, name: string, version: string, tag: string) {
   console.log(`publishing ${name}@${version} ...`)
   return spawnAsync([
     agent, 'publish', path.slice(1),
@@ -36,7 +36,6 @@ export default function (cli: CAC) {
     .action(async (names: string[], options) => {
       const packages: Record<string, PackageJson> = {}
       const spinner = ora()
-      const agentTask = getAgent()
       if (names.length) {
         Object.assign(packages, await getPackages(names))
         const pending = Object.keys(packages).filter(path => packages[path].private)
@@ -71,7 +70,7 @@ export default function (cli: CAC) {
         spinner.succeed()
       }
 
-      const agent = await agentTask
+      const agent = which().name
       for (const path in packages) {
         const { name, version } = packages[path]
         if (name === 'koishi') {

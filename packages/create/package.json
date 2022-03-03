@@ -28,7 +28,8 @@
   ],
   "devDependencies": {
     "@types/cross-spawn": "^6.0.2",
-    "@types/tar": "^6.1.1"
+    "@types/tar": "^6.1.1",
+    "@types/which-pm-runs": "^1.0.0"
   },
   "dependencies": {
     "axios": "^0.24.0",
@@ -36,6 +37,7 @@
     "kleur": "^4.1.4",
     "prompts": "^2.4.2",
     "tar": "^6.1.11",
+    "which-pm-runs": "^1.1.0",
     "yargs-parser": "^21.0.0"
   }
 }

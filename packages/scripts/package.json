@@ -30,13 +30,13 @@
     "koishi"
   ],
   "peerDependencies": {
-    "@koishijs/cli": "^4.3.3",
     "@koishijs/client": "^3.2.1"
   },
   "devDependencies": {
     "@types/cross-spawn": "^6.0.2",
     "@types/fs-extra": "^9.0.13",
-    "@types/semver": "^7.3.9"
+    "@types/semver": "^7.3.9",
+    "@types/which-pm-runs": "^1.0.0"
   },
   "dependencies": {
     "cac": "^6.7.12",
@@ -47,6 +47,7 @@
     "latest-version": "^5.1.0",
     "ora": "^5.4.1",
     "prompts": "^2.4.2",
-    "semver": "^7.3.5"
+    "semver": "^7.3.5",
+    "which-pm-runs": "^1.1.0"
   }
 }

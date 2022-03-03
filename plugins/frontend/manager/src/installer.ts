@@ -2,8 +2,8 @@ import { clone, Context, Dict, Logger } from 'koishi'
 import { DataService } from '@koishijs/plugin-console'
 import { resolve } from 'path'
 import { promises as fsp } from 'fs'
-import { getAgent } from '@koishijs/cli'
 import { Package } from './utils'
+import which from 'which-pm-runs'
 import spawn from 'cross-spawn'
 
 declare module '@koishijs/plugin-console' {
@@ -86,10 +86,8 @@ class Installer extends DataService<Dict<string>> {
   }
 
   installDep = async (deps: Dict<string>) => {
-    const [agent, meta] = await Promise.all([
-      getAgent(),
-      this.override(deps),
-    ])
+    const agent = which().name
+    const meta = await this.override(deps)
     const args: string[] = agent === 'yarn' ? [] : ['install']
     const code = await this.exec(agent, args)
     if (!code) {

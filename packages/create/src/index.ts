@@ -4,6 +4,7 @@ import parse from 'yargs-parser'
 import prompts from 'prompts'
 import spawn from 'cross-spawn'
 import axios from 'axios'
+import which from 'which-pm-runs'
 import { blue, bold, dim, green, red, yellow } from 'kleur'
 import { basename, join, relative } from 'path'
 import { extract } from 'tar'
@@ -22,9 +23,6 @@ const argv = parse(process.argv.slice(2), {
   },
 })
 
-const { npm_execpath: execpath = '' } = process.env
-const isYarn = execpath.includes('yarn')
-const hasPnpm = !isYarn && supports('pnpm', ['--version'])
 const hasGit = supports('git', ['--version'])
 
 function supports(command: string, args: string[] = []) {
@@ -128,22 +126,8 @@ async function initGit() {
   console.log(green('  Done.\n'))
 }
 
-async function getAgent() {
-  if (isYarn) return 'yarn'
-  const agents = ['npm']
-  if (await hasPnpm) agents.push('pnpm')
-  if (agents.length === 1) return agents[0]
-  const { agent } = await prompts({
-    type: 'select',
-    name: 'agent',
-    message: 'Choose a package manager:',
-    choices: agents.map((agent) => ({ title: agent, value: agent })),
-  })
-  return agent as string
-}
-
 async function install() {
-  const agent = await getAgent()
+  const agent = which().name
 
   const yes = await confirm('Install and start it now?')
   if (yes) {
