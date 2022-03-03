@@ -25,15 +25,15 @@ export default class ConfigLoader<T> {
         }
       } else {
         this.dirname = filename
-        this.findConfigFile()
+        this.findConfig()
       }
     } else {
-      this.findConfigFile()
+      this.findConfig()
     }
     this.writable = writableExts.includes(this.extname)
   }
 
-  private findConfigFile() {
+  private findConfig() {
     const files = readdirSync(this.dirname)
     for (const basename of ['koishi.config', 'koishi']) {
       for (const extname of supportedExts) {
@@ -47,7 +47,7 @@ export default class ConfigLoader<T> {
     throw new Error('config file not found')
   }
 
-  loadConfig() {
+  readConfig() {
     if (['.yaml', '.yml'].includes(this.extname)) {
       this.config = yaml.load(readFileSync(this.filename, 'utf8')) as any
     } else if (['.json'].includes(this.extname)) {
@@ -57,6 +57,7 @@ export default class ConfigLoader<T> {
       const module = require(this.filename)
       this.config = module.default || module
     }
+    return this.config
   }
 
   writeConfig() {

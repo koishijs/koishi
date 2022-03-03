@@ -119,8 +119,7 @@ class Watcher {
     // use original config
     const { loader } = this.ctx
     const oldConfig = loader.config
-    loader.loadConfig()
-    const newConfig = loader.config
+    const newConfig = loader.readConfig()
 
     // check non-plugin changes
     const merged = { ...oldConfig, ...newConfig }

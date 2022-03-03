@@ -42,7 +42,7 @@ process.on('unhandledRejection', (error) => {
 })
 
 const loader = new Loader()
-const config = loader.loadConfig()
+const config = loader.readConfig()
 
 logger.prepare(config.logger)
 

@@ -49,20 +49,20 @@ export default class Loader extends ConfigLoader<App.Config> {
     }
   }
 
-  loadConfig(): App.Config {
+  readConfig() {
     // load .env file into process.env
     dotenv.config({
       path: resolve(this.dirname, '.env'),
     })
 
     // load original config file
-    super.loadConfig()
+    const config = super.readConfig()
 
-    let resolved = new App.Config(this.config)
+    let resolved = new App.Config(config)
     if (this.writable) {
       // schemastery may change original config
       // so we need to validate config twice
-      resolved = new App.Config(this.interpolate(this.config))
+      resolved = new App.Config(this.interpolate(config))
     }
 
     return resolved
