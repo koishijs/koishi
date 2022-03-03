@@ -1,39 +1,15 @@
 const { getHighlighter, loadTheme } = require('shiki')
 const { escapeHtml } = require('markdown-it/lib/common/utils')
 const { resolve } = require('path')
-const { setupForFile, transformAttributesToHTML } = require('remark-shiki-twoslash')
+const { twoslash } = require('./twoslash')
 
 const cliAliases = ['npm', 'yarn']
-
-const twoslashSupportedList = ['ts', 'js', 'twoslash']
-const typeHeader = `
-import {
-  App,
-  Session,
-  Context,
-  Service,
-  Schema,
-  Argv,
-  Awaitable
-} from 'koishi'
-
-const app = new App()
-const ctx = app
-const cmd = ctx.command('koishi-docs-preserve')
-
-// ---cut---
-
-`
 
 module.exports = {
   name: 'enhanced-highlight',
 
   async extendsMarkdown(md) {
     const tomorrow = await loadTheme(resolve(__dirname, 'tomorrow.json'))
-
-    const { highlighters: twoslashHighlighters } = await setupForFile({
-      theme: 'monokai',
-    })
 
     const highlighter1 = await getHighlighter({
       theme: 'monokai',
@@ -53,31 +29,8 @@ module.exports = {
       if (!lang) {
         return `<pre v-pre><code>${escapeHtml(code)}</code></pre>`
       }
-      try {
-        if (twoslashSupportedList.includes(lang)) {
-          let noHeader = false
-          if (code.includes('// @koishiDocsNoHeader')) {
-            noHeader = true
-            // Prevent flag escape
-            code = code.replace('// @koishiDocsNoHeader', '')
-          }
-          let twoslashCode = noHeader ? code : typeHeader + code
-          twoslashCode = twoslashCode.replace(/\r?\n$/, '')
-          return transformAttributesToHTML(
-            twoslashCode,
-            [lang, 'twoslash', attrs].join(' '),
-            twoslashHighlighters,
-            {}
-          )
-        }
-      } catch (e) {
-        console.log('Code block:')
-        console.log(e.code)
-        console.log()
-        console.log('Message:')
-        console.log(e.message)
-        console.log()
-      }
+      const twoslashHtml = twoslash(code, lang, attrs)
+      if (twoslashHtml) return twoslashHtml
       const h = lang === 'cli' || cliAliases.includes(lang) ? highlighter2 : highlighter1
       return h.codeToHtml(code, lang).replace('<pre', '<pre v-pre')
     }
@@ -88,8 +41,15 @@ module.exports = {
       const token = tokens[index]
       if (!token.title) {
         const rawInfo = token.info || ''
-        const titleExec = /title="(.*)"/g.exec(rawInfo)
-        token.title = titleExec && titleExec[1] ? titleExec[1] : ''
+        let titleMatch = rawInfo
+          .split(' ')
+          .filter((x) => x.startsWith('title='))
+        if (titleMatch) {
+          titleMatch = titleMatch[0]
+          if (titleMatch.startsWith('title="') && titleMatch.endsWith('"'))
+            token.title = /title="(.*)"/g.exec(rawInfo)[1]
+          else token.title = /title=(.*)/g.exec(rawInfo)[1]
+        }
       }
       const rawCode = fence(...args)
       while ((temp = tokens[--index])?.type === 'fence');
