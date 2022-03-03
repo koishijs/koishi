@@ -32,8 +32,7 @@ ctx.plugin({
 由于 JavaScript 中类本身也是一种函数，因此我们也可以将插件写成类的形式。
 
 ::: code-group language example-plugin
-```js
-// @koishiDocsNoHeader
+```js no-extra-header
 class ExamplePlugin {
   constructor(ctx, config) {
     // 你可以保存插件的上下文和选项
@@ -47,8 +46,7 @@ class ExamplePlugin {
   callback(session, next) {}
 }
 ```
-```ts
-// @koishiDocsNoHeader
+```ts no-extra-header
 import { Context, Next, Session } from 'koishi'
 
 interface Config {}
@@ -85,8 +83,7 @@ class ExamplePlugin {
 例如，下面给出了一个插件的例子，它实现了检测说话带空格的功能：
 
 ::: code-group language detect-space
-```js
-// @koishiDocsNoHeader
+```js no-extra-header
 module.exports.name = 'detect-space'
 
 module.exports.apply = (ctx) => {
@@ -99,8 +96,7 @@ module.exports.apply = (ctx) => {
   })
 }
 ```
-```ts
-// @koishiDocsNoHeader
+```ts no-extra-header
 import { Context } from 'koishi'
 
 export default function detectSpace(ctx: Context) {
@@ -120,8 +116,7 @@ export default function detectSpace(ctx: Context) {
 Koishi 的插件也是可以嵌套的。你可以将你编写的插件解耦成多个独立的子插件，再用一个父插件作为入口，就像这样：
 
 ::: code-group language nested-plugin
-```js
-// @koishiDocsNoHeader
+```js no-extra-header
 // 在 a.js, b.js 中编写两个不同的插件
 const pluginA = require('./a')
 const pluginB = require('./b')
@@ -132,8 +127,7 @@ module.exports.apply = (ctx) => {
   ctx.plugin(pluginB)
 }
 ```
-```ts
-// @koishiDocsNoHeader
+```ts no-extra-header
 // @errors: 2307
 
 // 在 a.ts, b.ts 中编写两个不同的插件
@@ -158,8 +152,7 @@ Koishi 的许多插件都采用了这种写法，例如 [koishi-plugin-tools](ht
 通常来说一个插件的效应应该是永久的，但如果你想在运行时卸载一个插件，应该怎么做？你可以使用 `ctx.dispose()` 方法来解决：
 
 ::: code-group language
-```js
-// @koishiDocsNoHeader
+```js no-extra-header
 function callback(ctx, options) {
   // 编写你的插件逻辑
   ctx.on('message', eventCallback)
@@ -174,8 +167,7 @@ app.plugin(callback)
 // 卸载这个插件，取消上面的全部操作
 app.dispose(callback)
 ```
-```ts
-// @koishiDocsNoHeader
+```ts no-extra-header
 import { Context } from 'koishi'
 
 function callback(ctx: Context, options) {
@@ -197,8 +189,7 @@ app.dispose(callback)
 看起来很神奇，不过它的实现方式也非常简单。当一个插件被注册时，Koishi 会记录注册过程中定义的所有事件钩子、指令、中间件乃至子插件。当 `ctx.dispose()` 被调用时，再逐一取消上述操作的效应。因此，它的局限性也很明显：它并不能妥善处理除了 Context API 以外的**副作用**。不过，我们也准备了额外的解决办法：
 
 ::: code-group language my-plugin
-```js
-// @koishiDocsNoHeader
+```js no-extra-header
 module.exports = (ctx, options) => {
   const server = createServer()
 
@@ -213,8 +204,7 @@ module.exports = (ctx, options) => {
   })
 }
 ```
-```ts
-// @koishiDocsNoHeader
+```ts no-extra-header
 import { Context } from 'koishi'
 
 export default function (ctx: Context, options) {

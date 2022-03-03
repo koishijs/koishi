@@ -45,7 +45,7 @@ Koishi 工作区原生地支持 TypeScript 开发。上面的两组 `-r` 参数�
 
 这里的行为也可以在配置文件中进行定制：
 
-```yaml title="koishi.config.yml"
+```yaml title=koishi.config.yml
 watch:
   # 要忽略的文件列表，支持 glob patterns
   ignore:

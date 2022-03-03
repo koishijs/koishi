@@ -6,7 +6,7 @@ sidebarDepth: 2
 
 @koishijs/plugin-respondent 允许设置一套内置问答，就像这样：
 
-```js title="koishi.config.js"
+```js title=koishi.config.js
 module.exports = {
   plugins: {
     respondent: [{

@@ -10,7 +10,7 @@ sidebarDepth: 2
 
 feedback 指令用于向开发者反馈信息：
 
-```yaml title="koishi.config.yaml"
+```yaml title=koishi.config.yaml
 plugins:
   feedback:
     # 填写接收者的账号，格式为 {platform}:{userId}

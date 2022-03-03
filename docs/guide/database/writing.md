@@ -10,8 +10,7 @@ sidebarDepth: 2
 
 ## 代码示例
 
-```ts
-// @koishiDocsNoHeader
+```ts no-extra-header
 import { createPool, Pool, PoolConfig } from 'mysql'
 import { Context, Database } from 'koishi'
 

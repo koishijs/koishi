@@ -48,8 +48,7 @@ class Bot {
 下面是一个使用 Webhook 的例子。适配器通过 http post 请求接受事件推送。
 
 ::: code-group language adapter
-```js
-// @koishiDocsNoHeader
+```js no-extra-header
 const { Adapter, Bot, Session } = require('koishi')
 
 class MyBot extends Bot {
@@ -78,8 +77,7 @@ class MyAdapter extends Adapter {
 // 注册适配器
 Adapter.types['my-adapter'] = MyAdapter
 ```
-```ts
-// @koishiDocsNoHeader
+```ts no-extra-header
 import { App, Adapter, Bot, Session } from 'koishi'
 
 class MyBot extends Bot {
@@ -177,7 +175,7 @@ Adapter.types['another-adapter'] = MyAdapter2
 
 如果你嫌 onebot:http, onebot:ws 的写法太麻烦，不如试试下面的写法：
 
-```js title="koishi.config.js"
+```js title=koishi.config.js
 module.exports = {
   type: 'onebot',
   server: 'ws://localhost:6700',

@@ -39,8 +39,7 @@ yarn add koishi @koishijs/plugin-adapter-onebot @koishijs/plugin-echo
 新建入口文件 `index.js`，并写下这段代码：
 
 ::: code-group language index
-```js
-// @koishiDocsNoHeader
+```js no-extra-header
 const { App } = require('koishi')
 
 // 创建一个 Koishi 应用
@@ -59,8 +58,7 @@ app.plugin('echo')
 // 启动应用
 app.start()
 ```
-```ts
-// @koishiDocsNoHeader
+```ts no-extra-header
 import { App } from 'koishi'
 
 // 创建一个 Koishi 应用
@@ -143,7 +141,7 @@ app.plugin(require('@koishijs/plugin-echo'))
 
 现在让我们在上面的代码中添加一段自己的交互逻辑：
 
-```js title="index.js"
+```js title=index.js
 // 如果收到“天王盖地虎”，就回应“宝塔镇河妖”
 app.middleware((session, next) => {
   if (session.content === '天王盖地虎') {
@@ -164,8 +162,7 @@ app.middleware((session, next) => {
 不过这样写可能并不好，因为一旦功能变多，你的 `index.js` 就会变得臃肿。我们推荐将上面的逻辑写在一个单独的文件里，并将它作为一个插件来加载：
 
 ::: code-group language ping
-```js
-// @koishiDocsNoHeader
+```js no-extra-header
 module.exports.name = 'ping'
 
 module.exports.apply = (ctx) => {
@@ -179,8 +176,7 @@ module.exports.apply = (ctx) => {
   })
 }
 ```
-```ts
-// @koishiDocsNoHeader
+```ts no-extra-header
 import { Context } from 'koishi'
 
 export function apply(ctx: Context) {
@@ -197,8 +193,7 @@ export function apply(ctx: Context) {
 :::
 
 ::: code-group language
-```js
-// @koishiDocsNoHeader
+```js no-extra-header
 // @errors: 2307
 
 import { App } from 'koishi'
@@ -209,8 +204,7 @@ const app = new App({})
 // 这里的 ./ping 是相对于 index.js 的路径
 app.plugin(require('./ping'))
 ```
-```ts
-// @koishiDocsNoHeader
+```ts no-extra-header
 // @errors: 2307
 
 import { App } from 'koishi'
@@ -240,7 +234,7 @@ yarn add @koishijs/plugin-database-mysql
 
 然后继续修改你的代码，在应用中配置 MySQL 数据库插件：
 
-```js title="index.js"
+```js title=index.js
 app.plugin('database-mysql', {
   host: '[your-host]',
   port: 3306,
@@ -256,7 +250,7 @@ app.plugin('database-mysql', {
 
 如果你要同时运行来自多个平台的机器人，你只需要同时安装着多个平台的适配器插件即可：
 
-```js title="index.js"
+```js title=index.js
 // 来自 onebot 适配器的机器人
 app.plugin('adapter-onebot', {
   protocol: 'ws',
@@ -273,7 +267,7 @@ app.plugin('adapter-discord', {
 
 如果你要同时运行来自同一个平台的多个机器人，只需将上述配置写进一个 `bots` 数组即可：
 
-```js title="index.js"
+```js title=index.js
 app.plugin('adapter-onebot', {
   bots: [{
     // 这里配置你的第一个机器人

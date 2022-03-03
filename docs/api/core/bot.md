@@ -206,8 +206,7 @@ export interface GuildInfo {
 
 获取群成员信息。
 
-```ts
-// @koishiDocsNoHeader
+```ts no-extra-header
 export interface UserInfo {
   userId: string
   username: string
