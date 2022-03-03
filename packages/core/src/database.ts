@@ -135,7 +135,7 @@ export namespace Database {
 }
 
 export function unwrapExports(module: any) {
-  return module.default || module
+  return module?.default || module
 }
 
 export interface Modules {}

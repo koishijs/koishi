@@ -1,4 +1,4 @@
-import { Adapter, App, Context, Dict, omit, pick, Plugin, remove, Schema, unwrapExports } from 'koishi'
+import { Adapter, App, Context, Dict, noop, omit, pick, Plugin, remove, Schema, unwrapExports } from 'koishi'
 import { DataService } from '@koishijs/plugin-console'
 import { promises as fsp } from 'fs'
 import { dirname } from 'path'
@@ -69,7 +69,7 @@ class PackageProvider extends DataService<Dict<PackageProvider.Data>> {
     await (this.task ||= this.prepare())
 
     // add app config
-    const packages = await Promise.all(Object.values(this.cache))
+    const packages = (await Promise.all(Object.values(this.cache))).filter(x => x)
     packages.unshift({
       name: '',
       shortname: '',
@@ -103,7 +103,7 @@ class PackageProvider extends DataService<Dict<PackageProvider.Data>> {
   private loadPackage(name: string, path: string) {
     // require.resolve(name) may be different from require.resolve(path)
     // because tsconfig-paths may resolve the path differently
-    this.cache[require.resolve(name)] = this.parsePackage(name, path)
+    this.cache[require.resolve(name)] = this.parsePackage(name, path).catch(noop)
   }
 
   private async parsePackage(name: string, path: string) {
@@ -130,6 +130,9 @@ class PackageProvider extends DataService<Dict<PackageProvider.Data>> {
     result.root = result.shortname in plugins
     result.schema = exports?.Config || exports?.schema
     result.config = plugins[result.shortname] || plugins['~' + result.shortname]
+
+    // make sure that result can be serialized into json
+    JSON.stringify(result)
 
     return result
   }
