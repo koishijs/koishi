@@ -1,14 +1,14 @@
 <template>
-  <k-comment v-if="!validate(schema)" type="warning">
+  <k-comment v-if="!validate(resolved)" type="warning">
     部分配置项无法正常显示，这可能并非预期行为<slot name="hint"></slot>。
   </k-comment>
   <form class="k-form">
-    <h2 v-if="showHeader ?? !hasTitle(schema, true)">基础设置</h2>
+    <h2 v-if="showHeader ?? !hasTitle(resolved, true)">基础设置</h2>
     <slot name="prolog"></slot>
     <k-schema
       v-model="config"
       :initial="initial"
-      :schema="schema"
+      :schema="resolved"
       :disabled="disabled"
     ></k-schema>
     <slot name="epilog"></slot>
@@ -26,6 +26,10 @@ const props = defineProps({
   modelValue: {},
   disabled: Boolean,
   showHeader: {},
+})
+
+const resolved = computed(() => {
+  return props.schema && new Schema(props.schema)
 })
 
 const emit = defineEmits(['update:modelValue'])

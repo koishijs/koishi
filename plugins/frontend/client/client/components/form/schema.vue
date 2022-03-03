@@ -75,7 +75,7 @@
     </ul>
   </schema-item>
 
-  <template v-if="!schema.meta.hidden && isComposite">
+  <template v-if="schema && !schema.meta.hidden && isComposite">
     <div class="k-schema-group" v-if="prefix">
       <schema-group v-if="!schema.meta.hidden && isComposite" v-model:signal="signal"
         :schema="schema" v-model="config" :prefix="prefix" :disabled="disabled" :initial="initial">
