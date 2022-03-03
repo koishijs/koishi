@@ -1,7 +1,7 @@
 const { getHighlighter, loadTheme } = require('shiki')
 const { escapeHtml } = require('markdown-it/lib/common/utils')
 const { resolve } = require('path')
-const { twoslash } = require('./twoslash')
+const { setupTwoslash, twoslash } = require('./twoslash')
 
 const cliAliases = ['npm', 'yarn']
 
@@ -10,6 +10,8 @@ module.exports = {
 
   async extendsMarkdown(md) {
     const tomorrow = await loadTheme(resolve(__dirname, 'tomorrow.json'))
+
+    await setupTwoslash()
 
     const highlighter1 = await getHighlighter({
       theme: 'monokai',
@@ -44,11 +46,16 @@ module.exports = {
         let titleMatch = rawInfo
           .split(' ')
           .filter((x) => x.startsWith('title='))
-        if (titleMatch) {
+        if (titleMatch.length) {
           titleMatch = titleMatch[0]
-          if (titleMatch.startsWith('title="') && titleMatch.endsWith('"'))
-            token.title = /title="(.*)"/g.exec(rawInfo)[1]
-          else token.title = /title=(.*)/g.exec(rawInfo)[1]
+          token.info = rawInfo.replace(' ' + titleMatch, '')
+          if (titleMatch.startsWith('title="') && titleMatch.endsWith('"')) {
+            const titleExec = /title="(.*)"/g.exec(rawInfo)
+            if (titleExec && titleExec[1]) token.title = titleExec[1]
+          } else {
+            const titleExec = /title=(.*)/g.exec(rawInfo)
+            if (titleExec && titleExec[1]) token.title = titleExec[1]
+          }
         }
       }
       const rawCode = fence(...args)

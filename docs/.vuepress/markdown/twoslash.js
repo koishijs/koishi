@@ -5,6 +5,7 @@ const {
 
 const twoslashSupportedList = ['ts', 'js', 'twoslash']
 const extraHeader = `
+import { resolve } from 'path'
 import {
   App,
   Session,
@@ -14,6 +15,10 @@ import {
   Argv,
   Awaitable
 } from 'koishi'
+import {
+  Dict,
+  segment
+} from '@koishijs/utils'
 
 const app = new App()
 const ctx = app
@@ -24,14 +29,14 @@ const cmd = ctx.command('koishi-docs-preserve')
 
 let twoslashHighlighters
 
-function twoslash(code, lang, attrs) {
-  if (!twoslashHighlighters) {
-    const { highlighters } = await setupForFile({
-      theme: 'monokai',
-    })
-    twoslashHighlighters = highlighters
-  }
+async function setupTwoslash() {
+  const { highlighters } = await setupForFile({
+    theme: 'monokai',
+  })
+  twoslashHighlighters = highlighters
+}
 
+function twoslash(code, lang, attrs) {
   if (!twoslashSupportedList.includes(lang)) return null
 
   try {
@@ -59,5 +64,6 @@ function twoslash(code, lang, attrs) {
 }
 
 module.exports = {
+  setupTwoslash,
   twoslash,
 }
