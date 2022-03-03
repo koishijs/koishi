@@ -1,7 +1,6 @@
-import { dirname, extname, isAbsolute, resolve } from 'path'
-import { readdirSync, readFileSync, writeFileSync } from 'fs'
+import { isAbsolute, resolve } from 'path'
 import { App, Context, Dict, interpolate, Logger, Modules, unwrapExports, valueMap } from 'koishi'
-import * as yaml from 'js-yaml'
+import ConfigLoader from '@koishijs/loader'
 import * as dotenv from 'dotenv'
 
 declare module 'koishi' {
@@ -14,58 +13,28 @@ declare module 'koishi' {
 
 Context.service('loader')
 
-const oldPaths = Modules.internal.paths
-Modules.internal.paths = function (name: string) {
-  // resolve absolute or relative path
-  if (isAbsolute(name) || name.startsWith('.')) {
-    return [resolve(cwd, name)]
-  }
-  return oldPaths(name)
-}
-
-let cwd = process.cwd()
 const logger = new Logger('app')
-
-const writableExts = ['.json', '.yml', '.yaml']
-const supportedExts = ['.js', '.json', '.ts', '.coffee', '.yaml', '.yml']
+const oldPaths = Modules.internal.paths
 
 const context = {
   env: process.env,
 }
 
-export default class Loader {
-  dirname: string
-  filename: string
-  extname: string
+export default class Loader extends ConfigLoader<App.Config> {
   app: App
   config: App.Config
   cache: Dict<string> = {}
-  readonly: boolean
 
   constructor() {
-    if (process.env.KOISHI_CONFIG_FILE) {
-      this.filename = resolve(cwd, process.env.KOISHI_CONFIG_FILE)
-      this.extname = extname(this.filename)
-      cwd = dirname(this.filename)
-    } else {
-      this.findConfig()
-    }
-    this.dirname = cwd
-    this.readonly = !writableExts.includes(this.extname)
-  }
+    super(process.env.KOISHI_CONFIG_FILE)
 
-  findConfig() {
-    const files = readdirSync(cwd)
-    for (const basename of ['koishi.config', 'koishi']) {
-      for (const extname of supportedExts) {
-        if (files.includes(basename + extname)) {
-          this.extname = extname
-          this.filename = cwd + '/' + basename + extname
-          return
-        }
+    Modules.internal.paths = (name) => {
+      // resolve absolute or relative path
+      if (isAbsolute(name) || name.startsWith('.')) {
+        return [resolve(this.dirname, name)]
       }
+      return oldPaths(name)
     }
-    throw new Error(`config file not found`)
   }
 
   interpolate(source: any) {
@@ -81,41 +50,28 @@ export default class Loader {
   }
 
   loadConfig(): App.Config {
-    let config: App.Config
-    if (['.yaml', '.yml'].includes(this.extname)) {
-      config = yaml.load(readFileSync(this.filename, 'utf8')) as any
-    } else if (['.json'].includes(this.extname)) {
-      // we do not use require here because it will pollute require.cache
-      config = JSON.parse(readFileSync(this.filename, 'utf8')) as any
-    } else {
-      const module = require(this.filename)
-      config = module.default || module
-    }
-
     // load .env file into process.env
     dotenv.config({
       path: resolve(this.dirname, '.env'),
     })
 
-    let resolved = new App.Config(config)
-    if (!this.readonly) {
+    // load original config file
+    super.loadConfig()
+
+    let resolved = new App.Config(this.config)
+    if (this.writable) {
       // schemastery may change original config
       // so we need to validate config twice
-      resolved = new App.Config(this.interpolate(config))
+      resolved = new App.Config(this.interpolate(this.config))
     }
 
-    this.config = config
     return resolved
   }
 
   writeConfig() {
     // prevent hot reload when it's being written
     if (this.app.watcher) this.app.watcher.suspend = true
-    if (this.extname === '.json') {
-      writeFileSync(this.filename, JSON.stringify(this.config, null, 2))
-    } else {
-      writeFileSync(this.filename, yaml.dump(this.config))
-    }
+    super.writeConfig()
   }
 
   resolvePlugin(name: string) {
