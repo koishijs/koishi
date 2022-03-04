@@ -312,6 +312,7 @@ module.exports = {
           '/about/releases/v4.1.md',
           '/about/releases/v4.2.md',
           '/about/releases/v4.3.md',
+          '/about/releases/v4.4.md',
         ],
       }, {
         text: '贡献指南',
