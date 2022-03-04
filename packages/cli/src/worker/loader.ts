@@ -24,9 +24,11 @@ export default class Loader extends ConfigLoader<App.Config> {
   app: App
   config: App.Config
   cache: Dict<string> = {}
+  envfile: string
 
   constructor() {
     super(process.env.KOISHI_CONFIG_FILE)
+    this.envfile = resolve(this.dirname, '.env')
 
     Modules.internal.paths = (name) => {
       // resolve absolute or relative path
@@ -51,9 +53,7 @@ export default class Loader extends ConfigLoader<App.Config> {
 
   readConfig() {
     // load .env file into process.env
-    dotenv.config({
-      path: resolve(this.dirname, '.env'),
-    })
+    dotenv.config({ path: this.envfile })
 
     // load original config file
     const config = super.readConfig()
