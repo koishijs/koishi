@@ -30,7 +30,7 @@
     "@types/pngjs": "^6.0.1"
   },
   "peerDependencies": {
-    "koishi": "^4.3.3"
+    "koishi": "^4.4.0"
   },
   "dependencies": {
     "chrome-finder": "^1.0.7",

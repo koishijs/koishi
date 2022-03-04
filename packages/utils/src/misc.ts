@@ -1,3 +1,7 @@
+import { isNullable } from 'schemastery'
+
+export { isNullable, isPlainObject, valueMap, clone } from 'schemastery'
+
 export function noop(): any {}
 
 export function contain(array1: readonly any[], array2: readonly any[]) {
@@ -28,10 +32,6 @@ export function remove<T>(list: T[], item: T) {
   }
 }
 
-export function valueMap<T, U>(object: Dict<T>, transform: (value: T, key: string) => U): Dict<U> {
-  return Object.fromEntries(Object.entries(object).map(([key, value]) => [key, transform(value, key)]))
-}
-
 export function isInteger(source: any) {
   return typeof source === 'number' && Math.floor(source) === source
 }
@@ -47,23 +47,6 @@ export function enumKeys<T extends string>(data: Record<T, string | number>) {
 export function defineEnumProperty<T extends object>(object: T, key: keyof T, value: T[keyof T]) {
   object[key] = value
   object[value as any] = key
-}
-
-const primitives = ['number', 'string', 'bigint', 'boolean', 'symbol']
-
-export function clone<T extends unknown>(source: T): T {
-  // primitive types, null & undefined
-  if (primitives.includes(typeof source)) return source
-  if (!source) return source
-
-  // array
-  if (Array.isArray(source)) return source.map(clone) as any
-
-  if (isType('Date', source)) return new Date(source.valueOf()) as any
-  if (isType('RegExp', source)) return new RegExp(source.source, source.flags) as any
-
-  // fallback
-  return valueMap(source as any, clone) as any
 }
 
 export function merge<T extends object>(head: T, base: T): T {
@@ -108,10 +91,6 @@ export function assertProperty<O, K extends keyof O>(config: O, key: K) {
 export function coerce(val: any) {
   const { stack } = val instanceof Error ? val : new Error(val as any)
   return stack
-}
-
-export function isNullable(value: any) {
-  return value === null || value === undefined
 }
 
 export function makeArray<T>(source: T | T[]) {

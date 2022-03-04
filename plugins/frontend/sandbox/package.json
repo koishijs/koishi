@@ -32,7 +32,7 @@
     "mock"
   ],
   "peerDependencies": {
-    "koishi": "^4.3.3"
+    "koishi": "^4.4.0"
   },
   "devDependencies": {
     "@koishijs/client": "^3.2.1",
