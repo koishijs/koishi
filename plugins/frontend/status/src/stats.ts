@@ -85,7 +85,7 @@ class StatisticsProvider extends DataService<StatisticsProvider.Payload> {
     }, { primary: 'time' })
 
     ctx.model.extend('stats_hourly', {
-      time: 'date',
+      time: 'timestamp',
       ...Object.fromEntries(StatisticsProvider.hourlyFields.map((key) => [key, { type: 'integer', initial: 0 }])),
     }, { primary: 'time' })
 
