@@ -1,6 +1,7 @@
 const { getHighlighter, loadTheme } = require('shiki')
 const { escapeHtml } = require('markdown-it/lib/common/utils')
 const { resolve } = require('path')
+const { setupTwoslash, twoslash } = require('./twoslash')
 
 const cliAliases = ['npm', 'yarn']
 
@@ -9,6 +10,8 @@ module.exports = {
 
   async extendsMarkdown(md) {
     const tomorrow = await loadTheme(resolve(__dirname, 'tomorrow.json'))
+
+    await setupTwoslash()
 
     const highlighter1 = await getHighlighter({
       theme: 'monokai',
@@ -24,10 +27,12 @@ module.exports = {
       }],
     })
 
-    md.options.highlight = (code, lang) => {
+    md.options.highlight = (code, lang, attrs) => {
       if (!lang) {
         return `<pre v-pre><code>${escapeHtml(code)}</code></pre>`
       }
+      const twoslashHtml = twoslash(code, lang, attrs)
+      if (twoslashHtml) return twoslashHtml
       const h = lang === 'cli' || cliAliases.includes(lang) ? highlighter2 : highlighter1
       return h.codeToHtml(code, lang).replace('<pre', '<pre v-pre')
     }
@@ -36,11 +41,23 @@ module.exports = {
     md.renderer.rules.fence = (...args) => {
       let [tokens, index] = args, temp
       const token = tokens[index]
+      if (args[3].frontmatter.noTwoslash) token.info += ' no-twoslash'
       if (!token.title) {
         const rawInfo = token.info || ''
-        const [langName, title = ''] = rawInfo.split(/\s+/)
-        token.info = langName
-        token.title = title.trim()
+        let titleMatch = rawInfo
+          .split(' ')
+          .filter((x) => x.startsWith('title='))
+        if (titleMatch.length) {
+          titleMatch = titleMatch[0]
+          token.info = rawInfo.replace(' ' + titleMatch, '')
+          if (titleMatch.startsWith('title="') && titleMatch.endsWith('"')) {
+            const titleExec = /title="(.*)"/g.exec(rawInfo)
+            if (titleExec && titleExec[1]) token.title = titleExec[1]
+          } else {
+            const titleExec = /title=(.*)/g.exec(rawInfo)
+            if (titleExec && titleExec[1]) token.title = titleExec[1]
+          }
+        }
       }
       const rawCode = fence(...args)
       while ((temp = tokens[--index])?.type === 'fence');
@@ -49,7 +66,7 @@ module.exports = {
         return `<template #${token.info}>${rawCode}</template>`
       }
       let style = ''
-      if (token.info === 'cli') style += `; background-color: ${tomorrow.bg}`
+      if (token.info.startsWith('cli')) style += `; background-color: ${tomorrow.bg}`
       return `<panel-view class="code" title=${JSON.stringify(token.title)} style="${style.slice(2)}">${rawCode}</panel-view>`
     }
   },

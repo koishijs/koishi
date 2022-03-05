@@ -18,7 +18,7 @@ sidebarDepth: 2
 
 教学系统各功能的权限设置。
 
-```js
+```ts
 interface AuthorityConfig {
   base?: number     // 可访问教学系统，默认值为 2
   admin?: number    // 可修改非自己创建的问答，默认值为 3
@@ -89,7 +89,7 @@ interface AuthorityConfig {
 
 控制防循环行为，参见 [防刷屏机制](./misc.md#防刷屏机制)。
 
-```js
+```ts
 export interface LoopConfig {
   participants: number
   length: number
@@ -103,7 +103,7 @@ export interface LoopConfig {
 
 控制节流行为，参见 [防刷屏机制](./misc.md#防刷屏机制)。
 
-```js
+```ts
 export interface ThrottleConfig {
   interval: number
   responses: number

@@ -10,7 +10,7 @@ sidebarDepth: 2
 
 当没有加载数据库服务时，你需要手动提供转发规则数组。
 
-```yaml koishi.config.yaml
+```yaml title=koishi.config.yaml
 plugins:
   forward:
     # 请使用 {platform}:{channelId} 的格式

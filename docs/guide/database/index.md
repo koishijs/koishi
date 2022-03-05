@@ -27,7 +27,7 @@ yarn add @koishijs/plugin-database-mysql -D
 
 然后与你添加插件同样的方法配置你的数据库：
 
-```yaml koishi.config.yaml
+```yaml title=koishi.config.yaml
 plugins:
   database-mysql:
     host: host

@@ -1,5 +1,6 @@
 ---
 sidebarDepth: 2
+noTwoslash: true
 ---
 
 # 使用装饰器 <Badge text="社区" type="warning"/>
@@ -311,7 +312,7 @@ export default class MyPlugin extends BasePlugin<MyPluginConfig> {
   onPing() {
     return 'pong';
   }
-  
+
   @UseCommand('pang', 'Pang!')
   @CommandShortcut('乓！') // 只适用于 pang 指令
   onPang() {
@@ -480,7 +481,7 @@ MyPlugin.using // ['database', 'assets']
 export default class MyPlugin extends BasePlugin<MyPluginConfig> {
   @Inject()
   private database: Database;
-  
+
   // 该指令仅在数据库被安装时生效
   @UsingService('database')
   @UseCommand('dress', '获取自己的裙子信息')
@@ -533,17 +534,17 @@ import { Provide, DefinePlugin, BasePlugin, Caller } from 'koishi-thirdeye';
 @DefinePlugin({ name: 'my-photo-registry' })
 export class MyPhotoRegistry extends BasePlugin<Config> {
   private photos = new Set<Photo>();
-  
+
   @Caller()
   private caller: Context;
-  
+
   addPhoto(photo: Photo) {
     // 预先保存一下正在访问该方法的上下文，预防以后发生变化。
     const ctx = this.caller;
-    
+
     // 注册来源插件上下文的卸载监听器，使得来源插件卸载时该 Photo 自动被删除。
     ctx.on('dispose', () => this.photos.delete(photo));
-    
+
     this.photos.add(photo);
   }
 }

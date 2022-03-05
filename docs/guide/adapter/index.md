@@ -47,7 +47,7 @@ module.exports = {
   ],
 }
 ```
-```ts
+```ts no-extra-header
 // 这只是为了引入类型，本身没有作用
 import { AppConfig } from 'koishi'
 import {} from '@koishijs/plugin-onebot'
@@ -77,26 +77,26 @@ export default {
 这里是使用配置文件的写法，如果要使用 Koishi API，你只需要做一点变化：
 
 ::: code-group language index
-```js
+```js no-extra-header
 const { App } = require('koishi')
 
 // 你需要手动安装所有相关平台的适配器
 require('@koishijs/plugin-onebot')
 require('@koishijs/plugin-kaiheila')
 
-new App({ /* 同上述配置 */ })
+const app = new App({ /* 同上述配置 */ })
 
 // 启动应用
 app.start()
 ```
-```ts
+```ts no-extra-header
 import { App } from 'koishi'
 
 // 你需要手动安装所有相关平台的适配器
 import '@koishijs/plugin-onebot'
 import '@koishijs/plugin-kaiheila'
 
-new App({ /* 同上述配置 */ })
+const app = new App({ /* 同上述配置 */ })
 
 // 启动应用
 app.start()

@@ -32,7 +32,7 @@ sidebarDepth: 2
 
 为了控制机器人在单一群触发教学问答的频率，我们可以设定当机器人在 1 分钟内在某个群中触发过超过 10 次问答，则 Koishi 将忽略该群内的消息直到这个数字降低到 10 以下为止。这里的数值都是可以配置的：
 
-```js koishi.config.js
+```js title=koishi.config.js
 module.exports = {
   plugins: {
     teach: {
@@ -47,7 +47,7 @@ module.exports = {
 
 为了防止多个机器人之间的循环触发，以及部分用户的攻击性刷屏行为，我们可以设定如果最近的 5 次教学问答都由某 1 个用户触发，则 Koishi 将不会继续响应来自该用户的教学问答。该效果会在该用户没有发送除指令调用以外消息之后的 5 分钟内被解除。这里的数值也都是可以配置的：
 
-```js koishi.config.js
+```js title=koishi.config.js
 module.exports = {
   plugins: {
     teach: {

@@ -40,7 +40,7 @@ const { App } = require('koishi')
 const app = new App()
 app.plugin('mock')
 ```
-```ts
+```ts no-extra-header
 import { App } from 'koishi'
 import mock from '@koishijs/plugin-mock'
 
@@ -64,7 +64,7 @@ yarn add typescript ts-node @types/node @types/mocha @types/chai -D
 
 接着编辑你的 `.mocharc.js` 文件：
 
-```js .mocharc.js
+```js title=.mocharc.js
 module.exports = {
   extension: ['ts'],
   require: [
@@ -78,7 +78,7 @@ module.exports = {
 
 对于聊天机器人来说最常见的需求是处理用户的消息。为此，我们提供了 **客户端 (Client)** 对象，用于模拟特定频道和用户的输入：
 
-```ts
+```ts no-extra-header
 import { App } from 'koishi'
 import mock from '@koishijs/plugin-mock'
 
@@ -116,7 +116,7 @@ it('example 1', () => {
 
 @koishijs/plugin-database-memory 是 Koishi 的一个基于内存的数据库实现，非常适合用于单元测试。
 
-```ts
+```ts no-extra-header
 import { App } from 'koishi'
 import mock from '@koishijs/plugin-mock'
 import memory from '@koishijs/plugin-database-memory'

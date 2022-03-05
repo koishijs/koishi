@@ -6,7 +6,7 @@ sidebarDepth: 2
 
 子线程 API 可通过 [`setupFiles`](./config.md#setupfiles) 配置项访问：
 
-```js koishi.config.js
+```js title=koishi.config.js
 export default {
   plugins: {
     eval: {
@@ -18,7 +18,7 @@ export default {
 }
 ```
 
-```js worker.js
+```js title=worker.js
 import { internal } from 'koishi-plugin-eval/lib/worker'
 
 internal.setGlobal('foo', 1)
@@ -153,7 +153,7 @@ koishi-plugin-eval 中的代码在一个沙箱环境中运行，而这个沙箱�
 
 下面是一段示例代码，展示了如何使用 `synthetize()` 和 `mapDirectory()` 创建一个 utils 全局对象：
 
-```js worker.js
+```js title=worker.js
 import { synthetize, mapDirectory } from 'koishi-plugin-eval/lib/worker'
 import { Random } from 'koishi-utils'
 

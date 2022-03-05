@@ -117,7 +117,7 @@ Koishi 支持多个聊天平台，对于不同的平台，你也需要做好相�
 
 打开你创建的目录，你会发现有一个 `koishi.config.yml` 文件。它大概长这样：
 
-```yaml koishi.config.yml
+```yaml title=koishi.config.yml
 port: 8080
 
 plugins:
@@ -135,7 +135,7 @@ plugins:
 
 你可以通过插值语法在配置文件中使用环境变量。例如：
 
-```yaml koishi.config.yml
+```yaml title=koishi.config.yml
 plugins:
   adapter-discord:
     bots:

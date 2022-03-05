@@ -170,7 +170,7 @@ app.command('my-command [arg:number]')
 使用 `Argv.createDomain()` 创建新类型：
 
 ::: code-group language
-```js
+```js no-extra-header
 const { Argv } = require('koishi')
 
 Argv.createDomain('repeat', source => source.repeat(3))
@@ -178,7 +178,7 @@ Argv.createDomain('repeat', source => source.repeat(3))
 app.command('test [arg:repeat]')
   .action((_, arg) => arg)
 ```
-```ts
+```ts no-extra-header
 import { Argv } from 'koishi'
 
 declare module 'koishi' {
@@ -206,7 +206,7 @@ app.command('test [arg:repeat]')
 你也可以在 `Argv.createDomain()` 的回调函数中抛出错误，以实现类型检查的目的：
 
 ::: code-group language
-```js
+```js no-extra-header
 const { Argv } = require('koishi')
 
 Argv.createDomain('positive', (source) => {
@@ -218,7 +218,7 @@ Argv.createDomain('positive', (source) => {
 app.command('test [x:positive]')
   .action((_, arg) => arg)
 ```
-```ts
+```ts no-extra-header
 import { Argv } from 'koishi'
 
 declare module 'koishi' {

@@ -33,7 +33,7 @@ ctx.middleware((session, next) => {
 
 中间件的本质是下面的函数。看起来挺简单的，不是吗？我们将在下面详细介绍它的运作方式。
 
-```js
+```ts
 type Next = (next?: Callback) => Promise<void | string>
 type Callback = void | string | ((next?: Next) => Awaitable<void | string>)
 type Middleware = (session: Session, next: Next) => Promise<void | string>
