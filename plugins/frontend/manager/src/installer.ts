@@ -86,7 +86,7 @@ class Installer extends DataService<Dict<string>> {
   }
 
   installDep = async (deps: Dict<string>) => {
-    const agent = which().name
+    const agent = which()?.name || 'npm'
     const meta = await this.override(deps)
     const args: string[] = agent === 'yarn' ? [] : ['install']
     const code = await this.exec(agent, args)

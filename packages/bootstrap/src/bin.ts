@@ -21,7 +21,7 @@ interface Config {
 const loader = new ConfigLoader<Config>(_[0])
 const { plugins = {} } = loader.readConfig()
 
-const agent = which().name
+const agent = which()?.name || 'npm'
 const metafile = resolve(loader.dirname, 'package.json')
 if (!existsSync(metafile)) {
   spawnSync(agent, ['init'], { cwd: loader.dirname, stdio: 'inherit' })

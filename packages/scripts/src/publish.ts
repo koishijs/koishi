@@ -70,7 +70,7 @@ export default function (cli: CAC) {
         spinner.succeed()
       }
 
-      const agent = which().name
+      const agent = which()?.name || 'npm'
       for (const path in packages) {
         const { name, version } = packages[path]
         if (name === 'koishi') {

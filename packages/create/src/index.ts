@@ -127,7 +127,7 @@ async function initGit() {
 }
 
 async function install() {
-  const agent = which().name
+  const agent = which()?.name || 'npm'
 
   const yes = await confirm('Install and start it now?')
   if (yes) {
