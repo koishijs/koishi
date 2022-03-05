@@ -194,8 +194,21 @@ export function apply(ctx: Context) {
 
 ::: code-group language
 ```js no-extra-header
-// @errors: 2307
+// @module: commonjs
+// @filename: ping.js
+module.exports.name = 'ping'
 
+module.exports.apply = (ctx) => {
+  ctx.middleware((session, next) => {
+    if (session.content === 'PING') {
+      return 'PONG'
+    } else {
+      return next()
+    }
+  })
+}
+
+// @filename: index.js
 import { App } from 'koishi'
 
 const app = new App({})
@@ -205,6 +218,23 @@ const app = new App({})
 app.plugin(require('./ping'))
 ```
 ```ts no-extra-header
+// @module: esnext
+// @filename: ping.ts
+import { Context } from 'koishi'
+
+export const name = 'ping'
+
+export function apply(ctx: Context) {
+  ctx.middleware((session, next) => {
+    if (session.content === 'PING') {
+      return 'PONG'
+    } else {
+      return next()
+    }
+  })
+}
+
+// @filename: index.ts
 import { App } from 'koishi'
 
 const app = new App({})
