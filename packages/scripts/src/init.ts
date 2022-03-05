@@ -16,8 +16,8 @@ class Initiator {
   constructor(private options: Options) {}
 
   async start(name: string) {
-    const agent = which()?.name || 'npm'
     await this.init(name)
+    const agent = which()?.name || 'npm'
     const args: string[] = agent === 'yarn' ? [] : ['install']
     spawn.sync(agent, args, { stdio: 'inherit' })
   }

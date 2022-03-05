@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/scripts",
   "description": "Workspace Scripts for Koishi",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "engines": {
@@ -46,6 +46,7 @@
     "kleur": "^4.1.4",
     "latest-version": "^5.1.0",
     "ora": "^5.4.1",
+    "p-map": "^4.0.0",
     "prompts": "^2.4.2",
     "semver": "^7.3.5",
     "which-pm-runs": "^1.1.0"

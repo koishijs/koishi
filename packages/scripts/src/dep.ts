@@ -3,6 +3,8 @@ import { cyan, green, yellow } from 'kleur'
 import { writeJson } from 'fs-extra'
 import { gt } from 'semver'
 import { CAC } from 'cac'
+import spawn from 'cross-spawn'
+import which from 'which-pm-runs'
 import latest from 'latest-version'
 import pMap from 'p-map'
 import ora from 'ora'
@@ -61,6 +63,10 @@ class Graph {
     }
 
     console.log(output.sort().join('\n'))
+
+    const agent = which()?.name || 'npm'
+    const args: string[] = agent === 'yarn' ? [] : ['install']
+    spawn.sync(agent, args, { stdio: 'inherit' })
   }
 }
 
