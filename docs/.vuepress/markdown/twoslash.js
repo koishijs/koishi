@@ -4,28 +4,9 @@ const {
 } = require('remark-shiki-twoslash')
 
 const twoslashSupportedList = ['ts', 'js', 'twoslash']
-const extraHeader = `
-import { resolve } from 'path'
-import {
-  App,
-  Session,
-  Context,
-  Service,
-  Schema,
-  Argv,
-  Awaitable
-} from 'koishi'
-import {
-  Dict,
-  segment
-} from '@koishijs/utils'
-
-const app = new App()
-const ctx = app
-const cmd = ctx.command('koishi-docs-preserve')
-
-// ---cut---
-`
+const extraHeader = require('fs').readFileSync(
+  require('path').resolve(__dirname, 'header.ts')
+)
 
 let twoslashHighlighters
 
