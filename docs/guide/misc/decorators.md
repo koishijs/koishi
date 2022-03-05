@@ -211,6 +211,51 @@ export class Config {
 }
 ```
 
+### 循环嵌套配置
+
+如果配置类存在循环嵌套，我们需要使用 `SchemaRef(() => Type)` 方法进行定义。
+
+```ts
+@RegisterSchema()
+export class Author {
+  constructor(_: Partial<Author>) {}
+
+  @DefineSchema()
+  name: string;
+
+  getName?() {
+    return this.name;
+  }
+
+  @DefineSchema({
+    type: SchemaRef(() => Post), // 循环嵌套类的数组，array 可以由成员变量类型自动推断。
+  })
+  posts?: Post[];
+}
+
+@RegisterSchema()
+export class Post {
+  constructor(_: Partial<Post>) {}
+
+  @DefineSchema()
+  name: string;
+
+  getName?() {
+    return this.name;
+  }
+
+  @DefineSchema({
+    type: SchemaRef(() => Author), // 循环嵌套
+  })
+  author?: Author;
+
+  @DefineSchema({
+    type: SchemaRef(() => Post), // 指定自身为类型也需要如此使用。
+  })
+  childPosts?: Post[];
+}
+```
+
 ## 注册事件
 
 正如最开始的例子一样，我们可以使用以 `Use` 开头的装饰器进行事件和中间件的注册监听。
@@ -439,6 +484,33 @@ export default class MyPlugin extends BasePlugin<Config> {
 - `@OnPlatform(value)` 等价于 `ctx.platform(value)`。
 - `@OnPrivate(value)` 等价于 `ctx.private(value)`。
 - `@OnSelection(value)` 等价于 `ctx.select(value)`。
+
+## 条件注册
+
+如果某个事件或是子插件只在满足一定条件的情况下进行注册，那么我们可以使用 `@If` 装饰器来指定。
+
+```ts
+@DefinePlugin({ name: 'my-plugin', schema: Config })
+export default class MyPlugin extends BasePlugin<Config> {
+  @If<MyPlugin>((o, config, ctx) => o.config.dress) // 只有 config.dress 是 true 的情况下该指令才会注册。
+  @UseCommand('dress')
+  dressCommand() {
+    return '我穿裙子了！';
+  }
+}
+```
+
+### API
+
+`@If<T>(o: T, config: Config, ctx: Context)`
+
+- `o` 插件实例对象。
+- `config` 插件的配置。
+- `ctx` 插件的上下文对象。
+
+::: info
+由于装饰器无法自动推断类型，因此为了更好地使用该装饰器，您需要如同上例一般，手动指定装饰器的类型 `T` 为插件类本身。
+:::
 
 ## 声明依赖关系
 
