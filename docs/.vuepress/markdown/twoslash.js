@@ -18,6 +18,8 @@ async function setupTwoslash() {
 }
 
 function twoslash(code, lang, attrs) {
+  if (process.env.NODE_ENV !== 'production') return null
+
   if (!twoslashSupportedList.includes(lang)) return null
 
   try {
