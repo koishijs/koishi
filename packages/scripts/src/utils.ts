@@ -85,6 +85,7 @@ export async function getPackages(args: readonly string[], options: FallbackOpti
 export type DependencyType = 'dependencies' | 'devDependencies' | 'peerDependencies' | 'optionalDependencies'
 
 export interface PackageJson extends Partial<Record<DependencyType, Record<string, string>>> {
+  $dirty?: boolean
   name: string
   main?: string
   module?: string
