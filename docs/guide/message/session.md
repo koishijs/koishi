@@ -98,7 +98,7 @@ await session.cancelQueued(0.5 * Time.second)
 
 事实上，对于不同的消息长度，系统等待的时间也是不一样的，你可以通过配置项修改这个行为：
 
-::: code-group config koishi.config
+::: code-group config koishi
 ```yaml
 delay:
   # 消息里每有一个字符就等待 0.02s

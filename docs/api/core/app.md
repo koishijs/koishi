@@ -102,7 +102,7 @@ Koishi 服务暴露在公网的地址。部分功能（例如 [adapter-telegram]
 
 ## 配置文件选项
 
-下面的配置项来自 koishi 的命令行工具，仅可用于 koishi.config 文件。
+下面的配置项来自 Koishi 的命令行工具，仅可用于配置文件。
 
 ### options.plugins
 

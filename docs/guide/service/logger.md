@@ -28,7 +28,7 @@ sidebarDepth: 2
 
 你可以在配置文件中控制输出等级：
 
-```js title=koishi.config.js
+```js title=koishi.js
 module.exports = {
   logLevel: 3,
 }
@@ -87,7 +87,7 @@ export interface Logger {
 
 前面所说的命名空间不仅会作为输出的前缀，还能用于过滤输出。用户可以通过将 `logLevel` 配置成对象的形式，指定每一个插件产生的输出的等级，就像这样：
 
-```js title=koishi.config.js
+```js title=koishi.js
 module.exports = {
   logLevel: {
     // 基础输出等级，当没有找到对应的配置项时将使用这个值
@@ -112,7 +112,7 @@ module.exports = (ctx) => {
 
 然后，你也可以将你的配置项具体到每一级命名空间中：
 
-```js title=koishi.config.js
+```js title=koishi.js
 module.exports = {
   logLevel: {
     foo: {

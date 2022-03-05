@@ -124,7 +124,7 @@ export function apply(ctx: Context, config: Config) {
 
 适配器现在通过插件的形式导入了：
 
-```ts title=koishi.config.ts
+```ts title=koishi.ts
 // @errors: 2528
 
 // before
@@ -146,7 +146,7 @@ export default {
 
 同时我们也调整了一些机器人配置项，并支持了一些全新的特性。下面举一些例子：
 
-```ts title=koishi.config.ts
+```ts title=koishi.ts
 export default {
   plugins: {
     onebot: {

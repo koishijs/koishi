@@ -26,7 +26,7 @@ sidebarDepth: 2
 
 在 [快速上手](../introduction/direct.md#配置多机器人) 一章中我们已经给出了一个简单的例子：
 
-::: code-group language koishi.config
+::: code-group language koishi
 ```js
 module.exports = {
   port: 7070,

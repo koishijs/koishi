@@ -156,7 +156,7 @@ account:
   password: ''    # 推荐，密码为空时将使用扫码登录
 ```
 
-下面介绍不同的通信方式所需的配置，以及 koishi.config.yml 的对应配置。
+下面介绍不同的通信方式所需的配置，以及 koishi.yml 的对应配置。
 
 ### HTTP
 
@@ -170,7 +170,7 @@ servers:
           secret: my-secret
 ```
 
-::: code-group config koishi.config
+::: code-group config koishi
 ```yaml
 port: 8080
 plugins:
@@ -204,7 +204,7 @@ servers:
       port: 6700
 ```
 
-::: code-group config koishi.config
+::: code-group config koishi
 ```yaml
 plugins:
   adapter-onebot:
@@ -233,7 +233,7 @@ servers:
       universal: ws://127.0.0.1:8080/onebot
 ```
 
-::: code-group config koishi.config
+::: code-group config koishi
 ```yaml
 port: 8080
 plugins:
@@ -267,7 +267,7 @@ servers:
       universal: wss://my-host:9090/onebot
 ```
 
-::: code-group config koishi.config
+::: code-group config koishi
 ```yaml
 # 请注意这里的 port 可能跟 selfUrl 中的不一致
 # 你可以通过 nginx，candy 等工具实现端口的转发和 SSL 等需求
@@ -427,7 +427,7 @@ node -e "console.log(process.arch)"
 
 请检查你的配置是否正确。尤其注意以下几点：
 
-- koishi.config.yml 中的 `selfId` 必须写并且必须是字符串
+- koishi.yml 中的 `selfId` 必须写并且必须是字符串
 - 如果你使用 HTTP：请不要忘记配置 post，同时默认情况下 post 的 `url` 字段应该包含 `/onebot`
 - 如果你使用反向 WebSocket：默认情况下 `universal` 字段应该包含 `/onebot`
 

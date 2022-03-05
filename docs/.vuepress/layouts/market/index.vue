@@ -115,12 +115,6 @@ html.dark {
     grid-column: 1 / -1;
   }
 
-  @media (max-width: 480px) {
-    .banner.info span.timestamp {
-      display: none;
-    }
-  }
-
   > .card {
     transition: var(--color-transition);
   }
@@ -204,6 +198,26 @@ html.dark {
       .badge-container {
         margin: 1rem 0 1.25rem;
       }
+    }
+  }
+
+  @media (max-width: 480px) {
+    padding: 0 1rem 2rem;
+
+    .search-box {
+      width: calc(100% - 3.4rem);
+    }
+
+    .banner.info span.timestamp {
+      display: none;
+    }
+
+    > .package-view {
+      padding: 0;
+    }
+
+    > .package-view > * {
+      padding: 0 1rem;
     }
   }
 }

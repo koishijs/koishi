@@ -20,19 +20,19 @@ docker pull koishijs/koishi:latest
 
 ## 启动容器
 
-Koishi 的 Docker 镜像需要挂载配置文件 `koishi.config.js` 才能运行。在适配器和插件还没有安装时，你可以先创建如下的配置文件来确保容器能够正确启动：
+Koishi 的 Docker 镜像需要挂载配置文件 `koishi.js` 才能运行。在适配器和插件还没有安装时，你可以先创建如下的配置文件来确保容器能够正确启动：
 
-```js title=koishi.config.js
+```js title=koishi.js
 module.exports = {
   bots: [],
 }
 ```
 
-完成之后，挂载 `koishi.config.js` 并启动容器：
+完成之后，挂载 `koishi.js` 并启动容器：
 
 ```cli
 docker run -d --name koishi \
-  -v $PWD/koishi.config.js:/app/koishi.config.js \
+  -v $PWD/koishi.js:/app/koishi.js \
   koishijs/koishi:latest
 ```
 
@@ -56,7 +56,7 @@ exit
 
 修改配置文件以启用这些插件：
 
-```js title=koishi.config.js
+```js title=koishi.js
 module.exports = {
   // 协议类型
   type: 'onebot:http',

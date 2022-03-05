@@ -107,7 +107,7 @@ ctx
 
 这种写法也同样支持过滤器，并且它最大的好处是可以被写进配置文件中：
 
-::: code-group config koishi.config
+::: code-group config koishi
 ```yaml
 plugins:
   eval:

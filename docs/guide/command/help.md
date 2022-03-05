@@ -158,7 +158,7 @@ ctx.command('foo.bar/abc.xyz')
 
 如果你在开发用于特定目的的机器人，你可能不希望用户使用全局的 help 指令查看指令列表。
 
-```yaml koishi.config.yml
+```yaml koishi.yml
 # 禁用帮助指令
 help: false
 

@@ -6,7 +6,7 @@ sidebarDepth: 2
 
 子线程 API 可通过 [`setupFiles`](./config.md#setupfiles) 配置项访问：
 
-```js title=koishi.config.js
+```js title=koishi.js
 export default {
   plugins: {
     eval: {

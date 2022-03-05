@@ -45,7 +45,7 @@ Koishi 工作区原生地支持 TypeScript 开发。上面的两组 `-r` 参数�
 
 这里的行为也可以在配置文件中进行定制：
 
-```yaml title=koishi.config.yml
+```yaml title=koishi.yml
 watch:
   # 要忽略的文件列表，支持 glob patterns
   ignore:
@@ -54,10 +54,10 @@ watch:
 
 ### 修改入口文件
 
-`koishi start` 指令需要一个配置文件作为入口。这个配置文件允许 js，ts，json，yaml 等多种格式。默认情况下，配置文件名应当形如 `koishi.config.[ext]`，但你其实也可以传入一个 `file` 参数来指定其他名称。它的完整语法为：
+`koishi start` 指令需要一个配置文件作为入口。这个配置文件允许 js，ts，json，yaml 等多种格式。默认情况下，配置文件名应当形如 `koishi.[ext]` 或 `koishi.config.[ext]`，但你其实也可以传入一个 `file` 参数来指定其他名称。它的完整语法为：
 
 ```cli
-# 如果你不写这里的 file 参数，程序就会自动寻找 koishi.config.[ext] 文件
+# 如果你不写这里的 file 参数，程序就会自动寻找 koishi.[ext] 和 koishi.config.[ext] 文件
 koishi start [file] [options]
 ```
 
@@ -102,7 +102,7 @@ root
 │       ├── src
 │       │   └── index.ts
 │       └── package.json
-├── koishi.config.yml
+├── koishi.yml
 └── package.json
 ```
 

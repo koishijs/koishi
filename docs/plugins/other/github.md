@@ -73,7 +73,7 @@ koishi-plugin-github 封装了一系列 GitHub 相关的功能。比如监听 [G
 
 ### 填写插件的配置项
 
-```js title=koishi.config.js
+```js title=koishi.js
 module.exports = {
   plugins: {
     github: {
