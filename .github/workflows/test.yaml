@@ -72,15 +72,12 @@ jobs:
       - name: Build Frontend
         run: yarn fe
       - name: Upload Packages
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: packages
-          path: packages
-      - name: Upload Plugins
-        uses: actions/upload-artifact@v2
-        with:
-          name: plugins
-          path: plugins
+          path: |
+            packages
+            plugins
 
   unit-test:
     runs-on: ubuntu-latest
@@ -197,10 +194,9 @@ jobs:
       - name: Install
         run: yarn
       - name: Download
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: packages
-          path: packages
       - name: Publish
         run: yarn pub
 
@@ -230,16 +226,10 @@ jobs:
           key: yarn-cache-${{ runner.os }}-${{ needs.prepare.outputs.random-uuid }}-node-14
       - name: Install
         run: yarn
-      - name: Download Packages
-        uses: actions/download-artifact@v2
+      - name: Download
+        uses: actions/download-artifact@v3
         with:
           name: packages
-          path: packages
-      - name: Download Plugins
-        uses: actions/download-artifact@v2
-        with:
-          name: plugins
-          path: plugins
       - name: Build
         run: yarn docs build
       - name: Deploy
