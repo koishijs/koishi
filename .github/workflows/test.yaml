@@ -1,9 +1,6 @@
 name: Test
 
-on:
-  push:
-    paths-ignore:
-      - docs/**
+on: [push]
 
 env:
   CI: true
@@ -201,3 +198,41 @@ jobs:
           path: packages
       - name: Publish
         run: yarn pub
+
+  docs:
+    if: ${{ github.ref == 'refs/heads/master' }}
+    runs-on: ubuntu-latest
+    needs:
+      - build
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v1
+      - name: Set up Node
+        uses: actions/setup-node@v2
+        with:
+          node-version: 14
+      - name: Restore Lockfile
+        uses: actions/cache@v2
+        with:
+          path: yarn.lock
+          key: yarn-lock-${{ runner.os }}-${{ needs.prepare.outputs.random-uuid }}
+      - name: Restore Cache
+        uses: actions/cache@v2
+        with:
+          path: ${{ needs.prepare.outputs.cache-dir }}
+          key: yarn-cache-${{ runner.os }}-${{ needs.prepare.outputs.random-uuid }}-node-14
+      - name: Install
+        run: yarn
+      - name: Compile
+        run: yarn build
+      - name: Build
+        run: yarn docs build
+      - name: Deploy
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          deploy_key: ${{ secrets.ACTIONS_DEPLOY_KEY }}
+          publish_dir: docs/.vuepress/dist
+          publish_branch: master
+          external_repository: koishijs/koishijs.github.io
+          force_orphan: true
