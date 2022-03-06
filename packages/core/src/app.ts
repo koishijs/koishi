@@ -6,6 +6,7 @@ import { Command } from './command'
 import { Computed, Session } from './session'
 import { KoishiError } from './error'
 import { Model } from './orm'
+import { Template } from './i18n'
 import runtime from './internal/runtime'
 import validate from './internal/validate'
 import help, { HelpConfig } from './internal/help'
@@ -49,6 +50,7 @@ export class App extends Context {
     })
 
     this.model = new Model(this)
+    this.i18n = new Template(this)
     this.bots = new Adapter.BotList(this)
 
     this._commands.resolve = (key) => {
@@ -245,6 +247,7 @@ export namespace App {
 
   export namespace Config {
     export interface Basic {
+      locale?: string
       prefix?: Computed<string | string[]>
       nickname?: string | string[]
       autoAssign?: Computed<Awaitable<boolean>>
@@ -272,6 +275,7 @@ export namespace App {
   export const Config = Schema.intersect([]) as Config.Static
 
   defineProperty(Config, 'Basic', Schema.object({
+    locale: Schema.string().default('zh').description('默认使用的语言。'),
     prefix: Schema.union([
       Schema.array(String),
       Schema.transform(String, (prefix) => [prefix]),

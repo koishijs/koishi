@@ -51,8 +51,8 @@ export default function help(ctx: Context, config: HelpConfig = {}) {
     .action(async ({ session, options }, target) => {
       if (!target) {
         const commands = app._commandList.filter(cmd => cmd.parent === null)
-        const output = formatCommands('internal.global-help-prolog', session, commands, options)
-        const epilog = template('internal.global-help-epilog')
+        const output = formatCommands('help.global-prolog', session, commands, options)
+        const epilog = session.text('help.global-epilog')
         if (epilog) output.push(epilog)
         return output.filter(Boolean).join('\n')
       }
@@ -62,8 +62,8 @@ export default function help(ctx: Context, config: HelpConfig = {}) {
         session.suggest({
           target,
           items: getCommandNames(session),
-          prefix: template('internal.help-suggestion-prefix'),
-          suffix: template('internal.help-suggestion-suffix'),
+          prefix: session.text('help.suggestion-prefix'),
+          suffix: session.text('help.suggestion-suffix'),
           async apply(suggestion) {
             return showHelp(ctx.getCommand(suggestion), this as any, options)
           },
@@ -75,6 +75,38 @@ export default function help(ctx: Context, config: HelpConfig = {}) {
     })
 
   if (config.shortcut !== false) cmd.shortcut('帮助', { fuzzy: true })
+
+  ctx.i18n.define('help', {
+    zh: {
+      'hint-authority': '括号内为对应的最低权限等级',
+      'hint-subcommand': '标有星号的表示含有子指令',
+      'command-aliases': '别名：{0}。',
+      'command-examples': '使用示例：',
+      'command-authority': '最低权限：{0} 级。',
+      'suggestion-prefix': '指令未找到。',
+      'suggestion-suffix': '发送空行或句号以使用推测的指令。',
+      // TODO
+      'subcommand-prolog': '可用的子指令有{0}：',
+      'global-help-prolog': '当前可用的指令有{0}：',
+      'global-help-epilog': '输入“帮助 指令名”查看特定指令的语法和使用示例。',
+      'available-options': '可用的选项有：',
+      'available-options-with-authority': '可用的选项有（括号内为额外要求的权限等级）：',
+    },
+    en: {
+      'hint-authority': 'this minimum authority is marked in parentheses',
+      'hint-subcommand': 'those marked with an asterisk have subcommands',
+      'command-aliases': 'Aliases: {0}.',
+      'command-examples': 'Examples:',
+      'command-authority': 'Minimum authority: {0}.',
+      'suggestion-prefix': 'Command not found.',
+      'suggestion-suffix': 'Send a blank line or a period to apply the suggestion.',
+      'subcommand-prolog': 'Available subcommands{0}:',
+      'global-help-prolog': 'Available commands{0}:',
+      'global-help-epilog': 'Type "help <command>" to see syntax and examples for a specific command.',
+      'available-options': 'Available options:',
+      'available-options-with-authority': 'Available options (parentheses indicate additional authority requirement):',
+    },
+  })
 }
 
 export function getCommandNames(session: Session) {
@@ -110,9 +142,9 @@ function formatCommands(path: string, session: Session<'authority'>, children: C
     return output
   })
   const hints: string[] = []
-  if (options.authority) hints.push(template('internal.hint-authority'))
-  if (hasSubcommand) hints.push(template('internal.hint-subcommand'))
-  output.unshift(template(path, [template.brace(hints)]))
+  if (options.authority) hints.push(session.text('help.hint-authority'))
+  if (hasSubcommand) hints.push(session.text('help.hint-subcommand'))
+  output.unshift(session.text(path, [template.brace(hints)]))
   return output
 }
 
@@ -129,8 +161,8 @@ function getOptions(command: Command, session: Session<'authority'>, config: Hel
   if (!options.length) return []
 
   const output = config.authority && options.some(o => o.authority)
-    ? [template('internal.available-options-with-authority')]
-    : [template('internal.available-options')]
+    ? [session.text('help.available-options-with-authority')]
+    : [session.text('help.available-options')]
 
   options.forEach((option) => {
     const authority = option.authority && config.authority ? `(${option.authority}) ` : ''
@@ -157,13 +189,13 @@ async function showHelp(command: Command, session: Session<'authority'>, config:
   }
 
   if (command._aliases.length > 1) {
-    output.push(template('internal.command-aliases', Array.from(command._aliases.slice(1)).join('，')))
+    output.push(session.text('help.command-aliases', [Array.from(command._aliases.slice(1)).join('，')]))
   }
 
   session.app.emit(session, 'help/command', output, command, session)
 
   if (session.user && command.config.authority > 1) {
-    output.push(template('internal.command-authority', command.config.authority))
+    output.push(session.text('help.command-authority', [command.config.authority]))
   }
 
   const usage = command._usage
@@ -174,10 +206,10 @@ async function showHelp(command: Command, session: Session<'authority'>, config:
   output.push(...getOptions(command, session, config))
 
   if (command._examples.length) {
-    output.push(template('internal.command-examples'), ...command._examples.map(example => '    ' + example))
+    output.push(session.text('help.command-examples'), ...command._examples.map(example => '    ' + example))
   }
 
-  output.push(...formatCommands('internal.subcommand-prolog', session, command.children, config))
+  output.push(...formatCommands('help.subcommand-prolog', session, command.children, config))
 
   return output.filter(Boolean).join('\n')
 }
@@ -205,18 +237,4 @@ template.set('internal', {
   'suggestion': '您要找的是不是{0}？',
   'command-suggestion-prefix': '',
   'command-suggestion-suffix': '发送空行或句号以使用推测的指令。',
-
-  // help
-  'help-suggestion-prefix': '指令未找到。',
-  'help-suggestion-suffix': '发送空行或句号以使用推测的指令。',
-  'subcommand-prolog': '可用的子指令有{0}：',
-  'global-help-prolog': '当前可用的指令有{0}：',
-  'global-help-epilog': '输入“帮助 指令名”查看特定指令的语法和使用示例。',
-  'available-options': '可用的选项有：',
-  'available-options-with-authority': '可用的选项有（括号内为额外要求的权限等级）：',
-  'hint-authority': '括号内为对应的最低权限等级',
-  'hint-subcommand': '标有星号的表示含有子指令',
-  'command-aliases': '别名：{0}。',
-  'command-examples': '使用示例：',
-  'command-authority': '最低权限：{0} 级。',
 })

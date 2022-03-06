@@ -7,6 +7,7 @@ import { App } from './app'
 import { Bot } from './bot'
 import { Adapter } from './adapter'
 import { Model, Tables } from './orm'
+import { Template } from './i18n'
 import Schema from 'schemastery'
 
 export type Next = (next?: Next.Callback) => Promise<void | string>
@@ -589,6 +590,7 @@ export namespace Context {
     bots: Adapter.BotList
     database: Database
     model: Model
+    i18n: Template
   }
 
   export const Services: (keyof Services)[] = []
@@ -616,6 +618,7 @@ export namespace Context {
   }
 
   service('bots')
+  service('i18n')
   service('model')
 
   export const deprecatedEvents: Dict<EventName & string> = {

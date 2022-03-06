@@ -303,6 +303,17 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
     return this.user = cache
   }
 
+  text(path: string, params: object = {}) {
+    const locales = [this.app.options.locale]
+    if (this.guild?.['locale']) {
+      locales.unshift(this.guild['locale'])
+      if (this.channel !== this.guild && this.channel['locale']) {
+        locales.unshift(this.channel['locale'])
+      }
+    }
+    return this.app.i18n.render(locales, path, params)
+  }
+
   collect<T extends 'user' | 'channel'>(key: T, argv: Argv, fields = new Set<keyof Tables[T]>()) {
     const collect = (argv: Argv) => {
       argv.session = this

@@ -87,6 +87,7 @@ export function sanitize(source: string) {
   return trimSlash(source)
 }
 
+/** @deprecated use template service instead */
 export function template(path: string | string[], ...params: any[]) {
   if (!Array.isArray(path)) path = [path]
   for (const item of path) {
