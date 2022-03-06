@@ -4,8 +4,6 @@ on:
   push:
     branches:
       - master
-    paths:
-      - docs/**
   schedule:
     - cron: '0 0,12 * * *'
 
