@@ -32,7 +32,7 @@ module.exports = {
         return `<pre v-pre><code>${escapeHtml(code)}</code></pre>`
       }
       const twoslashHtml = twoslash(code, lang, attrs)
-      if (twoslashHtml) return twoslashHtml
+      if (twoslashHtml) return twoslashHtml.replace('<pre', '<pre v-pre')
       const h = lang === 'cli' || cliAliases.includes(lang) ? highlighter2 : highlighter1
       return h.codeToHtml(code, lang).replace('<pre', '<pre v-pre')
     }
