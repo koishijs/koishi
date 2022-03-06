@@ -43,6 +43,7 @@ module.exports = {
       const token = tokens[index]
       if (args[3].frontmatter.noTwoslash) token.info += ' no-twoslash'
       if (!token.title) {
+        token.title = ''
         const rawInfo = token.info || ''
         let titleMatch = rawInfo
           .split(' ')
