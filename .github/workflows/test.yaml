@@ -71,11 +71,16 @@ jobs:
         run: yarn dtsc --listEmittedFiles
       - name: Build Frontend
         run: yarn fe
-      - name: Upload
+      - name: Upload Packages
         uses: actions/upload-artifact@v2
         with:
           name: packages
           path: packages
+      - name: Upload Plugins
+        uses: actions/upload-artifact@v2
+        with:
+          name: plugins
+          path: plugins
 
   unit-test:
     runs-on: ubuntu-latest
@@ -225,8 +230,16 @@ jobs:
           key: yarn-cache-${{ runner.os }}-${{ needs.prepare.outputs.random-uuid }}-node-14
       - name: Install
         run: yarn
-      - name: Compile
-        run: yarn build
+      - name: Download Packages
+        uses: actions/download-artifact@v2
+        with:
+          name: packages
+          path: packages
+      - name: Download Plugins
+        uses: actions/download-artifact@v2
+        with:
+          name: plugins
+          path: plugins
       - name: Build
         run: yarn docs build
       - name: Deploy
