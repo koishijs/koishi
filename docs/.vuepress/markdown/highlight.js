@@ -32,7 +32,7 @@ module.exports = {
         return `<pre v-pre><code>${escapeHtml(code)}</code></pre>`
       }
       const twoslashHtml = twoslash(code, lang, attrs)
-      if (twoslashHtml) return twoslashHtml
+      if (twoslashHtml) return twoslashHtml.replace('<pre', '<pre v-pre')
       const h = lang === 'cli' || cliAliases.includes(lang) ? highlighter2 : highlighter1
       return h.codeToHtml(code, lang).replace('<pre', '<pre v-pre')
     }
@@ -43,6 +43,7 @@ module.exports = {
       const token = tokens[index]
       if (args[3].frontmatter.noTwoslash) token.info += ' no-twoslash'
       if (!token.title) {
+        token.title = ''
         const rawInfo = token.info || ''
         let titleMatch = rawInfo
           .split(' ')
