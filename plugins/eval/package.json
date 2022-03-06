@@ -34,12 +34,12 @@
     "koishi": "^4.4.0"
   },
   "optionalDependencies": {
-    "@babel/core": "^7.16.7",
-    "@babel/plugin-transform-react-jsx": "^7.16.7",
+    "@babel/core": "^7.17.5",
+    "@babel/plugin-transform-react-jsx": "^7.17.3",
     "coffeescript": "^2.6.1",
-    "esbuild": "^0.12.25",
+    "esbuild": "^0.12.29",
     "json5": "^2.2.0",
-    "typescript": "^4.5.4"
+    "typescript": "^4.6.2"
   },
   "dependencies": {
     "js-yaml": "^4.1.0",

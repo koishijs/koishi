@@ -29,7 +29,7 @@
     "impl:github"
   ],
   "devDependencies": {
-    "@types/marked": "^4.0.1",
+    "@types/marked": "^4.0.2",
     "@koishijs/plugin-puppeteer": "^3.0.3",
     "@koishijs/plugin-database-memory": "^1.0.2",
     "@koishijs/plugin-mock": "^1.0.3"
@@ -38,8 +38,8 @@
     "koishi": "^4.4.0"
   },
   "dependencies": {
-    "@octokit/webhooks-types": "^5.2.0",
+    "@octokit/webhooks-types": "^5.4.0",
     "axios": "^0.24.0",
-    "marked": "^4.0.10"
+    "marked": "^4.0.12"
   }
 }

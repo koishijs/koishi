@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/bootstrap",
   "description": "Bootstraper for Koishi",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "engines": {
     "node": ">=12.0.0"
   },
@@ -29,12 +29,13 @@
     "cli"
   ],
   "devDependencies": {
-    "@types/which-pm-runs": "^1.0.0"
+    "@types/which-pm-runs": "^1.0.0",
+    "@types/yargs-parser": "^21.0.0"
   },
   "dependencies": {
     "@koishijs/loader": "^1.0.0",
     "kleur": "^4.1.4",
     "which-pm-runs": "^1.1.0",
-    "yargs-parser": "^21.0.0"
+    "yargs-parser": "^21.0.1"
   }
 }

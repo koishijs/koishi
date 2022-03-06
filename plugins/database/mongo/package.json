@@ -38,6 +38,6 @@
   },
   "dependencies": {
     "@koishijs/orm-utils": "^1.0.0",
-    "mongodb": "^4.3.0"
+    "mongodb": "^4.4.1"
   }
 }

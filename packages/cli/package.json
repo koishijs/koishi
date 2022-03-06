@@ -34,7 +34,7 @@
     "koishi": "^4.4.0"
   },
   "devDependencies": {
-    "@types/prompts": "^2.0.14",
+    "@types/prompts": "^2.4.0",
     "@types/throttle-debounce": "^2.1.0"
   },
   "dependencies": {

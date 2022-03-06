@@ -38,7 +38,7 @@ function supports(command: string, args: string[] = []) {
 }
 
 async function getName() {
-  if (argv._[0]) return argv._[0]
+  if (argv._[0]) return '' + argv._[0]
   const { name } = await prompts({
     type: 'text',
     name: 'name',

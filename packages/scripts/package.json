@@ -41,8 +41,8 @@
   "dependencies": {
     "cac": "^6.7.12",
     "cross-spawn": "^7.0.3",
-    "fs-extra": "^10.0.0",
-    "globby": "^11.0.4",
+    "fs-extra": "^10.0.1",
+    "globby": "^11.1.0",
     "kleur": "^4.1.4",
     "latest-version": "^5.1.0",
     "ora": "^5.4.1",

@@ -18,7 +18,7 @@ interface Config {
   plugins?: Record<string, VersionInfo>
 }
 
-const loader = new ConfigLoader<Config>(_[0])
+const loader = new ConfigLoader<Config>('' + _[0])
 const { plugins = {} } = loader.readConfig()
 
 const agent = which()?.name || 'npm'
