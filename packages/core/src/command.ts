@@ -74,8 +74,8 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
     return this
   }
 
-  constructor(name: string, decl: string, desc: string, public context: Context) {
-    super(name, decl, desc)
+  constructor(name: string, decl: string, context: Context) {
+    super(name, decl, context)
     this.config = { ...Command.defaultConfig }
     this._registerAlias(name.toLowerCase())
     context.app._commandList.push(this)

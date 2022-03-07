@@ -1,7 +1,7 @@
 import { Dict } from '@koishijs/utils'
 import { Context } from './context'
 
-type Value = string | ((params: object) => string)
+type Value = string
 type Node = Value | Store
 
 interface Store {
@@ -15,20 +15,16 @@ export class Template {
     this.define('general', {
       zh: {
         'name': '中文',
-        'left-paren': '（',
-        'right-paren': '）',
-        'left-quote': '“',
-        'right-quote': '”',
+        'paren': '（{0}）',
+        'quote': '“{0}”',
         'comma': '，',
         'and': '和',
         'or': '或',
       },
       en: {
         'name': 'English',
-        'left-paren': ' (',
-        'right-paren': ') ',
-        'left-quote': '"',
-        'right-quote': '"',
+        'paren': ' ({0}) ',
+        'quote': '"{0}"',
         'comma': ', ',
         'and': 'and',
         'or': 'or',
@@ -53,23 +49,21 @@ export class Template {
     }
   }
 
-  render(locales: string[], path: string, params: object) {
-    for (const locale of locales) {
+  render(locales: Iterable<string>, path: string, params: object) {
+    for (const locale of [...locales, '']) {
       const value = this.data[locale]?.[path]
-      if (typeof value === 'string') {
-        return value.replace(/\{([\w-.]+)\}/g, (_, path) => {
-          const segments = path.split('.')
-          let result = params
-          for (const segment of segments) {
-            result = result[segment]
-            if (!result) return ''
-          }
-          return result.toString()
-        })
-      } else if (typeof value === 'function') {
-        return value(params)
-      }
+      if (typeof value !== 'string') continue
+
+      return value.replace(/\{([\w-.]+)\}/g, (_, path) => {
+        const segments = path.split('.')
+        let result = params
+        for (const segment of segments) {
+          result = result[segment]
+          if (!result) return ''
+        }
+        return result.toString()
+      })
     }
-    return path
+    return ''
   }
 }

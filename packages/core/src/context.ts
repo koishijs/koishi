@@ -523,8 +523,11 @@ export class Context {
         }
         return parent = command
       }
-      command = new Command(name, decl, index === segments.length - 1 ? desc : '', this)
+      command = new Command(name, decl, this)
       list.push(command)
+      this.i18n.define(`command.${name}.description`, {
+        '': index === segments.length - 1 ? desc : '',
+      })
       if (!root) root = command
       if (parent) {
         command.parent = parent
@@ -534,7 +537,9 @@ export class Context {
       parent = command
     })
 
-    if (desc) parent.description = desc
+    if (desc) {
+      this.i18n.define(`command.${parent.name}.description`, { '': desc })
+    }
     Object.assign(parent.config, config)
     list.forEach(command => this.emit('command-added', command))
     if (!config?.patch) {

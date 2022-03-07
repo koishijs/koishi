@@ -38,11 +38,9 @@ describe('Command API', () => {
 
     it('modify commands', () => {
       const d1 = app.command('d', 'foo', { authority: 1 })
-      expect(app._commands.get('d').description).to.equal('foo')
       expect(app._commands.get('d').config.authority).to.equal(1)
 
       const d2 = app.command('d', 'bar', { authority: 2 })
-      expect(app._commands.get('d').description).to.equal('bar')
       expect(app._commands.get('d').config.authority).to.equal(2)
 
       expect(d1).to.equal(d2)
@@ -156,13 +154,12 @@ describe('Command API', () => {
 
     it('patch command', () => {
       app.plugin((ctx) => {
-        ctx.command('foo', 'desc', { patch: true }).alias('fooo').option('opt', 'option 1')
-        ctx.command('abc', 'desc', { patch: true }).alias('abcd').option('opt', 'option 1')
+        ctx.command('foo', { patch: true }).alias('fooo').option('opt', 'option 1')
+        ctx.command('abc', { patch: true }).alias('abcd').option('opt', 'option 1')
 
         const foo = app._commands.get('foo')
         expect(foo).to.be.ok
         expect(app._commands.get('fooo')).to.be.ok
-        expect(foo.description).to.equal('desc')
         expect(Object.keys(foo._options)).to.have.length(2)
         expect(app._commands.get('abc')).to.be.undefined
         expect(app._commands.get('abcd')).to.be.undefined

@@ -55,7 +55,7 @@ Session.prototype.suggest = function suggest(this: Session, options) {
 
   return sendNext(async () => {
     const message = prefix + this.text('suggest.hint', [suggestions.map(text => {
-      return this.text('general.left-quote') + text + this.text('general.right-quote')
+      return this.text('general.quote', [text])
     }).join(this.text('general.or'))])
     if (suggestions.length > 1) return message
 

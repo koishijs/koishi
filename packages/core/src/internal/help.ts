@@ -16,7 +16,15 @@ export interface HelpConfig extends Command.Config {
 }
 
 export function enableHelp<U extends User.Field, G extends Channel.Field, A extends any[], O extends {}>(cmd: Command<U, G, A, O>) {
-  return cmd.option('help', '-h  显示此信息', { hidden: true })
+  cmd.context.i18n.define('option.help', {
+    zh: '显示此信息',
+    en: 'show this message',
+  })
+
+  return cmd.option('help', '-h', {
+    hidden: true,
+    descPath: 'option.help',
+  })
 }
 
 export default function help(ctx: Context, config: HelpConfig = {}) {
@@ -41,12 +49,12 @@ export default function help(ctx: Context, config: HelpConfig = {}) {
     session.collect(key, { ...argv, command, args: [], options: { help: true } }, fields)
   }
 
-  const cmd = ctx.command('help [command:string]', '显示帮助信息', { authority: 0, ...config })
+  const cmd = ctx.command('help [command:string]', { authority: 0, ...config })
     .userFields(['authority'])
     .userFields(createCollector('user'))
     .channelFields(createCollector('channel'))
-    .option('authority', '-a  显示权限设置')
-    .option('showHidden', '-H  查看隐藏的选项和指令')
+    .option('authority', '-a')
+    .option('showHidden', '-H')
     .action(async ({ session, options }, target) => {
       if (!target) {
         const commands = app._commandList.filter(cmd => cmd.parent === null)
@@ -92,12 +100,29 @@ export default function help(ctx: Context, config: HelpConfig = {}) {
       'hint-subcommand': 'those marked with an asterisk have subcommands',
       'command-aliases': 'Aliases: {0}.',
       'command-examples': 'Examples:',
-      'command-authority': 'Minimum authority: {0}.',
+      'command-authority': 'Minimal authority: {0}.',
       'subcommand-prolog': 'Available subcommands{0}:',
       'global-prolog': 'Available commands{0}:',
       'global-epilog': 'Type "help <command>" to see syntax and examples for a specific command.',
       'available-options': 'Available options:',
       'available-options-with-authority': 'Available options (parentheses indicate additional authority requirement):',
+    },
+  })
+
+  ctx.i18n.define('command.help', {
+    zh: {
+      description: '显示帮助信息',
+      option: {
+        authority: '显示权限设置',
+        showHidden: '查看隐藏的选项和指令',
+      },
+    },
+    en: {
+      description: 'Show help',
+      option: {
+        authority: 'show authority requirements',
+        showHidden: 'show hidden options and commands',
+      },
     },
   })
 }
@@ -126,21 +151,19 @@ function formatCommands(path: string, session: Session<'authority'>, children: C
   if (!commands.length) return []
 
   let hasSubcommand = false
-  const output = commands.map(({ name, config, children, description }) => {
+  const output = commands.map(({ name, config, children }) => {
     let output = '    ' + name
     if (options.authority) {
       output += ` (${config.authority}${children.length ? (hasSubcommand = true, '*') : ''})`
     }
-    output += '  ' + description
+    output += '  ' + session.text(`command.${name}.description`)
     return output
   })
   const hints: string[] = []
   if (options.authority) hints.push(session.text('help.hint-authority'))
   if (hasSubcommand) hints.push(session.text('help.hint-subcommand'))
   const hintText = hints.length
-    ? session.text('general.left-paren')
-    + hints.join(session.text('general.comma'))
-    + session.text('general.right-paren')
+    ? session.text('general.paren', [hints.join(session.text('general.comma'))])
     : ''
   output.unshift(session.text(path, [hintText]))
   return output
@@ -164,7 +187,10 @@ function getOptions(command: Command, session: Session<'authority'>, config: Hel
 
   options.forEach((option) => {
     const authority = option.authority && config.authority ? `(${option.authority}) ` : ''
-    const line = command.app.chain('help/option', `${authority}${option.description}`, option, command, session)
+    let line = `${authority}${option.syntax}`
+    const description = session.text(option.descPath ?? `command.${command.name}.option.${option.name}`)
+    if (description) line += '  ' + description
+    line = command.app.chain('help/option', line, option, command, session)
     output.push('    ' + line)
   })
 
@@ -174,7 +200,8 @@ function getOptions(command: Command, session: Session<'authority'>, config: Hel
 async function showHelp(command: Command, session: Session<'authority'>, config: HelpOptions) {
   const output = [command.name + command.declaration]
 
-  if (command.description) output.push(command.description)
+  const description = session.text(`command.${command.name}.description`)
+  if (description) output.push(description)
 
   if (session.app.database) {
     const argv: Argv = { command, args: [], options: { help: true } }

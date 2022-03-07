@@ -150,25 +150,6 @@ export namespace template {
     }
     return result + source
   }
-
-  export function quote(content: any) {
-    return get('basic.left-quote') + content + get('basic.right-quote')
-  }
-
-  export function brace(items: any[]) {
-    if (!items.length) return ''
-    return get('basic.left-brace') + items.join(get('basic.comma')) + get('basic.right-brace')
-  }
 }
 
 export { template as t }
-
-template.set('basic', {
-  'left-brace': '（',
-  'right-brace': '）',
-  'left-quote': '“',
-  'right-quote': '”',
-  'comma': '，',
-  'and': '和',
-  'or': '或',
-})

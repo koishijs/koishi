@@ -1,6 +1,6 @@
 import { camelCase, Dict, escapeRegExp, paramCase, segment, Time } from '@koishijs/utils'
 import { Command } from './command'
-import { Next } from './context'
+import { Context, Next } from './context'
 import { Channel, User } from './database'
 import { Session } from './session'
 
@@ -355,6 +355,7 @@ export namespace Argv {
     hidden?: boolean | ((session: Session) => boolean)
     authority?: number
     notUsage?: boolean
+    descPath?: string
   }
 
   export interface TypedOptionConfig<T extends Type> extends OptionConfig<T> {
@@ -362,7 +363,7 @@ export namespace Argv {
   }
 
   export interface OptionDeclaration extends Declaration, OptionConfig {
-    description?: string
+    syntax: string
     values?: Dict<any>
   }
 
@@ -377,7 +378,7 @@ export namespace Argv {
     private _namedOptions: OptionDeclarationMap = {}
     private _symbolicOptions: OptionDeclarationMap = {}
 
-    constructor(public name: string, declaration: string, public description: string) {
+    constructor(public name: string, declaration: string, public context: Context) {
       if (!name) throw new Error('expect a command name')
       const decl = this._arguments = parseDecl(declaration)
       this.declaration = decl.stripped
@@ -409,15 +410,16 @@ export namespace Argv {
 
       const declList = parseDecl(bracket)
       if (declList.stripped) syntax += ' ' + declList.stripped
-      if (desc) syntax += '  ' + desc
       const option = this._options[name] ||= {
         ...Command.defaultOptionConfig,
         ...declList[0],
         ...config,
         name,
         values: {},
-        description: syntax,
+        syntax,
       }
+
+      this.context.i18n.define(`command.${this.name}.option.${name}`, { '': desc })
 
       const fallbackType = typeof option.fallback
       if ('value' in config) {
