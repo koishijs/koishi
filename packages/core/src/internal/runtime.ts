@@ -1,8 +1,7 @@
-import { defineProperty, template, valueMap } from '@koishijs/utils'
+import { defineProperty, valueMap } from '@koishijs/utils'
 import { Argv } from '../parser'
 import { Context } from '../context'
 import { Session } from '../session'
-import { getCommandNames } from './help'
 
 export default function runtime(ctx: Context) {
   ctx.before('parse', (content, session) => {
@@ -62,27 +61,6 @@ export default function runtime(ctx: Context) {
     // execute command
     if (!session.resolve(session.argv)) return next()
     return session.execute(session.argv, next)
-  })
-
-  ctx.middleware((session, next) => {
-    // use `!prefix` instead of `prefix === null` to prevent from blocking other middlewares
-    // we need to make sure that the user truly has the intension to call a command
-    const { argv, quote, subtype, parsed: { content, prefix, appel } } = session
-    if (argv.command || subtype !== 'private' && !prefix && !appel) return next()
-    const target = content.split(/\s/, 1)[0].toLowerCase()
-    if (!target) return next()
-
-    return session.suggest({
-      target,
-      next,
-      items: getCommandNames(session),
-      prefix: template('internal.command-suggestion-prefix'),
-      suffix: template('internal.command-suggestion-suffix'),
-      async apply(suggestion, next) {
-        const newMessage = suggestion + content.slice(target.length) + (quote ? ' ' + quote.content : '')
-        return this.execute(newMessage, next)
-      },
-    })
   })
 
   function executeHelp(session: Session, name: string) {

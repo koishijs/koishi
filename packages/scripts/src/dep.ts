@@ -1,4 +1,4 @@
-import { cwd, DependencyType, getPackages, PackageJson } from './utils'
+import { config, cwd, DependencyType, getPackages, PackageJson } from './utils'
 import { cyan, green, yellow } from 'kleur'
 import { writeJson } from 'fs-extra'
 import { gt } from 'semver'
@@ -47,14 +47,14 @@ class Graph {
       spinner.text = `progress: ${progress}/${requests.length}`
       if (!gt(newVersion, oldVersion)) return
       const newRange = oldRange[0] + newVersion
-      output.push(`- ${yellow(dep)}: ${cyan(oldVersion)} -> ${green(newRange)}`)
+      output.push(`- ${yellow(dep)}: ${cyan(oldVersion)} -> ${green(newVersion)}`)
       for (const name in this.deps[request]) {
         Object.defineProperty(this.pkgs[name], '$dirty', { value: true })
         for (const type of this.deps[request][name]) {
           this.pkgs[name][type][dep] = newRange
         }
       }
-    }, { concurrency: 10 })
+    }, { concurrency: config.concurrency })
     spinner.succeed()
 
     for (const path in this.pkgs) {

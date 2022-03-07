@@ -42,7 +42,7 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
   _disposables?: Disposable[]
 
   private _userFields: FieldCollector<'user'>[] = []
-  private _channelFields: FieldCollector<'channel'>[] = []
+  private _channelFields: FieldCollector<'channel'>[] = [['locale']]
   private _actions: Command.Action[] = []
   private _checkers: Command.Action[] = [async (argv) => {
     return this.app.serial(argv.session, 'command/before-execute', argv)

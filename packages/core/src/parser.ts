@@ -1,4 +1,4 @@
-import { camelCase, Dict, escapeRegExp, paramCase, segment, template, Time } from '@koishijs/utils'
+import { camelCase, Dict, escapeRegExp, paramCase, segment, Time } from '@koishijs/utils'
 import { Command } from './command'
 import { Next } from './context'
 import { Channel, User } from './database'
@@ -231,34 +231,34 @@ export namespace Argv {
   createDomain('rawtext', source => segment.unescape(source), { greedy: true })
   createDomain('boolean', () => true)
 
-  createDomain('number', (source) => {
+  createDomain('number', (source, session) => {
     const value = +source
     if (Number.isFinite(value)) return value
-    throw new Error(template('internal.invalid-number'))
+    throw new Error(session.text('internal.invalid-number'))
   })
 
-  createDomain('integer', (source) => {
+  createDomain('integer', (source, session) => {
     const value = +source
     if (value * 0 === 0 && Math.floor(value) === value) return value
-    throw new Error(template('internal.invalid-integer'))
+    throw new Error(session.text('internal.invalid-integer'))
   })
 
-  createDomain('posint', (source) => {
+  createDomain('posint', (source, session) => {
     const value = +source
     if (value * 0 === 0 && Math.floor(value) === value && value > 0) return value
-    throw new Error(template('internal.invalid-posint'))
+    throw new Error(session.text('internal.invalid-posint'))
   })
 
-  createDomain('natural', (source) => {
+  createDomain('natural', (source, session) => {
     const value = +source
     if (value * 0 === 0 && Math.floor(value) === value && value >= 0) return value
-    throw new Error(template('internal.invalid-natural'))
+    throw new Error(session.text('internal.invalid-natural'))
   })
 
-  createDomain('date', (source) => {
+  createDomain('date', (source, session) => {
     const timestamp = Time.parseDate(source)
     if (+timestamp) return timestamp
-    throw new Error(template('internal.invalid-date'))
+    throw new Error(session.text('internal.invalid-date'))
   })
 
   createDomain('user', (source, session) => {
@@ -271,7 +271,7 @@ export namespace Argv {
     if (code && code.type === 'at') {
       return `${session.platform}:${code.data.id}`
     }
-    throw new Error(template('internal.invalid-user'))
+    throw new Error(session.text('internal.invalid-user'))
   })
 
   createDomain('channel', (source, session) => {
@@ -284,7 +284,7 @@ export namespace Argv {
     if (code && code.type === 'sharp') {
       return `${session.platform}:${code.data.id}`
     }
-    throw new Error(template('internal.invalid-channel'))
+    throw new Error(session.text('internal.invalid-channel'))
   })
 
   const BRACKET_REGEXP = /<[^>]+>|\[[^\]]+\]/g
@@ -330,8 +330,12 @@ export namespace Argv {
       try {
         return transform(source, argv.session)
       } catch (err) {
-        const message = err['message'] || template('internal.check-syntax')
-        argv.error = template(`internal.invalid-${kind}`, name, message)
+        if (!argv.session) {
+          argv.error = `internal.invalid-${kind}`
+        } else {
+          const message = err['message'] || argv.session.text('internal.check-syntax')
+          argv.error = argv.session.text(`internal.invalid-${kind}`, [name, message])
+        }
         return
       }
     }
@@ -434,7 +438,7 @@ export namespace Argv {
     private _assignOption(option: OptionDeclaration, names: readonly string[], optionMap: OptionDeclarationMap) {
       for (const name of names) {
         if (name in optionMap) {
-          throw new Error(template.format('duplicate option name "{0}" for command "{1}"', name, this.name))
+          throw new Error(`duplicate option name "${name}" for command "${this.name}"`)
         }
         optionMap[name] = option
       }

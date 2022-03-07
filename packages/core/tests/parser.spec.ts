@@ -61,8 +61,8 @@ describe('Parser API', () => {
       expect(cmd.parse('--delta')).to.have.shape({ error: '', options: { delta: '' } })
       expect(cmd.parse('--delta 1')).to.have.shape({ error: '', options: { delta: '1' } })
       expect(cmd.parse('--delta -1')).to.have.shape({ error: '', options: { delta: '-1' } })
-      expect(cmd.parse('--epsilon awee')).to.have.shape({ error: '选项 epsilon 输入无效，请提供一个正整数。' })
-      expect(cmd.parse('--epsilon 1.2')).to.have.shape({ error: '选项 epsilon 输入无效，请提供一个正整数。' })
+      expect(cmd.parse('--epsilon awee').error).to.be.ok
+      expect(cmd.parse('--epsilon 1.2').error).to.be.ok
     })
 
     it('short alias', () => {

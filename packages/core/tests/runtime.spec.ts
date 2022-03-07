@@ -1,5 +1,4 @@
 import { App, User, Channel, Command, sleep } from 'koishi'
-import { install } from '@sinonjs/fake-timers'
 import memory from '@koishijs/plugin-database-memory'
 import mock, { DEFAULT_SELF_ID } from '@koishijs/plugin-mock'
 
@@ -25,7 +24,7 @@ const cmd1 = app.command('cmd1 <arg1>', { authority: 2 })
   .shortcut('foo4', { fuzzy: true })
   .option('--bar', '', { authority: 3 })
   .option('--baz', '', { notUsage: true })
-  .action(({ session }, arg) => session.send('cmd1:' + arg))
+  .action(({}, arg) => 'cmd1:' + arg)
 
 const cmd2 = app.command('cmd2')
   .userFields(['id'])
@@ -33,7 +32,7 @@ const cmd2 = app.command('cmd2')
   .shortcut('foo3', { prefix: true, fuzzy: true })
   .option('--bar', '', { authority: 3 })
   .option('--baz', '', { notUsage: true })
-  .action(({ session }) => session.send('cmd2:' + session.userId))
+  .action(({ session }) => 'cmd2:' + session.userId)
 
 app.middleware((session, next) => {
   if (session.content.includes('escape')) return 'early'
@@ -45,8 +44,6 @@ before(async () => {
   await app.mock.initUser('123', 2)
   await app.mock.initUser('456', 1)
   await app.mock.initUser('789', 1)
-  // make coverage happy (checkTimer)
-  await app.database.setUser('mock', '456', { timers: { foo: 0 } })
   await app.database.setUser('mock', '789', { flag: User.Flag.ignore })
   await app.mock.initChannel('321')
   await app.mock.initChannel('654', '999')

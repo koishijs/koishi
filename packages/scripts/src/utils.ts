@@ -9,10 +9,12 @@ export const meta: PackageJson = require(cwd + '/package.json')
 
 export interface Config {
   mode?: 'monorepo' | 'separate' | 'submodule'
+  concurrency?: number
 }
 
 export const config: Config = {
   mode: 'monorepo',
+  concurrency: 10,
   ...meta['koishi-scripts'],
 }
 

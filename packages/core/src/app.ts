@@ -9,6 +9,7 @@ import { Model } from './orm'
 import { Template } from './i18n'
 import runtime from './internal/runtime'
 import validate from './internal/validate'
+import suggest, { SuggestConfig } from './internal/suggest'
 import help, { HelpConfig } from './internal/help'
 import Schema from 'schemastery'
 
@@ -80,6 +81,7 @@ export class App extends Context {
     // install internal plugins
     this.plugin(runtime)
     this.plugin(validate)
+    this.plugin(suggest)
     this.plugin(help, options.help)
   }
 
@@ -140,7 +142,7 @@ export class App extends Context {
     if (this.database) {
       if (session.subtype === 'group') {
         // attach group data
-        const channelFields = new Set<Channel.Field>(['flag', 'assignee', 'guildId'])
+        const channelFields = new Set<Channel.Field>(['flag', 'assignee', 'guildId', 'locale'])
         this.emit('before-attach-channel', session, channelFields)
         const channel = await session.observeChannel(channelFields)
         // for backwards compatibility (TODO remove in v5)
@@ -246,13 +248,12 @@ export namespace App {
   export interface Config extends Config.Basic, Config.Features, Config.Advanced {}
 
   export namespace Config {
-    export interface Basic {
+    export interface Basic extends SuggestConfig {
       locale?: string
       prefix?: Computed<string | string[]>
       nickname?: string | string[]
       autoAssign?: Computed<Awaitable<boolean>>
       autoAuthorize?: Computed<Awaitable<number>>
-      minSimilarity?: number
     }
 
     export interface Features {

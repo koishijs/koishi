@@ -1,4 +1,3 @@
-import { template } from '@koishijs/utils'
 import { Argv } from '../parser'
 import { Command } from '../command'
 import { Context } from '../context'
@@ -59,16 +58,15 @@ export default function help(ctx: Context, config: HelpConfig = {}) {
 
       const command = findCommand(target)
       if (!command?.context.match(session)) {
-        session.suggest({
+        return session.suggest({
           target,
           items: getCommandNames(session),
-          prefix: session.text('help.suggestion-prefix'),
-          suffix: session.text('help.suggestion-suffix'),
+          prefix: session.text('suggest.help-prefix'),
+          suffix: session.text('suggest.help-suffix'),
           async apply(suggestion) {
             return showHelp(ctx.getCommand(suggestion), this as any, options)
           },
         })
-        return
       }
 
       return showHelp(command, session, options)
@@ -83,12 +81,9 @@ export default function help(ctx: Context, config: HelpConfig = {}) {
       'command-aliases': '别名：{0}。',
       'command-examples': '使用示例：',
       'command-authority': '最低权限：{0} 级。',
-      'suggestion-prefix': '指令未找到。',
-      'suggestion-suffix': '发送空行或句号以使用推测的指令。',
-      // TODO
       'subcommand-prolog': '可用的子指令有{0}：',
-      'global-help-prolog': '当前可用的指令有{0}：',
-      'global-help-epilog': '输入“帮助 指令名”查看特定指令的语法和使用示例。',
+      'global-prolog': '当前可用的指令有{0}：',
+      'global-epilog': '输入“帮助 指令名”查看特定指令的语法和使用示例。',
       'available-options': '可用的选项有：',
       'available-options-with-authority': '可用的选项有（括号内为额外要求的权限等级）：',
     },
@@ -98,11 +93,9 @@ export default function help(ctx: Context, config: HelpConfig = {}) {
       'command-aliases': 'Aliases: {0}.',
       'command-examples': 'Examples:',
       'command-authority': 'Minimum authority: {0}.',
-      'suggestion-prefix': 'Command not found.',
-      'suggestion-suffix': 'Send a blank line or a period to apply the suggestion.',
       'subcommand-prolog': 'Available subcommands{0}:',
-      'global-help-prolog': 'Available commands{0}:',
-      'global-help-epilog': 'Type "help <command>" to see syntax and examples for a specific command.',
+      'global-prolog': 'Available commands{0}:',
+      'global-epilog': 'Type "help <command>" to see syntax and examples for a specific command.',
       'available-options': 'Available options:',
       'available-options-with-authority': 'Available options (parentheses indicate additional authority requirement):',
     },
@@ -144,7 +137,12 @@ function formatCommands(path: string, session: Session<'authority'>, children: C
   const hints: string[] = []
   if (options.authority) hints.push(session.text('help.hint-authority'))
   if (hasSubcommand) hints.push(session.text('help.hint-subcommand'))
-  output.unshift(session.text(path, [template.brace(hints)]))
+  const hintText = hints.length
+    ? session.text('general.left-paren')
+    + hints.join(session.text('general.comma'))
+    + session.text('general.right-paren')
+    : ''
+  output.unshift(session.text(path, [hintText]))
   return output
 }
 
@@ -213,28 +211,3 @@ async function showHelp(command: Command, session: Session<'authority'>, config:
 
   return output.filter(Boolean).join('\n')
 }
-
-template.set('internal', {
-  // command
-  'low-authority': '权限不足。',
-  'insufficient-arguments': '缺少参数，输入帮助以查看用法。',
-  'redunant-arguments': '存在多余参数，输入帮助以查看用法。',
-  'invalid-argument': '参数 {0} 输入无效，{1}',
-  'unknown-option': '存在未知选项 {0}，输入帮助以查看用法。',
-  'invalid-option': '选项 {0} 输入无效，{1}',
-  'check-syntax': '输入帮助以查看用法。',
-
-  // parser
-  'invalid-number': '请提供一个数字。',
-  'invalid-integer': '请提供一个整数。',
-  'invalid-posint': '请提供一个正整数。',
-  'invalid-natural': '请提供一个非负整数。',
-  'invalid-date': '请输入合法的时间。',
-  'invalid-user': '请指定正确的用户。',
-  'invalid-channel': '请指定正确的频道。',
-
-  // suggest
-  'suggestion': '您要找的是不是{0}？',
-  'command-suggestion-prefix': '',
-  'command-suggestion-suffix': '发送空行或句号以使用推测的指令。',
-})

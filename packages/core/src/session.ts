@@ -1,8 +1,7 @@
-import { distance } from 'fastest-levenshtein'
 import { Channel, User } from './database'
 import { Tables, TableType } from './orm'
 import { Command } from './command'
-import { Awaitable, defineProperty, Logger, observe, Random, remove, segment, template } from '@koishijs/utils'
+import { defineProperty, Logger, observe, Random, remove, segment } from '@koishijs/utils'
 import { Argv } from './parser'
 import { Middleware, Next } from './context'
 import { App } from './app'
@@ -227,7 +226,7 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
       for (const key in cache) {
         fieldSet.delete(key as any)
       }
-      if (!fieldSet.size) return this.channel = cache
+      if (!fieldSet.size) return cache
     }
 
     // 绑定一个新的可观测频道实例
@@ -239,7 +238,7 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
       cache = observe(data, diff => this.app.database.setChannel(platform, channelId, diff), `channel ${key}`)
       this.app._channelCache.set(this.id, key, cache)
     }
-    return this.channel = cache
+    return cache
   }
 
   async observeChannel<T extends Channel.Field = never>(fields: Iterable<T> = []): Promise<Channel.Observed<T | G>> {
@@ -305,8 +304,10 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
 
   text(path: string, params: object = {}) {
     const locales = [this.app.options.locale]
-    if (this.guild?.['locale']) {
-      locales.unshift(this.guild['locale'])
+    if (this.guild) {
+      if (this.guild?.['locale']) {
+        locales.unshift(this.guild['locale'])
+      }
       if (this.channel !== this.guild && this.channel['locale']) {
         locales.unshift(this.channel['locale'])
       }
@@ -427,60 +428,6 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
       }, timeout)
     })
   }
-
-  suggest(options: SuggestOptions) {
-    const {
-      target,
-      items,
-      prefix = '',
-      suffix,
-      apply,
-      next = Next.compose,
-      minSimilarity = this.app.options.minSimilarity,
-    } = options
-
-    const sendNext = async (callback: Next) => {
-      const result = await next(callback)
-      if (result) await this.send(result)
-    }
-
-    let suggestions: string[], minDistance = Infinity
-    for (const name of items) {
-      const dist = distance(name, target)
-      if (name.length <= 2 || dist > name.length * minSimilarity) continue
-      if (dist === minDistance) {
-        suggestions.push(name)
-      } else if (dist < minDistance) {
-        suggestions = [name]
-        minDistance = dist
-      }
-    }
-    if (!suggestions) return sendNext(async () => prefix)
-
-    return sendNext(async () => {
-      const message = prefix + template('internal.suggestion', suggestions.map(template.quote).join(template.get('basic.or')))
-      if (suggestions.length > 1) return message
-
-      const dispose = this.middleware((session, next) => {
-        dispose()
-        const message = session.content.trim()
-        if (message && message !== '.' && message !== '。') return next()
-        return apply.call(session, suggestions[0], next)
-      })
-
-      return message + suffix
-    })
-  }
-}
-
-export interface SuggestOptions {
-  target: string
-  items: string[]
-  next?: Next
-  prefix?: string
-  suffix: string
-  minSimilarity?: number
-  apply: (this: Session, suggestion: string, next: Next) => Awaitable<void | string>
 }
 
 export function getSessionId(session: Session) {

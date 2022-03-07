@@ -1,13 +1,17 @@
-import { App, template } from 'koishi'
+import { App } from 'koishi'
 import mock from '@koishijs/plugin-mock'
 import memory from '@koishijs/plugin-database-memory'
-
-template.set('internal.global-help-epilog', 'EPILOG')
 
 const app = new App()
 
 app.plugin(mock)
 app.plugin(memory)
+
+app.i18n.define('help', {
+  zh: {
+    'global-epilog': 'EPILOG',
+  },
+})
 
 const client = app.mock.client('123')
 
@@ -123,10 +127,13 @@ describe('Help Command', () => {
   })
 
   it('no database', async () => {
-    template.set('internal.global-help-epilog', '')
-
     const app = new App()
     app.plugin(mock)
+    app.i18n.define('help', {
+      zh: {
+        'global-epilog': '',
+      },
+    })
     await app.start()
 
     const client = app.mock.client('123')
