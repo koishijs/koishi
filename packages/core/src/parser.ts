@@ -419,7 +419,7 @@ export namespace Argv {
         syntax,
       }
 
-      this.context.i18n.define(`command.${this.name}.option.${name}`, { '': desc })
+      if (desc) this.context.i18n.define('', `command.${this.name}.option.${name}`, desc)
 
       const fallbackType = typeof option.fallback
       if ('value' in config) {

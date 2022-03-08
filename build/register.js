@@ -2,6 +2,7 @@ const { install } = require('source-map-support')
 const { transformSync } = require('esbuild')
 const { readFileSync, readdirSync } = require('fs')
 const { resolve } = require('path')
+const { load } = require('js-yaml')
 
 // hack for tests
 if (process.env.TS_NODE_PROJECT) {
@@ -44,6 +45,12 @@ const globalInjections = {
     const loaders = readdirSync(resolve(__dirname, '../plugins/eval/src/loaders'))
     return loaders.map(name => name.slice(0, -3))
   },
+}
+
+require.extensions['.yaml'] = require.extensions['.yml'] = (module, filename) => {
+  const source = readFileSync(filename, 'utf8')
+  const data = load(source)
+  module.exports = data
 }
 
 require.extensions['.ts'] = (module, filename) => {

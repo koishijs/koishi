@@ -12,40 +12,28 @@ export class Template {
   data: Dict<Dict<Value>> = {}
 
   constructor(protected ctx: Context) {
-    this.define('general', {
-      zh: {
-        'name': '中文',
-        'paren': '（{0}）',
-        'quote': '“{0}”',
-        'comma': '，',
-        'and': '和',
-        'or': '或',
-      },
-      en: {
-        'name': 'English',
-        'paren': ' ({0}) ',
-        'quote': '"{0}"',
-        'comma': ', ',
-        'and': 'and',
-        'or': 'or',
-      },
-    })
+    this.define('zh', require('../i18n/zh.yml'))
+    this.define('en', require('../i18n/en.yml'))
   }
 
   private set(locale: string, prefix: string, value: Node) {
     if (typeof value === 'string') {
-      this.data[locale][prefix] = value
+      this.data[locale][prefix.slice(0, -1)] = value
     } else {
       for (const key in value) {
-        this.set(locale, `${prefix}.${key}`, value[key])
+        this.set(locale, prefix + key + '.', value[key])
       }
     }
   }
 
-  define(prefix: string, dict: Store) {
-    for (const locale in dict) {
-      this.data[locale] ||= {}
-      this.set(locale, prefix, dict[locale])
+  define(locale: string, dict: Store): void
+  define(locale: string, key: string, value: Node): void
+  define(locale: string, ...args: [Store] | [string, Node]) {
+    this.data[locale] ||= {}
+    if (typeof args[0] === 'string') {
+      this.set(locale, args[0] + '.', args[1])
+    } else {
+      this.set(locale, '', args[0])
     }
   }
 

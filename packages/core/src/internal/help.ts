@@ -16,11 +16,6 @@ export interface HelpConfig extends Command.Config {
 }
 
 export function enableHelp<U extends User.Field, G extends Channel.Field, A extends any[], O extends {}>(cmd: Command<U, G, A, O>) {
-  cmd.context.i18n.define('option.help', {
-    zh: '显示此信息',
-    en: 'show this message',
-  })
-
   return cmd.option('help', '-h', {
     hidden: true,
     descPath: 'option.help',
@@ -81,50 +76,6 @@ export default function help(ctx: Context, config: HelpConfig = {}) {
     })
 
   if (config.shortcut !== false) cmd.shortcut('帮助', { fuzzy: true })
-
-  ctx.i18n.define('help', {
-    zh: {
-      'hint-authority': '括号内为对应的最低权限等级',
-      'hint-subcommand': '标有星号的表示含有子指令',
-      'command-aliases': '别名：{0}。',
-      'command-examples': '使用示例：',
-      'command-authority': '最低权限：{0} 级。',
-      'subcommand-prolog': '可用的子指令有{0}：',
-      'global-prolog': '当前可用的指令有{0}：',
-      'global-epilog': '输入“帮助 指令名”查看特定指令的语法和使用示例。',
-      'available-options': '可用的选项有：',
-      'available-options-with-authority': '可用的选项有（括号内为额外要求的权限等级）：',
-    },
-    en: {
-      'hint-authority': 'this minimum authority is marked in parentheses',
-      'hint-subcommand': 'those marked with an asterisk have subcommands',
-      'command-aliases': 'Aliases: {0}.',
-      'command-examples': 'Examples:',
-      'command-authority': 'Minimal authority: {0}.',
-      'subcommand-prolog': 'Available subcommands{0}:',
-      'global-prolog': 'Available commands{0}:',
-      'global-epilog': 'Type "help <command>" to see syntax and examples for a specific command.',
-      'available-options': 'Available options:',
-      'available-options-with-authority': 'Available options (parentheses indicate additional authority requirement):',
-    },
-  })
-
-  ctx.i18n.define('command.help', {
-    zh: {
-      description: '显示帮助信息',
-      option: {
-        authority: '显示权限设置',
-        showHidden: '查看隐藏的选项和指令',
-      },
-    },
-    en: {
-      description: 'Show help',
-      option: {
-        authority: 'show authority requirements',
-        showHidden: 'show hidden options and commands',
-      },
-    },
-  })
 }
 
 export function getCommandNames(session: Session) {

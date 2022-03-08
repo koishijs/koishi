@@ -1,0 +1,52 @@
+general:
+  name: English
+  paren: ' ({0}) '
+  quote: '"{0}"'
+  comma: ', '
+  and: and
+  or: or
+
+internal:
+  low-authority: Low authority.
+  insufficient-arguments: Insufficient arguments, type help to see usage.
+  redunant-arguments: Redunant arguments, type help to see usage.
+  invalid-argument: Invalid argument {0}, {1}
+  unknown-option: Unknown option {0}, type help to see usage.
+  invalid-option: Invalid option {0}, {1}
+  check-syntax: Type help to see usage.
+  invalid-number: Expect a number.
+  invalid-integer: Expect an integer.
+  invalid-posint: Expect a positive integer.
+  invalid-natural: Expect a non-negative integer.
+  invalid-date: Expect a valid date.
+  invalid-user: Expect a valid user.
+  invalid-channel: Expect a valid channel.
+
+suggest:
+  hint: Do you mean {0}?
+  command-prefix: ''
+  command-suffix: Send a period to apply the suggestion.
+  help-prefix: Command not found.
+  help-suffix: Send a blank line or a period to apply the suggestion.
+
+command:
+  help:
+    description: Show help
+    option:
+      authority: show authority requirements
+      showHidden: show hidden options and commands
+
+option:
+  help: show this message
+
+help:
+  hint-authority: this minimum authority is marked in parentheses
+  hint-subcommand: those marked with an asterisk have subcommands
+  command-aliases: 'Aliases: {0}.'
+  command-examples: 'Examples:'
+  command-authority: 'Minimal authority: {0}.'
+  subcommand-prolog: 'Available subcommands{0}:'
+  global-prolog: 'Available commands{0}:'
+  global-epilog: Type "help <command>" to see syntax and examples for a specific command.
+  available-options: 'Available options:'
+  available-options-with-authority: 'Available options (parentheses indicate additional authority requirement):'

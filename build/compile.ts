@@ -1,9 +1,10 @@
 import { build, BuildFailure, BuildOptions, Message, Platform, Plugin } from 'esbuild'
 import { resolve } from 'path'
 import { cyan, red, yellow } from 'kleur'
-import { existsSync, readdir } from 'fs-extra'
+import { existsSync, readdir, readFile } from 'fs-extra'
 import escapeRegExp from 'escape-string-regexp'
 import { getPackages, PackageJson, requireSafe } from './utils'
+import yaml from 'js-yaml'
 import cac from 'cac'
 
 const { args } = cac().help().parse()
@@ -73,7 +74,7 @@ async function compile(name: string) {
     define: {
       KOISHI_VERSION,
     },
-    plugins: [externalPlugin],
+    plugins: [externalPlugin, yamlPlugin()],
   }
 
   // bundle for both node and browser
@@ -111,6 +112,7 @@ async function compile(name: string) {
         plugins: [
           usePlatformPlugin('node'),
           externalPlugin,
+          yamlPlugin(),
         ],
       }),
       bundle({
@@ -122,6 +124,7 @@ async function compile(name: string) {
         plugins: [
           usePlatformPlugin('browser'),
           externalPlugin,
+          yamlPlugin(),
         ],
       }),
     ])
@@ -135,6 +138,27 @@ async function compile(name: string) {
 
   return bundle(options)
 }
+
+const yamlPlugin = (options: yaml.LoadOptions = {}): Plugin => ({
+  name: 'yaml',
+  setup(build) {
+    build.onResolve({ filter: /\.ya?ml$/ }, ({ path, resolveDir }) => {
+      if (resolveDir === '') return
+      return {
+        path: resolve(resolveDir, path),
+        namespace: 'yaml',
+      }
+    })
+
+    build.onLoad({ namespace: 'yaml', filter: /.*/ }, async ({ path }) => {
+      const source = await readFile(path, 'utf8')
+      return {
+        loader: 'json',
+        contents: JSON.stringify(yaml.load(source, options)),
+      }
+    })
+  },
+})
 
 ;(async () => {
   const folders = await getPackages(args)

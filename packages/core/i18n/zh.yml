@@ -1,0 +1,52 @@
+general:
+  name: 中文
+  paren: '（{0}）'
+  quote: '“{0}”'
+  comma: ，
+  and: 和
+  or: 或
+
+internal:
+  low-authority: 权限不足。
+  insufficient-arguments: 缺少参数，输入帮助以查看用法。
+  redunant-arguments: 存在多余参数，输入帮助以查看用法。
+  invalid-argument: 参数 {0} 输入无效，{1}
+  unknown-option: 存在未知选项 {0}，输入帮助以查看用法。
+  invalid-option: 选项 {0} 输入无效，{1}
+  check-syntax: 输入帮助以查看用法。
+  invalid-number: 请提供一个数字。
+  invalid-integer: 请提供一个整数。
+  invalid-posint: 请提供一个正整数。
+  invalid-natural: 请提供一个非负整数。
+  invalid-date: 请输入合法的时间。
+  invalid-user: 请指定正确的用户。
+  invalid-channel: 请指定正确的频道。
+
+suggest:
+  hint: 您要找的是不是{0}？
+  command-prefix: ''
+  command-suffix: 发送空行或句号以使用推测的指令。
+  help-prefix: 指令未找到。
+  help-suffix: 发送空行或句号以使用推测的指令。
+
+command:
+  help:
+    description: 显示帮助信息
+    option:
+      authority: 显示权限设置
+      showHidden: 查看隐藏的选项和指令
+
+option:
+  help: 显示此信息
+
+help:
+  hint-authority: 括号内为对应的最低权限等级
+  hint-subcommand: 标有星号的表示含有子指令
+  command-aliases: 别名：{0}。
+  command-examples: 使用示例：
+  command-authority: 最低权限：{0} 级。
+  subcommand-prolog: 可用的子指令有{0}：
+  global-prolog: 当前可用的指令有{0}：
+  global-epilog: 输入“帮助 指令名”查看特定指令的语法和使用示例。
+  available-options: 可用的选项有：
+  available-options-with-authority: 可用的选项有（括号内为额外要求的权限等级）：

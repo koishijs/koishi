@@ -91,21 +91,4 @@ export default function suggest(ctx: Context) {
       },
     })
   })
-
-  ctx.i18n.define('suggest', {
-    zh: {
-      'hint': '您要找的是不是{0}？',
-      'command-prefix': '',
-      'command-suffix': '发送空行或句号以使用推测的指令。',
-      'help-prefix': '指令未找到。',
-      'help-suffix': '发送空行或句号以使用推测的指令。',
-    },
-    en: {
-      'hint': 'Do you mean {0}?',
-      'command-prefix': '',
-      'command-suffix': 'Send a period to apply the suggestion.',
-      'help-prefix': 'Command not found.',
-      'help-suffix': 'Send a blank line or a period to apply the suggestion.',
-    },
-  })
 }
