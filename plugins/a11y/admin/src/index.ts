@@ -1,17 +1,5 @@
-import { Channel, Command, Context, difference, enumKeys, Schema, template, User } from 'koishi'
+import { Channel, Command, Context, difference, enumKeys, Schema, User } from 'koishi'
 import { adminChannel, adminUser, parsePlatform } from '@koishijs/helpers'
-
-template.set('admin', {
-  // flag
-  'unknown-flag': '未找到标记 {0}。',
-  'all-flags': '全部标记为：{0}。',
-  'no-flags': '未设置任何标记。',
-  'current-flags': '当前的标记为：{0}。',
-
-  // admin helper
-  'user-expected': '请指定目标用户。',
-  'invalid-assignee-platform': '代理者应与目标频道属于同一平台。',
-})
 
 function adminFlag<U extends User.Field, G extends Channel.Field, A extends any[], O extends {}>(cmd: Command<U, G, A, O>, map: any, key: 'user' | 'channel') {
   return cmd
@@ -23,7 +11,7 @@ function adminFlag<U extends User.Field, G extends Channel.Field, A extends any[
 
       if (options.set || options.unset) {
         const notFound = difference(args, enumKeys(map))
-        if (notFound.length) return template('admin.unknown-flag', notFound.join(', '))
+        if (notFound.length) return session.text('admin.unknown-flag', [notFound.join(', ')])
         for (const name of args) {
           options.set ? target.flag |= map[name] : target.flag &= ~map[name]
         }
@@ -31,7 +19,7 @@ function adminFlag<U extends User.Field, G extends Channel.Field, A extends any[
       }
 
       if (options.list) {
-        return template('admin.all-flags', enumKeys(map).join(', '))
+        return session.text('admin.all-flags', [enumKeys(map).join(', ')])
       }
 
       let flag = target.flag
@@ -41,8 +29,8 @@ function adminFlag<U extends User.Field, G extends Channel.Field, A extends any[
         flag -= value
         keys.unshift(map[value])
       }
-      if (!keys.length) return template('admin.no-flags')
-      return template('admin.current-flags', keys.join(', '))
+      if (!keys.length) return session.text('admin.no-flags')
+      return session.text('admin.current-flags', [keys.join(', ')])
     })
 }
 
@@ -53,6 +41,9 @@ export const using = ['database'] as const
 export const Config: Schema<Config> = Schema.object({})
 
 export function apply(ctx: Context) {
+  ctx.i18n.define('zh', require('../i18n/zh'))
+  ctx.i18n.define('en', require('../i18n/en'))
+
   ctx.command('user', '用户管理', { authority: 3 })
   ctx.command('channel', '频道管理', { authority: 3 })
 
@@ -60,7 +51,7 @@ export function apply(ctx: Context) {
     .alias('auth')
     .use(adminUser)
     .action(async ({ session }, authority) => {
-      if (session.userId === session.user[session.platform]) return template('admin.user-expected')
+      if (session.userId === session.user[session.platform]) return session.text('admin.user-expected')
       session.user.authority = authority
     })
 
@@ -81,10 +72,17 @@ export function apply(ctx: Context) {
       } else {
         const [platform, userId] = parsePlatform(value)
         if (platform !== parsePlatform(options.channel)[0]) {
-          return template('admin.invalid-assignee-platform')
+          return session.text('admin.invalid-assignee-platform')
         }
         session.channel.assignee = userId
       }
+    })
+
+  ctx.command('channel/localize <lang>', '本地化', { authority: 3, checkUnknown: true })
+    .channelFields(['locale'])
+    .use(adminChannel)
+    .action(async ({ session }, lang) => {
+      session.channel.locale = lang
     })
 
   ctx.command('channel.flag [-s|-S] [...flags]', '标记信息', { authority: 3, checkUnknown: true })

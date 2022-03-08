@@ -1,18 +1,4 @@
-import { Argv, Awaitable, Channel, Command, difference, Extend, observe, template, User } from 'koishi'
-
-template.set('common', {
-  'error-encountered': '发生未知错误。',
-})
-
-template.set('admin', {
-  'user-not-found': '未找到指定的用户。',
-  'user-unchanged': '用户数据未改动。',
-  'user-updated': '用户数据已修改。',
-  'channel-not-found': '未找到指定的频道。',
-  'channel-unchanged': '频道数据未改动。',
-  'channel-updated': '频道数据已修改。',
-  'not-in-group': '当前不在群组上下文中，请使用 -c 参数指定目标频道。',
-})
+import { App, Argv, Awaitable, Channel, Command, difference, Extend, observe, User } from 'koishi'
 
 export function parsePlatform(target: string): [platform: string, id: string] {
   const index = target.indexOf(':')
@@ -21,22 +7,34 @@ export function parsePlatform(target: string): [platform: string, id: string] {
   return [platform, id] as any
 }
 
+const refs = new WeakSet<App>()
+
+function loadI18n(app: App) {
+  if (refs.has(app)) return
+  refs.add(app)
+  app.i18n.define('zh', require('../i18n/zh'))
+  app.i18n.define('en', require('../i18n/en'))
+}
+
 export function handleError<U extends User.Field, G extends Channel.Field, A extends any[], O extends {}>(
   cmd: Command<U, G, A, O>,
   handler: (error: Error, argv: Argv<U, G, A, O>) => Awaitable<void | string>,
 ) {
+  loadI18n(cmd.app)
+
   return cmd.action(async (argv, ...args) => {
     try {
       return await argv.next()
     } catch (error) {
       if (handler) return handler(error, argv)
-      return template('common.error-encountered', error.message)
+      return argv.session.text('internal.error-encountered', error.message)
     }
   }, true)
 }
 
 export function adminUser<U extends User.Field, G extends Channel.Field, A extends any[], O extends {}>(cmd: Command<U, G, A, O>) {
   let notFound = false
+  loadI18n(cmd.app)
 
   async function setTarget(argv: Argv<'authority', G, A, Extend<O, 'user', string>>) {
     const { options, session } = argv
@@ -61,7 +59,7 @@ export function adminUser<U extends User.Field, G extends Channel.Field, A exten
         await app.database.createUser(platform, userId, diff)
       }, `user ${options.user}`)
     } else if (user.authority <= data.authority) {
-      return template('internal.low-authority')
+      return session.text('internal.low-authority')
     } else {
       session.user = observe(data, async (diff) => {
         await app.database.setUser(platform, userId, diff)
@@ -85,16 +83,16 @@ export function adminUser<U extends User.Field, G extends Channel.Field, A exten
         const diffKeys = Object.keys(session.user.$diff)
         const result = await next()
         if (notFound && !session.user.authority) {
-          return template('admin.user-not-found')
+          return session.text('admin.user-not-found')
         } else if (typeof result === 'string') {
           return result
         } else if (!difference(Object.keys(session.user.$diff), diffKeys).length) {
-          return template('admin.user-unchanged')
+          return session.text('admin.user-unchanged')
         } else if (session.user !== user && session.user.authority >= user.authority) {
-          return template('internal.low-authority')
+          return session.text('internal.low-authority')
         }
         await session.user.$update()
-        return template('admin.user-updated')
+        return session.text('admin.user-updated')
       } finally {
         session.user = user
       }
@@ -103,6 +101,7 @@ export function adminUser<U extends User.Field, G extends Channel.Field, A exten
 
 export function adminChannel<U extends User.Field, G extends Channel.Field, A extends any[], O extends {}>(cmd: Command<U, G, A, O>) {
   let notFound = false
+  loadI18n(cmd.app)
 
   async function setTarget(argv: Argv<U, G, A, Extend<O, 'channel', string>>) {
     const { options, session } = argv
@@ -110,7 +109,7 @@ export function adminChannel<U extends User.Field, G extends Channel.Field, A ex
 
     // channel is required for private messages
     if (session.subtype === 'private' && !options.channel) {
-      return template('admin.not-in-group')
+      return session.text('admin.not-in-group')
     }
 
     // channel not specified or identical, use current channel
@@ -148,14 +147,14 @@ export function adminChannel<U extends User.Field, G extends Channel.Field, A ex
         const diffKeys = Object.keys(session.channel.$diff)
         const result = await next()
         if (notFound && !session.channel.assignee) {
-          return template('admin.channel-not-found')
+          return session.text('admin.channel-not-found')
         } else if (typeof result === 'string') {
           return result
         } else if (!difference(Object.keys(session.channel.$diff), diffKeys).length) {
-          return template('admin.channel-unchanged')
+          return session.text('admin.channel-unchanged')
         }
         await session.channel.$update()
-        return template('admin.channel-updated')
+        return session.text('admin.channel-updated')
       } finally {
         session.channel = channel
       }

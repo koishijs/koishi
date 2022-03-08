@@ -12,8 +12,8 @@ export class Template {
   data: Dict<Dict<Value>> = {}
 
   constructor(protected ctx: Context) {
-    this.define('zh', require('../i18n/zh.yml'))
-    this.define('en', require('../i18n/en.yml'))
+    this.define('zh', require('../i18n/zh'))
+    this.define('en', require('../i18n/en'))
   }
 
   private set(locale: string, prefix: string, value: Node) {

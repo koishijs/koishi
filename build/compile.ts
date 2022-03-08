@@ -140,15 +140,12 @@ async function compile(name: string) {
 }
 
 const yamlPlugin = (options: yaml.LoadOptions = {}): Plugin => ({
-  name: 'yaml',
+  name: 'i18n',
   setup(build) {
-    build.onResolve({ filter: /\.ya?ml$/ }, ({ path, resolveDir }) => {
-      if (resolveDir === '') return
-      return {
-        path: resolve(resolveDir, path),
-        namespace: 'yaml',
-      }
-    })
+    build.onResolve({ filter: /\/i18n\/[\w-]+$/ }, ({ path, resolveDir }) => ({
+      path: resolve(resolveDir, path) + '.yml',
+      namespace: 'yaml',
+    }))
 
     build.onLoad({ namespace: 'yaml', filter: /.*/ }, async ({ path }) => {
       const source = await readFile(path, 'utf8')
