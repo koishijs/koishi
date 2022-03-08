@@ -1,7 +1,8 @@
-command:
+commands:
   broadcast:
     description: 全服广播
-    expect-text: 请输入要发送的文本。
-    option:
+    options:
       forced: 无视 silent 标签进行广播
       only: 仅向当前账号负责的群进行广播
+    messages:
+      expect-text: 请输入要发送的文本。

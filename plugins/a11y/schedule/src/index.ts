@@ -127,7 +127,7 @@ export function apply(ctx: Context, { minInterval }: Config) {
     .action(async ({ session, options }, ...dateSegments) => {
       if (options.delete) {
         await ctx.database.remove('schedule', [options.delete])
-        return session.text('schedule.delete-success', [options.delete])
+        return session.text('.delete-success', [options.delete])
       }
 
       if (options.list) {
@@ -135,42 +135,42 @@ export function apply(ctx: Context, { minInterval }: Config) {
         if (!options.full) {
           schedules = schedules.filter(s => session.channelId === s.session.channelId)
         }
-        if (!schedules.length) return session.text('schedule.list-empty')
+        if (!schedules.length) return session.text('.list-empty')
         return schedules.map(({ id, time, interval, command, session: payload }) => {
           let output = `${id}. ${Time.formatTimeInterval(time, interval)}：${command}`
           if (options.full) {
-            output += session.text('schedule.context', [payload.subtype === 'private'
-              ? session.text('schedule.context.private', payload)
-              : session.text('schedule.context.guild', payload)])
+            output += session.text('.context', [payload.subtype === 'private'
+              ? session.text('.context.private', payload)
+              : session.text('.context.guild', payload)])
           }
           return output
         }).join('\n')
       }
 
-      if (!options.rest) return session.text('schedule.command-expected')
+      if (!options.rest) return session.text('.command-expected')
 
       const dateString = dateSegments.join('-')
       const time = Time.parseDate(dateString)
       const timestamp = +time
       if (Number.isNaN(timestamp) || timestamp > 2147483647000) {
         if (/^\d+$/.test(dateString)) {
-          return session.text('schedule.date-invalid-suggestion', [dateString])
+          return session.text('.date-invalid-suggestion', [dateString])
         } else {
-          return session.text('schedule.date-invalid')
+          return session.text('.date-invalid')
         }
       } else if (!options.interval) {
         if (!dateString) {
-          return session.text('schedule.date-expected')
+          return session.text('.date-expected')
         } else if (timestamp <= Date.now()) {
-          return session.text('schedule.date-past')
+          return session.text('.date-past')
         }
       }
 
       const interval = Time.parseTime(options.interval)
       if (!interval && options.interval) {
-        return session.text('schedule.interval-invalid')
+        return session.text('.interval-invalid')
       } else if (interval && interval < minInterval) {
-        return session.text('schedule.interval-too-short')
+        return session.text('.interval-too-short')
       }
 
       const schedule = await ctx.database.create('schedule', {
@@ -181,6 +181,6 @@ export function apply(ctx: Context, { minInterval }: Config) {
         session: session.toJSON(),
       })
       prepareSchedule(schedule, session)
-      return session.text('schedule.create-success', [schedule.id])
+      return session.text('.create-success', [schedule.id])
     })
 }

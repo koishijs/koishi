@@ -124,14 +124,14 @@ export function apply(ctx: Context) {
         return
       }
 
-      if (name) return session.text('usage.present', [name, user.usage[name] || 0])
+      if (name) return session.text('.present', [name, user.usage[name] || 0])
       const output: string[] = []
       for (const name of Object.keys(user.usage).sort()) {
         if (name.startsWith('_')) continue
         output.push(`${name}：${user.usage[name]}`)
       }
-      if (!output.length) return session.text('usage.none')
-      output.unshift(session.text('usage.list'))
+      if (!output.length) return session.text('.none')
+      output.unshift(session.text('.list'))
       return output.join('\n')
     })
 
@@ -156,16 +156,16 @@ export function apply(ctx: Context) {
       const now = Date.now()
       if (name) {
         const delta = user.timers[name] - now
-        if (delta > 0) return session.text('timer.present', [name, Time.formatTime(delta)])
-        return session.text('timer.absent', [name])
+        if (delta > 0) return session.text('.present', [name, Time.formatTime(delta)])
+        return session.text('.absent', [name])
       }
       const output: string[] = []
       for (const name of Object.keys(user.timers).sort()) {
         if (name.startsWith('_')) continue
         output.push(`${name}：剩余 ${Time.formatTime(user.timers[name] - now)}`)
       }
-      if (!output.length) return session.text('timer.none')
-      output.unshift(session.text('timer.list'))
+      if (!output.length) return session.text('.none')
+      output.unshift(session.text('.list'))
       return output.join('\n')
     })
 }

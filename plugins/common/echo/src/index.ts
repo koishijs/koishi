@@ -17,7 +17,7 @@ export function apply(ctx: Context) {
     .option('channel', '-c [channel:channel]', { authority: 3 })
     .option('guild', '-g [guild:string]', { authority: 3 })
     .action(async ({ options, session }, message) => {
-      if (!message) return session.text('command.echo.expect-text')
+      if (!message) return session.text('.expect-text')
 
       if (options.escape) {
         message = segment.unescape(message)
@@ -34,7 +34,7 @@ export function apply(ctx: Context) {
         const [platform, id] = parsePlatform(target)
         const bot = ctx.bots.find(bot => bot.platform === platform)
         if (!bot) {
-          return session.text('command.echo.platform-not-found')
+          return session.text('.platform-not-found')
         } else if (options.user) {
           await bot.sendPrivateMessage(id, message)
         } else {

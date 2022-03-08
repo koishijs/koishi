@@ -107,7 +107,7 @@ function formatCommands(path: string, session: Session<'authority'>, children: C
     if (options.authority) {
       output += ` (${config.authority}${children.length ? (hasSubcommand = true, '*') : ''})`
     }
-    output += '  ' + session.text(`commands.${name}.description`)
+    output += '  ' + session.text(`commands.${name}.description?`)
     return output
   })
   const hints: string[] = []
@@ -139,7 +139,7 @@ function getOptions(command: Command, session: Session<'authority'>, config: Hel
   options.forEach((option) => {
     const authority = option.authority && config.authority ? `(${option.authority}) ` : ''
     let line = `${authority}${option.syntax}`
-    const description = session.text(option.descPath ?? `commands.${command.name}.options.${option.name}`)
+    const description = session.text(option.descPath ?? `commands.${command.name}.options.${option.name}?`)
     if (description) line += '  ' + description
     line = command.app.chain('help/option', line, option, command, session)
     output.push('    ' + line)
@@ -151,7 +151,7 @@ function getOptions(command: Command, session: Session<'authority'>, config: Hel
 async function showHelp(command: Command, session: Session<'authority'>, config: HelpOptions) {
   const output = [command.name + command.declaration]
 
-  const description = session.text(`commands.${command.name}.description`)
+  const description = session.text(`commands.${command.name}.description?`)
   if (description) output.push(description)
 
   if (session.app.database) {

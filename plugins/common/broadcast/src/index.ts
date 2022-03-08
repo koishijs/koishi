@@ -13,7 +13,7 @@ export function apply(ctx: Context) {
     .option('forced', '-f')
     .option('only', '-o')
     .action(async ({ options, session }, message) => {
-      if (!message) return session.text('command.broadcast.expect-text')
+      if (!message) return session.text('.expect-text')
       if (!options.only) {
         await ctx.broadcast(message, options.forced)
         return

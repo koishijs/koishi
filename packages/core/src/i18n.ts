@@ -1,4 +1,4 @@
-import { Dict } from '@koishijs/utils'
+import { Dict, isNullable } from '@koishijs/utils'
 import { Context } from './context'
 
 type Value = string
@@ -38,6 +38,11 @@ export class Template {
   }
 
   render(locales: Iterable<string>, path: string, params: object) {
+    let optional = false
+    if (path.endsWith('?')) {
+      optional = true
+      path = path.slice(0, -1)
+    }
     for (const locale of [...locales, '']) {
       const value = this.data[locale]?.[path]
       if (typeof value !== 'string') continue
@@ -47,12 +52,13 @@ export class Template {
         let result = params
         for (const segment of segments) {
           result = result[segment]
-          if (!result) return ''
+          if (isNullable(result)) return ''
         }
         return result.toString()
       })
     }
+    if (optional) return ''
     this.ctx.logger('i18n').warn('missing', path)
-    return ''
+    return path
   }
 }
