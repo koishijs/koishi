@@ -1,8 +1,4 @@
-import { Channel, Context, Schema, template } from 'koishi'
-
-template.set('broadcast', {
-  'expect-text': '请输入要发送的文本。',
-})
+import { Channel, Context, Schema } from 'koishi'
 
 export interface Config {}
 
@@ -11,11 +7,13 @@ export const using = ['database'] as const
 export const Config: Schema<Config> = Schema.object({})
 
 export function apply(ctx: Context) {
-  ctx.command('broadcast <message:text>', '全服广播', { authority: 4 })
-    .option('forced', '-f  无视 silent 标签进行广播')
-    .option('only', '-o  仅向当前账号负责的群进行广播')
+  ctx.i18n.define('zh', require('../i18n/zh'))
+
+  ctx.command('broadcast <message:text>', { authority: 4 })
+    .option('forced', '-f')
+    .option('only', '-o')
     .action(async ({ options, session }, message) => {
-      if (!message) return template('broadcast.expect-text')
+      if (!message) return session.text('command.broadcast.expect-text')
       if (!options.only) {
         await ctx.broadcast(message, options.forced)
         return

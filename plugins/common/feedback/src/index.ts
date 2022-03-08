@@ -1,11 +1,5 @@
-import { Context, Dict, Schema, sleep, template, Time } from 'koishi'
+import { Context, Dict, Schema, sleep, Time } from 'koishi'
 import { parsePlatform } from '@koishijs/helpers'
-
-template.set('feedback', {
-  'expect-text': '请输入要发送的文本。',
-  'receive': '收到来自 {0} 的反馈信息：\n{1}',
-  'success': '反馈信息发送成功！',
-})
 
 export interface Config {
   operators?: string[]
@@ -22,16 +16,18 @@ export const schema: Schema<string[] | Config, Config> = Schema.union([
 export const name = 'feedback'
 
 export function apply(ctx: Context, { operators = [], replyTimeout = Time.day }: Config) {
+  ctx.i18n.define('zh', require('../i18n/zh'))
+
   type FeedbackData = [sid: string, channelId: string, guildId: string]
   const feedbacks: Dict<FeedbackData> = {}
 
-  ctx.command('feedback <message:text>', '发送反馈信息给作者')
+  ctx.command('feedback <message:text>')
     .userFields(['name', 'id'])
     .action(async ({ session }, text) => {
-      if (!text) return template('feedback.expect-text')
+      if (!text) return session.text('command.feedback.expect-text')
       const { username: name, userId } = session
       const nickname = name === '' + userId ? userId : `${name} (${userId})`
-      const message = template('feedback.receive', nickname, text)
+      const message = session.text('command.feedback.receive', [nickname, text])
       const delay = ctx.app.options.delay.broadcast
       const data: FeedbackData = [session.sid, session.channelId, session.guildId]
       for (let index = 0; index < operators.length; ++index) {
@@ -47,7 +43,7 @@ export function apply(ctx: Context, { operators = [], replyTimeout = Time.day }:
           ctx.logger('bot').warn(error)
         })
       }
-      return template('feedback.success')
+      return session.text('command.feedback.success')
     })
 
   ctx.middleware(async (session, next) => {
