@@ -52,6 +52,7 @@ export class Template {
         return result.toString()
       })
     }
+    this.ctx.logger('i18n').warn('missing', path)
     return ''
   }
 }

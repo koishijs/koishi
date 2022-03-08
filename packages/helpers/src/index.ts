@@ -68,7 +68,7 @@ export function adminUser<U extends User.Field, G extends Channel.Field, A exten
   }
 
   return cmd
-    .option('user', '-u [user:user]  指定目标用户', { authority: 3 })
+    .option('user', '-u [user:user]', { authority: 3, descPath: 'admin.user-option' })
     .userFields(['authority'])
     .userFields(({ session, options }, fields) => {
       const platform = options.user ? options.user.split(':')[0] : session.platform
@@ -137,7 +137,7 @@ export function adminChannel<U extends User.Field, G extends Channel.Field, A ex
 
   return cmd
     .channelFields(['assignee'])
-    .option('channel', '-c [channel:channel]  指定目标频道', { authority: 3 })
+    .option('channel', '-c [channel:channel]', { authority: 3, descPath: 'admin.channel-option' })
     .action(async (argv, ...args) => {
       const { session, next } = argv
       const channel = session.channel

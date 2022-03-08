@@ -7,7 +7,7 @@ const app = new App()
 app.plugin(mock)
 app.plugin(memory)
 
-app.i18n.define('zh', 'help.global-epilog', 'EPILOG')
+app.i18n.define('zh', 'commands.help.messages.global-epilog', 'EPILOG')
 
 const client = app.mock.client('123')
 
@@ -125,7 +125,7 @@ describe('Help Command', () => {
   it('no database', async () => {
     const app = new App()
     app.plugin(mock)
-    app.i18n.define('zh', 'help.global-epilog', '')
+    app.i18n.define('zh', 'commands.help.messages.global-epilog', '')
     await app.start()
 
     const client = app.mock.client('123')

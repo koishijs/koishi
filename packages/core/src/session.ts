@@ -1,7 +1,7 @@
 import { Channel, User } from './database'
 import { Tables, TableType } from './orm'
 import { Command } from './command'
-import { defineProperty, Logger, observe, Random, remove, segment } from '@koishijs/utils'
+import { defineProperty, Logger, observe, Promisify, Random, remove, segment } from '@koishijs/utils'
 import { Argv } from './parser'
 import { Middleware, Next } from './context'
 import { App } from './app'
@@ -77,6 +77,7 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
   type?: string
   subtype?: string
   subsubtype?: string
+  scope?: string
 
   bot: Bot
   app: App
@@ -302,6 +303,16 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
     return this.user = cache
   }
 
+  async withScope<T>(scope: string, callback: () => T) {
+    const oldScope = this.scope
+    try {
+      this.scope = scope
+      return await callback() as Promisify<T>
+    } finally {
+      this.scope = oldScope
+    }
+  }
+
   text(path: string, params: object = {}) {
     const locales = [this.app.options.locale]
     if (this.guild) {
@@ -311,6 +322,13 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
       if (this.channel !== this.guild && this.channel['locale']) {
         locales.unshift(this.channel['locale'])
       }
+    }
+    if (path.startsWith('.')) {
+      if (!this.scope) {
+        this.app.logger('i18n').warn(new Error('missing scope'))
+        return ''
+      }
+      path = this.scope + path
     }
     return this.app.i18n.render(locales, path, params)
   }
@@ -386,7 +404,8 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
       }
     }
 
-    if (!argv.command.context.match(this)) return ''
+    const { command } = argv
+    if (!command.context.match(this)) return ''
 
     if (this.app.database) {
       if (this.subtype === 'group') {
@@ -401,10 +420,12 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
       next = undefined as Next
     }
 
-    const result = await argv.command.execute(argv, next)
-    if (!shouldEmit) return result
-    await this.send(result)
-    return ''
+    return this.withScope(`commands.${command.name}.messages`, async () => {
+      const result = await command.execute(argv as Argv, next as Next)
+      if (!shouldEmit) return result
+      await this.send(result)
+      return ''
+    })
   }
 
   middleware(middleware: Middleware) {

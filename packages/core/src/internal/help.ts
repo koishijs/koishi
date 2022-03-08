@@ -18,7 +18,7 @@ export interface HelpConfig extends Command.Config {
 export function enableHelp<U extends User.Field, G extends Channel.Field, A extends any[], O extends {}>(cmd: Command<U, G, A, O>) {
   return cmd.option('help', '-h', {
     hidden: true,
-    descPath: 'option.help',
+    descPath: 'commands.help.options.help',
   })
 }
 
@@ -53,8 +53,8 @@ export default function help(ctx: Context, config: HelpConfig = {}) {
     .action(async ({ session, options }, target) => {
       if (!target) {
         const commands = app._commandList.filter(cmd => cmd.parent === null)
-        const output = formatCommands('help.global-prolog', session, commands, options)
-        const epilog = session.text('help.global-epilog')
+        const output = formatCommands('.global-prolog', session, commands, options)
+        const epilog = session.text('.global-epilog')
         if (epilog) output.push(epilog)
         return output.filter(Boolean).join('\n')
       }
@@ -107,12 +107,12 @@ function formatCommands(path: string, session: Session<'authority'>, children: C
     if (options.authority) {
       output += ` (${config.authority}${children.length ? (hasSubcommand = true, '*') : ''})`
     }
-    output += '  ' + session.text(`command.${name}.description`)
+    output += '  ' + session.text(`commands.${name}.description`)
     return output
   })
   const hints: string[] = []
-  if (options.authority) hints.push(session.text('help.hint-authority'))
-  if (hasSubcommand) hints.push(session.text('help.hint-subcommand'))
+  if (options.authority) hints.push(session.text('.hint-authority'))
+  if (hasSubcommand) hints.push(session.text('.hint-subcommand'))
   const hintText = hints.length
     ? session.text('general.paren', [hints.join(session.text('general.comma'))])
     : ''
@@ -133,13 +133,13 @@ function getOptions(command: Command, session: Session<'authority'>, config: Hel
   if (!options.length) return []
 
   const output = config.authority && options.some(o => o.authority)
-    ? [session.text('help.available-options-with-authority')]
-    : [session.text('help.available-options')]
+    ? [session.text('.available-options-with-authority')]
+    : [session.text('.available-options')]
 
   options.forEach((option) => {
     const authority = option.authority && config.authority ? `(${option.authority}) ` : ''
     let line = `${authority}${option.syntax}`
-    const description = session.text(option.descPath ?? `command.${command.name}.option.${option.name}`)
+    const description = session.text(option.descPath ?? `commands.${command.name}.options.${option.name}`)
     if (description) line += '  ' + description
     line = command.app.chain('help/option', line, option, command, session)
     output.push('    ' + line)
@@ -151,7 +151,7 @@ function getOptions(command: Command, session: Session<'authority'>, config: Hel
 async function showHelp(command: Command, session: Session<'authority'>, config: HelpOptions) {
   const output = [command.name + command.declaration]
 
-  const description = session.text(`command.${command.name}.description`)
+  const description = session.text(`commands.${command.name}.description`)
   if (description) output.push(description)
 
   if (session.app.database) {
@@ -165,13 +165,13 @@ async function showHelp(command: Command, session: Session<'authority'>, config:
   }
 
   if (command._aliases.length > 1) {
-    output.push(session.text('help.command-aliases', [Array.from(command._aliases.slice(1)).join('，')]))
+    output.push(session.text('.command-aliases', [Array.from(command._aliases.slice(1)).join('，')]))
   }
 
   session.app.emit(session, 'help/command', output, command, session)
 
   if (session.user && command.config.authority > 1) {
-    output.push(session.text('help.command-authority', [command.config.authority]))
+    output.push(session.text('.command-authority', [command.config.authority]))
   }
 
   const usage = command._usage
@@ -182,10 +182,10 @@ async function showHelp(command: Command, session: Session<'authority'>, config:
   output.push(...getOptions(command, session, config))
 
   if (command._examples.length) {
-    output.push(session.text('help.command-examples'), ...command._examples.map(example => '    ' + example))
+    output.push(session.text('.command-examples'), ...command._examples.map(example => '    ' + example))
   }
 
-  output.push(...formatCommands('help.subcommand-prolog', session, command.children, config))
+  output.push(...formatCommands('.subcommand-prolog', session, command.children, config))
 
   return output.filter(Boolean).join('\n')
 }

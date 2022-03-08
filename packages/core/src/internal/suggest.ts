@@ -53,6 +53,7 @@ Session.prototype.suggest = function suggest(this: Session, options) {
   }
   if (!suggestions) return sendNext(async () => prefix)
 
+  const scope = this.scope
   return sendNext(async () => {
     const message = prefix + this.text('suggest.hint', [suggestions.map(text => {
       return this.text('general.quote', [text])
@@ -63,7 +64,9 @@ Session.prototype.suggest = function suggest(this: Session, options) {
       dispose()
       const message = session.content.trim()
       if (message && message !== '.' && message !== '。') return next()
-      return apply.call(session, suggestions[0], next)
+      return session.withScope(scope, () => {
+        return apply.call(session, suggestions[0], next)
+      })
     })
 
     return message + suffix

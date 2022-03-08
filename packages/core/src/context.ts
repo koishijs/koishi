@@ -534,7 +534,7 @@ export class Context {
       parent = command
     })
 
-    if (desc) this.i18n.define('', `command.${parent.name}.description`, desc)
+    if (desc) this.i18n.define('', `commands.${parent.name}.description`, desc)
     Object.assign(parent.config, config)
     list.forEach(command => this.emit('command-added', command))
     if (!config?.patch) {

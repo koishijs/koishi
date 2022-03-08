@@ -35,10 +35,10 @@ export function apply(ctx: Context, config: Config = {}) {
     await user.$update()
   }
 
-  ctx.command('bind', '绑定到账号', { authority: 0 })
+  ctx.command('bind', { authority: 0 })
     .action(({ session }) => {
       const token = generate(session, +(session.subtype === 'group'))
-      return session.text('bind.generated-1', [token])
+      return session.text('.generated-1', [token])
     })
 
   ctx.middleware(async (session, next) => {
@@ -49,18 +49,18 @@ export function apply(ctx: Context, config: Config = {}) {
       const user = await sess.observeUser([session.platform as never])
       delete tokens[session.content]
       await bind(user, session.platform, session.userId)
-      return session.text('bind.success')
+      return session.text('commands.bind.messages.success')
     } else {
       const user = await session.observeUser(['authority', data[0] as never])
       if (!user.authority) return session.text('internal.low-authority')
-      if (user[data[0]]) return session.text('bind.failed')
+      if (user[data[0]]) return session.text('commands.bind.messages.failed')
       delete tokens[session.content]
       if (data[2]) {
         const token = generate(session, -1)
-        return session.text('bind.generated-2', [token])
+        return session.text('commands.bind.messages.generated-2', [token])
       } else {
         await bind(user, data[0], data[1])
-        return session.text('bind.success')
+        return session.text('commands.bind.messages.success')
       }
     }
   }, true)
