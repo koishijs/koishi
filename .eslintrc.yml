@@ -87,8 +87,8 @@ rules:
 
   camelcase: off
   '@typescript-eslint/naming-convention':
-    - error
-    
+    - warn
+
     # group selectors
     - selector: default
       format: [camelCase, UPPER_CASE]
@@ -106,6 +106,12 @@ rules:
       format: [UPPER_CASE, PascalCase]
     - selector: [typeParameter]
       format: [PascalCase]
+    - selector: [objectLiteralProperty]
+      format: null
+    - selector: [typeProperty]
+      format: null
+    - selector: [typeMethod]
+      format: null
 
   # https://github.com/typescript-eslint/typescript-eslint/blob/master/packages/eslint-plugin/docs/rules/no-redeclare.md
   no-redeclare: off

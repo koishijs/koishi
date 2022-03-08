@@ -40,7 +40,6 @@ export interface ISQLiteFieldInfo {
   name: string
   type: string
   notnull: number
-  // eslint-disable-next-line @typescript-eslint/naming-convention
   dflt_value: string
   pk: boolean
 }
