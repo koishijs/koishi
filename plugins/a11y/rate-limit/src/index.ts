@@ -1,4 +1,4 @@
-import { Argv, Command, Context, Dict, Schema, Session, template, Time, User } from 'koishi'
+import { Argv, Command, Context, Dict, Schema, Session, Time, User } from 'koishi'
 import { adminUser } from '@koishijs/helpers'
 
 declare module 'koishi' {
@@ -19,27 +19,6 @@ declare module 'koishi' {
   }
 }
 
-template.set('internal', {
-  'usage-exhausted': '调用次数已达上限。',
-  'too-frequent': '调用过于频繁，请稍后再试。',
-  'option-not-usage': '（不计入总次数）',
-  'command-max-usage': '已调用次数：{0}/{1}。',
-  'command-min-interval': '距离下次调用还需：{0}/{1} 秒。',
-})
-
-template.set('usage', {
-  'present': '今日 {0} 功能的调用次数为：{1}',
-  'list': '今日各功能的调用次数为：',
-  'none': '今日没有调用过消耗次数的功能。',
-})
-
-template.set('timer', {
-  'present': '定时器 {0} 的生效时间为：剩余 {1}',
-  'absent': '定时器 {0} 当前并未生效。',
-  'list': '各定时器的生效时间为：',
-  'none': '当前没有生效的定时器。',
-})
-
 export interface Config {}
 
 export const name = 'rate-limit'
@@ -47,6 +26,8 @@ export const using = ['database'] as const
 export const Config: Schema<Config> = Schema.object({})
 
 export function apply(ctx: Context) {
+  ctx.i18n.define('zh', require('../i18n/zh'))
+
   ctx.model.extend('user', {
     usage: 'json',
     timers: 'json',
@@ -72,7 +53,7 @@ export function apply(ctx: Context) {
     if (!session.user) return
 
     function sendHint(message: string, ...param: any[]) {
-      return command.config.showWarning ? template(message, param) : ''
+      return command.config.showWarning ? session.text(message, param) : ''
     }
 
     let isUsage = true
@@ -106,13 +87,13 @@ export function apply(ctx: Context) {
 
     if (maxUsage < Infinity) {
       const count = getUsage(name, session.user)
-      output.push(template('internal.command-max-usage', Math.min(count, maxUsage), maxUsage))
+      output.push(session.text('internal.command-max-usage', [Math.min(count, maxUsage), maxUsage]))
     }
 
     if (minInterval > 0) {
       const due = session.user.timers[name]
       const nextUsage = due ? (Math.max(0, due - Date.now()) / 1000).toFixed() : 0
-      output.push(template('internal.command-min-interval', nextUsage, minInterval / 1000))
+      output.push(session.text('internal.command-min-interval', [nextUsage, minInterval / 1000]))
     }
   })
 
@@ -120,15 +101,15 @@ export function apply(ctx: Context) {
   ctx.on('help/option', (output, option, command, session) => {
     const maxUsage = command.getConfig('maxUsage', session)
     if (option.notUsage && maxUsage !== Infinity) {
-      output += template('internal.option-not-usage')
+      output += session.text('internal.option-not-usage')
     }
     return output
   })
 
-  ctx.command('usage [key] [value:posint]', '调用次数信息', { authority: 1 })
+  ctx.command('usage [key] [value:posint]', { authority: 1 })
     .userFields(['usage'])
-    .option('set', '-s  设置调用次数', { authority: 4 })
-    .option('clear', '-c  清空调用次数', { authority: 4 })
+    .option('set', '-s', { authority: 4 })
+    .option('clear', '-c', { authority: 4 })
     .use(adminUser)
     .action(({ session, options }, name, count) => {
       const { user } = session
@@ -138,26 +119,26 @@ export function apply(ctx: Context) {
       }
 
       if (options.set) {
-        if (!count) return template('internal.insufficient-arguments')
+        if (!count) return session.text('internal.insufficient-arguments')
         user.usage[name] = count
         return
       }
 
-      if (name) return template('usage.present', name, user.usage[name] || 0)
+      if (name) return session.text('usage.present', [name, user.usage[name] || 0])
       const output: string[] = []
       for (const name of Object.keys(user.usage).sort()) {
         if (name.startsWith('_')) continue
         output.push(`${name}：${user.usage[name]}`)
       }
-      if (!output.length) return template('usage.none')
-      output.unshift(template('usage.list'))
+      if (!output.length) return session.text('usage.none')
+      output.unshift(session.text('usage.list'))
       return output.join('\n')
     })
 
-  ctx.command('timer [key] [value:date]', '定时器信息', { authority: 1 })
+  ctx.command('timer [key] [value:date]', { authority: 1 })
     .userFields(['timers'])
-    .option('set', '-s  设置定时器', { authority: 4 })
-    .option('clear', '-c  清空定时器', { authority: 4 })
+    .option('set', '-s', { authority: 4 })
+    .option('clear', '-c', { authority: 4 })
     .use(adminUser)
     .action(({ session, options }, name, value) => {
       const { user } = session
@@ -167,7 +148,7 @@ export function apply(ctx: Context) {
       }
 
       if (options.set) {
-        if (!value) return template('internal.insufficient-arguments')
+        if (!value) return session.text('internal.insufficient-arguments')
         user.timers[name] = +value
         return
       }
@@ -175,16 +156,16 @@ export function apply(ctx: Context) {
       const now = Date.now()
       if (name) {
         const delta = user.timers[name] - now
-        if (delta > 0) return template('timer.present', name, Time.formatTime(delta))
-        return template('timer.absent', name)
+        if (delta > 0) return session.text('timer.present', [name, Time.formatTime(delta)])
+        return session.text('timer.absent', [name])
       }
       const output: string[] = []
       for (const name of Object.keys(user.timers).sort()) {
         if (name.startsWith('_')) continue
         output.push(`${name}：剩余 ${Time.formatTime(user.timers[name] - now)}`)
       }
-      if (!output.length) return template('timer.none')
-      output.unshift(template('timer.list'))
+      if (!output.length) return session.text('timer.none')
+      output.unshift(session.text('timer.list'))
       return output.join('\n')
     })
 }

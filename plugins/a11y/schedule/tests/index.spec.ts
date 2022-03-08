@@ -48,7 +48,7 @@ describe('Schedule Plugin', () => {
 
     await client1.shouldReply('schedule -lf', [
       '1. 每天 00:59：echo bar，上下文：私聊 123',
-      '2. 2000-01-01 01:01:00：echo foo，上下文：群聊 456',
+      '2. 2000-01-01 01:01:00：echo foo，上下文：频道 456',
     ].join('\n'))
 
     clock.tick(Time.minute) // 01:01

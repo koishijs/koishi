@@ -1,6 +1,16 @@
 command:
+  user:
+    description: 用户管理
+  channel:
+    description: 频道管理
   authorize:
     description: 权限管理
+  assign:
+    description: 受理者账号
+  user.flag:
+    description: 标记信息
+  channel.flag:
+    description: 标记信息
 
 admin:
   unknown-flag: 未找到标记 {0}。
@@ -9,3 +19,8 @@ admin:
   current-flags: 当前的标记为：{0}。
   user-expected: 请指定目标用户。
   invalid-assignee-platform: 代理者应与目标频道属于同一平台。
+
+flag:
+  list: 标记列表
+  set: 添加标记
+  unset: 删除标记

@@ -4,10 +4,6 @@ declare module 'koishi' {
   interface Tables {
     schedule: Schedule
   }
-
-  interface Modules {
-    schedule: typeof import('.')
-  }
 }
 
 export interface Schedule {
@@ -22,10 +18,6 @@ export interface Schedule {
 
 const logger = new Logger('schedule')
 
-function formatContext(session: Session.Payload) {
-  return session.subtype === 'private' ? `私聊 ${session.userId}` : `群聊 ${session.guildId}`
-}
-
 export const name = 'schedule'
 export const using = ['database'] as const
 
@@ -38,6 +30,8 @@ export const Config: Schema<Config> = Schema.object({
 })
 
 export function apply(ctx: Context, { minInterval }: Config) {
+  ctx.i18n.define('zh', require('../i18n/zh'))
+
   ctx.model.extend('schedule', {
     id: 'unsigned',
     assignee: 'string',
@@ -123,17 +117,17 @@ export function apply(ctx: Context, { minInterval }: Config) {
     })
   })
 
-  ctx.command('schedule [time]', '设置定时命令', { authority: 3, checkUnknown: true })
-    .option('rest', '-- <command:text>  要执行的指令')
-    .option('interval', '/ <interval:string>  设置触发的间隔秒数', { authority: 4 })
-    .option('list', '-l  查看已经设置的日程')
-    .option('ensure', '-e  错过时间也确保执行')
-    .option('full', '-f  查找全部上下文', { authority: 4 })
-    .option('delete', '-d <id>  删除已经设置的日程')
+  ctx.command('schedule [time]', { authority: 3, checkUnknown: true })
+    .option('rest', '-- <command:text>')
+    .option('interval', '/ <interval:string>', { authority: 4 })
+    .option('list', '-l')
+    .option('ensure', '-e')
+    .option('full', '-f', { authority: 4 })
+    .option('delete', '-d <id>')
     .action(async ({ session, options }, ...dateSegments) => {
       if (options.delete) {
         await ctx.database.remove('schedule', [options.delete])
-        return `日程 ${options.delete} 已删除。`
+        return session.text('schedule.delete-success', [options.delete])
       }
 
       if (options.list) {
@@ -141,38 +135,42 @@ export function apply(ctx: Context, { minInterval }: Config) {
         if (!options.full) {
           schedules = schedules.filter(s => session.channelId === s.session.channelId)
         }
-        if (!schedules.length) return '当前没有等待执行的日程。'
-        return schedules.map(({ id, time, interval, command, session }) => {
+        if (!schedules.length) return session.text('schedule.list-empty')
+        return schedules.map(({ id, time, interval, command, session: payload }) => {
           let output = `${id}. ${Time.formatTimeInterval(time, interval)}：${command}`
-          if (options.full) output += `，上下文：${formatContext(session)}`
+          if (options.full) {
+            output += session.text('schedule.context', [payload.subtype === 'private'
+              ? session.text('schedule.context.private', payload)
+              : session.text('schedule.context.guild', payload)])
+          }
           return output
         }).join('\n')
       }
 
-      if (!options.rest) return '请输入要执行的指令。'
+      if (!options.rest) return session.text('schedule.command-expected')
 
       const dateString = dateSegments.join('-')
       const time = Time.parseDate(dateString)
       const timestamp = +time
       if (Number.isNaN(timestamp) || timestamp > 2147483647000) {
         if (/^\d+$/.test(dateString)) {
-          return `请输入合法的日期。你要输入的是不是 ${dateString}s？`
+          return session.text('schedule.date-invalid-suggestion', [dateString])
         } else {
-          return '请输入合法的日期。'
+          return session.text('schedule.date-invalid')
         }
       } else if (!options.interval) {
         if (!dateString) {
-          return '请输入执行时间。'
+          return session.text('schedule.date-expected')
         } else if (timestamp <= Date.now()) {
-          return '不能指定过去的时间为执行时间。'
+          return session.text('schedule.date-past')
         }
       }
 
       const interval = Time.parseTime(options.interval)
       if (!interval && options.interval) {
-        return '请输入合法的时间间隔。'
+        return session.text('schedule.interval-invalid')
       } else if (interval && interval < minInterval) {
-        return '时间间隔过短。'
+        return session.text('schedule.interval-too-short')
       }
 
       const schedule = await ctx.database.create('schedule', {
@@ -183,6 +181,6 @@ export function apply(ctx: Context, { minInterval }: Config) {
         session: session.toJSON(),
       })
       prepareSchedule(schedule, session)
-      return `日程已创建，编号为 ${schedule.id}。`
+      return session.text('schedule.create-success', [schedule.id])
     })
 }

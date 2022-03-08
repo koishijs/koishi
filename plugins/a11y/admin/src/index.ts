@@ -3,9 +3,9 @@ import { adminChannel, adminUser, parsePlatform } from '@koishijs/helpers'
 
 function adminFlag<U extends User.Field, G extends Channel.Field, A extends any[], O extends {}>(cmd: Command<U, G, A, O>, map: any, key: 'user' | 'channel') {
   return cmd
-    .option('list', '-l  标记列表')
-    .option('set', '-s  添加标记', { authority: 4 })
-    .option('unset', '-S  删除标记', { authority: 4 })
+    .option('list', '-l', { descPath: 'flag.list' })
+    .option('set', '-s', { authority: 4, descPath: 'flag.set' })
+    .option('unset', '-S', { authority: 4, descPath: 'flag.unset' })
     .action(async ({ options, session }, ...args) => {
       const target = session[key] as any
 
@@ -44,10 +44,10 @@ export function apply(ctx: Context) {
   ctx.i18n.define('zh', require('../i18n/zh'))
   ctx.i18n.define('en', require('../i18n/en'))
 
-  ctx.command('user', '用户管理', { authority: 3 })
-  ctx.command('channel', '频道管理', { authority: 3 })
+  ctx.command('user', { authority: 3 })
+  ctx.command('channel', { authority: 3 })
 
-  ctx.command('user/authorize <value:natural>', '权限信息', { authority: 4, checkUnknown: true })
+  ctx.command('user/authorize <value:natural>', { authority: 4, checkUnknown: true })
     .alias('auth')
     .use(adminUser)
     .action(async ({ session }, authority) => {
@@ -55,12 +55,12 @@ export function apply(ctx: Context) {
       session.user.authority = authority
     })
 
-  ctx.command('user.flag [-s|-S] [...flags]', '标记信息', { authority: 3, checkUnknown: true })
+  ctx.command('user.flag [-s|-S] [...flags]', { authority: 3, checkUnknown: true })
     .userFields(['flag'])
     .use(adminFlag, User.Flag, 'user')
     .use(adminUser)
 
-  ctx.command('channel/assign [bot:user]', '受理者账号', { authority: 4, checkUnknown: true })
+  ctx.command('channel/assign [bot:user]', { authority: 4, checkUnknown: true })
     .channelFields(['assignee'])
     .option('noTarget', '-T  移除受理者')
     .use(adminChannel)
@@ -85,7 +85,7 @@ export function apply(ctx: Context) {
       session.channel.locale = lang
     })
 
-  ctx.command('channel.flag [-s|-S] [...flags]', '标记信息', { authority: 3, checkUnknown: true })
+  ctx.command('channel.flag [-s|-S] [...flags]', { authority: 3, checkUnknown: true })
     .channelFields(['flag'])
     .use(adminFlag, Channel.Flag, 'channel')
     .use(adminChannel)
