@@ -48,7 +48,7 @@
   /** The tooltip-like which provides the LSP response */
   pre.twoslash data-lsp::before {
     content: attr(lsp);
-    position: fixed;
+    position: absolute;
     pointer-events: none;
     transform: translate(0, 1rem);
 
