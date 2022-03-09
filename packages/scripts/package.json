@@ -35,6 +35,7 @@
   "devDependencies": {
     "@types/cross-spawn": "^6.0.2",
     "@types/fs-extra": "^9.0.13",
+    "@types/js-yaml": "^4.0.5",
     "@types/semver": "^7.3.9",
     "@types/which-pm-runs": "^1.0.0"
   },
@@ -43,6 +44,7 @@
     "cross-spawn": "^7.0.3",
     "fs-extra": "^10.0.1",
     "globby": "^11.1.0",
+    "js-yaml": "^4.1.0",
     "kleur": "^4.1.4",
     "latest-version": "^5.1.0",
     "ora": "^5.4.1",

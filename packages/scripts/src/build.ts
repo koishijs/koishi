@@ -1,7 +1,9 @@
 import { CAC } from 'cac'
-import { writeFile } from 'fs-extra'
+import { mkdir, readdir, readFile, writeFile } from 'fs-extra'
 import { buildExtension } from '@koishijs/client/lib'
 import { cwd, getPackages, PackageJson, spawnAsync, TsConfig } from './utils'
+import yaml from 'js-yaml'
+import ora from 'ora'
 
 interface Node {
   path?: string
@@ -65,14 +67,45 @@ async function buildGraph(nodes: Record<string, Node>) {
   if (code) process.exit(code)
 }
 
+async function buildYamlFile(source: string, target: string, file: string) {
+  const content = await readFile(source + '/' + file, 'utf8')
+  await writeFile(target + '/' + file, JSON.stringify(yaml.load(content)))
+}
+
+async function buildYamlPackage(path: string) {
+  const source = cwd + path + '/src/locales'
+  const target = cwd + path + '/lib/locales'
+  const files = await readdir(source)
+  await mkdir(target, { recursive: true })
+  await Promise.all(files.map((file) => {
+    return buildYamlFile(source, target, file)
+  }))
+}
+
 export default function (cli: CAC) {
   cli.command('build [...name]', 'build packages')
     .action(async (names: string[], options) => {
+      const spinner = ora()
+
+      spinner.start('loading packages')
       const packages = await getPackages(names)
+      spinner.succeed()
+
+      spinner.start('building typescript')
       const nodes = initGraph(packages)
       await buildGraph(nodes)
+      spinner.succeed()
+
+      spinner.start('building locales')
+      await Promise.all(Object.keys(packages).map((path) => {
+        return buildYamlPackage(path).catch(() => {})
+      }))
+      spinner.succeed()
+
+      spinner.start('building client')
       for (const path in packages) {
         await buildExtension(cwd + path)
       }
+      spinner.succeed()
     })
 }
