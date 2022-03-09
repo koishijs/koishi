@@ -1,4 +1,4 @@
-import { Command, Context, Dict, Schema, Session, template, Time } from 'koishi'
+import { Command, Context, Dict, Schema, Session, Time } from 'koishi'
 import { parsePlatform } from '@koishijs/helpers'
 
 declare module 'koishi' {
@@ -6,8 +6,6 @@ declare module 'koishi' {
     forward: string[]
   }
 }
-
-template.set('forward', '{0}: {1}')
 
 export interface Rule {
   source: string
@@ -39,6 +37,8 @@ export const schema = Schema.union([
 ])
 
 export function apply(ctx: Context, { rules, interval }: Config) {
+  ctx.i18n.define('zh', require('../i18n/zh'))
+
   const relayMap: Dict<Rule> = {}
 
   async function sendRelay(session: Session, rule: Partial<Rule>) {
@@ -56,7 +56,7 @@ export function apply(ctx: Context, { rules, interval }: Config) {
       }
 
       const bot = ctx.bots.get(`${platform}:${rule.selfId}`)
-      const content = template('forward', author.nickname || author.username, parsed.content)
+      const content = `${author.nickname || author.username}: ${parsed.content}`
       await bot.sendMessage(channelId, content, rule.guildId).then((ids) => {
         for (const id of ids) {
           relayMap[id] = {
@@ -104,45 +104,44 @@ export function apply(ctx: Context, { rules, interval }: Config) {
 
   ctx.using(['database'], (ctx) => {
     const cmd = ctx
-      .command('forward [operation:string] <channel:channel>', '设置消息转发', { authority: 3 })
-      .usage(session => `当前频道 ID：${session.cid}`)
+      .command('forward [operation:string] <channel:channel>', { authority: 3 })
       .alias('fwd')
 
-    const register = (def: string, desc: string, callback: Command.Action<never, 'forward', [string]>) => cmd
-      .subcommand(def, desc, { authority: 3, checkArgCount: true })
+    const register = (def: string, callback: Command.Action<never, 'forward', [string]>) => cmd
+      .subcommand(def, { authority: 3, checkArgCount: true })
       .channelFields(['forward'])
       .action(callback)
 
-    register('.add <channel:channel>', '添加目标频道', async ({ session }, id) => {
+    register('.add <channel:channel>', async ({ session }, id) => {
       const { forward } = session.channel
       if (forward.includes(id)) {
-        return `${id} 已经是当前频道的目标频道。`
+        return session.text('.unchanged', [id])
       } else {
         forward.push(id)
-        return `已成功添加目标频道 ${id}。`
+        return session.text('.updated', [id])
       }
     })
 
-    register('.remove <channel:channel>', '移除目标频道', async ({ session }, id) => {
+    register('.remove <channel:channel>', async ({ session }, id) => {
       const { forward } = session.channel
       const index = forward.indexOf(id)
       if (index >= 0) {
         forward.splice(index, 1)
-        return `已成功移除目标频道 ${id}。`
+        return session.text('.updated', [id])
       } else {
-        return `${id} 不是当前频道的目标频道。`
+        return session.text('.unchanged', [id])
       }
     }).alias('forward.rm')
 
-    register('.clear', '移除全部目标频道', async ({ session }) => {
+    register('.clear', async ({ session }) => {
       session.channel.forward = []
-      return '已成功移除全部目标频道。'
+      return session.text('.updated')
     })
 
-    register('.list', '查看目标频道列表', async ({ session }) => {
+    register('.list', async ({ session }) => {
       const { forward } = session.channel
-      if (!forward.length) return '当前频道没有设置目标频道。'
-      return ['当前频道的目标频道列表为：', ...forward].join('\n')
+      if (!forward.length) return session.text('.empty')
+      return [session.text('.header'), ...forward].join('\n')
     }).alias('forward.ls')
   })
 }

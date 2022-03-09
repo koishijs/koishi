@@ -24,10 +24,10 @@ export function apply(ctx: Context, { operators = [], replyTimeout = Time.day }:
   ctx.command('feedback <message:text>')
     .userFields(['name', 'id'])
     .action(async ({ session }, text) => {
-      if (!text) return session.text('command.feedback.expect-text')
+      if (!text) return session.text('.expect-text')
       const { username: name, userId } = session
       const nickname = name === '' + userId ? userId : `${name} (${userId})`
-      const message = session.text('command.feedback.receive', [nickname, text])
+      const message = session.text('.receive', [nickname, text])
       const delay = ctx.app.options.delay.broadcast
       const data: FeedbackData = [session.sid, session.channelId, session.guildId]
       for (let index = 0; index < operators.length; ++index) {
@@ -43,7 +43,7 @@ export function apply(ctx: Context, { operators = [], replyTimeout = Time.day }:
           ctx.logger('bot').warn(error)
         })
       }
-      return session.text('command.feedback.success')
+      return session.text('.success')
     })
 
   ctx.middleware(async (session, next) => {

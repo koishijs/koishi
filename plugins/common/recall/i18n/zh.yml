@@ -1,0 +1,5 @@
+commands:
+  recall:
+    description: 撤回机器人发送的消息
+    messages:
+      no-recent: 近期没有发送消息。

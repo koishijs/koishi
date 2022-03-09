@@ -11,6 +11,8 @@ export const Config = Schema.object({
 export const name = 'recall'
 
 export function apply(ctx: Context, { timeout }: Config) {
+  ctx.i18n.define('zh', require('../i18n/zh'))
+
   ctx = ctx.guild()
   const recent: Dict<string[]> = {}
 
@@ -20,10 +22,10 @@ export function apply(ctx: Context, { timeout }: Config) {
     ctx.setTimeout(() => remove(list, session.messageId), timeout)
   })
 
-  ctx.command('recall [count:number]', '撤回 bot 发送的消息', { authority: 2 })
+  ctx.command('recall [count:number]', { authority: 2 })
     .action(async ({ session }, count = 1) => {
       const list = recent[session.channelId]
-      if (!list) return '近期没有发送消息。'
+      if (!list) return session.text('.no-recent')
       const removal = list.splice(0, count)
       const delay = ctx.app.options.delay.broadcast
       if (!list.length) delete recent[session.channelId]

@@ -1,11 +1,5 @@
-import { Context, Schema, Session, template } from 'koishi'
+import { Context, Schema, Session } from 'koishi'
 import { parsePlatform } from '@koishijs/helpers'
-
-template.set('sudo', {
-  'expect-command': '请输入要触发的指令。',
-  'expect-context': '请提供新的上下文。',
-  'invalid-private-member': '无法在私聊上下文使用 --member 选项。',
-})
 
 export interface Config {}
 
@@ -14,24 +8,26 @@ export const using = ['database'] as const
 export const Config: Schema<Config> = Schema.object({})
 
 export function apply(ctx: Context) {
-  ctx.command('sudo <command:text>', '在特定上下文中触发指令', { authority: 3 })
+  ctx.i18n.define('zh', require('../i18n/zh'))
+
+  ctx.command('sudo <command:text>', { authority: 3 })
     .userFields(['authority'])
-    .option('user', '-u [id:user]  使用用户私聊上下文')
-    .option('member', '-m [id:user]  使用当前频道成员上下文')
-    .option('channel', '-c [id:channel]  使用群聊上下文')
+    .option('user', '-u [id:user]')
+    .option('member', '-m [id:user]')
+    .option('channel', '-c [id:channel]')
     .action(async ({ session, options }, message) => {
-      if (!message) return template('sudo.expect-command')
+      if (!message) return session.text('.expect-command')
 
       if (options.member) {
         if (session.subtype === 'private') {
-          return template('sudo.invalid-private-member')
+          return session.text('.invalid-private-member')
         }
         options.channel = session.cid
         options.user = options.member
       }
 
       if (!options.user && !options.channel) {
-        return template('sudo.expect-context')
+        return session.text('.expect-context')
       }
 
       const sess = new Session(session.bot, session)
@@ -52,7 +48,7 @@ export function apply(ctx: Context) {
         sess.userId = sess.author.userId = parsePlatform(options.user)[1]
         const user = await sess.observeUser(['authority'])
         if (session.user.authority <= user.authority) {
-          return template('internal.low-authority')
+          return session.text('internal.low-authority')
         }
       } else {
         sess.user = session.user
