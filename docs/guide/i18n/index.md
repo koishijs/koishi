@@ -47,7 +47,7 @@ channel.locale = 'en'
 <chat-message nickname="Koishi" avatar="/koishi.png">Hello!</chat-message>
 </panel-view>
 
-### 使用插值
+### 列表插值
 
 ```ts
 ctx.i18n.define('zh', { hello: '你好，{0}！' })
@@ -62,6 +62,8 @@ ctx.command('greeting').action(({ session }) => {
 <chat-message nickname="Alice" color="#cc0066">greeting</chat-message>
 <chat-message nickname="Koishi" avatar="/koishi.png">Hello, Alice!</chat-message>
 </panel-view>
+
+### 对象插值
 
 ### 使用修饰符
 

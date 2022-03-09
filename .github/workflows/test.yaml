@@ -63,8 +63,6 @@ jobs:
           key: yarn-cache-${{ runner.os }}-${{ needs.prepare.outputs.random-uuid }}-node-14
       - name: Install
         run: yarn
-      - name: Lint
-        run: yarn lint
       - name: Build JS
         run: yarn compile
       - name: Build DTS
@@ -79,12 +77,38 @@ jobs:
             packages
             plugins
 
+  lint:
+    runs-on: ubuntu-latest
+    needs:
+      - prepare
+
+    steps:
+      - name: Check out
+        uses: actions/checkout@v1
+      - name: Set up Node
+        uses: actions/setup-node@v2
+        with:
+          node-version: 14
+      - name: Restore Lockfile
+        uses: actions/cache@v2
+        with:
+          path: yarn.lock
+          key: yarn-lock-${{ runner.os }}-${{ needs.prepare.outputs.random-uuid }}
+      - name: Restore Cache
+        uses: actions/cache@v2
+        with:
+          path: ${{ needs.prepare.outputs.cache-dir }}
+          key: yarn-cache-${{ runner.os }}-${{ needs.prepare.outputs.random-uuid }}-node-14
+      - name: Install
+        run: yarn
+      - name: Lint
+        run: yarn lint
+
   unit-test:
     runs-on: ubuntu-latest
     needs:
       - prepare
 
-    continue-on-error: ${{ matrix.node-version == 16 }}
     strategy:
       fail-fast: false
       matrix:
