@@ -28,7 +28,7 @@
     "utilities"
   ],
   "peerDependencies": {
-    "koishi": "^4.4.0"
+    "koishi": "^4.4.1"
   },
   "devDependencies": {},
   "dependencies": {}

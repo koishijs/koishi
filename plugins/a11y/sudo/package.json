@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-sudo",
   "description": "Simulate Other Contexts in Koishi",
-  "version": "1.0.2",
+  "version": "1.1.0",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -30,13 +30,13 @@
     "required:database"
   ],
   "peerDependencies": {
-    "koishi": "^4.4.0"
+    "koishi": "^4.4.1"
   },
   "devDependencies": {
     "@koishijs/plugin-database-memory": "^1.0.2",
     "@koishijs/plugin-mock": "^1.0.3"
   },
   "dependencies": {
-    "@koishijs/helpers": "^1.0.0"
+    "@koishijs/helpers": "^1.1.0"
   }
 }
