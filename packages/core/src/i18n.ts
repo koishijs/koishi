@@ -12,6 +12,7 @@ export class Template {
   data: Dict<Dict<Value>> = {}
 
   constructor(protected ctx: Context) {
+    this.define('', {})
     this.define('zh', require('../i18n/zh'))
     this.define('en', require('../i18n/en'))
   }
@@ -19,7 +20,7 @@ export class Template {
   private set(locale: string, prefix: string, value: Node) {
     if (typeof value === 'string') {
       this.data[locale][prefix.slice(0, -1)] = value
-    } else {
+    } else if (value) {
       for (const key in value) {
         this.set(locale, prefix + key + '.', value[key])
       }
@@ -38,25 +39,43 @@ export class Template {
   }
 
   render(locales: Iterable<string>, path: string, params: object) {
+    // optional path
     let optional = false
     if (path.endsWith('?')) {
       optional = true
       path = path.slice(0, -1)
     }
-    for (const locale of [...locales, '']) {
-      const value = this.data[locale]?.[path]
-      if (typeof value !== 'string') continue
 
-      return value.replace(/\{([\w-.]+)\}/g, (_, path) => {
-        const segments = path.split('.')
-        let result = params
-        for (const segment of segments) {
-          result = result[segment]
-          if (isNullable(result)) return ''
-        }
-        return result.toString()
-      })
+    // sort locales by priority
+    const queue = new Set<string>()
+    for (const locale of locales) {
+      if (!locale) continue
+      queue.add(locale)
     }
+    for (const locale in this.data) {
+      if (locale.startsWith('$')) continue
+      queue.add(locale)
+    }
+
+    // try every locale
+    for (const locale of queue) {
+      for (const key of ['$' + locale, locale]) {
+        const value = this.data[key]?.[path]
+        if (typeof value !== 'string') continue
+
+        return value.replace(/\{([\w-.]+)\}/g, (_, path) => {
+          const segments = path.split('.')
+          let result = params
+          for (const segment of segments) {
+            result = result[segment]
+            if (isNullable(result)) return ''
+          }
+          return result.toString()
+        })
+      }
+    }
+
+    // path not found
     if (optional) return ''
     this.ctx.logger('i18n').warn('missing', path)
     return path

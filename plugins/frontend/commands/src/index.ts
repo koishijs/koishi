@@ -1,5 +1,5 @@
 import { Command, Context, Dict, pick, remove, Schema } from 'koishi'
-import CommandProvider from './service'
+// import CommandProvider from './service'
 
 export * from './service'
 
@@ -120,5 +120,5 @@ export function apply(ctx: Context, config: Dict<Config>) {
     }
   }, true)
 
-  ctx.plugin(CommandProvider)
+  // ctx.plugin(CommandProvider)
 }

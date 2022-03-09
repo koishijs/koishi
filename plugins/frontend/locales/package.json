@@ -1,7 +1,7 @@
 {
-  "name": "@koishijs/plugin-commands",
-  "description": "Override Command Config for Koishi",
-  "version": "1.2.1",
+  "name": "@koishijs/plugin-locales",
+  "description": "Override Locale Texts for Koishi",
+  "version": "1.0.0",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -20,7 +20,7 @@
   "bugs": {
     "url": "https://github.com/koishijs/koishi/issues"
   },
-  "homepage": "https://koishi.js.org/plugins/commands/",
+  "homepage": "https://koishi.js.org/plugins/locales/",
   "keywords": [
     "bot",
     "chatbot",
