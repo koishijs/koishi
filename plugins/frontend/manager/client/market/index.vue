@@ -1,16 +1,25 @@
 <template>
-  <div class="market-search">
-    <el-input v-model="query" #suffix>
-      <k-icon name="search"></k-icon>
-    </el-input>
-  </div>
-  <div class="market-filter">
-    共搜索到 {{ plugins.length }} 个插件。
-    <el-checkbox v-model="config.showInstalled">显示已下载的插件</el-checkbox>
-  </div>
-  <div class="market-container">
-    <package-view v-for="data in packages" :key="data.name" :data="data" @query="query = $event"></package-view>
-  </div>
+  <template v-if="Object.keys(store.market).length">
+    <div class="market-search">
+      <el-input v-model="query" #suffix>
+        <k-icon name="search"></k-icon>
+      </el-input>
+    </div>
+    <div class="market-filter">
+      共搜索到 {{ plugins.length }} 个插件。
+      <el-checkbox v-model="config.showInstalled">显示已下载的插件</el-checkbox>
+    </div>
+    <div class="market-container">
+      <package-view v-for="data in packages" :key="data.name" :data="data" @query="query = $event"></package-view>
+    </div>
+  </template>
+  <k-comment v-else type="error" class="market-error">
+    <p>无法连接到插件市场。这可能是以下原因导致的：</p>
+    <ul>
+      <li>无法连接到网络，请检查你的网络连接和代理设置</li>
+      <li>您所用的 registry 不支持搜索功能 (如 npmmirror)，请考虑进行更换</li>
+    </ul>
+  </k-comment>
 </template>
 
 <script setup lang="ts">
@@ -108,6 +117,11 @@ const packages = computed(() => {
   gap: 2rem;
   margin: 2rem;
   justify-items: center;
+}
+
+.market-error.k-comment {
+  margin-left: 2rem;
+  margin-right: 2rem;
 }
 
 </style>
