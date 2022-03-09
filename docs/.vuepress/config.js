@@ -123,6 +123,12 @@ module.exports = {
           '/guide/service/logger.md',
         ],
       }, {
+        text: '国际化',
+        isGroup: true,
+        children: [
+          '/guide/i18n/index.md',
+        ],
+      }, {
         text: '控制台开发',
         isGroup: true,
         children: [
