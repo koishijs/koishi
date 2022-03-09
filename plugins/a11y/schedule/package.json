@@ -24,6 +24,7 @@
     "plugin",
     "schedule",
     "task",
+    "locale:zh",
     "required:database"
   ],
   "devDependencies": {

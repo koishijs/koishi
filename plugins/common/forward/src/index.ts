@@ -37,7 +37,7 @@ export const schema = Schema.union([
 ])
 
 export function apply(ctx: Context, { rules, interval }: Config) {
-  ctx.i18n.define('zh', require('../i18n/zh'))
+  ctx.i18n.define('zh', require('./locales/zh'))
 
   const relayMap: Dict<Rule> = {}
 

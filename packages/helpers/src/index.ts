@@ -12,8 +12,8 @@ const refs = new WeakSet<App>()
 function loadI18n(app: App) {
   if (refs.has(app)) return
   refs.add(app)
-  app.i18n.define('zh', require('../i18n/zh'))
-  app.i18n.define('en', require('../i18n/en'))
+  app.i18n.define('zh', require('./locales/zh'))
+  app.i18n.define('en', require('./locales/en'))
 }
 
 export function handleError<U extends User.Field, G extends Channel.Field, A extends any[], O extends {}>(

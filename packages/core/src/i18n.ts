@@ -13,8 +13,8 @@ export class Template {
 
   constructor(protected ctx: Context) {
     this.define('', {})
-    this.define('zh', require('../i18n/zh'))
-    this.define('en', require('../i18n/en'))
+    this.define('zh', require('./locales/zh'))
+    this.define('en', require('./locales/en'))
   }
 
   private set(locale: string, prefix: string, value: Node) {

@@ -7,7 +7,7 @@ export const name = 'echo'
 export const Config: Schema<Config> = Schema.object({})
 
 export function apply(ctx: Context) {
-  ctx.i18n.define('zh', require('../i18n/zh'))
+  ctx.i18n.define('zh', require('./locales/zh'))
 
   ctx.command('echo <message:text>', { authority: 2 })
     .option('anonymous', '-a', { authority: 3 })

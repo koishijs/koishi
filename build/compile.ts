@@ -142,7 +142,7 @@ async function compile(name: string) {
 const yamlPlugin = (options: yaml.LoadOptions = {}): Plugin => ({
   name: 'i18n',
   setup(build) {
-    build.onResolve({ filter: /\/i18n\/[\w-]+$/ }, ({ path, resolveDir }) => ({
+    build.onResolve({ filter: /\/locales\/[\w-]+$/ }, ({ path, resolveDir }) => ({
       path: resolve(resolveDir, path) + '.yml',
       namespace: 'yaml',
     }))

@@ -16,7 +16,7 @@ export const schema: Schema<string[] | Config, Config> = Schema.union([
 export const name = 'feedback'
 
 export function apply(ctx: Context, { operators = [], replyTimeout = Time.day }: Config) {
-  ctx.i18n.define('zh', require('../i18n/zh'))
+  ctx.i18n.define('zh', require('./locales/zh'))
 
   type FeedbackData = [sid: string, channelId: string, guildId: string]
   const feedbacks: Dict<FeedbackData> = {}

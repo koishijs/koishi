@@ -11,7 +11,7 @@ export const Config = Schema.object({
 export const name = 'recall'
 
 export function apply(ctx: Context, { timeout }: Config) {
-  ctx.i18n.define('zh', require('../i18n/zh'))
+  ctx.i18n.define('zh', require('./locales/zh'))
 
   ctx = ctx.guild()
   const recent: Dict<string[]> = {}

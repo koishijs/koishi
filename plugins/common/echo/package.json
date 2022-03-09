@@ -25,7 +25,8 @@
     "chatbot",
     "koishi",
     "plugin",
-    "echo"
+    "echo",
+    "locale:zh"
   ],
   "peerDependencies": {
     "koishi": "^4.4.0"

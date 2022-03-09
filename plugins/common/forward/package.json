@@ -27,6 +27,7 @@
     "plugin",
     "relay",
     "forward",
+    "locale:zh",
     "optional:database"
   ],
   "peerDependencies": {

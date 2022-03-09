@@ -8,7 +8,7 @@ export const using = ['database'] as const
 export const Config: Schema<Config> = Schema.object({})
 
 export function apply(ctx: Context) {
-  ctx.i18n.define('zh', require('../i18n/zh'))
+  ctx.i18n.define('zh', require('./locales/zh'))
 
   ctx.command('sudo <command:text>', { authority: 3 })
     .userFields(['authority'])

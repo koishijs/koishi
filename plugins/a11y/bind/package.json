@@ -26,6 +26,8 @@
     "koishi",
     "plugin",
     "bind",
+    "locale:zh",
+    "locale:en",
     "required:database"
   ],
   "peerDependencies": {

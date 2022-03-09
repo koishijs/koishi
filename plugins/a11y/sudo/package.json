@@ -26,6 +26,7 @@
     "koishi",
     "plugin",
     "sudo",
+    "locale:zh",
     "required:database"
   ],
   "peerDependencies": {

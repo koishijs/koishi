@@ -26,6 +26,7 @@
     "koishi",
     "plugin",
     "broadcast",
+    "locale:zh",
     "optional:database"
   ],
   "peerDependencies": {

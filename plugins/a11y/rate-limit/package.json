@@ -26,6 +26,7 @@
     "koishi",
     "plugin",
     "rate-limit",
+    "locale:zh",
     "required:database"
   ],
   "peerDependencies": {
