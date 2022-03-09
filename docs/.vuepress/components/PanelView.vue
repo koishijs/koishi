@@ -93,7 +93,7 @@ $textShadow: 1px 1px 1px rgba(23, 31, 35, 0.5);
   position: relative;
   border-radius: 6px;
   margin: 1rem 0;
-  overflow: scroll hidden;
+  overflow: auto hidden;
   background-color: var(--c-bg-dark);
   transition: background-color ease 0.3s;
 
