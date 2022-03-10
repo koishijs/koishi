@@ -15,7 +15,7 @@ noTwoslash: true
 import {
   DefinePlugin,
   SchemaProperty,
-  CommandDescription,
+  CommandLocale,
   PutOption,
   UseCommand,
   OnApply,
@@ -24,7 +24,7 @@ import {
   UseEvent,
   Get,
   PutUserName,
-  PutTemplate,
+  PutRenderer,
   Renderer,
 } from 'koishi-thirdeye';
 import { Context, Session } from 'koishi';
@@ -61,12 +61,29 @@ export default class MyPlugin extends BasePlugin<MyPluginConfig> implements Life
 
   // 注册指令
   @UseCommand('dress')
+  @CommandLocale('cn', {
+    description: '穿裙子',
+    options: {
+      color: '裙子的颜色'
+    },
+    messages: {
+      wearsDress: '{name} 穿了 {color} 颜色的裙子。'
+    }
+  })
+  @CommandLocale('en', {
+    description: 'Wear dress',
+    options: {
+      color:  'Dress color'
+    },
+    messages: {
+      wearsDress: '{name} wears dress of color {color}.'
+    }
+  })
   @CommandDescription({ cn: '穿裙子', en: 'Wear dress' })
   onDressCommand(
-    @PutOption('color', '-c <color:string>', { description: { cn: '裙子的颜色', en: 'Dress color' } }) color: string,
+    @PutOption('color', '-c <color:string>') color: string,
     @PutUserName() name: string,
-    @PutTemplate('wearsDress', { cn: '{name} 穿了 {color} 颜色的裙子。', en: '{name} wears dress of color {color}.' })
-      wearsDress: Renderer<{ name: string, color: string }>
+    @PutRenderer('.wearsDress') wearsDress: Renderer<{ name: string, color: string }>
   ) {
     return wearsDress({ name, color });
   }
@@ -294,7 +311,7 @@ export class Post {
 import {
   DefinePlugin,
   SchemaProperty,
-  CommandDescription,
+  CommandLocale,
   PutOption,
   UseCommand,
   OnApply,
@@ -303,7 +320,7 @@ import {
   UseEvent,
   Get,
   PutUserName,
-  PutTemplate,
+  PutRenderer,
   Renderer,
 } from 'koishi-thirdeye';
 import { Context, Session } from 'koishi';
@@ -340,12 +357,29 @@ export default class MyPlugin extends BasePlugin<MyPluginConfig> implements Life
 
   // 注册指令
   @UseCommand('dress')
+  @CommandLocale('cn', {
+    description: '穿裙子',
+    options: {
+      color: '裙子的颜色'
+    },
+    messages: {
+      wearsDress: '{name} 穿了 {color} 颜色的裙子。'
+    }
+  })
+  @CommandLocale('en', {
+    description: 'Wear dress',
+    options: {
+      color:  'Dress color'
+    },
+    messages: {
+      wearsDress: '{name} wears dress of color {color}.'
+    }
+  })
   @CommandDescription({ cn: '穿裙子', en: 'Wear dress' })
   onDressCommand(
-    @PutOption('color', '-c <color:string>', { description: { cn: '裙子的颜色', en: 'Dress color' } }) color: string,
+    @PutOption('color', '-c <color:string>') color: string,
     @PutUserName() name: string,
-    @PutTemplate('wearsDress', { cn: '{name} 穿了 {color} 颜色的裙子。', en: '{name} wears dress of color {color}.' })
-    wearsDress: Renderer<{ name: string, color: string }>
+    @PutRenderer('.wearsDress') wearsDress: Renderer<{ name: string, color: string }>
   ) {
     return wearsDress({ name, color });
   }
@@ -403,7 +437,7 @@ export default class MyPlugin extends BasePlugin<MyPluginConfig> {
 
 #### API
 
-- `@CommandDescription(text: string | Dict<string>)` 指令描述。等价于 `ctx.command(def, desc)` 中的描述。特别地，可以传入一个形如 `{ cn: string, en: string }` 的字典来为每一种语言指定指令描述。
+- `@CommandDescription(text: string)` 指令描述。等价于 `ctx.command(def, desc)` 中的描述。
 - `@CommandUsage(text: string)` 指令介绍。等价于 `cmd.usage(text)`。
 - `@CommandExample(text: string)` 指令示例。等价于 `cmd.example(text)`。
 - `@CommandAlias(def: string)` 指令别名。等价于 `cmd.alias(def)`。
@@ -434,7 +468,6 @@ for (const [locale, content] of Object.entries(text)) {
 - `@PutArg(index: number)` 注入指令的第 n 个参数。
 - `@PutArgs()` 注入包含指令全部参数的数组。
 - `@PutOption(name: string, desc: string, config: Argv.OptionConfig = {})` 给指令添加选项并注入到该参数。等价于 `cmd.option(name, desc, config)`。
-  - `config` 参数中拥有额外的 `description: Dict<string>` 选项，可以用来定义每一种语言的选项描述文本。
 - `@PutUser(fields: string[])` 添加一部分字段用于观测，并将 User 对象注入到该参数。
 - `@PutChannel(fields: string[])` 添加一部分字段用于观测，并将 Channel 对象注入到该参数。
 - `@PutGuild(fields: string[])` 添加一部分字段用于观测，并将 Guild 对象注入到该参数。
@@ -506,9 +539,15 @@ export default class MyPlugin extends BasePlugin<MyPluginConfig> {
 @DefinePlugin({ name: 'my-plugin', schema: MyPluginConfig })
 export default class MyPlugin extends BasePlugin<MyPluginConfig> {
   @UseCommand('dress')
-  @CommandTemplate('notifyWear', {
-    zh: '今天穿 {name} 了吗？',
-    en: 'Did you wear {name} today?'
+  @CommandLocale('zh', {
+    messages: {
+      notifyWear: '今天穿 {name} 了吗？',
+    }
+  })
+  @CommandLocale('en', {
+    messages: {
+      notifyWear: 'Did you wear {name} today?'
+    }
   })
   onNotifyDress(
     @PutRenderer('.notifyWear') render: Renderer<{ name: string }>
@@ -518,59 +557,9 @@ export default class MyPlugin extends BasePlugin<MyPluginConfig> {
 }
 ```
 
-另外，`@PutTemplate` 可以在定义一个文本的同时，注入该文本的渲染器。
-
-上例还可以使用 `@PutTemplate` 方法简写成下面的形式：
-
-```ts
-@DefinePlugin({ name: 'my-plugin', schema: MyPluginConfig })
-export default class MyPlugin extends BasePlugin<MyPluginConfig> {
-  @UseCommand('dress')
-  onNotifyDress(
-    @PutTemplate('notifyWear', {
-      zh: '今天穿 {name} 了吗？',
-      en: 'Did you wear {name} today?'
-    }) render: Renderer<{ name: string }>
-  ) {
-    return render({ name: 'dress' })
-  }
-}
-```
-
 ### 文本定义
 
 koishi-thirdeye 中，定义文本有下面几种形式：
-
-#### 指令内定义
-
-一种最简洁的方法是，在指令描述装饰器中直接定义多语言的文本。
-
-在上面的例子中您已经接触过 `@CommandTemplate` 以及 `@PutTemplate` 这两个装饰器，用来定义消息模板文本。
-
-此外 `@CommandDescription` 和 `@PutOption` 中的 `description` 选项，均可以传入 `Dict<string>` 类型，以给每一种语言定义相关文本
-
-```ts
-@DefinePlugin({ name: 'my-plugin', schema: MyPluginConfig })
-export default class MyPlugin extends BasePlugin<MyPluginConfig> {
-  @UseCommand('dress')
-  @CommandDescription({
-    zh: '穿衣服。',
-    en: 'Wear clothes.'
-  })
-  onNotifyDress(
-    @PutOption('name', '-n <name:string>', { description: {
-      zh: '穿着的名称。',
-      en: 'Name of wearing.',
-    }}) name: string,
-    @PutTemplate('notifyWear', {
-      zh: '今天穿 {name} 了吗？',
-      en: 'Did you wear {name} today?'
-    }) render: Renderer<{ name: string }>
-  ) {
-    return render({ name })
-  }
-}
-```
 
 #### 分指令完整定义
 
