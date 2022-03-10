@@ -531,16 +531,6 @@ export default class MyPlugin extends BasePlugin<MyPluginConfig> {
 @DefinePlugin({ name: 'my-plugin', schema: MyPluginConfig })
 export default class MyPlugin extends BasePlugin<MyPluginConfig> {
   @UseCommand('dress')
-  @CommandLocale('zh', {
-    messages: {
-      notifyWear: '今天穿 {name} 了吗？',
-    }
-  })
-  @CommandLocale('en', {
-    messages: {
-      notifyWear: 'Did you wear {name} today?'
-    }
-  })
   onNotifyDress(
     @PutRenderer('.notifyWear') render: Renderer<{ name: string }>
   ) {
