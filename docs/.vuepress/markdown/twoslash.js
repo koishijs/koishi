@@ -36,6 +36,9 @@ function twoslash(code, lang, attrs) {
       {
         defaultCompilerOptions: {
           strict: false,
+          target: 'esnext',
+          module: 'esnext',
+          moduleResolution: 'node',
         },
       },
     )

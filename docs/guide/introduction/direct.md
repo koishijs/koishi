@@ -141,7 +141,7 @@ app.plugin(require('@koishijs/plugin-echo'))
 
 现在让我们在上面的代码中添加一段自己的交互逻辑：
 
-```js title=index.js
+```ts title=index.ts
 // 如果收到“天王盖地虎”，就回应“宝塔镇河妖”
 app.middleware((session, next) => {
   if (session.content === '天王盖地虎') {

@@ -12,6 +12,7 @@ sidebarDepth: 2
 
 ```ts title=src/index.ts no-extra-header
 import { Context } from 'koishi'
+import { resolve } from 'path'
 import { DataService } from '@koishijs/plugin-console'
 
 declare module '@koishijs/plugin-console' {
@@ -22,7 +23,7 @@ declare module '@koishijs/plugin-console' {
   }
 }
 
-class CustomProvider extends DataSource<string[]> {
+class CustomProvider extends DataService<string[]> {
   constructor(ctx: Context) {
     super(ctx, 'custom')
   }
@@ -79,6 +80,7 @@ import { store } from '@koishijs/client'
 
 ```ts title=src/index.ts no-extra-header
 import { Context } from 'koishi'
+import { resolve } from 'path'
 import { DataService } from '@koishijs/plugin-console'
 
 declare module '@koishijs/plugin-console' {
