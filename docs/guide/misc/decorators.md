@@ -79,7 +79,6 @@ export default class MyPlugin extends BasePlugin<MyPluginConfig> implements Life
       wearsDress: '{name} wears dress of color {color}.',
     },
   })
-  @CommandDescription({ cn: '穿裙子', en: 'Wear dress' })
   onDressCommand(
     @PutOption('color', '-c <color:string>') color: string,
     @PutUserName() name: string,
@@ -375,7 +374,6 @@ export default class MyPlugin extends BasePlugin<MyPluginConfig> implements Life
       wearsDress: '{name} wears dress of color {color}.',
     },
   })
-  @CommandDescription({ cn: '穿裙子', en: 'Wear dress' })
   onDressCommand(
     @PutOption('color', '-c <color:string>') color: string,
     @PutUserName() name: string,
