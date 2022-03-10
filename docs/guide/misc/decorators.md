@@ -445,13 +445,6 @@ export default class MyPlugin extends BasePlugin<MyPluginConfig> {
 - `@CommandBefore(callback: Command.Action, append = false)` 等价于 `cmd.before(callback, append)`。
 - `@CommandAction(callback: Command.Action, prepend = false)` 等价于 `cmd.action(callback, append)`。
 - `@CommandUse(callback, ...args)` 指令功能配置。等价于 `cmd.use(callback, ...args)`。
-
-```ts
-for (const [locale, content] of Object.entries(text)) {
-  ctx.i18n.define(locale, `commands.${command.name}.messages.${name}`, content)
-}
-```
-
 - `@CommandLocale(locale: string, def: any)` 注册该指令特定语言的 i18n 模板。等价于 `ctx.i18n.define(locale, 'commands.{指令名称}', def)`。
 
 ::: tip
