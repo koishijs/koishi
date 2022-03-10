@@ -6,8 +6,8 @@ sidebarDepth: 2
 
 @koishijs/plugin-respondent 允许设置一套内置问答，就像这样：
 
-```js title=koishi.js
-module.exports = {
+```ts title=koishi.ts
+export default {
   plugins: {
     respondent: [{
       match: 'awsl',

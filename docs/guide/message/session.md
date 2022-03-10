@@ -77,7 +77,7 @@ ctx.on('friend-request', async (session) => {
 
 如果你需要连续发送多条消息，那么在各条消息之间留下一定的时间间隔是很重要的：一方面它可以防止消息刷屏和消息错位（后发的条消息呈现在先发的消息前面），提高了阅读体验；另一方面它能够有效降低机器人发送消息的频率，防止被平台误封。这个时候，`session.sendQueued()` 可以解决你的问题。
 
-```js
+```ts
 // 发送两条消息，中间间隔一段时间，这个时间由系统计算决定
 await session.sendQueued('message1')
 await session.sendQueued('message2')
@@ -88,7 +88,7 @@ await session.cancelQueued()
 
 你也可以在发送时手动定义等待的时长：
 
-```js
+```ts
 // 如果消息队列非空，在前一条消息发送完成后 1s 发送本消息
 await session.sendQueued('message3', Time.second)
 
@@ -105,18 +105,6 @@ delay:
   character: 20
   # 每条消息至少等待 0.5s
   message: 500
-```
-```js
-const { Time } = require('koishi')
-
-module.exports = {
-  delay: {
-    // 消息里每有一个字符就等待 0.02s
-    character: 0.02 * Time.second,
-    // 每条消息至少等待 0.5s
-    message: 0.5 * Time.second,
-  },
-}
 ```
 ```ts
 import { Time } from 'koishi'
@@ -138,7 +126,7 @@ export default {
 
 当你需要进行一些交互式操作时，可以使用 `session.prompt()`：
 
-```js
+```ts
 await session.send('请输入用户名：')
 
 const name = await session.prompt()
@@ -155,7 +143,7 @@ return `${name}，请多指教！`
 
 有的时候你可能希望向多个频道同时发送消息，我们也专门设计了相关的接口。
 
-```js
+```ts
 // 使用当前机器人账户向多个频道发送消息
 await session.bot.broadcast(['123456', '456789'], content)
 
@@ -172,7 +160,7 @@ await ctx.broadcast(content)
 
 我们还可以实用 `session.execute()` 来让用户执行某条指令：
 
-```js
+```ts
 // 当用户输入“查看帮助”时，执行 help 指令
 ctx.middleware((session, next) => {
   if (session.content === '查看帮助') {

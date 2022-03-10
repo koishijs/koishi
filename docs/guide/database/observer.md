@@ -10,7 +10,7 @@ sidebarDepth: 2
 
 之前我们已经提到过，你可以在 `session.user` 上获得本次事件相关的用户数据，但实际上 `session.user` 能做的远远不止这些。它的本质其实是一个**观察者**对象。假如我们有下面的代码：
 
-```js
+```ts
 // 定义一个 items 字段，用于存放物品列表
 ctx.model.extend('user', {
   items: 'list',
@@ -41,8 +41,8 @@ ctx.command('lottery')
 
 如果你需要对全体指令添加所需的用户字段，可以使用 `Command.userFields()`。下面是一个例子：
 
-```js
-const { Command } = require('koishi')
+```ts
+import { Command } from 'koishi'
 
 // 注意这不是实例方法，而是类上的静态方法
 Command.userFields(['name'])
@@ -54,7 +54,7 @@ app.before('command/execute', ({ session, command }) => {
 
 如果要控制中间件能取得的用户数据，可以监听 before-user 和 before-channel 事件，通过修改传入的 `fields` 参数来添加特定的字段。下面是一个例子：
 
-```js
+```ts
 // 定义一个 msgCount 字段，用于存放收到的信息数量
 ctx.model.extend('user', {
   msgCount: 'integer',
@@ -76,7 +76,7 @@ app.middleware((session, next) => {
 
 对于 Koishi 内部的两个抽象表 User 和 Channel，我们在 [会话对象](../../api/core/session.md) 中封装了几个高级方法：
 
-```js
+```ts
 // 中间增加了一个第二参数，表示默认情况下的权限等级
 // 如果找到该用户，则返回该用户本身
 session.getUser(id, fields)

@@ -41,7 +41,7 @@ echo hello
 
 你可以为一条指令添加别名：
 
-```js
+```ts
 app.command('echo').alias('say')
 ```
 
@@ -53,7 +53,7 @@ Koishi 的指令机制虽然能够尽可能避免冲突和误触发，但是也�
 
 假设你实现了一个货币系统和 rank 指令，调用 `rank wealth --global` 可以实现查看全服所有人财富排行，你可以这样做：
 
-```js
+```ts
 ctx.command('rank <type>')
   .shortcut('全服财富排行', { args: ['wealth'], options: { global: true } })
 ```
@@ -62,7 +62,7 @@ ctx.command('rank <type>')
 
 通常来说，快捷方式都要求严格匹配（当然删除两端空格和繁简体转化这种程度的模糊匹配是可以做的），但是你也可以让快捷方式允许带参数：
 
-```js
+```ts
 ctx.command('buy <item>')
   .shortcut('购买', { prefix: true, fuzzy: true })
 ```
@@ -71,7 +71,7 @@ ctx.command('buy <item>')
 
 除此以外，你还可以使用正则表达式作为快捷方式：
 
-```js
+```ts
 ctx.command('market <area>')
   .shortcut(/^查(.+区)市场$/, { args: ['$1'] })
 ```

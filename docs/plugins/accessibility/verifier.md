@@ -6,8 +6,8 @@ sidebarDepth: 2
 
 @koishijs/plugin-verifier 可用于配置机器人接收到各类申请时的行为。
 
-```js title=koishi.js
-module.exports = {
+```ts title=koishi.ts
+export default {
   plugins: {
     verifier: {
       onFriendRequest: true, // 通过所有好友申请

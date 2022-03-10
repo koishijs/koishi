@@ -40,8 +40,8 @@ Koishi 使用**状态标签**来管理用户和群的可能状态。状态标签
 
 利用位运算操作符，你可以用下面的方法辨别和修改状态信息：
 
-```js
-const { Channel } = require('koishi')
+```ts
+import { Channel } from 'koishi'
 
 // 判断会话用户是否被设置了 ignore 状态
 if (session.channel.flag & Channel.Flag.ignore) {}
@@ -99,17 +99,15 @@ Koishi v3 起支持多平台和多账户，因此在用户系统中也需要记�
 
 前面已经介绍过了，默认情况下每一名用户都是 0 级权限，每一个群都没有代理者，这虽然安全但也给 Koishi 的搭建带来了不小的麻烦。因此，我们也提供了自动注册的配置项：`autoAuthorize` 和 `autoAssign`。下面展示两个例子：
 
-```js title=koishi.js
-module.exports = {
-  // 一旦收到来自未知频道的消息，就自动注册频道数据，代理者为收到消息的人
-  autoAssign: true,
-  // 一旦收到来自未知用户的消息，就自动注册用户数据，权限等级为 1
-  autoAuthorize: 1,
-}
+```yaml title=koishi.yml
+# 一旦收到来自未知频道的消息，就自动注册频道数据，代理者为收到消息的人
+autoAssign: true
+# 一旦收到来自未知用户的消息，就自动注册用户数据，权限等级为 1
+autoAuthorize: 1
 ```
 
-```js title=koishi.js
-module.exports = {
+```ts title=koishi.ts
+export default {
   // 为频道 123456789 自动分配代理者
   autoAssign: ses => ses.channelId === '123456789',
   // 为用户 987654321 设置 4 级权限
@@ -128,7 +126,7 @@ module.exports = {
 
 你可以通过这样的方式设置一个指令的调用权限：
 
-```js
+```ts
 // 设置 echo 命令的调用权限为 2 级
 ctx.command('echo <message:text> 输出收到的信息', { authority: 2 })
   // 设置 -t 选项的调用权限为 3 级

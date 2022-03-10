@@ -16,7 +16,7 @@ sidebarDepth: 2
 
 有些指令（例如签到抽卡点赞，高性能损耗的计算，限制次数的 API 调用等）我们并不希望被无限制调用，这时我们可以设置每天访问次数的上限：
 
-```js
+```ts
 // 设置 lottery 指令每人每天只能调用 10 次
 ctx.command('lottery 抽卡', { maxUsage: 10 })
   // 设置使用了 -s 的调用不计入总次数
@@ -29,8 +29,8 @@ ctx.command('lottery 抽卡', { maxUsage: 10 })
 
 有些指令（例如高强度刷屏）我们并不希望被短时间内重复调用，这时我们可以设置最短触发间隔：
 
-```js
-const { Time } = require('koishi')
+```ts
+import { Time } from 'koishi'
 
 // 设置 lottery 指令每 60 秒只能调用 1 次
 ctx.command('lottery', { minInterval: Time.minute })
@@ -42,7 +42,7 @@ ctx.command('lottery', { minInterval: Time.minute })
 
 如果我们希望让多个指令共同同一个调用限制，可以通过 `usageName` 来实现：
 
-```js
+```ts
 ctx.command('lottery 常驻抽卡', { maxUsage: 10 })
 ctx.command('accurate 精准抽卡', { maxUsage: 10, usageName: 'lottery' })
 ```

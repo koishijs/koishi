@@ -55,7 +55,7 @@ type QueryModifier<T extends string> = T[] | QueryOptions<T>
 
 下面是一些简单的示例：
 
-```js
+```ts
 // 获取名为 schedule 的表中 id 为 1 或者 2 的数据行
 // Koishi ORM 自动解析你的 primary key
 const rows = await ctx.database.get('schedule', [1, 2])

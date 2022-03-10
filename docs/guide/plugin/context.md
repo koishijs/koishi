@@ -10,7 +10,7 @@ sidebarDepth: 2
 
 我们可以通过 **会话选择器 (Session Selector)** 来快速创建新的上下文：
 
-```js
+```ts
 app.user('112233')                  // 选择来自用户 112233 的会话
 app.self('112233')                  // 选择发送给机器人 112233 的会话
 app.guild('445566')                 // 选择来自群组 445566 的会话
@@ -20,14 +20,14 @@ app.platform('discord')             // 选择来自平台 discord 的会话
 
 这种写法也支持链式的调用：
 
-```js
+```ts
 // 选择来自平台 discord 中用户 112233 的会话
 app.platform('discord').user('112233')
 ```
 
 利用上下文，你可以非常方便地对每个环境进行分别配置：
 
-```js
+```ts
 // 在所有环境注册中间件
 app.middleware(callback)
 
@@ -47,7 +47,7 @@ app.platform('onebot').plugin(require('./my-plugin'))
 
 如果感觉简单的会话选择器无法满足你的需求，你也可以给一个上下文添加 **条件选择器 (Condition Selector)**：它传入一个会话对象，并返回一个布尔类型。过滤器有三种添加方式：
 
-```js
+```ts
 // 满足当前上下文条件，且消息内容为“啦啦啦”
 ctx.intersect(session => session.content === '啦啦啦')
 
@@ -60,7 +60,7 @@ ctx.exclude(session => session.content === '啦啦啦')
 
 上述方法也可以传入一个上下文作为参数，分别表示两个上下文的交集、并集和差集：
 
-```js
+```ts
 // 选择来自群组 1122233 和用户 445566 的会话
 app.guild('112233').intersect(app.user('445566'))
 
@@ -77,7 +77,7 @@ app.guild('112233').exclude(app.user('445566'))
 
 加载插件的时候，我们也可以通过第二个参数选择插件的上下文：
 
-```js
+```ts
 ctx.plugin('repeater', {
   // 仅在 onebot 平台下 2 个特定频道内注册插件
   $platform: 'onebot',
@@ -93,7 +93,7 @@ ctx.plugin('repeater', {
 
 这相当于
 
-```js
+```ts
 ctx
   .platform('onebot')
   .channel('123456', '456789')
@@ -140,7 +140,7 @@ export default {
 
 这相当于
 
-```js
+```ts
 app
   .user('123456789')
   .union(app.exclude(app.platform('discord')))

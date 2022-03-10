@@ -119,7 +119,7 @@ export function apply(ctx: Context) {
 
 对于部分功能依赖某个服务的插件，我们也提供了一个语法糖 `ctx.using()`：
 
-```js
+```ts
 ctx.using(['console'], (ctx) => {
   ctx.console.addEntry('/path/to/teach/extension')
 })
@@ -186,7 +186,7 @@ export function apply(ctx: Context) {
 
 如果你希望自己插件提供一些接口供其他插件使用，那么最好的办法便是提供自定义服务，就像这样：
 
-```js
+```ts
 // 这个表达式定义了一个名为 console 的服务
 Context.service('console')
 
@@ -240,7 +240,7 @@ Service 抽象类的构造函数支持三个参数：
 
 此外，当注册了服务的插件被卸载时，其注册的服务也会被移除，其他插件不再可以访问到这项服务：
 
-```js
+```ts
 app.console                 // falsy
 app.plugin(Console)         // 加载插件
 app.console                 // truthy

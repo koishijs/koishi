@@ -39,7 +39,7 @@ plugins:
 
 运行程序后，你就可以通过访问 `ctx.database` 来调用数据库接口了：
 
-```js
+```ts
 // 获取用户数据
 const user = await ctx.database.getUser(platform, id)
 
@@ -55,7 +55,7 @@ await ctx.database.setChannel(platform, id, { assignee: '123456789' })
 
 使用 `database.get()` 方法以获取特定表中的数据。下面是一个最基本的形式：
 
-```js
+```ts
 // 获取 schedule 表中 id 为 1234 的数据行，返回一个数组
 await ctx.database.get('schedule', 1234)
 
@@ -65,14 +65,14 @@ await ctx.database.get('schedule', [1234, 5678])
 
 对于复杂的数据表，如果你只需要获取少数字段，你可以通过第三个参数手动指定要获取的字段：
 
-```js
+```ts
 // 返回的数组中每个元素只会包含 command, lastCall 属性
 await ctx.database.get('schedule', [1234], ['command', 'lastCall'])
 ```
 
 你还可以向第二个参数传入一个对象，用来查询非主键上的数据或者同时指定多列的值：
 
-```js
+```ts
 // 获取名为 schedule 的表中 assignee 为 onebot:123456 的数据行
 await ctx.database.get('schedule', {
   assignee: ['onebot:123456'],
@@ -81,7 +81,7 @@ await ctx.database.get('schedule', {
 
 对于需要进行复杂的数据库搜索的，ORM 也提供了相对应的方法：
 
-```js
+```ts
 // 获取名为 schedule 的表中 id 大于 2 但是小于等于 5 的数据行
 await ctx.database.get('schedule', {
   id: { $gt: 2, $lte: 5 },
@@ -90,7 +90,7 @@ await ctx.database.get('schedule', {
 
 我们甚至也支持逻辑运算：
 
-```js
+```ts
 // 上述两个搜索条件的或运算
 await ctx.database.get('schedule', {
   $or: [
@@ -106,7 +106,7 @@ await ctx.database.get('schedule', {
 
 删除数据的语法与获取数据类似：
 
-```js
+```ts
 // 从 schedule 表中删除特定 id 的数据行
 // 第二个参数也可以使用上面介绍的对象语法
 await ctx.database.remove('schedule', [id])
@@ -116,7 +116,7 @@ await ctx.database.remove('schedule', [id])
 
 除了获取和删除数据，常用的需求还有添加和修改数据。
 
-```js
+```ts
 // 向 schedule 表中添加一行数据，data 是要添加的数据行
 // 返回值是添加的行的完整数据（包括自动生成的 id 和默认属性等）
 await ctx.database.create('schedule', row)
@@ -124,7 +124,7 @@ await ctx.database.create('schedule', row)
 
 修改数据的逻辑稍微有些不同，需要你传入一个数组：
 
-```js
+```ts
 // 用 rows 来对数据进行更新，你需要确保每一个元素都拥有 id 属性
 // 修改时只会用 rows 中出现的键进行覆盖，不会影响未记录在 data 中的字段
 await ctx.database.update('schedule', rows)
@@ -132,7 +132,7 @@ await ctx.database.update('schedule', rows)
 
 如果想以非主键来索引要修改的数据，可以使用第三个参数：
 
-```js
+```ts
 // 用 rows 来对数据进行更新，你需要确保每一个元素都拥有 onebot 属性
 await ctx.database.update('user', rows, 'onebot')
 ```
@@ -146,7 +146,7 @@ await ctx.database.update('user', rows, 'onebot')
 向内置的 User 表中注入字段的方式如下：
 
 ::: code-group language
-```js
+```ts
 ctx.model.extend('user', {
   // 向用户表中注入字符串字段 foo
   foo: 'string',

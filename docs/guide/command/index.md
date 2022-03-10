@@ -8,7 +8,7 @@ sidebarDepth: 2
 
 编写下面的代码，你就实现了一个简单的 echo 指令：
 
-```js
+```ts
 app.command('echo <message>')
   .action((_, message) => message)
 ```
@@ -34,7 +34,7 @@ app.command('echo <message>')
 
 例如，下面的程序定义了一个拥有三个参数的指令，第一个为必选参数，后面两个为可选参数，它们将分别作为 `action` 回调函数的第 2, 3, 4 个参数：
 
-```js
+```ts
 app.command('my-command <arg1> [arg2] [arg3]')
   .action((_, arg1, arg2, arg3) => { /* do something */ })
 ```
@@ -47,7 +47,7 @@ app.command('my-command <arg1> [arg2] [arg3]')
 
 有时我们需要传入未知数量的参数，这时我们可以使用 **变长参数**，它可以通过在括号中前置 `...` 来实现。在下面的例子中，无论传入了多少个参数，都会被放入 `rest` 数组进行处理：
 
-```js
+```ts
 app.command('my-command <arg1> [...rest]')
   .action((_, arg1, ...rest) => { /* do something */ })
 ```
@@ -57,7 +57,7 @@ app.command('my-command <arg1> [...rest]')
 通常来说传入的信息被解析成指令调用后，会被空格分割成若干个参数。但如果你想输入的就是含有空格的内容，可以通过在括号中后置 `:text` 来声明一个 **文本参数**。
 在下面的例子中，即使 my-command 后面的内容中含有空格，也会被整体传入 `message` 中：
 
-```js
+```ts
 app.command('my-command <message:text>')
   .action((_, message) => { /* do something */ })
 ```
@@ -70,7 +70,7 @@ app.command('my-command <message:text>')
 
 使用 `cmd.option(name, desc)` 函数可以给指令定义参数。这个函数也是可以链式调用的，就像这样：
 
-```js
+```ts
 app.command('my-command')
   .option('alpha', '-a')          // 定义一个选项
   .option('beta', '-b [beta]')    // 定义一个带参数的可选选项
@@ -99,7 +99,7 @@ app.command('my-command')
 
 使用 `fallback` 配置选项的默认值。配置了默认值的选项，如果没有被使用，则会按照注册的默认值进行赋值。
 
-```js
+```ts
 app.command('my-command')
   .option('alpha', '-a', { fallback: 100 })
   .option('beta', '-b', { fallback: 100 })
@@ -115,7 +115,7 @@ app.command('my-command')
 
 将同一个选项注册多次，并结合使用 `value` 配置选项的重载值。如果使用了带有重载值的选项，将按照注册的重载值进行赋值。
 
-```js
+```ts
 app.command('my-command')
   .option('writer', '-w <id>')
   .option('writer', '--anonymous', { value: 0 })
@@ -132,7 +132,7 @@ app.command('my-command')
 
 Koishi v3 加入了参数的类型系统。它的作用是规约参数和选项的类型，并在指令执行前就对不合法的调用发出警告。定义一个带类型的参数或选项很简单：
 
-```js
+```ts
 function showValue(value) {
   return `${typeof value} ${JSON.stringify(value)}`
 }
@@ -249,7 +249,7 @@ app.command('test [x:positive]')
 
 你可以在 `cmd.option()` 的第三个参数中传入一个 `type` 属性，作为选项的临时类型声明。它可以是像上面的例子一样的回调函数，也可以是一个 `RegExp` 对象，表示传入的选项应当匹配的正则表达式：
 
-```js
+```ts
 app.command('test')
   .option('foo', '-f <foo>', { type: /^ba+r$/ })
   .action(({ options }) => options.foo)
@@ -264,7 +264,7 @@ app.command('test')
 
 从 v3 开始 Koishi 支持给一个指令配置多个回调函数，并引入了 `cmd.before()`。你可以利用这个接口定义一些更加复杂的类型检查逻辑。让我们在最后简单地了解一下这个特性。
 
-```js
+```ts
 app.command('test')
   .before(checker1)
   .before(checker2)

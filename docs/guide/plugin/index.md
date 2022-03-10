@@ -15,7 +15,7 @@ sidebarDepth: 2
 
 而一个插件在被加载时，则相当于进行了上述函数的调用。因此，下面的三种写法是基本等价的：
 
-```js
+```ts
 ctx.middleware(callback)
 
 ctx.plugin(ctx => ctx.middleware(callback))

@@ -28,7 +28,7 @@ Koishi 拥有着强大的指令系统，然而过于复杂的功能也会困扰�
 
 之前已经介绍了 `ctx.command()` 和 `cmd.option()` 这两个方法，它们都能传入一个 `desc` 参数。你可以在这个参数的结尾补上对于指令或参数的说明文字，就像这样：
 
-```js
+```ts
 ctx.command('echo <message:text> 输出收到的信息')
   .option('timeout', '-t <seconds> 设定延迟发送的时间')
 ```
@@ -47,7 +47,7 @@ ctx.command('echo <message:text> 输出收到的信息')
 
 当然，我们还可以加入具体的用法和使用示例，进一步丰富这则使用说明：
 
-```js
+```ts
 ctx.command('echo <message:text>', '输出收到的信息')
   .option('timeout', '-t <seconds> 设定延迟发送的时间')
   .usage('注意：参数请写在最前面，不然会被当成 message 的一部分！')
@@ -75,7 +75,7 @@ ctx.command('echo <message:text>', '输出收到的信息')
 
 读到这里，细心的你可能会产生一丝好奇：如果 `echo -h` 能够被解析成查看帮助的话，这个 `-h` 为什么不出现在这个帮助中呢？答案很简单，因为这个内置选项被 Koishi 隐藏起来了。如果你希望隐藏一条指令或一条指令，只需要注册时将配置项 `hidden` 设置为 `true` 即可：
 
-```js
+```ts
 ctx.command('bar 一条看不见的指令', { hidden: true })
   .option('foo', '<text> 一个看不见的选项')
   .action(({ options }) => 'secret: ' + options.foo)
@@ -112,7 +112,7 @@ ctx.command('bar 一条看不见的指令', { hidden: true })
 
 通过 `cmd.subcommand()` 方法可以创建子指令，它的调用方法与 `ctx.command()` 是完全一致的，唯一的区别是创建的指令将被标记为原来指令的子指令。下面我们举个简单的例子，假设你运行了下面的代码：
 
-```js
+```ts
 ctx.command('foo').subcommand('bar')
 ```
 
@@ -120,7 +120,7 @@ ctx.command('foo').subcommand('bar')
 
 在解决第二个问题之前，先让我介绍一下 Koishi 支持的两种子指令格式。一种是 **层级式**，也就是刚刚演示的这种；而另一种则叫 **派生式**。后者跟前者的区别是，它在调用时要额外加个前置小数点：
 
-```js
+```ts
 ctx.command('foo').subcommand('.bar')
 ctx.command('foo').subcommand('foo.bar') // 这两种写法是等价的
 ```
@@ -136,21 +136,21 @@ ctx.command('foo').subcommand('foo.bar') // 这两种写法是等价的
 
 如果你想创建一个 foo 指令，其含有一个 bar 作为子指令，用上面的写法的确是一种很好的做法。但是如果 foo 是已经存在的指令，这种写法还生效吗？这一点上，你并不需要担心。Koishi 内部的逻辑可以保证：当调用 `ctx.command()` 方法时，如果指令不存在将会被创建；而如果指令已存在（并且在当前上下文内），除去其他参数可以对其进行修改外，将会直接返回之前注册的指令本身。因此，你可以使用下面的写法来创建两种子指令：
 
-```js
+```ts
 ctx.command('foo').subcommand('bar')
 ctx.command('foo').subcommand('.baz')
 ```
 
 Koishi 为其提供了一种更加简便的等价写法，称为 **链式注册**：
 
-```js
+```ts
 ctx.command('foo/bar') // 用斜杠表示层级式子指令
 ctx.command('foo.bar') // 用小数点表示派生式子指令
 ```
 
 利用这种写法，你甚至可以快速注册多级指令：
 
-```js
+```ts
 ctx.command('foo.bar/abc.xyz')
 ```
 

@@ -146,18 +146,14 @@ export default {
 
 同时我们也调整了一些机器人配置项，并支持了一些全新的特性。下面举一些例子：
 
-```ts title=koishi.ts
-export default {
-  plugins: {
-    onebot: {
-      // 如果只有一个 bot，你仍然可以像 v3 一样直接写在这里，不用专门提供 bots 数组
-      protocol: 'http',   // 相当于过去的 type: 'onebot:http'
-      disabled: true,     // 不启动，可以配合网页控制台动态控制运行状态
-      platform: 'qq',     // 此时账户信息将从 user.qq 而非 user.onebot 访问
-                          // 你还可以对同一个适配器下的多个 bot 实例设置多个不同的平台
-    },
-  },
-}
+```yaml title=koishi.yml
+plugins:
+  onebot:
+    # 如果只有一个 bot，你仍然可以像 v3 一样直接写在这里，不用专门提供 bots 数组
+    protocol: http      # 相当于过去的 type: 'onebot:http'
+    disabled: true      # 不启动，可以配合网页控制台动态控制运行状态
+    platform: qq        # 此时账户信息将从 user.qq 而非 user.onebot 访问
+                        # 你还可以对同一个适配器下的多个 bot 实例设置多个不同的平台
 ```
 
 ### 应用变更

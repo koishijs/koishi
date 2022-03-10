@@ -10,17 +10,12 @@ sidebarDepth: 2
 
 通过提供 `onRepeat` 参数，我们可以定义机器人在检测到复读时进行怎样的行为，是跟着复读，还是进行打断，甚至是出警。首先让我们看一个最简单的例子：
 
-```js title=koishi.js
-module.exports = {
-  plugins: {
-    repeater: {
-      onRepeat: {
-        minTimes: 3,
-        probability: 0.5,
-      },
-    },
-  },
-}
+```yaml title=koishi.yml
+plugins:
+  repeater:
+    onRepeat:
+      minTimes: 3
+      probability: 0.5
 ```
 
 <panel-view :messages="[
@@ -41,8 +36,8 @@ module.exports = {
 
 当我们也不希望机器人复读所有的内容，我们可以通过如下配置让机器人自动打断某些复读：
 
-```js title=koishi.js
-module.exports = {
+```ts title=koishi.ts
+export default {
   plugins: {
     repeater: {
       onRepeat: (state) =>
@@ -64,8 +59,8 @@ module.exports = {
 
 来看一个更复杂的例子。我们还可以让 Koishi 对所有将同一句话复读 2 次的用户作出警告。你可以这样配置：
 
-```js title=koishi.js
-module.exports = {
+```ts title=koishi.ts
+export default {
   plugins: {
     repeater: {
       onRepeat: (state) =>
@@ -89,8 +84,8 @@ module.exports = {
 
 例如，如果你想让你的机器人在一条信息已经复读过 5 次以上，且自己也已经复读过后，对任何打断复读的人以 50% 的概率出警。你可以这样配置：
 
-```js title=koishi.js
-module.exports = {
+```ts title=koishi.ts
+export default {
   plugins: {
     repeater: {
       onRepeat:{

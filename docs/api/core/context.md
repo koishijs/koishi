@@ -22,7 +22,7 @@ sidebarDepth: 2
 
 如果你配置了 [port](./app.md#option-port) 选项，则这个属性将作为一个 [KoaRouter](https://github.com/koajs/router/blob/master/API.md) 实例。你可以在上面自定义新的路由：
 
-```js
+```ts
 ctx.router.get('/path', (ctx, next) => {
   // handle request
 })

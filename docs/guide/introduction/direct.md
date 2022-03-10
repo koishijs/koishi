@@ -123,7 +123,7 @@ app.plugin(echo)
 
 同理，对于 commonjs 的使用者，如果要使用 `require` 来获取插件对象，也应注意到这种区别：
 
-```js
+```ts
 // 这里的 .default 是不可省略的
 app.plugin(require('@koishijs/plugin-adapter-onebot').default, {
   protocol: 'ws',
