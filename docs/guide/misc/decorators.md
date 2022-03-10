@@ -15,7 +15,6 @@ noTwoslash: true
 import {
   DefinePlugin,
   SchemaProperty,
-  CommandLocale,
   PutOption,
   UseCommand,
   OnApply,
@@ -24,8 +23,6 @@ import {
   UseEvent,
   Get,
   PutUserName,
-  PutRenderer,
-  Renderer,
 } from 'koishi-thirdeye'
 import { Context, Session } from 'koishi'
 import { WebSocket } from 'ws'
@@ -291,7 +288,6 @@ export class Post {
 import {
   DefinePlugin,
   SchemaProperty,
-  CommandLocale,
   PutOption,
   UseCommand,
   OnApply,
@@ -300,8 +296,6 @@ import {
   UseEvent,
   Get,
   PutUserName,
-  PutRenderer,
-  Renderer,
 } from 'koishi-thirdeye'
 import { Context, Session } from 'koishi'
 import { WebSocket } from 'ws'
