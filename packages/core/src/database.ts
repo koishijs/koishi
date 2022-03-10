@@ -8,6 +8,7 @@ export interface User {
   flag: number
   authority: number
   name: string
+  locale: string
 }
 
 export namespace User {

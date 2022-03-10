@@ -41,7 +41,7 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
   _disposed?: boolean
   _disposables?: Disposable[]
 
-  private _userFields: FieldCollector<'user'>[] = []
+  private _userFields: FieldCollector<'user'>[] = [['locale']]
   private _channelFields: FieldCollector<'channel'>[] = [['locale']]
   private _actions: Command.Action[] = []
   private _checkers: Command.Action[] = [async (argv) => {

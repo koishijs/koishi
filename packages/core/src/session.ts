@@ -315,6 +315,7 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
 
   text(path: string, params: object = {}) {
     const locales = [this.app.options.locale]
+    locales.unshift(this.user?.['locale'])
     if (this.subtype === 'group') {
       locales.unshift(this.guild?.['locale'])
       locales.unshift(this.channel?.['locale'])

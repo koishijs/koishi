@@ -7,8 +7,12 @@ commands:
     description: 权限管理
   assign:
     description: 受理者账号
+  user.locale:
+    description: 语言偏好
   user.flag:
     description: 标记信息
+  channel.locale:
+    description: 语言偏好
   channel.flag:
     description: 标记信息
 
@@ -19,8 +23,10 @@ admin:
   current-flags: 当前的标记为：{0}。
   user-expected: 请指定目标用户。
   invalid-assignee-platform: 代理者应与目标频道属于同一平台。
-
-flag:
-  list: 标记列表
-  set: 添加标记
-  unset: 删除标记
+  current-locale: 当前语言偏好为：{0}。
+  no-locale: 未设置语言偏好。
+  options:
+    remove: 重置设置
+    list: 查看全部
+    set: 添加项
+    unset: 删除项

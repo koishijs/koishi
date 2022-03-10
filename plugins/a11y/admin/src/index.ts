@@ -1,11 +1,13 @@
 import { Channel, Command, Context, difference, enumKeys, Schema, User } from 'koishi'
 import { adminChannel, adminUser, parsePlatform } from '@koishijs/helpers'
 
-function adminFlag<U extends User.Field, G extends Channel.Field, A extends any[], O extends {}>(cmd: Command<U, G, A, O>, map: any, key: 'user' | 'channel') {
+type Key = 'user' | 'channel'
+
+function adminFlag<U extends User.Field, G extends Channel.Field, A extends any[], O extends {}>(cmd: Command<U, G, A, O>, map: any, key: Key) {
   return cmd
-    .option('list', '-l', { descPath: 'flag.list' })
-    .option('set', '-s', { authority: 4, descPath: 'flag.set' })
-    .option('unset', '-S', { authority: 4, descPath: 'flag.unset' })
+    .option('list', '-l', { descPath: 'admin.options.list' })
+    .option('set', '-s', { authority: 4, descPath: 'admin.options.set' })
+    .option('unset', '-S', { authority: 4, descPath: 'admin.options.unset' })
     .action(async ({ options, session }, ...args) => {
       const target = session[key] as any
 
@@ -34,6 +36,23 @@ function adminFlag<U extends User.Field, G extends Channel.Field, A extends any[
     })
 }
 
+function adminLocale<U extends User.Field, G extends Channel.Field, A extends any[], O extends {}>(cmd: Command<U, G, A, O>, key: Key) {
+  return cmd
+    .option('remove', '-r', { descPath: 'admin.options.remove' })
+    .action(async ({ session, options }, ...args) => {
+      const target = session[key] as any
+      if (options.remove) {
+        target.locale = ''
+      } else if (args[0]) {
+        target.locale = args[0]
+      } else if (target.locale) {
+        return session.text('admin.current-locale', [target.locale])
+      } else {
+        return session.text('admin.no-locale')
+      }
+    })
+}
+
 export interface Config {}
 
 export const name = 'admin'
@@ -55,17 +74,22 @@ export function apply(ctx: Context) {
       session.user.authority = authority
     })
 
-  ctx.command('user.flag [-s|-S] [...flags]', { authority: 3, checkUnknown: true })
+  ctx.command('user.locale <lang>', { authority: 1, checkUnknown: true })
+    .userFields(['locale'])
+    .use(adminLocale, 'user')
+    .use(adminUser)
+
+  ctx.command('user.flag [...flags]', { authority: 3, checkUnknown: true })
     .userFields(['flag'])
     .use(adminFlag, User.Flag, 'user')
     .use(adminUser)
 
   ctx.command('channel/assign [bot:user]', { authority: 4, checkUnknown: true })
     .channelFields(['assignee'])
-    .option('noTarget', '-T  移除受理者')
+    .option('remove', '-r', { descPath: 'admin.options.remove' })
     .use(adminChannel)
     .action(async ({ session, options }, value) => {
-      if (options.noTarget) {
+      if (options.remove) {
         session.channel.assignee = ''
       } else if (!value) {
         session.channel.assignee = session.selfId
@@ -78,14 +102,12 @@ export function apply(ctx: Context) {
       }
     })
 
-  ctx.command('channel/localize <lang>', '本地化', { authority: 3, checkUnknown: true })
+  ctx.command('channel.locale <lang>', { authority: 3, checkUnknown: true })
     .channelFields(['locale'])
+    .use(adminLocale, 'channel')
     .use(adminChannel)
-    .action(async ({ session }, lang) => {
-      session.channel.locale = lang
-    })
 
-  ctx.command('channel.flag [-s|-S] [...flags]', { authority: 3, checkUnknown: true })
+  ctx.command('channel.flag [...flags]', { authority: 3, checkUnknown: true })
     .channelFields(['flag'])
     .use(adminFlag, Channel.Flag, 'channel')
     .use(adminChannel)

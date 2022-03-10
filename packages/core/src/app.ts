@@ -158,7 +158,7 @@ export class App extends Context {
 
       // attach user data
       // authority is for suggestion
-      const userFields = new Set<User.Field>(['flag', 'authority'])
+      const userFields = new Set<User.Field>(['flag', 'authority', 'locale'])
       this.emit('before-attach-user', session, userFields)
       const user = await session.observeUser(userFields)
 
