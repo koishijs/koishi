@@ -26,14 +26,14 @@ import {
   PutUserName,
   PutRenderer,
   Renderer,
-} from 'koishi-thirdeye';
-import { Context, Session } from 'koishi';
-import { WebSocket } from 'ws';
-import { IncomingMessage } from 'http';
+} from 'koishi-thirdeye'
+import { Context, Session } from 'koishi'
+import { WebSocket } from 'ws'
+import { IncomingMessage } from 'http'
 
 export class MyPluginConfig {
   @SchemaProperty({ default: 'bar' })
-  foo: string;
+  foo: string
 }
 
 @DefinePlugin({ name: 'my-plugin', schema: MyPluginConfig })
@@ -46,16 +46,16 @@ export default class MyPlugin extends BasePlugin<MyPluginConfig> implements Life
   @UseMiddleware()
   simpleMiddleware(session: Session, next: NextFunction) {
     if (session.content === 'pang') {
-      return 'peng';
+      return 'peng'
     }
-    return next();
+    return next()
   }
 
   // 注册事件监听器
   @UseEvent('message')
   async onMessage(session: Session) {
     if (session.content === 'ping') {
-      await session.send('pong');
+      await session.send('pong')
     }
   }
 
@@ -85,20 +85,20 @@ export default class MyPlugin extends BasePlugin<MyPluginConfig> implements Life
     @PutUserName() name: string,
     @PutRenderer('.wearsDress') wearsDress: Renderer<{ name: string, color: string }>
   ) {
-    return wearsDress({ name, color });
+    return wearsDress({ name, color })
   }
 
   // 注册 Koa 路由
   @Get('/ping')
   onPing(koaCtx: KoaContext) {
-    koaCtx.body = 'pong';
+    koaCtx.body = 'pong'
   }
 
   // 注册 WebSocket 监听器
   @Ws('/my-ws')
   onWsClientConnect(socket: WebSocket, req: IncomingMessage) {
-    socket.write('Hello!');
-    socket.close();
+    socket.write('Hello!')
+    socket.close()
   }
 }
 ```
@@ -146,23 +146,23 @@ export default class MyPlugin {
 
   // 建议如此使用 Context，而不是构造函数中的
   @InjectContext()
-  private ctx: Context;
+  private ctx: Context
 
   // 建议如此使用 Config，而不是构造函数中的
   @InjectConfig()
-  private config: Config;
+  private config: Config
 
   // Logger 名称默认为插件名称
   @InjectLogger('my-plugin')
-  private logger: Logger;
+  private logger: Logger
 
   // 注入 Service API 中的 Assets，并声明为依赖
   @Inject('assets', true)
-  private assets: Assets;
+  private assets: Assets
 
   // 根据属性名称判别 Service API 名称
   @Inject()
-  private database: Database;
+  private database: Database
 }
 ```
 
@@ -213,17 +213,17 @@ export class Config {
   constructor(_config: any) {}
 
   @SchemaProperty({ default: 'baz' })
-  foo: string; // 自动推断出 Schema.string()
+  foo: string // 自动推断出 Schema.string()
 
   getFoo() {
-    return this.foo;
+    return this.foo
   }
 
   @SchemaProperty({ type: Schema.number(), required: true }) // 也可手动指定 Schema 对象
-  bar: number;
+  bar: number
 
   @SchemaProperty({ type: String })
-  someArray: string[]; // 自动推断出 Schema.array(...)，但是无法推断内部类型，需要手动指定
+  someArray: string[] // 自动推断出 Schema.array(...)，但是无法推断内部类型，需要手动指定
 }
 ```
 
@@ -237,10 +237,10 @@ export class ChildConfig {
   constructor(_config: any) {}
 
   @SchemaProperty({ default: 'baz' })
-  foo: string;
+  foo: string
 
   @SchemaProperty({ type: Schema.number(), required: true })
-  bar: number;
+  bar: number
 }
 
 // Config 类本身会成为 Schema 对象
@@ -250,11 +250,11 @@ export class Config {
 
   // 自动推断出 ChildConfig
   @SchemaProperty()
-  child: ChildConfig;
+  child: ChildConfig
 
   // 无法自动推断 ChildConfig，需要手动指定。但是可以推断出外层的 Schema.array(...)
   @SchemaProperty({ type: ChildConfig })
-  children: ChildConfig[];
+  children: ChildConfig[]
 }
 ```
 
@@ -268,16 +268,16 @@ export class Author {
   constructor(_: Partial<Author>) {}
 
   @DefineSchema()
-  name: string;
+  name: string
 
   getName?() {
-    return this.name;
+    return this.name
   }
 
   @DefineSchema({
     type: SchemaRef(() => Post), // 循环嵌套类的数组，array 可以由成员变量类型自动推断。
   })
-  posts?: Post[];
+  posts?: Post[]
 }
 
 @RegisterSchema()
@@ -285,21 +285,21 @@ export class Post {
   constructor(_: Partial<Post>) {}
 
   @DefineSchema()
-  name: string;
+  name: string
 
   getName?() {
-    return this.name;
+    return this.name
   }
 
   @DefineSchema({
     type: SchemaRef(() => Author), // 循环嵌套
   })
-  author?: Author;
+  author?: Author
 
   @DefineSchema({
     type: SchemaRef(() => Post), // 指定自身为类型也需要如此使用。
   })
-  childPosts?: Post[];
+  childPosts?: Post[]
 }
 ```
 
@@ -322,14 +322,14 @@ import {
   PutUserName,
   PutRenderer,
   Renderer,
-} from 'koishi-thirdeye';
-import { Context, Session } from 'koishi';
-import { WebSocket } from 'ws';
-import { IncomingMessage } from 'http';
+} from 'koishi-thirdeye'
+import { Context, Session } from 'koishi'
+import { WebSocket } from 'ws'
+import { IncomingMessage } from 'http'
 
 export class MyPluginConfig {
   @SchemaProperty({ default: 'bar' })
-  foo: string;
+  foo: string
 }
 
 @DefinePlugin({ name: 'my-plugin', schema: MyPluginConfig })
@@ -342,16 +342,16 @@ export default class MyPlugin extends BasePlugin<MyPluginConfig> implements Life
   @UseMiddleware()
   simpleMiddleware(session: Session, next: NextFunction) {
     if (session.content === 'pang') {
-      return 'peng';
+      return 'peng'
     }
-    return next();
+    return next()
   }
 
   // 注册事件监听器
   @UseEvent('message')
   async onMessage(session: Session) {
     if (session.content === 'ping') {
-      await session.send('pong');
+      await session.send('pong')
     }
   }
 
@@ -381,20 +381,20 @@ export default class MyPlugin extends BasePlugin<MyPluginConfig> implements Life
     @PutUserName() name: string,
     @PutRenderer('.wearsDress') wearsDress: Renderer<{ name: string, color: string }>
   ) {
-    return wearsDress({ name, color });
+    return wearsDress({ name, color })
   }
 
   // 注册 Koa 路由
   @Get('/ping')
   onPing(koaCtx: KoaContext) {
-    koaCtx.body = 'pong';
+    koaCtx.body = 'pong'
   }
 
   // 注册 WebSocket 监听器
   @Ws('/my-ws')
   onWsClientConnect(socket: WebSocket, req: IncomingMessage) {
-    socket.write('Hello!');
-    socket.close();
+    socket.write('Hello!')
+    socket.close()
   }
 }
 ```
@@ -424,13 +424,13 @@ export default class MyPlugin extends BasePlugin<MyPluginConfig> {
   @UseCommand('ping', 'Ping!')
   @CommandShortcut('枰！') // 只适用于 ping 指令
   onPing() {
-    return 'pong';
+    return 'pong'
   }
 
   @UseCommand('pang', 'Pang!')
   @CommandShortcut('乓！') // 只适用于 pang 指令
   onPang() {
-    return 'peng';
+    return 'peng'
   }
 }
 ```
@@ -617,8 +617,8 @@ export default class MyPlugin extends BasePlugin<MyPluginConfig> {
 例如我们需要在插件内加载 `@koishijs/plugin-common` 作为子插件，我们可以用下面的方法。
 
 ```ts
-import PluginCommon from '@koishijs/plugin-common';
-import { DefinePlugin, BasePlugin, UsePlugin, PluginDef } from 'koishi-thirdeye';
+import PluginCommon from '@koishijs/plugin-common'
+import { DefinePlugin, BasePlugin, UsePlugin, PluginDef } from 'koishi-thirdeye'
 
 @DefinePlugin({ name: 'my-plugin', schema: Config })
 export default class MyPlugin extends BasePlugin<Config> {
@@ -628,13 +628,13 @@ export default class MyPlugin extends BasePlugin<Config> {
   }
 
   private async getPluginCommonConfig() {
-    return { echo: true };
+    return { echo: true }
   }
 
   @UsePlugin()
   async registerAsyncPluginCommon() { // 可以是异步插件
-    const pluginCommonConfig = await this.getPluginCommonConfig();
-    return PluginDef(PluginCommon, pluginCommonConfig);
+    const pluginCommonConfig = await this.getPluginCommonConfig()
+    return PluginDef(PluginCommon, pluginCommonConfig)
   }
 }
 ```
@@ -653,7 +653,7 @@ export default class MyPlugin extends BasePlugin<Config> {
   @OnGuild()
   @UseEvent('message') // 只对 OneBot 平台的群组有效
   onMessage(session: Session) {
-    return;
+    return
   }
 }
 ```
@@ -678,7 +678,7 @@ export default class MyPlugin extends BasePlugin<Config> {
   @If<MyPlugin>((o, config, ctx) => o.config.dress) // 只有 config.dress 是 true 的情况下该指令才会注册。
   @UseCommand('dress')
   dressCommand() {
-    return '我穿裙子了！';
+    return '我穿裙子了！'
   }
 }
 ```
@@ -709,7 +709,7 @@ koishi-thirdeye 支持自动管理插件的关系依赖列表。
 @DefinePlugin({ name: 'my-plugin', schema: Config })
 export default class MyPlugin extends BasePlugin<Config> {
   @Inject('database', true)
-  private database: Database; // 注入数据库服务，并声明为依赖
+  private database: Database // 注入数据库服务，并声明为依赖
 }
 
 MyPlugin.using // ['database']
@@ -735,14 +735,14 @@ MyPlugin.using // ['database', 'assets']
 @DefinePlugin({ name: 'my-plugin', schema: MyPluginConfig })
 export default class MyPlugin extends BasePlugin<MyPluginConfig> {
   @Inject()
-  private database: Database;
+  private database: Database
 
   // 该指令仅在数据库被安装时生效
   @UsingService('database')
   @UseCommand('dress', '获取自己的裙子信息')
   async getDresses(@PutSession('userId') userId: string) {
-    const dresses = await this.database.get('dress', { userId });
-    return dresses.map((dress) => dress.name).join('\n');
+    const dresses = await this.database.get('dress', { userId })
+    return dresses.map((dress) => dress.name).join('\n')
   }
 }
 ```
@@ -754,13 +754,13 @@ export default class MyPlugin extends BasePlugin<MyPluginConfig> {
 若该提供者需要立即生效，我们需要使用 `immediate` 属性，将其标记为立即加载的提供者。
 
 ```ts
-import { Provide, DefinePlugin, BasePlugin } from 'koishi-thirdeye';
+import { Provide, DefinePlugin, BasePlugin } from 'koishi-thirdeye'
 
 // 类型合并定义不可省略
 declare module 'koishi' {
   namespace Context {
     interface Services {
-      myService: MyServicePlugin;
+      myService: MyServicePlugin
     }
   }
 }
@@ -783,24 +783,24 @@ export class MyServicePlugin extends BasePlugin<Config> {
 下面是一个例子，确保注册 Photo 的插件卸载时，Photo 正常被删除。
 
 ```ts
-import { Provide, DefinePlugin, BasePlugin, Caller } from 'koishi-thirdeye';
+import { Provide, DefinePlugin, BasePlugin, Caller } from 'koishi-thirdeye'
 
 @Provide('MyPhotoRegistry', { immediate: true })
 @DefinePlugin({ name: 'my-photo-registry' })
 export class MyPhotoRegistry extends BasePlugin<Config> {
-  private photos = new Set<Photo>();
+  private photos = new Set<Photo>()
 
   @Caller()
-  private caller: Context;
+  private caller: Context
 
   addPhoto(photo: Photo) {
     // 预先保存一下正在访问该方法的上下文，预防以后发生变化。
-    const ctx = this.caller;
+    const ctx = this.caller
 
     // 注册来源插件上下文的卸载监听器，使得来源插件卸载时该 Photo 自动被删除。
-    ctx.on('dispose', () => this.photos.delete(photo));
+    ctx.on('dispose', () => this.photos.delete(photo))
 
-    this.photos.add(photo);
+    this.photos.add(photo)
   }
 }
 ```
