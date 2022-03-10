@@ -2,6 +2,7 @@ const {
   setupForFile,
   transformAttributesToHTML,
 } = require('remark-shiki-twoslash')
+const { ScriptTarget, ModuleKind, ModuleResolutionKind } = require('typescript')
 
 const twoslashSupportedList = ['ts', 'js', 'twoslash']
 const extraHeader = require('fs').readFileSync(
@@ -36,9 +37,9 @@ function twoslash(code, lang, attrs) {
       {
         defaultCompilerOptions: {
           strict: false,
-          target: 'esnext',
-          module: 'esnext',
-          moduleResolution: 'node',
+          target: ScriptTarget.ESNext,
+          module: ModuleKind.ESNext,
+          moduleResolution: ModuleResolutionKind.NodeNext,
         },
       },
     )
