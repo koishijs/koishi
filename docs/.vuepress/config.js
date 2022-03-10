@@ -84,6 +84,7 @@ module.exports = {
           '/guide/command/index.md',
           '/guide/command/execution.md',
           '/guide/command/help.md',
+          '/guide/command/more.md',
         ],
       }, {
         text: '模块化',

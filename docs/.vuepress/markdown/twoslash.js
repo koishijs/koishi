@@ -39,7 +39,7 @@ function twoslash(code, lang, attrs) {
           strict: false,
           target: ScriptTarget.ESNext,
           module: ModuleKind.ESNext,
-          moduleResolution: ModuleResolutionKind.NodeNext,
+          moduleResolution: ModuleResolutionKind.NodeJs,
         },
       },
     )
