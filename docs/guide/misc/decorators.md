@@ -60,31 +60,12 @@ export default class MyPlugin extends BasePlugin<MyPluginConfig> implements Life
   }
 
   // 注册指令
-  @UseCommand('dress')
-  @CommandLocale('cn', {
-    description: '穿裙子',
-    options: {
-      color: '裙子的颜色',
-    },
-    messages: {
-      wearsDress: '{name} 穿了 {color} 颜色的裙子。',
-    },
-  })
-  @CommandLocale('en', {
-    description: 'Wear dress',
-    options: {
-      color:  'Dress color',
-    },
-    messages: {
-      wearsDress: '{name} wears dress of color {color}.',
-    },
-  })
+  @UseCommand('dress', '穿裙子')
   onDressCommand(
-    @PutOption('color', '-c <color:string>') color: string,
+    @PutOption('color', '-c <color:string>  裙子的颜色') color: string,
     @PutUserName() name: string,
-    @PutRenderer('.wearsDress') wearsDress: Renderer<{ name: string, color: string }>
   ) {
-    return wearsDress({ name, color })
+    return `${name} 今天穿的裙子的颜色是 ${color}。}`
   }
 
   // 注册 Koa 路由
@@ -355,31 +336,12 @@ export default class MyPlugin extends BasePlugin<MyPluginConfig> implements Life
   }
 
   // 注册指令
-  @UseCommand('dress')
-  @CommandLocale('cn', {
-    description: '穿裙子',
-    options: {
-      color: '裙子的颜色',
-    },
-    messages: {
-      wearsDress: '{name} 穿了 {color} 颜色的裙子。',
-    },
-  })
-  @CommandLocale('en', {
-    description: 'Wear dress',
-    options: {
-      color:  'Dress color',
-    },
-    messages: {
-      wearsDress: '{name} wears dress of color {color}.',
-    },
-  })
+  @UseCommand('dress', '穿裙子')
   onDressCommand(
-    @PutOption('color', '-c <color:string>') color: string,
+    @PutOption('color', '-c <color:string>  裙子的颜色') color: string,
     @PutUserName() name: string,
-    @PutRenderer('.wearsDress') wearsDress: Renderer<{ name: string, color: string }>
   ) {
-    return wearsDress({ name, color })
+    return `${name} 今天穿的裙子的颜色是 ${color}。}`
   }
 
   // 注册 Koa 路由
