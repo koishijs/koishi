@@ -445,7 +445,6 @@ export default class MyPlugin extends BasePlugin<MyPluginConfig> {
 - `@CommandBefore(callback: Command.Action, append = false)` 等价于 `cmd.before(callback, append)`。
 - `@CommandAction(callback: Command.Action, prepend = false)` 等价于 `cmd.action(callback, append)`。
 - `@CommandUse(callback, ...args)` 指令功能配置。等价于 `cmd.use(callback, ...args)`。
-- `@CommandTemplate(name: string, text: string | Dict<string>)` 在 i18n 路径 `commands.{指令名称}.commands.{name}` 下注册消息模板。等价于 `ctx.i18n.define(<each locale>, 'command.{指令名称}.messages.{name}', text)`。
 
 ```ts
 for (const [locale, content] of Object.entries(text)) {
