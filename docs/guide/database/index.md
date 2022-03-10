@@ -146,7 +146,7 @@ await ctx.database.update('user', rows, 'onebot')
 向内置的 User 表中注入字段的方式如下：
 
 ::: code-group language
-```ts
+```js
 ctx.model.extend('user', {
   // 向用户表中注入字符串字段 foo
   foo: 'string',

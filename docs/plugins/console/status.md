@@ -36,7 +36,7 @@ status 指令可以用于查看机器人的运行状态。
 
 <div v-pre>
 
-```js
+```ts
 template.set('status', {
   bot: '{{ username }}：{{ code ? `无法连接` : `工作中（${currentRate[0]}/min）` }}',
   output: [

@@ -60,7 +60,7 @@ evaluate 指令会创建一个沙箱环境。这个沙箱环境支持 ES2020 的
 
 ### utils
 
-部分 koishi-utils 的功能将作为一个独立模块暴露在全局对象上，它包含了下列属性：
+部分 @koishijs/utils 的功能将作为一个独立模块暴露在全局对象上，它包含了下列属性：
 
 - segment
 - Random

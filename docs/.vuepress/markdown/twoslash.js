@@ -33,7 +33,11 @@ function twoslash(code, lang, attrs) {
       twoslashCode,
       [lang, 'twoslash', attrs].join(' '),
       twoslashHighlighters,
-      {}
+      {
+        defaultCompilerOptions: {
+          strict: false,
+        },
+      },
     )
   } catch (e) {
     console.log('Code block:')

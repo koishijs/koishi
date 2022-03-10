@@ -14,7 +14,7 @@ plugins:
 ```
 
 ```js title=worker.js
-import { internal } from 'koishi-plugin-eval/lib/worker'
+import { internal } from '@koishijs/plugin-eval/lib/worker'
 
 internal.setGlobal('foo', 1)
 ```
@@ -101,7 +101,7 @@ internal.setGlobal('foo', 1)
 请在充分理解的基础上小心使用 Internal API。不恰当的使用方式将存在导致沙箱逃逸的风险。
 :::
 
-koishi-plugin-eval 中的代码在一个沙箱环境中运行，而这个沙箱在一个子线程中运行。沙箱和子线程中的对象必须严格隔离，不然攻击者可利用沙箱逃逸获取到子线程中的全局对象，进而操作你的电脑。Internal API 提供的方法可以让你得以在子线程中操作沙箱的内部对象。
+@koishijs/plugin-eval 中的代码在一个沙箱环境中运行，而这个沙箱在一个子线程中运行。沙箱和子线程中的对象必须严格隔离，不然攻击者可利用沙箱逃逸获取到子线程中的全局对象，进而操作你的电脑。Internal API 提供的方法可以让你得以在子线程中操作沙箱的内部对象。
 
 ### internal.contextify(value)
 
@@ -149,12 +149,12 @@ koishi-plugin-eval 中的代码在一个沙箱环境中运行，而这个沙箱�
 下面是一段示例代码，展示了如何使用 `synthetize()` 和 `mapDirectory()` 创建一个 utils 全局对象：
 
 ```js title=worker.js
-import { synthetize, mapDirectory } from 'koishi-plugin-eval/lib/worker'
-import { Random } from 'koishi-utils'
+import { synthetize, mapDirectory } from '@koishijs/plugin-eval/lib/worker'
+import { Random } from '@koishijs/utils'
 
 // 创建一个只导出一个 Random 对象的 koishi/utils.ts 模块，并暴露为全局属性 utils
 synthetize('koishi/utils.ts', { Random }, 'utils')
 
-// 将 koishi-utils 的路径映射到虚拟路径 koishi/utils/ 下
-mapDirectory('koishi/utils/', require.resolve('koishi-utils'))
+// 将 @koishijs/utils 的路径映射到虚拟路径 koishi/utils/ 下
+mapDirectory('koishi/utils/', require.resolve('@koishijs/utils'))
 ```
