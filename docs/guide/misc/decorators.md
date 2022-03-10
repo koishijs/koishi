@@ -360,20 +360,20 @@ export default class MyPlugin extends BasePlugin<MyPluginConfig> implements Life
   @CommandLocale('cn', {
     description: '穿裙子',
     options: {
-      color: '裙子的颜色'
+      color: '裙子的颜色',
     },
     messages: {
-      wearsDress: '{name} 穿了 {color} 颜色的裙子。'
-    }
+      wearsDress: '{name} 穿了 {color} 颜色的裙子。',
+    },
   })
   @CommandLocale('en', {
     description: 'Wear dress',
     options: {
-      color:  'Dress color'
+      color:  'Dress color',
     },
     messages: {
-      wearsDress: '{name} wears dress of color {color}.'
-    }
+      wearsDress: '{name} wears dress of color {color}.',
+    },
   })
   @CommandDescription({ cn: '穿裙子', en: 'Wear dress' })
   onDressCommand(
