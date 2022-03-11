@@ -16,7 +16,7 @@
   "bugs": {
     "url": "https://github.com/koishijs/koishi/issues"
   },
-  "homepage": "https://github.com/koishijs/koishi/packages/plugin-puppeteer#readme",
+  "homepage": "https://github.com/koishijs/koishi/tree/master/plugins/puppeteer#readme",
   "keywords": [
     "bot",
     "chatbot",
