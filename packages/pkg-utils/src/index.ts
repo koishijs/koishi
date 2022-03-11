@@ -134,7 +134,7 @@ export class Scanner extends EventEmitter {
       shortname,
       official,
       size: latest.dist.unpackedSize,
-      keywords: (latest.keywords || []).filter(keyword => keyword.includes(':')),
+      keywords: latest.keywords || [],
       ...pick(latest, ['version', 'description', 'license', 'author']),
       ...object.score.detail,
     })
