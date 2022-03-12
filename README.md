@@ -118,6 +118,8 @@ Koishi 完全基于 TypeScript 开发，拥有顶级的类型支持，丰富的�
 - [admin](https://koishi.js.org/plugins/accessibility/admin.html)：数据管理
 - [bind](https://koishi.js.org/plugins/accessibility/bind.html)：账号绑定
 - [callme](https://koishi.js.org/plugins/accessibility/callme.html)：设置昵称
+- [commands](https://koishi.js.org/plugins/accessibility/commands.html): 指令管理
+- [locales](https://koishi.js.org/plugins/accessibility/locales.html): 多语言管理
 - [rate-limit](https://koishi.js.org/plugins/accessibility/rate-limit.html)：速率控制
 - [schedule](https://koishi.js.org/plugins/accessibility//schedule.html)：计划任务
 - [sudo](https://koishi.js.org/plugins/accessibility/sudo.html)：模拟调用
@@ -125,10 +127,14 @@ Koishi 完全基于 TypeScript 开发，拥有顶级的类型支持，丰富的�
 
 ### 网页控制台
 
+- [auto](https://koishi.js.org/plugins/console/auth.html): 用户登录
 - [chat](https://koishi.js.org/plugins/console/chat.html): 聊天工具
 - [console](https://koishi.js.org/plugins/console/): 网页控制台
-- [commands](https://koishi.js.org/plugins/console/commands.html): 指令管理
+- [dataview](https://koishi.js.org/plugins/console/dataview.html): 数据库操作
+- [insight](https://koishi.js.org/plugins/console/insight.html): 插件依赖图
+- [logger](https://koishi.js.org/plugins/console/logger.html): 日志管理
 - [manager](https://koishi.js.org/plugins/console/manager.html): 插件管理
+- [sandbox](https://koishi.js.org/plugins/console/sandbox.html): 沙箱调试
 - [status](https://koishi.js.org/plugins/console/status.html): 运行状态
 
 ### 其他官方插件

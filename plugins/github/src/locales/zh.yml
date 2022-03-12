@@ -21,6 +21,7 @@ commands:
       delete-failed: 由于未知原因移除仓库失败！
 
   github:
+    description: GitHub
     options:
       list: 查看当前频道订阅的仓库列表
       add: 为当前频道添加仓库订阅
