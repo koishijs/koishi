@@ -71,7 +71,7 @@ ctx.command('accurate 精准抽卡', { maxUsage: 10, usageName: 'lottery' })
 ## 修改已有指令
 
 ::: tip
-要修改已有指令，你需要安装官方插件 @koishijs/plugin-commands。
+要修改已有指令，你需要安装官方插件 [@koishijs/plugin-commands](../../plugins/accessibility/commands.md)。
 :::
 
 ## 多语言支持

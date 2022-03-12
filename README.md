@@ -119,7 +119,7 @@ Koishi 完全基于 TypeScript 开发，拥有顶级的类型支持，丰富的�
 - [bind](https://koishi.js.org/plugins/accessibility/bind.html)：账号绑定
 - [callme](https://koishi.js.org/plugins/accessibility/callme.html)：设置昵称
 - [commands](https://koishi.js.org/plugins/accessibility/commands.html): 指令管理
-- [locales](https://koishi.js.org/plugins/accessibility/locales.html): 多语言管理
+- [locales](https://koishi.js.org/plugins/accessibility/locales.html): 本地翻译
 - [rate-limit](https://koishi.js.org/plugins/accessibility/rate-limit.html)：速率控制
 - [schedule](https://koishi.js.org/plugins/accessibility//schedule.html)：计划任务
 - [sudo](https://koishi.js.org/plugins/accessibility/sudo.html)：模拟调用
