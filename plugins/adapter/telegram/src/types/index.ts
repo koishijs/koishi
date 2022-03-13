@@ -1,3 +1,6 @@
+import FormData from 'form-data'
+import { Logger, Quester } from 'koishi'
+
 export type Integer = number
 export type Float = number
 export type String = string
@@ -4067,3 +4070,109 @@ export interface Internal {
    */
   getGameHighScores(payload: GetGameHighScoresPayload): Promise<GameHighScore>
 }
+
+const logger = new Logger('telegram')
+
+export class Internal {
+  constructor(public http: Quester) {}
+
+  static define(method: string) {
+    Internal.prototype[method] = async function (this: Internal, data = {}) {
+      logger.debug('[request] %s %o', method, data)
+      const payload = new FormData()
+      for (const key in data) {
+        payload.append(key, data[key])
+      }
+      const response = await this.http.post('/' + method, payload, {
+        headers: payload.getHeaders(),
+      })
+      logger.debug('[response] %o', response)
+      const { ok, result } = response
+      if (ok) return result
+      throw new Error('Telegram API error: ' + response)
+    }
+  }
+}
+
+Internal.define('getUpdates')
+Internal.define('setWebhook')
+Internal.define('deleteWebhook')
+Internal.define('getWebhookInfo')
+Internal.define('getMe')
+Internal.define('logOut')
+Internal.define('close')
+Internal.define('sendMessage')
+Internal.define('forwardMessage')
+Internal.define('copyMessage')
+Internal.define('sendPhoto')
+Internal.define('sendAudio')
+Internal.define('sendDocument')
+Internal.define('sendVideo')
+Internal.define('sendAnimation')
+Internal.define('sendVoice')
+Internal.define('sendVideoNote')
+Internal.define('sendMediaGroup')
+Internal.define('sendLocation')
+Internal.define('editMessageLiveLocation')
+Internal.define('stopMessageLiveLocation')
+Internal.define('sendVenue')
+Internal.define('sendContact')
+Internal.define('sendPoll')
+Internal.define('sendDice')
+Internal.define('sendChatAction')
+Internal.define('getUserProfilePhotos')
+Internal.define('getFile')
+Internal.define('banChatMember')
+Internal.define('unbanChatMember')
+Internal.define('restrictChatMember')
+Internal.define('promoteChatMember')
+Internal.define('setChatAdministratorCustomTitle')
+Internal.define('banChatSenderChat')
+Internal.define('unbanChatSenderChat')
+Internal.define('setChatPermissions')
+Internal.define('exportChatInviteLink')
+Internal.define('createChatInviteLink')
+Internal.define('editChatInviteLink')
+Internal.define('revokeChatInviteLink')
+Internal.define('approveChatJoinRequest')
+Internal.define('declineChatJoinRequest')
+Internal.define('setChatPhoto')
+Internal.define('deleteChatPhoto')
+Internal.define('setChatTitle')
+Internal.define('setChatDescription')
+Internal.define('pinChatMessage')
+Internal.define('unpinChatMessage')
+Internal.define('unpinAllChatMessages')
+Internal.define('leaveChat')
+Internal.define('getChat')
+Internal.define('getChatAdministrators')
+Internal.define('getChatMemberCount')
+Internal.define('getChatMember')
+Internal.define('setChatStickerSet')
+Internal.define('deleteChatStickerSet')
+Internal.define('answerCallbackQuery')
+Internal.define('setMyCommands')
+Internal.define('deleteMyCommands')
+Internal.define('getMyCommands')
+Internal.define('editMessageText')
+Internal.define('editMessageCaption')
+Internal.define('editMessageMedia')
+Internal.define('editMessageReplyMarkup')
+Internal.define('stopPoll')
+Internal.define('deleteMessage')
+Internal.define('sendSticker')
+Internal.define('getStickerSet')
+Internal.define('uploadStickerFile')
+Internal.define('createNewStickerSet')
+Internal.define('addStickerToSet')
+Internal.define('setStickerPositionInSet')
+Internal.define('deleteStickerFromSet')
+Internal.define('setStickerSetThumb')
+Internal.define('answerInlineQuery')
+Internal.define('sendInvoice')
+Internal.define('answerShippingQuery')
+Internal.define('answerPreCheckoutQuery')
+Internal.define('setPassportDataErrors')
+Internal.define('sendGame')
+Internal.define('setGameScore')
+Internal.define('getGameHighScores')

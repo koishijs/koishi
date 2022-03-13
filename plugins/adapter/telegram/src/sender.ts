@@ -50,13 +50,13 @@ async function isGif(url: string) {
   return false
 }
 
-const assetApi: Dict<string> = {
-  photo: '/sendPhoto',
-  audio: '/sendAudio',
-  document: '/sendDocument',
-  video: '/sendVideo',
-  animation: '/sendAnimation',
-}
+const assetApi = {
+  photo: 'sendPhoto',
+  audio: 'sendAudio',
+  document: 'sendDocument',
+  video: 'sendVideo',
+  animation: 'sendAnimation',
+} as const
 
 export class Sender {
   errors: Error[] = []
@@ -75,6 +75,8 @@ export class Sender {
   }
 
   sendAsset = async () => {
+    // FIXME
+    this.bot.internal[assetApi[this.currAssetType]](this.payload)
     this.results.push(await this.bot.post(assetApi[this.currAssetType], ...await maybeFile(this.payload, this.currAssetType)))
     this.currAssetType = null
     delete this.payload[this.currAssetType]

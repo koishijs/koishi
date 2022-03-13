@@ -57,32 +57,11 @@ export class TelegramBot extends Bot<BotConfig> {
       ...config,
       endpoint: `${config.endpoint}/file/bot${config.token}`,
     })
+    this.internal = new Telegram.Internal(this.http)
   }
 
   /**
-   * Request telegram API
-   * @param action method of telegram API. Starts with a '/'
-   * @param params params in camelCase
-   * @returns Respond form telegram
-   */
-  async get<T = any, P = any>(action: string, params: P = undefined): Promise<T> {
-    this.logger.debug('[request] %s %o', action, params)
-    const response = await this.http.get(action, {
-      params: snakeCase(params || {}),
-    })
-    this.logger.debug('[response] %o', response)
-    const { ok, result } = response
-    if (ok) return camelize(result)
-    throw new SenderError(params, action, -1, this.selfId)
-  }
-
-  /**
-   * Request telegram API
-   * @param action method of telegram API. Starts with a '/'
-   * @param params params in camelCase
-   * @param field file field key in fromData
-   * @param content file stream
-   * @returns Respond form telegram
+   * @deprecated
    */
   async post<T = any, P = any>(action: string, params: P = undefined, field = '', content: Buffer = null, filename = 'file'): Promise<T> {
     this.logger.debug('[request] %s %o', action, params)
