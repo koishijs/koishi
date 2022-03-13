@@ -21,6 +21,20 @@ sidebarDepth: 2
 
 机器人账户的令牌。
 
+### options(.bots[]).endpoint
+
+- 类型: `string`
+- 默认值: `'https://discord.com/api/v8'`
+
+API 请求的终结点。
+
+### options(.bots[]).proxyAgent
+
+- 类型: `string`
+- 默认值: [`app.options.request.proxyAgent`](../../api/core/app.md#options-request-proxyagent)
+
+请求时默认使用的网络代理。
+
 ## 适配器选项
 
 包括全部的 [`WsClient`](../adapter.md#类-adapter-wsclient) 选项和下列额外选项：

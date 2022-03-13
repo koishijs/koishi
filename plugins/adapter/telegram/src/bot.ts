@@ -25,18 +25,19 @@ export interface TelegramResponse {
   result: any
 }
 
-export interface BotConfig extends Bot.BaseConfig {
+export interface BotConfig extends Bot.BaseConfig, Quester.Config {
   token?: string
-  request?: Quester.Config
   pollingTimeout?: number
 }
 
-export const BotConfig: Schema<BotConfig> = Schema.object({
-  token: Schema.string().description('机器人的用户令牌。').role('secret').required(),
-  request: Quester.createSchema({
+export const BotConfig: Schema<BotConfig> = Schema.intersect([
+  Schema.object({
+    token: Schema.string().description('机器人的用户令牌。').role('secret').required(),
+  }),
+  Quester.createSchema({
     endpoint: 'https://api.telegram.org',
   }),
-})
+])
 
 export class TelegramBot extends Bot<BotConfig> {
   static adaptUser(data: Partial<Telegram.User & Bot.User>) {
@@ -57,10 +58,12 @@ export class TelegramBot extends Bot<BotConfig> {
     super(adapter, config)
     this.selfId = config.token.split(':')[0]
     this.http = this.app.http.extend({
-      endpoint: `${config.request.endpoint}/bot${config.token}`,
+      ...config,
+      endpoint: `${config.endpoint}/bot${config.token}`,
     })
     this.http.file = this.app.http.extend({
-      endpoint: `${config.request.endpoint}/file/bot${config.token}`,
+      ...config,
+      endpoint: `${config.endpoint}/file/bot${config.token}`,
     })
   }
 
