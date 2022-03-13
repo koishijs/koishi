@@ -99,61 +99,61 @@ export class Sender {
 
     for (const seg of segs.slice(currIdx)) {
       switch (seg.type) {
-      case 'text':
-        this.payload.caption += seg.data.content
-        break
-      case 'at': {
-        const atTarget = seg.data.name || seg.data.id || seg.data.role || seg.data.type
-        if (!atTarget) break
-        this.payload.caption += `@${atTarget} `
-        break
-      }
-      case 'sharp': {
-        const sharpTarget = seg.data.name || seg.data.id
-        if (!sharpTarget) break
-        this.payload.caption += `#${sharpTarget} `
-        break
-      }
-      case 'face':
-        logger.warn("Telegram don't support face")
-        break
-      case 'image':
-      case 'audio':
-      case 'video':
-      case 'file': {
-        // send previous asset if there is any
-        if (this.currAssetType) await this.sendAsset()
-
-        // handel current asset
-        const assetUrl = seg.data.url
-
-        if (!assetUrl) {
-          logger.warn('asset segment with no url')
+        case 'text':
+          this.payload.caption += seg.data.content
+          break
+        case 'at': {
+          const atTarget = seg.data.name || seg.data.id || seg.data.role || seg.data.type
+          if (!atTarget) break
+          this.payload.caption += `@${atTarget} `
           break
         }
-        if (seg.type === 'image') this.currAssetType = await isGif(assetUrl) ? 'animation' : 'photo'
-        else if (seg.type === 'file') this.currAssetType = 'document'
-        else this.currAssetType = seg.type
-        this.payload[this.currAssetType] = assetUrl
-        break
-      }
-      default:
-        logger.warn(`Unexpected asset type: ${seg.type}`)
-        return
+        case 'sharp': {
+          const sharpTarget = seg.data.name || seg.data.id
+          if (!sharpTarget) break
+          this.payload.caption += `#${sharpTarget} `
+          break
+        }
+        case 'face':
+          logger.warn("Telegram don't support face")
+          break
+        case 'image':
+        case 'audio':
+        case 'video':
+        case 'file': {
+        // send previous asset if there is any
+          if (this.currAssetType) await this.sendAsset()
+
+          // handel current asset
+          const assetUrl = seg.data.url
+
+          if (!assetUrl) {
+            logger.warn('asset segment with no url')
+            break
+          }
+          if (seg.type === 'image') this.currAssetType = await isGif(assetUrl) ? 'animation' : 'photo'
+          else if (seg.type === 'file') this.currAssetType = 'document'
+          else this.currAssetType = seg.type
+          this.payload[this.currAssetType] = assetUrl
+          break
+        }
+        default:
+          logger.warn(`Unexpected asset type: ${seg.type}`)
+          return
       }
     }
 
     // if something left in payload
     if (this.currAssetType) await this.sendAsset()
     if (this.payload.caption) {
-      this.results.push(await this.bot.get('/sendMessage', {
-        chatId: this.chatId,
+      this.results.push(await this.bot.internal.sendMessage({
+        chat_id: this.chatId,
         text: this.payload.caption,
-        replyToMessageId: this.payload.replyToMessageId,
+        reply_to_message_id: this.payload.replyToMessageId,
       }))
     }
 
-    if (!this.errors.length) return this.results.map(result => '' + result.messageId)
+    if (!this.errors.length) return this.results.map(result => '' + result.message_id)
     throw new AggregateError(this.errors)
   }
 }

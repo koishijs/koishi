@@ -3634,10 +3634,10 @@ export interface GameHighScore {
 
 export interface Internal {
   /**
-   * Use this method to receive incoming updates using long polling (wiki). An Update objects is returned.
+   * Use this method to receive incoming updates using long polling (wiki). An Array of Update objects is returned.
    * @see https://core.telegram.org/bots/api#getupdates
    */
-  getUpdates(payload: GetUpdatesPayload): Promise<Update>
+  getUpdates(payload: GetUpdatesPayload): Promise<Update[]>
   /**
    * Use this method to specify a url and receive incoming updates via an outgoing webhook. Whenever there is an update for the bot, we will send an HTTPS POST request to the specified url, containing a JSON-serialized Update. In case of an unsuccessful request, we will give up after a reasonable amount of attempts. Returns True on success.
    *
@@ -3650,6 +3650,26 @@ export interface Internal {
    * @see https://core.telegram.org/bots/api#deletewebhook
    */
   deleteWebhook(payload: DeleteWebhookPayload): Promise<True>
+  /**
+   * Use this method to get current webhook status. Requires no parameters. On success, returns a WebhookInfo object. If the bot is using getUpdates, will return an object with the url field empty.
+   * @see https://core.telegram.org/bots/api#getwebhookinfo
+   */
+  getWebhookInfo(): Promise<WebhookInfo>
+  /**
+   * A simple method for testing your bot's authentication token. Requires no parameters. Returns basic information about the bot in form of a User object.
+   * @see https://core.telegram.org/bots/api#getme
+   */
+  getMe(): Promise<User>
+  /**
+   * Use this method to log out from the cloud Bot API server before launching the bot locally. You must log out the bot before running it locally, otherwise there is no guarantee that the bot will receive updates. After a successful call, you can immediately log in on a local server, but will not be able to log in back to the cloud Bot API server for 10 minutes. Returns True on success. Requires no parameters.
+   * @see https://core.telegram.org/bots/api#logout
+   */
+  logOut(): Promise<True>
+  /**
+   * Use this method to close the bot instance before moving it from one local server to another. You need to delete the webhook before calling this method to ensure that the bot isn't launched again after server restart. The method will return error 429 in the first 10 minutes after the bot is launched. Returns True on success. Requires no parameters.
+   * @see https://core.telegram.org/bots/api#close
+   */
+  close(): Promise<True>
   /**
    * Use this method to send text messages. On success, the sent Message is returned.
    * @see https://core.telegram.org/bots/api#sendmessage
@@ -3877,10 +3897,10 @@ export interface Internal {
    */
   getChat(payload: GetChatPayload): Promise<Chat>
   /**
-   * Use this method to get a list of administrators in a chat. On success, returns an ChatMember objects that contains information about all chat administrators except other bots. If the chat is a group or a supergroup and no administrators were appointed, only the creator will be returned.
+   * Use this method to get a list of administrators in a chat. On success, returns an Array of ChatMember objects that contains information about all chat administrators except other bots. If the chat is a group or a supergroup and no administrators were appointed, only the creator will be returned.
    * @see https://core.telegram.org/bots/api#getchatadministrators
    */
-  getChatAdministrators(payload: GetChatAdministratorsPayload): Promise<ChatMember>
+  getChatAdministrators(payload: GetChatAdministratorsPayload): Promise<ChatMember[]>
   /**
    * Use this method to get the number of members in a chat. Returns Int on success.
    * @see https://core.telegram.org/bots/api#getchatmembercount
