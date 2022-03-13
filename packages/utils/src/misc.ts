@@ -1,4 +1,6 @@
-import { isNullable } from 'schemastery'
+import Schema, { isNullable } from 'schemastery'
+
+export { Schema }
 
 export { isNullable, isPlainObject, valueMap, clone } from 'schemastery'
 

@@ -1,11 +1,10 @@
-import { Awaitable, coerce, Dict, Logger, remove, template } from '@koishijs/utils'
+import { Awaitable, coerce, Dict, Logger, remove, Schema, template } from '@koishijs/utils'
 import { Argv } from './parser'
 import { Context, Disposable, Next } from './context'
 import { Channel, User } from './database'
 import { Computed, FieldCollector, Session } from './session'
 import { KoishiError } from './error'
 import * as internal from './internal'
-import Schema from 'schemastery'
 
 const logger = new Logger('command')
 

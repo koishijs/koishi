@@ -1,4 +1,4 @@
-import { Awaitable, coerce, defineProperty, Dict, escapeRegExp, Logger, makeArray, Time } from '@koishijs/utils'
+import { Awaitable, coerce, defineProperty, Dict, escapeRegExp, Logger, makeArray, Schema, Time } from '@koishijs/utils'
 import { Context, Next, Plugin } from './context'
 import { Adapter } from './adapter'
 import { Channel, User } from './database'
@@ -11,7 +11,6 @@ import runtime from './internal/runtime'
 import validate from './internal/validate'
 import suggest, { SuggestConfig } from './internal/suggest'
 import help, { HelpConfig } from './internal/help'
-import Schema from 'schemastery'
 
 function createLeadingRE(patterns: string[], prefix = '', suffix = '') {
   return patterns.length ? new RegExp(`^${prefix}(${patterns.map(escapeRegExp).join('|')})${suffix}`) : /$^/

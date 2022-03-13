@@ -1,4 +1,4 @@
-import { Awaitable, defineProperty, Dict, Logger, makeArray, MaybeArray, Promisify, Random, remove, sleep } from '@koishijs/utils'
+import { Awaitable, defineProperty, Dict, Logger, makeArray, MaybeArray, Promisify, Random, remove, Schema, sleep } from '@koishijs/utils'
 import { Command } from './command'
 import { Session } from './session'
 import { Channel, Database, Modules, User } from './database'
@@ -8,7 +8,6 @@ import { Bot } from './bot'
 import { Adapter } from './adapter'
 import { Model, Tables } from './orm'
 import { Template } from './i18n'
-import Schema from 'schemastery'
 
 export type Next = (next?: Next.Callback) => Promise<void | string>
 export type Middleware = (session: Session, next: Next) => Awaitable<void | string>
