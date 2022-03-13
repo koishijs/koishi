@@ -454,7 +454,7 @@ export default class MyPlugin extends BasePlugin<MyPluginConfig> {
   }
 
   @UseCommand('sock', '穿袜子')
-  onDressCommand(@PutObject() arg: WearArg) {
+  onSockCommand(@PutObject() arg: WearArg) {
     return `${arg.name} 今天穿了 ${arg.count || 1} 条袜子，颜色是 ${arg.color}。`
   }
 }
