@@ -23,7 +23,7 @@
     "build": "yarn compile && yarn dtsc && yarn fe",
     "dtsc": "node -r ./build/register build/dtsc",
     "bump": "yarn compile scripts && koishi-scripts bump",
-    "clean": "yarn compile scripts && koishi-scripts clean",
+    "clean": "node -r ./build/register build/clean",
     "compile": "node -r ./build/register build/compile",
     "dep": "node -r ./build/register build/dep",
     "docs": "yarn workspace docs",

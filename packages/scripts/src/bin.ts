@@ -2,7 +2,6 @@
 
 import registerBuildCommand from './build'
 import registerBumpCommand from './bump'
-import registerCleanCommand from './clean'
 import registerDepCommand from './dep'
 import registerInitCommand from './init'
 import registerPublishCommand from './publish'
@@ -14,7 +13,6 @@ const cli = CAC('koishi-scripts').help().version(version)
 
 registerBuildCommand(cli)
 registerBumpCommand(cli)
-registerCleanCommand(cli)
 registerDepCommand(cli)
 registerInitCommand(cli)
 registerPublishCommand(cli)
