@@ -23,6 +23,7 @@ import {
   UseEvent,
   Get,
   PutUserName,
+  CommandUsage,
 } from 'koishi-thirdeye'
 import { Context, Session } from 'koishi'
 import { WebSocket } from 'ws'
@@ -58,6 +59,7 @@ export default class MyPlugin extends BasePlugin<MyPluginConfig> implements Life
 
   // 注册指令
   @UseCommand('dress', '穿裙子')
+  @CommandUsage('今天穿裙子了吗？')
   onDressCommand(
     @PutOption('color', '-c <color:string>  裙子的颜色') color: string,
     @PutUserName() name: string,
@@ -296,6 +298,7 @@ import {
   UseEvent,
   Get,
   PutUserName,
+  CommandUsage,
 } from 'koishi-thirdeye'
 import { Context, Session } from 'koishi'
 import { WebSocket } from 'ws'
@@ -331,11 +334,12 @@ export default class MyPlugin extends BasePlugin<MyPluginConfig> implements Life
 
   // 注册指令
   @UseCommand('dress', '穿裙子')
+  @CommandUsage('今天穿裙子了吗？')
   onDressCommand(
     @PutOption('color', '-c <color:string>  裙子的颜色') color: string,
     @PutUserName() name: string,
   ) {
-    return `${name} 今天穿的裙子的颜色是 ${color}。}`
+    return `${name} 今天穿的裙子的颜色是 ${color}。`
   }
 
   // 注册 Koa 路由
@@ -407,11 +411,64 @@ export default class MyPlugin extends BasePlugin<MyPluginConfig> {
 
 ### 指令参数
 
-指令参数也使用一组装饰器对指令参数进行注入。下列装饰器应对由 `@UseCommand` 配置的类成员方法参数进行操作。
+指令参数也使用一组方法参数装饰器对由 `@UseCommand` 定义的类成员方法参数进行注入。此外，部分参数装饰器可以改变指令的行为。
+
+```ts
+@DefinePlugin({ name: 'my-plugin', schema: MyPluginConfig })
+export default class MyPlugin extends BasePlugin<MyPluginConfig> {
+  // 注册指令
+  @UseCommand('dress', '穿裙子')
+  onDressCommand(
+    @PutArg(0) count: number, // 注入该指令的第 1 个参数，并标记该指令的第 1 个参数是 number 类型。
+    @PutOption('color', '-c <color>  裙子的颜色') color: string, // 为该方法添加 color 选项，注入到该参数内。
+    @PutUserName() name: string, // 注入调用指令的用户的名称。
+  ) {
+    return `${name} 今天穿了 ${count || 1} 条裙子，颜色是 ${color}。`
+  }
+}
+```
+
+您或许可以注意到，`color` 选项并没有使用 `<color:string>` 这种显式指定选项类型的语法进行定义。但是 koishi-thirdeye 会由 `onDressCommand` 方法参数 `color` 的类型进行推断出 `string` 类型，并写入 `dress` 指令。类似地，`dress` 命令的第一个参数 `[count:number]` 也是自动推断生成的。因此，使用 koishi-thirdeye 编写指令的时候，无需刻意手动指定类型，大部分情况下类型会被自动推断。
+
+#### 类参数
+
+在属性比较多或多个指令的参数存在大量重复的情况下，使用过多方法参数装饰器可能不太优雅。这种情况下您也可以使用类定义指令参数。
+
+```ts
+class WearArg {
+  @PutArg(0)
+  count: number
+
+  @PutOption('color', '-c <color>  裙子的颜色')
+  color: string
+
+  @PutUserName()
+  name: string
+}
+
+@DefinePlugin({ name: 'my-plugin', schema: MyPluginConfig })
+export default class MyPlugin extends BasePlugin<MyPluginConfig> {
+
+  @UseCommand('dress', '穿裙子')
+  onDressCommand(@PutObject() arg: WearArg) {
+    return `${arg.name} 今天穿了 ${arg.count || 1} 条裙子，颜色是 ${arg.color}。`
+  }
+
+  @UseCommand('sock', '穿袜子')
+  onDressCommand(@PutObject() arg: WearArg) {
+    return `${arg.name} 今天穿了 ${arg.count || 1} 条袜子，颜色是 ${arg.color}。`
+  }
+
+}
+```
+
+#### API
+
+这些装饰器可以用于指令对应的类成员方法参数，也可以用于注入类的方法。
 
 - `@PutArgv(field?: keyof Argv)` 注入 `Argv` 对象，或 `Argv` 对象的指定字段。
 - `@PutSession(field?: keyof Session)` 注入 `Session` 对象，或 `Session` 对象的指定字段。
-- `@PutArg(index: number)` 注入指令的第 n 个参数。
+- `@PutArg(index: number)` 注入指令的第 n 个参数，从 0 开始。
 - `@PutArgs()` 注入包含指令全部参数的数组。
 - `@PutOption(name: string, desc: string, config: Argv.OptionConfig = {})` 给指令添加选项并注入到该参数。等价于 `cmd.option(name, desc, config)`。
 - `@PutUser(fields: string[])` 添加一部分字段用于观测，并将 User 对象注入到该参数。
@@ -422,7 +479,7 @@ export default class MyPlugin extends BasePlugin<MyPluginConfig> {
 - `@PutNext()` 注入 `argv.next` 方法。
 - `@PutRenderer(path: string)` 注入某一特定 i18n 路径的渲染器，类型为 `Renderer<T>`。
 - `@PutCommonRenderer()` 注入通用渲染器，类型为 `CRenderer`。
-- `@PutTemplate(name: string, text: string | Dict<string>)` 为该指令定义一个消息模板，并注入该模板的渲染器，类型为 `Renderer<T>`。
+- `@PutObject()` 注入类定义的对象。
 
 ### 子指令
 
