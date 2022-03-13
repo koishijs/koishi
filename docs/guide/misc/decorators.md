@@ -439,7 +439,7 @@ class WearArg {
   @PutArg(0)
   count: number
 
-  @PutOption('color', '-c <color>  裙子的颜色')
+  @PutOption('color', '-c <color>  颜色')
   color: string
 
   @PutUserName()
