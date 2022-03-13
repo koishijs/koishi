@@ -448,7 +448,6 @@ class WearArg {
 
 @DefinePlugin({ name: 'my-plugin', schema: MyPluginConfig })
 export default class MyPlugin extends BasePlugin<MyPluginConfig> {
-
   @UseCommand('dress', '穿裙子')
   onDressCommand(@PutObject() arg: WearArg) {
     return `${arg.name} 今天穿了 ${arg.count || 1} 条裙子，颜色是 ${arg.color}。`
@@ -458,7 +457,6 @@ export default class MyPlugin extends BasePlugin<MyPluginConfig> {
   onDressCommand(@PutObject() arg: WearArg) {
     return `${arg.name} 今天穿了 ${arg.count || 1} 条袜子，颜色是 ${arg.color}。`
   }
-
 }
 ```
 
