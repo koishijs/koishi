@@ -8,7 +8,8 @@ export function renderText(source: string) {
       return prev + `[CQ:at,qq=${data.id}]`
     } else if (['video', 'audio', 'image'].includes(type)) {
       if (type === 'audio') type = 'record'
-      if (!data.file) data.file = data.url
+      data.file = data.url
+      delete data.url
     } else if (type === 'quote') {
       type = 'reply'
     }
