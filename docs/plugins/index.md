@@ -44,6 +44,8 @@ Koishi 官方提供了许多插件。为了更好地模块化开发，它们被�
 - [@koishijs/plugin-admin](./accessibility/admin.md)：数据管理
 - [@koishijs/plugin-bind](./accessibility/bind.md)：账号绑定
 - [@koishijs/plugin-callme](./accessibility/callme.md)：设置昵称
+- [@koishijs/plugin-commands](./accessibility/commands.md)：指令管理
+- [@koishijs/plugin-locales](./accessibility/locales.md)：本地翻译
 - [@koishijs/plugin-rate-limit](./accessibility/rate-limit.md)：速率控制
 - [@koishijs/plugin-schedule](./accessibility/schedule.md)：计划任务
 - [@koishijs/plugin-sudo](./accessibility/sudo.md)：模拟调用
@@ -53,7 +55,6 @@ Koishi 官方提供了许多插件。为了更好地模块化开发，它们被�
 
 - [@koishijs/plugin-console](./console/index.md)：控制台
 - [@koishijs/plugin-chat](./console/chat.md)：聊天工具
-- [@koishijs/plugin-commands](./console/commands.md)：指令管理
 - [@koishijs/plugin-dataview](./console/dataview.md)：数据库操作
 - [@koishijs/plugin-insight](./console/insight.md)：插件依赖图
 - [@koishijs/plugin-logger](./console/logger.md)：日志管理
