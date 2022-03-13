@@ -25,6 +25,8 @@ abstract class TelegramAdapter extends Adapter<BotConfig, AdapterConfig> {
   async onUpdate(update: Telegram.Update, bot: TelegramBot) {
     logger.debug('receive %s', JSON.stringify(update))
     const session: Partial<Session> = { selfId: bot.selfId }
+    session.telegram = Object.create(bot.internal)
+    Object.assign(session.telegram, update)
 
     function parseText(text: string, entities: Telegram.MessageEntity[]): segment[] {
       let curr = 0
