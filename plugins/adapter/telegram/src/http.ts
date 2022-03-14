@@ -1,8 +1,7 @@
 import { Adapter, assertProperty, camelCase, Context, Dict, Logger, sanitize, Schema, segment, Session, trimSlash } from 'koishi'
-import { adaptUser } from '.'
 import { BotConfig, TelegramBot } from './bot'
 import * as Telegram from './types'
-import { AdapterConfig } from './utils'
+import { AdapterConfig, adaptUser } from './utils'
 
 const logger = new Logger('telegram')
 
