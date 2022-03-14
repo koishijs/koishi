@@ -1,8 +1,6 @@
-import FormData from 'form-data'
-import { Adapter, assertProperty, Bot, camelize, Dict, Logger, Quester, renameProperty, Schema, snakeCase } from 'koishi'
+import { Adapter, assertProperty, Bot, Dict, Logger, Quester, renameProperty, Schema } from 'koishi'
 import * as Telegram from './types'
 import { AdapterConfig, adaptGuildMember, adaptUser } from './utils'
-import { AxiosError } from 'axios'
 import { Sender } from './sender'
 
 const logger = new Logger('telegram')
@@ -58,30 +56,6 @@ export class TelegramBot extends Bot<BotConfig> {
       endpoint: `${config.endpoint}/file/bot${config.token}`,
     })
     this.internal = new Telegram.Internal(this.http)
-  }
-
-  /**
-   * @deprecated
-   */
-  async post<T = any, P = any>(action: string, params: P = undefined, field = '', content: Buffer = null, filename = 'file'): Promise<T> {
-    this.logger.debug('[request] %s %o', action, params)
-    const payload = new FormData()
-    for (const key in params) {
-      payload.append(snakeCase(key), params[key].toString())
-    }
-    if (field && content) payload.append(field, content, filename)
-    let response: any
-    try {
-      response = await this.http.post(action, payload, {
-        headers: payload.getHeaders(),
-      })
-    } catch (e) {
-      response = (e as AxiosError).response.data
-    }
-    this.logger.debug('[response] %o', response)
-    const { ok, result } = response
-    if (ok) return camelize(result)
-    throw new SenderError(params, action, -1, this.selfId)
   }
 
   async sendMessage(channelId: string, content: string) {

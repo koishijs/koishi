@@ -4,6 +4,7 @@ import * as Telegram from './types'
 import AggregateError from 'es-aggregate-error'
 import fileType from 'file-type'
 import { TelegramBot } from '.'
+import FormData from 'form-data'
 
 const logger = new Logger('telegram')
 
@@ -16,9 +17,9 @@ type TLAssetType =
   | 'video'
   | 'animation'
 
-async function maybeFile(payload: Dict, field: TLAssetType): Promise<[any, string?, Buffer?, string?]> {
-  if (!payload[field]) return [payload]
-  let content
+async function maybeFile(payload: Dict, field: TLAssetType): Promise<[string?, Buffer?, string?]> {
+  if (!payload[field]) return []
+  let content: any
   let filename = 'file'
   const [schema, data] = payload[field].split('://')
   if (schema === 'file') {
@@ -35,7 +36,7 @@ async function maybeFile(payload: Dict, field: TLAssetType): Promise<[any, strin
       logger.warn('Can not infer file mime')
     } else filename = `file.${type.ext}`
   }
-  return [payload, field, content, filename]
+  return [field, content, filename]
 }
 
 async function isGif(url: string) {
@@ -65,22 +66,26 @@ export class Sender {
   currAssetType: TLAssetType = null
   payload: Dict
 
-  constructor(private bot: TelegramBot, private chatId: string) {
-    this.payload = { chatId, caption: '' }
+  constructor(private bot: TelegramBot, private chat_id: string) {
+    this.payload = { chat_id, caption: '' }
   }
 
-  static from(bot: TelegramBot, chatId: string) {
-    const sender = new Sender(bot, chatId)
+  static from(bot: TelegramBot, chat_id: string) {
+    const sender = new Sender(bot, chat_id)
     return sender.sendMessage.bind(sender)
   }
 
   sendAsset = async () => {
-    // FIXME
-    this.bot.internal[assetApi[this.currAssetType]](this.payload)
-    this.results.push(await this.bot.post(assetApi[this.currAssetType], ...await maybeFile(this.payload, this.currAssetType)))
+    const [field, content, filename] = await maybeFile(this.payload, this.currAssetType)
+    const payload = new FormData()
+    for (const key in this.payload) {
+      payload.append(key, this.payload[key].toString())
+    }
+    if (field && content) payload.append(field, content, filename)
+    this.results.push(await this.bot.internal[assetApi[this.currAssetType]](payload as any))
     this.currAssetType = null
     delete this.payload[this.currAssetType]
-    delete this.payload.replyToMessage
+    delete this.payload.reply_to_message
     this.payload.caption = ''
   }
 
@@ -89,11 +94,11 @@ export class Sender {
     let currIdx = 0
     while (currIdx < segs.length && prefixTypes.includes(segs[currIdx].type)) {
       if (segs[currIdx].type === 'quote') {
-        this.payload.replyToMessageId = segs[currIdx].data.id
+        this.payload.reply_to_message_id = segs[currIdx].data.id
       } else if (segs[currIdx].type === 'anonymous') {
         if (segs[currIdx].data.ignore === 'false') return null
       } else if (segs[currIdx].type === 'markdown') {
-        this.payload.parseMode = 'MarkdownV2'
+        this.payload.parse_mode = 'MarkdownV2'
       }
       // else if (segs[currIdx].type === 'card') {}
       ++currIdx
@@ -149,9 +154,9 @@ export class Sender {
     if (this.currAssetType) await this.sendAsset()
     if (this.payload.caption) {
       this.results.push(await this.bot.internal.sendMessage({
-        chat_id: this.chatId,
+        chat_id: this.chat_id,
         text: this.payload.caption,
-        reply_to_message_id: this.payload.replyToMessageId,
+        reply_to_message_id: this.payload.reply_to_message_id,
       }))
     }
 

@@ -11,13 +11,14 @@ export class Internal {
   static define(method: string) {
     Internal.prototype[method] = async function (this: Internal, data = {}) {
       logger.debug('[request] %s %o', method, data)
-      const payload = new FormData()
-      for (const key in data) {
-        payload.append(key, data[key])
+      let response: any
+      if (data instanceof FormData) {
+        response = await this.http.post('/' + method, data, {
+          headers: data.getHeaders(),
+        })
+      } else {
+        response = await this.http.post('/' + method, data)
       }
-      const response = await this.http.post('/' + method, payload, {
-        headers: payload.getHeaders(),
-      })
       logger.debug('[response] %o', response)
       const { ok, result } = response
       if (ok) return result
