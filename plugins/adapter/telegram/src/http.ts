@@ -109,12 +109,13 @@ abstract class TelegramAdapter extends Adapter<BotConfig, AdapterConfig> {
       session.content = segment.join(segments)
       session.userId = message.from.id.toString()
       session.author = adaptUser(message.from)
+      session.channelId = message.chat.id.toString()
       if (message.chat.type === 'private') {
         session.subtype = 'private'
-        session.channelId = session.guildId = `private:${session.userId}`
+        session.channelId = 'private:' + session.channelId
       } else {
         session.subtype = 'group'
-        session.channelId = session.guildId = message.chat.id.toString()
+        session.guildId = session.channelId
       }
     } else if (update.chat_join_request) {
       session.timestamp = update.chat_join_request.date * 1000
