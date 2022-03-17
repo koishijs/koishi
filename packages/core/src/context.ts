@@ -7,7 +7,7 @@ import { App } from './app'
 import { Bot } from './bot'
 import { Adapter } from './adapter'
 import { Model, Tables } from './orm'
-import { Template } from './i18n'
+import { I18n } from './i18n'
 
 export type Next = (next?: Next.Callback) => Promise<void | string>
 export type Middleware = (session: Session, next: Next) => Awaitable<void | string>
@@ -589,7 +589,7 @@ export namespace Context {
     bots: Adapter.BotList
     database: Database
     model: Model
-    i18n: Template
+    i18n: I18n
   }
 
   export const Services: (keyof Services)[] = []

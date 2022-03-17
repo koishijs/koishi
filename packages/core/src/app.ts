@@ -6,7 +6,7 @@ import { Command } from './command'
 import { Computed, Session } from './session'
 import { KoishiError } from './error'
 import { Model } from './orm'
-import { Template } from './i18n'
+import { I18n } from './i18n'
 import runtime from './internal/runtime'
 import validate from './internal/validate'
 import suggest, { SuggestConfig } from './internal/suggest'
@@ -50,7 +50,7 @@ export class App extends Context {
     })
 
     this.model = new Model(this)
-    this.i18n = new Template(this)
+    this.i18n = new I18n(this)
     this.bots = new Adapter.BotList(this)
 
     this._commands.resolve = (key) => {

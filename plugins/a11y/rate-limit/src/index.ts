@@ -54,7 +54,7 @@ export function apply(ctx: Context) {
 
     function sendHint(path: string, ...param: any[]) {
       if (!command.config.showWarning) return ''
-      return session.text(`.${path}?`, param) || session.text(`internal.${path}`, param)
+      return session.text([`.${path}`, `internal.${path}`], param)
     }
 
     let isUsage = true

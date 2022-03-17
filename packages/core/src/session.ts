@@ -1,11 +1,12 @@
 import { Channel, User } from './database'
 import { Tables, TableType } from './orm'
 import { Command } from './command'
-import { defineProperty, Logger, observe, Promisify, Random, remove, segment } from '@koishijs/utils'
+import { defineProperty, Logger, makeArray, observe, Promisify, Random, remove, segment } from '@koishijs/utils'
 import { Argv } from './parser'
 import { Middleware, Next } from './context'
 import { App } from './app'
 import { Bot } from './bot'
+import { I18n } from './i18n'
 
 type Genres = 'friend' | 'channel' | 'group' | 'group-member' | 'group-role' | 'group-file' | 'group-emoji'
 type Actions = 'added' | 'deleted' | 'updated'
@@ -313,21 +314,22 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
     }
   }
 
-  text(path: string, params: object = {}) {
+  text(path: string | string[], params: object = {}, options: I18n.Options = {}) {
     const locales = [this.app.options.locale]
     locales.unshift(this.user?.['locale'])
     if (this.subtype === 'group') {
       locales.unshift(this.guild?.['locale'])
       locales.unshift(this.channel?.['locale'])
     }
-    if (path.startsWith('.')) {
+    const paths = makeArray(path).map((path) => {
+      if (!path.startsWith('.')) return path
       if (!this.scope) {
         this.app.logger('i18n').warn(new Error('missing scope'))
         return ''
       }
-      path = this.scope + path
-    }
-    return this.app.i18n.render(locales, path, params)
+      return this.scope + path
+    })
+    return this.app.i18n.text(locales, paths, params, options)
   }
 
   collect<T extends 'user' | 'channel'>(key: T, argv: Argv, fields = new Set<keyof Tables[T]>()) {
