@@ -39,7 +39,7 @@
     "@koishijs/utils": "^5.2.0",
     "@types/koa": "*",
     "@types/koa__router": "*",
-    "@types/ws": "^8.5.2",
+    "@types/ws": "^8.5.3",
     "axios": "^0.24.0",
     "file-type": "^16.5.3",
     "koa": "^2.13.4",

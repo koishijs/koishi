@@ -33,7 +33,7 @@
   },
   "devDependencies": {
     "@koishijs/plugin-mock": "^1.0.3",
-    "@types/ws": "^8.5.2"
+    "@types/ws": "^8.5.3"
   },
   "dependencies": {
     "qface": "^1.2.0",
