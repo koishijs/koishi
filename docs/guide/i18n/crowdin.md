@@ -25,3 +25,50 @@ sidebarDepth: 2
 ::: tip
 若你的项目是开放源代码的，并且活跃了 4 个月以上，也可以申请 Crowdin 的开源项目许可。当你成功创建项目后，填写[这个表单](https://crowdin.com/page/open-source-project-setup-request)，Crowdin 的客服人员会帮助你。
 :::
+
+在新建项目界面，需要填写项目名称（推荐和插件或机器人的名称一致），是否公开项目，设置源语言和目标语言，然后点击创建项目按钮。
+
+:::tip
+公开项目意味着所有 Crowdin 用户都能看到你的项目的内容，也可以向项目贡献翻译。如果你是通过开源项目免费许可的方式创建的项目，则只能创建公开项目。
+:::
+
+## 上传项目文件
+
+### 手动上传
+
+创建项目完毕后，Crowdin 会带领你来到项目内容（Content）界面。在这里，你可以点击上传文件（Upload Files）按钮上传**源语言**文件。
+
+#### 文件类型
+
+你需要保证你的文件格式受 Crowdin 支持，可以在[这里](https://support.crowdin.com/supported-formats/)查看 Crowdin 支持的文件类型列表。
+
+作为示例，我们使用的是 `YAML` 格式的文档，Crowdin 目前仅支持纯文本的 `YAML` 格式的文档，不支持 `anchor` 等高级功能。
+
+Crowdin 会读取 `YAML` 中的键值和注释作为该待翻译字符串的上下文。考虑以下文本：
+
+```yaml
+commands:
+  ping:
+    description: 回复 ping 信息
+
+    options:
+      # 这是一段注释
+      detail: 显示网络连接情况
+```
+
+那么在翻译界面，Crowdin 会为 `回复 ping 信息` 这一字符串添加 `commands.ping.description` 作为其上下文信息。而对于 `显示网络连接情况` 这一字符串，除了显示 `commands.ping.options.detail` 以外，还会显示 `这是一段注释` 作为其上下文信息。当然，除了写在键值的上方，你也可以写在键值后方，表现是一样的。
+
+Crowdin 还支持复数名词，考虑以下文本：*由于中文不存在单复数对立，此处采用英文进行演示*
+
+```yaml
+commands:
+  echo:
+    message:
+      dress:
+        one: {name} has a dress
+        other: {name} has {number} dresses
+```
+
+::: tip
+当然，Crowdin 同样会标识出诸如 `{name}` 这样的插值语法，并且在缺少插值或译者翻译插值时报告错误。
+:::
