@@ -77,12 +77,21 @@ commands:
 
 除了手动上传，你还可以设置 GitHub 集成，让 Crowdin 自动同步 GitHub 仓库里的原文，并定期推送译文到相应的仓库。
 
+你可以点击[这里](https://support.crowdin.com/github-integration/)直达 Crowdin 关于 GitHub 集成的文档。
+
 回到项目主页，单击集成（Integrations）标签页，可以为你的项目设置集成。Crowdin 支持许多集成方案，找到 GitHub 并点击。
 
 *如果你使用的是 GitLab，则是点击 GitLab 或 GitLab Enterprice*
 
-然后，单击 Set Up Integration
+然后，单击 Set Up Integration，连接到你的 GitHub 账户（如果你不是用 GitHub 账户登录，且还没绑定 GitHub 账户的话），选择你想要设置集成的仓库，选择你想要获取原文和推送译文的分支，默认情况下 Crowdin 创建一个新的分支，名为 `l10n_` 加上原分支名，如图中所示的 `l10n_master`。
 
+![github integration connecting github](https://support.crowdin.com/assets/docs/github_integration_connecting_github.png)
+
+![github integration unconfigured](https://support.crowdin.com/assets/docs/github_integration_unconfigured.png)
+
+此外，你还需要点击分支名右边的编辑按钮，然后点添加文件筛选器（Add File Filter），在视图左边写上源文件和目标文件的模式匹配字符串之后，在右边切换并预览将会同步到 Crowdin 的文件列表，以及翻译后的文件名及其路径，你还可以添加更多的筛选器。确认添加无误后，单击 Save 按钮保存。
+
+视图下方的 Push Source 选项默认是不勾选的，即 Crowdin 不会自动将翻译推送到仓库，打开这个选项后，Crowdin 会在对应的仓库开启一个 PR，并自动 rebase 到最新的分支，然后同步 Crowdin 上的同步到仓库。设置完成后，Crowdin 并不会自动开始同步，需要手动触发一次：点击表格右上角的 Sync Now，静待片刻即可同步完成。
 ### 通过 Crowdin CLI 上传文件
 
 ## 进行翻译
