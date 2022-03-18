@@ -92,7 +92,23 @@ commands:
 此外，你还需要点击分支名右边的编辑按钮，然后点添加文件筛选器（Add File Filter），在视图左边写上源文件和目标文件的模式匹配字符串之后，在右边切换并预览将会同步到 Crowdin 的文件列表，以及翻译后的文件名及其路径，你还可以添加更多的筛选器。确认添加无误后，单击 Save 按钮保存。
 
 视图下方的 Push Source 选项默认是不勾选的，即 Crowdin 不会自动将翻译推送到仓库，打开这个选项后，Crowdin 会在对应的仓库开启一个 PR，并自动 rebase 到最新的分支，然后同步 Crowdin 上的同步到仓库。设置完成后，Crowdin 并不会自动开始同步，需要手动触发一次：点击表格右上角的 Sync Now，静待片刻即可同步完成。
+
 ### 通过 Crowdin CLI 上传文件
+
+Crowdin 还提供了一个 CLI 工具，可以通过命令行管理本地和远程的本地化资源文件。如果你使用的系统是 MacOS，则你可以通过运行下面两行代码方便地安装 Crowdin CLI。*其他平台的安装方式可以查看[Crowdin 的文档](https://support.crowdin.com/cli-tool/#installation)*
+
+```bash
+$ brew tap crowdin/crowdin
+$ brew install crowdin@3
+```
+
+如果你当前项目根目录下还没有 Crowdin 的配置文件 `crowdin.yml`，则你可以运行 `crowdin init` 创建一个基础配置文件，修改其中的条目以适应你的项目。详细的介绍可以看[Crowdin 的文档](https://support.crowdin.com/configuration-file/)。
+
+::: tip
+`crowdin.yml` 中的配置项不仅适用于 Crowdin CLI，还可以在上述的 GitHub 集成中发挥作用，Crowdin 会自动读取该文件以确定翻译的范围等。
+:::
+
+一般推荐在项目目录下的 `crowdin.yml` 文件中配置好筛选器，并且在 `$HOME/.crowdin.yml` 文件中存储你的 Crowdin 密钥等敏感信息，然后你就可以简单地运行 `crowdin upload sources` 上传源文件，而不需要每次都打出冗长的包含通配符的文件路径了。
 
 ## 进行翻译
 
