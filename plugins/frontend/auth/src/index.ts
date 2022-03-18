@@ -70,9 +70,11 @@ class AuthService extends DataService<UserAuth> {
     ctx.console.addListener('login/password', async function (name, password) {
       const user = await ctx.database.getUser('name', name, ['password', ...authFields])
       if (!user || user.password !== password) throw new Error('用户名或密码错误。')
-      user.token = v4()
-      user.expire = Date.now() + config.authTokenExpire
-      await ctx.database.setUser('name', name, pick(user, ['token', 'expire']))
+      if (user.expire > Date.now()) {
+        user.token = v4()
+        user.expire = Date.now() + config.authTokenExpire
+        await ctx.database.setUser('name', name, pick(user, ['token', 'expire']))
+      }
       setAuthUser(this, omit(user, ['password']))
     })
 
@@ -108,8 +110,11 @@ class AuthService extends DataService<UserAuth> {
       const state = states[session.uid]
       if (state && state[0] === session.content) {
         const user = await session.observeUser(authFields)
-        user.token = v4()
-        user.expire = Date.now() + config.authTokenExpire
+        if (user.expire > Date.now()) {
+          user.token = v4()
+          user.expire = Date.now() + config.authTokenExpire
+          await user.$update()
+        }
         return setAuthUser(state[2], user)
       }
       return next()
