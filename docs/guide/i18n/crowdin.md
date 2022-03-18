@@ -72,3 +72,21 @@ commands:
 ::: tip
 当然，Crowdin 同样会标识出诸如 `{name}` 这样的插值语法，并且在译文缺少插值或译者翻译插值变量时报告错误。
 :::
+
+### 设置 GitHub / GitLab 集成
+
+除了手动上传，你还可以设置 GitHub 集成，让 Crowdin 自动同步 GitHub 仓库里的原文，并定期推送译文到相应的仓库。
+
+回到项目主页，单击集成（Integrations）标签页，可以为你的项目设置集成。Crowdin 支持许多集成方案，找到 GitHub 并点击。
+
+*如果你使用的是 GitLab，则是点击 GitLab 或 GitLab Enterprice*
+
+然后，单击 Set Up Integration
+
+### 通过 Crowdin CLI 上传文件
+
+## 进行翻译
+
+## 下载翻译结果
+
+## 集成 CI (Github Actions / TravisCI)
