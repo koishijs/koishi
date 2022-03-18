@@ -11,16 +11,13 @@ export namespace I18n {
     [K: string]: Node
   }
 
-  export type Renderer = (dict: Context, params: any, locale: string) => string
-
-  export interface Context {
-    $(path: string, params?: object): string
-    [key: string]: any
-  }
+  export type Formatter = (value: string, ...args: string[]) => string
+  export type Renderer = (dict: Dict, params: any, locale: string) => string
 }
 
 export class I18n {
   _data: Dict<Dict<I18n.Template>> = {}
+  _formatters: Dict<I18n.Formatter> = {}
   _renderers: Dict<I18n.Renderer> = {}
 
   static isTemplate(data: any): data is I18n.Template {
@@ -32,13 +29,30 @@ export class I18n {
     this.define('zh', require('./locales/zh'))
     this.define('en', require('./locales/en'))
 
-    this.renderer('list', (data, params: any[]) => {
-      const body = params.map(item => data.$('item', item)).join(data.$('separator'))
-      if (data[params.length]) {
-        return data.$('' + params.length, [params.length, body])
-      } else {
-        return data.$('default', [params.length, body])
-      }
+    this.renderer('list', (data, params: any[], locale) => {
+      const list = params.map((value) => {
+        return this.render(data.item, { value }, locale)
+      })
+      if (data.header) list.unshift(this.render(data.header, params, locale))
+      if (data.footer) list.push(this.render(data.footer, params, locale))
+      return list.join('\n')
+    })
+
+    this.renderer('inline-list', (data, params: any[], locale) => {
+      let output = ''
+      params.forEach((value, index) => {
+        if (index) {
+          if (index === params.length - 1 && data.conj !== undefined) {
+            output += data.conj
+          } else {
+            output += data.separator ?? this.text([locale], ['general.comma'], {})
+          }
+        }
+        output += this.render(data.item, { value }, locale) ?? value
+      })
+      const path = params.length in data ? params.length : 'body'
+      if (data[path] === undefined) return output
+      return this.render(data[path], [output, params.length], locale)
     })
   }
 
@@ -68,27 +82,37 @@ export class I18n {
     }
   }
 
+  formatter(name: string, callback: I18n.Formatter) {
+    this._formatters[name] = callback
+  }
+
   renderer(name: string, callback: I18n.Renderer) {
     this._renderers[name] = callback
   }
 
-  render(value: I18n.Template, params: object, locale: string) {
+  render(value: I18n.Template, params: any, locale: string) {
+    if (value === undefined) return
+
     if (typeof value !== 'string') {
       const render = this._renderers[value.$]
       if (!render) throw new Error(`Renderer "${value.$}" not found`)
-      const context = Object.create(value)
-      context.$ = (path: string, params: any) => {
-        return this.render(value[path], params, locale)
-      }
-      return render(context, params, locale)
+      return render(value, params, locale)
     }
 
-    return value.replace(/\{([\w-.]+)\}/g, (_, path) => {
-      const segments = path.split('.')
+    return value.replace(/\{(.+?)\}/g, (_, inner: string) => {
+      const [path, ...exprs] = inner.split('|')
+      const segments = path.trim().split('.')
       let result = params
       for (const segment of segments) {
         result = result[segment]
         if (isNullable(result)) return ''
+      }
+      for (const expr of exprs) {
+        const cap = expr.trim().match(/(\w+)(?:\((.+)\))?/)
+        const formatter = this._formatters[cap[1]]
+        if (!formatter) throw new Error(`Formatter "${cap[1]}" not found`)
+        const args = cap[2] ? cap[2].split(',').map(v => v.trim()) : []
+        result = formatter(result, ...args)
       }
       return result.toString()
     })
@@ -107,9 +131,9 @@ export class I18n {
     }
 
     // try every locale
-    for (const locale of queue) {
-      for (const key of ['$' + locale, locale]) {
-        for (const path of paths) {
+    for (const path of paths) {
+      for (const locale of queue) {
+        for (const key of ['$' + locale, locale]) {
           const value = this._data[key]?.[path]
           if (value === undefined) continue
           return this.render(value, params, locale)
