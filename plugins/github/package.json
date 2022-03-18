@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-github",
   "description": "GitHub toolkit for Koishi",
-  "version": "4.0.5",
+  "version": "4.1.0",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -35,7 +35,7 @@
     "@koishijs/plugin-mock": "^1.0.3"
   },
   "peerDependencies": {
-    "koishi": "^4.4.1"
+    "koishi": "^4.4.2"
   },
   "dependencies": {
     "@octokit/webhooks-types": "^5.5.1",

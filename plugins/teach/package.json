@@ -35,13 +35,13 @@
     "impl:teach"
   ],
   "peerDependencies": {
-    "koishi": "^4.4.1"
+    "koishi": "^4.4.2"
   },
   "devDependencies": {
     "@koishijs/client": "^3.2.3",
     "@koishijs/plugin-console": "^3.2.3",
     "@koishijs/plugin-database-memory": "^1.0.2",
-    "@koishijs/plugin-status": "^5.3.3",
+    "@koishijs/plugin-status": "^5.3.4",
     "@koishijs/plugin-mock": "^1.0.3"
   },
   "dependencies": {

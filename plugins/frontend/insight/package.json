@@ -31,7 +31,7 @@
   ],
   "peerDependencies": {
     "@koishijs/plugin-console": "^3.2.3",
-    "koishi": "^4.4.1"
+    "koishi": "^4.4.2"
   },
   "devDependencies": {
     "@koishijs/client": "^3.2.3",
