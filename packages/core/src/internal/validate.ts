@@ -1,8 +1,6 @@
 import { Argv } from '../parser'
 import { Context } from '../context'
 
-export type ValidationField = 'authority' | 'usage' | 'timers'
-
 export default function validate(ctx: Context) {
   // add user fields
   ctx.on('command-added', (cmd) => {

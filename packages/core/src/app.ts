@@ -44,6 +44,7 @@ export class App extends Context {
     this.options = new App.Config(options)
     this.registry.set(null, {
       id: '',
+      parent: null,
       using: [],
       children: [],
       disposables: [],

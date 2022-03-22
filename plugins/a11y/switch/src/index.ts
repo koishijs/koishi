@@ -1,13 +1,9 @@
-import { Argv, Context, deduplicate, difference, intersection, Schema, template } from 'koishi'
+import { Context, deduplicate, Dict, difference, intersection, Plugin, Schema, Session, template } from 'koishi'
 import { adminChannel } from '@koishijs/helpers'
 
 declare module 'koishi' {
   interface Channel {
     disable: string[]
-  }
-
-  interface Modules {
-    switch: typeof import('.')
   }
 }
 
@@ -23,21 +19,77 @@ export const name = 'switch'
 export const using = ['database'] as const
 export const Config: Schema<Config> = Schema.object({})
 
+const kSwitch = Symbol('switch')
+
+class Switch {
+  states: Set<Plugin.State> = new Set()
+  disabled: string[] = []
+
+  register(state: Plugin.State) {
+    if (this.states.has(state)) return
+    this.states.add(state)
+    const oldFilter = state.context.filter
+    state.context[kSwitch] = oldFilter
+    state.context.filter = (session: Session<never, 'disable'>) => {
+      if (!oldFilter(session)) return false
+      if (!session.channel?.disable) return true
+      return !session.channel.disable.includes(state.plugin.name)
+    }
+  }
+
+  unregister(state: Plugin.State) {
+    this.states.delete(state)
+    state.context.filter = state.context[kSwitch]
+  }
+
+  dispose() {
+    for (const state of this.states) {
+      state.context.filter = state.context[kSwitch]
+    }
+  }
+}
+
 export function apply(ctx: Context, config: Config = {}) {
   ctx.model.extend('channel', {
     disable: 'list',
   })
 
   ctx.before('attach-channel', (session, fields) => {
-    if (session.argv) fields.add('disable')
+    if (!session.argv) return
+    fields.add('disable')
   })
 
-  // check channel
-  ctx.before('command/execute', ({ session, command }: Argv<never, 'disable'>) => {
-    if (!session.channel) return
-    while (command) {
-      if (session.channel.disable.includes(command.name)) return ''
-      command = command.parent as any
+  const states: Dict<Switch> = {}
+
+  for (const state of ctx.app.registry.values()) {
+    register(state)
+  }
+
+  function register(state: Plugin.State) {
+    if (!state.plugin?.name || state.plugin.name === 'apply') return
+    (states[state.plugin.name] ??= new Switch()).register(state)
+  }
+
+  function unregister(state: Plugin.State) {
+    if (!state.plugin?.name || state.plugin.name === 'apply') return
+    states[state.plugin.name]?.unregister(state)
+  }
+
+  ctx.on('plugin-added', register)
+  ctx.on('plugin-removed', unregister)
+
+  ctx.on('ready', async () => {
+    const channels = await ctx.database.get('channel', {}, ['id', 'platform', 'disable'])
+    for (const { id, platform, disable } of channels) {
+      for (const name of disable) {
+        (states[name] ??= new Switch()).disabled.push(`${platform}:${id}`)
+      }
+    }
+  })
+
+  ctx.on('dispose', () => {
+    for (const name in states) {
+      states[name].dispose()
     }
   })
 
