@@ -1,4 +1,4 @@
-import { clone, Dict, Extract, Get, makeArray, MaybeArray } from '@koishijs/utils'
+import { clone, Dict, Extract, Get, Intersect, makeArray, MaybeArray } from '@koishijs/utils'
 import { KoishiError } from './error'
 import { Context } from './context'
 import { Channel, User } from './database'
@@ -9,13 +9,26 @@ export type TableType = keyof Tables
 type Primitive = string | number
 type Comparable = Primitive | Date
 
-type Keys<O, T = any> = {
+type Values<S> = S[keyof S]
+
+type Keys<O, T = any> = Values<{
   [K in keyof O]: O[K] extends T ? K : never
-}[keyof O] & string
+}> & string
 
 type NestKeys<O, T = any, X = readonly any[] | ((...args: any) => any)> = O extends object ? {
   [K in keyof O]: O[K] extends X ? never : (O[K] extends T ? K : never) | `${K & string}.${NestKeys<O[K], T, X | O>}`
 }[keyof O] & string : never
+
+type Atomic = number | string | boolean | bigint | symbol | Date | boolean | unknown[]
+
+type Wrap<S, P extends string> =
+  | S extends Atomic ? { [K in P]?: S }
+  : string extends keyof S ? { [K in P]?: S }
+  : Flatten<S, `${P}.`>
+
+type Flatten<S, P extends string = ''> = Values<{
+  [K in keyof S & string as `${P}${K}`]: Wrap<S[K], `${P}${K}`>
+}>
 
 export class Model {
   public config: Dict<Model.Config> = {}
@@ -77,17 +90,6 @@ export class Model {
     }
   }
 
-  create<T extends TableType>(name: T): Tables[T] {
-    const { fields, primary } = this.config[name]
-    const result = {} as Tables[T]
-    for (const key in fields) {
-      if (key !== primary && fields[key].initial !== undefined) {
-        result[key] = clone(fields[key].initial)
-      }
-    }
-    return result
-  }
-
   resolveQuery<T extends TableType>(name: T, query: Query<T> = {}): Query.Expr<Tables[T]> {
     if (Array.isArray(query) || query instanceof RegExp || ['string', 'number'].includes(typeof query)) {
       const { primary } = this.config[name]
@@ -97,6 +99,57 @@ export class Model {
       return { [primary]: query } as any
     }
     return query as any
+  }
+
+  resolveModifier<T extends TableType>(name: T, modifier: Query.Modifier): Query.ModifierExpr {
+    if (!modifier) modifier = {}
+    if (Array.isArray(modifier)) modifier = { fields: modifier }
+    if (modifier.fields) {
+      const fields = Object.keys(this.config[name])
+      modifier.fields = modifier.fields.flatMap((key) => {
+        if (fields.includes(key)) return key
+        const prefix = key + '.'
+        return fields.filter(path => path.startsWith(prefix))
+      })
+    }
+    return modifier
+  }
+
+  create<T extends TableType>(name: T, data?: {}) {
+    const { fields, primary } = this.config[name]
+    const result = {}
+    for (const key in fields) {
+      if (key !== primary && fields[key].initial !== undefined) {
+        result[key] = clone(fields[key].initial)
+      }
+    }
+    return this.parse(name, { ...result, ...data }) as Tables[T]
+  }
+
+  parse<T extends TableType>(name: T, source: object) {
+    const result: any = {}
+    for (const key in source) {
+      let value = result
+      const segments = key.split('.').reverse()
+      for (let index = segments.length - 1; index > 0; index--) {
+        value = value[segments[index]] ?? {}
+      }
+      value[segments[0]] = source[key]
+    }
+    return result
+  }
+
+  format<T extends TableType>(name: T, source: object, prefix = '', result = {} as Tables[T]) {
+    const { fields } = this.config[name]
+    Object.entries(source).map(([key, value]) => {
+      key = prefix + key
+      if (key in fields || !value || typeof value !== 'object' || value instanceof Date) {
+        result[key] = value
+      } else {
+        this.format(name, value, key + '.', result)
+      }
+    })
+    return result
   }
 }
 
@@ -133,15 +186,17 @@ export namespace Model {
       | T extends number ? 'integer' | 'unsigned' | 'float' | 'double' | 'decimal'
       : T extends string ? 'char' | 'string' | 'text'
       : T extends Date ? 'timestamp' | 'date' | 'time'
-      : T extends any[] ? 'list' | 'json'
+      : T extends unknown[] ? 'list' | 'json'
       : T extends object ? 'json'
       : never
 
     type WithParam<S extends string> = S | `${S}(${any})`
 
-    export type Extension<O = any> = {
+    export type MapField<O = any> = {
       [K in keyof O]?: Field<O[K]> | WithParam<Type<O[K]>>
     }
+
+    export type Extension<O = any> = MapField<Intersect<Flatten<O>>>
 
     export type Config<O = any> = {
       [K in keyof O]?: Field<O[K]>
@@ -189,7 +244,7 @@ export type Query<T extends TableType = any> = Query.Expr<Tables[T]> | Query.Sho
 
 export namespace Query {
   export type Field<T extends TableType> = string & keyof Tables[T]
-  export type Index<T extends TableType> = Keys<Tables[T], Primitive>
+  export type Index<T extends TableType> = Keys<Intersect<Flatten<Tables[T]>>, Primitive>
 
   export interface FieldExpr<T = any> {
     // logical
@@ -241,7 +296,7 @@ export namespace Query {
     [K in keyof T]?: FieldQuery<T[K]>
   }
 
-  export interface ModifierExpr<K extends string> {
+  export interface ModifierExpr<K extends string = string> {
     limit?: number
     offset?: number
     fields?: K[]
@@ -250,11 +305,6 @@ export namespace Query {
   }
 
   export type Modifier<T extends string = string> = T[] | ModifierExpr<T>
-
-  export function resolveModifier<K extends string>(modifier: Modifier<K>): ModifierExpr<K> {
-    if (Array.isArray(modifier)) return { fields: modifier }
-    return modifier || {}
-  }
 
   type NestGet<O, K extends string> = K extends `${infer L}.${infer R}` ? NestGet<Get<O, L>, R> : Get<O, K>
 
