@@ -143,7 +143,7 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
       content = content.slice(node.capture[0].length).trimStart()
       this.quote = await this.bot.getMessage(node.data.channelId || this.channelId, node.data.id).catch((error) => {
         logger.warn(error)
-        return null
+        return undefined
       })
     }
     return content

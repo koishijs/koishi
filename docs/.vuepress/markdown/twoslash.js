@@ -1,7 +1,4 @@
-const {
-  setupForFile,
-  transformAttributesToHTML,
-} = require('remark-shiki-twoslash')
+const { setupForFile, transformAttributesToHTML } = require('remark-shiki-twoslash')
 const { ScriptTarget, ModuleKind, ModuleResolutionKind } = require('typescript')
 
 const twoslashSupportedList = ['ts', 'js', 'twoslash']
@@ -11,14 +8,14 @@ const extraHeader = require('fs').readFileSync(
 
 let twoslashHighlighters
 
-async function setupTwoslash() {
+async function setup() {
   const { highlighters } = await setupForFile({
     theme: 'monokai',
   })
   twoslashHighlighters = highlighters
 }
 
-function twoslash(code, lang, attrs) {
+function render(code, lang, attrs) {
   if (process.env.NODE_ENV !== 'production') return null
 
   if (!twoslashSupportedList.includes(lang)) return null
@@ -42,7 +39,7 @@ function twoslash(code, lang, attrs) {
           moduleResolution: ModuleResolutionKind.NodeJs,
         },
       },
-    )
+    ).replace(/<div /g, '<span ').replace(/<\/div>/g, '</span>\n')
   } catch (e) {
     console.log('Code block:')
     console.log(e.code)
@@ -55,6 +52,6 @@ function twoslash(code, lang, attrs) {
 }
 
 module.exports = {
-  setupTwoslash,
-  twoslash,
+  setup,
+  render,
 }
