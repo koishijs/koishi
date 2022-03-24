@@ -96,11 +96,11 @@ namespace QueryOperators {
     it('time comparisons', async () => {
       await expect(app.database.get('temp1', {
         // date should not matter
-        time: { $gt: new Date('2022-01-01 11:00:00') },
+        time: { $gt: new Date('1970-01-01 11:00:00') },
       })).eventually.to.have.length(1).with.nested.property('0.text').equal('awesome foo')
 
       await expect(app.database.get('temp1', {
-        time: { $lte: new Date('2022-01-01 11:00:00') },
+        time: { $lte: new Date('1970-01-01 11:00:00') },
       })).eventually.to.have.length(0)
     })
 

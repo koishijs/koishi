@@ -6,10 +6,6 @@ declare module 'koishi' {
   interface Database {
     memory: MemoryDatabase
   }
-
-  interface Modules {
-    'database-memory': typeof import('.')
-  }
 }
 
 export class MemoryDatabase extends Database {
@@ -55,14 +51,14 @@ export class MemoryDatabase extends Database {
   }
 
   async get(name: TableType, query: Query, modifier?: Query.Modifier) {
-    const { fields, limit = Infinity, offset = 0, sort = {} } = Query.resolveModifier(modifier)
+    const { fields, limit = Infinity, offset = 0, sort = {} } = this.ctx.model.resolveModifier(name, modifier)
     return executeSort(this.$query(name, query), sort)
-      .map(row => clone(pick(row, fields)))
+      .map(row => clone(pick(this.ctx.model.parse(name, row), fields)))
       .slice(offset, offset + limit)
   }
 
   async set(name: TableType, query: Query, data: {}) {
-    this.$query(name, query).forEach(row => executeUpdate(row, data))
+    this.$query(name, query).forEach(row => executeUpdate(row, this.ctx.model.format(name, data)))
     this.$save(name)
   }
 
@@ -73,10 +69,10 @@ export class MemoryDatabase extends Database {
     this.$save(name)
   }
 
-  async create(name: TableType, data: any) {
+  async create<T extends TableType>(name: T, data: any) {
     const store = this.$table(name)
     const { primary, fields, autoInc } = this.ctx.model.config[name]
-    data = clone(data)
+    data = this.ctx.model.format(name, clone(data))
     if (!Array.isArray(primary) && autoInc && !(primary in data)) {
       const max = store.length ? Math.max(...store.map(row => +row[primary])) : 0
       data[primary] = max + 1
@@ -89,7 +85,7 @@ export class MemoryDatabase extends Database {
         throw new KoishiError('duplicate entry', 'database.duplicate-entry')
       }
     }
-    const copy = { ...this.ctx.model.create(name), ...data }
+    const copy = this.ctx.model.create(name, data)
     store.push(copy)
     this.$save(name)
     return clone(copy)
@@ -97,7 +93,8 @@ export class MemoryDatabase extends Database {
 
   async upsert(name: TableType, data: any[], key: string | string[]) {
     const keys = makeArray(key || this.ctx.model.config[name].primary)
-    for (const item of data) {
+    for (const _item of data) {
+      const item = this.ctx.model.format(name, _item)
       const row = this.$table(name).find(row => {
         return keys.every(key => row[key] === item[key])
       })

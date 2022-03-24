@@ -1,4 +1,4 @@
-import { clone, Dict, Extract, Get, Intersect, makeArray, MaybeArray } from '@koishijs/utils'
+import { clone, Dict, Extract, Get, Intersect, isNullable, makeArray, MaybeArray } from '@koishijs/utils'
 import { KoishiError } from './error'
 import { Context } from './context'
 import { Channel, User } from './database'
@@ -21,9 +21,9 @@ type NestKeys<O, T = any, X = readonly any[] | ((...args: any) => any)> = O exte
 
 type Atomic = number | string | boolean | bigint | symbol | Date | boolean | unknown[]
 
-type Wrap<S, P extends string> =
-  | S extends Atomic ? { [K in P]?: S }
-  : string extends keyof S ? { [K in P]?: S }
+type Wrap<S, P extends string> = { [K in P]?: S }
+  | S extends Atomic ? never
+  : string extends keyof S ? never
   : Flatten<S, `${P}.`>
 
 type Flatten<S, P extends string = ''> = Values<{
@@ -119,22 +119,37 @@ export class Model {
     const { fields, primary } = this.config[name]
     const result = {}
     for (const key in fields) {
-      if (key !== primary && fields[key].initial !== undefined) {
+      if (key !== primary && !isNullable(fields[key].initial)) {
         result[key] = clone(fields[key].initial)
       }
     }
     return this.parse(name, { ...result, ...data }) as Tables[T]
   }
 
+  resolveValue(name: string, key: string, value: any) {
+    if (isNullable(value)) return value
+    const { fields } = this.config[name]
+    if (fields[key]?.type === 'time') {
+      const date = new Date(0)
+      date.setHours(value.getHours(), value.getMinutes(), value.getSeconds(), value.getMilliseconds())
+      return date
+    }
+    return value
+  }
+
   parse<T extends TableType>(name: T, source: object) {
     const result: any = {}
-    for (const key in source) {
-      let value = result
+    const { fields } = this.config[name]
+    for (const key in { ...source, ...fields }) {
+      let node = result
       const segments = key.split('.').reverse()
       for (let index = segments.length - 1; index > 0; index--) {
-        value = value[segments[index]] ?? {}
+        node = node[segments[index]] ??= {}
       }
-      value[segments[0]] = source[key]
+      if (!isNullable(source[key])) {
+        const value = this.resolveValue(name, key, source[key])
+        node[segments[0]] = value
+      }
     }
     return result
   }
@@ -144,7 +159,7 @@ export class Model {
     Object.entries(source).map(([key, value]) => {
       key = prefix + key
       if (key in fields || !value || typeof value !== 'object' || value instanceof Date) {
-        result[key] = value
+        result[key] = this.resolveValue(name, key, value)
       } else {
         this.format(name, value, key + '.', result)
       }
