@@ -20,19 +20,19 @@ const logger = new Logger('sqlite')
 
 function getTypeDefinition({ type }: Model.Field) {
   switch (type) {
-  case 'integer':
-  case 'unsigned':
-  case 'date':
-  case 'time':
-  case 'timestamp': return `INTEGER`
-  case 'float':
-  case 'double':
-  case 'decimal': return `REAL`
-  case 'char':
-  case 'string':
-  case 'text':
-  case 'list':
-  case 'json': return `TEXT`
+    case 'integer':
+    case 'unsigned':
+    case 'date':
+    case 'time':
+    case 'timestamp': return `INTEGER`
+    case 'float':
+    case 'double':
+    case 'decimal': return `REAL`
+    case 'char':
+    case 'string':
+    case 'text':
+    case 'list':
+    case 'json': return `TEXT`
   }
 }
 
@@ -95,7 +95,7 @@ class SQLiteDatabase extends Database {
   private _getColDefs(table: string, key: string) {
     const config = this.ctx.model.config[table]
     const { initial, nullable = initial === undefined || initial === null } = config.fields[key]
-    let def = this.sql.escapeId(key)
+    let def = `\`${key}\``
     if (key === config.primary && config.autoInc) {
       def += ' INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT'
     } else {
@@ -132,7 +132,7 @@ class SQLiteDatabase extends Database {
           this.#exec('run', `ALTER TABLE ${this.sql.escapeId(table)} ADD COLUMN ${def}`)
         } else {
           // Drop column
-          this.#exec('run', `ALTER TABLE ${this.sql.escapeId(table)} DROP COLUMN ${this.sql.escapeId(key)}`)
+          this.#exec('run', `ALTER TABLE ${this.sql.escapeId(table)} DROP COLUMN \`${key}\``)
         }
       }
     } else {
@@ -149,8 +149,8 @@ class SQLiteDatabase extends Database {
         constraints.push(
           ...Object.entries(config.foreign)
             .map(([key, [table, key2]]) =>
-              `FOREIGN KEY (${this.sql.escapeId(key)})
-              REFERENCES ${this.sql.escapeId(table)} (${this.sql.escapeId(key2)})`,
+              `FOREIGN KEY (\`${key}\`)
+              REFERENCES ${this.sql.escapeId(table)} (\`${key2})\``,
             ),
         )
       }
@@ -172,7 +172,7 @@ class SQLiteDatabase extends Database {
   }
 
   #joinKeys(keys?: string[]) {
-    return keys ? keys.map(key => this.sql.escapeId(key)).join(',') : '*'
+    return keys?.length ? keys.map(key => `\`${key}\``).join(',') : '*'
   }
 
   stop() {
@@ -210,15 +210,15 @@ class SQLiteDatabase extends Database {
   }
 
   #query(name: TableType, query: Query) {
-    return this.sql.parseQuery(this.ctx.model.resolveQuery(name, query))
+    return this.sql.parseQuery(this.resolveQuery(name, query))
   }
 
   #get(name: TableType, query: Query, modifier: Query.Modifier) {
     const filter = this.#query(name, query)
     if (filter === '0') return []
-    const { fields, limit, offset, sort } = Query.resolveModifier(modifier)
+    const { fields, limit, offset, sort } = this.resolveModifier(name, modifier)
     let sql = `SELECT ${this.#joinKeys(fields)} FROM ${this.sql.escapeId(name)} WHERE ${filter}`
-    if (sort) sql += ' ORDER BY ' + Object.entries(sort).map(([key, order]) => `${this.sql.escapeId(key)} ${order}`).join(', ')
+    if (sort) sql += ' ORDER BY ' + Object.entries(sort).map(([key, order]) => `\`${key}\` ${order}`).join(', ')
     if (limit) sql += ' LIMIT ' + limit
     if (offset) sql += ' OFFSET ' + offset
     const rows = this.#exec('all', sql)
@@ -231,15 +231,16 @@ class SQLiteDatabase extends Database {
 
   #update(name: TableType, indexFields: string[], updateFields: string[], update: {}, data: {}) {
     const row = this.caster.dump(name, executeUpdate(data, update))
-    const assignment = updateFields.map((key) => `${this.sql.escapeId(key)} = ${this.sql.escape(row[key])}`).join(',')
+    const assignment = updateFields.map((key) => `\`${key}\` = ${this.sql.escape(row[key])}`).join(',')
     const query = Object.fromEntries(indexFields.map(key => [key, row[key]]))
     const filter = this.#query(name, query)
     this.#exec('run', `UPDATE ${this.sql.escapeId(name)} SET ${assignment} WHERE ${filter}`)
   }
 
   async set(name: TableType, query: Query, update: {}) {
-    const { primary } = this.ctx.model.config[name]
-    const updateFields = [...new Set(Object.keys(update).map(key => key.split('.', 1)[0]))]
+    update = this.resolveUpdate(name, update)
+    const { primary } = this.resolveTable(name)
+    const updateFields = Object.keys(update)
     const indexFields = makeArray(primary)
     const fields = union(indexFields, updateFields)
     const table = this.#get(name, query, fields)
@@ -255,19 +256,19 @@ class SQLiteDatabase extends Database {
     return this.#exec('run', sql)
   }
 
-  async create(name: TableType, data: {}) {
-    data = { ...this.ctx.model.create(name), ...data }
+  async create<T extends TableType>(name: T, data: {}) {
+    data = this.ctx.model.create(name, data)
     const result = this.#create(name, data)
-    const { autoInc, primary } = this.ctx.model.config[name]
+    const { autoInc, primary } = this.resolveTable(name)
     if (!autoInc) return data as any
     return { ...data, [primary as string]: result.lastInsertRowid }
   }
 
   async upsert(name: TableType, updates: any[], keys: string | string[]) {
     if (!updates.length) return
-    const { primary } = this.ctx.model.config[name]
-    const merged = Object.assign({}, ...updates)
-    const dataFields = [...new Set(Object.keys(merged).map(key => key.split('.', 1)[0]))]
+    updates = updates.map(item => this.ctx.model.format(name, item))
+    const { primary } = this.resolveTable(name)
+    const dataFields = Object.keys(Object.assign({}, ...updates))
     const indexFields = makeArray(keys || primary)
     const fields = union(indexFields, dataFields)
     const updateFields = difference(dataFields, indexFields)

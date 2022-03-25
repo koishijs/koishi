@@ -1,4 +1,4 @@
-import { App, Dict } from 'koishi'
+import { App } from 'koishi'
 import { expect } from 'chai'
 
 interface ObjectModel {
