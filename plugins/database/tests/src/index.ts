@@ -2,6 +2,7 @@ import { App } from 'koishi'
 import BuiltinMethods from './builtin'
 import QueryOperators from './query'
 import UpdateOperators from './update'
+import ObjectOperations from './object'
 import './setup'
 
 namespace Tests {
@@ -58,6 +59,7 @@ namespace Tests {
     export const builtin = BuiltinMethods
     export const query = QueryOperators
     export const update = UpdateOperators
+    export const object = ObjectOperations
   }
 
   export const database = createUnit(DatabaseTests, true)

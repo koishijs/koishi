@@ -37,58 +37,63 @@ namespace ObjectOperations {
     return result
   }
 
-  export const literal = function Literal(app: App) {
-    it('upsert nested property', async () => {
+  export const upsert = function Upsert(app: App) {
+    it('object literal', async () => {
       const table = await setup(app)
-      table[0].meta.a = -1
-      table[0].meta.embed = { b: 114 }
-      table[1].meta.a = -2
-      table[1].meta.embed = { b: 514 }
-      table.push({ id: 2, meta: { a: -3, embed: { b: 1919 } } })
-      table.push({ id: 3, meta: { a: -4, embed: { b: 810 } } })
+      table[0].meta = { a: 0, embed: { b: 114 } }
+      table[1].meta = { a: 1, embed: { b: 514 } }
+      table.push({ id: 2, meta: { a: 2, embed: { b: 1919 } } })
+      table.push({ id: 3, meta: { a: 3, embed: { b: 810 } } })
       await expect(app.database.upsert('object', [
-        { id: 0, 'meta.a': -1, 'meta.embed.b': 114 },
-        { id: 1, meta: { a: -2, 'embed.b': 514 } },
-        { id: 2, 'meta.a': -3, 'meta.embed': { b: 1919 } },
-        { id: 3, meta: { a: -4, embed: { b: 810 } } },
+        { id: 0, meta: { a: { $: 'id' }, embed: { b: 114 } } },
+        { id: 1, meta: { a: { $: 'id' }, 'embed.b': 514 } },
+        { id: 2, meta: { a: { $: 'id' }, embed: { b: 1919 } } },
+        { id: 3, meta: { a: { $: 'id' }, 'embed.b': 810 } },
       ])).eventually.fulfilled
       await expect(app.database.get('object', {})).to.eventually.have.shape(table)
     })
 
-    it('modify nested property', async () => {
+    it('nested property', async () => {
       const table = await setup(app)
-      table[1].meta = { a: 1, embed: { b: 233 } }
-      await expect(app.database.set('object', [1, 10], {
-        meta: { a: { $: 'id' }, embed: { b: 233 } },
+      table[0].meta = { a: 0, embed: { b: 114 } }
+      table[1].meta = { a: 1, embed: { b: 514 } }
+      table.push({ id: 2, meta: { a: 2, embed: { b: 1919 } } })
+      table.push({ id: 3, meta: { a: 3, embed: { b: 810 } } })
+      await expect(app.database.upsert('object', [
+        { id: 0, 'meta.a': { $: 'id' }, 'meta.embed.b': 114 },
+        { id: 1, 'meta.a': { $: 'id' }, 'meta.embed': { b: 514 } },
+        { id: 2, 'meta.a': { $: 'id' }, 'meta.embed.b': 1919 },
+        { id: 3, 'meta.a': { $: 'id' }, 'meta.embed': { b: 810 } },
+      ])).eventually.fulfilled
+      await expect(app.database.get('object', {})).to.eventually.have.shape(table)
+    })
+  }
+
+  export const modify = function Modify(app: App) {
+    it('object literal', async () => {
+      const table = await setup(app)
+      table[0].meta = { a: 0, embed: { b: 114 } }
+      table[1].meta = { a: 1, embed: { b: 514 } }
+      await expect(app.database.set('object', 0, {
+        meta: { a: { $: 'id' }, embed: { b: 114 } },
+      })).eventually.fulfilled
+      await expect(app.database.set('object', 1, {
+        meta: { a: { $: 'id' }, 'embed.b': 514 },
       })).eventually.fulfilled
       await expect(app.database.get('object', {})).to.eventually.have.shape(table)
     })
 
-    it('modify nested property', async () => {
+    it('nested property', async () => {
       const table = await setup(app)
-      table[1].meta = { a: 1, embed: { b: 233 } }
-      await expect(app.database.set('object', [1, 10], {
-        meta: { a: { $: 'id' }, 'embed.b': 233 },
-      })).eventually.fulfilled
-      await expect(app.database.get('object', {})).to.eventually.have.shape(table)
-    })
-
-    it('modify nested property 2', async () => {
-      const table = await setup(app)
-      table[1].meta = { a: 1, embed: { b: 233 } }
-      await expect(app.database.set('object', [1, 10], {
+      table[0].meta = { a: 0, embed: { b: 114 } }
+      table[1].meta = { a: 1, embed: { b: 514 } }
+      await expect(app.database.set('object', 0, {
         'meta.a': { $: 'id' },
-        'meta.embed': { b: 233 },
+        'meta.embed.b': 114,
       })).eventually.fulfilled
-      await expect(app.database.get('object', {})).to.eventually.have.shape(table)
-    })
-
-    it('modify nested property 2', async () => {
-      const table = await setup(app)
-      table[1].meta = { a: 1, embed: { b: 233 } }
-      await expect(app.database.set('object', [1, 10], {
+      await expect(app.database.set('object', 1, {
         'meta.a': { $: 'id' },
-        'meta.embed.b': 233,
+        'meta.embed': { b: 514 },
       })).eventually.fulfilled
       await expect(app.database.get('object', {})).to.eventually.have.shape(table)
     })

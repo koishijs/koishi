@@ -1,4 +1,4 @@
-import { clone, Context, Database, KoishiError, Logger, makeArray, Model, noop, pick, Query, Schema, Tables, TableType } from 'koishi'
+import { Context, Database, KoishiError, Logger, makeArray, Model, noop, pick, Query, Schema, Tables, TableType } from 'koishi'
 import { executeEval, executeQuery, executeSort, executeUpdate } from '@koishijs/orm-utils'
 import { LevelUp } from 'levelup'
 import level from 'level'
@@ -14,10 +14,6 @@ declare module 'abstract-leveldown' {
 declare module 'koishi' {
   interface Database {
     level: LevelDatabase
-  }
-
-  interface Modules {
-    'database-level': typeof import('.')
   }
 }
 
@@ -115,8 +111,7 @@ class LevelDatabase extends Database {
 
   async get(name: keyof Tables, query: Query, modifier: Query.Modifier) {
     const expr = this.ctx.model.resolveQuery(name, query)
-    const { fields, limit = Infinity, offset = 0, sort } = Query.resolveModifier(modifier)
-
+    const { fields, limit = Infinity, offset = 0, sort = {} } = this.ctx.model.resolveModifier(name, modifier)
     const { primary } = this.ctx.model.config[name]
     const table = this.table(name)
     // Direct read
@@ -125,7 +120,7 @@ class LevelDatabase extends Database {
       try {
         const value = await table.get(key)
         if (offset === 0 && limit > 0 && executeQuery(value, expr)) {
-          return [pick(value, fields)]
+          return [pick(this.ctx.model.parse(name, value), fields)]
         }
       } catch (e) {
         if (e.notFound !== true) throw e
@@ -136,11 +131,12 @@ class LevelDatabase extends Database {
     const result: any[] = []
     for await (const [, value] of table.iterator()) {
       if (executeQuery(value, expr)) {
-        result.push(pick(value, fields))
+        result.push(value)
       }
     }
-    if (sort) executeSort(result, sort)
-    return result.slice(offset, offset + limit)
+    return executeSort(result, sort)
+      .slice(offset, offset + limit)
+      .map(row => pick(this.ctx.model.parse(name, row), fields))
   }
 
   async set(name: keyof Tables, query: Query, data: {}) {
@@ -150,6 +146,7 @@ class LevelDatabase extends Database {
       return
     }
 
+    data = this.ctx.model.format(name, data)
     const expr = this.ctx.model.resolveQuery(name, query)
     const table = this.table(name)
     // Direct update
@@ -177,7 +174,6 @@ class LevelDatabase extends Database {
 
   async remove(name: keyof Tables, query: Query) {
     const expr = this.ctx.model.resolveQuery(name, query)
-
     const { primary } = this.ctx.model.config[name]
     const table = this.table(name)
     // Direct delete
@@ -203,10 +199,10 @@ class LevelDatabase extends Database {
     await batch.write()
   }
 
-  create(name: keyof Tables, data: any, forced?: boolean) {
+  create<T extends TableType>(name: T, data: any, forced?: boolean) {
     return this.queue(async () => {
       const { primary, fields, autoInc } = this.ctx.model.config[name]
-      data = clone(data)
+      data = this.ctx.model.format(name, data)
       if (!Array.isArray(primary) && autoInc && !(primary in data)) {
         const max = await this._maxKey(name)
         data[primary] = max + 1
@@ -219,7 +215,7 @@ class LevelDatabase extends Database {
         throw new KoishiError('duplicate entry', 'database.duplicate-entry')
       }
 
-      const copy = { ...this.ctx.model.create(name), ...data }
+      const copy = this.ctx.model.create(name, data)
       await this.table(name).put(key, copy)
       return copy
     })
@@ -229,8 +225,9 @@ class LevelDatabase extends Database {
     const { primary } = this.ctx.model.config[name]
     const keys = makeArray(key || primary)
     const table = this.table(name)
-    for (const item of data) {
+    for (const _item of data) {
       // Direct upsert
+      const item = this.ctx.model.format(name, _item)
       if (makeArray(primary).every(key => key in item)) {
         const key = this._makeKey(primary, item)
         try {
