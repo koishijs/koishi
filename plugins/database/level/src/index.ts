@@ -110,8 +110,8 @@ class LevelDatabase extends Database {
   }
 
   async get(name: keyof Tables, query: Query, modifier: Query.Modifier) {
-    const expr = this.ctx.model.resolveQuery(name, query)
-    const { fields, limit = Infinity, offset = 0, sort = {} } = this.ctx.model.resolveModifier(name, modifier)
+    const expr = this.resolveQuery(name, query)
+    const { fields, limit = Infinity, offset = 0, sort = {} } = this.resolveModifier(name, modifier)
     const { primary } = this.ctx.model.config[name]
     const table = this.table(name)
     // Direct read
@@ -140,14 +140,10 @@ class LevelDatabase extends Database {
   }
 
   async set(name: keyof Tables, query: Query, data: {}) {
+    data = this.resolveUpdate(name, data)
     const { primary } = this.ctx.model.config[name]
-    if (makeArray(primary).some(key => key in data)) {
-      logger.warn('Cannot update primary key')
-      return
-    }
 
-    data = this.ctx.model.format(name, data)
-    const expr = this.ctx.model.resolveQuery(name, query)
+    const expr = this.resolveQuery(name, query)
     const table = this.table(name)
     // Direct update
     if (makeArray(primary).every(key => isDirectFieldQuery(expr[key]))) {
@@ -173,7 +169,7 @@ class LevelDatabase extends Database {
   }
 
   async remove(name: keyof Tables, query: Query) {
-    const expr = this.ctx.model.resolveQuery(name, query)
+    const expr = this.resolveQuery(name, query)
     const { primary } = this.ctx.model.config[name]
     const table = this.table(name)
     // Direct delete
@@ -265,7 +261,7 @@ class LevelDatabase extends Database {
   }
 
   async eval(name: keyof Tables, expr: any, query: Query) {
-    query = this.ctx.model.resolveQuery(name, query)
+    query = this.resolveQuery(name, query)
     const result: any[] = []
     const table = this.table(name)
     for await (const [, value] of table.iterator()) {

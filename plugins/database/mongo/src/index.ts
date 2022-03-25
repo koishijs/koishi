@@ -102,7 +102,7 @@ class MongoDatabase extends Database {
   }
 
   private _createFilter(name: string, query: Query) {
-    return transformQuery(this.ctx.model.resolveQuery(name, query))
+    return transformQuery(this.resolveQuery(name, query))
   }
 
   async drop() {
@@ -133,7 +133,7 @@ class MongoDatabase extends Database {
     if (!filter) return []
     await this._tableTasks[name]
     let cursor = this.db.collection(name).find(filter)
-    const { fields, limit, offset = 0, sort } = this.ctx.model.resolveModifier(name, modifier)
+    const { fields, limit, offset = 0, sort } = this.resolveModifier(name, modifier)
     cursor = cursor.project({ _id: 0, ...Object.fromEntries((fields ?? []).map(key => [key, 1])) })
     if (offset) cursor = cursor.skip(offset)
     if (limit) cursor = cursor.limit(offset + limit)

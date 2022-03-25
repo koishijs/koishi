@@ -14,7 +14,10 @@ export class KoishiError extends Error {
 export namespace KoishiError {
   export type Code =
     | 'runtime.max-depth-exceeded'
+    | 'database.unknown-table'
+    | 'database.unknown-field'
     | 'database.duplicate-entry'
+    | 'database.modify-primary-key'
     | 'model.missing-field-definition'
     | 'model.invalid-field-definition'
     | 'model.invalid-query'

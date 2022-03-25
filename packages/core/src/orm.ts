@@ -90,31 +90,6 @@ export class Model {
     }
   }
 
-  resolveQuery<T extends TableType>(name: T, query: Query<T> = {}): Query.Expr<Tables[T]> {
-    if (Array.isArray(query) || query instanceof RegExp || ['string', 'number'].includes(typeof query)) {
-      const { primary } = this.config[name]
-      if (Array.isArray(primary)) {
-        throw new KoishiError('invalid shorthand for composite primary key', 'model.invalid-query')
-      }
-      return { [primary]: query } as any
-    }
-    return query as any
-  }
-
-  resolveModifier<T extends TableType>(name: T, modifier: Query.Modifier): Query.ModifierExpr {
-    if (!modifier) modifier = {}
-    if (Array.isArray(modifier)) modifier = { fields: modifier }
-    if (modifier.fields) {
-      const fields = Object.keys(this.config[name])
-      modifier.fields = modifier.fields.flatMap((key) => {
-        if (fields.includes(key)) return key
-        const prefix = key + '.'
-        return fields.filter(path => path.startsWith(prefix))
-      })
-    }
-    return modifier
-  }
-
   create<T extends TableType>(name: T, data?: {}) {
     const { fields, primary } = this.config[name]
     const result = {}
@@ -155,13 +130,18 @@ export class Model {
   }
 
   format<T extends TableType>(name: T, source: object, prefix = '', result = {} as Tables[T]) {
-    const { fields } = this.config[name]
+    const fields = Object.keys(this.config[name].fields)
     Object.entries(source).map(([key, value]) => {
       key = prefix + key
-      if (key in fields || !value || typeof value !== 'object' || value instanceof Date) {
+      if (fields.includes(key)) {
         result[key] = this.resolveValue(name, key, value)
-      } else {
+      } else if (value && typeof value === 'object') {
         this.format(name, value, key + '.', result)
+      } else {
+        const field = fields.find(field => key.startsWith(field + '.'))
+        if (!field) throw new KoishiError(`unknown field "${key}"`, 'database.unknown-field')
+        const node = result[field] ??= {}
+        node[key.slice(field.length + 1)] = value
       }
     })
     return result

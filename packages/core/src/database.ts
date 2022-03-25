@@ -1,7 +1,8 @@
 import * as utils from '@koishijs/utils'
-import { Awaitable, Dict, Get, MaybeArray } from '@koishijs/utils'
-import { Query } from './orm'
+import { Awaitable, Dict, Get, makeArray, MaybeArray } from '@koishijs/utils'
+import { Query, Tables } from './orm'
 import { Context } from './context'
+import { KoishiError } from './error'
 
 export interface User {
   id: string
@@ -72,6 +73,45 @@ export abstract class Service {
 export abstract class Database extends Service {
   constructor(ctx: Context) {
     super(ctx, 'database')
+  }
+
+  protected resolveTable<T extends keyof Tables>(name: T) {
+    const config = this.ctx.model.config[name]
+    if (config) return config
+    throw new KoishiError(`unknown table name "${name}"`, 'database.unknown-table')
+  }
+
+  protected resolveQuery<T extends keyof Tables>(name: T, query: Query<T> = {}): Query.Expr<Tables[T]> {
+    if (Array.isArray(query) || query instanceof RegExp || ['string', 'number'].includes(typeof query)) {
+      const { primary } = this.resolveTable(name)
+      if (Array.isArray(primary)) {
+        throw new KoishiError('invalid shorthand for composite primary key', 'model.invalid-query')
+      }
+      return { [primary]: query } as any
+    }
+    return query as any
+  }
+
+  protected resolveModifier<T extends keyof Tables>(name: T, modifier: Query.Modifier): Query.ModifierExpr {
+    if (!modifier) modifier = {}
+    if (Array.isArray(modifier)) modifier = { fields: modifier }
+    if (modifier.fields) {
+      const fields = Object.keys(this.resolveTable(name).fields)
+      modifier.fields = modifier.fields.flatMap((key) => {
+        if (fields.includes(key)) return key
+        const prefix = key + '.'
+        return fields.filter(path => path.startsWith(prefix))
+      })
+    }
+    return modifier
+  }
+
+  protected resolveUpdate<T extends keyof Tables>(name: T, update: any) {
+    const { primary } = this.resolveTable(name)
+    if (makeArray(primary).some(key => key in update)) {
+      throw new KoishiError(`cannot modify primary key`, 'database.modify-primary-key')
+    }
+    return this.ctx.model.format(name, update)
   }
 
   getUser<T extends string, K extends T | User.Field>(platform: T, id: string, modifier?: Query.Modifier<K>): Promise<UserWithPlatform<T, T | K>>

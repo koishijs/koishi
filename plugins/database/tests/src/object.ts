@@ -36,7 +36,7 @@ namespace ObjectOperations {
   }
 
   export const upsert = function Upsert(app: App) {
-    it.only('object literal', async () => {
+    it('object literal', async () => {
       const table = await setup(app)
       table[0].meta = { a: '0', embed: { b: 114 } }
       table[1].meta = { a: '1', embed: { b: 514 } }
