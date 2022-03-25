@@ -53,12 +53,13 @@ export class MemoryDatabase extends Database {
   async get(name: TableType, query: Query, modifier?: Query.Modifier) {
     const { fields, limit = Infinity, offset = 0, sort = {} } = this.ctx.model.resolveModifier(name, modifier)
     return executeSort(this.$query(name, query), sort)
-      .map(row => clone(pick(this.ctx.model.parse(name, row), fields)))
       .slice(offset, offset + limit)
+      .map(row => clone(pick(this.ctx.model.parse(name, row), fields)))
   }
 
   async set(name: TableType, query: Query, data: {}) {
-    this.$query(name, query).forEach(row => executeUpdate(row, this.ctx.model.format(name, data)))
+    data = this.ctx.model.format(name, data)
+    this.$query(name, query).forEach(row => executeUpdate(row, data))
     this.$save(name)
   }
 

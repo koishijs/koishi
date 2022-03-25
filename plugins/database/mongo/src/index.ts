@@ -133,7 +133,7 @@ class MongoDatabase extends Database {
     if (!filter) return []
     await this._tableTasks[name]
     let cursor = this.db.collection(name).find(filter)
-    const { fields, limit, offset = 0, sort } = Query.resolveModifier(modifier)
+    const { fields, limit, offset = 0, sort } = this.ctx.model.resolveModifier(name, modifier)
     cursor = cursor.project({ _id: 0, ...Object.fromEntries((fields ?? []).map(key => [key, 1])) })
     if (offset) cursor = cursor.skip(offset)
     if (limit) cursor = cursor.limit(offset + limit)
@@ -147,13 +147,16 @@ class MongoDatabase extends Database {
     await this._tableTasks[name]
     const { primary } = this.ctx.model.config[name]
     const indexFields = makeArray(primary)
-    const updateFields = new Set(Object.keys(update).map(key => key.split('.', 1)[0]))
     const coll = this.db.collection(name)
     const original = await coll.find(filter).toArray()
     if (!original.length) return
+    update = this.ctx.model.format(name, update)
+    const updateFields = new Set(Object.keys(update).map(key => key.split('.', 1)[0]))
     const bulk = coll.initializeUnorderedBulkOp()
     for (const item of original) {
-      bulk.find(pick(item, indexFields)).updateOne({ $set: pick(executeUpdate(item, update), updateFields) })
+      bulk.find(pick(item, indexFields)).updateOne({
+        $set: pick(executeUpdate(item, update), updateFields),
+      })
     }
     await bulk.execute()
   }
@@ -168,7 +171,7 @@ class MongoDatabase extends Database {
     return this._tableTasks[name] = Promise.resolve(this._tableTasks[name]).catch(noop).then(callback)
   }
 
-  async create(name: TableType, data: any) {
+  async create<T extends TableType>(name: T, data: any) {
     const coll = this.db.collection(name)
     return this.queue(name, async () => {
       const { primary, fields, autoInc } = this.ctx.model.config[name]
@@ -180,10 +183,10 @@ class MongoDatabase extends Database {
           data[primary] = data[primary].padStart(8, '0')
         }
       }
-      const copy = { ...this.ctx.model.create(name), ...data }
+      const copy = this.ctx.model.create(name, data)
       try {
         await coll.insertOne(copy)
-        delete copy._id
+        delete copy['_id']
         return copy
       } catch (err) {
         if (err instanceof MongoError && err.code === 11000) {
@@ -202,7 +205,8 @@ class MongoDatabase extends Database {
     const coll = this.db.collection(name)
     const original = await coll.find({ $or: data.map(item => pick(item, indexFields)) }).toArray()
     const bulk = coll.initializeUnorderedBulkOp()
-    for (const update of data) {
+    for (const _item of data) {
+      const update = this.ctx.model.format(name, _item)
       const item = original.find(item => indexFields.every(key => item[key].valueOf() === update[key].valueOf()))
       if (item) {
         const updateFields = new Set(Object.keys(update).map(key => key.split('.', 1)[0]))
