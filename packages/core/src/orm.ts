@@ -114,14 +114,13 @@ export class Model {
 
   parse<T extends TableType>(name: T, source: object) {
     const result: any = {}
-    const { fields } = this.config[name]
-    for (const key in { ...source, ...fields }) {
+    for (const key in source) {
       let node = result
       const segments = key.split('.').reverse()
       for (let index = segments.length - 1; index > 0; index--) {
         node = node[segments[index]] ??= {}
       }
-      if (!isNullable(source[key])) {
+      if (key in source) {
         const value = this.resolveValue(name, key, source[key])
         node[segments[0]] = value
       }
@@ -200,7 +199,7 @@ export namespace Model {
     const regexp = /^(\w+)(?:\((.+)\))?$/
 
     export function parse(source: string | Field): Field {
-      if (typeof source !== 'string') return source
+      if (typeof source !== 'string') return { initial: null, ...source }
 
       // parse string definition
       const capture = regexp.exec(source)

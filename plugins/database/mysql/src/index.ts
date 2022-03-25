@@ -402,15 +402,14 @@ class MysqlDatabase extends Database {
     }
 
     const update = updateFields.map((field) => {
-      const escaped = backtick(field)
-      const branches: Dict<string> = {}
-      const absent = data.filter((item) => {
+      const toExpression = (item: any) => {
         // update directly
         if (field in item) {
           if (Object.keys(item[field]).some(key => key.startsWith('$'))) {
-            branches[createFilter(item)] = this.sql.parseEval(item[field], name, field)
+            return this.sql.parseEval(item[field], name, field)
+          } else {
+            return `VALUES(${escaped})`
           }
-          return
         }
 
         // update with json_set
@@ -421,14 +420,27 @@ class MysqlDatabase extends Database {
           if (first !== field) continue
           value = `json_set(${value}, '$${rest.map(key => `."${key}"`).join('')}', ${this.sql.parseEval(item[key])})`
         }
-        if (value === valueInit) return true
-        branches[createFilter(item)] = value
+        if (value === valueInit) {
+          return escaped
+        } else {
+          return value
+        }
+      }
+
+      const escaped = backtick(field)
+      const branches: Dict<any[]> = {}
+      data.forEach((item) => {
+        (branches[toExpression(item)] ??= []).push(item)
       })
 
-      if (absent.length) branches[createMultiFilter(absent)] = escaped
-      let value = `VALUES(${escaped})`
-      for (const condition in branches) {
-        value = `if(${condition}, ${branches[condition]}, ${value})`
+      const entries = Object.entries(branches)
+        .map(([expr, items]) => [createMultiFilter(items), expr])
+        .sort(([a], [b]) => a.length - b.length)
+        .reverse()
+
+      let value = entries[0][1]
+      for (let index = 1; index < entries.length; index++) {
+        value = `if(${entries[index][0]}, ${entries[index][1]}, ${value})`
       }
       return `${escaped} = ${value}`
     }).join(', ')
