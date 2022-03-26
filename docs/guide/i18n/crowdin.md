@@ -4,7 +4,7 @@ sidebarDepth: 2
 
 # 使用 Crowdin 管理 i18n 资源
 
-[Crowdin](https://crowdin.com/) 是一个专业的本地化内容管理平台，不少商业项目使用该网站翻译并管理其本地化资源。同时，该网站也为开源项目和教学项目提供了免费或优惠的许可证。当然，你不一定需要将你的项目托管在这个网站上，特别在项目较小，翻译的字符串不多的时候，使用这类网站反而相当于杀鸡用牛刀。但当你的项目中需要翻译的字符串较多，或需要支持很多种不同的语言，那么使用专业的管理平台会十分方便。同时，Crowdin 也不仅仅是 CAT（计算机辅助翻译），也提供了内容管理的功能，以及多种与第三方工具集成的方案，包括与 GitHub / GitLab 等代码托管平台集成。由于 Crowdin 提供了 CLI 和 API 等多种方式管理项目资源，你也可以使用 CI (Continuous Integration，持续集成）等方式管理你的项目资源。
+[Crowdin](https://crowdin.com/) 是一个专业的本地化内容管理平台，不少商业项目使用该网站翻译并管理其本地化资源。同时，该网站也为开源项目和教学项目提供了免费或优惠的许可证。当然，你不一定需要将你的项目托管在这个网站上，特别在项目较小，翻译的字符串不多的时候，使用这类网站反而相当于杀鸡用牛刀。但当你的项目中需要翻译的字符串较多，或需要支持很多种不同的语言，那么使用专业的管理平台会十分方便。同时，Crowdin 也不仅仅是 CAT（计算机辅助翻译），也提供了内容管理的功能，以及多种与第三方工具集成的方案，包括与 GitHub 等代码托管平台集成。由于 Crowdin 提供了 CLI 和 API 等多种方式管理项目资源，你也可以使用 CI (Continuous Integration，持续集成）等方式管理你的项目资源。
 
 ::: tip
 除了 Crowdin，还有很多其他平台也提供类似的功能，有一些甚至是完全免费的，如：[Transifex](https://www.transifex.com)、[Memsource](https://www.memsource.com/)、[Lokalise](https://lokalise.com/)、[POEditor](https://poeditor.com/) 等等。你也可以尝试搜索 `Translation Management System` 或 `Localization Platform`，整个互联网上有无数的本地化管理平台等着你去发掘。
@@ -23,67 +23,32 @@ sidebarDepth: 2
 成功注册并登录 Crowdin 后，你会被自动导向你的[个人页面](https://crowdin.com/profile)。点击右上角的加号，即可创建项目。
 
 ::: tip
-若你的项目是开放源代码的，并且活跃了 4 个月以上，也可以申请 Crowdin 的开源项目许可。当你成功创建项目后，填写[这个表单](https://crowdin.com/page/open-source-project-setup-request)，Crowdin 的客服人员会帮助你。
+若你的项目是开放源代码的，并且活跃了 4 个月及以上，你可以申请 Crowdin 的开源项目许可。当你成功创建项目后，填写[这个表单](https://crowdin.com/page/open-source-project-setup-request)，Crowdin 的客服人员会帮助你。
 :::
 
-在新建项目界面，需要填写项目名称（推荐和插件或机器人的名称一致），是否公开项目，设置源语言和目标语言，然后点击创建项目按钮。
+在新建项目界面，需要填写项目名称（推荐和插件或机器人的名称一致），选择是否公开项目，设置源语言和目标语言，然后点击创建项目按钮。
 
 :::tip
-公开项目意味着所有 Crowdin 用户都能看到你的项目的内容，也可以向项目贡献翻译。如果你是通过开源项目免费许可的方式创建的项目，则只能创建公开项目。
+公开项目意味着所有 Crowdin 用户都能搜索到你的项目，也可以看到你的项目的所有内容，也可以向项目贡献翻译。如果你是通过开源项目免费许可的方式创建的项目，则只能创建公开项目。
 :::
 
 ## 上传项目文件
 
+你可以通过网页手动上传文件，也可以通过 Crowdin 的 CLI 程序进行上传，或是使用集成让 Crowdin 直接从代码仓库同步文件。
+
 ### 手动上传
 
-创建项目完毕后，Crowdin 会带领你来到项目内容（Content）界面。在这里，你可以点击上传文件（Upload Files）按钮上传**源语言**文件。
+导航至 Crowdin 的内容（Content）界面，你可以点击上传文件（Upload Files）按钮上传**源语言**文件。
 
-#### 文件类型
+### 设置代码仓库集成
 
-你需要保证你的文件格式受 Crowdin 支持，可以在[这里](https://support.crowdin.com/supported-formats/)查看 Crowdin 支持的文件类型列表。
+除了手动上传，你还可以设置集成，让 Crowdin 自动同步 GitHub 等仓库里的文件，并可设置定期推送译文到相应的分支。
 
-作为示例，我们使用的是 `YAML` 格式的文档，Crowdin 目前仅支持纯文本的 `YAML` 格式的文档，不支持 `anchor` 等高级功能。
+你可以点击[这里](https://support.crowdin.com/github-integration/)直达 Crowdin 关于 GitHub 集成的文档。如果你使用的是 Gitlab 等其他仓库，也可以在知识库里找到相应的指南。
 
-Crowdin 会读取 `YAML` 中的键值和注释作为该待翻译字符串的上下文。考虑以下文本：
+回到项目主页，单击集成（Integrations）标签页，可以为你的项目设置集成。Crowdin 支持许多集成方案，找到你所使用的代码仓库并点击。
 
-```yaml
-commands:
-  ping:
-    description: 回复 ping 信息
-
-    options:
-      # 这是一段注释
-      detail: 显示网络连接情况
-```
-
-那么在翻译界面，Crowdin 会为 `回复 ping 信息` 这一字符串添加 `commands.ping.description` 作为其上下文信息。而对于 `显示网络连接情况` 这一字符串，除了显示 `commands.ping.options.detail` 以外，还会显示 `这是一段注释` 作为其上下文信息。当然，除了写在键值的上方，你也可以写在键值后方，表现是一样的。
-
-Crowdin 还支持复数名词，考虑以下文本：*由于中文普通话不存在单复数对立，此处采用英文进行演示*
-
-```yaml
-commands:
-  echo:
-    message:
-      dress:
-        one: {name} has a dress
-        other: {name} has {number} dresses
-```
-
-::: tip
-当然，Crowdin 同样会标识出诸如 `{name}` 这样的插值语法，并且在译文缺少插值或译者翻译插值变量时报告错误。
-:::
-
-### 设置 GitHub / GitLab 集成
-
-除了手动上传，你还可以设置 GitHub 集成，让 Crowdin 自动同步 GitHub 仓库里的原文，并定期推送译文到相应的仓库。
-
-你可以点击[这里](https://support.crowdin.com/github-integration/)直达 Crowdin 关于 GitHub 集成的文档。
-
-回到项目主页，单击集成（Integrations）标签页，可以为你的项目设置集成。Crowdin 支持许多集成方案，找到 GitHub 并点击。
-
-*如果你使用的是 GitLab，则是点击 GitLab 或 GitLab Enterprice*
-
-然后，单击 Set Up Integration，连接到你的 GitHub 账户（如果你不是用 GitHub 账户登录，且还没绑定 GitHub 账户的话），选择你想要设置集成的仓库，选择你想要获取原文和推送译文的分支，默认情况下 Crowdin 创建一个新的分支，名为 `l10n_` 加上原分支名，如图中所示的 `l10n_master`。
+然后，单击 Set Up Integration，连接到你的代码仓库的账户，选择你想要设置集成的仓库，选择你想要获取原文和推送译文的分支，默认情况下 Crowdin 创建一个新的分支，名为 `l10n_` 加上原分支名，如图中所示的 `l10n_master`。
 
 ![github integration connecting github](https://support.crowdin.com/assets/docs/github_integration_connecting_github.png)
 
@@ -108,7 +73,42 @@ $ brew install crowdin@3
 `crowdin.yml` 中的配置项不仅适用于 Crowdin CLI，还可以在上述的 GitHub 集成中发挥作用，Crowdin 会自动读取该文件以确定翻译的范围等。
 :::
 
-一般推荐在项目目录下的 `crowdin.yml` 文件中配置好筛选器，并且在 `$HOME/.crowdin.yml` 文件中存储你的 Crowdin 密钥等敏感信息，然后你就可以简单地运行 `crowdin upload sources` 上传源文件，而不需要每次都打出冗长的包含通配符的文件路径了。
+推荐在项目目录下的 `crowdin.yml` 文件中配置好文件筛选器，并且在 `$HOME/.crowdin.yml` 文件中存储你的 Crowdin 密钥等敏感信息，然后你就可以简单地运行 `crowdin upload sources` 上传源文件，而不需要每次都打出冗长的包含通配符的文件路径了。
+
+### 文件类型
+
+Crowdin 支持许多常见文件类型，如 `HTML`、`docx`、`pdf`，本地化软件框架支持的 `xliff` 与 `po` 等自然也不在话下，如果你不确定你的文件类型是否受支持，你可以在[这里](https://support.crowdin.com/supported-formats/)查看 Crowdin 支持的文件类型列表。
+
+作为示例，我们使用的是 `YAML` 格式的文档，Crowdin 目前仅支持纯文本的 `YAML` 格式的文档，不支持 `anchor` 等高级功能。
+
+当然你也可以使用 `JSON` 格式，但传统的 `JSON` 无法添加注释，显示在 Crowdin 上则会缺少足够的上下文信息。因为翻译者在 Crowdin 上无法看到源码，也无法看到翻译后的结果的显示样式，作为开发者应当通过各种方式向翻译者提供详尽的上下文信息。再综合考虑 `koishi` 对 i18n 的处理方式与 Crowdin 支持的格式，采用 `YAML` 是较为经济的选择。
+
+Crowdin 会读取 `YAML` 中的键值和注释作为该待翻译字符串的上下文。以下面的 `YAML` 为例：
+
+```yaml
+commands:
+  ping:
+    description: 回复 ping 信息
+
+    options:
+      # 这是一段注释
+      detail: 显示网络连接情况
+
+    messages:
+      pong: PONG! # 注释也可以写在后方
+```
+
+那么在翻译界面，Crowdin 会为 `回复 ping 信息` 这一字符串添加 `commands.ping.description` 作为其上下文信息。而对于 `显示网络连接情况` 这一字符串，除了显示 `commands.ping.options.detail` 以外，还会显示 `这是一段注释` 作为其上下文信息。当然，除了写在键值的上方，你也可以写在键值后方，效果是一样的。
+
+
+```yaml
+commands:
+  dress:
+    message:
+      dress: {name}今天穿了{color}色的裙子
+```
+
+与大部分 CAT 工具一样，Crowdin 同样会标识出诸如 `{name}` 这样的插值语法，并且在译文缺少插值或译者翻译插值变量时报告错误。
 
 ## 进行翻译
 
