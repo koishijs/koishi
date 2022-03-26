@@ -2,6 +2,7 @@ import { Adapter, assertProperty, Bot, Dict, Logger, Quester, renameProperty, Sc
 import * as Telegram from './types'
 import { AdapterConfig, adaptGuildMember, adaptUser } from './utils'
 import { Sender } from './sender'
+import fs from 'fs'
 
 const logger = new Logger('telegram')
 
@@ -23,14 +24,24 @@ export interface TelegramResponse {
   result: any
 }
 
+export interface FileConfig {
+  endpoint?: string
+  local?: boolean
+}
+
 export interface BotConfig extends Bot.BaseConfig, Quester.Config {
   token?: string
   pollingTimeout?: number
+  files?: FileConfig
 }
 
 export const BotConfig: Schema<BotConfig> = Schema.intersect([
   Schema.object({
     token: Schema.string().description('机器人的用户令牌。').role('secret').required(),
+    files: Schema.object({
+      endpoint: Schema.string().description('文件请求的终结点。'),
+      local: Schema.boolean().description('是否启用 [Telegram Bot API](https://github.com/tdlib/telegram-bot-api) 本地模式。').default(false),
+    }),
   }),
   Quester.createSchema({
     endpoint: 'https://api.telegram.org',
@@ -42,18 +53,20 @@ export class TelegramBot extends Bot<BotConfig> {
 
   http: Quester & { file?: Quester }
   internal?: Telegram.Internal
+  local?: boolean
 
   constructor(adapter: Adapter, config: BotConfig) {
     assertProperty(config, 'token')
     super(adapter, config)
     this.selfId = config.token.split(':')[0]
+    this.local = config.files.local
     this.http = this.app.http.extend({
       ...config,
       endpoint: `${config.endpoint}/bot${config.token}`,
     })
     this.http.file = this.app.http.extend({
       ...config,
-      endpoint: `${config.endpoint}/file/bot${config.token}`,
+      endpoint: `${config.files.endpoint || config.endpoint}/file/bot${config.token}`,
     })
     this.internal = new Telegram.Internal(this.http)
   }
@@ -150,7 +163,12 @@ export class TelegramBot extends Bot<BotConfig> {
   }
 
   async $getFileContent(filePath: string) {
-    const res = await this.http.file.get(`/${filePath}`, { responseType: 'arraybuffer' })
+    let res: Buffer
+    if (this.local) {
+      res = await fs.promises.readFile(filePath)
+    } else {
+      res = await this.http.file.get(`/${filePath}`, { responseType: 'arraybuffer' })
+    }
     const base64 = `base64://` + res.toString('base64')
     return { url: base64 }
   }

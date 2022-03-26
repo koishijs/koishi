@@ -37,6 +37,20 @@ API 请求的终结点。
 
 请求时默认使用的网络代理。
 
+### options(.bots[]).files.endpoint
+
+- 类型: `string`
+- 默认值: [`options(.bots[]).endpoint`](#options-bots-endpoint)
+
+文件请求的终结点。
+
+### options(.bots[]).files.local
+
+- 类型: `boolean`
+- 默认值: `false`
+
+是否启用 [Telegram Bot API](https://github.com/tdlib/telegram-bot-api) 本地模式。
+
 ## 适配器选项
 
 ### options.path
