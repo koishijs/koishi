@@ -93,8 +93,9 @@ export class Model {
   create<T extends TableType>(name: T, data?: {}) {
     const { fields, primary } = this.config[name]
     const result = {}
+    const _primary = makeArray(primary)
     for (const key in fields) {
-      if (key !== primary && !isNullable(fields[key].initial)) {
+      if (!_primary.includes(key) && !isNullable(fields[key].initial)) {
         result[key] = clone(fields[key].initial)
       }
     }
@@ -134,17 +135,20 @@ export class Model {
       key = prefix + key
       if (fields.includes(key)) {
         result[key] = this.resolveValue(name, key, value)
-      } else if (value && typeof value === 'object') {
-        this.format(name, value, key + '.', result)
-      } else {
+      } else if (!value || typeof value !== 'object' || isEvalExpr(value)) {
         const field = fields.find(field => key.startsWith(field + '.'))
         if (!field) throw new KoishiError(`unknown field "${key}"`, 'database.unknown-field')
-        const node = result[field] ??= {}
-        node[key.slice(field.length + 1)] = value
+        result[key] = value
+      } else {
+        this.format(name, value, key + '.', result)
       }
     })
     return result
   }
+}
+
+export function isEvalExpr(value: any): value is Eval.UniveralExpr {
+  return Object.keys(value).some(key => key.startsWith('$'))
 }
 
 export namespace Model {

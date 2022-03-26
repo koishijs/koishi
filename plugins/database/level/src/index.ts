@@ -118,9 +118,13 @@ class LevelDatabase extends Database {
     if (makeArray(primary).every(key => isDirectFieldQuery(expr[key]))) {
       const key = this._makeKey(primary, expr)
       try {
-        const value = await table.get(key)
+        let value = await table.get(key)
         if (offset === 0 && limit > 0 && executeQuery(value, expr)) {
-          return [pick(this.ctx.model.parse(name, value), fields)]
+          value = this.ctx.model.format(name, value)
+          for (const key in this.ctx.model.config[name].fields) {
+            value[key] ??= null
+          }
+          return [this.ctx.model.parse(name, pick(value, fields))]
         }
       } catch (e) {
         if (e.notFound !== true) throw e
@@ -136,7 +140,7 @@ class LevelDatabase extends Database {
     }
     return executeSort(result, sort)
       .slice(offset, offset + limit)
-      .map(row => pick(this.ctx.model.parse(name, row), fields))
+      .map(row => this.resolveData(name, row, fields))
   }
 
   async set(name: keyof Tables, query: Query, data: {}) {

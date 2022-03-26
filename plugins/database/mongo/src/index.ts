@@ -134,11 +134,10 @@ class MongoDatabase extends Database {
     await this._tableTasks[name]
     let cursor = this.db.collection(name).find(filter)
     const { fields, limit, offset = 0, sort } = this.resolveModifier(name, modifier)
-    cursor = cursor.project({ _id: 0, ...Object.fromEntries((fields ?? []).map(key => [key, 1])) })
     if (offset) cursor = cursor.skip(offset)
     if (limit) cursor = cursor.limit(offset + limit)
     if (sort) cursor = cursor.sort(sort)
-    return await cursor.toArray() as any
+    return (await cursor.toArray()).map(row => this.resolveData(name, row, fields)) as any
   }
 
   async set(name: TableType, query: Query, update: {}) {

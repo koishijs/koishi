@@ -1,5 +1,5 @@
 import * as utils from '@koishijs/utils'
-import { Awaitable, Dict, Get, makeArray, MaybeArray } from '@koishijs/utils'
+import { Awaitable, Dict, Get, makeArray, MaybeArray, pick } from '@koishijs/utils'
 import { Query, Tables } from './orm'
 import { Context } from './context'
 import { KoishiError } from './error'
@@ -112,6 +112,14 @@ export abstract class Database extends Service {
       throw new KoishiError(`cannot modify primary key`, 'database.modify-primary-key')
     }
     return this.ctx.model.format(name, update)
+  }
+
+  protected resolveData<T extends keyof Tables>(name: T, data: any, fields: string[]) {
+    data = this.ctx.model.format(name, data)
+    for (const key in this.ctx.model.config[name].fields) {
+      data[key] ??= null
+    }
+    return this.ctx.model.parse(name, pick(data, fields))
   }
 
   getUser<T extends string, K extends T | User.Field>(platform: T, id: string, modifier?: Query.Modifier<K>): Promise<UserWithPlatform<T, T | K>>

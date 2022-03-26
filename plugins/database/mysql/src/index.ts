@@ -1,6 +1,6 @@
 import { createPool, escapeId, format, escape as mysqlEscape } from '@vlasky/mysql'
 import type { OkPacket, Pool, PoolConfig } from 'mysql'
-import { Context, Database, Dict, difference, KoishiError, Logger, makeArray, Model, pick, Query, Schema, Tables, Time } from 'koishi'
+import { Context, Database, Dict, difference, isEvalExpr, KoishiError, Logger, makeArray, Model, pick, Query, Schema, Tables, Time } from 'koishi'
 import { executeUpdate } from '@koishijs/orm-utils'
 import { Builder } from '@koishijs/sql-utils'
 
@@ -340,16 +340,49 @@ class MysqlDatabase extends Database {
     })
   }
 
+  private toUpdateExpr(name: string, item: any, field: string, upsert: boolean) {
+    const escaped = backtick(field)
+
+    // update directly
+    if (field in item) {
+      if (isEvalExpr(item[field]) || !upsert) {
+        return this.sql.parseEval(item[field], name, field)
+      } else {
+        return `VALUES(${escaped})`
+      }
+    }
+
+    // update with json_set
+    const valueInit = `ifnull(${escaped}, '{}')`
+    let value = valueInit
+    for (const key in item) {
+      if (!key.startsWith(field + '.')) continue
+      const rest = key.slice(field.length + 1).split('.')
+      value = `json_set(${value}, '$${rest.map(key => `."${key}"`).join('')}', ${this.sql.parseEval(item[key])})`
+    }
+
+    if (value === valueInit) {
+      return escaped
+    } else {
+      return value
+    }
+  }
+
   async set(name: TableType, query: Query, data: {}) {
     data = this.ctx.model.format(name, data)
+    const { fields } = this.resolveTable(name)
     await this._tableTasks[name]
     const filter = this._createFilter(name, query)
     if (filter === '0') return
-    const keys = Object.keys(data)
-    const update = keys.map((key) => {
-      const valueExpr = this.sql.parseEval(data[key], name, key)
-      return `${backtick(key)} = ${valueExpr}`
+    const updateFields = [...new Set(Object.keys(data).map((key) => {
+      return Object.keys(fields).find(field => field === key || key.startsWith(field + '.'))
+    }))]
+
+    const update = updateFields.map((field) => {
+      const escaped = backtick(field)
+      return `${escaped} = ${this.toUpdateExpr(name, data, field, false)}`
     }).join(', ')
+
     await this.query(`UPDATE ${name} SET ${update} WHERE ${filter}`)
   }
 
@@ -386,7 +419,9 @@ class MysqlDatabase extends Database {
       return this.ctx.model.format(name, executeUpdate(this.ctx.model.create(name), item))
     })
     const indexFields = makeArray(keys || primary)
-    const dataFields = Object.keys(merged)
+    const dataFields = [...new Set(Object.keys(merged).map((key) => {
+      return Object.keys(fields).find(field => field === key || key.startsWith(field + '.'))
+    }))]
     const updateFields = difference(dataFields, indexFields)
 
     const createFilter = (item: any) => this.sql.parseQuery(pick(item, indexFields))
@@ -402,35 +437,10 @@ class MysqlDatabase extends Database {
     }
 
     const update = updateFields.map((field) => {
-      const toExpression = (item: any) => {
-        // update directly
-        if (field in item) {
-          if (Object.keys(item[field]).some(key => key.startsWith('$'))) {
-            return this.sql.parseEval(item[field], name, field)
-          } else {
-            return `VALUES(${escaped})`
-          }
-        }
-
-        // update with json_set
-        const valueInit = `ifnull(${escaped}, '{}')`
-        let value = valueInit
-        for (const key in item) {
-          const [first, ...rest] = key.split('.')
-          if (first !== field) continue
-          value = `json_set(${value}, '$${rest.map(key => `."${key}"`).join('')}', ${this.sql.parseEval(item[key])})`
-        }
-        if (value === valueInit) {
-          return escaped
-        } else {
-          return value
-        }
-      }
-
       const escaped = backtick(field)
       const branches: Dict<any[]> = {}
       data.forEach((item) => {
-        (branches[toExpression(item)] ??= []).push(item)
+        (branches[this.toUpdateExpr(name, item, field, true)] ??= []).push(item)
       })
 
       const entries = Object.entries(branches)

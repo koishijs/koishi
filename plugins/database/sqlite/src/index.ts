@@ -87,7 +87,7 @@ class SQLiteDatabase extends Database {
     })
     this.caster.register<Date, number>({
       types: ['date', 'time', 'timestamp'],
-      dump: value => +value,
+      dump: value => value === null ? null : +value,
       load: (value) => value === null ? null : new Date(value),
     })
   }
@@ -239,13 +239,14 @@ class SQLiteDatabase extends Database {
 
   async set(name: TableType, query: Query, update: {}) {
     update = this.resolveUpdate(name, update)
-    const { primary } = this.resolveTable(name)
-    const updateFields = Object.keys(update)
-    const indexFields = makeArray(primary)
-    const fields = union(indexFields, updateFields)
-    const table = this.#get(name, query, fields)
+    const { primary, fields } = this.resolveTable(name)
+    const updateFields = [...new Set(Object.keys(update).map((key) => {
+      return Object.keys(fields).find(field => field === key || key.startsWith(field + '.'))
+    }))]
+    const primaryFields = makeArray(primary)
+    const table = this.#get(name, query, union(primaryFields, updateFields))
     for (const data of table) {
-      this.#update(name, indexFields, updateFields, update, data)
+      this.#update(name, primaryFields, updateFields, update, data)
     }
   }
 
@@ -267,14 +268,16 @@ class SQLiteDatabase extends Database {
   async upsert(name: TableType, updates: any[], keys: string | string[]) {
     if (!updates.length) return
     updates = updates.map(item => this.ctx.model.format(name, item))
-    const { primary } = this.resolveTable(name)
-    const dataFields = Object.keys(Object.assign({}, ...updates))
+    const { primary, fields } = this.resolveTable(name)
+    const dataFields = [...new Set(Object.keys(Object.assign({}, ...updates)).map((key) => {
+      return Object.keys(fields).find(field => field === key || key.startsWith(field + '.'))
+    }))]
     const indexFields = makeArray(keys || primary)
-    const fields = union(indexFields, dataFields)
+    const relaventFields = union(indexFields, dataFields)
     const updateFields = difference(dataFields, indexFields)
     const table = this.#get(name, {
       $or: updates.map(item => Object.fromEntries(indexFields.map(key => [key, item[key]]))),
-    }, fields)
+    }, relaventFields)
     for (const item of updates) {
       const data = table.find(row => indexFields.every(key => row[key] === item[key]))
       if (data) {
