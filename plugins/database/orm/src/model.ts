@@ -14,6 +14,7 @@ export class Model<T = any> {
       unique: [],
       foreign: {},
       fields: {},
+      internal: { '': {} },
     }
 
     table.primary = primary || table.primary
@@ -22,7 +23,14 @@ export class Model<T = any> {
     Object.assign(table.foreign, foreign)
 
     for (const key in fields) {
-      table.fields[key] = Model.Field.parse(fields[key])
+      if (typeof fields[key] === 'function') {
+        const index = key.lastIndexOf('.')
+        const prefix = key.slice(0, index + 1)
+        const method = key.slice(index + 1)
+        ;(table.internal[prefix] ??= {})[method] = fields[key]
+      } else {
+        table.fields[key] = Model.Field.parse(fields[key])
+      }
     }
 
     // check index
@@ -41,9 +49,9 @@ export class Model<T = any> {
   create<K extends Keys<T>>(name: K, data?: {}) {
     const { fields, primary } = this.config[name]
     const result = {}
-    const _primary = makeArray(primary)
+    const keys = makeArray(primary)
     for (const key in fields) {
-      if (!_primary.includes(key) && !isNullable(fields[key].initial)) {
+      if (!keys.includes(key) && !isNullable(fields[key].initial)) {
         result[key] = clone(fields[key].initial)
       }
     }
@@ -62,12 +70,16 @@ export class Model<T = any> {
   }
 
   parse<K extends Keys<T>>(name: K, source: object) {
-    const result: any = {}
+    const { internal } = this.config[name]
+    const result: any = Object.create(internal[''])
     for (const key in source) {
       let node = result
       const segments = key.split('.').reverse()
+      let prefix = ''
       for (let index = segments.length - 1; index > 0; index--) {
-        node = node[segments[index]] ??= {}
+        const segment = segments[index]
+        prefix += segment + '.'
+        node = node[segment] ??= Object.create(internal[prefix] ?? {})
       }
       if (key in source) {
         const value = this.resolveValue(name, key, source[key])
@@ -107,6 +119,7 @@ export namespace Model {
 
   export interface Config<O = any> extends Extension<O> {
     fields?: Field.Config<O>
+    internal?: Field.Internal<O>
   }
 
   export interface Field<T = any> {
@@ -143,7 +156,11 @@ export namespace Model {
     export type Extension<O = any> = MapField<Flatten<O>>
 
     export type Config<O = any> = {
-      [K in keyof O]?: Field<O[K]>
+      [K in keyof O]?: O[K] extends (...args: any) => any ? never : Field<O[K]>
+    }
+
+    export type Internal<O = any> = {
+      [K in keyof O]?: O[K] extends (...args: any) => any ? O[K] : never
     }
 
     const regexp = /^(\w+)(?:\((.+)\))?$/

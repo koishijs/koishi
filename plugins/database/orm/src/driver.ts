@@ -15,10 +15,14 @@ export interface TableStats {
   size: number
 }
 
+type Get<S, K> = {
+  [P in keyof S as S[P] extends (...args: any) => any ? P : P extends K ? P : never]: S[P]
+}
+
 export abstract class Driver<S> {
   abstract drop(): Promise<void>
   abstract stats(): Promise<Stats>
-  abstract get<T extends Keys<S>, K extends Keys<S[T]>>(table: T, query: Query<S[T]>, modifier?: Modifier<K>): Promise<Pick<S[T], K>[]>
+  abstract get<T extends Keys<S>, K extends Keys<S[T]>>(table: T, query: Query<S[T]>, modifier?: Modifier<K>): Promise<Get<S[T], K>[]>
   abstract set<T extends Keys<S>>(table: T, query: Query<S[T]>, data: Update<S[T]>): Promise<void>
   abstract remove<T extends Keys<S>>(table: T, query: Query<S[T]>): Promise<void>
   abstract create<T extends Keys<S>>(table: T, data: Update<S[T]>): Promise<S[T]>
