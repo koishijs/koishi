@@ -60,10 +60,13 @@ export class I18n {
     if (I18n.isTemplate(value)) {
       const dict = this._data[locale]
       const path = prefix.slice(0, -1)
-      if (dict[path] && !locale.startsWith('$')) {
+      if (!isNullable(dict[path]) && !locale.startsWith('$')) {
         logger.warn('override', locale, path)
       }
       dict[path] = value as I18n.Template
+      (this[Context.current] ?? this.ctx).on('dispose', () => {
+        delete dict[path]
+      })
     } else if (value) {
       for (const key in value) {
         this.set(locale, prefix + key + '.', value[key])

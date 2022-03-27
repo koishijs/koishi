@@ -71,7 +71,7 @@ export default class RegistryProvider extends DataService<Dict<PluginData>> {
         : !plugin.name || plugin.name === 'apply'
           ? ''
           : capitalize(camelize(plugin.name)),
-      parent: state.context?.state.id,
+      parent: state.parent?.state.id,
       disposables: state.disposables.length,
       dependencies: state.using.map(name => this.ctx[name]?.['ctx']?.state.id).filter(x => x),
     }

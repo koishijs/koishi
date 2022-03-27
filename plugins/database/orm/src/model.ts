@@ -96,9 +96,9 @@ export class Model<T = any> {
       if (fields.includes(key)) {
         result[key] = this.resolveValue(name, key, value)
       } else if (!value || typeof value !== 'object' || isEvalExpr(value)) {
+        // drop unknown fields
         const field = fields.find(field => key.startsWith(field + '.'))
-        if (!field) throw new ModelError(`unknown field "${key}"`)
-        result[key] = value
+        if (field) result[key] = value
       } else {
         this.format(name, value, key + '.', result)
       }

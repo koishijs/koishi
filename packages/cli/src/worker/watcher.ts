@@ -275,7 +275,7 @@ class Watcher {
 
         try {
           const plugin = attempts[filename]
-          state.context.plugin(plugin, state.config)
+          state.parent.plugin(plugin, state.config)
           const displayName = plugin.name || relative(this.root, filename)
           logger.info('reload plugin %c', displayName)
         } catch (err) {
@@ -289,7 +289,7 @@ class Watcher {
       for (const [state, filename] of reloads) {
         try {
           this.ctx.dispose(attempts[filename])
-          state.context.plugin(state.plugin, state.config)
+          state.parent.plugin(state.plugin, state.config)
         } catch (err) {
           logger.warn(err)
         }
