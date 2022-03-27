@@ -1,4 +1,5 @@
 export * from '@koishijs/utils'
+export * from '@koishijs/orm'
 export * from './adapter'
 export * from './app'
 export * from './bot'

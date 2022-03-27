@@ -5,23 +5,25 @@ import { Model } from './model'
 import { Modifier, Query } from './query'
 import { Flatten, Indexable, Keys } from './utils'
 
-export interface Stats {
-  size?: number
-  tables?: Dict<TableStats>
-}
-
-export interface TableStats {
-  count: number
-  size: number
-}
-
 export type Result<S, K, T = (...args: any) => any> = {
   [P in keyof S as S[P] extends T ? P : P extends K ? P : never]: S[P]
 }
 
-export abstract class Driver<S> {
+export namespace Driver {
+  export interface Stats {
+    size?: number
+    tables?: Dict<TableStats>
+  }
+
+  export interface TableStats {
+    count: number
+    size: number
+  }
+}
+
+export abstract class Driver<S = any> {
   abstract drop(): Promise<void>
-  abstract stats(): Promise<Stats>
+  abstract stats(): Promise<Driver.Stats>
   abstract get<T extends Keys<S>, K extends Keys<S[T]>>(table: T, query: Query<S[T]>, modifier?: Modifier<K>): Promise<Result<S[T], K>[]>
   abstract set<T extends Keys<S>>(table: T, query: Query<S[T]>, data: Update<S[T]>): Promise<void>
   abstract remove<T extends Keys<S>>(table: T, query: Query<S[T]>): Promise<void>

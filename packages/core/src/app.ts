@@ -1,7 +1,7 @@
 import { Awaitable, coerce, defineProperty, Dict, escapeRegExp, Logger, makeArray, Schema, Time } from '@koishijs/utils'
 import { Context, Next, Plugin } from './context'
 import { Adapter } from './adapter'
-import { Channel, Model, User } from './database'
+import { Channel, ModelService, User } from './database'
 import { Command } from './command'
 import { Computed, Session } from './session'
 import { I18n } from './i18n'
@@ -48,7 +48,7 @@ export class App extends Context {
       disposables: [],
     })
 
-    this.model = new Model(this)
+    this.model = new ModelService(this)
     this.i18n = new I18n(this)
     this.bots = new Adapter.BotList(this)
 

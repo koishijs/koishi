@@ -1,10 +1,7 @@
 import * as utils from '@koishijs/utils'
 import { Awaitable, Dict, Get, MaybeArray } from '@koishijs/utils'
-import * as orm from '@koishijs/orm'
-import { Driver, Modifier, Result, Update } from '@koishijs/orm'
+import { Driver, Model, Modifier, Result, Update } from '@koishijs/orm'
 import { Context } from './context'
-
-export { DriverError } from '@koishijs/orm'
 
 export interface User {
   id: string
@@ -49,7 +46,7 @@ export interface Tables {
   channel: Channel
 }
 
-export class Model extends orm.Model<Tables> {
+export class ModelService extends Model<Tables> {
   constructor(protected ctx: Context) {
     super()
 
@@ -75,7 +72,7 @@ export class Model extends orm.Model<Tables> {
     })
   }
 
-  extend<K extends keyof Tables>(name: K, fields?: orm.Model.Field.Extension<Tables[K]>, extension?: orm.Model.Extension<Tables[K]>) {
+  extend<K extends keyof Tables>(name: K, fields?: Model.Field.Extension<Tables[K]>, extension?: Model.Extension<Tables[K]>) {
     super.extend(name, fields, extension)
     this.ctx.emit('model', name)
   }

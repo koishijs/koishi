@@ -1,7 +1,7 @@
 import { createPool, escapeId, format, escape as mysqlEscape } from '@vlasky/mysql'
 import type { OkPacket, Pool, PoolConfig } from 'mysql'
 import { Context, Database, Dict, difference, DriverError, Logger, makeArray, pick, Schema, Tables, Time } from 'koishi'
-import { executeUpdate, isEvalExpr, Model, Modifier, Query, Stats } from '@koishijs/orm'
+import { Driver, executeUpdate, isEvalExpr, Model, Modifier, Query } from '@koishijs/orm'
 import { Builder } from '@koishijs/sql-utils'
 
 declare module 'mysql' {
@@ -315,7 +315,7 @@ class MysqlDatabase extends Database {
 
   async stats() {
     const data = await this.select('information_schema.tables', ['TABLE_NAME', 'TABLE_ROWS', 'DATA_LENGTH'], 'TABLE_SCHEMA = ?', [this.config.database])
-    const stats: Stats = { size: 0 }
+    const stats: Driver.Stats = { size: 0 }
     stats.tables = Object.fromEntries(data.map(({ TABLE_NAME: name, TABLE_ROWS: count, DATA_LENGTH: size }) => {
       stats.size += size
       return [name, { count, size }]
