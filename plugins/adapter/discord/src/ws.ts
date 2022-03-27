@@ -32,6 +32,7 @@ export default class WebSocketClient extends Adapter.WebSocketClient<BotConfig, 
           seq: bot._d,
         },
       }))
+      bot.resolve()
     }
 
     bot.socket.on('message', async (data) => {
