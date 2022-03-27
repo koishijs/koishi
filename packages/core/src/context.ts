@@ -1,12 +1,11 @@
 import { Awaitable, defineProperty, Dict, Logger, makeArray, MaybeArray, Promisify, Random, remove, Schema, sleep } from '@koishijs/utils'
 import { Command } from './command'
 import { Session } from './session'
-import { Channel, Database, Modules, User } from './database'
+import { Channel, Database, Model, Modules, Tables, User } from './database'
 import { Argv } from './parser'
 import { App } from './app'
 import { Bot } from './bot'
 import { Adapter } from './adapter'
-import { Model, Tables } from './orm'
 import { I18n } from './i18n'
 
 export type Next = (next?: Next.Callback) => Promise<void | string>
@@ -617,6 +616,7 @@ export namespace Context {
   }
 
   service('bots')
+  service('database')
   service('i18n')
   service('model')
 

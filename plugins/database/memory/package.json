@@ -37,6 +37,6 @@
     "js-yaml": "^4.1.0"
   },
   "dependencies": {
-    "@koishijs/orm-utils": "^1.0.0"
+    "@koishijs/orm": "^1.0.0"
   }
 }

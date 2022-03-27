@@ -1,5 +1,5 @@
-import { Context, Database, difference, Logger, makeArray, Model, Query, Schema, TableType, union } from 'koishi'
-import { executeUpdate } from '@koishijs/orm-utils'
+import { Context, Database, difference, Logger, makeArray, Schema, Tables, union } from 'koishi'
+import { executeUpdate, Model, Modifier, Query } from '@koishijs/orm'
 import { Builder, Caster } from '@koishijs/sql-utils'
 import sqlite, { Statement } from 'better-sqlite3'
 import { resolve } from 'path'
@@ -74,7 +74,7 @@ class SQLiteDatabase extends Database {
       }
     }()
 
-    this.caster = new Caster(ctx.model)
+    this.caster = new Caster(this.model)
     this.caster.register<object, string>({
       types: ['json'],
       dump: value => JSON.stringify(value),
@@ -92,8 +92,8 @@ class SQLiteDatabase extends Database {
     })
   }
 
-  private _getColDefs(table: string, key: string) {
-    const config = this.ctx.model.config[table]
+  private _getColDefs(table: keyof Tables, key: string) {
+    const config = this.model.config[table]
     const { initial, nullable = initial === undefined || initial === null } = config.fields[key]
     let def = `\`${key}\``
     if (key === config.primary && config.autoInc) {
@@ -109,11 +109,11 @@ class SQLiteDatabase extends Database {
   }
 
   /** synchronize table schema */
-  private _syncTable(table: string) {
+  private _syncTable(table: keyof Tables) {
     const info = this.#exec('all', `PRAGMA table_info(${this.sql.escapeId(table)})`) as ISQLiteFieldInfo[]
     // FIXME: register platform columns before database initializion
     // WARN: side effecting Tables.config
-    const config = this.ctx.model.config[table]
+    const config = this.model.config[table]
     if (table === 'user') {
       new Set(this.ctx.bots.map(bot => bot.platform)).forEach(platform => {
         config.fields[platform] = { type: 'string', length: 63 }
@@ -162,8 +162,8 @@ class SQLiteDatabase extends Database {
     this.db = sqlite(this.config.path === ':memory:' ? this.config.path : resolve(this.config.path))
     this.db.function('regexp', (pattern, str) => +new RegExp(pattern).test(str))
 
-    for (const name in this.ctx.model.config) {
-      this._syncTable(name)
+    for (const name in this.model.config) {
+      this._syncTable(name as keyof Tables)
     }
 
     this.ctx.on('model', (name) => {
@@ -191,7 +191,7 @@ class SQLiteDatabase extends Database {
   }
 
   async drop() {
-    const tables = Object.keys(this.ctx.model.config)
+    const tables = Object.keys(this.model.config)
     for (const table of tables) {
       this.#exec('run', `DROP TABLE ${this.sql.escapeId(table)}`)
     }
@@ -203,17 +203,17 @@ class SQLiteDatabase extends Database {
     return { size }
   }
 
-  async remove(name: TableType, query: Query) {
+  async remove(name: keyof Tables, query: Query) {
     const filter = this.#query(name, query)
     if (filter === '0') return
     this.#exec('run', `DELETE FROM ${this.sql.escapeId(name)} WHERE ${filter}`)
   }
 
-  #query(name: TableType, query: Query) {
+  #query(name: keyof Tables, query: Query) {
     return this.sql.parseQuery(this.resolveQuery(name, query))
   }
 
-  #get(name: TableType, query: Query, modifier: Query.Modifier) {
+  #get(name: keyof Tables, query: Query, modifier: Modifier) {
     const filter = this.#query(name, query)
     if (filter === '0') return []
     const { fields, limit, offset, sort } = this.resolveModifier(name, modifier)
@@ -225,11 +225,11 @@ class SQLiteDatabase extends Database {
     return rows.map(row => this.caster.load(name, row))
   }
 
-  async get(name: TableType, query: Query, modifier: Query.Modifier) {
+  async get(name: keyof Tables, query: Query, modifier: Modifier) {
     return this.#get(name, query, modifier)
   }
 
-  #update(name: TableType, indexFields: string[], updateFields: string[], update: {}, data: {}) {
+  #update(name: keyof Tables, indexFields: string[], updateFields: string[], update: {}, data: {}) {
     const row = this.caster.dump(name, executeUpdate(data, update))
     const assignment = updateFields.map((key) => `\`${key}\` = ${this.sql.escape(row[key])}`).join(',')
     const query = Object.fromEntries(indexFields.map(key => [key, row[key]]))
@@ -237,7 +237,7 @@ class SQLiteDatabase extends Database {
     this.#exec('run', `UPDATE ${this.sql.escapeId(name)} SET ${assignment} WHERE ${filter}`)
   }
 
-  async set(name: TableType, query: Query, update: {}) {
+  async set(name: keyof Tables, query: Query, update: {}) {
     update = this.resolveUpdate(name, update)
     const { primary, fields } = this.resolveTable(name)
     const updateFields = [...new Set(Object.keys(update).map((key) => {
@@ -250,24 +250,24 @@ class SQLiteDatabase extends Database {
     }
   }
 
-  #create(name: TableType, data: {}) {
+  #create(name: keyof Tables, data: {}) {
     data = this.caster.dump(name, data)
     const keys = Object.keys(data)
     const sql = `INSERT INTO ${this.sql.escapeId(name)} (${this.#joinKeys(keys)}) VALUES (${keys.map(key => this.sql.escape(data[key])).join(', ')})`
     return this.#exec('run', sql)
   }
 
-  async create<T extends TableType>(name: T, data: {}) {
-    data = this.ctx.model.create(name, data)
+  async create<T extends keyof Tables>(name: T, data: {}) {
+    data = this.model.create(name, data)
     const result = this.#create(name, data)
     const { autoInc, primary } = this.resolveTable(name)
     if (!autoInc) return data as any
     return { ...data, [primary as string]: result.lastInsertRowid }
   }
 
-  async upsert(name: TableType, updates: any[], keys: string | string[]) {
+  async upsert(name: keyof Tables, updates: any[], keys: string | string[]) {
     if (!updates.length) return
-    updates = updates.map(item => this.ctx.model.format(name, item))
+    updates = updates.map(item => this.model.format(name, item))
     const { primary, fields } = this.resolveTable(name)
     const dataFields = [...new Set(Object.keys(Object.assign({}, ...updates)).map((key) => {
       return Object.keys(fields).find(field => field === key || key.startsWith(field + '.'))
@@ -283,12 +283,12 @@ class SQLiteDatabase extends Database {
       if (data) {
         this.#update(name, indexFields, updateFields, item, data)
       } else {
-        this.#create(name, executeUpdate(this.ctx.model.create(name), item))
+        this.#create(name, executeUpdate(this.model.create(name), item))
       }
     }
   }
 
-  async eval(name: TableType, expr: any, query: Query) {
+  async eval(name: keyof Tables, expr: any, query: Query) {
     const filter = this.#query(name, query)
     const output = this.sql.parseEval(expr)
     const { value } = this.#exec('get', `SELECT ${output} AS value FROM ${this.sql.escapeId(name)} WHERE ${filter}`)

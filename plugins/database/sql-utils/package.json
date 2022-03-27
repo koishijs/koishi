@@ -31,5 +31,7 @@
     "koishi": "^4.4.2"
   },
   "devDependencies": {},
-  "dependencies": {}
+  "dependencies": {
+    "@koishijs/orm": "^1.0.0"
+  }
 }

@@ -34,6 +34,7 @@
     "chai-shape": "^1.0.0"
   },
   "dependencies": {
+    "@koishijs/orm": "^1.0.0",
     "@koishijs/utils": "^5.2.1",
     "fastest-levenshtein": "^1.0.12"
   }

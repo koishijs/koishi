@@ -72,7 +72,7 @@ namespace OrmOperations {
     await app.database.remove(name, {})
     const result: Tables[K][] = []
     for (const item of table) {
-      result.push(await app.database.create(name, item))
+      result.push(await app.database.create(name, item as any))
     }
     return result
   }

@@ -3,7 +3,6 @@ import { Argv } from './parser'
 import { Context, Disposable, Next } from './context'
 import { Channel, User } from './database'
 import { Computed, FieldCollector, Session } from './session'
-import { KoishiError } from './error'
 import * as internal from './internal'
 
 const logger = new Logger('command')
@@ -228,7 +227,7 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
       if (callback !== undefined) {
         queue.push(next => Next.compose(callback, next))
         if (queue.length > Next.MAX_DEPTH) {
-          throw new KoishiError(`middleware call stack exceeded ${Next.MAX_DEPTH}`, 'runtime.max-depth-exceeded')
+          throw new Error(`middleware stack exceeded ${Next.MAX_DEPTH}`)
         }
       }
       return queue[index++]?.(argv.next)

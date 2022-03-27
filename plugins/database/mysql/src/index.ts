@@ -1,7 +1,7 @@
 import { createPool, escapeId, format, escape as mysqlEscape } from '@vlasky/mysql'
 import type { OkPacket, Pool, PoolConfig } from 'mysql'
-import { Context, Database, Dict, difference, isEvalExpr, KoishiError, Logger, makeArray, Model, pick, Query, Schema, Tables, Time } from 'koishi'
-import { executeUpdate } from '@koishijs/orm-utils'
+import { Context, Database, Dict, difference, DriverError, Logger, makeArray, pick, Schema, Tables, Time } from 'koishi'
+import { executeUpdate, isEvalExpr, Model, Modifier, Query, Stats } from '@koishijs/orm'
 import { Builder } from '@koishijs/sql-utils'
 
 declare module 'mysql' {
@@ -23,8 +23,6 @@ declare module 'koishi' {
 const logger = new Logger('mysql')
 
 const DEFAULT_DATE = new Date('1970-01-01')
-
-export type TableType = keyof Tables
 
 function getIntegerType(length = 11) {
   if (length <= 4) return 'tinyint'
@@ -125,7 +123,7 @@ class MysqlDatabase extends Database {
         const type = MysqlDatabase.tables[orgTable]?.[orgName]
         if (typeof type === 'object') return type.parse(field)
 
-        const meta = this.ctx.model.config[orgTable]?.fields[orgName]
+        const meta = this.model.config[orgTable]?.fields[orgName]
         if (Model.Field.string.includes(meta?.type)) {
           return field.string()
         } else if (meta?.type === 'json') {
@@ -154,14 +152,14 @@ class MysqlDatabase extends Database {
       ...config,
     }
 
-    this.sql = new MySQLBuilder(this.ctx.model)
+    this.sql = new MySQLBuilder(this.model)
   }
 
   async start() {
     this.pool = createPool(this.config)
 
-    for (const name in this.ctx.model.config) {
-      this._tableTasks[name] = this._syncTable(name as TableType)
+    for (const name in this.model.config) {
+      this._tableTasks[name] = this._syncTable(name as keyof Tables)
     }
 
     this.ctx.on('model', (name) => {
@@ -173,7 +171,7 @@ class MysqlDatabase extends Database {
     this.pool.end()
   }
 
-  private _getColDefs(name: TableType, columns: string[]) {
+  private _getColDefs(name: keyof Tables, columns: string[]) {
     const table = this.resolveTable(name)
     const { primary, foreign, autoInc } = table
     const fields = { ...table.fields }
@@ -218,7 +216,7 @@ class MysqlDatabase extends Database {
   }
 
   /** synchronize table schema */
-  private async _syncTable(name: TableType) {
+  private async _syncTable(name: keyof Tables) {
     await this._tableTasks[name]
     // eslint-disable-next-line max-len
     const data = await this.queue<any[]>('SELECT COLUMN_NAME from information_schema.columns WHERE TABLE_SCHEMA = ? && TABLE_NAME = ?', [this.config.database, name])
@@ -233,7 +231,7 @@ class MysqlDatabase extends Database {
     }
   }
 
-  _inferFields<T extends TableType>(table: T, keys: readonly string[]) {
+  _inferFields<T extends keyof Tables>(table: T, keys: readonly string[]) {
     if (!keys) return
     const types = MysqlDatabase.tables[table] || {}
     return keys.map((key) => {
@@ -242,7 +240,7 @@ class MysqlDatabase extends Database {
     }) as (keyof Tables[T])[]
   }
 
-  _createFilter(name: TableType, query: Query) {
+  _createFilter(name: keyof Tables, query: Query) {
     return this.sql.parseQuery(this.resolveQuery(name, query))
   }
 
@@ -263,7 +261,7 @@ class MysqlDatabase extends Database {
         if (!err) return resolve(results)
         logger.warn(sql)
         if (err['code'] === 'ER_DUP_ENTRY') {
-          err = new KoishiError(err.message, 'database.duplicate-entry')
+          err = new DriverError('duplicate-entry', err.message)
         }
         err.stack = err.message + error.stack.slice(5)
         reject(err)
@@ -317,7 +315,7 @@ class MysqlDatabase extends Database {
 
   async stats() {
     const data = await this.select('information_schema.tables', ['TABLE_NAME', 'TABLE_ROWS', 'DATA_LENGTH'], 'TABLE_SCHEMA = ?', [this.config.database])
-    const stats: Query.Stats = { size: 0 }
+    const stats: Stats = { size: 0 }
     stats.tables = Object.fromEntries(data.map(({ TABLE_NAME: name, TABLE_ROWS: count, DATA_LENGTH: size }) => {
       stats.size += size
       return [name, { count, size }]
@@ -325,7 +323,7 @@ class MysqlDatabase extends Database {
     return stats
   }
 
-  async get(name: TableType, query: Query, modifier?: Query.Modifier) {
+  async get(name: keyof Tables, query: Query, modifier?: Modifier) {
     await this._tableTasks[name]
     const filter = this._createFilter(name, query)
     if (filter === '0') return []
@@ -336,7 +334,7 @@ class MysqlDatabase extends Database {
     if (limit) sql += ' LIMIT ' + limit
     if (offset) sql += ' OFFSET ' + offset
     return this.queue(sql).then((data) => {
-      return data.map((row) => this.ctx.model.parse(name, row))
+      return data.map((row) => this.model.parse(name, row))
     })
   }
 
@@ -368,8 +366,8 @@ class MysqlDatabase extends Database {
     }
   }
 
-  async set(name: TableType, query: Query, data: {}) {
-    data = this.ctx.model.format(name, data)
+  async set(name: keyof Tables, query: Query, data: {}) {
+    data = this.model.format(name, data)
     const { fields } = this.resolveTable(name)
     await this._tableTasks[name]
     const filter = this._createFilter(name, query)
@@ -386,17 +384,17 @@ class MysqlDatabase extends Database {
     await this.query(`UPDATE ${name} SET ${update} WHERE ${filter}`)
   }
 
-  async remove(name: TableType, query: Query) {
+  async remove(name: keyof Tables, query: Query) {
     await this._tableTasks[name]
     const filter = this._createFilter(name, query)
     if (filter === '0') return
     await this.query('DELETE FROM ?? WHERE ' + filter, [name])
   }
 
-  async create<T extends TableType>(name: T, data: {}) {
+  async create<T extends keyof Tables>(name: T, data: {}) {
     await this._tableTasks[name]
-    data = this.ctx.model.create(name, data)
-    const formatted = this.ctx.model.format(name, data)
+    data = this.model.create(name, data)
+    const formatted = this.model.format(name, data)
     const { autoInc, primary } = this.resolveTable(name)
     const keys = Object.keys(formatted)
     const header = await this.query<OkPacket>(
@@ -407,16 +405,16 @@ class MysqlDatabase extends Database {
     return { ...data, [primary as string]: header.insertId } as any
   }
 
-  async upsert(name: TableType, data: any[], keys: string | string[]) {
+  async upsert(name: keyof Tables, data: any[], keys: string | string[]) {
     if (!data.length) return
-    data = data.map(item => this.ctx.model.format(name, item))
+    data = data.map(item => this.model.format(name, item))
     await this._tableTasks[name]
 
     const { fields, primary } = this.resolveTable(name)
     const merged = {}
     const insertion = data.map((item) => {
       Object.assign(merged, item)
-      return this.ctx.model.format(name, executeUpdate(this.ctx.model.create(name), item))
+      return this.model.format(name, executeUpdate(this.model.create(name), item))
     })
     const indexFields = makeArray(keys || primary)
     const dataFields = [...new Set(Object.keys(merged).map((key) => {
@@ -464,7 +462,7 @@ class MysqlDatabase extends Database {
     )
   }
 
-  async eval(name: TableType, expr: any, query: Query) {
+  async eval(name: keyof Tables, expr: any, query: Query) {
     await this._tableTasks[name]
     const filter = this._createFilter(name, query)
     const output = this.sql.parseEval(expr)
@@ -485,7 +483,7 @@ namespace MysqlDatabase {
   })
 
   type Declarations = {
-    [T in TableType]?: {
+    [T in keyof Tables]?: {
       [K in keyof Tables[T]]?: () => string
     }
   }

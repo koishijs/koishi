@@ -1,4 +1,5 @@
-import { Dict, Eval, Model, Query, TableType } from 'koishi'
+import { Dict, Tables } from 'koishi'
+import { Eval, Model, Query } from '@koishijs/orm'
 
 export type QueryOperators = {
   [K in keyof Query.FieldExpr]?: (key: string, value: Query.FieldExpr[K]) => string
@@ -224,7 +225,7 @@ export class Caster {
     typeCaster.types.forEach(type => this.types[type] = typeCaster)
   }
 
-  dump(table: TableType, obj: any): any {
+  dump(table: keyof Tables, obj: any): any {
     obj = this.model.format(table, obj)
     const { fields } = this.model.config[table]
     const result = {}
@@ -235,7 +236,7 @@ export class Caster {
     return result
   }
 
-  load(table: TableType, obj: any): any {
+  load(table: keyof Tables, obj: any): any {
     const { fields } = this.model.config[table]
     const result = {}
     for (const key in obj) {

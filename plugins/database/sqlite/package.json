@@ -33,7 +33,7 @@
     "koishi": "^4.4.2"
   },
   "dependencies": {
-    "@koishijs/orm-utils": "^1.0.0",
+    "@koishijs/orm": "^1.0.0",
     "@koishijs/sql-utils": "^1.0.0",
     "better-sqlite3": "^7.5.0",
     "sqlstring-sqlite": "^0.1.1"

@@ -1,8 +1,9 @@
 {
-  "name": "@koishijs/orm-utils",
+  "name": "@koishijs/orm",
   "description": "ORM utilities for Koishi",
   "version": "1.0.0",
-  "main": "lib/index.js",
+  "main": "lib/node.js",
+  "module": "lib/browser.js",
   "typings": "lib/index.d.ts",
   "engines": {
     "node": ">=12.0.0"
@@ -19,15 +20,13 @@
   "bugs": {
     "url": "https://github.com/koishijs/koishi/issues"
   },
-  "homepage": "https://github.com/koishijs/koishi/packages/orm-utils#readme",
+  "homepage": "https://koishi.js.org",
   "keywords": [
     "bot",
     "chatbot",
-    "koishi",
-    "plugin",
-    "utilities"
+    "koishi"
   ],
-  "peerDependencies": {
-    "koishi": "^4.4.2"
+  "dependencies": {
+    "@koishijs/utils": "^5.2.1"
   }
 }

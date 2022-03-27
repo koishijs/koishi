@@ -1,5 +1,5 @@
-import { Context, Database, KoishiError, Logger, makeArray, Model, noop, pick, Query, Schema, Tables, TableType } from 'koishi'
-import { executeEval, executeQuery, executeSort, executeUpdate } from '@koishijs/orm-utils'
+import { Context, Database, Logger, makeArray, Model, noop, pick, Schema, Tables } from 'koishi'
+import { DriverError, executeEval, executeQuery, executeSort, executeUpdate, Modifier, Query } from '@koishijs/orm'
 import { LevelUp } from 'levelup'
 import level from 'level'
 import sub from 'subleveldown'
@@ -45,7 +45,7 @@ class LevelDatabase extends Database {
   }
 
   private createValueEncoding(table: string) {
-    const { fields } = this.ctx.model.config[table]
+    const { fields } = this.model.config[table]
     const dates = Object.keys(fields).filter(f => ['timestamp', 'date', 'time'].includes(fields[f].type))
     if (!dates.length) {
       return {
@@ -68,11 +68,11 @@ class LevelDatabase extends Database {
     }
   }
 
-  table<K extends TableType>(table: K): LevelUp {
+  table<K extends keyof Tables>(table: K): LevelUp {
     return this.#tables[table] ??= sub(this.#level, table, { valueEncoding: this.createValueEncoding(table) })
   }
 
-  private async _maxKey<K extends TableType>(table: K) {
+  private async _maxKey<K extends keyof Tables>(table: K) {
     // eslint-disable-next-line no-unreachable-loop
     for await (const [key] of this.table(table).iterator({ reverse: true, limit: 1 })) {
       return +key
@@ -80,7 +80,7 @@ class LevelDatabase extends Database {
     return 0
   }
 
-  private async _exists<K extends TableType>(table: K, key: string) {
+  private async _exists<K extends keyof Tables>(table: K, key: string) {
     try {
       // Avoid deserialize
       await this.table(table).get(key, { valueEncoding: 'binary' })
@@ -109,10 +109,10 @@ class LevelDatabase extends Database {
     return getStats(this.#path)
   }
 
-  async get(name: keyof Tables, query: Query, modifier: Query.Modifier) {
+  async get(name: keyof Tables, query: Query, modifier: Modifier) {
     const expr = this.resolveQuery(name, query)
     const { fields, limit = Infinity, offset = 0, sort = {} } = this.resolveModifier(name, modifier)
-    const { primary } = this.ctx.model.config[name]
+    const { primary } = this.model.config[name]
     const table = this.table(name)
     // Direct read
     if (makeArray(primary).every(key => isDirectFieldQuery(expr[key]))) {
@@ -120,11 +120,11 @@ class LevelDatabase extends Database {
       try {
         let value = await table.get(key)
         if (offset === 0 && limit > 0 && executeQuery(value, expr)) {
-          value = this.ctx.model.format(name, value)
-          for (const key in this.ctx.model.config[name].fields) {
+          value = this.model.format(name, value)
+          for (const key in this.model.config[name].fields) {
             value[key] ??= null
           }
-          return [this.ctx.model.parse(name, pick(value, fields))]
+          return [this.model.parse(name, pick(value, fields))]
         }
       } catch (e) {
         if (e.notFound !== true) throw e
@@ -145,7 +145,7 @@ class LevelDatabase extends Database {
 
   async set(name: keyof Tables, query: Query, data: {}) {
     data = this.resolveUpdate(name, data)
-    const { primary } = this.ctx.model.config[name]
+    const { primary } = this.model.config[name]
 
     const expr = this.resolveQuery(name, query)
     const table = this.table(name)
@@ -174,7 +174,7 @@ class LevelDatabase extends Database {
 
   async remove(name: keyof Tables, query: Query) {
     const expr = this.resolveQuery(name, query)
-    const { primary } = this.ctx.model.config[name]
+    const { primary } = this.model.config[name]
     const table = this.table(name)
     // Direct delete
     if (makeArray(primary).every(key => isDirectFieldQuery(expr[key]))) {
@@ -199,10 +199,10 @@ class LevelDatabase extends Database {
     await batch.write()
   }
 
-  create<T extends TableType>(name: T, data: any, forced?: boolean) {
+  create<T extends keyof Tables>(name: T, data: any, forced?: boolean) {
     return this.queue(async () => {
-      const { primary, fields, autoInc } = this.ctx.model.config[name]
-      data = this.ctx.model.format(name, data)
+      const { primary, fields, autoInc } = this.model.config[name]
+      data = this.model.format(name, data)
       if (!Array.isArray(primary) && autoInc && !(primary in data)) {
         const max = await this._maxKey(name)
         data[primary] = max + 1
@@ -212,22 +212,22 @@ class LevelDatabase extends Database {
       }
       const key = this._makeKey(primary, data)
       if (!forced && await this._exists(name, key)) {
-        throw new KoishiError('duplicate entry', 'database.duplicate-entry')
+        throw new DriverError('duplicate-entry')
       }
 
-      const copy = this.ctx.model.create(name, data)
+      const copy = this.model.create(name, data)
       await this.table(name).put(key, copy)
       return copy
     })
   }
 
   async upsert(name: keyof Tables, data: any[], key: string | string[]) {
-    const { primary } = this.ctx.model.config[name]
+    const { primary } = this.model.config[name]
     const keys = makeArray(key || primary)
     const table = this.table(name)
     for (const _item of data) {
       // Direct upsert
-      const item = this.ctx.model.format(name, _item)
+      const item = this.model.format(name, _item)
       if (makeArray(primary).every(key => key in item)) {
         const key = this._makeKey(primary, item)
         try {
@@ -237,7 +237,7 @@ class LevelDatabase extends Database {
           }
         } catch (e) {
           if (e.notFound !== true) throw e
-          const data = this.ctx.model.create(name)
+          const data = this.model.create(name)
           await this.create(name, executeUpdate(data, item), true)
         }
         continue
@@ -247,7 +247,7 @@ class LevelDatabase extends Database {
       for await (const [key, value] of table.iterator()) {
         if (keys.every(key => value[key] === item[key])) {
           insert = false
-          const { primary } = this.ctx.model.config[name]
+          const { primary } = this.model.config[name]
           if (makeArray(primary).some(key => (key in data) && value[key] !== data[key])) {
             logger.warn('Cannot update primary key')
             break

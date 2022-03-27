@@ -1,8 +1,7 @@
 import { Argv } from '../parser'
 import { Command } from '../command'
 import { Context } from '../context'
-import { Channel, User } from '../database'
-import { TableType } from '../orm'
+import { Channel, Tables, User } from '../database'
 import { FieldCollector, Session } from '../session'
 
 interface HelpOptions {
@@ -37,7 +36,7 @@ export default function help(ctx: Context, config: HelpConfig = {}) {
     if (shortcut) return shortcut.command
   }
 
-  const createCollector = <T extends TableType>(key: T): FieldCollector<T> => (argv, fields) => {
+  const createCollector = <T extends keyof Tables>(key: T): FieldCollector<T> => (argv, fields) => {
     const { args: [target], session } = argv
     const command = findCommand(target)
     if (!command) return

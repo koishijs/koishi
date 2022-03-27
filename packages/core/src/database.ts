@@ -1,8 +1,10 @@
 import * as utils from '@koishijs/utils'
-import { Awaitable, Dict, Get, makeArray, MaybeArray, pick } from '@koishijs/utils'
-import { Query, Tables } from './orm'
+import { Awaitable, Dict, Get, MaybeArray } from '@koishijs/utils'
+import * as orm from '@koishijs/orm'
+import { Driver, Modifier } from '@koishijs/orm'
 import { Context } from './context'
-import { KoishiError } from './error'
+
+export { DriverError } from '@koishijs/orm'
 
 export interface User {
   id: string
@@ -42,9 +44,42 @@ export namespace Channel {
   export type Observed<K extends Field = Field> = utils.Observed<Pick<Channel, K>, Promise<void>>
 }
 
-export interface Database extends Query.Methods {}
+export interface Tables {
+  user: User
+  channel: Channel
+}
 
-type UserWithPlatform<T extends string, K extends string> = Pick<User, K & User.Field> & Record<T, string>
+export class Model extends orm.Model<Tables> {
+  constructor(protected ctx: Context) {
+    super()
+
+    this.extend('user', {
+      id: 'string(63)',
+      name: 'string(63)',
+      flag: 'unsigned(20)',
+      authority: 'unsigned(4)',
+      locale: 'string(63)',
+    }, {
+      autoInc: true,
+    })
+
+    this.extend('channel', {
+      id: 'string(63)',
+      platform: 'string(63)',
+      flag: 'unsigned(20)',
+      assignee: 'string(63)',
+      guildId: 'string(63)',
+      locale: 'string(63)',
+    }, {
+      primary: ['id', 'platform'],
+    })
+  }
+
+  extend<K extends keyof Tables>(name: K, fields?: orm.Model.Field.Extension<Tables[K]>, extension?: orm.Model.Extension<Tables[K]>) {
+    super.extend(name, fields, extension)
+    this.ctx.emit('model', name)
+  }
+}
 
 export abstract class Service {
   protected start(): Awaitable<void> {}
@@ -70,61 +105,29 @@ export abstract class Service {
   }
 }
 
-export abstract class Database extends Service {
-  constructor(ctx: Context) {
-    super(ctx, 'database')
+type UserWithPlatform<T extends string, K extends string> = Pick<User, K & User.Field> & Record<T, string>
+
+export abstract class Database extends Driver<Tables> {
+  protected start(): Awaitable<void> {}
+  protected stop(): Awaitable<void> {}
+
+  constructor(protected ctx: Context) {
+    super(ctx.model)
+
+    ctx.on('ready', async () => {
+      await this.start()
+      ctx.database = this
+    })
+
+    ctx.on('dispose', async () => {
+      if (ctx.database === this) ctx.database = null
+      await this.stop()
+    })
   }
 
-  protected resolveTable<T extends keyof Tables>(name: T) {
-    const config = this.ctx.model.config[name]
-    if (config) return config
-    throw new KoishiError(`unknown table name "${name}"`, 'database.unknown-table')
-  }
-
-  protected resolveQuery<T extends keyof Tables>(name: T, query: Query<T> = {}): Query.Expr<Tables[T]> {
-    if (Array.isArray(query) || query instanceof RegExp || ['string', 'number'].includes(typeof query)) {
-      const { primary } = this.resolveTable(name)
-      if (Array.isArray(primary)) {
-        throw new KoishiError('invalid shorthand for composite primary key', 'model.invalid-query')
-      }
-      return { [primary]: query } as any
-    }
-    return query as any
-  }
-
-  protected resolveModifier<T extends keyof Tables>(name: T, modifier: Query.Modifier): Query.ModifierExpr {
-    if (!modifier) modifier = {}
-    if (Array.isArray(modifier)) modifier = { fields: modifier }
-    if (modifier.fields) {
-      const fields = Object.keys(this.resolveTable(name).fields)
-      modifier.fields = modifier.fields.flatMap((key) => {
-        if (fields.includes(key)) return key
-        const prefix = key + '.'
-        return fields.filter(path => path.startsWith(prefix))
-      })
-    }
-    return modifier
-  }
-
-  protected resolveUpdate<T extends keyof Tables>(name: T, update: any) {
-    const { primary } = this.resolveTable(name)
-    if (makeArray(primary).some(key => key in update)) {
-      throw new KoishiError(`cannot modify primary key`, 'database.modify-primary-key')
-    }
-    return this.ctx.model.format(name, update)
-  }
-
-  protected resolveData<T extends keyof Tables>(name: T, data: any, fields: string[]) {
-    data = this.ctx.model.format(name, data)
-    for (const key in this.ctx.model.config[name].fields) {
-      data[key] ??= null
-    }
-    return this.ctx.model.parse(name, pick(data, fields))
-  }
-
-  getUser<T extends string, K extends T | User.Field>(platform: T, id: string, modifier?: Query.Modifier<K>): Promise<UserWithPlatform<T, T | K>>
-  getUser<T extends string, K extends T | User.Field>(platform: T, ids: string[], modifier?: Query.Modifier<K>): Promise<UserWithPlatform<T, K>[]>
-  async getUser(platform: string, id: MaybeArray<string>, modifier?: Query.Modifier<User.Field>) {
+  getUser<T extends string, K extends T | User.Field>(platform: T, id: string, modifier?: Modifier<K>): Promise<UserWithPlatform<T, T | K>>
+  getUser<T extends string, K extends T | User.Field>(platform: T, ids: string[], modifier?: Modifier<K>): Promise<UserWithPlatform<T, K>[]>
+  async getUser(platform: string, id: MaybeArray<string>, modifier?: Modifier<User.Field>) {
     const data = await this.get('user', { [platform]: id }, modifier)
     return Array.isArray(id) ? data : data[0] && { ...data[0], [platform]: id } as any
   }
@@ -137,9 +140,9 @@ export abstract class Database extends Service {
     return this.create('user', { [platform]: id, ...data })
   }
 
-  getChannel<K extends Channel.Field>(platform: string, id: string, modifier?: Query.Modifier<K>): Promise<Pick<Channel, K | 'id' | 'platform'>>
-  getChannel<K extends Channel.Field>(platform: string, ids: string[], modifier?: Query.Modifier<K>): Promise<Pick<Channel, K>[]>
-  async getChannel(platform: string, id: MaybeArray<string>, modifier?: Query.Modifier<Channel.Field>) {
+  getChannel<K extends Channel.Field>(platform: string, id: string, modifier?: Modifier<K>): Promise<Pick<Channel, K | 'id' | 'platform'>>
+  getChannel<K extends Channel.Field>(platform: string, ids: string[], modifier?: Modifier<K>): Promise<Pick<Channel, K>[]>
+  async getChannel(platform: string, id: MaybeArray<string>, modifier?: Modifier<Channel.Field>) {
     const data = await this.get('channel', { platform, id }, modifier)
     return Array.isArray(id) ? data : data[0] && { ...data[0], platform, id }
   }

@@ -36,7 +36,7 @@
     "koishi": "^4.4.2"
   },
   "dependencies": {
-    "@koishijs/orm-utils": "^1.0.0",
+    "@koishijs/orm": "^1.0.0",
     "@koishijs/sql-utils": "^1.0.0",
     "@types/mysql": "^2.15.21",
     "@vlasky/mysql": "^2.18.5"
