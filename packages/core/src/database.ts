@@ -82,17 +82,16 @@ export abstract class Service {
   protected start(): Awaitable<void> {}
   protected stop(): Awaitable<void> {}
 
-  constructor(protected ctx: Context, key: keyof Context.Services, immediate?: boolean) {
-    Context.service(key)
-    if (immediate) ctx[key] = this as never
+  constructor(protected ctx: Context, public name: keyof Context.Services, public immediate?: boolean) {
+    Context.service(name)
 
     ctx.on('ready', async () => {
       await this.start()
-      if (!immediate) ctx[key] = this as never
+      ctx[name] = this as never
     })
 
     ctx.on('dispose', async () => {
-      if (ctx[key] === this as never) ctx[key] = null
+      if (ctx[name] === this as never) ctx[name] = null
       await this.stop()
     })
   }

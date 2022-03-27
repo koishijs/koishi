@@ -33,6 +33,11 @@ export class Console extends Service {
   constructor(public ctx: Context, public config: Console.Config) {
     super(ctx, 'console', true)
 
+    const { devMode, uiPath, apiPath, selfUrl } = config
+    this.global.devMode = devMode
+    this.global.uiPath = uiPath
+    this.global.endpoint = selfUrl + apiPath
+
     ctx.plugin(HttpService, config)
     ctx.plugin(WsService, config)
   }

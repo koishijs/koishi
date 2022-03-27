@@ -17,10 +17,7 @@ class HttpService extends DataService<string[]> {
   constructor(ctx: Context, private config: HttpService.Config) {
     super(ctx, 'http')
 
-    const { devMode, uiPath } = config
-    ctx.console.global.devMode = devMode
-    ctx.console.global.uiPath = uiPath
-    config.root ||= devMode
+    config.root ||= config.devMode
       ? resolve(dirname(require.resolve('@koishijs/client/package.json')), 'app')
       : resolve(__dirname, '../dist')
   }

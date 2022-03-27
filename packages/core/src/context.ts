@@ -1,7 +1,7 @@
 import { Awaitable, defineProperty, Dict, Logger, makeArray, MaybeArray, Promisify, Random, remove, Schema, sleep } from '@koishijs/utils'
 import { Command } from './command'
 import { Session } from './session'
-import { Channel, Database, ModelService, Modules, Tables, User } from './database'
+import { Channel, Database, ModelService, Modules, Service, Tables, User } from './database'
 import { Argv } from './parser'
 import { App } from './app'
 import { Bot } from './bot'
@@ -258,7 +258,7 @@ export class Context {
 
     // check duplication
     if (this.app.registry.has(plugin)) {
-      this.logger('app').warn(new Error('duplicate plugin detected'))
+      this.logger('app').warn(`duplicate plugin detected: ${plugin.name}`)
       return this
     }
 
@@ -275,6 +275,7 @@ export class Context {
     const schema = plugin['Config'] || plugin['schema']
     const using = plugin['using'] || []
 
+    this.logger('app').debug('plugin:', plugin.name)
     this.app.registry.set(plugin, {
       plugin,
       schema,
@@ -291,9 +292,10 @@ export class Context {
     this.emit('plugin-added', this.app.registry.get(plugin))
 
     if (using.length) {
-      context.on('service', async (name) => {
+      context.on('service', (name) => {
         if (!using.includes(name)) return
-        await Promise.allSettled(context.state.disposables.slice(1).map(dispose => dispose()))
+        context.state.children.slice().map(plugin => this.dispose(plugin))
+        context.state.disposables.slice(1).map(dispose => dispose())
         callback()
       })
     }
@@ -303,8 +305,11 @@ export class Context {
       if (typeof plugin !== 'function') {
         plugin.apply(context, config)
       } else if (isConstructor(plugin)) {
-        // eslint-disable-next-line no-new, new-cap
-        new plugin(context, config)
+        // eslint-disable-next-line new-cap
+        const instance = new plugin(context, config)
+        if (instance instanceof Service && instance.immediate) {
+          context[instance.name] = instance as never
+        }
       } else {
         plugin(context, config)
       }
@@ -318,6 +323,7 @@ export class Context {
     if (!plugin) throw new Error('root level context cannot be disposed')
     const state = this.app.registry.get(plugin)
     if (!state) return
+    this.logger('app').debug('dispose:', plugin.name)
     state.children.slice().map(plugin => this.dispose(plugin))
     state.disposables.slice().map(dispose => dispose())
     this.app.registry.delete(plugin)
