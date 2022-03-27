@@ -47,7 +47,7 @@ class HttpService extends DataService<string[]> {
     const key = 'extension-' + Random.id()
     this.data[key] = this.resolveEntry(entry)
     this.refresh()
-    this.caller.on('dispose', () => {
+    this.caller?.on('dispose', () => {
       delete this.data[key]
       this.refresh()
     })

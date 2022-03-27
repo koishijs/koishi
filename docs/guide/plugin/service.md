@@ -262,8 +262,8 @@ class Console extends Service {
     this.triggerReload()
 
     // 注意这个地方，caller 属性会指向访问此方法的上下文
-    // 只需要在这个上下文上监听 disconnect 事件，就可以顺利处理副作用了
-    this.caller.on('dispose', () => {
+    // 只需要在这个上下文上监听 dispose 事件，就可以顺利处理副作用了
+    this.caller?.on('dispose', () => {
       this.entries.delete(filename)
       this.triggerReload()
     })
@@ -293,7 +293,7 @@ class Console extends Service {
 ```ts
 class Console extends Service {
   async addEntry(filename: string) {
-    this.caller.on('dispose', async () => {
+    this.caller?.on('dispose', async () => {
       this.entries.delete(filename)
       await this.triggerReload()
     })

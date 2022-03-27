@@ -39,6 +39,7 @@ export abstract class DataService<T = never> extends Service {
   }
 
   async refresh() {
+    if (!this.ctx.state) return
     this.broadcast('data', await this.get(true))
   }
 

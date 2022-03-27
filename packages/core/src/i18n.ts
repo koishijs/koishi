@@ -64,7 +64,7 @@ export class I18n {
         logger.warn('override', locale, path)
       }
       dict[path] = value as I18n.Template
-      (this[Context.current] ?? this.ctx).on('dispose', () => {
+      this[Context.current]?.on('dispose', () => {
         delete dict[path]
       })
     } else if (value) {
