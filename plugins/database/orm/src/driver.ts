@@ -15,17 +15,17 @@ export interface TableStats {
   size: number
 }
 
-type Get<S, K> = {
-  [P in keyof S as S[P] extends (...args: any) => any ? P : P extends K ? P : never]: S[P]
+export type Result<S, K, T = (...args: any) => any> = {
+  [P in keyof S as S[P] extends T ? P : P extends K ? P : never]: S[P]
 }
 
 export abstract class Driver<S> {
   abstract drop(): Promise<void>
   abstract stats(): Promise<Stats>
-  abstract get<T extends Keys<S>, K extends Keys<S[T]>>(table: T, query: Query<S[T]>, modifier?: Modifier<K>): Promise<Get<S[T], K>[]>
+  abstract get<T extends Keys<S>, K extends Keys<S[T]>>(table: T, query: Query<S[T]>, modifier?: Modifier<K>): Promise<Result<S[T], K>[]>
   abstract set<T extends Keys<S>>(table: T, query: Query<S[T]>, data: Update<S[T]>): Promise<void>
   abstract remove<T extends Keys<S>>(table: T, query: Query<S[T]>): Promise<void>
-  abstract create<T extends Keys<S>>(table: T, data: Update<S[T]>): Promise<S[T]>
+  abstract create<T extends Keys<S>>(table: T, data: Partial<S[T]>): Promise<S[T]>
   abstract upsert<T extends Keys<S>>(table: T, data: Update<S[T]>[], keys?: MaybeArray<Keys<Flatten<S[T]>, Indexable>>): Promise<void>
   abstract eval<T extends Keys<S>, E extends Eval.Aggregation<S[T]>>(table: T, expr: E, query?: Query<S[T]>): Promise<Eval<E>>
 

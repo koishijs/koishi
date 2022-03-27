@@ -231,7 +231,7 @@ class Watcher {
 
       // prepare for reload
       let ancestor = state, isMarked = false
-      while ((ancestor = ancestor.parent) && !(isMarked = reloads.has(ancestor)));
+      while ((ancestor = ancestor.parent?.state) && !(isMarked = reloads.has(ancestor)));
       if (!isMarked) reloads.set(state, filename)
     }
 
