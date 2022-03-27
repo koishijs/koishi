@@ -31,7 +31,7 @@
     "required:database"
   ],
   "peerDependencies": {
-    "koishi": "^4.4.2"
+    "koishi": "^4.5.0"
   },
   "devDependencies": {
     "@koishijs/plugin-mock": "^1.0.3"
