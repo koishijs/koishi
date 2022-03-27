@@ -173,15 +173,20 @@ async function showHelp(command: Command, session: Session<'authority'>, config:
     output.push(session.text('.command-authority', [command.config.authority]))
   }
 
-  const usage = command._usage
-  if (usage) {
-    output.push(typeof usage === 'string' ? usage : await usage.call(command, session))
+  if (command._usage) {
+    output.push(typeof command._usage === 'string' ? command._usage : await command._usage(session))
+  } else {
+    const text = session.text([`commands.${command.name}.usage`, ''])
+    if (text) output.push(text)
   }
 
   output.push(...getOptions(command, session, config))
 
   if (command._examples.length) {
     output.push(session.text('.command-examples'), ...command._examples.map(example => '    ' + example))
+  } else {
+    const text = session.text([`commands.${command.name}.examples`, ''])
+    output.push(...text.split('\n').map(line => '    ' + line))
   }
 
   output.push(...formatCommands('.subcommand-prolog', session, command.children, config))

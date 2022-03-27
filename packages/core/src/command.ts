@@ -1,4 +1,4 @@
-import { Awaitable, coerce, Dict, Logger, remove, Schema, template } from '@koishijs/utils'
+import { Awaitable, coerce, Dict, Logger, remove, Schema } from '@koishijs/utils'
 import { Argv } from './parser'
 import { Context, Disposable, Next } from './context'
 import { Channel, User } from './database'
@@ -89,7 +89,7 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
     if (!previous) {
       this.app._commands.set(name, this)
     } else if (previous !== this) {
-      throw new Error(template.format('duplicate command names: "{0}"', name))
+      throw new Error(`duplicate command names: "${name}"`)
     }
   }
 
