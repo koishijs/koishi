@@ -46,7 +46,7 @@ function render(code, lang, attrs) {
     return html
       .replace(/<div class='line'/g, '\n<span class="line"')
       .replace(/<code>\n/, '<code>')
-      .replace(/<\/div>(?=\n|<\/code>)/, '</span>')
+      .replace(/<\/div>(?=\n|<\/code>|<span class="error">)/, '</span>')
   } catch (e) {
     console.log('Code block:')
     console.log(e.code)

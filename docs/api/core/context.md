@@ -56,6 +56,35 @@ ctx.router.get('/path', (ctx, next) => {
 
 新增一个机器人实例。
 
+## 实例属性
+
+以下实例属性都是只读的。
+
+### ctx.state
+
+- 类型: `State`
+
+当前上下文关联的插件信息对象。
+
+```ts
+export interface State {
+  id: string
+  parent: Context
+  config?: any
+  using: string[]
+  schema?: Schema
+  plugin?: Plugin
+  children: Plugin[]
+  disposables: Disposable[]
+}
+```
+
+### ctx.filter
+
+- 类型: `(session: Session) => boolean`
+
+插件绑定的过滤器。
+
 ## 过滤器
 
 有关这里的 API，请参见 [使用上下文](../../guide/context.md#使用上下文)。
