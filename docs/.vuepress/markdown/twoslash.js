@@ -47,7 +47,7 @@ function render(code, lang, attrs) {
       .replace(/<div class="language-id">.+?<\/div>/, '')
       .replace(/<div class='line'/g, '<span class="line"')
       .replace(/<\/div>(?!<\/pre>)/g, '</span>\n')
-    if (html.includes('只是提供了一套标准')) {
+    if (html.includes('LogicalQueryExpr')) {
       console.log(html)
       console.log(result)
     }

@@ -20,8 +20,6 @@ Koishi 内置了下面几个数据库字段：
   - **???:** `string` [平台编号](#平台相关字段)
   - **flag:** `number` 状态标签
   - **authority:** `number` 用户权限
-  - **usage:** `Record<string, number>` 指令调用次数
-  - **timers:** `Record<string, number>` 指令调用时间
 - **channel:** 频道表
   - **platform:** `string` 平台名
   - **id:** `string` [平台编号](#平台相关字段)

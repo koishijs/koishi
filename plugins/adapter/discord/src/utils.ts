@@ -37,7 +37,7 @@ export const adaptAuthor = (author: DC.User): Bot.Author => ({
   nickname: author.username,
 })
 
-export function adaptMessage(bot: DiscordBot, meta: DC.Message, session: Partial<Session> = {}) {
+export function adaptMessage(meta: DC.Message, session: Partial<Session> = {}) {
   if (meta.author) {
     session.author = adaptAuthor(meta.author)
     session.userId = meta.author.id
@@ -115,7 +115,7 @@ export function adaptMessage(bot: DiscordBot, meta: DC.Message, session: Partial
 }
 
 function adaptMessageSession(bot: DiscordBot, meta: DC.Message, session: Partial<Session> = {}) {
-  adaptMessage(bot, meta, session)
+  adaptMessage(meta, session)
   session.messageId = meta.id
   session.timestamp = new Date(meta.timestamp).valueOf() || Date.now()
   // 遇到过 cross post 的消息在这里不会传消息 id
