@@ -37,9 +37,14 @@ function render(code, lang, attrs) {
           target: ScriptTarget.ESNext,
           module: ModuleKind.ESNext,
           moduleResolution: ModuleResolutionKind.NodeJs,
+          types: [
+            '@koishijs/client/global',
+          ],
         },
       },
-    ).replace(/<div /g, '<span ').replace(/<\/div>/g, '</span>\n')
+    )
+      .replace(/<div class="line"/g, '<span class="line"')
+      .replace(/<\/div>(?=<\/code|<span class="line")/g, '</span>\n')
   } catch (e) {
     console.log('Code block:')
     console.log(e.code)

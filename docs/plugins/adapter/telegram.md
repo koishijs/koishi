@@ -65,10 +65,3 @@ API 请求的终结点。
 - 类型：`string`
 
 Koishi 服务暴露在公网的地址，会覆盖 [`app.options.selfUrl`](../../api/app.md#options-selfurl) 的值。
-
-### options.endpoint
-
-- 类型: `string`
-- 默认值: `'https://api.telegram.org'`
-
-要请求的 API 终结点。

@@ -107,6 +107,8 @@ await ctx.database.get('schedule', {
 删除数据的语法与获取数据类似：
 
 ```ts
+declare const id: string
+// ---cut---
 // 从 schedule 表中删除特定 id 的数据行
 // 第二个参数也可以使用上面介绍的对象语法
 await ctx.database.remove('schedule', [id])
@@ -117,6 +119,8 @@ await ctx.database.remove('schedule', [id])
 除了获取和删除数据，常用的需求还有添加和修改数据。
 
 ```ts
+declare const row: Schedule
+// ---cut---
 // 向 schedule 表中添加一行数据，data 是要添加的数据行
 // 返回值是添加的行的完整数据（包括自动生成的 id 和默认属性等）
 await ctx.database.create('schedule', row)
@@ -125,6 +129,8 @@ await ctx.database.create('schedule', row)
 修改数据的逻辑稍微有些不同，需要你传入一个数组：
 
 ```ts
+declare const row: Schedule[]
+// ---cut---
 // 用 rows 来对数据进行更新，你需要确保每一个元素都拥有 id 属性
 // 修改时只会用 rows 中出现的键进行覆盖，不会影响未记录在 data 中的字段
 await ctx.database.update('schedule', rows)
@@ -133,6 +139,8 @@ await ctx.database.update('schedule', rows)
 如果想以非主键来索引要修改的数据，可以使用第三个参数：
 
 ```ts
+declare const row: Koishi.User[]
+// ---cut---
 // 用 rows 来对数据进行更新，你需要确保每一个元素都拥有 onebot 属性
 await ctx.database.update('user', rows, 'onebot')
 ```
@@ -145,16 +153,9 @@ await ctx.database.update('user', rows, 'onebot')
 
 向内置的 User 表中注入字段的方式如下：
 
-::: code-group language
-```js
-ctx.model.extend('user', {
-  // 向用户表中注入字符串字段 foo
-  foo: 'string',
-  // 你还可以配置默认值为 'bar'
-  foo: { type: 'string', initial: 'bar' },
-})
-```
 ```ts
+// @errors: 1117
+
 // TypeScript 用户需要进行类型合并
 declare module 'koishi' {
   interface User {
@@ -169,7 +170,6 @@ ctx.model.extend('user', {
   foo: { type: 'string', initial: 'bar' },
 })
 ```
-:::
 
 向 Channel 注入字段同理。
 

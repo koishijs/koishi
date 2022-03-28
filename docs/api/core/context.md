@@ -200,13 +200,7 @@ ctx.router.get('/path', (ctx, next) => {
 - **options:** `any` 要传入插件的参数，如果为 `false` 则插件不会被安装
 - 返回值: `this`
 
-当前上下文中安装一个插件。
-
-```ts
-type PluginFunction<U> = (ctx: Context, options: U) => void
-type PluginObject<U> = { apply: PluginFunction<T, U> }
-type Plugin<U> = PluginFunction<T, U> | PluginObject<T, U>
-```
+当前上下文中安装一个插件。参见 [认识插件](../../guide/plugin/)。
 
 ### ctx.using(deps, plugin)
 
