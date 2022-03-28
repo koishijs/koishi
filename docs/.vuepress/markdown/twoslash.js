@@ -43,10 +43,12 @@ function render(code, lang, attrs) {
         },
       },
     )
-    return html
+    const result = html
       .replace(/<div clas="language-id">.+?<\/div>/, '')
       .replace(/<div class='line'/g, '<span class="line"')
       .replace(/<\/div>(?!<\/pre>)/g, '</span>\n')
+    if (html.includes('适配器配置项')) console.log(result)
+    return result
   } catch (e) {
     console.log('Code block:')
     console.log(e.code)
