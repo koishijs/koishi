@@ -47,7 +47,10 @@ function render(code, lang, attrs) {
       .replace(/<div class="language-id">.+?<\/div>/, '')
       .replace(/<div class='line'/g, '<span class="line"')
       .replace(/<\/div>(?!<\/pre>)/g, '</span>\n')
-    if (html.includes('适配器配置项')) console.log(result)
+    if (html.includes('只是提供了一套标准')) {
+      console.log(html)
+      console.log(result)
+    }
     return result
   } catch (e) {
     console.log('Code block:')
