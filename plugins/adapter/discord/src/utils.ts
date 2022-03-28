@@ -50,7 +50,7 @@ export function adaptMessage(meta: DC.Message, session: Partial<Session> = {}) {
   session.content = ''
   if (meta.content) {
     session.content = meta.content
-      .replace(/<@[!&](.+?)>/, (_, id) => {
+      .replace(/<@[!&](.+?)>/g, (_, id) => {
         if (meta.mention_roles.includes(id)) {
           return segment('at', { role: id })
         } else {
@@ -58,11 +58,11 @@ export function adaptMessage(meta: DC.Message, session: Partial<Session> = {}) {
           return segment.at(id, { name: user?.username })
         }
       })
-      .replace(/<:(.*):(.+?)>/, (_, name, id) => segment('face', { id: id, name }))
-      .replace(/<a:(.*):(.+?)>/, (_, name, id) => segment('face', { id: id, name, animated: true }))
-      .replace(/@everyone/, () => segment('at', { type: 'all' }))
-      .replace(/@here/, () => segment('at', { type: 'here' }))
-      .replace(/<#(.+?)>/, (_, id) => {
+      .replace(/<:(.*):(.+?)>/g, (_, name, id) => segment('face', { id: id, name }))
+      .replace(/<a:(.*):(.+?)>/g, (_, name, id) => segment('face', { id: id, name, animated: true }))
+      .replace(/@everyone/g, () => segment('at', { type: 'all' }))
+      .replace(/@here/g, () => segment('at', { type: 'here' }))
+      .replace(/<#(.+?)>/g, (_, id) => {
         const channel = meta.mention_channels?.find(c => c.id === id)
         return segment.sharp(id, { name: channel?.name })
       })
