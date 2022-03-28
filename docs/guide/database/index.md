@@ -40,6 +40,10 @@ plugins:
 运行程序后，你就可以通过访问 `ctx.database` 来调用数据库接口了：
 
 ```ts
+declare const id: string
+declare const platform: string
+
+// ---cut---
 // 获取用户数据
 const user = await ctx.database.getUser(platform, id)
 
@@ -129,20 +133,20 @@ await ctx.database.create('schedule', row)
 修改数据的逻辑稍微有些不同，需要你传入一个数组：
 
 ```ts
-declare const row: Schedule[]
+declare const rows: Schedule[]
 // ---cut---
 // 用 rows 来对数据进行更新，你需要确保每一个元素都拥有 id 属性
 // 修改时只会用 rows 中出现的键进行覆盖，不会影响未记录在 data 中的字段
-await ctx.database.update('schedule', rows)
+await ctx.database.upsert('schedule', rows)
 ```
 
 如果想以非主键来索引要修改的数据，可以使用第三个参数：
 
 ```ts
-declare const row: Koishi.User[]
+declare const rows: Koishi.User[]
 // ---cut---
 // 用 rows 来对数据进行更新，你需要确保每一个元素都拥有 onebot 属性
-await ctx.database.update('user', rows, 'onebot')
+await ctx.database.upsert('user', rows, 'onebot')
 ```
 
 ## 扩展数据模型
@@ -178,6 +182,7 @@ ctx.model.extend('user', {
 利用 `ctx.model.extend()` 的第三个参数，我们就可以定义新的数据表了：
 
 ```ts
+// @errors: 2440
 // TypeScript 用户需要进行类型合并
 declare module 'koishi' {
   interface Tables {
@@ -225,6 +230,7 @@ interface Foo {
   name: string
   bar: string
   baz: string
+  uid: string
 }
 
 // ---cut---

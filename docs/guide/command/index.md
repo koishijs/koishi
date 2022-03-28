@@ -169,15 +169,6 @@ app.command('my-command [arg:number]')
 
 使用 `Argv.createDomain()` 创建新类型：
 
-::: code-group language
-```js no-extra-header
-const { Argv } = require('koishi')
-
-Argv.createDomain('repeat', source => source.repeat(3))
-
-app.command('test [arg:repeat]')
-  .action((_, arg) => arg)
-```
 ```ts no-extra-header
 import { Argv } from 'koishi'
 
@@ -194,7 +185,6 @@ Argv.createDomain('repeat', source => source.repeat(3))
 app.command('test [arg:repeat]')
   .action((_, arg) => arg)
 ```
-:::
 
 <panel-view :messages="[
   ['Alice', 'test foo'],
@@ -205,20 +195,7 @@ app.command('test [arg:repeat]')
 
 你也可以在 `Argv.createDomain()` 的回调函数中抛出错误，以实现类型检查的目的：
 
-::: code-group language
-```js no-extra-header
-const { Argv } = require('koishi')
-
-Argv.createDomain('positive', (source) => {
-  const value = +source
-  if (Math.sign(value) !== 1) throw new Error('应为正数。')
-  return value
-})
-
-app.command('test [x:positive]')
-  .action((_, arg) => arg)
-```
-```ts no-extra-header
+```ts
 import { Argv } from 'koishi'
 
 declare module 'koishi' {
@@ -238,7 +215,6 @@ Argv.createDomain('positive', (source) => {
 app.command('test [x:positive]')
   .action((_, arg) => arg)
 ```
-:::
 
 <panel-view :messages="[
   ['Alice', 'test 0.5'],

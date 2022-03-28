@@ -45,9 +45,9 @@ function render(code, lang, attrs) {
     )
     if (html.includes('适配器配置项')) console.log(html)
     return html
-      .replace(/<div class='line'/g, '\n<span class="line"')
-      .replace(/<code>\n/, '<code>')
-      .replace(/<\/div>(?=\n|<\/code>|<span class="error">)/, '</span>')
+      .replace(/<div clas="language-id">.+?<\/div>/g, '')
+      .replace(/<div class='line'/g, '<span class="line"')
+      .replace(/<\/div>(?!<\/pre>)/, '</span>\n')
   } catch (e) {
     console.log('Code block:')
     console.log(e.code)

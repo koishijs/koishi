@@ -1,4 +1,4 @@
-import { App, Session, Context, Command, Service, Schema, Argv, Awaitable } from 'koishi'
+import { App, Session, Context, Command, Service, Schema, Awaitable } from 'koishi'
 import { Dict, segment } from '@koishijs/utils'
 import {} from '@koishijs/plugin-adapter-discord'
 import {} from '@koishijs/plugin-adapter-onebot'

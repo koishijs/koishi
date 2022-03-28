@@ -11,6 +11,9 @@ sidebarDepth: 2
 之前我们已经提到过，你可以在 `session.user` 上获得本次事件相关的用户数据，但实际上 `session.user` 能做的远远不止这些。它的本质其实是一个**观察者**对象。假如我们有下面的代码：
 
 ```ts
+declare function getLotteryItem(): string
+
+// ---cut---
 // 定义一个 items 字段，用于存放物品列表
 declare module 'koishi' {
   interface User {
@@ -89,9 +92,15 @@ ctx.middleware((session: Session<'msgCount'>, next) => {
 对于 Koishi 内部的两个抽象表 User 和 Channel，我们在 [会话对象](../../api/core/session.md) 中封装了几个高级方法：
 
 ```ts
+declare const id: string
+declare const authority: number
+declare const assignee: string
+declare const fields: any[]
+
+// ---cut---
 // 中间增加了一个第二参数，表示默认情况下的权限等级
 // 如果找到该用户，则返回该用户本身
-session.getUser(id, fields)
+session.getUser(id, authority, fields)
 
 // 在当前会话上绑定一个可观测用户实例
 // 也就是所谓的 session.user
@@ -99,7 +108,7 @@ session.observeUser(fields)
 
 // 中间增加了一个第二参数，表示默认情况下的 assignee
 // 如果找到该频道，则不修改任何数据，返回该频道本身
-session.getChannel(id, fields)
+session.getChannel(id, assignee, fields)
 
 // 在当前会话上绑定一个可观测频道实例
 // 也就是所谓的 session.channel

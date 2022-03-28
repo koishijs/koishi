@@ -28,7 +28,7 @@ class CustomProvider extends DataService<string[]> {
     super(ctx, 'custom')
   }
 
-  get() {
+  async get() {
     return ['Hello', 'World']
   }
 }

@@ -39,6 +39,8 @@ ctx.command('greeting').action(({ session }) => {
 现在，如果我们希望它在某个频道使用英文，我们只需设置这个频道的属性：
 
 ```ts
+declare const channel: import('koishi').Channel
+// ---cut---
 channel.locale = 'en'
 ```
 
@@ -129,7 +131,7 @@ session.text(['foo', ''])
 在 [编写帮助](../command/help.md#编写帮助) 一节中，我们已经了解到指令和参数的描述文本都是在指令注册时就定义的。这种做法对单语言开发固然方便，但并不适合多语言开发，因为它将翻译逻辑与代码逻辑耦合了。如果你希望你编写的指令支持多语言，那么需要将翻译文本单独定义：
 
 ```ts
-ctx.i18n.define(zh, {
+ctx.i18n.define('zh', {
   commands: {
     foo: {
       description: '指令描述',
@@ -140,7 +142,7 @@ ctx.i18n.define(zh, {
   },
 })
 
-ctx.command('foo').options('bar')
+ctx.command('foo').option('bar')
 ```
 
 ### 作用域渲染
