@@ -813,3 +813,63 @@ export class MyPhotoRegistry extends BasePlugin<Config> {
   }
 }
 ```
+
+## 扩展数据表
+
+借助 `koishi-entities` 这个包，您也可以很轻松地使用类和装饰器定义数据表。
+
+::: info
+koishi-thirdeye 已经重新导出了这个包，无需再手动导入或安装 `koishi-entities`。
+:::
+
+### 定义数据表
+
+数据表类以 `@DefineModel` 装饰器进行修饰，指明表的名称。同时，每个表字段以 `@ModelField()` 装饰器进行修饰。
+
+`@ModelField` 的第一个参数用于指定表的类型，用法见 [`ctx.model`](../database/index.md#扩展字段) 的用法。同时，您也可以使用一些其他的相关装饰器自定义表的相关行为。
+
+在数据库查询时，结果中的对象均会被类实例化。因此您可以在类中灵活地定义方法函数，简化数据对象的操作。
+
+```ts
+@DefineModel('dress')
+export class Dress {
+  @PrimaryGenerated() // 自增主键
+  @ModelField('integer(11)')
+  id: number;
+
+  @Unique() // 唯一键
+  @ModelField()
+  name: string;
+
+  getDisplayString() {
+    return `${this.name}(${this.id})`;
+  }
+
+  @Foreign('dress', 'id') // 外键，指向 dress.id
+  @ModelField('integer(11)')
+  parentId: number;
+}
+```
+
+### 注册数据表模型
+
+```ts
+@UseModel(Dress) // 注册 Dress 数据表模型
+@DefinePlugin({ name: 'my-plugin', schema: MyPluginConfig })
+export default class MyPlugin extends BasePlugin<MyPluginConfig> {
+
+  // 注入数据库服务，并注册为依赖
+  @Inject(true)
+  private database: Database
+
+  @UseCommand('dress <id>')
+  async getDress(@PutArg(0) id: number) {
+    const [dress] = await this.database.get(dress, { id })
+    if (dress) {
+      return dress.getDisplayString() // 可以使用对象方法
+    } else {
+      return 'Not found.'
+    }
+  }
+}
+```
