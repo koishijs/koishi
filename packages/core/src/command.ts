@@ -1,11 +1,9 @@
-import { Awaitable, coerce, Dict, Logger, remove, template } from '@koishijs/utils'
+import { Awaitable, coerce, Dict, Logger, remove, Schema } from '@koishijs/utils'
 import { Argv } from './parser'
 import { Context, Disposable, Next } from './context'
 import { Channel, User } from './database'
 import { Computed, FieldCollector, Session } from './session'
-import { KoishiError } from './error'
 import * as internal from './internal'
-import Schema from 'schemastery'
 
 const logger = new Logger('command')
 
@@ -41,7 +39,7 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
   _disposed?: boolean
   _disposables?: Disposable[]
 
-  private _userFields: FieldCollector<'user'>[] = []
+  private _userFields: FieldCollector<'user'>[] = [['locale']]
   private _channelFields: FieldCollector<'channel'>[] = [['locale']]
   private _actions: Command.Action[] = []
   private _checkers: Command.Action[] = [async (argv) => {
@@ -91,7 +89,7 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
     if (!previous) {
       this.app._commands.set(name, this)
     } else if (previous !== this) {
-      throw new Error(template.format('duplicate command names: "{0}"', name))
+      throw new Error(`duplicate command names: "${name}"`)
     }
   }
 
@@ -229,7 +227,7 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
       if (callback !== undefined) {
         queue.push(next => Next.compose(callback, next))
         if (queue.length > Next.MAX_DEPTH) {
-          throw new KoishiError(`middleware call stack exceeded ${Next.MAX_DEPTH}`, 'runtime.max-depth-exceeded')
+          throw new Error(`middleware stack exceeded ${Next.MAX_DEPTH}`)
         }
       }
       return queue[index++]?.(argv.next)

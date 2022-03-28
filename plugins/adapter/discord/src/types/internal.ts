@@ -4,6 +4,8 @@ import { AxiosRequestConfig } from 'axios'
 type Method = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH'
 
 export class Internal {
+  constructor(private http: Quester) {}
+
   static define(routes: Dict<Partial<Record<Method, string | string[]>>>) {
     for (const path in routes) {
       for (const key in routes[path]) {
@@ -34,6 +36,4 @@ export class Internal {
       }
     }
   }
-
-  constructor(private http: Quester) {}
 }

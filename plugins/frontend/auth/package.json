@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-auth",
   "description": "Console User Authentication",
-  "version": "1.1.0",
+  "version": "1.1.2",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -34,8 +34,8 @@
     "required:console"
   ],
   "peerDependencies": {
-    "@koishijs/plugin-console": "^3.2.3",
-    "koishi": "^4.4.1"
+    "@koishijs/plugin-console": "^3.2.4",
+    "koishi": "^4.5.0"
   },
   "devDependencies": {
     "@koishijs/client": "^3.2.3"

@@ -1,6 +1,6 @@
 import * as utils from '@koishijs/utils'
 import { Awaitable, Dict, Get, MaybeArray } from '@koishijs/utils'
-import { Query } from './orm'
+import { Driver, Model, Modifier, Result, Update } from '@koishijs/orm'
 import { Context } from './context'
 
 export interface User {
@@ -8,6 +8,7 @@ export interface User {
   flag: number
   authority: number
   name: string
+  locale: string
 }
 
 export namespace User {
@@ -40,25 +41,57 @@ export namespace Channel {
   export type Observed<K extends Field = Field> = utils.Observed<Pick<Channel, K>, Promise<void>>
 }
 
-export interface Database extends Query.Methods {}
+export interface Tables {
+  user: User
+  channel: Channel
+}
 
-type UserWithPlatform<T extends string, K extends string> = Pick<User, K & User.Field> & Record<T, string>
+export class ModelService extends Model<Tables> {
+  constructor(protected ctx: Context) {
+    super()
+
+    this.extend('user', {
+      id: 'string(63)',
+      name: 'string(63)',
+      flag: 'unsigned(20)',
+      authority: 'unsigned(4)',
+      locale: 'string(63)',
+    }, {
+      autoInc: true,
+    })
+
+    this.extend('channel', {
+      id: 'string(63)',
+      platform: 'string(63)',
+      flag: 'unsigned(20)',
+      assignee: 'string(63)',
+      guildId: 'string(63)',
+      locale: 'string(63)',
+    }, {
+      primary: ['id', 'platform'],
+    })
+  }
+
+  extend<K extends keyof Tables>(name: K, fields?: Model.Field.Extension<Tables[K]>, extension?: Model.Extension<Tables[K]>) {
+    super.extend(name, fields, extension)
+    this.ctx.emit('model', name)
+  }
+}
 
 export abstract class Service {
   protected start(): Awaitable<void> {}
   protected stop(): Awaitable<void> {}
 
-  constructor(protected ctx: Context, key: keyof Context.Services, immediate?: boolean) {
-    Context.service(key)
-    if (immediate) ctx[key] = this as never
+  constructor(protected ctx: Context, public name: keyof Context.Services, public immediate?: boolean) {
+    Context.service(name)
 
     ctx.on('ready', async () => {
       await this.start()
-      if (!immediate) ctx[key] = this as never
+      ctx[name] = this as never
     })
 
     ctx.on('dispose', async () => {
-      if (ctx[key] === this as never) ctx[key] = null
+      if (ctx[name] === this as never) ctx[name] = null
       await this.stop()
     })
   }
@@ -68,19 +101,34 @@ export abstract class Service {
   }
 }
 
-export abstract class Database extends Service {
-  constructor(ctx: Context) {
-    super(ctx, 'database')
+export abstract class Database extends Driver<Tables> {
+  protected start(): Awaitable<void> {}
+  protected stop(): Awaitable<void> {}
+
+  constructor(protected ctx: Context) {
+    super(ctx.model)
+
+    ctx.on('ready', async () => {
+      await this.start()
+      ctx.database = this
+    })
+
+    ctx.on('dispose', async () => {
+      if (ctx.database === this) ctx.database = null
+      await this.stop()
+    })
   }
 
-  getUser<T extends string, K extends T | User.Field>(platform: T, id: string, modifier?: Query.Modifier<K>): Promise<UserWithPlatform<T, T | K>>
-  getUser<T extends string, K extends T | User.Field>(platform: T, ids: string[], modifier?: Query.Modifier<K>): Promise<UserWithPlatform<T, K>[]>
-  async getUser(platform: string, id: MaybeArray<string>, modifier?: Query.Modifier<User.Field>) {
+  getUser<T extends string, K extends User.Field>(platform: T, id: string, modifier?: Modifier<K>): Promise<Result<User, K> & Record<T, string>>
+  getUser<T extends string, K extends User.Field>(platform: T, ids: string[], modifier?: Modifier<K>): Promise<Result<User, K>[]>
+  async getUser(platform: string, id: MaybeArray<string>, modifier?: Modifier<User.Field>) {
     const data = await this.get('user', { [platform]: id }, modifier)
-    return Array.isArray(id) ? data : data[0] && { ...data[0], [platform]: id } as any
+    if (Array.isArray(id)) return data
+    if (data[0]) Object.assign(data[0], { [platform]: id })
+    return data[0] as any
   }
 
-  setUser(platform: string, id: string, data: Partial<User>) {
+  setUser(platform: string, id: string, data: Update<User>) {
     return this.set('user', { [platform]: id }, data)
   }
 
@@ -88,21 +136,23 @@ export abstract class Database extends Service {
     return this.create('user', { [platform]: id, ...data })
   }
 
-  getChannel<K extends Channel.Field>(platform: string, id: string, modifier?: Query.Modifier<K>): Promise<Pick<Channel, K | 'id' | 'platform'>>
-  getChannel<K extends Channel.Field>(platform: string, ids: string[], modifier?: Query.Modifier<K>): Promise<Pick<Channel, K>[]>
-  async getChannel(platform: string, id: MaybeArray<string>, modifier?: Query.Modifier<Channel.Field>) {
+  getChannel<K extends Channel.Field>(platform: string, id: string, modifier?: Modifier<K>): Promise<Result<Channel, K | 'id' | 'platform'>>
+  getChannel<K extends Channel.Field>(platform: string, ids: string[], modifier?: Modifier<K>): Promise<Result<Channel, K>[]>
+  async getChannel(platform: string, id: MaybeArray<string>, modifier?: Modifier<Channel.Field>) {
     const data = await this.get('channel', { platform, id }, modifier)
-    return Array.isArray(id) ? data : data[0] && { ...data[0], platform, id }
+    if (Array.isArray(id)) return data
+    if (data[0]) Object.assign(data[0], { platform, id })
+    return data[0]
   }
 
-  getAssignedChannels<K extends Channel.Field>(fields?: K[], assignMap?: Dict<string[]>): Promise<Pick<Channel, K>[]>
+  getAssignedChannels<K extends Channel.Field>(fields?: K[], assignMap?: Dict<string[]>): Promise<Result<Channel, K>[]>
   async getAssignedChannels(fields?: Channel.Field[], assignMap: Dict<string[]> = this.ctx.getSelfIds()) {
     return this.get('channel', {
       $or: Object.entries(assignMap).map(([platform, assignee]) => ({ platform, assignee })),
     }, fields)
   }
 
-  setChannel(platform: string, id: string, data: Partial<Channel>) {
+  setChannel(platform: string, id: string, data: Update<Channel>) {
     return this.set('channel', { platform, id }, data)
   }
 

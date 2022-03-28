@@ -16,7 +16,7 @@
   "bugs": {
     "url": "https://github.com/koishijs/koishi/issues"
   },
-  "homepage": "https://github.com/koishijs/koishi/packages/plugin-puppeteer#readme",
+  "homepage": "https://koishi.js.org/plugins/other/puppeteer.html",
   "keywords": [
     "bot",
     "chatbot",
@@ -30,11 +30,11 @@
     "@types/pngjs": "^6.0.1"
   },
   "peerDependencies": {
-    "koishi": "^4.4.1"
+    "koishi": "^4.5.0"
   },
   "dependencies": {
     "chrome-finder": "^1.0.7",
     "pngjs": "^6.0.0",
-    "puppeteer-core": "^13.4.1"
+    "puppeteer-core": "^13.5.1"
   }
 }

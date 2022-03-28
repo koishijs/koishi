@@ -31,10 +31,10 @@
     "impl:worker"
   ],
   "peerDependencies": {
-    "koishi": "^4.4.1"
+    "koishi": "^4.5.0"
   },
   "optionalDependencies": {
-    "@babel/core": "^7.17.5",
+    "@babel/core": "^7.17.7",
     "@babel/plugin-transform-react-jsx": "^7.17.3",
     "coffeescript": "^2.6.1",
     "esbuild": "^0.12.29",
@@ -43,12 +43,12 @@
   },
   "dependencies": {
     "js-yaml": "^4.1.0",
-    "simple-git": "^2.48.0"
+    "simple-git": "^3.4.0"
   },
   "devDependencies": {
     "@types/babel__core": "^7.1.18",
     "@types/js-yaml": "^4.0.5",
-    "@koishijs/plugin-database-memory": "^1.0.2",
+    "@koishijs/plugin-database-memory": "^1.1.0",
     "@koishijs/plugin-mock": "^1.0.3"
   }
 }

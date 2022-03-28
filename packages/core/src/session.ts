@@ -1,7 +1,6 @@
-import { Channel, User } from './database'
-import { Tables, TableType } from './orm'
+import { Channel, Tables, User } from './database'
 import { Command } from './command'
-import { defineProperty, Logger, observe, Promisify, Random, remove, segment } from '@koishijs/utils'
+import { defineProperty, Logger, makeArray, observe, Promisify, Random, remove, segment } from '@koishijs/utils'
 import { Argv } from './parser'
 import { Middleware, Next } from './context'
 import { App } from './app'
@@ -43,9 +42,8 @@ export interface Session extends Session.Payload {}
 
 export namespace Session {
   export interface Payload {
-    id?: string
     platform?: string
-    selfId?: string
+    selfId: string
     type?: string
     subtype?: string
     messageId?: string
@@ -82,13 +80,13 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
   bot: Bot
   app: App
 
-  selfId?: string
+  selfId: string
   operatorId?: string
   targetId?: string
   duration?: number
   file?: FileInfo
 
-  id?: string
+  id: string
   platform?: string
   argv?: Argv<U, G>
   user?: User.Observed<U>
@@ -101,7 +99,7 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
   private _hooks: (() => void)[]
   private _promise: Promise<string>
 
-  constructor(bot: Bot, session: Session.Payload) {
+  constructor(bot: Bot, session: Partial<Session.Payload>) {
     Object.assign(this, session)
     this.platform = bot.platform
     defineProperty(this, 'app', bot.app)
@@ -132,7 +130,7 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
   toJSON(): Session.Payload {
     return Object.fromEntries(Object.entries(this).filter(([key]) => {
       return !key.startsWith('_') && !key.startsWith('$')
-    }))
+    })) as any
   }
 
   private async _preprocess() {
@@ -143,7 +141,7 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
       content = content.slice(node.capture[0].length).trimStart()
       this.quote = await this.bot.getMessage(node.data.channelId || this.channelId, node.data.id).catch((error) => {
         logger.warn(error)
-        return null
+        return undefined
       })
     }
     return content
@@ -313,20 +311,22 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
     }
   }
 
-  text(path: string, params: object = {}) {
+  text(path: string | string[], params: object = {}) {
     const locales = [this.app.options.locale]
+    locales.unshift(this.user?.['locale'])
     if (this.subtype === 'group') {
       locales.unshift(this.guild?.['locale'])
       locales.unshift(this.channel?.['locale'])
     }
-    if (path.startsWith('.')) {
+    const paths = makeArray(path).map((path) => {
+      if (!path.startsWith('.')) return path
       if (!this.scope) {
         this.app.logger('i18n').warn(new Error('missing scope'))
         return ''
       }
-      path = this.scope + path
-    }
-    return this.app.i18n.render(locales, path, params)
+      return this.scope + path
+    })
+    return this.app.i18n.text(locales, paths, params)
   }
 
   collect<T extends 'user' | 'channel'>(key: T, argv: Argv, fields = new Set<keyof Tables[T]>()) {
@@ -451,11 +451,11 @@ export function getSessionId(session: Session) {
   return '' + session.userId + session.channelId
 }
 
-export type FieldCollector<T extends TableType, K = keyof Tables[T], A extends any[] = any[], O = {}> =
+export type FieldCollector<T extends keyof Tables, K = keyof Tables[T], A extends any[] = any[], O = {}> =
   | Iterable<K>
   | ((argv: Argv<never, never, A, O>, fields: Set<keyof Tables[T]>) => void)
 
-function collectFields<T extends TableType>(argv: Argv, collectors: FieldCollector<T>[], fields: Set<keyof Tables[T]>) {
+function collectFields<T extends keyof Tables>(argv: Argv, collectors: FieldCollector<T>[], fields: Set<keyof Tables[T]>) {
   for (const collector of collectors) {
     if (typeof collector === 'function') {
       collector(argv, fields)

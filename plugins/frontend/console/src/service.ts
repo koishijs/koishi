@@ -25,9 +25,9 @@ export abstract class DataService<T = never> extends Service {
     return null
   }
 
-  constructor(protected ctx: Context, protected name: keyof Console.Services, public options: DataService.Options = {}) {
-    super(ctx, `console.${name}`, true)
-    DataService.define(name)
+  constructor(protected ctx: Context, protected key: keyof Console.Services, public options: DataService.Options = {}) {
+    super(ctx, `console.${key}`, true)
+    DataService.define(key)
   }
 
   start() {
@@ -35,7 +35,7 @@ export abstract class DataService<T = never> extends Service {
   }
 
   protected broadcast(type: string, value: any) {
-    this.ctx.console.ws.broadcast(type, { key: this.name, value }, this.options)
+    this.ctx.console?.ws.broadcast(type, { key: this.key, value }, this.options)
   }
 
   async refresh() {

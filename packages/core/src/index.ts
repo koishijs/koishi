@@ -1,16 +1,11 @@
-import Schema from 'schemastery'
-
-export { Schema }
-
 export * from '@koishijs/utils'
+export * from '@koishijs/orm'
 export * from './adapter'
 export * from './app'
 export * from './bot'
 export * from './command'
 export * from './context'
 export * from './database'
-export * from './error'
-export * from './orm'
 export * from './parser'
 export * from './session'
 export * from './internal'

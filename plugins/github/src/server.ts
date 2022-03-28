@@ -126,13 +126,13 @@ export class GitHub extends Service {
     if (name) {
       await session.execute({ name: 'github.authorize', args: [name] })
     } else {
-      await session.send('输入超时。')
+      await session.send(session.text('github.input-timeout'))
     }
   }
 
   async request(method: Method, url: string, session: ReplySession, body?: any, headers?: Dict) {
     if (!session.user.ghAccessToken) {
-      return this.authorize(session, '要使用此功能，请对机器人进行授权。输入你的 GitHub 用户名。')
+      return this.authorize(session, session.text('github.require-auth'))
     }
 
     try {
@@ -150,7 +150,7 @@ export class GitHub extends Service {
       session.user.ghAccessToken = data.access_token
       session.user.ghRefreshToken = data.refresh_token
     } catch {
-      return this.authorize(session, '令牌已失效，需要重新授权。输入你的 GitHub 用户名。')
+      return this.authorize(session, session.text('github.auth-expired'))
     }
 
     return await this._request(method, url, session, body, headers)
@@ -181,7 +181,7 @@ export class ReplyHandler {
   }
 
   react(url: string) {
-    return this.request('POST', url, '发送失败。', {
+    return this.request('POST', url, this.session.text('github.send-failed'), {
       content: this.content,
     }, {
       accept: 'application/vnd.github.squirrel-girl-preview',
@@ -199,14 +199,14 @@ export class ReplyHandler {
   }
 
   async reply(url: string, params?: Dict) {
-    return this.request('POST', url, '发送失败。', {
+    return this.request('POST', url, this.session.text('github.send-failed'), {
       body: await this.transform(this.content),
       ...params,
     })
   }
 
   base(url: string) {
-    return this.request('PATCH', url, '修改失败。', {
+    return this.request('PATCH', url, this.session.text('github.modify-failed'), {
       base: this.content,
     })
   }
@@ -214,7 +214,7 @@ export class ReplyHandler {
   merge(url: string, method?: 'merge' | 'squash' | 'rebase') {
     const [title] = this.content.split('\n', 1)
     const message = this.content.slice(title.length)
-    return this.request('PUT', url, '操作失败。', {
+    return this.request('PUT', url, this.session.text('github.action-failed'), {
       merge_method: method,
       commit_title: title.trim(),
       commit_message: message.trim(),
@@ -231,7 +231,7 @@ export class ReplyHandler {
 
   async close(url: string, commentUrl: string) {
     if (this.content) await this.reply(commentUrl)
-    await this.request('PATCH', url, '操作失败。', {
+    await this.request('PATCH', url, this.session.text('github.action-failed'), {
       state: 'closed',
     })
   }
@@ -251,7 +251,7 @@ export class ReplyHandler {
       buffer = await page.screenshot({ clip })
     } catch (error) {
       new Logger('puppeteer').warn(error)
-      return this.session.send('截图失败。')
+      return this.session.send(this.session.text('github.screenshot-failed'))
     } finally {
       await page.close()
     }

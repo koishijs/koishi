@@ -5,7 +5,11 @@ sidebarDepth: 2
 # 直接调用 Koishi
 
 ::: tip
-这篇指南假设你已了解关于 JavaScript 和 Node.js 的中级知识。如果你刚开始学习 JS 开发或者对编写业务代码不感兴趣，建议跳过本章，直接前往 [创建模板项目](./template.md) 章节。
+这篇指南假设你已了解关于 TypeScript 和 Node.js 的中级知识。如果你刚开始学习 JS 开发或者对编写业务代码不感兴趣，建议跳过本章，直接前往 [创建模板项目](./template.md) 章节。
+:::
+
+::: tip
+开发 Koishi 并非一定要使用 TypeScript，但它强大的类型系统能够在开发中提供有效的类型提示。在接下来的文档中，我们将统一使用 TypeScript 作为示例代码。如果你想编写纯粹的 JS 或使用其他方言，可以在示例代码的基础上自行修改。
 :::
 
 Koishi 项目通常可以通过两种方式搭建：
@@ -26,6 +30,9 @@ npm init
 
 # 安装 koishi 和相关库
 npm i koishi @koishijs/plugin-adapter-onebot @koishijs/plugin-echo
+
+# 安装 TypeScript 相关依赖 (如不使用请忽略此步骤)
+npm i typescript @types/node esbuild-register -D
 ```
 ```yarn
 # 初始化项目
@@ -33,32 +40,15 @@ yarn init
 
 # 安装 koishi 和相关库
 yarn add koishi @koishijs/plugin-adapter-onebot @koishijs/plugin-echo
+
+# 安装 TypeScript 相关依赖 (如不使用请忽略此步骤)
+yarn add typescript @types/node esbuild-register -D
 ```
 :::
 
-新建入口文件 `index.js`，并写下这段代码：
+新建入口文件 `index.ts`，并写下这段代码：
 
-::: code-group language index
-```js no-extra-header
-const { App } = require('koishi')
-
-// 创建一个 Koishi 应用
-const app = new App()
-
-// 安装 onebot 适配器插件，并配置机器人
-app.plugin('adapter-onebot', {
-  protocol: 'ws',
-  selfId: '123456789',
-  endpoint: 'ws://127.0.0.1:6700',
-})
-
-// 安装 echo 插件
-app.plugin('echo')
-
-// 启动应用
-app.start()
-```
-```ts no-extra-header
+```ts title=index.ts no-extra-header
 import { App } from 'koishi'
 
 // 创建一个 Koishi 应用
@@ -77,12 +67,11 @@ app.plugin('echo')
 // 启动应用
 app.start()
 ```
-:::
 
 最后运行这个文件：
 
 ```cli
-node .
+node -r esbuild-register .
 ```
 
 现在可以对你的机器人说话了：
@@ -106,7 +95,7 @@ Koishi 插件可以在 [npm](https://www.npmjs.com/) 上获取。要下载的包
 
 `app.plugin()` 也支持传入完整的插件对象，这种写法尽管长了一些，但是对于 TypeScript 用户会有更好的类型支持：
 
-```ts
+```ts title=index.ts
 import onebot from '@koishijs/plugin-adapter-onebot'
 import * as echo from '@koishijs/plugin-echo'
 
@@ -123,7 +112,7 @@ app.plugin(echo)
 
 同理，对于 commonjs 的使用者，如果要使用 `require` 来获取插件对象，也应注意到这种区别：
 
-```ts
+```ts title=index.ts
 // 这里的 .default 是不可省略的
 app.plugin(require('@koishijs/plugin-adapter-onebot').default, {
   protocol: 'ws',
@@ -159,93 +148,31 @@ app.middleware((session, next) => {
 <chat-message nickname="Koishi" avatar="/koishi.png">宝塔镇河妖</chat-message>
 </panel-view>
 
-不过这样写可能并不好，因为一旦功能变多，你的 `index.js` 就会变得臃肿。我们推荐将上面的逻辑写在一个单独的文件里，并将它作为一个插件来加载：
+不过这样写可能并不好，因为一旦功能变多，你的 `index.ts` 就会变得臃肿。我们推荐将上面的逻辑写在一个单独的文件里，并将它作为一个插件来加载：
 
-::: code-group language ping
-```js no-extra-header
-module.exports.name = 'ping'
-
-module.exports.apply = (ctx) => {
-  // 如果收到“天王盖地虎”，就回应“宝塔镇河妖”
-  ctx.middleware(async (session, next) => {
-    if (session.content === '天王盖地虎') {
-      return '宝塔镇河妖'
-    } else {
-      return next()
-    }
-  })
-}
-```
-```ts no-extra-header
-import { Context } from 'koishi'
-
-export function apply(ctx: Context) {
-  // 如果收到“天王盖地虎”，就回应“宝塔镇河妖”
-  ctx.middleware(async (session, next) => {
-    if (session.content === '天王盖地虎') {
-      return '宝塔镇河妖'
-    } else {
-      return next()
-    }
-  })
-}
-```
-:::
-
-::: code-group language
-```js no-extra-header
-// @module: commonjs
-// @filename: ping.js
-module.exports.name = 'ping'
-
-module.exports.apply = (ctx) => {
-  ctx.middleware((session, next) => {
-    if (session.content === 'PING') {
-      return 'PONG'
-    } else {
-      return next()
-    }
-  })
-}
-
-// @filename: index.js
-import { App } from 'koishi'
-
-const app = new App({})
-
-// ---cut---
-// 这里的 ./ping 是相对于 index.js 的路径
-app.plugin(require('./ping'))
-```
-```ts no-extra-header
-// @module: esnext
-// @filename: ping.ts
+```ts title=ping.ts no-extra-header
 import { Context } from 'koishi'
 
 export const name = 'ping'
 
 export function apply(ctx: Context) {
-  ctx.middleware((session, next) => {
-    if (session.content === 'PING') {
-      return 'PONG'
+  // 如果收到“天王盖地虎”，就回应“宝塔镇河妖”
+  ctx.middleware(async (session, next) => {
+    if (session.content === '天王盖地虎') {
+      return '宝塔镇河妖'
     } else {
       return next()
     }
   })
 }
+```
 
-// @filename: index.ts
-import { App } from 'koishi'
-
-const app = new App({})
-
-// ---cut---
-// 这里的 ./ping 是相对于 index.js 的路径
+```ts title=index.ts
+// 这里的 ./ping 是相对于 index.ts 的路径
 import * as ping from './ping'
 
 app.plugin(ping)
 ```
-:::
 
 ## 配置数据库
 
@@ -262,7 +189,7 @@ yarn add @koishijs/plugin-database-mysql
 
 然后继续修改你的代码，在应用中配置 MySQL 数据库插件：
 
-```js title=index.js
+```ts title=index.ts
 app.plugin('database-mysql', {
   host: '[your-host]',
   port: 3306,
@@ -278,7 +205,7 @@ app.plugin('database-mysql', {
 
 如果你要同时运行来自多个平台的机器人，你只需要同时安装着多个平台的适配器插件即可：
 
-```js title=index.js
+```ts title=index.ts
 // 来自 onebot 适配器的机器人
 app.plugin('adapter-onebot', {
   protocol: 'ws',
@@ -295,7 +222,7 @@ app.plugin('adapter-discord', {
 
 如果你要同时运行来自同一个平台的多个机器人，只需将上述配置写进一个 `bots` 数组即可：
 
-```js title=index.js
+```ts title=index.ts
 app.plugin('adapter-onebot', {
   bots: [{
     // 这里配置你的第一个机器人

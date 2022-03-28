@@ -13,6 +13,7 @@ export const using = ['database'] as const
 const logger = new Logger('github')
 
 export function apply(ctx: Context, config: Config) {
+  ctx.i18n.define('zh', require('./locales/zh'))
   config.path = sanitize(config.path)
 
   const { app, database } = ctx
@@ -38,11 +39,11 @@ export function apply(ctx: Context, config: Config) {
     return _ctx.status = 200
   })
 
-  ctx.command('github.authorize <user>', 'GitHub 授权')
+  ctx.command('github.authorize <user>')
     .alias('github.auth')
     .userFields(['id'])
     .action(async ({ session }, user) => {
-      if (!user) return '请输入用户名。'
+      if (!user) return session.text('.user-expected')
       const token = Random.id()
       tokens[token] = session.user.id
       const url = 'https://github.com/login/oauth/authorize?' + encode({
@@ -52,29 +53,29 @@ export function apply(ctx: Context, config: Config) {
         scope: 'admin:repo_hook,repo',
         login: user,
       })
-      return '请点击下面的链接继续操作：\n' + url
+      return session.text('.follow-link') + '\n' + url
     })
 
   const repoRegExp = /^[\w.-]+\/[\w.-]+$/
 
-  ctx.command('github.repos [name]', '管理监听的仓库')
+  ctx.command('github.repos [name]')
     .userFields(['ghAccessToken', 'ghRefreshToken'])
-    .option('add', '-a  监听一个新的仓库')
-    .option('delete', '-d  移除已监听的仓库')
-    .option('subscribe', '-s  添加完成后更新到订阅')
+    .option('add', '-a')
+    .option('delete', '-d')
+    .option('subscribe', '-s')
     .action(async ({ session, options }, name) => {
       if (options.add || options.delete) {
-        if (!name) return '请输入仓库名。'
-        if (!repoRegExp.test(name)) return '请输入正确的仓库名。'
+        if (!name) return session.text('github.repo-expected')
+        if (!repoRegExp.test(name)) return session.text('github.repo-invalid')
         if (!session.user.ghAccessToken) {
-          return ctx.github.authorize(session, '要使用此功能，请对机器人进行授权。输入你的 GitHub 用户名。')
+          return ctx.github.authorize(session, session.text('github.require-auth'))
         }
 
         name = name.toLowerCase()
         const url = `https://api.github.com/repos/${name}/hooks`
         const [repo] = await ctx.database.get('github', [name])
         if (options.add) {
-          if (repo) return `已经添加过仓库 ${name}。`
+          if (repo) return session.text('.add-unchanged', [name])
           const secret = Random.id()
           let data: any
           try {
@@ -88,30 +89,30 @@ export function apply(ctx: Context, config: Config) {
           } catch (err) {
             if (!axios.isAxiosError(err)) throw err
             if (err.response?.status === 404) {
-              return '仓库不存在或您无权访问。'
+              return session.text('github.repo-not-found', [name])
             } else if (err.response?.status === 403) {
-              return '第三方访问受限，请尝试授权此应用。\nhttps://docs.github.com/articles/restricting-access-to-your-organization-s-data/'
+              return session.text('github.forbidden')
             } else {
               logger.warn(err)
-              return '由于未知原因添加仓库失败。'
+              return session.text('.add-failed', [name])
             }
           }
           await ctx.database.create('github', { name, id: data.id, secret })
-          if (!options.subscribe) return '添加仓库成功！'
+          if (!options.subscribe) return session.text('.add-succeeded', [name])
           return session.execute({
             name: 'github',
             args: [name],
             options: { add: true },
           }, true)
         } else {
-          if (!repo) return `尚未添加过仓库 ${name}。`
+          if (!repo) return session.text('.delete-unchanged', [name])
           try {
             await ctx.github.request('DELETE', `${url}/${repo.id}`, session)
           } catch (err) {
             if (!axios.isAxiosError(err)) throw err
             if (err.response.status !== 404) {
               logger.warn(err)
-              return '移除仓库失败。'
+              return session.text('.delete-failed', [name])
             }
           }
 
@@ -129,12 +130,12 @@ export function apply(ctx: Context, config: Config) {
             updateChannels(),
             ctx.database.remove('github', [name]),
           ])
-          return '移除仓库成功！'
+          return session.text('.delete-succeeded', [name])
         }
       }
 
       const repos = await ctx.database.get('github', {})
-      if (!repos.length) return '当前没有监听的仓库。'
+      if (!repos.length) return session.text('.empty')
       return repos.map(repo => repo.name).join('\n')
     })
 
@@ -154,26 +155,26 @@ export function apply(ctx: Context, config: Config) {
 
   ctx.command('github [name]')
     .channelFields(['githubWebhooks'])
-    .option('list', '-l  查看当前频道订阅的仓库列表', { hidden })
-    .option('add', '-a  为当前频道添加仓库订阅', { hidden, authority: 2 })
-    .option('delete', '-d  从当前频道移除仓库订阅', { hidden, authority: 2 })
+    .option('list', '-l', { hidden })
+    .option('add', '-a', { hidden, authority: 2 })
+    .option('delete', '-d', { hidden, authority: 2 })
     .action(async ({ session, options }, name) => {
       if (options.list) {
-        if (!session.channel) return '当前不是群聊上下文。'
+        if (!session.channel) return session.text('.private-context')
         const names = Object.keys(session.channel.githubWebhooks)
-        if (!names.length) return '当前没有订阅的仓库。'
+        if (!names.length) return session.text('.empty')
         return names.join('\n')
       }
 
       if (options.add || options.delete) {
-        if (!session.channel) return '当前不是群聊上下文。'
-        if (!name) return '请输入仓库名。'
-        if (!repoRegExp.test(name)) return '请输入正确的仓库名。'
+        if (!session.channel) return session.text('.private-context')
+        if (!name) return session.text('github.repo-expected')
+        if (!repoRegExp.test(name)) return session.text('github.repo-invalid')
 
         name = name.toLowerCase()
         const webhooks = session.channel.githubWebhooks
         if (options.add) {
-          if (webhooks[name]) return `已经在当前频道订阅过仓库 ${name}。`
+          if (webhooks[name]) return session.text('.add-unchanged', [name])
           const [repo] = await ctx.database.get('github', [name])
           if (!repo) {
             const dispose = session.middleware(({ content }, next) => {
@@ -186,18 +187,18 @@ export function apply(ctx: Context, config: Config) {
                 options: { add: true, subscribe: true },
               })
             })
-            return `尚未添加过仓库 ${name}。发送空行或句号以立即添加并订阅该仓库。`
+            return session.text('.unknown', [name])
           }
           webhooks[name] = {}
           await session.channel.$update()
           subscribe(name, session.cid, {})
-          return '添加订阅成功！'
+          return session.text('.add-succeeded', [name])
         } else if (options.delete) {
-          if (!webhooks[name]) return `尚未在当前频道订阅过仓库 ${name}。`
+          if (!webhooks[name]) return session.text('.delete-unchanged', [name])
           delete webhooks[name]
           await session.channel.$update()
           unsubscribe(name, session.cid)
-          return '移除订阅成功！'
+          return session.text('.delete-succeeded', [name])
         }
       }
 
@@ -206,40 +207,40 @@ export function apply(ctx: Context, config: Config) {
 
   async function request(method: Method, url: string, session: ReplySession, body: any, message: string) {
     return ctx.github.request(method, 'https://api.github.com' + url, session, body)
-      .then(() => message + '成功！')
+      .then(() => message + session.text('github.succeeded'))
       .catch((err) => {
         logger.warn(err)
-        return message + '失败。'
+        return message + session.text('github.failed')
       })
   }
 
-  ctx.command('github.issue [title] [body:text]', '创建和查看 issue')
+  ctx.command('github.issue [title] [body:text]')
     .userFields(['ghAccessToken', 'ghRefreshToken'])
-    .option('repo', '-r [repo:string]  仓库名')
+    .option('repo', '-r [repo:string]')
     .action(async ({ session, options }, title, body) => {
-      if (!options.repo) return '请输入仓库名。'
-      if (!repoRegExp.test(options.repo)) return '请输入正确的仓库名。'
+      if (!options.repo) return session.text('github.repo-expected')
+      if (!repoRegExp.test(options.repo)) return session.text('github.repo-invalid')
       if (!session.user.ghAccessToken) {
-        return ctx.github.authorize(session, '要使用此功能，请对机器人进行授权。输入你的 GitHub 用户名。')
+        return ctx.github.authorize(session, session.text('github.require-auth'))
       }
 
       return request('POST', `/repos/${options.repo}/issues`, session, {
         title,
         body,
-      }, '创建')
+      }, session.text('github.create'))
     })
 
-  ctx.command('github.star [repo]', '给仓库点个 star')
+  ctx.command('github.star [repo]')
     .userFields(['ghAccessToken', 'ghRefreshToken'])
-    .option('repo', '-r [repo:string]  仓库名')
+    .option('repo', '-r [repo:string]')
     .action(async ({ session, options }) => {
-      if (!options.repo) return '请输入仓库名。'
-      if (!repoRegExp.test(options.repo)) return '请输入正确的仓库名。'
+      if (!options.repo) return session.text('github.repo-expected')
+      if (!repoRegExp.test(options.repo)) return session.text('github.repo-invalid')
       if (!session.user.ghAccessToken) {
-        return ctx.github.authorize(session, '要使用此功能，请对机器人进行授权。输入你的 GitHub 用户名。')
+        return ctx.github.authorize(session, session.text('github.require-auth'))
       }
 
-      return request('PUT', `/user/starred/${options.repo}`, session, null, '创建')
+      return request('PUT', `/user/starred/${options.repo}`, session, null, session.text('github.action'))
     })
 
   ctx.on('ready', async () => {

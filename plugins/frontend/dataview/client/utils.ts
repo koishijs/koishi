@@ -1,4 +1,4 @@
-import { Query } from 'koishi'
+import { Driver, Keys } from 'koishi'
 import { message, send } from '@koishijs/client'
 
 export function serialize(obj: unknown): string {
@@ -35,7 +35,7 @@ export function deserialize(str: string): unknown {
   )
 }
 
-export async function sendQuery<K extends keyof Query.Methods>(name: K, ...args: Parameters<Query.Methods[K]>): Promise<ReturnType<Query.Methods[K]>> {
+export async function sendQuery<K extends Keys<Driver, Function>>(name: K, ...args: Parameters<Driver[K]>): Promise<ReturnType<Driver[K]>> {
   return deserialize(await send(`database/${name}`, ...args.map(serialize) as any) as any)
 }
 

@@ -9,7 +9,7 @@ const specs = [
   'plugins/a11y/admin/tests/*.spec.ts',
   'plugins/a11y/rate-limit/tests/*.spec.ts',
   'plugins/a11y/schedule/tests/*.spec.ts',
-  // 'plugins/a11y/switch/tests/*.spec.ts',
+  'plugins/a11y/switch/tests/*.spec.ts',
   'plugins/a11y/sudo/tests/*.spec.ts',
   // 'plugins/a11y/verifier/tests/*.spec.ts',
   'plugins/common/broadcast/tests/*.spec.ts',

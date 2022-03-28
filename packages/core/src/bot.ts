@@ -1,8 +1,7 @@
-import { Dict, Logger, makeArray, Random, sleep } from '@koishijs/utils'
+import { Dict, Logger, makeArray, Random, Schema, sleep } from '@koishijs/utils'
 import { Adapter } from './adapter'
 import { App } from './app'
 import { Session } from './session'
-import Schema from 'schemastery'
 
 const logger = new Logger('bot')
 

@@ -1,7 +1,5 @@
-import { App, Model, omit, Tables } from 'koishi'
+import { App, omit, Tables } from 'koishi'
 import { expect } from 'chai'
-
-export const DEFAULT_DATE = new Date('1970-01-01')
 
 interface Bar {
   id?: number
@@ -11,10 +9,6 @@ interface Bar {
   timestamp?: Date
   date?: Date
   time?: Date
-  meta?: {
-    a?: string
-    b?: number
-  }
 }
 
 interface Baz {
@@ -39,7 +33,6 @@ function OrmOperations(app: App) {
     timestamp: 'timestamp',
     date: 'date',
     time: 'time',
-    meta: { type: 'json' },
   }, {
     autoInc: true,
   })
@@ -50,30 +43,6 @@ function OrmOperations(app: App) {
     value: 'string',
   }, {
     primary: ['ida', 'idb'],
-  })
-}
-
-function normalizeDate<T extends Tables[keyof Tables]>(row: T, model: Model.Config<T>): T {
-  const normalized = { ...row }
-  for (const k in row) {
-    if (!row[k]) continue
-    if (model.fields[k]?.type === 'time') {
-      const raw: Date = row[k] as any,
-        h = raw.getHours(),
-        m = raw.getMinutes(),
-        s = raw.getSeconds()
-      const date = new Date(DEFAULT_DATE)
-      date.setHours(h, m, s)
-      normalized[k] = date as any
-    }
-  }
-  return normalized
-}
-
-function expectShapeNormalized<T extends Tables[keyof Tables]>(t1: T[], t2: T[], model: Model.Config<T>) {
-  expect(t1.length).to.equal(t2.length)
-  t1.forEach((_, i) => {
-    expect(normalizeDate(t1[i], model)).to.have.shape(normalizeDate(t2[i], model))
   })
 }
 
@@ -88,9 +57,8 @@ namespace OrmOperations {
     { id: 3, num: 1989 },
     { id: 4, list: ['1', '1', '4'] },
     { id: 5, timestamp: magicBorn },
-    { id: 6, meta: { a: 'foo', b: 233 } },
-    { id: 7, date: magicBorn },
-    { id: 8, time: new Date('2020-01-01 12:00:00') },
+    { id: 6, date: magicBorn },
+    { id: 7, time: new Date('1970-01-01 12:00:00') },
   ]
 
   const bazTable: Baz[] = [
@@ -104,14 +72,13 @@ namespace OrmOperations {
     await app.database.remove(name, {})
     const result: Tables[K][] = []
     for (const item of table) {
-      result.push(await app.database.create(name, item))
+      result.push(await app.database.create(name, item as any))
     }
     return result
   }
 
   export const create = function Create(app: App) {
     it('auto increment primary key', async () => {
-      const model = app.model.config['temp2']
       const table = barTable.map(bar => merge(app.model.create('temp2'), bar))
       for (const index in barTable) {
         const bar = await app.database.create('temp2', omit(barTable[index], ['id']))
@@ -119,9 +86,9 @@ namespace OrmOperations {
         expect(bar).to.have.shape(table[index])
       }
       for (const obj of table) {
-        expectShapeNormalized(await app.database.get('temp2', { id: obj.id }), [obj], model)
+        await expect(app.database.get('temp2', { id: obj.id })).to.eventually.have.shape([obj])
       }
-      expectShapeNormalized(await app.database.get('temp2', {}), table, model)
+      await expect(app.database.get('temp2', {})).to.eventually.have.shape(table)
     })
 
     it('specify primary key', async () => {
@@ -160,7 +127,6 @@ namespace OrmOperations {
   }
 
   export const set = function Set(app: App) {
-    const modelTemp2 = app.model.config['temp2']
     it('basic support', async () => {
       const table = await setup(app, 'temp2', barTable)
       const data = table.find(bar => bar.timestamp)
@@ -175,7 +141,7 @@ namespace OrmOperations {
           { timestamp: magicBorn },
         ],
       }, { text: 'thu' })).eventually.fulfilled
-      expectShapeNormalized(await app.database.get('temp2', {}), table, modelTemp2)
+      await expect(app.database.get('temp2', {})).to.eventually.have.shape(table)
     })
 
     it('using expressions', async () => {
@@ -185,35 +151,11 @@ namespace OrmOperations {
       await expect(app.database.set('temp2', [table[1].id, table[2].id, 9], {
         num: { $multiply: [2, { $: 'id' }] },
       })).eventually.fulfilled
-      expectShapeNormalized(await app.database.get('temp2', {}), table, modelTemp2)
-    })
-
-    it('using object literals', async () => {
-      const table = await setup(app, 'temp2', barTable)
-      const data1 = table.find(item => item.meta)
-      const data2 = table.find(item => !item.meta)
-      data1.meta = data2.meta = { b: 114514 }
-      await expect(app.database.set('temp2', [data1.id, data2.id, 9], {
-        meta: { b: 114514 },
-      })).eventually.fulfilled
-      expectShapeNormalized(await app.database.get('temp2', {}), table, modelTemp2)
-    })
-
-    it('nested property', async () => {
-      const table = await setup(app, 'temp2', barTable)
-      const data1 = table.find(item => item.meta)
-      const data2 = table.find(item => !item.meta)
-      data1.meta.a = 'foobar'
-      data2.meta = { a: 'bar' }
-      await expect(app.database.set('temp2', [data1.id, data2.id, 9], {
-        'meta.a': { $concat: [{ $ifNull: [{ $: 'meta.a' }, ''] }, 'bar'] },
-      })).eventually.fulfilled
-      expectShapeNormalized(await app.database.get('temp2', {}), table, modelTemp2)
+      await expect(app.database.get('temp2', {})).to.eventually.have.shape(table)
     })
   }
 
   export const upsert = function Upsert(app: App) {
-    const modelTemp2 = app.model.config['temp2']
     it('update existing records', async () => {
       const table = await setup(app, 'temp2', barTable)
       const data = [
@@ -225,7 +167,7 @@ namespace OrmOperations {
         table[index] = merge(table[index], update)
       })
       await expect(app.database.upsert('temp2', data)).eventually.fulfilled
-      expectShapeNormalized(await app.database.get('temp2', {}), table, modelTemp2)
+      await expect(app.database.get('temp2', {})).to.eventually.have.shape(table)
     })
 
     it('insert new records', async () => {
@@ -236,7 +178,7 @@ namespace OrmOperations {
       ]
       table.push(...data.map(bar => merge(app.model.create('temp2'), bar)))
       await expect(app.database.upsert('temp2', data)).eventually.fulfilled
-      expectShapeNormalized(await app.database.get('temp2', {}), table, modelTemp2)
+      await expect(app.database.get('temp2', {})).to.eventually.have.shape(table)
     })
 
     it('using expressions', async () => {
@@ -253,41 +195,7 @@ namespace OrmOperations {
         { id: 3, num: { $add: [3, { $: 'num' }] } },
         { id: 9, num: 999 },
       ])).eventually.fulfilled
-      expectShapeNormalized(await app.database.get('temp2', {}), table, modelTemp2)
-    })
-
-    it('using object literals', async () => {
-      const table = await setup(app, 'temp2', barTable)
-      const data5 = table.find(item => item.id === 5)
-      const data6 = table.find(item => item.id === 6)
-      const data9 = table.find(item => item.id === 9)
-      data5.meta = { b: 114 }
-      data6.meta = { b: 514 }
-      expect(data9).to.be.undefined
-      table.push({ id: 9, meta: { b: 114514 } })
-      await expect(app.database.upsert('temp2', [
-        { id: 5, meta: { b: 114 } },
-        { id: 6, meta: { b: 514 } },
-        { id: 9, meta: { b: 114514 } },
-      ])).eventually.fulfilled
-      expectShapeNormalized(await app.database.get('temp2', {}), table, modelTemp2)
-    })
-
-    it('nested property', async () => {
-      const table = await setup(app, 'temp2', barTable)
-      const data5 = table.find(item => item.id === 5)
-      const data6 = table.find(item => item.id === 6)
-      const data9 = table.find(item => item.id === 9)
-      data5.meta = { b: 555 }
-      data6.meta.b = 666
-      expect(data9).to.be.undefined
-      table.push({ id: 9, meta: { b: 999 } })
-      await expect(app.database.upsert('temp2', [
-        { id: 5, 'meta.b': 555 },
-        { id: 6, 'meta.b': 666 },
-        { id: 9, 'meta.b': 999 },
-      ])).eventually.fulfilled
-      expectShapeNormalized(await app.database.get('temp2', {}), table, modelTemp2)
+      await expect(app.database.get('temp2', {})).to.eventually.have.shape(table)
     })
   }
 

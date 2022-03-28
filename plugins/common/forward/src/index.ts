@@ -1,4 +1,4 @@
-import { Command, Context, Dict, Schema, Session, Time } from 'koishi'
+import { Command, Context, Dict, Schema, segment, Session, Time } from 'koishi'
 import { parsePlatform } from '@koishijs/helpers'
 
 declare module 'koishi' {
@@ -56,7 +56,20 @@ export function apply(ctx: Context, { rules, interval }: Config) {
       }
 
       const bot = ctx.bots.get(`${platform}:${rule.selfId}`)
-      const content = `${author.nickname || author.username}: ${parsed.content}`
+      const chain = segment.parse(parsed.content)
+
+      // replace all mentions (koishijs/koishi#506)
+      if (chain.some(item => item.type === 'at')) {
+        const dict = await session.bot.getGuildMemberMap(session.guildId)
+        chain.forEach((item, index) => {
+          if (item.type === 'at') {
+            const content = '@' + dict[item.data.id]
+            chain.splice(index, 1, { type: 'text', data: { content } })
+          }
+        })
+      }
+
+      const content = `${author.nickname || author.username}: ${segment.join(chain)}`
       await bot.sendMessage(channelId, content, rule.guildId).then((ids) => {
         for (const id of ids) {
           relayMap[id] = {

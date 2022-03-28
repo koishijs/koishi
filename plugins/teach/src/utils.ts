@@ -1,4 +1,4 @@
-import { App, difference, isInteger, observe, Session } from 'koishi'
+import { App, difference, isInteger, observe, Query, Session } from 'koishi'
 
 declare module 'koishi' {
   interface EventMap {

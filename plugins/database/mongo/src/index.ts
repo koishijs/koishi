@@ -1,7 +1,7 @@
 import { Db, IndexDescription, MongoClient, MongoError } from 'mongodb'
-import { Context, Database, Dict, isNullable, KoishiError, makeArray, Model, noop, omit, pick, Query, Schema, Tables } from 'koishi'
+import { Context, Database, Dict, DriverError, isNullable, makeArray, Model, noop, omit, pick, Schema, Tables } from 'koishi'
+import { executeEval, executeUpdate, Modifier, Query } from '@koishijs/orm'
 import { URLSearchParams } from 'url'
-import { executeEval, executeUpdate } from '@koishijs/orm-utils'
 import { transformEval, transformQuery } from './utils'
 
 declare module 'koishi' {
@@ -10,11 +10,9 @@ declare module 'koishi' {
   }
 }
 
-type TableType = keyof Tables
-
 interface EvalTask {
   expr: any
-  table: TableType
+  table: keyof Tables
   query: Query
   resolve: (value: any) => void
   reject: (error: Error) => void
@@ -48,7 +46,7 @@ class MongoDatabase extends Database {
     this.client = await MongoClient.connect(mongourl)
     this.db = this.client.db(this.config.database)
 
-    for (const name in this.ctx.model.config) {
+    for (const name in this.model.config) {
       this._tableTasks[name] = this._syncTable(name)
     }
 
@@ -62,7 +60,7 @@ class MongoDatabase extends Database {
   }
 
   private async _createIndexes(name: string) {
-    const { primary, unique } = this.ctx.model.config[name]
+    const { primary, unique } = this.model.config[name]
     const coll = this.db.collection(name)
     const newSpecs: IndexDescription[] = []
     const oldSpecs = await coll.indexes()
@@ -83,7 +81,7 @@ class MongoDatabase extends Database {
   }
 
   private async _createFields(name: string) {
-    const { fields } = this.ctx.model.config[name]
+    const { fields } = this.model.config[name]
     const coll = this.db.collection(name)
     await Promise.all(Object.keys(fields).map((key) => {
       if (isNullable(fields[key].initial)) return
@@ -101,16 +99,16 @@ class MongoDatabase extends Database {
     ])
   }
 
-  private _createFilter(name: string, query: Query) {
-    return transformQuery(this.ctx.model.resolveQuery(name, query))
+  private _createFilter(name: keyof Tables, query: Query) {
+    return transformQuery(this.resolveQuery(name, query))
   }
 
   async drop() {
-    await Promise.all(Object.keys(this.ctx.model.config).map(name => this.db.dropCollection(name)))
+    await Promise.all(Object.keys(this.model.config).map(name => this.db.dropCollection(name)))
   }
 
   private async _collStats() {
-    const tables = Object.keys(this.ctx.model.config)
+    const tables = Object.keys(this.model.config)
     const entries = await Promise.all(tables.map(async (name) => {
       const coll = this.db.collection(name)
       const { count, size } = await coll.stats()
@@ -128,50 +126,52 @@ class MongoDatabase extends Database {
     return { size: totalSize, tables }
   }
 
-  async get(name: TableType, query: Query, modifier: Query.Modifier) {
+  async get(name: keyof Tables, query: Query, modifier: Modifier) {
     const filter = this._createFilter(name, query)
     if (!filter) return []
     await this._tableTasks[name]
     let cursor = this.db.collection(name).find(filter)
-    const { fields, limit, offset = 0, sort } = Query.resolveModifier(modifier)
-    cursor = cursor.project({ _id: 0, ...Object.fromEntries((fields ?? []).map(key => [key, 1])) })
+    const { fields, limit, offset = 0, sort } = this.resolveModifier(name, modifier)
     if (offset) cursor = cursor.skip(offset)
     if (limit) cursor = cursor.limit(offset + limit)
     if (sort) cursor = cursor.sort(sort)
-    return await cursor.toArray() as any
+    return (await cursor.toArray()).map(row => this.resolveData(name, row, fields)) as any
   }
 
-  async set(name: TableType, query: Query, update: {}) {
+  async set(name: keyof Tables, query: Query, update: {}) {
     const filter = this._createFilter(name, query)
     if (!filter) return
     await this._tableTasks[name]
-    const { primary } = this.ctx.model.config[name]
+    const { primary } = this.model.config[name]
     const indexFields = makeArray(primary)
-    const updateFields = new Set(Object.keys(update).map(key => key.split('.', 1)[0]))
     const coll = this.db.collection(name)
     const original = await coll.find(filter).toArray()
     if (!original.length) return
+    update = this.model.format(name, update)
+    const updateFields = new Set(Object.keys(update).map(key => key.split('.', 1)[0]))
     const bulk = coll.initializeUnorderedBulkOp()
     for (const item of original) {
-      bulk.find(pick(item, indexFields)).updateOne({ $set: pick(executeUpdate(item, update), updateFields) })
+      bulk.find(pick(item, indexFields)).updateOne({
+        $set: pick(executeUpdate(item, update), updateFields),
+      })
     }
     await bulk.execute()
   }
 
-  async remove(name: TableType, query: Query) {
+  async remove(name: keyof Tables, query: Query) {
     const filter = this._createFilter(name, query)
     if (!filter) return
     await this.db.collection(name).deleteMany(filter)
   }
 
-  private queue(name: TableType, callback: () => Promise<any>) {
+  private queue(name: keyof Tables, callback: () => Promise<any>) {
     return this._tableTasks[name] = Promise.resolve(this._tableTasks[name]).catch(noop).then(callback)
   }
 
-  async create(name: TableType, data: any) {
+  async create<T extends keyof Tables>(name: T, data: any) {
     const coll = this.db.collection(name)
     return this.queue(name, async () => {
-      const { primary, fields, autoInc } = this.ctx.model.config[name]
+      const { primary, fields, autoInc } = this.model.config[name]
       if (autoInc && !Array.isArray(primary) && !(primary in data)) {
         const [latest] = await coll.find().sort(primary, -1).limit(1).toArray()
         data[primary] = latest ? +latest[primary] + 1 : 1
@@ -180,42 +180,43 @@ class MongoDatabase extends Database {
           data[primary] = data[primary].padStart(8, '0')
         }
       }
-      const copy = { ...this.ctx.model.create(name), ...data }
+      const copy = this.model.create(name, data)
       try {
         await coll.insertOne(copy)
-        delete copy._id
+        delete copy['_id']
         return copy
       } catch (err) {
         if (err instanceof MongoError && err.code === 11000) {
-          throw new KoishiError(err.message, 'database.duplicate-entry')
+          throw new DriverError('duplicate-entry', err.message)
         }
         throw err
       }
     })
   }
 
-  async upsert(name: TableType, data: any[], keys: string | string[]) {
+  async upsert(name: keyof Tables, data: any[], keys: string | string[]) {
     if (!data.length) return
-    if (!keys) keys = this.ctx.model.config[name].primary
+    if (!keys) keys = this.model.config[name].primary
     const indexFields = makeArray(keys)
     await this._tableTasks[name]
     const coll = this.db.collection(name)
     const original = await coll.find({ $or: data.map(item => pick(item, indexFields)) }).toArray()
     const bulk = coll.initializeUnorderedBulkOp()
-    for (const update of data) {
+    for (const _item of data) {
+      const update = this.model.format(name, _item)
       const item = original.find(item => indexFields.every(key => item[key].valueOf() === update[key].valueOf()))
       if (item) {
         const updateFields = new Set(Object.keys(update).map(key => key.split('.', 1)[0]))
         const override = omit(pick(executeUpdate(item, update), updateFields), indexFields)
         bulk.find(pick(item, indexFields)).updateOne({ $set: override })
       } else {
-        bulk.insert(executeUpdate(this.ctx.model.create(name), update))
+        bulk.insert(executeUpdate(this.model.create(name), update))
       }
     }
     await bulk.execute()
   }
 
-  eval(table: TableType, expr: any, query: Query) {
+  eval(table: keyof Tables, expr: any, query: Query) {
     return new Promise<any>((resolve, reject) => {
       this._evalTasks.push({ expr, table, query, resolve, reject })
       process.nextTick(() => this._flushEvalTasks())

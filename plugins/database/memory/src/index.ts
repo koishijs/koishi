@@ -1,14 +1,10 @@
-import { clone, Context, Database, Dict, KoishiError, makeArray, Model, noop, pick, Query, TableType } from 'koishi'
-import { executeEval, executeQuery, executeSort, executeUpdate } from '@koishijs/orm-utils'
+import { clone, Context, Database, Dict, DriverError, makeArray, Model, noop, pick, Tables } from 'koishi'
+import { executeEval, executeQuery, executeSort, executeUpdate, Modifier, Query } from '@koishijs/orm'
 import { Config, Storage } from './storage'
 
 declare module 'koishi' {
   interface Database {
     memory: MemoryDatabase
-  }
-
-  interface Modules {
-    'database-memory': typeof import('.')
   }
 }
 
@@ -36,7 +32,7 @@ export class MemoryDatabase extends Database {
 
   stop() {}
 
-  $table<K extends TableType>(table: K) {
+  $table<K extends keyof Tables>(table: K) {
     return this.#store[table] ||= []
   }
 
@@ -49,34 +45,35 @@ export class MemoryDatabase extends Database {
     return {}
   }
 
-  $query(name: TableType, query: Query) {
-    const expr = this.ctx.model.resolveQuery(name, query)
+  $query(name: keyof Tables, query: Query) {
+    const expr = this.resolveQuery(name, query)
     return this.$table(name).filter(row => executeQuery(row, expr))
   }
 
-  async get(name: TableType, query: Query, modifier?: Query.Modifier) {
-    const { fields, limit = Infinity, offset = 0, sort = {} } = Query.resolveModifier(modifier)
+  async get(name: keyof Tables, query: Query, modifier?: Modifier) {
+    const { fields, limit = Infinity, offset = 0, sort = {} } = this.resolveModifier(name, modifier)
     return executeSort(this.$query(name, query), sort)
-      .map(row => clone(pick(row, fields)))
       .slice(offset, offset + limit)
+      .map(row => this.resolveData(name, row, fields))
   }
 
-  async set(name: TableType, query: Query, data: {}) {
+  async set(name: keyof Tables, query: Query, data: {}) {
+    data = this.resolveUpdate(name, data)
     this.$query(name, query).forEach(row => executeUpdate(row, data))
     this.$save(name)
   }
 
-  async remove(name: TableType, query: Query) {
-    const expr = this.ctx.model.resolveQuery(name, query)
+  async remove(name: keyof Tables, query: Query) {
+    const expr = this.resolveQuery(name, query)
     this.#store[name] = this.$table(name)
       .filter(row => !executeQuery(row, expr))
     this.$save(name)
   }
 
-  async create(name: TableType, data: any) {
+  async create<T extends keyof Tables>(name: T, data: any) {
     const store = this.$table(name)
-    const { primary, fields, autoInc } = this.ctx.model.config[name]
-    data = clone(data)
+    const { primary, fields, autoInc } = this.model.config[name]
+    data = this.model.format(name, clone(data))
     if (!Array.isArray(primary) && autoInc && !(primary in data)) {
       const max = store.length ? Math.max(...store.map(row => +row[primary])) : 0
       data[primary] = max + 1
@@ -86,32 +83,33 @@ export class MemoryDatabase extends Database {
     } else {
       const duplicated = await this.get(name, pick(data, makeArray(primary)))
       if (duplicated.length) {
-        throw new KoishiError('duplicate entry', 'database.duplicate-entry')
+        throw new DriverError('duplicate-entry')
       }
     }
-    const copy = { ...this.ctx.model.create(name), ...data }
+    const copy = this.model.create(name, data)
     store.push(copy)
     this.$save(name)
     return clone(copy)
   }
 
-  async upsert(name: TableType, data: any[], key: string | string[]) {
-    const keys = makeArray(key || this.ctx.model.config[name].primary)
-    for (const item of data) {
+  async upsert(name: keyof Tables, data: any[], key: string | string[]) {
+    const keys = makeArray(key || this.model.config[name].primary)
+    for (const _item of data) {
+      const item = this.model.format(name, _item)
       const row = this.$table(name).find(row => {
         return keys.every(key => row[key] === item[key])
       })
       if (row) {
         executeUpdate(row, item)
       } else {
-        const data = this.ctx.model.create(name)
+        const data = this.model.create(name)
         await this.create(name, executeUpdate(data, item)).catch(noop)
       }
     }
     this.$save(name)
   }
 
-  async eval(name: TableType, expr: any, query: Query) {
+  async eval(name: keyof Tables, expr: any, query: Query) {
     const table = this.$query(name, query)
     return executeEval(table, expr)
   }

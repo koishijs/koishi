@@ -1,9 +1,8 @@
-import { Awaitable, Dict, Logger, paramCase, remove } from '@koishijs/utils'
+import { Awaitable, Dict, Logger, paramCase, remove, Schema } from '@koishijs/utils'
 import { Session } from './session'
 import { App } from './app'
 import { Bot } from './bot'
 import { Context, Plugin } from './context'
-import Schema from 'schemastery'
 
 export abstract class Adapter<S extends Bot.BaseConfig = Bot.BaseConfig, T = {}> {
   public bots: Bot<S>[] = []

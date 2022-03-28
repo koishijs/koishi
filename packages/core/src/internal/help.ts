@@ -1,8 +1,7 @@
 import { Argv } from '../parser'
 import { Command } from '../command'
 import { Context } from '../context'
-import { Channel, User } from '../database'
-import { TableType } from '../orm'
+import { Channel, Tables, User } from '../database'
 import { FieldCollector, Session } from '../session'
 
 interface HelpOptions {
@@ -37,7 +36,7 @@ export default function help(ctx: Context, config: HelpConfig = {}) {
     if (shortcut) return shortcut.command
   }
 
-  const createCollector = <T extends TableType>(key: T): FieldCollector<T> => (argv, fields) => {
+  const createCollector = <T extends keyof Tables>(key: T): FieldCollector<T> => (argv, fields) => {
     const { args: [target], session } = argv
     const command = findCommand(target)
     if (!command) return
@@ -107,7 +106,7 @@ function formatCommands(path: string, session: Session<'authority'>, children: C
     if (options.authority) {
       output += ` (${config.authority}${children.length ? (hasSubcommand = true, '*') : ''})`
     }
-    output += '  ' + session.text(`commands.${name}.description?`)
+    output += '  ' + session.text([`commands.${name}.description`, ''])
     return output
   })
   const hints: string[] = []
@@ -139,7 +138,7 @@ function getOptions(command: Command, session: Session<'authority'>, config: Hel
   options.forEach((option) => {
     const authority = option.authority && config.authority ? `(${option.authority}) ` : ''
     let line = `${authority}${option.syntax}`
-    const description = session.text(option.descPath ?? `commands.${command.name}.options.${option.name}?`)
+    const description = session.text(option.descPath ?? [`commands.${command.name}.options.${option.name}`, ''])
     if (description) line += '  ' + description
     line = command.app.chain('help/option', line, option, command, session)
     output.push('    ' + line)
@@ -151,7 +150,7 @@ function getOptions(command: Command, session: Session<'authority'>, config: Hel
 async function showHelp(command: Command, session: Session<'authority'>, config: HelpOptions) {
   const output = [command.name + command.declaration]
 
-  const description = session.text(`commands.${command.name}.description?`)
+  const description = session.text([`commands.${command.name}.description`, ''])
   if (description) output.push(description)
 
   if (session.app.database) {
@@ -174,15 +173,20 @@ async function showHelp(command: Command, session: Session<'authority'>, config:
     output.push(session.text('.command-authority', [command.config.authority]))
   }
 
-  const usage = command._usage
-  if (usage) {
-    output.push(typeof usage === 'string' ? usage : await usage.call(command, session))
+  if (command._usage) {
+    output.push(typeof command._usage === 'string' ? command._usage : await command._usage(session))
+  } else {
+    const text = session.text([`commands.${command.name}.usage`, ''])
+    if (text) output.push(text)
   }
 
   output.push(...getOptions(command, session, config))
 
   if (command._examples.length) {
     output.push(session.text('.command-examples'), ...command._examples.map(example => '    ' + example))
+  } else {
+    const text = session.text([`commands.${command.name}.examples`, ''])
+    output.push(...text.split('\n').map(line => '    ' + line))
   }
 
   output.push(...formatCommands('.subcommand-prolog', session, command.children, config))

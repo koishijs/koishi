@@ -23,6 +23,34 @@ sidebarDepth: 2
 
 机器人账户的令牌。
 
+### options(.bots[]).endpoint
+
+- 类型: `string`
+- 默认值: `'https://api.telegram.org'`
+
+API 请求的终结点。
+
+### options(.bots[]).proxyAgent
+
+- 类型: `string`
+- 默认值: [`app.options.request.proxyAgent`](../../api/core/app.md#options-request-proxyagent)
+
+请求时默认使用的网络代理。
+
+### options(.bots[]).files.endpoint
+
+- 类型: `string`
+- 默认值: [`options(.bots[]).endpoint`](#options-bots-endpoint)
+
+文件请求的终结点。
+
+### options(.bots[]).files.local
+
+- 类型: `boolean`
+- 默认值: `false`
+
+是否启用 [Telegram Bot API](https://github.com/tdlib/telegram-bot-api) 本地模式。
+
 ## 适配器选项
 
 ### options.path

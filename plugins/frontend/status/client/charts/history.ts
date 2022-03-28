@@ -23,9 +23,6 @@ export default (ctx: Context) => {
           },
           yAxis: {
             type: 'value',
-            axisLabel: {
-              formatter: value => value / 1000 + 'k',
-            },
           },
           series: {
             type: 'line',

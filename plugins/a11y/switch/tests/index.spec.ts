@@ -1,4 +1,4 @@
-import { App } from 'koishi'
+import { App, Context } from 'koishi'
 import * as _switch from '@koishijs/plugin-switch'
 import memory from '@koishijs/plugin-database-memory'
 import mock from '@koishijs/plugin-mock'
@@ -12,7 +12,13 @@ const client = app.mock.client('123', '321')
 
 app.plugin(_switch)
 app.command('foo', { authority: 4 })
-app.command('baz').action(() => 'zab')
+
+app.plugin({
+  name: 'baz',
+  apply(ctx: Context) {
+    ctx.command('baz').action(() => 'zab')
+  },
+})
 
 before(async () => {
   await app.start()
@@ -21,7 +27,7 @@ before(async () => {
 
 describe('Switch Plugin', () => {
   it('basic support', async () => {
-    await client.shouldReply('switch -t #123', '未找到指定的频道。')
+    await client.shouldReply('switch -c #123', '未找到指定的频道。')
     await client.shouldReply('switch', '当前没有禁用功能。')
     await client.shouldReply('baz', 'zab')
     await client.shouldReply('switch baz', '已禁用 baz 功能。')

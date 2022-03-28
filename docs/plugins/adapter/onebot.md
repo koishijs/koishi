@@ -119,17 +119,24 @@ dnf install ffmpeg ffmpeg-devel
 
 如果缺省，Koishi 会读取你的 `endpoint` 选项，根据你配置的服务器 URL 进行适配。
 
+### options(.bots[]).token
+
+- 类型：`string`
+
+发送信息时用于验证的字段。
+
 ### options(.bots[]).endpoint
 
 - 类型：`string`
 
 如果使用了 HTTP，则该配置将作为发送信息的服务端；如果使用了 WebSocket，则该配置将作为监听事件和发送信息的服务端。
 
-### options(.bots[]).token
+### options(.bots[]).proxyAgent
 
-- 类型：`string`
+- 类型: `string`
+- 默认值: [`app.options.request.proxyAgent`](../../api/core/app.md#options-request-proxyagent)
 
-发送信息时用于验证的字段。
+请求时默认使用的网络代理。
 
 ## 适配器选项
 

@@ -1,9 +1,8 @@
-import FormData from 'form-data'
-import { Adapter, assertProperty, Bot, camelCase, Dict, Logger, Quester, renameProperty, Schema, snakeCase } from 'koishi'
+import { Adapter, assertProperty, Bot, Dict, Logger, Quester, renameProperty, Schema } from 'koishi'
 import * as Telegram from './types'
-import { AdapterConfig } from './utils'
-import { AxiosError } from 'axios'
+import { AdapterConfig, adaptGuildMember, adaptUser } from './utils'
 import { Sender } from './sender'
+import fs from 'fs'
 
 const logger = new Logger('telegram')
 
@@ -25,89 +24,51 @@ export interface TelegramResponse {
   result: any
 }
 
-export interface BotConfig extends Bot.BaseConfig {
-  token?: string
-  request?: Quester.Config
-  pollingTimeout?: number
+export interface FileConfig {
+  endpoint?: string
+  local?: boolean
 }
 
-export const BotConfig: Schema<BotConfig> = Schema.object({
-  token: Schema.string().description('机器人的用户令牌。').role('secret').required(),
-  request: Quester.createSchema({
+export interface BotConfig extends Bot.BaseConfig, Quester.Config {
+  token?: string
+  pollingTimeout?: number
+  files?: FileConfig
+}
+
+export const BotConfig: Schema<BotConfig> = Schema.intersect([
+  Schema.object({
+    token: Schema.string().description('机器人的用户令牌。').role('secret').required(),
+    files: Schema.object({
+      endpoint: Schema.string().description('文件请求的终结点。'),
+      local: Schema.boolean().description('是否启用 [Telegram Bot API](https://github.com/tdlib/telegram-bot-api) 本地模式。').default(false),
+    }),
+  }),
+  Quester.createSchema({
     endpoint: 'https://api.telegram.org',
   }),
-})
+])
 
 export class TelegramBot extends Bot<BotConfig> {
-  static adaptUser(data: Partial<Telegram.User & Bot.User>) {
-    data.userId = data.id.toString()
-    data.nickname = data.firstName + (data.lastName || '')
-    delete data.id
-    delete data.firstName
-    delete data.lastName
-    return data as Bot.User
-  }
-
   static schema = AdapterConfig
 
   http: Quester & { file?: Quester }
+  internal?: Telegram.Internal
+  local?: boolean
 
   constructor(adapter: Adapter, config: BotConfig) {
     assertProperty(config, 'token')
     super(adapter, config)
     this.selfId = config.token.split(':')[0]
+    this.local = config.files.local
     this.http = this.app.http.extend({
-      endpoint: `${config.request.endpoint}/bot${config.token}`,
+      ...config,
+      endpoint: `${config.endpoint}/bot${config.token}`,
     })
     this.http.file = this.app.http.extend({
-      endpoint: `${config.request.endpoint}/file/bot${config.token}`,
+      ...config,
+      endpoint: `${config.files.endpoint || config.endpoint}/file/bot${config.token}`,
     })
-  }
-
-  /**
-   * Request telegram API
-   * @param action method of telegram API. Starts with a '/'
-   * @param params params in camelCase
-   * @returns Respond form telegram
-   */
-  async get<T = any, P = any>(action: string, params: P = undefined): Promise<T> {
-    this.logger.debug('[request] %s %o', action, params)
-    const response = await this.http.get(action, {
-      params: snakeCase(params || {}),
-    })
-    this.logger.debug('[response] %o', response)
-    const { ok, result } = response
-    if (ok) return camelCase(result)
-    throw new SenderError(params, action, -1, this.selfId)
-  }
-
-  /**
-   * Request telegram API
-   * @param action method of telegram API. Starts with a '/'
-   * @param params params in camelCase
-   * @param field file field key in fromData
-   * @param content file stream
-   * @returns Respond form telegram
-   */
-  async post<T = any, P = any>(action: string, params: P = undefined, field = '', content: Buffer = null, filename = 'file'): Promise<T> {
-    this.logger.debug('[request] %s %o', action, params)
-    const payload = new FormData()
-    for (const key in params) {
-      payload.append(snakeCase(key), params[key].toString())
-    }
-    if (field && content) payload.append(field, content, filename)
-    let response: any
-    try {
-      response = await this.http.post(action, payload, {
-        headers: payload.getHeaders(),
-      })
-    } catch (e) {
-      response = (e as AxiosError).response.data
-    }
-    this.logger.debug('[response] %o', response)
-    const { ok, result } = response
-    if (ok) return camelCase(result)
-    throw new SenderError(params, action, -1, this.selfId)
+    this.internal = new Telegram.Internal(this.http)
   }
 
   async sendMessage(channelId: string, content: string) {
@@ -137,15 +98,16 @@ export class TelegramBot extends Bot<BotConfig> {
   }
 
   async sendPrivateMessage(userId: string, content: string) {
-    return this.sendMessage(userId, content)
+    return this.sendMessage('private:' + userId, content)
   }
 
   async getMessage() {
     return null
   }
 
-  async deleteMessage(chatId: string, messageId: string) {
-    await this.get('/deleteMessage', { chatId, messageId })
+  async deleteMessage(chat_id: string, message_id: string | number) {
+    message_id = +message_id
+    await this.internal.deleteMessage({ chat_id, message_id })
   }
 
   static adaptGroup(data: Telegram.Chat): Bot.Guild {
@@ -154,8 +116,8 @@ export class TelegramBot extends Bot<BotConfig> {
     return data as any
   }
 
-  async getGuild(chatId: string): Promise<Bot.Guild> {
-    const data = await this.get<Telegram.Chat>('/getChat', { chatId })
+  async getGuild(chat_id: string): Promise<Bot.Guild> {
+    const data = await this.internal.getChat({ chat_id })
     return TelegramBot.adaptGroup(data)
   }
 
@@ -163,44 +125,50 @@ export class TelegramBot extends Bot<BotConfig> {
     return []
   }
 
-  async getGuildMember(chatId: string, userId: string): Promise<Bot.GuildMember> {
-    if (Number.isNaN(+userId)) return null
-    const data = await this.get('/getChatMember', { chatId, userId })
-    return TelegramBot.adaptUser(data)
+  async getGuildMember(chat_id: string, user_id: string | number) {
+    user_id = +user_id
+    if (Number.isNaN(user_id)) return null
+    const data = await this.internal.getChatMember({ chat_id, user_id })
+    return adaptGuildMember(data)
   }
 
-  async getGuildMemberList(chatId: string): Promise<Bot.GuildMember[]> {
-    const data = await this.get('/getChatAdministrators', { chatId })
-    return data.map(TelegramBot.adaptUser)
+  async getGuildMemberList(chat_id: string) {
+    const data = await this.internal.getChatAdministrators({ chat_id })
+    return data.map(adaptGuildMember)
   }
 
-  setGroupLeave(chatId: string) {
-    return this.get('/leaveChat', { chatId })
+  setGroupLeave(chat_id: string) {
+    return this.internal.leaveChat({ chat_id })
   }
 
-  async handleGuildMemberRequest(messageId: string, approve: boolean, comment?: string): Promise<void> {
-    const [chatId, userId] = messageId.split('@')
-    const method = approve ? '/approveChatJoinRequest' : '/declineChatJoinRequest'
-    const success = await this.get<boolean>(method, { chatId, userId })
+  async handleGuildMemberRequest(messageId: string, approve: boolean, comment?: string) {
+    const [chat_id, user_id] = messageId.split('@')
+    const method = approve ? 'approveChatJoinRequest' : 'declineChatJoinRequest'
+    const success = await this.internal[method]({ chat_id, user_id: +user_id })
     if (!success) throw new Error(`handel guild member request field ${success}`)
   }
 
   async getLoginInfo() {
-    const data = await this.get<Telegram.User>('/getMe')
-    return TelegramBot.adaptUser(data)
+    const data = await this.internal.getMe()
+    return adaptUser(data)
   }
 
-  async $getFileData(fileId: string) {
+  async $getFileData(file_id: string) {
     try {
-      const file = await this.get<Telegram.File>('/getFile', { fileId })
-      return await this.$getFileContent(file.filePath)
+      const file = await this.internal.getFile({ file_id })
+      return await this.$getFileContent(file.file_path)
     } catch (e) {
       logger.warn('get file error', e)
     }
   }
 
   async $getFileContent(filePath: string) {
-    const res = await this.http.file.get(`/${filePath}`, { responseType: 'arraybuffer' })
+    let res: Buffer
+    if (this.local) {
+      res = await fs.promises.readFile(filePath)
+    } else {
+      res = await this.http.file.get(`/${filePath}`, { responseType: 'arraybuffer' })
+    }
     const base64 = `base64://` + res.toString('base64')
     return { url: base64 }
   }

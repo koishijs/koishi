@@ -2,6 +2,7 @@ import { CAC } from 'cac'
 import { mkdir, readdir, readFile, writeFile } from 'fs-extra'
 import { buildExtension } from '@koishijs/client/lib'
 import { cwd, getPackages, PackageJson, spawnAsync, TsConfig } from './utils'
+import { extname } from 'path'
 import yaml from 'js-yaml'
 import ora from 'ora'
 
@@ -69,7 +70,16 @@ async function buildGraph(nodes: Record<string, Node>) {
 
 async function buildYamlFile(source: string, target: string, file: string) {
   const content = await readFile(source + '/' + file, 'utf8')
-  await writeFile(target + '/' + file, JSON.stringify(yaml.load(content)))
+  const ext = extname(file)
+  const name = file.slice(0, -ext.length)
+  switch (ext) {
+    case '.yaml':
+    case '.yml':
+      await writeFile(target + '/' + name + '.json', JSON.stringify(yaml.load(content)))
+      break
+    default:
+      await writeFile(target + '/' + file, content)
+  }
 }
 
 async function buildYamlPackage(path: string) {

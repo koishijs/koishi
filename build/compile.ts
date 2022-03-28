@@ -120,6 +120,8 @@ async function compile(name: string) {
         format: 'esm',
         target: 'esnext',
         platform: 'browser',
+        sourcemap: false,
+        minify: true,
         outfile: base + '/' + meta.module,
         plugins: [
           usePlatformPlugin('browser'),

@@ -240,6 +240,7 @@ async function bundleNodes(nodes: Node[]) {
       ])
     } else {
       const content = await bundle(node)
+      await fs.mkdir(resolve(cwd, node.path, 'lib'), { recursive: true })
       await fs.writeFile(resolve(cwd, node.path, 'lib/index.d.ts'), content)
     }
   }

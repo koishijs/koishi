@@ -52,8 +52,9 @@ export function apply(ctx: Context) {
     const { session, options, command } = argv
     if (!session.user) return
 
-    function sendHint(message: string, ...param: any[]) {
-      return command.config.showWarning ? session.text(message, param) : ''
+    function sendHint(path: string, ...param: any[]) {
+      if (!command.config.showWarning) return ''
+      return session.text([`.${path}`, `internal.${path}`], param)
     }
 
     let isUsage = true
@@ -68,11 +69,11 @@ export function apply(ctx: Context) {
       const maxUsage = command.getConfig('maxUsage', session)
 
       if (maxUsage < Infinity && checkUsage(name, session.user, maxUsage)) {
-        return sendHint('internal.usage-exhausted')
+        return sendHint('usage-exhausted')
       }
 
       if (minInterval > 0 && checkTimer(name, session.user, minInterval)) {
-        return sendHint('internal.too-frequent')
+        return sendHint('too-frequent')
       }
     }
   })
