@@ -2,9 +2,9 @@
 sidebarDepth: 2
 ---
 
-# 使用 Crowdin 管理 i18n 资源
+# 接入 Crowdin
 
-[Crowdin](https://crowdin.com/) 是一个专业的本地化内容管理平台，不少商业项目使用该网站翻译并管理其本地化资源。同时，该网站也为开源项目和教学项目提供了免费或优惠的许可证。当然，你不一定需要将你的项目托管在这个网站上，特别在项目较小，翻译的字符串不多的时候，使用这类网站反而相当于杀鸡用牛刀。但当你的项目中需要翻译的字符串较多，或需要支持很多种不同的语言，那么使用专业的管理平台会十分方便。同时，Crowdin 也不仅仅是 CAT（计算机辅助翻译），也提供了内容管理的功能，以及多种与第三方工具集成的方案，包括与 GitHub 等代码托管平台集成。由于 Crowdin 提供了 CLI 和 API 等多种方式管理项目资源，你也可以使用 CI (Continuous Integration，持续集成）等方式管理你的项目资源。
+[Crowdin](https://crowdin.com/) 是一个专业的本地化内容管理平台，不少商业项目使用该网站翻译并管理其本地化资源。同时，该网站也为开源项目和教学项目提供了免费或优惠的许可证。当然，你不一定需要将你的项目托管在这个网站上，特别在项目较小，翻译的字符串不多的时候，使用这类网站反而相当于杀鸡用牛刀。但当你的项目中需要翻译的字符串较多，或需要支持很多种不同的语言，那么使用专业的管理平台会十分方便。同时，Crowdin 也不仅仅是 CAT (计算机辅助翻译)，也提供了内容管理的功能，以及多种与第三方工具集成的方案，包括与 GitHub 等代码托管平台集成。由于 Crowdin 提供了 CLI 和 API 等多种方式管理项目资源，你也可以使用 CI (Continuous Integration，持续集成) 等方式管理你的项目资源。
 
 ::: tip
 除了 Crowdin，还有很多其他平台也提供类似的功能，有一些甚至是完全免费的，如：[Transifex](https://www.transifex.com)、[Memsource](https://www.memsource.com/)、[Lokalise](https://lokalise.com/)、[POEditor](https://poeditor.com/) 等等。你也可以尝试搜索 `Translation Management System` 或 `Localization Platform`，整个互联网上有无数的本地化管理平台等着你去发掘。
@@ -15,7 +15,7 @@ sidebarDepth: 2
 你可以使用邮箱注册，也可以用谷歌账号、Github 账号等登录，与其他网站异曲同工，因此此处不再赘述。
 
 :::tip
-如果你还是学生，并且成功申请了 GitHub 的学生开发包（Student Pack），在你使用 GitHub 账号成功登录 Crowdin 后会自动获赠价值 1500 美元的 1 年 Bronze 计划。
+如果你还是学生，并且成功申请了 GitHub 的学生开发包 (Student Pack)，在你使用 GitHub 账号成功登录 Crowdin 后会自动获赠价值 1500 美元的 1 年 Bronze 计划。
 :::
 
 ## 创建本地化项目
@@ -26,7 +26,7 @@ sidebarDepth: 2
 若你的项目是开放源代码的，并且活跃了 4 个月及以上，你可以申请 Crowdin 的开源项目许可。当你成功创建项目后，填写[这个表单](https://crowdin.com/page/open-source-project-setup-request)，Crowdin 的客服人员会帮助你。
 :::
 
-在新建项目界面，需要填写项目名称（推荐和插件或机器人的名称一致），选择是否公开项目，设置源语言和目标语言，然后点击创建项目按钮。
+在新建项目界面，需要填写项目名称 (推荐和插件或机器人的名称一致)，选择是否公开项目，设置源语言和目标语言，然后点击创建项目按钮。
 
 :::tip
 公开项目意味着所有 Crowdin 用户都能搜索到你的项目，也可以看到你的项目的所有内容，也可以向项目贡献翻译。如果你是通过开源项目免费许可的方式创建的项目，则只能创建公开项目。
@@ -38,7 +38,7 @@ sidebarDepth: 2
 
 ### 手动上传
 
-导航至 Crowdin 的内容（Content）界面，你可以点击上传文件（Upload Files）按钮上传**源语言**文件。
+导航至 Crowdin 的内容 (Content) 界面，你可以点击上传文件 (Upload Files) 按钮上传**源语言**文件。
 
 ### 设置代码仓库集成
 
@@ -46,7 +46,7 @@ sidebarDepth: 2
 
 你可以点击[这里](https://support.crowdin.com/github-integration/)直达 Crowdin 关于 GitHub 集成的文档。如果你使用的是 Gitlab 等其他仓库，也可以在知识库里找到相应的指南。
 
-回到项目主页，单击集成（Integrations）标签页，可以为你的项目设置集成。Crowdin 支持许多集成方案，找到你所使用的代码仓库并点击。
+回到项目主页，单击集成 (Integrations) 标签页，可以为你的项目设置集成。Crowdin 支持许多集成方案，找到你所使用的代码仓库并点击。
 
 然后，单击 Set Up Integration，连接到你的代码仓库的账户，选择你想要设置集成的仓库，选择你想要获取原文和推送译文的分支，默认情况下 Crowdin 创建一个新的分支，名为 `l10n_` 加上原分支名，如图中所示的 `l10n_master`。
 
@@ -54,7 +54,7 @@ sidebarDepth: 2
 
 ![github integration unconfigured](https://support.crowdin.com/assets/docs/github_integration_unconfigured.png)
 
-此外，你还需要点击分支名右边的编辑按钮，然后点添加文件筛选器（Add File Filter），在视图左边写上源文件和目标文件的模式匹配字符串之后，在右边切换并预览将会同步到 Crowdin 的文件列表，以及翻译后的文件名及其路径，你还可以添加更多的筛选器。确认添加无误后，单击 Save 按钮保存。
+此外，你还需要点击分支名右边的编辑按钮，然后点添加文件筛选器 (Add File Filter)，在视图左边写上源文件和目标文件的模式匹配字符串之后，在右边切换并预览将会同步到 Crowdin 的文件列表，以及翻译后的文件名及其路径，你还可以添加更多的筛选器。确认添加无误后，单击 Save 按钮保存。
 
 视图下方的 Push Source 选项默认是不勾选的，即 Crowdin 不会自动将翻译推送到仓库，打开这个选项后，Crowdin 会在对应的仓库开启一个 PR，并自动 rebase 到最新的分支，然后同步 Crowdin 上的同步到仓库。设置完成后，Crowdin 并不会自动开始同步，需要手动触发一次：点击表格右上角的 Sync Now，静待片刻即可同步完成。
 
@@ -117,3 +117,7 @@ commands:
 ![crowdin online editor](https://support.crowdin.com/assets/docs/online_editor_sections.png)
 
 如果你对该项目申请了开源项目免费许可，那么该项目还会启用 Global TM 功能。这是 Crowdin 的共享翻译语料库，可以根据其他人的项目中存在的类似文本对当前的待翻译字符串进行提示，你的项目的字符串及翻译结果也会上传到这个语料库中。
+
+## 下载翻译
+
+与上传翻译一样，Crowdin 提供了多种方式可以下载翻译结果，你可以直接通过网页下载单个或多个文件，也可以通过 Crowdin CLI 下载。如果你设置了与任何代码仓库的集成，并勾选了定时同步，则 Crowdin 会自动推送翻译结果到指定的分支。
