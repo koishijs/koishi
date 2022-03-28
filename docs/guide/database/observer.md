@@ -48,15 +48,15 @@ ctx.command('lottery')
 
 如果说观察者机制帮我们解决了多次更新和数据安全的问题的话，那么这一节要介绍的就是如何控制要加载的内容。在上面的例子中我们看到了 `cmd.userFields()` 函数，它通过一个 [可迭代对象](https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Iteration_protocols) 或者回调函数来添加所需的用户字段。同理我们也有 `cmd.channelFields()` 方法，功能类似。
 
-如果你需要对全体指令添加所需的用户字段，可以使用 `Command.userFields()`。下面是一个例子：
+如果你需要对全体指令添加所需的用户字段，可以使用 `command/before-attach-user` 事件。下面是一个例子：
 
 ```ts
-import { Command } from 'koishi'
-
 // 注意这不是实例方法，而是类上的静态方法
-Command.userFields(['name'])
+ctx.before('command/attach-user', (argv, fields) => {
+  fields.add('name')
+})
 
-app.before('command/execute', ({ session, command }) => {
+ctx.before('command/execute', ({ session, command }) => {
   console.log('%s calls command %s', session.user.name, command.name)
 })
 ```
@@ -93,14 +93,12 @@ ctx.middleware((session: Session<'msgCount'>, next) => {
 
 ```ts
 declare const id: string
-declare const authority: number
-declare const assignee: string
 declare const fields: any[]
 
 // ---cut---
 // 中间增加了一个第二参数，表示默认情况下的权限等级
 // 如果找到该用户，则返回该用户本身
-session.getUser(id, authority, fields)
+session.getUser(id, fields)
 
 // 在当前会话上绑定一个可观测用户实例
 // 也就是所谓的 session.user
@@ -108,7 +106,7 @@ session.observeUser(fields)
 
 // 中间增加了一个第二参数，表示默认情况下的 assignee
 // 如果找到该频道，则不修改任何数据，返回该频道本身
-session.getChannel(id, assignee, fields)
+session.getChannel(id, fields)
 
 // 在当前会话上绑定一个可观测频道实例
 // 也就是所谓的 session.channel

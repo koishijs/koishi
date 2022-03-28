@@ -169,7 +169,7 @@ app.command('my-command [arg:number]')
 
 使用 `Argv.createDomain()` 创建新类型：
 
-```ts no-extra-header
+```ts
 import { Argv } from 'koishi'
 
 declare module 'koishi' {
@@ -182,8 +182,7 @@ declare module 'koishi' {
 
 Argv.createDomain('repeat', source => source.repeat(3))
 
-app.command('test [arg:repeat]')
-  .action((_, arg) => arg)
+ctx.command('test [arg:repeat]').action((_, arg) => arg)
 ```
 
 <panel-view :messages="[
@@ -209,11 +208,10 @@ declare module 'koishi' {
 Argv.createDomain('positive', (source) => {
   const value = +source
   if (Math.sign(value) !== 1) throw new Error('应为正数。')
-  return value
+  return value.toString()
 })
 
-app.command('test [x:positive]')
-  .action((_, arg) => arg)
+ctx.command('test [x:positive]').action((_, arg) => arg)
 ```
 
 <panel-view :messages="[

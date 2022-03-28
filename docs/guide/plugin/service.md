@@ -51,7 +51,7 @@ module.exports.apply = (ctx) => {
   // 检查数据库服务是否存在
   if (!ctx.database) return
 
-  ctx.command('teach').action(() => {
+  ctx.command('teach').action((_, content) => {
     // 检查资源存储服务是否存在
     if (ctx.assets) ctx.assets.transform(content)
   })
@@ -70,7 +70,7 @@ export function apply(ctx: Context) {
   // 检查数据库服务是否存在
   if (!ctx.database) return
 
-  ctx.command('teach').action(() => {
+  ctx.command('teach').action((_, content) => {
     // 检查资源存储服务是否存在
     if (ctx.assets) ctx.assets.transform(content)
   })
@@ -150,7 +150,7 @@ module.exports.name = 'teach'
 module.exports.using = ['database']
 
 module.exports.apply = (ctx) => {
-  ctx.command('teach').action(() => {
+  ctx.command('teach').action((_, content) => {
     // 对于可选的依赖服务，在运行时检测即可
     if (ctx.assets) ctx.assets.transform(content)
   })
@@ -169,7 +169,7 @@ export const name = 'teach'
 export const using = ['database'] as const
 
 export function apply(ctx: Context) {
-  ctx.command('teach').action(() => {
+  ctx.command('teach').action((_, content) => {
     // 对于可选的依赖服务，在运行时检测即可
     if (ctx.assets) ctx.assets.transform(content)
   })
