@@ -7,7 +7,13 @@ sidebarDepth: 2
 [Crowdin](https://crowdin.com/) 是一个专业的本地化内容管理平台，不少商业项目使用该网站翻译并管理其本地化资源。同时，该网站也为开源项目和教学项目提供了免费或优惠的许可证。当然，你不一定需要将你的项目托管在这个网站上，特别在项目较小，翻译的字符串不多的时候，使用这类网站反而相当于杀鸡用牛刀。但当你的项目中需要翻译的字符串较多，或需要支持很多种不同的语言，那么使用专业的管理平台会十分方便。同时，Crowdin 也不仅仅是 CAT (计算机辅助翻译)，也提供了内容管理的功能，以及多种与第三方工具集成的方案，包括与 GitHub 等代码托管平台集成。由于 Crowdin 提供了 CLI 和 API 等多种方式管理项目资源，你也可以使用 CI (Continuous Integration，持续集成) 等方式管理你的项目资源。
 
 ::: tip
-除了 Crowdin，还有很多其他平台也提供类似的功能，有一些甚至是完全免费的，如：[Transifex](https://www.transifex.com)、[Memsource](https://www.memsource.com/)、[Lokalise](https://lokalise.com/)、[POEditor](https://poeditor.com/) 等等。你也可以尝试搜索 `Translation Management System` 或 `Localization Platform`，整个互联网上有无数的本地化管理平台等着你去发掘。
+除了 Crowdin，还有很多其他平台也提供类似的功能，有一些甚至是完全免费的，如：
+- [Transifex](https://www.transifex.com)
+- [Memsource](https://www.memsource.com/)
+- [Lokalise](https://lokalise.com/)
+- [POEditor](https://poeditor.com/)
+
+你也可以尝试搜索 Translation Management System 或 Localization Platform 等关键词，整个互联网上有无数的本地化管理平台等着你去发掘。
 :::
 
 ## 注册及登录 Crowdin
