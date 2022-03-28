@@ -43,6 +43,7 @@ function render(code, lang, attrs) {
         },
       },
     )
+    if (html.includes('适配器配置项')) console.log(html)
     return html
       .replace(/<div class='line'/g, '\n<span class="line"')
       .replace(/<code>\n/, '<code>')

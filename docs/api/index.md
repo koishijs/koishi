@@ -16,6 +16,7 @@ sidebarDepth: 0
 - [指令 (Command)](./core/command.md)
 - [上下文 (Context)](./core/context.md)
 - [事件 (Events)](./core/events.md)
+- [服务 (Service)](./core/service.md)
 - [会话 (Session)](./core/session.md)
 
 ## 数据库 API

@@ -5,7 +5,7 @@ sidebarDepth: 2
 # 数据管理 (Admin)
 
 ::: tip
-本章中介绍的内容需要你安装数据库支持，同时建议提前阅读 [指南 · 用户系统管理](../../guide/manage.md)。
+本章中介绍的内容需要你安装数据库支持，同时建议提前阅读 [指南 / 内置用户系统](../../guide/database/builtin.md)。
 :::
 
 ## 指令：authorize

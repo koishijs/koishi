@@ -163,6 +163,7 @@ module.exports = {
           '/api/core/command.md',
           '/api/core/context.md',
           '/api/core/events.md',
+          '/api/core/service.md',
           '/api/core/session.md',
         ],
       }, {
