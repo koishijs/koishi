@@ -1,5 +1,8 @@
 import { App, Session, Context, Command, Service, Schema, Argv, Awaitable } from 'koishi'
 import { Dict, segment } from '@koishijs/utils'
+import {} from '@koishijs/plugin-adapter-discord'
+import {} from '@koishijs/plugin-adapter-onebot'
+import {} from '@koishijs/plugin-adapter-telegram'
 import {} from '@koishijs/plugin-rate-limit'
 import {} from '@koishijs/plugin-console'
 import { Schedule } from '@koishijs/plugin-schedule'

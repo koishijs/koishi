@@ -11,6 +11,8 @@ sidebarDepth: 2
 ## 代码示例
 
 ```ts no-extra-header
+// @errors: 2416
+
 import { createPool, Pool, PoolConfig } from 'mysql'
 import { Context, Database } from 'koishi'
 
@@ -40,6 +42,10 @@ export default class MysqlDatabase extends Database {
   set() {}
   upsert() {}
   remove() {}
+  create() {}
+  drop() {}
+  eval() {}
+  stats() {}
 }
 ```
 

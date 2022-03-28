@@ -177,22 +177,6 @@ ctx.model.extend('user', {
 
 利用 `ctx.model.extend()` 的第三个参数，我们就可以定义新的数据表了：
 
-::: code-group language
-```js
-ctx.model.extend('schedule', {
-  // 各字段类型
-  id: 'unsigned',
-  assignee: 'string',
-  time: 'timestamp',
-  lastCall: 'timestamp',
-  interval: 'integer',
-  command: 'text',
-  session: 'json',
-}, {
-  // 使用自增的主键值
-  autoInc: true,
-})
-```
 ```ts
 // TypeScript 用户需要进行类型合并
 declare module 'koishi' {
@@ -208,7 +192,7 @@ export interface Schedule {
   lastCall: Date
   interval: number
   command: string
-  session: Session
+  session: Session.Payload
 }
 
 ctx.model.extend('schedule', {
@@ -225,13 +209,25 @@ ctx.model.extend('schedule', {
   autoInc: true,
 })
 ```
-:::
 
 ### 创建索引
 
 我们还可以为数据库声明索引：
 
 ```ts
+declare module 'koishi' {
+  interface Tables {
+    foo: Foo
+  }
+}
+
+interface Foo {
+  name: string
+  bar: string
+  baz: string
+}
+
+// ---cut---
 // 注意这里配置的是第三个参数，也就是之前 autoInc 所在的参数
 ctx.model.extend('foo', {}, {
   // 主键，默认为 'id'

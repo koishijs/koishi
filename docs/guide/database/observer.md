@@ -12,6 +12,12 @@ sidebarDepth: 2
 
 ```ts
 // 定义一个 items 字段，用于存放物品列表
+declare module 'koishi' {
+  interface User {
+    items: string[]
+  }
+}
+
 ctx.model.extend('user', {
   items: 'list',
 })
@@ -56,16 +62,22 @@ app.before('command/execute', ({ session, command }) => {
 
 ```ts
 // 定义一个 msgCount 字段，用于存放收到的信息数量
+declare module 'koishi' {
+  interface User {
+    msgCount: number
+  }
+}
+
 ctx.model.extend('user', {
   msgCount: 'integer',
 })
 
 // 手动添加要获取的字段，下面会介绍
-app.before('attach-user', (session, fields) => {
+ctx.before('attach-user', (session, fields) => {
   fields.add('msgCount')
 })
 
-app.middleware((session, next) => {
+ctx.middleware((session: Session<'msgCount'>, next) => {
   // 这里更新了 msgCount 数据
   session.user.msgCount++
   return next()
