@@ -101,6 +101,7 @@ module.exports = {
         isGroup: true,
         children: [
           '/guide/database/index.md',
+          '/guide/database/model.md',
           '/guide/database/builtin.md',
           '/guide/database/observer.md',
           '/guide/database/writing.md',

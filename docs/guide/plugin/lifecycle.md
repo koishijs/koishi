@@ -49,6 +49,7 @@ const dispose = ctx.on('foo', (...args) => {
 前面介绍了，Koishi 有不少监听器满足 before-xxx 的形式。对于这类监听器的注册，我们也提供了一个语法糖，那就是 `ctx.before('xxx', callback)`。这种写法也支持命名空间的情况：
 
 ```ts
+// @errors: 2304
 ctx.before('dialogue/search', callback)
 // 相当于
 ctx.on('dialogue/before-search', callback)
@@ -72,6 +73,14 @@ Koishi 的事件系统与 EventEmitter 的最大区别在于，触发一个事�
 这些方法的基本用法也都与 EventEmitter 类似，第一个参数是事件名称，之后的参数对应回调函数的参数。下面是一个例子：
 
 ```ts
+declare module 'koishi' {
+  interface EventMap {
+    'custom-event'(...args: any[]): void
+  }
+}
+
+// ---cut---
+// @errors: 2304
 ctx.emit('custom-event', arg1, arg2, ...rest)
 // 对应于
 ctx.on('custom-event', (arg1, arg2, ...rest) => {})
@@ -82,6 +91,14 @@ ctx.on('custom-event', (arg1, arg2, ...rest) => {})
 在上一章中，我们已经了解到上下文选择器会对会话事件进行过滤。但是相信你应该已经意识到，事件不一定与某个会话相关，而这样的事件显然不能被过滤。那么，如何让特定事件支持选择器呢？只需在触发事件的时候传入一个额外的一参数 `session` 即可：
 
 ```ts
+declare module 'koishi' {
+  interface EventMap {
+    'custom-event'(...args: any[]): void
+  }
+}
+
+// ---cut---
+// @errors: 2304
 // 无法匹配该会话的上下文中注册的回调函数不会被执行 (可能有点绕)
 ctx.emit(session, 'custom-event', arg1, arg2, ...rest)
 ```

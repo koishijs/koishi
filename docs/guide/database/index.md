@@ -40,10 +40,7 @@ plugins:
 运行程序后，你就可以通过访问 `ctx.database` 来调用数据库接口了：
 
 ```ts
-declare const id: string
-declare const platform: string
-
-// ---cut---
+// @errors: 2304
 // 获取用户数据
 const user = await ctx.database.getUser(platform, id)
 
@@ -111,8 +108,7 @@ await ctx.database.get('schedule', {
 删除数据的语法与获取数据类似：
 
 ```ts
-declare const id: string
-// ---cut---
+// @errors: 2304
 // 从 schedule 表中删除特定 id 的数据行
 // 第二个参数也可以使用上面介绍的对象语法
 await ctx.database.remove('schedule', [id])
@@ -123,8 +119,7 @@ await ctx.database.remove('schedule', [id])
 除了获取和删除数据，常用的需求还有添加和修改数据。
 
 ```ts
-declare const row: Schedule
-// ---cut---
+// @errors: 2304
 // 向 schedule 表中添加一行数据，data 是要添加的数据行
 // 返回值是添加的行的完整数据（包括自动生成的 id 和默认属性等）
 await ctx.database.create('schedule', row)
@@ -133,8 +128,7 @@ await ctx.database.create('schedule', row)
 修改数据的逻辑稍微有些不同，需要你传入一个数组：
 
 ```ts
-declare const rows: Schedule[]
-// ---cut---
+// @errors: 2304
 // 用 rows 来对数据进行更新，你需要确保每一个元素都拥有 id 属性
 // 修改时只会用 rows 中出现的键进行覆盖，不会影响未记录在 data 中的字段
 await ctx.database.upsert('schedule', rows)
@@ -143,109 +137,7 @@ await ctx.database.upsert('schedule', rows)
 如果想以非主键来索引要修改的数据，可以使用第三个参数：
 
 ```ts
-declare const rows: Koishi.User[]
-// ---cut---
+// @errors: 2304
 // 用 rows 来对数据进行更新，你需要确保每一个元素都拥有 onebot 属性
 await ctx.database.upsert('user', rows, 'onebot')
-```
-
-## 扩展数据模型
-
-如果你的插件需要声明新的字段或者表，你可以通过 `ctx.model` 来对数据模型进行扩展。请注意，数据模型的扩展一定要在使用前完成，不然后续数据库操作可能会失败。
-
-### 扩展字段
-
-向内置的 User 表中注入字段的方式如下：
-
-```ts
-// @errors: 1117
-
-// TypeScript 用户需要进行类型合并
-declare module 'koishi' {
-  interface User {
-    foo: string
-  }
-}
-
-ctx.model.extend('user', {
-  // 向用户表中注入字符串字段 foo
-  foo: 'string',
-  // 你还可以配置默认值为 'bar'
-  foo: { type: 'string', initial: 'bar' },
-})
-```
-
-向 Channel 注入字段同理。
-
-### 扩展表
-
-利用 `ctx.model.extend()` 的第三个参数，我们就可以定义新的数据表了：
-
-```ts
-// @errors: 2440
-// TypeScript 用户需要进行类型合并
-declare module 'koishi' {
-  interface Tables {
-    schedule: Schedule
-  }
-}
-
-export interface Schedule {
-  id: number
-  assignee: string
-  time: Date
-  lastCall: Date
-  interval: number
-  command: string
-  session: Session.Payload
-}
-
-ctx.model.extend('schedule', {
-  // 各字段类型
-  id: 'unsigned',
-  assignee: 'string',
-  time: 'timestamp',
-  lastCall: 'timestamp',
-  interval: 'integer',
-  command: 'text',
-  session: 'json',
-}, {
-  // 使用自增的主键值
-  autoInc: true,
-})
-```
-
-### 创建索引
-
-我们还可以为数据库声明索引：
-
-```ts
-declare module 'koishi' {
-  interface Tables {
-    foo: Foo
-  }
-}
-
-interface Foo {
-  name: string
-  bar: string
-  baz: string
-  uid: string
-}
-
-// ---cut---
-// 注意这里配置的是第三个参数，也就是之前 autoInc 所在的参数
-ctx.model.extend('foo', {}, {
-  // 主键，默认为 'id'
-  // 主键将会被用于 Query 的简写形式，如果传入的是原始类型或数组则会自行理解成主键的值
-  primary: 'name',
-  // 唯一键，这应该是一个列表
-  // 这个列表中的字段对应的值在创建和修改的时候都不允许与其他行重复
-  unique: ['bar', 'baz'],
-  // 外键，这应该是一个键值对
-  foreign: {
-    // 相当于约束了 foo.uid 必须是某一个 user.id
-    uid: ['user', 'id'],
-  },
-})
 ```
