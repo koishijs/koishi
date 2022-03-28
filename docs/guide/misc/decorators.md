@@ -831,27 +831,29 @@ koishi-thirdeye 已经重新导出了这个包，无需再手动导入或安装 
 在数据库查询时，结果中的对象均会被类实例化。因此您可以在类中灵活地定义方法函数，简化数据对象的操作。
 
 ```ts
-@DefineModel('dress')
+@DefineModel('dress') // 表名称
 export class Dress {
   @PrimaryGenerated() // 自增主键
   @ModelField('integer(11)')
-  id: number;
+  id: number
 
   @Unique() // 唯一键
   @ModelField()
-  name: string;
+  name: string
 
   getDisplayString() {
-    return `${this.name}(${this.id})`;
+    return `${this.name}(${this.id})`
   }
 
   @Foreign('dress', 'id') // 外键，指向 dress.id
   @ModelField('integer(11)')
-  parentId: number;
+  parentId: number
 }
 ```
 
 ### 注册数据表模型
+
+您只需要使用 `@UseModel` 装饰器修饰插件类即可。
 
 ```ts
 @UseModel(Dress) // 注册 Dress 数据表模型
@@ -870,6 +872,39 @@ export default class MyPlugin extends BasePlugin<MyPluginConfig> {
     } else {
       return 'Not found.'
     }
+  }
+}
+```
+
+### 扩展内置数据表
+
+对于 `user` 或 `channel` 等内置数据表，以及来自其他插件的表，比起重新定义整个表模型，更常见的场景是需要在表内添加若干字段。这种情况下 `@MixinModel` 可能为适合。
+
+```ts
+declare module 'koishi' {
+  interface User {
+    dress: Dress;
+  }
+}
+
+// 无需 @DefineModel 装饰器
+class Dress {
+  @ModelField('string(8)')
+  color: string
+  @ModelField('integer(7)')
+  size: string
+  getDisplayString() {
+    return `${this.color} dress of size ${this.id}`
+  }
+}
+
+@MixinModel('user', { dress: Dress }) // 将 Dress 类成员字段作为 dress 属性注入到 user 表中
+@DefinePlugin({ name: 'my-plugin', schema: MyPluginConfig })
+export default class MyPlugin extends BasePlugin<MyPluginConfig> {
+
+  @UseCommand('mydress')
+  getDress(@PutUser(['name', 'dress']) user: User) {
+    return `${user.name} is wearing a ${user.dress.getDisplayString()}.`
   }
 }
 ```
