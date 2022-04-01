@@ -1,6 +1,7 @@
 import { Context, Dict, Random, Schema, Session, Time, User } from 'koishi'
 
 export interface Config {
+  tokenPrefix?: string
   generateToken?: () => string
 }
 
@@ -20,7 +21,8 @@ export function apply(ctx: Context, config: Config = {}) {
   type TokenData = [platform: string, id: string, pending: number]
   const tokens: Dict<TokenData> = {}
 
-  const { generateToken = () => 'koishi/' + Random.id(6, 10) } = config
+  const { tokenPrefix: prefix = 'koishi' } = config
+  const { generateToken = () => `${prefix}/` + Random.id(6, 10) } = config
 
   function generate(session: Session, pending: number) {
     const token = generateToken()
