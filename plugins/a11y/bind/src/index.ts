@@ -21,8 +21,8 @@ export function apply(ctx: Context, config: Config = {}) {
   type TokenData = [platform: string, id: string, pending: number]
   const tokens: Dict<TokenData> = {}
 
-  const { tokenPrefix: prefix = 'koishi' } = config
-  const { generateToken = () => `${prefix}/` + Random.id(6, 10) } = config
+  const { tokenPrefix: prefix = 'koishi/' } = config
+  const { generateToken = () => `${prefix}` + Random.id(6, 10) } = config
 
   function generate(session: Session, pending: number) {
     const token = generateToken()
