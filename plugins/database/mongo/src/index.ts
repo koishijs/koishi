@@ -91,7 +91,7 @@ class MongoDatabase extends Database {
 
   /** synchronize table schema */
   private async _syncTable(name: string) {
-    await this._tableTasks[name]
+    await Promise.resolve(this._tableTasks[name]).catch(noop)
     await this.db.createCollection(name).catch(noop)
     await Promise.all([
       this._createIndexes(name),
@@ -129,7 +129,7 @@ class MongoDatabase extends Database {
   async get(name: keyof Tables, query: Query, modifier: Modifier) {
     const filter = this._createFilter(name, query)
     if (!filter) return []
-    await this._tableTasks[name]
+    await Promise.resolve(this._tableTasks[name]).catch(noop)
     let cursor = this.db.collection(name).find(filter)
     const { fields, limit, offset = 0, sort } = this.resolveModifier(name, modifier)
     if (offset) cursor = cursor.skip(offset)
@@ -141,7 +141,7 @@ class MongoDatabase extends Database {
   async set(name: keyof Tables, query: Query, update: {}) {
     const filter = this._createFilter(name, query)
     if (!filter) return
-    await this._tableTasks[name]
+    await Promise.resolve(this._tableTasks[name]).catch(noop)
     const { primary } = this.model.config[name]
     const indexFields = makeArray(primary)
     const coll = this.db.collection(name)
@@ -198,7 +198,7 @@ class MongoDatabase extends Database {
     if (!data.length) return
     if (!keys) keys = this.model.config[name].primary
     const indexFields = makeArray(keys)
-    await this._tableTasks[name]
+    await Promise.resolve(this._tableTasks[name]).catch(noop)
     const coll = this.db.collection(name)
     const original = await coll.find({ $or: data.map(item => pick(item, indexFields)) }).toArray()
     const bulk = coll.initializeUnorderedBulkOp()
