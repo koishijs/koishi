@@ -26,6 +26,6 @@ bind 指令用于跨平台绑定账号。该指令 0 级权限即可调用。
 ### options.tokenPrefix
 
 - 类型: `string`
-- 默认值: `koishi/`
+- 默认值: `'koishi/'`
 
 生成的随机码的前缀。
