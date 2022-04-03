@@ -23,7 +23,7 @@ class Initiator {
   }
 
   async init(name: string) {
-    this.name = name || await this.getName()
+    this.name = name ||= await this.getName()
     this.desc = await this.getDesc()
     this.fullname = name.includes('/')
       ? name.replace('/', '/koishi-plugin-')

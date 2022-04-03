@@ -51,7 +51,8 @@ function render(code, lang, attrs) {
       console.log(html)
       console.log(result)
     }
-    return result
+    // FIXME
+    return html
   } catch (e) {
     console.log('Code block:')
     console.log(e.code)
