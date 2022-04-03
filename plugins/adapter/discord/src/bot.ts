@@ -1,5 +1,5 @@
 import { Adapter, Bot, Quester, Schema, segment } from 'koishi'
-import { adaptChannel, AdapterConfig, adaptGroup as adaptGuild, adaptMessage, adaptUser } from './utils'
+import { adaptChannel, AdapterConfig, adaptGroup as adaptGuild, adaptMessage, adaptMessageSession, adaptUser, prepareMessageSession } from './utils'
 import { Sender } from './sender'
 import { GatewayIntent, Internal } from './types'
 
@@ -166,5 +166,19 @@ export class DiscordBot extends Bot<BotConfig> {
   async getChannelList(guildId: string) {
     const data = await this.internal.getGuildChannels(guildId)
     return data.map(v => adaptChannel(v))
+  }
+
+  async getChannelMessageHistory(channelId: string, start?: string) {
+    const data = await this.internal.getChannelMessages(channelId, {
+      after: start,
+      limit: 2,
+    })
+    console.log(data)
+    return data.map(v => {
+      const session = {}
+      prepareMessageSession(session, v)
+      adaptMessageSession(v, session)
+      return session
+    }) as unknown as Bot.Message[]
   }
 }

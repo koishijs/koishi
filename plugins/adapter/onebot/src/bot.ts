@@ -172,6 +172,13 @@ export class OneBotBot extends Bot<BotConfig> {
   async deleteFriend(userId: string) {
     await this.internal.deleteFriend(userId)
   }
+
+  async getChannelMessageHistory(channelId: string, start?: string) {
+    // 从旧到新
+    const list = await this.internal.getGroupMsgHistory(Number(channelId), Number(start))
+    // @ts-ignore
+    return list.messages.map(OneBot.adaptMessage)
+  }
 }
 
 export class QQGuildBot extends OneBotBot {
@@ -261,7 +268,7 @@ class SenderError extends Error {
 
 const logger = new Logger('onebot')
 
-export interface Internal extends OneBot.Internal {}
+export interface Internal extends OneBot.Internal { }
 
 export class Internal {
   _request?(action: string, params: Dict): Promise<OneBot.Response>

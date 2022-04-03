@@ -114,7 +114,7 @@ export function adaptMessage(meta: DC.Message, session: Partial<Session> = {}) {
   return session as Bot.Message
 }
 
-function adaptMessageSession(bot: DiscordBot, meta: DC.Message, session: Partial<Session> = {}) {
+export function adaptMessageSession(meta: DC.Message, session: Partial<Session> = {}) {
   adaptMessage(meta, session)
   session.messageId = meta.id
   session.timestamp = new Date(meta.timestamp).valueOf() || Date.now()
@@ -126,7 +126,7 @@ function adaptMessageSession(bot: DiscordBot, meta: DC.Message, session: Partial
   return session
 }
 
-function prepareMessageSession(session: Partial<Session>, data: Partial<DC.Message>) {
+export function prepareMessageSession(session: Partial<Session>, data: Partial<DC.Message>) {
   session.guildId = data.guild_id
   session.subtype = data.guild_id ? 'group' : 'private'
   session.channelId = data.channel_id
@@ -150,7 +150,7 @@ export async function adaptSession(bot: DiscordBot, input: DC.GatewayPayload) {
   if (input.t === 'MESSAGE_CREATE') {
     session.type = 'message'
     prepareMessageSession(session, input.d)
-    adaptMessageSession(bot, input.d, session)
+    adaptMessageSession(input.d, session)
     // dc 情况特殊 可能有 embeds 但是没有消息主体
     // if (!session.content) return
     if (session.userId === bot.selfId) return
@@ -160,7 +160,7 @@ export async function adaptSession(bot: DiscordBot, input: DC.GatewayPayload) {
     const msg = await bot.internal.getChannelMessage(input.d.channel_id, input.d.id)
     // Unlike creates, message updates may contain only a subset of the full message object payload
     // https://discord.com/developers/docs/topics/gateway#message-update
-    adaptMessageSession(bot, msg, session)
+    adaptMessageSession(msg, session)
     // if (!session.content) return
     if (session.userId === bot.selfId) return
   } else if (input.t === 'MESSAGE_DELETE') {
