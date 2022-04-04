@@ -97,12 +97,12 @@ function* getCommands(session: Session<'authority'>, commands: Command[], showHi
 function formatCommands(path: string, session: Session<'authority'>, children: Command[], options: HelpOptions) {
   const commands = Array
     .from(getCommands(session, children, options.showHidden))
-    .sort((a, b) => a.name > b.name ? 1 : -1)
+    .sort((a, b) => a.displayName > b.displayName ? 1 : -1)
   if (!commands.length) return []
 
   let hasSubcommand = false
-  const output = commands.map(({ name, config, children }) => {
-    let output = '    ' + name
+  const output = commands.map(({ name, displayName, config, children }) => {
+    let output = '    ' + displayName
     if (options.authority) {
       output += ` (${config.authority}${children.length ? (hasSubcommand = true, '*') : ''})`
     }
@@ -148,7 +148,7 @@ function getOptions(command: Command, session: Session<'authority'>, config: Hel
 }
 
 async function showHelp(command: Command, session: Session<'authority'>, config: HelpOptions) {
-  const output = [command.name + command.declaration]
+  const output = [command.displayName + command.declaration]
 
   const description = session.text([`commands.${command.name}.description`, ''])
   if (description) output.push(description)
@@ -186,7 +186,7 @@ async function showHelp(command: Command, session: Session<'authority'>, config:
     output.push(session.text('.command-examples'), ...command._examples.map(example => '    ' + example))
   } else {
     const text = session.text([`commands.${command.name}.examples`, ''])
-    output.push(...text.split('\n').map(line => '    ' + line))
+    if (text) output.push(...text.split('\n').map(line => '    ' + line))
   }
 
   output.push(...formatCommands('.subcommand-prolog', session, command.children, config))
