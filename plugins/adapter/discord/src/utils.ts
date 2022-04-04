@@ -182,7 +182,14 @@ export async function adaptSession(bot: DiscordBot, input: DC.GatewayPayload) {
     session.type = 'reaction-deleted'
     session.subtype = 'emoji'
     prepareReactionSession(session, input.d)
+  } else if (input.t === 'CHANNEL_UPDATE') {
+    session.type = 'channel-updated'
+    session.guildId = input.d.guild_id
+    session.subtype = input.d.guild_id ? 'group' : 'private'
+    session.channelId = input.d.id
+    console.log(input.d)
   } else {
+    console.log(input)
     return
   }
   return new Session(bot, session)

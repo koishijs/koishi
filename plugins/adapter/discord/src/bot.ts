@@ -1,8 +1,7 @@
 import { Adapter, Bot, Quester, Schema, segment } from 'koishi'
 import { adaptChannel, AdapterConfig, adaptGroup as adaptGuild, adaptMessage, adaptMessageSession, adaptUser, prepareMessageSession } from './utils'
 import { Sender } from './sender'
-import { GatewayIntent, Internal } from './types'
-
+import { GatewayIntent, Internal, Channel, Permission } from './types'
 interface PrivilegedIntents {
   members?: boolean
   presence?: boolean
@@ -60,6 +59,8 @@ export class DiscordBot extends Bot<BotConfig> {
       | GatewayIntent.GUILD_MESSAGE_REACTIONS
       | GatewayIntent.DIRECT_MESSAGES
       | GatewayIntent.DIRECT_MESSAGE_REACTIONS
+      | GatewayIntent.GUILDS
+      | GatewayIntent.GUILD_MEMBERS
     if (this.config.intents.members) {
       intents |= GatewayIntent.GUILD_MEMBERS
     }
@@ -164,16 +165,35 @@ export class DiscordBot extends Bot<BotConfig> {
   }
 
   async getChannelList(guildId: string) {
-    const data = await this.internal.getGuildChannels(guildId)
-    return data.map(v => adaptChannel(v))
+    let channels = await this.internal.getGuildChannels(guildId)
+    // 获取 bot 的 role, 然后筛选符合的 channel
+    // https://discord.com/developers/docs/topics/permissions#permissions
+    const member = await this.internal.getGuildMember(guildId, this.selfId)
+    channels = channels.filter(v => v.type !== Channel.Type.GUILD_CATEGORY && v.type !== Channel.Type.GUILD_VOICE).filter(v => {
+      let result = false
+      // exclude @everyone role
+      for (const overwrites of v.permission_overwrites) {
+        // 0 (role) or 1 (member)
+        if (overwrites.type === 0 && member.roles.includes(overwrites.id)) {
+          if ((Number(overwrites.allow) & Permission.VIEW_CHANNEL) === Permission.VIEW_CHANNEL) {
+            result = true
+          }
+        }
+      }
+      if (v.permission_overwrites.length === 0) {
+        result = true
+      }
+      return result
+    })
+    // 有 VIEW_CHANNEL 的权限
+    return channels.map(v => adaptChannel(v))
   }
 
   async getChannelMessageHistory(channelId: string, start?: string) {
     const data = await this.internal.getChannelMessages(channelId, {
       after: start,
-      limit: 2,
+      limit: 100,
     })
-    console.log(data)
     return data.map(v => {
       const session = {}
       prepareMessageSession(session, v)
