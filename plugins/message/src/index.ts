@@ -21,7 +21,17 @@ export class MessageDatabase extends Service {
   }
 
   states = {}
+  _queue: Partial<Session>[] = []
   // platform.channelId
+
+  get queue() {
+    return this._queue
+  }
+
+  set queue(arr) {
+    this._queue = [...new Set(arr)]
+    logger.info('set queue %o', this._queue)
+  }
 
   async start() {
     this.ctx.model.extend('message', {
@@ -47,17 +57,41 @@ export class MessageDatabase extends Service {
       const channels = await session.bot.getChannelList(session.guildId)
       const exist = Boolean(channels.find(v => v.channelId === session.channelId))
       if (!exist) {
-        delete this.states[session.platform]?.[session.channelId]
+        if (this.queue.find(v => v.channelId === session.channelId && v.platform === session.platform)) {
+          this.queue = this.queue.filter(v => v.channelId !== session.channelId && v.platform !== session.platform)
+        } else {
+          delete this.states[session.platform]?.[session.channelId]
+        }
       } else {
-        await this.syncMessages(session.bot, session.guildId, session.channelId)
-        this.states[session.platform][session.channelId] = true
+        this.queue.push(session)
+        // await this.syncMessages(session.bot, session.guildId, session.channelId)
+        // this.states[session.platform][session.channelId] = true
       }
-      console.log(session)
     })
     this.ctx.on('message', this.onMessage.bind(this))
+    setTimeout(this.runQueue.bind(this), 1)
   }
 
-  async syncMessages(bot: Bot, guildId: string, channelId) {
+  async runQueue() {
+    while (true) {
+      if (!this.queue.length) {
+        await new Promise((resolve) => setTimeout(resolve, 1000))
+      }
+      const item = this.queue.shift()
+      if (item) {
+        logger.info('queue item %o', item)
+        try {
+          await this.syncMessages(item.bot, item.guildId, item.channelId)
+          this.states[item.bot.platform] ||= {}
+          this.states[item.bot.platform][item.channelId] = true
+        } catch (e) {
+          logger.error(e)
+        }
+      }
+    }
+  }
+
+  async syncMessages(bot: Bot, guildId: string, channelId: string) {
     logger.info('channel %s', channelId)
     const existRecord = await this.ctx.database.get('message', {
       channelId,
@@ -133,14 +167,11 @@ export class MessageDatabase extends Service {
     for (const guild of await bot.getGuildList()) {
       const channels = bot.getChannelList ? (await bot.getChannelList(guild.guildId)).map(v => v.channelId) : [guild.guildId]
       for (const channel of channels) {
-        try {
-          await this.syncMessages(bot, guild.guildId, channel)
-
-          this.states[bot.platform] ||= {}
-          this.states[bot.platform][channel] = true
-        } catch (e) {
-          logger.error(e)
-        }
+        this.queue.push({
+          guildId: guild.guildId,
+          channelId: channel,
+          bot,
+        })
       }
     }
   }
