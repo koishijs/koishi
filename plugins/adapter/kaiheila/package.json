@@ -25,7 +25,7 @@
     "impl:adapter"
   ],
   "peerDependencies": {
-    "koishi": "^4.5.0"
+    "koishi": "^4.5.1"
   },
   "devDependencies": {
     "@koishijs/plugin-mock": "^1.0.3"

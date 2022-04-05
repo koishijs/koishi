@@ -30,7 +30,7 @@
     "impl:assets"
   ],
   "peerDependencies": {
-    "koishi": "^4.5.0"
+    "koishi": "^4.5.1"
   },
   "dependencies": {
     "simple-git": "^3.4.0"

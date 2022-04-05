@@ -29,11 +29,11 @@
   ],
   "peerDependencies": {
     "@koishijs/plugin-console": "^3.2.4",
-    "koishi": "^4.5.0"
+    "koishi": "^4.5.1"
   },
   "devDependencies": {
     "@koishijs/client": "^3.2.3",
-    "@koishijs/cli": "^4.5.0",
+    "@koishijs/cli": "^4.5.1",
     "echarts": "^5.3.1",
     "vue-echarts": "^6.0.2"
   },

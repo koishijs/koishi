@@ -30,12 +30,12 @@
   ],
   "devDependencies": {
     "@types/marked": "^4.0.2",
-    "@koishijs/plugin-puppeteer": "^3.0.4",
+    "@koishijs/plugin-puppeteer": "^3.0.5",
     "@koishijs/plugin-database-memory": "^1.1.0",
     "@koishijs/plugin-mock": "^1.0.3"
   },
   "peerDependencies": {
-    "koishi": "^4.5.0"
+    "koishi": "^4.5.1"
   },
   "dependencies": {
     "@octokit/webhooks-types": "^5.5.1",

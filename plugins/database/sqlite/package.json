@@ -30,7 +30,7 @@
     "impl:database"
   ],
   "peerDependencies": {
-    "koishi": "^4.5.0"
+    "koishi": "^4.5.1"
   },
   "dependencies": {
     "@koishijs/orm": "^1.0.0",
