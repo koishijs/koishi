@@ -123,7 +123,6 @@ class MongoDatabase extends Database {
       this.db.stats(),
       this._collStats(),
     ])
-    // https://www.mongodb.com/docs/manual/reference/command/dbStats/#mongodb-data-dbStats.totalSize
     // While MongoDB's document above says that the `stats.totalSize` is the sum of
     // `stats.dataSize` and `stats.storageSize`, it's actually `undefined` in some cases.
     // So we have to calculate it manually.
