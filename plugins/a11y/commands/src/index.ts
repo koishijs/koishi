@@ -115,7 +115,6 @@ export function apply(ctx: Context, config: Dict<Config>) {
       const cmd = ctx.app._commands.resolve(name)
       Object.assign(cmd.config, options)
       teleport(cmd, parent)
-      cmd.name = name
     }
   }, true)
 
