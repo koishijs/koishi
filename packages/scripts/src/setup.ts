@@ -121,9 +121,10 @@ interface Options {
 }
 
 export default function (cli: CAC) {
-  cli.command('new [name]', 'initialize a new plugin')
+  cli.command('setup [name]', 'initialize a new plugin')
     .alias('create')
     .alias('init')
+    .alias('new')
     .option('-c, --console', 'with console extension')
     .action(async (name: string, options) => {
       new Initiator(options).start(name)
