@@ -1,4 +1,4 @@
-import { Dict, isNullable, Logger } from '@koishijs/utils'
+import { Dict, isNullable, Logger, Time } from '@koishijs/utils'
 import { Context } from './context'
 
 const logger = new Logger('i18n')
@@ -11,7 +11,7 @@ export namespace I18n {
     [K: string]: Node
   }
 
-  export type Formatter = (value: string, ...args: string[]) => string
+  export type Formatter = (value: any, args: string[], locale: string) => string
   export type Renderer = (dict: Dict, params: any, locale: string) => string
 }
 
@@ -28,6 +28,34 @@ export class I18n {
     this.define('', { '': '' })
     this.define('zh', require('./locales/zh'))
     this.define('en', require('./locales/en'))
+
+    const { day, hour, minute, second } = Time
+
+    this.formatter('time', (ms: number, _, locale) => {
+      let result: string
+      if (ms >= day - hour / 2) {
+        ms += hour / 2
+        result = Math.floor(ms / day) + ' ' + this.text([locale], ['general.day'], {})
+        if (ms % day > hour) {
+          result += ` ${Math.floor(ms % day / hour)} ` + this.text([locale], ['general.hour'], {})
+        }
+      } else if (ms >= hour - minute / 2) {
+        ms += minute / 2
+        result = Math.floor(ms / hour) + ' ' + this.text([locale], ['general.hour'], {})
+        if (ms % hour > minute) {
+          result += ` ${Math.floor(ms % hour / minute)} ` + this.text([locale], ['general.minute'], {})
+        }
+      } else if (ms >= minute - second / 2) {
+        ms += second / 2
+        result = Math.floor(ms / minute) + ' ' + this.text([locale], ['general.minute'], {})
+        if (ms % minute > second) {
+          result += ` ${Math.floor(ms % minute / second)} ` + this.text([locale], ['general.second'], {})
+        }
+      } else {
+        result = Math.round(ms / second) + ' ' + this.text([locale], ['general.second'], {})
+      }
+      return result
+    })
 
     this.renderer('list', (data, params: any[], locale) => {
       const list = params.map((value) => {
@@ -115,7 +143,7 @@ export class I18n {
         const formatter = this._formatters[cap[1]]
         if (!formatter) throw new Error(`Formatter "${cap[1]}" not found`)
         const args = cap[2] ? cap[2].split(',').map(v => v.trim()) : []
-        result = formatter(result, ...args)
+        result = formatter(result, args, locale)
       }
       return result.toString()
     })

@@ -19,7 +19,7 @@ sidebarDepth: 2
 
 参数 query 支持正则以及表达式，你可以使用复杂的嵌套更细致化的去完成你对数据库的查找服务。实现上与 mongo 近似，如果你有使用过 mongodb 经验，那么使用 Koishi ORM 对你来说便不是一件难事。
 
-```ts
+<!-- ```ts
 interface FieldQueryExpr<T> {
   $regex?: RegExp
   $in?: T[]
@@ -51,11 +51,11 @@ interface QueryOptions<T extends string> {
 }
 
 type QueryModifier<T extends string> = T[] | QueryOptions<T>
-```
+``` -->
 
 下面是一些简单的示例：
 
-```ts
+<!-- ```ts
 // @errors: 2451
 
 // 获取名为 schedule 的表中 id 为 1 或者 2 的数据行
@@ -78,7 +78,7 @@ const rows = await ctx.database.get('schedule', {
 
 // 只获取 id 和 command 字段（默认情况下将获取全部字段）
 const rows = await ctx.database.get('schedule', 1, ['id', 'command'])
-```
+``` -->
 
 ## database.set(table, query, updater)
 

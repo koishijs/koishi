@@ -21,7 +21,8 @@ commands:
       set: 设置定时器
       clear: 清空定时器
     messages:
-      present: 定时器 {0} 的生效时间为：剩余 {1}
+      present: 定时器 {0} 的生效时间为：剩余 {1 | time}
       absent: 定时器 {0} 当前并未生效。
       list: 各定时器的生效时间为：
+      item: '{0}：剩余 {1 | time}'
       none: 当前没有生效的定时器。
