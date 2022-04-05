@@ -119,10 +119,14 @@ class MongoDatabase extends Database {
 
   async stats() {
     // https://docs.mongodb.com/manual/reference/command/dbStats/#std-label-dbstats-output
-    const [{ totalSize }, tables] = await Promise.all([
+    const [stats, tables] = await Promise.all([
       this.db.stats(),
       this._collStats(),
     ])
+    // While MongoDB's document above says that the `stats.totalSize` is the sum of
+    // `stats.dataSize` and `stats.storageSize`, it's actually `undefined` in some cases.
+    // So we have to calculate it manually.
+    const totalSize = stats.indexSize + stats.storageSize
     return { size: totalSize, tables }
   }
 
