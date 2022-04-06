@@ -1,5 +1,5 @@
 import { CAC } from 'cac'
-import { copyFile, mkdir, readFile, readJson, writeFile, writeJson } from 'fs-extra'
+import { copyFile, mkdir, readFile, readJson, writeFile } from 'fs-extra'
 import { resolve } from 'path'
 import { config, cwd, meta, PackageJson } from './utils'
 import which from 'which-pm-runs'
@@ -68,11 +68,11 @@ class Initiator {
       source.peerDependencies['@koishijs/console'] = meta.dependencies['@koishijs/console']
     }
     source.peerDependencies['koishi'] = meta.dependencies['koishi']
-    await writeJson(this.target + '/package.json', {
+    await writeFile(this.target + '/package.json', JSON.stringify({
       name: this.fullname,
       description: this.desc,
       ...source,
-    }, { spaces: 2 })
+    }, null, 2))
   }
 
   async writeTsConfig() {

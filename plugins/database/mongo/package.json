@@ -30,7 +30,7 @@
     "impl:database"
   ],
   "devDependencies": {
-    "@koishijs/database-tests": "^1.0.0",
+    "@koishijs/database-tests": "^1.1.0",
     "@koishijs/plugin-mock": "^1.0.3"
   },
   "peerDependencies": {
@@ -38,6 +38,6 @@
   },
   "dependencies": {
     "@koishijs/orm": "^1.0.0",
-    "mongodb": "^4.4.1"
+    "mongodb": "^4.5.0"
   }
 }

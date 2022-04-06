@@ -39,7 +39,7 @@
     "sqlstring-sqlite": "^0.1.1"
   },
   "devDependencies": {
-    "@koishijs/database-tests": "^1.0.0",
+    "@koishijs/database-tests": "^1.1.0",
     "@koishijs/plugin-mock": "^1.0.3",
     "@types/better-sqlite3": "^7.5.0"
   }

@@ -32,7 +32,7 @@
     "koishi": "^4.5.1"
   },
   "devDependencies": {
-    "@koishijs/database-tests": "^1.0.0",
+    "@koishijs/database-tests": "^1.1.0",
     "@koishijs/plugin-mock": "^1.0.3",
     "@types/abstract-leveldown": "^7.2.0",
     "@types/level": "^6.0.1",

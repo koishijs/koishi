@@ -31,7 +31,7 @@
     "koishi": "^4.5.1"
   },
   "devDependencies": {
-    "@koishijs/database-tests": "^1.0.0",
+    "@koishijs/database-tests": "^1.1.0",
     "@koishijs/plugin-mock": "^1.0.3",
     "@types/js-yaml": "^4.0.5",
     "js-yaml": "^4.1.0"

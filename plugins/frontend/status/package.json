@@ -34,10 +34,10 @@
   "devDependencies": {
     "@koishijs/client": "^3.2.3",
     "@koishijs/cli": "^4.5.1",
-    "echarts": "^5.3.1",
+    "echarts": "^5.3.2",
     "vue-echarts": "^6.0.2"
   },
   "dependencies": {
-    "systeminformation": "^5.11.8"
+    "systeminformation": "^5.11.9"
   }
 }
