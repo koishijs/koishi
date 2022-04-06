@@ -36,7 +36,9 @@
     "@types/ws": "^8.5.3"
   },
   "dependencies": {
+    "https-proxy-agent": "^5.0.0",
     "qface": "^1.2.0",
+    "socks-proxy-agent": "^6.2.0-beta.0",
     "ws": "^8.5.0"
   }
 }
