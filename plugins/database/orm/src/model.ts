@@ -1,7 +1,9 @@
-import { clone, Dict, isNullable, makeArray, MaybeArray } from '@koishijs/utils'
+import { clone, Dict, isNullable, Logger, makeArray, MaybeArray } from '@koishijs/utils'
 import { isEvalExpr } from './eval'
 import { ModelError } from './error'
 import { Flatten, Keys } from './utils'
+
+const logger = new Logger('model')
 
 export class Model<T = any> {
   public config: Dict<Model.Config> = {}
@@ -29,6 +31,9 @@ export class Model<T = any> {
         const method = key.slice(index + 1)
         ;(table.internal[prefix] ??= {})[method] = fields[key]
       } else {
+        if (table.fields[key]) {
+          logger.warn('override', name, key)
+        }
         table.fields[key] = Model.Field.parse(fields[key])
       }
     }
