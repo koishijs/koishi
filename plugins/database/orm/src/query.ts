@@ -1,9 +1,9 @@
-import { Dict, Extract } from '@koishijs/utils'
+import { Extract } from '@koishijs/utils'
 import { Eval, executeEval } from './eval'
 import { Comparable, Indexable } from './utils'
-import { Selection } from './driver'
+import { Selection } from './selection'
 
-export type Query<T = any> = Query.Expr<T> | Query.Shorthand<Indexable> | Selection.Callback<[T], boolean>
+export type Query<T = any> = Query.Expr<T> | Query.Shorthand<Indexable> | Selection.Callback<T, boolean>
 
 export namespace Query {
   export interface FieldExpr<T = any> {
@@ -44,7 +44,7 @@ export namespace Query {
     $and?: Expr<T>[]
     $not?: Expr<T>
     /** @deprecated use query callback instead */
-    $expr?: Eval.Boolean
+    $expr?: Eval.Expr<boolean>
   }
 
   export type Shorthand<T = any> =
@@ -136,29 +136,5 @@ export function executeQuery(data: any, query: Query.Expr): boolean {
     } catch {
       return false
     }
-  })
-}
-
-export type Modifier<T extends string = string> = T[] | Modifier.Expr<T>
-
-export namespace Modifier {
-  export interface Expr<K extends string = string> {
-    limit?: number
-    offset?: number
-    fields?: K[]
-    /** @experimental */
-    sort?: Dict<'asc' | 'desc'>
-  }
-}
-
-export function executeSort(data: any[], sort: Dict<'asc' | 'desc'>) {
-  return data.sort((a, b) => {
-    for (const key in sort) {
-      const dir = sort[key] === 'asc' ? 1 : -1
-      const x = a[key], y = b[key]
-      if (x < y) return -dir
-      if (x > y) return dir
-    }
-    return 0
   })
 }

@@ -5,6 +5,7 @@ export class ModelError extends Error {
 export namespace DriverError {
   export type Code =
     | 'duplicate-entry'
+    | 'unsupported-expression'
 }
 
 export class DriverError<T extends DriverError.Code> extends Error {

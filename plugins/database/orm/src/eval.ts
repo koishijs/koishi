@@ -21,8 +21,6 @@ export type Eval<U> =
 const kExpr = Symbol('expr')
 const kType = Symbol('type')
 
-const Eval = {} as Eval.Static
-
 export namespace Eval {
   export interface Expr<T = any> {
     [kExpr]: true
@@ -36,6 +34,8 @@ export namespace Eval {
   export type Any = Common | Expr
 
   export interface Static {
+    (key: string, value: any): Eval.Expr
+
     // univeral
     if<T extends Common>(cond: Any, vThen: T | Expr<T>, vElse: T | Expr<T>): Expr<T>
     ifNull<T extends Common>(...args: Expr<T>[]): Expr<T>
@@ -46,9 +46,6 @@ export namespace Eval {
     subtract(x: number, y: number): Expr<number>
     divide(x: number, y: number): Expr<number>
 
-    // string
-    concat(...args: String[]): Expr<string>
-
     // comparison
     eq(x: number, y: number): Expr<boolean>
     ne(x: number, y: number): Expr<boolean>
@@ -56,6 +53,14 @@ export namespace Eval {
     gte(x: number, y: number): Expr<boolean>
     lt(x: number, y: number): Expr<boolean>
     lte(x: number, y: number): Expr<boolean>
+
+    // string
+    concat(...args: String[]): Expr<string>
+
+    // logical
+    and(...args: Boolean[]): Expr<boolean>
+    or(...args: Boolean[]): Expr<boolean>
+    not(value: Boolean): Expr<boolean>
 
     // aggregation
     sum(value: Number): Expr<number>
@@ -66,19 +71,22 @@ export namespace Eval {
   }
 }
 
+export const Eval = ((key, value) => ({ [kExpr]: true, ['$' + key]: value })) as Eval.Static
+
 const operators = {} as Record<keyof Eval.Static, (args: any, data: any) => any>
-const makeExpr = (key: string, value: string): Eval.Expr => ({ [kExpr]: true, ['$' + key]: value })
+
+operators['$'] = getRecursive
 
 type UnaryCallback<T> = T extends (value: infer R) => Eval.Expr<infer S> ? (value: R, data: any[]) => S : never
 function unary<K extends keyof Eval.Static>(key: K, callback: UnaryCallback<Eval.Static[K]>): Eval.Static[K] {
   operators[key] = callback
-  return (value: any) => makeExpr(key, value)
+  return (value: any) => Eval(key, value)
 }
 
 type MultaryCallback<T> = T extends (...args: infer R) => Eval.Expr<infer S> ? (args: R, data: any) => S : never
 function multary<K extends keyof Eval.Static>(key: K, callback: MultaryCallback<Eval.Static[K]>): Eval.Static[K] {
   operators[key] = callback
-  return (...args: any) => makeExpr(key, args)
+  return (...args: any) => Eval(key, args)
 }
 
 // univeral
@@ -102,16 +110,17 @@ Eval.lte = multary('lte', ([left, right], data) => executeEval(data, left).value
 // string
 Eval.concat = multary('concat', (args, data) => args.map(arg => executeEval(data, arg)).join(''))
 
+// logical
+Eval.and = multary('and', (args, data) => args.every(arg => executeEval(data, arg)))
+Eval.or = multary('or', (args, data) => args.some(arg => executeEval(data, arg)))
+Eval.not = unary('not', (value, data) => !executeEval(data, value))
+
 // aggregation
 Eval.sum = unary('sum', (expr, table) => table.reduce<number>((prev, curr) => prev + executeAggr(expr, curr), 0))
 Eval.avg = unary('avg', (expr, table) => table.reduce((prev, curr) => prev + executeAggr(expr, curr), 0) / table.length)
 Eval.max = unary('max', (expr, table) => Math.max(...table.map(data => executeAggr(expr, data))))
 Eval.min = unary('min', (expr, table) => Math.min(...table.map(data => executeAggr(expr, data))))
 Eval.count = unary('count', (expr, table) => new Set(table.map(data => executeAggr(expr, data))).size)
-
-export type Row<S> = {
-  [K in keyof S]: S[K] extends Common ? Eval.Expr<S[K]> : Row<S[K]>
-}
 
 export { Eval as $ }
 
@@ -131,7 +140,6 @@ function getRecursive(path: string, data: any) {
 }
 
 function executeEvalExpr(expr: any, data: any) {
-  if ('$' in expr) return getRecursive(expr.$, data)
   for (const key in expr) {
     if (key in operators) {
       return operators[key](expr[key], data)
