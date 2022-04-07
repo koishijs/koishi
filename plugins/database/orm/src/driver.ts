@@ -1,6 +1,6 @@
-import { Dict, makeArray, MaybeArray, pick } from '@koishijs/utils'
+import { Dict, Intersect, makeArray, MaybeArray, pick } from '@koishijs/utils'
 import { ModelError } from './error'
-import { Eval, Update } from './eval'
+import { Eval, Row, Update } from './eval'
 import { Model } from './model'
 import { Modifier, Query } from './query'
 import { Flatten, Indexable, Keys } from './utils'
@@ -21,6 +21,17 @@ export namespace Driver {
   }
 }
 
+type Selector<S> = Keys<S> | Selection
+
+namespace Selector {
+  export type Resolve<S, T> =
+    | T extends Keys<S> ? S[T]
+    : T extends Selection<infer U> ? Intersect<U[number]>
+    : never
+
+  export type Tuple<S, T> = T extends [infer L, ...infer R] ? [Resolve<S, L>, ...Tuple<S, R>] : never
+}
+
 export abstract class Driver<S = any> {
   abstract drop(): Promise<void>
   abstract stats(): Promise<Driver.Stats>
@@ -29,9 +40,15 @@ export abstract class Driver<S = any> {
   abstract remove<T extends Keys<S>>(table: T, query: Query<S[T]>): Promise<void>
   abstract create<T extends Keys<S>>(table: T, data: Partial<S[T]>): Promise<S[T]>
   abstract upsert<T extends Keys<S>>(table: T, data: Update<S[T]>[], keys?: MaybeArray<Keys<Flatten<S[T]>, Indexable>>): Promise<void>
-  abstract eval<T extends Keys<S>, E extends Eval.Aggregation<S[T]>>(table: T, expr: E, query?: Query<S[T]>): Promise<Eval<E>>
+  abstract eval<T extends Keys<S>, E extends Eval.Any>(table: T, expr: E, query?: Query<S[T]>): Promise<Eval<E>>
 
   constructor(public model: Model<S>) {}
+
+  select<T extends Selector<S>>(table: T, where?: Query<Selector.Resolve<S, T>>): Selection<[Selector.Resolve<S, T>]>
+  select<T extends Selector<S>[]>(tables: T, where?: Selection.Callback<Selector.Tuple<S, T>, boolean>): Selection<Selector.Tuple<S, T>>
+  select(name: any): any {
+    return new Selection()
+  }
 
   protected resolveTable<T extends Keys<S>>(name: T) {
     const config = this.model.config[name]
@@ -78,5 +95,43 @@ export abstract class Driver<S = any> {
       data[key] ??= null
     }
     return this.model.parse(name, pick(data, fields))
+  }
+}
+
+export type Direction = 'asc' | 'desc'
+
+export namespace Selection {
+  export type Rows<T> = T extends [infer L, ...infer R] ? [Row<L>, ...Rows<R>] : never
+  export type Callback<S extends unknown[], T = any> = (...rows: Rows<S>) => Eval.Expr<T>
+
+  export type Project<S extends unknown[], T extends Dict<Callback<S>>> = {
+    [K in keyof T]: Eval<ReturnType<T[K]>>
+  }
+}
+
+export class Selection<S extends unknown[] = any[]> {
+  #limit: number
+  #offset: number
+
+  orderBy(field: Keys<Intersect<S[number]>>, direction?: Direction): this
+  orderBy(field: Selection.Callback<S>, direction?: Direction): this
+  orderBy(field: string | Function, direction: Direction = 'asc') {
+    return this
+  }
+
+  project<T extends Keys<Intersect<S[number]>>>(fields: T[]): Selection<[Pick<Intersect<S[number]>, T>]>
+  project<T extends Dict<Selection.Callback<S>>>(fields: T): Selection<[Selection.Project<S, T>]>
+  project(fields: any): any {
+    return this
+  }
+
+  limit(limit: number) {
+    this.#limit = limit
+    return this
+  }
+
+  offset(offset: number) {
+    this.#offset = offset
+    return this
   }
 }

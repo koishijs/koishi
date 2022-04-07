@@ -9,6 +9,7 @@ export type Keys<O, T = any> = Values<{
 export type Atomic = number | string | boolean | bigint | symbol | Date
 export type Indexable = string | number
 export type Comparable = string | number | Date
+export type Common = string | number | boolean | Date
 
 type FlatWrap<S, T, P extends string> = { [K in P]?: S }
   // rule out atomic / recursive types

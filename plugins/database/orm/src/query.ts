@@ -1,8 +1,9 @@
 import { Dict, Extract } from '@koishijs/utils'
 import { Eval, executeEval } from './eval'
 import { Comparable, Indexable } from './utils'
+import { Selection } from './driver'
 
-export type Query<T = any> = Query.Expr<T> | Query.Shorthand<Indexable>
+export type Query<T = any> = Query.Expr<T> | Query.Shorthand<Indexable> | Selection.Callback<[T], boolean>
 
 export namespace Query {
   export interface FieldExpr<T = any> {
@@ -42,7 +43,8 @@ export namespace Query {
     $or?: Expr<T>[]
     $and?: Expr<T>[]
     $not?: Expr<T>
-    $expr?: Eval.Boolean<T>
+    /** @deprecated use query callback instead */
+    $expr?: Eval.Boolean
   }
 
   export type Shorthand<T = any> =
