@@ -38,6 +38,18 @@ export class HttpAdapter extends Adapter<MatrixBot, AdapterConfig> {
     }
 
     stop() { }
+    
+    async connect(bot: MatrixBot): Promise<void> {
+        console.log(bot.userId)
+        try {
+            await bot.http.post('/client/v3/register', {
+                type: 'm.login.application_service',
+                username: bot.selfId,
+            })
+        } catch (e) {
+            console.log(e)
+        }
+    }
 
     private transactions(ctx: Context) {
         const { txnId } = ctx.params
@@ -50,6 +62,7 @@ export class HttpAdapter extends Adapter<MatrixBot, AdapterConfig> {
         }
     }
     private users(ctx: Context) {
+        ctx.body = {}
     }
     private rooms(ctx: Context) {
     }

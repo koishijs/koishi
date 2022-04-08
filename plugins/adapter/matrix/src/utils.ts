@@ -5,7 +5,6 @@ import * as Matrix from './types'
 export interface AdapterConfig { }
 
 export function adaptSession(bot: MatrixBot, event: Matrix.ClientEvent) {
-    console.log(JSON.stringify(event, null, 2))
     const session: Partial<Session> = {}
     session.selfId = bot.selfId
     session.userId = event.sender
@@ -35,7 +34,7 @@ export function adaptSession(bot: MatrixBot, event: Matrix.ClientEvent) {
                 if (reply) {
                     const { event_id } = reply
                     const body = content.body.substring(content.body.indexOf('\n\n') + 2)
-                    session.content = segment.quote(event_id) + body
+                    session.content = segment('quote', { id: event_id, channelId: event.room_id }) + body
                     break
                 }
                 session.content = content.body
@@ -46,7 +45,7 @@ export function adaptSession(bot: MatrixBot, event: Matrix.ClientEvent) {
             case 'm.video':
                 // mxc://address/id
                 const mxc = (content as any).url
-                const url = `${bot.config.endpoint}/_matrix/media/v3/download/${mxc.substring(6)}`
+                const url = `${bot.endpoint}/_matrix/media/v3/download/${mxc.substring(6)}`
                 session.content = segment(content.msgtype.substring(2), { url })
                 break
             default: return
