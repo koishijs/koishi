@@ -1,0 +1,31 @@
+{
+  "name": "@koishijs/plugin-adapter-matrix",
+  "description": "Matrix Adapter for Koishi",
+  "version": "1.0.0",
+  "main": "lib/index.js",
+  "typings": "lib/index.d.ts",
+  "files": [
+    "lib"
+  ],
+  "author": "Anillc <i@anillc.cn>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/koishijs/koishi.git"
+  },
+  "bugs": {
+    "url": "https://github.com/koishijs/koishi/issues"
+  },
+  "homepage": "https://koishi.js.org/api/adapter/matrix.html",
+  "keywords": [
+    "bot",
+    "matrix",
+    "chatbot",
+    "koishi",
+    "impl:adapter"
+  ],
+  "peerDependencies": {
+    "koa": "^2.13.4",
+    "koishi": "^4.5.1"
+  }
+}
