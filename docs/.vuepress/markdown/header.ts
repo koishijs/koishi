@@ -8,7 +8,7 @@ import { Schedule } from '@koishijs/plugin-schedule'
 import {} from '@koishijs/plugin-teach'
 
 declare global {
-  type Dict = import('koishi').Dict
+  type Dict<T = any> = import('koishi').Dict<T>
   type Awaitable<T> = import('koishi').Awaitable<T>
   type segment = import('koishi').segment
   const segment: typeof import('koishi').segment
