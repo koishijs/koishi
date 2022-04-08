@@ -1,30 +1,66 @@
 import { Adapter, Schema } from 'koishi'
 import { Context } from 'koa'
-import { MatrixBot } from './bot'
-import { AdapterConfig } from './utils'
+import { BotConfig, MatrixBot } from './bot'
+import { AdapterConfig, dispatchSession } from './utils'
+import { ClientEvent } from './types'
 
 export class HttpAdapter extends Adapter<MatrixBot, AdapterConfig> {
-    static schema: Schema<AdapterConfig> = Schema.object({
-        selfId: Schema.string().description('机器人的 ID。').required(),
-        senderLocalpart: Schema.string().description('机器人的 localpart, 继承自 selfId 。').required(),
-        hsToken: Schema.string().description('hs_token').required(),
-        asToken: Schema.string().description('as_token').required(),
-    })
+    static schema = BotConfig
+    private txnId: string = null
+
     start() {
-        const {  } = this.config
+        const { } = this.config
+        const router = this.ctx.router.use((ctx, next) => {
+            const bot = this.bots.find(bot => (bot instanceof MatrixBot) && (bot.hsToken === ctx.query.access_token))
+            if (!bot) {
+                ctx.body = { errcode: 'M_FORBIDDEN' }
+                return
+            }
+            ctx.bot = bot
+            next()
+        })
         const put = (path: string, callback: (ctx: Context) => void) => {
-            this.ctx.router.put(path, callback)
-            this.ctx.router.put('/_matrix/app/v1' + path, callback)
+            router.put(path, callback.bind(this))
+            router.put('/_matrix/app/v1' + path, callback.bind(this))
         }
         const get = (path: string, callback: (ctx: Context) => void) => {
-            this.ctx.router.get(path, callback)
-            this.ctx.router.get('/_matrix/app/v1' + path, callback)
+            router.get(path, callback.bind(this))
+            router.get('/_matrix/app/v1' + path, callback.bind(this))
         }
-        put('/transactions/{txnId}', this.transactions)
-    }
-    stop() {
+        put('/transactions/:txnId', this.transactions)
+        get('/users/:userId', this.users)
+        get('/room/:roomAlias', this.rooms)
+        get('/thirdpatry/location', this.location)
+        get('/thirdparty/location/:protocol', this.locationProtocol)
+        get('/thirdparty/protocol/:protocol', this.protocol)
+        get('/thirdpatry/user', this.user)
+        get('/thirdpatry/user/:protocol', this.userProtocol)
     }
 
+    stop() { }
+
     private transactions(ctx: Context) {
+        const { txnId } = ctx.params
+        const events = ctx.request.body.events as ClientEvent[]
+        ctx.body = {}
+        if (txnId === this.txnId) return
+        this.txnId = txnId
+        for (const event of events) {
+            dispatchSession(ctx.bot, event)
+        }
+    }
+    private users(ctx: Context) {
+    }
+    private rooms(ctx: Context) {
+    }
+    private location(ctx: Context) {
+    }
+    private locationProtocol(ctx: Context) {
+    }
+    private protocol(ctx: Context) {
+    }
+    private user(ctx: Context) {
+    }
+    private userProtocol(ctx: Context) {
     }
 }

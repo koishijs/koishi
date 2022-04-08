@@ -1,6 +1,8 @@
-export interface Transactions {
+import { Quester } from 'koishi'
+
+export interface Transaction {
     txnId: string
-    events: ClientEvent
+    events: ClientEvent[]
 }
 
 export interface ClientEvent {
@@ -147,6 +149,10 @@ export interface M_ROOM_POWER_LEVELS extends EventContent {
     users_default?: number
 }
 
+export interface M_ROOM_REDACTION extends EventContent {
+    reason?: string
+}
+
 export interface M_ROOM_MESSAGE extends EventContent {
     body: string
     msgtype: string
@@ -185,14 +191,14 @@ export interface M_EMOTE extends M_ROOM_MESSAGE {
     body: string
     format?: 'org.matrix.custom.html'
     formatted_body?: string
-    msgtype: 'm.text'
+    msgtype: 'm.emote'
 }
 
 export interface M_NOTICE extends M_ROOM_MESSAGE {
     body: string
     format?: 'org.matrix.custom.html'
     formatted_body?: string
-    msgtype: 'm.text'
+    msgtype: 'm.notice'
 }
 
 export interface M_IMAGE extends M_ROOM_MESSAGE {
@@ -324,4 +330,6 @@ export interface M_SPACE_PARENT extends EventContent {
     via?: string[]
 }
 
-export interface Internal {}
+export class Internal {
+    constructor(public http: Quester) {}
+}

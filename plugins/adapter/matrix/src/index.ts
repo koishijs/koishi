@@ -4,9 +4,9 @@ import { HttpAdapter } from './http'
 import * as Matrix from './types'
 
 declare module 'koishi' {
-  interface Session { // TODO: Payload
-      matrix: Matrix.Internal
+  interface Session {
+      matrix: Matrix.Internal & Matrix.ClientEvent
   }
 }
 
-Adapter.define('matrix', MatrixBot, HttpAdapter)
+export default Adapter.define('matrix', MatrixBot, HttpAdapter)
