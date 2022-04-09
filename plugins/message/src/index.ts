@@ -20,9 +20,10 @@ export class MessageDatabase extends Service {
     super(ctx, 'msgdb', true)
   }
 
-  states = {}
+  states: Record<string, boolean> = {}
   _queue: Partial<Session>[] = []
-  // platform.channelId
+  messageQueue: Record<string, Partial<Session>[]> = {}
+  // platform:channelId
 
   get queue() {
     return this._queue
@@ -57,10 +58,10 @@ export class MessageDatabase extends Service {
       const channels = await session.bot.getChannelList(session.guildId)
       const exist = Boolean(channels.find(v => v.channelId === session.channelId))
       if (!exist) {
-        if (this.queue.find(v => v.channelId === session.channelId && v.platform === session.platform)) {
-          this.queue = this.queue.filter(v => v.channelId !== session.channelId && v.platform !== session.platform)
+        if (this.queue.find(v => v.cid === session.cid)) {
+          this.queue = this.queue.filter(v => v.cid !== session.cid)
         } else {
-          delete this.states[session.platform]?.[session.channelId]
+          delete this.states[session.cid]
         }
       } else {
         this.queue.push(session)
@@ -69,6 +70,7 @@ export class MessageDatabase extends Service {
       }
     })
     this.ctx.on('message', this.onMessage.bind(this))
+    this.ctx.on('send', this.onMessage.bind(this)) // TODO no userId and nickname(onebot) here
     setTimeout(this.runQueue.bind(this), 1)
   }
 
@@ -77,17 +79,32 @@ export class MessageDatabase extends Service {
       if (!this.queue.length) {
         await new Promise((resolve) => setTimeout(resolve, 1000))
       }
-      const item = this.queue.shift()
-      if (item) {
-        logger.info('queue item %o', item)
+      const session = this.queue.shift()
+      if (session) {
+        logger.info('queue item %o', session, session.cid)
         try {
-          await this.syncMessages(item.bot, item.guildId, item.channelId)
-          this.states[item.bot.platform] ||= {}
-          this.states[item.bot.platform][item.channelId] = true
+          await this.syncMessages(session.bot, session.guildId, session.channelId)
+          this.states[session.cid] = true
         } catch (e) {
           logger.error(e)
         }
       }
+    }
+  }
+
+  static adaptMessage(session: Partial<Session>, bot: Bot = session.bot, guildId: string = session.guildId) {
+    return {
+      id: simpleflake(),
+      messageId: session.messageId,
+      content: session.content,
+      platform: bot.platform,
+      guildId: session.guildId || guildId, // eg. discord
+      timestamp: new Date(session.timestamp),
+      userId: session.userId,
+      username: session.author.username,
+      nickname: session.author.nickname,
+      channelId: session.channelId,
+      selfId: bot.selfId,
     }
   }
 
@@ -103,26 +120,15 @@ export class MessageDatabase extends Service {
     })
     const messages = await bot.getChannelMessageHistory(channelId)
     if (existRecord.length === 0) {
-      this.ctx.database.upsert('message', messages.map(session => ({
-        id: simpleflake(),
-        messageId: session.messageId,
-        content: session.content,
-        platform: bot.platform,
-        guildId: session.guildId || guildId, // eg. discord
-        timestamp: new Date(session.timestamp),
-        userId: session.userId,
-        username: session.author.username,
-        nickname: session.author.nickname,
-        channelId: session.channelId,
-        selfId: bot.selfId,
-      })))
+      this.ctx.database.upsert('message', messages.map(session => MessageDatabase.adaptMessage(session, null, guildId)))
     } else {
       logger.info('last message id %s', existRecord[0].messageId)
-      const msgInDb = messages.find(v => v.messageId === existRecord[0].messageId)
-      let continued = Boolean(msgInDb)
+      const existMessageInDb = messages.find(v => v.messageId === existRecord[0].messageId) // maybe null
+      let continued = Boolean(existMessageInDb)
       let nowMessageId = messages[0].messageId
       let newMessages = continued ? messages.filter(v => v.timestamp > existRecord[0].timestamp.valueOf()) : messages
-      logger.info('msgInDb %o, nowMessageId %s, newMessages %o', existRecord[0], nowMessageId, newMessages)
+      logger.info('existMessageInDb %o, nowMessageId %s', existMessageInDb, nowMessageId)
+      logger.info('newMessages %o', newMessages)
       while (!continued) {
         logger.warn('now message id, %o', nowMessageId)
         try {
@@ -141,7 +147,7 @@ export class MessageDatabase extends Service {
         }
       }
       // @TODO 粗糙解决一下消息重复的问题 修时间精度
-      newMessages = newMessages.filter(v => v.messageId !== msgInDb.messageId)
+      newMessages = newMessages.filter(v => v.messageId !== existMessageInDb?.messageId)
       this.ctx.database.upsert('message', newMessages.map(session => ({
         id: simpleflake(),
         messageId: session.messageId,
@@ -156,6 +162,11 @@ export class MessageDatabase extends Service {
         selfId: bot.selfId,
       })))
     }
+    const newLocal = this.messageQueue[bot.platform + ':' + channelId]
+    if (newLocal?.length) {
+      this.ctx.database.upsert('message', newLocal.map(session => MessageDatabase.adaptMessage(session)))
+      this.messageQueue[bot.platform + ':' + channelId] = []
+    }
   }
 
   async onBotStatusUpdated(bot: Bot) {
@@ -167,33 +178,22 @@ export class MessageDatabase extends Service {
     for (const guild of await bot.getGuildList()) {
       const channels = bot.getChannelList ? (await bot.getChannelList(guild.guildId)).map(v => v.channelId) : [guild.guildId]
       for (const channel of channels) {
-        this.queue.push({
+        this.queue.push(new Session(bot, {
           guildId: guild.guildId,
-          channelId: channel,
-          bot,
-        })
+          channelId: channel
+        }))
       }
     }
   }
 
   async onMessage(session: Session) {
-    if (this.states[session.bot.platform]?.[session.channelId]) {
-      logger.info('on message, id: %s', session.messageId)
-      this.ctx.database.create('message', {
-        id: simpleflake(),
-        messageId: session.messageId,
-        content: session.content,
-        platform: session.bot.platform,
-        guildId: session.guildId,
-        timestamp: new Date(session.timestamp),
-        userId: session.userId,
-        username: session.author.username,
-        nickname: session.author.nickname,
-        channelId: session.channelId,
-        selfId: session.bot.selfId,
-      })
+    if (this.states[session.cid]) {
+      logger.info('on message, cid: %s, id: %s', session.cid, session.messageId)
+      this.ctx.database.create('message', MessageDatabase.adaptMessage(session))
     } else {
-      logger.info('on message, id: %s, ignored', session.messageId)
+      this.messageQueue[session.cid] ||= []
+      this.messageQueue[session.cid].push(session)
+      logger.info('on message, cid: %s, id: %s, ignored, msg queue length: %d', session.cid, session.messageId, this.messageQueue[session.cid].length)
     }
   }
 }
