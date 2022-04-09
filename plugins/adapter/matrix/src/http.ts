@@ -30,24 +30,18 @@ export class HttpAdapter extends Adapter<MatrixBot, AdapterConfig> {
         put('/transactions/:txnId', this.transactions)
         get('/users/:userId', this.users)
         get('/room/:roomAlias', this.rooms)
-        get('/thirdpatry/location', this.location)
-        get('/thirdparty/location/:protocol', this.locationProtocol)
-        get('/thirdparty/protocol/:protocol', this.protocol)
-        get('/thirdpatry/user', this.user)
-        get('/thirdpatry/user/:protocol', this.userProtocol)
     }
 
     stop() { }
     
     async connect(bot: MatrixBot): Promise<void> {
-        console.log(bot.userId)
         try {
             await bot.http.post('/client/v3/register', {
                 type: 'm.login.application_service',
                 username: bot.selfId,
             })
         } catch (e) {
-            console.log(e)
+            if (e.response.status !== 400) throw e
         }
     }
 
@@ -65,15 +59,6 @@ export class HttpAdapter extends Adapter<MatrixBot, AdapterConfig> {
         ctx.body = {}
     }
     private rooms(ctx: Context) {
-    }
-    private location(ctx: Context) {
-    }
-    private locationProtocol(ctx: Context) {
-    }
-    private protocol(ctx: Context) {
-    }
-    private user(ctx: Context) {
-    }
-    private userProtocol(ctx: Context) {
+        ctx.body = {}
     }
 }

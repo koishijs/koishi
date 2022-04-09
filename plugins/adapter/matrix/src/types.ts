@@ -353,12 +353,10 @@ export class Internal {
         if (url.startsWith('base64://')) {
             data = Buffer.from(url.substring(9), 'base64')
         } else {
-            console.log(123)
             data = (await this.http.axios(url, {
                 method: 'GET',
                 responseType: 'arraybuffer',
             })).data
-            console.log(456)
         }
         const { content_uri } = await this.http.post(`/media/v3/upload?filename=${filename}`, data)
         const eventContent = {

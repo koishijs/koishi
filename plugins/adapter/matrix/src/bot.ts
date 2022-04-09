@@ -46,8 +46,20 @@ export class MatrixBot extends Bot<BotConfig> {
         const ids = []
         let text = ''
         let reply = null
-        const sendText = content => this.internal.sendTextMessage(channelId, this.userId, content, reply)
-        const sendMedia = (url, type) => this.internal.sendMediaMessage(channelId, this.userId, type, url)
+        const sendText = async (content) => {
+            const session = await this.session({ content, channelId, subtype: 'group' })
+            const id = await this.internal.sendTextMessage(channelId, this.userId, content, reply)
+            session.messageId = id
+            this.app.emit(session, 'send', session)
+            return id
+        }
+        const sendMedia = async (url, type) => {
+            const session = await this.session({ content, channelId, subtype: 'group' })
+            const id = await this.internal.sendMediaMessage(channelId, this.userId, type, url)
+            session.messageId = id
+            this.app.emit(session, 'send', session)
+            return id
+        }
         for (const seg of segs) {
             switch (seg.type) {
                 case 'text':
