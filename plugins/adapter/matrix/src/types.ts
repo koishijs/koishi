@@ -1,4 +1,5 @@
 import { Quester } from 'koishi'
+import { MatrixBot } from './bot'
 
 export interface Transaction {
   txnId: string
@@ -109,6 +110,12 @@ export interface PublicKeys {
 export interface Profile {
   avatar_url?: string
   displayname?: string
+}
+
+export interface User {
+  access_token?: string
+  device_id?: string
+  user_id?: string
 }
 
 export interface EventContent {}
@@ -337,14 +344,16 @@ export interface M_SPACE_PARENT extends EventContent {
 
 export class Internal {
   private txnId = Math.round(Math.random() * 1000)
-  constructor(public http: Quester) {}
+
+  constructor(public bot: MatrixBot) {}
+
   async sendTextMessage(roomId: string, userId: string, content: string, reply?: string): Promise<string> {
     const eventContent: M_TEXT = {
       msgtype: 'm.text',
       body: content,
     }
     if (reply) eventContent['m.relates_to'] = { 'm.in_reply_to': { 'event_id': reply } }
-    const response = await this.http.put(
+    const response = await this.bot.http.put(
       `/client/v3/rooms/${roomId}/send/m.room.message/${this.txnId++}?user_id=${userId}`, eventContent)
     return response.event_id
   }
@@ -354,27 +363,39 @@ export class Internal {
     if (url.startsWith('base64://')) {
       data = Buffer.from(url.substring(9), 'base64')
     } else {
-      data = (await this.http.axios(url, {
+      data = (await this.bot.http.axios(url, {
         method: 'GET',
         responseType: 'arraybuffer',
       })).data
     }
-    const { content_uri } = await this.http.post(`/media/v3/upload?filename=${filename}`, data)
+    const { content_uri } = await this.bot.http.post(`/media/v3/upload?filename=${filename}`, data)
     const eventContent = {
       msgtype: `m.${type}`,
       body: filename,
       url: content_uri,
     }
-    const response = await this.http.put(
+    const response = await this.bot.http.put(
       `/client/v3/rooms/${roomId}/send/m.room.message/${this.txnId++}?user_id=${userId}`, eventContent)
     return response.event_id
   }
 
   async getEvent(roomId: string, eventId: string): Promise<ClientEvent> {
-    return await this.http.get(`/client/v3/rooms/${roomId}/event/${eventId}`)
+    return await this.bot.http.get(`/client/v3/rooms/${roomId}/event/${eventId}`)
   }
 
   async getProfile(userId: string): Promise<Profile> {
-    return await this.http.get(`/client/v3/profile/${userId}`)
+    return await this.bot.http.get(`/client/v3/profile/${userId}`)
+  }
+
+  async register(username: string): Promise<User> {
+      return await this.bot.http.post('/client/v3/register', {
+        type: 'm.login.application_service',
+        username,
+      })
+  }
+
+  getAssetUrl(mxc: string) {
+    // mxc://
+    return `${this.bot.endpoint}/_matrix/media/v3/download/${mxc.substring(6)}`
   }
 }

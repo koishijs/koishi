@@ -35,13 +35,12 @@ export class HttpAdapter extends Adapter<MatrixBot, AdapterConfig> {
 
   async connect(bot: MatrixBot): Promise<void> {
     try {
-      await bot.http.post('/client/v3/register', {
-        type: 'm.login.application_service',
-        username: bot.selfId,
-      })
+      await bot.internal.register(bot.selfId)
     } catch (e) {
       if (e.response.status !== 400) throw e
     }
+    const { avatar } = await bot.getUser(bot.userId)
+    bot.avatar = avatar
   }
 
   private transactions(ctx: Context) {

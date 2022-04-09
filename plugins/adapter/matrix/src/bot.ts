@@ -38,7 +38,7 @@ export class MatrixBot extends Bot<BotConfig> {
           'Authorization': `Bearer ${config.asToken}`,
         },
       })
-      this.internal = new Matrix.Internal(this.http)
+      this.internal = new Matrix.Internal(this)
     }
 
     async sendMessage(channelId: string, content: string, guildId?: string): Promise<string[]> {
@@ -111,17 +111,14 @@ export class MatrixBot extends Bot<BotConfig> {
       }
     }
 
-    // async editMessage(channelId: string, messageId: string, content: string) {}
-    // async deleteMessage(channelId: string, messageId: string) {}
     async getSelf(): Promise<Bot.User> {
       return await this.getUser(this.userId)
     }
 
     async getUser(userId: string): Promise<Bot.User> {
       const profile = await this.internal.getProfile(userId)
-      let avatar
-      // mxc://
-      if (profile.avatar_url) avatar = `${this.config.endpoint}/_matrix/media/v3/download/${profile.avatar_url.substring(6)}`
+      let avatar: string
+      if (profile.avatar_url) avatar = this.internal.getAssetUrl(profile.avatar_url)
       return {
         userId,
         avatar,

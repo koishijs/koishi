@@ -44,9 +44,7 @@ export function adaptSession(bot: MatrixBot, event: Matrix.ClientEvent) {
       case 'm.file':
       case 'm.audio':
       case 'm.video': {
-        // mxc://address/id
-        const mxc = (content as any).url
-        const url = `${bot.endpoint}/_matrix/media/v3/download/${mxc.substring(6)}`
+        const url = bot.internal.getAssetUrl((content as any).url)
         session.content = segment(content.msgtype.substring(2), { url })
         break
       }
