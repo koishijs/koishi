@@ -1,6 +1,6 @@
 import { Bot, Context, Logger, Service, Session } from 'koishi'
 import { Message } from './types'
-import { simpleflake } from 'simpleflakes'
+import snowflakes, { toTimestamp } from './snowflakes'
 
 declare module 'koishi' {
   interface Tables {
@@ -23,7 +23,7 @@ export class MessageDatabase extends Service {
   states: Record<string, boolean> = {}
   _queue: Partial<Session>[] = []
   messageQueue: Record<string, Partial<Session>[]> = {}
-  // platform:channelId
+  // platform:channelId, session.cid
 
   get queue() {
     return this._queue
@@ -65,8 +65,6 @@ export class MessageDatabase extends Service {
         }
       } else {
         this.queue.push(session)
-        // await this.syncMessages(session.bot, session.guildId, session.channelId)
-        // this.states[session.platform][session.channelId] = true
       }
     })
     this.ctx.on('message', this.onMessage.bind(this))
@@ -94,7 +92,7 @@ export class MessageDatabase extends Service {
 
   static adaptMessage(session: Partial<Session>, bot: Bot = session.bot, guildId: string = session.guildId) {
     return {
-      id: simpleflake(),
+      id: snowflakes().toString(),
       messageId: session.messageId,
       content: session.content,
       platform: bot.platform,
@@ -120,7 +118,8 @@ export class MessageDatabase extends Service {
     })
     const messages = await bot.getChannelMessageHistory(channelId)
     if (existRecord.length === 0) {
-      this.ctx.database.upsert('message', messages.map(session => MessageDatabase.adaptMessage(session, null, guildId)))
+      // @TODO adapter(onebot) missing bot
+      this.ctx.database.upsert('message', messages.map(session => MessageDatabase.adaptMessage(session, bot, guildId)))
     } else {
       logger.info('last message id %s', existRecord[0].messageId)
       const existMessageInDb = messages.find(v => v.messageId === existRecord[0].messageId) // maybe null
@@ -146,21 +145,8 @@ export class MessageDatabase extends Service {
           continued = true
         }
       }
-      // @TODO 粗糙解决一下消息重复的问题 修时间精度
-      newMessages = newMessages.filter(v => v.messageId !== existMessageInDb?.messageId)
-      this.ctx.database.upsert('message', newMessages.map(session => ({
-        id: simpleflake(),
-        messageId: session.messageId,
-        content: session.content,
-        platform: bot.platform,
-        guildId: session.guildId || guildId,
-        timestamp: new Date(session.timestamp),
-        userId: session.userId,
-        username: session.author.username,
-        nickname: session.author.nickname,
-        channelId: session.channelId,
-        selfId: bot.selfId,
-      })))
+      newMessages = newMessages.filter(v => v.timestamp > (existMessageInDb ? toTimestamp(BigInt(v.messageId)) : 0))
+      this.ctx.database.upsert('message', newMessages.map(session => MessageDatabase.adaptMessage(session, bot, guildId)))
     }
     const newLocal = this.messageQueue[bot.platform + ':' + channelId]
     if (newLocal?.length) {
@@ -180,13 +166,14 @@ export class MessageDatabase extends Service {
       for (const channel of channels) {
         this.queue.push(new Session(bot, {
           guildId: guild.guildId,
-          channelId: channel
+          channelId: channel,
         }))
       }
     }
   }
 
   async onMessage(session: Session) {
+    // @TODO segments' base64://
     if (this.states[session.cid]) {
       logger.info('on message, cid: %s, id: %s', session.cid, session.messageId)
       this.ctx.database.create('message', MessageDatabase.adaptMessage(session))
