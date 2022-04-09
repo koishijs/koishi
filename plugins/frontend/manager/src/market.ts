@@ -1,7 +1,6 @@
-import { Context, version as currentVersion, Dict, Quester, Schema } from 'koishi'
-import { Package } from './utils'
-import { satisfies } from 'semver'
+import { Context, Dict, pick, Quester, Schema } from 'koishi'
 import { DataService } from '@koishijs/plugin-console'
+import scan, { AnalyzedPackage, PackageJson } from '@koishijs/market'
 import spawn from 'cross-spawn'
 
 class MarketProvider extends DataService<Dict<MarketProvider.Data>> {
@@ -29,47 +28,6 @@ class MarketProvider extends DataService<Dict<MarketProvider.Data>> {
     this.tempCache = {}
   }
 
-  private async search(offset = 0) {
-    const { objects, total } = await this.http.get<Package.SearchResult>('/-/v1/search', {
-      params: {
-        text: 'koishi+plugin',
-        size: 250,
-        from: offset,
-      },
-    })
-    objects.forEach(result => this.analyze(result))
-    return total
-  }
-
-  private async analyze({ package: item, score }: Package.SearchItem) {
-    const { name, description } = item
-    const official = name.startsWith('@koishijs/plugin-')
-    const community = name.startsWith('koishi-plugin-')
-    if (!official && !community) return
-
-    const registry = await this.http.get<Package.Registry>(`/${name}`)
-    const versions = Object.values(registry.versions).filter((remote) => {
-      const { dependencies, peerDependencies, deprecated } = remote
-      const declaredVersion = { ...dependencies, ...peerDependencies }['koishi']
-      return !deprecated && declaredVersion && satisfies(currentVersion, declaredVersion)
-    }).map(Package.getMeta).reverse()
-    if (!versions.length) return
-
-    const shortname = official ? name.slice(17) : name.slice(14)
-    const latest = registry.versions[versions[0].version]
-    this.tempCache[name] = this.fullCache[name] = {
-      ...item,
-      shortname,
-      official,
-      score: score.detail.popularity * 100,
-      description,
-      versions,
-      size: latest.dist.unpackedSize,
-      license: latest.license,
-    }
-    this.flushData()
-  }
-
   async prepare() {
     const registry = await new Promise<string>((resolve, reject) => {
       let stdout = ''
@@ -87,10 +45,18 @@ class MarketProvider extends DataService<Dict<MarketProvider.Data>> {
       endpoint: registry.trim(),
     })
 
-    const total = await this.search()
-    for (let offset = 250; offset < total; offset += 250) {
-      await this.search(offset)
-    }
+    await scan({
+      version: '4',
+      request: this.http.get,
+      onItem: (item) => {
+        const { name, versions } = item
+        this.tempCache[name] = this.fullCache[name] = {
+          ...item,
+          versions: versions.map(item => pick(item, ['version', 'keywords', 'peerDependencies'])),
+        }
+        this.flushData()
+      },
+    })
   }
 
   async get() {
@@ -103,13 +69,8 @@ namespace MarketProvider {
 
   export const Config = Schema.object({})
 
-  export interface Data extends Package.SearchPackage {
-    versions: Package.Meta[]
-    shortname: string
-    official: boolean
-    score: number
-    size: number
-    license: string
+  export interface Data extends Omit<AnalyzedPackage, 'versions'> {
+    versions: Partial<PackageJson>[]
   }
 }
 

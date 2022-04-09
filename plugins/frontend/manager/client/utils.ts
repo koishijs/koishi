@@ -40,8 +40,7 @@ export function removeFavorite(name: string) {
 
 export const getMixedMeta = (name: string) => ({
   keywords: [],
-  devDeps: [],
-  peerDeps: [],
+  peerDependencies: {},
   ...store.market[name],
   ...store.packages[name],
 })
