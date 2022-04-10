@@ -72,12 +72,12 @@ $ npm i -g @crowdin/cli
 $ yarn global add @crowdin/cli
 ```
 
-Crowdin 也提供了 HomeBrew / apt 等多种安装方式，对于 Windows 用户，你也可以直接下载 Crowdin 所提供的安装程序安装，请查看 [Crowdin 的文档](https://support.crowdin.com/cli-tool/#installation)获知更多详情。
+Crowdin 也提供了 Homebrew / apt 等多种安装方式，对于 Windows 用户，你也可以直接下载 Crowdin 所提供的安装程序安装，请查看 [Crowdin 的文档](https://support.crowdin.com/cli-tool/#installation)获知更多详情。
 
-如果你当前项目根目录下还没有 Crowdin 的配置文件 `crowdin.yml`，则你可以运行 `crowdin init` 创建一个基础配置文件，修改其中的条目以适应你的项目。详细的介绍可以看[Crowdin 的文档](https://support.crowdin.com/configuration-file/)。
+在运行 Crowdin 的 CLI 工具之前，你需要确保当前项目的根目录下存在名为 `crowdin.yml` 的配置文件，你可以运行 `crowdin init` 创建一个基础配置文件，修改其中的条目以适应你的项目。详细的介绍可以看[Crowdin 的文档](https://support.crowdin.com/configuration-file/)。
 
 ::: tip
-`crowdin.yml` 中的配置项不仅适用于 Crowdin CLI，还可以在上述的 GitHub 集成中发挥作用，Crowdin 会自动读取该文件以确定翻译的范围等。
+`crowdin.yml` 中的配置项不仅适用于 Crowdin CLI，还可以在上述的代码仓库集成中发挥作用，Crowdin 会自动读取该文件以确定翻译的范围。
 :::
 
 推荐在项目目录下的 `crowdin.yml` 文件中配置好文件筛选器，并且在 `$HOME/.crowdin.yml` 文件中存储你的 Crowdin 密钥等敏感信息，然后你就可以简单地运行 `crowdin upload sources` 上传源文件，而不需要每次都打出冗长的包含通配符的文件路径了。
