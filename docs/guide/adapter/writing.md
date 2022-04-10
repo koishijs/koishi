@@ -60,18 +60,20 @@ class MyBot extends Bot {
 }
 
 class MyAdapter extends Adapter {
-  constructor(app) {
+  constructor(ctx) {
     // 请注意这里的第二个参数是应该是一个构造函数而非实例
-    super(app, MyBot)
+    super(ctx, MyBot)
   }
 
   start() {
     // 收到 http post 请求时，生成会话对象并触发事件
-    this.app.router.post('/', (ctx) => {
+    this.ctx.router.post('/', (ctx) => {
       const session = new Session(this.app, ctx.request.body)
       this.dispatch(session)
     })
   }
+
+  stop() {}
 }
 
 // 注册适配器
@@ -101,6 +103,8 @@ class MyAdapter extends Adapter {
       this.dispatch(session)
     })
   }
+
+  stop() {}
 }
 
 // 注册适配器
@@ -170,24 +174,3 @@ class MyAdapter2 extends Adapter.WsClient {
 Adapter.types['another-adapter'] = MyAdapter2
 ```
 :::
-
-### 适配器重定向
-
-如果你嫌 onebot:http, onebot:ws 的写法太麻烦，不如试试下面的写法：
-
-```js title=koishi.js
-module.exports = {
-  type: 'onebot',
-  server: 'ws://localhost:6700',
-}
-```
-
-启动程序，你将发现它也能按照 onebot:ws 的逻辑正常运行。这是因为 Koishi 提供了一个重定向方法，专门用于处理这种需求。你只需要这样定义即可：
-
-```js
-Adapter.types['onebot'] = Adapter.redirect((bot) => {
-  return !bot.server ? 'onebot:ws-reverse'
-    : bot.server.startsWith('ws') ? 'onebot:ws'
-      : 'onebot:http'
-})
-```

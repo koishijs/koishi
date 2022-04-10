@@ -120,23 +120,12 @@ export class DiscordBot extends Bot<BotConfig> {
   }
 
   async getMessage(channelId: string, messageId: string): Promise<Bot.Message> {
-    const [msg, channel] = await Promise.all([
-      this.internal.getChannelMessage(channelId, messageId),
-      this.internal.getChannel(channelId),
-    ])
-    const result: Bot.Message = {
-      messageId: msg.id,
-      channelId: msg.channel_id,
-      guildId: channel.guild_id,
-      userId: msg.author.id,
-      content: msg.content,
-      timestamp: new Date(msg.timestamp).valueOf(),
-      author: adaptUser(msg.author),
-    }
-    result.author.nickname = msg.member?.nick
-    if (msg.message_reference) {
-      const quoteMsg = await this.internal.getChannelMessage(msg.message_reference.channel_id, msg.message_reference.message_id)
-      result.quote = adaptMessage(this, quoteMsg)
+    const original = await this.internal.getChannelMessage(channelId, messageId)
+    const result = adaptMessage(original)
+    const reference = original.message_reference
+    if (reference) {
+      const quoteMsg = await this.internal.getChannelMessage(reference.channel_id, reference.message_id)
+      result.quote = adaptMessage(quoteMsg)
     }
     return result
   }

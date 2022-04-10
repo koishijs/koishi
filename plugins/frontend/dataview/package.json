@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-dataview",
   "description": "View Database in Koishi Console",
-  "version": "1.2.1",
+  "version": "1.2.2",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -31,8 +31,8 @@
     "required:database"
   ],
   "peerDependencies": {
-    "@koishijs/plugin-console": "^3.2.3",
-    "koishi": "^4.4.1"
+    "@koishijs/plugin-console": "^3.2.4",
+    "koishi": "^4.5.1"
   },
   "devDependencies": {
     "@koishijs/client": "^3.2.3"

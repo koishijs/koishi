@@ -33,7 +33,7 @@ describe('@koishijs/plugin-override', () => {
       await client.shouldNotReply('bar')
       await client.shouldNotReply('baz')
 
-      await app.dispose(commands)
+      app.dispose(commands)
     })
 
     it('dispose plugin', async () => {
@@ -49,7 +49,7 @@ describe('@koishijs/plugin-override', () => {
       await client.shouldReply('bar', 'test')
       await client.shouldReply('baz', 'test')
 
-      await app.dispose(commands)
+      app.dispose(commands)
 
       await client.shouldReply('bar', 'test')
       await client.shouldNotReply('baz')
@@ -72,7 +72,7 @@ describe('@koishijs/plugin-override', () => {
       await client.shouldReply('foo.bar', 'test')
       await client.shouldReply('baz', 'test')
 
-      await app.dispose(commands)
+      app.dispose(commands)
       await client.shouldReply('foo.bar', 'test')
       await client.shouldNotReply('baz')
       expect(foo.children).to.have.length(1)
@@ -94,7 +94,7 @@ describe('@koishijs/plugin-override', () => {
       await client.shouldReply('bar', 'test')
       await client.shouldReply('baz', 'test')
 
-      await app.dispose(commands)
+      app.dispose(commands)
       await client.shouldReply('bar', 'test')
       await client.shouldNotReply('baz')
       expect(foo.children).to.have.length(0)
@@ -118,7 +118,7 @@ describe('@koishijs/plugin-override', () => {
       expect(baz.children).to.have.length(1)
       await client.shouldReply('foo', 'test')
 
-      await app.dispose(commands)
+      app.dispose(commands)
       await client.shouldReply('foo', 'test')
       expect(bar.children).to.have.length(1)
       expect(baz.children).to.have.length(0)
@@ -143,7 +143,7 @@ describe('@koishijs/plugin-override', () => {
       await client.shouldReply('foo', /baz/)
       await client.shouldReply('baz', 'test')
 
-      await app.dispose(commands)
+      app.dispose(commands)
       await client.shouldNotReply('foo')
       await client.shouldNotReply('baz')
       await client.shouldReply('bar', 'test')

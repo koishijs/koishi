@@ -1,9 +1,8 @@
-import { Awaitable, coerce, Dict, Logger, remove, Schema, template } from '@koishijs/utils'
+import { Awaitable, coerce, Dict, Logger, remove, Schema } from '@koishijs/utils'
 import { Argv } from './parser'
 import { Context, Disposable, Next } from './context'
 import { Channel, User } from './database'
 import { Computed, FieldCollector, Session } from './session'
-import { KoishiError } from './error'
 import * as internal from './internal'
 
 const logger = new Logger('command')
@@ -76,7 +75,7 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
   constructor(name: string, decl: string, context: Context) {
     super(name, decl, context)
     this.config = { ...Command.defaultConfig }
-    this._registerAlias(name.toLowerCase())
+    this._registerAlias(name)
     context.app._commandList.push(this)
   }
 
@@ -84,14 +83,44 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
     return this.context.app
   }
 
-  private _registerAlias(name: string) {
-    this._aliases.push(name)
+  get displayName() {
+    return this._aliases[0]
+  }
+
+  set displayName(name) {
+    this._registerAlias(name, true)
+  }
+
+  private _registerAlias(name: string, prepend = false) {
+    name = name.toLowerCase()
+
+    // add to list
+    const done = this._aliases.includes(name)
+    if (done) {
+      if (prepend) {
+        remove(this._aliases, name)
+        this._aliases.unshift(name)
+      }
+      return
+    } else if (prepend) {
+      this._aliases.unshift(name)
+    } else {
+      this._aliases.push(name)
+    }
+
+    // register global
     const previous = this.app.getCommand(name)
     if (!previous) {
       this.app._commands.set(name, this)
     } else if (previous !== this) {
-      throw new Error(template.format('duplicate command names: "{0}"', name))
+      throw new Error(`duplicate command names: "${name}"`)
     }
+
+    // add disposable
+    this._disposables?.push(() => {
+      remove(this._aliases, name)
+      this.app._commands.delete(name)
+    })
   }
 
   [Symbol.for('nodejs.util.inspect.custom')]() {
@@ -110,14 +139,8 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
 
   alias(...names: string[]) {
     if (this._disposed) return this
-    for (const _name of names) {
-      const name = _name.toLowerCase()
-      if (this._aliases.includes(name)) continue
+    for (const name of names) {
       this._registerAlias(name)
-      this._disposables?.push(() => {
-        remove(this._aliases, name)
-        this.app._commands.delete(name)
-      })
     }
     return this
   }
@@ -228,7 +251,7 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
       if (callback !== undefined) {
         queue.push(next => Next.compose(callback, next))
         if (queue.length > Next.MAX_DEPTH) {
-          throw new KoishiError(`middleware call stack exceeded ${Next.MAX_DEPTH}`, 'runtime.max-depth-exceeded')
+          throw new Error(`middleware stack exceeded ${Next.MAX_DEPTH}`)
         }
       }
       return queue[index++]?.(argv.next)

@@ -1,4 +1,5 @@
-import { Query, Random, valueMap } from 'koishi'
+import { Random, valueMap } from 'koishi'
+import { Query } from '@koishijs/orm'
 import { Filter, FilterOperators } from 'mongodb'
 
 function createFieldFilter(query: Query.FieldQuery, key: string) {

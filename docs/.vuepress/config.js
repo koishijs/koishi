@@ -101,6 +101,7 @@ module.exports = {
         isGroup: true,
         children: [
           '/guide/database/index.md',
+          '/guide/database/model.md',
           '/guide/database/builtin.md',
           '/guide/database/observer.md',
           '/guide/database/writing.md',
@@ -164,6 +165,7 @@ module.exports = {
           '/api/core/command.md',
           '/api/core/context.md',
           '/api/core/events.md',
+          '/api/core/service.md',
           '/api/core/session.md',
         ],
       }, {

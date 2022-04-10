@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/database-tests",
   "description": "Test utilities for Koishi",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "engines": {
@@ -32,11 +32,11 @@
   "devDependencies": {
     "@types/chai": "^4.3.0",
     "@types/chai-as-promised": "^7.1.5",
-    "@types/node": "^17.0.21"
+    "@types/node": "^17.0.23"
   },
   "peerDependencies": {
     "@koishijs/plugin-mock": "^1.0.3",
-    "koishi": "^4.4.1"
+    "koishi": "^4.5.1"
   },
   "dependencies": {
     "chai": "^4.3.6",

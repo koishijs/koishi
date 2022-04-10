@@ -1,6 +1,6 @@
 import { cwd, DependencyType, getWorkspaces, PackageJson } from './utils'
 import { cyan, green, yellow } from 'kleur'
-import { writeJson } from 'fs-extra'
+import { writeFile } from 'fs-extra'
 import { gt, satisfies } from 'semver'
 import latest from 'latest-version'
 import prompts from 'prompts'
@@ -100,7 +100,7 @@ interface Dependency {
   await pMap(Object.keys(workspaces), (name) => {
     const workspace = workspaces[name]
     if (!workspace.dirty) return
-    return writeJson(`${cwd}/${workspace.path}/package.json`, workspace.meta, { spaces: 2 })
+    return writeFile(`${cwd}/${workspace.path}/package.json`, JSON.stringify(workspace.meta, null, 2))
   })
 
   console.log(output.sort().join('\n'))

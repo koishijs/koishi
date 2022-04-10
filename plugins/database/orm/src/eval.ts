@@ -1,41 +1,85 @@
-import { Dict, Eval, Query } from 'koishi'
+import { Flatten, Keys } from './utils'
 
-type QueryOperators = {
-  [K in keyof Query.FieldExpr]?: (query: Query.FieldExpr[K], data: any) => boolean
+export function isEvalExpr(value: any): value is Eval.UniveralExpr {
+  return Object.keys(value).some(key => key.startsWith('$'))
 }
 
-const queryOperators: QueryOperators = {
-  // logical
-  $or: (query, data) => query.reduce((prev, query) => prev || executeFieldQuery(query, data), false),
-  $and: (query, data) => query.reduce((prev, query) => prev && executeFieldQuery(query, data), true),
-  $not: (query, data) => !executeFieldQuery(query, data),
+type $Date = Date
 
-  // comparison
-  $eq: (query, data) => data.valueOf() === query.valueOf(),
-  $ne: (query, data) => data.valueOf() !== query.valueOf(),
-  $gt: (query, data) => data.valueOf() > query.valueOf(),
-  $gte: (query, data) => data.valueOf() >= query.valueOf(),
-  $lt: (query, data) => data.valueOf() < query.valueOf(),
-  $lte: (query, data) => data.valueOf() <= query.valueOf(),
+export type Uneval<T, U> =
+  | U extends number ? Eval.Number<T>
+  : U extends string ? Eval.String<T>
+  : U extends boolean ? Eval.Boolean<T>
+  : U extends $Date ? Eval.Date<T>
+  : any
 
-  // membership
-  $in: (query, data) => query.includes(data),
-  $nin: (query, data) => !query.includes(data),
+export type Eval<U> =
+  | U extends number ? number
+  : U extends boolean ? boolean
+  : U extends string ? string
+  : U extends symbol ? any
+  : U extends Eval.NumberExpr ? number
+  : U extends Eval.StringExpr ? string
+  : U extends Eval.BooleanExpr ? boolean
+  : U extends Eval.AggregationExpr ? number
+  : never
 
-  // regexp
-  $regex: (query, data) => query.test(data),
-  $regexFor: (query, data) => new RegExp(data, 'i').test(query),
+export namespace Eval {
+  export type GeneralExpr = UniveralExpr & NumberExpr & StringExpr & BooleanExpr & AggregationExpr
+  export type Number<T = any, A = never> = A | number | NumberExpr<T, A>
+  export type String<T = any, A = never> = string | StringExpr<T, A>
+  export type Boolean<T = any, A = never> = boolean | BooleanExpr<T, A>
+  export type Date<T = any> = $Date | DateExpr<T>
+  export type Aggregation<T = any> = Number<{}, AggregationExpr<T>>
 
-  // bitwise
-  $bitsAllSet: (query, data) => (query & data) === query,
-  $bitsAllClear: (query, data) => (query & data) === 0,
-  $bitsAnySet: (query, data) => (query & data) !== 0,
-  $bitsAnyClear: (query, data) => (query & data) !== query,
+  export interface UniveralExpr<T = any, U = any> {
+    $?: Keys<Flatten<T>, U>
+    $if?: [any, Uneval<T, U>, Uneval<T, U>]
+    $ifNull?: Uneval<T, U>[]
+  }
 
-  // list
-  $el: (query, data) => data.some(item => executeFieldQuery(query, item)),
-  $size: (query, data) => data.length === query,
+  export interface NumberExpr<T = any, A = never> extends UniveralExpr<T, number> {
+    $add?: Number<T, A>[]
+    $multiply?: Number<T, A>[]
+    $subtract?: [Number<T, A>, Number<T, A>]
+    $divide?: [Number<T, A>, Number<T, A>]
+  }
+
+  export interface StringExpr<T = any, A = never> extends UniveralExpr<T, string> {
+    $concat?: String<T, A>[]
+  }
+
+  type ComparableBinary<T, A> =
+    | [Number<T, A>, Number<T, A>]
+    | [String<T, A>, String<T, A>]
+    | [Boolean<T, A>, Boolean<T, A>]
+    | [Date<T>, Date<T>]
+
+  export interface BooleanExpr<T = any, A = never> extends UniveralExpr<T, boolean> {
+    $eq?: ComparableBinary<T, A>
+    $ne?: ComparableBinary<T, A>
+    $gt?: ComparableBinary<T, A>
+    $gte?: ComparableBinary<T, A>
+    $lt?: ComparableBinary<T, A>
+    $lte?: ComparableBinary<T, A>
+  }
+
+  export interface DateExpr<T = any> extends UniveralExpr<T, $Date> {}
+
+  export interface AggregationExpr<T = any> {
+    $sum?: Keys<Flatten<T>, number> | NumberExpr<T>
+    $avg?: Keys<Flatten<T>, number> | NumberExpr<T>
+    $max?: Keys<Flatten<T>, number> | NumberExpr<T>
+    $min?: Keys<Flatten<T>, number> | NumberExpr<T>
+    $count?: Keys<Flatten<T>> | NumberExpr<T> | StringExpr<T> | BooleanExpr<T>
+  }
 }
+
+type MapUneval<S, T> = {
+  [K in keyof S]?: Uneval<T, S[K]>
+}
+
+export type Update<T> = MapUneval<Flatten<T>, T>
 
 type EvalOperators = {
   [K in keyof Eval.GeneralExpr]?: (args: Eval.GeneralExpr[K], data: any) => any
@@ -79,61 +123,6 @@ const evalOperators: EvalOperators = {
   $min: (expr, table: any[]) => Math.min(...table.map(data => executeAggr(expr, data))),
   $max: (expr, table: any[]) => Math.max(...table.map(data => executeAggr(expr, data))),
   $count: (expr, table: any[]) => new Set(table.map(data => executeAggr(expr, data))).size,
-}
-
-function executeFieldQuery(query: Query.FieldQuery, data: any) {
-  // shorthand syntax
-  if (Array.isArray(query)) {
-    return query.includes(data)
-  } else if (query instanceof RegExp) {
-    return query.test(data)
-  } else if (typeof query === 'string' || typeof query === 'number' || query instanceof Date) {
-    return data.valueOf() === query.valueOf()
-  }
-
-  for (const key in query) {
-    if (key in queryOperators) {
-      if (!queryOperators[key](query[key], data)) return false
-    }
-  }
-
-  return true
-}
-
-export function executeQuery(data: any, query: Query.Expr): boolean {
-  const entries: [string, any][] = Object.entries(query)
-  return entries.every(([key, value]) => {
-    // execute logical query
-    if (key === '$and') {
-      return (value as Query.Expr[]).reduce((prev, query) => prev && executeQuery(data, query), true)
-    } else if (key === '$or') {
-      return (value as Query.Expr[]).reduce((prev, query) => prev || executeQuery(data, query), false)
-    } else if (key === '$not') {
-      return !executeQuery(data, value)
-    } else if (key === '$expr') {
-      return executeEval(data, value)
-    }
-
-    // execute field query
-    try {
-      if (!(key in data)) return false
-      return executeFieldQuery(value, data[key])
-    } catch {
-      return false
-    }
-  })
-}
-
-export function executeSort(data: any[], sort: Dict<'asc' | 'desc'>) {
-  return data.sort((a, b) => {
-    for (const key in sort) {
-      const dir = sort[key] === 'asc' ? 1 : -1
-      const x = a[key], y = b[key]
-      if (x < y) return -dir
-      if (x > y) return dir
-    }
-    return 0
-  })
 }
 
 function executeEvalExpr(expr: any, data: any) {

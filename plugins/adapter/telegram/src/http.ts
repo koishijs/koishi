@@ -67,7 +67,7 @@ abstract class TelegramAdapter extends Adapter<BotConfig, AdapterConfig> {
           author: adaptUser(message.reply_to_message.from),
           content: replayText ? segment.join(parsedReply) : undefined,
         }
-        segments.push({ type: 'quote', data: { id: message.reply_to_message.message_id } })
+        segments.push({ type: 'quote', data: { id: message.reply_to_message.message_id, channelId: message.reply_to_message.chat.id } })
       }
       if (message.location) {
         segments.push({

@@ -2,7 +2,7 @@
 sidebarDepth: 2
 ---
 
-# 编写插件
+# 认识插件
 
 在 [直接调用 Koishi](../introduction/direct.md) 一章中，我们已经学习了基础的插件开发范例。本章将介绍更多的插件编写方式，以及一些场景下的最佳实践。
 
@@ -151,23 +151,12 @@ Koishi 的许多插件都采用了这种写法，例如 [koishi-plugin-tools](ht
 
 通常来说一个插件的效应应该是永久的，但如果你想在运行时卸载一个插件，应该怎么做？你可以使用 `ctx.dispose()` 方法来解决：
 
-::: code-group language
-```js no-extra-header
-function callback(ctx, options) {
-  // 编写你的插件逻辑
-  ctx.on('message', eventCallback)
-  ctx.command('foo').action(commandCallback)
-  ctx.middleware(middlewareCallback)
-  ctx.plugin(require('another-plugin'))
-}
-
-// 加载插件
-app.plugin(callback)
-
-// 卸载这个插件，取消上面的全部操作
-app.dispose(callback)
-```
 ```ts no-extra-header
+declare const app: import('koishi').App
+
+// ---cut---
+// @errors: 2304
+
 import { Context } from 'koishi'
 
 function callback(ctx: Context, options) {
@@ -184,7 +173,6 @@ app.plugin(callback)
 // 卸载这个插件，取消上面的全部操作
 app.dispose(callback)
 ```
-:::
 
 看起来很神奇，不过它的实现方式也非常简单。当一个插件被注册时，Koishi 会记录注册过程中定义的所有事件钩子、指令、中间件乃至子插件。当 `ctx.dispose()` 被调用时，再逐一取消上述操作的效应。因此，它的局限性也很明显：它并不能妥善处理除了 Context API 以外的**副作用**。不过，我们也准备了额外的解决办法：
 

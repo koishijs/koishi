@@ -73,7 +73,7 @@ const rows = await ctx.database.get('schedule', { id: { $gt: 2, $lte: 5 } })
 // id 大于 2 但是小于等于 5 或者 id 大于 100 的数据行
 const rows = await ctx.database.get('schedule', {
   id: { $gt: 2, $lte: 5 },
-  $or: [{ $id: { $gt: 100 } }],
+  $or: [{ id: { $gt: 100 } }],
 })
 
 // 只获取 id 和 command 字段（默认情况下将获取全部字段）

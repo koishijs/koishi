@@ -1,21 +1,18 @@
-import { Argv, Context, deduplicate, difference, intersection, Schema, template } from 'koishi'
+import { Argv, Context, deduplicate, difference, intersection, Schema } from 'koishi'
 import { adminChannel } from '@koishijs/helpers'
 
 declare module 'koishi' {
+  namespace Command {
+    interface Config {
+      disabled?: boolean
+    }
+  }
+
   interface Channel {
+    enable: string[]
     disable: string[]
   }
-
-  interface Modules {
-    switch: typeof import('.')
-  }
 }
-
-template.set('switch', {
-  'forbidden': '您无权修改 {0} 功能。',
-  'list': '当前禁用的功能有：{0}',
-  'none': '当前没有禁用功能。',
-})
 
 export interface Config {}
 
@@ -24,20 +21,30 @@ export const using = ['database'] as const
 export const Config: Schema<Config> = Schema.object({})
 
 export function apply(ctx: Context, config: Config = {}) {
+  ctx.i18n.define('zh', require('./locales/zh'))
+
   ctx.model.extend('channel', {
+    // enable: 'list',
     disable: 'list',
   })
 
   ctx.before('attach-channel', (session, fields) => {
-    if (session.argv) fields.add('disable')
+    if (!session.argv) return
+    // fields.add('enable')
+    fields.add('disable')
   })
 
   // check channel
-  ctx.before('command/execute', ({ session, command }: Argv<never, 'disable'>) => {
-    if (!session.channel) return
+  ctx.before('command/execute', ({ session, command }: Argv<never, 'enable' | 'disable'>) => {
+    const { enable = [], disable = [] } = session.channel || {}
     while (command) {
-      if (session.channel.disable.includes(command.name)) return ''
-      command = command.parent as any
+      if (command.config.disabled) {
+        if (enable.includes(command.name)) return null
+        return ''
+      } else {
+        if (disable.includes(command.name)) return ''
+        command = command.parent as any
+      }
     }
   })
 
@@ -48,8 +55,8 @@ export function apply(ctx: Context, config: Config = {}) {
     .action(async ({ session }, ...names: string[]) => {
       const channel = session.channel
       if (!names.length) {
-        if (!channel.disable.length) return template('switch.none')
-        return template('switch.list', channel.disable.join(', '))
+        if (!channel.disable.length) return session.text('.none')
+        return session.text('.list', [channel.disable.join(', ')])
       }
 
       names = deduplicate(names)
@@ -57,7 +64,7 @@ export function apply(ctx: Context, config: Config = {}) {
         const command = ctx.app._commands.get(name)
         return command && command.config.authority >= session.user.authority
       })
-      if (forbidden.length) return template('switch.forbidden', forbidden.join(', '))
+      if (forbidden.length) return session.text('.forbidden', [forbidden.join(', ')])
 
       const add = difference(names, channel.disable)
       const remove = intersection(names, channel.disable)

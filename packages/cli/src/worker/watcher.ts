@@ -231,7 +231,7 @@ class Watcher {
 
       // prepare for reload
       let ancestor = state, isMarked = false
-      while ((ancestor = ancestor.parent) && !(isMarked = reloads.has(ancestor)));
+      while ((ancestor = ancestor.parent?.state) && !(isMarked = reloads.has(ancestor)));
       if (!isMarked) reloads.set(state, filename)
     }
 
@@ -266,20 +266,20 @@ class Watcher {
 
     try {
       for (const [state, filename] of reloads) {
+        const path = relative(this.root, filename)
+
         try {
           this.ctx.dispose(state.plugin)
         } catch (err) {
-          const displayName = state.plugin.name || relative(this.root, filename)
-          logger.warn('failed to dispose plugin %c\n' + coerce(err), displayName)
+          logger.warn('failed to dispose plugin at %c\n' + coerce(err), path)
         }
 
         try {
           const plugin = attempts[filename]
-          state.context.plugin(plugin, state.config)
-          const displayName = plugin.name || relative(this.root, filename)
-          logger.info('reload plugin %c', displayName)
+          state.parent.plugin(plugin, state.config)
+          logger.info('reload plugin at %c', path)
         } catch (err) {
-          logger.warn('failed to reload plugin at %c\n' + coerce(err), relative(this.root, filename))
+          logger.warn('failed to reload plugin at %c\n' + coerce(err), path)
           throw err
         }
       }
@@ -289,7 +289,7 @@ class Watcher {
       for (const [state, filename] of reloads) {
         try {
           this.ctx.dispose(attempts[filename])
-          state.context.plugin(state.plugin, state.config)
+          state.parent.plugin(state.plugin, state.config)
         } catch (err) {
           logger.warn(err)
         }

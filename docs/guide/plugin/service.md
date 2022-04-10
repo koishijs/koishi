@@ -51,7 +51,7 @@ module.exports.apply = (ctx) => {
   // 检查数据库服务是否存在
   if (!ctx.database) return
 
-  ctx.command('teach').action(() => {
+  ctx.command('teach').action((_, content) => {
     // 检查资源存储服务是否存在
     if (ctx.assets) ctx.assets.transform(content)
   })
@@ -70,7 +70,7 @@ export function apply(ctx: Context) {
   // 检查数据库服务是否存在
   if (!ctx.database) return
 
-  ctx.command('teach').action(() => {
+  ctx.command('teach').action((_, content) => {
     // 检查资源存储服务是否存在
     if (ctx.assets) ctx.assets.transform(content)
   })
@@ -89,27 +89,16 @@ export function apply(ctx: Context) {
 
 为了解决这种问题，Koishi 为插件声明提供了一个独特的 `using` 属性：
 
-::: code-group language plugin-teach
-```js
-module.exports.name = 'teach'
-module.exports.using = ['database']
-
-module.exports.apply = (ctx) => {
-  // 你可以立即访问数据库服务
-  ctx.database.get()
-}
-```
-```ts
+```ts title=plugin-teach.ts
 export const name = 'teach'
 export const using = ['database'] as const
 // 上面的 as const 的作用是固定 `using` 的内部类型
 
 export function apply(ctx: Context) {
   // 你可以立即访问数据库服务
-  ctx.database.get()
+  ctx.database.get('dialogue', {})
 }
 ```
-:::
 
 `using` 是一个数组，表示此插件依赖的服务列表。如果你声明了某个服务作为你插件的依赖：
 
@@ -150,7 +139,7 @@ module.exports.name = 'teach'
 module.exports.using = ['database']
 
 module.exports.apply = (ctx) => {
-  ctx.command('teach').action(() => {
+  ctx.command('teach').action((_, content) => {
     // 对于可选的依赖服务，在运行时检测即可
     if (ctx.assets) ctx.assets.transform(content)
   })
@@ -169,7 +158,7 @@ export const name = 'teach'
 export const using = ['database'] as const
 
 export function apply(ctx: Context) {
-  ctx.command('teach').action(() => {
+  ctx.command('teach').action((_, content) => {
     // 对于可选的依赖服务，在运行时检测即可
     if (ctx.assets) ctx.assets.transform(content)
   })
@@ -187,6 +176,8 @@ export function apply(ctx: Context) {
 如果你希望自己插件提供一些接口供其他插件使用，那么最好的办法便是提供自定义服务，就像这样：
 
 ```ts
+import Console from '@koishijs/plugin-console'
+// ---cut---
 // 这个表达式定义了一个名为 console 的服务
 Context.service('console')
 
@@ -241,6 +232,8 @@ Service 抽象类的构造函数支持三个参数：
 此外，当注册了服务的插件被卸载时，其注册的服务也会被移除，其他插件不再可以访问到这项服务：
 
 ```ts
+import Console from '@koishijs/plugin-console'
+// ---cut---
 app.console                 // falsy
 app.plugin(Console)         // 加载插件
 app.console                 // truthy
@@ -255,6 +248,11 @@ app.console                 // truthy
 既然服务的作用是提供接口供其他插件调用，就自然会涉及一个热重载的问题。如果某个插件先调用了服务上的方法，然后被卸载，那么我们就需要处理调用所带来的副作用。让我们来看一段 console 插件的源码：
 
 ```ts
+interface Console {
+  entries: Set<string>
+  triggerReload(): void
+}
+// ---cut---
 class Console extends Service {
   // 这个方法的作用是添加入口文件
   addEntry(filename: string) {
@@ -262,8 +260,8 @@ class Console extends Service {
     this.triggerReload()
 
     // 注意这个地方，caller 属性会指向访问此方法的上下文
-    // 只需要在这个上下文上监听 disconnect 事件，就可以顺利处理副作用了
-    this.caller.on('dispose', () => {
+    // 只需要在这个上下文上监听 dispose 事件，就可以顺利处理副作用了
+    this.caller?.on('dispose', () => {
       this.entries.delete(filename)
       this.triggerReload()
     })
@@ -275,6 +273,11 @@ class Console extends Service {
 需要注意的是，这里的 `caller` 属性仅仅会在调用时进行赋值，因此如果你要提供的接口是异步的，那么请在一开始保存这个上下文的引用，因为它可能在后续的异步操作中被修改。下面的两种写法都是可以的：
 
 ```ts
+interface Console {
+  entries: Set<string>
+  triggerReload(): void
+}
+// ---cut---
 class Console extends Service {
   async addEntry(filename: string) {
     // 预先保存一下 caller，因为后面有异步操作
@@ -291,9 +294,14 @@ class Console extends Service {
 ```
 
 ```ts
+interface Console {
+  entries: Set<string>
+  triggerReload(): void
+}
+// ---cut---
 class Console extends Service {
   async addEntry(filename: string) {
-    this.caller.on('dispose', async () => {
+    this.caller?.on('dispose', async () => {
       this.entries.delete(filename)
       await this.triggerReload()
     })

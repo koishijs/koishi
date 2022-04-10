@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-database-sqlite",
   "description": "SQLite support for Koishi",
-  "version": "1.0.2",
+  "version": "1.1.0",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -30,16 +30,16 @@
     "impl:database"
   ],
   "peerDependencies": {
-    "koishi": "^4.4.1"
+    "koishi": "^4.5.1"
   },
   "dependencies": {
-    "@koishijs/orm-utils": "^1.0.0",
-    "@koishijs/sql-utils": "^1.0.0",
+    "@koishijs/orm": "^1.0.0",
+    "@koishijs/sql-utils": "^1.1.0",
     "better-sqlite3": "^7.5.0",
     "sqlstring-sqlite": "^0.1.1"
   },
   "devDependencies": {
-    "@koishijs/database-tests": "^1.0.0",
+    "@koishijs/database-tests": "^1.1.0",
     "@koishijs/plugin-mock": "^1.0.3",
     "@types/better-sqlite3": "^7.5.0"
   }

@@ -51,6 +51,8 @@ ctx.command('lottery 抽卡', { maxUsage: 10 })
 有些指令（例如高强度刷屏）我们并不希望被短时间内重复调用，这时我们可以设置最短触发间隔：
 
 ```ts
+import { Time } from 'koishi'
+
 // 设置 lottery 指令每 60 秒只能调用 1 次
 ctx.command('lottery', { minInterval: Time.minute })
 ```

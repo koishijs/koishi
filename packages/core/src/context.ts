@@ -1,12 +1,11 @@
 import { Awaitable, defineProperty, Dict, Logger, makeArray, MaybeArray, Promisify, Random, remove, Schema, sleep } from '@koishijs/utils'
 import { Command } from './command'
 import { Session } from './session'
-import { Channel, Database, Modules, User } from './database'
+import { Channel, Database, ModelService, Modules, Service, Tables, User } from './database'
 import { Argv } from './parser'
 import { App } from './app'
 import { Bot } from './bot'
 import { Adapter } from './adapter'
-import { Model, Tables } from './orm'
 import { I18n } from './i18n'
 
 export type Next = (next?: Next.Callback) => Promise<void | string>
@@ -52,11 +51,11 @@ export namespace Plugin {
     : never
 
   export interface State {
-    id?: string
-    parent?: State
+    id: string
+    parent: Context
     context?: Context
     config?: any
-    using?: readonly (keyof Context.Services)[]
+    using: readonly (keyof Context.Services)[]
     schema?: Schema
     plugin?: Plugin
     children: Plugin[]
@@ -259,7 +258,7 @@ export class Context {
 
     // check duplication
     if (this.app.registry.has(plugin)) {
-      this.logger('app').warn(new Error('duplicate plugin detected'))
+      this.logger('app').warn(`duplicate plugin detected: ${plugin.name}`)
       return this
     }
 
@@ -272,29 +271,31 @@ export class Context {
     config = this.validate(plugin, config)
     if (!config) return this
 
-    const ctx = new Context(this.filter, this.app, plugin).select(config)
+    const context = new Context(this.filter, this.app, plugin).select(config)
     const schema = plugin['Config'] || plugin['schema']
     const using = plugin['using'] || []
 
+    this.logger('app').debug('plugin:', plugin.name)
     this.app.registry.set(plugin, {
       plugin,
       schema,
       using,
+      context,
       id: Random.id(),
-      context: this,
+      parent: this,
       config: config,
-      parent: this.state,
       children: [],
       disposables: [],
     })
 
     this.state.children.push(plugin)
-    this.emit('plugin-added', plugin)
+    this.emit('plugin-added', this.app.registry.get(plugin))
 
     if (using.length) {
-      ctx.on('service', async (name) => {
+      context.on('service', (name) => {
         if (!using.includes(name)) return
-        await Promise.allSettled(ctx.state.disposables.slice(1).map(dispose => dispose()))
+        context.state.children.slice().map(plugin => this.dispose(plugin))
+        context.state.disposables.slice(1).map(dispose => dispose())
         callback()
       })
     }
@@ -302,12 +303,15 @@ export class Context {
     const callback = () => {
       if (using.some(name => !this[name])) return
       if (typeof plugin !== 'function') {
-        plugin.apply(ctx, config)
+        plugin.apply(context, config)
       } else if (isConstructor(plugin)) {
-        // eslint-disable-next-line no-new, new-cap
-        new plugin(ctx, config)
+        // eslint-disable-next-line new-cap
+        const instance = new plugin(context, config)
+        if (instance instanceof Service && instance.immediate) {
+          context[instance.name] = instance as never
+        }
       } else {
-        plugin(ctx, config)
+        plugin(context, config)
       }
     }
 
@@ -319,11 +323,12 @@ export class Context {
     if (!plugin) throw new Error('root level context cannot be disposed')
     const state = this.app.registry.get(plugin)
     if (!state) return
+    this.logger('app').debug('dispose:', plugin.name)
     state.children.slice().map(plugin => this.dispose(plugin))
     state.disposables.slice().map(dispose => dispose())
     this.app.registry.delete(plugin)
-    remove(state.parent.children, plugin)
-    this.emit('plugin-removed', plugin)
+    remove(state.parent.state.children, plugin)
+    this.emit('plugin-removed', state)
     return state
   }
 
@@ -588,7 +593,7 @@ export namespace Context {
   export interface Services {
     bots: Adapter.BotList
     database: Database
-    model: Model
+    model: ModelService
     i18n: I18n
   }
 
@@ -617,6 +622,7 @@ export namespace Context {
   }
 
   service('bots')
+  service('database')
   service('i18n')
   service('model')
 
@@ -655,8 +661,8 @@ export interface EventMap {
   'middleware'(session: Session): void
   'help/command'(output: string[], command: Command, session: Session): void
   'help/option'(output: string, option: Argv.OptionDeclaration, command: Command, session: Session): string
-  'plugin-added'(plugin: Plugin): void
-  'plugin-removed'(plugin: Plugin): void
+  'plugin-added'(state: Plugin.State): void
+  'plugin-removed'(state: Plugin.State): void
   'ready'(): Awaitable<void>
   'dispose'(): Awaitable<void>
   'model'(name: keyof Tables): void

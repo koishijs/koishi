@@ -1,6 +1,7 @@
 import { Context, Dict, Random, Schema, Session, Time, User } from 'koishi'
 
 export interface Config {
+  tokenPrefix?: string
   generateToken?: () => string
 }
 
@@ -20,7 +21,8 @@ export function apply(ctx: Context, config: Config = {}) {
   type TokenData = [platform: string, id: string, pending: number]
   const tokens: Dict<TokenData> = {}
 
-  const { generateToken = () => 'koishi/' + Random.id(6, 10) } = config
+  const { tokenPrefix: prefix = 'koishi/' } = config
+  const { generateToken = () => `${prefix}` + Random.id(6, 10) } = config
 
   function generate(session: Session, pending: number) {
     const token = generateToken()
@@ -45,7 +47,9 @@ export function apply(ctx: Context, config: Config = {}) {
     const data = tokens[session.content]
     if (!data) return next()
     if (data[2] < 0) {
-      const sess = new Session(session.bot, { ...session, platform: data[0], userId: data[1] })
+      const sess = new Session(session.bot, session)
+      sess.platform = data[0]
+      sess.userId = data[1]
       const user = await sess.observeUser([session.platform as never])
       delete tokens[session.content]
       await bind(user, session.platform, session.userId)

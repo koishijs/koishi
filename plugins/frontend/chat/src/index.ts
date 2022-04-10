@@ -78,17 +78,16 @@ export function apply(ctx: Context, options: Config = {}) {
   })
 
   ctx.using(['console'], (ctx) => {
-    const { devMode, apiPath } = ctx.console.config
+    const { apiPath } = ctx.console.config
     const whitelist = [...builtinWhitelist, ...options.whitelist || []]
 
     ctx.console.global.whitelist = whitelist
     ctx.console.global.maxMessages = options.maxMessages
 
-    if (devMode) {
-      ctx.console.addEntry(resolve(__dirname, '../client/index.ts'))
-    } else {
-      ctx.console.addEntry(resolve(__dirname, '../dist'))
-    }
+    ctx.console.addEntry({
+      dev: resolve(__dirname, '../client/index.ts'),
+      prod: resolve(__dirname, '../dist'),
+    })
 
     ctx.console.addListener('chat', async ({ content, platform, selfId, channelId, guildId }) => {
       if (ctx.assets) content = await ctx.assets.transform(content)

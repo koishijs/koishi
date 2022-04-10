@@ -1,11 +1,9 @@
 import { Awaitable, coerce, defineProperty, Dict, escapeRegExp, Logger, makeArray, Schema, Time } from '@koishijs/utils'
 import { Context, Next, Plugin } from './context'
 import { Adapter } from './adapter'
-import { Channel, User } from './database'
+import { Channel, ModelService, User } from './database'
 import { Command } from './command'
 import { Computed, Session } from './session'
-import { KoishiError } from './error'
-import { Model } from './orm'
 import { I18n } from './i18n'
 import runtime from './internal/runtime'
 import validate from './internal/validate'
@@ -44,12 +42,13 @@ export class App extends Context {
     this.options = new App.Config(options)
     this.registry.set(null, {
       id: '',
+      parent: null,
       using: [],
       children: [],
       disposables: [],
     })
 
-    this.model = new Model(this)
+    this.model = new ModelService(this)
     this.i18n = new I18n(this)
     this.bots = new Adapter.BotList(this)
 
@@ -198,7 +197,7 @@ export class App extends Context {
         if (callback !== undefined) {
           queue.push(next => Next.compose(callback, next))
           if (queue.length > Next.MAX_DEPTH) {
-            throw new KoishiError(`middleware stack exceeded ${Next.MAX_DEPTH}`, 'runtime.max-depth-exceeded')
+            throw new Error(`middleware stack exceeded ${Next.MAX_DEPTH}`)
           }
         }
         return await queue[index++]?.(next)

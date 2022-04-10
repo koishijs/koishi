@@ -90,6 +90,8 @@ type CommandAction = (argv: Argv, ...args: any[]) => Awaitable<string | void>
 参见[按需加载](../../guide/manage.md#声明所需字段)章节。
 
 ```ts
+import { Argv } from 'koishi'
+// ---cut---
 type FieldCollector<K extends string> =
   | Iterable<K>
   | ((argv: Argv, fields: Set<K>) => void)

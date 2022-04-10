@@ -2,9 +2,9 @@
   "extends": "../../../tsconfig.base",
   "compilerOptions": {
     "rootDir": "src",
-    "outDir": "lib",
+    "outFile": "temp/index.d.ts",
   },
   "include": [
-    "src",
-  ],
+    "src"
+  ]
 }

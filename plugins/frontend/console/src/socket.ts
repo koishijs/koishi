@@ -55,10 +55,7 @@ class WsService extends DataService {
   constructor(public ctx: Context, private config: WsService.Config) {
     super(ctx, 'ws')
 
-    const { apiPath, selfUrl } = config
-    ctx.console.global.endpoint = selfUrl + apiPath
-
-    this.layer = ctx.router.ws(apiPath, this.onConnection)
+    this.layer = ctx.router.ws(config.apiPath, this.onConnection)
   }
 
   broadcast(type: string, body: any, options: DataService.Options = {}) {

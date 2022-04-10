@@ -28,7 +28,7 @@ Koishi 项目通常可以通过两种方式搭建：
 # 初始化项目
 npm init
 
-# 安装 koishi 和相关库
+# 安装 koishi 和相关插件
 npm i koishi @koishijs/plugin-adapter-onebot @koishijs/plugin-echo
 
 # 安装 TypeScript 相关依赖 (如不使用请忽略此步骤)

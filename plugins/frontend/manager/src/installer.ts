@@ -1,8 +1,8 @@
 import { clone, Context, Dict, Logger } from 'koishi'
 import { DataService } from '@koishijs/plugin-console'
+import { PackageJson } from '@koishijs/market'
 import { resolve } from 'path'
 import { promises as fsp } from 'fs'
-import { Package } from './utils'
 import which from 'which-pm-runs'
 import spawn from 'cross-spawn'
 
@@ -16,7 +16,7 @@ declare module '@koishijs/plugin-console' {
 const logger = new Logger('market')
 
 class Installer extends DataService<Dict<string>> {
-  private metaTask: Promise<Package.Json>
+  private metaTask: Promise<PackageJson>
 
   constructor(public ctx: Context) {
     super(ctx, 'dependencies', { authority: 4 })
@@ -32,7 +32,7 @@ class Installer extends DataService<Dict<string>> {
   async _loadDeps() {
     const filename = resolve(this.cwd, 'package.json')
     const source = await fsp.readFile(filename, 'utf8')
-    const meta: Package.Json = JSON.parse(source)
+    const meta: PackageJson = JSON.parse(source)
     meta.dependencies ||= {}
     return meta
   }

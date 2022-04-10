@@ -60,6 +60,7 @@ Copyright © 2019-2022, Shigma
 
 ## 联系方式
 
-[![Discord](https://img.shields.io/discord/811975252883800125?label=discord&style=flat-square)](https://discord.gg/xfxYwmd284)
+[![Discord](https://img.shields.io/discord/811975252883800125?label=discord&style=flat-square&logo=discord&logoColor=white)](https://discord.gg/xfxYwmd284)
+[![QQ](https://img.shields.io/badge/QQ-426230045-brightgreen?style=flat-square&logo=tencent-qq&logoColor=white)](https://jq.qq.com/?_wv=1027&k=6FDoxQ6g)
 
 本群只交流程序开发，不欢迎伸手党，禁止谈论商业行为。
