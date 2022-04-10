@@ -106,7 +106,6 @@ commands:
 
 那么在翻译界面，Crowdin 会为 `回复 ping 信息` 这一字符串添加 `commands.ping.description` 作为其上下文信息。而对于 `显示网络连接情况` 这一字符串，除了显示 `commands.ping.options.detail` 以外，还会显示 `这是一段注释` 作为其上下文信息。当然，除了写在键值的上方，你也可以写在键值后方，效果是一样的。
 
-
 ```yaml
 commands:
   dress:
