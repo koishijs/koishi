@@ -82,6 +82,7 @@ function getEnvInfo(name: string) {
 
   // check dependencies
   for (const name in data.peerDependencies) {
+    if (!name.startsWith('koishi-plugin-') || !name.startsWith('@koishijs/plugin-')) continue
     if (name === '@koishijs/plugin-console') continue
     const available = name in store.packages
     const fulfilled = !!store.packages[name]?.id
