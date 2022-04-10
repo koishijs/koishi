@@ -41,7 +41,7 @@ class S3Assets extends Assets {
     }
     const { buffer, filename } = await this.analyze(url, file)
     const s3Key = `${this.config.pathPrefix}${filename}`
-    const finalUrl = `${this.config.publicUrl}${filename}`
+    const finalUrl = `${this.config.publicUrl}${encodeURIComponent(filename)}`
     try {
       const checkExisting = await this.listObjects(s3Key)
       if (checkExisting.Contents?.some((obj) => obj.Key === s3Key)) return finalUrl
