@@ -128,7 +128,7 @@ commands:
 commands:
   dress:
     message:
-      dress: {name}今天穿了{color}色的裙子
+      dress: '{name}今天穿了{color}色的裙子'
 ```
 
 与大部分 CAT 工具一样，Crowdin 同样会标识出诸如 `{name}` 这样的插值语法，并且在译文缺少插值或译者翻译插值变量时报告错误。
