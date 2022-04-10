@@ -66,12 +66,13 @@ sidebarDepth: 2
 
 ### 通过 Crowdin CLI 上传文件
 
-Crowdin 还提供了一个 CLI 工具，可以通过命令行管理本地和远程的本地化资源文件。如果你使用的系统是 MacOS，则你可以通过运行下面两行代码方便地安装 Crowdin CLI。*其他平台的安装方式可以查看[Crowdin 的文档](https://support.crowdin.com/cli-tool/#installation)*
-
+Crowdin 还提供了一个 CLI 工具，可以通过命令行管理本地和远程的本地化资源文件。你可以通过 npm 或 yarn 安装。
 ```bash
-$ brew tap crowdin/crowdin
-$ brew install crowdin@3
+$ npm i -g @crowdin/cli
+$ yarn global add @crowdin/cli
 ```
+
+Crowdin 也提供了 HomeBrew / apt 等多种安装方式，对于 Windows 用户，你也可以直接下载 Crowdin 所提供的安装程序安装，请查看 [Crowdin 的文档](https://support.crowdin.com/cli-tool/#installation)获知更多详情。
 
 如果你当前项目根目录下还没有 Crowdin 的配置文件 `crowdin.yml`，则你可以运行 `crowdin init` 创建一个基础配置文件，修改其中的条目以适应你的项目。详细的介绍可以看[Crowdin 的文档](https://support.crowdin.com/configuration-file/)。
 
