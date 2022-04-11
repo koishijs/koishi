@@ -129,6 +129,7 @@ module.exports = {
         isGroup: true,
         children: [
           '/guide/i18n/index.md',
+          '/guide/i18n/crowdin.md',
         ],
       }, {
         text: '控制台开发',
