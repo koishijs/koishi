@@ -26,7 +26,7 @@
       </k-comment>
 
       <!-- external -->
-      <k-comment type="warning" v-if="!store.dependencies[current]">
+      <k-comment type="warning" v-if="!data.workspace && !store.dependencies[current]">
         尚未将当前插件列入依赖，<a @click="send('market/patch', current, data.version)">点击添加</a>。
       </k-comment>
 

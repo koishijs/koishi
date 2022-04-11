@@ -90,10 +90,10 @@ defineEmits(['command'])
       opacity: 0;
       color: var(--disabled);
       transition: var(--color-transition);
-    }
 
-    .k-icon:hover {
-      color: var(--fg1);
+      &:hover {
+        color: var(--fg1);
+      }
     }
   }
 
