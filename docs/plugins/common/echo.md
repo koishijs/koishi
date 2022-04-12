@@ -9,9 +9,12 @@ sidebarDepth: 2
 - 基本语法：`echo <message>`
 - 最低权限：2
 - 选项：
-  - `-e, --escape` 发送转义消息（需要 3 级权限）
-  - `-u, --user [@user]` 目标用户（需要 3 级权限）
-  - `-c, --channel [#channel]` 目标频道（需要 3 级权限）
+  - `-a, --anonymous`  匿名发送消息 (需要 3 级权限)
+  - `-A, --force-anonymous`  强制匿名发送消息 (需要 3 级权限)
+  - `-e, --escape`  发送转义消息 (需要 3 级权限)
+  - `-u, --user [user]`  发送到用户 (需要 3 级权限)
+  - `-c, --channel [channel]`  发送到频道 (需要 3 级权限)
+  - `-g, --guild [guild]`  指定群组编号 (需要 3 级权限)
 
 你可以使用 echo 指令发送消息到特定的上下文：
 
@@ -22,5 +25,5 @@ echo -c #bar foo bar      # 向频道 bar 发送 foo bar
 ```
 
 ::: tip 提示
-echo 指令的 message 参数是一个 [文本参数](../../guide/command.md#文本参数)，因此你应该把所有的选项写到消息前面，否则会被认为是消息的一部分。下面的几个指令也是如此。
+echo 指令的 message 参数是一个 [文本参数](../../guide/command/index.md#文本参数)，因此你应该把所有的选项写到消息前面，否则会被认为是消息的一部分。
 :::
