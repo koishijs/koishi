@@ -32,18 +32,30 @@ export default {
   ['Koishi', '一直挖坑一直爽'],
 ]"/>
 
-其中 `match` 可以是一个字符串或正则表达式，用来表示要匹配的内容；`reply` 可以是一个字符串或传入字符串的函数，用来表示输出的结果。`respondent` 数组会按照从上到下的顺序进行匹配。
+如果想要加入更高级和用户可定义的问答系统，可以参见 [@koishijs/plugin-teach](../teach/index.md)。
 
-::: tip 提示
-`reply` 的函数定义如下：
+## 配置项
 
-```ts
-(...capture: string[]) => string
-```
+### options
+
+- 类型: `Array`
+
+`respondent` 的规则数组，按照从上到下的顺序进行匹配。
+
+### options[].match
+
+- 类型: `string | RegExp`
+
+要匹配的内容。
+
+### options[].reply
+
+- 类型: `string | ((...capture: string[]) => string)`
+
+输出的结果。
+
+`reply` 函数的传入参数与 [`String.prototype.replace`](https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Global_Objects/String/replace#%E5%8F%82%E6%95%B0) 类似：
 
 当 `match` 是字符串时，`capture` 数组仅包含匹配的字符串这一个参数，即 `[message]`；
 
-当 `match` 是正则表达式时，`capture` 数组是 `String.prototype.match(match)` 的返回结果，即 `[message, ...captureGroups]` (第一个参数是接收到的信息本身，其他为正则表达式所匹配的捕获组)。
-:::
-
-如果想要加入更高级和用户可定义的问答系统，可以参见 [@koishijs/plugin-teach](../teach/index.md)。
+当 `match` 是正则表达式时，`capture` 数组包含了源信息和正则表达式所匹配的捕获组，即 `[message, ...captureGroups]`。
