@@ -43,8 +43,6 @@ ctx.middleware((session, next) => {
 现在，如果我们希望它在某个频道使用英文，我们只需设置这个频道的属性：
 
 ```ts
-declare const channel: import('koishi').Channel
-// ---cut---
 channel.locale = 'en'
 ```
 

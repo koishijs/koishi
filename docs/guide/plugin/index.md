@@ -151,10 +151,7 @@ Koishi 的许多插件都采用了这种写法，例如 [koishi-plugin-tools](ht
 
 通常来说一个插件的效应应该是永久的，但如果你想在运行时卸载一个插件，应该怎么做？你可以使用 `ctx.dispose()` 方法来解决：
 
-```ts no-extra-header
-declare const app: import('koishi').App
-
-// ---cut---
+```ts
 // @errors: 2304
 
 import { Context } from 'koishi'

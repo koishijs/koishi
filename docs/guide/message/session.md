@@ -147,9 +147,6 @@ return `${name}，请多指教！`
 有的时候你可能希望向多个频道同时发送消息，我们也专门设计了相关的接口。
 
 ```ts
-declare const content: string
-
-// ---cut---
 // 使用当前机器人账户向多个频道发送消息
 await session.bot.broadcast(['123456', '456789'], content)
 
