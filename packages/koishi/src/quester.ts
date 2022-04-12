@@ -1,6 +1,7 @@
 import { Schema } from '@koishijs/core'
 import { Dict } from '@koishijs/utils'
-import { Agent } from 'http'
+import { Agent, ClientRequestArgs } from 'http'
+import WebSocket from 'ws'
 import ProxyAgent from 'proxy-agent'
 import axios, { AxiosRequestConfig, AxiosResponse, Method } from 'axios'
 
@@ -27,6 +28,7 @@ export interface Quester {
   post<T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T>
   put<T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T>
   patch<T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T>
+  ws(url: string, options?: ClientRequestArgs): WebSocket
 }
 
 export namespace Quester {
@@ -94,6 +96,18 @@ export namespace Quester {
     http.head = async (url, config) => {
       const response = await request(url, { ...config, method: 'HEAD' })
       return response.headers
+    }
+
+    http.ws = (url, options = {}) => {
+      return new WebSocket(url, {
+        agent: getAgent(config.proxyAgent),
+        handshakeTimeout: config.timeout,
+        ...options,
+        headers: {
+          ...config.headers,
+          ...options.headers,
+        },
+      })
     }
 
     return http

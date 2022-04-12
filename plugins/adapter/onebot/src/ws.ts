@@ -1,9 +1,6 @@
-import { Adapter, Context, Logger, Schema, Time, WebSocketLayer } from 'koishi'
+import { Adapter, Context, Logger, omit, Quester, Schema, Time, WebSocketLayer } from 'koishi'
 import { BotConfig, OneBotBot } from './bot'
 import { AdapterConfig, dispatchSession, Response } from './utils'
-import WebSocket from 'ws'
-import { HttpsProxyAgent } from 'https-proxy-agent'
-import { SocksProxyAgent } from 'socks-proxy-agent'
 
 const logger = new Logger('onebot')
 
@@ -13,21 +10,16 @@ export class WebSocketClient extends Adapter.WebSocketClient<BotConfig, AdapterC
     password: Schema.string().role('secret').description('机器人的密码。'),
     token: Schema.string().role('secret').description('发送信息时用于验证的字段，应与 OneBot 配置文件中的 access_token 保持一致。'),
     endpoint: Schema.string().role('url').description('要连接的 OneBot 服务器地址。').required(),
-    proxyAgent: Schema.string().role('url').description('使用的代理服务器地址。'),
+    ...omit(Quester.Config.dict, ['endpoint']),
   })
 
   protected accept = accept
 
   prepare(bot: OneBotBot) {
-    const { endpoint, token, proxyAgent } = bot.config
-    const headers: Record<string, string> = {}
-    if (token) headers.Authorization = `Bearer ${token}`
-    if (proxyAgent) {
-      const agent = proxyAgent.startsWith('http')
-        ? new HttpsProxyAgent(proxyAgent)
-        : new SocksProxyAgent(proxyAgent)
-      return new WebSocket(endpoint, { headers, agent })
-    } else return new WebSocket(endpoint, { headers })
+    const { token, endpoint } = bot.config
+    const http = this.ctx.http.extend(bot.config)
+    if (token) http.config.headers.Authorization = `Bearer ${token}`
+    return http.ws(endpoint)
   }
 }
 
