@@ -116,6 +116,14 @@ module.exports = {
           '/guide/adapter/writing.md',
         ],
       }, {
+        text: '国际化',
+        isGroup: true,
+        children: [
+          '/guide/i18n/index.md',
+          '/guide/i18n/translation.md',
+          '/guide/i18n/crowdin.md',
+        ],
+      }, {
         text: '更多功能',
         isGroup: true,
         children: [
@@ -123,13 +131,6 @@ module.exports = {
           '/guide/service/http.md',
           '/guide/service/router.md',
           '/guide/service/logger.md',
-        ],
-      }, {
-        text: '国际化',
-        isGroup: true,
-        children: [
-          '/guide/i18n/index.md',
-          '/guide/i18n/crowdin.md',
         ],
       }, {
         text: '控制台开发',

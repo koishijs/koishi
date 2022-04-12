@@ -81,10 +81,10 @@ koishi start [file] [options]
 
 ::: code-group manager
 ```npm
-npm run new [name] [-c]
+npm run setup [name] [-c]
 ```
 ```yarn
-yarn new [name] [-c]
+yarn setup [name] [-c]
 ```
 :::
 
