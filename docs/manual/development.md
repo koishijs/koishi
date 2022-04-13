@@ -1,5 +1,9 @@
 ---
 sidebarDepth: 2
+redirectFrom:
+  - /guide/introduction/cli.html
+  - /guide/introduction/development.html
+  - /guide/introduction/workspace.html
 ---
 
 # 工作区开发

@@ -1,5 +1,8 @@
 ---
 sidebarDepth: 2
+redirectFrom:
+  - /guide/introduction/console.html
+  - /guide/introduction/template.html
 ---
 
 # 创建模板项目

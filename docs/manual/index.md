@@ -1,6 +1,7 @@
 ---
 sidebarDepth: 2
 noOutboundLinks: true
+  - /guide/introduction/
 ---
 
 # 介绍

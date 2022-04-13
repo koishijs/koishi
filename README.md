@@ -24,7 +24,7 @@ Koishi 是一个现代化跨平台机器人框架，目前可支持 [QQ](https:/
 - 支持 QQ，Telegram，Discord 等主流聊天平台，支持多账户和跨平台数据互通
 - 随时随地通过控制面板监控运行状态，控制机器人的行为，甚至上号聊天
 
-参见：[模板项目](https://koishi.js.org/guide/introduction/template.html)
+参见：[模板项目](https://koishi.js.org/manual/template.html)
 
 ### 功能强大的 API
 

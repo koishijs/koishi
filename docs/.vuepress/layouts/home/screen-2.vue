@@ -9,7 +9,7 @@
           <li>支持 QQ，Telegram，Discord 等主流聊天平台</li>
           <li>随时随地通过控制面板监控运行状态，甚至上号聊天</li>
         </ul>
-        <p>查看指南：<router-link to="/guide/introduction/template">创建 Koishi 模板项目</router-link></p>
+        <p>查看指南：<router-link to="/manual/template">创建 Koishi 模板项目</router-link></p>
       </div>
       <div class="image">
         <carousel></carousel>

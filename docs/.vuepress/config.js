@@ -45,8 +45,13 @@ module.exports = {
         link: 'https://koishi.js.org/v1/',
       }],
     }, {
+      text: '入门',
+      link: '/manual/',
+      activeMatch: '/manual/',
+    }, {
       text: '指南',
-      link: '/guide/introduction/',
+      link: '/guide/message/middleware.md',
+      activeMatch: '/guide/',
     }, {
       text: 'API',
       link: '/api/',
@@ -60,16 +65,18 @@ module.exports = {
     }],
 
     sidebar: {
-      '/guide/': [{
-        text: '入门',
+      '/manual/': [{
+        text: '起步',
         isGroup: true,
         children: [
-          '/guide/introduction/index.md',
-          '/guide/introduction/direct.md',
-          '/guide/introduction/template.md',
-          '/guide/introduction/development.md',
+          '/manual/index.md',
+          '/manual/direct.md',
+          '/manual/template.md',
+          '/manual/development.md',
         ],
-      }, {
+      }],
+
+      '/guide/': [{
         text: '处理交互',
         isGroup: true,
         children: [
