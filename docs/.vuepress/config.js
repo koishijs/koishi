@@ -207,6 +207,7 @@ module.exports = {
         isGroup: true,
         children: [
           '/plugins/adapter/discord.md',
+          '/plugins/adapter/feishu.md',
           '/plugins/adapter/kaiheila.md',
           '/plugins/adapter/onebot.md',
           '/plugins/adapter/qqguild.md',
