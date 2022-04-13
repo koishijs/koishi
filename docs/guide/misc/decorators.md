@@ -12,13 +12,26 @@ noTwoslash: true
 [koishi-thirdeye](https://www.npmjs.com/package/koishi-thirdeye) 允许你使用类装饰器开发 Koishi 插件。下面是一个一目了然的例子：
 
 ```ts
-import { RegisterSchema, DefinePlugin, SchemaProperty, CommandUsage, PutOption, UseCommand, LifecycleEvents, KoaContext, UseMiddleware, UseEvent, Get } from 'koishi-thirdeye';
-import { Context, Session } from 'koishi';
+import {
+  DefinePlugin,
+  SchemaProperty,
+  PutOption,
+  UseCommand,
+  OnApply,
+  KoaContext,
+  UseMiddleware,
+  UseEvent,
+  Get,
+  PutUserName,
+  CommandUsage,
+} from 'koishi-thirdeye'
+import { Context, Session } from 'koishi'
+import { WebSocket } from 'ws'
+import { IncomingMessage } from 'http'
 
-@RegisterSchema()
 export class MyPluginConfig {
   @SchemaProperty({ default: 'bar' })
-  foo: string;
+  foo: string
 }
 
 @DefinePlugin({ name: 'my-plugin', schema: MyPluginConfig })
@@ -31,27 +44,40 @@ export default class MyPlugin extends BasePlugin<MyPluginConfig> implements Life
   @UseMiddleware()
   simpleMiddleware(session: Session, next: NextFunction) {
     if (session.content === 'pang') {
-      return 'peng';
+      return 'peng'
     }
-    return next();
+    return next()
   }
 
   // 注册事件监听器
   @UseEvent('message')
   async onMessage(session: Session) {
     if (session.content === 'ping') {
-      await session.send('pong');
+      await session.send('pong')
     }
   }
 
   // 注册指令
-  @UseCommand('echo <content:string>', '指令描述')
-  @CommandUsage('指令说明')
-  onEcho(
-    @PutArg(0) content: string,
-    @PutOption('name', '-n <name:string>  指令的参数，名称', { fallback: '有人' }) name: string
+  @UseCommand('dress', '穿裙子')
+  @CommandUsage('今天穿裙子了吗？')
+  onDressCommand(
+    @PutOption('color', '-c <color:string>  裙子的颜色') color: string,
+    @PutUserName() name: string,
   ) {
-    return `${name}说了: ${content}`;
+    return `${name} 今天穿的裙子的颜色是 ${color}。}`
+  }
+
+  // 注册 Koa 路由
+  @Get('/ping')
+  onPing(koaCtx: KoaContext) {
+    koaCtx.body = 'pong'
+  }
+
+  // 注册 WebSocket 监听器
+  @Ws('/my-ws')
+  onWsClientConnect(socket: WebSocket, req: IncomingMessage) {
+    socket.write('Hello!')
+    socket.close()
   }
 }
 ```
@@ -99,23 +125,23 @@ export default class MyPlugin {
 
   // 建议如此使用 Context，而不是构造函数中的
   @InjectContext()
-  private ctx: Context;
+  private ctx: Context
 
   // 建议如此使用 Config，而不是构造函数中的
   @InjectConfig()
-  private config: Config;
+  private config: Config
 
   // Logger 名称默认为插件名称
   @InjectLogger('my-plugin')
-  private logger: Logger;
+  private logger: Logger
 
   // 注入 Service API 中的 Assets，并声明为依赖
   @Inject('assets', true)
-  private assets: Assets;
+  private assets: Assets
 
   // 根据属性名称判别 Service API 名称
   @Inject()
-  private database: Database;
+  private database: Database
 }
 ```
 
@@ -166,17 +192,17 @@ export class Config {
   constructor(_config: any) {}
 
   @SchemaProperty({ default: 'baz' })
-  foo: string; // 自动推断出 Schema.string()
+  foo: string // 自动推断出 Schema.string()
 
   getFoo() {
-    return this.foo;
+    return this.foo
   }
 
   @SchemaProperty({ type: Schema.number(), required: true }) // 也可手动指定 Schema 对象
-  bar: number;
+  bar: number
 
   @SchemaProperty({ type: String })
-  someArray: string[]; // 自动推断出 Schema.array(...)，但是无法推断内部类型，需要手动指定
+  someArray: string[] // 自动推断出 Schema.array(...)，但是无法推断内部类型，需要手动指定
 }
 ```
 
@@ -190,10 +216,10 @@ export class ChildConfig {
   constructor(_config: any) {}
 
   @SchemaProperty({ default: 'baz' })
-  foo: string;
+  foo: string
 
   @SchemaProperty({ type: Schema.number(), required: true })
-  bar: number;
+  bar: number
 }
 
 // Config 类本身会成为 Schema 对象
@@ -203,11 +229,11 @@ export class Config {
 
   // 自动推断出 ChildConfig
   @SchemaProperty()
-  child: ChildConfig;
+  child: ChildConfig
 
   // 无法自动推断 ChildConfig，需要手动指定。但是可以推断出外层的 Schema.array(...)
   @SchemaProperty({ type: ChildConfig })
-  children: ChildConfig[];
+  children: ChildConfig[]
 }
 ```
 
@@ -221,16 +247,16 @@ export class Author {
   constructor(_: Partial<Author>) {}
 
   @DefineSchema()
-  name: string;
+  name: string
 
   getName?() {
-    return this.name;
+    return this.name
   }
 
   @DefineSchema({
     type: SchemaRef(() => Post), // 循环嵌套类的数组，array 可以由成员变量类型自动推断。
   })
-  posts?: Post[];
+  posts?: Post[]
 }
 
 @RegisterSchema()
@@ -238,21 +264,21 @@ export class Post {
   constructor(_: Partial<Post>) {}
 
   @DefineSchema()
-  name: string;
+  name: string
 
   getName?() {
-    return this.name;
+    return this.name
   }
 
   @DefineSchema({
     type: SchemaRef(() => Author), // 循环嵌套
   })
-  author?: Author;
+  author?: Author
 
   @DefineSchema({
     type: SchemaRef(() => Post), // 指定自身为类型也需要如此使用。
   })
-  childPosts?: Post[];
+  childPosts?: Post[]
 }
 ```
 
@@ -264,22 +290,23 @@ export class Post {
 import {
   DefinePlugin,
   SchemaProperty,
-  CommandUsage,
   PutOption,
   UseCommand,
   OnApply,
   KoaContext,
   UseMiddleware,
   UseEvent,
-  Get
-} from 'koishi-thirdeye';
-import { Context, Session } from 'koishi';
-import { WebSocket } from 'ws';
-import { IncomingMessage } from 'http';
+  Get,
+  PutUserName,
+  CommandUsage,
+} from 'koishi-thirdeye'
+import { Context, Session } from 'koishi'
+import { WebSocket } from 'ws'
+import { IncomingMessage } from 'http'
 
 export class MyPluginConfig {
   @SchemaProperty({ default: 'bar' })
-  foo: string;
+  foo: string
 }
 
 @DefinePlugin({ name: 'my-plugin', schema: MyPluginConfig })
@@ -292,40 +319,40 @@ export default class MyPlugin extends BasePlugin<MyPluginConfig> implements Life
   @UseMiddleware()
   simpleMiddleware(session: Session, next: NextFunction) {
     if (session.content === 'pang') {
-      return 'peng';
+      return 'peng'
     }
-    return next();
+    return next()
   }
 
   // 注册事件监听器
   @UseEvent('message')
   async onMessage(session: Session) {
     if (session.content === 'ping') {
-      await session.send('pong');
+      await session.send('pong')
     }
   }
 
   // 注册指令
-  @UseCommand('echo <content:string>', '指令描述')
-  @CommandUsage('指令说明')
-  onEcho(
-    @PutArg(0) content: string,
-    @PutOption('name', '-n <name:string>  指令的参数，名称', { fallback: '有人' }) name: string
+  @UseCommand('dress', '穿裙子')
+  @CommandUsage('今天穿裙子了吗？')
+  onDressCommand(
+    @PutOption('color', '-c <color:string>  裙子的颜色') color: string,
+    @PutUserName() name: string,
   ) {
-    return `${name}说了: ${content}`;
+    return `${name} 今天穿的裙子的颜色是 ${color}。`
   }
 
   // 注册 Koa 路由
   @Get('/ping')
   onPing(koaCtx: KoaContext) {
-    koaCtx.body = 'pong';
+    koaCtx.body = 'pong'
   }
 
   // 注册 WebSocket 监听器
   @Ws('/my-ws')
   onWsClientConnect(socket: WebSocket, req: IncomingMessage) {
-    socket.write('Hello!');
-    socket.close();
+    socket.write('Hello!')
+    socket.close()
   }
 }
 ```
@@ -355,13 +382,13 @@ export default class MyPlugin extends BasePlugin<MyPluginConfig> {
   @UseCommand('ping', 'Ping!')
   @CommandShortcut('枰！') // 只适用于 ping 指令
   onPing() {
-    return 'pong';
+    return 'pong'
   }
 
   @UseCommand('pang', 'Pang!')
   @CommandShortcut('乓！') // 只适用于 pang 指令
   onPang() {
-    return 'peng';
+    return 'peng'
   }
 }
 ```
@@ -376,6 +403,7 @@ export default class MyPlugin extends BasePlugin<MyPluginConfig> {
 - `@CommandBefore(callback: Command.Action, append = false)` 等价于 `cmd.before(callback, append)`。
 - `@CommandAction(callback: Command.Action, prepend = false)` 等价于 `cmd.action(callback, append)`。
 - `@CommandUse(callback, ...args)` 指令功能配置。等价于 `cmd.use(callback, ...args)`。
+- `@CommandLocale(locale: string, def: any)` 注册该指令特定语言的 i18n 模板。等价于 `ctx.i18n.define(locale, 'commands.{指令名称}', def)`。
 
 ::: tip
 装饰器的执行顺序为由下到上。`@CommandBefore` 会从上到下执行，而 `@CommandAction` 会从下到上执行。而作为类成员方法的回调函数会**最后**执行。
@@ -383,11 +411,62 @@ export default class MyPlugin extends BasePlugin<MyPluginConfig> {
 
 ### 指令参数
 
-指令参数也使用一组装饰器对指令参数进行注入。下列装饰器应对由 `@UseCommand` 配置的类成员方法参数进行操作。
+指令参数也使用一组方法参数装饰器对由 `@UseCommand` 定义的类成员方法参数进行注入。此外，部分参数装饰器可以改变指令的行为。
+
+```ts
+@DefinePlugin({ name: 'my-plugin', schema: MyPluginConfig })
+export default class MyPlugin extends BasePlugin<MyPluginConfig> {
+  // 注册指令
+  @UseCommand('dress', '穿裙子')
+  onDressCommand(
+    @PutArg(0) count: number, // 注入该指令的第 1 个参数，并标记该指令的第 1 个参数是 number 类型。
+    @PutOption('color', '-c <color>  裙子的颜色') color: string, // 为该方法添加 color 选项，注入到该参数内。
+    @PutUserName() name: string, // 注入调用指令的用户的名称。
+  ) {
+    return `${name} 今天穿了 ${count || 1} 条裙子，颜色是 ${color}。`
+  }
+}
+```
+
+您或许可以注意到，`color` 选项并没有使用 `<color:string>` 这种显式指定选项类型的语法进行定义。但是 koishi-thirdeye 会由 `onDressCommand` 方法参数 `color` 的类型进行推断出 `string` 类型，并写入 `dress` 指令。类似地，`dress` 命令的第一个参数 `[count:number]` 也是自动推断生成的。因此，使用 koishi-thirdeye 编写指令的时候，无需刻意手动指定类型，大部分情况下类型会被自动推断。
+
+#### 类参数
+
+在属性比较多或多个指令的参数存在大量重复的情况下，使用过多方法参数装饰器可能不太优雅。这种情况下您也可以使用类定义指令参数。
+
+```ts
+class WearArg {
+  @PutArg(0)
+  count: number
+
+  @PutOption('color', '-c <color>  颜色')
+  color: string
+
+  @PutUserName()
+  name: string
+}
+
+@DefinePlugin({ name: 'my-plugin', schema: MyPluginConfig })
+export default class MyPlugin extends BasePlugin<MyPluginConfig> {
+  @UseCommand('dress', '穿裙子')
+  onDressCommand(@PutObject() arg: WearArg) {
+    return `${arg.name} 今天穿了 ${arg.count || 1} 条裙子，颜色是 ${arg.color}。`
+  }
+
+  @UseCommand('sock', '穿袜子')
+  onSockCommand(@PutObject() arg: WearArg) {
+    return `${arg.name} 今天穿了 ${arg.count || 1} 条袜子，颜色是 ${arg.color}。`
+  }
+}
+```
+
+#### API
+
+这些装饰器可以用于指令对应的类成员方法参数，也可以用于注入类的方法。
 
 - `@PutArgv(field?: keyof Argv)` 注入 `Argv` 对象，或 `Argv` 对象的指定字段。
 - `@PutSession(field?: keyof Session)` 注入 `Session` 对象，或 `Session` 对象的指定字段。
-- `@PutArg(index: number)` 注入指令的第 n 个参数。
+- `@PutArg(index: number)` 注入指令的第 n 个参数，从 0 开始。
 - `@PutArgs()` 注入包含指令全部参数的数组。
 - `@PutOption(name: string, desc: string, config: Argv.OptionConfig = {})` 给指令添加选项并注入到该参数。等价于 `cmd.option(name, desc, config)`。
 - `@PutUser(fields: string[])` 添加一部分字段用于观测，并将 User 对象注入到该参数。
@@ -396,6 +475,9 @@ export default class MyPlugin extends BasePlugin<MyPluginConfig> {
 - `@PutUserName(useDatabase: boolean = true)` 注入当前用户的用户名。
   - `useDatabase` 是否尝试从数据库获取用户名。**会自动把 `name` 加入用户观察者属性中**。
 - `@PutNext()` 注入 `argv.next` 方法。
+- `@PutRenderer(path: string)` 注入某一特定 i18n 路径的渲染器，类型为 `Renderer<T>`。
+- `@PutCommonRenderer()` 注入通用渲染器，类型为 `CRenderer`。
+- `@PutObject()` 注入类定义的对象。
 
 ### 子指令
 
@@ -425,6 +507,116 @@ export default class MyPlugin extends BasePlugin<Config> {
 }
 ```
 
+## 多语言与模板渲染
+
+koishi-thirdeye 同样也提供了多语言以及模板渲染支持，在指令的类成员方法中使用装饰器即可使用对应的文本。
+
+### 注入渲染器
+
+与传统的 `session.text` 不同，koishi-thirdeye 的指令回调成员函数中采用渲染器注入的方式，将渲染器函数通过方法参数装饰器注入到指令回调函数参数当中进行调用。
+
+#### 注入通用渲染器
+
+您可以使用 `@PutCommonRenderer` 注入通用渲染器，适合需要渲染不确定的文本的场景。
+
+```ts
+@DefinePlugin({ name: 'my-plugin', schema: MyPluginConfig })
+export default class MyPlugin extends BasePlugin<MyPluginConfig> {
+  @UseCommand('foo')
+  onFooCommand(
+    @PutCommonRenderer() render: CRenderer
+  ) {
+    // 等价于 session.text('commands.help.description')
+    return render('commands.help.description')
+  }
+}
+```
+
+#### 注入指定渲染器
+
+`@PutRenderer` 装饰器可以用来注入某一确定路径的文本的渲染器。特别地，`Renderer<T>` 的类型参数可以锁定该渲染器的传入参数类型，避免开发时的类型出错。
+
+```ts
+@DefinePlugin({ name: 'my-plugin', schema: MyPluginConfig })
+export default class MyPlugin extends BasePlugin<MyPluginConfig> {
+  @UseCommand('dress')
+  onNotifyDress(
+    @PutRenderer('.notifyWear') render: Renderer<{ name: string }>
+  ) {
+    return render({ name: 'dress' })
+  }
+}
+```
+
+### 文本定义
+
+koishi-thirdeye 中，定义文本有下面几种形式：
+
+#### 分指令完整定义
+
+对于代码和文本分离的场景，使用 `@CommandLocale(locale: string, def: any)` 也是一个好的选择。
+
+```json
+{
+  "description": "穿衣服。",
+  "options": {
+    "name": "穿着的名称。"
+  },
+  "messages": {
+    "notifyWear": "今天穿 {name} 了吗？"
+  }
+}
+```
+
+```ts
+@DefinePlugin({ name: 'my-plugin', schema: MyPluginConfig })
+export default class MyPlugin extends BasePlugin<MyPluginConfig> {
+  @UseCommand('dress')
+  @CommandLocale('zh', require('../locales/zh/dress')) // 对应上面的 json 文件。
+  @CommandLocale('en', require('../locales/en/dress')) // 略，自行脑补。
+  onNotifyDress(
+    @PutOption('name', '-n <name:string>') name: string,
+    @PutRenderer('.notifyWear') render: Renderer<{ name: string }>
+  ) {
+    return render({ name })
+  }
+}
+```
+
+#### 完整定义
+
+对于需要集中管理文本的情况，我们也可以利用 `@DefineLocale` 装饰器使用完整定义的方式。
+
+该装饰器需要放在类的顶部，作用等价于 `ctx.i18n.define`，形式相同。
+
+```json
+{
+  "commands.dress": {
+    "description": "穿衣服。",
+    "options": {
+      "name": "穿着的名称。"
+    },
+    "messages": {
+      "notifyWear": "今天穿 {name} 了吗？"
+    }
+  }
+}
+```
+
+```ts
+@DefineLocale('zh', require('../locales/zh'))
+@DefinePlugin({ name: 'my-plugin', schema: MyPluginConfig })
+export default class MyPlugin extends BasePlugin<MyPluginConfig> {
+  @UseCommand('dress')
+  onNotifyDress(
+    @PutOption('name', '-n <name:string>') name: string,
+    @PutRenderer('.notifyWear') render: Renderer<{ name: string }>
+  ) {
+    return render({ name })
+  }
+}
+```
+
 ## 嵌套插件与异步插件
 
 我们可以使用 `@UsePlugin()` 装饰器进行注册子插件。在插件加载时方法会自动被调用。该方法需要返回插件定义，可以使用 `PluginDef()` 方法生成。
@@ -434,8 +626,8 @@ export default class MyPlugin extends BasePlugin<Config> {
 例如我们需要在插件内加载 `@koishijs/plugin-common` 作为子插件，我们可以用下面的方法。
 
 ```ts
-import PluginCommon from '@koishijs/plugin-common';
-import { DefinePlugin, BasePlugin, UsePlugin, PluginDef } from 'koishi-thirdeye';
+import PluginCommon from '@koishijs/plugin-common'
+import { DefinePlugin, BasePlugin, UsePlugin, PluginDef } from 'koishi-thirdeye'
 
 @DefinePlugin({ name: 'my-plugin', schema: Config })
 export default class MyPlugin extends BasePlugin<Config> {
@@ -445,13 +637,13 @@ export default class MyPlugin extends BasePlugin<Config> {
   }
 
   private async getPluginCommonConfig() {
-    return { echo: true };
+    return { echo: true }
   }
 
   @UsePlugin()
   async registerAsyncPluginCommon() { // 可以是异步插件
-    const pluginCommonConfig = await this.getPluginCommonConfig();
-    return PluginDef(PluginCommon, pluginCommonConfig);
+    const pluginCommonConfig = await this.getPluginCommonConfig()
+    return PluginDef(PluginCommon, pluginCommonConfig)
   }
 }
 ```
@@ -470,7 +662,7 @@ export default class MyPlugin extends BasePlugin<Config> {
   @OnGuild()
   @UseEvent('message') // 只对 OneBot 平台的群组有效
   onMessage(session: Session) {
-    return;
+    return
   }
 }
 ```
@@ -495,7 +687,7 @@ export default class MyPlugin extends BasePlugin<Config> {
   @If<MyPlugin>((o, config, ctx) => o.config.dress) // 只有 config.dress 是 true 的情况下该指令才会注册。
   @UseCommand('dress')
   dressCommand() {
-    return '我穿裙子了！';
+    return '我穿裙子了！'
   }
 }
 ```
@@ -526,7 +718,7 @@ koishi-thirdeye 支持自动管理插件的关系依赖列表。
 @DefinePlugin({ name: 'my-plugin', schema: Config })
 export default class MyPlugin extends BasePlugin<Config> {
   @Inject('database', true)
-  private database: Database; // 注入数据库服务，并声明为依赖
+  private database: Database // 注入数据库服务，并声明为依赖
 }
 
 MyPlugin.using // ['database']
@@ -552,14 +744,14 @@ MyPlugin.using // ['database', 'assets']
 @DefinePlugin({ name: 'my-plugin', schema: MyPluginConfig })
 export default class MyPlugin extends BasePlugin<MyPluginConfig> {
   @Inject()
-  private database: Database;
+  private database: Database
 
   // 该指令仅在数据库被安装时生效
   @UsingService('database')
   @UseCommand('dress', '获取自己的裙子信息')
   async getDresses(@PutSession('userId') userId: string) {
-    const dresses = await this.database.get('dress', { userId });
-    return dresses.map((dress) => dress.name).join('\n');
+    const dresses = await this.database.get('dress', { userId })
+    return dresses.map((dress) => dress.name).join('\n')
   }
 }
 ```
@@ -571,13 +763,13 @@ export default class MyPlugin extends BasePlugin<MyPluginConfig> {
 若该提供者需要立即生效，我们需要使用 `immediate` 属性，将其标记为立即加载的提供者。
 
 ```ts
-import { Provide, DefinePlugin, BasePlugin } from 'koishi-thirdeye';
+import { Provide, DefinePlugin, BasePlugin } from 'koishi-thirdeye'
 
 // 类型合并定义不可省略
 declare module 'koishi' {
   namespace Context {
     interface Services {
-      myService: MyServicePlugin;
+      myService: MyServicePlugin
     }
   }
 }
@@ -600,24 +792,119 @@ export class MyServicePlugin extends BasePlugin<Config> {
 下面是一个例子，确保注册 Photo 的插件卸载时，Photo 正常被删除。
 
 ```ts
-import { Provide, DefinePlugin, BasePlugin, Caller } from 'koishi-thirdeye';
+import { Provide, DefinePlugin, BasePlugin, Caller } from 'koishi-thirdeye'
 
 @Provide('MyPhotoRegistry', { immediate: true })
 @DefinePlugin({ name: 'my-photo-registry' })
 export class MyPhotoRegistry extends BasePlugin<Config> {
-  private photos = new Set<Photo>();
+  private photos = new Set<Photo>()
 
   @Caller()
-  private caller: Context;
+  private caller: Context
 
   addPhoto(photo: Photo) {
     // 预先保存一下正在访问该方法的上下文，预防以后发生变化。
-    const ctx = this.caller;
+    const ctx = this.caller
 
     // 注册来源插件上下文的卸载监听器，使得来源插件卸载时该 Photo 自动被删除。
-    ctx.on('dispose', () => this.photos.delete(photo));
+    ctx.on('dispose', () => this.photos.delete(photo))
 
-    this.photos.add(photo);
+    this.photos.add(photo)
+  }
+}
+```
+
+## 扩展数据表
+
+借助 `koishi-entities` 这个包，您也可以很轻松地使用类和装饰器定义数据表。
+
+::: info
+koishi-thirdeye 已经重新导出了这个包，无需再手动导入或安装 `koishi-entities`。
+:::
+
+### 定义数据表
+
+数据表类以 `@DefineModel` 装饰器进行修饰，指明表的名称。同时，每个表字段以 `@ModelField()` 装饰器进行修饰。
+
+`@ModelField` 的第一个参数用于指定表的类型，用法见 [`ctx.model`](../database/index.md#扩展字段) 的用法。同时，您也可以使用一些其他的相关装饰器自定义表的相关行为。
+
+在数据库查询时，结果中的对象均会被类实例化。因此您可以在类中灵活地定义方法函数，简化数据对象的操作。
+
+```ts
+@DefineModel('dress') // 表名称
+export class Dress {
+  @PrimaryGenerated() // 自增主键
+  @ModelField('integer(11)')
+  id: number
+
+  @Unique() // 唯一键
+  @ModelField()
+  name: string
+
+  getDisplayString() {
+    return `${this.name}(${this.id})`
+  }
+
+  @Foreign('dress', 'id') // 外键，指向 dress.id
+  @ModelField('integer(11)')
+  parentId: number
+}
+```
+
+### 注册数据表模型
+
+您只需要使用 `@UseModel` 装饰器修饰插件类即可。
+
+```ts
+@UseModel(Dress) // 注册 Dress 数据表模型
+@DefinePlugin({ name: 'my-plugin', schema: MyPluginConfig })
+export default class MyPlugin extends BasePlugin<MyPluginConfig> {
+
+  // 注入数据库服务，并注册为依赖
+  @Inject(true)
+  private database: Database
+
+  @UseCommand('dress <id>')
+  async getDress(@PutArg(0) id: number) {
+    const [dress] = await this.database.get(dress, { id })
+    if (dress) {
+      return dress.getDisplayString() // 可以使用对象方法
+    } else {
+      return 'Not found.'
+    }
+  }
+}
+```
+
+### 扩展内置数据表
+
+对于 `user` 或 `channel` 等内置数据表，以及来自其他插件的表，比起重新定义整个表模型，更常见的场景是需要在表内添加若干字段。这种情况下 `@MixinModel` 可能为适合。
+
+```ts
+declare module 'koishi' {
+  interface User {
+    dress: Dress;
+  }
+}
+
+// 无需 @DefineModel 装饰器
+class Dress {
+  @ModelField('string(8)')
+  color: string
+  @ModelField('integer(7)')
+  size: string
+  getDisplayString() {
+    return `${this.color} dress of size ${this.id}`
+  }
+}
+
+@MixinModel('user', { dress: Dress }) // 将 Dress 类成员字段作为 dress 属性注入到 user 表中
+@DefinePlugin({ name: 'my-plugin', schema: MyPluginConfig })
+export default class MyPlugin extends BasePlugin<MyPluginConfig> {
+
+  @UseCommand('mydress')
+  getDress(@PutUser(['name', 'dress']) user: User) {
+    return `${user.name} is wearing a ${user.dress.getDisplayString()}.`
   }
 }
 ```
