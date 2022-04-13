@@ -30,11 +30,11 @@
     "required:console"
   ],
   "peerDependencies": {
-    "@koishijs/plugin-console": "^3.2.4",
-    "koishi": "^4.5.1"
+    "@koishijs/plugin-console": "^3.2.5",
+    "koishi": "^4.5.2"
   },
   "devDependencies": {
-    "@koishijs/client": "^3.2.3",
+    "@koishijs/client": "^3.2.4",
     "@types/throttle-debounce": "^2.1.0"
   },
   "dependencies": {

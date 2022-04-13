@@ -1,6 +1,6 @@
 {
   "name": "@koishijs/plugin-eval",
-  "version": "4.0.3",
+  "version": "4.0.4",
   "description": "Execute JavaScript and create addons in Koishi",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
@@ -31,7 +31,7 @@
     "impl:worker"
   ],
   "peerDependencies": {
-    "koishi": "^4.5.1"
+    "koishi": "^4.5.2"
   },
   "optionalDependencies": {
     "@babel/core": "^7.17.8",
