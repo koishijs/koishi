@@ -72,7 +72,8 @@ module.exports = {
         text: '起步',
         isGroup: true,
         children: [
-          '/manual/starter/boilerplate.md',
+          '/manual/starter/node.md',
+          '/manual/starter/installation.md',
           '/manual/starter/console.md',
           '/manual/starter/adapter.md',
           '/manual/starter/next-step.md',
