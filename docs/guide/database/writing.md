@@ -11,6 +11,8 @@ sidebarDepth: 2
 ## 代码示例
 
 ```ts no-extra-header
+// @errors: 2416
+
 import { createPool, Pool, PoolConfig } from 'mysql'
 import { Context, Database } from 'koishi'
 
@@ -40,6 +42,10 @@ export default class MysqlDatabase extends Database {
   set() {}
   upsert() {}
   remove() {}
+  create() {}
+  drop() {}
+  eval() {}
+  stats() {}
 }
 ```
 
@@ -64,6 +70,8 @@ ctx.database.mysql.query('select * from user')
 对于其他数据库实现类似，例如 mongo 的原始接口可以通过 `ctx.database.mongo` 访问到。为了实现这一点，数据库插件的开发者需要在上面的示例代码中添加下面几行：
 
 ```ts
+import { Database } from 'koishi'
+
 // 步骤 1: 注入属性
 declare module 'koishi' {
   interface Database {

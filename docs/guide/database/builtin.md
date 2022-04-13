@@ -2,7 +2,7 @@
 sidebarDepth: 2
 ---
 
-# 内置的用户系统
+# 内置用户系统
 
 ::: tip
 本节所介绍的内容需要你安装一个数据库支持。如果你暂时不打算使用数据库，那么可以略过。
@@ -20,8 +20,6 @@ Koishi 内置了下面几个数据库字段：
   - **???:** `string` [平台编号](#平台相关字段)
   - **flag:** `number` 状态标签
   - **authority:** `number` 用户权限
-  - **usage:** `Record<string, number>` 指令调用次数
-  - **timers:** `Record<string, number>` 指令调用时间
 - **channel:** 频道表
   - **platform:** `string` 平台名
   - **id:** `string` [平台编号](#平台相关字段)

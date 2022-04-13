@@ -1,4 +1,4 @@
-import { Adapter, assertProperty, camelCase, Context, Dict, Logger, sanitize, Schema, segment, Session, trimSlash } from 'koishi'
+import { Adapter, assertProperty, Context, Dict, Logger, sanitize, Schema, segment, Session, trimSlash } from 'koishi'
 import { BotConfig, TelegramBot } from './bot'
 import * as Telegram from './types'
 import { AdapterConfig, adaptUser } from './utils'
@@ -158,7 +158,7 @@ export class HttpServer extends TelegramAdapter {
   async start() {
     const { path } = this.config
     this.ctx.router.post(path, async (ctx) => {
-      const payload = camelCase<Telegram.Update>(ctx.request.body)
+      const payload: Telegram.Update = ctx.request.body
       const token = ctx.request.query.token as string
       const [selfId] = token.split(':')
       const bot = this.bots.find(bot => bot.selfId === selfId) as TelegramBot

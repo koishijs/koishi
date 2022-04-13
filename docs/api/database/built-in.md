@@ -4,6 +4,13 @@ sidebarDepth: 2
 
 # 内置数据结构
 
+Koishi 的数据库 API 实际上分为两部分：
+
+- @koishijs/core 中定义的内置数据结构
+- @koishijs/orm 中提供的 ORM 接口
+
+这一页中将仅展示第一部分的内容。
+
 ## 内置表
 
 ### User
@@ -12,8 +19,6 @@ sidebarDepth: 2
 - **name:** `string` 用户昵称
 - **flag:** `number` 状态标签
 - **authority:** `number` 用户权限
-- **usage:** `Record<string, number>` 指令调用次数
-- **timers:** `Record<string, number>` 指令调用时间
 
 ### Channel
 

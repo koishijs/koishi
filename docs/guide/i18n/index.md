@@ -24,8 +24,12 @@ ctx.i18n.define('en', { hello: 'Hello!' })
 现在我们把它用在指令中：
 
 ```ts
-ctx.command('greeting').action(({ session }) => {
-  return session.text('hello')
+ctx.middleware((session, next) => {
+  if (session.content === 'greeting') {
+    return session.text('hello')
+  } else {
+    return next()
+  }
 })
 ```
 
@@ -55,8 +59,12 @@ channel.locale = 'en'
 ctx.i18n.define('zh', { hello: '你好，{0}！' })
 ctx.i18n.define('en', { hello: 'Hello, {0}!' })
 
-ctx.command('greeting').action(({ session }) => {
-  return session.text('hello', [session.author.username])
+ctx.middleware((session, next) => {
+  if (session.content === 'greeting') {
+    return session.text('hello', [session.author.username])
+  } else {
+    return next()
+  }
 })
 ```
 
@@ -71,8 +79,12 @@ ctx.command('greeting').action(({ session }) => {
 ctx.i18n.define('zh', { hello: '你好，{username}！' })
 ctx.i18n.define('en', { hello: 'Hello, {username}!' })
 
-ctx.command('greeting').action(({ session }) => {
-  return session.text('hello', session.author)
+ctx.middleware((session, next) => {
+  if (session.content === 'greeting') {
+    return session.text('hello', session.author)
+  } else {
+    return next()
+  }
 })
 ```
 
@@ -81,13 +93,23 @@ ctx.command('greeting').action(({ session }) => {
 ```ts
 ctx.i18n.define('zh', { hello: '你好，{author.username}！' })
 ctx.i18n.define('en', { hello: 'Hello, {author.username}!' })
-
-ctx.command('greeting').action(({ session }) => {
-  return session.text('hello', session)
-})
 ```
 
 上述三段代码的实际效果完全相同，可以根据自己的需要进行选择。
+
+### 格式化插值
+
+在插值语法中，你还可以使用 `|` 分隔符来进行格式化：
+
+```ts
+ctx.i18n.define('zh', { remain: '距离比赛结束还有{0 | time}。' })
+
+session.text('remain', [123456 /* 毫秒数 */])
+```
+
+<panel-view title="聊天记录">
+<chat-message nickname="Koishi" avatar="/koishi.png">距离比赛结束还有 2 分钟 3 秒。</chat-message>
+</panel-view>
 
 ## 渲染回退
 
@@ -112,10 +134,8 @@ ctx.command('greeting').action(({ session }) => {
 session.text(['foo', 'bar'])
 ```
 
-路径回退的优先级低于语言回退。举个例子，假如可选的语言包括 A 和 B，路径包括 1 和 2。翻译 A1 不存在，但是翻译 A2 和 B1 都存在。这种情况下会输出 B1 而非 A2。
-
 ::: tip
-采用这种设计是因为不同的路径通常表达了不同的逻辑。相比语言的正确性，逻辑的正确性更重要。
+路径回退的优先级低于语言回退。举个例子，假如可选的语言包括 A 和 B，路径包括 1 和 2。翻译 A1 不存在，但是翻译 A2 和 B1 都存在。这种情况下会输出 B1 而非 A2。采用这种设计是因为不同的路径通常表达了不同的逻辑。相比语言的正确性，逻辑的正确性更重要。
 :::
 
 利用这种行为，你可以实现静默渲染。下面的代码当未找到翻译时，将只会输出一个空串，并且不会输出警告：
@@ -123,30 +143,3 @@ session.text(['foo', 'bar'])
 ```ts
 session.text(['foo', ''])
 ```
-
-## 指令本地化
-
-在 [编写帮助](../command/help.md#编写帮助) 一节中，我们已经了解到指令和参数的描述文本都是在指令注册时就定义的。这种做法对单语言开发固然方便，但并不适合多语言开发，因为它将翻译逻辑与代码逻辑耦合了。如果你希望你编写的指令支持多语言，那么需要将翻译文本单独定义：
-
-```ts
-ctx.i18n.define(zh, {
-  commands: {
-    foo: {
-      description: '指令描述',
-      options: {
-        bar: '选项描述',
-      },
-    },
-  },
-})
-
-ctx.command('foo').options('bar')
-```
-
-### 作用域渲染
-
-## 编写翻译文件
-
-### 工作区开发
-
-### 覆盖默认文本

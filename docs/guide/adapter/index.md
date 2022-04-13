@@ -26,80 +26,37 @@ sidebarDepth: 2
 
 在 [快速上手](../introduction/direct.md#配置多机器人) 一章中我们已经给出了一个简单的例子：
 
-::: code-group language koishi
-```js
-module.exports = {
-  port: 7070,
-  onebot: {
-    // onebot 服务将在 http://localhost:7070/onebot 进行处理
-    path: '/onebot',
-    secret: 'my-secret',
-  },
-  kaiheila: {
-    // kaiheila 服务将在 http://localhost:7070/kaiheila 进行处理
-    path: '/kaiheila',
-  },
-  bots: [
-    // 在这里写上不同的机器人配置
-    { type: 'onebot:http', selfId: '123456789', server: 'http://onebot-server' },
-    { type: 'onebot:ws', selfId: '987654321', token: 'my-onebot-token' },
-    { type: 'kaiheila:ws', selfId: 'aAbBcCdD', token: 'my-kaiheila-token' },
-  ],
-}
+::: code-group config koishi
+```yaml
+plugins:
+  adapter-discord:
+    token: QwErTyUiOpAsDfGhJkLzXcVbNm
+
+  adapter-onebot:
+    bots:
+      - protocol: ws
+        selfId: '123456789'
+        endpoint: ws://127.0.0.1:6700
+      - protocol: http
+        selfId: '234567890'
+        endpoint: http://127.0.0.1:67570000
 ```
-```ts no-extra-header
-// 这只是为了引入类型，本身没有作用
-import { AppConfig } from 'koishi'
-import {} from '@koishijs/plugin-onebot'
-import {} from '@koishijs/plugin-kaiheila'
+```ts
+app.plugin('adapter-discord', {
+  token: 'QwErTyUiOpAsDfGhJkLzXcVbNm',
+})
 
-export default {
-  port: 7070,
-  onebot: {
-    // onebot 服务将在 http://localhost:7070/onebot 进行处理
-    path: '/event',
-    secret: 'my-secret',
-  },
-  kaiheila: {
-    // kaiheila 服务将在 http://localhost:7070/kaiheila 进行处理
-    path: '/kaiheila',
-  },
-  bots: [
-    // 在这里写上不同的机器人配置
-    { type: 'onebot:http', selfId: '123456789', server: 'http://onebot-server' },
-    { type: 'onebot:ws', selfId: '987654321', token: 'my-onebot-token' },
-    { type: 'kaiheila:ws', selfId: 'aAbBcCdD', token: 'my-kaiheila-token' },
-  ],
-} as AppConfig
-```
-:::
-
-这里是使用配置文件的写法，如果要使用 Koishi API，你只需要做一点变化：
-
-::: code-group language index
-```js no-extra-header
-const { App } = require('koishi')
-
-// 你需要手动安装所有相关平台的适配器
-require('@koishijs/plugin-onebot')
-require('@koishijs/plugin-kaiheila')
-
-const app = new App({ /* 同上述配置 */ })
-
-// 启动应用
-app.start()
-```
-```ts no-extra-header
-import { App } from 'koishi'
-
-// 你需要手动安装所有相关平台的适配器
-import '@koishijs/plugin-onebot'
-import '@koishijs/plugin-kaiheila'
-
-const app = new App({ /* 同上述配置 */ })
-
-// 启动应用
-app.start()
+app.plugin('adapter-onebot', {
+  bots: [{
+    protocol: 'ws',
+    selfId: '123456789',
+    endpoint: 'ws://127.0.0.1:6700',
+  }, {
+    protocol: 'http',
+    selfId: '234567890',
+    endpoint: 'http://127.0.0.1:5700',
+  }],
+})
 ```
 :::
 

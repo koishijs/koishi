@@ -76,8 +76,7 @@ export function apply(ctx: Context, config: Dict<Config>) {
       const _name = locate(target, name)
       if (!_name) return
       // directly modify name of prototype
-      target.name = _name
-      command.alias(_name)
+      command.displayName = _name
     }
 
     for (const name of config.alias) {
@@ -116,7 +115,6 @@ export function apply(ctx: Context, config: Dict<Config>) {
       const cmd = ctx.app._commands.resolve(name)
       Object.assign(cmd.config, options)
       teleport(cmd, parent)
-      cmd.name = name
     }
   }, true)
 

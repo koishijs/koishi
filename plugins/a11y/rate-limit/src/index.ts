@@ -157,13 +157,13 @@ export function apply(ctx: Context) {
       const now = Date.now()
       if (name) {
         const delta = user.timers[name] - now
-        if (delta > 0) return session.text('.present', [name, Time.formatTime(delta)])
+        if (delta > 0) return session.text('.present', [name, delta])
         return session.text('.absent', [name])
       }
       const output: string[] = []
       for (const name of Object.keys(user.timers).sort()) {
         if (name.startsWith('_')) continue
-        output.push(`${name}：剩余 ${Time.formatTime(user.timers[name] - now)}`)
+        output.push(session.text('.item', [name, user.timers[name] - now]))
       }
       if (!output.length) return session.text('.none')
       output.unshift(session.text('.list'))

@@ -65,11 +65,8 @@ type DomainType = string | RegExp | ((source: string) => any)
 
 为指令添加执行函数。
 
-```ts no-extra-header
-import { Argv } from 'koishi'
-
-// ---cut---
-type Awaitable<T> = T extends Promise<unknown> ? T : T | Promise<T>
+```ts
+type Awaitable<T> = [T] extends [Promise<unknown>] ? T : T | Promise<T>
 type CommandAction = (argv: Argv, ...args: any[]) => Awaitable<string | void>
 ```
 

@@ -378,7 +378,7 @@ export namespace Argv {
     private _namedOptions: OptionDeclarationMap = {}
     private _symbolicOptions: OptionDeclarationMap = {}
 
-    constructor(public name: string, declaration: string, public context: Context) {
+    constructor(public readonly name: string, declaration: string, public context: Context) {
       if (!name) throw new Error('expect a command name')
       const decl = this._arguments = parseDecl(declaration)
       this.declaration = decl.stripped

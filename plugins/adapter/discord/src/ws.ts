@@ -2,7 +2,6 @@ import { Adapter, Logger, renameProperty } from 'koishi'
 import { GatewayOpcode, GatewayPayload } from './types'
 import { AdapterConfig, adaptSession, adaptUser } from './utils'
 import { BotConfig, DiscordBot } from './bot'
-import WebSocket from 'ws'
 
 const logger = new Logger('discord')
 
@@ -10,7 +9,8 @@ export default class WebSocketClient extends Adapter.WebSocketClient<BotConfig, 
   static schema = BotConfig
 
   prepare(bot: DiscordBot) {
-    return new WebSocket(bot.config.gateway)
+    const http = this.ctx.http.extend(bot.config)
+    return http.ws(bot.config.gateway)
   }
 
   heartbeat(bot: DiscordBot) {

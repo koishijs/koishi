@@ -63,8 +63,7 @@ export class Sender {
 
   async sendEmbed(fileBuffer: ArrayBuffer, payload_json: Dict, filename: string) {
     const fd = new FormData()
-    const type = await fromBuffer(fileBuffer)
-    filename ||= 'file.' + type.ext
+    filename ||= 'file.' + (await fromBuffer(fileBuffer)).ext
     fd.append('file', fileBuffer, filename)
     fd.append('payload_json', JSON.stringify(payload_json))
     return this.post(fd, fd.getHeaders())
@@ -98,12 +97,11 @@ export class Sender {
     }
 
     const sendDownload = async () => {
-      const filename = basename(data.url)
       const buffer = await this.bot.app.http.get<ArrayBuffer>(data.url, {
         headers: { accept: type + '/*' },
         responseType: 'arraybuffer',
       })
-      return this.sendEmbed(buffer, addition, data.file || filename)
+      return this.sendEmbed(buffer, addition, data.file)
     }
 
     const mode = data.mode as HandleExternalAsset || handleExternalAsset

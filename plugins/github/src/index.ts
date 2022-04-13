@@ -154,6 +154,7 @@ export function apply(ctx: Context, config: Config) {
   const hidden = (sess: Session) => sess.subtype !== 'group'
 
   ctx.command('github [name]')
+    .alias('gh')
     .channelFields(['githubWebhooks'])
     .option('list', '-l', { hidden })
     .option('add', '-a', { hidden, authority: 2 })

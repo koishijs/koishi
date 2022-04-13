@@ -29,14 +29,14 @@
     "impl:database"
   ],
   "devDependencies": {
-    "@koishijs/database-tests": "^1.0.0",
+    "@koishijs/database-tests": "^1.1.0",
     "@koishijs/plugin-mock": "^1.0.3"
   },
   "peerDependencies": {
-    "koishi": "^4.5.0"
+    "koishi": "^4.5.2"
   },
   "dependencies": {
-    "@koishijs/orm": "^1.0.0",
+    "@koishijs/orm": "^1.0.1",
     "@koishijs/sql-utils": "^1.1.0",
     "@types/mysql": "^2.15.21",
     "@vlasky/mysql": "^2.18.5"

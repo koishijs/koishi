@@ -79,6 +79,8 @@ module.exports = {
 对于聊天机器人来说最常见的需求是处理用户的消息。为此，我们提供了 **客户端 (Client)** 对象，用于模拟特定频道和用户的输入：
 
 ```ts no-extra-header
+/// <reference types="mocha" />
+// ---cut---
 import { App } from 'koishi'
 import mock from '@koishijs/plugin-mock'
 
@@ -100,7 +102,7 @@ app.middleware(({ content }, next) => {
 // 这一句不能少，要等待 app 启动完成
 before(() => app.start())
 
-it('example 1', () => {
+it('example 1', async () => {
   // 将“天王盖地虎”发送给机器人将会获得“宝塔镇河妖”的回复
   await client.shouldReply('天王盖地虎', '宝塔镇河妖')
 
@@ -141,7 +143,7 @@ before(async () => {
   await app.mock.initUser('456', 2)
 })
 
-it('example 2', () => {
+it('example 2', async () => {
   // 用户 123 尝试调用 foo 指令，但是权限不足
   await client1.shouldReply('foo', '权限不足。')
 

@@ -40,6 +40,7 @@ plugins:
 运行程序后，你就可以通过访问 `ctx.database` 来调用数据库接口了：
 
 ```ts
+// @errors: 2304
 // 获取用户数据
 const user = await ctx.database.getUser(platform, id)
 
@@ -49,9 +50,7 @@ await ctx.database.setChannel(platform, id, { assignee: '123456789' })
 
 你可以在后面的 API 文档中看到全部内置的 [数据库方法](../../api/core/database.md)。
 
-## 调用数据库
-
-### 获取数据
+## 获取数据
 
 使用 `database.get()` 方法以获取特定表中的数据。下面是一个最基本的形式：
 
@@ -100,150 +99,94 @@ await ctx.database.get('schedule', {
 })
 ```
 
-> 你可以在 [这里](../../api/core/database.md#db-get-table) 看到更多相关的 API。
+你可以在 [这里](../../api/database/query.md) 看到完整的查询表达式 API。
 
-### 删除数据
+## 添加和删除数据
 
-删除数据的语法与获取数据类似：
+添加和删除数据的语法也非常简单：
 
 ```ts
+// @errors: 2304
 // 从 schedule 表中删除特定 id 的数据行
-// 第二个参数也可以使用上面介绍的对象语法
+// 第二个参数也可以使用上面介绍的查询表达式
 await ctx.database.remove('schedule', [id])
-```
 
-### 添加和修改数据
-
-除了获取和删除数据，常用的需求还有添加和修改数据。
-
-```ts
 // 向 schedule 表中添加一行数据，data 是要添加的数据行
 // 返回值是添加的行的完整数据（包括自动生成的 id 和默认属性等）
 await ctx.database.create('schedule', row)
 ```
 
-修改数据的逻辑稍微有些不同，需要你传入一个数组：
+## 修改数据
+
+Koishi 提供了两种修改数据的方法。我们将逐一介绍。
+
+| | set | upsert |
+| ---- | ---- | ---- |
+| 作用范围 | 支持复杂的查询表达式 | 只能限定特定字段的值 |
+| 插入行为 | 如果不存在则不会进行任何操作 | 如果不存在则会插入新行 |
+
+### 使用 set 修改数据
+
+`database.set()` 方法需要传入三个参数：表名、查询条件和要修改的数据。
 
 ```ts
-// 用 rows 来对数据进行更新，你需要确保每一个元素都拥有 id 属性
-// 修改时只会用 rows 中出现的键进行覆盖，不会影响未记录在 data 中的字段
-await ctx.database.update('schedule', rows)
+// 第二个参数也可以使用上面介绍的查询表达式
+await ctx.database.set('schedule', 1234, {
+  assignee: 'onebot:123456',
+  lastCall: new Date(),
+})
 ```
+
+如果要修改的数据与已有数据相关，可以使用求值表达式：
+
+```ts
+// 让所有日期为今天的数据行的 count 字段在原有基础上增加 1
+await ctx.database.set('foo', { date: new Date() }, {
+  // { $add: [a, b] } 相当于 a + b
+  // { $: field } 相当于对当前行的 field 字段取值
+  count: { $add: [{ $: 'count' }, 1] },
+})
+```
+
+你可以在 [这里](../../api/database/evaluation.md) 看到完整的求值表达式 API。
+
+### 使用 upsert 修改数据
+
+`database.upsert()` 的逻辑稍微有些不同，需要你传入一个数组：
+
+```ts
+// 用一个数组来对数据进行更新，你需要确保每一个元素都拥有这个数据表的主键
+// 修改时只会用每一行中出现的键进行覆盖，不会影响未定义的字段
+await ctx.database.upsert('foo', [
+  { id: 1, foo: 'hello' },
+  { id: 2, foo: 'world' },
+  // 这里同样支持求值表达式，$concat 可用于连接字符串
+  { id: 3, bar: { $concat: ['koi', 'shi'] } },
+])
+```
+
+如果初始的数据库是这样的：
+
+| id | foo | bar |
+| ---- | ---- | ---- |
+| (默认值) | null | bar |
+| 1 | foo | baz |
+
+那么进行上述操作后的数据库将是这样的：
+
+| id | foo | bar | 说明 |
+| ---- | ---- | ---- | ---- |
+| 1 | hello | baz | 该行已经存在，只更新了 foo 字段 |
+| 2 | world | bar | 插入了新行，其中 foo 字段取自传入的数据，bar 字段取自默认值 |
+| 3 | null | koishi | 插入了新行，其中 bar 字段取自传入的数据，foo 字段取自默认值 |
 
 如果想以非主键来索引要修改的数据，可以使用第三个参数：
 
 ```ts
-// 用 rows 来对数据进行更新，你需要确保每一个元素都拥有 onebot 属性
-await ctx.database.update('user', rows, 'onebot')
-```
+// @errors: 2304
+// 以非主键为基准对数据表进行更新，你需要确保每一个元素都拥有 onebot 属性
+await ctx.database.upsert('user', rows, 'onebot')
 
-## 扩展数据模型
-
-如果你的插件需要声明新的字段或者表，你可以通过 `ctx.model` 来对数据模型进行扩展。请注意，数据模型的扩展一定要在使用前完成，不然后续数据库操作可能会失败。
-
-### 扩展字段
-
-向内置的 User 表中注入字段的方式如下：
-
-::: code-group language
-```js
-ctx.model.extend('user', {
-  // 向用户表中注入字符串字段 foo
-  foo: 'string',
-  // 你还可以配置默认值为 'bar'
-  foo: { type: 'string', initial: 'bar' },
-})
-```
-```ts
-// TypeScript 用户需要进行类型合并
-declare module 'koishi' {
-  interface User {
-    foo: string
-  }
-}
-
-ctx.model.extend('user', {
-  // 向用户表中注入字符串字段 foo
-  foo: 'string',
-  // 你还可以配置默认值为 'bar'
-  foo: { type: 'string', initial: 'bar' },
-})
-```
-:::
-
-向 Channel 注入字段同理。
-
-### 扩展表
-
-利用 `ctx.model.extend()` 的第三个参数，我们就可以定义新的数据表了：
-
-::: code-group language
-```js
-ctx.model.extend('schedule', {
-  // 各字段类型
-  id: 'unsigned',
-  assignee: 'string',
-  time: 'timestamp',
-  lastCall: 'timestamp',
-  interval: 'integer',
-  command: 'text',
-  session: 'json',
-}, {
-  // 使用自增的主键值
-  autoInc: true,
-})
-```
-```ts
-// TypeScript 用户需要进行类型合并
-declare module 'koishi' {
-  interface Tables {
-    schedule: Schedule
-  }
-}
-
-export interface Schedule {
-  id: number
-  assignee: string
-  time: Date
-  lastCall: Date
-  interval: number
-  command: string
-  session: Session
-}
-
-ctx.model.extend('schedule', {
-  // 各字段类型
-  id: 'unsigned',
-  assignee: 'string',
-  time: 'timestamp',
-  lastCall: 'timestamp',
-  interval: 'integer',
-  command: 'text',
-  session: 'json',
-}, {
-  // 使用自增的主键值
-  autoInc: true,
-})
-```
-:::
-
-### 创建索引
-
-我们还可以为数据库声明索引：
-
-```ts
-// 注意这里配置的是第三个参数，也就是之前 autoInc 所在的参数
-ctx.model.extend('foo', {}, {
-  // 主键，默认为 'id'
-  // 主键将会被用于 Query 的简写形式，如果传入的是原始类型或数组则会自行理解成主键的值
-  primary: 'name',
-  // 唯一键，这应该是一个列表
-  // 这个列表中的字段对应的值在创建和修改的时候都不允许与其他行重复
-  unique: ['bar', 'baz'],
-  // 外键，这应该是一个键值对
-  foreign: {
-    // 相当于约束了 foo.uid 必须是某一个 user.id
-    uid: ['user', 'id'],
-  },
-})
+// 以复合键为基准对数据表进行更新，你需要确保每一个元素都拥有 platform 和 id 属性
+await ctx.database.upsert('channel', rows, ['platform', 'id'])
 ```

@@ -21,6 +21,14 @@ addons 功能在上述功能的基础上，允许用户编写自己的模块并�
 @koishijs/plugin-eval 提供了一套陷阱 API。它会影响 evaluate 指令和扩展指令中的用户数据。你可以通过下面的方式来定义一个陷阱：
 
 ```ts
+declare module 'koishi' {
+  interface User {
+    bar: string
+  }
+}
+
+// ---cut---
+
 import { Trap } from '@koishijs/plugin-eval'
 
 Trap.user.define('foo', {

@@ -346,7 +346,12 @@ export class SharedCache<T> {
   }
 
   set(ref: string, key: string, value: T) {
-    const entry = this.#keyMap[key] ||= { value, key, refs: new Set() }
+    let entry = this.#keyMap[key]
+    if (entry) {
+      entry.value = value
+    } else {
+      entry = this.#keyMap[key] = { value, key, refs: new Set() }
+    }
     entry.refs.add(ref)
   }
 

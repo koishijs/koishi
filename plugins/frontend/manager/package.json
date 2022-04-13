@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-manager",
   "description": "Manage your bots and plugins with console",
-  "version": "1.6.0",
+  "version": "1.7.0",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -30,16 +30,17 @@
     "required:console"
   ],
   "peerDependencies": {
-    "@koishijs/cli": "^4.5.0",
-    "@koishijs/plugin-console": "^3.2.4",
-    "koishi": "^4.5.0"
+    "@koishijs/cli": "^4.5.2",
+    "@koishijs/plugin-console": "^3.2.5",
+    "koishi": "^4.5.2"
   },
   "devDependencies": {
-    "@koishijs/client": "^3.2.3",
+    "@koishijs/client": "^3.2.4",
     "@types/cross-spawn": "^6.0.2",
     "@types/which-pm-runs": "^1.0.0"
   },
   "dependencies": {
+    "@koishijs/market": "^1.0.0",
     "cross-spawn": "^7.0.3",
     "semver": "^7.3.5",
     "which-pm-runs": "^1.1.0"

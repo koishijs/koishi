@@ -81,10 +81,10 @@ koishi start [file] [options]
 
 ::: code-group manager
 ```npm
-npm run new [name] [-c]
+npm run setup [name] [-c]
 ```
 ```yarn
-yarn new [name] [-c]
+yarn setup [name] [-c]
 ```
 :::
 
@@ -108,7 +108,7 @@ root
 
 打开 `index.ts` 文件，并修改其中的代码：
 
-```ts
+```ts no-extra-header
 import { Context } from 'koishi'
 
 export const name = 'demo'

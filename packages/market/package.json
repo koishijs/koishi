@@ -1,7 +1,6 @@
 {
-  "name": "@koishijs/pkg-utils",
+  "name": "@koishijs/market",
   "description": "Scan Package Manager for Koishi Plugins",
-  "private": true,
   "version": "1.0.0",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
@@ -24,7 +23,7 @@
     "koishi"
   ],
   "dependencies": {
-    "@koishijs/utils": "^5.2.1",
+    "@koishijs/utils": "^5.2.2",
     "semver": "^7.3.5"
   }
 }

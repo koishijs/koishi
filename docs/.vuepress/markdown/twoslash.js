@@ -1,7 +1,7 @@
 const { setupForFile, transformAttributesToHTML } = require('remark-shiki-twoslash')
 const { ScriptTarget, ModuleKind, ModuleResolutionKind } = require('typescript')
 
-const twoslashSupportedList = ['ts', 'js', 'twoslash']
+const twoslashSupportedList = ['ts', 'twoslash']
 const extraHeader = require('fs').readFileSync(
   require('path').resolve(__dirname, 'header.ts')
 )
@@ -27,7 +27,7 @@ function render(code, lang, attrs) {
       ? code
       : extraHeader + code
     twoslashCode = twoslashCode.replace(/\r?\n$/, '')
-    return transformAttributesToHTML(
+    const html = transformAttributesToHTML(
       twoslashCode,
       [lang, 'twoslash', attrs].join(' '),
       twoslashHighlighters,
@@ -37,12 +37,20 @@ function render(code, lang, attrs) {
           target: ScriptTarget.ESNext,
           module: ModuleKind.ESNext,
           moduleResolution: ModuleResolutionKind.NodeJs,
+          types: [
+            '@koishijs/client/global',
+          ],
         },
       },
-    ).replace(/<div /g, '<span ').replace(/<\/div>/g, '</span>\n')
+    )
+    return html
+      .replace(/<div class="language-id">.+?<\/div>/, '')
+      .replace(/<div class='line'/g, '<span class="line"')
+      .replace(/<\/div>(?!<\/pre>)/g, '</span>\n')
+      .replace(/<\/br>/g, '\n')
   } catch (e) {
     console.log('Code block:')
-    console.log(e.code)
+    console.log(code)
     console.log()
     console.log('Message:')
     console.log(e.message)

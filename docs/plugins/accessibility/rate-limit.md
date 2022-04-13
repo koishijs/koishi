@@ -10,6 +10,11 @@ sidebarDepth: 2
 
 请先阅读 [指南 / 速率限制](../../guide/command/more.md#速率限制) 章节。
 
+## 扩展用户字段
+
+- **usage:** `Record<string, number>` 指令调用次数
+- **timers:** `Record<string, number>` 指令调用时间
+
 ## 指令：user.usage
 ## 指令：user.timer
 

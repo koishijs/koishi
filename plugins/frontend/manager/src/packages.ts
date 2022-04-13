@@ -1,8 +1,8 @@
 import { Adapter, App, Context, Dict, noop, omit, pick, Plugin, remove, Schema, unwrapExports } from 'koishi'
 import { DataService } from '@koishijs/plugin-console'
+import { LocalPackage, PackageJson } from '@koishijs/market'
 import { promises as fsp } from 'fs'
 import { dirname } from 'path'
-import { Package } from './utils'
 import {} from '@koishijs/cli'
 
 const { readdir, readFile } = fsp
@@ -106,8 +106,13 @@ class PackageProvider extends DataService<Dict<PackageProvider.Data>> {
   }
 
   private async parsePackage(name: string, path: string) {
-    const data: Package.Local = JSON.parse(await readFile(path + '/package.json', 'utf8'))
-    const result = pick(data, ['name', 'version', 'description']) as PackageProvider.Data
+    const data: LocalPackage = JSON.parse(await readFile(path + '/package.json', 'utf8'))
+    const result = pick(data, [
+      'name',
+      'version',
+      'description',
+      'peerDependencies',
+    ]) as PackageProvider.Data
 
     // workspace packages are followed by symlinks
     result.workspace = !require.resolve(name).includes('node_modules')
@@ -118,9 +123,6 @@ class PackageProvider extends DataService<Dict<PackageProvider.Data>> {
     const exports = getExports(name)
     const newLength = Object.keys(Adapter.library).length
     if (newLength > oldLength) this.ctx.console.protocols.refresh()
-
-    // check plugin dependencies
-    Object.assign(result, Package.getMeta(data))
 
     // check plugin state
     const { plugins } = this.ctx.loader.config
@@ -140,7 +142,7 @@ class PackageProvider extends DataService<Dict<PackageProvider.Data>> {
 namespace PackageProvider {
   export interface Config {}
 
-  export interface Data extends Partial<Package.Base>, Partial<Package.Meta> {
+  export interface Data extends Partial<PackageJson> {
     id?: string
     root?: boolean
     config?: any

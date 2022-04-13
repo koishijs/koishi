@@ -1,5 +1,4 @@
 import { intersects } from 'semver'
-import { EventEmitter } from 'events'
 import { Dict, pick } from '@koishijs/utils'
 
 export interface User {
@@ -15,7 +14,7 @@ export interface BasePackage {
 }
 
 export interface PackageJson extends BasePackage {
-  keywords?: string[]
+  keywords: string[]
   dependencies?: Dict<string>
   devDependencies?: Dict<string>
   peerDependencies?: Dict<string>
@@ -57,7 +56,7 @@ export interface SearchPackage extends BasePackage {
   author: User
   publisher: User
   maintainers: User[]
-  keywords?: string[]
+  keywords: string[]
 }
 
 export interface ScoreDetail {
@@ -81,72 +80,67 @@ export interface SearchResult {
   objects: SearchObject[]
 }
 
-export interface AnalyzedPackage extends BasePackage, ScoreDetail {
-  author: User
-  links: Dict<string>
-  keywords: string[]
+export interface AnalyzedPackage extends SearchPackage, ScoreDetail {
   shortname: string
   official: boolean
   size: number
   license: string
+  versions: RemotePackage[]
 }
 
-export interface Scanner {
-  on(event: 'item', callback: (item: AnalyzedPackage) => void): this
-  on(event: 'finish', callback: () => void): this
+export interface ScanConfig {
+  version?: string
+  request<T>(url: string): Promise<T>
+  onItem?(item: AnalyzedPackage): void
 }
 
-export class Scanner extends EventEmitter {
-  private tasks: Promise<void>[]
-  protected version = '4'
+export default async function scan(config: ScanConfig) {
+  const { version, request, onItem } = config
+  const tasks: Promise<void>[] = []
 
-  constructor(private request: <T>(url: string) => Promise<T>) {
-    super()
-  }
-
-  private async search(offset: number) {
-    const result = await this.request<SearchResult>(`/-/v1/search?text=koishi+plugin&size=250&offset=${offset}`)
-    this.tasks.push(...result.objects.map(item => this.analyze(item)))
+  async function search(offset: number) {
+    const result = await config.request<SearchResult>(`/-/v1/search?text=koishi+plugin&size=250&offset=${offset}`)
+    tasks.push(...result.objects.map(item => analyze(item)))
     return result.total
   }
 
-  private async analyze(object: SearchObject) {
-    const { name, links } = object.package
+  async function analyze(object: SearchObject) {
+    const { name } = object.package
     const official = name.startsWith('@koishijs/plugin-')
     const community = name.startsWith('koishi-plugin-')
     if (!official && !community) return
 
-    const registry = await this.request<Registry>(`/${name}`)
+    const registry = await request<Registry>(`/${name}`)
     const versions = Object.values(registry.versions).filter((remote) => {
       const { dependencies, peerDependencies, deprecated } = remote
       const declaredVersion = { ...dependencies, ...peerDependencies }['koishi']
       try {
-        return !deprecated && declaredVersion && intersects(this.version, declaredVersion)
+        return !deprecated && declaredVersion && intersects(version, declaredVersion)
       } catch {}
     }).reverse()
     if (!versions.length) return
 
     const latest = registry.versions[versions[0].version]
+    latest.keywords ??= []
+    if (latest.keywords.includes('market:hidden')) return
+
     const shortname = official ? name.slice(17) : name.slice(14)
-    this.emit('item', {
+    onItem({
       name,
-      links,
       shortname,
       official,
+      versions,
       size: latest.dist.unpackedSize,
-      keywords: latest.keywords || [],
-      ...pick(latest, ['version', 'description', 'license', 'author']),
+      ...pick(object.package, ['date', 'links', 'publisher', 'maintainers']),
+      ...pick(latest, ['keywords', 'version', 'description', 'license', 'author']),
       ...object.score.detail,
     })
   }
 
-  async start() {
-    this.tasks = []
-    const total = await this.search(0)
-    for (let offset = 250; offset < total; offset += 250) {
-      await this.search(offset)
-    }
-    await Promise.all(this.tasks)
-    this.emit('finish')
+  const total = await search(0)
+  for (let offset = 250; offset < total; offset += 250) {
+    await search(offset)
   }
+
+  await Promise.all(tasks)
 }

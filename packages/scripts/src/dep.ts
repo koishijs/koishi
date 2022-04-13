@@ -1,6 +1,6 @@
 import { config, cwd, DependencyType, getPackages, PackageJson } from './utils'
 import { cyan, green, yellow } from 'kleur'
-import { writeJson } from 'fs-extra'
+import { writeFile } from 'fs-extra'
 import { gt } from 'semver'
 import { CAC } from 'cac'
 import spawn from 'cross-spawn'
@@ -59,7 +59,7 @@ class Graph {
 
     for (const path in this.pkgs) {
       if (!this.pkgs[path].$dirty) continue
-      await writeJson(`${cwd}/${path}/package.json`, this.pkgs[path], { spaces: 2 })
+      await writeFile(`${cwd}/${path}/package.json`, JSON.stringify(this.pkgs[path], null, 2))
     }
 
     console.log(output.sort().join('\n'))

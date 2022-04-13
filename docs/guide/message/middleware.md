@@ -58,6 +58,8 @@ ctx.middleware((session, next) => {
 这个函数的返回值是一个新的函数，调用这个函数就可以完成取消上述中间件：
 
 ```ts
+declare const callback: import('koishi').Middleware
+// ---cut---
 const dispose = ctx.middleware(callback)
 dispose() // 取消中间件
 ```

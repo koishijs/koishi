@@ -12,13 +12,7 @@ const client = app.mock.client('123', '321')
 
 app.plugin(_switch)
 app.command('foo', { authority: 4 })
-
-app.plugin({
-  name: 'baz',
-  apply(ctx: Context) {
-    ctx.command('baz').action(() => 'zab')
-  },
-})
+app.command('baz').action(() => 'zab')
 
 before(async () => {
   await app.start()

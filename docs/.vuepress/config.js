@@ -101,6 +101,7 @@ module.exports = {
         isGroup: true,
         children: [
           '/guide/database/index.md',
+          '/guide/database/model.md',
           '/guide/database/builtin.md',
           '/guide/database/observer.md',
           '/guide/database/writing.md',
@@ -115,6 +116,15 @@ module.exports = {
           '/guide/adapter/writing.md',
         ],
       }, {
+        text: '国际化',
+        isGroup: true,
+        children: [
+          '/guide/i18n/index.md',
+          '/guide/i18n/translation.md',
+          '/guide/i18n/presets.md',
+          '/guide/i18n/crowdin.md',
+        ],
+      }, {
         text: '更多功能',
         isGroup: true,
         children: [
@@ -122,12 +132,6 @@ module.exports = {
           '/guide/service/http.md',
           '/guide/service/router.md',
           '/guide/service/logger.md',
-        ],
-      }, {
-        text: '国际化',
-        isGroup: true,
-        children: [
-          '/guide/i18n/index.md',
         ],
       }, {
         text: '控制台开发',
@@ -163,6 +167,7 @@ module.exports = {
           '/api/core/command.md',
           '/api/core/context.md',
           '/api/core/events.md',
+          '/api/core/service.md',
           '/api/core/session.md',
         ],
       }, {

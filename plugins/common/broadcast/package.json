@@ -30,7 +30,7 @@
     "optional:database"
   ],
   "peerDependencies": {
-    "koishi": "^4.5.0"
+    "koishi": "^4.5.2"
   },
   "devDependencies": {
     "@koishijs/plugin-database-memory": "^1.1.0",

@@ -6,55 +6,34 @@ sidebarDepth: 2
 
 **上下文 (Context)** 是 Koishi 的重要概念。你的每一个插件，中间件，监听器和指令都被绑定在上下文上。
 
-## 内置服务
+## 实例属性
 
-下面的属性为了访问方便而绑定，严格上它们对一个 App 实例下的所有上下文都是相同的。
+以下实例属性都是只读的。
 
-### ctx.database
+### ctx.state
 
-- 类型: `Database`
+- 类型: `State`
 
-当前应用的 [Database](./database.md#数据库对象) 对象。
-
-### ctx.router
-
-- 类型: `KoaRouter`
-
-如果你配置了 [port](./app.md#option-port) 选项，则这个属性将作为一个 [KoaRouter](https://github.com/koajs/router/blob/master/API.md) 实例。你可以在上面自定义新的路由：
+当前上下文关联的插件信息对象。
 
 ```ts
-ctx.router.get('/path', (ctx, next) => {
-  // handle request
-})
+export interface State {
+  id: string
+  parent: Context
+  config?: any
+  using: string[]
+  schema?: Schema
+  plugin?: Plugin
+  children: Plugin[]
+  disposables: Disposable[]
+}
 ```
 
-### ctx.bots
+### ctx.filter
 
-- 类型: [`Bot[]`](./bot.md)
+- 类型: `(session: Session) => boolean`
 
-一个保存了当前全部 Bot 的数组。除了可以使用 `ctx.bot.forEach()` 这样的方法外，我们还提供了一些额外的接口：
-
-#### ctx.bots.get(sid)
-
-- **sid:** `string` 机器人的 sid
-- 返回值: `Bot` 机器人实例
-
-使用 sid 获取机器人实例。
-
-#### ctx.bots.remove(id)
-
-- **sid:** `string` 机器人的 id
-- 返回值: `boolean` 机器人实例是否存在
-
-移除一个机器人实例。
-
-#### ctx.bots.create(platform, options, constructor?)
-
-- **platform:** `string` 适配器名
-- **options:** `object` 配置项
-- **constructor:** `Function` 构造函数
-
-新增一个机器人实例。
+插件绑定的过滤器。
 
 ## 过滤器
 
@@ -200,13 +179,7 @@ ctx.router.get('/path', (ctx, next) => {
 - **options:** `any` 要传入插件的参数，如果为 `false` 则插件不会被安装
 - 返回值: `this`
 
-当前上下文中安装一个插件。
-
-```ts
-type PluginFunction<U> = (ctx: Context, options: U) => void
-type PluginObject<U> = { apply: PluginFunction<T, U> }
-type Plugin<U> = PluginFunction<T, U> | PluginObject<T, U>
-```
+当前上下文中安装一个插件。参见 [认识插件](../../guide/plugin/)。
 
 ### ctx.using(deps, plugin)
 
