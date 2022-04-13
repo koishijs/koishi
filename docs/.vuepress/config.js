@@ -46,7 +46,7 @@ module.exports = {
       }],
     }, {
       text: '入门',
-      link: '/manual/',
+      link: '/manual/introduction.md',
       activeMatch: '/manual/',
     }, {
       text: '指南',
@@ -66,13 +66,25 @@ module.exports = {
 
     sidebar: {
       '/manual/': [{
+        text: '介绍',
+        link: '/manual/introduction.md',
+      }, {
         text: '起步',
         isGroup: true,
         children: [
-          '/manual/index.md',
-          '/manual/direct.md',
-          '/manual/template.md',
-          '/manual/development.md',
+          '/manual/starter/boilerplate.md',
+          '/manual/starter/console.md',
+          '/manual/starter/adapter.md',
+          '/manual/starter/next-step.md',
+        ],
+      }, {
+        text: '进阶',
+        isGroup: true,
+        children: [
+          '/manual/advanced/config.md',
+          '/manual/advanced/development.md',
+          '/manual/advanced/direct.md',
+          '/manual/advanced/server.md',
         ],
       }],
 
