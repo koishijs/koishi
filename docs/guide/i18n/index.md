@@ -111,8 +111,6 @@ session.text('remain', [123456 /* 毫秒数 */])
 <chat-message nickname="Koishi" avatar="/koishi.png">距离比赛结束还有 2 分钟 3 秒。</chat-message>
 </panel-view>
 
-## 渲染预设
-
 ## 渲染回退
 
 ### 语言优先级

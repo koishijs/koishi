@@ -1,4 +1,4 @@
-import { App, Command, Context, User, Channel, Session } from 'koishi'
+import { App, Channel, Command, Session, User } from 'koishi'
 import {} from '@koishijs/plugin-adapter-discord'
 import {} from '@koishijs/plugin-adapter-onebot'
 import {} from '@koishijs/plugin-adapter-telegram'
@@ -14,11 +14,13 @@ declare global {
   type segment = import('koishi').segment
   type Schema<S = any, T = S> = import('koishi').Schema<S, T>
 
+  const Schema: typeof import('koishi').Schema
   const segment: typeof import('koishi').segment
   const Time: typeof import('koishi').Time
 
   // core
   type Argv = import('koishi').Argv
+  type Context = import('koishi').Context
   type Disposable = import('koishi').Disposable
   type Service = import('koishi').Service
 

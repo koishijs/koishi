@@ -121,6 +121,7 @@ module.exports = {
         children: [
           '/guide/i18n/index.md',
           '/guide/i18n/translation.md',
+          '/guide/i18n/presets.md',
           '/guide/i18n/crowdin.md',
         ],
       }, {
