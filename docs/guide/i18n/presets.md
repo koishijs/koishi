@@ -20,10 +20,34 @@ apple@plural:
 ```ts
 class Apple {}
 // ---cut---
-session.text('apples', [])              // no apples
-session.text('apples', [new Apple()])   // one apple
-session.text('apples', { length: 2 })   // 2 apples
+session.text('apples', [])              // You have no apples
+session.text('apples', [new Apple()])   // You have one apple
+session.text('apples', { length: 2 })   // You have 2 apples
 ```
+
+## 列表渲染
+
+`@list` 预设模板可以用来渲染列表或对象：
+
+```yaml
+rank@list:
+  header: 当前排名如下：
+  item: '第 {key} 名：{value}'
+  footer: 要查看特定结果，请使用 --all 选项。
+```
+
+```ts
+session.text('rank', ['foo', 'bar'])
+```
+
+<panel-view title="聊天记录">
+<chat-message nickname="Koishi" avatar="/koishi.png">
+<p>当前排名如下：</p>
+<p>第 1 名：foo</p>
+<p>第 2 名：bar</p>
+<p>要查看更多结果，请使用 --all 选项。</p>
+</chat-message>
+</panel-view>
 
 ## 随机渲染
 

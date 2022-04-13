@@ -152,12 +152,12 @@ export class I18n {
     })
 
     this.preset('list', (data, params: any[], locale) => {
-      const list = params.map((value, index) => {
-        return this.render(data.item, [value, index], locale)
+      const list = Object.entries(params).map(([key, value]) => {
+        return this.render(data.item, { key, value }, locale)
       })
-      if (data.header) list.unshift(this.render(data.header, params, locale))
-      if (data.footer) list.push(this.render(data.footer, params, locale))
-      return list.join('\n')
+      list.unshift(this.render(data.header, params, locale))
+      list.push(this.render(data.footer, params, locale))
+      return list.join('\n').trim()
     })
   }
 }
