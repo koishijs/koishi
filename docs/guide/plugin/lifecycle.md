@@ -24,6 +24,12 @@ ctx.on('guild-member-added', (session) => {
 这套事件系统与 EventEmitter 的一个不同点在于，无论是 `ctx.on()` 还是 `ctx.once()` 都会返回一个 dispose 函数，调用这个函数即可取消注册监听器。因此你其实不必使用 `ctx.once()` 和 `ctx.off()`。下面给一个只触发一次的监听器的例子：
 
 ```ts
+declare module 'koishi' {
+  interface EventMap {
+    foo(...args: any[]): void
+  }
+}
+// ---cut---
 // 回调函数只会被触发一次
 const dispose = ctx.on('foo', (...args) => {
   dispose()

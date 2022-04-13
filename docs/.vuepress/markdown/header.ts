@@ -3,6 +3,7 @@ import {} from '@koishijs/plugin-adapter-discord'
 import {} from '@koishijs/plugin-adapter-onebot'
 import {} from '@koishijs/plugin-adapter-telegram'
 import {} from '@koishijs/plugin-console'
+import {} from '@koishijs/plugin-eval'
 import {} from '@koishijs/plugin-rate-limit'
 import { Schedule } from '@koishijs/plugin-schedule'
 import {} from '@koishijs/plugin-teach'
@@ -23,6 +24,9 @@ declare global {
   type Context = import('koishi').Context
   type Disposable = import('koishi').Disposable
   type Service = import('koishi').Service
+
+  const Context: typeof import('koishi').Context
+  const Service: typeof import('koishi').Service
 
   const app: App
   const ctx: Context

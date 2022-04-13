@@ -6,7 +6,7 @@ import { Middleware, Next } from './context'
 import { App } from './app'
 import { Bot } from './bot'
 
-type Genres = 'friend' | 'channel' | 'group' | 'group-member' | 'group-role' | 'group-file' | 'group-emoji'
+type Genres = 'friend' | 'channel' | 'guild' | 'guild-member' | 'guild-role' | 'guild-file' | 'guild-emoji'
 type Actions = 'added' | 'deleted' | 'updated'
 type SessionEventCallback = (session: Session) => void
 
@@ -24,9 +24,9 @@ declare module './context' {
     'friend-request': SessionEventCallback
     'guild-request': SessionEventCallback
     'guild-member-request': SessionEventCallback
-    'group-member/role': SessionEventCallback
-    'group-member/ban': SessionEventCallback
-    'group-member/nickname': SessionEventCallback
+    'guild-member/role': SessionEventCallback
+    'guild-member/ban': SessionEventCallback
+    'guild-member/nickname': SessionEventCallback
     'notice/poke': SessionEventCallback
     'notice/lucky-king': SessionEventCallback
     'notice/honor': SessionEventCallback

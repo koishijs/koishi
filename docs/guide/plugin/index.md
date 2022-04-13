@@ -16,6 +16,8 @@ sidebarDepth: 2
 而一个插件在被加载时，则相当于进行了上述函数的调用。因此，下面的三种写法是基本等价的：
 
 ```ts
+declare const callback: Middleware
+/// ---cut---
 ctx.middleware(callback)
 
 ctx.plugin(ctx => ctx.middleware(callback))
@@ -173,24 +175,9 @@ app.dispose(callback)
 
 看起来很神奇，不过它的实现方式也非常简单。当一个插件被注册时，Koishi 会记录注册过程中定义的所有事件钩子、指令、中间件乃至子插件。当 `ctx.dispose()` 被调用时，再逐一取消上述操作的效应。因此，它的局限性也很明显：它并不能妥善处理除了 Context API 以外的**副作用**。不过，我们也准备了额外的解决办法：
 
-::: code-group language my-plugin
-```js no-extra-header
-module.exports = (ctx, options) => {
-  const server = createServer()
-
-  ctx.on('ready', () => {
-    // ctx.dispose 无法消除 server.listen 带来的副作用
-    server.listen(1234)
-  })
-
-  // 添加一个特殊的回调函数来处理副作用
-  ctx.on('dispose', () => {
-    server.close()
-  })
-}
-```
-```ts no-extra-header
+```ts title=my-plugin.ts
 import { Context } from 'koishi'
+import { createServer } from 'http'
 
 export default function (ctx: Context, options) {
   const server = createServer()
@@ -206,4 +193,3 @@ export default function (ctx: Context, options) {
   })
 }
 ```
-:::
