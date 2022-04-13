@@ -587,7 +587,7 @@ export default class MyPlugin extends BasePlugin<MyPluginConfig> {
 
 对于需要集中管理文本的情况，我们也可以利用 `@DefineLocale` 装饰器使用完整定义的方式。
 
-该装饰器需要放在了类的顶部，作用等价于 `ctx.i18n.define`，形式相同。
+该装饰器需要放在类的顶部，作用等价于 `ctx.i18n.define`，形式相同。
 
 ```json
 {
