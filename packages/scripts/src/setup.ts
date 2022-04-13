@@ -23,11 +23,17 @@ class Initiator {
   }
 
   async init(name: string) {
-    this.name = name ||= await this.getName()
+    name ||= await this.getName()
+    if (name.includes('koishi-plugin-')) {
+      this.fullname = name
+      this.name = name.replace('koishi-plugin-', '')
+    } else {
+      this.name = name
+      this.fullname = name.includes('/')
+        ? name.replace('/', '/koishi-plugin-')
+        : 'koishi-plugin-' + name
+    }
     this.desc = await this.getDesc()
-    this.fullname = name.includes('/')
-      ? name.replace('/', '/koishi-plugin-')
-      : 'koishi-plugin-' + name
     this.target = resolve(cwd, 'plugins', name)
     await this.write()
   }
