@@ -25,26 +25,27 @@ export class HttpServer extends Adapter<BotConfig, AdapterConfig> {
     const { encryptKey, path = '/feishu' } = this.config
     this.ctx.router.post(path, (ctx) => {
       // compare signature if encryptKey is set
+      // But not every message contains signature
       // https://open.feishu.cn/document/ukTMukTMukTM/uYDNxYjL2QTM24iN0EjN/event-security-verification
-      if (encryptKey) {
+      const signature = firstOrDefault(ctx.headers['X-Lark-Signature'])
+      if (encryptKey && signature) {
         const timestamp = firstOrDefault(ctx.headers['X-Lark-Request-Timestamp'])
         const nonce = firstOrDefault(ctx.headers['X-Lark-Request-Nonce'])
-        const signature = firstOrDefault(ctx.headers['X-Lark-Signature'])
         const body = ctx.request.rawBody
         const actualSignature = this.cipher.calculateSignature(timestamp, nonce, body)
         if (signature !== actualSignature) return ctx.status = 403
       }
 
+      // try to decrypt message first if encryptKey is set
+      const body = this.tryDecrypt(ctx.request.body)
       // respond challenge message
       // https://open.feishu.cn/document/ukTMukTMukTM/uYDNxYjL2QTM24iN0EjN/event-subscription-configure-/request-url-configuration-case
-      const body = ctx.request.body
       if (
         body?.type === 'url_verification'
         && body?.challenge
         && typeof body.challenge === 'string'
       ) {
-        const obj = this.tryDecrypt(body)
-        ctx.response.body = { challenge: obj.challenge }
+        ctx.response.body = { challenge: body.challenge }
         return
       }
 
@@ -58,8 +59,8 @@ export class HttpServer extends Adapter<BotConfig, AdapterConfig> {
   async dispatchSession(body: any) {}
 
   private tryDecrypt(body: any) {
-    if (this.cipher) {
-      return JSON.parse(this.cipher.decrypt(body))
+    if (this.cipher && typeof body.encrypt === 'string') {
+      return JSON.parse(this.cipher.decrypt(body.encrypt))
     }
 
     return body
