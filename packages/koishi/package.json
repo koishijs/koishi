@@ -1,7 +1,7 @@
 {
   "name": "koishi",
   "description": "Cross-Platform Chatbot Framework Made with Love",
-  "version": "4.5.1",
+  "version": "4.5.2",
   "main": "lib/index.js",
   "typings": "lib/node.d.ts",
   "engines": {
@@ -35,8 +35,8 @@
   },
   "dependencies": {
     "@koa/router": "^10.1.1",
-    "@koishijs/core": "^4.5.1",
-    "@koishijs/utils": "^5.2.1",
+    "@koishijs/core": "^4.5.2",
+    "@koishijs/utils": "^5.2.2",
     "@types/koa": "*",
     "@types/koa__router": "*",
     "@types/ws": "^8.5.3",

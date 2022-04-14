@@ -1,7 +1,7 @@
 <template>
   <k-card-aside class="page-sandbox">
     <template #aside>
-      <div class="header k-menu-item" @click="createUser">添加用户</div>
+      <div class="card-header k-menu-item" @click="createUser">添加用户</div>
       <div class="user-container">
         <el-scrollbar>
           <k-tab-group :data="userMap" v-model="config.user" #="{ name }">
@@ -14,14 +14,24 @@
         </el-scrollbar>
       </div>
     </template>
-    <div class="header">
-      <span class="k-choose-item" :class="{ active: config.isPrivate }" @click="config.isPrivate = true">私聊模式</span>
-      <span class="k-choose-item" :class="{ active: !config.isPrivate }" @click="config.isPrivate = false">群聊模式</span>
+    <div class="card-header">
+      <template v-for="(name, key) in panelTypes" :key="key">
+        <span class="k-choose-item"
+          :class="{ active: config.panelType === key }"
+          @click="config.panelType = key">{{ name }}</span>
+      </template>
     </div>
     <keep-alive>
-      <k-empty v-if="!users.length">
+      <k-empty key="empty" v-if="!users.length">
         <div>点击「添加用户」开始体验</div>
       </k-empty>
+      <k-content :key="'profile' + channel" v-else-if="config.panelType === 'profile'">
+        <k-form
+          :schema="schema"
+          :initial="store.users[config.user]"
+          :show-header="false"
+          @update:modelValue="modifyUser"></k-form>
+      </k-content>
       <k-chat-panel v-else class="sandbox" :key="channel" :messages="config.messages[channel] || []" @send="sendMessage" #="data">
         <chat-message :data="data"></chat-message>
       </k-chat-panel>
@@ -31,10 +41,15 @@
 
 <script lang="ts" setup>
 
-import { message, send } from '@koishijs/client'
+import { message, send, Schema, store } from '@koishijs/client'
 import { computed } from 'vue'
-import { config, words } from './utils'
+import { config, words, panelTypes } from './utils'
+import type { User } from 'koishi'
 import ChatMessage from './message.vue'
+
+const schema = Schema.object({
+  authority: Schema.natural().description('权限等级').default(1),
+})
 
 const users = computed(() => {
   return Object
@@ -47,7 +62,10 @@ const userMap = computed(() => {
   return Object.fromEntries(users.value.map((name) => [name, { name }]))
 })
 
-const channel = computed(() => config.isPrivate ? '@' + config.user : '#')
+const channel = computed(() => {
+  if (config.panelType === 'guild') return '#'
+  return '@' + config.user
+})
 
 const length = 10
 
@@ -62,14 +80,20 @@ function createUser() {
   } while (users.value.includes(name))
   config.user = name
   config.messages['@' + name] = []
+  send('sandbox/user', config.user, {})
 }
 
 function removeUser(name: string) {
   const index = users.value.indexOf(name)
   delete config.messages['@' + name]
+  send('sandbox/user', config.user, null)
   if (config.user === name) {
     config.user = users.value[index] || ''
   }
+}
+
+function modifyUser(diff: Partial<User>) {
+  send('sandbox/user', config.user, diff)
 }
 
 function sendMessage(content: string) {
@@ -108,14 +132,14 @@ function sendMessage(content: string) {
     overflow-y: auto;
   }
 
-  .header, .footer {
+  .card-header, .footer {
     font-size: 1.15rem;
     text-align: center;
     padding: 1rem 0;
     font-weight: bold;
   }
 
-  .header {
+  .card-header {
     border-bottom: 1px solid var(--border);
   }
 

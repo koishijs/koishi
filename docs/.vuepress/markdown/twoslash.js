@@ -43,19 +43,14 @@ function render(code, lang, attrs) {
         },
       },
     )
-    const result = html
+    return html
       .replace(/<div class="language-id">.+?<\/div>/, '')
       .replace(/<div class='line'/g, '<span class="line"')
       .replace(/<\/div>(?!<\/pre>)/g, '</span>\n')
-    if (html.includes('LogicalQueryExpr')) {
-      console.log(html)
-      console.log(result)
-    }
-    // FIXME
-    return html
+      .replace(/<\/br>/g, '\n')
   } catch (e) {
     console.log('Code block:')
-    console.log(e.code)
+    console.log(code)
     console.log()
     console.log('Message:')
     console.log(e.message)

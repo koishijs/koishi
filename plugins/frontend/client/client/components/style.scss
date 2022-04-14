@@ -54,6 +54,7 @@ html.dark {
   --el-text-color-regular: var(--fg1);
   --el-text-color-primary: var(--fg3);
   --el-input-text-color: var(--fg1);
+  --el-border-color: var(--border);
   --el-border-color-base: var(--border);
   --el-border-color-light: var(--border);
   --el-border-color-lighter: var(--border);
@@ -95,7 +96,7 @@ html.dark {
 }
 
 .el-input-number__decrease, .el-input-number__increase {
-  --el-bg-color: transparent;
+  --el-fill-color-light: transparent;
 }
 
 .el-input .k-icon {

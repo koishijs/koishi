@@ -1,6 +1,7 @@
 import { Dict } from 'koishi'
 import { computed } from 'vue'
-import { MarketProvider, Package } from '@koishijs/plugin-manager'
+import { PackageJson } from '@koishijs/market'
+import { MarketProvider } from '@koishijs/plugin-manager'
 import { store } from '@koishijs/client'
 import { getMixedMeta } from '../utils'
 
@@ -26,9 +27,9 @@ export interface EnvInfo {
   console?: boolean
 }
 
-function getKeywords(prefix: string, meta: Package.Meta) {
+function getKeywords(prefix: string, meta: Partial<PackageJson>) {
   prefix += ':'
-  return meta.keywords
+  return (meta.keywords || [])
     .filter(name => name.startsWith(prefix))
     .map(name => name.slice(prefix.length))
 }
@@ -80,7 +81,8 @@ function getEnvInfo(name: string) {
   }
 
   // check dependencies
-  for (const name of data.peerDeps) {
+  for (const name in data.peerDependencies) {
+    if (!name.startsWith('koishi-plugin-') || !name.startsWith('@koishijs/plugin-')) continue
     if (name === '@koishijs/plugin-console') continue
     const available = name in store.packages
     const fulfilled = !!store.packages[name]?.id

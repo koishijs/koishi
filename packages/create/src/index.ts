@@ -17,6 +17,7 @@ const cwd = process.cwd()
 
 const argv = parse(process.argv.slice(2), {
   alias: {
+    ref: ['r'],
     forced: ['f'],
     mirror: ['m'],
     template: ['t'],
@@ -88,12 +89,19 @@ async function prepare() {
   emptyDir(rootDir)
 }
 
+function getRef() {
+  if (!argv.ref) return 'refs/heads/master'
+  if (argv.ref.startsWith('refs/')) return argv.ref
+  if (/^[0-9a-f]{40}$/.test(argv.ref)) return argv.ref
+  return `refs/heads/${argv.ref}`
+}
+
 async function scaffold() {
   console.log(dim('  Scaffolding project in ') + project + dim(' ...'))
 
   const mirror = argv.mirror || 'https://github.com'
   const template = argv.template || 'koishijs/boilerplate'
-  const url = `${mirror}/${template}/archive/refs/heads/master.tar.gz`
+  const url = `${mirror}/${template}/archive/${getRef()}.tar.gz`
 
   try {
     const { data } = await axios.get<NodeJS.ReadableStream>(url, { responseType: 'stream' })

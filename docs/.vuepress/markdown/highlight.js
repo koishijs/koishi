@@ -34,7 +34,11 @@ module.exports = {
       const twoslashHtml = twoslash.render(code, lang, attrs)
       if (twoslashHtml) return twoslashHtml.replace('<pre', '<pre v-pre')
       const h = lang === 'cli' || cliAliases.includes(lang) ? highlighter2 : highlighter1
-      return h.codeToHtml(code, lang).replace('<pre', '<pre v-pre')
+      code = code
+        .replace(/^[\s\S]*\/\/ ---cut---\r?\n/, '')
+        .replace(/^[\s\S]*\/\/ @errors: \d+\r?\n/, '')
+        .trim()
+      return h.codeToHtml(code, { lang }).replace('<pre', '<pre v-pre')
     }
 
     const fence = md.renderer.rules.fence

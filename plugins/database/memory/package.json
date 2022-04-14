@@ -28,7 +28,7 @@
     "impl:database"
   ],
   "peerDependencies": {
-    "koishi": "^4.5.1"
+    "koishi": "^4.5.2"
   },
   "devDependencies": {
     "@koishijs/database-tests": "^1.1.0",
@@ -37,6 +37,6 @@
     "js-yaml": "^4.1.0"
   },
   "dependencies": {
-    "@koishijs/orm": "^1.0.0"
+    "@koishijs/orm": "^1.0.1"
   }
 }

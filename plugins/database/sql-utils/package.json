@@ -28,10 +28,10 @@
     "utilities"
   ],
   "peerDependencies": {
-    "koishi": "^4.5.1"
+    "koishi": "^4.5.2"
   },
   "devDependencies": {},
   "dependencies": {
-    "@koishijs/orm": "^1.0.0"
+    "@koishijs/orm": "^1.0.1"
   }
 }

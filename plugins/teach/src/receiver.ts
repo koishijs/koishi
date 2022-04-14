@@ -309,9 +309,9 @@ export default function receiver(ctx: Context, config: Dialogue.Config) {
     await triggerNotice(session.subsubtype, session)
   })
 
-  ctx.on('group-member-added', triggerNotice.bind(null, 'join'))
+  ctx.on('guild-member-added', triggerNotice.bind(null, 'join'))
 
-  ctx.on('group-member-deleted', triggerNotice.bind(null, 'leave'))
+  ctx.on('guild-member-deleted', triggerNotice.bind(null, 'leave'))
 
   ctx.on('dialogue/receive', ({ session }) => {
     // generally flag and authority has already attached to users

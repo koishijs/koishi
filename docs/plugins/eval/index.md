@@ -23,7 +23,7 @@ addons 功能在上述功能的基础上，允许用户编写自己的模块并�
 ```ts
 declare module 'koishi' {
   interface User {
-    bar: string,
+    bar: string
   }
 }
 

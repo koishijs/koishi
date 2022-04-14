@@ -17,7 +17,7 @@
       <el-select v-else v-model="value">
         <el-option v-if="store.dependencies[name]" value="">移除依赖</el-option>
         <el-option
-          v-for="({ version }) in remote.versions"
+          v-for="({ version }) in remote?.versions || []"
           :key="version" :value="version"
         >{{ version }}{{ version === local?.version ? ' (当前)' : '' }}</el-option>
       </el-select>

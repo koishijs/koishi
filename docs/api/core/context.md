@@ -17,8 +17,6 @@ sidebarDepth: 2
 当前上下文关联的插件信息对象。
 
 ```ts
-import { Disposable } from 'koishi'
-// ---cut---
 export interface State {
   id: string
   parent: Context

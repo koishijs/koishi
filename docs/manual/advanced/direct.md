@@ -1,5 +1,8 @@
 ---
 sidebarDepth: 2
+redirectFrom:
+  - /guide/introduction/coding.html
+  - /guide/introduction/direct.html
 ---
 
 # 直接调用 Koishi
