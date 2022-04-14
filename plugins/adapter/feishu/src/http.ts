@@ -38,8 +38,12 @@ export class HttpServer extends Adapter<BotConfig, AdapterConfig> {
       // respond challenge message
       // https://open.feishu.cn/document/ukTMukTMukTM/uYDNxYjL2QTM24iN0EjN/event-subscription-configure-/request-url-configuration-case
       const body = ctx.request.body
-      if (body?.challenge && typeof body.challenge === 'string') {
-        const obj = this.tryDecrypt(body.challenge)
+      if (
+        body?.type === 'url_verification'
+        && body?.challenge
+        && typeof body.challenge === 'string'
+      ) {
+        const obj = this.tryDecrypt(body)
         ctx.response.body = { challenge: obj.challenge }
         return
       }
@@ -58,7 +62,7 @@ export class HttpServer extends Adapter<BotConfig, AdapterConfig> {
       return JSON.parse(this.cipher.decrypt(body))
     }
 
-    return JSON.parse(body)
+    return body
   }
 }
 
