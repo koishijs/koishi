@@ -36,19 +36,19 @@ export default {
 
 ## 配置项
 
-### options
+### rules
 
 - 类型: `Array`
 
 `respondent` 的规则数组，按照从上到下的顺序进行匹配。
 
-### options[].match
+### rules[].match
 
 - 类型: `string | RegExp`
 
 要匹配的内容。
 
-### options[].reply
+### rules[].reply
 
 - 类型: `string | ((...capture: string[]) => string)`
 
