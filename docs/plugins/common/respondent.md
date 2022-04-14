@@ -52,10 +52,9 @@ export default {
 
 - 类型: `string | ((...capture: string[]) => string)`
 
-输出的结果。
+要做出的响应。
 
-`reply` 函数的传入参数与 [`String.prototype.replace`](https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Global_Objects/String/replace#%E5%8F%82%E6%95%B0) 类似：
+这个属性的行为类似于 [`String.prototype.replace()`](https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Global_Objects/String/replace#%E5%8F%82%E6%95%B0)：
 
-当 `match` 是字符串时，`capture` 数组仅包含匹配的字符串这一个参数，即 `[message]`；
-
-当 `match` 是正则表达式时，`capture` 数组包含了源信息和正则表达式所匹配的捕获组，即 `[message, ...captureGroups]`。
+- 如果 `reply` 是字符串，则直接输出此字符串作为响应
+- 如果 `reply` 是函数，则传入 match 的匹配结果作为参数，输出返回的字符串作为响应
