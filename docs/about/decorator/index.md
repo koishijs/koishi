@@ -1,6 +1,8 @@
 ---
 sidebarDepth: 2
 noTwoslash: true
+redirectFrom:
+  - /guide/misc/decorators.html
 ---
 
 # 使用装饰器 <Badge text="社区" type="warning"/>

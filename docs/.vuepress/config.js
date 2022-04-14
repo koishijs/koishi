@@ -50,8 +50,7 @@ module.exports = {
       activeMatch: '/manual/',
     }, {
       text: '指南',
-      link: '/guide/message/middleware.md',
-      activeMatch: '/guide/',
+      link: '/guide/',
     }, {
       text: 'API',
       link: '/api/',
@@ -86,10 +85,14 @@ module.exports = {
           '/manual/advanced/development.md',
           '/manual/advanced/direct.md',
           '/manual/advanced/server.md',
+          '/manual/advanced/docker.md',
         ],
       }],
 
       '/guide/': [{
+        text: '总览',
+        link: '/guide/',
+      }, {
         text: '处理交互',
         isGroup: true,
         children: [
@@ -162,12 +165,10 @@ module.exports = {
           '/guide/console/data.md',
         ],
       }, {
-        text: '调试与部署',
+        text: '单元测试',
         isGroup: true,
         children: [
           '/guide/misc/unit-tests.md',
-          '/guide/misc/decorators.md',
-          '/guide/misc/docker.md',
         ],
       }],
 
@@ -346,6 +347,12 @@ module.exports = {
           '/about/releases/v4.2.md',
           '/about/releases/v4.3.md',
           '/about/releases/v4.4.md',
+        ],
+      }, {
+        text: '装饰器',
+        isGroup: true,
+        children: [
+          '/about/decorator/',
         ],
       }, {
         text: '贡献指南',

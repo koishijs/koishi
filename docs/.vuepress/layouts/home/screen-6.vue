@@ -1,6 +1,9 @@
 <template>
   <div class="screen screen-6">
     <div class="navigation">
+      <div class="item guide" v-for="item in getSidebarItems('/manual/')" :key="item.link || item.text">
+        <sidebar-item :item="item"></sidebar-item>
+      </div>
       <div class="item guide" v-for="item in getSidebarItems('/guide/')" :key="item.link || item.text">
         <sidebar-item :item="item"></sidebar-item>
       </div>
