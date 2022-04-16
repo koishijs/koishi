@@ -1,5 +1,5 @@
-import { Context, Database, Logger, makeArray, Model, noop, pick, Schema, Tables } from 'koishi'
-import { DriverError, executeEval, executeQuery, executeSort, executeUpdate, Modifier, Query } from '@koishijs/orm'
+import { Context, Database, Logger, makeArray, noop, Schema, Tables } from 'koishi'
+import { DriverError, Executable, executeEval, Field, Query } from '@koishijs/orm'
 import { LevelUp } from 'levelup'
 import level from 'level'
 import sub from 'subleveldown'
@@ -44,8 +44,8 @@ class LevelDatabase extends Database {
     await this.#level.close()
   }
 
-  private createValueEncoding(table: string) {
-    const { fields } = this.model.config[table]
+  private createValueEncoding(table: keyof Tables) {
+    const { fields } = this.model(table)
     const dates = Object.keys(fields).filter(f => ['timestamp', 'date', 'time'].includes(fields[f].type))
     if (!dates.length) {
       return {
@@ -109,23 +109,19 @@ class LevelDatabase extends Database {
     return getStats(this.#path)
   }
 
-  async get(name: keyof Tables, query: Query, modifier: Modifier) {
-    const expr = this.resolveQuery(name, query)
-    const { fields, limit = Infinity, offset = 0, sort = {} } = this.resolveModifier(name, modifier)
-    const { primary } = this.model.config[name]
-    const table = this.table(name)
-    // Direct read
-    if (makeArray(primary).every(key => isDirectFieldQuery(expr[key]))) {
-      const key = this._makeKey(primary, expr)
+  async #query(sel: Executable) {
+    const { model, query } = sel
+    const { primary } = model
+
+    // direct read
+    const table = this.table(sel.table as any)
+    if (makeArray(primary).every(key => isDirectFieldQuery(query[key]))) {
+      const { offset, limit } = sel.modifier
+      const key = this._makeKey(primary, query)
+      if (offset !== 0 || limit <= 0) return []
       try {
-        let value = await table.get(key)
-        if (offset === 0 && limit > 0 && executeQuery(value, expr)) {
-          value = this.model.format(name, value)
-          for (const key in this.model.config[name].fields) {
-            value[key] ??= null
-          }
-          return [this.model.parse(name, pick(value, fields))]
-        }
+        const value = await table.get(key)
+        if (sel.filter(value)) return [value]
       } catch (e) {
         if (e.notFound !== true) throw e
       }
@@ -134,28 +130,34 @@ class LevelDatabase extends Database {
 
     const result: any[] = []
     for await (const [, value] of table.iterator()) {
-      if (executeQuery(value, expr)) {
-        result.push(value)
-      }
+      if (sel.filter(value)) result.push(value)
     }
-    return executeSort(result, sort)
-      .slice(offset, offset + limit)
-      .map(row => this.resolveData(name, row, fields))
+    return result
+  }
+
+  async execute(sel: Executable) {
+    const { fields, expr } = sel
+    const result = await this.#query(sel)
+    if (expr) {
+      return executeEval(result.map(row => ({ [sel.ref]: row })), expr)
+    } else {
+      return sel.truncate(result).map(row => sel.resolveData(row, fields))
+    }
   }
 
   async set(name: keyof Tables, query: Query, data: {}) {
-    data = this.resolveUpdate(name, data)
-    const { primary } = this.model.config[name]
-
-    const expr = this.resolveQuery(name, query)
+    const sel = this.select(name, query)
+    const { primary } = this.model(name)
     const table = this.table(name)
-    // Direct update
-    if (makeArray(primary).every(key => isDirectFieldQuery(expr[key]))) {
-      const key = this._makeKey(primary, expr)
+    data = sel.resolveUpdate(data)
+
+    // direct update
+    if (makeArray(primary).every(key => isDirectFieldQuery(sel.query[key]))) {
+      const key = this._makeKey(primary, sel.query)
       try {
         const value = await table.get(key)
-        if (executeQuery(value, expr)) {
-          await table.put(key, executeUpdate(value, data))
+        if (sel.filter(value)) {
+          await table.put(key, sel.update(value, data))
         }
       } catch (e) {
         if (e.notFound !== true) throw e
@@ -165,23 +167,24 @@ class LevelDatabase extends Database {
 
     const batch = table.batch()
     for await (const [key, value] of table.iterator()) {
-      if (executeQuery(value, expr)) {
-        batch.put(key, executeUpdate(value, data))
+      if (sel.filter(value)) {
+        batch.put(key, sel.update(value, data))
       }
     }
     await batch.write()
   }
 
   async remove(name: keyof Tables, query: Query) {
-    const expr = this.resolveQuery(name, query)
-    const { primary } = this.model.config[name]
+    const sel = this.select(name, query)
+    const { primary } = this.model(name)
     const table = this.table(name)
-    // Direct delete
-    if (makeArray(primary).every(key => isDirectFieldQuery(expr[key]))) {
-      const key = this._makeKey(primary, expr)
+
+    // direct delete
+    if (makeArray(primary).every(key => isDirectFieldQuery(sel.query[key]))) {
+      const key = this._makeKey(primary, sel.query)
       try {
         const value = await table.get(key)
-        if (executeQuery(value, expr)) {
+        if (sel.filter(value)) {
           await table.del(key)
         }
       } catch (e) {
@@ -192,7 +195,7 @@ class LevelDatabase extends Database {
 
     const batch = table.batch()
     for await (const [key, value] of table.iterator()) {
-      if (executeQuery(value, expr)) {
+      if (sel.filter(value)) {
         batch.del(key)
       }
     }
@@ -201,12 +204,13 @@ class LevelDatabase extends Database {
 
   create<T extends keyof Tables>(name: T, data: any, forced?: boolean) {
     return this.queue(async () => {
-      const { primary, fields, autoInc } = this.model.config[name]
-      data = this.model.format(name, data)
+      const model = this.model(name)
+      const { primary, fields, autoInc } = model
+      data = model.format(data)
       if (!Array.isArray(primary) && autoInc && !(primary in data)) {
         const max = await this._maxKey(name)
         data[primary] = max + 1
-        if (Model.Field.string.includes(fields[primary].type)) {
+        if (Field.string.includes(fields[primary].type)) {
           data[primary] += ''
         }
       }
@@ -215,65 +219,50 @@ class LevelDatabase extends Database {
         throw new DriverError('duplicate-entry')
       }
 
-      const copy = this.model.create(name, data)
+      const copy = model.create(data)
       await this.table(name).put(key, copy)
       return copy
     })
   }
 
   async upsert(name: keyof Tables, data: any[], key: string | string[]) {
-    const { primary } = this.model.config[name]
+    const sel = this.select(name)
+    const { primary } = sel.model
     const keys = makeArray(key || primary)
     const table = this.table(name)
-    for (const _item of data) {
-      // Direct upsert
-      const item = this.model.format(name, _item)
+    const batch = table.batch()
+
+    for (const item of sel.resolveUpsert(data)) {
+      // direct upsert
       if (makeArray(primary).every(key => key in item)) {
         const key = this._makeKey(primary, item)
         try {
           const value = await table.get(key)
           if (keys.every(key => value[key] === item[key])) {
-            await table.put(key, executeUpdate(value, item))
+            batch.put(key, sel.update(value, item))
           }
         } catch (e) {
           if (e.notFound !== true) throw e
-          const data = this.model.create(name)
-          await this.create(name, executeUpdate(data, item), true)
+          batch.put(key, sel.update(sel.model.create(), item))
         }
         continue
       }
 
-      let insert: boolean = true
+      let insert = true
       for await (const [key, value] of table.iterator()) {
         if (keys.every(key => value[key] === item[key])) {
           insert = false
-          const { primary } = this.model.config[name]
-          if (makeArray(primary).some(key => (key in data) && value[key] !== data[key])) {
-            logger.warn('Cannot update primary key')
-            break
-          }
-          await table.put(key, executeUpdate(value, data))
-          // Match the behavior here
-          // mongo/src/index.ts > upsert() > bulk.find(pick(item, keys)).updateOne({ $set: omit(item, keys) })
+          batch.put(key, sel.update(value, item))
           break
         }
       }
       if (insert) {
-        await this.create(name, item, true)
+        const data = sel.update(sel.model.create(), item)
+        batch.put(this._makeKey(primary, data), data)
       }
     }
-  }
 
-  async eval(name: keyof Tables, expr: any, query: Query) {
-    query = this.resolveQuery(name, query)
-    const result: any[] = []
-    const table = this.table(name)
-    for await (const [, value] of table.iterator()) {
-      if (executeQuery(value, query)) {
-        result.push(value)
-      }
-    }
-    return executeEval(result, expr)
+    await batch.write()
   }
 }
 

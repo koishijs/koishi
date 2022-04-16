@@ -1,5 +1,5 @@
-import { Dict, MaybeArray, pick } from '@koishijs/utils'
-import { Eval, Update } from './eval'
+import { Dict, MaybeArray } from '@koishijs/utils'
+import { Update } from './eval'
 import { Model } from './model'
 import { Query } from './query'
 import { Flatten, Indexable, Keys } from './utils'
@@ -74,15 +74,5 @@ export abstract class Driver<S = any> {
     const model = this.models[name]
     if (model) return model
     throw new TypeError(`unknown table name "${name}"`)
-  }
-
-  protected resolveData<T extends Keys<S>>(name: T, data: any, fields: Dict<Eval.Expr<any>>) {
-    const model = this.model(name)
-    data = model.format(data)
-    for (const key in model.fields) {
-      data[key] ??= null
-    }
-    if (!fields) return model.parse(data)
-    return model.parse(pick(data, Object.keys(fields)))
   }
 }

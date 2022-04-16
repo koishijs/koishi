@@ -1,4 +1,4 @@
-import { defineProperty, Dict, makeArray, valueMap } from '@koishijs/utils'
+import { defineProperty, Dict, makeArray, pick, valueMap } from '@koishijs/utils'
 import { Driver } from './driver'
 import { Eval, executeEval, executeUpdate } from './eval'
 import { Model } from './model'
@@ -103,6 +103,15 @@ export abstract class Executable<S = any, T = any> {
   resolveUpsert(upsert: any) {
     if (typeof upsert === 'function') upsert = upsert(this.row)
     return upsert.map(item => this.model.format(item))
+  }
+
+  resolveData(data: any, fields: Dict<Eval.Expr<any>>) {
+    data = this.model.format(data)
+    for (const key in this.model.fields) {
+      data[key] ??= null
+    }
+    if (!fields) return this.model.parse(data)
+    return this.model.parse(pick(data, Object.keys(fields)))
   }
 
   protected resolveField(field: Selection.Field<S>): Eval.Expr {

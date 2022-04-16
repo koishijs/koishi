@@ -50,10 +50,9 @@ export class MemoryDatabase extends Database {
     const data = this.$table(table).filter(row => sel.filter(row))
     if (expr) {
       return executeEval(data.map(row => ({ [sel.ref]: row })), expr)
+    } else {
+      return sel.truncate(data).map(row => sel.resolveData(row, fields))
     }
-    return sel
-      .truncate(data)
-      .map(row => this.resolveData<any>(table, row, fields))
   }
 
   async set(name: keyof Tables, query: Query, data: {}) {
