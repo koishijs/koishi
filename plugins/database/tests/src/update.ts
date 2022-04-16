@@ -1,4 +1,4 @@
-import { App, omit, Tables } from 'koishi'
+import { $, App, omit, Tables } from 'koishi'
 import { expect } from 'chai'
 
 interface Bar {
@@ -148,9 +148,9 @@ namespace OrmOperations {
       const table = await setup(app, 'temp2', barTable)
       table[1].num = table[1].id * 2
       table[2].num = table[2].id * 2
-      await expect(app.database.set('temp2', [table[1].id, table[2].id, 9], {
-        num: { $multiply: [2, { $: 'id' }] },
-      })).eventually.fulfilled
+      await expect(app.database.set('temp2', [table[1].id, table[2].id, 9], row => ({
+        num: $.multiply(2, row.id),
+      }))).eventually.fulfilled
       await expect(app.database.get('temp2', {})).to.eventually.have.shape(table)
     })
   }
@@ -190,9 +190,9 @@ namespace OrmOperations {
       data3.num = data3.num + 3
       expect(data9).to.be.undefined
       table.push({ id: 9, num: 999 })
-      await expect(app.database.upsert('temp2', [
-        { id: 2, num: { $multiply: [2, { $: 'id' }] } },
-        { id: 3, num: { $add: [3, { $: 'num' }] } },
+      await expect(app.database.upsert('temp2', row => [
+        { id: 2, num: $.multiply(2, row.id) },
+        { id: 3, num: $.add(3, row.num) },
         { id: 9, num: 999 },
       ])).eventually.fulfilled
       await expect(app.database.get('temp2', {})).to.eventually.have.shape(table)

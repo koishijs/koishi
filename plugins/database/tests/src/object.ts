@@ -1,4 +1,4 @@
-import { App } from 'koishi'
+import { $, App } from 'koishi'
 import { expect } from 'chai'
 
 interface ObjectModel {
@@ -79,11 +79,11 @@ namespace ObjectOperations {
       table[1].meta = { a: '1', embed: { b: 514 } }
       table.push({ id: '2', meta: { a: '2', embed: { b: 1919, c: 'world' } } })
       table.push({ id: '3', meta: { a: '3', embed: { b: 810 } } })
-      await expect(app.database.upsert('object', [
-        { id: '0', 'meta.a': { $: 'id' }, 'meta.embed.b': 114 },
-        { id: '1', 'meta.a': { $: 'id' }, 'meta.embed': { b: 514 } },
-        { id: '2', 'meta.a': { $: 'id' }, 'meta.embed.b': { $multiply: [19, 101] } },
-        { id: '3', 'meta.a': { $: 'id' }, 'meta.embed': { b: 810 } },
+      await expect(app.database.upsert('object', row => [
+        { id: '0', 'meta.a': row.id, 'meta.embed.b': 114 },
+        { id: '1', 'meta.a': row.id, 'meta.embed': { b: 514 } },
+        { id: '2', 'meta.a': row.id, 'meta.embed.b': $.multiply(19, 101) },
+        { id: '3', 'meta.a': row.id, 'meta.embed': { b: 810 } },
       ])).eventually.fulfilled
       await expect(app.database.get('object', {})).to.eventually.have.shape(table)
     })
@@ -107,14 +107,14 @@ namespace ObjectOperations {
       const table = await setup(app)
       table[0].meta = { a: '0', embed: { b: 114, c: 'hello' } }
       table[1].meta = { a: '1', embed: { b: 514 } }
-      await expect(app.database.set('object', '0', {
-        'meta.a': { $: 'id' },
+      await expect(app.database.set('object', '0', row => ({
+        'meta.a': row.id,
         'meta.embed.b': 114,
-      })).eventually.fulfilled
-      await expect(app.database.set('object', '1', {
-        'meta.a': { $: 'id' },
+      }))).eventually.fulfilled
+      await expect(app.database.set('object', '1', row => ({
+        'meta.a': row.id,
         'meta.embed': { b: 514 },
-      })).eventually.fulfilled
+      }))).eventually.fulfilled
       await expect(app.database.get('object', {})).to.eventually.have.shape(table)
     })
   }

@@ -1,5 +1,5 @@
 import { clone, Context, Database, Dict, DriverError, makeArray, Model, noop, pick, Tables } from 'koishi'
-import { executeEval, executeQuery, executeSort, executeUpdate, Modifier, Query } from '@koishijs/orm'
+import { Executable, executeEval, executeUpdate, Query } from '@koishijs/orm'
 import { Config, Storage } from './storage'
 
 declare module 'koishi' {
@@ -32,7 +32,7 @@ export class MemoryDatabase extends Database {
 
   stop() {}
 
-  $table<K extends keyof Tables>(table: K) {
+  $table(table: string) {
     return this.#store[table] ||= []
   }
 
@@ -45,28 +45,27 @@ export class MemoryDatabase extends Database {
     return {}
   }
 
-  $query(name: keyof Tables, query: Query) {
-    const expr = this.resolveQuery(name, query)
-    return this.$table(name).filter(row => executeQuery(row, expr))
-  }
-
-  async get(name: keyof Tables, query: Query, modifier?: Modifier) {
-    const { fields, limit = Infinity, offset = 0, sort = {} } = this.resolveModifier(name, modifier)
-    return executeSort(this.$query(name, query), sort)
-      .slice(offset, offset + limit)
-      .map(row => this.resolveData(name, row, fields))
+  async execute(selection: Executable) {
+    const { table, fields, expr } = selection
+    const data = this.$table(table).filter(row => selection.filter(row))
+    if (expr) return executeEval(data, expr)
+    return selection
+      .truncate(data)
+      .map(row => this.resolveData<any>(table, row, fields))
   }
 
   async set(name: keyof Tables, query: Query, data: {}) {
     data = this.resolveUpdate(name, data)
-    this.$query(name, query).forEach(row => executeUpdate(row, data))
+    const selection = this.select(name, query)
+    this.$table(name)
+      .filter(row => selection.filter(row))
+      .forEach(row => executeUpdate(row, data))
     this.$save(name)
   }
 
   async remove(name: keyof Tables, query: Query) {
-    const expr = this.resolveQuery(name, query)
-    this.#store[name] = this.$table(name)
-      .filter(row => !executeQuery(row, expr))
+    const selection = this.select(name, query)
+    this.#store[name] = this.$table(name).filter(row => !selection.filter(row))
     this.$save(name)
   }
 
@@ -107,11 +106,6 @@ export class MemoryDatabase extends Database {
       }
     }
     this.$save(name)
-  }
-
-  async eval(name: keyof Tables, expr: any, query: Query) {
-    const table = this.$query(name, query)
-    return executeEval(table, expr)
   }
 }
 

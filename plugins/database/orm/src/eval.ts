@@ -43,16 +43,16 @@ export namespace Eval {
     // arithmetic
     add(...args: Number[]): Expr<number>
     multiply(...args: Number[]): Expr<number>
-    subtract(x: number, y: number): Expr<number>
-    divide(x: number, y: number): Expr<number>
+    subtract(x: Number, y: Number): Expr<number>
+    divide(x: Number, y: Number): Expr<number>
 
     // comparison
-    eq(x: number, y: number): Expr<boolean>
-    ne(x: number, y: number): Expr<boolean>
-    gt(x: number, y: number): Expr<boolean>
-    gte(x: number, y: number): Expr<boolean>
-    lt(x: number, y: number): Expr<boolean>
-    lte(x: number, y: number): Expr<boolean>
+    eq(x: Number, y: Number): Expr<boolean>
+    ne(x: Number, y: Number): Expr<boolean>
+    gt(x: Number, y: Number): Expr<boolean>
+    gte(x: Number, y: Number): Expr<boolean>
+    lt(x: Number, y: Number): Expr<boolean>
+    lte(x: Number, y: Number): Expr<boolean>
 
     // string
     concat(...args: String[]): Expr<string>
@@ -79,13 +79,13 @@ operators['$'] = getRecursive
 
 type UnaryCallback<T> = T extends (value: infer R) => Eval.Expr<infer S> ? (value: R, data: any[]) => S : never
 function unary<K extends keyof Eval.Static>(key: K, callback: UnaryCallback<Eval.Static[K]>): Eval.Static[K] {
-  operators[key] = callback
+  operators['$' + key] = callback
   return (value: any) => Eval(key, value)
 }
 
 type MultaryCallback<T> = T extends (...args: infer R) => Eval.Expr<infer S> ? (args: R, data: any) => S : never
 function multary<K extends keyof Eval.Static>(key: K, callback: MultaryCallback<Eval.Static[K]>): Eval.Static[K] {
-  operators[key] = callback
+  operators['$' + key] = callback
   return (...args: any) => Eval(key, args)
 }
 
@@ -130,8 +130,14 @@ type MapUneval<S> = {
 
 export type Update<T> = MapUneval<Flatten<T>>
 
-function getRecursive(path: string, data: any) {
-  let value = data
+function getRecursive(args: string | string[], data: any) {
+  if (typeof args === 'string') {
+    // for backwards compatibility, TODO remove in v5
+    return getRecursive([Object.keys(data)[0], args], data)
+  }
+
+  const [ref, path] = args
+  let value = data[ref]
   for (const key of path.split('.')) {
     if (!value) return
     value = value[key]

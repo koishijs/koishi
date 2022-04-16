@@ -1,4 +1,4 @@
-import { defineProperty, Dict, Random, valueMap } from '@koishijs/utils'
+import { defineProperty, Dict, valueMap } from '@koishijs/utils'
 import { Driver } from './driver'
 import { ModelError } from './error'
 import { Eval, executeEval } from './eval'
@@ -34,6 +34,8 @@ export namespace Selection {
   export type Row<S> = {
     [K in keyof S]: Eval.Expr<S[K]> & (S[K] extends Common ? {} : Row<S[K]>)
   }
+
+  export type Yield<S, T> = T | ((row: Row<S>) => T)
 
   export type Project<S, T extends Dict<Field<S>>> = {
     [K in keyof T]: Resolve<S, T[K]>
@@ -99,7 +101,7 @@ export abstract class Executable<S = any, T = any> {
   }
 
   filter(data: any) {
-    return executeQuery(data, this.query)
+    return executeQuery(data, this.query, this.ref)
   }
 
   truncate(data: any[]) {
@@ -126,10 +128,12 @@ export abstract class Executable<S = any, T = any> {
   }
 }
 
+const letters = 'abcdefghijklmnopqrstuvwxyz'
+
 export class Selection<S = any> extends Executable<S, S[]> {
   constructor(driver: Driver, table: string, query: Query) {
     super(driver)
-    this.ref = Random.id()
+    this.ref = Array(8).fill(0).map(() => letters[Math.floor(Math.random() * letters.length)]).join('')
     this.table = table
     this.query = this.resolveQuery(query)
     this.modifier = { sort: [], limit: Infinity, offset: 0 }

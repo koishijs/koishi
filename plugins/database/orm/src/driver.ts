@@ -35,12 +35,10 @@ export abstract class Driver<S = any> {
   abstract drop(): Promise<void>
   abstract stats(): Promise<Driver.Stats>
   abstract execute(executable: Executable): Promise<any>
-  abstract set<T extends Keys<S>>(table: T, query: Query<S[T]>, data: Update<S[T]>): Promise<void>
+  abstract set<T extends Keys<S>>(table: T, query: Query<S[T]>, data: Selection.Yield<S[T], Update<S[T]>>): Promise<void>
   abstract remove<T extends Keys<S>>(table: T, query: Query<S[T]>): Promise<void>
   abstract create<T extends Keys<S>>(table: T, data: Partial<S[T]>): Promise<S[T]>
-  abstract upsert<T extends Keys<S>>(table: T, data: Update<S[T]>[], keys?: MaybeArray<Keys<Flatten<S[T]>, Indexable>>): Promise<void>
-  /** @deprecated use select api instead */
-  abstract eval<T extends Keys<S>, E extends Eval.Any>(table: T, expr: E, query?: Query<S[T]>): Promise<Eval<E>>
+  abstract upsert<T extends Keys<S>>(table: T, data: Selection.Yield<S[T], Update<S[T]>[]>, keys?: MaybeArray<Keys<Flatten<S[T]>, Indexable>>): Promise<void>
 
   constructor(public model: Model<S>) {}
 
@@ -63,6 +61,11 @@ export abstract class Driver<S = any> {
     return selection.execute()
   }
 
+  /** @deprecated use selection api instead */
+  eval(table: Keys<S>, expr: any, query?: Query) {
+    return this.select(table, query).evaluate(() => expr).execute()
+  }
+
   resolveTable<T extends Keys<S>>(name: T) {
     const config = this.model.config[name]
     if (config) return config
@@ -77,11 +80,12 @@ export abstract class Driver<S = any> {
     return this.model.format(name, update)
   }
 
-  protected resolveData<T extends Keys<S>>(name: T, data: any, fields: string[]) {
+  protected resolveData<T extends Keys<S>>(name: T, data: any, fields: Dict<Eval.Expr<any>>) {
     data = this.model.format(name, data)
     for (const key in this.model.config[name].fields) {
       data[key] ??= null
     }
-    return this.model.parse(name, pick(data, fields))
+    if (!fields) return this.model.parse(name, data)
+    return this.model.parse(name, pick(data, Object.keys(fields)))
   }
 }

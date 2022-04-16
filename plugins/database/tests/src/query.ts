@@ -1,4 +1,4 @@
-import { App } from 'koishi'
+import { $, App } from 'koishi'
 import { expect } from 'chai'
 
 interface Foo {
@@ -268,15 +268,8 @@ namespace QueryOperators {
     })
 
     it('arithmetic operators', async () => {
-      await expect(app.database.get('temp1', {
-        $expr: {
-          $eq: [9, {
-            $add: [
-              { $: 'id' },
-              { $: 'value' },
-            ],
-          }],
-        },
+      await expect(app.database.get('temp1', (row) => {
+        return $.eq(9, $.add(row.id, row.value))
       })).eventually.to.have.length(2).with.shape([{ id: 1 }, { id: 2 }])
     })
   }
