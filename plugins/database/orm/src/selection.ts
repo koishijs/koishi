@@ -1,7 +1,6 @@
-import { defineProperty, Dict, valueMap } from '@koishijs/utils'
+import { defineProperty, Dict, makeArray, valueMap } from '@koishijs/utils'
 import { Driver } from './driver'
-import { ModelError } from './error'
-import { Eval, executeEval } from './eval'
+import { Eval, executeEval, executeUpdate } from './eval'
 import { Model } from './model'
 import { executeQuery, Query } from './query'
 import { Common, Keys } from './utils'
@@ -62,7 +61,7 @@ export interface Executable extends Selection.Payload {}
 
 export abstract class Executable<S = any, T = any> {
   #row: Selection.Row<S>
-  #config: Model.Config
+  #model: Model
 
   protected driver: Driver
 
@@ -75,24 +74,38 @@ export abstract class Executable<S = any, T = any> {
     return this.#row ||= createRow(this.ref)
   }
 
-  get config() {
-    return this.#config ||= this.driver.resolveTable(this.table)
+  get model() {
+    return this.#model ||= this.driver.model(this.table)
   }
 
   resolveQuery(query: Query<S>): Query.Expr<S>
   resolveQuery(query: Query<S> = {}): any {
     if (typeof query === 'function') return { $expr: query(this.row) }
     if (Array.isArray(query) || query instanceof RegExp || ['string', 'number'].includes(typeof query)) {
-      const { primary } = this.config
+      const { primary } = this.model
       if (Array.isArray(primary)) {
-        throw new ModelError('invalid shorthand for composite primary key')
+        throw new TypeError('invalid shorthand for composite primary key')
       }
       return { [primary]: query }
     }
     return query
   }
 
-  resolveField(field: Selection.Field<S>): Eval.Expr {
+  resolveUpdate(update: any) {
+    if (typeof update === 'function') update = update(this.row)
+    const { primary } = this.model
+    if (makeArray(primary).some(key => key in update)) {
+      throw new TypeError(`cannot modify primary key`)
+    }
+    return this.model.format(update)
+  }
+
+  resolveUpsert(upsert: any) {
+    if (typeof upsert === 'function') upsert = upsert(this.row)
+    return upsert.map(item => this.model.format(item))
+  }
+
+  protected resolveField(field: Selection.Field<S>): Eval.Expr {
     if (typeof field === 'string') {
       return this.row[field]
     } else if (typeof field === 'function') {
@@ -102,6 +115,10 @@ export abstract class Executable<S = any, T = any> {
 
   filter(data: any) {
     return executeQuery(data, this.query, this.ref)
+  }
+
+  update(data: any, update: any) {
+    return executeUpdate(data, update, this.ref)
   }
 
   truncate(data: any[]) {
@@ -158,16 +175,15 @@ export class Selection<S = any> extends Executable<S, S[]> {
   project<T extends Dict<Selection.Field<S>>>(fields: T): Selection<Selection.Project<S, T>>
   project(fields: Keys<S>[] | Dict<Selection.Field<S>>) {
     if (Array.isArray(fields)) {
-      this.fields = Object.fromEntries(fields.map(field => [field, this.row[field]]))
+      const modelFields = Object.keys(this.model.fields)
+      const keys = fields.flatMap((key) => {
+        if (this.model.fields[key]) return key
+        return modelFields.filter(path => path.startsWith(key + '.'))
+      })
+      this.fields = Object.fromEntries(keys.map(key => [key, this.row[key]]))
     } else {
       this.fields = valueMap(fields, field => this.resolveField(field))
     }
-    // const fields = Object.keys(this.resolveTable(name).fields)
-    // modifier.fields = modifier.fields.flatMap((key) => {
-    //   if (fields.includes(key)) return key
-    //   const prefix = key + '.'
-    //   return fields.filter(path => path.startsWith(prefix))
-    // })
     return this as any
   }
 

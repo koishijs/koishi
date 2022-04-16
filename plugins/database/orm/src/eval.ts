@@ -168,7 +168,7 @@ export function executeEval(data: any, expr: any) {
   return executeEvalExpr(expr, data)
 }
 
-export function executeUpdate(data: any, update: any) {
+export function executeUpdate(data: any, update: any, ref: string) {
   for (const key in update) {
     let root = data
     const path = key.split('.')
@@ -176,7 +176,7 @@ export function executeUpdate(data: any, update: any) {
     for (const key of path) {
       root = root[key] ||= {}
     }
-    root[last] = executeEval(data, update[key])
+    root[last] = executeEval({ [ref]: data }, update[key])
   }
   return data
 }

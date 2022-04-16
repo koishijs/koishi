@@ -1,5 +1,4 @@
-import { Dict, makeArray, MaybeArray, pick } from '@koishijs/utils'
-import { ModelError } from './error'
+import { Dict, MaybeArray, pick } from '@koishijs/utils'
 import { Eval, Update } from './eval'
 import { Model } from './model'
 import { Query } from './query'
@@ -40,15 +39,20 @@ export abstract class Driver<S = any> {
   abstract create<T extends Keys<S>>(table: T, data: Partial<S[T]>): Promise<S[T]>
   abstract upsert<T extends Keys<S>>(table: T, data: Selection.Yield<S[T], Update<S[T]>[]>, keys?: MaybeArray<Keys<Flatten<S[T]>, Indexable>>): Promise<void>
 
-  constructor(public model: Model<S>) {}
+  constructor(public models: Dict<Model>) {}
 
   select<T extends Selector<S>>(table: T, query?: Query<Selector.Resolve<S, T>>): Selection<Selector.Resolve<S, T>> {
     return new Selection(this, table, query)
   }
 
   get<T extends Keys<S>, K extends Keys<S[T]>>(table: T, query: Query<S[T]>, modifier?: Driver.Cursor<K>): Promise<Result<S[T], K>[]>
-  get(table: Keys<S>, query: Query, cursor: Driver.Cursor = {}) {
-    if (Array.isArray(cursor)) cursor = { fields: cursor }
+  get(table: Keys<S>, query: Query, cursor: Driver.Cursor) {
+    if (Array.isArray(cursor)) {
+      cursor = { fields: cursor }
+    } else if (!cursor) {
+      cursor = {}
+    }
+
     const selection = this.select(table, query)
     if (cursor.fields) selection.project(cursor.fields)
     if (cursor.limit !== undefined) selection.limit(cursor.limit)
@@ -66,26 +70,19 @@ export abstract class Driver<S = any> {
     return this.select(table, query).evaluate(() => expr).execute()
   }
 
-  resolveTable<T extends Keys<S>>(name: T) {
-    const config = this.model.config[name]
-    if (config) return config
-    throw new ModelError(`unknown table name "${name}"`)
-  }
-
-  protected resolveUpdate<T extends Keys<S>>(name: T, update: any) {
-    const { primary } = this.resolveTable(name)
-    if (makeArray(primary).some(key => key in update)) {
-      throw new ModelError(`cannot modify primary key`)
-    }
-    return this.model.format(name, update)
+  model<T extends Keys<S>>(name: T) {
+    const model = this.models[name]
+    if (model) return model
+    throw new TypeError(`unknown table name "${name}"`)
   }
 
   protected resolveData<T extends Keys<S>>(name: T, data: any, fields: Dict<Eval.Expr<any>>) {
-    data = this.model.format(name, data)
-    for (const key in this.model.config[name].fields) {
+    const model = this.model(name)
+    data = model.format(data)
+    for (const key in model.fields) {
       data[key] ??= null
     }
-    if (!fields) return this.model.parse(name, data)
-    return this.model.parse(name, pick(data, Object.keys(fields)))
+    if (!fields) return model.parse(data)
+    return model.parse(pick(data, Object.keys(fields)))
   }
 }

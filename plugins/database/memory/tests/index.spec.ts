@@ -14,5 +14,10 @@ describe('Memory Database', () => {
     root: resolve(__dirname, 'temp'),
   })
 
-  tests.database(app)
+  tests.database(app, {
+    // query: false,
+    // builtin: false,
+    // update: false,
+    // object: false,
+  })
 })

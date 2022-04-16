@@ -1,6 +1,6 @@
 import * as utils from '@koishijs/utils'
 import { Awaitable, Dict, Get, MaybeArray } from '@koishijs/utils'
-import { Driver, Model, Modifier, Result, Update } from '@koishijs/orm'
+import { Driver, Field, Keys, Model, Result, Update } from '@koishijs/orm'
 import { Context } from './context'
 
 export interface User {
@@ -46,10 +46,10 @@ export interface Tables {
   channel: Channel
 }
 
-export class ModelService extends Model<Tables> {
-  constructor(protected ctx: Context) {
-    super()
+export class ModelService {
+  public config: { [K in Keys<Tables>]?: Model<Tables[K]> } = {}
 
+  constructor(protected ctx: Context) {
     this.extend('user', {
       id: 'string(63)',
       name: 'string(63)',
@@ -72,9 +72,14 @@ export class ModelService extends Model<Tables> {
     })
   }
 
-  extend<K extends keyof Tables>(name: K, fields?: Model.Field.Extension<Tables[K]>, extension?: Model.Extension<Tables[K]>) {
-    super.extend(name, fields, extension)
+  extend<K extends Keys<Tables>>(name: K, fields?: Field.Extension<Tables[K]>, config: Model.Config<Tables[K]> = {}) {
+    const model = this.config[name] ||= new Model<any>(name)
+    model.extend(fields, config)
     this.ctx.emit('model', name)
+  }
+
+  create<K extends Keys<Tables>>(name: K, data?: {}) {
+    return this.config[name].create(data)
   }
 }
 
@@ -106,7 +111,7 @@ export abstract class Database extends Driver<Tables> {
   protected stop(): Awaitable<void> {}
 
   constructor(protected ctx: Context) {
-    super(ctx.model)
+    super(ctx.model.config)
 
     ctx.on('ready', async () => {
       await this.start()
@@ -119,9 +124,9 @@ export abstract class Database extends Driver<Tables> {
     })
   }
 
-  getUser<T extends string, K extends User.Field>(platform: T, id: string, modifier?: Modifier<K>): Promise<Result<User, K> & Record<T, string>>
-  getUser<T extends string, K extends User.Field>(platform: T, ids: string[], modifier?: Modifier<K>): Promise<Result<User, K>[]>
-  async getUser(platform: string, id: MaybeArray<string>, modifier?: Modifier<User.Field>) {
+  getUser<T extends string, K extends User.Field>(platform: T, id: string, modifier?: Driver.Cursor<K>): Promise<Result<User, K> & Record<T, string>>
+  getUser<T extends string, K extends User.Field>(platform: T, ids: string[], modifier?: Driver.Cursor<K>): Promise<Result<User, K>[]>
+  async getUser(platform: string, id: MaybeArray<string>, modifier?: Driver.Cursor<User.Field>) {
     const data = await this.get('user', { [platform]: id }, modifier)
     if (Array.isArray(id)) return data
     if (data[0]) Object.assign(data[0], { [platform]: id })
@@ -136,9 +141,9 @@ export abstract class Database extends Driver<Tables> {
     return this.create('user', { [platform]: id, ...data })
   }
 
-  getChannel<K extends Channel.Field>(platform: string, id: string, modifier?: Modifier<K>): Promise<Result<Channel, K | 'id' | 'platform'>>
-  getChannel<K extends Channel.Field>(platform: string, ids: string[], modifier?: Modifier<K>): Promise<Result<Channel, K>[]>
-  async getChannel(platform: string, id: MaybeArray<string>, modifier?: Modifier<Channel.Field>) {
+  getChannel<K extends Channel.Field>(platform: string, id: string, modifier?: Driver.Cursor<K>): Promise<Result<Channel, K | 'id' | 'platform'>>
+  getChannel<K extends Channel.Field>(platform: string, ids: string[], modifier?: Driver.Cursor<K>): Promise<Result<Channel, K>[]>
+  async getChannel(platform: string, id: MaybeArray<string>, modifier?: Driver.Cursor<Channel.Field>) {
     const data = await this.get('channel', { platform, id }, modifier)
     if (Array.isArray(id)) return data
     if (data[0]) Object.assign(data[0], { platform, id })
