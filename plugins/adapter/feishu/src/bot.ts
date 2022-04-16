@@ -16,9 +16,18 @@ export const BotConfig = Schema.intersect([
 
 export class FeishuBot extends Bot<BotConfig> {
   static schema = AdapterConfig
+  token?: string
   http: Quester
 
   constructor(adapter: Adapter, config: BotConfig) {
     super(adapter, config)
+
+    this.http = adapter.ctx.http.extend({
+      endpoint: config.endpoint,
+      headers: {
+        'Content-Type': 'application/json; charset=utf-8',
+        'Authorization': `Bearer ${this.token}`, // FIXME: token is dynamically updated by auth
+      },
+    })
   }
 }

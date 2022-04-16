@@ -1,6 +1,9 @@
-import { Adapter, Context, omit, Quester, Schema } from 'koishi'
+import { Adapter, Context, Logger, omit, Quester, Schema } from 'koishi'
 import { BotConfig, FeishuBot } from './bot'
+import { BaseEvent } from './types'
 import { AdapterConfig, Cipher } from './utils'
+
+const logger = new Logger('feishu')
 
 export class HttpServer extends Adapter<BotConfig, AdapterConfig> {
   static schema: Schema<BotConfig> = Schema.object({
@@ -24,6 +27,8 @@ export class HttpServer extends Adapter<BotConfig, AdapterConfig> {
   async start() {
     const { encryptKey, path = '/feishu' } = this.config
     this.ctx.router.post(path, (ctx) => {
+      logger.debug('receive %o', ctx.request.body)
+
       // compare signature if encryptKey is set
       // But not every message contains signature
       // https://open.feishu.cn/document/ukTMukTMukTM/uYDNxYjL2QTM24iN0EjN/event-security-verification
@@ -56,7 +61,18 @@ export class HttpServer extends Adapter<BotConfig, AdapterConfig> {
 
   async stop() {}
 
-  async dispatchSession(body: any) {}
+  async dispatchSession(body: BaseEvent) {
+    const { header } = body
+    const { event_type } = header
+    switch (event_type) {
+      case 'im.message.receive_v1':
+        // https://open.feishu.cn/document/uAjLw4CM/ukTMukTMukTM/reference/im-v1/message/events/receive
+        break
+
+      default:
+        break
+    }
+  }
 
   private tryDecrypt(body: any) {
     if (this.cipher && typeof body.encrypt === 'string') {
