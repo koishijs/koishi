@@ -108,7 +108,7 @@ export type SelectorType = typeof selectors[number]
 export type SelectorValue = boolean | MaybeArray<string | number>
 export type BaseSelection = { [K in SelectorType as `$${K}`]?: SelectorValue }
 
-export interface Selection extends BaseSelection {
+interface Selection extends BaseSelection {
   $and?: Selection[]
   $or?: Selection[]
   $not?: Selection

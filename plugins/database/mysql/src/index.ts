@@ -1,7 +1,7 @@
 import { createPool, escapeId, format, escape as mysqlEscape } from '@vlasky/mysql'
 import type { OkPacket, Pool, PoolConfig } from 'mysql'
 import { Context, Database, Dict, difference, DriverError, Logger, makeArray, pick, Schema, Tables, Time } from 'koishi'
-import { Driver, executeUpdate, isEvalExpr, Model, Modifier, Query } from '@koishijs/orm'
+import { Driver, Executable, Field, isEvalExpr, Model, Query } from '@koishijs/orm'
 import { Builder } from '@koishijs/sql-utils'
 
 declare module 'mysql' {
@@ -32,7 +32,7 @@ function getIntegerType(length = 11) {
   return 'bigint'
 }
 
-function getTypeDefinition({ type, length, precision, scale }: Model.Field) {
+function getTypeDefinition({ type, length, precision, scale }: Field) {
   switch (type) {
     case 'float':
     case 'double':
@@ -59,7 +59,7 @@ function createIndex(keys: string | string[]) {
 }
 
 class MySQLBuilder extends Builder {
-  constructor(private model: Model) {
+  constructor(private models: Dict<Model>) {
     super()
   }
 
@@ -79,12 +79,12 @@ class MySQLBuilder extends Builder {
     const type = MysqlDatabase.tables[table]?.[field]
     if (typeof type === 'object') return type.stringify(value)
 
-    const meta = this.model.config[table]?.fields[field]
+    const meta = this.models[table]?.fields[field]
     if (meta?.type === 'json') {
       return JSON.stringify(value)
     } else if (meta?.type === 'list') {
       return value.join(',')
-    } else if (Model.Field.date.includes(meta?.type)) {
+    } else if (Field.date.includes(meta?.type)) {
       return Time.template('yyyy-MM-dd hh:mm:ss', value)
     }
 
@@ -123,8 +123,8 @@ class MysqlDatabase extends Database {
         const type = MysqlDatabase.tables[orgTable]?.[orgName]
         if (typeof type === 'object') return type.parse(field)
 
-        const meta = this.model.config[orgTable]?.fields[orgName]
-        if (Model.Field.string.includes(meta?.type)) {
+        const meta = this.models[orgTable]?.fields[orgName]
+        if (Field.string.includes(meta?.type)) {
           return field.string()
         } else if (meta?.type === 'json') {
           const source = field.string()
@@ -152,13 +152,13 @@ class MysqlDatabase extends Database {
       ...config,
     }
 
-    this.sql = new MySQLBuilder(this.model)
+    this.sql = new MySQLBuilder(this.models)
   }
 
   async start() {
     this.pool = createPool(this.config)
 
-    for (const name in this.model.config) {
+    for (const name in this.models) {
       this._tableTasks[name] = this._syncTable(name as keyof Tables)
     }
 
@@ -172,7 +172,7 @@ class MysqlDatabase extends Database {
   }
 
   private _getColDefs(name: keyof Tables, columns: string[]) {
-    const table = this.resolveTable(name)
+    const table = this.model(name)
     const { primary, foreign, autoInc } = table
     const fields = { ...table.fields }
     const unique = [...table.unique]
@@ -231,17 +231,13 @@ class MysqlDatabase extends Database {
     }
   }
 
-  _inferFields<T extends keyof Tables>(table: T, keys: readonly string[]) {
+  _inferFields(table: string, keys: readonly string[]) {
     if (!keys) return
     const types = MysqlDatabase.tables[table] || {}
     return keys.map((key) => {
       const type = types[key]
       return typeof type === 'function' ? `${type()} AS ${key}` : key
-    }) as (keyof Tables[T])[]
-  }
-
-  _createFilter(name: keyof Tables, query: Query) {
-    return this.sql.parseQuery(this.resolveQuery(name, query))
+    })
   }
 
   _joinKeys = (keys: readonly string[]) => {
@@ -297,24 +293,24 @@ class MysqlDatabase extends Database {
     }
   }
 
-  select<T extends {}>(table: string, fields: readonly (string & keyof T)[], conditional?: string, values?: readonly any[]): Promise<T[]>
-  select(table: string, fields: string[], conditional?: string, values: readonly any[] = []) {
+  _select<T extends {}>(table: string, fields: readonly (string & keyof T)[], conditional?: string, values?: readonly any[]): Promise<T[]>
+  _select(table: string, fields: string[], conditional?: string, values: readonly any[] = []) {
     logger.debug(`[select] ${table}: ${fields ? fields.join(', ') : '*'}`)
     const sql = 'SELECT '
       + this._joinKeys(fields)
-      + (table.includes('.') ? `FROM ${table}` : ' FROM `' + table + `\` _${table}`)
+      + (table.includes('.') ? `FROM ${table}` : ' FROM `' + table + '`')
       + (conditional ? ' WHERE ' + conditional : '')
     return this.queue(sql, values)
   }
 
   async drop() {
-    const data = await this.select('information_schema.tables', ['TABLE_NAME'], 'TABLE_SCHEMA = ?', [this.config.database])
+    const data = await this._select('information_schema.tables', ['TABLE_NAME'], 'TABLE_SCHEMA = ?', [this.config.database])
     if (!data.length) return
     await this.query(data.map(({ TABLE_NAME }) => `DROP TABLE ${this.sql.escapeId(TABLE_NAME)}`).join('; '))
   }
 
   async stats() {
-    const data = await this.select('information_schema.tables', ['TABLE_NAME', 'TABLE_ROWS', 'DATA_LENGTH'], 'TABLE_SCHEMA = ?', [this.config.database])
+    const data = await this._select('information_schema.tables', ['TABLE_NAME', 'TABLE_ROWS', 'DATA_LENGTH'], 'TABLE_SCHEMA = ?', [this.config.database])
     const stats: Driver.Stats = { size: 0 }
     stats.tables = Object.fromEntries(data.map(({ TABLE_NAME: name, TABLE_ROWS: count, DATA_LENGTH: size }) => {
       stats.size += size
@@ -323,19 +319,26 @@ class MysqlDatabase extends Database {
     return stats
   }
 
-  async get(name: keyof Tables, query: Query, modifier?: Modifier) {
-    await this._tableTasks[name]
-    const filter = this._createFilter(name, query)
-    if (filter === '0') return []
-    const { fields, limit, offset, sort } = this.resolveModifier(name, modifier)
-    const keys = this._joinKeys(this._inferFields(name, fields))
-    let sql = `SELECT ${keys} FROM ${name} _${name} WHERE ${filter}`
-    if (sort) sql += ' ORDER BY ' + Object.entries(sort).map(([key, order]) => `${backtick(key)} ${order}`).join(', ')
-    if (limit) sql += ' LIMIT ' + limit
-    if (offset) sql += ' OFFSET ' + offset
-    return this.queue(sql).then((data) => {
-      return data.map((row) => this.model.parse(name, row))
-    })
+  async execute(sel: Executable) {
+    const { table, fields, expr } = sel
+    const filter = this.sql.parseQuery(sel.query)
+    await this._tableTasks[table]
+    if (expr) {
+      const output = this.sql.parseEval(expr)
+      const [data] = await this.queue(`SELECT ${output} AS value FROM ${table} WHERE ${filter}`)
+      return data.value
+    } else {
+      if (filter === '0') return []
+      const { limit, offset, sort } = sel.modifier
+      const keys = this._joinKeys(this._inferFields(table, fields ? Object.keys(fields) : null))
+      let sql = `SELECT ${keys} FROM ${table} _${table} WHERE ${filter}`
+      if (sort.length) sql += ' ORDER BY ' + sort.map(([key, order]) => `${backtick(key['$'][1])} ${order}`).join(', ')
+      if (limit < Infinity) sql += ' LIMIT ' + limit
+      if (offset > 0) sql += ' OFFSET ' + offset
+      return this.queue(sql).then((data) => {
+        return data.map((row) => sel.model.parse(row))
+      })
+    }
   }
 
   private toUpdateExpr(name: string, item: any, field: string, upsert: boolean) {
@@ -367,10 +370,11 @@ class MysqlDatabase extends Database {
   }
 
   async set(name: keyof Tables, query: Query, data: {}) {
-    data = this.model.format(name, data)
-    const { fields } = this.resolveTable(name)
+    const sel = this.select(name, query)
+    data = sel.resolveUpdate(data)
+    const filter = this.sql.parseQuery(sel.query)
+    const { fields } = sel.model
     await this._tableTasks[name]
-    const filter = this._createFilter(name, query)
     if (filter === '0') return
     const updateFields = [...new Set(Object.keys(data).map((key) => {
       return Object.keys(fields).find(field => field === key || key.startsWith(field + '.'))
@@ -386,16 +390,18 @@ class MysqlDatabase extends Database {
 
   async remove(name: keyof Tables, query: Query) {
     await this._tableTasks[name]
-    const filter = this._createFilter(name, query)
+    const sel = this.select(name, query)
+    const filter = this.sql.parseQuery(sel.query)
     if (filter === '0') return
     await this.query('DELETE FROM ?? WHERE ' + filter, [name])
   }
 
   async create<T extends keyof Tables>(name: T, data: {}) {
     await this._tableTasks[name]
-    data = this.model.create(name, data)
-    const formatted = this.model.format(name, data)
-    const { autoInc, primary } = this.resolveTable(name)
+    const model = this.model(name)
+    data = model.create(data)
+    const formatted = model.format(data)
+    const { autoInc, primary } = model
     const keys = Object.keys(formatted)
     const header = await this.query<OkPacket>(
       `INSERT INTO ?? (${this._joinKeys(keys)}) VALUES (${keys.map(() => '?').join(', ')})`,
@@ -407,14 +413,15 @@ class MysqlDatabase extends Database {
 
   async upsert(name: keyof Tables, data: any[], keys: string | string[]) {
     if (!data.length) return
-    data = data.map(item => this.model.format(name, item))
+    const sel = this.select(name)
+    data = sel.resolveUpsert(data)
     await this._tableTasks[name]
 
-    const { fields, primary } = this.resolveTable(name)
+    const { fields, primary } = sel.model
     const merged = {}
     const insertion = data.map((item) => {
       Object.assign(merged, item)
-      return this.model.format(name, executeUpdate(this.model.create(name), item))
+      return sel.model.format(sel.update(sel.model.create(), item))
     })
     const indexFields = makeArray(keys || primary)
     const dataFields = [...new Set(Object.keys(merged).map((key) => {
@@ -460,14 +467,6 @@ class MysqlDatabase extends Database {
       ON DUPLICATE KEY UPDATE ${update}`,
       [].concat(...insertion.map(item => this._formatValues(name, item, initFields))),
     )
-  }
-
-  async eval(name: keyof Tables, expr: any, query: Query) {
-    await this._tableTasks[name]
-    const filter = this._createFilter(name, query)
-    const output = this.sql.parseEval(expr)
-    const [data] = await this.queue(`SELECT ${output} AS value FROM ${name} WHERE ${filter}`)
-    return data.value
   }
 }
 

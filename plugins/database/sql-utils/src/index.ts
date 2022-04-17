@@ -1,13 +1,15 @@
-import { Dict, Tables } from 'koishi'
-import { Eval, Model, Query } from '@koishijs/orm'
+import { Dict } from '@koishijs/utils'
+import { Eval, Field, Model, Query } from '@koishijs/orm'
 
 export type QueryOperators = {
   [K in keyof Query.FieldExpr]?: (key: string, value: Query.FieldExpr[K]) => string
 }
 
+export type ExtractUnary<T> = T extends [infer U] ? U : T
+
 export type EvalOperators = {
-  [K in keyof Eval.GeneralExpr]?: (expr: Eval.GeneralExpr[K]) => string
-}
+  [K in keyof Eval.Static as `$${K}`]?: (expr: ExtractUnary<Parameters<Eval.Static[K]>>) => string
+} & { $: (expr: any) => string }
 
 export abstract class Builder {
   protected createEqualQuery = this.comparator('=')
@@ -77,6 +79,11 @@ export abstract class Builder {
 
       // string
       $concat: (args) => `concat(${args.map(arg => this.parseEval(arg)).join(', ')})`,
+
+      // logical
+      $or: (args) => this.logicalOr(args.map(arg => this.parseEval(arg))),
+      $and: (args) => this.logicalAnd(args.map(arg => this.parseEval(arg))),
+      $not: (arg) => this.logicalNot(this.parseEval(arg)),
 
       // boolean
       $eq: this.binary('='),
@@ -194,10 +201,15 @@ export abstract class Builder {
     return this.parseEvalExpr(expr)
   }
 
-  private getRecursive(key: string) {
-    if (!key.includes('.')) return this.escapeId(key)
-    const [field, ...rest] = key.split('.')
-    return `json_unquote(json_extract(${this.escapeId(field)}, '$${rest.map(key => `."${key}"`).join('')}'))`
+  private getRecursive(args: string | string[]) {
+    if (typeof args === 'string') {
+      return this.getRecursive(['_', args])
+    } else {
+      const [, key] = args
+      if (!key.includes('.')) return this.escapeId(key)
+      const [field, ...rest] = key.split('.')
+      return `json_unquote(json_extract(${this.escapeId(field)}, '$${rest.map(key => `."${key}"`).join('')}'))`
+    }
   }
 
   parseEval(expr: any, table?: string, field?: string): string {
@@ -209,7 +221,7 @@ export abstract class Builder {
 }
 
 export interface TypeCaster<S = any, T = any> {
-  types: Model.Field.Type<S>[]
+  types: Field.Type<S>[]
   dump: (value: S) => T
   load: (value: T, initial?: S) => S
 }
@@ -217,7 +229,7 @@ export interface TypeCaster<S = any, T = any> {
 export class Caster {
   protected types: Dict<TypeCaster>
 
-  constructor(private model: Model) {
+  constructor(private models: Dict<Model>) {
     this.types = Object.create(null)
   }
 
@@ -225,9 +237,9 @@ export class Caster {
     typeCaster.types.forEach(type => this.types[type] = typeCaster)
   }
 
-  dump(table: keyof Tables, obj: any): any {
-    obj = this.model.format(table, obj)
-    const { fields } = this.model.config[table]
+  dump(table: string, obj: any): any {
+    obj = this.models[table].format(obj)
+    const { fields } = this.models[table]
     const result = {}
     for (const key in obj) {
       const converter = this.types[fields[key]?.type]
@@ -236,14 +248,14 @@ export class Caster {
     return result
   }
 
-  load(table: keyof Tables, obj: any): any {
-    const { fields } = this.model.config[table]
+  load(table: string, obj: any): any {
+    const { fields } = this.models[table]
     const result = {}
     for (const key in obj) {
       const { type, initial } = fields[key]
       const converter = this.types[type]
       result[key] = converter ? converter.load(obj[key], initial) : obj[key]
     }
-    return this.model.parse(table, result)
+    return this.models[table].parse(result)
   }
 }
