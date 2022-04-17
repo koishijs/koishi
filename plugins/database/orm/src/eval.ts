@@ -38,7 +38,7 @@ export namespace Eval {
 
     // univeral
     if<T extends Common>(cond: Any, vThen: T | Expr<T>, vElse: T | Expr<T>): Expr<T>
-    ifNull<T extends Common>(...args: Expr<T>[]): Expr<T>
+    ifNull<T extends Common>(...args: (T | Expr<T>)[]): Expr<T>
 
     // arithmetic
     add(...args: Number[]): Expr<number>
@@ -47,8 +47,8 @@ export namespace Eval {
     divide(x: Number, y: Number): Expr<number>
 
     // comparison
-    eq(x: Number, y: Number): Expr<boolean>
-    ne(x: Number, y: Number): Expr<boolean>
+    eq(x: Any, y: Any): Expr<boolean>
+    ne(x: Any, y: Any): Expr<boolean>
     gt(x: Number, y: Number): Expr<boolean>
     gte(x: Number, y: Number): Expr<boolean>
     lt(x: Number, y: Number): Expr<boolean>

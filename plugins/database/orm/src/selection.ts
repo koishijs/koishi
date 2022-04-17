@@ -40,7 +40,10 @@ export namespace Selection {
     [K in keyof T]: Resolve<S, T[K]>
   }
 
+  export type Type = 'get' | 'set' | 'remove' | 'create' | 'upsert' | 'eval'
+
   export interface Payload {
+    type: Type
     ref: string
     table: string
     modifier: Modifier
@@ -78,8 +81,8 @@ export abstract class Executable<S = any, T = any> {
     return this.#model ||= this.driver.model(this.table)
   }
 
-  resolveQuery(query: Query<S>): Query.Expr<S>
-  resolveQuery(query: Query<S> = {}): any {
+  protected resolveQuery(query: Query<S>): Query.Expr<S>
+  protected resolveQuery(query: Query<S> = {}): any {
     if (typeof query === 'function') return { $expr: query(this.row) }
     if (Array.isArray(query) || query instanceof RegExp || ['string', 'number'].includes(typeof query)) {
       const { primary } = this.model

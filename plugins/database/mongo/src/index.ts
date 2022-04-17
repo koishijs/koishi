@@ -99,10 +99,6 @@ class MongoDatabase extends Database {
     ])
   }
 
-  private _createFilter(name: keyof Tables, query: Query) {
-    return transformQuery(this.select(name).resolveQuery(query))
-  }
-
   async drop() {
     await Promise.all(Object.keys(this.models).map(name => this.db.dropCollection(name)))
   }

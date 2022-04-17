@@ -1,4 +1,4 @@
-import { clone, Context, defineProperty, Observed, pick, Query, Service } from 'koishi'
+import { $, clone, Context, defineProperty, Observed, pick, Query, Service } from 'koishi'
 import { Dialogue, DialogueTest, equal } from './utils'
 
 declare module 'koishi' {
@@ -75,9 +75,10 @@ export default class Teach extends Service {
   }
 
   async stats(): Promise<Dialogue.Stats> {
+    const selection = this.ctx.database.select('dialogue')
     const [dialogues, questions] = await Promise.all([
-      this.ctx.database.eval('dialogue', { $count: 'id' }),
-      this.ctx.database.eval('dialogue', { $count: 'question' }),
+      selection.evaluate(row => $.count(row.id)).execute(),
+      selection.evaluate(row => $.count(row.question)).execute(),
     ])
     return { dialogues, questions }
   }

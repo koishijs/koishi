@@ -1,4 +1,4 @@
-import { Assets, Context, Logger, Schema, sleep, Time } from 'koishi'
+import { $, Assets, Context, Logger, Schema, sleep, Time } from 'koishi'
 import Git, { ResetMode, SimpleGit, SimpleGitOptions } from 'simple-git'
 import { promises as fsp } from 'fs'
 import { join, resolve } from 'path'
@@ -82,7 +82,11 @@ class JsdelivrAssets extends Assets {
     if (!file) return { branch: offset, size: 0 }
     const { branch } = file
     if (forceNew) return { branch: branch + offset, size: 0 }
-    const size = await this.ctx.database.eval('jsdelivr', { $sum: 'size' }, { branch: file.branch })
+
+    const size = await this.ctx.database
+      .select('jsdelivr', { branch: file.branch })
+      .evaluate(row => $.sum(row.size))
+      .execute()
     if (size >= this.config.maxBranchSize) {
       logger.debug(`will switch to branch ${toBranchName(branch)}`)
       return { branch: branch + offset, size: 0 }
@@ -196,9 +200,10 @@ class JsdelivrAssets extends Assets {
   }
 
   async stats() {
+    const selection = this.ctx.database.select('jsdelivr')
     const [assetCount, assetSize] = await Promise.all([
-      this.ctx.database.eval('jsdelivr', { $count: 'id' }),
-      this.ctx.database.eval('jsdelivr', { $sum: 'size' }),
+      selection.evaluate(row => $.count(row.id)).execute(),
+      selection.evaluate(row => $.sum(row.size)).execute(),
     ])
     return { assetCount, assetSize }
   }

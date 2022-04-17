@@ -1,4 +1,4 @@
-import { Context, Dict, Driver, Keys, Model, Schema } from 'koishi'
+import { Context, Dict, Driver, Field, Keys, Model, Schema } from 'koishi'
 import { DataService } from '@koishijs/plugin-console'
 import { resolve } from 'path'
 import { deserialize, serialize } from './utils'
@@ -17,7 +17,9 @@ declare module '@koishijs/plugin-console' {
   interface Events extends DbEvents {}
 }
 
-export interface TableInfo extends Driver.TableStats, Model.Config {}
+export interface TableInfo extends Driver.TableStats, Model.Config<any> {
+  fields: Field.Config
+}
 
 export interface DatabaseInfo extends Driver.Stats {
   tables: Dict<TableInfo>

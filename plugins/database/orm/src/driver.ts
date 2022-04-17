@@ -65,9 +65,12 @@ export abstract class Driver<S = any> {
     return selection.execute()
   }
 
-  /** @deprecated use selection api instead */
+  eval<K extends Keys<S>, T>(table: K, expr: Selection.Callback<S[K], T>, query?: Query): Promise<T>
+  eval(table: Keys<S>, expr: any, query?: Query): any
   eval(table: Keys<S>, expr: any, query?: Query) {
-    return this.select(table, query).evaluate(() => expr).execute()
+    return this.select(table, query)
+      .evaluate(typeof expr === 'function' ? expr : () => expr)
+      .execute()
   }
 
   model<T extends Keys<S>>(name: T) {
