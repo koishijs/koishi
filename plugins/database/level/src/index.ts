@@ -139,7 +139,7 @@ class LevelDatabase extends Database {
     const { fields, expr } = sel
     const result = await this.#query(sel)
     if (expr) {
-      return executeEval(result.map(row => ({ [sel.ref]: row })), expr)
+      return executeEval(result.map(row => ({ [sel.ref]: row, _: row })), expr)
     } else {
       return sel.truncate(result).map(row => sel.resolveData(row, fields))
     }

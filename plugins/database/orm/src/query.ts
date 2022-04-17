@@ -126,7 +126,7 @@ export function executeQuery(data: any, query: Query.Expr, ref: string): boolean
     } else if (key === '$not') {
       return !executeQuery(data, value, ref)
     } else if (key === '$expr') {
-      return executeEval({ [ref]: data }, value)
+      return executeEval({ [ref]: data, _: data }, value)
     }
 
     // execute field query

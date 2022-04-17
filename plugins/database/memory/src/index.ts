@@ -49,7 +49,7 @@ export class MemoryDatabase extends Database {
     const { table, fields, expr } = sel
     const data = this.$table(table).filter(row => sel.filter(row))
     if (expr) {
-      return executeEval(data.map(row => ({ [sel.ref]: row })), expr)
+      return executeEval(data.map(row => ({ [sel.ref]: row, _: row })), expr)
     } else {
       return sel.truncate(data).map(row => sel.resolveData(row, fields))
     }

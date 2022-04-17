@@ -133,7 +133,7 @@ export type Update<T> = MapUneval<Flatten<T>>
 function getRecursive(args: string | string[], data: any) {
   if (typeof args === 'string') {
     // for backwards compatibility, TODO remove in v5
-    return getRecursive([Object.keys(data)[0], args], data)
+    return getRecursive(['_', args], data)
   }
 
   const [ref, path] = args
@@ -176,7 +176,7 @@ export function executeUpdate(data: any, update: any, ref: string) {
     for (const key of path) {
       root = root[key] ||= {}
     }
-    root[last] = executeEval({ [ref]: data }, update[key])
+    root[last] = executeEval({ [ref]: data, _: data }, update[key])
   }
   return data
 }

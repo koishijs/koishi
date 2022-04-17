@@ -127,7 +127,11 @@ export function transformEval(expr: any, onAggr?: (pipeline: any[]) => void) {
   if (typeof expr === 'number' || typeof expr === 'string' || typeof expr === 'boolean') {
     return expr
   } else if (expr.$) {
-    return '$' + expr.$
+    if (typeof expr.$ === 'string') {
+      return '$' + expr.$
+    } else {
+      return '$' + expr.$[1]
+    }
   }
 
   for (const key of aggrKeys) {
