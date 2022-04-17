@@ -75,6 +75,8 @@ export class HttpServer extends Adapter<BotConfig, AdapterConfig> {
   }
 
   private tryDecrypt(body: any) {
+    // try to decrypt message if encryptKey is set
+    // https://open.feishu.cn/document/ukTMukTMukTM/uYDNxYjL2QTM24iN0EjN/event-subscription-configure-/encrypt-key-encryption-configuration-case
     if (this.cipher && typeof body.encrypt === 'string') {
       return JSON.parse(this.cipher.decrypt(body.encrypt))
     }
