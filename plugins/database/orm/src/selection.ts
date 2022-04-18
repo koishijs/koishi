@@ -22,30 +22,13 @@ export namespace Selector {
     : never
 }
 
-export namespace Selection {
-  export type Callback<S, T = any> = (row: Row<S>) => Eval.Expr<T>
-  export type Field<S = any> = Keys<S> | Callback<S>
-  export type Resolve<S, F extends Field<S>> =
-    | F extends Keys<S> ? S[F]
-    : F extends Callback<S> ? Eval<ReturnType<F>>
-    : never
-
-  export type Row<S> = {
-    [K in keyof S]: Eval.Expr<S[K]> & (S[K] extends Common ? {} : Row<S[K]>)
-  }
-
-  export type Yield<S, T> = T | ((row: Row<S>) => T)
-
-  export type Project<S, T extends Dict<Field<S>>> = {
-    [K in keyof T]: Resolve<S, T[K]>
-  }
-
-  export type Type = 'get' | 'set' | 'remove' | 'create' | 'upsert' | 'eval'
+export namespace Executable {
+  export type Action = 'get' | 'set' | 'remove' | 'create' | 'upsert' | 'eval'
 
   export interface Payload {
-    type: Type
+    type: Action
+    table: string
     ref: string
-    name: string
     query: Query.Expr
     fields?: Dict<Eval.Expr>
     expr?: Eval.Expr
@@ -60,25 +43,25 @@ const createRow = (ref: string, prefix = '', expr = {}) => new Proxy(expr, {
   },
 })
 
-export interface Executable extends Selection.Payload {}
+export interface Executable extends Executable.Payload {}
 
 export class Executable<S = any, T = any> {
   #row: Selection.Row<S>
   #model: Model
 
-  protected driver: Driver
+  public driver: Driver
 
-  constructor(driver: Driver, payload?: Selection.Payload) {
+  constructor(driver: Driver, payload?: Executable.Payload) {
     defineProperty(this, 'driver', driver)
     Object.assign(this, payload)
   }
 
   get row() {
-    return this.#row ||= createRow(this.name)
+    return this.#row ||= createRow(this.ref)
   }
 
   get model() {
-    return this.#model ||= this.driver.model(this.ref)
+    return this.#model ||= this.driver.model(this.table)
   }
 
   protected resolveQuery(query: Query<S>): Query.Expr<S>
@@ -118,14 +101,33 @@ export class Executable<S = any, T = any> {
 
 const letters = 'abcdefghijklmnopqrstuvwxyz'
 
+export namespace Selection {
+  export type Callback<S, T = any> = (row: Row<S>) => Eval.Expr<T>
+  export type Field<S = any> = Keys<S> | Callback<S>
+  export type Resolve<S, F extends Field<S>> =
+    | F extends Keys<S> ? S[F]
+    : F extends Callback<S> ? Eval<ReturnType<F>>
+    : never
+
+  export type Row<S> = {
+    [K in keyof S]: Eval.Expr<S[K]> & (S[K] extends Common ? {} : Row<S[K]>)
+  }
+
+  export type Yield<S, T> = T | ((row: Row<S>) => T)
+
+  export type Project<S, T extends Dict<Field<S>>> = {
+    [K in keyof T]: Resolve<S, T[K]>
+  }
+}
+
 export class Selection<S = any> extends Executable<S, S[]> {
-  type: Selection.Type = 'get'
   args: [Modifier]
 
   constructor(driver: Driver, table: string, query: Query) {
     super(driver)
-    this.name = Array(8).fill(0).map(() => letters[Math.floor(Math.random() * letters.length)]).join('')
-    this.ref = table
+    this.type = 'get'
+    this.ref = Array(8).fill(0).map(() => letters[Math.floor(Math.random() * letters.length)]).join('')
+    this.table = table
     this.query = this.resolveQuery(query)
     this.args = [{ sort: [], limit: Infinity, offset: 0 }]
   }
@@ -161,12 +163,12 @@ export class Selection<S = any> extends Executable<S, S[]> {
     return this as any
   }
 
+  action(type: Executable.Action, ...args: any[]) {
+    return new Executable(this.driver, { ...this, type, args })
+  }
+
   evaluate<T>(callback: Selection.Callback<S, T>): Executable<S, T> {
-    return new Executable(this.driver, {
-      ...this,
-      type: 'eval',
-      args: [this.resolveField(callback)],
-    })
+    return this.action('eval', this.resolveField(callback))
   }
 }
 

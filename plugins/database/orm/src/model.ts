@@ -1,8 +1,6 @@
-import { clone, isNullable, Logger, makeArray, MaybeArray } from '@koishijs/utils'
+import { clone, isNullable, makeArray, MaybeArray } from '@koishijs/utils'
 import { isEvalExpr } from './eval'
 import { Flatten, Keys } from './utils'
-
-const logger = new Logger('model')
 
 export interface Field<T = any> {
   type: Field.Type<T>
@@ -116,9 +114,6 @@ export class Model<S = any> {
         const method = key.slice(index + 1)
         ;(this.internal[prefix] ??= {})[method] = fields[key]
       } else {
-        if (this.fields[key]) {
-          logger.warn('override', this.name, key)
-        }
         this.fields[key] = Field.parse(fields[key])
       }
     }

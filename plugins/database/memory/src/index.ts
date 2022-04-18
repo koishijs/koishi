@@ -1,36 +1,34 @@
-import { clone, Context, Database, Dict, DriverError, makeArray, noop, pick, Tables } from 'koishi'
-import { Executable, executeEval, Field, Query } from '@koishijs/orm'
+import { clone, Context, Dict, DriverError, Eval, makeArray, noop, pick } from 'koishi'
+import { Driver, Executable, executeEval, executeQuery, executeSort, executeUpdate, Field, Modifier } from '@koishijs/orm'
 import { Config, Storage } from './storage'
 
-declare module 'koishi' {
-  interface Database {
-    memory: MemoryDatabase
-  }
-}
-
-export class MemoryDatabase extends Database {
-  public memory = this
-
+class MemoryDriver extends Driver {
   #store: Dict<any[]> = {}
   #loader: Storage
 
   constructor(public ctx: Context, public config: Config = {}) {
-    super(ctx)
-
+    super(ctx.model, 'memory')
+    ctx.on('ready', () => this.start())
+    ctx.on('dispose', () => this.stop())
     if (config.storage) {
       this.#loader = new Storage(ctx, config)
     }
   }
 
+  prepare(name: string) {}
+
   async start() {
     await this.#loader?.start(this.#store)
+    super.start()
   }
 
   async $save(name: string) {
     await this.#loader?.save(name, this.#store[name])
   }
 
-  stop() {}
+  async stop() {
+    super.stop()
+  }
 
   $table(table: string) {
     return this.#store[table] ||= []
@@ -45,36 +43,37 @@ export class MemoryDatabase extends Database {
     return {}
   }
 
-  async execute(sel: Executable) {
-    const { table, fields, expr } = sel
-    const data = this.$table(table).filter(row => sel.filter(row))
-    if (expr) {
-      return executeEval(data.map(row => ({ [sel.ref]: row, _: row })), expr)
-    } else {
-      return sel.truncate(data).map(row => sel.resolveData(row, fields))
-    }
+  async get(sel: Executable, modifier: Modifier) {
+    const { ref, query, fields, table } = sel
+    const data = this.$table(table).filter(row => executeQuery(row, query, ref))
+    return executeSort(data, modifier, ref).map(row => sel.resolveData(row, fields))
   }
 
-  async set(name: keyof Tables, query: Query, data: {}) {
-    const sel = this.select(name, query)
-    data = sel.resolveUpdate(data)
-    this.$table(name)
-      .filter(row => sel.filter(row))
-      .forEach(row => sel.update(row, data))
-    this.$save(name)
+  async eval(sel: Executable, expr: Eval.Expr) {
+    const { ref, query, table } = sel
+    const data = this.$table(table).filter(row => executeQuery(row, query, ref))
+    return executeEval(data.map(row => ({ [ref]: row, _: row })), expr)
   }
 
-  async remove(name: keyof Tables, query: Query) {
-    const sel = this.select(name, query)
-    this.#store[name] = this.$table(name).filter(row => !sel.filter(row))
-    this.$save(name)
+  async set(sel: Executable, data: {}) {
+    const { table, ref, query } = sel
+    this.$table(table)
+      .filter(row => executeQuery(row, query, ref))
+      .forEach(row => executeUpdate(row, data, ref))
+    this.$save(table)
   }
 
-  async create<T extends keyof Tables>(name: T, data: any) {
-    const store = this.$table(name)
-    const model = this.model(name)
+  async remove(sel: Executable) {
+    const { ref, query, table } = sel
+    this.#store[table] = this.$table(table).filter(row => !executeQuery(row, query, ref))
+    this.$save(table)
+  }
+
+  async create(sel: Executable, data: any) {
+    const { table, model } = sel
     const { primary, fields, autoInc } = model
-    data = model.format(clone(data))
+    const store = this.$table(table)
+    data = sel.model.format(clone(data))
     if (!Array.isArray(primary) && autoInc && !(primary in data)) {
       const max = store.length ? Math.max(...store.map(row => +row[primary])) : 0
       data[primary] = max + 1
@@ -82,33 +81,32 @@ export class MemoryDatabase extends Database {
         data[primary] += ''
       }
     } else {
-      const duplicated = await this.get(name, pick(data, makeArray(primary)))
+      const duplicated = await this.ctx.database.get(table as any, pick(data, makeArray(primary)))
       if (duplicated.length) {
         throw new DriverError('duplicate-entry')
       }
     }
     const copy = model.create(data)
     store.push(copy)
-    this.$save(name)
+    this.$save(table)
     return clone(copy)
   }
 
-  async upsert(name: keyof Tables, data: any, key: string | string[]) {
-    const sel = this.select(name)
-    const keys = makeArray(key || sel.model.primary)
-    for (const update of sel.resolveUpsert(data)) {
-      const row = this.$table(name).find(row => {
+  async upsert(sel: Executable, data: any, keys: string[]) {
+    const { table, model, ref } = sel
+    for (const update of data) {
+      const row = this.$table(table).find(row => {
         return keys.every(key => row[key] === update[key])
       })
       if (row) {
-        sel.update(row, update)
+        executeUpdate(row, update, ref)
       } else {
-        const data = sel.update(sel.model.create(), update)
-        await this.create(name, data).catch(noop)
+        const data = executeUpdate(model.create(), update, ref)
+        await this.ctx.database.create(table as any, data).catch(noop)
       }
     }
-    this.$save(name)
+    this.$save(table)
   }
 }
 
-export default MemoryDatabase
+export default MemoryDriver

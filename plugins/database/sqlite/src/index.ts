@@ -1,16 +1,10 @@
-import { Context, Database, difference, Logger, makeArray, Schema, Tables, union } from 'koishi'
-import { Executable, Field, Query, Selection } from '@koishijs/orm'
+import { Context, difference, Eval, Logger, makeArray, Schema, Tables, union } from 'koishi'
+import { Driver, Executable, executeUpdate, Field, Modifier } from '@koishijs/orm'
 import { Builder, Caster } from '@koishijs/sql-utils'
 import sqlite, { Statement } from 'better-sqlite3'
 import { resolve } from 'path'
 import { escapeId, format, escape as sqlEscape } from 'sqlstring-sqlite'
 import { promises as fsp } from 'fs'
-
-declare module 'koishi' {
-  interface Database {
-    sqlite: SQLiteDatabase
-  }
-}
 
 const logger = new Logger('sqlite')
 
@@ -40,16 +34,17 @@ export interface ISQLiteFieldInfo {
   pk: boolean
 }
 
-class SQLiteDatabase extends Database {
+class SQLiteDriver extends Driver {
   public db: sqlite.Database
   sqlite = this
   sql: Builder
   caster: Caster
-
   #path: string
 
-  constructor(public ctx: Context, public config: SQLiteDatabase.Config) {
-    super(ctx)
+  constructor(public ctx: Context, public config: SQLiteDriver.Config) {
+    super(ctx.model, 'sqlite')
+    ctx.on('ready', () => this.start())
+    ctx.on('dispose', () => this.stop())
 
     this.#path = this.config.path === ':memory:' ? this.config.path : resolve(ctx.app.baseDir, this.config.path)
 
@@ -70,7 +65,7 @@ class SQLiteDatabase extends Database {
       }
     }()
 
-    this.caster = new Caster(this.models)
+    this.caster = new Caster(this.database.tables)
     this.caster.register<object, string>({
       types: ['json'],
       dump: value => JSON.stringify(value),
@@ -105,7 +100,7 @@ class SQLiteDatabase extends Database {
   }
 
   /** synchronize table schema */
-  private _syncTable(table: keyof Tables) {
+  prepare(table: keyof Tables) {
     const info = this.#exec('all', `PRAGMA table_info(${this.sql.escapeId(table)})`) as ISQLiteFieldInfo[]
     // FIXME: register platform columns before database initializion
     // WARN: side effecting Tables.config
@@ -157,21 +152,15 @@ class SQLiteDatabase extends Database {
   async start() {
     this.db = sqlite(this.config.path === ':memory:' ? this.config.path : resolve(this.config.path))
     this.db.function('regexp', (pattern, str) => +new RegExp(pattern).test(str))
-
-    for (const name in this.models) {
-      this._syncTable(name as keyof Tables)
-    }
-
-    this.ctx.on('model', (name) => {
-      this._syncTable(name)
-    })
+    super.start()
   }
 
   #joinKeys(keys?: string[]) {
     return keys?.length ? keys.map(key => `\`${key}\``).join(',') : '*'
   }
 
-  stop() {
+  async stop() {
+    super.stop()
     this.db.close()
   }
 
@@ -187,7 +176,7 @@ class SQLiteDatabase extends Database {
   }
 
   async drop() {
-    const tables = Object.keys(this.models)
+    const tables = Object.keys(this.database.tables)
     for (const table of tables) {
       this.#exec('run', `DROP TABLE ${this.sql.escapeId(table)}`)
     }
@@ -199,96 +188,95 @@ class SQLiteDatabase extends Database {
     return { size }
   }
 
-  async remove(name: keyof Tables, query: Query) {
-    const sel = this.select(name, query)
-    const filter = this.sql.parseQuery(sel.query)
+  async remove(sel: Executable) {
+    const { query, table } = sel
+    const filter = this.sql.parseQuery(query)
     if (filter === '0') return
-    this.#exec('run', `DELETE FROM ${this.sql.escapeId(name)} WHERE ${filter}`)
+    this.#exec('run', `DELETE FROM ${this.sql.escapeId(table)} WHERE ${filter}`)
   }
 
-  async execute(sel: Executable) {
-    const { table, fields, expr } = sel
-    const filter = this.sql.parseQuery(sel.query)
-    if (expr) {
-      const output = this.sql.parseEval(expr)
-      const { value } = this.#exec('get', `SELECT ${output} AS value FROM ${this.sql.escapeId(table)} WHERE ${filter}`)
-      return value
-    } else {
-      if (filter === '0') return []
-      const { limit, offset, sort } = sel.modifier
-      let sql = `SELECT ${this.#joinKeys(fields ? Object.keys(fields) : null)} FROM ${this.sql.escapeId(table)} WHERE ${filter}`
-      if (sort.length) sql += ' ORDER BY ' + sort.map(([key, order]) => `\`${key['$'][1]}\` ${order}`).join(', ')
-      if (limit < Infinity) sql += ' LIMIT ' + limit
-      if (offset > 0) sql += ' OFFSET ' + offset
-      const rows = this.#exec('all', sql)
-      return rows.map(row => this.caster.load(table, row))
-    }
+  async get(sel: Executable, modifier: Modifier) {
+    const { table, fields, query } = sel
+    const filter = this.sql.parseQuery(query)
+    if (filter === '0') return []
+    const { limit, offset, sort } = modifier
+    let sql = `SELECT ${this.#joinKeys(fields ? Object.keys(fields) : null)} FROM ${this.sql.escapeId(table)} WHERE ${filter}`
+    if (sort.length) sql += ' ORDER BY ' + sort.map(([key, order]) => `\`${key['$'][1]}\` ${order}`).join(', ')
+    if (limit < Infinity) sql += ' LIMIT ' + limit
+    if (offset > 0) sql += ' OFFSET ' + offset
+    const rows = this.#exec('all', sql)
+    return rows.map(row => this.caster.load(table, row))
   }
 
-  #update(sel: Selection, indexFields: string[], updateFields: string[], update: {}, data: {}) {
-    const row = this.caster.dump(sel.table, sel.update(data, update))
+  async eval(sel: Executable, expr: Eval.Expr) {
+    const { table, query } = sel
+    const filter = this.sql.parseQuery(query)
+    const output = this.sql.parseEval(expr)
+    const { value } = this.#exec('get', `SELECT ${output} AS value FROM ${this.sql.escapeId(table)} WHERE ${filter}`)
+    return value
+  }
+
+  #update(sel: Executable, indexFields: string[], updateFields: string[], update: {}, data: {}) {
+    const { ref, table } = sel
+    const row = this.caster.dump(table, executeUpdate(data, update, ref))
     const assignment = updateFields.map((key) => `\`${key}\` = ${this.sql.escape(row[key])}`).join(',')
     const query = Object.fromEntries(indexFields.map(key => [key, row[key]]))
     const filter = this.sql.parseQuery(query)
-    this.#exec('run', `UPDATE ${this.sql.escapeId(sel.table)} SET ${assignment} WHERE ${filter}`)
+    this.#exec('run', `UPDATE ${this.sql.escapeId(table)} SET ${assignment} WHERE ${filter}`)
   }
 
-  async set(name: keyof Tables, query: Query, update: {}) {
-    const sel = this.select(name, query)
-    update = sel.resolveUpdate(update)
-    const { primary, fields } = sel.model
+  async set(sel: Executable, update: {}) {
+    const { model, table, query } = sel
+    const { primary, fields } = model
     const updateFields = [...new Set(Object.keys(update).map((key) => {
       return Object.keys(fields).find(field => field === key || key.startsWith(field + '.'))
     }))]
     const primaryFields = makeArray(primary)
-    const table = await this.get(name, query, union(primaryFields, updateFields) as [])
-    for (const data of table) {
-      this.#update(sel, primaryFields, updateFields, update, data)
+    const data = await this.database.get(table, query, union(primaryFields, updateFields) as [])
+    for (const row of data) {
+      this.#update(sel, primaryFields, updateFields, update, row)
     }
   }
 
-  #create(name: keyof Tables, data: {}) {
-    data = this.caster.dump(name, data)
+  #create(table: string, data: {}) {
+    data = this.caster.dump(table, data)
     const keys = Object.keys(data)
-    const sql = `INSERT INTO ${this.sql.escapeId(name)} (${this.#joinKeys(keys)}) VALUES (${keys.map(key => this.sql.escape(data[key])).join(', ')})`
+    const sql = `INSERT INTO ${this.sql.escapeId(table)} (${this.#joinKeys(keys)}) VALUES (${keys.map(key => this.sql.escape(data[key])).join(', ')})`
     return this.#exec('run', sql)
   }
 
-  async create<T extends keyof Tables>(name: T, data: {}) {
-    const model = this.model(name)
+  async create(sel: Executable, data: {}) {
+    const { model, table } = sel
     data = model.create(data)
-    const result = this.#create(name, data)
+    const result = this.#create(table, data)
     const { autoInc, primary } = model
     if (!autoInc) return data as any
     return { ...data, [primary as string]: result.lastInsertRowid }
   }
 
-  async upsert(name: keyof Tables, data: any[], keys: string | string[]) {
+  async upsert(sel: Executable, data: any[], keys: string[]) {
     if (!data.length) return
-    const sel = this.select(name)
-    data = sel.resolveUpsert(data)
-    const { primary, fields } = sel.model
+    const { model, table, ref } = sel
     const dataFields = [...new Set(Object.keys(Object.assign({}, ...data)).map((key) => {
-      return Object.keys(fields).find(field => field === key || key.startsWith(field + '.'))
+      return Object.keys(model.fields).find(field => field === key || key.startsWith(field + '.'))
     }))]
-    const indexFields = makeArray(keys || primary)
-    const relaventFields = union(indexFields, dataFields)
-    const updateFields = difference(dataFields, indexFields)
-    const table = await this.get(name, {
-      $or: data.map(item => Object.fromEntries(indexFields.map(key => [key, item[key]]))),
+    const relaventFields = union(keys, dataFields)
+    const updateFields = difference(dataFields, keys)
+    const results = await this.database.get(table, {
+      $or: data.map(item => Object.fromEntries(keys.map(key => [key, item[key]]))),
     }, relaventFields as [])
     for (const item of data) {
-      const data = table.find(row => indexFields.every(key => row[key] === item[key]))
-      if (data) {
-        this.#update(sel, indexFields, updateFields, item, data)
+      const row = results.find(row => keys.every(key => row[key] === item[key]))
+      if (row) {
+        this.#update(sel, keys, updateFields, item, row)
       } else {
-        this.#create(name, sel.update(sel.model.create(), item))
+        this.#create(table, executeUpdate(model.create(), item, ref))
       }
     }
   }
 }
 
-namespace SQLiteDatabase {
+namespace SQLiteDriver {
   export interface Config {
     path?: string
   }
@@ -298,4 +286,4 @@ namespace SQLiteDatabase {
   })
 }
 
-export default SQLiteDatabase
+export default SQLiteDriver

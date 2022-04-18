@@ -1,14 +1,8 @@
 import { Db, IndexDescription, MongoClient, MongoError } from 'mongodb'
-import { Context, Database, Dict, DriverError, isNullable, makeArray, noop, omit, pick, Schema, Tables } from 'koishi'
-import { Executable, executeEval, Field, Query } from '@koishijs/orm'
+import { Context, Dict, DriverError, Eval, isNullable, makeArray, noop, omit, pick, Schema, Tables } from 'koishi'
+import { Driver, Executable, executeEval, executeUpdate, Field, Modifier, Query } from '@koishijs/orm'
 import { URLSearchParams } from 'url'
 import { transformEval, transformQuery } from './utils'
-
-declare module 'koishi' {
-  interface Database {
-    mongo: MongoDatabase
-  }
-}
 
 interface EvalTask {
   expr: any
@@ -18,15 +12,17 @@ interface EvalTask {
   reject: (error: Error) => void
 }
 
-class MongoDatabase extends Database {
+class MongoDriver extends Driver {
   public client: MongoClient
   public db: Db
   public mongo = this
   private _tableTasks: Dict<Promise<any>> = {}
   private _evalTasks: EvalTask[] = []
 
-  constructor(public ctx: Context, private config: MongoDatabase.Config) {
-    super(ctx)
+  constructor(public ctx: Context, private config: MongoDriver.Config) {
+    super(ctx.model, 'mongo')
+    ctx.on('ready', () => this.start())
+    ctx.on('dispose', () => this.stop())
   }
 
   private connectionStringFromConfig() {
@@ -45,17 +41,11 @@ class MongoDatabase extends Database {
     const mongourl = this.config.uri || this.connectionStringFromConfig()
     this.client = await MongoClient.connect(mongourl)
     this.db = this.client.db(this.config.database)
-
-    for (const name in this.models) {
-      this._tableTasks[name] = this._syncTable(name as keyof Tables)
-    }
-
-    this.ctx.on('model', (name) => {
-      this._tableTasks[name] = this._syncTable(name)
-    })
+    super.start()
   }
 
   stop() {
+    super.stop()
     return this.client.close()
   }
 
@@ -99,12 +89,16 @@ class MongoDatabase extends Database {
     ])
   }
 
+  prepare(name: string): void {
+    this._tableTasks[name] = this._syncTable(name as keyof Tables)
+  }
+
   async drop() {
-    await Promise.all(Object.keys(this.models).map(name => this.db.dropCollection(name)))
+    await Promise.all(Object.keys(this.database.tables).map(name => this.db.dropCollection(name)))
   }
 
   private async _collStats() {
-    const tables = Object.keys(this.models)
+    const tables = Object.keys(this.database.tables)
     const entries = await Promise.all(tables.map(async (name) => {
       const coll = this.db.collection(name)
       const { count, size } = await coll.stats()
@@ -126,26 +120,27 @@ class MongoDatabase extends Database {
     return { size: totalSize, tables }
   }
 
-  async execute(sel: Executable) {
-    const { table, fields, modifier, expr, query } = sel
+  async get(sel: Executable, modifier: Modifier) {
+    const { table, fields, query } = sel
+    const { offset, limit, sort } = modifier
     const filter = transformQuery(query)
     if (!filter) return []
-    if (expr) {
-      return new Promise<any>((resolve, reject) => {
-        this._evalTasks.push({ expr, table, query, resolve, reject })
-        process.nextTick(() => this._flushEvalTasks())
-      })
-    } else {
-      const { offset, limit, sort } = modifier
-      let cursor = this.db.collection(table).find(filter)
-      if (limit < Infinity) {
-        cursor = cursor.limit(offset + limit)
-      }
-      cursor = cursor.skip(offset)
-      cursor = cursor.sort(Object.fromEntries(sort.map(([k, v]) => [k['$'][1], v === 'desc' ? -1 : 1])))
-      const data = await cursor.toArray()
-      return data.map(row => sel.resolveData(row, fields))
+    let cursor = this.db.collection(table).find(filter)
+    if (limit < Infinity) {
+      cursor = cursor.limit(offset + limit)
     }
+    cursor = cursor.skip(offset)
+    cursor = cursor.sort(Object.fromEntries(sort.map(([k, v]) => [k['$'][1], v === 'desc' ? -1 : 1])))
+    const data = await cursor.toArray()
+    return data.map(row => sel.resolveData(row, fields))
+  }
+
+  async eval(sel: Executable, expr: Eval.Expr) {
+    const { table, query } = sel
+    return new Promise<any>((resolve, reject) => {
+      this._evalTasks.push({ expr, table, query, resolve, reject })
+      process.nextTick(() => this._flushEvalTasks())
+    })
   }
 
   private async _flushEvalTasks() {
@@ -181,41 +176,39 @@ class MongoDatabase extends Database {
     }
   }
 
-  async set(name: keyof Tables, query: Query, update: {}) {
-    const sel = this.select(name, query)
-    const filter = transformQuery(sel.query)
+  async set(sel: Executable, update: {}) {
+    const { query, table, ref } = sel
+    const filter = transformQuery(query)
     if (!filter) return
     const indexFields = makeArray(sel.model.primary)
-    const coll = this.db.collection(name)
+    const coll = this.db.collection(table)
     const original = await coll.find(filter).toArray()
     if (!original.length) return
-    update = sel.resolveUpdate(update)
     const updateFields = new Set(Object.keys(update).map(key => key.split('.', 1)[0]))
     const bulk = coll.initializeUnorderedBulkOp()
     for (const item of original) {
       bulk.find(pick(item, indexFields)).updateOne({
-        $set: pick(sel.update(item, update), updateFields),
+        $set: pick(executeUpdate(item, update, ref), updateFields),
       })
     }
     await bulk.execute()
   }
 
-  async remove(name: keyof Tables, query: Query) {
-    const sel = this.select(name, query)
-    const filter = transformQuery(sel.query)
+  async remove(sel: Executable) {
+    const { query, table } = sel
+    const filter = transformQuery(query)
     if (!filter) return
-    await this.db.collection(name).deleteMany(filter)
+    await this.db.collection(table).deleteMany(filter)
   }
 
   private queue(name: keyof Tables, callback: () => Promise<any>) {
     return this._tableTasks[name] = Promise.resolve(this._tableTasks[name]).catch(noop).then(callback)
   }
 
-  async create<T extends keyof Tables>(name: T, data: any) {
-    const coll = this.db.collection(name)
-    return this.queue(name, async () => {
-      const model = this.model(name)
-      const { primary, fields, autoInc } = model
+  async create(sel: Executable, data: any) {
+    const coll = this.db.collection(sel.table)
+    return this.queue(sel.table as any, async () => {
+      const { primary, fields, autoInc } = sel.model
       if (autoInc && !Array.isArray(primary) && !(primary in data)) {
         const [latest] = await coll.find().sort(primary, -1).limit(1).toArray()
         data[primary] = latest ? +latest[primary] + 1 : 1
@@ -224,7 +217,7 @@ class MongoDatabase extends Database {
           data[primary] = data[primary].padStart(8, '0')
         }
       }
-      const copy = model.create(data)
+      const copy = sel.model.create(data)
       try {
         await coll.insertOne(copy)
         delete copy['_id']
@@ -238,30 +231,28 @@ class MongoDatabase extends Database {
     })
   }
 
-  async upsert(name: keyof Tables, data: any[], keys: string | string[]) {
+  async upsert(sel: Executable, data: any[], keys: string[]) {
     if (!data.length) return
-    const sel = this.select(name)
-    data = sel.resolveUpsert(data)
-    const indexFields = makeArray(keys || sel.model.primary)
-    await Promise.resolve(this._tableTasks[name]).catch(noop)
-    const coll = this.db.collection(name)
-    const original = await coll.find({ $or: data.map(item => pick(item, indexFields)) }).toArray()
+    const { table, ref, model } = sel
+    await Promise.resolve(this._tableTasks[table]).catch(noop)
+    const coll = this.db.collection(table)
+    const original = await coll.find({ $or: data.map(item => pick(item, keys)) }).toArray()
     const bulk = coll.initializeUnorderedBulkOp()
     for (const update of data) {
-      const item = original.find(item => indexFields.every(key => item[key].valueOf() === update[key].valueOf()))
+      const item = original.find(item => keys.every(key => item[key].valueOf() === update[key].valueOf()))
       if (item) {
         const updateFields = new Set(Object.keys(update).map(key => key.split('.', 1)[0]))
-        const override = omit(pick(sel.update(item, update), updateFields), indexFields)
-        bulk.find(pick(item, indexFields)).updateOne({ $set: override })
+        const override = omit(pick(executeUpdate(item, update, ref), updateFields), keys)
+        bulk.find(pick(item, keys)).updateOne({ $set: override })
       } else {
-        bulk.insert(sel.update(sel.model.create(), update))
+        bulk.insert(executeUpdate(model.create(), update, ref))
       }
     }
     await bulk.execute()
   }
 }
 
-namespace MongoDatabase {
+namespace MongoDriver {
   export const name = 'database-mongo'
 
   export interface Config {
@@ -289,4 +280,4 @@ namespace MongoDatabase {
   })
 }
 
-export default MongoDatabase
+export default MongoDriver
