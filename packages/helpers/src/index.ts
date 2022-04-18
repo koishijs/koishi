@@ -53,7 +53,7 @@ export function adminUser<U extends User.Field, G extends Channel.Field, A exten
 
     if (!data) {
       notFound = true
-      const temp = app.model.create('user')
+      const temp = app.model.tables.user.create()
       temp[platform] = userId
       session.user = observe(temp, async (diff) => {
         await app.database.createUser(platform, userId, diff)
@@ -122,7 +122,7 @@ export function adminChannel<U extends User.Field, G extends Channel.Field, A ex
 
     if (!data) {
       notFound = true
-      const temp = app.model.create('channel')
+      const temp = app.model.tables.channel.create()
       temp.platform = platform
       temp.id = channelId
       session.channel = observe(temp, async (diff) => {

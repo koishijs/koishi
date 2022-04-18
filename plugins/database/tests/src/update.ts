@@ -79,7 +79,7 @@ namespace OrmOperations {
 
   export const create = function Create(app: App) {
     it('auto increment primary key', async () => {
-      const table = barTable.map(bar => merge(app.model.create('temp2'), bar))
+      const table = barTable.map(bar => merge(app.model.tables.temp2.create(), bar))
       for (const index in barTable) {
         const bar = await app.database.create('temp2', omit(barTable[index], ['id']))
         barTable[index].id = bar.id
@@ -176,7 +176,7 @@ namespace OrmOperations {
         { id: table[table.length - 1].id + 1, text: 'wmlake' },
         { id: table[table.length - 1].id + 2, text: 'bytower' },
       ]
-      table.push(...data.map(bar => merge(app.model.create('temp2'), bar)))
+      table.push(...data.map(bar => merge(app.model.tables.temp2.create(), bar)))
       await expect(app.database.upsert('temp2', data)).eventually.fulfilled
       await expect(app.database.get('temp2', {})).to.eventually.have.shape(table)
     })

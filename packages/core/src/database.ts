@@ -1,6 +1,6 @@
 import * as utils from '@koishijs/utils'
 import { Awaitable, Dict, Get, MaybeArray } from '@koishijs/utils'
-import { Database, Driver, Field, Keys, Model, Result, Update } from '@koishijs/orm'
+import { Database, Driver, Result, Update } from '@koishijs/orm'
 import { Context } from './context'
 
 export interface User {
@@ -46,43 +46,6 @@ export interface Tables {
   channel: Channel
 }
 
-export class ModelService {
-  public config: { [K in Keys<Tables>]?: Model<Tables[K]> } = {}
-
-  constructor(protected ctx: Context) {
-    this.extend('user', {
-      id: 'string(63)',
-      name: 'string(63)',
-      flag: 'unsigned(20)',
-      authority: 'unsigned(4)',
-      locale: 'string(63)',
-    }, {
-      autoInc: true,
-    })
-
-    this.extend('channel', {
-      id: 'string(63)',
-      platform: 'string(63)',
-      flag: 'unsigned(20)',
-      assignee: 'string(63)',
-      guildId: 'string(63)',
-      locale: 'string(63)',
-    }, {
-      primary: ['id', 'platform'],
-    })
-  }
-
-  extend<K extends Keys<Tables>>(name: K, fields?: Field.Extension<Tables[K]>, config: Model.Config<Tables[K]> = {}) {
-    const model = this.config[name] ||= new Model<any>(name)
-    model.extend(fields, config)
-    this.ctx.emit('model', name)
-  }
-
-  create<K extends Keys<Tables>>(name: K, data?: {}) {
-    return this.config[name].create(data)
-  }
-}
-
 export abstract class Service {
   protected start(): Awaitable<void> {}
   protected stop(): Awaitable<void> {}
@@ -106,19 +69,39 @@ export abstract class Service {
   }
 }
 
-export abstract class DatabaseService extends Database<Tables> {
-  constructor(protected ctx: Context, driver: Driver) {
-    super(ctx.model.config, driver)
+export class DatabaseService extends Database<Tables> {
+  constructor(protected ctx: Context) {
+    super()
 
-    ctx.on('ready', async () => {
-      await this.driver.start()
-      ctx.database = this
+    this.extend('user', {
+      id: 'string(63)',
+      name: 'string(63)',
+      flag: 'unsigned(20)',
+      authority: 'unsigned(4)',
+      locale: 'string(63)',
+    }, {
+      autoInc: true,
     })
 
-    ctx.on('dispose', async () => {
-      if (ctx.database === this) ctx.database = null
-      await this.driver.stop()
+    this.extend('channel', {
+      id: 'string(63)',
+      platform: 'string(63)',
+      flag: 'unsigned(20)',
+      assignee: 'string(63)',
+      guildId: 'string(63)',
+      locale: 'string(63)',
+    }, {
+      primary: ['id', 'platform'],
     })
+  }
+
+  setDriver(name: string, driver: Driver) {
+    super.setDriver(name, driver)
+    if (Object.keys(this.drivers).length) {
+      this.ctx.database = this
+    } else {
+      this.ctx.database = null
+    }
   }
 
   getUser<T extends string, K extends User.Field>(platform: T, id: string, modifier?: Driver.Cursor<K>): Promise<Result<User, K> & Record<T, string>>
@@ -161,6 +144,12 @@ export abstract class DatabaseService extends Database<Tables> {
   createChannel(platform: string, id: string, data: Partial<Channel>) {
     return this.create('channel', { platform, id, ...data })
   }
+}
+
+// workaround typings
+DatabaseService.prototype.extend = function extend(this: DatabaseService, name, fields, config) {
+  Database.prototype.extend.call(this, name, fields, config)
+  this.ctx.emit('model', name)
 }
 
 export namespace DatabaseService {
