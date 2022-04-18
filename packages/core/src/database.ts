@@ -1,6 +1,6 @@
 import * as utils from '@koishijs/utils'
 import { Awaitable, Dict, Get, MaybeArray } from '@koishijs/utils'
-import { Driver, Field, Keys, Model, Result, Update } from '@koishijs/orm'
+import { Database, Driver, Field, Keys, Model, Result, Update } from '@koishijs/orm'
 import { Context } from './context'
 
 export interface User {
@@ -106,21 +106,18 @@ export abstract class Service {
   }
 }
 
-export abstract class Database extends Driver<Tables> {
-  protected start(): Awaitable<void> {}
-  protected stop(): Awaitable<void> {}
-
-  constructor(protected ctx: Context) {
-    super(ctx.model.config)
+export abstract class DatabaseService extends Database<Tables> {
+  constructor(protected ctx: Context, driver: Driver) {
+    super(ctx.model.config, driver)
 
     ctx.on('ready', async () => {
-      await this.start()
+      await this.driver.start()
       ctx.database = this
     })
 
     ctx.on('dispose', async () => {
       if (ctx.database === this) ctx.database = null
-      await this.stop()
+      await this.driver.stop()
     })
   }
 
@@ -166,13 +163,13 @@ export abstract class Database extends Driver<Tables> {
   }
 }
 
-export namespace Database {
+export namespace DatabaseService {
   type Methods<S, T> = {
     [K in keyof S]?: S[K] extends (...args: infer R) => infer U ? (this: T, ...args: R) => U : S[K]
   }
 
   type Constructor<T> = new (...args: any[]) => T
-  type ExtensionMethods<T> = Methods<Database, T extends Constructor<infer I> ? I : never>
+  type ExtensionMethods<T> = Methods<DatabaseService, T extends Constructor<infer I> ? I : never>
   type Extension<T> = ((Database: T) => void) | ExtensionMethods<T>
 
   /** @deprecated */

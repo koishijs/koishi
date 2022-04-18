@@ -1,6 +1,5 @@
 import { clone, isNullable, Logger, makeArray, MaybeArray } from '@koishijs/utils'
 import { isEvalExpr } from './eval'
-import { ModelError } from './error'
 import { Flatten, Keys } from './utils'
 
 const logger = new Logger('model')
@@ -53,7 +52,7 @@ export namespace Field {
 
     // parse string definition
     const capture = regexp.exec(source)
-    if (!capture) throw new ModelError('invalid field definition')
+    if (!capture) throw new TypeError('invalid field definition')
     const type = capture[1] as Type
     const args = (capture[2] || '').split(',')
     const field: Field = { type }

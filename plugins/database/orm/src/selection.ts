@@ -1,8 +1,8 @@
-import { defineProperty, Dict, makeArray, pick, valueMap } from '@koishijs/utils'
+import { defineProperty, Dict, pick, valueMap } from '@koishijs/utils'
 import { Driver } from './driver'
-import { Eval, executeEval, executeUpdate } from './eval'
+import { Eval, executeEval } from './eval'
 import { Model } from './model'
-import { executeQuery, Query } from './query'
+import { Query } from './query'
 import { Common, Keys } from './utils'
 
 export type Direction = 'asc' | 'desc'
@@ -45,11 +45,11 @@ export namespace Selection {
   export interface Payload {
     type: Type
     ref: string
-    table: string
-    modifier: Modifier
+    name: string
+    query: Query.Expr
     fields?: Dict<Eval.Expr>
-    query?: Query.Expr
     expr?: Eval.Expr
+    args?: any[]
   }
 }
 
@@ -62,7 +62,7 @@ const createRow = (ref: string, prefix = '', expr = {}) => new Proxy(expr, {
 
 export interface Executable extends Selection.Payload {}
 
-export abstract class Executable<S = any, T = any> {
+export class Executable<S = any, T = any> {
   #row: Selection.Row<S>
   #model: Model
 
@@ -74,11 +74,11 @@ export abstract class Executable<S = any, T = any> {
   }
 
   get row() {
-    return this.#row ||= createRow(this.ref)
+    return this.#row ||= createRow(this.name)
   }
 
   get model() {
-    return this.#model ||= this.driver.model(this.table)
+    return this.#model ||= this.driver.model(this.ref)
   }
 
   protected resolveQuery(query: Query<S>): Query.Expr<S>
@@ -92,20 +92,6 @@ export abstract class Executable<S = any, T = any> {
       return { [primary]: query }
     }
     return query
-  }
-
-  resolveUpdate(update: any) {
-    if (typeof update === 'function') update = update(this.row)
-    const { primary } = this.model
-    if (makeArray(primary).some(key => key in update)) {
-      throw new TypeError(`cannot modify primary key`)
-    }
-    return this.model.format(update)
-  }
-
-  resolveUpsert(upsert: any) {
-    if (typeof upsert === 'function') upsert = upsert(this.row)
-    return upsert.map(item => this.model.format(item))
   }
 
   resolveData(data: any, fields: Dict<Eval.Expr<any>>) {
@@ -125,33 +111,6 @@ export abstract class Executable<S = any, T = any> {
     }
   }
 
-  filter(data: any) {
-    return executeQuery(data, this.query, this.ref)
-  }
-
-  update(data: any, update: any) {
-    return executeUpdate(data, update, this.ref)
-  }
-
-  truncate(data: any[]) {
-    const { limit, offset, sort } = this.modifier
-
-    // step 1: sort data
-    data.sort((a, b) => {
-      for (const [field, direction] of sort) {
-        const sign = direction === 'asc' ? 1 : -1
-        const x = executeEval({ [this.ref]: a }, field)
-        const y = executeEval({ [this.ref]: b }, field)
-        if (x < y) return -sign
-        if (x > y) return sign
-      }
-      return 0
-    })
-
-    // step 2: truncate data
-    return data.slice(offset, offset + limit)
-  }
-
   execute(): Promise<T> {
     return this.driver.execute(this)
   }
@@ -160,26 +119,29 @@ export abstract class Executable<S = any, T = any> {
 const letters = 'abcdefghijklmnopqrstuvwxyz'
 
 export class Selection<S = any> extends Executable<S, S[]> {
+  type: Selection.Type = 'get'
+  args: [Modifier]
+
   constructor(driver: Driver, table: string, query: Query) {
     super(driver)
-    this.ref = Array(8).fill(0).map(() => letters[Math.floor(Math.random() * letters.length)]).join('')
-    this.table = table
+    this.name = Array(8).fill(0).map(() => letters[Math.floor(Math.random() * letters.length)]).join('')
+    this.ref = table
     this.query = this.resolveQuery(query)
-    this.modifier = { sort: [], limit: Infinity, offset: 0 }
+    this.args = [{ sort: [], limit: Infinity, offset: 0 }]
   }
 
   limit(limit: number) {
-    this.modifier.limit = limit
+    this.args[0].limit = limit
     return this
   }
 
   offset(offset: number) {
-    this.modifier.offset = offset
+    this.args[0].offset = offset
     return this
   }
 
   orderBy(field: Selection.Field<S>, direction?: Direction) {
-    this.modifier.sort.push([this.resolveField(field), direction])
+    this.args[0].sort.push([this.resolveField(field), direction])
     return this
   }
 
@@ -199,12 +161,30 @@ export class Selection<S = any> extends Executable<S, S[]> {
     return this as any
   }
 
-  evaluate<T>(callback: Selection.Callback<S, T>): Evaluation<S, T> {
-    return new Evaluation(this.driver, {
+  evaluate<T>(callback: Selection.Callback<S, T>): Executable<S, T> {
+    return new Executable(this.driver, {
       ...this,
-      expr: this.resolveField(callback),
+      type: 'eval',
+      args: [this.resolveField(callback)],
     })
   }
 }
 
-export class Evaluation<S = any, T = any> extends Executable<S, T> {}
+export function executeSort(data: any[], modifier: Modifier, name: string) {
+  const { limit, offset, sort } = modifier
+
+  // step 1: sort data
+  data.sort((a, b) => {
+    for (const [field, direction] of sort) {
+      const sign = direction === 'asc' ? 1 : -1
+      const x = executeEval({ [name]: a, _: a }, field)
+      const y = executeEval({ [name]: b, _: b }, field)
+      if (x < y) return -sign
+      if (x > y) return sign
+    }
+    return 0
+  })
+
+  // step 2: truncate data
+  return data.slice(offset, offset + limit)
+}

@@ -128,7 +128,7 @@ type MapUneval<S> = {
   [K in keyof S]?: Uneval<S[K]>
 }
 
-export type Update<T> = MapUneval<Flatten<T>>
+export type Update<T = any> = MapUneval<Flatten<T>>
 
 function getRecursive(args: string | string[], data: any) {
   if (typeof args === 'string') {

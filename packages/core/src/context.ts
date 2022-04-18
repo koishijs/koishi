@@ -1,7 +1,7 @@
 import { Awaitable, defineProperty, Dict, Logger, makeArray, MaybeArray, Promisify, Random, remove, Schema, sleep } from '@koishijs/utils'
 import { Command } from './command'
 import { Session } from './session'
-import { Channel, Database, ModelService, Modules, Service, Tables, User } from './database'
+import { Channel, DatabaseService, ModelService, Modules, Service, Tables, User } from './database'
 import { Argv } from './parser'
 import { App } from './app'
 import { Bot } from './bot'
@@ -592,7 +592,7 @@ export class Context {
 export namespace Context {
   export interface Services {
     bots: Adapter.BotList
-    database: Database
+    database: DatabaseService
     model: ModelService
     i18n: I18n
   }

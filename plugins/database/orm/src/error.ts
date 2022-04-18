@@ -1,7 +1,3 @@
-export class ModelError extends Error {
-  name = 'ModelError'
-}
-
 export namespace DriverError {
   export type Code =
     | 'duplicate-entry'
