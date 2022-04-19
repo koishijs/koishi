@@ -174,8 +174,14 @@ export class OneBotBot extends Bot<BotConfig> {
   }
 
   async getChannelMessageHistory(channelId: string, start?: string) {
-    // 从旧到新
-    const list = await this.internal.getGroupMsgHistory(Number(channelId), Number(start))
+    const msg = await this.internal.getMsg(start)
+    let list: OneBot.Message[]
+    if (msg?.message_seq) {
+      list = await this.internal.getGroupMsgHistory(Number(channelId), msg.message_seq)
+    } else {
+      list = await this.internal.getGroupMsgHistory(Number(channelId))
+    }
+    // 从旧到新 这 internal 类型好像有问题?
     // @ts-ignore
     return list.messages.map(OneBot.adaptMessage)
   }

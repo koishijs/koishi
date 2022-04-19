@@ -53,6 +53,7 @@ export interface SenderInfo extends StrangerInfo {
 export interface Message extends MessageId {
   real_id?: number
   time: number
+  message_seq: number
   message_type: 'private' | 'group' | 'guild'
   sender: SenderInfo
   group_id?: number
@@ -408,7 +409,7 @@ export interface Internal {
   getEssenceMsgList(group_id: id): Promise<EssenceMessage[]>
   getWordSlices(content: string): Promise<string[]>
   ocrImage(image: string): Promise<OcrResult>
-  getGroupMsgHistory(group_id: id, message_seq: id): Promise<Message[]>
+  getGroupMsgHistory(group_id: id, message_seq?: number): Promise<Message[]>
   deleteFriend(user_id: id): Promise<void>
   deleteFriendAsync(user_id: id): Promise<void>
   setFriendAddRequest(flag: string, approve: boolean, remark?: string): Promise<void>
