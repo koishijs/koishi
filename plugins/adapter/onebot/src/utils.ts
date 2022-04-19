@@ -177,33 +177,33 @@ export function adaptSession(data: OneBot.Payload) {
       // from go-cqhttp source code, but not mentioned in official docs
       case 'guild_channel_recall':
         session.type = 'message-deleted'
-        session.subtype = 'group'
+        session.subtype = 'guild'
         session.subsubtype = 'guild'
         break
       case 'friend_add':
         session.type = 'friend-added'
         break
       case 'group_upload':
-        session.type = 'group-file-added'
+        session.type = 'guild-file-added'
         break
       case 'group_admin':
-        session.type = 'group-member'
+        session.type = 'guild-member'
         session.subtype = 'role'
         break
       case 'group_ban':
-        session.type = 'group-member'
+        session.type = 'guild-member'
         session.subtype = 'ban'
         break
       case 'group_decrease':
-        session.type = session.userId === session.selfId ? 'group-deleted' : 'group-member-deleted'
+        session.type = session.userId === session.selfId ? 'guild-deleted' : 'guild-member-deleted'
         session.subtype = session.userId === session.operatorId ? 'active' : 'passive'
         break
       case 'group_increase':
-        session.type = session.userId === session.selfId ? 'group-added' : 'group-member-added'
+        session.type = session.userId === session.selfId ? 'guild-added' : 'guild-member-added'
         session.subtype = session.userId === session.operatorId ? 'active' : 'passive'
         break
       case 'group_card':
-        session.type = 'group-member'
+        session.type = 'guild-member'
         session.subtype = 'nickname'
         break
       case 'notify':

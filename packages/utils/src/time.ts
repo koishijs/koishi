@@ -73,6 +73,7 @@ export namespace Time {
     return ms + 'ms'
   }
 
+  /** @deprecated use i18n formatter instead */
   export function formatTime(ms: number) {
     let result: string
     if (ms >= day - hour / 2) {

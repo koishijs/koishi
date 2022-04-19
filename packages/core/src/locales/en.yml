@@ -5,6 +5,10 @@ general:
   comma: ', '
   and: and
   or: or
+  day: day
+  hour: hour
+  minute: minute
+  second: second
 
 internal:
   low-authority: Low authority.

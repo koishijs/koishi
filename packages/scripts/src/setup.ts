@@ -1,5 +1,5 @@
 import { CAC } from 'cac'
-import { copyFile, mkdir, readFile, readJson, writeFile, writeJson } from 'fs-extra'
+import { copyFile, mkdir, readFile, readJson, writeFile } from 'fs-extra'
 import { resolve } from 'path'
 import { config, cwd, meta, PackageJson } from './utils'
 import which from 'which-pm-runs'
@@ -23,11 +23,17 @@ class Initiator {
   }
 
   async init(name: string) {
-    this.name = name ||= await this.getName()
+    name ||= await this.getName()
+    if (name.includes('koishi-plugin-')) {
+      this.fullname = name
+      this.name = name.replace('koishi-plugin-', '')
+    } else {
+      this.name = name
+      this.fullname = name.includes('/')
+        ? name.replace('/', '/koishi-plugin-')
+        : 'koishi-plugin-' + name
+    }
     this.desc = await this.getDesc()
-    this.fullname = name.includes('/')
-      ? name.replace('/', '/koishi-plugin-')
-      : 'koishi-plugin-' + name
     this.target = resolve(cwd, 'plugins', name)
     await this.write()
   }
@@ -68,11 +74,11 @@ class Initiator {
       source.peerDependencies['@koishijs/console'] = meta.dependencies['@koishijs/console']
     }
     source.peerDependencies['koishi'] = meta.dependencies['koishi']
-    await writeJson(this.target + '/package.json', {
+    await writeFile(this.target + '/package.json', JSON.stringify({
       name: this.fullname,
       description: this.desc,
       ...source,
-    }, { spaces: 2 })
+    }, null, 2))
   }
 
   async writeTsConfig() {
@@ -121,9 +127,10 @@ interface Options {
 }
 
 export default function (cli: CAC) {
-  cli.command('new [name]', 'initialize a new plugin')
+  cli.command('setup [name]', 'initialize a new plugin')
     .alias('create')
     .alias('init')
+    .alias('new')
     .option('-c, --console', 'with console extension')
     .action(async (name: string, options) => {
       new Initiator(options).start(name)

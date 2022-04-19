@@ -59,7 +59,7 @@ const plugins = computed(() => {
 const packages = computed(() => {
   return plugins.value
     .filter(item => config.showInstalled || !store.packages[item.name])
-    .sort((a, b) => b.score - a.score)
+    .sort((a, b) => b.popularity - a.popularity)
 })
 
 </script>
@@ -82,7 +82,7 @@ const packages = computed(() => {
     font-size: 1.25rem;
     padding: 0 3rem 0 1.25rem;
     background-color: var(--card-bg);
-    transition: background-color 0.3s ease, border-color 0.3s ease;
+    transition: color 0.3s ease, background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
   }
 
   .el-input__suffix {

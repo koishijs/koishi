@@ -12,10 +12,7 @@ sidebarDepth: 2
 
 一个消息段对象的结构如下：
 
-```ts no-extra-header
-import { Dict } from '@koishijs/utils'
-
-// ---cut---
+```ts
 interface segment {
   type: string
   data: Dict<string | number | boolean>

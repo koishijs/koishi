@@ -63,7 +63,7 @@ export default {
 export default {
   plugins: {
     repeater: {
-      onRepeat: (state) =>
+      onRepeat: (state, session) =>
         state.users[session.userId] > 1 &&
         segment.at(session.userId) + "不许重复复读！"
     },

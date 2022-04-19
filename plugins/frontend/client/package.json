@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/client",
   "description": "Koishi Console Client",
-  "version": "3.2.3",
+  "version": "3.2.4",
   "main": "client/index.ts",
   "files": [
     "app",
@@ -33,14 +33,14 @@
   ],
   "dependencies": {
     "@koishijs/segment": "^1.1.1",
-    "@types/marked": "^4.0.2",
-    "@vitejs/plugin-vue": "^2.2.4",
+    "@types/marked": "^4.0.3",
+    "@vitejs/plugin-vue": "^2.3.1",
     "@vueuse/core": "^7.7.1",
     "cac": "^6.7.12",
-    "element-plus": "^2.1.4",
+    "element-plus": "^2.1.8",
     "marked": "^4.0.12",
-    "sass": "^1.49.9",
-    "schemastery": "^3.1.1",
+    "sass": "^1.49.11",
+    "schemastery": "^3.2.0",
     "vite": "~2.5.10",
     "vue": "^3.2.31",
     "vue-router": "^4.0.14"

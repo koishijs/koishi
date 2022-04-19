@@ -13,7 +13,6 @@ export * from './market'
 export * from './packages'
 export * from './protocols'
 export * from './services'
-export * from './utils'
 
 export {
   Installer,

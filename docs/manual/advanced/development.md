@@ -1,5 +1,9 @@
 ---
 sidebarDepth: 2
+redirectFrom:
+  - /guide/introduction/cli.html
+  - /guide/introduction/development.html
+  - /guide/introduction/workspace.html
 ---
 
 # 工作区开发
@@ -52,19 +56,6 @@ watch:
     - some-file
 ```
 
-### 修改入口文件
-
-`koishi start` 指令需要一个配置文件作为入口。这个配置文件允许 js，ts，json，yaml 等多种格式。默认情况下，配置文件名应当形如 `koishi.[ext]` 或 `koishi.config.[ext]`，但你其实也可以传入一个 `file` 参数来指定其他名称。它的完整语法为：
-
-```cli
-# 如果你不写这里的 file 参数，程序就会自动寻找 koishi.[ext] 和 koishi.config.[ext] 文件
-koishi start [file] [options]
-```
-
-::: tip
-基于这个逻辑，你也可以将你的配置文件的后缀名改为 ts 等，但动态的配置文件格式将不再支持 @koishijs/plugin-manager，这意味着你将无法使用插件市场。
-:::
-
 <!-- 此外，这个指令还支持一些额外的配置项：
 
 - **--log-level:** 控制输出等级
@@ -81,10 +72,10 @@ koishi start [file] [options]
 
 ::: code-group manager
 ```npm
-npm run new [name] [-c]
+npm run setup [name] [-c]
 ```
 ```yarn
-yarn new [name] [-c]
+yarn setup [name] [-c]
 ```
 :::
 

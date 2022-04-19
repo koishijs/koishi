@@ -1,3 +1,5 @@
+require('./patchRedirect')
+
 module.exports = {
   extends: '@vuepress/theme-default',
 

@@ -1,73 +1,46 @@
-import { Dict, isNullable, Logger } from '@koishijs/utils'
+import { Dict, isNullable, Logger, Random, Time } from '@koishijs/utils'
 import { Context } from './context'
 
 const logger = new Logger('i18n')
+const kTemplate = Symbol('template')
 
 export namespace I18n {
-  export type Template = string | { $: string }
-  export type Node = Template | Store
+  export type Node = string | Store
 
   export interface Store {
+    [kTemplate]?: string
     [K: string]: Node
   }
 
-  export type Formatter = (value: string, ...args: string[]) => string
+  export type Formatter = (value: any, args: string[], locale: string) => string
   export type Renderer = (dict: Dict, params: any, locale: string) => string
 }
 
 export class I18n {
-  _data: Dict<Dict<I18n.Template>> = {}
+  _data: Dict<I18n.Store> = {}
   _formatters: Dict<I18n.Formatter> = {}
-  _renderers: Dict<I18n.Renderer> = {}
-
-  static isTemplate(data: any): data is I18n.Template {
-    return typeof data === 'string' || data?.$
-  }
+  _presets: Dict<I18n.Renderer> = {}
 
   constructor(protected ctx: Context) {
     this.define('', { '': '' })
     this.define('zh', require('./locales/zh'))
     this.define('en', require('./locales/en'))
-
-    this.renderer('list', (data, params: any[], locale) => {
-      const list = params.map((value) => {
-        return this.render(data.item, { value }, locale)
-      })
-      if (data.header) list.unshift(this.render(data.header, params, locale))
-      if (data.footer) list.push(this.render(data.footer, params, locale))
-      return list.join('\n')
-    })
-
-    this.renderer('inline-list', (data, params: any[], locale) => {
-      let output = ''
-      params.forEach((value, index) => {
-        if (index) {
-          if (index === params.length - 1 && data.conj !== undefined) {
-            output += data.conj
-          } else {
-            output += data.separator ?? this.text([locale], ['general.comma'], {})
-          }
-        }
-        output += this.render(data.item, { value }, locale) ?? value
-      })
-      const path = params.length in data ? params.length : 'body'
-      if (data[path] === undefined) return output
-      return this.render(data[path], [output, params.length], locale)
-    })
+    this.registerBuiltins()
   }
 
   private set(locale: string, prefix: string, value: I18n.Node) {
-    if (I18n.isTemplate(value)) {
+    if (prefix.includes('@') || typeof value === 'string') {
       const dict = this._data[locale]
-      const path = prefix.slice(0, -1)
+      const [path, preset] = prefix.slice(0, -1).split('@')
+      if (preset) value[kTemplate] = preset
       if (!isNullable(dict[path]) && !locale.startsWith('$')) {
         logger.warn('override', locale, path)
       }
-      dict[path] = value as I18n.Template
+      dict[path] = value
       this[Context.current]?.on('dispose', () => {
         delete dict[path]
       })
-    } else if (value) {
+    } else {
       for (const key in value) {
         this.set(locale, prefix + key + '.', value[key])
       }
@@ -89,16 +62,17 @@ export class I18n {
     this._formatters[name] = callback
   }
 
-  renderer(name: string, callback: I18n.Renderer) {
-    this._renderers[name] = callback
+  preset(name: string, callback: I18n.Renderer) {
+    this._presets[name] = callback
   }
 
-  render(value: I18n.Template, params: any, locale: string) {
+  render(value: I18n.Node, params: any, locale: string) {
     if (value === undefined) return
 
     if (typeof value !== 'string') {
-      const render = this._renderers[value.$]
-      if (!render) throw new Error(`Renderer "${value.$}" not found`)
+      const preset = value[kTemplate]
+      const render = this._presets[preset]
+      if (!render) throw new Error(`Preset "${preset}" not found`)
       return render(value, params, locale)
     }
 
@@ -115,7 +89,7 @@ export class I18n {
         const formatter = this._formatters[cap[1]]
         if (!formatter) throw new Error(`Formatter "${cap[1]}" not found`)
         const args = cap[2] ? cap[2].split(',').map(v => v.trim()) : []
-        result = formatter(result, ...args)
+        result = formatter(result, args, locale)
       }
       return result.toString()
     })
@@ -147,5 +121,43 @@ export class I18n {
     // path not found
     logger.warn('missing', paths[0])
     return paths[0]
+  }
+
+  private registerBuiltins() {
+    const units = ['day', 'hour', 'minute', 'second'] as const
+
+    this.formatter('time', (ms: number, _, locale) => {
+      for (let index = 0; index < 3; index++) {
+        const major = Time[units[index]]
+        const minor = Time[units[index + 1]]
+        if (ms >= major - minor / 2) {
+          ms += minor / 2
+          let result = Math.floor(ms / major) + ' ' + this.text([locale], ['general.' + units[index]], {})
+          if (ms % major > minor) {
+            result += ` ${Math.floor(ms % major / minor)} ` + this.text([locale], ['general.' + units[index + 1]], {})
+          }
+          return result
+        }
+      }
+      return Math.round(ms / Time.second) + ' ' + this.text([locale], ['general.second'], {})
+    })
+
+    this.preset('plural', (data: string[], params: { length: number }, locale) => {
+      const path = params.length in data ? params.length : data.length - 1
+      return this.render(data[path], params, locale)
+    })
+
+    this.preset('random', (data: string[], params, locale) => {
+      return this.render(Random.pick(data), params, locale)
+    })
+
+    this.preset('list', (data, params: any[], locale) => {
+      const list = Object.entries(params).map(([key, value]) => {
+        return this.render(data.item, { key, value }, locale)
+      })
+      list.unshift(this.render(data.header, params, locale))
+      list.push(this.render(data.footer, params, locale))
+      return list.join('\n').trim()
+    })
   }
 }
