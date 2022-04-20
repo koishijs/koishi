@@ -1,6 +1,6 @@
 import * as utils from '@koishijs/utils'
 import { Awaitable, Dict, Get, MaybeArray } from '@koishijs/utils'
-import { Database, Driver, Result, Update } from '@koishijs/orm'
+import { Database, Driver, Result, Update } from 'cosmotype'
 import { Context } from './context'
 
 export interface User {

@@ -23,7 +23,7 @@
     "koishi"
   ],
   "dependencies": {
-    "@koishijs/utils": "^5.2.2",
+    "@koishijs/utils": "^5.3.0",
     "semver": "^7.3.5"
   }
 }
