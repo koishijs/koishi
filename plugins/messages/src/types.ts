@@ -6,7 +6,7 @@ export interface Message {
   guildId: string
   userId: string
   timestamp: Date
-  quoteId?: number
+  quoteId?: string
   username: string
   nickname: string
   channelId: string

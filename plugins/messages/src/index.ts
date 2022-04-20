@@ -1,4 +1,4 @@
-import { Bot, Context, Logger, Service, Session } from 'koishi'
+import { Bot, Context, Logger, segment, Service, Session } from 'koishi'
 import { Message } from './types'
 import snowflakes from './snowflakes'
 
@@ -13,6 +13,7 @@ declare module 'koishi' {
   }
   interface EventMap {
     'messages/synced'(bot: Bot, channelId: string)
+    'messages/syncFailed'(bot: Bot, channelId: string, error: Error)
   }
 }
 
@@ -55,7 +56,7 @@ export class MessageDatabase extends Service {
       messageId: 'string',
       userId: 'string',
       timestamp: 'timestamp',
-      quoteId: 'integer',
+      quoteId: 'string',
       username: 'string',
       nickname: 'string',
       channelId: 'string',
@@ -66,7 +67,7 @@ export class MessageDatabase extends Service {
 
     // 如果是一个 platform 有多个 bot, bot 状态变化, 频道状态变化待解决
     this.ctx.on('message', this.#onMessage.bind(this))
-    this.ctx.on('send', this.#onMessage.bind(this)) // TODO no userId and nickname(onebot) here
+    this.ctx.on('send', this.#onMessage.bind(this))
     this.#queueRunning = true
     setTimeout(this.#runQueue.bind(this), 1)
   }
@@ -82,18 +83,37 @@ export class MessageDatabase extends Service {
     }))
   }
 
-  async getMessages(bot: Bot, guildId: string, channelId: string) {
-    if (this.#status[bot.platform + ':' + channelId] === ChannelStatus.SYNCED) {
-      const data = await this.ctx.database.get('message', { platform: bot.platform, channelId }, {
-        sort: {
-          timestamp: 'desc',
-        },
-        limit: 50,
-      })
-      return data
-    } else {
+  async getMessages(bot: Bot, guildId: string, channelId: string): Promise<Partial<Session>[]> {
+    // 正在同步: 内存中的最后50条消息
+    // 已同步: 数据库里拿
+    // 未同步: 尝试同步, 数据库里拿
+    if (this.#status[bot.platform + ':' + channelId] === ChannelStatus.SYNCING) {
+      const queue = this.#messageQueue[bot.platform + ':' + channelId]
+      if (queue?.length) {
+        return queue.slice(-50)
+      }
+      return []
+    }
+    if (this.#status[bot.platform + ':' + channelId] !== ChannelStatus.SYNCED) {
       this.#addToSyncQueue(bot, guildId, channelId)
     }
+    const data = await this.ctx.database.get('message', { platform: bot.platform, channelId }, {
+      sort: {
+        timestamp: 'desc',
+      },
+      limit: 50,
+    })
+    return data.map(v => new Session(bot, {
+      timestamp: v.timestamp.valueOf(),
+      channelId: v.channelId,
+      guildId: v.guildId,
+      author: {
+        userId: v.userId,
+        nickname: v.nickname,
+        username: v.username,
+      },
+      content: v.content,
+    }))
   }
 
   async #onGuildDeleted(session: Session) {
@@ -120,7 +140,12 @@ export class MessageDatabase extends Service {
     }
   }
 
-  static adaptMessage(session: Partial<Session>, bot: Bot = session.bot, guildId: string = session.guildId) {
+  static adaptMessage(session: Partial<Session>, bot: Bot = session.bot, guildId: string = session.guildId): Message {
+    const seg = segment.parse(session.content)
+    const quote = seg.find(v => v.type === 'quote')
+    if (quote) {
+      session.content = session.content.slice(quote.capture[0].length)
+    }
     return {
       id: snowflakes().toString(),
       messageId: session.messageId,
@@ -133,6 +158,7 @@ export class MessageDatabase extends Service {
       nickname: session.author.nickname,
       channelId: session.channelId,
       selfId: bot.selfId,
+      quoteId: quote?.data?.id || null,
     }
   }
 
@@ -169,6 +195,9 @@ export class MessageDatabase extends Service {
       } catch (e) {
         // 也许同步失败了需要删除已存数据库的数据?
         logger.error(e)
+        this.#messageQueue[bot.platform + ':' + channelId] = []
+        bot.app.emit('messages/syncFailed', bot, channelId, e)
+        return
       }
     } else {
       logger.debug('channel %s dont have getChannelMessageHistory api, ignored', channelId)
