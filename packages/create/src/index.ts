@@ -20,6 +20,7 @@ const argv = parse(process.argv.slice(2), {
     ref: ['r'],
     forced: ['f'],
     mirror: ['m'],
+    prod: ['p'],
     template: ['t'],
     yes: ['y'],
   },
@@ -140,7 +141,7 @@ async function install() {
 
   const yes = argv.yes || await confirm('Install and start it now?')
   if (yes) {
-    spawn.sync(agent, ['install'], { stdio: 'inherit', cwd: rootDir })
+    spawn.sync(agent, ['install', ...argv.prod ? ['--production'] : []], { stdio: 'inherit', cwd: rootDir })
     if (!argv.yes) {
       spawn.sync(agent, ['run', 'start'], { stdio: 'inherit', cwd: rootDir })
     }
