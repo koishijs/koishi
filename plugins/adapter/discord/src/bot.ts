@@ -189,11 +189,13 @@ export class DiscordBot extends Bot<BotConfig> {
     return channels.map(v => adaptChannel(v))
   }
 
-  async getChannelMessageHistory(channelId: string, start?: string) {
-    const data = await this.internal.getChannelMessages(channelId, {
-      after: start,
-      limit: 100,
-    })
+  async getChannelMessageHistory(channelId: string, before?: string) {
+    // doesnt include `before` message
+    // 从旧到新
+    const data = (await this.internal.getChannelMessages(channelId, {
+      before: before,
+      limit: 50,
+    })).reverse()
     return data.map(v => {
       const session = {}
       prepareMessageSession(session, v)

@@ -173,14 +173,18 @@ export class OneBotBot extends Bot<BotConfig> {
     await this.internal.deleteFriend(userId)
   }
 
-  async getChannelMessageHistory(channelId: string, start?: string) {
-    const msg = await this.internal.getMsg(start)
+  async getChannelMessageHistory(channelId: string, before?: string) {
+    // include `before` message
     let list: OneBot.Message[]
-    if (msg?.message_seq) {
-      list = await this.internal.getGroupMsgHistory(Number(channelId), msg.message_seq)
-    } else {
+    if(before){
+      const msg = await this.internal.getMsg(before)
+      if (msg?.message_seq) {
+        list = await this.internal.getGroupMsgHistory(Number(channelId), msg.message_seq)
+      }
+    }else{
       list = await this.internal.getGroupMsgHistory(Number(channelId))
     }
+
     // 从旧到新 这 internal 类型好像有问题?
     // @ts-ignore
     return list.messages.map(OneBot.adaptMessage)

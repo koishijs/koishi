@@ -1,7 +1,7 @@
 import { Flatten, Keys } from './utils'
 
 export function isEvalExpr(value: any): value is Eval.UniveralExpr {
-  return Object.keys(value).some(key => key.startsWith('$'))
+  return value && Object.keys(value).some(key => key.startsWith('$'))
 }
 
 type $Date = Date

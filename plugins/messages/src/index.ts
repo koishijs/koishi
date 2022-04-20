@@ -43,8 +43,9 @@ export class MessageDatabase extends Service {
   }
 
   set #queue(arr) {
-    this.#_queue = [...new Set(arr)]
-    logger.debug('set queue %o', this.#_queue)
+    const ids = arr.map(o => o.cid)
+    this.#_queue =arr.filter(({cid}, index) => !ids.includes(cid, index + 1))
+    //logger.debug('set queue %o', this.#_queue)
   }
 
   async start() {
@@ -76,17 +77,24 @@ export class MessageDatabase extends Service {
     this.#queueRunning = false
   }
 
-  #addToSyncQueue(bot: Bot, guildId: string, channelId: string) {
+  addToSyncQueue(bot: Bot, guildId: string, channelId: string) {
     this.#queue.push(new Session(bot, {
       guildId,
       channelId,
     }))
   }
 
+  removeFromSyncQueue(bot: Bot, guildId: string, channelId: string){
+    delete this.#status[bot.platform + ':' + channelId]
+    this.#queue = this.#queue.filter(v => v.cid !== (bot.platform + ':' + channelId))
+    // 如果正在同步的话 怎么处理呢
+  }
+
   async getMessages(bot: Bot, guildId: string, channelId: string): Promise<Partial<Session>[]> {
     // 正在同步: 内存中的最后50条消息
     // 已同步: 数据库里拿
     // 未同步: 尝试同步, 数据库里拿
+    logger.debug('get messages, status: %o', this.#status[bot.platform + ':' + channelId])
     if (this.#status[bot.platform + ':' + channelId] === ChannelStatus.SYNCING) {
       const queue = this.#messageQueue[bot.platform + ':' + channelId]
       if (queue?.length) {
@@ -95,7 +103,7 @@ export class MessageDatabase extends Service {
       return []
     }
     if (this.#status[bot.platform + ':' + channelId] !== ChannelStatus.SYNCED) {
-      this.#addToSyncQueue(bot, guildId, channelId)
+      this.addToSyncQueue(bot, guildId, channelId)
     }
     const data = await this.ctx.database.get('message', { platform: bot.platform, channelId }, {
       sort: {
@@ -129,9 +137,8 @@ export class MessageDatabase extends Service {
       }
       const session = this.#queue.shift()
       if (session) {
-        logger.debug('queue item %o', session, session.cid)
+        logger.debug('queue item %o', session)
         try {
-          this.#status[session.cid] = ChannelStatus.SYNCING
           await this.#syncMessages(session.bot, session.guildId, session.channelId)
         } catch (e) {
           logger.error(e)
@@ -162,77 +169,104 @@ export class MessageDatabase extends Service {
     }
   }
 
+  async getMessageBetween(bot: Bot, channelId: string, from: string, to?: string): Promise<Bot.Message[]> {
+    if (!to) {
+      const latestMessages = await bot.getChannelMessageHistory(channelId)
+      to = latestMessages[latestMessages.length - 1].messageId
+    }
+    logger.info('from to %o %o', from, to)
+    let nowMessageId = to
+    let newMessages = []
+    if(from === to){
+      return []
+    }
+    while (true) {
+      const messages = await bot.getChannelMessageHistory(channelId, nowMessageId) // 从旧到新
+      if (messages.find(v => v.messageId === from && v.messageId !== nowMessageId)) {
+        // 找到了！
+        const stopPosition = messages.findIndex(v => v.messageId === from)
+        newMessages = newMessages.concat(messages.filter((v, i) => i > stopPosition && v.messageId !== to))
+        break
+      }
+      newMessages = newMessages.concat(messages.filter(v => v.messageId !== to))
+      nowMessageId = messages[0].messageId
+    }
+    return newMessages
+  }
+
   async #syncMessages(bot: Bot, guildId: string, channelId: string) {
     logger.debug('channel %s', channelId)
     const cid = bot.platform + ':' + channelId
+
+    this.#status[cid] = ChannelStatus.SYNCING
+    // 已经收到新消息: 数据库中 到 新消息
+    // 没有收到新消息: 数据库中 到 现在
+    // 没有数据库消息: 获取一次
     if (bot.getChannelMessageHistory) {
       try {
-        if (!this.#messageRecord[cid].inDb) {
-          const messages = await bot.getChannelMessageHistory(channelId, this.#messageRecord[cid].received)
-          this.ctx.database.upsert('message', messages.map(session => MessageDatabase.adaptMessage(session, bot, guildId)))
+        const inDatabase = await this.ctx.database.get('message', {
+          channelId: channelId,
+        }, {
+          sort: {
+            id: 'desc',
+          },
+          limit: 1,
+        })
+        if (!inDatabase.length) {
+          const latestMessages = await bot.getChannelMessageHistory(channelId)
+          // 获取一次
+          await this.ctx.database.upsert('message', latestMessages.map(session => MessageDatabase.adaptMessage(session, bot, guildId)))
         } else {
-          const inDatabase = await this.ctx.database.get('message', {
-            id: this.#messageRecord[cid].inDb,
-          })
-          // 从新到旧查询
-          let nowMessageId = this.#messageRecord[cid].received
-          let newMessages = []
+          // 数据库中最后一条消息
 
-          while (true) {
-            const messages = await bot.getChannelMessageHistory(channelId, nowMessageId)
-            if (messages.find(v => v.messageId === inDatabase[0].messageId && v.messageId !== nowMessageId)) {
-              // 这里会包含新发送的第一条消息 去个重
-              newMessages = newMessages.concat(messages.filter(v => v.timestamp > inDatabase[0].timestamp.valueOf()
-                && v.messageId !== nowMessageId))
-              break
-            }
-            newMessages = newMessages.concat(messages.filter(v => v.messageId !== nowMessageId))
-            nowMessageId = messages[0].messageId
+          let newMessages = await this.getMessageBetween(bot, channelId, inDatabase[0].messageId, this.#messageRecord[cid]?.received)
+          logger.info('get new messages')
+          if( newMessages.length){
+            await this.ctx.database.upsert('message', newMessages.map(session => MessageDatabase.adaptMessage(session, bot, guildId)))
           }
-          logger.debug(newMessages)
-          this.ctx.database.upsert('message', newMessages.map(session => MessageDatabase.adaptMessage(session, bot, guildId)))
         }
       } catch (e) {
-        // 也许同步失败了需要删除已存数据库的数据?
         logger.error(e)
-        this.#messageQueue[bot.platform + ':' + channelId] = []
+        this.#messageQueue[cid] = []
         bot.app.emit('messages/syncFailed', bot, channelId, e)
+        this.#queue = this.#queue.filter(v => v.cid !== cid)
+
         return
       }
     } else {
       logger.debug('channel %s dont have getChannelMessageHistory api, ignored', channelId)
     }
 
-    const newLocal = this.#messageQueue[bot.platform + ':' + channelId]
+    const newLocal = this.#messageQueue[cid]
     if (newLocal?.length) {
-      this.ctx.database.upsert('message', newLocal.map(session => MessageDatabase.adaptMessage(session)))
-      this.#messageQueue[bot.platform + ':' + channelId] = []
+      await this.ctx.database.upsert('message', newLocal.map(session => MessageDatabase.adaptMessage(session)))
+      this.#messageQueue[cid] = []
     }
-    this.#status[bot.platform + ':' + channelId] = ChannelStatus.SYNCED
+    this.#status[cid] = ChannelStatus.SYNCED
     bot.app.emit('messages/synced', bot, channelId)
   }
 
   async #onMessage(session: Session) {
-    if (!this.#messageRecord[session.cid]) {
-      const inDb = await this.ctx.database.get('message', {
-        channelId: session.channelId,
-      }, {
-        sort: {
-          timestamp: 'desc',
-        },
-        limit: 1,
-      })
-      this.#messageRecord[session.cid] = {
-        inDb: inDb?.[0]?.id,
-        received: session.messageId,
-      }
-      logger.debug('set message record, %o', this.#messageRecord)
-    }
     // @TODO segments' base64://
-    if (this.#status[session.cid] !== ChannelStatus.SYNCING) {
+    if (this.#status[session.cid] === ChannelStatus.SYNCED) {
       logger.debug('on message, cid: %s, id: %s', session.cid, session.messageId)
-      this.ctx.database.create('message', MessageDatabase.adaptMessage(session))
-    } else {
+      await this.ctx.database.create('message', MessageDatabase.adaptMessage(session))
+    } else if(this.#queue.find(v => v.cid === session.cid)){
+      // in queue, not synced
+      if (!this.#messageRecord[session.cid]) {
+        const inDb = await this.ctx.database.get('message', {
+          channelId: session.channelId,
+        }, {
+          sort: {
+            id: 'desc',
+          },
+          limit: 1,
+        })
+        this.#messageRecord[session.cid] = {
+          inDb: inDb?.[0]?.id,
+          received: session.messageId,
+        }
+      }
       this.#messageQueue[session.cid] ||= []
       this.#messageQueue[session.cid].push(session)
       logger.debug('on message, cid: %s, id: %s, ignored, msg queue length: %d', session.cid, session.messageId, this.#messageQueue[session.cid].length)
