@@ -32,7 +32,7 @@
     "koishi": "^4.6.0"
   },
   "devDependencies": {
-    "@koishijs/client": "^3.2.5",
+    "@koishijs/client": "^3.2.6",
     "@koishijs/plugin-console": "^3.2.6",
     "@koishijs/plugin-mock": "^1.0.4",
     "@types/throttle-debounce": "^2.1.0"

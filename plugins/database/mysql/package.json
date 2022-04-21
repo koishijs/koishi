@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-database-mysql",
   "description": "MySQL support for Koishi",
-  "version": "4.3.0",
+  "version": "4.3.1",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -32,6 +32,6 @@
     "koishi": "^4.6.0"
   },
   "dependencies": {
-    "@cosmotype/driver-mysql": "^1.0.1"
+    "@cosmotype/driver-mysql": "^1.0.2"
   }
 }

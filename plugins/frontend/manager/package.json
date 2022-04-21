@@ -35,7 +35,7 @@
     "koishi": "^4.6.0"
   },
   "devDependencies": {
-    "@koishijs/client": "^3.2.5",
+    "@koishijs/client": "^3.2.6",
     "@types/cross-spawn": "^6.0.2",
     "@types/which-pm-runs": "^1.0.0"
   },

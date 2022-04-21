@@ -38,7 +38,7 @@
     "koishi": "^4.6.0"
   },
   "devDependencies": {
-    "@koishijs/client": "^3.2.5",
+    "@koishijs/client": "^3.2.6",
     "@koishijs/plugin-console": "^3.2.6",
     "@koishijs/plugin-database-memory": "^1.2.0",
     "@koishijs/plugin-status": "^5.3.6",
