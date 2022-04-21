@@ -70,7 +70,7 @@ export namespace InjectedAdapter {
 
           _retryCount++
           bot.status = 'reconnect'
-          logger.warn(`${message}, will retry in ${Time.formatTimeShort(timeout)}...`)
+          logger.warn(`${message}, will retry in ${Time.format(timeout)}...`)
           setTimeout(() => {
             if (this.isListening && !bot.config.disabled) reconnect()
           }, timeout)

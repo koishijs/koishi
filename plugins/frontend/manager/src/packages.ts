@@ -1,8 +1,9 @@
-import { Adapter, App, Context, Dict, noop, omit, pick, Plugin, remove, Schema, unwrapExports } from 'koishi'
+import { Adapter, App, Context, Dict, noop, omit, pick, Plugin, remove, Schema } from 'koishi'
 import { DataService } from '@koishijs/plugin-console'
 import { LocalPackage, PackageJson } from '@koishijs/market'
 import { promises as fsp } from 'fs'
 import { dirname } from 'path'
+import ns from 'ns-require'
 import {} from '@koishijs/cli'
 
 const { readdir, readFile } = fsp
@@ -17,7 +18,7 @@ function getExports(id: string) {
     remove(module.children, result)
     delete require.cache[path]
   }
-  return unwrapExports(result.exports)
+  return ns.unwrapExports(result.exports)
 }
 
 class PackageProvider extends DataService<Dict<PackageProvider.Data>> {
@@ -42,7 +43,7 @@ class PackageProvider extends DataService<Dict<PackageProvider.Data>> {
 
   private async updatePackage(plugin: Plugin, id: string) {
     const entry = Object.keys(require.cache).find((key) => {
-      return unwrapExports(require.cache[key].exports) === plugin
+      return ns.unwrapExports(require.cache[key].exports) === plugin
     })
     if (!this.cache[entry]) return
     const local = await this.cache[entry]

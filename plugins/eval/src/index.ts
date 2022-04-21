@@ -25,10 +25,6 @@ declare module 'koishi' {
     _isEval: boolean
   }
 
-  interface Modules {
-    eval: typeof import('.')
-  }
-
   interface EventMap {
     'eval/before-send'(content: string, session: Session): Awaitable<string>
     'eval/before-start'(): Awaitable<void>

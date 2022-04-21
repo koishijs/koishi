@@ -1,4 +1,4 @@
-import { Context, DriverError, Schema, template } from 'koishi'
+import { Context, RuntimeError, Schema, template } from 'koishi'
 
 declare module 'koishi' {
   interface EventMap {
@@ -51,7 +51,7 @@ export function apply(ctx: Context) {
         await user.$update()
         return template('callme.updated', session.username)
       } catch (error) {
-        if (DriverError.check(error, 'duplicate-entry')) {
+        if (RuntimeError.check(error, 'duplicate-entry')) {
           return template('callme.duplicate')
         } else {
           ctx.logger('common').warn(error)

@@ -1,10 +1,10 @@
-import { Context, Dict, Driver, Keys, Model, Schema } from 'koishi'
+import { Context, Database, Dict, Driver, Field, Keys, Model, Schema } from 'koishi'
 import { DataService } from '@koishijs/plugin-console'
 import { resolve } from 'path'
 import { deserialize, serialize } from './utils'
 
 export type DbEvents = {
-  [M in Keys<Driver, Function> as `database/${M}`]: (...args: string[]) => Promise<string>
+  [M in Keys<Database, Function> as `database/${M}`]: (...args: string[]) => Promise<string>
 }
 
 declare module '@koishijs/plugin-console' {
@@ -17,7 +17,9 @@ declare module '@koishijs/plugin-console' {
   interface Events extends DbEvents {}
 }
 
-export interface TableInfo extends Driver.TableStats, Model.Config {}
+export interface TableInfo extends Driver.TableStats, Model.Config<any> {
+  fields: Field.Config
+}
 
 export interface DatabaseInfo extends Driver.Stats {
   tables: Dict<TableInfo>
@@ -28,7 +30,7 @@ class DatabaseProvider extends DataService<DatabaseInfo> {
 
   task: Promise<DatabaseInfo>
 
-  addListener<K extends Keys<Driver, Function>>(name: K, refresh = false) {
+  addListener<K extends Keys<Database, Function>>(name: K, refresh = false) {
     this.ctx.console.addListener(`database/${name}`, async (...args) => {
       const result = await (this.ctx.database[name] as any)(...args.map(deserialize))
       if (refresh) this.refresh()
@@ -45,7 +47,6 @@ class DatabaseProvider extends DataService<DatabaseInfo> {
     })
 
     this.addListener('create', true)
-    this.addListener('drop', true)
     this.addListener('eval', true)
     this.addListener('get')
     this.addListener('remove', true)
@@ -61,9 +62,9 @@ class DatabaseProvider extends DataService<DatabaseInfo> {
     const result = { tables: {}, ...stats } as DatabaseInfo
     const tableStats = result.tables
     result.tables = {}
-    for (const name in this.ctx.model.config) {
+    for (const name in this.ctx.model.tables) {
       result.tables[name] = {
-        ...this.ctx.model.config[name],
+        ...this.ctx.model.tables[name],
         ...tableStats[name],
       }
     }

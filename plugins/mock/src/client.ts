@@ -11,7 +11,7 @@ const RECEIVED_NTH_OTHERWISE = 'expected "%s" to be replied with %s at index %s 
 
 export class MessageClient {
   public app: App
-  public meta: Partial<Session>
+  public meta: Session.Payload
 
   private replies: string[] = []
 
