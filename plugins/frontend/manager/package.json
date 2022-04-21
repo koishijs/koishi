@@ -42,6 +42,7 @@
   "dependencies": {
     "@koishijs/market": "^1.0.0",
     "cross-spawn": "^7.0.3",
+    "ns-require": "^1.1.0",
     "semver": "^7.3.5",
     "which-pm-runs": "^1.1.0"
   }

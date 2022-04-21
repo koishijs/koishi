@@ -153,7 +153,7 @@ DatabaseService.prototype.extend = function extend(this: DatabaseService, name, 
   this.ctx.emit('model', name)
 }
 
-export const nsRequire = ns({
+export const scope = ns({
   namespace: 'koishi',
   prefix: 'plugin',
   official: 'koishijs',
@@ -174,7 +174,7 @@ export namespace DatabaseService {
   export function extend(module: any, extension: any) {
     let Database: any
     try {
-      Database = typeof module === 'string' ? nsRequire(module) : module
+      Database = typeof module === 'string' ? scope.require(module) : module
     } catch {}
     if (!Database) return
 

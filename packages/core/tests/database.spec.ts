@@ -1,8 +1,18 @@
 import { App } from 'koishi'
 import { expect } from 'chai'
-import {} from '@koishijs/plugin-mock'
+import mock from '@koishijs/plugin-mock'
+import memory from '@koishijs/plugin-database-memory'
+import 'chai-shape'
 
-export default function BuiltinMethods(app: App) {
+const app = new App()
+
+app.plugin(mock)
+app.plugin(memory)
+
+before(() => app.start())
+after(() => app.stop())
+
+describe('Database API', () => {
   describe('User Operations', () => {
     it('db.setUser() on non-existing user', async () => {
       await app.database.setUser('mock', 'A', { authority: 1 })
@@ -55,4 +65,4 @@ export default function BuiltinMethods(app: App) {
       await expect(app.database.getChannel('mock', ['A'])).eventually.to.deep.equal([])
     })
   })
-}
+})

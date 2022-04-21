@@ -25,7 +25,7 @@ export default class Loader extends ConfigLoader<App.Config> {
   config: App.Config
   cache: Dict<string> = {}
   envfile: string
-  scope: ns.Require
+  scope: ns.Scope
 
   constructor() {
     super(process.env.KOISHI_CONFIG_FILE)
