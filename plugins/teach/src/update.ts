@@ -71,11 +71,11 @@ export default function apply(ctx: Context) {
 
   ctx.on('dialogue/detail-short', ({ _type, _timestamp }, output) => {
     if (_type) {
-      output.unshift(`${_type}-${Time.formatTimeShort(Date.now() - _timestamp)}`)
+      output.unshift(`${_type}-${Time.format(Date.now() - _timestamp)}`)
     }
   })
 
-  ctx.on('dialogue/detail', ({ original, answer, flag, _type, _timestamp }, output) => {
+  ctx.on('dialogue/detail', ({ original, answer, flag, _type, _timestamp }, output, { app }) => {
     if (flag & Dialogue.Flag.regexp) {
       output.push(`正则：${original}`)
     } else {
@@ -83,7 +83,7 @@ export default function apply(ctx: Context) {
     }
     output.push(`回答：${answer}`)
     if (_type) {
-      output.push(`${_type}于：${Time.formatTime(Date.now() - _timestamp)}前`)
+      output.push(`${_type}于：${app.i18n.render('{0 | time}', [Date.now() - _timestamp], 'zh')}前`)
     }
   })
 }

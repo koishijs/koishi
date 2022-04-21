@@ -42,7 +42,7 @@ export default function (config: teach.Config) {
   }
 
   async function stop() {
-    await app.database.drop()
+    await app.database.dropAll()
     await app.stop()
   }
 
