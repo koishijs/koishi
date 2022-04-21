@@ -1,7 +1,8 @@
 import * as utils from '@koishijs/utils'
-import { Awaitable, Dict, Get, MaybeArray } from '@koishijs/utils'
+import { Awaitable, Dict, MaybeArray } from '@koishijs/utils'
 import { Database, Driver, Result, Update } from 'cosmotype'
 import { Context } from './context'
+import ns from 'ns-require'
 
 export interface User {
   id: string
@@ -152,6 +153,12 @@ DatabaseService.prototype.extend = function extend(this: DatabaseService, name, 
   this.ctx.emit('model', name)
 }
 
+export const nsRequire = ns({
+  namespace: 'koishi',
+  prefix: 'plugin',
+  official: 'koishijs',
+})
+
 export namespace DatabaseService {
   type Methods<S, T> = {
     [K in keyof S]?: S[K] extends (...args: infer R) => infer U ? (this: T, ...args: R) => U : S[K]
@@ -162,10 +169,13 @@ export namespace DatabaseService {
   type Extension<T> = ((Database: T) => void) | ExtensionMethods<T>
 
   /** @deprecated */
-  export function extend<K extends keyof Modules>(module: K, extension: Extension<Get<Modules[K], 'default'>>): void
+  export function extend(module: string, extension: any): void
   export function extend<T extends Constructor<unknown>>(module: T, extension: Extension<T>): void
   export function extend(module: any, extension: any) {
-    const Database = typeof module === 'string' ? Modules.require(module) : module
+    let Database: any
+    try {
+      Database = typeof module === 'string' ? nsRequire(module) : module
+    } catch {}
     if (!Database) return
 
     if (typeof extension === 'function') {
@@ -173,66 +183,5 @@ export namespace DatabaseService {
     } else {
       Object.assign(Database.prototype, extension)
     }
-  }
-}
-
-export function unwrapExports(module: any) {
-  return module?.default || module
-}
-
-export interface Modules {}
-
-export namespace Modules {
-  const cache: Dict = {}
-
-  export function define(name: string, value: any) {
-    cache[name] = value
-  }
-
-  export namespace internal {
-    export function require(name: string) {
-      return cache[name]
-    }
-
-    export function resolve(name: string) {
-      if (name in cache) return name
-      throw new Error(`Cannot find module "${name}"`)
-    }
-
-    export function paths(name: string) {
-      const prefix1 = 'koishi-plugin-'
-      const prefix2 = '@koishijs/plugin-'
-      if (name.includes(prefix1) || name.startsWith(prefix2)) {
-        // full package path
-        return [name]
-      } else if (name[0] === '@') {
-        // scope package path
-        const index = name.indexOf('/')
-        return [name.slice(0, index + 1) + prefix1 + name.slice(index + 1)]
-      } else {
-        // normal package path
-        return [prefix1 + name, prefix2 + name]
-      }
-    }
-  }
-
-  export function require(name: string, forced = false) {
-    try {
-      const path = resolve(name)
-      const exports = internal.require(path)
-      return unwrapExports(exports)
-    } catch (error) {
-      if (forced) throw error
-    }
-  }
-
-  export function resolve(name: string) {
-    const modules = internal.paths(name)
-    for (const path of modules) {
-      try {
-        return internal.resolve(path)
-      } catch {}
-    }
-    throw new Error(`cannot resolve plugin "${name}"`)
   }
 }

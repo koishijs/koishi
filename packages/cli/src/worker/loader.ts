@@ -1,7 +1,8 @@
-import { isAbsolute, resolve } from 'path'
-import { App, Context, Dict, interpolate, Logger, Modules, unwrapExports, valueMap } from 'koishi'
+import { resolve } from 'path'
+import { App, Context, Dict, interpolate, Logger, valueMap } from 'koishi'
 import ConfigLoader from '@koishijs/loader'
 import * as dotenv from 'dotenv'
+import ns from 'ns-require'
 
 declare module 'koishi' {
   namespace Context {
@@ -14,7 +15,6 @@ declare module 'koishi' {
 Context.service('loader')
 
 const logger = new Logger('app')
-const oldPaths = Modules.internal.paths
 
 const context = {
   env: process.env,
@@ -25,18 +25,17 @@ export default class Loader extends ConfigLoader<App.Config> {
   config: App.Config
   cache: Dict<string> = {}
   envfile: string
+  scope: ns.Require
 
   constructor() {
     super(process.env.KOISHI_CONFIG_FILE)
     this.envfile = resolve(this.dirname, '.env')
-
-    Modules.internal.paths = (name) => {
-      // resolve absolute or relative path
-      if (isAbsolute(name) || name.startsWith('.')) {
-        return [resolve(this.dirname, name)]
-      }
-      return oldPaths(name)
-    }
+    this.scope = ns({
+      namespace: 'koishi',
+      prefix: 'plugin',
+      official: 'koishijs',
+      dirname: this.dirname,
+    })
   }
 
   interpolate(source: any) {
@@ -76,12 +75,12 @@ export default class Loader extends ConfigLoader<App.Config> {
 
   resolvePlugin(name: string) {
     try {
-      this.cache[name] ||= Modules.resolve(name)
+      this.cache[name] ||= this.scope.resolve(name)
     } catch (err) {
       logger.error(err.message)
       return
     }
-    return unwrapExports(require(this.cache[name]))
+    return ns.unwrapExports(require(this.cache[name]))
   }
 
   unloadPlugin(name: string) {

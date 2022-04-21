@@ -34,10 +34,6 @@ declare module 'koishi' {
     'dialogue/validate'(argv: Dialogue.Argv): void | string
     'dialogue/execute'(argv: Dialogue.Argv): Awaitable<void | string>
   }
-
-  interface Modules {
-    teach: typeof import('.')
-  }
 }
 
 export type Config = Dialogue.Config

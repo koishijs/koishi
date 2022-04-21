@@ -1,7 +1,7 @@
 import { Awaitable, defineProperty, Dict, Logger, makeArray, MaybeArray, Promisify, Random, remove, Schema, sleep } from '@koishijs/utils'
 import { Command } from './command'
 import { Session } from './session'
-import { Channel, DatabaseService, Modules, Service, Tables, User } from './database'
+import { Channel, DatabaseService, nsRequire, Service, Tables, User } from './database'
 import { Argv } from './parser'
 import { App } from './app'
 import { Bot } from './bot'
@@ -254,7 +254,7 @@ export class Context {
   plugin<T extends Plugin>(plugin: T, config?: boolean | Plugin.Config<T>): this
   plugin(entry: string | Plugin, config?: any) {
     // load plugin by name
-    const plugin: Plugin = typeof entry === 'string' ? Modules.require(entry, true) : entry
+    const plugin: Plugin = typeof entry === 'string' ? nsRequire(entry) : entry
 
     // check duplication
     if (this.app.registry.has(plugin)) {
