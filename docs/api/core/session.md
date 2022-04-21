@@ -56,11 +56,26 @@ sidebarDepth: 2
 
 ### session.user
 
-当前会话绑定的可观测 [User](./database.md#user) 对象。
+当前会话绑定的用户数据，是一个可观测 [User](./database.md#user) 对象。
+
+::: tip
+通常情况下，Session 对象只有在中间件内才有此属性。因此如果想使用此接口请考虑下列方式：
+
+- 使用中间件
+- 使用指令 (指令的执行处于中间件内部)
+- 手动调用 [`session.observeUser()`](#session-observeuser-fields)
+- 手动调用 [`database.getUser()`](../database/built-in.md#database-getuser-platform-id-modifier)
+
+下面的两个属性也同理。
+:::
 
 ### session.channel
 
-当前会话绑定的可观测 [Channel](./database.md#channel) 对象。
+当前会话绑定的频道数据，是一个可观测 [Channel](./database.md#channel) 对象。
+
+### session.guild
+
+当前会话绑定的群组数据，是一个可观测 [Channel](./database.md#channel) 对象。
 
 ## 实例方法
 
