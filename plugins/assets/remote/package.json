@@ -27,6 +27,6 @@
     "impl:assets"
   ],
   "peerDependencies": {
-    "koishi": "^4.5.2"
+    "koishi": "^4.6.0"
   }
 }

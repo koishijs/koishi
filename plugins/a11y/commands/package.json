@@ -29,12 +29,12 @@
     "command"
   ],
   "peerDependencies": {
-    "koishi": "^4.5.2"
+    "koishi": "^4.6.0"
   },
   "devDependencies": {
-    "@koishijs/client": "^3.2.4",
-    "@koishijs/plugin-console": "^3.2.5",
-    "@koishijs/plugin-mock": "^1.0.3",
+    "@koishijs/client": "^3.2.5",
+    "@koishijs/plugin-console": "^3.2.6",
+    "@koishijs/plugin-mock": "^1.0.4",
     "@types/throttle-debounce": "^2.1.0"
   },
   "dependencies": {

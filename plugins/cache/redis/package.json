@@ -32,7 +32,7 @@
     "lru"
   ],
   "peerDependencies": {
-    "koishi": "^4.5.2"
+    "koishi": "^4.6.0"
   },
   "dependencies": {
     "generic-pool": "^3.8.2",
