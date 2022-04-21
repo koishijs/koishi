@@ -55,7 +55,7 @@ module.exports = {
       text: 'API',
       link: '/api/',
     }, {
-      text: '插件',
+      text: '生态',
       children: ['/market.md', '/plugins/'],
     }, {
       text: '更多',
@@ -347,6 +347,8 @@ module.exports = {
           '/about/releases/v4.2.md',
           '/about/releases/v4.3.md',
           '/about/releases/v4.4.md',
+          '/about/releases/v4.5.md',
+          '/about/releases/v4.6.md',
         ],
       }, {
         text: '装饰器',
