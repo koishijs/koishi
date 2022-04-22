@@ -84,7 +84,7 @@ export class Author {
   @SchemaProperty()
   name: string
 
-  getName?() {
+  getName() {
     return this.name
   }
 
