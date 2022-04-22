@@ -37,7 +37,7 @@ module.exports = {
   themeConfig: {
     logo: '/koishi.png',
     navbar: [{
-      text: 'v4.x',
+      text: `v4.x (${execSync('git log -1 --format=%h').toString().trim()})`,
       children: [{
         text: 'v3.x',
         link: 'https://koishi.js.org/v3/',
@@ -57,7 +57,7 @@ module.exports = {
       link: '/api/',
     }, {
       text: '生态',
-      children: ['/market.md', '/plugins/'],
+      children: ['/market.md', '/plugins/', '/community/'],
     }, {
       text: '更多',
       link: '/about/faq.md',
@@ -335,6 +335,17 @@ module.exports = {
         ],
       }],
 
+      '/community/': [{
+        text: '总览',
+        link: '/community/',
+      }, {
+        text: '装饰器',
+        isGroup: true,
+        children: [
+          '/community/decorator/',
+        ],
+      }],
+
       '/about/': [{
         text: '常见问题',
         link: '/about/faq.md',
@@ -352,12 +363,6 @@ module.exports = {
           '/about/releases/v4.6.md',
         ],
       }, {
-        text: '装饰器',
-        isGroup: true,
-        children: [
-          '/about/decorator/',
-        ],
-      }, {
         text: '贡献指南',
         isGroup: true,
         children: [
@@ -373,7 +378,6 @@ module.exports = {
     docsBranch: 'next',
     editLinkText: '帮助我们改善此页面',
     contributors: false,
-    commitHash: execSync('git log -1 --format=%h').toString().trim(),
 
     themePlugins: {
       git: false,
