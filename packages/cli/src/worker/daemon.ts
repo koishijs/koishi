@@ -33,9 +33,7 @@ export function apply(ctx: Context, config: Config = {}) {
 
     ctx
       .command(commandName, { authority: 4 })
-      .option('restart', '-r  重新启动')
-      .shortcut('关机', { prefix: true })
-      .shortcut('重启', { prefix: true, options: { restart: true } })
+      .option('restart', '-r')
       .action(async ({ options, session }) => {
         const { channelId, guildId, sid } = session
         if (!options.restart) {
