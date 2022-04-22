@@ -73,8 +73,9 @@ export function apply(ctx: Context, options: Config = {}) {
     }
 
     // render template with fallback options
-    const templatePath = 'chat.log.' + (session.type === 'message' ? 'receive' : 'send')
-    logger.debug(session.text([templatePath, templatePath + '-fallback'], message))
+    let templatePath = 'chat.log.' + (session.type === 'message' ? 'receive' : 'send')
+    if (!message.channelName) templatePath += '-fallback'
+    logger.debug(session.text(templatePath, message))
   })
 
   ctx.using(['console'], (ctx) => {
