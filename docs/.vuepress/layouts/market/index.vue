@@ -2,7 +2,7 @@
   <div class="market-container">
     <h1 class="banner">插件市场</h1>
     <div class="banner info">
-      当前共有 {{ market.packages.length }} 个可用于 v4 版本的插件
+      当前共有 {{ hasWords ? packages.length + ' / ' : '' }}{{ market.packages.length }} 个可用于 v4 版本的插件
       <span class="timestamp">({{ new Date(market.timestamp).toLocaleString() }})</span>
     </div>
     <div class="banner card search-box">
@@ -79,6 +79,10 @@ function validate(data: AnalyzedPackage, word: string) {
   return data.shortname.includes(word)
     || data.keywords.some(keyword => !keyword.includes(':') && keyword.includes(word))
 }
+
+const hasWords = computed(() => {
+  return words.filter(w => w).length > 0
+})
 
 const packages = computed(() => {
   return market.packages.filter((data) => {

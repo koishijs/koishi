@@ -1,5 +1,9 @@
 <template>
   <parent-layout :class="{ home: frontmatter.home }">
+    <template #navbar-before>
+      <code class="commit-hash">{{ themeData.commitHash }}</code>
+    </template>
+
     <template #navbar-after>
       <div class="navbar-icons">
         <a class="icon" href="https://discord.com/invite/xfxYwmd284" target="_blank" aria-label="Discord">
@@ -33,8 +37,10 @@ import HomePage from './home/index.vue'
 import MarketPage from './market/index.vue'
 import { usePageFrontmatter } from '@vuepress/client'
 import { useDarkMode } from '@vuepress/theme-default/lib/client/composables'
+import { useThemeData } from '@vuepress/plugin-theme-data/lib/client'
 import ParentLayout from '@vuepress/theme-default/lib/client/layouts/Layout.vue'
 
+const themeData = useThemeData()
 const frontmatter = usePageFrontmatter()
 
 const isDarkMode = useDarkMode()
@@ -45,6 +51,10 @@ const toggleDarkMode = () => {
 </script>
 
 <style lang="scss">
+
+.commit-hash {
+  margin-right: 1rem;
+}
 
 .navbar-icons {
   margin: -2px 0.5rem 0 1.5rem;

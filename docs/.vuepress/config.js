@@ -1,3 +1,4 @@
+const { execSync } = require('child_process')
 const { resolve } = require('path')
 const { remove: removeDiacritics } = require('diacritics')
 
@@ -372,10 +373,10 @@ module.exports = {
     docsBranch: 'next',
     editLinkText: '帮助我们改善此页面',
     contributors: false,
+    commitHash: execSync('git log -1 --format=%h').toString().trim(),
 
     themePlugins: {
-      // only enable git plugin in production mode
-      git: process.env.NODE_ENV === 'production',
+      git: false,
     },
   },
 
