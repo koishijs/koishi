@@ -18,6 +18,7 @@ export function enableHelp<U extends User.Field, G extends Channel.Field, A exte
   return cmd.option('help', '-h', {
     hidden: true,
     descPath: 'commands.help.options.help',
+    notUsage: true,
   })
 }
 
