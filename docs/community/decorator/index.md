@@ -3,7 +3,7 @@ sidebarDepth: 2
 noTwoslash: true
 ---
 
-# 装饰器
+# 概述
 
 这些库为您提供了使用 TypeScript 的装饰器的代码编写形式，来简化您的 Koishi 插件或应用的开发流程。
 

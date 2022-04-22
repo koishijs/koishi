@@ -341,8 +341,8 @@ module.exports = {
       }, {
         text: '装饰器',
         isGroup: true,
-        link: '/community/decorator/',
         children: [
+          '/community/decorator/',
           '/community/decorator/thirdeye.md',
           '/community/decorator/schemastery.md',
           '/community/decorator/nestjs.md',

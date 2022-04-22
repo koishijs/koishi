@@ -216,7 +216,7 @@ import { Context } from 'koishi'
       provide: AppService,
       inject: [getContextProvideToken()],
       useFactory: (ctx: Context) => new AppService(ctx),
-    }
+    },
   ],
 })
 export class AppModule {}
