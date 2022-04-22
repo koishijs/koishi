@@ -11,8 +11,8 @@ noTwoslash: true
 请注意：这些库并不是官方维护的库。如果对这个库的使用或本文档的说明有任何疑问，请前往对应的仓库而非官方仓库提交 issue。
 :::
 
-|                               库名                               |    用途     |         文档          |                          仓库                          |
-|:--------------------------------------------------------------:|:---------:|:-------------------:|:----------------------------------------------------:|
-| [`koishi-thirdeye`](https://npmjs.com/package/koishi-thirdeye) |   开发插件    | [文档](./thirdeye.md) |  [仓库](https://github.com/koishijs/koishi-thirdeye)   |
-| [`schemastery-gen`](https://npmjs.com/package/schemastery-gen) | 编写描述配置模式  | [文档](./schemastery.md) | [仓库](https://code.mycard.moe/3rdeye/schemastery-gen) |
-|   [`koishi-nestjs`](https://npmjs.com/package/koishi-nestjs)   | 开发成品机器人应用 | [文档](./nestjs.md) |   [仓库](https://github.com/koishijs/koishi-nestjs)    |
+|                              库名                              |    用途     |         文档          |                          仓库                          |
+|:------------------------------------------------------------:|:---------:|:-------------------:|:----------------------------------------------------:|
+| [koishi-thirdeye](https://npmjs.com/package/koishi-thirdeye) |   开发插件    | [文档](./thirdeye.md) |  [仓库](https://github.com/koishijs/koishi-thirdeye)   |
+| [schemastery-gen](https://npmjs.com/package/schemastery-gen) | 编写描述配置模式  | [文档](./schemastery.md) | [仓库](https://code.mycard.moe/3rdeye/schemastery-gen) |
+|   [koishi-nestjs](https://npmjs.com/package/koishi-nestjs)   | 开发成品机器人应用 | [文档](./nestjs.md) |   [仓库](https://github.com/koishijs/koishi-nestjs)    |

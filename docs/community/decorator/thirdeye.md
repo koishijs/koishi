@@ -85,8 +85,7 @@ export default class MyPlugin extends BasePlugin<MyPluginConfig> implements Life
 koishi-thirdeye 允许您使用 `@DefinePlugin()` 装饰器定义类插件。您可以向装饰器中传入插件的基本信息：
 
 - **name**: `string` 插件名称。
-- **schema**: `Schema` 插件的描述配置模式。
-  - 既可以是传统的 Schema 描述模式，也可以是由 [`schemastery-gen`](./schemastery.md) 生成的 Schema 类。
+- **schema**: `Schema` 插件的描述配置模式。既可以是传统的 Schema 描述模式，也可以是由 [schemastery-gen](./schemastery.md) 生成的 Schema 类。
 
 ```ts
 import { DefineSchema, SchemaProperty, DefinePlugin } from 'koishi-thirdeye'
@@ -206,9 +205,9 @@ export default class MyPlugin extends BasePlugin<Config> implements LifecycleEve
 
 ### API
 
-- `onApply` 只能是同步函数，会在插件加载时运行
-- `onConnect` 可以是异步函数，会在 Koishi 启动时运行，相当于 ready 事件的回调函数
-- `onDisconnect` 可以是异步函数，会在插件被卸载时运行，相当于 dispose 事件的回调函数
+- **onApply:** 只能是同步函数，会在插件加载时运行
+- **onConnect:** 可以是异步函数，会在 Koishi 启动时运行，相当于 ready 事件的回调函数
+- **onDisconnect:** 可以是异步函数，会在插件被卸载时运行，相当于 dispose 事件的回调函数
 
 ## 注册事件
 
@@ -624,9 +623,9 @@ export default class MyPlugin extends BasePlugin<Config> {
 
 `@If<T>(o: T, config: Config, ctx: Context)`
 
-- `o` 插件实例对象。
-- `config` 插件的配置。
-- `ctx` 插件的上下文对象。
+- **o:** 插件实例对象。
+- **config:** 插件的配置。
+- **ctx:** 插件的上下文对象。
 
 ::: tip
 由于装饰器无法自动推断类型，因此为了更好地使用该装饰器，您需要如同上例一般，手动指定装饰器的类型 `T` 为插件类本身。
@@ -744,10 +743,10 @@ export class MyPhotoRegistry extends BasePlugin<Config> {
 
 ## 扩展数据表
 
-借助 `koishi-entities` 这个包，您也可以很轻松地使用类和装饰器定义数据表。
+借助 koishi-entities 这个包，您也可以很轻松地使用类和装饰器定义数据表。
 
 ::: tip
-koishi-thirdeye 已经重新导出了这个包，无需再手动导入或安装 `koishi-entities`。
+koishi-thirdeye 已经重新导出了这个包，无需再手动导入或安装 koishi-entities。
 :::
 
 ### 定义数据表

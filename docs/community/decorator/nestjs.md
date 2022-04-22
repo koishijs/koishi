@@ -109,9 +109,9 @@ koishi-nestjs 的配置项和 [Koishi 配置项](../../api/core/app.md) 基本�
 
 ### WebSocket 服务器
 
-和直接运行 Koishi 不同，Nest.js 中的 Koishi 模块并不会直接注册 HttpServer，而是将 HttpServer 与 Nest.js 中的 HttpServer 进行绑定。而 WebSocket 使用的也是 Nest.js 中的 [WebSocket 网关](https://docs.nestjs.cn/8/websockets)。因此若要使用到如 `console` 或 `adapter-onebot` 的反向 WebSocket 功能的插件，需要在 Nest.js 实例注册时进行一些额外的配置。
+和直接运行 Koishi 不同，Nest.js 中的 Koishi 模块并不会直接注册 HttpServer，而是将 HttpServer 与 Nest.js 中的 HttpServer 进行绑定。而 WebSocket 使用的也是 Nest.js 中的 [WebSocket 网关](https://docs.nestjs.cn/8/websockets)。因此若要使用到如 [console](../../plugins/console/) 或 [adapter-onebot](../../plugins/adapter/onebot.md#反向-websocket) 的反向 WebSocket 功能的插件，需要在 Nest.js 实例注册时进行一些额外的配置。
 
-为了与 Koishi 更好地适配 Nest.js 的 WebSocket 功能，koishi-nestjs 提供了基于 `@nestjs/platform-ws` 的专用 Nest.js WebSocket 适配器。我们需要在 Koishi 模块配置中设置 `useWs` 为 `true`，并加载专用 WebSocket 适配器：
+为了与 Koishi 更好地适配 Nest.js 的 WebSocket 功能，koishi-nestjs 提供了基于 @nestjs/platform-ws 的专用 Nest.js WebSocket 适配器。我们需要在 Koishi 模块配置中设置 `useWs` 为 `true`，并加载专用 WebSocket 适配器：
 
 ```ts
 // app.module.ts
@@ -149,7 +149,7 @@ const app = await NestFactory.create(AppModule)
 app.useWebSocketAdapter(new KoishiWsAdapter(app))
 ```
 
-该适配器拥有和 `@nestjs/platform-ws` 适配器基本一致的功能。在 Nest.js 工程内您可以如同正常的 WebSocket 适配器一般使用它。
+该适配器拥有和 @nestjs/platform-ws 适配器基本一致的功能。在 Nest.js 工程内您可以如同正常的 WebSocket 适配器一般使用它。
 
 ## 注入 Koishi 实例
 
@@ -228,9 +228,8 @@ export class AppModule {}
 function getContextProvideToken(scopeType?: ContextScopeTypes, values: string[] = [])
 ```
 
-- `scopeType` 选择器类型，可以是 `private` `channel` `guild` `self` `user` `platform` 之一。留空表示全局上下文。
-- `values` 选择器值。例如 `getContextProvideToken('platform', ['onebot'])` 等价于 `ctx.platform('onebot')`。
-
+- **scopeType:** 选择器类型，可以是 `private` `channel` `guild` `self` `user` `platform` 之一。留空表示全局上下文。
+- **values:** 选择器值。例如 `getContextProvideToken('platform', ['onebot'])` 等价于 `ctx.platform('onebot')`。
 
 ## 在提供者类中注册方法
 
