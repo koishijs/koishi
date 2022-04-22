@@ -68,6 +68,7 @@ class DatabaseProvider extends DataService<DatabaseInfo> {
         ...tableStats[name],
       }
     }
+    result.tables = Object.fromEntries(Object.entries(result.tables).sort(([a], [b]) => a.localeCompare(b)))
     return result
   }
 
