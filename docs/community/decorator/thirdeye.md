@@ -84,8 +84,8 @@ export default class MyPlugin extends BasePlugin<MyPluginConfig> implements Life
 
 koishi-thirdeye 允许您使用 `@DefinePlugin()` 装饰器定义类插件。您可以向装饰器中传入插件的基本信息：
 
-- **name**: `string` 插件名称。
-- **schema**: `Schema` 插件的描述配置模式。既可以是传统的 Schema 描述模式，也可以是由 [schemastery-gen](./schemastery.md) 生成的 Schema 类。
+- **name:** `string` 插件名称。
+- **schema:** `Schema` 插件的描述配置模式。既可以是传统的 Schema 描述模式，也可以是由 [schemastery-gen](./schemastery.md) 生成的 Schema 类。
 
 ```ts
 import { DefineSchema, SchemaProperty, DefinePlugin } from 'koishi-thirdeye'
