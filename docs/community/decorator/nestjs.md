@@ -5,7 +5,13 @@ noTwoslash: true
 
 # Nest.js
 
-[koishi-nestjs](https://www.npmjs.com/package/koishi-nestjs) 允许您在 Nest.js 中，把 Koishi 当作一个模块来引入工程，并与 Nest.js 中的其他模块进行交互，以打造规模化的机器人应用。
+[Nest.js](https://nestjs.com/) 是一个 IoC 形式的 Node.js Web 应用框架。
+
+[koishi-nestjs](https://www.npmjs.com/package/koishi-nestjs) 允许您在 Nest.js 中，把 Koishi 当作一个模块来引入工程，并与 Nest.js 中的其他模块进行交互，以打造规模化的机器人应用，或在您的业务逻辑中加入机器人功能。
+
+::: tip
+本部分文档假定您已经具备 Koishi 和 Nest.js 相关基础。请参照 [Koishi](../../guide/) 以及 [Nest.js](https://docs.nestjs.cn/8/) 的相关文档，了解相关知识。
+:::
 
 ## 安装
 
@@ -35,9 +41,9 @@ import PluginOnebot from '@koishijs/plugin-onebot'
         // 预安装的插件
         PluginDef(PluginOnebot, {
       	  protocol: 'ws',
-          endpoint: 'CQ_ENDPOINT',
-          selfId: 'CQ_ENDPOINT',
-          token: 'CQ_ENDPOINT',
+          endpoint: 'ws://localhost:6700',
+          selfId: '111514',
+          token: 'koishi',
         }),
       ],
     }),

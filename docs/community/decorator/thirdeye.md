@@ -86,24 +86,60 @@ koishi-thirdeye 允许您使用 `@DefinePlugin()` 装饰器定义类插件。您
 
 - `name` 插件名称
 - `schema` 插件的描述配置模式
-  - 既可以是传统的 Schema 描述模式，也可以是由 `schemastery-gen` 生成的 Schema 类
+  - 既可以是传统的 Schema 描述模式，也可以是由 [`schemastery-gen`](./schemastery.md) 生成的 Schema 类
 
 ```ts
-// 在此处定义 Config 的 Schema 描述模式
+import { DefineSchema, SchemaProperty, DefinePlugin } from 'koishi-thirdeye'
+
+@DefineSchema()
+export class Config {
+  @SchemaProperty({ default: 'bar' })
+  foo: string
+}
+
 @DefinePlugin({ name: 'my-plugin', schema: Config })
 export default class MyPlugin {
   constructor(private ctx: Context, private config: Partial<Config>) {} // 不建议在构造函数进行任何操作
+
+  @UseCommand('dress', '穿裙子')
+  @CommandUsage('今天穿裙子了吗？')
+  onDressCommand(
+    @PutOption('color', '-c <color:string>  裙子的颜色') color: string,
+    @PutUserName() name: string,
+  ) {
+    return `${name} 今天穿的裙子的颜色是 ${color}。`
+  }
 }
 ```
 
+::: warning
+koishi-thirdeye 已经重新导出了 schemastery-gen 这个包。您无需重新安装或导入 schemastery-gen 包。
+:::
+
 ### 插件基类
 
-为了简化插件的编写，插件基类 `BasePlugin<Config>` 实现了上面的构造函数定义。因此上面的代码可以简化为：
+为了简化插件的编写，插件基类 `BasePlugin<Config>` 实现了上面的构造函数定义，并定义了一些常用属性。因此上面的代码可以简化为：
 
 ```ts
-// 在此处定义 Config 的 Schema 描述模式
+import { DefineSchema, SchemaProperty, DefinePlugin } from 'koishi-thirdeye'
+
+@DefineSchema()
+export class Config {
+  @SchemaProperty({ default: 'bar' })
+  foo: string
+}
+
 @DefinePlugin({ name: 'my-plugin', schema: Config })
-export default class MyPlugin extends BasePlugin<Config> {}
+export default class MyPlugin extends BasePlugin<Config> {
+  @UseCommand('dress', '穿裙子')
+  @CommandUsage('今天穿裙子了吗？')
+  onDressCommand(
+    @PutOption('color', '-c <color:string>  裙子的颜色') color: string,
+    @PutUserName() name: string,
+  ) {
+    return `${name} 今天穿的裙子的颜色是 ${color}。`
+  }
+}
 ```
 
 在插件内分别可以使用 `this.config` 和 `this.ctx` 访问配置和上下文对象。
@@ -173,112 +209,6 @@ export default class MyPlugin extends BasePlugin<Config> implements LifecycleEve
 - `onApply` 只能是同步函数，会在插件加载时运行
 - `onConnect` 可以是异步函数，会在 Koishi 启动时运行，相当于 ready 事件的回调函数
 - `onDisconnect` 可以是异步函数，会在插件被卸载时运行，相当于 dispose 事件的回调函数
-
-## 描述配置模式
-
-借助 schemastery-gen 这个包，我们可以使用装饰器进行编写描述配置模式。插件加载时，类将会自动实例化，并注入这些方法。
-
-我们需要使用 `@DefineSchema` 装饰器对配置类进行修饰，使其成为一个描述配置。同时，需要对每个出现于配置的成员属性使用 `@SchemaProperty` 进行修饰。
-
-对于每一个成员字段，系统将会尝试推断这些字段类型，也可以使用 `type` 参数手动指定类型或另一个 Schema 对象。
-
-特别地，系统可以推断出某一字段是否为数组，但是无法推断数组内部的类型。因此下例中我们**必须**手动指定 `someArray` 的内部类型为 `string`。
-
-```ts
-@DefineSchema() // Config 类本身会成为 Schema 对象
-export class Config {
-  constructor(_config: any) {}
-
-  @SchemaProperty({ default: 'baz' })
-  foo: string // 自动推断出 Schema.string()
-
-  getFoo() {
-    return this.foo
-  }
-
-  @SchemaProperty({ type: Schema.number(), required: true }) // 也可手动指定 Schema 对象
-  bar: number
-
-  @SchemaProperty({ type: String })
-  someArray: string[] // 自动推断出 Schema.array(...)，但是无法推断内部类型，需要手动指定
-}
-```
-
-### 嵌套配置
-
-在配置类存在嵌套的情况下，内层类也会自动实例化，并且会自动注入到外层类的对应属性中。
-
-```ts
-@DefineSchema()
-export class ChildConfig {
-  constructor(_config: any) {}
-
-  @SchemaProperty({ default: 'baz' })
-  foo: string
-
-  @SchemaProperty({ type: Schema.number(), required: true })
-  bar: number
-}
-
-// Config 类本身会成为 Schema 对象
-@DefineSchema()
-export class Config {
-  constructor(_config: any) {}
-
-  // 自动推断出 ChildConfig
-  @SchemaProperty()
-  child: ChildConfig
-
-  // 无法自动推断 ChildConfig，需要手动指定。但是可以推断出外层的 Schema.array(...)
-  @SchemaProperty({ type: ChildConfig })
-  children: ChildConfig[]
-}
-```
-
-### 循环嵌套配置
-
-如果配置类存在循环嵌套，我们需要使用 `SchemaRef(() => Type)` 方法进行定义。
-
-```ts
-@RegisterSchema()
-export class Author {
-  constructor(_: Partial<Author>) {}
-
-  @DefineSchema()
-  name: string
-
-  getName?() {
-    return this.name
-  }
-
-  @DefineSchema({
-    type: SchemaRef(() => Post), // 循环嵌套类的数组，array 可以由成员变量类型自动推断。
-  })
-  posts?: Post[]
-}
-
-@RegisterSchema()
-export class Post {
-  constructor(_: Partial<Post>) {}
-
-  @DefineSchema()
-  name: string
-
-  getName?() {
-    return this.name
-  }
-
-  @DefineSchema({
-    type: SchemaRef(() => Author), // 循环嵌套
-  })
-  author?: Author
-
-  @DefineSchema({
-    type: SchemaRef(() => Post), // 指定自身为类型也需要如此使用。
-  })
-  childPosts?: Post[]
-}
-```
 
 ## 注册事件
 

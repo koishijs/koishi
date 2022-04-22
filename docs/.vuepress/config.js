@@ -344,6 +344,7 @@ module.exports = {
         link: '/community/decorator/',
         children: [
           '/community/decorator/thirdeye.md',
+          '/community/decorator/schemastery.md',
           '/community/decorator/nestjs.md',
         ],
       }],
