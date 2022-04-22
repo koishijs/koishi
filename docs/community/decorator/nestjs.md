@@ -23,7 +23,7 @@ npm install koishi-nestjs koishi
 
 koishi-nestjs 中，Koishi 以 Nest.js 的模块的形式引入到项目工程中。我们支持同步和异步两种配置方式。
 
-另外，KoishiModule 会被注册为 [全局模块](https://docs.nestjs.cn/8/modules?id=%e5%85%a8%e5%b1%80%e6%a8%a1%e5%9d%97) 。在项目的任何模块中注册 KoishiModule 后，在项目的任何位置均能使用 Koishi 的功能。
+另外，KoishiModule 会被注册为 [全局模块](https://docs.nestjs.cn/8/modules?id=%e5%85%a8%e5%b1%80%e6%a8%a1%e5%9d%97)。在项目的任何模块中注册 KoishiModule 后，在项目的任何位置均能使用 Koishi 的功能。
 
 ### 同步
 
@@ -88,17 +88,17 @@ export class AppModule {}
 
 koishi-nestjs 的配置项和 [Koishi 配置项](../../api/core/app.md) 基本一致，下面是 koishi-nestjs 特有的配置项：
 
-- `loggerPrefix`: `string` Nest 日志中 Logger 的前缀。默认 `koishi` 。
-- `loggerColor`: `number` Nest 日志中 Logger 的颜色支持。默认 `0` 。
-- `usePlugins`: `KoishiModulePlugin[]` 可选。预先安装的 Koishi 插件列表。使用 `PluginDef(plugin, options, select)` 方法生成该项的定义。该配置项的成员参数如下。
-  - `plugin` Koishi 插件。
-  - `options` Koishi 插件配置。等同于 `ctx.plugin(plugin, options)`。
-  - `select` 可选，Selection 对象，指定插件的 [上下文选择器](../../guide/plugin/context.md#配置插件上下文) 。
-- `moduleSelection` `KoishiModuleSelection[]` 可选。指定 Nest 实例加载的其他 Nest 模块注入的 Koishi 上下文选择器，参数如下：
-  - `module` Nest 模块名。
-  - `select` Selection 对象，指定插件的 [上下文选择器](../../guide/plugin/context.md#配置插件上下文) 。
-- `useWs`: `boolean` 默认 `false` 。是否启用 WebSocket 网关。**异步配置该项应写入异步配置项中**，而不是写在 `useFactory` 中。
-- `actionErrorMessage`: `string` 指令中发生未知错误时，机器人返回的信息。默认 `Internal Server Error`。
+- **loggerPrefix:** `string` Nest 日志中 Logger 的前缀。默认 `koishi`。
+- **loggerColor:** `number` Nest 日志中 Logger 的颜色支持。默认 `0`。
+- **usePlugins:** `KoishiModulePlugin[]` 可选。预先安装的 Koishi 插件列表。使用 `PluginDef(plugin, options, select)` 方法生成该项的定义。该配置项的成员参数如下。
+  - **plugin**: Koishi 插件。
+  - **options**: Koishi 插件配置。等同于 `ctx.plugin(plugin, options)`。
+  - **select**: 可选，Selection 对象，指定插件的 [上下文选择器](../../guide/plugin/context.md#配置插件上下文)。
+- **moduleSelection** `KoishiModuleSelection[]` 可选。指定 Nest 实例加载的其他 Nest 模块注入的 Koishi 上下文选择器，参数如下：
+  - **module**: Nest 模块类。
+  - **select**: Selection 对象，指定插件的 [上下文选择器](../../guide/plugin/context.md#配置插件上下文)。
+- **useWs:** `boolean` 是否启用 WebSocket 网关。**异步配置该项应写入异步配置项中**，而不是写在 `useFactory` 中。默认 `false`。
+- **actionErrorMessage:** `string` 指令中发生未知错误时，机器人返回的信息。默认 `Internal Server Error`。
 
 #### 不支持的配置项
 
@@ -109,7 +109,7 @@ koishi-nestjs 的配置项和 [Koishi 配置项](../../api/core/app.md) 基本�
 
 ### WebSocket 服务器
 
-和直接运行 Koishi 不同，Nest.js 中的 Koishi 模块并不会直接注册 HttpServer，而是将 HttpServer 与 Nest.js 中的 HttpServer 进行绑定。而 WebSocket 使用的也是 Nest.js 中的 [WebSocket 网关](https://docs.nestjs.cn/8/websockets) 。因此若要使用到如 `console` 或 `adapter-onebot` 的反向 WebSocket 功能的插件，需要在 Nest.js 实例注册时进行一些额外的配置。
+和直接运行 Koishi 不同，Nest.js 中的 Koishi 模块并不会直接注册 HttpServer，而是将 HttpServer 与 Nest.js 中的 HttpServer 进行绑定。而 WebSocket 使用的也是 Nest.js 中的 [WebSocket 网关](https://docs.nestjs.cn/8/websockets)。因此若要使用到如 `console` 或 `adapter-onebot` 的反向 WebSocket 功能的插件，需要在 Nest.js 实例注册时进行一些额外的配置。
 
 为了与 Koishi 更好地适配 Nest.js 的 WebSocket 功能，koishi-nestjs 提供了基于 `@nestjs/platform-ws` 的专用 Nest.js WebSocket 适配器。我们需要在 Koishi 模块配置中设置 `useWs` 为 `true`，并加载专用 WebSocket 适配器：
 
@@ -215,7 +215,7 @@ import { Context } from 'koishi'
     {
       provide: AppService,
       inject: [getContextProvideToken()],
-      useFactory: (ctx: Context) => new AppService(ctx)
+      useFactory: (ctx: Context) => new AppService(ctx),
     }
   ],
 })
@@ -229,7 +229,7 @@ function getContextProvideToken(scopeType?: ContextScopeTypes, values: string[] 
 ```
 
 - `scopeType` 选择器类型，可以是 `private` `channel` `guild` `self` `user` `platform` 之一。留空表示全局上下文。
-- `values` 选择器值。例如 `getContextProvideToken('platform', ['onebot'])` 等价于 `ctx.platform('onebot')` .
+- `values` 选择器值。例如 `getContextProvideToken('platform', ['onebot'])` 等价于 `ctx.platform('onebot')`。
 
 
 ## 在提供者类中注册方法
