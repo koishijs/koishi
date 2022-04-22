@@ -32,8 +32,9 @@ class MarketProvider extends DataService<Dict<MarketProvider.Data>> {
   async prepare() {
     const registry = await new Promise<string>((resolve, reject) => {
       let stdout = ''
-      const agent = which()?.name || 'npm'
-      const child = spawn(agent, ['config', 'get', 'registry'], { cwd: this.ctx.app.baseDir })
+      const agent = which()
+      const key = (agent?.name === 'yarn' && !agent?.version.startsWith('1.')) ? 'npmRegistryServer' : 'registry'
+      const child = spawn(agent?.name || 'npm', ['config', 'get', key], { cwd: this.ctx.app.baseDir })
       child.on('exit', (code) => {
         if (!code) return resolve(stdout)
         reject(new Error(`child process failed with code ${code}`))
