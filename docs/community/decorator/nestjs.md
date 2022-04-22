@@ -89,22 +89,15 @@ export class AppModule {}
 koishi-nestjs 的配置项和 [Koishi 配置项](../../api/core/app.md) 基本一致，下面是 koishi-nestjs 特有的配置项：
 
 - `loggerPrefix`: `string` Nest 日志中 Logger 的前缀。默认 `koishi` 。
-
 - `loggerColor`: `number` Nest 日志中 Logger 的颜色支持。默认 `0` 。
-
 - `usePlugins`: `KoishiModulePlugin[]` 可选。预先安装的 Koishi 插件列表。使用 `PluginDef(plugin, options, select)` 方法生成该项的定义。该配置项的成员参数如下。
-
   - `plugin` Koishi 插件。
   - `options` Koishi 插件配置。等同于 `ctx.plugin(plugin, options)`。
   - `select` 可选，Selection 对象，指定插件的 [上下文选择器](../../guide/plugin/context.md#配置插件上下文) 。
-
 - `moduleSelection` `KoishiModuleSelection[]` 可选。指定 Nest 实例加载的其他 Nest 模块注入的 Koishi 上下文选择器，参数如下：
-
   - `module` Nest 模块名。
   - `select` Selection 对象，指定插件的 [上下文选择器](../../guide/plugin/context.md#配置插件上下文) 。
-
 - `useWs`: `boolean` 默认 `false` 。是否启用 WebSocket 网关。**异步配置该项应写入异步配置项中**，而不是写在 `useFactory` 中。
-
 - `actionErrorMessage`: `string` 指令中发生未知错误时，机器人返回的信息。默认 `Internal Server Error`。
 
 #### 不支持的配置项
@@ -197,17 +190,11 @@ export class AppService implements OnModuleInit {
 在 Nest 提供者构造函数参数列表中使用下列装饰器即可进行注入操作。
 
 - `@InjectContext()` 注入全体上下文。等价于 `ctx.any()`
-
 - `@InjectContextPrivate(...values[]: string)` 注入私聊上下文。等价于 `ctx.private(...values)`
-
 - `@InjectContextChannel(...values[]: string)` 注入频道上下文。等价于 `ctx.channel(...values)`
-
 - `@InjectContextGuild(...values[]: string)` 注入群组上下文。等价于 `ctx.guild(...values)`
-
 - `@InjectContextSelf(...values[]: string)` 注入机器人账户上下文。等价于 `ctx.self(...values)`
-
 - `@InjectContextUser(...values[]: string)` 注入用户上下文。等价于 `ctx.user(...values)`
-
 - `@InjectContextPlatform(...values[]: string)` 注入平台上下文。等价于 `ctx.platform(...values)`
 
 ### 在自定义提供者注入 Koishi 上下文
@@ -242,7 +229,6 @@ function getContextProvideToken(scopeType?: ContextScopeTypes, values: string[] 
 ```
 
 - `scopeType` 选择器类型，可以是 `private` `channel` `guild` `self` `user` `platform` 之一。留空表示全局上下文。
-
 - `values` 选择器值。例如 `getContextProvideToken('platform', ['onebot'])` 等价于 `ctx.platform('onebot')` .
 
 
