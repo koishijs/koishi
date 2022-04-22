@@ -25,9 +25,19 @@ before(async () => {
   await app.mock.initUser('123', 4)
   await app.mock.initChannel('456')
 
-  // inject data before starting
-  app.database.memory.$table('schedule').push({
-    id: 1,
+  app.model.extend('schedule', {
+    id: 'unsigned',
+    assignee: 'string',
+    time: 'timestamp',
+    lastCall: 'timestamp',
+    interval: 'integer',
+    command: 'text',
+    session: 'json',
+  }, {
+    autoInc: true,
+  })
+
+  await app.database.create('schedule', {
     time: new Date('2000-1-1 0:59'),
     assignee: app.bots[0].sid,
     interval: Time.day,

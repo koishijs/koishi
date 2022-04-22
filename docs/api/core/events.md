@@ -37,17 +37,17 @@ Koishi 封装了一套事件系统。其基本用法与 Node.js 自带的 [Event
 
 跟群组、好友有关的事件统称为成员类事件，共有以下几种：
 
-- group-added: 加入了群组
-- group-deleted: 退出了群组
-- group-request: 收到了群组邀请
-- group-member-added: 群组成员增加
-- group-member-deleted: 群组成员减少
-- group-member-request: 收到了入群申请
+- guild-added: 加入了群组
+- guild-deleted: 退出了群组
+- guild-request: 收到了群组邀请
+- guild-member-added: 群组成员增加
+- guild-member-deleted: 群组成员减少
+- guild-member-request: 收到了入群申请
 - friend-added: 好友数量增加
 - friend-deleted: 好友数量减少
 - friend-request: 收到了好友请求
 
-形如 group(-member)?-(added|deleted) 的事件拥有以下的属性：
+形如 guild(-member)?-(added|deleted) 的事件拥有以下的属性：
 
 - **operatorId:** `string` 操作者 ID
 
@@ -58,15 +58,15 @@ Koishi 封装了一套事件系统。其基本用法与 Node.js 自带的 [Event
 
 ### 操作类事件
 
-上报事件中最主要的一部分都有着统一的结构：**事件主体** + **操作类型**。例如好友请求事件是 friend-request，群组文件更新事件是 group-file-updated 等。目前支持的事件主体包括以下几种：
+上报事件中最主要的一部分都有着统一的结构：**事件主体** + **操作类型**。例如好友请求事件是 friend-request，群组文件更新事件是 guild-file-updated 等。目前支持的事件主体包括以下几种：
 
 - friend
 - channel
-- group
-- group-member
-- group-role
-- group-file
-- group-emoji
+- guild
+- guild-member
+- guild-role
+- guild-file
+- guild-emoji
 
 操作类型包含以下几种：
 

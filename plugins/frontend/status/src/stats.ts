@@ -1,4 +1,4 @@
-import { Bot, Channel, Context, Dict, Logger, Schema, Session, Time, valueMap } from 'koishi'
+import { $, Bot, Channel, Context, Dict, Logger, Schema, Session, Time, valueMap } from 'koishi'
 import { DataService } from '@koishijs/plugin-console'
 import {} from '@koishijs/cli'
 
@@ -152,12 +152,11 @@ class StatisticsProvider extends DataService<StatisticsProvider.Payload> {
     if (!Object.values(this.daily).some(data => Object.keys(data).length)) return
     const time = new Date(date)
     time.setHours(0, 0, 0, 0)
-    await this.ctx.database.upsert('stats_daily', [{
+    await this.ctx.database.upsert('stats_daily', row => [{
       time,
       ...Object.fromEntries(Object.entries(this.daily).flatMap(([type, record]) => {
         return Object.entries(record).map(([key, value]) => {
-          const $ = `${type}.${key}`
-          return [$, { $add: [{ $ifNull: [{ $ }, 0] }, value] }]
+          return [`${type}.${key}`, $.add($.ifNull(row[type][key], 0), value)]
         })
       })),
     }])
@@ -167,9 +166,9 @@ class StatisticsProvider extends DataService<StatisticsProvider.Payload> {
     if (!Object.values(this.hourly).some(value => value)) return
     const time = new Date(date)
     time.setMinutes(0, 0, 0)
-    await this.ctx.database.upsert('stats_hourly', [{
+    await this.ctx.database.upsert('stats_hourly', row => [{
       time,
-      ...valueMap(this.hourly, (value, $) => ({ $add: [{ $ }, value] })),
+      ...valueMap(this.hourly, (value, key) => $.add(row[key], value)),
     }])
   }
 
@@ -177,23 +176,24 @@ class StatisticsProvider extends DataService<StatisticsProvider.Payload> {
     if (!Object.values(this.longterm).some(value => value)) return
     const time = new Date(date)
     time.setHours(0, 0, 0, 0)
-    await this.ctx.database.upsert('stats_longterm', [{
+    await this.ctx.database.upsert('stats_longterm', row => [{
       time,
-      ...valueMap(this.longterm, (value, $) => ({ $add: [{ $ }, value] })),
+      ...valueMap(this.longterm, (value, key) => $.add(row[key], value)),
     }])
   }
 
   private async _uploadGuilds(date: Date) {
-    // FIXME should be guilds
     if (!Object.values(this.guilds).some(data => Object.keys(data).length)) return
-    const $ = 'activity.' + Time.getDateNumber(date)
-    await this.ctx.database.upsert('channel', Object.entries(this.guilds).flatMap(([platform, record]) => {
-      return Object.entries(record).map(([id, value]) => ({
-        id,
-        platform,
-        [$]: { $add: [{ $ifNull: [{ $ }, 0] }, value] },
-      }))
-    }))
+    const key = 'activity.' + Time.getDateNumber(date)
+    await this.ctx.database.upsert('channel', (row) => {
+      return Object.entries(this.guilds).flatMap(([platform, record]) => {
+        return Object.entries(record).map(([id, value]) => ({
+          id,
+          platform,
+          [key]: $.add($.ifNull(row[key], 0), value),
+        }))
+      })
+    })
   }
 
   async upload(forced = false) {
@@ -289,9 +289,7 @@ class StatisticsProvider extends DataService<StatisticsProvider.Payload> {
       this.ctx.database.get('stats_daily', { time }, { sort, limit: RECENT_LENGTH }),
       this.ctx.database.get('stats_hourly', { time }, { sort, limit: 24 * RECENT_LENGTH }),
       this.ctx.database.get('stats_longterm', { time }, { sort }),
-      this.ctx.database.get('channel', {
-        $expr: { $eq: [{ $: 'id' }, { $: 'guildId' }] },
-      }, ['platform', 'id', 'name', 'assignee']),
+      this.ctx.database.get('channel', row => $.eq(row.id, row.guildId), ['platform', 'id', 'name', 'assignee']),
     ])
     const data = { daily, hourly, longterm, guilds }
     const payload = {} as StatisticsProvider.Payload

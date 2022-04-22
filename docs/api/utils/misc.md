@@ -107,19 +107,9 @@ sidebarDepth: 2
 
 将一个字符串解析成 Date 对象。
 
-### Time.formatTime(ms)
+### Time.format(ms)
 
 - **ms:** `number` 毫秒数
-
-### Time.formatTimeShort(ms)
-
-- **ms:** `number` 毫秒数
-
-### Time.formatTimeInterval(time, interval?)
-
-- **time:** `Date` 起始时间
-- **interval:** `number` 时间间隔，单位为毫秒
-- 返回值: `string`
 
 ## 随机数操作
 

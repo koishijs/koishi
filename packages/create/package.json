@@ -1,14 +1,13 @@
 {
   "name": "create-koishi",
-  "description": "Node runtime for Koishi",
-  "version": "5.0.3",
+  "description": "Setup a Koishi application",
+  "version": "5.1.2",
   "main": "lib/index.js",
   "engines": {
     "node": ">=12.0.0"
   },
   "files": [
-    "lib",
-    "template"
+    "lib"
   ],
   "bin": "lib/index.js",
   "author": "Shigma <shigma10826@gmail.com>",

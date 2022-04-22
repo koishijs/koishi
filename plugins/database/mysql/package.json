@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-database-mysql",
   "description": "MySQL support for Koishi",
-  "version": "4.2.0",
+  "version": "4.3.1",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -28,17 +28,10 @@
     "mysql",
     "impl:database"
   ],
-  "devDependencies": {
-    "@koishijs/database-tests": "^1.1.0",
-    "@koishijs/plugin-mock": "^1.0.3"
-  },
   "peerDependencies": {
-    "koishi": "^4.5.1"
+    "koishi": "^4.6.0"
   },
   "dependencies": {
-    "@koishijs/orm": "^1.0.0",
-    "@koishijs/sql-utils": "^1.1.0",
-    "@types/mysql": "^2.15.21",
-    "@vlasky/mysql": "^2.18.5"
+    "@cosmotype/driver-mysql": "^1.0.2"
   }
 }

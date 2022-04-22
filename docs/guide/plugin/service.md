@@ -190,7 +190,7 @@ app.private().console instanceof Console // true
 
 对于 TypeScript 用户，你还需要进行声明合并，以便能够在上下文对象中获得类型提示：
 
-```ts
+```ts no-extra-header
 declare module 'koishi' {
   namespace Context {
     interface Services {

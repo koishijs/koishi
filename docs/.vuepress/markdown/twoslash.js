@@ -50,7 +50,7 @@ function render(code, lang, attrs) {
       .replace(/<\/br>/g, '\n')
   } catch (e) {
     console.log('Code block:')
-    console.log(e.code)
+    console.log(code)
     console.log()
     console.log('Message:')
     console.log(e.message)

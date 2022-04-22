@@ -17,9 +17,12 @@ const cwd = process.cwd()
 
 const argv = parse(process.argv.slice(2), {
   alias: {
+    ref: ['r'],
     forced: ['f'],
     mirror: ['m'],
+    prod: ['p'],
     template: ['t'],
+    yes: ['y'],
   },
 })
 
@@ -79,7 +82,7 @@ async function prepare() {
   const files = fs.readdirSync(rootDir)
   if (!files.length) return
 
-  if (!argv.forced) {
+  if (!argv.forced && !argv.yes) {
     console.log(yellow(`  Target directory "${project}" is not empty.`))
     const yes = await confirm('Remove existing files and continue?')
     if (!yes) process.exit(0)
@@ -88,12 +91,19 @@ async function prepare() {
   emptyDir(rootDir)
 }
 
+function getRef() {
+  if (!argv.ref) return 'refs/heads/master'
+  if (argv.ref.startsWith('refs/')) return argv.ref
+  if (/^[0-9a-f]{40}$/.test(argv.ref)) return argv.ref
+  return `refs/heads/${argv.ref}`
+}
+
 async function scaffold() {
   console.log(dim('  Scaffolding project in ') + project + dim(' ...'))
 
   const mirror = argv.mirror || 'https://github.com'
   const template = argv.template || 'koishijs/boilerplate'
-  const url = `${mirror}/${template}/archive/refs/heads/master.tar.gz`
+  const url = `${mirror}/${template}/archive/${getRef()}.tar.gz`
 
   try {
     const { data } = await axios.get<NodeJS.ReadableStream>(url, { responseType: 'stream' })
@@ -119,7 +129,7 @@ async function scaffold() {
 }
 
 async function initGit() {
-  if (!await hasGit) return
+  if (!await hasGit || argv.yes) return
   const yes = await confirm('Initialize Git for version control?')
   if (!yes) return
   spawn.sync('git', ['init'], { stdio: 'ignore', cwd: rootDir })
@@ -129,10 +139,12 @@ async function initGit() {
 async function install() {
   const agent = which()?.name || 'npm'
 
-  const yes = await confirm('Install and start it now?')
+  const yes = argv.yes || await confirm('Install and start it now?')
   if (yes) {
-    spawn.sync(agent, ['install'], { stdio: 'inherit', cwd: rootDir })
-    spawn.sync(agent, ['run', 'start'], { stdio: 'inherit', cwd: rootDir })
+    spawn.sync(agent, ['install', ...argv.prod ? ['--production'] : []], { stdio: 'inherit', cwd: rootDir })
+    if (!argv.yes) {
+      spawn.sync(agent, ['run', 'start'], { stdio: 'inherit', cwd: rootDir })
+    }
   } else {
     console.log(dim('  You can start it later by:\n'))
     if (rootDir !== cwd) {

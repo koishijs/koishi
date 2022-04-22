@@ -28,6 +28,9 @@ app.platform('discord').user('112233')
 利用上下文，你可以非常方便地对每个环境进行分别配置：
 
 ```ts
+declare const callback: Middleware
+declare const listener: (session: Session) => void
+/// ---cut---
 // 在所有环境注册中间件
 app.middleware(callback)
 

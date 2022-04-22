@@ -112,45 +112,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node-version: [14, 16]
-
-    services:
-      mongo:
-        image: mongo
-        ports:
-          - 27017:27017
-        # https://stackoverflow.com/questions/66317184/github-actions-cannot-connect-to-mongodb-service
-        options: --health-cmd "mongo" --health-interval 10s --health-timeout 5s --health-retries 5
-      mysql57:
-        image: mysql:5.7
-        ports:
-          - 3306:3306
-        options: --health-cmd "mysqladmin ping" --health-interval 10s --health-timeout 5s --health-retries 5
-        env:
-          MYSQL_USER: koishi
-          MYSQL_DATABASE: test
-          MYSQL_PASSWORD: koishi@114514
-          MYSQL_ROOT_PASSWORD: password
-      maria10:
-        image: mariadb:10.5
-        ports:
-          - 3307:3306
-        options: --health-cmd "mysqladmin ping" --health-interval 10s --health-timeout 5s --health-retries 5
-        env:
-          MYSQL_USER: koishi
-          MYSQL_DATABASE: test
-          MYSQL_PASSWORD: koishi@114514
-          MYSQL_ROOT_PASSWORD: password
-      mysql8:
-        image: mysql:8
-        ports:
-          - 3308:3306
-        options: --health-cmd "mysqladmin ping" --health-interval 10s --health-timeout 5s --health-retries 5
-        env:
-          MYSQL_USER: koishi
-          MYSQL_DATABASE: test
-          MYSQL_PASSWORD: koishi@114514
-          MYSQL_ROOT_PASSWORD: password
+        node-version: [14, 16, 18]
 
     steps:
       - name: Check out
