@@ -343,6 +343,9 @@ module.exports = {
         isGroup: true,
         children: [
           '/community/decorator/',
+          '/community/decorator/thirdeye.md',
+          '/community/decorator/schemastery.md',
+          '/community/decorator/nestjs.md',
         ],
       }],
 
