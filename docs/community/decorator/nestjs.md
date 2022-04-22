@@ -94,7 +94,7 @@ koishi-nestjs 的配置项和 [Koishi 配置项](../../api/core/app.md) 基本�
   - **plugin:** Koishi 插件。
   - **options:** Koishi 插件配置。等同于 `ctx.plugin(plugin, options)`。
   - **select:** 可选，Selection 对象，指定插件的 [上下文选择器](../../guide/plugin/context.md#配置插件上下文)。
-- **moduleSelection** `KoishiModuleSelection[]` 可选。指定 Nest 实例加载的其他 Nest 模块注入的 Koishi 上下文选择器，参数如下：
+- **moduleSelection:** `KoishiModuleSelection[]` 可选。指定 Nest 实例加载的其他 Nest 模块注入的 Koishi 上下文选择器，参数如下：
   - **module:** Nest 模块类。
   - **select:** Selection 对象，指定插件的 [上下文选择器](../../guide/plugin/context.md#配置插件上下文)。
 - **useWs:** `boolean` 是否启用 WebSocket 网关。**异步配置该项应写入异步配置项中**，而不是写在 `useFactory` 中。默认 `false`。
