@@ -1,4 +1,4 @@
-import { Context, Logger, Schema, template } from 'koishi'
+import { Context, Logger, Schema } from 'koishi'
 import { resolve } from 'path'
 import receiver, { Message, RefreshConfig } from './receiver'
 import {} from '@koishijs/plugin-console'
@@ -33,11 +33,6 @@ interface ClientExtension {
   maxMessages?: number
 }
 
-template.set('chat', {
-  send: '[{{ channelName || "私聊" }}] {{ abstract }}',
-  receive: '[{{ channelName || "私聊" }}] {{ username }}: {{ abstract }}',
-})
-
 const builtinWhitelist = [
   'http://gchat.qpic.cn/',
   'http://c2cpicdw.qpic.cn/',
@@ -64,6 +59,8 @@ export const Config = Schema.object({
 const logger = new Logger('message')
 
 export function apply(ctx: Context, options: Config = {}) {
+  ctx.i18n.define('zh', require('./locales/zh'))
+
   options = { ...defaultOptions, ...options }
   ctx.plugin(receiver, options.refresh)
 
@@ -74,7 +71,10 @@ export function apply(ctx: Context, options: Config = {}) {
       const { assignee } = await session.observeChannel(['assignee'])
       if (assignee !== session.selfId) return
     }
-    logger.debug(template('chat.' + (session.type === 'message' ? 'receive' : 'send'), message))
+
+    // render template with fallback options
+    const templatePath = 'chat.log.' + (session.type === 'message' ? 'receive' : 'send')
+    logger.debug(session.text([templatePath, templatePath + '-fallback'], message))
   })
 
   ctx.using(['console'], (ctx) => {
