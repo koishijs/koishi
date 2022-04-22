@@ -5,6 +5,7 @@
   <h1 id="koishi"><a href="https://koishi.js.org/" target="_blank">Koishi</a></h1>
 
 [![Codecov](https://img.shields.io/codecov/c/github/koishijs/koishi?style=flat-square)](https://codecov.io/gh/koishijs/koishi)
+[![downloads](https://img.shields.io/npm/dm/koishi?style=flat-square)](https://www.npmjs.com/package/koishi)
 [![npm](https://img.shields.io/npm/v/koishi?style=flat-square)](https://www.npmjs.com/package/koishi)
 [![GitHub](https://img.shields.io/github/license/koishijs/koishi?style=flat-square)](https://github.com/koishijs/koishi/blob/master/LICENSE)
 
