@@ -14,10 +14,10 @@ noTwoslash: true
 特别地，系统可以推断出某一字段是否为数组，但是无法推断数组内部的类型。因此下例中我们**必须**手动指定 `someArray` 的内部类型为 `string`。
 
 ```ts
-import { SchemaProperty, SchemaProperty } from 'schemastery-gen'
+import { RegisterSchema, SchemaProperty } from 'schemastery-gen'
 import { Context } from 'koishi'
 
-@SchemaProperty() // Config 类本身会成为 Schema 对象
+@RegisterSchema() // Config 类本身会成为 Schema 对象
 export class Config {
   constructor(_config: any) {}
 
@@ -46,7 +46,7 @@ export function apply(ctx: Context, config: Partial<Config>) {
 在配置类存在嵌套的情况下，内层类也会自动实例化，并且会自动注入到外层类的对应属性中。
 
 ```ts
-@SchemaProperty()
+@RegisterSchema()
 export class ChildConfig {
   constructor(_config: any) {}
 
