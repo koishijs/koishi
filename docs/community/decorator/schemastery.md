@@ -7,7 +7,7 @@ noTwoslash: true
 
 借助 [schemastery-gen](https://npmjs.com/package/schemastery-gen) 这个包，我们可以使用装饰器进行编写 Koishi 插件所需要的描述配置模式。插件加载时，类将会自动实例化，并注入这些方法。
 
-我们需要使用 `@SchemaProperty` 装饰器对配置类进行修饰，使其成为一个 Schema 对象。同时，需要对每个出现于配置的成员属性使用 `@SchemaProperty` 进行修饰。
+我们需要使用 `@RegisterSchema` 装饰器对配置类进行修饰，使其成为一个 Schema 对象。同时，需要对每个出现于配置的成员属性使用 `@SchemaProperty` 进行修饰。
 
 对于每一个成员字段，系统将会尝试推断这些字段类型，也可以使用 `type` 参数手动指定类型或另一个 Schema 对象。
 
