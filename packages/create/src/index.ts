@@ -141,9 +141,11 @@ async function install() {
   if (argv.yes) return
 
   const agent = which()?.name || 'npm'
-
   const yes = await confirm('Install and start it now?')
   if (yes) {
+    // https://docs.npmjs.com/cli/v8/commands/npm-install
+    // with the --production flag or `NODE_ENV` set to production,
+    // npm will not install modules listed in devDependencies
     spawn.sync(agent, ['install', ...argv.prod ? ['--production'] : []], { stdio: 'inherit', cwd: rootDir })
     spawn.sync(agent, ['run', 'start'], { stdio: 'inherit', cwd: rootDir })
   } else {
