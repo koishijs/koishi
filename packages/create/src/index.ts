@@ -137,9 +137,12 @@ async function initGit() {
 }
 
 async function install() {
+  // with `-y` option, we don't install dependencies
+  if (argv.yes) return
+
   const agent = which()?.name || 'npm'
 
-  const yes = argv.yes || await confirm('Install and start it now?')
+  const yes = await confirm('Install and start it now?')
   if (yes) {
     spawn.sync(agent, ['install', ...argv.prod ? ['--production'] : []], { stdio: 'inherit', cwd: rootDir })
     if (!argv.yes) {
