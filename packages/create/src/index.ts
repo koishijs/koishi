@@ -145,9 +145,7 @@ async function install() {
   const yes = await confirm('Install and start it now?')
   if (yes) {
     spawn.sync(agent, ['install', ...argv.prod ? ['--production'] : []], { stdio: 'inherit', cwd: rootDir })
-    if (!argv.yes) {
-      spawn.sync(agent, ['run', 'start'], { stdio: 'inherit', cwd: rootDir })
-    }
+    spawn.sync(agent, ['run', 'start'], { stdio: 'inherit', cwd: rootDir })
   } else {
     console.log(dim('  You can start it later by:\n'))
     if (rootDir !== cwd) {
