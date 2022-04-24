@@ -1,4 +1,4 @@
-import { Context, noop, template } from 'koishi'
+import { Context, noop } from 'koishi'
 
 declare module 'koishi' {
   interface EventMap {
@@ -7,15 +7,9 @@ declare module 'koishi' {
 }
 
 export interface Config {
-  exitCommand?: boolean | string
+  exitCommand?: boolean
   autoRestart?: boolean
 }
-
-template.set('daemon', {
-  exiting: '正在关机……',
-  restarting: '正在重启……',
-  restarted: '已成功重启。',
-})
 
 interface Message {
   type: 'send'
@@ -32,21 +26,23 @@ export function apply(ctx: Context, config: Config = {}) {
     ctx.parallel('exit', signal).finally(() => process.exit())
   }
 
-  exitCommand && ctx
-    .command(exitCommand === true ? 'exit' : exitCommand, '停止机器人运行', { authority: 4 })
-    .option('restart', '-r  重新启动')
-    .shortcut('关机', { prefix: true })
-    .shortcut('重启', { prefix: true, options: { restart: true } })
-    .action(async ({ options, session }) => {
-      const { channelId, guildId, sid } = session
-      if (!options.restart) {
-        await session.send(template('daemon.exiting')).catch(noop)
-        process.exit()
-      }
-      process.send({ type: 'queue', body: { channelId, guildId, sid, message: template('daemon.restarted') } })
-      await session.send(template('daemon.restarting')).catch(noop)
-      process.exit(51)
-    })
+  if (exitCommand) {
+    ctx.i18n.define('zh', require('../locales/zh'))
+
+    ctx
+      .command('exit', { authority: 4 })
+      .option('restart', '-r')
+      .action(async ({ options, session }) => {
+        const { channelId, guildId, sid } = session
+        if (!options.restart) {
+          await session.send(session.text('.exiting')).catch(noop)
+          process.exit()
+        }
+        process.send({ type: 'queue', body: { channelId, guildId, sid, message: session.text('.restarted') } })
+        await session.send(session.text('.restarting')).catch(noop)
+        process.exit(51)
+      })
+  }
 
   ctx.on('ready', () => {
     process.send({ type: 'start', body: { autoRestart } })

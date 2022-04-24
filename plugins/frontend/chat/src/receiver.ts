@@ -14,20 +14,37 @@ export const RefreshConfig = Schema.object({
 
 const textSegmentTypes = ['text', 'header', 'section']
 
-const segmentTypes = {
-  face: '表情',
-  record: '语音',
-  video: '短视频',
-  image: '图片',
-  music: '音乐',
-  quote: '引用',
-  forward: '合并转发',
-  dice: '掷骰子',
-  rps: '猜拳',
-  poke: '戳一戳',
-  json: 'JSON',
-  xml: 'XML',
-  card: '卡片消息',
+const segmentTypes = [
+  'at.all',
+  'at.here',
+  'at.role',
+  'at.user',
+  'share',
+  'contact.friend',
+  'contact.guild',
+  'face',
+  'record',
+  'video',
+  'image',
+  'music',
+  'quote',
+  'forward',
+  'dice',
+  'rps',
+  'poke',
+  'json',
+  'xml',
+  'card',
+] as const
+
+type SegmentType = typeof segmentTypes[number]
+
+function segmentToLocale(session: Session, type: SegmentType, params?: object): string {
+  if (segmentTypes.includes(type)) {
+    return session.text('chat.segmentTypes.' + type, params)
+  }
+
+  return session.text('chat.segmentTypes.unknown')
 }
 
 export interface Message {
@@ -118,6 +135,8 @@ export default function receiver(ctx: Context, config: RefreshConfig = {}) {
   }
 
   async function prepareAbstract(session: Session, params: Message, timestamp: number) {
+    const stl = segmentToLocale.bind(this, session)
+
     const codes = segment.parse(params.content.split(/\r?\n/, 1)[0])
     params.abstract = ''
     for (const code of codes) {
@@ -125,11 +144,11 @@ export default function receiver(ctx: Context, config: RefreshConfig = {}) {
         params.abstract += segment.unescape(code.data.content)
       } else if (code.type === 'at') {
         if (code.data.type === 'all') {
-          params.abstract += '@全体成员'
+          params.abstract += stl('at.all')
         } else if (code.data.type === 'here') {
-          params.abstract += '@在线成员'
+          params.abstract += stl('at.here')
         } else if (code.data.role) {
-          params.abstract += '@角色组'
+          params.abstract += stl('at.role')
         } else if (session.subtype === 'group') {
           const id = `${session.platform}:${code.data.id}`
           if (code.data.name) {
@@ -137,16 +156,16 @@ export default function receiver(ctx: Context, config: RefreshConfig = {}) {
           } else if (!userMap[id] || timestamp - userMap[id][1] >= refreshUserName) {
             userMap[id] = [getUserName(session.bot, session.guildId, code.data.id), timestamp]
           }
-          params.abstract += '@' + (code.data.name = await userMap[id][0])
+          params.abstract += stl('at.user', [(code.data.name = await userMap[id][0])])
         } else {
-          params.abstract += '@' + session.bot.username
+          params.abstract += stl('at.user', [session.bot.username])
         }
       } else if (code.type === 'share' || code.type === 'location') {
-        params.abstract += `[分享:${code.data.title}]`
+        params.abstract += stl('share', [code.data.title])
       } else if (code.type === 'contact') {
-        params.abstract += `[推荐${code.data.type === 'qq' ? '好友' : '群'}:${code.data.id}]`
+        params.abstract += stl(code.data.type === 'qq' ? 'contact.friend' : 'contact.guild', [code.data.id])
       } else {
-        params.abstract += `[${segmentTypes[code.type] || '未知'}]`
+        params.abstract += `[${stl(code.type as SegmentType)}]`
       }
     }
     params.content = codes.map(({ type, data }) => segment(type, data)).join('')

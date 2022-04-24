@@ -1,0 +1,11 @@
+commands:
+  exit:
+    description: 停止机器人运行
+
+    options:
+      restart: 重新启动
+
+    messages:
+      exiting: 正在关机……
+      restarting: 正在重启……
+      restarted: 已成功重启。
