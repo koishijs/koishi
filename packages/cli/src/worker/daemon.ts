@@ -7,7 +7,7 @@ declare module 'koishi' {
 }
 
 export interface Config {
-  exitCommand?: boolean | string
+  exitCommand?: boolean
   autoRestart?: boolean
 }
 
@@ -27,12 +27,10 @@ export function apply(ctx: Context, config: Config = {}) {
   }
 
   if (exitCommand) {
-    const commandName = exitCommand === true ? 'exit' : exitCommand
-
-    ctx.i18n.define('zh', { [`commands.${commandName}`]: require('../locales/zh') })
+    ctx.i18n.define('zh', require('../locales/zh'))
 
     ctx
-      .command(commandName, { authority: 4 })
+      .command('exit', { authority: 4 })
       .option('restart', '-r')
       .action(async ({ options, session }) => {
         const { channelId, guildId, sid } = session
