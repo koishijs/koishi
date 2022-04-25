@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-adapter-telegram",
   "description": "Telegram Adapter for Koishi",
-  "version": "2.2.2",
+  "version": "2.2.3",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
