@@ -29,9 +29,9 @@
     "impl:database"
   ],
   "peerDependencies": {
-    "koishi": "^4.6.0"
+    "koishi": "^4.6.1"
   },
   "dependencies": {
-    "@cosmotype/driver-mysql": "^1.0.2"
+    "@cosmotype/driver-mysql": "^1.0.3"
   }
 }

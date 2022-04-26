@@ -28,7 +28,7 @@
     "impl:database"
   ],
   "peerDependencies": {
-    "koishi": "^4.6.0"
+    "koishi": "^4.6.1"
   },
   "dependencies": {
     "@cosmotype/driver-memory": "^1.0.2"

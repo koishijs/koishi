@@ -35,11 +35,11 @@
     "@koishijs/plugin-mock": "^1.0.4"
   },
   "peerDependencies": {
-    "koishi": "^4.6.0"
+    "koishi": "^4.6.1"
   },
   "dependencies": {
     "@octokit/webhooks-types": "^5.5.1",
     "axios": "^0.24.0",
-    "marked": "^4.0.12"
+    "marked": "^4.0.14"
   }
 }

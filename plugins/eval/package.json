@@ -31,19 +31,19 @@
     "impl:worker"
   ],
   "peerDependencies": {
-    "koishi": "^4.6.0"
+    "koishi": "^4.6.1"
   },
   "optionalDependencies": {
-    "@babel/core": "^7.17.8",
+    "@babel/core": "^7.17.9",
     "@babel/plugin-transform-react-jsx": "^7.17.3",
-    "coffeescript": "^2.6.1",
+    "coffeescript": "^2.7.0",
     "esbuild": "^0.12.29",
     "json5": "^2.2.1",
     "typescript": "^4.6.3"
   },
   "dependencies": {
     "js-yaml": "^4.1.0",
-    "simple-git": "^3.5.0"
+    "simple-git": "^3.7.1"
   },
   "devDependencies": {
     "@types/babel__core": "^7.1.19",
