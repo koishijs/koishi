@@ -15,7 +15,7 @@ class ServiceProvider extends DataService<Dict<string>> {
     this.cache = {}
     for (const name of Context.Services) {
       const value = this.ctx[name]?.['ctx']?.state.id
-      if (value) this.cache[name] = value
+      this.cache[name] = value ?? null
     }
     return this.cache
   }
