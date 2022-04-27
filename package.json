@@ -25,7 +25,7 @@
     "bump": "yakumo version",
     "dep": "yakumo upgrade",
     "pub": "yakumo publish",
-    "docs": "yarn workspace docs",
+    "docs": "yarn workspace @koishijs/docs",
     "draft": "node -r ./build/register build/release",
     "fe": "node -r ./build/register build/frontend",
     "test": "mocha --no-warnings --experimental-vm-modules --enable-source-maps",

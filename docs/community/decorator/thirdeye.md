@@ -7,7 +7,7 @@ redirectFrom:
 
 # 开发插件
 
-[koishi-thirdeye](https://www.npmjs.com/package/koishi-thirdeye) 允许您使用类装饰器开发 Koishi 插件。下面是一个一目了然的例子：
+[koishi-thirdeye](https://github.com/koishijs/koishi-thirdeye) 允许您使用类装饰器开发 Koishi 插件。下面是一个一目了然的例子：
 
 ```ts
 import {

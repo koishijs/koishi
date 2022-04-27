@@ -295,37 +295,6 @@ module.exports = {
           '/plugins/console/status.md',
         ],
       }, {
-        text: '教学系统 (Teach)',
-        isGroup: true,
-        children: [
-          '/plugins/teach/index.md',
-          '/plugins/teach/interp.md',
-          '/plugins/teach/prob.md',
-          '/plugins/teach/regexp.md',
-          '/plugins/teach/context.md',
-          // '/plugins/teach/prev-succ.md',
-          '/plugins/teach/misc.md',
-          '/plugins/teach/config.md',
-        ],
-      }, {
-        text: '执行脚本 (Eval)',
-        isGroup: true,
-        children: [
-          '/plugins/eval/index.md',
-          '/plugins/eval/addon.md',
-          '/plugins/eval/main.md',
-          '/plugins/eval/worker.md',
-          '/plugins/eval/sandbox.md',
-          '/plugins/eval/config.md',
-        ],
-      }, ...devOnly({
-        text: '冒险系统 (Adventure)',
-        isGroup: true,
-        children: [
-          '/plugins/adventure/index.md',
-          '/plugins/adventure/events.md',
-        ],
-      }), {
         text: '其他官方插件',
         isGroup: true,
         children: [
@@ -339,10 +308,46 @@ module.exports = {
         text: '总览',
         link: '/community/',
       }, {
-        text: '装饰器',
+        text: '教学系统 (Teach)',
         isGroup: true,
         children: [
-          '/community/decorator/',
+          '/community/teach/index.md',
+          '/community/teach/interp.md',
+          '/community/teach/prob.md',
+          '/community/teach/regexp.md',
+          '/community/teach/context.md',
+          // '/community/teach/prev-succ.md',
+          '/community/teach/misc.md',
+          '/community/teach/config.md',
+        ],
+      }, {
+        text: '接入 GitHub (GitHub)',
+        isGroup: true,
+        children: [
+          '/community/github/github.md',
+        ],
+      }, {
+        text: '执行脚本 (Eval)',
+        isGroup: true,
+        children: [
+          '/community/eval/index.md',
+          '/community/eval/addon.md',
+          '/community/eval/main.md',
+          '/community/eval/worker.md',
+          '/community/eval/sandbox.md',
+          '/community/eval/config.md',
+        ],
+      }, ...devOnly({
+        text: '冒险系统 (Adventure)',
+        isGroup: true,
+        children: [
+          '/community/adventure/index.md',
+          '/community/adventure/events.md',
+        ],
+      }), {
+        text: '装饰器支持',
+        isGroup: true,
+        children: [
           '/community/decorator/thirdeye.md',
           '/community/decorator/schemastery.md',
           '/community/decorator/nestjs.md',

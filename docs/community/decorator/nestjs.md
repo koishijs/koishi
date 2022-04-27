@@ -3,14 +3,14 @@ sidebarDepth: 2
 noTwoslash: true
 ---
 
-# Nest.js
+# NestJS 开发
 
-[Nest.js](https://nestjs.com/) 是一个 IoC 形式的 Node.js Web 应用框架。
+[NestJS](https://nestjs.com/) 是一个 IoC 形式的 Node.js Web 应用框架。
 
-[koishi-nestjs](https://www.npmjs.com/package/koishi-nestjs) 允许您在 Nest.js 中，把 Koishi 当作一个模块来引入工程，并与 Nest.js 中的其他模块进行交互，以打造规模化的机器人应用，或在您的业务逻辑中加入机器人功能。
+[koishi-nestjs](https://github.com/koishijs/koishi-nestjs) 允许您在 NestJS 中，把 Koishi 当作一个模块来引入工程，并与 NestJS 中的其他模块进行交互，以打造规模化的机器人应用，或在您的业务逻辑中加入机器人功能。
 
 ::: tip
-本部分文档假定您已经具备 Koishi 和 Nest.js 相关基础。请参照 [Koishi](../../guide/) 以及 [Nest.js](https://docs.nestjs.cn/8/) 的相关文档，了解相关知识。
+本部分文档假定您已经具备 Koishi 和 NestJS 相关基础。请参照 [Koishi](../../guide/) 以及 [NestJS](https://docs.nestjs.cn/8/) 的相关文档，了解相关知识。
 :::
 
 ## 安装
@@ -21,7 +21,7 @@ npm install koishi-nestjs koishi
 
 ## 配置模块
 
-koishi-nestjs 中，Koishi 以 Nest.js 的模块的形式引入到项目工程中。我们支持同步和异步两种配置方式。
+koishi-nestjs 中，Koishi 以 NestJS 的模块的形式引入到项目工程中。我们支持同步和异步两种配置方式。
 
 另外，KoishiModule 会被注册为 [全局模块](https://docs.nestjs.cn/8/modules?id=%e5%85%a8%e5%b1%80%e6%a8%a1%e5%9d%97)。在项目的任何模块中注册 KoishiModule 后，在项目的任何位置均能使用 Koishi 的功能。
 
@@ -102,16 +102,16 @@ koishi-nestjs 的配置项和 [Koishi 配置项](../../api/core/app.md) 基本�
 
 #### 不支持的配置项
 
-由于 koishi-nestjs 复用了 Nest.js 实例的 HttpServer 对象，因此下列关于 HttpServer 监听的选项将不受支持：
+由于 koishi-nestjs 复用了 NestJS 实例的 HttpServer 对象，因此下列关于 HttpServer 监听的选项将不受支持：
 
 - `port`
 - `host`
 
 ### WebSocket 服务器
 
-和直接运行 Koishi 不同，Nest.js 中的 Koishi 模块并不会直接注册 HttpServer，而是将 HttpServer 与 Nest.js 中的 HttpServer 进行绑定。而 WebSocket 使用的也是 Nest.js 中的 [WebSocket 网关](https://docs.nestjs.cn/8/websockets)。因此若要使用到如 [console](../../plugins/console/) 或 [adapter-onebot](../../plugins/adapter/onebot.md#反向-websocket) 的反向 WebSocket 功能的插件，需要在 Nest.js 实例注册时进行一些额外的配置。
+和直接运行 Koishi 不同，Nest.js 中的 Koishi 模块并不会直接注册 HttpServer，而是将 HttpServer 与 NestJS 中的 HttpServer 进行绑定。而 WebSocket 使用的也是 NestJS 中的 [WebSocket 网关](https://docs.nestjs.cn/8/websockets)。因此若要使用到如 [console](../../plugins/console/) 或 [adapter-onebot](../../plugins/adapter/onebot.md#反向-websocket) 的反向 WebSocket 功能的插件，需要在 NestJS 实例注册时进行一些额外的配置。
 
-为了与 Koishi 更好地适配 Nest.js 的 WebSocket 功能，koishi-nestjs 提供了基于 @nestjs/platform-ws 的专用 Nest.js WebSocket 适配器。我们需要在 Koishi 模块配置中设置 `useWs` 为 `true`，并加载专用 WebSocket 适配器：
+为了与 Koishi 更好地适配 NestJS 的 WebSocket 功能，koishi-nestjs 提供了基于 @nestjs/platform-ws 的专用 NestJS WebSocket 适配器。我们需要在 Koishi 模块配置中设置 `useWs` 为 `true`，并加载专用 WebSocket 适配器：
 
 ```ts
 // app.module.ts
@@ -149,15 +149,15 @@ const app = await NestFactory.create(AppModule)
 app.useWebSocketAdapter(new KoishiWsAdapter(app))
 ```
 
-该适配器拥有和 @nestjs/platform-ws 适配器基本一致的功能。在 Nest.js 工程内您可以如同正常的 WebSocket 适配器一般使用它。
+该适配器拥有和 @nestjs/platform-ws 适配器基本一致的功能。在 NestJS 工程内您可以如同正常的 WebSocket 适配器一般使用它。
 
 ## 注入 Koishi 实例
 
-作为开发方式的一种，您可以在 Nest.js 的控制器或提供者类中直接对 Koishi 实例或上下文进行注入操作。
+作为开发方式的一种，您可以在 NestJS 的控制器或提供者类中直接对 Koishi 实例或上下文进行注入操作。
 
 这种情况下，建议让 Nest 提供者类实现 `OnModuleInit` 接口，并在该事件方法中进行 Koishi 指令注册操作。
 
-koishi-nestjs 将在 Nest.js 应用启动时启动 Koishi 实例。
+koishi-nestjs 将在 NestJS 应用启动时启动 Koishi 实例。
 
 ### 注入上下文
 
@@ -267,14 +267,14 @@ export class AppService {
 }
 ```
 
-装饰器定义与 [koishi-thirdeye](./thirdeye.md#注册事件) 中一致。但是下列存在于 koishi-thirdeye 的功能由于 Nest.js 已经提供，因此在 koishi-nestjs 中不受支持。
+装饰器定义与 [koishi-thirdeye](./thirdeye.md#注册事件) 中一致。但是下列存在于 koishi-thirdeye 的功能由于 NestJS 已经提供，因此在 koishi-nestjs 中不受支持。
 
-- `@Get` 等 HTTP 路由注册方法。请使用 Nest.js 的控制器。
-- `@Ws` 请使用 Nest.js 的 WebSocket 网关。
+- `@Get` 等 HTTP 路由注册方法。请使用 NestJS 的控制器。
+- `@Ws` 请使用 NestJS 的 WebSocket 网关。
 
 ### 错误处理
 
-在 koishi-nestjs 的指令处理中，若抛出 Nest.js 中的 `HttpException` 或 `WsException` 的异常时，系统将会以其中的返回信息作为机器人发送给用户的错误信息。
+在 koishi-nestjs 的指令处理中，若抛出 NestJS 中的 `HttpException` 或 `WsException` 的异常时，系统将会以其中的返回信息作为机器人发送给用户的错误信息。
 
 若遇到未知的错误，机器人则会返回给用户 `Internal Server Error` 信息。要改变这一错误信息，可以使用 `actionErrorMessage` 配置选项。设置成空字符串可以完全禁用这一行为。
 
@@ -296,7 +296,7 @@ export class AppService {
 
 选择器装饰器可以注册在提供者类顶部，也可以注册在提供者方法函数。定义与 [koishi-thirdeye](./thirdeye.md#选择器) 相同。
 
-具有选择器定义的 Nest.js 提供者类注入的 Koishi 上下文对象，也会受到这些选择器定义的影响。
+具有选择器定义的 NestJS 提供者类注入的 Koishi 上下文对象，也会受到这些选择器定义的影响。
 
 ```ts
 @OnPlatform('onebot')
@@ -313,7 +313,7 @@ export class AppService implements OnModuleInit {
 
 ## 使用服务
 
-您也可以在 Nest.js 的提供者类中，使用 `@WireContextService()` 装饰器在 Nest.js 提供者类中注入 Koishi 的服务对象。
+您也可以在 NestJS 的提供者类中，使用 `@WireContextService()` 装饰器在 NestJS 提供者类中注入 Koishi 的服务对象。
 
 ```ts
 @Injectable()
