@@ -298,7 +298,6 @@ module.exports = {
         text: '其他官方插件',
         isGroup: true,
         children: [
-          '/plugins/other/github.md',
           '/plugins/other/mock.md',
           '/plugins/other/puppeteer.md',
         ],
@@ -311,20 +310,20 @@ module.exports = {
         text: '教学系统 (Teach)',
         isGroup: true,
         children: [
-          '/community/teach/index.md',
-          '/community/teach/interp.md',
-          '/community/teach/prob.md',
-          '/community/teach/regexp.md',
-          '/community/teach/context.md',
-          // '/community/teach/prev-succ.md',
-          '/community/teach/misc.md',
-          '/community/teach/config.md',
+          '/community/dialogue/',
+          '/community/dialogue/interp.md',
+          '/community/dialogue/prob.md',
+          '/community/dialogue/regexp.md',
+          '/community/dialogue/context.md',
+          // '/community/dialogue/prev-succ.md',
+          '/community/dialogue/misc.md',
+          '/community/dialogue/config.md',
         ],
       }, {
         text: '接入 GitHub (GitHub)',
         isGroup: true,
         children: [
-          '/community/github/github.md',
+          '/community/github/index.md',
         ],
       }, {
         text: '执行脚本 (Eval)',

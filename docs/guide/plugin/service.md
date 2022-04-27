@@ -30,11 +30,11 @@ Koishi 中的服务可以分为大致三种类型。对于每一种我都给出�
 
 - ctx.console
 - ctx.puppeteer
-- ctx.teach
+- ctx.worker
 
 ## 声明依赖关系
 
-前面从服务提供者的角度提供了解决方案，现在让我们把视角转换到服务的使用者上。假设你正在开发名为 teach 的教学系统，并且这个插件依赖多个服务：
+前面从服务提供者的角度提供了解决方案，现在让我们把视角转换到服务的使用者上。假设你正在开发名为 dialogue 的问答系统，并且这个插件依赖多个服务：
 
 - database: 你使用数据库存储教学内容，离开数据库你的插件将无法运行
 - assets: 你需要使用资源存储服务来做图片转存，离开此服务将可能导致部分图片无法正常显示，但短时间内不会对插件的运行造成影响
@@ -42,55 +42,55 @@ Koishi 中的服务可以分为大致三种类型。对于每一种我都给出�
 
 那么你应该怎么写呢？先让我们来看一段标准错误答案：
 
-::: code-group language plugin-teach
+::: code-group language plugin-dialogue
 ```js
 // 标准错误答案！别抄这个！
-module.exports.name = 'teach'
+module.exports.name = 'dialogue'
 
 module.exports.apply = (ctx) => {
   // 检查数据库服务是否存在
   if (!ctx.database) return
 
-  ctx.command('teach').action((_, content) => {
+  ctx.command('dialogue').action((_, content) => {
     // 检查资源存储服务是否存在
     if (ctx.assets) ctx.assets.transform(content)
   })
 
   // 检查控制台服务是否存在
   if (ctx.console) {
-    ctx.console.addEntry('/path/to/teach/extension')
+    ctx.console.addEntry('/path/to/dialogue/extension')
   }
 }
 ```
 ```ts
 // 标准错误答案！别抄这个！
-export const name = 'teach'
+export const name = 'dialogue'
 
 export function apply(ctx: Context) {
   // 检查数据库服务是否存在
   if (!ctx.database) return
 
-  ctx.command('teach').action((_, content) => {
+  ctx.command('dialogue').action((_, content) => {
     // 检查资源存储服务是否存在
     if (ctx.assets) ctx.assets.transform(content)
   })
 
   // 检查控制台服务是否存在
   if (ctx.console) {
-    ctx.console.addEntry('/path/to/teach/extension')
+    ctx.console.addEntry('/path/to/dialogue/extension')
   }
 }
 ```
 :::
 
-你很快会发现这样写完全无法运行。首先，数据库服务需要等到应用启动完成后才可以访问，换言之即使安装了数据库插件，你也无法立即判断数据库服务是否存在。此外，一旦上述服务所在插件在运行时被重载，由于上面的代码属于 teach 插件，因此 if 中代码的副作用将无法被有效清理；而当相应的服务重新被注册时，这部分的代码也不会被重新运行，从而导致一系列难以检测的问题。
+你很快会发现这样写完全无法运行。首先，数据库服务需要等到应用启动完成后才可以访问，换言之即使安装了数据库插件，你也无法立即判断数据库服务是否存在。此外，一旦上述服务所在插件在运行时被重载，由于上面的代码属于 dialogue 插件，因此 if 中代码的副作用将无法被有效清理；而当相应的服务重新被注册时，这部分的代码也不会被重新运行，从而导致一系列难以检测的问题。
 
 ### using 属性
 
 为了解决这种问题，Koishi 为插件声明提供了一个独特的 `using` 属性：
 
-```ts title=plugin-teach.ts
-export const name = 'teach'
+```ts title=plugin-dialogue.ts
+export const name = 'dialogue'
 export const using = ['database'] as const
 // 上面的 as const 的作用是固定 `using` 的内部类型
 
@@ -110,14 +110,14 @@ export function apply(ctx: Context) {
 
 ```ts
 ctx.using(['console'], (ctx) => {
-  ctx.console.addEntry('/path/to/teach/extension')
+  ctx.console.addEntry('/path/to/dialogue/extension')
 })
 
 // 等价于
 ctx.plugin({
   using: ['console'],
   apply: (ctx) => {
-    ctx.console.addEntry('/path/to/teach/extension')
+    ctx.console.addEntry('/path/to/dialogue/extension')
   },
 })
 ```
@@ -128,44 +128,44 @@ ctx.plugin({
 
 ### 最佳实践
 
-现在让我们回到一开始的问题。对于 teach 插件所使用的三个服务 database, assets 和 console，分别应该如何声明呢？下面给出了一个最佳实践，请注意不同服务的处理方式之间的区别：
+现在让我们回到一开始的问题。对于 dialogue 插件所使用的三个服务 database, assets 和 console，分别应该如何声明呢？下面给出了一个最佳实践，请注意不同服务的处理方式之间的区别：
 
-::: code-group language plugin-teach
+::: code-group language plugin-dialogue
 ```js
 // 正确答案！抄这个！
-module.exports.name = 'teach'
+module.exports.name = 'dialogue'
 
 // 对于整体依赖的服务，使用 using 属性声明依赖关系
 module.exports.using = ['database']
 
 module.exports.apply = (ctx) => {
-  ctx.command('teach').action((_, content) => {
+  ctx.command('dialogue').action((_, content) => {
     // 对于可选的依赖服务，在运行时检测即可
     if (ctx.assets) ctx.assets.transform(content)
   })
 
   // 对于部分功能依赖的服务，使用 ctx.using() 注册为子插件
   ctx.using(['console'], (ctx) => {
-    ctx.console.addEntry('/path/to/teach/extension')
+    ctx.console.addEntry('/path/to/dialogue/extension')
   })
 }
 ```
 ```ts
 // 正确答案！抄这个！
-export const name = 'teach'
+export const name = 'dialogue'
 
 // 对于整体依赖的服务，使用 using 属性声明依赖关系
 export const using = ['database'] as const
 
 export function apply(ctx: Context) {
-  ctx.command('teach').action((_, content) => {
+  ctx.command('dialogue').action((_, content) => {
     // 对于可选的依赖服务，在运行时检测即可
     if (ctx.assets) ctx.assets.transform(content)
   })
 
   // 对于部分功能依赖的服务，使用 ctx.using() 注册为子插件
   ctx.using(['console'], (ctx) => {
-    ctx.console.addEntry('/path/to/teach/extension')
+    ctx.console.addEntry('/path/to/dialogue/extension')
   })
 }
 ```
