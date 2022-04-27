@@ -12,12 +12,13 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/koishijs/koishi.git"
+    "url": "git+https://github.com/koishijs/koishi.git",
+    "directory": "plugins/database/level"
   },
   "bugs": {
     "url": "https://github.com/koishijs/koishi/issues"
   },
-  "homepage": "https://koishi.js.org/plugins/other/database",
+  "homepage": "https://koishi.js.org/plugins/database/level.html",
   "keywords": [
     "bot",
     "chatbot",

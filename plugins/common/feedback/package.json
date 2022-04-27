@@ -14,12 +14,13 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/koishijs/koishi.git"
+    "url": "git+https://github.com/koishijs/koishi.git",
+    "directory": "plugins/common/feedback"
   },
   "bugs": {
     "url": "https://github.com/koishijs/koishi/issues"
   },
-  "homepage": "https://koishi.js.org/plugins/feedback/",
+  "homepage": "https://koishi.js.org/plugins/common/feedback.html",
   "keywords": [
     "bot",
     "chatbot",

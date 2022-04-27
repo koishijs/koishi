@@ -14,12 +14,13 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/koishijs/koishi.git"
+    "url": "git+https://github.com/koishijs/koishi.git",
+    "directory": "plugins/database/mysql"
   },
   "bugs": {
     "url": "https://github.com/koishijs/koishi/issues"
   },
-  "homepage": "https://koishi.js.org/api/database/mysql.html",
+  "homepage": "https://koishi.js.org/plugins/database/mysql.html",
   "keywords": [
     "bot",
     "chatbot",

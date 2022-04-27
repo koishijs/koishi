@@ -11,12 +11,13 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/koishijs/koishi.git"
+    "url": "git+https://github.com/koishijs/koishi.git",
+    "directory": "plugins/a11y/schedule"
   },
   "bugs": {
     "url": "https://github.com/koishijs/koishi/issues"
   },
-  "homepage": "https://github.com/koishijs/koishi/packages/plugin-schedule#readme",
+  "homepage": "https://koishi.js.org/plugins/accessibility/schedule.html",
   "keywords": [
     "bot",
     "chatbot",

@@ -15,12 +15,13 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/koishijs/koishi.git"
+    "url": "git+https://github.com/koishijs/koishi.git",
+    "directory": "plugins/frontend/dataview"
   },
   "bugs": {
     "url": "https://github.com/koishijs/koishi/issues"
   },
-  "homepage": "https://koishi.js.org/plugins/dataview/",
+  "homepage": "https://koishi.js.org/plugins/console/dataview.html",
   "keywords": [
     "bot",
     "chatbot",

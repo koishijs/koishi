@@ -11,12 +11,12 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/koishijs/koishi.git"
+    "url": "git+https://github.com/koishijs/koishi-plugin-github.git"
   },
   "bugs": {
-    "url": "https://github.com/koishijs/koishi/issues"
+    "url": "https://github.com/koishijs/koishi-plugin-github/issues"
   },
-  "homepage": "https://koishi.js.org/plugins/other/github",
+  "homepage": "https://koishi.js.org/community/github/",
   "keywords": [
     "bot",
     "chatbot",

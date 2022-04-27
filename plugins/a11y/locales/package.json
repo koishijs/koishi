@@ -15,7 +15,8 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/koishijs/koishi.git"
+    "url": "git+https://github.com/koishijs/koishi.git",
+    "directory": "plugins/a11y/locales"
   },
   "bugs": {
     "url": "https://github.com/koishijs/koishi/issues"

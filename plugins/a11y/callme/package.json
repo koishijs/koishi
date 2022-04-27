@@ -14,12 +14,13 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/koishijs/koishi.git"
+    "url": "git+https://github.com/koishijs/koishi.git",
+    "directory": "plugins/a11y/callme"
   },
   "bugs": {
     "url": "https://github.com/koishijs/koishi/issues"
   },
-  "homepage": "https://koishi.js.org/plugins/callme/",
+  "homepage": "https://koishi.js.org/plugins/accessibility/callme.html",
   "keywords": [
     "bot",
     "chatbot",

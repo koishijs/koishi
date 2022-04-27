@@ -15,12 +15,13 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/koishijs/plugin-assets-s3.git"
+    "url": "git+https://github.com/koishijs/plugin-assets-s3.git",
+    "directory": "plugins/assets/s3"
   },
   "bugs": {
     "url": "https://github.com/koishijs/plugin-assets-s3/issues"
   },
-  "homepage": "https://koishi.js.org/plugins/other/assets-s3",
+  "homepage": "https://koishi.js.org/plugins/assets/s3.html",
   "keywords": [
     "bot",
     "chatbot",

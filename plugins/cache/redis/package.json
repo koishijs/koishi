@@ -18,12 +18,13 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/koishijs/koishi.git"
+    "url": "git+https://github.com/koishijs/koishi.git",
+    "directory": "plugins/cache/redis"
   },
   "bugs": {
     "url": "https://github.com/koishijs/koishi/issues"
   },
-  "homepage": "https://koishi.js.org/api/cache/redis.html",
+  "homepage": "https://koishi.js.org/plugins/cache/redis.html",
   "keywords": [
     "bot",
     "chatbot",

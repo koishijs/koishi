@@ -14,12 +14,13 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/koishijs/koishi.git"
+    "url": "git+https://github.com/koishijs/koishi.git",
+    "directory": "plugins/a11y/rate-limit"
   },
   "bugs": {
     "url": "https://github.com/koishijs/koishi/issues"
   },
-  "homepage": "https://koishi.js.org/plugins/rate-limit/",
+  "homepage": "https://koishi.js.org/plugins/accessibility/rate-limit.html",
   "keywords": [
     "bot",
     "chatbot",

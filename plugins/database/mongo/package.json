@@ -15,12 +15,13 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/koishijs/koishi.git"
+    "url": "git+https://github.com/koishijs/koishi.git",
+    "directory": "plugins/database/mongo"
   },
   "bugs": {
     "url": "https://github.com/koishijs/koishi/issues"
   },
-  "homepage": "https://koishi.js.org/api/database/mongo.html",
+  "homepage": "https://koishi.js.org/plugins/database/mongo.html",
   "keywords": [
     "bot",
     "chatbot",
