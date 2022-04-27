@@ -33,6 +33,6 @@
     "koishi": "^4.6.1"
   },
   "dependencies": {
-    "@cosmotype/driver-sqlite": "^1.0.5"
+    "@cosmotype/driver-sqlite": "^1.0.6"
   }
 }

@@ -31,6 +31,6 @@
     "koishi": "^4.6.1"
   },
   "dependencies": {
-    "@cosmotype/driver-memory": "^1.0.2"
+    "@cosmotype/driver-memory": "^1.0.3"
   }
 }

@@ -33,6 +33,6 @@
     "koishi": "^4.6.1"
   },
   "dependencies": {
-    "@cosmotype/driver-mongo": "^1.0.2"
+    "@cosmotype/driver-mongo": "^1.1.2"
   }
 }

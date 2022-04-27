@@ -32,6 +32,6 @@
     "koishi": "^4.6.1"
   },
   "dependencies": {
-    "@cosmotype/driver-level": "^1.0.0"
+    "@cosmotype/driver-level": "^1.0.1"
   }
 }

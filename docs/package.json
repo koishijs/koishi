@@ -1,5 +1,5 @@
 {
-  "name": "docs",
+  "name": "@koishijs/docs",
   "private": true,
   "version": "1.0.0",
   "main": "index.js",
