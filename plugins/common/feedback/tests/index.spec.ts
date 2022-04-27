@@ -1,7 +1,7 @@
 import { App } from 'koishi'
 import * as feedback from '@koishijs/plugin-feedback'
 import mock from '@koishijs/plugin-mock'
-import jest from 'jest-mock'
+import * as jest from 'jest-mock'
 import { expect } from 'chai'
 import 'chai-shape'
 

@@ -1,12 +1,11 @@
 import { App, User, Channel, Command, sleep } from 'koishi'
-import memory from '@koishijs/plugin-database-memory'
 import mock, { DEFAULT_SELF_ID } from '@koishijs/plugin-mock'
 
 const app = new App({
   minSimilarity: 0,
 })
 
-app.plugin(memory)
+app.plugin('database-memory')
 app.plugin(mock)
 
 // make coverage happy

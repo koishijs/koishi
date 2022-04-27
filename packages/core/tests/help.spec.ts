@@ -1,11 +1,10 @@
 import { App } from 'koishi'
 import mock from '@koishijs/plugin-mock'
-import memory from '@koishijs/plugin-database-memory'
 
 const app = new App()
 
 app.plugin(mock)
-app.plugin(memory)
+app.plugin('database-memory')
 
 app.i18n.define('$zh', 'commands.help.messages.global-epilog', 'EPILOG')
 

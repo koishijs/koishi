@@ -1,13 +1,16 @@
 import { App } from 'koishi'
-import { expect } from 'chai'
+import { expect, use } from 'chai'
 import mock from '@koishijs/plugin-mock'
-import memory from '@koishijs/plugin-database-memory'
-import 'chai-shape'
+import shape from 'chai-shape'
+import promise from 'chai-as-promised'
+
+use(shape)
+use(promise)
 
 const app = new App()
 
 app.plugin(mock)
-app.plugin(memory)
+app.plugin('database-memory')
 
 before(() => app.start())
 after(() => app.stop())

@@ -113,11 +113,10 @@ it('example 1', async () => {
 ```ts no-extra-header
 import { App } from 'koishi'
 import mock from '@koishijs/plugin-mock'
-import memory from '@koishijs/plugin-database-memory'
 
 const app = new App()
 app.plugin(mock)
-app.plugin(memory)
+app.plugin('database-memory')
 
 // 这次我们来测试一下这个指令
 app.command('foo', { authority: 2 }).action(() => 'bar')
