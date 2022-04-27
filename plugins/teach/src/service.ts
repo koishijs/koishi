@@ -68,7 +68,7 @@ export default class Teach extends Service {
         dialogue.$diff = {}
         argv.updated.push(dialogue.id)
         data.push(pick(dialogue, fields))
-        this.addHistory(dialogue._backup, '修改', argv, false)
+        this.addHistory(dialogue._backup, 'modify', argv, false)
       }
     }
     await argv.app.database.upsert('dialogue', data)
@@ -87,14 +87,14 @@ export default class Teach extends Service {
     const ids = dialogues.map(d => d.id)
     argv.app.database.remove('dialogue', ids)
     for (const id of ids) {
-      this.addHistory(argv.dialogueMap[id], '删除', argv, revert)
+      this.addHistory(argv.dialogueMap[id], 'remove', argv, revert)
     }
     return ids
   }
 
   async revert(dialogues: Dialogue[], argv: Dialogue.Argv) {
-    const created = dialogues.filter(d => d._type === '添加')
-    const edited = dialogues.filter(d => d._type !== '添加')
+    const created = dialogues.filter(d => d._type === 'create')
+    const edited = dialogues.filter(d => d._type !== 'create')
     await this.remove(created, argv, true)
     await this.recover(edited, argv)
     return `问答 ${dialogues.map(d => d.id).sort((a, b) => a - b)} 已回退完成。`
@@ -103,7 +103,7 @@ export default class Teach extends Service {
   async recover(dialogues: Dialogue[], argv: Dialogue.Argv) {
     await argv.app.database.upsert('dialogue', dialogues)
     for (const dialogue of dialogues) {
-      this.addHistory(dialogue, '修改', argv, true)
+      this.addHistory(dialogue, 'modify', argv, true)
     }
   }
 

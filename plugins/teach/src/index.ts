@@ -74,6 +74,8 @@ export const name = 'teach'
 export const using = ['database'] as const
 
 export function apply(ctx: Context, config: Config) {
+  ctx.i18n.define('zh', require('./locales/zh'))
+
   // features
   ctx.plugin(service, config)
   ctx.plugin(command, config)

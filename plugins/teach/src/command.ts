@@ -143,7 +143,7 @@ function registerPrefix(ctx: Context, prefix: string) {
 export default function command(ctx: Context, config: Dialogue.Config = {}) {
   registerPrefix(ctx, config.prefix)
 
-  ctx.command('teach', '添加教学对话', { authority: config.authority.base, checkUnknown: true, hideOptions: true })
+  ctx.command('teach', { authority: config.authority.base, checkUnknown: true, hideOptions: true })
     .userFields(['authority', 'id'])
     .usage(session => cheatSheet(session, config))
     .action(async (argv) => {

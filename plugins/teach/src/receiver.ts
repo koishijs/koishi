@@ -337,7 +337,7 @@ export default function receiver(ctx: Context, config: Dialogue.Config) {
     }
   })
 
-  ctx2.command('dialogue <message:text>', '触发教学对话')
+  ctx2.command('dialogue <message:text>')
     .action(async ({ session }, message = '') => {
       if (session._redirected > maxRedirections) return
       session.content = message

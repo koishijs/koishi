@@ -23,12 +23,12 @@ declare module './utils' {
 
 export default function apply(ctx: Context) {
   ctx.command('teach')
-    .option('review', '-v  查看最近的修改')
-    .option('revert', '-V  回退最近的修改')
-    .option('includeLast', '-l [count]  包含最近的修改数量', { type: isIntegerOrInterval })
-    .option('excludeLast', '-L [count]  排除最近的修改数量', { type: isIntegerOrInterval })
-    .option('target', '<ids>  查看或修改已有问题', { type: RE_DIALOGUES })
-    .option('remove', '-r  彻底删除问答')
+    .option('review', '-v')
+    .option('revert', '-V')
+    .option('includeLast', '-l [count]', { type: isIntegerOrInterval })
+    .option('excludeLast', '-L [count]', { type: isIntegerOrInterval })
+    .option('target', '<ids>', { type: RE_DIALOGUES })
+    .option('remove', '-r')
 
   ctx.on('dialogue/execute', (argv) => {
     const { remove, revert, target } = argv.options
@@ -69,13 +69,13 @@ export default function apply(ctx: Context) {
     await argv.app.parallel('dialogue/search', argv, {}, argv.dialogues)
   })
 
-  ctx.on('dialogue/detail-short', ({ _type, _timestamp }, output) => {
+  ctx.on('dialogue/detail-short', ({ _type, _timestamp }, output, { session }) => {
     if (_type) {
-      output.unshift(`${_type}-${Time.format(Date.now() - _timestamp)}`)
+      output.unshift(`${session.text(`.operation.${_type}`)}-${Time.format(Date.now() - _timestamp)}`)
     }
   })
 
-  ctx.on('dialogue/detail', ({ original, answer, flag, _type, _timestamp }, output, { app }) => {
+  ctx.on('dialogue/detail', ({ original, answer, flag, _type, _timestamp }, output, { app, session }) => {
     if (flag & Dialogue.Flag.regexp) {
       output.push(`正则：${original}`)
     } else {
@@ -83,7 +83,7 @@ export default function apply(ctx: Context) {
     }
     output.push(`回答：${answer}`)
     if (_type) {
-      output.push(`${_type}于：${app.i18n.render('{0 | time}', [Date.now() - _timestamp], 'zh')}前`)
+      output.push(`${session.text(`.operation.${_type}`)}于：${app.i18n.render('{0 | time}', [Date.now() - _timestamp], 'zh')}前`)
     }
   })
 }
@@ -230,7 +230,7 @@ export async function create(argv: Dialogue.Argv) {
   try {
     app.emit('dialogue/modify', argv, dialogue)
     const created = await app.database.create('dialogue', dialogue)
-    argv.app.teach.addHistory(dialogue, '添加', argv, false)
+    argv.app.teach.addHistory(dialogue, 'create', argv, false)
     argv.dialogues = [created]
 
     await app.serial('dialogue/after-modify', argv)

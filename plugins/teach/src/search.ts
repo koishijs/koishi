@@ -41,11 +41,11 @@ export default function apply(ctx: Context) {
   })
 
   ctx.command('teach')
-    .option('search', '搜索已有问答', { notUsage: true })
-    .option('page', '/ <page>  设置搜索结果的页码', { type: isPositiveInteger })
-    .option('autoMerge', '自动合并相同的问题和回答')
-    .option('recursive', '-R  禁用递归查询', { value: false })
-    .option('pipe', '| <op:text>  对每个搜索结果执行操作')
+    .option('search', '', { notUsage: true })
+    .option('page', '/ <page>', { type: isPositiveInteger })
+    .option('autoMerge', '')
+    .option('recursive', '-R', { value: false })
+    .option('pipe', '| <op:text>')
 
   ctx.on('dialogue/execute', (argv) => {
     const { search } = argv.options
@@ -164,7 +164,7 @@ async function showSearch(argv: Dialogue.Argv) {
   const dialogues = await argv.app.teach.get(test)
 
   if (pipe) {
-    if (!dialogues.length) return '没有搜索到任何问答。'
+    if (!dialogues.length) return session.text('.search.empty')
     const command = app.command('teach')
     const argv = { ...command.parse(pipe), session, command }
     const target = argv.options['target'] = dialogues.map(d => d.id).join(',')

@@ -1,0 +1,30 @@
+commands:
+  teach:
+    description: 添加教学对话
+    options:
+      # search
+      search: 搜索已有问答
+      page: 设置搜索结果的页码
+      autoMerge: 自动合并相同的问题和回答
+      recursive: 禁用递归查询
+      pipe: 对每个搜索结果执行操作
+
+      # update
+      review: 查看最近的修改
+      revert: 回退最近的修改
+      includeLast: 包含最近的修改数量
+      excludeLast: 排除最近的修改数量
+      target: 查看或修改已有问题
+      remove: 彻底删除问答
+
+    messages:
+      search:
+        empty: 没有搜索到任何问答。
+
+      operation:
+        create: 添加
+        modify: 修改
+        remove: 删除
+
+  dialogue:
+    description: 触发教学对话
