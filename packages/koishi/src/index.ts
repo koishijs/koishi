@@ -29,6 +29,9 @@ declare module '@koishijs/core' {
   }
 }
 
+const { version } = require('../package.json')
+export { version }
+
 App.Config.list.unshift(App.Config.Network)
 App.Config.list.push(Schema.object({
   request: Quester.Config,

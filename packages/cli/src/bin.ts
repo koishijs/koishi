@@ -3,9 +3,8 @@
 import registerStartCommand from './start'
 import CAC from 'cac'
 
-declare const KOISHI_VERSION: string
-
-const cli = CAC('koishi').help().version(KOISHI_VERSION)
+const { version } = require('../package.json')
+const cli = CAC('koishi').help().version(version)
 
 registerStartCommand(cli)
 

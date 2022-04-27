@@ -18,9 +18,6 @@ const specs = [
   'plugins/common/recall/tests/*.spec.ts',
   'plugins/common/repeater/tests/*.spec.ts',
   'plugins/common/respondent/tests/*.spec.ts',
-  // 'plugins/eval/tests/*.spec.ts',
-  // 'plugins/github/tests/*.spec.ts',
-  'plugins/teach/tests/*.spec.ts',
 ]
 
 const folders = ['a11y', 'common', 'frontend']
