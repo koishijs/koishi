@@ -15,6 +15,7 @@ declare module './context' {
     'message': SessionEventCallback
     'message-deleted': SessionEventCallback
     'message-updated': SessionEventCallback
+    'message-self': SessionEventCallback
     'reaction-added': SessionEventCallback
     'reaction-deleted': SessionEventCallback
     'reaction-deleted/one': SessionEventCallback

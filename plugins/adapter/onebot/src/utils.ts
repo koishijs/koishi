@@ -141,6 +141,14 @@ export function adaptSession(data: OneBot.Payload) {
     return session
   }
 
+  if (data.post_type === 'message_sent') {
+    Object.assign(session, adaptMessage(data))
+    session.subtype = data.message_type === 'guild' ? 'group' : data.message_type
+    session.subsubtype = data.message_type
+    session.type = "message-self";
+    return session
+  }
+
   session.subtype = data.sub_type
   if (data.user_id) session.userId = '' + data.user_id
   if (data.group_id) session.guildId = session.channelId = '' + data.group_id
