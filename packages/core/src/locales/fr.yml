@@ -11,13 +11,13 @@ general:
   second: seconde
 
 internal:
-  low-authority: Autorité insuffisante.
-  insufficient-arguments: Arguments insuffisants, tapez "help" pour voir l'utilisation.
-  redunant-arguments: Arguments redondants, tapez "help" pour voir l'utilisation.
+  low-authority: Droits insuffisants.
+  insufficient-arguments: Arguments insuffisants, tapez "help" pour afficher l'aide
+  redunant-arguments: Arguments redondants, tapez "help" pour afficher l'aide
   invalid-argument: Arguments {0} invalides, {1}
-  unknown-option: Option {0} inconnue, tapez "help" pour voir l'utilisation.
+  unknown-option: Option {0} inconnue, tapez "help" pour afficher l'aide
   invalid-option: Option {0} invalide, {1}
-  check-syntax: Tapez "help" pour voir l'utilisation.
+  check-syntax: Tapez "help" pour afficher l'aide
   invalid-number: Entrez un nombre.
   invalid-integer: Entrez un entier.
   invalid-posint: Entrez un entier positif.
