@@ -38,16 +38,16 @@ commands:
     description: Afficher l'aide
     options:
       help: afficher cette aide
-      authority: afficher les autorisations requises
+      authority: afficher les droits nécessaires
       showHidden: afficher les options et commandes cachées
     messages:
-      hint-authority: cette autorité minimum est marquée dans les parenthèses
+      hint-authority: les droits minimums sont indiqués entre parenthèses
       hint-subcommand: ces commandes avec un astérisque ont des sous-commandes
-      command-aliases: 'Alias: {0}.'
+      command-aliases: 'Alias : {0}.'
       command-examples: 'Exemples :'
-      command-authority: 'Autorité minimum: {0}.'
+      command-authority: 'Droit minimum : {0}.'
       subcommand-prolog: 'Commandes disponibles{0} :'
       global-prolog: 'Commandes disponibles{0} :'
       global-epilog: Tapez "help <commande>" pour voir la syntaxe et les exemples pour une commande spécifique.
       available-options: 'Options disponibles :'
-      available-options-with-authority: 'Options disponibles (parenthèses indiquent une autorité supplémentaire) :'
+      available-options-with-authority: 'Options disponibles (les parenthèses indiquent un droit supplémentaire) :'
