@@ -28,6 +28,7 @@ export function apply(ctx: Context, config: Config = {}) {
 
   if (exitCommand) {
     ctx.i18n.define('zh', require('../locales/zh'))
+    ctx.i18n.define('fr', require('../locales/fr'))
 
     ctx
       .command('exit', { authority: 4 })

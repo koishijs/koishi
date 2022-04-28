@@ -1,0 +1,11 @@
+commands:
+  exit:
+    description: Stopez le robot
+
+    options:
+      restart: Redémarrer
+
+    messages:
+      exiting: On s'éteint…
+      restarting: On redémarre…
+      restarted: Redémarré.
