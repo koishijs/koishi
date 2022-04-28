@@ -5,12 +5,16 @@ general:
   comma: '、'
   and: と
   or: や
+  day: 日
+  hour: 時間
+  minute: 分
+  second: 秒
 
 internal:
   low-authority: 実行できる権限が付与されていません
-  insufficient-arguments: 引数が不足してます、「help」コマンドで使い方を検索してください。
+  insufficient-arguments: パラメータが不足してます、「help」コマンドで使い方を検索してください。
   redunant-arguments: パラメータ数が多すぎます、「help」コマンドで使い方を検索してください。
-  invalid-argument: 無効な引数「{0}」、{1}
+  invalid-argument: 無効なパラメータ「{0}」、{1}
   unknown-option: 未知なオプション「{0}」、「help」コマンドで使い方を検索してください。
   invalid-option: 無効なオプション「{0}」、{1}
   check-syntax: 「help」コマンドで使い方を検索してください。
@@ -23,17 +27,17 @@ internal:
   invalid-channel: チャンネル名を指定してください。
 
 suggest:
-  hint: 「{0}」で続行しますか？
+  hint: 「{0}」で実行しますか？
   command-prefix: ''
   command-suffix: 句点でこのコマンドを実行します。
   help-prefix: コマンドが見つかりません。
-  help-suffix: 空行または句点でこのコマンドを実行します。
+  help-suffix: この提案を実行するには、空行または句点を送信します。
 
 commands:
   help:
     description: ヘルプを表示
     options:
-      help: ヘルプメッセージを表示
+      help: このメッセージを表示
       authority: コマンドやオプションの権限を表示
       showHidden: 隠しコマンドやオプションを表示
     messages:
@@ -46,4 +50,4 @@ commands:
       global-prolog: '利用可能なコマンド{0}：'
       global-epilog: 「help <command>」を入力するとコマンドの使い方を表示します。
       available-options: '利用可能なオプション：'
-      available-options-with-authority: '利用可能なオプション（括弧には最低権限が表示されています）：'
+      available-options-with-authority: '利用可能なオプション（必要な権限は括弧にで表示されています）：'
