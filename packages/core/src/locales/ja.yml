@@ -12,12 +12,12 @@ general:
 
 internal:
   low-authority: 実行できる権限が付与されていません
-  insufficient-arguments: パラメータが不足してます、「help」コマンドで使い方を検索してください。
-  redunant-arguments: パラメータ数が多すぎます、「help」コマンドで使い方を検索してください。
+  insufficient-arguments: パラメータが不足しています、「help」を送信して使い方を確認してください。
+  redunant-arguments: パラメータ数が多すぎます、「help」を送信して使い方を確認してください。
   invalid-argument: 無効なパラメータ「{0}」、{1}
-  unknown-option: 未知なオプション「{0}」、「help」コマンドで使い方を検索してください。
+  unknown-option: 未知なオプション「{0}」、「help」を送信して使い方を確認してください。
   invalid-option: 無効なオプション「{0}」、{1}
-  check-syntax: 「help」コマンドで使い方を検索してください。
+  check-syntax: 「help」を送信して使い方を検索してください。
   invalid-number: 数字を指定してください。
   invalid-integer: 整数を指定してください。
   invalid-posint: 正の整数を指定してください。
@@ -27,9 +27,9 @@ internal:
   invalid-channel: チャンネル名を指定してください。
 
 suggest:
-  hint: 「{0}」で実行しますか？
+  hint: 「{0}」を実行したいですか？
   command-prefix: ''
-  command-suffix: 句点でこのコマンドを実行します。
+  command-suffix: 句点を送信してコマンドを実行します。
   help-prefix: コマンドが見つかりません。
   help-suffix: この提案を実行するには、空行または句点を送信します。
 
@@ -48,6 +48,6 @@ commands:
       command-authority: '最低権限：{0}。'
       subcommand-prolog: '利用可能なサブコマンド{0}：'
       global-prolog: '利用可能なコマンド{0}：'
-      global-epilog: 「help <command>」を入力するとコマンドの使い方を表示します。
+      global-epilog: 「help <command>」を送信してコマンドの使い方を表示します。
       available-options: '利用可能なオプション：'
       available-options-with-authority: '利用可能なオプション（必要な権限は括弧にで表示されています）：'
