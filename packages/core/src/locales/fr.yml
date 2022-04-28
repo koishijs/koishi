@@ -14,9 +14,9 @@ internal:
   low-authority: Autorité insuffisante.
   insufficient-arguments: Arguments insuffisants, tapez "help" pour voir l'utilisation.
   redunant-arguments: Arguments redondants, tapez "help" pour voir l'utilisation.
-  invalid-argument: Arguments invalides {0}, {1}
-  unknown-option: Option inconnue {0}, tapez "help" pour voir l'utilisation.
-  invalid-option: Option invalide {0}, {1}
+  invalid-argument: Arguments {0} invalides, {1}
+  unknown-option: Option {0} inconnue, tapez "help" pour voir l'utilisation.
+  invalid-option: Option {0} invalide, {1}
   check-syntax: Tapez "help" pour voir l'utilisation.
   invalid-number: Entrez un nombre.
   invalid-integer: Entrez un entier.
