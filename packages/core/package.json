@@ -36,7 +36,7 @@
   },
   "dependencies": {
     "@koishijs/utils": "^5.4.1",
-    "cosmotype": "^1.0.7",
+    "cosmotype": "^1.0.9",
     "fastest-levenshtein": "^1.0.12",
     "ns-require": "^1.1.2"
   }

@@ -234,31 +234,31 @@ export namespace Argv {
   createDomain('number', (source, session) => {
     const value = +source
     if (Number.isFinite(value)) return value
-    throw new Error(session.text('internal.invalid-number'))
+    throw new Error('internal.invalid-number')
   })
 
   createDomain('integer', (source, session) => {
     const value = +source
     if (value * 0 === 0 && Math.floor(value) === value) return value
-    throw new Error(session.text('internal.invalid-integer'))
+    throw new Error('internal.invalid-integer')
   })
 
   createDomain('posint', (source, session) => {
     const value = +source
     if (value * 0 === 0 && Math.floor(value) === value && value > 0) return value
-    throw new Error(session.text('internal.invalid-posint'))
+    throw new Error('internal.invalid-posint')
   })
 
   createDomain('natural', (source, session) => {
     const value = +source
     if (value * 0 === 0 && Math.floor(value) === value && value >= 0) return value
-    throw new Error(session.text('internal.invalid-natural'))
+    throw new Error('internal.invalid-natural')
   })
 
   createDomain('date', (source, session) => {
     const timestamp = Time.parseDate(source)
     if (+timestamp) return timestamp
-    throw new Error(session.text('internal.invalid-date'))
+    throw new Error('internal.invalid-date')
   })
 
   createDomain('user', (source, session) => {
@@ -271,7 +271,7 @@ export namespace Argv {
     if (code && code.type === 'at') {
       return `${session.platform}:${code.data.id}`
     }
-    throw new Error(session.text('internal.invalid-user'))
+    throw new Error('internal.invalid-user')
   })
 
   createDomain('channel', (source, session) => {
@@ -284,7 +284,7 @@ export namespace Argv {
     if (code && code.type === 'sharp') {
       return `${session.platform}:${code.data.id}`
     }
-    throw new Error(session.text('internal.invalid-channel'))
+    throw new Error('internal.invalid-channel')
   })
 
   const BRACKET_REGEXP = /<[^>]+>|\[[^\]]+\]/g
@@ -333,7 +333,7 @@ export namespace Argv {
         if (!argv.session) {
           argv.error = `internal.invalid-${kind}`
         } else {
-          const message = err['message'] || argv.session.text('internal.check-syntax')
+          const message = argv.session.text(err['message'] || 'internal.check-syntax')
           argv.error = argv.session.text(`internal.invalid-${kind}`, [name, message])
         }
         return
