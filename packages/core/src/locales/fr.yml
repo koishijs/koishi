@@ -1,0 +1,53 @@
+general:
+  name: francais
+  paren: ' ({0}) '
+  quote: '"{0}"'
+  comma: ', '
+  and: et
+  or: ou
+  day: jour
+  hour: heure
+  minute: minute
+  second: seconde
+
+internal:
+  low-authority: Droits insuffisants.
+  insufficient-arguments: Arguments insuffisants, tapez "help" pour afficher l'aide
+  redunant-arguments: Arguments redondants, tapez "help" pour afficher l'aide
+  invalid-argument: Arguments {0} invalides, {1}
+  unknown-option: Option {0} inconnue, tapez "help" pour afficher l'aide
+  invalid-option: Option {0} invalide, {1}
+  check-syntax: Tapez "help" pour afficher l'aide
+  invalid-number: Entrez un nombre.
+  invalid-integer: Entrez un entier.
+  invalid-posint: Entrez un entier positif.
+  invalid-natural: Entrez un entier non négatif.
+  invalid-date: Entrez une date valide.
+  invalid-user: Entrez un nom d'utilisateur valide.
+  invalid-channel: Entrez un nom de canal valide.
+
+suggest:
+  hint: Voulez-vous dire {0} ?
+  command-prefix: ''
+  command-suffix: Tapez un point pour appliquer la suggestion.
+  help-prefix: Commande inconnue.
+  help-suffix: Tapez une ligne vide ou un point pour appliquer la suggestion.
+
+commands:
+  help:
+    description: Afficher l'aide
+    options:
+      help: afficher cette aide
+      authority: afficher les droits nécessaires
+      showHidden: afficher les options et commandes cachées
+    messages:
+      hint-authority: les droits minimums sont indiqués entre parenthèses
+      hint-subcommand: ces commandes avec un astérisque ont des sous-commandes
+      command-aliases: 'Alias : {0}.'
+      command-examples: 'Exemples :'
+      command-authority: 'Droit minimum : {0}.'
+      subcommand-prolog: 'Commandes disponibles{0} :'
+      global-prolog: 'Commandes disponibles{0} :'
+      global-epilog: Tapez "help <commande>" pour voir la syntaxe et les exemples pour une commande spécifique.
+      available-options: 'Options disponibles :'
+      available-options-with-authority: 'Options disponibles (les parenthèses indiquent un droit supplémentaire) :'
