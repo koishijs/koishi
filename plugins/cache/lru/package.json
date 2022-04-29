@@ -14,12 +14,13 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/koishijs/koishi.git"
+    "url": "git+https://github.com/koishijs/koishi.git",
+    "directory": "plugins/cache/lru"
   },
   "bugs": {
     "url": "https://github.com/koishijs/koishi/issues"
   },
-  "homepage": "https://koishi.js.org/api/cache/lru.html",
+  "homepage": "https://koishi.js.org/plugins/cache/lru.html",
   "keywords": [
     "bot",
     "chatbot",
@@ -29,7 +30,7 @@
     "impl:cache"
   ],
   "peerDependencies": {
-    "koishi": "^4.5.2"
+    "koishi": "^4.6.1"
   },
   "dependencies": {
     "lru-cache": "^6.0.0"

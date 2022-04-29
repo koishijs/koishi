@@ -1,4 +1,4 @@
-import { Argv, Assets, Context, noop, Schema, Time } from 'koishi'
+import { $, Argv, Assets, Context, noop, Schema, Time } from 'koishi'
 import { DataService } from '@koishijs/plugin-console'
 
 declare module 'koishi' {
@@ -22,14 +22,14 @@ class MetaProvider extends DataService<MetaProvider.Payload> {
     })
 
     this.extend(async () => {
-      const activeUsers = await ctx.database?.eval('user', { $count: 'id' }, {
+      const activeUsers = await ctx.database?.eval('user', row => $.count(row.id), {
         lastCall: { $gt: new Date(new Date().getTime() - Time.day) },
       })
       return { activeUsers }
     })
 
     this.extend(async () => {
-      const activeGuilds = await ctx.database?.eval('channel', { $count: 'id' }, {
+      const activeGuilds = await ctx.database?.eval('channel', row => $.count(row.id), {
         assignee: { $ne: null },
       })
       return { activeGuilds }

@@ -15,12 +15,13 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/koishijs/plugin-assets-s3.git"
+    "url": "git+https://github.com/koishijs/plugin-assets-s3.git",
+    "directory": "plugins/assets/s3"
   },
   "bugs": {
     "url": "https://github.com/koishijs/plugin-assets-s3/issues"
   },
-  "homepage": "https://koishi.js.org/plugins/other/assets-s3",
+  "homepage": "https://koishi.js.org/plugins/assets/s3.html",
   "keywords": [
     "bot",
     "chatbot",
@@ -31,9 +32,9 @@
     "impl:assets"
   ],
   "peerDependencies": {
-    "koishi": "^4.5.2"
+    "koishi": "^4.6.1"
   },
   "dependencies": {
-    "@aws-sdk/client-s3": "^3.58.0"
+    "@aws-sdk/client-s3": "^3.78.0"
   }
 }

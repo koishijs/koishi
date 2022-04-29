@@ -100,7 +100,7 @@ export namespace Quester {
 
     http.ws = (url, options = {}) => {
       return new WebSocket(url, {
-        agent: getAgent(config.proxyAgent),
+        agent: config.proxyAgent && getAgent(config.proxyAgent),
         handshakeTimeout: config.timeout,
         ...options,
         headers: {

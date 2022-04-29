@@ -207,7 +207,7 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
     if (assignee) {
       return app.database.createChannel(platform, id, { assignee, guildId })
     } else {
-      const channel = app.model.create('channel')
+      const channel = app.model.tables.channel.create()
       Object.assign(channel, { platform, id, guildId })
       return channel
     }
@@ -260,7 +260,7 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
     if (authority) {
       return app.database.createUser(platform, id, { authority })
     } else {
-      const user = app.model.create('user')
+      const user = app.model.tables.user.create()
       Object.assign(user, { [platform]: id, authority })
       return user
     }
@@ -282,7 +282,7 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
 
     // 匿名消息不会写回数据库
     if (this.author?.anonymous) {
-      const fallback = this.app.model.create('user')
+      const fallback = this.app.model.tables.user.create()
       fallback[platform] = userId
       fallback.authority = await this.resolveValue(this.app.options.autoAuthorize)
       const user = observe(fallback, () => Promise.resolve())

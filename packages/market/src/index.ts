@@ -1,5 +1,5 @@
 import { intersects } from 'semver'
-import { Dict, pick } from '@koishijs/utils'
+import { Dict, pick } from 'cosmokit'
 
 export interface User {
   name: string

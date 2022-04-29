@@ -1,6 +1,7 @@
 import { Context, Dict, pick, Quester, Schema } from 'koishi'
 import { DataService } from '@koishijs/plugin-console'
 import scan, { AnalyzedPackage, PackageJson } from '@koishijs/market'
+import which from 'which-pm-runs'
 import spawn from 'cross-spawn'
 
 class MarketProvider extends DataService<Dict<MarketProvider.Data>> {
@@ -31,7 +32,9 @@ class MarketProvider extends DataService<Dict<MarketProvider.Data>> {
   async prepare() {
     const registry = await new Promise<string>((resolve, reject) => {
       let stdout = ''
-      const child = spawn('npm', ['config', 'get', 'registry'], { cwd: this.ctx.app.baseDir })
+      const agent = which()
+      const key = (agent?.name === 'yarn' && !agent?.version.startsWith('1.')) ? 'npmRegistryServer' : 'registry'
+      const child = spawn(agent?.name || 'npm', ['config', 'get', key], { cwd: this.ctx.app.baseDir })
       child.on('exit', (code) => {
         if (!code) return resolve(stdout)
         reject(new Error(`child process failed with code ${code}`))

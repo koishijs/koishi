@@ -1,14 +1,13 @@
 import { App } from 'koishi'
 import { resolve } from 'path'
 import { promises as fs } from 'fs'
-import memory from '@koishijs/plugin-database-memory'
 import mock from '@koishijs/plugin-mock'
 import * as eval from '@koishijs/plugin-eval'
-import * as teach from '@koishijs/plugin-teach'
+import * as teach from 'koishi-plugin-dialogue'
 
 const app = new App()
 
-app.plugin(memory)
+app.plugin('database-memory')
 app.plugin(mock)
 
 app.plugin(eval, {

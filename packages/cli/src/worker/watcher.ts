@@ -1,7 +1,8 @@
-import { App, coerce, Context, Dict, Logger, makeArray, Plugin, Schema, unwrapExports } from 'koishi'
+import { App, coerce, Context, Dict, Logger, makeArray, Plugin, Schema } from 'koishi'
 import { FSWatcher, watch, WatchOptions } from 'chokidar'
 import { relative, resolve } from 'path'
 import { debounce } from 'throttle-debounce'
+import ns from 'ns-require'
 
 function loadDependencies(filename: string, ignored: Set<string>) {
   const dependencies = new Set<string>()
@@ -211,7 +212,7 @@ class Watcher {
     // that is, reloading them will not cause any other reloads
     for (const filename in require.cache) {
       const module = require.cache[filename]
-      const plugin = unwrapExports(module.exports)
+      const plugin = ns.unwrapExports(module.exports)
       const state = this.ctx.app.registry.get(plugin)
       if (!state || this.declined.has(filename)) continue
       pending.set(filename, state)
@@ -250,7 +251,7 @@ class Watcher {
     const attempts = {}
     try {
       for (const [, filename] of reloads) {
-        attempts[filename] = unwrapExports(require(filename))
+        attempts[filename] = ns.unwrapExports(require(filename))
       }
     } catch (err) {
       // rollback require.cache

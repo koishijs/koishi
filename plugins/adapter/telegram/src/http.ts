@@ -32,7 +32,6 @@ abstract class TelegramAdapter extends Adapter<BotConfig, AdapterConfig> {
       const segs: segment[] = []
       for (const e of entities) {
         const eText = text.substr(e.offset, e.length)
-        let handleCurrent = true
         if (e.type === 'mention') {
           if (eText[0] !== '@') throw new Error('Telegram mention does not start with @: ' + eText)
           const atName = eText.slice(1)
@@ -41,10 +40,10 @@ abstract class TelegramAdapter extends Adapter<BotConfig, AdapterConfig> {
         } else if (e.type === 'text_mention') {
           segs.push({ type: 'at', data: { id: e.user.id } })
         } else {
-          handleCurrent = false
+          continue
         }
-        if (handleCurrent && e.offset > curr) {
-          segs.push({ type: 'text', data: { content: text.slice(curr, e.offset) } })
+        if (e.offset > curr) {
+          segs.splice(-1, 0, { type: 'text', data: { content: text.slice(curr, e.offset) } })
           curr = e.offset + e.length
         }
       }
@@ -53,6 +52,7 @@ abstract class TelegramAdapter extends Adapter<BotConfig, AdapterConfig> {
       }
       return segs
     }
+
     const message = update.message || update.edited_message || update.channel_post || update.edited_channel_post
     if (message) {
       session.messageId = message.message_id.toString()

@@ -11,7 +11,8 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/koishijs/koishi.git"
+    "url": "git+https://github.com/koishijs/koishi.git",
+    "directory": "packages/market"
   },
   "bugs": {
     "url": "https://github.com/koishijs/koishi/issues"
@@ -23,7 +24,7 @@
     "koishi"
   ],
   "dependencies": {
-    "@koishijs/utils": "^5.2.2",
-    "semver": "^7.3.5"
+    "cosmokit": "^1.1.2",
+    "semver": "^7.3.7"
   }
 }

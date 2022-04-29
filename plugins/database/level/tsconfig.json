@@ -4,11 +4,6 @@
     "rootDir": "src",
     "outDir": "lib",
   },
-  "references": [
-    {
-      "path": "./src/runtime"
-    }
-  ],
   "include": [
     "src",
   ],

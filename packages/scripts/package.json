@@ -18,7 +18,8 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/koishijs/koishi.git"
+    "url": "git+https://github.com/koishijs/koishi.git",
+    "directory": "packages/scripts"
   },
   "bugs": {
     "url": "https://github.com/koishijs/koishi/issues"
@@ -30,7 +31,7 @@
     "koishi"
   ],
   "peerDependencies": {
-    "@koishijs/client": "^3.2.4"
+    "@koishijs/client": "^3.2.8"
   },
   "devDependencies": {
     "@types/cross-spawn": "^6.0.2",
@@ -42,7 +43,7 @@
   "dependencies": {
     "cac": "^6.7.12",
     "cross-spawn": "^7.0.3",
-    "fs-extra": "^10.0.1",
+    "fs-extra": "^10.1.0",
     "globby": "^11.1.0",
     "js-yaml": "^4.1.0",
     "kleur": "^4.1.4",
@@ -50,7 +51,7 @@
     "ora": "^5.4.1",
     "p-map": "^4.0.0",
     "prompts": "^2.4.2",
-    "semver": "^7.3.5",
+    "semver": "^7.3.7",
     "which-pm-runs": "^1.1.0"
   }
 }

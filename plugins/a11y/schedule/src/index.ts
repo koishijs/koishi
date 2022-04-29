@@ -29,8 +29,31 @@ export const Config: Schema<Config> = Schema.object({
   minInterval: Schema.natural().role('ms').description('允许的最小时间间隔。').default(Time.minute),
 })
 
+function toHourMinute(time: Date) {
+  return `${Time.toDigits(time.getHours())}:${Time.toDigits(time.getMinutes())}`
+}
+
 export function apply(ctx: Context, { minInterval }: Config) {
   ctx.i18n.define('zh', require('./locales/zh'))
+
+  ctx.i18n.formatter('interval', ([date, interval]: [Date, number], _, locale) => {
+    if (!interval) {
+      return Time.template('yyyy-MM-dd hh:mm:ss', date)
+    } else if (interval === Time.day) {
+      return ctx.i18n.text([locale], ['general.everyday'], [toHourMinute(date)])
+    } else if (interval === Time.week) {
+      return ctx.i18n.text([locale], ['general.everyweek'], [
+        ctx.i18n.text([locale], ['general.days.' + date.getDay()], {}),
+        toHourMinute(date),
+      ])
+    } else {
+      const now = Date.now()
+      return ctx.i18n.text([locale], ['general.interval'], [
+        interval,
+        +date < now ? interval - (now - +date) % interval : +date - now,
+      ])
+    }
+  })
 
   ctx.model.extend('schedule', {
     id: 'unsigned',
@@ -76,7 +99,7 @@ export function apply(ctx: Context, { minInterval }: Config) {
       }, date - now)
     }
 
-    logger.debug('prepare %d: %c from %s every %s', id, command, time, Time.formatTimeShort(interval))
+    logger.debug('prepare %d: %c from %s every %s', id, command, time, Time.format(interval))
     const timeout = date < now ? interval - (now - date) % interval : date - now
     if (lastCall && timeout + now - interval > +lastCall) {
       executeSchedule()
@@ -137,7 +160,7 @@ export function apply(ctx: Context, { minInterval }: Config) {
         }
         if (!schedules.length) return session.text('.list-empty')
         return schedules.map(({ id, time, interval, command, session: payload }) => {
-          let output = `${id}. ${Time.formatTimeInterval(time, interval)}：${command}`
+          let output = `${id}. ${session.text('.list-item', [[time, interval]])}：${command}`
           if (options.full) {
             output += session.text('.context', [payload.subtype === 'private'
               ? session.text('.context.private', payload)

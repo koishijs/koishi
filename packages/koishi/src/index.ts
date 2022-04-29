@@ -1,4 +1,4 @@
-import { App, Context, Modules, Schema } from '@koishijs/core'
+import { App, Context, Schema } from '@koishijs/core'
 import { trimSlash } from '@koishijs/utils'
 import { Cache } from './cache'
 import { Assets } from './assets'
@@ -34,10 +34,6 @@ App.Config.list.push(Schema.object({
   request: Quester.Config,
   assets: App.Config.Assets,
 }))
-
-// use node require
-Modules.internal.require = require
-Modules.internal.resolve = require.resolve
 
 Context.service('assets')
 Context.service('cache')

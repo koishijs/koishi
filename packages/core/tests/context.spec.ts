@@ -1,9 +1,11 @@
 import { App, Context, Dict, noop } from 'koishi'
-import { expect } from 'chai'
+import { expect, use } from 'chai'
 import { inspect } from 'util'
 import mock from '@koishijs/plugin-mock'
-import jest from 'jest-mock'
-import {} from 'chai-shape'
+import * as jest from 'jest-mock'
+import shape from 'chai-shape'
+
+use(shape)
 
 const app = new App().plugin(mock)
 const guildSession = app.mock.session({ userId: '123', guildId: '456', subtype: 'group' })

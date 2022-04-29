@@ -14,12 +14,13 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/koishijs/koishi.git"
+    "url": "git+https://github.com/koishijs/koishi.git",
+    "directory": "plugins/a11y/bind"
   },
   "bugs": {
     "url": "https://github.com/koishijs/koishi/issues"
   },
-  "homepage": "https://koishi.js.org/plugins/bind/",
+  "homepage": "https://koishi.js.org/plugins/accessibility/bind.html",
   "keywords": [
     "bot",
     "chatbot",
@@ -31,10 +32,10 @@
     "required:database"
   ],
   "peerDependencies": {
-    "koishi": "^4.5.2"
+    "koishi": "^4.6.1"
   },
   "devDependencies": {
-    "@koishijs/plugin-database-memory": "^1.1.0",
-    "@koishijs/plugin-mock": "^1.0.3"
+    "@koishijs/plugin-database-memory": "^1.2.0",
+    "@koishijs/plugin-mock": "^1.0.4"
   }
 }

@@ -42,7 +42,7 @@ echo hello
 你可以为一条指令添加别名：
 
 ```ts
-app.command('echo').alias('say')
+ctx.command('echo').alias('say')
 ```
 
 这样一来，无论是 `echo` 还是 `say` 都能触发这条指令了。

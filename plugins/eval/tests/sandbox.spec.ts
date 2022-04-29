@@ -1,7 +1,9 @@
 import { Sandbox } from '@koishijs/plugin-eval/src/worker/sandbox'
 import { inspect } from 'util'
-import { expect } from 'chai'
-import {} from 'chai-shape'
+import { expect, use } from 'chai'
+import shape from 'chai-shape'
+
+use(shape)
 
 describe('Eval Sandbox (Frozen)', () => {
   const vm = new Sandbox()

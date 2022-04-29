@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/helpers",
   "description": "Helper functions for Koishi",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -27,9 +27,9 @@
     "command"
   ],
   "peerDependencies": {
-    "koishi": "^4.5.2"
+    "koishi": "^4.6.1"
   },
   "devDependencies": {
-    "@koishijs/plugin-mock": "^1.0.3"
+    "@koishijs/plugin-mock": "^1.0.4"
   }
 }
