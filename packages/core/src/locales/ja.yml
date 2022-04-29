@@ -31,7 +31,7 @@ suggest:
   command-prefix: ''
   command-suffix: 句点を送信してコマンドを実行します。
   help-prefix: コマンドが見つかりません。
-  help-suffix: この提案を実行するには、空行または句点を送信します。
+  help-suffix: 句点を送信してこの提案を実行します。
 
 commands:
   help:

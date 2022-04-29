@@ -31,7 +31,7 @@ suggest:
   command-prefix: ''
   command-suffix: Tapez un point pour appliquer la suggestion.
   help-prefix: Commande inconnue.
-  help-suffix: Tapez une ligne vide ou un point pour appliquer la suggestion.
+  help-suffix: Tapez un point pour appliquer la suggestion.
 
 commands:
   help:
