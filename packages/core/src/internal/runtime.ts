@@ -40,11 +40,16 @@ export default function runtime(ctx: Context) {
             if (!index || index > 9) return
             source = source.replace(new RegExp(`\\$${index}`, 'g'), (segment || '').replace(/\$/g, '@@__PLACEHOLDER__@@'))
           })
-          return source.replace(/@@__PLACEHOLDER__@@/g, '$')
+          return {
+            inters: [],
+            quote: false,
+            terminator: '',
+            content: source.replace(/@@__PLACEHOLDER__@@/g, '$')
+          }
         }
         return {
           command,
-          args: args.map(escape),
+          tokens: args.map(escape),
           options: valueMap(options, escape),
         }
       }
