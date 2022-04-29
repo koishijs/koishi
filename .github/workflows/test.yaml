@@ -11,7 +11,7 @@ jobs:
 
     steps:
       - name: Check out
-        uses: actions/checkout@v1
+        uses: actions/checkout@v3
       - name: Set up Node
         uses: actions/setup-node@v2
         with:
@@ -46,7 +46,7 @@ jobs:
 
     steps:
       - name: Check out
-        uses: actions/checkout@v1
+        uses: actions/checkout@v3
       - name: Set up Node
         uses: actions/setup-node@v2
         with:
@@ -84,7 +84,7 @@ jobs:
 
     steps:
       - name: Check out
-        uses: actions/checkout@v1
+        uses: actions/checkout@v3
       - name: Set up Node
         uses: actions/setup-node@v2
         with:
@@ -116,7 +116,7 @@ jobs:
 
     steps:
       - name: Check out
-        uses: actions/checkout@v1
+        uses: actions/checkout@v3
       - name: Set up Node
         uses: actions/setup-node@v2
         with:
@@ -160,7 +160,7 @@ jobs:
 
     steps:
       - name: Check out
-        uses: actions/checkout@v1
+        uses: actions/checkout@v3
       - name: Create .npmrc
         run: 'echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" > .npmrc'
       - name: Set up Node
@@ -195,7 +195,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v1
+        uses: actions/checkout@v3
       - name: Set up Node
         uses: actions/setup-node@v2
         with:
@@ -216,6 +216,14 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           name: packages
+      - name: Checkout koishi-plugin-dialogue
+        uses: actions/checkout@v3
+        with:
+          repository: koishijs/koishi-plugin-dialogue
+          path: external/dialogue
+      - name: Create Symlinks
+        run: |
+          ln -sd ../../../external/dialogue/docs ./docs/community/dialogue
       - name: Build
         run: yarn docs build
       - name: Deploy
@@ -236,7 +244,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v1
+        uses: actions/checkout@v3
       - name: Set up Node
         uses: actions/setup-node@v2
         with:
