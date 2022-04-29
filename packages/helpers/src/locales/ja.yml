@@ -1,8 +1,8 @@
 internal:
-  error-encountered: 未知なエラーが発生しました：{0}
+  error-encountered: 不明なエラーが発生しました：{0}
 
 admin:
-  user-option: ユーザーを指定する
+  user-option: ターゲットユーザーを指定する
   user-not-found: 指定されたユーザーが見つかりません。
   user-unchanged: ユーザーのデータは変更されていません。
   user-updated: ユーザーのデータが変更されました。
@@ -10,4 +10,4 @@ admin:
   channel-not-found: 指定されたチャンネルが見つかりません。
   channel-unchanged: チャンネルのデータは変更されていません。
   channel-updated: チャンネルのデータが変更されました。
-  not-in-group: ギルドコンテキストではありません。-c オプションを使用してください。
+  not-in-group: ギルドコンテキストではありません。-c を使用してターゲットチャンネルを指定します。
