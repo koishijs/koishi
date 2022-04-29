@@ -1,5 +1,5 @@
 internal:
-  error-encountered: "Une erreur inconnue s'est produite: {0}"
+  error-encountered: "Une erreur inconnue s'est produite : {0}"
 
 admin:
   user-not-found: Utilisateur introuvable.
