@@ -4,10 +4,10 @@ internal:
 admin:
   user-option: ターゲットユーザーを指定する
   user-not-found: 指定されたユーザーが見つかりません。
-  user-unchanged: ユーザーのデータは変更されていません。
-  user-updated: ユーザーのデータが変更されました。
-  channel-option: チャンネルを指定する
+  user-unchanged: ユーザーデータは変更されていません。
+  user-updated: ユーザーデータが変更されました。
+  channel-option: ターゲットチャンネルを指定する
   channel-not-found: 指定されたチャンネルが見つかりません。
-  channel-unchanged: チャンネルのデータは変更されていません。
-  channel-updated: チャンネルのデータが変更されました。
+  channel-unchanged: チャンネルデータは変更されていません。
+  channel-updated: チャンネルデータが変更されました。
   not-in-group: ギルドコンテキストではありません。-c を使用してターゲットチャンネルを指定します。
