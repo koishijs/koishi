@@ -8,4 +8,4 @@ admin:
   channel-not-found: Chanel introuvable.
   channel-unchanged: Les données du chanel n'ont pas été modifiées.
   channel-updated: Les données du chanel ont été changées.
-  not-in-group: Vous n'êtes pas dans la contexte du groupe, tapez -c pour spécifier le chanel cible.
+  not-in-group: Vous n'êtes pas dans le contexte du groupe, tapez -c pour spécifier le chanel cible.
