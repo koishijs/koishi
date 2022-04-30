@@ -1,6 +1,9 @@
 name: Test
 
-on: [push]
+on:
+  - push
+  - pull_request
+  - workflow_dispatch
 
 env:
   CI: true
@@ -221,9 +224,21 @@ jobs:
         with:
           repository: koishijs/koishi-plugin-dialogue
           path: external/dialogue
+      - name: Checkout koishi-plugin-eval
+        uses: actions/checkout@v3
+        with:
+          repository: koishijs/koishi-plugin-eval
+          path: external/eval
+      - name: Checkout koishi-plugin-github
+        uses: actions/checkout@v3
+        with:
+          repository: koishijs/koishi-plugin-github
+          path: external/github
       - name: Create Symlinks
         run: |
           ln -s ../../external/dialogue/docs ./docs/community/dialogue
+          ln -s ../../external/eval/docs ./docs/community/eval
+          ln -s ../../external/github/docs ./docs/community/github
       - name: Build
         run: yarn docs build
       - name: Deploy
