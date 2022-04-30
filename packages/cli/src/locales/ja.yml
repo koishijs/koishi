@@ -1,9 +1,9 @@
 commands:
   exit:
-    description: BOTをシャットダウンする。
+    description: BOT をシャットダウンする。
 
     options:
-      restart: BOTを再起動する。
+      restart: BOT を再起動する。
 
     messages:
       exiting: シャットダウン中……
