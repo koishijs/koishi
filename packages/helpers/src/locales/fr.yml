@@ -1,0 +1,11 @@
+internal:
+  error-encountered: "Une erreur inconnue s'est produite : {0}"
+
+admin:
+  user-not-found: Utilisateur introuvable.
+  user-unchanged: Les données utilisateur n'ont pas été modifiées.
+  user-updated: Les données utilisateur ont été changées.
+  channel-not-found: Canel introuvable.
+  channel-unchanged: Les données du canel n'ont pas été modifiées.
+  channel-updated: Les données du canel ont été changées.
+  not-in-group: Vous n'êtes pas dans le contexte du groupe, tapez -c pour spécifier le canel cible.
