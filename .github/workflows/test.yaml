@@ -223,7 +223,7 @@ jobs:
           path: external/dialogue
       - name: Create Symlinks
         run: |
-          ln -sd ../../../external/dialogue/docs ./docs/community/dialogue
+          ln -s ../../external/dialogue/docs ./docs/community/dialogue
       - name: Build
         run: yarn docs build
       - name: Deploy
