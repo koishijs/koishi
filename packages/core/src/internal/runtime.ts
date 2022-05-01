@@ -27,7 +27,9 @@ export default function runtime(ctx: Context) {
         if (!fuzzy && content !== name || !content.startsWith(name)) continue
         const message = content.slice(name.length)
         if (fuzzy && !parsed.appel && message.match(/^\S/)) continue
-        const argv = command.parse(message.trim(), '', [...args], { ...options })
+        let argv = Argv.parse(message.trim())
+        argv.session = session
+        argv = command.parse(argv, '', [...args], { ...options })
         argv.command = command
         return argv
       } else {

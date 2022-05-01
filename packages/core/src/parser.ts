@@ -463,9 +463,7 @@ export namespace Argv {
       return true
     }
 
-    parse(argv: Argv): Argv
-    parse(source: string, terminator?: string, args?: any[], options?: Dict<any>): Argv
-    parse(argv: string | Argv, terminator?: string, args = [], options = {}): Argv {
+    parse(argv: string | Argv, terminator?: string, args: any[] = [], options: Dict<any> = {}): Argv {
       if (typeof argv === 'string') argv = Argv.parse(argv, terminator)
 
       const source = this.name + ' ' + Argv.stringify(argv)
