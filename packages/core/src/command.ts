@@ -1,4 +1,4 @@
-import { Awaitable, coerce, Dict, Logger, remove, Schema } from '@koishijs/utils'
+import { Awaitable, coerce, Dict, Logger, remove, Schema, segment } from '@koishijs/utils'
 import { Argv } from './parser'
 import { Context, Disposable, Next } from './context'
 import { Channel, User } from './database'
@@ -19,6 +19,7 @@ export namespace Command {
     fuzzy?: boolean
     args?: string[]
     options?: Dict
+    replacement?: string
   }
 
   export type Action<U extends User.Field = never, G extends Channel.Field = never, A extends any[] = any[], O extends {} = {}>
@@ -145,8 +146,13 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
     return this
   }
 
-  shortcut(name: string | RegExp, config: Command.Shortcut = {}) {
+  shortcut(name: string | RegExp, config?: Command.Shortcut): Command<U, G, A, O>
+  shortcut(name: string | RegExp, replacement?: string): Command<U, G, A, O>
+  shortcut(name: string | RegExp, config: Command.Shortcut | string = {}) {
     if (this._disposed) return this
+    if (typeof config === 'string') {
+      config = { replacement: segment.escape(config) }
+    }
     config.name = name
     config.command = this
     this.app._shortcuts.push(config)
