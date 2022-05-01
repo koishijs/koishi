@@ -11,4 +11,6 @@ export interface Message {
   nickname: string
   channelId: string
   selfId: string
+  lastUpdated?: Date
+  deleted?: number
 }

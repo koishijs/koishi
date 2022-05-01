@@ -44,8 +44,8 @@ export class MessageDatabase extends Service {
 
   set #queue(arr) {
     const ids = arr.map(o => o.cid)
-    this.#_queue =arr.filter(({cid}, index) => !ids.includes(cid, index + 1))
-    //logger.debug('set queue %o', this.#_queue)
+    this.#_queue = arr.filter(({ cid }, index) => !ids.includes(cid, index + 1))
+    // logger.debug('set queue %o', this.#_queue)
   }
 
   async start() {
@@ -62,6 +62,8 @@ export class MessageDatabase extends Service {
       nickname: 'string',
       channelId: 'string',
       selfId: 'string',
+      lastUpdated: 'timestamp',
+      deleted: 'integer',
     }, {
       primary: 'id',
     })
@@ -69,6 +71,24 @@ export class MessageDatabase extends Service {
     // 如果是一个 platform 有多个 bot, bot 状态变化, 频道状态变化待解决
     this.ctx.on('message', this.#onMessage.bind(this))
     this.ctx.on('send', this.#onMessage.bind(this))
+    this.ctx.on('message-deleted', async (session) => {
+      await this.ctx.database.set('message', {
+        messageId: session.messageId,
+        platform: session.platform,
+      }, {
+        deleted: 1,
+        lastUpdated: new Date(),
+      })
+    })
+    this.ctx.on('message-updated', async (session) => {
+      await this.ctx.database.set('message', {
+        messageId: session.messageId,
+        platform: session.platform,
+      }, {
+        content: session.content,
+        lastUpdated: new Date(),
+      })
+    })
     this.#queueRunning = true
     setTimeout(this.#runQueue.bind(this), 1)
   }
@@ -84,7 +104,7 @@ export class MessageDatabase extends Service {
     }))
   }
 
-  removeFromSyncQueue(bot: Bot, guildId: string, channelId: string){
+  removeFromSyncQueue(bot: Bot, guildId: string, channelId: string) {
     delete this.#status[bot.platform + ':' + channelId]
     this.#queue = this.#queue.filter(v => v.cid !== (bot.platform + ':' + channelId))
     // 如果正在同步的话 怎么处理呢
@@ -170,18 +190,34 @@ export class MessageDatabase extends Service {
   }
 
   async getMessageBetween(bot: Bot, channelId: string, from: string, to?: string): Promise<Bot.Message[]> {
+    // from: older, to: newer
+    let toMessage: Bot.Message
     if (!to) {
+      logger.debug('!to')
       const latestMessages = await bot.getChannelMessageHistory(channelId)
       to = latestMessages[latestMessages.length - 1].messageId
+      toMessage = latestMessages[latestMessages.length - 1]
     }
     logger.info('from to %o %o', from, to)
     let nowMessageId = to
     let newMessages = []
-    if(from === to){
+    if (from === to) {
       return []
     }
+
+    const fromMessageInDatabase = (await this.ctx.database.get('message', {
+      platform: bot.platform,
+      messageId: from,
+    }))[0]
+    // 如果后端没接收到（eg. gocq离线） 但是 koishi 在线时接收到了 要特殊处理
+    if (fromMessageInDatabase?.timestamp.valueOf() > toMessage.timestamp) {
+      logger.debug('ignored')
+      return []
+    }
+
     while (true) {
       const messages = await bot.getChannelMessageHistory(channelId, nowMessageId) // 从旧到新
+      logger.info('get history, now msg id: %s, newMessages length: %d', nowMessageId, newMessages.length)
       if (messages.find(v => v.messageId === from && v.messageId !== nowMessageId)) {
         // 找到了！
         const stopPosition = messages.findIndex(v => v.messageId === from)
@@ -209,6 +245,7 @@ export class MessageDatabase extends Service {
         }, {
           sort: {
             id: 'desc',
+            timestamp: 'desc',
           },
           limit: 1,
         })
@@ -219,9 +256,9 @@ export class MessageDatabase extends Service {
         } else {
           // 数据库中最后一条消息
 
-          let newMessages = await this.getMessageBetween(bot, channelId, inDatabase[0].messageId, this.#messageRecord[cid]?.received)
+          const newMessages = await this.getMessageBetween(bot, channelId, inDatabase[0].messageId, this.#messageRecord[cid]?.received)
           logger.info('get new messages')
-          if( newMessages.length){
+          if (newMessages.length) {
             await this.ctx.database.upsert('message', newMessages.map(session => MessageDatabase.adaptMessage(session, bot, guildId)))
           }
         }
@@ -251,7 +288,7 @@ export class MessageDatabase extends Service {
     if (this.#status[session.cid] === ChannelStatus.SYNCED) {
       logger.debug('on message, cid: %s, id: %s', session.cid, session.messageId)
       await this.ctx.database.create('message', MessageDatabase.adaptMessage(session))
-    } else if(this.#queue.find(v => v.cid === session.cid)){
+    } else if (this.#queue.find(v => v.cid === session.cid)) {
       // in queue, not synced
       if (!this.#messageRecord[session.cid]) {
         const inDb = await this.ctx.database.get('message', {

@@ -1,7 +1,7 @@
 import { Adapter, Bot, Quester, Schema, segment } from 'koishi'
 import { adaptChannel, AdapterConfig, adaptGroup as adaptGuild, adaptMessage, adaptMessageSession, adaptUser, prepareMessageSession } from './utils'
 import { Sender } from './sender'
-import { GatewayIntent, Internal, Channel, Permission } from './types'
+import { Channel, GatewayIntent, Internal, Permission } from './types'
 interface PrivilegedIntents {
   members?: boolean
   presence?: boolean
