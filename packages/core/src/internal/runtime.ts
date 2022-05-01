@@ -80,9 +80,20 @@ export default function runtime(ctx: Context) {
     }
 
     if (command['_actions'].length) return
+    // subcommand redirect
     const arg0 = args.shift() || ''
     const subcommand = ctx.getCommand(command.name + '.' + arg0)
     if (subcommand) {
+      // save command names
+      const commands = session['__redirected_commands'] ||= [
+        `(${command.name}${command._aliases.length !== 0 ? '|' + command._aliases.join('|') : ''})`,
+      ]
+      commands.push(arg0)
+      const regex = new RegExp(`^${commands.join('[. ]')}( |$)`)
+      // remove command names for re-parsing
+      argv = Argv.parse(session.parsed.content.replace(regex, ''))
+      argv.session = session
+      argv = subcommand.parse(argv)
       return session.execute({ ...argv, command: subcommand })
     } else {
       return executeHelp(session, command.name)
