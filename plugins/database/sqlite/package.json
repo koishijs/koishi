@@ -31,7 +31,7 @@
     "impl:database"
   ],
   "peerDependencies": {
-    "koishi": "^4.6.1"
+    "koishi": "^4.6.2"
   },
   "dependencies": {
     "@cosmotype/driver-sqlite": "^1.0.6"

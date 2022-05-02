@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/cli",
   "description": "CLI for Koishi",
-  "version": "4.6.1",
+  "version": "4.6.2",
   "typings": "index.d.ts",
   "engines": {
     "node": ">=12.0.0"
@@ -32,14 +32,14 @@
     "daemon"
   ],
   "peerDependencies": {
-    "koishi": "^4.6.1"
+    "koishi": "^4.6.2"
   },
   "devDependencies": {
     "@types/prompts": "^2.4.0",
     "@types/throttle-debounce": "^2.1.0"
   },
   "dependencies": {
-    "@koishijs/loader": "^1.0.0",
+    "@koishijs/loader": "^1.0.1",
     "cac": "^6.7.12",
     "chokidar": "^3.5.3",
     "dotenv": "^16.0.0",

@@ -31,17 +31,17 @@
     "required:console"
   ],
   "peerDependencies": {
-    "@koishijs/cli": "^4.6.1",
-    "@koishijs/plugin-console": "^3.2.8",
-    "koishi": "^4.6.1"
+    "@koishijs/cli": "^4.6.2",
+    "@koishijs/plugin-console": "^3.2.9",
+    "koishi": "^4.6.2"
   },
   "devDependencies": {
-    "@koishijs/client": "^3.2.8",
+    "@koishijs/client": "^3.2.9",
     "@types/cross-spawn": "^6.0.2",
     "@types/which-pm-runs": "^1.0.0"
   },
   "dependencies": {
-    "@koishijs/market": "^1.0.0",
+    "@koishijs/market": "^1.0.1",
     "cross-spawn": "^7.0.3",
     "ns-require": "^1.1.2",
     "semver": "^7.3.7",

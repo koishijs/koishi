@@ -29,10 +29,10 @@
     "optional:console"
   ],
   "peerDependencies": {
-    "koishi": "^4.6.1"
+    "koishi": "^4.6.2"
   },
   "devDependencies": {
-    "@koishijs/client": "^3.2.8",
-    "@koishijs/plugin-console": "^3.2.8"
+    "@koishijs/client": "^3.2.9",
+    "@koishijs/plugin-console": "^3.2.9"
   }
 }
