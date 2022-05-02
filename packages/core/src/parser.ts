@@ -364,7 +364,8 @@ export namespace Argv {
 
   export interface OptionDeclaration extends Declaration, OptionConfig {
     syntax: string
-    values?: Dict<any>
+    values: Dict<any>
+    valuesSyntax: Dict<string>
   }
 
   type OptionDeclarationMap = Dict<OptionDeclaration>
@@ -404,7 +405,7 @@ export namespace Argv {
         }
       }
 
-      if (!config.value && !names.includes(param)) {
+      if (!('value' in config) && !names.includes(param)) {
         syntax += ', --' + param
       }
 
@@ -416,18 +417,24 @@ export namespace Argv {
         ...config,
         name,
         values: {},
+        valuesSyntax: {},
         syntax,
       }
 
-      if (desc) this.context.i18n.define('', `commands.${this.name}.options.${name}`, desc)
-
+      let path = `commands.${this.name}.options.${name}`
       const fallbackType = typeof option.fallback
       if ('value' in config) {
+        path += '.' + config.value
+        option.valuesSyntax[config.value] = syntax
         names.forEach(name => option.values[name] = config.value)
       } else if (!bracket.trim()) {
         option.type = 'boolean'
       } else if (!option.type && (fallbackType === 'string' || fallbackType === 'number')) {
         option.type = fallbackType
+      }
+
+      if (desc) {
+        this.context.i18n.define('', path, desc)
       }
 
       this._assignOption(option, names, this._namedOptions)
