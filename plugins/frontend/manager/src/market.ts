@@ -7,12 +7,14 @@ import spawn from 'cross-spawn'
 class MarketProvider extends DataService<Dict<MarketProvider.Data>> {
   /** https://github.com/npm/registry/blob/master/docs/REGISTRY-API.md */
   private http: Quester
+  private registry: string
   private timestamp = 0
   private fullCache: Dict<MarketProvider.Data> = {}
   private tempCache: Dict<MarketProvider.Data> = {}
 
   constructor(ctx: Context, private config: MarketProvider.Config) {
     super(ctx, 'market', { authority: 4 })
+    this.registry = config.registry
   }
 
   async start() {
@@ -30,22 +32,24 @@ class MarketProvider extends DataService<Dict<MarketProvider.Data>> {
   }
 
   async prepare() {
-    const registry = await new Promise<string>((resolve, reject) => {
-      let stdout = ''
-      const agent = which()
-      const key = (agent?.name === 'yarn' && !agent?.version.startsWith('1.')) ? 'npmRegistryServer' : 'registry'
-      const child = spawn(agent?.name || 'npm', ['config', 'get', key], { cwd: this.ctx.app.baseDir })
-      child.on('exit', (code) => {
-        if (!code) return resolve(stdout)
-        reject(new Error(`child process failed with code ${code}`))
+    if (this.registry === '') {
+      this.registry = await new Promise<string>((resolve, reject) => {
+        let stdout = ''
+        const agent = which()
+        const key = (agent?.name === 'yarn' && !agent?.version.startsWith('1.')) ? 'npmRegistryServer' : 'registry'
+        const child = spawn(agent?.name || 'npm', ['config', 'get', key], { cwd: this.ctx.app.baseDir })
+        child.on('exit', (code) => {
+          if (!code) return resolve(stdout)
+          reject(new Error(`child process failed with code ${code}`))
+        })
+        child.on('error', reject)
+        child.stdout.on('data', (data) => {
+          stdout += data.toString()
+        })
       })
-      child.on('error', reject)
-      child.stdout.on('data', (data) => {
-        stdout += data.toString()
-      })
-    })
+    }
     this.http = this.ctx.http.extend({
-      endpoint: registry.trim(),
+      endpoint: this.registry.trim(),
     })
 
     await scan({
@@ -68,9 +72,13 @@ class MarketProvider extends DataService<Dict<MarketProvider.Data>> {
 }
 
 namespace MarketProvider {
-  export interface Config {}
+  export interface Config {
+    registry?: string
+  }
 
-  export const Config = Schema.object({})
+  export const Config = Schema.object({
+    registry: Schema.string().description('插件市场查询的 registry，需要支持搜索功能').default(''),
+  }).description('插件市场设置')
 
   export interface Data extends Omit<AnalyzedPackage, 'versions'> {
     versions: Partial<PackageJson>[]
