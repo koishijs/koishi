@@ -25,6 +25,10 @@ function render() {
 <style lang="scss">
 
 .k-markdown {
+  a {
+    color: var(--active);
+  }
+
   code {
     color: var(--fg2);
     padding: 0.25rem 0.5rem;

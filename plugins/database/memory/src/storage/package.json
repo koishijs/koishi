@@ -1,7 +1,0 @@
-{
-  "name": "@koishijs/plugin-database-memory.storage",
-  "private": true,
-  "main": "node.ts",
-  "module": "browser.ts",
-  "typings": "index.ts"
-}

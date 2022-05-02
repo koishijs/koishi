@@ -1,12 +1,6 @@
 import { Assets, Context, Quester, Random, Schema } from 'koishi'
 import { createHmac } from 'crypto'
 
-declare module 'koishi' {
-  interface Modules {
-    'assets-remote': typeof import('.')
-  }
-}
-
 class RemoteAssets extends Assets {
   http: Quester
 

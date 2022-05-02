@@ -20,12 +20,14 @@ export function renderText(source: string) {
 export interface BotConfig extends Bot.BaseConfig, Quester.Config {
   selfId?: string
   token?: string
+  qqguildPlatform?: string
 }
 
 export const BotConfig: Schema<BotConfig> = Schema.intersect([
   Schema.object({
     selfId: Schema.string(),
     token: Schema.string().role('secret'),
+    qqguildPlatform: Schema.string().default('qqguild'),
   }),
   Quester.Config,
 ])
@@ -74,7 +76,7 @@ export class OneBotBot extends Bot<BotConfig> {
     if (!profile?.tiny_id || profile.tiny_id === '0') return
     const guildBotConfig: BotConfig = {
       ...this.config,
-      platform: 'qqguild',
+      platform: this.config.qqguildPlatform,
       selfId: profile.tiny_id,
     }
     this.guildBot = this.app.bots.create('onebot', guildBotConfig, QQGuildBot)

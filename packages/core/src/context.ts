@@ -1,7 +1,7 @@
 import { Awaitable, defineProperty, Dict, Logger, makeArray, MaybeArray, Promisify, Random, remove, Schema, sleep } from '@koishijs/utils'
 import { Command } from './command'
 import { Session } from './session'
-import { Channel, Database, ModelService, Modules, Service, Tables, User } from './database'
+import { Channel, DatabaseService, scope, Service, Tables, User } from './database'
 import { Argv } from './parser'
 import { App } from './app'
 import { Bot } from './bot'
@@ -108,7 +108,7 @@ export type SelectorType = typeof selectors[number]
 export type SelectorValue = boolean | MaybeArray<string | number>
 export type BaseSelection = { [K in SelectorType as `$${K}`]?: SelectorValue }
 
-export interface Selection extends BaseSelection {
+interface Selection extends BaseSelection {
   $and?: Selection[]
   $or?: Selection[]
   $not?: Selection
@@ -254,7 +254,7 @@ export class Context {
   plugin<T extends Plugin>(plugin: T, config?: boolean | Plugin.Config<T>): this
   plugin(entry: string | Plugin, config?: any) {
     // load plugin by name
-    const plugin: Plugin = typeof entry === 'string' ? Modules.require(entry, true) : entry
+    const plugin: Plugin = typeof entry === 'string' ? scope.require(entry) : entry
 
     // check duplication
     if (this.app.registry.has(plugin)) {
@@ -592,8 +592,8 @@ export class Context {
 export namespace Context {
   export interface Services {
     bots: Adapter.BotList
-    database: Database
-    model: ModelService
+    database: DatabaseService
+    model: DatabaseService
     i18n: I18n
   }
 

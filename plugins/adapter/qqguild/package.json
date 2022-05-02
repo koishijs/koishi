@@ -15,7 +15,8 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/koishijs/koishi.git"
+    "url": "git+https://github.com/koishijs/koishi.git",
+    "directory": "plugins/adapter/qqguild"
   },
   "bugs": {
     "url": "https://github.com/koishijs/koishi/issues"
@@ -29,7 +30,7 @@
     "impl:adapter"
   ],
   "peerDependencies": {
-    "koishi": "^4.5.2"
+    "koishi": "^4.6.2"
   },
   "dependencies": {
     "@qq-guild-sdk/core": "^1.1.4",

@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-switch",
   "description": "Switch Plugin Contexts in Koishi",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -14,12 +14,13 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/koishijs/koishi.git"
+    "url": "git+https://github.com/koishijs/koishi.git",
+    "directory": "plugins/a11y/switch"
   },
   "bugs": {
     "url": "https://github.com/koishijs/koishi/issues"
   },
-  "homepage": "https://koishi.js.org/plugins/switch/",
+  "homepage": "https://koishi.js.org/plugins/accessibility/switch.html",
   "keywords": [
     "bot",
     "chatbot",
@@ -30,13 +31,13 @@
     "required:database"
   ],
   "peerDependencies": {
-    "koishi": "^4.5.2"
+    "koishi": "^4.6.2"
   },
   "devDependencies": {
-    "@koishijs/plugin-database-memory": "^1.1.0",
-    "@koishijs/plugin-mock": "^1.0.3"
+    "@koishijs/plugin-database-memory": "^1.2.0",
+    "@koishijs/plugin-mock": "^1.0.4"
   },
   "dependencies": {
-    "@koishijs/helpers": "^1.1.0"
+    "@koishijs/helpers": "^1.2.0"
   }
 }

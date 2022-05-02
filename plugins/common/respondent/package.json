@@ -14,12 +14,13 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/koishijs/koishi.git"
+    "url": "git+https://github.com/koishijs/koishi.git",
+    "directory": "plugins/common/respondent"
   },
   "bugs": {
     "url": "https://github.com/koishijs/koishi/issues"
   },
-  "homepage": "https://koishi.js.org/plugins/respondent/",
+  "homepage": "https://koishi.js.org/plugins/common/respondent.html",
   "keywords": [
     "bot",
     "chatbot",
@@ -28,9 +29,9 @@
     "optional:database"
   ],
   "peerDependencies": {
-    "koishi": "^4.5.2"
+    "koishi": "^4.6.2"
   },
   "devDependencies": {
-    "@koishijs/plugin-mock": "^1.0.3"
+    "@koishijs/plugin-mock": "^1.0.4"
   }
 }

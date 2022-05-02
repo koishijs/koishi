@@ -1,3 +1,4 @@
+const { execSync } = require('child_process')
 const { resolve } = require('path')
 const { remove: removeDiacritics } = require('diacritics')
 
@@ -36,7 +37,7 @@ module.exports = {
   themeConfig: {
     logo: '/koishi.png',
     navbar: [{
-      text: 'v4.x',
+      text: `v4.x (${execSync('git log -1 --format=%h').toString().trim()})`,
       children: [{
         text: 'v3.x',
         link: 'https://koishi.js.org/v3/',
@@ -55,8 +56,8 @@ module.exports = {
       text: 'API',
       link: '/api/',
     }, {
-      text: '插件',
-      children: ['/market.md', '/plugins/'],
+      text: '生态',
+      children: ['/market.md', '/plugins/', '/community/'],
     }, {
       text: '更多',
       link: '/about/faq.md',
@@ -294,43 +295,61 @@ module.exports = {
           '/plugins/console/status.md',
         ],
       }, {
+        text: '其他官方插件',
+        isGroup: true,
+        children: [
+          '/plugins/other/mock.md',
+          '/plugins/other/puppeteer.md',
+        ],
+      }],
+
+      '/community/': [{
+        text: '总览',
+        link: '/community/',
+      }, {
         text: '教学系统 (Teach)',
         isGroup: true,
         children: [
-          '/plugins/teach/index.md',
-          '/plugins/teach/interp.md',
-          '/plugins/teach/prob.md',
-          '/plugins/teach/regexp.md',
-          '/plugins/teach/context.md',
-          // '/plugins/teach/prev-succ.md',
-          '/plugins/teach/misc.md',
-          '/plugins/teach/config.md',
+          '/community/dialogue/',
+          '/community/dialogue/interp.md',
+          '/community/dialogue/prob.md',
+          '/community/dialogue/regexp.md',
+          '/community/dialogue/context.md',
+          // '/community/dialogue/prev-succ.md',
+          '/community/dialogue/misc.md',
+          '/community/dialogue/config.md',
+        ],
+      }, {
+        text: '接入 GitHub (GitHub)',
+        isGroup: true,
+        children: [
+          '/community/github/index.md',
         ],
       }, {
         text: '执行脚本 (Eval)',
         isGroup: true,
         children: [
-          '/plugins/eval/index.md',
-          '/plugins/eval/addon.md',
-          '/plugins/eval/main.md',
-          '/plugins/eval/worker.md',
-          '/plugins/eval/sandbox.md',
-          '/plugins/eval/config.md',
+          '/community/eval/index.md',
+          '/community/eval/addon.md',
+          '/community/eval/main.md',
+          '/community/eval/worker.md',
+          '/community/eval/sandbox.md',
+          '/community/eval/config.md',
         ],
       }, ...devOnly({
         text: '冒险系统 (Adventure)',
         isGroup: true,
         children: [
-          '/plugins/adventure/index.md',
-          '/plugins/adventure/events.md',
+          '/community/adventure/index.md',
+          '/community/adventure/events.md',
         ],
       }), {
-        text: '其他官方插件',
+        text: '装饰器支持',
         isGroup: true,
         children: [
-          '/plugins/other/github.md',
-          '/plugins/other/mock.md',
-          '/plugins/other/puppeteer.md',
+          '/community/decorator/thirdeye.md',
+          '/community/decorator/schemastery.md',
+          '/community/decorator/nestjs.md',
         ],
       }],
 
@@ -347,12 +366,8 @@ module.exports = {
           '/about/releases/v4.2.md',
           '/about/releases/v4.3.md',
           '/about/releases/v4.4.md',
-        ],
-      }, {
-        text: '装饰器',
-        isGroup: true,
-        children: [
-          '/about/decorator/',
+          '/about/releases/v4.5.md',
+          '/about/releases/v4.6.md',
         ],
       }, {
         text: '贡献指南',
@@ -372,8 +387,7 @@ module.exports = {
     contributors: false,
 
     themePlugins: {
-      // only enable git plugin in production mode
-      git: process.env.NODE_ENV === 'production',
+      git: false,
     },
   },
 

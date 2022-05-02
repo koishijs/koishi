@@ -11,12 +11,13 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/koishijs/koishi.git"
+    "url": "git+https://github.com/koishijs/koishi.git",
+    "directory": "plugins/assets/local"
   },
   "bugs": {
     "url": "https://github.com/koishijs/koishi/issues"
   },
-  "homepage": "https://koishi.js.org/plugins/other/assets",
+  "homepage": "https://koishi.js.org/plugins/assets/local.html",
   "keywords": [
     "bot",
     "chatbot",
@@ -27,6 +28,6 @@
     "impl:assets"
   ],
   "peerDependencies": {
-    "koishi": "^4.5.2"
+    "koishi": "^4.6.2"
   }
 }

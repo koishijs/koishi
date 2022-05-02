@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-database-level",
   "description": "LevelDB implementation for Koishi",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "main": "lib/node.js",
   "module": "lib/browser.js",
   "typings": "lib/index.d.ts",
@@ -12,12 +12,13 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/koishijs/koishi.git"
+    "url": "git+https://github.com/koishijs/koishi.git",
+    "directory": "plugins/database/level"
   },
   "bugs": {
     "url": "https://github.com/koishijs/koishi/issues"
   },
-  "homepage": "https://koishi.js.org/plugins/other/database",
+  "homepage": "https://koishi.js.org/plugins/database/level.html",
   "keywords": [
     "bot",
     "chatbot",
@@ -29,18 +30,9 @@
     "impl:database"
   ],
   "peerDependencies": {
-    "koishi": "^4.5.2"
-  },
-  "devDependencies": {
-    "@koishijs/database-tests": "^1.1.0",
-    "@koishijs/plugin-mock": "^1.0.3",
-    "@types/abstract-leveldown": "^7.2.0",
-    "@types/level": "^6.0.1",
-    "@types/subleveldown": "^4.1.1"
+    "koishi": "^4.6.2"
   },
   "dependencies": {
-    "@koishijs/orm": "^1.0.1",
-    "level": "^7.0.1",
-    "subleveldown": "^6.0.1"
+    "@cosmotype/driver-level": "^1.0.1"
   }
 }

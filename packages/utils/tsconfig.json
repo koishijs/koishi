@@ -4,10 +4,7 @@
     "rootDir": "src",
     "outFile": "temp/index.d.ts",
   },
-  "references": [
-    { "path": "./src/logger" }
-  ],
   "include": [
-    "src"
-  ]
+    "src",
+  ],
 }

@@ -8,6 +8,7 @@
     "esModuleInterop": true,
     "moduleResolution": "node",
     "strictBindCallApply": true,
+    "jsx": "preserve",
     "types": [
       "@koishijs/client/global",
     ],

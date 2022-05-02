@@ -1,6 +1,9 @@
 name: Test
 
-on: [push]
+on:
+  - push
+  - pull_request
+  - workflow_dispatch
 
 env:
   CI: true
@@ -11,7 +14,7 @@ jobs:
 
     steps:
       - name: Check out
-        uses: actions/checkout@v1
+        uses: actions/checkout@v3
       - name: Set up Node
         uses: actions/setup-node@v2
         with:
@@ -46,7 +49,7 @@ jobs:
 
     steps:
       - name: Check out
-        uses: actions/checkout@v1
+        uses: actions/checkout@v3
       - name: Set up Node
         uses: actions/setup-node@v2
         with:
@@ -84,7 +87,7 @@ jobs:
 
     steps:
       - name: Check out
-        uses: actions/checkout@v1
+        uses: actions/checkout@v3
       - name: Set up Node
         uses: actions/setup-node@v2
         with:
@@ -112,49 +115,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node-version: [14, 16]
-
-    services:
-      mongo:
-        image: mongo
-        ports:
-          - 27017:27017
-        # https://stackoverflow.com/questions/66317184/github-actions-cannot-connect-to-mongodb-service
-        options: --health-cmd "mongo" --health-interval 10s --health-timeout 5s --health-retries 5
-      mysql57:
-        image: mysql:5.7
-        ports:
-          - 3306:3306
-        options: --health-cmd "mysqladmin ping" --health-interval 10s --health-timeout 5s --health-retries 5
-        env:
-          MYSQL_USER: koishi
-          MYSQL_DATABASE: test
-          MYSQL_PASSWORD: koishi@114514
-          MYSQL_ROOT_PASSWORD: password
-      maria10:
-        image: mariadb:10.5
-        ports:
-          - 3307:3306
-        options: --health-cmd "mysqladmin ping" --health-interval 10s --health-timeout 5s --health-retries 5
-        env:
-          MYSQL_USER: koishi
-          MYSQL_DATABASE: test
-          MYSQL_PASSWORD: koishi@114514
-          MYSQL_ROOT_PASSWORD: password
-      mysql8:
-        image: mysql:8
-        ports:
-          - 3308:3306
-        options: --health-cmd "mysqladmin ping" --health-interval 10s --health-timeout 5s --health-retries 5
-        env:
-          MYSQL_USER: koishi
-          MYSQL_DATABASE: test
-          MYSQL_PASSWORD: koishi@114514
-          MYSQL_ROOT_PASSWORD: password
+        node-version: [12, 14, 16, 18]
 
     steps:
       - name: Check out
-        uses: actions/checkout@v1
+        uses: actions/checkout@v3
       - name: Set up Node
         uses: actions/setup-node@v2
         with:
@@ -198,7 +163,7 @@ jobs:
 
     steps:
       - name: Check out
-        uses: actions/checkout@v1
+        uses: actions/checkout@v3
       - name: Create .npmrc
         run: 'echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" > .npmrc'
       - name: Set up Node
@@ -233,7 +198,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v1
+        uses: actions/checkout@v3
       - name: Set up Node
         uses: actions/setup-node@v2
         with:
@@ -254,6 +219,26 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           name: packages
+      - name: Checkout koishi-plugin-dialogue
+        uses: actions/checkout@v3
+        with:
+          repository: koishijs/koishi-plugin-dialogue
+          path: external/dialogue
+      - name: Checkout koishi-plugin-eval
+        uses: actions/checkout@v3
+        with:
+          repository: koishijs/koishi-plugin-eval
+          path: external/eval
+      - name: Checkout koishi-plugin-github
+        uses: actions/checkout@v3
+        with:
+          repository: koishijs/koishi-plugin-github
+          path: external/github
+      - name: Create Symlinks
+        run: |
+          ln -s ../../external/dialogue/docs ./docs/community/dialogue
+          ln -s ../../external/eval/docs ./docs/community/eval
+          ln -s ../../external/github/docs ./docs/community/github
       - name: Build
         run: yarn docs build
       - name: Deploy
@@ -274,7 +259,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v1
+        uses: actions/checkout@v3
       - name: Set up Node
         uses: actions/setup-node@v2
         with:

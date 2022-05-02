@@ -1,8 +1,7 @@
 import { App, Channel } from 'koishi'
 import * as broadcast from '@koishijs/plugin-broadcast'
 import mock from '@koishijs/plugin-mock'
-import memory from '@koishijs/plugin-database-memory'
-import jest from 'jest-mock'
+import * as jest from 'jest-mock'
 import { expect } from 'chai'
 
 const app = new App({
@@ -10,7 +9,7 @@ const app = new App({
 })
 
 app.plugin(mock, { selfIds: ['514', '114'] })
-app.plugin(memory)
+app.plugin('database-memory')
 app.plugin(broadcast)
 
 const client = app.mock.client('123')

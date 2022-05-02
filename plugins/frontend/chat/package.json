@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-chat",
   "description": "Display and respond to messages for Koishi",
-  "version": "1.2.3",
+  "version": "1.3.0",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -12,12 +12,13 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/koishijs/koishi.git"
+    "url": "git+https://github.com/koishijs/koishi.git",
+    "directory": "plugins/frontend/chat"
   },
   "bugs": {
     "url": "https://github.com/koishijs/koishi/issues"
   },
-  "homepage": "https://koishi.js.org/plugins/other/chat",
+  "homepage": "https://koishi.js.org/plugins/console/chat.html",
   "keywords": [
     "bot",
     "chatbot",
@@ -28,10 +29,10 @@
     "optional:console"
   ],
   "peerDependencies": {
-    "koishi": "^4.5.2"
+    "koishi": "^4.6.2"
   },
   "devDependencies": {
-    "@koishijs/client": "^3.2.4",
-    "@koishijs/plugin-console": "^3.2.5"
+    "@koishijs/client": "^3.2.9",
+    "@koishijs/plugin-console": "^3.2.9"
   }
 }

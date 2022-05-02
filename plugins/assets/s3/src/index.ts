@@ -1,12 +1,6 @@
 import { Assets, Context, Schema } from 'koishi'
 import { ListObjectsCommand, PutObjectCommand, S3Client, S3ClientConfig } from '@aws-sdk/client-s3'
 
-declare module 'koishi' {
-  interface Modules {
-    'assets-s3': typeof import('.')
-  }
-}
-
 class S3Assets extends Assets {
   private s3: S3Client
 

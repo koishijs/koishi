@@ -1,4 +1,5 @@
-import { defineProperty, isType, noop } from './misc'
+import { isType } from './misc'
+import { defineProperty, noop } from 'cosmokit'
 
 const immutable = ['number', 'string', 'bigint', 'boolean', 'symbol', 'function']
 const builtin = ['Date', 'RegExp', 'Set', 'Map', 'WeakSet', 'WeakMap', 'Array']

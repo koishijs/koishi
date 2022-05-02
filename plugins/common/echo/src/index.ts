@@ -13,14 +13,18 @@ export function apply(ctx: Context) {
     .option('anonymous', '-a', { authority: 3 })
     .option('forceAnonymous', '-A', { authority: 3 })
     .option('escape', '-e', { authority: 3 })
+    .option('unescape', '-E', { authority: 3 })
     .option('user', '-u [user:user]', { authority: 3 })
     .option('channel', '-c [channel:channel]', { authority: 3 })
     .option('guild', '-g [guild:string]', { authority: 3 })
     .action(async ({ options, session }, message) => {
       if (!message) return session.text('.expect-text')
 
-      if (options.escape) {
+      if (options.unescape) {
         message = segment.unescape(message)
+      }
+      if (options.escape) {
+        message = segment.escape(message)
       }
 
       if (options.forceAnonymous) {

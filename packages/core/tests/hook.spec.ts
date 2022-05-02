@@ -1,7 +1,7 @@
 import { App, Middleware, Context, sleep, noop, Logger, Next } from 'koishi'
 import { expect } from 'chai'
 import mock from '@koishijs/plugin-mock'
-import jest from 'jest-mock'
+import * as jest from 'jest-mock'
 
 const app = new App().plugin(mock)
 

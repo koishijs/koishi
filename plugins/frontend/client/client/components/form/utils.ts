@@ -1,6 +1,7 @@
-import Schema, { clone } from 'schemastery'
+import Schema from 'schemastery'
+import { clone } from 'cosmokit'
 
-export * from 'schemastery'
+export * from 'cosmokit'
 export { Schema }
 
 const primitive = ['string', 'number', 'boolean']

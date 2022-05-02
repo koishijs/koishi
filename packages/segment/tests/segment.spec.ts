@@ -1,6 +1,8 @@
 import { segment } from 'koishi'
-import { expect } from 'chai'
-import {} from 'chai-shape'
+import { expect, use } from 'chai'
+import shape from 'chai-shape'
+
+use(shape)
 
 describe('Segment API', () => {
   it('segment.escape()', () => {
