@@ -50,7 +50,7 @@ export function adaptMessage(meta: DC.Message, session: Partial<Session> = {}) {
   session.content = ''
   if (meta.content) {
     session.content = meta.content
-      .replace(/<@!?(\d{17,19})>/g, (_, id) => {
+      .replace(/<@[!&](.+?)>/g, (_, id) => {
         if (meta.mention_roles.includes(id)) {
           return segment('at', { role: id })
         } else {
