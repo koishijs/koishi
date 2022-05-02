@@ -7,7 +7,6 @@ import spawn from 'cross-spawn'
 class MarketProvider extends DataService<Dict<MarketProvider.Data>> {
   /** https://github.com/npm/registry/blob/master/docs/REGISTRY-API.md */
   private http: Quester
-  private registry: string
   private timestamp = 0
   private fullCache: Dict<MarketProvider.Data> = {}
   private tempCache: Dict<MarketProvider.Data> = {}
@@ -31,9 +30,9 @@ class MarketProvider extends DataService<Dict<MarketProvider.Data>> {
   }
 
   async prepare() {
-    const { registry } = this.config
-    if (registry === '') {
-      this.config.registry = await new Promise<string>((resolve, reject) => {
+    let { registry } = this.config
+    if (!registry) {
+      registry = await new Promise<string>((resolve, reject) => {
         let stdout = ''
         const agent = which()
         const key = (agent?.name === 'yarn' && !agent?.version.startsWith('1.')) ? 'npmRegistryServer' : 'registry'
@@ -49,7 +48,7 @@ class MarketProvider extends DataService<Dict<MarketProvider.Data>> {
       })
     }
     this.http = this.ctx.http.extend({
-      endpoint: this.config.registry.trim(),
+      endpoint: registry.trim(),
     })
 
     await scan({
@@ -77,7 +76,7 @@ namespace MarketProvider {
   }
 
   export const Config = Schema.object({
-    registry: Schema.string().description('用于插件市场搜索和下载的 registry，需要支持搜索功能').default(''),
+    registry: Schema.string().description('用于插件市场搜索和下载的 registry。').default(''),
   }).description('插件市场设置')
 
   export interface Data extends Omit<AnalyzedPackage, 'versions'> {
