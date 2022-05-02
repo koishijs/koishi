@@ -45,7 +45,7 @@ export const Config: Schema<Config> = Schema.intersect([
   MarketProvider.Config,
 ])
 
-export function apply(ctx: Context, config: Config = { registry: '' }) {
+export function apply(ctx: Context, config: Config) {
   if (!ctx.loader.writable) {
     return ctx.logger('manager').warn('manager is only available for json/yaml config file')
   }

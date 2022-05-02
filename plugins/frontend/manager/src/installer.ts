@@ -88,7 +88,10 @@ class Installer extends DataService<Dict<string>> {
   installDep = async (deps: Dict<string>) => {
     const agent = which()?.name || 'npm'
     const meta = await this.override(deps)
-    const args: string[] = agent === 'yarn' ? [] : ['install']
+    const args: string[] = []
+    if (agent === 'yarn') args.push('install')
+    const registry = this.ctx['console.market'].config.registry
+    if (registry !== '') args.push('--registry=' + registry)
     const code = await this.exec(agent, args)
     if (!code) {
       this.metaTask = Promise.resolve(meta)

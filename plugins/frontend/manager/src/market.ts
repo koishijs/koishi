@@ -12,9 +12,8 @@ class MarketProvider extends DataService<Dict<MarketProvider.Data>> {
   private fullCache: Dict<MarketProvider.Data> = {}
   private tempCache: Dict<MarketProvider.Data> = {}
 
-  constructor(ctx: Context, private config: MarketProvider.Config) {
+  constructor(ctx: Context, public config: MarketProvider.Config) {
     super(ctx, 'market', { authority: 4 })
-    this.registry = config.registry
   }
 
   async start() {
@@ -32,8 +31,9 @@ class MarketProvider extends DataService<Dict<MarketProvider.Data>> {
   }
 
   async prepare() {
-    if (this.registry === '') {
-      this.registry = await new Promise<string>((resolve, reject) => {
+    const { registry } = this.config
+    if (registry === '') {
+      this.config.registry = await new Promise<string>((resolve, reject) => {
         let stdout = ''
         const agent = which()
         const key = (agent?.name === 'yarn' && !agent?.version.startsWith('1.')) ? 'npmRegistryServer' : 'registry'
@@ -49,7 +49,7 @@ class MarketProvider extends DataService<Dict<MarketProvider.Data>> {
       })
     }
     this.http = this.ctx.http.extend({
-      endpoint: this.registry.trim(),
+      endpoint: this.config.registry.trim(),
     })
 
     await scan({
@@ -77,7 +77,7 @@ namespace MarketProvider {
   }
 
   export const Config = Schema.object({
-    registry: Schema.string().description('插件市场查询的 registry，需要支持搜索功能').default(''),
+    registry: Schema.string().description('用于插件市场搜索和下载的 registry，需要支持搜索功能').default(''),
   }).description('插件市场设置')
 
   export interface Data extends Omit<AnalyzedPackage, 'versions'> {
