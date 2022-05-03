@@ -121,7 +121,7 @@ class HttpService extends DataService<string[]> {
       server: {
         middlewareMode: true,
         fs: {
-          strict: true,
+          strict: false,
         },
       },
       plugins: [vue()],

@@ -329,6 +329,11 @@ module.exports = {
 
   bundler: viteBundler({
     viteOptions: {
+      server: {
+        fs: {
+          strict: false,
+        },
+      },
       plugins: [
         require('@rollup/plugin-yaml')(),
       ],
