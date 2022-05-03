@@ -82,7 +82,7 @@ export default class Sandbox extends Adapter {
         content,
         channelId: channel,
         guildId: channel,
-        selfId: 'sandbox',
+        selfId: 'koishi',
         type: 'message',
         subtype: channel === '@' + user ? 'private' : 'group',
         author: {
