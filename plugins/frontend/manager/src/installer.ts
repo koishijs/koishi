@@ -90,7 +90,7 @@ class Installer extends DataService<Dict<string>> {
     const meta = await this.override(deps)
     const args: string[] = []
     if (agent === 'yarn') args.push('install')
-    const registry = this.ctx['console.market'].config.registry
+    const registry = this.ctx.console.market.config.registry
     if (registry) args.push('--registry=' + registry)
     const code = await this.exec(agent, args)
     if (!code) {
