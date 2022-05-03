@@ -12,7 +12,7 @@ $white: #ffffff;
   --card-border: var(--card-bg);
   --card-shadow: 0 6px 10px -4px rgb(0 0 0 / 15%);
   --loading-mask-bg: #f2f3f5bf;
-  --color-transition: color 0.3s ease, border-color 0.3s ease, background-color 0.3s ease, opacity 0.3s ease;
+  --color-transition: color 0.3s ease, border-color 0.3s ease, background-color 0.3s ease, box-shadow 0.3s ease, opacity 0.3s ease;
 
   @mixin apply-color($name, $base) {
     --#{$name}: #{$base};
@@ -67,14 +67,13 @@ html.dark {
   --el-color-white: var(--bg1);
   --el-color-black: var(--fg1);
   --el-bg-color: var(--bg0);
+  --el-bg-color-overlay: var(--bg0);
+  --el-fill-color-blank: transparent;
+  --el-fill-color-light: var(--page-bg);
 }
 
 .k-icon {
   transition: color 0.3s ease, background-color 0.3s ease;
-}
-
-.el-checkbox__label {
-  transition: color 0.3s ease;
 }
 
 .el-dropdown-menu {
@@ -95,16 +94,15 @@ html.dark {
   }
 }
 
-.el-input-number__decrease, .el-input-number__increase {
-  --el-fill-color-light: transparent;
-}
-
 .el-input .k-icon {
   height: 0.75rem;
 }
 
-.el-input__wrapper {
-  --el-input-bg-color: transparent;
+.el-input__wrapper,
+.el-input-number__decrease,
+.el-input-number__increase,
+.el-checkbox__label {
+  transition: var(--color-transition);
 }
 
 .el-input__prefix-inner, .el-input__suffix-inner {

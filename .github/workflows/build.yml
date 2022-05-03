@@ -21,18 +21,20 @@ jobs:
       - id: cache
         name: Yarn Cache Dir
         run: echo "::set-output name=value::$(yarn cache dir)"
-      - name: Install
-        run: yarn
-      - name: Prepare Lockfile
+      - name: Restore Lockfile
         uses: actions/cache@v2
         with:
           path: yarn.lock
-          key: yarn-lock-${{ runner.os }}-${{ github.sha }}
-      - name: Prepare Cache
+          key: yarn-lock-${{ github.sha }}
+          restore-keys: yarn-lock-
+      - name: Restore Cache
         uses: actions/cache@v2
         with:
           path: ${{ steps.cache.outputs.value }}
-          key: yarn-cache-${{ runner.os }}-${{ github.sha }}-node-16
+          key: yarn-cache-${{ github.sha }}-node-16
+          restore-keys: yarn-cache-
+      - name: Install
+        run: yarn
 
     outputs:
       cache-dir: ${{ steps.cache.outputs.value }}
@@ -53,12 +55,12 @@ jobs:
         uses: actions/cache@v2
         with:
           path: yarn.lock
-          key: yarn-lock-${{ runner.os }}-${{ github.sha }}
+          key: yarn-lock-${{ github.sha }}
       - name: Restore Cache
         uses: actions/cache@v2
         with:
           path: ${{ needs.prepare.outputs.cache-dir }}
-          key: yarn-cache-${{ runner.os }}-${{ github.sha }}-node-16
+          key: yarn-cache-${{ github.sha }}-node-16
       - name: Install
         run: yarn
       - name: Build JS
@@ -92,12 +94,12 @@ jobs:
         uses: actions/cache@v2
         with:
           path: yarn.lock
-          key: yarn-lock-${{ runner.os }}-${{ github.sha }}
+          key: yarn-lock-${{ github.sha }}
       - name: Restore Cache
         uses: actions/cache@v2
         with:
           path: ${{ needs.prepare.outputs.cache-dir }}
-          key: yarn-cache-${{ runner.os }}-${{ github.sha }}-node-16
+          key: yarn-cache-${{ github.sha }}-node-16
       - name: Install
         run: yarn
       - name: Lint
@@ -125,14 +127,13 @@ jobs:
         uses: actions/cache@v2
         with:
           path: yarn.lock
-          key: yarn-lock-${{ runner.os }}-${{ github.sha }}
+          key: yarn-lock-${{ github.sha }}
       - name: Restore Cache
         uses: actions/cache@v2
         with:
           path: ${{ needs.prepare.outputs.cache-dir }}
-          key: yarn-cache-${{ runner.os }}-${{ github.sha }}-node-${{ matrix.node-version }}
-          restore-keys: |
-            yarn-lock-${{ runner.os }}-${{ github.sha }}-node
+          key: yarn-cache-${{ github.sha }}-node-${{ matrix.node-version }}
+          restore-keys: yarn-cache-${{ github.sha }}-node
       - name: Install
         run: yarn
       - name: Build JS
@@ -165,12 +166,12 @@ jobs:
         uses: actions/cache@v2
         with:
           path: yarn.lock
-          key: yarn-lock-${{ runner.os }}-${{ github.sha }}
+          key: yarn-lock-${{ github.sha }}
       - name: Restore Cache
         uses: actions/cache@v2
         with:
           path: ${{ needs.prepare.outputs.cache-dir }}
-          key: yarn-cache-${{ runner.os }}-${{ github.sha }}-node-16
+          key: yarn-cache-${{ github.sha }}-node-16
       - name: Install
         run: yarn
       - name: Download
@@ -226,12 +227,12 @@ jobs:
         uses: actions/cache@v2
         with:
           path: yarn.lock
-          key: yarn-lock-${{ runner.os }}-${{ github.sha }}
+          key: yarn-lock-${{ github.sha }}
       - name: Restore Cache
         uses: actions/cache@v2
         with:
           path: ${{ needs.prepare.outputs.cache-dir }}
-          key: yarn-cache-${{ runner.os }}-${{ github.sha }}-node-16
+          key: yarn-cache-${{ github.sha }}-node-16
       - name: Install
         run: yarn
       - name: Download

@@ -25,8 +25,12 @@ function render() {
 <style lang="scss">
 
 .k-markdown {
-  a {
+  a, code a {
     color: var(--active);
+
+    &:hover {
+      text-decoration: underline;
+    }
   }
 
   code {
