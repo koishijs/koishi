@@ -32,7 +32,7 @@ const { width, height } = useWindowSize()
 const config = useThemeLocaleData().value
 
 function getSidebarItems(route: string) {
-  return resolveArraySidebarItems(config.sidebar[route].filter(item => item.isGroup), 1)
+  return resolveArraySidebarItems(config.sidebar[route].filter(item => item.children), 1)
 }
 
 </script>

@@ -1,4 +1,3 @@
-import { execSync } from 'child_process'
 import { resolve } from 'path'
 import { remove as removeDiacritics } from 'diacritics'
 import { readdirSync } from 'fs'
@@ -17,6 +16,10 @@ for (const dirent of dirents) {
   if (!dirent.isDirectory() && !dirent.isSymbolicLink()) continue
   communitySidebar.push(require(communityFolder + '/' + dirent.name))
 }
+
+const hash = process.env.GITHUB_SHA
+  ? ` (${process.env.GITHUB_SHA.slice(0, 7)})`
+  : ''
 
 module.exports = {
   base: '/',
@@ -47,7 +50,7 @@ module.exports = {
   theme: theme({
     logo: '/koishi.png',
     navbar: [{
-      text: `v4.x (${execSync('git log -1 --format=%h').toString().trim()})`,
+      text: 'v4.x' + hash,
       children: [{
         text: 'v3.x',
         link: 'https://koishi.js.org/v3/',

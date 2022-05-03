@@ -6,11 +6,10 @@ import popup from '@vuepress/plugin-pwa-popup'
 import container from '@vuepress/plugin-container'
 import docsearch from '@vuepress/plugin-docsearch'
 import zoom from '@vuepress/plugin-medium-zoom'
-import { redirect } from 'vuepress-plugin-redirect2'
 
 export default (options: DefaultThemeOptions): Theme => ({
   name: 'vuepress-theme-local',
-  extends: defaultTheme(),
+  extends: defaultTheme(options),
 
   layouts: {
     Layout: require.resolve('./layouts/Layout.vue'),

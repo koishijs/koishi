@@ -1,12 +1,11 @@
 name: Test
 
 on:
-  - push
-  - pull_request
-  - workflow_dispatch
-
-env:
-  CI: true
+  push:
+  pull_request:
+  workflow_dispatch:
+  schedule:
+    - cron: 30 1/6 * * *
 
 jobs:
   prepare:
@@ -18,10 +17,7 @@ jobs:
       - name: Set up Node
         uses: actions/setup-node@v2
         with:
-          node-version: 14
-      - id: random
-        name: Generate UUID
-        run: echo "::set-output name=value::$(openssl rand -hex 10)"
+          node-version: 16
       - id: cache
         name: Yarn Cache Dir
         run: echo "::set-output name=value::$(yarn cache dir)"
@@ -31,15 +27,14 @@ jobs:
         uses: actions/cache@v2
         with:
           path: yarn.lock
-          key: yarn-lock-${{ runner.os }}-${{ steps.random.outputs.value }}
+          key: yarn-lock-${{ runner.os }}-${{ github.sha }}
       - name: Prepare Cache
         uses: actions/cache@v2
         with:
           path: ${{ steps.cache.outputs.value }}
-          key: yarn-cache-${{ runner.os }}-${{ steps.random.outputs.value }}-node-14
+          key: yarn-cache-${{ runner.os }}-${{ github.sha }}-node-16
 
     outputs:
-      random-uuid: ${{ steps.random.outputs.value }}
       cache-dir: ${{ steps.cache.outputs.value }}
 
   build:
@@ -53,17 +48,17 @@ jobs:
       - name: Set up Node
         uses: actions/setup-node@v2
         with:
-          node-version: 14
+          node-version: 16
       - name: Restore Lockfile
         uses: actions/cache@v2
         with:
           path: yarn.lock
-          key: yarn-lock-${{ runner.os }}-${{ needs.prepare.outputs.random-uuid }}
+          key: yarn-lock-${{ runner.os }}-${{ github.sha }}
       - name: Restore Cache
         uses: actions/cache@v2
         with:
           path: ${{ needs.prepare.outputs.cache-dir }}
-          key: yarn-cache-${{ runner.os }}-${{ needs.prepare.outputs.random-uuid }}-node-14
+          key: yarn-cache-${{ runner.os }}-${{ github.sha }}-node-16
       - name: Install
         run: yarn
       - name: Build JS
@@ -81,6 +76,7 @@ jobs:
             plugins
 
   lint:
+    if: ${{ github.event_name == 'push' || github.event_name == 'pull_request' }}
     runs-on: ubuntu-latest
     needs:
       - prepare
@@ -91,23 +87,24 @@ jobs:
       - name: Set up Node
         uses: actions/setup-node@v2
         with:
-          node-version: 14
+          node-version: 16
       - name: Restore Lockfile
         uses: actions/cache@v2
         with:
           path: yarn.lock
-          key: yarn-lock-${{ runner.os }}-${{ needs.prepare.outputs.random-uuid }}
+          key: yarn-lock-${{ runner.os }}-${{ github.sha }}
       - name: Restore Cache
         uses: actions/cache@v2
         with:
           path: ${{ needs.prepare.outputs.cache-dir }}
-          key: yarn-cache-${{ runner.os }}-${{ needs.prepare.outputs.random-uuid }}-node-14
+          key: yarn-cache-${{ runner.os }}-${{ github.sha }}-node-16
       - name: Install
         run: yarn
       - name: Lint
         run: yarn lint
 
   unit-test:
+    if: ${{ github.event_name == 'push' || github.event_name == 'pull_request' }}
     runs-on: ubuntu-latest
     needs:
       - prepare
@@ -128,20 +125,20 @@ jobs:
         uses: actions/cache@v2
         with:
           path: yarn.lock
-          key: yarn-lock-${{ runner.os }}-${{ needs.prepare.outputs.random-uuid }}
+          key: yarn-lock-${{ runner.os }}-${{ github.sha }}
       - name: Restore Cache
         uses: actions/cache@v2
         with:
           path: ${{ needs.prepare.outputs.cache-dir }}
-          key: yarn-cache-${{ runner.os }}-${{ needs.prepare.outputs.random-uuid }}-node-${{ matrix.node-version }}
+          key: yarn-cache-${{ runner.os }}-${{ github.sha }}-node-${{ matrix.node-version }}
           restore-keys: |
-            yarn-lock-${{ runner.os }}-${{ needs.prepare.outputs.random-uuid }}-node
+            yarn-lock-${{ runner.os }}-${{ github.sha }}-node
       - name: Install
         run: yarn
       - name: Build JS
         run: yarn compile
       - name: Unit Test
-        run: yarn test:json --mongo-ports=27017 --mysql-ports=3306,3307,3308
+        run: yarn test:json
       - name: Report Coverage
         if: ${{ matrix.node-version == 14 }}
         uses: codecov/codecov-action@v1
@@ -149,45 +146,6 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
           file: ./coverage/coverage-final.json
           name: codecov
-
-  publish:
-    if: ${{ github.ref == 'refs/heads/master' }}
-    runs-on: ubuntu-latest
-    needs:
-      - prepare
-      - build
-      - unit-test
-
-    env:
-      GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
-
-    steps:
-      - name: Check out
-        uses: actions/checkout@v3
-      - name: Create .npmrc
-        run: 'echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" > .npmrc'
-      - name: Set up Node
-        uses: actions/setup-node@v2
-        with:
-          node-version: 14
-      - name: Restore Lockfile
-        uses: actions/cache@v2
-        with:
-          path: yarn.lock
-          key: yarn-lock-${{ runner.os }}-${{ needs.prepare.outputs.random-uuid }}
-      - name: Restore Cache
-        uses: actions/cache@v2
-        with:
-          path: ${{ needs.prepare.outputs.cache-dir }}
-          key: yarn-cache-${{ runner.os }}-${{ needs.prepare.outputs.random-uuid }}-node-14
-      - name: Install
-        run: yarn
-      - name: Download
-        uses: actions/download-artifact@v3
-        with:
-          name: packages
-      - name: Publish
-        run: yarn pub
 
   docs:
     if: ${{ github.ref == 'refs/heads/master' }}
@@ -202,17 +160,17 @@ jobs:
       - name: Set up Node
         uses: actions/setup-node@v2
         with:
-          node-version: 14
+          node-version: 16
       - name: Restore Lockfile
         uses: actions/cache@v2
         with:
           path: yarn.lock
-          key: yarn-lock-${{ runner.os }}-${{ needs.prepare.outputs.random-uuid }}
+          key: yarn-lock-${{ runner.os }}-${{ github.sha }}
       - name: Restore Cache
         uses: actions/cache@v2
         with:
           path: ${{ needs.prepare.outputs.cache-dir }}
-          key: yarn-cache-${{ runner.os }}-${{ needs.prepare.outputs.random-uuid }}-node-14
+          key: yarn-cache-${{ runner.os }}-${{ github.sha }}-node-16
       - name: Install
         run: yarn
       - name: Download
@@ -263,17 +221,17 @@ jobs:
       - name: Set up Node
         uses: actions/setup-node@v2
         with:
-          node-version: 14
+          node-version: 16
       - name: Restore Lockfile
         uses: actions/cache@v2
         with:
           path: yarn.lock
-          key: yarn-lock-${{ runner.os }}-${{ needs.prepare.outputs.random-uuid }}
+          key: yarn-lock-${{ runner.os }}-${{ github.sha }}
       - name: Restore Cache
         uses: actions/cache@v2
         with:
           path: ${{ needs.prepare.outputs.cache-dir }}
-          key: yarn-cache-${{ runner.os }}-${{ needs.prepare.outputs.random-uuid }}-node-14
+          key: yarn-cache-${{ runner.os }}-${{ github.sha }}-node-16
       - name: Install
         run: yarn
       - name: Download
