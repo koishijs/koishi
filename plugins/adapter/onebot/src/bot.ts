@@ -143,6 +143,18 @@ export class OneBotBot extends Bot<BotConfig> {
     return data.map(OneBot.adaptGuildMember)
   }
 
+  async kickGuildMember(guildId: string, userId: string, permanent?: boolean) {
+    return this.internal.setGroupKick(guildId, userId, permanent)
+  }
+
+  async muteGuildMember(guildId: string, userId: string, duration: number) {
+    return this.internal.setGroupBan(guildId, userId, duration / 1000)
+  }
+
+  async muteChannel(channelId: string, guildId?: string, enable?: boolean) {
+    return this.internal.setGroupWholeBan(channelId, enable)
+  }
+
   protected async sendGuildMessage(guildId: string, channelId: string, content: string) {
     const session = await this.session({ content, subtype: 'group', guildId, channelId })
     if (!session?.content) return []

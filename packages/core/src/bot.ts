@@ -171,10 +171,13 @@ export namespace Bot {
     // guild member
     getGuildMember(guildId: string, userId: string): Promise<GuildMember>
     getGuildMemberList(guildId: string): Promise<GuildMember[]>
+    kickGuildMember(guildId: string, userId: string, permanent?: boolean): Promise<void>
+    muteGuildMember(guildId: string, userId: string, duration: number, reason?: string): Promise<void>
 
     // channel
     getChannel(channelId: string, guildId?: string): Promise<Channel>
     getChannelList(guildId: string): Promise<Channel[]>
+    muteChannel(channelId: string, guildId?: string, enable?: boolean): Promise<void>
 
     // request
     handleFriendRequest(messageId: string, approve: boolean, comment?: string): Promise<void>
