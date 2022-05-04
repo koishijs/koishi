@@ -1,4 +1,4 @@
-import { Adapter, Bot, omit, Quester, Schema } from 'koishi'
+import { Adapter, Bot, Quester, Schema } from 'koishi'
 import { AdapterConfig } from './utils'
 
 export interface BotConfig extends Bot.BaseConfig, Quester.Config {
@@ -7,12 +7,16 @@ export interface BotConfig extends Bot.BaseConfig, Quester.Config {
   appSecret: string
 }
 
-export const BotConfig = Schema.object({
-  endpoint: Schema.string().required().description('机器人的终结点。'),
-  appId: Schema.string().required().description('机器人的应用 ID。'),
-  appSecret: Schema.string().role('secret').required().description('机器人的应用密钥。'),
-  ...omit(Quester.Config.dict, ['endpoint']),
-})
+export const BotConfig = Schema.intersect([
+  Schema.object({
+    endpoint: Schema.string().required().description('机器人的终结点。'),
+    appId: Schema.string().required().description('机器人的应用 ID。'),
+    appSecret: Schema.string().role('secret').required().description('机器人的应用密钥。'),
+  }),
+  Quester.createSchema({
+    endpoint: 'https://open.feishu.cn/open-apis/',
+  }),
+])
 
 export class FeishuBot extends Bot<BotConfig> {
   static schema = AdapterConfig
