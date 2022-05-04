@@ -187,9 +187,7 @@ export async function adaptSession(bot: DiscordBot, input: DC.GatewayPayload) {
     session.guildId = input.d.guild_id
     session.subtype = input.d.guild_id ? 'group' : 'private'
     session.channelId = input.d.id
-    console.log(input.d)
   } else {
-    console.log(input)
     return
   }
   return new Session(bot, session)

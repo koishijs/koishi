@@ -45,13 +45,12 @@ export class MessageDatabase extends Service {
   set #queue(arr) {
     const ids = arr.map(o => o.cid)
     this.#_queue = arr.filter(({ cid }, index) => !ids.includes(cid, index + 1))
-    // logger.debug('set queue %o', this.#_queue)
   }
 
   async start() {
     this.ctx.model.extend('message', {
       id: 'string',
-      content: 'string',
+      content: 'text',
       platform: 'string',
       guildId: 'string',
       messageId: 'string',
@@ -70,7 +69,13 @@ export class MessageDatabase extends Service {
 
     // 如果是一个 platform 有多个 bot, bot 状态变化, 频道状态变化待解决
     this.ctx.on('message', this.#onMessage.bind(this))
-    this.ctx.on('send', this.#onMessage.bind(this))
+    this.ctx.on('send', async (session) => {
+      const msg = await session.bot.getMessage(session.channelId, session.messageId)
+      if (msg) {
+        session.content = msg.content
+      }
+      await this.#onMessage(session)
+    })
     this.ctx.on('message-deleted', async (session) => {
       await this.ctx.database.set('message', {
         messageId: session.messageId,
@@ -89,12 +94,25 @@ export class MessageDatabase extends Service {
         lastUpdated: new Date(),
       })
     })
+    this.ctx.on('channel-added', async (session) => {
+      // 有调用过同步 API
+      if (!this.inSyncQueue(session.platform, session.channelId) && this.#status[session.platform + ':' + session.channelId] === ChannelStatus.SYNCED) {
+        this.addToSyncQueue(session.bot, session.guildId, session.channelId)
+      }
+    })
+    this.ctx.on('channel-deleted', async (session) => {
+      delete this.#messageRecord[session.cid]
+    })
     this.#queueRunning = true
     setTimeout(this.#runQueue.bind(this), 1)
   }
 
   async stop() {
     this.#queueRunning = false
+  }
+
+  inSyncQueue(platform: string, channelId: string) {
+    return this.#queue.filter(v => v.cid === platform + ':' + channelId).length > 0
   }
 
   addToSyncQueue(bot: Bot, guildId: string, channelId: string) {
@@ -104,7 +122,7 @@ export class MessageDatabase extends Service {
     }))
   }
 
-  removeFromSyncQueue(bot: Bot, guildId: string, channelId: string) {
+  removeFromSyncQueue(bot: Bot, channelId: string) {
     delete this.#status[bot.platform + ':' + channelId]
     this.#queue = this.#queue.filter(v => v.cid !== (bot.platform + ':' + channelId))
     // 如果正在同步的话 怎么处理呢
@@ -197,6 +215,8 @@ export class MessageDatabase extends Service {
       const latestMessages = await bot.getChannelMessageHistory(channelId)
       to = latestMessages[latestMessages.length - 1].messageId
       toMessage = latestMessages[latestMessages.length - 1]
+    } else {
+      toMessage = await bot.getMessage(channelId, to)
     }
     logger.info('from to %o %o', from, to)
     let nowMessageId = to
@@ -284,7 +304,8 @@ export class MessageDatabase extends Service {
   }
 
   async #onMessage(session: Session) {
-    // @TODO segments' base64://
+    const { assignee } = await session.observeChannel(['assignee'])
+    if (assignee !== session.selfId) return
     if (this.#status[session.cid] === ChannelStatus.SYNCED) {
       logger.debug('on message, cid: %s, id: %s', session.cid, session.messageId)
       await this.ctx.database.create('message', MessageDatabase.adaptMessage(session))
