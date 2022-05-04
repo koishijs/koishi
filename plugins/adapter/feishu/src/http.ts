@@ -1,4 +1,4 @@
-import { Adapter, Context, Logger, omit, Quester, Schema } from 'koishi'
+import { Adapter, Context, Logger } from 'koishi'
 import { BotConfig, FeishuBot } from './bot'
 import { BaseEvent } from './types'
 import { AdapterConfig, Cipher } from './utils'
@@ -6,11 +6,7 @@ import { AdapterConfig, Cipher } from './utils'
 const logger = new Logger('feishu')
 
 export class HttpServer extends Adapter<BotConfig, AdapterConfig> {
-  static schema: Schema<BotConfig> = Schema.object({
-    token: Schema.string().role('secret'),
-    endpoint: Schema.string().role('url').description('要连接的 Feishu 服务器地址。').required(),
-    ...omit(Quester.Config.dict, ['endpoint']),
-  })
+  static schema = BotConfig
 
   public bots: FeishuBot[]
 
@@ -42,7 +38,7 @@ export class HttpServer extends Adapter<BotConfig, AdapterConfig> {
       }
 
       // try to decrypt message first if encryptKey is set
-      const body = this.tryDecrypt(ctx.request.body)
+      const body = this.tryDecryptBody(ctx.request.body)
       // respond challenge message
       // https://open.feishu.cn/document/ukTMukTMukTM/uYDNxYjL2QTM24iN0EjN/event-subscription-configure-/request-url-configuration-case
       if (
@@ -55,7 +51,7 @@ export class HttpServer extends Adapter<BotConfig, AdapterConfig> {
       }
 
       // dispatch message
-      this.dispatchSession(this.tryDecrypt(ctx.request.body))
+      this.dispatchSession(this.tryDecryptBody(ctx.request.body))
     })
   }
 
@@ -74,11 +70,15 @@ export class HttpServer extends Adapter<BotConfig, AdapterConfig> {
     }
   }
 
-  private tryDecrypt(body: any) {
+  private tryDecryptBody(body: any) {
     // try to decrypt message if encryptKey is set
     // https://open.feishu.cn/document/ukTMukTMukTM/uYDNxYjL2QTM24iN0EjN/event-subscription-configure-/encrypt-key-encryption-configuration-case
     if (this.cipher && typeof body.encrypt === 'string') {
       return JSON.parse(this.cipher.decrypt(body.encrypt))
+    }
+
+    if (typeof body.encrypt === 'string' && !this.config.encryptKey) {
+      logger.error('encryptKey is not set, but received encrypted message: %o', body)
     }
 
     return body
