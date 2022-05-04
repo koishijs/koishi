@@ -2,8 +2,8 @@
   <k-card class="market-view">
     <template #header>
       {{ data.shortname }}
-      <a v-if="repo" :href="data.links.repository" target="_blank" rel="noopener noreferrer">
-        <k-icon :name="repo"></k-icon>
+      <a v-if="data.links.homepage" :href="data.links.homepage" target="_blank" rel="noopener noreferrer">
+        <k-icon name="link"></k-icon>
       </a>
       <k-button v-if="store.packages[data.name]" solid type="success" class="right" @click="router.push('/settings/' + data.name)">配置</k-button>
       <k-button v-else-if="!config.override[data.name]" solid class="right" @click="addFavorite(data.name)">添加</k-button>
@@ -61,13 +61,6 @@ const props = defineProps({
 
 const meta = computed(() => getMixedMeta(props.data.name))
 
-const repo = computed(() => {
-  const { repository = '' } = props.data.links
-  if (repository.startsWith('https://github.com')) {
-    return 'github'
-  }
-})
-
 const email = computed(() => props.data.author?.email)
 
 const router = useRouter()
@@ -102,20 +95,15 @@ const router = useRouter()
     margin-top: 1.25rem;
   }
 
-  .k-badge {
-    cursor: pointer;
-    user-select: none;
-  }
-
   header, footer {
     flex-shrink: 0;
   }
 
   header .k-icon {
     color: var(--fg1);
-    margin-left: 0.5rem;
-    height: 1.25rem;
-    vertical-align: -3px;
+    margin-left: 0.6rem;
+    height: 1rem;
+    vertical-align: -1px;
     transition: color 0.3s ease;
   }
 

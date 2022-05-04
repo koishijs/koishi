@@ -12,12 +12,13 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/koishijs/koishi.git"
+    "url": "git+https://github.com/koishijs/koishi.git",
+    "directory": "plugins/frontend/status"
   },
   "bugs": {
     "url": "https://github.com/koishijs/koishi/issues"
   },
-  "homepage": "https://koishi.js.org/plugins/other/status",
+  "homepage": "https://koishi.js.org/plugins/console/status.html",
   "keywords": [
     "bot",
     "chatbot",
@@ -28,16 +29,16 @@
     "required:console"
   ],
   "peerDependencies": {
-    "@koishijs/plugin-console": "^3.2.6",
-    "koishi": "^4.6.0"
+    "@koishijs/plugin-console": "^3.2.9",
+    "koishi": "^4.6.2"
   },
   "devDependencies": {
-    "@koishijs/client": "^3.2.6",
-    "@koishijs/cli": "^4.6.0",
+    "@koishijs/client": "^3.2.9",
+    "@koishijs/cli": "^4.6.2",
     "echarts": "^5.3.2",
     "vue-echarts": "^6.0.2"
   },
   "dependencies": {
-    "systeminformation": "^5.11.9"
+    "systeminformation": "^5.11.14"
   }
 }

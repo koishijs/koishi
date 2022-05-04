@@ -2,7 +2,7 @@ import { App } from 'koishi'
 import { expect } from 'chai'
 import * as recall from '@koishijs/plugin-recall'
 import mock from '@koishijs/plugin-mock'
-import jest from 'jest-mock'
+import * as jest from 'jest-mock'
 import 'chai-shape'
 
 const app = new App()

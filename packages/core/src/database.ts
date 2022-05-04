@@ -5,6 +5,7 @@ import { Context } from './context'
 import ns from 'ns-require'
 
 export interface User {
+  // TODO v5: change to number
   id: string
   flag: number
   authority: number
@@ -75,6 +76,7 @@ export class DatabaseService extends Database<Tables> {
     super()
 
     this.extend('user', {
+      // TODO v5: change to number
       id: 'string(63)',
       name: 'string(63)',
       flag: 'unsigned(20)',

@@ -1,5 +1,0 @@
-version: 0.1
-
-commands:
-  - name: test
-    desc: 测试功能

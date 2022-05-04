@@ -29,9 +29,9 @@ internal:
 suggest:
   hint: 您要找的是不是{0}？
   command-prefix: ''
-  command-suffix: 发送空行或句号以使用推测的指令。
+  command-suffix: 发送句号以使用推测的指令。
   help-prefix: 指令未找到。
-  help-suffix: 发送空行或句号以使用推测的指令。
+  help-suffix: 发送句号以使用推测的指令。
 
 commands:
   help:

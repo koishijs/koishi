@@ -1,7 +1,7 @@
 import { expect } from 'chai'
 import { App, sleep, Session } from 'koishi'
 import mock, { DEFAULT_SELF_ID } from '@koishijs/plugin-mock'
-import jest from 'jest-mock'
+import * as jest from 'jest-mock'
 import * as verifier from '@koishijs/plugin-verifier'
 
 const app = new App().plugin(mock)

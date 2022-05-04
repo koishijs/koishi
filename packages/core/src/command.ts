@@ -178,8 +178,13 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
   option<K extends string, R>(name: K, desc: string, config: Argv.TypedOptionConfig<(source: string) => R>): Command<U, G, A, Extend<O, K, R>>
   option<K extends string, R extends string>(name: K, desc: string, config: Argv.TypedOptionConfig<R[]>): Command<U, G, A, Extend<O, K, R>>
   option<K extends string, D extends string>(name: K, desc: D, config?: Argv.OptionConfig): Command<U, G, A, Extend<O, K, Argv.OptionType<D>>>
-  option(name: string, desc: string, config: Argv.OptionConfig = {}) {
-    this._createOption(name, desc, config)
+  option(name: string, ...args: [Argv.OptionConfig?] | [string, Argv.OptionConfig?]) {
+    let desc = ''
+    if (typeof args[0] === 'string') {
+      desc = args.shift() as string
+    }
+    const config = args[0] as Argv.OptionConfig
+    this._createOption(name, desc, config || {})
     this._disposables?.push(() => this.removeOption(name))
     return this
   }

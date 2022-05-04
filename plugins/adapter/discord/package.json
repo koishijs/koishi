@@ -15,7 +15,8 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/koishijs/koishi.git"
+    "url": "git+https://github.com/koishijs/koishi.git",
+    "directory": "plugins/adapter/discord"
   },
   "bugs": {
     "url": "https://github.com/koishijs/koishi/issues"
@@ -29,7 +30,7 @@
     "impl:adapter"
   ],
   "peerDependencies": {
-    "koishi": "^4.6.0"
+    "koishi": "^4.6.2"
   },
   "devDependencies": {
     "@koishijs/plugin-mock": "^1.0.4",
@@ -41,6 +42,6 @@
     "es-aggregate-error": "^1.0.7",
     "file-type": "^16.5.3",
     "form-data": "^4.0.0",
-    "ws": "^8.5.0"
+    "ws": "^8.6.0"
   }
 }

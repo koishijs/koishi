@@ -1,4 +1,4 @@
-import { Driver, Keys } from 'koishi'
+import { Database, Keys } from 'koishi'
 import { message, send } from '@koishijs/client'
 
 export function serialize(obj: unknown): string {
@@ -35,7 +35,7 @@ export function deserialize(str: string): any {
   )
 }
 
-export async function sendQuery<K extends Keys<Driver, Function>>(name: K, ...args: Parameters<Driver[K]>): Promise<ReturnType<Driver[K]>> {
+export async function sendQuery<K extends Keys<Database, Function>>(name: K, ...args: Parameters<Database[K]>): Promise<ReturnType<Database[K]>> {
   return deserialize(await send(`database/${name}`, ...args.map(serialize) as any))
 }
 

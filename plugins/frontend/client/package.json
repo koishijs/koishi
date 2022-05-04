@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/client",
   "description": "Koishi Console Client",
-  "version": "3.2.6",
+  "version": "3.2.9",
   "main": "client/index.ts",
   "files": [
     "app",
@@ -16,12 +16,13 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/koishijs/koishi.git"
+    "url": "git+https://github.com/koishijs/koishi.git",
+    "directory": "plugins/frontend/client"
   },
   "bugs": {
     "url": "https://github.com/koishijs/koishi/issues"
   },
-  "homepage": "https://koishi.js.org/plugins/other/status.html",
+  "homepage": "https://koishi.js.org",
   "keywords": [
     "bot",
     "chatbot",
@@ -37,13 +38,13 @@
     "@vitejs/plugin-vue": "^2.3.1",
     "@vueuse/core": "^7.7.1",
     "cac": "^6.7.12",
-    "cosmokit": "^1.1.1",
-    "element-plus": "^2.1.8",
-    "marked": "^4.0.12",
-    "sass": "^1.49.11",
-    "schemastery": "^3.3.2",
-    "vite": "~2.5.10",
-    "vue": "^3.2.31",
+    "cosmokit": "^1.1.2",
+    "element-plus": "^2.1.11",
+    "marked": "^4.0.15",
+    "sass": "^1.51.0",
+    "schemastery": "^3.3.3",
+    "vite": "^2.9.7",
+    "vue": "^3.2.33",
     "vue-router": "^4.0.14"
   }
 }

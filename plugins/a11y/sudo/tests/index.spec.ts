@@ -1,11 +1,10 @@
 import { App } from 'koishi'
-import memory from '@koishijs/plugin-database-memory'
 import mock from '@koishijs/plugin-mock'
 import * as sudo from '@koishijs/plugin-sudo'
 
 const app = new App()
 
-app.plugin(memory)
+app.plugin('database-memory')
 app.plugin(mock)
 app.plugin(sudo)
 

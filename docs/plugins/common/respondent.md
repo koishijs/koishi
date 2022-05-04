@@ -32,7 +32,7 @@ export default {
   ['Koishi', '一直挖坑一直爽'],
 ]"/>
 
-如果想要加入更高级和用户可定义的问答系统，可以参见 [@koishijs/plugin-teach](../teach/index.md)。
+如果想要加入更高级和用户可定义的问答系统，可以参见 [koishi-plugin-dialogue](../../community/dialogue/)。
 
 ## 配置项
 

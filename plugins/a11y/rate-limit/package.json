@@ -14,12 +14,13 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/koishijs/koishi.git"
+    "url": "git+https://github.com/koishijs/koishi.git",
+    "directory": "plugins/a11y/rate-limit"
   },
   "bugs": {
     "url": "https://github.com/koishijs/koishi/issues"
   },
-  "homepage": "https://koishi.js.org/plugins/rate-limit/",
+  "homepage": "https://koishi.js.org/plugins/accessibility/rate-limit.html",
   "keywords": [
     "bot",
     "chatbot",
@@ -30,12 +31,12 @@
     "required:database"
   ],
   "peerDependencies": {
-    "koishi": "^4.6.0"
+    "koishi": "^4.6.2"
   },
   "devDependencies": {
     "@koishijs/plugin-mock": "^1.0.4"
   },
   "dependencies": {
-    "@koishijs/helpers": "^1.1.1"
+    "@koishijs/helpers": "^1.2.0"
   }
 }

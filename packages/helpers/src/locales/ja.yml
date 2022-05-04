@@ -1,0 +1,13 @@
+internal:
+  error-encountered: 不明なエラーが発生しました：{0}
+
+admin:
+  user-option: 特定のユーザーを指定する
+  user-not-found: 指定されたユーザーが見つかりません。
+  user-unchanged: ユーザーデータは変更されていません。
+  user-updated: ユーザーデータが変更されました。
+  channel-option: 特定のチャンネルを指定する
+  channel-not-found: 指定されたチャンネルが見つかりません。
+  channel-unchanged: チャンネルデータは変更されていません。
+  channel-updated: チャンネルデータが変更されました。
+  not-in-group: ギルドコンテキストではありません。-c を使用して特定のチャンネルを指定します。

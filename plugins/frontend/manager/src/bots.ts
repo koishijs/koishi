@@ -49,11 +49,11 @@ class BotProvider extends DataService<Dict<BotProvider.Data>> {
 
     ctx.on('bot-added', (bot) => {
       BotProvider.initialize(bot, ctx)
-      this.refresh()
+      process.nextTick(() => this.refresh())
     })
 
     ctx.on('bot-removed', (bot) => {
-      this.refresh()
+      process.nextTick(() => this.refresh())
       bot._messageSent.stop()
       bot._messageReceived.stop()
     })

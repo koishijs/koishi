@@ -14,12 +14,13 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/koishijs/koishi.git"
+    "url": "git+https://github.com/koishijs/koishi.git",
+    "directory": "plugins/common/broadcast"
   },
   "bugs": {
     "url": "https://github.com/koishijs/koishi/issues"
   },
-  "homepage": "https://koishi.js.org/plugins/broadcast/",
+  "homepage": "https://koishi.js.org/plugins/common/broadcast.html",
   "keywords": [
     "bot",
     "chatbot",
@@ -30,7 +31,7 @@
     "optional:database"
   ],
   "peerDependencies": {
-    "koishi": "^4.6.0"
+    "koishi": "^4.6.2"
   },
   "devDependencies": {
     "@koishijs/plugin-database-memory": "^1.2.0",

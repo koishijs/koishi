@@ -14,12 +14,13 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/koishijs/koishi.git"
+    "url": "git+https://github.com/koishijs/koishi.git",
+    "directory": "plugins/common/repeater"
   },
   "bugs": {
     "url": "https://github.com/koishijs/koishi/issues"
   },
-  "homepage": "https://koishi.js.org/plugins/repeater/",
+  "homepage": "https://koishi.js.org/plugins/common/repeater.html",
   "keywords": [
     "bot",
     "chatbot",
@@ -28,7 +29,7 @@
     "repeater"
   ],
   "peerDependencies": {
-    "koishi": "^4.6.0"
+    "koishi": "^4.6.2"
   },
   "devDependencies": {
     "@koishijs/plugin-mock": "^1.0.4"

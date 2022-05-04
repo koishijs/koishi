@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-callme",
   "description": "Set User Nickname in Koishi",
-  "version": "1.0.4",
+  "version": "1.1.0",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -14,12 +14,13 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/koishijs/koishi.git"
+    "url": "git+https://github.com/koishijs/koishi.git",
+    "directory": "plugins/a11y/callme"
   },
   "bugs": {
     "url": "https://github.com/koishijs/koishi/issues"
   },
-  "homepage": "https://koishi.js.org/plugins/callme/",
+  "homepage": "https://koishi.js.org/plugins/accessibility/callme.html",
   "keywords": [
     "bot",
     "chatbot",
@@ -29,7 +30,7 @@
     "required:database"
   ],
   "peerDependencies": {
-    "koishi": "^4.6.0"
+    "koishi": "^4.6.2"
   },
   "devDependencies": {
     "@koishijs/plugin-database-memory": "^1.2.0",

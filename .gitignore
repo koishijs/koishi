@@ -10,6 +10,7 @@ temp
 tsconfig.temp.json
 
 /community
+/external
 /addons
 /public
 /atri

@@ -137,14 +137,17 @@ async function initGit() {
 }
 
 async function install() {
-  const agent = which()?.name || 'npm'
+  // with `-y` option, we don't install dependencies
+  if (argv.yes) return
 
-  const yes = argv.yes || await confirm('Install and start it now?')
+  const agent = which()?.name || 'npm'
+  const yes = await confirm('Install and start it now?')
   if (yes) {
+    // https://docs.npmjs.com/cli/v8/commands/npm-install
+    // with the --production flag or `NODE_ENV` set to production,
+    // npm will not install modules listed in devDependencies
     spawn.sync(agent, ['install', ...argv.prod ? ['--production'] : []], { stdio: 'inherit', cwd: rootDir })
-    if (!argv.yes) {
-      spawn.sync(agent, ['run', 'start'], { stdio: 'inherit', cwd: rootDir })
-    }
+    spawn.sync(agent, ['run', 'start'], { stdio: 'inherit', cwd: rootDir })
   } else {
     console.log(dim('  You can start it later by:\n'))
     if (rootDir !== cwd) {

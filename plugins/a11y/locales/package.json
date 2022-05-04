@@ -15,7 +15,8 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/koishijs/koishi.git"
+    "url": "git+https://github.com/koishijs/koishi.git",
+    "directory": "plugins/a11y/locales"
   },
   "bugs": {
     "url": "https://github.com/koishijs/koishi/issues"
@@ -29,11 +30,11 @@
     "command"
   ],
   "peerDependencies": {
-    "koishi": "^4.6.0"
+    "koishi": "^4.6.2"
   },
   "devDependencies": {
-    "@koishijs/client": "^3.2.6",
-    "@koishijs/plugin-console": "^3.2.6",
+    "@koishijs/client": "^3.2.9",
+    "@koishijs/plugin-console": "^3.2.9",
     "@koishijs/plugin-mock": "^1.0.4",
     "@types/throttle-debounce": "^2.1.0"
   },

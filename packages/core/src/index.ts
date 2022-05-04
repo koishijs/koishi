@@ -10,5 +10,5 @@ export * from './parser'
 export * from './session'
 export * from './internal'
 
-declare const KOISHI_VERSION: string
-export const version = KOISHI_VERSION
+const version: string = require('../package.json').version
+export { version }

@@ -25,6 +25,14 @@ function render() {
 <style lang="scss">
 
 .k-markdown {
+  a, code a {
+    color: var(--active);
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+
   code {
     color: var(--fg2);
     padding: 0.25rem 0.5rem;

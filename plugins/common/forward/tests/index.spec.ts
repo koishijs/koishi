@@ -1,10 +1,11 @@
 import { App } from 'koishi'
-import { expect } from 'chai'
-import {} from 'chai-shape'
-import jest from 'jest-mock'
-import memory from '@koishijs/plugin-database-memory'
+import { expect, use } from 'chai'
+import shape from 'chai-shape'
+import * as jest from 'jest-mock'
 import mock, { DEFAULT_SELF_ID } from '@koishijs/plugin-mock'
 import * as forward from '@koishijs/plugin-forward'
+
+use(shape)
 
 const app = new App()
 
@@ -45,7 +46,7 @@ describe('@koishijs/plugin-forward', () => {
   })
 
   it('command usage', async () => {
-    app.plugin(memory)
+    app.plugin('database-memory')
     await app._tasks.flush()
     await app.mock.initUser('123', 3)
 

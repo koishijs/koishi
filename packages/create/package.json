@@ -1,7 +1,7 @@
 {
   "name": "create-koishi",
   "description": "Setup a Koishi application",
-  "version": "5.1.2",
+  "version": "5.1.4",
   "main": "lib/index.js",
   "engines": {
     "node": ">=12.0.0"
@@ -14,7 +14,8 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/koishijs/koishi.git"
+    "url": "git+https://github.com/koishijs/koishi.git",
+    "directory": "packages/create"
   },
   "bugs": {
     "url": "https://github.com/koishijs/koishi/issues"

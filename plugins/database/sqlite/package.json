@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-database-sqlite",
   "description": "SQLite support for Koishi",
-  "version": "1.2.0",
+  "version": "1.2.2",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -14,12 +14,13 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/koishijs/koishi.git"
+    "url": "git+https://github.com/koishijs/koishi.git",
+    "directory": "plugins/database/sqlite"
   },
   "bugs": {
     "url": "https://github.com/koishijs/koishi/issues"
   },
-  "homepage": "https://koishi.js.org/api/database/mysql.html",
+  "homepage": "https://koishi.js.org/plugins/database/sqlite.html",
   "keywords": [
     "bot",
     "chatbot",
@@ -30,9 +31,9 @@
     "impl:database"
   ],
   "peerDependencies": {
-    "koishi": "^4.6.0"
+    "koishi": "^4.6.2"
   },
   "dependencies": {
-    "@cosmotype/driver-sqlite": "^1.0.3"
+    "@cosmotype/driver-sqlite": "^1.0.6"
   }
 }

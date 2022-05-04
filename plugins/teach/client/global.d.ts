@@ -1,1 +1,0 @@
-/// <reference types="@koishijs/client" />

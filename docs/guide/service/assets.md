@@ -71,7 +71,7 @@ export interface FileInfo {
 - [@koishijs/plugin-assets-remote](../../plugins/assets/local.md)
 - [@koishijs/plugin-assets-s3](../../plugins/assets/s3.md)
 
-以下是使用此服务的官方插件：
+以下是使用此服务的插件：
 
-- [@koishijs/plugin-github](../../plugins/other/github.md) (可选)
-- [@koishijs/plugin-teach](../../plugins/teach/) (可选)
+- [koishi-plugin-github](../../community/github/) (可选)
+- [koishi-plugin-dialogue](../../community/dialogue/) (可选)

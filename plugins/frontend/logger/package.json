@@ -15,12 +15,13 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/koishijs/koishi.git"
+    "url": "git+https://github.com/koishijs/koishi.git",
+    "directory": "plugins/frontend/logger"
   },
   "bugs": {
     "url": "https://github.com/koishijs/koishi/issues"
   },
-  "homepage": "https://koishi.js.org/plugins/logger/",
+  "homepage": "https://koishi.js.org/plugins/console/logger.html",
   "keywords": [
     "bot",
     "chatbot",
@@ -30,12 +31,12 @@
     "optional:console"
   ],
   "peerDependencies": {
-    "@koishijs/plugin-console": "^3.2.6",
-    "koishi": "^4.6.0"
+    "@koishijs/plugin-console": "^3.2.9",
+    "koishi": "^4.6.2"
   },
   "devDependencies": {
-    "@koishijs/client": "^3.2.6",
-    "@koishijs/cli": "^4.6.0",
+    "@koishijs/client": "^3.2.9",
+    "@koishijs/cli": "^4.6.2",
     "ansi_up": "^5.1.0"
   }
 }

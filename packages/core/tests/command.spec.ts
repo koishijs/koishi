@@ -1,9 +1,13 @@
 import { App, Command, Logger, Next } from 'koishi'
 import { inspect } from 'util'
-import { expect } from 'chai'
-import {} from 'chai-shape'
+import { expect, use } from 'chai'
+import shape from 'chai-shape'
+import promise from 'chai-as-promised'
 import mock from '@koishijs/plugin-mock'
-import jest from 'jest-mock'
+import * as jest from 'jest-mock'
+
+use(shape)
+use(promise)
 
 const logger = new Logger('command')
 

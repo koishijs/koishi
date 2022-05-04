@@ -11,7 +11,7 @@ class MarketProvider extends DataService<Dict<MarketProvider.Data>> {
   private fullCache: Dict<MarketProvider.Data> = {}
   private tempCache: Dict<MarketProvider.Data> = {}
 
-  constructor(ctx: Context, private config: MarketProvider.Config) {
+  constructor(ctx: Context, public config: MarketProvider.Config) {
     super(ctx, 'market', { authority: 4 })
   }
 
@@ -30,19 +30,23 @@ class MarketProvider extends DataService<Dict<MarketProvider.Data>> {
   }
 
   async prepare() {
-    const registry = await new Promise<string>((resolve, reject) => {
-      let stdout = ''
-      const agent = which()?.name || 'npm'
-      const child = spawn(agent, ['config', 'get', 'registry'], { cwd: this.ctx.app.baseDir })
-      child.on('exit', (code) => {
-        if (!code) return resolve(stdout)
-        reject(new Error(`child process failed with code ${code}`))
+    let { registry } = this.config
+    if (!registry) {
+      registry = await new Promise<string>((resolve, reject) => {
+        let stdout = ''
+        const agent = which()
+        const key = (agent?.name === 'yarn' && !agent?.version.startsWith('1.')) ? 'npmRegistryServer' : 'registry'
+        const child = spawn(agent?.name || 'npm', ['config', 'get', key], { cwd: this.ctx.app.baseDir })
+        child.on('exit', (code) => {
+          if (!code) return resolve(stdout)
+          reject(new Error(`child process failed with code ${code}`))
+        })
+        child.on('error', reject)
+        child.stdout.on('data', (data) => {
+          stdout += data.toString()
+        })
       })
-      child.on('error', reject)
-      child.stdout.on('data', (data) => {
-        stdout += data.toString()
-      })
-    })
+    }
     this.http = this.ctx.http.extend({
       endpoint: registry.trim(),
     })
@@ -67,9 +71,13 @@ class MarketProvider extends DataService<Dict<MarketProvider.Data>> {
 }
 
 namespace MarketProvider {
-  export interface Config {}
+  export interface Config {
+    registry?: string
+  }
 
-  export const Config = Schema.object({})
+  export const Config = Schema.object({
+    registry: Schema.string().description('用于插件市场搜索和下载的 registry。').default(''),
+  }).description('插件市场设置')
 
   export interface Data extends Omit<AnalyzedPackage, 'versions'> {
     versions: Partial<PackageJson>[]
