@@ -16,7 +16,7 @@ function loadI18n(app: App) {
   app.i18n.define('en', require('./locales/en'))
   app.i18n.define('ja', require('./locales/ja'))
   app.i18n.define('fr', require('./locales/fr'))
-  app.i18n.define('zh-tw', require('./locales/zht'))
+  app.i18n.define('zh-tw', require('./locales/zh-tw'))
 }
 
 export function handleError<U extends User.Field, G extends Channel.Field, A extends any[], O extends {}>(

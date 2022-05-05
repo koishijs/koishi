@@ -27,7 +27,7 @@ export class I18n {
     this.define('en', require('./locales/en'))
     this.define('ja', require('./locales/ja'))
     this.define('fr', require('./locales/fr'))
-    this.define('zh-tw', require('./locales/zht'))
+    this.define('zh-tw', require('./locales/zh-tw'))
     this.registerBuiltins()
   }
 
