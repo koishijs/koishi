@@ -149,7 +149,7 @@ jobs:
           name: codecov
 
   docs:
-    if: ${{ github.ref == 'refs/heads/master' }}
+    if: ${{ github.repository == 'koishijs/koishi' && github.ref == 'refs/heads/master' }}
     runs-on: ubuntu-latest
     needs:
       - prepare
@@ -210,7 +210,7 @@ jobs:
           force_orphan: true
 
   docs-next:
-    if: ${{ github.ref == 'refs/heads/next' }}
+    if: ${{ github.repository == 'koishijs/koishi' && github.ref == 'refs/heads/next' }}
     runs-on: ubuntu-latest
     needs:
       - prepare
