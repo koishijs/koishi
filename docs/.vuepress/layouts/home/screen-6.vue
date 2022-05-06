@@ -7,11 +7,9 @@
       <div class="item guide" v-for="item in getSidebarItems('/guide/')" :key="item.link || item.text">
         <sidebar-item :item="item"></sidebar-item>
       </div>
-      <template v-if="width >= 1200 && height >= 800">
-        <div class="item api" v-for="item in getSidebarItems('/api/')" :key="item.link || item.text">
-          <sidebar-item :item="item"></sidebar-item>
-        </div>
-      </template>
+      <div class="item api" v-for="item in getSidebarItems('/api/')" :key="item.link || item.text">
+        <sidebar-item :item="item"></sidebar-item>
+      </div>
     </div>
   </div>
 
@@ -22,13 +20,11 @@
 
 <script lang="ts" setup>
 
-import { useWindowSize } from '@vueuse/core'
 import { useThemeLocaleData, resolveArraySidebarItems } from '@vuepress/theme-default/lib/client/composables'
 import SidebarItem from '@vuepress/theme-default/lib/client/components/SidebarItem.vue'
 
 defineEmits(['scroll-screen'])
 
-const { width, height } = useWindowSize()
 const config = useThemeLocaleData().value
 
 function getSidebarItems(route: string) {
@@ -75,6 +71,12 @@ function getSidebarItems(route: string) {
     width: 14rem;
     &:last-child {
       padding-right: var(--nav-padding);
+    }
+
+    &.api {
+      @media (max-width: 1200px) or (max-height: 800px) {
+        display: none;
+      }
     }
   }
 
