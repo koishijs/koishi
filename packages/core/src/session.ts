@@ -1,6 +1,6 @@
 import { Channel, Tables, User } from './database'
 import { Command } from './command'
-import { defineProperty, Logger, makeArray, observe, Promisify, Random, remove, segment } from '@koishijs/utils'
+import { defineProperty, Logger, makeArray, observe, Promisify, Random, segment } from '@koishijs/utils'
 import { Argv } from './parser'
 import { Middleware, Next } from './context'
 import { App } from './app'
@@ -94,10 +94,9 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
   guild?: Channel.Observed<G>
   parsed?: Parsed
 
-  private _delay?: number
-  private _queued: Promise<void>
-  private _hooks: (() => void)[]
   private _promise: Promise<string>
+  private _queued: NodeJS.Timeout
+  private _queuedMessages: [string, number][]
 
   constructor(bot: Bot, session: Partial<Session.Payload>) {
     Object.assign(this, session)
@@ -107,8 +106,8 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
     defineProperty(this, 'user', null)
     defineProperty(this, 'channel', null)
     defineProperty(this, 'id', Random.id())
-    defineProperty(this, '_queued', Promise.resolve())
-    defineProperty(this, '_hooks', [])
+    defineProperty(this, '_queuedMessages', [])
+    defineProperty(this, '_queued', undefined)
   }
 
   get uid() {
@@ -169,8 +168,19 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
   }
 
   cancelQueued(delay = this.app.options.delay.cancel) {
-    this._hooks.forEach(Reflect.apply)
-    this._delay = delay
+    if (typeof this._queued !== 'undefined') clearTimeout(this._queued)
+    this._queuedMessages = []
+    this._queued = setTimeout(() => this._next(), delay)
+  }
+
+  private _next() {
+    const message = this._queuedMessages.shift()
+    if (typeof message === 'undefined') {
+      this._queued = undefined
+      return
+    }
+    this.send(message[0])
+    this._queued = setTimeout(() => this._next(), message[1])
   }
 
   async sendQueued(content: string, delay?: number) {
@@ -179,19 +189,8 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
       const { message, character } = this.app.options.delay
       delay = Math.max(message, character * content.length)
     }
-    return this._queued = this._queued.then(() => new Promise<void>((resolve) => {
-      const hook = () => {
-        resolve()
-        clearTimeout(timer)
-        remove(this._hooks, hook)
-      }
-      this._hooks.push(hook)
-      const timer = setTimeout(async () => {
-        await this.send(content)
-        this._delay = delay
-        hook()
-      }, this._delay || 0)
-    }))
+    this._queuedMessages.push([content, delay])
+    if (typeof this._queued === 'undefined') this._next()
   }
 
   resolveValue<T>(source: T | ((session: Session) => T)): T {
