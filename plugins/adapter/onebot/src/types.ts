@@ -218,7 +218,7 @@ export interface GroupRequest extends GroupBase {
   actor: number
 }
 
-export interface InvitedRequest extends GroupRequest {}
+export interface InvitedRequest extends GroupRequest { }
 
 export interface JoinRequest extends GroupRequest {
   message: string
@@ -409,7 +409,7 @@ export interface Internal {
   getEssenceMsgList(group_id: id): Promise<EssenceMessage[]>
   getWordSlices(content: string): Promise<string[]>
   ocrImage(image: string): Promise<OcrResult>
-  getGroupMsgHistory(group_id: id, message_seq?: number): Promise<Message[]>
+  getGroupMsgHistory(group_id: id, message_seq?: number): Promise<{ messages: Message[] }>
   deleteFriend(user_id: id): Promise<void>
   deleteFriendAsync(user_id: id): Promise<void>
   setFriendAddRequest(flag: string, approve: boolean, remark?: string): Promise<void>

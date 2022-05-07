@@ -165,28 +165,8 @@ export class DiscordBot extends Bot<BotConfig> {
   }
 
   async getChannelList(guildId: string) {
-    let channels = await this.internal.getGuildChannels(guildId)
-    // 获取 bot 的 role, 然后筛选符合的 channel
-    // https://discord.com/developers/docs/topics/permissions#permissions
-    const member = await this.internal.getGuildMember(guildId, this.selfId)
-    channels = channels.filter(v => v.type !== Channel.Type.GUILD_CATEGORY && v.type !== Channel.Type.GUILD_VOICE).filter(v => {
-      let result = false
-      // exclude @everyone role
-      for (const overwrites of v.permission_overwrites) {
-        // 0 (role) or 1 (member)
-        if (overwrites.type === 0 && member.roles.includes(overwrites.id)) {
-          if ((Number(overwrites.allow) & Permission.VIEW_CHANNEL) === Permission.VIEW_CHANNEL) {
-            result = true
-          }
-        }
-      }
-      if (v.permission_overwrites.length === 0) {
-        result = true
-      }
-      return result
-    })
-    // 有 VIEW_CHANNEL 的权限
-    return channels.map(v => adaptChannel(v))
+    const data = await this.internal.getGuildChannels(guildId)
+    return data.map(v => adaptChannel(v))
   }
 
   async getChannelMessageHistory(channelId: string, before?: string) {

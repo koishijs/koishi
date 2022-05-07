@@ -179,15 +179,14 @@ export class OneBotBot extends Bot<BotConfig> {
     if (before) {
       const msg = await this.internal.getMsg(before)
       if (msg?.message_seq) {
-        list = await this.internal.getGroupMsgHistory(Number(channelId), msg.message_seq)
+        list = (await this.internal.getGroupMsgHistory(Number(channelId), msg.message_seq)).messages
       }
     } else {
-      list = await this.internal.getGroupMsgHistory(Number(channelId))
+      list = (await this.internal.getGroupMsgHistory(Number(channelId))).messages
     }
 
-    // 从旧到新 这 internal 类型好像有问题?
-    // @ts-ignore
-    return list.messages.map(OneBot.adaptMessage)
+    // 从旧到新
+    return list.map(OneBot.adaptMessage)
   }
 }
 
@@ -278,7 +277,7 @@ class SenderError extends Error {
 
 const logger = new Logger('onebot')
 
-export interface Internal extends OneBot.Internal { }
+export interface Internal extends OneBot.Internal {}
 
 export class Internal {
   _request?(action: string, params: Dict): Promise<OneBot.Response>
