@@ -1,7 +1,7 @@
 import { Adapter, Bot, Quester, Schema, segment } from 'koishi'
 import { adaptChannel, AdapterConfig, adaptGroup as adaptGuild, adaptMessage, adaptMessageSession, adaptUser, prepareMessageSession } from './utils'
 import { Sender } from './sender'
-import { Channel, GatewayIntent, Internal, Permission } from './types'
+import { GatewayIntent, Internal } from './types'
 interface PrivilegedIntents {
   members?: boolean
   presence?: boolean
@@ -59,8 +59,6 @@ export class DiscordBot extends Bot<BotConfig> {
       | GatewayIntent.GUILD_MESSAGE_REACTIONS
       | GatewayIntent.DIRECT_MESSAGES
       | GatewayIntent.DIRECT_MESSAGE_REACTIONS
-      | GatewayIntent.GUILDS
-      | GatewayIntent.GUILD_MEMBERS
     if (this.config.intents.members) {
       intents |= GatewayIntent.GUILD_MEMBERS
     }
