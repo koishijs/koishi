@@ -74,7 +74,11 @@ function getSidebarItems(route: string) {
     }
 
     &.api {
-      @media (max-width: 1200px) or (max-height: 800px) {
+      @media (max-width: 1200px) {
+        display: none;
+      }
+
+      @media (max-height: 800px) {
         display: none;
       }
     }

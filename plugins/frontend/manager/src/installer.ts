@@ -1,8 +1,8 @@
-import { clone, Context, Dict, Logger } from 'koishi'
+import { Context, Dict, Logger } from 'koishi'
 import { DataService } from '@koishijs/plugin-console'
 import { PackageJson } from '@koishijs/market'
 import { resolve } from 'path'
-import { promises as fsp } from 'fs'
+import { promises as fsp, readFileSync } from 'fs'
 import which from 'which-pm-runs'
 import spawn from 'cross-spawn'
 
@@ -15,11 +15,24 @@ declare module '@koishijs/plugin-console' {
 
 const logger = new Logger('market')
 
-class Installer extends DataService<Dict<string>> {
-  private metaTask: Promise<PackageJson>
+export interface Dependency {
+  request: string
+  resolved: string
+  workspace?: boolean
+  versions?: Partial<PackageJson>[]
+}
+
+function loadJson(path: string) {
+  return JSON.parse(readFileSync(path, 'utf8'))
+}
+
+class Installer extends DataService<Dict<Dependency>> {
+  private meta: PackageJson
 
   constructor(public ctx: Context) {
     super(ctx, 'dependencies', { authority: 4 })
+    this.meta = loadJson(resolve(this.cwd, 'package.json'))
+    this.meta.dependencies ||= {}
 
     ctx.console.addListener('market/install', this.installDep, { authority: 4 })
     ctx.console.addListener('market/patch', this.patchDep, { authority: 4 })
@@ -29,17 +42,17 @@ class Installer extends DataService<Dict<string>> {
     return this.ctx.app.baseDir
   }
 
-  async _loadDeps() {
-    const filename = resolve(this.cwd, 'package.json')
-    const source = await fsp.readFile(filename, 'utf8')
-    const meta: PackageJson = JSON.parse(source)
-    meta.dependencies ||= {}
-    return meta
-  }
-
   async get() {
-    const meta = await (this.metaTask ||= this._loadDeps())
-    return meta.dependencies
+    const results: Dict<Dependency> = {}
+    for (const name in this.meta.dependencies) {
+      const path = require.resolve(name + '/package.json')
+      results[name] = {
+        request: this.meta.dependencies[name],
+        resolved: loadJson(path).version,
+        workspace: !path.includes('node_modules'),
+      }
+    }
+    return results
   }
 
   async exec(command: string, args: string[]) {
@@ -66,35 +79,31 @@ class Installer extends DataService<Dict<string>> {
 
   async override(deps: Dict<string>) {
     const filename = resolve(this.cwd, 'package.json')
-    const meta = clone(await (this.metaTask ||= this._loadDeps()))
     for (const key in deps) {
       if (deps[key]) {
-        meta.dependencies[key] = deps[key]
+        this.meta.dependencies[key] = '^' + deps[key]
       } else {
-        delete meta.dependencies[key]
+        delete this.meta.dependencies[key]
       }
     }
-    meta.dependencies = Object.fromEntries(Object.entries(meta.dependencies).sort((a, b) => a[0].localeCompare(b[0])))
-    await fsp.writeFile(filename, JSON.stringify(meta, null, 2))
-    return meta
+    this.meta.dependencies = Object.fromEntries(Object.entries(this.meta.dependencies).sort((a, b) => a[0].localeCompare(b[0])))
+    await fsp.writeFile(filename, JSON.stringify(this.meta, null, 2))
   }
 
   patchDep = async (name: string, version: string) => {
-    const meta = await this.override({ [name]: version })
-    this.metaTask = Promise.resolve(meta)
+    await this.override({ [name]: version })
     this.refresh()
   }
 
   installDep = async (deps: Dict<string>) => {
     const agent = which()?.name || 'npm'
-    const meta = await this.override(deps)
+    await this.override(deps)
     const args: string[] = []
-    if (agent === 'yarn') args.push('install')
+    if (agent !== 'yarn') args.push('install')
     const registry = this.ctx.console.market.config.registry
     if (registry) args.push('--registry=' + registry)
     const code = await this.exec(agent, args)
     if (!code) {
-      this.metaTask = Promise.resolve(meta)
       this.refresh()
       this.ctx.console.packages.refresh()
     }

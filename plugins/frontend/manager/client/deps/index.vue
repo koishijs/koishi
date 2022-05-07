@@ -1,7 +1,7 @@
 <template>
   <k-card class="page-deps">
     <div class="controls">
-      <el-checkbox v-model="config.showDepsOnly">只显示依赖的插件</el-checkbox>
+      <el-checkbox v-model="config.hideWorkspace">忽略工作区依赖{{ config.override }}</el-checkbox>
       <span class="float-right" v-if="!overrideCount">当前没有变更的依赖</span>
       <template v-else>
         <k-button class="float-right" solid @click="install">更新依赖</k-button>
@@ -46,11 +46,12 @@ import { message, loading } from '@koishijs/client'
 import PackageView from './package.vue'
 
 const names = computed(() => {
-  const data = config.showDepsOnly
-    ? Object.keys(store.dependencies).filter(name => store.packages[name])
-    : Object.values(store.packages).map(item => item.name).filter(Boolean)
+  let data = Object.keys(store.dependencies)
+  if (config.hideWorkspace) {
+    data = data.filter(name => !store.dependencies[name].workspace)
+  }
   for (const key in config.override) {
-    if (!data.includes(key) && store.market[key] && config.override[key]) data.push(key)
+    if (!data.includes(key) && store.market[key]) data.push(key)
   }
   return data.sort((a, b) => a > b ? 1 : -1)
 })
@@ -105,7 +106,7 @@ main.route-dependencies {
     }
 
     tr:hover {
-      background-color: var(--bg1);
+      background-color: var(--hover-bg);
     }
 
     tr:first-child {

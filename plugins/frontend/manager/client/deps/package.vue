@@ -2,24 +2,23 @@
   <tr class="dep-package-view">
     <td class="name" :class="state">{{ name }}</td>
     <td class="current">
-      <template v-if="store.dependencies[name]">
-        {{ local.version }}
-        <template v-if="local?.workspace">(工作区)</template>
-        <template v-else-if="local?.version === remote?.versions[0].version">(最新)</template>
+      <template v-if="local">
+        {{ local.resolved }}
+        <template v-if="local.workspace">(工作区)</template>
+        <template v-else-if="local.resolved === remote?.versions[0].version">(最新)</template>
       </template>
       <span v-else>-</span>
     </td>
     <td class="target">
       <template v-if="local?.workspace">
-        <k-button v-if="store.dependencies[name]" @click="send('market/patch', name, null)">移除依赖</k-button>
-        <k-button v-else @click="send('market/patch', name, local.version)">添加依赖</k-button>
+        <k-button @click="send('market/patch', name, null)">移除依赖</k-button>
       </template>
       <el-select v-else v-model="value">
-        <el-option v-if="store.dependencies[name]" value="">移除依赖</el-option>
+        <el-option value="">移除依赖</el-option>
         <el-option
           v-for="({ version }) in remote?.versions || []"
           :key="version" :value="version"
-        >{{ version }}{{ version === local?.version ? ' (当前)' : '' }}</el-option>
+        >{{ version }}{{ version === local?.resolved ? ' (当前)' : '' }}</el-option>
       </el-select>
     </td>
   </tr>
@@ -38,10 +37,10 @@ const props = defineProps({
 const value = computed({
   get() {
     const target = config.override[props.name]
-    return target === '' ? '移除插件' : target
+    return target === '' ? '移除依赖' : target
   },
   set(target: string) {
-    if (target === '' && !local.value || target === local.value) {
+    if (target === '' && !local.value || target === local.value?.resolved) {
       delete config.override[props.name]
     } else {
       config.override[props.name] = target
@@ -50,13 +49,16 @@ const value = computed({
 })
 
 const state = computed(() => {
-  if (store.dependencies[props.name]) return 'tracked'
-  if (local.value) return local.value.workspace ? 'workspace' : 'external'
-  return 'remote'
+  if (!props.name.includes('koishi-plugin-') && !props.name.startsWith('@koishijs/plugin-')) {
+    return 'disabled'
+  }
+  if (store.packages?.[props.name]?.id) return 'success'
+  if (local.value) return 'warning'
+  return 'error'
 })
 
 const local = computed(() => {
-  return store.packages[props.name]
+  return store.dependencies[props.name]
 })
 
 const remote = computed(() => {
@@ -88,17 +90,21 @@ const remote = computed(() => {
       box-shadow: 1px 1px 2px #3333;
     }
 
-    &.tracked::before {
+    // 已加载的插件
+    &.success::before {
       background-color: var(--success);
     }
-    &.workspace::before {
-      background-color: var(--disabled);
+    // 未加载的插件
+    &.warning::before {
+      background-color: var(--warning);
     }
-    &.external::before {
-      background-color: var(--primary);
-    }
-    &.remote::before {
+    // 未安装的插件
+    &.error::before {
       background-color: var(--error);
+    }
+    // 非插件
+    &.disabled::before {
+      background-color: var(--disabled);
     }
   }
 
