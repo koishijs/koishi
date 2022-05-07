@@ -1,5 +1,5 @@
 <template>
-  <template v-if="Object.keys(store.market).length">
+  <template v-if="plugins.length">
     <div class="search-box">
       <k-badge type="success" v-for="(word, index) in words.slice(0, -1)" :key="index" @click="words.splice(index, 1)">{{ word }}</k-badge>
       <input
@@ -86,13 +86,12 @@ function onQuery(word: string) {
 }
 
 const plugins = computed(() => {
-  return Object.values(store.market).filter((data) => {
-    return words.every(word => validate(data, word))
-  })
+  return Object.values(store.market).filter(data => data.shortname)
 })
 
 const packages = computed(() => {
   return plugins.value
+    .filter(data => words.every(word => validate(data, word)))
     .filter(item => config.showInstalled || !store.packages[item.name])
     .sort((a, b) => b.popularity - a.popularity)
 })

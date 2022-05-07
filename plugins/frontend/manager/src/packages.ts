@@ -1,10 +1,11 @@
 import { Adapter, App, Context, Dict, Logger, omit, pick, Plugin, remove, Schema } from 'koishi'
 import { DataService } from '@koishijs/plugin-console'
-import { LocalPackage, PackageJson } from '@koishijs/market'
+import { PackageJson } from '@koishijs/market'
 import { promises as fsp } from 'fs'
 import { dirname } from 'path'
 import ns from 'ns-require'
 import {} from '@koishijs/cli'
+import { loadManifest } from './utils'
 
 const logger = new Logger('market')
 
@@ -104,15 +105,15 @@ class PackageProvider extends DataService<Dict<PackageProvider.Data>> {
     try {
       // require.resolve(name) may be different from require.resolve(path)
       // because tsconfig-paths may resolve the path differently
-      this.cache[require.resolve(name)] = this.parsePackage(name, path)
+      this.cache[require.resolve(name)] = this.parsePackage(name)
     } catch (error) {
       logger.warn('failed to parse %c', name)
       logger.debug(error)
     }
   }
 
-  private parsePackage(name: string, path: string) {
-    const data: LocalPackage = require(path + '/package.json')
+  private parsePackage(name: string) {
+    const data = loadManifest(name)
     const result = pick(data, [
       'name',
       'version',
@@ -121,7 +122,7 @@ class PackageProvider extends DataService<Dict<PackageProvider.Data>> {
     ]) as PackageProvider.Data
 
     // workspace packages are followed by symlinks
-    result.workspace = !require.resolve(name).includes('node_modules')
+    result.workspace = data.$workspace
     result.shortname = data.name.replace(/(koishi-|^@koishijs\/)plugin-/, '')
 
     // check adapter

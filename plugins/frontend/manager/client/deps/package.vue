@@ -5,7 +5,7 @@
       <template v-if="local">
         {{ local.resolved }}
         <template v-if="local.workspace">(工作区)</template>
-        <template v-else-if="local.resolved === remote?.versions[0].version">(最新)</template>
+        <template v-else-if="local.resolved === versions[0]?.version">(最新)</template>
       </template>
       <span v-else>-</span>
     </td>
@@ -17,7 +17,7 @@
         <k-button class="prefix right-adjacent" @click="prefix = matrix[prefix]">{{ prefix || '=' }}</k-button>
         <el-select class="left-adjacent" v-model="value">
           <el-option value="">移除依赖</el-option>
-          <el-option v-for="({ version }) in remote?.versions || []" :key="version" :value="version"></el-option>
+          <el-option v-for="({ version }) in versions" :key="version" :value="version"></el-option>
         </el-select>
       </template>
     </td>
@@ -78,8 +78,8 @@ const local = computed(() => {
   return store.dependencies[props.name]
 })
 
-const remote = computed(() => {
-  return store.market[props.name]
+const versions = computed(() => {
+  return store.market[props.name]?.versions || []
 })
 
 </script>
@@ -126,11 +126,11 @@ const remote = computed(() => {
   }
 
   .k-button.action {
-    width: 9rem;
+    width: 10rem;
   }
 
   .el-select {
-    width: 7rem;
+    width: 8rem;
   }
 
   .k-button.prefix {

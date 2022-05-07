@@ -1,8 +1,9 @@
 import { Context, Dict, pick, Quester, Schema } from 'koishi'
 import { DataService } from '@koishijs/plugin-console'
-import scan, { AnalyzedPackage, PackageJson } from '@koishijs/market'
+import scan, { AnalyzedPackage, PackageJson, Registry } from '@koishijs/market'
 import which from 'which-pm-runs'
 import spawn from 'cross-spawn'
+import { loadManifest } from './utils'
 
 class MarketProvider extends DataService<Dict<MarketProvider.Data>> {
   /** https://github.com/npm/registry/blob/master/docs/REGISTRY-API.md */
@@ -30,13 +31,14 @@ class MarketProvider extends DataService<Dict<MarketProvider.Data>> {
   }
 
   async prepare() {
+    const cwd = this.ctx.app.baseDir
     let { registry } = this.config
     if (!registry) {
       registry = await new Promise<string>((resolve, reject) => {
         let stdout = ''
         const agent = which()
         const key = (agent?.name === 'yarn' && !agent?.version.startsWith('1.')) ? 'npmRegistryServer' : 'registry'
-        const child = spawn(agent?.name || 'npm', ['config', 'get', key], { cwd: this.ctx.app.baseDir })
+        const child = spawn(agent?.name || 'npm', ['config', 'get', key], { cwd })
         child.on('exit', (code) => {
           if (!code) return resolve(stdout)
           reject(new Error(`child process failed with code ${code}`))
@@ -47,11 +49,22 @@ class MarketProvider extends DataService<Dict<MarketProvider.Data>> {
         })
       })
     }
+
     this.http = this.ctx.http.extend({
       endpoint: registry.trim(),
     })
 
-    await scan({
+    const meta = loadManifest(cwd)
+    const tasks = Object.keys(meta.dependencies).map(async (name) => {
+      const registry = await this.http.get<Registry>(`/${name}`)
+      const versions = Object.values(registry.versions)
+        .map(item => pick(item, ['version', 'peerDependencies']))
+        .reverse()
+      this.tempCache[name] = this.fullCache[name] = { versions } as any
+      this.flushData()
+    })
+
+    tasks.push(scan({
       version: '4',
       request: this.http.get,
       onItem: (item) => {
@@ -62,7 +75,9 @@ class MarketProvider extends DataService<Dict<MarketProvider.Data>> {
         }
         this.flushData()
       },
-    })
+    }))
+
+    await Promise.allSettled(tasks)
   }
 
   async get() {

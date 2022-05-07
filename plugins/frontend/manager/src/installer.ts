@@ -2,7 +2,8 @@ import { Context, Dict, Logger } from 'koishi'
 import { DataService } from '@koishijs/plugin-console'
 import { PackageJson } from '@koishijs/market'
 import { resolve } from 'path'
-import { promises as fsp, readFileSync } from 'fs'
+import { promises as fsp } from 'fs'
+import { loadManifest } from './utils'
 import which from 'which-pm-runs'
 import spawn from 'cross-spawn'
 
@@ -22,17 +23,12 @@ export interface Dependency {
   versions?: Partial<PackageJson>[]
 }
 
-function loadJson(path: string) {
-  return JSON.parse(readFileSync(path, 'utf8'))
-}
-
 class Installer extends DataService<Dict<Dependency>> {
   private meta: PackageJson
 
   constructor(public ctx: Context) {
     super(ctx, 'dependencies', { authority: 4 })
-    this.meta = loadJson(resolve(this.cwd, 'package.json'))
-    this.meta.dependencies ||= {}
+    this.meta = loadManifest(this.cwd)
 
     ctx.console.addListener('market/install', this.installDep, { authority: 4 })
     ctx.console.addListener('market/patch', this.patchDep, { authority: 4 })
@@ -45,12 +41,15 @@ class Installer extends DataService<Dict<Dependency>> {
   async get() {
     const results: Dict<Dependency> = {}
     for (const name in this.meta.dependencies) {
-      const path = require.resolve(name + '/package.json')
-      results[name] = {
-        request: this.meta.dependencies[name],
-        resolved: loadJson(path).version,
-        workspace: !path.includes('node_modules'),
-      }
+      try {
+        // some dependencies may be left with no local installation
+        const meta = loadManifest(name)
+        results[name] = {
+          request: this.meta.dependencies[name],
+          resolved: meta.version,
+          workspace: meta.$workspace,
+        }
+      } catch {}
     }
     return results
   }
@@ -100,7 +99,7 @@ class Installer extends DataService<Dict<Dependency>> {
     await this.override(deps)
     const args: string[] = []
     if (agent !== 'yarn') args.push('install')
-    const registry = this.ctx.console.market.config.registry
+    const { registry } = this.ctx.console.market.config
     if (registry) args.push('--registry=' + registry)
     const code = await this.exec(agent, args)
     if (!code) {
