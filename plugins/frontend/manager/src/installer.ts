@@ -1,9 +1,10 @@
-import { Context, Dict, Logger } from 'koishi'
+import { Context, defineProperty, Dict, Logger } from 'koishi'
 import { DataService } from '@koishijs/plugin-console'
 import { PackageJson } from '@koishijs/market'
 import { resolve } from 'path'
 import { promises as fsp } from 'fs'
 import { loadManifest } from './utils'
+import {} from '@koishijs/cli'
 import which from 'which-pm-runs'
 import spawn from 'cross-spawn'
 
@@ -19,16 +20,17 @@ const logger = new Logger('market')
 export interface Dependency {
   request: string
   resolved: string
-  workspace?: boolean
-  versions?: Partial<PackageJson>[]
+  workspace: boolean
+  active?: boolean
 }
 
 class Installer extends DataService<Dict<Dependency>> {
-  private meta: PackageJson
+  private manifest: PackageJson
+  private _payload: Dict<Dependency>
 
   constructor(public ctx: Context) {
     super(ctx, 'dependencies', { authority: 4 })
-    this.meta = loadManifest(this.cwd)
+    this.manifest = loadManifest(this.cwd)
 
     ctx.console.addListener('market/install', this.installDep, { authority: 4 })
     ctx.console.addListener('market/patch', this.patchDep, { authority: 4 })
@@ -38,20 +40,22 @@ class Installer extends DataService<Dict<Dependency>> {
     return this.ctx.app.baseDir
   }
 
-  async get() {
+  get(force = false) {
+    if (!force && this._payload) return this._payload
     const results: Dict<Dependency> = {}
-    for (const name in this.meta.dependencies) {
+    for (const name in this.manifest.dependencies) {
       try {
         // some dependencies may be left with no local installation
         const meta = loadManifest(name)
         results[name] = {
-          request: this.meta.dependencies[name],
+          request: this.manifest.dependencies[name],
           resolved: meta.version,
           workspace: meta.$workspace,
         }
+        defineProperty(results[name], 'active', require.resolve(name) in require.cache)
       } catch {}
     }
-    return results
+    return this._payload = results
   }
 
   async exec(command: string, args: string[]) {
@@ -80,13 +84,13 @@ class Installer extends DataService<Dict<Dependency>> {
     const filename = resolve(this.cwd, 'package.json')
     for (const key in deps) {
       if (deps[key]) {
-        this.meta.dependencies[key] = deps[key]
+        this.manifest.dependencies[key] = deps[key]
       } else {
-        delete this.meta.dependencies[key]
+        delete this.manifest.dependencies[key]
       }
     }
-    this.meta.dependencies = Object.fromEntries(Object.entries(this.meta.dependencies).sort((a, b) => a[0].localeCompare(b[0])))
-    await fsp.writeFile(filename, JSON.stringify(this.meta, null, 2))
+    this.manifest.dependencies = Object.fromEntries(Object.entries(this.manifest.dependencies).sort((a, b) => a[0].localeCompare(b[0])))
+    await fsp.writeFile(filename, JSON.stringify(this.manifest, null, 2))
   }
 
   patchDep = async (name: string, version: string) => {
@@ -96,17 +100,24 @@ class Installer extends DataService<Dict<Dependency>> {
 
   installDep = async (deps: Dict<string>) => {
     const agent = which()?.name || 'npm'
+    const oldPayload = this.get()
     await this.override(deps)
     const args: string[] = []
     if (agent !== 'yarn') args.push('install')
     const { registry } = this.ctx.console.market.config
     if (registry) args.push('--registry=' + registry)
     const code = await this.exec(agent, args)
-    if (!code) {
-      this.refresh()
-      this.ctx.console.packages.refresh()
+    if (code) return code
+    await this.refresh()
+    const newPayload = this.get()
+    for (const name in oldPayload) {
+      const { active, resolved, workspace } = oldPayload[name]
+      if (workspace || !active) continue
+      if (newPayload[name].resolved === resolved) continue
+      this.ctx.loader.fullReload()
     }
-    return code
+    this.ctx.console.packages.refresh()
+    return 0
   }
 }
 

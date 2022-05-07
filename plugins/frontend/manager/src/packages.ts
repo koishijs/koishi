@@ -12,12 +12,17 @@ const logger = new Logger('market')
 /** require without affecting the dependency tree */
 function getExports(id: string) {
   const path = require.resolve(id)
+  const keys = Object.keys(require.cache)
   let result = require.cache[path]
   if (!result) {
     require(path)
     result = require.cache[path]
     remove(module.children, result)
-    delete require.cache[path]
+    for (const key in require.cache) {
+      if (!keys.includes(key)) {
+        delete require.cache[key]
+      }
+    }
   }
   return ns.unwrapExports(result.exports)
 }

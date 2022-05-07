@@ -138,7 +138,7 @@ export default class Loader extends ConfigLoader<App.Config> {
     this.app.logger('diagnostic').warn('plugin %c is missing required service %c', name, missing.join(', '))
   }
 
-  fullReload() {
+  fullReload(): never {
     logger.info('trigger full reload')
     process.exit(51)
   }

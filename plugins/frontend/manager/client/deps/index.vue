@@ -39,8 +39,8 @@
 
 <script lang="ts" setup>
 
-import { computed } from 'vue'
-import { store, send } from '@koishijs/client'
+import { computed, watch } from 'vue'
+import { store, send, socket } from '@koishijs/client'
 import { config, overrideCount } from '../utils'
 import { message, loading } from '@koishijs/client'
 import PackageView from './package.vue'
@@ -60,16 +60,22 @@ async function install() {
   const instance = loading({
     text: '正在更新依赖……',
   })
+  const dispose = watch(socket, () => {
+    message.success('安装成功！')
+    dispose()
+    instance.close()
+  })
   try {
     const code = await send('market/install', config.override)
-    if (code === 0) {
-      message.success('安装成功！')
-    } else {
+    if (code) {
       message.error('安装失败！')
+    } else {
+      message.success('安装成功！')
     }
   } catch (err) {
     message.error('安装超时！')
   } finally {
+    dispose()
     instance.close()
   }
 }
