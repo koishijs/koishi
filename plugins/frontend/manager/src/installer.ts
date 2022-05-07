@@ -81,7 +81,7 @@ class Installer extends DataService<Dict<Dependency>> {
     const filename = resolve(this.cwd, 'package.json')
     for (const key in deps) {
       if (deps[key]) {
-        this.meta.dependencies[key] = '^' + deps[key]
+        this.meta.dependencies[key] = deps[key]
       } else {
         delete this.meta.dependencies[key]
       }

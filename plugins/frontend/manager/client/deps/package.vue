@@ -11,15 +11,15 @@
     </td>
     <td class="target">
       <template v-if="local?.workspace">
-        <k-button @click="send('market/patch', name, null)">移除依赖</k-button>
+        <k-button class="action" @click="send('market/patch', name, null)">移除依赖</k-button>
       </template>
-      <el-select v-else v-model="value">
-        <el-option value="">移除依赖</el-option>
-        <el-option
-          v-for="({ version }) in remote?.versions || []"
-          :key="version" :value="version"
-        >{{ version }}{{ version === local?.resolved ? ' (当前)' : '' }}</el-option>
-      </el-select>
+      <template v-else>
+        <k-button class="prefix right-adjacent" @click="prefix = matrix[prefix]">{{ prefix || '=' }}</k-button>
+        <el-select class="left-adjacent" v-model="value">
+          <el-option value="">移除依赖</el-option>
+          <el-option v-for="({ version }) in remote?.versions || []" :key="version" :value="version"></el-option>
+        </el-select>
+      </template>
     </td>
   </tr>
 </template>
@@ -37,16 +37,33 @@ const props = defineProps({
 const value = computed({
   get() {
     const target = config.override[props.name]
-    return target === '' ? '移除依赖' : target
+    return target === '' ? '移除依赖' : target?.replace(/^[\^~]/, '')
   },
   set(target: string) {
-    if (target === '' && !local.value || target === local.value?.resolved) {
+    if (target === '' && !local.value) {
       delete config.override[props.name]
     } else {
-      config.override[props.name] = target
+      config.override[props.name] = prefix.value + target
+      if (config.override[props.name] === local.value?.request) {
+        delete config.override[props.name]
+      }
     }
   },
 })
+
+const prefix = computed({
+  get() {
+    return /^[\^~]?/.exec(config.override[props.name] || local.value.request)[0]
+  },
+  set(prefix: string) {
+    config.override[props.name] = prefix + (config.override[props.name] || local.value.request).replace(/^[\^~]/, '')
+    if (config.override[props.name] === local.value?.request) {
+      delete config.override[props.name]
+    }
+  },
+})
+
+const matrix = { '': '^', '^': '~', '~': '' }
 
 const state = computed(() => {
   if (!props.name.includes('koishi-plugin-') && !props.name.startsWith('@koishijs/plugin-')) {
@@ -67,7 +84,7 @@ const remote = computed(() => {
 
 </script>
 
-<style lang="scss">
+<style lang="scss" scoped>
 
 .dep-package-view {
   height: 3rem;
@@ -75,7 +92,7 @@ const remote = computed(() => {
 
   td.name {
     text-align: left;
-    padding-left: 4rem;
+    padding-left: 3.6rem;
 
     &::before {
       content: '';
@@ -84,8 +101,8 @@ const remote = computed(() => {
       width: 0.5rem;
       height: 0.5rem;
       top: 50%;
-      left: 2rem;
-      transform: translateY(-50%);
+      left: 1.8rem;
+      transform: translate(-50%, -50%);
       transition: background-color 0.3s ease;
       box-shadow: 1px 1px 2px #3333;
     }
@@ -108,8 +125,19 @@ const remote = computed(() => {
     }
   }
 
-  .el-select, .k-button {
-    width: 10rem;
+  .k-button.action {
+    width: 9rem;
+  }
+
+  .el-select {
+    width: 7rem;
+  }
+
+  .k-button.prefix {
+    width: 2rem;
+    height: 2rem;
+    vertical-align: bottom;
+    padding: 0;
   }
 }
 

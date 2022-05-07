@@ -1,7 +1,7 @@
 <template>
   <k-card class="page-deps">
     <div class="controls">
-      <el-checkbox v-model="config.hideWorkspace">忽略工作区依赖{{ config.override }}</el-checkbox>
+      <el-checkbox v-model="config.hideWorkspace">忽略工作区依赖</el-checkbox>
       <span class="float-right" v-if="!overrideCount">当前没有变更的依赖</span>
       <template v-else>
         <k-button class="float-right" solid @click="install">更新依赖</k-button>

@@ -135,6 +135,7 @@ class HttpService extends DataService<string[]> {
       },
       optimizeDeps: {
         include: [
+          'schemastery',
           'element-plus',
         ],
       },
