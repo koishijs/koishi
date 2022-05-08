@@ -13,8 +13,10 @@ export const AdapterConfig: Schema<AdapterConfig> = Schema.intersect([
   Adapter.WebSocketClient.Config,
 ])
 
+type Intents = keyof typeof QQGuild.Bot.Intents
+
 export interface BotConfig extends Bot.BaseConfig, QQGuild.Bot.AppConfig {
-  indents: number
+  intents: number | Intents | Intents[]
 }
 
 export const BotConfig = Schema.intersect([
