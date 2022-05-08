@@ -34,8 +34,7 @@ export class App extends Context {
   public options: App.Config
   public isActive = false
   public registry = new Plugin.Registry()
-
-  private _nameRE: RegExp
+  public _nameRE: RegExp
 
   constructor(options: App.Config = {}) {
     super(() => true)

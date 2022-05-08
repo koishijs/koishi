@@ -21,10 +21,6 @@ export interface PackageJson extends BasePackage {
   optionalDependencies?: Dict<string>
 }
 
-export interface LocalPackage extends PackageJson {
-  private?: boolean
-}
-
 export interface RemotePackage extends PackageJson {
   deprecated?: string
   author: User

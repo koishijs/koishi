@@ -152,6 +152,10 @@ export class DiscordBot extends Bot<BotConfig> {
     }
   }
 
+  async kickGuildMember(guildId: string, userId: string) {
+    return this.internal.removeGuildMember(guildId, userId)
+  }
+
   async getGuild(guildId: string) {
     const data = await this.internal.getGuild(guildId)
     return adaptGuild(data)

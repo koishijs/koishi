@@ -1,16 +1,29 @@
-const { execSync } = require('child_process')
-const { resolve } = require('path')
-const { remove: removeDiacritics } = require('diacritics')
+import { resolve } from 'path'
+import { remove as removeDiacritics } from 'diacritics'
+import { readdirSync } from 'fs'
+import { viteBundler } from 'vuepress'
+import theme from './theme'
+import './patchRedirect'
 
-function devOnly(value) {
-  return process.env.NODE_ENV === 'production' ? [] : [value]
+const communitySidebar = [{
+  text: '总览',
+  link: '/community/',
+}]
+
+const communityFolder = resolve(__dirname, '../community')
+const dirents = readdirSync(communityFolder, { withFileTypes: true })
+for (const dirent of dirents) {
+  if (!dirent.isDirectory() && !dirent.isSymbolicLink()) continue
+  communitySidebar.push(require(communityFolder + '/' + dirent.name))
 }
+
+const hash = process.env.GITHUB_SHA
+  ? ` (${process.env.GITHUB_SHA.slice(0, 7)})`
+  : ''
 
 module.exports = {
   base: '/',
   title: 'Koishi',
-  theme: resolve(__dirname, 'theme'),
-  bundler: '@vuepress/vite',
 
   head: [
     ['link', { rel: 'icon', href: `/koishi.png` }],
@@ -34,10 +47,10 @@ module.exports = {
     },
   },
 
-  themeConfig: {
+  theme: theme({
     logo: '/koishi.png',
     navbar: [{
-      text: `v4.x (${execSync('git log -1 --format=%h').toString().trim()})`,
+      text: 'v4.x' + hash,
       children: [{
         text: 'v3.x',
         link: 'https://koishi.js.org/v3/',
@@ -70,7 +83,6 @@ module.exports = {
         link: '/manual/introduction.md',
       }, {
         text: '起步',
-        isGroup: true,
         children: [
           '/manual/starter/node.md',
           '/manual/starter/installation.md',
@@ -80,7 +92,6 @@ module.exports = {
         ],
       }, {
         text: '进阶',
-        isGroup: true,
         children: [
           '/manual/advanced/config.md',
           '/manual/advanced/development.md',
@@ -95,7 +106,6 @@ module.exports = {
         link: '/guide/',
       }, {
         text: '处理交互',
-        isGroup: true,
         children: [
           '/guide/message/middleware.md',
           '/guide/message/session.md',
@@ -103,7 +113,6 @@ module.exports = {
         ],
       }, {
         text: '指令系统',
-        isGroup: true,
         children: [
           '/guide/command/index.md',
           '/guide/command/execution.md',
@@ -112,7 +121,6 @@ module.exports = {
         ],
       }, {
         text: '模块化',
-        isGroup: true,
         children: [
           '/guide/plugin/index.md',
           '/guide/plugin/context.md',
@@ -122,7 +130,6 @@ module.exports = {
         ],
       }, {
         text: '数据库',
-        isGroup: true,
         children: [
           '/guide/database/index.md',
           '/guide/database/model.md',
@@ -132,7 +139,6 @@ module.exports = {
         ],
       }, {
         text: '跨平台',
-        isGroup: true,
         children: [
           '/guide/adapter/index.md',
           '/guide/adapter/bot.md',
@@ -141,7 +147,6 @@ module.exports = {
         ],
       }, {
         text: '国际化',
-        isGroup: true,
         children: [
           '/guide/i18n/index.md',
           '/guide/i18n/translation.md',
@@ -150,7 +155,6 @@ module.exports = {
         ],
       }, {
         text: '更多功能',
-        isGroup: true,
         children: [
           '/guide/service/assets.md',
           '/guide/service/http.md',
@@ -159,7 +163,6 @@ module.exports = {
         ],
       }, {
         text: '控制台开发',
-        isGroup: true,
         children: [
           '/guide/console/index.md',
           '/guide/console/extension.md',
@@ -167,7 +170,6 @@ module.exports = {
         ],
       }, {
         text: '单元测试',
-        isGroup: true,
         children: [
           '/guide/misc/unit-tests.md',
         ],
@@ -181,7 +183,6 @@ module.exports = {
         link: '/api/glossary.md',
       }, {
         text: '核心 API',
-        isGroup: true,
         children: [
           '/api/core/adapter.md',
           '/api/core/app.md',
@@ -194,7 +195,6 @@ module.exports = {
         ],
       }, {
         text: '数据库 API',
-        isGroup: true,
         children: [
           '/api/database/built-in.md',
           '/api/database/database.md',
@@ -204,7 +204,6 @@ module.exports = {
         ],
       }, {
         text: '其他内置 API',
-        isGroup: true,
         children: [
           '/api/utils/segment.md',
           '/api/utils/schema.md',
@@ -215,7 +214,6 @@ module.exports = {
         ],
       }, {
         text: '控制台开发',
-        isGroup: true,
         children: [
           '/api/console/server.md',
           '/api/console/client.md',
@@ -227,7 +225,6 @@ module.exports = {
         link: '/plugins/',
       }, {
         text: '适配器支持',
-        isGroup: true,
         children: [
           '/plugins/adapter/discord.md',
           '/plugins/adapter/kaiheila.md',
@@ -237,7 +234,6 @@ module.exports = {
         ],
       }, {
         text: '数据库支持',
-        isGroup: true,
         children: [
           '/plugins/database/level.md',
           '/plugins/database/memory.md',
@@ -247,7 +243,6 @@ module.exports = {
         ],
       }, {
         text: '资源存储支持',
-        isGroup: true,
         children: [
           '/plugins/assets/git.md',
           '/plugins/assets/local.md',
@@ -256,7 +251,6 @@ module.exports = {
         ],
       }, {
         text: '常用功能',
-        isGroup: true,
         children: [
           '/plugins/common/broadcast.md',
           '/plugins/common/echo.md',
@@ -268,7 +262,6 @@ module.exports = {
         ],
       }, {
         text: '辅助功能',
-        isGroup: true,
         children: [
           '/plugins/accessibility/admin.md',
           '/plugins/accessibility/bind.md',
@@ -282,7 +275,6 @@ module.exports = {
         ],
       }, {
         text: '控制台功能',
-        isGroup: true,
         children: [
           '/plugins/console/index.md',
           '/plugins/console/auth.md',
@@ -296,69 +288,19 @@ module.exports = {
         ],
       }, {
         text: '其他官方插件',
-        isGroup: true,
         children: [
           '/plugins/other/mock.md',
           '/plugins/other/puppeteer.md',
         ],
       }],
 
-      '/community/': [{
-        text: '总览',
-        link: '/community/',
-      }, {
-        text: '教学系统 (Teach)',
-        isGroup: true,
-        children: [
-          '/community/dialogue/',
-          '/community/dialogue/interp.md',
-          '/community/dialogue/prob.md',
-          '/community/dialogue/regexp.md',
-          '/community/dialogue/context.md',
-          // '/community/dialogue/prev-succ.md',
-          '/community/dialogue/misc.md',
-          '/community/dialogue/config.md',
-        ],
-      }, {
-        text: '接入 GitHub (GitHub)',
-        isGroup: true,
-        children: [
-          '/community/github/index.md',
-        ],
-      }, {
-        text: '执行脚本 (Eval)',
-        isGroup: true,
-        children: [
-          '/community/eval/index.md',
-          '/community/eval/addon.md',
-          '/community/eval/main.md',
-          '/community/eval/worker.md',
-          '/community/eval/sandbox.md',
-          '/community/eval/config.md',
-        ],
-      }, ...devOnly({
-        text: '冒险系统 (Adventure)',
-        isGroup: true,
-        children: [
-          '/community/adventure/index.md',
-          '/community/adventure/events.md',
-        ],
-      }), {
-        text: '装饰器支持',
-        isGroup: true,
-        children: [
-          '/community/decorator/thirdeye.md',
-          '/community/decorator/schemastery.md',
-          '/community/decorator/nestjs.md',
-        ],
-      }],
+      '/community/': communitySidebar,
 
       '/about/': [{
         text: '常见问题',
         link: '/about/faq.md',
       }, {
         text: '更新与迁移',
-        isGroup: true,
         children: [
           '/about/history.md',
           '/about/migration.md',
@@ -371,7 +313,6 @@ module.exports = {
         ],
       }, {
         text: '贡献指南',
-        isGroup: true,
         children: [
           '/about/contribute/structure.md',
           '/about/contribute/docs.md',
@@ -379,20 +320,19 @@ module.exports = {
       }],
     },
 
-    lastUpdated: '上次更新',
     docsRepo: 'koishijs/koishi',
     docsDir: 'docs',
-    docsBranch: 'next',
     editLinkText: '帮助我们改善此页面',
     contributors: false,
+  }),
 
-    themePlugins: {
-      git: false,
-    },
-  },
-
-  bundlerConfig: {
+  bundler: viteBundler({
     viteOptions: {
+      server: {
+        fs: {
+          strict: false,
+        },
+      },
       plugins: [
         require('@rollup/plugin-yaml')(),
       ],
@@ -410,5 +350,5 @@ module.exports = {
       //   },
       // },
     },
-  },
+  }),
 }

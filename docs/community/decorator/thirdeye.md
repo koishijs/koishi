@@ -291,6 +291,7 @@ export default class MyPlugin extends BasePlugin<MyPluginConfig> implements Life
 - `@UseBeforeEvent(name: BeforeEventName, prepend?: boolean)` 注册事件监听器。等价于 `ctx.before(name, callback, prepend)`。
 - `@UseCommand(def: string, desc?: string, config?: Command.Config)` 注册指令。
   - 若指定 `config.empty` 则不会注册当前函数为 action，用于没有 action 的父指令。
+- `@UseInterval(ms: number)` 注册定时任务，等价于 `ctx.setInterval(callback, ms)`。
 - `@Get(path: string)` `@Post(path: string)` 在 Koishi 的 Koa 路由中注册 GET/POST 路径。此外， PUT PATCH DELETE 等方法也有所支持。
 - `@Ws(path: string)` 注册 Koishi 的 WebSocket 监听器。
 
@@ -740,6 +741,204 @@ export class MyPhotoRegistry extends BasePlugin<Config> {
   }
 }
 ```
+
+## 多实例插件
+
+您可能需要开发某一类插件，这些插件的配置中允许定义多个实例，而插件加载时会将每一个对应配置进行实例化，如 [autopic](https://npmjs.com/package/koishi-plugin-autopic) 插件，会定时向特定目标发送随机图片。这些插件的配置看起来像下面的配置，具有 `instances` 属性，配置每一个实例，并在插件加载时分别进行实例化。
+
+我们配置这些插件的时候，会像下面这样书写配置：
+
+```yaml
+# koishi.yml
+plugins:
+  autopic:
+    instances:
+      - interval: 30000
+        tags:
+          - 白丝
+        targets:
+          - bot: 'onebot:1111111111'
+            channels:
+              - channelId: '123123123'
+      - interval: 60000
+        tags:
+          - 黑丝
+        targets:
+          - bot: 'onebot:1111111112'
+            channels:
+              - channelId: '123123123'
+```
+
+这样的插件通常情况下，会如同下面的方式进行编写：
+
+```ts
+@RegisterSchema()
+export class InstanceConfig {
+  @SchemaProperty()
+  interval: string
+
+  @SchemaProperty({ type: String })
+  tags: string[]
+
+  @SchemaProperty({ type: SendTarget })
+  targets: SendTarget[]
+}
+
+@RegisterSchema()
+export class Config {
+  instances: Instance[]
+}
+
+export class Instance {
+  constructor(private ctx: Context, private config: InstanceConfig) {
+    ctx.setInterval(() => this.send(), config.interval)
+  }
+
+  async send() {
+    // 发送图片
+  }
+}
+
+@DefinePlugin({ schema: Config })
+export default class AutoPicPlugin extends BasePlugin<Config> {
+  onApply() {
+    this.config.instances.forEach((instanceConfig) => new Instance(this.ctx, config))
+  }
+}
+```
+
+更复杂的情况，我们还需要手动实现每个实例的生命周期管理，这会让多实例插件编写变得十分繁琐。因此 koishi-thirdeye 提供了多实例插件的解决方案。
+
+### 编写切面
+
+使用 koishi-thirdeye 编写多实例插件时，您只需要对切面进行编写。编写切面的方式和编写插件的方式相同。
+
+::: warning
+切面插件只支持使用 koishi-thirdeye 编写。
+:::
+
+```ts
+// instance.ts
+@RegisterSchema()
+export class InstanceConfig {
+  @SchemaProperty()
+  cron: string
+
+  @SchemaProperty({ type: String })
+  tags: string[]
+
+  @SchemaProperty({ type: SendTarget })
+  targets: SendTarget[]
+}
+
+@DefinePlugin({ schema: InstanceConfig })
+export class Instance extends BasePlugin<InstanceConfig> {
+  async send() {
+    // 发送图片
+  }
+
+  onApply() {
+    this.ctx.setInterval(() => this.send(), this.config.interval)
+  }
+}
+```
+
+### 定义多实例插件
+
+完成切面编写之后，您只需要使用 `MultiInstancePlugin` 基类工厂函数，即可定义多实例插件。
+
+::: warning
+多实例插件的 Schema 描述配置模式已经由 `MultiInstancePlugin` 自动生成，请不要对其进行覆盖，以避免配置异常。
+:::
+
+```ts
+// index.ts
+
+@DefinePlugin()
+export default class AutoPicPlugin extends MultiInstancePlugin(AutoPicInstancePlugin) {}
+```
+
+加载多实例插件时，每个实例的配置均在配置的 `instances` 属性下，对应切面插件的配置项。
+
+```yaml
+# koishi.yml
+plugins:
+  autopic:
+    instances:
+      - interval: 30000
+        tags:
+          - 白丝
+        targets:
+          - bot: 'onebot:1111111111'
+            channels:
+              - channelId: '123123123'
+      - interval: 60000
+        tags:
+          - 黑丝
+        targets:
+          - bot: 'onebot:1111111112'
+            channels:
+              - channelId: '123123123'
+```
+
+此外，`MultiInstancePlugin` 接受 Schema 描述配置模式类作为第二个参数，允许您对插件的配置进行注入。
+
+::: warning
+注入的描述配置模式类只支持使用 [schemastery-gen](./schemastery.md)，即装饰器的形式，进行编写。
+:::
+
+```ts
+// index.ts
+@RegisterSchema()
+export class Config {
+  @SchemaProperty()
+  defaultInterval: number;
+}
+
+@DefinePlugin()
+export default class AutoPicPlugin extends MultiInstancePlugin(AutoPicInstancePlugin, Config) {}
+```
+
+```yaml
+# koishi.yml
+plugins:
+  autopic:
+    defaultInterval: 30000
+    instances:
+      - tags:
+          - 白丝
+        targets:
+          - bot: 'onebot:1111111111'
+            channels:
+              - channelId: '123123123'
+      - interval: 60000
+        tags:
+          - 黑丝
+        targets:
+          - bot: 'onebot:1111111112'
+            channels:
+              - channelId: '123123123'
+```
+
+### 实例管理
+
+多实例插件基类提供了 `instances` 属性，可以访问所有加载的实例。
+
+```ts
+@DefinePlugin()
+export default class AutoPicPlugin extends MultiInstancePlugin(AutoPicInstancePlugin) {
+  @UseCommand('instance <name>', '获取实例状态')
+  onGetInstanceStatus(@PutArg(0) name: string) {
+    const instance = this.instances.find((instance) => instance.name === name)
+    if (!instance) {
+      return '未找到实例。'
+    }
+    return instance.getStatus()
+  }
+}
+```
+
+要在切面插件中访问其父插件，可以使用[服务](#提供服务)的形式。
 
 ## 扩展数据表
 

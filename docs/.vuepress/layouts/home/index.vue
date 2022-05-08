@@ -54,10 +54,6 @@ function scroll(scale = 1) {
   grid-template-rows: repeat(5, 100vh);
   scroll-snap-type: y mandatory;
 
-  .koi {
-    color: var(--c-love);
-  }
-
   .screen.flex {
     padding: 6rem;
     position: relative;

@@ -1,16 +1,23 @@
 <template>
-  <template v-if="Object.keys(store.market).length">
-    <div class="market-search">
-      <el-input v-model="query" #suffix>
-        <k-icon name="search"></k-icon>
-      </el-input>
+  <template v-if="plugins.length">
+    <div class="search-box">
+      <k-badge type="success" v-for="(word, index) in words.slice(0, -1)" :key="index" @click="words.splice(index, 1)">{{ word }}</k-badge>
+      <input
+        placeholder="输入想要查询的插件名"
+        v-model="words[words.length - 1]"
+        @blur="onEnter"
+        @keydown.escape="onEscape"
+        @keydown.backspace="onBackspace"
+        @keypress.enter.prevent="onEnter"
+        @keypress.space.prevent="onEnter"/>
+      <k-icon name="search"></k-icon>
     </div>
     <div class="market-filter">
-      共搜索到 {{ plugins.length }} 个插件。
+      共搜索到 {{ realWords.length ? packages.length + ' / ' : '' }}{{ Object.keys(store.market).length }} 个插件。
       <el-checkbox v-model="config.showInstalled">显示已下载的插件</el-checkbox>
     </div>
     <div class="market-container">
-      <package-view v-for="data in packages" :key="data.name" :data="data" @query="query = $event"></package-view>
+      <package-view v-for="data in packages" :key="data.name" :data="data" @query="onQuery"></package-view>
     </div>
   </template>
   <k-comment v-else type="error" class="market-error">
@@ -25,39 +32,66 @@
 <script setup lang="ts">
 
 import { store } from '@koishijs/client'
-import { computed } from 'vue'
+import { computed, reactive, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { config } from '../utils'
 import { validate } from './utils'
+import type { AnalyzedPackage } from '@koishijs/market'
 import PackageView from './package.vue'
-
-function join(source: string | string[]) {
-  return Array.isArray(source) ? source.join(' ') : source || ''
-}
 
 const route = useRoute()
 const router = useRouter()
 
-const query = computed<string>({
-  get() {
-    return join(route.query.keyword)
-  },
-  set(value) {
-    const { keyword, ...rest } = route.query
-    if (value) {
-      router.replace({ query: { keyword: value, ...rest } })
-    } else {
-      router.replace({ query: rest })
-    }
-  },
-})
+const { keyword } = route.query
+const words = reactive(Array.isArray(keyword) ? keyword : (keyword || '').split(' '))
+
+if (words[words.length - 1]) words.push('')
+
+const realWords = computed(() => words.filter(w => w))
+
+watch(words, () => {
+  const { keyword: _, ...rest } = route.query
+  const keyword = realWords.value.join(' ')
+  if (keyword) {
+    router.replace({ query: { keyword, ...rest } })
+  } else {
+    router.replace({ query: rest })
+  }
+}, { deep: true })
+
+function onEnter(event: KeyboardEvent) {
+  const last = words[words.length - 1]
+  if (!last) return
+  if (words.slice(0, -1).includes(last)) {
+    words.pop()
+  }
+  words.push('')
+}
+
+function onEscape(event: KeyboardEvent) {
+  words[words.length - 1] = ''
+}
+
+function onBackspace(event: KeyboardEvent) {
+  if (words[words.length - 1] === '' && words.length > 1) {
+    event.preventDefault()
+    words.splice(words.length - 2, 1)
+  }
+}
+
+function onQuery(word: string) {
+  if (!words[words.length - 1]) words.pop()
+  if (!words.includes(word)) words.push(word)
+  words.push('')
+}
 
 const plugins = computed(() => {
-  return Object.values(store.market).filter(data => validate(data, query.value))
+  return Object.values(store.market).filter(data => data.shortname)
 })
 
 const packages = computed(() => {
   return plugins.value
+    .filter(data => words.every(word => validate(data, word)))
     .filter(item => config.showInstalled || !store.packages[item.name])
     .sort((a, b) => b.popularity - a.popularity)
 })
@@ -66,31 +100,44 @@ const packages = computed(() => {
 
 <style lang="scss">
 
-.market-search {
-  margin: 2rem 2rem 0;
+.search-box {
+  margin: 2rem auto 0;
   display: flex;
   justify-content: center;
+  align-items: center;
+  width: 600px;
+  max-width: 600px;
+  height: 3rem;
+  border-radius: 1.5rem;
+  background-color: var(--card-bg);
+  align-items: center;
+  padding: 0 1.2rem;
+  transition: var(--color-transition);
 
-  .el-input {
-    max-width: 600px;
-    line-height: 3rem;
-  }
-
-  .el-input__inner {
+  input {
     height: 3rem;
-    border-radius: 2rem;
-    font-size: 1.25rem;
-    padding: 0 3rem 0 1.25rem;
-    background-color: var(--card-bg);
-    transition: color 0.3s ease, background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+    width: 100%;
+    font-size: 1em;
+    background-color: transparent;
+    border: none;
+    outline: none;
+    color: var(--fg1);
+    transition: var(--color-transition);
   }
 
-  .el-input__suffix {
-    right: 1.25rem;
+  .badge {
+    flex-shrink: 0;
+  }
 
-    .k-icon {
-      height: 1.25rem;
-    }
+  .badge + input {
+    margin-left: 0.4rem;
+  }
+}
+
+.search-box, .market-container {
+  .k-badge {
+    cursor: pointer;
+    user-select: none;
   }
 }
 

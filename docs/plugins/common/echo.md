@@ -12,6 +12,7 @@ sidebarDepth: 2
   - `-a, --anonymous`  匿名发送消息 (需要 3 级权限)
   - `-A, --force-anonymous`  强制匿名发送消息 (需要 3 级权限)
   - `-e, --escape`  发送转义消息 (需要 3 级权限)
+  - `-E, --unescape`  发送反转义消息 (需要 3 级权限)
   - `-u, --user [user]`  发送到用户 (需要 3 级权限)
   - `-c, --channel [channel]`  发送到频道 (需要 3 级权限)
   - `-g, --guild [guild]`  指定群组编号 (需要 3 级权限)

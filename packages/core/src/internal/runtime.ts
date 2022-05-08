@@ -27,7 +27,9 @@ export default function runtime(ctx: Context) {
         if (!fuzzy && content !== name || !content.startsWith(name)) continue
         const message = content.slice(name.length)
         if (fuzzy && !parsed.appel && message.match(/^\S/)) continue
-        const argv = command.parse(message.trim(), '', [...args], { ...options })
+        let argv = Argv.parse(message.trim())
+        argv.session = session
+        argv = command.parse(argv, '', [...args], { ...options })
         argv.command = command
         return argv
       } else {
@@ -78,9 +80,20 @@ export default function runtime(ctx: Context) {
     }
 
     if (command['_actions'].length) return
+    // subcommand redirect
     const arg0 = args.shift() || ''
     const subcommand = ctx.getCommand(command.name + '.' + arg0)
     if (subcommand) {
+      // save command names
+      const commands = session['__redirected_commands'] ||= [
+        `(${command.name}${command._aliases.length !== 0 ? '|' + command._aliases.join('|') : ''})`,
+      ]
+      commands.push(arg0)
+      const regex = new RegExp(`^${commands.join('[. ]')}( |$)`)
+      // remove command names for re-parsing
+      argv = Argv.parse(session.parsed.content.replace(regex, ''))
+      argv.session = session
+      argv = subcommand.parse(argv)
       return session.execute({ ...argv, command: subcommand })
     } else {
       return executeHelp(session, command.name)

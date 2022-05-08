@@ -1,4 +1,4 @@
-import { Adapter, assertProperty, Bot, Dict, Logger, Quester, renameProperty, Schema } from 'koishi'
+import { Adapter, assertProperty, Bot, Dict, Logger, Quester, renameProperty, Schema, Time } from 'koishi'
 import * as Telegram from './types'
 import { AdapterConfig, adaptGuildMember, adaptUser } from './utils'
 import { Sender } from './sender'
@@ -135,6 +135,16 @@ export class TelegramBot extends Bot<BotConfig> {
   async getGuildMemberList(chat_id: string) {
     const data = await this.internal.getChatAdministrators({ chat_id })
     return data.map(adaptGuildMember)
+  }
+
+  async kickGuildMember(chat_id: string, user_id: string | number, permanent?: boolean) {
+    user_id = +user_id
+    await this.internal.banChatMember({
+      chat_id,
+      user_id,
+      until_date: Date.now() + (permanent ? 0 : Time.minute),
+      revoke_messages: true,
+    })
   }
 
   setGroupLeave(chat_id: string) {

@@ -68,7 +68,7 @@ export function apply(ctx: Context, options: Config = {}) {
 
   ctx.on('chat/receive', async (message, session) => {
     if (session.subtype !== 'private' && ctx.database) {
-      const { assignee } = await session.observeChannel(['assignee'])
+      const { assignee } = await ctx.database.getChannel(session.platform, session.channelId, ['assignee'])
       if (assignee !== session.selfId) return
     }
 

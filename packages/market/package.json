@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/market",
   "description": "Scan Package Manager for Koishi Plugins",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [

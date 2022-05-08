@@ -3,9 +3,6 @@
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {
-      "@koishijs/plugin-eval/lib/worker": [
-        "plugins/eval/src/worker",
-      ],
       "@koishijs/database-tests": [
         "plugins/database/tests/src",
       ],

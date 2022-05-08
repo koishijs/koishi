@@ -5,25 +5,25 @@ import { createStorage, store } from '@koishijs/client'
 interface ManagerConfig {
   override: Dict<string>
   showInstalled?: boolean
-  showDepsOnly?: boolean
+  hideWorkspace?: boolean
 }
 
-export const config = createStorage<ManagerConfig>('manager', 1, () => ({
+export const config = createStorage<ManagerConfig>('manager', 2, () => ({
   override: {},
   showInstalled: false,
-  showDepsOnly: false,
+  hideWorkspace: true,
 }))
 
 export const overrideCount = computed(() => {
   return Object.values(config.override).filter(value => value !== undefined).length
 })
 
-watch(store.dependencies, (value) => {
+watch(() => store.dependencies, (value) => {
   if (!value) return
   for (const key in config.override) {
     if (!config.override[key]) {
       if (!value[key]) delete config.override[key]
-    } else if (value[key] === config.override[key]) {
+    } else if (value[key]?.resolved === config.override[key]) {
       delete config.override[key]
     }
   }

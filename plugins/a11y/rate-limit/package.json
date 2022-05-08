@@ -31,12 +31,12 @@
     "required:database"
   ],
   "peerDependencies": {
-    "koishi": "^4.6.1"
+    "koishi": "^4.6.3"
   },
   "devDependencies": {
     "@koishijs/plugin-mock": "^1.0.4"
   },
   "dependencies": {
-    "@koishijs/helpers": "^1.1.1"
+    "@koishijs/helpers": "^1.2.0"
   }
 }
