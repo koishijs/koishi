@@ -12,8 +12,9 @@ declare module 'koishi' {
     }
   }
   interface EventMap {
-    'messages/synced'(bot: Bot, channelId: string)
-    'messages/syncFailed'(bot: Bot, channelId: string, error: Error)
+    'messages/synced'(cid: string)
+    'messages/syncFailed'(cid: string, error: Error)
+    'messages/syncing'(cid: string)
   }
 }
 
@@ -37,6 +38,12 @@ export class MessageDatabase extends Service {
     inDb: string
     received: string
   }> = {}
+
+  #syncingItem: Partial<Session> = null
+
+  get syncingItem() {
+    return this.#syncingItem
+  }
 
   get #queue() {
     return this.#_queue
@@ -98,7 +105,7 @@ export class MessageDatabase extends Service {
     // channel updated: 如果在队列内, 打断同步, 停止记录后续消息
     this.ctx.on('channel-updated', async (session) => {
       if (this.inSyncQueue(session.cid)) {
-        logger.info('in queue, removed, cid: %s', session.cid)
+        logger.debug('in queue, removed, cid: %s', session.cid)
         this.removeFromSyncQueue(session.platform + ':' + session.channelId)
       }
     })
@@ -106,7 +113,7 @@ export class MessageDatabase extends Service {
     this.ctx.on('guild-added', async (session) => {
       if (session.channelId === session.guildId) {
         if (this.#status[session.cid] === ChannelStatus.SYNCED) {
-          logger.info('guild added, addToSyncQueue, cid: %s', session.cid)
+          logger.debug('guild added, addToSyncQueue, cid: %s', session.cid)
           this.addToSyncQueue(session.bot, session.guildId, session.channelId)
         }
       }
@@ -135,18 +142,19 @@ export class MessageDatabase extends Service {
   }
 
   async getMessages(bot: Bot, guildId: string, channelId: string): Promise<Partial<Session>[]> {
+    const cid = bot.platform + ':' + channelId
     // 正在同步: 内存中的最后50条消息
     // 已同步: 数据库里拿
     // 未同步: 尝试同步, 数据库里拿
-    logger.debug('get messages, status: %o', this.#status[bot.platform + ':' + channelId])
-    if (this.#status[bot.platform + ':' + channelId] === ChannelStatus.SYNCING) {
-      const queue = this.#messageQueue[bot.platform + ':' + channelId]
+    logger.debug('get messages, status: %o', this.#status[cid])
+    if (this.#status[cid] === ChannelStatus.SYNCING) {
+      const queue = this.#messageQueue[cid]
       if (queue?.length) {
         return queue.slice(-50)
       }
       return []
     }
-    if (this.#status[bot.platform + ':' + channelId] !== ChannelStatus.SYNCED) {
+    if (this.#status[cid] !== ChannelStatus.SYNCED) {
       this.addToSyncQueue(bot, guildId, channelId)
     }
     const data = await this.ctx.database.get('message', { platform: bot.platform, channelId }, {
@@ -175,13 +183,16 @@ export class MessageDatabase extends Service {
       }
       const session = this.#queue[0]
       if (session) {
+        this.#syncingItem = session
         logger.debug('queue item %o', session)
+        this.ctx.app.emit('messages/syncing', session.cid)
         try {
           await this.#syncMessages(session.bot, session.guildId, session.channelId)
         } catch (e) {
           logger.error(e)
         }
         this.#queue.shift()
+        this.#syncingItem = null
       }
     }
   }
@@ -219,7 +230,7 @@ export class MessageDatabase extends Service {
     } else {
       toMessage = await bot.getMessage(channelId, to)
     }
-    logger.info('from to %o %o', from, to)
+    logger.debug('from to %o %o', from, to)
     let nowMessageId = to
     let newMessages = []
     if (from === to) {
@@ -241,7 +252,7 @@ export class MessageDatabase extends Service {
         throw new Error('not in sync queue')
       }
       const messages = await bot.getChannelMessageHistory(channelId, nowMessageId) // 从旧到新
-      logger.info('get history, now msg id: %s, newMessages length: %d', nowMessageId, newMessages.length)
+      logger.debug('get history, now msg id: %s, newMessages length: %d', nowMessageId, newMessages.length)
       if (messages.find(v => v.messageId === from && v.messageId !== nowMessageId)) {
         // 找到了！
         const stopPosition = messages.findIndex(v => v.messageId === from)
@@ -286,7 +297,7 @@ export class MessageDatabase extends Service {
           // 数据库中最后一条消息
 
           const newMessages = await this.getMessageBetween(bot, channelId, inDatabase[0].messageId, this.#messageRecord[cid]?.received)
-          logger.info('get new messages')
+          logger.debug('get new messages')
           if (newMessages.length) {
             await this.ctx.database.upsert('message', newMessages.map(session => MessageDatabase.adaptMessage(session, bot, guildId)))
           }
@@ -294,8 +305,8 @@ export class MessageDatabase extends Service {
       } catch (e) {
         logger.error(e)
         this.#messageQueue[cid] = []
-        bot.app.emit('messages/syncFailed', bot, channelId, e)
-        this.removeFromSyncQueue(bot.platform + ':' + channelId)
+        bot.app.emit('messages/syncFailed', cid, e)
+        this.removeFromSyncQueue(cid)
         this.#status[cid] = ChannelStatus.FAILED
         return
       }
@@ -309,8 +320,8 @@ export class MessageDatabase extends Service {
       this.#messageQueue[cid] = []
     }
     this.#status[cid] = ChannelStatus.SYNCED
-    bot.app.emit('messages/synced', bot, channelId)
-    this.removeFromSyncQueue(bot.platform + ':' + channelId)
+    bot.app.emit('messages/synced', cid)
+    this.removeFromSyncQueue(cid)
   }
 
   async #onMessage(session: Session) {
