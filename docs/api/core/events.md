@@ -37,17 +37,17 @@ Koishi 封装了一套事件系统。其基本用法与 Node.js 自带的 [Event
 
 跟群组、好友有关的事件统称为成员类事件，共有以下几种：
 
-- group-added: 加入了群组
-- group-deleted: 退出了群组
-- group-request: 收到了群组邀请
-- group-member-added: 群组成员增加
-- group-member-deleted: 群组成员减少
-- group-member-request: 收到了入群申请
+- guild-added: 加入了群组
+- guild-deleted: 退出了群组
+- guild-request: 收到了群组邀请
+- guild-member-added: 群组成员增加
+- guild-member-deleted: 群组成员减少
+- guild-member-request: 收到了入群申请
 - friend-added: 好友数量增加
 - friend-deleted: 好友数量减少
 - friend-request: 收到了好友请求
 
-形如 group(-member)?-(added|deleted) 的事件拥有以下的属性：
+形如 guild(-member)?-(added|deleted) 的事件拥有以下的属性：
 
 - **operatorId:** `string` 操作者 ID
 
@@ -58,15 +58,15 @@ Koishi 封装了一套事件系统。其基本用法与 Node.js 自带的 [Event
 
 ### 操作类事件
 
-上报事件中最主要的一部分都有着统一的结构：**事件主体** + **操作类型**。例如好友请求事件是 friend-request，群组文件更新事件是 group-file-updated 等。目前支持的事件主体包括以下几种：
+上报事件中最主要的一部分都有着统一的结构：**事件主体** + **操作类型**。例如好友请求事件是 friend-request，群组文件更新事件是 guild-file-updated 等。目前支持的事件主体包括以下几种：
 
 - friend
 - channel
-- group
-- group-member
-- group-role
-- group-file
-- group-emoji
+- guild
+- guild-member
+- guild-role
+- guild-file
+- guild-emoji
 
 操作类型包含以下几种：
 
@@ -124,7 +124,7 @@ Koishi 封装了一套事件系统。其基本用法与 Node.js 自带的 [Event
 
 当 Koishi 试图从数据库获取频道 / 用户信息前触发。你可以在回调函数中通过 `fields.add()` 修改传入的字段集合，增加的字段将可以被指令以及之后的中间件获取到。
 
-如果没有配置数据库，则两个事件都不会触发；如果不是群聊消息，则 before-attach-channel 事件不会触发。
+这两个事件的触发于内置中间件中。如果没有配置数据库，则两个事件都不会触发；如果不是群聊消息，则 before-attach-channel 事件不会触发。
 
 ### 事件：attach-channel
 ### 事件：attach-user
@@ -136,6 +136,17 @@ Koishi 封装了一套事件系统。其基本用法与 Node.js 自带的 [Event
 
 如果没有配置数据库，则两个事件都不会触发；如果不是群聊消息，则 attach-channel 事件不会触发。
 
+### 事件：command/before-attach-channel
+### 事件：command/before-attach-user
+
+- **session:** `Argv` 运行时参数
+- **fields:** `Set<string>` 要获取的字段列表
+- **触发方式:** emit
+
+当 Koishi 试图从数据库获取频道 / 用户信息前触发。你可以在回调函数中通过 `fields.add()` 修改传入的字段集合，增加的字段将可以被指令以及之后的中间件获取到。
+
+这两个事件触发于任意指令调用前。如果没有配置数据库，则两个事件都不会触发；如果不是群聊消息，则 before-attach-channel 事件不会触发。
+
 ### 事件：before-send
 
 - **session:** `Session` 消息会话
@@ -143,7 +154,7 @@ Koishi 封装了一套事件系统。其基本用法与 Node.js 自带的 [Event
 
 即将发送信息时会在对应的上下文触发。调用时会传入一个事件类型为 [send](#消息类事件) 的会话实例。由于该消息还未发送，这个会话并没有 `messageId` 属性。你可以通过修改 `session.content` 改变发送的内容，或者返回一个 truthy 值以取消该消息的发送。
 
-### 事件：before-command
+### 事件：command/before-execute
 
 - **argv:** `Argv` 运行时参数
 - **触发方式:** serial
@@ -186,3 +197,24 @@ Koishi 封装了一套事件系统。其基本用法与 Node.js 自带的 [Event
 - **触发方式:** emit
 
 调用 `model.extend()` 时触发。
+
+### 事件：bot-added
+
+- **bot:** [`Bot`](./bot.md) 机器人实例
+- **触发方式:** emit
+
+添加机器人时触发。
+
+### 事件：bot-removed
+
+- **bot:** [`Bot`](./bot.md) 机器人实例
+- **触发方式:** emit
+
+移除机器人时触发。
+
+### 事件：bot-status-updated
+
+- **bot:** [`Bot`](./bot.md) 机器人实例
+- **触发方式:** emit
+
+[bot.status](./bot.md#bot-status) 发生改变时触发。

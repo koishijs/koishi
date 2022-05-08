@@ -1,10 +1,13 @@
-import { cwd, PackageJson, getWorkspaces, spawnAsync, spawnSync } from './utils'
+import { cwd, getPackages, PackageJson, spawnAsync, spawnSync } from './utils'
 import { gt, maxSatisfying, prerelease } from 'semver'
 import { Octokit } from '@octokit/rest'
 import { draft } from './release'
-import { writeJson } from 'fs-extra'
+import { copyFile } from 'fs-extra'
 import latest from 'latest-version'
 import ora from 'ora'
+import cac from 'cac'
+
+const { args } = cac().help().parse()
 
 const { CI, GITHUB_EVENT_NAME, GITHUB_REF, GITHUB_TOKEN } = process.env
 
@@ -13,20 +16,16 @@ if (CI && (GITHUB_REF !== 'refs/heads/master' || GITHUB_EVENT_NAME !== 'push')) 
   process.exit(0)
 }
 
-function getVersion(name: string, isLatest = true) {
-  if (isLatest) {
-    return latest(name).catch(() => '0.0.1')
-  } else {
+function getVersion(name: string, isNext = false) {
+  if (isNext) {
     return latest(name, { version: 'next' }).catch(() => getVersion(name))
+  } else {
+    return latest(name).catch(() => '0.0.1')
   }
 }
 
 ;(async () => {
-  let folders = await getWorkspaces()
-  if (process.argv[2]) {
-    folders = folders.filter(path => path.startsWith(process.argv[2]))
-  }
-
+  const folders = await getPackages(args)
   const spinner = ora()
   const bumpMap: Record<string, PackageJson> = {}
 
@@ -37,7 +36,7 @@ function getVersion(name: string, isLatest = true) {
     try {
       meta = require(`../${name}/package.json`)
       if (!meta.private) {
-        const version = await getVersion(meta.name, !prerelease(meta.version))
+        const version = await getVersion(meta.name, isNext(meta.version))
         if (gt(meta.version, version)) {
           bumpMap[name] = meta
         }
@@ -46,6 +45,12 @@ function getVersion(name: string, isLatest = true) {
     spinner.text = `Loading workspaces (${++progress}/${folders.length})`
   }))
   spinner.succeed()
+
+  function isNext(version: string) {
+    const parts = prerelease(version)
+    if (!parts) return false
+    return parts[0] !== 'rc'
+  }
 
   function publish(folder: string, name: string, version: string, tag: string) {
     console.log(`publishing ${name}@${version} ...`)
@@ -60,12 +65,15 @@ function getVersion(name: string, isLatest = true) {
   if (Object.keys(bumpMap).length) {
     for (const folder in bumpMap) {
       const { name, version } = bumpMap[folder]
-      await publish(folder, name, version, prerelease(version) ? 'next' : 'latest')
+      if (name === 'koishi') {
+        await copyFile(`${cwd}/README.md`, `${cwd}/${folder}/README.md`)
+      }
+      await publish(folder, name, version, isNext(version) ? 'next' : 'latest')
     }
   }
 
   const { version } = require('../packages/koishi/package') as PackageJson
-  if (prerelease(version)) return
+  if (!CI || isNext(version)) return
 
   const tags = spawnSync(['git', 'tag', '-l']).split(/\r?\n/)
   if (tags.includes(version)) {
@@ -86,7 +94,7 @@ function getVersion(name: string, isLatest = true) {
     owner: 'koishijs',
     tag_name: version,
     name: `Koishi ${version}`,
-    prerelease: !!prerelease(version),
+    prerelease: isNext(version),
     body,
   })
   console.log('Release created successfully.')

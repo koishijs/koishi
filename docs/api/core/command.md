@@ -12,7 +12,7 @@ Argv 对象会作为 `cmd.action()`, `cmd.userFields()` 等方法的回调函数
 
 - **args:** `any[]` 参数列表
 - **options:** `{}` 选项列表
-- **next:** `NextFunction` 中间件的 next 回调函数
+- **next:** `Next` 中间件的 next 回调函数
 - **session:** [`Session`](./session.md) 所在的会话对象
 
 ## 实例方法
@@ -32,7 +32,7 @@ Argv 对象会作为 `cmd.action()`, `cmd.userFields()` 等方法的回调函数
 
 为指令添加一个选项。
 
-```js
+```ts
 type DomainType = string | RegExp | ((source: string) => any)
 ```
 
@@ -65,8 +65,8 @@ type DomainType = string | RegExp | ((source: string) => any)
 
 为指令添加执行函数。
 
-```js
-type Awaitable<T> = T extends Promise<unknown> ? T : T | Promise<T>
+```ts
+type Awaitable<T> = [T] extends [Promise<unknown>] ? T : T | Promise<T>
 type CommandAction = (argv: Argv, ...args: any[]) => Awaitable<string | void>
 ```
 
@@ -86,7 +86,7 @@ type CommandAction = (argv: Argv, ...args: any[]) => Awaitable<string | void>
 如果指令需要用到用户数据，你可以提前声明，这样有助于合并多次请求，从而提高性能。
 参见[按需加载](../../guide/manage.md#声明所需字段)章节。
 
-```js
+```ts
 type FieldCollector<K extends string> =
   | Iterable<K>
   | ((argv: Argv, fields: Set<K>) => void)
@@ -142,7 +142,7 @@ type FieldCollector<K extends string> =
   - **argv.args:** `any[]` 指令的参数列表
   - **argv.options:** `Record<string, any>` 指令的选项
   - **argv.session:** [`Session`](./session.md) 当前的会话对象
-- **next:** [`NextFunction`](../../guide/message.md#使用中间件) 所处的中间件的 `next` 回调函数
+- **next:** [`Next`](../../guide/message.md#使用中间件) 所处的中间件的 `next` 回调函数
 - 返回值: `Promise<string>` 执行函数的返回结果，可用于指令插值
 
 执行当前指令。
@@ -164,17 +164,3 @@ type FieldCollector<K extends string> =
 ### Command.defaultOptionConfig
 
 默认的选项配置。
-
-### Command.userFields(fields)
-
-- **fields:** `FieldCollector<UserField>` 要请求的用户字段
-
-如果所有指令都需要用到用户数据，你可以提前声明，这样有助于合并多次请求，从而提高性能。
-参见[按需加载](../../guide/manage.md#声明所需字段)章节。
-
-### Command.channelFields(fields)
-
-- **fields:** `FieldCollector<ChannelField>` 要请求的频道字段
-
-如果所有指令都需要用到频道数据，你可以提前声明，这样有助于合并多次请求，从而提高性能。
-参见[按需加载](../../guide/manage.md#声明所需字段)章节。

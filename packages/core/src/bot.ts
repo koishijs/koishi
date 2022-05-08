@@ -1,28 +1,43 @@
-import { Logger, sleep, Dict } from '@koishijs/utils'
+import { Dict, Logger, makeArray, Random, Schema, sleep } from '@koishijs/utils'
 import { Adapter } from './adapter'
 import { App } from './app'
 import { Session } from './session'
-import Schema from 'schemastery'
+
+const logger = new Logger('bot')
 
 export interface Bot extends Bot.BaseConfig, Bot.Methods, Bot.UserBase {}
 
 export abstract class Bot<T extends Bot.BaseConfig = Bot.BaseConfig> {
-  readonly app: App
-  readonly logger: Logger
-  readonly platform: string
+  public app: App
+  public platform: string
+  public hidden?: boolean
+  public internal?: any
+  public selfId?: string
+  public logger: Logger
+  public id = Random.id()
 
   private _status: Bot.Status
 
-  selfId?: string
   error?: Error
-  resolve?: () => void
-  reject?: (error: Error) => void
 
   constructor(public adapter: Adapter, public config: T) {
     this.app = adapter.ctx.app
     this.platform = config.platform || adapter.platform
     this.logger = new Logger(adapter.platform)
     this._status = 'offline'
+    this.extendModel()
+
+    adapter.ctx.on('ready', () => this.start())
+    adapter.ctx.on('dispose', () => this.stop())
+  }
+
+  private extendModel() {
+    if (this.platform in this.app.model.tables.user.fields) return
+    this.app.model.extend('user', {
+      [this.platform]: { type: 'string', length: 63 },
+    }, {
+      unique: [this.platform as never],
+    })
   }
 
   get status() {
@@ -32,13 +47,26 @@ export abstract class Bot<T extends Bot.BaseConfig = Bot.BaseConfig> {
   set status(value) {
     this._status = value
     if (this.app.bots.includes(this)) {
-      this.app.emit('bot-updated', this)
+      this.app.emit('bot-status-updated', this)
     }
   }
 
+  resolve() {
+    this.status = 'online'
+    logger.success('logged in to %s as %c (%s)', this.platform, this.username, this.selfId)
+  }
+
+  reject(error: Error) {
+    this.error = error
+    this.status = 'offline'
+    logger.error(error)
+  }
+
   async start() {
+    if (this.config.disabled) return
+    if (['connect', 'reconnect', 'online'].includes(this.status)) return
+    this.status = 'connect'
     try {
-      this.status = 'connect'
       await this.app.parallel('bot-connect', this)
       await this.adapter.connect(this)
     } catch (error) {
@@ -47,40 +75,24 @@ export abstract class Bot<T extends Bot.BaseConfig = Bot.BaseConfig> {
   }
 
   async stop() {
+    if (['disconnect', 'offline'].includes(this.status)) return
+    this.status = 'disconnect'
     try {
-      await this.app.parallel('bot-dispose', this)
-      await this.adapter.dispose(this)
+      await this.app.parallel('bot-disconnect', this)
+      await this.adapter.disconnect(this)
     } catch (error) {
       this.logger.warn(error)
     }
     this.status = 'offline'
   }
 
-  connect() {
-    const task = new Promise<this>((resolve, reject) => {
-      this.resolve = () => {
-        this.status = 'online'
-        resolve(this)
-      }
-      this.reject = (error) => {
-        this.error = error
-        this.status = 'offline'
-        reject(error)
-      }
-    })
-
-    if (this.app.isActive) {
-      this.start()
-    }
-    return task
-  }
-
   get sid() {
     return `${this.platform}:${this.selfId}`
   }
 
-  createSession(session: Partial<Session<never, never, 'send'>>) {
-    return new Session<never, never, 'send'>(this, {
+  /** @deprecated using `bot.session()` instead */
+  createSession(session: Partial<Session>) {
+    return new Session(this, {
       ...session,
       type: 'send',
       selfId: this.selfId,
@@ -96,17 +108,24 @@ export abstract class Bot<T extends Bot.BaseConfig = Bot.BaseConfig> {
     })
   }
 
+  async session(data: Partial<Session>) {
+    const session = this.createSession(data)
+    if (await this.app.serial(session, 'before-send', session)) return
+    return session
+  }
+
   async getGuildMemberMap(guildId: string) {
     const list = await this.getGuildMemberList(guildId)
     return Object.fromEntries(list.map(info => [info.userId, info.nickname || info.username]))
   }
 
-  async broadcast(channels: string[], content: string, delay = this.app.options.delay.broadcast) {
+  async broadcast(channels: (string | [string, string])[], content: string, delay = this.app.options.delay.broadcast) {
     const messageIds: string[] = []
     for (let index = 0; index < channels.length; index++) {
       if (index && delay) await sleep(delay)
       try {
-        messageIds.push(await this.sendMessage(channels[index], content, 'unknown'))
+        const [channelId, guildId] = makeArray(channels[index])
+        messageIds.push(...await this.sendMessage(channelId, content, guildId))
       } catch (error) {
         this.app.logger('bot').warn(error)
       }
@@ -116,25 +135,25 @@ export abstract class Bot<T extends Bot.BaseConfig = Bot.BaseConfig> {
 }
 
 export namespace Bot {
+  export const library: Dict<Bot.Constructor> = {}
+
   export interface BaseConfig {
     disabled?: boolean
     protocol?: string
     platform?: string
   }
 
-  export const library: Dict<Constructor> = {}
-
   export interface Constructor<S extends Bot.BaseConfig = Bot.BaseConfig> {
     new (adapter: Adapter, config: S): Bot<S>
     schema?: Schema
   }
 
-  export type Status = 'offline' | 'online' | 'connect' | 'reconnect'
+  export type Status = 'offline' | 'online' | 'connect' | 'disconnect' | 'reconnect'
 
   export interface Methods {
     // message
-    sendMessage(channelId: string, content: string, guildId?: string): Promise<string>
-    sendPrivateMessage(userId: string, content: string): Promise<string>
+    sendMessage(channelId: string, content: string, guildId?: string): Promise<string[]>
+    sendPrivateMessage(userId: string, content: string): Promise<string[]>
     getMessage(channelId: string, messageId: string): Promise<Message>
     editMessage(channelId: string, messageId: string, content: string): Promise<void>
     deleteMessage(channelId: string, messageId: string): Promise<void>
@@ -152,10 +171,13 @@ export namespace Bot {
     // guild member
     getGuildMember(guildId: string, userId: string): Promise<GuildMember>
     getGuildMemberList(guildId: string): Promise<GuildMember[]>
+    kickGuildMember(guildId: string, userId: string, permanent?: boolean): Promise<void>
+    muteGuildMember(guildId: string, userId: string, duration: number, reason?: string): Promise<void>
 
     // channel
-    getChannel(channelId: string): Promise<Channel>
+    getChannel(channelId: string, guildId?: string): Promise<Channel>
     getChannelList(guildId: string): Promise<Channel[]>
+    muteChannel(channelId: string, guildId?: string, enable?: boolean): Promise<void>
 
     // request
     handleFriendRequest(messageId: string, approve: boolean, comment?: string): Promise<void>
@@ -209,6 +231,6 @@ export namespace Bot {
   }
 
   export interface Message extends MessageBase {
-    subtype?: keyof Session.Events['message']
+    subtype?: 'private' | 'group'
   }
 }

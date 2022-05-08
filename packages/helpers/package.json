@@ -1,0 +1,36 @@
+{
+  "name": "@koishijs/helpers",
+  "description": "Helper functions for Koishi",
+  "version": "1.2.0",
+  "main": "lib/index.js",
+  "typings": "lib/index.d.ts",
+  "files": [
+    "lib"
+  ],
+  "author": "Shigma <shigma10826@gmail.com>",
+  "license": "MIT",
+  "scripts": {
+    "lint": "eslint src --ext .ts"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/koishijs/koishi.git",
+    "directory": "packages/helpers"
+  },
+  "bugs": {
+    "url": "https://github.com/koishijs/koishi/issues"
+  },
+  "homepage": "https://koishi.js.org/plugins/echo/",
+  "keywords": [
+    "bot",
+    "chatbot",
+    "koishi",
+    "command"
+  ],
+  "peerDependencies": {
+    "koishi": "^4.6.2"
+  },
+  "devDependencies": {
+    "@koishijs/plugin-mock": "^1.0.4"
+  }
+}

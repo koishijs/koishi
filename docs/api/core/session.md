@@ -56,11 +56,26 @@ sidebarDepth: 2
 
 ### session.user
 
-当前会话绑定的可观测 [User](./database.md#user) 对象。
+当前会话绑定的用户数据，是一个可观测 [User](./database.md#user) 对象。
+
+::: tip
+通常情况下，Session 对象只有在中间件内才有此属性。因此如果想使用此接口请考虑下列方式：
+
+- 使用中间件
+- 使用指令 (指令的执行处于中间件内部)
+- 手动调用 [`session.observeUser()`](#session-observeuser-fields)
+- 手动调用 [`database.getUser()`](../database/built-in.md#database-getuser-platform-id-modifier)
+
+下面的两个属性也同理。
+:::
 
 ### session.channel
 
-当前会话绑定的可观测 [Channel](./database.md#channel) 对象。
+当前会话绑定的频道数据，是一个可观测 [Channel](./database.md#channel) 对象。
+
+### session.guild
+
+当前会话绑定的群组数据，是一个可观测 [Channel](./database.md#channel) 对象。
 
 ## 实例方法
 
@@ -118,11 +133,11 @@ sidebarDepth: 2
 
 - **options.target:** `string` 目标字符串
 - **options.items:** `string[]` 源字符串列表
-- **options.next:** [`NextFunction?`](../../guide/message.md#使用中间件) 回调函数
+- **options.next:** [`Next?`](../../guide/message.md#使用中间件) 回调函数
 - **options.prefix:** `string?` 显示在候选输入前的文本
 - **options.suffix:** `string` 当只有一个选项时，显示在候选输入后的文本
 - **options.coefficient:** `number` 用于模糊匹配的相似系数，缺省时会使用 [`app.options.minSimilarity`](./app.md#options-minsimilarity)
-- **options.apply:** `(suggestion: string, next: NextFunction) => void` 确认后执行的操作
+- **options.apply:** `(suggestion: string, next: Next) => void` 确认后执行的操作
 - 返回值: `Promise<void>`
 
 尝试显示候选输入。
@@ -139,14 +154,14 @@ sidebarDepth: 2
 按照 argv 中的 command 属性向 fields 添加所需的用户字段。它是内置的 before-attach-user 和 before-attach-channel 监听器。
 
 - **argv:** `Argv` 只需确保其中存在 command 属性即可
-- **key:** `'user' | 'group'` 用户字段集合
+- **key:** `'user' | 'channel'` 要添加的类型
 - **fields:** `Set<string>` 用户字段集合
 - 返回值: `void`
 
 ### session.execute(argv, next?)
 
 - **argv:** `string | Argv` 指令文本或运行时参数对象
-- **next:** [`NextFunction`](../../guide/message.md#使用中间件) 回调函数
+- **next:** [`Next`](../../guide/message.md#使用中间件) 回调函数
 - 返回值: `Promise<void>`
 
 执行一个指令。可以传入一个 argv 对象或者指令对应的文本。

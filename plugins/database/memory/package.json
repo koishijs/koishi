@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-database-memory",
   "description": "A in-memory database implementation for Koishi",
-  "version": "1.0.0-beta.4",
+  "version": "1.2.0",
   "main": "lib/node.js",
   "module": "lib/browser.js",
   "typings": "lib/index.d.ts",
@@ -12,33 +12,26 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/koishijs/koishi.git"
+    "url": "git+https://github.com/koishijs/koishi.git",
+    "directory": "plugins/database/memory"
   },
   "bugs": {
     "url": "https://github.com/koishijs/koishi/issues"
   },
-  "homepage": "https://koishi.js.org/plugins/other/database",
+  "homepage": "https://koishi.js.org/plugins/database/memory.html",
   "keywords": [
     "bot",
-    "qqbot",
-    "cqhttp",
-    "coolq",
     "chatbot",
     "koishi",
     "plugin",
     "database",
-    "server"
+    "server",
+    "impl:database"
   ],
   "peerDependencies": {
-    "koishi": "^4.0.0-beta.6"
-  },
-  "devDependencies": {
-    "@koishijs/plugin-mock": "^1.0.0-beta.2",
-    "@koishijs/test-utils": "^8.0.0-beta.6",
-    "@types/js-yaml": "^4.0.3",
-    "js-yaml": "^4.1.0"
+    "koishi": "^4.6.2"
   },
   "dependencies": {
-    "@koishijs/orm-utils": "^1.0.0-beta.4"
+    "@cosmotype/driver-memory": "^1.0.3"
   }
 }

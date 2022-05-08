@@ -1,0 +1,196 @@
+@use 'sass:color';
+
+$black: #000000;
+$white: #ffffff;
+
+:root {
+  --active: #506ae6;
+  --border: #e2e2e4;
+  --border-dark: #c8c9cc;
+  --card-bg: #ffffff;
+  --page-bg: #f2f3f5;
+  --card-border: var(--card-bg);
+  --card-shadow: 0 6px 10px -4px rgb(0 0 0 / 15%);
+  --loading-mask-bg: #f2f3f5bf;
+  --color-transition: color 0.3s ease, border-color 0.3s ease, background-color 0.3s ease, box-shadow 0.3s ease, opacity 0.3s ease;
+
+  @mixin apply-color($name, $base) {
+    --#{$name}: #{$base};
+    --#{$name}-shade: #{mix($base, $black, 90%)};
+    --#{$name}-tint: #{mix($base, $white, 80%)};
+    --#{$name}-fade: #{fade-out($base, 0.9)};
+  }
+
+  @include apply-color(primary, #409eff);
+  @include apply-color(success, #67c23a);
+  @include apply-color(warning, #e49400);
+  @include apply-color(error, #f56c6c);
+  @include apply-color(info, #909399);
+}
+
+html.dark {
+  --active: #ffffff;
+  --border: #4f515cbf;
+  --card-bg: #2f3034;
+  --page-bg: #202225;
+  --card-border: var(--border);
+  --loading-mask-bg: #202225bf;
+
+  @mixin apply-color($name, $base) {
+    --#{$name}: #{$base};
+    --#{$name}-shade: #{mix($base, $black, 80%)};
+    --#{$name}-tint: #{mix($base, $white, 90%)};
+    --#{$name}-fade: #{fade-out($base, 0.9)};
+  }
+
+  @include apply-color(primary, #7459ff);
+  @include apply-color(success, #3ba55e);
+  @include apply-color(warning, #f9af1b);
+  @include apply-color(error, #ff595a);
+  @include apply-color(info, #4f545c);
+}
+
+:root {
+  --el-text-color-regular: var(--fg1);
+  --el-text-color-primary: var(--fg3);
+  --el-input-text-color: var(--fg1);
+  --el-border-color: var(--border);
+  --el-border-color-base: var(--border);
+  --el-border-color-light: var(--border);
+  --el-border-color-lighter: var(--border);
+  --el-border-color-extra-light: var(--border);
+  --el-color-primary: var(--primary);
+  --el-color-primary-light-9: var(--bg1);
+  --el-color-success: var(--success);
+  --el-color-warning: var(--warning);
+  --el-color-error: var(--error);
+  --el-color-white: var(--bg1);
+  --el-color-black: var(--fg1);
+  --el-bg-color: var(--bg0);
+  --el-bg-color-overlay: var(--bg0);
+  --el-fill-color-blank: transparent;
+  --el-fill-color-light: var(--page-bg);
+}
+
+.k-icon {
+  transition: color 0.3s ease, background-color 0.3s ease;
+}
+
+.el-dropdown-menu {
+  background-color: var(--el-color-white);
+}
+
+.el-dropdown__popper.el-popper[role=tooltip] {
+  background-color: var(--el-color-white);
+}
+
+.el-dropdown-menu__item.is-disabled {
+  pointer-events: none;
+}
+
+.el-dropdown-menu__item--divided {
+  &:first-child, &:last-child {
+    display: none;
+  }
+}
+
+.el-input .k-icon {
+  height: 0.75rem;
+}
+
+.el-input__wrapper,
+.el-input-number__decrease,
+.el-input-number__increase,
+.el-checkbox__label {
+  transition: var(--color-transition);
+}
+
+.el-input__prefix-inner, .el-input__suffix-inner {
+  align-items: center;
+}
+
+.el-loading-mask {
+  background-color: var(--loading-mask-bg);
+  transition: 0.3s ease;
+}
+
+.el-radio {
+  height: 1.2rem;
+}
+
+.el-radio__label {
+  --el-color-primary: var(--active);
+  padding-top: 1px;
+}
+
+.el-scrollbar__bar {
+  z-index: 500;
+}
+
+html.dark .el-switch {
+  --el-switch-off-color: #72767d;
+}
+
+.right-adjacent {
+  &.k-button, &.el-select .el-input__wrapper {
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+  }
+
+  &:hover {
+    z-index: 100;
+  }
+  &:hover + .left-adjacent {
+    border-left-color: transparent;
+  }
+}
+
+.left-adjacent {
+  z-index: 0;
+  margin-left: -1px;
+
+  &.k-button, &.el-select .el-input__wrapper {
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+  }
+}
+
+.el-table__body-wrapper,
+.el-table__footer-wrapper,
+.el-table__header-wrapper {
+  --el-table-tr-bg-color: var(--card-bg);
+  --el-table-header-bg-color: var(--bg2);
+  tr {
+    td,
+    th {
+      &.hover-row {
+        background-color: var(--el-table-row-hover-bg-color);
+      }
+      &.el-table-fixed-column--left,
+      &.el-table-fixed-column--right {
+        background-color: var(--el-table-tr-bg-color);
+      }
+      &.el-table-fixed-column--left:is(th),
+      &.el-table-fixed-column--right:is(th) {
+        background-color: var(--el-table-header-bg-color);
+      }
+      &.is-first-column,
+      &.is-last-column {
+        &.el-table-fixed-column--left {
+          &::before {
+            box-shadow: inset 10px 0 10px -10px var(--bg0);
+          }
+        }
+        &.el-table-fixed-column--right {
+          &::before {
+            box-shadow: inset -10px 0 10px -10px var(--bg0);
+          }
+        }
+      }
+    }
+  }
+}
+
+body > .el-message {
+  margin-left: 8rem;
+}

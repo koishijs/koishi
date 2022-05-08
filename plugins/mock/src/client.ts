@@ -1,5 +1,5 @@
 import assert from 'assert'
-import { App, pick, Session } from 'koishi'
+import { App, Session } from 'koishi'
 import { format } from 'util'
 import { MockAdapter } from './adapter'
 
@@ -11,7 +11,7 @@ const RECEIVED_NTH_OTHERWISE = 'expected "%s" to be replied with %s at index %s 
 
 export class MessageClient {
   public app: App
-  public meta: Partial<Session.Message>
+  public meta: Session.Payload
 
   private replies: string[] = []
 
@@ -50,10 +50,10 @@ export class MessageClient {
       }
       const send = async (content: string) => {
         if (!content) return
-        const session = this.app.bots[0].createSession(pick(this.meta, ['userId', 'channelId', 'guildId']))
-        session.content = content
-        this.app.emit(session as any, 'before-send', session)
-        this.replies.push(content)
+        const session = await this.app.bots[0].session({ ...this.meta, content })
+        if (!session?.content) return []
+        this.replies.push(session.content)
+        return []
       }
       const dispose = this.app.on('middleware', (session) => {
         if (session.id === uuid) process.nextTick(_resolve)

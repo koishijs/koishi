@@ -3,15 +3,50 @@
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {
-      "@koishijs/plugin-adapter-*": ["plugins/adapter/*/src"],
-      "@koishijs/plugin-assets-*": ["plugins/assets/*/src"],
-      "@koishijs/plugin-cache-*": ["plugins/cache/*/src"],
-      "@koishijs/plugin-database-*": ["plugins/database/*/src"],
-      "@koishijs/plugin-*": ["plugins/*/src"],
-      "@koishijs/plugin-eval/lib/worker": ["plugins/eval/src/worker"],
-      "@koishijs/*": ["packages/*/src"],
-      "koishi": ["packages/koishi/src"],
-      "chai-shape": ["community/chai-shape/src"],
+      "@koishijs/database-tests": [
+        "plugins/database/tests/src",
+      ],
+      "@koishijs/plugin-adapter-*": [
+        "plugins/adapter/*/src",
+        "community/adapter-*/src",
+      ],
+      "@koishijs/plugin-assets-*": [
+        "plugins/assets/*/src",
+        "community/assets-*/src",
+      ],
+      "@koishijs/plugin-cache-*": [
+        "plugins/cache/*/src",
+        "community/cache-*/src",
+      ],
+      "@koishijs/plugin-database-*": [
+        "plugins/database/*/src",
+        "community/database-*/src",
+      ],
+      "@koishijs/plugin-*": [
+        "plugins/a11y/*/src",
+        "plugins/common/*/src",
+        "plugins/frontend/*/src",
+        "plugins/*/src",
+      ],
+      "@koishijs/*": [
+        "packages/*/src",
+        "plugins/a11y/*/src",
+        "plugins/adapter/*/src",
+        "plugins/assets/*/src",
+        "plugins/cache/*/src",
+        "plugins/common/*/src",
+        "plugins/database/*/src",
+        "plugins/frontend/*/src",
+      ],
+      "koishi-plugin-*": [
+        "community/*/src",
+      ],
+      "koishi": [
+        "packages/koishi/src",
+      ],
+      "*": [
+        "community/*/src",
+      ],
     },
   },
 }

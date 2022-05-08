@@ -1,7 +1,10 @@
-import { build, BuildFailure, BuildOptions, Message } from 'esbuild'
+import { build, BuildFailure, BuildOptions, Message, Platform, Plugin } from 'esbuild'
 import { resolve } from 'path'
-import { cyan, yellow, red } from 'kleur'
-import { getPackages } from './utils'
+import { cyan, red, yellow } from 'kleur'
+import { existsSync, readdir, readFile } from 'fs-extra'
+import escapeRegExp from 'escape-string-regexp'
+import { getPackages, PackageJson, requireSafe } from './utils'
+import yaml from 'js-yaml'
 import cac from 'cac'
 
 const { args } = cac().help().parse()
@@ -44,12 +47,20 @@ const KOISHI_VERSION = JSON.stringify(version)
 const root = resolve(__dirname, '..') + '/'
 
 async function compile(name: string) {
-  if (name.includes('.') || name.includes('ui-')) return
+  // filter out private packages
+  const meta: PackageJson = requireSafe(`../${name}/package.json`)
+  if (!meta || meta.private) return
+
+  const filter = /^[@/\w-]+$/
+  const externalPlugin: Plugin = {
+    name: 'external library',
+    setup(build) {
+      build.onResolve({ filter }, () => ({ external: true }))
+    },
+  }
 
   const base = root + name
   const entryPoints = [base + '/src/index.ts']
-
-  let filter = /^[@/\w-]+$/
   const options: BuildOptions = {
     entryPoints,
     bundle: true,
@@ -63,12 +74,62 @@ async function compile(name: string) {
     define: {
       KOISHI_VERSION,
     },
-    plugins: [{
-      name: 'external library',
+    plugins: [externalPlugin, yamlPlugin()],
+  }
+
+  // bundle for both node and browser
+  if (meta.module) {
+    delete options.outdir
+
+    const modules: string[] = []
+    try {
+      for (const name of await readdir(base + '/src')) {
+        if (existsSync(base + '/src/' + name + '/package.json')) {
+          modules.push(name)
+        }
+      }
+    } catch {
+      return
+    }
+
+    const filter = new RegExp(`^.+\\/(${modules.map(escapeRegExp).join('|')})$`)
+    const usePlatformPlugin = (platform: Platform): Plugin => ({
+      name: 'platform specific modules',
       setup(build) {
-        build.onResolve({ filter }, () => ({ external: true }))
+        build.onResolve({ filter }, ({ path, resolveDir }) => {
+          for (const module of modules) {
+            if (!path.includes(module)) continue
+            return { path: resolve(resolveDir, `${module}/${platform}.ts`) }
+          }
+        })
       },
-    }],
+    })
+
+    return Promise.all([
+      bundle({
+        ...options,
+        outfile: base + '/' + meta.module.replace('browser', 'node'),
+        plugins: [
+          usePlatformPlugin('node'),
+          externalPlugin,
+          yamlPlugin(),
+        ],
+      }),
+      bundle({
+        ...options,
+        format: 'esm',
+        target: 'esnext',
+        platform: 'browser',
+        sourcemap: false,
+        minify: true,
+        outfile: base + '/' + meta.module,
+        plugins: [
+          usePlatformPlugin('browser'),
+          externalPlugin,
+          yamlPlugin(),
+        ],
+      }),
+    ])
   }
 
   try {
@@ -79,6 +140,24 @@ async function compile(name: string) {
 
   return bundle(options)
 }
+
+const yamlPlugin = (options: yaml.LoadOptions = {}): Plugin => ({
+  name: 'i18n',
+  setup(build) {
+    build.onResolve({ filter: /\/locales\/[\w-]+$/ }, ({ path, resolveDir }) => ({
+      path: resolve(resolveDir, path) + '.yml',
+      namespace: 'yaml',
+    }))
+
+    build.onLoad({ namespace: 'yaml', filter: /.*/ }, async ({ path }) => {
+      const source = await readFile(path, 'utf8')
+      return {
+        loader: 'json',
+        contents: JSON.stringify(yaml.load(source, options)),
+      }
+    })
+  },
+})
 
 ;(async () => {
   const folders = await getPackages(args)

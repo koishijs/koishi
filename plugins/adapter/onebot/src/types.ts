@@ -11,6 +11,7 @@ export interface MessageId {
 
 export interface AccountInfo {
   user_id: string
+  tiny_id?: string
   nickname: string
 }
 
@@ -52,11 +53,11 @@ export interface SenderInfo extends StrangerInfo {
 export interface Message extends MessageId {
   real_id?: number
   time: number
-  message_type: 'private' | 'group'
+  message_type: 'private' | 'group' | 'guild'
   sender: SenderInfo
   group_id?: number
-  guild_id?: number
-  channel_id?: number
+  guild_id?: string
+  channel_id?: string
   message: string | any[]
   anonymous?: AnonymousInfo
 }
@@ -282,36 +283,37 @@ export enum SafetyLevel { safe, unknown, danger }
 
 export interface GuildServiceProfile {
   nickname: string
-  tiny_id: number
+  tiny_id: string
   avatar_url: string
 }
 
-export interface GuildInfo {
-  guild_id: number
+export interface GuildBaseInfo {
+  guild_id: string
   guild_name: string
-  guild_display_id: number
 }
 
-export interface GuildMeta {
-  guild_id: number
-  guild_name: string
+export interface GuildInfo extends GuildBaseInfo {
+  guild_display_id: string
+}
+
+export interface GuildMeta extends GuildBaseInfo {
   guild_profile: string
   create_time: number
   max_member_count: number
   max_robot_count: number
   max_admin_count: number
   member_count: number
-  owner_id: number
+  owner_id: string
 }
 
 export interface ChannelInfo {
-  owner_guild_id: number
-  channel_id: number
+  owner_guild_id: string
+  channel_id: string
   channel_type: number
   channel_name: string
   create_time: number
-  creator_id: number
-  creator_tiny_id: number
+  creator_id: string
+  creator_tiny_id: string
   talk_permission: number
   visible_type: number
   current_slow_mode: number
@@ -325,17 +327,30 @@ export interface SlowModeInfo {
   slow_mode_circle: number
 }
 
-export interface GuildMemberInfo {
-  tiny_id: number
+export interface GuildMemberListData {
+  members: GuildMemberInfo[]
+  finished: boolean
+  next_token: string
+}
+
+export interface GuildMemberRole {
+  role_id: string
+  role_name: string
+}
+
+export interface GuildMemberInfo extends GuildMemberRole {
+  tiny_id: string
   title: string
   nickname: string
   role: number
 }
 
-export interface GuildMembers {
-  members: GuildMemberInfo[]
-  bots: GuildMemberInfo[]
-  admins: GuildMemberInfo[]
+export interface GuildMemberProfile {
+  tiny_id: string
+  nickname: string
+  avatar_url: string
+  join_time: number
+  roles: GuildMemberRole[]
 }
 
 export interface ReactionInfo {
@@ -350,6 +365,7 @@ export interface ReactionInfo {
 export interface Payload extends Message {
   time: number
   self_id: number
+  self_tiny_id?: string
   post_type: string
   request_type: string
   notice_type: string
@@ -464,6 +480,7 @@ export interface Internal {
   getGuildList(): Promise<GuildInfo[]>
   getGuildMetaByGuest(guild_id: id): Promise<GuildMeta>
   getGuildChannelList(guild_id: id, no_cache: boolean): Promise<ChannelInfo[]>
-  getGuildMembers(guild_id: id): Promise<GuildMembers>
+  getGuildMemberList(guild_id: id, next_token?: string): Promise<GuildMemberListData>
+  getGuildMemberProfile(guild_id: id, user_id: id): Promise<GuildMemberProfile>
   sendGuildChannelMsg(guild_id: id, channel_id: id, message: string): Promise<number>
 }

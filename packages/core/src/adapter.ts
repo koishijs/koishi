@@ -1,9 +1,8 @@
-import { Logger, paramCase, Dict, Awaitable } from '@koishijs/utils'
+import { Awaitable, Dict, Logger, paramCase, remove, Schema } from '@koishijs/utils'
 import { Session } from './session'
 import { App } from './app'
 import { Bot } from './bot'
 import { Context, Plugin } from './context'
-import Schema from 'schemastery'
 
 export abstract class Adapter<S extends Bot.BaseConfig = Bot.BaseConfig, T = {}> {
   public bots: Bot<S>[] = []
@@ -11,25 +10,14 @@ export abstract class Adapter<S extends Bot.BaseConfig = Bot.BaseConfig, T = {}>
 
   protected abstract start(): Awaitable<void>
   protected abstract stop(): Awaitable<void>
-  abstract connect(bot: Bot): Awaitable<void>
 
   constructor(public ctx: Context, public config: T) {
-    ctx.on('ready', async () => {
-      await this.start()
-      for (const bot of this.bots) {
-        bot.start()
-      }
-    })
-
-    ctx.on('dispose', async () => {
-      for (const bot of this.bots) {
-        bot.stop()
-      }
-      await this.stop()
-    })
+    ctx.on('ready', () => this.start())
+    ctx.on('dispose', () => this.stop())
   }
 
-  dispose(bot: Bot): Awaitable<void> {}
+  connect(bot: Bot): Awaitable<void> {}
+  disconnect(bot: Bot): Awaitable<void> {}
 
   dispatch(session: Session) {
     if (!this.ctx.app.isActive) return
@@ -62,7 +50,7 @@ export namespace Adapter {
   export type BotConfig<R> = R & { bots?: R[] }
   export type PluginConfig<S = any, R = any> = S & BotConfig<R>
 
-  function join(platform: string, protocol: string) {
+  export function join(platform: string, protocol: string) {
     return protocol ? `${platform}.${protocol}` : platform
   }
 
@@ -93,8 +81,23 @@ export namespace Adapter {
     } else {
       library[platform] = { [redirect]: args[1] } as Constructor
       BotConfig = library[platform].schema = Schema.union([]).description('机器人要使用的协议。')
+      const FlatConfig = Schema.object({ protocol: Schema.string() })
+      function flatten(schema: Schema) {
+        if (schema.type === 'union' || schema.type === 'intersect') {
+          schema.list.forEach(flatten)
+        } else if (schema.type === 'object') {
+          for (const key in schema.dict) {
+            FlatConfig.dict[key] = new Schema(schema.dict[key])
+            FlatConfig.dict[key].meta = { ...schema.dict[key].meta, required: false }
+          }
+        } else {
+          throw new Error('cannot flatten bot schema')
+        }
+      }
+
       for (const protocol in args[0]) {
         library[join(platform, protocol)] = args[0][protocol]
+        flatten(args[0][protocol].schema)
         BotConfig.list.push(Schema.intersect([
           Schema.object({
             protocol: Schema.const(protocol).required(),
@@ -102,7 +105,7 @@ export namespace Adapter {
           args[0][protocol].schema,
         ]).description(protocol))
       }
-      BotConfig.list.push(Schema.transform(Schema.dict(Schema.any()), (value) => {
+      BotConfig.list.push(Schema.transform(FlatConfig, (value) => {
         if (value.protocol) throw new Error(`unknown protocol "${value.protocol}"`)
         value.protocol = args[1](value) as never
         logger.debug('infer type as %s', value.protocol)
@@ -119,14 +122,11 @@ export namespace Adapter {
     ])
 
     function apply(ctx: Context, config: PluginConfig = {}) {
-      ctx.emit('adapter')
+      ctx.emit('adapter', platform)
       configMap[platform] = config
+
       for (const options of config.bots) {
-        ctx.bots.create(platform, options).then((bot) => {
-          logger.success('logged in to %s as %c (%s)', bot.platform, bot.username, bot.selfId)
-        }, (error: Error) => {
-          logger.error(error)
-        })
+        ctx.bots.create(platform, options, constructor)
       }
     }
 
@@ -144,19 +144,22 @@ export namespace Adapter {
       return this.find(bot => bot.sid === sid)
     }
 
-    create(platform: string, options: any, constructor: Bot.Constructor = Bot.library[platform]) {
+    create<T extends Bot>(platform: string, options: any, constructor?: new (adapter: Adapter, config: any) => T): T {
+      constructor ||= Bot.library[platform] as any
       const adapter = this.resolve(platform, options)
       const bot = new constructor(adapter, options)
       adapter.bots.push(bot)
       this.push(bot)
       this.app.emit('bot-added', bot)
-      return bot.connect()
+      return bot
     }
 
-    async remove(sid: string) {
-      const index = this.findIndex(bot => bot.sid === sid)
+    async remove(id: string) {
+      const index = this.findIndex(bot => bot.id === id)
       if (index < 0) return
       const [bot] = this.splice(index, 1)
+      remove(bot.adapter.bots, bot)
+      bot.config.disabled = true
       this.app.emit('bot-removed', bot)
       return bot.stop()
     }
@@ -165,7 +168,7 @@ export namespace Adapter {
       const type = join(platform, config.protocol)
       if (this.adapters[type]) return this.adapters[type]
 
-      const constructor = library[type]
+      const constructor = Adapter.library[type]
       if (!constructor) {
         throw new Error(`unsupported protocol "${type}"`)
       }

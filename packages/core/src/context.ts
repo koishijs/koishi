@@ -1,20 +1,29 @@
-import { Logger, makeArray, remove, Random, Promisify, Awaitable, Dict, MaybeArray, defineProperty } from '@koishijs/utils'
+import { Awaitable, defineProperty, Dict, Logger, makeArray, MaybeArray, Promisify, Random, remove, Schema, sleep } from '@koishijs/utils'
 import { Command } from './command'
 import { Session } from './session'
-import { User, Channel, Modules } from './database'
+import { Channel, DatabaseService, scope, Service, Tables, User } from './database'
 import { Argv } from './parser'
 import { App } from './app'
 import { Bot } from './bot'
-import { Database } from './database'
 import { Adapter } from './adapter'
-import { Model, Tables } from './orm'
-import Schema from 'schemastery'
+import { I18n } from './i18n'
 
-export type NextFunction = (next?: NextFunction) => Promise<void>
-export type Middleware = (session: Session, next: NextFunction) => any
+export type Next = (next?: Next.Callback) => Promise<void | string>
+export type Middleware = (session: Session, next: Next) => Awaitable<void | string>
 export type Disposable = () => void
 
-export type Plugin<T = any> = Plugin.Function<T> | Plugin.Object<T>
+export namespace Next {
+  export const MAX_DEPTH = 64
+
+  export type Queue = ((next?: Next) => Promise<void | string>)[]
+  export type Callback = void | string | ((next?: Next) => Awaitable<void | string>)
+
+  export async function compose(callback: Callback, next?: Next) {
+    return typeof callback === 'function' ? callback(next) : callback
+  }
+}
+
+export type Plugin = Plugin.Function | Plugin.Object
 
 export namespace Plugin {
   export type Function<T = any> = (ctx: Context, options: T) => void
@@ -27,22 +36,26 @@ export namespace Plugin {
     using?: readonly (keyof Context.Services)[]
   }
 
+  export interface ObjectWithSchema<T = any> {
+    name?: string
+    apply: Function
+    schema?: Schema<T, any>
+    using?: readonly (keyof Context.Services)[]
+  }
+
   export type Config<T extends Plugin> =
     | T extends Constructor<infer U> ? U
     : T extends Function<infer U> ? U
+    : T extends ObjectWithSchema<infer U> ? U
     : T extends Object<infer U> ? U
     : never
 
-  export type ModuleConfig<T> = 'default' extends keyof T
-    ? Config<Extract<T['default'], Plugin>>
-    : Config<Extract<T, Plugin>>
-
-  export interface State<T = any> {
-    id?: string
-    parent?: State
+  export interface State {
+    id: string
+    parent: Context
     context?: Context
-    config?: T
-    using?: readonly (keyof Context.Services)[]
+    config?: any
+    using: readonly (keyof Context.Services)[]
     schema?: Schema
     plugin?: Plugin
     children: Plugin[]
@@ -88,13 +101,12 @@ function isApplicable(object: Plugin) {
   return object && typeof object === 'object' && typeof object.apply === 'function'
 }
 
-type Filter = (session: Session) => boolean
-
 const selectors = ['user', 'guild', 'channel', 'self', 'private', 'platform'] as const
 
-type SelectorType = typeof selectors[number]
-type SelectorValue = boolean | MaybeArray<string | number>
-type BaseSelection = { [K in SelectorType as `$${K}`]?: SelectorValue }
+export type Filter = (session: Session) => boolean
+export type SelectorType = typeof selectors[number]
+export type SelectorValue = boolean | MaybeArray<string | number>
+export type BaseSelection = { [K in SelectorType as `$${K}`]?: SelectorValue }
 
 interface Selection extends BaseSelection {
   $and?: Selection[]
@@ -114,42 +126,38 @@ export class Context {
     return `Context <${this._plugin ? this._plugin.name : 'root'}>`
   }
 
+  private _property<K extends keyof Session>(key: K, ...values: Session[K][]) {
+    return this.intersect((session) => {
+      return values.length ? values.includes(session[key]) : !!session[key]
+    })
+  }
+
   user(...values: string[]) {
-    return this.select('userId', ...values)
+    return this._property('userId', ...values)
   }
 
   self(...values: string[]) {
-    return this.select('selfId', ...values)
+    return this._property('selfId', ...values)
   }
 
   guild(...values: string[]) {
-    return this.select('guildId', ...values)
+    return this._property('guildId', ...values)
   }
 
   channel(...values: string[]) {
-    return this.select('channelId', ...values)
+    return this._property('channelId', ...values)
   }
 
   platform(...values: string[]) {
-    return this.select('platform', ...values)
+    return this._property('platform', ...values)
   }
 
   private(...values: string[]) {
-    return this.except(this.select('guildId')).select('userId', ...values)
+    return this.exclude(this._property('guildId'))._property('userId', ...values)
   }
 
-  select<K extends keyof Session>(key: K, ...values: Session[K][]): Context
-  select(options?: Selection): Context
-  select(...args: [Selection?] | [string, ...any[]]) {
-    if (typeof args[0] === 'string') {
-      const key = args.shift()
-      return this.intersect((session) => {
-        return args.length ? args.includes(session[key]) : !!session[key]
-      })
-    }
-
+  select(options: Selection) {
     let ctx: Context = this
-    const options = args[0] ?? {}
 
     // basic selectors
     for (const type of selectors) {
@@ -157,7 +165,7 @@ export class Context {
       if (value === true) {
         ctx = ctx[type]()
       } else if (value === false) {
-        ctx = ctx.except(ctx[type]())
+        ctx = ctx.exclude(ctx[type]())
       } else if (value !== undefined) {
         // we turn everything into string
         ctx = ctx[type](...makeArray(value).map(item => '' + item))
@@ -180,9 +188,9 @@ export class Context {
       ctx = ctx.intersect(ctx2)
     }
 
-    // except
+    // exclude
     if (options.$not) {
-      ctx = ctx.except(this.select(options.$not))
+      ctx = ctx.exclude(this.select(options.$not))
     }
 
     return ctx
@@ -210,9 +218,14 @@ export class Context {
     return new Context(s => this.filter(s) && filter(s), this.app, this._plugin)
   }
 
-  except(arg: Filter | Context) {
+  exclude(arg: Filter | Context) {
     const filter = typeof arg === 'function' ? arg : arg.filter
     return new Context(s => this.filter(s) && !filter(s), this.app, this._plugin)
+  }
+
+  /** @deprecated use `ctx.exclude()` instead */
+  except(arg: Filter | Context) {
+    return this.exclude(arg)
   }
 
   match(session?: Session) {
@@ -224,64 +237,81 @@ export class Context {
   }
 
   using(using: readonly (keyof Context.Services)[], callback: Plugin.Function<void>) {
-    return this.plugin({ using, apply: callback })
+    return this.plugin({ using, apply: callback, name: callback.name })
   }
 
-  plugin<T extends keyof Modules>(plugin: T, options?: boolean | Plugin.ModuleConfig<Modules[T]>): this
-  plugin<T extends Plugin>(plugin: T, options?: boolean | Plugin.Config<T>): this
-  plugin(plugin: Plugin, options?: any) {
-    if (options === false) return this
-    if (options === true) options = undefined
-    options ??= {}
+  validate<T extends Plugin>(plugin: T, config: any) {
+    if (config === false) return
+    if (config === true) config = undefined
+    config ??= {}
 
-    if (typeof plugin === 'string') {
-      plugin = Modules.require(plugin, true)
-    }
+    const schema = plugin['Config'] || plugin['schema']
+    if (schema) config = schema(config)
+    return config
+  }
 
+  plugin(name: string, config?: any): this
+  plugin<T extends Plugin>(plugin: T, config?: boolean | Plugin.Config<T>): this
+  plugin(entry: string | Plugin, config?: any) {
+    // load plugin by name
+    const plugin: Plugin = typeof entry === 'string' ? scope.require(entry) : entry
+
+    // check duplication
     if (this.app.registry.has(plugin)) {
-      this.logger('app').warn(new Error('duplicate plugin detected'))
+      this.logger('app').warn(`duplicate plugin detected: ${plugin.name}`)
       return this
     }
 
+    // check if it's a valid plugin
     if (typeof plugin !== 'function' && !isApplicable(plugin)) {
       throw new Error('invalid plugin, expect function or object with an "apply" method')
     }
 
-    const ctx = new Context(this.filter, this.app, plugin).select(options)
+    // validate plugin config
+    config = this.validate(plugin, config)
+    if (!config) return this
+
+    const context = new Context(this.filter, this.app, plugin).select(config)
     const schema = plugin['Config'] || plugin['schema']
     const using = plugin['using'] || []
-    if (schema) options = schema(options)
 
+    this.logger('app').debug('plugin:', plugin.name)
     this.app.registry.set(plugin, {
       plugin,
       schema,
       using,
+      context,
       id: Random.id(),
-      context: this,
-      config: options,
-      parent: this.state,
+      parent: this,
+      config: config,
       children: [],
       disposables: [],
     })
 
-    const dispose = this.on('service', async (name) => {
-      if (!using.includes(name)) return
-      await Promise.allSettled(ctx.state.disposables.slice(1).map(dispose => dispose()))
-      callback()
-    })
-
     this.state.children.push(plugin)
-    this.emit('plugin-added', plugin)
-    ctx.state.disposables.push(dispose)
+    this.emit('plugin-added', this.app.registry.get(plugin))
+
+    if (using.length) {
+      context.on('service', (name) => {
+        if (!using.includes(name)) return
+        context.state.children.slice().map(plugin => this.dispose(plugin))
+        context.state.disposables.slice(1).map(dispose => dispose())
+        callback()
+      })
+    }
 
     const callback = () => {
       if (using.some(name => !this[name])) return
       if (typeof plugin !== 'function') {
-        plugin.apply(ctx, options)
+        plugin.apply(context, config)
       } else if (isConstructor(plugin)) {
-        new plugin(ctx, options)
+        // eslint-disable-next-line new-cap
+        const instance = new plugin(context, config)
+        if (instance instanceof Service && instance.immediate) {
+          context[instance.name] = instance as never
+        }
       } else {
-        plugin(ctx, options)
+        plugin(context, config)
       }
     }
 
@@ -289,18 +319,25 @@ export class Context {
     return this
   }
 
-  async dispose(plugin = this._plugin) {
+  dispose(plugin = this._plugin) {
     if (!plugin) throw new Error('root level context cannot be disposed')
     const state = this.app.registry.get(plugin)
     if (!state) return
-    await Promise.allSettled([
-      ...state.children.slice().map(plugin => this.dispose(plugin)),
-      ...state.disposables.slice().map(dispose => dispose()),
-    ]).finally(() => {
-      this.app.registry.delete(plugin)
-      remove(state.parent.children, plugin)
-      this.emit('plugin-removed', plugin)
-    })
+    this.logger('app').debug('dispose:', plugin.name)
+    state.children.slice().map(plugin => this.dispose(plugin))
+    state.disposables.slice().map(dispose => dispose())
+    this.app.registry.delete(plugin)
+    remove(state.parent.state.children, plugin)
+    this.emit('plugin-removed', state)
+    return state
+  }
+
+  * getHooks(name: EventName, session?: Session) {
+    const hooks = this.app._hooks[name] || []
+    for (const [context, callback] of hooks.slice()) {
+      if (!context.match(session)) continue
+      yield callback
+    }
   }
 
   async parallel<K extends EventName>(name: K, ...args: Parameters<EventMap[K]>): Promise<void>
@@ -309,13 +346,10 @@ export class Context {
     const tasks: Promise<any>[] = []
     const session = typeof args[0] === 'object' ? args.shift() : null
     const name = args.shift()
-    for (const [context, callback] of this.app._hooks[name] || []) {
-      if (!context.match(session)) continue
-      tasks.push((async () => {
-        return callback.apply(session, args)
-      })().catch(((error) => {
+    for (const callback of this.getHooks(name, session)) {
+      tasks.push(Promise.resolve(callback.apply(session, args)).catch((error) => {
         this.logger('app').warn(error)
-      })))
+      }))
     }
     await Promise.all(tasks)
   }
@@ -331,8 +365,7 @@ export class Context {
   async waterfall(...args: [any, ...any[]]) {
     const session = typeof args[0] === 'object' ? args.shift() : null
     const name = args.shift()
-    for (const [context, callback] of this.app._hooks[name] || []) {
-      if (!context.match(session)) continue
+    for (const callback of this.getHooks(name, session)) {
       const result = await callback.apply(session, args)
       args[0] = result
     }
@@ -344,8 +377,7 @@ export class Context {
   chain(...args: [any, ...any[]]) {
     const session = typeof args[0] === 'object' ? args.shift() : null
     const name = args.shift()
-    for (const [context, callback] of this.app._hooks[name] || []) {
-      if (!context.match(session)) continue
+    for (const callback of this.getHooks(name, session)) {
       const result = callback.apply(session, args)
       args[0] = result
     }
@@ -357,8 +389,7 @@ export class Context {
   async serial(...args: any[]) {
     const session = typeof args[0] === 'object' ? args.shift() : null
     const name = args.shift()
-    for (const [context, callback] of this.app._hooks[name] || []) {
-      if (!context.match(session)) continue
+    for (const callback of this.getHooks(name, session)) {
       const result = await callback.apply(session, args)
       if (isBailed(result)) return result
     }
@@ -369,28 +400,26 @@ export class Context {
   bail(...args: any[]) {
     const session = typeof args[0] === 'object' ? args.shift() : null
     const name = args.shift()
-    for (const [context, callback] of this.app._hooks[name] || []) {
-      if (!context.match(session)) continue
+    for (const callback of this.getHooks(name, session)) {
       const result = callback.apply(session, args)
       if (isBailed(result)) return result
     }
   }
 
   on<K extends EventName>(name: K, listener: EventMap[K], prepend?: boolean): () => boolean
-  on(name: string & EventName, listener: Disposable, prepend = false) {
+  on(name: EventName, listener: Disposable, prepend = false) {
     const method = prepend ? 'unshift' : 'push'
 
-    if (name === 'connect') {
-      name = 'ready'
-      this.logger('context').warn('event "connect" is deprecated, use "ready" instead')
-    } else if (name === 'disconnect') {
-      name = 'dispose'
-      this.logger('context').warn('event "disconnect" is deprecated, use "dispose" instead')
+    if (typeof name === 'string' && name in Context.deprecatedEvents) {
+      const alternative = Context.deprecatedEvents[name]
+      this.logger('app').warn(`event "${name}" is deprecated, use "${alternative}" instead`)
+      name = alternative
     }
 
     // handle special events
     if (name === 'ready' && this.app.isActive) {
-      return listener(), () => false
+      this.app._tasks.queue(sleep(0).then(() => listener()))
+      return () => false
     } else if (name === 'dispose') {
       this.state.disposables[method](listener)
       return () => remove(this.state.disposables, listener)
@@ -419,7 +448,8 @@ export class Context {
     return this.on(seg.join('/') as EventName, listener, !append)
   }
 
-  once<K extends EventName>(name: K, listener: EventMap[K], prepend = false) {
+  once<K extends EventName>(name: K, listener: EventMap[K], prepend?: boolean): () => boolean
+  once(name: EventName, listener: Disposable, prepend = false) {
     const dispose = this.on(name, function (...args: any[]) {
       dispose()
       return listener.apply(this, args)
@@ -443,6 +473,7 @@ export class Context {
   private createTimerDispose(timer: NodeJS.Timeout) {
     const dispose = () => {
       clearTimeout(timer)
+      if (!this.state) return
       return remove(this.state.disposables, dispose)
     }
     this.state.disposables.push(dispose)
@@ -461,6 +492,10 @@ export class Context {
     return this.createTimerDispose(setInterval(callback, ms, ...args))
   }
 
+  getCommand(name: string) {
+    return this.app._commands.get(name)
+  }
+
   command<D extends string>(def: D, config?: Command.Config): Command<never, never, Argv.ArgumentType<D>>
   command<D extends string>(def: D, desc: string, config?: Command.Config): Command<never, never, Argv.ArgumentType<D>>
   command(def: string, ...args: [Command.Config?] | [string, Command.Config?]) {
@@ -471,10 +506,11 @@ export class Context {
     const segments = path.split(/(?=[./])/g)
 
     let parent: Command, root: Command
+    const list: Command[] = []
     segments.forEach((segment, index) => {
       const code = segment.charCodeAt(0)
       const name = code === 46 ? parent.name + segment : code === 47 ? segment.slice(1) : segment
-      let command = this.app._commands.get(name)
+      let command = this.getCommand(name)
       if (command) {
         if (parent) {
           if (command === parent) {
@@ -491,7 +527,8 @@ export class Context {
         }
         return parent = command
       }
-      command = new Command(name, decl, index === segments.length - 1 ? desc : '', this)
+      command = new Command(name, decl, this)
+      list.push(command)
       if (!root) root = command
       if (parent) {
         command.parent = parent
@@ -501,8 +538,9 @@ export class Context {
       parent = command
     })
 
-    if (desc) parent.description = desc
+    if (desc) this.i18n.define('', `commands.${parent.name}.description`, desc)
     Object.assign(parent.config, config)
+    list.forEach(command => this.emit('command-added', command))
     if (!config?.patch) {
       if (root) this.state.disposables.unshift(() => root.dispose())
       return parent
@@ -534,31 +572,17 @@ export class Context {
     const [content, forced] = args as [string, boolean]
     if (!content) return []
 
-    const data = this.database
-      ? await this.database.getAssignedChannels(['id', 'assignee', 'flag'])
-      : channels.map((id) => {
-        const [platform] = id.split(':')
-        const bot = this.bots.find(bot => bot.platform === platform)
-        return bot && { id, assignee: bot.selfId, flag: 0 }
-      }).filter(Boolean)
-
-    const assignMap: Dict<Dict<string[]>> = {}
-    for (const { id, assignee, flag } of data) {
-      if (channels && !channels.includes(id)) continue
+    const data = await this.database.getAssignedChannels(['id', 'assignee', 'flag', 'platform', 'guildId'])
+    const assignMap: Dict<Dict<[string, string][]>> = {}
+    for (const { id, assignee, flag, platform, guildId } of data) {
+      if (channels && !channels.includes(`${platform}:${id}`)) continue
       if (!forced && (flag & Channel.Flag.silent)) continue
-      const [type] = id.split(':')
-      const cid = id.slice(type.length + 1)
-      const map = assignMap[type] ||= {}
-      if (map[assignee]) {
-        map[assignee].push(cid)
-      } else {
-        map[assignee] = [cid]
-      }
+      ((assignMap[platform] ||= {})[assignee] ||= []).push([id, guildId])
     }
 
-    return (await Promise.all(Object.entries(assignMap).flatMap(([type, map]) => {
+    return (await Promise.all(Object.entries(assignMap).flatMap(([platform, map]) => {
       return this.bots.map((bot) => {
-        if (bot.platform !== type) return Promise.resolve([])
+        if (bot.platform !== platform) return Promise.resolve([])
         return bot.broadcast(map[bot.selfId] || [], content)
       })
     }))).flat(1)
@@ -568,12 +592,16 @@ export class Context {
 export namespace Context {
   export interface Services {
     bots: Adapter.BotList
-    database: Database
-    model: Model
+    database: DatabaseService
+    model: DatabaseService
+    i18n: I18n
   }
+
+  export const Services: (keyof Services)[] = []
 
   export function service(key: keyof Services) {
     if (Object.prototype.hasOwnProperty.call(Context.prototype, key)) return
+    Services.push(key)
     const privateKey = Symbol(key)
     Object.defineProperty(Context.prototype, key, {
       get(this: Context) {
@@ -589,39 +617,20 @@ export namespace Context {
         this.emit('service', key)
         const action = value ? oldValue ? 'changed' : 'enabled' : 'disabled'
         this.logger('service').debug(key, action)
-        if (value) {
-          this.app._services[key] = this.state.id
-          const dispose = () => {
-            if (this.app[privateKey] !== value) return
-            this[key] = null
-            delete this.app._services[key]
-          }
-          this.state.disposables.push(dispose)
-          this.on('service', (name) => {
-            if (name !== key) return
-            dispose()
-            remove(this.state.disposables, dispose)
-          })
-        }
       },
     })
   }
 
   service('bots')
   service('database')
+  service('i18n')
   service('model')
-}
 
-type FlattenEvents<T> = {
-  [K in keyof T & string]: K | `${K}/${FlattenEvents<T[K]>}`
-}[keyof T & string]
-
-type SessionEventMap = {
-  [K in FlattenEvents<Session.Events>]: K extends `${infer X}/${infer R}`
-    ? R extends `${infer Y}/${any}`
-      ? (session: Session.Payload<X, Y>) => void
-      : (session: Session.Payload<X, R>) => void
-    : (session: Session.Payload<K>) => void
+  export const deprecatedEvents: Dict<EventName & string> = {
+    'connect': 'ready',
+    'disconnect': 'dispose',
+    'before-command': 'command/before-execute',
+  }
 }
 
 type EventName = keyof EventMap
@@ -630,37 +639,43 @@ type BeforeEventName = OmitSubstring<EventName & string, 'before-'>
 
 export type BeforeEventMap = { [E in EventName & string as OmitSubstring<E, 'before-'>]: EventMap[E] }
 
-export interface EventMap extends SessionEventMap {
+export interface EventMap {
   [Context.middleware]: Middleware
 
-  // Koishi events
+  // internal events
   'appellation'(name: string, session: Session): string
   'before-parse'(content: string, session: Session): Argv
-  'parse'(argv: Argv, session: Session): string
   'before-attach-channel'(session: Session, fields: Set<Channel.Field>): void
   'attach-channel'(session: Session): Awaitable<void | boolean>
   'before-attach-user'(session: Session, fields: Set<User.Field>): void
   'attach-user'(session: Session): Awaitable<void | boolean>
   'before-attach'(session: Session): void
   'attach'(session: Session): void
-  'before-send'(session: Session<never, never, 'send'>): Awaitable<void | boolean>
-  'before-command'(argv: Argv): Awaitable<void | string>
-  'command'(argv: Argv): Awaitable<void>
+  'before-send'(session: Session): Awaitable<void | boolean>
   'command-added'(command: Command): void
   'command-removed'(command: Command): void
+  'command-error'(argv: Argv, error: any): void
+  'command/before-execute'(argv: Argv): Awaitable<void | string>
+  'command/before-attach-channel'(argv: Argv, fields: Set<Channel.Field>): void
+  'command/before-attach-user'(argv: Argv, fields: Set<User.Field>): void
   'middleware'(session: Session): void
-  'plugin-added'(plugin: Plugin): void
-  'plugin-removed'(plugin: Plugin): void
-  'connect'(): Awaitable<void>
-  'disconnect'(): Awaitable<void>
+  'help/command'(output: string[], command: Command, session: Session): void
+  'help/option'(output: string, option: Argv.OptionDeclaration, command: Command, session: Session): string
+  'plugin-added'(state: Plugin.State): void
+  'plugin-removed'(state: Plugin.State): void
   'ready'(): Awaitable<void>
   'dispose'(): Awaitable<void>
   'model'(name: keyof Tables): void
   'service'(name: keyof Context.Services): void
-  'adapter'(): void
+  'adapter'(name: string): void
   'bot-added'(bot: Bot): void
   'bot-removed'(bot: Bot): void
-  'bot-updated'(bot: Bot): void
+  'bot-status-updated'(bot: Bot): void
   'bot-connect'(bot: Bot): Awaitable<void>
-  'bot-dispose'(bot: Bot): Awaitable<void>
+  'bot-disconnect'(bot: Bot): Awaitable<void>
+
+  // deprecated events
+  'connect'(): Awaitable<void>
+  'disconnect'(): Awaitable<void>
+  'before-command'(argv: Argv): Awaitable<void | string>
 }

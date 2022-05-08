@@ -1,6 +1,6 @@
 import { App, Dict } from 'koishi'
 import { Socket } from 'net'
-import { ServerResponse, IncomingMessage } from 'http'
+import { IncomingMessage, ServerResponse } from 'http'
 
 export namespace Webhook {
   export interface Response {
@@ -13,24 +13,50 @@ export namespace Webhook {
 export class Webhook {
   constructor(public app: App) {}
 
-  get(path: string, headers?: Dict<any>) {
+  async head(path: string, headers?: Dict<any>) {
+    const res = await this.receive('HEAD', path, headers, '')
+    return res.headers
+  }
+
+  async get(path: string, headers?: Dict<any>) {
     return this.receive('GET', path, headers, '')
   }
 
-  post(path: string, body: any, headers?: Dict<any>) {
-    return this.receive('POST', path, {
-      ...headers,
-      'content-type': 'application/json',
-    }, JSON.stringify(body))
+  async delete(path: string, headers?: Dict<any>) {
+    return this.receive('DELETE', path, headers, '')
   }
 
-  private receive(method: string, path: string, headers: Dict<any>, content: string) {
+  async post(path: string, body: any, headers?: Dict<any>) {
+    return this.receive('POST', path, headers, body)
+  }
+
+  async put(path: string, body: any, headers?: Dict<any>) {
+    return this.receive('PUT', path, headers, body)
+  }
+
+  async patch(path: string, body: any, headers?: Dict<any>) {
+    return this.receive('PATCH', path, headers, body)
+  }
+
+  receive(method: string, path: string, headers: Dict<any>, body: any) {
     const socket = new Socket()
     const req = new IncomingMessage(socket)
     req.url = path
     req.method = method
+
+    // prepare request headers
     Object.assign(req.headers, headers)
-    req.headers['content-length'] = '' + content.length
+    if (typeof body === 'string') {
+      req.headers['content-type'] = 'text/plain'
+    } else if (Buffer.isBuffer(body)) {
+      req.headers['content-type'] = 'application/octet-stream'
+    } else {
+      body = JSON.stringify(body)
+      req.headers['content-type'] = 'application/json'
+    }
+    req.headers['content-length'] = '' + body.length
+
+    // send request body
     return new Promise<Webhook.Response>((resolve) => {
       const res = new ServerResponse(req)
       let body = ''
@@ -38,14 +64,15 @@ export class Webhook {
         body += chunk
         return true
       }
-      res.end = (chunk: any) => {
-        res.write(chunk)
+      res.end = (callback: () => void) => {
         const code = res.statusCode
         const headers = res.getHeaders()
         resolve({ code, body, headers })
+        callback?.()
+        return res
       }
       this.app._httpServer.emit('request', req, res)
-      req.emit('data', content)
+      req.emit('data', body)
       req.emit('end')
     })
   }

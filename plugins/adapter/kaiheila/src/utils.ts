@@ -1,7 +1,7 @@
-import { Adapter, Bot, Session, segment, camelCase, Schema, App } from 'koishi'
+import { Adapter, Bot, camelCase, Schema, segment, Session } from 'koishi'
 import * as KHL from './types'
 
-export interface AdapterConfig extends Adapter.WebSocketClient.Config, App.Config.Request {
+export interface AdapterConfig extends Adapter.WebSocketClient.Config {
   path?: string
 }
 
@@ -10,7 +10,6 @@ export const AdapterConfig: Schema<AdapterConfig> = Schema.intersect([
     path: Schema.string().description('服务器监听的路径，仅用于 http 协议。').default('/kaiheila'),
   }),
   Adapter.WebSocketClient.Config,
-  App.Config.Request,
 ])
 
 export const adaptGroup = (data: KHL.Guild): Bot.Guild => ({
@@ -52,12 +51,13 @@ function adaptMessageSession(data: KHL.Data, meta: KHL.MessageMeta, session: Par
   adaptMessage(data, meta, session)
   session.messageId = data.msgId
   session.timestamp = data.msgTimestamp
-  session.subtype = data.channelType === 'GROUP' ? 'group' : 'private'
+  const subtype = data.channelType === 'GROUP' ? 'group' : 'private'
+  session.subtype = subtype
   if (meta.quote) {
     session.quote = adaptMessage(meta.quote, meta.quote)
     session.quote.messageId = meta.quote.id
     session.quote.channelId = session.channelId
-    session.quote.subtype = session.subtype
+    session.quote.subtype = subtype
   }
   return session
 }

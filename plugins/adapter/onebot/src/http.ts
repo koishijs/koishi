@@ -1,6 +1,6 @@
-import { Adapter, Logger, assertProperty, Schema, Quester, omit, Context } from 'koishi'
+import { Adapter, Logger, omit, Quester, Schema } from 'koishi'
 import { BotConfig, OneBotBot } from './bot'
-import { dispatchSession, AdapterConfig } from './utils'
+import { AdapterConfig, dispatchSession } from './utils'
 import { createHmac } from 'crypto'
 
 const logger = new Logger('onebot')
@@ -8,24 +8,19 @@ const logger = new Logger('onebot')
 export class HttpServer extends Adapter<BotConfig, AdapterConfig> {
   static schema: Schema<BotConfig> = Schema.object({
     selfId: Schema.string().description('机器人的账号。').required(),
-    token: Schema.string().description('发送信息时用于验证的字段，应与 OneBot 配置文件中的 access_token 保持一致。'),
-    endpoint: Schema.string().description('要连接的 OneBot 服务器地址。').required(),
+    password: Schema.string().role('secret').description('机器人的密码。'),
+    token: Schema.string().role('secret').description('发送信息时用于验证的字段，应与 OneBot 配置文件中的 access_token 保持一致。'),
+    endpoint: Schema.string().role('url').description('要连接的 OneBot 服务器地址。').required(),
     ...omit(Quester.Config.dict, ['endpoint']),
   })
 
   public bots: OneBotBot[]
 
-  constructor(ctx: Context, config: AdapterConfig = {}) {
-    super(ctx, config)
-    assertProperty(ctx.app.options, 'port')
-    this.http = ctx.http.extend(config.request)
-  }
-
   async connect(bot: OneBotBot) {
     const { endpoint, token } = bot.config
     if (!endpoint) return
 
-    const http = this.http.extend(bot.config).extend({
+    const http = this.ctx.http.extend(bot.config).extend({
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Token ${token}`,
@@ -36,9 +31,7 @@ export class HttpServer extends Adapter<BotConfig, AdapterConfig> {
       return http.post('/' + action, params)
     }
 
-    Object.assign(bot, await bot.getSelf())
-    logger.info('connected to %c', http.config.endpoint)
-    bot.resolve()
+    return bot.initialize()
   }
 
   async start() {

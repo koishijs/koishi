@@ -1,13 +1,14 @@
-import { defineProperty, Time, coerce, escapeRegExp, makeArray, template, trimSlash, merge, Dict, valueMap } from '@koishijs/utils'
-import { Context, Middleware, NextFunction, Plugin } from './context'
-import { Argv } from './parser'
+import { Awaitable, coerce, defineProperty, Dict, escapeRegExp, Logger, makeArray, Schema, Time } from '@koishijs/utils'
+import { Context, Next, Plugin } from './context'
 import { Adapter } from './adapter'
-import { Channel, User } from './database'
-import validate, { Command } from './command'
-import { Session } from './session'
-import help, { getCommandNames, HelpConfig } from './help'
-import Schema from 'schemastery'
-import { Model } from './orm'
+import { Channel, DatabaseService, User } from './database'
+import { Command } from './command'
+import { Computed, Session } from './session'
+import { I18n } from './i18n'
+import runtime from './internal/runtime'
+import validate from './internal/validate'
+import suggest, { SuggestConfig } from './internal/suggest'
+import help, { HelpConfig } from './internal/help'
 
 function createLeadingRE(patterns: string[], prefix = '', suffix = '') {
   return patterns.length ? new RegExp(`^${prefix}(${patterns.map(escapeRegExp).join('|')})${suffix}`) : /$^/
@@ -17,13 +18,15 @@ interface CommandMap extends Map<string, Command> {
   resolve(key: string): Command
 }
 
+const logger = new Logger('app')
+
 export class App extends Context {
   _commandList: Command[] = []
   _commands: CommandMap = new Map<string, Command>() as never
   _shortcuts: Command.Shortcut[] = []
+  _tasks = new TaskQueue()
   _hooks: Record<keyof any, [Context, (...args: any[]) => any][]> = {}
   _sessions: Dict<Session> = Object.create(null)
-  _services: Dict<string> = Object.create(null)
   _userCache = new SharedCache<User.Observed<any>>()
   _channelCache = new SharedCache<Channel.Observed<any>>()
 
@@ -31,43 +34,28 @@ export class App extends Context {
   public options: App.Config
   public isActive = false
   public registry = new Plugin.Registry()
-
-  private _nameRE: RegExp
-
-  static defaultConfig: App.Config = {
-    maxListeners: 64,
-    prettyErrors: true,
-    autoAssign: true,
-    autoAuthorize: 1,
-    minSimilarity: 0.4,
-    delay: {
-      character: 0,
-      cancel: 0,
-      message: 0.1 * Time.second,
-      broadcast: 0.5 * Time.second,
-      prompt: Time.minute,
-    },
-  }
+  public _nameRE: RegExp
 
   constructor(options: App.Config = {}) {
     super(() => true)
-    if (options.selfUrl) options.selfUrl = trimSlash(options.selfUrl)
-    this.options = merge(options, App.defaultConfig)
+    this.options = new App.Config(options)
     this.registry.set(null, {
       id: '',
+      parent: null,
       using: [],
       children: [],
       disposables: [],
     })
 
-    this.model = new Model(this)
+    this.model = new DatabaseService(this)
+    this.i18n = new I18n(this)
     this.bots = new Adapter.BotList(this)
 
     this._commands.resolve = (key) => {
       if (!key) return
       const segments = key.split('.')
       let i = 1, name = segments[0], cmd: Command
-      while ((cmd = this._commands.get(name)) && i < segments.length) {
+      while ((cmd = this.getCommand(name)) && i < segments.length) {
         name = cmd.name + '.' + segments[i++]
       }
       return cmd
@@ -77,22 +65,7 @@ export class App extends Context {
 
     // bind built-in event listeners
     this.middleware(this._process.bind(this))
-    this.middleware(this._suggest.bind(this))
     this.on('message', this._handleMessage.bind(this))
-    this.before('parse', this._handleArgv.bind(this))
-    this.before('parse', this._handleShortcut.bind(this))
-
-    this.on('parse', (argv: Argv, session: Session) => {
-      const { parsed, subtype } = session
-      // group message should have prefix or appel to be interpreted as a command call
-      if (argv.root && subtype !== 'private' && parsed.prefix === null && !parsed.appel) return
-      if (!argv.tokens.length) return
-      const cmd = this._commands.resolve(argv.tokens[0].content)
-      if (cmd) {
-        argv.tokens.shift()
-        return cmd.name
-      }
-    })
 
     this.before('attach-user', (session, fields) => {
       session.collect('user', session.argv, fields)
@@ -102,7 +75,10 @@ export class App extends Context {
       session.collect('channel', session.argv, fields)
     })
 
+    // install internal plugins
+    this.plugin(runtime)
     this.plugin(validate)
+    this.plugin(suggest)
     this.plugin(help, options.help)
   }
 
@@ -114,24 +90,27 @@ export class App extends Context {
 
   async start() {
     this.isActive = true
-    await this.parallel('ready')
-    this.logger('app').debug('started')
+    logger.debug('started')
+    for (const callback of this.getHooks('ready')) {
+      this._tasks.queue(callback())
+    }
+    delete this._hooks.ready
+    await this._tasks.flush()
   }
 
   async stop() {
     this.isActive = false
-    // `disconnect` event is handled by ctx.disposables
+    logger.debug('stopped')
+    // `dispose` event is handled by ctx.disposables
     await Promise.all(this.state.disposables.map(dispose => dispose()))
-    this.logger('app').debug('stopped')
   }
 
-  private _resolvePrefixes(session: Session.Message) {
-    const { prefix } = this.options
-    const temp = typeof prefix === 'function' ? prefix(session) : prefix
+  private _resolvePrefixes(session: Session) {
+    const temp = session.resolveValue(this.options.prefix)
     return Array.isArray(temp) ? temp : [temp || '']
   }
 
-  private async _process(session: Session.Message, next: NextFunction) {
+  private async _process(session: Session, next: Next) {
     let capture: RegExpMatchArray
     let atSelf = false, appel = false, prefix: string = null
     const pattern = /^\[CQ:(\w+)((,\w+=[^,\]]*)*)\]/
@@ -157,16 +136,14 @@ export class App extends Context {
     defineProperty(session, 'parsed', { content, appel, prefix })
     this.emit(session, 'before-attach', session)
 
-    defineProperty(session, 'argv', this.bail('before-parse', content, session))
-    session.argv.root = true
-    session.argv.session = session
-
     if (this.database) {
       if (session.subtype === 'group') {
         // attach group data
-        const channelFields = new Set<Channel.Field>(['flag', 'assignee'])
+        const channelFields = new Set<Channel.Field>(['flag', 'assignee', 'guildId', 'locale'])
         this.emit('before-attach-channel', session, channelFields)
         const channel = await session.observeChannel(channelFields)
+        // for backwards compatibility (TODO remove in v5)
+        channel.guildId = session.guildId
 
         // emit attach event
         if (await this.serial(session, 'attach-channel', session)) return
@@ -178,7 +155,7 @@ export class App extends Context {
 
       // attach user data
       // authority is for suggestion
-      const userFields = new Set<User.Field>(['flag', 'authority'])
+      const userFields = new Set<User.Field>(['flag', 'authority', 'locale'])
       this.emit('before-attach-user', session, userFields)
       const user = await session.observeUser(userFields)
 
@@ -189,44 +166,21 @@ export class App extends Context {
       if (user.flag & User.Flag.ignore) return
     }
 
-    // execute command
     this.emit(session, 'attach', session)
-    if (!session.resolve(session.argv)) return next()
-    return session.execute(session.argv, next)
-  }
-
-  private _suggest(session: Session, next: NextFunction) {
-    // use `!prefix` instead of `prefix === null` to prevent from blocking other middlewares
-    // we need to make sure that the user truly has the intension to call a command
-    const { argv, quote, subtype, parsed: { content, prefix, appel } } = session
-    if (argv.command || subtype !== 'private' && !prefix && !appel) return next()
-    const target = content.split(/\s/, 1)[0].toLowerCase()
-    if (!target) return next()
-
-    return session.suggest({
-      target,
-      next,
-      items: getCommandNames(session),
-      prefix: template('internal.command-suggestion-prefix'),
-      suffix: template('internal.command-suggestion-suffix'),
-      async apply(suggestion, next) {
-        const newMessage = suggestion + content.slice(target.length) + (quote ? ' ' + quote.content : '')
-        return this.execute(newMessage, next)
-      },
-    })
+    return next()
   }
 
   private async _handleMessage(session: Session) {
     // preparation
     this._sessions[session.id] = session
-    const middlewares: Middleware[] = this._hooks[Context.middleware]
+    const queue: Next.Queue = this._hooks[Context.middleware]
       .filter(([context]) => context.match(session))
-      .map(([, middleware]) => middleware)
+      .map(([, middleware]) => middleware.bind(null, session))
 
     // execute middlewares
     let index = 0, midStack = '', lastCall = ''
     const { prettyErrors } = this.options
-    const next = async (fallback?: NextFunction) => {
+    const next: Next = async (callback) => {
       if (prettyErrors) {
         lastCall = new Error().stack.split('\n', 3)[2]
         if (index) {
@@ -239,75 +193,42 @@ export class App extends Context {
         if (!this._sessions[session.id]) {
           throw new Error('isolated next function detected')
         }
-        if (fallback) middlewares.push((_, next) => fallback(next))
-        return await middlewares[index++]?.(session, next)
+        if (callback !== undefined) {
+          queue.push(next => Next.compose(callback, next))
+          if (queue.length > Next.MAX_DEPTH) {
+            throw new Error(`middleware stack exceeded ${Next.MAX_DEPTH}`)
+          }
+        }
+        return await queue[index++]?.(next)
       } catch (error) {
         let stack = coerce(error)
         if (prettyErrors) {
           const index = stack.indexOf(lastCall)
-          if (index >= 0) stack = stack.slice(0, index)
+          if (index >= 0) {
+            stack = stack.slice(0, index)
+          } else {
+            stack += '\n'
+          }
           stack += `Middleware stack:${midStack}`
         }
         this.logger('session').warn(`${session.content}\n${stack}`)
       }
     }
-    await next()
 
-    // update session map
-    delete this._sessions[session.id]
-    this.emit(session, 'middleware', session)
+    try {
+      const result = await next()
+      if (result) await session.send(result)
+    } finally {
+      // update session map
+      delete this._sessions[session.id]
+      this.emit(session, 'middleware', session)
 
-    // flush user & group data
-    this._userCache.delete(session.id)
-    this._channelCache.delete(session.id)
-    await session.user?.$update()
-    await session.channel?.$update()
-  }
-
-  private _handleArgv(content: string, session: Session) {
-    const argv = Argv.parse(content)
-    if (session.quote) {
-      argv.tokens.push({
-        content: session.quote.content,
-        quoted: true,
-        inters: [],
-        terminator: '',
-      })
-    }
-    return argv
-  }
-
-  private _handleShortcut(content: string, session: Session) {
-    const { parsed, quote } = session
-    if (parsed.prefix || quote) return
-    for (const shortcut of this._shortcuts) {
-      const { name, fuzzy, command, prefix, options = {}, args = [] } = shortcut
-      if (prefix && !parsed.appel || !command.context.match(session)) continue
-      if (typeof name === 'string') {
-        if (!fuzzy && content !== name || !content.startsWith(name)) continue
-        const message = content.slice(name.length)
-        if (fuzzy && !parsed.appel && message.match(/^\S/)) continue
-        const argv = command.parse(message.trim(), '', [...args], { ...options })
-        argv.command = command
-        return argv
-      } else {
-        const capture = name.exec(content)
-        if (!capture) continue
-        function escape(source: any) {
-          if (typeof source !== 'string') return source
-          source = source.replace(/\$\$/g, '@@__PLACEHOLDER__@@')
-          capture.forEach((segment, index) => {
-            if (!index || index > 9) return
-            source = source.replace(new RegExp(`\\$${index}`, 'g'), (segment || '').replace(/\$/g, '@@__PLACEHOLDER__@@'))
-          })
-          return source.replace(/@@__PLACEHOLDER__@@/g, '$')
-        }
-        return {
-          command,
-          args: args.map(escape),
-          options: valueMap(options, escape),
-        }
-      }
+      // flush user & group data
+      this._userCache.delete(session.id)
+      this._channelCache.delete(session.id)
+      await session.user?.$update()
+      await session.channel?.$update()
+      await session.guild?.$update()
     }
   }
 }
@@ -321,37 +242,88 @@ export namespace App {
     prompt?: number
   }
 
-  export interface Config extends Config.Network {
-    prefix?: string | string[] | ((session: Session.Message) => void | string | string[])
-    nickname?: string | string[]
-    maxListeners?: number
-    prettyErrors?: boolean
-    delay?: DelayConfig
-    help?: boolean | HelpConfig
-    autoAssign?: boolean | ((session: Session) => boolean)
-    autoAuthorize?: number | ((session: Session) => number)
-    minSimilarity?: number
-  }
+  export interface Config extends Config.Basic, Config.Features, Config.Advanced {}
 
   export namespace Config {
-    export interface Static extends Schema<Config> {
-      Network?: Schema<Config.Network>
+    export interface Basic extends SuggestConfig {
+      locale?: string
+      prefix?: Computed<string | string[]>
+      nickname?: string | string[]
+      autoAssign?: Computed<Awaitable<boolean>>
+      autoAuthorize?: Computed<Awaitable<number>>
     }
 
-    export interface Network {
-      selfUrl?: string
+    export interface Features {
+      help?: false | HelpConfig
+      delay?: DelayConfig
+    }
+
+    export interface Advanced {
+      maxListeners?: number
+      prettyErrors?: boolean
+    }
+
+    export interface Static extends Schema<Config> {
+      Basic: Schema<Basic>
+      Features: Schema<Features>
+      Advanced: Schema<Advanced>
     }
   }
 
-  export const Config: Config.Static = Schema.intersect([])
+  export const Config = Schema.intersect([]) as Config.Static
 
-  const NetworkConfig: Schema<Config.Network> = Schema.object({
-    selfUrl: Schema.string().description('Koishi 服务暴露在公网的地址。部分插件（例如 github 和 telegram）需要用到。'),
-  }).description('网络设置')
+  defineProperty(Config, 'Basic', Schema.object({
+    locale: Schema.string().default('zh').description('默认使用的语言。'),
+    prefix: Schema.union([
+      Schema.array(String),
+      Schema.transform(String, (prefix) => [prefix]),
+    ] as const).default(['']).description('指令前缀字符，可以是字符串或字符串数组。将用于指令前缀的匹配。'),
+    nickname: Schema.union([
+      Schema.array(String),
+      Schema.transform(String, (nickname) => [nickname]),
+    ] as const).description('机器人的昵称，可以是字符串或字符串数组。将用于指令前缀的匹配。'),
+    autoAssign: Schema.union([Boolean, Function]).default(true).description('当获取不到频道数据时，是否使用接受者作为代理者。'),
+    autoAuthorize: Schema.union([Schema.natural(), Function]).default(1).description('当获取不到用户数据时默认使用的权限等级。'),
+    minSimilarity: Schema.percent().default(0.4).description('用于模糊匹配的相似系数，应该是一个 0 到 1 之间的数值。数值越高，模糊匹配越严格。设置为 1 可以完全禁用模糊匹配。'),
+  }).description('基础设置'))
 
-  defineProperty(Config, 'Network', NetworkConfig)
+  defineProperty(Config, 'Features', Schema.object({
+    delay: Schema.object({
+      character: Schema.natural().role('ms').default(0).description('调用 `session.sendQueued()` 时消息间发送的最小延迟，按前一条消息的字数计算。'),
+      message: Schema.natural().role('ms').default(0.1 * Time.second).description('调用 `session.sendQueued()` 时消息间发送的最小延迟，按固定值计算。'),
+      cancel: Schema.natural().role('ms').default(0).description('调用 `session.cancelQueued()` 时默认的延迟。'),
+      broadcast: Schema.natural().role('ms').default(0.5 * Time.second).description('调用 `bot.broadcast()` 时默认的延迟。'),
+      prompt: Schema.natural().role('ms').default(Time.minute).description('调用 `session.prompt()` 时默认的等待时间。'),
+    }),
+  }).description('消息设置'))
 
-  Config.list.push(NetworkConfig)
+  defineProperty(Config, 'Advanced', Schema.object({
+    prettyErrors: Schema.boolean().default(true).description('启用报错优化模式。在此模式下 Koishi 会对程序抛出的异常进行整理，过滤掉框架内部的调用记录，输出更易读的提示信息。'),
+    maxListeners: Schema.natural().default(64).description('每种监听器的最大数量。如果超过这个数量，Koishi 会认定为发生了内存泄漏，将产生一个警告。'),
+  }).description('高级设置'))
+
+  Config.list.push(Config.Basic, Config.Features, Config.Advanced)
+}
+
+export function defineConfig(config: App.Config) {
+  return config
+}
+
+class TaskQueue {
+  #internal = new Set<Promise<void>>()
+
+  queue(value: any) {
+    const task = Promise.resolve(value)
+      .catch(err => logger.warn(err))
+      .then(() => this.#internal.delete(task))
+    this.#internal.add(task)
+  }
+
+  async flush() {
+    while (this.#internal.size) {
+      await Promise.all(Array.from(this.#internal))
+    }
+  }
 }
 
 export namespace SharedCache {
@@ -364,33 +336,31 @@ export namespace SharedCache {
 
 export class SharedCache<T> {
   #keyMap: Dict<SharedCache.Entry<T>> = Object.create(null)
-  #refMap: Dict<SharedCache.Entry<T>> = Object.create(null)
 
   get(ref: string, key: string) {
     const entry = this.#keyMap[key]
     if (!entry) return
-    this.ref(ref, entry)
+    entry.refs.add(ref)
     return entry.value
   }
 
   set(ref: string, key: string, value: T) {
-    const entry = this.#keyMap[key] ||= { value, key, refs: new Set() }
-    this.ref(ref, entry)
-  }
-
-  private ref(ref: string, entry: SharedCache.Entry<T>) {
-    this.delete(ref)
-    this.#refMap[ref] = entry
+    let entry = this.#keyMap[key]
+    if (entry) {
+      entry.value = value
+    } else {
+      entry = this.#keyMap[key] = { value, key, refs: new Set() }
+    }
     entry.refs.add(ref)
   }
 
   delete(ref: string) {
-    const entry = this.#refMap[ref]
-    if (!entry) return
-    entry.refs.delete(ref)
-    if (!entry.refs.size) {
-      delete this.#keyMap[entry.key]
+    for (const key in this.#keyMap) {
+      const { refs } = this.#keyMap[key]
+      refs.delete(ref)
+      if (!refs.size) {
+        delete this.#keyMap[key]
+      }
     }
-    delete this.#refMap[ref]
   }
 }

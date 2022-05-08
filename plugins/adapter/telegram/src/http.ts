@@ -1,47 +1,15 @@
-import axios, { AxiosError } from 'axios'
-import FormData from 'form-data'
-import { Adapter, assertProperty, camelCase, Context, Logger, sanitize, segment, Session, trimSlash } from 'koishi'
+import { Adapter, assertProperty, Context, Dict, Logger, sanitize, Schema, segment, Session, trimSlash } from 'koishi'
 import { BotConfig, TelegramBot } from './bot'
 import * as Telegram from './types'
-import { AdapterConfig } from './utils'
+import { AdapterConfig, adaptUser } from './utils'
 
 const logger = new Logger('telegram')
 
-type GetUpdatesOptions = {
-  offset?: number
-  limit?: number
-  /** In seconds */
-  timeout?: number
-  allowedUpdates?: string[]
-}
-
 abstract class TelegramAdapter extends Adapter<BotConfig, AdapterConfig> {
-  static schema = BotConfig
-  constructor(ctx: Context, config: AdapterConfig) {
-    super(ctx, config)
-    this.config.request = this.config.request || {}
-    this.config.request.endpoint = this.config.request.endpoint || 'https://api.telegram.org'
-    this.http = ctx.http.extend(config.request)
-  }
-
-  abstract start(): void
-  abstract stop(): void
   /** Init telegram updates listening */
   abstract listenUpdates(bot: TelegramBot): Promise<void>
 
   async connect(bot: TelegramBot): Promise<void> {
-    bot._request = async (action, params, field, content, filename) => {
-      const payload = new FormData()
-      for (const key in params) {
-        payload.append(key, params[key].toString())
-      }
-      if (field && content) payload.append(field, content, filename)
-      try {
-        return await bot.http.post(action, payload, payload.getHeaders())
-      } catch (e) {
-        return (e as AxiosError).response.data
-      }
-    }
     const { username, userId, avatar, nickname } = await bot.getLoginInfo()
     bot.username = username
     bot.avatar = avatar
@@ -55,15 +23,15 @@ abstract class TelegramAdapter extends Adapter<BotConfig, AdapterConfig> {
 
   async onUpdate(update: Telegram.Update, bot: TelegramBot) {
     logger.debug('receive %s', JSON.stringify(update))
-    const { selfId, token } = bot.config
-    const session: Partial<Session> = { selfId }
+    const session: Partial<Session> = { selfId: bot.selfId }
+    session.telegram = Object.create(bot.internal)
+    Object.assign(session.telegram, update)
 
     function parseText(text: string, entities: Telegram.MessageEntity[]): segment[] {
       let curr = 0
       const segs: segment[] = []
       for (const e of entities) {
         const eText = text.substr(e.offset, e.length)
-        let handleCurrent = true
         if (e.type === 'mention') {
           if (eText[0] !== '@') throw new Error('Telegram mention does not start with @: ' + eText)
           const atName = eText.slice(1)
@@ -72,10 +40,10 @@ abstract class TelegramAdapter extends Adapter<BotConfig, AdapterConfig> {
         } else if (e.type === 'text_mention') {
           segs.push({ type: 'at', data: { id: e.user.id } })
         } else {
-          handleCurrent = false
+          continue
         }
-        if (handleCurrent && e.offset > curr) {
-          segs.push({ type: 'text', data: { content: text.slice(curr, e.offset) } })
+        if (e.offset > curr) {
+          segs.splice(-1, 0, { type: 'text', data: { content: text.slice(curr, e.offset) } })
           curr = e.offset + e.length
         }
       }
@@ -84,21 +52,22 @@ abstract class TelegramAdapter extends Adapter<BotConfig, AdapterConfig> {
       }
       return segs
     }
-    const message = update.message || update.editedMessage || update.channelPost || update.editedChannelPost
+
+    const message = update.message || update.edited_message || update.channel_post || update.edited_channel_post
     if (message) {
-      session.messageId = message.messageId.toString()
-      session.type = (update.message || update.channelPost) ? 'message' : 'message-updated'
+      session.messageId = message.message_id.toString()
+      session.type = (update.message || update.channel_post) ? 'message' : 'message-updated'
       session.timestamp = message.date * 1000
       const segments: segment[] = []
-      if (message.replyToMessage) {
-        const replayText = message.replyToMessage.text || message.replyToMessage.caption
-        const parsedReply = parseText(replayText, message.replyToMessage.entities || [])
+      if (message.reply_to_message) {
+        const replayText = message.reply_to_message.text || message.reply_to_message.caption
+        const parsedReply = parseText(replayText, message.reply_to_message.entities || [])
         session.quote = {
-          messageId: message.replyToMessage.messageId.toString(),
-          author: TelegramBot.adaptUser(message.replyToMessage.from),
+          messageId: message.reply_to_message.message_id.toString(),
+          author: adaptUser(message.reply_to_message.from),
           content: replayText ? segment.join(parsedReply) : undefined,
         }
-        segments.push({ type: 'quote', data: { id: message.replyToMessage.messageId } })
+        segments.push({ type: 'quote', data: { id: message.reply_to_message.message_id, channelId: message.reply_to_message.chat.id } })
       }
       if (message.location) {
         segments.push({
@@ -106,50 +75,55 @@ abstract class TelegramAdapter extends Adapter<BotConfig, AdapterConfig> {
           data: { lat: message.location.latitude, lon: message.location.longitude },
         })
       }
-      const getFileData = async (fileId) => {
-        try {
-          const file = await bot.get<Telegram.File>('/getFile', { fileId })
-          const downloadUrl = `${this.config.request.endpoint}/file/bot${token}/${file.filePath}`
-          const res = await axios.get(downloadUrl, { responseType: 'arraybuffer' })
-          const base64 = `base64://` + Buffer.from(res.data, 'binary').toString('base64')
-          return { url: base64 }
-        } catch (e) {
-          logger.warn('get file error', e)
-        }
-      }
       if (message.photo) {
-        const photo = message.photo.sort((s1, s2) => s2.fileSize - s1.fileSize)[0]
-        segments.push({ type: 'image', data: await getFileData(photo.fileId) })
+        const photo = message.photo.sort((s1, s2) => s2.file_size - s1.file_size)[0]
+        segments.push({ type: 'image', data: await bot.$getFileData(photo.file_id) })
       }
       if (message.sticker) {
         // TODO: Convert tgs to gif
         // https://github.com/ed-asriyan/tgs-to-gif
         // Currently use thumb only
-        segments.push({ type: 'text', data: { content: `[${message.sticker.setName || 'sticker'} ${message.sticker.emoji || ''}]` } })
-      } else if (message.animation) segments.push({ type: 'image', data: await getFileData(message.animation.fileId) })
-      else if (message.voice) segments.push({ type: 'audio', data: await getFileData(message.voice.fileId) })
-      else if (message.video) segments.push({ type: 'video', data: await getFileData(message.video.fileId) })
-      else if (message.document) segments.push({ type: 'file', data: await getFileData(message.document.fileId) })
+        try {
+          const file = await bot.internal.getFile({ file_id: message.sticker.file_id })
+          if (file.file_path.endsWith('.tgs')) {
+            throw new Error('tgs is not supported now')
+          }
+          segments.push({ type: 'image', data: await bot.$getFileContent(file.file_path) })
+        } catch (e) {
+          logger.warn('get file error', e)
+          segments.push({ type: 'text', data: { content: `[${message.sticker.set_name || 'sticker'} ${message.sticker.emoji || ''}]` } })
+        }
+      } else if (message.animation) {
+        segments.push({ type: 'image', data: await bot.$getFileData(message.animation.file_id) })
+      } else if (message.voice) {
+        segments.push({ type: 'audio', data: await bot.$getFileData(message.voice.file_id) })
+      } else if (message.video) {
+        segments.push({ type: 'video', data: await bot.$getFileData(message.video.file_id) })
+      } else if (message.document) {
+        segments.push({ type: 'file', data: await bot.$getFileData(message.document.file_id) })
+      }
 
       const msgText: string = message.text || message.caption
       segments.push(...parseText(msgText, message.entities || []))
 
       session.content = segment.join(segments)
       session.userId = message.from.id.toString()
-      session.author = TelegramBot.adaptUser(message.from)
+      session.author = adaptUser(message.from)
+      session.channelId = message.chat.id.toString()
       if (message.chat.type === 'private') {
         session.subtype = 'private'
+        session.channelId = 'private:' + session.channelId
       } else {
         session.subtype = 'group'
-        session.channelId = session.guildId = message.chat.id.toString()
+        session.guildId = session.channelId
       }
-    } else if (update.chatJoinRequest) {
-      session.timestamp = update.chatJoinRequest.date * 1000
+    } else if (update.chat_join_request) {
+      session.timestamp = update.chat_join_request.date * 1000
       session.type = 'guild-member-request'
-      session.messageId = `${update.chatJoinRequest.chat.id}@${update.chatJoinRequest.from.id}`
+      session.messageId = `${update.chat_join_request.chat.id}@${update.chat_join_request.from.id}`
       // Telegram join request does not have text
       session.content = ''
-      session.channelId = update.chatJoinRequest.chat.id.toString()
+      session.channelId = update.chat_join_request.chat.id.toString()
       session.guildId = session.channelId
     }
     logger.debug('receive %o', session)
@@ -158,6 +132,8 @@ abstract class TelegramAdapter extends Adapter<BotConfig, AdapterConfig> {
 }
 
 export class HttpServer extends TelegramAdapter {
+  static schema = BotConfig
+
   constructor(ctx: Context, config: AdapterConfig) {
     super(ctx, config)
     config.path = sanitize(config.path || '/telegram')
@@ -171,9 +147,9 @@ export class HttpServer extends TelegramAdapter {
   async listenUpdates(bot: TelegramBot) {
     const { token } = bot.config
     const { path, selfUrl } = this.config
-    const info = await bot.get<boolean>('/setWebhook', {
+    const info = await bot.internal.setWebhook({
       url: selfUrl + path + '?token=' + token,
-      dropPendingUpdates: true,
+      drop_pending_updates: true,
     })
     if (!info) throw new Error('Set webhook failed')
     logger.debug('listening updates %c', 'telegram: ' + bot.selfId)
@@ -182,7 +158,7 @@ export class HttpServer extends TelegramAdapter {
   async start() {
     const { path } = this.config
     this.ctx.router.post(path, async (ctx) => {
-      const payload = camelCase<Telegram.Update>(ctx.request.body)
+      const payload: Telegram.Update = ctx.request.body
       const token = ctx.request.query.token as string
       const [selfId] = token.split(':')
       const bot = this.bots.find(bot => bot.selfId === selfId) as TelegramBot
@@ -198,41 +174,51 @@ export class HttpServer extends TelegramAdapter {
 }
 
 export class HttpPolling extends TelegramAdapter {
-  private offset: Record<string, number> = {}
+  static schema = Schema.intersect([
+    BotConfig,
+    Schema.object({
+      pollingTimeout: Schema.union([
+        Schema.natural(),
+        Schema.transform(Schema.const(true as const), () => 60),
+      ]).default(60).description('通过长轮询获取更新时请求的超时 (单位为秒)。'),
+    }),
+  ])
+
+  private offset: Dict<number> = {}
   private isStopped: boolean
 
-  start(): void {
+  start() {
     this.isStopped = false
   }
 
-  stop(): void {
+  stop() {
     this.isStopped = true
   }
 
   async listenUpdates(bot: TelegramBot): Promise<void> {
-    const { selfId } = bot.config
+    const { selfId } = bot
     this.offset[selfId] = this.offset[selfId] || 0
 
-    const { url } = await bot.get<Telegram.WebhookInfo, GetUpdatesOptions>('/getWebhookInfo', {})
+    const { url } = await bot.internal.getWebhookInfo()
     if (url) {
       logger.warn('Bot currently has a webhook set up, trying to remove it...')
-      await bot.get<boolean>('/setWebhook', { url: '' })
+      await bot.internal.setWebhook({ url: '' })
     }
 
     // Test connection / init offset with 0 timeout polling
-    const previousUpdates = await bot.get<Telegram.Update[], GetUpdatesOptions>('/getUpdates', {
-      allowedUpdates: [],
+    const previousUpdates = await bot.internal.getUpdates({
+      allowed_updates: [],
       timeout: 0,
     })
-    previousUpdates.forEach(e => this.offset[selfId] = Math.max(this.offset[selfId], e.updateId))
+    previousUpdates.forEach(e => this.offset[selfId] = Math.max(this.offset[selfId], e.update_id))
 
     const polling = async () => {
-      const updates = await bot.get<Telegram.Update[], GetUpdatesOptions>('/getUpdates', {
+      const updates = await bot.internal.getUpdates({
         offset: this.offset[selfId] + 1,
-        timeout: bot.config.pollingTimeout === true ? 60 : bot.config.pollingTimeout,
+        timeout: bot.config.pollingTimeout,
       })
       for (const e of updates) {
-        this.offset[selfId] = Math.max(this.offset[selfId], e.updateId)
+        this.offset[selfId] = Math.max(this.offset[selfId], e.update_id)
         this.onUpdate(e, bot)
       }
 

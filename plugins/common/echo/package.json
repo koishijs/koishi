@@ -1,0 +1,41 @@
+{
+  "name": "@koishijs/plugin-echo",
+  "description": "Echo plugin for Koishi",
+  "version": "2.0.0",
+  "main": "lib/index.js",
+  "typings": "lib/index.d.ts",
+  "files": [
+    "lib"
+  ],
+  "author": "Shigma <shigma10826@gmail.com>",
+  "license": "MIT",
+  "scripts": {
+    "lint": "eslint src --ext .ts"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/koishijs/koishi.git",
+    "directory": "plugins/common/echo"
+  },
+  "bugs": {
+    "url": "https://github.com/koishijs/koishi/issues"
+  },
+  "homepage": "https://koishi.js.org/plugins/common/echo.html",
+  "keywords": [
+    "bot",
+    "chatbot",
+    "koishi",
+    "plugin",
+    "echo",
+    "locale:zh"
+  ],
+  "peerDependencies": {
+    "koishi": "^4.6.2"
+  },
+  "devDependencies": {
+    "@koishijs/plugin-mock": "^1.0.4"
+  },
+  "dependencies": {
+    "@koishijs/helpers": "^1.2.0"
+  }
+}

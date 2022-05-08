@@ -28,7 +28,7 @@ sidebarDepth: 2
 
 你可以在配置文件中控制输出等级：
 
-```js koishi.config.js
+```js title=koishi.js
 module.exports = {
   logLevel: 3,
 }
@@ -59,7 +59,7 @@ module.exports = {
 
 如果你是插件开发者，你也可以主动调用 Koishi 内置的 Logger API 来输出调试信息，这样用户就可以用上述的方法来控制你的插件的输出等级了。具体使用方法是这样的：
 
-```js my-plugin.js
+```js title=my-plugin.js
 module.exports = (ctx) => {
   // 生成一个 Logger 对象，foo 作为它的命名空间
   const logger = ctx.logger('foo')
@@ -73,7 +73,7 @@ module.exports = (ctx) => {
 
 上面的这个 Logger 对象有下面的方法，它们的函数签名与 `console.log` 一致：
 
-```js
+```ts no-extra-header
 export interface Logger {
   warn(format: any, ...param: any[]): void
   info(format: any, ...param: any[]): void
@@ -87,7 +87,7 @@ export interface Logger {
 
 前面所说的命名空间不仅会作为输出的前缀，还能用于过滤输出。用户可以通过将 `logLevel` 配置成对象的形式，指定每一个插件产生的输出的等级，就像这样：
 
-```js koishi.config.js
+```js title=koishi.js
 module.exports = {
   logLevel: {
     // 基础输出等级，当没有找到对应的配置项时将使用这个值
@@ -101,7 +101,7 @@ module.exports = {
 
 Koishi 也支持多级命名空间，每一级之间用冒号分隔，你可以用下面的方式声明一个子命名空间：
 
-```js plugin-foo.js
+```js title=plugin-foo.js
 module.exports = (ctx) => {
   // 这两种写法是等价的
   const logger = ctx.logger('foo:temp')
@@ -112,7 +112,7 @@ module.exports = (ctx) => {
 
 然后，你也可以将你的配置项具体到每一级命名空间中：
 
-```js koishi.config.js
+```js title=koishi.js
 module.exports = {
   logLevel: {
     foo: {
@@ -135,7 +135,7 @@ module.exports = {
 如果你不希望使用 Koishi 的命令行工具，同时又想使用上述种种特性，你可以考虑直接调用 Logger 的底层方法来进行配置。
 
 ::: warning
-由于手动调用 Logger 并不是我们所推荐的行为，本节中介绍的属性和方法不会记录在文档中，Koishi 也不会保证这些功能不会在版本更新中发生变化。在开发时，请尽量以 koishi-utils 包提供的 dts 文件，而非本页面为准。
+由于手动调用 Logger 并不是我们所推荐的行为，本节中介绍的属性和方法不会记录在文档中，Koishi 也不会保证这些功能不会在版本更新中发生变化。在开发时，请尽量以 @koishijs/utils 包提供的 dts 文件，而非本页面为准。
 :::
 
 ### Logger.showTime

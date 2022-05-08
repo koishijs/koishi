@@ -2,33 +2,37 @@
 
 import parse from 'yargs-parser'
 import prompts from 'prompts'
-import { bold, blue, yellow, green, dim } from 'kleur'
-import { basename, join, relative } from 'path'
 import spawn from 'cross-spawn'
+import axios from 'axios'
+import which from 'which-pm-runs'
+import { blue, bold, dim, green, red, yellow } from 'kleur'
+import { basename, join, relative } from 'path'
+import { extract } from 'tar'
 import * as fs from 'fs'
 
 let project: string
 let rootDir: string
 
 const cwd = process.cwd()
-const tempDir = join(__dirname, '..', 'template')
-const meta = require(join(tempDir, 'package.json'))
 
 const argv = parse(process.argv.slice(2), {
   alias: {
+    ref: ['r'],
     forced: ['f'],
+    mirror: ['m'],
+    prod: ['p'],
+    template: ['t'],
+    yes: ['y'],
   },
 })
 
-const { npm_execpath: execpath = '' } = process.env
-const isYarn = execpath.includes('yarn')
-const hasPnpm = !isYarn && supports('pnpm', ['--version'])
+const hasGit = supports('git', ['--version'])
 
 function supports(command: string, args: string[] = []) {
   return new Promise<boolean>((resolve) => {
     const child = spawn(command, args, { stdio: 'ignore' })
     child.on('exit', (code) => {
-      resolve(code ? false : true)
+      resolve(!code)
     })
     child.on('error', () => {
       resolve(false)
@@ -37,11 +41,11 @@ function supports(command: string, args: string[] = []) {
 }
 
 async function getName() {
-  if (argv._[0]) return argv._[0]
+  if (argv._[0]) return '' + argv._[0]
   const { name } = await prompts({
     type: 'text',
     name: 'name',
-    message: 'Project Name:',
+    message: 'Project name:',
     initial: 'koishi-app',
   })
   return name.trim() as string
@@ -56,20 +60,6 @@ function emptyDir(root: string) {
       fs.rmdirSync(abs)
     } else {
       fs.unlinkSync(abs)
-    }
-  }
-}
-
-function copy(src: string, dest: string) {
-  const stat = fs.statSync(src)
-  if (!stat.isDirectory()) {
-    fs.copyFileSync(src, dest)
-  } else {
-    fs.mkdirSync(dest, { recursive: true })
-    for (const file of fs.readdirSync(src)) {
-      const srcFile = join(src, file)
-      const destFile = join(dest, file)
-      copy(srcFile, destFile)
     }
   }
 }
@@ -92,7 +82,7 @@ async function prepare() {
   const files = fs.readdirSync(rootDir)
   if (!files.length) return
 
-  if (!argv.forced) {
+  if (!argv.forced && !argv.yes) {
     console.log(yellow(`  Target directory "${project}" is not empty.`))
     const yes = await confirm('Remove existing files and continue?')
     if (!yes) process.exit(0)
@@ -101,91 +91,62 @@ async function prepare() {
   emptyDir(rootDir)
 }
 
-interface CompilerOptions {
-  dependencies: string[]
-  register: string
-}
-
-const compilers: Record<string, CompilerOptions> = {
-  'tsc': {
-    dependencies: ['ts-node'],
-    register: 'ts-node/register/transpile-only',
-  },
-  'esbuild': {
-    dependencies: ['esbuild', 'esbuild-register'],
-    register: 'esbuild-register',
-  },
-}
-
-const devDeps: string[] = []
-
-const files: (string | [string, string])[] = [
-  ['_gitignore', '.gitignore'],
-  'koishi.config.yml',
-]
-
-async function getCompiler() {
-  const keys = ['', ...Object.keys(compilers)]
-  const { name } = await prompts({
-    type: 'select',
-    name: 'name',
-    message: 'Choose a typescript compiler:',
-    choices: keys.map(value => ({ title: value || 'none', value })),
-  })
-
-  if (!name) {
-    files.push(['src-js', 'src'])
-    return
-  }
-
-  files.push('src', 'tsconfig.json')
-  const compiler = compilers[name]
-  devDeps.push('typescript', ...compiler.dependencies)
-  meta.scripts.start += ' -- -r ' + compiler.register
+function getRef() {
+  if (!argv.ref) return 'refs/heads/master'
+  if (argv.ref.startsWith('refs/')) return argv.ref
+  if (/^[0-9a-f]{40}$/.test(argv.ref)) return argv.ref
+  return `refs/heads/${argv.ref}`
 }
 
 async function scaffold() {
   console.log(dim('  Scaffolding project in ') + project + dim(' ...'))
 
-  for (const name of files) {
-    const [src, dest] = typeof name === 'string' ? [name, name] : name
-    copy(join(tempDir, src), join(rootDir, dest))
+  const mirror = argv.mirror || 'https://github.com'
+  const template = argv.template || 'koishijs/boilerplate'
+  const url = `${mirror}/${template}/archive/${getRef()}.tar.gz`
+
+  try {
+    const { data } = await axios.get<NodeJS.ReadableStream>(url, { responseType: 'stream' })
+
+    await new Promise<void>((resolve, reject) => {
+      const stream = data.pipe(extract({ cwd: rootDir, newer: true, strip: 1 }))
+      stream.on('finish', resolve)
+      stream.on('error', reject)
+    })
+  } catch (err) {
+    if (!axios.isAxiosError(err) || !err.response) throw err
+    const { status, statusText } = err.response
+    console.log(`${red('error')} request failed with status code ${status} ${statusText}`)
+    process.exit(1)
   }
 
-  for (const key in meta.devDependencies) {
-    if (!devDeps.includes(key)) {
-      delete meta.devDependencies[key]
-    }
-  }
-
-  // place "name" on the top of package.json
-  fs.writeFileSync(join(rootDir, 'package.json'), JSON.stringify({
-    name: project,
-    ...meta,
-  }, null, 2))
+  const filename = join(rootDir, 'package.json')
+  const meta = require(filename)
+  meta.name = project
+  fs.writeFileSync(filename, JSON.stringify(meta, null, 2))
 
   console.log(green('  Done.\n'))
 }
 
-async function getAgent() {
-  if (isYarn) return 'yarn'
-  const agents = ['npm']
-  if (await hasPnpm) agents.push('pnpm')
-  const { agent } = await prompts({
-    type: 'select',
-    name: 'agent',
-    message: 'Choose a package manager:',
-    choices: agents.map((agent) => ({ title: agent, value: agent })),
-  })
-  return agent as string
+async function initGit() {
+  if (!await hasGit || argv.yes) return
+  const yes = await confirm('Initialize Git for version control?')
+  if (!yes) return
+  spawn.sync('git', ['init'], { stdio: 'ignore', cwd: rootDir })
+  console.log(green('  Done.\n'))
 }
 
 async function install() {
-  const agent = await getAgent()
+  // with `-y` option, we don't install dependencies
+  if (argv.yes) return
 
+  const agent = which()?.name || 'npm'
   const yes = await confirm('Install and start it now?')
   if (yes) {
-    spawn.sync(agent, ['install'], { stdio: 'inherit', cwd: rootDir })
+    // https://docs.npmjs.com/cli/v8/commands/npm-install
+    // with the --production flag or `NODE_ENV` set to production,
+    // npm will not install modules listed in devDependencies
+    spawn.sync(agent, ['install', ...argv.prod ? ['--production'] : []], { stdio: 'inherit', cwd: rootDir })
     spawn.sync(agent, ['run', 'start'], { stdio: 'inherit', cwd: rootDir })
   } else {
     console.log(dim('  You can start it later by:\n'))
@@ -210,8 +171,8 @@ async function start() {
   project = basename(rootDir)
 
   await prepare()
-  await getCompiler()
   await scaffold()
+  await initGit()
   await install()
 }
 

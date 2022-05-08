@@ -1,0 +1,43 @@
+{
+  "name": "@koishijs/plugin-console",
+  "description": "Web User Interface for Koishi",
+  "version": "3.2.9",
+  "main": "lib/index.js",
+  "typings": "lib/index.d.ts",
+  "files": [
+    "lib",
+    "dist",
+    "client/index.d.ts"
+  ],
+  "author": "Shigma <shigma10826@gmail.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/koishijs/koishi.git",
+    "directory": "plugins/frontend/console"
+  },
+  "bugs": {
+    "url": "https://github.com/koishijs/koishi/issues"
+  },
+  "homepage": "https://koishi.js.org/plugins/console/",
+  "keywords": [
+    "bot",
+    "chatbot",
+    "koishi",
+    "plugin",
+    "webui",
+    "impl:console"
+  ],
+  "peerDependencies": {
+    "koishi": "^4.6.2"
+  },
+  "devDependencies": {
+    "@koishijs/client": "^3.2.9",
+    "@types/uuid": "^8.3.4"
+  },
+  "dependencies": {
+    "open": "^8.4.0",
+    "uuid": "^8.3.2",
+    "ws": "^8.6.0"
+  }
+}

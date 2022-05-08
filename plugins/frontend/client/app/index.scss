@@ -1,0 +1,78 @@
+$black: #000000;
+$white: #ffffff;
+
+:root, *::before, *::after {
+  --bg0: #ffffff;
+  --bg1: #f7f7f8;
+  --bg2: #f2f3f5;
+  --bg3: #e3e5e8;
+  --bg4: #d3d7db;
+
+  --fg0: #000000;
+  --fg1: #231f37;
+  --fg2: #545260;
+  --fg3: #7a7887;
+  --fg3t: #7a78877f;
+
+  --disabled: #909399;
+
+  --hover-inset: 0 0 2px inset #0002;
+
+  --menu-fg: var(--fg1);
+  --hover-bg: var(--bg2);
+
+  --aside-width: 16rem;
+
+  // breakpoints
+  --bp-large: 1440px;
+  --bp-medium: 1024px;
+  --bp-small: 768px;
+  --bp-tiny: 480px;
+}
+
+html.dark .el-switch {
+  --el-switch-off-color: #72767d;
+}
+
+html.dark {
+  --bg0: #1e1e2e;
+  --bg1: #202225;
+  --bg2: #2f2f35;
+  --bg3: #36393f;
+  --bg4: #40444b;
+
+  --fg0: #ffffff;
+  --fg1: #e3e5e8;
+  --fg2: #dcddde;
+  --fg3: #b9bbbe;
+
+  --menu-fg: var(--fg3);
+  --hover-bg: var(--bg3);
+}
+
+.k-menu-item {
+  display: block;
+  position: relative;
+  cursor: pointer;
+  user-select: none;
+  color: var(--menu-fg);
+  transition: color 0.3s ease, border-color 0.3s ease, background-color 0.3s ease;
+
+  &:hover {
+    color: var(--fg0);
+    background-color: var(--hover-bg);
+  }
+
+  &.active {
+    font-weight: bolder;
+    color: var(--active);
+  }
+}
+
+.k-group {
+  display: inline-block;
+}
+
+.float-right {
+  float: right;
+}

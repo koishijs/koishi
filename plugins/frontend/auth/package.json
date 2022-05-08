@@ -1,0 +1,44 @@
+{
+  "name": "@koishijs/plugin-auth",
+  "description": "Console User Authentication",
+  "version": "1.1.2",
+  "main": "lib/index.js",
+  "typings": "lib/index.d.ts",
+  "files": [
+    "lib",
+    "dist"
+  ],
+  "author": "Shigma <shigma10826@gmail.com>",
+  "license": "MIT",
+  "scripts": {
+    "lint": "eslint src --ext .ts"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/koishijs/koishi.git",
+    "directory": "plugins/frontend/auth"
+  },
+  "bugs": {
+    "url": "https://github.com/koishijs/koishi/issues"
+  },
+  "homepage": "https://koishi.js.org/plugins/console/auth.html",
+  "keywords": [
+    "bot",
+    "chatbot",
+    "koishi",
+    "plugin",
+    "auth",
+    "authentication",
+    "login",
+    "console",
+    "required:database",
+    "required:console"
+  ],
+  "peerDependencies": {
+    "@koishijs/plugin-console": "^3.2.9",
+    "koishi": "^4.6.2"
+  },
+  "devDependencies": {
+    "@koishijs/client": "^3.2.9"
+  }
+}

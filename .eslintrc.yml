@@ -24,6 +24,8 @@ plugins:
   - '@typescript-eslint'
 
 rules:
+  array-callback-return: off
+
   comma-dangle:
     - error
     - always-multiline
@@ -58,6 +60,11 @@ rules:
     - avoidEscape: true
       allowTemplateLiterals: true
 
+  sort-imports:
+    - warn
+    - ignoreCase: true
+      ignoreDeclarationSort: true
+
   valid-typeof: off
 
   yield-star-spacing:
@@ -80,8 +87,8 @@ rules:
 
   camelcase: off
   '@typescript-eslint/naming-convention':
-    - error
-    
+    - warn
+
     # group selectors
     - selector: default
       format: [camelCase, UPPER_CASE]
@@ -99,9 +106,24 @@ rules:
       format: [UPPER_CASE, PascalCase]
     - selector: [typeParameter]
       format: [PascalCase]
+    - selector: [objectLiteralProperty]
+      format: null
+    - selector: [typeProperty]
+      format: null
+    - selector: [typeMethod]
+      format: null
 
   # https://github.com/typescript-eslint/typescript-eslint/blob/master/packages/eslint-plugin/docs/rules/no-redeclare.md
   no-redeclare: off
+
+  # https://typescript-eslint.io/docs/linting/troubleshooting/#i-get-errors-from-the-no-undef-rule-about-global-variables-not-being-defined-even-though-there-are-no-typescript-errors
+  no-undef: off
+
+  indent:
+    - warn
+    - 2
+    - offsetTernaryExpressions: false
+      SwitchCase: 1
 
   no-unused-vars: off
   '@typescript-eslint/no-unused-vars':
@@ -116,6 +138,10 @@ rules:
 
   no-useless-constructor: off
   '@typescript-eslint/no-useless-constructor': warn
+
+  node/no-callback-literal: off
+
+  quote-props: off
 
   semi: off
   '@typescript-eslint/semi':

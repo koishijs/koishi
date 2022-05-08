@@ -2,7 +2,7 @@
 sidebarDepth: 2
 ---
 
-# 内置的用户系统
+# 内置用户系统
 
 ::: tip
 本节所介绍的内容需要你安装一个数据库支持。如果你暂时不打算使用数据库，那么可以略过。
@@ -20,8 +20,6 @@ Koishi 内置了下面几个数据库字段：
   - **???:** `string` [平台编号](#平台相关字段)
   - **flag:** `number` 状态标签
   - **authority:** `number` 用户权限
-  - **usage:** `Record<string, number>` 指令调用次数
-  - **timers:** `Record<string, number>` 指令调用时间
 - **channel:** 频道表
   - **platform:** `string` 平台名
   - **id:** `string` [平台编号](#平台相关字段)
@@ -40,8 +38,8 @@ Koishi 使用**状态标签**来管理用户和群的可能状态。状态标签
 
 利用位运算操作符，你可以用下面的方法辨别和修改状态信息：
 
-```js
-const { Channel } = require('koishi')
+```ts
+import { Channel } from 'koishi'
 
 // 判断会话用户是否被设置了 ignore 状态
 if (session.channel.flag & Channel.Flag.ignore) {}
@@ -78,7 +76,7 @@ Koishi v3 起支持多平台和多账户，因此在用户系统中也需要记�
 
 用户数据中有一个可变字段，它记录了你在特定平台上的 **用户编号**。例如，如果你的 QQ 号的 111222333，Telegram 号为 444555666，那么你的用户数据可能长这样：
 
-```js
+```json
 {
   "id": 233,
   // 请注意：即使 QQ 号都是数字，这个字段的值也永远是字符串
@@ -99,17 +97,15 @@ Koishi v3 起支持多平台和多账户，因此在用户系统中也需要记�
 
 前面已经介绍过了，默认情况下每一名用户都是 0 级权限，每一个群都没有代理者，这虽然安全但也给 Koishi 的搭建带来了不小的麻烦。因此，我们也提供了自动注册的配置项：`autoAuthorize` 和 `autoAssign`。下面展示两个例子：
 
-```js koishi.config.js
-module.exports = {
-  // 一旦收到来自未知频道的消息，就自动注册频道数据，代理者为收到消息的人
-  autoAssign: true,
-  // 一旦收到来自未知用户的消息，就自动注册用户数据，权限等级为 1
-  autoAuthorize: 1,
-}
+```yaml title=koishi.yml
+# 一旦收到来自未知频道的消息，就自动注册频道数据，代理者为收到消息的人
+autoAssign: true
+# 一旦收到来自未知用户的消息，就自动注册用户数据，权限等级为 1
+autoAuthorize: 1
 ```
 
-```js koishi.config.js
-module.exports = {
+```ts title=koishi.ts
+export default {
   // 为频道 123456789 自动分配代理者
   autoAssign: ses => ses.channelId === '123456789',
   // 为用户 987654321 设置 4 级权限
@@ -117,59 +113,3 @@ module.exports = {
   autoAuthorize: ses => ses.userId === '987654321' ? 4 : ses.groupId ? 1 : 0,
 }
 ```
-
-## 指令调用管理
-
-利用上面描述的这套用户系统，我们就可以实现指令的调用权限控制。本节将分别介绍目前支持的权限控制形式。通过配置 `ctx.command()` 的第二个参数可以修改有关指令调用的一些设置。
-
-下面的错误提示都是默认显示的，但是你也可以通过设置 `showWarning` 为 `false` 来手动关闭。关闭后，无论是以上哪种情况，机器人都将直接不响应调用，不会产生任何提示信息。
-
-### 设置调用权限
-
-你可以通过这样的方式设置一个指令的调用权限：
-
-```js
-// 设置 echo 命令的调用权限为 2 级
-ctx.command('echo <message:text> 输出收到的信息', { authority: 2 })
-  // 设置 -t 选项的调用权限为 3 级
-  .option('timeout', '-t <seconds> 设定延迟发送的时间', { authority: 3 })
-```
-
-这样一来，1 级或以下权限的用户就无法调用 echo 指令；2 级权限用户只能调用 echo 指令但不能使用 -t 参数；3 级或以上权限的用户不受限制。对于受限的用户，机器人将会回复“权限不足”。
-
-### 设置访问次数上限
-
-有些指令（例如签到抽卡点赞，高性能损耗的计算，限制次数的 API 调用等）我们并不希望被无限制调用，这时我们可以设置每天访问次数的上限：
-
-```js
-// 设置 lottery 指令每人每天只能调用 10 次
-ctx.command('lottery 抽卡', { maxUsage: 10 })
-  // 设置使用了 -s 的调用不计入总次数
-  .option('--show', '-s 查看已经抽到的物品列表', { notUsage: true })
-```
-
-这样一来，所有访问 lottery 指令且不含 -s 选项的调用次数上限便被设成了 10 次。当超出总次数后，机器人将回复“调用次数已达上限”。
-
-### 设置最短触发间隔
-
-有些指令（例如高强度刷屏）我们并不希望被短时间内重复调用，这时我们可以设置最短触发间隔：
-
-```js
-const { Time } = require('koishi')
-
-// 设置 lottery 指令每 60 秒只能调用 1 次
-ctx.command('lottery', { minInterval: Time.minute })
-```
-
-这样一来，lottery 指令被调用后 60 秒内，如果再次被调用，将会提示“调用过于频繁，请稍后再试”。当然，`notUsage` 对 `minInterval` 也同样生效。
-
-### 多指令共享调用限制
-
-如果我们希望让多个指令共同同一个调用限制，可以通过 `usageName` 来实现：
-
-```js
-ctx.command('lottery 常驻抽卡', { maxUsage: 10 })
-ctx.command('accurate 精准抽卡', { maxUsage: 10, usageName: 'lottery' })
-```
-
-这样一来，就能限制每天的 lottery 和 accurate 指令的调用次数之和不超过 10 了。

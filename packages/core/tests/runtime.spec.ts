@@ -1,23 +1,21 @@
 import { App, User, Channel, Command, sleep } from 'koishi'
-import { install } from '@sinonjs/fake-timers'
-import memory from '@koishijs/plugin-database-memory'
 import mock, { DEFAULT_SELF_ID } from '@koishijs/plugin-mock'
 
 const app = new App({
   minSimilarity: 0,
 })
 
-app.plugin(memory)
+app.plugin('database-memory')
 app.plugin(mock)
 
 // make coverage happy
 Command.channelFields([])
 
-const session1 = app.mock.client('123')
-const session2 = app.mock.client('456')
-const session3 = app.mock.client('789')
-const session4 = app.mock.client('123', '321')
-const session5 = app.mock.client('123', '654')
+const client1 = app.mock.client('123')
+const client2 = app.mock.client('456')
+const client3 = app.mock.client('789')
+const client4 = app.mock.client('123', '321')
+const client5 = app.mock.client('123', '654')
 
 const cmd1 = app.command('cmd1 <arg1>', { authority: 2 })
   .channelFields(['id'])
@@ -25,7 +23,7 @@ const cmd1 = app.command('cmd1 <arg1>', { authority: 2 })
   .shortcut('foo4', { fuzzy: true })
   .option('--bar', '', { authority: 3 })
   .option('--baz', '', { notUsage: true })
-  .action(({ session }, arg) => session.send('cmd1:' + arg))
+  .action(({}, arg) => 'cmd1:' + arg)
 
 const cmd2 = app.command('cmd2')
   .userFields(['id'])
@@ -33,15 +31,18 @@ const cmd2 = app.command('cmd2')
   .shortcut('foo3', { prefix: true, fuzzy: true })
   .option('--bar', '', { authority: 3 })
   .option('--baz', '', { notUsage: true })
-  .action(({ session }) => session.send('cmd2:' + session.userId))
+  .action(({ session }) => 'cmd2:' + session.userId)
+
+app.middleware((session, next) => {
+  if (session.content.includes('escape')) return 'early'
+  return next()
+})
 
 before(async () => {
   await app.start()
   await app.mock.initUser('123', 2)
   await app.mock.initUser('456', 1)
   await app.mock.initUser('789', 1)
-  // make coverage happy (checkTimer)
-  await app.database.setUser('mock', '456', { timers: { foo: 0 } })
   await app.database.setUser('mock', '789', { flag: User.Flag.ignore })
   await app.mock.initChannel('321')
   await app.mock.initChannel('654', '999')
@@ -55,45 +56,45 @@ describe('Runtime', () => {
       // also support functions
       app.options.prefix = () => '!'
 
-      await session1.shouldReply('cmd2', 'cmd2:123')
-      await session4.shouldNotReply('cmd2')
-      await session1.shouldReply('!cmd2', 'cmd2:123')
-      await session4.shouldReply('!cmd2', 'cmd2:123')
-      await session1.shouldNotReply('.cmd2')
-      await session4.shouldNotReply('.cmd2')
+      await client1.shouldReply('cmd2', 'cmd2:123')
+      await client4.shouldNotReply('cmd2')
+      await client1.shouldReply('!cmd2', 'cmd2:123')
+      await client4.shouldReply('!cmd2', 'cmd2:123')
+      await client1.shouldNotReply('.cmd2')
+      await client4.shouldNotReply('.cmd2')
     })
 
     it('multiple prefixes', async () => {
       app.options.prefix = ['!', '.']
 
-      await session1.shouldReply('cmd2', 'cmd2:123')
-      await session4.shouldNotReply('cmd2')
-      await session1.shouldReply('!cmd2', 'cmd2:123')
-      await session4.shouldReply('!cmd2', 'cmd2:123')
-      await session1.shouldReply('.cmd2', 'cmd2:123')
-      await session4.shouldReply('.cmd2', 'cmd2:123')
+      await client1.shouldReply('cmd2', 'cmd2:123')
+      await client4.shouldNotReply('cmd2')
+      await client1.shouldReply('!cmd2', 'cmd2:123')
+      await client4.shouldReply('!cmd2', 'cmd2:123')
+      await client1.shouldReply('.cmd2', 'cmd2:123')
+      await client4.shouldReply('.cmd2', 'cmd2:123')
     })
 
     it('optional prefix', async () => {
       app.options.prefix = ['.', '']
 
-      await session1.shouldReply('cmd2', 'cmd2:123')
-      await session4.shouldReply('cmd2', 'cmd2:123')
-      await session1.shouldNotReply('!cmd2')
-      await session4.shouldNotReply('!cmd2')
-      await session1.shouldReply('.cmd2', 'cmd2:123')
-      await session4.shouldReply('.cmd2', 'cmd2:123')
+      await client1.shouldReply('cmd2', 'cmd2:123')
+      await client4.shouldReply('cmd2', 'cmd2:123')
+      await client1.shouldNotReply('!cmd2')
+      await client4.shouldNotReply('!cmd2')
+      await client1.shouldReply('.cmd2', 'cmd2:123')
+      await client4.shouldReply('.cmd2', 'cmd2:123')
     })
 
     it('no prefix', async () => {
       app.options.prefix = null
 
-      await session1.shouldReply('cmd2', 'cmd2:123')
-      await session4.shouldReply('cmd2', 'cmd2:123')
-      await session1.shouldNotReply('!cmd2')
-      await session4.shouldNotReply('!cmd2')
-      await session1.shouldNotReply('.cmd2')
-      await session4.shouldNotReply('.cmd2')
+      await client1.shouldReply('cmd2', 'cmd2:123')
+      await client4.shouldReply('cmd2', 'cmd2:123')
+      await client1.shouldNotReply('!cmd2')
+      await client4.shouldNotReply('!cmd2')
+      await client1.shouldNotReply('.cmd2')
+      await client4.shouldNotReply('.cmd2')
     })
   })
 
@@ -109,39 +110,39 @@ describe('Runtime', () => {
     })
 
     it('no nickname', async () => {
-      await session1.shouldReply('cmd2', 'cmd2:123')
-      await session4.shouldNotReply('cmd2')
-      await session1.shouldReply('-cmd2', 'cmd2:123')
-      await session4.shouldReply('-cmd2', 'cmd2:123')
-      await session4.shouldNotReply(`[CQ:reply,id=123] [CQ:at,id=${DEFAULT_SELF_ID}] cmd2`)
+      await client1.shouldReply('cmd2', 'cmd2:123')
+      await client4.shouldNotReply('cmd2')
+      await client1.shouldReply('-cmd2', 'cmd2:123')
+      await client4.shouldReply('-cmd2', 'cmd2:123')
+      await client4.shouldNotReply(`[CQ:reply,id=123] [CQ:at,id=${DEFAULT_SELF_ID}] cmd2`)
     })
 
     it('single nickname', async () => {
       app.options.nickname = 'koishi'
       app.prepare()
 
-      await session1.shouldReply('koishi, cmd2', 'cmd2:123')
-      await session4.shouldReply('koishi, cmd2', 'cmd2:123')
-      await session1.shouldReply('koishi\n cmd2', 'cmd2:123')
-      await session4.shouldReply('koishi\n cmd2', 'cmd2:123')
-      await session1.shouldReply('@koishi cmd2', 'cmd2:123')
-      await session4.shouldReply('@koishi cmd2', 'cmd2:123')
-      await session1.shouldNotReply('komeiji, cmd2')
-      await session4.shouldNotReply('komeiji, cmd2')
+      await client1.shouldReply('koishi, cmd2', 'cmd2:123')
+      await client4.shouldReply('koishi, cmd2', 'cmd2:123')
+      await client1.shouldReply('koishi\n cmd2', 'cmd2:123')
+      await client4.shouldReply('koishi\n cmd2', 'cmd2:123')
+      await client1.shouldReply('@koishi cmd2', 'cmd2:123')
+      await client4.shouldReply('@koishi cmd2', 'cmd2:123')
+      await client1.shouldNotReply('komeiji, cmd2')
+      await client4.shouldNotReply('komeiji, cmd2')
     })
 
     it('multiple nicknames', async () => {
       app.options.nickname = ['komeiji', 'koishi']
       app.prepare()
 
-      await session1.shouldReply('cmd2', 'cmd2:123')
-      await session4.shouldNotReply('cmd2')
-      await session1.shouldReply('-cmd2', 'cmd2:123')
-      await session4.shouldReply('-cmd2', 'cmd2:123')
-      await session1.shouldReply('koishi, cmd2', 'cmd2:123')
-      await session4.shouldReply('koishi, cmd2', 'cmd2:123')
-      await session1.shouldReply('komeiji cmd2', 'cmd2:123')
-      await session4.shouldReply('komeiji cmd2', 'cmd2:123')
+      await client1.shouldReply('cmd2', 'cmd2:123')
+      await client4.shouldNotReply('cmd2')
+      await client1.shouldReply('-cmd2', 'cmd2:123')
+      await client4.shouldReply('-cmd2', 'cmd2:123')
+      await client1.shouldReply('koishi, cmd2', 'cmd2:123')
+      await client4.shouldReply('koishi, cmd2', 'cmd2:123')
+      await client1.shouldReply('komeiji cmd2', 'cmd2:123')
+      await client4.shouldReply('komeiji cmd2', 'cmd2:123')
     })
   })
 
@@ -157,52 +158,48 @@ describe('Runtime', () => {
     })
 
     it('single shortcut', async () => {
-      await session4.shouldReply(' foo1 ', 'cmd1:bar')
-      await session4.shouldReply(' foo2 ', 'cmd2:123')
-      await session4.shouldNotReply('foo1 bar')
-      await session4.shouldNotReply('foo2 -t bar')
+      await client4.shouldReply(' foo1 ', 'cmd1:bar')
+      await client4.shouldReply(' foo2 ', 'cmd2:123')
+      await client4.shouldNotReply('foo1 bar')
+      await client4.shouldNotReply('foo2 -t bar')
     })
 
     it('no command prefix', async () => {
-      await session4.shouldNotReply('#foo1')
-      await session4.shouldNotReply('#foo2')
+      await client4.shouldNotReply('#foo1')
+      await client4.shouldNotReply('#foo2')
     })
 
     it('nickname prefix & fuzzy', async () => {
-      await session4.shouldNotReply('foo3 -t baz')
-      await session4.shouldReply(`[CQ:at,id=${DEFAULT_SELF_ID}] foo3 -t baz`, 'cmd2:123')
+      await client4.shouldNotReply('foo3 -t baz')
+      await client4.shouldReply(`[CQ:at,id=${DEFAULT_SELF_ID}] foo3 -t baz`, 'cmd2:123')
     })
 
     it('one argument & fuzzy', async () => {
-      await session4.shouldReply('foo4 bar baz', 'cmd1:bar')
-      await session4.shouldNotReply('foo4bar baz')
-      await session4.shouldReply(`[CQ:at,id=${DEFAULT_SELF_ID}] foo4bar baz`, 'cmd1:bar')
+      await client4.shouldReply('foo4 bar baz', 'cmd1:bar')
+      await client4.shouldNotReply('foo4bar baz')
+      await client4.shouldReply(`[CQ:at,id=${DEFAULT_SELF_ID}] foo4bar baz`, 'cmd1:bar')
     })
   })
 
   describe('Middleware Validation', () => {
-    app.middleware((session) => {
-      if (session.content === 'mid') return session.send('mid')
-    })
-
     it('user.flag.ignore', async () => {
-      await session1.shouldReply('cmd2', 'cmd2:123')
-      await session3.shouldNotReply('cmd2')
+      await client1.shouldReply('cmd2', 'cmd2:123')
+      await client3.shouldNotReply('cmd2')
     })
 
     it('channel.assignee', async () => {
-      await session4.shouldReply('cmd1 test --baz', 'cmd1:test')
-      await session4.shouldReply('mid', 'mid')
-      await session5.shouldNotReply('cmd1 test --baz')
-      await session5.shouldReply(`[CQ:at,id=${DEFAULT_SELF_ID}] cmd1 test --baz`, 'cmd1:test')
+      await client4.shouldReply('cmd1 test --baz', 'cmd1:test')
+      await client4.shouldReply('escape', 'early')
+      await client5.shouldNotReply('cmd1 test --baz')
+      await client5.shouldReply(`[CQ:at,id=${DEFAULT_SELF_ID}] cmd1 test --baz`, 'cmd1:test')
     })
 
     it('channel.flag.ignore', async () => {
       await app.database.setChannel('mock', '321', { flag: Channel.Flag.ignore })
       await sleep(0)
-      await session4.shouldNotReply('mid')
-      await session4.shouldNotReply('cmd1 --baz')
-      await session4.shouldNotReply(`[CQ:at,id=${DEFAULT_SELF_ID}] cmd1 --baz`)
+      await client4.shouldNotReply('escape')
+      await client4.shouldNotReply('cmd1 --baz')
+      await client4.shouldNotReply(`[CQ:at,id=${DEFAULT_SELF_ID}] cmd1 --baz`)
       await app.database.setChannel('mock', '321', { flag: 0 })
     })
   })
@@ -210,56 +207,30 @@ describe('Runtime', () => {
   describe('Command Validation', () => {
     it('check authority', async () => {
       app.command('cmd1', { showWarning: true })
-      await session2.shouldReply('cmd1', '权限不足。')
-      await session1.shouldReply('cmd1 --bar', '权限不足。')
+      await client2.shouldReply('cmd1', '权限不足。')
+      await client1.shouldReply('cmd1 --bar', '权限不足。')
       app.command('cmd1', { showWarning: false })
-      await session1.shouldNotReply('cmd1 --bar')
-    })
-
-    it('check usage', async () => {
-      cmd1.config.maxUsage = 1
-      cmd1.config.showWarning = true
-      await session4.shouldReply('cmd1 test', 'cmd1:test')
-      await session4.shouldReply('cmd1 test --baz', 'cmd1:test')
-      await session1.shouldReply('cmd1 test', '调用次数已达上限。')
-      await session4.shouldReply('cmd1 test --baz', 'cmd1:test')
-      cmd1.config.showWarning = false
-      await session1.shouldNotReply('cmd1')
-      delete cmd1.config.maxUsage
-    })
-
-    it('check frequency', async () => {
-      const clock = install()
-      cmd2.config.minInterval = () => 1000
-      cmd2.config.showWarning = true
-      await session2.shouldReply('cmd2', 'cmd2:456')
-      await session2.shouldReply('cmd2 --baz', 'cmd2:456')
-      await session2.shouldReply('cmd2', '调用过于频繁，请稍后再试。')
-      await session2.shouldReply('cmd2 --baz', 'cmd2:456')
-      cmd2.config.showWarning = false
-      await session2.shouldNotReply('cmd2')
-      delete cmd2.config.minInterval
-      clock.uninstall()
+      await client1.shouldNotReply('cmd1 --bar')
     })
 
     it('check arg count', async () => {
       cmd1.config.checkArgCount = true
       cmd1.config.showWarning = true
-      await session4.shouldReply('cmd1', '缺少参数，输入帮助以查看用法。')
-      await session4.shouldReply('cmd1 foo', 'cmd1:foo')
-      await session4.shouldReply('cmd1 foo bar', '存在多余参数，输入帮助以查看用法。')
+      await client4.shouldReply('cmd1', '缺少参数，输入帮助以查看用法。')
+      await client4.shouldReply('cmd1 foo', 'cmd1:foo')
+      await client4.shouldReply('cmd1 foo bar', '存在多余参数，输入帮助以查看用法。')
       cmd1.config.showWarning = false
-      await session4.shouldNotReply('cmd1')
+      await client4.shouldNotReply('cmd1')
       cmd1.config.checkArgCount = false
     })
 
     it('check unknown option', async () => {
       cmd2.config.checkUnknown = true
       cmd2.config.showWarning = true
-      await session2.shouldReply('cmd2', 'cmd2:456')
-      await session2.shouldReply('cmd2 --foo', '存在未知选项 foo，输入帮助以查看用法。')
+      await client2.shouldReply('cmd2', 'cmd2:456')
+      await client2.shouldReply('cmd2 --foo', '存在未知选项 foo，输入帮助以查看用法。')
       cmd2.config.showWarning = false
-      await session2.shouldNotReply('cmd2 --foo')
+      await client2.shouldNotReply('cmd2 --foo')
       cmd2.config.checkUnknown = false
     })
 
@@ -269,22 +240,22 @@ describe('Runtime', () => {
       cmd3.option('bar', '<bar>', { type: () => { throw new Error('SUFFIX') } })
       cmd3.option('baz', '<baz>', { type: /$^/ })
       cmd3.option('bax', '<baz>', { type: ['abc', 'def'] })
-      await session1.shouldReply('cmd3', 'after cmd3')
-      await session1.shouldReply('cmd3 --foo xxx', '选项 foo 输入无效，输入帮助以查看用法。')
-      await session1.shouldReply('cmd3 --bar xxx', '选项 bar 输入无效，SUFFIX')
-      await session1.shouldReply('cmd3 --baz xxx', '选项 baz 输入无效，输入帮助以查看用法。')
-      await session1.shouldReply('cmd3 --bax cba', '选项 bax 输入无效，输入帮助以查看用法。')
+      await client1.shouldReply('cmd3', 'after cmd3')
+      await client1.shouldReply('cmd3 --foo xxx', '选项 foo 输入无效，输入帮助以查看用法。')
+      await client1.shouldReply('cmd3 --bar xxx', '选项 bar 输入无效，SUFFIX')
+      await client1.shouldReply('cmd3 --baz xxx', '选项 baz 输入无效，输入帮助以查看用法。')
+      await client1.shouldReply('cmd3 --bax cba', '选项 bax 输入无效，输入帮助以查看用法。')
       cmd3.dispose()
     })
 
-    it('command.check', async () => {
+    it('command.before()', async () => {
       const cmd3 = app.command('cmd3').action(() => 'after cmd3')
-      await session1.shouldReply('cmd3', 'after cmd3')
+      await client1.shouldReply('cmd3', 'after cmd3')
       let value = 'before cmd3'
       cmd3.before(() => value)
-      await session1.shouldReply('cmd3', 'before cmd3')
+      await client1.shouldReply('cmd3', 'before cmd3')
       value = ''
-      await session1.shouldNotReply('cmd3')
+      await client1.shouldNotReply('cmd3')
       cmd3.dispose()
     })
   })

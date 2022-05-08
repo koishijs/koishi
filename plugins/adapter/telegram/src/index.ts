@@ -1,19 +1,23 @@
 import { Adapter } from 'koishi'
 import { TelegramBot } from './bot'
-import { HttpServer, HttpPolling } from './http'
+import { HttpPolling, HttpServer } from './http'
+import * as Telegram from './types'
 
 declare module 'koishi' {
-  interface Modules {
-    'adapter-telegram': typeof import('.')
+  interface Session {
+    telegram?: Telegram.Update & Telegram.Internal
   }
 }
 
-export { TelegramBot } from './bot'
-export const webhookAdapter = Adapter.define('telegram', TelegramBot, HttpServer)
-export const pollingAdapter = Adapter.define('telegram', TelegramBot, HttpPolling)
+export * as Telegram from './types'
+export * from './bot'
+export * from './http'
+export * from './sender'
+export * from './utils'
+
 export default Adapter.define('telegram', TelegramBot, {
   webhook: HttpServer,
   polling: HttpPolling,
 }, ({ pollingTimeout }) => {
-  return pollingTimeout !== undefined ? 'polling' : 'webhook'
+  return pollingTimeout ? 'polling' : 'webhook'
 })

@@ -80,7 +80,7 @@ sidebarDepth: 2
 
 ### bot.status
 
-- 可选值: online, offline, connect, disconnect
+- 可选值: online, offline, connect, disconnect, reconnect
 
 当前 Bot 的运行状态。
 
@@ -90,7 +90,7 @@ sidebarDepth: 2
 
 - **channelId:** `string` 频道 ID
 - **content:** `string` 要发送的内容
-- 返回值: `Promise<string>` 发送的消息 ID
+- 返回值: `Promise<string[]>` 发送的消息 ID
 
 向特定频道发送消息。
 
@@ -98,7 +98,7 @@ sidebarDepth: 2
 
 - **userId:** `string` 对方 ID
 - **content:** `string` 要发送的内容
-- 返回值: `Promise<string>` 发送的消息 ID
+- 返回值: `Promise<string[]>` 发送的消息 ID
 
 向特定用户发送私聊消息。
 
@@ -110,7 +110,10 @@ sidebarDepth: 2
 
 获取特定消息。
 
-```js
+```ts
+type AuthorInfo = any
+
+// ---cut---
 export interface MessageInfo {
   messageId: string
   subtype: 'private' | 'group'
@@ -154,7 +157,7 @@ export interface MessageInfo {
 
 获取机器人自己的信息。
 
-```js
+```ts
 export interface UserInfo {
   userId: string
   username: string
@@ -182,7 +185,7 @@ export interface UserInfo {
 
 获取群组信息。
 
-```js
+```ts
 export interface GuildInfo {
   guildId: string
   guildName: string
@@ -203,7 +206,14 @@ export interface GuildInfo {
 
 获取群成员信息。
 
-```js
+```ts no-extra-header
+export interface UserInfo {
+  userId: string
+  username: string
+  avatar?: string
+}
+
+// ---cut---
 export interface GuildMemberInfo extends UserInfo {
   nickname: string
 }
@@ -230,7 +240,7 @@ export interface GuildMemberInfo extends UserInfo {
 
 获取频道信息。
 
-```js
+```ts
 export interface ChannelInfo {
   channelId: string
   channelName: string
@@ -275,9 +285,9 @@ export interface ChannelInfo {
 
 ## 其他方法
 
-### bot.createSession(session) <Badge text="内置"/>
+### bot.session(session) <Badge text="内置"/>
 
 - **session:** `Partial<Session>` 会话数据
-- 返回值: `Session` 新会话
+- 返回值: `Promise<Session>` 新会话
 
 创建一个 send 类型的会话，供 `bot.sendMessage()` 等 API 使用。

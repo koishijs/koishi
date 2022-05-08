@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-assets-s3",
   "description": "Assets provider based on s3 for Koishi",
-  "version": "1.0.0-beta.4",
+  "version": "1.0.5",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -15,28 +15,26 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/koishijs/plugin-assets-s3.git"
+    "url": "git+https://github.com/koishijs/plugin-assets-s3.git",
+    "directory": "plugins/assets/s3"
   },
   "bugs": {
     "url": "https://github.com/koishijs/plugin-assets-s3/issues"
   },
-  "homepage": "https://koishi.js.org/plugins/other/assets-s3",
+  "homepage": "https://koishi.js.org/plugins/assets/s3.html",
   "keywords": [
     "bot",
-    "qqbot",
-    "cqhttp",
-    "coolq",
     "chatbot",
     "koishi",
     "plugin",
     "assets",
     "server",
-    "service:assets"
+    "impl:assets"
   ],
   "peerDependencies": {
-    "koishi": "^4.0.0-beta.6"
+    "koishi": "^4.6.2"
   },
   "dependencies": {
-    "@aws-sdk/client-s3": "^3.20.0"
+    "@aws-sdk/client-s3": "^3.82.0"
   }
 }

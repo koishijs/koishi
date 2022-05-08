@@ -12,7 +12,7 @@ sidebarDepth: 2
 
 先让我们回顾一下之前介绍过的例子：
 
-```js
+```ts
 // 当有新成员入群时，发送：欢迎+@入群者+入群！
 ctx.on('guild-member-added', (session) => {
   session.send('欢迎' + segment.at(session.userId) + '入群！')
@@ -23,7 +23,13 @@ ctx.on('guild-member-added', (session) => {
 
 这套事件系统与 EventEmitter 的一个不同点在于，无论是 `ctx.on()` 还是 `ctx.once()` 都会返回一个 dispose 函数，调用这个函数即可取消注册监听器。因此你其实不必使用 `ctx.once()` 和 `ctx.off()`。下面给一个只触发一次的监听器的例子：
 
-```js
+```ts
+declare module 'koishi' {
+  interface EventMap {
+    foo(...args: any[]): void
+  }
+}
+// ---cut---
 // 回调函数只会被触发一次
 const dispose = ctx.on('foo', (...args) => {
   dispose()
@@ -39,7 +45,7 @@ const dispose = ctx.on('foo', (...args) => {
 - 对于相关的大量事件，推荐通过命名空间进行管理，使用 `/` 作为分隔符
 - 配对使用 xxx 和 before-xxx 命名时序相关的事件
 
-举个例子，@koishijs/plugin-teach 扩展了多达 20 个自定义事件。为了防止命名冲突，所有的事件都以 `dialogue/` 开头，并且在特定操作前触发的事件都包含了 `before-` 前缀，例如：
+举个例子，koishi-plugin-dialogue 扩展了多达 20 个自定义事件。为了防止命名冲突，所有的事件都以 `dialogue/` 开头，并且在特定操作前触发的事件都包含了 `before-` 前缀，例如：
 
 - dialogue/before-search: 获取搜索结果前触发
 - dialogue/search: 获取完搜索结果后触发
@@ -48,7 +54,8 @@ const dispose = ctx.on('foo', (...args) => {
 
 前面介绍了，Koishi 有不少监听器满足 before-xxx 的形式。对于这类监听器的注册，我们也提供了一个语法糖，那就是 `ctx.before('xxx', callback)`。这种写法也支持命名空间的情况：
 
-```js
+```ts
+// @errors: 2304
 ctx.before('dialogue/search', callback)
 // 相当于
 ctx.on('dialogue/before-search', callback)
@@ -71,7 +78,15 @@ Koishi 的事件系统与 EventEmitter 的最大区别在于，触发一个事�
 
 这些方法的基本用法也都与 EventEmitter 类似，第一个参数是事件名称，之后的参数对应回调函数的参数。下面是一个例子：
 
-```js
+```ts
+declare module 'koishi' {
+  interface EventMap {
+    'custom-event'(...args: any[]): void
+  }
+}
+
+// ---cut---
+// @errors: 2304
 ctx.emit('custom-event', arg1, arg2, ...rest)
 // 对应于
 ctx.on('custom-event', (arg1, arg2, ...rest) => {})
@@ -81,7 +96,15 @@ ctx.on('custom-event', (arg1, arg2, ...rest) => {})
 
 在上一章中，我们已经了解到上下文选择器会对会话事件进行过滤。但是相信你应该已经意识到，事件不一定与某个会话相关，而这样的事件显然不能被过滤。那么，如何让特定事件支持选择器呢？只需在触发事件的时候传入一个额外的一参数 `session` 即可：
 
-```js
+```ts
+declare module 'koishi' {
+  interface EventMap {
+    'custom-event'(...args: any[]): void
+  }
+}
+
+// ---cut---
+// @errors: 2304
 // 无法匹配该会话的上下文中注册的回调函数不会被执行 (可能有点绕)
 ctx.emit(session, 'custom-event', arg1, arg2, ...rest)
 ```

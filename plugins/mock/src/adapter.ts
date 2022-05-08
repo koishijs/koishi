@@ -1,4 +1,4 @@
-import { Adapter, App, Bot, Context, Schema, Session } from 'koishi'
+import { Adapter, App, Bot, Channel, Context, Schema, Session, User } from 'koishi'
 import { MessageClient } from './client'
 import { Webhook } from './webhook'
 
@@ -60,22 +60,19 @@ export class MockAdapter extends Adapter<BotConfig> {
     const bot = this.bots.find(bot => bot.selfId === selfId)
     if (bot) return bot
 
-    this.ctx.bots.create('mock', { selfId }, MockBot)
-    return this.bots.find(bot => bot.selfId === selfId)
+    return this.ctx.bots.create('mock', { selfId }, MockBot)
   }
 
-  connect() {}
+  async stop() {}
 
-  stop() {}
+  async start() {}
 
-  start() {}
-
-  async initUser(id: string, authority = 1) {
-    await this.app.database.create('user', { mock: id, authority })
+  async initUser(id: string, authority = 1, data?: Partial<User>) {
+    await this.app.database.create('user', { mock: id, authority, ...data })
   }
 
-  async initChannel(id: string, assignee = this.bots[0].selfId) {
-    await this.app.database.create('channel', { platform: 'mock', id, assignee })
+  async initChannel(id: string, assignee = this.bots[0].selfId, data?: Partial<Channel>) {
+    await this.app.database.create('channel', { platform: 'mock', id, assignee, ...data })
   }
 
   client(userId: string, channelId?: string) {
@@ -105,7 +102,7 @@ export namespace MockAdapter {
   }
 
   export const Config = Schema.object({
-    selfIds: Schema.array(Schema.string()).default([DEFAULT_SELF_ID]),
+    selfIds: Schema.array(String).default([DEFAULT_SELF_ID]),
   })
 }
 

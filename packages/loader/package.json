@@ -1,0 +1,34 @@
+{
+  "name": "@koishijs/loader",
+  "description": "Config Loader for Koishi",
+  "version": "1.0.1",
+  "main": "lib/index.js",
+  "typings": "lib/index.d.ts",
+  "files": [
+    "lib"
+  ],
+  "author": "Shigma <shigma10826@gmail.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/koishijs/koishi.git",
+    "directory": "packages/loader"
+  },
+  "bugs": {
+    "url": "https://github.com/koishijs/koishi/issues"
+  },
+  "homepage": "https://koishi.js.org/api/utils.html",
+  "keywords": [
+    "bot",
+    "chatbot",
+    "koishi",
+    "loader",
+    "config"
+  ],
+  "devDependencies": {
+    "@types/js-yaml": "^4.0.5"
+  },
+  "dependencies": {
+    "js-yaml": "^4.1.0"
+  }
+}

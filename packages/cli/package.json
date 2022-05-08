@@ -1,25 +1,24 @@
 {
   "name": "@koishijs/cli",
   "description": "CLI for Koishi",
-  "version": "4.0.0-beta.7",
-  "main": "index.js",
+  "version": "4.6.2",
   "typings": "index.d.ts",
   "engines": {
     "node": ">=12.0.0"
   },
   "files": [
     "lib",
-    "index.js",
     "index.d.ts"
   ],
   "bin": {
-    "koishi": "lib/index.js"
+    "koishi": "lib/bin.js"
   },
   "author": "Shigma <shigma10826@gmail.com>",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/koishijs/koishi.git"
+    "url": "git+https://github.com/koishijs/koishi.git",
+    "directory": "packages/cli"
   },
   "bugs": {
     "url": "https://github.com/koishijs/koishi/issues"
@@ -27,22 +26,26 @@
   "homepage": "https://koishi.js.org",
   "keywords": [
     "bot",
-    "qqbot",
-    "cqhttp",
-    "coolq",
     "chatbot",
-    "koishi"
+    "koishi",
+    "cli",
+    "daemon"
   ],
+  "peerDependencies": {
+    "koishi": "^4.6.2"
+  },
   "devDependencies": {
-    "@types/js-yaml": "^4.0.3",
-    "@types/prompts": "^2.0.14"
+    "@types/prompts": "^2.4.0",
+    "@types/throttle-debounce": "^2.1.0"
   },
   "dependencies": {
-    "cac": "^6.7.3",
-    "chokidar": "^3.5.2",
-    "js-yaml": "^4.1.0",
+    "@koishijs/loader": "^1.0.1",
+    "cac": "^6.7.12",
+    "chokidar": "^3.5.3",
+    "dotenv": "^16.0.0",
+    "ns-require": "^1.1.2",
     "kleur": "^4.1.4",
-    "koishi": "^4.0.0-beta.6",
-    "prompts": "^2.4.1"
+    "prompts": "^2.4.2",
+    "throttle-debounce": "^3.0.1"
   }
 }

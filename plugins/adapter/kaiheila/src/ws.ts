@@ -1,6 +1,6 @@
-import { Adapter, Context, Logger, Schema, Time } from 'koishi'
+import { Adapter, Logger, Schema, Time } from 'koishi'
 import { BotConfig, KaiheilaBot } from './bot'
-import { adaptSession, AdapterConfig } from './utils'
+import { AdapterConfig, adaptSession } from './utils'
 import { Payload, Signal } from './types'
 import WebSocket from 'ws'
 
@@ -10,16 +10,8 @@ const heartbeatIntervals = [6, 2, 4]
 
 export default class WebSocketClient extends Adapter.WebSocketClient<BotConfig, AdapterConfig> {
   static schema = Schema.object({
-    token: Schema.string().description('机器人的用户令牌。').required(),
+    token: Schema.string().description('机器人的用户令牌。').role('secret').required(),
   })
-
-  constructor(ctx: Context, config: AdapterConfig) {
-    super(ctx, config)
-    this.http = ctx.http.extend({
-      endpoint: 'https://www.kaiheila.cn/api/v3',
-      ...config.request,
-    })
-  }
 
   async prepare(bot: KaiheilaBot) {
     const { url } = await bot.request('GET', '/gateway/index?compress=0')
@@ -49,10 +41,9 @@ export default class WebSocketClient extends Adapter.WebSocketClient<BotConfig, 
     clearInterval(bot._heartbeat)
 
     bot.socket.on('message', async (data) => {
-      data = data.toString()
       let parsed: Payload
       try {
-        parsed = JSON.parse(data)
+        parsed = JSON.parse(data.toString())
       } catch (error) {
         return logger.warn('cannot parse message', data)
       }

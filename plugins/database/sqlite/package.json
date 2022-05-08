@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-database-sqlite",
   "description": "SQLite support for Koishi",
-  "version": "1.0.0-beta.4",
+  "version": "1.2.2",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -14,35 +14,26 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/koishijs/koishi.git"
+    "url": "git+https://github.com/koishijs/koishi.git",
+    "directory": "plugins/database/sqlite"
   },
   "bugs": {
     "url": "https://github.com/koishijs/koishi/issues"
   },
-  "homepage": "https://koishi.js.org/api/database/mysql.html",
+  "homepage": "https://koishi.js.org/plugins/database/sqlite.html",
   "keywords": [
     "bot",
-    "qqbot",
-    "cqhttp",
-    "coolq",
     "chatbot",
     "koishi",
     "plugin",
     "database",
-    "sqlite"
+    "sqlite",
+    "impl:database"
   ],
   "peerDependencies": {
-    "koishi": "^4.0.0-beta.6"
+    "koishi": "^4.6.2"
   },
   "dependencies": {
-    "@koishijs/orm-utils": "^1.0.0-beta.4",
-    "@koishijs/sql-utils": "^1.0.0-beta.4",
-    "better-sqlite3": "^7.4.3",
-    "sqlstring-sqlite": "^0.1.1"
-  },
-  "devDependencies": {
-    "@koishijs/plugin-mock": "^1.0.0-beta.2",
-    "@koishijs/test-utils": "^8.0.0-beta.6",
-    "@types/better-sqlite3": "^7.4.0"
+    "@cosmotype/driver-sqlite": "^1.0.6"
   }
 }

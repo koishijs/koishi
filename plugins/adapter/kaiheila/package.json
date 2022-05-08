@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-adapter-kaiheila",
-  "description": "Kaiheila adapter for Koishi",
-  "version": "2.0.0-beta.5",
+  "description": "Kaiheila Adapter for Koishi",
+  "version": "2.0.6",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -11,7 +11,8 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/koishijs/koishi.git"
+    "url": "git+https://github.com/koishijs/koishi.git",
+    "directory": "plugins/adapter/kaiheila"
   },
   "bugs": {
     "url": "https://github.com/koishijs/koishi/issues"
@@ -21,17 +22,18 @@
     "bot",
     "kaiheila",
     "chatbot",
-    "koishi"
+    "koishi",
+    "impl:adapter"
   ],
   "peerDependencies": {
-    "koishi": "^4.0.0-beta.6"
+    "koishi": "^4.6.2"
   },
   "devDependencies": {
-    "@koishijs/plugin-mock": "^1.0.0-beta.2"
+    "@koishijs/plugin-mock": "^1.0.4"
   },
   "dependencies": {
-    "axios": "^0.21.4",
+    "axios": "^0.24.0",
     "form-data": "^4.0.0",
-    "ws": "^8.2.1"
+    "ws": "^8.6.0"
   }
 }

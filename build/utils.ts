@@ -17,10 +17,13 @@ export function getWorkspaces() {
 const categories = [
   'packages',
   'plugins',
+  'plugins/a11y',
   'plugins/adapter',
   'plugins/assets',
   'plugins/cache',
+  'plugins/common',
   'plugins/database',
+  'plugins/frontend',
   'community',
 ]
 
@@ -38,10 +41,18 @@ export async function getPackages(args: readonly string[]) {
   }).filter(Boolean) : folders
 }
 
+export function requireSafe(id: string) {
+  try {
+    return require(id)
+  } catch {}
+}
+
 export type DependencyType = 'dependencies' | 'devDependencies' | 'peerDependencies' | 'optionalDependencies'
 
 export interface PackageJson extends Partial<Record<DependencyType, Record<string, string>>> {
   name?: string
+  main?: string
+  module?: string
   description?: string
   private?: boolean
   version?: string

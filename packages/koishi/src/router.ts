@@ -1,6 +1,6 @@
 import { App, Context, Schema } from '@koishijs/core'
-import { MaybeArray, remove } from '@koishijs/utils'
-import { Server, createServer, IncomingMessage } from 'http'
+import { defineProperty, MaybeArray, remove } from '@koishijs/utils'
+import { createServer, IncomingMessage, Server } from 'http'
 import { pathToRegexp } from 'path-to-regexp'
 import parseUrl from 'parseurl'
 import WebSocket from 'ws'
@@ -22,24 +22,27 @@ declare module '@koishijs/core' {
   }
 
   namespace App {
-    interface Config {
-      baseDir?: string
-    }
+    interface Config extends Config.Network {}
 
     namespace Config {
+      interface Static {
+        Network: Schema<Network>
+      }
+
       interface Network {
-        port?: number
         host?: string
+        port?: number
+        selfUrl?: string
       }
     }
   }
 }
 
-App.Config.Network.dict = {
-  host: Schema.string().description('要监听的 IP 地址。如果将此设置为 `0.0.0.0` 将监听所有地址，包括局域网和公网地址。'),
-  port: Schema.number().description('要监听的端口。'),
-  ...App.Config.Network.dict,
-}
+defineProperty(App.Config, 'Network', Schema.object({
+  host: Schema.string().default('localhost').description('要监听的 IP 地址。如果将此设置为 `0.0.0.0` 将监听所有地址，包括局域网和公网地址。'),
+  port: Schema.natural().max(65535).description('要监听的端口。'),
+  selfUrl: Schema.string().role('url').description('应用暴露在公网的地址。部分插件 (例如 github 和 telegram) 需要用到。'),
+}).description('网络设置'))
 
 type WebSocketCallback = (socket: WebSocket, request: IncomingMessage) => void
 
@@ -95,8 +98,6 @@ export class Router extends KoaRouter {
   }
 
   static prepare(app: App) {
-    app.options.baseDir ||= process.cwd()
-
     // create server
     const koa = new Koa()
     app.router = new Router()
@@ -108,27 +109,12 @@ export class Router extends KoaRouter {
     app._wsServer = new WebSocket.Server({
       server: app._httpServer,
     })
-    
+
     app._wsServer.on('connection', (socket, request) => {
       for (const manager of app.router.wsStack) {
         if (manager.accept(socket, request)) return
       }
       socket.close()
     })
-    
-    const { port,  host } = app.options
-    if (!port) return
-
-    app.on('ready', () => {
-      app._httpServer.listen(port, host)
-      app.logger('app').info('server listening at %c', `http://${host || 'localhost'}:${port}`)
-    })
-
-    app.on('dispose', () => {
-      app.logger('app').info('http server closing')
-      app._wsServer?.close()
-      app._httpServer?.close()
-    })
-
   }
 }

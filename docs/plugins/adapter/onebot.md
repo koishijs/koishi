@@ -77,8 +77,7 @@ sidebarDepth: 2
 
 几个可用的镜像源：
 
-- `https://hub.fastgit.org`
-- `https://github.com.cnpmjs.org`
+- `https://hub.fastgit.xyz`
 - `https://github.bajins.com`
 - `https://github.rc1844.workers.dev`
 
@@ -106,7 +105,7 @@ apt install -y ffmpeg
 
 ```cli
 # Centos7 及之前
-yum install ffmpeg ffmpeg-devel 
+yum install ffmpeg ffmpeg-devel
 
 # CentOS8 及之后
 dnf install ffmpeg ffmpeg-devel
@@ -120,17 +119,24 @@ dnf install ffmpeg ffmpeg-devel
 
 如果缺省，Koishi 会读取你的 `endpoint` 选项，根据你配置的服务器 URL 进行适配。
 
+### options(.bots[]).token
+
+- 类型：`string`
+
+发送信息时用于验证的字段。
+
 ### options(.bots[]).endpoint
 
 - 类型：`string`
 
 如果使用了 HTTP，则该配置将作为发送信息的服务端；如果使用了 WebSocket，则该配置将作为监听事件和发送信息的服务端。
 
-### options(.bots[]).token
+### options(.bots[]).proxyAgent
 
-- 类型：`string`
+- 类型: `string`
+- 默认值: [`app.options.request.proxyAgent`](../../api/core/app.md#options-request-proxyagent)
 
-发送信息时用于验证的字段。
+请求时默认使用的网络代理。
 
 ## 适配器选项
 
@@ -151,17 +157,17 @@ dnf install ffmpeg ffmpeg-devel
 
 首先下面的配置是与通信方式无关的：
 
-```yaml config.yml
+```yaml title=config.yml
 account:
   uin: 123456     # 必填，QQ 账号
   password: ''    # 推荐，密码为空时将使用扫码登录
 ```
 
-下面介绍不同的通信方式所需的配置，以及 koishi.config.yml 的对应配置。
+下面介绍不同的通信方式所需的配置，以及 koishi.yml 的对应配置。
 
 ### HTTP
 
-```yaml config.yml
+```yaml title=config.yml
 servers:
   - http:
       host: 127.0.0.1
@@ -171,7 +177,7 @@ servers:
           secret: my-secret
 ```
 
-::: code-group config koishi.config
+::: code-group config koishi
 ```yaml
 port: 8080
 plugins:
@@ -198,14 +204,14 @@ export default {
 
 ### 正向 WebSocket
 
-```yaml config.yml
+```yaml title=config.yml
 servers:
   - ws:
       host: 127.0.0.1
       port: 6700
 ```
 
-::: code-group config koishi.config
+::: code-group config koishi
 ```yaml
 plugins:
   adapter-onebot:
@@ -228,13 +234,13 @@ export default {
 
 ### 反向 WebSocket
 
-```yaml config.yml
+```yaml title=config.yml
 servers:
   - ws-reverse:
       universal: ws://127.0.0.1:8080/onebot
 ```
 
-::: code-group config koishi.config
+::: code-group config koishi
 ```yaml
 port: 8080
 plugins:
@@ -257,7 +263,7 @@ export default {
 
 ### 配置 `path` 和 `selfUrl`
 
-```yaml config.yml
+```yaml title=config.yml
 servers:
   # 这里同时列出了 http 和 ws-reverse 中需要做的修改
   # 实际情况下你可能只需要用到其中一份配置
@@ -268,7 +274,7 @@ servers:
       universal: wss://my-host:9090/onebot
 ```
 
-::: code-group config koishi.config
+::: code-group config koishi
 ```yaml
 # 请注意这里的 port 可能跟 selfUrl 中的不一致
 # 你可以通过 nginx，candy 等工具实现端口的转发和 SSL 等需求
@@ -301,43 +307,43 @@ export default {
 
 ### OneBot v11 标准 API
 
-- [`onebot.sendPrivateMsg()`](https://github.com/botuniverse/onebot/blob/master/v11/specs/api/public.md#send_private_msg-发送私聊消息) 发送私聊消息
-- [`onebot.sendGroupMsg()`](https://github.com/botuniverse/onebot/blob/master/v11/specs/api/public.md#send_group_msg-发送群消息) 发送群消息
-- [`onebot.deleteMsg()`](https://github.com/botuniverse/onebot/blob/master/v11/specs/api/public.md#delete_msg-撤回消息) 撤回消息
-- [`onebot.getMsg()`](https://github.com/botuniverse/onebot/blob/master/v11/specs/api/public.md#get_msg-获取消息) 获取消息
-- [`onebot.getForwardMsg()`](https://github.com/botuniverse/onebot/blob/master/v11/specs/api/public.md#get_forward_msg-获取合并转发消息) 获取合并转发消息
-- [`onebot.sendLike()`](https://github.com/botuniverse/onebot/blob/master/v11/specs/api/public.md#send_like-发送好友赞) 发送好友赞
-- [`onebot.setGroupKick()`](https://github.com/botuniverse/onebot/blob/master/v11/specs/api/public.md#set_group_kick-群组踢人) 群组踢人
-- [`onebot.setGroupBan()`](https://github.com/botuniverse/onebot/blob/master/v11/specs/api/public.md#set_group_ban-群组单人禁言) 群组单人禁言
-- [`onebot.setGroupAnonymousBan()`](https://github.com/botuniverse/onebot/blob/master/v11/specs/api/public.md#set_group_anonymous_ban-群组匿名用户禁言) 群组匿名用户禁言 <sup>[1]</sup>
-- [`onebot.setGroupWholeBan()`](https://github.com/botuniverse/onebot/blob/master/v11/specs/api/public.md#set_group_whole_ban-群组全员禁言) 群组全员禁言
-- [`onebot.setGroupAdmin()`](https://github.com/botuniverse/onebot/blob/master/v11/specs/api/public.md#set_group_admin-群组设置管理员) 群组设置管理员
-- [`onebot.setGroupAnonymous()`](https://github.com/botuniverse/onebot/blob/master/v11/specs/api/public.md#set_group_anonymous-群组匿名) 群组匿名 <sup>[2]</sup>
-- [`onebot.setGroupCard()`](https://github.com/botuniverse/onebot/blob/master/v11/specs/api/public.md#set_group_card-设置群名片群备注) 设置群名片（群备注）
-- [`onebot.setGroupName()`](https://github.com/botuniverse/onebot/blob/master/v11/specs/api/public.md#set_group_name-设置群名) 设置群名
-- [`onebot.setGroupLeave()`](https://github.com/botuniverse/onebot/blob/master/v11/specs/api/public.md#set_group_leave-退出群组) 退出群组
-- [`onebot.setGroupSpecialTitle()`](https://github.com/botuniverse/onebot/blob/master/v11/specs/api/public.md#set_group_special_title-设置群组专属头衔) 设置群组专属头衔
-- [`onebot.setFriendAddRequest()`](https://github.com/botuniverse/onebot/blob/master/v11/specs/api/public.md#set_friend_add_request-处理加好友请求) 处理加好友请求
-- [`onebot.setGroupAddRequest()`](https://github.com/botuniverse/onebot/blob/master/v11/specs/api/public.md#set_group_add_request-处理加群请求邀请) 处理加群请求／邀请
-- [`onebot.getLoginInfo()`](https://github.com/botuniverse/onebot/blob/master/v11/specs/api/public.md#get_login_info-获取登录号信息) 获取登录号信息
-- [`onebot.getStrangerInfo()`](https://github.com/botuniverse/onebot/blob/master/v11/specs/api/public.md#get_stranger_info-获取陌生人信息) 获取陌生人信息
-- [`onebot.getFriendList()`](https://github.com/botuniverse/onebot/blob/master/v11/specs/api/public.md#get_friend_list-获取好友列表) 获取好友列表
-- [`onebot.getGroupInfo()`](https://github.com/botuniverse/onebot/blob/master/v11/specs/api/public.md#get_group_info-获取群信息) 获取群信息
-- [`onebot.getGroupList()`](https://github.com/botuniverse/onebot/blob/master/v11/specs/api/public.md#get_group_list-获取群列表) 获取群列表
-- [`onebot.getGroupMemberInfo()`](https://github.com/botuniverse/onebot/blob/master/v11/specs/api/public.md#get_group_member_info-获取群成员信息) 获取群成员信息
-- [`onebot.getGroupMemberList()`](https://github.com/botuniverse/onebot/blob/master/v11/specs/api/public.md#get_group_member_list-获取群成员列表) 获取群成员列表
-- [`onebot.getGroupHonorInfo()`](https://github.com/botuniverse/onebot/blob/master/v11/specs/api/public.md#get_group_honor_info-获取群荣誉信息) 获取群荣誉信息
-- [`onebot.getCookies()`](https://github.com/botuniverse/onebot/blob/master/v11/specs/api/public.md#get_cookies-获取-cookies) 获取 Cookies <sup>[2]</sup>
-- [`onebot.getCsrfToken()`](https://github.com/botuniverse/onebot/blob/master/v11/specs/api/public.md#get_csrf_token-获取-csrf-token) 获取 CSRF Token <sup>[2]</sup>
-- [`onebot.getCredentials()`](https://github.com/botuniverse/onebot/blob/master/v11/specs/api/public.md#get_credentials-获取-qq-相关接口凭证) 获取 QQ 相关接口凭证 <sup>[2]</sup>
-- [`onebot.getRecord()`](https://github.com/botuniverse/onebot/blob/master/v11/specs/api/public.md#get_record-获取语音) 获取语音 <sup>[2]</sup>
-- [`onebot.getImage()`](https://github.com/botuniverse/onebot/blob/master/v11/specs/api/public.md#get_image-获取图片) 获取图片
-- [`onebot.canSendImage()`](https://github.com/botuniverse/onebot/blob/master/v11/specs/api/public.md#can_send_image-检查是否可以发送图片) 检查是否可以发送图片
-- [`onebot.canSendRecord()`](https://github.com/botuniverse/onebot/blob/master/v11/specs/api/public.md#can_send_record-检查是否可以发送语音) 检查是否可以发送语音
-- [`onebot.getStatus()`](https://github.com/botuniverse/onebot/blob/master/v11/specs/api/public.md#get_status-获取运行状态) 获取运行状态
-- [`onebot.getVersionInfo()`](https://github.com/botuniverse/onebot/blob/master/v11/specs/api/public.md#get_version_info-获取版本信息) 获取版本信息
-- [`onebot.setRestart()`](https://github.com/botuniverse/onebot/blob/master/v11/specs/api/public.md#set_restart-重启-onebot-实现) 重启 OneBot 实现
-- [`onebot.cleanCache()`](https://github.com/botuniverse/onebot/blob/master/v11/specs/api/public.md#clean_cache-清理缓存) 清理缓存 <sup>[2]</sup>
+- [`onebot.sendPrivateMsg()`](https://github.com/botuniverse/onebot-11/blob/master/api/public.md#send_private_msg-发送私聊消息) 发送私聊消息
+- [`onebot.sendGroupMsg()`](https://github.com/botuniverse/onebot-11/blob/master/api/public.md#send_group_msg-发送群消息) 发送群消息
+- [`onebot.deleteMsg()`](https://github.com/botuniverse/onebot-11/blob/master/api/public.md#delete_msg-撤回消息) 撤回消息
+- [`onebot.getMsg()`](https://github.com/botuniverse/onebot-11/blob/master/api/public.md#get_msg-获取消息) 获取消息
+- [`onebot.getForwardMsg()`](https://github.com/botuniverse/onebot-11/blob/master/api/public.md#get_forward_msg-获取合并转发消息) 获取合并转发消息
+- [`onebot.sendLike()`](https://github.com/botuniverse/onebot-11/blob/master/api/public.md#send_like-发送好友赞) 发送好友赞
+- [`onebot.setGroupKick()`](https://github.com/botuniverse/onebot-11/blob/master/api/public.md#set_group_kick-群组踢人) 群组踢人
+- [`onebot.setGroupBan()`](https://github.com/botuniverse/onebot-11/blob/master/api/public.md#set_group_ban-群组单人禁言) 群组单人禁言
+- [`onebot.setGroupAnonymousBan()`](https://github.com/botuniverse/onebot-11/blob/master/api/public.md#set_group_anonymous_ban-群组匿名用户禁言) 群组匿名用户禁言 <sup>[1]</sup>
+- [`onebot.setGroupWholeBan()`](https://github.com/botuniverse/onebot-11/blob/master/api/public.md#set_group_whole_ban-群组全员禁言) 群组全员禁言
+- [`onebot.setGroupAdmin()`](https://github.com/botuniverse/onebot-11/blob/master/api/public.md#set_group_admin-群组设置管理员) 群组设置管理员
+- [`onebot.setGroupAnonymous()`](https://github.com/botuniverse/onebot-11/blob/master/api/public.md#set_group_anonymous-群组匿名) 群组匿名 <sup>[2]</sup>
+- [`onebot.setGroupCard()`](https://github.com/botuniverse/onebot-11/blob/master/api/public.md#set_group_card-设置群名片群备注) 设置群名片（群备注）
+- [`onebot.setGroupName()`](https://github.com/botuniverse/onebot-11/blob/master/api/public.md#set_group_name-设置群名) 设置群名
+- [`onebot.setGroupLeave()`](https://github.com/botuniverse/onebot-11/blob/master/api/public.md#set_group_leave-退出群组) 退出群组
+- [`onebot.setGroupSpecialTitle()`](https://github.com/botuniverse/onebot-11/blob/master/api/public.md#set_group_special_title-设置群组专属头衔) 设置群组专属头衔
+- [`onebot.setFriendAddRequest()`](https://github.com/botuniverse/onebot-11/blob/master/api/public.md#set_friend_add_request-处理加好友请求) 处理加好友请求
+- [`onebot.setGroupAddRequest()`](https://github.com/botuniverse/onebot-11/blob/master/api/public.md#set_group_add_request-处理加群请求邀请) 处理加群请求／邀请
+- [`onebot.getLoginInfo()`](https://github.com/botuniverse/onebot-11/blob/master/api/public.md#get_login_info-获取登录号信息) 获取登录号信息
+- [`onebot.getStrangerInfo()`](https://github.com/botuniverse/onebot-11/blob/master/api/public.md#get_stranger_info-获取陌生人信息) 获取陌生人信息
+- [`onebot.getFriendList()`](https://github.com/botuniverse/onebot-11/blob/master/api/public.md#get_friend_list-获取好友列表) 获取好友列表
+- [`onebot.getGroupInfo()`](https://github.com/botuniverse/onebot-11/blob/master/api/public.md#get_group_info-获取群信息) 获取群信息
+- [`onebot.getGroupList()`](https://github.com/botuniverse/onebot-11/blob/master/api/public.md#get_group_list-获取群列表) 获取群列表
+- [`onebot.getGroupMemberInfo()`](https://github.com/botuniverse/onebot-11/blob/master/api/public.md#get_group_member_info-获取群成员信息) 获取群成员信息
+- [`onebot.getGroupMemberList()`](https://github.com/botuniverse/onebot-11/blob/master/api/public.md#get_group_member_list-获取群成员列表) 获取群成员列表
+- [`onebot.getGroupHonorInfo()`](https://github.com/botuniverse/onebot-11/blob/master/api/public.md#get_group_honor_info-获取群荣誉信息) 获取群荣誉信息
+- [`onebot.getCookies()`](https://github.com/botuniverse/onebot-11/blob/master/api/public.md#get_cookies-获取-cookies) 获取 Cookies <sup>[2]</sup>
+- [`onebot.getCsrfToken()`](https://github.com/botuniverse/onebot-11/blob/master/api/public.md#get_csrf_token-获取-csrf-token) 获取 CSRF Token <sup>[2]</sup>
+- [`onebot.getCredentials()`](https://github.com/botuniverse/onebot-11/blob/master/api/public.md#get_credentials-获取-qq-相关接口凭证) 获取 QQ 相关接口凭证 <sup>[2]</sup>
+- [`onebot.getRecord()`](https://github.com/botuniverse/onebot-11/blob/master/api/public.md#get_record-获取语音) 获取语音 <sup>[2]</sup>
+- [`onebot.getImage()`](https://github.com/botuniverse/onebot-11/blob/master/api/public.md#get_image-获取图片) 获取图片
+- [`onebot.canSendImage()`](https://github.com/botuniverse/onebot-11/blob/master/api/public.md#can_send_image-检查是否可以发送图片) 检查是否可以发送图片
+- [`onebot.canSendRecord()`](https://github.com/botuniverse/onebot-11/blob/master/api/public.md#can_send_record-检查是否可以发送语音) 检查是否可以发送语音
+- [`onebot.getStatus()`](https://github.com/botuniverse/onebot-11/blob/master/api/public.md#get_status-获取运行状态) 获取运行状态
+- [`onebot.getVersionInfo()`](https://github.com/botuniverse/onebot-11/blob/master/api/public.md#get_version_info-获取版本信息) 获取版本信息
+- [`onebot.setRestart()`](https://github.com/botuniverse/onebot-11/blob/master/api/public.md#set_restart-重启-onebot-实现) 重启 OneBot 实现
+- [`onebot.cleanCache()`](https://github.com/botuniverse/onebot-11/blob/master/api/public.md#clean_cache-清理缓存) 清理缓存 <sup>[2]</sup>
 
 注释：
 
@@ -376,7 +382,7 @@ export default {
 
 ### QQ 频道 API <Badge type="warning" text="meta"/>
 
-- [`onebot.getGuildServiceProfile()`](https://github.com/Mrs4s/go-cqhttp/blob/master/docs/guild.md#获取频道系统内BOT的资料) 获取频道系统内 BOT 的资料 
+- [`onebot.getGuildServiceProfile()`](https://github.com/Mrs4s/go-cqhttp/blob/master/docs/guild.md#获取频道系统内BOT的资料) 获取频道系统内 BOT 的资料
 - [`onebot.getGuildList()`](https://github.com/Mrs4s/go-cqhttp/blob/master/docs/guild.md#获取频道列表) 获取频道列表
 - [`onebot.getGuildMetaByGuest()`](https://github.com/Mrs4s/go-cqhttp/blob/master/docs/guild.md#通过访客获取频道元数据) 通过访客获取频道元数据
 - [`onebot.getGuildChannelList()`](https://github.com/Mrs4s/go-cqhttp/blob/master/docs/guild.md#获取子频道列表) 获取子频道列表
@@ -391,7 +397,7 @@ OneBot 提出了 **异步调用** 的概念，当 OneBot 服务器受到异步�
 
 但是另一方面，你也无法得知异步调用是否成功被执行。与此同时，没有副作用的异步调用也毫无意义（因为这些调用本身就是为了获取某些信息，但是异步调用是无法获取调用结果的）。因此，Koishi 为除此以外的所有异步调用都提供了 API，它们的调用接口与非异步的版本除了在方法后面加了一个 Async 外没有任何区别：
 
-```js
+```ts
 // 普通版本
 const messageId = await session.onebot.sendPrivateMsg('123456789', 'Hello world')
 
@@ -428,7 +434,7 @@ node -e "console.log(process.arch)"
 
 请检查你的配置是否正确。尤其注意以下几点：
 
-- koishi.config.yml 中的 `selfId` 必须写并且必须是字符串
+- koishi.yml 中的 `selfId` 必须写并且必须是字符串
 - 如果你使用 HTTP：请不要忘记配置 post，同时默认情况下 post 的 `url` 字段应该包含 `/onebot`
 - 如果你使用反向 WebSocket：默认情况下 `universal` 字段应该包含 `/onebot`
 

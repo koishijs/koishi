@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-database-mysql",
   "description": "MySQL support for Koishi",
-  "version": "4.0.0-beta.6",
+  "version": "4.3.2",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -14,33 +14,25 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/koishijs/koishi.git"
+    "url": "git+https://github.com/koishijs/koishi.git",
+    "directory": "plugins/database/mysql"
   },
   "bugs": {
     "url": "https://github.com/koishijs/koishi/issues"
   },
-  "homepage": "https://koishi.js.org/api/database/mysql.html",
+  "homepage": "https://koishi.js.org/plugins/database/mysql.html",
   "keywords": [
     "bot",
-    "qqbot",
-    "cqhttp",
-    "coolq",
     "chatbot",
     "koishi",
     "database",
-    "mysql"
+    "mysql",
+    "impl:database"
   ],
-  "devDependencies": {
-    "@koishijs/plugin-mock": "^1.0.0-beta.2",
-    "@koishijs/test-utils": "^8.0.0-beta.6"
-  },
   "peerDependencies": {
-    "koishi": "^4.0.0-beta.6"
+    "koishi": "^4.6.2"
   },
   "dependencies": {
-    "@koishijs/orm-utils": "^1.0.0-beta.4",
-    "@koishijs/sql-utils": "^1.0.0-beta.4",
-    "@types/mysql": "^2.15.19",
-    "mysql": "^2.18.1"
+    "@cosmotype/driver-mysql": "^1.0.5"
   }
 }

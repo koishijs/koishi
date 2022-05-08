@@ -1,4 +1,6 @@
+community
 temp
 dist
 lib
+tests
 *.js

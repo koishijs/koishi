@@ -1,0 +1,38 @@
+general:
+  days:
+    - 日
+    - 一
+    - 二
+    - 三
+    - 四
+    - 五
+    - 六
+  everyday: 每天 {0}
+  everyweek: 每周{0} {1}
+  interval: 每隔 {0 | time} (剩余 {1 | time})
+
+commands:
+  schedule:
+    description: 设置定时命令
+    options:
+      rest: 要执行的指令
+      interval: 设置触发的间隔秒数
+      list: 查看已经设置的日程
+      ensure: 错过时间也确保执行
+      full: 查找全部上下文
+      delete: 删除已经设置的日程
+    messages:
+      context: ，上下文：{0}
+      context.private: 私聊 {userId}
+      context.guild: 频道 {channelId}
+      delete-success: 日程 {0} 已删除。
+      create-success: 日程已创建，编号为 {0}。
+      list-item: '{0 | interval}'
+      list-empty: 当前没有等待执行的日程。
+      command-expected: 请输入要执行的指令。
+      date-invalid: 请输入合法的日期。
+      date-invalid-suggestion: 请输入合法的日期。你要输入的是不是 {0}s？
+      date-expected: 请输入执行时间。
+      date-past: 不能指定过去的时间为执行时间。
+      interval-invalid: 请输入合法的时间间隔。
+      interval-too-short: 时间间隔过短。

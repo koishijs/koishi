@@ -87,6 +87,7 @@ export function sanitize(source: string) {
   return trimSlash(source)
 }
 
+/** @deprecated use template service instead */
 export function template(path: string | string[], ...params: any[]) {
   if (!Array.isArray(path)) path = [path]
   for (const item of path) {
@@ -149,26 +150,6 @@ export namespace template {
     }
     return result + source
   }
-
-  export function quote(content: any) {
-    return get('basic.left-quote') + content + get('basic.right-quote')
-  }
-
-  export function brace(items: any[]) {
-    if (!items.length) return ''
-    return get('basic.left-brace') + items.join(get('basic.comma')) + get('basic.right-brace')
-  }
 }
 
 export { template as t }
-
-/* eslint-disable quote-props */
-template.set('basic', {
-  'left-brace': '（',
-  'right-brace': '）',
-  'left-quote': '“',
-  'right-quote': '”',
-  'comma': '，',
-  'and': '和',
-  'or': '或',
-})

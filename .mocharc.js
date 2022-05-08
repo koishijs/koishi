@@ -1,33 +1,32 @@
 process.env.TS_NODE_PROJECT = 'tsconfig.test.json'
 
 const specs = [
-  'community/chai-shape/tests/*.spec.ts',
-  'community/schemastery/tests/*.spec.ts',
   'packages/core/tests/*.spec.ts',
+  'packages/segment/tests/*.spec.ts',
   'packages/utils/tests/*.spec.ts',
-  'packages/dev-utils/tests/*.spec.ts',
-  'packages/test-utils/tests/*.spec.ts',
-  'plugins/admin/tests/*.spec.ts',
-  'plugins/common/tests/*.spec.ts',
-  'plugins/database/level/tests/*.spec.ts',
-  'plugins/database/memory/tests/*.spec.ts',
-  'plugins/database/mongo/tests/*.spec.ts',
-  'plugins/database/mysql/tests/*.spec.ts',
-  'plugins/database/sqlite/tests/*.spec.ts',
-  'plugins/eval/tests/*.spec.ts',
-  'plugins/forward/tests/*.spec.ts',
-  'plugins/github/tests/*.spec.ts',
-  'plugins/repeater/tests/*.spec.ts',
-  'plugins/schedule/tests/*.spec.ts',
-  'plugins/teach/tests/*.spec.ts',
-  'plugins/verifier/tests/*.spec.ts',
+  'plugins/a11y/admin/tests/*.spec.ts',
+  'plugins/a11y/commands/tests/*.spec.ts',
+  'plugins/a11y/rate-limit/tests/*.spec.ts',
+  'plugins/a11y/schedule/tests/*.spec.ts',
+  'plugins/a11y/switch/tests/*.spec.ts',
+  'plugins/a11y/sudo/tests/*.spec.ts',
+  // 'plugins/a11y/verifier/tests/*.spec.ts',
+  'plugins/common/broadcast/tests/*.spec.ts',
+  'plugins/common/echo/tests/*.spec.ts',
+  'plugins/common/feedback/tests/*.spec.ts',
+  'plugins/common/forward/tests/*.spec.ts',
+  'plugins/common/recall/tests/*.spec.ts',
+  'plugins/common/repeater/tests/*.spec.ts',
+  'plugins/common/respondent/tests/*.spec.ts',
 ]
+
+const folders = ['a11y', 'common', 'frontend']
 
 const libraries = {}
 
 for (const path of specs) {
   const [seg1, seg2, seg3] = path.split('/')
-  if (seg2 === 'database') {
+  if (folders.includes(seg2)) {
     libraries[seg3] = seg1 + '/' + seg2
   } else {
     libraries[seg2] = seg1

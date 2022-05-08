@@ -1,5 +1,8 @@
 import { defineBuild } from '../../../build'
 
 export = defineBuild(async (base, options) => {
-  options.entryPoints.push(base + '/src/worker.ts')
+  options.entryPoints = [
+    base + '/src/bin.ts',
+    base + '/src/worker/index.ts',
+  ]
 })

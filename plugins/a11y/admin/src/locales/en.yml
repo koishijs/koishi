@@ -1,0 +1,11 @@
+commands:
+  authorize:
+    description: Authority management
+
+admin:
+  unknown-flag: Cannot find flag {0}.
+  all-flags: 'All flags: {0}.'
+  no-flags: No flags set.
+  current-flags: 'Current flags: {0}.'
+  user-expected: Please specify a target user.
+  invalid-assignee-platform: Invalid assignee platform.

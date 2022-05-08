@@ -1,12 +1,5 @@
-import { Assets, Context, Random, Schema, Quester } from 'koishi'
+import { Assets, Context, Quester, Random, Schema } from 'koishi'
 import { createHmac } from 'crypto'
-import { stringify } from 'querystring'
-
-declare module 'koishi' {
-  interface Modules {
-    'assets-remote': typeof import('.')
-  }
-}
 
 class RemoteAssets extends Assets {
   http: Quester
@@ -21,13 +14,14 @@ class RemoteAssets extends Assets {
   stop() {}
 
   async upload(url: string, file: string) {
+    if (url.startsWith(this.config.endpoint)) return url
     const { secret } = this.config
     const params = { url, file } as any
     if (secret) {
       params.salt = Random.id()
       params.sign = createHmac('sha1', secret).update(file + params.salt).digest('hex')
     }
-    const data = await this.http('POST', '?' + stringify(params))
+    const data = await this.http.post('', null, { params })
     return data
   }
 
@@ -43,8 +37,8 @@ namespace RemoteAssets {
   }
 
   export const Config = Schema.object({
-    endpoint: Schema.string().description('远程服务器地址。').required(),
-    secret: Schema.string().description('服务器设置的密钥，配合 assets-local 使用。'),
+    endpoint: Schema.string().role('url').description('远程服务器地址。').required(),
+    secret: Schema.string().description('服务器设置的密钥，配合 assets-local 使用。').role('secret'),
   })
 }
 

@@ -17,7 +17,7 @@ sidebarDepth: 2
 让我们看一个简单的示例。下面的插件将注册一个指令，输出当前插件的配置项。
 
 ::: code-group language
-```js
+```js no-extra-header
 const { Schema } = require('koishi')
 
 module.exports.name = 'example'
@@ -34,7 +34,7 @@ module.exports.apply = (ctx, config) => {
   })
 }
 ```
-```ts
+```ts no-extra-header
 import { Context, Schema } from 'koishi'
 
 export const name = 'example'

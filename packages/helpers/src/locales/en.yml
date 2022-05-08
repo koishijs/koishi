@@ -1,0 +1,11 @@
+internal:
+  error-encountered: 'An unknown error has occurred: {0}'
+
+admin:
+  user-not-found: User not found.
+  user-unchanged: User data unchanged.
+  user-updated: User data updated.
+  channel-not-found: Channel not found.
+  channel-unchanged: Channel data unchanged.
+  channel-updated: Channel data updated.
+  not-in-group: Not in guild context, use -c to specify target channel.

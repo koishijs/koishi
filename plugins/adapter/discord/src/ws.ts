@@ -1,24 +1,16 @@
-import { Adapter, Context, Logger, renameProperty } from 'koishi'
-import { GatewayOpcode, GatewayPayload, GatewayIntent } from './types'
-import { adaptSession, adaptUser, AdapterConfig } from './utils'
+import { Adapter, Logger, renameProperty } from 'koishi'
+import { GatewayOpcode, GatewayPayload } from './types'
+import { AdapterConfig, adaptSession, adaptUser } from './utils'
 import { BotConfig, DiscordBot } from './bot'
-import WebSocket from 'ws'
 
 const logger = new Logger('discord')
 
 export default class WebSocketClient extends Adapter.WebSocketClient<BotConfig, AdapterConfig> {
   static schema = BotConfig
 
-  constructor(ctx: Context, config: AdapterConfig) {
-    super(ctx, config)
-    this.http = ctx.http.extend({
-      endpoint: 'https://discord.com/api/v8',
-      ...config.request,
-    })
-  }
-
-  prepare() {
-    return new WebSocket('wss://gateway.discord.gg/?v=8&encoding=json')
+  prepare(bot: DiscordBot) {
+    const http = this.ctx.http.extend(bot.config)
+    return http.ws(bot.config.gateway)
   }
 
   heartbeat(bot: DiscordBot) {
@@ -40,13 +32,13 @@ export default class WebSocketClient extends Adapter.WebSocketClient<BotConfig, 
           seq: bot._d,
         },
       }))
+      bot.resolve()
     }
 
     bot.socket.on('message', async (data) => {
-      data = data.toString()
       let parsed: GatewayPayload
       try {
-        parsed = JSON.parse(data)
+        parsed = JSON.parse(data.toString())
       } catch (error) {
         return logger.warn('cannot parse message', data)
       }
@@ -65,11 +57,7 @@ export default class WebSocketClient extends Adapter.WebSocketClient<BotConfig, 
             token: bot.config.token,
             properties: {},
             compress: false,
-            intents: GatewayIntent.GUILD_MEMBERS
-              | GatewayIntent.GUILD_MESSAGES
-              | GatewayIntent.GUILD_MESSAGE_REACTIONS
-              | GatewayIntent.DIRECT_MESSAGES
-              | GatewayIntent.DIRECT_MESSAGE_REACTIONS,
+            intents: bot.getIntents(),
           },
         }))
       }

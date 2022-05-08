@@ -1,6 +1,6 @@
-import { camelCase, segment, escapeRegExp, paramCase, template, Time, Dict } from '@koishijs/utils'
+import { camelCase, Dict, escapeRegExp, paramCase, segment, Time } from '@koishijs/utils'
 import { Command } from './command'
-import { NextFunction } from './context'
+import { Context, Next } from './context'
 import { Channel, User } from './database'
 import { Session } from './session'
 
@@ -26,7 +26,7 @@ export interface Argv<U extends User.Field = never, G extends Channel.Field = ne
   root?: boolean
   tokens?: Token[]
   name?: string
-  next?: NextFunction
+  next?: Next
 }
 
 const leftQuotes = `"'“‘`
@@ -115,7 +115,7 @@ export namespace Argv {
 
     stringify(argv: Argv) {
       const output = argv.tokens.reduce((prev, token) => {
-        if (token.quoted) prev += leftQuotes[rightQuotes.indexOf(token.terminator[0])]
+        if (token.quoted) prev += leftQuotes[rightQuotes.indexOf(token.terminator[0])] || ''
         return prev + token.content + token.terminator
       }, '')
       if (argv.rest && !rightQuotes.includes(output[output.length - 1]) || argv.initiator) {
@@ -231,34 +231,34 @@ export namespace Argv {
   createDomain('rawtext', source => segment.unescape(source), { greedy: true })
   createDomain('boolean', () => true)
 
-  createDomain('number', (source) => {
+  createDomain('number', (source, session) => {
     const value = +source
     if (Number.isFinite(value)) return value
-    throw new Error(template('internal.invalid-number'))
+    throw new Error('internal.invalid-number')
   })
 
-  createDomain('integer', (source) => {
+  createDomain('integer', (source, session) => {
     const value = +source
     if (value * 0 === 0 && Math.floor(value) === value) return value
-    throw new Error(template('internal.invalid-integer'))
+    throw new Error('internal.invalid-integer')
   })
 
-  createDomain('posint', (source) => {
+  createDomain('posint', (source, session) => {
     const value = +source
     if (value * 0 === 0 && Math.floor(value) === value && value > 0) return value
-    throw new Error(template('internal.invalid-posint'))
+    throw new Error('internal.invalid-posint')
   })
 
-  createDomain('natural', (source) => {
+  createDomain('natural', (source, session) => {
     const value = +source
     if (value * 0 === 0 && Math.floor(value) === value && value >= 0) return value
-    throw new Error(template('internal.invalid-natural'))
+    throw new Error('internal.invalid-natural')
   })
 
-  createDomain('date', (source) => {
+  createDomain('date', (source, session) => {
     const timestamp = Time.parseDate(source)
     if (+timestamp) return timestamp
-    throw new Error(template('internal.invalid-date'))
+    throw new Error('internal.invalid-date')
   })
 
   createDomain('user', (source, session) => {
@@ -271,7 +271,7 @@ export namespace Argv {
     if (code && code.type === 'at') {
       return `${session.platform}:${code.data.id}`
     }
-    throw new Error(template('internal.invalid-user'))
+    throw new Error('internal.invalid-user')
   })
 
   createDomain('channel', (source, session) => {
@@ -284,7 +284,7 @@ export namespace Argv {
     if (code && code.type === 'sharp') {
       return `${session.platform}:${code.data.id}`
     }
-    throw new Error(template('internal.invalid-channel'))
+    throw new Error('internal.invalid-channel')
   })
 
   const BRACKET_REGEXP = /<[^>]+>|\[[^\]]+\]/g
@@ -330,8 +330,12 @@ export namespace Argv {
       try {
         return transform(source, argv.session)
       } catch (err) {
-        const message = err['message'] || template('internal.check-syntax')
-        argv.error = template(`internal.invalid-${kind}`, name, message)
+        if (!argv.session) {
+          argv.error = `internal.invalid-${kind}`
+        } else {
+          const message = argv.session.text(err['message'] || 'internal.check-syntax')
+          argv.error = argv.session.text(`internal.invalid-${kind}`, [name, message])
+        }
         return
       }
     }
@@ -351,6 +355,7 @@ export namespace Argv {
     hidden?: boolean | ((session: Session) => boolean)
     authority?: number
     notUsage?: boolean
+    descPath?: string
   }
 
   export interface TypedOptionConfig<T extends Type> extends OptionConfig<T> {
@@ -358,8 +363,9 @@ export namespace Argv {
   }
 
   export interface OptionDeclaration extends Declaration, OptionConfig {
-    description?: string
-    values?: Dict<any>
+    syntax: string
+    values: Dict<any>
+    valuesSyntax: Dict<string>
   }
 
   type OptionDeclarationMap = Dict<OptionDeclaration>
@@ -373,7 +379,7 @@ export namespace Argv {
     private _namedOptions: OptionDeclarationMap = {}
     private _symbolicOptions: OptionDeclarationMap = {}
 
-    constructor(public name: string, declaration: string, public description: string) {
+    constructor(public readonly name: string, declaration: string, public context: Context) {
       if (!name) throw new Error('expect a command name')
       const decl = this._arguments = parseDecl(declaration)
       this.declaration = decl.stripped
@@ -399,29 +405,36 @@ export namespace Argv {
         }
       }
 
-      if (!config.value && !names.includes(param)) {
+      if (!('value' in config) && !names.includes(param)) {
         syntax += ', --' + param
       }
 
       const declList = parseDecl(bracket)
       if (declList.stripped) syntax += ' ' + declList.stripped
-      if (desc) syntax += '  ' + desc
       const option = this._options[name] ||= {
         ...Command.defaultOptionConfig,
         ...declList[0],
         ...config,
         name,
         values: {},
-        description: syntax,
+        valuesSyntax: {},
+        syntax,
       }
 
+      let path = `commands.${this.name}.options.${name}`
       const fallbackType = typeof option.fallback
       if ('value' in config) {
+        path += '.' + config.value
+        option.valuesSyntax[config.value] = syntax
         names.forEach(name => option.values[name] = config.value)
       } else if (!bracket.trim()) {
         option.type = 'boolean'
       } else if (!option.type && (fallbackType === 'string' || fallbackType === 'number')) {
         option.type = fallbackType
+      }
+
+      if (desc) {
+        this.context.i18n.define('', path, desc)
       }
 
       this._assignOption(option, names, this._namedOptions)
@@ -434,7 +447,7 @@ export namespace Argv {
     private _assignOption(option: OptionDeclaration, names: readonly string[], optionMap: OptionDeclarationMap) {
       for (const name of names) {
         if (name in optionMap) {
-          throw new Error(template.format('duplicate option name "{0}" for command "{1}"', name, this.name))
+          throw new Error(`duplicate option name "${name}" for command "${this.name}"`)
         }
         optionMap[name] = option
       }
@@ -457,9 +470,7 @@ export namespace Argv {
       return true
     }
 
-    parse(argv: Argv): Argv
-    parse(source: string, terminator?: string, args?: any[], options?: Dict<any>): Argv
-    parse(argv: string | Argv, terminator?: string, args = [], options = {}): Argv {
+    parse(argv: string | Argv, terminator?: string, args: any[] = [], options: Dict<any> = {}): Argv {
       if (typeof argv === 'string') argv = Argv.parse(argv, terminator)
 
       const source = this.name + ' ' + Argv.stringify(argv)

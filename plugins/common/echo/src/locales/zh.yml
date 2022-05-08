@@ -1,0 +1,14 @@
+commands:
+  echo:
+    description: 向当前上下文发送消息
+    options:
+      anonymous: 匿名发送消息
+      forceAnonymous: 强制匿名发送消息
+      escape: 发送转义消息
+      unescape: 发送反转义消息
+      user: 发送到用户
+      channel: 发送到频道
+      guild: 指定群组编号
+    messages:
+      expect-text: 请输入要发送的文本。
+      platform-not-found: 找不到指定的平台。

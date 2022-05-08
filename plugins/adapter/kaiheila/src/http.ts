@@ -1,23 +1,21 @@
-import { Adapter, Logger, assertProperty, sanitize, Schema, Context } from 'koishi'
+import { Adapter, Context, Logger, Quester, sanitize, Schema } from 'koishi'
 import { BotConfig, KaiheilaBot } from './bot'
-import { adaptSession, AdapterConfig } from './utils'
+import { AdapterConfig, adaptSession } from './utils'
 
 const logger = new Logger('kaiheila')
 
 export default class HttpServer extends Adapter<BotConfig, AdapterConfig> {
-  static schema = Schema.object({
-    token: Schema.string().description('机器人的用户令牌。').required(),
-    verifyToken: Schema.string().description('机器人的验证令牌。').required(),
-  })
+  static schema = Schema.intersect([
+    Schema.object({
+      token: Schema.string().description('机器人的用户令牌。').role('secret').required(),
+      verifyToken: Schema.string().description('机器人的验证令牌。').required(),
+    }),
+    Quester.Config,
+  ])
 
   constructor(ctx: Context, config: AdapterConfig) {
-    assertProperty(ctx.app.options, 'port')
     config.path = sanitize(config.path || '/kaiheila')
     super(ctx, config)
-    this.http = ctx.http.extend({
-      endpoint: 'https://www.kaiheila.cn/api/v3',
-      ...config.request,
-    })
   }
 
   async connect(bot: KaiheilaBot) {

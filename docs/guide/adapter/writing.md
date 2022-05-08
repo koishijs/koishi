@@ -12,7 +12,7 @@ Koishi 通过 **适配器 (Adapter)** 实现对多账户和跨平台的实现。
 
 当应用被创建时，它会按照配置创建所有的适配器和机器人实例。如果多个机器人使用了同一种适配器，那么会创建一个适配器实例绑定多个机器人。它们的关系用代码表示就是这样：
 
-```ts
+```ts no-extra-header
 class App {
   // 可以使用 adapters[type] 找到对应的适配器
   adapters: Record<string, Adapter>
@@ -48,43 +48,45 @@ class Bot {
 下面是一个使用 Webhook 的例子。适配器通过 http post 请求接受事件推送。
 
 ::: code-group language adapter
-```js
+```js no-extra-header
 const { Adapter, Bot, Session } = require('koishi')
 
 class MyBot extends Bot {
   async sendMessage(channelId, content) {
     // 这里应该执行发送操作
     this.logger.debug('send:', content)
-    return Random.uuid()
+    return []
   }
 }
 
 class MyAdapter extends Adapter {
-  constructor(app) {
+  constructor(ctx) {
     // 请注意这里的第二个参数是应该是一个构造函数而非实例
-    super(app, MyBot)
+    super(ctx, MyBot)
   }
 
   start() {
     // 收到 http post 请求时，生成会话对象并触发事件
-    this.app.router.post('/', (ctx) => {
+    this.ctx.router.post('/', (ctx) => {
       const session = new Session(this.app, ctx.request.body)
       this.dispatch(session)
     })
   }
+
+  stop() {}
 }
 
 // 注册适配器
 Adapter.types['my-adapter'] = MyAdapter
 ```
-```ts
-import { Adapter, Bot, Session } from 'koishi'
+```ts no-extra-header
+import { App, Adapter, Bot, Session } from 'koishi'
 
 class MyBot extends Bot {
   async sendMessage(channelId: string, content: string) {
     // 这里应该执行发送操作
     this.logger.debug('send:', content)
-    return Random.uuid()
+    return []
   }
 }
 
@@ -101,6 +103,8 @@ class MyAdapter extends Adapter {
       this.dispatch(session)
     })
   }
+
+  stop() {}
 }
 
 // 注册适配器
@@ -113,7 +117,7 @@ Adapter.types['my-adapter'] = MyAdapter
 WebSocket 的逻辑相比 Webhook 要稍微复杂一些，因此我们提供了一个工具类：
 
 ::: code-group language adapter
-```js
+```js no-extra-header
 const { Adapter, Bot, Session } = require('koishi')
 const WebSocket = require('ws')
 
@@ -141,7 +145,7 @@ class MyAdapter2 extends Adapter.WsClient {
 // 注册适配器
 Adapter.types['another-adapter'] = MyAdapter2
 ```
-```ts
+```ts no-extra-header
 import { Adapter, Bot, Session } from 'koishi'
 import WebSocket from 'ws'
 
@@ -170,24 +174,3 @@ class MyAdapter2 extends Adapter.WsClient {
 Adapter.types['another-adapter'] = MyAdapter2
 ```
 :::
-
-### 适配器重定向
-
-如果你嫌 onebot:http, onebot:ws 的写法太麻烦，不如试试下面的写法：
-
-```js koishi.config.js
-module.exports = {
-  type: 'onebot',
-  server: 'ws://localhost:6700',
-}
-```
-
-启动程序，你将发现它也能按照 onebot:ws 的逻辑正常运行。这是因为 Koishi 提供了一个重定向方法，专门用于处理这种需求。你只需要这样定义即可：
-
-```js
-Adapter.types['onebot'] = Adapter.redirect((bot) => {
-  return !bot.server ? 'onebot:ws-reverse'
-    : bot.server.startsWith('ws') ? 'onebot:ws'
-      : 'onebot:http'
-})
-```

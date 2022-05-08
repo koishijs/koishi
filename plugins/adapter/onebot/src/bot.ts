@@ -1,4 +1,4 @@
-import { Bot, segment, Adapter, Dict, Schema, Quester, Logger, camelize } from 'koishi'
+import { Adapter, Bot, camelize, Dict, Logger, noop, Quester, Schema, segment } from 'koishi'
 import * as OneBot from './utils'
 
 export function renderText(source: string) {
@@ -8,7 +8,8 @@ export function renderText(source: string) {
       return prev + `[CQ:at,qq=${data.id}]`
     } else if (['video', 'audio', 'image'].includes(type)) {
       if (type === 'audio') type = 'record'
-      if (!data.file) data.file = data.url
+      data.file = data.url
+      delete data.url
     } else if (type === 'quote') {
       type = 'reply'
     }
@@ -19,12 +20,14 @@ export function renderText(source: string) {
 export interface BotConfig extends Bot.BaseConfig, Quester.Config {
   selfId?: string
   token?: string
+  qqguildPlatform?: string
 }
 
 export const BotConfig: Schema<BotConfig> = Schema.intersect([
   Schema.object({
     selfId: Schema.string(),
-    token: Schema.string(),
+    token: Schema.string().role('secret'),
+    qqguildPlatform: Schema.string().default('qqguild'),
   }),
   Quester.Config,
 ])
@@ -33,18 +36,62 @@ export class OneBotBot extends Bot<BotConfig> {
   static schema = OneBot.AdapterConfig
 
   public internal = new Internal()
+  public guildBot: QQGuildBot
 
-  constructor(adapter: Adapter, options: BotConfig) {
-    super(adapter, options)
-    this.selfId = options.selfId
-    this.avatar = `http://q.qlogo.cn/headimg_dl?dst_uin=${options.selfId}&spec=640`
+  constructor(adapter: Adapter, config: BotConfig) {
+    super(adapter, config)
+    this.selfId = config.selfId
+    this.avatar = `http://q.qlogo.cn/headimg_dl?dst_uin=${config.selfId}&spec=640`
   }
 
-  sendMessage(channelId: string, content: string) {
+  get status() {
+    return super.status
+  }
+
+  set status(status) {
+    super.status = status
+    if (this.guildBot && this.app.bots.includes(this.guildBot)) {
+      this.app.emit('bot-status-updated', this.guildBot)
+    }
+  }
+
+  async stop() {
+    if (this.guildBot) {
+      // QQGuild stub bot should also be removed
+      await this.app.bots.remove(this.guildBot.sid)
+    }
+    await super.stop()
+  }
+
+  async initialize() {
+    await Promise.all([
+      this.getSelf().then(data => Object.assign(this, data)),
+      this.setupGuildService().catch(noop),
+    ]).then(() => this.resolve(), error => this.reject(error))
+  }
+
+  async setupGuildService() {
+    const profile = await this.internal.getGuildServiceProfile()
+    // guild service is not supported in this account
+    if (!profile?.tiny_id || profile.tiny_id === '0') return
+    const guildBotConfig: BotConfig = {
+      ...this.config,
+      platform: this.config.qqguildPlatform,
+      selfId: profile.tiny_id,
+    }
+    this.guildBot = this.app.bots.create('onebot', guildBotConfig, QQGuildBot)
+    this.guildBot.hidden = true
+    this.guildBot.internal = this.internal
+    this.guildBot.parentBot = this
+    this.guildBot.avatar = profile.avatar_url
+    this.guildBot.username = profile.nickname
+  }
+
+  sendMessage(channelId: string, content: string, guildId?: string) {
     content = renderText(content)
     return channelId.startsWith('private:')
       ? this.sendPrivateMessage(channelId.slice(8), content)
-      : this.sendGuildMessage(channelId, content)
+      : this.sendGuildMessage(guildId, channelId, content)
   }
 
   async getMessage(channelId: string, messageId: string) {
@@ -96,22 +143,32 @@ export class OneBotBot extends Bot<BotConfig> {
     return data.map(OneBot.adaptGuildMember)
   }
 
-  async sendGuildMessage(guildId: string, content: string) {
-    if (!content) return
-    const session = this.createSession({ content, subtype: 'group', guildId, channelId: guildId })
-    if (this.app.bail(session, 'before-send', session)) return
-    session.messageId = '' + await this.internal.sendGroupMsg(guildId, content)
+  async kickGuildMember(guildId: string, userId: string, permanent?: boolean) {
+    return this.internal.setGroupKick(guildId, userId, permanent)
+  }
+
+  async muteGuildMember(guildId: string, userId: string, duration: number) {
+    return this.internal.setGroupBan(guildId, userId, duration / 1000)
+  }
+
+  async muteChannel(channelId: string, guildId?: string, enable?: boolean) {
+    return this.internal.setGroupWholeBan(channelId, enable)
+  }
+
+  protected async sendGuildMessage(guildId: string, channelId: string, content: string) {
+    const session = await this.session({ content, subtype: 'group', guildId, channelId })
+    if (!session?.content) return []
+    session.messageId = '' + await this.internal.sendGroupMsg(channelId, session.content)
     this.app.emit(session, 'send', session)
-    return session.messageId
+    return [session.messageId]
   }
 
   async sendPrivateMessage(userId: string, content: string) {
-    if (!content) return
-    const session = this.createSession({ content, subtype: 'private', userId, channelId: 'private:' + userId })
-    if (this.app.bail(session, 'before-send', session)) return
-    session.messageId = '' + await this.internal.sendPrivateMsg(userId, content)
+    const session = await this.session({ content, subtype: 'private', userId, channelId: 'private:' + userId })
+    if (!session?.content) return []
+    session.messageId = '' + await this.internal.sendPrivateMsg(userId, session.content)
     this.app.emit(session, 'send', session)
-    return session.messageId
+    return [session.messageId]
   }
 
   async handleFriendRequest(messageId: string, approve: boolean, comment?: string) {
@@ -128,6 +185,79 @@ export class OneBotBot extends Bot<BotConfig> {
 
   async deleteFriend(userId: string) {
     await this.internal.deleteFriend(userId)
+  }
+}
+
+export class QQGuildBot extends OneBotBot {
+  parentBot: OneBotBot
+
+  get status() {
+    if (!this.parentBot) {
+      return 'offline'
+    }
+    return this.parentBot.status
+  }
+
+  set status(status) {
+    // cannot change status here
+  }
+
+  async start() {
+    await this.app.parallel('bot-connect', this)
+  }
+
+  async stop() {
+    // Don't stop this bot twice
+    if (!this.parentBot) return
+    // prevent circular reference and use this as already disposed
+    this.parentBot = undefined
+    await this.app.parallel('bot-disconnect', this)
+  }
+
+  async sendGuildMessage(guildId: string, channelId: string, content: string) {
+    const session = await this.session({ content, subtype: 'group', guildId, channelId })
+    if (!session?.content) return []
+    session.messageId = '' + await this.internal.sendGuildChannelMsg(guildId, channelId, session.content)
+    this.app.emit(session, 'send', session)
+    return [session.messageId]
+  }
+
+  async getChannel(channelId: string, guildId?: string) {
+    const channels = await this.getChannelList(guildId)
+    return channels.find((channel) => channel.channelId === channelId)
+  }
+
+  async getChannelList(guildId: string) {
+    const data = await this.internal.getGuildChannelList(guildId, false)
+    return (data || []).map(OneBot.adaptChannel)
+  }
+
+  async getGuild(guildId: string) {
+    const data = await this.internal.getGuildMetaByGuest(guildId)
+    return OneBot.adaptGuild(data)
+  }
+
+  async getGuildList() {
+    const data = await this.internal.getGuildList()
+    return data.map(OneBot.adaptGuild)
+  }
+
+  async getGuildMember(guildId: string, userId: string) {
+    const profile = await this.internal.getGuildMemberProfile(guildId, userId)
+    return OneBot.adaptQQGuildMemberProfile(profile)
+  }
+
+  async getGuildMemberList(guildId: string) {
+    let nextToken: string | undefined
+    let list: Bot.GuildMember[] = []
+    while (true) {
+      const data = await this.internal.getGuildMemberList(guildId, nextToken)
+      if (!data.members?.length) break
+      list = list.concat(data.members.map(OneBot.adaptQQGuildMemberInfo))
+      if (data.finished) break
+      nextToken = data.next_token
+    }
+    return list
   }
 }
 
@@ -272,5 +402,6 @@ Internal.define('get_guild_service_profile')
 Internal.define('get_guild_list')
 Internal.define('get_guild_meta_by_guest', 'guild_id')
 Internal.define('get_guild_channel_list', 'guild_id', 'no_cache')
-Internal.define('get_guild_members', 'guild_id')
+Internal.define('get_guild_member_list', 'guild_id', 'next_token')
+Internal.define('get_guild_member_profile', 'guild_id', 'user_id')
 Internal.defineExtract('send_guild_channel_msg', 'message_id', 'guild_id', 'channel_id', 'message')

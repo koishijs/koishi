@@ -1,13 +1,5 @@
 import { Assets, Context, Schema } from 'koishi'
-import { Credentials } from '@aws-sdk/types'
 import { ListObjectsCommand, PutObjectCommand, S3Client, S3ClientConfig } from '@aws-sdk/client-s3'
-import { createHash } from 'crypto'
-
-declare module 'koishi' {
-  interface Modules {
-    'assets-s3': typeof import('.')
-  }
-}
 
 class S3Assets extends Assets {
   private s3: S3Client
@@ -38,10 +30,12 @@ class S3Assets extends Assets {
   }
 
   async upload(url: string, file: string) {
-    const buffer = await this.download(url)
-    const hash = createHash('sha1').update(buffer).digest('hex')
-    const s3Key = `${this.config.pathPrefix}${hash}`
-    const finalUrl = `${this.config.publicUrl}${hash}`
+    if (url.startsWith(this.config.publicUrl)) {
+      return url
+    }
+    const { buffer, filename } = await this.analyze(url, file)
+    const s3Key = `${this.config.pathPrefix}${filename}`
+    const finalUrl = `${this.config.publicUrl}${filename}`
     try {
       const checkExisting = await this.listObjects(s3Key)
       if (checkExisting.Contents?.some((obj) => obj.Key === s3Key)) return finalUrl
@@ -57,7 +51,7 @@ class S3Assets extends Assets {
     } catch (e) {
       this.ctx
         .logger('assets-s3')
-        .error(`Failed to upload file ${file} to ${s3Key}: ${e.toString()}`)
+        .error(`Failed to upload file ${filename} to ${s3Key}: ${e.toString()}`)
       return Object.assign(new Error(e))
     }
   }
@@ -99,7 +93,7 @@ namespace S3Assets {
 
   export const Config = Schema.object({
     region: Schema.string().default('none'),
-    endpoint: Schema.string(),
+    endpoint: Schema.string().role('url'),
     credentials: Credentials,
     bucket: Schema.string().required(),
     pathPrefix: Schema.string().default(''),

@@ -6,13 +6,13 @@ sidebarDepth: 2
 
 从本节开始，我们开始深入研究如何利用 Koishi 的来接收和发送消息。
 
-首先让我们回顾一下之前展示过的 [基本示例](../introduction/coding.md#添加交互逻辑)：
+首先让我们回顾一下之前展示过的 [基本示例](../introduction/direct.md#添加交互逻辑)：
 
-```js
+```ts
 // 如果收到“天王盖地虎”，就回应“宝塔镇河妖”
 ctx.middleware((session, next) => {
   if (session.content === '天王盖地虎') {
-    return session.send('宝塔镇河妖')
+    return '宝塔镇河妖'
   } else {
     return next()
   }
@@ -33,20 +33,21 @@ ctx.middleware((session, next) => {
 
 中间件的本质是下面的函数。看起来挺简单的，不是吗？我们将在下面详细介绍它的运作方式。
 
-```js
-type NextFunction = (next?: NextFunction) => any
-type Middleware = (session: Session, next: NextFunction) => any
+```ts
+type Next = (next?: Callback) => Promise<void | string>
+type Callback = void | string | ((next?: Next) => Awaitable<void | string>)
+type Middleware = (session: Session, next: Next) => Promise<void | string>
 ```
 
 ## 注册和取消中间件
 
 使用 `ctx.middleware()` 方法注册中间件。这个方法接受一个回调函数，其第一个参数为一个会话对象，第二个参数是 `next` 函数，只有调用了它才会进入接下来的流程。如果自始至终都没有调用 `next` 函数的话，之后的中间件都将不会被执行。下面是一个例子：
 
-```js
+```ts
 ctx.middleware((session, next) => {
   // 仅当接收到的消息包含了对机器人的称呼时才继续处理（比如消息以 @机器人 开头）
   if (session.parsed.appel) {
-    return session.send('是你在叫我吗？')
+    return '是你在叫我吗？'
   } else {
     // 如果去掉这一行，那么不满足上述条件的消息就不会进入下一个中间件了
     return next()
@@ -56,7 +57,9 @@ ctx.middleware((session, next) => {
 
 这个函数的返回值是一个新的函数，调用这个函数就可以完成取消上述中间件：
 
-```js
+```ts
+declare const callback: import('koishi').Middleware
+// ---cut---
 const dispose = ctx.middleware(callback)
 dispose() // 取消中间件
 ```
@@ -65,13 +68,13 @@ dispose() // 取消中间件
 
 中间件也可以是异步的。下面给出一个示例：
 
-```js
+```ts
 ctx.middleware(async (session, next) => {
   // 获取数据库中的用户信息
   // 这里只是示例，事实上 Koishi 会自动获取数据库中的信息并存放在 session.user 中
   const user = await session.getUser(session.userId)
   if (user.authority === 0) {
-    return session.send('抱歉，你没有权限访问机器人。')
+    return '抱歉，你没有权限访问机器人。'
   } else {
     return next()
   }
@@ -88,7 +91,7 @@ ctx.middleware(async (session, next) => {
 
 听起来这种需求有些奇怪，让我们举个具体点例子吧：假如你写的是一个复读插件，它需要在每次连续接收到 3 条相同消息时进行复读。我们不难使用事件监听器实现这种逻辑：
 
-```js
+```ts
 let times = 0 // 复读次数
 let message = '' // 当前消息
 
@@ -108,14 +111,14 @@ ctx.on('message', (session) => {
 
 但是这样写出的机器人就存在所有用事件监听器写出的机器人的通病——如果这条消息本身可以触发其他回应，机器人就会多次回应。更糟糕的是，你无法预测哪一次回应先发生，因此这样写出的机器人就会产生延迟复读的迷惑行为。为了避免这种情况发生，Koishi 对这种情况也有对应的解决方案，那就是 **前置中间件**：
 
-```js
+```ts
 let times = 0 // 复读次数
 let message = '' // 当前消息
 
 ctx.middleware((session, next) => {
   if (session.content === message) {
     times += 1
-    if (times === 3) return session.send(message)
+    if (times === 3) return message
   } else {
     times = 0
     message = session.content
@@ -130,11 +133,11 @@ ctx.middleware((session, next) => {
 
 为了应对这种问题 Koishi 提供了更加方便的写法：你只需要在调用 `next` 时再次传入一个回调函数即可！这个回调函数只接受一个 `next` 参数，且只会加入当前的中间件执行队列；无论这个回调函数执行与否，在本次中间件解析完成后，它都会被清除。下面是一个例子：
 
-```js
+```ts
 ctx.middleware((session, next) => {
   if (session.content === 'hlep') {
     // 如果该 session 没有被截获，则这里的回调函数将会被执行
-    return next(() => session.send('你想说的是 help 吗？'))
+    return next('你想说的是 help 吗？')
   } else {
     return next()
   }
@@ -143,14 +146,14 @@ ctx.middleware((session, next) => {
 
 除此以外，临时中间件还有下面的用途。让我们先回到上面介绍的前置中间件。它虽然能够成功解决问题，但是如果有两个插件都注册了类似的前置中间件，就仍然可能发生一个前置中间件截获了消息，导致另一个前置中间件获取不到消息的情况发生。但是，借助临时中间件，我们便有了更好的解决方案：
 
-```js
+```ts
 let times = 0 // 复读次数
 let message = '' // 当前消息
 
 ctx.middleware((session, next) => {
   if (session.content === message) {
     times += 1
-    if (times === 3) return next(() => session.send(message))
+    if (times === 3) return next(message)
   } else {
     times = 0
     message = session.content
@@ -159,4 +162,4 @@ ctx.middleware((session, next) => {
 }, true)
 ```
 
-搭配使用上面几种中间件，你的机器人便拥有了无限可能。在 @koishijs/plugin-common 库中，就有着一个官方实现的复读功能，它远比上面的示例所显示的更加强大。如果想深入了解中间件机制，可以去研究一下这个功能的 [源代码](https://github.com/koishijs/koishi/blob/master/plugins/common/src/handler.ts)。
+搭配使用上面几种中间件，你的机器人便拥有了无限可能。在 @koishijs/plugin-repeater 库中，就有着一个官方实现的复读功能，它远比上面的示例所显示的更加强大。如果想深入了解中间件机制，可以去研究一下这个功能的 [源代码](https://github.com/koishijs/koishi/blob/master/plugins/common/repeater/src/index.ts)。

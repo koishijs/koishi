@@ -1,0 +1,18 @@
+{
+  "compilerOptions": {
+    "rootDir": ".",
+    "target": "es2020",
+    "module": "esnext",
+    "declaration": true,
+    "noEmit": true,
+    "composite": true,
+    "incremental": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "moduleResolution": "node",
+    "strictBindCallApply": true,
+  },
+  "include": [
+    "*",
+  ],
+}

@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-assets-remote",
   "description": "A classic assets provider for Koishi",
-  "version": "2.0.0-beta.4",
+  "version": "2.0.3",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -11,25 +11,23 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/koishijs/koishi.git"
+    "url": "git+https://github.com/koishijs/koishi.git",
+    "directory": "plugins/assets/remote"
   },
   "bugs": {
     "url": "https://github.com/koishijs/koishi/issues"
   },
-  "homepage": "https://koishi.js.org/plugins/other/assets",
+  "homepage": "https://koishi.js.org/plugins/assets/remote.html",
   "keywords": [
     "bot",
-    "qqbot",
-    "cqhttp",
-    "coolq",
     "chatbot",
     "koishi",
     "plugin",
     "assets",
     "server",
-    "service:assets"
+    "impl:assets"
   ],
   "peerDependencies": {
-    "koishi": "^4.0.0-beta.6"
+    "koishi": "^4.6.2"
   }
 }

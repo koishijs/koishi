@@ -4,15 +4,14 @@ sidebarDepth: 2
 
 # 控制台 (Console)
 
-
 ## 配置项
 
-### title
+<!-- ### title
 
 - 类型: `string`
 - 默认值: `'Koishi 控制台'`
 
-网页控制台的标题。
+网页控制台的标题。 -->
 
 ### uiPath
 
@@ -41,16 +40,16 @@ Koishi 服务暴露在公网的地址。
 只有你将 `uiPath` 和 `apiPath` 分别部署到了不同的端口或域名时，这个选项才建议使用。
 :::
 
+### open
+
+- 类型: `boolean`
+- 默认值: `false`
+
+应用启动后自动打开网页。
+
 ### devMode
 
 - 类型: `boolean`
 - 默认值: `false`
 
 启用[调试模式](#调试模式)。
-
-### expiration
-
-- 类型: `number`
-- 默认值: `Time.week`
-
-登陆控制台所获得的令牌的生效时间。

@@ -1,0 +1,7 @@
+commands:
+  feedback:
+    description: 发送反馈信息给作者
+    messages:
+      expect-text: 请输入要发送的文本。
+      receive: "收到来自 {0} 的反馈信息：\n{1}"
+      success: 反馈信息发送成功！

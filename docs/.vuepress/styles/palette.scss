@@ -14,18 +14,26 @@
   --c-border: #E4E1F2; // hsv(250, 7, 95)
   --c-border-dark: #C0BECC; // hsv(250, 7, 80)
 
+  --c-primary: #5546a3;
   --c-brand: #5546a3;
   --c-brand-light: #473a88;
   --c-scroll-track: #eaecef;
+
+  --color-transition:
+    color 0.3s ease,
+    border-color 0.3s ease,
+    background-color 0.3s ease,
+    box-shadow 0.3s ease,
+    opacity 0.3s ease;
 }
 
 .dark:root {
   --c-bg: #0A061A; // hsv(250, 60, 15)
   --c-bg-home: #181526; // hsv(250, 45, 15)
   --c-bg-dark: #221F33; // hsv(250, 40, 20)
-  --c-text: #DFD9FF; // hsv(250, 15, 100)
+  --c-text: #EAE6FF; // hsv(250, 10, 100)
   --c-text-home: #D4CCFF; // hsv(250, 20, 100)
-  --c-text-dark: #EAE6FF; // hsv(250, 10, 100)
+  --c-text-dark: #F4F2FF; // hsv(250, 5, 100)
   --c-text-darker: #F4F2FF; // hsv(250, 5, 100)
   --c-text-darkest: #FFFFFF;
   --c-text-lightest: #9F99BF; // hsv(250, 20, 75)
@@ -33,6 +41,7 @@
   --c-border: #262433; // hsv(250, 30, 25)
   --c-border-dark: #4C4766; // hsv(250, 30, 40)
 
+  --c-primary: #7459ff;
   --c-brand: #40DFFF; // hsv(190, 75, 100)
   --c-brand-light: #7289da;
   --c-scroll-track: #151310;
@@ -52,6 +61,10 @@
 html.dark .DocSearch {
   --docsearch-searchbox-background: #{alpha(25%)};
   --docsearch-searchbox-focus-background: #{alpha(25%)};
+}
+
+.DocSearch-Button {
+  transition: var(--color-transition);
 }
 
 $textShadow: 1px 1px 1px rgba(23, 31, 35, 0.5);

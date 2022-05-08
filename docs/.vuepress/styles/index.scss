@@ -1,4 +1,5 @@
 @import '@vuepress/plugin-palette/palette';
+@import './twoslash';
 
 html {
   background-color: var(--bg0);
@@ -33,8 +34,29 @@ html {
   }
 }
 
-.sidebar-heading:not(:first-child) {
-  margin-top: 1rem;
+body {
+  font-size: 15px;
+}
+
+code {
+  font-size: 0.9em;
+}
+
+.badge + .badge {
+  margin-left: 0.5rem;
+}
+
+aside.sidebar {
+  font-size: 15px;
+
+  li:not(:first-child) .sidebar-heading {
+    margin-top: 1rem;
+  }
+}
+
+.sidebar-item {
+  padding-top: 5px !important;
+  padding-bottom: 5px !important;
 }
 
 .medium-zoom-image--opened {

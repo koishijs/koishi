@@ -18,11 +18,11 @@
   },
   "homepage": "https://koishi.js.org",
   "peerDependencies": {
-    "vue": "^3.2.21"
+    "vue": "^3.2.33"
   },
   "dependencies": {
-    "@koishijs/core": "^4.0.0-beta.6",
-    "@vueuse/core": "^6.8.0",
-    "monaco-editor": "^0.27.0"
+    "@koishijs/core": "^4.6.2",
+    "@vueuse/core": "^7.7.1",
+    "monaco-editor": "^0.31.1"
   }
 }

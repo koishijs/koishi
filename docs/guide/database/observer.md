@@ -10,8 +10,17 @@ sidebarDepth: 2
 
 之前我们已经提到过，你可以在 `session.user` 上获得本次事件相关的用户数据，但实际上 `session.user` 能做的远远不止这些。它的本质其实是一个**观察者**对象。假如我们有下面的代码：
 
-```js
+```ts
+declare function getLotteryItem(): string
+
+// ---cut---
 // 定义一个 items 字段，用于存放物品列表
+declare module 'koishi' {
+  interface User {
+    items: string[]
+  }
+}
+
 ctx.model.extend('user', {
   items: 'list',
 })
@@ -39,31 +48,39 @@ ctx.command('lottery')
 
 如果说观察者机制帮我们解决了多次更新和数据安全的问题的话，那么这一节要介绍的就是如何控制要加载的内容。在上面的例子中我们看到了 `cmd.userFields()` 函数，它通过一个 [可迭代对象](https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Iteration_protocols) 或者回调函数来添加所需的用户字段。同理我们也有 `cmd.channelFields()` 方法，功能类似。
 
-如果你需要对全体指令添加所需的用户字段，可以使用 `Command.userFields()`。下面是一个例子：
+如果你需要对全体指令添加所需的用户字段，可以使用 `command/before-attach-user` 事件。下面是一个例子：
 
-```js
-const { Command } = require('koishi')
-
+```ts
 // 注意这不是实例方法，而是类上的静态方法
-Command.userFields(['name'])
+ctx.before('command/attach-user', (argv, fields) => {
+  fields.add('name')
+})
 
-app.before('command', ({ session, command }) => {
+ctx.before('command/execute', ({ session, command }) => {
   console.log('%s calls command %s', session.user.name, command.name)
 })
 ```
 
 如果要控制中间件能取得的用户数据，可以监听 before-user 和 before-channel 事件，通过修改传入的 `fields` 参数来添加特定的字段。下面是一个例子：
 
-```js
+```ts
 // 定义一个 msgCount 字段，用于存放收到的信息数量
+declare module 'koishi' {
+  interface User {
+    msgCount: number
+  }
+}
+
 ctx.model.extend('user', {
   msgCount: 'integer',
 })
 
 // 手动添加要获取的字段，下面会介绍
-app.before('attach-user', fields => fields.add('msgCount'))
+ctx.before('attach-user', (session, fields) => {
+  fields.add('msgCount')
+})
 
-app.middleware((session, next) => {
+ctx.middleware((session: Session<'msgCount'>, next) => {
   // 这里更新了 msgCount 数据
   session.user.msgCount++
   return next()
@@ -74,12 +91,14 @@ app.middleware((session, next) => {
 
 对于 Koishi 内部的两个抽象表 User 和 Channel，我们在 [会话对象](../../api/core/session.md) 中封装了几个高级方法：
 
-```js
+```ts
+declare const id: string
+declare const fields: any[]
+
+// ---cut---
 // 中间增加了一个第二参数，表示默认情况下的权限等级
 // 如果找到该用户，则返回该用户本身
-// 否则创建一个新的用户数据，权限为 authority
-// 如果 authority 大于 0，则将新的用户数据添加到表中
-session.getUser(id, authority, fields)
+session.getUser(id, fields)
 
 // 在当前会话上绑定一个可观测用户实例
 // 也就是所谓的 session.user
@@ -87,9 +106,7 @@ session.observeUser(fields)
 
 // 中间增加了一个第二参数，表示默认情况下的 assignee
 // 如果找到该频道，则不修改任何数据，返回该频道本身
-// 如果未找到该频道，则创建一个新的频道，代理者为 selfId
-// 如果 selfId 大于 0，则将新的频道数据添加到表中
-session.getChannel(id, selfId, fields)
+session.getChannel(id, fields)
 
 // 在当前会话上绑定一个可观测频道实例
 // 也就是所谓的 session.channel

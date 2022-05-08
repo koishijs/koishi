@@ -4,10 +4,6 @@ sidebarDepth: 2
 
 # 单元测试
 
-::: danger 注意
-这里是**正在施工**的 koishi v4 的文档。要查看 v3 版本的文档，请前往[**这里**](/)。
-:::
-
 如果你是一位插件开发者，比起让机器人真正运行起来，你或许会更希望使用**单元测试**，因为它具有许多前者所不具有的优点：
 
 - 可以在无网络的情况下运行
@@ -16,28 +12,38 @@ sidebarDepth: 2
 - 能够有效避免风控带来的损失
 - 便于调试与错误定位
 
-本章将介绍官方库 `koishi-test-utils`。它一个基于 [Mocha](https://mochajs.org/) 和 [Chai](https://www.chaijs.com/) 的单元测试工具集，你可以用它来快速检验你编写的 Koishi 插件和数据库实现。
+本章将介绍官方插件 `@koishijs/plugin-mock`。你可以用它来快速检验你编写的 Koishi 插件。
+
+::: tip
+本节中介绍的样例用到了 [Mocha](https://mochajs.org/) 和 [Chai](https://www.chaijs.com/)。它们都是比较通用的测试库和断言库，但并非绑定 @koishijs/plugin-mock 一同使用。你也可以根据你的喜好选择其他工具，比如 [Jest](https://jestjs.io/) 等等。
+:::
 
 ## 准备工作
 
-安装最新版本的 Mocha, Chai 和 koishi-test-utils：
+安装所需的测试工具以及 @koishijs/plugin-mock：
 
 ::: code-group manager
 ```npm
-npm i mocha chai koishi-test-utils -D
+npm i mocha chai @koishijs/plugin-mock -D
 ```
 ```yarn
-yarn add mocha chai koishi-test-utils -D
+yarn add mocha chai @koishijs/plugin-mock -D
 ```
 :::
 
-::: tip 提示
-你可以在 [这里](../../api/test-utils.md) 看到完整的接口列表和所需的最低版本。
-:::
+接着创建存放测试文件的 `tests` 目录，并在其中新建一个 `index.spec.js` 文件，开始编写你的单元测试：
+
+```ts title=tests/index.spec.js
+import { App } from 'koishi'
+import mock from '@koishijs/plugin-mock'
+
+const app = new App()
+app.plugin(mock)
+```
 
 ### 使用 TypeScript
 
-如果你使用 TypeScript 进行开发，你可能还需要下面这些依赖（当然你可能已经安装了它们）：
+如果你使用 TypeScript 进行开发，你可能还需要下面这些依赖 (当然你可能已经安装了它们)：
 
 ::: code-group manager
 ```npm
@@ -50,7 +56,7 @@ yarn add typescript ts-node @types/node @types/mocha @types/chai -D
 
 接着编辑你的 `.mocharc.js` 文件：
 
-```js .mocharc.js
+```js title=.mocharc.js
 module.exports = {
   extension: ['ts'],
   require: [
@@ -60,195 +66,79 @@ module.exports = {
 }
 ```
 
-## 模拟事件上报
+## 模拟会话消息
 
-当你不希望真正用服务器却希望测试 App 对某个事件上报的响应时，你可以使用 MockedApp 来模拟一次事件上报：
+对于聊天机器人来说最常见的需求是处理用户的消息。为此，我们提供了 **客户端 (Client)** 对象，用于模拟特定频道和用户的输入：
 
-```js
-const { MockedApp } = require('koishi-test-utils')
+```ts no-extra-header
+/// <reference types="mocha" />
+// ---cut---
+import { App } from 'koishi'
+import mock from '@koishijs/plugin-mock'
 
-// 这里的 MockedApp 是 App 的一个子类，因此你仍然可以像过去那样编写代码
-const app = new MockedApp()
+const app = new App()
+app.plugin(mock)
+
+// 创建一个 userId 为 123 的私聊客户端
+const client = app.mock.client('123')
 
 // 这是一个简单的中间件例子，下面将测试这个中间件
-app.middleware(({ message, send }, next) => {
-  if (message === '天王盖地虎') return send('宝塔镇河妖')
-  return next()
+app.middleware(({ content }, next) => {
+  if (content === '天王盖地虎') {
+    return '宝塔镇河妖'
+  } else {
+    return next()
+  }
 })
 
-test('example', async () => {
-  // 尝试接收一个 message 事件
-  await app.receiveMessage('user', '天王盖地虎', 123)
+// 这一句不能少，要等待 app 启动完成
+before(() => app.start())
 
-  // 判断 app 应该最终发送了这个请求
-  // 这里的请求名相当于 sender 中对应的接口名，不用写 async
-  // 请求参数与 sender 相一致
-  app.shouldHaveLastRequest('send_private_msg', {
-    userId: 123,
-    message: '宝塔镇河妖',
-  })
+it('example 1', async () => {
+  // 将“天王盖地虎”发送给机器人将会获得“宝塔镇河妖”的回复
+  await client.shouldReply('天王盖地虎', '宝塔镇河妖')
 
-  // 再次尝试接收一个 message 事件
-  await app.receiveMessage('user', '宫廷玉液酒', 123)
+  // 将“天王盖地虎”发送给机器人将会获得某些回复
+  await client.shouldReply('天王盖地虎')
 
-  // 判断 app 应该最终没有发送任何请求
-  app.shouldHaveNoRequests()
+  // 将“宫廷玉液酒”发送给机器人将不会获得任何回复
+  await client.shouldNotReply('宫廷玉液酒')
 })
-```
-
-## 模拟会话
-
-Koishi 本身不需要会话的概念，因为 Meta 对象本身就具有 [快捷操作](./message.md#快捷操作) 功能。但是在单元测试中，我们可能经常需要让一个用户多次向机器人发送信息，这时一个会话系统就变得非常有用了。
-
-```js
-const { MockedApp } = require('koishi-test-utils')
-
-// 创建一个无服务端的 App 实例
-const app = new MockedApp()
-
-// 创建一个 QQ 号为 123 的私聊会话
-const session = app.createSession('user', 123)
-
-// 还是刚刚那个例子
-app.middleware(({ message, send }, next) => {
-  if (message === '天王盖地虎') return send('宝塔镇河妖')
-  return next()
-})
-
-test('example', () => {
-  // 将 foo 发送给机器人将会获得 bar 的回复
-  await session.shouldHaveResponse('天王盖地虎', '宝塔镇河妖')
-
-  // 将 foo 发送给机器人将会获得某些回复
-  await session.shouldHaveResponse('天王盖地虎')
-
-  // 将 foo 发送给机器人后将会获得与快照一致的回复
-  await session.shouldMatchSnapshot('天王盖地虎')
-
-  // 将 foo 发送给机器人将不会获得任何回复
-  await session.shouldHaveNoResponse('宫廷玉液酒')
-})
-```
-
-## 模拟服务器
-
-如果你想使用真正的 HTTP / WebSocket 服务器来测试，Koishi 也提供了相应的办法：
-
-```js
-const { createHttpServer } = require('koishi-test-utils')
-
-test('example', async () => {
-  // 创建一个真正的 CQHTTP 服务端
-  const server = await createHttpServer(token)
-
-  // 创建一个与之关联的 App
-  const app = server.createBoundApp()
-
-  // 运行 Koishi 应用
-  await app.start()
-
-  // 服务端向 Koishi 上报事件
-  await server.post(meta)
-
-  // 设置客户端请求的结果
-  server.setResponse(method, data)
-
-  // 判断上一次请求的内容
-  server.shouldHaveLastRequest(method, params)
-
-  // 关闭服务端和所有关联的 App
-  await server.close()
-})
-```
-
-## 模拟工具函数
-
-如果我们编写的插件中含有延时或者随机效果，测试工作会变得困难不少——因为我们希望所有测试的行为都能在短时间内符合预期地完成。这个时候，koishi-test-utils 也提供了一种解决方式。
-
-```js
-// 这里的 utils 相当于 koishi-utils 的一个副本
-// 在此基础上额外提供了测试时进行控制的方法
-const { utils } = require('koishi-test-utils')
-
-// 此后插件中的 randomPick() 调用将永远返回数组的第一个元素
-utils.randomPick.mockIndex(0)
-
-// 此后插件中的 randomInt() 调用将永远返回 3
-utils.randomInt.mockReturnValue(3)
-
-// 此后插件中的 sleep() 调用将不等待直接返回 Promise.resolve()
-utils.sleep.mockResolvedValue()
-```
-
-这些函数也有对应的 once 版本，它们将只生效一次：
-
-```js
-// 下一次插件中的 randomPick() 调用将返回数组的第一个元素
-utils.randomPick.mockIndexOnce(0)
-
-// 下一次插件中的 randomInt() 调用将返回 3
-utils.randomInt.mockReturnValueOnce(3)
-
-// 下一次插件中的 sleep() 调用将不等待直接返回 Promise.resolve()
-utils.sleep.mockResolvedValueOnce()
 ```
 
 ## 模拟数据库
 
-@koishijs/plugin-memory 是 Koishi 的一个数据库实现，只不过它将所有数据都留在内存中，方便调试：
+@koishijs/plugin-database-memory 是 Koishi 的一个基于内存的数据库实现，非常适合用于单元测试。
 
-```js
-const { App } = require('koishi')
-require('@koishijs/plugin-memory')
+```ts no-extra-header
+import { App } from 'koishi'
+import mock from '@koishijs/plugin-mock'
 
-// 使用内存数据库
-const app = new App({
-  database: { memory: {} },
+const app = new App()
+app.plugin(mock)
+app.plugin('database-memory')
+
+// 这次我们来测试一下这个指令
+app.command('foo', { authority: 2 }).action(() => 'bar')
+
+// 创建两个来自不同用户的客户端对象
+const client1 = app.mock.client('123')
+const client2 = app.mock.client('456')
+
+before(async () => {
+  await app.start()
+
+  // 在数据库中初始化两个用户，userId 分别为 123 和 456，权限等级分别为 1 和 2
+  // app.mock.initUser() 方法本质上只是 app.database.createUser() 的语法糖
+  await app.mock.initUser('123', 1)
+  await app.mock.initUser('456', 2)
 })
-```
 
-当然你也可以和上面的 MockedApp 结合起来使用：
+it('example 2', async () => {
+  // 用户 123 尝试调用 foo 指令，但是权限不足
+  await client1.shouldReply('foo', '权限不足。')
 
-```js
-const { MockedApp } = require('koishi-test-utils')
-require('@koishijs/plugin-memory')
-
-// 使用内存数据库
-const app = new MockedApp({
-  database: { memory: {} },
-})
-```
-
-## 测试数据库
-
-你可以使用 `testDatabase()` 方法测试你编写的数据库。下面是一个简单的例子，它测试了我们刚刚介绍的内存数据库：
-
-```js
-const { testDatabase } = require('koishi-test-utils')
-require('@koishijs/plugin-memory')
-
-testDatabase({ memory: {} })
-
-// 传入两个参数
-// 第一个参数是 App 的构造选项中的 database 参数
-// 第二个参数是每个测试阶段要执行的钩子函数，这些函数将用于手动清理数据库
-testDatabase({ memory: {} }, {
-  beforeEachUser: app => app.database.memory.store.user = [],
-  beforeEachGroup: app => app.database.memory.store.group = [],
-})
-```
-
-这个函数将测试所有 [内置的数据库方法](../../api/core/database.md) 是否已经被实现。
-
-除此以外，你还可以测试你扩展的数据库接口，就像这样：
-
-```js
-const { testDatabase } = require('koishi-test-utils')
-
-// 返回一个 App 实例
-const app = testDatabase(options, hooks)
-
-test('other methods', () => {
-  // do something with `app`
+  // 用户 456 得以正常调用 foo 指令
+  await client2.shouldReply('foo', 'bar')
 })
 ```
