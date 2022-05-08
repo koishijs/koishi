@@ -30,7 +30,7 @@
     "impl:database"
   ],
   "peerDependencies": {
-    "koishi": "^4.6.2"
+    "koishi": "^4.6.3"
   },
   "dependencies": {
     "@cosmotype/driver-level": "^1.0.1"
