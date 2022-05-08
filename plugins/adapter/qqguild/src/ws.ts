@@ -39,7 +39,6 @@ export class WebSocketClient extends Adapter<BotConfig, AdapterConfig> {
     if (typeof intents === 'number') {
       return intents
     }
-    Array.isArray(intents) || (intents = [intents])
     return intents.reduce((sum, intent) => sum | QQGuild.Bot.Intents[intent], 0)
   }
 

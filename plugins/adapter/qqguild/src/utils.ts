@@ -16,7 +16,7 @@ export const AdapterConfig: Schema<AdapterConfig> = Schema.intersect([
 type Intents = keyof typeof QQGuild.Bot.Intents
 
 export interface BotConfig extends Bot.BaseConfig, QQGuild.Bot.AppConfig {
-  intents: number | Intents | Intents[]
+  intents: number | Intents[]
 }
 
 export const BotConfig = Schema.intersect([
