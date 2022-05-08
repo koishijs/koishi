@@ -24,6 +24,7 @@ export const BotConfig = Schema.intersect([
     id: Schema.string().description('机器人 id。').required(),
     key: Schema.string().description('机器人 key。').role('secret').required(),
     token: Schema.string().description('机器人令牌。').role('secret').required(),
+    intents: Schema.number(),
   }),
 ])
 
