@@ -34,7 +34,7 @@ export default function runtime(ctx: Context) {
     for (const shortcut of ctx.app._shortcuts) {
       const { name, fuzzy, command, prefix, options = {}, args = [], replacement } = shortcut
       if (prefix && !parsed.appel || !command.context.match(session)) continue
-      if (!replacement) {
+      if (typeof replacement !== 'string') {
         if (typeof name === 'string') {
           if (!fuzzy && content !== name || !content.startsWith(name)) continue
           const message = content.slice(name.length)
@@ -56,12 +56,13 @@ export default function runtime(ctx: Context) {
       } else {
         let argv: Argv
         if (typeof name === 'string') {
-          if (name !== content) continue
-          argv = Argv.parse(replacement)
+          if (!content.startsWith(name)) continue
+          const message = content.slice(name.length)
+          argv = Argv.parse(`${replacement} ${message}`.trim())
         } else {
           const capture = name.exec(content)
           if (!capture) continue
-          argv = Argv.parse(escape(capture)(replacement))
+          argv = Argv.parse(escape(capture)(replacement).trim())
         }
         argv.session = session
         argv = command.parse(argv)
