@@ -28,9 +28,7 @@ const createSession = (bot: QQGuildBot, msg: Message) => {
     .replace(/<#(.+)>/, (_, $1) => segment.sharp($1))
   session.content = (msg as any as { attachments: any[] }).attachments
     .filter(({ contentType }) => contentType.startsWith('image'))
-    .reduce(
-      (content, attachment) => content + segment.image(attachment.url), session.content,
-    )
+    .reduce((content, attachment) => content + segment.image(attachment.url), session.content)
   return new Session(bot, session)
 }
 
