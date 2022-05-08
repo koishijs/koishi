@@ -23,10 +23,9 @@ const createSession = (bot: QQGuildBot, msg: Message) => {
   session.guildId = msg.guildId
   session.channelId = msg.channelId
   session.subtype = 'group'
-  session.content = msg.content
-    ?.replace(/<@!(.+)>/, (_, $1) => segment.at($1))
-    ?.replace(/<#(.+)>/, (_, $1) => segment.sharp($1))
-    ?? ''
+  session.content = (msg.content ?? '')
+    .replace(/<@!(.+)>/, (_, $1) => segment.at($1))
+    .replace(/<#(.+)>/, (_, $1) => segment.sharp($1))
   session.content = (msg as any as { attachments: any[] }).attachments
     .filter(({ contentType }) => contentType.startsWith('image'))
     .reduce(
