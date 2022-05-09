@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-adapter-telegram",
   "description": "Telegram Adapter for Koishi",
-  "version": "2.2.1",
+  "version": "2.2.4",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -15,7 +15,8 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/koishijs/koishi.git"
+    "url": "git+https://github.com/koishijs/koishi.git",
+    "directory": "plugins/adapter/telegram"
   },
   "bugs": {
     "url": "https://github.com/koishijs/koishi/issues"
@@ -29,11 +30,11 @@
     "impl:adapter"
   ],
   "peerDependencies": {
-    "koishi": "^4.5.1"
+    "koishi": "^4.6.3"
   },
   "devDependencies": {
     "@types/es-aggregate-error": "^1.0.2",
-    "@koishijs/plugin-mock": "^1.0.3"
+    "@koishijs/plugin-mock": "^1.0.4"
   },
   "dependencies": {
     "axios": "^0.24.0",

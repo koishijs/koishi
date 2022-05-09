@@ -98,7 +98,8 @@
 
 import { watch, ref, computed } from 'vue'
 import type { PropType } from 'vue'
-import { clone, deepEqual, getChoices, getFallback, isNullable, Schema, validate } from './utils'
+import { deepEqual, getChoices, getFallback, Schema, validate } from './utils'
+import { clone, isNullable } from 'cosmokit'
 import SchemaItem from './item.vue'
 import SchemaGroup from './group.vue'
 import SchemaPrimitive from './primitive.vue'

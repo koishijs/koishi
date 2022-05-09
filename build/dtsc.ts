@@ -219,7 +219,6 @@ const coreLibs = [
 const whitelist = [
   '@koishijs/plugin-mock',
   '@koishijs/plugin-database-memory',
-  '@koishijs/database-tests',
 ]
 
 async function prepareBuild(nodes: Node[]) {

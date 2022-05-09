@@ -24,6 +24,12 @@ ctx.on('guild-member-added', (session) => {
 这套事件系统与 EventEmitter 的一个不同点在于，无论是 `ctx.on()` 还是 `ctx.once()` 都会返回一个 dispose 函数，调用这个函数即可取消注册监听器。因此你其实不必使用 `ctx.once()` 和 `ctx.off()`。下面给一个只触发一次的监听器的例子：
 
 ```ts
+declare module 'koishi' {
+  interface EventMap {
+    foo(...args: any[]): void
+  }
+}
+// ---cut---
 // 回调函数只会被触发一次
 const dispose = ctx.on('foo', (...args) => {
   dispose()
@@ -39,7 +45,7 @@ const dispose = ctx.on('foo', (...args) => {
 - 对于相关的大量事件，推荐通过命名空间进行管理，使用 `/` 作为分隔符
 - 配对使用 xxx 和 before-xxx 命名时序相关的事件
 
-举个例子，@koishijs/plugin-teach 扩展了多达 20 个自定义事件。为了防止命名冲突，所有的事件都以 `dialogue/` 开头，并且在特定操作前触发的事件都包含了 `before-` 前缀，例如：
+举个例子，koishi-plugin-dialogue 扩展了多达 20 个自定义事件。为了防止命名冲突，所有的事件都以 `dialogue/` 开头，并且在特定操作前触发的事件都包含了 `before-` 前缀，例如：
 
 - dialogue/before-search: 获取搜索结果前触发
 - dialogue/search: 获取完搜索结果后触发

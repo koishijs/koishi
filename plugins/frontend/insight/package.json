@@ -15,12 +15,13 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/koishijs/koishi.git"
+    "url": "git+https://github.com/koishijs/koishi.git",
+    "directory": "plugins/frontend/insight"
   },
   "bugs": {
     "url": "https://github.com/koishijs/koishi/issues"
   },
-  "homepage": "https://koishi.js.org/plugins/insight/",
+  "homepage": "https://koishi.js.org/plugins/console/insight.html",
   "keywords": [
     "bot",
     "chatbot",
@@ -30,11 +31,11 @@
     "required:console"
   ],
   "peerDependencies": {
-    "@koishijs/plugin-console": "^3.2.4",
-    "koishi": "^4.5.1"
+    "@koishijs/plugin-console": "^3.2.10",
+    "koishi": "^4.6.3"
   },
   "devDependencies": {
-    "@koishijs/client": "^3.2.3",
+    "@koishijs/client": "^3.2.10",
     "@types/throttle-debounce": "^2.1.0"
   },
   "dependencies": {

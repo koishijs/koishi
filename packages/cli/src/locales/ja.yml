@@ -1,0 +1,11 @@
+commands:
+  exit:
+    description: BOT をシャットダウンする。
+
+    options:
+      restart: BOT を再起動する。
+
+    messages:
+      exiting: シャットダウン中……
+      restarting: 再起動中……
+      restarted: 再起動完了。

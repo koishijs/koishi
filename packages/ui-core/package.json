@@ -18,9 +18,9 @@
   },
   "homepage": "https://koishi.js.org",
   "peerDependencies": {
-    "vue": "^3.2.31"
+    "vue": "^3.2.33"
   },
   "dependencies": {
-    "@koishijs/core": "^4.5.1"
+    "@koishijs/core": "^4.6.3"
   }
 }

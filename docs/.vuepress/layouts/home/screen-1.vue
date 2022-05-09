@@ -7,7 +7,7 @@
       MADE WITH <span class="koi">LOVE</span>
     </p>
     <div class="actions">
-      <router-link class="action-button primary" to="/guide/introduction/template">Get Started</router-link>
+      <router-link class="action-button primary" to="/manual/starter/installation">Get Started</router-link>
       <a class="action-button secondary" @click="$emit('scroll-screen', 1)">Learn More</a>
     </div>
     <svg aria-hidden="true" focusable="false" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512" class="w-10 h-10">
@@ -40,13 +40,17 @@ defineEmits(['scroll-screen'])
     animation: bounce 1s infinite;
   }
 
+  .koi {
+    color: var(--c-love);
+  }
+
   .desc {
     color: var(--c-text-lightest);
     text-transform: uppercase;
     text-align: center;
     line-height: 2;
 
-     br {
+    br {
       @media (min-width: 600px) {
         display: none;
       }

@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/core",
   "description": "Core Features for Koishi",
-  "version": "4.5.1",
+  "version": "4.6.3",
   "main": "lib/node.js",
   "module": "lib/browser.js",
   "typings": "lib/index.d.ts",
@@ -15,7 +15,8 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/koishijs/koishi.git"
+    "url": "git+https://github.com/koishijs/koishi.git",
+    "directory": "packages/core"
   },
   "bugs": {
     "url": "https://github.com/koishijs/koishi/issues"
@@ -27,15 +28,16 @@
     "koishi"
   ],
   "devDependencies": {
-    "@koishijs/plugin-database-memory": "^1.1.0",
-    "@koishijs/plugin-mock": "^1.0.3",
+    "@koishijs/plugin-database-memory": "^1.2.0",
+    "@koishijs/plugin-mock": "^1.0.4",
     "chai": "^4.3.6",
     "chai-as-promised": "^7.1.1",
     "chai-shape": "^1.0.0"
   },
   "dependencies": {
-    "@koishijs/orm": "^1.0.0",
-    "@koishijs/utils": "^5.2.1",
-    "fastest-levenshtein": "^1.0.12"
+    "@koishijs/utils": "^5.4.2",
+    "cosmotype": "^1.0.9",
+    "fastest-levenshtein": "^1.0.12",
+    "ns-require": "^1.1.2"
   }
 }

@@ -32,6 +32,29 @@ export default {
   ['Koishi', '一直挖坑一直爽'],
 ]"/>
 
-其中 `match` 可以是一个字符串或正则表达式，用来表示要匹配的内容；`reply` 可以是一个字符串或传入字符串的函数，用来表示输出的结果。`respondent` 数组会按照从上到下的顺序进行匹配。
+如果想要加入更高级和用户可定义的问答系统，可以参见 [koishi-plugin-dialogue](../../community/dialogue/)。
 
-如果想要加入更高级和用户可定义的问答系统，可以参见 [@koishijs/plugin-teach](../teach.md)。
+## 配置项
+
+### options.rules
+
+- 类型: `Array`
+
+`respondent` 的规则数组，按照从上到下的顺序进行匹配。
+
+### options.rules[].match
+
+- 类型: `string | RegExp`
+
+要匹配的内容。
+
+### options.rules[].reply
+
+- 类型: `string | ((...capture: string[]) => string)`
+
+要做出的响应。
+
+这个属性的行为类似于 [`String.prototype.replace()`](https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Global_Objects/String/replace#%E5%8F%82%E6%95%B0)：
+
+- 如果 `reply` 是字符串，则直接输出此字符串作为响应
+- 如果 `reply` 是函数，则传入 match 的匹配结果作为参数，输出返回的字符串作为响应

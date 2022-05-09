@@ -1,11 +1,10 @@
 import { App } from 'koishi'
 import mock from '@koishijs/plugin-mock'
-import memory from '@koishijs/plugin-database-memory'
 
 const app = new App()
 
 app.plugin(mock)
-app.plugin(memory)
+app.plugin('database-memory')
 
 app.i18n.define('$zh', 'commands.help.messages.global-epilog', 'EPILOG')
 
@@ -37,7 +36,7 @@ describe('Help Command', () => {
       '    -H, --show-hidden  查看隐藏的选项和指令',
     ].join('\n'))
 
-    await client.shouldReply('help heip', '指令未找到。您要找的是不是“help”？发送空行或句号以使用推测的指令。')
+    await client.shouldReply('help heip', '指令未找到。您要找的是不是“help”？发送句号以使用推测的指令。')
     await client.shouldReply('.', message)
     await client.shouldReply('help -h', message)
   })
@@ -62,6 +61,7 @@ describe('Help Command', () => {
     const bar = app
       .command('bar <arg:number>', 'DESCRIPTION', { hideOptions: true })
       .option('opt1', '选项1', { authority: 2 })
+      .option('opt1', '-n  选项2', { value: false })
       .option('opt2', '[arg:boolean]  选项3')
       .option('opt3', '-o [arg:boolean]', { hidden: true })
 
@@ -73,6 +73,7 @@ describe('Help Command', () => {
       message,
       '可用的选项有：',
       '    --opt1  选项1',
+      '    -n  选项2',
       '    --opt2 [arg]  选项3',
     ].join('\n'))
 
@@ -81,6 +82,7 @@ describe('Help Command', () => {
       '可用的选项有：',
       '    -h, --help  显示此信息',
       '    --opt1  选项1',
+      '    -n  选项2',
       '    --opt2 [arg]  选项3',
       '    -o, --opt3 [arg]',
     ].join('\n'))
@@ -89,6 +91,7 @@ describe('Help Command', () => {
       message,
       '可用的选项有（括号内为额外要求的权限等级）：',
       '    (2) --opt1  选项1',
+      '    (2) -n  选项2',
       '    --opt2 [arg]  选项3',
     ].join('\n'))
   })

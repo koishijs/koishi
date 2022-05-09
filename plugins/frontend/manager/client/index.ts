@@ -56,7 +56,7 @@ export default (ctx: Context) => {
     icon: 'box-open',
     order: 610,
     authority: 4,
-    fields: ['market', 'packages', 'dependencies'],
+    fields: ['market', 'dependencies'],
     component: Dependencies,
     badge: () => overrideCount.value,
   })

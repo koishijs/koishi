@@ -1,5 +1,5 @@
 import { intersects } from 'semver'
-import { Dict, pick } from '@koishijs/utils'
+import { Dict, pick } from 'cosmokit'
 
 export interface User {
   name: string
@@ -19,10 +19,6 @@ export interface PackageJson extends BasePackage {
   devDependencies?: Dict<string>
   peerDependencies?: Dict<string>
   optionalDependencies?: Dict<string>
-}
-
-export interface LocalPackage extends PackageJson {
-  private?: boolean
 }
 
 export interface RemotePackage extends PackageJson {

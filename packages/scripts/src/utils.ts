@@ -111,6 +111,7 @@ export interface TsConfig {
 export function spawnAsync(args: string[]) {
   const child = spawn(args[0], args.slice(1), { cwd, stdio: 'pipe' })
   return new Promise<number>((resolve) => {
+    child.stderr.pipe(process.stderr)
     child.on('close', resolve)
   })
 }

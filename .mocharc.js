@@ -1,8 +1,6 @@
 process.env.TS_NODE_PROJECT = 'tsconfig.test.json'
 
 const specs = [
-  'community/chai-shape/tests/*.spec.ts',
-  'community/schemastery/tests/*.spec.ts',
   'packages/core/tests/*.spec.ts',
   'packages/segment/tests/*.spec.ts',
   'packages/utils/tests/*.spec.ts',
@@ -20,17 +18,9 @@ const specs = [
   'plugins/common/recall/tests/*.spec.ts',
   'plugins/common/repeater/tests/*.spec.ts',
   'plugins/common/respondent/tests/*.spec.ts',
-  'plugins/database/level/tests/*.spec.ts',
-  'plugins/database/memory/tests/*.spec.ts',
-  'plugins/database/mongo/tests/*.spec.ts',
-  'plugins/database/mysql/tests/*.spec.ts',
-  'plugins/database/sqlite/tests/*.spec.ts',
-  // 'plugins/eval/tests/*.spec.ts',
-  // 'plugins/github/tests/*.spec.ts',
-  'plugins/teach/tests/*.spec.ts',
 ]
 
-const folders = ['a11y', 'common', 'database', 'frontend']
+const folders = ['a11y', 'common', 'frontend']
 
 const libraries = {}
 

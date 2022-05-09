@@ -18,6 +18,7 @@ export function enableHelp<U extends User.Field, G extends Channel.Field, A exte
   return cmd.option('help', '-h', {
     hidden: true,
     descPath: 'commands.help.options.help',
+    notUsage: true,
   })
 }
 
@@ -142,6 +143,13 @@ function getOptions(command: Command, session: Session<'authority'>, config: Hel
     if (description) line += '  ' + description
     line = command.app.chain('help/option', line, option, command, session)
     output.push('    ' + line)
+    for (const value in option.valuesSyntax) {
+      let line = `${authority}${option.valuesSyntax[value]}`
+      const description = session.text([`commands.${command.name}.options.${option.name}.${value}`, ''])
+      if (description) line += '  ' + description
+      line = command.app.chain('help/option', line, option, command, session)
+      output.push('    ' + line)
+    }
   })
 
   return output

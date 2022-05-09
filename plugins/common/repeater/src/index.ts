@@ -1,11 +1,5 @@
 import { Context, Dict, Random, Schema, Session } from 'koishi'
 
-declare module 'koishi' {
-  interface Modules {
-    repeater: typeof import('.')
-  }
-}
-
 interface RepeatState {
   content: string
   repeated: boolean

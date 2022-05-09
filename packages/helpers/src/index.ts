@@ -14,6 +14,8 @@ function loadI18n(app: App) {
   refs.add(app)
   app.i18n.define('zh', require('./locales/zh'))
   app.i18n.define('en', require('./locales/en'))
+  app.i18n.define('ja', require('./locales/ja'))
+  app.i18n.define('fr', require('./locales/fr'))
 }
 
 export function handleError<U extends User.Field, G extends Channel.Field, A extends any[], O extends {}>(
@@ -53,7 +55,7 @@ export function adminUser<U extends User.Field, G extends Channel.Field, A exten
 
     if (!data) {
       notFound = true
-      const temp = app.model.create('user')
+      const temp = app.model.tables.user.create()
       temp[platform] = userId
       session.user = observe(temp, async (diff) => {
         await app.database.createUser(platform, userId, diff)
@@ -122,7 +124,7 @@ export function adminChannel<U extends User.Field, G extends Channel.Field, A ex
 
     if (!data) {
       notFound = true
-      const temp = app.model.create('channel')
+      const temp = app.model.tables.channel.create()
       temp.platform = platform
       temp.id = channelId
       session.channel = observe(temp, async (diff) => {

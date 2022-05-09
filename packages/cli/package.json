@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/cli",
   "description": "CLI for Koishi",
-  "version": "4.5.1",
+  "version": "4.6.3",
   "typings": "index.d.ts",
   "engines": {
     "node": ">=12.0.0"
@@ -17,7 +17,8 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/koishijs/koishi.git"
+    "url": "git+https://github.com/koishijs/koishi.git",
+    "directory": "packages/cli"
   },
   "bugs": {
     "url": "https://github.com/koishijs/koishi/issues"
@@ -31,17 +32,18 @@
     "daemon"
   ],
   "peerDependencies": {
-    "koishi": "^4.5.1"
+    "koishi": "^4.6.3"
   },
   "devDependencies": {
     "@types/prompts": "^2.4.0",
     "@types/throttle-debounce": "^2.1.0"
   },
   "dependencies": {
-    "@koishijs/loader": "^1.0.0",
+    "@koishijs/loader": "^1.0.1",
     "cac": "^6.7.12",
     "chokidar": "^3.5.3",
     "dotenv": "^16.0.0",
+    "ns-require": "^1.1.2",
     "kleur": "^4.1.4",
     "prompts": "^2.4.2",
     "throttle-debounce": "^3.0.1"

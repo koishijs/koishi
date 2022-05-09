@@ -33,21 +33,13 @@ yarn add mocha chai @koishijs/plugin-mock -D
 
 接着创建存放测试文件的 `tests` 目录，并在其中新建一个 `index.spec.js` 文件，开始编写你的单元测试：
 
-::: code-group languages tests/index.spec
-```js
-const { App } = require('koishi')
-
-const app = new App()
-app.plugin('mock')
-```
-```ts no-extra-header
+```ts title=tests/index.spec.js
 import { App } from 'koishi'
 import mock from '@koishijs/plugin-mock'
 
 const app = new App()
 app.plugin(mock)
 ```
-:::
 
 ### 使用 TypeScript
 
@@ -121,11 +113,10 @@ it('example 1', async () => {
 ```ts no-extra-header
 import { App } from 'koishi'
 import mock from '@koishijs/plugin-mock'
-import memory from '@koishijs/plugin-database-memory'
 
 const app = new App()
 app.plugin(mock)
-app.plugin(memory)
+app.plugin('database-memory')
 
 // 这次我们来测试一下这个指令
 app.command('foo', { authority: 2 }).action(() => 'bar')
