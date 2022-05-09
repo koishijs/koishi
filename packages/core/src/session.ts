@@ -1,6 +1,6 @@
 import { Channel, Tables, User } from './database'
 import { Command } from './command'
-import { defineProperty, Logger, makeArray, observe, Promisify, Random, segment } from '@koishijs/utils'
+import { defineProperty, isNullable, Logger, makeArray, observe, Promisify, Random, segment } from '@koishijs/utils'
 import { Argv } from './parser'
 import { Middleware, Next } from './context'
 import { App } from './app'
@@ -95,7 +95,7 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
   parsed?: Parsed
 
   private _promise: Promise<string>
-  private _queued: NodeJS.Timeout
+  private _queuedTimeout: NodeJS.Timeout
   private _queuedMessages: [string, number][]
 
   constructor(bot: Bot, session: Partial<Session.Payload>) {
@@ -168,29 +168,29 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
   }
 
   cancelQueued(delay = this.app.options.delay.cancel) {
-    if (typeof this._queued !== 'undefined') clearTimeout(this._queued)
+    clearTimeout(this._queuedTimeout)
     this._queuedMessages = []
-    this._queued = setTimeout(() => this._next(), delay)
+    this._queuedTimeout = setTimeout(() => this._next(), delay)
   }
 
   private _next() {
     const message = this._queuedMessages.shift()
-    if (typeof message === 'undefined') {
-      this._queued = undefined
+    if (!message) {
+      this._queuedTimeout = undefined
       return
     }
     this.send(message[0])
-    this._queued = setTimeout(() => this._next(), message[1])
+    this._queuedTimeout = setTimeout(() => this._next(), message[1])
   }
 
   async sendQueued(content: string, delay?: number) {
     if (!content) return
-    if (typeof delay === 'undefined') {
+    if (isNullable(delay)) {
       const { message, character } = this.app.options.delay
       delay = Math.max(message, character * content.length)
     }
     this._queuedMessages.push([content, delay])
-    if (typeof this._queued === 'undefined') this._next()
+    if (!this._queuedTimeout) this._next()
   }
 
   resolveValue<T>(source: T | ((session: Session) => T)): T {
