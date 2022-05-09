@@ -1,5 +1,5 @@
 export interface Message {
-  id: string
+  id?: number
   content: string
   messageId: string
   platform: string

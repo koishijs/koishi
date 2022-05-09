@@ -1,6 +1,5 @@
 import { Bot, Context, Logger, segment, Service, Session } from 'koishi'
 import { Message } from './types'
-import snowflakes from './snowflakes'
 
 declare module 'koishi' {
   interface Tables {
@@ -35,7 +34,7 @@ export class MessageDatabase extends Service {
   // platform:channelId, session.cid
   #queueRunning: boolean = true
   #messageRecord: Record<string, {
-    inDb: string
+    inDb: number
     received: string
   }> = {}
 
@@ -56,7 +55,7 @@ export class MessageDatabase extends Service {
 
   async start() {
     this.ctx.model.extend('message', {
-      id: 'string',
+      id: 'integer',
       content: 'text',
       platform: 'string',
       guildId: 'string',
@@ -72,6 +71,7 @@ export class MessageDatabase extends Service {
       deleted: 'integer',
     }, {
       primary: 'id',
+      autoInc: true,
     })
 
     // 如果是一个 platform 有多个 bot, bot 状态变化, 频道状态变化待解决
@@ -204,7 +204,6 @@ export class MessageDatabase extends Service {
       session.content = session.content.slice(quote.capture[0].length)
     }
     return {
-      id: snowflakes().toString(),
       messageId: session.messageId,
       content: session.content,
       platform: bot.platform,
@@ -325,7 +324,7 @@ export class MessageDatabase extends Service {
   }
 
   async #onMessage(session: Session) {
-    const { assignee } = await session.observeChannel(['assignee'])
+    const { assignee } = await this.ctx.database.getChannel(session.platform, session.channelId, ['assignee'])
     if (assignee !== session.selfId) return
     if ((
       this.#status[session.cid] === ChannelStatus.SYNCED || this.#status[session.cid] === ChannelStatus.FAILED
@@ -360,4 +359,3 @@ export async function apply(ctx: Context) {
 }
 
 export * from './types'
-export * from './snowflakes'
