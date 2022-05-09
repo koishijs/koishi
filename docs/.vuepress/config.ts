@@ -323,7 +323,6 @@ module.exports = {
 
     docsRepo: 'koishijs/koishi',
     docsDir: 'docs',
-    docsBranch: 'next',
     editLinkText: '帮助我们改善此页面',
     contributors: false,
   }),

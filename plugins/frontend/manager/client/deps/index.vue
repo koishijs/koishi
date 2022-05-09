@@ -1,7 +1,7 @@
 <template>
   <k-card class="page-deps">
     <div class="controls">
-      <el-checkbox v-model="config.showDepsOnly">只显示依赖的插件</el-checkbox>
+      <el-checkbox v-model="config.hideWorkspace">忽略工作区依赖</el-checkbox>
       <span class="float-right" v-if="!overrideCount">当前没有变更的依赖</span>
       <template v-else>
         <k-button class="float-right" solid @click="install">更新依赖</k-button>
@@ -39,18 +39,19 @@
 
 <script lang="ts" setup>
 
-import { computed } from 'vue'
-import { store, send } from '@koishijs/client'
+import { computed, watch } from 'vue'
+import { store, send, socket } from '@koishijs/client'
 import { config, overrideCount } from '../utils'
 import { message, loading } from '@koishijs/client'
 import PackageView from './package.vue'
 
 const names = computed(() => {
-  const data = config.showDepsOnly
-    ? Object.keys(store.dependencies).filter(name => store.packages[name])
-    : Object.values(store.packages).map(item => item.name).filter(Boolean)
+  let data = Object.keys(store.dependencies)
+  if (config.hideWorkspace) {
+    data = data.filter(name => !store.dependencies[name].workspace)
+  }
   for (const key in config.override) {
-    if (!data.includes(key) && store.market[key] && config.override[key]) data.push(key)
+    if (!data.includes(key) && store.market[key]) data.push(key)
   }
   return data.sort((a, b) => a > b ? 1 : -1)
 })
@@ -59,16 +60,22 @@ async function install() {
   const instance = loading({
     text: '正在更新依赖……',
   })
+  const dispose = watch(socket, () => {
+    message.success('安装成功！')
+    dispose()
+    instance.close()
+  })
   try {
     const code = await send('market/install', config.override)
-    if (code === 0) {
-      message.success('安装成功！')
-    } else {
+    if (code) {
       message.error('安装失败！')
+    } else {
+      message.success('安装成功！')
     }
   } catch (err) {
     message.error('安装超时！')
   } finally {
+    dispose()
     instance.close()
   }
 }
@@ -105,7 +112,7 @@ main.route-dependencies {
     }
 
     tr:hover {
-      background-color: var(--bg1);
+      background-color: var(--hover-bg);
     }
 
     tr:first-child {

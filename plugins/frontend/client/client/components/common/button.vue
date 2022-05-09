@@ -54,7 +54,7 @@ function onClick(event: MouseEvent) {
   border-radius: 0.4em;
   cursor: pointer;
   padding: 0.4em 1em;
-  transition: color 0.3s ease, border-color 0.3s ease, background-color 0.3s ease;
+  transition: var(--color-transition);
   display: inline-block;
   &.round {
     border-radius: 50%;
@@ -116,22 +116,7 @@ function onClick(event: MouseEvent) {
     }
   }
 
-  .k-button-group > &:not(:first-child) {
-    border-top-left-radius: 0;
-    border-bottom-left-radius: 0;
-  }
-  .k-button-group > &:not(:last-child) {
-    border-top-right-radius: 0;
-    border-bottom-right-radius: 0;
-    &:not(:hover) {
-      border-right-width: 0;
-    }
-  }
-  .k-button-group > &:hover + & {
-    border-left-width: 0;
-  }
-
-  *:not(.k-button-group) > & + & {
+  & + & {
     margin: 0 1rem;
   }
 }

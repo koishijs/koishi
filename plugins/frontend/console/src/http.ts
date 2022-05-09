@@ -50,7 +50,7 @@ class HttpService extends DataService<string[]> {
     })
   }
 
-  async get() {
+  get() {
     const { devMode, uiPath } = this.config
     const filenames: string[] = []
     for (const key in this.data) {
@@ -135,6 +135,7 @@ class HttpService extends DataService<string[]> {
       },
       optimizeDeps: {
         include: [
+          'schemastery',
           'element-plus',
         ],
       },

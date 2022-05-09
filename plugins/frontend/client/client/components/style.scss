@@ -131,6 +131,30 @@ html.dark .el-switch {
   --el-switch-off-color: #72767d;
 }
 
+.right-adjacent {
+  &.k-button, &.el-select .el-input__wrapper {
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+  }
+
+  &:hover {
+    z-index: 100;
+  }
+  &:hover + .left-adjacent {
+    border-left-color: transparent;
+  }
+}
+
+.left-adjacent {
+  z-index: 0;
+  margin-left: -1px;
+
+  &.k-button, &.el-select .el-input__wrapper {
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+  }
+}
+
 .el-table__body-wrapper,
 .el-table__footer-wrapper,
 .el-table__header-wrapper {
