@@ -11,7 +11,7 @@ general:
   second: 秒
 
 internal:
-  low-authority: 沒有足夠的權限。
+  low-authority: 權限不足。
   insufficient-arguments: 參數個數不足，輸入「help」檢視用法。
   redunant-arguments: 參數個數冗餘，輸入「help」檢視用法。
   invalid-argument: 參數 {0} 無效，{1}
