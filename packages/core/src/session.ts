@@ -107,7 +107,7 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
     defineProperty(this, 'channel', null)
     defineProperty(this, 'id', Random.id())
     defineProperty(this, '_queuedMessages', [])
-    defineProperty(this, '_queued', undefined)
+    defineProperty(this, '_queuedTimeout', undefined)
   }
 
   get uid() {
