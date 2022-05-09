@@ -120,6 +120,14 @@ type FieldCollector<K extends string> =
 
 设置快捷方式。
 
+### cmd.shortcut(name, replacement?)
+
+- **name:** `string | RegExp` 快捷方式名
+- **replacement:** `string` 要带的参数和选项
+- 返回值: `this`
+
+设置快捷方式。由于 [`cmd.shortcut(name, config)`](#cmd-shortcut-name-config) 并没有对参数进行类型转换，当你的 shortcut 依赖参数或选项的类型转换时可以使用该方法。
+
 ### cmd.subcommand(name, desc?, config?)
 
 - **name:** `string` 指令名以及可能的参数
