@@ -8,6 +8,4 @@ declare module 'koishi' {
   }
 }
 
-export default Adapter.define('feishu', FeishuBot, {
-  http: HttpServer,
-}, () => 'http')
+export default Adapter.define('feishu', FeishuBot, HttpServer)
