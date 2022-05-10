@@ -35,17 +35,10 @@ const createSession = (bot: QQGuildBot, msg: Message) => {
 export class WebSocketClient extends Adapter<BotConfig, AdapterConfig> {
   static schema = BotConfig
 
-  resolveIntents(intents: BotConfig['intents']): number {
-    if (typeof intents === 'number') {
-      return intents
-    }
-    return intents.reduce((sum, intent) => sum | QQGuild.Bot.Intents[intent], 0)
-  }
-
   async connect(bot: QQGuildBot) {
     Object.assign(bot, await bot.getSelf())
     bot.resolve()
-    await bot.$innerBot.startClient(this.resolveIntents(bot.config.intents))
+    await bot.$innerBot.startClient(bot.config.intents)
     bot.$innerBot.on('ready', bot.resolve)
     bot.$innerBot.on('message', msg => {
       const session = createSession(bot, msg)
