@@ -17,7 +17,7 @@ const Intents = QQGuild.Bot.Intents
 type Intents = keyof typeof Intents
 
 export interface BotConfig extends Bot.BaseConfig, QQGuild.Bot.AppConfig {
-  intents: number | Intents[]
+  intents: number
 }
 
 export const BotConfig = Schema.intersect([
