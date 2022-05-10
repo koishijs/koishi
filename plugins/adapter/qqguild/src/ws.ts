@@ -45,9 +45,6 @@ export class WebSocketClient extends Adapter<BotConfig, AdapterConfig> {
   async connect(bot: QQGuildBot) {
     Object.assign(bot, await bot.getSelf())
     bot.resolve()
-    if (bot.config.intents === undefined) {
-      throw new Error('intents is required')
-    }
     await bot.$innerBot.startClient(this.resolveIntents(bot.config.intents))
     bot.$innerBot.on('ready', bot.resolve)
     bot.$innerBot.on('message', msg => {

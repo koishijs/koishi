@@ -1,6 +1,6 @@
-import { Guild as GGuild, User as GUser } from '@qq-guild-sdk/core/dist/common'
-import { Adapter, Bot, Schema } from 'koishi'
+import { Guild as GGuild, User as GUser } from '@qq-guild-sdk/core'
 import * as QQGuild from '@qq-guild-sdk/core'
+import { Adapter, Bot, Schema } from 'koishi'
 
 export interface AdapterConfig extends Adapter.WebSocketClient.Config, Omit<QQGuild.Bot.Options, 'app'> {}
 
@@ -13,7 +13,8 @@ export const AdapterConfig: Schema<AdapterConfig> = Schema.intersect([
   Adapter.WebSocketClient.Config,
 ])
 
-type Intents = keyof typeof QQGuild.Bot.Intents
+const Intents = QQGuild.Bot.Intents
+type Intents = keyof typeof Intents
 
 export interface BotConfig extends Bot.BaseConfig, QQGuild.Bot.AppConfig {
   intents: number | Intents[]
@@ -24,7 +25,7 @@ export const BotConfig = Schema.intersect([
     id: Schema.string().description('机器人 id。').required(),
     key: Schema.string().description('机器人 key。').role('secret').required(),
     token: Schema.string().description('机器人令牌。').role('secret').required(),
-    intents: Schema.number().description('需要订阅的机器人事件。'),
+    intents: Schema.number().description('需要订阅的机器人事件。').default(Intents.PUBLIC_GUILD_MESSAGES),
   }),
 ])
 
