@@ -1,7 +1,5 @@
-import { Context, Schema } from 'koishi'
+import { DatabaseService, Schema } from 'koishi'
 import MongoDriver from '@cosmotype/driver-mongo'
-
-export const name = 'MemoryDatabase'
 
 export type Config = MongoDriver.Config
 
@@ -14,8 +12,4 @@ export const Config: Schema<Config> = Schema.object({
   database: Schema.string().description('要访问的数据库名。').default('koishi'),
 })
 
-export function apply(ctx: Context, config: Config) {
-  const driver = new MongoDriver(ctx.model, config)
-  ctx.on('ready', () => driver.start())
-  ctx.on('dispose', () => driver.stop())
-}
+export default DatabaseService.plugin(MongoDriver, Config)

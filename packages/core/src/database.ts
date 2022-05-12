@@ -1,7 +1,7 @@
 import * as utils from '@koishijs/utils'
-import { Awaitable, Dict, MaybeArray } from '@koishijs/utils'
+import { Awaitable, Dict, MaybeArray, Schema } from '@koishijs/utils'
 import { Database, Driver, Result, Update } from 'cosmotype'
-import { Context } from './context'
+import { Context, Plugin } from './context'
 import ns from 'ns-require'
 
 export interface User {
@@ -184,6 +184,18 @@ export namespace DatabaseService {
       extension(Database)
     } else {
       Object.assign(Database.prototype, extension)
+    }
+  }
+
+  export function plugin<C>(DriverClass: new (database: Database, config: C) => Driver, config: Schema<C, any>): Plugin.Object<C> {
+    return {
+      name: DriverClass.name,
+      Config: config,
+      apply(ctx, config) {
+        const driver = new DriverClass(ctx.model, config)
+        ctx.on('ready', () => driver.start())
+        ctx.on('dispose', () => driver.stop())
+      },
     }
   }
 }

@@ -1,7 +1,5 @@
-import { Context, Schema } from 'koishi'
+import { DatabaseService, Schema } from 'koishi'
 import MySQLDriver from '@cosmotype/driver-mysql'
-
-export const name = 'MemoryDatabase'
 
 export type Config = MySQLDriver.Config
 
@@ -13,8 +11,4 @@ export const Config: Schema<Config> = Schema.object({
   database: Schema.string().description('要访问的数据库名。').default('koishi'),
 })
 
-export function apply(ctx: Context, config: Config) {
-  const driver = new MySQLDriver(ctx.model, config)
-  ctx.on('ready', () => driver.start())
-  ctx.on('dispose', () => driver.stop())
-}
+export default DatabaseService.plugin(MySQLDriver, Config)
