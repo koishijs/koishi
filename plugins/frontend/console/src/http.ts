@@ -126,6 +126,7 @@ class HttpService extends DataService<string[]> {
       },
       plugins: [vue()],
       resolve: {
+        dedupe: ['vue'],
         alias: {
           '../client.js': '@koishijs/client',
           '../vue.js': 'vue',
