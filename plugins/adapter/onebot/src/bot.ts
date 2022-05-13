@@ -186,6 +186,22 @@ export class OneBotBot extends Bot<BotConfig> {
   async deleteFriend(userId: string) {
     await this.internal.deleteFriend(userId)
   }
+
+  async getChannelMessageHistory(channelId: string, before?: string) {
+    // include `before` message
+    let list: OneBot.Message[]
+    if (before) {
+      const msg = await this.internal.getMsg(before)
+      if (msg?.message_seq) {
+        list = (await this.internal.getGroupMsgHistory(Number(channelId), msg.message_seq)).messages
+      }
+    } else {
+      list = (await this.internal.getGroupMsgHistory(Number(channelId))).messages
+    }
+
+    // 从旧到新
+    return list.map(OneBot.adaptMessage)
+  }
 }
 
 export class QQGuildBot extends OneBotBot {

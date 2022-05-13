@@ -125,6 +125,19 @@ abstract class TelegramAdapter extends Adapter<BotConfig, AdapterConfig> {
       session.content = ''
       session.channelId = update.chat_join_request.chat.id.toString()
       session.guildId = session.channelId
+    } else if (update.my_chat_member) {
+      session.timestamp = update.my_chat_member.date * 1000
+      session.messageId = `${update.my_chat_member.chat.id}@${update.my_chat_member.from.id}`
+      session.content = ''
+      session.channelId = update.my_chat_member.chat.id.toString()
+      session.guildId = session.channelId
+      if (update.my_chat_member.old_chat_member.user.id.toString() === bot.selfId) {
+        if (update.my_chat_member.new_chat_member.status === 'left') {
+          session.type = 'group-deleted'
+        } else if (update.my_chat_member.old_chat_member.status === 'left') {
+          session.type = 'group-added'
+        }
+      }
     }
     logger.debug('receive %o', session)
     this.dispatch(new Session(bot, session))
