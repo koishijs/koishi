@@ -50,6 +50,9 @@ export class HttpServer extends Adapter<BotConfig, AdapterConfig> {
         return
       }
 
+      ctx.body = 'OK'
+      ctx.status = 200
+
       // dispatch message
       this.dispatchSession(this.tryDecryptBody(ctx.request.body))
     })
@@ -57,12 +60,13 @@ export class HttpServer extends Adapter<BotConfig, AdapterConfig> {
 
   async stop() {}
 
-  async dispatchSession(body: BaseEvent) {
+  async dispatchSession(body: BaseEvent): Promise<void> {
     const { header } = body
     const { event_type } = header
     switch (event_type) {
       case 'im.message.receive_v1':
         // https://open.feishu.cn/document/uAjLw4CM/ukTMukTMukTM/reference/im-v1/message/events/receive
+        console.log('received message: %o', body)
         break
 
       default:
@@ -70,7 +74,7 @@ export class HttpServer extends Adapter<BotConfig, AdapterConfig> {
     }
   }
 
-  private tryDecryptBody(body: any) {
+  private tryDecryptBody(body: any): any {
     // try to decrypt message if encryptKey is set
     // https://open.feishu.cn/document/ukTMukTMukTM/uYDNxYjL2QTM24iN0EjN/event-subscription-configure-/encrypt-key-encryption-configuration-case
     if (this.cipher && typeof body.encrypt === 'string') {
