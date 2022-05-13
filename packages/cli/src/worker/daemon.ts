@@ -30,6 +30,7 @@ export function apply(ctx: Context, config: Config = {}) {
     ctx.i18n.define('zh', require('../locales/zh'))
     ctx.i18n.define('ja', require('../locales/ja'))
     ctx.i18n.define('fr', require('../locales/fr'))
+    ctx.i18n.define('zh-tw', require('../locales/zh-tw'))
 
     ctx
       .command('exit', { authority: 4 })
