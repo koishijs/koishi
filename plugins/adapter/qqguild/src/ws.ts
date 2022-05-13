@@ -1,5 +1,4 @@
 import { Message } from '@qq-guild-sdk/core'
-import * as QQGuild from '@qq-guild-sdk/core'
 import { Logger, segment } from '@koishijs/utils'
 import { Adapter, Session } from 'koishi'
 import { QQGuildBot } from './bot'
