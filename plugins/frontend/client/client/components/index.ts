@@ -24,7 +24,6 @@ import {
   ElTree,
 } from 'element-plus'
 
-import chat from './chat'
 import common from './common'
 import form from './form'
 import * as icons from './icons'
@@ -64,6 +63,9 @@ export * from './form'
 export * from './layout'
 export * from './notice'
 
+export * from '@satorijs/ui-chat'
+export * from '@satorijs/ui-virtual'
+
 export { icons }
 
 export default function (app: App) {
@@ -89,7 +91,6 @@ export default function (app: App) {
   app.use(ElTableColumn)
   app.use(ElTimePicker)
 
-  app.use(chat)
   app.use(common)
   app.use(form)
   app.use(icons)
