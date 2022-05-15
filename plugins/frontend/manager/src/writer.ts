@@ -93,6 +93,7 @@ export default class ConfigWriter {
     const name = 'adapter-' + bot.adapter.platform
     this.plugins[name].bots.splice(index, 1)
     this.loader.writeConfig()
-    return this.ctx.bots.remove(id)
+    this.ctx.bots.remove(id)
+    return bot.stop()
   }
 }
