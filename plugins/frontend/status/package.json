@@ -37,8 +37,5 @@
     "@koishijs/cli": "^4.6.3",
     "echarts": "^5.3.2",
     "vue-echarts": "^6.0.2"
-  },
-  "dependencies": {
-    "systeminformation": "^5.11.14"
   }
 }
