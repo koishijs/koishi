@@ -16,14 +16,18 @@
         <span class="timestamp">{{ formatDateTime(new Date(data.timestamp)) }}</span>
       </div>
     </template>
-    <message-content :content="data.content"/>
+    <message-content :content="data.content">
+      <template #image="{ url }">
+        <chat-image :src="url"></chat-image>
+      </template>
+    </message-content>
   </div>
 </template>
 
 <script lang="ts" setup>
 
 import { Message } from '@koishijs/plugin-chat/src'
-import { MessageContent } from '@koishijs/client'
+import { MessageContent, ChatImage } from '@koishijs/client'
 
 defineEmits(['locate'])
 

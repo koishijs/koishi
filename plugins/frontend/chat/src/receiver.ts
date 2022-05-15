@@ -168,7 +168,6 @@ export default function receiver(ctx: Context, config: RefreshConfig = {}) {
         params.abstract += `[${stl(code.type as SegmentType)}]`
       }
     }
-    params.content = codes.map(({ type, data }) => segment(type, data)).join('')
   }
 
   async function prepareContent(session: Session, message: Message, timestamp: number) {

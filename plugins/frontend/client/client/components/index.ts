@@ -26,6 +26,7 @@ import {
 
 import common from './common'
 import form from './form'
+import ChatImage from './chat/image.vue'
 import * as icons from './icons'
 import layout from './layout'
 import notice from './notice'
@@ -66,7 +67,7 @@ export * from './notice'
 export * from '@satorijs/ui-chat'
 export * from '@satorijs/ui-virtual'
 
-export { icons }
+export { icons, ChatImage }
 
 export default function (app: App) {
   app.use(ElButton)

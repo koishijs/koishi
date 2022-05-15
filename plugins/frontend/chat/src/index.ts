@@ -1,4 +1,4 @@
-import { Context, Logger, Schema } from 'koishi'
+import { Context, Logger, Schema, segment } from 'koishi'
 import { resolve } from 'path'
 import receiver, { Message, RefreshConfig } from './receiver'
 import {} from '@koishijs/plugin-console'
@@ -68,8 +68,8 @@ export function apply(ctx: Context, options: Config = {}) {
 
   ctx.on('chat/receive', async (message, session) => {
     if (session.subtype !== 'private' && ctx.database) {
-      const { assignee } = await ctx.database.getChannel(session.platform, session.channelId, ['assignee'])
-      if (assignee !== session.selfId) return
+      const channel = await ctx.database.getChannel(session.platform, session.channelId, ['assignee'])
+      if (!channel || channel.assignee !== session.selfId) return
     }
 
     // render template with fallback options
@@ -96,15 +96,22 @@ export function apply(ctx: Context, options: Config = {}) {
     }, { authority: 3 })
 
     ctx.on('chat/receive', async (message) => {
+      message.content = segment.transform(message.content, {
+        image: (data) => {
+          if (whitelist.includes(data.url)) {
+            data.url = apiPath + '/proxy/' + encodeURIComponent(data.url)
+          }
+          return segment('image', data)
+        },
+      })
       Object.values(ctx.console.ws.handles).forEach((handle) => {
         handle.socket.send(JSON.stringify({ type: 'chat', body: message }))
       })
     })
 
     const { get } = ctx.http
-    ctx.router.get(apiPath + '/assets/:url', async (ctx) => {
+    ctx.router.get(apiPath + '/proxy/:url', async (ctx) => {
       if (!whitelist.some(prefix => ctx.params.url.startsWith(prefix))) {
-        console.log(ctx.params.url)
         return ctx.status = 403
       }
       return ctx.body = await get<internal.Readable>(ctx.params.url, { responseType: 'stream' })

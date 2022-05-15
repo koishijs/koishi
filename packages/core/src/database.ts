@@ -78,7 +78,7 @@ export class DatabaseService extends Database<Tables> {
     this.extend('user', {
       // TODO v5: change to number
       id: 'string(63)',
-      name: 'string(63)',
+      name: { type: 'string', length: 63 },
       flag: 'unsigned(20)',
       authority: 'unsigned(4)',
       locale: 'string(63)',
