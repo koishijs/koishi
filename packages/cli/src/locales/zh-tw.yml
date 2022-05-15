@@ -1,0 +1,11 @@
+commands:
+  exit:
+    description: 關閉機器人
+
+    options:
+      restart: 重新啟動
+
+    messages:
+      exiting: 正在關閉……
+      restarting: 正在重新啟動……
+      restarted: 已重新啟動。

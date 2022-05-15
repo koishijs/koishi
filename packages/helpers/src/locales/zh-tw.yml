@@ -1,0 +1,12 @@
+internal:
+  error-encountered: 出現未知錯誤：{0}
+
+admin:
+  user-not-found: 找不到指定的用戶。
+  user-unchanged: 用戶資料未更新。
+  user-updated: 用戶資料已更新。
+  channel-option: 指定目標頻道
+  channel-not-found: 找不到指定的頻道。
+  channel-unchanged: 頻道資料未更新。
+  channel-updated: 頻道資料已更新。
+  not-in-group: 當前不在群組上下文中，請使用 -c 參數指定目標頻道。

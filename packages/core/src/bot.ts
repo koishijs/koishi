@@ -183,6 +183,7 @@ export namespace Bot {
     handleFriendRequest(messageId: string, approve: boolean, comment?: string): Promise<void>
     handleGuildRequest(messageId: string, approve: boolean, comment?: string): Promise<void>
     handleGuildMemberRequest(messageId: string, approve: boolean, comment?: string): Promise<void>
+    getChannelMessageHistory(channelId: string, before?: string): Promise<Message[]>
   }
 
   export interface Channel {

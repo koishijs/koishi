@@ -866,7 +866,7 @@ export type ChatMember =
  */
 export interface ChatMemberOwner {
   /** The member's status in the chat, always "creator" */
-  status?: string
+  status?: 'creator'
   /** Information about the user */
   user?: User
   /** True, if the user's presence in the chat is hidden */
@@ -881,7 +881,7 @@ export interface ChatMemberOwner {
  */
 export interface ChatMemberAdministrator {
   /** The member's status in the chat, always "administrator" */
-  status?: string
+  status?: 'administrator'
   /** Information about the user */
   user?: User
   /** True, if the bot is allowed to edit administrator privileges of that user */
@@ -918,7 +918,7 @@ export interface ChatMemberAdministrator {
  */
 export interface ChatMemberMember {
   /** The member's status in the chat, always "member" */
-  status?: string
+  status?: 'member'
   /** Information about the user */
   user?: User
 }
@@ -929,7 +929,7 @@ export interface ChatMemberMember {
  */
 export interface ChatMemberRestricted {
   /** The member's status in the chat, always "restricted" */
-  status?: string
+  status?: 'restricted'
   /** Information about the user */
   user?: User
   /** True, if the user is a member of the chat at the moment of the request */
@@ -960,7 +960,7 @@ export interface ChatMemberRestricted {
  */
 export interface ChatMemberLeft {
   /** The member's status in the chat, always "left" */
-  status?: string
+  status?: 'left'
   /** Information about the user */
   user?: User
 }
@@ -971,7 +971,7 @@ export interface ChatMemberLeft {
  */
 export interface ChatMemberBanned {
   /** The member's status in the chat, always "kicked" */
-  status?: string
+  status?: 'kicked'
   /** Information about the user */
   user?: User
   /** Date when restrictions will be lifted for this user; unix time. If 0, then the user is banned forever */

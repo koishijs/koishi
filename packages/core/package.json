@@ -35,8 +35,8 @@
     "chai-shape": "^1.0.0"
   },
   "dependencies": {
-    "@koishijs/utils": "^5.4.2",
-    "cosmotype": "^1.0.9",
+    "@koishijs/utils": "^5.4.3",
+    "cosmotype": "^1.0.10",
     "fastest-levenshtein": "^1.0.12",
     "ns-require": "^1.1.2"
   }

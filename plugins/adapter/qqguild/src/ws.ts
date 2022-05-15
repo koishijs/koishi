@@ -22,9 +22,12 @@ const createSession = (bot: QQGuildBot, msg: Message) => {
   session.guildId = msg.guildId
   session.channelId = msg.channelId
   session.subtype = 'group'
-  session.content = msg.content
+  session.content = (msg.content ?? '')
     .replace(/<@!(.+)>/, (_, $1) => segment.at($1))
     .replace(/<#(.+)>/, (_, $1) => segment.sharp($1))
+  session.content = (msg as any as { attachments: any[] }).attachments
+    .filter(({ contentType }) => contentType.startsWith('image'))
+    .reduce((content, attachment) => content + segment.image(attachment.url), session.content)
   return new Session(bot, session)
 }
 
@@ -34,7 +37,7 @@ export class WebSocketClient extends Adapter<BotConfig, AdapterConfig> {
   async connect(bot: QQGuildBot) {
     Object.assign(bot, await bot.getSelf())
     bot.resolve()
-    await bot.$innerBot.startClient(bot.config.indents)
+    await bot.$innerBot.startClient(bot.config.intents)
     bot.$innerBot.on('ready', bot.resolve)
     bot.$innerBot.on('message', msg => {
       const session = createSession(bot, msg)
