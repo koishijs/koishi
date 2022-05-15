@@ -64,8 +64,7 @@ export * from './form'
 export * from './layout'
 export * from './notice'
 
-export * from '@satorijs/ui-chat'
-export * from '@satorijs/ui-virtual'
+export * from '@satorijs/components'
 
 export { icons, ChatImage }
 

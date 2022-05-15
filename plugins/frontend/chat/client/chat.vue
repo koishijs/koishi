@@ -18,7 +18,7 @@
         <virtual-list :data="filtered" pinned v-model:active-key="index" key-name="messageId">
           <template #header><div class="header-padding"></div></template>
           <template #="data">
-            <chat-message @click="handleClick(data)" :successive="isSuccessive(data, data.index)" :data="data"></chat-message>
+            <chat-message :successive="isSuccessive(data, data.index)" :data="data"></chat-message>
           </template>
           <template #footer><div class="footer-padding"></div></template>
         </virtual-list>
@@ -46,7 +46,6 @@ import ChatMessage from './message.vue'
 
 const pinned = ref(true)
 const index = ref<string>()
-const activeMessage = ref<Message>()
 const messages = storage.create<Message[]>('chat', [])
 const current = ref<string>('')
 
@@ -93,15 +92,10 @@ function isSuccessive({ quote, userId, channelId }: Message, index: number) {
   return !quote && !!prev && prev.userId === userId && prev.channelId === channelId
 }
 
-function handleClick(message: Message) {
-  activeMessage.value = message
-}
-
 function handleSend(content: string) {
-  if (!activeMessage.value) return
-  pinned.value = false
-  const { platform, selfId, channelId, guildId } = activeMessage.value
-  send('chat', { content, platform, selfId, channelId, guildId })
+  if (!current.value) return
+  const [platform, guildId, channelId] = current.value.split(':')
+  send('chat', { content, platform, channelId, guildId })
 }
 
 </script>

@@ -15,7 +15,6 @@ declare module 'koishi' {
 interface ChatPayload {
   content: string
   platform: string
-  selfId: string
   channelId: string
   guildId: string
 }
@@ -43,6 +42,8 @@ const defaultOptions: Config = {
 }
 
 export const name = 'chat'
+
+export const using = ['database'] as const
 
 export interface Config extends ClientExtension {
   refresh?: RefreshConfig
@@ -90,9 +91,11 @@ export function apply(ctx: Context, options: Config = {}) {
       prod: resolve(__dirname, '../dist'),
     })
 
-    ctx.console.addListener('chat', async ({ content, platform, selfId, channelId, guildId }) => {
+    ctx.console.addListener('chat', async ({ content, platform, channelId, guildId }) => {
       if (ctx.assets) content = await ctx.assets.transform(content)
-      ctx.bots.get(`${platform}:${selfId}`)?.sendMessage(channelId, content, guildId)
+      const channel = await ctx.database.getChannel(platform, channelId, ['assignee'])
+      if (!channel || !channel.assignee) return
+      ctx.bots.get(`${platform}:${channel.assignee}`)?.sendMessage(channelId, content, guildId)
     }, { authority: 3 })
 
     ctx.on('chat/receive', async (message) => {
