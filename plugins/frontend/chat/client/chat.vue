@@ -5,7 +5,7 @@
         <template v-for="({ name, channels }, id) in guilds" :key="id">
           <div class="k-tab-group-title">{{ name }}</div>
           <template v-for="({ name }, key) in channels" :key="key">
-            <k-tab-item v-model="current" :label="id + ':' + key">
+            <k-tab-item v-model="current" :label="id + '/' + key">
               {{ name }}
             </k-tab-item>
           </template>
@@ -37,35 +37,42 @@
 
 <script lang="ts" setup>
 
-import { config, receive, send, ChatInput, VirtualList } from '@koishijs/client'
+import { config, receive, send, ChatInput, VirtualList, createStorage } from '@koishijs/client'
 import { computed, ref } from 'vue'
 import type { Dict } from 'cosmokit'
 import type { Message } from '@koishijs/plugin-chat/src'
-import { storage } from './utils'
 import ChatMessage from './message.vue'
 
-const pinned = ref(true)
 const index = ref<string>()
-const messages = storage.create<Message[]>('chat', [])
+const messages = createStorage<Message[]>('chat', 1, () => [])
 const current = ref<string>('')
 
 receive('chat', (body) => {
-  messages.value.push(body)
-  messages.value.splice(0, messages.value.length - config.maxMessages)
+  messages.push(body)
+  messages.splice(0, messages.length - config.maxMessages)
 })
 
 const guilds = computed(() => {
   const guilds: Dict<{
     name: string
-    channels: Dict<{ name: string }>
-  }> = { '': { name: '私聊', channels: {} } }
-  for (const message of messages.value) {
-    const guild = guilds[message.platform + ':' + message.guildId] ||= {
-      name: message.guildName || '未知群组',
+    channels: Dict<{
+      name: string
+      selfId: string
+    }>
+  }> = {}
+  for (const message of messages) {
+    const outerId = message.guildId || message.selfId + '$'
+    const guild = guilds[message.platform + '/' + outerId] ||= {
+      name: message.guildId
+        ? message.guildName || '未知群组'
+        : `私聊 (${message.selfName})`,
       channels: {},
     }
     guild.channels[message.channelId] ||= {
-      name: message.channelName,
+      name: message.guildId
+        ? message.channelName || '未知频道'
+        : message.username,
+      selfId: message.selfId,
     }
   }
   return guilds
@@ -73,29 +80,32 @@ const guilds = computed(() => {
 
 const header = computed(() => {
   if (!current.value) return
-  const [platform, guildId, channelId] = current.value.split(':')
-  const guild = guilds.value[platform + ':' + guildId]
+  const [platform, guildId, channelId] = current.value.split('/')
+  const guild = guilds.value[platform + '/' + guildId]
   if (!guild) return
   return `${guild.name} / ${guild.channels[channelId]?.name}`
 })
 
 const filtered = computed(() => {
   if (!current.value) return []
-  const [platform, guildId, channelId] = current.value.split(':')
-  return messages.value.filter((data) => {
-    return data.platform === platform && data.guildId === guildId && data.channelId === channelId
+  const [platform, guildId, channelId] = current.value.split('/')
+  return messages.filter((data) => {
+    if (data.platform !== platform || data.channelId !== channelId) return
+    if (guildId.endsWith('$') && data.selfId + '$' !== guildId) return
+    return true
   })
 })
 
 function isSuccessive({ quote, userId, channelId }: Message, index: number) {
-  const prev = messages.value[index - 1]
+  const prev = messages[index - 1]
   return !quote && !!prev && prev.userId === userId && prev.channelId === channelId
 }
 
 function handleSend(content: string) {
   if (!current.value) return
-  const [platform, guildId, channelId] = current.value.split(':')
-  send('chat', { content, platform, channelId, guildId })
+  const [platform, guildId, channelId] = current.value.split('/')
+  const { selfId } = guilds.value[platform + '/' + guildId].channels[channelId]
+  send('chat', { content, platform, channelId, guildId, selfId })
 }
 
 </script>

@@ -17,6 +17,7 @@ interface ChatPayload {
   platform: string
   channelId: string
   guildId: string
+  selfId: string
 }
 
 declare module '@koishijs/plugin-console' {
@@ -33,8 +34,8 @@ interface ClientExtension {
 }
 
 const builtinWhitelist = [
-  'http://gchat.qpic.cn/',
-  'http://c2cpicdw.qpic.cn/',
+  'https://gchat.qpic.cn/',
+  'https://c2cpicdw.qpic.cn/',
 ]
 
 const defaultOptions: Config = {
@@ -91,17 +92,15 @@ export function apply(ctx: Context, options: Config = {}) {
       prod: resolve(__dirname, '../dist'),
     })
 
-    ctx.console.addListener('chat', async ({ content, platform, channelId, guildId }) => {
+    ctx.console.addListener('chat', async ({ content, platform, channelId, guildId, selfId }) => {
       if (ctx.assets) content = await ctx.assets.transform(content)
-      const channel = await ctx.database.getChannel(platform, channelId, ['assignee'])
-      if (!channel || !channel.assignee) return
-      ctx.bots.get(`${platform}:${channel.assignee}`)?.sendMessage(channelId, content, guildId)
+      ctx.bots.get(`${platform}:${selfId}`)?.sendMessage(channelId, content, guildId)
     }, { authority: 3 })
 
     ctx.on('chat/receive', async (message) => {
       message.content = segment.transform(message.content, {
         image: (data) => {
-          if (whitelist.includes(data.url)) {
+          if (whitelist.some(prefix => data.url.startsWith(prefix))) {
             data.url = apiPath + '/proxy/' + encodeURIComponent(data.url)
           }
           return segment('image', data)
