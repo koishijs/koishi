@@ -29,9 +29,9 @@
     "impl:database"
   ],
   "peerDependencies": {
-    "koishi": "^4.6.3"
+    "koishi": "^4.7.0"
   },
   "dependencies": {
-    "@cosmotype/driver-memory": "^1.0.3"
+    "@minatojs/driver-memory": "^1.0.3"
   }
 }

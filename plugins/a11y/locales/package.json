@@ -30,11 +30,11 @@
     "command"
   ],
   "peerDependencies": {
-    "koishi": "^4.6.3"
+    "koishi": "^4.7.0"
   },
   "devDependencies": {
-    "@koishijs/client": "^3.2.10",
-    "@koishijs/plugin-console": "^3.2.10",
+    "@koishijs/client": "^3.3.0",
+    "@koishijs/plugin-console": "^3.3.0",
     "@koishijs/plugin-mock": "^1.0.4",
     "@types/throttle-debounce": "^2.1.0"
   },

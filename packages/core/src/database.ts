@@ -1,6 +1,6 @@
 import * as utils from '@koishijs/utils'
 import { Awaitable, Dict, MaybeArray } from '@koishijs/utils'
-import { Database, Driver, Result, Update } from 'cosmotype'
+import { Database, Driver, Result, Update } from 'minato'
 import { Context } from './context'
 import ns from 'ns-require'
 

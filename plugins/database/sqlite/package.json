@@ -31,9 +31,9 @@
     "impl:database"
   ],
   "peerDependencies": {
-    "koishi": "^4.6.3"
+    "koishi": "^4.7.0"
   },
   "dependencies": {
-    "@cosmotype/driver-sqlite": "^1.0.6"
+    "@minatojs/driver-sqlite": "^1.0.6"
   }
 }

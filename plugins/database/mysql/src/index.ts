@@ -1,5 +1,5 @@
 import { Context, Schema } from 'koishi'
-import MySQLDriver from '@cosmotype/driver-mysql'
+import MySQLDriver from '@minatojs/driver-mysql'
 
 export const name = 'MemoryDatabase'
 
