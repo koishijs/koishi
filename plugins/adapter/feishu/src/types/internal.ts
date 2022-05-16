@@ -3,6 +3,13 @@ import { AxiosRequestConfig } from 'axios'
 
 export interface Internal {}
 
+export interface BaseResponse {
+  /** error code. would be 0 if success, and non-0 if failed. */
+  code: number
+  /** error message. would be 'success' if success. */
+  msg: string
+}
+
 type Method = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH'
 
 export class Internal {
