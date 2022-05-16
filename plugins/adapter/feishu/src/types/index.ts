@@ -1,3 +1,6 @@
+export * from './internal'
+
+export * from './auth'
 export * from './event'
 
 export namespace Feishu {
