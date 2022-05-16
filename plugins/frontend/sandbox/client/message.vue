@@ -1,14 +1,17 @@
 <template>
-  <div class="avatar">{{ data.user[0] }}</div>
-  <div class="nickname">{{ data.user }}</div>
-  <div class="message-box">
-    <k-message-content :content="data.content"/>
+  <div class="chat-message">
+    <div class="avatar">{{ data.user[0] }}</div>
+    <div class="nickname">{{ data.user }}</div>
+    <div class="message-box">
+      <message-content :content="data.content"/>
+    </div>
   </div>
 </template>
 
 <script lang="ts" setup>
 
 import { Message } from '@koishijs/plugin-sandbox/src'
+import { MessageContent } from '@koishijs/client'
 
 defineProps<{
   data: Message
@@ -16,12 +19,13 @@ defineProps<{
 
 </script>
 
-<style lang="scss">
+<style lang="scss" scoped>
 
-.page-sandbox .k-chat-message {
+.chat-message {
   --avatar-size: 2.8rem;
 
   margin: 1rem 1.5rem;
+  position: relative;
 
   .nickname {
     position: relative;

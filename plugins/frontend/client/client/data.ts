@@ -11,9 +11,9 @@ interface StorageData<T> {
 export function createStorage<T extends object>(key: string, version: number, fallback?: () => T) {
   const storage = useLocalStorage('koishi.console.' + key, {} as StorageData<T>)
   const initial = fallback ? fallback() : {} as T
-  if (storage.value['version'] !== version) {
+  if (storage.value.version !== version) {
     storage.value = { version, data: initial }
-  } else {
+  } else if (!Array.isArray(storage.value.data)) {
     storage.value.data = { ...initial, ...storage.value.data }
   }
   return reactive<T>(storage.value['data'])

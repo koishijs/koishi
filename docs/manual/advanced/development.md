@@ -27,7 +27,7 @@ yarn dev
 
 ```sh
 -r esbuild-register
--r tsconfig-paths/register
+-r yml-register
 --watch
 ```
 

@@ -32,7 +32,7 @@
     "impl:assets"
   ],
   "peerDependencies": {
-    "koishi": "^4.6.3"
+    "koishi": "^4.7.0"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.82.0"

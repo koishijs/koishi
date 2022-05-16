@@ -1,5 +1,5 @@
 import { Context, Schema } from 'koishi'
-import MongoDriver from '@cosmotype/driver-mongo'
+import MongoDriver from '@minatojs/driver-mongo'
 
 export const name = 'MemoryDatabase'
 

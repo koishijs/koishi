@@ -1,5 +1,5 @@
 export * from '@koishijs/utils'
-export * from 'cosmotype'
+export * from 'minato'
 export * from './adapter'
 export * from './app'
 export * from './bot'

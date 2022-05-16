@@ -1,5 +1,21 @@
 import { Bot, Context, Logger, segment, Service, Session } from 'koishi'
-import { Message } from './types'
+
+export interface Message {
+  id?: number
+  content: string
+  messageId: string
+  platform: string
+  guildId: string
+  userId: string
+  timestamp: Date
+  quoteId?: string
+  username: string
+  nickname: string
+  channelId: string
+  selfId: string
+  lastUpdated?: Date
+  deleted?: number
+}
 
 declare module 'koishi' {
   interface Tables {
@@ -7,25 +23,46 @@ declare module 'koishi' {
   }
   namespace Context {
     interface Services {
-      messages: MessageDatabase
+      messages: MessageService
     }
   }
   interface EventMap {
-    'messages/synced'(cid: string)
-    'messages/syncFailed'(cid: string, error: Error)
-    'messages/syncing'(cid: string)
+    'messages/synced'(cid: string): void
+    'messages/syncFailed'(cid: string, error: Error): void
+    'messages/syncing'(cid: string): void
   }
 }
 
 const logger = new Logger('messages')
 
 enum ChannelStatus {
-  SYNCING, SYNCED, FAILED
+  SYNCING,
+  SYNCED,
+  FAILED,
 }
 
-export class MessageDatabase extends Service {
+export class MessageService extends Service {
   constructor(ctx: Context) {
     super(ctx, 'messages', true)
+
+    this.ctx.model.extend('message', {
+      id: 'integer',
+      content: 'text',
+      platform: 'string',
+      guildId: 'string',
+      messageId: 'string',
+      userId: 'string',
+      timestamp: 'timestamp',
+      quoteId: 'string',
+      username: 'string',
+      nickname: 'string',
+      channelId: 'string',
+      selfId: 'string',
+      lastUpdated: 'timestamp',
+      deleted: 'integer',
+    }, {
+      autoInc: true,
+    })
   }
 
   #status: Record<string, ChannelStatus> = {}
@@ -54,26 +91,6 @@ export class MessageDatabase extends Service {
   }
 
   async start() {
-    this.ctx.model.extend('message', {
-      id: 'integer',
-      content: 'text',
-      platform: 'string',
-      guildId: 'string',
-      messageId: 'string',
-      userId: 'string',
-      timestamp: 'timestamp',
-      quoteId: 'string',
-      username: 'string',
-      nickname: 'string',
-      channelId: 'string',
-      selfId: 'string',
-      lastUpdated: 'timestamp',
-      deleted: 'integer',
-    }, {
-      primary: 'id',
-      autoInc: true,
-    })
-
     // 如果是一个 platform 有多个 bot, bot 状态变化, 频道状态变化待解决
     this.ctx.on('message', this.#onMessage.bind(this))
     this.ctx.on('send', async (session) => {
@@ -291,14 +308,14 @@ export class MessageDatabase extends Service {
         if (!inDatabase.length) {
           const latestMessages = await bot.getChannelMessageHistory(channelId)
           // 获取一次
-          await this.ctx.database.upsert('message', latestMessages.map(session => MessageDatabase.adaptMessage(session, bot, guildId)))
+          await this.ctx.database.upsert('message', latestMessages.map(session => MessageService.adaptMessage(session, bot, guildId)))
         } else {
           // 数据库中最后一条消息
 
           const newMessages = await this.getMessageBetween(bot, channelId, inDatabase[0].messageId, this.#messageRecord[cid]?.received)
           logger.debug('get new messages')
           if (newMessages.length) {
-            await this.ctx.database.upsert('message', newMessages.map(session => MessageDatabase.adaptMessage(session, bot, guildId)))
+            await this.ctx.database.upsert('message', newMessages.map(session => MessageService.adaptMessage(session, bot, guildId)))
           }
         }
       } catch (e) {
@@ -315,7 +332,7 @@ export class MessageDatabase extends Service {
 
     const newLocal = this.#messageQueue[cid]
     if (newLocal?.length) {
-      await this.ctx.database.upsert('message', newLocal.map(session => MessageDatabase.adaptMessage(session)))
+      await this.ctx.database.upsert('message', newLocal.map(session => MessageService.adaptMessage(session)))
       this.#messageQueue[cid] = []
     }
     this.#status[cid] = ChannelStatus.SYNCED
@@ -330,7 +347,7 @@ export class MessageDatabase extends Service {
       this.#status[session.cid] === ChannelStatus.SYNCED || this.#status[session.cid] === ChannelStatus.FAILED
     ) && !this.inSyncQueue(session.cid)) {
       logger.debug('on message, cid: %s, id: %s', session.cid, session.messageId)
-      await this.ctx.database.create('message', MessageDatabase.adaptMessage(session))
+      await this.ctx.database.create('message', MessageService.adaptMessage(session))
     } else if (this.inSyncQueue(session.cid)) {
       // in queue, not synced
       if (!this.#messageRecord[session.cid]) {
@@ -353,9 +370,3 @@ export class MessageDatabase extends Service {
     }
   }
 }
-
-export async function apply(ctx: Context) {
-  ctx.plugin(MessageDatabase)
-}
-
-export * from './types'

@@ -7,7 +7,7 @@ sidebarDepth: 2
 Koishi 的数据库 API 实际上分为两部分：
 
 - @koishijs/core 中定义的内置数据结构
-- cosmotype 中提供的 ORM 接口
+- minato 中提供的 ORM 接口
 
 这一页中将仅展示第一部分的内容。
 

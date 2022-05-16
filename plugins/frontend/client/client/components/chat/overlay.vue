@@ -1,5 +1,5 @@
 <template>
-  <transition name="fade">
+  <transition name="overlay">
     <div class="image-viewer" v-if="shared.overlayImage" @click="setImage(null)">
       <span class="button left" :class="{ disabled: !siblings.prev }" @click.stop="setImage(siblings.prev)">
         <k-icon name="chevron-left"/>
@@ -46,7 +46,7 @@ const transform = computed(() => {
 
 const siblings = computed(() => {
   if (!shared.overlayImage) return
-  const elements = Array.from(document.querySelectorAll<HTMLImageElement>('.k-image'))
+  const elements = Array.from(document.querySelectorAll<HTMLImageElement>('.chat-image'))
   const index = elements.indexOf(shared.overlayImage)
   return {
     prev: elements[index - 1],
@@ -132,11 +132,11 @@ function onKeyDown(ev: KeyboardEvent) {
 $buttonSize: 3rem;
 $buttonBg: #303133;
 
-.fade-enter-from, .fade-leave-to {
+.overlay-enter-from, .overlay-leave-to {
   opacity: 0;
 }
 
-.fade-enter-to, .fade-leave-from {
+.overlay-enter, .overlay-leave {
   opacity: 1;
 }
 

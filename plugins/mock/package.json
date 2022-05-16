@@ -30,9 +30,10 @@
     "tester",
     "unit",
     "mock",
+    "market:hidden",
     "impl:mock"
   ],
   "peerDependencies": {
-    "koishi": "^4.6.3"
+    "koishi": "^4.7.0"
   }
 }

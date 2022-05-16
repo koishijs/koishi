@@ -136,6 +136,10 @@ export namespace Adapter {
   export class BotList extends Array<Bot> {
     adapters: Dict<Adapter> = {}
 
+    get caller(): Context {
+      return this[Context.current]
+    }
+
     constructor(private app: App) {
       super()
     }
@@ -151,17 +155,19 @@ export namespace Adapter {
       adapter.bots.push(bot)
       this.push(bot)
       this.app.emit('bot-added', bot)
+      this.caller.on('dispose', () => {
+        this.remove(bot.id)
+      })
       return bot
     }
 
-    async remove(id: string) {
+    remove(id: string) {
       const index = this.findIndex(bot => bot.id === id)
       if (index < 0) return
       const [bot] = this.splice(index, 1)
-      remove(bot.adapter.bots, bot)
-      bot.config.disabled = true
+      const exist = remove(bot.adapter.bots, bot)
       this.app.emit('bot-removed', bot)
-      return bot.stop()
+      return exist
     }
 
     private resolve(platform: string, config: Bot.BaseConfig): Adapter {
@@ -178,8 +184,11 @@ export namespace Adapter {
         return this.resolve(platform, config)
       }
 
-      const adapter = new constructor(this[Context.current], configMap[platform])
+      const adapter = new constructor(this.caller, configMap[platform])
       adapter.platform = platform
+      this.caller.on('dispose', () => {
+        delete this.adapters[type]
+      })
       return this.adapters[type] = adapter
     }
   }

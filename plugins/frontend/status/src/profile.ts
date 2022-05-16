@@ -1,6 +1,5 @@
 import { Context, Schema, Time } from 'koishi'
-import { cpus } from 'os'
-import { mem } from 'systeminformation'
+import { cpus, freemem, totalmem } from 'os'
 import { DataService } from '@koishijs/plugin-console'
 
 export type LoadRate = [app: number, total: number]
@@ -10,8 +9,8 @@ let appRate: number
 let usedRate: number
 
 async function memoryRate(): Promise<LoadRate> {
-  const { total, active } = await mem()
-  return [process.memoryUsage().rss / total, active / total]
+  const total = totalmem()
+  return [process.memoryUsage().rss / total, 1 - freemem() / total]
 }
 
 function getCpuUsage() {
