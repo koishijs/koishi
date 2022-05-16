@@ -3,8 +3,8 @@
 on:
   issues:
     types:
-      - "milestoned"
-      - "demilestoned"
+      - milestoned
+      - demilestoned
 
 jobs:
   backlog:
@@ -14,5 +14,5 @@ jobs:
       - name: Backlog
         uses: H4M5TER/milestone-backlog@v1.0
         with:
-          token: ${{ secrets.BACKLOG_PAT }}
+          token: ${{ secrets.WORKFLOW_TOKEN }}
           creator: shigma
