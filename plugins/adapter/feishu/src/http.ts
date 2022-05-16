@@ -82,7 +82,7 @@ export class HttpServer extends Adapter<BotConfig, AdapterConfig> {
     }
 
     if (typeof body.encrypt === 'string' && !this.config.encryptKey) {
-      logger.error('encryptKey is not set, but received encrypted message: %o', body)
+      logger.warn('encryptKey is not set, but received encrypted message: %o', body)
     }
 
     return body
