@@ -71,6 +71,13 @@ export interface Parsed {
 
 export type Computed<T> = T | ((session: Session) => T)
 
+interface Task {
+  delay: number
+  content: string
+  resolve(ids: string[]): void
+  reject(reason: any): void
+}
+
 export class Session<U extends User.Field = never, G extends Channel.Field = never> {
   type?: string
   subtype?: string
@@ -95,8 +102,8 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
   parsed?: Parsed
 
   private _promise: Promise<string>
+  private _queuedTasks: Task[]
   private _queuedTimeout: NodeJS.Timeout
-  private _queuedMessages: [string, number][]
 
   constructor(bot: Bot, session: Partial<Session.Payload>) {
     Object.assign(this, session)
@@ -106,8 +113,8 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
     defineProperty(this, 'user', null)
     defineProperty(this, 'channel', null)
     defineProperty(this, 'id', Random.id())
-    defineProperty(this, '_queuedMessages', [])
-    defineProperty(this, '_queuedTimeout', undefined)
+    defineProperty(this, '_queuedTasks', [])
+    defineProperty(this, '_queuedTimeout', null)
   }
 
   get uid() {
@@ -169,18 +176,18 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
 
   cancelQueued(delay = this.app.options.delay.cancel) {
     clearTimeout(this._queuedTimeout)
-    this._queuedMessages = []
+    this._queuedTasks = []
     this._queuedTimeout = setTimeout(() => this._next(), delay)
   }
 
   private _next() {
-    const message = this._queuedMessages.shift()
-    if (!message) {
-      this._queuedTimeout = undefined
+    const task = this._queuedTasks.shift()
+    if (!task) {
+      this._queuedTimeout = null
       return
     }
-    this.send(message[0])
-    this._queuedTimeout = setTimeout(() => this._next(), message[1])
+    this.send(task.content).then(task.resolve, task.reject)
+    this._queuedTimeout = setTimeout(() => this._next(), task.delay)
   }
 
   async sendQueued(content: string, delay?: number) {
@@ -189,8 +196,10 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
       const { message, character } = this.app.options.delay
       delay = Math.max(message, character * content.length)
     }
-    this._queuedMessages.push([content, delay])
-    if (!this._queuedTimeout) this._next()
+    return new Promise<string[]>((resolve, reject) => {
+      this._queuedTasks.push({ content, delay, resolve, reject })
+      if (!this._queuedTimeout) this._next()
+    })
   }
 
   resolveValue<T>(source: T | ((session: Session) => T)): T {

@@ -30,6 +30,7 @@
     "tester",
     "unit",
     "mock",
+    "market:hidden",
     "impl:mock"
   ],
   "peerDependencies": {
