@@ -1,6 +1,4 @@
-import { Feishu } from '.'
-
-export interface BaseEventHeader<T = string> {
+export interface EventHeader<T = string> {
   event_id: string
   event_type: T
   create_time: string
@@ -9,45 +7,12 @@ export interface BaseEventHeader<T = string> {
   tenant_key: string
 }
 
-// FIXME: find out common part between events
-export interface EventBody {
-  'im.message.receive_v1': {
-    sender: {
-      sender_id: Feishu.UserIds
-      sender_type?: string
-      tenant_key: string
-    }
-    message: {
-      message_id: string
-      root_id: string
-      parent_id: string
-      create_time: string
-      chat_id: string
-      chat_type: string
-      message_type: string
-      content: string
-      mentions: {
-        key: string
-        id: Feishu.UserIds
-        name: string
-        tenant_key: string
-      }[]
-    }
-  }
-  'im.message.message_read_v1': {
-    reader: {
-      reader_id: Feishu.UserIds
-      read_time: string
-      tenant_key: string
-    }
-    message_id_list: string[]
-  }
-}
+export interface EventBody {}
 
 // In fact, this is the 2.0 version of the event sent by Feishu.
 // And only the 2.0 version has the `schema` field.
-export interface BaseEvent<T = string> {
+export interface Event<T = string> {
   schema: '2.0'
-  header: BaseEventHeader<T>
+  header: EventHeader<T>
   event: T extends keyof EventBody ? EventBody[T] : any
 }

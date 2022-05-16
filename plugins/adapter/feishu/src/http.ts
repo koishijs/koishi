@@ -1,15 +1,13 @@
 import { Adapter, Context, Logger } from 'koishi'
 import { BotConfig, FeishuBot } from './bot'
-import { BaseEvent } from './types'
+import { Event } from './types'
 import { AdapterConfig, Cipher } from './utils'
 
 const logger = new Logger('feishu')
 
 export class HttpServer extends Adapter<BotConfig, AdapterConfig> {
   static schema = BotConfig
-
   public bots: FeishuBot[]
-
   private cipher?: Cipher
 
   constructor(ctx: Context, config: AdapterConfig) {
@@ -34,22 +32,19 @@ export class HttpServer extends Adapter<BotConfig, AdapterConfig> {
         const nonce = firstOrDefault(ctx.headers['X-Lark-Request-Nonce'])
         const body = ctx.request.rawBody
         const actualSignature = this.cipher.calculateSignature(timestamp, nonce, body)
-        if (signature !== actualSignature) return ctx.status = 403
+        if (signature !== actualSignature) return (ctx.status = 403)
       }
 
       // try to decrypt message first if encryptKey is set
       const body = this.tryDecryptBody(ctx.request.body)
       // respond challenge message
       // https://open.feishu.cn/document/ukTMukTMukTM/uYDNxYjL2QTM24iN0EjN/event-subscription-configure-/request-url-configuration-case
-      if (
-        body?.type === 'url_verification'
-        && body?.challenge
-        && typeof body.challenge === 'string'
-      ) {
+      if (body?.type === 'url_verification' && body?.challenge && typeof body.challenge === 'string') {
         ctx.response.body = { challenge: body.challenge }
         return
       }
 
+      // Feishu requires 200 OK response to make sure event is received
       ctx.body = 'OK'
       ctx.status = 200
 
@@ -60,7 +55,7 @@ export class HttpServer extends Adapter<BotConfig, AdapterConfig> {
 
   async stop() {}
 
-  async dispatchSession(body: BaseEvent): Promise<void> {
+  async dispatchSession(body: Event): Promise<void> {
     const { header } = body
     const { event_type } = header
     switch (event_type) {

@@ -2,6 +2,7 @@ export * from './internal'
 
 export * from './auth'
 export * from './event'
+export * from './message'
 
 export namespace Feishu {
   export interface UserIds {
