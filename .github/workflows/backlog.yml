@@ -1,0 +1,18 @@
+﻿name: Milestone Issue Backlog
+
+on:
+  issues:
+    types:
+      - milestoned
+      - demilestoned
+
+jobs:
+  backlog:
+    name: Backlog
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Backlog
+        uses: H4M5TER/milestone-backlog@v1.0
+        with:
+          token: ${{ secrets.WORKFLOW_TOKEN }}
+          creator: shigma
