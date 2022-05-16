@@ -1,4 +1,5 @@
 import { Adapter, Bot, Quester, Schema } from 'koishi'
+import { Internal } from './types'
 import { AdapterConfig } from './utils'
 
 export interface BotConfig extends Bot.BaseConfig, Quester.Config {
@@ -22,6 +23,7 @@ export class FeishuBot extends Bot<BotConfig> {
   static schema = AdapterConfig
   _token?: string
   http: Quester
+  internal: Internal
 
   constructor(adapter: Adapter, config: BotConfig) {
     super(adapter, config)
@@ -34,6 +36,19 @@ export class FeishuBot extends Bot<BotConfig> {
         'Content-Type': 'application/json; charset=utf-8',
       },
     })
+
+    this.internal = new Internal(this.http)
+
+    this.refreshToken()
+  }
+
+  private async refreshToken(): Promise<void> {
+    const { tenant_access_token: token } = await this.internal.getTenantAccessToken({
+      app_id: this.config.appId,
+      app_secret: this.config.appSecret,
+    })
+    this.logger.debug('refreshed token %s', token)
+    this.token = token
   }
 
   get token() {

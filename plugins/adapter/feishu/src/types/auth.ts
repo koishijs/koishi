@@ -1,5 +1,10 @@
 import { BaseResponse, Internal } from '.'
 
+export interface AppCredentials {
+  app_id: string
+  app_secret: string
+}
+
 export interface AppAccessToken extends BaseResponse {
   /** access token */
   app_access_token: string
@@ -20,12 +25,12 @@ declare module './internal' {
      * Returns the app_access_token for the bot.
      * @see https://open.feishu.cn/document/ukTMukTMukTM/ukDNz4SO0MjL5QzM/auth-v3/auth/app_access_token_internal
      */
-    getAppAccessToken(app_id: string, app_secret: string): Promise<AppAccessToken>
+    getAppAccessToken(data: AppCredentials): Promise<AppAccessToken>
     /**
      * Returns the tenant_access_token for the bot.
      * @see https://open.feishu.cn/document/ukTMukTMukTM/ukDNz4SO0MjL5QzM/auth-v3/auth/tenant_access_token_internal
      */
-    getTenantAccessToken(app_id: string, app_secret: string): Promise<TenantAccessToken>
+    getTenantAccessToken(data: AppCredentials): Promise<TenantAccessToken>
   }
 }
 
