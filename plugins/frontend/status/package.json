@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-status",
   "description": "Status view for Koishi",
-  "version": "5.3.6",
+  "version": "5.4.0",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
