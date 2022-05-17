@@ -200,7 +200,7 @@ jobs:
       - name: Build
         run: yarn docs build
       - name: Deploy
-        if: ${{ github.repository == 'koishijs/koishi' && github.ref == 'refs/heads/next' }}
+        if: ${{ github.repository == 'koishijs/koishi' && github.ref == 'refs/heads/master' }}
         uses: peaceiris/actions-gh-pages@v3
         with:
           deploy_key: ${{ secrets.ACTIONS_DEPLOY_KEY }}
