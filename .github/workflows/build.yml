@@ -149,7 +149,6 @@ jobs:
           name: codecov
 
   docs:
-    if: ${{ github.repository == 'koishijs/koishi' && github.ref == 'refs/heads/master' }}
     runs-on: ubuntu-latest
     needs:
       - prepare
@@ -201,6 +200,7 @@ jobs:
       - name: Build
         run: yarn docs build
       - name: Deploy
+        if: ${{ github.repository == 'koishijs/koishi' && github.ref == 'refs/heads/master' }}
         uses: peaceiris/actions-gh-pages@v3
         with:
           deploy_key: ${{ secrets.ACTIONS_DEPLOY_KEY }}
@@ -210,7 +210,6 @@ jobs:
           force_orphan: true
 
   docs-next:
-    if: ${{ github.repository == 'koishijs/koishi' && github.ref == 'refs/heads/next' }}
     runs-on: ubuntu-latest
     needs:
       - prepare
@@ -242,6 +241,7 @@ jobs:
       - name: Build
         run: yarn docs build
       - name: Deploy
+        if: ${{ github.repository == 'koishijs/koishi' && github.ref == 'refs/heads/next' }}
         uses: peaceiris/actions-gh-pages@v3
         with:
           deploy_key: ${{ secrets.ACTIONS_DEPLOY_KEY_NEXT }}
