@@ -25,7 +25,7 @@ export const BotConfig = Schema.intersect([
     id: Schema.string().description('机器人 id。').required(),
     key: Schema.string().description('机器人 key。').role('secret').required(),
     token: Schema.string().description('机器人令牌。').role('secret').required(),
-    intents: Schema.number().description('需要订阅的机器人事件。').default(Intents.PUBLIC_GUILD_MESSAGES),
+    intents: Schema.bitset(Intents).description('需要订阅的机器人事件。').default(Intents.PUBLIC_GUILD_MESSAGES),
   }),
 ])
 

@@ -31,7 +31,7 @@
     "koishi"
   ],
   "peerDependencies": {
-    "@koishijs/client": "^3.3.0"
+    "@koishijs/client": "^3.3.1"
   },
   "devDependencies": {
     "@types/cross-spawn": "^6.0.2",

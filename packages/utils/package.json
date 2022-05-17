@@ -33,7 +33,7 @@
     "@koishijs/segment": "^1.1.1",
     "cosmokit": "^1.1.2",
     "reggol": "^1.0.3",
-    "schemastery": "^3.3.3",
+    "schemastery": "^3.4.0",
     "supports-color": "^8.1.1"
   }
 }

@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/client",
   "description": "Koishi Console Client",
-  "version": "3.3.0",
+  "version": "3.3.1",
   "main": "client/index.ts",
   "files": [
     "app",
@@ -43,7 +43,7 @@
     "element-plus": "^2.1.11",
     "marked": "^4.0.15",
     "sass": "^1.51.0",
-    "schemastery": "^3.3.3",
+    "schemastery": "^3.4.0",
     "vite": "^2.9.8",
     "vue": "^3.2.33",
     "vue-router": "^4.0.14"

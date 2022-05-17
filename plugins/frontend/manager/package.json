@@ -32,11 +32,11 @@
   ],
   "peerDependencies": {
     "@koishijs/cli": "^4.7.0",
-    "@koishijs/plugin-console": "^3.3.0",
+    "@koishijs/plugin-console": "^3.3.1",
     "koishi": "^4.7.0"
   },
   "devDependencies": {
-    "@koishijs/client": "^3.3.0",
+    "@koishijs/client": "^3.3.1",
     "@types/cross-spawn": "^6.0.2",
     "@types/which-pm-runs": "^1.0.0"
   },

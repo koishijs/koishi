@@ -31,11 +31,11 @@
     "optional:console"
   ],
   "peerDependencies": {
-    "@koishijs/plugin-console": "^3.3.0",
+    "@koishijs/plugin-console": "^3.3.1",
     "koishi": "^4.7.0"
   },
   "devDependencies": {
-    "@koishijs/client": "^3.3.0",
+    "@koishijs/client": "^3.3.1",
     "@koishijs/cli": "^4.7.0",
     "ansi_up": "^5.1.0"
   }

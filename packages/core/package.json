@@ -37,7 +37,7 @@
   "dependencies": {
     "@koishijs/utils": "^5.4.3",
     "fastest-levenshtein": "^1.0.12",
-    "minato": "^1.0.10",
+    "minato": "^1.1.0",
     "ns-require": "^1.1.2"
   }
 }
