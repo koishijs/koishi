@@ -1,0 +1,20 @@
+commands:
+  help:
+    description: ヘルプを表示
+    options:
+      help: このメッセージを表示
+      authority: コマンドやオプションの権限を表示
+      showHidden: 隠しコマンドやオプションを表示
+    messages:
+      suggest-prefix: コマンドが見つかりません。
+      suggest-suffix: 句点を送信してこの提案を実行します。
+      hint-authority: 最低権限は括弧にで表示されています
+      hint-subcommand: サブコマンドがあるコマンドはアスタリスクで表示されています
+      command-aliases: '別名: {0}。'
+      command-examples: 例：
+      command-authority: '最低権限：{0}。'
+      subcommand-prolog: '利用可能なサブコマンド{0}：'
+      global-prolog: '利用可能なコマンド{0}：'
+      global-epilog: 「help <command>」を送信してコマンドの使い方を表示します。
+      available-options: '利用可能なオプション：'
+      available-options-with-authority: '利用可能なオプション（必要な権限は括弧にで表示されています）：'

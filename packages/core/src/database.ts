@@ -189,4 +189,6 @@ DatabaseService.prototype.extend = function extend(this: DatabaseService, name, 
 }
 
 Context.service('database')
-Context.service('model')
+Context.service('model', {
+  constructor: DatabaseService,
+})

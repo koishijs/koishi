@@ -18,6 +18,7 @@ export class Patch {
   constructor(ctx: Context) {
     ctx.app.baseDir ??= process.cwd()
     ctx.plugin('suggest')
+    ctx.plugin('help')
   }
 }
 

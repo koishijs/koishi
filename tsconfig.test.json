@@ -44,6 +44,9 @@
       "koishi": [
         "packages/koishi/src",
       ],
+      "cordis": [
+        "../packages/cordis/src",
+      ],
       "*": [
         "community/*/src",
       ],

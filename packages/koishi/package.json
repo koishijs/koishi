@@ -37,6 +37,7 @@
     "@koa/router": "^10.1.1",
     "@koishijs/core": "^4.7.0",
     "@koishijs/plugin-suggest": "^1.0.0",
+    "@koishijs/plugin-help": "^1.0.0",
     "@koishijs/utils": "^5.4.4",
     "@types/koa": "*",
     "@types/koa__router": "*",

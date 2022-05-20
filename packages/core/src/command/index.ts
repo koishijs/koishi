@@ -4,12 +4,10 @@ import { Command } from './command'
 import { Argv } from './parser'
 import runtime from './runtime'
 import validate from './validate'
-import help, { HelpConfig } from './help'
 import { Channel, User } from '../database'
 import { Session } from '../protocol'
 
 export * from './command'
-export * from './help'
 export * from './runtime'
 export * from './parser'
 export * from './validate'
@@ -37,9 +35,7 @@ declare module 'cordis' {
 }
 
 export namespace Commander {
-  export interface Config {
-    help?: false | HelpConfig
-  }
+  export interface Config {}
 
   export interface Delegates {
     command<D extends string>(def: D, config?: Command.Config): Command<never, never, Argv.ArgumentType<D>>
@@ -57,7 +53,6 @@ export class Commander {
   constructor(private ctx: Context, private config: Commander.Config = {}) {
     ctx.plugin(runtime)
     ctx.plugin(validate)
-    ctx.plugin(help, config.help)
   }
 
   protected get caller(): Context {
@@ -76,6 +71,12 @@ export class Commander {
 
   getCommand(name: string) {
     return this._commands.get(name)
+  }
+
+  getCommandNames(session: Session) {
+    return this._commandList
+      .filter(cmd => cmd.match(session) && !cmd.config.hidden)
+      .flatMap(cmd => cmd._aliases)
   }
 
   command(def: string, ...args: [Command.Config?] | [string, Command.Config?]) {

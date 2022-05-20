@@ -1,8 +1,15 @@
-import { Argv } from './parser'
-import { Command } from './command'
-import { Context } from 'cordis'
-import { Channel, Tables, User } from '../database'
-import { FieldCollector, Session } from '../protocol/session'
+import { Argv, Channel, Command, Context, FieldCollector, Session, Tables, User } from 'koishi'
+import {} from '@koishijs/plugin-suggest'
+
+declare module 'koishi' {
+  namespace App {
+    namespace Config {
+      interface Features {
+        help?: false | HelpConfig
+      }
+    }
+  }
+}
 
 interface HelpOptions {
   showHidden?: boolean
@@ -22,7 +29,15 @@ export function enableHelp<U extends User.Field, G extends Channel.Field, A exte
   })
 }
 
-export default function help(ctx: Context, config: HelpConfig = {}) {
+export const name = 'help'
+
+export function apply(ctx: Context, config: HelpConfig = {}) {
+  ctx.i18n.define('zh', require('./locales/zh'))
+  ctx.i18n.define('en', require('./locales/en'))
+  ctx.i18n.define('ja', require('./locales/ja'))
+  ctx.i18n.define('fr', require('./locales/fr'))
+  ctx.i18n.define('zh-tw', require('./locales/zh-tw'))
+
   if (config.options !== false) {
     ctx.on('command-added', cmd => cmd.use(enableHelp))
   }
@@ -44,7 +59,7 @@ export default function help(ctx: Context, config: HelpConfig = {}) {
     session.collect(key, { ...argv, command, args: [], options: { help: true } }, fields)
   }
 
-  const cmd = $.command('help [command:string]', { authority: 0, ...config })
+  const cmd = ctx.command('help [command:string]', { authority: 0, ...config })
     .userFields(['authority'])
     .userFields(createCollector('user'))
     .channelFields(createCollector('channel'))
@@ -61,11 +76,14 @@ export default function help(ctx: Context, config: HelpConfig = {}) {
 
       const command = findCommand(target)
       if (!command?.ctx.match(session)) {
+        if (!session.suggest) {
+          return session.text('.suggest-prefix')
+        }
         return session.suggest({
           target,
-          items: getCommandNames(session),
-          prefix: session.text('suggest.help-prefix'),
-          suffix: session.text('suggest.help-suffix'),
+          items: $.getCommandNames(session),
+          prefix: session.text('.suggest-prefix'),
+          suffix: session.text('.suggest-suffix'),
           async apply(suggestion) {
             return showHelp($.getCommand(suggestion), this as any, options)
           },
@@ -76,12 +94,6 @@ export default function help(ctx: Context, config: HelpConfig = {}) {
     })
 
   if (config.shortcut !== false) cmd.shortcut('帮助', { fuzzy: true })
-}
-
-export function getCommandNames(session: Session) {
-  return session.app.$commander._commandList
-    .filter(cmd => cmd.match(session) && !cmd.config.hidden)
-    .flatMap(cmd => cmd._aliases)
 }
 
 function* getCommands(session: Session<'authority'>, commands: Command[], showHidden = false): Generator<Command> {
