@@ -68,7 +68,7 @@ describe('Context API', () => {
     const event = 'attach'
 
     beforeEach(() => {
-      delete app._hooks[event]
+      delete app.lifecycle._hooks[event]
     })
 
     it('context.prototype.parallel', async () => {
@@ -220,8 +220,8 @@ describe('Context API', () => {
 
       function getHookSnapshot() {
         const result: Dict<number> = {}
-        for (const name in app._hooks) {
-          result[name] = app._hooks[name].length
+        for (const name in app.lifecycle._hooks) {
+          result[name] = app.lifecycle._hooks[name].length
         }
         result._ = app.state.disposables.length
         return result

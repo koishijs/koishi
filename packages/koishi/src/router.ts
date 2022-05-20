@@ -75,6 +75,28 @@ export class WebSocketLayer {
 export class Router extends KoaRouter {
   wsStack: WebSocketLayer[] = []
 
+  constructor(ctx: Context) {
+    super()
+
+    // create server
+    const koa = new Koa()
+    koa.use(require('koa-bodyparser')())
+    koa.use(this.routes())
+    koa.use(this.allowedMethods())
+
+    ctx.app._httpServer = createServer(koa.callback())
+    ctx.app._wsServer = new WebSocket.Server({
+      server: ctx.app._httpServer,
+    })
+
+    ctx.app._wsServer.on('connection', (socket, request) => {
+      for (const manager of this.wsStack) {
+        if (manager.accept(socket, request)) return
+      }
+      socket.close()
+    })
+  }
+
   /**
    * hack into router methods to make sure that koa middlewares are disposable
    */
@@ -95,26 +117,5 @@ export class Router extends KoaRouter {
       remove(this.wsStack, layer)
     })
     return layer
-  }
-
-  static prepare(app: App) {
-    // create server
-    const koa = new Koa()
-    app.router = new Router()
-    koa.use(require('koa-bodyparser')())
-    koa.use(app.router.routes())
-    koa.use(app.router.allowedMethods())
-
-    app._httpServer = createServer(koa.callback())
-    app._wsServer = new WebSocket.Server({
-      server: app._httpServer,
-    })
-
-    app._wsServer.on('connection', (socket, request) => {
-      for (const manager of app.router.wsStack) {
-        if (manager.accept(socket, request)) return
-      }
-      socket.close()
-    })
   }
 }

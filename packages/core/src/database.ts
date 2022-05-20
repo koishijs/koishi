@@ -1,8 +1,19 @@
 import * as utils from '@koishijs/utils'
-import { Awaitable, Dict, MaybeArray } from '@koishijs/utils'
+import { Dict, MaybeArray } from '@koishijs/utils'
+import { Awaitable } from 'cosmokit'
 import { Database, Driver, Result, Update } from 'minato'
-import { Context } from './context'
-import ns from 'ns-require'
+import { Context } from 'cordis'
+
+declare module 'cordis' {
+  interface Events {
+    'model'(name: keyof Tables): void
+  }
+
+  interface Context {
+    database: DatabaseService
+    model: DatabaseService
+  }
+}
 
 export interface User {
   // TODO v5: change to number
@@ -48,26 +59,36 @@ export interface Tables {
   channel: Channel
 }
 
-export abstract class Service {
+export class Service {
   protected start(): Awaitable<void> {}
   protected stop(): Awaitable<void> {}
 
-  constructor(protected ctx: Context, public name: keyof Context.Services, public immediate?: boolean) {
+  constructor(protected ctx: Context, public name: string, public immediate?: boolean) {
     Context.service(name)
 
     ctx.on('ready', async () => {
       await this.start()
-      ctx[name] = this as never
+      if (!immediate) ctx[name] = this
     })
 
+    if (immediate) {
+      setTimeout(() => ctx[name] = this, 0)
+    }
+
     ctx.on('dispose', async () => {
-      if (ctx[name] === this as never) ctx[name] = null
+      if (ctx[name] === this) ctx[name] = null
       await this.stop()
     })
   }
 
   get caller(): Context {
     return this[Context.current] || this.ctx
+  }
+}
+
+export namespace DatabaseService {
+  export interface Delegates {
+    getSelfIds(type?: string, assignees?: string[]): Dict<string[]>
   }
 }
 
@@ -133,8 +154,20 @@ export class DatabaseService extends Database<Tables> {
     return data[0]
   }
 
+  getSelfIds(type?: string, assignees?: string[]): Dict<string[]> {
+    if (type) {
+      assignees ||= this.ctx.bots.filter(bot => bot.platform === type).map(bot => bot.selfId)
+      return { [type]: assignees }
+    }
+    const platforms: Dict<string[]> = {}
+    for (const bot of this.ctx.bots) {
+      (platforms[bot.platform] ||= []).push(bot.selfId)
+    }
+    return platforms
+  }
+
   getAssignedChannels<K extends Channel.Field>(fields?: K[], assignMap?: Dict<string[]>): Promise<Result<Channel, K>[]>
-  async getAssignedChannels(fields?: Channel.Field[], assignMap: Dict<string[]> = this.ctx.getSelfIds()) {
+  async getAssignedChannels(fields?: Channel.Field[], assignMap: Dict<string[]> = this.getSelfIds()) {
     return this.get('channel', {
       $or: Object.entries(assignMap).map(([platform, assignee]) => ({ platform, assignee })),
     }, fields)
@@ -155,35 +188,5 @@ DatabaseService.prototype.extend = function extend(this: DatabaseService, name, 
   this.ctx.emit('model', name)
 }
 
-export const scope = ns({
-  namespace: 'koishi',
-  prefix: 'plugin',
-  official: 'koishijs',
-})
-
-export namespace DatabaseService {
-  type Methods<S, T> = {
-    [K in keyof S]?: S[K] extends (...args: infer R) => infer U ? (this: T, ...args: R) => U : S[K]
-  }
-
-  type Constructor<T> = new (...args: any[]) => T
-  type ExtensionMethods<T> = Methods<DatabaseService, T extends Constructor<infer I> ? I : never>
-  type Extension<T> = ((Database: T) => void) | ExtensionMethods<T>
-
-  /** @deprecated */
-  export function extend(module: string, extension: any): void
-  export function extend<T extends Constructor<unknown>>(module: T, extension: Extension<T>): void
-  export function extend(module: any, extension: any) {
-    let Database: any
-    try {
-      Database = typeof module === 'string' ? scope.require(module) : module
-    } catch {}
-    if (!Database) return
-
-    if (typeof extension === 'function') {
-      extension(Database)
-    } else {
-      Object.assign(Database.prototype, extension)
-    }
-  }
-}
+Context.service('database')
+Context.service('model')

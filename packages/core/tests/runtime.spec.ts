@@ -101,12 +101,12 @@ describe('Runtime', () => {
   describe('Nickname Prefix', () => {
     before(() => {
       app.options.prefix = '-'
-      app.prepare()
+      app.$internal.prepare()
     })
 
     after(() => {
       app.options.prefix = null
-      app.prepare()
+      app.$internal.prepare()
     })
 
     it('no nickname', async () => {
@@ -119,7 +119,7 @@ describe('Runtime', () => {
 
     it('single nickname', async () => {
       app.options.nickname = 'koishi'
-      app.prepare()
+      app.$internal.prepare()
 
       await client1.shouldReply('koishi, cmd2', 'cmd2:123')
       await client4.shouldReply('koishi, cmd2', 'cmd2:123')
@@ -133,7 +133,7 @@ describe('Runtime', () => {
 
     it('multiple nicknames', async () => {
       app.options.nickname = ['komeiji', 'koishi']
-      app.prepare()
+      app.$internal.prepare()
 
       await client1.shouldReply('cmd2', 'cmd2:123')
       await client4.shouldNotReply('cmd2')
@@ -149,12 +149,12 @@ describe('Runtime', () => {
   describe('Shortcuts', () => {
     before(() => {
       app.options.prefix = '#'
-      app.prepare()
+      app.$internal.prepare()
     })
 
     after(() => {
       app.options.prefix = null
-      app.prepare()
+      app.$internal.prepare()
     })
 
     it('single shortcut', async () => {

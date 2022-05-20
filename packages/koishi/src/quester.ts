@@ -1,4 +1,4 @@
-import { Schema } from '@koishijs/core'
+import { App, Context, Schema } from '@koishijs/core'
 import { Dict } from '@koishijs/utils'
 import { Agent, ClientRequestArgs } from 'http'
 import WebSocket from 'ws'
@@ -29,6 +29,12 @@ export interface Quester {
   put<T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T>
   patch<T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T>
   ws(url: string, options?: ClientRequestArgs): WebSocket
+}
+
+export class Quester {
+  constructor(ctx: Context, config: App.Config) {
+    return Quester.create(config.request)
+  }
 }
 
 export namespace Quester {
