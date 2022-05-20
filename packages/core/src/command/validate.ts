@@ -1,5 +1,5 @@
-import { Argv } from '../parser'
-import { Context } from '../context'
+import { Argv } from './parser'
+import { Context } from 'cordis'
 
 export default function validate(ctx: Context) {
   // add user fields

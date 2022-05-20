@@ -1,14 +1,18 @@
-import { Awaitable, coerce, Dict, Logger, remove, Schema } from '@koishijs/utils'
+import { coerce, Dict, Logger, remove, Schema } from '@koishijs/utils'
+import { Awaitable } from 'cosmokit'
+import { Context, Disposable } from 'cordis'
 import { Argv } from './parser'
-import { Context, Disposable, Next } from './context'
-import { Channel, User } from './database'
-import { Computed, FieldCollector, Session } from './session'
-import * as internal from './internal'
+import { Next } from '../protocol'
+import { Channel, User } from '../database'
+import { Computed, FieldCollector, Session } from '../protocol/session'
 
 const logger = new Logger('command')
 
 export type Extend<O extends {}, K extends string, T> = {
   [P in K | keyof O]?: (P extends keyof O ? O[P] : unknown) & (P extends K ? T : unknown)
+}
+
+export interface CommandService {
 }
 
 export namespace Command {
@@ -43,10 +47,8 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
   private _channelFields: FieldCollector<'channel'>[] = [['locale']]
   private _actions: Command.Action[] = []
   private _checkers: Command.Action[] = [async (argv) => {
-    return this.app.serial(argv.session, 'command/before-execute', argv)
+    return this.ctx.serial(argv.session, 'command/before-execute', argv)
   }]
-
-  public static enableHelp: typeof internal.enableHelp
 
   static defaultConfig: Command.Config = {
     authority: 1,
@@ -72,15 +74,11 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
     return this
   }
 
-  constructor(name: string, decl: string, context: Context) {
-    super(name, decl, context)
+  constructor(name: string, decl: string, ctx: Context) {
+    super(name, decl, ctx)
     this.config = { ...Command.defaultConfig }
     this._registerAlias(name)
-    context.app._commandList.push(this)
-  }
-
-  get app() {
-    return this.context.app
+    ctx.$commander._commandList.push(this)
   }
 
   get displayName() {
@@ -109,9 +107,9 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
     }
 
     // register global
-    const previous = this.app.getCommand(name)
+    const previous = this.ctx.$commander.getCommand(name)
     if (!previous) {
-      this.app._commands.set(name, this)
+      this.ctx.$commander._commands.set(name, this)
     } else if (previous !== this) {
       throw new Error(`duplicate command names: "${name}"`)
     }
@@ -119,7 +117,7 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
     // add disposable
     this._disposables?.push(() => {
       remove(this._aliases, name)
-      this.app._commands.delete(name)
+      this.ctx.$commander._commands.delete(name)
     })
   }
 
@@ -149,8 +147,8 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
     if (this._disposed) return this
     config.name = name
     config.command = this
-    this.app._shortcuts.push(config)
-    this._disposables?.push(() => remove(this.app._shortcuts, config))
+    this.ctx.$commander._shortcuts.push(config)
+    this._disposables?.push(() => remove(this.ctx.$commander._shortcuts, config))
     return this
   }
 
@@ -161,7 +159,7 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
     const desc = typeof args[0] === 'string' ? args.shift() as string : ''
     const config = args[0] as Command.Config || {}
     if (this._disposed) config.patch = true
-    return this.context.command(def, desc, config)
+    return this.ctx.command(def, desc, config)
   }
 
   usage(text: Command.Usage<U, G>) {
@@ -191,7 +189,7 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
 
   match(session: Session) {
     const { authority = Infinity } = (session.user || {}) as User
-    return this.context.match(session) && this.config.authority <= authority
+    return this.ctx.match(session) && this.config.authority <= authority
   }
 
   getConfig<K extends keyof Command.Config>(key: K, session: Session): Exclude<Command.Config[K], (session: Session) => any> {
@@ -269,7 +267,7 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
       if (index === length) throw error
       const stack = coerce(error)
       logger.warn(`${argv.source ||= this.stringify(args, options)}\n${stack}`)
-      this.app.emit(argv.session, 'command-error', argv, error)
+      this.ctx.emit(argv.session, 'command-error', argv, error)
     }
 
     return ''
@@ -277,13 +275,13 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
 
   dispose() {
     this._disposed = true
-    this.app.emit('command-removed', this)
+    this.ctx.emit('command-removed', this)
     for (const cmd of this.children.slice()) {
       cmd.dispose()
     }
-    this.app._shortcuts = this.app._shortcuts.filter(s => s.command !== this)
-    this._aliases.forEach(name => this.app._commands.delete(name))
-    remove(this.app._commandList, this)
+    this.ctx.$commander._shortcuts = this.ctx.$commander._shortcuts.filter(s => s.command !== this)
+    this._aliases.forEach(name => this.ctx.$commander._commands.delete(name))
+    remove(this.ctx.$commander._commandList, this)
     if (this.parent) {
       remove(this.parent.children, this)
     }

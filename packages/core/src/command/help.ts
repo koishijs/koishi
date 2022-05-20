@@ -1,8 +1,8 @@
-import { Argv } from '../parser'
-import { Command } from '../command'
-import { Context } from '../context'
+import { Argv } from './parser'
+import { Command } from './command'
+import { Context } from 'cordis'
 import { Channel, Tables, User } from '../database'
-import { FieldCollector, Session } from '../session'
+import { FieldCollector, Session } from '../protocol/session'
 
 interface HelpOptions {
   showHidden?: boolean
@@ -27,11 +27,11 @@ export default function help(ctx: Context, config: HelpConfig = {}) {
     ctx.on('command-added', cmd => cmd.use(enableHelp))
   }
 
-  const app = ctx.app
+  const $ = ctx.$commander
   function findCommand(target: string) {
-    const command = app._commands.resolve(target)
+    const command = $._commands.resolve(target)
     if (command) return command
-    const shortcut = app._shortcuts.find(({ name }) => {
+    const shortcut = $._shortcuts.find(({ name }) => {
       return typeof name === 'string' ? name === target : name.test(target)
     })
     if (shortcut) return shortcut.command
@@ -44,7 +44,7 @@ export default function help(ctx: Context, config: HelpConfig = {}) {
     session.collect(key, { ...argv, command, args: [], options: { help: true } }, fields)
   }
 
-  const cmd = ctx.command('help [command:string]', { authority: 0, ...config })
+  const cmd = $.command('help [command:string]', { authority: 0, ...config })
     .userFields(['authority'])
     .userFields(createCollector('user'))
     .channelFields(createCollector('channel'))
@@ -52,7 +52,7 @@ export default function help(ctx: Context, config: HelpConfig = {}) {
     .option('showHidden', '-H')
     .action(async ({ session, options }, target) => {
       if (!target) {
-        const commands = app._commandList.filter(cmd => cmd.parent === null)
+        const commands = $._commandList.filter(cmd => cmd.parent === null)
         const output = formatCommands('.global-prolog', session, commands, options)
         const epilog = session.text('.global-epilog')
         if (epilog) output.push(epilog)
@@ -60,14 +60,14 @@ export default function help(ctx: Context, config: HelpConfig = {}) {
       }
 
       const command = findCommand(target)
-      if (!command?.context.match(session)) {
+      if (!command?.ctx.match(session)) {
         return session.suggest({
           target,
           items: getCommandNames(session),
           prefix: session.text('suggest.help-prefix'),
           suffix: session.text('suggest.help-suffix'),
           async apply(suggestion) {
-            return showHelp(ctx.getCommand(suggestion), this as any, options)
+            return showHelp($.getCommand(suggestion), this as any, options)
           },
         })
       }
@@ -79,7 +79,7 @@ export default function help(ctx: Context, config: HelpConfig = {}) {
 }
 
 export function getCommandNames(session: Session) {
-  return session.app._commandList
+  return session.app.$commander._commandList
     .filter(cmd => cmd.match(session) && !cmd.config.hidden)
     .flatMap(cmd => cmd._aliases)
 }
@@ -141,13 +141,13 @@ function getOptions(command: Command, session: Session<'authority'>, config: Hel
     let line = `${authority}${option.syntax}`
     const description = session.text(option.descPath ?? [`commands.${command.name}.options.${option.name}`, ''])
     if (description) line += '  ' + description
-    line = command.app.chain('help/option', line, option, command, session)
+    line = command.ctx.chain('help/option', line, option, command, session)
     output.push('    ' + line)
     for (const value in option.valuesSyntax) {
       let line = `${authority}${option.valuesSyntax[value]}`
       const description = session.text([`commands.${command.name}.options.${option.name}.${value}`, ''])
       if (description) line += '  ' + description
-      line = command.app.chain('help/option', line, option, command, session)
+      line = command.ctx.chain('help/option', line, option, command, session)
       output.push('    ' + line)
     }
   })
