@@ -4,8 +4,8 @@ import { Channel } from './database'
 import { Session } from './protocol/session'
 
 declare module 'cordis' {
-  interface Context extends Selector.Delegates {
-    $selector: Selector
+  interface Context extends SelectorService.Delegates {
+    $selector: SelectorService
   }
 }
 
@@ -21,7 +21,7 @@ interface Selection extends BaseSelection {
   $not?: Selection
 }
 
-export namespace Selector {
+export namespace SelectorService {
   export interface Delegates {
     logger(name: string): Logger
     user(...values: string[]): Context
@@ -44,7 +44,7 @@ function property<K extends keyof Session>(ctx: Context, key: K, ...values: Sess
   })
 }
 
-export class Selector {
+export class SelectorService {
   constructor(private ctx: Context) {
     ctx.on('logger/error', (name, ...args) => {
       this.logger(name).error(...args)
@@ -175,6 +175,6 @@ export class Selector {
 }
 
 Context.service('$selector', {
-  constructor: Selector,
+  constructor: SelectorService,
   methods: ['logger', 'user', 'self', 'guild', 'channel', 'platform', 'private', 'select', 'setTimeout', 'setInterval', 'broadcast'],
 })

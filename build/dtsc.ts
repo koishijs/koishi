@@ -93,6 +93,7 @@ interface Layer {
     }
     for (const dep in deps) {
       if (whitelist.includes(dep) && meta.devDependencies[dep] || !nodes[dep]) continue
+      if (name === 'koishi' && dep.startsWith('@koishijs/plugin-')) continue
       nodes[name].prev.push(dep)
       nodes[dep].next.add(name)
     }

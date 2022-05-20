@@ -26,17 +26,17 @@ describe('Hook API', () => {
     it('max hooks', async () => {
       appWarn.mockClear()
       createArray(64 + extraCalls, () => app.on('attach', noop))
-      expect(app._hooks.attach.length).to.equal(64 + extraCalls)
+      expect(app.lifecycle._hooks.attach.length).to.equal(64 + extraCalls)
       expect(appWarn.mock.calls).to.have.length(extraCalls)
-      delete app._hooks.attach
+      delete app.lifecycle._hooks.attach
     })
 
     it('max prepended hooks', () => {
       appWarn.mockClear()
       createArray(64 + extraCalls, () => app.on('attach', noop, true))
-      expect(app._hooks.attach.length).to.equal(64 + extraCalls)
+      expect(app.lifecycle._hooks.attach.length).to.equal(64 + extraCalls)
       expect(appWarn.mock.calls).to.have.length(extraCalls)
-      delete app._hooks.attach
+      delete app.lifecycle._hooks.attach
     })
   })
 
@@ -44,7 +44,7 @@ describe('Hook API', () => {
     let callSequence: jest.Mock<any, any[]>[]
 
     beforeEach(() => {
-      Reflect.deleteProperty(app._hooks, Context.middleware)
+      app.$internal._hooks = []
       callSequence = []
     })
 

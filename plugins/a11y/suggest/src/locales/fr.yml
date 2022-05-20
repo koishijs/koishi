@@ -1,0 +1,4 @@
+suggest:
+  hint: Voulez-vous dire {0} ?
+  command-prefix: ''
+  command-suffix: Tapez un point pour appliquer la suggestion.

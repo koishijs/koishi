@@ -4,12 +4,10 @@ import { Awaitable } from 'cosmokit'
 import { Computed, Session } from './session'
 import { Channel, User } from '../database'
 import { Context } from 'cordis'
-import suggest from './suggest'
 
 export * from './adapter'
 export * from './bot'
 export * from './session'
-export * from './suggest'
 
 declare module 'cordis' {
   interface Context extends Internal.Delegates {
@@ -69,8 +67,6 @@ export class Internal {
     // bind built-in event listeners
     this.middleware(this._process.bind(this))
     ctx.on('message', this._handleMessage.bind(this))
-
-    ctx.plugin(suggest, config)
 
     ctx.before('attach-user', (session, fields) => {
       session.collect('user', session.argv, fields)

@@ -17,10 +17,11 @@ declare module '@koishijs/core' {
 export class Patch {
   constructor(ctx: Context) {
     ctx.app.baseDir ??= process.cwd()
+    ctx.plugin('suggest')
   }
 }
 
-Context.service(Symbol('patch'), {
+Context.service('$patch', {
   constructor: Patch,
 })
 
@@ -35,7 +36,8 @@ Context.prototype.plugin = function (this: Context, entry: any, config?: any) {
   if (typeof entry === 'string') {
     entry = scope.require(entry)
   }
-  return plugin.call(this, entry, config)
+  plugin.call(this, entry, config)
+  return this
 }
 
 const start = App.prototype.start

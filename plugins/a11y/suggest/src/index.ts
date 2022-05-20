@@ -1,9 +1,20 @@
 import { distance } from 'fastest-levenshtein'
 import { Awaitable } from 'cosmokit'
-import { Context } from 'cordis'
-import { Next } from '.'
-import { Session } from '../protocol/session'
-import { getCommandNames } from '../command/help'
+import { App, Context, Next, Schema, Session } from 'koishi'
+
+declare module 'koishi' {
+  namespace App {
+    namespace Config {
+      interface Basic extends SuggestConfig {}
+    }
+  }
+
+  interface Session {
+    suggest(options: SuggestOptions): Promise<void>
+  }
+}
+
+App.Config.Basic.dict.minSimilarity = Schema.percent().default(0.4).description('用于模糊匹配的相似系数，应该是一个 0 到 1 之间的数值。数值越高，模糊匹配越严格。设置为 1 可以完全禁用模糊匹配。')
 
 export interface SuggestOptions {
   target: string
@@ -17,12 +28,6 @@ export interface SuggestOptions {
 
 export interface SuggestConfig {
   minSimilarity?: number
-}
-
-declare module './session' {
-  interface Session {
-    suggest(options: SuggestOptions): Promise<void>
-  }
 }
 
 Session.prototype.suggest = function suggest(this: Session, options) {
@@ -74,7 +79,15 @@ Session.prototype.suggest = function suggest(this: Session, options) {
   })
 }
 
-export default function suggest(ctx: Context) {
+export const name = 'suggest'
+
+export function apply(ctx: Context) {
+  ctx.i18n.define('zh', require('./locales/zh'))
+  ctx.i18n.define('en', require('./locales/en'))
+  ctx.i18n.define('ja', require('./locales/ja'))
+  ctx.i18n.define('fr', require('./locales/fr'))
+  ctx.i18n.define('zh-tw', require('./locales/zh-tw'))
+
   ctx.middleware((session, next) => {
     // use `!prefix` instead of `prefix === null` to prevent from blocking other middlewares
     // we need to make sure that the user truly has the intension to call a command
@@ -86,7 +99,7 @@ export default function suggest(ctx: Context) {
     return session.suggest({
       target,
       next,
-      items: getCommandNames(session),
+      items: ctx.$commander.getCommandNames(session),
       prefix: session.text('suggest.command-prefix'),
       suffix: session.text('suggest.command-suffix'),
       async apply(suggestion, next) {
