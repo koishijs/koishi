@@ -7,4 +7,7 @@
   "include": [
     "src",
   ],
+  "dtsc": {
+    "inline": ["@koishijs/core"],
+  },
 }

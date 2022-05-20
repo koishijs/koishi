@@ -2,6 +2,7 @@ import { resolve } from 'path'
 import globby from 'globby'
 import spawn from 'cross-spawn'
 import { readdir } from 'fs-extra'
+import { SpawnOptions } from 'child_process'
 
 export const cwd = resolve(__dirname, '..')
 
@@ -69,8 +70,8 @@ export function spawnSync(args: string[], silent?: boolean) {
   }
 }
 
-export function spawnAsync(args: string[]) {
-  const child = spawn(args[0], args.slice(1), { cwd, stdio: 'inherit' })
+export function spawnAsync(args: string[], options?: SpawnOptions) {
+  const child = spawn(args[0], args.slice(1), { cwd, stdio: 'inherit', ...options })
   return new Promise<number>((resolve) => {
     child.on('close', resolve)
   })
