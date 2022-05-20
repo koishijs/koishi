@@ -1,8 +1,9 @@
 import { distance } from 'fastest-levenshtein'
-import { Awaitable } from '@koishijs/utils'
-import { Context, Next } from '../context'
-import { Session } from '../session'
-import { getCommandNames } from './help'
+import { Awaitable } from 'cosmokit'
+import { Context } from 'cordis'
+import { Next } from '.'
+import { Session } from '../protocol/session'
+import { getCommandNames } from '../command/help'
 
 export interface SuggestOptions {
   target: string
@@ -18,7 +19,7 @@ export interface SuggestConfig {
   minSimilarity?: number
 }
 
-declare module '../session' {
+declare module './session' {
   interface Session {
     suggest(options: SuggestOptions): Promise<void>
   }

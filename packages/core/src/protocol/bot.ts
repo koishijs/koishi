@@ -1,14 +1,26 @@
 import { Dict, Logger, makeArray, Random, Schema, sleep } from '@koishijs/utils'
+import { Awaitable } from 'cosmokit'
 import { Adapter } from './adapter'
-import { App } from './app'
+import { Context } from 'cordis'
 import { Session } from './session'
+
+declare module 'cordis' {
+  interface Events {
+    'adapter'(name: string): void
+    'bot-added'(bot: Bot): void
+    'bot-removed'(bot: Bot): void
+    'bot-status-updated'(bot: Bot): void
+    'bot-connect'(bot: Bot): Awaitable<void>
+    'bot-disconnect'(bot: Bot): Awaitable<void>
+  }
+}
 
 const logger = new Logger('bot')
 
 export interface Bot extends Bot.BaseConfig, Bot.Methods, Bot.UserBase {}
 
 export abstract class Bot<T extends Bot.BaseConfig = Bot.BaseConfig> {
-  public app: App
+  public ctx: Context
   public platform: string
   public hidden?: boolean
   public internal?: any
@@ -21,7 +33,7 @@ export abstract class Bot<T extends Bot.BaseConfig = Bot.BaseConfig> {
   error?: Error
 
   constructor(public adapter: Adapter, public config: T) {
-    this.app = adapter.ctx.app
+    this.ctx = adapter.ctx
     this.platform = config.platform || adapter.platform
     this.logger = new Logger(adapter.platform)
     this._status = 'offline'
@@ -32,8 +44,8 @@ export abstract class Bot<T extends Bot.BaseConfig = Bot.BaseConfig> {
   }
 
   private extendModel() {
-    if (this.platform in this.app.model.tables.user.fields) return
-    this.app.model.extend('user', {
+    if (this.platform in this.ctx.model.tables.user.fields) return
+    this.ctx.model.extend('user', {
       [this.platform]: { type: 'string', length: 63 },
     }, {
       unique: [this.platform as never],
@@ -46,8 +58,8 @@ export abstract class Bot<T extends Bot.BaseConfig = Bot.BaseConfig> {
 
   set status(value) {
     this._status = value
-    if (this.app.bots.includes(this)) {
-      this.app.emit('bot-status-updated', this)
+    if (this.ctx.bots.includes(this)) {
+      this.ctx.emit('bot-status-updated', this)
     }
   }
 
@@ -67,7 +79,7 @@ export abstract class Bot<T extends Bot.BaseConfig = Bot.BaseConfig> {
     if (['connect', 'reconnect', 'online'].includes(this.status)) return
     this.status = 'connect'
     try {
-      await this.app.parallel('bot-connect', this)
+      await this.ctx.parallel('bot-connect', this)
       await this.adapter.connect(this)
     } catch (error) {
       this.reject(error)
@@ -78,7 +90,7 @@ export abstract class Bot<T extends Bot.BaseConfig = Bot.BaseConfig> {
     if (['disconnect', 'offline'].includes(this.status)) return
     this.status = 'disconnect'
     try {
-      await this.app.parallel('bot-disconnect', this)
+      await this.ctx.parallel('bot-disconnect', this)
       await this.adapter.disconnect(this)
     } catch (error) {
       this.logger.warn(error)
@@ -110,7 +122,7 @@ export abstract class Bot<T extends Bot.BaseConfig = Bot.BaseConfig> {
 
   async session(data: Partial<Session>) {
     const session = this.createSession(data)
-    if (await this.app.serial(session, 'before-send', session)) return
+    if (await this.ctx.serial(session, 'before-send', session)) return
     return session
   }
 
@@ -119,7 +131,7 @@ export abstract class Bot<T extends Bot.BaseConfig = Bot.BaseConfig> {
     return Object.fromEntries(list.map(info => [info.userId, info.nickname || info.username]))
   }
 
-  async broadcast(channels: (string | [string, string])[], content: string, delay = this.app.options.delay.broadcast) {
+  async broadcast(channels: (string | [string, string])[], content: string, delay = this.ctx.app.options.delay.broadcast) {
     const messageIds: string[] = []
     for (let index = 0; index < channels.length; index++) {
       if (index && delay) await sleep(delay)
@@ -127,7 +139,7 @@ export abstract class Bot<T extends Bot.BaseConfig = Bot.BaseConfig> {
         const [channelId, guildId] = makeArray(channels[index])
         messageIds.push(...await this.sendMessage(channelId, content, guildId))
       } catch (error) {
-        this.app.logger('bot').warn(error)
+        this.ctx.logger('bot').warn(error)
       }
     }
     return messageIds

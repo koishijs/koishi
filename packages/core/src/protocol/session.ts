@@ -1,17 +1,23 @@
-import { Channel, Tables, User } from './database'
-import { Command } from './command'
+import { Channel, Tables, User } from '../database'
+import { Argv, Command } from '../command'
+import { Awaitable } from 'cosmokit'
 import { defineProperty, isNullable, Logger, makeArray, observe, Promisify, Random, segment } from '@koishijs/utils'
-import { Argv } from './parser'
-import { Middleware, Next } from './context'
-import { App } from './app'
+import { Middleware, Next } from '.'
+import { App } from 'cordis'
 import { Bot } from './bot'
 
 type Genres = 'friend' | 'channel' | 'guild' | 'guild-member' | 'guild-role' | 'guild-file' | 'guild-emoji'
 type Actions = 'added' | 'deleted' | 'updated'
 type SessionEventCallback = (session: Session) => void
 
-declare module './context' {
-  interface EventMap extends Record<`${Genres}-${Actions}`, SessionEventCallback> {
+type KoishiSession = Session<any, any>
+
+declare module 'cordis' {
+  namespace Lifecycle {
+    interface Session extends KoishiSession {}
+  }
+
+  interface Events extends Record<`${Genres}-${Actions}`, SessionEventCallback> {
     'message': SessionEventCallback
     'message-deleted': SessionEventCallback
     'message-updated': SessionEventCallback
@@ -33,6 +39,10 @@ declare module './context' {
     'notice/honor/talkative': SessionEventCallback
     'notice/honor/performer': SessionEventCallback
     'notice/honor/emotion': SessionEventCallback
+
+    // session events
+    'appellation'(name: string, session: Session): string
+    'before-send'(session: Session): Awaitable<void | boolean>
   }
 }
 
@@ -108,7 +118,7 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
   constructor(bot: Bot, session: Partial<Session.Payload>) {
     Object.assign(this, session)
     this.platform = bot.platform
-    defineProperty(this, 'app', bot.app)
+    defineProperty(this, 'app', bot.ctx.app)
     defineProperty(this, 'bot', bot)
     defineProperty(this, 'user', null)
     defineProperty(this, 'channel', null)
@@ -228,7 +238,7 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
     const key = `${platform}:${channelId}`
 
     // 如果存在满足可用的缓存数据，使用缓存代替数据获取
-    let cache = this.app._channelCache.get(this.id, key)
+    let cache = this.app.$internal._channelCache.get(this.id, key)
     if (cache) {
       for (const key in cache) {
         fieldSet.delete(key as any)
@@ -238,12 +248,12 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
 
     // 绑定一个新的可观测频道实例
     const data = await this.getChannel(channelId, [...fieldSet])
-    cache = this.app._channelCache.get(this.id, key)
+    cache = this.app.$internal._channelCache.get(this.id, key)
     if (cache) {
       cache.$merge(data)
     } else {
       cache = observe(data, diff => this.app.database.setChannel(platform, channelId, diff), `channel ${key}`)
-      this.app._channelCache.set(this.id, key, cache)
+      this.app.$internal._channelCache.set(this.id, key, cache)
     }
     return cache
   }
@@ -280,7 +290,7 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
     const { userId, platform } = this
 
     // 如果存在满足可用的缓存数据，使用缓存代替数据获取
-    let cache = this.app._userCache.get(this.id, this.uid)
+    let cache = this.app.$internal._userCache.get(this.id, this.uid)
     if (cache) {
       for (const key in cache) {
         fieldSet.delete(key as any)
@@ -299,12 +309,12 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
 
     // 绑定一个新的可观测用户实例
     const data = await this.getUser(userId, [...fieldSet])
-    cache = this.app._userCache.get(this.id, this.uid)
+    cache = this.app.$internal._userCache.get(this.id, this.uid)
     if (cache) {
       cache.$merge(data)
     } else {
       cache = observe(data, diff => this.app.database.setUser(this.platform, userId, diff), `user ${this.uid}`)
-      this.app._userCache.set(this.id, this.uid, cache)
+      this.app.$internal._userCache.set(this.id, this.uid, cache)
     }
     return this.user = cache
   }
@@ -356,13 +366,13 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
 
   private inferCommand(argv: Argv) {
     if (argv.command) return argv.command
-    if (argv.name) return argv.command = this.app._commands.resolve(argv.name)
+    if (argv.name) return argv.command = this.app.$commander.resolve(argv.name)
 
     const { parsed, subtype } = this
     // guild message should have prefix or appel to be interpreted as a command call
     if (argv.root && subtype !== 'private' && parsed.prefix === null && !parsed.appel) return
     if (!argv.tokens.length) return
-    const cmd = this.app._commands.resolve(argv.tokens[0].content)
+    const cmd = this.app.$commander.resolve(argv.tokens[0].content)
     if (cmd) {
       argv.tokens.shift()
       return argv.command = cmd
@@ -401,7 +411,7 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
       }
       if (!this.resolve(argv)) return ''
     } else {
-      argv.command ||= this.app.getCommand(argv.name)
+      argv.command ||= this.app.$commander.getCommand(argv.name)
       if (!argv.command) {
         logger.warn(new Error(`cannot find command ${argv.name}`))
         return ''
@@ -409,7 +419,7 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
     }
 
     const { command } = argv
-    if (!command.context.match(this)) return ''
+    if (!command.ctx.match(this)) return ''
 
     if (this.app.database) {
       if (this.subtype === 'group') {
