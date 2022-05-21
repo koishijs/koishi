@@ -116,3 +116,25 @@ export class Post {
   childPosts: Post[]
 }
 ```
+
+## 描述合并
+
+使用 `Mixin()` 方法，我们可以轻松对配置类进行合并。
+
+```ts
+class DressColor {
+  @SchemaProperty({ default: 'red' })
+  color: string
+}
+
+class DressSize {
+  @SchemaProperty({ default: 'M' })
+  size: string
+}
+
+@RegisterSchema()
+class Dress extends Mixin(DressColor, DressSize) {
+  @SchemaProperty({ default: 'dress' })
+  name: string
+}
+```
