@@ -85,7 +85,7 @@ describe('Schedule Plugin', () => {
     await new Promise(process.nextTick)
     await client1.shouldReply('', 'foo')
 
-    await client1.shouldReply('schedule -l', '2. 2000-01-01 00:30:00 起每隔 1 小时：echo foo')
+    await client1.shouldReply('schedule -l', '2. 每隔 1 小时 (剩余 59 分钟)：echo foo')
     await client1.shouldReply('schedule -d 2', '日程 2 已删除。')
     clock.tick(Time.hour) // 02:31
     await new Promise(process.nextTick)

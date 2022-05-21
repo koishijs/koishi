@@ -47,7 +47,7 @@ describe('@koishijs/plugin-forward', () => {
 
   it('command usage', async () => {
     app.plugin('database-memory')
-    await app._tasks.flush()
+    await app.lifecycle.flush()
     await app.mock.initUser('123', 3)
 
     await session2.shouldReply('forward', /设置消息转发/)

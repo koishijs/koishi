@@ -43,7 +43,7 @@
     "element-plus": "^2.1.11",
     "marked": "^4.0.15",
     "sass": "^1.51.0",
-    "schemastery": "^3.4.1",
+    "schemastery": "^3.4.2",
     "vite": "^2.9.8",
     "vue": "^3.2.33",
     "vue-router": "^4.0.14"
