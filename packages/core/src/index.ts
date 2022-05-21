@@ -4,14 +4,13 @@ import { App } from 'cordis'
 import { Computed } from './protocol'
 
 export * from '@koishijs/utils'
+export * from 'cordis'
 export * from 'minato'
-export * from './command'
-export * from './database'
 export * from './i18n'
+export * from './database'
 export * from './protocol'
+export * from './command'
 export * from './selector'
-
-export { App, Context, Disposable, Events, Filter, Plugin } from 'cordis'
 
 const version: string = require('../package.json').version
 export { version }

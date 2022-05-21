@@ -44,7 +44,7 @@ export function apply(ctx: Context, config: HelpConfig = {}) {
 
   const $ = ctx.$commander
   function findCommand(target: string) {
-    const command = $._commands.resolve(target)
+    const command = $.resolve(target)
     if (command) return command
     const shortcut = $._shortcuts.find(({ name }) => {
       return typeof name === 'string' ? name === target : name.test(target)

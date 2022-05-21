@@ -17,8 +17,8 @@ declare module '@koishijs/core' {
 export class Patch {
   constructor(ctx: Context) {
     ctx.app.baseDir ??= process.cwd()
-    ctx.plugin('suggest')
-    ctx.plugin('help')
+    ctx.plugin('suggest', ctx.app.options)
+    ctx.plugin('help', ctx.app.options['help'])
   }
 }
 

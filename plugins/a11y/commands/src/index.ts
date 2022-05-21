@@ -46,7 +46,7 @@ export function apply(ctx: Context, config: Dict<Config>) {
   function locate(command: Command, name: string) {
     const capture = name.match(/.*(?=[./])/)
     if (!capture) return name
-    const parent = ctx.app._commands.resolve(capture[0])
+    const parent = ctx.app.$commander.resolve(capture[0])
     if (capture[0] && !parent) {
       ctx.logger('command').warn('cannot find parent command', capture[0])
       return
@@ -88,7 +88,7 @@ export function apply(ctx: Context, config: Dict<Config>) {
   }
 
   for (const key in config) {
-    const command = ctx.app._commands.resolve(key)
+    const command = ctx.app.$commander.resolve(key)
     if (command) {
       accept(command, config[key])
     } else if (config[key].create) {
@@ -99,7 +99,7 @@ export function apply(ctx: Context, config: Dict<Config>) {
 
   ctx.on('command-added', (cmd) => {
     for (const key in config) {
-      if (cmd === ctx.app._commands.resolve(key)) {
+      if (cmd === ctx.app.$commander.resolve(key)) {
         return accept(cmd, config[key])
       }
     }
@@ -112,7 +112,7 @@ export function apply(ctx: Context, config: Dict<Config>) {
   ctx.on('dispose', () => {
     for (const key in snapshots) {
       const { name, parent, ...options } = snapshots[key]
-      const cmd = ctx.app._commands.resolve(name)
+      const cmd = ctx.app.$commander.resolve(name)
       Object.assign(cmd.config, options)
       teleport(cmd, parent)
     }

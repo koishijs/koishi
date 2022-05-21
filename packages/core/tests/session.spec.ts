@@ -32,36 +32,8 @@ describe('Session API', () => {
   describe('Other Session Methods', () => {
     const app = new App({ prefix: '.' }).plugin(mock)
     const client = app.mock.client('123', '456')
-    const items = ['foo', 'bar']
-
-    app.command('find [item]').action(({ session }, item) => {
-      if (items.includes(item)) return 'found:' + item
-      return session.suggest({
-        target: item,
-        items: ['foo', 'bar', 'baz'],
-        prefix: 'PREFIX',
-        suffix: 'SUFFIX',
-        apply(message) {
-          return session.execute({ args: [message], name: 'find' })
-        },
-      })
-    })
 
     before(() => app.start())
-
-    it('no suggestions', async () => {
-      await client.shouldNotReply(' ')
-      await client.shouldNotReply('find for')
-    })
-
-    it('show suggestions', async () => {
-      await client.shouldReply('.find 111', 'PREFIX')
-      await client.shouldNotReply(' ')
-      await client.shouldReply('.find for', `PREFIX您要找的是不是“foo”？SUFFIX`)
-      await client.shouldReply(' ', 'found:foo')
-      await client.shouldReply('.find bax', `PREFIX您要找的是不是“bar”或“baz”？`)
-      await client.shouldNotReply(' ')
-    })
 
     app.middleware(async (session, next) => {
       if (session.content !== 'prompt') return next()

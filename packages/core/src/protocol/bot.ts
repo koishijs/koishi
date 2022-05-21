@@ -1,7 +1,7 @@
 import { Dict, Logger, makeArray, Random, Schema, sleep } from '@koishijs/utils'
 import { Awaitable } from 'cosmokit'
 import { Adapter } from './adapter'
-import { Context } from 'cordis'
+import { App, Context } from 'cordis'
 import { Session } from './session'
 
 declare module 'cordis' {
@@ -20,6 +20,7 @@ const logger = new Logger('bot')
 export interface Bot extends Bot.BaseConfig, Bot.Methods, Bot.UserBase {}
 
 export abstract class Bot<T extends Bot.BaseConfig = Bot.BaseConfig> {
+  public app: App
   public ctx: Context
   public platform: string
   public hidden?: boolean
@@ -34,6 +35,7 @@ export abstract class Bot<T extends Bot.BaseConfig = Bot.BaseConfig> {
 
   constructor(public adapter: Adapter, public config: T) {
     this.ctx = adapter.ctx
+    this.app = this.ctx.app
     this.platform = config.platform || adapter.platform
     this.logger = new Logger(adapter.platform)
     this._status = 'offline'

@@ -1,7 +1,10 @@
 import { App, User, Channel, Command, sleep } from 'koishi'
 import mock, { DEFAULT_SELF_ID } from '@koishijs/plugin-mock'
 
-const app = new App()
+const app = new App({
+  // @ts-ignore disable suggestions
+  minSimilarity: 0,
+})
 
 app.plugin('database-memory')
 app.plugin(mock)

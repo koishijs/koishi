@@ -75,6 +75,12 @@ export class Internal {
     ctx.before('attach-channel', (session, fields) => {
       session.collect('channel', session.argv, fields)
     })
+
+    this.middleware((session, next) => {
+      // execute command
+      if (!session.resolve(session.argv)) return next()
+      return session.execute(session.argv, next)
+    })
   }
 
   protected get caller(): Context {

@@ -38,7 +38,7 @@ Session.prototype.suggest = function suggest(this: Session, options) {
     suffix,
     apply,
     next = Next.compose,
-    minSimilarity = this.app.options.minSimilarity,
+    minSimilarity = this.app.options.minSimilarity ?? 0.4,
   } = options
 
   const sendNext = async (callback: Next) => {

@@ -113,9 +113,7 @@ export class Router extends KoaRouter {
     const layer = new WebSocketLayer(this, path, callback)
     this.wsStack.push(layer)
     const context: Context = this[Context.current]
-    context?.state.disposables.push(() => {
-      remove(this.wsStack, layer)
-    })
+    context?.state.disposables.push(() => layer.close())
     return layer
   }
 }

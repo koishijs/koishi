@@ -23,7 +23,7 @@ export function handleError<U extends User.Field, G extends Channel.Field, A ext
   cmd: Command<U, G, A, O>,
   handler: (error: Error, argv: Argv<U, G, A, O>) => Awaitable<void | string>,
 ) {
-  loadI18n(cmd.app)
+  loadI18n(cmd.ctx.app)
 
   return cmd.action(async (argv, ...args) => {
     try {
@@ -37,7 +37,7 @@ export function handleError<U extends User.Field, G extends Channel.Field, A ext
 
 export function adminUser<U extends User.Field, G extends Channel.Field, A extends any[], O extends {}>(cmd: Command<U, G, A, O>) {
   let notFound = false
-  loadI18n(cmd.app)
+  loadI18n(cmd.ctx.app)
 
   async function setTarget(argv: Argv<'authority', G, A, Extend<O, 'user', string>>) {
     const { options, session } = argv
@@ -104,7 +104,7 @@ export function adminUser<U extends User.Field, G extends Channel.Field, A exten
 
 export function adminChannel<U extends User.Field, G extends Channel.Field, A extends any[], O extends {}>(cmd: Command<U, G, A, O>) {
   let notFound = false
-  loadI18n(cmd.app)
+  loadI18n(cmd.ctx.app)
 
   async function setTarget(argv: Argv<U, G, A, Extend<O, 'channel', string>>) {
     const { options, session } = argv

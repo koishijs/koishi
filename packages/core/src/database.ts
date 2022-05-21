@@ -1,6 +1,5 @@
 import * as utils from '@koishijs/utils'
 import { Dict, MaybeArray } from '@koishijs/utils'
-import { Awaitable } from 'cosmokit'
 import { Database, Driver, Result, Update } from 'minato'
 import { Context } from 'cordis'
 
@@ -57,33 +56,6 @@ export namespace Channel {
 export interface Tables {
   user: User
   channel: Channel
-}
-
-export class Service {
-  protected start(): Awaitable<void> {}
-  protected stop(): Awaitable<void> {}
-
-  constructor(protected ctx: Context, public name: string, public immediate?: boolean) {
-    Context.service(name)
-
-    ctx.on('ready', async () => {
-      await this.start()
-      if (!immediate) ctx[name] = this
-    })
-
-    if (immediate) {
-      setTimeout(() => ctx[name] = this, 0)
-    }
-
-    ctx.on('dispose', async () => {
-      if (ctx[name] === this) ctx[name] = null
-      await this.stop()
-    })
-  }
-
-  get caller(): Context {
-    return this[Context.current] || this.ctx
-  }
 }
 
 export namespace DatabaseService {

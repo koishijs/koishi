@@ -59,12 +59,6 @@ export default function runtime(ctx: Context) {
     session.argv.session = session
   })
 
-  ctx.middleware((session, next) => {
-    // execute command
-    if (!session.resolve(session.argv)) return next()
-    return session.execute(session.argv, next)
-  })
-
   function executeHelp(session: Session, name: string) {
     if (!ctx.$commander.getCommand('help')) return
     return session.execute({
