@@ -27,7 +27,7 @@ class HttpService extends DataService<string[]> {
     if (this.config.devMode) await this.createVite()
     this.serveAssets()
 
-    if (this.config.open) {
+    if (this.config.open && !process.env.KOI) {
       const { host, port } = this.ctx.app.options
       open(`http://${host || 'localhost'}:${port}${this.config.uiPath}`)
     }
