@@ -76,4 +76,4 @@ app.start().then(() => {
   for (const name in loader.cache) {
     loader.diagnose(name)
   }
-})
+}, handleException)

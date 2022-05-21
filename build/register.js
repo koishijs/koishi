@@ -68,7 +68,7 @@ require.extensions['.ts'] = (module, filename) => {
     format: 'cjs',
     loader: 'ts',
     charset: 'utf8',
-    target: 'es2020',
+    target: 'es2019',
     define,
   })
   cache[filename] = code
