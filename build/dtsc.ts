@@ -42,6 +42,7 @@ async function prepareBuild(nodes: Node[]) {
 async function bundleNodes(nodes: Node[]) {
   for (const node of nodes) {
     await fs.mkdir(resolve(cwd, node.path, 'lib'), { recursive: true })
+    console.log('building', node.path)
     await spawnAsync(['yarn', 'dtsc'], {
       cwd: resolve(cwd, node.path),
     })

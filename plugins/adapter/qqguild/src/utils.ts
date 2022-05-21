@@ -8,7 +8,7 @@ export const AdapterConfig: Schema<AdapterConfig> = Schema.intersect([
   Schema.object({
     sandbox: Schema.boolean().description('是否开启沙箱模式。').default(true),
     endpoint: Schema.string().role('url').description('API 入口地址。').default('https://api.sgroup.qq.com/'),
-    authType: Schema.union(['bot', 'bearer']).description('采用的验证方式。').default('bot'),
+    authType: Schema.union(['bot', 'bearer'] as const).description('采用的验证方式。').default('bot'),
   }),
   Adapter.WebSocketClient.Config,
 ])

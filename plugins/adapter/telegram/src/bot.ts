@@ -46,7 +46,7 @@ export const BotConfig: Schema<BotConfig> = Schema.intersect([
   Quester.createSchema({
     endpoint: 'https://api.telegram.org',
   }),
-])
+] as const)
 
 export class TelegramBot extends Bot<BotConfig> {
   static schema = AdapterConfig

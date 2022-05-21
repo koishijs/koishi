@@ -61,7 +61,7 @@ export function apply(ctx: Context, config: Config = {}) {
 
       names = deduplicate(names)
       const forbidden = names.filter((name) => {
-        const command = ctx.app._commands.get(name)
+        const command = ctx.$commander._commands.get(name)
         return command && command.config.authority >= session.user.authority
       })
       if (forbidden.length) return session.text('.forbidden', [forbidden.join(', ')])

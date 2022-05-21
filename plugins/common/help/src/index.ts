@@ -9,6 +9,11 @@ declare module 'koishi' {
       }
     }
   }
+
+  interface Events {
+    'help/command'(output: string[], command: Command, session: Session): void
+    'help/option'(output: string, option: Argv.OptionDeclaration, command: Command, session: Session): string
+  }
 }
 
 interface HelpOptions {
@@ -25,7 +30,6 @@ export function enableHelp<U extends User.Field, G extends Channel.Field, A exte
   return cmd.option('help', '-h', {
     hidden: true,
     descPath: 'commands.help.options.help',
-    notUsage: true,
   })
 }
 

@@ -355,7 +355,6 @@ export namespace Argv {
     /** hide the option by default */
     hidden?: boolean | ((session: Session) => boolean)
     authority?: number
-    notUsage?: boolean
     descPath?: string
   }
 
