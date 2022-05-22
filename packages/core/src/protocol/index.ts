@@ -162,6 +162,9 @@ export class Internal {
   }
 
   private async _handleMessage(session: Session) {
+    // ignore self messages
+    if (session.selfId === session.userId) return
+
     // preparation
     this._sessions[session.id] = session
     const queue: Next.Queue = this._hooks

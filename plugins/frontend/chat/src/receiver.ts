@@ -202,5 +202,4 @@ export default function receiver(ctx: Context, config: RefreshConfig = {}) {
   }
 
   ctx.any().on('message', handleMessage)
-  ctx.any().on('send', handleMessage)
 }

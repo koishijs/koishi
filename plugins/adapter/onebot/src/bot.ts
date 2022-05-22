@@ -20,6 +20,7 @@ export function renderText(source: string) {
 export interface BotConfig extends Bot.BaseConfig, Quester.Config {
   selfId?: string
   token?: string
+  reportSelfMessage?: boolean
   qqguildPlatform?: string
 }
 
@@ -27,6 +28,7 @@ export const BotConfig: Schema<BotConfig> = Schema.intersect([
   Schema.object({
     selfId: Schema.string(),
     token: Schema.string().role('secret'),
+    reportSelfMessage: Schema.boolean().default(false),
     qqguildPlatform: Schema.string().default('qqguild'),
   }),
   Quester.Config,
@@ -58,7 +60,7 @@ export class OneBotBot extends Bot<BotConfig> {
   async stop() {
     if (this.guildBot) {
       // QQGuild stub bot should also be removed
-      await this.app.bots.remove(this.guildBot.sid)
+      this.app.bots.remove(this.guildBot.sid)
     }
     await super.stop()
   }
@@ -160,6 +162,9 @@ export class OneBotBot extends Bot<BotConfig> {
     if (!session?.content) return []
     session.messageId = '' + await this.internal.sendGroupMsg(channelId, session.content)
     this.app.emit(session, 'send', session)
+    if (!this.config.reportSelfMessage) {
+      this.app.emit(session, 'message', session)
+    }
     return [session.messageId]
   }
 
@@ -168,6 +173,9 @@ export class OneBotBot extends Bot<BotConfig> {
     if (!session?.content) return []
     session.messageId = '' + await this.internal.sendPrivateMsg(userId, session.content)
     this.app.emit(session, 'send', session)
+    if (!this.config.reportSelfMessage) {
+      this.app.emit(session, 'message', session)
+    }
     return [session.messageId]
   }
 
@@ -235,6 +243,9 @@ export class QQGuildBot extends OneBotBot {
     if (!session?.content) return []
     session.messageId = '' + await this.internal.sendGuildChannelMsg(guildId, channelId, session.content)
     this.app.emit(session, 'send', session)
+    if (!this.config.reportSelfMessage) {
+      this.app.emit(session, 'message', session)
+    }
     return [session.messageId]
   }
 

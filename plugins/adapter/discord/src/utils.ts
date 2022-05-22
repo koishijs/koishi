@@ -153,7 +153,6 @@ export async function adaptSession(bot: DiscordBot, input: DC.GatewayPayload) {
     adaptMessageSession(input.d, session)
     // dc 情况特殊 可能有 embeds 但是没有消息主体
     // if (!session.content) return
-    if (session.userId === bot.selfId) return
   } else if (input.t === 'MESSAGE_UPDATE') {
     session.type = 'message-updated'
     prepareMessageSession(session, input.d)
@@ -162,7 +161,6 @@ export async function adaptSession(bot: DiscordBot, input: DC.GatewayPayload) {
     // https://discord.com/developers/docs/topics/gateway#message-update
     adaptMessageSession(msg, session)
     // if (!session.content) return
-    if (session.userId === bot.selfId) return
   } else if (input.t === 'MESSAGE_DELETE') {
     session.type = 'message-deleted'
     session.messageId = input.d.id
