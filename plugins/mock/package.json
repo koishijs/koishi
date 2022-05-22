@@ -34,6 +34,6 @@
     "impl:mock"
   ],
   "peerDependencies": {
-    "koishi": "^4.7.0"
+    "koishi": "^4.7.1"
   }
 }

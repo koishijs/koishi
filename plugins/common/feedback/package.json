@@ -30,12 +30,12 @@
     "locale:zh"
   ],
   "peerDependencies": {
-    "koishi": "^4.7.0"
+    "koishi": "^4.7.1"
   },
   "devDependencies": {
     "@koishijs/plugin-mock": "^1.0.4"
   },
   "dependencies": {
-    "@koishijs/helpers": "^1.2.1"
+    "@koishijs/helpers": "^1.2.2"
   }
 }

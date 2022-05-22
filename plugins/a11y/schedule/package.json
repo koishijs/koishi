@@ -33,6 +33,6 @@
     "@koishijs/plugin-mock": "^1.0.4"
   },
   "peerDependencies": {
-    "koishi": "^4.7.0"
+    "koishi": "^4.7.1"
   }
 }

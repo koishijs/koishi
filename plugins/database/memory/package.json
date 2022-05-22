@@ -29,7 +29,7 @@
     "impl:database"
   ],
   "peerDependencies": {
-    "koishi": "^4.7.0"
+    "koishi": "^4.7.1"
   },
   "dependencies": {
     "@minatojs/driver-memory": "^1.0.3"

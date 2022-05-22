@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-adapter-discord",
   "description": "Discord Adapter for Koishi",
-  "version": "2.1.0",
+  "version": "2.1.1",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -30,7 +30,7 @@
     "impl:adapter"
   ],
   "peerDependencies": {
-    "koishi": "^4.7.0"
+    "koishi": "^4.7.1"
   },
   "devDependencies": {
     "@koishijs/plugin-mock": "^1.0.4",

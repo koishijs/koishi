@@ -30,7 +30,7 @@
     "impl:adapter"
   ],
   "peerDependencies": {
-    "koishi": "^4.7.0"
+    "koishi": "^4.7.1"
   },
   "dependencies": {
     "@qq-guild-sdk/core": "^2.0.1",

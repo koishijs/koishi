@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/cli",
   "description": "CLI for Koishi",
-  "version": "4.7.0",
+  "version": "4.7.1",
   "typings": "index.d.ts",
   "engines": {
     "node": ">=12.0.0"
@@ -32,7 +32,7 @@
     "daemon"
   ],
   "peerDependencies": {
-    "koishi": "^4.7.0"
+    "koishi": "^4.7.1"
   },
   "devDependencies": {
     "@types/prompts": "^2.4.0",

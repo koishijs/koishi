@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/core",
   "description": "Core Features for Koishi",
-  "version": "4.7.0",
+  "version": "4.7.1",
   "main": "lib/node.js",
   "module": "lib/browser.js",
   "typings": "lib/index.d.ts",
@@ -35,7 +35,7 @@
     "chai-shape": "^1.0.0"
   },
   "dependencies": {
-    "@koishijs/utils": "^5.4.4",
+    "@koishijs/utils": "^5.4.5",
     "cordis": "^1.1.1",
     "fastest-levenshtein": "^1.0.12",
     "minato": "^1.1.0"
