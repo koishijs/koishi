@@ -7,6 +7,7 @@
       v-model="config[key]"
       :schema="item"
       :initial="initial?.[key]"
+      :instant="instant"
       :disabled="disabled"
       :prefix="prefix + key + '.'">
       <h3>
@@ -21,6 +22,7 @@
       v-model="config"
       :initial="initial"
       :schema="{ ...item, meta: { default: schema.meta.default, ...item.meta } }"
+      :instant="instant"
       :disabled="disabled"
       :prefix="prefix">
       <slot></slot>
@@ -89,7 +91,7 @@
   <template v-if="schema && !schema.meta.hidden && isComposite">
     <div class="k-schema-group" v-if="prefix">
       <schema-group v-if="!schema.meta.hidden && isComposite" v-model:signal="signal"
-        :schema="schema" v-model="config" :prefix="prefix" :disabled="disabled" :initial="initial">
+        :schema="schema" v-model="config" :prefix="prefix" :disabled="disabled" :instant="instant" :initial="initial">
       </schema-group>
     </div>
 
@@ -99,7 +101,7 @@
         <k-button solid @click="signal = true" :disabled="disabled">添加项</k-button>
       </h2>
       <schema-group v-if="!schema.meta.hidden && isComposite" v-model:signal="signal"
-        :schema="schema" v-model="config" :prefix="prefix" :disabled="disabled" :initial="initial">
+        :schema="schema" v-model="config" :prefix="prefix" :disabled="disabled" :instant="instant" :initial="initial">
       </schema-group>
     </template>
   </template>
