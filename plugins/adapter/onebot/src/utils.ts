@@ -134,8 +134,12 @@ export function adaptSession(data: OneBot.Payload) {
   session.selfId = data.self_tiny_id ? data.self_tiny_id : '' + data.self_id
   session.type = data.post_type
 
-  if (data.post_type === 'message') {
+  if (data.post_type === 'message' || data.post_type === 'message_sent') {
     Object.assign(session, adaptMessage(data))
+    if (data.post_type === 'message_sent' && !session.guildId) {
+      session.channelId = 'private:' + data.target_id
+    }
+    session.type = 'message'
     session.subtype = data.message_type === 'guild' ? 'group' : data.message_type
     session.subsubtype = data.message_type
     return session

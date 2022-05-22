@@ -97,7 +97,7 @@ const filtered = computed(() => {
 })
 
 function isSuccessive({ quote, userId, channelId }: Message, index: number) {
-  const prev = messages[index - 1]
+  const prev = filtered.value[index - 1]
   return !quote && !!prev && prev.userId === userId && prev.channelId === channelId
 }
 

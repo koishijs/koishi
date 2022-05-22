@@ -11,7 +11,6 @@
     <template v-else>
       <img class="avatar" v-if="data.avatar" :src="data.avatar"/>
       <div class="header">
-        <span class="channel">{{ data.channelName || '私聊' }}</span>
         <span class="username">{{ data.username }}</span>
         <span class="timestamp">{{ formatDateTime(new Date(data.timestamp)) }}</span>
       </div>
