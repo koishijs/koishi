@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-status",
   "description": "Status view for Koishi",
-  "version": "5.4.0",
+  "version": "5.4.1",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -25,15 +25,25 @@
     "koishi",
     "plugin",
     "status",
-    "server",
-    "required:console"
+    "server"
   ],
+  "koishi": {
+    "description": {
+      "en": "Display running status in the console",
+      "zh": "在控制台中显示运行状态"
+    },
+    "service": {
+      "required": [
+        "console"
+      ]
+    }
+  },
   "peerDependencies": {
-    "@koishijs/plugin-console": "^3.3.2",
+    "@koishijs/plugin-console": "^3.3.3",
     "koishi": "^4.7.1"
   },
   "devDependencies": {
-    "@koishijs/client": "^3.3.2",
+    "@koishijs/client": "^3.3.3",
     "@koishijs/cli": "^4.7.1",
     "echarts": "^5.3.2",
     "vue-echarts": "^6.0.2"

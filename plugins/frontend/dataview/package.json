@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-dataview",
   "description": "View Database in Koishi Console",
-  "version": "1.2.4",
+  "version": "1.2.5",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -27,15 +27,25 @@
     "chatbot",
     "koishi",
     "plugin",
-    "database",
-    "required:console",
-    "required:database"
+    "database"
   ],
+  "koishi": {
+    "description": {
+      "en": "View database in the console",
+      "zh": "在网页控制台中访问数据库"
+    },
+    "service": {
+      "required": [
+        "database",
+        "console"
+      ]
+    }
+  },
   "peerDependencies": {
-    "@koishijs/plugin-console": "^3.3.2",
+    "@koishijs/plugin-console": "^3.3.3",
     "koishi": "^4.7.1"
   },
   "devDependencies": {
-    "@koishijs/client": "^3.3.2"
+    "@koishijs/client": "^3.3.3"
   }
 }
