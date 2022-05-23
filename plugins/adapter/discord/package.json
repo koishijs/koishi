@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-adapter-discord",
   "description": "Discord Adapter for Koishi",
-  "version": "2.1.1",
+  "version": "2.1.2",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -26,14 +26,24 @@
     "bot",
     "discord",
     "chatbot",
-    "koishi",
-    "impl:adapter"
+    "koishi"
   ],
+  "koishi": {
+    "description": {
+      "en": "Discord Adapter",
+      "zh": "Discord 适配器"
+    },
+    "service": {
+      "implements": [
+        "adapter"
+      ]
+    }
+  },
   "peerDependencies": {
     "koishi": "^4.7.1"
   },
   "devDependencies": {
-    "@koishijs/plugin-mock": "^1.0.4",
+    "@koishijs/plugin-mock": "^1.0.5",
     "@types/es-aggregate-error": "^1.0.2",
     "@types/ws": "^8.5.3",
     "axios": "^0.24.0"

@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-database-mongo",
   "description": "MongoDB support for Koishi",
-  "version": "3.3.0",
+  "version": "3.3.1",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -27,9 +27,19 @@
     "chatbot",
     "koishi",
     "database",
-    "mysql",
-    "impl:database"
+    "mongo"
   ],
+  "koishi": {
+    "description": {
+      "en": "MongoDB support",
+      "zh": "MongoDB 支持"
+    },
+    "service": {
+      "implements": [
+        "database"
+      ]
+    }
+  },
   "peerDependencies": {
     "koishi": "^4.7.1"
   },

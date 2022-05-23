@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-adapter-telegram",
   "description": "Telegram Adapter for Koishi",
-  "version": "2.2.6",
+  "version": "2.2.7",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -26,15 +26,25 @@
     "bot",
     "telegram",
     "chatbot",
-    "koishi",
-    "impl:adapter"
+    "koishi"
   ],
+  "koishi": {
+    "description": {
+      "en": "Telegram Adapter",
+      "zh": "Telegram 适配器"
+    },
+    "service": {
+      "implements": [
+        "adapter"
+      ]
+    }
+  },
   "peerDependencies": {
     "koishi": "^4.7.1"
   },
   "devDependencies": {
     "@types/es-aggregate-error": "^1.0.2",
-    "@koishijs/plugin-mock": "^1.0.4"
+    "@koishijs/plugin-mock": "^1.0.5"
   },
   "dependencies": {
     "axios": "^0.24.0",

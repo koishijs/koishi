@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-adapter-qqguild",
   "description": "QQ Guild Adapter for Koishi",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -26,9 +26,19 @@
     "bot",
     "qqbot",
     "qqguild",
-    "koishi",
-    "impl:adapter"
+    "koishi"
   ],
+  "koishi": {
+    "description": {
+      "en": "QQ Guild Adapter",
+      "zh": "QQ 频道适配器"
+    },
+    "service": {
+      "implements": [
+        "adapter"
+      ]
+    }
+  },
   "peerDependencies": {
     "koishi": "^4.7.1"
   },
