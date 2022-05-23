@@ -11,7 +11,7 @@ const specs = [
   'plugins/a11y/suggest/tests/*.spec.ts',
   'plugins/a11y/switch/tests/*.spec.ts',
   'plugins/a11y/sudo/tests/*.spec.ts',
-  // 'plugins/a11y/verifier/tests/*.spec.ts',
+  'plugins/a11y/verifier/tests/*.spec.ts',
   'plugins/common/broadcast/tests/*.spec.ts',
   'plugins/common/echo/tests/*.spec.ts',
   'plugins/common/feedback/tests/*.spec.ts',
