@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-suggest",
   "description": "Suggestion Plugin for Koishi",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -26,9 +26,22 @@
     "chatbot",
     "koishi",
     "plugin",
-    "suggest",
-    "required:database"
+    "suggest"
   ],
+  "koishi": {
+    "hidden": true,
+    "description": {
+      "en": "Provide suggestions for user input",
+      "zh": "为用户输入提供建议"
+    },
+    "locales": [
+      "zh",
+      "en",
+      "fr",
+      "zh-tw",
+      "ja"
+    ]
+  },
   "peerDependencies": {
     "koishi": "^4.7.1"
   },

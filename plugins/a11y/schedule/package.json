@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-schedule",
   "description": "Create Scheduled Tasks for Koishi",
-  "version": "4.2.0",
+  "version": "4.2.1",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -24,10 +24,22 @@
     "koishi",
     "plugin",
     "schedule",
-    "task",
-    "locale:zh",
-    "required:database"
+    "task"
   ],
+  "koishi": {
+    "description": {
+      "en": "Create scheduled tasks",
+      "zh": "定时执行指令"
+    },
+    "service": {
+      "required": [
+        "database"
+      ]
+    },
+    "locales": [
+      "zh"
+    ]
+  },
   "devDependencies": {
     "@koishijs/plugin-database-memory": "^1.3.0",
     "@koishijs/plugin-mock": "^1.0.4"
