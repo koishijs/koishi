@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-forward",
   "description": "Forward plugin for Koishi",
-  "version": "2.1.2",
+  "version": "2.1.3",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -27,16 +27,28 @@
     "koishi",
     "plugin",
     "relay",
-    "forward",
-    "locale:zh",
-    "optional:database"
+    "forward"
   ],
+  "koishi": {
+    "description": {
+      "en": "Forward messages between different channels",
+      "zh": "在不同的频道间转发消息"
+    },
+    "service": {
+      "optional": [
+        "database"
+      ]
+    },
+    "locales": [
+      "zh"
+    ]
+  },
   "peerDependencies": {
     "koishi": "^4.7.1"
   },
   "devDependencies": {
     "@koishijs/plugin-database-memory": "^1.3.0",
-    "@koishijs/plugin-mock": "^1.0.4"
+    "@koishijs/plugin-mock": "^1.0.5"
   },
   "dependencies": {
     "@koishijs/helpers": "^1.2.2"

@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-help",
   "description": "Help plugin for Koishi",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -26,15 +26,27 @@
     "chatbot",
     "koishi",
     "plugin",
-    "help",
-    "locale:zh"
+    "help"
   ],
+  "koishi": {
+    "description": {
+      "en": "Show help for commands",
+      "zh": "显示指令的帮助信息"
+    },
+    "locales": [
+      "zh",
+      "en",
+      "ja",
+      "fr",
+      "zh-tw"
+    ]
+  },
   "peerDependencies": {
     "koishi": "^4.7.1"
   },
   "devDependencies": {
     "@koishijs/plugin-database-memory": "^1.3.0",
-    "@koishijs/plugin-mock": "^1.0.4",
-    "@koishijs/plugin-suggest": "^1.0.0"
+    "@koishijs/plugin-mock": "^1.0.5",
+    "@koishijs/plugin-suggest": "^1.0.1"
   }
 }

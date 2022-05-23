@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-echo",
   "description": "Echo plugin for Koishi",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -26,14 +26,22 @@
     "chatbot",
     "koishi",
     "plugin",
-    "echo",
-    "locale:zh"
+    "echo"
   ],
+  "koishi": {
+    "description": {
+      "en": "Echo messages",
+      "zh": "发送指定消息"
+    },
+    "locales": [
+      "zh"
+    ]
+  },
   "peerDependencies": {
     "koishi": "^4.7.1"
   },
   "devDependencies": {
-    "@koishijs/plugin-mock": "^1.0.4"
+    "@koishijs/plugin-mock": "^1.0.5"
   },
   "dependencies": {
     "@koishijs/helpers": "^1.2.2"
