@@ -7,14 +7,14 @@ export function getKeywords(name: string) {
 }
 
 export function validate(data: MarketProvider.Data, word: string) {
-  const { keywords } = getMixedMeta(data.name)
+  const { locales, service } = getMixedMeta(data.name).manifest
   if (word.startsWith('impl:')) {
-    return keywords.includes(word)
+    return service.implements.includes(word.slice(5))
   } else if (word.startsWith('locale:')) {
-    return keywords.includes(word)
+    return locales.includes(word.slice(7))
   } else if (word.startsWith('using:')) {
     const name = word.slice(6)
-    return keywords.includes('required:' + name) || keywords.includes('optional:' + name)
+    return service.required.includes(name) || service.optional.includes(name)
   } else if (word.startsWith('email:')) {
     return data.author?.email === word.slice(6)
   } else if (word.startsWith('is:')) {

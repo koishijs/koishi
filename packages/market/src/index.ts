@@ -14,6 +14,7 @@ export interface BasePackage {
 }
 
 export interface PackageJson extends BasePackage {
+  koishi?: Manifest
   keywords: string[]
   dependencies?: Dict<string>
   devDependencies?: Dict<string>
@@ -21,12 +22,28 @@ export interface PackageJson extends BasePackage {
   optionalDependencies?: Dict<string>
 }
 
+export interface Manifest {
+  hidden?: boolean
+  description?: Dict<string>
+  service?: {
+    required?: string[]
+    optional?: string[]
+    implements?: string[]
+  }
+  locales?: string[]
+  recommends?: string[]
+}
+
 export interface RemotePackage extends PackageJson {
   deprecated?: string
   author: User
   maintainers: User[]
   license: string
-  dist: {
+  dist: RemotePackage.Dist
+}
+
+export namespace RemotePackage {
+  export interface Dist {
     shasum: string
     integrity: string
     tarball: string
@@ -55,19 +72,25 @@ export interface SearchPackage extends BasePackage {
   keywords: string[]
 }
 
-export interface ScoreDetail {
-  quality: number
-  popularity: number
-  maintenance: number
-}
-
 export interface SearchObject {
   package: SearchPackage
-  score: {
-    final: number
-    detail: ScoreDetail
-  }
+  score: SearchObject.Score
   searchScore: number
+}
+
+export namespace SearchObject {
+  export interface Score {
+    final: number
+    detail: Score.Detail
+  }
+
+  export namespace Score {
+    export interface Detail {
+      quality: number
+      popularity: number
+      maintenance: number
+    }
+  }
 }
 
 export interface SearchResult {
@@ -76,12 +99,13 @@ export interface SearchResult {
   objects: SearchObject[]
 }
 
-export interface AnalyzedPackage extends SearchPackage, ScoreDetail {
+export interface AnalyzedPackage extends SearchPackage, SearchObject.Score.Detail {
   shortname: string
   official: boolean
   size: number
   license: string
   versions: RemotePackage[]
+  manifest: Manifest
 }
 
 export interface ScanConfig {
@@ -98,6 +122,37 @@ export default async function scan(config: ScanConfig) {
     const result = await config.request<SearchResult>(`/-/v1/search?text=koishi+plugin&size=250&offset=${offset}`)
     tasks.push(...result.objects.map(item => analyze(item)))
     return result.total
+  }
+
+  function conclusion(remote: RemotePackage) {
+    const manifest = {
+      description: {},
+      locales: [],
+      recommends: [],
+      ...remote.koishi,
+      service: {
+        required: [],
+        optional: [],
+        implements: [],
+        ...remote.koishi?.service,
+      },
+    }
+
+    for (const keyword of remote.keywords ?? []) {
+      if (keyword === 'market:hidden') {
+        manifest.hidden = true
+      } else if (keyword.startsWith('required:')) {
+        manifest.service.required.push(keyword.slice(9))
+      } else if (keyword.startsWith('optional:')) {
+        manifest.service.optional.push(keyword.slice(9))
+      } else if (keyword.startsWith('impl:')) {
+        manifest.service.implements.push(keyword.slice(5))
+      } else if (keyword.startsWith('locale:')) {
+        manifest.locales.push(keyword.slice(7))
+      }
+    }
+
+    return manifest
   }
 
   async function analyze(object: SearchObject) {
@@ -118,11 +173,13 @@ export default async function scan(config: ScanConfig) {
 
     const latest = registry.versions[versions[0].version]
     latest.keywords ??= []
-    if (latest.keywords.includes('market:hidden')) return
+    const manifest = conclusion(latest)
+    if (manifest.hidden) return
 
     const shortname = official ? name.slice(17) : name.slice(14)
     onItem({
       name,
+      manifest,
       shortname,
       official,
       versions,

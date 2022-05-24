@@ -16,19 +16,19 @@
         @click="$emit('query', 'is:official')"
       >官方</k-badge>
       <k-badge type="primary"
-        v-if="meta.keywords.includes('impl:database')"
+        v-if="meta.manifest.service.implements.includes('database')"
         @click="$emit('query', 'impl:database')"
       >数据库</k-badge>
       <k-badge type="primary"
-        v-if="meta.keywords.includes('impl:adapter')"
+        v-if="meta.manifest.service.implements.includes('adapter')"
         @click="$emit('query', 'impl:adapter')"
       >适配器</k-badge>
       <k-badge type="primary"
-        v-if="meta.keywords.includes('impl:assets')"
+        v-if="meta.manifest.service.implements.includes('manifestassets')"
         @click="$emit('query', 'impl:assets')"
       >资源存储</k-badge>
       <k-badge type="primary"
-        v-if="meta.keywords.includes('required:console') || meta.keywords.includes('optional:console')"
+        v-if="meta.manifest.service.required.includes('console') || meta.manifest.service.optional.includes('console')"
         @click="$emit('query', 'using:console')"
       >控制台</k-badge>
     </div>

@@ -15,19 +15,19 @@
         @click="$emit('query', 'is:official')"
       >官方</badge>
       <badge type="primary"
-        v-if="data.keywords.includes('impl:database')"
+        v-if="data.manifest.service.implements.includes('database')"
         @click="$emit('query', 'impl:database')"
       >数据库</badge>
       <badge type="primary"
-        v-if="data.keywords.includes('impl:adapter')"
+        v-if="data.manifest.service.implements.includes('adapter')"
         @click="$emit('query', 'impl:adapter')"
       >适配器</badge>
       <badge type="primary"
-        v-if="data.keywords.includes('impl:assets')"
+        v-if="data.manifest.service.implements.includes('assets')"
         @click="$emit('query', 'impl:assets')"
       >资源存储</badge>
       <badge type="primary"
-        v-if="data.keywords.includes('required:console') || data.keywords.includes('optional:console')"
+        v-if="data.manifest.service.required.includes('console') || data.manifest.service.optional.includes('console')"
         @click="$emit('query', 'using:console')"
       >控制台</badge>
     </div>
