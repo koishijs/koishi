@@ -8,7 +8,7 @@
         </svg>
       </a>
     </div>
-    <p class="desc" v-html="data.description"></p>
+    <p class="desc" v-html="data.manifest.description.zh || data.manifest.description.en"></p>
     <div class="badge-container">
       <badge type="tip"
         v-if="data.official"

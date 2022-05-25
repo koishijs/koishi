@@ -126,7 +126,9 @@ export default async function scan(config: ScanConfig) {
 
   function conclusion(remote: RemotePackage) {
     const manifest = {
-      description: {},
+      description: {
+        en: remote.description,
+      },
       locales: [],
       recommends: [],
       ...remote.koishi,

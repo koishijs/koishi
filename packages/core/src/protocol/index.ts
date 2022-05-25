@@ -88,8 +88,7 @@ export class Internal {
   }
 
   middleware(middleware: Middleware, prepend = false) {
-    this.caller.lifecycle.checkLength(this._hooks.length, 'middleware')
-    return this.caller.lifecycle.register(this._hooks, middleware, prepend)
+    return this.caller.lifecycle.register('middleware', this._hooks, middleware, prepend)
   }
 
   prepare() {

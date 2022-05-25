@@ -42,7 +42,7 @@
     "@koishijs/loader": "^1.0.1",
     "cac": "^6.7.12",
     "chokidar": "^3.5.3",
-    "dotenv": "^16.0.0",
+    "dotenv": "^16.0.1",
     "ns-require": "^1.1.2",
     "kleur": "^4.1.4",
     "prompts": "^2.4.2",

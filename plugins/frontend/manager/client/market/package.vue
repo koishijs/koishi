@@ -9,7 +9,7 @@
       <k-button v-else-if="!config.override[data.name]" solid class="right" @click="addFavorite(data.name)">添加</k-button>
       <k-button v-else solid type="warning" class="right" @click="removeFavorite(data.name)">取消</k-button>
     </template>
-    <k-markdown inline class="desc" :source="meta.description"></k-markdown>
+    <k-markdown inline class="desc" :source="meta.manifest.description.zh || meta.manifest.description.en"></k-markdown>
     <div class="badges">
       <k-badge type="success"
         v-if="data.official"
