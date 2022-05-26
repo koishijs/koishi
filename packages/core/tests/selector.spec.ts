@@ -2,7 +2,8 @@ import { App } from 'koishi'
 import { expect } from 'chai'
 import mock from '@koishijs/plugin-mock'
 
-const app = new App().plugin(mock)
+const app = new App()
+app.plugin(mock)
 const guildSession = app.mock.session({ userId: '123', guildId: '456', subtype: 'group' })
 const privateSession = app.mock.session({ userId: '123', subtype: 'private' })
 

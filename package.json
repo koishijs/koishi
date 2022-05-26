@@ -88,9 +88,9 @@
     "typescript": "^4.7.2",
     "yakumo": "^0.2.4",
     "yakumo-mocha": "^0.2.4",
-    "yakumo-publish": "^0.2.2",
-    "yakumo-upgrade": "^0.2.2",
-    "yakumo-version": "^0.2.3"
+    "yakumo-publish": "^0.2.3",
+    "yakumo-upgrade": "^0.2.3",
+    "yakumo-version": "^0.2.4"
   },
   "yakumo": {
     "require": [

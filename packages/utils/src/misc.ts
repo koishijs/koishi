@@ -25,7 +25,7 @@ export function merge<T extends object>(head: T, base: T): T {
   return head
 }
 
-export function assertProperty<O, K extends keyof O>(config: O, key: K) {
+export function assertProperty<O, K extends keyof O & string>(config: O, key: K) {
   if (!config[key]) throw new Error(`missing configuration "${key}"`)
   return config[key]
 }

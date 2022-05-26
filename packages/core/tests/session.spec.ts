@@ -3,7 +3,8 @@ import mock from '@koishijs/plugin-mock'
 
 describe('Session API', () => {
   describe('Command Execution', () => {
-    const app = new App().plugin(mock)
+    const app = new App()
+    app.plugin(mock)
     const client = app.mock.client('456')
 
     app.command('echo [content:text]').action((_, text) => text)
@@ -30,7 +31,8 @@ describe('Session API', () => {
   })
 
   describe('Other Session Methods', () => {
-    const app = new App({ prefix: '.' }).plugin(mock)
+    const app = new App({ prefix: '.' })
+    app.plugin(mock)
     const client = app.mock.client('123', '456')
 
     before(() => app.start())

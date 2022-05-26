@@ -10,7 +10,7 @@ declare module '@koishijs/core' {
 
   namespace Registry {
     interface Delegates {
-      plugin(path: string, config?: any): Context
+      plugin(path: string, config?: any): () => boolean
     }
   }
 }
@@ -38,8 +38,7 @@ Context.prototype.plugin = function (this: Context, entry: any, config?: any) {
   if (typeof entry === 'string') {
     entry = scope.require(entry)
   }
-  plugin.call(this, entry, config)
-  return this
+  return plugin.call(this, entry, config)
 }
 
 const start = App.prototype.start

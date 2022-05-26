@@ -157,27 +157,28 @@ describe('Command API', () => {
     })
 
     it('patch command', () => {
-      app.plugin((ctx) => {
+      const dispose = app.plugin((ctx) => {
         ctx.command('foo', { patch: true }).alias('fooo').option('opt', 'option 1')
         ctx.command('abc', { patch: true }).alias('abcd').option('opt', 'option 1')
-
-        const foo = app.$commander._commands.get('foo')
-        expect(foo).to.be.ok
-        expect(app.$commander._commands.get('fooo')).to.be.ok
-        expect(Object.keys(foo._options)).to.have.length(2)
-        expect(app.$commander._commands.get('abc')).to.be.undefined
-        expect(app.$commander._commands.get('abcd')).to.be.undefined
-
-        ctx.dispose()
-        expect(app.$commander._commands.get('foo')).to.be.ok
-        expect(app.$commander._commands.get('fooo')).to.be.undefined
-        expect(Object.keys(foo._options)).to.have.length(1)
       })
+
+      const foo = app.$commander._commands.get('foo')
+      expect(foo).to.be.ok
+      expect(app.$commander._commands.get('fooo')).to.be.ok
+      expect(Object.keys(foo._options)).to.have.length(2)
+      expect(app.$commander._commands.get('abc')).to.be.undefined
+      expect(app.$commander._commands.get('abcd')).to.be.undefined
+
+      dispose()
+      expect(app.$commander._commands.get('foo')).to.be.ok
+      expect(app.$commander._commands.get('fooo')).to.be.undefined
+      expect(Object.keys(foo._options)).to.have.length(1)
     })
   })
 
   describe('Execute Commands', () => {
-    const app = new App().plugin(mock)
+    const app = new App()
+    app.plugin(mock)
     const session = app.mock.session({})
     const warn = jest.spyOn(logger, 'warn')
     const next = jest.fn(Next.compose)
@@ -293,7 +294,8 @@ describe('Command API', () => {
   })
 
   describe('Bypass Middleware', async () => {
-    const app = new App().plugin(mock)
+    const app = new App()
+    app.plugin(mock)
     const client = app.mock.client('123')
 
     app.middleware((session, next) => {
