@@ -32,6 +32,7 @@ declare module '@koishijs/core' {
       interface Network {
         host?: string
         port?: number
+        maxPort?: number
         selfUrl?: string
       }
     }
@@ -41,6 +42,7 @@ declare module '@koishijs/core' {
 defineProperty(App.Config, 'Network', Schema.object({
   host: Schema.string().default('localhost').description('要监听的 IP 地址。如果将此设置为 `0.0.0.0` 将监听所有地址，包括局域网和公网地址。'),
   port: Schema.natural().max(65535).description('要监听的端口。'),
+  maxPort: Schema.natural().max(65535).description('允许监听的最大端口号。'),
   selfUrl: Schema.string().role('url').description('应用暴露在公网的地址。部分插件 (例如 github 和 telegram) 需要用到。'),
 }).description('网络设置'))
 
@@ -75,6 +77,28 @@ export class WebSocketLayer {
 export class Router extends KoaRouter {
   wsStack: WebSocketLayer[] = []
 
+  constructor(ctx: Context) {
+    super()
+
+    // create server
+    const koa = new Koa()
+    koa.use(require('koa-bodyparser')())
+    koa.use(this.routes())
+    koa.use(this.allowedMethods())
+
+    ctx.app._httpServer = createServer(koa.callback())
+    ctx.app._wsServer = new WebSocket.Server({
+      server: ctx.app._httpServer,
+    })
+
+    ctx.app._wsServer.on('connection', (socket, request) => {
+      for (const manager of this.wsStack) {
+        if (manager.accept(socket, request)) return
+      }
+      socket.close()
+    })
+  }
+
   /**
    * hack into router methods to make sure that koa middlewares are disposable
    */
@@ -91,30 +115,7 @@ export class Router extends KoaRouter {
     const layer = new WebSocketLayer(this, path, callback)
     this.wsStack.push(layer)
     const context: Context = this[Context.current]
-    context?.state.disposables.push(() => {
-      remove(this.wsStack, layer)
-    })
+    context?.state.disposables.push(() => layer.close())
     return layer
-  }
-
-  static prepare(app: App) {
-    // create server
-    const koa = new Koa()
-    app.router = new Router()
-    koa.use(require('koa-bodyparser')())
-    koa.use(app.router.routes())
-    koa.use(app.router.allowedMethods())
-
-    app._httpServer = createServer(koa.callback())
-    app._wsServer = new WebSocket.Server({
-      server: app._httpServer,
-    })
-
-    app._wsServer.on('connection', (socket, request) => {
-      for (const manager of app.router.wsStack) {
-        if (manager.accept(socket, request)) return
-      }
-      socket.close()
-    })
   }
 }

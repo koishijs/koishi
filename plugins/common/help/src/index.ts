@@ -1,8 +1,20 @@
-import { Argv } from '../parser'
-import { Command } from '../command'
-import { Context } from '../context'
-import { Channel, Tables, User } from '../database'
-import { FieldCollector, Session } from '../session'
+import { Argv, Channel, Command, Context, FieldCollector, Session, Tables, User } from 'koishi'
+import {} from '@koishijs/plugin-suggest'
+
+declare module 'koishi' {
+  namespace App {
+    namespace Config {
+      interface Features {
+        help?: false | HelpConfig
+      }
+    }
+  }
+
+  interface Events {
+    'help/command'(output: string[], command: Command, session: Session): void
+    'help/option'(output: string, option: Argv.OptionDeclaration, command: Command, session: Session): string
+  }
+}
 
 interface HelpOptions {
   showHidden?: boolean
@@ -18,20 +30,27 @@ export function enableHelp<U extends User.Field, G extends Channel.Field, A exte
   return cmd.option('help', '-h', {
     hidden: true,
     descPath: 'commands.help.options.help',
-    notUsage: true,
   })
 }
 
-export default function help(ctx: Context, config: HelpConfig = {}) {
+export const name = 'help'
+
+export function apply(ctx: Context, config: HelpConfig = {}) {
+  ctx.i18n.define('zh', require('./locales/zh'))
+  ctx.i18n.define('en', require('./locales/en'))
+  ctx.i18n.define('ja', require('./locales/ja'))
+  ctx.i18n.define('fr', require('./locales/fr'))
+  ctx.i18n.define('zh-tw', require('./locales/zh-tw'))
+
   if (config.options !== false) {
     ctx.on('command-added', cmd => cmd.use(enableHelp))
   }
 
-  const app = ctx.app
+  const $ = ctx.$commander
   function findCommand(target: string) {
-    const command = app._commands.resolve(target)
+    const command = $.resolve(target)
     if (command) return command
-    const shortcut = app._shortcuts.find(({ name }) => {
+    const shortcut = $._shortcuts.find(({ name }) => {
       return typeof name === 'string' ? name === target : name.test(target)
     })
     if (shortcut) return shortcut.command
@@ -52,7 +71,7 @@ export default function help(ctx: Context, config: HelpConfig = {}) {
     .option('showHidden', '-H')
     .action(async ({ session, options }, target) => {
       if (!target) {
-        const commands = app._commandList.filter(cmd => cmd.parent === null)
+        const commands = $._commandList.filter(cmd => cmd.parent === null)
         const output = formatCommands('.global-prolog', session, commands, options)
         const epilog = session.text('.global-epilog')
         if (epilog) output.push(epilog)
@@ -60,14 +79,17 @@ export default function help(ctx: Context, config: HelpConfig = {}) {
       }
 
       const command = findCommand(target)
-      if (!command?.context.match(session)) {
+      if (!command?.ctx.match(session)) {
+        if (!session.suggest) {
+          return session.text('.suggest-prefix')
+        }
         return session.suggest({
           target,
-          items: getCommandNames(session),
-          prefix: session.text('suggest.help-prefix'),
-          suffix: session.text('suggest.help-suffix'),
+          items: $.getCommandNames(session),
+          prefix: session.text('.suggest-prefix'),
+          suffix: session.text('.suggest-suffix'),
           async apply(suggestion) {
-            return showHelp(ctx.getCommand(suggestion), this as any, options)
+            return showHelp($.getCommand(suggestion), this as any, options)
           },
         })
       }
@@ -76,12 +98,6 @@ export default function help(ctx: Context, config: HelpConfig = {}) {
     })
 
   if (config.shortcut !== false) cmd.shortcut('帮助', { fuzzy: true })
-}
-
-export function getCommandNames(session: Session) {
-  return session.app._commandList
-    .filter(cmd => cmd.match(session) && !cmd.config.hidden)
-    .flatMap(cmd => cmd._aliases)
 }
 
 function* getCommands(session: Session<'authority'>, commands: Command[], showHidden = false): Generator<Command> {
@@ -141,13 +157,13 @@ function getOptions(command: Command, session: Session<'authority'>, config: Hel
     let line = `${authority}${option.syntax}`
     const description = session.text(option.descPath ?? [`commands.${command.name}.options.${option.name}`, ''])
     if (description) line += '  ' + description
-    line = command.app.chain('help/option', line, option, command, session)
+    line = command.ctx.chain('help/option', line, option, command, session)
     output.push('    ' + line)
     for (const value in option.valuesSyntax) {
       let line = `${authority}${option.valuesSyntax[value]}`
       const description = session.text([`commands.${command.name}.options.${option.name}.${value}`, ''])
       if (description) line += '  ' + description
-      line = command.app.chain('help/option', line, option, command, session)
+      line = command.ctx.chain('help/option', line, option, command, session)
       output.push('    ' + line)
     }
   })

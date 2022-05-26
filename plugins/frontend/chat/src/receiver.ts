@@ -59,6 +59,7 @@ export interface Message {
   channelId?: string
   guildId?: string
   selfId?: string
+  selfName?: string
   channelName?: string
   guildName?: string
   timestamp?: number
@@ -168,7 +169,6 @@ export default function receiver(ctx: Context, config: RefreshConfig = {}) {
         params.abstract += `[${stl(code.type as SegmentType)}]`
       }
     }
-    params.content = codes.map(({ type, data }) => segment(type, data)).join('')
   }
 
   async function prepareContent(session: Session, message: Message, timestamp: number) {
@@ -196,10 +196,10 @@ export default function receiver(ctx: Context, config: RefreshConfig = {}) {
       session.channelName = channelName
       channelMap[cid] = [Promise.resolve(channelName), timestamp]
     }
+    params.selfName = session.bot.username
     await Promise.all([prepareChannel, prepareGroup, prepareContent].map(cb => cb(session, params, timestamp)))
     ctx.emit('chat/receive', params, session)
   }
 
   ctx.any().on('message', handleMessage)
-  ctx.any().on('send', handleMessage)
 }

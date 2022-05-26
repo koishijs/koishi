@@ -22,6 +22,10 @@ export function apply(ctx: Context, config: Config = {}) {
   const { exitCommand, autoRestart = true } = config
 
   function handleSignal(signal: NodeJS.Signals) {
+    // prevent restarting when child process is exiting
+    if (autoRestart) {
+      process.send({ type: 'start', body: { autoRestart: false } })
+    }
     ctx.logger('app').info(`terminated by ${signal}`)
     ctx.parallel('exit', signal).finally(() => process.exit())
   }

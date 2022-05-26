@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-puppeteer",
   "description": "Take Screenshots in Koishi",
-  "version": "3.0.6",
+  "version": "3.0.7",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -23,14 +23,24 @@
     "koishi",
     "plugin",
     "screenshot",
-    "puppeteer",
-    "impl:puppeteer"
+    "puppeteer"
   ],
+  "koishi": {
+    "description": {
+      "en": "Headless browser service which can be used to take screenshots",
+      "zh": "提供浏览器服务，可用于网页截图等"
+    },
+    "service": {
+      "implements": [
+        "puppeteer"
+      ]
+    }
+  },
   "devDependencies": {
     "@types/pngjs": "^6.0.1"
   },
   "peerDependencies": {
-    "koishi": "^4.6.3"
+    "koishi": "^4.7.1"
   },
   "dependencies": {
     "chrome-finder": "^1.0.7",

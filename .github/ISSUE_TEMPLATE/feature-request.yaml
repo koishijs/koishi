@@ -1,6 +1,6 @@
 name: Feature Request
 description: 提交功能请求
-title: "Feature Request: "
+title: "Feature: "
 labels:
   - feature
 body:

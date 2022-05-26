@@ -14,7 +14,7 @@ export interface Rule {
   guildId?: string
 }
 
-export const Rule = Schema.object({
+export const Rule: Schema<Rule> = Schema.object({
   source: Schema.string().required().description('来源频道'),
   target: Schema.string().required().description('目标频道'),
   selfId: Schema.string().required().description('负责推送的机器人账号'),
@@ -28,12 +28,12 @@ export interface Config {
   interval?: number
 }
 
-export const schema = Schema.union([
+export const Config = Schema.union([
   Schema.object({
     rules: Schema.array(Rule).description('转发规则'),
     interval: Schema.natural().role('ms').default(Time.hour).description('推送消息不再响应回复的时间。'),
   }),
-  Schema.transform(Schema.array(Rule), (rules) => ({ rules })),
+  Schema.transform(Schema.array(Rule), (rules) => ({ rules, interval: Time.hour })),
 ])
 
 export function apply(ctx: Context, { rules, interval }: Config) {

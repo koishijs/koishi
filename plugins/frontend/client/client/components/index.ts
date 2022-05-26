@@ -24,9 +24,9 @@ import {
   ElTree,
 } from 'element-plus'
 
-import chat from './chat'
 import common from './common'
 import form from './form'
+import ChatImage from './chat/image.vue'
 import * as icons from './icons'
 import layout from './layout'
 import notice from './notice'
@@ -64,7 +64,9 @@ export * from './form'
 export * from './layout'
 export * from './notice'
 
-export { icons }
+export * from '@satorijs/components'
+
+export { icons, ChatImage }
 
 export default function (app: App) {
   app.use(ElButton)
@@ -89,7 +91,6 @@ export default function (app: App) {
   app.use(ElTableColumn)
   app.use(ElTimePicker)
 
-  app.use(chat)
   app.use(common)
   app.use(form)
   app.use(icons)

@@ -122,7 +122,6 @@ export function adaptSession(bot: Bot, input: any) {
     session.type = 'message'
     adaptMessageCreate(data, data.extra as KHL.MessageExtra, session)
     if (!session.content) return
-    if (session.userId === bot.selfId) return
   }
   return new Session(bot, session)
 }

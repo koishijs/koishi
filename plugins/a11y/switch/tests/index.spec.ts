@@ -18,7 +18,7 @@ before(async () => {
   await app.mock.initUser('123', 3)
 })
 
-describe('Switch Plugin', () => {
+describe('@koishijs/plugin-switch', () => {
   it('basic support', async () => {
     await client.shouldReply('switch -c #123', '未找到指定的频道。')
     await client.shouldReply('switch', '当前没有禁用功能。')

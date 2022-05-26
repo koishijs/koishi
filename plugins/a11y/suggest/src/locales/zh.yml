@@ -1,0 +1,4 @@
+suggest:
+  hint: 您要找的是不是{0}？
+  command-prefix: ''
+  command-suffix: 发送句号以使用推测的指令。

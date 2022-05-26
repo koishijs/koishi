@@ -1,8 +1,9 @@
 import { camelCase, Dict, escapeRegExp, paramCase, segment, Time } from '@koishijs/utils'
 import { Command } from './command'
-import { Context, Next } from './context'
-import { Channel, User } from './database'
-import { Session } from './session'
+import { Context } from 'cordis'
+import { Channel, User } from '../database'
+import { Session } from '../protocol/session'
+import { Next } from '../protocol'
 
 export interface Token {
   rest?: string
@@ -354,7 +355,6 @@ export namespace Argv {
     /** hide the option by default */
     hidden?: boolean | ((session: Session) => boolean)
     authority?: number
-    notUsage?: boolean
     descPath?: string
   }
 
@@ -379,7 +379,7 @@ export namespace Argv {
     private _namedOptions: OptionDeclarationMap = {}
     private _symbolicOptions: OptionDeclarationMap = {}
 
-    constructor(public readonly name: string, declaration: string, public context: Context) {
+    constructor(public readonly name: string, declaration: string, public ctx: Context) {
       if (!name) throw new Error('expect a command name')
       const decl = this._arguments = parseDecl(declaration)
       this.declaration = decl.stripped
@@ -434,7 +434,7 @@ export namespace Argv {
       }
 
       if (desc) {
-        this.context.i18n.define('', path, desc)
+        this.ctx.i18n.define('', path, desc)
       }
 
       this._assignOption(option, names, this._namedOptions)

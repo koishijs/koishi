@@ -69,7 +69,7 @@ export enum GatewayIntent {
    * - STAGE_INSTANCE_UPDATE
    * - STAGE_INSTANCE_DELETE
    */
-  GUILD_CREATE = 1 << 0,
+  GUILDS = 1 << 0,
   /**
    * - GUILD_MEMBER_ADD
    * - GUILD_MEMBER_UPDATE

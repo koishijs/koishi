@@ -143,13 +143,13 @@ export namespace Message {
   /** https://discord.com/developers/docs/resources/channel#get-channel-messages-query-string-params */
   export interface GetParams {
     /** get messages around this message ID */
-    around: snowflake
+    around?: snowflake
     /** get messages before this message ID */
-    before: snowflake
+    before?: snowflake
     /** get messages after this message ID */
-    after: snowflake
+    after?: snowflake
     /** max number of messages to return (1-100) */
-    limit: integer
+    limit?: integer
   }
 
   /** https://discord.com/developers/docs/resources/channel#create-message-jsonform-params */

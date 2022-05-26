@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-database-memory",
   "description": "A in-memory database implementation for Koishi",
-  "version": "1.2.0",
+  "version": "1.3.1",
   "main": "lib/node.js",
   "module": "lib/browser.js",
   "typings": "lib/index.d.ts",
@@ -26,12 +26,23 @@
     "plugin",
     "database",
     "server",
-    "impl:database"
+    "memory"
   ],
+  "koishi": {
+    "description": {
+      "en": "In-memory database support",
+      "zh": "基于内存的数据库支持"
+    },
+    "service": {
+      "implements": [
+        "database"
+      ]
+    }
+  },
   "peerDependencies": {
-    "koishi": "^4.6.3"
+    "koishi": "^4.7.1"
   },
   "dependencies": {
-    "@cosmotype/driver-memory": "^1.0.3"
+    "@minatojs/driver-memory": "^1.0.3"
   }
 }

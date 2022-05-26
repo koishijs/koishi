@@ -2,6 +2,7 @@ import { App, User, Channel, Command, sleep } from 'koishi'
 import mock, { DEFAULT_SELF_ID } from '@koishijs/plugin-mock'
 
 const app = new App({
+  // @ts-ignore disable suggestions
   minSimilarity: 0,
 })
 
@@ -22,7 +23,7 @@ const cmd1 = app.command('cmd1 <arg1>', { authority: 2 })
   .shortcut('foo1', { args: ['bar'] })
   .shortcut('foo4', { fuzzy: true })
   .option('--bar', '', { authority: 3 })
-  .option('--baz', '', { notUsage: true })
+  .option('--baz', '')
   .action(({}, arg) => 'cmd1:' + arg)
 
 const cmd2 = app.command('cmd2')
@@ -30,7 +31,7 @@ const cmd2 = app.command('cmd2')
   .shortcut('foo2', { options: { text: 'bar' } })
   .shortcut('foo3', { prefix: true, fuzzy: true })
   .option('--bar', '', { authority: 3 })
-  .option('--baz', '', { notUsage: true })
+  .option('--baz', '')
   .action(({ session }) => 'cmd2:' + session.userId)
 
 app.middleware((session, next) => {
@@ -101,12 +102,12 @@ describe('Runtime', () => {
   describe('Nickname Prefix', () => {
     before(() => {
       app.options.prefix = '-'
-      app.prepare()
+      app.$internal.prepare()
     })
 
     after(() => {
       app.options.prefix = null
-      app.prepare()
+      app.$internal.prepare()
     })
 
     it('no nickname', async () => {
@@ -119,7 +120,7 @@ describe('Runtime', () => {
 
     it('single nickname', async () => {
       app.options.nickname = 'koishi'
-      app.prepare()
+      app.$internal.prepare()
 
       await client1.shouldReply('koishi, cmd2', 'cmd2:123')
       await client4.shouldReply('koishi, cmd2', 'cmd2:123')
@@ -133,7 +134,7 @@ describe('Runtime', () => {
 
     it('multiple nicknames', async () => {
       app.options.nickname = ['komeiji', 'koishi']
-      app.prepare()
+      app.$internal.prepare()
 
       await client1.shouldReply('cmd2', 'cmd2:123')
       await client4.shouldNotReply('cmd2')
@@ -149,12 +150,12 @@ describe('Runtime', () => {
   describe('Shortcuts', () => {
     before(() => {
       app.options.prefix = '#'
-      app.prepare()
+      app.$internal.prepare()
     })
 
     after(() => {
       app.options.prefix = null
-      app.prepare()
+      app.$internal.prepare()
     })
 
     it('single shortcut', async () => {

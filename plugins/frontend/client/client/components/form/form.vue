@@ -7,6 +7,7 @@
     <slot name="prolog"></slot>
     <k-schema
       v-model="config"
+      :instant="instant"
       :initial="initial"
       :schema="resolved"
       :disabled="disabled"
@@ -26,6 +27,7 @@ const props = defineProps({
   modelValue: {},
   disabled: Boolean,
   showHeader: {},
+  instant: Boolean,
 })
 
 const resolved = computed(() => {

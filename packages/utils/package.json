@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/utils",
   "description": "Utilities for Koishi",
-  "version": "5.4.3",
+  "version": "5.4.5",
   "main": "lib/node.js",
   "module": "lib/browser.js",
   "typings": "lib/index.d.ts",
@@ -33,7 +33,7 @@
     "@koishijs/segment": "^1.1.1",
     "cosmokit": "^1.1.2",
     "reggol": "^1.0.3",
-    "schemastery": "^3.3.3",
+    "schemastery": "^3.4.3",
     "supports-color": "^8.1.1"
   }
 }

@@ -49,12 +49,28 @@ function render(code, lang, attrs) {
       .replace(/<\/div>(?!<\/pre>)/g, '</span>\n')
       .replace(/<\/br>/g, '\n')
   } catch (e) {
-    console.log('Code block:')
-    console.log(code)
-    console.log()
-    console.log('Message:')
-    console.log(e.message)
-    console.log()
+    const ci = 'GITHUB_ACTIONS' in process.env
+    const blue = (x) => `\u001b[34m${x}\u001b[0m\n`
+    const startGroup = (x) => ci ? `::group::${x}` : `${blue('----- ' + x)}\n`
+    const endGroup = () => ci ? '::endgroup::' : `${blue('-----')}\n`
+
+    if ('recommendation' in e && 'code' in e) {
+      // Twoslash error
+      console.log(startGroup('Twoslash Compiler Error'))
+      console.log(blue('Code:'))
+      console.log(e.code)
+      console.log(blue('Error:'))
+      console.log(e.recommendation)
+    } else {
+      // Other error
+      console.log(startGroup('Twoslash Error'))
+      console.log(blue('Code:'))
+      console.log(code)
+      console.log(blue('Error:'))
+      console.log(e.message)
+    }
+
+    console.log(endGroup())
     return null
   }
 }

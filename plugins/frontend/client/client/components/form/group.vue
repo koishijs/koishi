@@ -23,6 +23,7 @@
           :initial="initial?.[key]"
           :schema="schema.inner"
           :disabled="disabled"
+          :instant="instant"
           :prefix="prefix + key + '.'">
           <h3>
             <span>{{ prefix + key }}</span>
@@ -37,6 +38,7 @@
       :initial="initial?.[key]"
       :schema="schema.inner"
       :disabled="disabled"
+      :instant="instant"
       :prefix="prefix + key + '.'"
       @command="handleCommand($event, index)">
       <template #menu>
@@ -89,6 +91,7 @@ const props = defineProps({
   initial: {},
   prefix: String,
   disabled: Boolean,
+  instant: Boolean,
   signal: Boolean,
 })
 

@@ -1,4 +1,5 @@
 import { App } from 'koishi'
+import {} from '@koishijs/plugin-help'
 import mock from '@koishijs/plugin-mock'
 
 const app = new App()

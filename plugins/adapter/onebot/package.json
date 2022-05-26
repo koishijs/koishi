@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-adapter-onebot",
   "description": "OneBot Adapter for Koishi",
-  "version": "4.2.2",
+  "version": "4.2.5",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -26,14 +26,24 @@
     "coolq",
     "chatbot",
     "koishi",
-    "plugin",
-    "impl:adapter"
+    "plugin"
   ],
+  "koishi": {
+    "description": {
+      "en": "OneBot Adapter",
+      "zh": "OneBot 适配器"
+    },
+    "service": {
+      "implements": [
+        "adapter"
+      ]
+    }
+  },
   "peerDependencies": {
-    "koishi": "^4.6.3"
+    "koishi": "^4.7.1"
   },
   "devDependencies": {
-    "@koishijs/plugin-mock": "^1.0.4",
+    "@koishijs/plugin-mock": "^1.0.5",
     "@types/ws": "^8.5.3"
   },
   "dependencies": {

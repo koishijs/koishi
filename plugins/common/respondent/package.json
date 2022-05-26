@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-respondent",
-  "description": "Common plugins for Koishi",
-  "version": "5.0.0",
+  "description": "Respondent plugin for Koishi",
+  "version": "5.0.1",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -25,13 +25,18 @@
     "bot",
     "chatbot",
     "koishi",
-    "plugin",
-    "optional:database"
+    "plugin"
   ],
+  "koishi": {
+    "description": {
+      "en": "Support automatic responding through custom rules",
+      "zh": "自动回复插件，允许设置一套自定义问答规则"
+    }
+  },
   "peerDependencies": {
-    "koishi": "^4.6.3"
+    "koishi": "^4.7.1"
   },
   "devDependencies": {
-    "@koishijs/plugin-mock": "^1.0.4"
+    "@koishijs/plugin-mock": "^1.0.5"
   }
 }

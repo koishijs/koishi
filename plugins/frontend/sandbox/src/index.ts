@@ -127,7 +127,7 @@ export class UserProvider extends DataService<Dict<User>> {
         return this.observe(user, users)
       } else if (!data) {
         delete users[name]
-        this.ctx.app._userCache.set('sandbox', 'sandbox:' + name, null)
+        this.ctx.$internal._userCache.set('sandbox', 'sandbox:' + name, null)
         return this.ctx.database.remove('user', { sandbox: name })
       }
       Object.assign(users[name], data)
@@ -141,7 +141,7 @@ export class UserProvider extends DataService<Dict<User>> {
       await this.ctx.database.setUser('sandbox', user.sandbox, diff)
       this.refresh()
     })
-    this.ctx.app._userCache.set('sandbox', uid, users[user.sandbox])
+    this.ctx.$internal._userCache.set('sandbox', uid, users[user.sandbox])
   }
 
   async prepare() {
@@ -155,7 +155,7 @@ export class UserProvider extends DataService<Dict<User>> {
 
   stop() {
     // keep user cache active until disposed
-    this.ctx.app._userCache.delete('sandbox')
+    this.ctx.$internal._userCache.delete('sandbox')
   }
 
   async get() {

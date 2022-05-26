@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-bind",
   "description": "Bind User Accounts Across Platforms in Koishi",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -26,16 +26,28 @@
     "chatbot",
     "koishi",
     "plugin",
-    "bind",
-    "locale:zh",
-    "locale:en",
-    "required:database"
+    "bind"
   ],
+  "koishi": {
+    "description": {
+      "en": "Bind user accounts across platforms",
+      "zh": "跨平台账户绑定 (绑定后在多个平台将共享同一套用户数据)"
+    },
+    "service": {
+      "required": [
+        "database"
+      ]
+    },
+    "locales": [
+      "zh",
+      "en"
+    ]
+  },
   "peerDependencies": {
-    "koishi": "^4.6.3"
+    "koishi": "^4.7.1"
   },
   "devDependencies": {
-    "@koishijs/plugin-database-memory": "^1.2.0",
-    "@koishijs/plugin-mock": "^1.0.4"
+    "@koishijs/plugin-database-memory": "^1.3.1",
+    "@koishijs/plugin-mock": "^1.0.5"
   }
 }

@@ -1,6 +1,6 @@
 import { Context, Schema } from 'koishi'
 import { resolve } from 'path'
-import SQLiteDriver from '@cosmotype/driver-sqlite'
+import SQLiteDriver from '@minatojs/driver-sqlite'
 
 export const name = 'SQLiteDatabase'
 

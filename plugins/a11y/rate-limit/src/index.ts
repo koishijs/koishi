@@ -1,5 +1,6 @@
 import { Argv, Command, Context, Dict, Schema, Session, Time, User } from 'koishi'
 import { adminUser } from '@koishijs/helpers'
+import {} from '@koishijs/plugin-help'
 
 declare module 'koishi' {
   namespace Command {
@@ -16,6 +17,12 @@ declare module 'koishi' {
   interface User {
     usage: Dict<number>
     timers: Dict<number>
+  }
+
+  namespace Argv {
+    interface OptionConfig {
+      notUsage?: boolean
+    }
   }
 }
 

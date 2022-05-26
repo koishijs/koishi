@@ -160,7 +160,7 @@ export class Sender {
       }))
     }
 
-    if (!this.errors.length) return this.results.map(result => '' + result.message_id)
+    if (!this.errors.length) return this.results
     throw new AggregateError(this.errors)
   }
 }

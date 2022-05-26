@@ -1,4 +1,4 @@
-import { App } from 'koishi'
+import { App, Bot } from 'koishi'
 import * as feedback from '@koishijs/plugin-feedback'
 import mock from '@koishijs/plugin-mock'
 import * as jest from 'jest-mock'
@@ -23,7 +23,7 @@ describe('@koishijs/plugin-feedback', () => {
     expect(send1.mock.calls).to.have.length(1)
     expect(send1.mock.calls).to.have.shape([['999', '收到来自 123 的反馈信息：\nfoo']])
 
-    const send2 = app.bots[0].sendMessage = jest.fn()
+    const send2 = app.bots[0].sendMessage = jest.fn(async () => ['2000'])
     await client.shouldNotReply('bar')
     expect(send2.mock.calls).to.have.length(0)
     await client.shouldNotReply(`[CQ:quote,id=1000] bar`)

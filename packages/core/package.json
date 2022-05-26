@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/core",
   "description": "Core Features for Koishi",
-  "version": "4.6.3",
+  "version": "4.7.1",
   "main": "lib/node.js",
   "module": "lib/browser.js",
   "typings": "lib/index.d.ts",
@@ -28,16 +28,16 @@
     "koishi"
   ],
   "devDependencies": {
-    "@koishijs/plugin-database-memory": "^1.2.0",
+    "@koishijs/plugin-database-memory": "^1.3.0",
     "@koishijs/plugin-mock": "^1.0.4",
     "chai": "^4.3.6",
     "chai-as-promised": "^7.1.1",
     "chai-shape": "^1.0.0"
   },
   "dependencies": {
-    "@koishijs/utils": "^5.4.3",
-    "cosmotype": "^1.0.9",
+    "@koishijs/utils": "^5.4.5",
+    "cordis": "^1.2.0",
     "fastest-levenshtein": "^1.0.12",
-    "ns-require": "^1.1.2"
+    "minato": "^1.1.0"
   }
 }

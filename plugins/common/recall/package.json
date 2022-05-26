@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-recall",
   "description": "Recall plugin for Koishi",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -26,13 +26,21 @@
     "chatbot",
     "koishi",
     "plugin",
-    "recall",
-    "locale:zh"
+    "recall"
   ],
+  "koishi": {
+    "description": {
+      "en": "Recall messages",
+      "zh": "撤回已发送的消息"
+    },
+    "locales": [
+      "zh"
+    ]
+  },
   "peerDependencies": {
-    "koishi": "^4.6.3"
+    "koishi": "^4.7.1"
   },
   "devDependencies": {
-    "@koishijs/plugin-mock": "^1.0.4"
+    "@koishijs/plugin-mock": "^1.0.5"
   }
 }

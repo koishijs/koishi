@@ -35,6 +35,7 @@ export interface Config {
 }
 
 export const name = 'verifier'
+
 export const Config: Schema<Config> = Schema.object({
   onFriendRequest: Schema.union([Number, String, Boolean, Function]).description('通过好友请求所需的权限等级。'),
   onGuildMemberRequest: Schema.union([Number, String, Boolean, Function]).description('通过入群申请所需的权限等级。'),

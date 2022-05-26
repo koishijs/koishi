@@ -1,7 +1,7 @@
 import { defineProperty, valueMap } from '@koishijs/utils'
-import { Argv } from '../parser'
-import { Context } from '../context'
-import { Session } from '../session'
+import { Argv } from './parser'
+import { Context } from 'cordis'
+import { Session } from '../protocol/session'
 
 export default function runtime(ctx: Context) {
   ctx.before('parse', (content, session) => {
@@ -20,9 +20,9 @@ export default function runtime(ctx: Context) {
   ctx.before('parse', (content, session) => {
     const { parsed, quote } = session
     if (parsed.prefix || quote) return
-    for (const shortcut of ctx.app._shortcuts) {
+    for (const shortcut of ctx.$commander._shortcuts) {
       const { name, fuzzy, command, prefix, options = {}, args = [] } = shortcut
-      if (prefix && !parsed.appel || !command.context.match(session)) continue
+      if (prefix && !parsed.appel || !command.ctx.match(session)) continue
       if (typeof name === 'string') {
         if (!fuzzy && content !== name || !content.startsWith(name)) continue
         const message = content.slice(name.length)
@@ -59,14 +59,8 @@ export default function runtime(ctx: Context) {
     session.argv.session = session
   })
 
-  ctx.middleware((session, next) => {
-    // execute command
-    if (!session.resolve(session.argv)) return next()
-    return session.execute(session.argv, next)
-  })
-
   function executeHelp(session: Session, name: string) {
-    if (!ctx.getCommand('help')) return
+    if (!ctx.$commander.getCommand('help')) return
     return session.execute({
       name: 'help',
       args: [name],
@@ -82,7 +76,7 @@ export default function runtime(ctx: Context) {
     if (command['_actions'].length) return
     // subcommand redirect
     const arg0 = args.shift() || ''
-    const subcommand = ctx.getCommand(command.name + '.' + arg0)
+    const subcommand = ctx.$commander.getCommand(command.name + '.' + arg0)
     if (subcommand) {
       // save command names
       const commands = session['__redirected_commands'] ||= [

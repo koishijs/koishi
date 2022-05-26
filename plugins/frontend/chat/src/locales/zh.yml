@@ -17,7 +17,7 @@ chat:
       guild: '[推荐群:{ name }]'
     face: 表情
     record: 语音
-    video: 短视频
+    video: 视频
     image: 图片
     music: 音乐
     quote: 引用

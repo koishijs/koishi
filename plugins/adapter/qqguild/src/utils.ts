@@ -8,7 +8,7 @@ export const AdapterConfig: Schema<AdapterConfig> = Schema.intersect([
   Schema.object({
     sandbox: Schema.boolean().description('是否开启沙箱模式。').default(true),
     endpoint: Schema.string().role('url').description('API 入口地址。').default('https://api.sgroup.qq.com/'),
-    authType: Schema.union(['bot', 'bearer']).description('采用的验证方式。').default('bot'),
+    authType: Schema.union(['bot', 'bearer'] as const).description('采用的验证方式。').default('bot'),
   }),
   Adapter.WebSocketClient.Config,
 ])
@@ -25,7 +25,7 @@ export const BotConfig = Schema.intersect([
     id: Schema.string().description('机器人 id。').required(),
     key: Schema.string().description('机器人 key。').role('secret').required(),
     token: Schema.string().description('机器人令牌。').role('secret').required(),
-    intents: Schema.number().description('需要订阅的机器人事件。').default(Intents.PUBLIC_GUILD_MESSAGES),
+    intents: Schema.bitset(Intents).description('需要订阅的机器人事件。').default(Intents.PUBLIC_GUILD_MESSAGES),
   }),
 ])
 

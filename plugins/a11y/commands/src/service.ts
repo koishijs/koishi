@@ -47,7 +47,7 @@ export default class CommandProvider extends DataService<CommandData[]> {
 
   async get(forced = false) {
     if (this.cached && !forced) return this.cached
-    this.cached = this.ctx.app._commandList.filter(cmd => !cmd.parent).map(traverse)
+    this.cached = this.ctx.app.$commander._commandList.filter(cmd => !cmd.parent).map(traverse)
     return this.cached
   }
 }

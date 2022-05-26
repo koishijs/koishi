@@ -1,5 +1,5 @@
 import { resolve } from 'path'
-import { App, Context, Dict, interpolate, Logger, valueMap } from 'koishi'
+import { App, Context, Dict, interpolate, Logger, Registry, valueMap } from 'koishi'
 import ConfigLoader from '@koishijs/loader'
 import * as dotenv from 'dotenv'
 import ns from 'ns-require'
@@ -105,14 +105,14 @@ export default class Loader extends ConfigLoader<App.Config> {
     const plugin = this.resolvePlugin(name)
     if (!plugin) return
 
-    if (this.app.isActive) {
-      this.app._tasks.flush().then(() => this.diagnose(name))
+    if (this.app.lifecycle.isActive) {
+      this.app.lifecycle.flush().then(() => this.diagnose(name))
     }
 
     const state = this.app.dispose(plugin)
     const config = this.config.plugins[name]
     logger.info(`%s plugin %c`, state ? 'reload' : 'apply', name)
-    this.app.validate(plugin, config)
+    Registry.validate(plugin, config)
     this.app.plugin(plugin, this.interpolate(config))
   }
 

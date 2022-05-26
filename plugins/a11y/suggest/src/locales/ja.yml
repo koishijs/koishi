@@ -1,0 +1,4 @@
+suggest:
+  hint: 「{0}」を実行したいですか？
+  command-prefix: ''
+  command-suffix: 句点を送信してコマンドを実行します。

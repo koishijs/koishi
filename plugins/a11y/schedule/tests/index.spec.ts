@@ -6,50 +6,50 @@ import * as jest from 'jest-mock'
 import { expect } from 'chai'
 import 'chai-shape'
 
-const app = new App().plugin(mock)
-const client1 = app.mock.client('123', '456')
-const client2 = app.mock.client('123')
+describe('@koishijs/plugin-switch', () => {
+  const app = new App().plugin(mock)
+  const client1 = app.mock.client('123', '456')
+  const client2 = app.mock.client('123')
 
-const send = app.bots[0].sendMessage = jest.fn(async () => [])
+  const send = app.bots[0].sendMessage = jest.fn(async () => [])
 
-app.plugin('database-memory')
-app.command('echo [content:text]').action((_, text) => text)
+  app.plugin('database-memory')
+  app.command('echo [content:text]').action((_, text) => text)
 
-let clock: InstalledClock
+  let clock: InstalledClock
 
-before(async () => {
-  clock = install({ now: new Date('2000-1-1 1:00') })
+  before(async () => {
+    clock = install({ now: new Date('2000-1-1 1:00') })
 
-  await app.start()
-  await app.mock.initUser('123', 4)
-  await app.mock.initChannel('456')
+    await app.start()
+    await app.mock.initUser('123', 4)
+    await app.mock.initChannel('456')
 
-  app.model.extend('schedule', {
-    id: 'unsigned',
-    assignee: 'string',
-    time: 'timestamp',
-    lastCall: 'timestamp',
-    interval: 'integer',
-    command: 'text',
-    session: 'json',
-  }, {
-    autoInc: true,
+    app.model.extend('schedule', {
+      id: 'unsigned',
+      assignee: 'string',
+      time: 'timestamp',
+      lastCall: 'timestamp',
+      interval: 'integer',
+      command: 'text',
+      session: 'json',
+    }, {
+      autoInc: true,
+    })
+
+    await app.database.create('schedule', {
+      time: new Date('2000-1-1 0:59'),
+      assignee: app.bots[0].sid,
+      interval: Time.day,
+      command: 'echo bar',
+      session: client2.meta,
+    })
+
+    app.plugin(schedule)
   })
 
-  await app.database.create('schedule', {
-    time: new Date('2000-1-1 0:59'),
-    assignee: app.bots[0].sid,
-    interval: Time.day,
-    command: 'echo bar',
-    session: client2.meta,
-  })
+  after(() => clock.uninstall())
 
-  app.plugin(schedule)
-})
-
-after(() => clock.uninstall())
-
-describe('Schedule Plugin', () => {
   it('register schedule', async () => {
     await client1.shouldReply('schedule -l', '当前没有等待执行的日程。')
     await client1.shouldReply('schedule 1m -- echo foo', '日程已创建，编号为 2。')
@@ -85,7 +85,7 @@ describe('Schedule Plugin', () => {
     await new Promise(process.nextTick)
     await client1.shouldReply('', 'foo')
 
-    await client1.shouldReply('schedule -l', '2. 2000-01-01 00:30:00 起每隔 1 小时：echo foo')
+    await client1.shouldReply('schedule -l', '2. 每隔 1 小时 (剩余 59 分钟)：echo foo')
     await client1.shouldReply('schedule -d 2', '日程 2 已删除。')
     clock.tick(Time.hour) // 02:31
     await new Promise(process.nextTick)

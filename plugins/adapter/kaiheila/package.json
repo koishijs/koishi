@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-adapter-kaiheila",
   "description": "Kaiheila Adapter for Koishi",
-  "version": "2.0.6",
+  "version": "2.0.8",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -22,14 +22,24 @@
     "bot",
     "kaiheila",
     "chatbot",
-    "koishi",
-    "impl:adapter"
+    "koishi"
   ],
+  "koishi": {
+    "description": {
+      "en": "Kaiheila Adapter",
+      "zh": "开黑啦适配器"
+    },
+    "service": {
+      "implements": [
+        "adapter"
+      ]
+    }
+  },
   "peerDependencies": {
-    "koishi": "^4.6.3"
+    "koishi": "^4.7.1"
   },
   "devDependencies": {
-    "@koishijs/plugin-mock": "^1.0.4"
+    "@koishijs/plugin-mock": "^1.0.5"
   },
   "dependencies": {
     "axios": "^0.24.0",

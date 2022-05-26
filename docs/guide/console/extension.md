@@ -77,8 +77,8 @@ export function apply(ctx: Context) {
   // 在已有插件逻辑的基础上，添加下面这段
   ctx.using(['console'], (ctx) => {
     ctx.console.addEntry({
-      dev: resolve(__dirname, 'client/index.ts'),
-      prod: resolve(__dirname, 'dist'),
+      dev: resolve(__dirname, '../client/index.ts'),
+      prod: resolve(__dirname, '../dist'),
     })
   })
 }

@@ -1,0 +1,4 @@
+suggest:
+  hint: 你想輸入的是{0}嗎？
+  command-prefix: ''
+  command-suffix: 發送句號可使用推測的指令。

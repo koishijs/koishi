@@ -26,23 +26,24 @@
         <div>点击「添加用户」开始体验</div>
       </k-empty>
       <k-content :key="'profile' + channel" v-else-if="config.panelType === 'profile'">
-        <k-form
-          :schema="schema"
-          :initial="store.users[config.user]"
-          :show-header="false"
-          @update:modelValue="modifyUser"></k-form>
+        <k-form instant v-model="model" :schema="schema" :show-header="false"></k-form>
       </k-content>
-      <k-chat-panel v-else class="sandbox" :key="channel" :messages="config.messages[channel] || []" @send="sendMessage" #="data">
-        <chat-message :data="data"></chat-message>
-      </k-chat-panel>
+      <template v-else :key="channel">
+        <virtual-list :data="config.messages[channel] || []" #="data" pinned>
+          <chat-message :data="data"></chat-message>
+        </virtual-list>
+        <div class="card-footer">
+          <chat-input @send="sendMessage"></chat-input>
+        </div>
+      </template>
     </keep-alive>
   </k-card-aside>
 </template>
 
 <script lang="ts" setup>
 
-import { message, send, Schema, store } from '@koishijs/client'
-import { computed } from 'vue'
+import { clone, message, send, Schema, store, ChatInput, VirtualList, deepEqual } from '@koishijs/client'
+import { computed, ref, watch } from 'vue'
 import { config, words, panelTypes } from './utils'
 import type { User } from 'koishi'
 import ChatMessage from './message.vue'
@@ -92,9 +93,16 @@ function removeUser(name: string) {
   }
 }
 
-function modifyUser(diff: Partial<User>) {
-  send('sandbox/user', config.user, diff)
-}
+const model = ref()
+
+watch(() => store.users[config.user], (value) => {
+  model.value = clone(value)
+}, { immediate: true })
+
+watch(model, (value) => {
+  if (deepEqual(value, store.users[config.user])) return
+  send('sandbox/user', config.user, value)
+}, { deep: true })
 
 function sendMessage(content: string) {
   send('sandbox/message', config.user, channel.value, content)
@@ -127,23 +135,16 @@ function sendMessage(content: string) {
     user-select: none;
   }
 
-  .k-chat-panel {
-    height: 100%;
-    overflow-y: auto;
-  }
-
-  .card-header, .footer {
-    font-size: 1.15rem;
-    text-align: center;
-    padding: 1rem 0;
-    font-weight: bold;
-  }
-
   .card-header {
+    text-align: center;
+    font-weight: bold;
+    font-size: 1.15rem;
+    padding: 1rem 0;
     border-bottom: 1px solid var(--border);
   }
 
-  .footer {
+  .card-footer {
+    padding: 1rem 1.25rem;
     border-top: 1px solid var(--border);
   }
 

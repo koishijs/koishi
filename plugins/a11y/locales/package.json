@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-locales",
   "description": "Override Locale Texts for Koishi",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -29,13 +29,19 @@
     "plugin",
     "command"
   ],
+  "koishi": {
+    "description": {
+      "en": "Override locale texts",
+      "zh": "配置翻译文本"
+    }
+  },
   "peerDependencies": {
-    "koishi": "^4.6.3"
+    "koishi": "^4.7.1"
   },
   "devDependencies": {
-    "@koishijs/client": "^3.2.10",
-    "@koishijs/plugin-console": "^3.2.10",
-    "@koishijs/plugin-mock": "^1.0.4",
+    "@koishijs/client": "^3.3.3",
+    "@koishijs/plugin-console": "^3.3.3",
+    "@koishijs/plugin-mock": "^1.0.5",
     "@types/throttle-debounce": "^2.1.0"
   },
   "dependencies": {

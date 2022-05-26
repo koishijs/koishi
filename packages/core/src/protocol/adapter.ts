@@ -1,8 +1,14 @@
-import { Awaitable, Dict, Logger, paramCase, remove, Schema } from '@koishijs/utils'
+import { Dict, Logger, paramCase, remove, Schema } from '@koishijs/utils'
+import { Awaitable } from 'cosmokit'
+import { Context, Plugin } from 'cordis'
 import { Session } from './session'
-import { App } from './app'
 import { Bot } from './bot'
-import { Context, Plugin } from './context'
+
+declare module 'cordis' {
+  interface Context {
+    bots: Adapter.BotList
+  }
+}
 
 export abstract class Adapter<S extends Bot.BaseConfig = Bot.BaseConfig, T = {}> {
   public bots: Bot<S>[] = []
@@ -20,7 +26,7 @@ export abstract class Adapter<S extends Bot.BaseConfig = Bot.BaseConfig, T = {}>
   disconnect(bot: Bot): Awaitable<void> {}
 
   dispatch(session: Session) {
-    if (!this.ctx.app.isActive) return
+    if (!this.ctx.lifecycle.isActive) return
     const events: string[] = [session.type]
     if (session.subtype) {
       events.unshift(events[0] + '/' + session.subtype)
@@ -136,7 +142,11 @@ export namespace Adapter {
   export class BotList extends Array<Bot> {
     adapters: Dict<Adapter> = {}
 
-    constructor(private app: App) {
+    get caller(): Context {
+      return this[Context.current] || this.ctx
+    }
+
+    constructor(private ctx: Context) {
       super()
     }
 
@@ -150,18 +160,20 @@ export namespace Adapter {
       const bot = new constructor(adapter, options)
       adapter.bots.push(bot)
       this.push(bot)
-      this.app.emit('bot-added', bot)
+      this.caller.emit('bot-added', bot)
+      this.caller.on('dispose', () => {
+        this.remove(bot.id)
+      })
       return bot
     }
 
-    async remove(id: string) {
+    remove(id: string) {
       const index = this.findIndex(bot => bot.id === id)
       if (index < 0) return
       const [bot] = this.splice(index, 1)
-      remove(bot.adapter.bots, bot)
-      bot.config.disabled = true
-      this.app.emit('bot-removed', bot)
-      return bot.stop()
+      const exist = remove(bot.adapter.bots, bot)
+      this.caller.emit('bot-removed', bot)
+      return exist
     }
 
     private resolve(platform: string, config: Bot.BaseConfig): Adapter {
@@ -178,9 +190,16 @@ export namespace Adapter {
         return this.resolve(platform, config)
       }
 
-      const adapter = new constructor(this[Context.current], configMap[platform])
+      const adapter = new constructor(this.caller, configMap[platform])
       adapter.platform = platform
+      this.caller.on('dispose', () => {
+        delete this.adapters[type]
+      })
       return this.adapters[type] = adapter
     }
   }
 }
+
+Context.service('bots', {
+  constructor: Adapter.BotList,
+})

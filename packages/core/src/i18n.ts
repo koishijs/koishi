@@ -1,8 +1,14 @@
 import { Dict, isNullable, Logger, Random, Time } from '@koishijs/utils'
-import { Context } from './context'
+import { Context } from 'cordis'
 
 const logger = new Logger('i18n')
 const kTemplate = Symbol('template')
+
+declare module 'cordis' {
+  interface Context {
+    i18n: I18n
+  }
+}
 
 export namespace I18n {
   export type Node = string | Store
@@ -21,7 +27,7 @@ export class I18n {
   _formatters: Dict<I18n.Formatter> = {}
   _presets: Dict<I18n.Renderer> = {}
 
-  constructor(protected ctx: Context) {
+  constructor(ctx: Context) {
     this.define('', { '': '' })
     this.define('zh', require('./locales/zh'))
     this.define('en', require('./locales/en'))
@@ -164,3 +170,7 @@ export class I18n {
     })
   }
 }
+
+Context.service('i18n', {
+  constructor: I18n,
+})

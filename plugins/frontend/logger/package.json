@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-logger",
   "description": "Dump log files for Koishi",
-  "version": "1.2.2",
+  "version": "1.2.3",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -27,16 +27,26 @@
     "chatbot",
     "koishi",
     "plugin",
-    "logs",
-    "optional:console"
+    "logs"
   ],
+  "koishi": {
+    "description": {
+      "en": "Dump log files and show them in the console",
+      "zh": "保存日志文件并在控制台中显示"
+    },
+    "service": {
+      "optional": [
+        "console"
+      ]
+    }
+  },
   "peerDependencies": {
-    "@koishijs/plugin-console": "^3.2.10",
-    "koishi": "^4.6.3"
+    "@koishijs/plugin-console": "^3.3.3",
+    "koishi": "^4.7.1"
   },
   "devDependencies": {
-    "@koishijs/client": "^3.2.10",
-    "@koishijs/cli": "^4.6.3",
+    "@koishijs/client": "^3.3.3",
+    "@koishijs/cli": "^4.7.1",
     "ansi_up": "^5.1.0"
   }
 }

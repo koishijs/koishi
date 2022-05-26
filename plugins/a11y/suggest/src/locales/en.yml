@@ -1,0 +1,4 @@
+suggest:
+  hint: Do you mean {0}?
+  command-prefix: ''
+  command-suffix: Send a period to apply the suggestion.

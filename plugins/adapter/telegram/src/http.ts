@@ -1,7 +1,7 @@
-import { Adapter, assertProperty, Context, Dict, Logger, sanitize, Schema, segment, Session, trimSlash } from 'koishi'
+import { Adapter, assertProperty, Context, Dict, Logger, sanitize, Schema, Session, trimSlash } from 'koishi'
 import { BotConfig, TelegramBot } from './bot'
 import * as Telegram from './types'
-import { AdapterConfig, adaptUser } from './utils'
+import { AdapterConfig } from './utils'
 
 const logger = new Logger('telegram')
 
@@ -27,96 +27,10 @@ abstract class TelegramAdapter extends Adapter<BotConfig, AdapterConfig> {
     session.telegram = Object.create(bot.internal)
     Object.assign(session.telegram, update)
 
-    function parseText(text: string, entities: Telegram.MessageEntity[]): segment[] {
-      let curr = 0
-      const segs: segment[] = []
-      for (const e of entities) {
-        const eText = text.substr(e.offset, e.length)
-        if (e.type === 'mention') {
-          if (eText[0] !== '@') throw new Error('Telegram mention does not start with @: ' + eText)
-          const atName = eText.slice(1)
-          if (eText === '@' + bot.username) segs.push({ type: 'at', data: { id: bot.selfId, name: atName } })
-          // TODO handle @others
-        } else if (e.type === 'text_mention') {
-          segs.push({ type: 'at', data: { id: e.user.id } })
-        } else {
-          continue
-        }
-        if (e.offset > curr) {
-          segs.splice(-1, 0, { type: 'text', data: { content: text.slice(curr, e.offset) } })
-          curr = e.offset + e.length
-        }
-      }
-      if (curr < text?.length || 0) {
-        segs.push({ type: 'text', data: { content: text.slice(curr) } })
-      }
-      return segs
-    }
-
     const message = update.message || update.edited_message || update.channel_post || update.edited_channel_post
     if (message) {
-      session.messageId = message.message_id.toString()
-      session.type = (update.message || update.channel_post) ? 'message' : 'message-updated'
-      session.timestamp = message.date * 1000
-      const segments: segment[] = []
-      if (message.reply_to_message) {
-        const replayText = message.reply_to_message.text || message.reply_to_message.caption
-        const parsedReply = parseText(replayText, message.reply_to_message.entities || [])
-        session.quote = {
-          messageId: message.reply_to_message.message_id.toString(),
-          author: adaptUser(message.reply_to_message.from),
-          content: replayText ? segment.join(parsedReply) : undefined,
-        }
-        segments.push({ type: 'quote', data: { id: message.reply_to_message.message_id, channelId: message.reply_to_message.chat.id } })
-      }
-      if (message.location) {
-        segments.push({
-          type: 'location',
-          data: { lat: message.location.latitude, lon: message.location.longitude },
-        })
-      }
-      if (message.photo) {
-        const photo = message.photo.sort((s1, s2) => s2.file_size - s1.file_size)[0]
-        segments.push({ type: 'image', data: await bot.$getFileData(photo.file_id) })
-      }
-      if (message.sticker) {
-        // TODO: Convert tgs to gif
-        // https://github.com/ed-asriyan/tgs-to-gif
-        // Currently use thumb only
-        try {
-          const file = await bot.internal.getFile({ file_id: message.sticker.file_id })
-          if (file.file_path.endsWith('.tgs')) {
-            throw new Error('tgs is not supported now')
-          }
-          segments.push({ type: 'image', data: await bot.$getFileContent(file.file_path) })
-        } catch (e) {
-          logger.warn('get file error', e)
-          segments.push({ type: 'text', data: { content: `[${message.sticker.set_name || 'sticker'} ${message.sticker.emoji || ''}]` } })
-        }
-      } else if (message.animation) {
-        segments.push({ type: 'image', data: await bot.$getFileData(message.animation.file_id) })
-      } else if (message.voice) {
-        segments.push({ type: 'audio', data: await bot.$getFileData(message.voice.file_id) })
-      } else if (message.video) {
-        segments.push({ type: 'video', data: await bot.$getFileData(message.video.file_id) })
-      } else if (message.document) {
-        segments.push({ type: 'file', data: await bot.$getFileData(message.document.file_id) })
-      }
-
-      const msgText: string = message.text || message.caption
-      segments.push(...parseText(msgText, message.entities || []))
-
-      session.content = segment.join(segments)
-      session.userId = message.from.id.toString()
-      session.author = adaptUser(message.from)
-      session.channelId = message.chat.id.toString()
-      if (message.chat.type === 'private') {
-        session.subtype = 'private'
-        session.channelId = 'private:' + session.channelId
-      } else {
-        session.subtype = 'group'
-        session.guildId = session.channelId
-      }
+      session.type = update.message || update.channel_post ? 'message' : 'message-updated'
+      await bot.adaptMessage(message, session)
     } else if (update.chat_join_request) {
       session.timestamp = update.chat_join_request.date * 1000
       session.type = 'guild-member-request'
@@ -125,6 +39,19 @@ abstract class TelegramAdapter extends Adapter<BotConfig, AdapterConfig> {
       session.content = ''
       session.channelId = update.chat_join_request.chat.id.toString()
       session.guildId = session.channelId
+    } else if (update.my_chat_member) {
+      session.timestamp = update.my_chat_member.date * 1000
+      session.messageId = `${update.my_chat_member.chat.id}@${update.my_chat_member.from.id}`
+      session.content = ''
+      session.channelId = update.my_chat_member.chat.id.toString()
+      session.guildId = session.channelId
+      if (update.my_chat_member.old_chat_member.user.id.toString() === bot.selfId) {
+        if (update.my_chat_member.new_chat_member.status === 'left') {
+          session.type = 'group-deleted'
+        } else if (update.my_chat_member.old_chat_member.status === 'left') {
+          session.type = 'group-added'
+        }
+      }
     }
     logger.debug('receive %o', session)
     this.dispatch(new Session(bot, session))

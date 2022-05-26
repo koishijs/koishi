@@ -31,13 +31,15 @@ jobs:
             --platform linux/amd64,linux/arm/v7,linux/arm64 \
             --tag ${DOCKER_REPO}:${GITHUB_REF#refs/tags/} \
             --tag ${DOCKER_REPO}:latest \
-            --file ./docker/Dockerfile
+            --file ./docker/Dockerfile \
+            ./docker
           docker buildx build \
             --output "type=image,push=true" \
             --platform linux/amd64,linux/arm/v7,linux/arm64 \
             --tag ${DOCKER_REPO}:${GITHUB_REF#refs/tags/}-puppeteer \
             --tag ${DOCKER_REPO}:latest-puppeteer \
-            --file ./docker/Dockerfile.puppeteer
+            --file ./docker/Dockerfile.puppeteer \
+            ./docker
       - name: Docker Hub logout
         if: always()
         run: docker logout

@@ -7,6 +7,7 @@
       v-model="config[key]"
       :schema="item"
       :initial="initial?.[key]"
+      :instant="instant"
       :disabled="disabled"
       :prefix="prefix + key + '.'">
       <h3>
@@ -21,6 +22,7 @@
       v-model="config"
       :initial="initial"
       :schema="{ ...item, meta: { default: schema.meta.default, ...item.meta } }"
+      :instant="instant"
       :disabled="disabled"
       :prefix="prefix">
       <slot></slot>
@@ -73,12 +75,23 @@
         >{{ item.meta.description }}</el-radio>
       </li>
     </ul>
+
+    <ul v-else-if="schema.type === 'bitset'">
+      <li v-for="(value, key) in schema.bits" :key="value">
+        <bit-checkbox
+          v-model="config"
+          :disabled="disabled"
+          :label="key"
+          :value="value"
+        ></bit-checkbox>
+      </li>
+    </ul>
   </schema-item>
 
   <template v-if="schema && !schema.meta.hidden && isComposite">
     <div class="k-schema-group" v-if="prefix">
       <schema-group v-if="!schema.meta.hidden && isComposite" v-model:signal="signal"
-        :schema="schema" v-model="config" :prefix="prefix" :disabled="disabled" :initial="initial">
+        :schema="schema" v-model="config" :prefix="prefix" :disabled="disabled" :instant="instant" :initial="initial">
       </schema-group>
     </div>
 
@@ -88,7 +101,7 @@
         <k-button solid @click="signal = true" :disabled="disabled">添加项</k-button>
       </h2>
       <schema-group v-if="!schema.meta.hidden && isComposite" v-model:signal="signal"
-        :schema="schema" v-model="config" :prefix="prefix" :disabled="disabled" :initial="initial">
+        :schema="schema" v-model="config" :prefix="prefix" :disabled="disabled" :instant="instant" :initial="initial">
       </schema-group>
     </template>
   </template>
@@ -100,6 +113,7 @@ import { watch, ref, computed } from 'vue'
 import type { PropType } from 'vue'
 import { deepEqual, getChoices, getFallback, Schema, validate } from './utils'
 import { clone, isNullable } from 'cosmokit'
+import BitCheckbox from './bit.vue'
 import SchemaItem from './item.vue'
 import SchemaGroup from './group.vue'
 import SchemaPrimitive from './primitive.vue'
@@ -211,40 +225,16 @@ function handleCommand(action: string) {
     font-size: 0.875rem;
   }
 
-  li .el-input {
-    display: inline;
-    > input {
-      border: none;
-      max-width: 200px;
-    }
-  }
-
   ul {
     list-style: none;
     width: 100%;
     padding-left: 1rem;
     margin: 0;
     font-size: 0.875rem;
+    margin: 0.5rem 0 0.25rem;
 
-    li:first-child {
-      margin-top: 0.25rem;
-    }
-
-    li:last-child {
-      margin-bottom: 0.25rem;
-    }
-
-    .remove {
-      color: var(--fg3);
-      opacity: 0.4;
-      transition: 0.3s ease;
-      height: 0.875rem;
-      margin-right: 0.25rem;
-      cursor: pointer;
-
-      &:hover {
-        opacity: 1;
-      }
+    .el-radio, .el-checkbox {
+      height: 1.375rem;
     }
   }
 }

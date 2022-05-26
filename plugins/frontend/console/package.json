@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-console",
   "description": "Web User Interface for Koishi",
-  "version": "3.2.10",
+  "version": "3.3.3",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -25,14 +25,24 @@
     "chatbot",
     "koishi",
     "plugin",
-    "webui",
-    "impl:console"
+    "webui"
   ],
+  "koishi": {
+    "description": {
+      "en": "Web UI interface",
+      "zh": "网页控制台"
+    },
+    "service": {
+      "implements": [
+        "console"
+      ]
+    }
+  },
   "peerDependencies": {
-    "koishi": "^4.6.3"
+    "koishi": "^4.7.1"
   },
   "devDependencies": {
-    "@koishijs/client": "^3.2.10",
+    "@koishijs/client": "^3.3.3",
     "@types/uuid": "^8.3.4"
   },
   "dependencies": {
