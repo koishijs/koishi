@@ -1,5 +1,5 @@
-import { Adapter, Bot, Quester, Schema, segment } from 'koishi'
-import { Internal } from './types'
+import { Adapter, Bot, Quester, Schema, segment, Session } from 'koishi'
+import { Internal, MessageContent } from './types'
 import { AdapterConfig } from './utils'
 
 export interface BotConfig extends Bot.BaseConfig, Quester.Config {
@@ -68,5 +68,38 @@ export class FeishuBot extends Bot<BotConfig> {
     /* if (chain[0].type === 'quote') {
       chain.shift().data.id
     } */
+  }
+
+  private _prepareMessage(chain: segment.Chain): string[] {
+    return chain
+      .map(({ type, data, capture }): MessageContent.Contents => {
+        switch (type) {
+          case 'text':
+            return {
+              text: data.content,
+            }
+          case 'at': {
+            if (data.id) {
+              return {
+                text: `<at user_id="${data.id}">${data.name}</at>`,
+              }
+            } else if (data.type === 'all') {
+              return {
+                text: '<at user_id="all">所有人</at>',
+              }
+            } else if (data.type === 'here' || data.role) {
+              this.logger.warn(`@here or @role{${data.role}} is not supported`)
+            }
+            break
+          }
+
+          case 'sharp':
+          case 'face':
+            this.logger.warn(`${type} is not supported`)
+            break
+        }
+      })
+      .filter((content) => typeof content !== 'undefined')
+      .map((content) => JSON.stringify(content))
   }
 }

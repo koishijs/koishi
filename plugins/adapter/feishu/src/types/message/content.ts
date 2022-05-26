@@ -1,5 +1,16 @@
 // https://open.feishu.cn/document/uAjLw4CM/ukTMukTMukTM/im-v1/message/create_json
 
+export type Contents =
+  | Text
+  | Image
+  | ShareChat
+  | ShareUser
+  | Audio
+  | Media
+  | File
+  | Sticker
+  | RichText
+
 export interface Text {
   text: string
 }
