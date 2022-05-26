@@ -1,3 +1,4 @@
+import FormData from 'form-data'
 import { Dict, makeArray, Quester } from 'koishi'
 import { AxiosRequestConfig } from 'axios'
 
@@ -15,6 +16,15 @@ type Method = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH'
 export class Internal {
   constructor(private http: Quester) {}
 
+  private processReponse(response: any): BaseResponse {
+    const { code, msg } = response
+    if (code === 0) {
+      return response
+    } else {
+      throw new Error(`HTTP response with non-zero status (${code}) with message "${msg}"`)
+    }
+  }
+
   static define(routes: Dict<Partial<Record<Method, string | string[]>>>) {
     for (const path in routes) {
       for (const key in routes[path]) {
@@ -31,6 +41,9 @@ export class Internal {
               if (method === 'GET' || method === 'DELETE') {
                 config.params = args[0]
               } else {
+                if (method === 'POST' && args[0] instanceof FormData) {
+                  config.headers = args[0].getHeaders()
+                }
                 config.data = args[0]
               }
             } else if (args.length === 2 && method !== 'GET' && method !== 'DELETE') {
@@ -39,7 +52,7 @@ export class Internal {
             } else if (args.length > 1) {
               throw new Error(`too many arguments for ${path}, received ${raw}`)
             }
-            return this.http(method, url, config)
+            return this.processReponse(this.http(method, url, config))
           }
         }
       }

@@ -1,5 +1,15 @@
 import { BaseResponse, Internal } from '.'
 
+/**
+ * Feishu defines three types of token:
+ * - app_access_token: to access the API in an app (published on App Store).
+ * - tenant_access_token: to access the API as an enterprise or a team (tenant).
+ *   *We commonly use this one*
+ * - user_access_token: to access the API as the specific user.
+ *
+ * @see https://open.feishu.cn/document/ukTMukTMukTM/uMTNz4yM1MjLzUzM
+ */
+
 export interface AppCredentials {
   app_id: string
   app_secret: string

@@ -1,4 +1,4 @@
-import { Adapter, Bot, Quester, Schema } from 'koishi'
+import { Adapter, Bot, Quester, Schema, segment } from 'koishi'
 import { Internal } from './types'
 import { AdapterConfig } from './utils'
 
@@ -58,5 +58,15 @@ export class FeishuBot extends Bot<BotConfig> {
   set token(v: string) {
     this._token = v
     this.http.config.headers.Authorization = `Bearer ${v}`
+  }
+
+  async sendMessage(channelId: string, content: string, guildId?: string): Promise<string[]> {
+    const session = await this.session({ channelId, content, guildId, subtype: guildId ? 'group' : 'private' })
+    if (!session?.content) return []
+
+    const chain = segment.parse(content)
+    /* if (chain[0].type === 'quote') {
+      chain.shift().data.id
+    } */
   }
 }
