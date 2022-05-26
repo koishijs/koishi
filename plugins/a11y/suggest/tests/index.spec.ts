@@ -3,7 +3,8 @@ import {} from '@koishijs/plugin-suggest'
 import mock from '@koishijs/plugin-mock'
 
 describe('Command Suggestion', () => {
-  const app = new App({ prefix: '/' }).plugin(mock)
+  const app = new App({ prefix: '/' })
+  app.plugin(mock)
   const client1 = app.mock.client('456')
   const client2 = app.mock.client('789', '987')
 
@@ -59,7 +60,8 @@ describe('Command Suggestion', () => {
 })
 
 describe('Other Session Methods', () => {
-  const app = new App({ prefix: '.' }).plugin(mock)
+  const app = new App({ prefix: '.' })
+  app.plugin(mock)
   const client = app.mock.client('123', '456')
   const items = ['foo', 'bar']
 

@@ -46,9 +46,11 @@
   },
   "devDependencies": {
     "@koishijs/client": "^3.3.3",
+    "@types/d3-force": "^3.0.3",
     "@types/throttle-debounce": "^2.1.0"
   },
   "dependencies": {
+    "d3-force": "^3.0.0",
     "throttle-debounce": "^3.0.1"
   }
 }
