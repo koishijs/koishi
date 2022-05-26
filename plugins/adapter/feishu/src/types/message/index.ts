@@ -1,4 +1,4 @@
-import { BaseResponse, Feishu, Internal } from '.'
+import { BaseResponse, Feishu, Internal } from '..'
 
 export type MessageType = 'text' | 'post' | 'image' | 'file' | 'audio' | 'media' | 'sticker' | 'interactive' | 'share_chat' | 'share_user'
 
@@ -12,7 +12,7 @@ export interface Mention extends Feishu.UserIdentifiers {
   tenant_key: string
 }
 
-declare module './event' {
+declare module '../event' {
   export interface EventBody {
     /**
      * Receive message event.
@@ -140,7 +140,7 @@ export interface Message {
   upper_message_id: string
 }
 
-declare module './internal' {
+declare module '../internal' {
   export interface Internal {
     /** @see https://open.feishu.cn/document/uAjLw4CM/ukTMukTMukTM/reference/im-v1/message/create */
     sendMessage(receive_id_type: Feishu.ReceiveIdType, message: MessagePayload): Promise<BaseResponse & { data: Message }>
