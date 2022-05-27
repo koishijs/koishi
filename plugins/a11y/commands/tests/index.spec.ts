@@ -3,9 +3,7 @@ import mock from '@koishijs/plugin-mock'
 import * as commands from '@koishijs/plugin-commands'
 import { expect } from 'chai'
 
-const app = new App({
-  minSimilarity: 0,
-})
+const app = new App()
 
 app.plugin(mock)
 

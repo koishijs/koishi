@@ -1,15 +1,7 @@
-import { Argv, Channel, Command, Context, FieldCollector, Session, Tables, User } from 'koishi'
+import { Argv, Channel, Command, Context, FieldCollector, Schema, Session, Tables, User } from 'koishi'
 import {} from '@koishijs/plugin-suggest'
 
 declare module 'koishi' {
-  namespace App {
-    namespace Config {
-      interface Features {
-        help?: false | HelpConfig
-      }
-    }
-  }
-
   interface Events {
     'help/command'(output: string[], command: Command, session: Session): void
     'help/option'(output: string, option: Argv.OptionDeclaration, command: Command, session: Session): string
@@ -21,10 +13,15 @@ interface HelpOptions {
   authority?: boolean
 }
 
-export interface HelpConfig extends Command.Config {
+export interface Config extends Command.Config {
   shortcut?: boolean
   options?: boolean
 }
+
+export const Config: Schema<Config> = Schema.object({
+  shortcut: Schema.boolean().default(true).description('是否启用快捷调用。'),
+  options: Schema.boolean().default(true).description('是否为每个指令添加 `-h, --help` 选项。'),
+})
 
 export function enableHelp<U extends User.Field, G extends Channel.Field, A extends any[], O extends {}>(cmd: Command<U, G, A, O>) {
   return cmd.option('help', '-h', {
@@ -35,7 +32,7 @@ export function enableHelp<U extends User.Field, G extends Channel.Field, A exte
 
 export const name = 'help'
 
-export function apply(ctx: Context, config: HelpConfig = {}) {
+export function apply(ctx: Context, config: Config = {}) {
   ctx.i18n.define('zh', require('./locales/zh'))
   ctx.i18n.define('en', require('./locales/en'))
   ctx.i18n.define('ja', require('./locales/ja'))
@@ -43,6 +40,7 @@ export function apply(ctx: Context, config: HelpConfig = {}) {
   ctx.i18n.define('zh-tw', require('./locales/zh-tw'))
 
   if (config.options !== false) {
+    ctx.$commander._commands.forEach(cmd => cmd.use(enableHelp))
     ctx.on('command-added', cmd => cmd.use(enableHelp))
   }
 
@@ -80,12 +78,12 @@ export function apply(ctx: Context, config: HelpConfig = {}) {
 
       const command = findCommand(target)
       if (!command?.ctx.match(session)) {
-        if (!session.suggest) {
+        if (!ctx.$suggest) {
           return session.text('.suggest-prefix')
         }
         return session.suggest({
           target,
-          items: $.getCommandNames(session),
+          items: ctx.$suggest.getCommandNames(session),
           prefix: session.text('.suggest-prefix'),
           suffix: session.text('.suggest-suffix'),
           async apply(suggestion) {

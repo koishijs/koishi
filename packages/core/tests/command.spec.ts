@@ -29,8 +29,8 @@ describe('Command API', () => {
       ctx1.command('b')
       ctx2.command('c')
 
-      // a, b, c, help
-      expect(app.$commander._commandList).to.have.length(4)
+      // a, b, c
+      expect(app.$commander._commandList).to.have.length(3)
       expect(app.$commander._commands.get('a').ctx).to.equal(app)
       expect(app.$commander._commands.get('b').ctx).to.equal(ctx1)
       expect(app.$commander._commands.get('c').ctx).to.equal(ctx2)
@@ -146,13 +146,12 @@ describe('Command API', () => {
     test.alias('it').shortcut('2')
 
     it('basic support', () => {
-      // don't forget help
-      expect(app.$commander._commandList).to.have.length(4)
-      expect(app.$commander._shortcuts).to.have.length(3)
+      expect(app.$commander._commandList).to.have.length(3)
+      expect(app.$commander._shortcuts).to.have.length(2)
       expect(foo.children).to.have.length(1)
       bar.dispose()
-      expect(app.$commander._commandList).to.have.length(2)
-      expect(app.$commander._shortcuts).to.have.length(1)
+      expect(app.$commander._commandList).to.have.length(1)
+      expect(app.$commander._shortcuts).to.have.length(0)
       expect(foo.children).to.have.length(0)
     })
 
@@ -165,14 +164,14 @@ describe('Command API', () => {
       const foo = app.$commander._commands.get('foo')
       expect(foo).to.be.ok
       expect(app.$commander._commands.get('fooo')).to.be.ok
-      expect(Object.keys(foo._options)).to.have.length(2)
+      expect(Object.keys(foo._options)).to.have.length(1)
       expect(app.$commander._commands.get('abc')).to.be.undefined
       expect(app.$commander._commands.get('abcd')).to.be.undefined
 
       dispose()
       expect(app.$commander._commands.get('foo')).to.be.ok
       expect(app.$commander._commands.get('fooo')).to.be.undefined
-      expect(Object.keys(foo._options)).to.have.length(1)
+      expect(Object.keys(foo._options)).to.have.length(0)
     })
   })
 

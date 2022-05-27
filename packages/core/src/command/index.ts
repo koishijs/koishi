@@ -71,12 +71,6 @@ export class Commander {
     return this._commands.get(name)
   }
 
-  getCommandNames(session: Session) {
-    return this._commandList
-      .filter(cmd => cmd.match(session) && !cmd.config.hidden)
-      .flatMap(cmd => cmd._aliases)
-  }
-
   command(def: string, ...args: [Command.Config?] | [string, Command.Config?]) {
     const desc = typeof args[0] === 'string' ? args.shift() as string : ''
     const config = args[0] as Command.Config

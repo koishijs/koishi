@@ -1,12 +1,10 @@
 import { distance } from 'fastest-levenshtein'
 import { Awaitable } from 'cosmokit'
-import { App, Context, Next, Schema, Session } from 'koishi'
+import { Context, Next, Schema, Session } from 'koishi'
 
 declare module 'koishi' {
-  namespace App {
-    namespace Config {
-      interface Basic extends SuggestConfig {}
-    }
+  interface Context {
+    $suggest: SuggestionService
   }
 
   interface Session {
@@ -14,7 +12,7 @@ declare module 'koishi' {
   }
 }
 
-App.Config.Basic.dict.minSimilarity = Schema.percent().default(0.4).description('用于模糊匹配的相似系数，应该是一个 0 到 1 之间的数值。数值越高，模糊匹配越严格。设置为 1 可以完全禁用模糊匹配。')
+Context.service('$suggest')
 
 export interface SuggestOptions {
   target: string
@@ -26,10 +24,6 @@ export interface SuggestOptions {
   apply: (this: Session, suggestion: string, next: Next) => Awaitable<void | string>
 }
 
-export interface SuggestConfig {
-  minSimilarity?: number
-}
-
 Session.prototype.suggest = function suggest(this: Session, options) {
   const {
     target,
@@ -38,7 +32,7 @@ Session.prototype.suggest = function suggest(this: Session, options) {
     suffix,
     apply,
     next = Next.compose,
-    minSimilarity = this.app.options.minSimilarity ?? 0.4,
+    minSimilarity = this.app.$suggest.config.minSimilarity,
   } = options
 
   const sendNext = async (callback: Next) => {
@@ -79,33 +73,53 @@ Session.prototype.suggest = function suggest(this: Session, options) {
   })
 }
 
-export const name = 'suggest'
+class SuggestionService {
+  constructor(public ctx: Context, public config: SuggestionService.Config) {
+    ctx.$suggest = this
 
-export function apply(ctx: Context) {
-  ctx.i18n.define('zh', require('./locales/zh'))
-  ctx.i18n.define('en', require('./locales/en'))
-  ctx.i18n.define('ja', require('./locales/ja'))
-  ctx.i18n.define('fr', require('./locales/fr'))
-  ctx.i18n.define('zh-tw', require('./locales/zh-tw'))
+    ctx.i18n.define('zh', require('./locales/zh'))
+    ctx.i18n.define('en', require('./locales/en'))
+    ctx.i18n.define('ja', require('./locales/ja'))
+    ctx.i18n.define('fr', require('./locales/fr'))
+    ctx.i18n.define('zh-tw', require('./locales/zh-tw'))
 
-  ctx.middleware((session, next) => {
-    // use `!prefix` instead of `prefix === null` to prevent from blocking other middlewares
-    // we need to make sure that the user truly has the intension to call a command
-    const { argv, quote, subtype, parsed: { content, prefix, appel } } = session
-    if (argv.command || subtype !== 'private' && !prefix && !appel) return next()
-    const target = content.split(/\s/, 1)[0].toLowerCase()
-    if (!target) return next()
+    ctx.middleware((session, next) => {
+      // use `!prefix` instead of `prefix === null` to prevent from blocking other middlewares
+      // we need to make sure that the user truly has the intension to call a command
+      const { argv, quote, subtype, parsed: { content, prefix, appel } } = session
+      if (argv.command || subtype !== 'private' && !prefix && !appel) return next()
+      const target = content.split(/\s/, 1)[0].toLowerCase()
+      if (!target) return next()
 
-    return session.suggest({
-      target,
-      next,
-      items: ctx.$commander.getCommandNames(session),
-      prefix: session.text('suggest.command-prefix'),
-      suffix: session.text('suggest.command-suffix'),
-      async apply(suggestion, next) {
-        const newMessage = suggestion + content.slice(target.length) + (quote ? ' ' + quote.content : '')
-        return this.execute(newMessage, next)
-      },
+      return session.suggest({
+        target,
+        next,
+        items: this.getCommandNames(session),
+        prefix: session.text('suggest.command-prefix'),
+        suffix: session.text('suggest.command-suffix'),
+        async apply(suggestion, next) {
+          const newMessage = suggestion + content.slice(target.length) + (quote ? ' ' + quote.content : '')
+          return this.execute(newMessage, next)
+        },
+      })
     })
+  }
+
+  getCommandNames(session: Session) {
+    return this.ctx.$commander._commandList
+      .filter(cmd => cmd.match(session) && !cmd.config.hidden)
+      .flatMap(cmd => cmd._aliases)
+  }
+}
+
+namespace SuggestionService {
+  export interface Config {
+    minSimilarity?: number
+  }
+
+  export const Config: Schema<Config> = Schema.object({
+    minSimilarity: Schema.percent().default(0.4).description('用于模糊匹配的相似系数，应该是一个 0 到 1 之间的数值。数值越高，模糊匹配越严格。设置为 1 可以完全禁用模糊匹配。'),
   })
 }
+
+export default SuggestionService

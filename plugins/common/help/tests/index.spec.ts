@@ -1,10 +1,13 @@
 import { App } from 'koishi'
-import {} from '@koishijs/plugin-help'
+import * as help from '@koishijs/plugin-help'
+import suggest from '@koishijs/plugin-suggest'
 import mock from '@koishijs/plugin-mock'
 
 const app = new App()
 
 app.plugin(mock)
+app.plugin(help)
+app.plugin(suggest)
 app.plugin('database-memory')
 
 app.i18n.define('$zh', 'commands.help.messages.global-epilog', 'EPILOG')
@@ -128,6 +131,7 @@ describe('Help Command', () => {
 
   it('no database', async () => {
     const app = new App()
+    app.plugin(help)
     app.plugin(mock)
     app.i18n.define('$zh', 'commands.help.messages.global-epilog', '')
     await app.start()
@@ -136,19 +140,9 @@ describe('Help Command', () => {
     await client.shouldReply('help', '当前可用的指令有：\n    help  显示帮助信息')
   })
 
-  it('disable help command', async () => {
-    const app = new App({ help: false })
-    app.plugin(mock)
-    app.command('foo').action(() => {})
-    await app.start()
-
-    const client = app.mock.client('123')
-    await client.shouldNotReply('help')
-    await client.shouldNotReply('foo -h')
-  })
-
   it('disable help options', async () => {
-    const app = new App({ help: { options: false } })
+    const app = new App()
+    app.plugin(help, { options: false })
     app.plugin(mock)
     app.command('foo').action(() => {})
     await app.start()
@@ -159,7 +153,8 @@ describe('Help Command', () => {
   })
 
   it('disable help shortcut', async () => {
-    const app = new App({ help: { shortcut: false } })
+    const app = new App()
+    app.plugin(help, { shortcut: false })
     app.plugin(mock)
     await app.start()
 
