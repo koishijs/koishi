@@ -9,6 +9,7 @@
             <el-input v-if="schema.type === 'dict'" v-model="entries[index][0]"></el-input>
             <span v-else>{{ key }}</span>
           </h3>
+          <k-markdown inline :source="schema.inner.meta.description"></k-markdown>
         </template>
         <template #menu>
           <el-dropdown-item divided :disabled="!index" command="up">上移</el-dropdown-item>
@@ -21,7 +22,7 @@
         <k-schema
           v-model="entries[index][1]"
           :initial="initial?.[key]"
-          :schema="schema.inner"
+          :schema="{ ...schema.inner, meta: { ...schema.inner.meta, description: '' } }"
           :disabled="disabled"
           :instant="instant"
           :prefix="prefix + key + '.'">
