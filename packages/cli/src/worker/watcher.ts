@@ -278,6 +278,7 @@ class Watcher {
     try {
       for (const [runtime, filename] of reloads) {
         const path = relative(this.root, filename)
+        const states = runtime.children.slice()
 
         try {
           this.ctx.dispose(runtime.plugin)
@@ -287,7 +288,7 @@ class Watcher {
 
         try {
           const plugin = attempts[filename]
-          for (const state of runtime.children) {
+          for (const state of states) {
             state.parent.plugin(plugin, state.config)
           }
           logger.info('reload plugin at %c', path)
