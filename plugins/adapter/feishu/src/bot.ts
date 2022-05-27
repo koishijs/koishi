@@ -1,4 +1,6 @@
-import { Adapter, Bot, Quester, Schema, segment, Session } from 'koishi'
+import FormData from 'form-data'
+import { createReadStream } from 'fs'
+import { Adapter, Bot, Quester, Schema, segment } from 'koishi'
 import { Internal, MessageContent } from './types'
 import { AdapterConfig } from './utils'
 
@@ -7,6 +9,8 @@ export interface BotConfig extends Bot.BaseConfig, Quester.Config {
   appId: string
   appSecret: string
 }
+
+type AssetType = 'image' | 'audio' | 'video' | 'file'
 
 export const BotConfig = Schema.intersect([
   Schema.object({
@@ -65,41 +69,103 @@ export class FeishuBot extends Bot<BotConfig> {
     if (!session?.content) return []
 
     const chain = segment.parse(content)
-    /* if (chain[0].type === 'quote') {
-      chain.shift().data.id
-    } */
+    const messages = await this._prepareMessage(chain)
+    messages.forEach((message) => {
+      this.internal.sendMessage('open_id', {
+        content: message.content,
+        msg_type: message.type,
+        receive_id: channelId,
+      })
+    })
   }
 
-  private _prepareMessage(chain: segment.Chain): string[] {
-    return chain
-      .map(({ type, data, capture }): MessageContent.Contents => {
+  private async _prepareMessage(chain: segment.Chain): Promise<{ type: string; content: string }[]> {
+    return (await Promise.all(chain
+      .map(async ({ type, data }): Promise<{ type: string; content: MessageContent.Contents }> => {
         switch (type) {
           case 'text':
             return {
-              text: data.content,
+              type: 'text',
+              content: {
+                text: data.content,
+              },
             }
           case 'at': {
             if (data.id) {
               return {
-                text: `<at user_id="${data.id}">${data.name}</at>`,
+                type: 'text',
+                content: {
+                  text: `<at user_id="${data.id}">${data.name}</at>`,
+                },
               }
             } else if (data.type === 'all') {
               return {
-                text: '<at user_id="all">所有人</at>',
+                type: 'text',
+                content: {
+                  text: '<at user_id="all">所有人</at>',
+                },
               }
             } else if (data.type === 'here' || data.role) {
               this.logger.warn(`@here or @role{${data.role}} is not supported`)
             }
             break
           }
+          case 'image':
+          case 'audio':
+          case 'video':
+          case 'file':
+            return {
+              type,
+              content: await this._prepareAssets(type, data),
+            }
 
           case 'sharp':
           case 'face':
             this.logger.warn(`${type} is not supported`)
             break
         }
+      })))
+      .filter(({ content }) => typeof content !== 'undefined')
+      .map(({ type, content }) => {
+        return {
+          type,
+          content: JSON.stringify(content),
+        }
       })
-      .filter((content) => typeof content !== 'undefined')
-      .map((content) => JSON.stringify(content))
+  }
+
+  private async _prepareAssets(type: AssetType, data: any): Promise<MessageContent.Contents> {
+    const payload = new FormData()
+
+    const assetKey = type === 'image' ? 'image' : 'file'
+    const [schema, file] = data.url.split('://')
+    const filename = schema === 'base64' ? 'unknown' : data.url.split('/').pop()
+    if (schema === 'file') {
+      payload.append(assetKey, createReadStream(file))
+    } else if (schema === 'base64') {
+      payload.append(assetKey, Buffer.from(file, 'base64'))
+    }
+
+    if (type === 'image') {
+      payload.append('image_type', 'message')
+      const { data } = await this.internal.uploadImage(payload)
+      return { image_key: data.image_key }
+    } else {
+      if (type === 'audio') {
+        payload.append('file_type', 'opus')
+      } else if (type === 'video') {
+        payload.append('file_type', 'mp4')
+      } else {
+        const ext = filename.split('.').pop()
+        if (['xls', 'ppt', 'pdf'].includes(ext)) {
+          payload.append('file_type', ext)
+        } else {
+          payload.append('file_type', 'stream')
+        }
+      }
+      payload.append('file_name', filename)
+      const { data } = await this.internal.uploadFile(payload)
+      return { file_key: data.file_key }
+    }
   }
 }

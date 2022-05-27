@@ -1,6 +1,7 @@
 import { Feishu, Internal } from '..'
-import * as MessageContent from './content'
-export { MessageContent }
+
+export * from './content'
+export * from './asset'
 
 export type MessageType = 'text' | 'post' | 'image' | 'file' | 'audio' | 'media' | 'sticker' | 'interactive' | 'share_chat' | 'share_user'
 
