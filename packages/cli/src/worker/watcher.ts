@@ -203,27 +203,27 @@ class Watcher {
     this.analyzeChanges()
 
     /** plugins pending classification */
-    const pending = new Map<string, Plugin.State>()
+    const pending = new Map<string, Plugin.Runtime>()
 
     /** plugins that should be reloaded */
-    const reloads = new Map<Plugin.State, string>()
+    const reloads = new Map<Plugin.Runtime, string>()
 
     // we assume that plugin entry files are "atomic"
     // that is, reloading them will not cause any other reloads
     for (const filename in require.cache) {
       const module = require.cache[filename]
       const plugin = ns.unwrapExports(module.exports)
-      const state = this.ctx.app.registry.get(plugin)
-      if (!state || this.declined.has(filename)) continue
-      pending.set(filename, state)
+      const runtime = this.ctx.app.registry.get(plugin)
+      if (!runtime || this.declined.has(filename)) continue
+      pending.set(filename, runtime)
       if (!plugin['sideEffect']) this.declined.add(filename)
     }
 
-    for (const [filename, state] of pending) {
+    for (const [filename, runtime] of pending) {
       // check if it is a dependent of the changed file
       this.declined.delete(filename)
       const dependencies = [...loadDependencies(filename, this.declined)]
-      if (!state.plugin['sideEffect']) this.declined.add(filename)
+      if (!runtime.plugin['sideEffect']) this.declined.add(filename)
 
       // we only detect reloads at plugin level
       // a plugin will be reloaded if any of its dependencies are accepted
@@ -231,21 +231,38 @@ class Watcher {
       dependencies.forEach(dep => this.accepted.add(dep))
 
       // prepare for reload
-      let ancestor = state, isMarked = false
-      while ((ancestor = ancestor.parent?.state) && !(isMarked = reloads.has(ancestor)));
-      if (!isMarked) reloads.set(state, filename)
+      let isMarked = false
+      const visited = new Set<Plugin.Runtime>()
+      const queued = [runtime]
+      while (queued.length) {
+        const runtime = queued.shift()
+        if (visited.has(runtime)) continue
+        visited.add(runtime)
+        if (reloads.has(runtime)) {
+          isMarked = true
+          break
+        }
+        for (const state of runtime.children) {
+          queued.push(state.runtime)
+        }
+      }
+      if (!isMarked) reloads.set(runtime, filename)
     }
 
     // save require.cache for rollback
+    // and delete module cache before re-require
     const backup: Dict<NodeJS.Module> = {}
     for (const filename of this.accepted) {
       backup[filename] = require.cache[filename]
+      delete require.cache[filename]
     }
 
-    // delete module cache before re-require
-    this.accepted.forEach((path) => {
-      delete require.cache[path]
-    })
+    /** rollback require.cache */
+    function rollback() {
+      for (const filename in backup) {
+        require.cache[filename] = backup[filename]
+      }
+    }
 
     // attempt to load entry files
     const attempts = {}
@@ -254,30 +271,25 @@ class Watcher {
         attempts[filename] = ns.unwrapExports(require(filename))
       }
     } catch (err) {
-      // rollback require.cache
       logger.warn(err)
       return rollback()
     }
 
-    function rollback() {
-      for (const filename in backup) {
-        require.cache[filename] = backup[filename]
-      }
-    }
-
     try {
-      for (const [state, filename] of reloads) {
+      for (const [runtime, filename] of reloads) {
         const path = relative(this.root, filename)
 
         try {
-          this.ctx.dispose(state.plugin)
+          this.ctx.dispose(runtime.plugin)
         } catch (err) {
           logger.warn('failed to dispose plugin at %c\n' + coerce(err), path)
         }
 
         try {
           const plugin = attempts[filename]
-          state.parent.plugin(plugin, state.config)
+          for (const state of runtime.children) {
+            state.parent.plugin(plugin, state.config)
+          }
           logger.info('reload plugin at %c', path)
         } catch (err) {
           logger.warn('failed to reload plugin at %c\n' + coerce(err), path)
@@ -287,10 +299,10 @@ class Watcher {
     } catch {
       // rollback require.cache and plugin states
       rollback()
-      for (const [state, filename] of reloads) {
+      for (const [runtime, filename] of reloads) {
         try {
           this.ctx.dispose(attempts[filename])
-          state.parent.plugin(state.plugin, state.config)
+          runtime.parent.plugin(runtime.plugin, runtime.config)
         } catch (err) {
           logger.warn(err)
         }

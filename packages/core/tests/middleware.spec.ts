@@ -3,7 +3,8 @@ import { expect } from 'chai'
 import mock from '@koishijs/plugin-mock'
 import * as jest from 'jest-mock'
 
-const app = new App().plugin(mock)
+const app = new App()
+app.plugin(mock)
 
 const midLogger = new Logger('session')
 const midWarn = jest.spyOn(midLogger, 'warn')

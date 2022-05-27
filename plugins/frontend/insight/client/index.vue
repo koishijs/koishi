@@ -1,121 +1,171 @@
 <template>
-  <draggable :width="graph.width" :height="graph.height" :padding="48">
-    <div class="node-container" :class="{ active: current }">
-      <div v-for="(node, id) in graph.nodes" :key="id"
-        :style="getStyle(node)" :class="getNodeClass(node)"
-        @mouseenter="current = id" @mouseleave="current = null">
-        <div class="content">
-          <div class="title">{{ node.name || 'Anonymous' }}</div>
-          <div>复杂度：{{ node.disposables }}</div>
-        </div>
-        <screw v-if="node.prev.length" placement="left"></screw>
-        <screw v-if="node.next.length" placement="right"></screw>
-      </div>
-    </div>
-    <svg class="edge-container" :class="{ active: current }" width="1000rem" height="1000rem" viewBox="0 0 1000 1000">
-      <path v-for="edge in graph.edges" :key="edge.id" :class="edge.type"
-        :d="getPath(edge)" stroke-width="0.125" fill="none"></path>
+  <div>
+    <svg
+      ref="svg"
+      id="couple"
+      :width="size"
+      :height="size"
+      :viewBox="`-${size / 2} -${size / 2} ${size} ${size}`"
+      @click.stop.prevent="onClick"
+    >
+      <g class="links">
+        <line
+          v-for="(link, index) in links"
+          :key="index"
+          :x1="link.source.x"
+          :y1="link.source.y"
+          :x2="link.target.x"
+          :y2="link.target.y"
+          :class="link.type"
+          @mouseenter.stop.prevent="onMouseEnterLink(link, $event)"
+          @mouseleave.stop.prevent="onMouseLeaveLink(link, $event)"
+        />
+      </g>
+      <g class="nodes">
+        <circle
+          v-for="(node, index) in nodes"
+          :key="index"
+          :cx="node.x"
+          :cy="node.y"
+          :class="{ active: node.active }"
+          @mouseenter.stop.prevent="onMouseEnterNode(node, $event)"
+          @mouseleave.stop.prevent="onMouseLeaveNode(node, $event)"
+          @mousedown.stop.prevent="onDragStart(node, $event)"
+          @touchstart.stop.prevent="onDragStart(node, $event)"
+        />
+      </g>
     </svg>
-    <svg class="edge-container highlight" width="1000rem" height="1000rem" viewBox="0 0 1000 1000">
-      <path v-for="edge in graph.edges" :key="edge.id" :class="getEdgeClass(edge)"
-        :d="getPath(edge)" stroke-width="0.125" fill="none"></path>
-    </svg>
-  </draggable>
+    <div
+      class="tooltip"
+      :class="{ active: title }"
+      :style="style"
+    >{{ title }}</div>
+  </div>
 </template>
 
 <script lang="ts" setup>
 
-import { graph, getPath, getStyle, Node, Edge, isAncestor } from './utils'
-import { ref } from 'vue'
-import draggable from './draggable.vue'
-import screw from './screw.vue'
+import { onMounted, reactive } from 'vue'
+import { store } from '@koishijs/client'
+import Insight from '../src'
+import * as d3 from 'd3-force'
+import { style, title, setTitle, deactivate } from './shared'
 
-const current = ref<string | number>(null)
+// const current = ref<string | number>(null)
 
-function getEdgeClass(edge: Edge) {
-  const selected = graph.value.nodes[current.value]
-  return {
-    [edge.type]: true,
-    active: isAncestor(selected, edge.source) && isAncestor(selected, edge.target)
-      || isAncestor(edge.source, selected) && isAncestor(edge.target, selected),
-  }
+interface Node extends Insight.Node, d3.SimulationNodeDatum {
+  active?: boolean
 }
 
-function getNodeClass(node: Node) {
-  const selected = graph.value.nodes[current.value]
-  return {
-    node: true,
-    active: isAncestor(selected, node) || isAncestor(node, selected),
-  }
+interface Link extends Omit<Insight.Link, 'source' | 'target'>, d3.SimulationLinkDatum<Node> {
+  source: Node
+  target: Node
 }
+
+const nodes = reactive<Node[]>(store.insight.nodes as any)
+const links = reactive<Link[]>(store.insight.edges as any)
+
+const size = 960
+
+const forceLink = d3
+  .forceLink<Node, Link>(links)
+  .id(node => node.id)
+  .distance(120)
+
+const simulation = d3
+  .forceSimulation(nodes)
+  .force('link', forceLink)
+  .force('charge', d3.forceManyBody().strength(-400))
+  .force('x', d3.forceX().strength(0.05))
+  .force('y', d3.forceY().strength(0.05))
+  .stop()
+
+onMounted(() => {
+  simulation.alpha(1).restart()
+})
+
+function onClick() {}
+
+function onMouseEnterNode(node: Node, event: MouseEvent) {
+  node.active = true
+  setTitle(node.name, event)
+}
+
+function onMouseLeaveNode(node: Node, event: MouseEvent) {
+  node.active = false
+  deactivate(300)
+}
+
+function onMouseEnterLink(link: Link, event: MouseEvent) {}
+
+function onMouseLeaveLink(link: Link, event: MouseEvent) {}
+
+function onDragStart(node: Node, event: MouseEvent | TouchEvent) {}
+
+// function getEdgeClass(edge: Link) {
+//   const selected = graph.value.nodes[current.value]
+//   return {
+//     [edge.type]: true,
+//     active: isAncestor(selected, edge.source) && isAncestor(selected, edge.target)
+//       || isAncestor(edge.source, selected) && isAncestor(edge.target, selected),
+//   }
+// }
+
+// function getNodeClass(node: Node) {
+//   const selected = graph.value.nodes[current.value]
+//   return {
+//     node: true,
+//     active: isAncestor(selected, node) || isAncestor(node, selected),
+//   }
+// }
 
 </script>
 
-<style lang="scss">
+<style lang="scss" scoped>
 
-.node-container {
-  .node {
-    font-size: 0.875rem;
-    position: absolute;
-    padding: 1rem;
-    width: 12rem;
-    height: 3rem;
-    line-height: 1.5;
-    border-radius: 8px;
-    background-color: var(--card-bg);
-    box-shadow: var(--card-shadow);
-    border: 1px solid var(--border);
-    transition: background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+g.nodes {
+  stroke: #fff;
+  stroke-opacity: 0.8;
+  stroke-width: 1.5;
 
-    .title {
-      font-size: 1rem;
-      font-weight: bolder;
-      margin-bottom: 0.125rem;
-    }
-
-    .content {
-      transition: opacity 0.3s ease;
+  circle {
+    r: 10;
+    fill: #9467bd;
+    transition: fill 0.3s ease, r 0.3s ease;
+    &.active, &:hover {
+      r: 12;
+      fill: #17becf;
     }
   }
 
-  &.active .node:not(.active) {
-    z-index: -10;
-    background-color: var(--page-bg);
-    box-shadow: unset;
+  text {
+    font-weight: 200;
+    letter-spacing: 1px;
+  }
+}
 
-    .content {
-      opacity: 0.5;
+g.links {
+  stroke: #999;
+  stroke-opacity: 0.6;
+  stroke-width: 3;
+
+  line {
+    transition: stroke-width 0.3s ease;
+    &:hover {
+      stroke-width: 5;
+    }
+    &.dashed {
+      stroke-dasharray: 6 6;
     }
   }
 }
 
-.edge-container {
-  z-index: -20;
-  position: absolute;
-
-  path {
-    stroke: var(--bg4);
-    transition: stroke 0.3s ease;
-  }
-
-  path.dependency {
-    stroke-dasharray: 0.5 0.5;
-  }
-
-  &.active path {
-    stroke: var(--border);
-  }
-
-  &.highlight {
-    z-index: -5;
-    path {
-      stroke: transparent;
-    }
-
-    path.active {
-      stroke: var(--primary);
-    }
-  }
+.tooltip {
+  position: fixed;
+  user-select: none;
+  background-color: #0003;
+  border-radius: 6px;
+  padding: 4px 8px;
 }
 
 </style>

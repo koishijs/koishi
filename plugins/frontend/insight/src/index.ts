@@ -6,21 +6,22 @@ import { resolve } from 'path'
 declare module '@koishijs/plugin-console' {
   namespace Console {
     interface Services {
-      registry: RegistryProvider
+      insight: Insight
     }
   }
 }
 
-export interface Config {}
+function getName(plugin: Plugin) {
+  if (!plugin) return 'App'
+  if (!plugin.name || plugin.name === 'apply') return 'Anonymous'
+  return capitalize(camelize(plugin.name))
+}
 
-export default class RegistryProvider extends DataService<Dict<PluginData>> {
-  static using = ['console'] as const
-  static schema: Schema<Config> = Schema.object({})
-
-  private cache: Dict<PluginData>
+class Insight extends DataService<Insight.Payload> {
+  private nodes: Dict<Insight.Node>
 
   constructor(ctx: Context) {
-    super(ctx, 'registry')
+    super(ctx, 'insight')
 
     ctx.console.addEntry({
       dev: resolve(__dirname, '../client/index.ts'),
@@ -43,47 +44,73 @@ export default class RegistryProvider extends DataService<Dict<PluginData>> {
   })
 
   private timer = setInterval(() => {
-    if (!this.cache) return
-    const patch: Dict<PluginData> = {}
-    for (const [, state] of this.ctx.app.registry) {
-      const data = this.cache[state.id]
-      if (!data) continue
-      if (state.disposables.length !== data.disposables) {
-        data.disposables = state.disposables.length
-        patch[state.id] = data
-      }
-    }
-    if (Object.keys(patch).length) this.patch(patch)
+    // if (!this.nodes) return
+    // for (const [, runtime] of this.ctx.app.registry) {
+    //   const data = this.nodes[runtime.id]
+    //   if (!data) continue
+    //   if (runtime.disposables.length !== data.disposables) {
+    //     data.disposables = runtime.disposables.length
+    //     payload[runtime.id] = data
+    //   }
+    // }
+    // if (Object.keys(payload).length) this.patch(payload)
   }, 1000)
 
-  async get(forced = false) {
-    if (this.cache && !forced) return this.cache
-    this.cache = {}
-    this.traverse(null)
-    return this.cache
-  }
-
-  private traverse(plugin: Plugin) {
-    const state = this.ctx.app.registry.get(plugin)
-    this.cache[state.id] = {
-      name: !plugin
-        ? 'App'
-        : !plugin.name || plugin.name === 'apply'
-          ? ''
-          : capitalize(camelize(plugin.name)),
-      parent: state.parent?.state.id,
-      disposables: state.disposables.length,
-      dependencies: state.using.map(name => this.ctx[name]?.['ctx']?.state.id).filter(x => x),
+  get() {
+    const nodes: Insight.Node[] = []
+    const edges: Insight.Link[] = []
+    for (const runtime of this.ctx.app.registry.values()) {
+      const services = runtime.using.map(name => this.ctx[name])
+      if (services.some(x => !x)) continue
+      nodes.push({
+        id: runtime.id,
+        name: getName(runtime.plugin),
+        weight: runtime.disposables.length,
+        forks: runtime.children.map(child => child.disposables.length),
+      })
+      for (const child of runtime.children) {
+        edges.push({
+          type: 'solid',
+          source: child.parent.state.runtime.id,
+          target: runtime.id,
+        })
+      }
+      for (const service of services) {
+        edges.push({
+          type: 'dashed',
+          source: service.ctx.state.id,
+          target: runtime.id,
+        })
+      }
     }
-    for (const child of state.children) {
-      this.traverse(child)
-    }
+    return { nodes, edges }
   }
 }
 
-export interface PluginData {
-  name: string
-  parent: string
-  disposables: number
-  dependencies: string[]
+namespace Insight {
+  export interface Payload {
+    nodes: Node[]
+    edges: Link[]
+  }
+
+  export interface Node {
+    id: string
+    name: string
+    weight: number
+    forks: number[]
+  }
+
+  export interface Link {
+    type: 'solid' | 'dashed'
+    source: string
+    target: string
+  }
+
+  export const using = ['console'] as const
+
+  export interface Config {}
+
+  export const Config: Schema<Config> = Schema.object({})
 }
+
+export default Insight

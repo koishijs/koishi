@@ -7,7 +7,8 @@ import { expect } from 'chai'
 import 'chai-shape'
 
 describe('@koishijs/plugin-switch', () => {
-  const app = new App().plugin(mock)
+  const app = new App()
+  app.plugin(mock)
   const client1 = app.mock.client('123', '456')
   const client2 = app.mock.client('123')
 
