@@ -1,49 +1,59 @@
 <template>
-  <div :class="{ highlight }">
+  <div :class="{ highlight: tooltip.active }">
     <svg
       ref="svg"
       id="couple"
       :width="size"
       :height="size"
       :viewBox="`-${size / 2} -${size / 2} ${size} ${size}`"
-      @click.stop.prevent="onClick"
     >
       <g class="links">
-        <line
-          v-for="(link, index) in links"
-          :key="index"
-          :x1="link.source.x"
-          :y1="link.source.y"
-          :x2="link.target.x"
-          :y2="link.target.y"
-          :class="link.type"
-          @mouseenter.stop.prevent="onMouseEnterLink(link, $event)"
-          @mouseleave.stop.prevent="onMouseLeaveLink(link, $event)"
-        />
+        <g class="link" v-for="(link, index) in links" :key="index" :class="{ active: subgraph.links.has(link) }">
+          <line
+            :x1="link.source.x"
+            :y1="link.source.y"
+            :x2="link.target.x"
+            :y2="link.target.y"
+            class="shadow"
+            @mouseenter.stop.prevent="onMouseEnterLink(link, $event)"
+            @mouseleave.stop.prevent="onMouseLeaveLink(link, $event)"
+          />
+          <line
+            :x1="link.source.x"
+            :y1="link.source.y"
+            :x2="link.target.x"
+            :y2="link.target.y"
+            :class="link.type"
+          />
+        </g>
       </g>
       <g class="nodes">
-        <circle
-          v-for="(node, index) in nodes"
-          :key="index"
-          :cx="node.x"
-          :cy="node.y"
-          :class="{ active: node.active }"
-          @mouseenter.stop.prevent="onMouseEnterNode(node, $event)"
-          @mouseleave.stop.prevent="onMouseLeaveNode(node, $event)"
-          @mousedown.stop.prevent="onDragStart(node, $event)"
-          @touchstart.stop.prevent="onDragStart(node, $event)"
-        />
+        <g class="node"
+          v-for="(node, index) in nodes" :key="index"
+          :class="{ active: subgraph.nodes.has(node) }"
+        >
+          <circle
+            :cx="node.x"
+            :cy="node.y"
+            @mouseenter.stop.prevent="onMouseEnterNode(node, $event)"
+            @mouseleave.stop.prevent="onMouseLeaveNode(node, $event)"
+            @mousedown.stop.prevent="onDragStart(node, $event)"
+            @touchstart.stop.prevent="onDragStart(node, $event)"
+          />
+        </g>
       </g>
     </svg>
     <transition name="fade">
-      <div class="tooltip" v-show="tooltip.active" :style="tooltip.style">{{ tooltip.title }}</div>
+      <div class="tooltip" v-show="tooltip.active" :style="tooltip.style">
+        <div v-for="(line, index) of tooltip.content.split('\n')" :key="index">{{ line }}</div>
+      </div>
     </transition>
   </div>
 </template>
 
 <script lang="ts" setup>
 
-import { onMounted, reactive, ref } from 'vue'
+import { onMounted, reactive, ref, computed } from 'vue'
 import { store } from '@koishijs/client'
 import Insight from '../src'
 import * as d3 from 'd3-force'
@@ -51,10 +61,9 @@ import { useTooltip, getEventPoint } from './tooltip'
 import { useEventListener } from '@vueuse/core'
 
 const tooltip = useTooltip()
-
-// const current = ref<string | number>(null)
 const dragged = ref<Node>(null)
-const highlight = ref(false)
+const fNode = ref<Node>(null) 
+const fLink = ref<Link>(null) 
 
 interface Node extends Insight.Node, d3.SimulationNodeDatum {
   lastX?: number
@@ -101,29 +110,30 @@ useEventListener('touchmove', onDragMove)
 useEventListener('mouseup', onDragEnd)
 useEventListener('touchend', onDragEnd)
 
-function onClick() {
-  setFocusedNodes()
-  tooltip.deactivate(0)
-}
-
 function onMouseEnterNode(node: Node, event: MouseEvent) {
-  node.active = true
-  tooltip.activate(node.name, event)
+  fNode.value = node
+  tooltip.activate(node.name + '\n复杂度：' + node.weight, event)
 }
 
 function onMouseLeaveNode(node: Node, event: MouseEvent) {
   if (dragged.value === node) return
-  node.active = false
+  fNode.value = null
   tooltip.deactivate(300)
 }
 
-function onMouseEnterLink(link: Link, event: MouseEvent) {}
+function onMouseEnterLink(link: Link, event: MouseEvent) {
+  fLink.value = link
+  let text = `${link.type === 'dashed' ? '依赖' : '调用'}：${link.source.name} → ${link.target.name}`
+  tooltip.activate(text, event)
+}
 
-function onMouseLeaveLink(link: Link, event: MouseEvent) {}
+function onMouseLeaveLink(link: Link, event: MouseEvent) {
+  fLink.value = null
+  tooltip.deactivate(300)
+}
 
 function onDragStart(node: Node, event: MouseEvent | TouchEvent) {
   dragged.value = node
-  node.active = true
   simulation.alphaTarget(0.3).restart()
   const point = getEventPoint(event)
   node.lastX = point.clientX
@@ -154,53 +164,87 @@ function onDragEnd(event: MouseEvent | TouchEvent) {
   if (!node) return
   node.fx = null
   node.fy = null
-  node.active = false
+  fNode.value = null
   dragged.value = null
 }
 
-function setFocusedNodes(...nodes: Node[]) {
-  // this.nodes.forEach((node) => {
-  //   node.focused = !!nodes.find(({ id }) => id === node.id)
-  // })
+interface Graph {
+  nodes: Set<Node>
+  links: Set<Link>
 }
+
+const subgraph = computed<Graph>(() => {
+  if (fLink.value) {
+    return {
+      nodes: new Set([fLink.value.source, fLink.value.target]),
+      links: new Set([fLink.value]),
+    }
+  }
+  if (!fNode.value) return { nodes: new Set(), links: new Set() }
+  const g1: Graph = {
+    nodes: new Set([fNode.value]),
+    links: new Set(),
+  }
+  let flag = true
+  while (flag) {
+    flag = false
+    for (const link of links) {
+      if (g1.links.has(link) || link.type !== 'solid') continue
+      if (g1.nodes.has(link.source) && !g1.nodes.has(link.target)) {
+        g1.nodes.add(link.target)
+        g1.links.add(link)
+        flag = true
+      }
+    }
+  }
+  const g2: Graph = {
+    nodes: new Set([fNode.value]),
+    links: new Set(),
+  }
+  flag = true
+  while (flag) {
+    flag = false
+    for (const link of links) {
+      if (g2.links.has(link) || link.type !== 'solid') continue
+      if (g2.nodes.has(link.target) && !g2.nodes.has(link.source)) {
+        g2.nodes.add(link.source)
+        g2.links.add(link)
+        flag = true
+      }
+    }
+  }
+  return {
+    nodes: new Set([...g1.nodes, ...g2.nodes]),
+    links: new Set([...g1.links, ...g2.links]),
+  }
+})
 
 </script>
 
 <style lang="scss" scoped>
 
-g.nodes {
-  stroke: var(--border);
-  stroke-opacity: 0.8;
-  stroke-width: 1.5;
-
+g.node {
   circle {
     r: 10;
+    stroke: var(--page-bg);
+    stroke-opacity: 1;
+    stroke-width: 2;
     cursor: pointer;
-    fill: var(--card-bg);
-    transition: 0.3s ease;
-    &.active, &:hover {
+    fill: var(--fg3);
+    transition: r 0.3s ease, fill 0.3s ease, stroke 0.3s ease, box-shadow 0.3s ease;
+
+    &:hover {
       r: 12;
-      fill: #17becf;
+      fill: var(--active);
     }
   }
 
-  text {
-    font-weight: 200;
-    letter-spacing: 1px;
+  .highlight &:not(.active) circle {
+    fill: var(--bg4);
   }
 }
 
-.highlight g.nodes {
-  circle {
-    fill: var(--page-bg);
-  }
-}
-
-g.links {
-  stroke: var(--bg4);
-  stroke-opacity: 0.6;
-  stroke-width: 3;
-
+g.link {
   line {
     transition: 0.3s ease;
     &:hover {
@@ -209,10 +253,21 @@ g.links {
     &.dashed {
       stroke-dasharray: 6 6;
     }
+    &.shadow {
+      stroke: var(--page-bg);
+      stroke-width: 6;
+      cursor: pointer;
+    }
+    &:not(.shadow) {
+      stroke: var(--fg3);
+      stroke-opacity: 0.3;
+      stroke-width: 3;
+      pointer-events: none;
+    }
   }
 
-  &.active path {
-    stroke: var(--border);
+  .highlight &:not(.active) line:not(.shadow) {
+    stroke-opacity: 0.1;
   }
 }
 
@@ -225,10 +280,23 @@ g.links {
 .tooltip {
   position: fixed;
   pointer-events: none;
-  background-color: #0003;
-  border-radius: 6px;
+  user-select: none;
   padding: 4px 8px;
   transition: 0.3s ease;
+
+  &::after {
+    z-index: -1;
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    border-radius: 6px;
+    background-color: var(--card-bg);
+    opacity: 0.6;
+    transition: 0.3s ease;
+  }
 
   &.fade-enter-from, &.fade-leave-to {
     opacity: 0;

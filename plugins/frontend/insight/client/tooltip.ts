@@ -16,7 +16,7 @@ export function getEventPoint(event: MouseEvent | TouchEvent): Pointer {
 }
 
 export function useTooltip() {
-  const title = ref('')
+  const content = ref('')
 
   const active = ref(false)
   const inactive = ref(true)
@@ -36,7 +36,7 @@ export function useTooltip() {
   })
 
   function activate(text: string, event: MouseEvent | TouchEvent) {
-    title.value = text
+    content.value = text
     active.value = true
     inactive.value = false
     const pointer = getEventPoint(event)
@@ -67,7 +67,7 @@ export function useTooltip() {
 
   return reactive({
     style,
-    title,
+    content,
     active,
     inactive,
     activate,

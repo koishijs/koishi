@@ -76,10 +76,12 @@ class Insight extends DataService<Insight.Payload> {
         })
       }
       for (const service of services) {
+        const ctx = service.ctx
+        if (!ctx || ctx === ctx.app) continue
         edges.push({
           type: 'dashed',
-          source: service.ctx.state.id,
-          target: runtime.id,
+          source: runtime.id,
+          target: ctx.state.id,
         })
       }
     }
