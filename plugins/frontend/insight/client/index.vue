@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div :class="{ highlight }">
     <svg
       ref="svg"
       id="couple"
@@ -35,25 +35,30 @@
         />
       </g>
     </svg>
-    <div
-      class="tooltip"
-      :class="{ active: title }"
-      :style="style"
-    >{{ title }}</div>
+    <transition name="fade">
+      <div class="tooltip" v-show="tooltip.active" :style="tooltip.style">{{ tooltip.title }}</div>
+    </transition>
   </div>
 </template>
 
 <script lang="ts" setup>
 
-import { onMounted, reactive } from 'vue'
+import { onMounted, reactive, ref } from 'vue'
 import { store } from '@koishijs/client'
 import Insight from '../src'
 import * as d3 from 'd3-force'
-import { style, title, setTitle, deactivate } from './shared'
+import { useTooltip, getEventPoint } from './tooltip'
+import { useEventListener } from '@vueuse/core'
+
+const tooltip = useTooltip()
 
 // const current = ref<string | number>(null)
+const dragged = ref<Node>(null)
+const highlight = ref(false)
 
 interface Node extends Insight.Node, d3.SimulationNodeDatum {
+  lastX?: number
+  lastY?: number
   active?: boolean
 }
 
@@ -80,58 +85,99 @@ const simulation = d3
   .force('y', d3.forceY().strength(0.05))
   .stop()
 
+const ticks = 1000
+const alphaMin = 0.001
+
 onMounted(() => {
-  simulation.alpha(1).restart()
+  simulation
+    .alpha(1)
+    .alphaMin(alphaMin)
+    .alphaDecay(1 - Math.pow(alphaMin, 1 / ticks))
+    .restart()
 })
 
-function onClick() {}
+useEventListener('mousemove', onDragMove)
+useEventListener('touchmove', onDragMove)
+useEventListener('mouseup', onDragEnd)
+useEventListener('touchend', onDragEnd)
+
+function onClick() {
+  setFocusedNodes()
+  tooltip.deactivate(0)
+}
 
 function onMouseEnterNode(node: Node, event: MouseEvent) {
   node.active = true
-  setTitle(node.name, event)
+  tooltip.activate(node.name, event)
 }
 
 function onMouseLeaveNode(node: Node, event: MouseEvent) {
+  if (dragged.value === node) return
   node.active = false
-  deactivate(300)
+  tooltip.deactivate(300)
 }
 
 function onMouseEnterLink(link: Link, event: MouseEvent) {}
 
 function onMouseLeaveLink(link: Link, event: MouseEvent) {}
 
-function onDragStart(node: Node, event: MouseEvent | TouchEvent) {}
+function onDragStart(node: Node, event: MouseEvent | TouchEvent) {
+  dragged.value = node
+  node.active = true
+  simulation.alphaTarget(0.3).restart()
+  const point = getEventPoint(event)
+  node.lastX = point.clientX
+  node.lastY = point.clientY
+  node.fx = node.x
+  node.fy = node.y
+}
 
-// function getEdgeClass(edge: Link) {
-//   const selected = graph.value.nodes[current.value]
-//   return {
-//     [edge.type]: true,
-//     active: isAncestor(selected, edge.source) && isAncestor(selected, edge.target)
-//       || isAncestor(edge.source, selected) && isAncestor(edge.target, selected),
-//   }
-// }
+function onDragMove(event: MouseEvent | TouchEvent) {
+  const node = dragged.value
+  if (!node) return
+  const point = getEventPoint(event)
+  node.fx += point.clientX - node.lastX
+  node.fy += point.clientY - node.lastY
+  node.lastX = point.clientX
+  node.lastY = point.clientY
+  // const dist2 = node.fx ** 2 + node.fy ** 2
+  // if (dist2 > this.DRAGGABLE_RADIUS ** 2) {
+  //   const scale = this.DRAGGABLE_RADIUS / Math.sqrt(dist2)
+  //   node.fx *= scale
+  //   node.fy *= scale
+  // }
+}
 
-// function getNodeClass(node: Node) {
-//   const selected = graph.value.nodes[current.value]
-//   return {
-//     node: true,
-//     active: isAncestor(selected, node) || isAncestor(node, selected),
-//   }
-// }
+function onDragEnd(event: MouseEvent | TouchEvent) {
+  simulation.alphaTarget(0)
+  const node = dragged.value
+  if (!node) return
+  node.fx = null
+  node.fy = null
+  node.active = false
+  dragged.value = null
+}
+
+function setFocusedNodes(...nodes: Node[]) {
+  // this.nodes.forEach((node) => {
+  //   node.focused = !!nodes.find(({ id }) => id === node.id)
+  // })
+}
 
 </script>
 
 <style lang="scss" scoped>
 
 g.nodes {
-  stroke: #fff;
+  stroke: var(--border);
   stroke-opacity: 0.8;
   stroke-width: 1.5;
 
   circle {
     r: 10;
-    fill: #9467bd;
-    transition: fill 0.3s ease, r 0.3s ease;
+    cursor: pointer;
+    fill: var(--card-bg);
+    transition: 0.3s ease;
     &.active, &:hover {
       r: 12;
       fill: #17becf;
@@ -144,13 +190,19 @@ g.nodes {
   }
 }
 
+.highlight g.nodes {
+  circle {
+    fill: var(--page-bg);
+  }
+}
+
 g.links {
-  stroke: #999;
+  stroke: var(--bg4);
   stroke-opacity: 0.6;
   stroke-width: 3;
 
   line {
-    transition: stroke-width 0.3s ease;
+    transition: 0.3s ease;
     &:hover {
       stroke-width: 5;
     }
@@ -158,14 +210,29 @@ g.links {
       stroke-dasharray: 6 6;
     }
   }
+
+  &.active path {
+    stroke: var(--border);
+  }
+}
+
+.highlight g.links {
+  path.active {
+    stroke: var(--primary);
+  }
 }
 
 .tooltip {
   position: fixed;
-  user-select: none;
+  pointer-events: none;
   background-color: #0003;
   border-radius: 6px;
   padding: 4px 8px;
+  transition: 0.3s ease;
+
+  &.fade-enter-from, &.fade-leave-to {
+    opacity: 0;
+  }
 }
 
 </style>

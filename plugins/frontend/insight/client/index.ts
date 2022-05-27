@@ -1,5 +1,5 @@
 import { Context } from '@koishijs/client'
-import {} from '@koishijs/plugin-insight'
+import {} from '@koishijs/plugin-insight/src'
 import Graph from './index.vue'
 
 export default (ctx: Context) => {
@@ -8,7 +8,7 @@ export default (ctx: Context) => {
     name: '依赖图',
     icon: 'diagram',
     order: 600,
-    fields: ['registry'],
+    fields: ['insight'],
     component: Graph,
   })
 }
