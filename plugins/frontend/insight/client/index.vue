@@ -3,9 +3,9 @@
     <svg
       ref="svg"
       id="couple"
-      :width="size"
-      :height="size"
-      :viewBox="`-${size / 2} -${size / 2} ${size} ${size}`"
+      :width="width - 256"
+      :height="height"
+      :viewBox="`-${width / 2 - 128} -${height / 2} ${width - 256} ${height}`"
     >
       <g class="links">
         <g class="link" v-for="(link, index) in links" :key="index" :class="{ active: subgraph.links.has(link) }">
@@ -58,7 +58,9 @@ import { store } from '@koishijs/client'
 import Insight from '../src'
 import * as d3 from 'd3-force'
 import { useTooltip, getEventPoint } from './tooltip'
-import { useEventListener } from '@vueuse/core'
+import { useEventListener, useWindowSize } from '@vueuse/core'
+
+const { width, height } = useWindowSize()
 
 const tooltip = useTooltip()
 const dragged = ref<Node>(null)
@@ -78,8 +80,6 @@ interface Link extends Omit<Insight.Link, 'source' | 'target'>, d3.SimulationLin
 
 const nodes = reactive<Node[]>(store.insight.nodes as any)
 const links = reactive<Link[]>(store.insight.edges as any)
-
-const size = 960
 
 const forceLink = d3
   .forceLink<Node, Link>(links)
@@ -254,7 +254,7 @@ g.link {
       stroke-dasharray: 6 6;
     }
     &.shadow {
-      stroke: var(--page-bg);
+      stroke: transparent;
       stroke-width: 6;
       cursor: pointer;
     }

@@ -3,6 +3,7 @@ import globby from 'globby'
 import ts from 'typescript'
 import ora from 'ora'
 import prompts from 'prompts'
+import { SpawnOptions } from 'child_process'
 
 export const cwd = process.cwd()
 export const meta: PackageJson = require(cwd + '/package.json')
@@ -108,10 +109,11 @@ export interface TsConfig {
   compilerOptions?: ts.CompilerOptions
 }
 
-export function spawnAsync(args: string[]) {
-  const child = spawn(args[0], args.slice(1), { cwd, stdio: 'pipe' })
+export function spawnAsync(args: string[], options: SpawnOptions = {}) {
+  const child = spawn(args[0], args.slice(1), { cwd, stdio: 'inherit', ...options })
   return new Promise<number>((resolve) => {
-    child.stderr.pipe(process.stderr)
+    child.stderr?.pipe(process.stderr)
+    child.stdout?.pipe(process.stdout)
     child.on('close', resolve)
   })
 }
