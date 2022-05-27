@@ -41,9 +41,9 @@
     }
   },
   "peerDependencies": {
-    "@koishijs/cli": "^4.7.1",
+    "@koishijs/cli": "^4.7.2",
     "@koishijs/plugin-console": "^3.3.3",
-    "koishi": "^4.7.1"
+    "koishi": "^4.7.2"
   },
   "devDependencies": {
     "@koishijs/client": "^3.3.3",
@@ -51,7 +51,7 @@
     "@types/which-pm-runs": "^1.0.0"
   },
   "dependencies": {
-    "@koishijs/market": "^1.0.1",
+    "@koishijs/market": "^1.1.0",
     "cross-spawn": "^7.0.3",
     "ns-require": "^1.1.2",
     "semver": "^7.3.7",

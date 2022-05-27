@@ -42,11 +42,11 @@
   },
   "peerDependencies": {
     "@koishijs/plugin-console": "^3.3.3",
-    "koishi": "^4.7.1"
+    "koishi": "^4.7.2"
   },
   "devDependencies": {
     "@koishijs/client": "^3.3.3",
-    "@koishijs/cli": "^4.7.1",
+    "@koishijs/cli": "^4.7.2",
     "ansi_up": "^5.1.0"
   }
 }
