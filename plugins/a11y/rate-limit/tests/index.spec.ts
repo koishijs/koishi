@@ -1,5 +1,6 @@
 import { App, Time } from 'koishi'
 import mock from '@koishijs/plugin-mock'
+import * as help from '@koishijs/plugin-help'
 import * as admin from '@koishijs/plugin-admin'
 import * as rate from '@koishijs/plugin-rate-limit'
 import { install } from '@sinonjs/fake-timers'
@@ -7,6 +8,7 @@ import { install } from '@sinonjs/fake-timers'
 const app = new App()
 let now = Date.now()
 
+app.plugin(help)
 app.plugin(mock)
 app.plugin('database-memory')
 app.plugin(admin)
@@ -76,38 +78,47 @@ describe('@koishijs/plugin-rate-limit', () => {
 
     it('Extended Help', async () => {
       const clock = install({ now })
-      await client1.shouldReply('help bar', 'bar\n指令2\n距离下次调用还需：60/180 秒。')
-      await client2.shouldReply('help bar', 'bar\n指令2\n距离下次调用还需：0/180 秒。')
-      clock.uninstall()
+      try {
+        await client1.shouldReply('help bar', 'bar\n指令2\n距离下次调用还需：60/180 秒。')
+        await client2.shouldReply('help bar', 'bar\n指令2\n距离下次调用还需：0/180 秒。')
+      } finally {
+        clock.uninstall()
+      }
     })
 
     it('Runtime Check', async () => {
       const clock = install({ now })
-      cmd.config.showWarning = true
-      await client1.shouldReply('bar', '调用过于频繁，请稍后再试。')
-      await client2.shouldReply('bar', 'test')
-      clock.tick(Time.minute + 1)
-      now = clock.now
-      await client1.shouldReply('bar', 'test')
-      await client1.shouldReply('bar --opt1', 'test')
-      cmd.config.showWarning = false
-      await client2.shouldNotReply('bar')
-      clock.uninstall()
+      try {
+        cmd.config.showWarning = true
+        await client1.shouldReply('bar', '调用过于频繁，请稍后再试。')
+        await client2.shouldReply('bar', 'test')
+        clock.tick(Time.minute + 1)
+        now = clock.now
+        await client1.shouldReply('bar', 'test')
+        await client1.shouldReply('bar --opt1', 'test')
+        cmd.config.showWarning = false
+        await client2.shouldNotReply('bar')
+      } finally {
+        clock.uninstall()
+      }
     })
 
     it('Modify Timers', async () => {
       const clock = install({ now })
-      await client1.shouldReply('timer', '各定时器的生效时间为：\nbar：剩余 3 分钟')
-      await client1.shouldReply('timer -c bar', '用户数据已修改。')
-      await client1.shouldReply('timer', '当前没有生效的定时器。')
-      await client1.shouldReply('timer -s foo', '缺少参数，输入帮助以查看用法。')
-      await client1.shouldReply('timer -s foo nan', '参数 value 输入无效，请输入合法的时间。')
-      await client1.shouldReply('timer -s foo 2min', '用户数据已修改。')
-      await client1.shouldReply('timer foo', '定时器 foo 的生效时间为：剩余 2 分钟')
-      await client1.shouldReply('timer fox', '定时器 fox 当前并未生效。')
-      await client1.shouldReply('timer -c', '用户数据已修改。')
-      await client1.shouldReply('timer', '当前没有生效的定时器。')
-      clock.uninstall()
+      try {
+        await client1.shouldReply('timer', '各定时器的生效时间为：\nbar：剩余 3 分钟')
+        await client1.shouldReply('timer -c bar', '用户数据已修改。')
+        await client1.shouldReply('timer', '当前没有生效的定时器。')
+        await client1.shouldReply('timer -s foo', '缺少参数，输入帮助以查看用法。')
+        await client1.shouldReply('timer -s foo nan', '参数 value 输入无效，请输入合法的时间。')
+        await client1.shouldReply('timer -s foo 2min', '用户数据已修改。')
+        await client1.shouldReply('timer foo', '定时器 foo 的生效时间为：剩余 2 分钟')
+        await client1.shouldReply('timer fox', '定时器 fox 当前并未生效。')
+        await client1.shouldReply('timer -c', '用户数据已修改。')
+        await client1.shouldReply('timer', '当前没有生效的定时器。')
+      } finally {
+        clock.uninstall()
+      }
     })
   })
 })

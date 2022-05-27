@@ -1,17 +1,19 @@
 import { App } from 'koishi'
 import mock from '@koishijs/plugin-mock'
+import * as help from '@koishijs/plugin-help'
 import * as commands from '@koishijs/plugin-commands'
 import { expect } from 'chai'
 
 const app = new App()
 
+app.plugin(help)
 app.plugin(mock)
 
 const client = app.mock.client('123')
 
 before(() => app.start())
 
-describe('@koishijs/plugin-override', () => {
+describe('@koishijs/plugin-commands', () => {
   describe('basic usage', () => {
     it('dispose command', async () => {
       const cmd = app.command('bar').action(() => 'test')

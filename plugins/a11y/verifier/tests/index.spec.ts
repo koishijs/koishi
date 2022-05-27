@@ -50,7 +50,7 @@ const receiveGroupMemberRequest = (app: App, userId: string) => receive(app, {
 })
 
 
-describe('Common Handlers', () => {
+describe('@koishijs/plugin-verifier', () => {
   it('request handler: undefined', async () => {
     const instance = await setup({})
 

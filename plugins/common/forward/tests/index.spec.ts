@@ -2,6 +2,7 @@ import { App } from 'koishi'
 import { expect, use } from 'chai'
 import shape from 'chai-shape'
 import * as jest from 'jest-mock'
+import * as help from '@koishijs/plugin-help'
 import mock, { DEFAULT_SELF_ID } from '@koishijs/plugin-mock'
 import * as forward from '@koishijs/plugin-forward'
 
@@ -10,6 +11,7 @@ use(shape)
 const app = new App()
 
 app.plugin(mock)
+app.plugin(help)
 
 const session2 = app.mock.client('123', '456')
 const session3 = app.mock.client('789', '654')
