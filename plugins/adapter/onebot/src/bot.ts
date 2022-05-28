@@ -162,9 +162,6 @@ export class OneBotBot extends Bot<BotConfig> {
     if (!session?.content) return []
     session.messageId = '' + await this.internal.sendGroupMsg(channelId, session.content)
     this.app.emit(session, 'send', session)
-    if (!this.config.reportSelfMessage) {
-      this.app.emit(session, 'message', session)
-    }
     return [session.messageId]
   }
 
@@ -173,9 +170,6 @@ export class OneBotBot extends Bot<BotConfig> {
     if (!session?.content) return []
     session.messageId = '' + await this.internal.sendPrivateMsg(userId, session.content)
     this.app.emit(session, 'send', session)
-    if (!this.config.reportSelfMessage) {
-      this.app.emit(session, 'message', session)
-    }
     return [session.messageId]
   }
 
