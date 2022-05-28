@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/market",
   "description": "Scan Package Manager for Koishi Plugins",
-  "version": "1.1.0",
+  "version": "2.0.0",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -25,6 +25,7 @@
   ],
   "dependencies": {
     "cosmokit": "^1.1.2",
+    "p-map": "^4.0.0",
     "semver": "^7.3.7"
   }
 }

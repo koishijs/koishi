@@ -1,5 +1,6 @@
 import { intersects } from 'semver'
 import { Dict, pick } from 'cosmokit'
+import pMap from 'p-map'
 
 export interface User {
   name: string
@@ -110,60 +111,74 @@ export interface AnalyzedPackage extends SearchPackage, SearchObject.Score.Detai
 
 export interface ScanConfig {
   version?: string
+  concurrency?: number
   request<T>(url: string): Promise<T>
-  onItem?(item: AnalyzedPackage): void
+  onSuccess(item: AnalyzedPackage): void
+  onFailure?(name: string, reason: any): void
+}
+
+function conclude(remote: RemotePackage) {
+  const manifest = {
+    description: {
+      en: remote.description,
+    },
+    locales: [],
+    recommends: [],
+    ...remote.koishi,
+    service: {
+      required: [],
+      optional: [],
+      implements: [],
+      ...remote.koishi?.service,
+    },
+  }
+
+  for (const keyword of remote.keywords ?? []) {
+    if (keyword === 'market:hidden') {
+      manifest.hidden = true
+    } else if (keyword.startsWith('required:')) {
+      manifest.service.required.push(keyword.slice(9))
+    } else if (keyword.startsWith('optional:')) {
+      manifest.service.optional.push(keyword.slice(9))
+    } else if (keyword.startsWith('impl:')) {
+      manifest.service.implements.push(keyword.slice(5))
+    } else if (keyword.startsWith('locale:')) {
+      manifest.locales.push(keyword.slice(7))
+    }
+  }
+
+  return manifest
 }
 
 export default async function scan(config: ScanConfig) {
-  const { version, request, onItem } = config
-  const tasks: Promise<void>[] = []
+  const { version, concurrency = 10, request, onSuccess, onFailure } = config
+  const tasks: SearchObject[] = []
 
   async function search(offset: number) {
     const result = await config.request<SearchResult>(`/-/v1/search?text=koishi+plugin&size=250&offset=${offset}`)
-    tasks.push(...result.objects.map(item => analyze(item)))
+    tasks.push(...result.objects)
     return result.total
   }
 
-  function conclusion(remote: RemotePackage) {
-    const manifest = {
-      description: {
-        en: remote.description,
-      },
-      locales: [],
-      recommends: [],
-      ...remote.koishi,
-      service: {
-        required: [],
-        optional: [],
-        implements: [],
-        ...remote.koishi?.service,
-      },
-    }
-
-    for (const keyword of remote.keywords ?? []) {
-      if (keyword === 'market:hidden') {
-        manifest.hidden = true
-      } else if (keyword.startsWith('required:')) {
-        manifest.service.required.push(keyword.slice(9))
-      } else if (keyword.startsWith('optional:')) {
-        manifest.service.optional.push(keyword.slice(9))
-      } else if (keyword.startsWith('impl:')) {
-        manifest.service.implements.push(keyword.slice(5))
-      } else if (keyword.startsWith('locale:')) {
-        manifest.locales.push(keyword.slice(7))
-      }
-    }
-
-    return manifest
+  const total = await search(0)
+  for (let offset = 250; offset < total; offset += 250) {
+    await search(offset)
   }
 
-  async function analyze(object: SearchObject) {
+  await pMap(tasks, async (object) => {
     const { name } = object.package
     const official = name.startsWith('@koishijs/plugin-')
     const community = name.startsWith('koishi-plugin-')
     if (!official && !community) return
 
-    const registry = await request<Registry>(`/${name}`)
+    let registry: Registry
+    try {
+      registry = await request<Registry>(`/${name}`)
+    } catch (error) {
+      onFailure?.(name, error)
+      return
+    }
+
     const versions = Object.values(registry.versions).filter((remote) => {
       const { dependencies, peerDependencies, deprecated } = remote
       const declaredVersion = { ...dependencies, ...peerDependencies }['koishi']
@@ -175,11 +190,11 @@ export default async function scan(config: ScanConfig) {
 
     const latest = registry.versions[versions[0].version]
     latest.keywords ??= []
-    const manifest = conclusion(latest)
+    const manifest = conclude(latest)
     if (manifest.hidden) return
 
     const shortname = official ? name.slice(17) : name.slice(14)
-    onItem({
+    onSuccess({
       name,
       manifest,
       shortname,
@@ -190,12 +205,5 @@ export default async function scan(config: ScanConfig) {
       ...pick(latest, ['keywords', 'version', 'description', 'license', 'author']),
       ...object.score.detail,
     })
-  }
-
-  const total = await search(0)
-  for (let offset = 250; offset < total; offset += 250) {
-    await search(offset)
-  }
-
-  await Promise.all(tasks)
+  }, { concurrency })
 }

@@ -59,7 +59,7 @@ watch(words, () => {
   }
 }, { deep: true })
 
-function onEnter(event: KeyboardEvent) {
+function onEnter(event: Event) {
   const last = words[words.length - 1]
   if (!last) return
   if (words.slice(0, -1).includes(last)) {

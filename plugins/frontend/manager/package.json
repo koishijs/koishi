@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-manager",
   "description": "Manage your bots and plugins with console",
-  "version": "1.8.3",
+  "version": "1.8.4",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -51,7 +51,7 @@
     "@types/which-pm-runs": "^1.0.0"
   },
   "dependencies": {
-    "@koishijs/market": "^1.1.0",
+    "@koishijs/market": "^2.0.0",
     "cross-spawn": "^7.0.3",
     "ns-require": "^1.1.2",
     "semver": "^7.3.7",

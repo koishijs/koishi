@@ -67,7 +67,7 @@ class MarketProvider extends DataService<Dict<MarketProvider.Data>> {
     tasks.push(scan({
       version: '4',
       request: this.http.get,
-      onItem: (item) => {
+      onSuccess: (item) => {
         const { name, versions } = item
         this.tempCache[name] = this.fullCache[name] = {
           ...item,

@@ -13,11 +13,14 @@ scan({
     const { data } = await axios.get(BASE_URL + url)
     return data
   },
-  onItem(item) {
+  onSuccess(item) {
     item.description = marked
       .parseInline(item.description || '')
       .replace('<a ', '<a target="_blank" rel="noopener noreferrer" ')
     packages.push(item)
+  },
+  onFailure(name, reason) {
+    console.error(`Failed to analyze ${name}: ${reason}`)
   },
 }).then(() => {
   packages.sort((a, b) => b.popularity - a.popularity)
