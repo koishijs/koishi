@@ -23,7 +23,7 @@ watch(() => store.dependencies, (value) => {
   for (const key in config.override) {
     if (!config.override[key]) {
       if (!value[key]) delete config.override[key]
-    } else if (value[key]?.resolved === config.override[key]) {
+    } else if (value[key]?.request === config.override[key]) {
       delete config.override[key]
     }
   }

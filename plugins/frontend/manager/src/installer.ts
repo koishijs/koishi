@@ -18,8 +18,19 @@ declare module '@koishijs/plugin-console' {
 const logger = new Logger('market')
 
 export interface Dependency {
+  /**
+   * requested semver range
+   * @example `^1.2.3`
+   */
   request: string
+  /**
+   * installed package version
+   * @example `1.2.5`
+   */
   resolved: string
+  /**
+   * whether it is a workspace package
+   */
   workspace: boolean
   active?: boolean
 }
