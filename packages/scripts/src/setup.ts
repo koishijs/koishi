@@ -34,7 +34,7 @@ class Initiator {
         : 'koishi-plugin-' + name
     }
     this.desc = await this.getDesc()
-    this.target = resolve(cwd, 'plugins', name)
+    this.target = resolve(cwd, 'plugins', this.name)
     await this.write()
   }
 
