@@ -41,7 +41,7 @@
   "devDependencies": {
     "@koishijs/client": "^3.3.3",
     "@koishijs/plugin-console": "^3.3.3",
-    "@koishijs/plugin-mock": "^1.0.5",
+    "@koishijs/plugin-mock": "^1.0.6",
     "@types/throttle-debounce": "^2.1.0"
   },
   "dependencies": {

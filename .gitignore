@@ -12,13 +12,10 @@ tsconfig.temp.json
 /community
 /external
 /addons
-/public
-/atri
 /coverage
-/legacy
+/docs
 /shiki
 /test
-/utsuho
 /.yalc
 
 todo.md

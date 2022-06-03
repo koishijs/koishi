@@ -68,7 +68,7 @@ export class Webhook {
         const code = res.statusCode
         const headers = res.getHeaders()
         resolve({ code, body, headers })
-        callback?.()
+        if (typeof callback === 'function') callback()
         return res
       }
       this.app._httpServer.emit('request', req, res)

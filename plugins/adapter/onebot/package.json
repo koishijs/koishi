@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-adapter-onebot",
   "description": "OneBot Adapter for Koishi",
-  "version": "4.2.6",
+  "version": "4.2.7",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -43,7 +43,7 @@
     "koishi": "^4.7.2"
   },
   "devDependencies": {
-    "@koishijs/plugin-mock": "^1.0.5",
+    "@koishijs/plugin-mock": "^1.0.6",
     "@types/ws": "^8.5.3"
   },
   "dependencies": {
