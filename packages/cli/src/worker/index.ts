@@ -73,7 +73,5 @@ namespace addons {
 app.plugin(addons, app.options)
 
 app.start().then(() => {
-  for (const name in loader.cache) {
-    loader.diagnose(name)
-  }
+  loader.diagnose()
 }, handleException)

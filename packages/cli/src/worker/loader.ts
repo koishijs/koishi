@@ -14,6 +14,7 @@ declare module 'koishi' {
   namespace Plugin {
     interface Runtime {
       [Loader.kRecord]?: Dict<Plugin.Fork>
+      [Loader.kWarning]?: boolean
     }
   }
 }
@@ -28,6 +29,7 @@ const context = {
 
 export default class Loader extends ConfigLoader<App.Config> {
   static readonly kRecord = Symbol('record')
+  static readonly kWarning = Symbol('warning')
 
   app: App
   config: App.Config
@@ -91,30 +93,12 @@ export default class Loader extends ConfigLoader<App.Config> {
     return ns.unwrapExports(require(this.cache[name]))
   }
 
-  unloadPlugin(name: string) {
-    const plugin = this.resolvePlugin(name)
-    if (!plugin) return
-
-    const names = Object.keys(this.cache).filter((name) => {
-      const plugin = this.resolvePlugin(name)
-      const runtime = this.app.registry.get(plugin)
-      return runtime?.using.every(key => this.app[key])
-    })
-
-    const state = this.app.dispose(plugin)
-    if (state) logger.info(`dispose plugin %c`, name)
-
-    for (const name of names) {
-      this.diagnose(name)
-    }
-  }
-
   loadPlugin(name: string, config: any, parent: Context, action = 'apply') {
     const plugin = this.resolvePlugin(name)
     if (!plugin) return
 
     if (this.app.lifecycle.isActive) {
-      this.app.lifecycle.flush().then(() => this.diagnose(name))
+      this.app.lifecycle.flush().then(() => this.check(name))
     }
 
     logger.info(`%s plugin %c`, action, name)
@@ -151,13 +135,21 @@ export default class Loader extends ConfigLoader<App.Config> {
     return app
   }
 
-  diagnose(name: string) {
-    const plugin = this.resolvePlugin(name)
-    const state = this.app.registry.get(plugin)
-    if (!state) return
+  diagnose(allowCache = false) {
+    for (const name in this.cache) {
+      this.check(name, allowCache)
+    }
+  }
 
-    const missing = state.using.filter(key => !this.app[key])
-    if (!missing.length) return
+  private check(name: string, allowCache = false) {
+    const plugin = this.resolvePlugin(name)
+    const runtime = this.app.registry.get(plugin)
+    if (!runtime) return
+
+    const missing = runtime.using.filter(key => !this.app[key])
+    const oldWarning = runtime[Loader.kWarning]
+    runtime[Loader.kWarning] = missing.length > 0
+    if (!runtime[Loader.kWarning] || allowCache && oldWarning) return
     this.app.logger('diagnostic').warn('plugin %c is missing required service %c', name, missing.join(', '))
   }
 

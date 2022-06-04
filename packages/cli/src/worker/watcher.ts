@@ -161,6 +161,7 @@ class Watcher {
         } else {
           delete root[Loader.kRecord][name]
           this.ctx.logger('app').info(`unload plugin %c`, name)
+          this.ctx.loader.diagnose()
         }
       }
     }
