@@ -3,6 +3,7 @@ import { FSWatcher, watch, WatchOptions } from 'chokidar'
 import { relative, resolve } from 'path'
 import { debounce } from 'throttle-debounce'
 import ns from 'ns-require'
+import Loader from './loader'
 
 function loadDependencies(filename: string, ignored: Set<string>) {
   const dependencies = new Set<string>()
@@ -119,27 +120,48 @@ class Watcher {
   private triggerEntryReload() {
     // use original config
     const { loader } = this.ctx
-    const oldConfig = loader.config
+    const old = loader.config
     loader.readConfig()
-    const newConfig = loader.config
+    const neo = loader.config
 
     // check non-plugin changes
-    const merged = { ...oldConfig, ...newConfig }
+    const merged = { ...old, ...neo }
     delete merged.plugins
-    if (Object.keys(merged).some(key => !deepEqual(oldConfig[key], newConfig[key]))) {
+    if (Object.keys(merged).some(key => !deepEqual(old[key], neo[key]))) {
       return this.ctx.loader.fullReload()
     }
 
     // check plugin changes
-    const oldPlugins = oldConfig.plugins
-    const newPlugins = newConfig.plugins
-    for (const name in { ...oldPlugins, ...newPlugins }) {
-      if (name.startsWith('~')) continue
-      if (deepEqual(oldPlugins[name], newPlugins[name])) continue
-      if (name in newPlugins) {
-        loader.reloadPlugin(name)
+    this.triggerGroupReload(neo.plugins || {}, old.plugins || {}, this.ctx.app.state.runtime)
+  }
+
+  private triggerGroupReload(neo: Dict, old: Dict, root: Plugin.Runtime) {
+    for (const name in { ...old, ...neo }) {
+      if (name.startsWith('~') || name.startsWith('$')) continue
+      const dispose = root[Loader.kRecord][name]
+      if (name.startsWith('+')) {
+        // handle group config changes
+        if (!dispose) {
+          // load new group
+          this.ctx.loader.loadGroup(name, neo[name], root)
+        } else if (name in neo) {
+          this.triggerGroupReload(neo[name] || {}, old[name] || {}, dispose.runtime)
+        } else {
+          dispose()
+          delete root[Loader.kRecord][name]
+          this.ctx.logger('app').info(`unload group %c`, name.slice(1))
+        }
       } else {
-        loader.unloadPlugin(name)
+        // handle plugin config changes
+        if (deepEqual(old[name], neo[name])) continue
+        dispose?.()
+        if (name in neo) {
+          const action = dispose ? 'reload' : 'apply'
+          root[Loader.kRecord][name] = this.ctx.loader.loadPlugin(name, neo[name], root.context, action)
+        } else {
+          delete root[Loader.kRecord][name]
+          this.ctx.logger('app').info(`unload plugin %c`, name)
+        }
       }
     }
   }

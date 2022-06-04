@@ -1,5 +1,5 @@
 import { resolve } from 'path'
-import { App, Context, Dict, interpolate, Logger, Registry, valueMap } from 'koishi'
+import { App, Context, defineProperty, Dict, interpolate, Logger, Plugin, Registry, valueMap } from 'koishi'
 import ConfigLoader from '@koishijs/loader'
 import * as dotenv from 'dotenv'
 import ns from 'ns-require'
@@ -8,6 +8,12 @@ declare module 'koishi' {
   namespace Context {
     interface Services {
       loader: Loader
+    }
+  }
+
+  namespace Plugin {
+    interface Runtime {
+      [Loader.kRecord]?: Dict<Plugin.Fork>
     }
   }
 }
@@ -21,6 +27,8 @@ const context = {
 }
 
 export default class Loader extends ConfigLoader<App.Config> {
+  static readonly kRecord = Symbol('record')
+
   app: App
   config: App.Config
   cache: Dict<string> = {}
@@ -89,8 +97,8 @@ export default class Loader extends ConfigLoader<App.Config> {
 
     const names = Object.keys(this.cache).filter((name) => {
       const plugin = this.resolvePlugin(name)
-      const state = this.app.registry.get(plugin)
-      return state?.using.every(key => this.app[key])
+      const runtime = this.app.registry.get(plugin)
+      return runtime?.using.every(key => this.app[key])
     })
 
     const state = this.app.dispose(plugin)
@@ -101,7 +109,7 @@ export default class Loader extends ConfigLoader<App.Config> {
     }
   }
 
-  reloadPlugin(name: string) {
+  loadPlugin(name: string, config: any, parent: Context, action = 'apply') {
     const plugin = this.resolvePlugin(name)
     if (!plugin) return
 
@@ -109,22 +117,37 @@ export default class Loader extends ConfigLoader<App.Config> {
       this.app.lifecycle.flush().then(() => this.diagnose(name))
     }
 
-    const state = this.app.dispose(plugin)
-    const config = this.config.plugins[name]
-    logger.info(`%s plugin %c`, state ? 'reload' : 'apply', name)
+    logger.info(`%s plugin %c`, action, name)
     Registry.validate(plugin, config)
-    this.app.plugin(plugin, this.interpolate(config))
+    return parent.plugin(plugin, this.interpolate(config))
+  }
+
+  loadGroup(name: string, plugins: Dict, root: Plugin.Runtime) {
+    logger.info(`%s group %c`, 'load', name.slice(1))
+    const { context, [Loader.kRecord]: record } = root
+    const fork = record[name] = context.plugin(() => {})
+    defineProperty(fork.runtime.plugin, 'name', name.slice(1))
+    this.loadGroupRecord(plugins, fork.runtime)
+  }
+
+  private loadGroupRecord(plugins: Dict, root: Plugin.Runtime) {
+    root[Loader.kRecord] = {}
+    const { context, [Loader.kRecord]: record } = root
+    for (const name in plugins || {}) {
+      if (name.startsWith('~') || name.startsWith('$')) continue
+      if (name.startsWith('+')) {
+        this.loadGroup(name, plugins[name], root)
+      } else {
+        record[name] = this.loadPlugin(name, plugins[name], context)
+      }
+    }
   }
 
   createApp() {
     const app = this.app = new App(this.config)
     app.loader = this
     app.baseDir = this.dirname
-    const { plugins } = this.config
-    for (const name in plugins) {
-      if (name.startsWith('~')) continue
-      this.reloadPlugin(name)
-    }
+    this.loadGroupRecord(this.config.plugins, app.state.runtime)
     return app
   }
 
