@@ -1,7 +1,7 @@
 import { Context, Schema } from 'koishi'
 import MySQLDriver from '@minatojs/driver-mysql'
 
-export const name = 'MemoryDatabase'
+export const name = 'MySQLDatabase'
 
 export type Config = MySQLDriver.Config
 

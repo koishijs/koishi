@@ -45,7 +45,6 @@ export default class ConfigWriter {
     this.loader.config.plugins = this.plugins
     this.loader.writeConfig()
     this.loader.fullReload()
-    console.log(1111, config)
   }
 
   reloadPlugin(name: string, config: any) {

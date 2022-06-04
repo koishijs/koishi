@@ -1,7 +1,7 @@
 import { Context, Schema } from 'koishi'
 import LevelDriver from '@minatojs/driver-level'
 
-export const name = 'MemoryDatabase'
+export const name = 'LevelDatabase'
 
 export type Config = LevelDriver.Config
 

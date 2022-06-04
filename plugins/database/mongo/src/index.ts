@@ -1,7 +1,7 @@
 import { Context, Schema } from 'koishi'
 import MongoDriver from '@minatojs/driver-mongo'
 
-export const name = 'MemoryDatabase'
+export const name = 'MongoDatabase'
 
 export type Config = MongoDriver.Config
 
