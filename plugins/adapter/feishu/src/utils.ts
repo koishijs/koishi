@@ -1,18 +1,13 @@
 import crypto from 'crypto'
-import { Adapter, Schema } from 'koishi'
+import { Schema } from 'koishi'
 
 export interface AdapterConfig {
   path?: string
-  encryptKey?: string
 }
 
-export const AdapterConfig = Schema.intersect([
-  Schema.object({
-    path: Schema.string().role('url').description('要连接的服务器地址。').default('/feishu'),
-    encryptKey: Schema.string().role('secret').description('用于事件订阅或事件安全验证时的解密密钥，需要和飞书后台配置的 Encrypt Key 一致。'),
-  }),
-  Adapter.WebSocketClient.Config,
-])
+export const AdapterConfig = Schema.object({
+  path: Schema.string().role('url').description('要连接的服务器地址。').default('/feishu'),
+})
 
 export class Cipher {
   encryptKey: string
