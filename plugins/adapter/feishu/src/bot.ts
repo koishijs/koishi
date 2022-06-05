@@ -14,9 +14,9 @@ type AssetType = 'image' | 'audio' | 'video' | 'file'
 
 export const BotConfig = Schema.intersect([
   Schema.object({
-    endpoint: Schema.string().required().description('机器人的终结点。'),
     appId: Schema.string().required().description('机器人的应用 ID。'),
     appSecret: Schema.string().role('secret').required().description('机器人的应用密钥。'),
+    encryptKey: Schema.string().role('secret').description('机器人的 Encrypt Key。'),
   }),
   Quester.createSchema({
     endpoint: 'https://open.feishu.cn/open-apis/',
