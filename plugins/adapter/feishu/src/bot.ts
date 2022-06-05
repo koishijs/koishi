@@ -69,69 +69,70 @@ export class FeishuBot extends Bot<BotConfig> {
     if (!session?.content) return []
 
     const chain = segment.parse(content)
-    const messages = await this._prepareMessage(chain)
-    messages.forEach((message) => {
-      this.internal.sendMessage('open_id', {
-        content: message.content,
-        msg_type: message.type,
+
+    const messageIds: string[] = []
+    let buffer: MessageContent.Text[] = []
+    const sendBuffer = async () => {
+      if (!buffer.length) return
+      const { data } = await this.internal.sendMessage('open_id', {
+        msg_type: 'text',
+        content: JSON.stringify(buffer),
         receive_id: channelId,
       })
-    })
-  }
+      buffer = []
+      messageIds.push(data.message_id)
+    }
 
-  private async _prepareMessage(chain: segment.Chain): Promise<{ type: string; content: string }[]> {
-    return (await Promise.all(chain
-      .map(async ({ type, data }): Promise<{ type: string; content: MessageContent.Contents }> => {
-        switch (type) {
-          case 'text':
-            return {
-              type: 'text',
-              content: {
-                text: data.content,
-              },
-            }
-          case 'at': {
-            if (data.id) {
-              return {
-                type: 'text',
-                content: {
-                  text: `<at user_id="${data.id}">${data.name}</at>`,
-                },
-              }
-            } else if (data.type === 'all') {
-              return {
-                type: 'text',
-                content: {
-                  text: '<at user_id="all">所有人</at>',
-                },
-              }
-            } else if (data.type === 'here' || data.role) {
-              this.logger.warn(`@here or @role{${data.role}} is not supported`)
-            }
-            break
+    for (const message of chain) {
+      const { type, data } = message
+      switch (type) {
+        case 'text':
+          buffer.push({
+            text: data.content,
+          })
+          break
+        case 'at': {
+          if (data.id) {
+            buffer.push({
+              text: `<at user_id="${data.id}">${data.name}</at>`,
+            })
+          } else if (data.type === 'all') {
+            buffer.push({
+              text: '<at user_id="all">all</at>',
+            })
+          } else if (data.type === 'here' || data.role) {
+            this.logger.warn(`@here or @role{${data.role}} is not supported`)
           }
-          case 'image':
-          case 'audio':
-          case 'video':
-          case 'file':
-            return {
-              type,
-              content: await this._prepareAssets(type, data),
-            }
+          break
+        }
+        case 'image':
+        case 'audio':
+        case 'video':
+        case 'file': {
+          await sendBuffer()
+          const content = await this._prepareAssets(type, data)
+          const resp = await this.internal.sendMessage('open_id', {
+            content: JSON.stringify(content),
+            // video is marked as 'media' in feishu platform
+            // see https://open.feishu.cn/document/uAjLw4CM/ukTMukTMukTM/im-v1/message/create_json#54406d84
+            msg_type: type === 'video' ? 'media' : type,
+            receive_id: channelId,
+          })
+          messageIds.push(resp.data.message_id)
+          break
+        }
 
-          case 'sharp':
-          case 'face':
-            this.logger.warn(`${type} is not supported`)
-            break
-        }
-      })))
-      .filter(({ content }) => typeof content !== 'undefined')
-      .map(({ type, content }) => {
-        return {
-          type,
-          content: JSON.stringify(content),
-        }
-      })
+        case 'sharp':
+        case 'face':
+          this.logger.warn(`${type} is not supported`)
+          break
+      }
+    }
+
+    // assume there are no more messages in the buffer.
+    await sendBuffer()
+
+    return messageIds
   }
 
   private async _prepareAssets(type: AssetType, data: any): Promise<MessageContent.Contents> {
