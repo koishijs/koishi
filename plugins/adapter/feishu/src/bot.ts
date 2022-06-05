@@ -111,14 +111,14 @@ export class FeishuBot extends Bot<BotConfig> {
         case 'file': {
           await sendBuffer()
           const content = await this._prepareAssets(type, data)
-          const resp = await this.internal.sendMessage('open_id', {
+          const { data: resp } = await this.internal.sendMessage('open_id', {
             content: JSON.stringify(content),
             // video is marked as 'media' in feishu platform
             // see https://open.feishu.cn/document/uAjLw4CM/ukTMukTMukTM/im-v1/message/create_json#54406d84
             msg_type: type === 'video' ? 'media' : type,
             receive_id: channelId,
           })
-          messageIds.push(resp.data.message_id)
+          messageIds.push(resp.message_id)
           break
         }
 
