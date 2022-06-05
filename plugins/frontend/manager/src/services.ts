@@ -7,7 +7,7 @@ class ServiceProvider extends DataService<Dict<string>> {
   constructor(ctx: Context) {
     super(ctx, 'services', { authority: 4 })
 
-    ctx.on('service', () => this.refresh())
+    ctx.on('internal/service', () => this.refresh())
   }
 
   async get(forced = false) {

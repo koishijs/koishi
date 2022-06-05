@@ -37,6 +37,9 @@ function deepEqual(a: any, b: any) {
 const logger = new Logger('watch')
 
 class Watcher {
+  /**
+   * whether the config file is being written
+   */
   public suspend = false
 
   private root: string
@@ -100,7 +103,9 @@ class Watcher {
         if (require.cache[path]) {
           this.ctx.loader.fullReload()
         } else {
+          this.suspend = true
           this.triggerEntryReload()
+          this.suspend = false
         }
       } else {
         if (this.externals.has(path)) {
@@ -132,36 +137,38 @@ class Watcher {
     }
 
     // check plugin changes
-    this.triggerGroupReload(neo.plugins || {}, old.plugins || {}, this.ctx.app.state.runtime)
+    this.triggerGroupReload(neo.plugins || {}, old.plugins || {}, this.ctx.loader.runtime)
   }
 
   private triggerGroupReload(neo: Dict, old: Dict, root: Plugin.Runtime) {
     for (const name in { ...old, ...neo }) {
       if (name.startsWith('~') || name.startsWith('$')) continue
-      const dispose = root[Loader.kRecord][name]
+      const fork = root[Loader.kRecord][name]
       if (name.startsWith('+')) {
         // handle group config changes
-        if (!dispose) {
+        if (!fork) {
           // load new group
-          this.ctx.loader.loadGroup(name, neo[name], root)
+          this.ctx.loader.loadGroup(name, neo[name], root.context)
         } else if (name in neo) {
-          this.triggerGroupReload(neo[name] || {}, old[name] || {}, dispose.runtime)
+          this.triggerGroupReload(neo[name] || {}, old[name] || {}, fork.runtime)
         } else {
-          dispose()
+          fork.dispose()
           delete root[Loader.kRecord][name]
           this.ctx.logger('app').info(`unload group %c`, name.slice(1))
         }
       } else {
         // handle plugin config changes
         if (deepEqual(old[name], neo[name])) continue
-        dispose?.()
-        if (name in neo) {
-          const action = dispose ? 'reload' : 'apply'
-          root[Loader.kRecord][name] = this.ctx.loader.loadPlugin(name, neo[name], root.context, action)
-        } else {
+        if (!(name in neo)) {
+          fork?.dispose()
           delete root[Loader.kRecord][name]
           this.ctx.logger('app').info(`unload plugin %c`, name)
           this.ctx.loader.diagnose()
+        } else if (fork) {
+          fork.update(neo[name])
+          this.ctx.logger('app').info(`reload plugin %c`, name)
+        } else {
+          root[Loader.kRecord][name] = this.ctx.loader.loadPlugin(name, neo[name], root.context)
         }
       }
     }

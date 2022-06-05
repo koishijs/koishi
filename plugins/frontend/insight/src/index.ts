@@ -30,7 +30,7 @@ class Insight extends DataService<Insight.Payload> {
 
     ctx.on('plugin-added', this.update)
     ctx.on('plugin-removed', this.update)
-    ctx.on('service', this.update)
+    ctx.on('internal/service', this.update)
   }
 
   stop() {
