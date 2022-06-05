@@ -8,6 +8,7 @@ export interface BotConfig extends Bot.BaseConfig, Quester.Config {
   endpoint: string
   appId: string
   appSecret: string
+  encryptKey?: string
 }
 
 type AssetType = 'image' | 'audio' | 'video' | 'file'
