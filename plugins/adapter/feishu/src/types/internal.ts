@@ -1,9 +1,10 @@
 import FormData from 'form-data'
-import { Dict, makeArray, Quester } from 'koishi'
+import { Dict, Logger, makeArray, Quester } from 'koishi'
 import { AxiosRequestConfig } from 'axios'
 
 export interface Internal {}
 
+const logger = new Logger('feishu')
 export interface BaseResponse {
   /** error code. would be 0 if success, and non-0 if failed. */
   code: number
@@ -21,6 +22,7 @@ export class Internal {
     if (code === 0) {
       return response
     } else {
+      logger.debug('response: %o', response)
       throw new Error(`HTTP response with non-zero status (${code}) with message "${msg}"`)
     }
   }
@@ -30,7 +32,7 @@ export class Internal {
       for (const key in routes[path]) {
         const method = key as Method
         for (const name of makeArray(routes[path][method])) {
-          Internal.prototype[name] = function (this: Internal, ...args: any[]) {
+          Internal.prototype[name] = async function (this: Internal, ...args: any[]) {
             const raw = args.join(', ')
             const url = path.replace(/\{([^}]+)\}/g, () => {
               if (!args.length) throw new Error(`too few arguments for ${path}, received ${raw}`)
@@ -52,7 +54,7 @@ export class Internal {
             } else if (args.length > 1) {
               throw new Error(`too many arguments for ${path}, received ${raw}`)
             }
-            return this.processReponse(this.http(method, url, config))
+            return this.processReponse(await this.http(method, url, config))
           }
         }
       }
