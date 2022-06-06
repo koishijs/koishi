@@ -156,7 +156,7 @@ describe('Command API', () => {
     })
 
     it('patch command', () => {
-      const dispose = app.plugin((ctx) => {
+      const fork = app.plugin((ctx) => {
         ctx.command('foo', { patch: true }).alias('fooo').option('opt', 'option 1')
         ctx.command('abc', { patch: true }).alias('abcd').option('opt', 'option 1')
       })
@@ -168,7 +168,7 @@ describe('Command API', () => {
       expect(app.$commander._commands.get('abc')).to.be.undefined
       expect(app.$commander._commands.get('abcd')).to.be.undefined
 
-      dispose()
+      fork.dispose()
       expect(app.$commander._commands.get('foo')).to.be.ok
       expect(app.$commander._commands.get('fooo')).to.be.undefined
       expect(Object.keys(foo._options)).to.have.length(0)

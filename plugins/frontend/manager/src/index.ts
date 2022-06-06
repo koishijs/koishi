@@ -13,6 +13,7 @@ export * from './market'
 export * from './packages'
 export * from './protocols'
 export * from './services'
+export * from './writer'
 
 export {
   Installer,
@@ -21,6 +22,7 @@ export {
   PackageProvider,
   AdapterProvider,
   ServiceProvider,
+  ConfigWriter,
 }
 
 declare module '@koishijs/plugin-console' {
@@ -32,6 +34,7 @@ declare module '@koishijs/plugin-console' {
       packages: PackageProvider
       protocols: AdapterProvider
       services: ServiceProvider
+      config: ConfigWriter
     }
   }
 }

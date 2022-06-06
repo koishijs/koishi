@@ -1,4 +1,4 @@
-import { Adapter, App, Context, Dict, Logger, omit, pick, Plugin, remove, Schema } from 'koishi'
+import { Adapter, App, Context, Dict, Logger, pick, Plugin, remove, Schema } from 'koishi'
 import { DataService } from '@koishijs/plugin-console'
 import { PackageJson } from '@koishijs/market'
 import { promises as fsp } from 'fs'
@@ -80,7 +80,6 @@ class PackageProvider extends DataService<Dict<PackageProvider.Data>> {
       name: '',
       shortname: '',
       schema: App.Config,
-      config: omit(this.ctx.loader.config, ['plugins']),
     })
 
     return Object.fromEntries(packages.filter(x => x).map(data => [data.name, data]))
@@ -137,12 +136,10 @@ class PackageProvider extends DataService<Dict<PackageProvider.Data>> {
     if (newLength > oldLength) this.ctx.console.protocols.refresh()
 
     // check plugin state
-    const { plugins } = this.ctx.loader.config
-    const state = this.registry.get(exports)
-    result.id = state?.id
-    result.root = result.shortname in plugins
+    const runtime = this.registry.get(exports)
+    result.id = runtime?.id
+    result.forkable = runtime?.isForkable
     result.schema = exports?.Config || exports?.schema
-    result.config = plugins[result.shortname] || plugins['~' + result.shortname]
 
     // make sure that result can be serialized into json
     JSON.stringify(result)
@@ -156,8 +153,7 @@ namespace PackageProvider {
 
   export interface Data extends Partial<PackageJson> {
     id?: string
-    root?: boolean
-    config?: any
+    forkable?: boolean
     shortname?: string
     schema?: Schema
     workspace?: boolean

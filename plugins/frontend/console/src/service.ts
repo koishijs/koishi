@@ -1,4 +1,4 @@
-import { Awaitable, Context, Service } from 'koishi'
+import { Context, Service } from 'koishi'
 import Console from '.'
 
 export namespace DataService {
@@ -21,7 +21,7 @@ export abstract class DataService<T = never> extends Service {
     })
   }
 
-  public get(forced?: boolean): Awaitable<T> {
+  public get(forced?: boolean): Promise<T> {
     return null
   }
 

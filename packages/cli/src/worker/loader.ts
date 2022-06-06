@@ -28,8 +28,8 @@ const context = {
 }
 
 export default class Loader extends ConfigLoader<App.Config> {
-  static readonly kRecord = Symbol('record')
-  static readonly kWarning = Symbol('warning')
+  static readonly kRecord = Symbol.for('koishi.loader.record')
+  static readonly kWarning = Symbol.for('koishi.loader.warning')
 
   app: App
   config: App.Config
@@ -94,7 +94,7 @@ export default class Loader extends ConfigLoader<App.Config> {
     return ns.unwrapExports(require(this.cache[name]))
   }
 
-  loadPlugin(name: string, config: any, parent: Context) {
+  private forkPlugin(name: string, config: any, parent: Context) {
     const plugin = this.resolvePlugin(name)
     if (!plugin) return
 
@@ -107,6 +107,26 @@ export default class Loader extends ConfigLoader<App.Config> {
     return parent.plugin(plugin, this.interpolate(config))
   }
 
+  reloadPlugin(runtime: Plugin.Runtime, name: string, config: any) {
+    const fork = runtime[Loader.kRecord][name]
+    if (fork) {
+      fork.update(config, true)
+      logger.info(`reload plugin %c`, name)
+    } else {
+      runtime[Loader.kRecord][name] = this.forkPlugin(name, config, runtime.context)
+    }
+  }
+
+  unloadPlugin(runtime: Plugin.Runtime, name: string) {
+    const fork = runtime[Loader.kRecord][name]
+    if (fork) {
+      fork.dispose()
+      logger.info(`unload plugin %c`, name)
+      delete runtime[Loader.kRecord][name]
+      this.diagnose(true)
+    }
+  }
+
   loadGroup(name: string, plugins: Dict, parent: Context) {
     logger.info(`%s group %c`, 'load', name)
     const fork = parent.plugin({ name, apply() {} }, plugins)
@@ -117,7 +137,7 @@ export default class Loader extends ConfigLoader<App.Config> {
       if (name.startsWith('+')) {
         record[name] = this.loadGroup(name.slice(1), plugins[name], context)
       } else {
-        record[name] = this.loadPlugin(name, plugins[name], context)
+        this.reloadPlugin(fork.runtime, name, plugins[name])
       }
     }
     return fork
@@ -130,8 +150,6 @@ export default class Loader extends ConfigLoader<App.Config> {
     this.runtime = this.loadGroup('Loader', this.config.plugins, app).runtime
 
     app.on('internal/update', (fork, value) => {
-      // do not rewrite config if it's being written
-      if (this.app.watcher.suspend) return
       const { runtime } = fork.parent.state
       const record = runtime[Loader.kRecord]
       if (!record) return

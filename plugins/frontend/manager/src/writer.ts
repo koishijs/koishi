@@ -1,21 +1,23 @@
-import { Adapter, Bot, Context } from 'koishi'
+import { DataService } from '@koishijs/plugin-console'
+import { Adapter, App, Bot, Context } from 'koishi'
 import { Loader } from '@koishijs/cli'
 
 declare module '@koishijs/plugin-console' {
   interface Events {
     'manager/app-reload'(config: any): void
-    'manager/plugin-reload'(name: string, config: any): void
-    'manager/plugin-unload'(name: string, config: any): void
+    'manager/plugin-reload'(path: string, config: any): void
+    'manager/plugin-unload'(path: string, config: any): void
     'manager/bot-update'(id: string, adapter: string, config: any): void
     'manager/bot-remove'(id: string): void
   }
 }
 
-export default class ConfigWriter {
+class ConfigWriter extends DataService<App.Config> {
   private loader: Loader
   private plugins: {}
 
-  constructor(private ctx: Context) {
+  constructor(ctx: Context) {
+    super(ctx, 'config', { authority: 4 })
     this.loader = ctx.loader
     this.plugins = ctx.loader.config.plugins
 
@@ -40,6 +42,10 @@ export default class ConfigWriter {
     }, { authority: 4 })
   }
 
+  async get() {
+    return this.loader.config
+  }
+
   reloadApp(config: any) {
     this.loader.config = config
     this.loader.config.plugins = this.plugins
@@ -47,18 +53,31 @@ export default class ConfigWriter {
     this.loader.fullReload()
   }
 
-  reloadPlugin(name: string, config: any) {
-    delete this.plugins['~' + name]
-    this.plugins[name] = config
-    this.loader.writeConfig()
-    this.loader.reloadPlugin(name)
+  private resolve(path: string) {
+    const segments = path.split('.')
+    let runtime = this.loader.runtime
+    let name = segments.shift()
+    while (segments.length) {
+      runtime = runtime[Symbol.for('koishi.loader.record')][name].runtime
+      name = segments.shift()
+    }
+    return [runtime, name] as const
   }
 
-  unloadPlugin(name: string, config: any) {
-    delete this.plugins[name]
-    this.plugins['~' + name] = config
+  reloadPlugin(path: string, config: any) {
+    const [runtime, name] = this.resolve(path)
+    this.loader.reloadPlugin(runtime, name, config)
+    delete runtime.config['~' + name]
+    runtime.config[name] = config
     this.loader.writeConfig()
-    this.loader.unloadPlugin(name)
+  }
+
+  unloadPlugin(path: string, config: any) {
+    const [runtime, name] = this.resolve(path)
+    this.loader.unloadPlugin(runtime, name)
+    delete runtime.config[name]
+    runtime.config['~' + name] = config
+    this.loader.writeConfig()
   }
 
   updateBot(id: string, adapter: string, config: any) {
@@ -72,7 +91,7 @@ export default class ConfigWriter {
       if (!this.plugins[name]) {
         this.plugins[name] = { ...this.plugins['~' + name] }
         delete this.plugins['~' + name]
-        this.loader.reloadPlugin(name)
+        this.loader.reloadPlugin(this.loader.runtime, name, this.plugins[name])
       }
       this.plugins[name].bots.push(config)
       bot = this.ctx.bots.create(adapter, config)
@@ -96,3 +115,5 @@ export default class ConfigWriter {
     return bot.stop()
   }
 }
+
+export default ConfigWriter

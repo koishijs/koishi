@@ -51,7 +51,7 @@ class Installer extends DataService<Dict<Dependency>> {
     return this.ctx.app.baseDir
   }
 
-  get(force = false) {
+  async get(force = false) {
     if (!force && this._payload) return this._payload
     const results: Dict<Dependency> = {}
     for (const name in this.manifest.dependencies) {

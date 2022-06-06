@@ -56,7 +56,7 @@ class Insight extends DataService<Insight.Payload> {
     // if (Object.keys(payload).length) this.patch(payload)
   }, 1000)
 
-  get() {
+  async get() {
     const nodes: Insight.Node[] = []
     const edges: Insight.Link[] = []
     for (const runtime of this.ctx.app.registry.values()) {

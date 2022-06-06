@@ -103,9 +103,7 @@ class Watcher {
         if (require.cache[path]) {
           this.ctx.loader.fullReload()
         } else {
-          this.suspend = true
           this.triggerEntryReload()
-          this.suspend = false
         }
       } else {
         if (this.externals.has(path)) {
@@ -140,35 +138,29 @@ class Watcher {
     this.triggerGroupReload(neo.plugins || {}, old.plugins || {}, this.ctx.loader.runtime)
   }
 
-  private triggerGroupReload(neo: Dict, old: Dict, root: Plugin.Runtime) {
+  private triggerGroupReload(neo: Dict, old: Dict, runtime: Plugin.Runtime) {
     for (const name in { ...old, ...neo }) {
       if (name.startsWith('~') || name.startsWith('$')) continue
-      const fork = root[Loader.kRecord][name]
+      const fork = runtime[Loader.kRecord][name]
       if (name.startsWith('+')) {
         // handle group config changes
         if (!fork) {
           // load new group
-          this.ctx.loader.loadGroup(name, neo[name], root.context)
+          this.ctx.loader.loadGroup(name, neo[name], runtime.context)
         } else if (name in neo) {
           this.triggerGroupReload(neo[name] || {}, old[name] || {}, fork.runtime)
         } else {
           fork.dispose()
-          delete root[Loader.kRecord][name]
+          delete runtime[Loader.kRecord][name]
           this.ctx.logger('app').info(`unload group %c`, name.slice(1))
         }
       } else {
         // handle plugin config changes
         if (deepEqual(old[name], neo[name])) continue
-        if (!(name in neo)) {
-          fork?.dispose()
-          delete root[Loader.kRecord][name]
-          this.ctx.logger('app').info(`unload plugin %c`, name)
-          this.ctx.loader.diagnose()
-        } else if (fork) {
-          fork.update(neo[name])
-          this.ctx.logger('app').info(`reload plugin %c`, name)
+        if (name in neo) {
+          this.ctx.loader.reloadPlugin(runtime, name, neo[name])
         } else {
-          root[Loader.kRecord][name] = this.ctx.loader.loadPlugin(name, neo[name], root.context)
+          this.ctx.loader.unloadPlugin(runtime, name)
         }
       }
     }
