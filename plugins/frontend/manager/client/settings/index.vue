@@ -1,19 +1,25 @@
 <template>
   <k-card-aside class="page-settings">
     <template #aside>
-      <plugin-select v-model="current"></plugin-select>
+      <plugin-select v-model="path"></plugin-select>
     </template>
-    <plugin-settings :key="current" :current="current"></plugin-settings>
+    <k-content class="plugin-view">
+      <global-settings v-if="current.path === '@global'" :data="current"></global-settings>
+      <group-settings v-else-if="current.children" :data="current"></group-settings>
+      <plugin-settings v-else :current="current"></plugin-settings>
+    </k-content>
   </k-card-aside>
 </template>
 
 <script setup lang="ts">
 
-import { store } from '@koishijs/client'
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { plugins } from './utils'
+import GlobalSettings from './global.vue'
+import GroupSettings from './group.vue'
 import PluginSelect from './select.vue'
-import PluginSettings from './settings.vue'
+import PluginSettings from './plugin.vue'
 
 function join(source: string | string[]) {
   return Array.isArray(source) ? source.join('/') : source || ''
@@ -22,16 +28,18 @@ function join(source: string | string[]) {
 const route = useRoute()
 const router = useRouter()
 
-const current = computed<string>({
+const path = computed<string>({
   get() {
     const name = join(route.params.name)
-    return store.packages[name] ? name : ''
+    return name in plugins.value.map ? name : '@global'
   },
   set(name) {
-    if (!store.packages[name]) name = ''
-    router.replace('/settings/' + name)
+    if (!(name in plugins.value.map)) name = '@global'
+    router.replace('/plugins/' + name)
   },
 })
+
+const current = computed(() => plugins.value.map[path.value])
 
 </script>
 

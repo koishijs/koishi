@@ -40,6 +40,8 @@ class ConfigWriter extends DataService<App.Config> {
     ctx.console.addListener('manager/bot-remove', (id) => {
       this.removeBot(id)
     }, { authority: 4 })
+
+    ctx.on('config', () => this.refresh())
   }
 
   async get() {
@@ -54,7 +56,7 @@ class ConfigWriter extends DataService<App.Config> {
   }
 
   private resolve(path: string) {
-    const segments = path.split('.')
+    const segments = path.split('/')
     let runtime = this.loader.runtime
     let name = segments.shift()
     while (segments.length) {

@@ -4,6 +4,7 @@ import { PackageJson } from '@koishijs/market'
 import { MarketProvider } from '@koishijs/plugin-manager'
 import { store } from '@koishijs/client'
 import { getMixedMeta } from '../utils'
+import {} from '@koishijs/cli'
 
 interface DepInfo {
   name: string
@@ -61,11 +62,6 @@ function getEnvInfo(name: string) {
   const data = getMixedMeta(name)
   const result: EnvInfo = { impl: [], using: {}, deps: {} }
 
-  // nested plugins
-  if (!data.root && data.id) {
-    result.invalid = true
-  }
-
   // check implementations
   for (const name of getKeywords('impl', data)) {
     if (name === 'adapter') continue
@@ -98,4 +94,53 @@ function getEnvInfo(name: string) {
 
 export const envMap = computed(() => {
   return Object.fromEntries(Object.keys(store.packages).map(name => [name, getEnvInfo(name)]))
+})
+
+export interface Tree {
+  label: string
+  path: string
+  config?: any
+  disabled?: boolean
+  children?: Tree[]
+}
+
+function getTree(prefix: string, plugins: any, map: Dict<Tree>): Tree[] {
+  const trees: Tree[] = []
+  for (const key in plugins) {
+    if (key.startsWith('$')) continue
+    const label = key.replace(/^~/, '')
+    const path = prefix + label
+    const config = plugins[key]
+    const node: Tree = { label, path, config }
+    if (key.startsWith('~')) {
+      node.disabled = true
+    }
+    if (key.startsWith('+')) {
+      node.label = '分组：' + label.slice(1)
+      node.children = getTree(path + '/', config, map)
+    }
+    map[path] = node
+    trees.push(node)
+  }
+  return trees
+}
+
+export const plugins = computed(() => {
+  const map: Dict<Tree> = {
+    '@global': {
+      label: '全局设置',
+      path: '@global',
+      config: store.config,
+    },
+    '': {
+      label: '所有插件',
+      path: '',
+      config: store.config.plugins,
+    },
+  }
+  map[''].children = getTree('', store.config.plugins, map)
+  return {
+    map,
+    data: [map['']],
+  }
 })

@@ -7,6 +7,11 @@ import Watcher from './watcher'
 export { Loader, Watcher }
 
 declare module 'koishi' {
+  interface EventMap {
+    'exit'(signal: NodeJS.Signals): Promise<void>
+    'config'(): void
+  }
+
   interface App {
     prologue: string[]
     watcher: Watcher

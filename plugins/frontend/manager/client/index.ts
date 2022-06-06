@@ -31,12 +31,12 @@ export default (ctx: Context) => {
   })
 
   ctx.addPage({
-    path: '/settings/:name*',
+    path: '/plugins/:name*',
     name: '插件配置',
     icon: 'cog',
     order: 630,
     authority: 4,
-    fields: ['packages', 'services', 'dependencies'],
+    fields: ['config', 'packages', 'services', 'dependencies'],
     component: Settings,
   })
 

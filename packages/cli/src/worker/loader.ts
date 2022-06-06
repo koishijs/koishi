@@ -82,6 +82,7 @@ export default class Loader extends ConfigLoader<App.Config> {
     // prevent hot reload when it's being written
     if (this.app.watcher) this.app.watcher.suspend = true
     super.writeConfig()
+    this.app.emit('config')
   }
 
   resolvePlugin(name: string) {

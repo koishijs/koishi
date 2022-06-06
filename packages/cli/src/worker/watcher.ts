@@ -136,6 +136,7 @@ class Watcher {
 
     // check plugin changes
     this.triggerGroupReload(neo.plugins || {}, old.plugins || {}, this.ctx.loader.runtime)
+    this.ctx.emit('config')
   }
 
   private triggerGroupReload(neo: Dict, old: Dict, runtime: Plugin.Runtime) {

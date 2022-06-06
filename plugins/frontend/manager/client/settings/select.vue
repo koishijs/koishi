@@ -5,10 +5,15 @@
         <k-icon name="search"></k-icon>
       </el-input>
     </div>
-    <k-tab-item class="k-tab-group-title" label="" v-model="model">
+    <k-tab-item class="k-tab-group-title" label="@global" v-model="model">
       全局设置
     </k-tab-item>
-    <div class="k-tab-group-title">
+    <el-tree :data="plugins.data" :expand-on-click-node="false" default-expand-all :props="{ class: getClass }"
+      @node-click="handleClick"
+      #="{ node }">
+      {{ node.label }}
+    </el-tree>
+    <!-- <div class="k-tab-group-title">
       运行中的插件
     </div>
     <k-tab-group
@@ -31,7 +36,7 @@
       :data="packages" v-model="model"
       :filter="data => !data.id && data.name && (!config.showDepsOnly || store.dependencies[data.name])" #="data">
       <span :class="{ readonly: isReadonly(data) }">{{ data.shortname }}</span>
-    </k-tab-group>
+    </k-tab-group> -->
   </el-scrollbar>
 </template>
 
@@ -39,7 +44,7 @@
 
 import { ref, computed, onActivated, nextTick } from 'vue'
 import { store } from '@koishijs/client'
-import { envMap } from './utils'
+import { Tree, envMap, plugins } from './utils'
 import { config } from '../utils'
 
 const props = defineProps<{
@@ -52,6 +57,18 @@ const model = computed({
   get: () => props.modelValue,
   set: val => emits('update:modelValue', val),
 })
+
+function handleClick(tree: Tree) {
+  model.value = tree.path
+}
+
+function getClass(tree: Tree) {
+  const words: string[] = []
+  if (tree.children) words.push('is-group')
+  if (tree.disabled) words.push('is-disabled')
+  if (tree.path === model.value) words.push('is-active')
+  return words.join(' ')
+}
 
 const packages = computed(() => {
   return Object.fromEntries(Object.values(store.packages)
@@ -71,6 +88,7 @@ onActivated(async () => {
   const container = root.value.$el
   await nextTick()
   const element = container.querySelector('.k-tab-item.active') as HTMLElement
+  if (!element) return
   root.value['setScrollTop'](element.offsetTop - (container.offsetHeight - element.offsetHeight) / 2)
 })
 
@@ -121,6 +139,43 @@ onActivated(async () => {
 
   .k-tab-item:hover i.remove {
     opacity: 0.4;
+  }
+
+  .el-tree {
+    margin-top: 0.5rem;
+    user-select: none;
+  }
+
+  .el-tree-node__expand-icon {
+    margin-left: 8px;
+  }
+
+  .el-tree-node.is-group {
+    > .el-tree-node__content {
+      font-weight: bold;
+    }
+  }
+
+  .el-tree-node.is-disabled {
+    > .el-tree-node__content {
+      color: var(--fg3t);
+    }
+  }
+
+  .el-tree-node.is-active {
+    > .el-tree-node__content {
+      background-color: var(--hover-bg);
+      color: var(--active);
+    }
+  }
+
+  .el-tree-node__content {
+    line-height: 2.25rem;
+    height: 2.25rem;
+  }
+
+  .el-tree-node__label {
+    font-size: 16px;
   }
 }
 
