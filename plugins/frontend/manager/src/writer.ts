@@ -12,6 +12,19 @@ declare module '@koishijs/plugin-console' {
   }
 }
 
+function rename(object: any, old: string, neo: string, value: string) {
+  const keys = Object.keys(object)
+  const index = keys.indexOf(old)
+  const rest = index < 0 ? [] : keys.slice(index + 1)
+  const temp = { [neo]: value }
+  delete object[old]
+  for (const key of rest) {
+    temp[key] = object[key]
+    delete object[key]
+  }
+  Object.assign(object, temp)
+}
+
 class ConfigWriter extends DataService<App.Config> {
   private loader: Loader
   private plugins: {}
@@ -69,16 +82,14 @@ class ConfigWriter extends DataService<App.Config> {
   reloadPlugin(path: string, config: any) {
     const [runtime, name] = this.resolve(path)
     this.loader.reloadPlugin(runtime, name, config)
-    delete runtime.config['~' + name]
-    runtime.config[name] = config
+    rename(runtime.config, '~' + name, name, config)
     this.loader.writeConfig()
   }
 
   unloadPlugin(path: string, config: any) {
     const [runtime, name] = this.resolve(path)
     this.loader.unloadPlugin(runtime, name)
-    delete runtime.config[name]
-    runtime.config['~' + name] = config
+    rename(runtime.config, name, '~' + name, config)
     this.loader.writeConfig()
   }
 

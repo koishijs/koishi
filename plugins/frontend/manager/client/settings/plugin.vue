@@ -70,6 +70,7 @@ import { send, store, clone } from '@koishijs/client'
 import { computed, ref, watch } from 'vue'
 import { getMixedMeta } from '../utils'
 import { envMap, Tree } from './utils'
+import KDepLink from './dep-link.vue'
 
 const props = defineProps<{
   current: Tree
