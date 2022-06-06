@@ -1,15 +1,24 @@
 import { DataService } from '@koishijs/plugin-console'
-import { Adapter, App, Bot, Context } from 'koishi'
+import { Adapter, App, Bot, Context, remove } from 'koishi'
 import { Loader } from '@koishijs/cli'
 
 declare module '@koishijs/plugin-console' {
   interface Events {
     'manager/app-reload'(config: any): void
+    'manager/teleport'(source: string, target: string, index: number): void
     'manager/plugin-reload'(path: string, config: any): void
     'manager/plugin-unload'(path: string, config: any): void
     'manager/bot-update'(id: string, adapter: string, config: any): void
     'manager/bot-remove'(id: string): void
   }
+}
+
+function insertKey(object: {}, temp: {}, rest: string[]) {
+  for (const key of rest) {
+    temp[key] = object[key]
+    delete object[key]
+  }
+  Object.assign(object, temp)
 }
 
 function rename(object: any, old: string, neo: string, value: string) {
@@ -18,11 +27,16 @@ function rename(object: any, old: string, neo: string, value: string) {
   const rest = index < 0 ? [] : keys.slice(index + 1)
   const temp = { [neo]: value }
   delete object[old]
-  for (const key of rest) {
-    temp[key] = object[key]
-    delete object[key]
+  insertKey(object, temp, rest)
+}
+
+function dropKey(plugins: {}, name: string) {
+  if (!(name in plugins)) {
+    name = '~' + name
   }
-  Object.assign(object, temp)
+  const value = plugins[name]
+  delete plugins[name]
+  return { [name]: value }
 }
 
 class ConfigWriter extends DataService<App.Config> {
@@ -36,6 +50,10 @@ class ConfigWriter extends DataService<App.Config> {
 
     ctx.console.addListener('manager/app-reload', (config) => {
       this.reloadApp(config)
+    }, { authority: 4 })
+
+    ctx.console.addListener('manager/teleport', (source, target, index) => {
+      this.teleport(source, target, index)
     }, { authority: 4 })
 
     ctx.console.addListener('manager/plugin-reload', (name, config) => {
@@ -90,6 +108,25 @@ class ConfigWriter extends DataService<App.Config> {
     const [runtime, name] = this.resolve(path)
     this.loader.unloadPlugin(runtime, name)
     rename(runtime.config, name, '~' + name, config)
+    this.loader.writeConfig()
+  }
+
+  teleport(source: string, target: string, index: number) {
+    const [runtimeS, nameS] = this.resolve(source)
+    const [runtimeT] = this.resolve(target ? target + '/' : '')
+
+    // teleport fork
+    const fork = runtimeS[Symbol.for('koishi.loader.record')][nameS]
+    if (fork) {
+      remove(fork.parent.state.disposables, fork.dispose)
+      fork.parent = runtimeT.context
+      fork.parent.state.disposables.push(fork.dispose)
+    }
+
+    // teleport config
+    const temp = dropKey(runtimeS.config, nameS)
+    const rest = Object.keys(runtimeT.config).slice(index)
+    insertKey(runtimeT.config, temp, rest)
     this.loader.writeConfig()
   }
 

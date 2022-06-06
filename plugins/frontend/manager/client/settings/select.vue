@@ -8,44 +8,26 @@
     <k-tab-item class="k-tab-group-title" label="@global" v-model="model">
       全局设置
     </k-tab-item>
-    <el-tree :data="plugins.data" :expand-on-click-node="false" default-expand-all :props="{ class: getClass }"
+    <el-tree
+      :data="plugins.data"
+      :expand-on-click-node="false"
+      default-expand-all draggable
+      :props="{ class: getClass }"
+      :allow-drag="allowDrag"
+      :allow-drop="allowDrop"
       @node-click="handleClick"
+      @node-drop="handleDrop"
       #="{ node }">
       {{ node.label }}
     </el-tree>
-    <!-- <div class="k-tab-group-title">
-      运行中的插件
-    </div>
-    <k-tab-group
-      :data="packages" v-model="model"
-      :filter="data => data.id" #="data">
-      <span :class="{ readonly: isReadonly(data) }">{{ data.shortname }}</span>
-    </k-tab-group>
-    <div class="k-tab-group-title">
-      未运行的插件
-      <k-hint placement="right" name="filter" v-model="config.showDepsOnly">
-        <template v-if="config.showDepsOnly">
-          <b>筛选：已开启</b><br>只显示依赖的插件。
-        </template>
-        <template v-else>
-          <b>筛选：已关闭</b><br>显示本地的全部插件。
-        </template>
-      </k-hint>
-    </div>
-    <k-tab-group
-      :data="packages" v-model="model"
-      :filter="data => !data.id && data.name && (!config.showDepsOnly || store.dependencies[data.name])" #="data">
-      <span :class="{ readonly: isReadonly(data) }">{{ data.shortname }}</span>
-    </k-tab-group> -->
   </el-scrollbar>
 </template>
 
 <script lang="ts" setup>
 
 import { ref, computed, onActivated, nextTick } from 'vue'
-import { store } from '@koishijs/client'
-import { Tree, envMap, plugins } from './utils'
-import { config } from '../utils'
+import { store, send } from '@koishijs/client'
+import { Tree, plugins } from './utils'
 
 const props = defineProps<{
   modelValue: string
@@ -58,8 +40,39 @@ const model = computed({
   set: val => emits('update:modelValue', val),
 })
 
+function allowDrag(node: Tree) {
+  return node.path !== ''
+}
+
+interface Node {
+  data: Tree
+  parent: Node
+  isLeaf: boolean
+  childNodes: Node[]
+}
+
+function allowDrop(source: Node, target: Node, type: 'inner' | 'prev' | 'next') {
+  return type === 'inner' ? !target.isLeaf : target.data.path !== ''
+}
+
 function handleClick(tree: Tree) {
   model.value = tree.path
+}
+
+function handleDrop(source: Node, target: Node, position: 'before' | 'after' | 'inner', event: DragEvent) {
+  const parent = position === 'inner' ? target : target.parent
+  const oldPath = source.data.path
+  const ctxPath = parent.data.path
+  const index = parent.childNodes.findIndex(node => node.data.path === oldPath)
+  send('manager/teleport', oldPath, ctxPath, index)
+  const segments1 = oldPath.split('/')
+  const segments2 = ctxPath ? ctxPath.split('/') : []
+  segments2.push(segments1.pop())
+  const newPath = source.data.path = segments2.join('/')
+  if (oldPath === newPath) return
+  plugins.value.map[newPath] = plugins.value.map[oldPath]
+  delete plugins.value.map[oldPath]
+  emits('update:modelValue', newPath)
 }
 
 function getClass(tree: Tree) {
@@ -79,10 +92,6 @@ const packages = computed(() => {
 
 const root = ref<{ $el: HTMLElement }>(null)
 const keyword = ref('')
-
-function isReadonly(data: any) {
-  return envMap.value[data.name].invalid
-}
 
 onActivated(async () => {
   const container = root.value.$el
