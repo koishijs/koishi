@@ -1,5 +1,5 @@
 import { Dict } from 'koishi'
-import { computed } from 'vue'
+import { computed, reactive, watch } from 'vue'
 import { PackageJson } from '@koishijs/market'
 import { MarketProvider } from '@koishijs/plugin-manager'
 import { store } from '@koishijs/client'
@@ -104,7 +104,7 @@ export interface Tree {
   children?: Tree[]
 }
 
-function getTree(prefix: string, plugins: any, map: Dict<Tree>): Tree[] {
+function getTree(prefix: string, plugins: any): Tree[] {
   const trees: Tree[] = []
   for (const key in plugins) {
     if (key.startsWith('$')) continue
@@ -117,30 +117,31 @@ function getTree(prefix: string, plugins: any, map: Dict<Tree>): Tree[] {
     }
     if (key.startsWith('+')) {
       node.label = '分组：' + label.slice(1)
-      node.children = getTree(path + '/', config, map)
+      node.children = getTree(path + '/', config)
     }
-    map[path] = node
     trees.push(node)
   }
   return trees
 }
 
 export const plugins = computed(() => {
-  const map: Dict<Tree> = {
+  const root: Tree = {
+    label: '所有插件',
+    path: '',
+    config: store.config.plugins,
+    children: getTree('', store.config.plugins),
+  }
+  const paths: Dict<Tree> = {
     '@global': {
       label: '全局设置',
       path: '@global',
       config: store.config,
     },
-    '': {
-      label: '所有插件',
-      path: '',
-      config: store.config.plugins,
-    },
   }
-  map[''].children = getTree('', store.config.plugins, map)
-  return {
-    map,
-    data: [map['']],
+  function traverse(tree: Tree) {
+    paths[tree.path] = tree
+    tree.children?.forEach(traverse)
   }
+  traverse(root)
+  return { root, paths }
 })

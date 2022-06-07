@@ -5,13 +5,14 @@
         <k-icon name="search"></k-icon>
       </el-input>
     </div>
-    <k-tab-item class="k-tab-group-title" label="@global" v-model="model">
-      全局设置
-    </k-tab-item>
+    <k-tab-item class="k-tab-group-title" label="@global" v-model="model">全局设置</k-tab-item>
     <el-tree
-      :data="plugins.data"
+      ref="tree"
+      :data="[plugins.root]"
+      :draggable="true"
+      :default-expand-all="true"
       :expand-on-click-node="false"
-      default-expand-all draggable
+      :filter-node-method="filterNode"
       :props="{ class: getClass }"
       :allow-drag="allowDrag"
       :allow-drop="allowDrop"
@@ -25,8 +26,8 @@
 
 <script lang="ts" setup>
 
-import { ref, computed, onActivated, nextTick } from 'vue'
-import { store, send } from '@koishijs/client'
+import { ref, computed, onActivated, nextTick, watch } from 'vue'
+import { send } from '@koishijs/client'
 import { Tree, plugins } from './utils'
 
 const props = defineProps<{
@@ -40,8 +41,12 @@ const model = computed({
   set: val => emits('update:modelValue', val),
 })
 
-function allowDrag(node: Tree) {
-  return node.path !== ''
+function filterNode(value: string, data: Tree) {
+  return data.label.includes(keyword.value)
+}
+
+function allowDrag(node: Node) {
+  return node.data.path !== ''
 }
 
 interface Node {
@@ -70,8 +75,8 @@ function handleDrop(source: Node, target: Node, position: 'before' | 'after' | '
   segments2.push(segments1.pop())
   const newPath = source.data.path = segments2.join('/')
   if (oldPath === newPath) return
-  plugins.value.map[newPath] = plugins.value.map[oldPath]
-  delete plugins.value.map[oldPath]
+  plugins.value.paths[newPath] = plugins.value.paths[oldPath]
+  delete plugins.value.paths[oldPath]
   emits('update:modelValue', newPath)
 }
 
@@ -83,15 +88,13 @@ function getClass(tree: Tree) {
   return words.join(' ')
 }
 
-const packages = computed(() => {
-  return Object.fromEntries(Object.values(store.packages)
-    .filter(data => data.shortname.includes(keyword.value))
-    .sort((a, b) => a.shortname < b.shortname ? -1 : 1)
-    .map(data => [data.name, data]))
-})
-
 const root = ref<{ $el: HTMLElement }>(null)
+const tree = ref(null)
 const keyword = ref('')
+
+watch(keyword, (val) => {
+  tree.value.filter(val)
+})
 
 onActivated(async () => {
   const container = root.value.$el
