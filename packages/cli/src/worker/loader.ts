@@ -135,8 +135,8 @@ export default class Loader extends ConfigLoader<App.Config> {
     const { context } = fork.runtime
     for (const name in plugins || {}) {
       if (name.startsWith('~') || name.startsWith('$')) continue
-      if (name.startsWith('+')) {
-        record[name] = this.loadGroup(name.slice(1), plugins[name], context)
+      if (name.startsWith('group@')) {
+        record[name] = this.loadGroup(name.slice(6), plugins[name], context)
       } else {
         this.reloadPlugin(fork.runtime, name, plugins[name])
       }

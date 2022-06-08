@@ -69,7 +69,9 @@ function handleDrop(source: Node, target: Node, position: 'before' | 'after' | '
   const oldPath = source.data.path
   const ctxPath = parent.data.path
   const index = parent.childNodes.findIndex(node => node.data.path === oldPath)
-  send('manager/teleport', oldPath, ctxPath, index)
+  if (!oldPath.endsWith('$')) {
+    send('manager/teleport', oldPath, ctxPath, index)
+  }
   const segments1 = oldPath.split('/')
   const segments2 = ctxPath ? ctxPath.split('/') : []
   segments2.push(segments1.pop())

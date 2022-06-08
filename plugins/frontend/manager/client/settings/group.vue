@@ -20,7 +20,7 @@ const props = defineProps<{
 function addPlugin() {
   const tree: Tree = {
     label: '',
-    path: props.current.path ? props.current.path + '/$' : '$',
+    path: props.current.path + '$',
     config: {},
     disabled: true,
   }

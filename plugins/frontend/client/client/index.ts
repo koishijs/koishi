@@ -37,6 +37,7 @@ interface RouteMetaExtension {
 
 export interface PageOptions extends RouteMetaExtension, PageExtension {
   path: string
+  strict?: boolean
   component: Component
 }
 

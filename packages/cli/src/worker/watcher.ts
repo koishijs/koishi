@@ -143,7 +143,7 @@ class Watcher {
     for (const name in { ...old, ...neo }) {
       if (name.startsWith('~') || name.startsWith('$')) continue
       const fork = runtime[Loader.kRecord][name]
-      if (name.startsWith('+')) {
+      if (name.startsWith('group@')) {
         // handle group config changes
         if (!fork) {
           // load new group
@@ -153,7 +153,7 @@ class Watcher {
         } else {
           fork.dispose()
           delete runtime[Loader.kRecord][name]
-          this.ctx.logger('app').info(`unload group %c`, name.slice(1))
+          this.ctx.logger('app').info(`unload group %c`, name.slice(6))
         }
       } else {
         // handle plugin config changes

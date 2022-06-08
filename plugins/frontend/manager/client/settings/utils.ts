@@ -1,5 +1,5 @@
 import { Dict } from 'koishi'
-import { computed, reactive, watch } from 'vue'
+import { computed } from 'vue'
 import { PackageJson } from '@koishijs/market'
 import { MarketProvider } from '@koishijs/plugin-manager'
 import { store } from '@koishijs/client'
@@ -115,8 +115,9 @@ function getTree(prefix: string, plugins: any): Tree[] {
     if (key.startsWith('~')) {
       node.disabled = true
     }
-    if (key.startsWith('+')) {
-      node.label = '分组：' + label.slice(1)
+    if (key.startsWith('group@')) {
+      node.path += '/'
+      node.label = '分组：' + label.slice(6)
       node.children = getTree(path + '/', config)
     }
     trees.push(node)

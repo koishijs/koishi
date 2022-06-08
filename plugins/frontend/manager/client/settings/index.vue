@@ -23,8 +23,8 @@ import GroupSettings from './group.vue'
 import TreeView from './tree.vue'
 import PluginSettings from './plugin.vue'
 
-function join(source: string | string[]) {
-  return Array.isArray(source) ? source.join('/') : source || ''
+function join(source: string | string[], trailing = false) {
+  return Array.isArray(source) ? source.join('/') + (trailing ? '/' : '') : source || ''
 }
 
 const route = useRoute()
@@ -32,7 +32,7 @@ const router = useRouter()
 
 const path = computed<string>({
   get() {
-    const name = join(route.params.name)
+    const name = join(route.params.name, route.fullPath.endsWith('/'))
     return name in plugins.value.paths ? name : '@global'
   },
   set(name) {
