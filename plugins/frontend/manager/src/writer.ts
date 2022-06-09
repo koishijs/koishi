@@ -1,5 +1,5 @@
 import { DataService } from '@koishijs/plugin-console'
-import { Adapter, App, Bot, Context, remove } from 'koishi'
+import { Adapter, App, Bot, Context, Plugin, remove } from 'koishi'
 import { Loader } from '@koishijs/cli'
 
 declare module '@koishijs/plugin-console' {
@@ -23,7 +23,7 @@ function insertKey(object: {}, temp: {}, rest: string[]) {
   Object.assign(object, temp)
 }
 
-function rename(object: any, old: string, neo: string, value: string) {
+function rename(object: any, old: string, neo: string, value: any) {
   const keys = Object.keys(object)
   const index = keys.findIndex(key => key === old || key === '~' + old)
   const rest = index < 0 ? [] : keys.slice(index + 1)
@@ -110,7 +110,7 @@ class ConfigWriter extends DataService<App.Config> {
     if (newKey) {
       this.loader.unloadPlugin(runtime, oldKey)
     }
-    this.loader.reloadPlugin(runtime, newKey, config)
+    this.loader.reloadPlugin(runtime, newKey || oldKey, config)
     rename(runtime.config, oldKey, newKey || oldKey, config)
     this.loader.writeConfig()
     this.refresh()
@@ -151,25 +151,43 @@ class ConfigWriter extends DataService<App.Config> {
     this.loader.writeConfig()
   }
 
-  updateBot(id: string, adapter: string, config: any) {
+  locate(name: string, runtime: Plugin.Runtime) {
+    for (const key in runtime.config) {
+      const value = runtime.config[key]
+      const fork = runtime[Symbol.for('koishi.loader.record')][key]
+      if (key === name) {
+        return value
+      } else if (key === '~' + name) {
+        this.loader.reloadPlugin(runtime, name, value)
+        rename(runtime.config, name, name, value)
+        return value
+      } else if (key.startsWith('group@')) {
+        const result = this.locate(name, fork.runtime)
+        if (result) return result
+      }
+    }
+  }
+
+  updateBot(id: string, platform: string, config: any) {
     let bot: Bot
-    const name = 'adapter-' + adapter
+    const name = 'adapter-' + platform
     if (id) {
       bot = this.ctx.bots.find(bot => bot.id === id)
-      const index = bot.adapter.bots.indexOf(bot)
-      this.plugins[name].bots[index] = config
+      const index = bot.adapter.bots.filter(bot => !bot.hidden).indexOf(bot)
+      bot.adapter.ctx.state.parent.state.runtime.config[name].bots[index] = config
     } else {
-      if (!this.plugins[name]) {
-        this.plugins[name] = { ...this.plugins['~' + name] }
-        delete this.plugins['~' + name]
-        this.loader.reloadPlugin(this.loader.runtime, name, this.plugins[name])
+      let record = this.locate(name, this.loader.runtime)
+      if (!record) {
+        record = this.loader.runtime.config[name] = { bots: [] }
+        this.loader.reloadPlugin(this.loader.runtime, name, record)
       }
-      this.plugins[name].bots.push(config)
-      bot = this.ctx.bots.create(adapter, config)
+      record.bots.push(config)
+      // make sure adapter get correct caller context
+      bot = this.loader.runtime[Symbol.for('koishi.loader.record')][name].context.bots.create(platform, config)
     }
     this.loader.writeConfig()
     this.refresh()
-    bot.config = Adapter.library[Adapter.join(adapter, bot.protocol)].schema(config)
+    bot.config = Adapter.library[Adapter.join(platform, bot.protocol)].schema(config)
     if (config.disabled) {
       bot.stop()
     } else {
@@ -179,9 +197,10 @@ class ConfigWriter extends DataService<App.Config> {
 
   removeBot(id: string) {
     const bot = this.ctx.bots.find(bot => bot.id === id)
-    const index = bot.adapter.bots.indexOf(bot)
+    const index = bot.adapter.bots.filter(bot => !bot.hidden).indexOf(bot)
     const name = 'adapter-' + bot.adapter.platform
-    this.plugins[name].bots.splice(index, 1)
+    const config = bot.adapter.ctx.state.parent.state.runtime.config[name]
+    config.bots.splice(index, 1)
     this.loader.writeConfig()
     this.refresh()
     this.ctx.bots.remove(id)
