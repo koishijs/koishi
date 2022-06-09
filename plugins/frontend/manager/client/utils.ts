@@ -1,6 +1,6 @@
 import { Dict } from 'koishi'
 import { computed, watch } from 'vue'
-import { createStorage, store } from '@koishijs/client'
+import { createStorage, router, send, store } from '@koishijs/client'
 
 interface ManagerConfig {
   override: Dict<string>
@@ -44,3 +44,26 @@ export const getMixedMeta = (name: string) => ({
   ...store.market[name],
   ...store.packages[name],
 })
+
+function findPlugin(target: string, plugins: {}, prefix: string) {
+  for (let key in plugins) {
+    const config = plugins[key]
+    if (key.startsWith('~')) key = key.slice(1)
+    const request = key.split('@')[0]
+    if (request === target) return prefix + key
+    if (request === 'group') {
+      const result = findPlugin(target, config, prefix + key + '/')
+      if (result) return result
+    }
+  }
+}
+
+export function gotoSettings(name: string) {
+  const path = findPlugin(name, store.config.plugins, '')
+  if (path) {
+    router.push('/plugins/' + path)
+  } else {
+    send('manager/unload', name, {})
+    router.push('/plugins/' + name)
+  }
+}

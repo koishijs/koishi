@@ -5,7 +5,7 @@
       <a v-if="data.links.homepage" :href="data.links.homepage" target="_blank" rel="noopener noreferrer">
         <k-icon name="link"></k-icon>
       </a>
-      <k-button v-if="store.packages[data.name]" solid type="success" class="right" @click="router.push('/settings/' + data.name)">配置</k-button>
+      <k-button v-if="store.packages[data.name]" solid type="success" class="right" @click="gotoSettings(data.shortname)">配置</k-button>
       <k-button v-else-if="!config.override[data.name]" solid class="right" @click="addFavorite(data.name)">添加</k-button>
       <k-button v-else solid type="warning" class="right" @click="removeFavorite(data.name)">取消</k-button>
     </template>
@@ -48,10 +48,9 @@
 <script lang="ts" setup>
 
 import { computed, PropType } from 'vue'
-import { useRouter } from 'vue-router'
 import { MarketProvider } from '@koishijs/plugin-manager'
 import { store } from '@koishijs/client'
-import { config, addFavorite, removeFavorite, getMixedMeta } from '../utils'
+import { config, addFavorite, removeFavorite, getMixedMeta, gotoSettings } from '../utils'
 
 defineEmits(['query'])
 
@@ -62,8 +61,6 @@ const props = defineProps({
 const meta = computed(() => getMixedMeta(props.data.name))
 
 const email = computed(() => props.data.author?.email)
-
-const router = useRouter()
 
 </script>
 

@@ -116,7 +116,7 @@ class ConfigWriter extends DataService<App.Config> {
     this.refresh()
   }
 
-  unload(path: string, config: any, newKey?: string) {
+  unload(path: string, config = {}, newKey?: string) {
     const [runtime, oldKey] = this.resolve(path)
     this.loader.unloadPlugin(runtime, oldKey)
     rename(runtime.config, oldKey, '~' + (newKey || oldKey), config)
@@ -149,7 +149,6 @@ class ConfigWriter extends DataService<App.Config> {
     const rest = Object.keys(runtimeT.config).slice(index)
     insertKey(runtimeT.config, temp, rest)
     this.loader.writeConfig()
-    this.refresh()
   }
 
   updateBot(id: string, adapter: string, config: any) {

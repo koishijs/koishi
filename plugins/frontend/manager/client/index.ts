@@ -46,7 +46,7 @@ export default (ctx: Context) => {
     icon: 'puzzle-piece',
     order: 620,
     authority: 4,
-    fields: ['market', 'packages'],
+    fields: ['config', 'market', 'packages'],
     component: Market,
   })
 

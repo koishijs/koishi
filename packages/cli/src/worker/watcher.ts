@@ -140,6 +140,7 @@ class Watcher {
   }
 
   private triggerGroupReload(neo: Dict, old: Dict, runtime: Plugin.Runtime) {
+    runtime.config = neo
     for (const name in { ...old, ...neo }) {
       if (name.startsWith('~') || name.startsWith('$')) continue
       const fork = runtime[Loader.kRecord][name]

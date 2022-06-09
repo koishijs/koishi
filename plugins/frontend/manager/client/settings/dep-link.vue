@@ -6,19 +6,16 @@
 
 <script lang="ts" setup>
 
-import { useRouter } from 'vue-router'
 import { store } from '@koishijs/client'
-import { addFavorite } from '../utils'
+import { addFavorite, gotoSettings } from '../utils'
 
 defineProps<{
   name: string
 }>()
 
-const router = useRouter()
-
 function configurate(name: string) {
   if (store.packages[name]) {
-    router.push('/settings/' + name)
+    gotoSettings(name.replace('koishi-plugin-', '').replace('@koishijs/plugin-', ''))
   } else {
     addFavorite(name)
   }
