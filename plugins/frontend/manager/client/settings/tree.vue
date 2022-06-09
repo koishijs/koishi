@@ -8,9 +8,11 @@
     <k-tab-item class="k-tab-group-title" label=":global" v-model="model">全局设置</k-tab-item>
     <el-tree
       ref="tree"
+      node-key="id"
       :data="plugins.data"
       :draggable="true"
-      :default-expand-all="true"
+      :auto-expand-parent="false"
+      :default-expanded-keys="plugins.expanded"
       :expand-on-click-node="false"
       :filter-node-method="filterNode"
       :props="{ class: getClass }"
@@ -18,8 +20,10 @@
       :allow-drop="allowDrop"
       @node-click="handleClick"
       @node-drop="handleDrop"
+      @node-expand="handleExpand"
+      @node-collapse="handleCollapse"
       #="{ node }">
-      {{ node.label }}
+      {{ node.label || '待添加' }}
     </el-tree>
   </el-scrollbar>
 </template>
@@ -52,6 +56,7 @@ function allowDrag(node: Node) {
 interface Node {
   data: Tree
   parent: Node
+  expanded: boolean
   isLeaf: boolean
   childNodes: Node[]
 }
@@ -62,6 +67,14 @@ function allowDrop(source: Node, target: Node, type: 'inner' | 'prev' | 'next') 
 
 function handleClick(tree: Tree) {
   model.value = tree.path
+}
+
+function handleExpand(data: Tree, target: Node, instance) {
+  send('manager/meta', data.path, { $collapsed: null })
+}
+
+function handleCollapse(data: Tree, target: Node, instance) {
+  send('manager/meta', data.path, { $collapsed: true })
 }
 
 function handleDrop(source: Node, target: Node, position: 'before' | 'after' | 'inner', event: DragEvent) {

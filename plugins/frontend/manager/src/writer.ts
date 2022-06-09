@@ -9,6 +9,7 @@ declare module '@koishijs/plugin-console' {
     'manager/reload'(path: string, config: any, key?: string): void
     'manager/unload'(path: string, config: any, key?: string): void
     'manager/group'(path: string): void
+    'manager/meta'(path: string, config: any): void
     'manager/bot-update'(id: string, adapter: string, config: any): void
     'manager/bot-remove'(id: string): void
   }
@@ -54,7 +55,7 @@ class ConfigWriter extends DataService<App.Config> {
       this.reloadApp(config)
     }, { authority: 4 })
 
-    for (const key of ['teleport', 'reload', 'unload', 'group'] as const) {
+    for (const key of ['teleport', 'reload', 'unload', 'group', 'meta'] as const) {
       ctx.console.addListener(`manager/${key}`, this[key].bind(this), { authority: 4 })
     }
 
@@ -91,6 +92,19 @@ class ConfigWriter extends DataService<App.Config> {
     return [runtime, name] as const
   }
 
+  meta(path: string, config: any) {
+    const [runtime, name] = this.resolve(path)
+    const target = path ? runtime.config[name] : runtime.config
+    for (const key of Object.keys(config)) {
+      if (config[key] === null) {
+        delete target[key]
+      } else {
+        target[key] = config[key]
+      }
+    }
+    this.loader.writeConfig()
+  }
+
   reload(path: string, config: any, newKey?: string) {
     const [runtime, oldKey] = this.resolve(path)
     if (newKey) {
@@ -99,6 +113,7 @@ class ConfigWriter extends DataService<App.Config> {
     this.loader.reloadPlugin(runtime, newKey, config)
     rename(runtime.config, oldKey, newKey || oldKey, config)
     this.loader.writeConfig()
+    this.refresh()
   }
 
   unload(path: string, config: any, newKey?: string) {
@@ -106,6 +121,7 @@ class ConfigWriter extends DataService<App.Config> {
     this.loader.unloadPlugin(runtime, oldKey)
     rename(runtime.config, oldKey, '~' + (newKey || oldKey), config)
     this.loader.writeConfig()
+    this.refresh()
   }
 
   group(path: string) {
@@ -113,6 +129,7 @@ class ConfigWriter extends DataService<App.Config> {
     const config = runtime.config[oldKey] = {}
     this.loader.loadGroup(runtime, oldKey, config)
     this.loader.writeConfig()
+    this.refresh()
   }
 
   teleport(source: string, target: string, index: number) {
@@ -132,6 +149,7 @@ class ConfigWriter extends DataService<App.Config> {
     const rest = Object.keys(runtimeT.config).slice(index)
     insertKey(runtimeT.config, temp, rest)
     this.loader.writeConfig()
+    this.refresh()
   }
 
   updateBot(id: string, adapter: string, config: any) {
@@ -151,6 +169,7 @@ class ConfigWriter extends DataService<App.Config> {
       bot = this.ctx.bots.create(adapter, config)
     }
     this.loader.writeConfig()
+    this.refresh()
     bot.config = Adapter.library[Adapter.join(adapter, bot.protocol)].schema(config)
     if (config.disabled) {
       bot.stop()
@@ -165,6 +184,7 @@ class ConfigWriter extends DataService<App.Config> {
     const name = 'adapter-' + bot.adapter.platform
     this.plugins[name].bots.splice(index, 1)
     this.loader.writeConfig()
+    this.refresh()
     this.ctx.bots.remove(id)
     return bot.stop()
   }

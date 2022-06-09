@@ -97,6 +97,7 @@ export const envMap = computed(() => {
 })
 
 export interface Tree {
+  id: string
   label: string
   path: string
   config?: any
@@ -123,6 +124,7 @@ function getTree(prefix: string, plugins: any): Tree[] {
       node.label = key.split('@')[0]
       node.path = prefix + key
     }
+    node.id = node.path
     trees.push(node)
   }
   return trees
@@ -131,6 +133,7 @@ function getTree(prefix: string, plugins: any): Tree[] {
 export const plugins = computed(() => {
   const root: Tree = {
     label: '所有插件',
+    id: '',
     path: '',
     config: store.config.plugins,
     children: getTree('', store.config.plugins),
@@ -139,13 +142,18 @@ export const plugins = computed(() => {
     ':global': {
       label: '全局设置',
       path: ':global',
+      id: ':global',
       config: store.config,
     },
   }
+  const expanded: string[] = []
   function traverse(tree: Tree) {
+    if (!tree.config?.$collapsed && tree.children) {
+      expanded.push(tree.id)
+    }
     paths[tree.path] = tree
     tree.children?.forEach(traverse)
   }
   traverse(root)
-  return { data: [root], paths }
+  return { data: [root], paths, expanded }
 })
