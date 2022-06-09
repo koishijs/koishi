@@ -1,7 +1,7 @@
 <template>
   <h1 class="config-header">
-    <template v-if="current.path.endsWith('$')">
-      <el-select v-model="current.label" placeholder="插件选择">
+    <template v-if="!current.label">
+      <el-select v-model="current.target" placeholder="插件选择">
         <el-option
           v-for="value in Object.values(store.packages).slice(1)"
           :key="value.name"
@@ -18,7 +18,7 @@
       <k-button solid type="error" @click="execute('unload')">停用插件</k-button>
       <k-button solid :disabled="env.invalid" @click="execute('reload')">重载配置</k-button>
     </template>
-    <template v-else-if="name">
+    <template v-else-if="env">
       <k-button solid :disabled="env.invalid" @click="execute('reload')">启用插件</k-button>
       <k-button solid @click="execute('unload')">保存配置</k-button>
     </template>
@@ -80,7 +80,7 @@
 
 <script lang="ts" setup>
 
-import { send, store, clone } from '@koishijs/client'
+import { send, store, clone, router } from '@koishijs/client'
 import { computed, ref, watch } from 'vue'
 import { getMixedMeta } from '../utils'
 import { envMap, Tree } from './utils'
@@ -97,12 +97,16 @@ watch(() => props.current.config, (value) => {
 }, { immediate: true })
 
 const name = computed(() => {
-  const { label } = props.current
-  if (label.includes('/')) {
-    const [left, right] = label.split('/')
+  const { label, target: temporary } = props.current
+  const shortname = temporary || label
+  if (shortname.includes('/')) {
+    const [left, right] = shortname.split('/')
     return `${left}/koishi-plugin-${right}`
   }
-  return [`@koishijs/plugin-${label}`, `koishi-plugin-${label}`].find(name => name in store.packages)
+  return [
+    `@koishijs/plugin-${shortname}`,
+    `koishi-plugin-${shortname}`,
+  ].find(name => name in store.packages)
 })
 
 const data = computed(() => getMixedMeta(name.value))
@@ -115,7 +119,12 @@ const hasUpdate = computed(() => {
 })
 
 function execute(event: 'unload' | 'reload') {
-  send(`manager/plugin-${event}`, props.current.path, config.value)
+  send(`manager/plugin-${event}`, props.current.path, config.value, props.current.target)
+  if (props.current.target) {
+    const segments = props.current.path.split('/')
+    segments[segments.length - 1] = props.current.target
+    router.replace('/plugins/' + segments.join('/'))
+  }
 }
 
 </script>

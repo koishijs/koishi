@@ -9,6 +9,7 @@
 <script lang="ts" setup>
 
 import { useRouter } from 'vue-router'
+import { send } from '@koishijs/client'
 import { Tree, plugins } from './utils'
 
 const router = useRouter()
@@ -18,15 +19,10 @@ const props = defineProps<{
 }>()
 
 function addPlugin() {
-  const tree: Tree = {
-    label: '',
-    path: props.current.path + '$',
-    config: {},
-    disabled: true,
-  }
-  props.current.children.push(tree)
-  plugins.value.paths[tree.path] = tree
-  router.replace('/plugins/' + tree.path)
+  const id = Math.random().toString(36).slice(2, 8)
+  const path = (props.current.path ? props.current.path + '/' : '') + '@' + id
+  send(`manager/plugin-unload`, path, {})
+  router.replace('/plugins/' + path)
 }
 
 </script>

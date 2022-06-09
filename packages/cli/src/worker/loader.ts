@@ -108,22 +108,23 @@ export default class Loader extends ConfigLoader<App.Config> {
     return parent.plugin(plugin, this.interpolate(config))
   }
 
-  reloadPlugin(runtime: Plugin.Runtime, name: string, config: any) {
-    const fork = runtime[Loader.kRecord][name]
+  reloadPlugin(runtime: Plugin.Runtime, key: string, config: any) {
+    const fork = runtime[Loader.kRecord][key]
+    const name = key.split('@')[0]
     if (fork) {
       fork.update(config, true)
       logger.info(`reload plugin %c`, name)
     } else {
-      runtime[Loader.kRecord][name] = this.forkPlugin(name, config, runtime.context)
+      runtime[Loader.kRecord][key] = this.forkPlugin(name, config, runtime.context)
     }
   }
 
-  unloadPlugin(runtime: Plugin.Runtime, name: string) {
-    const fork = runtime[Loader.kRecord][name]
+  unloadPlugin(runtime: Plugin.Runtime, key: string) {
+    const fork = runtime[Loader.kRecord][key]
     if (fork) {
       fork.dispose()
-      logger.info(`unload plugin %c`, name)
-      delete runtime[Loader.kRecord][name]
+      delete runtime[Loader.kRecord][key]
+      logger.info(`unload plugin %c`, key)
       this.diagnose(true)
     }
   }

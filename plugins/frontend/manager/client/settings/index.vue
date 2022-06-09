@@ -6,7 +6,7 @@
     <keep-alive>
       <k-content class="plugin-view" :key="path">
         <global-settings v-if="current.path === '@global'" :current="current"></global-settings>
-        <group-settings v-else-if="current.children" :current="current"></group-settings>
+        <group-settings v-else-if="current.children" v-model="path" :current="current"></group-settings>
         <plugin-settings v-else :current="current"></plugin-settings>
       </k-content>
     </keep-alive>
@@ -17,22 +17,18 @@
 
 import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { plugins } from './utils'
+import { plugins, Tree } from './utils'
 import GlobalSettings from './global.vue'
 import GroupSettings from './group.vue'
 import TreeView from './tree.vue'
 import PluginSettings from './plugin.vue'
-
-function join(source: string | string[], trailing = false) {
-  return Array.isArray(source) ? source.join('/') + (trailing ? '/' : '') : source || ''
-}
 
 const route = useRoute()
 const router = useRouter()
 
 const path = computed<string>({
   get() {
-    const name = join(route.params.name, route.fullPath.endsWith('/'))
+    const name = route.path.slice(9)
     return name in plugins.value.paths ? name : '@global'
   },
   set(name) {
@@ -41,11 +37,11 @@ const path = computed<string>({
   },
 })
 
-const current = ref(plugins.value.paths[path.value])
+const current = ref<Tree>()
 
-watch(() => path.value, () => {
-  current.value = plugins.value.paths[path.value]
-})
+watch(() => plugins.value.paths[path.value], (value) => {
+  current.value = value
+}, { immediate: true })
 
 </script>
 

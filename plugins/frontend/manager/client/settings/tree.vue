@@ -8,7 +8,7 @@
     <k-tab-item class="k-tab-group-title" label="@global" v-model="model">全局设置</k-tab-item>
     <el-tree
       ref="tree"
-      :data="[plugins.root]"
+      :data="plugins.data"
       :draggable="true"
       :default-expand-all="true"
       :expand-on-click-node="false"
@@ -69,9 +69,7 @@ function handleDrop(source: Node, target: Node, position: 'before' | 'after' | '
   const oldPath = source.data.path
   const ctxPath = parent.data.path
   const index = parent.childNodes.findIndex(node => node.data.path === oldPath)
-  if (!oldPath.endsWith('$')) {
-    send('manager/teleport', oldPath, ctxPath, index)
-  }
+  send('manager/teleport', oldPath, ctxPath, index)
   const segments1 = oldPath.split('/')
   const segments2 = ctxPath ? ctxPath.split('/') : []
   segments2.push(segments1.pop())

@@ -100,25 +100,28 @@ export interface Tree {
   label: string
   path: string
   config?: any
+  target?: string
   disabled?: boolean
   children?: Tree[]
 }
 
 function getTree(prefix: string, plugins: any): Tree[] {
   const trees: Tree[] = []
-  for (const key in plugins) {
+  for (let key in plugins) {
     if (key.startsWith('$')) continue
-    const label = key.replace(/^~/, '')
-    const path = prefix + label
     const config = plugins[key]
-    const node: Tree = { label, path, config }
+    const node = { config } as Tree
     if (key.startsWith('~')) {
       node.disabled = true
+      key = key.slice(1)
     }
     if (key.startsWith('group@')) {
-      node.path += '/'
-      node.label = '分组：' + label.slice(6)
-      node.children = getTree(path + '/', config)
+      node.label = '分组：' + key.slice(6)
+      node.path = prefix + key
+      node.children = getTree(node.path + '/', config)
+    } else {
+      node.label = key.split('@')[0]
+      node.path = prefix + key
     }
     trees.push(node)
   }
@@ -144,5 +147,5 @@ export const plugins = computed(() => {
     tree.children?.forEach(traverse)
   }
   traverse(root)
-  return { root, paths }
+  return { data: [root], paths }
 })
