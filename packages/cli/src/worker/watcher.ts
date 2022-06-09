@@ -147,7 +147,7 @@ class Watcher {
         // handle group config changes
         if (!fork) {
           // load new group
-          this.ctx.loader.loadGroup(name, neo[name], runtime.context)
+          this.ctx.loader.loadGroup(runtime, name, neo[name])
         } else if (name in neo) {
           this.triggerGroupReload(neo[name] || {}, old[name] || {}, fork.runtime)
         } else {

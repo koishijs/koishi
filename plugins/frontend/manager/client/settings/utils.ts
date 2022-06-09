@@ -136,9 +136,9 @@ export const plugins = computed(() => {
     children: getTree('', store.config.plugins),
   }
   const paths: Dict<Tree> = {
-    '@global': {
+    ':global': {
       label: '全局设置',
-      path: '@global',
+      path: ':global',
       config: store.config,
     },
   }

@@ -129,15 +129,15 @@ export default class Loader extends ConfigLoader<App.Config> {
     }
   }
 
-  loadGroup(name: string, plugins: Dict, parent: Context) {
-    logger.info(`%s group %c`, 'load', name)
-    const fork = parent.plugin({ name, apply() {} }, plugins)
-    const record = fork.runtime[Loader.kRecord] = Object.create(null)
-    const { context } = fork.runtime
+  loadGroup(runtime: Plugin.Runtime, key: string, plugins: Dict) {
+    logger.info(`%s group %c`, 'load', key.slice(6))
+    const fork = runtime.context.plugin({ name: key.slice(6), apply() {} }, plugins)
+    fork.runtime[Loader.kRecord] = Object.create(null)
+    runtime[Loader.kRecord][key] = fork
     for (const name in plugins || {}) {
       if (name.startsWith('~') || name.startsWith('$')) continue
       if (name.startsWith('group@')) {
-        record[name] = this.loadGroup(name.slice(6), plugins[name], context)
+        this.loadGroup(fork.runtime, name, plugins[name])
       } else {
         this.reloadPlugin(fork.runtime, name, plugins[name])
       }
@@ -149,7 +149,8 @@ export default class Loader extends ConfigLoader<App.Config> {
     const app = this.app = new App(this.config)
     app.loader = this
     app.baseDir = this.dirname
-    this.runtime = this.loadGroup('Loader', this.config.plugins, app).runtime
+    app.state.runtime[Loader.kRecord] = Object.create(null)
+    this.runtime = this.loadGroup(app.state.runtime, 'group@loader', this.config.plugins).runtime
 
     app.on('internal/update', (fork, value) => {
       const { runtime } = fork.parent.state

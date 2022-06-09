@@ -6,8 +6,9 @@ declare module '@koishijs/plugin-console' {
   interface Events {
     'manager/app-reload'(config: any): void
     'manager/teleport'(source: string, target: string, index: number): void
-    'manager/plugin-reload'(path: string, config: any, key?: string): void
-    'manager/plugin-unload'(path: string, config: any, key?: string): void
+    'manager/reload'(path: string, config: any, key?: string): void
+    'manager/unload'(path: string, config: any, key?: string): void
+    'manager/group'(path: string): void
     'manager/bot-update'(id: string, adapter: string, config: any): void
     'manager/bot-remove'(id: string): void
   }
@@ -53,17 +54,9 @@ class ConfigWriter extends DataService<App.Config> {
       this.reloadApp(config)
     }, { authority: 4 })
 
-    ctx.console.addListener('manager/teleport', (source, target, index) => {
-      this.teleport(source, target, index)
-    }, { authority: 4 })
-
-    ctx.console.addListener('manager/plugin-reload', (name, config, key) => {
-      this.reloadPlugin(name, config, key)
-    }, { authority: 4 })
-
-    ctx.console.addListener('manager/plugin-unload', (name, config, key) => {
-      this.unloadPlugin(name, config, key)
-    }, { authority: 4 })
+    for (const key of ['teleport', 'reload', 'unload', 'group'] as const) {
+      ctx.console.addListener(`manager/${key}`, this[key].bind(this), { authority: 4 })
+    }
 
     ctx.console.addListener('manager/bot-update', (id, adapter, config) => {
       this.updateBot(id, adapter, config)
@@ -98,7 +91,7 @@ class ConfigWriter extends DataService<App.Config> {
     return [runtime, name] as const
   }
 
-  reloadPlugin(path: string, config: any, newKey?: string) {
+  reload(path: string, config: any, newKey?: string) {
     const [runtime, oldKey] = this.resolve(path)
     if (newKey) {
       this.loader.unloadPlugin(runtime, oldKey)
@@ -108,10 +101,17 @@ class ConfigWriter extends DataService<App.Config> {
     this.loader.writeConfig()
   }
 
-  unloadPlugin(path: string, config: any, newKey?: string) {
+  unload(path: string, config: any, newKey?: string) {
     const [runtime, oldKey] = this.resolve(path)
     this.loader.unloadPlugin(runtime, oldKey)
     rename(runtime.config, oldKey, '~' + (newKey || oldKey), config)
+    this.loader.writeConfig()
+  }
+
+  group(path: string) {
+    const [runtime, oldKey] = this.resolve(path)
+    const config = runtime.config[oldKey] = {}
+    this.loader.loadGroup(runtime, oldKey, config)
     this.loader.writeConfig()
   }
 

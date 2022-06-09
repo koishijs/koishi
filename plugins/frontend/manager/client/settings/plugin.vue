@@ -119,7 +119,7 @@ const hasUpdate = computed(() => {
 })
 
 function execute(event: 'unload' | 'reload') {
-  send(`manager/plugin-${event}`, props.current.path, config.value, props.current.target)
+  send(`manager/${event}`, props.current.path, config.value, props.current.target)
   if (props.current.target) {
     const segments = props.current.path.split('/')
     segments[segments.length - 1] = props.current.target

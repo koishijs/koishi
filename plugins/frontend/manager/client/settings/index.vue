@@ -5,7 +5,7 @@
     </template>
     <keep-alive>
       <k-content class="plugin-view" :key="path">
-        <global-settings v-if="current.path === '@global'" :current="current"></global-settings>
+        <global-settings v-if="current.path === ':global'" :current="current"></global-settings>
         <group-settings v-else-if="current.children" v-model="path" :current="current"></group-settings>
         <plugin-settings v-else :current="current"></plugin-settings>
       </k-content>
@@ -29,10 +29,10 @@ const router = useRouter()
 const path = computed<string>({
   get() {
     const name = route.path.slice(9)
-    return name in plugins.value.paths ? name : '@global'
+    return name in plugins.value.paths ? name : ':global'
   },
   set(name) {
-    if (!(name in plugins.value.paths)) name = '@global'
+    if (!(name in plugins.value.paths)) name = ':global'
     router.replace('/plugins/' + name)
   },
 })

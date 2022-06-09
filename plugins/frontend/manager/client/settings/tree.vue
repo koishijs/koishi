@@ -5,7 +5,7 @@
         <k-icon name="search"></k-icon>
       </el-input>
     </div>
-    <k-tab-item class="k-tab-group-title" label="@global" v-model="model">全局设置</k-tab-item>
+    <k-tab-item class="k-tab-group-title" label=":global" v-model="model">全局设置</k-tab-item>
     <el-tree
       ref="tree"
       :data="plugins.data"
