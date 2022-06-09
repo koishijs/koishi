@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-console",
   "description": "Web User Interface for Koishi",
-  "version": "3.3.3",
+  "version": "3.4.0",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -39,10 +39,10 @@
     }
   },
   "peerDependencies": {
-    "koishi": "^4.7.2"
+    "koishi": "^4.7.3"
   },
   "devDependencies": {
-    "@koishijs/client": "^3.3.3",
+    "@koishijs/client": "^3.4.0",
     "@types/uuid": "^8.3.4"
   },
   "dependencies": {
