@@ -52,6 +52,8 @@ function updateAlias() {
     color: inherit;
     font-size: inherit;
     font-weight: inherit;
+    background-color: transparent;
+    width: 6rem;
     border: none;
     outline: none;
     padding: 0;

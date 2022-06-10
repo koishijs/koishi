@@ -52,6 +52,7 @@ import Tachometer from './svg/tachometer.vue'
 import Tag from './svg/tag.vue'
 import TimesFull from './svg/times-full.vue'
 import Tools from './svg/tools.vue'
+import TrashCan from './svg/trash-can.vue'
 import Undo from './svg/undo.vue'
 import Users from './svg/users.vue'
 import User from './svg/user.vue'
@@ -113,6 +114,7 @@ register('tachometer', Tachometer)
 register('tag', Tag)
 register('times-full', TimesFull)
 register('tools', Tools)
+register('trash-can', TrashCan)
 register('undo', Undo)
 register('users', Users)
 register('user', User)

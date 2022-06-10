@@ -8,6 +8,7 @@ declare module '@koishijs/plugin-console' {
     'manager/teleport'(source: string, target: string, index: number): void
     'manager/reload'(path: string, config: any, key?: string): void
     'manager/unload'(path: string, config: any, key?: string): void
+    'manager/remove'(path: string): void
     'manager/group'(path: string): void
     'manager/alias'(path: string, alias: string): void
     'manager/meta'(path: string, config: any): void
@@ -56,7 +57,7 @@ class ConfigWriter extends DataService<App.Config> {
       this.reloadApp(config)
     }, { authority: 4 })
 
-    for (const key of ['teleport', 'reload', 'unload', 'group', 'meta', 'alias'] as const) {
+    for (const key of ['teleport', 'reload', 'unload', 'remove', 'group', 'meta', 'alias'] as const) {
       ctx.console.addListener(`manager/${key}`, this[key].bind(this), { authority: 4 })
     }
 
@@ -95,15 +96,17 @@ class ConfigWriter extends DataService<App.Config> {
 
   alias(path: string, alias: string) {
     const [runtime, oldKey] = this.resolve(path)
-    const config = runtime.config[oldKey]
+    let config: any
     let newKey = oldKey.split(':', 1)[0] + (alias ? ':' : '') + alias
     const record = runtime[Symbol.for('koishi.loader.record')]
     const fork = record[oldKey]
     if (fork) {
       delete record[oldKey]
       record[newKey] = fork
+      config = runtime.config[oldKey]
     } else {
       newKey = '~' + newKey
+      config = runtime.config['~' + oldKey]
     }
     rename(runtime.config, oldKey, newKey, config)
     this.loader.writeConfig()
@@ -137,6 +140,15 @@ class ConfigWriter extends DataService<App.Config> {
     const [runtime, oldKey] = this.resolve(path)
     this.loader.unloadPlugin(runtime, oldKey)
     rename(runtime.config, oldKey, '~' + (newKey || oldKey), config)
+    this.loader.writeConfig()
+    this.refresh()
+  }
+
+  remove(path: string) {
+    const [runtime, key] = this.resolve(path)
+    this.loader.unloadPlugin(runtime, key)
+    delete runtime.config[key]
+    delete runtime.config['~' + key]
     this.loader.writeConfig()
     this.refresh()
   }

@@ -3,10 +3,8 @@
     <template v-if="!current.label">
       <el-select v-model="current.target" placeholder="插件选择">
         <el-option
-          v-for="value in Object.values(store.packages).slice(1)"
-          :key="value.name"
-          :label="value.shortname"
-          :value="value.shortname"
+          v-for="name in Object.values(store.packages).slice(1).map(value => value.shortname).sort()"
+          :key="name" :label="name" :value="name"
         ></el-option>
       </el-select>
     </template>

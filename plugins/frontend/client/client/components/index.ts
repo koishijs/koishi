@@ -10,6 +10,7 @@ import {
   ElInputNumber,
   ElLoading,
   ElMessage,
+  ElMessageBox,
   ElPagination,
   ElPopconfirm,
   ElRadio,
@@ -41,6 +42,7 @@ import 'element-plus/es/components/input/style/css'
 import 'element-plus/es/components/input-number/style/css'
 import 'element-plus/es/components/loading/style/css'
 import 'element-plus/es/components/message/style/css'
+import 'element-plus/es/components/message-box/style/css'
 import 'element-plus/es/components/radio/style/css'
 import 'element-plus/es/components/scrollbar/style/css'
 import 'element-plus/es/components/select/style/css'
@@ -58,6 +60,7 @@ import './style.scss'
 
 export const loading = ElLoading.service
 export const message = ElMessage
+export const messageBox = ElMessageBox
 
 export * from './common'
 export * from './form'

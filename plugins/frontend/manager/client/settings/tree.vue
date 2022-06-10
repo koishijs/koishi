@@ -1,11 +1,11 @@
 <template>
-  <el-scrollbar class="plugin-select" ref="root">
+  <el-scrollbar class="plugin-tree" ref="root">
     <div class="search">
       <el-input v-model="keyword" #suffix>
         <k-icon name="search"></k-icon>
       </el-input>
     </div>
-    <k-tab-item class="k-tab-group-title" label=":global" v-model="model">全局设置</k-tab-item>
+    <k-tab-item class="k-tab-group-title" label="@global" v-model="model">全局设置</k-tab-item>
     <el-tree
       ref="tree"
       node-key="id"
@@ -25,6 +25,9 @@
       #="{ node }">
       <div class="item">
         <div class="label">{{ node.label === 'group' ? '分组：' + node.data.alias : node.label || '待添加' }}</div>
+        <div class="remove" @click.stop="remove(node.data)">
+          <k-icon name="trash-can"></k-icon>
+        </div>
       </div>
     </el-tree>
   </el-scrollbar>
@@ -33,7 +36,7 @@
 <script lang="ts" setup>
 
 import { ref, computed, onActivated, nextTick, watch } from 'vue'
-import { send } from '@koishijs/client'
+import { send, messageBox } from '@koishijs/client'
 import { Tree, plugins, setPath } from './utils'
 
 const props = defineProps<{
@@ -99,6 +102,16 @@ function getClass(tree: Tree) {
   return words.join(' ')
 }
 
+function remove(tree: Tree) {
+  messageBox.confirm('此插件正在运行，确定要删除吗？', '删除插件', {
+    confirmButtonText: '确定',
+    cancelButtonText: '取消',
+    type: 'warning',
+  }).then(() => {
+    send('manager/remove', tree.path)
+  }, () => {})
+}
+
 const root = ref<{ $el: HTMLElement }>(null)
 const tree = ref(null)
 const keyword = ref('')
@@ -119,7 +132,7 @@ onActivated(async () => {
 
 <style lang="scss">
 
-.plugin-select {
+.plugin-tree {
   width: 100%;
   height: 100%;
   border-right: 1px solid var(--border);
@@ -142,28 +155,6 @@ onActivated(async () => {
     color: var(--fg3t);
   }
 
-  .k-menu-item.active .readonly {
-    color: inherit;
-  }
-
-  .k-icon.remove {
-    position: absolute;
-    left: 2.25rem;
-    top: 50%;
-    opacity: 0;
-    color: var(--fg3);
-    transform: translateY(-50%);
-    transition: color 0.3s ease, opacity 0.3s ease;
-  }
-
-  .k-icon.remove:hover {
-    opacity: 1 !important;
-  }
-
-  .k-tab-item:hover i.remove {
-    opacity: 0.4;
-  }
-
   .el-tree {
     margin-top: 0.5rem;
     user-select: none;
@@ -173,20 +164,24 @@ onActivated(async () => {
     margin-left: 8px;
   }
 
-  .el-tree-node.is-group {
-    > .el-tree-node__content {
+  .el-tree-node {
+    &.is-group > .el-tree-node__content {
       font-weight: bold;
     }
-  }
 
-  .el-tree-node.is-disabled {
-    > .el-tree-node__content {
+    &:focus > .el-tree-node__content {
+      background-color: unset;
+    }
+
+    &.is-disabled > .el-tree-node__content .label {
       color: var(--fg3t);
     }
-  }
 
-  .el-tree-node.is-active {
-    > .el-tree-node__content {
+    // &:not(.is-disabled) > .el-tree-node__content .remove {
+    //   color: var(--error);
+    // }
+
+    &.is-active > .el-tree-node__content {
       background-color: var(--hover-bg);
       color: var(--active);
     }
@@ -195,9 +190,11 @@ onActivated(async () => {
   .el-tree-node__content {
     line-height: 2.25rem;
     height: 2.25rem;
+    transition: var(--color-transition);
 
     .item {
       flex: 1;
+      height: 100%;
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -207,6 +204,29 @@ onActivated(async () => {
     .label {
       overflow: hidden;
       text-overflow: ellipsis;
+      transition: var(--color-transition);
+    }
+
+    .remove {
+      display: flex;
+      height: 100%;
+      width: 2.5rem;
+      justify-content: center;
+      align-items: center;
+      opacity: 0;
+      color: var(--fg3);
+      transition: var(--color-transition);
+
+      &:hover {
+        opacity: 1 !important;
+      }
+    }
+
+    &:hover {
+      background-color: var(--hover-bg);
+      .remove {
+        opacity: 0.75;
+      }
     }
   }
 
