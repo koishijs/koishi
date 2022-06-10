@@ -34,7 +34,7 @@
 
 import { ref, computed, onActivated, nextTick, watch } from 'vue'
 import { send } from '@koishijs/client'
-import { Tree, plugins } from './utils'
+import { Tree, plugins, setPath } from './utils'
 
 const props = defineProps<{
   modelValue: string
@@ -88,11 +88,7 @@ function handleDrop(source: Node, target: Node, position: 'before' | 'after' | '
   const segments1 = oldPath.split('/')
   const segments2 = ctxPath ? ctxPath.split('/') : []
   segments2.push(segments1.pop())
-  const newPath = source.data.path = segments2.join('/')
-  if (oldPath === newPath) return
-  plugins.value.paths[newPath] = plugins.value.paths[oldPath]
-  delete plugins.value.paths[oldPath]
-  emits('update:modelValue', newPath)
+  setPath(oldPath, segments2.join('/'))
 }
 
 function getClass(tree: Tree) {

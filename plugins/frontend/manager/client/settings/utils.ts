@@ -2,7 +2,7 @@ import { Dict } from 'koishi'
 import { computed } from 'vue'
 import { PackageJson } from '@koishijs/market'
 import { MarketProvider } from '@koishijs/plugin-manager'
-import { store } from '@koishijs/client'
+import { router, store } from '@koishijs/client'
 import { getMixedMeta } from '../utils'
 import {} from '@koishijs/cli'
 
@@ -98,6 +98,7 @@ export const envMap = computed(() => {
 
 export interface Tree {
   id: string
+  alias?: string
   label: string
   path: string
   config?: any
@@ -121,7 +122,8 @@ function getTree(prefix: string, plugins: any): Tree[] {
       node.path = prefix + key
       node.children = getTree(node.path + '/', config)
     } else {
-      node.label = key.split(':')[0]
+      node.label = key.split(':', 1)[0]
+      node.alias = key.slice(node.label.length + 1)
       node.path = prefix + key
     }
     node.id = node.path
@@ -157,3 +159,12 @@ export const plugins = computed(() => {
   traverse(root)
   return { data: [root], paths, expanded }
 })
+
+export function setPath(oldPath: string, newPath: string) {
+  if (oldPath === newPath) return
+  const tree = plugins.value.paths[oldPath]
+  tree.path = newPath
+  plugins.value.paths[newPath] = tree
+  delete plugins.value.paths[oldPath]
+  router.replace('/plugins/' + newPath)
+}

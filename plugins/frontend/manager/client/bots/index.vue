@@ -46,6 +46,7 @@ watch(() => store.bots, () => {
 section.page-bots {
   > aside {
     width: 20rem;
+    max-width: unset;
 
     .add {
       font-size: 1.15rem;

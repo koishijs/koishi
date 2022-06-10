@@ -11,8 +11,10 @@
       </el-select>
     </template>
     <template v-else>
-      {{ data.shortname }}
-      <span class="version">({{ data.workspace ? '工作区' : data.version }})</span>
+      <span class="label">{{ data.shortname }}</span>
+      <span class="alias">
+        @ <input v-model="alias" @blur="updateAlias">
+      </span>
     </template>
     <template v-if="!current.disabled">
       <k-button solid type="error" @click="execute('unload')">停用插件</k-button>
@@ -83,7 +85,7 @@
 import { send, store, clone, router } from '@koishijs/client'
 import { computed, ref, watch } from 'vue'
 import { getMixedMeta } from '../utils'
-import { envMap, Tree } from './utils'
+import { envMap, Tree, setPath } from './utils'
 import KDepLink from './dep-link.vue'
 
 const props = defineProps<{
@@ -95,6 +97,23 @@ const config = ref()
 watch(() => props.current.config, (value) => {
   config.value = clone(value)
 }, { immediate: true })
+
+const alias = ref()
+
+watch(() => props.current.alias, (value) => {
+  alias.value = value
+}, { immediate: true })
+
+function updateAlias() {
+  if (alias.value === props.current.alias) return
+  props.current.alias = alias.value
+  send('manager/alias', props.current.path, alias.value)
+  const oldPath = props.current.path
+  const segments = oldPath.split('/')
+  const oldKey = segments.pop()
+  segments.push(oldKey.split(':', 1)[0] + (alias.value ? ':' : '') + alias.value)
+  setPath(oldPath, segments.join('/'))
+}
 
 const name = computed(() => {
   const { label, target: temporary } = props.current
@@ -136,6 +155,20 @@ function execute(event: 'unload' | 'reload') {
     cursor: pointer;
     &:hover {
       text-decoration: underline;
+    }
+  }
+
+  .config-header .alias {
+    font-size: 1.15rem;
+    color: var(--fg3);
+    user-select: none;
+
+    input {
+      font-size: inherit;
+      border: none;
+      outline: none;
+      color: var(--fg3);
+      padding: 0;
     }
   }
 }

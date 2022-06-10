@@ -9,6 +9,7 @@ declare module '@koishijs/plugin-console' {
     'manager/reload'(path: string, config: any, key?: string): void
     'manager/unload'(path: string, config: any, key?: string): void
     'manager/group'(path: string): void
+    'manager/alias'(path: string, alias: string): void
     'manager/meta'(path: string, config: any): void
     'manager/bot-update'(id: string, adapter: string, config: any): void
     'manager/bot-remove'(id: string): void
@@ -55,7 +56,7 @@ class ConfigWriter extends DataService<App.Config> {
       this.reloadApp(config)
     }, { authority: 4 })
 
-    for (const key of ['teleport', 'reload', 'unload', 'group', 'meta'] as const) {
+    for (const key of ['teleport', 'reload', 'unload', 'group', 'meta', 'alias'] as const) {
       ctx.console.addListener(`manager/${key}`, this[key].bind(this), { authority: 4 })
     }
 
@@ -90,6 +91,22 @@ class ConfigWriter extends DataService<App.Config> {
       name = segments.shift()
     }
     return [runtime, name] as const
+  }
+
+  alias(path: string, alias: string) {
+    const [runtime, oldKey] = this.resolve(path)
+    const config = runtime.config[oldKey]
+    let newKey = oldKey.split(':', 1)[0] + (alias ? ':' : '') + alias
+    const record = runtime[Symbol.for('koishi.loader.record')]
+    const fork = record[oldKey]
+    if (fork) {
+      delete record[oldKey]
+      record[newKey] = fork
+    } else {
+      newKey = '~' + newKey
+    }
+    rename(runtime.config, oldKey, newKey, config)
+    this.loader.writeConfig()
   }
 
   meta(path: string, config: any) {
@@ -151,7 +168,7 @@ class ConfigWriter extends DataService<App.Config> {
     this.loader.writeConfig()
   }
 
-  locate(name: string, runtime: Plugin.Runtime) {
+  private locate(name: string, runtime: Plugin.Runtime) {
     for (const key in runtime.config) {
       const value = runtime.config[key]
       const fork = runtime[Symbol.for('koishi.loader.record')][key]

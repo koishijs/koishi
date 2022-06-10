@@ -17,6 +17,7 @@ import Cog from './svg/cog.vue'
 import CommentsFull from './svg/comments-full.vue'
 import Database from './svg/database.vue'
 import Diagram from './svg/diagram.vue'
+import Edit from './svg/edit.vue'
 import ExclamationFull from './svg/exclamation-full.vue'
 import Expand from './svg/expand.vue'
 import External from './svg/external.vue'
@@ -77,6 +78,7 @@ register('cog', Cog)
 register('comments-full', CommentsFull)
 register('database', Database)
 register('diagram', Diagram)
+register('edit', Edit)
 register('exclamation-full', ExclamationFull)
 register('expand', Expand)
 register('external', External)

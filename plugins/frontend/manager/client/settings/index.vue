@@ -3,13 +3,11 @@
     <template #aside>
       <tree-view v-model="path"></tree-view>
     </template>
-    <keep-alive>
-      <k-content class="plugin-view" :key="path">
-        <global-settings v-if="current.path === ':global'" :current="current"></global-settings>
-        <group-settings v-else-if="current.children" v-model="path" :current="current"></group-settings>
-        <plugin-settings v-else :current="current"></plugin-settings>
-      </k-content>
-    </keep-alive>
+    <k-content class="plugin-view" :key="path">
+      <global-settings v-if="current.path === ':global'" :current="current"></global-settings>
+      <group-settings v-else-if="current.children" v-model="path" :current="current"></group-settings>
+      <plugin-settings v-else :current="current"></plugin-settings>
+    </k-content>
   </k-card-aside>
 </template>
 
