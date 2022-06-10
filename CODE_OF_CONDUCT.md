@@ -5,7 +5,7 @@
 
 ## Our Pledge
 
-We as members and contributors pledge to make participation in our
+We as members, contributors and maintainers pledge to make participation in our
 community a harassment-free experience for everyone, regardless of age, body
 size, visible or invisible disability, ethnicity, sex characteristics, gender
 identity and expression, level of experience, education, socio-economic status,
@@ -47,7 +47,7 @@ response to any behavior that they deem inappropriate, threatening, offensive,
 or harmful.
 
 Maintainers have the right and responsibility to remove, edit, or reject
-comments, commits, code, documentation edits, issues, and other contributions that are
+comments, commits, code, documentation, issues, and other contributions that are
 not aligned to this Code of Conduct, and will communicate reasons for moderation
 decisions when appropriate.
 
