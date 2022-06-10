@@ -23,7 +23,7 @@ defineProps<{
   line-height: 2.25rem;
   padding: 0 2rem 0 4rem;
   white-space: nowrap;
-  overflow: auto;
+  overflow: hidden;
   text-overflow: ellipsis;
 
   &.active {

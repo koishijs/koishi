@@ -23,7 +23,9 @@
       @node-expand="handleExpand"
       @node-collapse="handleCollapse"
       #="{ node }">
-      {{ node.label || '待添加' }}
+      <div class="item">
+        <div class="label">{{ node.label || '待添加' }}</div>
+      </div>
     </el-tree>
   </el-scrollbar>
 </template>
@@ -122,7 +124,7 @@ onActivated(async () => {
 <style lang="scss">
 
 .plugin-select {
-  width: 16rem;
+  width: 100%;
   height: 100%;
   border-right: 1px solid var(--border);
   overflow: auto;
@@ -197,6 +199,19 @@ onActivated(async () => {
   .el-tree-node__content {
     line-height: 2.25rem;
     height: 2.25rem;
+
+    .item {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      overflow: hidden;
+    }
+
+    .label {
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
   }
 
   .el-tree-node__label {

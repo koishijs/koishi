@@ -21,11 +21,11 @@
   box-shadow: var(--card-shadow);
   transition: background-color 0.3s ease;
 
-  --aside-width: 16rem; 
   > aside {
     overflow-x: hidden;
     overflow-y: auto;
-    width: var(--aside-width);
+    min-width: 16rem;
+    max-width: 18rem;
     flex-shrink: 0;
     border-right: 1px solid var(--border);
     transition: border-color 0.3s ease;
