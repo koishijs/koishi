@@ -3,10 +3,14 @@ import { Schema } from 'koishi'
 
 export interface AdapterConfig {
   path?: string
+  verifyToken?: boolean
+  verifySignature?: boolean
 }
 
 export const AdapterConfig = Schema.object({
   path: Schema.string().role('url').description('要连接的服务器地址。').default('/feishu'),
+  verifyToken: Schema.boolean().description('是否验证 Varification Token'),
+  verifySignature: Schema.boolean().description('是否验证 Signature'),
 })
 
 export class Cipher {

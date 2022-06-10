@@ -1,7 +1,8 @@
-import { Adapter, Context, Logger } from 'koishi'
-import { BotConfig, FeishuBot } from './bot'
-import { Event } from './types'
+import { Adapter, Context, Logger, Session } from 'koishi'
 import { AdapterConfig, Cipher } from './utils'
+import { BotConfig, FeishuBot } from './bot'
+
+import { Event } from './types'
 
 const logger = new Logger('feishu')
 
@@ -36,7 +37,7 @@ export class HttpServer extends Adapter<BotConfig, AdapterConfig> {
       // }
 
       // try to decrypt message first if encryptKey is set
-      const body = this.tryDecryptBody(ctx.request.body)
+      const body = this._tryDecryptBody(ctx.request.body)
       // respond challenge message
       // https://open.feishu.cn/document/ukTMukTMukTM/uYDNxYjL2QTM24iN0EjN/event-subscription-configure-/request-url-configuration-case
       if (body?.type === 'url_verification' && body?.challenge && typeof body.challenge === 'string') {
@@ -49,7 +50,7 @@ export class HttpServer extends Adapter<BotConfig, AdapterConfig> {
       ctx.status = 200
 
       // dispatch message
-      this.dispatchSession(this.tryDecryptBody(ctx.request.body))
+      this.dispatchSession(this._tryDecryptBody(ctx.request.body))
     })
   }
 
@@ -57,19 +58,13 @@ export class HttpServer extends Adapter<BotConfig, AdapterConfig> {
 
   async dispatchSession(body: Event): Promise<void> {
     const { header } = body
-    const { event_type } = header
-    switch (event_type) {
-      case 'im.message.receive_v1':
-        // https://open.feishu.cn/document/uAjLw4CM/ukTMukTMukTM/reference/im-v1/message/events/receive
-        console.log('received message: %o', body)
-        break
-
-      default:
-        break
-    }
+    const { app_id } = header
+    const bot = this.bots.find((bot) => bot.selfId === app_id)
+    const session = await this._adaptSession(bot, body)
+    this.dispatch(session)
   }
 
-  private tryDecryptBody(body: any): any {
+  private _tryDecryptBody(body: any): any {
     this._refreshCipher()
     // try to decrypt message if encryptKey is set
     // https://open.feishu.cn/document/ukTMukTMukTM/uYDNxYjL2QTM24iN0EjN/event-subscription-configure-/encrypt-key-encryption-configuration-case
@@ -88,6 +83,14 @@ export class HttpServer extends Adapter<BotConfig, AdapterConfig> {
     }
 
     return body
+  }
+
+  private async _adaptSession(bot: FeishuBot, body: Event): Promise<Session<never, never>> {
+    const payload: Partial<Session> = {
+      selfId: bot.selfId,
+    }
+    const session = new Session(bot, payload)
+    return session
   }
 
   private _refreshCipher(): void {
