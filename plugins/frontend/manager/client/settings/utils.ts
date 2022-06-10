@@ -98,7 +98,7 @@ export const envMap = computed(() => {
 
 export interface Tree {
   id: string
-  alias?: string
+  alias: string
   label: string
   path: string
   config?: any
@@ -118,6 +118,7 @@ function getTree(prefix: string, plugins: any): Tree[] {
       key = key.slice(1)
     }
     if (key.startsWith('group:')) {
+      node.alias = key.slice(6)
       node.label = '分组：' + key.slice(6)
       node.path = prefix + key
       node.children = getTree(node.path + '/', config)
@@ -137,14 +138,16 @@ export const plugins = computed(() => {
     label: '所有插件',
     id: '',
     path: '',
+    alias: '',
     config: store.config.plugins,
     children: getTree('', store.config.plugins),
   }
   const paths: Dict<Tree> = {
-    ':global': {
+    '$global': {
       label: '全局设置',
-      path: ':global',
-      id: ':global',
+      path: '$global',
+      id: '$global',
+      alias: '',
       config: store.config,
     },
   }
@@ -162,9 +165,12 @@ export const plugins = computed(() => {
 
 export function setPath(oldPath: string, newPath: string) {
   if (oldPath === newPath) return
-  const tree = plugins.value.paths[oldPath]
-  tree.path = newPath
-  plugins.value.paths[newPath] = tree
-  delete plugins.value.paths[oldPath]
+  for (const key of Object.keys(plugins.value.paths)) {
+    if (key !== oldPath && !key.startsWith(oldPath + '/')) continue
+    const tree = plugins.value.paths[key]
+    tree.path = newPath + key.slice(oldPath.length)
+    plugins.value.paths[tree.path] = tree
+    delete plugins.value.paths[key]
+  }
   router.replace('/plugins/' + newPath)
 }

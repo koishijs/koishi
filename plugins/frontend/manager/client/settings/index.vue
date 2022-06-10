@@ -27,10 +27,10 @@ const router = useRouter()
 const path = computed<string>({
   get() {
     const name = route.path.slice(9)
-    return name in plugins.value.paths ? name : ':global'
+    return name in plugins.value.paths ? name : '$global'
   },
   set(name) {
-    if (!(name in plugins.value.paths)) name = ':global'
+    if (!(name in plugins.value.paths)) name = '$global'
     router.replace('/plugins/' + name)
   },
 })

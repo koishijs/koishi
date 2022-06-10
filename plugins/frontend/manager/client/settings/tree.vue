@@ -24,7 +24,7 @@
       @node-collapse="handleCollapse"
       #="{ node }">
       <div class="item">
-        <div class="label">{{ node.label || '待添加' }}</div>
+        <div class="label">{{ node.children ? '分组：' + node.alias : node.label || '待添加' }}</div>
       </div>
     </el-tree>
   </el-scrollbar>

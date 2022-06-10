@@ -1,6 +1,7 @@
 <template>
   <h1 class="config-header">
-    {{ current.label }}
+    分组
+    <k-alias :current="current"></k-alias>
     <k-button solid @click="execute('unload', '')">添加插件</k-button>
     <k-button solid @click="execute('group', 'group')">添加分组</k-button>
   </h1>
@@ -10,6 +11,7 @@
 
 import { send, router } from '@koishijs/client'
 import { Tree } from './utils'
+import KAlias from './alias.vue'
 
 const props = defineProps<{
   current: Tree
@@ -23,3 +25,7 @@ function execute(action: 'group' | 'unload', name: string) {
 }
 
 </script>
+
+<style lang="scss" scoped>
+
+</style>
