@@ -47,7 +47,7 @@ response to any behavior that they deem inappropriate, threatening, offensive,
 or harmful.
 
 Maintainers have the right and responsibility to remove, edit, or reject
-comments, commits, code, documentation, issues, and other contributions that are
+code, documentation, comments, commits, issues, and other contributions that are
 not aligned to this Code of Conduct, and will communicate reasons for moderation
 decisions when appropriate.
 
@@ -138,7 +138,7 @@ For answers to common questions about this code of conduct, see the FAQ at
 
 ## 我们的承诺
 
-身为社区成员和贡献者，我们承诺使社区参与者不受骚扰，无论其年龄、体型、可见或不可见的缺陷、族裔、性征、性别认同和表达、经验水平、教育程度、社会与经济地位、国籍、相貌、种族、种姓、肤色、宗教信仰、性倾向或性取向如何。
+身为社区成员、贡献者和维护者，我们承诺使社区参与者不受骚扰，无论其年龄、体型、可见或不可见的缺陷、族裔、性征、性别认同和表达、经验水平、教育程度、社会与经济地位、国籍、相貌、种族、种姓、肤色、宗教信仰、性倾向或性取向如何。
 
 我们承诺以有助于建立开放、友善、多样化、包容、健康社区的方式行事和互动。
 
@@ -164,7 +164,7 @@ For answers to common questions about this code of conduct, see the FAQ at
 
 维护者有责任解释和落实我们所认可的行为准则，并妥善公正地对他们认为不当、威胁、冒犯或有害的任何行为采取纠正措施。
 
-维护者有权力和责任删除、编辑或拒绝或拒绝与本行为准则不相符的评论（comment）、提交（commits）、代码、文档（documentation）编辑、议题（issues）或其他贡献，并在适当时机知采取措施的理由。
+维护者有权力和责任删除、编辑或拒绝或拒绝与本行为准则不相符的代码、文档、评论（comment）、提交（commits）、议题（issues）或其他贡献，并在适当时机知采取措施的理由。
 
 ## 适用范围
 
