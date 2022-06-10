@@ -1,7 +1,9 @@
 <template>
   <h1 class="config-header">
-    分组
-    <k-alias :current="current"></k-alias>
+    <template v-if="current.path">
+      分组<k-alias :current="current"></k-alias>
+    </template>
+    <template v-else>{{ current.label }}</template>
     <k-button solid @click="execute('unload', '')">添加插件</k-button>
     <k-button solid @click="execute('group', 'group')">添加分组</k-button>
   </h1>

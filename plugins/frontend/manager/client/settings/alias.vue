@@ -1,13 +1,13 @@
 <template>
-  <span class="k-alias">
+  <span class="k-alias" :class="{ invalid }">
     @ <input v-model="alias" @blur="updateAlias">
   </span>
 </template>
 
 <script lang="ts" setup>
 
-import { setPath, Tree } from './utils'
-import { ref, watch } from 'vue'
+import { plugins, setPath, Tree } from './utils'
+import { computed, ref, watch } from 'vue'
 import { send } from '@koishijs/client'
 
 const props = defineProps<{
@@ -20,8 +20,18 @@ watch(() => props.current.alias, (value) => {
   alias.value = value
 }, { immediate: true })
 
+const invalid = computed(() => {
+  if (!alias.value) return false
+  for (const key in plugins.value.paths) {
+    if (key === props.current.path) continue
+    const tree = plugins.value.paths[key]
+    if (tree.alias === alias.value) return true
+  }
+})
+
 function updateAlias() {
   if (alias.value === props.current.alias) return
+  if (invalid.value) return
   props.current.alias = alias.value
   send('manager/alias', props.current.path, alias.value)
   const oldPath = props.current.path
@@ -39,11 +49,16 @@ function updateAlias() {
   user-select: none;
 
   input {
-    font-size: inherit;
     color: inherit;
+    font-size: inherit;
+    font-weight: inherit;
     border: none;
     outline: none;
     padding: 0;
+  }
+
+  &.invalid input {
+    color: var(--error);
   }
 }
 

@@ -117,17 +117,12 @@ function getTree(prefix: string, plugins: any): Tree[] {
       node.disabled = true
       key = key.slice(1)
     }
+    node.label = key.split(':', 1)[0]
+    node.alias = key.slice(node.label.length + 1)
+    node.id = node.path = prefix + key
     if (key.startsWith('group:')) {
-      node.alias = key.slice(6)
-      node.label = '分组：' + key.slice(6)
-      node.path = prefix + key
       node.children = getTree(node.path + '/', config)
-    } else {
-      node.label = key.split(':', 1)[0]
-      node.alias = key.slice(node.label.length + 1)
-      node.path = prefix + key
     }
-    node.id = node.path
     trees.push(node)
   }
   return trees
