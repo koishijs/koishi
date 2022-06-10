@@ -17,7 +17,7 @@ const props = defineProps<{
 
 function execute(action: 'group' | 'unload', name: string) {
   const id = Math.random().toString(36).slice(2, 8)
-  const path = (props.current.path ? props.current.path + '/' : '') + name + '@' + id
+  const path = (props.current.path ? props.current.path + '/' : '') + name + ':' + id
   send(`manager/${action}`, path)
   router.replace('/plugins/' + path)
 }

@@ -144,7 +144,7 @@ class Watcher {
     for (const name in { ...old, ...neo }) {
       if (name.startsWith('~') || name.startsWith('$')) continue
       const fork = runtime[Loader.kRecord][name]
-      if (name.startsWith('group@')) {
+      if (name.startsWith('group:')) {
         // handle group config changes
         if (!fork) {
           // load new group

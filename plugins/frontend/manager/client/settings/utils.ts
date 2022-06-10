@@ -116,12 +116,12 @@ function getTree(prefix: string, plugins: any): Tree[] {
       node.disabled = true
       key = key.slice(1)
     }
-    if (key.startsWith('group@')) {
+    if (key.startsWith('group:')) {
       node.label = '分组：' + key.slice(6)
       node.path = prefix + key
       node.children = getTree(node.path + '/', config)
     } else {
-      node.label = key.split('@')[0]
+      node.label = key.split(':')[0]
       node.path = prefix + key
     }
     node.id = node.path

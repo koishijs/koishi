@@ -49,7 +49,7 @@ function findPlugin(target: string, plugins: {}, prefix: string) {
   for (let key in plugins) {
     const config = plugins[key]
     if (key.startsWith('~')) key = key.slice(1)
-    const request = key.split('@')[0]
+    const request = key.split(':')[0]
     if (request === target) return prefix + key
     if (request === 'group') {
       const result = findPlugin(target, config, prefix + key + '/')

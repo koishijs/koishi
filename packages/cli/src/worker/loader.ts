@@ -109,7 +109,7 @@ export default class Loader extends ConfigLoader<App.Config> {
 
   reloadPlugin(runtime: Plugin.Runtime, key: string, config: any) {
     const fork = runtime[Loader.kRecord][key]
-    const name = key.split('@')[0]
+    const name = key.split(':')[0]
     if (fork) {
       fork.update(config, true)
       logger.info(`reload plugin %c`, name)
@@ -135,7 +135,7 @@ export default class Loader extends ConfigLoader<App.Config> {
     runtime[Loader.kRecord][key] = fork
     for (const name in plugins || {}) {
       if (name.startsWith('~') || name.startsWith('$')) continue
-      if (name.startsWith('group@')) {
+      if (name.startsWith('group:')) {
         this.loadGroup(fork.runtime, name, plugins[name])
       } else {
         this.reloadPlugin(fork.runtime, name, plugins[name])
@@ -149,7 +149,7 @@ export default class Loader extends ConfigLoader<App.Config> {
     app.loader = this
     app.baseDir = this.dirname
     app.state.runtime[Loader.kRecord] = Object.create(null)
-    this.runtime = this.loadGroup(app.state.runtime, 'group@loader', this.config.plugins).runtime
+    this.runtime = this.loadGroup(app.state.runtime, 'group=loader', this.config.plugins).runtime
 
     app.on('internal/update', (fork, value) => {
       const { runtime } = fork.parent.state
