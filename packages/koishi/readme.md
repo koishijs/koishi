@@ -57,7 +57,7 @@ Copyright © 2019-2022, Shigma
 
 ## 贡献指南
 
-[请看这里](./.github/contributing.md)
+[请看这里](./CONTRIBUTING.md)
 
 ## 联系方式
 
