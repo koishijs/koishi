@@ -5,7 +5,7 @@
 
 ## Our Pledge
 
-We as members, contributors, and leaders pledge to make participation in our
+We as members and contributors pledge to make participation in our
 community a harassment-free experience for everyone, regardless of age, body
 size, visible or invisible disability, ethnicity, sex characteristics, gender
 identity and expression, level of experience, education, socio-economic status,
@@ -41,13 +41,13 @@ Examples of unacceptable behavior include:
 
 ## Enforcement Responsibilities
 
-Community leaders are responsible for clarifying and enforcing our standards of
+Maintainers are responsible for clarifying and enforcing our standards of
 acceptable behavior and will take appropriate and fair corrective action in
 response to any behavior that they deem inappropriate, threatening, offensive,
 or harmful.
 
-Community leaders have the right and responsibility to remove, edit, or reject
-comments, commits, code, wiki edits, issues, and other contributions that are
+Maintainers have the right and responsibility to remove, edit, or reject
+comments, commits, code, documentation edits, issues, and other contributions that are
 not aligned to this Code of Conduct, and will communicate reasons for moderation
 decisions when appropriate.
 
@@ -62,16 +62,16 @@ representative at an online or offline event.
 ## Enforcement
 
 Instances of abusive, harassing, or otherwise unacceptable behavior may be
-reported to the community leaders responsible for enforcement at
+reported to the maintainers responsible for enforcement at
 <shigma10826@gmail.com>.
 All complaints will be reviewed and investigated promptly and fairly.
 
-All community leaders are obligated to respect the privacy and security of the
+All maintainers are obligated to respect the privacy and security of the
 reporter of any incident.
 
 ## Enforcement Guidelines
 
-Community leaders will follow these Community Impact Guidelines in determining
+Maintainers will follow these Community Impact Guidelines in determining
 the consequences for any action they deem in violation of this Code of Conduct:
 
 ### 1. Correction
@@ -79,7 +79,7 @@ the consequences for any action they deem in violation of this Code of Conduct:
 **Community Impact**: Use of inappropriate language or other behavior deemed
 unprofessional or unwelcome in the community.
 
-**Consequence**: A private, written warning from community leaders, providing
+**Consequence**: A private, written warning from maintainers, providing
 clarity around the nature of the violation and an explanation of why the
 behavior was inappropriate. A public apology may be requested.
 
@@ -138,7 +138,7 @@ For answers to common questions about this code of conduct, see the FAQ at
 
 ## 我们的承诺
 
-身为社区成员、贡献者和领袖，我们承诺使社区参与者不受骚扰，无论其年龄、体型、可见或不可见的缺陷、族裔、性征、性别认同和表达、经验水平、教育程度、社会与经济地位、国籍、相貌、种族、种姓、肤色、宗教信仰、性倾向或性取向如何。
+身为社区成员和贡献者，我们承诺使社区参与者不受骚扰，无论其年龄、体型、可见或不可见的缺陷、族裔、性征、性别认同和表达、经验水平、教育程度、社会与经济地位、国籍、相貌、种族、种姓、肤色、宗教信仰、性倾向或性取向如何。
 
 我们承诺以有助于建立开放、友善、多样化、包容、健康社区的方式行事和互动。
 
@@ -162,9 +162,9 @@ For answers to common questions about this code of conduct, see the FAQ at
 
 ## 责任和权力
 
-社区领袖有责任解释和落实我们所认可的行为准则，并妥善公正地对他们认为不当、威胁、冒犯或有害的任何行为采取纠正措施。
+维护者有责任解释和落实我们所认可的行为准则，并妥善公正地对他们认为不当、威胁、冒犯或有害的任何行为采取纠正措施。
 
-社区领导有权力和责任删除、编辑或拒绝或拒绝与本行为准则不相符的评论（comment）、提交（commits）、代码、维基（wiki）编辑、议题（issues）或其他贡献，并在适当时机知采取措施的理由。
+维护者有权力和责任删除、编辑或拒绝或拒绝与本行为准则不相符的评论（comment）、提交（commits）、代码、文档（documentation）编辑、议题（issues）或其他贡献，并在适当时机知采取措施的理由。
 
 ## 适用范围
 
@@ -174,20 +174,20 @@ For answers to common questions about this code of conduct, see the FAQ at
 
 ## 监督
 
-辱骂、骚扰或其他不可接受的行为可通过 <shigma10826@gmail.com> 向负责监督的社区领袖报告。
+辱骂、骚扰或其他不可接受的行为可通过 <shigma10826@gmail.com> 向负责监督的维护者报告。
 所有投诉都将得到及时和公平的审查和调查。
 
-所有社区领袖都有义务尊重任何事件报告者的隐私和安全。
+所有维护者都有义务尊重任何事件报告者的隐私和安全。
 
 ## 处理方针
 
-社区领袖将遵循下列社区处理方针来明确他们所认定违反本行为准则的行为的处理方式：
+维护者将遵循下列社区处理方针来明确他们所认定违反本行为准则的行为的处理方式：
 
 ### 1. 纠正
 
 **社区影响**：使用不恰当的语言或其他在社区中被认定为不符合职业道德或不受欢迎的行为。
 
-**处理意见**：由社区领袖发出非公开的书面警告，明确说明违规行为的性质，并解释举止如何不妥。或将要求公开道歉。
+**处理意见**：由维护者发出非公开的书面警告，明确说明违规行为的性质，并解释举止如何不妥。或将要求公开道歉。
 
 ### 2. 警告
 
