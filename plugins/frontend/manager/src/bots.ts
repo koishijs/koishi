@@ -65,7 +65,7 @@ class BotProvider extends DataService<Dict<BotProvider.Data>> {
     this.extend((bot) => {
       const name = 'adapter-' + bot.adapter.platform
       const index = bot.adapter.bots.filter(bot => !bot.hidden).indexOf(bot)
-      const config = bot.adapter.ctx.state.parent.state.runtime.config[name].bots[index]
+      const config = bot.adapter.ctx.state.parent.state.config[name].bots[index]
       return {
         ...pick(bot, ['platform', 'selfId', 'avatar', 'username', 'status']),
         ...pick(config, ['disabled', 'protocol']),

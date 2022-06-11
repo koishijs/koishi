@@ -85,36 +85,37 @@ class ConfigWriter extends DataService<App.Config> {
 
   private resolve(path: string) {
     const segments = path.split('/')
-    let runtime = this.loader.runtime
+    let ctx = this.loader.entry
     let name = segments.shift()
     while (segments.length) {
-      runtime = runtime[Symbol.for('koishi.loader.record')][name].runtime
+      ctx = ctx.state[Loader.kRecord][name].context
       name = segments.shift()
     }
-    return [runtime, name] as const
+    return [ctx.state, name] as const
   }
 
   alias(path: string, alias: string) {
-    const [runtime, oldKey] = this.resolve(path)
+    const [parent, oldKey] = this.resolve(path)
     let config: any
     let newKey = oldKey.split(':', 1)[0] + (alias ? ':' : '') + alias
-    const record = runtime[Symbol.for('koishi.loader.record')]
+    const record = parent[Loader.kRecord]
     const fork = record[oldKey]
     if (fork) {
       delete record[oldKey]
       record[newKey] = fork
-      config = runtime.config[oldKey]
+      fork.alias = alias
+      config = parent.config[oldKey]
     } else {
       newKey = '~' + newKey
-      config = runtime.config['~' + oldKey]
+      config = parent.config['~' + oldKey]
     }
-    rename(runtime.config, oldKey, newKey, config)
+    rename(parent.config, oldKey, newKey, config)
     this.loader.writeConfig()
   }
 
   meta(path: string, config: any) {
-    const [runtime, name] = this.resolve(path)
-    const target = path ? runtime.config[name] : runtime.config
+    const [parent, name] = this.resolve(path)
+    const target = path ? parent.config[name] : parent.config
     for (const key of Object.keys(config)) {
       if (config[key] === null) {
         delete target[key]
@@ -126,72 +127,72 @@ class ConfigWriter extends DataService<App.Config> {
   }
 
   reload(path: string, config: any, newKey?: string) {
-    const [runtime, oldKey] = this.resolve(path)
+    const [parent, oldKey] = this.resolve(path)
     if (newKey) {
-      this.loader.unloadPlugin(runtime, oldKey)
+      this.loader.unloadPlugin(parent.context, oldKey)
     }
-    this.loader.reloadPlugin(runtime, newKey || oldKey, config)
-    rename(runtime.config, oldKey, newKey || oldKey, config)
+    this.loader.reloadPlugin(parent.context, newKey || oldKey, config)
+    rename(parent.config, oldKey, newKey || oldKey, config)
     this.loader.writeConfig()
     this.refresh()
   }
 
   unload(path: string, config = {}, newKey?: string) {
-    const [runtime, oldKey] = this.resolve(path)
-    this.loader.unloadPlugin(runtime, oldKey)
-    rename(runtime.config, oldKey, '~' + (newKey || oldKey), config)
+    const [parent, oldKey] = this.resolve(path)
+    this.loader.unloadPlugin(parent.context, oldKey)
+    rename(parent.config, oldKey, '~' + (newKey || oldKey), config)
     this.loader.writeConfig()
     this.refresh()
   }
 
   remove(path: string) {
-    const [runtime, key] = this.resolve(path)
-    this.loader.unloadPlugin(runtime, key)
-    delete runtime.config[key]
-    delete runtime.config['~' + key]
+    const [parent, key] = this.resolve(path)
+    this.loader.unloadPlugin(parent.context, key)
+    delete parent.config[key]
+    delete parent.config['~' + key]
     this.loader.writeConfig()
     this.refresh()
   }
 
   group(path: string) {
-    const [runtime, oldKey] = this.resolve(path)
-    const config = runtime.config[oldKey] = {}
-    this.loader.loadGroup(runtime, oldKey, config)
+    const [parent, oldKey] = this.resolve(path)
+    const config = parent.config[oldKey] = {}
+    this.loader.loadGroup(parent.context, oldKey, config)
     this.loader.writeConfig()
     this.refresh()
   }
 
   teleport(source: string, target: string, index: number) {
-    const [runtimeS, nameS] = this.resolve(source)
-    const [runtimeT] = this.resolve(target ? target + '/' : '')
+    const [parentS, oldKey] = this.resolve(source)
+    const [parentT] = this.resolve(target ? target + '/' : '')
 
     // teleport fork
-    const fork = runtimeS[Symbol.for('koishi.loader.record')][nameS]
+    const fork = parentS[Loader.kRecord][oldKey]
     if (fork) {
-      remove(fork.parent.state.disposables, fork.dispose)
-      fork.parent = runtimeT.context
-      fork.parent.state.disposables.push(fork.dispose)
+      remove(parentS.disposables, fork.dispose)
+      fork.parent = parentT.context
+      parentT.disposables.push(fork.dispose)
     }
 
     // teleport config
-    const temp = dropKey(runtimeS.config, nameS)
-    const rest = Object.keys(runtimeT.config).slice(index)
-    insertKey(runtimeT.config, temp, rest)
+    const temp = dropKey(parentS.config, oldKey)
+    const rest = Object.keys(parentT.config).slice(index)
+    insertKey(parentT.config, temp, rest)
     this.loader.writeConfig()
   }
 
-  private locate(name: string, runtime: Plugin.Runtime) {
-    for (const key in runtime.config) {
-      const value = runtime.config[key]
-      const fork = runtime[Symbol.for('koishi.loader.record')][key]
+  private locate(name: string, parent: Plugin.State): Plugin.Fork {
+    for (const key in parent.config) {
+      const value = parent.config[key]
+      const fork = parent[Loader.kRecord][key]
       if (key === name) {
-        return value
+        return fork
       } else if (key === '~' + name) {
-        this.loader.reloadPlugin(runtime, name, value)
-        rename(runtime.config, name, name, value)
-        return value
-      } else if (key.startsWith('group@')) {
-        const result = this.locate(name, fork.runtime)
+        this.loader.reloadPlugin(parent.context, name, value)
+        rename(parent.config, name, name, value)
+        return parent[Loader.kRecord][name]
+      } else if (key.startsWith('group:')) {
+        const result = this.locate(name, fork)
         if (result) return result
       }
     }
@@ -228,7 +229,7 @@ class ConfigWriter extends DataService<App.Config> {
     const bot = this.ctx.bots.find(bot => bot.id === id)
     const index = bot.adapter.bots.filter(bot => !bot.hidden).indexOf(bot)
     const name = 'adapter-' + bot.adapter.platform
-    const config = bot.adapter.ctx.state.parent.state.runtime.config[name]
+    const config = bot.adapter.ctx.state.parent.state.config[name]
     config.bots.splice(index, 1)
     this.loader.writeConfig()
     this.refresh()

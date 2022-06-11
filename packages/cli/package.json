@@ -2,13 +2,13 @@
   "name": "@koishijs/cli",
   "description": "CLI for Koishi",
   "version": "4.7.3",
-  "typings": "index.d.ts",
+  "main": "lib/worker/index.js",
+  "typings": "lib/worker/index.d.ts",
   "engines": {
     "node": ">=12.0.0"
   },
   "files": [
-    "lib",
-    "index.d.ts"
+    "lib"
   ],
   "bin": {
     "koishi": "lib/bin.js"

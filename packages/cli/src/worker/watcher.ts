@@ -135,34 +135,34 @@ class Watcher {
     }
 
     // check plugin changes
-    this.triggerGroupReload(neo.plugins || {}, old.plugins || {}, this.ctx.loader.runtime)
+    this.triggerGroupReload(neo.plugins || {}, old.plugins || {}, this.ctx.loader.entry)
     this.ctx.emit('config')
   }
 
-  private triggerGroupReload(neo: Dict, old: Dict, runtime: Plugin.Runtime) {
-    runtime.config = neo
+  private triggerGroupReload(neo: Dict, old: Dict, ctx: Context) {
+    ctx.state.config = neo
     for (const name in { ...old, ...neo }) {
       if (name.startsWith('~') || name.startsWith('$')) continue
-      const fork = runtime[Loader.kRecord][name]
+      const fork = ctx.state[Loader.kRecord][name]
       if (name.startsWith('group:')) {
         // handle group config changes
         if (!fork) {
           // load new group
-          this.ctx.loader.loadGroup(runtime, name, neo[name])
+          this.ctx.loader.loadGroup(ctx, name, neo[name])
         } else if (name in neo) {
-          this.triggerGroupReload(neo[name] || {}, old[name] || {}, fork.runtime)
+          this.triggerGroupReload(neo[name] || {}, old[name] || {}, fork.context)
         } else {
           fork.dispose()
-          delete runtime[Loader.kRecord][name]
+          delete ctx.state[Loader.kRecord][name]
           this.ctx.logger('app').info(`unload group %c`, name.slice(6))
         }
       } else {
         // handle plugin config changes
         if (deepEqual(old[name], neo[name])) continue
         if (name in neo) {
-          this.ctx.loader.reloadPlugin(runtime, name, neo[name])
+          this.ctx.loader.reloadPlugin(ctx, name, neo[name])
         } else {
-          this.ctx.loader.unloadPlugin(runtime, name)
+          this.ctx.loader.unloadPlugin(ctx, name)
         }
       }
     }

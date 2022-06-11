@@ -13,8 +13,14 @@ declare module 'koishi' {
 
   namespace Plugin {
     interface Runtime {
-      [Loader.kRecord]?: Dict<Plugin.Fork>
       [Loader.kWarning]?: boolean
+    }
+
+    // Theoretically, these properties will only appear on `Plugin.Fork`.
+    // We define them directly on `Plugin.State` for typing convenience.
+    interface State {
+      [Loader.kRecord]?: Dict<Plugin.Fork>
+      alias?: string
     }
   }
 }
@@ -27,13 +33,29 @@ const context = {
   env: process.env,
 }
 
+const group: Plugin.Object = {
+  name: 'group',
+  reusable: true,
+  apply(ctx, plugins) {
+    ctx.state[Loader.kRecord] ||= Object.create(null)
+    for (const name in plugins || {}) {
+      if (name.startsWith('~') || name.startsWith('$')) continue
+      if (name.startsWith('group:')) {
+        ctx.loader.loadGroup(ctx, name, plugins[name])
+      } else {
+        ctx.loader.reloadPlugin(ctx, name, plugins[name])
+      }
+    }
+  },
+}
+
 export default class Loader extends ConfigLoader<App.Config> {
   static readonly kRecord = Symbol.for('koishi.loader.record')
   static readonly kWarning = Symbol.for('koishi.loader.warning')
 
   app: App
   config: App.Config
-  runtime: Plugin.Runtime
+  entry: Context
   cache: Dict<string> = {}
   envfile: string
   scope: ns.Scope
@@ -107,49 +129,43 @@ export default class Loader extends ConfigLoader<App.Config> {
     return parent.plugin(plugin, this.interpolate(config))
   }
 
-  reloadPlugin(runtime: Plugin.Runtime, key: string, config: any) {
-    const fork = runtime[Loader.kRecord][key]
-    const name = key.split(':')[0]
+  reloadPlugin(ctx: Context, key: string, config: any) {
+    const fork = ctx.state[Loader.kRecord][key]
+    const name = key.split(':', 1)[0]
     if (fork) {
       fork.update(config, true)
       logger.info(`reload plugin %c`, name)
     } else {
-      runtime[Loader.kRecord][key] = this.forkPlugin(name, config, runtime.context)
+      const fork = this.forkPlugin(name, config, ctx)
+      fork.alias = key.slice(name.length + 1)
+      ctx.state[Loader.kRecord][key] = fork
     }
   }
 
-  unloadPlugin(runtime: Plugin.Runtime, key: string) {
-    const fork = runtime[Loader.kRecord][key]
+  unloadPlugin(ctx: Context, key: string) {
+    const fork = ctx.state[Loader.kRecord][key]
     if (fork) {
       fork.dispose()
-      delete runtime[Loader.kRecord][key]
+      delete ctx.state[Loader.kRecord][key]
       logger.info(`unload plugin %c`, key)
       this.diagnose(true)
     }
   }
 
-  loadGroup(runtime: Plugin.Runtime, key: string, plugins: Dict) {
-    logger.info(`%s group %c`, 'load', key.slice(6))
-    const fork = runtime.context.plugin({ name: key.slice(6), apply() {} }, plugins)
-    fork.runtime[Loader.kRecord] = Object.create(null)
-    runtime[Loader.kRecord][key] = fork
-    for (const name in plugins || {}) {
-      if (name.startsWith('~') || name.startsWith('$')) continue
-      if (name.startsWith('group:')) {
-        this.loadGroup(fork.runtime, name, plugins[name])
-      } else {
-        this.reloadPlugin(fork.runtime, name, plugins[name])
-      }
-    }
-    return fork
+  loadGroup(ctx: Context, key: string, plugins: Dict) {
+    const fork = ctx.plugin(group, plugins)
+    fork.alias = key.slice(6)
+    logger.info(`%s group %c`, 'load', fork.alias)
+    ctx.state[Loader.kRecord][key] = fork
+    return fork.context
   }
 
   createApp() {
     const app = this.app = new App(this.config)
     app.loader = this
     app.baseDir = this.dirname
-    app.state.runtime[Loader.kRecord] = Object.create(null)
-    this.runtime = this.loadGroup(app.state.runtime, 'group=loader', this.config.plugins).runtime
+    app.state[Loader.kRecord] = Object.create(null)
+    this.entry = this.loadGroup(app, 'group=entry', this.config.plugins)
 
     app.on('internal/update', (fork, value) => {
       const { runtime } = fork.parent.state
