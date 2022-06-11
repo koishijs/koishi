@@ -9,14 +9,14 @@
       </el-select>
     </template>
     <template v-else>
-      <span class="label">{{ data.shortname }}</span>
+      <span class="label">{{ current.label }}</span>
       <k-alias :current="current"></k-alias>
     </template>
     <template v-if="!current.disabled">
       <k-button solid type="error" @click="execute('unload')">停用插件</k-button>
       <k-button solid :disabled="env.invalid" @click="execute('reload')">重载配置</k-button>
     </template>
-    <template v-else-if="env">
+    <template v-else-if="name">
       <k-button solid :disabled="env.invalid" @click="execute('reload')">启用插件</k-button>
       <k-button solid @click="execute('unload')">保存配置</k-button>
     </template>
@@ -74,6 +74,10 @@
       <template #hint>{{ hint }}</template>
     </k-form>
   </template>
+
+  <k-comment v-else-if="current.label" type="error">
+    此插件尚未安装，<span class="link" @click.stop="gotoMarket">点击前往插件市场</span>。
+  </k-comment>
 </template>
 
 <script lang="ts" setup>
@@ -100,7 +104,7 @@ const name = computed(() => {
   const shortname = temporary || label
   if (shortname.includes('/')) {
     const [left, right] = shortname.split('/')
-    return `${left}/koishi-plugin-${right}`
+    return [`${left}/koishi-plugin-${right}`].find(name => name in store.packages)
   }
   return [
     `@koishijs/plugin-${shortname}`,
@@ -126,6 +130,10 @@ function execute(event: 'unload' | 'reload') {
   }
 }
 
+function gotoMarket() {
+  router.push('/market?keyword=' + props.current.label)
+}
+
 </script>
 
 <style lang="scss">
@@ -141,6 +149,13 @@ function execute(event: 'unload' | 'reload') {
   .config-header.plugin .k-alias {
     font-size: 1.15rem;
     color: var(--fg3);
+  }
+
+  span.link {
+    &:hover {
+      cursor: pointer;
+      text-decoration: underline;
+    }
   }
 }
 

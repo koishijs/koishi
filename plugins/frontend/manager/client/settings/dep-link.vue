@@ -1,5 +1,5 @@
 <template>
-  <span class="k-dep-link" @click.stop="configurate(name)">
+  <span class="link" @click.stop="configurate(name)">
     {{ name }}
   </span>
 </template>
@@ -24,12 +24,5 @@ function configurate(name: string) {
 </script>
 
 <style scoped lang="scss">
-
-.k-dep-link {
-  &:hover {
-    cursor: pointer;
-    text-decoration: underline;
-  }
-}
 
 </style>

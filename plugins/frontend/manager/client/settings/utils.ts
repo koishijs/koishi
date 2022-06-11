@@ -1,6 +1,5 @@
 import { Dict } from 'koishi'
 import { computed } from 'vue'
-import { PackageJson } from '@koishijs/market'
 import { MarketProvider } from '@koishijs/plugin-manager'
 import { router, store } from '@koishijs/client'
 import { getMixedMeta } from '../utils'
@@ -28,18 +27,11 @@ export interface EnvInfo {
   console?: boolean
 }
 
-function getKeywords(prefix: string, meta: Partial<PackageJson>) {
-  prefix += ':'
-  return (meta.keywords || [])
-    .filter(name => name.startsWith(prefix))
-    .map(name => name.slice(prefix.length))
-}
-
 function isAvailable(name: string, remote: MarketProvider.Data) {
-  return getKeywords('impl', {
+  return {
     ...remote.versions[0],
     ...store.packages[remote.name],
-  }).includes(name)
+  }.manifest?.service.implements.includes(name)
 }
 
 function getEnvInfo(name: string) {
@@ -59,32 +51,32 @@ function getEnvInfo(name: string) {
     }
   }
 
-  const data = getMixedMeta(name)
+  const local = store.packages[name]
   const result: EnvInfo = { impl: [], using: {}, deps: {} }
 
   // check implementations
-  for (const name of getKeywords('impl', data)) {
+  for (const name of local.manifest.service.implements) {
     if (name === 'adapter') continue
     result.impl.push(name)
   }
 
   // check services
-  for (const name of getKeywords('required', data)) {
+  for (const name of local.manifest.service.required) {
     setService(name, true)
   }
-  for (const name of getKeywords('optional', data)) {
+  for (const name of local.manifest.service.optional) {
     setService(name, false)
   }
 
   // check dependencies
-  for (const name in data.peerDependencies) {
-    if (!name.startsWith('koishi-plugin-') || !name.startsWith('@koishijs/plugin-')) continue
+  for (const name in local.peerDependencies) {
+    if (!name.includes('koishi-plugin-') || !name.startsWith('@koishijs/plugin-')) continue
     if (name === '@koishijs/plugin-console') continue
     const available = name in store.packages
     const fulfilled = !!store.packages[name]?.id
     if (!fulfilled) result.invalid = true
     result.deps[name] = { name, required: true, fulfilled, local: available }
-    for (const impl of getKeywords('impl', getMixedMeta(name))) {
+    for (const impl of getMixedMeta(name).manifest.service.implements) {
       delete result.using[impl]
     }
   }
@@ -93,7 +85,10 @@ function getEnvInfo(name: string) {
 }
 
 export const envMap = computed(() => {
-  return Object.fromEntries(Object.keys(store.packages).map(name => [name, getEnvInfo(name)]))
+  return Object.fromEntries(Object
+    .keys(store.packages)
+    .filter(x => x)
+    .map(name => [name, getEnvInfo(name)]))
 })
 
 export interface Tree {

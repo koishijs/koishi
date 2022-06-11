@@ -31,21 +31,21 @@
 
 <script setup lang="ts">
 
-import { store } from '@koishijs/client'
+import { router, store } from '@koishijs/client'
 import { computed, reactive, watch } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { useRoute } from 'vue-router'
 import { config } from '../utils'
 import { validate } from './utils'
-import type { AnalyzedPackage } from '@koishijs/market'
 import PackageView from './package.vue'
 
 const route = useRoute()
-const router = useRouter()
 
-const { keyword } = route.query
-const words = reactive(Array.isArray(keyword) ? keyword : (keyword || '').split(' '))
+const words = reactive([])
 
-if (words[words.length - 1]) words.push('')
+watch(() => route.query.keyword, (keyword) => {
+  words.splice(0, Infinity, ...Array.isArray(keyword) ? keyword : (keyword || '').split(' '))
+  if (words[words.length - 1]) words.push('')
+}, { immediate: true })
 
 const realWords = computed(() => words.filter(w => w))
 

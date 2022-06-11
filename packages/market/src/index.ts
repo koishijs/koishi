@@ -117,23 +117,23 @@ export interface ScanConfig {
   onFailure?(name: string, reason: any): void
 }
 
-function conclude(remote: RemotePackage) {
-  const manifest = {
+export function conclude(meta: PackageJson) {
+  const manifest: Manifest = {
     description: {
-      en: remote.description,
+      en: meta.description,
     },
     locales: [],
     recommends: [],
-    ...remote.koishi,
+    ...meta.koishi,
     service: {
       required: [],
       optional: [],
       implements: [],
-      ...remote.koishi?.service,
+      ...meta.koishi?.service,
     },
   }
 
-  for (const keyword of remote.keywords ?? []) {
+  for (const keyword of meta.keywords ?? []) {
     if (keyword === 'market:hidden') {
       manifest.hidden = true
     } else if (keyword.startsWith('required:')) {

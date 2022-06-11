@@ -1,6 +1,6 @@
 import { Adapter, App, Context, Dict, Logger, pick, Plugin, remove, Schema } from 'koishi'
 import { DataService } from '@koishijs/plugin-console'
-import { PackageJson } from '@koishijs/market'
+import { conclude, Manifest, PackageJson } from '@koishijs/market'
 import { promises as fsp } from 'fs'
 import { dirname } from 'path'
 import ns from 'ns-require'
@@ -122,12 +122,13 @@ class PackageProvider extends DataService<Dict<PackageProvider.Data>> {
       'name',
       'version',
       'description',
-      'peerDependencies',
     ]) as PackageProvider.Data
 
     // workspace packages are followed by symlinks
     result.workspace = data.$workspace
     result.shortname = data.name.replace(/(koishi-|^@koishijs\/)plugin-/, '')
+    result.manifest = conclude(data)
+    result.peerDependencies = { ...data.peerDependencies }
 
     // check adapter
     const oldLength = Object.keys(Adapter.library).length
@@ -157,6 +158,7 @@ namespace PackageProvider {
     shortname?: string
     schema?: Schema
     workspace?: boolean
+    manifest?: Manifest
   }
 }
 
