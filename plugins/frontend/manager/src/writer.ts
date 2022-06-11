@@ -204,16 +204,17 @@ class ConfigWriter extends DataService<App.Config> {
     if (id) {
       bot = this.ctx.bots.find(bot => bot.id === id)
       const index = bot.adapter.bots.filter(bot => !bot.hidden).indexOf(bot)
-      bot.adapter.ctx.state.parent.state.runtime.config[name].bots[index] = config
+      bot.adapter.ctx.state.parent.state.config[name].bots[index] = config
     } else {
-      let record = this.locate(name, this.loader.runtime)
-      if (!record) {
-        record = this.loader.runtime.config[name] = { bots: [] }
-        this.loader.reloadPlugin(this.loader.runtime, name, record)
+      let fork = this.locate(name, this.loader.entry.state)
+      if (!fork) {
+        const config = this.loader.entry.state.config[name] = { bots: [] }
+        this.loader.reloadPlugin(this.loader.entry, name, config)
+        fork = this.loader.entry.state[Loader.kRecord][name]
       }
-      record.bots.push(config)
+      fork.parent.state.config[name].bots.push(config)
       // make sure adapter get correct caller context
-      bot = this.loader.runtime[Symbol.for('koishi.loader.record')][name].context.bots.create(platform, config)
+      bot = fork.context.bots.create(platform, config)
     }
     this.loader.writeConfig()
     this.refresh()

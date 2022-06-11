@@ -169,7 +169,7 @@ onActivated(async () => {
       font-weight: bold;
     }
 
-    &:focus > .el-tree-node__content {
+    &:focus:not(:hover) > .el-tree-node__content {
       background-color: unset;
     }
 
