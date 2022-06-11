@@ -14,10 +14,10 @@
     </template>
     <template v-if="!current.disabled">
       <k-button solid type="error" @click="execute('unload')">停用插件</k-button>
-      <k-button solid :disabled="env.invalid" @click="execute('reload')">重载配置</k-button>
+      <k-button solid :disabled="env.disabled" @click="execute('reload')">重载配置</k-button>
     </template>
     <template v-else-if="name">
-      <k-button solid :disabled="env.invalid" @click="execute('reload')">启用插件</k-button>
+      <k-button solid :disabled="env.disabled" :type="env.type" @click="execute('reload')">启用插件</k-button>
       <k-button solid @click="execute('unload')">保存配置</k-button>
     </template>
   </h1>
@@ -29,17 +29,17 @@
     </k-comment>
 
     <!-- external -->
-    <k-comment type="warning" v-if="!data.workspace && !store.dependencies[name]">
-      尚未将当前插件列入依赖，<a @click="send('market/patch', name, data.version)">点击添加</a>。
+    <k-comment type="warning" v-if="!local.workspace && !store.dependencies[name]">
+      尚未将当前插件列入依赖，<a @click="send('market/patch', name, local.version)">点击添加</a>。
     </k-comment>
 
     <!-- impl -->
     <template v-for="name in env.impl" :key="name">
-      <k-comment v-if="name in store.services && !data.id" type="warning">
+      <k-comment v-if="name in store.services && !local.id" type="warning">
         此插件将会提供 {{ name }} 服务，但此服务已被其他插件实现。
       </k-comment>
-      <k-comment v-else :type="data.id ? 'success' : 'primary'">
-        此插件{{ data.id ? '提供了' : '将会提供' }} {{ name }} 服务。
+      <k-comment v-else :type="local.id ? 'success' : 'primary'">
+        此插件{{ local.id ? '提供了' : '将会提供' }} {{ name }} 服务。
       </k-comment>
     </template>
 
@@ -66,11 +66,16 @@
       ({{ local ? `${fulfilled ? '已' : '未'}启用` : '未安装，点击添加' }})
     </k-comment>
 
+    <!-- reusability -->
+    <k-comment v-if="local.id && !local.forkable && current.disabled" type="warning">
+      此插件已在运行且不可重用，启用可能会导致非预期的问题。
+    </k-comment>
+
     <!-- schema -->
-    <k-comment v-if="!data.schema" type="warning">
+    <k-comment v-if="!local.schema" type="warning">
       此插件未声明配置项，这可能并非预期行为{{ hint }}。
     </k-comment>
-    <k-form :schema="data.schema" :initial="current.config" v-model="config">
+    <k-form :schema="local.schema" :initial="current.config" v-model="config">
       <template #hint>{{ hint }}</template>
     </k-form>
   </template>
@@ -112,13 +117,14 @@ const name = computed(() => {
   ].find(name => name in store.packages)
 })
 
-const data = computed(() => getMixedMeta(name.value))
+const local = computed(() => store.packages[name.value])
+const remote = computed(() => store.market[name.value])
 const env = computed(() => envMap.value[name.value])
-const hint = computed(() => data.value.workspace ? '，请检查源代码' : '，请联系插件作者')
+const hint = computed(() => local.value.workspace ? '，请检查源代码' : '，请联系插件作者')
 
 const hasUpdate = computed(() => {
-  if (!data.value.versions || data.value.workspace) return
-  return data.value.versions[0].version !== data.value.version
+  if (!remote.value?.versions || local.value.workspace) return
+  return remote.value.versions[0].version !== local.value.version
 })
 
 function execute(event: 'unload' | 'reload') {

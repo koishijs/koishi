@@ -23,7 +23,8 @@ export interface EnvInfo {
   impl: string[]
   deps: Dict<PluginDepInfo>
   using: Dict<ServiceDepInfo>
-  invalid?: boolean
+  disabled?: boolean
+  type?: 'warning'
   console?: boolean
 }
 
@@ -42,7 +43,7 @@ function getEnvInfo(name: string) {
     }
 
     const fulfilled = name in store.services
-    if (required && !fulfilled) result.invalid = true
+    if (required && !fulfilled) result.disabled = true
     result.using[name] = { name, required, fulfilled }
     if (!fulfilled) {
       result.using[name].available = Object.values(store.market || {})
@@ -74,11 +75,21 @@ function getEnvInfo(name: string) {
     if (name === '@koishijs/plugin-console') continue
     const available = name in store.packages
     const fulfilled = !!store.packages[name]?.id
-    if (!fulfilled) result.invalid = true
+    if (!fulfilled) result.disabled = true
     result.deps[name] = { name, required: true, fulfilled, local: available }
     for (const impl of getMixedMeta(name).manifest.service.implements) {
       delete result.using[impl]
     }
+  }
+
+  // check reusability
+  if (local.id && !local.forkable) {
+    result.type = 'warning'
+  }
+
+  // check schema
+  if (!local.schema) {
+    result.type = 'warning'
   }
 
   return result
