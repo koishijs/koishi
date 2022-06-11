@@ -45,6 +45,7 @@
     "koishi": "^4.7.3"
   },
   "devDependencies": {
+    "@koishijs/cli": "^4.7.3",
     "@koishijs/client": "^3.4.0",
     "@types/d3-force": "^3.0.3",
     "@types/throttle-debounce": "^2.1.0"
