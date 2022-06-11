@@ -21,7 +21,13 @@ watch(() => props.current.alias, (value) => {
 }, { immediate: true })
 
 const invalid = computed(() => {
-  if (!alias.value) return false
+  // group alias cannot be empty
+  if (!alias.value && props.current.label !== 'group') return false
+
+  // check invalid characters
+  if (alias.value.match(/[:~+#?@&*]/)) return true
+
+  // check duplications
   for (const key in plugins.value.paths) {
     if (key === props.current.path) continue
     const tree = plugins.value.paths[key]
