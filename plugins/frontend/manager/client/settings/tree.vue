@@ -103,7 +103,7 @@ function getClass(tree: Tree) {
 }
 
 function remove(tree: Tree) {
-  messageBox.confirm('此插件正在运行，确定要删除吗？', '删除插件', {
+  messageBox.confirm('确定要删除吗？', '删除插件', {
     confirmButtonText: '确定',
     cancelButtonText: '取消',
     type: 'warning',
