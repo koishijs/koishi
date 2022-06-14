@@ -83,7 +83,7 @@ const links = reactive<Link[]>(store.insight.edges as any)
 
 const forceLink = d3
   .forceLink<Node, Link>(links)
-  .id(node => node.id)
+  .id(node => node.uid)
   .distance(120)
 
 const simulation = d3

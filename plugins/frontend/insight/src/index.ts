@@ -25,9 +25,9 @@ function getName(plugin: Plugin) {
 function getSourceId(child: Plugin.Fork) {
   const { state } = child.parent
   if (state.runtime.isForkable) {
-    return state.id
+    return state.uid
   } else {
-    return state.runtime.id
+    return state.runtime.uid
   }
 }
 
@@ -60,11 +60,11 @@ class Insight extends DataService<Insight.Payload> {
   private timer = setInterval(() => {
     // if (!this.nodes) return
     // for (const [, runtime] of this.ctx.app.registry) {
-    //   const data = this.nodes[runtime.id]
+    //   const data = this.nodes[runtime.uid]
     //   if (!data) continue
     //   if (runtime.disposables.length !== data.disposables) {
     //     data.disposables = runtime.disposables.length
-    //     payload[runtime.id] = data
+    //     payload[runtime.uid] = data
     //   }
     // }
     // if (Object.keys(payload).length) this.patch(payload)
@@ -78,11 +78,11 @@ class Insight extends DataService<Insight.Payload> {
       const services = runtime.using.map(name => this.ctx[name])
       if (services.some(x => !x)) continue
 
-      const ref = runtime.id
+      const rid = runtime.uid
       const name = getName(runtime.plugin)
       const deps = new Set(services.map(({ ctx }) => {
         if (!ctx || ctx === ctx.app) return
-        return ctx.state.id
+        return ctx.state.uid
       }).filter(x => x))
 
       // We divide plugins into three categories:
@@ -98,14 +98,14 @@ class Insight extends DataService<Insight.Payload> {
       // Service dependencies will be connected from the last node of each path
 
       function addNode(state: Plugin.State) {
-        const { id, alias, disposables } = state
+        const { uid, alias, disposables } = state
         const weight = disposables.length
-        const node = { id, ref, name, weight }
+        const node = { uid, rid, name, weight }
         if (alias) node.name += ` <${format(alias)}>`
         nodes.push(node)
       }
 
-      function addEdge(type: 'dashed' | 'solid', source: string, target: string) {
+      function addEdge(type: 'dashed' | 'solid', source: number, target: number) {
         edges.push({ type, source, target })
       }
 
@@ -113,24 +113,24 @@ class Insight extends DataService<Insight.Payload> {
       if (!isReusable) {
         addNode(runtime)
         for (const target of deps) {
-          addEdge('dashed', runtime.id, target)
+          addEdge('dashed', runtime.uid, target)
         }
       }
 
       for (const fork of runtime.children) {
         if (runtime.isForkable) {
           addNode(fork)
-          addEdge('solid', getSourceId(fork), fork.id)
+          addEdge('solid', getSourceId(fork), fork.uid)
           if (!isReusable) {
-            addEdge('solid', fork.id, runtime.id)
+            addEdge('solid', fork.uid, runtime.uid)
           } else {
             for (const target of deps) {
-              addEdge('dashed', fork.id, target)
+              addEdge('dashed', fork.uid, target)
             }
           }
         } else {
           nodes[nodes.length - 1].weight += fork.disposables.length
-          addEdge('solid', getSourceId(fork), runtime.id)
+          addEdge('solid', getSourceId(fork), runtime.uid)
         }
       }
     }
@@ -146,16 +146,16 @@ namespace Insight {
   }
 
   export interface Node {
-    id: string
-    ref: string
+    uid: number
+    rid: number
     name: string
     weight: number
   }
 
   export interface Link {
     type: 'solid' | 'dashed'
-    source: string
-    target: string
+    source: number
+    target: number
   }
 
   export const using = ['console'] as const

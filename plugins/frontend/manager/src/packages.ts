@@ -35,7 +35,7 @@ class PackageProvider extends DataService<Dict<PackageProvider.Data>> {
     super(ctx, 'packages', { authority: 4 })
 
     this.ctx.on('plugin-added', async (state) => {
-      this.updatePackage(state.plugin, state.id)
+      this.updatePackage(state.plugin, state.uid)
     })
 
     this.ctx.on('plugin-removed', async (state) => {
@@ -47,7 +47,7 @@ class PackageProvider extends DataService<Dict<PackageProvider.Data>> {
     return this.ctx.app.registry
   }
 
-  private async updatePackage(plugin: Plugin, id: string) {
+  private async updatePackage(plugin: Plugin, id: number) {
     const entry = Object.keys(require.cache).find((key) => {
       return ns.unwrapExports(require.cache[key].exports) === plugin
     })
@@ -138,7 +138,7 @@ class PackageProvider extends DataService<Dict<PackageProvider.Data>> {
 
     // check plugin state
     const runtime = this.registry.get(exports)
-    result.id = runtime?.id
+    result.id = runtime?.uid
     result.forkable = runtime?.isForkable
     result.schema = exports?.Config || exports?.schema
 
@@ -153,7 +153,7 @@ namespace PackageProvider {
   export interface Config {}
 
   export interface Data extends Partial<PackageJson> {
-    id?: string
+    id?: number
     forkable?: boolean
     shortname?: string
     schema?: Schema
