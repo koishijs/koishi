@@ -38,6 +38,6 @@
     "@koishijs/utils": "^5.4.5",
     "cordis": "^1.4.3",
     "fastest-levenshtein": "^1.0.12",
-    "minato": "^1.1.0"
+    "minato": "^1.2.0"
   }
 }

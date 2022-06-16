@@ -43,6 +43,6 @@
     "koishi": "^4.7.4"
   },
   "dependencies": {
-    "@minatojs/driver-memory": "^1.0.3"
+    "@minatojs/driver-memory": "^1.1.0"
   }
 }

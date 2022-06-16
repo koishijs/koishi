@@ -44,6 +44,6 @@
     "koishi": "^4.7.4"
   },
   "dependencies": {
-    "@minatojs/driver-sqlite": "^1.1.0"
+    "@minatojs/driver-sqlite": "^1.2.0"
   }
 }
