@@ -1,4 +1,4 @@
-import { App, coerce, Context, Dict, Logger, makeArray, Plugin, Schema } from 'koishi'
+import { App, coerce, Context, Dict, Logger, makeArray, Runtime, Schema } from 'koishi'
 import { FSWatcher, watch, WatchOptions } from 'chokidar'
 import { relative, resolve } from 'path'
 import { debounce } from 'throttle-debounce'
@@ -227,10 +227,10 @@ class Watcher {
     this.analyzeChanges()
 
     /** plugins pending classification */
-    const pending = new Map<string, Plugin.Runtime>()
+    const pending = new Map<string, Runtime>()
 
     /** plugins that should be reloaded */
-    const reloads = new Map<Plugin.Runtime, string>()
+    const reloads = new Map<Runtime, string>()
 
     // we assume that plugin entry files are "atomic"
     // that is, reloading them will not cause any other reloads
@@ -256,7 +256,7 @@ class Watcher {
 
       // prepare for reload
       let isMarked = false
-      const visited = new Set<Plugin.Runtime>()
+      const visited = new Set<Runtime>()
       const queued = [runtime]
       while (queued.length) {
         const runtime = queued.shift()

@@ -3,7 +3,7 @@ import { Argv, Command } from '../command'
 import { Awaitable } from 'cosmokit'
 import { defineProperty, isNullable, Logger, makeArray, observe, Promisify, Random, segment } from '@koishijs/utils'
 import { Middleware, Next } from '.'
-import { App } from 'cordis'
+import { App, Context } from 'cordis'
 import { Bot } from './bot'
 
 type Genres = 'friend' | 'channel' | 'guild' | 'guild-member' | 'guild-role' | 'guild-file' | 'guild-emoji'
@@ -125,6 +125,10 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
     defineProperty(this, 'id', Random.id())
     defineProperty(this, '_queuedTasks', [])
     defineProperty(this, '_queuedTimeout', null)
+  }
+
+  [Context.filter](ctx: Context) {
+    return ctx.filter(this)
   }
 
   get uid() {

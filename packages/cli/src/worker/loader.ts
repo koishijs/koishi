@@ -11,17 +11,15 @@ declare module 'koishi' {
     }
   }
 
-  namespace Plugin {
-    interface Runtime {
-      [Loader.kWarning]?: boolean
-    }
+  interface Runtime {
+    [Loader.kWarning]?: boolean
+  }
 
-    // Theoretically, these properties will only appear on `Plugin.Fork`.
-    // We define them directly on `Plugin.State` for typing convenience.
-    interface State {
-      [Loader.kRecord]?: Dict<Plugin.Fork>
-      alias?: string
-    }
+  // Theoretically, these properties will only appear on `Fork`.
+  // We define them directly on `State` for typing convenience.
+  interface State {
+    [Loader.kRecord]?: Dict<Fork>
+    alias?: string
   }
 }
 

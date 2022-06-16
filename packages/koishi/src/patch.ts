@@ -10,7 +10,7 @@ declare module '@koishijs/core' {
 
   namespace Registry {
     interface Delegates {
-      plugin(path: string, config?: any): Plugin.Fork
+      plugin(path: string, config?: any): Fork
     }
   }
 }

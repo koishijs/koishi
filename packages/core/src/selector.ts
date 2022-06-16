@@ -46,14 +46,8 @@ function property<K extends keyof Session>(ctx: Context, key: K, ...values: Sess
 
 export class SelectorService {
   constructor(private ctx: Context) {
-    ctx.on('logger/error', (name, ...args) => {
-      this.logger(name).error(...args)
-    })
-    ctx.on('logger/warn', (name, ...args) => {
-      this.logger(name).warn(...args)
-    })
-    ctx.on('logger/debug', (name, ...args) => {
-      this.logger(name).debug(...args)
+    ctx.on('internal/warn', (format, ...args) => {
+      this.logger('app').warn(format, ...args)
     })
   }
 

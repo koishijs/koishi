@@ -1,4 +1,4 @@
-import { camelize, capitalize, Context, Dict, Plugin, Schema } from 'koishi'
+import { camelize, capitalize, Context, Dict, Fork, Plugin, Schema, State } from 'koishi'
 import { debounce } from 'throttle-debounce'
 import { DataService } from '@koishijs/plugin-console'
 import { resolve } from 'path'
@@ -22,7 +22,7 @@ function getName(plugin: Plugin) {
   return format(plugin.name)
 }
 
-function getSourceId(child: Plugin.Fork) {
+function getSourceId(child: Fork) {
   const { state } = child.parent
   if (state.runtime.isForkable) {
     return state.uid
@@ -97,7 +97,7 @@ class Insight extends DataService<Insight.Payload> {
       //       M:    target main state
       // Service dependencies will be connected from the last node of each path
 
-      function addNode(state: Plugin.State) {
+      function addNode(state: State) {
         const { uid, alias, disposables } = state
         const weight = disposables.length
         const node = { uid, rid, name, weight }
