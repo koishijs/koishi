@@ -1,6 +1,7 @@
 import { App, Time } from 'koishi'
 import { install, InstalledClock } from '@sinonjs/fake-timers'
 import * as schedule from '@koishijs/plugin-schedule'
+import memory from '@koishijs/plugin-database-memory'
 import mock from '@koishijs/plugin-mock'
 import * as jest from 'jest-mock'
 import { expect } from 'chai'
@@ -14,7 +15,7 @@ describe('@koishijs/plugin-switch', () => {
 
   const send = app.bots[0].sendMessage = jest.fn(async () => [])
 
-  app.plugin('database-memory')
+  app.plugin(memory)
   app.command('echo [content:text]').action((_, text) => text)
 
   let clock: InstalledClock

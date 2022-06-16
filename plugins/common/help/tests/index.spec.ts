@@ -2,13 +2,14 @@ import { App } from 'koishi'
 import * as help from '@koishijs/plugin-help'
 import suggest from '@koishijs/plugin-suggest'
 import mock from '@koishijs/plugin-mock'
+import memory from '@koishijs/plugin-database-memory'
 
 const app = new App()
 
 app.plugin(mock)
 app.plugin(help)
 app.plugin(suggest)
-app.plugin('database-memory')
+app.plugin(memory)
 
 app.i18n.define('$zh', 'commands.help.messages.global-epilog', 'EPILOG')
 

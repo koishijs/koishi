@@ -46,6 +46,7 @@
     "koishi": "^4.7.4"
   },
   "devDependencies": {
+    "@koishijs/plugin-help": "^1.0.1",
     "@koishijs/plugin-mock": "^1.0.6"
   },
   "dependencies": {

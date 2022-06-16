@@ -3,6 +3,7 @@ import { expect, use } from 'chai'
 import shape from 'chai-shape'
 import * as jest from 'jest-mock'
 import * as help from '@koishijs/plugin-help'
+import memory from '@koishijs/plugin-database-memory'
 import mock, { DEFAULT_SELF_ID } from '@koishijs/plugin-mock'
 import * as forward from '@koishijs/plugin-forward'
 
@@ -48,7 +49,7 @@ describe('@koishijs/plugin-forward', () => {
   })
 
   it('command usage', async () => {
-    app.plugin('database-memory')
+    app.plugin(memory)
     await app.lifecycle.flush()
     await app.mock.initUser('123', 3)
 

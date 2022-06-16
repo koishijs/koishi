@@ -1,5 +1,6 @@
 import { App, Time } from 'koishi'
 import mock from '@koishijs/plugin-mock'
+import memory from '@koishijs/plugin-database-memory'
 import * as help from '@koishijs/plugin-help'
 import * as admin from '@koishijs/plugin-admin'
 import * as rate from '@koishijs/plugin-rate-limit'
@@ -10,7 +11,7 @@ let now = Date.now()
 
 app.plugin(help)
 app.plugin(mock)
-app.plugin('database-memory')
+app.plugin(memory)
 app.plugin(admin)
 app.plugin(rate)
 

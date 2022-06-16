@@ -1,10 +1,11 @@
 import { App } from 'koishi'
 import * as _switch from '@koishijs/plugin-switch'
+import memory from '@koishijs/plugin-database-memory'
 import mock from '@koishijs/plugin-mock'
 
 const app = new App()
 
-app.plugin('database-memory')
+app.plugin(memory)
 app.plugin(mock)
 
 const client = app.mock.client('123', '321')

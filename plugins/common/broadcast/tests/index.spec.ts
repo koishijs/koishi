@@ -1,5 +1,6 @@
-import { App, Channel } from 'koishi'
+import { App, Bot, Channel } from 'koishi'
 import * as broadcast from '@koishijs/plugin-broadcast'
+import memory from '@koishijs/plugin-database-memory'
 import mock from '@koishijs/plugin-mock'
 import * as jest from 'jest-mock'
 import { expect } from 'chai'
@@ -9,7 +10,7 @@ const app = new App({
 })
 
 app.plugin(mock, { selfIds: ['514', '114'] })
-app.plugin('database-memory')
+app.plugin(memory)
 app.plugin(broadcast)
 
 const client = app.mock.client('123')
@@ -25,7 +26,7 @@ before(async () => {
 
 describe('@koishijs/plugin-broadcast', () => {
   it('basic support', async () => {
-    const send = jest.fn<Promise<string[]>, [string, string, string?]>(async () => [])
+    const send = jest.fn<Bot['sendMessage']>(async () => [])
     app.bots.forEach(bot => bot.sendMessage = send)
 
     await client.shouldReply('broadcast', '请输入要发送的文本。')

@@ -1,6 +1,7 @@
 import { App, User, Channel, defineEnumProperty } from 'koishi'
 import { expect, use } from 'chai'
 import * as admin from '@koishijs/plugin-admin'
+import memory from '@koishijs/plugin-database-memory'
 import mock from '@koishijs/plugin-mock'
 import promise from 'chai-as-promised'
 
@@ -8,7 +9,7 @@ use(promise)
 
 const app = new App()
 
-app.plugin('database-memory')
+app.plugin(memory)
 app.plugin(mock)
 app.plugin(admin)
 
