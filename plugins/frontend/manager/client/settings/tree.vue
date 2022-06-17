@@ -67,7 +67,9 @@ interface Node {
 }
 
 function allowDrop(source: Node, target: Node, type: 'inner' | 'prev' | 'next') {
-  return type === 'inner' ? !target.isLeaf : target.data.path !== ''
+  if (type !== 'inner') return target.data.path !== ''
+  const segments = target.data.path.split('/')
+  return segments[segments.length - 1].startsWith('group:')
 }
 
 function handleClick(tree: Tree) {
