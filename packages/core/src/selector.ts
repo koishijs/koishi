@@ -1,5 +1,5 @@
 import { Dict, Logger, makeArray, MaybeArray, remove } from '@koishijs/utils'
-import { Context } from 'cordis'
+import { Context, Events } from 'cordis'
 import { Channel } from './database'
 import { Session } from './protocol/session'
 
@@ -7,7 +7,15 @@ declare module 'cordis' {
   interface Context extends SelectorService.Delegates {
     $selector: SelectorService
   }
+
+  namespace Context {
+    interface Meta {
+      filter: Filter
+    }
+  }
 }
+
+export type Filter = (session: Session) => boolean
 
 const selectors = ['user', 'guild', 'channel', 'self', 'private', 'platform'] as const
 
@@ -24,6 +32,11 @@ interface Selection extends BaseSelection {
 export namespace SelectorService {
   export interface Delegates {
     logger(name: string): Logger
+    any(): Context
+    never(): Context
+    union(arg: Filter | Context): Context
+    intersect(arg: Filter | Context): Context
+    exclude(arg: Filter | Context): Context
     user(...values: string[]): Context
     self(...values: string[]): Context
     guild(...values: string[]): Context
@@ -31,12 +44,18 @@ export namespace SelectorService {
     platform(...values: string[]): Context
     private(...values: string[]): Context
     select(options: Selection): Context
+    before<K extends BeforeEventName>(name: K, listener: BeforeEventMap[K], append?: boolean): () => boolean
     setTimeout(callback: (...args: any[]) => void, ms: number, ...args: any[]): () => boolean
     setInterval(callback: (...args: any[]) => void, ms: number, ...args: any[]): () => boolean
     broadcast(content: string, forced?: boolean): Promise<string[]>
     broadcast(channels: readonly string[], content: string, forced?: boolean): Promise<string[]>
   }
 }
+
+type OmitSubstring<S extends string, T extends string> = S extends `${infer L}${T}${infer R}` ? `${L}${R}` : never
+type BeforeEventName = OmitSubstring<keyof Events & string, 'before-'>
+
+export type BeforeEventMap = { [E in keyof Events & string as OmitSubstring<E, 'before-'>]: Events[E] }
 
 function property<K extends keyof Session>(ctx: Context, key: K, ...values: Session[K][]) {
   return ctx.intersect((session: Session) => {
@@ -45,14 +64,49 @@ function property<K extends keyof Session>(ctx: Context, key: K, ...values: Sess
 }
 
 export class SelectorService {
-  constructor(private ctx: Context) {
-    ctx.on('internal/warn', (format, ...args) => {
+  constructor(private app: Context) {
+    app.filter = () => true
+
+    app.on('internal/warning', (format, ...args) => {
       this.logger('app').warn(format, ...args)
+    })
+
+    app.on('internal/runtime', (runtime) => {
+      if (!runtime.uid) return
+      runtime.context.filter = (session) => {
+        return runtime.children.some(p => p.context.filter(session))
+      }
     })
   }
 
   protected get caller(): Context {
-    return this[Context.current] || this.ctx
+    return this[Context.current] || this.app
+  }
+
+  any() {
+    return this.caller.extend({ filter: () => true })
+  }
+
+  never() {
+    return this.caller.extend({ filter: () => false })
+  }
+
+  union(arg: Filter | Context) {
+    const caller = this.caller
+    const filter = typeof arg === 'function' ? arg : arg.filter
+    return this.caller.extend({ filter: s => caller.filter(s) || filter(s) })
+  }
+
+  intersect(arg: Filter | Context) {
+    const caller = this.caller
+    const filter = typeof arg === 'function' ? arg : arg.filter
+    return this.caller.extend({ filter: s => caller.filter(s) && filter(s) })
+  }
+
+  exclude(arg: Filter | Context) {
+    const caller = this.caller
+    const filter = typeof arg === 'function' ? arg : arg.filter
+    return this.caller.extend({ filter: s => caller.filter(s) && !filter(s) })
   }
 
   logger(name: string) {
@@ -123,6 +177,12 @@ export class SelectorService {
     return ctx
   }
 
+  before<K extends BeforeEventName>(name: K, listener: BeforeEventMap[K], append = false) {
+    const seg = (name as string).split('/')
+    seg[seg.length - 1] = 'before-' + seg[seg.length - 1]
+    return this.caller.on(seg.join('/') as keyof Events, listener, !append)
+  }
+
   private createTimerDispose(timer: NodeJS.Timeout) {
     const dispose = () => {
       clearTimeout(timer)
@@ -170,5 +230,9 @@ export class SelectorService {
 
 Context.service('$selector', {
   constructor: SelectorService,
-  methods: ['logger', 'user', 'self', 'guild', 'channel', 'platform', 'private', 'select', 'setTimeout', 'setInterval', 'broadcast'],
+  methods: [
+    'any', 'never', 'union', 'intersect', 'exclude', 'select',
+    'user', 'self', 'guild', 'channel', 'platform', 'private',
+    'before', 'logger', 'setTimeout', 'setInterval', 'broadcast',
+  ],
 })

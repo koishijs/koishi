@@ -42,8 +42,8 @@ class Insight extends DataService<Insight.Payload> {
       prod: resolve(__dirname, '../dist'),
     })
 
-    ctx.on('plugin-added', this.update)
-    ctx.on('plugin-removed', this.update)
+    ctx.on('internal/fork', this.update)
+    ctx.on('internal/runtime', this.update)
     ctx.on('internal/service', this.update)
   }
 

@@ -189,7 +189,7 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
 
   match(session: Session) {
     const { authority = Infinity } = (session.user || {}) as User
-    return this.ctx.match(session) && this.config.authority <= authority
+    return this.ctx.filter(session) && this.config.authority <= authority
   }
 
   getConfig<K extends keyof Command.Config>(key: K, session: Session): Exclude<Command.Config[K], (session: Session) => any> {

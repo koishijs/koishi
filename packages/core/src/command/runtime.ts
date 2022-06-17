@@ -22,7 +22,7 @@ export default function runtime(ctx: Context) {
     if (parsed.prefix || quote) return
     for (const shortcut of ctx.$commander._shortcuts) {
       const { name, fuzzy, command, prefix, options = {}, args = [] } = shortcut
-      if (prefix && !parsed.appel || !command.ctx.match(session)) continue
+      if (prefix && !parsed.appel || !command.ctx.filter(session)) continue
       if (typeof name === 'string') {
         if (!fuzzy && content !== name || !content.startsWith(name)) continue
         const message = content.slice(name.length)

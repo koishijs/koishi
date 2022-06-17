@@ -10,13 +10,7 @@ type Genres = 'friend' | 'channel' | 'guild' | 'guild-member' | 'guild-role' | '
 type Actions = 'added' | 'deleted' | 'updated'
 type SessionEventCallback = (session: Session) => void
 
-type KoishiSession = Session<any, any>
-
 declare module 'cordis' {
-  namespace Lifecycle {
-    interface Session extends KoishiSession {}
-  }
-
   interface Events extends Record<`${Genres}-${Actions}`, SessionEventCallback> {
     'message': SessionEventCallback
     'message-deleted': SessionEventCallback
@@ -423,7 +417,7 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
     }
 
     const { command } = argv
-    if (!command.ctx.match(this)) return ''
+    if (!command.ctx.filter(this)) return ''
 
     if (this.app.database) {
       if (this.subtype === 'group') {

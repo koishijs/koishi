@@ -1,5 +1,5 @@
 import { DataService } from '@koishijs/plugin-console'
-import { Adapter, App, Bot, Context, Fork, remove } from 'koishi'
+import { Adapter, App, Bot, Context, remove, State } from 'koishi'
 import { Loader } from '@koishijs/cli'
 
 declare module '@koishijs/plugin-console' {
@@ -181,7 +181,7 @@ class ConfigWriter extends DataService<App.Config> {
     this.loader.writeConfig()
   }
 
-  private locate(name: string, parent: Fork): Fork {
+  private locate(name: string, parent: State): State {
     for (const key in parent.config) {
       const value = parent.config[key]
       const fork = parent[Loader.kRecord][key]

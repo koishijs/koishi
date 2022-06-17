@@ -167,7 +167,7 @@ export class Internal {
     // preparation
     this._sessions[session.id] = session
     const queue: Next.Queue = this._hooks
-      .filter(([context]) => context.match(session))
+      .filter(([context]) => context.filter(session))
       .map(([, middleware]) => middleware.bind(null, session))
 
     // execute middlewares

@@ -34,12 +34,8 @@ class PackageProvider extends DataService<Dict<PackageProvider.Data>> {
   constructor(ctx: Context, config: PackageProvider.Config) {
     super(ctx, 'packages', { authority: 4 })
 
-    this.ctx.on('plugin-added', async (state) => {
+    this.ctx.on('internal/runtime', (state) => {
       this.updatePackage(state.plugin, state.uid)
-    })
-
-    this.ctx.on('plugin-removed', async (state) => {
-      this.updatePackage(state.plugin, null)
     })
   }
 
@@ -47,7 +43,7 @@ class PackageProvider extends DataService<Dict<PackageProvider.Data>> {
     return this.ctx.app.registry
   }
 
-  private async updatePackage(plugin: Plugin, id: number) {
+  private updatePackage(plugin: Plugin, id: number) {
     const entry = Object.keys(require.cache).find((key) => {
       return ns.unwrapExports(require.cache[key].exports) === plugin
     })

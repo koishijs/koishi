@@ -8,9 +8,9 @@ export * from 'cordis'
 export * from 'minato'
 export * from './i18n'
 export * from './database'
+export * from './selector'
 export * from './protocol'
 export * from './command'
-export * from './selector'
 
 const version: string = require('../package.json').version
 export { version }

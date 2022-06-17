@@ -77,7 +77,7 @@ export function apply(ctx: Context, config: Config = {}) {
       }
 
       const command = findCommand(target)
-      if (!command?.ctx.match(session)) {
+      if (!command?.ctx.filter(session)) {
         if (!ctx.$suggest) {
           return session.text('.suggest-prefix')
         }
