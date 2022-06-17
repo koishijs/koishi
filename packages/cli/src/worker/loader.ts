@@ -1,5 +1,6 @@
 import { resolve } from 'path'
 import { App, Context, Dict, interpolate, Logger, Plugin, Registry, valueMap } from 'koishi'
+import { patch, separate } from './utils'
 import ConfigLoader from '@koishijs/loader'
 import * as dotenv from 'dotenv'
 import ns from 'ns-require'
@@ -122,21 +123,25 @@ export default class Loader extends ConfigLoader<App.Config> {
     return parent.plugin(plugin, this.interpolate(config))
   }
 
-  reloadPlugin(ctx: Context, key: string, config: any) {
-    let fork = ctx.state[Loader.kRecord][key]
-    const name = key.split(':', 1)[0]
+  reloadPlugin(parent: Context, key: string, config: any) {
+    let fork = parent.state[Loader.kRecord][key]
     if (fork) {
       logger.info(`reload plugin %c`, key)
+      patch(fork.parent, config)
       fork.update(config, true)
     } else {
       logger.info(`apply plugin %c`, key)
+      const name = key.split(':', 1)[0]
+      const ctx = parent.extend({})
+      patch(ctx, config)
       if (name === 'group') {
         fork = ctx.plugin(group, config)
       } else {
+        config = separate(config)[1]
         fork = this.forkPlugin(name, config, ctx)
       }
       fork.alias = key.slice(name.length + 1)
-      ctx.state[Loader.kRecord][key] = fork
+      parent.state[Loader.kRecord][key] = fork
     }
     return fork
   }
