@@ -19,6 +19,7 @@ declare module 'koishi' {
   // Theoretically, these properties will only appear on `Fork`.
   // We define them directly on `State` for typing convenience.
   interface State {
+    [Loader.update]?: boolean
     [Loader.kRecord]?: Dict<Fork>
     alias?: string
   }
@@ -45,6 +46,7 @@ const group: Plugin.Object = {
 }
 
 export default class Loader extends ConfigLoader<App.Config> {
+  static readonly update = Symbol.for('koishi.loader.update')
   static readonly kRecord = Symbol.for('koishi.loader.record')
   static readonly kWarning = Symbol.for('koishi.loader.warning')
 
@@ -128,7 +130,8 @@ export default class Loader extends ConfigLoader<App.Config> {
     if (fork) {
       logger.info(`reload plugin %c`, key)
       patch(fork.parent, config)
-      fork.update(config, true)
+      fork[Loader.update] = true
+      fork.update(config)
     } else {
       logger.info(`apply plugin %c`, key)
       const name = key.split(':', 1)[0]
@@ -164,6 +167,12 @@ export default class Loader extends ConfigLoader<App.Config> {
     this.entry = this.reloadPlugin(app, 'group:entry', this.config.plugins).context
 
     app.on('internal/update', (fork, value) => {
+      // prevent hot reload when config file is being written
+      if (fork[Loader.update]) {
+        fork[Loader.update] = false
+        return
+      }
+
       const { runtime } = fork.parent.state
       const record = runtime[Loader.kRecord]
       if (!record) return
