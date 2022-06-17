@@ -73,34 +73,33 @@ class Insight extends DataService<Insight.Payload> {
   async get() {
     const nodes: Insight.Node[] = []
     const edges: Insight.Link[] = []
+
     for (const runtime of this.ctx.app.registry.values()) {
-      // exclude plugins that don't work due to missing dependencies
-      const services = runtime.using.map(name => this.ctx[name])
-      if (services.some(x => !x)) continue
+      // Suppose we have the following types of nodes:
+      // - A, B: parent plugin states
+      // - X, Y: target fork states
+      // - M:    target main state
+      // - S:    service dependencies
 
-      const rid = runtime.uid
-      const name = getName(runtime.plugin)
-      const deps = new Set(services.map(({ ctx }) => {
-        if (!ctx || ctx === ctx.app) return
-        return ctx.state.uid
-      }).filter(x => x))
-
-      // We divide plugins into three categories:
+      // We can divide plugins into three categories:
       // 1. fully reusable plugins
-      //    will be displayed as A -> X, B -> Y
+      //    will be displayed as A -> X -> S, B -> Y -> S
       // 2. partially reusable plugins
-      //    will be displayed as A -> X -> M, B -> Y -> M
+      //    will be displayed as A -> X -> M -> S, B -> Y -> M -> S
       // 3. non-reusable plugins
-      //    will be displayed as A -> M, B -> M
-      // where A, B: parent plugin states
-      //       X, Y: target fork states
-      //       M:    target main state
-      // Service dependencies will be connected from the last node of each path
+      //    will be displayed as A -> M -> S, B -> M -> S
+
+      function isActive(state: State) {
+        // exclude plugins that don't work due to missing dependencies
+        return runtime.using.every(name => state.context[name])
+      }
+
+      const name = getName(runtime.plugin)
 
       function addNode(state: State) {
         const { uid, alias, disposables } = state
         const weight = disposables.length
-        const node = { uid, rid, name, weight }
+        const node = { uid, name, weight }
         if (alias) node.name += ` <${format(alias)}>`
         nodes.push(node)
       }
@@ -109,24 +108,31 @@ class Insight extends DataService<Insight.Payload> {
         edges.push({ type, source, target })
       }
 
+      function addDeps(state: State) {
+        for (const name of runtime.using) {
+          const ctx = state.context[name][Context.source]
+          const uid = ctx?.state.uid
+          if (!uid) continue
+          addEdge('dashed', state.uid, uid)
+        }
+      }
+
       const isReusable = runtime.plugin?.['reusable']
       if (!isReusable) {
+        if (!isActive(runtime)) continue
         addNode(runtime)
-        for (const target of deps) {
-          addEdge('dashed', runtime.uid, target)
-        }
+        addDeps(runtime)
       }
 
       for (const fork of runtime.children) {
         if (runtime.isForkable) {
+          if (!isActive(fork)) continue
           addNode(fork)
           addEdge('solid', getSourceId(fork), fork.uid)
           if (!isReusable) {
             addEdge('solid', fork.uid, runtime.uid)
           } else {
-            for (const target of deps) {
-              addEdge('dashed', fork.uid, target)
-            }
+            addDeps(fork)
           }
         } else {
           nodes[nodes.length - 1].weight += fork.disposables.length
@@ -147,7 +153,6 @@ namespace Insight {
 
   export interface Node {
     uid: number
-    rid: number
     name: string
     weight: number
   }
