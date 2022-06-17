@@ -104,6 +104,7 @@ class ConfigWriter extends DataService<App.Config> {
       delete record[oldKey]
       record[newKey] = fork
       fork.alias = alias
+      fork.context.emit('internal/fork', fork)
       config = parent.config[oldKey]
     } else {
       newKey = '~' + newKey
@@ -168,10 +169,17 @@ class ConfigWriter extends DataService<App.Config> {
 
     // teleport fork
     const fork = parentS[Loader.kRecord][oldKey]
-    if (fork) {
+    if (fork && parentS !== parentT) {
+      delete parentS[Loader.kRecord][oldKey]
+      parentT[Loader.kRecord][oldKey] = fork
       remove(parentS.disposables, fork.dispose)
-      fork.parent = parentT.context
       parentT.disposables.push(fork.dispose)
+      fork.parent = parentT.context
+      Object.setPrototypeOf(fork.context, parentT.context)
+      fork.context.emit('internal/fork', fork)
+      if (fork.runtime.using.some(name => parentS[name] !== parentT[name])) {
+        fork.restart()
+      }
     }
 
     // teleport config

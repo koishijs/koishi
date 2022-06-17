@@ -53,7 +53,7 @@
 
 <script lang="ts" setup>
 
-import { onMounted, reactive, ref, computed } from 'vue'
+import { onMounted, ref, computed, watch, reactive } from 'vue'
 import { store } from '@koishijs/client'
 import Insight from '../src'
 import * as d3 from 'd3-force'
@@ -79,10 +79,10 @@ interface Link extends Omit<Insight.Link, 'source' | 'target'>, d3.SimulationLin
 }
 
 const nodes = reactive<Node[]>(store.insight.nodes as any)
-const links = reactive<Link[]>(store.insight.edges as any)
+const links = computed<Link[]>(() => store.insight.edges as any)
 
 const forceLink = d3
-  .forceLink<Node, Link>(links)
+  .forceLink<Node, Link>(links.value)
   .id(node => node.uid)
   .distance(120)
 
@@ -93,6 +93,25 @@ const simulation = d3
   .force('x', d3.forceX().strength(0.05))
   .force('y', d3.forceY().strength(0.05))
   .stop()
+
+watch(() => store.insight, (value) => {
+  if (!value) return
+  nodes.slice().forEach((source, index) => {
+    const target = value.nodes.find(n => n.uid === source.uid)
+    if (!target) nodes.splice(index, 1)
+  })
+  for (const node of value.nodes) {
+    const source = nodes.find(n => n.uid === node.uid)
+    if (source) {
+      Object.assign(source, node)
+    } else {
+      nodes.push(node)
+    }
+  }
+  simulation.nodes(nodes)
+  forceLink.links(value.edges as any)
+  simulation.alpha(0.3).restart()
+})
 
 const ticks = 1000
 const alphaMin = 0.001
@@ -112,7 +131,7 @@ useEventListener('touchend', onDragEnd)
 
 function onMouseEnterNode(node: Node, event: MouseEvent) {
   fNode.value = node
-  tooltip.activate(node.name + '\n复杂度：' + node.weight, event)
+  tooltip.activate('插件：' + node.name, event)
 }
 
 function onMouseLeaveNode(node: Node, event: MouseEvent) {
@@ -123,7 +142,8 @@ function onMouseLeaveNode(node: Node, event: MouseEvent) {
 
 function onMouseEnterLink(link: Link, event: MouseEvent) {
   fLink.value = link
-  let text = `${link.type === 'dashed' ? '依赖' : '调用'}：${link.source.name} → ${link.target.name}`
+  const type = link.type === 'dashed' ? '依赖' : '调用'
+  const text = `${type}：${link.source.name} → ${link.target.name}`
   tooltip.activate(text, event)
 }
 
@@ -188,7 +208,7 @@ const subgraph = computed<Graph>(() => {
   let flag = true
   while (flag) {
     flag = false
-    for (const link of links) {
+    for (const link of links.value) {
       if (g1.links.has(link) || link.type !== 'solid') continue
       if (g1.nodes.has(link.source) && !g1.nodes.has(link.target)) {
         g1.nodes.add(link.target)
@@ -204,7 +224,7 @@ const subgraph = computed<Graph>(() => {
   flag = true
   while (flag) {
     flag = false
-    for (const link of links) {
+    for (const link of links.value) {
       if (g2.links.has(link) || link.type !== 'solid') continue
       if (g2.nodes.has(link.target) && !g2.nodes.has(link.source)) {
         g2.nodes.add(link.source)
