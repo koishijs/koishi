@@ -1,4 +1,4 @@
-import { Dict, Logger, makeArray, MaybeArray, remove } from '@koishijs/utils'
+import { Dict, Logger, remove } from '@koishijs/utils'
 import { Context, Events } from 'cordis'
 import { Channel } from './database'
 import { Session } from './protocol/session'
@@ -16,18 +16,6 @@ declare module 'cordis' {
 }
 
 export type Filter = (session: Session) => boolean
-
-const selectors = ['user', 'guild', 'channel', 'self', 'private', 'platform'] as const
-
-export type SelectorType = typeof selectors[number]
-export type SelectorValue = boolean | MaybeArray<string | number>
-export type BaseSelection = { [K in SelectorType as `$${K}`]?: SelectorValue }
-
-interface Selection extends BaseSelection {
-  $and?: Selection[]
-  $or?: Selection[]
-  $not?: Selection
-}
 
 export namespace SelectorService {
   export interface Delegates {
@@ -135,46 +123,6 @@ export class SelectorService {
 
   private(...values: string[]) {
     return property(this.caller.exclude(property(this.caller, 'guildId')), 'userId', ...values)
-  }
-
-  select(options: Selection) {
-    let ctx: Context = this.caller
-
-    // basic selectors
-    for (const type of selectors) {
-      const value = options[`$${type}`] as SelectorValue
-      if (value === true) {
-        ctx = ctx[type]()
-      } else if (value === false) {
-        ctx = ctx.exclude(ctx[type]())
-      } else if (value !== undefined) {
-        // we turn everything into string
-        ctx = ctx[type](...makeArray(value).map(item => '' + item))
-      }
-    }
-
-    // intersect
-    if (options.$and) {
-      for (const selection of options.$and) {
-        ctx = ctx.intersect(this.select(selection))
-      }
-    }
-
-    // union
-    if (options.$or) {
-      let ctx2: Context = this.caller
-      for (const selection of options.$or) {
-        ctx2 = ctx2.union(this.select(selection))
-      }
-      ctx = ctx.intersect(ctx2)
-    }
-
-    // exclude
-    if (options.$not) {
-      ctx = ctx.exclude(this.select(options.$not))
-    }
-
-    return ctx
   }
 
   before<K extends BeforeEventName>(name: K, listener: BeforeEventMap[K], append = false) {
