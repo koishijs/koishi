@@ -38,11 +38,7 @@ const group: Plugin.Object = {
     ctx.state[Loader.kRecord] ||= Object.create(null)
     for (const name in plugins || {}) {
       if (name.startsWith('~') || name.startsWith('$')) continue
-      if (name.startsWith('group:')) {
-        ctx.loader.loadGroup(ctx, name, plugins[name])
-      } else {
-        ctx.loader.reloadPlugin(ctx, name, plugins[name])
-      }
+      ctx.loader.reloadPlugin(ctx, name, plugins[name])
     }
   },
 }
@@ -122,22 +118,27 @@ export default class Loader extends ConfigLoader<App.Config> {
       this.app.lifecycle.flush().then(() => this.check(name))
     }
 
-    logger.info(`apply plugin %c`, name)
     Registry.validate(plugin, config)
     return parent.plugin(plugin, this.interpolate(config))
   }
 
   reloadPlugin(ctx: Context, key: string, config: any) {
-    const fork = ctx.state[Loader.kRecord][key]
+    let fork = ctx.state[Loader.kRecord][key]
     const name = key.split(':', 1)[0]
     if (fork) {
+      logger.info(`reload plugin %c`, key)
       fork.update(config, true)
-      logger.info(`reload plugin %c`, name)
     } else {
-      const fork = this.forkPlugin(name, config, ctx)
+      logger.info(`apply plugin %c`, key)
+      if (name === 'group') {
+        fork = ctx.plugin(group, config)
+      } else {
+        fork = this.forkPlugin(name, config, ctx)
+      }
       fork.alias = key.slice(name.length + 1)
       ctx.state[Loader.kRecord][key] = fork
     }
+    return fork
   }
 
   unloadPlugin(ctx: Context, key: string) {
@@ -150,20 +151,12 @@ export default class Loader extends ConfigLoader<App.Config> {
     }
   }
 
-  loadGroup(ctx: Context, key: string, plugins: Dict) {
-    const fork = ctx.plugin(group, plugins)
-    fork.alias = key.slice(6)
-    logger.info(`%s group %c`, 'load', fork.alias)
-    ctx.state[Loader.kRecord][key] = fork
-    return fork.context
-  }
-
   createApp() {
     const app = this.app = new App(this.config)
     app.loader = this
     app.baseDir = this.dirname
     app.state[Loader.kRecord] = Object.create(null)
-    this.entry = this.loadGroup(app, 'group=entry', this.config.plugins)
+    this.entry = this.reloadPlugin(app, 'group:entry', this.config.plugins).context
 
     app.on('internal/update', (fork, value) => {
       const { runtime } = fork.parent.state

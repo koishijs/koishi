@@ -158,7 +158,7 @@ class ConfigWriter extends DataService<App.Config> {
   group(path: string) {
     const [parent, oldKey] = this.resolve(path)
     const config = parent.config[oldKey] = {}
-    this.loader.loadGroup(parent.context, oldKey, config)
+    this.loader.reloadPlugin(parent.context, oldKey, config)
     this.loader.writeConfig()
     this.refresh()
   }
