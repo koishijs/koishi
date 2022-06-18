@@ -2,29 +2,17 @@ import { Dict } from 'koishi'
 import { computed } from 'vue'
 import { MarketProvider } from '@koishijs/plugin-manager'
 import { router, store } from '@koishijs/client'
-import { getMixedMeta } from '../utils'
 import {} from '@koishijs/cli'
 
 interface DepInfo {
-  name: string
   required: boolean
-  fulfilled: boolean
-}
-
-interface ServiceDepInfo extends DepInfo {
-  available?: string[]
-}
-
-interface PluginDepInfo extends DepInfo {
-  local?: boolean
+  available: string[]
 }
 
 export interface EnvInfo {
   impl: string[]
-  deps: Dict<PluginDepInfo>
-  using: Dict<ServiceDepInfo>
-  disabled?: boolean
-  type?: 'warning'
+  using: Dict<DepInfo>
+  warning?: boolean
   console?: boolean
 }
 
@@ -42,18 +30,14 @@ function getEnvInfo(name: string) {
       return
     }
 
-    const fulfilled = name in store.services
-    if (required && !fulfilled) result.disabled = true
-    result.using[name] = { name, required, fulfilled }
-    if (!fulfilled) {
-      result.using[name].available = Object.values(store.market || {})
-        .filter(data => isAvailable(name, data))
-        .map(data => data.name)
-    }
+    const available = Object.values(store.market || {})
+      .filter(data => isAvailable(name, data))
+      .map(data => data.name)
+    result.using[name] = { required, available }
   }
 
   const local = store.packages[name]
-  const result: EnvInfo = { impl: [], using: {}, deps: {} }
+  const result: EnvInfo = { impl: [], using: {} }
 
   // check implementations
   for (const name of local.manifest.service.implements) {
@@ -69,27 +53,14 @@ function getEnvInfo(name: string) {
     setService(name, false)
   }
 
-  // check dependencies
-  for (const name in local.peerDependencies) {
-    if (!name.includes('koishi-plugin-') || !name.startsWith('@koishijs/plugin-')) continue
-    if (name === '@koishijs/plugin-console') continue
-    const available = name in store.packages
-    const fulfilled = !!store.packages[name]?.id
-    if (!fulfilled) result.disabled = true
-    result.deps[name] = { name, required: true, fulfilled, local: available }
-    for (const impl of getMixedMeta(name).manifest.service.implements) {
-      delete result.using[impl]
-    }
-  }
-
   // check reusability
   if (local.id && !local.forkable) {
-    result.type = 'warning'
+    result.warning = true
   }
 
   // check schema
   if (!local.schema) {
-    result.type = 'warning'
+    result.warning = true
   }
 
   return result
@@ -109,25 +80,26 @@ export interface Tree {
   path: string
   config?: any
   target?: string
+  parent?: Tree
   disabled?: boolean
   children?: Tree[]
 }
 
-function getTree(prefix: string, plugins: any): Tree[] {
+function getTree(parent: Tree, plugins: any): Tree[] {
   const trees: Tree[] = []
   for (let key in plugins) {
     if (key.startsWith('$')) continue
     const config = plugins[key]
-    const node = { config } as Tree
+    const node = { config, parent } as Tree
     if (key.startsWith('~')) {
       node.disabled = true
       key = key.slice(1)
     }
     node.label = key.split(':', 1)[0]
     node.alias = key.slice(node.label.length + 1)
-    node.id = node.path = prefix + key
+    node.id = node.path = parent.path + (parent.path ? '/' : '') + key
     if (key.startsWith('group:')) {
-      node.children = getTree(node.path + '/', config)
+      node.children = getTree(node, config)
     }
     trees.push(node)
   }
@@ -141,8 +113,8 @@ export const plugins = computed(() => {
     path: '',
     alias: '',
     config: store.config.plugins,
-    children: getTree('', store.config.plugins),
   }
+  root.children = getTree(root, store.config.plugins)
   const paths: Dict<Tree> = {
     '@global': {
       label: '全局设置',

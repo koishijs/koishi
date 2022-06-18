@@ -36,7 +36,7 @@ export default (ctx: Context) => {
     icon: 'cog',
     order: 630,
     authority: 4,
-    fields: ['config', 'packages', 'services', 'dependencies'],
+    fields: ['config', 'packages', 'dependencies'],
     component: Settings,
   })
 

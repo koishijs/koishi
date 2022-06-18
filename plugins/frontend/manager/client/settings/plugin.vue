@@ -14,15 +14,20 @@
     </template>
     <template v-if="!current.disabled">
       <k-button solid type="error" @click="execute('unload')">停用插件</k-button>
-      <k-button solid :disabled="env.disabled" @click="execute('reload')">重载配置</k-button>
+      <k-button solid @click="execute('reload')">重载配置</k-button>
     </template>
     <template v-else-if="name">
-      <k-button solid :disabled="env.disabled" :type="env.type" @click="execute('reload')">启用插件</k-button>
+      <k-button solid :type="type" @click="execute('reload')">启用插件</k-button>
       <k-button solid @click="execute('unload')">保存配置</k-button>
     </template>
   </h1>
 
   <template v-if="name">
+    <!-- reusability -->
+    <k-comment v-if="local.id && !local.forkable && current.disabled" type="warning">
+      此插件已在运行且不可重用，启用可能会导致非预期的问题。
+    </k-comment>
+
     <!-- latest -->
     <k-comment v-if="hasUpdate">
       当前的插件版本不是最新，<router-link to="/dependencies">点击前往依赖管理</router-link>。
@@ -35,40 +40,27 @@
 
     <!-- impl -->
     <template v-for="name in env.impl" :key="name">
-      <k-comment v-if="name in store.services && !local.id" type="warning">
+      <k-comment v-if="deps[name] && current.disabled" type="warning">
         此插件将会提供 {{ name }} 服务，但此服务已被其他插件实现。
       </k-comment>
-      <k-comment v-else :type="local.id ? 'success' : 'primary'">
-        此插件{{ local.id ? '提供了' : '将会提供' }} {{ name }} 服务。
+      <k-comment v-else :type="current.disabled ? 'primary' : 'success'">
+        此插件{{ current.disabled ? '将会提供' : '提供了' }} {{ name }} 服务。
       </k-comment>
     </template>
 
     <!-- using -->
     <k-comment
-      v-for="({ fulfilled, required, available, name }) in env.using" :key="name"
-      :type="fulfilled ? 'success' : required ? 'error' : 'primary'">
+      v-for="({ required, available }, name) in env.using" :key="name"
+      :type="deps[name] ? 'success' : required ? 'warning' : 'primary'">
       {{ required ? '必需' : '可选' }}服务：{{ name }}
-      {{ fulfilled ? '(已加载)' : '(未加载，启用下列任一插件可实现此服务)' }}
-      <template v-if="!fulfilled" #body>
+      {{ deps[name] ? '(已加载)' : '(未加载，启用下列任一插件可实现此服务)' }}
+      <template v-if="!deps[name]" #body>
         <ul>
           <li v-for="name in available">
             <k-dep-link :name="name"></k-dep-link> (点击{{ name in store.packages ? '配置' : '添加' }})
           </li>
         </ul>
       </template>
-    </k-comment>
-
-    <!-- dep -->
-    <k-comment
-      v-for="({ fulfilled, required, local, name }) in env.deps" :key="name"
-      :type="fulfilled ? 'success' : required ? 'error' : 'primary'">
-      {{ required ? '必需' : '可选' }}依赖：<k-dep-link :name="name"></k-dep-link>
-      ({{ local ? `${fulfilled ? '已' : '未'}启用` : '未安装，点击添加' }})
-    </k-comment>
-
-    <!-- reusability -->
-    <k-comment v-if="local.id && !local.forkable && current.disabled" type="warning">
-      此插件已在运行且不可重用，启用可能会导致非预期的问题。
     </k-comment>
 
     <!-- schema -->
@@ -89,7 +81,6 @@
 
 import { send, store, clone, router } from '@koishijs/client'
 import { computed, ref, watch } from 'vue'
-import { getMixedMeta } from '../utils'
 import { envMap, Tree } from './utils'
 import KAlias from './alias.vue'
 import KDepLink from './dep-link.vue'
@@ -103,6 +94,19 @@ const config = ref()
 watch(() => props.current.config, (value) => {
   config.value = clone(value)
 }, { immediate: true })
+
+const deps = computed(() => props.current.parent.config.$deps)
+
+const type = computed(() => {
+  if (env.value.warning && props.current.disabled) return 'warning'
+  for (const name in env.value.using) {
+    if (deps.value[name]) {
+      if (env.value.impl.includes(name)) return 'warning'
+    } else {
+      if (env.value.using[name].required) return 'warning'
+    }
+  }
+})
 
 const name = computed(() => {
   const { label, target: temporary } = props.current
