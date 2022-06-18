@@ -1,6 +1,10 @@
 <template>
   <template v-if="!schema || schema.meta.hidden"/>
 
+  <!--
+    Schema.object(dict).description(desc)
+    desc will be displayed as h2 title
+  -->
   <template v-else-if="schema.type === 'object'">
     <h2 v-if="schema.meta.description">{{ schema.meta.description }}</h2>
     <k-schema v-for="(item, key) in schema.dict" :key="key"
@@ -11,7 +15,8 @@
       :disabled="disabled"
       :prefix="prefix + key + '.'">
       <h3>
-        <span>{{ prefix + key }}</span>
+        <span class="prefix">{{ prefix }}</span>
+        <span>{{ key }}</span>
       </h3>
       <k-markdown inline :source="item.meta.description"></k-markdown>
     </k-schema>
@@ -217,6 +222,10 @@ function handleCommand(action: string) {
     line-height: 1.7;
     position: relative;
     user-select: none;
+
+    .prefix {
+      font-weight: normal;
+    }
   }
 
   p {

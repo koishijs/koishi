@@ -4,10 +4,14 @@
       <schema-item @command="handleCommand($event, index)"
         :class="{ invalid: entries.filter(e => e[0] === key).length > 1 }">
         <template #left>
-          <h3>
-            <span>{{ prefix }}</span>
-            <el-input v-if="schema.type === 'dict'" v-model="entries[index][0]"></el-input>
-            <span v-else>{{ key }}</span>
+          <h3 v-if="schema.type === 'array'">
+            <span class="prefix">{{ prefix.slice(0, -1) }}[</span>
+            <span>{{ key }}</span>
+            <span class="prefix">]</span>
+          </h3>
+          <h3 v-else>
+            <span class="prefix">{{ prefix }}</span>
+            <el-input v-model="entries[index][0]"></el-input>
           </h3>
           <k-markdown inline :source="schema.inner.meta.description"></k-markdown>
         </template>
@@ -25,9 +29,10 @@
           :schema="{ ...schema.inner, meta: { ...schema.inner.meta, description: '' } }"
           :disabled="disabled"
           :instant="instant"
-          :prefix="prefix + key + '.'">
+          :prefix="schema.type === 'array' ? `${prefix.slice(0, -1)}[${key}].` : prefix + key + '.'">
           <h3>
-            <span>{{ prefix + key }}</span>
+            <span class="prefix">{{ prefix }}</span>
+            <span>{{ key }}</span>
           </h3>
         </k-schema>
       </div>
@@ -40,17 +45,21 @@
       :schema="schema.inner"
       :disabled="disabled"
       :instant="instant"
-      :prefix="prefix + key + '.'"
+      :prefix="schema.type === 'array' ? `${prefix.slice(0, -1)}[${key}].` : prefix + key + '.'"
       @command="handleCommand($event, index)">
       <template #menu>
         <el-dropdown-item divided :disabled="!index" command="up">上移</el-dropdown-item>
         <el-dropdown-item :disabled="index === entries.length - 1" command="down">下移</el-dropdown-item>
         <el-dropdown-item command="delete">删除</el-dropdown-item>
       </template>
-      <h3>
-        <span>{{ prefix }}</span>
-        <el-input v-if="schema.type === 'dict'" v-model="entries[index][0]"></el-input>
-        <span v-else>{{ key }}</span>
+      <h3 v-if="schema.type === 'array'">
+        <span class="prefix">{{ prefix.slice(0, -1) }}[</span>
+        <span>{{ key }}</span>
+        <span class="prefix">]</span>
+      </h3>
+      <h3 v-else>
+        <span class="prefix">{{ prefix }}</span>
+        <el-input v-model="entries[index][0]"></el-input>
       </h3>
     </k-schema>
   </template>
