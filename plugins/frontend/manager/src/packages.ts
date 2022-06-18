@@ -1,4 +1,4 @@
-import { Adapter, App, Context, Dict, Logger, pick, Plugin, remove, Schema } from 'koishi'
+import { Adapter, App, Context, Dict, Logger, pick, remove, Runtime, Schema, State } from 'koishi'
 import { DataService } from '@koishijs/plugin-console'
 import { conclude, Manifest, PackageJson } from '@koishijs/market'
 import { promises as fsp } from 'fs'
@@ -34,22 +34,26 @@ class PackageProvider extends DataService<Dict<PackageProvider.Data>> {
   constructor(ctx: Context, config: PackageProvider.Config) {
     super(ctx, 'packages', { authority: 4 })
 
-    this.ctx.on('internal/runtime', (state) => {
-      this.updatePackage(state.plugin, state.uid)
+    this.ctx.on('internal/runtime', (runtime) => {
+      this.updatePackage(runtime)
+    })
+
+    this.ctx.on('internal/fork', (fork) => {
+      this.updatePackage(fork)
     })
   }
 
   get registry() {
-    return this.ctx.app.registry
+    return this.ctx.registry
   }
 
-  private updatePackage(plugin: Plugin, id: number) {
+  private updatePackage(state: State) {
     const entry = Object.keys(require.cache).find((key) => {
-      return ns.unwrapExports(require.cache[key].exports) === plugin
+      return ns.unwrapExports(require.cache[key].exports) === state.runtime.plugin
     })
     if (!this.cache[entry]) return
-    const local = this.cache[entry]
-    local.id = id
+    const data = this.cache[entry]
+    this.parseRuntime(state.runtime, data)
     this.refresh()
   }
 
@@ -90,18 +94,18 @@ class PackageProvider extends DataService<Dict<PackageProvider.Data>> {
         const files = await fsp.readdir(base2).catch(() => [])
         for (const name2 of files) {
           if (name === '@koishijs' && name2.startsWith('plugin-') || name2.startsWith('koishi-plugin-')) {
-            this.loadPackage(name + '/' + name2, base2 + '/' + name2)
+            this.loadPackage(name + '/' + name2)
           }
         }
       } else {
         if (name.startsWith('koishi-plugin-')) {
-          this.loadPackage(name, base2)
+          this.loadPackage(name)
         }
       }
     }
   }
 
-  private loadPackage(name: string, path: string) {
+  private loadPackage(name: string) {
     try {
       // require.resolve(name) may be different from require.resolve(path)
       // because tsconfig-paths may resolve the path differently
@@ -131,17 +135,21 @@ class PackageProvider extends DataService<Dict<PackageProvider.Data>> {
     const exports = getExports(name)
     const newLength = Object.keys(Adapter.library).length
     if (newLength > oldLength) this.ctx.console.protocols.refresh()
+    result.schema = exports?.Config || exports?.schema
 
     // check plugin state
     const runtime = this.registry.get(exports)
-    result.id = runtime?.uid
-    result.forkable = runtime?.isForkable
-    result.schema = exports?.Config || exports?.schema
+    if (runtime) this.parseRuntime(runtime, result)
 
     // make sure that result can be serialized into json
     JSON.stringify(result)
 
     return result
+  }
+
+  parseRuntime(runtime: Runtime, result: PackageProvider.Data) {
+    result.id = runtime.uid
+    result.forkable = runtime.isForkable
   }
 }
 

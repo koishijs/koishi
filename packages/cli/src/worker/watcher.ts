@@ -139,15 +139,8 @@ class Watcher {
         this.ctx.loader.unloadPlugin(ctx, key)
       } else if (key.startsWith('group:')) {
         this.triggerGroupReload(key, neo[key] || {}, old[key] || {}, fork.context)
-      } else {
-        const [oldModifier, oldConfig] = separate(old[key])
-        const [neoModifier, neoConfig] = separate(neo[key])
-        if (!deepEqual(oldConfig, neoConfig)) {
-          this.ctx.loader.reloadPlugin(ctx, key, neo[key])
-        } else if (!deepEqual(oldModifier, neoModifier)) {
-          logger.info(`update modifier for plugin %c`, key)
-          patch(fork.parent, neo[key])
-        }
+      } else if (!deepEqual(old[key], neo[key])) {
+        this.ctx.loader.reloadPlugin(ctx, key, neo[key])
       }
     }
   }

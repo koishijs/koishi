@@ -136,8 +136,8 @@ export default class Loader extends ConfigLoader<App.Config> {
       logger.info(`apply plugin %c`, key)
       const name = key.split(':', 1)[0]
       const ctx = parent.extend({})
-      patch(ctx, config)
       if (name === 'group') {
+        patch(ctx, config)
         fork = ctx.plugin(group, config)
       } else {
         config = separate(config)[1]

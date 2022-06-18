@@ -43,7 +43,7 @@
     "cac": "^6.7.12",
     "chokidar": "^3.5.3",
     "dotenv": "^16.0.1",
-    "ns-require": "^1.1.2",
+    "ns-require": "^1.1.4",
     "kleur": "^4.1.4",
     "prompts": "^2.4.2",
     "throttle-debounce": "^3.0.1"

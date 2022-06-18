@@ -4,6 +4,8 @@ import * as logger from './logger'
 import Loader from './loader'
 import Watcher from './watcher'
 
+export * from './utils'
+
 export { Loader, Watcher }
 
 declare module 'koishi' {
