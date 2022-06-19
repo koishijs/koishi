@@ -40,7 +40,7 @@
     }
   },
   "peerDependencies": {
-    "koishi": "^4.7.4"
+    "koishi": "^4.7.5"
   },
   "devDependencies": {
     "@types/es-aggregate-error": "^1.0.2",
