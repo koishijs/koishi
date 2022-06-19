@@ -72,24 +72,24 @@ const email = computed(() => props.data.author?.email)
   margin: 0;
   display: flex;
   flex-direction: column;
+  justify-content: space-between;
 
   header, footer {
     margin: 1rem 0;
   }
 
   .k-card-body {
-    margin: 0;
+    margin: -1rem 0;
     flex-grow: 1;
     overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-evenly;
   }
 
   .desc {
     margin: 0;
     font-size: 15px;
-  }
-
-  .badges {
-    margin-top: 1.25rem;
   }
 
   header, footer {

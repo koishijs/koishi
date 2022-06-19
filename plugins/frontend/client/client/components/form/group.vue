@@ -5,9 +5,8 @@
         :class="{ invalid: entries.filter(e => e[0] === key).length > 1 }">
         <template #left>
           <h3 v-if="schema.type === 'array'">
-            <span class="prefix">{{ prefix.slice(0, -1) }}[</span>
-            <span>{{ key }}</span>
-            <span class="prefix">]</span>
+            <span class="prefix">{{ prefix.slice(0, -1) }}</span>
+            <span>[{{ key }}]</span>
           </h3>
           <h3 v-else>
             <span class="prefix">{{ prefix }}</span>
@@ -53,9 +52,8 @@
         <el-dropdown-item command="delete">删除</el-dropdown-item>
       </template>
       <h3 v-if="schema.type === 'array'">
-        <span class="prefix">{{ prefix.slice(0, -1) }}[</span>
-        <span>{{ key }}</span>
-        <span class="prefix">]</span>
+        <span class="prefix">{{ prefix.slice(0, -1) }}</span>
+        <span>[{{ key }}]</span>
       </h3>
       <h3 v-else>
         <span class="prefix">{{ prefix }}</span>

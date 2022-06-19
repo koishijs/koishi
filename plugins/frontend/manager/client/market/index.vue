@@ -40,12 +40,9 @@ import PackageView from './package.vue'
 
 const route = useRoute()
 
-const words = reactive([])
-
-watch(() => route.query.keyword, (keyword) => {
-  words.splice(0, Infinity, ...Array.isArray(keyword) ? keyword : (keyword || '').split(' '))
-  if (words[words.length - 1]) words.push('')
-}, { immediate: true })
+const { keyword } = route.query
+const words = reactive(Array.isArray(keyword) ? keyword : (keyword || '').split(' '))
+if (words[words.length - 1]) words.push('')
 
 const realWords = computed(() => words.filter(w => w))
 
