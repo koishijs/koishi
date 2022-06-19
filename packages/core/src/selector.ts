@@ -1,4 +1,4 @@
-import { Dict, Logger, remove } from '@koishijs/utils'
+import { Dict, Logger, Promisify, remove } from '@koishijs/utils'
 import { Context, Events } from 'cordis'
 import { Channel } from './database'
 import { Session } from './protocol/session'
@@ -32,6 +32,10 @@ export namespace SelectorService {
     platform(...values: string[]): Context
     private(...values: string[]): Context
     select(options: Selection): Context
+    waterfall<K extends keyof Events>(name: K, ...args: Parameters<Events[K]>): Promisify<ReturnType<Events[K]>>
+    waterfall<K extends keyof Events>(thisArg: ThisParameterType<Events[K]>, name: K, ...args: Parameters<Events[K]>): Promisify<ReturnType<Events[K]>>
+    chain<K extends keyof Events>(name: K, ...args: Parameters<Events[K]>): ReturnType<Events[K]>
+    chain<K extends keyof Events>(thisArg: ThisParameterType<Events[K]>, name: K, ...args: Parameters<Events[K]>): ReturnType<Events[K]>
     before<K extends BeforeEventName>(name: K, listener: BeforeEventMap[K], append?: boolean): () => boolean
     setTimeout(callback: (...args: any[]) => void, ms: number, ...args: any[]): () => boolean
     setInterval(callback: (...args: any[]) => void, ms: number, ...args: any[]): () => boolean
@@ -125,6 +129,26 @@ export class SelectorService {
     return property(this.caller.exclude(property(this.caller, 'guildId')), 'userId', ...values)
   }
 
+  async waterfall(...args: [any, ...any[]]) {
+    const thisArg = typeof args[0] === 'object' ? args.shift() : null
+    const name = args.shift()
+    for (const callback of this.app.lifecycle.getHooks(name, thisArg)) {
+      const result = await callback.apply(thisArg, args)
+      args[0] = result
+    }
+    return args[0]
+  }
+
+  chain(...args: [any, ...any[]]) {
+    const thisArg = typeof args[0] === 'object' ? args.shift() : null
+    const name = args.shift()
+    for (const callback of this.app.lifecycle.getHooks(name, thisArg)) {
+      const result = callback.apply(thisArg, args)
+      args[0] = result
+    }
+    return args[0]
+  }
+
   before<K extends BeforeEventName>(name: K, listener: BeforeEventMap[K], append = false) {
     const seg = (name as string).split('/')
     seg[seg.length - 1] = 'before-' + seg[seg.length - 1]
@@ -181,6 +205,6 @@ Context.service('$selector', {
   methods: [
     'any', 'never', 'union', 'intersect', 'exclude', 'select',
     'user', 'self', 'guild', 'channel', 'platform', 'private',
-    'before', 'logger', 'setTimeout', 'setInterval', 'broadcast',
+    'chain', 'waterfall', 'before', 'logger', 'setTimeout', 'setInterval', 'broadcast',
   ],
 })
