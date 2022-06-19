@@ -1,6 +1,6 @@
 import { resolve } from 'path'
 import { App, Context, Dict, interpolate, Logger, Plugin, Registry, valueMap } from 'koishi'
-import { patch, separate } from './utils'
+import { patch, stripModifier } from './utils'
 import ConfigLoader from '@koishijs/loader'
 import * as dotenv from 'dotenv'
 import ns from 'ns-require'
@@ -9,6 +9,7 @@ declare module 'koishi' {
   namespace Context {
     interface Services {
       loader: Loader
+      delimiter: symbol
     }
   }
 
@@ -46,6 +47,7 @@ const group: Plugin.Object = {
 }
 
 export default class Loader extends ConfigLoader<App.Config> {
+  static readonly unique = Symbol.for('koishi.loader.unique')
   static readonly update = Symbol.for('koishi.loader.update')
   static readonly kRecord = Symbol.for('koishi.loader.record')
   static readonly kWarning = Symbol.for('koishi.loader.warning')
@@ -135,13 +137,15 @@ export default class Loader extends ConfigLoader<App.Config> {
     } else {
       logger.info(`apply plugin %c`, key)
       const name = key.split(':', 1)[0]
-      const ctx = parent.extend({})
       if (name === 'group') {
+        const ctx = parent.isolate([])
+        ctx.delimiter = Symbol('unique')
+        ctx[ctx.delimiter] = true
         patch(ctx, config)
         fork = ctx.plugin(group, config)
       } else {
-        config = separate(config)[1]
-        fork = this.forkPlugin(name, config, ctx)
+        config = stripModifier(config)
+        fork = this.forkPlugin(name, config, parent)
       }
       fork.alias = key.slice(name.length + 1)
       parent.state[Loader.kRecord][key] = fork

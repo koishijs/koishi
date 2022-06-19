@@ -170,7 +170,7 @@ export const defineDriver = <T>(constructor: Driver.Constructor<T>, schema?: uti
   apply(ctx, config) {
     prepare?.(ctx, config)
     const driver = new constructor(ctx.model, config)
-    const key = ctx.mapping.database || 'default'
+    const key = ctx.state.uid
 
     ctx.on('ready', async () => {
       await driver.start()

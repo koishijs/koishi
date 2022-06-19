@@ -2,7 +2,7 @@ import { App, coerce, Context, Dict, Logger, makeArray, Runtime, Schema } from '
 import { FSWatcher, watch, WatchOptions } from 'chokidar'
 import { relative, resolve } from 'path'
 import { debounce } from 'throttle-debounce'
-import { deepEqual, patch, separate } from './utils'
+import { deepEqual, patch } from './utils'
 import ns from 'ns-require'
 import Loader from './loader'
 
@@ -123,13 +123,24 @@ class Watcher {
   }
 
   private triggerGroupReload(key: string, neo: Dict, old: Dict, ctx: Context) {
+    // update config reference
     ctx.state.config = neo
-    const [oldModifier] = separate(old)
-    const [neoModifier] = separate(neo)
-    if (!deepEqual(oldModifier, neoModifier)) {
-      logger.info(`update modifier for plugin %c`, key)
-      patch(ctx.state.parent, neo)
+
+    // update group modifier
+    let hasUpdate = false
+    if (!deepEqual(old.$filter || {}, neo.$filter || {})) {
+      hasUpdate = true
+      patch.filter(ctx.state.parent, neo.$filter)
     }
+    if (!deepEqual(old.$isolate || [], neo.$isolate || [])) {
+      hasUpdate = true
+      patch.isolate(ctx.state.parent, neo.$isolate)
+    }
+    if (hasUpdate) {
+      logger.info(`update modifier for plugin %c`, key)
+    }
+
+    // update inner plugins
     for (const key in { ...old, ...neo }) {
       if (key.startsWith('~') || key.startsWith('$')) continue
       const fork = ctx.state[Loader.kRecord][key]

@@ -1,4 +1,4 @@
-import { Context, makeArray, MaybeArray } from 'koishi'
+import { Context, Dict, makeArray, MaybeArray } from 'koishi'
 
 interface Modifier {
   $filter?: Selection
@@ -59,44 +59,77 @@ export function select(root: Context, options: Selection) {
 
 export function patch(ctx: Context, config: Modifier) {
   config ||= {}
-  const parent = Object.getPrototypeOf(ctx)
+  patch.filter(ctx, config.$filter)
+  patch.isolate(ctx, config.$isolate)
+}
 
-  if (config.$filter) {
-    ctx.filter = parent.intersect(select(ctx.any(), config.$filter)).filter
-  } else {
-    delete ctx.filter
-  }
-
-  const oldMapping = { ...ctx }.mapping || {}
-  if (config.$isolate) {
-    ctx.mapping = parent.isolate(config.$isolate).mapping
-  } else {
-    delete ctx.mapping
-  }
-
-  const neoMapping = { ...ctx }.mapping || {}
-  for (const name in { ...oldMapping, ...neoMapping }) {
-    const oldValue = ctx.app[oldMapping[name] || name]
-    const neoValue = ctx.app[neoMapping[name] || name]
-    if (oldValue === neoValue) continue
-    const self: Context = Object.create(ctx)
-    self[Context.filter] = (target) => {
-      return ctx.mapping[name] === target.mapping[name]
+export namespace patch {
+  export function filter(ctx: Context, filter: Selection) {
+    const parent = Object.getPrototypeOf(ctx)
+    if (filter) {
+      ctx.filter = parent.intersect(select(ctx.any(), filter)).filter
+    } else {
+      delete ctx.filter
     }
-    ctx.emit(self, 'internal/service', name)
+  }
+
+  export function isolate(ctx: Context, isolate: string[]) {
+    const updated: Dict<boolean> = {}
+    const { delimiter } = ctx
+
+    // remove isolation
+    for (const name of Object.keys(ctx.mapping)) {
+      if (isolate?.includes(name)) continue
+      const oldKey = ctx.mapping[name]
+      const value = ctx.app[oldKey]
+      delete ctx.mapping[name]
+      const neoKey = ctx.mapping[name] || name
+      if (value === ctx.app[neoKey]) continue
+      const source = value?.[Context.source]
+      updated[name] = source?.[delimiter]
+      if (updated[name]) {
+        // free right hand side service
+        source[name] = value
+        ctx.app[oldKey] = null
+      }
+    }
+
+    // add isolation
+    for (const name of isolate || []) {
+      if (ctx.mapping[name]) continue
+      const oldKey = ctx.mapping[name] || name
+      const value = ctx.app[oldKey]
+      ctx.mapping[name] = Symbol(name)
+      const neoKey = ctx.mapping[name]
+      if (value === ctx.app[neoKey]) continue
+      const source = value?.[Context.source]
+      updated[name] = source?.[delimiter]
+      if (updated[name]) {
+        // lock right hand side service
+        source[name] = value
+        ctx.app[oldKey] = null
+      }
+    }
+
+    const parent = Object.getPrototypeOf(ctx)
+    for (const name in updated) {
+      const self: Context = Object.create(ctx)
+      const source = updated[name] ? parent : ctx
+      self[Context.filter] = (target) => {
+        return source.mapping[name] === target.mapping[name] && updated[name] !== target[delimiter]
+      }
+      ctx.emit(self, 'internal/service', name)
+    }
   }
 }
 
-export function separate(config: any) {
-  const pick = {}, omit = {}
+export function stripModifier(config: any) {
+  const result = {}
   for (const [key, value] of Object.entries(config || {})) {
-    if (key.startsWith('$')) {
-      pick[key] = value
-    } else {
-      omit[key] = value
-    }
+    if (key.startsWith('$')) continue
+    result[key] = value
   }
-  return [pick, omit]
+  return result
 }
 
 export function deepEqual(a: any, b: any) {
