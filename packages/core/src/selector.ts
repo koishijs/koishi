@@ -31,7 +31,6 @@ export namespace SelectorService {
     channel(...values: string[]): Context
     platform(...values: string[]): Context
     private(...values: string[]): Context
-    select(options: Selection): Context
     waterfall<K extends keyof Events>(name: K, ...args: Parameters<Events[K]>): Promisify<ReturnType<Events[K]>>
     waterfall<K extends keyof Events>(thisArg: ThisParameterType<Events[K]>, name: K, ...args: Parameters<Events[K]>): Promisify<ReturnType<Events[K]>>
     chain<K extends keyof Events>(name: K, ...args: Parameters<Events[K]>): ReturnType<Events[K]>

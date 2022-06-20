@@ -147,6 +147,7 @@ export default class Loader extends ConfigLoader<App.Config> {
         config = stripModifier(config)
         fork = this.forkPlugin(name, config, parent)
       }
+      if (!fork) return
       fork.alias = key.slice(name.length + 1)
       parent.state[Loader.kRecord][key] = fork
     }
