@@ -8,7 +8,7 @@ declare module 'cordis' {
     'model'(name: keyof Tables): void
   }
 
-  interface Context {
+  interface Context extends DatabaseService.Mixin {
     database: DatabaseService
     model: DatabaseService
   }
@@ -59,14 +59,17 @@ export interface Tables {
 }
 
 export namespace DatabaseService {
-  export interface Delegates {
+  export interface Mixin {
     getSelfIds(type?: string, assignees?: string[]): Dict<string[]>
+    broadcast(content: string, forced?: boolean): Promise<string[]>
+    broadcast(channels: readonly string[], content: string, forced?: boolean): Promise<string[]>
   }
 }
 
 export class DatabaseService extends Database<Tables> {
-  constructor(protected ctx: Context) {
+  constructor(protected app: Context) {
     super()
+    this[Context.current] = app
 
     this.extend('user', {
       // TODO v5: change to number
@@ -89,10 +92,6 @@ export class DatabaseService extends Database<Tables> {
     }, {
       primary: ['id', 'platform'],
     })
-  }
-
-  get caller(): Context {
-    return this[Context.current] || this.ctx
   }
 
   getUser<T extends string, K extends User.Field>(platform: T, id: string, modifier?: Driver.Cursor<K>): Promise<Result<User, K> & Record<T, string>>
@@ -123,11 +122,11 @@ export class DatabaseService extends Database<Tables> {
 
   getSelfIds(type?: string, assignees?: string[]): Dict<string[]> {
     if (type) {
-      assignees ||= this.ctx.bots.filter(bot => bot.platform === type).map(bot => bot.selfId)
+      assignees ||= this.app.bots.filter(bot => bot.platform === type).map(bot => bot.selfId)
       return { [type]: assignees }
     }
     const platforms: Dict<string[]> = {}
-    for (const bot of this.ctx.bots) {
+    for (const bot of this.app.bots) {
       (platforms[bot.platform] ||= []).push(bot.selfId)
     }
     return platforms
@@ -147,20 +146,43 @@ export class DatabaseService extends Database<Tables> {
   createChannel(platform: string, id: string, data: Partial<Channel>) {
     return this.create('channel', { platform, id, ...data })
   }
+
+  async broadcast(...args: [string, boolean?] | [readonly string[], string, boolean?]) {
+    let channels: string[]
+    if (Array.isArray(args[0])) channels = args.shift() as any
+    const [content, forced] = args as [string, boolean]
+    if (!content) return []
+
+    const data = await this.getAssignedChannels(['id', 'assignee', 'flag', 'platform', 'guildId'])
+    const assignMap: Dict<Dict<[string, string][]>> = {}
+    for (const { id, assignee, flag, platform, guildId } of data) {
+      if (channels && !channels.includes(`${platform}:${id}`)) continue
+      if (!forced && (flag & Channel.Flag.silent)) continue
+      ((assignMap[platform] ||= {})[assignee] ||= []).push([id, guildId])
+    }
+
+    return (await Promise.all(Object.entries(assignMap).flatMap(([platform, map]) => {
+      return this.app.bots.map((bot) => {
+        if (bot.platform !== platform) return Promise.resolve([])
+        return bot.broadcast(map[bot.selfId] || [], content)
+      })
+    }))).flat(1)
+  }
 }
 
 // workaround typings
 DatabaseService.prototype.extend = function extend(this: DatabaseService, name, fields, config) {
   Database.prototype.extend.call(this, name, fields, {
     ...config,
-    driver: this.caller.mapping.database,
+    driver: this[Context.current].mapping.database,
   })
-  this.ctx.emit('model', name)
+  this.app.emit('model', name)
 }
 
 Context.service('database')
 Context.service('model', {
   constructor: DatabaseService,
+  methods: ['getSelfIds', 'broadcast'],
 })
 
 export const defineDriver = <T>(constructor: Driver.Constructor<T>, schema?: utils.Schema<T>, prepare?: Plugin.Function<T>): Plugin.Object<T> => ({
@@ -170,7 +192,7 @@ export const defineDriver = <T>(constructor: Driver.Constructor<T>, schema?: uti
   apply(ctx, config) {
     prepare?.(ctx, config)
     const driver = new constructor(ctx.model, config)
-    const key = ctx.state.uid
+    const key = ctx.mapping.database || 'default'
 
     ctx.on('ready', async () => {
       await driver.start()

@@ -9,7 +9,7 @@ declare module '@koishijs/core' {
   }
 
   namespace Registry {
-    interface Delegates {
+    interface Mixin {
       plugin(path: string, config?: any): Fork
     }
   }

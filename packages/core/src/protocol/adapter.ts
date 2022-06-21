@@ -142,12 +142,13 @@ export namespace Adapter {
   export class BotList extends Array<Bot> {
     adapters: Dict<Adapter> = {}
 
-    get caller(): Context {
-      return this[Context.current] || this.ctx
+    constructor(private app: Context) {
+      super()
+      this[Context.current] = app
     }
 
-    constructor(private ctx: Context) {
-      super()
+    protected get caller() {
+      return this[Context.current]
     }
 
     get(sid: string) {

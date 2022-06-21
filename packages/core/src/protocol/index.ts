@@ -10,7 +10,7 @@ export * from './bot'
 export * from './session'
 
 declare module 'cordis' {
-  interface Context extends Internal.Delegates {
+  interface Context extends Internal.Mixin {
     $internal: Internal
   }
 
@@ -49,7 +49,7 @@ export namespace Internal {
     prefix?: Computed<string | string[]>
   }
 
-  export interface Delegates {
+  export interface Mixin {
     middleware(middleware: Middleware, prepend?: boolean): () => boolean
   }
 }
@@ -62,6 +62,7 @@ export class Internal {
   _channelCache = new SharedCache<Channel.Observed<any>>()
 
   constructor(private ctx: Context, private config: Internal.Config) {
+    this[Context.current] = ctx
     this.prepare()
 
     // bind built-in event listeners
@@ -83,8 +84,8 @@ export class Internal {
     })
   }
 
-  protected get caller(): Context {
-    return this[Context.current] || this.ctx
+  protected get caller() {
+    return this[Context.current]
   }
 
   middleware(middleware: Middleware, prepend = false) {

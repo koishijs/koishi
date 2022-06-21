@@ -17,7 +17,7 @@ interface CommandMap extends Map<string, Command> {
 }
 
 declare module 'cordis' {
-  interface Context extends Commander.Delegates {
+  interface Context extends Commander.Mixin {
     $commander: Commander
   }
 
@@ -35,7 +35,7 @@ declare module 'cordis' {
 export namespace Commander {
   export interface Config {}
 
-  export interface Delegates {
+  export interface Mixin {
     command<D extends string>(def: D, config?: Command.Config): Command<never, never, Argv.ArgumentType<D>>
     command<D extends string>(def: D, desc: string, config?: Command.Config): Command<never, never, Argv.ArgumentType<D>>
   }
@@ -49,12 +49,13 @@ export class Commander {
   _shortcuts: Command.Shortcut[] = []
 
   constructor(private ctx: Context, private config: Commander.Config = {}) {
+    this[Context.current] = ctx
     ctx.plugin(runtime)
     ctx.plugin(validate)
   }
 
-  protected get caller(): Context {
-    return this[Context.current] || this.ctx
+  protected get caller() {
+    return this[Context.current]
   }
 
   resolve(key: string) {

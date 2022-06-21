@@ -1,11 +1,10 @@
-import { Dict, Logger, Promisify, remove } from '@koishijs/utils'
+import { Logger, Promisify, remove } from '@koishijs/utils'
 import { Context, Events } from 'cordis'
-import { Channel } from './database'
 import { Session } from './protocol/session'
 
 declare module 'cordis' {
-  interface Context extends SelectorService.Delegates {
-    $selector: SelectorService
+  interface Context extends SelectorService.Mixin {
+    selector: SelectorService
   }
 
   namespace Context {
@@ -18,7 +17,7 @@ declare module 'cordis' {
 export type Filter = (session: Session) => boolean
 
 export namespace SelectorService {
-  export interface Delegates {
+  export interface Mixin {
     logger(name: string): Logger
     any(): Context
     never(): Context
@@ -38,8 +37,6 @@ export namespace SelectorService {
     before<K extends BeforeEventName>(name: K, listener: BeforeEventMap[K], append?: boolean): () => boolean
     setTimeout(callback: (...args: any[]) => void, ms: number, ...args: any[]): () => boolean
     setInterval(callback: (...args: any[]) => void, ms: number, ...args: any[]): () => boolean
-    broadcast(content: string, forced?: boolean): Promise<string[]>
-    broadcast(channels: readonly string[], content: string, forced?: boolean): Promise<string[]>
   }
 }
 
@@ -56,6 +53,8 @@ function property<K extends keyof Session>(ctx: Context, key: K, ...values: Sess
 
 export class SelectorService {
   constructor(private app: Context) {
+    this[Context.current] = app
+
     app.filter = () => true
 
     app.on('internal/warning', (format, ...args) => {
@@ -70,8 +69,8 @@ export class SelectorService {
     })
   }
 
-  protected get caller(): Context {
-    return this[Context.current] || this.app
+  protected get caller() {
+    return this[Context.current]
   }
 
   any() {
@@ -175,31 +174,9 @@ export class SelectorService {
   setInterval(callback: (...args: any[]) => void, ms: number, ...args: any[]) {
     return this.createTimerDispose(setInterval(callback, ms, ...args))
   }
-
-  async broadcast(...args: [string, boolean?] | [readonly string[], string, boolean?]) {
-    let channels: string[]
-    if (Array.isArray(args[0])) channels = args.shift() as any
-    const [content, forced] = args as [string, boolean]
-    if (!content) return []
-
-    const data = await this.caller.database.getAssignedChannels(['id', 'assignee', 'flag', 'platform', 'guildId'])
-    const assignMap: Dict<Dict<[string, string][]>> = {}
-    for (const { id, assignee, flag, platform, guildId } of data) {
-      if (channels && !channels.includes(`${platform}:${id}`)) continue
-      if (!forced && (flag & Channel.Flag.silent)) continue
-      ((assignMap[platform] ||= {})[assignee] ||= []).push([id, guildId])
-    }
-
-    return (await Promise.all(Object.entries(assignMap).flatMap(([platform, map]) => {
-      return this.caller.bots.map((bot) => {
-        if (bot.platform !== platform) return Promise.resolve([])
-        return bot.broadcast(map[bot.selfId] || [], content)
-      })
-    }))).flat(1)
-  }
 }
 
-Context.service('$selector', {
+Context.service('selector', {
   constructor: SelectorService,
   methods: [
     'any', 'never', 'union', 'intersect', 'exclude', 'select',
