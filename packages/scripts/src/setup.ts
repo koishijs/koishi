@@ -2,6 +2,7 @@ import { CAC } from 'cac'
 import { copyFile, mkdir, readFile, readJson, writeFile } from 'fs-extra'
 import { resolve } from 'path'
 import { config, cwd, meta, PackageJson } from './utils'
+import { blue, red } from 'kleur'
 import which from 'which-pm-runs'
 import spawn from 'cross-spawn'
 import prompts from 'prompts'
@@ -24,14 +25,17 @@ class Initiator {
 
   async init(name: string) {
     name ||= await this.getName()
+    if (!/^(?:@[a-z0-9-*~][a-z0-9-*._~]*\/)?[a-z0-9-~][a-z0-9-._~]*$/.test(name)) {
+      console.log(red('error'), 'plugin name contains invalid character')
+      process.exit(1)
+    }
     if (name.includes('koishi-plugin-')) {
       this.fullname = name
       this.name = name.replace('koishi-plugin-', '')
+      console.log(blue('info'), 'prefix "koishi-plugin-" can be omitted')
     } else {
       this.name = name
-      this.fullname = name.includes('/')
-        ? name.replace('/', '/koishi-plugin-')
-        : 'koishi-plugin-' + name
+      this.fullname = name.replace(/^(.+\/)?/, '$1koishi-plugin-')
     }
     this.desc = await this.getDesc()
     this.target = resolve(cwd, 'plugins', this.name)

@@ -61,7 +61,7 @@
     "cross-env": "^7.0.3",
     "cross-spawn": "^7.0.3",
     "del": "^6.1.1",
-    "dtsc": "^1.1.1",
+    "dtsc": "^1.2.0",
     "esbuild": "^0.12.29",
     "eslint": "^7.32.0",
     "eslint-config-standard": "^16.0.3",
