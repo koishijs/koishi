@@ -181,6 +181,6 @@ Context.service('selector', {
   methods: [
     'any', 'never', 'union', 'intersect', 'exclude', 'select',
     'user', 'self', 'guild', 'channel', 'platform', 'private',
-    'chain', 'waterfall', 'before', 'logger', 'setTimeout', 'setInterval', 'broadcast',
+    'chain', 'waterfall', 'before', 'logger', 'setTimeout', 'setInterval',
   ],
 })

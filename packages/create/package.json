@@ -1,10 +1,10 @@
 {
   "name": "create-koishi",
   "description": "Setup a Koishi application",
-  "version": "5.1.4",
+  "version": "5.1.5",
   "main": "lib/index.js",
   "engines": {
-    "node": ">=12.0.0"
+    "node": "^12 || >=14"
   },
   "files": [
     "lib"
