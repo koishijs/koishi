@@ -180,7 +180,7 @@ watch(config, (value) => {
 }, { deep: true })
 
 function isPrimitive(schema: Schema) {
-  return ['string', 'number', 'boolean'].includes(schema.type)
+  return ['string', 'number', 'boolean', 'const'].includes(schema.type)
 }
 
 function handleCommand(action: string) {

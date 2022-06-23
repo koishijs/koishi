@@ -4,7 +4,7 @@ import { clone } from 'cosmokit'
 export * from 'cosmokit'
 export { Schema }
 
-const primitive = ['string', 'number', 'boolean']
+const primitive = ['string', 'number', 'boolean', 'const']
 const dynamic = ['function', 'transform']
 const composite = ['array', 'dict']
 
