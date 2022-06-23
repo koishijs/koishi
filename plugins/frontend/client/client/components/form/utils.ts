@@ -22,7 +22,7 @@ export function isObjectSchema(schema: Schema) {
 }
 
 export function getChoices(schema: Schema) {
-  return schema.list.filter(item => !['function', 'transform'].includes(item.type))
+  return schema.list.filter(item => !item.meta.hidden && !dynamic.includes(item.type))
 }
 
 export function getFallback(schema: Schema) {
@@ -37,8 +37,7 @@ export function validate(schema: Schema): boolean {
   } else if (schema.type === 'intersect') {
     return schema.list.every(isObjectSchema)
   } else if (schema.type === 'union') {
-    const choices = schema.list.filter(item => !dynamic.includes(item.type))
-    return choices.length === 1 && validate(choices[0]) || choices.every(item => item.type === 'const')
+    return getChoices(schema).every(item => validate(item) && (item.type === 'const' || item.meta.description))
   } else if (composite.includes(schema.type)) {
     return validate(schema.inner)
   } else {

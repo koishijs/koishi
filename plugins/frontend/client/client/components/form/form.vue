@@ -2,6 +2,7 @@
   <k-comment v-if="!validate(resolved)" type="warning">
     部分配置项无法正常显示，这可能并非预期行为<slot name="hint"></slot>。
   </k-comment>
+
   <form class="k-form">
     <h2 v-if="showHeader ?? !hasTitle(resolved, true)">基础设置</h2>
     <slot name="prolog"></slot>

@@ -1,10 +1,6 @@
 <template>
   <template v-if="!schema || schema.meta.hidden"/>
 
-  <!--
-    Schema.object(dict).description(desc)
-    desc will be displayed as h2 title
-  -->
   <template v-else-if="schema.type === 'object'">
     <h2 v-if="schema.meta.description">{{ schema.meta.description }}</h2>
     <k-schema v-for="(item, key) in schema.dict" :key="key"
@@ -46,28 +42,28 @@
     </template>
 
     <template #right>
-      <template v-if="isPrimitive(schema)">
+      <template v-if="schema.type === 'union' && !isRadio">
+        <el-select v-model="selectModel" :disabled="disabled">
+          <el-option
+            v-for="(item, index) in choices"
+            :key="index"
+            :value="index"
+            :label="item.meta.description || item.value"
+          ></el-option>
+        </el-select>
+      </template>
+
+      <template v-if="isPrimitive(active) && (schema.type !== 'union' || active.type !== 'const')">
         <schema-primitive
           v-model="config"
           :initial="initial"
-          :schema="schema"
+          :schema="active"
           :disabled="disabled"
         ></schema-primitive>
       </template>
 
       <template v-else-if="isComposite">
         <k-button solid @click="signal = true" :disabled="disabled">添加项</k-button>
-      </template>
-
-      <template v-else-if="isSelect">
-        <el-select v-model="config" :disabled="disabled">
-          <el-option
-            v-for="item in choices"
-            :key="item.value"
-            :label="item.value"
-            :value="item.value"
-          ></el-option>
-        </el-select>
       </template>
     </template>
 
@@ -145,12 +141,31 @@ const required = computed(() => {
     && isNullable(props.modelValue)
 })
 
-const choices = computed(() => getChoices(props.schema))
+const choices = ref<Schema[]>()
+const cache = ref<any[]>()
+const active = ref<Schema>()
 
-const isSelect = computed(() => {
-  return props.schema.type === 'union'
-    && choices.value.every(item => item.type === 'const')
-    && choices.value.some(item => !item.meta.description)
+watch(() => props.schema, (value) => {
+  if (value?.type !== 'union') {
+    choices.value = []
+    return
+  }
+  choices.value = getChoices(props.schema)
+  cache.value = choices.value.map((item) => {
+    if (item.type === 'const') return item.value
+    return getFallback(item)
+  })
+}, { immediate: true })
+
+const selectModel = computed({
+  get() {
+    if (active.value === props.schema) return
+    return active.value.meta.description || active.value.value
+  },
+  set(index) {
+    config.value = cache.value[index]
+    active.value = choices.value[index]
+  },
 })
 
 const isRadio = computed(() => {
@@ -160,13 +175,21 @@ const isRadio = computed(() => {
 })
 
 const isComposite = computed(() => {
-  return ['array', 'dict'].includes(props.schema.type) && validate(props.schema.inner)
+  return ['array', 'dict'].includes(active.value.type) && validate(active.value.inner)
 })
 
 const config = ref()
 const signal = ref(false)
 
 watch(() => props.modelValue, (value) => {
+  active.value = props.schema
+  for (const item of choices.value) {
+    try {
+      item(value)
+      active.value = item
+      break
+    } catch {}
+  }
   config.value = value ?? getFallback(props.schema)
 }, { immediate: true })
 
@@ -245,6 +268,11 @@ function handleCommand(action: string) {
     .el-radio, .el-checkbox {
       height: 1.375rem;
     }
+  }
+
+  .el-select:not(:last-child) {
+    width: 10rem;
+    margin-right: 1rem;
   }
 }
 

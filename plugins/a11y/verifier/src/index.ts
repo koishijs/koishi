@@ -1,9 +1,19 @@
 import { Awaitable, Context, Schema, Session } from 'koishi'
 
-type RequestHandler = string | boolean | ((session: Session) => Awaitable<string | boolean | void>)
-type Response = [boolean, string?]
+type RequestHandler = number | GeneralHandler
+type GeneralHandler = string | boolean | ((session: Session) => Awaitable<string | boolean | void>)
+type Response = [approve: boolean, comment?: string]
 
-async function useRequestHandler(handler: RequestHandler, session: Session, prefer: boolean): Promise<Response> {
+const RequestHandler: Schema<RequestHandler> = Schema.union([
+  Schema.const(undefined).description('无操作'),
+  Schema.const(true).description('全部通过'),
+  Schema.const(false).description('全部拒绝'),
+  Schema.natural().description('权限等级').default(0),
+  Schema.string().hidden(),
+  Schema.function().hidden(),
+])
+
+async function useGeneralHandler(handler: GeneralHandler, session: Session, prefer: boolean): Promise<Response> {
   const result = typeof handler === 'function' ? await handler(session) : handler
   if (typeof result === 'string') {
     return [prefer, result]
@@ -28,18 +38,18 @@ async function checkChannelAuthority(session: Session, authority: number): Promi
   }
 }
 
-export interface Config {
-  onFriendRequest?: number | RequestHandler
-  onGuildMemberRequest?: number | RequestHandler
-  onGuildRequest?: number | RequestHandler
-}
-
 export const name = 'verifier'
 
+export interface Config {
+  onFriendRequest?: RequestHandler
+  onGuildMemberRequest?: RequestHandler
+  onGuildRequest?: RequestHandler
+}
+
 export const Config: Schema<Config> = Schema.object({
-  onFriendRequest: Schema.union([Number, String, Boolean, Function]).description('通过好友请求所需的权限等级。'),
-  onGuildMemberRequest: Schema.union([Number, String, Boolean, Function]).description('通过入群申请所需的权限等级。'),
-  onGuildRequest: Schema.union([Number, String, Boolean, Function]).description('通过入群邀请所需的权限等级。'),
+  onFriendRequest: RequestHandler.description('如何响应好友请求？'),
+  onGuildMemberRequest: RequestHandler.description('如何响应入群申请？'),
+  onGuildRequest: RequestHandler.description('如何响应入群邀请？'),
 })
 
 export function apply(ctx: Context, config: Config = {}) {
@@ -48,21 +58,21 @@ export function apply(ctx: Context, config: Config = {}) {
   ctx.on('friend-request', async (session) => {
     const result = typeof onFriendRequest === 'number'
       ? await checkUserAuthority(session, onFriendRequest)
-      : await useRequestHandler(onFriendRequest, session, true)
+      : await useGeneralHandler(onFriendRequest, session, true)
     if (result) return session.bot.handleFriendRequest(session.messageId, ...result)
   })
 
   ctx.on('guild-request', async (session) => {
     const result = typeof onGuildRequest === 'number'
       ? await checkChannelAuthority(session, onGuildRequest)
-      : await useRequestHandler(onGuildRequest, session, false)
+      : await useGeneralHandler(onGuildRequest, session, false)
     if (result) return session.bot.handleGuildRequest(session.messageId, ...result)
   })
 
   ctx.on('guild-member-request', async (session) => {
     const result = typeof onGuildMemberRequest === 'number'
       ? await checkUserAuthority(session, onGuildMemberRequest)
-      : await useRequestHandler(onGuildMemberRequest, session, false)
+      : await useGeneralHandler(onGuildMemberRequest, session, false)
     if (result) return session.bot.handleGuildMemberRequest(session.messageId, ...result)
   })
 }

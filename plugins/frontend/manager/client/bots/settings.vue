@@ -28,7 +28,7 @@
 <script lang="ts" setup>
 
 import { computed, watch, ref, reactive } from 'vue'
-import { store, send, clone } from '@koishijs/client'
+import { store, send, clone, Schema } from '@koishijs/client'
 import { BotProvider } from '@koishijs/plugin-manager'
 
 const props = defineProps<{
@@ -38,11 +38,7 @@ const props = defineProps<{
 const createSchema = (values: string[]) => ({
   type: 'union',
   meta: { required: true },
-  list: values.map((value) => ({
-    type: 'const',
-    value,
-    meta: {},
-  })),
+  list: values.map((value) => Schema.const(value)),
 })
 
 const adapterSchema = computed(() => {
