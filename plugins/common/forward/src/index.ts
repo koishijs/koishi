@@ -47,16 +47,42 @@ export const Config = Schema.union([
     rules: Schema.array(Rule).description('转发规则列表。'),
     interval: Schema.natural().role('ms').default(Time.hour).description('推送消息不再响应回复的时间。'),
   }),
-  Schema.transform(Schema.array(Rule), (rules) => ({ rules, interval: Time.hour })),
+  Schema.transform(Schema.array(Rule), (rules) => ({
+    rules,
+    interval: Time.hour,
+  })),
 ])
 
-export function apply(ctx: Context, { rules, interval }: Config) {
+function defaultFilter(session: Session, filter: Filter) {
+  switch (filter.type) {
+    case 'user': {
+      return filter.data.findIndex((n) => n === session.uid) !== -1
+    }
+    case 'flag': {
+      for (const pat of filter.data) {
+        if (new RegExp(pat).test(session.content)) return true
+      }
+      return false
+    }
+    case 'all': {
+      return true;
+    }
+  }
+}
+
+export function apply(ctx: Context, {
+  rules,
+  interval,
+}: Config) {
   ctx.i18n.define('zh', require('./locales/zh'))
 
   const relayMap: Dict<Rule> = {}
 
   async function sendRelay(session: Session, rule: Partial<Rule>) {
-    const { author, parsed } = session
+    const {
+      author,
+      parsed,
+    } = session
     if (!parsed.content) return
 
     try {
@@ -88,7 +114,7 @@ export function apply(ctx: Context, { rules, interval }: Config) {
         for (const id of ids) {
           relayMap[id] = {
             source: rule.target,
-
+            filter: rule.filter,
             target: session.cid,
             selfId: session.selfId,
             guildId: session.guildId,
