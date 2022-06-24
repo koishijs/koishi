@@ -1,5 +1,5 @@
-import { Command, Context, Dict, Schema, segment, Session, Time } from 'koishi'
 import { parsePlatform } from '@koishijs/helpers'
+import { Command, Context, Dict, Schema, segment, Session, Time } from 'koishi'
 
 declare module 'koishi' {
   interface Channel {
@@ -7,15 +7,29 @@ declare module 'koishi' {
   }
 }
 
+export interface Filter {
+  type: 'user' | 'flag' | 'all'
+  data: string[]
+}
+
 export interface Rule {
   source: string
+  filter: Filter
   target: string
   selfId: string
   guildId?: string
 }
 
+// @ts-ignore
+export const Filter: Schema<Filter> = Schema.object({
+  type: Schema.union([Schema.const('user'), Schema.const('flag'), Schema.const('all')]),
+  data: Schema.array(Schema.string()),
+})
+
+// @ts-ignore
 export const Rule: Schema<Rule> = Schema.object({
   source: Schema.string().required().description('来源频道。'),
+  filter: Schema.object(Filter).required().description('过滤器'),
   target: Schema.string().required().description('目标频道。'),
   selfId: Schema.string().required().description('负责推送的机器人账号。'),
   guildId: Schema.string().description('目标频道的群组编号。'),
@@ -74,6 +88,7 @@ export function apply(ctx: Context, { rules, interval }: Config) {
         for (const id of ids) {
           relayMap[id] = {
             source: rule.target,
+
             target: session.cid,
             selfId: session.selfId,
             guildId: session.guildId,
@@ -85,10 +100,6 @@ export function apply(ctx: Context, { rules, interval }: Config) {
       ctx.logger('forward').warn(error)
     }
   }
-
-  ctx.before('attach-channel', (session, fields) => {
-    fields.add('forward')
-  })
 
   ctx.middleware(async (session: Session<never, 'forward'>, next) => {
     const { quote = {}, subtype } = session
