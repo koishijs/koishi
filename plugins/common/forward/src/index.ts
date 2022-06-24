@@ -1,12 +1,6 @@
 import { parsePlatform } from '@koishijs/helpers'
 import { Command, Context, Dict, Schema, segment, Session, Time } from 'koishi'
 
-declare module 'koishi' {
-  interface Channel {
-    forward: string[]
-  }
-}
-
 export interface Filter {
   type: 'user' | 'flag' | 'all'
   data: string[]
@@ -20,10 +14,16 @@ export interface Rule {
   guildId?: string
 }
 
+declare module 'koishi' {
+  interface Tables {
+    forward: Rule
+  }
+}
+
 // @ts-ignore
 export const Filter: Schema<Filter> = Schema.object({
-  type: Schema.union([Schema.const('user'), Schema.const('flag'), Schema.const('all')]),
-  data: Schema.array(Schema.string()),
+  type: Schema.union([Schema.const('user'), Schema.const('flag'), Schema.const('all')]).required().default('all').description('过滤器类型'),
+  data: Schema.array(Schema.string()).required().description('过滤器数据'),
 })
 
 // @ts-ignore
@@ -65,7 +65,7 @@ function defaultFilter(session: Session, filter: Filter) {
       return false
     }
     case 'all': {
-      return true;
+      return true
     }
   }
 }
@@ -84,6 +84,7 @@ export function apply(ctx: Context, {
       parsed,
     } = session
     if (!parsed.content) return
+    if (!defaultFilter(session, rule.filter)) return
 
     try {
       // get selfId
@@ -127,15 +128,20 @@ export function apply(ctx: Context, {
     }
   }
 
-  ctx.middleware(async (session: Session<never, 'forward'>, next) => {
-    const { quote = {}, subtype } = session
+  ctx.middleware(async (session: Session<never, never>, next) => {
+    const {
+      quote = {},
+      subtype,
+    } = session
     if (subtype !== 'group') return
     const data = relayMap[quote.messageId]
     if (data) return sendRelay(session, data)
 
     const tasks: Promise<void>[] = []
     if (ctx.database) {
-      for (const target of session.channel.forward) {
+      const rules = await ctx.database.get('forward', {})
+      for (const rule of rules) {
+        const target = rule.target
         tasks.push(sendRelay(session, { target }))
       }
     } else {
@@ -148,18 +154,18 @@ export function apply(ctx: Context, {
     return result
   })
 
-  ctx.model.extend('channel', {
-    forward: 'list',
-  })
+  ctx.model.extend('forward', {})
 
   ctx.using(['database'], (ctx) => {
     const cmd = ctx
       .command('forward [operation:string] <channel:channel>', { authority: 3 })
       .alias('fwd')
 
-    const register = (def: string, callback: Command.Action<never, 'forward', [string]>) => cmd
-      .subcommand(def, { authority: 3, checkArgCount: true })
-      .channelFields(['forward'])
+    const register = (def: string, callback: Command.Action<never, never, [string]>) => cmd
+      .subcommand(def, {
+        authority: 3,
+        checkArgCount: true,
+      })
       .action(callback)
 
     register('.add <channel:channel>', async ({ session }, id) => {
