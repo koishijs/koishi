@@ -38,5 +38,3 @@ report.*.json
 *.ntvs*
 *.njsproj
 *.sln
-
-pnpm-lock.json
