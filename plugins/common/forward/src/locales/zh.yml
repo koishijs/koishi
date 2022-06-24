@@ -1,0 +1,24 @@
+command:
+  forward:
+    description: 设置消息转发
+  forward.add:
+    description: 添加一条转发规则
+    options:
+      user: 添加用户过滤器
+      flag: 添加关键词过滤器
+      all: 设置为无条件转发
+    message:
+      changed: 添加转发规则成功！
+      unchanged: 发生错误，未添加转发规则
+  forward.list:
+    description: 查看当前频道转发规则列表
+    message:
+      list@list:
+        header: 转发规则列表
+        item: '{key}. 目标：{value.target} 过滤器：{value.filter}'
+      error: 发生错误，无法显示当前列表！
+  forward.clear:
+    description: 清除当前频道所有转发规则
+    message:
+      success: 清除成功！
+      error: 发生错误，未清除成功！

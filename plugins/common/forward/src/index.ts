@@ -3,7 +3,7 @@ import { Context, Dict, Schema, segment, Session, Time } from 'koishi'
 
 export interface Filter {
   type: 'user' | 'flag' | 'all'
-  data: string[]
+  data?: string[]
 }
 
 export interface Rule {
@@ -14,16 +14,23 @@ export interface Rule {
   guildId?: string
 }
 
+export interface DBRule {
+  id: number
+  source: string
+  filter: Filter
+  target: string
+}
+
 declare module 'koishi' {
   interface Tables {
-    forward: Rule
+    forward: DBRule
   }
 }
 
 // @ts-ignore
 export const Filter: Schema<Filter> = Schema.object({
   type: Schema.union([Schema.const('user'), Schema.const('flag'), Schema.const('all')]).required().default('all').description('过滤器类型'),
-  data: Schema.array(Schema.string()).required().description('过滤器数据'),
+  data: Schema.array(Schema.string()).description('过滤器数据'),
 })
 
 // @ts-ignore
@@ -154,13 +161,97 @@ export function apply(ctx: Context, {
     return result
   })
 
-  ctx.model.extend('forward', {})
+  ctx.model.extend('forward', {
+    id: 'integer',
+    source: 'string',
+    filter: 'json',
+    target: 'string',
+  }, {
+    autoInc: true,
+    primary: 'id',
+  })
 
   ctx.using(['database'], (ctx) => {
+    function generateFilter(options: any) {
+      if (options.user) {
+        const filter: Filter = {
+          type: 'user',
+          data: options.user,
+        }
+        return filter
+      } else if (options.flag) {
+        const filter: Filter = {
+          type: 'flag',
+          data: options.flag,
+        }
+        return filter
+      } else {
+        const filter: Filter = {
+          type: 'all',
+        }
+        return filter
+      }
+    }
+
     const cmd = ctx
       .command('forward [operation:string] <channel:channel>', { authority: 3 })
       .alias('fwd')
 
+    cmd.subcommand('.add <channel:channel>', {
+      authority: 3,
+      checkArgCount: true,
+    })
+      .option('user', '-U <user:user>')
+      .option('flag', '-F <flag:string>')
+      .option('all', '-A')
+      .check(({
+        session,
+        options,
+      }) => {
+        if (JSON.stringify(options) === '{}') options.all = true
+      })
+      .action(async ({
+        session,
+        options,
+      }, channel) => {
+        try {
+          await ctx.database.create('forward', {
+            source: session.cid,
+            target: channel,
+            filter: generateFilter(options),
+          })
+          session.text('.changed')
+        } catch (e) {
+          ctx.logger('forward').error(e)
+        }
+      })
 
+    cmd.subcommand('.list', {
+      authority: 3,
+      checkArgCount: true,
+    })
+      .action(async ({ session }) => {
+        try {
+          const rules = await ctx.database.get('forward', { source: session.cid })
+          session.text('.list', rules)
+        } catch (e) {
+          ctx.logger('forward').error(e)
+          session.text('.error')
+        }
+      }).alias('forward.ls')
+
+    cmd.subcommand('.clear', {
+      authority: 3,
+      checkArgCount: true,
+    })
+      .action(async ({ session }) => {
+        try {
+          await ctx.database.remove('forward', { source: session.cid })
+          session.text('.success')
+        } catch (e) {
+          ctx.logger('forward').error(e)
+          session.text('.error')
+        }
+      })
   })
 }
