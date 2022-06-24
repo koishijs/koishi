@@ -20,6 +20,8 @@ declare module '@koishijs/plugin-console' {
   }
 }
 
+const separator = /(?<!@[\w-]+)\//g
+
 function insertKey(object: {}, temp: {}, rest: string[]) {
   for (const key of rest) {
     temp[key] = object[key]
@@ -121,7 +123,7 @@ class ConfigWriter extends DataService<App.Config> {
   }
 
   private resolve(path: string) {
-    const segments = path.split('/')
+    const segments = path.split(separator)
     let ctx = this.loader.entry
     let name = segments.shift()
     while (segments.length) {

@@ -9,7 +9,7 @@
     <span class="right">
       <k-button solid @click="addItem(current.path, 'unload', '')">添加插件</k-button>
       <k-button solid @click="addItem(current.path, 'group', 'group')">添加分组</k-button>
-      <k-button solid type="error" @click="removeItem(current.path)">移除分组</k-button>
+      <k-button v-if="current.path" solid type="error" @click="removeItem(current.path)">移除分组</k-button>
     </span>
   </h1>
   <div class="k-form" v-if="current.config.$isolate?.length">

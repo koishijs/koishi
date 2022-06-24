@@ -86,7 +86,7 @@
 
 import { send, store, clone, router } from '@koishijs/client'
 import { computed, ref, watch } from 'vue'
-import { envMap, Tree, removeItem } from './utils'
+import { envMap, Tree, removeItem, separator } from './utils'
 import KAlias from './alias.vue'
 import KDepLink from './dep-link.vue'
 
@@ -114,8 +114,8 @@ const type = computed(() => {
 })
 
 const name = computed(() => {
-  const { label, target: temporary } = props.current
-  const shortname = temporary || label
+  const { label, target } = props.current
+  const shortname = target || label
   if (shortname.includes('/')) {
     const [left, right] = shortname.split('/')
     return [`${left}/koishi-plugin-${right}`].find(name => name in store.packages)
@@ -139,7 +139,7 @@ const hasUpdate = computed(() => {
 function execute(event: 'unload' | 'reload') {
   send(`manager/${event}`, props.current.path, config.value, props.current.target)
   if (props.current.target) {
-    const segments = props.current.path.split('/')
+    const segments = props.current.path.split(separator)
     segments[segments.length - 1] = props.current.target
     router.replace('/plugins/' + segments.join('/'))
   }

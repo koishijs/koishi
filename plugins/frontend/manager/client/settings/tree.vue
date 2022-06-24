@@ -42,7 +42,7 @@
 
 import { ref, computed, onActivated, nextTick, watch } from 'vue'
 import { send } from '@koishijs/client'
-import { Tree, plugins, setPath, addItem } from './utils'
+import { Tree, plugins, setPath, addItem, separator } from './utils'
 
 const props = defineProps<{
   modelValue: string
@@ -73,7 +73,7 @@ interface Node {
 
 function allowDrop(source: Node, target: Node, type: 'inner' | 'prev' | 'next') {
   if (type !== 'inner') return target.data.path !== ''
-  const segments = target.data.path.split('/')
+  const segments = target.data.path.split(separator)
   return segments[segments.length - 1].startsWith('group:')
 }
 
@@ -95,10 +95,11 @@ function handleDrop(source: Node, target: Node, position: 'before' | 'after' | '
   const ctxPath = parent.data.path
   const index = parent.childNodes.findIndex(node => node.data.path === oldPath)
   send('manager/teleport', oldPath, ctxPath, index)
-  const segments1 = oldPath.split('/')
-  const segments2 = ctxPath ? ctxPath.split('/') : []
+  const segments1 = oldPath.split(separator)
+  const segments2 = ctxPath ? ctxPath.split(separator) : []
   segments2.push(segments1.pop())
   setPath(oldPath, segments2.join('/'))
+  ;/(?<!dsa)/
 }
 
 function getClass(tree: Tree) {
