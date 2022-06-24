@@ -117,7 +117,7 @@ function onClick(event: MouseEvent) {
   }
 
   & + & {
-    margin: 0 1rem;
+    margin-left: 1rem;
   }
 }
 

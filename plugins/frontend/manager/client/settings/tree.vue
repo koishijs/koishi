@@ -25,8 +25,13 @@
       #="{ node }">
       <div class="item">
         <div class="label">{{ node.label === 'group' ? '分组：' + node.data.alias : node.label || '待添加' }}</div>
-        <div class="remove" @click.stop="remove(node.data)">
-          <k-icon name="trash-can"></k-icon>
+        <div class="right" v-if="node.label === 'group' || !node.data.path">
+          <span class="button" @click.stop="addItem(node.data.path, 'unload', '')">
+            <k-icon name="add-plugin"></k-icon>
+          </span>
+          <span class="button" @click.stop="addItem(node.data.path, 'group', 'group')">
+            <k-icon name="add-group"></k-icon>
+          </span>
         </div>
       </div>
     </el-tree>
@@ -36,8 +41,8 @@
 <script lang="ts" setup>
 
 import { ref, computed, onActivated, nextTick, watch } from 'vue'
-import { send, messageBox } from '@koishijs/client'
-import { Tree, plugins, setPath } from './utils'
+import { send } from '@koishijs/client'
+import { Tree, plugins, setPath, addItem } from './utils'
 
 const props = defineProps<{
   modelValue: string
@@ -102,16 +107,6 @@ function getClass(tree: Tree) {
   if (tree.disabled) words.push('is-disabled')
   if (tree.path === model.value) words.push('is-active')
   return words.join(' ')
-}
-
-function remove(tree: Tree) {
-  messageBox.confirm('确定要删除吗？', '删除插件', {
-    confirmButtonText: '确定',
-    cancelButtonText: '取消',
-    type: 'warning',
-  }).then(() => {
-    send('manager/remove', tree.path)
-  }, () => {})
 }
 
 const root = ref<{ $el: HTMLElement }>(null)
@@ -179,10 +174,6 @@ onActivated(async () => {
       color: var(--fg3t);
     }
 
-    // &:not(.is-disabled) > .el-tree-node__content .remove {
-    //   color: var(--error);
-    // }
-
     &.is-active > .el-tree-node__content {
       background-color: var(--hover-bg);
       color: var(--active);
@@ -209,24 +200,30 @@ onActivated(async () => {
       transition: var(--color-transition);
     }
 
-    .remove {
-      display: flex;
+    .right {
       height: 100%;
-      width: 2.5rem;
-      justify-content: center;
-      align-items: center;
-      opacity: 0;
-      color: var(--fg3);
-      transition: var(--color-transition);
+      margin: 0 0.75rem 0 0.5rem;
 
-      &:hover {
-        opacity: 1 !important;
+      > span.button {
+        display: inline-flex;
+        height: 100%;
+        width: 1.5rem;
+        justify-content: center;
+        align-items: center;
+        opacity: 0.75;
+        color: var(--fg3);
+        transition: var(--color-transition);
+
+        &:hover {
+          color: var(--fg2);
+          opacity: 1 !important;
+        }
       }
     }
 
     &:hover {
       background-color: var(--hover-bg);
-      .remove {
+      .right > .button {
         opacity: 0.75;
       }
     }

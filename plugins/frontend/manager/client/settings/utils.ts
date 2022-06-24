@@ -1,7 +1,7 @@
 import { Dict } from 'koishi'
 import { computed } from 'vue'
 import { MarketProvider } from '@koishijs/plugin-manager'
-import { router, store } from '@koishijs/client'
+import { router, send, store } from '@koishijs/client'
 import {} from '@koishijs/cli'
 
 interface DepInfo {
@@ -146,4 +146,19 @@ export function setPath(oldPath: string, newPath: string) {
     delete plugins.value.paths[key]
   }
   router.replace('/plugins/' + newPath)
+}
+
+export function addItem(path: string, action: 'group' | 'unload', name: string) {
+  const id = Math.random().toString(36).slice(2, 8)
+  if (path) path += '/'
+  path += name + ':' + id
+  send(`manager/${action}`, path)
+  router.replace('/plugins/' + path)
+}
+
+export function removeItem(path: string) {
+  send('manager/remove', path)
+  const segments = path.split('/')
+  segments.pop()
+  router.replace('/plugins/' + segments.join('/'))
 }

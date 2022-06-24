@@ -1,7 +1,9 @@
 <template>
   <h1 class="config-header">
-    全局设置
-    <k-button solid @click="send('manager/app-reload', current.config)">应用配置</k-button>
+    <span class="left">全局设置</span>
+    <span class="right">
+      <k-button solid @click="send('manager/app-reload', current.config)">应用配置</k-button>
+    </span>
   </h1>
   <k-form :schema="store.packages[''].schema" :initial="current.config" v-model="config"></k-form>
 </template>

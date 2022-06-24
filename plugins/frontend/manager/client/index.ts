@@ -1,12 +1,15 @@
-import { Card, Context } from '@koishijs/client'
+import { Card, Context, icons } from '@koishijs/client'
 import type {} from '@koishijs/plugin-manager'
 import Bots from './bots/index.vue'
 import Settings from './settings/index.vue'
 import Dependencies from './deps/index.vue'
 import Market from './market/index.vue'
 import { overrideCount } from './utils'
+import AddGroup from './icons/add-group.vue'
+import AddPlugin from './icons/add-plugin.vue'
 
-import './style.scss'
+icons.register('add-plugin', AddPlugin)
+icons.register('add-group', AddGroup)
 
 export default (ctx: Context) => {
   ctx.addView({

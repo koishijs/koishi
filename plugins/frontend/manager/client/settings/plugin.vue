@@ -1,25 +1,30 @@
 <template>
-  <h1 class="config-header plugin">
-    <template v-if="!current.label">
-      <el-select v-model="current.target" filterable placeholder="插件选择">
-        <el-option
-          v-for="name in Object.values(store.packages).slice(1).map(value => value.shortname).sort()"
-          :key="name" :label="name" :value="name"
-        ></el-option>
-      </el-select>
-    </template>
-    <template v-else>
-      <span class="label">{{ current.label }}</span>
-      <k-alias :current="current"></k-alias>
-    </template>
-    <template v-if="!current.disabled">
-      <k-button solid type="error" @click="execute('unload')">停用插件</k-button>
-      <k-button solid @click="execute('reload')">重载配置</k-button>
-    </template>
-    <template v-else-if="name">
-      <k-button solid :type="type" @click="execute('reload')">启用插件</k-button>
-      <k-button solid @click="execute('unload')">保存配置</k-button>
-    </template>
+  <h1 class="plugin-header config-header">
+    <span class="left">
+      <template v-if="!current.label">
+        <el-select v-model="current.target" filterable placeholder="插件选择">
+          <el-option
+            v-for="name in Object.values(store.packages).slice(1).map(value => value.shortname).sort()"
+            :key="name" :label="name" :value="name"
+          ></el-option>
+        </el-select>
+      </template>
+      <template v-else>
+        <span class="label">{{ current.label }}</span>
+        <k-alias :current="current"></k-alias>
+      </template>
+    </span>
+    <span class="right">
+      <template v-if="!current.disabled">
+        <k-button solid @click="execute('reload')">重载配置</k-button>
+        <k-button solid type="error" @click="execute('unload')">停用插件</k-button>
+      </template>
+      <template v-else-if="name">
+        <k-button solid @click="execute('unload')">保存配置</k-button>
+        <k-button solid :type="type" @click="execute('reload')">启用插件</k-button>
+      </template>
+      <k-button solid type="error" @click="removeItem(current.path)">移除配置</k-button>
+    </span>
   </h1>
 
   <template v-if="name">
@@ -81,7 +86,7 @@
 
 import { send, store, clone, router } from '@koishijs/client'
 import { computed, ref, watch } from 'vue'
-import { envMap, Tree } from './utils'
+import { envMap, Tree, removeItem } from './utils'
 import KAlias from './alias.vue'
 import KDepLink from './dep-link.vue'
 
@@ -156,7 +161,7 @@ function gotoMarket() {
     }
   }
 
-  .config-header.plugin .k-alias {
+  .plugin-header .k-alias {
     font-size: 1.15rem;
     color: var(--fg3);
   }

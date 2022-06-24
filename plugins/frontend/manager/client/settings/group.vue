@@ -1,11 +1,16 @@
 <template>
   <h1 class="config-header">
-    <template v-if="current.path">
-      分组<k-alias :current="current"></k-alias>
-    </template>
-    <template v-else>{{ current.label }}</template>
-    <k-button solid @click="execute('unload', '')">添加插件</k-button>
-    <k-button solid @click="execute('group', 'group')">添加分组</k-button>
+    <span class="left">
+      <template v-if="current.path">
+        分组<k-alias :current="current"></k-alias>
+      </template>
+      <template v-else>{{ current.label }}</template>
+    </span>
+    <span class="right">
+      <k-button solid @click="addItem(current.path, 'unload', '')">添加插件</k-button>
+      <k-button solid @click="addItem(current.path, 'group', 'group')">添加分组</k-button>
+      <k-button solid type="error" @click="removeItem(current.path)">移除分组</k-button>
+    </span>
   </h1>
   <div class="k-form" v-if="current.config.$isolate?.length">
     <h2>隔离服务</h2>
@@ -33,9 +38,9 @@
 
 <script lang="ts" setup>
 
-import { send, router, Schema, clone } from '@koishijs/client'
+import { Schema, clone } from '@koishijs/client'
 import { computed, ref, watch } from 'vue'
-import { Tree } from './utils'
+import { Tree, removeItem, addItem } from './utils'
 import KAlias from './alias.vue'
 
 const props = defineProps<{
@@ -61,13 +66,6 @@ const filter = Schema.object({
   guild: Schema.array(String).description('群组列表'),
   platform: Schema.array(String).description('平台列表'),
 }).description('过滤器')
-
-function execute(action: 'group' | 'unload', name: string) {
-  const id = Math.random().toString(36).slice(2, 8)
-  const path = (props.current.path ? props.current.path + '/' : '') + name + ':' + id
-  send(`manager/${action}`, path)
-  router.replace('/plugins/' + path)
-}
 
 </script>
 

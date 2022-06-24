@@ -1,5 +1,5 @@
 <template>
-  <k-card-aside class="page-settings">
+  <k-card-aside class="page-plugins">
     <template #aside>
       <tree-view v-model="path"></tree-view>
     </template>
@@ -44,5 +44,16 @@ watch(() => plugins.value.paths[path.value], (value) => {
 </script>
 
 <style lang="scss">
+
+.page-plugins {
+  h1 {
+    display: flex;
+    justify-content: space-between;
+    font-size: 1.375rem;
+    margin: 0 0 2rem;
+    height: 2rem;
+    align-items: center;
+  }
+}
 
 </style>

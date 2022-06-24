@@ -105,4 +105,14 @@ function update(disabled: boolean) {
 
 <style scoped lang="scss">
 
+.config-header {
+  font-size: 1.375rem;
+  margin: 0 0 2rem;
+  line-height: 2rem;
+
+  .k-button {
+    float: right;
+  }
+}
+
 </style>
