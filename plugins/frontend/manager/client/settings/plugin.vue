@@ -1,7 +1,7 @@
 <template>
   <h1 class="config-header plugin">
     <template v-if="!current.label">
-      <el-select v-model="current.target" placeholder="插件选择">
+      <el-select v-model="current.target" filterable placeholder="插件选择">
         <el-option
           v-for="name in Object.values(store.packages).slice(1).map(value => value.shortname).sort()"
           :key="name" :label="name" :value="name"
