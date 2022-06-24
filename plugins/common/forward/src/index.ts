@@ -1,5 +1,5 @@
 import { parsePlatform } from '@koishijs/helpers'
-import { Command, Context, Dict, Schema, segment, Session, Time } from 'koishi'
+import { Context, Dict, Schema, segment, Session, Time } from 'koishi'
 
 export interface Filter {
   type: 'user' | 'flag' | 'all'
@@ -161,43 +161,6 @@ export function apply(ctx: Context, {
       .command('forward [operation:string] <channel:channel>', { authority: 3 })
       .alias('fwd')
 
-    const register = (def: string, callback: Command.Action<never, never, [string]>) => cmd
-      .subcommand(def, {
-        authority: 3,
-        checkArgCount: true,
-      })
-      .action(callback)
 
-    register('.add <channel:channel>', async ({ session }, id) => {
-      const { forward } = session.channel
-      if (forward.includes(id)) {
-        return session.text('.unchanged', [id])
-      } else {
-        forward.push(id)
-        return session.text('.updated', [id])
-      }
-    })
-
-    register('.remove <channel:channel>', async ({ session }, id) => {
-      const { forward } = session.channel
-      const index = forward.indexOf(id)
-      if (index >= 0) {
-        forward.splice(index, 1)
-        return session.text('.updated', [id])
-      } else {
-        return session.text('.unchanged', [id])
-      }
-    }).alias('forward.rm')
-
-    register('.clear', async ({ session }) => {
-      session.channel.forward = []
-      return session.text('.updated')
-    })
-
-    register('.list', async ({ session }) => {
-      const { forward } = session.channel
-      if (!forward.length) return session.text('.empty')
-      return [session.text('.header'), ...forward].join('\n')
-    }).alias('forward.ls')
   })
 }
