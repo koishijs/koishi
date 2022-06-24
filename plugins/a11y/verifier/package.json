@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-verifier",
   "description": "Verify Friend / Guild Requests for Koishi",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [

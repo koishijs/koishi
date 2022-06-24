@@ -22,12 +22,21 @@ export function isObjectSchema(schema: Schema) {
 }
 
 export function getChoices(schema: Schema) {
-  return schema.list.filter(item => !item.meta.hidden && !dynamic.includes(item.type))
+  return schema.list
+    .filter(item => !item.meta.hidden && !dynamic.includes(item.type))
+    .flatMap(item => item.type === 'union' ? getChoices(item) : item, 1)
 }
 
-export function getFallback(schema: Schema) {
+export function getFallback(schema: Schema, required = false) {
   if (!schema || schema.type === 'union' && getChoices(schema).length === 1) return
-  return clone(schema.meta.default)
+  return clone(schema.meta.default) ?? (required ? inferFallback(schema) : undefined)
+}
+
+export function inferFallback(schema: Schema) {
+  if (schema.type === 'string') return ''
+  if (schema.type === 'number') return 0
+  if (schema.type === 'boolean') return false
+  if (['dict', 'object', 'intersect'].includes(schema.type)) return {}
 }
 
 export function validate(schema: Schema): boolean {
@@ -37,7 +46,8 @@ export function validate(schema: Schema): boolean {
   } else if (schema.type === 'intersect') {
     return schema.list.every(isObjectSchema)
   } else if (schema.type === 'union') {
-    return getChoices(schema).every(item => validate(item) && (item.type === 'const' || item.meta.description))
+    const choices = getChoices(schema)
+    return choices.length === 1 || choices.every(item => validate(item) && (item.type === 'const' || item.meta.description))
   } else if (composite.includes(schema.type)) {
     return validate(schema.inner)
   } else {

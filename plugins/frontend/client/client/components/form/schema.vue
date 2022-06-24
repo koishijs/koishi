@@ -91,8 +91,8 @@
 
   <template v-if="schema && !schema.meta.hidden && isComposite">
     <div class="k-schema-group" v-if="prefix">
-      <schema-group v-if="!schema.meta.hidden && isComposite" v-model:signal="signal"
-        :schema="schema" v-model="config" :prefix="prefix" :disabled="disabled" :instant="instant" :initial="initial">
+      <schema-group v-model:signal="signal"
+        :schema="active" v-model="config" :prefix="prefix" :disabled="disabled" :instant="instant" :initial="initial">
       </schema-group>
     </div>
 
@@ -101,10 +101,21 @@
         {{ schema.meta.description || '配置列表' }}
         <k-button solid @click="signal = true" :disabled="disabled">添加项</k-button>
       </h2>
-      <schema-group v-if="!schema.meta.hidden && isComposite" v-model:signal="signal"
-        :schema="schema" v-model="config" :prefix="prefix" :disabled="disabled" :instant="instant" :initial="initial">
+      <schema-group v-model:signal="signal"
+        :schema="active" v-model="config" :prefix="prefix" :disabled="disabled" :instant="instant" :initial="initial">
       </schema-group>
     </template>
+  </template>
+
+  <template v-else-if="schema?.type === 'union' && choices.length > 1 && ['object', 'intersect'].includes(active?.type)">
+    <k-schema 
+      v-model="config"
+      :initial="initial"
+      :schema="{ ...active, meta: { ...active.meta } }"
+      :instant="instant"
+      :disabled="disabled"
+      :prefix="prefix"
+    ></k-schema>
   </template>
 </template>
 
@@ -146,14 +157,14 @@ const cache = ref<any[]>()
 const active = ref<Schema>()
 
 watch(() => props.schema, (value) => {
-  if (value?.type !== 'union') {
+  if (!value?.list) {
     choices.value = []
     return
   }
   choices.value = getChoices(props.schema)
   cache.value = choices.value.map((item) => {
     if (item.type === 'const') return item.value
-    return getFallback(item)
+    return getFallback(item, true)
   })
 }, { immediate: true })
 
@@ -163,6 +174,7 @@ const selectModel = computed({
     return active.value.meta.description || active.value.value
   },
   set(index) {
+    if (active.value === choices.value[index]) return
     config.value = cache.value[index]
     active.value = choices.value[index]
   },

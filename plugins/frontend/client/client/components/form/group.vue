@@ -89,7 +89,7 @@ function handleCommand(action: string, index?: number) {
   } else if (action === 'delete') {
     entries.value.splice(index, 1)
   } else if (action === 'add') {
-    entries.value.push(['', getFallback(props.schema.inner) ?? null])
+    entries.value.push(['', getFallback(props.schema.inner, true)])
   }
 }
 
