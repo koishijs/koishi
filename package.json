@@ -1,6 +1,7 @@
 {
   "name": "@root/koishi",
   "private": true,
+  "packageManager": "yarn@1.22.19",
   "workspaces": [
     "docs",
     "test",
@@ -95,6 +96,5 @@
     "require": [
       "esbuild-register"
     ]
-  },
-  "packageManager": "yarn@1.22.19"
+  }
 }
