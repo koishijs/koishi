@@ -176,13 +176,13 @@ export function apply(ctx: Context, {
       if (options.user) {
         const filter: Filter = {
           type: 'user',
-          data: options.user,
+          data: [options.user],
         }
         return filter
       } else if (options.flag) {
         const filter: Filter = {
           type: 'flag',
-          data: options.flag,
+          data: [options.flag],
         }
         return filter
       } else {
@@ -253,15 +253,42 @@ export function apply(ctx: Context, {
           session.text('.error')
         }
       })
-    cmd.subcommand('.remove', {
+    cmd.subcommand('.remove <channel:channel>', {
       authority: 3,
       checkArgCount: true,
     })
-      .action(async ({session}) => {
+      .option('user', '-U <user:user>')
+      .option('flag', '-F <flag:string>')
+      .action(async ({session, options}, target) => {
         try {
-
-          return
-          // eslint-disable-next-line no-unreachable
+          const res = await ctx.database.get('forward', {
+            $and: [
+              {source: session.cid},
+              {target: target},
+            ],
+          })
+          if (res.length > 1) {
+            if (!options.flag && !options.user) return session.text('.error')
+            else if (options.flag && options.user) return session.text('.error')
+            else {
+              // @ts-ignore
+              await ctx.database.remove('forward', {
+                $and: [
+                  {source: session.cid},
+                  {target: target},
+                  {filter: generateFilter(options)},
+                ],
+              })
+            }
+          } else {
+            await ctx.database.remove('forward', {
+              $and: [
+                {source: session.cid},
+                {target: target},
+              ],
+            })
+          }
+          return session.text('.success')
         } catch (e) {
           ctx.logger('forward').error(e)
           session.text('.error')

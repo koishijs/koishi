@@ -24,6 +24,11 @@ command:
       error: 发生错误，未清除成功！
   forward.remove:
     description: 移除指定转发规则
+    usage: 指定过滤器时请只指定一个过滤器
+    options:
+      user: 指定用户过滤器
+      flag: 指定关键词过滤器
     message:
       success: 移除指定规则成功！
+      multi-res: 发现多个满足的规则，请指定过滤器！
       error: 发生错误，未移除成功！
