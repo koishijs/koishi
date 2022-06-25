@@ -1,5 +1,5 @@
-import {parsePlatform} from '@koishijs/helpers'
-import {Context, Dict, Schema, segment, Session, Time} from 'koishi'
+import { parsePlatform } from '@koishijs/helpers'
+import { Context, Dict, Schema, segment, Session, Time } from 'koishi'
 
 export interface Filter {
   type: 'user' | 'flag' | 'all'
@@ -244,9 +244,9 @@ export function apply(ctx: Context, {
       authority: 3,
       checkArgCount: true,
     })
-      .action(async ({session}) => {
+      .action(async ({ session }) => {
         try {
-          await ctx.database.remove('forward', {source: session.cid})
+          await ctx.database.remove('forward', { source: session.cid })
           session.text('.success')
         } catch (e) {
           ctx.logger('forward').error(e)
@@ -259,12 +259,12 @@ export function apply(ctx: Context, {
     })
       .option('user', '-U <user:user>')
       .option('flag', '-F <flag:string>')
-      .action(async ({session, options}, target) => {
+      .action(async ({ session, options }, target) => {
         try {
           const res = await ctx.database.get('forward', {
             $and: [
-              {source: session.cid},
-              {target: target},
+              { source: session.cid },
+              { target: target },
             ],
           })
           if (res.length > 1) {
@@ -274,17 +274,17 @@ export function apply(ctx: Context, {
               // @ts-ignore
               await ctx.database.remove('forward', {
                 $and: [
-                  {source: session.cid},
-                  {target: target},
-                  {filter: generateFilter(options)},
+                  { source: session.cid },
+                  { target: target },
+                  { filter: generateFilter(options) },
                 ],
               })
             }
           } else {
             await ctx.database.remove('forward', {
               $and: [
-                {source: session.cid},
-                {target: target},
+                { source: session.cid },
+                { target: target },
               ],
             })
           }
