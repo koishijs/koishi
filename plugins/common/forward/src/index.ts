@@ -268,8 +268,9 @@ export function apply(ctx: Context, {
             ],
           })
           if (res.length > 1) {
-            if (!options.flag && !options.user) return session.text('.error')
-            else if (options.flag && options.user) return session.text('.error')
+            session.text('.multi-res')
+            if (!options.flag && !options.user) throw new Error('No filter is mentioned.')
+            else if (options.flag && options.user) throw new Error('More than 1 filters are mentioned.')
             else {
               // @ts-ignore
               await ctx.database.remove('forward', {
