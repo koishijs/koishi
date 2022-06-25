@@ -22,3 +22,8 @@ command:
     message:
       success: 清除成功！
       error: 发生错误，未清除成功！
+  forward.remove:
+    description: 移除指定转发规则
+    message:
+      success: 移除指定规则成功！
+      error: 发生错误，未移除成功！
