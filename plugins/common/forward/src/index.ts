@@ -1,5 +1,5 @@
-import { parsePlatform } from '@koishijs/helpers'
-import { Context, Dict, Schema, segment, Session, Time } from 'koishi'
+import {parsePlatform} from '@koishijs/helpers'
+import {Context, Dict, Schema, segment, Session, Time} from 'koishi'
 
 export interface Filter {
   type: 'user' | 'flag' | 'all'
@@ -244,10 +244,24 @@ export function apply(ctx: Context, {
       authority: 3,
       checkArgCount: true,
     })
-      .action(async ({ session }) => {
+      .action(async ({session}) => {
         try {
-          await ctx.database.remove('forward', { source: session.cid })
+          await ctx.database.remove('forward', {source: session.cid})
           session.text('.success')
+        } catch (e) {
+          ctx.logger('forward').error(e)
+          session.text('.error')
+        }
+      })
+    cmd.subcommand('.remove', {
+      authority: 3,
+      checkArgCount: true,
+    })
+      .action(async ({session}) => {
+        try {
+
+          return
+          // eslint-disable-next-line no-unreachable
         } catch (e) {
           ctx.logger('forward').error(e)
           session.text('.error')
