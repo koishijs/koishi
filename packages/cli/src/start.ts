@@ -6,14 +6,6 @@ import kleur from 'kleur'
 
 let child: ChildProcess
 
-process.on('SIGINT', () => {
-  if (child) {
-    child.emit('SIGINT')
-  } else {
-    process.exit()
-  }
-})
-
 interface Message {
   type: 'start' | 'queue'
   body: any
