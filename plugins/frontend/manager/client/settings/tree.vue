@@ -99,7 +99,6 @@ function handleDrop(source: Node, target: Node, position: 'before' | 'after' | '
   const segments2 = ctxPath ? ctxPath.split(separator) : []
   segments2.push(segments1.pop())
   setPath(oldPath, segments2.join('/'))
-  ;/(?<!dsa)/
 }
 
 function getClass(tree: Tree) {
