@@ -116,10 +116,11 @@ export function adminChannel<U extends User.Field, G extends Channel.Field, A ex
     }
 
     // channel not specified or identical, use current channel
-    if (!options.channel || options.channel === session.cid) return
+    const { channel = session.cid } = options
+    if (channel === session.cid && !session.channel['$detached']) return
 
     // get target channel
-    const [platform, channelId] = parsePlatform(options.channel)
+    const [platform, channelId] = parsePlatform(channel)
     const fields = argv.session.collect('channel', argv)
     const data = await app.database.getChannel(platform, channelId, [...fields])
 
@@ -130,11 +131,11 @@ export function adminChannel<U extends User.Field, G extends Channel.Field, A ex
       temp.id = channelId
       session.channel = observe(temp, async (diff) => {
         await app.database.createChannel(platform, channelId, diff)
-      }, `channel ${options.channel}`)
+      }, `channel ${channel}`)
     } else {
       session.channel = observe(data, async (diff) => {
-        app.database.setChannel(platform, channelId, diff)
-      }, `channel ${options.channel}`)
+        await app.database.setChannel(platform, channelId, diff)
+      }, `channel ${channel}`)
     }
   }
 

@@ -224,7 +224,7 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
       return app.database.createChannel(platform, id, { assignee, guildId })
     } else {
       const channel = app.model.tables.channel.create()
-      Object.assign(channel, { platform, id, guildId })
+      Object.assign(channel, { platform, id, guildId, $detached: true })
       return channel
     }
   }
@@ -277,7 +277,7 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
       return app.database.createUser(platform, id, { authority })
     } else {
       const user = app.model.tables.user.create()
-      Object.assign(user, { [platform]: id, authority })
+      Object.assign(user, { [platform]: id, authority, $detached: true })
       return user
     }
   }
