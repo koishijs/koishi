@@ -37,7 +37,6 @@
     "@types/cross-spawn": "^6.0.2",
     "@types/fs-extra": "^9.0.13",
     "@types/js-yaml": "^4.0.5",
-    "@types/semver": "^7.3.9",
     "@types/which-pm-runs": "^1.0.0"
   },
   "dependencies": {
@@ -47,11 +46,8 @@
     "globby": "^11.1.0",
     "js-yaml": "^4.1.0",
     "kleur": "^4.1.4",
-    "latest-version": "^5.1.0",
     "ora": "^5.4.1",
-    "p-map": "^4.0.0",
     "prompts": "^2.4.2",
-    "semver": "^7.3.7",
     "which-pm-runs": "^1.1.0"
   }
 }
