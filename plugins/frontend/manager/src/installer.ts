@@ -111,7 +111,7 @@ class Installer extends DataService<Dict<Dependency>> {
 
   installDep = async (deps: Dict<string>) => {
     const agent = which()?.name || 'npm'
-    const oldPayload = this.get()
+    const oldPayload = await this.get()
     await this.override(deps)
     const args: string[] = []
     if (agent !== 'yarn') args.push('install')
