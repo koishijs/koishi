@@ -2,7 +2,7 @@
   <h1 class="config-header">
     <span class="left">全局设置</span>
     <span class="right">
-      <k-button solid @click="send('manager/app-reload', current.config)">应用配置</k-button>
+      <k-button solid @click="send('manager/app-reload', config)">应用配置</k-button>
     </span>
   </h1>
   <k-form :schema="store.packages[''].schema" :initial="current.config" v-model="config"></k-form>
