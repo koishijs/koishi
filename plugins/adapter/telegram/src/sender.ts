@@ -1,5 +1,6 @@
 import { createReadStream } from 'fs'
 import { Dict, Logger, segment } from 'koishi'
+import { fileURLToPath } from 'url'
 import * as Telegram from './types'
 import AggregateError from 'es-aggregate-error'
 import fileType from 'file-type'
@@ -21,16 +22,23 @@ async function maybeFile(payload: Dict, field: TLAssetType): Promise<[string?, B
   if (!payload[field]) return []
   let content: any
   let filename = 'file'
-  const [schema, data] = payload[field].split('://')
-  if (schema === 'file') {
-    content = createReadStream(data)
+
+  const url = new URL(payload[field])
+  const schema = url.protocol
+
+  // Because the base64 string is not url encoded, so it will contain slash
+  // and can't parse with URL.pathname
+  const data = payload[field].split('://')[1]
+
+  if (schema === 'file:') {
+    content = createReadStream(fileURLToPath(url))
     delete payload[field]
-  } else if (schema === 'base64') {
+  } else if (schema === 'base64:') {
     content = Buffer.from(data, 'base64')
     delete payload[field]
   }
   // add file extension for base64 document (general file)
-  if (field === 'document' && schema === 'base64') {
+  if (field === 'document' && schema === 'base64:') {
     const type = await fileType.fromBuffer(Buffer.from(data, 'base64'))
     if (!type) {
       logger.warn('Can not infer file mime')
