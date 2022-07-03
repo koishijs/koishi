@@ -10,9 +10,8 @@ export class WebSocketClient extends Adapter<BotConfig, AdapterConfig> {
 
   async connect(bot: QQGuildBot) {
     Object.assign(bot, await bot.getSelf())
-    bot.resolve()
     await bot.$innerBot.startClient(bot.config.intents)
-    bot.$innerBot.on('ready', bot.resolve)
+    bot.$innerBot.on('ready', bot.resolve.bind(bot))
     bot.$innerBot.on('message', msg => {
       const session = bot.adaptMessage(msg)
       if (session) {
