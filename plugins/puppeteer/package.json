@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-puppeteer",
   "description": "Take Screenshots in Koishi",
-  "version": "3.1.0",
+  "version": "3.1.1",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -45,6 +45,6 @@
   "dependencies": {
     "chrome-finder": "^1.0.7",
     "pngjs": "^6.0.0",
-    "puppeteer-core": "^15.2.0"
+    "puppeteer-core": "^13.7.0"
   }
 }
