@@ -1,6 +1,6 @@
 import { Context, defineProperty, Dict, Logger } from 'koishi'
 import { DataService } from '@koishijs/plugin-console'
-import { PackageJson } from '@koishijs/market'
+import { PackageJson } from '@koishijs/registry'
 import { resolve } from 'path'
 import { promises as fsp } from 'fs'
 import { loadManifest } from './utils'

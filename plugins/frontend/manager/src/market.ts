@@ -1,6 +1,6 @@
 import { Context, Dict, pick, Quester, Schema } from 'koishi'
 import { DataService } from '@koishijs/plugin-console'
-import scan, { AnalyzedPackage, PackageJson, Registry } from '@koishijs/market'
+import scan, { AnalyzedPackage, PackageJson, Registry } from '@koishijs/registry'
 import which from 'which-pm-runs'
 import spawn from 'cross-spawn'
 import { loadManifest } from './utils'

@@ -1,5 +1,5 @@
 import { readFileSync } from 'fs'
-import { PackageJson } from '@koishijs/market'
+import { PackageJson } from '@koishijs/registry'
 import { defineProperty } from 'koishi'
 
 export interface LocalPackage extends PackageJson {

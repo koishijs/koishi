@@ -1,6 +1,6 @@
 import { Adapter, App, Context, Dict, Logger, pick, remove, Runtime, Schema, State } from 'koishi'
 import { DataService } from '@koishijs/plugin-console'
-import { conclude, Manifest, PackageJson } from '@koishijs/market'
+import { conclude, Manifest, PackageJson } from '@koishijs/registry'
 import { promises as fsp } from 'fs'
 import { dirname } from 'path'
 import ns from 'ns-require'

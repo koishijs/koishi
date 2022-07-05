@@ -3,7 +3,7 @@ import { Adapter, App, Bot, Context, remove, State } from 'koishi'
 import { Loader } from '@koishijs/cli'
 import { LocalPackage } from './utils'
 import { readFileSync } from 'fs'
-import { conclude } from '@koishijs/market'
+import { conclude } from '@koishijs/registry'
 
 declare module '@koishijs/plugin-console' {
   interface Events {
