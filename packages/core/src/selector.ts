@@ -1,44 +1,37 @@
-import { Logger, Promisify, remove } from '@koishijs/utils'
-import { Context, Events } from 'cordis'
-import { Session } from './protocol/session'
-
-declare module 'cordis' {
-  interface Context extends SelectorService.Mixin {
-    selector: SelectorService
-  }
-
-  namespace Context {
-    interface Meta {
-      filter: Filter
-    }
-  }
-}
+import { defineProperty, Logger, Promisify, remove } from '@koishijs/utils'
+import { GetEvents, Parameters, ReturnType, ThisType } from 'cordis'
+import { Context, Events } from './context'
+import { Session } from './session'
 
 export type Filter = (session: Session) => boolean
 
-export namespace SelectorService {
-  export interface Mixin {
+/* eslint-disable max-len */
+declare module './context' {
+  interface Context {
+    filter: Filter
+    selector: SelectorService
     logger(name: string): Logger
-    any(): Context
-    never(): Context
-    union(arg: Filter | Context): Context
-    intersect(arg: Filter | Context): Context
-    exclude(arg: Filter | Context): Context
-    user(...values: string[]): Context
-    self(...values: string[]): Context
-    guild(...values: string[]): Context
-    channel(...values: string[]): Context
-    platform(...values: string[]): Context
-    private(...values: string[]): Context
-    waterfall<K extends keyof Events>(name: K, ...args: Parameters<Events[K]>): Promisify<ReturnType<Events[K]>>
-    waterfall<K extends keyof Events>(thisArg: ThisParameterType<Events[K]>, name: K, ...args: Parameters<Events[K]>): Promisify<ReturnType<Events[K]>>
-    chain<K extends keyof Events>(name: K, ...args: Parameters<Events[K]>): ReturnType<Events[K]>
-    chain<K extends keyof Events>(thisArg: ThisParameterType<Events[K]>, name: K, ...args: Parameters<Events[K]>): ReturnType<Events[K]>
+    any(): this
+    never(): this
+    union(arg: Filter | Context): this
+    intersect(arg: Filter | Context): this
+    exclude(arg: Filter | Context): this
+    user(...values: string[]): this
+    self(...values: string[]): this
+    guild(...values: string[]): this
+    channel(...values: string[]): this
+    platform(...values: string[]): this
+    private(...values: string[]): this
+    waterfall<K extends keyof GetEvents<this>>(name: K, ...args: Parameters<GetEvents<this>[K]>): Promisify<ReturnType<GetEvents<this>[K]>>
+    waterfall<K extends keyof GetEvents<this>>(thisArg: ThisType<GetEvents<this>[K]>, name: K, ...args: Parameters<GetEvents<this>[K]>): Promisify<ReturnType<GetEvents<this>[K]>>
+    chain<K extends keyof GetEvents<this>>(name: K, ...args: Parameters<GetEvents<this>[K]>): ReturnType<GetEvents<this>[K]>
+    chain<K extends keyof GetEvents<this>>(thisArg: ThisType<GetEvents<this>[K]>, name: K, ...args: Parameters<GetEvents<this>[K]>): ReturnType<GetEvents<this>[K]>
     before<K extends BeforeEventName>(name: K, listener: BeforeEventMap[K], append?: boolean): () => boolean
     setTimeout(callback: (...args: any[]) => void, ms: number, ...args: any[]): () => boolean
     setInterval(callback: (...args: any[]) => void, ms: number, ...args: any[]): () => boolean
   }
 }
+/* eslint-enable max-len */
 
 type OmitSubstring<S extends string, T extends string> = S extends `${infer L}${T}${infer R}` ? `${L}${R}` : never
 type BeforeEventName = OmitSubstring<keyof Events & string, 'before-'>
@@ -51,9 +44,15 @@ function property<K extends keyof Session>(ctx: Context, key: K, ...values: Sess
   })
 }
 
-export class SelectorService {
-  constructor(private app: Context) {
-    this[Context.current] = app
+export class SelectorService<C extends Context = Context> {
+  static readonly methods = [
+    'any', 'never', 'union', 'intersect', 'exclude', 'select',
+    'user', 'self', 'guild', 'channel', 'platform', 'private',
+    'chain', 'waterfall', 'before', 'logger', 'setTimeout', 'setInterval',
+  ]
+
+  constructor(private app: C) {
+    defineProperty(this, Context.current, app)
 
     app.filter = () => true
 
@@ -63,14 +62,14 @@ export class SelectorService {
 
     app.on('internal/runtime', (runtime) => {
       if (!runtime.uid) return
-      runtime.context.filter = (session) => {
-        return runtime.children.some(p => p.context.filter(session))
+      runtime.ctx.filter = (session) => {
+        return runtime.children.some(p => p.ctx.filter(session))
       }
     })
   }
 
   protected get caller() {
-    return this[Context.current]
+    return this[Context.current] as Context
   }
 
   any() {
@@ -81,19 +80,19 @@ export class SelectorService {
     return this.caller.extend({ filter: () => false })
   }
 
-  union(arg: Filter | Context) {
+  union(arg: Filter | C) {
     const caller = this.caller
     const filter = typeof arg === 'function' ? arg : arg.filter
     return this.caller.extend({ filter: s => caller.filter(s) || filter(s) })
   }
 
-  intersect(arg: Filter | Context) {
+  intersect(arg: Filter | C) {
     const caller = this.caller
     const filter = typeof arg === 'function' ? arg : arg.filter
     return this.caller.extend({ filter: s => caller.filter(s) && filter(s) })
   }
 
-  exclude(arg: Filter | Context) {
+  exclude(arg: Filter | C) {
     const caller = this.caller
     const filter = typeof arg === 'function' ? arg : arg.filter
     return this.caller.extend({ filter: s => caller.filter(s) && !filter(s) })
@@ -176,11 +175,4 @@ export class SelectorService {
   }
 }
 
-Context.service('selector', {
-  constructor: SelectorService,
-  methods: [
-    'any', 'never', 'union', 'intersect', 'exclude', 'select',
-    'user', 'self', 'guild', 'channel', 'platform', 'private',
-    'chain', 'waterfall', 'before', 'logger', 'setTimeout', 'setInterval',
-  ],
-})
+Context.service('selector', SelectorService)

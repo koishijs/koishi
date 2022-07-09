@@ -1,71 +1,11 @@
-import { Channel, Tables, User } from '../database'
-import { Argv, Command } from '../command'
-import { Awaitable } from 'cosmokit'
-import { defineProperty, isNullable, Logger, makeArray, observe, Promisify, Random, segment } from '@koishijs/utils'
-import { Middleware, Next } from '.'
-import { App, Context } from 'cordis'
-import { Bot } from './bot'
-
-type Genres = 'friend' | 'channel' | 'guild' | 'guild-member' | 'guild-role' | 'guild-file' | 'guild-emoji'
-type Actions = 'added' | 'deleted' | 'updated'
-type SessionEventCallback = (session: Session) => void
-
-declare module 'cordis' {
-  interface Events extends Record<`${Genres}-${Actions}`, SessionEventCallback> {
-    'message': SessionEventCallback
-    'message-deleted': SessionEventCallback
-    'message-updated': SessionEventCallback
-    'reaction-added': SessionEventCallback
-    'reaction-deleted': SessionEventCallback
-    'reaction-deleted/one': SessionEventCallback
-    'reaction-deleted/all': SessionEventCallback
-    'reaction-deleted/emoji': SessionEventCallback
-    'send': SessionEventCallback
-    'friend-request': SessionEventCallback
-    'guild-request': SessionEventCallback
-    'guild-member-request': SessionEventCallback
-    'guild-member/role': SessionEventCallback
-    'guild-member/ban': SessionEventCallback
-    'guild-member/nickname': SessionEventCallback
-    'notice/poke': SessionEventCallback
-    'notice/lucky-king': SessionEventCallback
-    'notice/honor': SessionEventCallback
-    'notice/honor/talkative': SessionEventCallback
-    'notice/honor/performer': SessionEventCallback
-    'notice/honor/emotion': SessionEventCallback
-
-    // session events
-    'appellation'(name: string, session: Session): string
-    'before-send'(session: Session): Awaitable<void | boolean>
-  }
-}
+import { defineProperty, isNullable, Logger, makeArray, observe, Promisify, segment } from '@koishijs/utils'
+import * as satori from '@satorijs/core'
+import { Argv, Command } from './command'
+import { Context } from './context'
+import { Channel, Tables, User } from './database'
+import { Middleware, Next } from './internal'
 
 const logger = new Logger('session')
-
-export interface Session extends Session.Payload {}
-
-export namespace Session {
-  export interface Payload {
-    platform?: string
-    selfId: string
-    type?: string
-    subtype?: string
-    messageId?: string
-    channelId?: string
-    guildId?: string
-    userId?: string
-    content?: string
-    timestamp?: number
-    author?: Bot.Author
-    quote?: Bot.Message
-    channelName?: string
-    guildName?: string
-    operatorId?: string
-    targetId?: string
-    duration?: number
-    file?: FileInfo
-  }
-}
 
 export interface Parsed {
   content: string
@@ -82,69 +22,30 @@ interface Task {
   reject(reason: any): void
 }
 
-export class Session<U extends User.Field = never, G extends Channel.Field = never> {
-  type?: string
-  subtype?: string
-  subsubtype?: string
-  scope?: string
+export namespace Session {
+  export interface Payload extends satori.Session.Payload {}
+}
 
-  bot: Bot
-  app: App
-
-  selfId: string
-  operatorId?: string
-  targetId?: string
-  duration?: number
-  file?: FileInfo
-
-  id: string
-  platform?: string
-  argv?: Argv<U, G>
-  user?: User.Observed<U>
-  channel?: Channel.Observed<G>
-  guild?: Channel.Observed<G>
-  parsed?: Parsed
+export class Session<U extends User.Field = never, G extends Channel.Field = never> extends satori.Session<Context> {
+  public argv?: Argv<U, G>
+  public user?: User.Observed<U>
+  public channel?: Channel.Observed<G>
+  public guild?: Channel.Observed<G>
+  public parsed?: Parsed
+  public scope?: string
 
   private _promise: Promise<string>
   private _queuedTasks: Task[]
   private _queuedTimeout: NodeJS.Timeout
 
-  constructor(bot: Bot, session: Partial<Session.Payload>) {
-    Object.assign(this, session)
-    this.platform = bot.platform
-    defineProperty(this, 'app', bot.ctx.app)
-    defineProperty(this, 'bot', bot)
+  constructor(bot: satori.Bot<Context>, payload: Partial<Session.Payload>) {
+    super(bot, payload)
+    defineProperty(this, 'scope', null)
     defineProperty(this, 'user', null)
     defineProperty(this, 'channel', null)
-    defineProperty(this, 'id', Random.id())
+    defineProperty(this, 'guild', null)
     defineProperty(this, '_queuedTasks', [])
     defineProperty(this, '_queuedTimeout', null)
-  }
-
-  [Context.filter](ctx: Context) {
-    return ctx.filter(this)
-  }
-
-  get uid() {
-    return `${this.platform}:${this.userId}`
-  }
-
-  get gid() {
-    return `${this.platform}:${this.guildId}`
-  }
-
-  get cid() {
-    return `${this.platform}:${this.channelId}`
-  }
-
-  get sid() {
-    return `${this.platform}:${this.selfId}`
-  }
-
-  toJSON(): Session.Payload {
-    return Object.fromEntries(Object.entries(this).filter(([key]) => {
-      return !key.startsWith('_') && !key.startsWith('$')
-    })) as any
   }
 
   private async _preprocess() {
@@ -166,7 +67,7 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
   }
 
   get username(): string {
-    const defaultName = this.user && this.user['name']
+    const defaultName: string = this.user && this.user['name']
       ? this.user['name']
       : this.author
         ? this.author.nickname || this.author.username
@@ -482,11 +383,4 @@ function collectFields<T extends keyof Tables>(argv: Argv, collectors: FieldColl
     }
   }
   return fields
-}
-
-export interface FileInfo {
-  id: string
-  name: string
-  size: number
-  busid: number
 }

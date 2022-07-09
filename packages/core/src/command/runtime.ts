@@ -1,7 +1,7 @@
 import { defineProperty, valueMap } from '@koishijs/utils'
 import { Argv } from './parser'
-import { Context } from 'cordis'
-import { Session } from '../protocol/session'
+import { Context } from '../context'
+import { Session } from '../session'
 
 export default function runtime(ctx: Context) {
   ctx.before('parse', (content, session) => {

@@ -1,10 +1,9 @@
-import { coerce, Dict, Logger, remove, Schema } from '@koishijs/utils'
-import { Awaitable } from 'cosmokit'
-import { Context, Disposable } from 'cordis'
+import { Awaitable, coerce, Dict, Logger, remove, Schema } from '@koishijs/utils'
+import { Context, Disposable } from '../context'
 import { Argv } from './parser'
-import { Next } from '../protocol'
+import { Next } from '../internal'
 import { Channel, User } from '../database'
-import { Computed, FieldCollector, Session } from '../protocol/session'
+import { Computed, FieldCollector, Session } from '../session'
 
 const logger = new Logger('command')
 

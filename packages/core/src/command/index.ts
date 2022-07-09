@@ -1,11 +1,11 @@
-import { Context } from 'cordis'
-import { Awaitable } from 'cosmokit'
+import { Awaitable, defineProperty } from '@koishijs/utils'
+import { Context } from '../context'
 import { Command } from './command'
 import { Argv } from './parser'
 import runtime from './runtime'
 import validate from './validate'
 import { Channel, User } from '../database'
-import { Session } from '../protocol'
+import { Session } from '../session'
 
 export * from './command'
 export * from './runtime'
@@ -16,7 +16,7 @@ interface CommandMap extends Map<string, Command> {
   resolve(key: string): Command
 }
 
-declare module 'cordis' {
+declare module '../context' {
   interface Context extends Commander.Mixin {
     $commander: Commander
   }
@@ -43,13 +43,14 @@ export namespace Commander {
 
 export class Commander {
   static readonly key = '$commander'
+  static readonly methods = ['command']
 
   _commandList: Command[] = []
   _commands = new Map<string, Command>() as CommandMap
   _shortcuts: Command.Shortcut[] = []
 
   constructor(private ctx: Context, private config: Commander.Config = {}) {
-    this[Context.current] = ctx
+    defineProperty(this, Context.current, ctx)
     ctx.plugin(runtime)
     ctx.plugin(validate)
   }
@@ -127,7 +128,4 @@ export class Commander {
   }
 }
 
-Context.service(Commander.key, {
-  constructor: Commander,
-  methods: ['command'],
-})
+Context.service(Commander.key, Commander)

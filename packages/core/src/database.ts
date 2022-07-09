@@ -1,9 +1,9 @@
 import * as utils from '@koishijs/utils'
-import { Dict, MaybeArray } from '@koishijs/utils'
+import { defineProperty, Dict, MaybeArray } from '@koishijs/utils'
 import { Database, Driver, Result, Update } from 'minato'
-import { Context, Plugin } from 'cordis'
+import { Context, Plugin } from './context'
 
-declare module 'cordis' {
+declare module './context' {
   interface Events {
     'model'(name: keyof Tables): void
   }
@@ -67,9 +67,11 @@ export namespace DatabaseService {
 }
 
 export class DatabaseService extends Database<Tables> {
+  static readonly methods = ['getSelfIds', 'broadcast']
+
   constructor(protected app: Context) {
     super()
-    this[Context.current] = app
+    defineProperty(this, Context.current, app)
 
     this.extend('user', {
       // TODO v5: change to number
@@ -180,10 +182,7 @@ DatabaseService.prototype.extend = function extend(this: DatabaseService, name, 
 }
 
 Context.service('database')
-Context.service('model', {
-  constructor: DatabaseService,
-  methods: ['getSelfIds', 'broadcast'],
-})
+Context.service('model', DatabaseService)
 
 export const defineDriver = <T>(constructor: Driver.Constructor<T>, schema?: utils.Schema<T>, prepare?: Plugin.Function<T>): Plugin.Object<T> => ({
   name: constructor.name,

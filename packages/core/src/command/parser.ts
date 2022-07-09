@@ -1,9 +1,9 @@
 import { camelCase, Dict, escapeRegExp, paramCase, segment, Time } from '@koishijs/utils'
 import { Command } from './command'
-import { Context } from 'cordis'
+import { Context } from '../context'
 import { Channel, User } from '../database'
-import { Session } from '../protocol/session'
-import { Next } from '../protocol'
+import { Session } from '../session'
+import { Next } from '../internal'
 
 export interface Token {
   rest?: string

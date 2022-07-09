@@ -1,10 +1,10 @@
 import { Dict, isNullable, Logger, Random, Time } from '@koishijs/utils'
-import { Context } from 'cordis'
+import { Context } from './context'
 
 const logger = new Logger('i18n')
 const kTemplate = Symbol('template')
 
-declare module 'cordis' {
+declare module './context' {
   interface Context {
     i18n: I18n
   }
@@ -171,6 +171,4 @@ export class I18n {
   }
 }
 
-Context.service('i18n', {
-  constructor: I18n,
-})
+Context.service('i18n', I18n)

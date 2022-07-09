@@ -1,15 +1,9 @@
-
-import { coerce, defineProperty, Dict, escapeRegExp, makeArray } from '@koishijs/utils'
-import { Awaitable } from 'cosmokit'
+import { Awaitable, coerce, defineProperty, Dict, escapeRegExp, makeArray } from '@koishijs/utils'
 import { Computed, Session } from './session'
-import { Channel, User } from '../database'
-import { Context } from 'cordis'
+import { Channel, User } from './database'
+import { Context } from './context'
 
-export * from './adapter'
-export * from './bot'
-export * from './session'
-
-declare module 'cordis' {
+declare module './context' {
   interface Context extends Internal.Mixin {
     $internal: Internal
   }
@@ -55,6 +49,8 @@ export namespace Internal {
 }
 
 export class Internal {
+  static readonly methods = ['middleware']
+
   _hooks: [Context, Middleware][] = []
   _nameRE: RegExp
   _sessions: Dict<Session> = Object.create(null)
@@ -62,7 +58,7 @@ export class Internal {
   _channelCache = new SharedCache<Channel.Observed<any>>()
 
   constructor(private ctx: Context, private config: Internal.Config) {
-    this[Context.current] = ctx
+    defineProperty(this, Context.current, ctx)
     this.prepare()
 
     // bind built-in event listeners
@@ -173,7 +169,7 @@ export class Internal {
 
     // execute middlewares
     let index = 0, midStack = '', lastCall = ''
-    const { prettyErrors } = this.ctx.app.options
+    const { prettyErrors } = this.ctx.options
     const next: Next = async (callback) => {
       if (prettyErrors) {
         lastCall = new Error().stack.split('\n', 3)[2]
@@ -227,10 +223,7 @@ export class Internal {
   }
 }
 
-Context.service('$internal', {
-  constructor: Internal,
-  methods: ['middleware'],
-})
+Context.service('$internal', Internal)
 
 export namespace SharedCache {
   export interface Entry<T> {
