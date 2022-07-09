@@ -21,9 +21,9 @@
   ],
   "scripts": {
     "build": "yarn compile && yarn dtsc && yarn fe",
-    "dtsc": "node -r ./build/register build/dtsc",
     "clean": "node -r ./build/register build/clean",
     "compile": "node -r ./build/register build/compile",
+    "dtsc": "yakumo tsc",
     "bump": "yakumo version",
     "dep": "yakumo upgrade",
     "pub": "yakumo publish",
@@ -62,8 +62,7 @@
     "cross-env": "^7.0.3",
     "cross-spawn": "^7.0.3",
     "del": "^6.1.1",
-    "dtsc": "^1.2.0",
-    "esbuild": "^0.12.29",
+    "esbuild": "^0.14.48",
     "eslint": "^7.32.0",
     "eslint-config-standard": "^16.0.3",
     "eslint-import-resolver-typescript": "^2.7.1",
@@ -86,11 +85,11 @@
     "semver": "^7.3.7",
     "source-map-support": "^0.5.21",
     "typescript": "^4.7.2",
-    "yakumo": "^0.2.7",
+    "yakumo": "^0.2.8",
     "yakumo-mocha": "^0.2.5",
     "yakumo-publish": "^0.2.4",
     "yakumo-upgrade": "^0.2.3",
-    "yakumo-version": "^0.2.4"
+    "yakumo-version": "^0.2.5"
   },
   "yakumo": {
     "require": [
