@@ -6,13 +6,11 @@ import * as screenshot from './screenshot'
 export * from './svg'
 
 declare module 'koishi' {
-  namespace Context {
-    interface Services {
-      puppeteer: Puppeteer
-    }
+  interface Context {
+    puppeteer: Puppeteer
   }
 
-  interface EventMap {
+  interface Events {
     'puppeteer/validate'(url: string): string
   }
 }

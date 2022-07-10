@@ -1,12 +1,10 @@
-import { Adapter, App, Bot, Channel, Context, Schema, Session, User } from 'koishi'
+import { Adapter, Bot, Channel, Context, Session, User } from 'koishi'
 import { MessageClient } from './client'
 import { Webhook } from './webhook'
 
 declare module 'koishi' {
-  namespace Context {
-    interface Services {
-      mock: MockAdapter
-    }
+  interface Context {
+    mock: MockAdapter
   }
 
   interface User {
@@ -16,15 +14,28 @@ declare module 'koishi' {
 
 export const DEFAULT_SELF_ID = '514'
 
-interface BotConfig extends Bot.BaseConfig {
-  selfId: string
+export namespace MockBot {
+  export interface Config extends Bot.Config {
+    selfId: string
+  }
 }
 
-export class MockBot extends Bot<BotConfig> {
-  constructor(adapter: MockAdapter, config: BotConfig) {
-    super(adapter, config)
-    this.selfId = config.selfId
+export class MockBot extends Bot {
+  constructor(ctx: Context, config: MockBot.Config) {
+    super(ctx, config)
+    this.selfId = config.selfId ?? DEFAULT_SELF_ID
     this.status = 'online'
+    ctx.plugin(MockAdapter, this)
+  }
+
+  client(userId: string, channelId?: string) {
+    return new MessageClient(this, userId, channelId)
+  }
+
+  receive(meta: Partial<Session>) {
+    const session = this.session(meta)
+    this.dispatch(session)
+    return session.id
   }
 
   async getMessage(channelId: string, messageId: string) {
@@ -35,38 +46,23 @@ export class MockBot extends Bot<BotConfig> {
       time: 0,
       subtype: null,
       messageType: null,
-      author: { userId: this.selfId } as Bot.Author,
+      author: { userId: this.selfId },
     }
   }
 }
 
-export class MockAdapter extends Adapter<BotConfig> {
-  public app: App
+MockBot.prototype.platform = 'mock'
+
+export class MockAdapter extends Adapter.Server<MockBot> {
+  public app: Context
   public webhook: Webhook
-  public platform = 'mock'
 
-  constructor(ctx: Context, config: MockAdapter.Config) {
-    super(ctx, config)
-    this.app = ctx.app
-    this.webhook = new Webhook(ctx.app)
+  constructor(ctx: Context, bot: MockBot) {
+    super()
+    this.app = ctx.root
+    this.webhook = new Webhook(ctx.root)
     ctx.mock = this
-    ctx.bots.adapters.mock = this
-
-    for (const selfId of config.selfIds) {
-      this.addBot(selfId)
-    }
   }
-
-  addBot(selfId = DEFAULT_SELF_ID) {
-    const bot = this.bots.find(bot => bot.selfId === selfId)
-    if (bot) return bot
-
-    return this.ctx.bots.create('mock', { selfId }, MockBot)
-  }
-
-  async stop() {}
-
-  async start() {}
 
   async initUser(id: string, authority = 1, data?: Partial<User>) {
     await this.app.database.create('user', { mock: id, authority, ...data })
@@ -77,34 +73,20 @@ export class MockAdapter extends Adapter<BotConfig> {
   }
 
   client(userId: string, channelId?: string) {
-    return new MessageClient(this, userId, channelId)
+    return new MessageClient(this.bots[0], userId, channelId)
   }
 
   session(meta: Partial<Session>) {
-    const bot = this.bots[0]
-    return new Session(bot, {
-      selfId: bot.selfId,
-      platform: bot.platform,
-      timestamp: Date.now(),
-      ...meta,
-    })
+    return this.bots[0].session(meta)
   }
 
   receive(meta: Partial<Session>) {
-    const session = this.session(meta)
-    this.dispatch(session)
-    return session.id
+    return this.bots[0].receive(meta)
   }
 }
 
 export namespace MockAdapter {
-  export interface Config {
-    selfIds?: string[]
-  }
-
-  export const Config = Schema.object({
-    selfIds: Schema.array(String).default([DEFAULT_SELF_ID]),
-  })
+  export interface Config {}
 }
 
 Context.service('mock')

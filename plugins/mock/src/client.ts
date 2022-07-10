@@ -1,7 +1,7 @@
 import assert from 'assert'
-import { App, Session } from 'koishi'
+import { Context, Session } from 'koishi'
 import { format } from 'util'
-import { MockAdapter } from './adapter'
+import { MockBot } from './adapter'
 
 const RECEIVED_UNEXPECTED = 'expected "%s" to be not replied but received "%s"'
 const RECEIVED_NOTHING = 'expected "%s" to be replied but received nothing'
@@ -10,17 +10,17 @@ const RECEIVED_NTH_NOTHING = 'expected "%s" to be replied at index %s but receiv
 const RECEIVED_NTH_OTHERWISE = 'expected "%s" to be replied with %s at index %s but received "%s"'
 
 export class MessageClient {
-  public app: App
+  public app: Context
   public meta: Session.Payload
 
   private replies: string[] = []
 
-  constructor(public mock: MockAdapter, public userId: string, public channelId?: string) {
-    this.app = mock.ctx.app
+  constructor(public bot: MockBot, public userId: string, public channelId?: string) {
+    this.app = bot.ctx.app
     this.meta = {
       platform: 'mock',
       type: 'message',
-      selfId: mock.bots[0].selfId,
+      selfId: bot.selfId,
       userId,
       author: {
         userId,
@@ -50,7 +50,7 @@ export class MessageClient {
       }
       const send = async (content: string) => {
         if (!content) return
-        const session = await this.app.bots[0].session({ ...this.meta, content })
+        const session = this.app.bots[0].session({ ...this.meta, content })
         if (!session?.content) return []
         this.replies.push(session.content)
         return []
@@ -58,7 +58,7 @@ export class MessageClient {
       const dispose = this.app.on('middleware', (session) => {
         if (session.id === uuid) process.nextTick(_resolve)
       })
-      const uuid = this.mock.receive({ ...this.meta, send, content })
+      const uuid = this.bot.receive({ ...this.meta, send, content })
     })
   }
 

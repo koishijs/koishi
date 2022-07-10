@@ -1,4 +1,4 @@
-import { App, Dict } from 'koishi'
+import { Context, Dict } from 'koishi'
 import { Socket } from 'net'
 import { IncomingMessage, ServerResponse } from 'http'
 
@@ -11,7 +11,7 @@ export namespace Webhook {
 }
 
 export class Webhook {
-  constructor(public app: App) {}
+  constructor(public app: Context) {}
 
   async head(path: string, headers?: Dict<any>) {
     const res = await this.receive('HEAD', path, headers, '')
@@ -71,7 +71,7 @@ export class Webhook {
         if (typeof callback === 'function') callback()
         return res
       }
-      this.app._httpServer.emit('request', req, res)
+      this.app.router._http.emit('request', req, res)
       req.emit('data', body)
       req.emit('end')
     })
