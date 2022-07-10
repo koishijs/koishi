@@ -21,22 +21,22 @@
   ],
   "scripts": {
     "build": "yarn compile && yarn dtsc && yarn fe",
-    "clean": "node -r ./build/register build/clean",
-    "compile": "node -r ./build/register build/compile",
+    "clean": "node -r esbuild-register build/clean",
+    "compile": "node -r esbuild-register build/compile",
+    "draft": "node -r esbuild-register build/release",
+    "fe": "node -r esbuild-register build/frontend",
     "dtsc": "yakumo tsc",
     "bump": "yakumo version",
     "dep": "yakumo upgrade",
     "pub": "yakumo publish",
     "docs": "yarn workspace @koishijs/docs",
-    "draft": "node -r ./build/register build/release",
-    "fe": "node -r ./build/register build/frontend",
     "test": "mocha --no-warnings --experimental-vm-modules --enable-source-maps",
     "test:json": "c8 -r json yarn test",
     "test:html": "rimraf coverage && c8 -r html yarn test",
     "test:text": "c8 -r text yarn test",
     "lint": "eslint packages plugins --ext=ts --cache",
     "scaffold": "yarn compile koishi && yarn create-koishi test",
-    "start": "yarn compile && cross-env TS_NODE_PROJECT=../tsconfig.test.json yarn workspace test koishi start --watch .. -r ../build/register --experimental-vm-modules",
+    "start": "yarn compile && cross-env TS_NODE_PROJECT=../tsconfig.json yarn workspace @koishijs/test koishi start --watch .. -r ../build/register --experimental-vm-modules",
     "shiki": "yarn workspace bot-shiki"
   },
   "license": "MIT",
@@ -63,6 +63,7 @@
     "cross-spawn": "^7.0.3",
     "del": "^6.1.1",
     "esbuild": "^0.14.48",
+    "esbuild-register": "^3.3.3",
     "eslint": "^7.32.0",
     "eslint-config-standard": "^16.0.3",
     "eslint-import-resolver-typescript": "^2.7.1",
@@ -89,7 +90,8 @@
     "yakumo-mocha": "^0.2.5",
     "yakumo-publish": "^0.2.4",
     "yakumo-upgrade": "^0.2.3",
-    "yakumo-version": "^0.2.5"
+    "yakumo-version": "^0.2.5",
+    "yml-register": "^1.0.0"
   },
   "yakumo": {
     "require": [

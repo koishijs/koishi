@@ -1,8 +1,7 @@
-process.env.TS_NODE_PROJECT = 'tsconfig.test.json'
+process.env.TS_NODE_PROJECT = 'tsconfig.json'
 
 const specs = [
   'packages/core/tests/*.spec.ts',
-  'packages/segment/tests/*.spec.ts',
   'packages/utils/tests/*.spec.ts',
   'plugins/a11y/admin/tests/*.spec.ts',
   'plugins/a11y/commands/tests/*.spec.ts',

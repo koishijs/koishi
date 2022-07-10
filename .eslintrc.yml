@@ -159,3 +159,5 @@ rules:
       asyncArrow: always
       named: never
   '@typescript-eslint/type-annotation-spacing': error
+
+  '@typescript-eslint/no-useless-constructor': off

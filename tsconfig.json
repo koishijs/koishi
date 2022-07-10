@@ -1,13 +1,51 @@
 {
+  "extends": "./tsconfig.base",
   "compilerOptions": {
-    "target": "esnext",
-    "module": "commonjs",
-    "noEmit": true,
-    "esModuleInterop": true,
-    "moduleResolution": "node",
-    "strictBindCallApply": true,
+    "baseUrl": ".",
+    "paths": {
+      "@koishijs/database-tests": [
+        "plugins/database/tests/src",
+      ],
+      "@koishijs/plugin-adapter-*": [
+        "plugins/adapter/*/src",
+        "external/adapter-*/src",
+      ],
+      "@koishijs/plugin-assets-*": [
+        "plugins/assets/*/src",
+        "external/assets-*/src",
+      ],
+      "@koishijs/plugin-database-*": [
+        "plugins/database/*/src",
+        "external/database-*/src",
+      ],
+      "@koishijs/plugin-*": [
+        "plugins/a11y/*/src",
+        "plugins/common/*/src",
+        "plugins/frontend/*/src",
+        "plugins/*/src",
+      ],
+      "@koishijs/*": [
+        "packages/*/src",
+        "plugins/a11y/*/src",
+        "plugins/adapter/*/src",
+        "plugins/assets/*/src",
+        "plugins/common/*/src",
+        "plugins/database/*/src",
+        "plugins/frontend/*/src",
+      ],
+      "koishi-plugin-*": [
+        "external/*/src",
+      ],
+      "koishi": [
+        "packages/koishi/src",
+      ],
+      "cordis": [
+        "../packages/cordis/src",
+      ],
+      "*": [
+        "external/*/src",
+      ],
+    },
   },
-  "include": [
-    "build",
-  ],
+  "files": [],
 }
