@@ -10,11 +10,17 @@ declare module '@satorijs/core' {
   }
 }
 
-export { satori }
-export { Adapter } from '@satorijs/core'
+export { Adapter, h, Message, segment } from '@satorijs/core'
+
+export type Filter = satori.Filter<Context>
 
 export const Bot = satori.Bot<Context>
 export type Bot = satori.Bot<Context>
+
+export namespace Bot {
+  export type Status = satori.Bot.Status
+  export type Config = satori.Bot.Config
+}
 
 Bot.prototype.session = function session(this: Bot, payload) {
   return new Session(this, payload)

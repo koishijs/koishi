@@ -1,15 +1,15 @@
 import { Context } from '@koishijs/core'
 import ns from 'ns-require'
 
+declare module 'cordis' {
+  interface Context {
+    plugin(path: string, config?: any): Fork<this>
+  }
+}
+
 declare module '@koishijs/core' {
   interface Context {
     baseDir: string
-  }
-
-  namespace Registry {
-    interface Mixin {
-      plugin(path: string, config?: any): Fork
-    }
   }
 }
 

@@ -19,7 +19,7 @@ before(() => Logger.levels.base = 1)
 after(() => Logger.levels.base = 2)
 
 describe('Middleware Runtime', () => {
-  let callSequence: jest.Mock<any, any[]>[]
+  let callSequence: jest.Mock[]
 
   beforeEach(() => {
     app.$internal._hooks = []

@@ -1,4 +1,5 @@
-import { camelCase, Dict, escapeRegExp, paramCase, segment, Time } from '@koishijs/utils'
+import { camelCase, Dict, escapeRegExp, paramCase, Time } from '@koishijs/utils'
+import { segment } from '@satorijs/core'
 import { Command } from './command'
 import { Context } from '../context'
 import { Channel, User } from '../database'

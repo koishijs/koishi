@@ -26,18 +26,21 @@ export interface Events<C extends Context = Context> extends satori.Events<C> {
 export interface Context {
   [Context.events]: Events<this>
   [Context.session]: Session
+  options: Context.Config
 }
 
-export class Context<T extends Context.Config = Context.Config> extends satori.Context<T> {
+export class Context extends satori.Context {
+  constructor(options?: Context.Config) {
+    super(options)
+  }
+
   get app() {
     return this.root
   }
 }
 
 export namespace Context {
-  export interface Config extends satori.Context.Config, Config.Basic, Config.Features, Config.Advanced {}
-
-  export const Config = Schema.intersect([]) as Config.Static
+  export interface Config extends satori.Context.Config, Config.Basic, Config.Message, Config.Advanced {}
 
   export namespace Config {
     export interface Basic {
@@ -48,7 +51,7 @@ export namespace Context {
       autoAuthorize?: Computed<Awaitable<number>>
     }
 
-    export interface Features {
+    export interface Message {
       delay?: DelayConfig
     }
 
@@ -67,10 +70,12 @@ export namespace Context {
 
     export interface Static extends Schema<Config> {
       Basic: Schema<Basic>
-      Features: Schema<Features>
+      Message: Schema<Message>
       Advanced: Schema<Advanced>
     }
   }
+
+  export const Config = Schema.intersect([]) as Config.Static
 
   defineProperty(Context.Config, 'Basic', Schema.object({
     locale: Schema.string().default('zh').description('默认使用的语言。'),
@@ -86,7 +91,7 @@ export namespace Context {
     autoAuthorize: Schema.union([Schema.natural(), Function]).default(1).description('当获取不到用户数据时默认使用的权限等级。'),
   }).description('基础设置'))
 
-  defineProperty(Context.Config, 'Features', Schema.object({
+  defineProperty(Context.Config, 'Message', Schema.object({
     delay: Schema.object({
       character: Schema.natural().role('ms').default(0).description('调用 `session.sendQueued()` 时消息间发送的最小延迟，按前一条消息的字数计算。'),
       message: Schema.natural().role('ms').default(0.1 * Time.second).description('调用 `session.sendQueued()` 时消息间发送的最小延迟，按固定值计算。'),
@@ -101,7 +106,7 @@ export namespace Context {
     maxListeners: Schema.natural().default(64).description('每种监听器的最大数量。如果超过这个数量，Koishi 会认定为发生了内存泄漏，将产生一个警告。'),
   }).description('高级设置'))
 
-  Context.Config.list.push(Context.Config.Basic, Context.Config.Features, Context.Config.Advanced)
+  Context.Config.list.push(Context.Config.Basic, Context.Config.Message, Context.Config.Advanced)
 }
 
 // for backward compatibility

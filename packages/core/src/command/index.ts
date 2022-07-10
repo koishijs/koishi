@@ -17,8 +17,10 @@ interface CommandMap extends Map<string, Command> {
 }
 
 declare module '../context' {
-  interface Context extends Commander.Mixin {
+  interface Context {
     $commander: Commander
+    command<D extends string>(def: D, config?: Command.Config): Command<never, never, Argv.ArgumentType<D>>
+    command<D extends string>(def: D, desc: string, config?: Command.Config): Command<never, never, Argv.ArgumentType<D>>
   }
 
   interface Events {
@@ -34,11 +36,6 @@ declare module '../context' {
 
 export namespace Commander {
   export interface Config {}
-
-  export interface Mixin {
-    command<D extends string>(def: D, config?: Command.Config): Command<never, never, Argv.ArgumentType<D>>
-    command<D extends string>(def: D, desc: string, config?: Command.Config): Command<never, never, Argv.ArgumentType<D>>
-  }
 }
 
 export class Commander {

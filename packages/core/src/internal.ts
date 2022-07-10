@@ -4,8 +4,9 @@ import { Channel, User } from './database'
 import { Context } from './context'
 
 declare module './context' {
-  interface Context extends Internal.Mixin {
+  interface Context {
     $internal: Internal
+    middleware(middleware: Middleware, prepend?: boolean): () => boolean
   }
 
   interface Events {
@@ -41,10 +42,6 @@ export namespace Internal {
   export interface Config {
     nickname?: string | string[]
     prefix?: Computed<string | string[]>
-  }
-
-  export interface Mixin {
-    middleware(middleware: Middleware, prepend?: boolean): () => boolean
   }
 }
 

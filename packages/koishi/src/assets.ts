@@ -1,5 +1,5 @@
-import { Context, Schema, Service } from '@koishijs/core'
-import { defineProperty, segment } from '@koishijs/utils'
+import { Context, Schema, segment, Service } from '@koishijs/core'
+import { defineProperty } from '@koishijs/utils'
 import { createHash } from 'crypto'
 import { basename } from 'path'
 import FileType from 'file-type'

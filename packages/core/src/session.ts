@@ -1,4 +1,4 @@
-import { defineProperty, isNullable, Logger, makeArray, observe, Promisify, segment } from '@koishijs/utils'
+import { defineProperty, isNullable, Logger, makeArray, observe, Promisify } from '@koishijs/utils'
 import * as satori from '@satorijs/core'
 import { Argv, Command } from './command'
 import { Context } from './context'
@@ -49,10 +49,10 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
   }
 
   private async _preprocess() {
-    let node: segment.Parsed
+    let node: satori.segment.Parsed
     let content = this.content.trim()
     // eslint-disable-next-line no-cond-assign
-    if (node = segment.from(content, { type: 'quote', caret: true })) {
+    if (node = satori.segment.from(content, { type: 'quote', caret: true })) {
       content = content.slice(node.capture[0].length).trimStart()
       this.quote = await this.bot.getMessage(node.data.channelId || this.channelId, node.data.id).catch((error) => {
         logger.warn(error)

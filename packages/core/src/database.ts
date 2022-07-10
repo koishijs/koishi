@@ -8,9 +8,12 @@ declare module './context' {
     'model'(name: keyof Tables): void
   }
 
-  interface Context extends DatabaseService.Mixin {
+  interface Context {
     database: DatabaseService
     model: DatabaseService
+    getSelfIds(type?: string, assignees?: string[]): Dict<string[]>
+    broadcast(content: string, forced?: boolean): Promise<string[]>
+    broadcast(channels: readonly string[], content: string, forced?: boolean): Promise<string[]>
   }
 }
 
@@ -58,14 +61,6 @@ export interface Tables {
   channel: Channel
 }
 
-export namespace DatabaseService {
-  export interface Mixin {
-    getSelfIds(type?: string, assignees?: string[]): Dict<string[]>
-    broadcast(content: string, forced?: boolean): Promise<string[]>
-    broadcast(channels: readonly string[], content: string, forced?: boolean): Promise<string[]>
-  }
-}
-
 export class DatabaseService extends Database<Tables> {
   static readonly methods = ['getSelfIds', 'broadcast']
 
@@ -93,6 +88,15 @@ export class DatabaseService extends Database<Tables> {
       locale: 'string(63)',
     }, {
       primary: ['id', 'platform'],
+    })
+
+    app.on('bot-added', (bot) => {
+      if (bot.platform in this.tables.user.fields) return
+      this.extend('user', {
+        [bot.platform]: { type: 'string', length: 63 },
+      }, {
+        unique: [bot.platform as never],
+      })
     })
   }
 
