@@ -137,7 +137,6 @@ rules:
   no-inner-declarations: off
 
   no-useless-constructor: off
-  '@typescript-eslint/no-useless-constructor': warn
 
   node/no-callback-literal: off
 
@@ -159,5 +158,3 @@ rules:
       asyncArrow: always
       named: never
   '@typescript-eslint/type-annotation-spacing': error
-
-  '@typescript-eslint/no-useless-constructor': off

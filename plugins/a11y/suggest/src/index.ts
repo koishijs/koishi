@@ -1,6 +1,5 @@
 import { distance } from 'fastest-levenshtein'
-import { Awaitable } from 'cosmokit'
-import { Context, Next, Schema, Session } from 'koishi'
+import { Awaitable, Context, Next, Schema, Session } from 'koishi'
 
 declare module 'koishi' {
   interface Context {

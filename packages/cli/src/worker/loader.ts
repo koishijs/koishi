@@ -1,27 +1,28 @@
 import { resolve } from 'path'
-import { App, Context, Dict, interpolate, Logger, Plugin, Registry, valueMap } from 'koishi'
+import { Context, Dict, interpolate, Logger, Plugin, valueMap } from 'koishi'
+import { resolveConfig } from 'cordis'
 import { patch, stripModifier } from './utils'
 import ConfigLoader from '@koishijs/loader'
 import * as dotenv from 'dotenv'
 import ns from 'ns-require'
 
 declare module 'koishi' {
-  namespace Context {
-    interface Services {
-      loader: Loader
-      delimiter: symbol
-    }
+  interface Context {
+    loader: Loader
+    delimiter: symbol
   }
+}
 
+declare module 'cordis' {
   interface Runtime {
     [Loader.kWarning]?: boolean
   }
 
   // Theoretically, these properties will only appear on `Fork`.
   // We define them directly on `State` for typing convenience.
-  interface State {
+  interface State<C> {
     [Loader.update]?: boolean
-    [Loader.kRecord]?: Dict<Fork>
+    [Loader.kRecord]?: Dict<Fork<C>>
     alias?: string
   }
 }
@@ -46,14 +47,14 @@ const group: Plugin.Object = {
   },
 }
 
-export default class Loader extends ConfigLoader<App.Config> {
+export default class Loader extends ConfigLoader<Context.Config> {
   static readonly unique = Symbol.for('koishi.loader.unique')
   static readonly update = Symbol.for('koishi.loader.update')
   static readonly kRecord = Symbol.for('koishi.loader.record')
   static readonly kWarning = Symbol.for('koishi.loader.warning')
 
-  app: App
-  config: App.Config
+  app: Context
+  config: Context.Config
   entry: Context
   cache: Dict<string> = {}
   envfile: string
@@ -89,11 +90,11 @@ export default class Loader extends ConfigLoader<App.Config> {
     // load original config file
     const config = super.readConfig()
 
-    let resolved = new App.Config(config)
+    let resolved = new Context.Config(config)
     if (this.writable) {
       // schemastery may change original config
       // so we need to validate config twice
-      resolved = new App.Config(this.interpolate(config))
+      resolved = new Context.Config(this.interpolate(config))
     }
 
     return resolved
@@ -123,7 +124,7 @@ export default class Loader extends ConfigLoader<App.Config> {
       this.app.lifecycle.flush().then(() => this.check(name))
     }
 
-    Registry.validate(plugin, config)
+    resolveConfig(plugin, config)
     return parent.plugin(plugin, this.interpolate(config))
   }
 
@@ -165,11 +166,11 @@ export default class Loader extends ConfigLoader<App.Config> {
   }
 
   createApp() {
-    const app = this.app = new App(this.config)
+    const app = this.app = new Context(this.config)
     app.loader = this
     app.baseDir = this.dirname
     app.state[Loader.kRecord] = Object.create(null)
-    this.entry = this.reloadPlugin(app, 'group:entry', this.config.plugins).context
+    this.entry = this.reloadPlugin(app, 'group:entry', this.config.plugins).ctx
 
     app.on('internal/update', (fork, value) => {
       // prevent hot reload when config file is being written

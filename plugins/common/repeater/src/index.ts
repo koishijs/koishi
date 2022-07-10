@@ -66,7 +66,7 @@ export function apply(ctx: Context, config: Config = {}) {
     const { content, uid, userId } = session
 
     // never respond to messages from self
-    if (ctx.bots.get(uid)) return
+    if (ctx.bots[uid]) return
 
     const state = getState(session.cid)
     const check = (handle: StateCallback) => {

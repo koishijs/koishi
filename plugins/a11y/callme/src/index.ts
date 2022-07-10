@@ -1,7 +1,7 @@
 import { Context, RuntimeError, Schema } from 'koishi'
 
 declare module 'koishi' {
-  interface EventMap {
+  interface Events {
     'common/callme'(name: string, session: Session): string | void
   }
 }

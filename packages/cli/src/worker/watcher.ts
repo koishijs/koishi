@@ -1,4 +1,4 @@
-import { App, coerce, Context, Dict, Logger, makeArray, Runtime, Schema } from 'koishi'
+import { coerce, Context, Dict, Logger, makeArray, Runtime, Schema } from 'koishi'
 import { FSWatcher, watch, WatchOptions } from 'chokidar'
 import { relative, resolve } from 'path'
 import { debounce } from 'throttle-debounce'
@@ -149,7 +149,7 @@ class Watcher {
       } else if (!(key in neo)) {
         this.ctx.loader.unloadPlugin(ctx, key)
       } else if (key.startsWith('group:')) {
-        this.triggerGroupReload(key, neo[key] || {}, old[key] || {}, fork.context)
+        this.triggerGroupReload(key, neo[key] || {}, old[key] || {}, fork.ctx)
       } else if (!deepEqual(old[key], neo[key])) {
         this.ctx.loader.reloadPlugin(ctx, key, neo[key])
       }
@@ -225,7 +225,7 @@ class Watcher {
     for (const filename in require.cache) {
       const module = require.cache[filename]
       const plugin = ns.unwrapExports(module.exports)
-      const runtime = this.ctx.app.registry.get(plugin)
+      const runtime = this.ctx.registry.get(plugin)
       if (!runtime || this.declined.has(filename)) continue
       pending.set(filename, runtime)
       if (!plugin['sideEffect']) this.declined.add(filename)
@@ -343,7 +343,7 @@ namespace Watcher {
     ]).description('要忽略的文件或目录。'),
   }).description('热重载设置')
 
-  App.Config.list.push(Schema.object({
+  Context.Config.list.push(Schema.object({
     watch: Config,
   }))
 }

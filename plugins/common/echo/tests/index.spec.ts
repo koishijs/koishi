@@ -2,8 +2,10 @@ import { App, Bot } from 'koishi'
 import * as echo from '@koishijs/plugin-echo'
 import mock from '@koishijs/plugin-mock'
 import * as jest from 'jest-mock'
-import { expect } from 'chai'
-import 'chai-shape'
+import { expect, use } from 'chai'
+import shape from 'chai-shape'
+
+use(shape)
 
 const app = new App()
 

@@ -121,7 +121,7 @@ export function apply(ctx: Context, { minInterval }: Config) {
 
     data.forEach((schedule) => {
       const { session, assignee } = schedule
-      const bot = ctx.bots.get(assignee)
+      const bot = ctx.bots[assignee]
       if (bot) {
         prepareSchedule(schedule, new Session(bot, session))
       } else {

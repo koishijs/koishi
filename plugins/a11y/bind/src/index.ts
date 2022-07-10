@@ -47,7 +47,7 @@ export function apply(ctx: Context, config: Config = {}) {
     const data = tokens[session.content]
     if (!data) return next()
     if (data[2] < 0) {
-      const sess = new Session(session.bot, session)
+      const sess = session.bot.session(session)
       sess.platform = data[0]
       sess.userId = data[1]
       const user = await sess.observeUser([session.platform as never])

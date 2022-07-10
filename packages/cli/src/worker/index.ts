@@ -9,17 +9,17 @@ export * from './utils'
 export { Loader, Watcher }
 
 declare module 'koishi' {
-  interface EventMap {
+  interface Events {
     'exit'(signal: NodeJS.Signals): Promise<void>
     'config'(): void
   }
 
-  interface App {
+  interface Context {
     prologue: string[]
     watcher: Watcher
   }
 
-  namespace App {
+  namespace Context {
     interface Config extends daemon.Config {
       plugins?: Dict
       timezoneOffset?: number

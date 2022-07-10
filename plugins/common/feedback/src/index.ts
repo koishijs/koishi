@@ -51,6 +51,6 @@ export function apply(ctx: Context, { operators = [], replyTimeout = Time.day }:
     if (!parsed.content || !quote) return next()
     const data = feedbacks[quote.messageId]
     if (!data) return next()
-    await ctx.bots.get(data[0]).sendMessage(data[1], parsed.content, data[2])
+    await ctx.bots[data[0]].sendMessage(data[1], parsed.content, data[2])
   })
 }

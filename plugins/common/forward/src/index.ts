@@ -55,7 +55,7 @@ export function apply(ctx: Context, { rules, interval }: Config) {
         rule.guildId = channel.guildId
       }
 
-      const bot = ctx.bots.get(`${platform}:${rule.selfId}`)
+      const bot = ctx.bots[`${platform}:${rule.selfId}`]
       const chain = segment.parse(parsed.content)
 
       // replace all mentions (koishijs/koishi#506)
