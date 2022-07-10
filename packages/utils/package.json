@@ -30,10 +30,8 @@
     "@types/supports-color": "^8.1.1"
   },
   "dependencies": {
-    "@koishijs/segment": "^1.1.1",
     "cosmokit": "^1.2.1",
     "reggol": "^1.0.3",
-    "schemastery": "^3.4.3",
-    "supports-color": "^8.1.1"
+    "schemastery": "^3.4.3"
   }
 }
