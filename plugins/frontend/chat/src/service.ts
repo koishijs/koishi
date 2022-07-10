@@ -1,4 +1,5 @@
 import { Bot, Context, Logger, segment, Service, Session } from 'koishi'
+import * as satori from '@satorijs/core'
 
 export interface Message {
   id?: number
@@ -21,12 +22,12 @@ declare module 'koishi' {
   interface Tables {
     message: Message
   }
-  namespace Context {
-    interface Services {
-      messages: MessageService
-    }
+
+  interface Context {
+    messages: MessageService
   }
-  interface EventMap {
+
+  interface Events {
     'messages/synced'(cid: string): void
     'messages/syncFailed'(cid: string, error: Error): void
     'messages/syncing'(cid: string): void
@@ -235,12 +236,12 @@ export class MessageService extends Service {
     }
   }
 
-  async getMessageBetween(bot: Bot, channelId: string, from: string, to?: string): Promise<Bot.Message[]> {
+  async getMessageBetween(bot: Bot, channelId: string, from: string, to?: string): Promise<satori.Message[]> {
     // from: older, to: newer
-    let toMessage: Bot.Message
+    let toMessage: satori.Message
     if (!to) {
       logger.debug('!to')
-      const latestMessages = await bot.getChannelMessageHistory(channelId)
+      const latestMessages = await bot.getMessageList(channelId)
       to = latestMessages[latestMessages.length - 1].messageId
       toMessage = latestMessages[latestMessages.length - 1]
     } else {
@@ -267,7 +268,7 @@ export class MessageService extends Service {
       if (!this.inSyncQueue(bot.platform + ':' + channelId)) {
         throw new Error('not in sync queue')
       }
-      const messages = await bot.getChannelMessageHistory(channelId, nowMessageId) // 从旧到新
+      const messages = await bot.getMessageList(channelId, nowMessageId) // 从旧到新
       logger.debug('get history, now msg id: %s, newMessages length: %d', nowMessageId, newMessages.length)
       if (messages.find(v => v.messageId === from && v.messageId !== nowMessageId)) {
         // 找到了！
@@ -294,7 +295,7 @@ export class MessageService extends Service {
     // 已经收到新消息: 数据库中 到 新消息
     // 没有收到新消息: 数据库中 到 现在
     // 没有数据库消息: 获取一次
-    if (bot.getChannelMessageHistory) {
+    if (bot.getMessageList) {
       try {
         const inDatabase = await this.ctx.database.get('message', {
           channelId: channelId,
@@ -306,7 +307,7 @@ export class MessageService extends Service {
           limit: 1,
         })
         if (!inDatabase.length) {
-          const latestMessages = await bot.getChannelMessageHistory(channelId)
+          const latestMessages = await bot.getMessageList(channelId)
           // 获取一次
           await this.ctx.database.upsert('message', latestMessages.map(session => MessageService.adaptMessage(session, bot, guildId)))
         } else {
@@ -321,13 +322,13 @@ export class MessageService extends Service {
       } catch (e) {
         logger.error(e)
         this.#messageQueue[cid] = []
-        bot.app.emit('messages/syncFailed', cid, e)
+        bot.ctx.emit('messages/syncFailed', cid, e)
         this.removeFromSyncQueue(cid)
         this.#status[cid] = ChannelStatus.FAILED
         return
       }
     } else {
-      logger.debug('channel %s dont have getChannelMessageHistory api, ignored', channelId)
+      logger.debug('channel %s dont have getMessageList api, ignored', channelId)
     }
 
     const newLocal = this.#messageQueue[cid]
@@ -336,7 +337,7 @@ export class MessageService extends Service {
       this.#messageQueue[cid] = []
     }
     this.#status[cid] = ChannelStatus.SYNCED
-    bot.app.emit('messages/synced', cid)
+    bot.ctx.emit('messages/synced', cid)
     this.removeFromSyncQueue(cid)
   }
 

@@ -275,7 +275,7 @@ class StatisticsProvider extends DataService<StatisticsProvider.Payload> {
           name: name || key,
           value: messageMap[key],
           last: data.daily[0].group[key] || 0,
-          assignee: this.ctx.bots.get(`${platform}:${assignee}`)?.selfId || '',
+          assignee: this.ctx.bots[`${platform}:${assignee}`]?.selfId || '',
         })
       }
     }

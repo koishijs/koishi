@@ -33,13 +33,13 @@
     "build"
   ],
   "dependencies": {
-    "@koishijs/segment": "^1.1.1",
     "@satorijs/components": "^0.3.3",
+    "@satorijs/message": "^1.0.1",
     "@types/marked": "^4.0.3",
     "@vitejs/plugin-vue": "^2.3.3",
     "@vueuse/core": "^7.7.1",
     "cac": "^6.7.12",
-    "cosmokit": "^1.1.2",
+    "cosmokit": "^1.2.1",
     "element-plus": "^2.2.2",
     "marked": "^4.0.16",
     "sass": "^1.52.1",

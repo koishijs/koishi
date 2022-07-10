@@ -12,10 +12,8 @@ type NestedServices = {
 }
 
 declare module 'koishi' {
-  namespace Context {
-    interface Services extends NestedServices {
-      console: Console
-    }
+  interface Context extends NestedServices {
+    console: Console
   }
 }
 

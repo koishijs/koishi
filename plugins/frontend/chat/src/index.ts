@@ -7,7 +7,7 @@ import internal from 'stream'
 export * from './receiver'
 
 declare module 'koishi' {
-  interface EventMap {
+  interface Events {
     'chat/receive'(message: Message, session: Session): void
   }
 }
@@ -94,7 +94,7 @@ export function apply(ctx: Context, options: Config = {}) {
 
     ctx.console.addListener('chat', async ({ content, platform, channelId, guildId, selfId }) => {
       if (ctx.assets) content = await ctx.assets.transform(content)
-      ctx.bots.get(`${platform}:${selfId}`)?.sendMessage(channelId, content, guildId)
+      ctx.bots[`${platform}:${selfId}`]?.sendMessage(channelId, content, guildId)
     }, { authority: 3 })
 
     ctx.on('chat/receive', async (message) => {

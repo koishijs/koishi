@@ -32,8 +32,8 @@
   "dependencies": {
     "@koishijs/utils": "^5.4.5",
     "@satorijs/core": "^1.0.1",
-    "cordis": "^2.0.4",
+    "cordis": "^2.0.5",
     "fastest-levenshtein": "^1.0.12",
-    "minato": "^1.2.2"
+    "minato": "^1.2.3"
   }
 }

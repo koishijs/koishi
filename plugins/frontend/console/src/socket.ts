@@ -4,7 +4,7 @@ import WebSocket from 'ws'
 import { DataService } from './service'
 
 declare module 'koishi' {
-  interface EventMap {
+  interface Events {
     'console/intercept'(handle: SocketHandle, listener: DataService.Options): Awaitable<boolean>
   }
 }
