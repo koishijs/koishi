@@ -1,7 +1,4 @@
-import { Adapter } from 'koishi'
-import { QQGuildBot } from './bot'
-import { WebSocketClient } from './ws'
+import QQGuildBot from '@satorijs/adapter-qqguild'
 
-export * from '@qq-guild-sdk/core'
-
-export default Adapter.define('qqguild', QQGuildBot, WebSocketClient)
+export default QQGuildBot
+export * from '@satorijs/adapter-qqguild'

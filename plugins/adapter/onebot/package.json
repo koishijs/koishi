@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-adapter-onebot",
   "description": "OneBot Adapter for Koishi",
-  "version": "4.2.7",
+  "version": "5.0.0",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -11,13 +11,13 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/koishijs/koishi.git",
-    "directory": "plugins/adapter/onebot"
+    "url": "git+https://github.com/satorijs/node-sdk.git",
+    "directory": "adapters/onebot"
   },
   "bugs": {
-    "url": "https://github.com/koishijs/koishi/issues"
+    "url": "https://github.com/satorijs/node-sdk/issues"
   },
-  "homepage": "https://koishi.js.org/api/adapter/onebot.html",
+  "homepage": "https://koishi.js.org/plugins/adapter/onebot.html",
   "keywords": [
     "bot",
     "qqbot",
@@ -42,12 +42,7 @@
   "peerDependencies": {
     "koishi": "^4.7.6"
   },
-  "devDependencies": {
-    "@koishijs/plugin-mock": "^1.0.6",
-    "@types/ws": "^8.5.3"
-  },
   "dependencies": {
-    "qface": "^1.2.0",
-    "ws": "^8.6.0"
+    "@satorijs/adapter-onebot": "^5.0.0"
   }
 }
