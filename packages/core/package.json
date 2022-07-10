@@ -36,6 +36,6 @@
     "@satorijs/core": "^1.0.0",
     "cordis": "^2.0.3",
     "fastest-levenshtein": "^1.0.12",
-    "minato": "^1.2.1"
+    "minato": "^1.2.2"
   }
 }

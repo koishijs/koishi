@@ -196,6 +196,7 @@ export const defineDriver = <T>(constructor: Driver.Constructor<T>, schema?: uti
     ctx.on('ready', async () => {
       await driver.start()
       ctx.model.drivers[key] = driver
+      ctx.model.refresh()
       const database = Object.create(ctx.model)
       ctx.database = database
     })
