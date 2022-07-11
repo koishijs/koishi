@@ -1,9 +1,5 @@
 <template>
-  <template v-if="schema.type === 'const'">
-    {{ schema.value }}
-  </template>
-
-  <el-switch v-else-if="schema.type === 'boolean'" v-model="value" :disabled="disabled"></el-switch>
+  <el-switch v-if="schema.type === 'boolean'" v-model="value" :disabled="disabled"></el-switch>
 
   <template v-else-if="schema.type === 'number'">
     <el-slider v-if="schema.meta.role === 'slider'" style="width: 200px"

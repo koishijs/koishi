@@ -1,4 +1,4 @@
-import KaiheilaBot from '@satorijs/adapter-kaiheila'
+import KookBot from '@satorijs/adapter-kook'
 
-export default KaiheilaBot
-export * from '@satorijs/adapter-kaiheila'
+export default KookBot
+export * from '@satorijs/adapter-kook'

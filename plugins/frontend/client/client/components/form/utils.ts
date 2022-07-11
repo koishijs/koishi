@@ -14,17 +14,14 @@ export function isObjectSchema(schema: Schema) {
   } else if (schema.type === 'intersect') {
     return schema.list.every(isObjectSchema)
   } else if (schema.type === 'union') {
-    const choices = schema.list.filter(item => !dynamic.includes(item.type))
-    return choices.length === 1 && isObjectSchema(choices[0])
+    return getChoices(schema).every(isObjectSchema)
   } else {
     return false
   }
 }
 
 export function getChoices(schema: Schema) {
-  return schema.list
-    .filter(item => !item.meta.hidden && !dynamic.includes(item.type))
-    .flatMap(item => item.type === 'union' ? getChoices(item) : item, 1)
+  return schema.list.filter(item => !item.meta.hidden && !dynamic.includes(item.type))
 }
 
 export function getFallback(schema: Schema, required = false) {
@@ -47,7 +44,7 @@ export function validate(schema: Schema): boolean {
     return schema.list.every(isObjectSchema)
   } else if (schema.type === 'union') {
     const choices = getChoices(schema)
-    return choices.length === 1 || choices.every(item => validate(item) && (item.type === 'const' || item.meta.description))
+    return choices.length === 1 || choices.every(item => validate(item))
   } else if (composite.includes(schema.type)) {
     return validate(schema.inner)
   } else {

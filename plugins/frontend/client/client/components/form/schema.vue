@@ -30,7 +30,9 @@
     </k-schema>
   </template>
 
-  <schema-item v-else-if="prefix || !isComposite" :disabled="disabled" :class="{ changed, required, invalid }" @command="handleCommand">
+  <template v-else-if="schema.type === 'const'"></template>
+
+  <schema-item v-else-if="prefix || (!isComposite && schema?.type !== 'union')" :disabled="disabled" :class="{ changed, required, invalid }" @command="handleCommand">
     <template #menu>
       <el-dropdown-item command="discard">撤销更改</el-dropdown-item>
       <el-dropdown-item command="default">恢复默认值</el-dropdown-item>
@@ -96,6 +98,7 @@
       </schema-group>
     </div>
 
+    <!-- top level array / dict -->
     <template v-else>
       <h2>
         {{ schema.meta.description || '配置列表' }}
@@ -107,6 +110,7 @@
     </template>
   </template>
 
+  <!-- union containing object -->
   <template v-else-if="schema?.type === 'union' && choices.length > 1 && ['object', 'intersect'].includes(active?.type)">
     <k-schema 
       v-model="config"
@@ -203,7 +207,7 @@ watch(() => props.modelValue, (value) => {
     } catch {}
   }
   config.value = value ?? getFallback(props.schema)
-}, { immediate: true })
+}, { immediate: true, deep: true })
 
 watch(config, (value) => {
   if (!props.schema) return
@@ -215,7 +219,7 @@ watch(config, (value) => {
 }, { deep: true })
 
 function isPrimitive(schema: Schema) {
-  return ['string', 'number', 'boolean', 'const'].includes(schema.type)
+  return ['string', 'number', 'boolean'].includes(schema.type)
 }
 
 function handleCommand(action: string) {
