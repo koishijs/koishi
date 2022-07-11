@@ -8,7 +8,10 @@ export namespace DataService {
 }
 
 export abstract class DataService<T = never> extends Service {
+  static keys = new Set<string>()
+
   static define(name: keyof Console.Services) {
+    this.keys.add(name)
     if (Object.prototype.hasOwnProperty.call(Console.prototype, name)) return
     const key = `console.${name}`
     Object.defineProperty(Console.prototype, name, {

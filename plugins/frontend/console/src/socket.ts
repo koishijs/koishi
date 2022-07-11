@@ -25,16 +25,20 @@ export class SocketHandle {
   }
 
   refresh() {
-    Context.Services.forEach(async (name) => {
-      const service = this.app[name] as DataService
-      if (!name.startsWith('console.') || !service) return
-      const key = name.slice(8)
+    DataService.keys.forEach(async (key) => {
+      const service = this.app[`console.${key}`] as DataService
+      if (!service) return
       if (await this.app.serial('console/intercept', this, service.options)) {
         return this.send({ type: 'data', body: { key, value: null } })
       }
-      const value = await service.get()
-      if (!value) return
-      this.send({ type: 'data', body: { key, value } })
+
+      try {
+        const value = await service.get()
+        if (!value) return
+        this.send({ type: 'data', body: { key, value } })
+      } catch (error) {
+        this.app.logger('console').warn(error)
+      }
     })
   }
 }

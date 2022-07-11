@@ -1,4 +1,4 @@
-import { App, Context, Dict, Logger, Schema, Time } from 'koishi'
+import { Context, Dict, Logger, Schema, Time } from 'koishi'
 import * as daemon from './daemon'
 import * as logger from './logger'
 import Loader from './loader'
@@ -30,7 +30,7 @@ declare module 'koishi' {
   }
 }
 
-Object.assign(App.Config.Advanced.dict, {
+Object.assign(Context.Config.Advanced.dict, {
   autoRestart: Schema.boolean().description('应用在运行时崩溃自动重启。').default(true).hidden(),
   timezoneOffset: Schema.number().description('时区偏移量 (分钟)。').default(new Date().getTimezoneOffset()),
   stackTraceLimit: Schema.natural().description('报错的调用堆栈深度。').default(10),
@@ -66,7 +66,7 @@ const app = loader.createApp()
 namespace addons {
   export const name = 'CLI'
 
-  export function apply(ctx: Context, config: App.Config) {
+  export function apply(ctx: Context, config: Context.Config) {
     logger.apply(ctx.app)
     ctx.plugin(daemon, config)
 

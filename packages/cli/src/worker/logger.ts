@@ -1,4 +1,4 @@
-import { App, defineProperty, Logger, remove, Schema, version } from 'koishi'
+import { Context, defineProperty, Logger, remove, Schema, version } from 'koishi'
 
 interface LogLevelConfig {
   // a little different from @koishijs/utils
@@ -21,9 +21,9 @@ export const Config: Schema<Config> = Schema.object({
   showTime: Schema.union([Boolean, String]).default(true).description('输出日志所使用的时间格式。'),
 }).description('日志设置').hidden()
 
-defineProperty(App.Config, 'logger', Config)
+defineProperty(Context.Config, 'logger', Config)
 
-App.Config.list.push(Schema.object({
+Context.Config.list.push(Schema.object({
   logger: Config,
 }))
 
@@ -76,7 +76,7 @@ export function prepare(config: Config = {}) {
   Logger.timestamp = Date.now()
 }
 
-export function apply(app: App) {
+export function apply(app: Context) {
   app.prologue = prologue
   app.on('ready', () => {
     remove(Logger.targets, target)
