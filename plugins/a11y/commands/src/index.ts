@@ -27,7 +27,7 @@ const Config: Schema<string | Config, Config> = Schema.union([
   Schema.transform(String, (name) => ({ name, alias: [] })),
 ])
 
-export const schema = Schema.dict(Config)
+export const schema: Schema<Dict<string | Config>, Dict<Config>> = Schema.dict(Config)
 
 export const name = 'commands'
 

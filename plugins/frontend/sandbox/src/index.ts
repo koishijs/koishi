@@ -1,4 +1,4 @@
-import { Adapter, Bot, Context, Dict, observe, Random, Schema, segment, Session, User } from 'koishi'
+import { Bot, Context, Dict, observe, Random, Schema, segment, User } from 'koishi'
 import { DataService } from '@koishijs/plugin-console'
 import { resolve } from 'path'
 
@@ -25,47 +25,16 @@ declare module '@koishijs/plugin-console' {
   }
 }
 
-export interface Config {}
-
-export const Config: Schema<Config> = Schema.object({})
-
-export class SandboxBot extends Bot {
-  username = 'koishi'
-  selfId = 'koishi'
-  hidden = true
-
-  constructor(public adapter: Sandbox, config: Bot.BaseConfig) {
-    super(adapter, config)
-  }
-
-  async sendMessage(channel: string, content: string) {
-    content = segment.transform(content, {
-      image(data) {
-        if (!data.url.startsWith('base64://')) return segment('image', data)
-        return segment.image('data:image/png;base64,' + data.url.slice(9))
-      },
-    })
-    this.adapter.broadcast({ content, user: 'Koishi', channel })
-    return [Random.id()]
-  }
-}
-
-export interface Message {
-  user: string
-  channel: string
-  content: string
-}
-
-export default class Sandbox extends Adapter {
+class SandboxBot extends Bot {
   static using = ['console'] as const
-  static schema: Schema<Config> = Schema.object({})
 
-  constructor(ctx: Context, config: Config) {
-    super(ctx, config)
+  username = 'koishi'
 
-    this.platform = 'sandbox'
-    ctx.bots.adapters.sandbox = this
-    const bot = ctx.bots.create('sandbox', {}, SandboxBot)
+  constructor(public ctx: Context, config: SandboxBot.Config) {
+    super(ctx, {
+      platform: 'sandbox',
+      selfId: 'koishi',
+    })
 
     ctx.plugin(UserProvider)
 
@@ -75,14 +44,12 @@ export default class Sandbox extends Adapter {
     })
 
     ctx.console.addListener('sandbox/message', async (user, channel, content) => {
-      this.broadcast({ content, user, channel })
-      this.dispatch(new Session(bot, {
-        platform: 'sandbox',
+      ctx.console.ws.broadcast('sandbox', { content, user, channel })
+      this.dispatch(this.session({
         userId: user,
         content,
         channelId: channel,
-        guildId: channel,
-        selfId: 'koishi',
+        guildId: channel === '@' + user ? undefined : channel,
         type: 'message',
         subtype: channel === '@' + user ? 'private' : 'group',
         author: {
@@ -93,13 +60,30 @@ export default class Sandbox extends Adapter {
     }, { authority: 4 })
   }
 
-  broadcast(body: Message) {
-    this.ctx.console.ws.broadcast('sandbox', body)
+  async sendMessage(channel: string, content: string) {
+    content = segment.transform(content, {
+      image(data) {
+        if (!data.url.startsWith('base64://')) return segment('image', data)
+        return segment.image('data:image/png;base64,' + data.url.slice(9))
+      },
+    })
+    this.ctx.console.ws.broadcast('sandbox', { content, user: 'Koishi', channel })
+    return [Random.id()]
   }
+}
 
-  async start() {}
+namespace SandboxBot {
+  export interface Config {}
 
-  async stop() {}
+  export const Config: Schema<Config> = Schema.object({})
+}
+
+export default SandboxBot
+
+export interface Message {
+  user: string
+  channel: string
+  content: string
 }
 
 export const words = [
