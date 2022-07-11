@@ -16,19 +16,26 @@ Koishi 是一个相当大的仓库，包含了各种各样的插件和适配器�
 
 ## 可以贡献的范围（我可以贡献__吗？）
 
-- 为已有的库添加新的特性
+### 为已有的库添加新的特性
 
 当然可以。不过在此之前建议你发一个 feature request 或者在官方群中与作者交流意见。这是为了确保你写的东西不会让别人的机器人挂掉。
 
-- 贡献一个新的平台/数据库实现
+### 贡献一个新的适配器 / 数据库实现
 
-非常欢迎。不过你需要知道平台和数据库实现非常底层的东西，建议你在写之前熟悉一下 Koishi 的基本架构和文档。如果有什么疑问，也可以在 issues 或者官方群中提出。
+非常欢迎。不过目前 Koishi 的适配器和数据库的实现并不在官方仓库中，你或许应该去这里提交 Pull Request：
 
-- 贡献一个新的插件
+- 适配器：[satorijs/node-sdk](https://github.com/satorijs/node-sdk)
+- 数据库：[shigma/minato](https://github.com/shigma/minato)
+
+另外，适配器和数据库实现非常底层的东西，建议你在写之前熟悉一下 Koishi 的基本架构和文档。如果有什么疑问，也可以在 issues 或者官方群中提出。
+
+### 贡献一个新的插件
 
 Koishi 至今为止的官方插件数量已经非常非常多了，比起创建一个新的官方插件，我们更愿意见到社区插件丰富起来。
 只要你为自己的插件添加上合适的前缀（如 `koishi-plugin-bar` 或 `@foo/koishi-plugin-bar`），Koishi 的插件市场便会自动收录。
 对于活跃的社区贡献者，我们也会邀请其成为组织 @koishijs 的成员（现在已经有不少了）。
+
+关于发布插件的指南，请参考[这篇文档](https://koishi.js.org/guide/plugin/publish.html)。
 
 ## 如何发送 Pull Request
 
@@ -74,23 +81,10 @@ Koishi 至今为止的官方插件数量已经非常非常多了，比起创建�
 如果你希望直接使用官方仓库调试机器人，可以尝试以下流程：
 
 1. 运行 `yarn` 安装必要的依赖
-2. 在根目录下创建一个新的 test 目录
-3. 创建 `test/package.json`：
-```json
-{
-    "name": "@koishijs/test",
-    "version": "1.0.0",
-    "private": true,
-    "scripts": {
-        "dev": "koishi start --watch .. -r esbuild-register -r yml-register"
-    },
-    "dependencies": {
-        "@koishijs/cli": "*"
-    }
-}
-```
-3. 创建 `test/koishi.yml`，可以参考[官方模板仓库](https://github.com/koishijs/boilerplate)
-4. 现在，运行 `yarn dev` 即可启动你的机器人
+2. 运行 `yarn scaffold` 创建一个模板项目
+3. 现在，运行 `yarn dev` 即可启动你的机器人
+
+你创建的模板项目将处于 `test` 目录下，这个目录已经被记录在了 .gitignore 中，所以你大可以放心地修改其中的内容。
 
 ## 脚本说明
 

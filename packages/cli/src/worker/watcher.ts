@@ -334,7 +334,7 @@ namespace Watcher {
     debounce?: number
   }
 
-  export const Config = Schema.object({
+  export const Config: Schema<Config> = Schema.object({
     root: Schema.string().description('要监听的根目录，相对于当前工作路径。'),
     debounce: Schema.natural().role('ms').default(100).description('延迟触发更新的等待时间。'),
     ignored: Schema.union([
