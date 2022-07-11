@@ -2,7 +2,8 @@ import { Context, Schema } from '@koishijs/core'
 import { defineProperty } from '@koishijs/utils'
 import { Cache } from './cache'
 import { Assets } from './assets'
-import * as satori from '@satorijs/satori'
+import { Quester } from '@satorijs/satori'
+import * as satori from '@satorijs/core'
 
 export { Quester, Router, WebSocketLayer } from '@satorijs/satori'
 
@@ -21,7 +22,9 @@ declare module '@koishijs/core' {
 
   namespace Context {
     namespace Config {
-      interface Static extends satori.Context.Config.Static {}
+      interface Static {
+        Network: satori.Context.Config.Network
+      }
     }
   }
 }
@@ -34,7 +37,7 @@ Context.Config.list.push(Schema.object({
   assets: Context.Config.Assets,
 }))
 
-Context.Config.list.push(satori.Quester.Config)
+Context.Config.list.push(Quester.Config)
 
 Context.service('assets')
 Context.service('cache')

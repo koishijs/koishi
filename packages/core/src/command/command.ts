@@ -1,5 +1,6 @@
 import { Awaitable, coerce, Dict, Logger, remove, Schema } from '@koishijs/utils'
-import { Context, Disposable } from '../context'
+import { Disposable } from 'cordis'
+import { Context } from '../context'
 import { Argv } from './parser'
 import { Next } from '../internal'
 import { Channel, User } from '../database'

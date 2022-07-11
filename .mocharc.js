@@ -36,10 +36,9 @@ for (const path of specs) {
 
 function getSpecFromArgv() {
   if (!process.env.npm_config_argv) return specs
-  const args = JSON.parse(process.env.npm_config_argv).original.filter(arg => !arg.startsWith('-'))
-  if (args.length === 1) return specs
-  process.argv.splice(1 - args.length, Infinity)
-  return args.slice(1).flatMap((path) => {
+  const args = JSON.parse(process.env.npm_config_argv).original.slice(2).filter(arg => !arg.startsWith('-'))
+  if (!args.length) return specs
+  return args.flatMap((path) => {
     const [name] = path.split('/')
     const target = path.slice(name.length)
     const prefix = `${libraries[name]}/${name}/tests/`
