@@ -230,7 +230,7 @@ namespace JsdelivrAssets {
     maxBranchSize?: number
   }
 
-  export const Config = Schema.object({
+  export const Config: Schema<Config> = Schema.object({
     github: GitHubConfig,
     git: Schema.object({
       baseDir: Schema.string().required(),

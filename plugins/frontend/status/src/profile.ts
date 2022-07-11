@@ -69,7 +69,7 @@ namespace ProfileProvider {
     tickInterval?: number
   }
 
-  export const Config = Schema.object({
+  export const Config: Schema<Config> = Schema.object({
     tickInterval: Schema.natural().role('ms').description('性能数据推送的时间间隔。').default(Time.second * 5),
   })
 

@@ -345,7 +345,7 @@ namespace StatisticsProvider {
     statsInternal?: number
   }
 
-  export const Config = Schema.object({
+  export const Config: Schema<Config> = Schema.object({
     statsInternal: Schema.natural().role('ms').description('统计数据推送的时间间隔。').default(Time.minute * 10),
   })
 

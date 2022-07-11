@@ -80,18 +80,18 @@ class S3Assets extends Assets {
 }
 
 namespace S3Assets {
-  const Credentials = Schema.object({
+  const Credentials: Schema<S3ClientConfig['credentials']> = Schema.object({
     accessKeyId: Schema.string().required(),
     secretAccessKey: Schema.string().required(),
   })
 
   export interface Config extends S3ClientConfig {
-    bucket: string
+    bucket?: string
     pathPrefix?: string
     publicUrl?: string
   }
 
-  export const Config = Schema.object({
+  export const Config: Schema<Config> = Schema.object({
     region: Schema.string().default('none'),
     endpoint: Schema.string().role('url'),
     credentials: Credentials,

@@ -39,7 +39,7 @@ export const using = ['console'] as const
 
 export interface Config extends MetaProvider.Config, ProfileProvider.Config, StatisticsProvider.Config {}
 
-export const Config = Schema.intersect([
+export const Config: Schema<Config> = Schema.intersect([
   MetaProvider.Config,
   ProfileProvider.Config,
   StatisticsProvider.Config,

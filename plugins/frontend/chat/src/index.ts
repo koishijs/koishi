@@ -51,7 +51,7 @@ export interface Config extends ClientExtension {
   logLevel?: number
 }
 
-export const Config = Schema.object({
+export const Config: Schema<Config> = Schema.object({
   whitelist: Schema.array(String),
   maxMessages: Schema.natural(),
   logLevel: Schema.natural().max(3),

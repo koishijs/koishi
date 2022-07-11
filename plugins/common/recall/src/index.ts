@@ -4,7 +4,7 @@ export interface Config {
   timeout?: number
 }
 
-export const Config = Schema.object({
+export const Config: Schema<Config> = Schema.object({
   timeout: Schema.natural().role('ms').default(Time.hour).description('消息保留的时间。'),
 })
 

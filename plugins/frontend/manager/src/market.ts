@@ -90,7 +90,7 @@ namespace MarketProvider {
     registry?: string
   }
 
-  export const Config = Schema.object({
+  export const Config: Schema<Config> = Schema.object({
     registry: Schema.string().description('用于插件市场搜索和下载的 registry。').default(''),
   }).description('插件市场设置')
 

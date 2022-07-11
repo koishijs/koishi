@@ -100,7 +100,7 @@ namespace LocalAssets {
     selfUrl?: string
   }
 
-  export const Config = Schema.object({
+  export const Config: Schema<Config> = Schema.object({
     root: Schema.string().description('本地存储资源文件的绝对路径。'),
     path: Schema.string().default('/files').description('静态图片暴露在服务器的路径。'),
     selfUrl: Schema.string().role('url').description('Koishi 服务暴露在公网的地址。缺省时将使用全局配置。'),

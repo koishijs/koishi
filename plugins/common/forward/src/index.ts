@@ -28,7 +28,7 @@ export interface Config {
   interval?: number
 }
 
-export const Config = Schema.union([
+export const Config: Schema<Config | Rule[], Config> = Schema.union([
   Schema.object({
     rules: Schema.array(Rule).description('转发规则列表。'),
     interval: Schema.natural().role('ms').default(Time.hour).description('推送消息不再响应回复的时间。'),
