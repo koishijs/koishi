@@ -9,7 +9,8 @@ const app = new App({
   delay: { broadcast: 0 },
 })
 
-app.plugin(mock, { selfIds: ['514', '114'] })
+app.plugin(mock, { selfId: '514' })
+app.plugin(mock, { selfId: '114' })
 app.plugin(memory)
 app.plugin(broadcast)
 

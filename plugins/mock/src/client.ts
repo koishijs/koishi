@@ -51,6 +51,7 @@ export class MessageClient {
       const send = async (content: string) => {
         if (!content) return
         const session = this.app.bots[0].session({ ...this.meta, content })
+        if (await this.app.serial(session, 'before-send', session)) return
         if (!session?.content) return []
         this.replies.push(session.content)
         return []

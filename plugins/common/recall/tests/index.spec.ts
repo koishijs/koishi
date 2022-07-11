@@ -18,7 +18,7 @@ describe('@koishijs/plugin-recall', () => {
   it('basic support', async () => {
     const del = app.bots[0].deleteMessage = jest.fn(async () => {})
     await client.shouldReply('recall', '近期没有发送消息。')
-    const session = await app.bots[0].session({ messageId: '1234', channelId: '456', guildId: '456' })
+    const session = app.bots[0].session({ messageId: '1234', channelId: '456', guildId: '456', type: 'send' })
     app.mock.receive(session)
     await client.shouldNotReply('recall')
     expect(del.mock.calls).to.have.shape([[client.meta.channelId, '1234']])

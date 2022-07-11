@@ -1,9 +1,9 @@
-import { App } from 'koishi'
+import { Context } from 'koishi'
 import mock from '@koishijs/plugin-mock'
 import * as repeater from '@koishijs/plugin-repeater'
 
 async function setup(config: repeater.Config) {
-  const app = new App()
+  const app = new Context()
   app.plugin(mock)
   const client1 = app.mock.client('123', '123')
   const client2 = app.mock.client('456', '123')
