@@ -2,13 +2,13 @@
   <k-card-aside class="page-bots">
     <template #aside v-if="botCount || current === ''">
       <el-scrollbar>
-        <div class="add k-menu-item" :class="{ active: current === '' }" @click="current = ''">添加机器人</div>
+        <!-- <div class="add k-menu-item" :class="{ active: current === '' }" @click="current = ''">添加机器人</div> -->
         <bot-preview
           v-for="(bot, key) in store.bots" :key="key" :data="bot"
           :class="{ active: current === key }" @click="current = key.toString()"/>
       </el-scrollbar>
     </template>
-    <template v-if="current === null">
+    <!-- <template v-if="current === null">
       <k-empty v-if="botCount">
         <div>当前未选择机器人</div>
       </k-empty>
@@ -16,9 +16,12 @@
         <div>当前没有配置任何机器人</div>
         <k-button solid @click="current = ''">添加机器人</k-button>
       </k-empty>
-    </template>
-    <k-content v-else class="bot-profile">
-      <bot-settings :current="current" :key="current"></bot-settings>
+    </template> -->
+    <k-content class="bot-profile">
+      <p>
+        目前暂无信息。请前往「插件配置」页面调整配置。
+      </p>
+      <!-- <bot-settings :current="current" :key="current"></bot-settings> -->
     </k-content>
   </k-card-aside>
 </template>

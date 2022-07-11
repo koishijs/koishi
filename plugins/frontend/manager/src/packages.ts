@@ -1,4 +1,4 @@
-import { Adapter, App, Context, Dict, Logger, pick, remove, Runtime, Schema, State } from 'koishi'
+import { Context, Dict, Logger, pick, remove, Runtime, Schema, State } from 'koishi'
 import { DataService } from '@koishijs/plugin-console'
 import { conclude, Manifest, PackageJson } from '@koishijs/registry'
 import { promises as fsp } from 'fs'
@@ -79,7 +79,7 @@ class PackageProvider extends DataService<Dict<PackageProvider.Data>> {
     packages.unshift({
       name: '',
       shortname: '',
-      schema: App.Config,
+      schema: Context.Config,
     })
 
     return Object.fromEntries(packages.filter(x => x).map(data => [data.name, data]))
@@ -131,10 +131,7 @@ class PackageProvider extends DataService<Dict<PackageProvider.Data>> {
     result.peerDependencies = { ...data.peerDependencies }
 
     // check adapter
-    const oldLength = Object.keys(Adapter.library).length
     const exports = getExports(name)
-    const newLength = Object.keys(Adapter.library).length
-    if (newLength > oldLength) this.ctx.console.protocols.refresh()
     result.schema = exports?.Config || exports?.schema
 
     // check plugin state

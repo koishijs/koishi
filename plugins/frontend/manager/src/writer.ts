@@ -1,5 +1,5 @@
 import { DataService } from '@koishijs/plugin-console'
-import { Adapter, App, Bot, Context, remove, State } from 'koishi'
+import { Adapter, Bot, Context, remove, State } from 'koishi'
 import { Loader } from '@koishijs/cli'
 import { LocalPackage } from './utils'
 import { readFileSync } from 'fs'
@@ -49,7 +49,7 @@ function dropKey(plugins: {}, name: string) {
   return { [name]: value }
 }
 
-class ConfigWriter extends DataService<App.Config> {
+class ConfigWriter extends DataService<Context.Config> {
   private loader: Loader
   private plugins: {}
 
@@ -88,7 +88,7 @@ class ConfigWriter extends DataService<App.Config> {
       // handle plugin groups
       if (name === 'group') {
         const fork = ctx.state[Loader.kRecord][key]
-        result[key] = this.getGroup(value, fork.context)
+        result[key] = this.getGroup(value, fork.ctx)
         for (const name in result[key].$deps) {
           if (result[key].$isolate?.includes(name)) continue
           result.$deps[name] ??= result[key].$deps[name]
@@ -127,7 +127,7 @@ class ConfigWriter extends DataService<App.Config> {
     let ctx = this.loader.entry
     let name = segments.shift()
     while (segments.length) {
-      ctx = ctx.state[Loader.kRecord][name].context
+      ctx = ctx.state[Loader.kRecord][name].ctx
       name = segments.shift()
     }
     return [ctx.state, name] as const
@@ -143,7 +143,7 @@ class ConfigWriter extends DataService<App.Config> {
       delete record[oldKey]
       record[newKey] = fork
       fork.alias = alias
-      fork.context.emit('internal/fork', fork)
+      fork.ctx.emit('internal/fork', fork)
       config = parent.config[oldKey]
     } else {
       newKey = '~' + newKey
@@ -169,9 +169,9 @@ class ConfigWriter extends DataService<App.Config> {
   reload(path: string, config: any, newKey?: string) {
     const [parent, oldKey] = this.resolve(path)
     if (newKey) {
-      this.loader.unloadPlugin(parent.context, oldKey)
+      this.loader.unloadPlugin(parent.ctx, oldKey)
     }
-    this.loader.reloadPlugin(parent.context, newKey || oldKey, config)
+    this.loader.reloadPlugin(parent.ctx, newKey || oldKey, config)
     rename(parent.config, oldKey, newKey || oldKey, config)
     this.loader.writeConfig()
     this.refresh()
@@ -179,7 +179,7 @@ class ConfigWriter extends DataService<App.Config> {
 
   unload(path: string, config = {}, newKey?: string) {
     const [parent, oldKey] = this.resolve(path)
-    this.loader.unloadPlugin(parent.context, oldKey)
+    this.loader.unloadPlugin(parent.ctx, oldKey)
     rename(parent.config, oldKey, '~' + (newKey || oldKey), config)
     this.loader.writeConfig()
     this.refresh()
@@ -187,7 +187,7 @@ class ConfigWriter extends DataService<App.Config> {
 
   remove(path: string) {
     const [parent, key] = this.resolve(path)
-    this.loader.unloadPlugin(parent.context, key)
+    this.loader.unloadPlugin(parent.ctx, key)
     delete parent.config[key]
     delete parent.config['~' + key]
     this.loader.writeConfig()
@@ -197,7 +197,7 @@ class ConfigWriter extends DataService<App.Config> {
   group(path: string) {
     const [parent, oldKey] = this.resolve(path)
     const config = parent.config[oldKey] = {}
-    this.loader.reloadPlugin(parent.context, oldKey, config)
+    this.loader.reloadPlugin(parent.ctx, oldKey, config)
     this.loader.writeConfig()
     this.refresh()
   }
@@ -213,9 +213,9 @@ class ConfigWriter extends DataService<App.Config> {
       parentT[Loader.kRecord][oldKey] = fork
       remove(parentS.disposables, fork.dispose)
       parentT.disposables.push(fork.dispose)
-      fork.parent = parentT.context
-      Object.setPrototypeOf(fork.context, parentT.context)
-      fork.context.emit('internal/fork', fork)
+      fork.parent = parentT.ctx
+      Object.setPrototypeOf(fork.ctx, parentT.ctx)
+      fork.ctx.emit('internal/fork', fork)
       if (fork.runtime.using.some(name => parentS[name] !== parentT[name])) {
         fork.restart()
       }
@@ -235,7 +235,7 @@ class ConfigWriter extends DataService<App.Config> {
       if (key === name) {
         return fork
       } else if (key === '~' + name) {
-        this.loader.reloadPlugin(parent.context, name, value)
+        this.loader.reloadPlugin(parent.ctx, name, value)
         rename(parent.config, name, name, value)
         return parent[Loader.kRecord][name]
       } else if (key.startsWith('group:')) {
@@ -261,7 +261,7 @@ class ConfigWriter extends DataService<App.Config> {
       }
       fork.parent.state.config[name].bots.push(config)
       // make sure adapter get correct caller context
-      bot = fork.context.bots.create(platform, config)
+      bot = fork.ctx.bots.create(platform, config)
     }
     this.loader.writeConfig()
     this.refresh()

@@ -1,7 +1,8 @@
-import { Bot, Context, Dict, omit, pick, Time } from 'koishi'
+import { Bot, Context, Dict, pick, Time } from 'koishi'
 import { DataService } from '@koishijs/plugin-console'
+import { Loader } from '@koishijs/cli'
 
-declare module 'koishi' {
+declare module '@satorijs/core' {
   interface Bot {
     _messageSent: TickCounter
     _messageReceived: TickCounter
@@ -62,16 +63,22 @@ class BotProvider extends DataService<Dict<BotProvider.Data>> {
       this.refresh()
     })
 
+    function getConfig(bot: Bot) {
+      const record = bot.ctx.state.parent.state[Loader.kRecord]
+      for (const key in record) {
+        if (record[key] === bot.ctx.state) {
+          return bot.ctx.state.parent.state.config[key]
+        }
+      }
+    }
+
     this.extend((bot) => {
-      const name = 'adapter-' + bot.adapter.platform
-      const index = bot.adapter.bots.filter(bot => !bot.hidden).indexOf(bot)
-      const config = bot.adapter.ctx.state.parent.state.config[name].bots[index]
+      const config = getConfig(bot)
       return {
         ...pick(bot, ['platform', 'selfId', 'avatar', 'username', 'status']),
-        ...pick(config, ['disabled', 'protocol']),
-        config: omit(config, ['disabled', 'platform', 'protocol']),
+        config,
         error: bot.error?.message,
-        adapter: bot.adapter.platform,
+        adapter: Object.getPrototypeOf(bot).platform,
         messageSent: bot._messageSent.get(),
         messageReceived: bot._messageReceived.get(),
       }
@@ -83,9 +90,10 @@ class BotProvider extends DataService<Dict<BotProvider.Data>> {
   }
 
   async get() {
-    return Object.fromEntries(this.ctx.bots.filter(bot => !bot.hidden).map((bot) => {
-      return [bot.id, Object.assign({}, ...this.callbacks.map(cb => cb(bot)))] as [string, BotProvider.Data]
-    }))
+    return Object.fromEntries(this.ctx.bots.map((bot) => [
+      bot.ctx.state.uid,
+      Object.assign({}, ...this.callbacks.map(cb => cb(bot))),
+    ]))
   }
 }
 
@@ -97,9 +105,7 @@ namespace BotProvider {
 
   export type Extension = (bot: Bot) => Partial<Data>
 
-  export interface Data extends
-    Pick<Bot.BaseConfig, 'disabled' | 'platform' | 'protocol'>,
-    Pick<Bot, 'selfId' | 'avatar' | 'username' | 'status' | 'config'> {
+  export interface Data extends Pick<Bot, 'selfId' | 'avatar' | 'username' | 'status' | 'config'> {
     error?: string
     adapter: string
     messageSent: number

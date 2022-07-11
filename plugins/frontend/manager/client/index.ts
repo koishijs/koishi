@@ -29,7 +29,7 @@ export default (ctx: Context) => {
     icon: 'robot',
     order: 640,
     authority: 4,
-    fields: ['bots', 'protocols'],
+    fields: ['bots'],
     component: Bots,
   })
 

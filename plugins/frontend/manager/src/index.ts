@@ -4,13 +4,11 @@ import Installer from './installer'
 import BotProvider from './bots'
 import MarketProvider from './market'
 import PackageProvider from './packages'
-import AdapterProvider from './protocols'
 import ConfigWriter from './writer'
 
 export * from './bots'
 export * from './market'
 export * from './packages'
-export * from './protocols'
 export * from './writer'
 
 export {
@@ -18,7 +16,6 @@ export {
   BotProvider,
   MarketProvider,
   PackageProvider,
-  AdapterProvider,
   ConfigWriter,
 }
 
@@ -29,7 +26,6 @@ declare module '@koishijs/plugin-console' {
       bots: BotProvider
       market: MarketProvider
       packages: PackageProvider
-      protocols: AdapterProvider
       config: ConfigWriter
     }
   }
@@ -52,7 +48,6 @@ export function apply(ctx: Context, config: Config) {
   ctx.plugin(Installer)
   ctx.plugin(BotProvider)
   ctx.plugin(MarketProvider, config)
-  ctx.plugin(AdapterProvider)
   ctx.plugin(PackageProvider)
   ctx.plugin(ConfigWriter)
 

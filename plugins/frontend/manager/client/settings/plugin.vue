@@ -84,7 +84,7 @@
 
 <script lang="ts" setup>
 
-import { send, store, clone, router } from '@koishijs/client'
+import { send, store, clone, router , Schema } from '@koishijs/client'
 import { computed, ref, watch } from 'vue'
 import { envMap, Tree, removeItem, separator } from './utils'
 import KAlias from './alias.vue'
