@@ -1,5 +1,5 @@
 import { DataService } from '@koishijs/plugin-console'
-import { Adapter, Bot, Context, remove, State } from 'koishi'
+import { Context, remove } from 'koishi'
 import { Loader } from '@koishijs/cli'
 import { LocalPackage } from './utils'
 import { readFileSync } from 'fs'
@@ -65,14 +65,6 @@ class ConfigWriter extends DataService<Context.Config> {
     for (const key of ['teleport', 'reload', 'unload', 'remove', 'group', 'meta', 'alias'] as const) {
       ctx.console.addListener(`manager/${key}`, this[key].bind(this), { authority: 4 })
     }
-
-    ctx.console.addListener('manager/bot-update', (id, adapter, config) => {
-      this.updateBot(id, adapter, config)
-    }, { authority: 4 })
-
-    ctx.console.addListener('manager/bot-remove', (id) => {
-      this.removeBot(id)
-    }, { authority: 4 })
 
     ctx.on('config', () => this.refresh())
   }
@@ -226,63 +218,6 @@ class ConfigWriter extends DataService<Context.Config> {
     const rest = Object.keys(parentT.config).slice(index)
     insertKey(parentT.config, temp, rest)
     this.loader.writeConfig()
-  }
-
-  private locate(name: string, parent: State): State {
-    for (const key in parent.config) {
-      const value = parent.config[key]
-      const fork = parent[Loader.kRecord][key]
-      if (key === name) {
-        return fork
-      } else if (key === '~' + name) {
-        this.loader.reloadPlugin(parent.ctx, name, value)
-        rename(parent.config, name, name, value)
-        return parent[Loader.kRecord][name]
-      } else if (key.startsWith('group:')) {
-        const result = this.locate(name, fork)
-        if (result) return result
-      }
-    }
-  }
-
-  updateBot(id: string, platform: string, config: any) {
-    let bot: Bot
-    const name = 'adapter-' + platform
-    if (id) {
-      bot = this.ctx.bots.find(bot => bot.id === id)
-      const index = bot.adapter.bots.filter(bot => !bot.hidden).indexOf(bot)
-      bot.adapter.ctx.state.parent.state.config[name].bots[index] = config
-    } else {
-      let fork = this.locate(name, this.loader.entry.state)
-      if (!fork) {
-        const config = this.loader.entry.state.config[name] = { bots: [] }
-        this.loader.reloadPlugin(this.loader.entry, name, config)
-        fork = this.loader.entry.state[Loader.kRecord][name]
-      }
-      fork.parent.state.config[name].bots.push(config)
-      // make sure adapter get correct caller context
-      bot = fork.ctx.bots.create(platform, config)
-    }
-    this.loader.writeConfig()
-    this.refresh()
-    bot.config = Adapter.library[Adapter.join(platform, bot.protocol)].schema(config)
-    if (config.disabled) {
-      bot.stop()
-    } else {
-      bot.start()
-    }
-  }
-
-  removeBot(id: string) {
-    const bot = this.ctx.bots.find(bot => bot.id === id)
-    const index = bot.adapter.bots.filter(bot => !bot.hidden).indexOf(bot)
-    const name = 'adapter-' + bot.adapter.platform
-    const config = bot.adapter.ctx.state.parent.state.config[name]
-    config.bots.splice(index, 1)
-    this.loader.writeConfig()
-    this.refresh()
-    this.ctx.bots.remove(id)
-    return bot.stop()
   }
 }
 

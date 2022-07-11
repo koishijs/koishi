@@ -37,6 +37,7 @@
     "lint": "eslint packages plugins --ext=ts --cache",
     "scaffold": "yarn compile koishi && yarn create-koishi test",
     "start": "yarn compile && cross-env TS_NODE_PROJECT=../tsconfig.json yarn workspace @koishijs/test koishi start --watch .. -r ../build/register --experimental-vm-modules",
+    "dev": "yarn compile && yarn workspace @koishijs/test dev",
     "shiki": "yarn workspace bot-shiki"
   },
   "license": "MIT",

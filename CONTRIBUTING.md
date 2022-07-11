@@ -28,7 +28,7 @@ Koishi 是一个相当大的仓库，包含了各种各样的插件和适配器�
 
 Koishi 至今为止的官方插件数量已经非常非常多了，比起创建一个新的官方插件，我们更愿意见到社区插件丰富起来。
 只要你为自己的插件添加上合适的前缀（如 `koishi-plugin-bar` 或 `@foo/koishi-plugin-bar`），Koishi 的插件市场便会自动收录。
-对于活跃的社区贡献者，我们也会邀请其成为 koishijs 的成员（现在已经有不少了）。
+对于活跃的社区贡献者，我们也会邀请其成为组织 @koishijs 的成员（现在已经有不少了）。
 
 ## 如何发送 Pull Request
 
@@ -38,7 +38,7 @@ Koishi 至今为止的官方插件数量已经非常非常多了，比起创建�
 2. 检出 master 分支
 3. 在 HEAD 处创建一个自己的分支，比如 my-feature
 4. 进行你的开发
-5. 创建 pull request 到 develop 分支
+5. 创建 pull request 到官方仓库的 master 分支
 
 ### 额外说明
 
@@ -49,7 +49,7 @@ Koishi 至今为止的官方插件数量已经非常非常多了，比起创建�
 
 ### 如何编写 Commit Message
 
-1. 标题一定要是纯英文（当然可以包含适当的 emoji）
+1. 标题一定要是纯英文（可以包含适当的 emoji）
 2. 要有一个合适的前缀，即你的 commit 标题应当满足下列格式：
     - fix(xxx): message
     - feat(xxx): message
@@ -61,6 +61,36 @@ Koishi 至今为止的官方插件数量已经非常非常多了，比起创建�
 4. merge commit 等自动产生的 commit message 不受限制
 
 ## 项目结构
+
+你能在项目根目录看到 4 个目录：
+
+- build: 包含构建相关脚本
+- docker: 包含 Dockerfile
+- packages: 包含 Koishi 核心库
+- plugins: 包含官方插件库
+
+## 官方仓库调试
+
+如果你希望直接使用官方仓库调试机器人，可以尝试以下流程：
+
+1. 运行 `yarn` 安装必要的依赖
+2. 在根目录下创建一个新的 test 目录
+3. 创建 `test/package.json`：
+```json
+{
+    "name": "@koishijs/test",
+    "version": "1.0.0",
+    "private": true,
+    "scripts": {
+        "dev": "koishi start --watch .. -r esbuild-register -r yml-register"
+    },
+    "dependencies": {
+        "@koishijs/cli": "*"
+    }
+}
+```
+3. 创建 `test/koishi.yml`，可以参考[官方模板仓库](https://github.com/koishijs/boilerplate)
+4. 现在，运行 `yarn dev` 即可启动你的机器人
 
 ## 脚本说明
 
