@@ -6,7 +6,7 @@ export interface RefreshConfig {
   channel?: number
 }
 
-export const RefreshConfig = Schema.object({
+export const RefreshConfig: Schema<RefreshConfig> = Schema.object({
   user: Schema.natural().role('ms').description('刷新用户数据的时间间隔。').default(Time.hour),
   guild: Schema.natural().role('ms').description('刷新群组数据的时间间隔。').default(Time.hour),
   channel: Schema.natural().role('ms').description('刷新频道数据的时间间隔。').default(Time.hour),

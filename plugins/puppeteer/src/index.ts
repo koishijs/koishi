@@ -31,7 +31,7 @@ const LaunchOptions = Schema.intersect([
     ignoreHTTPSErrors: Schema.boolean().description('在导航时忽略 HTTPS 错误。').default(false),
     args: Schema.array(String).description('额外的浏览器参数。Chromium 参数可以参考[这个页面](https://peter.sh/experiments/chromium-command-line-switches/)。'),
   }).description('高级设置'),
-])
+]) as Schema<LaunchOptions>
 
 type RenderCallback = (page: Page, next: (handle?: ElementHandle) => Promise<string>) => Promise<string>
 
