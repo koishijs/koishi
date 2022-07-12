@@ -32,6 +32,15 @@ class TickCounter {
   }
 }
 
+function getConfig(bot: Bot) {
+  const record = bot.ctx.state.parent.state[Loader.kRecord]
+  for (const key in record) {
+    if (record[key] === bot.ctx.state) {
+      return bot.ctx.state.parent.state.config[key]
+    }
+  }
+}
+
 class BotProvider extends DataService<Dict<BotProvider.Data>> {
   callbacks: BotProvider.Extension[] = []
 
@@ -63,15 +72,6 @@ class BotProvider extends DataService<Dict<BotProvider.Data>> {
       this.refresh()
     })
 
-    function getConfig(bot: Bot) {
-      const record = bot.ctx.state.parent.state[Loader.kRecord]
-      for (const key in record) {
-        if (record[key] === bot.ctx.state) {
-          return bot.ctx.state.parent.state.config[key]
-        }
-      }
-    }
-
     this.extend((bot) => {
       const config = getConfig(bot)
       return {
@@ -90,7 +90,7 @@ class BotProvider extends DataService<Dict<BotProvider.Data>> {
   }
 
   async get() {
-    return Object.fromEntries(this.ctx.bots.map((bot) => [
+    return Object.fromEntries(this.ctx.bots.filter(getConfig).map((bot) => [
       bot.ctx.state.uid,
       Object.assign({}, ...this.callbacks.map(cb => cb(bot))),
     ]))

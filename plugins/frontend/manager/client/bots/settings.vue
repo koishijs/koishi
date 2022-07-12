@@ -9,9 +9,9 @@
       <k-button solid @click="update(true)">退出账号</k-button>
       <k-button solid type="error" @click="send('manager/bot-remove', current)">移除实例</k-button>
     </template>
-  </h1> -->
-  <!-- <k-view name="manager:bot-prolog" :data="data"></k-view> -->
-  <!-- <k-form :schema="store.protocols[key]" :initial="initial" v-model="data.config" :show-header="true" #prolog>
+  </h1>
+  <k-view name="manager:bot-prolog" :data="data"></k-view>
+  <k-form :schema="store.protocols[key]" :initial="initial" v-model="data.config" :show-header="true" #prolog>
     <k-schema :instant="!bot" :initial="bot?.adapter" :schema="adapterSchema" v-model="data.adapter" :disabled="!!current">
       <h3>adapter</h3>
       <p>选择要使用的适配器。</p>

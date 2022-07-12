@@ -15,8 +15,6 @@ declare module '@koishijs/plugin-console' {
     'manager/group'(path: string): void
     'manager/alias'(path: string, alias: string): void
     'manager/meta'(path: string, config: any): void
-    'manager/bot-update'(id: string, adapter: string, config: any): void
-    'manager/bot-remove'(id: string): void
   }
 }
 

@@ -68,6 +68,8 @@
       </template>
     </k-comment>
 
+    <k-view name="manager:settings"></k-view>
+
     <!-- schema -->
     <k-comment v-if="!local.schema" type="warning">
       此插件未声明配置项，这可能并非预期行为{{ hint }}。
@@ -84,8 +86,8 @@
 
 <script lang="ts" setup>
 
-import { send, store, clone, router , Schema } from '@koishijs/client'
-import { computed, ref, watch } from 'vue'
+import { send, store, clone, router } from '@koishijs/client'
+import { computed, provide, ref, watch } from 'vue'
 import { envMap, Tree, removeItem, separator } from './utils'
 import KAlias from './alias.vue'
 import KDepLink from './dep-link.vue'
@@ -148,6 +150,9 @@ function execute(event: 'unload' | 'reload') {
 function gotoMarket() {
   router.push('/market?keyword=' + props.current.label)
 }
+
+provide('manager.local', local)
+provide('manager.config', config)
 
 </script>
 
