@@ -1,7 +1,7 @@
 {
   "name": "koishi",
   "description": "Cross-Platform Chatbot Framework Made with Love",
-  "version": "4.7.6",
+  "version": "4.8.0",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "engines": {
@@ -34,8 +34,8 @@
     "@types/parseurl": "^1.3.1"
   },
   "dependencies": {
-    "@koishijs/core": "^4.7.6",
-    "@koishijs/utils": "^5.4.5",
+    "@koishijs/core": "^4.8.0",
+    "@koishijs/utils": "^6.0.0",
     "@satorijs/satori": "^1.0.2",
     "file-type": "^16.5.3",
     "ns-require": "^1.1.4"

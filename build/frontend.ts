@@ -2,8 +2,8 @@ import { buildExtension } from '@koishijs/client/src'
 import { cwd, getPackages } from './utils'
 import { RollupOutput } from 'rollup'
 import { appendFile, copyFile } from 'fs-extra'
+import * as vite from 'vite'
 import vue from '@vitejs/plugin-vue'
-import vite from 'vite'
 import cac from 'cac'
 
 const { args } = cac().help().parse()
