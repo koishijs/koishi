@@ -4,7 +4,6 @@ const specs = [
   'packages/core/tests/*.spec.ts',
   'packages/utils/tests/*.spec.ts',
   'plugins/a11y/admin/tests/*.spec.ts',
-  'plugins/a11y/commands/tests/*.spec.ts',
   'plugins/a11y/rate-limit/tests/*.spec.ts',
   'plugins/a11y/schedule/tests/*.spec.ts',
   'plugins/a11y/suggest/tests/*.spec.ts',

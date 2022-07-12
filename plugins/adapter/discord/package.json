@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-adapter-discord",
   "description": "Discord Adapter for Koishi",
-  "version": "3.0.1",
+  "version": "3.0.2",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -11,11 +11,11 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/satorijs/node-sdk.git",
+    "url": "git+https://github.com/satorijs/satori.git",
     "directory": "adapters/discord"
   },
   "bugs": {
-    "url": "https://github.com/satorijs/node-sdk/issues"
+    "url": "https://github.com/satorijs/satori/issues"
   },
   "homepage": "https://koishi.js.org/plugins/adapter/discord.html",
   "keywords": [
@@ -39,6 +39,6 @@
     "koishi": "^4.8.0"
   },
   "dependencies": {
-    "@satorijs/adapter-discord": "^3.0.1"
+    "@satorijs/adapter-discord": "^3.0.2"
   }
 }

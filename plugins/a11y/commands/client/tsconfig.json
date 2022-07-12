@@ -1,9 +1,0 @@
-{
-  "extends": "../../../frontend/tsconfig.base",
-  "compilerOptions": {
-    "rootDir": ".",
-  },
-  "include": [
-    ".",
-  ],
-}

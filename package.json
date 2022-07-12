@@ -6,7 +6,9 @@
   "workspaces": [
     "docs",
     "test",
-    "community/*",
+    "external/*",
+    "external/console/packages/*",
+    "external/dialogue/packages/*",
     ".yalc/*",
     ".yalc/@*/*",
     "packages/*",
@@ -20,11 +22,10 @@
     "plugins/*"
   ],
   "scripts": {
-    "build": "yarn compile && yarn dtsc && yarn fe",
+    "build": "yarn compile && yarn dtsc",
     "clean": "node -r esbuild-register build/clean",
     "compile": "node -r esbuild-register build/compile",
     "draft": "node -r esbuild-register build/release",
-    "fe": "node -r esbuild-register build/frontend",
     "dtsc": "yakumo tsc",
     "bump": "yakumo version",
     "dep": "yakumo upgrade",
@@ -89,7 +90,7 @@
     "typescript": "^4.7.2",
     "yakumo": "^0.2.8",
     "yakumo-mocha": "^0.2.5",
-    "yakumo-publish": "^0.2.4",
+    "yakumo-publish": "^0.2.5",
     "yakumo-tsc": "^0.2.4",
     "yakumo-upgrade": "^0.2.3",
     "yakumo-version": "^0.2.5",

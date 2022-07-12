@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-adapter-onebot",
   "description": "OneBot Adapter for Koishi",
-  "version": "5.0.2",
+  "version": "5.0.3",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -11,11 +11,11 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/satorijs/node-sdk.git",
+    "url": "git+https://github.com/satorijs/satori.git",
     "directory": "adapters/onebot"
   },
   "bugs": {
-    "url": "https://github.com/satorijs/node-sdk/issues"
+    "url": "https://github.com/satorijs/satori/issues"
   },
   "homepage": "https://koishi.js.org/plugins/adapter/onebot.html",
   "keywords": [
@@ -43,6 +43,6 @@
     "koishi": "^4.8.0"
   },
   "dependencies": {
-    "@satorijs/adapter-onebot": "^5.0.2"
+    "@satorijs/adapter-onebot": "^5.0.3"
   }
 }
