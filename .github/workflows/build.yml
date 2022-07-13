@@ -64,8 +64,6 @@ jobs:
         run: yarn compile
       - name: Build DTS
         run: yarn dtsc --listEmittedFiles
-      - name: Build Frontend
-        run: yarn fe
       - name: Upload Packages
         uses: actions/upload-artifact@v3
         with:

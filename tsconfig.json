@@ -3,9 +3,6 @@
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {
-      "@koishijs/database-tests": [
-        "plugins/database/tests/src",
-      ],
       "@koishijs/plugin-adapter-*": [
         "plugins/adapter/*/src",
         "external/adapter-*/src",
@@ -21,26 +18,21 @@
       "@koishijs/plugin-*": [
         "plugins/a11y/*/src",
         "plugins/common/*/src",
-        "plugins/frontend/*/src",
         "plugins/*/src",
+        "external/console/packages/*/src",
       ],
       "@koishijs/*": [
         "packages/*/src",
         "plugins/a11y/*/src",
-        "plugins/adapter/*/src",
         "plugins/assets/*/src",
         "plugins/common/*/src",
-        "plugins/database/*/src",
-        "plugins/frontend/*/src",
+        "external/console/packages/*/src",
       ],
       "koishi-plugin-*": [
         "external/*/src",
       ],
       "koishi": [
         "packages/koishi/src",
-      ],
-      "cordis": [
-        "../packages/cordis/src",
       ],
       "*": [
         "external/*/src",

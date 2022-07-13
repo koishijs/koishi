@@ -1,6 +1,5 @@
 import { Context, Schema } from '@koishijs/core'
 import { defineProperty } from '@koishijs/utils'
-import { Cache } from './cache'
 import { Assets } from './assets'
 import { Quester } from '@satorijs/satori'
 import * as satori from '@satorijs/core'
@@ -8,7 +7,6 @@ import * as satori from '@satorijs/core'
 export { Quester, Router, WebSocketLayer } from '@satorijs/satori'
 
 export * from './assets'
-export * from './cache'
 export * from './patch'
 
 export * from '@koishijs/core'
