@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "koishi start --watch .. -r esbuild-register -r yml-register"
   },
-  "dependencies": {
+  "devDependencies": {
     "@koishijs/cli": "*"
   }
 }
