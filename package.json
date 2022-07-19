@@ -90,7 +90,7 @@
     "yakumo": "^0.2.8",
     "yakumo-mocha": "^0.2.5",
     "yakumo-publish": "^0.2.5",
-    "yakumo-tsc": "^0.2.4",
+    "yakumo-tsc": "^0.2.5",
     "yakumo-upgrade": "^0.2.3",
     "yakumo-version": "^0.2.5",
     "yml-register": "^1.0.0"
