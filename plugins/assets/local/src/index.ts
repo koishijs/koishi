@@ -1,7 +1,8 @@
 import { Assets, Context, sanitize, Schema, trimSlash } from 'koishi'
 import { createReadStream, promises as fs } from 'fs'
-import { basename, extname, resolve } from 'path'
+import { basename, resolve } from 'path'
 import { createHmac } from 'crypto'
+import { stream as fileTypeStream } from 'file-type'
 
 class LocalAssets extends Assets {
   private _promise: Promise<void>
@@ -30,10 +31,11 @@ class LocalAssets extends Assets {
       return ctx.body = await this.stats()
     })
 
-    ctx.router.get(config.path + '/:name', (ctx) => {
+    ctx.router.get(config.path + '/:name', async (ctx) => {
       const filename = resolve(config.root, basename(ctx.params.name))
-      ctx.type = extname(filename)
-      return ctx.body = createReadStream(filename)
+      const stream = await fileTypeStream(createReadStream(filename))
+      ctx.type = stream.fileType?.mime
+      return ctx.body = stream
     })
 
     ctx.router.post(config.path, async (ctx) => {
