@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/scripts",
   "description": "Workspace Scripts for Koishi",
-  "version": "2.0.3",
+  "version": "3.0.0",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "engines": {
@@ -31,7 +31,7 @@
     "koishi"
   ],
   "peerDependencies": {
-    "@koishijs/client": "^3.4.4"
+    "@koishijs/client": "^4.1.1"
   },
   "devDependencies": {
     "@types/cross-spawn": "^6.0.2",
