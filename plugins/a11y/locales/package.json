@@ -36,11 +36,9 @@
     }
   },
   "peerDependencies": {
-    "koishi": "^4.8.1"
+    "koishi": "^4.8.2"
   },
   "devDependencies": {
-    "@koishijs/client": "^3.4.4",
-    "@koishijs/plugin-console": "^3.4.4",
     "@koishijs/plugin-mock": "^2.0.0",
     "@types/throttle-debounce": "^2.1.0"
   },
