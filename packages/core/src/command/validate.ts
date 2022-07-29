@@ -29,7 +29,7 @@ export default function validate(ctx: Context) {
     }
 
     // check authority
-    if (session.user.authority) {
+    if (typeof session.user.authority === "number") {
       const authority = command.getConfig('authority', session)
       if (authority > session.user.authority) {
         return sendHint('internal.low-authority')
