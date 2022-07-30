@@ -35,7 +35,6 @@ Context.Config.list.push(Schema.object({
   assets: Context.Config.Assets,
 }))
 
-Context.Config.list.push(Quester.Config)
-
-Context.service('assets')
-Context.service('cache')
+Context.Config.list.push(Schema.object({
+  request: Quester.Config,
+}))

@@ -93,7 +93,7 @@ namespace S3Assets {
 
   export const Config: Schema<Config> = Schema.object({
     region: Schema.string().default('none'),
-    endpoint: Schema.string().role('url'),
+    endpoint: Schema.string().role('link'),
     credentials: Credentials,
     bucket: Schema.string().required(),
     pathPrefix: Schema.string().default(''),
