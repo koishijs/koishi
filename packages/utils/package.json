@@ -32,6 +32,6 @@
   "dependencies": {
     "cosmokit": "^1.2.1",
     "reggol": "^1.0.3",
-    "schemastery": "^3.4.3"
+    "schemastery": "^3.5.0"
   }
 }

@@ -20,7 +20,7 @@ const specs = [
   'plugins/common/respondent/tests/*.spec.ts',
 ]
 
-const folders = ['a11y', 'common', 'frontend']
+const folders = ['a11y', 'common']
 
 const libraries = {}
 
