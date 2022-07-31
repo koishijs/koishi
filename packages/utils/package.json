@@ -2,8 +2,8 @@
   "name": "@koishijs/utils",
   "description": "Utilities for Koishi",
   "version": "6.0.0",
-  "main": "lib/node.js",
-  "module": "lib/browser.js",
+  "main": "lib/index.cjs",
+  "module": "lib/index.mjs",
   "typings": "lib/index.d.ts",
   "files": [
     "lib"
@@ -32,6 +32,6 @@
   "dependencies": {
     "cosmokit": "^1.2.1",
     "reggol": "^1.0.3",
-    "schemastery": "^3.5.0"
+    "schemastery": "^3.5.1"
   }
 }

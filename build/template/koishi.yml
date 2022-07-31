@@ -11,7 +11,7 @@ plugins:
     sandbox: null
     insight: null
     dataview: null
-    manager: null
+    market: null
     status: null
     logger: null
     chat: null

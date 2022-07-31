@@ -41,6 +41,6 @@
     "koishi": "^4.8.3"
   },
   "dependencies": {
-    "file-type": "^16.5.3"
+    "file-type": "^16.5.4"
   }
 }

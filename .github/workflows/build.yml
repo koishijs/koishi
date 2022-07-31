@@ -23,13 +23,11 @@ jobs:
         with:
           path: yarn.lock
           key: yarn-lock-${{ github.sha }}
-          restore-keys: yarn-lock-
       - name: Restore Cache
         uses: actions/cache@v2
         with:
           path: ${{ steps.cache.outputs.value }}
           key: yarn-cache-${{ github.sha }}-node-16
-          restore-keys: yarn-cache-
       - name: Install
         run: yarn
 
@@ -131,8 +129,6 @@ jobs:
           restore-keys: yarn-cache-${{ github.sha }}-node
       - name: Install
         run: yarn
-      - name: Build JS
-        run: yarn compile
       - name: Unit Test
         run: yarn test:json
       - name: Report Coverage

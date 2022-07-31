@@ -2,8 +2,8 @@
   "name": "@koishijs/plugin-database-level",
   "description": "LevelDB implementation for Koishi",
   "version": "1.4.1",
-  "main": "lib/node.js",
-  "module": "lib/browser.js",
+  "main": "lib/index.cjs",
+  "module": "lib/index.mjs",
   "typings": "lib/index.d.ts",
   "files": [
     "lib"
