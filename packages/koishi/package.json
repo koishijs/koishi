@@ -22,13 +22,12 @@
   "homepage": "https://koishi.js.org",
   "keywords": [
     "bot",
-    "qqbot",
-    "cqhttp",
-    "coolq",
+    "chatbot",
     "discord",
     "telegram",
-    "chatbot",
-    "koishi"
+    "koishi",
+    "onebot",
+    "framework"
   ],
   "devDependencies": {
     "@types/parseurl": "^1.3.1"
