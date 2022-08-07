@@ -82,6 +82,7 @@ export namespace Context {
     prefix: Schema.union([
       Schema.array(String),
       Schema.transform(String, (prefix) => [prefix]),
+      Schema.function(),
     ] as const).default(['']).description('指令前缀字符构成的数组。将被用于指令的匹配。'),
     nickname: Schema.union([
       Schema.array(String),
