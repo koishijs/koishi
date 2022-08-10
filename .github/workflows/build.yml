@@ -58,10 +58,8 @@ jobs:
           key: yarn-cache-${{ github.sha }}-node-16
       - name: Install
         run: yarn
-      - name: Build JS
-        run: yarn compile
-      - name: Build DTS
-        run: yarn dtsc --listEmittedFiles
+      - name: Build
+        run: yarn build
       - name: Upload Packages
         uses: actions/upload-artifact@v3
         with:
@@ -107,7 +105,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node-version: [12, 14, 16, 18]
+        node-version: [14, 16, 18]
 
     steps:
       - name: Check out
