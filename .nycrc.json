@@ -1,12 +1,5 @@
 {
   "exclude": [
-    ".*",
-    "**/*.d.ts",
-    "**/*.config.js",
-    "build/**",
-    "coverage/**",
-    "packages/*/tests/**",
-    "packages/plugin-*/**/database/**",
-    "packages/plugin-status/**"
+    "packages/*/tests/**"
   ]
 }

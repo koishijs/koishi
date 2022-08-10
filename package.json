@@ -37,7 +37,7 @@
     "dep": "yakumo upgrade",
     "pub": "yakumo publish",
     "lint": "eslint packages plugins --ext=ts --cache",
-    "test": "mocha --no-warnings --experimental-vm-modules --enable-source-maps",
+    "test": "yakumo mocha -r esbuild-register -r yml-register",
     "test:json": "shx rm -rf coverage && c8 -r json yarn test",
     "test:html": "shx rm -rf coverage && c8 -r html yarn test",
     "test:text": "shx rm -rf coverage && c8 -r text yarn test",
@@ -87,14 +87,15 @@
     "shx": "^0.3.4",
     "source-map-support": "^0.5.21",
     "typescript": "^4.7.4",
-    "yakumo": "^0.3.1",
-    "yakumo-esbuild": "^0.3.5",
-    "yakumo-esbuild-yaml": "^0.3.0",
+    "yakumo": "^0.3.3",
+    "yakumo-esbuild": "^0.3.9",
+    "yakumo-esbuild-yaml": "^0.3.1",
     "yakumo-mocha": "^0.3.0",
     "yakumo-publish": "^0.3.0",
-    "yakumo-tsc": "^0.3.0",
+    "yakumo-publish-sync": "^0.3.1",
+    "yakumo-tsc": "^0.3.3",
     "yakumo-upgrade": "^0.3.1",
     "yakumo-version": "^0.3.0",
-    "yml-register": "^1.0.0"
+    "yml-register": "^1.1.0"
   }
 }
