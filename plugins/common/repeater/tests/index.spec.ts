@@ -40,12 +40,14 @@ describe('Repeater', () => {
 
   it('interrupt', async () => {
     const [client1, client2, client3] = await setup({
-      onRepeat: ({ times }) => times >= 3 ? '打断复读！' : '',
+      onRepeat: ({ times, repeated }) => times >= 3 && !repeated ? '打断复读！' : '',
     })
 
     await client1.shouldNotReply('foo')
     await client2.shouldNotReply('foo')
     await client3.shouldReply('foo', '打断复读！')
+    await client3.shouldNotReply('打断复读！')
+    await client3.shouldNotReply('打断复读！')
   })
 
   it('interrupt check', async () => {
