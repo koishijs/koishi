@@ -1,7 +1,7 @@
 internal:
   usage-exhausted: 调用次数已达上限。
   too-frequent: 调用过于频繁，请稍后再试。
-  option-not-usage: （不计入调用）
+  option-not-usage: ' (不计入调用)'
   command-max-usage: 已调用次数：{0}/{1}。
   command-min-interval: 距离下次调用还需：{0}/{1} 秒。
 

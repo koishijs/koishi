@@ -2,7 +2,6 @@ import { App, Time } from 'koishi'
 import mock from '@koishijs/plugin-mock'
 import memory from '@koishijs/plugin-database-memory'
 import * as help from '@koishijs/plugin-help'
-import * as admin from '@koishijs/plugin-admin'
 import * as rate from '@koishijs/plugin-rate-limit'
 import { install } from '@sinonjs/fake-timers'
 
@@ -12,7 +11,6 @@ let now = Date.now()
 app.plugin(help)
 app.plugin(mock)
 app.plugin(memory)
-app.plugin(admin)
 app.plugin(rate)
 
 const client1 = app.mock.client('123')
@@ -35,12 +33,13 @@ describe('@koishijs/plugin-rate-limit', () => {
       .action(() => 'test')
 
     it('Extended Help', async () => {
-      await client1.shouldReply('help foo', [
+      await client1.shouldReply('help foo -H', [
         'foo',
         '指令1',
         '已调用次数：1/3。',
         '可用的选项有：',
-        '    --opt1  选项1（不计入调用）',
+        '    -h, --help  显示此信息 (不计入调用)',
+        '    --opt1  选项1 (不计入调用)',
         '    --opt2  选项2',
       ].join('\n'))
     })

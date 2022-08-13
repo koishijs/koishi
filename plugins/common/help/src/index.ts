@@ -26,6 +26,8 @@ export const Config: Schema<Config> = Schema.object({
 export function enableHelp<U extends User.Field, G extends Channel.Field, A extends any[], O extends {}>(cmd: Command<U, G, A, O>) {
   return cmd.option('help', '-h', {
     hidden: true,
+    // @ts-ignore
+    notUsage: true,
     descPath: 'commands.help.options.help',
   })
 }

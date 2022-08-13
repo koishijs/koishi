@@ -46,6 +46,8 @@ export function apply(ctx: Context) {
     const { maxUsage, minInterval } = command.config
     let shouldFetchUsage = !!(maxUsage || minInterval)
     for (const { name, notUsage } of Object.values(command._options)) {
+      // --help is not a usage (#772)
+      if (name === 'help') continue
       if (name in options && notUsage) shouldFetchUsage = false
     }
     if (shouldFetchUsage) {
