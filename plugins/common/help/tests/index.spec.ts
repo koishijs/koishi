@@ -163,4 +163,16 @@ describe('Help Command', () => {
     await client.shouldReply('help')
     await client.shouldNotReply('帮助')
   })
+
+  it('checkArgCount (#769)', async () => {
+    const app = new App()
+    app.plugin(help)
+    app.plugin(mock)
+    app.command('test <arg>', { checkArgCount: true }).action(() => 'pass')
+    await app.start()
+
+    const client = app.mock.client('123')
+    await client.shouldReply('test', '缺少参数，输入帮助以查看用法。')
+    await client.shouldReply('test -h', 'test <arg>')
+  })
 })

@@ -42,7 +42,7 @@ export default function validate(ctx: Context) {
         }
       }
     }
-  })
+  }, true)
 
   // check argv
   ctx.before('command/execute', (argv: Argv) => {
@@ -70,5 +70,5 @@ export default function validate(ctx: Context) {
         return sendHint('internal.unknown-option', unknown.join(', '))
       }
     }
-  })
+  }, true)
 }
