@@ -38,7 +38,7 @@
     }
   },
   "peerDependencies": {
-    "koishi": "^4.8.4"
+    "koishi": "^4.8.5"
   },
   "dependencies": {
     "file-type": "^16.5.4"

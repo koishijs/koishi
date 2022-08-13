@@ -293,7 +293,7 @@ class Watcher {
         const states = runtime.children.slice()
 
         try {
-          this.ctx.dispose(runtime.plugin)
+          this.ctx.registry.delete(runtime.plugin)
         } catch (err) {
           logger.warn('failed to dispose plugin at %c\n' + coerce(err), path)
         }
@@ -314,7 +314,7 @@ class Watcher {
       rollback()
       for (const [runtime, filename] of reloads) {
         try {
-          this.ctx.dispose(attempts[filename])
+          this.ctx.registry.delete(attempts[filename])
           runtime.parent.plugin(runtime.plugin, runtime.config)
         } catch (err) {
           logger.warn(err)
