@@ -40,10 +40,8 @@ describe('Session API', () => {
     app.middleware(async (session, next) => {
       if (session.content !== 'prompt') return next()
       await session.send('prompt text')
-      ;(async () => {
-        const message = await session.prompt() || 'nothing'
-        await session.send('received ' + message)
-      })()
+      const message = await session.prompt() || 'nothing'
+      await session.send('received ' + message)
     })
 
     it('session.prompt 1', async () => {

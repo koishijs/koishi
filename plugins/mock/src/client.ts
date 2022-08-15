@@ -38,7 +38,7 @@ export class MessageClient {
     }
   }
 
-  async receive(content: string) {
+  async receive(content: string, count = Infinity) {
     return new Promise<string[]>((resolve) => {
       let resolved = false
       const _resolve = () => {
@@ -54,6 +54,7 @@ export class MessageClient {
         if (await this.app.serial(session, 'before-send', session)) return
         if (!session?.content) return []
         this.replies.push(session.content)
+        if (this.replies.length >= count) _resolve()
         return []
       }
       const dispose = this.app.on('middleware', (session) => {
@@ -64,8 +65,6 @@ export class MessageClient {
   }
 
   async shouldReply(message: string, reply?: string | RegExp | (string | RegExp)[]) {
-    const result = await this.receive(message)
-
     function match(reply: string | RegExp, content: string) {
       return typeof reply === 'string' ? reply === content : reply.test(content)
     }
@@ -75,16 +74,19 @@ export class MessageClient {
     }
 
     if (!reply) {
+      const result = await this.receive(message)
       assert.ok(result.length, format(RECEIVED_NOTHING, message))
       return
     }
 
     if (!Array.isArray(reply)) {
+      const result = await this.receive(message, 1)
       assert.ok(result.length, format(RECEIVED_NOTHING, message))
       assert.ok(result.some(match.bind(null, reply)), format(RECEIVED_OTHERWISE, message, prettify(reply), result))
       return
     }
 
+    const result = await this.receive(message)
     for (const index in reply) {
       const expected = reply[index]
       const actual = result[index]
