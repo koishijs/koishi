@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-repeater",
   "description": "Repeater plugins for Koishi",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -29,6 +29,7 @@
     "repeater"
   ],
   "koishi": {
+    "category": "tool",
     "description": {
       "en": "A repeater plugin with more features",
       "zh": "复读机插件，支持自动复读、打断复读和更多功能"
@@ -41,6 +42,6 @@
     "koishi": "^4.8.5"
   },
   "devDependencies": {
-    "@koishijs/plugin-mock": "^2.0.0"
+    "@koishijs/plugin-mock": "^2.0.2"
   }
 }

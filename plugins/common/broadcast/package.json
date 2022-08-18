@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-broadcast",
   "description": "Broadcast messages in Koishi",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -29,6 +29,7 @@
     "broadcast"
   ],
   "koishi": {
+    "category": "tool",
     "description": {
       "en": "Broadcast messages",
       "zh": "发送广播消息"
@@ -47,6 +48,6 @@
   },
   "devDependencies": {
     "@koishijs/plugin-database-memory": "^1.4.1",
-    "@koishijs/plugin-mock": "^2.0.0"
+    "@koishijs/plugin-mock": "^2.0.2"
   }
 }

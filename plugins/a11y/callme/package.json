@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-callme",
   "description": "Set User Nickname in Koishi",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -29,6 +29,7 @@
     "callme"
   ],
   "koishi": {
+    "category": "tool",
     "description": {
       "en": "Set user nickname",
       "zh": "设置用户昵称"
@@ -47,6 +48,6 @@
   },
   "devDependencies": {
     "@koishijs/plugin-database-memory": "^1.4.1",
-    "@koishijs/plugin-mock": "^2.0.0"
+    "@koishijs/plugin-mock": "^2.0.2"
   }
 }

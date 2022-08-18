@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-feedback",
   "description": "Feedback plugin for Koishi",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -30,6 +30,7 @@
     "locale:zh"
   ],
   "koishi": {
+    "category": "tool",
     "description": {
       "en": "Send feedback to operators",
       "zh": "发送反馈消息 (工单系统)"
@@ -42,7 +43,7 @@
     "koishi": "^4.8.5"
   },
   "devDependencies": {
-    "@koishijs/plugin-mock": "^2.0.0"
+    "@koishijs/plugin-mock": "^2.0.2"
   },
   "dependencies": {
     "@koishijs/helpers": "^1.2.3"

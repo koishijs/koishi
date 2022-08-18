@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-respondent",
   "description": "Respondent plugin for Koishi",
-  "version": "5.0.1",
+  "version": "5.0.2",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -28,6 +28,7 @@
     "plugin"
   ],
   "koishi": {
+    "category": "tool",
     "description": {
       "en": "Support automatic responding through custom rules",
       "zh": "自动回复插件，允许设置一套自定义问答规则"
@@ -37,6 +38,6 @@
     "koishi": "^4.8.5"
   },
   "devDependencies": {
-    "@koishijs/plugin-mock": "^2.0.0"
+    "@koishijs/plugin-mock": "^2.0.2"
   }
 }

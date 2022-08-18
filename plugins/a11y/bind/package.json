@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-bind",
   "description": "Bind User Accounts Across Platforms in Koishi",
-  "version": "1.3.0",
+  "version": "1.3.1",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -29,6 +29,7 @@
     "bind"
   ],
   "koishi": {
+    "category": "tool",
     "description": {
       "en": "Bind user accounts across platforms",
       "zh": "跨平台账户绑定 (绑定后在多个平台将共享同一套用户数据)"
@@ -48,6 +49,6 @@
   },
   "devDependencies": {
     "@koishijs/plugin-database-memory": "^1.4.1",
-    "@koishijs/plugin-mock": "^2.0.0"
+    "@koishijs/plugin-mock": "^2.0.2"
   }
 }

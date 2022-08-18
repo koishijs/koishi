@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-switch",
   "description": "Switch Command Contexts in Koishi",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -30,6 +30,7 @@
     "switch"
   ],
   "koishi": {
+    "category": "tool",
     "description": {
       "en": "Switch command contexts",
       "zh": "修改指令生效的上下文"
@@ -48,7 +49,7 @@
   },
   "devDependencies": {
     "@koishijs/plugin-database-memory": "^1.4.1",
-    "@koishijs/plugin-mock": "^2.0.0"
+    "@koishijs/plugin-mock": "^2.0.2"
   },
   "dependencies": {
     "@koishijs/helpers": "^1.2.3"

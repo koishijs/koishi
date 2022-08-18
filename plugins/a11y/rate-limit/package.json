@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-rate-limit",
   "description": "Set Rate Limits for Commands in Koishi",
-  "version": "1.1.6",
+  "version": "1.1.7",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -29,6 +29,7 @@
     "rate-limit"
   ],
   "koishi": {
+    "category": "tool",
     "description": {
       "en": "Set rate limits for commands",
       "zh": "为指令添加频率限制"
@@ -46,8 +47,8 @@
     "koishi": "^4.8.5"
   },
   "devDependencies": {
-    "@koishijs/plugin-help": "^1.1.1",
-    "@koishijs/plugin-mock": "^2.0.0"
+    "@koishijs/plugin-help": "^1.1.2",
+    "@koishijs/plugin-mock": "^2.0.2"
   },
   "dependencies": {
     "@koishijs/helpers": "^1.2.3"

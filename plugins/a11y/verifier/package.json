@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-verifier",
   "description": "Verify Friend / Guild Requests for Koishi",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -29,6 +29,7 @@
     "verifier"
   ],
   "koishi": {
+    "category": "tool",
     "description": {
       "en": "Verify friend / guild requests",
       "zh": "自动验证好友和群组请求，可设置为通过、拒绝或按权限等级放行"
@@ -38,6 +39,6 @@
     "koishi": "^4.8.5"
   },
   "devDependencies": {
-    "@koishijs/plugin-mock": "^2.0.0"
+    "@koishijs/plugin-mock": "^2.0.2"
   }
 }
