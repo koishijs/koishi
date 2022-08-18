@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-assets-s3",
   "description": "Assets provider based on s3 for Koishi",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -31,6 +31,7 @@
     "server"
   ],
   "koishi": {
+    "category": "storage",
     "description": {
       "en": "S3-based assets service",
       "zh": "基于 S3 的资源转存服务"

@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-database-memory",
   "description": "A in-memory database implementation for Koishi",
-  "version": "1.4.1",
+  "version": "1.4.2",
   "main": "lib/index.cjs",
   "module": "lib/index.mjs",
   "typings": "lib/index.d.ts",
@@ -29,6 +29,7 @@
     "memory"
   ],
   "koishi": {
+    "category": "storage",
     "description": {
       "en": "In-memory database support",
       "zh": "基于内存的数据库支持"

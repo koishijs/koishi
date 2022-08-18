@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-assets-local",
   "description": "A classic assets provider for Koishi",
-  "version": "2.0.7",
+  "version": "2.0.8",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -27,6 +27,7 @@
     "server"
   ],
   "koishi": {
+    "category": "storage",
     "description": {
       "en": "Local assets service",
       "zh": "使用本地目录的存放资源文件"

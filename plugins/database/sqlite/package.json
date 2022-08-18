@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-database-sqlite",
   "description": "SQLite support for Koishi",
-  "version": "1.4.3",
+  "version": "1.4.4",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -30,6 +30,7 @@
     "sqlite"
   ],
   "koishi": {
+    "category": "storage",
     "description": {
       "en": "SQLite support",
       "zh": "SQLite 支持"

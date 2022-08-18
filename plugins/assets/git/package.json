@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-assets-git",
   "description": "A git assets provider for Koishi",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -29,6 +29,7 @@
     "jsdelivr"
   ],
   "koishi": {
+    "category": "storage",
     "description": {
       "en": "Git-based assets service",
       "zh": "基于 Git 的资源转存服务"

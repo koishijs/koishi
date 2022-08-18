@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-database-mysql",
   "description": "MySQL support for Koishi",
-  "version": "4.5.1",
+  "version": "4.5.2",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -29,6 +29,7 @@
     "mysql"
   ],
   "koishi": {
+    "category": "storage",
     "description": {
       "en": "MySQL (MariaDB) support",
       "zh": "MySQL (MariaDB) 支持"
