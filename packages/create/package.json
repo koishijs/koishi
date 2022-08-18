@@ -1,7 +1,7 @@
 {
   "name": "create-koishi",
   "description": "Setup a Koishi application",
-  "version": "5.1.5",
+  "version": "5.2.0",
   "engines": {
     "node": "^12 || >=14"
   },
@@ -23,7 +23,15 @@
   "keywords": [
     "bot",
     "chatbot",
-    "koishi"
+    "koishi",
+    "discord",
+    "telegram",
+    "onebot",
+    "create",
+    "scaffold",
+    "template",
+    "generator",
+    "boilerplate"
   ],
   "devDependencies": {
     "@types/cross-spawn": "^6.0.2",

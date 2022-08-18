@@ -1,5 +1,5 @@
 import { cwd, getPackages } from '@koishijs/scripts'
-import { rm } from 'fs-extra'
+import { rm } from 'fs/promises'
 import cac from 'cac'
 
 const { args } = cac().help().parse()

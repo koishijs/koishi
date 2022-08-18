@@ -101,7 +101,7 @@ function getRef() {
 async function scaffold() {
   console.log(dim('  Scaffolding project in ') + project + dim(' ...'))
 
-  const mirror = argv.mirror || 'https://github.com'
+  const mirror = process.env.GITHUB_MIRROR = argv.mirror || 'https://github.com'
   const template = argv.template || 'koishijs/boilerplate'
   const url = `${mirror}/${template}/archive/${getRef()}.tar.gz`
 
@@ -120,12 +120,27 @@ async function scaffold() {
     process.exit(1)
   }
 
+  writePackageJson()
+  writeEnvironment()
+
+  console.log(green('  Done.\n'))
+}
+
+function writePackageJson() {
   const filename = join(rootDir, 'package.json')
   const meta = require(filename)
   meta.name = project
   fs.writeFileSync(filename, JSON.stringify(meta, null, 2))
+}
 
-  console.log(green('  Done.\n'))
+function writeEnvironment() {
+  const filename = join(rootDir, '.env')
+  if (!fs.existsSync(filename)) return
+  const content = fs.readFileSync(filename, 'utf8').split('\n').map((line) => {
+    if (!line.startsWith('GITHUB_MIRROR = ')) return line
+    return `GITHUB_MIRROR = ${process.env.GITHUB_MIRROR}`
+  }).join('\n')
+  fs.writeFileSync(filename, content)
 }
 
 async function initGit() {
