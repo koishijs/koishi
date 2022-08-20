@@ -332,6 +332,7 @@ namespace Watcher {
   export interface Config extends WatchOptions {
     root?: string
     debounce?: number
+    ignored?: string[]
   }
 
   export const Config: Schema<Config> = Schema.object({

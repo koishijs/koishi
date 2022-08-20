@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/utils",
   "description": "Utilities for Koishi",
-  "version": "6.0.0",
+  "version": "6.1.0",
   "main": "lib/index.cjs",
   "module": "lib/index.mjs",
   "typings": "lib/index.d.ts",
@@ -31,7 +31,8 @@
   },
   "dependencies": {
     "cosmokit": "^1.2.1",
+    "inaba": "^1.1.0",
     "reggol": "^1.0.3",
-    "schemastery": "^3.5.1"
+    "schemastery": "^3.5.3"
   }
 }

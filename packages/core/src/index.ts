@@ -1,3 +1,6 @@
+// @ts-ignore
+import { version } from '../package.json'
+
 export * from '@koishijs/utils'
 export * from 'minato'
 export * from './selector'
@@ -9,5 +12,4 @@ export * from './internal'
 export * from './session'
 export * from './command'
 
-const version: string = require('../package.json').version
 export { version }

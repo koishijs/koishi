@@ -30,9 +30,9 @@
     "chai-shape": "^1.0.0"
   },
   "dependencies": {
-    "@koishijs/utils": "^6.0.0",
-    "@satorijs/core": "^1.0.10",
-    "cordis": "^2.1.0",
+    "@koishijs/utils": "^6.1.0",
+    "@satorijs/core": "^1.0.11",
+    "cordis": "^2.1.1",
     "fastest-levenshtein": "^1.0.14",
     "minato": "^1.2.4"
   }

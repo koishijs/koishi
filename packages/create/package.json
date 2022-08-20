@@ -1,7 +1,7 @@
 {
   "name": "create-koishi",
   "description": "Setup a Koishi application",
-  "version": "5.2.0",
+  "version": "5.2.1",
   "engines": {
     "node": "^12 || >=14"
   },
@@ -34,14 +34,10 @@
     "boilerplate"
   ],
   "devDependencies": {
-    "@types/cross-spawn": "^6.0.2",
     "@types/tar": "^6.1.1",
     "@types/which-pm-runs": "^1.0.0",
-    "@types/yargs-parser": "^21.0.0"
-  },
-  "dependencies": {
+    "@types/yargs-parser": "^21.0.0",
     "axios": "^0.24.0",
-    "cross-spawn": "^7.0.3",
     "kleur": "^4.1.5",
     "prompts": "^2.4.2",
     "tar": "^6.1.11",
