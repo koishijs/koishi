@@ -1,7 +1,7 @@
 {
   "name": "create-koishi",
   "description": "Setup a Koishi application",
-  "version": "5.2.1",
+  "version": "5.2.3",
   "engines": {
     "node": "^12 || >=14"
   },
@@ -36,8 +36,11 @@
   "devDependencies": {
     "@types/tar": "^6.1.1",
     "@types/which-pm-runs": "^1.0.0",
-    "@types/yargs-parser": "^21.0.0",
+    "@types/yargs-parser": "^21.0.0"
+  },
+  "dependencies": {
     "axios": "^0.24.0",
+    "execa": "^5.1.1",
     "kleur": "^4.1.5",
     "prompts": "^2.4.2",
     "tar": "^6.1.11",

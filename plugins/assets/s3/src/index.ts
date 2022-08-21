@@ -89,6 +89,10 @@ namespace S3Assets {
     bucket?: string
     pathPrefix?: string
     publicUrl?: string
+
+    // override s3 client config for clarity
+    region?: string
+    endpoint?: string
   }
 
   export const Config: Schema<Config> = Schema.object({

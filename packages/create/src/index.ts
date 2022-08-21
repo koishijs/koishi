@@ -6,7 +6,7 @@ import parse from 'yargs-parser'
 import prompts from 'prompts'
 import axios from 'axios'
 import which from 'which-pm-runs'
-import { spawn, spawnSync } from 'child_process'
+import spawn from 'execa'
 import { basename, join, relative } from 'path'
 import { extract } from 'tar'
 import kleur from 'kleur'
@@ -149,7 +149,7 @@ async function initGit() {
   if (!await hasGit || argv.yes) return
   const yes = await confirm('Initialize Git for version control?')
   if (!yes) return
-  spawnSync('git', ['init'], { stdio: 'ignore', cwd: rootDir })
+  spawn.sync('git', ['init'], { stdio: 'ignore', cwd: rootDir })
   console.log(kleur.green('  Done.\n'))
 }
 
@@ -163,8 +163,8 @@ async function install() {
     // https://docs.npmjs.com/cli/v8/commands/npm-install
     // with the --production flag or `NODE_ENV` set to production,
     // npm will not install modules listed in devDependencies
-    spawnSync(agent, ['install', ...argv.prod ? ['--production'] : []], { stdio: 'inherit', cwd: rootDir })
-    spawnSync(agent, ['run', 'start'], { stdio: 'inherit', cwd: rootDir })
+    spawn.sync(agent, ['install', ...argv.prod ? ['--production'] : []], { stdio: 'inherit', cwd: rootDir })
+    spawn.sync(agent, ['run', 'start'], { stdio: 'inherit', cwd: rootDir })
   } else {
     console.log(kleur.dim('  You can start it later by:\n'))
     if (rootDir !== cwd) {
