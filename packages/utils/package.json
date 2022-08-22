@@ -32,7 +32,7 @@
   "dependencies": {
     "cosmokit": "^1.2.1",
     "inaba": "^1.1.0",
-    "reggol": "^1.0.3",
+    "reggol": "^1.0.4",
     "schemastery": "^3.5.3"
   }
 }
