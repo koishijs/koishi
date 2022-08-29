@@ -32,6 +32,14 @@ export function enableHelp<U extends User.Field, G extends Channel.Field, A exte
   })
 }
 
+function executeHelp(session: Session, name: string) {
+  if (!session.app.$commander.getCommand('help')) return
+  return session.execute({
+    name: 'help',
+    args: [name],
+  })
+}
+
 export const name = 'help'
 
 export function apply(ctx: Context, config: Config = {}) {
@@ -45,6 +53,16 @@ export function apply(ctx: Context, config: Config = {}) {
     ctx.$commander._commands.forEach(cmd => cmd.use(enableHelp))
     ctx.on('command-added', cmd => cmd.use(enableHelp))
   }
+
+  ctx.before('command/execute', (argv) => {
+    const { command, options, session } = argv
+    if (options['help'] && command._options.help) {
+      return executeHelp(session, command.name)
+    }
+
+    if (command['_actions'].length) return
+    return executeHelp(session, command.name)
+  })
 
   const $ = ctx.$commander
   function findCommand(target: string) {

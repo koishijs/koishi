@@ -270,12 +270,17 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
     const { parsed, subtype } = this
     // guild message should have prefix or appel to be interpreted as a command call
     if (argv.root && subtype !== 'private' && parsed.prefix === null && !parsed.appel) return
-    if (!argv.tokens.length) return
-    const cmd = this.app.$commander.resolve(argv.tokens[0].content)
-    if (cmd) {
+    const segments: string[] = []
+    while (argv.tokens.length) {
+      const { content } = argv.tokens[0]
+      segments.push(content)
+      const command = this.app.$commander.resolve(segments.join('.'))
+      if (!command) break
       argv.tokens.shift()
-      return argv.command = cmd
+      argv.command = command
+      if (command['_actions'].length) break
     }
+    return argv.command
   }
 
   resolve(argv: Argv) {
