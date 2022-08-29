@@ -46,7 +46,7 @@
     "koishi": "^4.8.6"
   },
   "devDependencies": {
-    "@koishijs/plugin-database-memory": "^1.4.2",
+    "@koishijs/plugin-database-memory": "^1.5.0",
     "@koishijs/plugin-mock": "^2.0.2"
   }
 }

@@ -2,7 +2,7 @@
 import { version } from '../package.json'
 
 export * from '@koishijs/utils'
-export * from 'minato'
+export * from '@minatojs/core'
 export * from './selector'
 export * from './bot'
 export * from './context'

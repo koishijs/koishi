@@ -1,6 +1,6 @@
 import * as utils from '@koishijs/utils'
 import { defineProperty, Dict, MaybeArray } from '@koishijs/utils'
-import { Database, Driver, Result, Update } from 'minato'
+import { Database, Driver, Result, Update } from '@minatojs/core'
 import { Context, Plugin } from './context'
 
 declare module './context' {

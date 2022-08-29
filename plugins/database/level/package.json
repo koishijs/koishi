@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-database-level",
   "description": "LevelDB implementation for Koishi",
-  "version": "1.4.2",
+  "version": "1.5.0",
   "main": "lib/index.cjs",
   "module": "lib/index.mjs",
   "typings": "lib/index.d.ts",
@@ -45,6 +45,6 @@
     "koishi": "^4.8.6"
   },
   "dependencies": {
-    "@minatojs/driver-level": "^1.1.1"
+    "@minatojs/driver-level": "^1.2.0"
   }
 }
