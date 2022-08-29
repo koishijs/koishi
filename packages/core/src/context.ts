@@ -17,7 +17,7 @@ export type Runtime = cordis.Runtime<Context>
 
 export const Service = cordis.Service<Context>
 
-export { Disposable } from 'cordis'
+export type { Disposable } from 'cordis'
 
 export interface Events<C extends Context = Context> extends satori.Events<C> {
   'appellation'(name: string, session: Session): string
