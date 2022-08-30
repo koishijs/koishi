@@ -2,13 +2,13 @@
 
 // @ts-ignore
 import { version } from '../package.json'
+import { execSync } from 'child_process'
+import { basename, join, relative } from 'path'
+import { extract } from 'tar'
 import parse from 'yargs-parser'
 import prompts from 'prompts'
 import axios from 'axios'
 import which from 'which-pm-runs'
-import spawn from 'execa'
-import { basename, join, relative } from 'path'
-import { extract } from 'tar'
 import kleur from 'kleur'
 import * as fs from 'fs'
 
@@ -28,18 +28,13 @@ const argv = parse(process.argv.slice(2), {
   },
 })
 
-const hasGit = supports('git', ['--version'])
-
-function supports(command: string, args: string[] = []) {
-  return new Promise<boolean>((resolve) => {
-    const child = spawn(command, args, { stdio: 'ignore' })
-    child.on('exit', (code) => {
-      resolve(!code)
-    })
-    child.on('error', () => {
-      resolve(false)
-    })
-  })
+function supports(command: string) {
+  try {
+    execSync(command)
+    return true
+  } catch {
+    return false
+  }
 }
 
 async function getName() {
@@ -146,10 +141,10 @@ function writeEnvironment() {
 }
 
 async function initGit() {
-  if (!await hasGit || argv.yes) return
+  if (argv.yes || !supports('git --version')) return
   const yes = await confirm('Initialize Git for version control?')
   if (!yes) return
-  spawn.sync('git', ['init'], { stdio: 'ignore', cwd: rootDir })
+  execSync('git init', { stdio: 'ignore', cwd: rootDir })
   console.log(kleur.green('  Done.\n'))
 }
 
@@ -163,8 +158,8 @@ async function install() {
     // https://docs.npmjs.com/cli/v8/commands/npm-install
     // with the --production flag or `NODE_ENV` set to production,
     // npm will not install modules listed in devDependencies
-    spawn.sync(agent, ['install', ...argv.prod ? ['--production'] : []], { stdio: 'inherit', cwd: rootDir })
-    spawn.sync(agent, ['run', 'start'], { stdio: 'inherit', cwd: rootDir })
+    execSync([agent, 'install', ...argv.prod ? ['--production'] : []].join(' '), { stdio: 'inherit', cwd: rootDir })
+    execSync([agent, 'run', 'start'].join(' '), { stdio: 'inherit', cwd: rootDir })
   } else {
     console.log(kleur.dim('  You can start it later by:\n'))
     if (rootDir !== cwd) {
