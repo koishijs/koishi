@@ -79,6 +79,4 @@ namespace addons {
 
 app.plugin(addons, app.options)
 
-app.start().then(() => {
-  loader.diagnose()
-}, handleException)
+app.start().catch(handleException)

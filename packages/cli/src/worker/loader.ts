@@ -14,10 +14,6 @@ declare module 'koishi' {
 }
 
 declare module 'cordis' {
-  interface Runtime {
-    [Loader.kWarning]?: boolean
-  }
-
   // Theoretically, these properties will only appear on `Fork`.
   // We define them directly on `State` for typing convenience.
   interface State<C> {
@@ -120,10 +116,6 @@ export default class Loader extends ConfigLoader<Context.Config> {
     const plugin = this.resolvePlugin(name)
     if (!plugin) return
 
-    if (this.app.lifecycle.isActive) {
-      this.app.lifecycle.flush().then(() => this.check(name))
-    }
-
     resolveConfig(plugin, config)
     return parent.plugin(plugin, this.interpolate(config))
   }
@@ -161,7 +153,6 @@ export default class Loader extends ConfigLoader<Context.Config> {
       fork.dispose()
       delete ctx.state[Loader.kRecord][key]
       logger.info(`unload plugin %c`, key)
-      this.diagnose(true)
     }
   }
 
@@ -190,24 +181,6 @@ export default class Loader extends ConfigLoader<Context.Config> {
     })
 
     return app
-  }
-
-  diagnose(allowCache = false) {
-    for (const name in this.cache) {
-      this.check(name, allowCache)
-    }
-  }
-
-  private check(name: string, allowCache = false) {
-    const plugin = this.resolvePlugin(name)
-    const runtime = this.app.registry.get(plugin)
-    if (!runtime) return
-
-    const missing = runtime.using.filter(key => !this.app[key])
-    const oldWarning = runtime[Loader.kWarning]
-    runtime[Loader.kWarning] = missing.length > 0
-    if (!runtime[Loader.kWarning] || allowCache && oldWarning) return
-    this.app.logger('diagnostic').warn('plugin %c is missing required service %c', name, missing.join(', '))
   }
 
   fullReload(): never {

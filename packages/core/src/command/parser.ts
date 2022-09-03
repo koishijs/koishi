@@ -227,7 +227,6 @@ export namespace Argv {
     builtin[name] = { ...options, transform }
   }
 
-  createDomain('rawtext', source => source)
   createDomain('string', source => source)
   createDomain('text', source => source, { greedy: true })
   createDomain('rawtext', source => segment.unescape(source), { greedy: true })
