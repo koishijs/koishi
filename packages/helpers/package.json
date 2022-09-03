@@ -1,9 +1,16 @@
 {
   "name": "@koishijs/helpers",
   "description": "Helper functions for Koishi",
-  "version": "1.2.3",
-  "main": "lib/index.js",
+  "version": "1.2.4",
+  "main": "lib/index.cjs",
   "typings": "lib/index.d.ts",
+  "exports": {
+    ".": {
+      "require": "./lib/index.cjs",
+      "import": "./lib/index.mjs"
+    },
+    "./package.json": "./package.json"
+  },
   "files": [
     "lib"
   ],

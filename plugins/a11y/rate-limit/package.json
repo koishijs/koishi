@@ -47,10 +47,10 @@
     "koishi": "^4.8.7"
   },
   "devDependencies": {
-    "@koishijs/plugin-help": "^1.2.0",
+    "@koishijs/plugin-help": "^1.2.1",
     "@koishijs/plugin-mock": "^2.0.2"
   },
   "dependencies": {
-    "@koishijs/helpers": "^1.2.3"
+    "@koishijs/helpers": "^1.2.4"
   }
 }

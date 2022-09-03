@@ -51,6 +51,6 @@
     "@koishijs/plugin-mock": "^2.0.2"
   },
   "dependencies": {
-    "@koishijs/helpers": "^1.2.3"
+    "@koishijs/helpers": "^1.2.4"
   }
 }

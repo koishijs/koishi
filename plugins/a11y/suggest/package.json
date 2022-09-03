@@ -1,9 +1,16 @@
 {
   "name": "@koishijs/plugin-suggest",
   "description": "Suggestion Plugin for Koishi",
-  "version": "1.1.2",
-  "main": "lib/index.js",
+  "version": "1.1.3",
+  "main": "lib/index.cjs",
   "typings": "lib/index.d.ts",
+  "exports": {
+    ".": {
+      "require": "./lib/index.cjs",
+      "import": "./lib/index.mjs"
+    },
+    "./package.json": "./package.json"
+  },
   "files": [
     "lib"
   ],
