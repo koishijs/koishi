@@ -131,21 +131,3 @@ export function stripModifier(config: any) {
   }
   return result
 }
-
-export function deepEqual(a: any, b: any) {
-  if (a === b) return true
-  if (typeof a !== typeof b) return false
-  if (typeof a !== 'object') return false
-  if (!a || !b) return false
-
-  // check array
-  if (Array.isArray(a)) {
-    if (!Array.isArray(b) || a.length !== b.length) return false
-    return a.every((item, index) => deepEqual(item, b[index]))
-  } else if (Array.isArray(b)) {
-    return false
-  }
-
-  // check object
-  return Object.keys({ ...a, ...b }).every(key => deepEqual(a[key], b[key]))
-}

@@ -39,7 +39,7 @@
     "@types/throttle-debounce": "^2.1.0"
   },
   "dependencies": {
-    "@koishijs/loader": "^1.0.1",
+    "@koishijs/loader": "^2.0.0",
     "cac": "^6.7.12",
     "chokidar": "^3.5.3",
     "dotenv": "^16.0.1",

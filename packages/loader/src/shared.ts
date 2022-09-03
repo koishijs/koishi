@@ -1,15 +1,19 @@
-import { resolve } from 'path'
-import { Context, Dict, interpolate, Logger, Plugin, valueMap } from 'koishi'
+import { Context, Dict, Logger, Plugin } from 'koishi'
 import { resolveConfig } from 'cordis'
 import { patch, stripModifier } from './utils'
-import ConfigLoader from '@koishijs/loader'
-import * as dotenv from 'dotenv'
-import ns from 'ns-require'
+
+export * from './utils'
 
 declare module 'koishi' {
   interface Context {
     loader: Loader
     delimiter: symbol
+  }
+
+  namespace Context {
+    interface Config {
+      plugins?: Dict
+    }
   }
 }
 
@@ -17,7 +21,7 @@ declare module 'cordis' {
   // Theoretically, these properties will only appear on `Fork`.
   // We define them directly on `State` for typing convenience.
   interface State<C> {
-    [Loader.update]?: boolean
+    [Loader.kUpdate]?: boolean
     [Loader.kRecord]?: Dict<Fork<C>>
     alias?: string
   }
@@ -26,10 +30,6 @@ declare module 'cordis' {
 Context.service('loader')
 
 const logger = new Logger('app')
-
-const context = {
-  env: process.env,
-}
 
 const group: Plugin.Object = {
   name: 'group',
@@ -43,74 +43,25 @@ const group: Plugin.Object = {
   },
 }
 
-export default class Loader extends ConfigLoader<Context.Config> {
-  static readonly unique = Symbol.for('koishi.loader.unique')
-  static readonly update = Symbol.for('koishi.loader.update')
+export abstract class Loader {
+  static readonly kUpdate = Symbol.for('koishi.loader.update')
   static readonly kRecord = Symbol.for('koishi.loader.record')
-  static readonly kWarning = Symbol.for('koishi.loader.warning')
+  static readonly exitCode = 51
 
-  app: Context
-  config: Context.Config
-  entry: Context
-  cache: Dict<string> = {}
-  envfile: string
-  scope: ns.Scope
+  public app: Context
+  public baseDir: string
+  public config: Context.Config
+  public entry: Context
+  public suspend = false
+  public filename: string
+  public envfile: string
+  public cache: Dict<string> = Object.create(null)
 
-  constructor() {
-    super(process.env.KOISHI_CONFIG_FILE)
-    this.envfile = resolve(this.dirname, '.env')
-    this.scope = ns({
-      namespace: 'koishi',
-      prefix: 'plugin',
-      official: 'koishijs',
-      dirname: this.dirname,
-    })
-  }
-
-  interpolate(source: any) {
-    if (typeof source === 'string') {
-      return interpolate(source, context, /\$\{\{(.+?)\}\}/g)
-    } else if (!source || typeof source !== 'object') {
-      return source
-    } else if (Array.isArray(source)) {
-      return source.map(item => this.interpolate(item))
-    } else {
-      return valueMap(source, item => this.interpolate(item))
-    }
-  }
-
-  readConfig() {
-    // load .env file into process.env
-    dotenv.config({ path: this.envfile })
-
-    // load original config file
-    const config = super.readConfig()
-
-    let resolved = new Context.Config(config)
-    if (this.writable) {
-      // schemastery may change original config
-      // so we need to validate config twice
-      resolved = new Context.Config(this.interpolate(config))
-    }
-
-    return resolved
-  }
-
-  writeConfig() {
-    // prevent hot reload when it's being written
-    if (this.app.watcher) this.app.watcher.suspend = true
-    super.writeConfig()
-  }
-
-  resolvePlugin(name: string) {
-    try {
-      this.cache[name] ||= this.scope.resolve(name)
-    } catch (err) {
-      logger.error(err.message)
-      return
-    }
-    return ns.unwrapExports(require(this.cache[name]))
-  }
+  abstract readConfig(): Context.Config
+  abstract writeConfig(): void
+  abstract interpolate(config: any): any
+  abstract resolvePlugin(name: string): any
+  abstract fullReload(): void
 
   private forkPlugin(name: string, config: any, parent: Context) {
     const plugin = this.resolvePlugin(name)
@@ -125,7 +76,7 @@ export default class Loader extends ConfigLoader<Context.Config> {
     if (fork) {
       logger.info(`reload plugin %c`, key)
       patch(fork.parent, config)
-      fork[Loader.update] = true
+      fork[Loader.kUpdate] = true
       fork.update(config)
     } else {
       logger.info(`apply plugin %c`, key)
@@ -159,14 +110,14 @@ export default class Loader extends ConfigLoader<Context.Config> {
   createApp() {
     const app = this.app = new Context(this.config)
     app.loader = this
-    app.baseDir = this.dirname
+    app.baseDir = this.baseDir
     app.state[Loader.kRecord] = Object.create(null)
     this.entry = this.reloadPlugin(app, 'group:entry', this.config.plugins).ctx
 
     app.on('internal/update', (fork, value) => {
       // prevent hot reload when config file is being written
-      if (fork[Loader.update]) {
-        fork[Loader.update] = false
+      if (fork[Loader.kUpdate]) {
+        fork[Loader.kUpdate] = false
         return
       }
 
@@ -181,10 +132,5 @@ export default class Loader extends ConfigLoader<Context.Config> {
     })
 
     return app
-  }
-
-  fullReload(): never {
-    logger.info('trigger full reload')
-    process.exit(51)
   }
 }

@@ -1,10 +1,10 @@
 import { Context, Dict, Logger, Schema, Time } from 'koishi'
+import Loader from '@koishijs/loader'
 import * as daemon from './daemon'
 import * as logger from './logger'
-import Loader from './loader'
 import Watcher from './watcher'
 
-export * from './utils'
+export * from '@koishijs/loader'
 
 export { Loader, Watcher }
 

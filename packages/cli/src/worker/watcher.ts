@@ -2,9 +2,26 @@ import { coerce, Context, Dict, Logger, makeArray, Runtime, Schema } from 'koish
 import { FSWatcher, watch, WatchOptions } from 'chokidar'
 import { relative, resolve } from 'path'
 import { debounce } from 'throttle-debounce'
-import { deepEqual, patch } from './utils'
+import Loader, { patch } from '@koishijs/loader'
 import ns from 'ns-require'
-import Loader from './loader'
+
+export function deepEqual(a: any, b: any) {
+  if (a === b) return true
+  if (typeof a !== typeof b) return false
+  if (typeof a !== 'object') return false
+  if (!a || !b) return false
+
+  // check array
+  if (Array.isArray(a)) {
+    if (!Array.isArray(b) || a.length !== b.length) return false
+    return a.every((item, index) => deepEqual(item, b[index]))
+  } else if (Array.isArray(b)) {
+    return false
+  }
+
+  // check object
+  return Object.keys({ ...a, ...b }).every(key => deepEqual(a[key], b[key]))
+}
 
 function loadDependencies(filename: string, ignored: Set<string>) {
   const dependencies = new Set<string>()
@@ -20,11 +37,6 @@ function loadDependencies(filename: string, ignored: Set<string>) {
 const logger = new Logger('watch')
 
 class Watcher {
-  /**
-   * whether the config file is being written
-   */
-  public suspend = false
-
   private root: string
   private watcher: FSWatcher
 
@@ -63,7 +75,7 @@ class Watcher {
   start() {
     const { loader } = this.ctx
     const { root = '', ignored = [] } = this.config
-    this.root = resolve(loader.dirname, root)
+    this.root = resolve(loader.baseDir, root)
     this.watcher = watch(this.root, {
       ...this.config,
       ignored: ['**/node_modules/**', '**/.git/**', '**/logs/**', ...makeArray(ignored)],
@@ -75,8 +87,8 @@ class Watcher {
 
     this.watcher.on('change', (path) => {
       const isEntry = path === loader.filename || path === loader.envfile
-      if (this.suspend && isEntry) {
-        this.suspend = false
+      if (loader.suspend && isEntry) {
+        loader.suspend = false
         return
       }
 
