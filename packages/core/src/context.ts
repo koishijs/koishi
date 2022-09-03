@@ -17,6 +17,8 @@ export type Runtime = cordis.Runtime<Context>
 
 export const Service = cordis.Service<Context>
 
+export { isApplicable, isBailed, isConstructor, resolveConfig } from 'cordis'
+
 export type { Disposable } from 'cordis'
 
 export interface Events<C extends Context = Context> extends satori.Events<C> {

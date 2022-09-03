@@ -48,7 +48,7 @@ process.on('unhandledRejection', (error) => {
   new Logger('app').warn(error)
 })
 
-const loader = new Loader()
+const loader = new Loader(process.env.KOISHI_CONFIG_FILE)
 const config = loader.readConfig()
 
 logger.prepare(config.logger)
@@ -60,8 +60,6 @@ if (config.timezoneOffset !== undefined) {
 if (config.stackTraceLimit !== undefined) {
   Error.stackTraceLimit = config.stackTraceLimit
 }
-
-const app = loader.createApp()
 
 namespace addons {
   export const name = 'CLI'
@@ -77,6 +75,10 @@ namespace addons {
   }
 }
 
-app.plugin(addons, app.options)
+async function start() {
+  const app = await loader.createApp()
+  app.plugin(addons, app.options)
+  await app.start()
+}
 
-app.start().catch(handleException)
+start().catch(handleException)

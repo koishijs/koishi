@@ -2,20 +2,16 @@
   "name": "@koishijs/loader",
   "description": "Config Loader for Koishi",
   "version": "2.0.0",
-  "main": "lib/index.js",
+  "main": "lib/node.js",
   "typings": "lib/index.d.ts",
   "exports": {
     ".": {
-      "node": "./lib/index.js",
-      "types": "./lib/index.d.ts"
+      "node": "./lib/node.js",
+      "browser": "./lib/browser.mjs"
     },
     "./shared": {
       "require": "./lib/shared.js",
-      "types": "./lib/shared.d.ts"
-    },
-    "./utils": {
-      "require": "./lib/utils.js",
-      "types": "./lib/utils.d.ts"
+      "import": "./lib/shared.mjs"
     },
     "./package.json": "./package.json"
   },
@@ -40,10 +36,17 @@
     "loader",
     "config"
   ],
+  "peerDependencies": {
+    "koishi": "^4.8.7"
+  },
   "devDependencies": {
-    "@types/js-yaml": "^4.0.5"
+    "@koishijs/registry": "^4.0.1",
+    "@types/js-yaml": "^4.0.5",
+    "koishi": "^4.8.7"
   },
   "dependencies": {
-    "js-yaml": "^4.1.0"
+    "dotenv": "^16.0.1",
+    "js-yaml": "^4.1.0",
+    "ns-require": "^1.1.4"
   }
 }

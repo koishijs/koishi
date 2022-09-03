@@ -1,6 +1,10 @@
 import { Context, Dict, makeArray, MaybeArray } from 'koishi'
 
-interface Modifier {
+export function unwrapExports(module: any) {
+  return module?.default || module
+}
+
+export interface Modifier {
   $filter?: Selection
   $isolate?: string[]
 }

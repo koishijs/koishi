@@ -1,5 +1,4 @@
-import { Context, Dict, Logger, Plugin } from 'koishi'
-import { resolveConfig } from 'cordis'
+import { Context, Dict, Logger, Plugin, resolveConfig } from 'koishi'
 import { patch, stripModifier } from './utils'
 
 export * from './utils'
@@ -59,19 +58,23 @@ export abstract class Loader {
 
   abstract readConfig(): Context.Config
   abstract writeConfig(): void
-  abstract interpolate(config: any): any
-  abstract resolvePlugin(name: string): any
+  abstract resolvePlugin(name: string): Promise<any>
+  abstract getPluginMeta(name: string): Promise<any>
   abstract fullReload(): void
 
-  private forkPlugin(name: string, config: any, parent: Context) {
-    const plugin = this.resolvePlugin(name)
+  interpolate(source: any) {
+    return source
+  }
+
+  private async forkPlugin(name: string, config: any, parent: Context) {
+    const plugin = await this.resolvePlugin(name)
     if (!plugin) return
 
     resolveConfig(plugin, config)
     return parent.plugin(plugin, this.interpolate(config))
   }
 
-  reloadPlugin(parent: Context, key: string, config: any) {
+  async reloadPlugin(parent: Context, key: string, config: any) {
     let fork = parent.state[Loader.kRecord][key]
     if (fork) {
       logger.info(`reload plugin %c`, key)
@@ -89,7 +92,7 @@ export abstract class Loader {
         fork = ctx.plugin(group, config)
       } else {
         config = stripModifier(config)
-        fork = this.forkPlugin(name, config, parent)
+        fork = await this.forkPlugin(name, config, parent)
       }
       if (!fork) return
       fork.alias = key.slice(name.length + 1)
@@ -107,12 +110,13 @@ export abstract class Loader {
     }
   }
 
-  createApp() {
+  async createApp() {
     const app = this.app = new Context(this.config)
     app.loader = this
     app.baseDir = this.baseDir
     app.state[Loader.kRecord] = Object.create(null)
-    this.entry = this.reloadPlugin(app, 'group:entry', this.config.plugins).ctx
+    const fork = await this.reloadPlugin(app, 'group:entry', this.config.plugins)
+    this.entry = fork.ctx
 
     app.on('internal/update', (fork, value) => {
       // prevent hot reload when config file is being written
