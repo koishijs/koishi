@@ -31,8 +31,8 @@ export function assertProperty<O, K extends keyof O & string>(config: O, key: K)
 }
 
 export function coerce(val: any) {
-  const { message, stack } = val instanceof Error ? val : new Error(val as any)
-  const lines = stack ? stack.split('\n') : []
+  const { message, stack } = val instanceof Error && val.stack ? val : new Error(val as any)
+  const lines = stack.split('\n')
   const index = lines.findIndex(line => line.endsWith(message))
   return lines.slice(index).join('\n')
 }
