@@ -31,6 +31,7 @@ export function assertProperty<O, K extends keyof O & string>(config: O, key: K)
 }
 
 export function coerce(val: any) {
+  // resolve error when stack is undefined
   const { message, stack } = val instanceof Error && val.stack ? val : new Error(val as any)
   const lines = stack.split('\n')
   const index = lines.findIndex(line => line.endsWith(message))
