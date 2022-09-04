@@ -17,6 +17,7 @@ export function apply(ctx: Context) {
 
   ctx.command('callme [name:text]')
     .userFields(['id', 'name'])
+    .alias('nn')
     .shortcut('叫我', { prefix: true, fuzzy: true })
     .action(async ({ session }, name) => {
       const { user } = session
