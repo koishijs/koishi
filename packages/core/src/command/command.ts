@@ -1,4 +1,5 @@
-import { Awaitable, coerce, Dict, Logger, remove, Schema } from '@koishijs/utils'
+import { Awaitable, coerce, Dict, isNullable, Logger, remove, Schema } from '@koishijs/utils'
+import { segment } from '@satorijs/core'
 import { Disposable } from 'cordis'
 import { Context } from '../context'
 import { Argv } from './parser'
@@ -26,7 +27,7 @@ export namespace Command {
   }
 
   export type Action<U extends User.Field = never, G extends Channel.Field = never, A extends any[] = any[], O extends {} = {}>
-    = (argv: Argv<U, G, A, O>, ...args: A) => Awaitable<void | string>
+    = (argv: Argv<U, G, A, O>, ...args: A) => Awaitable<void | string | segment>
 
   export type Usage<U extends User.Field = never, G extends Channel.Field = never>
     = string | ((session: Session<U, G>) => Awaitable<string>)
@@ -225,7 +226,7 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
     return callback(this, ...args)
   }
 
-  async execute(argv: Argv<U, G, A, O>, fallback = Next.compose): Promise<string> {
+  async execute(argv: Argv<U, G, A, O>, fallback = Next.compose): Promise<string | segment> {
     argv.command ??= this
     argv.args ??= [] as any
     argv.options ??= {} as any
@@ -262,7 +263,7 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
 
     try {
       const result = await argv.next()
-      if (typeof result === 'string') return result
+      if (!isNullable(result)) return result
     } catch (error) {
       if (index === length) throw error
       const stack = coerce(error)

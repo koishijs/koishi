@@ -1,6 +1,7 @@
 import * as utils from '@koishijs/utils'
 import { defineProperty, Dict, MaybeArray } from '@koishijs/utils'
 import { Database, Driver, Result, Update } from '@minatojs/core'
+import { segment } from '@satorijs/core'
 import { Context, Plugin } from './context'
 
 declare module './context' {
@@ -12,8 +13,8 @@ declare module './context' {
     database: DatabaseService
     model: DatabaseService
     getSelfIds(type?: string, assignees?: string[]): Dict<string[]>
-    broadcast(content: string, forced?: boolean): Promise<string[]>
-    broadcast(channels: readonly string[], content: string, forced?: boolean): Promise<string[]>
+    broadcast(content: string | segment, forced?: boolean): Promise<string[]>
+    broadcast(channels: readonly string[], content: string | segment, forced?: boolean): Promise<string[]>
   }
 }
 
@@ -153,10 +154,10 @@ export class DatabaseService extends Database<Tables> {
     return this.create('channel', { platform, id, ...data })
   }
 
-  async broadcast(...args: [string, boolean?] | [readonly string[], string, boolean?]) {
+  async broadcast(...args: [string | segment, boolean?] | [readonly string[], string | segment, boolean?]) {
     let channels: string[]
     if (Array.isArray(args[0])) channels = args.shift() as any
-    const [content, forced] = args as [string, boolean]
+    const [content, forced] = args as [string | segment, boolean]
     if (!content) return []
 
     const data = await this.getAssignedChannels(['id', 'assignee', 'flag', 'platform', 'guildId'])

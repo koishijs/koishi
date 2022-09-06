@@ -6,7 +6,7 @@ import * as satori from '@satorijs/core'
 declare module '@satorijs/core' {
   interface Bot {
     getGuildMemberMap(guildId: string): Promise<Dict<string>>
-    broadcast(channels: (string | [string, string])[], content: string, delay?: number): Promise<string[]>
+    broadcast(channels: (string | [string, string])[], content: string | satori.segment, delay?: number): Promise<string[]>
   }
 }
 

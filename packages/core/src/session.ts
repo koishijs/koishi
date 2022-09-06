@@ -17,7 +17,7 @@ export type Computed<T> = T | ((session: Session) => T)
 
 interface Task {
   delay: number
-  content: string
+  content: string | satori.segment
   resolve(ids: string[]): void
   reject(reason: any): void
 }
@@ -34,7 +34,6 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
   public parsed?: Parsed
   public scope?: string
 
-  private _promise: Promise<string>
   private _queuedTasks: Task[]
   private _queuedTimeout: NodeJS.Timeout
 
@@ -48,24 +47,6 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
     defineProperty(this, '_queuedTimeout', null)
   }
 
-  private async _preprocess() {
-    let node: satori.segment.Parsed
-    let content = this.content.trim()
-    // eslint-disable-next-line no-cond-assign
-    if (node = satori.segment.from(content, { type: 'quote', caret: true })) {
-      content = content.slice(node.capture[0].length).trimStart()
-      this.quote = await this.bot.getMessage(node.data.channelId || this.channelId, node.data.id).catch((error) => {
-        logger.warn(error)
-        return undefined
-      })
-    }
-    return content
-  }
-
-  async preprocess() {
-    return this._promise ||= this._preprocess()
-  }
-
   get username(): string {
     const defaultName: string = this.user && this.user['name']
       ? this.user['name']
@@ -75,7 +56,7 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
     return this.app.chain('appellation', defaultName, this)
   }
 
-  async send(content: string) {
+  async send(content: string | satori.segment) {
     if (!content) return
     return this.bot.sendMessage(this.channelId, content, this.guildId).catch<string[]>((error) => {
       logger.warn(error)
@@ -99,11 +80,12 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
     this._queuedTimeout = setTimeout(() => this._next(), task.delay)
   }
 
-  async sendQueued(content: string, delay?: number) {
-    if (!content) return
+  async sendQueued(content: string | satori.segment, delay?: number) {
+    const text = satori.segment.normalize(content).toString(true)
+    if (!text) return
     if (isNullable(delay)) {
       const { message, character } = this.app.options.delay
-      delay = Math.max(message, character * content.length)
+      delay = Math.max(message, character * text.length)
     }
     return new Promise<string[]>((resolve, reject) => {
       this._queuedTasks.push({ content, delay, resolve, reject })
@@ -340,7 +322,10 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
 
     return this.withScope(`commands.${command.name}.messages`, async () => {
       const result = await command.execute(argv as Argv, next as Next)
-      if (!shouldEmit) return result
+      if (!shouldEmit) {
+        if (typeof result === 'string') return result
+        return satori.segment(null, result).toString()
+      }
       await this.send(result)
       return ''
     })

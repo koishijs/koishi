@@ -1,4 +1,5 @@
 import { Awaitable, coerce, defineProperty, Dict, escapeRegExp, makeArray } from '@koishijs/utils'
+import { segment } from '@satorijs/core'
 import { Computed, Session } from './session'
 import { Channel, User } from './database'
 import { Context } from './context'
@@ -24,14 +25,14 @@ function createLeadingRE(patterns: string[], prefix = '', suffix = '') {
   return patterns.length ? new RegExp(`^${prefix}(${patterns.map(escapeRegExp).join('|')})${suffix}`) : /$^/
 }
 
-export type Next = (next?: Next.Callback) => Promise<void | string>
-export type Middleware = (session: Session, next: Next) => Awaitable<void | string>
+export type Next = (next?: Next.Callback) => Promise<void | string | segment>
+export type Middleware = (session: Session, next: Next) => Awaitable<void | string | segment>
 
 export namespace Next {
   export const MAX_DEPTH = 64
 
-  export type Queue = ((next?: Next) => Awaitable<void | string>)[]
-  export type Callback = void | string | ((next?: Next) => Awaitable<void | string>)
+  export type Queue = ((next?: Next) => Awaitable<void | string | segment>)[]
+  export type Callback = void | string | ((next?: Next) => Awaitable<void | string | segment>)
 
   export async function compose(callback: Callback, next?: Next) {
     return typeof callback === 'function' ? callback(next) : callback
@@ -97,13 +98,13 @@ export class Internal {
   private async _process(session: Session, next: Next) {
     let capture: RegExpMatchArray
     let atSelf = false, appel = false, prefix: string = null
-    const pattern = /^\[CQ:(\w+)((,\w+=[^,\]]*)*)\]/
-    let content = await session.preprocess()
+    let content = session.content.trim()
+    session.elements ??= segment.parse(content)
 
     // strip prefix
-    if (session.subtype !== 'private' && (capture = content.match(pattern)) && capture[1] === 'at' && capture[2].includes('id=' + session.selfId)) {
+    if (session.subtype !== 'private' && session.elements[0]?.type === 'at' && session.elements[0].attrs.id === session.selfId) {
       atSelf = appel = true
-      content = content.slice(capture[0].length).trimStart()
+      content = session.elements.slice(1).join('').trimStart()
       // eslint-disable-next-line no-cond-assign
     } else if (capture = content.match(this._nameRE)) {
       appel = true

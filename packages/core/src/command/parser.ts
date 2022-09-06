@@ -48,6 +48,20 @@ export namespace Argv {
 
   interpolate('$(', ')')
 
+  export namespace whitespace {
+    export const unescape = (source: string) => source
+      .replace(/@__KOISHI_SPACE__@/g, ' ')
+      .replace(/@__KOISHI_NOLINE__@/g, '\n')
+      .replace(/@__KOISHI_RETURN__@/g, '\r')
+      .replace(/@__KOISHI_TAB__@/g, '\t')
+
+    export const escape = (source: string) => source
+      .replace(/ /g, '@__KOISHI_SPACE__@')
+      .replace(/\n/g, '@__KOISHI_NOLINE__@')
+      .replace(/\r/g, '@__KOISHI_RETURN__@')
+      .replace(/\t/g, '@__KOISHI_TAB__@')
+  }
+
   export class Tokenizer {
     private bracs: Dict<Interpolation>
 
@@ -72,7 +86,7 @@ export namespace Argv {
       const regExp = new RegExp(stopReg)
       while (true) {
         const capture = regExp.exec(source)
-        content += source.slice(0, capture.index)
+        content += whitespace.unescape(source.slice(0, capture.index))
         if (capture[0] in this.bracs) {
           source = source.slice(capture.index + capture[0].length).trimStart()
           const { parse, terminator } = this.bracs[capture[0]]
@@ -100,6 +114,9 @@ export namespace Argv {
 
     parse(source: string, terminator = ''): Argv {
       const tokens: Token[] = []
+      source = segment.transform(source, {
+        text: ({ content }) => whitespace.escape(content),
+      })
       let rest = source, term = ''
       const stopReg = `\\s+|[${escapeRegExp(terminator)}]|$`
       // eslint-disable-next-line no-unmodified-loop-condition
@@ -112,6 +129,8 @@ export namespace Argv {
       }
       if (rest.startsWith(terminator)) rest = rest.slice(1)
       source = source.slice(0, -(rest + term).length)
+      rest = whitespace.unescape(rest)
+      source = whitespace.unescape(source)
       return { tokens, rest, source }
     }
 
