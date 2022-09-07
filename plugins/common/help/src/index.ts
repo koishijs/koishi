@@ -50,7 +50,7 @@ export function apply(ctx: Context, config: Config = {}) {
   ctx.i18n.define('zh-tw', require('./locales/zh-tw'))
 
   if (config.options !== false) {
-    ctx.$commander._commands.forEach(cmd => cmd.use(enableHelp))
+    ctx.$commander._commandList.forEach(cmd => cmd.use(enableHelp))
     ctx.on('command-added', cmd => cmd.use(enableHelp))
   }
 

@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-suggest",
   "description": "Suggestion Plugin for Koishi",
-  "version": "1.1.4",
+  "version": "1.1.5",
   "main": "lib/index.cjs",
   "typings": "lib/index.d.ts",
   "exports": {
@@ -57,6 +57,6 @@
     "@koishijs/plugin-mock": "^2.1.0"
   },
   "dependencies": {
-    "fastest-levenshtein": "^1.0.14"
+    "fastest-levenshtein": "^1.0.16"
   }
 }
