@@ -20,9 +20,9 @@ describe('@koishijs/plugin-echo', () => {
   it('basic support', async () => {
     await client.shouldReply('echo', '请输入要发送的文本。')
     await client.shouldReply('echo foo', 'foo')
-    await client.shouldReply('echo -E &#91;&#93;', '[]')
-    await client.shouldReply('echo -A foo', '[CQ:anonymous]foo')
-    await client.shouldReply('echo -a foo', '[CQ:anonymous,ignore=true]foo')
+    await client.shouldReply('echo -E &lt;&gt;', '<>')
+    await client.shouldReply('echo -A foo', '<anonymous/>foo')
+    await client.shouldReply('echo -a foo', '<anonymous ignore/>foo')
 
     const send1 = app.bots[0].sendPrivateMessage = jest.fn<Bot['sendPrivateMessage']>()
     await client.shouldNotReply('echo -u @100 foo')

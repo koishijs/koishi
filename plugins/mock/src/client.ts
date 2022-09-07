@@ -1,5 +1,5 @@
 import assert from 'assert'
-import { Context, Session } from 'koishi'
+import { Context, Message, segment, Session } from 'koishi'
 import { format } from 'util'
 import { MockBot } from './adapter'
 
@@ -60,7 +60,14 @@ export class MessageClient {
       const dispose = this.app.on('middleware', (session) => {
         if (session.id === uuid) process.nextTick(_resolve)
       })
-      const uuid = this.bot.receive({ ...this.meta, send, content })
+      let quote: Message
+      const elements = segment.parse(content)
+      if (elements[0]?.type === 'quote') {
+        const { attrs, children } = elements.shift()
+        quote = { messageId: attrs.id, elements: children, content: children.join('') }
+        content = elements.join('')
+      }
+      const uuid = this.bot.receive({ ...this.meta, send, content, elements, quote })
     })
   }
 

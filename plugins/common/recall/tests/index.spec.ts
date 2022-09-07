@@ -1,9 +1,11 @@
 import { App } from 'koishi'
-import { expect } from 'chai'
+import { expect, use } from 'chai'
 import * as recall from '@koishijs/plugin-recall'
 import mock from '@koishijs/plugin-mock'
 import * as jest from 'jest-mock'
-import 'chai-shape'
+import shape from 'chai-shape'
+
+use(shape)
 
 const app = new App()
 

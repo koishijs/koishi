@@ -26,7 +26,7 @@ describe('@koishijs/plugin-feedback', () => {
     const send2 = app.bots[0].sendMessage = jest.fn(async () => ['2000'])
     await client.shouldNotReply('bar')
     expect(send2.mock.calls).to.have.length(0)
-    await client.shouldNotReply(`[CQ:quote,id=1000] bar`)
+    await client.shouldNotReply(`<quote id=1000/> bar`)
     expect(send2.mock.calls).to.have.length(1)
     expect(send2.mock.calls).to.have.shape([['private:123', 'bar']])
   })

@@ -63,13 +63,13 @@ export function apply(ctx: Context, { rules, interval }: Config) {
         const dict = await session.bot.getGuildMemberMap(session.guildId)
         chain.forEach((item, index) => {
           if (item.type === 'at') {
-            const content = '@' + dict[item.data.id]
-            chain.splice(index, 1, { type: 'text', data: { content } })
+            const content = '@' + dict[item.attrs.id]
+            chain.splice(index, 1, segment('text', { content }))
           }
         })
       }
 
-      const content = `${author.nickname || author.username}: ${segment.join(chain)}`
+      const content = `${author.nickname || author.username}: ${chain.join('')}`
       await bot.sendMessage(channelId, content, rule.guildId).then((ids) => {
         for (const id of ids) {
           relayMap[id] = {

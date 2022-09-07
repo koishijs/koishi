@@ -114,9 +114,9 @@ export namespace Argv {
 
     parse(source: string, terminator = ''): Argv {
       const tokens: Token[] = []
-      source = segment.transform(source, {
-        text: ({ content }) => whitespace.escape(content),
-      })
+      source = segment.parse(source).map((el) => {
+        return el.type === 'text' ? el.toString() : whitespace.escape(el.toString())
+      }).join('')
       let rest = source, term = ''
       const stopReg = `\\s+|[${escapeRegExp(terminator)}]|$`
       // eslint-disable-next-line no-unmodified-loop-condition
