@@ -11,7 +11,7 @@ declare module '@satorijs/core' {
 }
 
 export type { Message } from '@satorijs/core'
-export { Adapter, h, segment } from '@satorijs/core'
+export { Adapter, h, segment, Logger, Quester } from '@satorijs/core'
 
 export type Filter = satori.Filter<Context>
 

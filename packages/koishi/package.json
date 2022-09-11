@@ -5,6 +5,16 @@
   "main": "lib/index.cjs",
   "module": "lib/index.mjs",
   "typings": "lib/index.d.ts",
+  "exports": {
+    ".": {
+      "node": {
+        "import": "./lib/index.mjs",
+        "require": "./lib/index.cjs"
+      },
+      "browser": "./browser.mjs"
+    },
+    "./package.json": "./package.json"
+  },
   "engines": {
     "node": ">=12.0.0"
   },
@@ -33,7 +43,7 @@
   "dependencies": {
     "@koishijs/core": "^4.9.0",
     "@koishijs/utils": "^6.1.2",
-    "@satorijs/satori": "^1.1.0",
+    "@satorijs/satori": "^1.1.1",
     "file-type": "^16.5.4",
     "ns-require": "^1.1.4"
   }
