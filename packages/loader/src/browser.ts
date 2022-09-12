@@ -2,6 +2,17 @@ import { Context } from 'koishi'
 import { Loader, unwrapExports } from './shared'
 import { MarketResult, SearchResult } from '@koishijs/registry'
 
+export * from './shared'
+
+function resolveName(name: string) {
+  if (name[0] === '@') {
+    const [left, right] = name.split('/')
+    return [`${left}/koishi-plugin-${right}`]
+  } else {
+    return [`@koishijs/plugin-${name}`, `koishi-plugin-${name}`]
+  }
+}
+
 export default class BrowserLoader extends Loader {
   public extname: string
   public meta = Object.create(null)
@@ -13,6 +24,7 @@ export default class BrowserLoader extends Loader {
   }
 
   private async prepare() {
+    if (!process.env.KOISHI_BASE) return
     const [search, market]: [SearchResult, MarketResult] = await Promise.all([
       fetch(this.baseDir + '/index.json').then(res => res.json()),
       fetch(this.baseDir + '/market.json').then(res => res.json()),
@@ -22,7 +34,7 @@ export default class BrowserLoader extends Loader {
       const { name } = object.package
       const shortname = name.replace(/(koishi-|^@koishijs\/)plugin-/, '')
       const item = market.objects.find(item => item.name === name)
-      this.cache[shortname] = `${this.baseDir}/modules/${name}@${item.version}/index.js`
+      this.cache[shortname] = `${this.baseDir}/modules/${name}/index.js`
       this.meta[shortname] = item.versions[item.version]
     }
   }
@@ -36,16 +48,15 @@ export default class BrowserLoader extends Loader {
 
   async resolvePlugin(name: string) {
     await (this._initTask ||= this.prepare())
-    try {
-      return unwrapExports(await import(this.cache[name]))
-    } catch (err) {
-      console.error(err)
+    const urls = process.env.KOISHI_BASE
+      ? [this.cache[name]]
+      : resolveName(name).map(name => `${this.baseDir}/modules/${name}/index.js`)
+    for (const url of urls) {
+      try {
+        return unwrapExports(await import(/* @vite-ignore */ url))
+      } catch (err) {}
     }
-  }
-
-  async getPluginMeta(name: string) {
-    await (this._initTask ||= this.prepare())
-    return this.meta[name]
+    console.error(`cannot resolve plugin ${name}`)
   }
 
   fullReload() {

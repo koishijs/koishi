@@ -1,4 +1,4 @@
-import { promises as fs, readdirSync, readFileSync, statSync, writeFileSync } from 'fs'
+import { readdirSync, readFileSync, statSync, writeFileSync } from 'fs'
 import { dirname, extname, resolve } from 'path'
 import { Context, interpolate, Logger, valueMap } from 'koishi'
 import { Loader, unwrapExports } from './shared'
@@ -20,7 +20,6 @@ const supportedExts = ['.js', '.json', '.ts', '.coffee', '.yaml', '.yml']
 export default class NodeLoader extends Loader {
   public baseDir = process.cwd()
   public extname: string
-  public writable: boolean
   public scope: ns.Scope
 
   constructor(filename?: string) {
@@ -120,11 +119,6 @@ export default class NodeLoader extends Loader {
       return
     }
     return unwrapExports(require(this.cache[name]))
-  }
-
-  async getPluginMeta(name: string) {
-    const filename = this.scope.resolve(name + '/package.json')
-    return JSON.parse(await fs.readFile(filename, 'utf8'))
   }
 
   fullReload() {

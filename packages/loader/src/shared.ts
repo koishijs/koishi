@@ -37,7 +37,7 @@ const group: Plugin.Object = {
     ctx.state[Loader.kRecord] ||= Object.create(null)
     for (const name in plugins || {}) {
       if (name.startsWith('~') || name.startsWith('$')) continue
-      ctx.loader.reloadPlugin(ctx, name, plugins[name])
+      ctx.lifecycle.queue(ctx.loader.reloadPlugin(ctx, name, plugins[name]))
     }
   },
 }
@@ -53,13 +53,13 @@ export abstract class Loader {
   public entry: Context
   public suspend = false
   public filename: string
+  public writable = true
   public envfile: string
   public cache: Dict<string> = Object.create(null)
 
   abstract readConfig(): Context.Config
   abstract writeConfig(): void
   abstract resolvePlugin(name: string): Promise<any>
-  abstract getPluginMeta(name: string): Promise<any>
   abstract fullReload(): void
 
   interpolate(source: any) {
