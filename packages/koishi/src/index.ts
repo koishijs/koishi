@@ -1,10 +1,9 @@
 import { Context, Schema } from '@koishijs/core'
 import { defineProperty } from '@koishijs/utils'
 import { Assets } from './assets'
-import { Quester } from '@satorijs/satori'
 import * as satori from '@satorijs/core'
 
-export { Quester, Router, WebSocketLayer } from '@satorijs/satori'
+export { Router, WebSocketLayer } from '@satorijs/satori'
 
 export * from './assets'
 export * from './patch'
@@ -36,5 +35,5 @@ Context.Config.list.push(Schema.object({
 }))
 
 Context.Config.list.push(Schema.object({
-  request: Quester.Config,
+  request: satori.Quester.Config,
 }))

@@ -87,9 +87,9 @@ export class MessageClient {
     }
 
     if (!Array.isArray(reply)) {
-      const result = await this.receive(message, 1)
-      assert.ok(result.length, format(RECEIVED_NOTHING, message))
-      assert.ok(result.some(match.bind(null, reply)), format(RECEIVED_OTHERWISE, message, prettify(reply), result))
+      const [result] = await this.receive(message, 1)
+      assert.ok(result, format(RECEIVED_NOTHING, message))
+      assert.ok(match(reply, result), format(RECEIVED_OTHERWISE, message, prettify(reply), result))
       return
     }
 
