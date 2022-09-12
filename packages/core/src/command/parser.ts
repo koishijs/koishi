@@ -405,12 +405,12 @@ export namespace Argv {
     }
 
     _createOption(name: string, def: string, config: OptionConfig) {
+      // do not use lookbehind assertion for Safari compatibility
+      const cap = /^((?:-[\w-]*|[^<[\s\w\x80-\uffff])(?:,\s*(?:-[\w-]*|[^<[\s\w\x80-\uffff]))*)?((?:\s*\[[^\]]+?\]|\s*<[^>]+?>)*)(.*)$/.exec(def)
       const param = paramCase(name)
-      const decl = def.replace(/(?<=^|\s)[\w\x80-\uffff].*/, '')
-      const desc = def.slice(decl.length)
-      let syntax = decl.replace(/(?<=^|\s)(<[^<]+>|\[[^[]+\]).*/, '')
-      const bracket = decl.slice(syntax.length)
-      syntax = syntax.trim() || '--' + param
+      let syntax = cap[1] || '--' + param
+      const bracket = cap[2] || ''
+      const desc = cap[3].trim()
 
       const names: string[] = []
       const symbols: string[] = []
@@ -428,7 +428,7 @@ export namespace Argv {
         syntax += ', --' + param
       }
 
-      const declList = parseDecl(bracket)
+      const declList = parseDecl(bracket.trimStart())
       if (declList.stripped) syntax += ' ' + declList.stripped
       const option = this._options[name] ||= {
         ...Command.defaultOptionConfig,
