@@ -2,8 +2,7 @@ import { coerce, Context, Dict, Logger, makeArray, Runtime, Schema } from 'koish
 import { FSWatcher, watch, WatchOptions } from 'chokidar'
 import { relative, resolve } from 'path'
 import { debounce } from 'throttle-debounce'
-import Loader, { patch } from '@koishijs/loader'
-import ns from 'ns-require'
+import Loader, { patch, unwrapExports } from '@koishijs/loader'
 
 export function deepEqual(a: any, b: any) {
   if (a === b) return true
@@ -190,11 +189,15 @@ class Watcher {
         const { children } = require.cache[filename]
         let isDeclined = true, isAccepted = false
         for (const { filename } of children) {
+          // ignore all declined children
           if (this.declined.has(filename) || filename.includes('/node_modules/')) continue
           if (this.accepted.has(filename)) {
+            // mark the module as accepted if any child is accepted
             isAccepted = true
             break
           } else {
+            // the child module is neither accepted nor declined
+            // so we need to perform further analysis
             isDeclined = false
             if (!pending.includes(filename)) {
               hasUpdate = true
@@ -208,6 +211,7 @@ class Watcher {
           if (isAccepted) {
             this.accepted.add(filename)
           } else {
+            // mark the module as declined if all children are declined
             this.declined.add(filename)
           }
         } else {
@@ -236,7 +240,7 @@ class Watcher {
     // that is, reloading them will not cause any other reloads
     for (const filename in require.cache) {
       const module = require.cache[filename]
-      const plugin = ns.unwrapExports(module.exports)
+      const plugin = unwrapExports(module.exports)
       const runtime = this.ctx.registry.get(plugin)
       if (!runtime || this.declined.has(filename)) continue
       pending.set(filename, runtime)
@@ -292,7 +296,7 @@ class Watcher {
     const attempts = {}
     try {
       for (const [, filename] of reloads) {
-        attempts[filename] = ns.unwrapExports(require(filename))
+        attempts[filename] = unwrapExports(require(filename))
       }
     } catch (err) {
       logger.warn(err)

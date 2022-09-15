@@ -11,6 +11,7 @@ declare module 'koishi' {
 
   namespace Context {
     interface Config {
+      name?: string
       plugins?: Dict
     }
   }
