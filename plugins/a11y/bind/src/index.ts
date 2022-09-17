@@ -1,4 +1,6 @@
 import { Context, Dict, Random, Schema, Session, Time, User } from 'koishi'
+import zh from './locales/zh.yml'
+import en from './locales/en.yml'
 
 export interface Config {
   tokenPrefix?: string
@@ -12,8 +14,8 @@ export const Config: Schema<Config> = Schema.object({
 })
 
 export function apply(ctx: Context, config: Config = {}) {
-  ctx.i18n.define('zh', require('./locales/zh'))
-  ctx.i18n.define('en', require('./locales/en'))
+  ctx.i18n.define('zh', zh)
+  ctx.i18n.define('en', en)
 
   // 1: group (1st step)
   // 0: private

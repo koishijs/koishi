@@ -1,5 +1,10 @@
 import { Argv, Channel, Command, Context, FieldCollector, Schema, Session, Tables, User } from 'koishi'
 import {} from '@koishijs/plugin-suggest'
+import zh from './locales/zh.yml'
+import en from './locales/en.yml'
+import ja from './locales/ja.yml'
+import fr from './locales/fr.yml'
+import zhTW from './locales/zh-tw.yml'
 
 declare module 'koishi' {
   interface Events {
@@ -43,11 +48,11 @@ function executeHelp(session: Session, name: string) {
 export const name = 'help'
 
 export function apply(ctx: Context, config: Config = {}) {
-  ctx.i18n.define('zh', require('./locales/zh'))
-  ctx.i18n.define('en', require('./locales/en'))
-  ctx.i18n.define('ja', require('./locales/ja'))
-  ctx.i18n.define('fr', require('./locales/fr'))
-  ctx.i18n.define('zh-tw', require('./locales/zh-tw'))
+  ctx.i18n.define('zh', zh)
+  ctx.i18n.define('en', en)
+  ctx.i18n.define('ja', ja)
+  ctx.i18n.define('fr', fr)
+  ctx.i18n.define('zh-tw', zhTW)
 
   if (config.options !== false) {
     ctx.$commander._commandList.forEach(cmd => cmd.use(enableHelp))

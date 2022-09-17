@@ -1,4 +1,5 @@
 import { Context, Dict, remove, Schema, sleep, Time } from 'koishi'
+import zh from './locales/zh.yml'
 
 export interface Config {
   timeout?: number
@@ -11,7 +12,7 @@ export const Config: Schema<Config> = Schema.object({
 export const name = 'recall'
 
 export function apply(ctx: Context, { timeout }: Config) {
-  ctx.i18n.define('zh', require('./locales/zh'))
+  ctx.i18n.define('zh', zh)
 
   ctx = ctx.guild()
   const recent: Dict<string[]> = {}

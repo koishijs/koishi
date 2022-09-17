@@ -1,6 +1,7 @@
 import { Argv, Command, Context, Dict, Schema, Session, Time, User } from 'koishi'
 import { adminUser } from '@koishijs/helpers'
 import {} from '@koishijs/plugin-help'
+import zh from './locales/zh.yml'
 
 declare module 'koishi' {
   namespace Command {
@@ -33,7 +34,7 @@ export const using = ['database'] as const
 export const Config: Schema<Config> = Schema.object({})
 
 export function apply(ctx: Context) {
-  ctx.i18n.define('zh', require('./locales/zh'))
+  ctx.i18n.define('zh', zh)
 
   ctx.model.extend('user', {
     usage: 'json',

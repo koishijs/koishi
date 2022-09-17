@@ -1,5 +1,7 @@
 import { Channel, Command, Context, difference, enumKeys, Schema, User } from 'koishi'
 import { adminChannel, adminUser, parsePlatform } from '@koishijs/helpers'
+import zh from './locales/zh.yml'
+import en from './locales/en.yml'
 
 type Key = 'user' | 'channel'
 
@@ -60,8 +62,8 @@ export const using = ['database'] as const
 export const Config: Schema<Config> = Schema.object({})
 
 export function apply(ctx: Context) {
-  ctx.i18n.define('zh', require('./locales/zh'))
-  ctx.i18n.define('en', require('./locales/en'))
+  ctx.i18n.define('zh', zh)
+  ctx.i18n.define('en', en)
 
   ctx.command('user', { authority: 3 })
   ctx.command('channel', { authority: 3 })

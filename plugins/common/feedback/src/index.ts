@@ -1,5 +1,6 @@
 import { Context, Dict, Schema, sleep, Time } from 'koishi'
 import { parsePlatform } from '@koishijs/helpers'
+import zh from './locales/zh.yml'
 
 export interface Config {
   operators?: string[]
@@ -16,7 +17,7 @@ export const schema: Schema<string[] | Config, Config> = Schema.union([
 export const name = 'feedback'
 
 export function apply(ctx: Context, { operators = [], replyTimeout = Time.day }: Config) {
-  ctx.i18n.define('zh', require('./locales/zh'))
+  ctx.i18n.define('zh', zh)
 
   type FeedbackData = [sid: string, channelId: string, guildId: string]
   const feedbacks: Dict<FeedbackData> = {}

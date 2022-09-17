@@ -1,5 +1,6 @@
 import { Argv, Context, deduplicate, difference, intersection, Schema } from 'koishi'
 import { adminChannel } from '@koishijs/helpers'
+import zh from './locales/zh.yml'
 
 declare module 'koishi' {
   namespace Command {
@@ -21,7 +22,7 @@ export const using = ['database'] as const
 export const Config: Schema<Config> = Schema.object({})
 
 export function apply(ctx: Context, config: Config = {}) {
-  ctx.i18n.define('zh', require('./locales/zh'))
+  ctx.i18n.define('zh', zh)
 
   ctx.model.extend('channel', {
     // enable: 'list',

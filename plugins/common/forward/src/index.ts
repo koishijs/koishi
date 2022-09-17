@@ -1,5 +1,6 @@
 import { Command, Context, Dict, Schema, segment, Session, Time } from 'koishi'
 import { parsePlatform } from '@koishijs/helpers'
+import zh from './locales/zh.yml'
 
 declare module 'koishi' {
   interface Channel {
@@ -37,7 +38,7 @@ export const Config: Schema<Config | Rule[], Config> = Schema.union([
 ])
 
 export function apply(ctx: Context, { rules, interval }: Config) {
-  ctx.i18n.define('zh', require('./locales/zh'))
+  ctx.i18n.define('zh', zh)
 
   const relayMap: Dict<Rule> = {}
 

@@ -1,5 +1,10 @@
 import { distance } from 'fastest-levenshtein'
 import { Awaitable, Context, Next, Schema, Session } from 'koishi'
+import zh from './locales/zh.yml'
+import en from './locales/en.yml'
+import ja from './locales/ja.yml'
+import fr from './locales/fr.yml'
+import zhTW from './locales/zh-tw.yml'
 
 declare module 'koishi' {
   interface Context {
@@ -76,11 +81,11 @@ class SuggestionService {
   constructor(public ctx: Context, public config: SuggestionService.Config) {
     ctx.$suggest = this
 
-    ctx.i18n.define('zh', require('./locales/zh'))
-    ctx.i18n.define('en', require('./locales/en'))
-    ctx.i18n.define('ja', require('./locales/ja'))
-    ctx.i18n.define('fr', require('./locales/fr'))
-    ctx.i18n.define('zh-tw', require('./locales/zh-tw'))
+    ctx.i18n.define('zh', zh)
+    ctx.i18n.define('en', en)
+    ctx.i18n.define('ja', ja)
+    ctx.i18n.define('fr', fr)
+    ctx.i18n.define('zh-tw', zhTW)
 
     ctx.middleware((session, next) => {
       // use `!prefix` instead of `prefix === null` to prevent from blocking other middlewares

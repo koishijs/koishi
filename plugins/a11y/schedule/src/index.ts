@@ -1,4 +1,5 @@
 import { Context, Dict, Logger, Schema, Session, Time } from 'koishi'
+import zh from './locales/zh.yml'
 
 declare module 'koishi' {
   interface Tables {
@@ -34,7 +35,7 @@ function toHourMinute(time: Date) {
 }
 
 export function apply(ctx: Context, { minInterval }: Config) {
-  ctx.i18n.define('zh', require('./locales/zh'))
+  ctx.i18n.define('zh', zh)
 
   ctx.i18n.formatter('interval', ([date, interval]: [Date, number], _, locale) => {
     if (!interval) {

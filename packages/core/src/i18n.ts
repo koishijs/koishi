@@ -1,5 +1,10 @@
 import { Dict, isNullable, Logger, Random, Time } from '@koishijs/utils'
 import { Context } from './context'
+import zh from './locales/zh.yml'
+import en from './locales/en.yml'
+import ja from './locales/ja.yml'
+import fr from './locales/fr.yml'
+import zhTW from './locales/zh-tw.yml'
 
 const logger = new Logger('i18n')
 const kTemplate = Symbol('template')
@@ -29,11 +34,11 @@ export class I18n {
 
   constructor(ctx: Context) {
     this.define('', { '': '' })
-    this.define('zh', require('./locales/zh'))
-    this.define('en', require('./locales/en'))
-    this.define('ja', require('./locales/ja'))
-    this.define('fr', require('./locales/fr'))
-    this.define('zh-tw', require('./locales/zh-tw'))
+    this.define('zh', zh)
+    this.define('en', en)
+    this.define('ja', ja)
+    this.define('fr', fr)
+    this.define('zh-tw', zhTW)
     this.registerBuiltins()
   }
 
