@@ -338,11 +338,7 @@ export namespace Argv {
   }
 
   export function parseValue(source: string, quoted: boolean, kind: string, argv: Argv, decl: Declaration = {}) {
-    const { name, type, fallback } = decl
-
-    // no explicit parameter & has fallback
-    const implicit = source === '' && !quoted
-    if (implicit && fallback !== undefined) return fallback
+    const { name, type } = decl
 
     // apply domain callback
     const transform = resolveType(type)
@@ -360,8 +356,10 @@ export namespace Argv {
       }
     }
 
+    // no explicit parameter
+    if (source === '' && !quoted) return true
+
     // default behavior
-    if (implicit) return true
     if (quoted) return source
     const n = +source
     return n * 0 === 0 ? n : source
@@ -492,8 +490,11 @@ export namespace Argv {
     parse(argv: string | Argv, terminator?: string, args: any[] = [], options: Dict<any> = {}): Argv {
       if (typeof argv === 'string') argv = Argv.parse(argv, terminator)
 
-      const source = this.name + ' ' + Argv.stringify(argv)
-      while (!argv.error && argv.tokens.length) {
+      if (!argv.source && argv.tokens) {
+        argv.source = this.name + ' ' + Argv.stringify(argv)
+      }
+
+      while (!argv.error && argv.tokens?.length) {
         const token = argv.tokens[0]
         let { content, quoted } = token
 
@@ -580,7 +581,7 @@ export namespace Argv {
       }
 
       delete argv.tokens
-      return { options, args, source, rest: argv.rest, error: argv.error || '' }
+      return { ...argv, options, args, error: argv.error || '', command: this as any }
     }
 
     private stringifyArg(value: any) {

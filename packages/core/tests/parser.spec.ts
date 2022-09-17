@@ -1,10 +1,10 @@
-import { App, Command } from 'koishi'
+import { Command, Context } from 'koishi'
 import { expect, use } from 'chai'
 import shape from 'chai-shape'
 
 use(shape)
 
-const app = new App()
+const app = new Context()
 
 let cmd: Command
 

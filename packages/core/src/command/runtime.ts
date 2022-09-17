@@ -26,11 +26,9 @@ export default function runtime(ctx: Context) {
         if (!fuzzy && content !== name || !content.startsWith(name)) continue
         const message = content.slice(name.length)
         if (fuzzy && !parsed.appel && message.match(/^\S/)) continue
-        let argv = Argv.parse(message.trim())
+        const argv = Argv.parse(message.trim())
         argv.session = session
-        argv = command.parse(argv, '', [...args], { ...options })
-        argv.command = command
-        return argv
+        return command.parse(argv, '', [...args], { ...options })
       } else {
         const capture = name.exec(content)
         if (!capture) continue
@@ -43,11 +41,10 @@ export default function runtime(ctx: Context) {
           })
           return source.replace(/@@__PLACEHOLDER__@@/g, '$')
         }
-        return {
-          command,
+        return command.parse({
           args: args.map(escape),
           options: valueMap(options, escape),
-        }
+        })
       }
     }
   })
