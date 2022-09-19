@@ -44,7 +44,7 @@
     ]
   },
   "peerDependencies": {
-    "koishi": "^4.9.1"
+    "koishi": "^4.9.2"
   },
   "devDependencies": {
     "@koishijs/plugin-database-memory": "^1.5.0",

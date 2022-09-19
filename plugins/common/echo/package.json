@@ -1,16 +1,9 @@
 {
   "name": "@koishijs/plugin-echo",
   "description": "Echo plugin for Koishi",
-  "version": "2.0.4",
-  "main": "lib/index.cjs",
+  "version": "2.0.5",
+  "main": "lib/index.js",
   "typings": "lib/index.d.ts",
-  "exports": {
-    ".": {
-      "require": "./lib/index.cjs",
-      "import": "./lib/index.mjs"
-    },
-    "./package.json": "./package.json"
-  },
   "files": [
     "lib"
   ],
@@ -36,6 +29,7 @@
     "echo"
   ],
   "koishi": {
+    "browser": true,
     "category": "tool",
     "description": {
       "en": "Echo messages",
@@ -46,7 +40,7 @@
     ]
   },
   "peerDependencies": {
-    "koishi": "^4.9.1"
+    "koishi": "^4.9.2"
   },
   "devDependencies": {
     "@koishijs/plugin-mock": "^2.1.0"

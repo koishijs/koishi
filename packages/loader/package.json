@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/loader",
   "description": "Config Loader for Koishi",
-  "version": "2.0.8",
+  "version": "2.0.9",
   "main": "lib/node.js",
   "typings": "lib/index.d.ts",
   "exports": {
@@ -38,12 +38,12 @@
     "config"
   ],
   "peerDependencies": {
-    "koishi": "^4.9.1"
+    "koishi": "^4.9.2"
   },
   "devDependencies": {
     "@koishijs/registry": "^4.1.0",
     "@types/js-yaml": "^4.0.5",
-    "koishi": "^4.9.1"
+    "koishi": "^4.9.2"
   },
   "dependencies": {
     "dotenv": "^16.0.1",

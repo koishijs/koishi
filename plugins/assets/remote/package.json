@@ -39,6 +39,6 @@
     }
   },
   "peerDependencies": {
-    "koishi": "^4.9.1"
+    "koishi": "^4.9.2"
   }
 }

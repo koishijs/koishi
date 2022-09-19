@@ -1,16 +1,9 @@
 {
   "name": "@koishijs/plugin-help",
   "description": "Help plugin for Koishi",
-  "version": "1.2.2",
-  "main": "lib/index.cjs",
+  "version": "1.2.3",
+  "main": "lib/index.js",
   "typings": "lib/index.d.ts",
-  "exports": {
-    ".": {
-      "require": "./lib/index.cjs",
-      "import": "./lib/index.mjs"
-    },
-    "./package.json": "./package.json"
-  },
   "files": [
     "lib"
   ],
@@ -36,6 +29,7 @@
     "help"
   ],
   "koishi": {
+    "browser": true,
     "category": "tool",
     "description": {
       "en": "Show help for commands",
@@ -50,7 +44,7 @@
     ]
   },
   "peerDependencies": {
-    "koishi": "^4.9.1"
+    "koishi": "^4.9.2"
   },
   "devDependencies": {
     "@koishijs/plugin-database-memory": "^1.5.0",
