@@ -1,11 +1,10 @@
-import { isType } from './misc'
-import { defineProperty, noop } from 'cosmokit'
+import { defineProperty, is, noop } from 'cosmokit'
 
 const immutable = ['number', 'string', 'bigint', 'boolean', 'symbol', 'function']
 const builtin = ['Date', 'RegExp', 'Set', 'Map', 'WeakSet', 'WeakMap', 'Array']
 
 function observeProperty(value: any, update: any) {
-  if (isType('Date', value)) {
+  if (is('Date', value)) {
     return observeDate(value, update)
   } else if (Array.isArray(value)) {
     return observeArray(value, update)

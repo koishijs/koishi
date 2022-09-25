@@ -1,26 +1,8 @@
-import { coerce, Context, Dict, Logger, makeArray, Runtime, Schema } from 'koishi'
+import { coerce, Context, deepEqual, Dict, Logger, makeArray, Runtime, Schema } from 'koishi'
 import { FSWatcher, watch, WatchOptions } from 'chokidar'
 import { relative, resolve } from 'path'
 import { debounce } from 'throttle-debounce'
 import Loader, { patch, unwrapExports } from '@koishijs/loader'
-
-export function deepEqual(a: any, b: any) {
-  if (a === b) return true
-  if (typeof a !== typeof b) return false
-  if (typeof a !== 'object') return false
-  if (!a || !b) return false
-
-  // check array
-  if (Array.isArray(a)) {
-    if (!Array.isArray(b) || a.length !== b.length) return false
-    return a.every((item, index) => deepEqual(item, b[index]))
-  } else if (Array.isArray(b)) {
-    return false
-  }
-
-  // check object
-  return Object.keys({ ...a, ...b }).every(key => deepEqual(a[key], b[key]))
-}
 
 function loadDependencies(filename: string, ignored: Set<string>) {
   const dependencies = new Set<string>()

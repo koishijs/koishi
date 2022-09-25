@@ -15,7 +15,6 @@ function resolveName(name: string) {
 
 export default class BrowserLoader extends Loader {
   public extname: string
-  public meta = Object.create(null)
   public config = { plugins: {} }
   private _initTask: Promise<void>
 
@@ -28,7 +27,6 @@ export default class BrowserLoader extends Loader {
     const market: MarketResult = await fetch(process.env.KOISHI_REGISTRY + '/market.json').then(res => res.json())
     for (const object of market.objects) {
       this.cache[object.shortname] = `${process.env.KOISHI_REGISTRY}/modules/${object.name}/index.js`
-      this.meta[object.shortname] = object.versions[object.version]
     }
   }
 

@@ -2,6 +2,7 @@ import Schema from 'schemastery'
 import Logger from 'reggol'
 import Random from 'inaba'
 
+export { is as isType } from 'cosmokit'
 export { Schema, Logger, Random }
 
 export * from 'cosmokit'
