@@ -95,8 +95,18 @@ export class Internal {
     return Array.isArray(temp) ? temp : [temp || '']
   }
 
+  private _stripNickname(content: string) {
+    if (content.startsWith('@')) content = content.slice(1)
+    for (const nickname of makeArray(this.config.nickname)) {
+      if (!content.startsWith(nickname)) continue
+      const rest = content.slice(nickname.length)
+      const capture = /^([,，]\s*|\s+)/.exec(rest)
+      if (!capture) continue
+      return rest.slice(capture[0].length)
+    }
+  }
+
   private async _process(session: Session, next: Next) {
-    let capture: RegExpMatchArray
     let atSelf = false, appel = false, prefix: string = null
     let content = session.content.trim()
     session.elements ??= segment.parse(content)
@@ -106,9 +116,12 @@ export class Internal {
       atSelf = appel = true
       content = session.elements.slice(1).join('').trimStart()
       // eslint-disable-next-line no-cond-assign
-    } else if (capture = content.match(this._nameRE)) {
-      appel = true
-      content = content.slice(capture[0].length)
+    } else {
+      const result = this._stripNickname(content)
+      if (result) {
+        appel = true
+        content = result
+      }
     }
 
     for (const _prefix of this._resolvePrefixes(session)) {

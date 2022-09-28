@@ -1,4 +1,4 @@
-import { Context, Dict, Logger, Plugin, resolveConfig } from 'koishi'
+import { Context, deepEqual, Dict, Logger, Plugin, resolveConfig } from 'koishi'
 import { patch, stripModifier } from './utils'
 
 export * from './utils'
@@ -7,6 +7,10 @@ declare module 'koishi' {
   interface Context {
     loader: Loader
     delimiter: symbol
+  }
+
+  interface Events {
+    'config'(): void
   }
 
   namespace Context {
@@ -36,10 +40,37 @@ const group: Plugin.Object = {
   reusable: true,
   apply(ctx, plugins) {
     ctx.state[Loader.kRecord] ||= Object.create(null)
+
     for (const name in plugins || {}) {
       if (name.startsWith('~') || name.startsWith('$')) continue
       ctx.lifecycle.queue(ctx.loader.reloadPlugin(ctx, name, plugins[name]))
     }
+
+    ctx.accept((neo) => {
+      // update config reference
+      const old = ctx.state.config
+
+      // update group modifier
+      if (!deepEqual(old.$filter || {}, neo.$filter || {})) {
+        patch.filter(ctx.state.parent, neo.$filter)
+      }
+      if (!deepEqual(old.$isolate || [], neo.$isolate || [])) {
+        patch.isolate(ctx.state.parent, neo.$isolate)
+      }
+
+      // update inner plugins
+      for (const key in { ...old, ...neo }) {
+        if (key.startsWith('~') || key.startsWith('$')) continue
+        const fork = ctx.state[Loader.kRecord][key]
+        if (!fork) {
+          ctx.loader.reloadPlugin(ctx, key, neo[key])
+        } else if (!(key in neo)) {
+          ctx.loader.unloadPlugin(ctx, key)
+        } else {
+          fork.update(neo[key] || {})
+        }
+      }
+    })
   },
 }
 
@@ -118,6 +149,10 @@ export abstract class Loader {
     app.state[Loader.kRecord] = Object.create(null)
     const fork = await this.reloadPlugin(app, 'group:entry', this.config.plugins)
     this.entry = fork.ctx
+
+    app.accept(['plugins'], (config) => {
+      fork.update(config.plugins)
+    })
 
     app.on('internal/update', (fork, value) => {
       // prevent hot reload when config file is being written
