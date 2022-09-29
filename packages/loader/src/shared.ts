@@ -25,7 +25,6 @@ declare module 'cordis' {
   // Theoretically, these properties will only appear on `Fork`.
   // We define them directly on `State` for typing convenience.
   interface State<C> {
-    [Loader.kUpdate]?: boolean
     [Loader.kRecord]?: Dict<Fork<C>>
     alias?: string
   }
@@ -67,15 +66,14 @@ const group: Plugin.Object = {
         } else if (!(key in neo)) {
           ctx.loader.unloadPlugin(ctx, key)
         } else {
-          fork.update(neo[key] || {})
+          ctx.loader.reloadPlugin(ctx, key, neo[key] || {})
         }
       }
-    })
+    }, { passive: true })
   },
 }
 
 export abstract class Loader {
-  static readonly kUpdate = Symbol.for('koishi.loader.update')
   static readonly kRecord = Symbol.for('koishi.loader.record')
   static readonly exitCode = 51
 
@@ -109,9 +107,7 @@ export abstract class Loader {
   async reloadPlugin(parent: Context, key: string, config: any) {
     let fork = parent.state[Loader.kRecord][key]
     if (fork) {
-      logger.info(`reload plugin %c`, key)
       patch(fork.parent, config)
-      fork[Loader.kUpdate] = true
       fork.update(config)
     } else {
       logger.info(`apply plugin %c`, key)
@@ -152,22 +148,18 @@ export abstract class Loader {
 
     app.accept(['plugins'], (config) => {
       fork.update(config.plugins)
+    }, { passive: true })
+
+    app.on('dispose', () => {
+      this.fullReload()
     })
 
-    app.on('internal/update', (fork, value) => {
-      // prevent hot reload when config file is being written
-      if (fork[Loader.kUpdate]) {
-        fork[Loader.kUpdate] = false
-        return
-      }
-
-      const { runtime } = fork.parent.state
-      const record = runtime[Loader.kRecord]
+    app.on('internal/update', (fork) => {
+      const record = fork.parent.state[Loader.kRecord]
       if (!record) return
       for (const name in record) {
         if (record[name] !== fork) continue
-        runtime.config[name] = value
-        return this.writeConfig()
+        logger.info(`reload plugin %c`, name)
       }
     })
 

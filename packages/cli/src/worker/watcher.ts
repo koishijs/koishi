@@ -1,8 +1,8 @@
-import { coerce, Context, deepEqual, Dict, Logger, makeArray, Runtime, Schema } from 'koishi'
+import { coerce, Context, Dict, Logger, makeArray, Runtime, Schema } from 'koishi'
 import { FSWatcher, watch, WatchOptions } from 'chokidar'
 import { relative, resolve } from 'path'
 import { debounce } from 'throttle-debounce'
-import Loader, { patch, unwrapExports } from '@koishijs/loader'
+import { unwrapExports } from '@koishijs/loader'
 
 function loadDependencies(filename: string, ignored: Set<string>) {
   const dependencies = new Set<string>()
@@ -79,7 +79,8 @@ class Watcher {
         if (require.cache[path]) {
           this.ctx.loader.fullReload()
         } else {
-          this.triggerEntryReload()
+          const config = loader.readConfig()
+          this.ctx.app.state.update(config)
         }
       } else {
         if (this.externals.has(path)) {
@@ -94,59 +95,6 @@ class Watcher {
 
   stop() {
     return this.watcher.close()
-  }
-
-  private triggerEntryReload() {
-    // use original config
-    const { loader } = this.ctx
-    const old = loader.config
-    loader.readConfig()
-    const neo = loader.config
-
-    // check non-plugin changes
-    const merged = { ...old, ...neo }
-    delete merged.plugins
-    if (Object.keys(merged).some(key => !deepEqual(old[key], neo[key]))) {
-      return this.ctx.loader.fullReload()
-    }
-
-    // check plugin changes
-    this.triggerGroupReload('group:entry', neo.plugins || {}, old.plugins || {}, this.ctx.loader.entry)
-    this.ctx.emit('config')
-  }
-
-  private triggerGroupReload(key: string, neo: Dict, old: Dict, ctx: Context) {
-    // update config reference
-    ctx.state.config = neo
-
-    // update group modifier
-    let hasUpdate = false
-    if (!deepEqual(old.$filter || {}, neo.$filter || {})) {
-      hasUpdate = true
-      patch.filter(ctx.state.parent, neo.$filter)
-    }
-    if (!deepEqual(old.$isolate || [], neo.$isolate || [])) {
-      hasUpdate = true
-      patch.isolate(ctx.state.parent, neo.$isolate)
-    }
-    if (hasUpdate) {
-      logger.info(`update modifier for plugin %c`, key)
-    }
-
-    // update inner plugins
-    for (const key in { ...old, ...neo }) {
-      if (key.startsWith('~') || key.startsWith('$')) continue
-      const fork = ctx.state[Loader.kRecord][key]
-      if (!fork) {
-        this.ctx.loader.reloadPlugin(ctx, key, neo[key])
-      } else if (!(key in neo)) {
-        this.ctx.loader.unloadPlugin(ctx, key)
-      } else if (key.startsWith('group:')) {
-        this.triggerGroupReload(key, neo[key] || {}, old[key] || {}, fork.ctx)
-      } else if (!deepEqual(old[key], neo[key])) {
-        this.ctx.loader.reloadPlugin(ctx, key, neo[key])
-      }
-    }
   }
 
   private analyzeChanges() {
