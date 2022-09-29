@@ -82,7 +82,7 @@
     "semver": "^7.3.7",
     "shx": "^0.3.4",
     "source-map-support": "^0.5.21",
-    "typescript": "^4.8.3",
+    "typescript": "4.8.2",
     "yakumo": "^0.3.6",
     "yakumo-esbuild": "^0.3.17",
     "yakumo-esbuild-yaml": "^0.3.1",

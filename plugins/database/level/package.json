@@ -42,7 +42,7 @@
     }
   },
   "peerDependencies": {
-    "koishi": "^4.9.2"
+    "koishi": "^4.9.3"
   },
   "dependencies": {
     "@minatojs/driver-level": "^1.2.0"
