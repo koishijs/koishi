@@ -32,7 +32,7 @@ Bot.prototype.getGuildMemberMap = async function getGuildMemberMap(this: Bot, gu
   return Object.fromEntries(list.map(info => [info.userId, info.nickname || info.username]))
 }
 
-Bot.prototype.broadcast = async function broadcast(this: Bot, channels, content, delay = this.ctx.options.delay.broadcast) {
+Bot.prototype.broadcast = async function broadcast(this: Bot, channels, content, delay = this.ctx.root.config.delay.broadcast) {
   const messageIds: string[] = []
   for (let index = 0; index < channels.length; index++) {
     if (index && delay) await sleep(delay)

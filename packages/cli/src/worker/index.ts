@@ -77,7 +77,7 @@ namespace addons {
 
 async function start() {
   const app = await loader.createApp()
-  app.plugin(addons, app.options)
+  app.plugin(addons, app.config)
   await app.start()
 }
 

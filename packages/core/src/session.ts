@@ -64,7 +64,7 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
     })
   }
 
-  cancelQueued(delay = this.app.options.delay.cancel) {
+  cancelQueued(delay = this.app.config.delay.cancel) {
     clearTimeout(this._queuedTimeout)
     this._queuedTasks = []
     this._queuedTimeout = setTimeout(() => this._next(), delay)
@@ -84,7 +84,7 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
     const text = satori.segment.normalize(content).toString(true)
     if (!text) return
     if (isNullable(delay)) {
-      const { message, character } = this.app.options.delay
+      const { message, character } = this.app.config.delay
       delay = Math.max(message, character * text.length)
     }
     return new Promise<string[]>((resolve, reject) => {
@@ -102,7 +102,7 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
     if (!fields.length) return { platform, id, guildId }
     const channel = await app.database.getChannel(platform, id, fields)
     if (channel) return channel
-    const assignee = await this.resolveValue(app.options.autoAssign) ? this.selfId : ''
+    const assignee = await this.resolveValue(app.config.autoAssign) ? this.selfId : ''
     if (assignee) {
       return app.database.createChannel(platform, id, { assignee, guildId })
     } else {
@@ -155,7 +155,7 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
     if (!fields.length) return { [platform]: id }
     const user = await app.database.getUser(platform, id, fields)
     if (user) return user
-    const authority = await this.resolveValue(app.options.autoAuthorize)
+    const authority = await this.resolveValue(app.config.autoAuthorize)
     if (authority) {
       return app.database.createUser(platform, id, { authority })
     } else {
@@ -183,7 +183,7 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
     if (this.author?.anonymous) {
       const fallback = this.app.model.tables.user.create()
       fallback[platform] = userId
-      fallback.authority = await this.resolveValue(this.app.options.autoAuthorize)
+      fallback.authority = await this.resolveValue(this.app.config.autoAuthorize)
       const user = observe(fallback, () => Promise.resolve())
       return this.user = user
     }
@@ -211,7 +211,7 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
   }
 
   text(path: string | string[], params: object = {}) {
-    const locales = [this.app.options.locale]
+    const locales = [this.app.config.locale]
     locales.unshift(this.user?.['locale'])
     if (this.subtype === 'group') {
       locales.unshift(this.guild?.['locale'])
@@ -339,7 +339,7 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
     }, true)
   }
 
-  prompt(timeout = this.app.options.delay.prompt) {
+  prompt(timeout = this.app.config.delay.prompt) {
     return new Promise<string>((resolve) => {
       const dispose = this.middleware((session) => {
         clearTimeout(timer)

@@ -29,7 +29,7 @@ export function apply(ctx: Context, { operators = [], replyTimeout = Time.day }:
       const { username: name, userId } = session
       const nickname = name === '' + userId ? userId : `${name} (${userId})`
       const message = session.text('.receive', [nickname, text])
-      const delay = ctx.app.options.delay.broadcast
+      const delay = ctx.root.config.delay.broadcast
       const data: FeedbackData = [session.sid, session.channelId, session.guildId]
       for (let index = 0; index < operators.length; ++index) {
         if (index && delay) await sleep(delay)

@@ -43,8 +43,8 @@
   ],
   "dependencies": {
     "@koishijs/core": "^4.9.3",
-    "@koishijs/utils": "^6.2.1",
-    "@satorijs/satori": "^1.1.9",
+    "@koishijs/utils": "^6.2.2",
+    "@satorijs/satori": "^1.1.11",
     "file-type": "^16.5.4",
     "ns-require": "^1.1.4"
   }

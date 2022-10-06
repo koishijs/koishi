@@ -44,7 +44,7 @@ export abstract class Assets extends Service {
   public async transform(content: string) {
     return await segment.transformAsync(content, Object.fromEntries(this.types.map((type) => {
       return [type, async (data) => {
-        if (this.ctx.options.assets.whitelist.some(prefix => data.url.startsWith(prefix))) {
+        if (this.ctx.root.config.assets.whitelist.some(prefix => data.url.startsWith(prefix))) {
           return segment(type, data)
         } else {
           return segment(type, { url: await this.upload(data.url, data.file) })

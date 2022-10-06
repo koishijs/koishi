@@ -53,7 +53,7 @@ describe('Runtime', () => {
   describe('Command Prefix', () => {
     it('single prefix', async () => {
       // also support functions
-      app.options.prefix = () => '!'
+      app.config.prefix = () => '!'
 
       await client1.shouldReply('cmd2', 'cmd2:123')
       await client4.shouldNotReply('cmd2')
@@ -64,7 +64,7 @@ describe('Runtime', () => {
     })
 
     it('multiple prefixes', async () => {
-      app.options.prefix = ['!', '.']
+      app.config.prefix = ['!', '.']
 
       await client1.shouldReply('cmd2', 'cmd2:123')
       await client4.shouldNotReply('cmd2')
@@ -75,7 +75,7 @@ describe('Runtime', () => {
     })
 
     it('optional prefix', async () => {
-      app.options.prefix = ['.', '']
+      app.config.prefix = ['.', '']
 
       await client1.shouldReply('cmd2', 'cmd2:123')
       await client4.shouldReply('cmd2', 'cmd2:123')
@@ -86,7 +86,7 @@ describe('Runtime', () => {
     })
 
     it('no prefix', async () => {
-      app.options.prefix = null
+      app.config.prefix = null
 
       await client1.shouldReply('cmd2', 'cmd2:123')
       await client4.shouldReply('cmd2', 'cmd2:123')
@@ -99,12 +99,12 @@ describe('Runtime', () => {
 
   describe('Nickname Prefix', () => {
     before(() => {
-      app.options.prefix = '-'
+      app.config.prefix = '-'
       app.$internal.prepare()
     })
 
     after(() => {
-      app.options.prefix = null
+      app.config.prefix = null
       app.$internal.prepare()
     })
 
@@ -117,7 +117,7 @@ describe('Runtime', () => {
     })
 
     it('single nickname', async () => {
-      app.options.nickname = 'koishi'
+      app.config.nickname = 'koishi'
       app.$internal.prepare()
 
       await client1.shouldReply('koishi, cmd2', 'cmd2:123')
@@ -131,7 +131,7 @@ describe('Runtime', () => {
     })
 
     it('multiple nicknames', async () => {
-      app.options.nickname = ['komeiji', 'koishi']
+      app.config.nickname = ['komeiji', 'koishi']
       app.$internal.prepare()
 
       await client1.shouldReply('cmd2', 'cmd2:123')
@@ -147,12 +147,12 @@ describe('Runtime', () => {
 
   describe('Shortcuts', () => {
     before(() => {
-      app.options.prefix = '#'
+      app.config.prefix = '#'
       app.$internal.prepare()
     })
 
     after(() => {
-      app.options.prefix = null
+      app.config.prefix = null
       app.$internal.prepare()
     })
 

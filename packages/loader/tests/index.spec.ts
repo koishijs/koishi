@@ -20,7 +20,7 @@ describe('@koishijs/loader', () => {
 
     const app = await loader.createApp()
     expect(app).to.be.instanceof(Context)
-    expect(app.options.prefix).to.deep.equal(['.'])
+    expect(app.config.prefix).to.deep.equal(['.'])
     expect(app.registry.get(loader.data.foo)).to.be.ok
     expect(app.registry.get(loader.data.foo)?.config).to.deep.equal({})
     expect(app.registry.get(loader.data.bar)).to.be.ok
@@ -42,7 +42,7 @@ describe('@koishijs/loader', () => {
     }
     app.state.update(loader.config)
     await app.lifecycle.flush()
-    expect(app.options.prefix).to.deep.equal(['/'])
+    expect(app.config.prefix).to.deep.equal(['/'])
     expect(app.registry.get(loader.data.foo)).to.be.not.ok
     expect(app.registry.get(loader.data.bar)).to.be.ok
     expect(app.registry.get(loader.data.bar)?.config).to.deep.equal({ a: 2 })

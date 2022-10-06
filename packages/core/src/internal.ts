@@ -180,7 +180,7 @@ export class Internal {
 
     // execute middlewares
     let index = 0, midStack = '', lastCall = ''
-    const { prettyErrors } = this.ctx.options
+    const { prettyErrors } = this.ctx.root.config
     const next: Next = async (callback) => {
       if (prettyErrors) {
         lastCall = new Error().stack.split('\n', 3)[2]

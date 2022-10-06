@@ -28,7 +28,7 @@ export interface Events<C extends Context = Context> extends satori.Events<C> {
 export interface Context {
   [Context.events]: Events<this>
   [Context.session]: Session
-  options: Context.Config
+  [Context.config]: Context.Config
 }
 
 export class Context extends satori.Context {
@@ -38,6 +38,11 @@ export class Context extends satori.Context {
 
   get app() {
     return this.root
+  }
+
+  /** @deprecated use `root.config` instead */
+  get options() {
+    return this.root.config
   }
 }
 
