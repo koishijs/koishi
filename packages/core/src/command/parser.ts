@@ -202,7 +202,7 @@ export namespace Argv {
 
   export type OptionType<S extends string> = ExtractFirst<Replace<S, '>', ']'>, any>
 
-  export type Type = DomainType | RegExp | string[] | Transform<any>
+  export type Type = DomainType | RegExp | readonly string[] | Transform<any>
 
   export interface Declaration {
     name?: string
@@ -223,6 +223,10 @@ export namespace Argv {
     return typeof type === 'string' ? builtin[type] || {} : {}
   }
 
+  // https://github.com/microsoft/TypeScript/issues/17002
+  // it never got fixed so we have to do this
+  const isArray = Array.isArray as (arg: any) => arg is readonly any[]
+
   function resolveType(type: Type) {
     if (typeof type === 'function') {
       return type
@@ -231,7 +235,7 @@ export namespace Argv {
         if (type.test(source)) return source
         throw new Error()
       }
-    } else if (Array.isArray(type)) {
+    } else if (isArray(type)) {
       return (source: string) => {
         if (type.includes(source)) return source
         throw new Error()
