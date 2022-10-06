@@ -3,14 +3,14 @@ import { ListObjectsCommand, PutObjectCommand, S3Client, S3ClientConfig } from '
 
 class S3Assets extends Assets {
   private s3: S3Client
+  private publicUrl: string
 
   constructor(ctx: Context, private config: S3Assets.Config) {
     super(ctx)
-    config.region ||= 'none'
-    config.pathPrefix ||= ''
+    this.publicUrl = config.publicUrl
     if (config.endpoint && !config.publicUrl) {
       // MinIO style public URL
-      config.publicUrl = `${config.endpoint}/${config.bucket}/${config.pathPrefix}`
+      this.publicUrl = `${config.endpoint}/${config.bucket}/${config.pathPrefix}`
     }
     this.s3 = new S3Client(config)
   }
@@ -30,12 +30,12 @@ class S3Assets extends Assets {
   }
 
   async upload(url: string, file: string) {
-    if (url.startsWith(this.config.publicUrl)) {
+    if (url.startsWith(this.publicUrl)) {
       return url
     }
     const { buffer, filename } = await this.analyze(url, file)
     const s3Key = `${this.config.pathPrefix}${filename}`
-    const finalUrl = `${this.config.publicUrl}${filename}`
+    const finalUrl = `${this.publicUrl}${filename}`
     try {
       const checkExisting = await this.listObjects(s3Key)
       if (checkExisting.Contents?.some((obj) => obj.Key === s3Key)) return finalUrl

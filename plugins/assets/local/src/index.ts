@@ -11,34 +11,38 @@ class LocalAssets extends Assets {
     assetSize: 0,
   }
 
+  private path: string
+  private root: string
+  private selfUrl: string
+
   constructor(ctx: Context, private config: LocalAssets.Config) {
     super(ctx)
 
-    config.path = sanitize(config.path || '/assets')
+    this.path = sanitize(config.path || '/assets')
     if (config.root) {
-      config.root = resolve(ctx.app.baseDir, config.root)
+      this.root = resolve(ctx.app.baseDir, config.root)
     } else {
-      config.root = resolve(__dirname, '../public')
+      this.root = resolve(__dirname, '../public')
     }
 
     if (config.selfUrl) {
-      config.selfUrl = trimSlash(config.selfUrl)
-    } else if (!(config.selfUrl = ctx.app.options.selfUrl)) {
-      throw new Error(`missing configuration "selfUrl" or "server"`)
+      this.selfUrl = trimSlash(config.selfUrl)
+    } else if (!(this.selfUrl = ctx.root.config.selfUrl)) {
+      throw new Error(`missing configuration "selfUrl"`)
     }
 
-    ctx.router.get(config.path, async (ctx) => {
+    ctx.router.get(this.path, async (ctx) => {
       return ctx.body = await this.stats()
     })
 
-    ctx.router.get(config.path + '/:name', async (ctx) => {
-      const filename = resolve(config.root, basename(ctx.params.name))
+    ctx.router.get(this.path + '/:name', async (ctx) => {
+      const filename = resolve(this.root, basename(ctx.params.name))
       const stream = await fileTypeStream(createReadStream(filename))
       ctx.type = stream.fileType?.mime
       return ctx.body = stream
     })
 
-    ctx.router.post(config.path, async (ctx) => {
+    ctx.router.post(this.path, async (ctx) => {
       const { salt, sign, url, file } = ctx.query
       if (Array.isArray(file) || Array.isArray(url)) {
         return ctx.status = 400
@@ -62,12 +66,11 @@ class LocalAssets extends Assets {
   stop() {}
 
   async init() {
-    const root = this.config.root
-    await fs.mkdir(root, { recursive: true })
-    const filenames = await fs.readdir(root)
+    await fs.mkdir(this.root, { recursive: true })
+    const filenames = await fs.readdir(this.root)
     this._stats.assetCount = filenames.length
     await Promise.all(filenames.map(async (file) => {
-      const { size } = await fs.stat(resolve(root, file))
+      const { size } = await fs.stat(resolve(this.root, file))
       this._stats.assetSize += size
     }))
   }
@@ -79,9 +82,9 @@ class LocalAssets extends Assets {
   }
 
   async upload(url: string, file: string) {
-    if (url.startsWith(this.config.selfUrl)) return url
+    if (url.startsWith(this.selfUrl)) return url
     await this._promise
-    const { selfUrl, path, root } = this.config
+    const { selfUrl, path, root } = this
     const { buffer, filename } = await this.analyze(url, file)
     const savePath = resolve(root, filename)
     await this.write(buffer, savePath)
