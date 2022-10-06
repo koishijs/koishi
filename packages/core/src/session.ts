@@ -81,7 +81,7 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
   }
 
   async sendQueued(content: string | satori.segment, delay?: number) {
-    const text = satori.segment.normalize(content).toString(true)
+    const text = satori.segment.normalize(content).toString()
     if (!text) return
     if (isNullable(delay)) {
       const { message, character } = this.app.config.delay
