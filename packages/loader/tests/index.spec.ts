@@ -49,4 +49,18 @@ describe('@koishijs/loader', () => {
     expect(app.registry.get(loader.data.baz)).to.be.ok
     expect(app.registry.get(loader.data.baz)?.config).to.deep.equal({})
   })
+
+  it('plugin update', async () => {
+    const { app } = loader
+    const runtime = app.registry.get(loader.data.bar)
+    runtime?.update({ a: 3 })
+    expect(loader.config.plugins).to.deep.equal({
+      'group:qux': {
+        'baz': {},
+        'bar': {
+          a: 3,
+        },
+      },
+    })
+  })
 })

@@ -30,6 +30,8 @@ declare module 'cordis' {
   }
 }
 
+const kUpdate = Symbol('update')
+
 Context.service('loader')
 
 const logger = new Logger('app')
@@ -108,6 +110,7 @@ export abstract class Loader {
     let fork = parent.state[Loader.kRecord][key]
     if (fork) {
       patch(fork.parent, config)
+      fork[kUpdate] = true
       fork.update(config)
     } else {
       logger.info(`apply plugin %c`, key)
@@ -147,6 +150,7 @@ export abstract class Loader {
     this.entry = fork.ctx
 
     app.accept(['plugins'], (config) => {
+      fork[kUpdate] = true
       fork.update(config.plugins)
     }, { passive: true })
 
@@ -160,6 +164,16 @@ export abstract class Loader {
       for (const name in record) {
         if (record[name] !== fork) continue
         logger.info(`reload plugin %c`, name)
+      }
+    })
+
+    app.on('internal/before-update', (fork, config) => {
+      if (fork[kUpdate]) return delete fork[kUpdate]
+      const record = fork.parent.state[Loader.kRecord]
+      if (!record) return
+      for (const name in record) {
+        if (record[name] !== fork) continue
+        fork.parent.state.config[name] = config
       }
     })
 
