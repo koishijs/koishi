@@ -177,11 +177,13 @@ function getOptions(command: Command, session: Session<'authority'>, config: Hel
 
   options.forEach((option) => {
     const authority = option.authority && config.authority ? `(${option.authority}) ` : ''
-    let line = `${authority}${option.syntax}`
-    const description = session.text(option.descPath ?? [`commands.${command.name}.options.${option.name}`, ''])
-    if (description) line += '  ' + description
-    line = command.ctx.chain('help/option', line, option, command, session)
-    output.push('    ' + line)
+    if (!('value' in option)) {
+      let line = `${authority}${option.syntax}`
+      const description = session.text(option.descPath ?? [`commands.${command.name}.options.${option.name}`, ''])
+      if (description) line += '  ' + description
+      line = command.ctx.chain('help/option', line, option, command, session)
+      output.push('    ' + line)
+    }
     for (const value in option.valuesSyntax) {
       let line = `${authority}${option.valuesSyntax[value]}`
       const description = session.text([`commands.${command.name}.options.${option.name}.${value}`, ''])
