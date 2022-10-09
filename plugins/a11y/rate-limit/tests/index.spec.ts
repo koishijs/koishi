@@ -1,9 +1,9 @@
 import { App, Time } from 'koishi'
 import mock from '@koishijs/plugin-mock'
 import memory from '@koishijs/plugin-database-memory'
-import * as help from '@koishijs/plugin-help'
-import * as rate from '@koishijs/plugin-rate-limit'
 import { install } from '@sinonjs/fake-timers'
+import * as help from '@koishijs/plugin-help'
+import * as rate from '../src'
 
 const app = new App()
 let now = Date.now()
@@ -119,6 +119,20 @@ describe('@koishijs/plugin-rate-limit', () => {
       } finally {
         clock.uninstall()
       }
+    })
+  })
+
+  describe('bypassAuthority', () => {
+    it('bypass maxUsage', async () => {
+      const cmd = app
+        .command('qux', '指令3', { maxUsage: 1, bypassAuthority: 3 })
+        .action(() => 'test')
+
+      await client2.shouldReply('qux', 'test')
+      await client2.shouldReply('qux', '调用次数已达上限。')
+      await client1.shouldReply('qux', 'test')
+      await client1.shouldReply('qux', 'test')
+      await client1.shouldReply('qux', 'test')
     })
   })
 })

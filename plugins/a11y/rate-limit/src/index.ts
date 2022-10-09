@@ -12,6 +12,7 @@ declare module 'koishi' {
       maxUsage?: Computed<number>
       /** min interval */
       minInterval?: Computed<number>
+      bypassAuthority?: Computed<number>
     }
   }
 
@@ -44,7 +45,7 @@ export function apply(ctx: Context) {
   // add user fields
   ctx.before('command/attach-user', ({ command, options = {} }, fields) => {
     if (!command) return
-    const { maxUsage, minInterval } = command.config
+    const { maxUsage, minInterval, bypassAuthority } = command.config
     let shouldFetchUsage = !!(maxUsage || minInterval)
     for (const { name, notUsage } of Object.values(command._options)) {
       // --help is not a usage (#772)
@@ -55,12 +56,19 @@ export function apply(ctx: Context) {
       if (maxUsage) fields.add('usage')
       if (minInterval) fields.add('timers')
     }
+    if (bypassAuthority) fields.add('authority')
   })
 
+  function bypassRateLimit(session: Session<'authority'>) {
+    if (!session.user) return true
+    const bypassAuthority = session.argv.command.getConfig('bypassAuthority', session)
+    if (session.user.authority >= bypassAuthority) return true
+  }
+
   // check user
-  ctx.before('command/execute', (argv: Argv<'usage' | 'timers'>) => {
+  ctx.before('command/execute', (argv: Argv<'authority' | 'usage' | 'timers'>) => {
     const { session, options, command } = argv
-    if (!session.user) return
+    if (bypassRateLimit(session)) return
 
     function sendHint(path: string, ...param: any[]) {
       if (!command.config.showWarning) return ''
@@ -89,8 +97,8 @@ export function apply(ctx: Context) {
   })
 
   // extend command help
-  ctx.on('help/command', (output, command, session: Session<'usage' | 'timers'>) => {
-    if (!session.user) return
+  ctx.on('help/command', (output, command, session: Session<'authority' | 'usage' | 'timers'>) => {
+    if (bypassRateLimit(session)) return
 
     const name = getUsageName(command)
     const maxUsage = command.getConfig('maxUsage', session) ?? Infinity
@@ -109,7 +117,8 @@ export function apply(ctx: Context) {
   })
 
   // extend command option
-  ctx.on('help/option', (output, option, command, session) => {
+  ctx.on('help/option', (output, option, command, session: Session<'authority'>) => {
+    if (bypassRateLimit(session)) return
     const maxUsage = command.getConfig('maxUsage', session)
     if (option.notUsage && maxUsage !== Infinity) {
       output += session.text('internal.option-not-usage')
