@@ -35,6 +35,7 @@ export default class BrowserLoader extends Loader {
   }
 
   writeConfig() {
+    this.app.emit('config')
   }
 
   async resolvePlugin(name: string) {

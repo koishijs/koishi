@@ -102,6 +102,7 @@ export default class NodeLoader extends Loader {
   }
 
   writeConfig() {
+    this.app.emit('config')
     this.suspend = true
     if (!this.writable) throw new Error('cannot overwrite readonly config')
     if (this.extname === '.json') {
