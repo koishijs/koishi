@@ -44,7 +44,7 @@
   "dependencies": {
     "@koishijs/core": "^4.9.4",
     "@koishijs/utils": "^6.2.2",
-    "@satorijs/satori": "^1.1.11",
+    "@satorijs/satori": "^1.2.0",
     "file-type": "^16.5.4",
     "ns-require": "^1.1.4"
   }

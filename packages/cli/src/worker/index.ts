@@ -11,7 +11,6 @@ export { Loader, Watcher }
 declare module 'koishi' {
   interface Events {
     'exit'(signal: NodeJS.Signals): Promise<void>
-    'config'(): void
   }
 
   interface Context {
@@ -37,16 +36,27 @@ Object.assign(Context.Config.Advanced.dict, {
   plugins: Schema.object({}).hidden(),
 })
 
+function isAggregateError(error: any): error is { errors: Error[] } {
+  return 'errors' in error && Array.isArray(error.errors)
+}
+
+function logError(error: any) {
+  if (!(error instanceof Error)) {
+    new Logger('app').error(error)
+  } else if (isAggregateError(error)) {
+    error.errors.map(logError)
+  } else {
+    new Logger('app').error(error.stack || error.message)
+  }
+}
+
 function handleException(error: any) {
-  new Logger('app').error(error)
+  logError(error)
   process.exit(1)
 }
 
 process.on('uncaughtException', handleException)
-
-process.on('unhandledRejection', (error) => {
-  new Logger('app').warn(error)
-})
+process.on('unhandledRejection', logError)
 
 const loader = new Loader(process.env.KOISHI_CONFIG_FILE)
 const config = loader.readConfig()
