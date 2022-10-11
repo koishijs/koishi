@@ -28,7 +28,7 @@ export function apply(ctx: Context, { timeout }: Config) {
       const list = recent[session.channelId]
       if (!list) return session.text('.no-recent')
       const removal = list.splice(0, count)
-      const delay = ctx.root.config.delay.broadcast
+      const delay = ctx.root.options.delay.broadcast
       if (!list.length) delete recent[session.channelId]
       for (let index = 0; index < removal.length; index++) {
         if (index && delay) await sleep(delay)
