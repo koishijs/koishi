@@ -7,7 +7,7 @@ USER koishi
 
 WORKDIR /home/koishi
 RUN yarn create koishi koishi-app -y && cd koishi-app && \
-    sed -i '1 ihost: 0.0.0.0' koishi.yml && \
+    sed -i 's/host: .*/host: 0.0.0.0/g' koishi.yml && \
     yarn install
 
 WORKDIR /home/koishi/koishi-app
