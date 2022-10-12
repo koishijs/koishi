@@ -12,7 +12,7 @@ Koishi 是一个相当大的仓库，包含了各种各样的插件和适配器�
 ## 开始之前
 
 - 如果你不知道应该从哪里开始入手，可以加入 [Discord](https://discord.gg/xfxYwmd284) 讨论。
-- 如果你想要报告 Bug 或者提出新的功能，可以在 [Github](https://github.com/koishijs/koishi/issues/new/choose) 上提出一个 Issue。
+- 如果你想要报告 Bug 或者提出新的功能，可以在 [GitHub](https://github.com/koishijs/koishi/issues/new/choose) 上提出一个 Issue。
 
 ## 可以贡献的范围（我可以贡献__吗？）
 
