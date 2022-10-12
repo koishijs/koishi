@@ -1,5 +1,5 @@
 import { App } from 'koishi'
-import * as help from '@koishijs/plugin-help'
+import * as help from '../src'
 import suggest from '@koishijs/plugin-suggest'
 import mock from '@koishijs/plugin-mock'
 import memory from '@koishijs/plugin-database-memory'

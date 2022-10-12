@@ -9,7 +9,22 @@ import zhTW from './locales/zh-tw.yml'
 declare module 'koishi' {
   interface Events {
     'help/command'(output: string[], command: Command, session: Session): void
-    'help/option'(output: string, option: Argv.OptionDeclaration, command: Command, session: Session): string
+    'help/option'(output: string, option: Argv.OptionVariant, command: Command, session: Session): string
+  }
+
+  namespace Command {
+    interface Config {
+      /** hide all options by default */
+      hideOptions?: boolean
+      /** hide command */
+      hidden?: boolean
+    }
+  }
+
+  namespace Argv {
+    interface OptionConfig {
+      hidden?: boolean | ((session: Session) => boolean)
+    }
   }
 }
 
@@ -159,7 +174,7 @@ function formatCommands(path: string, session: Session<'authority'>, children: C
   return output
 }
 
-function getOptionVisibility(option: Argv.OptionDeclaration, session: Session<'authority'>) {
+function getOptionVisibility(option: Argv.OptionConfig, session: Session<'authority'>) {
   if (session.user && option.authority > session.user.authority) return false
   return !session.resolveValue(option.hidden)
 }
@@ -171,28 +186,28 @@ function getOptions(command: Command, session: Session<'authority'>, config: Hel
     : Object.values(command._options).filter(option => getOptionVisibility(option, session))
   if (!options.length) return []
 
-  const output = config.authority && options.some(o => o.authority)
-    ? [session.text('.available-options-with-authority')]
-    : [session.text('.available-options')]
-
-  options.forEach((option) => {
+  const output: string[] = []
+  Object.values(command._options).forEach((option) => {
     const authority = option.authority && config.authority ? `(${option.authority}) ` : ''
-    if (!('value' in option)) {
+    function pushOption(option: Argv.OptionVariant, name: string) {
+      if (!config.showHidden && !getOptionVisibility(option, session)) return
       let line = `${authority}${option.syntax}`
-      const description = session.text(option.descPath ?? [`commands.${command.name}.options.${option.name}`, ''])
+      const description = session.text(option.descPath ?? [`commands.${command.name}.options.${name}`, ''])
       if (description) line += '  ' + description
       line = command.ctx.chain('help/option', line, option, command, session)
       output.push('    ' + line)
     }
-    for (const value in option.valuesSyntax) {
-      let line = `${authority}${option.valuesSyntax[value]}`
-      const description = session.text([`commands.${command.name}.options.${option.name}.${value}`, ''])
-      if (description) line += '  ' + description
-      line = command.ctx.chain('help/option', line, option, command, session)
-      output.push('    ' + line)
+
+    if (!('value' in option)) pushOption(option, option.name)
+    for (const value in option.variants) {
+      pushOption(option.variants[value], `${option.name}.${value}`)
     }
   })
 
+  if (!output.length) return []
+  output.unshift(config.authority && options.some(o => o.authority)
+    ? session.text('.available-options-with-authority')
+    : session.text('.available-options'))
   return output
 }
 

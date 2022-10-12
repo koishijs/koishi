@@ -373,8 +373,6 @@ export namespace Argv {
     value?: any
     fallback?: any
     type?: T
-    /** hide the option by default */
-    hidden?: boolean | ((session: Session) => boolean)
     authority?: number
     descPath?: string
   }
@@ -383,10 +381,15 @@ export namespace Argv {
     type: T
   }
 
-  export interface OptionDeclaration extends Declaration, OptionConfig {
+  export interface OptionVariant extends OptionConfig {
     syntax: string
+  }
+
+  export interface OptionDeclaration extends Declaration, OptionVariant {
     values: Dict<any>
+    /** @deprecated */
     valuesSyntax: Dict<string>
+    variants: Dict<OptionVariant>
   }
 
   type OptionDeclarationMap = Dict<OptionDeclaration>
@@ -439,6 +442,7 @@ export namespace Argv {
         name,
         values: {},
         valuesSyntax: {},
+        variants: {},
         syntax,
       }
 
@@ -446,6 +450,7 @@ export namespace Argv {
       const fallbackType = typeof option.fallback
       if ('value' in config) {
         path += '.' + config.value
+        option.variants[config.value] = { ...config, syntax }
         option.valuesSyntax[config.value] = syntax
         names.forEach(name => option.values[name] = config.value)
       } else if (!bracket.trim()) {

@@ -291,10 +291,6 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
 
 export namespace Command {
   export interface Config {
-    /** hide all options by default */
-    hideOptions?: boolean
-    /** hide command */
-    hidden?: boolean
     /** min authority */
     authority?: Computed<number>
     /** disallow unknown options */
