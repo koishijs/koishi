@@ -1,4 +1,4 @@
-import { Awaitable, coerce, Dict, isNullable, Logger, remove, Schema } from '@koishijs/utils'
+import { Awaitable, coerce, Dict, isNullable, isGeneratorFunction, Logger, remove, Schema } from '@koishijs/utils'
 import { segment } from '@satorijs/core'
 import { Disposable } from 'cordis'
 import { Context } from '../context'
@@ -26,8 +26,10 @@ export namespace Command {
     options?: Dict
   }
 
+  export type Plain = void | string | segment
+
   export type Action<U extends User.Field = never, G extends Channel.Field = never, A extends any[] = any[], O extends {} = {}>
-    = (argv: Argv<U, G, A, O>, ...args: A) => Awaitable<void | string | segment>
+    = (argv: Argv<U, G, A, O>, ...args: A) => Awaitable<Plain> | Generator<Plain, Plain, string[]> | AsyncGenerator<Plain, Plain, string[]>
 
   export type Usage<U extends User.Field = never, G extends Channel.Field = never>
     = string | ((session: Session<U, G>) => Awaitable<string>)
@@ -246,7 +248,24 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
 
     let index = 0
     const queue: Next.Queue = this._actions.map(action => async () => {
-      return await action.call(this, argv, ...args)
+      if (isGeneratorFunction<Command.Plain, Command.Plain, string[]>(action)) {
+        const result = action.call(this, argv, ...args)
+        let ids: string[] = []
+        while (true) {
+          const effect = await result.next(ids)
+          ids = []
+          // return
+          if (effect.done) {
+            return effect.value
+          }
+          // yield
+          if (!isNullable(effect.value)) {
+            ids = await argv.session.send(effect.value)
+          }
+        }
+      } else {
+        return action.call(this, argv, ...args) as Command.Plain
+      }
     })
 
     queue.push(fallback)

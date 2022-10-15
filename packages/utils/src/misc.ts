@@ -2,6 +2,10 @@ export function isInteger(source: any) {
   return typeof source === 'number' && Math.floor(source) === source
 }
 
+export function isGeneratorFunction<T = unknown, TReturn = any, TNext = unknown>(fn: any): fn is (...args: any[]) => Generator<T, TReturn, TNext> | AsyncGenerator<T, TReturn, TNext> {
+  return ['GeneratorFunction', 'AsyncGeneratorFunction'].includes(fn.constructor.name)
+}
+
 export async function sleep(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms))
 }
