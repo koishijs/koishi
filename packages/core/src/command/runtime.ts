@@ -18,10 +18,11 @@ export default function runtime(ctx: Context) {
 
   ctx.before('parse', (content, session) => {
     const { parsed, quote } = session
-    if (parsed.prefix || quote) return
+    if (parsed.prefix) return
     for (const shortcut of ctx.$commander._shortcuts) {
       const { name, fuzzy, command, prefix, options = {}, args = [] } = shortcut
       if (prefix && !parsed.appel || !command.ctx.filter(session)) continue
+      if (quote) content += ' ' + quote.content
       if (typeof name === 'string') {
         if (!fuzzy && content !== name || !content.startsWith(name)) continue
         const message = content.slice(name.length)
