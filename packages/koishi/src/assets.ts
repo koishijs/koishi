@@ -28,8 +28,6 @@ defineProperty(Context.Config, 'Assets', Schema.object({
   whitelist: Schema.array(Schema.string().required().role('link')).description('不处理的白名单 URL 列表。'),
 }).description('资源设置'))
 
-const PROTOCOL_BASE64 = 'base64://'
-
 export abstract class Assets extends Service {
   static types = ['image', 'audio', 'video']
   protected types: readonly string[] = Assets.types
@@ -53,16 +51,9 @@ export abstract class Assets extends Service {
     })))
   }
 
-  protected async download(url: string) {
-    if (url.startsWith(PROTOCOL_BASE64)) {
-      return Buffer.from(url.slice(PROTOCOL_BASE64.length), 'base64')
-    }
-    const data = await this.ctx.http.get<ArrayBuffer>(url, { responseType: 'arraybuffer' })
-    return Buffer.from(data)
-  }
-
   protected async analyze(url: string, name = ''): Promise<Assets.FileInfo> {
-    const buffer = await this.download(url)
+    const file = await this.ctx.http.file(url)
+    const buffer = Buffer.from(file.data)
     const hash = createHash('sha1').update(buffer).digest('hex')
     if (name) {
       name = basename(name)
