@@ -111,7 +111,7 @@ class SuggestionService {
 
   getCommandNames(session: Session) {
     return this.ctx.$commander._commandList
-      .filter(cmd => cmd.match(session) && !cmd.config.hidden)
+      .filter(cmd => cmd.match(session))
       .flatMap(cmd => cmd._aliases)
   }
 }

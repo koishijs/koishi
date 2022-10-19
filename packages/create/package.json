@@ -39,7 +39,7 @@
     "@types/yargs-parser": "^21.0.0"
   },
   "dependencies": {
-    "axios": "^0.24.0",
+    "axios": "^1.1.2",
     "kleur": "^4.1.5",
     "prompts": "^2.4.2",
     "tar": "^6.1.11",

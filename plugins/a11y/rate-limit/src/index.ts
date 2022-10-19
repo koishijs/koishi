@@ -118,7 +118,7 @@ export function apply(ctx: Context) {
 
   // extend command option
   ctx.on('help/option', (output, option, command, session: Session<'authority'>) => {
-    if (bypassRateLimit(session)) return
+    if (bypassRateLimit(session)) return output
     const maxUsage = command.getConfig('maxUsage', session)
     if (option.notUsage && maxUsage !== Infinity) {
       output += session.text('internal.option-not-usage')
