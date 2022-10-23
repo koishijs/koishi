@@ -111,23 +111,36 @@ export class Internal {
     let content = session.content.trim()
     session.elements ??= segment.parse(content)
 
-    // strip prefix
-    if (session.subtype !== 'private' && session.elements[0]?.type === 'at' && session.elements[0].attrs.id === session.selfId) {
-      atSelf = appel = true
-      content = session.elements.slice(1).join('').trimStart()
-      // eslint-disable-next-line no-cond-assign
-    } else {
+    // strip mentions
+    let hasMention = false
+    const elements = session.elements.slice()
+    while (elements[0]?.type === 'at') {
+      const { attrs } = elements.shift()
+      if (attrs.id === session.selfId) {
+        atSelf = appel = true
+      }
+      hasMention = true
+      content = elements.join('').trimStart()
+      // @ts-ignore
+      if (elements[0]?.type === 'text' && !elements[0].attrs.content.trim()) {
+        elements.shift()
+      }
+    }
+
+    if (!hasMention || atSelf) {
+      // strip nickname
       const result = this._stripNickname(content)
       if (result) {
         appel = true
         content = result
       }
-    }
 
-    for (const _prefix of this._resolvePrefixes(session)) {
-      if (!content.startsWith(_prefix)) continue
-      prefix = _prefix
-      content = content.slice(_prefix.length)
+      // strip prefix
+      for (const _prefix of this._resolvePrefixes(session)) {
+        if (!content.startsWith(_prefix)) continue
+        prefix = _prefix
+        content = content.slice(_prefix.length)
+      }
     }
 
     // store parsed message
