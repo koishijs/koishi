@@ -1,4 +1,5 @@
 import { App, Command, Logger, Next } from 'koishi'
+import { sleep } from '@koishijs/utils'
 import { inspect } from 'util'
 import { expect, use } from 'chai'
 import shape from 'chai-shape'
@@ -175,12 +176,14 @@ describe('Command API', () => {
     })
   })
 
-  describe('Execute Commands', () => {
+  describe('Execute Commands', async () => {
     const app = new App()
     app.plugin(mock)
     const session = app.mock.session({})
+    const client = app.mock.client('123')
     const warn = jest.spyOn(logger, 'warn')
     const next = jest.fn(Next.compose)
+    await app.start()
 
     let command: Command
     beforeEach(() => {
@@ -289,6 +292,36 @@ describe('Command API', () => {
       await expect(command.execute({ session }, next)).eventually.to.equal('catched')
       expect(warn.mock.calls).to.have.length(0)
       expect(next.mock.calls).to.have.length(0)
+    })
+
+    it('generator 1 (sync)', async () => {
+      command.action(function* () {
+        yield '1'
+        yield '2'
+        return '3'
+      })
+      await client.shouldReply('test', ['1', '2', '3'])
+    })
+
+    it('generator 2 (sync without yield)', async () => {
+      command.action(function* () { return '1' })
+      await client.shouldReply('test', '1')
+    })
+
+    it('generator 3 (sync without return)', async () => {
+      command.action(function* () { yield '1' })
+      await client.shouldReply('test', '1')
+    })
+
+    it('generator 4 (async)', async () => {
+      command.action(async function* () {
+        yield '1'
+        yield '2'
+        await sleep(100)
+        yield '3'
+        return '4'
+      })
+      await client.shouldReply('test', ['1', '2', '3', '4'])
     })
   })
 
