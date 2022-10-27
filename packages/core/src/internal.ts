@@ -1,6 +1,6 @@
 import { coerce, escapeRegExp, makeArray } from '@koishijs/utils'
 import { Awaitable, defineProperty, Dict } from 'cosmokit'
-import { Context, segment, Session } from '@satorijs/core'
+import { Context, Fragment, segment, Session } from '@satorijs/core'
 import { Computed } from './session'
 import { Channel, User } from './database'
 
@@ -25,14 +25,14 @@ function createLeadingRE(patterns: string[], prefix = '', suffix = '') {
   return patterns.length ? new RegExp(`^${prefix}(${patterns.map(escapeRegExp).join('|')})${suffix}`) : /$^/
 }
 
-export type Next = (next?: Next.Callback) => Promise<void | string | segment>
-export type Middleware = (session: Session, next: Next) => Awaitable<void | string | segment>
+export type Next = (next?: Next.Callback) => Promise<void | Fragment>
+export type Middleware = (session: Session, next: Next) => Awaitable<void | Fragment>
 
 export namespace Next {
   export const MAX_DEPTH = 64
 
-  export type Queue = ((next?: Next) => Awaitable<void | string | segment>)[]
-  export type Callback = void | string | ((next?: Next) => Awaitable<void | string | segment>)
+  export type Queue = ((next?: Next) => Awaitable<void | Fragment>)[]
+  export type Callback = void | string | ((next?: Next) => Awaitable<void | Fragment>)
 
   export async function compose(callback: Callback, next?: Next) {
     return typeof callback === 'function' ? callback(next) : callback

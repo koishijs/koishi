@@ -1,6 +1,6 @@
 import { Awaitable, Dict, isNullable, remove } from 'cosmokit'
 import { coerce } from '@koishijs/utils'
-import { Context, Logger, Schema, segment, Session } from '@satorijs/core'
+import { Context, Fragment, Logger, Schema, Session } from '@satorijs/core'
 import { Disposable } from 'cordis'
 import { Argv } from './parser'
 import { Next } from '../internal'
@@ -27,7 +27,7 @@ export namespace Command {
   }
 
   export type Action<U extends User.Field = never, G extends Channel.Field = never, A extends any[] = any[], O extends {} = {}>
-    = (argv: Argv<U, G, A, O>, ...args: A) => Awaitable<void | string | segment>
+    = (argv: Argv<U, G, A, O>, ...args: A) => Awaitable<void | Fragment>
 
   export type Usage<U extends User.Field = never, G extends Channel.Field = never>
     = string | ((session: Session<U, G>) => Awaitable<string>)
@@ -226,7 +226,7 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
     return callback(this, ...args)
   }
 
-  async execute(argv: Argv<U, G, A, O>, fallback = Next.compose): Promise<string | segment> {
+  async execute(argv: Argv<U, G, A, O>, fallback = Next.compose): Promise<Fragment> {
     argv.command ??= this
     argv.args ??= [] as any
     argv.options ??= {} as any
