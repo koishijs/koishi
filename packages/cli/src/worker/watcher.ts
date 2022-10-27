@@ -48,7 +48,7 @@ class Watcher {
   private stashed = new Set<string>()
 
   constructor(private ctx: Context, private config: Watcher.Config) {
-    ctx.app.watcher = this
+    ctx.root.watcher = this
     ctx.on('ready', () => this.start())
     ctx.on('dispose', () => this.stop())
   }
@@ -80,7 +80,7 @@ class Watcher {
           this.ctx.loader.fullReload()
         } else {
           const config = loader.readConfig()
-          this.ctx.app.state.update(config)
+          this.ctx.root.state.update(config)
         }
       } else {
         if (this.externals.has(path)) {

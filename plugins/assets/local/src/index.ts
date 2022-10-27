@@ -20,7 +20,7 @@ class LocalAssets extends Assets {
 
     this.path = sanitize(config.path || '/assets')
     if (config.root) {
-      this.root = resolve(ctx.app.baseDir, config.root)
+      this.root = resolve(ctx.baseDir, config.root)
     } else {
       this.root = resolve(__dirname, '../public')
     }

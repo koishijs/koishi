@@ -14,7 +14,7 @@ export const Config: Schema<Config> = Schema.object({
 
 export function apply(ctx: Context, config: Config) {
   ctx.on('ready', async () => {
-    const folder = resolve(ctx.app.baseDir, config.root)
+    const folder = resolve(ctx.baseDir, config.root)
     const created = await fsp.mkdir(folder, { recursive: true })
     if (!created) {
       const files = await fsp.readdir(folder)

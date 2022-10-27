@@ -85,16 +85,16 @@ export namespace patch {
     for (const name of Object.keys(ctx.mapping)) {
       if (isolate?.includes(name)) continue
       const oldKey = ctx.mapping[name]
-      const value = ctx.app[oldKey]
+      const value = ctx.root[oldKey]
       delete ctx.mapping[name]
       const neoKey = ctx.mapping[name] || name
-      if (value === ctx.app[neoKey]) continue
+      if (value === ctx.root[neoKey]) continue
       const source = value?.[Context.source]
       updated[name] = source?.[delimiter]
       if (updated[name]) {
         // free right hand side service
         source[name] = value
-        ctx.app[oldKey] = null
+        ctx.root[oldKey] = null
       }
     }
 
@@ -102,16 +102,16 @@ export namespace patch {
     for (const name of isolate || []) {
       if (ctx.mapping[name]) continue
       const oldKey = ctx.mapping[name] || name
-      const value = ctx.app[oldKey]
+      const value = ctx.root[oldKey]
       ctx.mapping[name] = Symbol(name)
       const neoKey = ctx.mapping[name]
-      if (value === ctx.app[neoKey]) continue
+      if (value === ctx.root[neoKey]) continue
       const source = value?.[Context.source]
       updated[name] = source?.[delimiter]
       if (updated[name]) {
         // lock right hand side service
         source[name] = value
-        ctx.app[oldKey] = null
+        ctx.root[oldKey] = null
       }
     }
 

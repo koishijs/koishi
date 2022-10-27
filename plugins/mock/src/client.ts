@@ -16,7 +16,7 @@ export class MessageClient {
   private replies: string[] = []
 
   constructor(public bot: MockBot, public userId: string, public channelId?: string) {
-    this.app = bot.ctx.app
+    this.app = bot.ctx.root
     this.meta = {
       platform: 'mock',
       type: 'message',

@@ -6,6 +6,6 @@ export default defineDriver(SQLiteDriver, Schema.object({
   path: Schema.string().description('数据库路径').default('.koishi.db'),
 }), (ctx, config) => {
   if (config.path !== ':memory:') {
-    config.path = resolve(ctx.app.baseDir, config.path)
+    config.path = resolve(ctx.baseDir, config.path)
   }
 })

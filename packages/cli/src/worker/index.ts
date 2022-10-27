@@ -64,7 +64,7 @@ namespace addons {
   export const name = 'CLI'
 
   export function apply(ctx: Context, config: Context.Config) {
-    logger.apply(ctx.app)
+    logger.apply(ctx.root)
     ctx.plugin(daemon, config)
 
     if (process.env.KOISHI_WATCH_ROOT !== undefined) {
