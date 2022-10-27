@@ -7,7 +7,7 @@ declare module 'cordis' {
   }
 }
 
-declare module '@koishijs/core' {
+declare module '@satorijs/core' {
   interface Context {
     baseDir: string
   }
@@ -15,7 +15,7 @@ declare module '@koishijs/core' {
 
 export class Patch {
   constructor(ctx: Context) {
-    ctx.app.baseDir ??= process.cwd()
+    ctx.root.baseDir ??= process.cwd()
   }
 }
 

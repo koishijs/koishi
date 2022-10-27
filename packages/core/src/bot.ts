@@ -1,31 +1,19 @@
-import { Dict, makeArray, sleep } from '@koishijs/utils'
-import { Context } from './context'
-import { Session } from './session'
-import * as satori from '@satorijs/core'
+import { makeArray, sleep } from '@koishijs/utils'
+import { Dict } from 'cosmokit'
+import { Bot } from '@satorijs/core'
 
 declare module '@satorijs/core' {
   interface Bot {
     getGuildMemberMap(guildId: string): Promise<Dict<string>>
-    broadcast(channels: (string | [string, string])[], content: string | satori.segment, delay?: number): Promise<string[]>
+    broadcast(channels: (string | [string, string])[], content: Fragment, delay?: number): Promise<string[]>
+  }
+
+  interface Events {
+    'appellation'(name: string, session: Session): string
   }
 }
 
-export type { Message } from '@satorijs/core'
-export { Adapter, h, segment, Logger, Quester } from '@satorijs/core'
-
-export type Filter = satori.Filter<Context>
-
-export const Bot = satori.Bot<Context>
-export type Bot = satori.Bot<Context>
-
-export namespace Bot {
-  export type Status = satori.Bot.Status
-  export type Config = satori.Bot.Config
-}
-
-Bot.prototype.session = function session(this: Bot, payload) {
-  return new Session(this, payload)
-}
+export * from '@satorijs/core'
 
 Bot.prototype.getGuildMemberMap = async function getGuildMemberMap(this: Bot, guildId) {
   const list = await this.getGuildMemberList(guildId)

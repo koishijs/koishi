@@ -1,9 +1,8 @@
-import { camelCase, Dict, escapeRegExp, paramCase, Time } from '@koishijs/utils'
-import { segment } from '@satorijs/core'
+import { camelCase, Dict, paramCase, Time } from 'cosmokit'
+import { escapeRegExp } from '@koishijs/utils'
+import { Context, segment, Session } from '@satorijs/core'
 import { Command } from './command'
-import { Context } from '../context'
 import { Channel, User } from '../database'
-import { Session } from '../session'
 import { Next } from '../internal'
 
 export interface Token {
@@ -14,7 +13,7 @@ export interface Token {
   inters: Argv[]
 }
 
-export interface Argv<U extends User.Field = never, G extends Channel.Field = never, A extends any[] = any[], O = {}> {
+export interface Argv<U extends User.Field = never, G extends Channel.Field = never, A extends any[] = any[], O extends {} = {}> {
   args?: A
   options?: O
   error?: string

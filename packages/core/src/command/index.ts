@@ -1,11 +1,10 @@
-import { Awaitable, defineProperty } from '@koishijs/utils'
-import { Context } from '../context'
+import { Awaitable, defineProperty } from 'cosmokit'
+import { Context } from '@satorijs/core'
 import { Command } from './command'
 import { Argv } from './parser'
 import runtime from './runtime'
 import validate from './validate'
 import { Channel, User } from '../database'
-import { Session } from '../session'
 
 export * from './command'
 export * from './runtime'
@@ -16,7 +15,7 @@ interface CommandMap extends Map<string, Command> {
   resolve(key: string): Command
 }
 
-declare module '../context' {
+declare module '@satorijs/core' {
   interface Context {
     $commander: Commander
     command<D extends string>(def: D, config?: Command.Config): Command<never, never, Argv.ArgumentType<D>>

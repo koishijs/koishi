@@ -1,5 +1,6 @@
-import { Dict, isNullable, Logger, Random, Time } from '@koishijs/utils'
-import { Context } from './context'
+import { Random } from '@koishijs/utils'
+import { Dict, isNullable, Time } from 'cosmokit'
+import { Context, Logger } from '@satorijs/core'
 import zh from './locales/zh.yml'
 import en from './locales/en.yml'
 import ja from './locales/ja.yml'
@@ -9,7 +10,7 @@ import zhTW from './locales/zh-tw.yml'
 const logger = new Logger('i18n')
 const kTemplate = Symbol('template')
 
-declare module './context' {
+declare module '@satorijs/core' {
   interface Context {
     i18n: I18n
   }

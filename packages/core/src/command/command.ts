@@ -1,11 +1,11 @@
-import { Awaitable, coerce, Dict, isNullable, Logger, remove, Schema } from '@koishijs/utils'
-import { segment } from '@satorijs/core'
+import { Awaitable, Dict, isNullable, remove } from 'cosmokit'
+import { coerce } from '@koishijs/utils'
+import { Context, Logger, Schema, segment, Session } from '@satorijs/core'
 import { Disposable } from 'cordis'
-import { Context } from '../context'
 import { Argv } from './parser'
 import { Next } from '../internal'
 import { Channel, User } from '../database'
-import { Computed, FieldCollector, Session } from '../session'
+import { Computed, FieldCollector } from '../session'
 
 const logger = new Logger('command')
 

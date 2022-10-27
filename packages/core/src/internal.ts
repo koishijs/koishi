@@ -1,10 +1,10 @@
-import { Awaitable, coerce, defineProperty, Dict, escapeRegExp, makeArray } from '@koishijs/utils'
-import { segment } from '@satorijs/core'
-import { Computed, Session } from './session'
+import { coerce, escapeRegExp, makeArray } from '@koishijs/utils'
+import { Awaitable, defineProperty, Dict } from 'cosmokit'
+import { Context, segment, Session } from '@satorijs/core'
+import { Computed } from './session'
 import { Channel, User } from './database'
-import { Context } from './context'
 
-declare module './context' {
+declare module '@satorijs/core' {
   interface Context {
     $internal: Internal
     middleware(middleware: Middleware, prepend?: boolean): () => boolean

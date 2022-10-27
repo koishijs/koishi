@@ -1,11 +1,49 @@
-import { defineProperty, isNullable, Logger, makeArray, observe, Promisify } from '@koishijs/utils'
-import * as satori from '@satorijs/core'
+import { extend, observe } from '@koishijs/utils'
+import { defineProperty, isNullable, makeArray, Promisify } from 'cosmokit'
+import { Fragment, Logger, segment, Session } from '@satorijs/core'
 import { Argv, Command } from './command'
-import { Context } from './context'
 import { Channel, Tables, User } from './database'
 import { Middleware, Next } from './internal'
 
 const logger = new Logger('session')
+
+declare module '@satorijs/core' {
+  interface Session<U extends User.Field = never, G extends Channel.Field = never> {
+    argv?: Argv<U, G>
+    user?: User.Observed<U>
+    channel?: Channel.Observed<G>
+    guild?: Channel.Observed<G>
+    parsed?: Parsed
+    scope?: string
+    username?: string
+    send(content: Fragment): Promise<string[]>
+    cancelQueued(delay?: number): void
+    sendQueued(content: Fragment, delay?: number): Promise<string[]>
+    resolveValue<T>(source: T | ((session: Session) => T)): T
+    getChannel<K extends Channel.Field = never>(id?: string, fields?: K[]): Promise<Channel>
+    observeChannel<T extends Channel.Field = never>(fields?: Iterable<T>): Promise<Channel.Observed<T | G>>
+    getUser<K extends User.Field = never>(id?: string, fields?: K[]): Promise<User>
+    observeUser<T extends User.Field = never>(fields?: Iterable<T>): Promise<User.Observed<T | U>>
+    withScope<T>(scope: string, callback: () => T): Promisify<T>
+    text(path: string | string[], params?: object): string
+    collect<T extends 'user' | 'channel'>(key: T, argv: Argv, fields?: Set<keyof Tables[T]>): Set<keyof Tables[T]>
+    inferCommand(argv: Argv): Command
+    resolve(argv: Argv): Command
+    execute(content: string, next?: true | Next): Promise<string>
+    execute(argv: Argv, next?: true | Next): Promise<string>
+    middleware(middleware: Middleware): () => boolean
+    prompt(timeout?: number): Promise<string>
+  }
+
+  namespace Session {
+    export interface Private extends Session {
+      _queuedTasks: Task[]
+      _queuedTimeout: NodeJS.Timeout
+      _next(): void
+      _observeChannelLike<T extends Channel.Field = never>(channelId: string, fields: Iterable<T>): Promise<any>
+    }
+  }
+}
 
 export interface Parsed {
   content: string
@@ -17,60 +55,48 @@ export type Computed<T> = T | ((session: Session) => T)
 
 interface Task {
   delay: number
-  content: string | satori.segment
+  content: Fragment
   resolve(ids: string[]): void
   reject(reason: any): void
 }
 
-export namespace Session {
-  export interface Payload extends satori.Session.Payload {}
-}
+const { initialize } = Session.prototype
 
-export class Session<U extends User.Field = never, G extends Channel.Field = never> extends satori.Session<Context> {
-  public argv?: Argv<U, G>
-  public user?: User.Observed<U>
-  public channel?: Channel.Observed<G>
-  public guild?: Channel.Observed<G>
-  public parsed?: Parsed
-  public scope?: string
-
-  private _queuedTasks: Task[]
-  private _queuedTimeout: NodeJS.Timeout
-
-  constructor(bot: satori.Bot<Context>, payload: Partial<Session.Payload>) {
-    super(bot, payload)
+extend(Session.prototype as Session.Private, {
+  initialize() {
+    initialize.call(this)
     defineProperty(this, 'scope', null)
     defineProperty(this, 'user', null)
     defineProperty(this, 'channel', null)
     defineProperty(this, 'guild', null)
     defineProperty(this, '_queuedTasks', [])
     defineProperty(this, '_queuedTimeout', null)
-  }
+  },
 
-  get username(): string {
+  get username() {
     const defaultName: string = this.user && this.user['name']
       ? this.user['name']
       : this.author
         ? this.author.nickname || this.author.username
         : this.userId
     return this.app.chain('appellation', defaultName, this)
-  }
+  },
 
-  async send(content: string | satori.segment) {
+  async send(content) {
     if (!content) return
     return this.bot.sendMessage(this.channelId, content, this.guildId).catch<string[]>((error) => {
       logger.warn(error)
       return []
     })
-  }
+  },
 
   cancelQueued(delay = this.app.config.delay.cancel) {
     clearTimeout(this._queuedTimeout)
     this._queuedTasks = []
     this._queuedTimeout = setTimeout(() => this._next(), delay)
-  }
+  },
 
-  private _next() {
+  _next() {
     const task = this._queuedTasks.shift()
     if (!task) {
       this._queuedTimeout = null
@@ -78,10 +104,10 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
     }
     this.send(task.content).then(task.resolve, task.reject)
     this._queuedTimeout = setTimeout(() => this._next(), task.delay)
-  }
+  },
 
-  async sendQueued(content: string | satori.segment, delay?: number) {
-    const text = satori.segment.normalize(content).toString()
+  async sendQueued(content, delay?: number) {
+    const text = segment.normalize(content).join('')
     if (!text) return
     if (isNullable(delay)) {
       const { message, character } = this.app.config.delay
@@ -91,13 +117,13 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
       this._queuedTasks.push({ content, delay, resolve, reject })
       if (!this._queuedTimeout) this._next()
     })
-  }
+  },
 
-  resolveValue<T>(source: T | ((session: Session) => T)): T {
+  resolveValue(source) {
     return typeof source === 'function' ? Reflect.apply(source, null, [this]) : source
-  }
+  },
 
-  async getChannel<K extends Channel.Field = never>(id = this.channelId, fields: K[] = []) {
+  async getChannel(id = this.channelId, fields = []) {
     const { app, platform, guildId } = this
     if (!fields.length) return { platform, id, guildId }
     const channel = await app.database.getChannel(platform, id, fields)
@@ -110,10 +136,10 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
       Object.assign(channel, { platform, id, guildId, $detached: true })
       return channel
     }
-  }
+  },
 
   /** 在当前会话上绑定一个可观测频道实例 */
-  async _observeChannelLike<T extends Channel.Field = never>(channelId: string, fields: Iterable<T> = []) {
+  async _observeChannelLike(channelId, fields = []) {
     const fieldSet = new Set<Channel.Field>(fields)
     const { platform } = this
     const key = `${platform}:${channelId}`
@@ -133,13 +159,13 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
     if (cache) {
       cache.$merge(data)
     } else {
-      cache = observe(data, diff => this.app.database.setChannel(platform, channelId, diff), `channel ${key}`)
+      cache = observe(data, diff => this.app.database.setChannel(platform, channelId, diff as any), `channel ${key}`)
       this.app.$internal._channelCache.set(this.id, key, cache)
     }
     return cache
-  }
+  },
 
-  async observeChannel<T extends Channel.Field = never>(fields: Iterable<T> = []): Promise<Channel.Observed<T | G>> {
+  async observeChannel(fields = []) {
     const tasks = [this._observeChannelLike(this.channelId, fields)]
     if (this.channelId !== this.guildId) {
       tasks.push(this._observeChannelLike(this.guildId, fields))
@@ -148,9 +174,9 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
     this.guild = guild
     this.channel = channel
     return channel
-  }
+  },
 
-  async getUser<K extends User.Field = never>(id = this.userId, fields: K[] = []) {
+  async getUser(id = this.userId, fields = []) {
     const { app, platform } = this
     if (!fields.length) return { [platform]: id }
     const user = await app.database.getUser(platform, id, fields)
@@ -163,10 +189,10 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
       Object.assign(user, { [platform]: id, authority, $detached: true })
       return user
     }
-  }
+  },
 
   /** 在当前会话上绑定一个可观测用户实例 */
-  async observeUser<T extends User.Field = never>(fields: Iterable<T> = []): Promise<User.Observed<T | U>> {
+  async observeUser(fields = []) {
     const fieldSet = new Set<User.Field>(fields)
     const { userId, platform } = this
 
@@ -194,23 +220,23 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
     if (cache) {
       cache.$merge(data)
     } else {
-      cache = observe(data, diff => this.app.database.setUser(this.platform, userId, diff), `user ${this.uid}`)
+      cache = observe(data, diff => this.app.database.setUser(this.platform, userId, diff as any), `user ${this.uid}`)
       this.app.$internal._userCache.set(this.id, this.uid, cache)
     }
     return this.user = cache
-  }
+  },
 
-  async withScope<T>(scope: string, callback: () => T) {
+  async withScope(scope, callback: () => any) {
     const oldScope = this.scope
     try {
       this.scope = scope
-      return await callback() as Promisify<T>
+      return await callback()
     } finally {
       this.scope = oldScope
     }
-  }
+  },
 
-  text(path: string | string[], params: object = {}) {
+  text(path, params = {}) {
     const locales = [this.app.config.locale]
     locales.unshift(this.user?.['locale'])
     if (this.subtype === 'group') {
@@ -226,9 +252,9 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
       return this.scope + path
     })
     return this.app.i18n.text(locales, paths, params)
-  }
+  },
 
-  collect<T extends 'user' | 'channel'>(key: T, argv: Argv, fields = new Set<keyof Tables[T]>()) {
+  collect(key: 'user' | 'channel', argv: Argv, fields = new Set()) {
     const collect = (argv: Argv) => {
       argv.session = this
       if (argv.tokens) {
@@ -243,9 +269,9 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
     }
     collect(argv)
     return fields
-  }
+  },
 
-  private inferCommand(argv: Argv) {
+  inferCommand(argv) {
     if (argv.command) return argv.command
     if (argv.name) return argv.command = this.app.$commander.resolve(argv.name)
 
@@ -263,9 +289,9 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
       if (command['_actions'].length) break
     }
     return argv.command
-  }
+  },
 
-  resolve(argv: Argv) {
+  resolve(argv) {
     if (!this.inferCommand(argv)) return
     if (argv.tokens?.every(token => !token.inters.length)) {
       const { options, args, error } = argv.command.parse(argv)
@@ -274,11 +300,9 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
       argv.error = error
     }
     return argv.command
-  }
+  },
 
-  async execute(content: string, next?: true | Next): Promise<string>
-  async execute(argv: Argv, next?: true | Next): Promise<string>
-  async execute(argv: string | Argv, next?: true | Next): Promise<string> {
+  async execute(argv, next) {
     if (typeof argv === 'string') argv = Argv.parse(argv)
 
     argv.session = this
@@ -324,20 +348,20 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
       const result = await command.execute(argv as Argv, next as Next)
       if (!shouldEmit) {
         if (typeof result === 'string') return result
-        return satori.segment(null, result).toString()
+        return segment(null, result).toString()
       }
       await this.send(result)
       return ''
     })
-  }
+  },
 
-  middleware(middleware: Middleware) {
+  middleware(middleware) {
     const identifier = getSessionId(this)
     return this.app.middleware(async (session, next) => {
       if (identifier && getSessionId(session) !== identifier) return next()
       return middleware(session, next)
     }, true)
-  }
+  },
 
   prompt(timeout = this.app.config.delay.prompt) {
     return new Promise<string>((resolve) => {
@@ -351,8 +375,8 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
         resolve('')
       }, timeout)
     })
-  }
-}
+  },
+})
 
 export function getSessionId(session: Session) {
   return '' + session.userId + session.channelId

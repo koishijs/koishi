@@ -1,5 +1,5 @@
+import { Context } from '@satorijs/core'
 import { Argv } from './parser'
-import { Context } from '../context'
 
 export default function validate(ctx: Context) {
   // add user fields

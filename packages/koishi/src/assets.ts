@@ -4,7 +4,7 @@ import { createHash } from 'crypto'
 import { basename } from 'path'
 import FileType from 'file-type'
 
-declare module '@koishijs/core' {
+declare module '@satorijs/core' {
   namespace Context {
     interface Config {
       assets?: Config.Assets

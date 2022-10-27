@@ -1,6 +1,6 @@
 import { defineProperty, valueMap } from '@koishijs/utils'
+import { Context } from '@satorijs/core'
 import { Argv } from './parser'
-import { Context } from '../context'
 
 export default function runtime(ctx: Context) {
   ctx.before('parse', (content, session) => {
