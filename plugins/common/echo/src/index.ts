@@ -11,8 +11,6 @@ export function apply(ctx: Context) {
   ctx.i18n.define('zh', zh)
 
   ctx.command('echo <message:text>', { authority: 2 })
-    .option('anonymous', '-a', { authority: 3 })
-    .option('forceAnonymous', '-A', { authority: 3 })
     .option('escape', '-e', { authority: 3 })
     .option('unescape', '-E', { authority: 3 })
     .option('user', '-u [user:user]', { authority: 3 })
@@ -26,12 +24,6 @@ export function apply(ctx: Context) {
       }
       if (options.escape) {
         message = segment.escape(message)
-      }
-
-      if (options.forceAnonymous) {
-        message = segment('anonymous') + message
-      } else if (options.anonymous) {
-        message = segment('anonymous', { ignore: true }) + message
       }
 
       const target = options.user || options.channel

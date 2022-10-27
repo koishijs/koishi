@@ -1,5 +1,5 @@
 import assert from 'assert'
-import { Context, Message, segment, Session } from 'koishi'
+import { Context, Fragment, segment, Session, Universal } from 'koishi'
 import { format } from 'util'
 import { MockBot } from './adapter'
 
@@ -48,9 +48,10 @@ export class MessageClient {
         resolve(this.replies)
         this.replies = []
       }
-      const send = async (content: string) => {
-        if (!content) return
-        const session = this.app.bots[0].session({ ...this.meta, content })
+      const send = async (fragment: Fragment) => {
+        const elements = segment.normalize(fragment)
+        if (!elements.length) return
+        const session = this.app.bots[0].session({ ...this.meta, elements })
         if (await this.app.serial(session, 'before-send', session)) return
         if (!session?.content) return []
         this.replies.push(session.content)
@@ -60,7 +61,7 @@ export class MessageClient {
       const dispose = this.app.on('middleware', (session) => {
         if (session.id === uuid) process.nextTick(_resolve)
       })
-      let quote: Message
+      let quote: Universal.Message
       const elements = segment.parse(content)
       if (elements[0]?.type === 'quote') {
         const { attrs, children } = elements.shift()

@@ -70,7 +70,7 @@ describe('Help Command', () => {
       .option('opt2', '[arg:boolean]  选项3')
       .option('opt3', '-o [arg:boolean]', { hidden: true })
 
-    await client.shouldReply('help bar', message = 'bar <arg>\nDESCRIPTION')
+    await client.shouldReply('help bar', message = 'bar &lt;arg&gt;\nDESCRIPTION')
 
     bar.config.hideOptions = false
 
@@ -173,6 +173,6 @@ describe('Help Command', () => {
 
     const client = app.mock.client('123')
     await client.shouldReply('test', '缺少参数，输入帮助以查看用法。')
-    await client.shouldReply('test -h', 'test <arg>')
+    await client.shouldReply('test -h', 'test &lt;arg&gt;')
   })
 })
