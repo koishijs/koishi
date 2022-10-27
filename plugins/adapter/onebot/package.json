@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-adapter-onebot",
   "description": "OneBot Adapter for Koishi",
-  "version": "5.2.7",
+  "version": "5.3.0",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -41,9 +41,9 @@
     }
   },
   "peerDependencies": {
-    "koishi": "^4.9.6"
+    "koishi": "^4.9.7"
   },
   "dependencies": {
-    "@satorijs/adapter-onebot": "^5.2.7"
+    "@satorijs/adapter-onebot": "^5.3.0"
   }
 }
