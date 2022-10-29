@@ -38,7 +38,7 @@
     }
   },
   "peerDependencies": {
-    "koishi": "^4.9.7"
+    "koishi": "^4.9.9"
   },
   "dependencies": {
     "@satorijs/adapter-qqguild": "^3.3.0"
