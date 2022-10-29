@@ -1,6 +1,6 @@
 import { extend, observe } from '@koishijs/utils'
 import { defineProperty, isNullable, makeArray, Promisify } from 'cosmokit'
-import { Fragment, Logger, segment, Session } from '@satorijs/core'
+import { Fragment, Logger, segment, SendOptions, Session } from '@satorijs/core'
 import { Argv, Command } from './command'
 import { Channel, Tables, User } from './database'
 import { Middleware, Next } from './internal'
@@ -16,7 +16,7 @@ declare module '@satorijs/core' {
     parsed?: Parsed
     scope?: string
     username?: string
-    send(content: Fragment): Promise<string[]>
+    send(content: Fragment, options?: SendOptions): Promise<string[]>
     cancelQueued(delay?: number): void
     sendQueued(content: Fragment, delay?: number): Promise<string[]>
     resolveValue<T>(source: T | ((session: Session) => T)): T
@@ -82,9 +82,10 @@ extend(Session.prototype as Session.Private, {
     return this.app.chain('appellation', defaultName, this)
   },
 
-  async send(content) {
+  async send(content, options = {}) {
     if (!content) return
-    return this.bot.sendMessage(this.channelId, content, this.guildId).catch<string[]>((error) => {
+    options.session = this
+    return this.bot.sendMessage(this.channelId, content, this.guildId, options).catch<string[]>((error) => {
       logger.warn(error)
       return []
     })
