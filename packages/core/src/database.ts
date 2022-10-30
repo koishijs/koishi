@@ -19,8 +19,7 @@ declare module '@satorijs/core' {
 }
 
 export interface User {
-  // TODO v5: change to number
-  id: string
+  id: number
   flag: number
   authority: number
   name: string
@@ -70,8 +69,7 @@ export class DatabaseService extends Database<Tables> {
     defineProperty(this, Context.current, app)
 
     this.extend('user', {
-      // TODO v5: change to number
-      id: 'string(63)',
+      id: 'unsigned(20)',
       name: { type: 'string', length: 63 },
       flag: 'unsigned(20)',
       authority: 'unsigned(4)',
