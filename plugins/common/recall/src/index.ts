@@ -19,7 +19,7 @@ export function apply(ctx: Context, { timeout }: Config) {
 
   ctx.on('send', (session) => {
     const list = recent[session.channelId] ||= []
-    list.push(session.messageId)
+    list.unshift(session.messageId)
     ctx.setTimeout(() => remove(list, session.messageId), timeout)
   })
 
