@@ -38,12 +38,12 @@
     "config"
   ],
   "peerDependencies": {
-    "koishi": "^4.9.9"
+    "koishi": "^4.10.0"
   },
   "devDependencies": {
-    "@koishijs/registry": "^4.1.0",
+    "@koishijs/registry": "^4.1.3",
     "@types/js-yaml": "^4.0.5",
-    "koishi": "^4.9.9"
+    "koishi": "^4.10.0"
   },
   "dependencies": {
     "dotenv": "^16.0.1",

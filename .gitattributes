@@ -3,4 +3,5 @@
 *.png -text
 *.jpg -text
 *.ico -text
+*.gif -text
 *.webp -text

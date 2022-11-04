@@ -9,7 +9,7 @@ import shape from 'chai-shape'
 
 use(shape)
 
-describe('@koishijs/plugin-switch', () => {
+describe('@koishijs/plugin-schedule', () => {
   const app = new App()
   app.plugin(mock)
   const client1 = app.mock.client('123', '456')
@@ -71,7 +71,7 @@ describe('@koishijs/plugin-switch', () => {
   })
 
   it('interval schedule', async () => {
-    await client1.shouldReply('schedule 00:30 / 1h -- echo foo', '日程已创建，编号为 2。')
+    await client1.shouldReply('schedule 00:30 / 1h -- echo foo', '日程已创建，编号为 3。')
 
     clock.tick(Time.minute * 20) // 01:21
     await new Promise(process.nextTick)
@@ -89,8 +89,8 @@ describe('@koishijs/plugin-switch', () => {
     await new Promise(process.nextTick)
     await client1.shouldReply('', 'foo')
 
-    await client1.shouldReply('schedule -l', '2. 每隔 1 小时 (剩余 59 分钟)：echo foo')
-    await client1.shouldReply('schedule -d 2', '日程 2 已删除。')
+    await client1.shouldReply('schedule -l', '3. 每隔 1 小时 (剩余 59 分钟)：echo foo')
+    await client1.shouldReply('schedule -d 3', '日程 3 已删除。')
     clock.tick(Time.hour) // 02:31
     await new Promise(process.nextTick)
     await client1.shouldNotReply('')

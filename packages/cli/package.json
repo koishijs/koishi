@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/cli",
   "description": "CLI for Koishi",
-  "version": "4.9.9",
+  "version": "4.10.0",
   "main": "lib/worker/index.js",
   "typings": "lib/worker/index.d.ts",
   "engines": {
@@ -32,7 +32,7 @@
     "daemon"
   ],
   "peerDependencies": {
-    "koishi": "^4.9.9"
+    "koishi": "^4.10.0"
   },
   "devDependencies": {
     "@types/prompts": "^2.4.0",
