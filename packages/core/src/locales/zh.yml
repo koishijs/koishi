@@ -3,6 +3,7 @@ general:
   paren: '（{0}）'
   quote: '“{0}”'
   comma: ，
+  ideograpic-comma: 、
   and: 和
   or: 或
   day: 天
