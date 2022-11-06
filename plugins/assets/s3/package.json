@@ -21,7 +21,7 @@
   "bugs": {
     "url": "https://github.com/koishijs/plugin-assets-s3/issues"
   },
-  "homepage": "https://koishi.js.org/plugins/assets/s3.html",
+  "homepage": "https://koishi.chat/plugins/assets/s3.html",
   "keywords": [
     "bot",
     "chatbot",

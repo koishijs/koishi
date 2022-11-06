@@ -1,8 +1,8 @@
 <div align="center">
-  <a href="https://koishi.js.org/" target="_blank">
-    <img width="160" src="https://koishi.js.org/koishi.png" alt="logo">
+  <a href="https://koishi.chat/" target="_blank">
+    <img width="160" src="https://koishi.chat/koishi.png" alt="logo">
   </a>
-  <h1 id="koishi"><a href="https://koishi.js.org/" target="_blank">Koishi</a></h1>
+  <h1 id="koishi"><a href="https://koishi.chat/" target="_blank">Koishi</a></h1>
 
 [![Codecov](https://img.shields.io/codecov/c/github/koishijs/koishi?style=flat-square)](https://codecov.io/gh/koishijs/koishi)
 [![downloads](https://img.shields.io/npm/dm/koishi?style=flat-square)](https://www.npmjs.com/package/koishi)
@@ -25,19 +25,19 @@ Koishi 是一个现代化跨平台机器人框架，目前可支持 [QQ](https:/
 - 支持 QQ，Telegram，Discord 等主流聊天平台，支持多账户和跨平台数据互通
 - 随时随地通过控制面板监控运行状态，控制机器人的行为，甚至上号聊天
 
-参见：[创建模板项目](https://koishi.js.org/manual/starter/boilerplate.html)
+参见：[创建模板项目](https://koishi.chat/manual/starter/boilerplate.html)
 
 ### 功能强大的 API
 
 经过了几个版本的迭代，Koishi 已经发展出了丰富的 API。从上层负责交互的指令、会话、中间件，再到中层负责控制的应用、上下文、插件，最后到底层的机器人和适配器，每一个部分都经过了精心的编写，可以让你轻松实现任何需求。如果担心在复杂的功能中迷失方向，我们也准备了细致的文档来提供帮助。
 
-参见：[API 文档](https://koishi.js.org/api/)
+参见：[API 文档](https://koishi.chat/api/)
 
 ### 丰富的生态系统
 
 Koishi 本体仅有不到 100 KB，绝大部分功能都采用插件化分发。上百个官方和社区插件，覆盖了机器人开发的方方面面，从平台接入、数据库、资源存储、网页控制台、状态管理到具体的业务功能一应俱全。无论你的目标是构建大型交互应用还是轻量级的业务机器人，Koishi 都为你提供了最佳实践。
 
-参见：[插件市场](https://koishi.js.org/market.html)
+参见：[插件市场](https://koishi.chat/market.html)
 
 ### 专为开发者打造
 

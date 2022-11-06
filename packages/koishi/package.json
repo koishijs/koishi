@@ -31,7 +31,7 @@
   "bugs": {
     "url": "https://github.com/koishijs/koishi/issues"
   },
-  "homepage": "https://koishi.js.org",
+  "homepage": "https://koishi.chat",
   "keywords": [
     "bot",
     "chatbot",
@@ -44,7 +44,7 @@
   "dependencies": {
     "@koishijs/core": "^4.10.0",
     "@koishijs/utils": "^6.2.4",
-    "@satorijs/satori": "^1.3.5",
+    "@satorijs/satori": "^1.3.6",
     "file-type": "^16.5.4",
     "ns-require": "^1.1.4"
   }

@@ -7,5 +7,5 @@ MySQL implementation for Koishi.
 
 ## Usage
 
-- [Using Database with Koishi](https://koishi.js.org/guide/using-database.html)
-- [Full API Reference](https://koishi.js.org/api/database.html)
+- [Using Database with Koishi](https://koishi.chat/guide/using-database.html)
+- [Full API Reference](https://koishi.chat/api/database.html)

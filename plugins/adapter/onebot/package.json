@@ -17,7 +17,7 @@
   "bugs": {
     "url": "https://github.com/satorijs/satori/issues"
   },
-  "homepage": "https://koishi.js.org/plugins/adapter/onebot.html",
+  "homepage": "https://koishi.chat/plugins/adapter/onebot.html",
   "keywords": [
     "bot",
     "qqbot",

@@ -20,7 +20,7 @@
   "bugs": {
     "url": "https://github.com/koishijs/koishi/issues"
   },
-  "homepage": "https://koishi.js.org/plugins/database/mysql.html",
+  "homepage": "https://koishi.chat/plugins/database/mysql.html",
   "keywords": [
     "bot",
     "chatbot",
