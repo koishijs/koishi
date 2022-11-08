@@ -50,13 +50,13 @@ export namespace Argv {
   export namespace whitespace {
     export const unescape = (source: string) => source
       .replace(/@__KOISHI_SPACE__@/g, ' ')
-      .replace(/@__KOISHI_NOLINE__@/g, '\n')
+      .replace(/@__KOISHI_NEWLINE__@/g, '\n')
       .replace(/@__KOISHI_RETURN__@/g, '\r')
       .replace(/@__KOISHI_TAB__@/g, '\t')
 
     export const escape = (source: string) => source
       .replace(/ /g, '@__KOISHI_SPACE__@')
-      .replace(/\n/g, '@__KOISHI_NOLINE__@')
+      .replace(/\n/g, '@__KOISHI_NEWLINE__@')
       .replace(/\r/g, '@__KOISHI_RETURN__@')
       .replace(/\t/g, '@__KOISHI_TAB__@')
   }
@@ -410,7 +410,7 @@ export namespace Argv {
 
     _createOption(name: string, def: string, config: OptionConfig) {
       // do not use lookbehind assertion for Safari compatibility
-      const cap = /^((?:-[\w-]*|[^<[\s\w\x80-\uffff])(?:,\s*(?:-[\w-]*|[^<[\s\w\x80-\uffff]))*)?((?:\s*\[[^\]]+?\]|\s*<[^>]+?>)*)(.*)$/.exec(def)
+      const cap = /^((?:-[\w-]*|[^,\s\w\x80-\uffff]+)(?:,\s*(?:-[\w-]*|[^,\s\w\x80-\uffff]+))*(?=\s|$))?((?:\s*\[[^\]]+?\]|\s*<[^>]+?>)*)(.*)$/.exec(def)
       const param = paramCase(name)
       let syntax = cap[1] || '--' + param
       const bracket = cap[2] || ''
@@ -422,7 +422,7 @@ export namespace Argv {
         param = param.trimStart()
         const name = param.replace(/^-+/, '')
         if (!name || !param.startsWith('-')) {
-          symbols.push(param)
+          symbols.push(segment.escape(param))
         } else {
           names.push(name)
         }

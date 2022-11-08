@@ -53,12 +53,12 @@ describe('Runtime', () => {
   describe('Command Prefix', () => {
     it('single prefix', async () => {
       // also support functions
-      app.config.prefix = () => '!'
+      app.config.prefix = () => '>'
 
       await client1.shouldReply('cmd2', 'cmd2:123')
       await client4.shouldNotReply('cmd2')
-      await client1.shouldReply('!cmd2', 'cmd2:123')
-      await client4.shouldReply('!cmd2', 'cmd2:123')
+      await client1.shouldReply('&gt;cmd2', 'cmd2:123')
+      await client4.shouldReply('&gt;cmd2', 'cmd2:123')
       await client1.shouldNotReply('.cmd2')
       await client4.shouldNotReply('.cmd2')
     })

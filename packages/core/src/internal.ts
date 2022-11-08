@@ -91,8 +91,9 @@ export class Internal {
   }
 
   private _resolvePrefixes(session: Session) {
-    const temp = session.resolveValue(this.config.prefix)
-    return Array.isArray(temp) ? temp : [temp || '']
+    const value = session.resolveValue(this.config.prefix)
+    const result = Array.isArray(value) ? value : [value || '']
+    return result.map(source => segment.escape(source))
   }
 
   private _stripNickname(content: string) {
