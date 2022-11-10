@@ -21,6 +21,12 @@ declare module '@satorijs/core' {
   }
 }
 
+export class SessionError extends Error {
+  constructor(public path: string | string[], public param?: Dict) {
+    super(makeArray(path)[0])
+  }
+}
+
 function createLeadingRE(patterns: string[], prefix = '', suffix = '') {
   return patterns.length ? new RegExp(`^${prefix}(${patterns.map(escapeRegExp).join('|')})${suffix}`) : /$^/
 }
@@ -216,6 +222,9 @@ export class Internal {
         }
         return await queue[index++]?.(next)
       } catch (error) {
+        if (error instanceof SessionError) {
+          return session.text(error.path, error.param)
+        }
         let stack = coerce(error)
         if (prettyErrors) {
           const index = stack.indexOf(lastCall)

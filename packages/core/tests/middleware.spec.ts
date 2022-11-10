@@ -1,4 +1,4 @@
-import { App, Middleware, sleep, noop, Logger, Next } from 'koishi'
+import { App, SessionError, Middleware, sleep, noop, Logger, Next } from 'koishi'
 import { expect } from 'chai'
 import mock from '@koishijs/plugin-mock'
 import * as jest from 'jest-mock'
@@ -84,6 +84,13 @@ describe('Middleware Runtime', () => {
     app.middleware(() => { throw new Error(errorMessage) })
     await app.mock.client('123').receive('foo')
     expect(midWarn.mock.calls).to.have.length(1)
+  })
+
+  it('middleware error with message', async () => {
+    midWarn.mockClear()
+    app.middleware(() => { throw new SessionError('internal.low-authority') })
+    await app.mock.client('123').shouldReply('foo', '权限不足。')
+    expect(midWarn.mock.calls).to.have.length(0)
   })
 
   it('isolated next function', async () => {
