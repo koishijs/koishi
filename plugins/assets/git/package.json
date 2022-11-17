@@ -44,7 +44,7 @@
     }
   },
   "peerDependencies": {
-    "koishi": "^4.10.1"
+    "koishi": "^4.10.2"
   },
   "dependencies": {
     "simple-git": "^3.11.0"

@@ -37,7 +37,7 @@
     "dep": "yakumo upgrade",
     "pub": "yakumo publish",
     "lint": "eslint packages plugins --ext=ts --cache",
-    "test": "yakumo mocha -r esbuild-register -r yml-register",
+    "test": "yakumo mocha -r esbuild-register -r yml-register --exit",
     "test:json": "shx rm -rf coverage && c8 -r json yarn test",
     "test:html": "shx rm -rf coverage && c8 -r html yarn test",
     "test:text": "shx rm -rf coverage && c8 -r text yarn test",
