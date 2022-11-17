@@ -3,15 +3,14 @@ import { expect } from 'chai'
 import mock from '@koishijs/plugin-mock'
 import * as jest from 'jest-mock'
 
+type NextCallback = Extract<Next.Callback, (...args: any[]) => any>
+
 const app = new App()
 app.plugin(mock)
 
 const midLogger = new Logger('session')
 const midWarn = jest.spyOn(midLogger, 'warn')
-
-export function createArray<T>(length: number, create: (index: number) => T) {
-  return [...new Array(length).keys()].map(create)
-}
+const client = app.mock.client('123')
 
 before(() => app.start())
 
@@ -22,11 +21,12 @@ describe('Middleware Runtime', () => {
   let callSequence: jest.Mock[]
 
   beforeEach(() => {
+    midWarn.mockClear()
     app.$internal._hooks = []
     callSequence = []
   })
 
-  function wrap<T extends (...args: any[]) => any>(callback: T) {
+  function trace<T extends (...args: any[]) => any>(callback: T) {
     const wrapper = jest.fn((...args: Parameters<T>) => {
       callSequence.push(wrapper)
       return callback.apply(null, args) as ReturnType<T>
@@ -34,70 +34,115 @@ describe('Middleware Runtime', () => {
     return wrapper
   }
 
-  it('run asynchronously', async () => {
-    const mid1 = wrap<Middleware>((_, next) => sleep(0).then(() => next()))
-    const mid2 = wrap<Middleware>((_, next) => next())
+  it('basic 1 (next callback)', async () => {
+    const mid1 = trace<Middleware>((_, next) => sleep(0).then(() => next()))
+    const mid2 = trace<Middleware>((_, next) => 'bar')
     app.middleware(mid1)
     app.middleware(mid2)
-    await app.mock.client('123').receive('foo')
+    await client.shouldReply('foo', 'bar')
     expect(callSequence).to.deep.equal([mid1, mid2])
   })
 
-  it('stop when no next is called', async () => {
-    const mid1 = wrap<Middleware>(noop)
-    const mid2 = wrap<Middleware>((_, next) => next())
+  it('basic 2 (return empty string)', async () => {
+    const mid1 = trace<Middleware>((_, next) => next())
+    const mid2 = trace<Middleware>((_, next) => '')
     app.middleware(mid1)
     app.middleware(mid2)
-    expect(callSequence).to.deep.equal([])
-    await app.mock.client('123').receive('foo')
+    await client.shouldNotReply('foo')
+    expect(callSequence).to.deep.equal([mid1, mid2])
+  })
+
+  it('basic 3 (early termination)', async () => {
+    const mid1 = trace<Middleware>(noop)
+    const mid2 = trace<Middleware>((_, next) => 'bar')
+    app.middleware(mid1)
+    app.middleware(mid2)
+    await client.shouldNotReply('foo')
     expect(callSequence).to.deep.equal([mid1])
   })
 
-  it('prepend middleware', async () => {
-    const mid1 = wrap<Middleware>((_, next) => next())
-    const mid2 = wrap<Middleware>((_, next) => next())
-    const mid3 = wrap<Middleware>((_, next) => next())
+  it('basic 4 (prepend middleware)', async () => {
+    const mid1 = trace<Middleware>((_, next) => next())
+    const mid2 = trace<Middleware>((_, next) => next())
+    const mid3 = trace<Middleware>((_, next) => next())
     app.middleware(mid1)
     app.middleware(mid2, true)
     app.middleware(mid3, true)
-    await app.mock.client('123').receive('foo')
+    await client.shouldNotReply('foo')
     expect(callSequence).to.deep.equal([mid3, mid2, mid1])
   })
 
-  it('temporary middleware', async () => {
-    type NextCallback = Extract<Next.Callback, (...args: any[]) => any>
-
-    const mid1 = wrap<Middleware>((_, next) => next(mid3))
-    const mid2 = wrap<Middleware>((_, next) => next(mid4))
-    const mid3 = wrap<NextCallback>((next) => next(mid5))
-    const mid4 = wrap<NextCallback>((next) => next())
-    const mid5 = wrap<NextCallback>((next) => next())
+  it('next 1 (parameter)', async () => {
+    const mid1 = trace<Middleware>((_, next) => next('bar'))
+    const mid2 = trace<Middleware>((_, next) => next('baz'))
     app.middleware(mid1)
     app.middleware(mid2)
-    await app.mock.client('123').receive('foo')
+    await client.shouldReply('foo', 'bar')
+    expect(callSequence).to.deep.equal([mid1, mid2])
+  })
+
+  it('next 2 (callback)', async () => {
+    const mid1 = trace<Middleware>((_, next) => next(() => 'bar'))
+    const mid2 = trace<Middleware>((_, next) => next(() => 'baz'))
+    app.middleware(mid1)
+    app.middleware(mid2)
+    await client.shouldReply('foo', 'bar')
+    expect(callSequence).to.deep.equal([mid1, mid2])
+  })
+
+  it('next 3 (high order parameter)', async () => {
+    const mid1 = trace<Middleware>((_, next) => next(() => 'bar'))
+    const mid2 = trace<Middleware>((_, next) => next(() => 'baz'))
+    app.middleware(mid1)
+    app.middleware(mid2)
+    await client.shouldReply('foo', 'bar')
+    expect(callSequence).to.deep.equal([mid1, mid2])
+  })
+
+  it('next 4 (compose)', async () => {
+    const mid1 = trace<Middleware>((_, next) => next(mid3))
+    const mid2 = trace<Middleware>((_, next) => next(mid4))
+    const mid3 = trace<NextCallback>((next) => next(mid5))
+    const mid4 = trace<NextCallback>((next) => next())
+    const mid5 = trace<NextCallback>((next) => next())
+    app.middleware(mid1)
+    app.middleware(mid2)
+    await client.shouldNotReply('foo')
     expect(callSequence).to.deep.equal([mid1, mid2, mid3, mid4, mid5])
   })
 
-  it('middleware error', async () => {
-    midWarn.mockClear()
-    const errorMessage = 'error message'
-    app.middleware(() => { throw new Error(errorMessage) })
-    await app.mock.client('123').receive('foo')
+  const path = 'internal.low-authority'
+
+  it('error 1 (middleware error)', async () => {
+    app.middleware(() => { throw new Error(path) })
+    await client.shouldNotReply('foo')
     expect(midWarn.mock.calls).to.have.length(1)
   })
 
-  it('middleware error with message', async () => {
-    midWarn.mockClear()
-    app.middleware(() => { throw new SessionError('internal.low-authority') })
-    await app.mock.client('123').shouldReply('foo', '权限不足。')
+  it('error 2 (next error)', async () => {
+    app.middleware((_, next) => next(() => { throw new Error(path) }))
+    await client.shouldNotReply('foo')
+    expect(midWarn.mock.calls).to.have.length(1)
+  })
+
+  it('error 3 (error message)', async () => {
+    app.middleware(() => { throw new SessionError(path) })
+    await client.shouldReply('foo', '权限不足。')
     expect(midWarn.mock.calls).to.have.length(0)
   })
 
-  it('isolated next function', async () => {
-    midWarn.mockClear()
+  it('edge case 1 (isolated next)', async () => {
     app.middleware((_, next) => (next(), undefined))
     app.middleware((_, next) => sleep(0).then(() => next()))
-    await app.mock.client('123').receive('foo')
+    await client.shouldNotReply('foo')
+    await sleep(0)
+    expect(midWarn.mock.calls).to.have.length(1)
+  })
+
+  it('edge case 2 (stack exceeded)', async () => {
+    const compose = (next: Next) => next(compose)
+    app.middleware((_, next) => next(compose))
+    await client.shouldNotReply('foo')
     await sleep(0)
     expect(midWarn.mock.calls).to.have.length(1)
   })

@@ -52,7 +52,6 @@ declare module '@satorijs/core' {
 
       export interface Advanced {
         maxListeners?: number
-        prettyErrors?: boolean
       }
 
       export interface Static extends Schema<Config> {
@@ -90,7 +89,6 @@ defineProperty(Context.Config, 'Message', Schema.object({
 }).description('消息设置'))
 
 defineProperty(Context.Config, 'Advanced', Schema.object({
-  prettyErrors: Schema.boolean().default(true).description('启用报错优化模式。在此模式下 Koishi 会对程序抛出的异常进行整理，过滤掉框架内部的调用记录，输出更易读的提示信息。'),
   maxListeners: Schema.natural().default(64).description('每种监听器的最大数量。如果超过这个数量，Koishi 会认定为发生了内存泄漏，将产生一个警告。'),
 }).description('高级设置'))
 

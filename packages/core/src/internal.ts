@@ -199,17 +199,8 @@ export class Internal {
       .map(([, middleware]) => middleware.bind(null, session))
 
     // execute middlewares
-    let index = 0, midStack = '', lastCall = ''
-    const { prettyErrors } = this.ctx.root.config
+    let index = 0
     const next: Next = async (callback) => {
-      if (prettyErrors) {
-        lastCall = new Error().stack.split('\n', 3)[2]
-        if (index) {
-          const capture = lastCall.match(/\((.+)\)/)
-          midStack = `\n  - ${capture ? capture[1] : lastCall.slice(7)}${midStack}`
-        }
-      }
-
       try {
         if (!this._sessions[session.id]) {
           throw new Error('isolated next function detected')
@@ -225,16 +216,7 @@ export class Internal {
         if (error instanceof SessionError) {
           return session.text(error.path, error.param)
         }
-        let stack = coerce(error)
-        if (prettyErrors) {
-          const index = stack.indexOf(lastCall)
-          if (index >= 0) {
-            stack = stack.slice(0, index)
-          } else {
-            stack += '\n'
-          }
-          stack += `Middleware stack:${midStack}`
-        }
+        const stack = coerce(error)
         this.ctx.logger('session').warn(`${session.content}\n${stack}`)
       }
     }
