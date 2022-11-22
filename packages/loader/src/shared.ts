@@ -24,8 +24,8 @@ declare module 'koishi' {
 declare module 'cordis' {
   // Theoretically, these properties will only appear on `Fork`.
   // We define them directly on `State` for typing convenience.
-  interface State<C> {
-    [Loader.kRecord]?: Dict<Fork<C>>
+  interface EffectScope<C> {
+    [Loader.kRecord]?: Dict<ForkScope<C>>
     alias?: string
   }
 }

@@ -11,9 +11,9 @@ export namespace Plugin {
   export type Object<S = any, T = any> = cordis.Plugin.Object<S, T, Context>
 }
 
-export type State = cordis.State<Context>
-export type Fork = cordis.Fork<Context>
-export type Runtime = cordis.Runtime<Context>
+export type EffectScope = cordis.EffectScope<Context>
+export type ForkScope = cordis.ForkScope<Context>
+export type MainScope = cordis.MainScope<Context>
 export type Service = cordis.Service<Context>
 
 export const Service = cordis.Service<Context>

@@ -3,7 +3,7 @@ import ns from 'ns-require'
 
 declare module 'cordis' {
   interface Context {
-    plugin(path: string, config?: any): Fork<this>
+    plugin(path: string, config?: any): ForkScope<this>
   }
 }
 

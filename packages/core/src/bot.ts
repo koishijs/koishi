@@ -1,6 +1,6 @@
 import { makeArray, sleep } from '@koishijs/utils'
 import { Dict } from 'cosmokit'
-import { Bot } from '@satorijs/core'
+import { Bot, Fragment } from '@satorijs/core'
 
 declare module '@satorijs/core' {
   interface Bot {
