@@ -113,7 +113,7 @@ describe('Runtime', () => {
       await client4.shouldNotReply('cmd2')
       await client1.shouldReply('-cmd2', 'cmd2:123')
       await client4.shouldReply('-cmd2', 'cmd2:123')
-      await client4.shouldNotReply(`<reply id=123/> <at id=${DEFAULT_SELF_ID}/> cmd2`)
+      await client4.shouldNotReply(`<reply id="123"/> <at id="${DEFAULT_SELF_ID}"/> cmd2`)
     })
 
     it('single nickname', async () => {
@@ -170,13 +170,13 @@ describe('Runtime', () => {
 
     it('nickname prefix & fuzzy', async () => {
       await client4.shouldNotReply('foo3 -t baz')
-      await client4.shouldReply(`<at id=${DEFAULT_SELF_ID}/> foo3 -t baz`, 'cmd2:123')
+      await client4.shouldReply(`<at id="${DEFAULT_SELF_ID}"/> foo3 -t baz`, 'cmd2:123')
     })
 
     it('one argument & fuzzy', async () => {
       await client4.shouldReply('foo4 bar baz', 'cmd1:bar')
       await client4.shouldNotReply('foo4bar baz')
-      await client4.shouldReply(`<at id=${DEFAULT_SELF_ID}/> foo4bar baz`, 'cmd1:bar')
+      await client4.shouldReply(`<at id="${DEFAULT_SELF_ID}"/> foo4bar baz`, 'cmd1:bar')
     })
   })
 
@@ -190,7 +190,7 @@ describe('Runtime', () => {
       await client4.shouldReply('cmd1 test --baz', 'cmd1:test')
       await client4.shouldReply('escape', 'early')
       await client5.shouldNotReply('cmd1 test --baz')
-      await client5.shouldReply(`<at id=${DEFAULT_SELF_ID}/> cmd1 test --baz`, 'cmd1:test')
+      await client5.shouldReply(`<at id="${DEFAULT_SELF_ID}"/> cmd1 test --baz`, 'cmd1:test')
     })
 
     it('channel.flag.ignore', async () => {
@@ -198,7 +198,7 @@ describe('Runtime', () => {
       await sleep(0)
       await client4.shouldNotReply('escape')
       await client4.shouldNotReply('cmd1 --baz')
-      await client4.shouldNotReply(`<at id=${DEFAULT_SELF_ID}/> cmd1 --baz`)
+      await client4.shouldNotReply(`<at id="${DEFAULT_SELF_ID}"/> cmd1 --baz`)
       await app.database.setChannel('mock', '321', { flag: 0 })
     })
   })

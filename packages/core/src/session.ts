@@ -1,6 +1,6 @@
 import { extend, observe } from '@koishijs/utils'
 import { defineProperty, isNullable, makeArray, Promisify } from 'cosmokit'
-import { Fragment, Logger, segment, SendOptions, Session } from '@satorijs/core'
+import { Fragment, Logger, segment, Session } from '@satorijs/core'
 import { Argv, Command } from './command'
 import { Channel, Tables, User } from './database'
 import { Middleware, Next } from './internal'
@@ -33,6 +33,7 @@ declare module '@satorijs/core' {
     execute(argv: Argv, next?: true | Next): Promise<string>
     middleware(middleware: Middleware): () => boolean
     prompt(timeout?: number): Promise<string>
+    transform(elements: segment[]): Promise<segment[]>
   }
 
   namespace Session {
@@ -82,10 +83,11 @@ extend(Session.prototype as Session.Private, {
     return this.app.chain('appellation', defaultName, this)
   },
 
-  async send(content, options = {}) {
-    if (!content) return
+  async send(fragment, options = {}) {
+    if (!fragment) return
     options.session = this
-    return this.bot.sendMessage(this.channelId, content, this.guildId, options).catch<string[]>((error) => {
+    const children = await this.transform(segment.normalize(fragment))
+    return this.bot.sendMessage(this.channelId, children, this.guildId, options).catch<string[]>((error) => {
       logger.warn(error)
       return []
     })
@@ -376,6 +378,10 @@ extend(Session.prototype as Session.Private, {
         resolve('')
       }, timeout)
     })
+  },
+
+  async transform(elements: segment[]) {
+    return await segment.transformAsync(elements, this.app.$internal._components, this)
   },
 })
 

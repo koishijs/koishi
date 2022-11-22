@@ -37,13 +37,13 @@ describe('@koishijs/plugin-forward', () => {
 
     await session3.shouldNotReply('hello')
     expect(send.mock.calls).to.have.length(0)
-    await session3.shouldNotReply('<quote id=2000/> hello')
+    await session3.shouldNotReply('<quote id="2000"/> hello')
     expect(send.mock.calls).to.have.length(1)
     expect(send.mock.calls).to.have.shape([['456', '789: hello']])
     send.mockClear()
 
     send.mockImplementation(async () => ['3000'])
-    await session2.shouldNotReply('<quote id=3000/> hello')
+    await session2.shouldNotReply('<quote id="3000"/> hello')
     expect(send.mock.calls).to.have.length(1)
     expect(send.mock.calls).to.have.shape([['654', '123: hello']])
   })

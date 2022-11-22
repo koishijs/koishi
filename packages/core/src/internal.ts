@@ -1,12 +1,13 @@
-import { coerce, escapeRegExp, makeArray } from '@koishijs/utils'
+import { coerce, escapeRegExp, makeArray, Random } from '@koishijs/utils'
 import { Awaitable, defineProperty, Dict } from 'cosmokit'
-import { Context, Fragment, segment, Session } from '@satorijs/core'
+import { Context, Fragment, Render, segment, Session } from '@satorijs/core'
 import { Computed } from './session'
 import { Channel, User } from './database'
 
 declare module '@satorijs/core' {
   interface Context {
     $internal: Internal
+    component(name: string, component: Component): () => boolean
     middleware(middleware: Middleware, prepend?: boolean): () => boolean
   }
 
@@ -20,6 +21,8 @@ declare module '@satorijs/core' {
     'middleware'(session: Session): void
   }
 }
+
+export type Component = Render<Awaitable<Fragment>, Session>
 
 export class SessionError extends Error {
   constructor(public path: string | string[], public param?: Dict) {
@@ -53,13 +56,14 @@ export namespace Internal {
 }
 
 export class Internal {
-  static readonly methods = ['middleware']
+  static readonly methods = ['middleware', 'component']
 
   _hooks: [Context, Middleware][] = []
   _nameRE: RegExp
   _sessions: Dict<Session> = Object.create(null)
   _userCache = new SharedCache<User.Observed<any>>()
   _channelCache = new SharedCache<Channel.Observed<any>>()
+  _components: Dict<Component> = Object.create(null)
 
   constructor(private ctx: Context, private config: Internal.Config) {
     defineProperty(this, Context.current, ctx)
@@ -82,6 +86,31 @@ export class Internal {
       if (!session.resolve(session.argv)) return next()
       return session.execute(session.argv, next)
     })
+
+    this.component('execute', async (attrs, content, session) => {
+      const children = await session.transform(content)
+      return session.execute(children.join(''), true)
+    })
+
+    this.component('prompt', async (attrs, content, session) => {
+      await session.send(content)
+      return session.prompt()
+    })
+
+    this.component('i18n', async (attrs, content, session) => {
+      return session.text(attrs.path)
+    })
+
+    this.component('random', async (attrs, content, session) => {
+      const children = await session.transform(content)
+      return Random.pick(children)
+    })
+
+    this.component('plural', async (attrs, content, session) => {
+      const children = await session.transform(content)
+      const path = attrs.count in children ? attrs.count : children.length - 1
+      return children[path]
+    })
   }
 
   protected get caller() {
@@ -90,6 +119,15 @@ export class Internal {
 
   middleware(middleware: Middleware, prepend = false) {
     return this.caller.lifecycle.register('middleware', this._hooks, middleware, prepend)
+  }
+
+  component(name: string, component: Component) {
+    this._components[name] = component
+    return this.caller.collect('component', () => {
+      const shouldDelete = this._components[name] === component
+      if (shouldDelete) delete this._components[name]
+      return shouldDelete
+    })
   }
 
   prepare() {
