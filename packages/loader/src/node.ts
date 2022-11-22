@@ -1,4 +1,4 @@
-import { readdirSync, readFileSync, statSync, writeFileSync } from 'fs'
+import { accessSync, constants, readdirSync, readFileSync, statSync, writeFileSync } from 'fs'
 import { dirname, extname, resolve } from 'path'
 import { Context, interpolate, Logger, valueMap } from 'koishi'
 import { Loader, unwrapExports } from './shared'
@@ -41,7 +41,7 @@ export default class NodeLoader extends Loader {
     } else {
       this.findConfig()
     }
-    this.writable = writableExts.includes(this.extname)
+    this.writable = this.checkWritable()
     this.envfile = resolve(this.baseDir, '.env')
     this.scope = ns({
       namespace: 'koishi',
@@ -49,6 +49,16 @@ export default class NodeLoader extends Loader {
       official: 'koishijs',
       dirname: this.baseDir,
     })
+  }
+
+  private checkWritable() {
+    if (!writableExts.includes(this.extname)) return false
+    try {
+      accessSync(this.filename, constants.W_OK)
+      return true
+    } catch {
+      return false
+    }
   }
 
   private findConfig() {
