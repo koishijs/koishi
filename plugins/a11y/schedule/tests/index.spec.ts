@@ -1,4 +1,4 @@
-import { App, Time } from 'koishi'
+import { App, segment, Time, Universal } from 'koishi'
 import { install, InstalledClock } from '@sinonjs/fake-timers'
 import * as schedule from '@koishijs/plugin-schedule'
 import memory from '@koishijs/plugin-database-memory'
@@ -15,7 +15,7 @@ describe('@koishijs/plugin-schedule', () => {
   const client1 = app.mock.client('123', '456')
   const client2 = app.mock.client('123')
 
-  const send = app.bots[0].sendMessage = jest.fn(async () => [])
+  const send = app.bots[0].sendMessage = jest.fn<Universal.Methods['sendMessage']>(async () => [])
 
   app.plugin(memory)
   app.command('echo [content:text]').action((_, text) => text)
@@ -102,7 +102,8 @@ describe('@koishijs/plugin-schedule', () => {
     await new Promise(process.nextTick)
     await new Promise(process.nextTick)
     expect(send.mock.calls).to.have.length(1)
-    expect(send.mock.calls).to.have.shape([['private:123', 'bar']])
+    expect(send.mock.calls[0][0]).to.equal('private:123')
+    expect(segment.normalize(send.mock.calls[0][1]).join('')).to.equal('bar')
   })
 
   it('check arguments', async () => {

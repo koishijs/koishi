@@ -1,4 +1,4 @@
-import { Argv, Channel, Command, Context, FieldCollector, Schema, Session, Tables, User } from 'koishi'
+import { Argv, Channel, Command, Context, FieldCollector, Schema, segment, Session, Tables, User } from 'koishi'
 import {} from '@koishijs/plugin-suggest'
 import zh from './locales/zh.yml'
 import en from './locales/en.yml'
@@ -255,5 +255,5 @@ async function showHelp(command: Command, session: Session<'authority'>, config:
 
   output.push(...formatCommands('.subcommand-prolog', session, command.children, config))
 
-  return output.filter(Boolean).join('\n')
+  return segment.escape(output.filter(Boolean).join('\n'))
 }
