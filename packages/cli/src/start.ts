@@ -2,15 +2,10 @@ import { Dict, hyphenate, isInteger } from '@koishijs/utils'
 import { ChildProcess, fork } from 'child_process'
 import { resolve } from 'path'
 import { CAC } from 'cac'
+import type { Config, Event } from './worker/daemon'
 import kleur from 'kleur'
 
 let child: ChildProcess
-
-interface Message {
-  type: 'start' | 'queue'
-  body: any
-}
-
 let buffer = null
 
 function toArg(key: string) {
@@ -37,17 +32,24 @@ function createWorker(options: Dict<any>) {
     execArgv,
   })
 
-  let config: { autoRestart: boolean }
+  let config: Config
+  let timer: NodeJS.Timeout
 
-  child.on('message', (message: Message) => {
+  child.on('message', (message: Event) => {
     if (message.type === 'start') {
       config = message.body
+      timer = setTimeout(() => {
+        console.log(kleur.red('daemon: heartbeat timeout'))
+        child.kill('SIGKILL')
+      }, config.heartbeatTimeout)
       if (buffer) {
         child.send({ type: 'send', body: buffer })
         buffer = null
       }
-    } else if (message.type === 'queue') {
+    } else if (message.type === 'exit') {
       buffer = message.body
+    } else if (message.type === 'heartbeat') {
+      timer.refresh()
     }
   })
 
@@ -56,9 +58,10 @@ function createWorker(options: Dict<any>) {
    * - 0: exit manually
    * - 51: restart (magic code)
    * - 130: SIGINT
-   * - 137: SIGKILL
+   * - 137: SIGKILL (timeout)
+   * - 143: SIGTERM
    */
-  const closingCode = [0, 130, 137]
+  const closingCode = [0, 130, 143]
 
   child.on('exit', (code) => {
     if (!config || closingCode.includes(code) || code !== 51 && !config.autoRestart) {

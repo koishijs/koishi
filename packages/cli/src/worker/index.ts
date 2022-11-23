@@ -19,18 +19,18 @@ declare module 'koishi' {
   }
 
   namespace Context {
-    interface Config extends daemon.Config {
+    interface Config {
       plugins?: Dict
       timezoneOffset?: number
       stackTraceLimit?: number
       logger?: logger.Config
       watch?: Watcher.Config
+      daemon?: daemon.Config
     }
   }
 }
 
 Object.assign(Context.Config.Advanced.dict, {
-  autoRestart: Schema.boolean().description('应用在运行时崩溃自动重启。').default(true).hidden(),
   timezoneOffset: Schema.number().description('时区偏移量 (分钟)。').default(new Date().getTimezoneOffset()),
   stackTraceLimit: Schema.natural().description('报错的调用堆栈深度。').default(10),
   plugins: Schema.object({}).hidden(),
@@ -65,7 +65,7 @@ namespace addons {
 
   export function apply(ctx: Context, config: Context.Config) {
     logger.apply(ctx.root)
-    ctx.plugin(daemon, config)
+    ctx.plugin(daemon, config.daemon)
 
     if (process.env.KOISHI_WATCH_ROOT !== undefined) {
       (config.watch ??= {}).root = process.env.KOISHI_WATCH_ROOT
