@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-schedule",
   "description": "Create Scheduled Tasks for Koishi",
-  "version": "4.3.1",
+  "version": "4.3.2",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -43,9 +43,9 @@
   },
   "devDependencies": {
     "@koishijs/plugin-database-memory": "^2.0.0",
-    "@koishijs/plugin-mock": "^2.2.0"
+    "@koishijs/plugin-mock": "^2.3.0"
   },
   "peerDependencies": {
-    "koishi": "^4.10.2"
+    "koishi": "^4.10.3"
   }
 }

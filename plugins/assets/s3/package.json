@@ -43,7 +43,7 @@
     }
   },
   "peerDependencies": {
-    "koishi": "^4.10.2"
+    "koishi": "^4.10.3"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.137.0"

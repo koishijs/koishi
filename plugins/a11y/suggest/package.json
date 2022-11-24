@@ -51,11 +51,11 @@
     ]
   },
   "peerDependencies": {
-    "koishi": "^4.10.2"
+    "koishi": "^4.10.3"
   },
   "devDependencies": {
     "@koishijs/plugin-database-memory": "^2.0.0",
-    "@koishijs/plugin-mock": "^2.2.0"
+    "@koishijs/plugin-mock": "^2.3.0"
   },
   "dependencies": {
     "fastest-levenshtein": "^1.0.16"
