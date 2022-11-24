@@ -1,6 +1,6 @@
 import { Random } from '@koishijs/utils'
-import { Dict, isNullable, Time } from 'cosmokit'
-import { Context, Logger } from '@satorijs/core'
+import { Dict, isNullable } from 'cosmokit'
+import { Context, Logger, segment } from '@satorijs/core'
 import zh from './locales/zh.yml'
 import en from './locales/en.yml'
 import ja from './locales/ja.yml'
@@ -91,23 +91,7 @@ export class I18n {
       return render(value, params, locale)
     }
 
-    return value.replace(/\{(.+?)\}/g, (_, inner: string) => {
-      const [path, ...exprs] = inner.split('|')
-      const segments = path.trim().split('.')
-      let result = params
-      for (const segment of segments) {
-        result = result[segment]
-        if (isNullable(result)) return ''
-      }
-      for (const expr of exprs) {
-        const cap = expr.trim().match(/(\w+)(?:\((.+)\))?/)
-        const formatter = this._formatters[cap[1]]
-        if (!formatter) throw new Error(`Formatter "${cap[1]}" not found`)
-        const args = cap[2] ? cap[2].split(',').map(v => v.trim()) : []
-        result = formatter(result, args, locale)
-      }
-      return result.toString()
-    })
+    return segment.parse(value, params).join('')
   }
 
   text(locales: Iterable<string>, paths: string[], params: object) {
@@ -139,24 +123,6 @@ export class I18n {
   }
 
   private registerBuiltins() {
-    const units = ['day', 'hour', 'minute', 'second'] as const
-
-    this.formatter('time', (ms: number, _, locale) => {
-      for (let index = 0; index < 3; index++) {
-        const major = Time[units[index]]
-        const minor = Time[units[index + 1]]
-        if (ms >= major - minor / 2) {
-          ms += minor / 2
-          let result = Math.floor(ms / major) + ' ' + this.text([locale], ['general.' + units[index]], {})
-          if (ms % major > minor) {
-            result += ` ${Math.floor(ms % major / minor)} ` + this.text([locale], ['general.' + units[index + 1]], {})
-          }
-          return result
-        }
-      }
-      return Math.round(ms / Time.second) + ' ' + this.text([locale], ['general.second'], {})
-    })
-
     this.preset('plural', (data: string[], params: { length: number }, locale) => {
       const path = params.length in data ? params.length : data.length - 1
       return this.render(data[path], params, locale)

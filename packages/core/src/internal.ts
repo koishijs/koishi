@@ -1,5 +1,5 @@
 import { coerce, escapeRegExp, makeArray, Random } from '@koishijs/utils'
-import { Awaitable, defineProperty, Dict } from 'cosmokit'
+import { Awaitable, defineProperty, Dict, Time } from 'cosmokit'
 import { Context, Fragment, Render, segment, Session } from '@satorijs/core'
 import { Computed } from './session'
 import { Channel, User } from './database'
@@ -110,6 +110,25 @@ export class Internal {
       const children = await session.transform(content)
       const path = attrs.count in children ? attrs.count : children.length - 1
       return children[path]
+    })
+
+    const units = ['day', 'hour', 'minute', 'second'] as const
+
+    this.component('i18n:time', (attrs, content, session) => {
+      let ms = +attrs.value
+      for (let index = 0; index < 3; index++) {
+        const major = Time[units[index]]
+        const minor = Time[units[index + 1]]
+        if (ms >= major - minor / 2) {
+          ms += minor / 2
+          let result = Math.floor(ms / major) + ' ' + session.text('general.' + units[index])
+          if (ms % major > minor) {
+            result += ` ${Math.floor(ms % major / minor)} ` + session.text('general.' + units[index + 1])
+          }
+          return result
+        }
+      }
+      return Math.round(ms / Time.second) + ' ' + session.text('general.second')
     })
   }
 

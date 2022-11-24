@@ -9,7 +9,7 @@ general:
     - 六
   everyday: 每天 {0}
   everyweek: 每周{0} {1}
-  interval: 每隔 {0 | time} (剩余 {1 | time})
+  interval: 每隔 <i18n:time value={0}/> (剩余 <i18n:time value={1}/>)
 
 commands:
   schedule:
@@ -27,7 +27,6 @@ commands:
       context.guild: 频道 {channelId}
       delete-success: 日程 {0} 已删除。
       create-success: 日程已创建，编号为 {0}。
-      list-item: '{0 | interval}'
       list-empty: 当前没有等待执行的日程。
       command-expected: 请输入要执行的指令。
       date-invalid: 请输入合法的日期。

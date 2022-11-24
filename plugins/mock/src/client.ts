@@ -48,14 +48,15 @@ export class MessageClient {
         resolve(this.replies)
         this.replies = []
       }
-      const send = async (fragment: Fragment) => {
-        const elements = segment.normalize(fragment)
+      const self = this
+      const send = async function (this: Session, fragment: Fragment) {
+        const elements = await this.transform(segment.normalize(fragment))
         if (!elements.length) return
-        const session = this.app.bots[0].session({ ...this.meta, elements })
+        const session = this.app.bots[0].session({ ...self.meta, elements })
         if (await this.app.serial(session, 'before-send', session)) return
         if (!session?.content) return []
-        this.replies.push(session.content)
-        if (this.replies.length >= count) _resolve()
+        self.replies.push(session.content)
+        if (self.replies.length >= count) _resolve()
         return []
       }
       const dispose = this.app.on('middleware', (session) => {

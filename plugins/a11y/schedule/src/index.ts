@@ -37,24 +37,24 @@ function toHourMinute(time: Date) {
 export function apply(ctx: Context, { minInterval }: Config) {
   ctx.i18n.define('zh', zh)
 
-  ctx.i18n.formatter('interval', ([date, interval]: [Date, number], _, locale) => {
+  function formatInterval(date: Date, interval: number, session: Session) {
     if (!interval) {
       return Time.template('yyyy-MM-dd hh:mm:ss', date)
     } else if (interval === Time.day) {
-      return ctx.i18n.text([locale], ['general.everyday'], [toHourMinute(date)])
+      return session.text('general.everyday', [toHourMinute(date)])
     } else if (interval === Time.week) {
-      return ctx.i18n.text([locale], ['general.everyweek'], [
-        ctx.i18n.text([locale], ['general.days.' + date.getDay()], {}),
+      return session.text('general.everyweek', [
+        session.text('general.days.' + date.getDay()),
         toHourMinute(date),
       ])
     } else {
       const now = Date.now()
-      return ctx.i18n.text([locale], ['general.interval'], [
+      return session.text('general.interval', [
         interval,
         +date < now ? interval - (now - +date) % interval : +date - now,
       ])
     }
-  })
+  }
 
   ctx.model.extend('schedule', {
     id: 'unsigned',
@@ -161,7 +161,7 @@ export function apply(ctx: Context, { minInterval }: Config) {
         }
         if (!schedules.length) return session.text('.list-empty')
         return schedules.map(({ id, time, interval, command, session: payload }) => {
-          let output = `${id}. ${session.text('.list-item', [[time, interval]])}：${command}`
+          let output = `${id}. ${formatInterval(time, interval, session)}：${command}`
           if (options.full) {
             output += session.text('.context', [payload.subtype === 'private'
               ? session.text('.context.private', payload)

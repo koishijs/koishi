@@ -191,7 +191,7 @@ function getOptions(command: Command, session: Session<'authority'>, config: Hel
     const authority = option.authority && config.authority ? `(${option.authority}) ` : ''
     function pushOption(option: Argv.OptionVariant, name: string) {
       if (!config.showHidden && !getOptionVisibility(option, session)) return
-      let line = `${authority}${option.syntax}`
+      let line = `${authority}${segment.escape(option.syntax)}`
       const description = session.text(option.descPath ?? [`commands.${command.name}.options.${name}`, ''])
       if (description) line += '  ' + description
       line = command.ctx.chain('help/option', line, option, command, session)
@@ -212,7 +212,7 @@ function getOptions(command: Command, session: Session<'authority'>, config: Hel
 }
 
 async function showHelp(command: Command, session: Session<'authority'>, config: HelpOptions) {
-  const output = [command.displayName + command.declaration]
+  const output = [command.displayName + segment.escape(command.declaration)]
 
   const description = session.text([`commands.${command.name}.description`, ''])
   if (description) output.push(description)
@@ -255,5 +255,5 @@ async function showHelp(command: Command, session: Session<'authority'>, config:
 
   output.push(...formatCommands('.subcommand-prolog', session, command.children, config))
 
-  return segment.escape(output.filter(Boolean).join('\n'))
+  return output.filter(Boolean).join('\n')
 }
