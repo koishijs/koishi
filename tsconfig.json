@@ -7,10 +7,6 @@
         "plugins/adapter/*/src",
         "external/adapter-*/src",
       ],
-      "@koishijs/plugin-assets-*": [
-        "plugins/assets/*/src",
-        "external/assets-*/src",
-      ],
       "@koishijs/plugin-database-*": [
         "plugins/database/*/src",
         "external/database-*/src",

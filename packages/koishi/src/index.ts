@@ -1,21 +1,41 @@
-import { Context, Schema } from '@koishijs/core'
-import { Assets } from './assets'
+import { Context } from '@koishijs/core'
+import ns from 'ns-require'
 
 export { Router, WebSocketLayer } from '@satorijs/satori'
-
-export * from './assets'
-export * from './patch'
 
 export * from '@koishijs/core'
 export * from '@koishijs/utils'
 
-declare module '@satorijs/core' {
+declare module 'cordis' {
   interface Context {
-    assets: Assets
-    cache: Cache
+    plugin(path: string, config?: any): ForkScope<this>
   }
 }
 
-Context.Config.list.push(Schema.object({
-  assets: Context.Config.Assets,
-}))
+declare module '@satorijs/core' {
+  interface Context {
+    baseDir: string
+  }
+}
+
+export class Patch {
+  constructor(ctx: Context) {
+    ctx.root.baseDir ??= process.cwd()
+  }
+}
+
+Context.service('$patch', Patch)
+
+export const scope = ns({
+  namespace: 'koishi',
+  prefix: 'plugin',
+  official: 'koishijs',
+})
+
+const plugin = Context.prototype.plugin
+Context.prototype.plugin = function (this: Context, entry: any, config?: any) {
+  if (typeof entry === 'string') {
+    entry = scope.require(entry)
+  }
+  return plugin.call(this, entry, config)
+}
