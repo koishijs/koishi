@@ -1,5 +1,6 @@
 import { distance } from 'fastest-levenshtein'
-import { Awaitable, Context, Next, Schema, Session } from 'koishi'
+import { Context, I18n, Schema, Session } from 'koishi'
+import {} from '@koishijs/plugin-help'
 import zh from './locales/zh.yml'
 import en from './locales/en.yml'
 import ja from './locales/ja.yml'
@@ -7,123 +8,118 @@ import fr from './locales/fr.yml'
 import zhTW from './locales/zh-tw.yml'
 
 declare module 'koishi' {
-  interface Context {
-    $suggest: SuggestionService
+  interface Session {
+    suggest(options: SuggestOptions): Promise<string>
   }
 
-  interface Session {
-    suggest(options: SuggestOptions): Promise<void>
+  interface CompareOptions {
+    minSimilarity?: number
   }
 }
-
-Context.service('$suggest')
 
 export interface SuggestOptions {
   target: string
-  items: string[]
-  next?: Next
+  items: Iterable<string>
   prefix?: string
   suffix: string
   minSimilarity?: number
-  apply: (this: Session, suggestion: string, next: Next) => Awaitable<void | string>
 }
 
-Session.prototype.suggest = function suggest(this: Session, options) {
-  const {
-    target,
-    items,
-    prefix = '',
-    suffix,
-    apply,
-    next = Next.compose,
-    minSimilarity = this.app.$suggest.config.minSimilarity,
-  } = options
+const oldCompare = I18n.prototype.compare
+I18n.prototype.compare = function (this: I18n, expect, actual, options) {
+  const runtime = this.ctx.registry.get(apply)
+  if (!runtime || !expect) return oldCompare.call(this, expect, actual, options)
 
-  const sendNext = async (callback: Next) => {
-    const result = await next(callback)
-    if (result) await this.send(result)
-  }
+  const value = 1 - distance(expect, actual) / expect.length
+  const threshold = options.minSimilarity ?? runtime.config.minSimilarity
+  return value >= threshold ? value : 0
+}
 
-  let suggestions: string[], minDistance = Infinity
+Session.prototype.suggest = async function suggest(this: Session, options: SuggestOptions) {
+  const runtime = this.app.registry.get(apply)
+  if (!runtime) return
+
+  const { target, items, prefix = '', suffix } = options
+  const suggestions: string[] = []
   for (const name of items) {
-    const dist = distance(name, target)
-    if (name.length <= 2 || dist > name.length * minSimilarity) continue
-    if (dist === minDistance) {
-      suggestions.push(name)
-    } else if (dist < minDistance) {
-      suggestions = [name]
-      minDistance = dist
-    }
+    if (!name) continue
+    const similarity = this.app.i18n.compare(name, target, options)
+    if (similarity > 0) suggestions.push(name)
   }
-  if (!suggestions) return sendNext(async () => prefix)
 
-  const scope = this.scope
-  return sendNext(async () => {
-    const message = prefix + this.text('suggest.hint', [suggestions.map(text => {
-      return this.text('general.quote', [text])
-    }).join(this.text('general.or'))])
-    if (suggestions.length > 1) return message
+  const send = async (message: string) => {
+    await this.send(message)
+    return null
+  }
+  if (!suggestions.length) return send(prefix)
 
+  const message = prefix + this.text('suggest.hint', [suggestions.map(text => {
+    return this.text('general.quote', [text])
+  }).join(this.text('general.or'))])
+  if (suggestions.length > 1) return send(message)
+
+  return new Promise<string>((resolve, reject) => {
     const dispose = this.middleware((session, next) => {
       dispose()
       const message = session.content.trim()
       if (message && message !== '.' && message !== '。') return next()
-      return session.withScope(scope, () => {
-        return apply.call(session, suggestions[0], next)
-      })
+      resolve(suggestions[0])
     })
-
-    return message + suffix
+    this.send(message + suffix).catch(reject)
   })
 }
 
-class SuggestionService {
-  constructor(public ctx: Context, public config: SuggestionService.Config) {
-    ctx.$suggest = this
+function getCommandNames(session: Session) {
+  return session.app.$commander._commandList
+    .filter(cmd => cmd.match(session))
+    .flatMap(cmd => cmd._aliases)
+}
 
-    ctx.i18n.define('zh', zh)
-    ctx.i18n.define('en', en)
-    ctx.i18n.define('ja', ja)
-    ctx.i18n.define('fr', fr)
-    ctx.i18n.define('zh-tw', zhTW)
+export const name = 'suggest'
 
-    ctx.middleware((session, next) => {
-      // use `!prefix` instead of `prefix === null` to prevent from blocking other middlewares
-      // we need to make sure that the user truly has the intension to call a command
-      const { argv, quote, subtype, parsed: { content, prefix, appel } } = session
-      if (argv.command || subtype !== 'private' && !prefix && !appel) return next()
-      const target = content.split(/\s/, 1)[0].toLowerCase()
-      if (!target) return next()
+export interface Config {
+  minSimilarity?: number
+}
 
-      return session.suggest({
+export const Config: Schema<Config> = Schema.object({
+  minSimilarity: Schema.percent().default(0.64).description('用于模糊匹配的相似系数，应该是一个 0 到 1 之间的数值。数值越高，模糊匹配越严格。设置为 1 可以完全禁用模糊匹配。'),
+})
+
+export function apply(ctx: Context, config: Config) {
+  ctx.i18n.define('zh', zh)
+  ctx.i18n.define('en', en)
+  ctx.i18n.define('ja', ja)
+  ctx.i18n.define('fr', fr)
+  ctx.i18n.define('zh-tw', zhTW)
+
+  ctx.on('help/search', async ({ session, args }) => {
+    const name = await session.suggest({
+      target: args[0],
+      items: getCommandNames(session),
+      prefix: session.text('commands.help.messages.not-found'),
+      suffix: session.text('suggest.command-suffix'),
+    })
+    return ctx.$commander.getCommand(name)
+  })
+
+  ctx.middleware((session, next) => {
+    // use `!prefix` instead of `prefix === null` to prevent from blocking other middlewares
+    // we need to make sure that the user truly has the intension to call a command
+    const { argv, quote, subtype, parsed: { content, prefix, appel } } = session
+    if (argv.command || subtype !== 'private' && !prefix && !appel) return next()
+    const target = content.split(/\s/, 1)[0].toLowerCase()
+    if (!target) return next()
+
+    return next(async (next) => {
+      const name = await session.suggest({
         target,
-        next,
-        items: this.getCommandNames(session),
+        items: getCommandNames(session),
         prefix: session.text('suggest.command-prefix'),
         suffix: session.text('suggest.command-suffix'),
-        async apply(suggestion, next) {
-          const newMessage = suggestion + content.slice(target.length) + (quote ? ' ' + quote.content : '')
-          return this.execute(newMessage, next)
-        },
       })
+      if (!name) return next()
+      const message = name + content.slice(target.length) + (quote ? ' ' + quote.content : '')
+      return session.execute(message, next)
     })
-  }
-
-  getCommandNames(session: Session) {
-    return this.ctx.$commander._commandList
-      .filter(cmd => cmd.match(session))
-      .flatMap(cmd => cmd._aliases)
-  }
-}
-
-namespace SuggestionService {
-  export interface Config {
-    minSimilarity?: number
-  }
-
-  export const Config: Schema<Config> = Schema.object({
-    minSimilarity: Schema.percent().default(0.4).description('用于模糊匹配的相似系数，应该是一个 0 到 1 之间的数值。数值越高，模糊匹配越严格。设置为 1 可以完全禁用模糊匹配。'),
   })
 }
-
-export default SuggestionService

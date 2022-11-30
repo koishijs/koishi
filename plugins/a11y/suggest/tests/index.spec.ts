@@ -1,5 +1,5 @@
 import { App } from 'koishi'
-import suggest from '@koishijs/plugin-suggest'
+import * as suggest from '@koishijs/plugin-suggest'
 import mock from '@koishijs/plugin-mock'
 
 describe('Command Suggestion', () => {
@@ -69,17 +69,16 @@ describe('Other Session Methods', () => {
   const client = app.mock.client('123', '456')
   const items = ['foo', 'bar']
 
-  app.command('find [item]').action(({ session }, item) => {
+  app.command('find [item]').action(async ({ session }, item) => {
     if (items.includes(item)) return 'found:' + item
-    return session.suggest({
+    const name = await session.suggest({
       target: item,
       items: ['foo', 'bar', 'baz'],
       prefix: 'PREFIX',
       suffix: 'SUFFIX',
-      apply(message) {
-        return session.execute({ args: [message], name: 'find' })
-      },
     })
+    if (!name) return
+    return session.execute({ args: [name], name: 'find' })
   })
 
   before(() => app.start())
