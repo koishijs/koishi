@@ -2,7 +2,6 @@ import { Awaitable, defineProperty } from 'cosmokit'
 import { Context } from '@satorijs/core'
 import { Command } from './command'
 import { Argv } from './parser'
-import runtime from './runtime'
 import validate from './validate'
 import { Channel, User } from '../database'
 
@@ -46,7 +45,6 @@ export class Commander {
 
   constructor(private ctx: Context, private config: Commander.Config = {}) {
     defineProperty(this, Context.current, ctx)
-    ctx.plugin(runtime)
     ctx.plugin(validate)
 
     ctx.before('parse', (content, session) => {

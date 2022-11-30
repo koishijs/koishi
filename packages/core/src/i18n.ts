@@ -16,6 +16,8 @@ declare module '@satorijs/core' {
   }
 }
 
+export interface CompareOptions {}
+
 export namespace I18n {
   export type Node = string | Store
 
@@ -26,14 +28,21 @@ export namespace I18n {
 
   export type Formatter = (value: any, args: string[], locale: string) => string
   export type Renderer = (dict: Dict, params: any, locale: string) => string
+
+  export interface FindOptions extends CompareOptions {}
+
+  export interface FindResult {
+    locale: string
+    data: Dict
+    similarity: number
+  }
 }
 
 export class I18n {
   _data: Dict<I18n.Store> = {}
-  _formatters: Dict<I18n.Formatter> = {}
   _presets: Dict<I18n.Renderer> = {}
 
-  constructor(ctx: Context) {
+  constructor(public ctx: Context) {
     this.define('', { '': '' })
     this.define('zh', zh)
     this.define('en', en)
@@ -43,11 +52,18 @@ export class I18n {
     this.registerBuiltins()
   }
 
+  compare(expect: string, actual: string, options: CompareOptions): number {
+    return expect === actual ? 1 : 0
+  }
+
   private set(locale: string, prefix: string, value: I18n.Node) {
     if (prefix.includes('@') || typeof value === 'string') {
       const dict = this._data[locale]
       const [path, preset] = prefix.slice(0, -1).split('@')
-      if (preset) value[kTemplate] = preset
+      if (preset) {
+        value[kTemplate] = preset
+        logger.warn('preset is deprecated and will be removed in the future')
+      }
       if (!isNullable(dict[path]) && !locale.startsWith('$')) {
         logger.warn('override', locale, path)
       }
@@ -73,12 +89,40 @@ export class I18n {
     }
   }
 
+  /** @deprecated */
   formatter(name: string, callback: I18n.Formatter) {
-    this._formatters[name] = callback
+    logger.warn('formatter is deprecated and will be removed in the future')
   }
 
+  /** @deprecated */
   preset(name: string, callback: I18n.Renderer) {
     this._presets[name] = callback
+  }
+
+  find(path: string, actual: string, options: I18n.FindOptions = {}): I18n.FindResult[] {
+    const groups: string[] = []
+    path = path.replace(/\(([^)]+)\)/g, (_, name) => {
+      groups.push(name)
+      return '([^.]+)'
+    })
+    const pattern = new RegExp(`^${path}$`)
+    const results: I18n.FindResult[] = []
+    for (const locale in this._data) {
+      for (const path in this._data[locale]) {
+        const capture = pattern.exec(path)
+        if (!capture) continue
+        const expect = this._data[locale][path]
+        if (typeof expect !== 'string') continue
+        const similarity = this.compare(expect, actual, options)
+        if (!similarity) continue
+        const data = {}
+        for (let i = 0; i < groups.length; i++) {
+          data[groups[i]] = capture[i + 1]
+        }
+        results.push({ locale, data, similarity })
+      }
+    }
+    return results
   }
 
   render(value: I18n.Node, params: any, locale: string) {
