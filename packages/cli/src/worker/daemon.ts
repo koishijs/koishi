@@ -1,5 +1,9 @@
 import Loader from '@koishijs/loader'
 import { Context, noop, Schema } from 'koishi'
+import zhCN from './locales/zh-CN.yml'
+import jaJP from './locales/ja-JP.yml'
+import frFR from './locales/fr-FR.yml'
+import zhTW from './locales/zh-TW.yml'
 
 export interface Config {
   exitCommand?: boolean
@@ -54,10 +58,10 @@ export function apply(ctx: Context, config: Config = {}) {
     ctx.parallel('exit', signal).finally(() => process.exit())
   }
 
-  ctx.i18n.define('zh', require('../locales/zh'))
-  ctx.i18n.define('ja', require('../locales/ja'))
-  ctx.i18n.define('fr', require('../locales/fr'))
-  ctx.i18n.define('zh-tw', require('../locales/zh-tw'))
+  ctx.i18n.define('zh', zhCN)
+  ctx.i18n.define('ja', jaJP)
+  ctx.i18n.define('fr', frFR)
+  ctx.i18n.define('zh-TW', zhTW)
 
   ctx
     .intersect(() => config.exitCommand)

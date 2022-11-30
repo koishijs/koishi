@@ -1,11 +1,11 @@
 import { Random } from '@koishijs/utils'
 import { Dict, isNullable } from 'cosmokit'
 import { Context, Logger, segment } from '@satorijs/core'
-import zh from './locales/zh.yml'
-import en from './locales/en.yml'
-import ja from './locales/ja.yml'
-import fr from './locales/fr.yml'
-import zhTW from './locales/zh-tw.yml'
+import zhCN from './locales/zh-CN.yml'
+import enUS from './locales/en-US.yml'
+import jaJP from './locales/ja-JP.yml'
+import frFR from './locales/fr-FR.yml'
+import zhTW from './locales/zh-TW.yml'
 
 const logger = new Logger('i18n')
 const kTemplate = Symbol('template')
@@ -44,11 +44,11 @@ export class I18n {
 
   constructor(public ctx: Context) {
     this.define('', { '': '' })
-    this.define('zh', zh)
-    this.define('en', en)
-    this.define('ja', ja)
-    this.define('fr', fr)
-    this.define('zh-tw', zhTW)
+    this.define('zh', zhCN)
+    this.define('en', enUS)
+    this.define('ja', jaJP)
+    this.define('fr', frFR)
+    this.define('zh-TW', zhTW)
     this.registerBuiltins()
   }
 

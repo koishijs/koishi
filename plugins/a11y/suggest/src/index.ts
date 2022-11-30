@@ -1,11 +1,11 @@
 import { distance } from 'fastest-levenshtein'
 import { Context, I18n, Schema, Session } from 'koishi'
 import {} from '@koishijs/plugin-help'
-import zh from './locales/zh.yml'
-import en from './locales/en.yml'
-import ja from './locales/ja.yml'
-import fr from './locales/fr.yml'
-import zhTW from './locales/zh-tw.yml'
+import zhCN from './locales/zh-CN.yml'
+import enUS from './locales/en-US.yml'
+import jaJP from './locales/ja-JP.yml'
+import frFR from './locales/fr-FR.yml'
+import zhTW from './locales/zh-TW.yml'
 
 declare module 'koishi' {
   interface Session {
@@ -86,11 +86,11 @@ export const Config: Schema<Config> = Schema.object({
 })
 
 export function apply(ctx: Context, config: Config) {
-  ctx.i18n.define('zh', zh)
-  ctx.i18n.define('en', en)
-  ctx.i18n.define('ja', ja)
-  ctx.i18n.define('fr', fr)
-  ctx.i18n.define('zh-tw', zhTW)
+  this.define('zh', zhCN)
+  this.define('en', enUS)
+  this.define('ja', jaJP)
+  this.define('fr', frFR)
+  this.define('zh-TW', zhTW)
 
   ctx.on('help/search', async ({ session, args }) => {
     const name = await session.suggest({

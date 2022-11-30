@@ -1,9 +1,9 @@
 import { App, Argv, Awaitable, Channel, Command, difference, Extend, observe, User } from 'koishi'
-import zh from './locales/zh.yml'
-import en from './locales/en.yml'
-import ja from './locales/ja.yml'
-import fr from './locales/fr.yml'
-import zhTW from './locales/zh-tw.yml'
+import zhCN from './locales/zh-CN.yml'
+import enUS from './locales/en-US.yml'
+import jaJP from './locales/ja-JP.yml'
+import frFR from './locales/fr-FR.yml'
+import zhTW from './locales/zh-TW.yml'
 
 export function parsePlatform(target: string): [platform: string, id: string] {
   const index = target.indexOf(':')
@@ -17,11 +17,11 @@ const refs = new WeakSet<App>()
 function loadI18n(app: App) {
   if (refs.has(app)) return
   refs.add(app)
-  app.i18n.define('zh', zh)
-  app.i18n.define('en', en)
-  app.i18n.define('ja', ja)
-  app.i18n.define('fr', fr)
-  app.i18n.define('zh-tw', zhTW)
+  this.define('zh', zhCN)
+  this.define('en', enUS)
+  this.define('ja', jaJP)
+  this.define('fr', frFR)
+  this.define('zh-TW', zhTW)
 }
 
 export function handleError<U extends User.Field, G extends Channel.Field, A extends any[], O extends {}>(
