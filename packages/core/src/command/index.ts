@@ -7,7 +7,6 @@ import validate from './validate'
 import { Channel, User } from '../database'
 
 export * from './command'
-export * from './runtime'
 export * from './parser'
 export * from './validate'
 
@@ -49,6 +48,25 @@ export class Commander {
     defineProperty(this, Context.current, ctx)
     ctx.plugin(runtime)
     ctx.plugin(validate)
+
+    ctx.before('parse', (content, session) => {
+      const argv = Argv.parse(content)
+      if (session.quote) {
+        argv.tokens.push({
+          content: session.quote.content,
+          quoted: true,
+          inters: [],
+          terminator: '',
+        })
+      }
+      return argv
+    })
+
+    ctx.before('attach', (session) => {
+      defineProperty(session, 'argv', ctx.bail('before-parse', session.parsed.content, session))
+      session.argv.root = true
+      session.argv.session = session
+    })
   }
 
   protected get caller() {

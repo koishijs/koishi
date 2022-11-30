@@ -34,6 +34,7 @@ declare module '@satorijs/core' {
     middleware(middleware: Middleware): () => boolean
     prompt(timeout?: number): Promise<string>
     transform(elements: segment[]): Promise<segment[]>
+    response?: Fragment
   }
 
   namespace Session {

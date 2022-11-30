@@ -1,4 +1,4 @@
-import { Awaitable, Dict, isNullable, remove } from 'cosmokit'
+import { Awaitable, camelize, Dict, isNullable, remove } from 'cosmokit'
 import { coerce } from '@koishijs/utils'
 import { Context, Fragment, Logger, Schema, Session } from '@satorijs/core'
 import { Disposable } from 'cordis'
@@ -11,9 +11,6 @@ const logger = new Logger('command')
 
 export type Extend<O extends {}, K extends string, T> = {
   [P in K | keyof O]?: (P extends keyof O ? O[P] : unknown) & (P extends K ? T : unknown)
-}
-
-export interface CommandService {
 }
 
 export namespace Command {
@@ -43,6 +40,7 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
   _usage?: Command.Usage
   _disposed?: boolean
   _disposables?: Disposable[]
+  _disposables2: Disposable[] = []
 
   private _userFields: FieldCollector<'user'>[] = [['locale']]
   private _channelFields: FieldCollector<'channel'>[] = [['locale']]
@@ -144,12 +142,32 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
     return this
   }
 
-  shortcut(name: string | RegExp, config: Command.Shortcut = {}) {
+  _escape(source: any) {
+    if (typeof source !== 'string') return source
+    return source
+      .replace(/\$\$/g, '@@__PLACEHOLDER__@@')
+      .replace(/\$\d/g, s => `{${s[1]}}`)
+      .replace(/@@__PLACEHOLDER__@@/g, '$')
+  }
+
+  shortcut(pattern: string | RegExp, config: Command.Shortcut = {}) {
     if (this._disposed) return this
-    config.name = name
-    config.command = this
-    this.ctx.$commander._shortcuts.push(config)
-    this._disposables?.push(() => remove(this.ctx.$commander._shortcuts, config))
+    let content = this.displayName
+    for (const arg of config.args || []) {
+      content += ' ' + this._escape(arg)
+    }
+    for (const key in config.options || {}) {
+      content += ` --${camelize(key)}`
+      const value = config.options[key]
+      if (value !== true) {
+        content += ' ' + this._escape(value)
+      }
+    }
+    if (config.fuzzy) content += ' {0}'
+    this._disposables2.push(this.ctx.match(pattern, `<execute>${content}</execute>`, {
+      appellation: config.prefix,
+      fuzzy: config.fuzzy,
+    }))
     return this
   }
 
@@ -276,11 +294,11 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
 
   dispose() {
     this._disposed = true
+    this._disposables2.forEach(dispose => dispose())
     this.ctx.emit('command-removed', this)
     for (const cmd of this.children.slice()) {
       cmd.dispose()
     }
-    this.ctx.$commander._shortcuts = this.ctx.$commander._shortcuts.filter(s => s.command !== this)
     this._aliases.forEach(name => this.ctx.$commander._commands.delete(name))
     remove(this.ctx.$commander._commandList, this)
     if (this.parent) {

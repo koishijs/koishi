@@ -9,6 +9,7 @@ declare module '@satorijs/core' {
     $internal: Internal
     component(name: string, component: Component): () => boolean
     middleware(middleware: Middleware, prepend?: boolean): () => boolean
+    match(pattern: string | RegExp, response: Fragment, options: Internal.MatchOptions): () => boolean
   }
 
   interface Events {
@@ -53,10 +54,21 @@ export namespace Internal {
     nickname?: string | string[]
     prefix?: Computed<string | string[]>
   }
+
+  export interface Matcher extends MatchOptions {
+    context: Context
+    pattern: string | RegExp
+    response: Fragment
+  }
+
+  export interface MatchOptions {
+    appellation?: boolean
+    fuzzy?: boolean
+  }
 }
 
 export class Internal {
-  static readonly methods = ['middleware', 'component']
+  static readonly methods = ['middleware', 'component', 'match']
 
   _hooks: [Context, Middleware][] = []
   _nameRE: RegExp
@@ -64,6 +76,7 @@ export class Internal {
   _userCache = new SharedCache<User.Observed<any>>()
   _channelCache = new SharedCache<Channel.Observed<any>>()
   _components: Dict<Component> = Object.create(null)
+  _matchers = new Set<Internal.Matcher>()
 
   constructor(private ctx: Context, private config: Internal.Config) {
     defineProperty(this, Context.current, ctx)
@@ -82,6 +95,7 @@ export class Internal {
     })
 
     this.middleware((session, next) => {
+      if (session.response) return session.response
       // execute command
       if (!session.resolve(session.argv)) return next()
       return session.execute(session.argv, next)
@@ -130,10 +144,34 @@ export class Internal {
       }
       return Math.round(ms / Time.second) + ' ' + session.text('general.second')
     })
+
+    ctx.before('attach', (session) => {
+      const { parsed, quote } = session
+      if (parsed.prefix) return
+      for (const { appellation, context, fuzzy, pattern, response } of this._matchers) {
+        if (appellation && !parsed.appel) continue
+        if (!context.filter(session)) continue
+        let content = parsed.content
+        if (quote) content += ' ' + quote.content
+        let params: [string, ...string[]]
+        if (typeof pattern === 'string') {
+          if (!fuzzy && content !== pattern || !content.startsWith(pattern)) continue
+          params = [content.slice(pattern.length)]
+          if (fuzzy && !parsed.appel && params[0].match(/^\S/)) continue
+        } else {
+          const params = pattern.exec(content)
+          if (!params) continue
+        }
+        session.response = typeof response === 'string'
+          ? segment.parse(response, params)
+          : response
+        return
+      }
+    })
   }
 
   protected get caller() {
-    return this[Context.current]
+    return this[Context.current] as Context
   }
 
   middleware(middleware: Middleware, prepend = false) {
@@ -146,6 +184,14 @@ export class Internal {
       const shouldDelete = this._components[name] === component
       if (shouldDelete) delete this._components[name]
       return shouldDelete
+    })
+  }
+
+  match(pattern: string | RegExp, response: Fragment, options: Internal.MatchOptions) {
+    const matcher: Internal.Matcher = { ...options, context: this.caller, pattern, response }
+    this._matchers.add(matcher)
+    return this.caller.collect('shortcut', () => {
+      return this._matchers.delete(matcher)
     })
   }
 
