@@ -86,11 +86,11 @@ export const Config: Schema<Config> = Schema.object({
 })
 
 export function apply(ctx: Context, config: Config) {
-  this.define('zh', zhCN)
-  this.define('en', enUS)
-  this.define('ja', jaJP)
-  this.define('fr', frFR)
-  this.define('zh-TW', zhTW)
+  ctx.i18n.define('zh', zhCN)
+  ctx.i18n.define('en', enUS)
+  ctx.i18n.define('ja', jaJP)
+  ctx.i18n.define('fr', frFR)
+  ctx.i18n.define('zh-TW', zhTW)
 
   ctx.on('help/search', async ({ session, args }) => {
     const name = await session.suggest({

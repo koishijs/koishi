@@ -1,9 +1,9 @@
 import Loader from '@koishijs/loader'
 import { Context, noop, Schema } from 'koishi'
-import zhCN from './locales/zh-CN.yml'
-import jaJP from './locales/ja-JP.yml'
-import frFR from './locales/fr-FR.yml'
-import zhTW from './locales/zh-TW.yml'
+import zhCN from '../locales/zh-CN.yml'
+import jaJP from '../locales/ja-JP.yml'
+import frFR from '../locales/fr-FR.yml'
+import zhTW from '../locales/zh-TW.yml'
 
 export interface Config {
   exitCommand?: boolean

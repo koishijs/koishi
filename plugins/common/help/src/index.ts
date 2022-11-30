@@ -63,11 +63,11 @@ function executeHelp(session: Session, name: string) {
 export const name = 'help'
 
 export function apply(ctx: Context, config: Config) {
-  this.define('zh', zhCN)
-  this.define('en', enUS)
-  this.define('ja', jaJP)
-  this.define('fr', frFR)
-  this.define('zh-TW', zhTW)
+  ctx.i18n.define('zh', zhCN)
+  ctx.i18n.define('en', enUS)
+  ctx.i18n.define('ja', jaJP)
+  ctx.i18n.define('fr', frFR)
+  ctx.i18n.define('zh-TW', zhTW)
 
   if (config.options !== false) {
     ctx.$commander._commandList.forEach(cmd => cmd.use(enableHelp))

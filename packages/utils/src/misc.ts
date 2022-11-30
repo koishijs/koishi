@@ -39,7 +39,7 @@ export function coerce(val: any) {
 }
 
 export function renameProperty<O extends object, K extends keyof O, T extends string>(config: O, key: K, oldKey: T) {
-  config[key] = Reflect.get(config, oldKey)
+  config[key] = Reflect.get(config, oldKey) as any
   Reflect.deleteProperty(config, oldKey)
 }
 

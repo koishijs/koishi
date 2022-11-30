@@ -17,11 +17,11 @@ const refs = new WeakSet<App>()
 function loadI18n(app: App) {
   if (refs.has(app)) return
   refs.add(app)
-  this.define('zh', zhCN)
-  this.define('en', enUS)
-  this.define('ja', jaJP)
-  this.define('fr', frFR)
-  this.define('zh-TW', zhTW)
+  app.i18n.define('zh', zhCN)
+  app.i18n.define('en', enUS)
+  app.i18n.define('ja', jaJP)
+  app.i18n.define('fr', frFR)
+  app.i18n.define('zh-TW', zhTW)
 }
 
 export function handleError<U extends User.Field, G extends Channel.Field, A extends any[], O extends {}>(
