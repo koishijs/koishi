@@ -6,8 +6,7 @@ commands:
       authority: afficher les droits nécessaires
       showHidden: afficher les options et commandes cachées
     messages:
-      suggest-prefix: Commande inconnue.
-      suggest-suffix: Tapez un point pour appliquer la suggestion.
+      not-found: Commande inconnue.
       hint-authority: les droits minimums sont indiqués entre parenthèses
       hint-subcommand: ces commandes avec un astérisque ont des sous-commandes
       command-aliases: 'Alias : {0}.'

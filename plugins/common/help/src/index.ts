@@ -1,5 +1,4 @@
-import { Argv, Channel, Command, Context, FieldCollector, Schema, segment, Session, Tables, User } from 'koishi'
-import {} from '@koishijs/plugin-suggest'
+import { Argv, Awaitable, Channel, Command, Context, FieldCollector, Schema, segment, Session, Tables, User } from 'koishi'
 import zh from './locales/zh.yml'
 import en from './locales/en.yml'
 import ja from './locales/ja.yml'
@@ -8,6 +7,7 @@ import zhTW from './locales/zh-tw.yml'
 
 declare module 'koishi' {
   interface Events {
+    'help/search'(argv: Argv): Awaitable<Command>
     'help/command'(output: string[], command: Command, session: Session): void
     'help/option'(output: string, option: Argv.OptionVariant, command: Command, session: Session): string
   }
@@ -33,7 +33,7 @@ interface HelpOptions {
   authority?: boolean
 }
 
-export interface Config extends Command.Config {
+export interface Config {
   shortcut?: boolean
   options?: boolean
 }
@@ -62,7 +62,7 @@ function executeHelp(session: Session, name: string) {
 
 export const name = 'help'
 
-export function apply(ctx: Context, config: Config = {}) {
+export function apply(ctx: Context, config: Config) {
   ctx.i18n.define('zh', zh)
   ctx.i18n.define('en', en)
   ctx.i18n.define('ja', ja)
@@ -101,13 +101,19 @@ export function apply(ctx: Context, config: Config = {}) {
     session.collect(key, { ...argv, command, args: [], options: { help: true } }, fields)
   }
 
+  ctx.on('help/search', ({ session, args }) => {
+    const command = findCommand(args[0])
+    if (command?.match(session)) return command
+  }, true)
+
   const cmd = ctx.command('help [command:string]', { authority: 0, ...config })
     .userFields(['authority'])
     .userFields(createCollector('user'))
     .channelFields(createCollector('channel'))
     .option('authority', '-a')
     .option('showHidden', '-H')
-    .action(async ({ session, options }, target) => {
+    .action(async (argv, target) => {
+      const { session, options } = argv
       if (!target) {
         const commands = $._commandList.filter(cmd => cmd.parent === null)
         const output = formatCommands('.global-prolog', session, commands, options)
@@ -116,22 +122,8 @@ export function apply(ctx: Context, config: Config = {}) {
         return output.filter(Boolean).join('\n')
       }
 
-      const command = findCommand(target)
-      if (!command?.ctx.filter(session)) {
-        if (!ctx.$suggest) {
-          return session.text('.suggest-prefix')
-        }
-        return session.suggest({
-          target,
-          items: ctx.$suggest.getCommandNames(session),
-          prefix: session.text('.suggest-prefix'),
-          suffix: session.text('.suggest-suffix'),
-          async apply(suggestion) {
-            return showHelp($.getCommand(suggestion), this as any, options)
-          },
-        })
-      }
-
+      const command = await ctx.serial('help/search', argv)
+      if (!command) return session.text('.not-found')
       return showHelp(command, session, options)
     })
 

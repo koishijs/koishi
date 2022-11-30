@@ -6,8 +6,7 @@ commands:
       authority: show authority requirements
       showHidden: show hidden options and commands
     messages:
-      suggest-prefix: Command not found.
-      suggest-suffix: Send a period to apply the suggestion.
+      not-found: Command not found.
       hint-authority: this minimum authority is marked in parentheses
       hint-subcommand: those marked with an asterisk have subcommands
       command-aliases: 'Aliases: {0}.'

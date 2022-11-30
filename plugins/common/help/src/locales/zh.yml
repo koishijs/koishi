@@ -6,8 +6,7 @@ commands:
       authority: 显示权限设置
       showHidden: 查看隐藏的选项和指令
     messages:
-      suggest-prefix: 指令未找到。
-      suggest-suffix: 发送句号以使用推测的指令。
+      not-found: 指令未找到。
       hint-authority: 括号内为对应的最低权限等级
       hint-subcommand: 标有星号的表示含有子指令
       command-aliases: 别名：{0}。

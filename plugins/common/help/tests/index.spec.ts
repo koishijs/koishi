@@ -1,6 +1,6 @@
 import { App } from 'koishi'
-import * as help from '../src'
-import suggest from '@koishijs/plugin-suggest'
+import * as help from '@koishijs/plugin-help'
+import * as suggest from '@koishijs/plugin-suggest'
 import mock from '@koishijs/plugin-mock'
 import memory from '@koishijs/plugin-database-memory'
 
@@ -102,8 +102,7 @@ describe('Help Command', () => {
   })
 
   it('subcommand', async () => {
-    const foo2 = app.command('foo2')
-    delete foo2.config.authority
+    const foo2 = app.command('foo2', { authority: 0 })
     const foo1 = foo2.subcommand('foo1')
     const foo3 = foo1.subcommand('foo3')
 
