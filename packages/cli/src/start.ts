@@ -38,7 +38,7 @@ function createWorker(options: Dict<any>) {
   child.on('message', (message: Event) => {
     if (message.type === 'start') {
       config = message.body
-      timer = setTimeout(() => {
+      timer = config.heartbeatTimeout && setTimeout(() => {
         console.log(kleur.red('daemon: heartbeat timeout'))
         child.kill('SIGKILL')
       }, config.heartbeatTimeout)
@@ -49,7 +49,7 @@ function createWorker(options: Dict<any>) {
     } else if (message.type === 'exit') {
       buffer = message.body
     } else if (message.type === 'heartbeat') {
-      timer.refresh()
+      if (timer) timer.refresh()
     }
   })
 

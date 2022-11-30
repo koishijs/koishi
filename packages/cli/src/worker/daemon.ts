@@ -11,8 +11,8 @@ export interface Config {
 export const Config: Schema<Config> = Schema.object({
   exitCommand: Schema.boolean().description('提供退出指令。').default(false),
   autoRestart: Schema.boolean().description('在运行时崩溃自动重启。').default(true),
-  heartbeatInterval: Schema.number().description('心跳发送间隔。').default(5000),
-  heartbeatTimeout: Schema.number().description('心跳超时时间。').default(10000),
+  heartbeatInterval: Schema.number().description('心跳发送间隔。').default(0),
+  heartbeatTimeout: Schema.number().description('心跳超时时间。').default(0),
 }).description('守护设置')
 
 Context.Config.list.push(Schema.object({
@@ -79,7 +79,7 @@ export function apply(ctx: Context, config: Config = {}) {
     process.on('SIGINT', handleSignal)
     process.on('SIGTERM', handleSignal)
 
-    ctx.setInterval(() => {
+    config.heartbeatInterval && setInterval(() => {
       process.send({ type: 'heartbeat' })
     }, config.heartbeatInterval)
   })
