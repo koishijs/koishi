@@ -167,14 +167,22 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
       }
     }
     if (config.fuzzy) content += ' {0}'
-    if (config.i18n) {
-      pattern = `commands.${this.name}.shortcuts.${pattern}`
+    if (typeof pattern === 'string') {
+      if (config.i18n) {
+        pattern = `commands.${this.name}.shortcuts.${pattern}`
+      } else {
+        config.i18n = true
+        const key = `commands.${this.name}.shortcuts._${Math.random().toString(36).slice(2)}`
+        this.ctx.i18n.define('', key, pattern)
+        pattern = key
+      }
     }
-    this._disposables2.push(this.ctx.match(pattern, `<execute>${content}</execute>`, {
+    const dispose = this.ctx.match(pattern, `<execute>${content}</execute>`, {
       appel: config.prefix,
       fuzzy: config.fuzzy,
       i18n: config.i18n as never,
-    }))
+    })
+    this._disposables2.push(dispose)
     return this
   }
 

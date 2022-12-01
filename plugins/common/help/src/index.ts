@@ -1,4 +1,4 @@
-import { Argv, Awaitable, Channel, Command, Context, FieldCollector, Schema, segment, Session, Tables, User } from 'koishi'
+import { Argv, Channel, Command, Context, FieldCollector, Schema, segment, Session, Tables, User } from 'koishi'
 import zhCN from './locales/zh-CN.yml'
 import enUS from './locales/en-US.yml'
 import jaJP from './locales/ja-JP.yml'
@@ -7,7 +7,6 @@ import zhTW from './locales/zh-TW.yml'
 
 declare module 'koishi' {
   interface Events {
-    'help/search'(argv: Argv): Awaitable<Command>
     'help/command'(output: string[], command: Command, session: Session): void
     'help/option'(output: string, option: Argv.OptionVariant, command: Command, session: Session): string
   }
@@ -85,26 +84,50 @@ export function apply(ctx: Context, config: Config) {
   })
 
   const $ = ctx.$commander
-  function findCommand(target: string) {
+  function findCommand(target: string, session: Session) {
     const command = $.resolve(target)
-    if (command) return command
-    const shortcut = $._shortcuts.find(({ name }) => {
-      return typeof name === 'string' ? name === target : name.test(target)
-    })
-    if (shortcut) return shortcut.command
+    if (command?.match(session)) return command
+
+    // shortcuts
+    const data = ctx.i18n
+      .find('commands.(name).shortcuts.(variant)', target)
+      .map(item => ({ ...item, command: $.resolve(item.data.name) }))
+      .filter(item => item.command?.match(session))
+    const perfect = data.filter(item => item.similarity === 1)
+    if (!perfect.length) return data
+    return perfect[0].command
   }
 
   const createCollector = <T extends keyof Tables>(key: T): FieldCollector<T> => (argv, fields) => {
     const { args: [target], session } = argv
-    const command = findCommand(target)
-    if (!command) return
-    session.collect(key, { ...argv, command, args: [], options: { help: true } }, fields)
+    const result = findCommand(target, session)
+    if (!Array.isArray(result)) {
+      session.collect(key, { ...argv, command: result, args: [], options: { help: true } }, fields)
+      return
+    }
+    for (const { command } of result) {
+      session.collect(key, { ...argv, command, args: [], options: { help: true } }, fields)
+    }
   }
 
-  ctx.on('help/search', ({ session, args }) => {
-    const command = findCommand(args[0])
-    if (command?.match(session)) return command
-  }, true)
+  async function inferCommand(target: string, session: Session) {
+    const result = findCommand(target, session)
+    if (!Array.isArray(result)) return result
+
+    const expect = $.available(session).filter((name) => {
+      return name && session.app.i18n.compare(name, target)
+    })
+    for (const item of result) {
+      if (expect.includes(item.data.name)) continue
+      expect.push(item.data.name)
+    }
+    const name = await session.suggest({
+      expect,
+      prefix: session.text('.not-found'),
+      suffix: session.text('internal.suggest-command'),
+    })
+    return $.resolve(name)
+  }
 
   const cmd = ctx.command('help [command:string]', { authority: 0, ...config })
     .userFields(['authority'])
@@ -122,12 +145,11 @@ export function apply(ctx: Context, config: Config) {
         return output.filter(Boolean).join('\n')
       }
 
-      const command = await ctx.serial('help/search', argv)
-      if (!command) return session.text('.not-found')
-      return showHelp(command, session, options)
+      const command = await inferCommand(target, session)
+      if (command) return showHelp(command, session, options)
     })
 
-  if (config.shortcut !== false) cmd.shortcut('帮助', { fuzzy: true })
+  if (config.shortcut !== false) cmd.shortcut('help', { i18n: true, fuzzy: true })
 }
 
 function* getCommands(session: Session<'authority'>, commands: Command[], showHidden = false): Generator<Command> {

@@ -1,6 +1,5 @@
 import { App } from 'koishi'
 import * as help from '@koishijs/plugin-help'
-import * as suggest from '@koishijs/plugin-suggest'
 import mock from '@koishijs/plugin-mock'
 import memory from '@koishijs/plugin-database-memory'
 
@@ -8,21 +7,21 @@ const app = new App()
 
 app.plugin(mock)
 app.plugin(help)
-app.plugin(suggest)
 app.plugin(memory)
 
 app.i18n.define('$zh', 'commands.help.messages.global-epilog', 'EPILOG')
 
-const client = app.mock.client('123')
+const client = app.mock.client('123', '456')
 
 before(async () => {
   await app.start()
   await app.mock.initUser('123', 2)
+  await app.mock.initChannel('456')
 })
 
 let message: string
 
-describe('Help Command', () => {
+describe('@koishijs/plugin-help', () => {
   it('basic support', async () => {
     await client.shouldReply('help', message = [
       '当前可用的指令有：',
@@ -41,9 +40,11 @@ describe('Help Command', () => {
       '    -H, --show-hidden  查看隐藏的选项和指令',
     ].join('\n'))
 
+    await client.shouldReply('help xxxx', '指令未找到。')
     await client.shouldReply('help heip', '指令未找到。您要找的是不是“help”？发送句号以使用推测的指令。')
     await client.shouldReply('.', message)
     await client.shouldReply('help -h', message)
+    await client.shouldReply('help 帮助', message)
   })
 
   it('command attributes', async () => {
