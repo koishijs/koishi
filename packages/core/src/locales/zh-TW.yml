@@ -25,3 +25,5 @@ internal:
   invalid-date: 請輸入有效時間。
   invalid-user: 請指定有效用戶。
   invalid-channel: 請指定有效頻道。
+  suggest-hint: 你想輸入的是{0}嗎？
+  suggest-command: 發送句號可使用推測的指令。

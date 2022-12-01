@@ -1,14 +1,16 @@
 import { extend, observe } from '@koishijs/utils'
-import { defineProperty, isNullable, makeArray, Promisify } from 'cosmokit'
+import { Awaitable, defineProperty, isNullable, makeArray, Promisify } from 'cosmokit'
 import { Fragment, Logger, segment, Session } from '@satorijs/core'
 import { Argv, Command } from './command'
 import { Channel, Tables, User } from './database'
 import { Middleware, Next } from './internal'
+import { CompareOptions } from './i18n'
 
 const logger = new Logger('session')
 
 declare module '@satorijs/core' {
   interface Session<U extends User.Field = never, G extends Channel.Field = never> {
+    locale?: string
     argv?: Argv<U, G>
     user?: User.Observed<U>
     channel?: Channel.Observed<G>
@@ -33,6 +35,8 @@ declare module '@satorijs/core' {
     execute(argv: Argv, next?: true | Next): Promise<string>
     middleware(middleware: Middleware): () => boolean
     prompt(timeout?: number): Promise<string>
+    prompt<T>(callback: (session: Session) => Awaitable<T>, options?: PromptOptions): Promise<T>
+    suggest(options: SuggestOptions): Promise<string>
     transform(elements: segment[]): Promise<segment[]>
     response?: Fragment
   }
@@ -45,6 +49,18 @@ declare module '@satorijs/core' {
       _observeChannelLike<T extends Channel.Field = never>(channelId: string, fields: Iterable<T>): Promise<any>
     }
   }
+}
+
+export interface PromptOptions {
+  timeout?: number
+}
+
+export interface SuggestOptions extends CompareOptions {
+  actual?: string
+  expect: readonly string[]
+  prefix?: string
+  suffix: string
+  timeout?: number
 }
 
 export interface Parsed {
@@ -247,6 +263,7 @@ extend(Session.prototype as Session.Private, {
       locales.unshift(this.guild?.['locale'])
       locales.unshift(this.channel?.['locale'])
     }
+    locales.unshift(this.locale)
     const paths = makeArray(path).map((path) => {
       if (!path.startsWith('.')) return path
       if (!this.scope) {
@@ -360,25 +377,62 @@ extend(Session.prototype as Session.Private, {
   },
 
   middleware(middleware) {
-    const identifier = getSessionId(this)
+    const id = getNarrowContextId(this)
     return this.app.middleware(async (session, next) => {
-      if (identifier && getSessionId(session) !== identifier) return next()
+      if (id && getNarrowContextId(session) !== id) return next()
       return middleware(session, next)
     }, true)
   },
 
-  prompt(timeout = this.app.config.delay.prompt) {
+  prompt(...args: any[]) {
+    const callback: (session: Session) => any = typeof args[0] === 'function'
+      ? args.shift()
+      : session => session.content
+    const options: PromptOptions = typeof args[0] === 'number'
+      ? { timeout: args[0] }
+      : args[0] ?? {}
     return new Promise<string>((resolve) => {
-      const dispose = this.middleware((session) => {
+      const dispose = this.middleware(async (session, next) => {
         clearTimeout(timer)
         dispose()
-        resolve(session.content)
+        const value = await callback(session)
+        resolve(value)
+        if (isNullable(value)) return next()
       })
       const timer = setTimeout(() => {
         dispose()
-        resolve('')
-      }, timeout)
+        resolve(undefined)
+      }, options.timeout ?? this.app.config.delay.prompt)
     })
+  },
+
+  async suggest(options: SuggestOptions) {
+    let { expect, prefix = '' } = options
+    if (options.actual) {
+      expect = expect.filter((name) => {
+        return name && this.app.i18n.compare(name, options.actual, options)
+      })
+    }
+    if (!expect.length) {
+      await this.send(prefix)
+      return
+    }
+
+    prefix += this.text('internal.suggest-hint', [expect.map(text => {
+      return this.text('general.quote', [text])
+    }).join(this.text('general.or'))])
+    if (expect.length > 1) {
+      await this.send(prefix)
+      return
+    }
+
+    await this.send(prefix + options.suffix)
+    return this.prompt((session) => {
+      const content = session.content.trim()
+      if (!content || content === '.' || content === '。') {
+        return expect[0]
+      }
+    }, options)
   },
 
   async transform(elements: segment[]) {
@@ -386,7 +440,7 @@ extend(Session.prototype as Session.Private, {
   },
 })
 
-export function getSessionId(session: Session) {
+function getNarrowContextId(session: Session) {
   return '' + session.userId + session.channelId
 }
 

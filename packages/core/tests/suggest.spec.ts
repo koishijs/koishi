@@ -1,11 +1,9 @@
 import { App } from 'koishi'
-import * as suggest from '@koishijs/plugin-suggest'
 import mock from '@koishijs/plugin-mock'
 
 describe('Command Suggestion', () => {
   const app = new App({ prefix: '/' })
   app.plugin(mock)
-  app.plugin(suggest)
 
   const client1 = app.mock.client('456')
   const client2 = app.mock.client('789', '987')
@@ -61,10 +59,9 @@ describe('Command Suggestion', () => {
   })
 })
 
-describe('Other Session Methods', () => {
+describe('session.suggest()', () => {
   const app = new App({ prefix: '.' })
   app.plugin(mock)
-  app.plugin(suggest)
 
   const client = app.mock.client('123', '456')
   const items = ['foo', 'bar']
@@ -72,8 +69,8 @@ describe('Other Session Methods', () => {
   app.command('find [item]').action(async ({ session }, item) => {
     if (items.includes(item)) return 'found:' + item
     const name = await session.suggest({
-      target: item,
-      items: ['foo', 'bar', 'baz'],
+      actual: item,
+      expect: ['foo', 'bar', 'baz'],
       prefix: 'PREFIX',
       suffix: 'SUFFIX',
     })

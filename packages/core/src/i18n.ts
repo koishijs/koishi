@@ -1,4 +1,5 @@
 import { Random } from '@koishijs/utils'
+import { distance } from 'fastest-levenshtein'
 import { Dict, isNullable } from 'cosmokit'
 import { Context, Logger, segment } from '@satorijs/core'
 import zhCN from './locales/zh-CN.yml'
@@ -16,7 +17,9 @@ declare module '@satorijs/core' {
   }
 }
 
-export interface CompareOptions {}
+export interface CompareOptions {
+  minSimilarity?: number
+}
 
 export namespace I18n {
   export type Node = string | Store
@@ -52,8 +55,10 @@ export class I18n {
     this.registerBuiltins()
   }
 
-  compare(expect: string, actual: string, options: CompareOptions): number {
-    return expect === actual ? 1 : 0
+  compare(expect: string, actual: string, options: CompareOptions = {}) {
+    const value = 1 - distance(expect, actual) / expect.length
+    const threshold = options.minSimilarity ?? this.ctx.root.config.minSimilarity
+    return value >= threshold ? value : 0
   }
 
   private set(locale: string, prefix: string, value: I18n.Node) {
@@ -100,6 +105,7 @@ export class I18n {
   }
 
   find(path: string, actual: string, options: I18n.FindOptions = {}): I18n.FindResult[] {
+    if (!actual) return []
     const groups: string[] = []
     path = path.replace(/\(([^)]+)\)/g, (_, name) => {
       groups.push(name)

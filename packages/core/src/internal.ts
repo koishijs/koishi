@@ -9,7 +9,8 @@ declare module '@satorijs/core' {
     $internal: Internal
     component(name: string, component: Component): () => boolean
     middleware(middleware: Middleware, prepend?: boolean): () => boolean
-    match(pattern: string | RegExp, response: Fragment, options: Internal.MatchOptions): () => boolean
+    match(pattern: string | RegExp, response: Fragment, options?: Internal.MatchOptions & { i18n?: false }): () => boolean
+    match(pattern: string, response: string, options: Internal.MatchOptions & { i18n: true }): () => boolean
   }
 
   interface Events {
@@ -62,7 +63,8 @@ export namespace Internal {
   }
 
   export interface MatchOptions {
-    appellation?: boolean
+    i18n?: boolean
+    appel?: boolean
     fuzzy?: boolean
   }
 }
@@ -83,7 +85,7 @@ export class Internal {
     this.prepare()
 
     // bind built-in event listeners
-    this.middleware(this._process.bind(this))
+    this.middleware(this._process.bind(this), true)
     ctx.on('message', this._handleMessage.bind(this))
 
     ctx.before('attach-user', (session, fields) => {
@@ -92,13 +94,6 @@ export class Internal {
 
     ctx.before('attach-channel', (session, fields) => {
       session.collect('channel', session.argv, fields)
-    })
-
-    this.middleware((session, next) => {
-      if (session.response) return session.response
-      // execute command
-      if (!session.resolve(session.argv)) return next()
-      return session.execute(session.argv, next)
     })
 
     this.component('execute', async (attrs, content, session) => {
@@ -148,24 +143,41 @@ export class Internal {
     ctx.before('attach', (session) => {
       const { parsed, quote } = session
       if (parsed.prefix) return
-      for (const { appellation, context, fuzzy, pattern, response } of this._matchers) {
-        if (appellation && !parsed.appel) continue
+      for (const { appel, context, i18n, fuzzy, pattern, response } of this._matchers) {
+        if (appel && !parsed.appel) continue
         if (!context.filter(session)) continue
         let content = parsed.content
         if (quote) content += ' ' + quote.content
-        let params: [string, ...string[]]
-        if (typeof pattern === 'string') {
-          if (!fuzzy && content !== pattern || !content.startsWith(pattern)) continue
-          params = [content.slice(pattern.length)]
-          if (fuzzy && !parsed.appel && params[0].match(/^\S/)) continue
-        } else {
-          const params = pattern.exec(content)
-          if (!params) continue
+
+        const trigger = (pattern: any) => {
+          if (!pattern || !response) return
+          let params: [string, ...string[]]
+          if (typeof pattern === 'string') {
+            if (!fuzzy && content !== pattern || !content.startsWith(pattern)) return
+            params = [content.slice(pattern.length)]
+            if (fuzzy && !parsed.appel && params[0].match(/^\S/)) return
+          } else {
+            const params = pattern.exec(content)
+            if (!params) return
+          }
+          return typeof response === 'string' ? segment.parse(response, params) : response
         }
-        session.response = typeof response === 'string'
-          ? segment.parse(response, params)
-          : response
-        return
+
+        if (!i18n) {
+          const result = trigger(pattern)
+          if (!result) continue
+          session.response = result
+          return
+        }
+
+        for (const locale in ctx.i18n._data) {
+          const store = ctx.i18n._data[locale]
+          const result = trigger(store[pattern as string])
+          if (!result) continue
+          session.locale = locale
+          session.response = result
+          return
+        }
       }
     })
   }
@@ -288,6 +300,7 @@ export class Internal {
     }
 
     this.ctx.emit(session, 'attach', session)
+    if (session.response) return session.response
     return next()
   }
 

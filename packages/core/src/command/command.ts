@@ -15,6 +15,7 @@ export type Extend<O extends {}, K extends string, T> = {
 
 export namespace Command {
   export interface Shortcut {
+    i18n?: boolean
     name?: string | RegExp
     command?: Command
     prefix?: boolean
@@ -150,6 +151,8 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
       .replace(/@@__PLACEHOLDER__@@/g, '$')
   }
 
+  shortcut(pattern: string | RegExp, config?: Command.Shortcut & { i18n?: false }): this
+  shortcut(pattern: string, config: Command.Shortcut & { i18n: true }): this
   shortcut(pattern: string | RegExp, config: Command.Shortcut = {}) {
     if (this._disposed) return this
     let content = this.displayName
@@ -164,9 +167,13 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
       }
     }
     if (config.fuzzy) content += ' {0}'
+    if (config.i18n) {
+      pattern = `commands.${this.name}.shortcuts.${pattern}`
+    }
     this._disposables2.push(this.ctx.match(pattern, `<execute>${content}</execute>`, {
-      appellation: config.prefix,
+      appel: config.prefix,
       fuzzy: config.fuzzy,
+      i18n: config.i18n as never,
     }))
     return this
   }

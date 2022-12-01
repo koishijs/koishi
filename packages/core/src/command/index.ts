@@ -1,5 +1,5 @@
 import { Awaitable, defineProperty } from 'cosmokit'
-import { Context } from '@satorijs/core'
+import { Context, Session } from '@satorijs/core'
 import { Command } from './command'
 import { Argv } from './parser'
 import validate from './validate'
@@ -65,6 +65,38 @@ export class Commander {
       session.argv.root = true
       session.argv.session = session
     })
+
+    ctx.middleware((session, next) => {
+      // execute command
+      if (!session.resolve(session.argv)) return next()
+      return session.execute(session.argv, next)
+    })
+
+    ctx.middleware((session, next) => {
+      // use `!prefix` instead of `prefix === null` to prevent from blocking other middlewares
+      // we need to make sure that the user truly has the intension to call a command
+      const { argv, quote, subtype, parsed: { content, prefix, appel } } = session
+      if (argv.command || subtype !== 'private' && !prefix && !appel) return next()
+      const actual = content.split(/\s/, 1)[0].toLowerCase()
+      if (!actual) return next()
+
+      return next(async (next) => {
+        const name = await session.suggest({
+          actual,
+          expect: this.available(session),
+          suffix: session.text('internal.suggest-command'),
+        })
+        if (!name) return next()
+        const message = name + content.slice(actual.length) + (quote ? ' ' + quote.content : '')
+        return session.execute(message, next)
+      })
+    })
+  }
+
+  available(session: Session) {
+    return this._commandList
+      .filter(cmd => cmd.match(session))
+      .flatMap(cmd => cmd._aliases)
   }
 
   protected get caller() {
