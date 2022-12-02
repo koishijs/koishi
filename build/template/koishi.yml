@@ -3,7 +3,6 @@ maxPort: 8099
 
 plugins:
   group:basic:
-    suggest: null
     help: null
   group:console:
     console:

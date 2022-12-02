@@ -9,8 +9,8 @@ declare module '@satorijs/core' {
     $internal: Internal
     component(name: string, component: Component): () => boolean
     middleware(middleware: Middleware, prepend?: boolean): () => boolean
-    match(pattern: string | RegExp, response: Fragment, options?: Internal.MatchOptions & { i18n?: false }): () => boolean
-    match(pattern: string, response: string, options: Internal.MatchOptions & { i18n: true }): () => boolean
+    match(pattern: string | RegExp, response: Fragment, options?: Matcher.Options & { i18n?: false }): () => boolean
+    match(pattern: string, response: string, options: Matcher.Options & { i18n: true }): () => boolean
   }
 
   interface Events {
@@ -50,22 +50,26 @@ export namespace Next {
   }
 }
 
+export interface Matcher extends Matcher.Options {
+  context: Context
+  pattern: string | RegExp
+  response: Matcher.Response
+}
+
+export namespace Matcher {
+  export type Response = Fragment | ((session: Session, params: [string, ...string[]]) => Awaitable<Fragment>)
+
+  export interface Options {
+    i18n?: boolean
+    appel?: boolean
+    fuzzy?: boolean
+  }
+}
+
 export namespace Internal {
   export interface Config {
     nickname?: string | string[]
     prefix?: Computed<string | string[]>
-  }
-
-  export interface Matcher extends MatchOptions {
-    context: Context
-    pattern: string | RegExp
-    response: Fragment
-  }
-
-  export interface MatchOptions {
-    i18n?: boolean
-    appel?: boolean
-    fuzzy?: boolean
   }
 }
 
@@ -78,7 +82,7 @@ export class Internal {
   _userCache = new SharedCache<User.Observed<any>>()
   _channelCache = new SharedCache<Channel.Observed<any>>()
   _components: Dict<Component> = Object.create(null)
-  _matchers = new Set<Internal.Matcher>()
+  _matchers = new Set<Matcher>()
 
   constructor(private ctx: Context, private config: Internal.Config) {
     defineProperty(this, Context.current, ctx)
@@ -141,43 +145,10 @@ export class Internal {
     })
 
     ctx.before('attach', (session) => {
-      const { parsed, quote } = session
-      if (parsed.prefix) return
-      for (const { appel, context, i18n, fuzzy, pattern, response } of this._matchers) {
-        if (appel && !parsed.appel) continue
-        if (!context.filter(session)) continue
-        let content = parsed.content
-        if (quote) content += ' ' + quote.content
-
-        const trigger = (pattern: any) => {
-          if (!pattern || !response) return
-          let params: [string, ...string[]]
-          if (typeof pattern === 'string') {
-            if (!fuzzy && content !== pattern || !content.startsWith(pattern)) return
-            params = [content.slice(pattern.length)]
-            if (fuzzy && !parsed.appel && params[0].match(/^\S/)) return
-          } else {
-            const params = pattern.exec(content)
-            if (!params) return
-          }
-          return typeof response === 'string' ? segment.parse(response, params) : response
-        }
-
-        if (!i18n) {
-          const result = trigger(pattern)
-          if (!result) continue
-          session.response = result
-          return
-        }
-
-        for (const locale in ctx.i18n._data) {
-          const store = ctx.i18n._data[locale]
-          const result = trigger(store[pattern as string])
-          if (!result) continue
-          session.locale = locale
-          session.response = result
-          return
-        }
+      if (session.parsed.prefix) return
+      for (const matcher of this._matchers) {
+        this._executeMatcher(session, matcher)
+        if (session.response) return
       }
     })
   }
@@ -199,12 +170,53 @@ export class Internal {
     })
   }
 
-  match(pattern: string | RegExp, response: Fragment, options: Internal.MatchOptions) {
-    const matcher: Internal.Matcher = { ...options, context: this.caller, pattern, response }
+  match(pattern: string | RegExp, response: Matcher.Response, options: Matcher.Options) {
+    const matcher: Matcher = { ...options, context: this.caller, pattern, response }
     this._matchers.add(matcher)
     return this.caller.collect('shortcut', () => {
       return this._matchers.delete(matcher)
     })
+  }
+
+  private _executeMatcher(session: Session, matcher: Matcher) {
+    const { parsed, quote } = session
+    const { appel, context, i18n, fuzzy, pattern, response } = matcher
+    if (appel && !parsed.appel) return
+    if (!context.filter(session)) return
+    let content = parsed.content
+    if (quote) content += ' ' + quote.content
+
+    let params: [string, ...string[]] = null
+    const match = (pattern: any) => {
+      if (!pattern) return
+      if (typeof pattern === 'string') {
+        if (!fuzzy && content !== pattern || !content.startsWith(pattern)) return
+        params = [content.slice(pattern.length)]
+        if (fuzzy && !parsed.appel && params[0].match(/^\S/)) {
+          params = null
+        }
+      } else {
+        params = pattern.exec(content)
+      }
+    }
+
+    if (!i18n) {
+      match(pattern)
+    } else {
+      for (const locale in this.ctx.i18n._data) {
+        const store = this.ctx.i18n._data[locale]
+        match(store[pattern as string])
+        if (params) continue
+        session.locale = locale
+        break
+      }
+    }
+
+    if (!params) return
+    session.response = async () => {
+      const output = await session.resolveValue(response, params)
+      return segment.normalize(output, params)
+    }
   }
 
   prepare() {
@@ -300,7 +312,7 @@ export class Internal {
     }
 
     this.ctx.emit(session, 'attach', session)
-    if (session.response) return session.response
+    if (session.response) return session.response()
     return next()
   }
 

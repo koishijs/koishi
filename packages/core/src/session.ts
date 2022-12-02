@@ -21,7 +21,7 @@ declare module '@satorijs/core' {
     send(content: Fragment, options?: SendOptions): Promise<string[]>
     cancelQueued(delay?: number): void
     sendQueued(content: Fragment, delay?: number): Promise<string[]>
-    resolveValue<T>(source: T | ((session: Session) => T)): T
+    resolveValue<T, R extends any[]>(source: T | ((session: Session, ...args: R) => T), ...args: R): T
     getChannel<K extends Channel.Field = never>(id?: string, fields?: K[]): Promise<Channel>
     observeChannel<T extends Channel.Field = never>(fields?: Iterable<T>): Promise<Channel.Observed<T | G>>
     getUser<K extends User.Field = never>(id?: string, fields?: K[]): Promise<User>
@@ -38,7 +38,7 @@ declare module '@satorijs/core' {
     prompt<T>(callback: (session: Session) => Awaitable<T>, options?: PromptOptions): Promise<T>
     suggest(options: SuggestOptions): Promise<string>
     transform(elements: segment[]): Promise<segment[]>
-    response?: Fragment
+    response?: () => Promise<Fragment>
   }
 
   namespace Session {
