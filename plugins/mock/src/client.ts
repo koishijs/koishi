@@ -11,8 +11,9 @@ const RECEIVED_NTH_OTHERWISE = 'expected "%s" to be replied with %s at index %s 
 
 export class MessageClient {
   public app: Context
-  public meta: Session.Payload
+  public meta: Partial<Session>
 
+  _resolve: (checkLength?: boolean) => void
   private replies: string[] = []
 
   constructor(public bot: MockBot, public userId: string, public channelId?: string) {
@@ -36,31 +37,33 @@ export class MessageClient {
       this.meta.channelId = 'private:' + userId
       this.meta.subtype = 'private'
     }
+
+    const self = this
+    this.meta.send = async function (this: Session, fragment: Fragment) {
+      const elements = await this.transform(segment.normalize(fragment))
+      if (!elements.length) return
+      const session = this.app.bots[0].session({ ...self.meta, elements })
+      if (await this.app.serial(session, 'before-send', session)) return
+      if (!session?.content) return []
+      self.replies.push(session.content)
+      self._resolve(true)
+      return []
+    }
   }
 
   async receive(content: string, count = Infinity) {
     return new Promise<string[]>((resolve) => {
       let resolved = false
-      const _resolve = () => {
+      this._resolve = (checkLength = false) => {
         if (resolved) return
+        if (checkLength && this.replies.length < count) return
         resolved = true
         dispose()
         resolve(this.replies)
         this.replies = []
       }
-      const self = this
-      const send = async function (this: Session, fragment: Fragment) {
-        const elements = await this.transform(segment.normalize(fragment))
-        if (!elements.length) return
-        const session = this.app.bots[0].session({ ...self.meta, elements })
-        if (await this.app.serial(session, 'before-send', session)) return
-        if (!session?.content) return []
-        self.replies.push(session.content)
-        if (self.replies.length >= count) _resolve()
-        return []
-      }
       const dispose = this.app.on('middleware', (session) => {
-        if (session.id === uuid) process.nextTick(_resolve)
+        if (session.id === uuid) process.nextTick(this._resolve)
       })
       let quote: Universal.Message
       const elements = segment.parse(content)
@@ -69,7 +72,7 @@ export class MessageClient {
         quote = { messageId: attrs.id, elements: children, content: children.join('') }
         content = elements.join('')
       }
-      const uuid = this.bot.receive({ ...this.meta, send, content, elements, quote })
+      const uuid = this.bot.receive({ ...this.meta, content, elements, quote })
     })
   }
 
