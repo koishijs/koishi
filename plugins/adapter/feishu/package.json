@@ -1,0 +1,48 @@
+{
+  "name": "@koishijs/plugin-adapter-feishu",
+  "description": "Feishu Adapter for Koishi",
+  "version": "1.0.0",
+  "main": "lib/index.js",
+  "typings": "lib/index.d.ts",
+  "files": [
+    "lib"
+  ],
+  "author": {
+    "name": "Maiko Tan",
+    "email": "maiko.tan.coding@gmail.com"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/satorijs/satori.git",
+    "directory": "adapters/feishu"
+  },
+  "bugs": {
+    "url": "https://github.com/satorijs/satori/issues"
+  },
+  "homepage": "https://koishi.chat/plugins/adapter/feishu.html",
+  "keywords": [
+    "bot",
+    "feishu",
+    "chatbot",
+    "koishi"
+  ],
+  "koishi": {
+    "category": "adapter",
+    "description": {
+      "en": "Feishu Adapter",
+      "zh": "飞书适配器"
+    },
+    "service": {
+      "implements": [
+        "adapter"
+      ]
+    }
+  },
+  "peerDependencies": {
+    "koishi": "^4.10.4"
+  },
+  "dependencies": {
+    "@satorijs/adapter-feishu": "^1.0.0"
+  }
+}
