@@ -8,7 +8,5 @@ files:
     translation: /packages/core/src/locales/%locale%.yml
   - source: /packages/helpers/src/locales/zh-CN.yml
     translation: /packages/helpers/src/locales/%locale%.yml
-  - source: /plugins/a11y/suggest/src/locales/zh-CN.yml
-    translation: /plugins/a11y/suggest/src/locales/%locale%.yml
   - source: /plugins/common/help/src/locales/zh-CN.yml
     translation: /plugins/common/help/src/locales/%locale%.yml

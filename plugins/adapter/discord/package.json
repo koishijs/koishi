@@ -37,7 +37,7 @@
     }
   },
   "peerDependencies": {
-    "koishi": "^4.10.3"
+    "koishi": "^4.10.4"
   },
   "dependencies": {
     "@satorijs/adapter-discord": "^3.3.2"
