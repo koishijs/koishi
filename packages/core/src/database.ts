@@ -1,6 +1,6 @@
 import * as utils from '@koishijs/utils'
 import { defineProperty, Dict, MaybeArray } from 'cosmokit'
-import { Database, Driver, Result, Update } from '@minatojs/core'
+import { Database, Driver, Update } from '@minatojs/core'
 import { Context, Fragment } from '@satorijs/core'
 import { Plugin } from './context'
 
@@ -99,8 +99,8 @@ export class DatabaseService extends Database<Tables> {
     })
   }
 
-  getUser<T extends string, K extends User.Field>(platform: T, id: string, modifier?: Driver.Cursor<K>): Promise<Result<User, K> & Record<T, string>>
-  getUser<T extends string, K extends User.Field>(platform: T, ids: string[], modifier?: Driver.Cursor<K>): Promise<Result<User, K>[]>
+  getUser<T extends string, K extends User.Field>(platform: T, id: string, modifier?: Driver.Cursor<K>): Promise<Pick<User, K> & Record<T, string>>
+  getUser<T extends string, K extends User.Field>(platform: T, ids: string[], modifier?: Driver.Cursor<K>): Promise<Pick<User, K>[]>
   async getUser(platform: string, id: MaybeArray<string>, modifier?: Driver.Cursor<User.Field>) {
     const data = await this.get('user', { [platform]: id }, modifier)
     if (Array.isArray(id)) return data
@@ -116,8 +116,8 @@ export class DatabaseService extends Database<Tables> {
     return this.create('user', { [platform]: id, ...data })
   }
 
-  getChannel<K extends Channel.Field>(platform: string, id: string, modifier?: Driver.Cursor<K>): Promise<Result<Channel, K | 'id' | 'platform'>>
-  getChannel<K extends Channel.Field>(platform: string, ids: string[], modifier?: Driver.Cursor<K>): Promise<Result<Channel, K>[]>
+  getChannel<K extends Channel.Field>(platform: string, id: string, modifier?: Driver.Cursor<K>): Promise<Pick<Channel, K | 'id' | 'platform'>>
+  getChannel<K extends Channel.Field>(platform: string, ids: string[], modifier?: Driver.Cursor<K>): Promise<Pick<Channel, K>[]>
   async getChannel(platform: string, id: MaybeArray<string>, modifier?: Driver.Cursor<Channel.Field>) {
     const data = await this.get('channel', { platform, id }, modifier)
     if (Array.isArray(id)) return data
@@ -137,7 +137,7 @@ export class DatabaseService extends Database<Tables> {
     return platforms
   }
 
-  getAssignedChannels<K extends Channel.Field>(fields?: K[], assignMap?: Dict<string[]>): Promise<Result<Channel, K>[]>
+  getAssignedChannels<K extends Channel.Field>(fields?: K[], assignMap?: Dict<string[]>): Promise<Pick<Channel, K>[]>
   async getAssignedChannels(fields?: Channel.Field[], assignMap: Dict<string[]> = this.getSelfIds()) {
     return this.get('channel', {
       $or: Object.entries(assignMap).map(([platform, assignee]) => ({ platform, assignee })),
@@ -179,7 +179,7 @@ export class DatabaseService extends Database<Tables> {
 DatabaseService.prototype.extend = function extend(this: DatabaseService, name, fields, config) {
   Database.prototype.extend.call(this, name, fields, {
     ...config,
-    driver: this[Context.current].mapping.database,
+    // driver: this[Context.current].mapping.database,
   })
   this.app.emit('model', name)
 }

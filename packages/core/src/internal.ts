@@ -215,7 +215,7 @@ export class Internal {
     if (!params) return
     session.response = async () => {
       const output = await session.resolveValue(response, params)
-      return segment.normalize(output, params)
+      return segment.normalize(output, params.map(source => segment.parse(source)))
     }
   }
 
@@ -355,14 +355,14 @@ export class Internal {
     } finally {
       // update session map
       delete this._sessions[session.id]
-      this.ctx.emit(session, 'middleware', session)
-
-      // flush user & group data
       this._userCache.delete(session.id)
       this._channelCache.delete(session.id)
+
+      // flush user & group data
       await session.user?.$update()
       await session.channel?.$update()
       await session.guild?.$update()
+      this.ctx.emit(session, 'middleware', session)
     }
   }
 }

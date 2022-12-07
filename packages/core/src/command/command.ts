@@ -3,7 +3,7 @@ import { coerce } from '@koishijs/utils'
 import { Context, Fragment, Logger, Schema, Session } from '@satorijs/core'
 import { Disposable } from 'cordis'
 import { Argv } from './parser'
-import { Next } from '../internal'
+import { Next, SessionError } from '../internal'
 import { Channel, User } from '../database'
 import { Computed, FieldCollector } from '../session'
 
@@ -299,6 +299,9 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
       if (!isNullable(result)) return result
     } catch (error) {
       if (index === length) throw error
+      if (error instanceof SessionError) {
+        return argv.session.text(error.path, error.param)
+      }
       const stack = coerce(error)
       logger.warn(`${argv.source ||= this.stringify(args, options)}\n${stack}`)
       this.ctx.emit(argv.session, 'command-error', argv, error)
