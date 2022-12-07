@@ -173,7 +173,8 @@ export abstract class Loader {
       if (!record) return
       for (const name in record) {
         if (record[name] !== fork) continue
-        fork.parent.state.config[name] = config
+        const simplify = fork.runtime.schema?.simplify
+        fork.parent.state.config[name] = simplify ? simplify(config) : config
       }
     })
 

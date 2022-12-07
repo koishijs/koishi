@@ -34,7 +34,7 @@
     "@minatojs/core": "^2.0.1",
     "@satorijs/core": "^1.4.3",
     "cordis": "^2.6.0",
-    "cosmokit": "^1.3.3",
+    "cosmokit": "^1.3.4",
     "fastest-levenshtein": "^1.0.16"
   }
 }
