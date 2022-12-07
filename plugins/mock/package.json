@@ -35,6 +35,6 @@
     "hidden": true
   },
   "peerDependencies": {
-    "koishi": "^4.10.4"
+    "koishi": "^4.10.5"
   }
 }

@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-database-mongo",
   "description": "MongoDB support for Koishi",
-  "version": "4.0.1",
+  "version": "4.0.3",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -42,9 +42,9 @@
     }
   },
   "peerDependencies": {
-    "koishi": "^4.10.4"
+    "koishi": "^4.10.5"
   },
   "dependencies": {
-    "@minatojs/driver-mongo": "^2.0.1"
+    "@minatojs/driver-mongo": "^2.0.3"
   }
 }

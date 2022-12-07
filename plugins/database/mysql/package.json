@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-database-mysql",
   "description": "MySQL support for Koishi",
-  "version": "5.0.1",
+  "version": "5.0.4",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -41,9 +41,9 @@
     }
   },
   "peerDependencies": {
-    "koishi": "^4.10.4"
+    "koishi": "^4.10.5"
   },
   "dependencies": {
-    "@minatojs/driver-mysql": "^2.0.1"
+    "@minatojs/driver-mysql": "^2.0.4"
   }
 }

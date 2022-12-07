@@ -206,7 +206,7 @@ export class Internal {
       for (const locale in this.ctx.i18n._data) {
         const store = this.ctx.i18n._data[locale]
         match(store[pattern as string])
-        if (params) continue
+        if (!params) continue
         session.locale = locale
         break
       }

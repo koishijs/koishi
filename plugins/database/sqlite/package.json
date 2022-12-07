@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-database-sqlite",
   "description": "SQLite support for Koishi",
-  "version": "3.0.1",
+  "version": "3.0.3",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -42,9 +42,9 @@
     }
   },
   "peerDependencies": {
-    "koishi": "^4.10.4"
+    "koishi": "^4.10.5"
   },
   "dependencies": {
-    "@minatojs/driver-sqlite": "^3.0.1"
+    "@minatojs/driver-sqlite": "^3.0.3"
   }
 }

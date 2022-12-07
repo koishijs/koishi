@@ -39,11 +39,11 @@ export class MessageClient {
     }
 
     const self = this
-    this.meta.send = async function (this: Session, fragment: Fragment) {
+    this.meta.send = async function (this: Session, fragment: Fragment, options) {
       const elements = await this.transform(segment.normalize(fragment))
       if (!elements.length) return
       const session = this.app.bots[0].session({ ...self.meta, elements })
-      if (await this.app.serial(session, 'before-send', session)) return
+      if (await this.app.serial(session, 'before-send', session, options)) return
       if (!session?.content) return []
       self.replies.push(session.content)
       self._resolve(true)

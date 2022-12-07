@@ -1,8 +1,10 @@
-import { Context, Schema } from 'koishi'
+import { Context, Logger, Schema } from 'koishi'
 import { promises as fsp } from 'fs'
 import { resolve } from 'path'
 
 export const name = 'locales'
+
+const logger = new Logger('locales')
 
 export interface Config {
   root?: string
@@ -19,6 +21,7 @@ export function apply(ctx: Context, config: Config) {
     if (!created) {
       const files = await fsp.readdir(folder)
       for (const file of files) {
+        logger.info('loading locale %s', file)
         ctx.i18n.define('$' + file.split('.')[0], require(folder + '/' + file))
       }
     }
