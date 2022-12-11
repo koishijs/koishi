@@ -67,7 +67,7 @@ export default class NodeLoader extends Loader {
       for (const extname of supportedExts) {
         if (files.includes(basename + extname)) {
           this.extname = extname
-          this.filename = this.baseDir + '/' + basename + extname
+          this.filename = resolve(this.baseDir, basename + extname)
           return
         }
       }
