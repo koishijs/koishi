@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/loader",
   "description": "Config Loader for Koishi",
-  "version": "2.2.5",
+  "version": "2.3.0",
   "main": "lib/node.js",
   "typings": "lib/index.d.ts",
   "exports": {

@@ -76,6 +76,7 @@ export default class NodeLoader extends Loader {
   }
 
   interpolate(source: any) {
+    if (!this.writable) return source
     if (typeof source === 'string') {
       return interpolate(source, context, /\$\{\{(.+?)\}\}/g)
     } else if (!source || typeof source !== 'object') {
@@ -101,14 +102,7 @@ export default class NodeLoader extends Loader {
       this.config = module.default || module
     }
 
-    let resolved = new Context.Config(this.config)
-    if (this.writable) {
-      // schemastery may change original config
-      // so we need to validate config twice
-      resolved = new Context.Config(this.interpolate(this.config))
-    }
-
-    return resolved
+    return new Context.Config(this.interpolate(this.config))
   }
 
   writeConfig() {

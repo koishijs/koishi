@@ -142,7 +142,7 @@ export abstract class Loader {
   }
 
   async createApp() {
-    const app = this.app = new Context(this.config)
+    const app = this.app = new Context(this.interpolate(this.config))
     app.loader = this
     app.baseDir = this.baseDir
     app.state[Loader.kRecord] = Object.create(null)
