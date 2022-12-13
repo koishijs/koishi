@@ -9,17 +9,16 @@ const evaluate = new Function('context', 'expr', `
 
 export function interpolate(template: string, context: object, pattern = /\{\{([\s\S]+?)\}\}/g) {
   let capture: RegExpExecArray
-  let result = '', hasMatch = false
+  let result = '', lastIndex = 0
   while ((capture = pattern.exec(template))) {
-    if (!hasMatch && capture[0] === template) {
+    if (capture[0] === template) {
       return evaluate(context, capture[1])
     }
-    hasMatch = true
-    result += template.slice(0, capture.index)
+    result += template.slice(lastIndex, capture.index)
     result += evaluate(context, capture[1]) ?? ''
-    template = template.slice(pattern.lastIndex)
+    lastIndex = capture.index + capture[0].length
   }
-  return result + template
+  return result + template.slice(lastIndex)
 }
 
 export function escapeRegExp(source: string) {
