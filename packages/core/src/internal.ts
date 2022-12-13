@@ -7,7 +7,7 @@ import { Channel, User } from './database'
 declare module '@satorijs/core' {
   interface Context {
     $internal: Internal
-    component(name: string, component: Component): () => boolean
+    component(name: string, component: Component, options?: Component.Options): () => boolean
     middleware(middleware: Middleware, prepend?: boolean): () => boolean
     match(pattern: string | RegExp, response: Fragment, options?: Matcher.Options & { i18n?: false }): () => boolean
     match(pattern: string, response: string, options: Matcher.Options & { i18n: true }): () => boolean
@@ -25,6 +25,12 @@ declare module '@satorijs/core' {
 }
 
 export type Component = Render<Awaitable<Fragment>, Session>
+
+export namespace Component {
+  export interface Options {
+    passive?: boolean
+  }
+}
 
 export class SessionError extends Error {
   constructor(public path: string | string[], public param?: Dict) {
@@ -100,34 +106,31 @@ export class Internal {
       session.collect('channel', session.argv, fields)
     })
 
-    this.component('execute', async (attrs, content, session) => {
-      const children = await session.transform(content)
+    this.component('execute', async (attrs, children, session) => {
       return session.execute(children.join(''), true)
     })
 
-    this.component('prompt', async (attrs, content, session) => {
-      await session.send(content)
+    this.component('prompt', async (attrs, children, session) => {
+      await session.send(children)
       return session.prompt()
     })
 
-    this.component('i18n', async (attrs, content, session) => {
+    this.component('i18n', async (attrs, children, session) => {
       return session.text(attrs.path)
     })
 
-    this.component('random', async (attrs, content, session) => {
-      const children = await session.transform(content)
+    this.component('random', async (attrs, children, session) => {
       return Random.pick(children)
     })
 
-    this.component('plural', async (attrs, content, session) => {
-      const children = await session.transform(content)
+    this.component('plural', async (attrs, children, session) => {
       const path = attrs.count in children ? attrs.count : children.length - 1
       return children[path]
     })
 
     const units = ['day', 'hour', 'minute', 'second'] as const
 
-    this.component('i18n:time', (attrs, content, session) => {
+    this.component('i18n:time', (attrs, children, session) => {
       let ms = +attrs.value
       for (let index = 0; index < 3; index++) {
         const major = Time[units[index]]
@@ -161,10 +164,16 @@ export class Internal {
     return this.caller.lifecycle.register('middleware', this._hooks, middleware, prepend)
   }
 
-  component(name: string, component: Component) {
-    this._components[name] = component
+  component(name: string, component: Component, options: Component.Options = {}) {
+    const render: Component = async (attrs, children, session) => {
+      if (!options.passive) {
+        children = await session.transform(children)
+      }
+      return component(attrs, children, session)
+    }
+    this._components[name] = render
     return this.caller.collect('component', () => {
-      const shouldDelete = this._components[name] === component
+      const shouldDelete = this._components[name] === render
       if (shouldDelete) delete this._components[name]
       return shouldDelete
     })
