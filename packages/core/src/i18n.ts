@@ -15,6 +15,10 @@ declare module '@satorijs/core' {
   interface Context {
     i18n: I18n
   }
+
+  interface Events {
+    'internal/i18n'(): void
+  }
 }
 
 export interface CompareOptions {
@@ -92,6 +96,7 @@ export class I18n {
     } else {
       this.set(locale, '', args[0])
     }
+    this.ctx.emit('internal/i18n')
   }
 
   /** @deprecated */
