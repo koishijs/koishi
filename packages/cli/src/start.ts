@@ -2,11 +2,30 @@ import { Dict, hyphenate, isInteger } from '@koishijs/utils'
 import { ChildProcess, fork } from 'child_process'
 import { resolve } from 'path'
 import { CAC } from 'cac'
-import type { Config, Event } from './worker/daemon'
+import type { Config } from './worker/daemon'
 import kleur from 'kleur'
 
+type Event = Event.Start | Event.Env | Event.Heartbeat
+
+namespace Event {
+  export interface Start {
+    type: 'start'
+    body: Config
+  }
+
+  export interface Env {
+    type: 'shared'
+    body: string
+  }
+
+  export interface Heartbeat {
+    type: 'heartbeat'
+  }
+}
+
 let child: ChildProcess
-let buffer = null
+
+process.env.KOISHI_SHARED = '{}'
 
 function toArg(key: string) {
   return key.length === 1 ? `-${key}` : `--${hyphenate(key)}`
@@ -42,29 +61,30 @@ function createWorker(options: Dict<any>) {
         console.log(kleur.red('daemon: heartbeat timeout'))
         child.kill('SIGKILL')
       }, config.heartbeatTimeout)
-      if (buffer) {
-        child.send({ type: 'send', body: buffer })
-        buffer = null
-      }
-    } else if (message.type === 'exit') {
-      buffer = message.body
+    } else if (message.type === 'shared') {
+      process.env.KOISHI_SHARED = message.body
     } else if (message.type === 'heartbeat') {
       if (timer) timer.refresh()
     }
   })
 
-  /**
-   * https://tldp.org/LDP/abs/html/exitcodes.html
-   * - 0: exit manually
-   * - 51: restart (magic code)
-   * - 130: SIGINT
-   * - 137: SIGKILL (timeout)
-   * - 143: SIGTERM
-   */
-  const closingCode = [0, 130, 143]
+  function shouldExit(code: number) {
+    // start failed
+    if (!config) return true
+
+    // exit manually or by signal
+    // https://tldp.org/LDP/abs/html/exitcodes.html
+    if (code === 0 || code >= 128 && code < 128 + 16) return true
+
+    // restart manually
+    if (code === 51) return false
+
+    // fallback to autoRestart
+    return !config.autoRestart
+  }
 
   child.on('exit', (code) => {
-    if (!config || closingCode.includes(code) || code !== 51 && !config.autoRestart) {
+    if (shouldExit(code)) {
       process.exit(code)
     }
     createWorker(options)
