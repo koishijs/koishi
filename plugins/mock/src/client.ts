@@ -1,5 +1,5 @@
 import assert from 'assert'
-import { Context, Fragment, segment, Session, Universal } from 'koishi'
+import { Context, segment, Session, Universal } from 'koishi'
 import { format } from 'util'
 import { MockBot } from './adapter'
 
@@ -39,7 +39,7 @@ export class MessageClient {
     }
 
     const self = this
-    this.meta.send = async function (this: Session, fragment: Fragment, options) {
+    this.meta.send = async function (this: Session, fragment, options) {
       const elements = await this.transform(segment.normalize(fragment))
       if (!elements.length) return
       const session = this.app.bots[0].session({ ...self.meta, elements })
