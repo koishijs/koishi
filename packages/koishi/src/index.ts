@@ -14,12 +14,16 @@ declare module 'cordis' {
 
 declare module '@satorijs/core' {
   interface Context {
+    shared: SharedData
     baseDir: string
   }
 }
 
+export interface SharedData {}
+
 export class Patch {
   constructor(ctx: Context) {
+    ctx.root.shared ??= {}
     ctx.root.baseDir ??= process.cwd()
   }
 }

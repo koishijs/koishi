@@ -14,7 +14,7 @@ function resolveName(name: string) {
 }
 
 export default class BrowserLoader extends Loader {
-  public extname: string
+  public shared = {}
   public config = { plugins: {} }
   private _initTask: Promise<void>
 

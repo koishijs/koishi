@@ -1,4 +1,4 @@
-import { Context, deepEqual, Dict, Logger, Plugin, resolveConfig } from 'koishi'
+import { Context, deepEqual, Dict, Logger, Plugin, resolveConfig, SharedData } from 'koishi'
 import { patch, stripModifier } from './utils'
 
 export * from './utils'
@@ -79,6 +79,7 @@ export abstract class Loader {
   static readonly kRecord = Symbol.for('koishi.loader.record')
   static readonly exitCode = 51
 
+  public shared: SharedData
   public app: Context
   public baseDir: string
   public config: Context.Config
@@ -145,6 +146,7 @@ export abstract class Loader {
     const app = this.app = new Context(this.interpolate(this.config))
     app.loader = this
     app.baseDir = this.baseDir
+    app.shared = this.shared
     app.state[Loader.kRecord] = Object.create(null)
     const fork = await this.reloadPlugin(app, 'group:entry', this.config.plugins)
     this.entry = fork.ctx

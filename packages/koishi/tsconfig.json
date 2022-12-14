@@ -10,6 +10,8 @@
   "dtsc": {
     "inline": [
       "@koishijs/core",
+      "@satorijs/core",
+      "@satorijs/satori",
     ],
   },
 }

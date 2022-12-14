@@ -18,6 +18,7 @@ const writableExts = ['.json', '.yml', '.yaml']
 const supportedExts = ['.js', '.json', '.ts', '.coffee', '.yaml', '.yml']
 
 export default class NodeLoader extends Loader {
+  public shared = JSON.parse(process.env.KOISHI_SHARED || '{}')
   public baseDir = process.cwd()
   public extname: string
   public scope: ns.Scope
@@ -126,8 +127,12 @@ export default class NodeLoader extends Loader {
     return unwrapExports(require(this.cache[name]))
   }
 
-  fullReload() {
-    logger.info('trigger full reload')
-    process.exit(Loader.exitCode)
+  fullReload(code = Loader.exitCode) {
+    const body = JSON.stringify(this.shared)
+    process.send({ type: 'shared', body }, (err: any) => {
+      if (err) logger.error('failed to send shared data')
+      logger.info('trigger full reload')
+      process.exit(code)
+    })
   }
 }
