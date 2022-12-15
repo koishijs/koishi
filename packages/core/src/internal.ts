@@ -224,7 +224,7 @@ export class Internal {
     if (!params) return
     session.response = async () => {
       const output = await session.resolveValue(response, params)
-      return segment.normalize(output, params.map(source => segment.parse(source)))
+      return segment.normalize(output, params.map(source => source ? segment.parse(source) : ''))
     }
   }
 
