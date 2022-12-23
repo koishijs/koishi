@@ -14,7 +14,9 @@ declare module 'cordis' {
 
 declare module '@satorijs/core' {
   interface Context {
+    /** @deprecated */
     shared: SharedData
+    envData: SharedData
     baseDir: string
   }
 }
@@ -23,7 +25,7 @@ export interface SharedData {}
 
 export class Patch {
   constructor(ctx: Context) {
-    ctx.root.shared ??= {}
+    ctx.root.shared = ctx.root.envData ??= {}
     ctx.root.baseDir ??= process.cwd()
   }
 }

@@ -63,7 +63,7 @@ export function apply(ctx: Context, config: Config = {}) {
         process.exit()
       }
       await session.send(session.text('.restarting')).catch(noop)
-      ctx.shared.startMessage = { channelId, guildId, sid, message: session.text('.restarted') }
+      ctx.envData.startMessage = { channelId, guildId, sid, message: session.text('.restarted') }
       ctx.loader.fullReload()
     })
 
@@ -76,14 +76,14 @@ export function apply(ctx: Context, config: Config = {}) {
       process.send({ type: 'heartbeat' })
     }, config.heartbeatInterval)
 
-    if (ctx.shared.startMessage) {
-      const { channelId, guildId, sid, message } = ctx.shared.startMessage
+    if (ctx.envData.startMessage) {
+      const { channelId, guildId, sid, message } = ctx.envData.startMessage
       const dispose = ctx.on('bot-status-updated', (bot) => {
         if (bot.sid !== sid || bot.status !== 'online') return
         bot.sendMessage(channelId, message, guildId)
         dispose()
       })
-      ctx.shared.startMessage = null
+      ctx.envData.startMessage = null
     }
   })
 }
