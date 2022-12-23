@@ -377,9 +377,9 @@ extend(Session.prototype as Session.Private, {
   },
 
   middleware(middleware) {
-    const id = getNarrowContextId(this)
+    const id = this.fid
     return this.app.middleware(async (session, next) => {
-      if (id && getNarrowContextId(session) !== id) return next()
+      if (id && session.fid !== id) return next()
       return middleware(session, next)
     }, true)
   },
@@ -439,10 +439,6 @@ extend(Session.prototype as Session.Private, {
     return await segment.transformAsync(elements, this.app.$internal._components, this)
   },
 })
-
-function getNarrowContextId(session: Session) {
-  return '' + session.userId + session.channelId
-}
 
 export type FieldCollector<T extends keyof Tables, K = keyof Tables[T], A extends any[] = any[], O = {}> =
   | Iterable<K>

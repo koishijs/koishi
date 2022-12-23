@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/cli",
   "description": "CLI for Koishi",
-  "version": "4.10.6",
+  "version": "4.10.8",
   "main": "lib/worker/index.js",
   "typings": "lib/worker/index.d.ts",
   "engines": {
@@ -32,18 +32,16 @@
     "daemon"
   ],
   "peerDependencies": {
-    "koishi": "^4.10.6"
+    "koishi": "^4.10.8"
   },
   "devDependencies": {
-    "@types/prompts": "^2.4.1",
     "@types/throttle-debounce": "^2.1.0"
   },
   "dependencies": {
-    "@koishijs/loader": "^2.4.0",
+    "@koishijs/loader": "^2.4.1",
     "cac": "^6.7.14",
     "chokidar": "^3.5.3",
     "kleur": "^4.1.5",
-    "prompts": "^2.4.2",
     "throttle-debounce": "^3.0.1"
   }
 }
