@@ -1,5 +1,7 @@
 import { expect } from 'chai'
 import { Context } from 'koishi'
+import * as jest from 'jest-mock'
+import mock from '@koishijs/plugin-mock'
 import Loader from './utils'
 
 describe('@koishijs/loader', () => {
@@ -33,9 +35,15 @@ describe('@koishijs/loader', () => {
       prefix: '/',
       plugins: {
         'group:qux': {
+          '$filter': {
+            'user': 123,
+          },
           'baz': {},
           'bar': {
-            a: 2,
+            'a': 2,
+            '$filter': {
+              'channel': 789,
+            },
           },
         },
       },
@@ -56,11 +64,40 @@ describe('@koishijs/loader', () => {
     runtime?.update({ a: 3 })
     expect(loader.config.plugins).to.deep.equal({
       'group:qux': {
+        '$filter': {
+          'user': 123,
+        },
         'baz': {},
         'bar': {
-          a: 3,
+          'a': 3,
+          '$filter': {
+            'channel': 789,
+          },
         },
       },
     })
+  })
+
+  it('filter', async () => {
+    const { app } = loader
+    app.plugin(mock)
+    expect(app.lifecycle._hooks['test/bar']).to.have.length(1)
+    expect(app.lifecycle._hooks['test/baz']).to.have.length(1)
+    const bar = app.lifecycle._hooks['test/bar'][0][1] as jest.Mock
+    const baz = app.lifecycle._hooks['test/baz'][0][1] as jest.Mock
+    expect(bar.mock.calls).to.have.length(0)
+    expect(baz.mock.calls).to.have.length(0)
+
+    let { meta } = app.mock.client('123', '456')
+    app.emit(app.mock.session(meta), 'test/bar' as any)
+    app.emit(app.mock.session(meta), 'test/baz' as any)
+    expect(bar.mock.calls).to.have.length(0)
+    expect(baz.mock.calls).to.have.length(1)
+
+    meta = app.mock.client('321', '456').meta
+    app.emit(app.mock.session(meta), 'test/bar' as any)
+    app.emit(app.mock.session(meta), 'test/baz' as any)
+    expect(bar.mock.calls).to.have.length(0)
+    expect(baz.mock.calls).to.have.length(1)
   })
 })

@@ -1,12 +1,23 @@
-import { Context, Dict, makeArray, MaybeArray } from 'koishi'
+import { Context, isNullable, makeArray, MaybeArray } from 'koishi'
 
 export function unwrapExports(module: any) {
   return module?.default || module
 }
 
 export interface Modifier {
+  $if?: boolean
   $filter?: Selection
-  $isolate?: string[]
+}
+
+export namespace Modifier {
+  export function pick(config: any, positive = false) {
+    const result = {}
+    for (const [key, value] of Object.entries(config || {})) {
+      if (key.startsWith('$') !== positive) continue
+      result[key] = value
+    }
+    return result
+  }
 }
 
 const selectors = ['user', 'guild', 'channel', 'self', 'private', 'platform'] as const
@@ -62,78 +73,12 @@ export function select(root: Context, options: Selection) {
 }
 
 export function patch(ctx: Context, config: Modifier) {
-  config ||= {}
-  patch.filter(ctx, config.$filter)
-  patch.isolate(ctx, config.$isolate)
-}
-
-export namespace patch {
-  export function filter(ctx: Context, filter: Selection) {
-    const parent = Object.getPrototypeOf(ctx)
-    if (filter) {
-      ctx.filter = parent.intersect(select(ctx.any(), filter)).filter
-    } else {
-      delete ctx.filter
-    }
+  config ??= {}
+  if (!isNullable(config.$if) && !config.$if) return true
+  const parent = Object.getPrototypeOf(ctx)
+  if (config.$filter) {
+    ctx.filter = parent.intersect(select(ctx.root, config.$filter)).filter
+  } else {
+    delete ctx.filter
   }
-
-  export function isolate(ctx: Context, isolate: string[]) {
-    const updated: Dict<boolean> = {}
-    const { delimiter } = ctx
-
-    // remove isolation
-    for (const name of Object.keys(ctx.mapping)) {
-      if (isolate?.includes(name)) continue
-      const oldKey = ctx.mapping[name]
-      const value = ctx.root[oldKey]
-      delete ctx.mapping[name]
-      const neoKey = ctx.mapping[name] || name
-      if (value === ctx.root[neoKey]) continue
-      const source = value?.[Context.source]
-      updated[name] = source?.[delimiter]
-      if (updated[name]) {
-        // free right hand side service
-        source[name] = value
-        ctx.root[oldKey] = null
-      }
-    }
-
-    // add isolation
-    for (const name of isolate || []) {
-      if (ctx.mapping[name]) continue
-      const oldKey = ctx.mapping[name] || name
-      const value = ctx.root[oldKey]
-      ctx.mapping[name] = Symbol(name)
-      const neoKey = ctx.mapping[name]
-      if (value === ctx.root[neoKey]) continue
-      const source = value?.[Context.source]
-      updated[name] = source?.[delimiter]
-      if (updated[name]) {
-        // lock right hand side service
-        source[name] = value
-        ctx.root[oldKey] = null
-      }
-    }
-
-    // FIXME
-    const parent = Object.getPrototypeOf(ctx)
-    for (const name in updated) {
-      const self: Context = Object.create(ctx)
-      const source = updated[name] ? parent : ctx
-      self[Context.filter] = (target: Context) => {
-        return source.mapping[name] === target.mapping[name] && updated[name] !== target[delimiter]
-      }
-      ctx.emit(self, 'internal/before-service', name, null)
-      ctx.emit(self, 'internal/service', name, null)
-    }
-  }
-}
-
-export function stripModifier(config: any) {
-  const result = {}
-  for (const [key, value] of Object.entries(config || {})) {
-    if (key.startsWith('$')) continue
-    result[key] = value
-  }
-  return result
 }

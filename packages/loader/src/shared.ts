@@ -1,12 +1,11 @@
 import { Context, deepEqual, Dict, Logger, Plugin, resolveConfig, SharedData } from 'koishi'
-import { patch, stripModifier } from './utils'
+import { Modifier, patch } from './utils'
 
 export * from './utils'
 
 declare module 'koishi' {
   interface Context {
     loader: Loader
-    delimiter: symbol
   }
 
   interface Events {
@@ -52,11 +51,10 @@ const group: Plugin.Object = {
       const old = ctx.state.config
 
       // update group modifier
-      if (!deepEqual(old.$filter || {}, neo.$filter || {})) {
-        patch.filter(ctx.state.parent, neo.$filter)
-      }
-      if (!deepEqual(old.$isolate || [], neo.$isolate || [])) {
-        patch.isolate(ctx.state.parent, neo.$isolate)
+      const oldMod = Modifier.pick(old, true)
+      const neoMod = Modifier.pick(neo, true)
+      if (!deepEqual(oldMod, neoMod)) {
+        patch(ctx.state.parent, neo)
       }
 
       // update inner plugins
@@ -112,19 +110,20 @@ export abstract class Loader {
     if (fork) {
       patch(fork.parent, config)
       fork[kUpdate] = true
+      if (fork.runtime.plugin !== group) {
+        config = Modifier.pick(config, false)
+      }
       fork.update(config)
     } else {
       logger.info(`apply plugin %c`, key)
       const name = key.split(':', 1)[0]
+      const ctx = parent.extend()
+      patch(ctx, config)
       if (name === 'group') {
-        const ctx = parent.isolate([])
-        ctx.delimiter = Symbol('unique')
-        ctx[ctx.delimiter] = true
-        patch(ctx, config)
         fork = ctx.plugin(group, config)
       } else {
-        config = stripModifier(config)
-        fork = await this.forkPlugin(name, config, parent)
+        config = Modifier.pick(config, false)
+        fork = await this.forkPlugin(name, config, ctx)
       }
       if (!fork) return
       fork.alias = key.slice(name.length + 1)
@@ -176,7 +175,10 @@ export abstract class Loader {
       for (const name in record) {
         if (record[name] !== fork) continue
         const simplify = fork.runtime.schema?.simplify
-        fork.parent.state.config[name] = simplify ? simplify(config) : config
+        fork.parent.state.config[name] = {
+          ...Modifier.pick(fork.parent.state.config[name], true),
+          ...simplify ? simplify(config) : config,
+        }
       }
     })
 
