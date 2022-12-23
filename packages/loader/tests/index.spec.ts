@@ -34,6 +34,9 @@ describe('@koishijs/loader', () => {
     loader.config = {
       prefix: '/',
       plugins: {
+        'foo': {
+          '$if': false,
+        },
         'group:qux': {
           '$filter': {
             'user': 123,
@@ -63,6 +66,9 @@ describe('@koishijs/loader', () => {
     const runtime = app.registry.get(loader.data.bar)
     runtime?.update({ a: 3 })
     expect(loader.config.plugins).to.deep.equal({
+      'foo': {
+        '$if': false,
+      },
       'group:qux': {
         '$filter': {
           'user': 123,

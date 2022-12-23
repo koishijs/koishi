@@ -1,5 +1,9 @@
 import { Context, isNullable, makeArray, MaybeArray } from 'koishi'
 
+export function isDefiniteFalsy(value: any) {
+  return !isNullable(value) && !value
+}
+
 export function unwrapExports(module: any) {
   return module?.default || module
 }
@@ -74,7 +78,6 @@ export function select(root: Context, options: Selection) {
 
 export function patch(ctx: Context, config: Modifier) {
   config ??= {}
-  if (!isNullable(config.$if) && !config.$if) return true
   const parent = Object.getPrototypeOf(ctx)
   if (config.$filter) {
     ctx.filter = parent.intersect(select(ctx.root, config.$filter)).filter

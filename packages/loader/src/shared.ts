@@ -1,5 +1,5 @@
-import { Context, deepEqual, Dict, Logger, Plugin, resolveConfig, SharedData } from 'koishi'
-import { Modifier, patch } from './utils'
+import { Context, Dict, Logger, Plugin, resolveConfig, SharedData } from 'koishi'
+import { isDefiniteFalsy, Modifier, patch } from './utils'
 
 export * from './utils'
 
@@ -49,13 +49,6 @@ const group: Plugin.Object = {
     ctx.accept((neo) => {
       // update config reference
       const old = ctx.state.config
-
-      // update group modifier
-      const oldMod = Modifier.pick(old, true)
-      const neoMod = Modifier.pick(neo, true)
-      if (!deepEqual(oldMod, neoMod)) {
-        patch(ctx.state.parent, neo)
-      }
 
       // update inner plugins
       for (const key in { ...old, ...neo }) {
@@ -108,6 +101,10 @@ export abstract class Loader {
   async reloadPlugin(parent: Context, key: string, config: any) {
     let fork = parent.state[Loader.kRecord][key]
     if (fork) {
+      if (isDefiniteFalsy(config.$if)) {
+        this.unloadPlugin(parent, key)
+        return
+      }
       patch(fork.parent, config)
       fork[kUpdate] = true
       if (fork.runtime.plugin !== group) {
@@ -115,6 +112,7 @@ export abstract class Loader {
       }
       fork.update(config)
     } else {
+      if (isDefiniteFalsy(config.$if)) return
       logger.info(`apply plugin %c`, key)
       const name = key.split(':', 1)[0]
       const ctx = parent.extend()
@@ -151,8 +149,7 @@ export abstract class Loader {
     this.entry = fork.ctx
 
     app.accept(['plugins'], (config) => {
-      fork[kUpdate] = true
-      fork.update(config.plugins)
+      this.reloadPlugin(app, 'group:entry', config.plugins)
     }, { passive: true })
 
     app.on('dispose', () => {
