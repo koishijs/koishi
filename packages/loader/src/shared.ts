@@ -101,7 +101,7 @@ export abstract class Loader {
   async reloadPlugin(parent: Context, key: string, config: any) {
     let fork = parent.state[Loader.kRecord][key]
     if (fork) {
-      if (isDefiniteFalsy(config.$if)) {
+      if (isDefiniteFalsy(config?.$if)) {
         this.unloadPlugin(parent, key)
         return
       }
@@ -112,7 +112,7 @@ export abstract class Loader {
       }
       fork.update(config)
     } else {
-      if (isDefiniteFalsy(config.$if)) return
+      if (isDefiniteFalsy(config?.$if)) return
       logger.info(`apply plugin %c`, key)
       const name = key.split(':', 1)[0]
       const ctx = parent.extend()

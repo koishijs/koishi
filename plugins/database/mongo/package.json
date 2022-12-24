@@ -42,7 +42,7 @@
     }
   },
   "peerDependencies": {
-    "koishi": "^4.10.8"
+    "koishi": "^4.10.10"
   },
   "dependencies": {
     "@minatojs/driver-mongo": "^2.0.4"
