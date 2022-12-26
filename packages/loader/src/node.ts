@@ -1,6 +1,6 @@
 import { accessSync, constants, readdirSync, readFileSync, statSync, writeFileSync } from 'fs'
 import { dirname, extname, resolve } from 'path'
-import { Context, interpolate, Logger, valueMap } from 'koishi'
+import { Context, interpolate, Logger, valueMap } from '@koishijs/core'
 import { Loader, unwrapExports } from './shared'
 import * as dotenv from 'dotenv'
 import * as yaml from 'js-yaml'
@@ -115,6 +115,10 @@ export default class NodeLoader extends Loader {
     } else {
       writeFileSync(this.filename, yaml.dump(this.config))
     }
+  }
+
+  async resolve(name: string) {
+    return this.scope.resolve(name)
   }
 
   async resolvePlugin(name: string) {

@@ -1,4 +1,4 @@
-import { Context, defineProperty, Logger, remove, Schema, version } from 'koishi'
+import { Context, defineProperty, Logger, remove, Schema, version } from '@koishijs/core'
 
 interface LogLevelConfig {
   // a little different from @koishijs/utils

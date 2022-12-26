@@ -1,6 +1,6 @@
-import { makeArray } from 'koishi'
-import { Loader, unwrapExports } from './shared'
+import { makeArray } from '@koishijs/core'
 import { MarketResult } from '@koishijs/registry'
+import { Loader, unwrapExports } from './shared'
 
 export * from './shared'
 
@@ -36,6 +36,11 @@ export default class BrowserLoader extends Loader {
 
   writeConfig() {
     this.app.emit('config')
+  }
+
+  async resolve(name: string) {
+    await (this._initTask ||= this.prepare())
+    return this.cache[name]
   }
 
   async resolvePlugin(name: string) {

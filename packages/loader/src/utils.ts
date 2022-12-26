@@ -1,4 +1,4 @@
-import { Context, isNullable, makeArray, MaybeArray } from 'koishi'
+import { Context, isNullable, makeArray, MaybeArray } from '@koishijs/core'
 
 export function isDefiniteFalsy(value: any) {
   return !isNullable(value) && !value

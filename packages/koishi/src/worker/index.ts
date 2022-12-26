@@ -1,14 +1,12 @@
-import { Context, Dict, Logger, Schema, Time } from 'koishi'
+import { Context, Dict, Logger, Schema, Time } from '@koishijs/core'
 import Loader from '@koishijs/loader'
 import * as daemon from './daemon'
 import * as logger from './logger'
 import Watcher from './watcher'
 
-export * from '@koishijs/loader'
-
 export { Loader, Watcher }
 
-declare module 'koishi' {
+declare module '@koishijs/core' {
   interface Events {
     'exit'(signal: NodeJS.Signals): Promise<void>
   }

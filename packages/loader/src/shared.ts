@@ -1,9 +1,9 @@
-import { Context, Dict, Logger, Plugin, resolveConfig, SharedData } from 'koishi'
+import { Context, Dict, EnvData, Logger, Plugin, resolveConfig } from '@koishijs/core'
 import { isDefiniteFalsy, Modifier, patch } from './utils'
 
 export * from './utils'
 
-declare module 'koishi' {
+declare module '@koishijs/core' {
   interface Context {
     loader: Loader
   }
@@ -21,8 +21,8 @@ declare module 'koishi' {
 }
 
 declare module 'cordis' {
-  // Theoretically, these properties will only appear on `Fork`.
-  // We define them directly on `State` for typing convenience.
+  // Theoretically, these properties will only appear on `ForkScope`.
+  // We define them directly on `EffectScope` for typing convenience.
   interface EffectScope<C> {
     [Loader.kRecord]?: Dict<ForkScope<C>>
     alias?: string
@@ -70,7 +70,7 @@ export abstract class Loader {
   static readonly kRecord = Symbol.for('koishi.loader.record')
   static readonly exitCode = 51
 
-  public envData: SharedData
+  public envData: EnvData
   public app: Context
   public baseDir: string
   public config: Context.Config
@@ -83,6 +83,7 @@ export abstract class Loader {
 
   abstract readConfig(): Context.Config
   abstract writeConfig(): void
+  abstract resolve(name: string): Promise<string>
   abstract resolvePlugin(name: string): Promise<any>
   abstract fullReload(): void
 
@@ -143,7 +144,7 @@ export abstract class Loader {
     const app = this.app = new Context(this.interpolate(this.config))
     app.loader = this
     app.baseDir = this.baseDir
-    app.shared = app.envData = this.envData
+    app.envData = this.envData
     app.state[Loader.kRecord] = Object.create(null)
     const fork = await this.reloadPlugin(app, 'group:entry', this.config.plugins)
     this.entry = fork.ctx

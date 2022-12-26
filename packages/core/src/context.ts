@@ -24,6 +24,8 @@ export type { Disposable } from 'cordis'
 
 declare module '@satorijs/core' {
   export interface Context {
+    envData: EnvData
+    baseDir: string
   }
 
   export namespace Context {
@@ -63,6 +65,8 @@ declare module '@satorijs/core' {
     }
   }
 }
+
+export interface EnvData {}
 
 defineProperty(Context.Config, 'Basic', Schema.object({
   locale: Schema.string().default('zh').description('默认使用的语言。'),

@@ -3,6 +3,7 @@ import ns from 'ns-require'
 
 export { Router, WebSocketLayer } from '@satorijs/satori'
 
+export type { Watcher } from './worker'
 export * from '@koishijs/core'
 export * from '@koishijs/utils'
 
@@ -12,20 +13,9 @@ declare module 'cordis' {
   }
 }
 
-declare module '@satorijs/core' {
-  interface Context {
-    /** @deprecated */
-    shared: SharedData
-    envData: SharedData
-    baseDir: string
-  }
-}
-
-export interface SharedData {}
-
-export class Patch {
+class Patch {
   constructor(ctx: Context) {
-    ctx.root.shared = ctx.root.envData ??= {}
+    ctx.root.envData ??= {}
     ctx.root.baseDir ??= process.cwd()
   }
 }

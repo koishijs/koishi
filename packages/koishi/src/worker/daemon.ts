@@ -1,12 +1,12 @@
-import { Context, noop, Schema } from 'koishi'
+import { Context, noop, Schema } from '@koishijs/core'
 import zhCN from '../locales/zh-CN.yml'
 import jaJP from '../locales/ja-JP.yml'
 import frFR from '../locales/fr-FR.yml'
 import zhTW from '../locales/zh-TW.yml'
 
-declare module 'koishi' {
-  interface SharedData {
-    startMessage: StartMessage
+declare module '@koishijs/core' {
+  interface EnvData {
+    startMessage?: StartMessage
   }
 }
 

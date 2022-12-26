@@ -1,4 +1,4 @@
-import { coerce, Context, Dict, Logger, MainScope, makeArray, Schema } from 'koishi'
+import { coerce, Context, Dict, Logger, MainScope, makeArray, Schema } from '@koishijs/core'
 import { FSWatcher, watch, WatchOptions } from 'chokidar'
 import { relative, resolve } from 'path'
 import { debounce } from 'throttle-debounce'

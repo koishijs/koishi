@@ -6,6 +6,6 @@
     "dev": "koishi start --watch .. -r esbuild-register -r yml-register"
   },
   "devDependencies": {
-    "@koishijs/cli": "*"
+    "koishi": "*"
   }
 }

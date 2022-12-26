@@ -2,7 +2,7 @@ import { Dict, hyphenate, isInteger } from '@koishijs/utils'
 import { ChildProcess, fork } from 'child_process'
 import { resolve } from 'path'
 import { CAC } from 'cac'
-import type { Config } from './worker/daemon'
+import type { Config } from '../worker/daemon'
 import kleur from 'kleur'
 
 type Event = Event.Start | Event.Env | Event.Heartbeat
