@@ -47,7 +47,7 @@ function createWorker(options: Dict<any>) {
   })
   execArgv.push(...options['--'])
 
-  child = fork(resolve(__dirname, 'worker'), [], {
+  child = fork(resolve(__dirname, '../worker'), [], {
     execArgv,
   })
 
@@ -78,6 +78,7 @@ function createWorker(options: Dict<any>) {
 
     // restart manually
     if (code === 51) return false
+    if (code === 52) return true
 
     // fallback to autoRestart
     return !config.autoRestart

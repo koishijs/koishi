@@ -3,8 +3,9 @@ import Loader from '@koishijs/loader'
 import * as daemon from './daemon'
 import * as logger from './logger'
 import Watcher from './watcher'
+import '@satorijs/satori'
 
-export { Loader, Watcher }
+export { Watcher }
 
 declare module '@koishijs/core' {
   interface Events {

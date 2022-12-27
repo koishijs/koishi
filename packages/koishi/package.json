@@ -13,6 +13,8 @@
       },
       "browser": "./browser.mjs"
     },
+    "./lib/cli": "./lib/cli/index.js",
+    "./lib/worker": "./lib/worker/index.js",
     "./package.json": "./package.json"
   },
   "bin": {
@@ -44,12 +46,18 @@
     "onebot",
     "framework"
   ],
+  "devDependencies": {
+    "@types/throttle-debounce": "^2.1.0"
+  },
   "dependencies": {
     "@koishijs/core": "^4.10.10",
     "@koishijs/loader": "^2.4.3",
-    "@koishijs/utils": "^6.3.4",
-    "@satorijs/satori": "^1.4.11",
-    "file-type": "^16.5.4",
-    "ns-require": "^1.1.4"
+    "@koishijs/utils": "^6.4.0",
+    "@satorijs/satori": "^1.5.0",
+    "cac": "^6.7.14",
+    "chokidar": "^3.5.3",
+    "kleur": "^4.1.5",
+    "ns-require": "^1.1.4",
+    "throttle-debounce": "^3.0.1"
   }
 }
