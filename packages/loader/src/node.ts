@@ -1,6 +1,6 @@
 import { accessSync, constants, readdirSync, readFileSync, statSync, writeFileSync } from 'fs'
 import { dirname, extname, resolve } from 'path'
-import { Context, interpolate, Logger, valueMap } from '@koishijs/core'
+import { Context, Logger } from '@koishijs/core'
 import { Loader, unwrapExports } from './shared'
 import * as dotenv from 'dotenv'
 import * as yaml from 'js-yaml'
@@ -10,10 +10,6 @@ export * from './shared'
 
 const logger = new Logger('app')
 
-const context = {
-  env: process.env,
-}
-
 const writableExts = ['.json', '.yml', '.yaml']
 const supportedExts = ['.js', '.json', '.ts', '.coffee', '.yaml', '.yml']
 
@@ -22,6 +18,9 @@ export default class NodeLoader extends Loader {
   public baseDir = process.cwd()
   public extname: string
   public scope: ns.Scope
+  public ctxData = {
+    env: process.env,
+  }
 
   constructor(filename?: string) {
     super()
@@ -74,19 +73,6 @@ export default class NodeLoader extends Loader {
       }
     }
     throw new Error('config file not found')
-  }
-
-  interpolate(source: any) {
-    if (!this.writable) return source
-    if (typeof source === 'string') {
-      return interpolate(source, context, /\$\{\{(.+?)\}\}/g)
-    } else if (!source || typeof source !== 'object') {
-      return source
-    } else if (Array.isArray(source)) {
-      return source.map(item => this.interpolate(item))
-    } else {
-      return valueMap(source, item => this.interpolate(item))
-    }
   }
 
   readConfig() {

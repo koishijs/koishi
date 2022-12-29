@@ -1,4 +1,4 @@
-import { Argv, Command, Context, Dict, Schema, Session, Time, User } from 'koishi'
+import { Argv, Command, Computed, Context, Dict, Schema, Session, Time, User } from 'koishi'
 import { adminUser } from '@koishijs/helpers'
 import {} from '@koishijs/plugin-help'
 import zh from './locales/zh.yml'

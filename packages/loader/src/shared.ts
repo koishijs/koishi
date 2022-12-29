@@ -1,5 +1,5 @@
-import { Context, Dict, EnvData, Logger, Plugin, resolveConfig } from '@koishijs/core'
-import { isDefiniteFalsy, Modifier, patch } from './utils'
+import { Context, Dict, EnvData, interpolate, isNullable, Logger, Plugin, resolveConfig, valueMap } from '@koishijs/core'
+import { Modifier, patch } from './utils'
 
 export * from './utils'
 
@@ -71,6 +71,7 @@ export abstract class Loader {
   static readonly exitCode = 51
 
   public envData: EnvData
+  public ctxData = {}
   public app: Context
   public baseDir: string
   public config: Context.Config
@@ -88,7 +89,16 @@ export abstract class Loader {
   abstract fullReload(): void
 
   interpolate(source: any) {
-    return source
+    if (!this.writable) return source
+    if (typeof source === 'string') {
+      return interpolate(source, this.ctxData, /\$\{\{(.+?)\}\}/g)
+    } else if (!source || typeof source !== 'object') {
+      return source
+    } else if (Array.isArray(source)) {
+      return source.map(item => this.interpolate(item))
+    } else {
+      return valueMap(source, item => this.interpolate(item))
+    }
   }
 
   private async forkPlugin(name: string, config: any, parent: Context) {
@@ -99,10 +109,15 @@ export abstract class Loader {
     return parent.plugin(plugin, this.interpolate(config))
   }
 
+  isTruthyLike(expr: any) {
+    if (isNullable(expr)) return true
+    return !!this.interpolate(`\${{ ${expr} }}`)
+  }
+
   async reloadPlugin(parent: Context, key: string, config: any) {
     let fork = parent.state[Loader.kRecord][key]
     if (fork) {
-      if (isDefiniteFalsy(config?.$if)) {
+      if (!this.isTruthyLike(config?.$if)) {
         this.unloadPlugin(parent, key)
         return
       }
@@ -113,7 +128,7 @@ export abstract class Loader {
       }
       fork.update(config)
     } else {
-      if (isDefiniteFalsy(config?.$if)) return
+      if (!this.isTruthyLike(config?.$if)) return
       logger.info(`apply plugin %c`, key)
       const name = key.split(':', 1)[0]
       const ctx = parent.extend()

@@ -42,7 +42,7 @@
   },
   "devDependencies": {
     "@koishijs/core": "^4.10.10",
-    "@koishijs/registry": "^4.2.3",
+    "@koishijs/registry": "^4.2.7",
     "@types/js-yaml": "^4.0.5"
   },
   "dependencies": {

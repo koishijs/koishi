@@ -1,8 +1,4 @@
-import { Context, isNullable, makeArray, MaybeArray } from '@koishijs/core'
-
-export function isDefiniteFalsy(value: any) {
-  return !isNullable(value) && !value
-}
+import { Context, makeArray, MaybeArray } from '@koishijs/core'
 
 export function unwrapExports(module: any) {
   return module?.default || module
