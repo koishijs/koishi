@@ -31,8 +31,8 @@
   },
   "dependencies": {
     "@koishijs/utils": "^6.4.0",
-    "@minatojs/core": "^2.0.3",
-    "@satorijs/core": "^1.5.0",
+    "@minatojs/core": "^2.1.0",
+    "@satorijs/core": "^1.5.1",
     "cordis": "^2.6.0",
     "cosmokit": "^1.4.0",
     "fastest-levenshtein": "^1.0.16"

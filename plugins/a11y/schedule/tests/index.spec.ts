@@ -1,10 +1,9 @@
-import { App, segment, Time, Universal } from 'koishi'
+import { App, Logger, Time } from 'koishi'
 import { install, InstalledClock } from '@sinonjs/fake-timers'
 import * as schedule from '@koishijs/plugin-schedule'
 import memory from '@koishijs/plugin-database-memory'
 import mock from '@koishijs/plugin-mock'
-import * as jest from 'jest-mock'
-import { expect, use } from 'chai'
+import { use } from 'chai'
 import shape from 'chai-shape'
 
 use(shape)
@@ -12,10 +11,9 @@ use(shape)
 describe('@koishijs/plugin-schedule', () => {
   const app = new App()
   app.plugin(mock)
+  const logger = new Logger('schedule')
   const client1 = app.mock.client('123', '456')
   const client2 = app.mock.client('123')
-
-  const send = app.bots[0].sendMessage = jest.fn<Universal.Methods['sendMessage']>(async () => [])
 
   app.plugin(memory)
   app.command('echo [content:text]').action((_, text) => text)
@@ -23,6 +21,7 @@ describe('@koishijs/plugin-schedule', () => {
   let clock: InstalledClock
 
   before(async () => {
+    logger.level = 3
     clock = install({ now: new Date('2000-1-1 1:00') })
 
     await app.start()
@@ -52,7 +51,10 @@ describe('@koishijs/plugin-schedule', () => {
     app.plugin(schedule)
   })
 
-  after(() => clock.uninstall())
+  after(() => {
+    logger.level = 2
+    clock.uninstall()
+  })
 
   it('register schedule', async () => {
     await client1.shouldReply('schedule -l', '当前没有等待执行的日程。')
@@ -97,13 +99,8 @@ describe('@koishijs/plugin-schedule', () => {
   })
 
   it('database integration', async () => {
-    expect(send.mock.calls).to.have.length(0)
     clock.tick(Time.day) // 02:31
-    await new Promise(process.nextTick)
-    await new Promise(process.nextTick)
-    expect(send.mock.calls).to.have.length(1)
-    expect(send.mock.calls[0][0]).to.equal('private:123')
-    expect(segment.normalize(send.mock.calls[0][1]).join('')).to.equal('bar')
+    await client2.shouldReply('', 'bar')
   })
 
   it('check arguments', async () => {

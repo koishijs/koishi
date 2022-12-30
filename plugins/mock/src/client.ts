@@ -11,7 +11,7 @@ const RECEIVED_NTH_OTHERWISE = 'expected "%s" to be replied with %s at index %s 
 
 export class MessageClient {
   public app: Context
-  public meta: Partial<Session>
+  public meta: Session.Payload & Partial<Session>
 
   _resolve: (checkLength?: boolean) => void
   private replies: string[] = []
@@ -39,6 +39,7 @@ export class MessageClient {
     }
 
     const self = this
+    this._resolve = () => {}
     this.meta.send = async function (this: Session, fragment, options) {
       const elements = await this.transform(segment.normalize(fragment))
       if (!elements.length) return
