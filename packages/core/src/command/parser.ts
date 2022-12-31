@@ -374,6 +374,7 @@ export namespace Argv {
     type?: T
     authority?: number
     descPath?: string
+    params?: object
   }
 
   export interface TypedOptionConfig<T extends Type> extends OptionConfig<T> {

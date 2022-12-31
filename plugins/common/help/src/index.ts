@@ -175,7 +175,7 @@ function formatCommands(path: string, session: Session<'authority'>, children: C
     if (options.authority) {
       output += ` (${config.authority}${children.length ? (hasSubcommand = true, '*') : ''})`
     }
-    output += '  ' + session.text([`commands.${name}.description`, ''])
+    output += '  ' + session.text([`commands.${name}.description`, ''], config.params)
     return output
   })
   const hints: string[] = []
@@ -206,7 +206,7 @@ function getOptions(command: Command, session: Session<'authority'>, config: Hel
     function pushOption(option: Argv.OptionVariant, name: string) {
       if (!config.showHidden && !getOptionVisibility(option, session)) return
       let line = `${authority}${segment.escape(option.syntax)}`
-      const description = session.text(option.descPath ?? [`commands.${command.name}.options.${name}`, ''])
+      const description = session.text(option.descPath ?? [`commands.${command.name}.options.${name}`, ''], option.params)
       if (description) line += '  ' + description
       line = command.ctx.chain('help/option', line, option, command, session)
       output.push('    ' + line)
@@ -228,7 +228,7 @@ function getOptions(command: Command, session: Session<'authority'>, config: Hel
 async function showHelp(command: Command, session: Session<'authority'>, config: HelpOptions) {
   const output = [command.displayName + segment.escape(command.declaration)]
 
-  const description = session.text([`commands.${command.name}.description`, ''])
+  const description = session.text([`commands.${command.name}.description`, ''], command.config.params)
   if (description) output.push(description)
 
   if (session.app.database) {

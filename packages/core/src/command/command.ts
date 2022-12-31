@@ -125,12 +125,12 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
     return `Command <${this.name}>`
   }
 
-  userFields<T extends User.Field = never>(fields: FieldCollector<'user', T, A, O>): Command<U | T, G, A, O> {
+  userFields<T extends User.Field>(fields: FieldCollector<'user', T, A, O>): Command<U | T, G, A, O> {
     this._userFields.push(fields)
     return this as any
   }
 
-  channelFields<T extends Channel.Field = never>(fields: FieldCollector<'channel', T, A, O>): Command<U, G | T, A, O> {
+  channelFields<T extends Channel.Field>(fields: FieldCollector<'channel', T, A, O>): Command<U, G | T, A, O> {
     this._channelFields.push(fields)
     return this as any
   }
@@ -337,6 +337,7 @@ export namespace Command {
     showWarning?: boolean
     /** depend on existing commands */
     patch?: boolean
+    params?: object
   }
 
   export const Config: Schema<Config> = Schema.object({
