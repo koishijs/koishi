@@ -156,15 +156,15 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
   shortcut(pattern: string | RegExp, config: Command.Shortcut = {}) {
     if (this._disposed) return this
     let content = this.displayName
-    for (const arg of config.args || []) {
-      content += ' ' + this._escape(arg)
-    }
     for (const key in config.options || {}) {
       content += ` --${camelize(key)}`
       const value = config.options[key]
       if (value !== true) {
         content += ' ' + this._escape(value)
       }
+    }
+    for (const arg of config.args || []) {
+      content += ' ' + this._escape(arg)
     }
     if (config.fuzzy) content += ' {0}'
     if (typeof pattern === 'string') {
