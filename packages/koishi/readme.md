@@ -45,7 +45,7 @@ Koishi 更为开发者准备了众多专业功能，使插件开发者得以在�
 
 Koishi 完全使用 [MIT](./LICENSE) 协议开源，维护良好的开源生态从我做起 (*>ω<)φ
 
-Copyright © 2019-2022, Shigma
+Copyright © 2019-2023, Shigma
 
 [![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fkoishijs%2Fkoishi.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2Fkoishijs%2Fkoishi?ref=badge_large)
 
