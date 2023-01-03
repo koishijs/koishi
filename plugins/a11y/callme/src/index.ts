@@ -1,4 +1,4 @@
-import { Context, RuntimeError, Schema, Session } from 'koishi'
+import { Context, h, RuntimeError, Schema, Session } from 'koishi'
 import zh from './locales/zh.yml'
 
 declare module 'koishi' {
@@ -28,12 +28,17 @@ export function apply(ctx: Context) {
         } else {
           return session.text('.unnamed')
         }
-      } else if (name === user.name) {
+      }
+
+      name = h.transform(name, {
+        text: true,
+        default: false,
+      }).trim()
+
+      if (name === user.name) {
         return session.text('.unchanged')
-      } else if (!(name = name.trim())) {
+      } else if (!name) {
         return session.text('.empty')
-      } else if (name.includes('[CQ:')) {
-        return session.text('.invalid')
       }
 
       const result = ctx.bail('common/callme', name, session)
