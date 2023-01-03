@@ -43,6 +43,7 @@ export const Config: Schema<Config> = Schema.object({
 })
 
 export function enableHelp<U extends User.Field, G extends Channel.Field, A extends any[], O extends {}>(cmd: Command<U, G, A, O>) {
+  cmd._disposables = cmd.ctx.registry.get(apply).disposables
   return cmd.option('help', '-h', {
     hidden: true,
     // @ts-ignore
