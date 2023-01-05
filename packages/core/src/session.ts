@@ -1,9 +1,9 @@
 import { extend, observe } from '@koishijs/utils'
 import { Awaitable, defineProperty, isNullable, makeArray, Promisify } from 'cosmokit'
-import { Fragment, Logger, segment, Session } from '@satorijs/core'
+import { Context, Fragment, Logger, segment, Session } from '@satorijs/core'
 import { Argv, Command } from './command'
 import { Channel, Tables, User } from './database'
-import { Middleware, Next } from './internal'
+import { Middleware, Next } from './middleware'
 import { CompareOptions } from './i18n'
 
 const logger = new Logger('session')
@@ -37,12 +37,12 @@ declare module '@satorijs/core' {
     prompt(timeout?: number): Promise<string>
     prompt<T>(callback: (session: Session) => Awaitable<T>, options?: PromptOptions): Promise<T>
     suggest(options: SuggestOptions): Promise<string>
-    transform(elements: segment[]): Promise<segment[]>
     response?: () => Promise<Fragment>
   }
 
   namespace Session {
     export interface Private extends Session {
+      [Context.filter](ctx: Context): boolean
       _queuedTasks: Task[]
       _queuedTimeout: NodeJS.Timeout
       _next(): void
@@ -81,6 +81,10 @@ interface Task {
 const { initialize } = Session.prototype
 
 extend(Session.prototype as Session.Private, {
+  [Context.filter](ctx: Context) {
+    return ctx.filter(this)
+  },
+
   initialize() {
     initialize.call(this)
     defineProperty(this, 'scope', null)
@@ -103,8 +107,7 @@ extend(Session.prototype as Session.Private, {
   async send(fragment, options = {}) {
     if (!fragment) return
     options.session = this
-    const children = await this.transform(segment.normalize(fragment))
-    return this.bot.sendMessage(this.channelId, children, this.guildId, options).catch<string[]>((error) => {
+    return this.bot.sendMessage(this.channelId, fragment, this.guildId, options).catch<string[]>((error) => {
       logger.warn(error)
       return []
     })
@@ -433,10 +436,6 @@ extend(Session.prototype as Session.Private, {
         return expect[0]
       }
     }, options)
-  },
-
-  async transform(elements: segment[]) {
-    return await segment.transformAsync(elements, this.app.$internal._components, this)
   },
 })
 

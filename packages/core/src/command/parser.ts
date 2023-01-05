@@ -3,7 +3,7 @@ import { escapeRegExp } from '@koishijs/utils'
 import { Context, segment, Session } from '@satorijs/core'
 import { Command } from './command'
 import { Channel, User } from '../database'
-import { Next } from '../internal'
+import { Next } from '../middleware'
 
 export interface Token {
   rest?: string

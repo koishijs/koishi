@@ -1,13 +1,12 @@
 import { coerce, escapeRegExp, makeArray, Random } from '@koishijs/utils'
 import { Awaitable, defineProperty, Dict, Time } from 'cosmokit'
-import { Context, Fragment, Render, segment, Session } from '@satorijs/core'
+import { Context, Fragment, segment, Session } from '@satorijs/core'
 import { Computed } from './session'
 import { Channel, User } from './database'
 
 declare module '@satorijs/core' {
   interface Context {
-    $internal: Internal
-    component(name: string, component: Component, options?: Component.Options): () => boolean
+    $internal: Processor
     middleware(middleware: Middleware, prepend?: boolean): () => boolean
     match(pattern: string | RegExp, response: Fragment, options?: Matcher.Options & { i18n?: false }): () => boolean
     match(pattern: string, response: string, options: Matcher.Options & { i18n: true }): () => boolean
@@ -21,14 +20,6 @@ declare module '@satorijs/core' {
     'before-attach'(session: Session): void
     'attach'(session: Session): void
     'middleware'(session: Session): void
-  }
-}
-
-export type Component = Render<Awaitable<Fragment>, Session>
-
-export namespace Component {
-  export interface Options {
-    passive?: boolean
   }
 }
 
@@ -72,25 +63,24 @@ export namespace Matcher {
   }
 }
 
-export namespace Internal {
+export namespace Processor {
   export interface Config {
     nickname?: string | string[]
     prefix?: Computed<string | string[]>
   }
 }
 
-export class Internal {
-  static readonly methods = ['middleware', 'component', 'match']
+export class Processor {
+  static readonly methods = ['middleware', 'match']
 
   _hooks: [Context, Middleware][] = []
   _nameRE: RegExp
   _sessions: Dict<Session> = Object.create(null)
   _userCache = new SharedCache<User.Observed<any>>()
   _channelCache = new SharedCache<Channel.Observed<any>>()
-  _components: Dict<Component> = Object.create(null)
   _matchers = new Set<Matcher>()
 
-  constructor(private ctx: Context, private config: Internal.Config) {
+  constructor(private ctx: Context, private config: Processor.Config) {
     defineProperty(this, Context.current, ctx)
     this.prepare()
 
@@ -106,31 +96,31 @@ export class Internal {
       session.collect('channel', session.argv, fields)
     })
 
-    this.component('execute', async (attrs, children, session) => {
+    ctx.component('execute', async (attrs, children, session) => {
       return session.execute(children.join(''), true)
-    })
+    }, { session: true })
 
-    this.component('prompt', async (attrs, children, session) => {
+    ctx.component('prompt', async (attrs, children, session) => {
       await session.send(children)
       return session.prompt()
-    })
+    }, { session: true })
 
-    this.component('i18n', async (attrs, children, session) => {
+    ctx.component('i18n', async (attrs, children, session) => {
       return session.text(attrs.path)
-    })
+    }, { session: true })
 
-    this.component('random', async (attrs, children, session) => {
+    ctx.component('random', async (attrs, children) => {
       return Random.pick(children)
     })
 
-    this.component('plural', async (attrs, children, session) => {
+    ctx.component('plural', async (attrs, children) => {
       const path = attrs.count in children ? attrs.count : children.length - 1
       return children[path]
     })
 
     const units = ['day', 'hour', 'minute', 'second'] as const
 
-    this.component('i18n:time', (attrs, children, session) => {
+    ctx.component('i18n:time', (attrs, children, session) => {
       let ms = +attrs.value
       for (let index = 0; index < 3; index++) {
         const major = Time[units[index]]
@@ -145,7 +135,7 @@ export class Internal {
         }
       }
       return Math.round(ms / Time.second) + ' ' + session.text('general.second')
-    })
+    }, { session: true })
 
     ctx.before('attach', (session) => {
       if (session.parsed.prefix) return
@@ -162,21 +152,6 @@ export class Internal {
 
   middleware(middleware: Middleware, prepend = false) {
     return this.caller.lifecycle.register('middleware', this._hooks, middleware, prepend)
-  }
-
-  component(name: string, component: Component, options: Component.Options = {}) {
-    const render: Component = async (attrs, children, session) => {
-      if (!options.passive) {
-        children = await session.transform(children)
-      }
-      return component(attrs, children, session)
-    }
-    this._components[name] = render
-    return this.caller.collect('component', () => {
-      const shouldDelete = this._components[name] === render
-      if (shouldDelete) delete this._components[name]
-      return shouldDelete
-    })
   }
 
   match(pattern: string | RegExp, response: Matcher.Response, options: Matcher.Options) {
@@ -376,7 +351,7 @@ export class Internal {
   }
 }
 
-Context.service('$internal', Internal)
+Context.service('$internal', Processor)
 
 export namespace SharedCache {
   export interface Entry<T> {

@@ -3,7 +3,7 @@ import { coerce } from '@koishijs/utils'
 import { Context, Fragment, Logger, Schema, Session } from '@satorijs/core'
 import { Disposable } from 'cordis'
 import { Argv } from './parser'
-import { Next, SessionError } from '../internal'
+import { Next, SessionError } from '../middleware'
 import { Channel, User } from '../database'
 import { Computed, FieldCollector } from '../session'
 
