@@ -1,7 +1,4 @@
 import { Context, Dict, EnvData, interpolate, isNullable, Logger, Plugin, resolveConfig, valueMap } from '@koishijs/core'
-import { Modifier, patch } from './utils'
-
-export * from './utils'
 
 declare module '@koishijs/core' {
   interface Context {
@@ -26,6 +23,26 @@ declare module 'cordis' {
   interface EffectScope<C> {
     [Loader.kRecord]?: Dict<ForkScope<C>>
     alias?: string
+  }
+}
+
+export function unwrapExports(module: any) {
+  return module?.default || module
+}
+
+export interface Modifier {
+  $if?: boolean
+  $filter?: Selection
+}
+
+export namespace Modifier {
+  export function pick(config: any, positive = false) {
+    const result = {}
+    for (const [key, value] of Object.entries(config || {})) {
+      if (key.startsWith('$') !== positive) continue
+      result[key] = value
+    }
+    return result
   }
 }
 
@@ -121,7 +138,6 @@ export abstract class Loader {
         this.unloadPlugin(parent, key)
         return
       }
-      patch(fork.parent, config)
       fork[kUpdate] = true
       if (fork.runtime.plugin !== group) {
         config = Modifier.pick(config, false)
@@ -132,7 +148,6 @@ export abstract class Loader {
       logger.info(`apply plugin %c`, key)
       const name = key.split(':', 1)[0]
       const ctx = parent.extend()
-      patch(ctx, config)
       if (name === 'group') {
         fork = ctx.plugin(group, config)
       } else {
@@ -142,6 +157,9 @@ export abstract class Loader {
       if (!fork) return
       fork.alias = key.slice(name.length + 1)
       parent.state[Loader.kRecord][key] = fork
+    }
+    fork.parent.filter = (session) => {
+      return parent.filter(session) && (!config.$filter || session.resolve(config.$filter))
     }
     return fork
   }
