@@ -158,19 +158,26 @@ export class DatabaseService extends Database<Tables> {
     const [content, forced] = args as [Fragment, boolean]
     if (!content) return []
 
-    const data = await this.getAssignedChannels(['id', 'assignee', 'flag', 'platform', 'guildId'])
-    const assignMap: Dict<Dict<[string, string][]>> = {}
-    for (const { id, assignee, flag, platform, guildId } of data) {
+    const data = await this.getAssignedChannels(['id', 'assignee', 'flag', 'platform', 'guildId', 'locale'])
+    const assignMap: Dict<Dict<Pick<Channel, 'id' | 'guildId' | 'locale'>[]>> = {}
+    for (const channel of data) {
+      const { platform, id, assignee, flag } = channel
       if (channels && !channels.includes(`${platform}:${id}`)) continue
       if (!forced && (flag & Channel.Flag.silent)) continue
-      ((assignMap[platform] ||= {})[assignee] ||= []).push([id, guildId])
+      ((assignMap[platform] ||= {})[assignee] ||= []).push(channel)
     }
 
-    return (await Promise.all(Object.entries(assignMap).flatMap(([platform, map]) => {
-      return this.app.bots.map((bot) => {
-        if (bot.platform !== platform) return Promise.resolve([])
-        return bot.broadcast(map[bot.selfId] || [], content)
-      })
+    return (await Promise.all(this.app.bots.map((bot) => {
+      const targets = assignMap[bot.platform]?.[bot.selfId]
+      if (!targets) return Promise.resolve([])
+      const sessions = targets.map(({ id, guildId, locale }) => bot.session({
+        type: 'message',
+        subtype: 'group',
+        channelId: id,
+        guildId,
+        locale,
+      }))
+      return bot.broadcast(sessions, content)
     }))).flat(1)
   }
 }

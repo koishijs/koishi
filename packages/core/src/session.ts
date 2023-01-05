@@ -10,7 +10,6 @@ const logger = new Logger('session')
 
 declare module '@satorijs/core' {
   interface Session<U extends User.Field = never, G extends Channel.Field = never> {
-    locale?: string
     argv?: Argv<U, G>
     user?: User.Observed<U>
     channel?: Channel.Observed<G>
@@ -47,6 +46,10 @@ declare module '@satorijs/core' {
       _queuedTimeout: NodeJS.Timeout
       _next(): void
       _observeChannelLike<T extends Channel.Field = never>(channelId: string, fields: Iterable<T>): Promise<any>
+    }
+
+    export interface Payload {
+      locale?: string
     }
   }
 }
