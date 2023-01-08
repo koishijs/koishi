@@ -68,7 +68,7 @@ export class Commander {
 
     ctx.middleware((session, next) => {
       // execute command
-      if (!session.resolve(session.argv)) return next()
+      if (!session.resolveCommand(session.argv)) return next()
       return session.execute(session.argv, next)
     })
 

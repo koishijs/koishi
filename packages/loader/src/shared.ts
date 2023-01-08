@@ -35,15 +35,16 @@ export interface Modifier {
   $filter?: Selection
 }
 
-export namespace Modifier {
-  export function pick(config: any, positive = false) {
-    const result = {}
-    for (const [key, value] of Object.entries(config || {})) {
-      if (key.startsWith('$') !== positive) continue
-      result[key] = value
+function separate(source: any, isGroup = false) {
+  const config: any = {}, meta: any = {}
+  for (const [key, value] of Object.entries(source || {})) {
+    if (key.startsWith('$')) {
+      meta[key] = value
+    } else {
+      config[key] = value
     }
-    return result
   }
+  return [isGroup ? source : config, meta]
 }
 
 const kUpdate = Symbol('update')
@@ -131,27 +132,24 @@ export abstract class Loader {
     return !!this.interpolate(`\${{ ${expr} }}`)
   }
 
-  async reloadPlugin(parent: Context, key: string, config: any) {
+  async reloadPlugin(parent: Context, key: string, source: any) {
     let fork = parent.state[Loader.kRecord][key]
+    const name = key.split(':', 1)[0]
+    const [config, meta] = separate(source, name === 'group')
     if (fork) {
-      if (!this.isTruthyLike(config?.$if)) {
+      if (!this.isTruthyLike(meta.$if)) {
         this.unloadPlugin(parent, key)
         return
       }
       fork[kUpdate] = true
-      if (fork.runtime.plugin !== group) {
-        config = Modifier.pick(config, false)
-      }
       fork.update(config)
     } else {
-      if (!this.isTruthyLike(config?.$if)) return
+      if (!this.isTruthyLike(meta.$if)) return
       logger.info(`apply plugin %c`, key)
-      const name = key.split(':', 1)[0]
       const ctx = parent.extend()
       if (name === 'group') {
         fork = ctx.plugin(group, config)
       } else {
-        config = Modifier.pick(config, false)
         fork = await this.forkPlugin(name, config, ctx)
       }
       if (!fork) return
@@ -159,7 +157,7 @@ export abstract class Loader {
       parent.state[Loader.kRecord][key] = fork
     }
     fork.parent.filter = (session) => {
-      return parent.filter(session) && (!config.$filter || session.resolve(config.$filter))
+      return parent.filter(session) && (!meta.$filter || session.resolve(meta.$filter))
     }
     return fork
   }
@@ -207,7 +205,7 @@ export abstract class Loader {
         if (record[name] !== fork) continue
         const simplify = fork.runtime.schema?.simplify
         fork.parent.state.config[name] = {
-          ...Modifier.pick(fork.parent.state.config[name], true),
+          ...separate(fork.parent.state.config[name])[1],
           ...simplify ? simplify(config) : config,
         }
       }

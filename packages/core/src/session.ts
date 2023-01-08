@@ -1,6 +1,7 @@
 import { extend, observe } from '@koishijs/utils'
 import { Awaitable, defineProperty, isNullable, makeArray, Promisify } from 'cosmokit'
 import { Context, Fragment, Logger, segment, Session } from '@satorijs/core'
+import { Eval, executeEval, isEvalExpr } from '@minatojs/core'
 import { Argv, Command } from './command'
 import { Channel, Tables, User } from './database'
 import { Middleware, Next } from './middleware'
@@ -20,7 +21,10 @@ declare module '@satorijs/core' {
     send(content: Fragment, options?: SendOptions): Promise<string[]>
     cancelQueued(delay?: number): void
     sendQueued(content: Fragment, delay?: number): Promise<string[]>
-    resolveValue<T, R extends any[]>(source: T | ((session: Session, ...args: R) => T), ...args: R): T
+    resolve<T, R extends any[]>(source: T | Eval.Expr | ((session: Session, ...args: R) => T), ...args: R):
+      | T extends Eval.Expr ? Eval<T>
+      : T extends (...args: any[]) => any ? ReturnType<T>
+      : T
     getChannel<K extends Channel.Field = never>(id?: string, fields?: K[]): Promise<Channel>
     observeChannel<T extends Channel.Field = never>(fields?: Iterable<T>): Promise<Channel.Observed<T | G>>
     getUser<K extends User.Field = never>(id?: string, fields?: K[]): Promise<User>
@@ -29,7 +33,7 @@ declare module '@satorijs/core' {
     text(path: string | string[], params?: object): string
     collect<T extends 'user' | 'channel'>(key: T, argv: Argv, fields?: Set<keyof Tables[T]>): Set<keyof Tables[T]>
     inferCommand(argv: Argv): Command
-    resolve(argv: Argv): Command
+    resolveCommand(argv: Argv): Command
     execute(content: string, next?: true | Next): Promise<string>
     execute(argv: Argv, next?: true | Next): Promise<string>
     middleware(middleware: Middleware): () => boolean
@@ -145,8 +149,12 @@ extend(Session.prototype as Session.Private, {
     })
   },
 
-  resolveValue(source) {
-    return typeof source === 'function' ? Reflect.apply(source, null, [this]) : source
+  resolve(source, ...params) {
+    if (typeof source === 'function') {
+      return Reflect.apply(source, null, [this, ...params])
+    }
+    if (!isEvalExpr(source)) return source
+    return executeEval({ _: this }, source)
   },
 
   async getChannel(id = this.channelId, fields = []) {
@@ -154,7 +162,7 @@ extend(Session.prototype as Session.Private, {
     if (!fields.length) return { platform, id, guildId }
     const channel = await app.database.getChannel(platform, id, fields)
     if (channel) return channel
-    const assignee = await this.resolveValue(app.config.autoAssign) ? this.selfId : ''
+    const assignee = await this.resolve(app.config.autoAssign) ? this.selfId : ''
     if (assignee) {
       return app.database.createChannel(platform, id, { assignee, guildId })
     } else {
@@ -207,7 +215,7 @@ extend(Session.prototype as Session.Private, {
     if (!fields.length) return { [platform]: id }
     const user = await app.database.getUser(platform, id, fields)
     if (user) return user
-    const authority = await this.resolveValue(app.config.autoAuthorize)
+    const authority = await this.resolve(app.config.autoAuthorize)
     if (authority) {
       return app.database.createUser(platform, id, { authority })
     } else {
@@ -235,7 +243,7 @@ extend(Session.prototype as Session.Private, {
     if (this.author?.anonymous) {
       const fallback = this.app.model.tables.user.create()
       fallback[platform] = userId
-      fallback.authority = await this.resolveValue(this.app.config.autoAuthorize)
+      fallback.authority = await this.resolve(this.app.config.autoAuthorize)
       const user = observe(fallback, () => Promise.resolve())
       return this.user = user
     }
@@ -289,7 +297,7 @@ extend(Session.prototype as Session.Private, {
           inters.forEach(collect)
         }
       }
-      if (!this.resolve(argv)) return
+      if (!this.resolveCommand(argv)) return
       this.app.emit(argv.session, `command/before-attach-${key}` as any, argv, fields)
       collectFields(argv, Command[`_${key}Fields`] as any, fields)
       collectFields(argv, argv.command[`_${key}Fields`] as any, fields)
@@ -318,7 +326,7 @@ extend(Session.prototype as Session.Private, {
     return argv.command
   },
 
-  resolve(argv) {
+  resolveCommand(argv) {
     if (!this.inferCommand(argv)) return
     if (argv.tokens?.every(token => !token.inters.length)) {
       const { options, args, error } = argv.command.parse(argv)
@@ -346,7 +354,7 @@ extend(Session.prototype as Session.Private, {
         }
         arg.inters = []
       }
-      if (!this.resolve(argv)) return ''
+      if (!this.resolveCommand(argv)) return ''
     } else {
       argv.command ||= this.app.$commander.getCommand(argv.name)
       if (!argv.command) {

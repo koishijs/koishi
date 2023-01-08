@@ -5,7 +5,7 @@ export type Filter = (session: Session) => boolean
 
 declare module '@satorijs/core' {
   interface Context {
-    rules: FilterService
+    $filter: FilterService
     filter: Filter
     any(): this
     never(): this

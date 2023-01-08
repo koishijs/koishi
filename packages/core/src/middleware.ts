@@ -198,7 +198,7 @@ export class Processor {
 
     if (!params) return
     session.response = async () => {
-      const output = await session.resolveValue(response, params)
+      const output = await session.resolve(response, params)
       return segment.normalize(output, params.map(source => source ? segment.parse(source) : ''))
     }
   }
@@ -208,7 +208,7 @@ export class Processor {
   }
 
   private _resolvePrefixes(session: Session) {
-    const value = session.resolveValue(this.config.prefix)
+    const value = session.resolve(this.config.prefix)
     const result = Array.isArray(value) ? value : [value || '']
     return result.map(source => segment.escape(source))
   }
