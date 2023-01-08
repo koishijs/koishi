@@ -87,7 +87,7 @@
     "yakumo-esbuild": "^0.3.19",
     "yakumo-esbuild-yaml": "^0.3.1",
     "yakumo-mocha": "^0.3.1",
-    "yakumo-publish": "^0.3.1",
+    "yakumo-publish": "^0.3.2",
     "yakumo-publish-sync": "^0.3.2",
     "yakumo-tsc": "^0.3.7",
     "yakumo-upgrade": "^0.3.2",

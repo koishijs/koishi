@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-database-memory",
   "description": "A in-memory database implementation for Koishi",
-  "version": "2.2.0",
+  "version": "2.2.1",
   "main": "lib/index.cjs",
   "module": "lib/index.mjs",
   "typings": "lib/index.d.ts",
@@ -32,7 +32,7 @@
     "category": "storage",
     "description": {
       "en": "In-memory database support",
-      "zh": "基于内存的数据库支持"
+      "zh": "基于内存的数据库支持 (主要用于本地测试)"
     },
     "service": {
       "implements": [
@@ -41,9 +41,9 @@
     }
   },
   "peerDependencies": {
-    "koishi": "^4.11.0"
+    "koishi": "^4.11.1"
   },
   "dependencies": {
-    "@minatojs/driver-memory": "^2.1.0"
+    "@minatojs/driver-memory": "^2.1.1"
   }
 }
