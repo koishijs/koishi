@@ -91,11 +91,7 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
 
   private _registerAlias(name: string, prepend = false) {
     name = name.toLowerCase()
-    name = name.split('.').reduce((previousValue, currentValue) => {
-      currentValue = (previousValue && previousValue + '.') + currentValue
-      const fullName = this.ctx.$commander.getCommand(currentValue)?.name
-      return fullName || currentValue
-    }, '')
+    if (name.startsWith('.')) name = this.name + name
 
     // add to list
     const done = this._aliases.includes(name)
