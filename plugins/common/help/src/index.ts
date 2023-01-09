@@ -191,7 +191,7 @@ function formatCommands(path: string, session: Session<'authority'>, children: C
 
 function getOptionVisibility(option: Argv.OptionConfig, session: Session<'authority'>) {
   if (session.user && option.authority > session.user.authority) return false
-  return !session.resolveValue(option.hidden)
+  return !session.resolve(option.hidden)
 }
 
 function getOptions(command: Command, session: Session<'authority'>, config: HelpOptions) {
