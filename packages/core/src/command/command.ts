@@ -91,7 +91,7 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
 
   private _registerAlias(name: string, prepend = false) {
     name = name.toLowerCase()
-    if (name.startsWith('.')) name = this.parent.name + name
+    if (name.startsWith('.') && this.parent) name = this.parent.name + name
 
     // add to list
     const done = this._aliases.includes(name)
