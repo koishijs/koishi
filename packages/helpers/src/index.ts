@@ -35,7 +35,7 @@ export function handleError<U extends User.Field, G extends Channel.Field, A ext
       return await argv.next()
     } catch (error) {
       if (handler) return handler(error, argv)
-      return argv.session.text('internal.error-encountered', error.message)
+      return argv.session.text('internal.error-encountered', [error.message])
     }
   }, true)
 }
