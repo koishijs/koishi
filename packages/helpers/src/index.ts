@@ -26,7 +26,7 @@ function loadI18n(app: App) {
 
 export function handleError<U extends User.Field, G extends Channel.Field, A extends any[], O extends {}>(
   cmd: Command<U, G, A, O>,
-  handler: (error: Error, argv: Argv<U, G, A, O>) => Awaitable<void | string>,
+  handler?: (error: Error, argv: Argv<U, G, A, O>) => Awaitable<void | string>,
 ) {
   loadI18n(cmd.ctx.root)
 
