@@ -26,7 +26,7 @@ function loadI18n(app: App) {
 
 export function handleError<U extends User.Field, G extends Channel.Field, A extends any[], O extends {}>(
   cmd: Command<U, G, A, O>,
-  handler: (error: Error, argv: Argv<U, G, A, O>) => Awaitable<void | string>,
+  handler?: (error: Error, argv: Argv<U, G, A, O>) => Awaitable<void | string>,
 ) {
   loadI18n(cmd.ctx.root)
 
@@ -35,7 +35,7 @@ export function handleError<U extends User.Field, G extends Channel.Field, A ext
       return await argv.next()
     } catch (error) {
       if (handler) return handler(error, argv)
-      return argv.session.text('internal.error-encountered', error.message)
+      return argv.session.text('internal.error-encountered', [error.message])
     }
   }, true)
 }
