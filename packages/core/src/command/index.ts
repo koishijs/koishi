@@ -146,7 +146,7 @@ export class Commander {
         }
         return parent = command
       }
-      command = new Command(name, decl, this.caller)
+      command = new Command(name, index === segments.length - 1 ? decl : '', this.caller)
       list.push(command)
       if (!root) root = command
       if (parent) {
