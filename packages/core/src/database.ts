@@ -198,6 +198,7 @@ export const defineDriver = <T>(constructor: Driver.Constructor<T>, schema?: uti
   name: constructor.name,
   reusable: true,
   Config: schema,
+  filter: false,
   apply(ctx, config) {
     config = { ...config }
     prepare?.(ctx, config)

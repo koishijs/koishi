@@ -1,5 +1,5 @@
 import { sleep } from '@koishijs/utils'
-import { Dict } from 'cosmokit'
+import { defineProperty, Dict } from 'cosmokit'
 import { Bot, Fragment } from '@satorijs/core'
 
 declare module '@satorijs/core' {
@@ -14,6 +14,9 @@ declare module '@satorijs/core' {
 }
 
 export * from '@satorijs/core'
+
+// adapter plugins usually do not respect filters
+defineProperty(Bot, 'filter', false)
 
 Bot.prototype.getGuildMemberMap = async function getGuildMemberMap(this: Bot, guildId) {
   const list = await this.getGuildMemberList(guildId)

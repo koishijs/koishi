@@ -22,6 +22,14 @@ export { resolveConfig } from 'cordis'
 
 export type { Disposable } from 'cordis'
 
+declare module 'cordis' {
+  namespace Plugin {
+    interface Object {
+      filter?: boolean
+    }
+  }
+}
+
 declare module '@satorijs/core' {
   export interface Context {
     envData: EnvData
