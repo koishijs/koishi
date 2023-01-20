@@ -74,6 +74,7 @@ export interface Parsed {
   content: string
   prefix: string
   appel: boolean
+  hasMention: boolean
 }
 
 export type Computed<T> = T | ((session: Session) => T)

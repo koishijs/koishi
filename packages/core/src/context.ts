@@ -2,6 +2,7 @@ import { Awaitable, defineProperty, Time } from 'cosmokit'
 import { Context, Schema } from '@satorijs/core'
 import * as cordis from 'cordis'
 import { Computed } from './session'
+import { Commander } from './command'
 
 export type Plugin = cordis.Plugin<Context>
 
@@ -37,12 +38,11 @@ declare module '@satorijs/core' {
   }
 
   export namespace Context {
-    export interface Config extends Config.Basic, Config.Message, Config.Advanced {}
+    export interface Config extends Config.Basic, Config.Message, Config.Advanced, Commander.Config {}
 
     export namespace Config {
       export interface Basic {
         locale?: string
-        prefix?: Computed<string | string[]>
         nickname?: string | string[]
         autoAssign?: Computed<Awaitable<boolean>>
         autoAuthorize?: Computed<Awaitable<number>>

@@ -138,7 +138,6 @@ export class Processor {
     }, { session: true })
 
     ctx.before('attach', (session) => {
-      if (session.parsed.prefix) return
       for (const matcher of this._matchers) {
         this._executeMatcher(session, matcher)
         if (session.response) return
@@ -165,7 +164,7 @@ export class Processor {
   private _executeMatcher(session: Session, matcher: Matcher) {
     const { parsed, quote } = session
     const { appel, context, i18n, fuzzy, pattern, response } = matcher
-    if (appel && !parsed.appel) return
+    if ((appel || parsed.hasMention) && !parsed.appel) return
     if (!context.filter(session)) return
     let content = parsed.content
     if (quote) content += ' ' + quote.content
@@ -207,12 +206,6 @@ export class Processor {
     this._nameRE = createLeadingRE(makeArray(this.config.nickname), '@?', '([,，]\\s*|\\s+)')
   }
 
-  private _resolvePrefixes(session: Session) {
-    const value = session.resolve(this.config.prefix)
-    const result = Array.isArray(value) ? value : [value || '']
-    return result.map(source => segment.escape(source))
-  }
-
   private _stripNickname(content: string) {
     if (content.startsWith('@')) content = content.slice(1)
     for (const nickname of makeArray(this.config.nickname)) {
@@ -225,7 +218,7 @@ export class Processor {
   }
 
   private async _process(session: Session, next: Next) {
-    let atSelf = false, appel = false, prefix: string = null
+    let atSelf = false, appel = false
     let content = session.content.trim()
     session.elements ??= segment.parse(content)
 
@@ -245,24 +238,17 @@ export class Processor {
       }
     }
 
-    if (!hasMention || atSelf) {
+    if (!hasMention) {
       // strip nickname
       const result = this._stripNickname(content)
       if (result) {
         appel = true
         content = result
       }
-
-      // strip prefix
-      for (const _prefix of this._resolvePrefixes(session)) {
-        if (!content.startsWith(_prefix)) continue
-        prefix = _prefix
-        content = content.slice(_prefix.length)
-      }
     }
 
     // store parsed message
-    defineProperty(session, 'parsed', { content, appel, prefix })
+    defineProperty(session, 'parsed', { hasMention, content, appel, prefix: null })
     this.ctx.emit(session, 'before-attach', session)
 
     if (this.ctx.database) {

@@ -1,9 +1,10 @@
 import { Awaitable, defineProperty } from 'cosmokit'
-import { Context, Session } from '@satorijs/core'
+import { Context, h, Session } from '@satorijs/core'
 import { Command } from './command'
 import { Argv } from './parser'
 import validate from './validate'
 import { Channel, User } from '../database'
+import { Computed } from '../session'
 
 export * from './command'
 export * from './parser'
@@ -32,7 +33,9 @@ declare module '@satorijs/core' {
 }
 
 export namespace Commander {
-  export interface Config {}
+  export interface Config {
+    prefix?: Computed<string | string[]>
+  }
 }
 
 export class Commander {
@@ -61,7 +64,15 @@ export class Commander {
     })
 
     ctx.before('attach', (session) => {
-      defineProperty(session, 'argv', ctx.bail('before-parse', session.parsed.content, session))
+      // strip prefix
+      let content = session.parsed.content
+      for (const prefix of this._resolvePrefixes(session)) {
+        if (!content.startsWith(prefix)) continue
+        session.parsed.prefix = prefix
+        content = content.slice(prefix.length)
+        break
+      }
+      defineProperty(session, 'argv', ctx.bail('before-parse', content, session))
       session.argv.root = true
       session.argv.session = session
     })
@@ -75,8 +86,9 @@ export class Commander {
     ctx.middleware((session, next) => {
       // use `!prefix` instead of `prefix === null` to prevent from blocking other middlewares
       // we need to make sure that the user truly has the intension to call a command
-      const { argv, quote, subtype, parsed: { content, prefix, appel } } = session
+      const { argv, quote, subtype, parsed: { prefix, appel } } = session
       if (argv.command || subtype !== 'private' && !prefix && !appel) return next()
+      const content = session.parsed.content.slice((prefix ?? '').length)
       const actual = content.split(/\s/, 1)[0].toLowerCase()
       if (!actual) return next()
 
@@ -91,6 +103,12 @@ export class Commander {
         return session.execute(message, next)
       })
     })
+  }
+
+  private _resolvePrefixes(session: Session) {
+    const value = session.resolve(this.config.prefix)
+    const result = Array.isArray(value) ? value : [value || '']
+    return result.map(source => h.escape(source))
   }
 
   available(session: Session) {

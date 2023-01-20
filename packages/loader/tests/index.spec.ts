@@ -39,13 +39,13 @@ describe('@koishijs/loader', () => {
         },
         'group:qux': {
           '$filter': {
-            'user': 123,
+            $eq: [{ $: 'userId' }, '123'],
           },
           'baz': {},
           'bar': {
             'a': 2,
             '$filter': {
-              'channel': 789,
+              $eq: [{ $: 'channelId' }, '789'],
             },
           },
         },
@@ -71,13 +71,13 @@ describe('@koishijs/loader', () => {
       },
       'group:qux': {
         '$filter': {
-          'user': 123,
+          $eq: [{ $: 'userId' }, '123'],
         },
         'baz': {},
         'bar': {
           'a': 3,
           '$filter': {
-            'channel': 789,
+            $eq: [{ $: 'channelId' }, '789'],
           },
         },
       },
