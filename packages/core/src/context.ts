@@ -21,7 +21,7 @@ export const Service = cordis.Service<Context>
 
 export { resolveConfig } from 'cordis'
 
-export type { Disposable } from 'cordis'
+export type { Disposable, ScopeStatus } from 'cordis'
 
 declare module 'cordis' {
   namespace Plugin {

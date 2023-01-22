@@ -38,11 +38,11 @@
     "config"
   ],
   "peerDependencies": {
-    "@koishijs/core": "^4.11.2"
+    "@koishijs/core": "4.11.2"
   },
   "devDependencies": {
-    "@koishijs/core": "^4.11.2",
-    "@koishijs/registry": "^4.4.3",
+    "@koishijs/core": "4.11.2",
+    "@koishijs/registry": "^4.4.4",
     "@types/js-yaml": "^4.0.5"
   },
   "dependencies": {

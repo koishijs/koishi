@@ -11,10 +11,15 @@ export default class TestLoader extends Loader {
     return this.data[name] ||= {
       name,
       apply: (ctx) => {
+        if (name === 'foo') throw new Error()
         ctx.on(`test/${name}` as any, jest.fn())
         ctx.accept()
       },
     }
+  }
+
+  async resolve(name: string) {
+    return name
   }
 
   readConfig() {

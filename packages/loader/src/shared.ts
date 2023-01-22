@@ -57,21 +57,23 @@ const group: Plugin.Object = {
   name: 'group',
   reusable: true,
   apply(ctx, plugins) {
-    ctx.state[Loader.kRecord] ||= Object.create(null)
+    ctx.scope[Loader.kRecord] ||= Object.create(null)
 
     for (const name in plugins || {}) {
       if (name.startsWith('~') || name.startsWith('$')) continue
-      ctx.lifecycle.queue(ctx.loader.reloadPlugin(ctx, name, plugins[name]))
+      ctx.scope.ensure(async () => {
+        await ctx.loader.reloadPlugin(ctx, name, plugins[name])
+      })
     }
 
     ctx.accept((neo) => {
       // update config reference
-      const old = ctx.state.config
+      const old = ctx.scope.config
 
       // update inner plugins
       for (const key in { ...old, ...neo }) {
         if (key.startsWith('~') || key.startsWith('$')) continue
-        const fork = ctx.state[Loader.kRecord][key]
+        const fork = ctx.scope[Loader.kRecord][key]
         if (!fork) {
           ctx.loader.reloadPlugin(ctx, key, neo[key])
         } else if (!(key in neo)) {
@@ -133,7 +135,7 @@ export abstract class Loader {
   }
 
   async reloadPlugin(parent: Context, key: string, source: any) {
-    let fork = parent.state[Loader.kRecord][key]
+    let fork = parent.scope[Loader.kRecord][key]
     const name = key.split(':', 1)[0]
     const [config, meta] = separate(source, name === 'group')
     if (fork) {
@@ -154,7 +156,7 @@ export abstract class Loader {
       }
       if (!fork) return
       fork.alias = key.slice(name.length + 1)
-      parent.state[Loader.kRecord][key] = fork
+      parent.scope[Loader.kRecord][key] = fork
     }
     fork.parent.filter = (session) => {
       return parent.filter(session) && (!meta.$filter || session.resolve(meta.$filter))
@@ -163,10 +165,10 @@ export abstract class Loader {
   }
 
   unloadPlugin(ctx: Context, key: string) {
-    const fork = ctx.state[Loader.kRecord][key]
+    const fork = ctx.scope[Loader.kRecord][key]
     if (fork) {
       fork.dispose()
-      delete ctx.state[Loader.kRecord][key]
+      delete ctx.scope[Loader.kRecord][key]
       logger.info(`unload plugin %c`, key)
     }
   }
@@ -176,7 +178,7 @@ export abstract class Loader {
     app.loader = this
     app.baseDir = this.baseDir
     app.envData = this.envData
-    app.state[Loader.kRecord] = Object.create(null)
+    app.scope[Loader.kRecord] = Object.create(null)
     const fork = await this.reloadPlugin(app, 'group:entry', this.config.plugins)
     this.entry = fork.ctx
 
@@ -189,7 +191,7 @@ export abstract class Loader {
     })
 
     app.on('internal/update', (fork) => {
-      const record = fork.parent.state[Loader.kRecord]
+      const record = fork.parent.scope[Loader.kRecord]
       if (!record) return
       for (const name in record) {
         if (record[name] !== fork) continue
@@ -199,13 +201,13 @@ export abstract class Loader {
 
     app.on('internal/before-update', (fork, config) => {
       if (fork[kUpdate]) return delete fork[kUpdate]
-      const record = fork.parent.state[Loader.kRecord]
+      const record = fork.parent.scope[Loader.kRecord]
       if (!record) return
       for (const name in record) {
         if (record[name] !== fork) continue
         const simplify = fork.runtime.schema?.simplify
-        fork.parent.state.config[name] = {
-          ...separate(fork.parent.state.config[name])[1],
+        fork.parent.scope.config[name] = {
+          ...separate(fork.parent.scope.config[name])[1],
           ...simplify ? simplify(config) : config,
         }
       }

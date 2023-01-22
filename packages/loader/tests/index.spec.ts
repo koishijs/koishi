@@ -29,7 +29,7 @@ describe('@koishijs/loader', () => {
     expect(app.registry.get(loader.data.bar)?.config).to.deep.equal({ a: 1 })
   })
 
-  it('app.state.update()', async () => {
+  it('app.scope.update()', async () => {
     const { app } = loader
     loader.config = {
       prefix: '/',
@@ -51,7 +51,7 @@ describe('@koishijs/loader', () => {
         },
       },
     }
-    app.state.update(loader.config)
+    app.scope.update(loader.config)
     await app.lifecycle.flush()
     expect(app.config.prefix).to.deep.equal(['/'])
     expect(app.registry.get(loader.data.foo)).to.be.not.ok
