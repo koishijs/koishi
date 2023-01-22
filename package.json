@@ -20,7 +20,7 @@
     "plugins/*"
   ],
   "scripts": {
-    "preinstall": "yakumo preinstall",
+    "preinstall": "yakumo preinstall || true",
     "docs": "yarn workspace @koishijs/docs",
     "console": "yarn workspace @root/console",
     "dialogue": "yarn workspace @root/dialogue",

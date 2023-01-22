@@ -42,7 +42,7 @@
     }
   },
   "peerDependencies": {
-    "koishi": "^4.11.2"
+    "koishi": "^4.11.3"
   },
   "dependencies": {
     "@minatojs/driver-memory": "^2.1.2"
