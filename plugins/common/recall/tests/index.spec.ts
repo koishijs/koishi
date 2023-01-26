@@ -25,4 +25,12 @@ describe('@koishijs/plugin-recall', () => {
     await client.shouldNotReply('recall')
     expect(del.mock.calls).to.have.shape([[client.meta.channelId, '1234']])
   })
+
+  it('reply', async () => {
+    const del = app.bots[0].deleteMessage = jest.fn(async () => {})
+    const session = app.bots[0].session({ messageId: '114', channelId: '514', guildId: '1919', type: 'message' })
+    app.mock.receive(session)
+    await client.shouldNotReply('<quote id="114"/>recall')
+    expect(del.mock.calls).to.have.shape([[client.meta.channelId, '114']])
+  })
 })
