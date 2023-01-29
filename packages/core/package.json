@@ -30,7 +30,7 @@
     "chai-shape": "^1.0.0"
   },
   "dependencies": {
-    "@koishijs/utils": "^6.4.1",
+    "@koishijs/utils": "^7.0.0",
     "@minatojs/core": "^2.1.2",
     "@satorijs/core": "^2.0.4",
     "cordis": "^2.7.1",
