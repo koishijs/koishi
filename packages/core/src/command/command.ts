@@ -5,7 +5,8 @@ import { Disposable } from 'cordis'
 import { Argv } from './parser'
 import { Next, SessionError } from '../middleware'
 import { Channel, User } from '../database'
-import { Computed, FieldCollector } from '../session'
+import { FieldCollector } from '../session'
+import { Computed } from '../filter'
 
 const logger = new Logger('command')
 
@@ -342,10 +343,7 @@ export namespace Command {
   }
 
   export const Config: Schema<Config> = Schema.object({
-    authority: Schema.union([
-      Schema.natural(),
-      Schema.function(),
-    ]).default(1),
+    authority: Schema.computed(Schema.natural()).default(1),
     hidden: Schema.boolean().default(false),
     checkArgCount: Schema.boolean().default(false),
     checkUnknown: Schema.boolean().default(false),

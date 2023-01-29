@@ -1,7 +1,7 @@
 import { coerce, escapeRegExp, makeArray, Random } from '@koishijs/utils'
 import { Awaitable, defineProperty, Dict, Time } from 'cosmokit'
 import { Context, Fragment, segment, Session } from '@satorijs/core'
-import { Computed } from './session'
+import { Computed } from './filter'
 import { Channel, User } from './database'
 
 declare module '@satorijs/core' {

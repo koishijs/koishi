@@ -77,8 +77,6 @@ export interface Parsed {
   hasMention: boolean
 }
 
-export type Computed<T> = T | ((session: Session) => T)
-
 interface Task {
   delay: number
   content: Fragment

@@ -159,7 +159,7 @@ export abstract class Loader {
       parent.scope[Loader.kRecord][key] = fork
     }
     fork.parent.filter = (session) => {
-      return parent.filter(session) && (!meta.$filter || session.resolve(meta.$filter))
+      return parent.filter(session) && (isNullable(meta.$filter) || session.resolve(meta.$filter))
     }
     return fork
   }

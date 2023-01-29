@@ -1,7 +1,7 @@
 import { Awaitable, defineProperty, Time } from 'cosmokit'
 import { Context, Schema } from '@satorijs/core'
 import * as cordis from 'cordis'
-import { Computed } from './session'
+import { Computed } from './filter'
 import { Commander } from './command'
 
 export type Plugin = cordis.Plugin<Context>

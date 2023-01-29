@@ -1,6 +1,25 @@
 import { defineProperty } from 'cosmokit'
-import { Context, Session } from '@satorijs/core'
+import { Context, Schema, Session } from '@satorijs/core'
+import { Eval } from '@minatojs/core'
 
+declare global {
+  namespace Schemastery {
+    interface Static {
+      filter(): Schema<Computed<boolean>>
+      computed<X>(inner: X): Schema<Computed<TypeS<X>>, Computed<TypeT<X>>>
+    }
+  }
+}
+
+Schema.filter = function filter() {
+  return Schema.any().role('filter')
+}
+
+Schema.computed = function computed(inner) {
+  return Schema.union([inner, Schema.any().hidden()]).role('computed')
+}
+
+export type Computed<T> = T | Eval.Expr<T> | ((session: Session) => T)
 export type Filter = (session: Session) => boolean
 
 declare module '@satorijs/core' {

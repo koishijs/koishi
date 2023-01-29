@@ -4,7 +4,7 @@ import { Command } from './command'
 import { Argv } from './parser'
 import validate from './validate'
 import { Channel, User } from '../database'
-import { Computed } from '../session'
+import { Computed } from '../filter'
 
 export * from './command'
 export * from './parser'
