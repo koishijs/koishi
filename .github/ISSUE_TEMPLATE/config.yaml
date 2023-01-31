@@ -1,0 +1,11 @@
+﻿blank_issues_enabled: false
+contact_links:
+- name: Discussion
+  url: https://github.com/koishijs/koishi/discussions
+  about: Asking for help here | 在这里寻求别人的帮助
+- name: Koishi Forum
+  url: https://forum.koishi.xyz
+  about: Asking for help here | 在这里寻求别人的帮助
+- name: Others
+  url: https://koishi.chat/about/contact.html
+  about: Other contacting platforms | 其他讨论方式
