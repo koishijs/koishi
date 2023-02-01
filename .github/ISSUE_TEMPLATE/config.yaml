@@ -2,10 +2,10 @@
 contact_links:
 - name: Github Discussion
   url: https://github.com/koishijs/koishi/discussions
-  about: Asking for help here | 在这里寻求别人的帮助
-- name: Koishi Official Forum
+  about: Asking for help here | 在讨论区寻求别人的帮助
+- name: Official Forum
   url: https://forum.koishi.xyz
-  about: Asking for help here | 在这里寻求别人的帮助
-- name: Others
+  about: Asking for help here | 在官方论坛寻求别人的帮助
+- name: More
   url: https://koishi.chat/about/contact.html
-  about: More Koishi communities | 其他讨论社区
+  about: More Koishi communities | 加入官方 QQ 群、Discord 频道
