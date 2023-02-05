@@ -228,6 +228,7 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
     return this.ctx.filter(session) && this.config.authority <= authority
   }
 
+  /** @deprecated */
   getConfig<K extends keyof Command.Config>(key: K, session: Session): Exclude<Command.Config[K], (session: Session) => any> {
     const value = this.config[key] as any
     return typeof value === 'function' ? value(session) : value

@@ -61,7 +61,7 @@ export function apply(ctx: Context) {
 
   function bypassRateLimit(session: Session<'authority'>, command: Command) {
     if (!session.user) return true
-    const bypassAuthority = command.getConfig('bypassAuthority', session)
+    const bypassAuthority = session.resolve(command.config.bypassAuthority)
     if (session.user.authority >= bypassAuthority) return true
   }
 
@@ -83,8 +83,8 @@ export function apply(ctx: Context) {
     // check usage
     if (isUsage) {
       const name = getUsageName(command)
-      const minInterval = command.getConfig('minInterval', session)
-      const maxUsage = command.getConfig('maxUsage', session)
+      const minInterval = session.resolve(command.config.minInterval)
+      const maxUsage = session.resolve(command.config.maxUsage)
 
       if (maxUsage < Infinity && checkUsage(name, session.user, maxUsage)) {
         return sendHint('usage-exhausted')
@@ -101,8 +101,8 @@ export function apply(ctx: Context) {
     if (bypassRateLimit(session, command)) return
 
     const name = getUsageName(command)
-    const maxUsage = command.getConfig('maxUsage', session) ?? Infinity
-    const minInterval = command.getConfig('minInterval', session) ?? 0
+    const maxUsage = session.resolve(command.config.maxUsage) ?? Infinity
+    const minInterval = session.resolve(command.config.minInterval) ?? 0
 
     if (maxUsage < Infinity) {
       const count = getUsage(name, session.user)
@@ -119,7 +119,7 @@ export function apply(ctx: Context) {
   // extend command option
   ctx.on('help/option', (output, option, command, session: Session<'authority'>) => {
     if (bypassRateLimit(session, command)) return output
-    const maxUsage = command.getConfig('maxUsage', session)
+    const maxUsage = session.resolve(command.config.maxUsage)
     if (option.notUsage && maxUsage !== Infinity) {
       output += session.text('internal.option-not-usage')
     }

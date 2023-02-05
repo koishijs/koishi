@@ -106,7 +106,7 @@ export class Processor {
     }, { session: true })
 
     ctx.component('i18n', async (attrs, children, session) => {
-      return session.text(attrs.path)
+      return session.text(attrs.path, children)
     }, { session: true })
 
     ctx.component('random', async (attrs, children) => {
