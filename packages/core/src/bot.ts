@@ -13,8 +13,6 @@ declare module '@satorijs/core' {
   }
 }
 
-export * from '@satorijs/core'
-
 // adapter plugins usually do not respect filters
 defineProperty(Bot, 'filter', false)
 

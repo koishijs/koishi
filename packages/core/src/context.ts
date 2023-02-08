@@ -19,8 +19,6 @@ export type Service = cordis.Service<Context>
 
 export const Service = cordis.Service<Context>
 
-export { Logger, Schema } from '@satorijs/core'
-
 export { resolveConfig } from 'cordis'
 
 export type { Disposable, ScopeStatus } from 'cordis'
