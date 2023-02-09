@@ -230,7 +230,10 @@ export class Processor {
       if (attrs.id === session.selfId) {
         atSelf = appel = true
       }
-      hasMention = true
+      // quote messages may contain mentions
+      if (!session.quote || session.quote.userId !== attrs.id) {
+        hasMention = true
+      }
       content = elements.join('').trimStart()
       // @ts-ignore
       if (elements[0]?.type === 'text' && !elements[0].attrs.content.trim()) {
