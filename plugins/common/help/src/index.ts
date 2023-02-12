@@ -174,7 +174,8 @@ function formatCommands(path: string, session: Session<'authority'>, children: C
   const output = commands.map(({ name, displayName, config, children }) => {
     let output = '    ' + displayName
     if (options.authority) {
-      output += ` (${config.authority}${children.length ? (hasSubcommand = true, '*') : ''})`
+      const authority = session.resolve(config.authority)
+      output += ` (${authority}${children.length ? (hasSubcommand = true, '*') : ''})`
     }
     output += '  ' + session.text([`commands.${name}.description`, ''], config.params)
     return output
@@ -248,8 +249,11 @@ async function showHelp(command: Command, session: Session<'authority'>, config:
 
   session.app.emit(session, 'help/command', output, command, session)
 
-  if (session.user && command.config.authority > 1) {
-    output.push(session.text('.command-authority', [command.config.authority]))
+  if (session.user) {
+    const authority = session.resolve(command.config.authority)
+    if (authority > 1) {
+      output.push(session.text('.command-authority', [authority]))
+    }
   }
 
   if (command._usage) {

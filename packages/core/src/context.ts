@@ -79,12 +79,12 @@ export interface EnvData {}
 defineProperty(Context.Config, 'Basic', Schema.object({
   locale: Schema.string().default('zh').description('默认使用的语言。'),
   prefix: Schema.union([
-    Schema.array(String),
+    Schema.array(String).role('table'),
     Schema.transform(String, (prefix) => [prefix]),
-    Schema.function(),
-  ] as const).default(['']).description('指令前缀字符构成的数组。将被用于指令的匹配。'),
+    Schema.any().hidden(),
+  ]).role('computed').default(['']).description('指令前缀字符构成的数组。将被用于指令的匹配。'),
   nickname: Schema.union([
-    Schema.array(String),
+    Schema.array(String).role('table'),
     Schema.transform(String, (nickname) => [nickname]),
   ] as const).description('机器人昵称构成的数组。将被用于指令的匹配。'),
   autoAssign: Schema.union([Boolean, Function]).default(true).description('当获取不到频道数据时，是否使用接受者作为代理者。'),

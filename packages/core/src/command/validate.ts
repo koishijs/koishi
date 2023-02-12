@@ -4,10 +4,9 @@ import { Argv } from './parser'
 export default function validate(ctx: Context) {
   // add user fields
   ctx.on('command-added', (cmd) => {
-    cmd.userFields(({ tokens, command, options = {} }, fields) => {
+    cmd.userFields(({ session, tokens, command, options = {} }, fields) => {
       if (!command) return
-      const { authority } = command.config
-      let shouldFetchAuthority = authority > 0
+      let shouldFetchAuthority = session.resolve(command.config.authority) > 0
       for (const { name, authority } of Object.values(command._options)) {
         if (name in options) {
           if (authority > 0) shouldFetchAuthority = true

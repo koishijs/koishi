@@ -1,4 +1,4 @@
-import { coerce, escapeRegExp, makeArray, Random } from '@koishijs/utils'
+import { coerce, makeArray, Random } from '@koishijs/utils'
 import { Awaitable, defineProperty, Dict, Time } from 'cosmokit'
 import { Context, Fragment, segment, Session } from '@satorijs/core'
 import { Computed } from './filter'
@@ -27,10 +27,6 @@ export class SessionError extends Error {
   constructor(public path: string | string[], public param?: Dict) {
     super(makeArray(path)[0])
   }
-}
-
-function createLeadingRE(patterns: string[], prefix = '', suffix = '') {
-  return patterns.length ? new RegExp(`^${prefix}(${patterns.map(escapeRegExp).join('|')})${suffix}`) : /$^/
 }
 
 export type Next = (next?: Next.Callback) => Promise<void | Fragment>
@@ -66,8 +62,8 @@ export namespace Matcher {
 
 export namespace Processor {
   export interface Config {
-    nickname?: string | string[]
-    prefix?: Computed<string | string[]>
+    nickname?: Computed<string[]>
+    prefix?: Computed<string[]>
   }
 }
 
@@ -75,7 +71,6 @@ export class Processor {
   static readonly methods = ['middleware', 'match']
 
   _hooks: [Context, Middleware][] = []
-  _nameRE: RegExp
   _sessions: Dict<Session> = Object.create(null)
   _userCache = new SharedCache<User.Observed<any>>()
   _channelCache = new SharedCache<Channel.Observed<any>>()
@@ -83,7 +78,6 @@ export class Processor {
 
   constructor(private ctx: Context, private config: Processor.Config) {
     defineProperty(this, Context.current, ctx)
-    this.prepare()
 
     // bind built-in event listeners
     this.middleware(this._process.bind(this), true)
@@ -209,13 +203,9 @@ export class Processor {
     }
   }
 
-  prepare() {
-    this._nameRE = createLeadingRE(makeArray(this.config.nickname), '@?', '([,，]\\s*|\\s+)')
-  }
-
-  private _stripNickname(content: string) {
+  private _stripNickname(session: Session, content: string) {
     if (content.startsWith('@')) content = content.slice(1)
-    for (const nickname of makeArray(this.config.nickname)) {
+    for (const nickname of session.resolve(this.config.nickname) ?? []) {
       if (!content.startsWith(nickname)) continue
       const rest = content.slice(nickname.length)
       const capture = /^([,，]\s*|\s+)/.exec(rest)
@@ -250,7 +240,7 @@ export class Processor {
 
     if (!hasMention) {
       // strip nickname
-      const result = this._stripNickname(content)
+      const result = this._stripNickname(session, content)
       if (result) {
         appel = true
         content = result

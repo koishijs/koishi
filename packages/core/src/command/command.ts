@@ -227,7 +227,7 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
 
   match(session: Session) {
     const { authority = Infinity } = (session.user || {}) as User
-    return this.ctx.filter(session) && this.config.authority <= authority
+    return this.ctx.filter(session) && session.resolve(this.config.authority) <= authority
   }
 
   /** @deprecated */
