@@ -10,7 +10,6 @@
     ".yalc/*",
     ".yalc/@*/*",
     "packages/*",
-    "plugins/a11y/*",
     "plugins/adapter/*",
     "plugins/assets/*",
     "plugins/common/*",
