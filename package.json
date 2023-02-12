@@ -5,7 +5,6 @@
   "packageManager": "yarn@1.22.19",
   "workspaces": [
     "docs",
-    "test",
     "external/*",
     "external/*/packages/*",
     ".yalc/*",
@@ -14,13 +13,11 @@
     "plugins/a11y/*",
     "plugins/adapter/*",
     "plugins/assets/*",
-    "plugins/cache/*",
     "plugins/common/*",
     "plugins/database/*",
     "plugins/*"
   ],
   "scripts": {
-    "preinstall": "yakumo preinstall || true",
     "docs": "yarn workspace @koishijs/docs",
     "console": "yarn workspace @root/console",
     "dialogue": "yarn workspace @root/dialogue",
@@ -37,10 +34,7 @@
     "test": "yakumo mocha -r esbuild-register -r yml-register --exit",
     "test:json": "shx rm -rf coverage && c8 -r json yarn test",
     "test:html": "shx rm -rf coverage && c8 -r html yarn test",
-    "test:text": "shx rm -rf coverage && c8 -r text yarn test",
-    "scaffold": "shx rm -rf test && shx cp -rf build/template/ test/ && yarn",
-    "start": "yarn compile cli && yarn workspace test dev",
-    "shiki": "yarn workspace bot-shiki"
+    "test:text": "shx rm -rf coverage && c8 -r text yarn test"
   },
   "license": "MIT",
   "devDependencies": {
