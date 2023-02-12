@@ -39,7 +39,7 @@
     ]
   },
   "peerDependencies": {
-    "koishi": "^4.11.5"
+    "koishi": "^4.11.6"
   },
   "devDependencies": {
     "@koishijs/plugin-mock": "^2.3.2"
