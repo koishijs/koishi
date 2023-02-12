@@ -60,6 +60,7 @@ export namespace Matcher {
     i18n?: boolean
     appel?: boolean
     fuzzy?: boolean
+    regex?: boolean
   }
 }
 
@@ -163,7 +164,7 @@ export class Processor {
 
   private _executeMatcher(session: Session, matcher: Matcher) {
     const { parsed, quote } = session
-    const { appel, context, i18n, fuzzy, pattern, response } = matcher
+    const { appel, context, i18n, regex, fuzzy, pattern, response } = matcher
     if ((appel || parsed.hasMention) && !parsed.appel) return
     if (!context.filter(session)) return
     let content = parsed.content
@@ -174,8 +175,8 @@ export class Processor {
       if (!pattern) return
       if (typeof pattern === 'string') {
         if (!fuzzy && content !== pattern || !content.startsWith(pattern)) return
-        params = [content.slice(pattern.length)]
-        if (fuzzy && !parsed.appel && params[0].match(/^\S/)) {
+        params = [content, content.slice(pattern.length)]
+        if (fuzzy && !parsed.appel && params[1].match(/^\S/)) {
           params = null
         }
       } else {
@@ -188,7 +189,13 @@ export class Processor {
     } else {
       for (const locale in this.ctx.i18n._data) {
         const store = this.ctx.i18n._data[locale]
-        match(store[pattern as string])
+        let value = store[pattern as string] as string | RegExp
+        if (!value) continue
+        if (regex) {
+          const rest = fuzzy ? `(?:${parsed.appel ? '' : '\\s+'}([\\s\\S]*))?` : ''
+          value = new RegExp(`^(?:${value})${rest}$`)
+        }
+        match(value)
         if (!params) continue
         session.locale = locale
         break

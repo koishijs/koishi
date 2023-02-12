@@ -168,7 +168,8 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
     for (const arg of config.args || []) {
       content += ' ' + this._escape(arg)
     }
-    if (config.fuzzy) content += ' {0}'
+    if (config.fuzzy) content += ' {1}'
+    const regex = config.i18n
     if (typeof pattern === 'string') {
       if (config.i18n) {
         pattern = `commands.${this.name}.shortcuts.${pattern}`
@@ -183,6 +184,7 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
       appel: config.prefix,
       fuzzy: config.fuzzy,
       i18n: config.i18n as never,
+      regex,
     })
     this._disposables2.push(dispose)
     return this
