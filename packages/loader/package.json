@@ -1,21 +1,10 @@
 {
   "name": "@koishijs/loader",
   "description": "Config Loader for Koishi",
-  "version": "2.5.6",
-  "main": "lib/node.js",
+  "version": "2.6.1",
+  "main": "lib/index.js",
+  "module": "lib/shared.mjs",
   "typings": "lib/index.d.ts",
-  "exports": {
-    ".": {
-      "node": "./lib/node.js",
-      "browser": "./lib/browser.mjs"
-    },
-    "./shared": {
-      "require": "./lib/shared.js",
-      "import": "./lib/shared.mjs"
-    },
-    "./src/*": "./src/*",
-    "./package.json": "./package.json"
-  },
   "files": [
     "lib"
   ],
