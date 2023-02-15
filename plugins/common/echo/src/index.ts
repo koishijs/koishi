@@ -10,7 +10,7 @@ export const Config: Schema<Config> = Schema.object({})
 export function apply(ctx: Context) {
   ctx.i18n.define('zh', zh)
 
-  ctx.command('echo <message:text>', { authority: 2 })
+  ctx.command('echo <message:text>')
     .option('escape', '-e', { authority: 3 })
     .option('unescape', '-E', { authority: 3 })
     .option('user', '-u [user:user]', { authority: 3 })

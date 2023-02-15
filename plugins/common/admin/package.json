@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-admin",
   "description": "Admin Plugin for Koishi",
-  "version": "1.1.5",
+  "version": "1.1.6",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -15,12 +15,12 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/koishijs/koishi.git",
-    "directory": "plugins/a11y/admin"
+    "directory": "plugins/common/admin"
   },
   "bugs": {
     "url": "https://github.com/koishijs/koishi/issues"
   },
-  "homepage": "https://koishi.chat/plugins/accessibility/admin.html",
+  "homepage": "https://koishi.chat/plugins/common/admin.html",
   "keywords": [
     "bot",
     "chatbot",

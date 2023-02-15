@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-rate-limit",
   "description": "Set Rate Limits for Commands in Koishi",
-  "version": "1.2.5",
+  "version": "1.2.6",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -15,12 +15,12 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/koishijs/koishi.git",
-    "directory": "plugins/a11y/rate-limit"
+    "directory": "plugins/common/rate-limit"
   },
   "bugs": {
     "url": "https://github.com/koishijs/koishi/issues"
   },
-  "homepage": "https://koishi.chat/plugins/accessibility/rate-limit.html",
+  "homepage": "https://koishi.chat/plugins/common/rate-limit.html",
   "keywords": [
     "bot",
     "chatbot",

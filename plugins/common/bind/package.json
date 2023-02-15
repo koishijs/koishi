@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-bind",
   "description": "Bind User Accounts Across Platforms in Koishi",
-  "version": "1.3.2",
+  "version": "1.3.3",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -15,12 +15,12 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/koishijs/koishi.git",
-    "directory": "plugins/a11y/bind"
+    "directory": "plugins/common/bind"
   },
   "bugs": {
     "url": "https://github.com/koishijs/koishi/issues"
   },
-  "homepage": "https://koishi.chat/plugins/accessibility/bind.html",
+  "homepage": "https://koishi.chat/plugins/common/bind.html",
   "keywords": [
     "bot",
     "chatbot",

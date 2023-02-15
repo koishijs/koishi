@@ -74,7 +74,7 @@
     "source-map-support": "^0.5.21",
     "typescript": "^4.9.4",
     "yakumo": "^0.3.9",
-    "yakumo-esbuild": "^0.3.19",
+    "yakumo-esbuild": "^0.3.22",
     "yakumo-esbuild-yaml": "^0.3.1",
     "yakumo-mocha": "^0.3.1",
     "yakumo-publish": "^0.3.3",
