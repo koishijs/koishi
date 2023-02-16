@@ -6,6 +6,7 @@ import Loader from './utils'
 
 describe('@koishijs/loader', () => {
   const loader = new Loader()
+  loader.writable = 'application/json'
 
   it('loader.createApp()', async () => {
     loader.config = {

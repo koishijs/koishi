@@ -1,4 +1,7 @@
-import { Context, Dict, EnvData, interpolate, isNullable, Logger, Plugin, resolveConfig, valueMap } from '@koishijs/core'
+import { Context, Dict, interpolate, isNullable, Logger, Plugin, resolveConfig, valueMap } from '@koishijs/core'
+import { constants, promises as fs } from 'fs'
+import * as yaml from 'js-yaml'
+import path from 'path'
 
 declare module '@koishijs/core' {
   interface Context {
@@ -86,32 +89,110 @@ const group: Plugin.Object = {
   },
 }
 
+const writable = {
+  '.json': 'application/json',
+  '.yaml': 'application/yaml',
+  '.yml': 'application/yaml',
+}
+
 export abstract class Loader {
   static readonly kRecord = Symbol.for('koishi.loader.record')
   static readonly exitCode = 51
+  static readonly extensions = new Set(Object.keys(writable))
 
-  public envData: EnvData
-  public ctxData = {}
+  // process
+  public baseDir = process.cwd()
+  public envData = JSON.parse(process.env.KOISHI_SHARED || '{}')
+  public params = {
+    env: process.env,
+  }
+
   public app: Context
-  public baseDir: string
   public config: Context.Config
   public entry: Context
   public suspend = false
   public filename: string
-  public writable = true
+  public writable: string
   public envfile: string
   public cache: Dict<string> = Object.create(null)
 
-  abstract readConfig(): Context.Config
-  abstract writeConfig(): void
   abstract resolve(name: string): Promise<string>
   abstract resolvePlugin(name: string): Promise<any>
   abstract fullReload(): void
 
+  async init(filename?: string) {
+    if (filename) {
+      filename = path.resolve(this.baseDir, filename)
+      const stats = await fs.stat(filename)
+      if (stats.isFile()) {
+        this.filename = filename
+        this.baseDir = path.dirname(filename)
+        const extname = path.extname(filename)
+        this.writable = writable[extname]
+        if (!Loader.extensions.has(extname)) {
+          throw new Error(`extension "${extname}" not supported`)
+        }
+      } else {
+        this.baseDir = filename
+        await this.findConfig()
+      }
+    } else {
+      await this.findConfig()
+    }
+    if (this.writable) {
+      try {
+        await fs.access(this.filename, constants.W_OK)
+      } catch {
+        this.writable = null
+      }
+    }
+    this.envfile = path.resolve(this.baseDir, '.env')
+  }
+
+  private async findConfig() {
+    const files = await fs.readdir(this.baseDir)
+    for (const basename of ['koishi.config', 'koishi']) {
+      for (const extname of Loader.extensions) {
+        if (files.includes(basename + extname)) {
+          this.writable = writable[extname]
+          this.filename = path.resolve(this.baseDir, basename + extname)
+          return
+        }
+      }
+    }
+    throw new Error('config file not found')
+  }
+
+  async readConfig() {
+    if (this.writable === 'application/yaml') {
+      this.config = yaml.load(await fs.readFile(this.filename, 'utf8')) as any
+    } else if (this.writable === 'application/json') {
+      // we do not use require here because it will pollute require.cache
+      this.config = JSON.parse(await fs.readFile(this.filename, 'utf8')) as any
+    } else {
+      const module = require(this.filename)
+      this.config = module.default || module
+    }
+
+    return new Context.Config(this.interpolate(this.config))
+  }
+
+  async writeConfig() {
+    this.app.emit('config')
+    this.suspend = true
+    if (this.writable === 'application/yaml') {
+      await fs.writeFile(this.filename, yaml.dump(this.config))
+    } else if (this.writable === 'application/json') {
+      await fs.writeFile(this.filename, JSON.stringify(this.config, null, 2))
+    } else {
+      throw new Error(`cannot overwrite readonly config`)
+    }
+  }
+
   interpolate(source: any) {
     if (!this.writable) return source
     if (typeof source === 'string') {
-      return interpolate(source, this.ctxData, /\$\{\{(.+?)\}\}/g)
+      return interpolate(source, this.params, /\$\{\{(.+?)\}\}/g)
     } else if (!source || typeof source !== 'object') {
       return source
     } else if (Array.isArray(source)) {

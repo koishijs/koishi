@@ -22,14 +22,6 @@ export default class TestLoader extends Loader {
     return name
   }
 
-  readConfig() {
-    return null as any
-  }
-
-  writeConfig() {
-    logger.info('write config')
-  }
-
   fullReload() {
     console.info('trigger full reload')
   }
