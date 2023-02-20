@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-rate-limit",
   "description": "Set Rate Limits for Commands in Koishi",
-  "version": "1.2.6",
+  "version": "1.2.7",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -44,11 +44,11 @@
     ]
   },
   "peerDependencies": {
-    "koishi": "^4.11.6"
+    "koishi": "^4.11.7"
   },
   "devDependencies": {
-    "@koishijs/plugin-help": "^2.0.3",
-    "@koishijs/plugin-mock": "^2.3.2"
+    "@koishijs/plugin-help": "^2.0.4",
+    "@koishijs/plugin-mock": "^2.3.3"
   },
   "dependencies": {
     "@koishijs/helpers": "^1.2.7"

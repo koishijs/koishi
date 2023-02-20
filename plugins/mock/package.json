@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-mock",
   "description": "Test Mocker for Koishi",
-  "version": "2.3.2",
+  "version": "2.3.3",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -35,6 +35,6 @@
     "hidden": true
   },
   "peerDependencies": {
-    "koishi": "^4.11.6"
+    "koishi": "^4.11.7"
   }
 }

@@ -40,7 +40,7 @@
     }
   },
   "peerDependencies": {
-    "koishi": "^4.11.6"
+    "koishi": "^4.11.7"
   },
   "dependencies": {
     "@satorijs/adapter-feishu": "^1.1.3"
