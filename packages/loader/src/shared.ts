@@ -242,6 +242,12 @@ export abstract class Loader {
     fork.parent.filter = (session) => {
       return parent.filter(session) && (isNullable(meta.$filter) || session.resolve(meta.$filter))
     }
+    const service = 'plugin:' + name
+    Context.service(service)
+    this.app[service] = fork.runtime
+    fork.runtime.disposables.push(() => {
+      this.app[service] = null
+    })
     return fork
   }
 
