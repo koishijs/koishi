@@ -65,7 +65,7 @@ export class I18n {
     return value >= threshold ? value : 0
   }
 
-  private set(locale: string, prefix: string, value: I18n.Node) {
+  private* set(locale: string, prefix: string, value: I18n.Node): Generator<string> {
     if (prefix.includes('@') || typeof value === 'string') {
       const dict = this._data[locale]
       const [path, preset] = prefix.slice(0, -1).split('@')
@@ -77,12 +77,10 @@ export class I18n {
         logger.warn('override', locale, path)
       }
       dict[path] = value
-      this[Context.current]?.on('dispose', () => {
-        delete dict[path]
-      })
+      yield path
     } else {
       for (const key in value) {
-        this.set(locale, prefix + key + '.', value[key])
+        yield* this.set(locale, prefix + key + '.', value[key])
       }
     }
   }
@@ -90,13 +88,17 @@ export class I18n {
   define(locale: string, dict: I18n.Store): void
   define(locale: string, key: string, value: I18n.Node): void
   define(locale: string, ...args: [I18n.Store] | [string, I18n.Node]) {
-    this._data[locale] ||= {}
-    if (typeof args[0] === 'string') {
-      this.set(locale, args[0] + '.', args[1])
-    } else {
-      this.set(locale, '', args[0])
-    }
+    const dict = this._data[locale] ||= {}
+    const paths = [...typeof args[0] === 'string'
+      ? this.set(locale, args[0] + '.', args[1])
+      : this.set(locale, '', args[0])]
     this.ctx.emit('internal/i18n')
+    this[Context.current]?.on('dispose', () => {
+      for (const path of paths) {
+        delete dict[path]
+      }
+      this.ctx.emit('internal/i18n')
+    })
   }
 
   /** @deprecated */

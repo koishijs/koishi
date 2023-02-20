@@ -11,6 +11,7 @@ describe('Session API', () => {
     app.command('exec [command:text]').action(({ session }, text) => session.execute(text))
 
     before(() => app.start())
+    after(() => app.stop())
 
     it('basic support', async () => {
       await client.shouldReply('echo 0', '0')
@@ -36,6 +37,7 @@ describe('Session API', () => {
     const client = app.mock.client('123', '456')
 
     before(() => app.start())
+    after(() => app.stop())
 
     app.middleware(async (session, next) => {
       if (session.content !== 'prompt') return next()

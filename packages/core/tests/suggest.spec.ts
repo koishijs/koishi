@@ -17,6 +17,7 @@ describe('Command Suggestion', () => {
     .action(({ options }) => 'fooo' + options.text)
 
   before(() => app.start())
+  after(() => app.stop())
 
   it('execute command', async () => {
     await client1.shouldReply('foo bar', 'foobar')
@@ -79,6 +80,7 @@ describe('session.suggest()', () => {
   })
 
   before(() => app.start())
+  after(() => app.stop())
 
   it('no suggestions', async () => {
     await client.shouldNotReply(' ')
