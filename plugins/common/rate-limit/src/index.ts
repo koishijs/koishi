@@ -42,6 +42,11 @@ export function apply(ctx: Context) {
     timers: 'json',
   })
 
+  ctx.schema.extend('command', Schema.object({
+    maxUsage: Schema.computed(Schema.number()).description('每天的调用次数上限。'),
+    minInterval: Schema.computed(Schema.number()).description('连续调用的最小间隔。'),
+  }), 800)
+
   // add user fields
   ctx.before('command/attach-user', ({ command, options = {} }, fields) => {
     if (!command) return

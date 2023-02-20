@@ -1,4 +1,4 @@
-import { Argv, Channel, Command, Context, FieldCollector, Schema, segment, Session, Tables, User } from 'koishi'
+import { Argv, Channel, Command, Computed, Context, FieldCollector, Schema, segment, Session, Tables, User } from 'koishi'
 import zhCN from './locales/zh-CN.yml'
 import enUS from './locales/en-US.yml'
 import jaJP from './locales/ja-JP.yml'
@@ -16,13 +16,13 @@ declare module 'koishi' {
       /** hide all options by default */
       hideOptions?: boolean
       /** hide command */
-      hidden?: boolean
+      hidden?: Computed<boolean>
     }
   }
 
   namespace Argv {
     interface OptionConfig {
-      hidden?: boolean | ((session: Session) => boolean)
+      hidden?: Computed<boolean>
     }
   }
 }
@@ -68,6 +68,14 @@ export function apply(ctx: Context, config: Config) {
   ctx.i18n.define('ja', jaJP)
   ctx.i18n.define('fr', frFR)
   ctx.i18n.define('zh-TW', zhTW)
+
+  ctx.schema.extend('command', Schema.object({
+    hidden: Schema.computed(Schema.boolean()).description('在帮助菜单中隐藏指令。').default(false),
+  }), 900)
+
+  ctx.schema.extend('command-option', Schema.object({
+    hidden: Schema.computed(Schema.boolean()).description('在帮助菜单中隐藏选项。').default(false),
+  }), 900)
 
   if (config.options !== false) {
     ctx.$commander._commandList.forEach(cmd => cmd.use(enableHelp))
@@ -155,7 +163,7 @@ export function apply(ctx: Context, config: Config) {
 
 function* getCommands(session: Session<'authority'>, commands: Command[], showHidden = false): Generator<Command> {
   for (const command of commands) {
-    if (!showHidden && command.config.hidden) continue
+    if (!showHidden && session.resolve(command.config.hidden)) continue
     if (command.match(session)) {
       yield command
     } else {

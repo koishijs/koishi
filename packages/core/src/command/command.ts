@@ -346,9 +346,6 @@ export namespace Command {
   }
 
   export const Config: Schema<Config> = Schema.object({
-    authority: Schema.computed(Schema.natural()).default(1),
-    hidden: Schema.boolean().default(false),
-    checkArgCount: Schema.boolean().default(false),
-    checkUnknown: Schema.boolean().default(false),
+    authority: Schema.computed(Schema.natural()).description('指令的权限等级。').default(1),
   })
 }

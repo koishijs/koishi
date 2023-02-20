@@ -103,6 +103,8 @@ export class Commander {
         return session.execute(message, next)
       })
     })
+
+    ctx.schema.extend('command', Command.Config, 1000)
   }
 
   private _resolvePrefixes(session: Session) {
