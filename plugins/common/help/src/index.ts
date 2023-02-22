@@ -1,4 +1,4 @@
-import { Argv, Channel, Command, Computed, Context, FieldCollector, Schema, segment, Session, Tables, User } from 'koishi'
+import { Argv, Channel, Command, Computed, Context, FieldCollector, h, Schema, Session, Tables, User } from 'koishi'
 import zhCN from './locales/zh-CN.yml'
 import enUS from './locales/en-US.yml'
 import jaJP from './locales/ja-JP.yml'
@@ -215,7 +215,7 @@ function getOptions(command: Command, session: Session<'authority'>, config: Hel
     const authority = option.authority && config.authority ? `(${option.authority}) ` : ''
     function pushOption(option: Argv.OptionVariant, name: string) {
       if (!config.showHidden && !getOptionVisibility(option, session)) return
-      let line = `${authority}${segment.escape(option.syntax)}`
+      let line = `${authority}${h.escape(option.syntax)}`
       const description = session.text(option.descPath ?? [`commands.${command.name}.options.${name}`, ''], option.params)
       if (description) line += '  ' + description
       line = command.ctx.chain('help/option', line, option, command, session)
@@ -236,7 +236,7 @@ function getOptions(command: Command, session: Session<'authority'>, config: Hel
 }
 
 async function showHelp(command: Command, session: Session<'authority'>, config: HelpOptions) {
-  const output = [command.displayName + segment.escape(command.declaration)]
+  const output = [command.displayName + h.escape(command.declaration)]
 
   const description = session.text([`commands.${command.name}.description`, ''], command.config.params)
   if (description) output.push(description)

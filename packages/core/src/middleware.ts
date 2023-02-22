@@ -1,6 +1,6 @@
 import { coerce, makeArray, Random } from '@koishijs/utils'
 import { Awaitable, defineProperty, Dict, Time } from 'cosmokit'
-import { Context, Fragment, segment, Session } from '@satorijs/core'
+import { Context, Fragment, h, Session } from '@satorijs/core'
 import { Computed } from './filter'
 import { Channel, User } from './database'
 
@@ -199,7 +199,7 @@ export class Processor {
     if (!params) return
     session.response = async () => {
       const output = await session.resolve(response, params)
-      return segment.normalize(output, params.map(source => source ? segment.parse(source) : ''))
+      return h.normalize(output, params.map(source => source ? h.parse(source) : ''))
     }
   }
 
@@ -217,7 +217,7 @@ export class Processor {
   private async _process(session: Session, next: Next) {
     let atSelf = false, appel = false
     let content = session.content.trim()
-    session.elements ??= segment.parse(content)
+    session.elements ??= h.parse(content)
 
     // strip mentions
     let hasMention = false

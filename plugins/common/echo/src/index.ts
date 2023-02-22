@@ -1,4 +1,4 @@
-import { Context, Schema, segment } from 'koishi'
+import { Context, h, Schema } from 'koishi'
 import { parsePlatform } from '@koishijs/helpers'
 import zh from './locales/zh.yml'
 
@@ -20,10 +20,10 @@ export function apply(ctx: Context) {
       if (!message) return session.text('.expect-text')
 
       if (options.unescape) {
-        message = segment.unescape(message)
+        message = h.unescape(message)
       }
       if (options.escape) {
-        message = segment.escape(message)
+        message = h.escape(message)
       }
 
       const target = options.user || options.channel

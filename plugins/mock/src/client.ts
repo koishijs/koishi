@@ -1,5 +1,5 @@
 import assert from 'assert'
-import { Context, Messenger, segment, SendOptions, Session, Universal } from 'koishi'
+import { Context, h, Messenger, SendOptions, Session, Universal } from 'koishi'
 import { format } from 'util'
 import { MockBot } from './adapter'
 
@@ -24,7 +24,7 @@ export class MockMessenger extends Messenger {
     this.buffer = ''
   }
 
-  async visit(element: segment) {
+  async visit(element: h) {
     const { type, children } = element
     if (type === 'message' || type === 'figure') {
       await this.flush()
@@ -87,7 +87,7 @@ export class MessageClient {
         if (session.id === uuid) process.nextTick(this.resolve)
       })
       let quote: Universal.Message
-      const elements = segment.parse(content)
+      const elements = h.parse(content)
       if (elements[0]?.type === 'quote') {
         const { attrs, children } = elements.shift()
         quote = { messageId: attrs.id, elements: children, content: children.join('') }

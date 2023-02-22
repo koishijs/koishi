@@ -1,6 +1,6 @@
 import { camelCase, Dict, paramCase, Time } from 'cosmokit'
 import { escapeRegExp } from '@koishijs/utils'
-import { Context, segment, Session } from '@satorijs/core'
+import { Context, h, Session } from '@satorijs/core'
 import { Command } from './command'
 import { Channel, User } from '../database'
 import { Next } from '../middleware'
@@ -113,7 +113,7 @@ export namespace Argv {
 
     parse(source: string, terminator = ''): Argv {
       const tokens: Token[] = []
-      source = segment.parse(source).map((el) => {
+      source = h.parse(source).map((el) => {
         return el.type === 'text' ? el.toString() : whitespace.escape(el.toString())
       }).join('')
       let rest = source, term = ''
@@ -251,7 +251,7 @@ export namespace Argv {
 
   createDomain('string', source => source)
   createDomain('text', source => source, { greedy: true })
-  createDomain('rawtext', source => segment.unescape(source), { greedy: true })
+  createDomain('rawtext', source => h('', h.parse(source)).toString(true), { greedy: true })
   createDomain('boolean', () => true)
 
   createDomain('number', (source, session) => {
@@ -290,7 +290,7 @@ export namespace Argv {
       if (source.includes(':')) return source
       return `${session.platform}:${source}`
     }
-    const code = segment.from(source)
+    const code = h.from(source)
     if (code && code.type === 'at') {
       return `${session.platform}:${code.data.id}`
     }
@@ -303,7 +303,7 @@ export namespace Argv {
       if (source.includes(':')) return source
       return `${session.platform}:${source}`
     }
-    const code = segment.from(source)
+    const code = h.from(source)
     if (code && code.type === 'sharp') {
       return `${session.platform}:${code.data.id}`
     }
@@ -423,7 +423,7 @@ export namespace Argv {
         param = param.trimStart()
         const name = param.replace(/^-+/, '')
         if (!name || !param.startsWith('-')) {
-          symbols.push(segment.escape(param))
+          symbols.push(h.escape(param))
         } else {
           names.push(name)
         }

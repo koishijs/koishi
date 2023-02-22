@@ -1,6 +1,6 @@
 import { extend, observe } from '@koishijs/utils'
 import { Awaitable, defineProperty, isNullable, makeArray, Promisify } from 'cosmokit'
-import { Context, Fragment, Logger, segment, Session } from '@satorijs/core'
+import { Context, Fragment, h, Logger, Session } from '@satorijs/core'
 import { Eval, executeEval, isEvalExpr } from '@minatojs/core'
 import { Argv, Command } from './command'
 import { Channel, Tables, User } from './database'
@@ -136,7 +136,7 @@ extend(Session.prototype as Session.Private, {
   },
 
   async sendQueued(content, delay?: number) {
-    const text = segment.normalize(content).join('')
+    const text = h.normalize(content).join('')
     if (!text) return
     if (isNullable(delay)) {
       const { message, character } = this.app.config.delay
@@ -382,7 +382,7 @@ extend(Session.prototype as Session.Private, {
       const result = await command.execute(argv as Argv, next as Next)
       if (!shouldEmit) {
         if (typeof result === 'string') return result
-        return segment(null, result).toString()
+        return h(null, result).toString()
       }
       await this.send(result)
       return ''

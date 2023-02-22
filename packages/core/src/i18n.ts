@@ -1,7 +1,7 @@
 import { Random } from '@koishijs/utils'
 import { distance } from 'fastest-levenshtein'
 import { Dict, isNullable } from 'cosmokit'
-import { Context, Logger, segment } from '@satorijs/core'
+import { Context, h, Logger } from '@satorijs/core'
 import zhCN from './locales/zh-CN.yml'
 import enUS from './locales/en-US.yml'
 import jaJP from './locales/ja-JP.yml'
@@ -148,7 +148,7 @@ export class I18n {
       return render(value, params, locale)
     }
 
-    return segment.parse(value, params).join('')
+    return h.parse(value, params).join('')
   }
 
   text(locales: Iterable<string>, paths: string[], params: object) {
