@@ -2,7 +2,7 @@ import { App } from 'koishi'
 import mock from '@koishijs/plugin-mock'
 
 describe('Command Suggestion', () => {
-  const app = new App({ prefix: '/' })
+  const app = new App({ prefix: '/', minSimilarity: 0.64 })
   app.plugin(mock)
 
   const client1 = app.mock.client('456')
@@ -61,7 +61,7 @@ describe('Command Suggestion', () => {
 })
 
 describe('session.suggest()', () => {
-  const app = new App({ prefix: '.' })
+  const app = new App({ prefix: '.', minSimilarity: 0.64 })
   app.plugin(mock)
 
   const client = app.mock.client('123', '456')
