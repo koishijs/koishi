@@ -1,8 +1,9 @@
 {
   "name": "@koishijs/plugin-adapter-feishu",
   "description": "Feishu Adapter for Koishi",
-  "version": "1.1.3",
+  "version": "1.2.2",
   "main": "lib/index.js",
+  "module": "lib/index.mjs",
   "typings": "lib/index.d.ts",
   "files": [
     "lib"
@@ -28,7 +29,7 @@
     "koishi"
   ],
   "koishi": {
-    "category": "adapter",
+    "browser": true,
     "description": {
       "en": "Feishu Adapter",
       "zh": "飞书适配器"
@@ -43,6 +44,6 @@
     "koishi": "^4.11.7"
   },
   "dependencies": {
-    "@satorijs/adapter-feishu": "^1.1.3"
+    "@satorijs/adapter-feishu": "^1.2.2"
   }
 }

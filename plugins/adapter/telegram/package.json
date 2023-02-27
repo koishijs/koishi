@@ -1,8 +1,9 @@
 {
   "name": "@koishijs/plugin-adapter-telegram",
   "description": "Telegram Adapter for Koishi",
-  "version": "3.6.7",
+  "version": "3.6.8",
   "main": "lib/index.js",
+  "module": "lib/index.mjs",
   "typings": "lib/index.d.ts",
   "files": [
     "lib"
@@ -25,7 +26,7 @@
     "koishi"
   ],
   "koishi": {
-    "category": "adapter",
+    "browser": true,
     "description": {
       "en": "Telegram Adapter",
       "zh": "Telegram 适配器"
@@ -40,6 +41,6 @@
     "koishi": "^4.11.7"
   },
   "dependencies": {
-    "@satorijs/adapter-telegram": "^3.6.7"
+    "@satorijs/adapter-telegram": "^3.6.8"
   }
 }

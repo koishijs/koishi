@@ -1,4 +1,4 @@
-import DiscordBot from '@satorijs/adapter-discord'
+import { DiscordBot } from '@satorijs/adapter-discord'
 
 export default DiscordBot
 export * from '@satorijs/adapter-discord'

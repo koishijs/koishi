@@ -1,6 +1,6 @@
 commands:
   echo:
-    description: 向当前上下文发送消息
+    description: 发送消息
     options:
       anonymous: 匿名发送消息
       forceAnonymous: 强制匿名发送消息

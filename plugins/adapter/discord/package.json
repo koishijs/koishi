@@ -1,8 +1,9 @@
 {
   "name": "@koishijs/plugin-adapter-discord",
   "description": "Discord Adapter for Koishi",
-  "version": "3.5.1",
+  "version": "3.5.5",
   "main": "lib/index.js",
+  "module": "lib/index.mjs",
   "typings": "lib/index.d.ts",
   "files": [
     "lib"
@@ -25,7 +26,7 @@
     "koishi"
   ],
   "koishi": {
-    "category": "adapter",
+    "browser": true,
     "description": {
       "en": "Discord Adapter",
       "zh": "Discord 适配器"
@@ -40,6 +41,6 @@
     "koishi": "^4.11.7"
   },
   "dependencies": {
-    "@satorijs/adapter-discord": "^3.5.1"
+    "@satorijs/adapter-discord": "^3.5.5"
   }
 }

@@ -1,8 +1,9 @@
 {
   "name": "@koishijs/plugin-database-sqlite",
   "description": "SQLite support for Koishi",
-  "version": "3.3.4",
+  "version": "3.3.10",
   "main": "lib/index.js",
+  "module": "lib/index.mjs",
   "typings": "lib/index.d.ts",
   "files": [
     "lib"
@@ -35,6 +36,9 @@
   ],
   "koishi": {
     "browser": true,
+    "exports": {
+      "sql-wasm.wasm": "@minatojs/sql.js/dist/sql-wasm.wasm"
+    },
     "description": {
       "en": "SQLite support",
       "zh": "SQLite 支持"
@@ -49,6 +53,6 @@
     "koishi": "^4.11.7"
   },
   "dependencies": {
-    "@minatojs/driver-sqlite": "^3.3.4"
+    "@minatojs/driver-sqlite": "^3.3.10"
   }
 }
