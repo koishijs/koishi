@@ -67,7 +67,7 @@ class Watcher {
     const triggerLocalReload = debounce(this.config.debounce, () => this.triggerLocalReload())
 
     this.watcher.on('change', async (path) => {
-      const isEntry = path === loader.filename || path === loader.envfile
+      const isEntry = path === loader.filename || loader.envFiles.includes(path)
       if (loader.suspend && isEntry) {
         loader.suspend = false
         return
@@ -81,6 +81,7 @@ class Watcher {
         } else {
           const config = await loader.readConfig()
           this.ctx.root.state.update(config)
+          this.ctx.emit('config')
         }
       } else {
         if (this.externals.has(path)) {

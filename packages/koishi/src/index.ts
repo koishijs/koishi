@@ -1,3 +1,5 @@
+// This file is only intended for users who do not use CLI.
+
 import { Context } from '@koishijs/core'
 import ns from 'ns-require'
 
@@ -15,6 +17,7 @@ declare module 'cordis' {
 
 class Patch {
   constructor(ctx: Context) {
+    // patch for @koishijs/loader
     ctx.root.envData ??= {}
     ctx.root.baseDir ??= process.cwd()
   }

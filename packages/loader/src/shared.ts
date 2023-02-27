@@ -114,7 +114,7 @@ export abstract class Loader {
   public writable = false
   public mime: string
   public filename: string
-  public envfile: string
+  public envFiles: string[]
   public cache: Dict<string> = Object.create(null)
 
   abstract resolve(name: string): Promise<string>
@@ -146,7 +146,10 @@ export abstract class Loader {
         this.writable = true
       } catch {}
     }
-    this.envfile = path.resolve(this.baseDir, '.env')
+    this.envFiles = [
+      path.resolve(this.baseDir, '.env'),
+      path.resolve(this.baseDir, '.env.local'),
+    ]
   }
 
   private async findConfig() {
@@ -178,7 +181,6 @@ export abstract class Loader {
   }
 
   async writeConfig() {
-    this.app.emit('config')
     this.suspend = true
     if (!this.writable) {
       throw new Error(`cannot overwrite readonly config`)
@@ -188,6 +190,7 @@ export abstract class Loader {
     } else if (this.mime === 'application/json') {
       await fs.writeFile(this.filename, JSON.stringify(this.config, null, 2))
     }
+    this.app.emit('config')
   }
 
   interpolate(source: any) {
