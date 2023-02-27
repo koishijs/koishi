@@ -111,8 +111,9 @@ export abstract class Loader {
   public config: Context.Config
   public entry: Context
   public suspend = false
+  public writable = false
+  public mime: string
   public filename: string
-  public writable: string
   public envfile: string
   public cache: Dict<string> = Object.create(null)
 
@@ -128,7 +129,7 @@ export abstract class Loader {
         this.filename = filename
         this.baseDir = path.dirname(filename)
         const extname = path.extname(filename)
-        this.writable = writable[extname]
+        this.mime = writable[extname]
         if (!Loader.extensions.has(extname)) {
           throw new Error(`extension "${extname}" not supported`)
         }
@@ -139,12 +140,11 @@ export abstract class Loader {
     } else {
       await this.findConfig()
     }
-    if (this.writable) {
+    if (this.mime) {
       try {
         await fs.access(this.filename, constants.W_OK)
-      } catch {
-        this.writable = null
-      }
+        this.writable = true
+      } catch {}
     }
     this.envfile = path.resolve(this.baseDir, '.env')
   }
@@ -154,7 +154,7 @@ export abstract class Loader {
     for (const basename of ['koishi.config', 'koishi']) {
       for (const extname of Loader.extensions) {
         if (files.includes(basename + extname)) {
-          this.writable = writable[extname]
+          this.mime = writable[extname]
           this.filename = path.resolve(this.baseDir, basename + extname)
           return
         }
@@ -164,9 +164,9 @@ export abstract class Loader {
   }
 
   async readConfig() {
-    if (this.writable === 'application/yaml') {
+    if (this.mime === 'application/yaml') {
       this.config = yaml.load(await fs.readFile(this.filename, 'utf8')) as any
-    } else if (this.writable === 'application/json') {
+    } else if (this.mime === 'application/json') {
       // we do not use require here because it will pollute require.cache
       this.config = JSON.parse(await fs.readFile(this.filename, 'utf8')) as any
     } else {
@@ -180,12 +180,13 @@ export abstract class Loader {
   async writeConfig() {
     this.app.emit('config')
     this.suspend = true
-    if (this.writable === 'application/yaml') {
-      await fs.writeFile(this.filename, yaml.dump(this.config))
-    } else if (this.writable === 'application/json') {
-      await fs.writeFile(this.filename, JSON.stringify(this.config, null, 2))
-    } else {
+    if (!this.writable) {
       throw new Error(`cannot overwrite readonly config`)
+    }
+    if (this.mime === 'application/yaml') {
+      await fs.writeFile(this.filename, yaml.dump(this.config))
+    } else if (this.mime === 'application/json') {
+      await fs.writeFile(this.filename, JSON.stringify(this.config, null, 2))
     }
   }
 
