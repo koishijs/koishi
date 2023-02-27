@@ -9,6 +9,7 @@ commands:
       not-found: Commande inconnue.
       hint-authority: les droits minimums sont indiqués entre parenthèses
       hint-subcommand: ces commandes avec un astérisque ont des sous-commandes
+      command-title: 'Commande : {0}'
       command-aliases: 'Alias : {0}.'
       command-examples: 'Exemples :'
       command-authority: 'Droit minimum : {0}.'

@@ -9,6 +9,7 @@ commands:
       not-found: 未找到指令。
       hint-authority: 括弧内為對應的最低權限
       hint-subcommand: 附有星號的表示其包含子指令
+      command-title: 指令：{0}
       command-aliases: 別名：{0}。
       command-examples: 使用示例：
       command-authority: 最低權限：{0} 級。

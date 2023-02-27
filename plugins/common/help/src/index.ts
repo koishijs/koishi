@@ -236,7 +236,7 @@ function getOptions(command: Command, session: Session<'authority'>, config: Hel
 }
 
 async function showHelp(command: Command, session: Session<'authority'>, config: HelpOptions) {
-  const output = [command.displayName + h.escape(command.declaration)]
+  const output = [session.text('.command-title', [command.displayName + command.declaration])]
 
   const description = session.text([`commands.${command.name}.description`, ''], command.config.params)
   if (description) output.push(description)

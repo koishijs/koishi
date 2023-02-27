@@ -3,7 +3,9 @@ import * as help from '@koishijs/plugin-help'
 import mock from '@koishijs/plugin-mock'
 import memory from '@koishijs/plugin-database-memory'
 
-const app = new App()
+const app = new App({
+  minSimilarity: 0.64,
+})
 
 app.plugin(mock)
 app.plugin(help)
@@ -33,7 +35,7 @@ describe('@koishijs/plugin-help', () => {
     await client.shouldReply('帮助', message)
 
     await client.shouldReply('help help', message = [
-      'help [command]',
+      '指令：help [command]',
       '显示帮助信息',
       '可用的选项有：',
       '    -a, --authority  显示权限设置',
@@ -55,12 +57,12 @@ describe('@koishijs/plugin-help', () => {
     app.command('foo5', 'DESCRIPTION').usage(({ userId }) => '' + userId)
     app.command('foo6', 'DESCRIPTION').example('EXAMPLE TEXT')
 
-    await client.shouldReply('help foo1', 'foo1\nDESCRIPTION\n别名：foo。')
-    await client.shouldReply('help foo2', 'foo2\nDESCRIPTION\n最低权限：2 级。')
-    await client.shouldReply('help foobar', 'foo3\nDESCRIPTION')
-    await client.shouldReply('help foo4', 'foo4\nDESCRIPTION\nUSAGE TEXT')
-    await client.shouldReply('help foo5', 'foo5\nDESCRIPTION\n123')
-    await client.shouldReply('help foo6', 'foo6\nDESCRIPTION\n使用示例：\n    EXAMPLE TEXT')
+    await client.shouldReply('help foo1', '指令：foo1\nDESCRIPTION\n别名：foo。')
+    await client.shouldReply('help foo2', '指令：foo2\nDESCRIPTION\n最低权限：2 级。')
+    await client.shouldReply('help foobar', '指令：foo3\nDESCRIPTION')
+    await client.shouldReply('help foo4', '指令：foo4\nDESCRIPTION\nUSAGE TEXT')
+    await client.shouldReply('help foo5', '指令：foo5\nDESCRIPTION\n123')
+    await client.shouldReply('help foo6', '指令：foo6\nDESCRIPTION\n使用示例：\n    EXAMPLE TEXT')
   })
 
   it('command options', async () => {
@@ -71,7 +73,7 @@ describe('@koishijs/plugin-help', () => {
       .option('opt2', '[arg:boolean]  选项3')
       .option('opt3', '-o [arg:boolean]', { hidden: true })
 
-    await client.shouldReply('help bar', message = 'bar &lt;arg&gt;\nDESCRIPTION')
+    await client.shouldReply('help bar', message = '指令：bar &lt;arg&gt;\nDESCRIPTION')
 
     bar.config.hideOptions = false
 
@@ -108,21 +110,21 @@ describe('@koishijs/plugin-help', () => {
     const foo3 = foo1.subcommand('foo3')
 
     await client.shouldReply('help foo2', [
-      'foo2',
+      '指令：foo2',
       'DESCRIPTION',
       '可用的子指令有：',
       '    foo1  DESCRIPTION',
     ].join('\n'))
 
     await client.shouldReply('help foo2 -a', [
-      'foo2',
+      '指令：foo2',
       'DESCRIPTION',
       '可用的子指令有（括号内为对应的最低权限等级，标有星号的表示含有子指令）：',
       '    foo1 (1*)  DESCRIPTION',
     ].join('\n'))
 
     await client.shouldReply('help foo1 -a', [
-      'foo1',
+      '指令：foo1',
       'DESCRIPTION',
       '别名：foo。',
       '可用的子指令有（括号内为对应的最低权限等级）：',
@@ -173,6 +175,6 @@ describe('@koishijs/plugin-help', () => {
 
     const client = app.mock.client('123')
     await client.shouldReply('test', '缺少参数，输入帮助以查看用法。')
-    await client.shouldReply('test -h', 'test &lt;arg&gt;')
+    await client.shouldReply('test -h', '指令：test &lt;arg&gt;')
   })
 })

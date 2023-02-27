@@ -9,6 +9,7 @@ commands:
       not-found: Command not found.
       hint-authority: this minimum authority is marked in parentheses
       hint-subcommand: those marked with an asterisk have subcommands
+      command-title: 'Command: {0}'
       command-aliases: 'Aliases: {0}.'
       command-examples: 'Examples:'
       command-authority: 'Minimal authority: {0}.'

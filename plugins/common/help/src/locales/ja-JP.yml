@@ -9,7 +9,8 @@ commands:
       not-found: コマンドが見つかりません。
       hint-authority: 最低権限は括弧にで表示されています
       hint-subcommand: サブコマンドがあるコマンドはアスタリスクで表示されています
-      command-aliases: '別名: {0}。'
+      command-title: 'コマンド：{0}'
+      command-aliases: '別名：{0}。'
       command-examples: 例：
       command-authority: '最低権限：{0}。'
       subcommand-prolog: '利用可能なサブコマンド{0}：'
