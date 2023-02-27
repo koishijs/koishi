@@ -91,12 +91,14 @@ export function apply(ctx: Context) {
       const minInterval = session.resolve(command.config.minInterval)
       const maxUsage = session.resolve(command.config.maxUsage)
 
-      if (maxUsage < Infinity && checkUsage(name, session.user, maxUsage)) {
-        return sendHint('usage-exhausted')
-      }
-
+      // interval check should be performed before usage check
+      // https://github.com/koishijs/koishi/issues/752
       if (minInterval > 0 && checkTimer(name, session.user, minInterval)) {
         return sendHint('too-frequent')
+      }
+
+      if (maxUsage < Infinity && checkUsage(name, session.user, maxUsage)) {
+        return sendHint('usage-exhausted')
       }
     }
   })

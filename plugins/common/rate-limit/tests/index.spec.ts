@@ -34,7 +34,7 @@ describe('@koishijs/plugin-rate-limit', () => {
 
     it('Extended Help', async () => {
       await client1.shouldReply('help foo -H', [
-        'foo',
+        '指令：foo',
         '指令1',
         '已调用次数：1/3。',
         '可用的选项有：',
@@ -79,8 +79,8 @@ describe('@koishijs/plugin-rate-limit', () => {
     it('Extended Help', async () => {
       const clock = install({ now })
       try {
-        await client1.shouldReply('help bar', 'bar\n指令2\n距离下次调用还需：60/180 秒。')
-        await client2.shouldReply('help bar', 'bar\n指令2\n距离下次调用还需：0/180 秒。')
+        await client1.shouldReply('help bar', '指令：bar\n指令2\n距离下次调用还需：60/180 秒。')
+        await client2.shouldReply('help bar', '指令：bar\n指令2\n距离下次调用还需：0/180 秒。')
       } finally {
         clock.uninstall()
       }
