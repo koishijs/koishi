@@ -119,7 +119,7 @@ export abstract class Loader {
 
   abstract resolve(name: string): Promise<string>
   abstract resolvePlugin(name: string): Promise<any>
-  abstract fullReload(): void
+  abstract fullReload(code?: number): void
 
   async init(filename?: string) {
     if (filename) {

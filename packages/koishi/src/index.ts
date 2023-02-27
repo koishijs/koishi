@@ -1,6 +1,7 @@
 // This file is only intended for users who do not use CLI.
 
 import { Context } from '@koishijs/core'
+import {} from '@koishijs/loader'
 import ns from 'ns-require'
 
 export { Router, WebSocketLayer } from '@satorijs/satori'
