@@ -336,7 +336,10 @@ export namespace Argv {
         required: cap[0][0] === '<',
       })
     }
-    result.stripped = source.replace(/:[\w-]+[>\]]/g, str => str.slice(-1)).trimEnd()
+    result.stripped = source.replace(/:[\w-]+(?=[>\]])/g, str => {
+      const domain = builtin[str.slice(1)]
+      return domain?.greedy ? '...' : ''
+    }).trimEnd()
     return result
   }
 
@@ -369,6 +372,8 @@ export namespace Argv {
   }
 
   export interface OptionConfig<T extends Type = Type> {
+    aliases?: string[]
+    symbols?: string[]
     value?: any
     fallback?: any
     type?: T
@@ -417,19 +422,19 @@ export namespace Argv {
       const bracket = cap[2] || ''
       const desc = cap[3].trim()
 
-      const names: string[] = []
-      const symbols: string[] = []
+      const aliases: string[] = config.aliases ?? []
+      const symbols: string[] = config.symbols ?? []
       for (let param of syntax.trim().split(',')) {
         param = param.trimStart()
         const name = param.replace(/^-+/, '')
         if (!name || !param.startsWith('-')) {
           symbols.push(h.escape(param))
         } else {
-          names.push(name)
+          aliases.push(name)
         }
       }
 
-      if (!('value' in config) && !names.includes(param)) {
+      if (!('value' in config) && !aliases.includes(param)) {
         syntax += ', --' + param
       }
 
@@ -452,7 +457,7 @@ export namespace Argv {
         path += '.' + config.value
         option.variants[config.value] = { ...config, syntax }
         option.valuesSyntax[config.value] = syntax
-        names.forEach(name => option.values[name] = config.value)
+        aliases.forEach(name => option.values[name] = config.value)
       } else if (!bracket.trim()) {
         option.type = 'boolean'
       } else if (!option.type && (fallbackType === 'string' || fallbackType === 'number')) {
@@ -463,7 +468,7 @@ export namespace Argv {
         this.ctx.i18n.define('', path, desc)
       }
 
-      this._assignOption(option, names, this._namedOptions)
+      this._assignOption(option, aliases, this._namedOptions)
       this._assignOption(option, symbols, this._symbolicOptions)
       if (!this._namedOptions[param]) {
         this._namedOptions[param] = option
