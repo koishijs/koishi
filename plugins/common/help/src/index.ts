@@ -181,7 +181,7 @@ function formatCommands(path: string, session: Session<'authority'>, children: C
   let hasSubcommand = false
   const firstPrefix = session.app.config.prefix[0] ?? ''
   const output = commands.map(({ name, displayName, config, children }) => {
-    let output = firstPrefix + '    ' + displayName
+    let output = '    ' + firstPrefix + displayName
     if (options.authority) {
       const authority = session.resolve(config.authority)
       output += ` (${authority}${children.length ? (hasSubcommand = true, '*') : ''})`
