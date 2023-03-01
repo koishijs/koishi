@@ -17,12 +17,17 @@ declare module 'koishi' {
       hideOptions?: boolean
       /** hide command */
       hidden?: Computed<boolean>
+      /** localization params */
+      params?: object
     }
   }
 
   namespace Argv {
     interface OptionConfig {
+      /** hide option */
       hidden?: Computed<boolean>
+      /** localization params */
+      params?: object
     }
   }
 }
@@ -70,11 +75,14 @@ export function apply(ctx: Context, config: Config) {
   ctx.i18n.define('zh-TW', zhTW)
 
   ctx.schema.extend('command', Schema.object({
+    hideOptions: Schema.boolean().description('是否隐藏所有选项。').default(false).hidden(),
     hidden: Schema.computed(Schema.boolean()).description('在帮助菜单中隐藏指令。').default(false),
+    params: Schema.any().description('帮助信息的本地化参数。').hidden(),
   }), 900)
 
   ctx.schema.extend('command-option', Schema.object({
     hidden: Schema.computed(Schema.boolean()).description('在帮助菜单中隐藏选项。').default(false),
+    params: Schema.any().description('帮助信息的本地化参数。').hidden(),
   }), 900)
 
   if (config.options !== false) {

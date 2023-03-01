@@ -342,10 +342,12 @@ export namespace Command {
     showWarning?: boolean
     /** depend on existing commands */
     patch?: boolean
-    params?: object
   }
 
   export const Config: Schema<Config> = Schema.object({
     authority: Schema.computed(Schema.natural()).description('指令的权限等级。').default(1),
+    checkUnknown: Schema.boolean().description('是否检查未知选项。').default(false).hidden(),
+    checkArgCount: Schema.boolean().description('是否检查参数数量。').default(false).hidden(),
+    showWarning: Schema.boolean().description('是否显示警告。').default(true).hidden(),
   })
 }

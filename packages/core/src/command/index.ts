@@ -1,5 +1,5 @@
 import { Awaitable, defineProperty } from 'cosmokit'
-import { Context, h, Session } from '@satorijs/core'
+import { Context, h, Schema, Session } from '@satorijs/core'
 import { Command } from './command'
 import { Argv } from './parser'
 import validate from './validate'
@@ -105,6 +105,9 @@ export class Commander {
     })
 
     ctx.schema.extend('command', Command.Config, 1000)
+    ctx.schema.extend('command-option', Schema.object({
+      authority: Schema.computed(Schema.natural()).description('选项的权限等级。').default(0),
+    }), 1000)
   }
 
   private _resolvePrefixes(session: Session) {
