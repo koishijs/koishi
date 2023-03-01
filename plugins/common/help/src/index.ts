@@ -144,8 +144,7 @@ export function apply(ctx: Context, config: Config) {
     .channelFields(createCollector('channel'))
     .option('authority', '-a')
     .option('showHidden', '-H')
-    .action(async (argv, target) => {
-      const { session, options } = argv
+    .action(async ({ session, options }, target) => {
       if (!target) {
         const commands = $._commandList.filter(cmd => cmd.parent === null)
         const output = formatCommands('.global-prolog', session, commands, options)
@@ -179,9 +178,9 @@ function formatCommands(path: string, session: Session<'authority'>, children: C
   if (!commands.length) return []
 
   let hasSubcommand = false
-  const firstPrefix = session.app.config.prefix[0] ?? ''
+  const prefix = session.resolve(session.app.config.prefix)[0] ?? ''
   const output = commands.map(({ name, displayName, config, children }) => {
-    let output = '    ' + firstPrefix + displayName
+    let output = '    ' + prefix + displayName
     if (options.authority) {
       const authority = session.resolve(config.authority)
       output += ` (${authority}${children.length ? (hasSubcommand = true, '*') : ''})`
@@ -195,12 +194,7 @@ function formatCommands(path: string, session: Session<'authority'>, children: C
   const hintText = hints.length
     ? session.text('general.paren', [hints.join(session.text('general.comma'))])
     : ''
-  const prefixes = session.app.config.prefix
-    .filter(Boolean)
-    .map(prefix => session.text('general.quote', [prefix]))
-    .join(session.text('general.comma'))
   output.unshift(session.text(path, [hintText]))
-  output.unshift(session.text('.global-prefix', [prefixes]))
   return output
 }
 
