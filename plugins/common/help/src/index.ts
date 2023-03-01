@@ -196,7 +196,7 @@ function formatCommands(path: string, session: Session<'authority'>, children: C
     ? session.text('general.paren', [hints.join(session.text('general.comma'))])
     : ''
   const prefixes = session.app.config.prefix
-    .filter(prefix => !!prefix)
+    .filter(Boolean)
     .map(prefix => session.text('general.quote', [prefix]))
     .join(session.text('general.comma'))
   output.unshift(session.text(path, [hintText]))
