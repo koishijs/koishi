@@ -1,4 +1,4 @@
-import { Context, Dict, interpolate, isNullable, Logger, Plugin, resolveConfig, valueMap } from '@koishijs/core'
+import { Context, Dict, ForkScope, interpolate, isNullable, Logger, Plugin, resolveConfig, valueMap } from '@koishijs/core'
 import { constants, promises as fs } from 'fs'
 import * as yaml from 'js-yaml'
 import path from 'path'
@@ -248,7 +248,7 @@ export abstract class Loader {
     }
     const service = 'plugin:' + name
     Context.service(service)
-    this.app[service] = fork.runtime
+    fork.runtime.ctx[service] = fork.runtime
     fork.runtime.disposables.push(() => {
       this.app[service] = null
     })
@@ -261,6 +261,15 @@ export abstract class Loader {
       fork.dispose()
       delete ctx.scope[Loader.kRecord][key]
       logger.info(`unload plugin %c`, key)
+    }
+  }
+
+  getRefName(fork: ForkScope) {
+    const record = fork.parent.scope[Loader.kRecord]
+    if (!record) return
+    for (const name in record) {
+      if (record[name] !== fork) continue
+      return name
     }
   }
 
@@ -282,26 +291,20 @@ export abstract class Loader {
     })
 
     app.on('internal/update', (fork) => {
-      const record = fork.parent.scope[Loader.kRecord]
-      if (!record) return
-      for (const name in record) {
-        if (record[name] !== fork) continue
-        logger.info(`reload plugin %c`, name)
-      }
+      const name = this.getRefName(fork)
+      if (name) logger.info(`reload plugin %c`, name)
     })
 
     app.on('internal/before-update', (fork, config) => {
       if (fork[kUpdate]) return delete fork[kUpdate]
-      const record = fork.parent.scope[Loader.kRecord]
-      if (!record) return
-      for (const name in record) {
-        if (record[name] !== fork) continue
-        const simplify = fork.runtime.schema?.simplify
-        fork.parent.scope.config[name] = {
-          ...separate(fork.parent.scope.config[name])[1],
-          ...simplify ? simplify(config) : config,
-        }
+      const name = this.getRefName(fork)
+      if (!name) return
+      const simplify = fork.runtime.schema?.simplify
+      fork.parent.scope.config[name] = {
+        ...separate(fork.parent.scope.config[name])[1],
+        ...simplify ? simplify(config) : config,
       }
+      this.writeConfig()
     })
 
     return app
