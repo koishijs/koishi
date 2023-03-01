@@ -17,6 +17,6 @@ commands:
       command-authority: 最低权限：{0} 级。
       subcommand-prolog: 可用的子指令有{0}：
       global-prolog: 当前可用的指令有{0}：
-      global-epilog: 输入“帮助 指令名”查看特定指令的语法和使用示例。
+      global-epilog: 输入“{0}help 指令名”查看特定指令的语法和使用示例。
       available-options: 可用的选项有：
       available-options-with-authority: 可用的选项有（括号内为额外要求的权限等级）：

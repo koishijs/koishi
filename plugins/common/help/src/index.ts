@@ -146,9 +146,10 @@ export function apply(ctx: Context, config: Config) {
     .option('showHidden', '-H')
     .action(async ({ session, options }, target) => {
       if (!target) {
+        const prefix = session.resolve(session.app.config.prefix)[0] ?? ''
         const commands = $._commandList.filter(cmd => cmd.parent === null)
         const output = formatCommands('.global-prolog', session, commands, options)
-        const epilog = session.text('.global-epilog')
+        const epilog = session.text('.global-epilog', [prefix])
         if (epilog) output.push(epilog)
         return output.filter(Boolean).join('\n')
       }
