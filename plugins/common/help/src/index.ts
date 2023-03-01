@@ -179,8 +179,9 @@ function formatCommands(path: string, session: Session<'authority'>, children: C
   if (!commands.length) return []
 
   let hasSubcommand = false
+  const firstPrefix = session.app.config.prefix[0] ?? ''
   const output = commands.map(({ name, displayName, config, children }) => {
-    let output = '    ' + displayName
+    let output = firstPrefix + '    ' + displayName
     if (options.authority) {
       const authority = session.resolve(config.authority)
       output += ` (${authority}${children.length ? (hasSubcommand = true, '*') : ''})`
@@ -194,7 +195,12 @@ function formatCommands(path: string, session: Session<'authority'>, children: C
   const hintText = hints.length
     ? session.text('general.paren', [hints.join(session.text('general.comma'))])
     : ''
+  const prefixes = session.app.config.prefix
+    .filter(prefix => !!prefix)
+    .map(prefix => session.text('general.quote', [prefix]))
+    .join(session.text('general.comma'))
   output.unshift(session.text(path, [hintText]))
+  output.unshift(session.text('.global-prefix', [prefixes]))
   return output
 }
 

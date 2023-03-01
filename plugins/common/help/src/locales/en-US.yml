@@ -14,6 +14,7 @@ commands:
       command-examples: 'Examples:'
       command-authority: 'Minimal authority: {0}.'
       subcommand-prolog: 'Available subcommands{0}:'
+      global-prefix: 'Available command prefixes: {0}'
       global-prolog: 'Available commands{0}:'
       global-epilog: Type "help <command>" to see syntax and examples for a specific command.
       available-options: 'Available options:'
