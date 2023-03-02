@@ -299,10 +299,10 @@ export abstract class Loader {
       if (fork[kUpdate]) return delete fork[kUpdate]
       const name = this.getRefName(fork)
       if (!name) return
-      const simplify = fork.runtime.schema?.simplify
+      const { schema } = fork.runtime
       fork.parent.scope.config[name] = {
         ...separate(fork.parent.scope.config[name])[1],
-        ...simplify ? simplify(config) : config,
+        ...schema ? schema.simplify(config) : config,
       }
       this.writeConfig()
     })

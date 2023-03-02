@@ -1,8 +1,8 @@
-import { coerce, Context, Dict, Logger, MainScope, makeArray, Schema } from '@koishijs/core'
+import { coerce, Context, Dict, ForkScope, Logger, MainScope, makeArray, Schema } from '@koishijs/core'
 import { FSWatcher, watch, WatchOptions } from 'chokidar'
 import { relative, resolve } from 'path'
 import { debounce } from 'throttle-debounce'
-import { unwrapExports } from '@koishijs/loader'
+import { Loader, unwrapExports } from '@koishijs/loader'
 
 function loadDependencies(filename: string, ignored: Set<string>) {
   const dependencies = new Set<string>()
@@ -13,6 +13,11 @@ function loadDependencies(filename: string, ignored: Set<string>) {
   }
   traverse(require.cache[filename])
   return dependencies
+}
+
+interface Reload {
+  filename: string
+  children: Map<ForkScope, string>
 }
 
 const logger = new Logger('watch')
@@ -165,7 +170,7 @@ class Watcher {
     const pending = new Map<string, MainScope>()
 
     /** plugins that should be reloaded */
-    const reloads = new Map<MainScope, string>()
+    const reloads = new Map<MainScope, Reload>()
 
     // we assume that plugin entry files are "atomic"
     // that is, reloading them will not cause any other reloads
@@ -205,7 +210,13 @@ class Watcher {
           queued.push(state.runtime)
         }
       }
-      if (!isMarked) reloads.set(runtime, filename)
+      if (!isMarked) {
+        const children = new Map<ForkScope, string>()
+        reloads.set(runtime, { filename, children })
+        for (const state of runtime.children) {
+          children.set(state, this.ctx.loader.getRefName(state))
+        }
+      }
     }
 
     // save require.cache for rollback
@@ -226,7 +237,7 @@ class Watcher {
     // attempt to load entry files
     const attempts = {}
     try {
-      for (const [, filename] of reloads) {
+      for (const [, { filename }] of reloads) {
         attempts[filename] = unwrapExports(require(filename))
       }
     } catch (err) {
@@ -235,9 +246,8 @@ class Watcher {
     }
 
     try {
-      for (const [runtime, filename] of reloads) {
+      for (const [runtime, { filename, children }] of reloads) {
         const path = relative(this.root, filename)
-        const states = runtime.children.slice()
 
         try {
           this.ctx.registry.delete(runtime.plugin)
@@ -246,9 +256,9 @@ class Watcher {
         }
 
         try {
-          const plugin = attempts[filename]
-          for (const state of states) {
-            state.parent.plugin(plugin, state.config)
+          for (const [state, name] of children) {
+            const fork = state.parent.plugin(attempts[filename], state.config)
+            if (name) state.parent.scope[Loader.kRecord][name] = fork
           }
           logger.info('reload plugin at %c', path)
         } catch (err) {
@@ -259,10 +269,13 @@ class Watcher {
     } catch {
       // rollback require.cache and plugin states
       rollback()
-      for (const [runtime, filename] of reloads) {
+      for (const [runtime, { filename, children }] of reloads) {
         try {
           this.ctx.registry.delete(attempts[filename])
-          runtime.parent.plugin(runtime.plugin, runtime.config)
+          for (const [state, name] of children) {
+            const fork = state.parent.plugin(runtime.plugin, state.config)
+            if (name) state.parent.scope[Loader.kRecord][name] = fork
+          }
         } catch (err) {
           logger.warn(err)
         }

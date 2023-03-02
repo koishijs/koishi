@@ -32,7 +32,7 @@ declare module '@koishijs/core' {
 Object.assign(Context.Config.Advanced.dict, {
   timezoneOffset: Schema.number().description('时区偏移量 (分钟)。').default(new Date().getTimezoneOffset()),
   stackTraceLimit: Schema.natural().description('报错的调用堆栈深度。').default(10),
-  plugins: Schema.object({}).hidden(),
+  plugins: Schema.any().hidden(),
 })
 
 function handleException(error: any) {
