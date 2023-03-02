@@ -146,9 +146,10 @@ export class Commander {
     const path = def.split(' ', 1)[0].toLowerCase()
     const decl = def.slice(path.length)
     const segments = path.split(/(?=[./])/g)
+    const caller = this.caller
 
     let parent: Command, root: Command
-    const list: Command[] = []
+    const extra: Command[] = []
     segments.forEach((segment, index) => {
       const code = segment.charCodeAt(0)
       const name = code === 46 ? parent.name + segment : code === 47 ? segment.slice(1) : segment
@@ -169,8 +170,8 @@ export class Commander {
         }
         return parent = command
       }
-      command = new Command(name, index === segments.length - 1 ? decl : '', this.caller)
-      list.push(command)
+      command = new Command(name, index === segments.length - 1 ? decl : '', caller)
+      extra.push(command)
       if (!root) root = command
       if (parent) {
         command.parent = parent
@@ -180,17 +181,17 @@ export class Commander {
       parent = command
     })
 
-    if (desc) this.caller.i18n.define('', `commands.${parent.name}.description`, desc)
+    if (desc) caller.i18n.define('', `commands.${parent.name}.description`, desc)
     Object.assign(parent.config, config)
-    list.forEach(command => this.caller.emit('command-added', command))
+    extra.forEach(command => caller.emit('command-added', command))
     if (!config?.patch) {
-      if (root) this.caller.state.disposables.unshift(() => root.dispose())
+      if (root) caller.state.disposables.unshift(() => root.dispose())
       return parent
     }
 
     if (root) root.dispose()
     const command = Object.create(parent)
-    command._disposables = this.caller.state.disposables
+    command._disposables = caller.state.disposables
     return command
   }
 }
