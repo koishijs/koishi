@@ -10,10 +10,6 @@ export * from './command'
 export * from './parser'
 export * from './validate'
 
-interface CommandMap extends Map<string, Command> {
-  resolve(key: string): Command
-}
-
 declare module '@satorijs/core' {
   interface Context {
     $commander: Commander
@@ -38,15 +34,16 @@ export namespace Commander {
   }
 }
 
-export class Commander {
+export class Commander extends Map<string, Command> {
   static readonly key = '$commander'
   static readonly methods = ['command']
 
   _commandList: Command[] = []
-  _commands = new Map<string, Command>() as CommandMap
+  _commands = this
   _shortcuts: Command.Shortcut[] = []
 
   constructor(private ctx: Context, private config: Commander.Config = {}) {
+    super()
     defineProperty(this, Context.current, ctx)
     ctx.plugin(validate)
 
@@ -130,14 +127,15 @@ export class Commander {
     if (!key) return
     const segments = key.split('.')
     let i = 1, name = segments[0], cmd: Command
-    while ((cmd = this.getCommand(name)) && i < segments.length) {
+    while ((cmd = this.get(name)) && i < segments.length) {
       name = cmd.name + '.' + segments[i++]
     }
     return cmd
   }
 
+  /** @deprecated use `.get()` instead */
   getCommand(name: string) {
-    return this._commands.get(name)
+    return this.get(name)
   }
 
   command(def: string, ...args: [Command.Config?] | [string, Command.Config?]) {
@@ -153,7 +151,7 @@ export class Commander {
     segments.forEach((segment, index) => {
       const code = segment.charCodeAt(0)
       const name = code === 46 ? parent.name + segment : code === 47 ? segment.slice(1) : segment
-      let command = this.getCommand(name)
+      let command = this.get(name)
       if (command) {
         if (parent) {
           if (command === parent) {
@@ -184,15 +182,14 @@ export class Commander {
     if (desc) caller.i18n.define('', `commands.${parent.name}.description`, desc)
     Object.assign(parent.config, config)
     extra.forEach(command => caller.emit('command-added', command))
+    parent[Context.current] = caller
     if (!config?.patch) {
       if (root) caller.state.disposables.unshift(() => root.dispose())
       return parent
     }
 
     if (root) root.dispose()
-    const command = Object.create(parent)
-    command._disposables = caller.state.disposables
-    return command
+    return parent
   }
 }
 

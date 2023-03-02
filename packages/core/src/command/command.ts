@@ -41,8 +41,7 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
   _examples: string[] = []
   _usage?: Command.Usage
   _disposed?: boolean
-  _disposables?: Disposable[]
-  _disposables2: Disposable[] = []
+  _disposables?: Disposable[] = []
 
   private _userFields: FieldCollector<'user'>[] = [['locale']]
   private _channelFields: FieldCollector<'channel'>[] = [['locale']]
@@ -82,6 +81,10 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
     ctx.$commander._commandList.push(this)
   }
 
+  get caller(): Context {
+    return this[Context.current] || this.ctx
+  }
+
   get displayName() {
     return this._aliases[0]
   }
@@ -109,18 +112,19 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
     }
 
     // register global
-    const previous = this.ctx.$commander.getCommand(name)
+    const previous = this.ctx.$commander.get(name)
     if (!previous) {
-      this.ctx.$commander._commands.set(name, this)
+      this.ctx.$commander.set(name, this)
     } else if (previous !== this) {
       throw new Error(`duplicate command names: "${name}"`)
     }
 
     // add disposable
-    this._disposables?.push(() => {
+    const dispose = this.caller.collect('command.alias', () => {
       remove(this._aliases, name)
-      this.ctx.$commander._commands.delete(name)
+      return this.ctx.$commander.delete(name)
     })
+    this._disposables.push(dispose)
   }
 
   [Symbol.for('nodejs.util.inspect.custom')]() {
@@ -186,7 +190,7 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
       i18n: config.i18n as never,
       regex,
     })
-    this._disposables2.push(dispose)
+    this._disposables.push(dispose)
     return this
   }
 
@@ -221,7 +225,7 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
     }
     const config = args[0] as Argv.OptionConfig
     this._createOption(name, desc, config || {})
-    this._disposables?.push(() => this.removeOption(name))
+    this.caller.collect('command.option', () => this.removeOption(name))
     return this
   }
 
@@ -246,7 +250,7 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
     } else {
       this._checkers.unshift(callback)
     }
-    this._disposables?.push(() => remove(this._checkers, callback))
+    this.caller.scope.disposables?.push(() => remove(this._checkers, callback))
     return this
   }
 
@@ -256,7 +260,7 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
     } else {
       this._actions.push(callback)
     }
-    this._disposables?.push(() => remove(this._actions, callback))
+    this.caller.scope.disposables?.push(() => remove(this._actions, callback))
     return this
   }
 
@@ -317,12 +321,11 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
 
   dispose() {
     this._disposed = true
-    this._disposables2.forEach(dispose => dispose())
+    this._disposables.splice(0).forEach(dispose => dispose())
     this.ctx.emit('command-removed', this)
     for (const cmd of this.children.slice()) {
       cmd.dispose()
     }
-    this._aliases.forEach(name => this.ctx.$commander._commands.delete(name))
     remove(this.ctx.$commander._commandList, this)
     if (this.parent) {
       remove(this.parent.children, this)

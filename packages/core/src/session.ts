@@ -355,7 +355,7 @@ extend(Session.prototype as Session.Private, {
       }
       if (!this.resolveCommand(argv)) return ''
     } else {
-      argv.command ||= this.app.$commander.getCommand(argv.name)
+      argv.command ||= this.app.$commander.get(argv.name)
       if (!argv.command) {
         logger.warn(new Error(`cannot find command ${argv.name}`))
         return ''
