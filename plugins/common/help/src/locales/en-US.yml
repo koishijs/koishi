@@ -15,6 +15,6 @@ commands:
       command-authority: 'Minimal authority: {0}.'
       subcommand-prolog: 'Available subcommands{0}:'
       global-prolog: 'Available commands{0}:'
-      global-epilog: Type "help <command>" to see syntax and examples for a specific command.
+      global-epilog: Type "{0}help <command>" to see syntax and examples for a specific command.
       available-options: 'Available options:'
       available-options-with-authority: 'Available options (parentheses indicate additional authority requirement):'

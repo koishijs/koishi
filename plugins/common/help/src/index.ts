@@ -152,12 +152,12 @@ export function apply(ctx: Context, config: Config) {
     .channelFields(createCollector('channel'))
     .option('authority', '-a')
     .option('showHidden', '-H')
-    .action(async (argv, target) => {
-      const { session, options } = argv
+    .action(async ({ session, options }, target) => {
       if (!target) {
+        const prefix = session.resolve(session.app.config.prefix)[0] ?? ''
         const commands = $._commandList.filter(cmd => cmd.parent === null)
         const output = formatCommands('.global-prolog', session, commands, options)
-        const epilog = session.text('.global-epilog')
+        const epilog = session.text('.global-epilog', [prefix])
         if (epilog) output.push(epilog)
         return output.filter(Boolean).join('\n')
       }
@@ -187,8 +187,9 @@ function formatCommands(path: string, session: Session<'authority'>, children: C
   if (!commands.length) return []
 
   let hasSubcommand = false
+  const prefix = session.resolve(session.app.config.prefix)[0] ?? ''
   const output = commands.map(({ name, displayName, config, children }) => {
-    let output = '    ' + displayName
+    let output = '    ' + prefix + displayName
     if (options.authority) {
       const authority = session.resolve(config.authority)
       output += ` (${authority}${children.length ? (hasSubcommand = true, '*') : ''})`
