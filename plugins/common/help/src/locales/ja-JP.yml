@@ -15,6 +15,6 @@ commands:
       command-authority: '最低権限：{0}。'
       subcommand-prolog: '利用可能なサブコマンド{0}：'
       global-prolog: '利用可能なコマンド{0}：'
-      global-epilog: 「help <command>」を送信してコマンドの使い方を表示します。
+      global-epilog: 「{0}help <command>」を送信してコマンドの使い方を表示します。
       available-options: '利用可能なオプション：'
       available-options-with-authority: '利用可能なオプション（必要な権限は括弧にで表示されています）：'
