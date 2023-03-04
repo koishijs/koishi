@@ -1,5 +1,5 @@
 import { defineDriver, Schema } from 'koishi'
-import MySQLDriver from '@minatojs/driver-mysql'
+import { MySQLDriver } from '@minatojs/driver-mysql'
 
 export default defineDriver(MySQLDriver, Schema.object({
   host: Schema.string().description('要连接到的主机名。').default('localhost'),

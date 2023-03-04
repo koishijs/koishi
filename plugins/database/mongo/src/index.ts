@@ -1,5 +1,5 @@
 import { defineDriver, Schema } from 'koishi'
-import MongoDriver from '@minatojs/driver-mongo'
+import { MongoDriver } from '@minatojs/driver-mongo'
 
 export default defineDriver(MongoDriver, Schema.object({
   protocol: Schema.string().description('要使用的协议名。').default('mongodb'),

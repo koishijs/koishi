@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/core",
   "description": "Core Features for Koishi",
-  "version": "4.11.8",
+  "version": "4.11.9",
   "main": "lib/index.cjs",
   "module": "lib/index.mjs",
   "typings": "lib/index.d.ts",
@@ -30,11 +30,11 @@
     "chai-shape": "^1.0.0"
   },
   "dependencies": {
-    "@koishijs/utils": "^7.0.0",
+    "@koishijs/utils": "^7.0.1",
     "@minatojs/core": "^2.2.2",
-    "@satorijs/core": "^2.2.0",
-    "cordis": "^2.7.3",
-    "cosmokit": "^1.4.0",
+    "@satorijs/core": "^2.2.1",
+    "cordis": "^2.7.4",
+    "cosmokit": "^1.4.1",
     "fastest-levenshtein": "^1.0.16"
   }
 }
