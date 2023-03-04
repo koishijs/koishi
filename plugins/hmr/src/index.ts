@@ -1,8 +1,20 @@
-import { coerce, Context, Dict, ForkScope, Logger, MainScope, makeArray, Schema } from '@koishijs/core'
+import { coerce, Context, Dict, ForkScope, Logger, MainScope, makeArray, Schema } from 'koishi'
 import { FSWatcher, watch, WatchOptions } from 'chokidar'
 import { relative, resolve } from 'path'
 import { debounce } from 'throttle-debounce'
 import { Loader, unwrapExports } from '@koishijs/loader'
+
+declare module 'koishi' {
+  interface Context {
+    watcher: Watcher
+  }
+
+  namespace Context {
+    interface Config {
+      watch?: Watcher.Config
+    }
+  }
+}
 
 function loadDependencies(filename: string, ignored: Set<string>) {
   const dependencies = new Set<string>()
@@ -296,17 +308,13 @@ namespace Watcher {
   }
 
   export const Config: Schema<Config> = Schema.object({
-    root: Schema.string().description('要监听的根目录，相对于当前工作路径。'),
+    root: Schema.string().required().description('要监听的根目录，相对于当前工作路径。'),
     debounce: Schema.natural().role('ms').default(100).description('延迟触发更新的等待时间。'),
     ignored: Schema.union([
       Schema.array(String),
       Schema.transform(String, (value) => [value]),
     ]).description('要忽略的文件或目录。'),
   }).description('热重载设置')
-
-  Context.Config.list.push(Schema.object({
-    watch: Config,
-  }))
 }
 
 export default Watcher

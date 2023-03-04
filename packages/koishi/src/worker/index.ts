@@ -2,10 +2,7 @@ import { Context, Dict, Logger, Schema, Time } from '@koishijs/core'
 import Loader from '@koishijs/loader'
 import * as daemon from './daemon'
 import * as logger from './logger'
-import Watcher from './watcher'
 import '@satorijs/satori'
-
-export { Watcher }
 
 declare module '@koishijs/core' {
   interface Events {
@@ -14,7 +11,6 @@ declare module '@koishijs/core' {
 
   interface Context {
     prologue: string[]
-    watcher: Watcher
   }
 
   namespace Context {
@@ -23,7 +19,6 @@ declare module '@koishijs/core' {
       timezoneOffset?: number
       stackTraceLimit?: number
       logger?: logger.Config
-      watch?: Watcher.Config
       daemon?: daemon.Config
     }
   }
@@ -52,11 +47,6 @@ namespace addons {
   export function apply(ctx: Context, config: Context.Config) {
     logger.apply(ctx.root)
     ctx.plugin(daemon, config.daemon)
-
-    if (process.env.KOISHI_WATCH_ROOT !== undefined) {
-      (config.watch ??= {}).root = process.env.KOISHI_WATCH_ROOT
-      ctx.plugin(Watcher, config.watch)
-    }
   }
 }
 

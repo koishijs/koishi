@@ -6,7 +6,6 @@ import ns from 'ns-require'
 
 export { Router, WebSocketLayer } from '@satorijs/satori'
 
-export type { Watcher } from './worker'
 export * from '@koishijs/core'
 export * from '@koishijs/utils'
 
