@@ -53,7 +53,7 @@ export function adminUser<U extends User.Field, G extends Channel.Field, A exten
 
     // spectified user is identical to current user
     const [platform, userId] = parsePlatform(options.user)
-    if (session.user[platform] === userId) return
+    if (session.userId === userId && session.platform === platform) return
 
     // get target user
     const fields = session.collect('user', argv)
@@ -78,10 +78,6 @@ export function adminUser<U extends User.Field, G extends Channel.Field, A exten
   return cmd
     .option('user', '-u [user:user]', { authority: 3, descPath: 'admin.user-option' })
     .userFields(['authority'])
-    .userFields(({ session, options }, fields) => {
-      const platform = options.user ? options.user.split(':')[0] : session.platform
-      fields.add(platform as never)
-    })
     .action(async (argv, ...args) => {
       const { session, next } = argv
       const user = session.user

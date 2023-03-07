@@ -31,7 +31,7 @@
   },
   "dependencies": {
     "@koishijs/utils": "^7.0.1",
-    "@minatojs/core": "^2.2.2",
+    "@minatojs/core": "^2.3.0",
     "@satorijs/core": "^2.2.1",
     "cordis": "^2.7.4",
     "cosmokit": "^1.4.1",

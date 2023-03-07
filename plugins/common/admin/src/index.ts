@@ -71,8 +71,8 @@ export function apply(ctx: Context) {
   ctx.command('user/authorize <value:natural>', { authority: 4, checkUnknown: true })
     .alias('auth')
     .use(adminUser)
-    .action(async ({ session }, authority) => {
-      if (session.userId === session.user[session.platform]) return session.text('admin.user-expected')
+    .action(async ({ session, options }, authority) => {
+      if (!options.user) return session.text('admin.user-expected')
       session.user.authority = authority
     })
 

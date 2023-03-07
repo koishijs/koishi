@@ -36,6 +36,12 @@ export namespace User {
   export type Observed<K extends Field = Field> = utils.Observed<Pick<User, K>, Promise<void>>
 }
 
+export interface Binding {
+  aid: number
+  pid: string
+  platform: string
+}
+
 export interface Channel {
   id: string
   platform: string
@@ -58,6 +64,7 @@ export namespace Channel {
 
 export interface Tables {
   user: User
+  binding: Binding
   channel: Channel
 }
 
@@ -78,6 +85,14 @@ export class DatabaseService extends Database<Tables> {
       autoInc: true,
     })
 
+    this.extend('binding', {
+      aid: 'unsigned(20)',
+      pid: 'string(63)',
+      platform: 'string(63)',
+    }, {
+      primary: ['pid', 'platform'],
+    })
+
     this.extend('channel', {
       id: 'string(63)',
       platform: 'string(63)',
@@ -89,31 +104,36 @@ export class DatabaseService extends Database<Tables> {
       primary: ['id', 'platform'],
     })
 
-    app.on('bot-added', (bot) => {
-      if (bot.platform in this.tables.user.fields) return
-      this.extend('user', {
-        [bot.platform]: { type: 'string', length: 63 },
-      }, {
-        unique: [bot.platform as never],
+    app.on('bot-added', ({ platform }) => {
+      if (platform in this.tables.user.fields) return
+      this.migrate('user', { [platform]: 'string(63)' }, async (db) => {
+        const users = await db.get('user', { [platform]: { $exists: true } }, ['id', platform as never])
+        await db.upsert('binding', users.map((user) => ({
+          aid: user.id,
+          pid: user[platform],
+          platform,
+        })))
       })
     })
   }
 
-  getUser<T extends string, K extends User.Field>(platform: T, id: string, modifier?: Driver.Cursor<K>): Promise<Pick<User, K> & Record<T, string>>
-  getUser<T extends string, K extends User.Field>(platform: T, ids: string[], modifier?: Driver.Cursor<K>): Promise<Pick<User, K>[]>
-  async getUser(platform: string, id: MaybeArray<string>, modifier?: Driver.Cursor<User.Field>) {
-    const data = await this.get('user', { [platform]: id }, modifier)
-    if (Array.isArray(id)) return data
-    if (data[0]) Object.assign(data[0], { [platform]: id })
-    return data[0] as any
+  async getUser<K extends User.Field>(platform: string, pid: string, modifier?: Driver.Cursor<K>): Promise<Pick<User, K>> {
+    const [binding] = await this.get('binding', { platform, pid }, ['aid'])
+    if (!binding) return
+    const [user] = await this.get('user', { id: binding.aid }, modifier)
+    return user
   }
 
-  setUser(platform: string, id: string, data: Update<User>) {
-    return this.set('user', { [platform]: id }, data)
+  async setUser(platform: string, pid: string, data: Update<User>) {
+    const [binding] = await this.get('binding', { platform, pid }, ['aid'])
+    if (!binding) return
+    return this.set('user', binding.aid, data)
   }
 
-  createUser(platform: string, id: string, data: Partial<User>) {
-    return this.create('user', { [platform]: id, ...data })
+  async createUser(platform: string, pid: string, data: Partial<User>) {
+    const user = await this.create('user', data)
+    await this.create('binding', { aid: user.id, pid, platform })
+    return user
   }
 
   getChannel<K extends Channel.Field>(platform: string, id: string, modifier?: Driver.Cursor<K>): Promise<Pick<Channel, K | 'id' | 'platform'>>

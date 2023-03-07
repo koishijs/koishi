@@ -65,7 +65,7 @@ export class MockAdapter extends Adapter.Server<MockBot> {
   }
 
   async initUser(id: string, authority = 1, data?: Partial<User>) {
-    await this.app.database.create('user', { mock: id, authority, ...data })
+    await this.app.database.createUser('mock', id, { authority, ...data })
   }
 
   async initChannel(id: string, assignee = this.bots[0].selfId, data?: Partial<Channel>) {

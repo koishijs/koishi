@@ -32,12 +32,6 @@ describe('Database API', () => {
       await app.database.setUser('mock', 'A', { authority: 2 })
       await expect(app.database.getUser('mock', 'A')).eventually.to.have.shape({ authority: 2 })
     })
-
-    it('db.getUser() with multiple ids', async () => {
-      await expect(app.database.getUser('mock', ['A'])).eventually.to.have.length(1)
-      await app.database.remove('user', { mock: ['A'] })
-      await expect(app.database.getUser('mock', ['A'])).eventually.to.have.length(0)
-    })
   })
 
   describe('Channel Operations', () => {
