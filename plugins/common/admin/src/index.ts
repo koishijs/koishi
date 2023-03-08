@@ -1,10 +1,12 @@
 import { Channel, Command, Context, difference, enumKeys, Schema, User } from 'koishi'
-import { adminChannel, adminUser, parsePlatform } from '@koishijs/helpers'
+import { AdminService, parsePlatform } from './service'
 import zhCN from './locales/zh-CN.yml'
 import enUS from './locales/en-US.yml'
 import jaJP from './locales/ja-JP.yml'
 import frFR from './locales/fr-FR.yml'
 import zhTW from './locales/zh-TW.yml'
+
+export * from './service'
 
 type Key = 'user' | 'channel'
 
@@ -71,31 +73,29 @@ export function apply(ctx: Context) {
   ctx.i18n.define('fr', frFR)
   ctx.i18n.define('zh-TW', zhTW)
 
+  ctx.plugin(AdminService)
+
   ctx.command('user', { authority: 3 })
   ctx.command('channel', { authority: 3 })
 
-  ctx.command('user/authorize <value:natural>', { authority: 4, checkUnknown: true })
+  const userAuth = ctx.command('user/authorize <value:natural>', { authority: 4, checkUnknown: true })
     .alias('auth')
-    .use(adminUser)
-    .action(async ({ session, options }, authority) => {
-      if (!options.user) return session.text('admin.user-expected')
+    .userFields(['authority'])
+    .action(async ({ session }, authority) => {
       session.user.authority = authority
     })
 
-  ctx.command('user.locale <lang>', { authority: 1, checkUnknown: true })
+  const userLocale = ctx.command('user.locale <lang>', { authority: 1, checkUnknown: true })
     .userFields(['locale'])
     .use(adminLocale, 'user')
-    .use(adminUser)
 
-  ctx.command('user.flag [...flags]', { authority: 3, checkUnknown: true })
+  const userFlag = ctx.command('user.flag [...flags]', { authority: 3, checkUnknown: true })
     .userFields(['flag'])
     .use(adminFlag, User.Flag, 'user')
-    .use(adminUser)
 
-  ctx.command('channel/assign [bot:user]', { authority: 4, checkUnknown: true })
+  const channelAssign = ctx.command('channel/assign [bot:user]', { authority: 4, checkUnknown: true })
     .channelFields(['assignee'])
     .option('remove', '-r', { descPath: 'admin.options.remove' })
-    .use(adminChannel)
     .action(async ({ session, options }, value) => {
       if (options.remove) {
         session.channel.assignee = ''
@@ -103,20 +103,25 @@ export function apply(ctx: Context) {
         session.channel.assignee = session.selfId
       } else {
         const [platform, userId] = parsePlatform(value)
-        if (platform !== parsePlatform(options.channel)[0]) {
+        if (platform !== session.platform) {
           return session.text('admin.invalid-assignee-platform')
         }
         session.channel.assignee = userId
       }
     })
 
-  ctx.command('channel.locale <lang>', { authority: 3, checkUnknown: true })
+  const channelLocale = ctx.command('channel.locale <lang>', { authority: 3, checkUnknown: true })
     .channelFields(['locale'])
     .use(adminLocale, 'channel')
-    .use(adminChannel)
 
-  ctx.command('channel.flag [...flags]', { authority: 3, checkUnknown: true })
+  const channelFlag = ctx.command('channel.flag [...flags]', { authority: 3, checkUnknown: true })
     .channelFields(['flag'])
     .use(adminFlag, Channel.Flag, 'channel')
-    .use(adminChannel)
+
+  ctx.admin.user(userAuth, { required: true })
+  ctx.admin.user(userLocale)
+  ctx.admin.user(userFlag)
+  ctx.admin.channel(channelAssign)
+  ctx.admin.channel(channelLocale)
+  ctx.admin.channel(channelFlag)
 }
