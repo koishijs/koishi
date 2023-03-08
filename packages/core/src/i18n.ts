@@ -73,7 +73,7 @@ export class I18n {
         value[kTemplate] = preset
         logger.warn('preset is deprecated and will be removed in the future')
       }
-      if (!isNullable(dict[path]) && !locale.startsWith('$')) {
+      if (!isNullable(dict[path]) && !locale.startsWith('$') && dict[path] !== value) {
         logger.warn('override', locale, path)
       }
       dict[path] = value
