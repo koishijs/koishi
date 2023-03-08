@@ -463,10 +463,7 @@ export namespace Argv {
         option.type = fallbackType
       }
 
-      if (desc) {
-        this.ctx.i18n.define('', path, desc)
-      }
-
+      if (desc) this.ctx.i18n.define('', path, desc)
       this._assignOption(option, aliases, this._namedOptions)
       this._assignOption(option, symbols, this._symbolicOptions)
       if (!this._namedOptions[param]) {

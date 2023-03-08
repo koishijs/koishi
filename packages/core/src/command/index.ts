@@ -179,7 +179,7 @@ export class Commander extends Map<string, Command> {
       parent = command
     })
 
-    if (desc) caller.i18n.define('', `commands.${parent.name}.description`, desc)
+    caller.i18n.define('', `commands.${parent.name}.description`, desc || '')
     Object.assign(parent.config, config)
     extra.forEach(command => caller.emit('command-added', command))
     parent[Context.current] = caller
