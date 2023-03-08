@@ -1,4 +1,4 @@
-import { Argv, Channel, Command, Computed, Context, FieldCollector, h, Schema, Session, Tables, User } from 'koishi'
+import { Argv, Command, Computed, Context, FieldCollector, h, Schema, Session, Tables } from 'koishi'
 import zhCN from './locales/zh-CN.yml'
 import enUS from './locales/en-US.yml'
 import jaJP from './locales/ja-JP.yml'
@@ -47,16 +47,6 @@ export const Config: Schema<Config> = Schema.object({
   options: Schema.boolean().default(true).description('是否为每个指令添加 `-h, --help` 选项。'),
 })
 
-export function enableHelp<U extends User.Field, G extends Channel.Field, A extends any[], O extends {}>(cmd: Command<U, G, A, O>) {
-  cmd._disposables = cmd.ctx.registry.get(apply).disposables
-  return cmd.option('help', '-h', {
-    hidden: true,
-    // @ts-ignore
-    notUsage: true,
-    descPath: 'commands.help.options.help',
-  })
-}
-
 function executeHelp(session: Session, name: string) {
   if (!session.app.$commander.getCommand('help')) return
   return session.execute({
@@ -74,6 +64,16 @@ export function apply(ctx: Context, config: Config) {
   ctx.i18n.define('fr', frFR)
   ctx.i18n.define('zh-TW', zhTW)
 
+  function enableHelp(command: Command) {
+    command[Context.current] = ctx
+    return command.option('help', '-h', {
+      hidden: true,
+      // @ts-ignore
+      notUsage: true,
+      descPath: 'commands.help.options.help',
+    })
+  }
+
   ctx.schema.extend('command', Schema.object({
     hideOptions: Schema.boolean().description('是否隐藏所有选项。').default(false).hidden(),
     hidden: Schema.computed(Schema.boolean()).description('在帮助菜单中隐藏指令。').default(false),
@@ -86,8 +86,8 @@ export function apply(ctx: Context, config: Config) {
   }), 900)
 
   if (config.options !== false) {
-    ctx.$commander._commandList.forEach(cmd => cmd.use(enableHelp))
-    ctx.on('command-added', cmd => cmd.use(enableHelp))
+    ctx.$commander._commandList.forEach(enableHelp)
+    ctx.on('command-added', enableHelp)
   }
 
   ctx.before('command/execute', (argv) => {
