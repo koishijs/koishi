@@ -11,6 +11,7 @@ general:
   second: second
 
 internal:
+  error-encountered: An unknown error has occurred.
   low-authority: Low authority.
   insufficient-arguments: Insufficient arguments, type help to see usage.
   redunant-arguments: Redunant arguments, type help to see usage.

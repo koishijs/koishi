@@ -246,11 +246,12 @@ describe('Command API', () => {
     })
 
     it('throw 1 (error in action)', async () => {
+      command.config.handleError = () => '乌拉！'
       command.action(() => {
         throw new Error('message 1')
       })
 
-      await expect(command.execute({ session }, next)).eventually.to.equal('')
+      await expect(command.execute({ session }, next)).eventually.to.equal('乌拉！')
       expect(warn.mock.calls).to.have.length(1)
       expect(warn.mock.calls[0][0]).to.match(/^test\nError: message 1/)
       expect(next.mock.calls).to.have.length(0)
@@ -263,7 +264,7 @@ describe('Command API', () => {
         })
       })
 
-      await expect(command.execute({ session }, next)).eventually.to.equal('')
+      await expect(command.execute({ session }, next)).eventually.to.equal('发生未知错误。')
       expect(warn.mock.calls).to.have.length(1)
       expect(warn.mock.calls[0][0]).to.match(/^test\nError: message 2/)
       expect(next.mock.calls).to.have.length(1)

@@ -1,6 +1,12 @@
 import { Context, h, Schema } from 'koishi'
-import { parsePlatform } from '@koishijs/helpers'
-import zh from './locales/zh.yml'
+import zhCN from './locales/zh-CN.yml'
+
+export function parsePlatform(target: string): [platform: string, id: string] {
+  const index = target.indexOf(':')
+  const platform = target.slice(0, index)
+  const id = target.slice(index + 1)
+  return [platform, id] as any
+}
 
 export interface Config {}
 
@@ -8,7 +14,7 @@ export const name = 'echo'
 export const Config: Schema<Config> = Schema.object({})
 
 export function apply(ctx: Context) {
-  ctx.i18n.define('zh', zh)
+  ctx.i18n.define('zh', zhCN)
 
   ctx.command('echo <message:text>')
     .option('escape', '-e', { authority: 3 })

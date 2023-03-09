@@ -11,6 +11,7 @@ general:
   second: seconde
 
 internal:
+  error-encountered: Une erreur inconnue s'est produite.
   low-authority: Droits insuffisants.
   insufficient-arguments: Arguments insuffisants, tapez "help" pour afficher l'aide
   redunant-arguments: Arguments redondants, tapez "help" pour afficher l'aide

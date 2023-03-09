@@ -11,6 +11,7 @@ general:
   second: 秒
 
 internal:
+  error-encountered: 发生未知错误。
   low-authority: 权限不足。
   insufficient-arguments: 缺少参数，输入帮助以查看用法。
   redunant-arguments: 存在多余参数，输入帮助以查看用法。

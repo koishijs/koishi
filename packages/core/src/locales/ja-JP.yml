@@ -11,6 +11,7 @@ general:
   second: 秒
 
 internal:
+  error-encountered: 不明なエラーが発生しました。
   low-authority: 実行できる権限が付与されていません
   insufficient-arguments: パラメータが不足しています、「help」を送信して使い方を確認してください。
   redunant-arguments: パラメータ数が多すぎます、「help」を送信して使い方を確認してください。

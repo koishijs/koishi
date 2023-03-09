@@ -53,6 +53,7 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
   static defaultConfig: Command.Config = {
     authority: 1,
     showWarning: true,
+    handleError: true,
   }
 
   static defaultOptionConfig: Argv.OptionConfig = {
@@ -314,6 +315,12 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
       const stack = coerce(error)
       logger.warn(`${argv.source ||= this.stringify(args, options)}\n${stack}`)
       this.ctx.emit(argv.session, 'command-error', argv, error)
+      if (typeof this.config.handleError === 'function') {
+        const result = await this.config.handleError(error, argv)
+        if (!isNullable(result)) return result
+      } else if (this.config.handleError) {
+        return argv.session.text('internal.error-encountered')
+      }
     }
 
     return ''
@@ -343,6 +350,8 @@ export namespace Command {
     checkArgCount?: boolean
     /** show command warnings */
     showWarning?: boolean
+    /** handle error */
+    handleError?: boolean | ((error: Error, argv: Argv) => Awaitable<void | Fragment>)
     /** depend on existing commands */
     patch?: boolean
   }
@@ -352,5 +361,6 @@ export namespace Command {
     checkUnknown: Schema.boolean().description('是否检查未知选项。').default(false).hidden(),
     checkArgCount: Schema.boolean().description('是否检查参数数量。').default(false).hidden(),
     showWarning: Schema.boolean().description('是否显示警告。').default(true).hidden(),
+    handleError: Schema.union([Schema.boolean(), Schema.function()]).description('是否处理错误。').default(true).hidden(),
   })
 }

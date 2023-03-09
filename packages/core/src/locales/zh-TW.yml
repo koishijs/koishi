@@ -11,6 +11,7 @@ general:
   second: 秒
 
 internal:
+  error-encountered: 出現未知錯誤。
   low-authority: 權限不足。
   insufficient-arguments: 參數個數不足，輸入「help」檢視用法。
   redunant-arguments: 參數個數冗餘，輸入「help」檢視用法。
