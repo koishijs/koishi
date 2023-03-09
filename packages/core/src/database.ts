@@ -38,6 +38,7 @@ export namespace User {
 
 export interface Binding {
   aid: number
+  bid: number
   pid: string
   platform: string
 }
@@ -87,6 +88,7 @@ export class DatabaseService extends Database<Tables> {
 
     this.extend('binding', {
       aid: 'unsigned(20)',
+      bid: 'unsigned(20)',
       pid: 'string(63)',
       platform: 'string(63)',
     }, {
@@ -110,6 +112,7 @@ export class DatabaseService extends Database<Tables> {
         const users = await db.get('user', { [platform]: { $exists: true } }, ['id', platform as never])
         await db.upsert('binding', users.map((user) => ({
           aid: user.id,
+          bid: user.id,
           pid: user[platform],
           platform,
         })))

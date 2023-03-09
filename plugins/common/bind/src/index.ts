@@ -1,4 +1,4 @@
-import { Context, Dict, Random, Schema, Session, Time, User } from 'koishi'
+import { Context, Dict, Random, Schema, Session, Time } from 'koishi'
 import zh from './locales/zh.yml'
 import en from './locales/en.yml'
 
@@ -20,52 +20,45 @@ export function apply(ctx: Context, config: Config = {}) {
   // 1: group (1st step)
   // 0: private
   // -1: group (2nd step)
-  type TokenData = [platform: string, id: string, pending: number]
+  type TokenData = [platform: string, id: string, phase: number]
   const tokens: Dict<TokenData> = {}
 
   const { tokenPrefix: prefix = 'koishi/' } = config
   const { generateToken = () => `${prefix}` + Random.id(6, 10) } = config
 
-  function generate(session: Session, pending: number) {
+  function generate(session: Session, phase: number) {
     const token = generateToken()
-    tokens[token] = [session.platform, session.userId, pending]
-    setTimeout(() => delete tokens[token], 5 * Time.minute)
+    tokens[token] = [session.platform, session.userId, phase]
+    ctx.setTimeout(() => delete tokens[token], 5 * Time.minute)
     return token
   }
 
-  async function bind(user: User.Observed<never>, platform: string, userId: string) {
-    await ctx.database.remove('user', { [platform]: [userId] })
-    user[platform] = userId as never
-    await user.$update()
+  async function bind(aid: number, platform: string, pid: string) {
+    await ctx.database.set('binding', { platform, pid }, { aid })
   }
 
   ctx.command('bind', { authority: 0 })
     .action(({ session }) => {
-      const token = generate(session, +(session.subtype === 'group'))
+      const token = generate(session, +(session.subtype !== 'private'))
       return session.text('.generated-1', [token])
     })
 
   ctx.middleware(async (session, next) => {
     const data = tokens[session.content]
     if (!data) return next()
+    delete tokens[session.content]
     if (data[2] < 0) {
-      const sess = session.bot.session(session)
-      sess.platform = data[0]
-      sess.userId = data[1]
-      const user = await sess.observeUser([session.platform as never])
-      delete tokens[session.content]
-      await bind(user, session.platform, session.userId)
+      const [binding] = await ctx.database.get('binding', { platform: data[0], pid: data[1] }, ['aid'])
+      await bind(binding.aid, session.platform, session.userId)
       return session.text('commands.bind.messages.success')
     } else {
-      const user = await session.observeUser(['authority', data[0] as never])
+      const user = await ctx.database.getUser(session.platform, session.userId, ['id', 'authority'])
       if (!user.authority) return session.text('internal.low-authority')
-      if (user[data[0]]) return session.text('commands.bind.messages.failed')
-      delete tokens[session.content]
       if (data[2]) {
         const token = generate(session, -1)
         return session.text('commands.bind.messages.generated-2', [token])
       } else {
-        await bind(user, data[0], data[1])
+        await bind(user.id, data[0], data[1])
         return session.text('commands.bind.messages.success')
       }
     }
