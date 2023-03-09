@@ -301,6 +301,8 @@ class Watcher {
 }
 
 namespace Watcher {
+  export const using = ['loader']
+
   export interface Config extends WatchOptions {
     root?: string
     debounce?: number

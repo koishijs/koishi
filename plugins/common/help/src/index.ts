@@ -1,4 +1,4 @@
-import { Argv, Command, Computed, Context, FieldCollector, h, Schema, Session, Tables } from 'koishi'
+import { Argv, Command, Computed, Context, FieldCollector, h, Schema, Session } from 'koishi'
 import zhCN from './locales/zh-CN.yml'
 import enUS from './locales/en-US.yml'
 import jaJP from './locales/ja-JP.yml'
@@ -66,7 +66,7 @@ export function apply(ctx: Context, config: Config) {
 
   function enableHelp(command: Command) {
     command[Context.current] = ctx
-    return command.option('help', '-h', {
+    command.option('help', '-h', {
       hidden: true,
       // @ts-ignore
       notUsage: true,
@@ -115,7 +115,7 @@ export function apply(ctx: Context, config: Config) {
     return perfect[0].command
   }
 
-  const createCollector = <T extends keyof Tables>(key: T): FieldCollector<T> => (argv, fields) => {
+  const createCollector = <T extends 'user' | 'channel'>(key: T): FieldCollector<T> => (argv, fields) => {
     const { args: [target], session } = argv
     const result = findCommand(target, session)
     if (!Array.isArray(result)) {

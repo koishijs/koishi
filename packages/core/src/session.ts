@@ -453,7 +453,7 @@ export type FieldCollector<T extends keyof Tables, K = keyof Tables[T], A extend
   | Iterable<K>
   | ((argv: Argv<never, never, A, O>, fields: Set<keyof Tables[T]>) => void)
 
-function collectFields<T extends keyof Tables>(argv: Argv, collectors: FieldCollector<T>[], fields: Set<keyof Tables[T]>) {
+function collectFields<T extends keyof Tables>(argv: Argv, collectors: FieldCollector<T>[], fields: Set<any>) {
   for (const collector of collectors) {
     if (typeof collector === 'function') {
       collector(argv, fields)

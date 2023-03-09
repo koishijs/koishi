@@ -69,7 +69,7 @@ export class MockAdapter extends Adapter.Server<MockBot> {
   }
 
   async initChannel(id: string, assignee = this.bots[0].selfId, data?: Partial<Channel>) {
-    await this.app.database.create('channel', { platform: 'mock', id, assignee, ...data })
+    await this.app.database.createChannel('mock', id, { assignee, ...data })
   }
 
   client(userId: string, channelId?: string) {
