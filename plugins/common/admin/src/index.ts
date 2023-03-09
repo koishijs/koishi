@@ -1,5 +1,6 @@
 import { Channel, Command, Context, difference, enumKeys, Schema, User } from 'koishi'
-import { AdminService, parsePlatform } from './service'
+import { parsePlatform } from './utils'
+import * as service from './service'
 import zhCN from './locales/zh-CN.yml'
 import enUS from './locales/en-US.yml'
 import jaJP from './locales/ja-JP.yml'
@@ -73,27 +74,30 @@ export function apply(ctx: Context) {
   ctx.i18n.define('fr', frFR)
   ctx.i18n.define('zh-TW', zhTW)
 
-  ctx.plugin(AdminService)
+  ctx.plugin(service)
 
   ctx.command('user', { authority: 3 })
   ctx.command('channel', { authority: 3 })
 
-  const userAuth = ctx.command('user/authorize <value:natural>', { authority: 4, checkUnknown: true })
+  ctx.command('user/authorize <value:natural>', { authority: 4, checkUnknown: true, admin: { user: true, upsert: true } })
     .alias('auth')
     .userFields(['authority'])
-    .action(async ({ session }, authority) => {
+    .action(async ({ options, session }, authority) => {
+      if (!options['user']) {
+        return session.text('admin.user-expected')
+      }
       session.user.authority = authority
     })
 
-  const userLocale = ctx.command('user.locale <lang>', { authority: 1, checkUnknown: true })
+  ctx.command('user.locale <lang>', { authority: 1, checkUnknown: true, admin: { user: true } })
     .userFields(['locale'])
     .use(adminLocale, 'user')
 
-  const userFlag = ctx.command('user.flag [...flags]', { authority: 3, checkUnknown: true })
+  ctx.command('user.flag [...flags]', { authority: 3, checkUnknown: true, admin: { user: true } })
     .userFields(['flag'])
     .use(adminFlag, User.Flag, 'user')
 
-  const channelAssign = ctx.command('channel/assign [bot:user]', { authority: 4, checkUnknown: true })
+  ctx.command('channel/assign [bot:user]', { authority: 4, checkUnknown: true, admin: { channel: true, upsert: true } })
     .channelFields(['assignee'])
     .option('remove', '-r', { descPath: 'admin.options.remove' })
     .action(async ({ session, options }, value) => {
@@ -110,18 +114,11 @@ export function apply(ctx: Context) {
       }
     })
 
-  const channelLocale = ctx.command('channel.locale <lang>', { authority: 3, checkUnknown: true })
+  ctx.command('channel.locale <lang>', { authority: 3, checkUnknown: true, admin: { channel: true } })
     .channelFields(['locale'])
     .use(adminLocale, 'channel')
 
-  const channelFlag = ctx.command('channel.flag [...flags]', { authority: 3, checkUnknown: true })
+  ctx.command('channel.flag [...flags]', { authority: 3, checkUnknown: true, admin: { channel: true } })
     .channelFields(['flag'])
     .use(adminFlag, Channel.Flag, 'channel')
-
-  ctx.admin.user(userAuth, { required: true })
-  ctx.admin.user(userLocale)
-  ctx.admin.user(userFlag)
-  ctx.admin.channel(channelAssign)
-  ctx.admin.channel(channelLocale)
-  ctx.admin.channel(channelFlag)
 }

@@ -2,12 +2,14 @@ import { App, Time } from 'koishi'
 import mock from '@koishijs/plugin-mock'
 import memory from '@koishijs/plugin-database-memory'
 import { install } from '@sinonjs/fake-timers'
+import * as admin from '@koishijs/plugin-admin'
 import * as help from '@koishijs/plugin-help'
 import * as rate from '../src'
 
 const app = new App()
 let now = Date.now()
 
+app.plugin(admin)
 app.plugin(help)
 app.plugin(mock)
 app.plugin(memory)
