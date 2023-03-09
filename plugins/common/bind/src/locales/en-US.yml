@@ -1,15 +1,19 @@
 commands.bind:
   description: Account binding
+  options:
+    remove: Unbind
   messages:
     generated-1: |-
       Command bind is meant to bind user accounts across multiple platforms.
       In this process, the data from the source platform will be preserved, while the data from the target platform will be overwritten.
       Make sure that you are on the target platform, and send the following text to any robot on the source platform within 5 minutes:
       {0}
-      Note: Each account can only be bound to each platform once, and this operation will erase the data on your current platform, please operate with caution!
+      After the binding is complete, you can use "bind -r" to unbind.
     generated-2: |-
       Token verification succeeded! Let's move on to the second step.
       Please send the following text to any robot on the target platform within the target platform using your account within 5 minutes:
       {0}
       Note: The current platform is your source platform, your data here will be completely preserved, and the data of the target platform will be overwritten, please operate with caution!
     success: 'Your account has been bound successfully!'
+    remove-success: 'Your account has been unbound successfully!'
+    remove-original: 'You cannot unbind: this is your original account.'

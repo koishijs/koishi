@@ -1,6 +1,6 @@
 import { Context, Dict, Random, Schema, Session, Time } from 'koishi'
-import zh from './locales/zh.yml'
-import en from './locales/en.yml'
+import zhCN from './locales/zh-CN.yml'
+import enUS from './locales/en-US.yml'
 
 export interface Config {
   tokenPrefix?: string
@@ -14,8 +14,8 @@ export const Config: Schema<Config> = Schema.object({
 })
 
 export function apply(ctx: Context, config: Config = {}) {
-  ctx.i18n.define('zh', zh)
-  ctx.i18n.define('en', en)
+  ctx.i18n.define('zh', zhCN)
+  ctx.i18n.define('en', enUS)
 
   // 1: group (1st step)
   // 0: private
@@ -38,7 +38,29 @@ export function apply(ctx: Context, config: Config = {}) {
   }
 
   ctx.command('bind', { authority: 0 })
-    .action(({ session }) => {
+    .userFields(['id'])
+    .option('remove', '-r')
+    .action(async ({ session, options }) => {
+      if (options.remove) {
+        const { platform, userId: pid } = session
+        const bindings = await ctx.database.get('binding', { aid: session.user.id })
+        const binding = bindings.find(item => item.platform === platform && item.pid === pid)
+        if (binding.aid !== binding.bid) {
+          // restore the original binding
+          await bind(binding.bid, platform, pid)
+          return session.text('.remove-success')
+        } else if (bindings.filter(item => item.aid === item.bid).length === 1) {
+          // cannot remove the last binding
+          return session.text('.remove-original')
+        } else {
+          // create a new account
+          const authority = await session.resolve(ctx.root.config.autoAuthorize)
+          const user = await ctx.database.create('user', { authority })
+          await bind(user.id, platform, pid)
+          return session.text('.remove-success')
+        }
+      }
+
       const token = generate(session, +(session.subtype !== 'private'))
       return session.text('.generated-1', [token])
     })
