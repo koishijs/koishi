@@ -1,4 +1,5 @@
 general:
+  $: 通用设置
   name: 中文
   paren: '（{0}）'
   quote: '“{0}”'
@@ -11,6 +12,7 @@ general:
   second: 秒
 
 internal:
+  $: 核心文本
   error-encountered: 发生未知错误。
   low-authority: 权限不足。
   insufficient-arguments: 缺少参数，输入帮助以查看用法。
@@ -28,3 +30,6 @@ internal:
   invalid-channel: 请指定正确的频道。
   suggest-hint: 您要找的是不是{0}？
   suggest-command: 发送句号以使用推测的指令。
+
+commands:
+  $: 指令系统

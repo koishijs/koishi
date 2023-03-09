@@ -169,6 +169,8 @@ export class Commander extends Map<string, Command> {
         return parent = command
       }
       command = new Command(name, index === segments.length - 1 ? decl : '', caller)
+      caller.i18n.define('', `commands.${command.name}.$`, '')
+      caller.i18n.define('', `commands.${command.name}.description`, desc || '')
       extra.push(command)
       if (!root) root = command
       if (parent) {
@@ -179,7 +181,6 @@ export class Commander extends Map<string, Command> {
       parent = command
     })
 
-    caller.i18n.define('', `commands.${parent.name}.description`, desc || '')
     Object.assign(parent.config, config)
     extra.forEach(command => caller.emit('command-added', command))
     parent[Context.current] = caller
