@@ -135,7 +135,7 @@ export class DatabaseService extends Database<Tables> {
 
   async createUser(platform: string, pid: string, data: Partial<User>) {
     const user = await this.create('user', data)
-    await this.create('binding', { aid: user.id, pid, platform })
+    await this.create('binding', { aid: user.id, bid: user.id, pid, platform })
     return user
   }
 

@@ -1,6 +1,3 @@
-internal:
-  error-encountered: 出現未知錯誤：{0}
-
 admin:
   user-not-found: 找不到指定的用戶。
   user-unchanged: 用戶資料未更新。

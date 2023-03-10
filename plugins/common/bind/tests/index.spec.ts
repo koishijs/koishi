@@ -28,7 +28,7 @@ before(async () => {
 after(() => app.stop())
 
 describe('@koishijs/plugin-bind', () => {
-  it('should bind successfully', async () => {
+  it('create binding', async () => {
     await client1.shouldReply('name', 'foo')
     await client2.shouldReply('name', 'bar')
     await client1.shouldReply('bind', /^koishi\/000001$/m)
@@ -38,10 +38,11 @@ describe('@koishijs/plugin-bind', () => {
     await client2.shouldReply('name', 'bar')
   })
 
-  it('should remove binding successfully', async () => {
+  it('remove binding', async () => {
     await client2.shouldReply('bind -r', '无法解除绑定：这是你的原始账号。')
     await client1.shouldReply('bind -r', '账号解绑成功！')
     await client1.shouldReply('name', 'foo')
     await client2.shouldReply('name', 'bar')
+    await client1.shouldReply('bind -r', '无法解除绑定：这是你的原始账号。')
   })
 })

@@ -1,6 +1,3 @@
-internal:
-  error-encountered: 不明なエラーが発生しました：{0}
-
 admin:
   user-option: 特定のユーザーを指定する
   user-not-found: 指定されたユーザーが見つかりません。
