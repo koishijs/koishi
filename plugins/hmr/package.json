@@ -38,11 +38,11 @@
     "hidden": true
   },
   "peerDependencies": {
-    "koishi": "^4.11.9"
+    "koishi": "^4.12.0"
   },
   "devDependencies": {
     "@types/throttle-debounce": "^2.1.0",
-    "koishi": "^4.11.9"
+    "koishi": "^4.12.0"
   },
   "dependencies": {
     "chokidar": "^3.5.3",
