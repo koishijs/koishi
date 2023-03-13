@@ -38,7 +38,10 @@ declare module '@satorijs/core' {
   }
 
   export namespace Context {
-    export interface Config extends Config.Basic, Config.Message, Config.Advanced, Commander.Config {}
+    export interface Config extends Config.Basic, Config.Advanced, Commander.Config {
+      i18n?: Config.I18n
+      delay?: Config.Delay
+    }
 
     export namespace Config {
       export interface Basic {
@@ -49,11 +52,12 @@ declare module '@satorijs/core' {
         minSimilarity?: number
       }
 
-      export interface Message {
-        delay?: DelayConfig
+      export interface I18n {
+        output?: 'prefer-user' | 'prefer-channel'
+        match?: 'strict' | 'prefer-input' | 'prefer-output'
       }
 
-      export interface DelayConfig {
+      export interface Delay {
         character?: number
         message?: number
         cancel?: number
@@ -67,7 +71,8 @@ declare module '@satorijs/core' {
 
       export interface Static extends Schema<Config> {
         Basic: Schema<Basic>
-        Message: Schema<Message>
+        I18n: Schema<I18n>
+        Delay: Schema<Delay>
         Advanced: Schema<Advanced>
       }
     }
@@ -92,21 +97,33 @@ defineProperty(Context.Config, 'Basic', Schema.object({
   minSimilarity: Schema.percent().default(1).description('用于模糊匹配的相似系数，应该是一个 0 到 1 之间的数值。数值越高，模糊匹配越严格。设置为 1 可以完全禁用模糊匹配。'),
 }).description('基础设置'))
 
-defineProperty(Context.Config, 'Message', Schema.object({
-  delay: Schema.object({
-    character: Schema.natural().role('ms').default(0).description('调用 `session.sendQueued()` 时消息间发送的最小延迟，按前一条消息的字数计算。'),
-    message: Schema.natural().role('ms').default(0.1 * Time.second).description('调用 `session.sendQueued()` 时消息间发送的最小延迟，按固定值计算。'),
-    cancel: Schema.natural().role('ms').default(0).description('调用 `session.cancelQueued()` 时默认的延迟。'),
-    broadcast: Schema.natural().role('ms').default(0.5 * Time.second).description('调用 `bot.broadcast()` 时默认的延迟。'),
-    prompt: Schema.natural().role('ms').default(Time.minute).description('调用 `session.prompt()` 时默认的等待时间。'),
-  }),
-}).description('消息设置'))
+defineProperty(Context.Config, 'I18n', Schema.object({
+  output: Schema.union([
+    Schema.const('prefer-user').description('优先使用用户语言'),
+    Schema.const('prefer-channel').description('优先使用频道语言'),
+  ]).default('prefer-channel').description('输出语言偏好设置。'),
+}).description('国际化设置'))
+
+defineProperty(Context.Config, 'Delay', Schema.object({
+  character: Schema.natural().role('ms').default(0).description('调用 `session.sendQueued()` 时消息间发送的最小延迟，按前一条消息的字数计算。'),
+  message: Schema.natural().role('ms').default(0.1 * Time.second).description('调用 `session.sendQueued()` 时消息间发送的最小延迟，按固定值计算。'),
+  cancel: Schema.natural().role('ms').default(0).description('调用 `session.cancelQueued()` 时默认的延迟。'),
+  broadcast: Schema.natural().role('ms').default(0.5 * Time.second).description('调用 `bot.broadcast()` 时默认的延迟。'),
+  prompt: Schema.natural().role('ms').default(Time.minute).description('调用 `session.prompt()` 时默认的等待时间。'),
+}).description('延迟设置'))
 
 defineProperty(Context.Config, 'Advanced', Schema.object({
   maxListeners: Schema.natural().default(64).description('每种监听器的最大数量。如果超过这个数量，Koishi 会认定为发生了内存泄漏，将产生一个警告。'),
 }).description('高级设置'))
 
-Context.Config.list.push(Context.Config.Basic, Context.Config.Message, Context.Config.Advanced)
+Context.Config.list.push(Context.Config.Basic)
+Context.Config.list.push(Schema.object({
+  i18n: Context.Config.I18n,
+}))
+Context.Config.list.push(Schema.object({
+  delay: Context.Config.Delay,
+}))
+Context.Config.list.push(Context.Config.Advanced)
 
 // for backward compatibility
 export { Context as App }

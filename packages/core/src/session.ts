@@ -270,12 +270,16 @@ extend(Session.prototype as Session.Private, {
   },
 
   text(path, params = {}) {
-    const locales = [this.app.config.locale]
-    locales.unshift(this.user?.['locale'])
-    if (this.subtype === 'group') {
-      locales.unshift(this.guild?.['locale'])
-      locales.unshift(this.channel?.['locale'])
+    const locales: string[] = [
+      this.channel?.['locale'],
+      this.guild?.['locale'],
+    ]
+    if (this.app.config.i18n.output === 'prefer-user') {
+      locales.unshift(this.user?.['locale'])
+    } else {
+      locales.push(this.user?.['locale'])
     }
+    locales.push(this.app.config.locale)
     locales.unshift(this.locale)
     const paths = makeArray(path).map((path) => {
       if (!path.startsWith('.')) return path
