@@ -35,7 +35,7 @@ interface Reload {
 const logger = new Logger('watch')
 
 class Watcher {
-  private root: string
+  private base: string
   private watcher: FSWatcher
 
   /**
@@ -65,17 +65,23 @@ class Watcher {
   private stashed = new Set<string>()
 
   constructor(private ctx: Context, private config: Watcher.Config) {
+    this.base = resolve(ctx.loader.baseDir, config.base || '')
     ctx.root.watcher = this
     ctx.on('ready', () => this.start())
     ctx.on('dispose', () => this.stop())
   }
 
+  relative(filename: string) {
+    if (!this.base) return filename
+    return relative(this.base, filename)
+  }
+
   start() {
     const { loader } = this.ctx
-    const { root = '', ignored = [] } = this.config
-    this.root = resolve(loader.baseDir, root)
-    this.watcher = watch(this.root, {
+    const { root, ignored } = this.config
+    this.watcher = watch(root, {
       ...this.config,
+      cwd: this.base,
       ignored: ['**/node_modules/**', '**/.git/**', '**/logs/**', ...makeArray(ignored)],
     })
 
@@ -84,16 +90,17 @@ class Watcher {
     const triggerLocalReload = debounce(this.config.debounce, () => this.triggerLocalReload())
 
     this.watcher.on('change', async (path) => {
-      const isEntry = path === loader.filename || loader.envFiles.includes(path)
+      const filename = resolve(this.base, path)
+      const isEntry = filename === loader.filename || loader.envFiles.includes(filename)
       if (loader.suspend && isEntry) {
         loader.suspend = false
         return
       }
 
-      logger.debug('change detected:', relative(this.root, path))
+      logger.debug('change detected:', path)
 
       if (isEntry) {
-        if (require.cache[path]) {
+        if (require.cache[filename]) {
           this.ctx.loader.fullReload()
         } else {
           const config = await loader.readConfig()
@@ -101,10 +108,10 @@ class Watcher {
           this.ctx.emit('config')
         }
       } else {
-        if (this.externals.has(path)) {
+        if (this.externals.has(filename)) {
           this.ctx.loader.fullReload()
-        } else if (require.cache[path]) {
-          this.stashed.add(path)
+        } else if (require.cache[filename]) {
+          this.stashed.add(filename)
           triggerLocalReload()
         }
       }
@@ -259,7 +266,7 @@ class Watcher {
 
     try {
       for (const [runtime, { filename, children }] of reloads) {
-        const path = relative(this.root, filename)
+        const path = this.relative(filename)
 
         try {
           this.ctx.registry.delete(runtime.plugin)
@@ -304,19 +311,24 @@ namespace Watcher {
   export const using = ['loader']
 
   export interface Config extends WatchOptions {
-    root?: string
+    base?: string
+    root?: string[]
     debounce?: number
     ignored?: string[]
   }
 
   export const Config: Schema<Config> = Schema.object({
-    root: Schema.string().required().description('要监听的根目录，相对于当前工作路径。'),
+    base: Schema.string().description('用户显示路径的根目录，默认为当前工作路径。'),
+    root: Schema.union([
+      Schema.array(String),
+      Schema.transform(String, (value) => [value]),
+    ]).description('要监听的文件或目录列表，相对于 `base` 路径。'),
     debounce: Schema.natural().role('ms').default(100).description('延迟触发更新的等待时间。'),
     ignored: Schema.union([
       Schema.array(String),
       Schema.transform(String, (value) => [value]),
     ]).description('要忽略的文件或目录。'),
-  }).description('热重载设置')
+  })
 }
 
 export default Watcher

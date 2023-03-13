@@ -92,11 +92,11 @@ function createWorker(options: Dict<any>) {
   })
 }
 
-function setEnvArg(name: string, value: string | boolean) {
+function setEnvArg(name: string, value: string | boolean, toJson = false) {
   if (value === true) {
-    process.env[name] = ''
+    process.env[name] = toJson ? '""' : ''
   } else if (value) {
-    process.env[name] = value
+    process.env[name] = toJson ? JSON.stringify(value) : value
   }
 }
 
@@ -114,7 +114,8 @@ export default function (cli: CAC) {
         console.warn(`${kleur.red('error')} log level should be a positive integer.`)
         process.exit(1)
       }
-      setEnvArg('KOISHI_WATCH_ROOT', watch)
+      setEnvArg('KOISHI_WATCH_ROOT', watch) // for backward compatibility
+      setEnvArg('KOISHI_WATCH', watch, true)
       setEnvArg('KOISHI_LOG_TIME', logTime)
       process.env.KOISHI_LOG_LEVEL = logLevel || ''
       process.env.KOISHI_DEBUG = debug || ''
