@@ -1,5 +1,5 @@
 import assert from 'assert'
-import { Context, h, Messenger, SendOptions, Session, Universal } from 'koishi'
+import { Context, h, hyphenate, isNullable, Messenger, SendOptions, Session, Universal } from 'koishi'
 import { format } from 'util'
 import { MockBot } from './adapter'
 
@@ -25,13 +25,32 @@ export class MockMessenger extends Messenger {
   }
 
   async visit(element: h) {
-    const { type, children } = element
+    const { type, attrs, children } = element
     if (type === 'message' || type === 'figure') {
       await this.flush()
       await this.render(children)
       await this.flush()
+    } else if (type === 'text') {
+      this.buffer += attrs.content
+    } else if (type === 'p') {
+      if (!this.buffer.endsWith('\n')) {
+        this.buffer += '\n'
+      }
+      await this.render(children)
+      this.buffer += '\n'
+    } else if (type === 'template' || !type) {
+      await this.render(children)
     } else {
-      this.buffer += element.toString()
+      const attrString = Object.entries(attrs).map(([key, value]) => {
+        if (isNullable(value)) return ''
+        key = hyphenate(key)
+        if (value === true) return ` ${key}`
+        if (value === false) return ` no-${key}`
+        return ` ${key}="${h.escape('' + value, true)}"`
+      }).join('')
+      this.buffer += `<${type}${attrString}>`
+      await this.render(children)
+      this.buffer += `</${type}>`
     }
   }
 }

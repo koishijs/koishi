@@ -73,7 +73,7 @@ describe('@koishijs/plugin-help', () => {
       .option('opt2', '[arg:boolean]  选项3')
       .option('opt3', '-o [arg:boolean]', { hidden: true })
 
-    await client.shouldReply('help bar', message = '指令：bar &lt;arg&gt;\nDESCRIPTION')
+    await client.shouldReply('help bar', message = '指令：bar <arg>\nDESCRIPTION')
 
     bar.config.hideOptions = false
 
@@ -175,6 +175,6 @@ describe('@koishijs/plugin-help', () => {
 
     const client = app.mock.client('123')
     await client.shouldReply('test', '缺少参数，输入帮助以查看用法。')
-    await client.shouldReply('test -h', '指令：test &lt;arg&gt;')
+    await client.shouldReply('test -h', '指令：test <arg>')
   })
 })
