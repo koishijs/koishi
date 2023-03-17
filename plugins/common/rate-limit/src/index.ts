@@ -12,6 +12,7 @@ declare module 'koishi' {
       maxUsage?: Computed<number>
       /** min interval */
       minInterval?: Computed<number>
+      /** @deprecated use filter instead */
       bypassAuthority?: Computed<number>
     }
   }
@@ -43,8 +44,13 @@ export function apply(ctx: Context) {
   })
 
   ctx.schema.extend('command', Schema.object({
-    maxUsage: Schema.computed(Schema.number()).description('每天的调用次数上限。'),
-    minInterval: Schema.computed(Schema.number()).description('连续调用的最小间隔。'),
+    usageName: Schema.string().description('调用次数的标识符。'),
+    maxUsage: Schema.computed(Schema.number(), { userFields: ['authority'] }).description('每天的调用次数上限。'),
+    minInterval: Schema.computed(Schema.number(), { userFields: ['authority'] }).description('连续调用的最小间隔。'),
+  }), 800)
+
+  ctx.schema.extend('command-option', Schema.object({
+    notUsage: Schema.boolean().description('不计入调用次数。'),
   }), 800)
 
   // add user fields
@@ -58,6 +64,7 @@ export function apply(ctx: Context) {
       if (name in options && notUsage) shouldFetchUsage = false
     }
     if (shouldFetchUsage) {
+      fields.add('authority')
       if (maxUsage) fields.add('usage')
       if (minInterval) fields.add('timers')
     }
