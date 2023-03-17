@@ -71,7 +71,7 @@ describe('Admin Commands', () => {
     await client1.shouldReply('assign -c nan', '选项 channel 输入无效，请指定正确的频道。')
     await client1.shouldReply('assign -c #321', '频道数据未改动。')
     await client1.shouldReply('assign -c #321 nan', '参数 bot 输入无效，请指定正确的用户。')
-    await client1.shouldReply('assign -c #321 @foo:bar', '代理者应与目标频道属于同一平台。')
+    await client1.shouldReply('assign -c #321 @foo:bar', '受理人应与目标频道属于同一平台。')
     await client1.shouldReply('assign -c #333', '频道数据已修改。')
 
     const getChannel = () => expect(app.database.getChannel('mock', '321')).eventually

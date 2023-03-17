@@ -32,7 +32,7 @@ admin:
   current-flags: 当前的标记为：{0}。
   user-expected: 请指定目标用户。
   channel-expected: 请指定目标频道。
-  invalid-assignee-platform: 代理者应与目标频道属于同一平台。
+  invalid-assignee-platform: 受理人应与目标频道属于同一平台。
   current-locale: 当前语言偏好为：{0}。
   no-locale: 未设置语言偏好。
   options:
