@@ -119,13 +119,6 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
     } else if (previous !== this) {
       throw new Error(`duplicate command names: "${name}"`)
     }
-
-    // add disposable
-    const dispose = this.caller.collect('command.alias', () => {
-      remove(this._aliases, name)
-      return this.ctx.$commander.delete(name)
-    })
-    this._disposables.push(dispose)
   }
 
   [Symbol.for('nodejs.util.inspect.custom')]() {
@@ -332,6 +325,9 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
     this.ctx.emit('command-removed', this)
     for (const cmd of this.children.slice()) {
       cmd.dispose()
+    }
+    for (const name of this._aliases) {
+      this.ctx.$commander.delete(name)
     }
     remove(this.ctx.$commander._commandList, this)
     if (this.parent) {
