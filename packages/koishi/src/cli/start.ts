@@ -92,11 +92,11 @@ function createWorker(options: Dict<any>) {
   })
 }
 
-function setEnvArg(name: string, value: string | boolean, toJson = false) {
+function setEnvArg(name: string, value: string | boolean) {
   if (value === true) {
-    process.env[name] = toJson ? '""' : ''
+    process.env[name] = ''
   } else if (value) {
-    process.env[name] = toJson ? JSON.stringify(value) : value
+    process.env[name] = value
   }
 }
 
@@ -115,7 +115,6 @@ export default function (cli: CAC) {
         process.exit(1)
       }
       setEnvArg('KOISHI_WATCH_ROOT', watch) // for backward compatibility
-      setEnvArg('KOISHI_WATCH', watch, true)
       setEnvArg('KOISHI_LOG_TIME', logTime)
       process.env.KOISHI_LOG_LEVEL = logLevel || ''
       process.env.KOISHI_DEBUG = debug || ''
