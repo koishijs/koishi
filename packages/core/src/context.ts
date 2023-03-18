@@ -82,7 +82,6 @@ declare module '@satorijs/core' {
 export interface EnvData {}
 
 defineProperty(Context.Config, 'Basic', Schema.object({
-  locale: Schema.string().default('zh').description('默认使用的语言。'),
   prefix: Schema.union([
     Schema.array(String).role('table'),
     Schema.transform(String, (prefix) => [prefix]),
@@ -108,7 +107,7 @@ defineProperty(Context.Config, 'I18n', Schema.object({
     Schema.const('prefer-user').description('优先使用用户语言'),
     Schema.const('prefer-channel').description('优先使用频道语言'),
   ]).default('prefer-channel').description('输出语言偏好设置。'),
-}).description('国际化设置'))
+}))
 
 defineProperty(Context.Config, 'Delay', Schema.object({
   character: Schema.natural().role('ms').default(0).description('调用 `session.sendQueued()` 时消息间发送的最小延迟，按前一条消息的字数计算。'),
@@ -116,7 +115,7 @@ defineProperty(Context.Config, 'Delay', Schema.object({
   cancel: Schema.natural().role('ms').default(0).description('调用 `session.cancelQueued()` 时默认的延迟。'),
   broadcast: Schema.natural().role('ms').default(0.5 * Time.second).description('调用 `bot.broadcast()` 时默认的延迟。'),
   prompt: Schema.natural().role('ms').default(Time.minute).description('调用 `session.prompt()` 时默认的等待时间。'),
-}).description('延迟设置'))
+}))
 
 defineProperty(Context.Config, 'Advanced', Schema.object({
   maxListeners: Schema.natural().default(64).description('每种监听器的最大数量。如果超过这个数量，Koishi 会认定为发生了内存泄漏，将产生一个警告。'),
@@ -124,11 +123,12 @@ defineProperty(Context.Config, 'Advanced', Schema.object({
 
 Context.Config.list.push(Context.Config.Basic)
 Context.Config.list.push(Schema.object({
+  locale: Schema.string().default('zh').description('默认使用的语言。'),
   i18n: Context.Config.I18n,
-}))
+}).description('国际化设置'))
 Context.Config.list.push(Schema.object({
   delay: Context.Config.Delay,
-}))
+}).description('延迟设置'))
 Context.Config.list.push(Context.Config.Advanced)
 
 // for backward compatibility
