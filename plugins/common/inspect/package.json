@@ -1,0 +1,55 @@
+{
+  "name": "@koishijs/plugin-inspect",
+  "description": "Inspect on any user, channel or message",
+  "version": "1.1.0",
+  "main": "lib/index.js",
+  "typings": "lib/index.d.ts",
+  "files": [
+    "lib"
+  ],
+  "author": "Shigma <shigma10826@gmail.com>",
+  "license": "MIT",
+  "scripts": {
+    "lint": "eslint src --ext .ts"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/koishijs/koishi.git",
+    "directory": "plugins/common/inspect"
+  },
+  "bugs": {
+    "url": "https://github.com/koishijs/koishi/issues"
+  },
+  "homepage": "https://koishi.chat/plugins/common/inspect.html",
+  "keywords": [
+    "bot",
+    "chatbot",
+    "koishi",
+    "plugin",
+    "inspect",
+    "debug",
+    "info",
+    "context",
+    "channel",
+    "user",
+    "message",
+    "session"
+  ],
+  "koishi": {
+    "browser": true,
+    "description": {
+      "en": "Inspect on any user, channel or message",
+      "zh": "查看用户、频道或消息的详细信息"
+    },
+    "locales": [
+      "zh"
+    ]
+  },
+  "peerDependencies": {
+    "koishi": "^4.12.0"
+  },
+  "devDependencies": {
+    "@koishijs/plugin-mock": "^2.4.1",
+    "koishi": "^4.12.0"
+  }
+}
