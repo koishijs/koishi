@@ -276,7 +276,7 @@ async function showHelp(command: Command, session: Session<'authority'>, config:
   if (command._usage) {
     output.push(typeof command._usage === 'string' ? command._usage : await command._usage(session))
   } else {
-    const text = session.text([`commands.${command.name}.usage`, ''])
+    const text = session.text([`commands.${command.name}.usage`, ''], command.config.params)
     if (text) output.push(text)
   }
 
@@ -285,7 +285,7 @@ async function showHelp(command: Command, session: Session<'authority'>, config:
   if (command._examples.length) {
     output.push(session.text('.command-examples'), ...command._examples.map(example => '    ' + example))
   } else {
-    const text = session.text([`commands.${command.name}.examples`, ''])
+    const text = session.text([`commands.${command.name}.examples`, ''], command.config.params)
     if (text) output.push(...text.split('\n').map(line => '    ' + line))
   }
 
