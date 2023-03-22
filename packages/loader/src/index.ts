@@ -8,7 +8,7 @@ export * from './shared'
 
 const logger = new Logger('app')
 
-// eslint-disable-next-line node/no-deprecated-api
+// eslint-disable-next-line n/no-deprecated-api
 for (const key in require.extensions) {
   Loader.extensions.add(key)
 }

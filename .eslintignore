@@ -1,6 +1,8 @@
-community
+/external
+
 temp
 dist
 lib
 tests
+
 *.js
