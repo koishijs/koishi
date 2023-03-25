@@ -82,7 +82,7 @@ class Watcher {
     this.watcher = watch(root, {
       ...this.config,
       cwd: this.base,
-      ignored: ['**/node_modules/**', '**/.git/**', '**/logs/**', ...makeArray(ignored)],
+      ignored: makeArray(ignored),
     })
 
     // files independent from any plugins will trigger a full reload
@@ -320,14 +320,18 @@ namespace Watcher {
   export const Config: Schema<Config> = Schema.object({
     base: Schema.string().description('用户显示路径的根目录，默认为当前工作路径。'),
     root: Schema.union([
-      Schema.array(String),
+      Schema.array(String).role('table'),
       Schema.transform(String, (value) => [value]),
-    ]).description('要监听的文件或目录列表，相对于 `base` 路径。'),
-    debounce: Schema.natural().role('ms').default(100).description('延迟触发更新的等待时间。'),
+    ]).default(['.']).description('要监听的文件或目录列表，相对于 `base` 路径。'),
     ignored: Schema.union([
-      Schema.array(String),
+      Schema.array(String).role('table'),
       Schema.transform(String, (value) => [value]),
-    ]).description('要忽略的文件或目录。'),
+    ]).default([
+      '**/node_modules/**',
+      '**/.git/**',
+      '**/logs/**',
+    ]).description('要忽略的文件或目录。使用 [Glob Patterns](https://github.com/micromatch/micromatch) 语法。'),
+    debounce: Schema.natural().role('ms').default(100).description('延迟触发更新的等待时间。'),
   })
 }
 

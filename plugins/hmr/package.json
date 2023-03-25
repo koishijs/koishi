@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-hmr",
   "description": "Hot Module Replacement Plugin for Koishi",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -20,7 +20,7 @@
   "bugs": {
     "url": "https://github.com/koishijs/koishi/issues"
   },
-  "homepage": "https://koishi.chat/plugins/test/",
+  "homepage": "https://koishi.chat/plugins/develop/hmr.html",
   "keywords": [
     "bot",
     "chatbot",
@@ -35,7 +35,10 @@
     "development"
   ],
   "koishi": {
-    "hidden": true
+    "description": {
+      "en": "Hot Module Replacement",
+      "zh": "模块热替换"
+    }
   },
   "peerDependencies": {
     "koishi": "^4.12.1"
