@@ -41,11 +41,11 @@
     }
   },
   "peerDependencies": {
-    "koishi": "^4.12.1"
+    "koishi": "^4.12.2"
   },
   "devDependencies": {
     "@types/throttle-debounce": "^2.1.0",
-    "koishi": "^4.12.1"
+    "koishi": "^4.12.2"
   },
   "dependencies": {
     "chokidar": "^3.5.3",

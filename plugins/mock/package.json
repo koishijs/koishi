@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-mock",
   "description": "Test Mocker for Koishi",
-  "version": "2.4.2",
+  "version": "2.4.3",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -20,7 +20,7 @@
   "bugs": {
     "url": "https://github.com/koishijs/koishi/issues"
   },
-  "homepage": "https://koishi.chat/plugins/test/",
+  "homepage": "https://koishi.chat/plugins/develop/mock.html",
   "keywords": [
     "bot",
     "chatbot",
@@ -29,15 +29,20 @@
     "test",
     "tester",
     "unit",
-    "mock"
+    "mock",
+    "simulation",
+    "utilities"
   ],
   "koishi": {
-    "hidden": true
+    "description": {
+      "en": "Test Utilities (for developers)",
+      "zh": "测试工具 (仅适用于开发)"
+    }
   },
   "peerDependencies": {
-    "koishi": "^4.12.1"
+    "koishi": "^4.12.2"
   },
   "devDependencies": {
-    "koishi": "^4.12.1"
+    "koishi": "^4.12.2"
   }
 }

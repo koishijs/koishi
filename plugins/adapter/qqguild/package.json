@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-adapter-qqguild",
   "description": "QQ Guild Adapter for Koishi",
-  "version": "3.4.4",
+  "version": "3.5.1",
   "main": "lib/index.js",
   "module": "lib/index.mjs",
   "typings": "lib/index.d.ts",
@@ -39,12 +39,12 @@
     }
   },
   "peerDependencies": {
-    "koishi": "^4.12.1"
+    "koishi": "^4.12.2"
   },
   "devDependencies": {
-    "koishi": "^4.12.1"
+    "koishi": "^4.12.2"
   },
   "dependencies": {
-    "@satorijs/adapter-qqguild": "^3.4.4"
+    "@satorijs/adapter-qqguild": "^3.5.1"
   }
 }

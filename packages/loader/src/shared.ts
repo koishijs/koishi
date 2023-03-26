@@ -180,7 +180,7 @@ export abstract class Loader {
     return new Context.Config(this.interpolate(this.config))
   }
 
-  async writeConfig() {
+  async writeConfig(silent = false) {
     this.suspend = true
     if (!this.writable) {
       throw new Error(`cannot overwrite readonly config`)
@@ -190,7 +190,7 @@ export abstract class Loader {
     } else if (this.mime === 'application/json') {
       await fs.writeFile(this.filename, JSON.stringify(this.config, null, 2))
     }
-    this.app.emit('config')
+    if (!silent) this.app.emit('config')
   }
 
   interpolate(source: any) {
