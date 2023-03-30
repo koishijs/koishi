@@ -349,7 +349,9 @@ extend(Session.prototype as Session.Private, {
         const { inters } = arg
         const output: string[] = []
         for (let i = 0; i < inters.length; ++i) {
-          output.push(await this.execute(inters[i], true))
+          const execution = await this.execute(inters[i], true)
+          const transformed = await this.transform(h.normalize(execution))
+          output.push(transformed.join(''))
         }
         for (let i = inters.length - 1; i >= 0; --i) {
           const { pos } = inters[i]
