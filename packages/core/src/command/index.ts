@@ -170,7 +170,7 @@ export class Commander extends Map<string, Command> {
       }
       command = new Command(name, index === segments.length - 1 ? decl : '', caller)
       caller.i18n.define('', `commands.${command.name}.$`, '')
-      caller.i18n.define('', `commands.${command.name}.description`, desc || '')
+      caller.i18n.define('', `commands.${command.name}.description`, index === segments.length - 1 ? desc : '')
       extra.push(command)
       if (!root) root = command
       if (parent) {
