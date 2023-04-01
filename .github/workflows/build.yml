@@ -130,8 +130,7 @@ jobs:
       - name: Unit Test
         run: yarn test:json
       - name: Report Coverage
-        if: ${{ matrix.node-version == 16 }}
-        uses: codecov/codecov-action@v1
+        uses: codecov/codecov-action@v3
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           file: ./coverage/coverage-final.json

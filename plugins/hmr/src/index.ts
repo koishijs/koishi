@@ -330,7 +330,7 @@ namespace Watcher {
       '**/node_modules/**',
       '**/.git/**',
       '**/logs/**',
-    ]).description('要忽略的文件或目录。使用 [Glob Patterns](https://github.com/micromatch/micromatch) 语法。'),
+    ]).description('要忽略的文件或目录。支持 [Glob Patterns](https://github.com/micromatch/micromatch) 语法。'),
     debounce: Schema.natural().role('ms').default(100).description('延迟触发更新的等待时间。'),
   })
 }

@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-echo",
   "description": "Echo plugin for Koishi",
-  "version": "2.2.0",
+  "version": "2.2.3",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -40,10 +40,10 @@
     ]
   },
   "peerDependencies": {
-    "koishi": "^4.12.2"
+    "koishi": "^4.12.3"
   },
   "devDependencies": {
     "@koishijs/plugin-mock": "^2.4.3",
-    "koishi": "^4.12.2"
+    "koishi": "^4.12.3"
   }
 }

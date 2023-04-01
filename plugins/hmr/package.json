@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-hmr",
   "description": "Hot Module Replacement Plugin for Koishi",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -41,11 +41,11 @@
     }
   },
   "peerDependencies": {
-    "koishi": "^4.12.2"
+    "koishi": "^4.12.3"
   },
   "devDependencies": {
     "@types/throttle-debounce": "^2.1.0",
-    "koishi": "^4.12.2"
+    "koishi": "^4.12.3"
   },
   "dependencies": {
     "chokidar": "^3.5.3",
