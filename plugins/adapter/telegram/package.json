@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-adapter-telegram",
   "description": "Telegram Adapter for Koishi",
-  "version": "3.7.3",
+  "version": "3.7.7",
   "main": "lib/index.js",
   "module": "lib/index.mjs",
   "typings": "lib/index.d.ts",
@@ -38,12 +38,12 @@
     }
   },
   "peerDependencies": {
-    "koishi": "^4.12.3"
+    "koishi": "^4.12.4"
   },
   "devDependencies": {
-    "koishi": "^4.12.3"
+    "koishi": "^4.12.4"
   },
   "dependencies": {
-    "@satorijs/adapter-telegram": "^3.7.3"
+    "@satorijs/adapter-telegram": "^3.7.7"
   }
 }
