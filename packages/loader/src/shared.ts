@@ -4,12 +4,14 @@ import * as yaml from 'js-yaml'
 import path from 'path'
 
 declare module '@koishijs/core' {
-  interface Context {
-    loader: Loader
-  }
-
   interface Events {
     'config'(): void
+    'exit'(signal: NodeJS.Signals): Promise<void>
+  }
+
+  interface Context {
+    prologue: string[]
+    loader: Loader
   }
 
   namespace Context {
@@ -31,11 +33,6 @@ declare module 'cordis' {
 
 export function unwrapExports(module: any) {
   return module?.default || module
-}
-
-export interface Modifier {
-  $if?: boolean
-  $filter?: Selection
 }
 
 function separate(source: any, isGroup = false) {

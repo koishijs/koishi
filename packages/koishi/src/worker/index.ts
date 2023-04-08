@@ -5,14 +5,6 @@ import * as logger from './logger'
 import '@satorijs/satori'
 
 declare module '@koishijs/core' {
-  interface Events {
-    'exit'(signal: NodeJS.Signals): Promise<void>
-  }
-
-  interface Context {
-    prologue: string[]
-  }
-
   namespace Context {
     interface Config {
       plugins?: Dict
