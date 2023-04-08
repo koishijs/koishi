@@ -66,7 +66,11 @@ export class I18n {
   }
 
   private* set(locale: string, prefix: string, value: I18n.Node): Generator<string> {
-    if (prefix.includes('@') || typeof value === 'string') {
+    if (typeof value === 'object' && value && !prefix.includes('@')) {
+      for (const key in value) {
+        yield* this.set(locale, prefix + key + '.', value[key])
+      }
+    } else if (prefix.includes('@') || typeof value === 'string') {
       const dict = this._data[locale]
       const [path, preset] = prefix.slice(0, -1).split('@')
       if (preset) {
@@ -79,9 +83,7 @@ export class I18n {
       dict[path] = value
       yield path
     } else {
-      for (const key in value) {
-        yield* this.set(locale, prefix + key + '.', value[key])
-      }
+      delete this._data[locale][prefix.slice(0, -1)]
     }
   }
 
