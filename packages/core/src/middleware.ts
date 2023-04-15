@@ -270,7 +270,7 @@ export class Processor {
 
       // attach user data
       // authority is for suggestion
-      const userFields = new Set<User.Field>(['flag', 'authority', 'locale'])
+      const userFields = new Set<User.Field>(['id', 'flag', 'authority', 'locale'])
       this.ctx.emit('before-attach-user', session, userFields)
       const user = await session.observeUser(userFields)
 

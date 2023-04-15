@@ -324,7 +324,7 @@ extend(Session.prototype as Session.Private, {
       if (!command) break
       argv.tokens.shift()
       argv.command = command
-      if (command['_actions'].length) break
+      if (command._arguments.length) break
     }
     return argv.command
   },
