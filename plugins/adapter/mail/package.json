@@ -1,0 +1,55 @@
+{
+  "name": "@koishijs/plugin-adapter-mail",
+  "description": "Mail Adapter for Koishi",
+  "version": "1.0.1",
+  "main": "lib/index.js",
+  "module": "lib/index.mjs",
+  "typings": "lib/index.d.ts",
+  "files": [
+    "lib"
+  ],
+  "author": "Anillc <void@anillc.cn>",
+  "contributors": [
+    "Anillc <void@anillc.cn>",
+    "Shigma <i@shig.ma>",
+    "arily <arily@arily.moe>"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/satorijs/satori.git",
+    "directory": "adapters/mail"
+  },
+  "bugs": {
+    "url": "https://github.com/satorijs/satori/issues"
+  },
+  "homepage": "https://koishi.chat/plugins/adapter/mail.html",
+  "keywords": [
+    "bot",
+    "adapter",
+    "email",
+    "chatbot",
+    "koishi"
+  ],
+  "koishi": {
+    "browser": true,
+    "description": {
+      "en": "Mail Adapter",
+      "zh": "邮件适配器"
+    },
+    "service": {
+      "implements": [
+        "adapter"
+      ]
+    }
+  },
+  "peerDependencies": {
+    "koishi": "^4.12.4"
+  },
+  "devDependencies": {
+    "koishi": "^4.12.4"
+  },
+  "dependencies": {
+    "@satorijs/adapter-mail": "^1.0.1"
+  }
+}
