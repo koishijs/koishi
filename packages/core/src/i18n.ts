@@ -140,20 +140,25 @@ export class I18n {
     return results
   }
 
-  render(value: I18n.Node, params: any, locale: string) {
+  _render(value: I18n.Node, params: any, locale: string) {
     if (value === undefined) return
 
     if (typeof value !== 'string') {
       const preset = value[kTemplate]
       const render = this._presets[preset]
       if (!render) throw new Error(`Preset "${preset}" not found`)
-      return render(value, params, locale)
+      return [h.text(render(value, params, locale))]
     }
 
-    return h.parse(value, params).join('')
+    return h.parse(value, params)
   }
 
+  /** @deprecated */
   text(locales: Iterable<string>, paths: string[], params: object) {
+    return this.render(locales, paths, params).join('')
+  }
+
+  render(locales: Iterable<string>, paths: string[], params: object) {
     // sort locales by priority
     const queue = new Set<string>()
     for (const locale of locales) {
@@ -171,32 +176,32 @@ export class I18n {
         for (const key of ['$' + locale, locale]) {
           const value = this._data[key]?.[path]
           if (value === undefined) continue
-          return this.render(value, params, locale)
+          return this._render(value, params, locale)
         }
       }
     }
 
     // path not found
     logger.warn('missing', paths[0])
-    return paths[0]
+    return [h.text(paths[0])]
   }
 
   private registerBuiltins() {
     this.preset('plural', (data: string[], params: { length: number }, locale) => {
       const path = params.length in data ? params.length : data.length - 1
-      return this.render(data[path], params, locale)
+      return this._render(data[path], params, locale).join('')
     })
 
     this.preset('random', (data: string[], params, locale) => {
-      return this.render(Random.pick(data), params, locale)
+      return this._render(Random.pick(data), params, locale).join('')
     })
 
     this.preset('list', (data, params: any[], locale) => {
       const list = Object.entries(params).map(([key, value]) => {
-        return this.render(data.item, { key, value }, locale)
+        return this._render(data.item, { key, value }, locale)
       })
-      list.unshift(this.render(data.header, params, locale))
-      list.push(this.render(data.footer, params, locale))
+      list.unshift(this._render(data.header, params, locale))
+      list.push(this._render(data.footer, params, locale))
       return list.join('\n').trim()
     })
   }

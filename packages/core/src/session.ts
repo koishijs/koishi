@@ -30,6 +30,7 @@ declare module '@satorijs/core' {
     getUser<K extends User.Field = never>(id?: string, fields?: K[]): Promise<User>
     observeUser<T extends User.Field = never>(fields?: Iterable<T>): Promise<User.Observed<T | U>>
     withScope<T>(scope: string, callback: () => T): Promisify<T>
+    i18n(path: string | string[], params?: object): h[]
     text(path: string | string[], params?: object): string
     collect<T extends 'user' | 'channel'>(key: T, argv: Argv, fields?: Set<keyof Tables[T]>): Set<keyof Tables[T]>
     inferCommand(argv: Argv): Command
@@ -270,6 +271,10 @@ extend(Session.prototype as Session.Private, {
   },
 
   text(path, params = {}) {
+    return this.i18n(path, params).join('')
+  },
+
+  i18n(path, params = {}) {
     const locales: string[] = [
       this.channel?.['locale'],
       this.guild?.['locale'],
@@ -289,7 +294,7 @@ extend(Session.prototype as Session.Private, {
       }
       return this.scope + path
     })
-    return this.app.i18n.text(locales, paths, params)
+    return this.app.i18n.render(locales, paths, params)
   },
 
   collect(key: 'user' | 'channel', argv: Argv, fields = new Set()) {
