@@ -1,5 +1,3 @@
-#!/usr/bin/env node
-
 import registerStartCommand from './start'
 import CAC from 'cac'
 
