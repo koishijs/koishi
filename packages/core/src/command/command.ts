@@ -274,7 +274,7 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
     // before hooks
     for (const validator of this._checkers) {
       const result = await validator.call(this, argv, ...args)
-      if (typeof result === 'string') return result
+      if (!isNullable(result)) return result
     }
 
     // FIXME empty actions will cause infinite loop
