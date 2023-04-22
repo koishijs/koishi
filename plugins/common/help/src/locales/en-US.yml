@@ -1,6 +1,8 @@
 commands:
   help:
     description: Show help
+    shortcuts:
+      help: 帮助
     options:
       help: show this message
       authority: show authority requirements
