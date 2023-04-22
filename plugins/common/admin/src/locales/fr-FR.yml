@@ -1,8 +1,41 @@
+commands:
+  user:
+    description: 用户管理
+  channel:
+    description: 频道管理
+  authorize:
+    description: 权限管理
+  assign:
+    description: 受理者账号
+  user.locale:
+    description: 语言偏好
+  user.flag:
+    description: 标记信息
+  channel.locale:
+    description: 语言偏好
+  channel.flag:
+    description: 标记信息
 admin:
-  user-not-found: Utilisateur introuvable.
-  user-unchanged: Les données utilisateur n'ont pas été modifiées.
-  user-updated: Les données utilisateur ont été changées.
-  channel-not-found: Canel introuvable.
-  channel-unchanged: Les données du canel n'ont pas été modifiées.
-  channel-updated: Les données du canel ont été changées.
-  not-in-group: Vous n'êtes pas dans le contexte du groupe, tapez -c pour spécifier le canel cible.
+  user-option: 指定目标用户
+  user-not-found: 未找到指定的用户。
+  user-unchanged: 用户数据未改动。
+  user-updated: 用户数据已修改。
+  channel-option: 指定目标频道
+  channel-not-found: 未找到指定的频道。
+  channel-unchanged: 频道数据未改动。
+  channel-updated: 频道数据已修改。
+  not-in-group: 当前不在群组上下文中，请使用 -c 参数指定目标频道。
+  unknown-flag: 未找到标记 {0}。
+  all-flags: 全部标记为：{0}。
+  no-flags: 未设置任何标记。
+  current-flags: 当前的标记为：{0}。
+  user-expected: 请指定目标用户。
+  channel-expected: 请指定目标频道。
+  invalid-assignee-platform: 受理人应与目标频道属于同一平台。
+  current-locale: 当前语言偏好为：{0}。
+  no-locale: 未设置语言偏好。
+  options:
+    remove: 重置设置
+    list: 查看全部
+    set: 添加项
+    unset: 删除项
