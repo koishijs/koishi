@@ -1,4 +1,5 @@
 general:
+  $: 通用设置
   name: English
   paren: ' ({0}) '
   quote: '"{0}"'
@@ -9,8 +10,8 @@ general:
   hour: hour
   minute: minute
   second: second
-
 internal:
+  $: 核心文本
   error-encountered: An unknown error has occurred.
   low-authority: Low authority.
   insufficient-arguments: Insufficient arguments, type help to see usage.
@@ -28,3 +29,5 @@ internal:
   invalid-channel: Expect a valid channel.
   suggest-hint: Do you mean {0}?
   suggest-command: Send a period to apply the suggestion.
+commands:
+  $: 指令系统
