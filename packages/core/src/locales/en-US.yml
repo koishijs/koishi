@@ -1,5 +1,5 @@
 general:
-  $: 通用设置
+  $: General Settings
   name: English
   paren: ' ({0}) '
   quote: '"{0}"'
@@ -30,4 +30,4 @@ internal:
   suggest-hint: Do you mean {0}?
   suggest-command: Send a period to apply the suggestion.
 commands:
-  $: 指令系统
+  $: Command System
