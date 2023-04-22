@@ -11,7 +11,7 @@ general:
   minute: minute
   second: second
 internal:
-  $: 核心文本
+  $: Internal Text
   error-encountered: An unknown error has occurred.
   low-authority: Low authority.
   insufficient-arguments: Insufficient arguments, type help to see usage.
