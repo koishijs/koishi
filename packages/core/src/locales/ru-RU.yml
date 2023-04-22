@@ -1,15 +1,15 @@
 general:
   $: 通用设置
-  name: 中文
+  name: Русский
   paren: '（{0}）'
   quote: '“{0}”'
   comma: '，'
-  and: 和
+  and: и
   or: 或
   day: 天
   hour: 小时
-  minute: 分钟
-  second: 秒
+  minute: минута
+  second: сек
 internal:
   $: 核心文本
   error-encountered: 发生未知错误。
