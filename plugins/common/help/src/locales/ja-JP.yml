@@ -2,7 +2,7 @@ commands:
   help:
     description: ヘルプを表示
     shortcuts:
-      help: 帮助
+      help: ヘルプ
     options:
       help: このメッセージを表示
       authority: コマンドやオプションの権限を表示
