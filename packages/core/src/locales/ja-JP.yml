@@ -1,5 +1,5 @@
 general:
-  $: 通用设置
+  $: 一般設定
   name: 日本語
   paren: '（{0}）'
   quote: '「{0}」'
