@@ -1,5 +1,5 @@
 general:
-  $: 通用设置
+  $: Paramètres généraux
   name: francais
   paren: ' ({0}) '
   quote: '"{0}"'
