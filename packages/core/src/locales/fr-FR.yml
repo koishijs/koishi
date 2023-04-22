@@ -11,7 +11,7 @@ general:
   minute: minute
   second: seconde
 internal:
-  $: 核心文本
+  $: Texte interne
   error-encountered: Une erreur inconnue s'est produite.
   low-authority: Droits insuffisants.
   insufficient-arguments: Arguments insuffisants, tapez "help" pour afficher l'aide
@@ -30,4 +30,4 @@ internal:
   suggest-hint: Voulez-vous dire {0} ?
   suggest-command: Tapez un point pour appliquer la suggestion.
 commands:
-  $: 指令系统
+  $: Système commande
