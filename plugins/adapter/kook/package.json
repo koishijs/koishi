@@ -39,10 +39,10 @@
     }
   },
   "peerDependencies": {
-    "koishi": "^4.12.5"
+    "koishi": "^4.12.6"
   },
   "devDependencies": {
-    "koishi": "^4.12.5"
+    "koishi": "^4.12.6"
   },
   "dependencies": {
     "@satorijs/adapter-kook": "^3.7.1"

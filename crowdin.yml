@@ -2,11 +2,5 @@ pull_request_title: 'i18n: update translations'
 pull_request_labels:
   - i18n
 files:
-  - source: /packages/cli/src/locales/zh-CN.yml
-    translation: /packages/cli/src/locales/%locale%.yml
-  - source: /packages/core/src/locales/zh-CN.yml
-    translation: /packages/core/src/locales/%locale%.yml
-  - source: /packages/helpers/src/locales/zh-CN.yml
-    translation: /packages/helpers/src/locales/%locale%.yml
-  - source: /plugins/common/help/src/locales/zh-CN.yml
-    translation: /plugins/common/help/src/locales/%locale%.yml
+  - source: /**/src/locales/zh-CN.yml
+    translation: /%original_path%/%locale%.yml
