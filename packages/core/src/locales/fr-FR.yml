@@ -1,4 +1,5 @@
 general:
+  $: 通用设置
   name: francais
   paren: ' ({0}) '
   quote: '"{0}"'
@@ -9,8 +10,8 @@ general:
   hour: heure
   minute: minute
   second: seconde
-
 internal:
+  $: 核心文本
   error-encountered: Une erreur inconnue s'est produite.
   low-authority: Droits insuffisants.
   insufficient-arguments: Arguments insuffisants, tapez "help" pour afficher l'aide
@@ -28,3 +29,5 @@ internal:
   invalid-channel: Entrez un nom de canal valide.
   suggest-hint: Voulez-vous dire {0} ?
   suggest-command: Tapez un point pour appliquer la suggestion.
+commands:
+  $: 指令系统
