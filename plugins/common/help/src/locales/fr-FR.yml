@@ -1,6 +1,8 @@
 commands:
   help:
     description: Afficher l'aide
+    shortcuts:
+      help: 帮助
     options:
       help: afficher cette aide
       authority: afficher les droits nécessaires
