@@ -3,7 +3,8 @@ import { FSWatcher, watch, WatchOptions } from 'chokidar'
 import { relative, resolve } from 'path'
 import { debounce } from 'throttle-debounce'
 import { Loader, unwrapExports } from '@koishijs/loader'
-
+import { codeFrameColumns } from '@babel/code-frame'
+import fs from 'fs/promises'
 declare module 'koishi' {
   interface Context {
     watcher: Watcher
@@ -14,6 +15,18 @@ declare module 'koishi' {
       watch?: Watcher.Config
     }
   }
+}
+
+async function readLinesFromFile(filePath: string, startLine: number, endLine: number): Promise<string[]> {
+  const fileContent = (await fs.readFile(filePath, 'utf-8')).toString()
+  const lines = fileContent.split('\n')
+  const result = []
+
+  for (let i = startLine; i <= endLine && i < lines.length; i++) {
+    result.push(lines[i])
+  }
+
+  return result
 }
 
 function loadDependencies(filename: string, ignored: Set<string>) {
@@ -30,6 +43,23 @@ function loadDependencies(filename: string, ignored: Set<string>) {
 interface Reload {
   filename: string
   children: Map<ForkScope, string>
+}
+
+type ComplieError = {
+  detail: string | undefined
+  id: string
+  location: {
+    column: number
+    file: string
+    length: number
+    line: number
+    lineText: string
+    namespace: string
+    suggestion: string
+  }
+  notes: any[]
+  pluginName: string
+  text: string
 }
 
 const logger = new Logger('watch')
@@ -260,7 +290,24 @@ class Watcher {
         attempts[filename] = unwrapExports(require(filename))
       }
     } catch (err) {
-      logger.warn(err)
+      // logger.warn(err)
+      const error = err.errors[0] as ComplieError
+      logger.warn('Encountered compilation error while attempting to reload module:')
+      logger.warn('')
+      logger.warn(`File: ${error.location.file}:${error.location.line}:${error.location.column}`)
+      // logger.warn(`${error.text}`)
+      readLinesFromFile(error.location.file, error.location.line - 2, error.location.line + 2).then((result) => {
+        const errTip: string[] = codeFrameColumns(result.join('\n'), {
+          start: { line: 2, column: error.location.column },
+        }, {
+          highlightCode: true,
+          message: error.text,
+        }).split('\n')
+        // console.log(errTip);
+        errTip.map(line => {
+          logger.warn(line)
+        })
+      })
       return rollback()
     }
 
