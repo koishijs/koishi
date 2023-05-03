@@ -2,7 +2,7 @@ general:
   $: Paramètres généraux
   name: francais
   paren: ' ({0}) '
-  quote: '"{0}"'
+  quote: '«{0}»'
   comma: ', '
   and: et
   or: ou
