@@ -13,7 +13,7 @@ general:
 internal:
   $: Texte interne
   error-encountered: Une erreur inconnue s'est produite.
-  low-authority: Droits insuffisants.
+  low-authority: Permission non accordée,
   insufficient-arguments: Arguments insuffisants, tapez "help" pour afficher l'aide
   redunant-arguments: Arguments redondants, tapez "help" pour afficher l'aide
   invalid-argument: Arguments {0} invalides, {1}
