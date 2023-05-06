@@ -44,10 +44,13 @@
     "koishi": "^4.12.7"
   },
   "devDependencies": {
+    "@types/babel__code-frame": "^7.0.3",
     "@types/throttle-debounce": "^2.1.0",
+    "esbuild": "^0.17.18",
     "koishi": "^4.12.7"
   },
   "dependencies": {
+    "@babel/code-frame": "^7.21.4",
     "chokidar": "^3.5.3",
     "throttle-debounce": "^3.0.1"
   }

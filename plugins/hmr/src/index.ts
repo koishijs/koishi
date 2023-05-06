@@ -3,6 +3,7 @@ import { FSWatcher, watch, WatchOptions } from 'chokidar'
 import { relative, resolve } from 'path'
 import { debounce } from 'throttle-debounce'
 import { Loader, unwrapExports } from '@koishijs/loader'
+import { handleError } from './error'
 
 declare module 'koishi' {
   interface Context {
@@ -259,8 +260,8 @@ class Watcher {
       for (const [, { filename }] of reloads) {
         attempts[filename] = unwrapExports(require(filename))
       }
-    } catch (err) {
-      logger.warn(err)
+    } catch (e) {
+      handleError(e)
       return rollback()
     }
 
