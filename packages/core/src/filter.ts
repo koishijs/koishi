@@ -1,49 +1,13 @@
 import { defineProperty } from 'cosmokit'
-import { Context, Schema, Session } from '@satorijs/core'
+import { Context, Session } from '@satorijs/core'
 import { Eval } from '@minatojs/core'
 import { Channel, User } from './database'
 
-declare global {
-  namespace Schemastery {
-    interface Static {
-      path(options?: Path.Options): Schema<string>
-      filter(): Schema<Computed<boolean>>
-      computed<X>(inner: X, options?: Computed.Options): Schema<Computed<TypeS<X>>, Computed<TypeT<X>>>
-    }
-
-    namespace Path {
-      interface Options {
-        filters?: Filter[]
-        allowCreate?: boolean
-      }
-
-      type Filter = FileFilter | 'file' | 'directory'
-
-      interface FileFilter {
-        name: string
-        extensions: string[]
-      }
-    }
-
-    export namespace Computed {
-      export interface Options {
-        userFields?: User.Field[]
-        channelFields?: Channel.Field[]
-      }
-    }
+export namespace Computed {
+  export interface Options {
+    userFields?: User.Field[]
+    channelFields?: Channel.Field[]
   }
-}
-
-Schema.filter = function filter() {
-  return Schema.any().role('filter')
-}
-
-Schema.computed = function computed(inner, options = {}) {
-  return Schema.union([inner, Schema.any().hidden()]).role('computed', options)
-}
-
-Schema.path = function path(options = {}) {
-  return Schema.string().role('path', options)
 }
 
 export type Computed<T> = T | Eval.Expr<T> | ((session: Session) => T)
