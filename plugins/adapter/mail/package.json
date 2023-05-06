@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-adapter-mail",
   "description": "Mail Adapter for Koishi",
-  "version": "1.0.1",
+  "version": "1.0.3",
   "main": "lib/index.js",
   "module": "lib/index.mjs",
   "typings": "lib/index.d.ts",
@@ -32,7 +32,6 @@
     "koishi"
   ],
   "koishi": {
-    "browser": true,
     "description": {
       "en": "Mail Adapter",
       "zh": "邮件适配器"
@@ -44,12 +43,12 @@
     }
   },
   "peerDependencies": {
-    "koishi": "^4.12.7"
+    "koishi": "^4.12.8"
   },
   "devDependencies": {
-    "koishi": "^4.12.7"
+    "koishi": "^4.12.8"
   },
   "dependencies": {
-    "@satorijs/adapter-mail": "^1.0.1"
+    "@satorijs/adapter-mail": "^1.0.3"
   }
 }
