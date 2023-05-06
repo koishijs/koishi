@@ -44,7 +44,9 @@
     "koishi": "^4.12.7"
   },
   "devDependencies": {
+    "@types/babel__code-frame": "^7.0.3",
     "@types/throttle-debounce": "^2.1.0",
+    "esbuild": "^0.17.18",
     "koishi": "^4.12.7"
   },
   "dependencies": {
