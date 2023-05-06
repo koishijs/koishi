@@ -53,6 +53,5 @@
     "@babel/code-frame": "^7.21.4",
     "chokidar": "^3.5.3",
     "throttle-debounce": "^3.0.1"
-    
   }
 }
