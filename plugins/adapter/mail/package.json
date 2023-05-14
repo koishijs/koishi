@@ -43,10 +43,10 @@
     }
   },
   "peerDependencies": {
-    "koishi": "^4.12.8"
+    "koishi": "^4.12.9"
   },
   "devDependencies": {
-    "koishi": "^4.12.8"
+    "koishi": "^4.12.9"
   },
   "dependencies": {
     "@satorijs/adapter-mail": "^1.0.3"

@@ -19,12 +19,12 @@ jobs:
         name: Yarn Cache Dir
         run: echo "value=$(yarn cache dir)" >> $GITHUB_OUTPUT
       - name: Restore Lockfile
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: yarn.lock
           key: yarn-lock-${{ github.sha }}
       - name: Restore Cache
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: ${{ steps.cache.outputs.value }}
           key: yarn-cache-${{ github.sha }}-node-16
@@ -47,12 +47,12 @@ jobs:
         with:
           node-version: 16
       - name: Restore Lockfile
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: yarn.lock
           key: yarn-lock-${{ github.sha }}
       - name: Restore Cache
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: ${{ needs.prepare.outputs.cache-dir }}
           key: yarn-cache-${{ github.sha }}-node-16
@@ -82,12 +82,12 @@ jobs:
         with:
           node-version: 16
       - name: Restore Lockfile
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: yarn.lock
           key: yarn-lock-${{ github.sha }}
       - name: Restore Cache
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: ${{ needs.prepare.outputs.cache-dir }}
           key: yarn-cache-${{ github.sha }}-node-16
@@ -115,12 +115,12 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
       - name: Restore Lockfile
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: yarn.lock
           key: yarn-lock-${{ github.sha }}
       - name: Restore Cache
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: ${{ needs.prepare.outputs.cache-dir }}
           key: yarn-cache-${{ github.sha }}-node-${{ matrix.node-version }}
