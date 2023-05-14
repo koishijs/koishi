@@ -217,7 +217,7 @@ extend(Session.prototype as Session.Private, {
     if (user) return user
     const authority = await this.resolve(app.config.autoAuthorize)
     if (authority) {
-      return app.database.createUser(platform, id, { authority })
+      return app.database.createUser(platform, id, { authority, createdAt: new Date() })
     } else {
       const user = app.model.tables.user.create()
       Object.assign(user, { [platform]: id, authority, $detached: true })

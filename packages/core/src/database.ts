@@ -24,6 +24,7 @@ export interface User {
   authority: number
   name: string
   locale: string
+  createdAt: Date
 }
 
 export namespace User {
@@ -82,6 +83,7 @@ export class DatabaseService extends Database<Tables> {
       flag: 'unsigned(20)',
       authority: 'unsigned(4)',
       locale: 'string(63)',
+      createdAt: 'timestamp',
     }, {
       autoInc: true,
     })
