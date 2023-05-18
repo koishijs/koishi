@@ -1,6 +1,7 @@
 general:
   $: 一般設定
   name: 日本語
+  paren: '（{0}）'
   quote: '「{0}」'
   comma: '、'
   and: と
@@ -8,7 +9,9 @@ general:
   day: 日
   hour: 時間
   minute: 分
+  second: 秒
 internal:
+  $: 核心文本
   error-encountered: 不明なエラーが発生しました。
   low-authority: 実行できる権限が付与されていません
   insufficient-arguments: パラメータが不足しています、「help」を送信して使い方を確認してください。
@@ -26,3 +29,5 @@ internal:
   invalid-channel: チャンネル名を指定してください。
   suggest-hint: '「{0}」を実行したいですか？'
   suggest-command: 句点を送信してコマンドを実行します。
+commands:
+  $: 指令系统
