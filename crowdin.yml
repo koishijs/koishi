@@ -1,6 +1,8 @@
+commit_message: '[skip ci]'
 pull_request_title: 'i18n: update translations'
 pull_request_labels:
   - i18n
 files:
   - source: /**/src/locales/zh-CN.yml
     translation: /%original_path%/%locale%.yml
+    skip_untranslated_strings: true

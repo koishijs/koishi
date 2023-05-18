@@ -319,11 +319,11 @@ namespace Watcher {
   }
 
   export const Config: Schema<Config> = Schema.object({
-    base: Schema.string().description('用户显示路径的根目录，默认为当前工作路径。'),
+    base: Schema.string(),
     root: Schema.union([
       Schema.array(String).role('table'),
       Schema.transform(String, (value) => [value]),
-    ]).default(['.']).description('要监听的文件或目录列表，相对于 `base` 路径。'),
+    ]).default(['.']),
     ignored: Schema.union([
       Schema.array(String).role('table'),
       Schema.transform(String, (value) => [value]),
@@ -331,8 +331,10 @@ namespace Watcher {
       '**/node_modules/**',
       '**/.git/**',
       '**/logs/**',
-    ]).description('要忽略的文件或目录。支持 [Glob Patterns](https://github.com/micromatch/micromatch) 语法。'),
-    debounce: Schema.natural().role('ms').default(100).description('延迟触发更新的等待时间。'),
+    ]),
+    debounce: Schema.natural().role('ms').default(100),
+  }).i18n({
+    'zh-CN': require('./locales/zh-CN'),
   })
 }
 
