@@ -1,4 +1,5 @@
 general:
+  $: 一般設定
   name: 日本語
   paren: '（{0}）'
   quote: '「{0}」'
@@ -9,8 +10,8 @@ general:
   hour: 時間
   minute: 分
   second: 秒
-
 internal:
+  $: 核心文本
   error-encountered: 不明なエラーが発生しました。
   low-authority: 実行できる権限が付与されていません
   insufficient-arguments: パラメータが不足しています、「help」を送信して使い方を確認してください。
@@ -18,7 +19,7 @@ internal:
   invalid-argument: 無効なパラメータ「{0}」、{1}
   unknown-option: 未知なオプション「{0}」、「help」を送信して使い方を確認してください。
   invalid-option: 無効なオプション「{0}」、{1}
-  check-syntax: 「help」を送信して使い方を検索してください。
+  check-syntax: '「help」を送信して使い方を検索してください。'
   invalid-number: 数字を指定してください。
   invalid-integer: 整数を指定してください。
   invalid-posint: 正の整数を指定してください。
@@ -26,5 +27,7 @@ internal:
   invalid-date: 日付を指定してください。
   invalid-user: ユーザー名を指定してください。
   invalid-channel: チャンネル名を指定してください。
-  suggest-hint: 「{0}」を実行したいですか？
+  suggest-hint: '「{0}」を実行したいですか？'
   suggest-command: 句点を送信してコマンドを実行します。
+commands:
+  $: 指令系统

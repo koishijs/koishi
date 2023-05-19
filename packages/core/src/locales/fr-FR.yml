@@ -1,7 +1,8 @@
 general:
+  $: Paramètres généraux
   name: francais
   paren: ' ({0}) '
-  quote: '"{0}"'
+  quote: '«{0}»'
   comma: ', '
   and: et
   or: ou
@@ -9,10 +10,10 @@ general:
   hour: heure
   minute: minute
   second: seconde
-
 internal:
+  $: Texte interne
   error-encountered: Une erreur inconnue s'est produite.
-  low-authority: Droits insuffisants.
+  low-authority: Permission non accordée,
   insufficient-arguments: Arguments insuffisants, tapez "help" pour afficher l'aide
   redunant-arguments: Arguments redondants, tapez "help" pour afficher l'aide
   invalid-argument: Arguments {0} invalides, {1}
@@ -28,3 +29,5 @@ internal:
   invalid-channel: Entrez un nom de canal valide.
   suggest-hint: Voulez-vous dire {0} ?
   suggest-command: Tapez un point pour appliquer la suggestion.
+commands:
+  $: Système commande
