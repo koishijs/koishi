@@ -1,0 +1,38 @@
+{
+  "name": "@koishijs/i18n-utils",
+  "description": "I18n Utilities for Koishi",
+  "version": "1.0.0",
+  "main": "lib/index.cjs",
+  "module": "lib/index.mjs",
+  "typings": "lib/index.d.ts",
+  "files": [
+    "lib"
+  ],
+  "author": "Shigma <shigma10826@gmail.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/koishijs/koishi.git",
+    "directory": "packages/i18n-utils"
+  },
+  "bugs": {
+    "url": "https://github.com/koishijs/koishi/issues"
+  },
+  "homepage": "https://koishi.chat/api/utils.html",
+  "keywords": [
+    "bot",
+    "chatbot",
+    "koishi",
+    "utilities",
+    "i18n",
+    "internationalization",
+    "translation",
+    "message",
+    "locale",
+    "localization",
+    "language"
+  ],
+  "dependencies": {
+    "cosmokit": "^1.4.2"
+  }
+}
