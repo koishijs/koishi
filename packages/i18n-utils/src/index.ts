@@ -5,38 +5,49 @@ type LocaleTree = { [key in string]: LocaleTree }
 export type FallbackLocale =
   | string
   | string[]
-  | { [locale in string]: string[] }
+  | { [key in string]: string[] }
   | false
 
-export function fallback(tree: LocaleTree, locale: string): string[] {
-  const tokens = locale ? locale.split('-') : []
-  const locales: string[] = []
-  tree = { ...tree }
-  let prefix = ''
-  const path: LocaleTree[] = [tree]
-  for (let i = 0; i < tokens.length; i++) {
-    const token = tokens[i]!
-    const locale = prefix + token
-    if (!(locale in tree)) break
-    prefix = locale + '-'
-    const parent = tree
-    tree = { ...parent[locale] }
-    delete parent[locale]
-    path.push(tree)
+type LocaleEntry = readonly [string, LocaleEntry[]]
+
+function toLocaleEntry(key: string, tree: LocaleTree): LocaleEntry {
+  return [key, [[key, []], ...Object.entries(tree).map(([key, value]) => toLocaleEntry(key, value))]]
+}
+
+function* traverse([key, children]: LocaleEntry, ignored: LocaleEntry[]): Generator<string> {
+  if (!children.length) {
+    return yield key
   }
-  tokens.splice(path.length - 1)
-  function traverse(tree: LocaleTree) {
-    for (const locale in tree) {
-      locales.push(locale)
-      traverse(tree[locale])
+  for (const child of children) {
+    if (ignored.includes(child)) continue
+    yield* traverse(child, ignored)
+  }
+}
+
+export function fallback(tree: LocaleTree, locales: string[]): string[] {
+  const root = toLocaleEntry('', tree)
+  const ignored: LocaleEntry[] = []
+  for (const locale of locales.slice().reverse()) {
+    let prefix = '', children = root[1]
+    const tokens = locale ? locale.split('-') : []
+    for (let i = 0; i < tokens.length; i++) {
+      const token = tokens[i]!
+      const current = prefix + token
+      const index = children.findIndex(([key]) => key === current)
+      if (index < 0) break
+      prefix = current + '-'
+      const [entry] = children.splice(index, 1)
+      children.unshift(entry)
+      children = entry[1]
+      if (current === locale) {
+        ignored.unshift(entry)
+      }
     }
   }
-  do {
-    tree = path.pop()!
-    const locale = tokens.join('-')
-    tokens.pop()
-    locales.push(locale)
-    traverse(tree)
-  } while (path.length)
-  return locales
+  ignored.push(root)
+  const results: string[] = []
+  for (const entry of ignored) {
+    results.push(...traverse(entry, ignored))
+  }
+  return results
 }
