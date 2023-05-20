@@ -3,6 +3,7 @@ import { Context, Schema } from '@satorijs/core'
 import * as cordis from 'cordis'
 import { Computed } from './filter'
 import { Commander } from './command'
+import { I18n } from './i18n'
 
 export type Plugin = cordis.Plugin<Context>
 
@@ -38,23 +39,17 @@ declare module '@satorijs/core' {
   }
 
   export namespace Context {
-    export interface Config extends Config.Basic, Config.Advanced, Commander.Config {
-      i18n?: Config.I18n
+    export interface Config extends Config.Basic, Config.Advanced {
+      i18n?: I18n.Config
       delay?: Config.Delay
     }
 
     export namespace Config {
-      export interface Basic {
-        locale?: string
+      export interface Basic extends Commander.Config {
         nickname?: string | string[]
         autoAssign?: Computed<Awaitable<boolean>>
         autoAuthorize?: Computed<Awaitable<number>>
         minSimilarity?: number
-      }
-
-      export interface I18n {
-        output?: 'prefer-user' | 'prefer-channel'
-        match?: 'strict' | 'prefer-input' | 'prefer-output'
       }
 
       export interface Delay {
@@ -102,12 +97,7 @@ defineProperty(Context.Config, 'Basic', Schema.object({
   minSimilarity: Schema.percent().default(1).description('用于模糊匹配的相似系数，应该是一个 0 到 1 之间的数值。数值越高，模糊匹配越严格。设置为 1 可以完全禁用模糊匹配。'),
 }).description('基础设置'))
 
-defineProperty(Context.Config, 'I18n', Schema.object({
-  output: Schema.union([
-    Schema.const('prefer-user').description('优先使用用户语言'),
-    Schema.const('prefer-channel').description('优先使用频道语言'),
-  ]).default('prefer-channel').description('输出语言偏好设置。'),
-}))
+defineProperty(Context.Config, 'I18n', I18n.Config)
 
 defineProperty(Context.Config, 'Delay', Schema.object({
   character: Schema.natural().role('ms').default(0).description('调用 `session.sendQueued()` 时消息间发送的最小延迟，按前一条消息的字数计算。'),
@@ -123,9 +113,8 @@ defineProperty(Context.Config, 'Advanced', Schema.object({
 
 Context.Config.list.push(Context.Config.Basic)
 Context.Config.list.push(Schema.object({
-  locale: Schema.string().default('zh').description('默认使用的语言。'),
-  i18n: Context.Config.I18n,
-}).description('国际化设置'))
+  i18n: I18n.Config,
+}))
 Context.Config.list.push(Schema.object({
   delay: Context.Config.Delay,
 }).description('延迟设置'))

@@ -1,7 +1,14 @@
 import { expect } from 'chai'
-import { fallback } from '../src'
+import { LocaleTree, fallback } from '../src'
 
 describe('@koishijs/i18n-utils', () => {
+  it('locale tree', () => {
+    expect(LocaleTree.from(['zh-CN', 'zh-TW', 'en-US', 'en-GB'])).to.deep.equal({
+      'zh': { 'zh-CN': {}, 'zh-TW': {} },
+      'en': { 'en-US': {}, 'en-GB': {} },
+    })
+  })
+
   it('single fallbacking', () => {
     expect(fallback({
       'zh': { 'zh-CN': {}, 'zh-TW': {} },
@@ -12,6 +19,11 @@ describe('@koishijs/i18n-utils', () => {
       'zh': { 'zh-CN': {}, 'zh-TW': {} },
       'en': { 'en-US': {}, 'en-GB': {} },
     }, ['en'])).to.deep.equal(['en', 'en-US', 'en-GB', '', 'zh', 'zh-CN', 'zh-TW'])
+
+    expect(fallback({
+      'zh': { 'zh-CN': {}, 'zh-TW': {} },
+      'en': { 'en-US': {}, 'en-GB': {} },
+    }, [])).to.deep.equal(['', 'zh', 'zh-CN', 'zh-TW', 'en', 'en-US', 'en-GB'])
 
     expect(fallback({
       'zh': { 'zh-CN': {}, 'zh-TW': {} },
@@ -28,7 +40,7 @@ describe('@koishijs/i18n-utils', () => {
     expect(fallback({
       'zh': { 'zh-CN': {}, 'zh-TW': {} },
       'en': { 'en-US': {}, 'en-GB': {} },
-    }, ['zh-TW', 'en'])).to.deep.equal(['zh-TW', 'en', 'en-US', 'en-GB', 'zh', 'zh-CN', ''])
+    }, ['zh-TW', 'zh-TW-XX', 'en'])).to.deep.equal(['zh-TW', 'en', 'en-US', 'en-GB', 'zh', 'zh-CN', ''])
 
     expect(fallback({
       'zh': { 'zh-CN': {}, 'zh-TW': {} },

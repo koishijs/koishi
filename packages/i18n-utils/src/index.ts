@@ -1,6 +1,22 @@
 // make sure the signature is compatible with @intlify/core-base
+import { deduplicate } from 'cosmokit'
 
-type LocaleTree = { [key in string]: LocaleTree }
+export type LocaleTree = { [key in string]: LocaleTree }
+
+export namespace LocaleTree {
+  export function from(locales: string[]) {
+    const tree: LocaleTree = {}
+    for (const locale of locales.filter(Boolean)) {
+      const tokens = locale.split('-')
+      let current = tree
+      for (let i = 0; i < tokens.length; i++) {
+        const locale = tokens.slice(0, i + 1).join('-')
+        current = current[locale] = current[locale] || {}
+      }
+    }
+    return tree
+  }
+}
 
 export type FallbackLocale =
   | string
@@ -27,7 +43,7 @@ function* traverse([key, children]: LocaleEntry, ignored: LocaleEntry[]): Genera
 export function fallback(tree: LocaleTree, locales: string[]): string[] {
   const root = toLocaleEntry('', tree)
   const ignored: LocaleEntry[] = []
-  for (const locale of locales.slice().reverse()) {
+  for (const locale of deduplicate(locales).filter(Boolean).reverse()) {
     let prefix = '', children = root[1]
     const tokens = locale ? locale.split('-') : []
     for (let i = 0; i < tokens.length; i++) {
@@ -35,10 +51,13 @@ export function fallback(tree: LocaleTree, locales: string[]): string[] {
       const current = prefix + token
       const index = children.findIndex(([key]) => key === current)
       if (index < 0) break
-      prefix = current + '-'
-      const [entry] = children.splice(index, 1)
-      children.unshift(entry)
+      const entry = children[index]
+      if (index > 0) {
+        children.splice(index, 1)
+        children.unshift(entry)
+      }
       children = entry[1]
+      prefix = current + '-'
       if (current === locale) {
         ignored.unshift(entry)
       }

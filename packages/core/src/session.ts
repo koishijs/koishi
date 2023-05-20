@@ -284,7 +284,6 @@ extend(Session.prototype as Session.Private, {
     } else {
       locales.push(this.user?.['locale'])
     }
-    locales.push(this.app.config.locale)
     locales.unshift(this.locale)
     const paths = makeArray(path).map((path) => {
       if (!path.startsWith('.')) return path

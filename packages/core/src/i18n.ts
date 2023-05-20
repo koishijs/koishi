@@ -1,7 +1,7 @@
-import { Random } from '@koishijs/utils'
 import { distance } from 'fastest-levenshtein'
 import { Dict, isNullable } from 'cosmokit'
-import { Context, h, Logger } from '@satorijs/core'
+import { fallback, LocaleTree } from '@koishijs/i18n-utils'
+import { Context, h, Logger, Schema } from '@satorijs/core'
 import zhCN from './locales/zh-CN.yml'
 import enUS from './locales/en-US.yml'
 import jaJP from './locales/ja-JP.yml'
@@ -46,17 +46,26 @@ export namespace I18n {
 }
 
 export class I18n {
+  static readonly [Context.expose] = 'i18n'
+
   _data: Dict<I18n.Store> = {}
   _presets: Dict<I18n.Renderer> = {}
 
-  constructor(public ctx: Context) {
+  locales: LocaleTree
+
+  constructor(public ctx: Context, config: I18n.Config) {
+    this.locales = LocaleTree.from(config.locales)
+
     this.define('', { '': '' })
     this.define('zh', zhCN)
     this.define('en', enUS)
     this.define('ja', jaJP)
     this.define('fr', frFR)
     this.define('zh-TW', zhTW)
-    this.registerBuiltins()
+  }
+
+  fallback(locales: string[]) {
+    return fallback(this.locales, locales)
   }
 
   compare(expect: string, actual: string, options: CompareOptions = {}) {
@@ -103,16 +112,6 @@ export class I18n {
     })
   }
 
-  /** @deprecated */
-  formatter(name: string, callback: I18n.Formatter) {
-    logger.warn('formatter is deprecated and will be removed in the future')
-  }
-
-  /** @deprecated */
-  preset(name: string, callback: I18n.Renderer) {
-    this._presets[name] = callback
-  }
-
   find(path: string, actual: string, options: I18n.FindOptions = {}): I18n.FindResult[] {
     if (!actual) return []
     const groups: string[] = []
@@ -154,25 +153,16 @@ export class I18n {
   }
 
   /** @deprecated */
-  text(locales: Iterable<string>, paths: string[], params: object) {
+  text(locales: string[], paths: string[], params: object) {
     return this.render(locales, paths, params).join('')
   }
 
-  render(locales: Iterable<string>, paths: string[], params: object) {
-    // sort locales by priority
-    const queue = new Set<string>()
-    for (const locale of locales) {
-      if (!locale) continue
-      queue.add(locale)
-    }
-    for (const locale in this._data) {
-      if (locale.startsWith('$')) continue
-      queue.add(locale)
-    }
+  render(locales: string[], paths: string[], params: object) {
+    locales = this.fallback(locales)
 
     // try every locale
     for (const path of paths) {
-      for (const locale of queue) {
+      for (const locale of locales) {
         for (const key of ['$' + locale, locale]) {
           const value = this._data[key]?.[path]
           if (value === undefined) continue
@@ -185,26 +175,22 @@ export class I18n {
     logger.warn('missing', paths[0])
     return [h.text(paths[0])]
   }
+}
 
-  private registerBuiltins() {
-    this.preset('plural', (data: string[], params: { length: number }, locale) => {
-      const path = params.length in data ? params.length : data.length - 1
-      return this._render(data[path], params, locale).join('')
-    })
-
-    this.preset('random', (data: string[], params, locale) => {
-      return this._render(Random.pick(data), params, locale).join('')
-    })
-
-    this.preset('list', (data, params: any[], locale) => {
-      const list = Object.entries(params).map(([key, value]) => {
-        return this._render(data.item, { key, value }, locale)
-      })
-      list.unshift(this._render(data.header, params, locale))
-      list.push(this._render(data.footer, params, locale))
-      return list.join('\n').trim()
-    })
+export namespace I18n {
+  export interface Config {
+    locales?: string[]
+    output?: 'prefer-user' | 'prefer-channel'
+    match?: 'strict' | 'prefer-input' | 'prefer-output'
   }
+
+  export const Config: Schema<Config> = Schema.object({
+    locales: Schema.array(String).default(['zh-CN', 'en-US', 'fr-FR', 'ja-JP', 'de-DE', 'ru-RU']).description('可用的语言列表。按照回退顺序排列。'),
+    output: Schema.union([
+      Schema.const('prefer-user' as const).description('优先使用用户语言'),
+      Schema.const('prefer-channel' as const).description('优先使用频道语言'),
+    ]).default('prefer-channel').description('输出语言偏好设置。'),
+  }).description('国际化设置')
 }
 
 Context.service('i18n', I18n)
