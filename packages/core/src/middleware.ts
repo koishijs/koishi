@@ -191,7 +191,7 @@ export class Processor {
         }
         match(value)
         if (!params) continue
-        session.locale = locale
+        session.locales = [locale]
         break
       }
     }
@@ -254,7 +254,7 @@ export class Processor {
     if (this.ctx.database) {
       if (session.subtype === 'group') {
         // attach group data
-        const channelFields = new Set<Channel.Field>(['flag', 'assignee', 'guildId', 'locale'])
+        const channelFields = new Set<Channel.Field>(['flag', 'assignee', 'guildId', 'locales'])
         this.ctx.emit('before-attach-channel', session, channelFields)
         const channel = await session.observeChannel(channelFields)
         // for backwards compatibility (TODO remove in v5)
@@ -270,7 +270,7 @@ export class Processor {
 
       // attach user data
       // authority is for suggestion
-      const userFields = new Set<User.Field>(['id', 'flag', 'authority', 'locale'])
+      const userFields = new Set<User.Field>(['id', 'flag', 'authority', 'locales'])
       this.ctx.emit('before-attach-user', session, userFields)
       const user = await session.observeUser(userFields)
 

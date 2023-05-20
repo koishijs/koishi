@@ -23,7 +23,7 @@ export interface User {
   flag: number
   authority: number
   name: string
-  locale: string
+  locales: string[]
   createdAt: Date
 }
 
@@ -50,7 +50,7 @@ export interface Channel {
   flag: number
   assignee: string
   guildId: string
-  locale: string
+  locales: string[]
 }
 
 export namespace Channel {
@@ -82,7 +82,7 @@ export class DatabaseService extends Database<Tables> {
       name: { type: 'string', length: 63 },
       flag: 'unsigned(20)',
       authority: 'unsigned(4)',
-      locale: 'string(63)',
+      locales: 'list(63)',
       createdAt: 'timestamp',
     }, {
       autoInc: true,
@@ -103,7 +103,7 @@ export class DatabaseService extends Database<Tables> {
       flag: 'unsigned(20)',
       assignee: 'string(63)',
       guildId: 'string(63)',
-      locale: 'string(63)',
+      locales: 'list(63)',
     }, {
       primary: ['id', 'platform'],
     })
@@ -183,8 +183,8 @@ export class DatabaseService extends Database<Tables> {
     const [content, forced] = args as [Fragment, boolean]
     if (!content) return []
 
-    const data = await this.getAssignedChannels(['id', 'assignee', 'flag', 'platform', 'guildId', 'locale'])
-    const assignMap: Dict<Dict<Pick<Channel, 'id' | 'guildId' | 'locale'>[]>> = {}
+    const data = await this.getAssignedChannels(['id', 'assignee', 'flag', 'platform', 'guildId', 'locales'])
+    const assignMap: Dict<Dict<Pick<Channel, 'id' | 'guildId' | 'locales'>[]>> = {}
     for (const channel of data) {
       const { platform, id, assignee, flag } = channel
       if (channels && !channels.includes(`${platform}:${id}`)) continue
@@ -195,12 +195,12 @@ export class DatabaseService extends Database<Tables> {
     return (await Promise.all(this.app.bots.map((bot) => {
       const targets = assignMap[bot.platform]?.[bot.selfId]
       if (!targets) return Promise.resolve([])
-      const sessions = targets.map(({ id, guildId, locale }) => bot.session({
+      const sessions = targets.map(({ id, guildId, locales }) => bot.session({
         type: 'message',
         subtype: 'group',
         channelId: id,
         guildId,
-        locale,
+        locales,
       }))
       return bot.broadcast(sessions, content)
     }))).flat(1)

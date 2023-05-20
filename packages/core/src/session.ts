@@ -54,7 +54,7 @@ declare module '@satorijs/core' {
     }
 
     export interface Payload {
-      locale?: string
+      locales?: string[]
     }
   }
 }
@@ -276,15 +276,15 @@ extend(Session.prototype as Session.Private, {
 
   i18n(path, params = {}) {
     const locales: string[] = [
-      this.channel?.['locale'],
-      this.guild?.['locale'],
+      ...(this.channel as Channel.Observed)?.locales || [],
+      ...(this.guild as Channel.Observed)?.locales || [],
     ]
     if (this.app.config.i18n.output === 'prefer-user') {
-      locales.unshift(this.user?.['locale'])
+      locales.unshift(...(this.user as User.Observed)?.locales || [])
     } else {
-      locales.push(this.user?.['locale'])
+      locales.push(...(this.user as User.Observed)?.locales || [])
     }
-    locales.unshift(this.locale)
+    locales.unshift(...this.locales || [])
     const paths = makeArray(path).map((path) => {
       if (!path.startsWith('.')) return path
       if (!this.scope) {

@@ -48,13 +48,13 @@ function adminLocale<U extends User.Field, G extends Channel.Field, A extends an
   return cmd
     .option('remove', '-r', { descPath: 'admin.options.remove' })
     .action(async ({ session, options }, ...args) => {
-      const target = session[key] as any
+      const target = session[key] as { locales?: string[] }
       if (options.remove) {
-        target.locale = ''
+        target.locales = []
       } else if (args[0]) {
-        target.locale = args[0]
-      } else if (target.locale) {
-        return session.text('admin.current-locale', [target.locale])
+        target.locales = [args[0]]
+      } else if (target.locales?.length) {
+        return session.text('admin.current-locale', [target.locales.join(', ')])
       } else {
         return session.text('admin.no-locale')
       }
@@ -90,7 +90,7 @@ export function apply(ctx: Context) {
     })
 
   ctx.command('user.locale <lang>', { authority: 1, checkUnknown: true, admin: { user: true } })
-    .userFields(['locale'])
+    .userFields(['locales'])
     .use(adminLocale, 'user')
 
   ctx.command('user.flag [...flags]', { authority: 3, checkUnknown: true, admin: { user: true } })
@@ -115,7 +115,7 @@ export function apply(ctx: Context) {
     })
 
   ctx.command('channel.locale <lang>', { authority: 3, checkUnknown: true, admin: { channel: true } })
-    .channelFields(['locale'])
+    .channelFields(['locales'])
     .use(adminLocale, 'channel')
 
   ctx.command('channel.flag [...flags]', { authority: 3, checkUnknown: true, admin: { channel: true } })
