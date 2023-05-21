@@ -41,10 +41,10 @@
     }
   },
   "peerDependencies": {
-    "koishi": "^4.12.9"
+    "koishi": "^4.13.0"
   },
   "devDependencies": {
-    "koishi": "^4.12.9"
+    "koishi": "^4.13.0"
   },
   "dependencies": {
     "@minatojs/driver-mysql": "^2.4.5"

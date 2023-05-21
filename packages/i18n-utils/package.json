@@ -30,7 +30,8 @@
     "message",
     "locale",
     "localization",
-    "language"
+    "language",
+    "fallback"
   ],
   "dependencies": {
     "cosmokit": "^1.4.2"
