@@ -2,7 +2,7 @@ commands:
   help:
     description: Show help
     shortcuts:
-      help: help
+      help: <></>
     options:
       help: show this message
       authority: show authority requirements

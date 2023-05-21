@@ -18,12 +18,6 @@ export namespace LocaleTree {
   }
 }
 
-export type FallbackLocale =
-  | string
-  | string[]
-  | { [key in string]: string[] }
-  | false
-
 type LocaleEntry = readonly [string, LocaleEntry[]]
 
 function toLocaleEntry(key: string, tree: LocaleTree): LocaleEntry {

@@ -165,7 +165,7 @@ export class I18n {
       for (const locale of locales) {
         for (const key of ['$' + locale, locale]) {
           const value = this._data[key]?.[path]
-          if (value === undefined) continue
+          if (value === undefined || !value && !locale && path !== '') continue
           return this._render(value, params, locale)
         }
       }
