@@ -185,7 +185,7 @@ export namespace I18n {
   }
 
   export const Config: Schema<Config> = Schema.object({
-    locales: Schema.array(String).default(['zh-CN', 'en-US', 'fr-FR', 'ja-JP', 'de-DE', 'ru-RU']).description('可用的语言列表。按照回退顺序排列。'),
+    locales: Schema.array(String).role('table').default(['zh-CN', 'en-US', 'fr-FR', 'ja-JP', 'de-DE', 'ru-RU']).description('可用的语言列表。按照回退顺序排列。'),
     output: Schema.union([
       Schema.const('prefer-user' as const).description('优先使用用户语言'),
       Schema.const('prefer-channel' as const).description('优先使用频道语言'),

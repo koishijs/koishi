@@ -1,5 +1,5 @@
 import { extend, observe } from '@koishijs/utils'
-import { Awaitable, defineProperty, isNullable, makeArray, Promisify } from 'cosmokit'
+import { Awaitable, defineProperty, isNullable, makeArray } from 'cosmokit'
 import { Context, Fragment, h, Logger, Session } from '@satorijs/core'
 import { Eval, executeEval, isEvalExpr } from '@minatojs/core'
 import { Argv, Command } from './command'
@@ -29,7 +29,8 @@ declare module '@satorijs/core' {
     observeChannel<T extends Channel.Field = never>(fields?: Iterable<T>): Promise<Channel.Observed<T | G>>
     getUser<K extends User.Field = never>(id?: string, fields?: K[]): Promise<User>
     observeUser<T extends User.Field = never>(fields?: Iterable<T>): Promise<User.Observed<T | U>>
-    withScope<T>(scope: string, callback: () => T): Promisify<T>
+    withScope(scope: string, callback: () => Awaitable<string>): Promise<string>
+    resolveScope(path: string): string
     i18n(path: string | string[], params?: object): h[]
     text(path: string | string[], params?: object): string
     collect<T extends 'user' | 'channel'>(key: T, argv: Argv, fields?: Set<keyof Tables[T]>): Set<keyof Tables[T]>
@@ -264,10 +265,25 @@ extend(Session.prototype as Session.Private, {
     const oldScope = this.scope
     try {
       this.scope = scope
-      return await callback()
+      const result = await callback()
+      return h.transform(result, {
+        i18n: (params, children) => h.i18n({
+          ...params,
+          path: this.resolveScope(params.path),
+        }, children),
+      }, this)
     } finally {
       this.scope = oldScope
     }
+  },
+
+  resolveScope(path) {
+    if (!path.startsWith('.')) return path
+    if (!this.scope) {
+      this.app.logger('i18n').warn(new Error('missing scope'))
+      return ''
+    }
+    return this.scope + path
   },
 
   text(path, params = {}) {
@@ -285,14 +301,7 @@ extend(Session.prototype as Session.Private, {
       locales.push(...(this.user as User.Observed)?.locales || [])
     }
     locales.unshift(...this.locales || [])
-    const paths = makeArray(path).map((path) => {
-      if (!path.startsWith('.')) return path
-      if (!this.scope) {
-        this.app.logger('i18n').warn(new Error('missing scope'))
-        return ''
-      }
-      return this.scope + path
-    })
+    const paths = makeArray(path).map((path) => this.resolveScope(path))
     return this.app.i18n.render(locales, paths, params)
   },
 
