@@ -45,11 +45,11 @@
     ]
   },
   "peerDependencies": {
-    "koishi": "^4.13.0"
+    "koishi": "^4.13.1"
   },
   "devDependencies": {
     "@koishijs/plugin-database-memory": "^2.3.4",
     "@koishijs/plugin-mock": "^2.4.3",
-    "koishi": "^4.13.0"
+    "koishi": "^4.13.1"
   }
 }
