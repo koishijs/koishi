@@ -224,9 +224,9 @@ export const defineDriver = <T>(constructor: Driver.Constructor<T>, schema?: Sch
   reusable: true,
   Config: schema,
   filter: false,
-  apply(ctx, config) {
+  async apply(ctx, config) {
     config = { ...config }
-    prepare?.(ctx, config)
+    await prepare?.(ctx, config)
     const driver = new constructor(ctx.model, config)
     const key = ctx.mapping.database || 'default'
 
