@@ -42,10 +42,10 @@
     }
   },
   "peerDependencies": {
-    "koishi": "^4.13.1"
+    "koishi": "^4.13.2"
   },
   "devDependencies": {
-    "koishi": "^4.13.1"
+    "koishi": "^4.13.2"
   },
   "dependencies": {
     "@satorijs/adapter-onebot": "^5.7.1"

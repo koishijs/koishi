@@ -38,10 +38,10 @@
     }
   },
   "peerDependencies": {
-    "koishi": "^4.13.1"
+    "koishi": "^4.13.2"
   },
   "devDependencies": {
-    "koishi": "^4.13.1"
+    "koishi": "^4.13.2"
   },
   "dependencies": {
     "@satorijs/adapter-discord": "^3.6.1"
