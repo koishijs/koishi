@@ -97,6 +97,14 @@ describe('Parser API', () => {
       expect(cmd.parse('-C')).to.have.shape({ options: { gamma: 1 } })
       expect(cmd.parse('')).to.have.shape({ options: { gamma: 0 }, args: [] })
     })
+
+    it('valued override', () => {
+      cmd = app.command('test <msg>')
+      cmd.option('writer', '-w <id>')
+      cmd.option('writer', '-W, --anonymous', { value: 0 })
+      expect(cmd.parse('foo -w 1 bar')).to.have.shape({ args: ['foo', 'bar'], options: { writer: 1 } })
+      expect(cmd.parse('foo -W bar')).to.have.shape({ args: ['foo', 'bar'], options: { writer: 0 } })
+    })
   })
 
   describe('Advanced Features', () => {

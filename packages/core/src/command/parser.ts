@@ -556,15 +556,18 @@ export namespace Argv {
         // get parameter from next token
         quoted = false
         if (!param) {
-          const { type } = option || {}
+          const { type, values } = option || {}
           if (resolveConfig(type).greedy) {
             param = Argv.stringify(argv)
             quoted = true
             argv.tokens = []
-          } else if (type !== 'boolean' && argv.tokens.length && (type || argv.tokens[0]?.content !== '-')) {
-            const token = argv.tokens.shift()
-            param = token.content
-            quoted = token.quoted
+          } else {
+            const isValued = names[names.length - 1] in (values || {})
+            if (!isValued && type !== 'boolean' && argv.tokens.length && (type || argv.tokens[0]?.content !== '-')) {
+              const token = argv.tokens.shift()
+              param = token.content
+              quoted = token.quoted
+            }
           }
         }
 
