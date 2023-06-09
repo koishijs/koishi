@@ -10,7 +10,6 @@ declare module '@koishijs/core' {
   }
 
   interface Context {
-    prologue: string[]
     loader: Loader
   }
 
@@ -125,6 +124,7 @@ export abstract class Loader {
   public filename: string
   public envFiles: string[]
   public cache: Dict<string> = Object.create(null)
+  public prolog?: Logger.Record[]
 
   abstract resolve(name: string): Promise<string>
   abstract resolvePlugin(name: string): Promise<any>
