@@ -20,6 +20,18 @@ declare module '@koishijs/core' {
       plugins?: Dict
     }
   }
+
+  interface EnvData {
+    message: StartMessage
+  }
+}
+
+interface StartMessage {
+  subtype: string
+  channelId: string
+  guildId: string
+  sid: string
+  content: string
 }
 
 declare module 'cordis' {
@@ -303,6 +315,16 @@ export abstract class Loader {
       }
       this.writeConfig()
     })
+
+    if (app.envData.message) {
+      const { sid, channelId, guildId, content } = app.envData.message
+      app.envData.message = null
+      const dispose = app.on('bot-status-updated', (bot) => {
+        if (bot.sid !== sid || bot.status !== 'online') return
+        dispose()
+        bot.sendMessage(channelId, content, guildId)
+      })
+    }
 
     return app
   }
