@@ -504,12 +504,19 @@ export namespace Argv {
         argv.source = this.name + ' ' + Argv.stringify(argv)
       }
 
+      let lastArgDecl: Declaration
+
       while (!argv.error && argv.tokens?.length) {
         const token = argv.tokens[0]
         let { content, quoted } = token
 
+        // variadic argument
+        const argDecl = this._arguments[args.length] || lastArgDecl
+        if (args.length === this._arguments.length - 1 && argDecl.variadic) {
+          lastArgDecl = argDecl
+        }
+
         // greedy argument
-        const argDecl = this._arguments[args.length]
         if (content[0] !== '-' && resolveConfig(argDecl?.type).greedy) {
           args.push(Argv.parseValue(Argv.stringify(argv), true, 'argument', argv, argDecl))
           break

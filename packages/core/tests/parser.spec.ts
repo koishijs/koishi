@@ -99,11 +99,16 @@ describe('Parser API', () => {
     })
 
     it('valued override', () => {
-      cmd = app.command('test <msg>')
+      cmd = app.command('test2 <msg>')
       cmd.option('writer', '-w <id>')
       cmd.option('writer', '-W, --anonymous', { value: 0 })
       expect(cmd.parse('foo -w 1 bar')).to.have.shape({ args: ['foo', 'bar'], options: { writer: 1 } })
       expect(cmd.parse('foo -W bar')).to.have.shape({ args: ['foo', 'bar'], options: { writer: 0 } })
+    })
+
+    it('typed arguments', () => {
+      cmd = app.command('test3 [...args:number]')
+      expect(cmd.parse('1 2 3')).to.have.shape({ args: [1, 2, 3] })
     })
   })
 
