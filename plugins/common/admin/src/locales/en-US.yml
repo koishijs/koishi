@@ -1,10 +1,10 @@
 commands:
   user:
-    description: 用户管理
+    description: User Management
   channel:
-    description: 频道管理
+    description: Channel Management
   authorize:
-    description: 权限管理
+    description: Permission Management
   assign:
     description: 受理者账号
   user.locale:
