@@ -1,33 +1,33 @@
 general:
-  $: General Settings
-  name: English
-  paren: ' ({0}) '
-  quote: '"{0}"'
-  comma: ', '
-  and: and
-  or: or
-  day: day
-  hour: hour
-  minute: minute
-  second: second
+  $: 通用设置
+  name: 中文
+  paren: '（{0}）'
+  quote: '“{0}”'
+  comma: '，'
+  and: 和
+  or: 或
+  day: 天
+  hour: 小时
+  minute: 分钟
+  second: 秒
 internal:
-  $: Internal Text
-  error-encountered: An unknown error has occurred.
-  low-authority: Low authority.
-  insufficient-arguments: Insufficient arguments, type help to see usage.
-  redunant-arguments: Redunant arguments, type help to see usage.
-  invalid-argument: Invalid argument {0}, {1}
-  unknown-option: Unknown option {0}, type help to see usage.
-  invalid-option: Invalid option {0}, {1}
-  check-syntax: Type help to see usage.
-  invalid-number: Expect a number.
-  invalid-integer: Expect an integer.
-  invalid-posint: Expect a positive integer.
-  invalid-natural: Expect a non-negative integer.
-  invalid-date: Expect a valid date.
-  invalid-user: Expect a valid user.
-  invalid-channel: Expect a valid channel.
-  suggest-hint: Do you mean {0}?
-  suggest-command: Send a period to apply the suggestion.
+  $: 核心文本
+  error-encountered: 发生未知错误。
+  low-authority: 权限不足。
+  insufficient-arguments: 缺少参数，输入帮助以查看用法。
+  redunant-arguments: 存在多余参数，输入帮助以查看用法。
+  invalid-argument: 参数 {0} 输入无效，{1}
+  unknown-option: 存在未知选项 {0}，输入帮助以查看用法。
+  invalid-option: 选项 {0} 输入无效，{1}
+  check-syntax: 输入帮助以查看用法。
+  invalid-number: 请提供一个数字。
+  invalid-integer: 请提供一个整数。
+  invalid-posint: 请提供一个正整数。
+  invalid-natural: 请提供一个非负整数。
+  invalid-date: 请输入合法的时间。
+  invalid-user: 请指定正确的用户。
+  invalid-channel: 请指定正确的频道。
+  suggest-hint: 您要找的是不是{0}？
+  suggest-command: 发送句号以使用推测的指令。
 commands:
-  $: Command System
+  $: 指令系统
