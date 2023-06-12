@@ -1,18 +1,18 @@
 commands:
   user:
-    description: 用户管理
+    description: User Management
   channel:
-    description: 频道管理
+    description: Channel Management
   authorize:
-    description: 权限管理
+    description: Permission Management
   assign:
-    description: 受理者账号
+    description: Recipient Account
   user.locale:
-    description: 语言偏好
+    description: Language Preference
   user.flag:
     description: 标记信息
   channel.locale:
-    description: 语言偏好
+    description: Language Preference
   channel.flag:
     description: 标记信息
 admin:
