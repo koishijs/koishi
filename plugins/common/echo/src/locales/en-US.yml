@@ -1,6 +1,6 @@
 commands:
   echo:
-    description: Send messages
+    description: 发送消息
     options:
       escape: 发送转义消息
       unescape: 发送反转义消息
@@ -8,5 +8,5 @@ commands:
       channel: 发送到频道
       guild: 指定群组编号
     messages:
-      expect-text: Please type to send
+      expect-text: 请输入要发送的文本。
       platform-not-found: 找不到指定的平台。
