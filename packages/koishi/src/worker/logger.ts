@@ -30,6 +30,7 @@ Context.Config.list.push(Schema.object({
 const prolog: Logger.Record[] = []
 
 const target: Logger.Target = {
+  colors: 3,
   record(record) {
     prolog.push(record)
   },

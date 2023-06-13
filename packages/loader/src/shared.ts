@@ -21,7 +21,7 @@ declare module '@koishijs/core' {
   }
 
   interface EnvData {
-    message: StartMessage
+    message?: StartMessage
   }
 }
 
