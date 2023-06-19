@@ -26,10 +26,10 @@ declare module '@koishijs/core' {
 }
 
 interface StartMessage {
-  subtype: string
-  channelId: string
-  guildId: string
-  sid: string
+  subtype?: string
+  channelId?: string
+  guildId?: string
+  sid?: string
   content: string
 }
 
