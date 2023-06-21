@@ -10,17 +10,17 @@ commands:
   user.locale:
     description: Language Preference
   user.flag:
-    description: 标记信息
+    description: Marker Information
   channel.locale:
     description: Language Preference
   channel.flag:
-    description: 标记信息
+    description: Mark Information
 admin:
-  user-option: 指定目标用户
-  user-not-found: 未找到指定的用户。
-  user-unchanged: 用户数据未改动。
-  user-updated: 用户数据已修改。
-  channel-option: 指定目标频道
+  user-option: Target User Specification
+  user-not-found: The specified user was not found.
+  user-unchanged: User data has not been changed.
+  user-updated: User data has been changed.
+  channel-option: Target Channel Specification
   channel-not-found: 未找到指定的频道。
   channel-unchanged: 频道数据未改动。
   channel-updated: 频道数据已修改。
