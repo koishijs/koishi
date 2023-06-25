@@ -2,12 +2,12 @@ general:
   $: Allgemeine Einstellungen
   name: Deutsch
   paren: '（{0}）'
-  quote: '“{0}”'
-  comma: '，'
+  quote: '„{0}“'
+  comma: ','
   and: und
   or: oder
-  day: Tag
-  hour: Stunde
+  day: Tag(en)
+  hour: Stunde(n)
   minute: Minute(n)
   second: Sekunde(n)
 internal:
