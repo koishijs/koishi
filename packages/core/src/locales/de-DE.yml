@@ -7,9 +7,9 @@ general:
   and: und
   or: oder
   day: Tag
-  hour: Stunden
-  minute: Minuten
-  second: Sekunde
+  hour: Stunde
+  minute: Minute(n)
+  second: Sekunde(n)
 internal:
   $: Interner Text
   error-encountered: 发生未知错误。
