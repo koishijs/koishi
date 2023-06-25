@@ -4,8 +4,8 @@ general:
   paren: '（{0}）'
   quote: '“{0}”'
   comma: '，'
-  and: 和
-  or: 或
+  and: und
+  or: oder
   day: 天
   hour: 小时
   minute: 分钟
