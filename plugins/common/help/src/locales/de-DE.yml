@@ -1,6 +1,6 @@
 commands:
   help:
-    description: Help
+    description: 显示帮助信息
     shortcuts:
       help: Hilfe
     options:
