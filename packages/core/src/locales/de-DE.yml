@@ -1,17 +1,17 @@
 general:
-  $: 通用设置
-  name: 中文
+  $: Allgemeine Einstellungen
+  name: Deutsch
   paren: '（{0}）'
   quote: '“{0}”'
   comma: '，'
   and: und
   or: oder
-  day: 天
-  hour: 小时
-  minute: 分钟
-  second: 秒
+  day: Tag
+  hour: Stunden
+  minute: Minuten
+  second: Sekunde
 internal:
-  $: 核心文本
+  $: Interner Text
   error-encountered: 发生未知错误。
   low-authority: 权限不足。
   insufficient-arguments: 缺少参数，输入帮助以查看用法。
