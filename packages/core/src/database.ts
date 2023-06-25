@@ -112,7 +112,7 @@ export class DatabaseService extends Database<Tables> {
       if (platform in this.tables.user.fields) return
       this.migrate('user', { [platform]: 'string(63)' }, async (db) => {
         const users = await db.get('user', { [platform]: { $exists: true } }, ['id', platform as never])
-        await db.upsert('binding', users.map((user) => ({
+        await db.upsert('binding', users.filter(u => u[platform]).map((user) => ({
           aid: user.id,
           bid: user.id,
           pid: user[platform],
