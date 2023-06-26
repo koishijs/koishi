@@ -22,12 +22,12 @@ internal:
   check-syntax: Geben Sie „Hilfe“ ein, um die Verwendung anzuzeigen.
   invalid-number: Bitte geben Sie eine Zahl an.
   invalid-integer: Bitte geben Sie eine ganze Zahl an.
-  invalid-posint: 请提供一个正整数。
-  invalid-natural: 请提供一个非负整数。
-  invalid-date: 请输入合法的时间。
-  invalid-user: 请指定正确的用户。
-  invalid-channel: 请指定正确的频道。
-  suggest-hint: 您要找的是不是{0}？
-  suggest-command: 发送句号以使用推测的指令。
+  invalid-posint: Bitte geben Sie eine positive ganze Zahl an.
+  invalid-natural: Bitte geben Sie eine nicht negative ganze Zahl an.
+  invalid-date: Bitte geben Sie eine gültige Zeit ein.
+  invalid-user: Bitte geben Sie den richtigen Benutzer an.
+  invalid-channel: Bitte geben Sie den richtigen Kanal an.
+  suggest-hint: Ist das, wonach Sie suchen, {0}?
+  suggest-command: Bitte verwenden Sie einen Punkt, um den Satz abzuschließen und die angegebene Anweisung zu befolgen.
 commands:
   $: Befehlssystem
