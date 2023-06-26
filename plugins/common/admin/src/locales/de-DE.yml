@@ -1,23 +1,23 @@
 commands:
   user:
-    description: 用户管理
+    description: Benutzerverwaltung
   channel:
-    description: 频道管理
+    description: Kanalmanagement
   authorize:
-    description: 权限管理
+    description: Berechtigungsverwaltung
   assign:
-    description: 受理者账号
+    description: Empfängerkonto
   user.locale:
-    description: 语言偏好
+    description: Spracheinstellung
   user.flag:
-    description: 标记信息
+    description: Kennzeichnungsinformationen
   channel.locale:
-    description: 语言偏好
+    description: Sprachpräferenz
   channel.flag:
-    description: 标记信息
+    description: Kennzeichnungsinformationen
 admin:
-  user-option: 指定目标用户
-  user-not-found: 未找到指定的用户。
+  user-option: Zielgruppe festlegen
+  user-not-found: Keine Zielgruppe gefunden.
   user-unchanged: 用户数据未改动。
   user-updated: 用户数据已修改。
   channel-option: 指定目标频道
