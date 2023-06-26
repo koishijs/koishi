@@ -30,4 +30,4 @@ internal:
   suggest-hint: 您要找的是不是{0}？
   suggest-command: 发送句号以使用推测的指令。
 commands:
-  $: 指令系统
+  $: Befehlssystem
