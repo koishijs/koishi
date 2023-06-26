@@ -15,13 +15,13 @@ internal:
   error-encountered: Ein unbekannter Fehler ist aufgetreten.
   low-authority: Niedrige Autorität.
   insufficient-arguments: Fehlender Parameter, geben Sie Hilfe ein, um die Verwendung zu sehen.
-  redunant-arguments: 存在多余参数，输入帮助以查看用法。
-  invalid-argument: 参数 {0} 输入无效，{1}
-  unknown-option: 存在未知选项 {0}，输入帮助以查看用法。
-  invalid-option: 选项 {0} 输入无效，{1}
-  check-syntax: 输入帮助以查看用法。
-  invalid-number: 请提供一个数字。
-  invalid-integer: 请提供一个整数。
+  redunant-arguments: Es sind zu viele Parameter vorhanden. Geben Sie "Hilfe" ein, um die Verwendung anzuzeigen.
+  invalid-argument: Der Parameter {0} ist ungültig. {1}
+  unknown-option: Es gibt eine unbekannte Option {0}. Geben Sie „Hilfe“ ein, um die Verwendung anzuzeigen.
+  invalid-option: Die Option {0} ist ungültig. {1}
+  check-syntax: Geben Sie „Hilfe“ ein, um die Verwendung anzuzeigen.
+  invalid-number: Bitte geben Sie eine Zahl an.
+  invalid-integer: Bitte geben Sie eine ganze Zahl an.
   invalid-posint: 请提供一个正整数。
   invalid-natural: 请提供一个非负整数。
   invalid-date: 请输入合法的时间。
