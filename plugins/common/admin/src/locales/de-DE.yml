@@ -18,10 +18,10 @@ commands:
 admin:
   user-option: Zielgruppe festlegen
   user-not-found: Keine Zielgruppe gefunden.
-  user-unchanged: 用户数据未改动。
-  user-updated: 用户数据已修改。
-  channel-option: 指定目标频道
-  channel-not-found: 未找到指定的频道。
+  user-unchanged: Die Benutzerdaten wurden nicht geändert
+  user-updated: Die Benutzerdaten wurden geändert.
+  channel-option: Geben Sie den Zielkanal an.
+  channel-not-found: Der Zielkanal konnte nicht gefunden werden.
   channel-unchanged: 频道数据未改动。
   channel-updated: 频道数据已修改。
   not-in-group: 当前不在群组上下文中，请使用 -c 参数指定目标频道。
