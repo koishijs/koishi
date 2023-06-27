@@ -1,7 +1,7 @@
 general:
   $: Allgemeine Einstellungen
   name: Deutsch
-  paren: '({0})'
+  paren: ' ({0}) '
   quote: '„{0}“'
   comma: ','
   and: und
@@ -22,12 +22,12 @@ internal:
   check-syntax: Geben Sie „Hilfe“ ein, um die Verwendung anzuzeigen.
   invalid-number: Bitte geben Sie eine Zahl an.
   invalid-integer: Bitte geben Sie eine ganzeZahl an.
-  invalid-posint: Bitte geben Sie eine positive ganze Zahl an.
-  invalid-natural: Bitte geben Sie eine nicht negative ganze Zahl an.
+  invalid-posint: Bitte geben Sie eine positive Ganzzahl an.
+  invalid-natural: Bitte geben Sie eine nicht negative Ganzzahl an.
   invalid-date: Bitte geben Sie eine gültige Zeit ein.
   invalid-user: Bitte geben Sie einen gültigen Benutzer an.
   invalid-channel: Bitte geben Sie einen gültigen Kanal an.
   suggest-hint: Ist das, wonach Sie suchen, {0}?
-  suggest-command: Bitte verwenden Sie einen Punkt, um den Satz abzuschließen und die angegebene Anweisung zu befolgen.
+  suggest-command: Senden Sie einen Punkt, um den Vorschlag anzuwenden.
 commands:
   $: Befehlssystem
