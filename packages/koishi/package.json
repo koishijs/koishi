@@ -47,7 +47,7 @@
   ],
   "dependencies": {
     "@koishijs/core": "4.13.5",
-    "@koishijs/loader": "3.3.0",
+    "@koishijs/loader": "4.0.0",
     "@koishijs/utils": "^7.0.2",
     "@satorijs/satori": "^2.4.0",
     "cac": "^6.7.14",

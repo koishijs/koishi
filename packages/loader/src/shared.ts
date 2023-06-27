@@ -1,4 +1,4 @@
-import { Context, Dict, ForkScope, interpolate, isNullable, Logger, Plugin, resolveConfig, valueMap } from '@koishijs/core'
+import { Context, Dict, ForkScope, interpolate, isNullable, Logger, Plugin, resolveConfig, valueMap, version } from '@koishijs/core'
 import { constants, promises as fs } from 'fs'
 import * as yaml from 'js-yaml'
 import path from 'path'
@@ -124,12 +124,23 @@ export abstract class Loader {
   public filename: string
   public envFiles: string[]
   public cache: Dict<string> = Object.create(null)
-  public prolog?: Logger.Record[]
+  public prolog: Logger.Record[] = []
 
   private store = new WeakMap<Plugin, string>()
 
   abstract import(name: string): Promise<any>
   abstract fullReload(code?: number): void
+
+  constructor() {
+    Logger.targets.push({
+      colors: 3,
+      record: (record) => {
+        this.prolog.push(record)
+        this.prolog = this.prolog.slice(-1000)
+      },
+    })
+    new Logger('app').info('%C', `Koishi/${version}`)
+  }
 
   async init(filename?: string) {
     if (filename) {

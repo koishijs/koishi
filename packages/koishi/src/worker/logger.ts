@@ -1,4 +1,4 @@
-import { Context, defineProperty, Logger, remove, Schema, version } from '@koishijs/core'
+import { Context, defineProperty, Logger, Schema } from '@koishijs/core'
 
 interface LogLevelConfig {
   // a little different from @koishijs/utils
@@ -26,15 +26,6 @@ defineProperty(Context.Config, 'logger', Config)
 Context.Config.list.push(Schema.object({
   logger: Config,
 }))
-
-const prolog: Logger.Record[] = []
-
-const target: Logger.Target = {
-  colors: 3,
-  record(record) {
-    prolog.push(record)
-  },
-}
 
 export function prepare(config: Config = {}) {
   const { levels } = config
@@ -71,15 +62,5 @@ export function prepare(config: Config = {}) {
     }
   }
 
-  Logger.targets.push(target)
-
-  new Logger('app').info('%C', `Koishi/${version}`)
   Logger.timestamp = Date.now()
-}
-
-export function apply(app: Context) {
-  app.loader.prolog = prolog
-  app.on('ready', () => {
-    remove(Logger.targets, target)
-  })
 }
