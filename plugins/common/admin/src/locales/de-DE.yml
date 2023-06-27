@@ -2,7 +2,7 @@ commands:
   user:
     description: Benutzerverwaltung
   channel:
-    description: Kanalmanagement
+    description: Kanalverwaltung
   authorize:
     description: Berechtigungsverwaltung
   assign:
