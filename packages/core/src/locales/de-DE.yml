@@ -25,8 +25,8 @@ internal:
   invalid-posint: Bitte geben Sie eine positive ganze Zahl an.
   invalid-natural: Bitte geben Sie eine nicht negative ganze Zahl an.
   invalid-date: Bitte geben Sie eine gültige Zeit ein.
-  invalid-user: 请指定正确的用户。
-  invalid-channel: Bitte geben Sie den richtigen Kanal an.
+  invalid-user: Bitte geben Sie einen gültigen Benutzer an.
+  invalid-channel: Bitte geben Sie einen gültigen Kanal an.
   suggest-hint: Ist das, wonach Sie suchen, {0}?
   suggest-command: Bitte verwenden Sie einen Punkt, um den Satz abzuschließen und die angegebene Anweisung zu befolgen.
 commands:
