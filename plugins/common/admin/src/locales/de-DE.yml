@@ -35,7 +35,7 @@ admin:
   current-locale: 'Die aktuelle Sprachpräferenz ist: {0}.'
   no-locale: Keine Sprachpräferenz festgelegt
   options:
-    remove: 重置设置
-    list: 查看全部
-    set: 添加项
-    unset: 删除项
+    remove: Die Einstellungen zurücksetzen
+    list: Alle anzeigen
+    set: Punkt hinzufügen
+    unset: Punkt löschen
