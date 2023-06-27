@@ -1,6 +1,6 @@
 general:
   $: Paramètres généraux
-  name: francais
+  name: Français
   paren: ' ({0}) '
   quote: '«{0}»'
   comma: ', '
