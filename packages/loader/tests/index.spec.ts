@@ -1,5 +1,5 @@
 import { expect } from 'chai'
-import { Context } from 'koishi'
+import { Context, sleep } from 'koishi'
 import * as jest from 'jest-mock'
 import mock from '@koishijs/plugin-mock'
 import Loader from './utils'
@@ -53,7 +53,7 @@ describe('@koishijs/loader', () => {
       },
     }
     app.scope.update(loader.config)
-    await app.lifecycle.flush()
+    await sleep(0)
     expect(app.config.prefix).to.deep.equal(['/'])
     expect(app.registry.get(loader.data.foo)).to.be.not.ok
     expect(app.registry.get(loader.data.bar)).to.be.ok

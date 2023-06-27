@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/loader",
   "description": "Config Loader for Koishi",
-  "version": "3.2.5",
+  "version": "3.3.0",
   "main": "lib/index.js",
   "module": "lib/shared.mjs",
   "typings": "lib/index.d.ts",
@@ -14,6 +14,7 @@
       "require": "./lib/shared.js",
       "import": "./lib/shared.mjs"
     },
+    "./src/*": "./src/*",
     "./package.json": "./package.json"
   },
   "files": [

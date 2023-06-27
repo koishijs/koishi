@@ -126,8 +126,9 @@ export abstract class Loader {
   public cache: Dict<string> = Object.create(null)
   public prolog?: Logger.Record[]
 
-  abstract resolve(name: string): Promise<string>
-  abstract resolvePlugin(name: string): Promise<any>
+  private store = new WeakMap<Plugin, string>()
+
+  abstract import(name: string): Promise<any>
   abstract fullReload(code?: number): void
 
   async init(filename?: string) {
@@ -213,6 +214,16 @@ export abstract class Loader {
     } else {
       return valueMap(source, item => this.interpolate(item))
     }
+  }
+
+  async resolvePlugin(name: string) {
+    const plugin = unwrapExports(await this.import(name))
+    if (plugin) this.store.set(plugin, name)
+    return plugin
+  }
+
+  keyFor(plugin: any) {
+    return this.store.get(plugin)
   }
 
   private async forkPlugin(name: string, config: any, parent: Context) {

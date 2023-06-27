@@ -1,5 +1,5 @@
 import { Logger } from '@koishijs/core'
-import { Loader, unwrapExports } from './shared'
+import { Loader } from './shared'
 import { promises as fs } from 'fs'
 import * as dotenv from 'dotenv'
 import ns from 'ns-require'
@@ -55,18 +55,14 @@ export default class NodeLoader extends Loader {
     return await super.readConfig()
   }
 
-  async resolve(name: string) {
-    return this.scope.resolve(name)
-  }
-
-  async resolvePlugin(name: string) {
+  async import(name: string) {
     try {
       this.cache[name] ||= this.scope.resolve(name)
     } catch (err) {
       logger.error(err.message)
       return
     }
-    return unwrapExports(require(this.cache[name]))
+    return require(this.cache[name])
   }
 
   fullReload(code = Loader.exitCode) {

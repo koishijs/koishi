@@ -1,13 +1,11 @@
-import { Dict, Logger, Plugin } from 'koishi'
+import { Dict, Plugin } from 'koishi'
 import { Loader } from '../src'
 import * as jest from 'jest-mock'
-
-const logger = new Logger('app')
 
 export default class TestLoader extends Loader {
   data: Dict<Plugin.Object> = Object.create(null)
 
-  async resolvePlugin(name: string) {
+  async import(name: string) {
     return this.data[name] ||= {
       name,
       apply: (ctx) => {
