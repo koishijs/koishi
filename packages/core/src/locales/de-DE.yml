@@ -1,7 +1,7 @@
 general:
   $: Allgemeine Einstellungen
   name: Deutsch
-  paren: '（{0}）'
+  paren: '({0})'
   quote: '„{0}“'
   comma: ','
   and: und
