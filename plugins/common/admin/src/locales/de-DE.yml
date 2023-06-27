@@ -31,9 +31,9 @@ admin:
   current-flags: 'Die aktuelle Kennzeichnung lautet: {0}.'
   user-expected: Zielgruppe festlegen。
   channel-expected: Zielkanal festlegen。
-  invalid-assignee-platform: 受理人应与目标频道属于同一平台。
-  current-locale: 当前语言偏好为：{0}。
-  no-locale: 未设置语言偏好。
+  invalid-assignee-platform: Der Empfänger sollte sich auf derselben Plattform befinden wie der Zielkanal.
+  current-locale: 'Die aktuelle Sprachpräferenz ist: {0}.'
+  no-locale: Keine Sprachpräferenz festgelegt
   options:
     remove: 重置设置
     list: 查看全部
