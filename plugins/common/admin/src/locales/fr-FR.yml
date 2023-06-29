@@ -1,6 +1,6 @@
 commands:
   user:
-    description: 用户管理
+    description: Gestion des utilisateurs
   channel:
     description: 频道管理
   authorize:
