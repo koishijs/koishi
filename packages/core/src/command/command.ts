@@ -1,6 +1,6 @@
-import { Awaitable, camelize, Dict, isNullable, remove } from 'cosmokit'
+import { Awaitable, camelize, Dict, isNullable, remove, valueMap } from 'cosmokit'
 import { coerce } from '@koishijs/utils'
-import { Context, Fragment, Logger, Schema, Session } from '@satorijs/core'
+import { Context, Fragment, Logger, Schema, Session, Universal } from '@satorijs/core'
 import { Disposable } from 'cordis'
 import { Argv } from './parser'
 import { Next, SessionError } from '../middleware'
@@ -334,6 +334,33 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
       remove(this.parent.children, this)
     }
   }
+
+  toJSON(): Universal.Command {
+    return {
+      name: this.name,
+      aliases: this._aliases,
+      description: valueMap(this.ctx.i18n._data, (store) => store[`commands.${this.name}.description`] as string),
+      arguments: this._arguments.map(arg => ({
+        name: arg.name,
+        type: toStringType(arg.type),
+        description: { '': toStringType(arg.type) },
+        required: arg.required,
+      })),
+      options: Object.entries(this._options).map(([name, option]) => ({
+        name,
+        type: toStringType(option.type),
+        description: valueMap(this.ctx.i18n._data, (store) => store[`commands.${this.name}.options.${name}`] as string),
+        required: option.required,
+      })),
+      children: this.children
+        .filter(child => child.name.includes('.'))
+        .map(child => child.toJSON()),
+    }
+  }
+}
+
+function toStringType(type: Argv.Type) {
+  return typeof type === 'string' ? type : 'string'
 }
 
 export namespace Command {
@@ -350,10 +377,13 @@ export namespace Command {
     handleError?: boolean | ((error: Error, argv: Argv) => Awaitable<void | Fragment>)
     /** depend on existing commands */
     patch?: boolean
+    /** enable slash integration */
+    slash?: boolean
   }
 
   export const Config: Schema<Config> = Schema.object({
     authority: Schema.computed(Schema.natural()).description('指令的权限等级。').default(1),
+    slash: Schema.boolean().description('启用 slash 集成功能。'),
     checkUnknown: Schema.boolean().description('是否检查未知选项。').default(false).hidden(),
     checkArgCount: Schema.boolean().description('是否检查参数数量。').default(false).hidden(),
     showWarning: Schema.boolean().description('是否显示警告。').default(true).hidden(),

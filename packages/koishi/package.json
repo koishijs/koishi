@@ -49,7 +49,7 @@
     "@koishijs/core": "4.13.5",
     "@koishijs/loader": "4.0.0",
     "@koishijs/utils": "^7.0.2",
-    "@satorijs/satori": "^2.4.0",
+    "@satorijs/satori": "^2.5.0",
     "cac": "^6.7.14",
     "kleur": "^4.1.5",
     "ns-require": "^1.1.4"

@@ -1,5 +1,5 @@
 import { Awaitable, defineProperty } from 'cosmokit'
-import { Context, h, Schema, Session } from '@satorijs/core'
+import { Bot, Context, h, Schema, Session } from '@satorijs/core'
 import { Command } from './command'
 import { Argv } from './parser'
 import validate from './validate'
@@ -105,6 +105,22 @@ export class Commander extends Map<string, Command> {
     ctx.schema.extend('command-option', Schema.object({
       authority: Schema.computed(Schema.natural()).description('选项的权限等级。').default(0),
     }), 1000)
+
+    ctx.on('ready', () => {
+      const bots = ctx.bots.filter(v => v.status === 'online' && v.updateCommands)
+      bots.forEach(bot => this.updateCommands(bot))
+    })
+
+    ctx.on('bot-status-updated', async (bot) => {
+      if (bot.status !== 'online' || !bot.updateCommands) return
+      this.updateCommands(bot)
+    })
+  }
+
+  updateCommands(bot: Bot) {
+    return bot.updateCommands(this._commandList
+      .filter(cmd => !cmd.name.includes('.'))
+      .map(cmd => cmd.toJSON()))
   }
 
   private _resolvePrefixes(session: Session) {

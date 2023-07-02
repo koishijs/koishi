@@ -83,6 +83,11 @@ export class Processor {
     this.middleware(this._process.bind(this), true)
     ctx.on('message', this._handleMessage.bind(this))
 
+    ctx.on('interaction/command', (session) => {
+      const { name, options, arguments: args } = session.data.command
+      session.execute({ name, args, options })
+    })
+
     ctx.before('attach-user', (session, fields) => {
       session.collect('user', session.argv, fields)
     })
