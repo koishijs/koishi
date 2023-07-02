@@ -58,10 +58,10 @@ function executeHelp(session: Session, name: string) {
 export const name = 'help'
 
 export function apply(ctx: Context, config: Config) {
-  ctx.i18n.define('zh', zhCN)
-  ctx.i18n.define('en', enUS)
-  ctx.i18n.define('ja', jaJP)
-  ctx.i18n.define('fr', frFR)
+  ctx.i18n.define('zh-CN', zhCN)
+  ctx.i18n.define('en-US', enUS)
+  ctx.i18n.define('ja-JP', jaJP)
+  ctx.i18n.define('fr-FR', frFR)
   ctx.i18n.define('zh-TW', zhTW)
 
   function enableHelp(command: Command) {

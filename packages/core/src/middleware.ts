@@ -84,7 +84,7 @@ export class Processor {
     ctx.on('message', this._handleMessage.bind(this))
 
     ctx.on('interaction/command', (session) => {
-      const { name, options, arguments: args } = session.data.command
+      const { name, options, arguments: args } = session.data.argv
       session.execute({ name, args, options })
     })
 

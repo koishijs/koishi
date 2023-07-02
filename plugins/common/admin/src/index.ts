@@ -68,10 +68,10 @@ export const using = ['database'] as const
 export const Config: Schema<Config> = Schema.object({})
 
 export function apply(ctx: Context) {
-  ctx.i18n.define('zh', zhCN)
-  ctx.i18n.define('en', enUS)
-  ctx.i18n.define('ja', jaJP)
-  ctx.i18n.define('fr', frFR)
+  ctx.i18n.define('zh-CN', zhCN)
+  ctx.i18n.define('en-US', enUS)
+  ctx.i18n.define('ja-JP', jaJP)
+  ctx.i18n.define('fr-FR', frFR)
   ctx.i18n.define('zh-TW', zhTW)
 
   ctx.plugin(service)

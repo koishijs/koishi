@@ -57,10 +57,10 @@ export class I18n {
     this.locales = LocaleTree.from(config.locales)
 
     this.define('', { '': '' })
-    this.define('zh', zhCN)
-    this.define('en', enUS)
-    this.define('ja', jaJP)
-    this.define('fr', frFR)
+    this.define('zh-CN', zhCN)
+    this.define('en-US', enUS)
+    this.define('ja-JP', jaJP)
+    this.define('fr-FR', frFR)
     this.define('zh-TW', zhTW)
   }
 

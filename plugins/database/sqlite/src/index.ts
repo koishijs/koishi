@@ -2,13 +2,14 @@ import { defineDriver, Logger, Schema } from 'koishi'
 import { SQLiteDriver } from '@minatojs/driver-sqlite'
 import { mkdir, rename, stat } from 'fs/promises'
 import { dirname, join } from 'path'
+import zhCN from './locales/zh-CN.yml'
 
 const logger = new Logger('sqlite')
 
 export default defineDriver(SQLiteDriver, Schema.object({
   path: Schema.path().default('data/koishi.db'),
 }).i18n({
-  'zh-CN': require('./locales/zh-CN'),
+  'zh-CN': zhCN,
 }), async (ctx, config) => {
   if (config.path === ':memory:') return
   config.path = join(ctx.baseDir, config.path)

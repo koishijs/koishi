@@ -1,7 +1,7 @@
 import { Argv, Command, Computed, Context, Dict, Schema, Session, Time, User } from 'koishi'
 import {} from '@koishijs/plugin-help'
 import * as admin from './admin'
-import zh from './locales/zh.yml'
+import zhCN from './locales/zh-CN.yml'
 
 declare module 'koishi' {
   namespace Command {
@@ -36,7 +36,7 @@ export const using = ['database'] as const
 export const Config: Schema<Config> = Schema.object({})
 
 export function apply(ctx: Context) {
-  ctx.i18n.define('zh', zh)
+  ctx.i18n.define('zh-CN', zhCN)
 
   ctx.model.extend('user', {
     usage: 'json',

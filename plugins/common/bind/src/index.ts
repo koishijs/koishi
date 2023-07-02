@@ -14,8 +14,8 @@ export const Config: Schema<Config> = Schema.object({
 })
 
 export function apply(ctx: Context, config: Config = {}) {
-  ctx.i18n.define('zh', zhCN)
-  ctx.i18n.define('en', enUS)
+  ctx.i18n.define('zh-CN', zhCN)
+  ctx.i18n.define('en-US', enUS)
 
   // 1: group (1st step)
   // 0: private

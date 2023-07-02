@@ -1,4 +1,5 @@
 import { Context, h, Schema } from 'koishi'
+import zhCN from './locales/zh-CN.yml'
 
 export const name = 'inspect'
 
@@ -7,7 +8,7 @@ export interface Config {}
 export const Config: Schema<Config> = Schema.object({})
 
 export function apply(ctx: Context) {
-  ctx.i18n.define('zh', require('./locales/zh-CN'))
+  ctx.i18n.define('zh-CN', zhCN)
 
   ctx.command('inspect')
     .action(({ session }, target) => {
