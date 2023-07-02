@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-bind",
   "description": "Bind User Accounts Across Platforms in Koishi",
-  "version": "1.4.1",
+  "version": "1.4.2",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -45,11 +45,11 @@
     ]
   },
   "peerDependencies": {
-    "koishi": "^4.13.5"
+    "koishi": "^4.13.6"
   },
   "devDependencies": {
     "@koishijs/plugin-database-memory": "^2.3.4",
     "@koishijs/plugin-mock": "^2.4.3",
-    "koishi": "^4.13.5"
+    "koishi": "^4.13.6"
   }
 }
