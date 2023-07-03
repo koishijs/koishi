@@ -6,7 +6,7 @@ commands:
   authorize:
     description: Gestion des permissions
   assign:
-    description: 受理者账号
+    description: Compte du destinataire
   user.locale:
     description: 语言偏好
   user.flag:
