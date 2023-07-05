@@ -1,7 +1,7 @@
 import { Context, Dict, ForkScope, interpolate, isNullable, Logger, Plugin, resolveConfig, valueMap, version } from '@koishijs/core'
 import { constants, promises as fs } from 'fs'
 import * as yaml from 'js-yaml'
-import path from 'path'
+import * as path from 'path'
 
 declare module '@koishijs/core' {
   interface Events {
@@ -229,12 +229,22 @@ export abstract class Loader {
 
   async resolvePlugin(name: string) {
     const plugin = unwrapExports(await this.import(name))
-    if (plugin) this.store.set(plugin, name)
+    if (plugin) this.store.set(this.app.registry.resolve(plugin), name)
     return plugin
   }
 
   keyFor(plugin: any) {
-    return this.store.get(plugin)
+    const name = this.store.get(this.app.registry.resolve(plugin))
+    if (name) return name.replace(/(koishi-|^@koishijs\/)plugin-/, '')
+  }
+
+  replace(oldKey: any, newKey: any) {
+    oldKey = this.app.registry.resolve(oldKey)
+    newKey = this.app.registry.resolve(newKey)
+    const name = this.store.get(oldKey)
+    if (!name) return
+    this.store.set(newKey, name)
+    this.store.delete(oldKey)
   }
 
   private async forkPlugin(name: string, config: any, parent: Context) {

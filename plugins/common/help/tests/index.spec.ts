@@ -11,7 +11,7 @@ app.plugin(mock)
 app.plugin(help)
 app.plugin(memory)
 
-app.i18n.define('$zh', 'commands.help.messages.global-epilog', 'EPILOG')
+app.i18n.define('$zh-CN', 'commands.help.messages.global-epilog', 'EPILOG')
 
 const client = app.mock.client('123', '456')
 
@@ -136,7 +136,7 @@ describe('@koishijs/plugin-help', () => {
     const app = new App()
     app.plugin(help)
     app.plugin(mock)
-    app.i18n.define('$zh', 'commands.help.messages.global-epilog', '')
+    app.i18n.define('$zh-CN', 'commands.help.messages.global-epilog', '')
     await app.start()
 
     const client = app.mock.client('123')
