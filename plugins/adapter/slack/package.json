@@ -1,0 +1,49 @@
+{
+  "name": "@koishijs/plugin-adapter-slack",
+  "description": "Slack Adapter for Koishi",
+  "version": "1.0.0",
+  "main": "lib/index.js",
+  "module": "lib/index.mjs",
+  "typings": "lib/index.d.ts",
+  "files": [
+    "lib"
+  ],
+  "author": "LittleC <i@ltlec.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/satorijs/satori.git",
+    "directory": "adapters/slack"
+  },
+  "bugs": {
+    "url": "https://github.com/satorijs/satori/issues"
+  },
+  "homepage": "https://koishi.chat/plugins/adapter/slack.html",
+  "keywords": [
+    "bot",
+    "slack",
+    "chatbot",
+    "koishi"
+  ],
+  "koishi": {
+    "browser": true,
+    "description": {
+      "en": "Slack Adapter",
+      "zh": "Slack 适配器"
+    },
+    "service": {
+      "implements": [
+        "adapter"
+      ]
+    }
+  },
+  "peerDependencies": {
+    "koishi": "^4.13.5"
+  },
+  "devDependencies": {
+    "koishi": "^4.13.5"
+  },
+  "dependencies": {
+    "@satorijs/adapter-slack": "^1.0.0"
+  }
+}
