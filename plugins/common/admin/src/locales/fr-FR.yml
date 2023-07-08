@@ -8,11 +8,11 @@ commands:
   assign:
     description: Compte du destinataire
   user.locale:
-    description: 语言偏好
+    description: Préférence Linguistique
   user.flag:
     description: 标记信息
   channel.locale:
-    description: 语言偏好
+    description: Préférence Linguistique
   channel.flag:
     description: 标记信息
 admin:
