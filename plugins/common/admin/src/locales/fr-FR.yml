@@ -12,7 +12,7 @@ commands:
   user.flag:
     description: L'information sur le marqueur
   channel.locale:
-    description: Préférence Linguistique
+    description: Préférences de langue
   channel.flag:
     description: L'information sur le marqueur
 admin:
