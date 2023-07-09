@@ -35,7 +35,7 @@
   },
   "license": "MIT",
   "devDependencies": {
-    "@koishijs/eslint-config": "^1.0.2",
+    "@koishijs/eslint-config": "^1.0.3",
     "@octokit/rest": "^18.12.0",
     "@sinonjs/fake-timers": "^6.0.1",
     "@types/chai": "^4.3.5",

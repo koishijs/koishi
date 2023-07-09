@@ -50,10 +50,10 @@
     }
   },
   "peerDependencies": {
-    "koishi": "^4.13.6"
+    "koishi": "^4.13.7"
   },
   "devDependencies": {
-    "koishi": "^4.13.6"
+    "koishi": "^4.13.7"
   },
   "dependencies": {
     "@minatojs/driver-sqlite": "^3.5.6"

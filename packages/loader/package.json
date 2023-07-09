@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/loader",
   "description": "Config Loader for Koishi",
-  "version": "4.0.1",
+  "version": "4.0.3",
   "main": "lib/index.js",
   "module": "lib/shared.mjs",
   "typings": "lib/index.d.ts",
@@ -39,10 +39,10 @@
     "config"
   ],
   "peerDependencies": {
-    "@koishijs/core": "4.13.6"
+    "@koishijs/core": "4.13.7"
   },
   "devDependencies": {
-    "@koishijs/core": "4.13.6",
+    "@koishijs/core": "4.13.7",
     "@types/js-yaml": "^4.0.5"
   },
   "dependencies": {
