@@ -78,7 +78,7 @@ export interface EnvData {}
 
 defineProperty(Context.Config, 'Basic', Schema.object({
   prefix: Schema.union([
-    Schema.array(String).role('table'),
+    Schema.array(Schema.string().default('')).role('table'),
     Schema.transform(String, (prefix) => [prefix]),
     Schema.any().hidden(),
   ]).role('computed').default(['']).description('指令前缀字符构成的数组。将被用于指令的匹配。'),
