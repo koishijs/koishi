@@ -14,8 +14,10 @@ export function apply(ctx: Context) {
     .action(({ session }, target) => {
       if (session.quote) {
         return session.text('.message', {
-          ...session.quote,
+          platform: session.platform,
+          guildId: session.guildId,
           selfId: session.selfId,
+          ...session.quote,
         })
       }
 
