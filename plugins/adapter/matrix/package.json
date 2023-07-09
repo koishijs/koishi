@@ -1,0 +1,48 @@
+{
+  "name": "@koishijs/plugin-adapter-matrix",
+  "description": "Matrix Adapter for Koishi",
+  "version": "3.1.2",
+  "main": "lib/index.js",
+  "typings": "lib/index.d.ts",
+  "files": [
+    "lib"
+  ],
+  "author": "Anillc <void@anillc.cn>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/satorijs/satori.git",
+    "directory": "adapters/matrix"
+  },
+  "bugs": {
+    "url": "https://github.com/satorijs/satori/issues"
+  },
+  "homepage": "https://koishi.chat/plugins/adapter/matrix.html",
+  "keywords": [
+    "bot",
+    "adapter",
+    "matrix",
+    "chatbot",
+    "koishi"
+  ],
+  "koishi": {
+    "description": {
+      "en": "Matrix Adapter",
+      "zh": "Matrix 适配器"
+    },
+    "service": {
+      "implements": [
+        "adapter"
+      ]
+    }
+  },
+  "peerDependencies": {
+    "koishi": "^4.13.6"
+  },
+  "devDependencies": {
+    "koishi": "^4.13.6"
+  },
+  "dependencies": {
+    "@satorijs/adapter-matrix": "^3.1.2"
+  }
+}
