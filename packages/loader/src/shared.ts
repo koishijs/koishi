@@ -22,6 +22,7 @@ declare module '@koishijs/core' {
 
   interface EnvData {
     message?: StartMessage
+    startTime?: number
   }
 }
 
@@ -110,7 +111,10 @@ export abstract class Loader {
 
   // process
   public baseDir = process.cwd()
-  public envData = JSON.parse(process.env.KOISHI_SHARED || '{}')
+  public envData = process.env.KOISHI_SHARED
+    ? JSON.parse(process.env.KOISHI_SHARED)
+    : { startTime: Date.now() }
+
   public params = {
     env: process.env,
   }
@@ -139,7 +143,6 @@ export abstract class Loader {
         this.prolog = this.prolog.slice(-1000)
       },
     })
-    new Logger('app').info('%C', `Koishi/${version}`)
   }
 
   async init(filename?: string) {
@@ -315,6 +318,7 @@ export abstract class Loader {
   }
 
   async createApp() {
+    new Logger('app').info('%C', `Koishi/${version}`)
     const app = this.app = new Context(this.interpolate(this.config))
     app.loader = this
     app.baseDir = this.baseDir

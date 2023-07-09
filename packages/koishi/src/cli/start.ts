@@ -25,7 +25,9 @@ namespace Event {
 
 let child: ChildProcess
 
-process.env.KOISHI_SHARED = '{}'
+process.env.KOISHI_SHARED = JSON.stringify({
+  startTime: Date.now(),
+})
 
 function toArg(key: string) {
   return key.length === 1 ? `-${key}` : `--${hyphenate(key)}`
