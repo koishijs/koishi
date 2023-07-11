@@ -22,7 +22,7 @@ admin:
   user-updated: Les données de l'utilisateur ont été modifiées.
   channel-option: Spécification du canal cible
   channel-not-found: Le canal spécifié n'a pas été trouvé.
-  channel-unchanged: 频道数据未改动。
+  channel-unchanged: Les données du canal n'ont pas été modifiées.
   channel-updated: 频道数据已修改。
   not-in-group: 当前不在群组上下文中，请使用 -c 参数指定目标频道。
   unknown-flag: 未找到标记 {0}。
