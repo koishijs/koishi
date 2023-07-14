@@ -24,7 +24,7 @@ admin:
   channel-not-found: Es wurden keinen Zielkanal gefunden.
   channel-unchanged: Kanaldaten wurden nicht verändert.
   channel-updated: Kanaldaten wurden geändert.
-  not-in-group: Gegenwärtig befinden Sie sich nicht im Kontext einer Gruppe. Verwenden Sie bitte den Parameter -c, um den Zielkanal anzugeben.
+  not-in-group: Gegenwärtig befinden Sie sich nicht im Kontext einer Gilde. Verwenden Sie bitte den Parameter -c, um den Zielkanal anzugeben. 
   unknown-flag: Die Kennzeichnung {0} wurde nicht gefunden.
   all-flags: Alles kennzeichnen als:{0}
   no-flags: Es wurden keine Kennzeichnungen vorgenommen.
