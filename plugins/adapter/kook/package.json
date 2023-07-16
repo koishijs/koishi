@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-adapter-kook",
   "description": "Kook (Kaiheila) Adapter for Koishi",
-  "version": "3.10.0",
+  "version": "3.10.1",
   "main": "lib/index.js",
   "module": "lib/index.mjs",
   "typings": "lib/index.d.ts",
@@ -39,12 +39,12 @@
     }
   },
   "peerDependencies": {
-    "koishi": "^4.13.7"
+    "koishi": "^4.13.8"
   },
   "devDependencies": {
-    "koishi": "^4.13.7"
+    "koishi": "^4.13.8"
   },
   "dependencies": {
-    "@satorijs/adapter-kook": "^3.10.0"
+    "@satorijs/adapter-kook": "^3.10.1"
   }
 }

@@ -1,9 +1,8 @@
 {
   "name": "@koishijs/plugin-adapter-line",
   "description": "Line Adapter for Koishi",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "main": "lib/index.js",
-  "module": "lib/index.mjs",
   "typings": "lib/index.d.ts",
   "files": [
     "lib"
@@ -21,12 +20,12 @@
   "homepage": "https://koishi.chat/plugins/adapter/line.html",
   "keywords": [
     "bot",
-    "line",
+    "adapter",
     "chatbot",
-    "koishi"
+    "koishi",
+    "line"
   ],
   "koishi": {
-    "browser": true,
     "description": {
       "en": "Line Adapter",
       "zh": "Line 适配器"
@@ -38,12 +37,12 @@
     }
   },
   "peerDependencies": {
-    "koishi": "^4.13.5"
+    "koishi": "^4.13.8"
   },
   "devDependencies": {
-    "koishi": "^4.13.5"
+    "koishi": "^4.13.8"
   },
   "dependencies": {
-    "@satorijs/adapter-line": "^1.0.0"
+    "@satorijs/adapter-line": "^1.0.1"
   }
 }

@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-adapter-onebot",
   "description": "OneBot Adapter for Koishi",
-  "version": "5.7.2",
+  "version": "5.7.3",
   "main": "lib/index.js",
   "module": "lib/index.mjs",
   "typings": "lib/index.d.ts",
@@ -33,7 +33,7 @@
     "browser": true,
     "description": {
       "en": "OneBot Adapter",
-      "zh": "OneBot 适配器 (可用于 QQ)"
+      "zh": "OneBot 适配器"
     },
     "service": {
       "implements": [
@@ -42,12 +42,12 @@
     }
   },
   "peerDependencies": {
-    "koishi": "^4.13.7"
+    "koishi": "^4.13.8"
   },
   "devDependencies": {
-    "koishi": "^4.13.7"
+    "koishi": "^4.13.8"
   },
   "dependencies": {
-    "@satorijs/adapter-onebot": "^5.7.2"
+    "@satorijs/adapter-onebot": "^5.7.3"
   }
 }
