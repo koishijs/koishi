@@ -1,0 +1,49 @@
+{
+  "name": "@koishijs/plugin-adapter-dingtalk",
+  "description": "Dingtalk Adapter for Koishi",
+  "version": "1.0.0",
+  "main": "lib/index.js",
+  "module": "lib/index.mjs",
+  "typings": "lib/index.d.ts",
+  "files": [
+    "lib"
+  ],
+  "author": "LittleC <i@ltlec.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/satorijs/satori.git",
+    "directory": "adapters/dingtalk"
+  },
+  "bugs": {
+    "url": "https://github.com/satorijs/satori/issues"
+  },
+  "homepage": "https://koishi.chat/plugins/adapter/dingtalk.html",
+  "keywords": [
+    "bot",
+    "dingtalk",
+    "chatbot",
+    "koishi"
+  ],
+  "koishi": {
+    "browser": true,
+    "description": {
+      "en": "WhatsApp Adapter",
+      "zh": "钉钉适配器"
+    },
+    "service": {
+      "implements": [
+        "adapter"
+      ]
+    }
+  },
+  "peerDependencies": {
+    "koishi": "^4.13.7"
+  },
+  "devDependencies": {
+    "koishi": "^4.13.7"
+  },
+  "dependencies": {
+    "@satorijs/adapter-dingtalk": "^1.0.0"
+  }
+}

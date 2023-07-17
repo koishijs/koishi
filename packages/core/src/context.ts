@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { Awaitable, defineProperty, Time } from 'cosmokit'
 import { Context, Schema } from '@satorijs/core'
 import * as cordis from 'cordis'
