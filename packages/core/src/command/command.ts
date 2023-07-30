@@ -217,9 +217,15 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
     if (typeof args[0] === 'string') {
       desc = args.shift() as string
     }
-    const config = args[0] as Argv.OptionConfig
-    this._createOption(name, desc, config || {})
+    const config = {
+      ...Command.defaultOptionConfig,
+      ...args[0] as Argv.OptionConfig,
+    }
+    this._createOption(name, desc, config)
     this.caller.collect('command.option', () => this.removeOption(name))
+    if (typeof config.authority === 'number') {
+      this.caller.permissions.inherit(`command.${this.name}.option.${name}`, [`authority.${config.authority}`])
+    }
     return this
   }
 
@@ -365,7 +371,10 @@ function toStringType(type: Argv.Type) {
 
 export namespace Command {
   export interface Config {
-    /** min authority */
+    /**
+     * min authority
+     * @deprecated use permission instead
+     */
     authority?: Computed<number>
     /** disallow unknown options */
     checkUnknown?: boolean

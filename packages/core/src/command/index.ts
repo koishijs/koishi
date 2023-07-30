@@ -135,7 +135,7 @@ export class Commander extends Map<string, Command> {
       .flatMap(cmd => cmd._aliases)
   }
 
-  protected get caller() {
+  protected get caller(): Context {
     return this[Context.current]
   }
 
@@ -200,6 +200,9 @@ export class Commander extends Map<string, Command> {
     Object.assign(parent.config, config)
     extra.forEach(command => caller.emit('command-added', command))
     parent[Context.current] = caller
+    if (typeof parent.config.authority === 'number') {
+      caller.permissions.inherit(`command.${parent.name}`, [`authority.${parent.config.authority}`])
+    }
     if (!config?.patch) {
       if (root) caller.state.disposables.unshift(() => root.dispose())
       return parent

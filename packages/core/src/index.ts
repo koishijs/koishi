@@ -13,6 +13,7 @@ export * from './lifecycle'
 export * from './middleware'
 export * from './schema'
 export * from './session'
+export * from './permission'
 export * from './command'
 
 export { version }

@@ -20,10 +20,11 @@ declare module '@satorijs/core' {
 
 export interface User {
   id: number
+  name: string
   flag: number
   authority: number
-  name: string
   locales: string[]
+  permissions: string[]
   createdAt: Date
 }
 
@@ -51,6 +52,7 @@ export interface Channel {
   assignee: string
   guildId: string
   locales: string[]
+  permissions: string[]
 }
 
 export namespace Channel {
@@ -79,10 +81,11 @@ export class DatabaseService extends Database<Tables> {
 
     this.extend('user', {
       id: 'unsigned(20)',
-      name: { type: 'string', length: 63 },
+      name: { type: 'string', length: 255 },
       flag: 'unsigned(20)',
       authority: 'unsigned(4)',
-      locales: 'list(63)',
+      locales: 'list(255)',
+      permissions: 'list',
       createdAt: 'timestamp',
     }, {
       autoInc: true,
@@ -91,26 +94,27 @@ export class DatabaseService extends Database<Tables> {
     this.extend('binding', {
       aid: 'unsigned(20)',
       bid: 'unsigned(20)',
-      pid: 'string(63)',
-      platform: 'string(63)',
+      pid: 'string(255)',
+      platform: 'string(255)',
     }, {
       primary: ['pid', 'platform'],
     })
 
     this.extend('channel', {
-      id: 'string(63)',
-      platform: 'string(63)',
+      id: 'string(255)',
+      platform: 'string(255)',
       flag: 'unsigned(20)',
-      assignee: 'string(63)',
-      guildId: 'string(63)',
-      locales: 'list(63)',
+      assignee: 'string(255)',
+      guildId: 'string(255)',
+      locales: 'list(255)',
+      permissions: 'list',
     }, {
       primary: ['id', 'platform'],
     })
 
     app.on('bot-added', ({ platform }) => {
       if (platform in this.tables.user.fields) return
-      this.migrate('user', { [platform]: 'string(63)' }, async (db) => {
+      this.migrate('user', { [platform]: 'string(255)' }, async (db) => {
         const users = await db.get('user', { [platform]: { $exists: true } }, ['id', platform as never])
         await db.upsert('binding', users.filter(u => u[platform]).map((user) => ({
           aid: user.id,

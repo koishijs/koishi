@@ -15,6 +15,7 @@ declare module '@satorijs/core' {
     user?: User.Observed<U>
     channel?: Channel.Observed<G>
     guild?: Channel.Observed<G>
+    permissions?: string[]
     parsed?: Parsed
     scope?: string
     username?: string
@@ -213,7 +214,7 @@ extend(Session.prototype as Session.Private, {
 
   async getUser(id = this.userId, fields = []) {
     const { app, platform } = this
-    if (!fields.length) return { [platform]: id }
+    if (!fields.length) return {}
     const user = await app.database.getUser(platform, id, fields)
     if (user) return user
     const authority = await this.resolve(app.config.autoAuthorize)
@@ -221,7 +222,7 @@ extend(Session.prototype as Session.Private, {
       return app.database.createUser(platform, id, { authority, createdAt: new Date() })
     } else {
       const user = app.model.tables.user.create()
-      Object.assign(user, { [platform]: id, authority, $detached: true })
+      Object.assign(user, { authority, $detached: true })
       return user
     }
   },
@@ -229,7 +230,7 @@ extend(Session.prototype as Session.Private, {
   /** 在当前会话上绑定一个可观测用户实例 */
   async observeUser(fields = []) {
     const fieldSet = new Set<User.Field>(fields)
-    const { userId, platform } = this
+    const { userId } = this
 
     // 如果存在满足可用的缓存数据，使用缓存代替数据获取
     let cache = this.app.$internal._userCache.get(this.id, this.uid)
@@ -243,7 +244,6 @@ extend(Session.prototype as Session.Private, {
     // 匿名消息不会写回数据库
     if (this.author?.anonymous) {
       const fallback = this.app.model.tables.user.create()
-      fallback[platform] = userId
       fallback.authority = await this.resolve(this.app.config.autoAuthorize)
       const user = observe(fallback, () => Promise.resolve())
       return this.user = user

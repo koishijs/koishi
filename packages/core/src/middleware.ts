@@ -256,14 +256,16 @@ export class Processor {
     defineProperty(session, 'parsed', { hasMention, content, appel, prefix: null })
     this.ctx.emit(session, 'before-attach', session)
 
+    session.permissions = []
     if (this.ctx.database) {
-      if (session.subtype === 'group') {
+      if (!session.isDirect) {
         // attach group data
-        const channelFields = new Set<Channel.Field>(['flag', 'assignee', 'guildId', 'locales'])
+        const channelFields = new Set<Channel.Field>(['flag', 'assignee', 'guildId', 'permissions', 'locales'])
         this.ctx.emit('before-attach-channel', session, channelFields)
         const channel = await session.observeChannel(channelFields)
-        // for backwards compatibility (TODO remove in v5)
+        // for backwards compatibility
         channel.guildId = session.guildId
+        session.permissions.push(...channel.permissions)
 
         // emit attach event
         if (await this.ctx.serial(session, 'attach-channel', session)) return
@@ -275,9 +277,10 @@ export class Processor {
 
       // attach user data
       // authority is for suggestion
-      const userFields = new Set<User.Field>(['id', 'flag', 'authority', 'locales'])
+      const userFields = new Set<User.Field>(['id', 'flag', 'authority', 'permissions', 'locales'])
       this.ctx.emit('before-attach-user', session, userFields)
       const user = await session.observeUser(userFields)
+      session.permissions.push(`user.${user.id}`, ...user.permissions)
 
       // emit attach event
       if (await this.ctx.serial(session, 'attach-user', session)) return

@@ -34,7 +34,6 @@ declare module 'koishi' {
 
 interface HelpOptions {
   showHidden?: boolean
-  authority?: boolean
 }
 
 export interface Config {
@@ -150,7 +149,6 @@ export function apply(ctx: Context, config: Config) {
     .userFields(['authority'])
     .userFields(createCollector('user'))
     .channelFields(createCollector('channel'))
-    .option('authority', '-a')
     .option('showHidden', '-H')
     .action(async ({ session, options }, target) => {
       if (!target) {
@@ -186,20 +184,13 @@ function formatCommands(path: string, session: Session<'authority'>, children: C
     .sort((a, b) => a.displayName > b.displayName ? 1 : -1)
   if (!commands.length) return []
 
-  let hasSubcommand = false
   const prefix = session.resolve(session.app.config.prefix)[0] ?? ''
-  const output = commands.map(({ name, displayName, config, children }) => {
+  const output = commands.map(({ name, displayName, config }) => {
     let output = '    ' + prefix + displayName
-    if (options.authority) {
-      const authority = session.resolve(config.authority)
-      output += ` (${authority}${children.length ? (hasSubcommand = true, '*') : ''})`
-    }
     output += '  ' + session.text([`commands.${name}.description`, ''], config.params)
     return output
   })
   const hints: string[] = []
-  if (options.authority) hints.push(session.text('.hint-authority'))
-  if (hasSubcommand) hints.push(session.text('.hint-subcommand'))
   const hintText = hints.length
     ? session.text('general.paren', [hints.join(session.text('general.comma'))])
     : ''
@@ -221,10 +212,9 @@ function getOptions(command: Command, session: Session<'authority'>, config: Hel
 
   const output: string[] = []
   Object.values(command._options).forEach((option) => {
-    const authority = option.authority && config.authority ? `(${option.authority}) ` : ''
     function pushOption(option: Argv.OptionVariant, name: string) {
       if (!config.showHidden && !getOptionVisibility(option, session)) return
-      let line = `${authority}${h.escape(option.syntax)}`
+      let line = `${h.escape(option.syntax)}`
       const description = session.text(option.descPath ?? [`commands.${command.name}.options.${name}`, ''], option.params)
       if (description) line += '  ' + description
       line = command.ctx.chain('help/option', line, option, command, session)
@@ -238,9 +228,7 @@ function getOptions(command: Command, session: Session<'authority'>, config: Hel
   })
 
   if (!output.length) return []
-  output.unshift(config.authority && options.some(o => o.authority)
-    ? session.text('.available-options-with-authority')
-    : session.text('.available-options'))
+  output.unshift(session.text('.available-options'))
   return output
 }
 
@@ -254,7 +242,7 @@ async function showHelp(command: Command, session: Session<'authority'>, config:
     const argv: Argv = { command, args: [], options: { help: true } }
     const userFields = session.collect('user', argv)
     await session.observeUser(userFields)
-    if (session.subtype === 'group') {
+    if (!session.isDirect) {
       const channelFields = session.collect('channel', argv)
       await session.observeChannel(channelFields)
     }
@@ -265,13 +253,6 @@ async function showHelp(command: Command, session: Session<'authority'>, config:
   }
 
   session.app.emit(session, 'help/command', output, command, session)
-
-  if (session.user) {
-    const authority = session.resolve(command.config.authority)
-    if (authority > 1) {
-      output.push(session.text('.command-authority', [authority]))
-    }
-  }
 
   if (command._usage) {
     output.push(typeof command._usage === 'string' ? command._usage : await command._usage(session))

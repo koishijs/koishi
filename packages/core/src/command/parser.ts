@@ -377,6 +377,7 @@ export namespace Argv {
     value?: any
     fallback?: any
     type?: T
+    /** @deprecated use permission instead */
     authority?: number
     descPath?: string
   }
@@ -440,7 +441,6 @@ export namespace Argv {
       const declList = parseDecl(bracket.trimStart())
       if (declList.stripped) syntax += ' ' + declList.stripped
       const option = this._options[name] ||= {
-        ...Command.defaultOptionConfig,
         ...declList[0],
         ...config,
         name,

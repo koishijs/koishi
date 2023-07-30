@@ -2,24 +2,8 @@ import { Context } from '@satorijs/core'
 import { Argv } from './parser'
 
 export default function validate(ctx: Context) {
-  // add user fields
-  ctx.on('command-added', (cmd) => {
-    cmd.userFields(({ session, tokens, command, options = {} }, fields) => {
-      if (!command) return
-      let shouldFetchAuthority = session.resolve(command.config.authority) > 0
-      for (const { name, authority } of Object.values(command._options)) {
-        if (name in options) {
-          if (authority > 0) shouldFetchAuthority = true
-        } else if (tokens) {
-          if (authority > 0) shouldFetchAuthority = true
-        }
-      }
-      if (shouldFetchAuthority) fields.add('authority')
-    })
-  })
-
   // check user
-  ctx.before('command/execute', (argv: Argv<'authority'>) => {
+  ctx.before('command/execute', async (argv: Argv<'authority'>) => {
     const { session, options, command } = argv
     if (!session.user) return
 
@@ -27,19 +11,15 @@ export default function validate(ctx: Context) {
       return command.config.showWarning ? session.text(message, param) : ''
     }
 
-    // check authority
-    if (typeof session.user.authority === 'number') {
-      const authority = session.resolve(command.config.authority)
-      if (authority > session.user.authority) {
-        return sendHint('internal.low-authority')
-      }
-    }
+    // check permissions
+    const permissions = [`command.${command.name}`]
     for (const option of Object.values(command._options)) {
       if (option.name in options) {
-        if (option.authority > session.user.authority) {
-          return sendHint('internal.low-authority')
-        }
+        permissions.push(`command.${command.name}.option.${option.name}`)
       }
+    }
+    if (!await ctx.permissions.test(session.permissions, permissions, session as any)) {
+      return sendHint('internal.low-authority')
     }
   }, true)
 

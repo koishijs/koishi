@@ -23,6 +23,7 @@ export namespace MockBot {
 export class MockBot extends Bot {
   constructor(ctx: Context, config: MockBot.Config) {
     super(ctx, config)
+    this.platform = 'mock'
     this.selfId = config.selfId ?? DEFAULT_SELF_ID
     this.status = 'online'
     ctx.plugin(MockAdapter, this)
@@ -50,8 +51,6 @@ export class MockBot extends Bot {
     }
   }
 }
-
-MockBot.prototype.platform = 'mock'
 
 export class MockAdapter extends Adapter.Server<MockBot> {
   public app: Context
