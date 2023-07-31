@@ -9,12 +9,8 @@ commands:
     description: Recipient Account
   user.locale:
     description: Language Preference
-  user.flag:
-    description: Marker Information
   channel.locale:
     description: Language Preference
-  channel.flag:
-    description: Mark Information
 admin:
   user-option: Target User Specification
   user-not-found: The specified user was not found.
@@ -25,10 +21,6 @@ admin:
   channel-unchanged: Channel data has not been changed.
   channel-updated: Channel data has been changed.
   not-in-group: 当前不在群组上下文中，请使用 -c 参数指定目标频道。
-  unknown-flag: Flag not found {0}.
-  all-flags: 全部标记为：{0}。
-  no-flags: 未设置任何标记。
-  current-flags: 当前的标记为：{0}。
   user-expected: 请指定目标用户。
   channel-expected: 请指定目标频道。
   invalid-assignee-platform: 受理人应与目标频道属于同一平台。
@@ -36,6 +28,3 @@ admin:
   no-locale: 未设置语言偏好。
   options:
     remove: 重置设置
-    list: 查看全部
-    set: 添加项
-    unset: 删除项
