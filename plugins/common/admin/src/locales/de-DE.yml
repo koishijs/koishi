@@ -9,12 +9,8 @@ commands:
     description: Empfängerkonto
   user.locale:
     description: Spracheinstellung
-  user.flag:
-    description: Kennzeichnungsinformationen
   channel.locale:
     description: Sprachpräferenz
-  channel.flag:
-    description: Kennzeichnungsinformationen
 admin:
   user-option: Zielbenutzer festlegen
   user-not-found: Es wurden keine Zielbenutzer gefunden.
@@ -25,10 +21,6 @@ admin:
   channel-unchanged: Kanaldaten wurden nicht verändert.
   channel-updated: Kanaldaten wurden geändert.
   not-in-group: Gegenwärtig befinden Sie sich nicht im Kontext einer Gilde. Verwenden Sie bitte den Parameter -c, um den Zielkanal anzugeben. 
-  unknown-flag: Die Kennzeichnung {0} wurde nicht gefunden.
-  all-flags: Alles kennzeichnen als:{0}
-  no-flags: Es wurden keine Kennzeichnungen vorgenommen.
-  current-flags: 'Die aktuelle Kennzeichnung lautet: {0}.'
   user-expected: Zielbenutzer festlegen
   channel-expected: Zielkanal festlegen
   invalid-assignee-platform: Der Empfänger sollte sich auf derselben Plattform befinden wie der Zielkanal.
@@ -36,6 +28,3 @@ admin:
   no-locale: Keine Sprachpräferenz festgelegt
   options:
     remove: Die Einstellungen zurücksetzen
-    list: Alle anzeigen
-    set: Punkt hinzufügen
-    unset: Punkt löschen
