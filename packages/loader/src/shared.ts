@@ -1,4 +1,4 @@
-import { Context, Dict, ForkScope, interpolate, isNullable, Logger, Plugin, resolveConfig, valueMap, version } from '@koishijs/core'
+import { Context, Dict, EffectScope, ForkScope, interpolate, isNullable, Logger, Plugin, resolveConfig, valueMap, version } from '@koishijs/core'
 import { constants, promises as fs } from 'fs'
 import * as yaml from 'js-yaml'
 import * as path from 'path'
@@ -315,6 +315,26 @@ export abstract class Loader {
       if (record[name] !== fork) continue
       return name
     }
+  }
+
+  paths(scope: EffectScope, suffix: string[] = []): string[] {
+    // root scope
+    if (scope === scope.parent.scope) {
+      return [suffix.slice(1).join('/')]
+    }
+
+    // runtime scope
+    if (scope.runtime === scope) {
+      return [].concat(...scope.runtime.children.map(child => this.paths(child, suffix)))
+    }
+
+    const child = scope
+    scope = scope.parent.scope
+    const record = scope[Loader.kRecord]
+    if (!record) return this.paths(scope, suffix)
+    const entry = Object.entries(record).find(([, value]) => value === child)
+    if (!entry) return []
+    return this.paths(scope, [entry[0], ...suffix])
   }
 
   async createApp() {
