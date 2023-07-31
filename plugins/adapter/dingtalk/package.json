@@ -21,14 +21,14 @@
   "homepage": "https://koishi.chat/plugins/adapter/dingtalk.html",
   "keywords": [
     "bot",
+    "dingding",
     "dingtalk",
     "chatbot",
     "koishi"
   ],
   "koishi": {
-    "browser": true,
     "description": {
-      "en": "WhatsApp Adapter",
+      "en": "Dingtalk Adapter",
       "zh": "钉钉适配器"
     },
     "service": {

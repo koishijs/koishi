@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { Promisify, remove } from 'cosmokit'
 import { GetEvents, Parameters, ReturnType, ThisType } from 'cordis'
 import { Context, Events, Logger } from '@satorijs/core'
