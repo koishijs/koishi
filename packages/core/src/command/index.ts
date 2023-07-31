@@ -203,12 +203,7 @@ export class Commander extends Map<string, Command> {
     if (typeof parent.config.authority === 'number') {
       caller.permissions.inherit(`command.${parent.name}`, [`authority.${parent.config.authority}`])
     }
-    if (!config?.patch) {
-      if (root) caller.state.disposables.unshift(() => root.dispose())
-      return parent
-    }
-
-    if (root) root.dispose()
+    if (root) caller.state.disposables.unshift(() => root.dispose())
     return parent
   }
 }

@@ -72,8 +72,8 @@ export class Processor {
 
   _hooks: [Context, Middleware][] = []
   _sessions: Dict<Session> = Object.create(null)
-  _userCache = new SharedCache<User.Observed<any>>()
-  _channelCache = new SharedCache<Channel.Observed<any>>()
+  _userCache = new SharedCache<User.Observed<keyof User>>()
+  _channelCache = new SharedCache<Channel.Observed<keyof Channel>>()
   _matchers = new Set<Matcher>()
 
   constructor(private ctx: Context, private config: Processor.Config) {

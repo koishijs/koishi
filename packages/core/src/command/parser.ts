@@ -211,7 +211,7 @@ export namespace Argv {
     required?: boolean
   }
 
-  export type Transform<T> = (source: string, session: Session) => T
+  export type Transform<T> = (source: string, session: Session<never, never>) => T
 
   export interface DomainConfig<T> {
     transform?: Transform<T>

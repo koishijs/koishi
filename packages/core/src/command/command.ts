@@ -40,7 +40,6 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
   _aliases: string[] = []
   _examples: string[] = []
   _usage?: Command.Usage
-  _disposed?: boolean
   _disposables?: Disposable[] = []
 
   private _userFields: FieldCollector<'user'>[] = [['locales']]
@@ -136,7 +135,6 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
   }
 
   alias(...names: string[]) {
-    if (this._disposed) return this
     for (const name of names) {
       this._registerAlias(name)
     }
@@ -154,7 +152,6 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
   shortcut(pattern: string | RegExp, config?: Command.Shortcut & { i18n?: false }): this
   shortcut(pattern: string, config: Command.Shortcut & { i18n: true }): this
   shortcut(pattern: string | RegExp, config: Command.Shortcut = {}) {
-    if (this._disposed) return this
     let content = this.displayName
     for (const key in config.options || {}) {
       content += ` --${camelize(key)}`
@@ -194,7 +191,6 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
     def = this.name + (def.charCodeAt(0) === 46 ? '' : '/') + def
     const desc = typeof args[0] === 'string' ? args.shift() as string : ''
     const config = args[0] as Command.Config || {}
-    if (this._disposed) config.patch = true
     return this.ctx.command(def, desc, config)
   }
 
@@ -234,12 +230,6 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
     return this.ctx.filter(session) && session.resolve(this.config.authority) <= authority
   }
 
-  /** @deprecated */
-  getConfig<K extends keyof Command.Config>(key: K, session: Session): Exclude<Command.Config[K], (session: Session) => any> {
-    const value = this.config[key] as any
-    return typeof value === 'function' ? value(session) : value
-  }
-
   check(callback: Command.Action<U, G, A, O>, append = false) {
     return this.before(callback, append)
   }
@@ -264,6 +254,7 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
     return this
   }
 
+  /** @deprecated */
   use<T extends Command, R extends any[]>(callback: (command: this, ...args: R) => T, ...args: R): T {
     return callback(this, ...args)
   }
@@ -326,7 +317,6 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
   }
 
   dispose() {
-    this._disposed = true
     this._disposables.splice(0).forEach(dispose => dispose())
     this.ctx.emit('command-removed', this)
     for (const cmd of this.children.slice()) {
@@ -381,8 +371,6 @@ export namespace Command {
     showWarning?: boolean
     /** handle error */
     handleError?: boolean | ((error: Error, argv: Argv) => Awaitable<void | Fragment>)
-    /** depend on existing commands */
-    patch?: boolean
     /** enable slash integration */
     slash?: boolean
   }

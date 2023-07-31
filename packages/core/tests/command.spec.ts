@@ -154,22 +154,6 @@ describe('Command API', () => {
       expect(app.$internal._matchers).to.have.length(0)
       expect(foo.children).to.have.length(0)
     })
-
-    it('patch command', () => {
-      const fork = app.plugin((ctx) => {
-        ctx.command('foo', { patch: true }).option('opt', 'option 1')
-        ctx.command('abc', { patch: true }).option('opt', 'option 1')
-      })
-
-      const foo = app.$commander._commands.get('foo')
-      expect(foo).to.be.ok
-      expect(Object.keys(foo._options)).to.have.length(1)
-      expect(app.$commander._commands.get('abc')).to.be.undefined
-
-      fork.dispose()
-      expect(app.$commander._commands.get('foo')).to.be.ok
-      expect(Object.keys(foo._options)).to.have.length(0)
-    })
   })
 
   describe('Execute Commands', () => {

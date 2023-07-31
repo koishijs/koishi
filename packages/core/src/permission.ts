@@ -1,6 +1,5 @@
 import { Context, Logger, Session } from '@satorijs/core'
 import { Awaitable, Dict } from 'cosmokit'
-import { Channel, User } from './database'
 
 const logger = new Logger('app')
 
@@ -40,7 +39,7 @@ class DAG {
 }
 
 export namespace Permissions {
-  export type ProvideCallback = (name: string, session: Partial<Session<User.Field, Channel.Field>>) => Awaitable<boolean>
+  export type ProvideCallback = (name: string, session: Partial<Session>) => Awaitable<boolean>
 }
 
 export class Permissions {
@@ -62,7 +61,7 @@ export class Permissions {
     })
   }
 
-  async check(name: string, session: Partial<Session<User.Field, Channel.Field>>) {
+  async check(name: string, session: Partial<Session>) {
     try {
       const callbacks = Object.entries(this.#providers)
         .filter(([key]) => name === key || key.endsWith('*') && name.startsWith(key.slice(0, -1)))
@@ -92,7 +91,7 @@ export class Permissions {
     })
   }
 
-  async test(x: string[], y: Iterable<string>, session: Partial<Session<User.Field, Channel.Field>> = {}) {
+  async test(x: string[], y: Iterable<string>, session: Partial<Session> = {}) {
     outer: for (const name of this.#depends.subgraph(y)) {
       const parents = [...this.#extends.subgraph([name])]
       if (parents.some(parent => x.includes(parent))) continue
