@@ -371,10 +371,7 @@ function toStringType(type: Argv.Type) {
 
 export namespace Command {
   export interface Config {
-    /**
-     * min authority
-     * @deprecated use permission instead
-     */
+    /** min authority */
     authority?: Computed<number>
     /** disallow unknown options */
     checkUnknown?: boolean

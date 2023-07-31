@@ -61,7 +61,7 @@ export function apply(ctx: Context, config: Config = {}) {
         }
       }
 
-      const token = generate(session, +(session.subtype !== 'private'))
+      const token = generate(session, +!session.isDirect)
       return session.text('.generated-1', [token])
     })
 

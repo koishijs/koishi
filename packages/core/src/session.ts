@@ -385,7 +385,7 @@ extend(Session.prototype as Session.Private, {
     if (!command.ctx.filter(this)) return ''
 
     if (this.app.database) {
-      if (this.subtype === 'group') {
+      if (!this.isDirect) {
         await this.observeChannel(this.collect('channel', argv))
       }
       await this.observeUser(this.collect('user', argv))

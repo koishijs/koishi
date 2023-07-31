@@ -377,7 +377,6 @@ export namespace Argv {
     value?: any
     fallback?: any
     type?: T
-    /** @deprecated use permission instead */
     authority?: number
     descPath?: string
   }

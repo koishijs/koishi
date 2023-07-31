@@ -40,13 +40,14 @@ export class MockBot extends Bot {
   }
 
   async getMessage(channelId: string, messageId: string) {
+    const idDirect = channelId.startsWith('private:')
     return {
       messageId,
       channelId,
       content: '',
       time: 0,
-      subtype: null,
-      messageType: null,
+      idDirect,
+      subtype: idDirect ? 'private' : 'group',
       author: { userId: this.selfId },
     }
   }

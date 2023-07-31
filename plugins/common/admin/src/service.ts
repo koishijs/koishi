@@ -102,7 +102,7 @@ function adminChannel(command: Command) {
     notFound = false
 
     // channel is required for private messages
-    if (session.subtype === 'private' && !options.channel) {
+    if (session.isDirect && !options.channel) {
       return session.text('admin.not-in-group')
     }
 

@@ -81,6 +81,7 @@ export class MessageClient {
     } else {
       this.meta.channelId = 'private:' + userId
       this.meta.subtype = 'private'
+      this.meta.isDirect = true
     }
 
     const self = this

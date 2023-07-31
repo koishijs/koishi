@@ -21,6 +21,7 @@ declare module '@satorijs/core' {
 export interface User {
   id: number
   name: string
+  /** @deprecated */
   flag: number
   authority: number
   locales: string[]
@@ -48,6 +49,7 @@ export interface Binding {
 export interface Channel {
   id: string
   platform: string
+  /** @deprecated */
   flag: number
   assignee: string
   guildId: string
