@@ -6,7 +6,6 @@ import { Argv } from './parser'
 import { Next, SessionError } from '../middleware'
 import { Channel, User } from '../database'
 import { FieldCollector } from '../session'
-import { Computed } from '../filter'
 
 const logger = new Logger('command')
 
@@ -219,13 +218,11 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
     }
     this._createOption(name, desc, config)
     this.caller.collect('command.option', () => this.removeOption(name))
-    if (typeof config.authority === 'number') {
-      this.caller.permissions.inherit(`authority.${config.authority}`, `command.${this.name}.option.${name}`)
-    }
+    this.caller.permissions.authority(config.authority, `command.${this.name}.option.${name}`)
     return this
   }
 
-  match(session: Session) {
+  match(session: Session<never, never>) {
     const { authority = Infinity } = (session.user || {}) as User
     return this.ctx.filter(session) && session.resolve(this.config.authority) <= authority
   }
@@ -362,7 +359,7 @@ function toStringType(type: Argv.Type) {
 export namespace Command {
   export interface Config {
     /** min authority */
-    authority?: Computed<number>
+    authority?: number
     /** disallow unknown options */
     checkUnknown?: boolean
     /** check argument count */
@@ -376,7 +373,7 @@ export namespace Command {
   }
 
   export const Config: Schema<Config> = Schema.object({
-    authority: Schema.computed(Schema.natural()).description('指令的权限等级。').default(1),
+    authority: Schema.natural().description('指令的权限等级。').default(1).hidden(),
     slash: Schema.boolean().description('启用 slash 集成功能。'),
     checkUnknown: Schema.boolean().description('是否检查未知选项。').default(false).hidden(),
     checkArgCount: Schema.boolean().description('是否检查参数数量。').default(false).hidden(),

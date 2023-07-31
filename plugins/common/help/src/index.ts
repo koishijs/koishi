@@ -7,8 +7,8 @@ import zhTW from './locales/zh-TW.yml'
 
 declare module 'koishi' {
   interface Events {
-    'help/command'(output: string[], command: Command, session: Session): void
-    'help/option'(output: string, option: Argv.OptionVariant, command: Command, session: Session): string
+    'help/command'(output: string[], command: Command, session: Session<never, never>): void
+    'help/option'(output: string, option: Argv.OptionVariant, command: Command, session: Session<never, never>): string
   }
 
   namespace Command {
@@ -46,8 +46,8 @@ export const Config: Schema<Config> = Schema.object({
   options: Schema.boolean().default(true).description('是否为每个指令添加 `-h, --help` 选项。'),
 })
 
-function executeHelp(session: Session, name: string) {
-  if (!session.app.$commander.getCommand('help')) return
+function executeHelp(session: Session<never, never>, name: string) {
+  if (!session.app.$commander.get('help')) return
   return session.execute({
     name: 'help',
     args: [name],
@@ -100,7 +100,7 @@ export function apply(ctx: Context, config: Config) {
   })
 
   const $ = ctx.$commander
-  function findCommand(target: string, session: Session) {
+  function findCommand(target: string, session: Session<never, never>) {
     const command = $.resolve(target)
     if (command?.match(session)) return command
 

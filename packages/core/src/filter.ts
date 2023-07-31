@@ -10,8 +10,8 @@ export namespace Computed {
   }
 }
 
-export type Computed<T> = T | Eval.Expr<T> | ((session: Session) => T)
-export type Filter = (session: Session) => boolean
+export type Computed<T> = T | Eval.Expr<T> | ((session: Session<never, never>) => T)
+export type Filter = (session: Session<never, never>) => boolean
 
 declare module '@satorijs/core' {
   interface Context {

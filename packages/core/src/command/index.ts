@@ -103,7 +103,7 @@ export class Commander extends Map<string, Command> {
 
     ctx.schema.extend('command', Command.Config, 1000)
     ctx.schema.extend('command-option', Schema.object({
-      authority: Schema.computed(Schema.natural()).description('选项的权限等级。').default(0),
+      authority: Schema.computed(Schema.natural()).description('选项的权限等级。').default(0).hidden(),
     }), 1000)
 
     ctx.on('ready', () => {
@@ -200,9 +200,7 @@ export class Commander extends Map<string, Command> {
     Object.assign(parent.config, config)
     extra.forEach(command => caller.emit('command-added', command))
     parent[Context.current] = caller
-    if (typeof parent.config.authority === 'number') {
-      caller.permissions.inherit(`authority.${parent.config.authority}`, `command.${parent.name}`)
-    }
+    this.caller.permissions.authority(parent.config.authority, `command.${parent.name}`)
     if (root) caller.state.disposables.unshift(() => root.dispose())
     return parent
   }

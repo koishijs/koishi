@@ -8,6 +8,10 @@ declare module '@satorijs/core' {
   interface Context {
     permissions: Permissions
   }
+
+  interface Events {
+    'internal/permission'(): void
+  }
 }
 
 class DAG {
@@ -56,11 +60,15 @@ export class Permissions {
       const value = +name.slice(10)
       return !user || user.authority >= value
     })
+
+    this.provide('bot.*', async (name, session) => {
+      return session.bot?.supports(name.slice(4), session)
+    })
   }
 
   provide(name: string, callback: Permissions.ProvideCallback) {
     this.#providers[name] = callback
-    this[Context.current]?.on('dispose', () => {
+    this[Context.current]?.collect('permission-provide', () => {
       delete this.#providers[name]
     })
   }
@@ -81,19 +89,34 @@ export class Permissions {
     }
   }
 
-  inherit(parent: string, child: string, condition: Computed<boolean> = true) {
-    // use child as source and parent as target
-    this.#inherits.link(child, parent, condition)
-    this[Context.current]?.on('dispose', () => {
-      this.#inherits.unlink(child, parent, condition)
+  authority(value: number, name: string) {
+    if (typeof value !== 'number') return
+    this.inherit(`authority.${value}`, name)
+  }
+
+  inherit(child: string, parent: string, condition: Computed<boolean> = true) {
+    this.#inherits.link(parent, child, condition)
+    this.ctx.emit('internal/permission')
+    this[Context.current]?.collect('permission-inherit', () => {
+      this.#inherits.unlink(parent, child, condition)
+      this.ctx.emit('internal/permission')
     })
   }
 
   depend(dependent: string, dependency: string, condition: Computed<boolean> = true) {
     this.#depends.link(dependent, dependency, condition)
-    this[Context.current]?.on('dispose', () => {
+    this.ctx.emit('internal/permission')
+    this[Context.current]?.collect('permission-depend', () => {
       this.#depends.unlink(dependent, dependency, condition)
+      this.ctx.emit('internal/permission')
     })
+  }
+
+  list() {
+    return [...new Set([
+      ...this.#inherits.store.keys(),
+      ...this.#depends.store.keys(),
+    ])]
   }
 
   async test(x: string[], y: Iterable<string>, session: Partial<Session> = {}) {
