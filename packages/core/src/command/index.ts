@@ -201,7 +201,7 @@ export class Commander extends Map<string, Command> {
     extra.forEach(command => caller.emit('command-added', command))
     parent[Context.current] = caller
     if (typeof parent.config.authority === 'number') {
-      caller.permissions.inherit(`command.${parent.name}`, [`authority.${parent.config.authority}`])
+      caller.permissions.inherit(`authority.${parent.config.authority}`, `command.${parent.name}`)
     }
     if (root) caller.state.disposables.unshift(() => root.dispose())
     return parent
