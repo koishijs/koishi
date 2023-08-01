@@ -326,9 +326,9 @@ extend(Session.prototype as Session.Private, {
     if (argv.command) return argv.command
     if (argv.name) return argv.command = this.app.$commander.resolve(argv.name)
 
-    const { parsed, subtype } = this
+    const { parsed, isDirect } = this
     // guild message should have prefix or appel to be interpreted as a command call
-    if (argv.root && subtype !== 'private' && parsed.prefix === null && !parsed.appel) return
+    if (argv.root && !isDirect && parsed.prefix === null && !parsed.appel) return
     const segments: string[] = []
     while (argv.tokens.length) {
       const { content } = argv.tokens[0]

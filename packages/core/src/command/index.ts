@@ -83,8 +83,8 @@ export class Commander extends Map<string, Command> {
     ctx.middleware((session, next) => {
       // use `!prefix` instead of `prefix === null` to prevent from blocking other middlewares
       // we need to make sure that the user truly has the intension to call a command
-      const { argv, quote, subtype, parsed: { prefix, appel } } = session
-      if (argv.command || subtype !== 'private' && !prefix && !appel) return next()
+      const { argv, quote, isDirect, parsed: { prefix, appel } } = session
+      if (argv.command || !isDirect && !prefix && !appel) return next()
       const content = session.parsed.content.slice((prefix ?? '').length)
       const actual = content.split(/\s/, 1)[0].toLowerCase()
       if (!actual) return next()
@@ -141,7 +141,7 @@ export class Commander extends Map<string, Command> {
 
   resolve(key: string) {
     if (!key) return
-    const segments = key.split('.')
+    const segments = key.toLowerCase().split('.')
     let i = 1, name = segments[0], cmd: Command
     while ((cmd = this.get(name)) && i < segments.length) {
       name = cmd.name + '.' + segments[i++]
