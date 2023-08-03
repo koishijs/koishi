@@ -1,6 +1,6 @@
-protocol: 要使用的协议名。
-host: 要连接到的主机名。
-port: 要连接到的端口号。
-username: 要使用的用户名。
-password: 要使用的密码。
-database: 要访问的数据库名。
+protocol: 要使用的協議名。
+host: 要連接到的主機名。
+port: 要連接到的端口號。
+username: 要使用的使用者名。
+password: 要使用的密碼。
+database: 要訪問的數據庫名。
