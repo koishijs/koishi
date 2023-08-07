@@ -137,7 +137,7 @@ export class DatabaseService extends Database<Tables> {
 
   async setUser(platform: string, pid: string, data: Update<User>) {
     const [binding] = await this.get('binding', { platform, pid }, ['aid'])
-    if (!binding) return
+    if (!binding) throw new Error('user not found')
     return this.set('user', binding.aid, data)
   }
 

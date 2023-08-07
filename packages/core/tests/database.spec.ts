@@ -19,7 +19,7 @@ after(() => app.stop())
 describe('Database API', () => {
   describe('User Operations', () => {
     it('db.setUser() on non-existing user', async () => {
-      await app.database.setUser('mock', 'A', { authority: 1 })
+      await expect(app.database.setUser('mock', 'A', { authority: 1 })).to.be.rejected
       await expect(app.database.getUser('mock', 'A')).eventually.not.to.be.ok
     })
 
