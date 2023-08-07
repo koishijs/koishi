@@ -17,6 +17,18 @@ declare module '@satorijs/core' {
 class DAG {
   store: Map<string, Map<string, Computed<boolean>[]>> = new Map()
 
+  define(name: string) {
+    this.delete(name)
+    this.store.set(name, new Map())
+  }
+
+  delete(name: string) {
+    this.store.delete(name)
+    for (const map of this.store.values()) {
+      map.delete(name)
+    }
+  }
+
   link(source: string, target: string, condition: Computed<boolean>) {
     if (!this.store.has(source)) this.store.set(source, new Map())
     const map = this.store.get(source)
@@ -66,10 +78,14 @@ export class Permissions {
     })
   }
 
+  private get caller(): Context {
+    return this[Context.current]
+  }
+
   provide(name: string, callback: Permissions.ProvideCallback) {
     this.#providers[name] = callback
-    this[Context.current]?.collect('permission-provide', () => {
-      delete this.#providers[name]
+    return this.caller?.collect('permission-provide', () => {
+      return delete this.#providers[name]
     })
   }
 
@@ -94,29 +110,34 @@ export class Permissions {
     this.inherit(`authority.${value}`, name)
   }
 
+  define(name: string, inherits: string[]) {
+    this.#inherits.define(name)
+    this.ctx.emit('internal/permission')
+    for (const permission of inherits) {
+      this.inherit(name, permission)
+    }
+    return this.caller?.collect('permission-define', () => {
+      this.#inherits.delete(name)
+      this.ctx.emit('internal/permission')
+    })
+  }
+
   inherit(child: string, parent: string, condition: Computed<boolean> = true) {
     this.#inherits.link(parent, child, condition)
-    this.ctx.emit('internal/permission')
-    this[Context.current]?.collect('permission-inherit', () => {
+    return this.caller?.collect('permission-inherit', () => {
       this.#inherits.unlink(parent, child, condition)
-      this.ctx.emit('internal/permission')
     })
   }
 
   depend(dependent: string, dependency: string, condition: Computed<boolean> = true) {
     this.#depends.link(dependent, dependency, condition)
-    this.ctx.emit('internal/permission')
-    this[Context.current]?.collect('permission-depend', () => {
+    return this.caller?.collect('permission-depend', () => {
       this.#depends.unlink(dependent, dependency, condition)
-      this.ctx.emit('internal/permission')
     })
   }
 
   list() {
-    return [...new Set([
-      ...this.#inherits.store.keys(),
-      ...this.#depends.store.keys(),
-    ])]
+    return [...this.#inherits.store.keys()]
   }
 
   async test(x: string[], y: Iterable<string>, session: Partial<Session> = {}) {
