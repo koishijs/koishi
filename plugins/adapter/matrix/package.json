@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-adapter-matrix",
   "description": "Matrix Adapter for Koishi",
-  "version": "3.1.2",
+  "version": "3.2.1",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -37,12 +37,12 @@
     }
   },
   "peerDependencies": {
-    "koishi": "^4.14.0"
+    "koishi": "^4.14.1"
   },
   "devDependencies": {
-    "koishi": "^4.14.0"
+    "koishi": "^4.14.1"
   },
   "dependencies": {
-    "@satorijs/adapter-matrix": "^3.1.2"
+    "@satorijs/adapter-matrix": "^3.2.1"
   }
 }
