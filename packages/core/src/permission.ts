@@ -76,6 +76,12 @@ export class Permissions {
     this.provide('bot.*', async (name, session) => {
       return session.bot?.supports(name.slice(4), session)
     })
+
+    this.provide('*', async (name, session) => {
+      return session.permissions?.includes(name)
+        || session.user?.permissions?.includes(name)
+        || session.channel?.permissions?.includes(name)
+    })
   }
 
   private get caller(): Context {
@@ -96,9 +102,9 @@ export class Permissions {
         .map(([key, value]) => value)
       if (!callbacks.length) return false
       for (const callback of callbacks) {
-        if (!await callback(name, session)) return false
+        if (await callback(name, session)) return true
       }
-      return true
+      return false
     } catch (error) {
       logger.warn(error)
       return false
@@ -140,11 +146,10 @@ export class Permissions {
     return [...this.#inherits.store.keys()]
   }
 
-  async test(x: string[], y: Iterable<string>, session: Partial<Session> = {}) {
+  async test(y: Iterable<string>, session: Partial<Session> = {}) {
     const cache: Dict<Promise<boolean>> = Object.create(null)
     for (const name of this.#depends.subgraph(y, session)) {
       const parents = [...this.#inherits.subgraph([name], session)]
-      if (parents.some(parent => x.includes(parent))) continue
       const results = await Promise.all(parents.map(parent => cache[parent] ||= this.check(parent, session)))
       if (results.some(result => result)) continue
       return false

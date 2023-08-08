@@ -18,7 +18,7 @@ export default function validate(ctx: Context) {
         permissions.push(`command.${command.name}.option.${option.name}`)
       }
     }
-    if (!await ctx.permissions.test(session.permissions, permissions, session as any)) {
+    if (!await ctx.permissions.test(permissions, session as any)) {
       return sendHint('internal.low-authority')
     }
   }, true)

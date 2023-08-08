@@ -100,6 +100,7 @@ extend(Session.prototype as Session.Private, {
     defineProperty(this, 'user', null)
     defineProperty(this, 'channel', null)
     defineProperty(this, 'guild', null)
+    defineProperty(this, 'permissions', [])
     defineProperty(this, '_queuedTasks', [])
     defineProperty(this, '_queuedTimeout', null)
   },

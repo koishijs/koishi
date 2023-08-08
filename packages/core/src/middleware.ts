@@ -256,7 +256,6 @@ export class Processor {
     defineProperty(session, 'parsed', { hasMention, content, appel, prefix: null })
     this.ctx.emit(session, 'before-attach', session)
 
-    session.permissions = []
     if (this.ctx.database) {
       if (!session.isDirect) {
         // attach group data
@@ -265,7 +264,6 @@ export class Processor {
         const channel = await session.observeChannel(channelFields)
         // for backwards compatibility
         channel.guildId = session.guildId
-        session.permissions.push(...channel.permissions)
 
         // emit attach event
         if (await this.ctx.serial(session, 'attach-channel', session)) return
@@ -280,7 +278,6 @@ export class Processor {
       const userFields = new Set<User.Field>(['id', 'flag', 'authority', 'permissions', 'locales'])
       this.ctx.emit('before-attach-user', session, userFields)
       const user = await session.observeUser(userFields)
-      session.permissions.push(`user.${user.id}`, ...user.permissions)
 
       // emit attach event
       if (await this.ctx.serial(session, 'attach-user', session)) return
