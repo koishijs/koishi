@@ -1,0 +1,48 @@
+{
+  "name": "@koishijs/plugin-adapter-rocketchat",
+  "description": "Rocket Chat Adapter for Koishi",
+  "version": "1.0.0",
+  "main": "lib/index.js",
+  "typings": "lib/index.d.ts",
+  "files": [
+    "lib"
+  ],
+  "author": "LittleC <i@ltlec.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/satorijs/satori.git",
+    "directory": "adapters/rocketchat"
+  },
+  "bugs": {
+    "url": "https://github.com/satorijs/satori/issues"
+  },
+  "homepage": "https://koishi.chat/plugins/adapter/rocketchat.html",
+  "keywords": [
+    "bot",
+    "adapter",
+    "chatbot",
+    "koishi",
+    "rocketchat"
+  ],
+  "koishi": {
+    "description": {
+      "en": "Rocket Chat Adapter",
+      "zh": "Rocket Chat 适配器"
+    },
+    "service": {
+      "implements": [
+        "adapter"
+      ]
+    }
+  },
+  "peerDependencies": {
+    "koishi": "^4.14.1"
+  },
+  "devDependencies": {
+    "koishi": "^4.14.1"
+  },
+  "dependencies": {
+    "@satorijs/adapter-rocketchat": "^1.0.0"
+  }
+}
