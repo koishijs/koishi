@@ -27,7 +27,7 @@ declare module '@koishijs/core' {
 }
 
 interface StartMessage {
-  subtype?: string
+  isDirect?: boolean
   channelId?: string
   guildId?: string
   sid?: string
@@ -287,8 +287,9 @@ export abstract class Loader {
       fork.alias = key.slice(name.length + 1)
       parent.scope[Loader.kRecord][key] = fork
     }
+    const filter = this.interpolate(meta.$filter)
     fork.parent.filter = (session) => {
-      return parent.filter(session) && (isNullable(meta.$filter) || session.resolve(meta.$filter))
+      return parent.filter(session) && (isNullable(filter) || session.resolve(filter))
     }
     const service = 'plugin:' + name
     Context.service(service)
