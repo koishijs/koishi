@@ -4,11 +4,12 @@
   "version": "4.1.1",
   "main": "lib/index.js",
   "module": "lib/shared.mjs",
-  "typings": "lib/index.d.ts",
+  "types": "lib/index.d.ts",
   "exports": {
     ".": {
       "require": "./lib/index.js",
-      "import": "./lib/shared.mjs"
+      "import": "./lib/shared.mjs",
+      "types": "./lib/index.d.ts"
     },
     "./shared": {
       "require": "./lib/shared.js",
