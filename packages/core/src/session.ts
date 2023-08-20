@@ -387,9 +387,9 @@ extend(Session.prototype as Session.Private, {
 
     if (this.app.database) {
       if (!this.isDirect) {
-        await this.observeChannel(this.collect('channel', argv))
+        await this.observeChannel(this.collect('channel', argv, new Set(['permissions', 'locales'])))
       }
-      await this.observeUser(this.collect('user', argv))
+      await this.observeUser(this.collect('user', argv, new Set(['authority', 'permissions', 'locales'])))
     }
 
     let shouldEmit = true
