@@ -68,7 +68,7 @@ export class Permissions {
   #providers: Dict<Permissions.ProvideCallback> = Object.create(null)
 
   constructor(public ctx: Context) {
-    this.provide('authority.*', (name, { user }) => {
+    this.provide('authority.*', (name, { user }: Partial<Session<'authority'>>) => {
       const value = +name.slice(10)
       return !user || user.authority >= value
     })
@@ -77,7 +77,7 @@ export class Permissions {
       return session.bot?.supports(name.slice(4), session)
     })
 
-    this.provide('*', async (name, session) => {
+    this.provide('*', async (name, session: Partial<Session<'permissions', 'permissions'>>) => {
       return session.permissions?.includes(name)
         || session.user?.permissions?.includes(name)
         || session.channel?.permissions?.includes(name)
