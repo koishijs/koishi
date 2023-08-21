@@ -1,7 +1,7 @@
 {
   "name": "koishi",
   "description": "Cross-Platform Chatbot Framework Made with Love",
-  "version": "4.14.1",
+  "version": "4.14.2",
   "main": "lib/index.cjs",
   "module": "lib/index.mjs",
   "types": "lib/index.d.ts",
@@ -44,10 +44,10 @@
     "framework"
   ],
   "dependencies": {
-    "@koishijs/core": "4.14.1",
-    "@koishijs/loader": "4.1.1",
-    "@koishijs/utils": "^7.0.4",
-    "@satorijs/satori": "^2.6.1",
+    "@koishijs/core": "4.14.2",
+    "@koishijs/loader": "4.1.2",
+    "@koishijs/utils": "^7.0.5",
+    "@satorijs/satori": "^2.6.2",
     "cac": "^6.7.14",
     "kleur": "^4.1.5",
     "ns-require": "^1.1.4"
