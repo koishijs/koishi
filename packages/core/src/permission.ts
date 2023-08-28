@@ -73,8 +73,8 @@ export class Permissions {
       return !user || user.authority >= value
     })
 
-    this.provide('bot.*', async (name, session) => {
-      return session.bot?.supports(name.slice(4), session)
+    this.provide('*', async (name, session) => {
+      return session.bot?.checkPermission(name, session)
     })
 
     this.provide('*', async (name, session: Partial<Session<'permissions', 'permissions'>>) => {

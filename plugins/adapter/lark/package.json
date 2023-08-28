@@ -43,10 +43,10 @@
     }
   },
   "peerDependencies": {
-    "koishi": "^4.14.2"
+    "koishi": "^4.14.3"
   },
   "devDependencies": {
-    "koishi": "^4.14.2"
+    "koishi": "^4.14.3"
   },
   "dependencies": {
     "@satorijs/adapter-lark": "^2.1.3"
