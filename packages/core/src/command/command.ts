@@ -1,4 +1,4 @@
-import { Awaitable, camelize, Dict, isNullable, remove, valueMap } from 'cosmokit'
+import { Awaitable, camelize, Dict, isNullable, remove } from 'cosmokit'
 import { coerce } from '@koishijs/utils'
 import { Context, Fragment, Logger, Schema, Session, Universal } from '@satorijs/core'
 import { Disposable } from 'cordis'
@@ -332,7 +332,7 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
     return {
       name: this.name,
       aliases: this._aliases,
-      description: valueMap(this.ctx.i18n._data, (store) => store[`commands.${this.name}.description`] as string),
+      description: this.ctx.i18n.get(`commands.${this.name}.description`),
       arguments: this._arguments.map(arg => ({
         name: arg.name,
         type: toStringType(arg.type),
@@ -342,7 +342,7 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
       options: Object.entries(this._options).map(([name, option]) => ({
         name,
         type: toStringType(option.type),
-        description: valueMap(this.ctx.i18n._data, (store) => store[`commands.${this.name}.options.${name}`] as string),
+        description: this.ctx.i18n.get(`commands.${this.name}.options.${name}`),
         required: option.required,
       })),
       children: this.children

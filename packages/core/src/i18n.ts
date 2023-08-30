@@ -48,7 +48,7 @@ export namespace I18n {
 export class I18n {
   static readonly [Context.expose] = 'i18n'
 
-  _data: Dict<I18n.Store> = {}
+  _data: Dict<Dict<string>> = {}
   _presets: Dict<I18n.Renderer> = {}
 
   locales: LocaleTree
@@ -74,18 +74,25 @@ export class I18n {
     return value >= threshold ? value : 0
   }
 
+  get(key: string, locales: string[] = []): Dict<string> {
+    const result: Dict<string> = {}
+    for (const locale of this.fallback(locales)) {
+      const value = this._data[locale]?.[key]
+      if (value) result[locale] = value
+    }
+    return result
+  }
+
   private* set(locale: string, prefix: string, value: I18n.Node): Generator<string> {
     if (typeof value === 'object' && value && !prefix.includes('@')) {
       for (const key in value) {
         yield* this.set(locale, prefix + key + '.', value[key])
       }
-    } else if (prefix.includes('@') || typeof value === 'string') {
+    } else if (prefix.includes('@')) {
+      throw new Error('preset is deprecated')
+    } else if (typeof value === 'string') {
       const dict = this._data[locale]
-      const [path, preset] = prefix.slice(0, -1).split('@')
-      if (preset) {
-        value[kTemplate] = preset
-        logger.warn('preset is deprecated and will be removed in the future')
-      }
+      const path = prefix.slice(0, -1)
       if (!isNullable(dict[path]) && !locale.startsWith('$') && dict[path] !== value) {
         logger.warn('override', locale, path)
       }

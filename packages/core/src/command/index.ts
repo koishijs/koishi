@@ -60,6 +60,18 @@ export class Commander extends Map<string, Command> {
       return argv
     })
 
+    ctx.on('interaction/command', (session) => {
+      if (session.data?.argv) {
+        const { name, options, arguments: args } = session.data.argv
+        session.execute({ name, args, options })
+      } else {
+        defineProperty(session, 'argv', ctx.bail('before-parse', session.content, session))
+        session.argv.root = true
+        session.argv.session = session
+        session.execute(session.argv)
+      }
+    })
+
     ctx.before('attach', (session) => {
       // strip prefix
       let content = session.parsed.content

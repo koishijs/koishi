@@ -36,7 +36,6 @@ export namespace User {
 
   export type Field = keyof User
   export type Observed<K extends Field = Field> = utils.Observed<Pick<User, K>, Promise<void>>
-  export interface Prelude extends Pick<User, 'id' | 'authority' | 'permissions' | 'locales'> {}
 }
 
 export interface Binding {
@@ -65,7 +64,6 @@ export namespace Channel {
 
   export type Field = keyof Channel
   export type Observed<K extends Field = Field> = utils.Observed<Pick<Channel, K>, Promise<void>>
-  export interface Prelude extends Pick<Channel, 'assignee' | 'guildId' | 'permissions' | 'locales'> {}
 }
 
 export interface Tables {

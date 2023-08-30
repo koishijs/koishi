@@ -1,40 +1,34 @@
 {
-  "name": "@koishijs/plugin-adapter-mail",
-  "description": "Mail Adapter for Koishi",
-  "version": "1.1.2",
+  "name": "@koishijs/plugin-adapter-wecom",
+  "description": "Wecom Adapter for Koishi",
+  "version": "1.0.0",
   "main": "lib/index.js",
-  "module": "lib/index.mjs",
   "typings": "lib/index.d.ts",
   "files": [
     "lib"
   ],
-  "author": "Anillc <void@anillc.cn>",
-  "contributors": [
-    "Anillc <void@anillc.cn>",
-    "Shigma <i@shig.ma>",
-    "arily <arily@arily.moe>"
-  ],
+  "author": "LittleC <i@ltlec.com>",
   "license": "MIT",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/satorijs/satori.git",
-    "directory": "adapters/mail"
+    "directory": "adapters/wecom"
   },
   "bugs": {
     "url": "https://github.com/satorijs/satori/issues"
   },
-  "homepage": "https://koishi.chat/plugins/adapter/mail.html",
+  "homepage": "https://koishi.chat/plugins/adapter/wecom.html",
   "keywords": [
     "bot",
     "adapter",
-    "email",
     "chatbot",
-    "koishi"
+    "koishi",
+    "wecom"
   ],
   "koishi": {
     "description": {
-      "en": "Mail Adapter",
-      "zh": "邮件适配器"
+      "en": "Wecom Adapter",
+      "zh": "企业微信适配器"
     },
     "service": {
       "implements": [
@@ -49,6 +43,6 @@
     "koishi": "^4.14.3"
   },
   "dependencies": {
-    "@satorijs/adapter-mail": "^1.1.2"
+    "@satorijs/adapter-wecom": "^1.0.0"
   }
 }

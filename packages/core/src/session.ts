@@ -10,7 +10,7 @@ import { CompareOptions } from './i18n'
 const logger = new Logger('session')
 
 declare module '@satorijs/core' {
-  interface Session<U extends User.Field = keyof User.Prelude, G extends Channel.Field = keyof Channel.Prelude> {
+  interface Session<U extends User.Field = never, G extends Channel.Field = never> {
     argv?: Argv<U, G>
     user?: User.Observed<U>
     channel?: Channel.Observed<G>
@@ -387,9 +387,9 @@ extend(Session.prototype as Session.Private, {
 
     if (this.app.database) {
       if (!this.isDirect) {
-        await this.observeChannel(this.collect('channel', argv))
+        await this.observeChannel(this.collect('channel', argv, new Set(['permissions', 'locales'])))
       }
-      await this.observeUser(this.collect('user', argv))
+      await this.observeUser(this.collect('user', argv, new Set(['authority', 'permissions', 'locales'])))
     }
 
     let shouldEmit = true
