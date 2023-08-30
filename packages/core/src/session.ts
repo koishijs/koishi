@@ -47,6 +47,8 @@ declare module '@satorijs/core' {
   }
 
   namespace Session {
+    export const shadow: unique symbol
+
     export interface Private extends Session {
       [Context.filter](ctx: Context): boolean
       _queuedTasks: Task[]
@@ -86,6 +88,8 @@ interface Task {
   resolve(ids: string[]): void
   reject(reason: any): void
 }
+
+defineProperty(Session, 'shadow', Symbol.for('session.shadow'))
 
 const { initialize } = Session.prototype
 

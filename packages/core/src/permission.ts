@@ -147,6 +147,7 @@ export class Permissions {
   }
 
   async test(y: Iterable<string>, session: Partial<Session> = {}) {
+    session = session[Session.shadow] || session
     const cache: Dict<Promise<boolean>> = Object.create(null)
     for (const name of this.#depends.subgraph(y, session)) {
       const parents = [...this.#inherits.subgraph([name], session)]
