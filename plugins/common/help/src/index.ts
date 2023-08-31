@@ -102,7 +102,7 @@ export function apply(ctx: Context, config: Config) {
   const $ = ctx.$commander
   function findCommand(target: string, session: Session<never, never>) {
     const command = $.resolve(target)
-    if (command?.match(session)) return command
+    if (command?.ctx.filter(session)) return command
 
     // shortcuts
     const data = ctx.i18n
@@ -161,7 +161,12 @@ export function apply(ctx: Context, config: Config) {
       }
 
       const command = await inferCommand(target, session)
-      if (command) return showHelp(command, session, options)
+      if (!command) return
+      const permissions = [`command.${command.name}`]
+      if (!await ctx.permissions.test(permissions, session as any)) {
+        return session.text('internal.low-authority')
+      }
+      return showHelp(command, session, options)
     })
 
   if (config.shortcut !== false) cmd.shortcut('help', { i18n: true, fuzzy: true })
