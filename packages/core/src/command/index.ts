@@ -203,7 +203,6 @@ export class Commander extends Map<string, Command> {
       if (!root) root = command
       if (parent) {
         command.parent = parent
-        command.config.authority = parent.config.authority
         parent.children.push(command)
       }
       parent = command
