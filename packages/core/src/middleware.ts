@@ -32,6 +32,14 @@ export class SessionError extends Error {
 export type Next = (next?: Next.Callback) => Promise<void | Fragment>
 export type Middleware = (session: Session, next: Next) => Awaitable<void | Fragment>
 
+export const Middleware = (prepend?: boolean) => <T extends Middleware>(value: T, meta: ClassMethodDecoratorContext, ...args) => {
+  if (meta.kind !== 'method') return value
+  meta.addInitializer(function () {
+    (this[Context.current] as Context).middleware(value.bind(this), prepend)
+  })
+  return value
+}
+
 export namespace Next {
   export const MAX_DEPTH = 64
 
@@ -80,7 +88,6 @@ export class Processor {
     defineProperty(this, Context.current, ctx)
 
     // bind built-in event listeners
-    this.middleware(this._process.bind(this), true)
     ctx.on('message', this._handleMessage.bind(this))
 
     ctx.before('attach-user', (session, fields) => {
@@ -214,6 +221,7 @@ export class Processor {
     }
   }
 
+  @Middleware(true)
   private async _process(session: Session, next: Next) {
     let atSelf = false, appel = false
     let content = session.content.trim()
