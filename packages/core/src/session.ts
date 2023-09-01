@@ -56,10 +56,6 @@ declare module '@satorijs/core' {
       _next(): void
       _observeChannelLike<T extends Channel.Field = never>(channelId: string, fields: Iterable<T>): Promise<any>
     }
-
-    export interface Payload {
-      locales?: string[]
-    }
   }
 }
 
@@ -223,11 +219,12 @@ extend(Session.prototype as Session.Private, {
     const user = await app.database.getUser(platform, id, fields)
     if (user) return user
     const authority = await this.resolve(app.config.autoAuthorize)
+    const data = { locales: this.locales, authority, createdAt: new Date() }
     if (authority) {
-      return app.database.createUser(platform, id, { authority, createdAt: new Date() })
+      return app.database.createUser(platform, id, data)
     } else {
       const user = app.model.tables.user.create()
-      Object.assign(user, { authority, $detached: true })
+      Object.assign(user, { ...data, $detached: true })
       return user
     }
   },
