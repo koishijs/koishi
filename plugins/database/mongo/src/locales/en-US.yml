@@ -1,6 +1,6 @@
 protocol: 要使用的协议名。
 host: 要连接到的主机名。
-port: 要连接到的端口号。
-username: 要使用的用户名。
-password: 要使用的密码。
-database: 要访问的数据库名。
+port: The port number to be connected.
+username: The username to use.
+password: The password to use.
+database: The database name to use.
