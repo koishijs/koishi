@@ -1,4 +1,4 @@
-host: 要连接到的主机名。
+host: The host to connect to.
 port: The port number to be connected.
 user: The username to use.
 password: The password to use.
