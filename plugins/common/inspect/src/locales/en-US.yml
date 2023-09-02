@@ -1,18 +1,18 @@
 commands:
   inspect:
-    description: 查看用户、频道或消息的详细信息
+    description: View details of users, channels or messages
     usage: |-
       inspect @user
       inspect #channel
       inspect
     messages:
-      invalid: 参数无法解析。
-      user: 用户 ID：{id}
-      channel: 频道 ID：{id}
+      invalid: Could not parse arguments.
+      user: 'User ID: {id}'
+      channel: 'Channel ID: {id}'
       message: |-
-        平台名：{platform}
-        消息 ID：{messageId}
-        频道 ID：{channelId}
-        群组 ID：{guildId}
-        用户 ID：{userId}
-        自身 ID：{selfId}
+        Platform name: {platform}
+        Message ID: {messageId}
+        Channel ID: {channelId}
+        Guild ID: {guildId}
+        User ID: {userId}
+        Self ID: {selfId}
