@@ -108,7 +108,7 @@ describe('Parser API', () => {
 
     it('typed arguments', () => {
       cmd = app.command('test3 [...args:number]')
-      expect(cmd.parse('1 2 3')).to.have.shape({ args: [1, 2, 3] })
+      expect(cmd.parse('1 2 -3')).to.have.shape({ args: [1, 2, -3] })
     })
   })
 

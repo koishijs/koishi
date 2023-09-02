@@ -201,7 +201,7 @@ export namespace Argv {
 
   export type OptionType<S extends string> = ExtractFirst<Replace<S, '>', ']'>, any>
 
-  export type Type = DomainType | RegExp | readonly string[] | Transform<any>
+  export type Type = DomainType | RegExp | readonly string[] | Transform<any> | DomainConfig<any>
 
   export interface Declaration {
     name?: string
@@ -216,31 +216,32 @@ export namespace Argv {
   export interface DomainConfig<T> {
     transform?: Transform<T>
     greedy?: boolean
-  }
-
-  function resolveConfig(type: Type) {
-    return typeof type === 'string' ? builtin[type] || {} : {}
+    numeric?: boolean
   }
 
   // https://github.com/microsoft/TypeScript/issues/17002
   // it never got fixed so we have to do this
   const isArray = Array.isArray as (arg: any) => arg is readonly any[]
 
-  function resolveType(type: Type) {
+  function resolveDomain(type: Type) {
     if (typeof type === 'function') {
-      return type
+      return { transform: type }
     } else if (type instanceof RegExp) {
-      return (source: string) => {
+      const transform = (source: string) => {
         if (type.test(source)) return source
         throw new Error()
       }
+      return { transform }
     } else if (isArray(type)) {
-      return (source: string) => {
+      const transform = (source: string) => {
         if (type.includes(source)) return source
         throw new Error()
       }
+      return { transform }
+    } else if (typeof type === 'object') {
+      return type ?? {}
     }
-    return builtin[type]?.transform
+    return builtin[type] ?? {}
   }
 
   const builtin: Dict<DomainConfig<any>> = {}
@@ -258,25 +259,25 @@ export namespace Argv {
     const value = +source
     if (Number.isFinite(value)) return value
     throw new Error('internal.invalid-number')
-  })
+  }, { numeric: true })
 
   createDomain('integer', (source, session) => {
     const value = +source
     if (value * 0 === 0 && Math.floor(value) === value) return value
     throw new Error('internal.invalid-integer')
-  })
+  }, { numeric: true })
 
   createDomain('posint', (source, session) => {
     const value = +source
     if (value * 0 === 0 && Math.floor(value) === value && value > 0) return value
     throw new Error('internal.invalid-posint')
-  })
+  }, { numeric: true })
 
   createDomain('natural', (source, session) => {
     const value = +source
     if (value * 0 === 0 && Math.floor(value) === value && value >= 0) return value
     throw new Error('internal.invalid-natural')
-  })
+  }, { numeric: true })
 
   createDomain('date', (source, session) => {
     const timestamp = Time.parseDate(source)
@@ -347,10 +348,10 @@ export namespace Argv {
     const { name, type } = decl
 
     // apply domain callback
-    const transform = resolveType(type)
-    if (transform) {
+    const domain = resolveDomain(type)
+    if (domain.transform) {
       try {
-        return transform(source, argv.session)
+        return domain.transform(source, argv.session)
       } catch (err) {
         if (!argv.session) {
           argv.error = `internal.invalid-${kind}`
@@ -510,13 +511,13 @@ export namespace Argv {
         let { content, quoted } = token
 
         // variadic argument
-        const argDecl = this._arguments[args.length] || lastArgDecl
+        const argDecl = this._arguments[args.length] || lastArgDecl || { type: 'string' }
         if (args.length === this._arguments.length - 1 && argDecl.variadic) {
           lastArgDecl = argDecl
         }
 
         // greedy argument
-        if (content[0] !== '-' && resolveConfig(argDecl?.type).greedy) {
+        if (content[0] !== '-' && resolveDomain(argDecl.type).greedy) {
           args.push(Argv.parseValue(Argv.stringify(argv), true, 'argument', argv, argDecl))
           break
         }
@@ -531,8 +532,8 @@ export namespace Argv {
           names = [paramCase(option.name)]
         } else {
           // normal argument
-          if (content[0] !== '-' || quoted) {
-            args.push(Argv.parseValue(content, quoted, 'argument', argv, argDecl || { type: 'string' }))
+          if (content[0] !== '-' || quoted || (+content) * 0 === 0 && resolveDomain(argDecl.type).numeric) {
+            args.push(Argv.parseValue(content, quoted, 'argument', argv, argDecl))
             continue
           }
 
@@ -563,13 +564,14 @@ export namespace Argv {
         quoted = false
         if (!param) {
           const { type, values } = option || {}
-          if (resolveConfig(type).greedy) {
+          if (resolveDomain(type).greedy) {
             param = Argv.stringify(argv)
             quoted = true
             argv.tokens = []
           } else {
-            const isValued = names[names.length - 1] in (values || {})
-            if (!isValued && type !== 'boolean' && argv.tokens.length && (type || argv.tokens[0]?.content !== '-')) {
+            // Option has bounded value or option is boolean.
+            const isValued = names[names.length - 1] in (values || {}) || type === 'boolean'
+            if (!isValued && argv.tokens.length && (type || argv.tokens[0]?.content !== '-')) {
               const token = argv.tokens.shift()
               param = token.content
               quoted = token.quoted
