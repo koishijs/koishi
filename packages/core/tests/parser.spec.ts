@@ -34,7 +34,7 @@ describe('Parser API', () => {
     it('register', () => {
       cmd = app.command('cmd2 <foo> [bar:text]')
       cmd.option('alpha', '-a')
-      cmd.option('beta', '-b <beta>')
+      cmd.option('beta', '-b <beta:number>')
       // infer argument type from fallback
       cmd.option('gamma', '-c <gamma>', { fallback: 0 })
       // define argument type by definition
@@ -45,12 +45,12 @@ describe('Parser API', () => {
 
     it('option parser', () => {
       expect(cmd.parse('--alpha')).to.have.shape({ options: { alpha: true } })
-      expect(cmd.parse('--beta')).to.have.shape({ options: { beta: true } })
+      expect(cmd.parse('--beta')).to.have.shape({ options: { beta: 0 } })
       expect(cmd.parse('--no-alpha')).to.have.shape({ options: { alpha: false } })
       expect(cmd.parse('--no-beta')).to.have.shape({ options: { beta: false } })
       expect(cmd.parse('--alpha 1')).to.have.shape({ options: { alpha: true } })
       expect(cmd.parse('--beta 1')).to.have.shape({ options: { beta: 1 } })
-      expect(cmd.parse('--beta "1"')).to.have.shape({ options: { beta: '1' } })
+      expect(cmd.parse('--beta "1"')).to.have.shape({ options: { beta: 1 } })
       expect(cmd.parse('--beta -1')).to.have.shape({ options: { beta: -1 } })
     })
 
@@ -68,8 +68,8 @@ describe('Parser API', () => {
     })
 
     it('short alias', () => {
-      expect(cmd.parse('-ab ""')).to.have.shape({ options: { alpha: true, beta: '' } })
-      expect(cmd.parse('-ab=')).to.have.shape({ options: { alpha: true, beta: true } })
+      expect(cmd.parse('-ab')).to.have.shape({ options: { alpha: true, beta: 0 } })
+      expect(cmd.parse('-ab=')).to.have.shape({ options: { alpha: true, beta: 0 } })
       expect(cmd.parse('-ab 1')).to.have.shape({ options: { alpha: true, beta: 1 } })
       expect(cmd.parse('-ab=1')).to.have.shape({ options: { alpha: true, beta: 1 } })
       expect(cmd.parse('-ab -1')).to.have.shape({ options: { alpha: true, beta: -1 } })
@@ -100,7 +100,7 @@ describe('Parser API', () => {
 
     it('valued override', () => {
       cmd = app.command('test2 <msg>')
-      cmd.option('writer', '-w <id>')
+      cmd.option('writer', '-w <id:number>')
       cmd.option('writer', '-W, --anonymous', { value: 0 })
       expect(cmd.parse('foo -w 1 bar')).to.have.shape({ args: ['foo', 'bar'], options: { writer: 1 } })
       expect(cmd.parse('foo -W bar')).to.have.shape({ args: ['foo', 'bar'], options: { writer: 0 } })
@@ -116,7 +116,7 @@ describe('Parser API', () => {
     it('symbol alias', () => {
       cmd = app.command('cmd3')
       cmd.option('sharp', '# <id>')
-      expect(cmd.parse('# 1')).to.have.shape({ args: [], options: { sharp: 1 } })
+      expect(cmd.parse('# 1')).to.have.shape({ args: [], options: { sharp: '1' } })
     })
 
     it('duplicate option', () => {

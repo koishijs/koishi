@@ -345,32 +345,21 @@ export namespace Argv {
     return result
   }
 
-  export function parseValue(source: string, quoted: boolean, kind: string, argv: Argv, decl: Declaration = {}) {
-    const { name, type } = decl
+  export function parseValue(source: string, kind: string, argv: Argv, decl: Declaration = {}) {
+    const { name, type = 'string' } = decl
 
     // apply domain callback
     const domain = resolveDomain(type)
-    if (domain.transform) {
-      try {
-        return domain.transform(source, argv.session)
-      } catch (err) {
-        if (!argv.session) {
-          argv.error = `internal.invalid-${kind}`
-        } else {
-          const message = argv.session.text(err['message'] || 'internal.check-syntax')
-          argv.error = argv.session.text(`internal.invalid-${kind}`, [name, message])
-        }
-        return
+    try {
+      return domain.transform(source, argv.session)
+    } catch (err) {
+      if (!argv.session) {
+        argv.error = `internal.invalid-${kind}`
+      } else {
+        const message = argv.session.text(err['message'] || 'internal.check-syntax')
+        argv.error = argv.session.text(`internal.invalid-${kind}`, [name, message])
       }
     }
-
-    // no explicit parameter
-    if (source === '' && !quoted) return true
-
-    // default behavior
-    if (quoted) return source
-    const n = +source
-    return n * 0 === 0 ? n : source
   }
 
   export interface OptionConfig<T extends Type = Type> extends PermissionConfig {
@@ -511,14 +500,14 @@ export namespace Argv {
         let { content, quoted } = token
 
         // variadic argument
-        const argDecl = this._arguments[args.length] || lastArgDecl || { type: 'string' }
+        const argDecl = this._arguments[args.length] || lastArgDecl || {}
         if (args.length === this._arguments.length - 1 && argDecl.variadic) {
           lastArgDecl = argDecl
         }
 
         // greedy argument
         if (content[0] !== '-' && resolveDomain(argDecl.type).greedy) {
-          args.push(Argv.parseValue(Argv.stringify(argv), true, 'argument', argv, argDecl))
+          args.push(Argv.parseValue(Argv.stringify(argv), 'argument', argv, argDecl))
           break
         }
 
@@ -533,7 +522,7 @@ export namespace Argv {
         } else {
           // normal argument
           if (content[0] !== '-' || quoted || (+content) * 0 === 0 && resolveDomain(argDecl.type).numeric) {
-            args.push(Argv.parseValue(content, quoted, 'argument', argv, argDecl))
+            args.push(Argv.parseValue(content, 'argument', argv, argDecl))
             continue
           }
 
@@ -588,7 +577,7 @@ export namespace Argv {
             options[key] = optDecl.values[name]
           } else {
             const source = j + 1 < names.length ? '' : param
-            options[key] = Argv.parseValue(source, quoted, 'option', argv, optDecl)
+            options[key] = Argv.parseValue(source, 'option', argv, optDecl)
           }
           if (argv.error) break
         }
