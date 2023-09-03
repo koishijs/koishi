@@ -17,8 +17,8 @@ declare module '@satorijs/core' {
 defineProperty(Bot, 'filter', false)
 
 Bot.prototype.getGuildMemberMap = async function getGuildMemberMap(this: Bot, guildId) {
-  const list = await this.getGuildMemberList(guildId)
-  return Object.fromEntries(list.map(info => [info.userId, info.nickname || info.username]))
+  const { data } = await this.getGuildMemberList(guildId)
+  return Object.fromEntries(data.map(info => [info.userId, info.nickname || info.username]))
 }
 
 Bot.prototype.broadcast = async function broadcast(this: Bot, channels, content, delay = this.ctx.root.config.delay.broadcast) {

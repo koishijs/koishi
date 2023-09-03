@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-help",
   "description": "Help plugin for Koishi",
-  "version": "2.3.1",
+  "version": "2.3.2",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -44,11 +44,11 @@
     ]
   },
   "peerDependencies": {
-    "koishi": "^4.14.3"
+    "koishi": "^4.14.4"
   },
   "devDependencies": {
     "@koishijs/plugin-database-memory": "^2.3.4",
     "@koishijs/plugin-mock": "^2.5.0",
-    "koishi": "^4.14.3"
+    "koishi": "^4.14.4"
   }
 }
