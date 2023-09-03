@@ -6,6 +6,7 @@ import { Argv } from './parser'
 import { Next, SessionError } from '../middleware'
 import { Channel, User } from '../database'
 import { FieldCollector } from '../session'
+import { PermissionConfig } from '../permission'
 
 const logger = new Logger('command')
 
@@ -49,14 +50,11 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
   }]
 
   static defaultConfig: Command.Config = {
-    authority: 1,
     showWarning: true,
     handleError: true,
   }
 
-  static defaultOptionConfig: Argv.OptionConfig = {
-    authority: 0,
-  }
+  static defaultOptionConfig: Argv.OptionConfig = {}
 
   private static _userFields: FieldCollector<'user'>[] = []
   private static _channelFields: FieldCollector<'channel'>[] = []
@@ -218,13 +216,12 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
     }
     this._createOption(name, desc, config)
     this.caller.collect('command.option', () => this.removeOption(name))
-    this.caller.permissions.authority(config.authority, `command.${this.name}.option.${name}`)
+    this.caller.permissions.config(`command.${this.name}.option.${name}`, config, 0)
     return this
   }
 
   match(session: Session<never, never>) {
-    const { authority = Infinity } = (session.user || {}) as User
-    return this.ctx.filter(session) && session.resolve(this.config.authority) <= authority
+    return this.ctx.filter(session)
   }
 
   check(callback: Command.Action<U, G, A, O>, append = false) {
@@ -357,9 +354,7 @@ function toStringType(type: Argv.Type) {
 }
 
 export namespace Command {
-  export interface Config {
-    /** min authority */
-    authority?: number
+  export interface Config extends PermissionConfig {
     /** disallow unknown options */
     checkUnknown?: boolean
     /** check argument count */

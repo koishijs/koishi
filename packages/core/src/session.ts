@@ -66,6 +66,7 @@ export interface PromptOptions {
 export interface SuggestOptions extends CompareOptions {
   actual?: string
   expect: readonly string[]
+  filter?: (name: string) => Awaitable<boolean>
   prefix?: string
   suffix: string
   timeout?: number
@@ -441,11 +442,17 @@ extend(Session.prototype as Session.Private, {
   },
 
   async suggest(options: SuggestOptions) {
-    let { expect, prefix = '' } = options
+    let { expect, filter, prefix = '' } = options
     if (options.actual) {
       expect = expect.filter((name) => {
         return name && this.app.i18n.compare(name, options.actual, options)
       })
+      if (filter) {
+        expect = (await Promise.all(expect
+          .map(async (name) => [name, await filter(name)] as const)))
+          .filter(([, result]) => result)
+          .map(([name]) => name)
+      }
     }
     if (!expect.length) {
       await this.send(prefix)

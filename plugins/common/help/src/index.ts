@@ -137,10 +137,15 @@ export function apply(ctx: Context, config: Config) {
       if (expect.includes(item.data.name)) continue
       expect.push(item.data.name)
     }
+    const cache = new Map<string, Promise<boolean>>()
     const name = await session.suggest({
       expect,
       prefix: session.text('.not-found'),
       suffix: session.text('internal.suggest-command'),
+      filter: (name) => {
+        name = $.resolve(name)!.name
+        return ctx.permissions.test(`command.${name}`, session, cache)
+      },
     })
     return $.resolve(name)
   }

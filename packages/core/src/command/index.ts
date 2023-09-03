@@ -102,10 +102,15 @@ export class Commander extends Map<string, Command> {
       if (!actual) return next()
 
       return next(async (next) => {
+        const cache = new Map<string, Promise<boolean>>()
         const name = await session.suggest({
           actual,
           expect: this.available(session),
           suffix: session.text('internal.suggest-command'),
+          filter: (name) => {
+            name = this.resolve(name)!.name
+            return ctx.permissions.test(`command.${name}`, session, cache)
+          },
         })
         if (!name) return next()
         const message = name + content.slice(actual.length) + (quote ? ' ' + quote.content : '')
@@ -211,7 +216,7 @@ export class Commander extends Map<string, Command> {
     Object.assign(parent.config, config)
     extra.forEach(command => caller.emit('command-added', command))
     parent[Context.current] = caller
-    this.caller.permissions.authority(parent.config.authority, `command.${parent.name}`)
+    this.caller.permissions.config(`command.${parent.name}`, parent.config, 1)
     if (root) caller.state.disposables.unshift(() => root.dispose())
     return parent
   }

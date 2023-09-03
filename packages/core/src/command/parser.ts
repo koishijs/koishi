@@ -4,6 +4,7 @@ import { Context, h, Session } from '@satorijs/core'
 import { Command } from './command'
 import { Channel, User } from '../database'
 import { Next } from '../middleware'
+import { PermissionConfig } from '../permission'
 
 export interface Token {
   rest?: string
@@ -372,13 +373,12 @@ export namespace Argv {
     return n * 0 === 0 ? n : source
   }
 
-  export interface OptionConfig<T extends Type = Type> {
+  export interface OptionConfig<T extends Type = Type> extends PermissionConfig {
     aliases?: string[]
     symbols?: string[]
     value?: any
     fallback?: any
     type?: T
-    authority?: number
     descPath?: string
   }
 

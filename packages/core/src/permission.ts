@@ -14,6 +14,12 @@ declare module '@satorijs/core' {
   }
 }
 
+export interface PermissionConfig {
+  authority?: number
+  permissions?: string[]
+  dependencies?: string[]
+}
+
 class DAG {
   store: Map<string, Map<string, Computed<boolean>[]>> = new Map()
 
@@ -63,9 +69,9 @@ export namespace Permissions {
 }
 
 export class Permissions {
-  #inherits = new DAG()
-  #depends = new DAG()
-  #providers: Dict<Permissions.ProvideCallback> = Object.create(null)
+  _inherits = new DAG()
+  _depends = new DAG()
+  _providers: Dict<Permissions.ProvideCallback> = Object.create(null)
 
   constructor(public ctx: Context) {
     this.provide('authority.*', (name, { user }: Partial<Session<'authority'>>) => {
@@ -73,11 +79,11 @@ export class Permissions {
       return !user || user.authority >= value
     })
 
-    this.provide('*', async (name, session) => {
+    this.provide('*', (name, session) => {
       return session.bot?.checkPermission(name, session)
     })
 
-    this.provide('*', async (name, session: Partial<Session<'permissions', 'permissions'>>) => {
+    this.provide('*', (name, session: Partial<Session<'permissions', 'permissions'>>) => {
       return session.permissions?.includes(name)
         || session.user?.permissions?.includes(name)
         || session.channel?.permissions?.includes(name)
@@ -89,15 +95,15 @@ export class Permissions {
   }
 
   provide(name: string, callback: Permissions.ProvideCallback) {
-    this.#providers[name] = callback
+    this._providers[name] = callback
     return this.caller?.collect('permission-provide', () => {
-      return delete this.#providers[name]
+      return delete this._providers[name]
     })
   }
 
   async check(name: string, session: Partial<Session>) {
     try {
-      const callbacks = Object.entries(this.#providers)
+      const callbacks = Object.entries(this._providers)
         .filter(([key]) => name === key || key.endsWith('*') && name.startsWith(key.slice(0, -1)))
         .map(([key, value]) => value)
       if (!callbacks.length) return false
@@ -111,47 +117,71 @@ export class Permissions {
     }
   }
 
-  authority(value: number, name: string) {
-    if (typeof value !== 'number') return
-    this.inherit(`authority.${value}`, name)
+  config(name: string, config: PermissionConfig = {}, defaultAuthority = 0) {
+    for (const dep of config.dependencies || []) {
+      this._depends.link(name, dep, true)
+    }
+    const children = config.permissions || []
+    if (!config.permissions || typeof config.authority === 'number') {
+      children.push(`authority.${config.authority ?? defaultAuthority}`)
+    }
+    for (const child of children) {
+      this._inherits.link(name, child, true)
+    }
+    return this.caller?.collect('permission-config', () => {
+      for (const dep of config.dependencies || []) {
+        this._depends.unlink(name, dep, true)
+      }
+      for (const child of children) {
+        this._inherits.unlink(name, child, true)
+      }
+      this.ctx.emit('internal/permission')
+    })
   }
 
   define(name: string, inherits: string[]) {
-    this.#inherits.define(name)
+    this._inherits.define(name)
     this.ctx.emit('internal/permission')
     for (const permission of inherits) {
       this.inherit(name, permission)
     }
     return this.caller?.collect('permission-define', () => {
-      this.#inherits.delete(name)
+      this._inherits.delete(name)
       this.ctx.emit('internal/permission')
     })
   }
 
   inherit(child: string, parent: string, condition: Computed<boolean> = true) {
-    this.#inherits.link(parent, child, condition)
+    this._inherits.link(parent, child, condition)
     return this.caller?.collect('permission-inherit', () => {
-      this.#inherits.unlink(parent, child, condition)
+      this._inherits.unlink(parent, child, condition)
     })
   }
 
   depend(dependent: string, dependency: string, condition: Computed<boolean> = true) {
-    this.#depends.link(dependent, dependency, condition)
+    this._depends.link(dependent, dependency, condition)
     return this.caller?.collect('permission-depend', () => {
-      this.#depends.unlink(dependent, dependency, condition)
+      this._depends.unlink(dependent, dependency, condition)
     })
   }
 
   list() {
-    return [...this.#inherits.store.keys()]
+    return [...this._inherits.store.keys()]
   }
 
-  async test(y: Iterable<string>, session: Partial<Session> = {}) {
+  async test(names: Iterable<string>, session: Partial<Session> = {}, cache: Map<string, Promise<boolean>> = new Map()) {
     session = session[Session.shadow] || session
-    const cache: Dict<Promise<boolean>> = Object.create(null)
-    for (const name of this.#depends.subgraph(y, session)) {
-      const parents = [...this.#inherits.subgraph([name], session)]
-      const results = await Promise.all(parents.map(parent => cache[parent] ||= this.check(parent, session)))
+    if (typeof names === 'string') names = [names]
+    for (const name of this._depends.subgraph(names, session)) {
+      const parents = [...this._inherits.subgraph([name], session)]
+      const results = await Promise.all(parents.map(parent => {
+        let result = cache.get(parent)
+        if (!result) {
+          result = this.check(parent, session)
+          cache.set(parent, result)
+        }
+        return result
+      }))
       if (results.some(result => result)) continue
       return false
     }
