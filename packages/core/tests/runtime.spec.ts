@@ -200,10 +200,15 @@ describe('Runtime', () => {
   describe('Command Validation', () => {
     it('check authority', async () => {
       app.command('cmd1', { showWarning: true })
-      await client2.shouldReply('cmd1', '权限不足。')
+      await client2.shouldReply('cmd1 test', '权限不足。')
+      await client1.shouldReply('cmd1 test', 'cmd1:test')
       await client1.shouldReply('cmd1 --bar', '权限不足。')
       app.command('cmd1', { showWarning: false })
       await client1.shouldNotReply('cmd1 --bar')
+      const cmd3 = app.command('cmd1/cmd3').action(() => 'after cmd3')
+      await client2.shouldReply('cmd3', '权限不足。')
+      await client1.shouldReply('cmd3', 'after cmd3')
+      cmd3.dispose()
     })
 
     it('check arg count', async () => {

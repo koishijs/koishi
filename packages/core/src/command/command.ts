@@ -95,13 +95,17 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
   }
 
   set parent(parent: Command) {
+    // We do not use `ctx.permissions.depend()` here
+    // because the permission `command.${name}` itself is disposable.
     if (this._parent === parent) return
     if (this._parent) {
       remove(this._parent.children, this)
+      this.ctx.permissions._depends.unlink(`command.${this.name}`, `command.${this._parent.name}`, true)
     }
     this._parent = parent
-    if (!parent?.children.includes(this)) {
-      parent?.children.push(this)
+    if (parent) {
+      parent.children.push(this)
+      this.ctx.permissions._depends.link(`command.${this.name}`, `command.${parent.name}`, true)
     }
   }
 

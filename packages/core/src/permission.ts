@@ -129,12 +129,8 @@ export class Permissions {
       this._inherits.link(name, child, true)
     }
     return this.caller?.collect('permission-config', () => {
-      for (const dep of config.dependencies || []) {
-        this._depends.unlink(name, dep, true)
-      }
-      for (const child of children) {
-        this._inherits.unlink(name, child, true)
-      }
+      this._depends.delete(name)
+      this._inherits.delete(name)
       this.ctx.emit('internal/permission')
     })
   }
