@@ -103,15 +103,15 @@ export class I18n {
     }
   }
 
-  define(locale: string, dict: I18n.Store): void
-  define(locale: string, key: string, value: I18n.Node): void
+  define(locale: string, dict: I18n.Store): () => void
+  define(locale: string, key: string, value: I18n.Node): () => void
   define(locale: string, ...args: [I18n.Store] | [string, I18n.Node]) {
     const dict = this._data[locale] ||= {}
     const paths = [...typeof args[0] === 'string'
       ? this.set(locale, args[0] + '.', args[1])
       : this.set(locale, '', args[0])]
     this.ctx.emit('internal/i18n')
-    this[Context.current]?.on('dispose', () => {
+    return this[Context.current]?.collect('i18n', () => {
       for (const path of paths) {
         delete dict[path]
       }

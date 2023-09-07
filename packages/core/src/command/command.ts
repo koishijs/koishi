@@ -35,8 +35,8 @@ export namespace Command {
 export class Command<U extends User.Field = never, G extends Channel.Field = never, A extends any[] = any[], O extends {} = {}> extends Argv.CommandBase {
   config: Command.Config
   children: Command[] = []
-  parent: Command = null
 
+  _parent: Command = null
   _aliases: string[] = []
   _examples: string[] = []
   _usage?: Command.Usage
@@ -88,6 +88,21 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
 
   set displayName(name) {
     this._registerAlias(name, true)
+  }
+
+  get parent() {
+    return this._parent
+  }
+
+  set parent(parent: Command) {
+    if (this._parent === parent) return
+    if (this._parent) {
+      remove(this._parent.children, this)
+    }
+    this._parent = parent
+    if (!parent?.children.includes(this)) {
+      parent?.children.push(this)
+    }
   }
 
   private _registerAlias(name: string, prepend = false) {
@@ -320,9 +335,7 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
       this.ctx.$commander.delete(name)
     }
     remove(this.ctx.$commander._commandList, this)
-    if (this.parent) {
-      remove(this.parent.children, this)
-    }
+    this.parent = null
   }
 
   toJSON(): Universal.Command {

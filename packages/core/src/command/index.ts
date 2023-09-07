@@ -179,8 +179,11 @@ export class Commander extends Map<string, Command> {
     const segments = path.split(/(?=[./])/g)
     const caller = this.caller
 
-    let parent: Command, root: Command
-    const extra: Command[] = []
+    /** parent command in the chain */
+    let parent: Command
+    /** the first created command */
+    let root: Command
+    const created: Command[] = []
     segments.forEach((segment, index) => {
       const code = segment.charCodeAt(0)
       const name = code === 46 ? parent.name + segment : code === 47 ? segment.slice(1) : segment
@@ -196,28 +199,28 @@ export class Commander extends Map<string, Command> {
             }
           } else {
             command.parent = parent
-            parent.children.push(command)
           }
         }
         return parent = command
       }
       command = new Command(name, index === segments.length - 1 ? decl : '', caller)
-      caller.i18n.define('', `commands.${command.name}.$`, '')
-      caller.i18n.define('', `commands.${command.name}.description`, index === segments.length - 1 ? desc : '')
-      extra.push(command)
-      if (!root) root = command
+      command._disposables.push(caller.i18n.define('', {
+        [`commands.${command.name}.$`]: '',
+        [`commands.${command.name}.description`]: index === segments.length - 1 ? desc : '',
+      }))
+      created.push(command)
+      root ||= command
       if (parent) {
         command.parent = parent
-        parent.children.push(command)
       }
       parent = command
     })
 
     Object.assign(parent.config, config)
-    extra.forEach(command => caller.emit('command-added', command))
+    created.forEach(command => caller.emit('command-added', command))
     parent[Context.current] = caller
-    this.caller.permissions.config(`command.${parent.name}`, parent.config, 1)
-    if (root) caller.state.disposables.unshift(() => root.dispose())
+    parent._disposables.push(this.caller.permissions.config(`command.${parent.name}`, parent.config, 1))
+    if (root) caller.collect(`command <${root.name}>`, () => root.dispose())
     return parent
   }
 }
