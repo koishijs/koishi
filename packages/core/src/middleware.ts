@@ -348,31 +348,32 @@ export namespace SharedCache {
 }
 
 export class SharedCache<T> {
-  #keyMap: Dict<SharedCache.Entry<T>> = Object.create(null)
+  #keyMap = new Map<string, SharedCache.Entry<T>>()
 
   get(ref: string, key: string) {
-    const entry = this.#keyMap[key]
+    const entry = this.#keyMap.get(key)
     if (!entry) return
     entry.refs.add(ref)
     return entry.value
   }
 
   set(ref: string, key: string, value: T) {
-    let entry = this.#keyMap[key]
+    let entry = this.#keyMap.get(key)
     if (entry) {
       entry.value = value
     } else {
-      entry = this.#keyMap[key] = { value, key, refs: new Set() }
+      entry = { value, key, refs: new Set() }
+      this.#keyMap.set(key, entry)
     }
     entry.refs.add(ref)
   }
 
   delete(ref: string) {
-    for (const key in this.#keyMap) {
-      const { refs } = this.#keyMap[key]
+    for (const key of [...this.#keyMap.keys()]) {
+      const { refs } = this.#keyMap.get(key)
       refs.delete(ref)
       if (!refs.size) {
-        delete this.#keyMap[key]
+        this.#keyMap.delete(key)
       }
     }
   }

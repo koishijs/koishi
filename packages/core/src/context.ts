@@ -1,4 +1,4 @@
-import { Awaitable, defineProperty, Time } from 'cosmokit'
+import { defineProperty, Time } from 'cosmokit'
 import { Context, Schema } from '@satorijs/core'
 import * as cordis from 'cordis'
 import { Computed } from './filter'
@@ -47,8 +47,8 @@ declare module '@satorijs/core' {
     export namespace Config {
       export interface Basic extends Commander.Config {
         nickname?: string | string[]
-        autoAssign?: Computed<Awaitable<boolean>>
-        autoAuthorize?: Computed<Awaitable<number>>
+        autoAssign?: Computed<boolean>
+        autoAuthorize?: Computed<number>
         minSimilarity?: number
       }
 

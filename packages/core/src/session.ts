@@ -166,7 +166,7 @@ extend(Session.prototype as Session.Private, {
     if (!fields.length) return { platform, id, guildId }
     const channel = await app.database.getChannel(platform, id, fields)
     if (channel) return channel
-    const assignee = await this.resolve(app.config.autoAssign) ? this.selfId : ''
+    const assignee = this.resolve(app.config.autoAssign) ? this.selfId : ''
     if (assignee) {
       return app.database.createChannel(platform, id, { assignee, guildId })
     } else {
@@ -219,7 +219,7 @@ extend(Session.prototype as Session.Private, {
     if (!fields.length) return {}
     const user = await app.database.getUser(platform, id, fields)
     if (user) return user
-    const authority = await this.resolve(app.config.autoAuthorize)
+    const authority = this.resolve(app.config.autoAuthorize)
     const data = { locales: this.locales, authority, createdAt: new Date() }
     if (authority) {
       return app.database.createUser(platform, id, data)
@@ -247,7 +247,7 @@ extend(Session.prototype as Session.Private, {
     // 匿名消息不会写回数据库
     if (this.author?.anonymous) {
       const fallback = this.app.model.tables.user.create()
-      fallback.authority = await this.resolve(this.app.config.autoAuthorize)
+      fallback.authority = this.resolve(this.app.config.autoAuthorize)
       const user = observe(fallback, () => Promise.resolve())
       return this.user = user
     }
