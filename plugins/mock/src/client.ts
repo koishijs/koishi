@@ -49,8 +49,13 @@ export class MockMessenger extends Messenger {
         return ` ${key}="${h.escape('' + value, true)}"`
       }).join('')
       this.buffer += `<${type}${attrString}>`
+      const length = this.buffer.length
       await this.render(children)
-      this.buffer += `</${type}>`
+      if (this.buffer.length === length) {
+        this.buffer = this.buffer.slice(0, -1) + `/>`
+      } else {
+        this.buffer += `</${type}>`
+      }
     }
   }
 }
