@@ -157,11 +157,11 @@ export class Processor {
   }
 
   private _executeMatcher(session: Session, matcher: Matcher) {
-    const { parsed, quote } = session
+    const { stripped, quote } = session
     const { appel, context, i18n, regex, fuzzy, pattern, response } = matcher
-    if ((appel || parsed.hasMention) && !parsed.appel) return
+    if ((appel || stripped.hasAt) && !stripped.appel) return
     if (!context.filter(session)) return
-    let content = parsed.content
+    let content = stripped.content
     if (quote) content += ' ' + quote.content
 
     let params: [string, ...string[]] = null
@@ -170,7 +170,7 @@ export class Processor {
       if (typeof pattern === 'string') {
         if (!fuzzy && content !== pattern || !content.startsWith(pattern)) return
         params = [content, content.slice(pattern.length)]
-        if (fuzzy && !parsed.appel && params[1].match(/^\S/)) {
+        if (fuzzy && !stripped.appel && params[1].match(/^\S/)) {
           params = null
         }
       } else {
@@ -186,7 +186,7 @@ export class Processor {
         let value = store[pattern as string] as string | RegExp
         if (!value) continue
         if (regex) {
-          const rest = fuzzy ? `(?:${parsed.appel ? '' : '\\s+'}([\\s\\S]*))?` : ''
+          const rest = fuzzy ? `(?:${stripped.appel ? '' : '\\s+'}([\\s\\S]*))?` : ''
           value = new RegExp(`^(?:${value})${rest}$`)
         }
         match(value)
@@ -203,52 +203,7 @@ export class Processor {
     }
   }
 
-  private _stripNickname(session: Session, content: string) {
-    if (content.startsWith('@')) content = content.slice(1)
-    for (const nickname of session.resolve(this.config.nickname) ?? []) {
-      if (!content.startsWith(nickname)) continue
-      const rest = content.slice(nickname.length)
-      const capture = /^([,，]\s*|\s+)/.exec(rest)
-      if (!capture) continue
-      return rest.slice(capture[0].length)
-    }
-  }
-
   private async _process(session: Session, next: Next) {
-    let atSelf = false, appel = false
-    let content = session.content.trim()
-    session.elements ??= h.parse(content)
-
-    // strip mentions
-    let hasMention = false
-    const elements = session.elements.slice()
-    while (elements[0]?.type === 'at') {
-      const { attrs } = elements.shift()
-      if (attrs.id === session.selfId) {
-        atSelf = appel = true
-      }
-      // quote messages may contain mentions
-      if (!session.quote || session.quote.userId !== attrs.id) {
-        hasMention = true
-      }
-      content = elements.join('').trimStart()
-      // @ts-ignore
-      if (elements[0]?.type === 'text' && !elements[0].attrs.content.trim()) {
-        elements.shift()
-      }
-    }
-
-    if (!hasMention) {
-      // strip nickname
-      const result = this._stripNickname(session, content)
-      if (result) {
-        appel = true
-        content = result
-      }
-    }
-
-    // store parsed message
-    defineProperty(session, 'parsed', { hasMention, content, appel, prefix: null })
     this.ctx.emit(session, 'before-attach', session)
 
     if (this.ctx.database) {
@@ -265,7 +220,7 @@ export class Processor {
 
         // ignore some group calls
         if (channel.flag & Channel.Flag.ignore) return
-        if (channel.assignee !== session.selfId && !atSelf) return
+        if (channel.assignee !== session.selfId && !session.stripped.atSelf) return
       }
 
       // attach user data

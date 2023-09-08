@@ -66,9 +66,10 @@ export function apply(ctx: Context, config: Config = {}) {
     })
 
   ctx.middleware(async (session, next) => {
-    const data = tokens[session.content]
+    const token = session.stripped.content
+    const data = tokens[token]
     if (!data) return next()
-    delete tokens[session.content]
+    delete tokens[token]
     if (data[2] < 0) {
       const [binding] = await ctx.database.get('binding', { platform: data[0], pid: data[1] }, ['aid'])
       await bind(binding.aid, session.platform, session.userId)

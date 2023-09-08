@@ -16,7 +16,9 @@ declare module '@satorijs/core' {
     channel?: Channel.Observed<G>
     guild?: Channel.Observed<G>
     permissions?: string[]
-    parsed?: Parsed
+    /** @deprecated */
+    parsed?: Stripped
+    stripped?: Stripped
     scope?: string
     username?: string
     send(content: Fragment, options?: SendOptions): Promise<string[]>
@@ -51,9 +53,11 @@ declare module '@satorijs/core' {
 
     export interface Private extends Session {
       [Context.filter](ctx: Context): boolean
+      _stripped: Stripped
       _queuedTasks: Task[]
       _queuedTimeout: NodeJS.Timeout
       _next(): void
+      _stripNickname(content: string): string
       _observeChannelLike<T extends Channel.Field = never>(channelId: string, fields: Iterable<T>): Promise<any>
     }
   }
@@ -72,11 +76,12 @@ export interface SuggestOptions extends CompareOptions {
   timeout?: number
 }
 
-export interface Parsed {
+export interface Stripped {
   content: string
   prefix: string
   appel: boolean
-  hasMention: boolean
+  hasAt: boolean
+  atSelf: boolean
 }
 
 interface Task {
@@ -102,6 +107,7 @@ extend(Session.prototype as Session.Private, {
     defineProperty(this, 'channel', null)
     defineProperty(this, 'guild', null)
     defineProperty(this, 'permissions', [])
+    defineProperty(this, '_stripped', null)
     defineProperty(this, '_queuedTasks', [])
     defineProperty(this, '_queuedTimeout', null)
   },
@@ -159,6 +165,57 @@ extend(Session.prototype as Session.Private, {
     }
     if (!isEvalExpr(source)) return source
     return executeEval({ _: this }, source)
+  },
+
+  _stripNickname(content: string) {
+    if (content.startsWith('@')) content = content.slice(1)
+    for (const nickname of this.resolve(this.app.config.nickname) ?? []) {
+      if (!content.startsWith(nickname)) continue
+      const rest = content.slice(nickname.length)
+      const capture = /^([,，]\s*|\s+)/.exec(rest)
+      if (!capture) continue
+      return rest.slice(capture[0].length)
+    }
+  },
+
+  get parsed() {
+    return this.stripped
+  },
+
+  get stripped() {
+    const self = this as Session.Private
+    if (self._stripped) return self._stripped
+
+    // strip mentions
+    let atSelf = false, appel = false
+    let hasAt = false
+    const elements = self.elements.slice()
+    while (elements[0]?.type === 'at') {
+      const { attrs } = elements.shift()
+      if (attrs.id === self.selfId) {
+        atSelf = appel = true
+      }
+      // quote messages may contain mentions
+      if (!self.quote || self.quote.userId !== attrs.id) {
+        hasAt = true
+      }
+      // @ts-ignore
+      if (elements[0]?.type === 'text' && !elements[0].attrs.content.trim()) {
+        elements.shift()
+      }
+    }
+
+    let content = elements.join('').trim()
+    if (!hasAt) {
+      // strip nickname
+      const result = self._stripNickname(content)
+      if (result) {
+        appel = true
+        content = result
+      }
+    }
+
+    return self._stripped = { hasAt, content, appel, atSelf, prefix: null }
   },
 
   async getChannel(id = this.channelId, fields = []) {
