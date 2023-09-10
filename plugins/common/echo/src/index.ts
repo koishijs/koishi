@@ -13,7 +13,7 @@ export interface Config {}
 export const name = 'echo'
 export const Config: Schema<Config> = Schema.object({})
 
-export function apply(ctx: Context) {
+export function apply(ctx: Context, config: Config) {
   ctx.i18n.define('zh-CN', zhCN)
 
   ctx.command('echo <message:text>')
