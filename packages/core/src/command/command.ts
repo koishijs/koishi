@@ -52,6 +52,7 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
   static defaultConfig: Command.Config = {
     showWarning: true,
     handleError: true,
+    slash: true,
   }
 
   static defaultOptionConfig: Argv.OptionConfig = {}
@@ -380,13 +381,13 @@ export namespace Command {
     showWarning?: boolean
     /** handle error */
     handleError?: boolean | ((error: Error, argv: Argv) => Awaitable<void | Fragment>)
-    /** enable slash integration */
+    /** enable slash command */
     slash?: boolean
   }
 
   export const Config: Schema<Config> = Schema.object({
     authority: Schema.natural().description('指令的权限等级。').default(1).hidden(),
-    slash: Schema.boolean().description('启用 slash 集成功能。'),
+    slash: Schema.boolean().description('启用斜线指令功能。').default(true),
     checkUnknown: Schema.boolean().description('是否检查未知选项。').default(false).hidden(),
     checkArgCount: Schema.boolean().description('是否检查参数数量。').default(false).hidden(),
     showWarning: Schema.boolean().description('是否显示警告。').default(true).hidden(),

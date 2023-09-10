@@ -136,7 +136,7 @@ export class Commander extends Map<string, Command> {
 
   updateCommands(bot: Bot) {
     return bot.updateCommands(this._commandList
-      .filter(cmd => !cmd.name.includes('.'))
+      .filter(cmd => !cmd.name.includes('.') && cmd.config.slash)
       .map(cmd => cmd.toJSON()))
   }
 
