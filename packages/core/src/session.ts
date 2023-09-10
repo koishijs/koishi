@@ -29,9 +29,9 @@ declare module '@satorijs/core' {
       : T extends (...args: any[]) => any ? ReturnType<T>
       : T
     getChannel<K extends Channel.Field = never>(id?: string, fields?: K[]): Promise<Channel>
-    observeChannel<T extends Channel.Field = never>(fields?: Iterable<T>): Promise<Channel.Observed<T | G>>
+    observeChannel<T extends Channel.Field = never>(fields: Iterable<T>): Promise<Channel.Observed<T | G>>
     getUser<K extends User.Field = never>(id?: string, fields?: K[]): Promise<User>
-    observeUser<T extends User.Field = never>(fields?: Iterable<T>): Promise<User.Observed<T | U>>
+    observeUser<T extends User.Field = never>(fields: Iterable<T>): Promise<User.Observed<T | U>>
     withScope(scope: string, callback: () => Awaitable<string>): Promise<string>
     resolveScope(path: string): string
     i18n(path: string | string[], params?: object): h[]
@@ -260,7 +260,7 @@ extend(Session.prototype as Session.Private, {
     return cache
   },
 
-  async observeChannel(fields = []) {
+  async observeChannel(fields: Iterable<keyof Channel>) {
     const tasks = [this._observeChannelLike(this.channelId, fields)]
     if (this.channelId !== this.guildId) {
       tasks.push(this._observeChannelLike(this.guildId, fields))
@@ -271,15 +271,15 @@ extend(Session.prototype as Session.Private, {
     return channel
   },
 
-  async getUser(id = this.userId, fields = []) {
+  async getUser(userId = this.userId, fields = []) {
     const { app, platform } = this
     if (!fields.length) return {}
-    const user = await app.database.getUser(platform, id, fields)
+    const user = await app.database.getUser(platform, userId, fields)
     if (user) return user
     const authority = this.resolve(app.config.autoAuthorize)
     const data = { locales: this.locales, authority, createdAt: new Date() }
     if (authority) {
-      return app.database.createUser(platform, id, data)
+      return app.database.createUser(platform, userId, data)
     } else {
       const user = app.model.tables.user.create()
       Object.assign(user, { ...data, $detached: true })
@@ -288,12 +288,12 @@ extend(Session.prototype as Session.Private, {
   },
 
   /** 在当前会话上绑定一个可观测用户实例 */
-  async observeUser(fields = []) {
+  async observeUser(fields: Iterable<keyof User>) {
     const fieldSet = new Set<User.Field>(fields)
     const { userId } = this
 
     // 如果存在满足可用的缓存数据，使用缓存代替数据获取
-    let cache = this.app.$internal._userCache.get(this.id, this.uid)
+    let cache = this.user || this.app.$internal._userCache.get(this.id, this.uid)
     if (cache) {
       for (const key in cache) {
         fieldSet.delete(key as any)
@@ -311,12 +311,12 @@ extend(Session.prototype as Session.Private, {
 
     // 绑定一个新的可观测用户实例
     const data = await this.getUser(userId, [...fieldSet])
-    cache = this.app.$internal._userCache.get(this.id, this.uid)
+    cache = this.user || this.app.$internal._userCache.get(this.id, this.uid)
     if (cache) {
       cache.$merge(data)
     } else {
       cache = observe(data, diff => this.app.database.setUser(this.platform, userId, diff as any), `user ${this.uid}`)
-      this.app.$internal._userCache.set(this.id, this.uid, cache)
+      this.app.$internal._userCache.set(this.id, this.uid, cache as any)
     }
     return this.user = cache
   },

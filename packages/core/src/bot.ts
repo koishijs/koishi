@@ -4,6 +4,7 @@ import { Bot, Fragment } from '@satorijs/core'
 
 declare module '@satorijs/core' {
   interface Bot {
+    /** @deprecated */
     getGuildMemberMap(guildId: string): Promise<Dict<string>>
     broadcast(channels: (string | [string, string] | Session)[], content: Fragment, delay?: number): Promise<string[]>
   }
@@ -17,8 +18,11 @@ declare module '@satorijs/core' {
 defineProperty(Bot, 'filter', false)
 
 Bot.prototype.getGuildMemberMap = async function getGuildMemberMap(this: Bot, guildId) {
-  const { data } = await this.getGuildMemberList(guildId)
-  return Object.fromEntries(data.map(info => [info.userId, info.nickname || info.username]))
+  const result: Dict<string> = {}
+  for await (const member of this.getGuildMemberIter(guildId)) {
+    result[member.userId] = member.nickname || member.username
+  }
+  return result
 }
 
 Bot.prototype.broadcast = async function broadcast(this: Bot, channels, content, delay = this.ctx.root.config.delay.broadcast) {
