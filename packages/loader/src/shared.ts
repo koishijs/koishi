@@ -218,7 +218,6 @@ export abstract class Loader {
   }
 
   interpolate(source: any) {
-    if (!this.writable) return source
     if (typeof source === 'string') {
       return interpolate(source, this.params, /\$\{\{(.+?)\}\}/g)
     } else if (!source || typeof source !== 'object') {
