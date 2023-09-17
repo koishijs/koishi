@@ -1,6 +1,6 @@
 import { sleep } from '@koishijs/utils'
 import { defineProperty, Dict } from 'cosmokit'
-import { Bot, Fragment } from '@satorijs/core'
+import { Adapter, Bot, Fragment } from '@satorijs/core'
 
 declare module '@satorijs/core' {
   interface Bot {
@@ -16,11 +16,12 @@ declare module '@satorijs/core' {
 
 // adapter plugins usually do not respect filters
 defineProperty(Bot, 'filter', false)
+defineProperty(Adapter, 'filter', false)
 
 Bot.prototype.getGuildMemberMap = async function getGuildMemberMap(this: Bot, guildId) {
   const result: Dict<string> = {}
   for await (const member of this.getGuildMemberIter(guildId)) {
-    result[member.userId] = member.nickname || member.username
+    result[member.user.id] = member.nickname || member.user.nick || member.user.name
   }
   return result
 }
