@@ -93,7 +93,7 @@ class Watcher {
     })
 
     // files independent from any plugins will trigger a full reload
-    this.externals = loadDependencies(require.resolve('@koishijs/loader'), new Set(Object.values(loader.cache)))
+    this.externals = loadDependencies(require.resolve('koishi'), new Set(Object.values(loader.cache)))
     const triggerLocalReload = debounce(this.config.debounce, () => this.triggerLocalReload())
 
     this.watcher.on('change', async (path) => {
