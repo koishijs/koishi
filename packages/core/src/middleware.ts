@@ -181,9 +181,9 @@ export class Processor {
     if (!i18n) {
       match(pattern)
     } else {
-      for (const locale in this.ctx.i18n._data) {
+      for (const locale of this.ctx.i18n.fallback([])) {
         const store = this.ctx.i18n._data[locale]
-        let value = store[pattern as string] as string | RegExp
+        let value = store?.[pattern as string] as string | RegExp
         if (!value) continue
         if (regex) {
           const rest = fuzzy ? `(?:${stripped.appel ? '' : '\\s+'}([\\s\\S]*))?` : ''
@@ -298,21 +298,21 @@ export namespace SharedCache {
   export interface Entry<T> {
     value: T
     key: string
-    refs: Set<string>
+    refs: Set<number>
   }
 }
 
 export class SharedCache<T> {
   #keyMap = new Map<string, SharedCache.Entry<T>>()
 
-  get(ref: string, key: string) {
+  get(ref: number, key: string) {
     const entry = this.#keyMap.get(key)
     if (!entry) return
     entry.refs.add(ref)
     return entry.value
   }
 
-  set(ref: string, key: string, value: T) {
+  set(ref: number, key: string, value: T) {
     let entry = this.#keyMap.get(key)
     if (entry) {
       entry.value = value
@@ -323,7 +323,7 @@ export class SharedCache<T> {
     entry.refs.add(ref)
   }
 
-  delete(ref: string) {
+  delete(ref: number) {
     for (const key of [...this.#keyMap.keys()]) {
       const { refs } = this.#keyMap.get(key)
       refs.delete(ref)

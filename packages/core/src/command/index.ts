@@ -74,10 +74,10 @@ export class Commander extends Map<string, Command> {
 
     ctx.before('attach', (session) => {
       // strip prefix
-      let content = session.parsed.content
+      let content = session.stripped.content
       for (const prefix of this._resolvePrefixes(session)) {
         if (!content.startsWith(prefix)) continue
-        session.parsed.prefix = prefix
+        session.stripped.prefix = prefix
         content = content.slice(prefix.length)
         break
       }
@@ -95,9 +95,9 @@ export class Commander extends Map<string, Command> {
     ctx.middleware((session, next) => {
       // use `!prefix` instead of `prefix === null` to prevent from blocking other middlewares
       // we need to make sure that the user truly has the intension to call a command
-      const { argv, quote, isDirect, parsed: { prefix, appel } } = session
+      const { argv, quote, isDirect, stripped: { prefix, appel } } = session
       if (argv.command || !isDirect && !prefix && !appel) return next()
-      const content = session.parsed.content.slice((prefix ?? '').length)
+      const content = session.stripped.content.slice((prefix ?? '').length)
       const actual = content.split(/\s/, 1)[0].toLowerCase()
       if (!actual) return next()
 
@@ -203,11 +203,13 @@ export class Commander extends Map<string, Command> {
         }
         return parent = command
       }
-      command = new Command(name, index === segments.length - 1 ? decl : '', caller)
+      const isLast = index === segments.length - 1
+      command = new Command(name, isLast ? decl : '', caller)
       command._disposables.push(caller.i18n.define('', {
         [`commands.${command.name}.$`]: '',
-        [`commands.${command.name}.description`]: index === segments.length - 1 ? desc : '',
+        [`commands.${command.name}.description`]: isLast ? desc : '',
       }))
+      command._disposables.push(caller.permissions.config(`command.${name}`, isLast ? config : {}, 1))
       created.push(command)
       root ||= command
       if (parent) {
@@ -219,7 +221,6 @@ export class Commander extends Map<string, Command> {
     Object.assign(parent.config, config)
     created.forEach(command => caller.emit('command-added', command))
     parent[Context.current] = caller
-    parent._disposables.push(this.caller.permissions.config(`command.${parent.name}`, parent.config, 1))
     if (root) caller.collect(`command <${root.name}>`, () => root.dispose())
     return parent
   }
