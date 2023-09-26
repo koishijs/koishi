@@ -1,7 +1,7 @@
 import * as utils from '@koishijs/utils'
 import { defineProperty, Dict, MaybeArray } from 'cosmokit'
 import { Database, Driver, Update } from '@minatojs/core'
-import { Context, Fragment, Schema } from '@satorijs/core'
+import { Context, Fragment, Schema, Universal } from '@satorijs/core'
 import { Plugin } from './context'
 
 declare module '@satorijs/core' {
@@ -199,13 +199,15 @@ export class DatabaseService extends Database<Tables> {
     return (await Promise.all(this.app.bots.map((bot) => {
       const targets = assignMap[bot.platform]?.[bot.selfId]
       if (!targets) return Promise.resolve([])
-      const sessions = targets.map(({ id, guildId, locales }) => bot.session({
-        type: 'message',
-        subtype: 'group',
-        channelId: id,
-        guildId,
-        locales,
-      }))
+      const sessions = targets.map(({ id, guildId, locales }) => {
+        const session = bot.session({
+          type: 'message',
+          channel: { id, type: Universal.Channel.Type.TEXT },
+          guild: { id: guildId },
+        })
+        session.locales = locales
+        return session
+      })
       return bot.broadcast(sessions, content)
     }))).flat(1)
   }

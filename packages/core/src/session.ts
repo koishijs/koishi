@@ -1,6 +1,6 @@
 import { extend, observe } from '@koishijs/utils'
 import { Awaitable, defineProperty, isNullable, makeArray } from 'cosmokit'
-import { Context, Fragment, h, Logger, Session } from '@satorijs/core'
+import { Context, Fragment, h, Logger, Session, Universal } from '@satorijs/core'
 import { Eval, executeEval, isEvalExpr } from '@minatojs/core'
 import { Argv, Command } from './command'
 import { Channel, Tables, User } from './database'
@@ -21,7 +21,7 @@ declare module '@satorijs/core' {
     stripped?: Stripped
     scope?: string
     username?: string
-    send(content: Fragment, options?: SendOptions): Promise<string[]>
+    send(content: Fragment, options?: Universal.SendOptions): Promise<string[]>
     cancelQueued(delay?: number): void
     sendQueued(content: Fragment, delay?: number): Promise<string[]>
     resolve<T, R extends any[]>(source: T | Eval.Expr | ((session: Session, ...args: R) => T), ...args: R):
@@ -196,7 +196,7 @@ extend(Session.prototype as Session.Private, {
         atSelf = appel = true
       }
       // quote messages may contain mentions
-      if (!self.quote || self.quote.userId !== attrs.id) {
+      if (self.quote?.user?.id && self.quote.user.id !== attrs.id) {
         hasAt = true
       }
       // @ts-ignore
@@ -220,7 +220,7 @@ extend(Session.prototype as Session.Private, {
 
   async getChannel(id = this.channelId, fields = []) {
     const { app, platform, guildId } = this
-    if (!fields.length) return { platform, id, guildId }
+    if (!fields.length) return { platform, id, guildId } as Channel
     const channel = await app.database.getChannel(platform, id, fields)
     if (channel) return channel
     const assignee = this.resolve(app.config.autoAssign) ? this.selfId : ''
@@ -273,7 +273,7 @@ extend(Session.prototype as Session.Private, {
 
   async getUser(userId = this.userId, fields = []) {
     const { app, platform } = this
-    if (!fields.length) return {}
+    if (!fields.length) return {} as User
     const user = await app.database.getUser(platform, userId, fields)
     if (user) return user
     const authority = this.resolve(app.config.autoAuthorize)
@@ -302,7 +302,7 @@ extend(Session.prototype as Session.Private, {
     }
 
     // 匿名消息不会写回数据库
-    if (this.author?.anonymous) {
+    if (this.author?.['anonymous']) {
       const fallback = this.app.model.tables.user.create()
       fallback.authority = this.resolve(this.app.config.autoAuthorize)
       const user = observe(fallback, () => Promise.resolve())
@@ -318,7 +318,7 @@ extend(Session.prototype as Session.Private, {
       cache = observe(data, diff => this.app.database.setUser(this.platform, userId, diff as any), `user ${this.uid}`)
       this.app.$internal._userCache.set(this.id, this.uid, cache as any)
     }
-    return this.user = cache
+    return this.user = cache as any
   },
 
   async withScope(scope, callback: () => any) {

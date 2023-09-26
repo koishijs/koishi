@@ -1,0 +1,51 @@
+{
+  "name": "@koishijs/plugin-adapter-qq",
+  "description": "QQ Adapter for Koishi",
+  "version": "4.0.1",
+  "main": "lib/index.js",
+  "module": "lib/index.mjs",
+  "typings": "lib/index.d.ts",
+  "files": [
+    "lib"
+  ],
+  "author": "Shigma <shigma10826@gmail.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/satorijs/satori.git",
+    "directory": "adapters/qq"
+  },
+  "bugs": {
+    "url": "https://github.com/satorijs/satori/issues"
+  },
+  "homepage": "https://koishi.chat/plugins/adapter/qq.html",
+  "keywords": [
+    "bot",
+    "chatbot",
+    "qqbot",
+    "qqguild",
+    "qq",
+    "koishi"
+  ],
+  "koishi": {
+    "browser": true,
+    "description": {
+      "en": "QQ Guild Adapter",
+      "zh": "QQ 频道适配器"
+    },
+    "service": {
+      "implements": [
+        "adapter"
+      ]
+    }
+  },
+  "peerDependencies": {
+    "koishi": "^4.14.6"
+  },
+  "devDependencies": {
+    "koishi": "^4.14.6"
+  },
+  "dependencies": {
+    "@satorijs/adapter-qq": "^4.0.1"
+  }
+}
