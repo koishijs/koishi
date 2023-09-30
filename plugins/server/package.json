@@ -1,0 +1,47 @@
+{
+  "name": "@koishijs/plugin-server",
+  "description": "Satori Protocol Adapter for Koishi",
+  "version": "1.0.0-alpha.0",
+  "main": "lib/index.js",
+  "module": "lib/index.mjs",
+  "typings": "lib/index.d.ts",
+  "files": [
+    "lib"
+  ],
+  "author": "Shigma <i@shig.ma>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/satorijs/satori.git",
+    "directory": "packages/server"
+  },
+  "bugs": {
+    "url": "https://github.com/satorijs/satori/issues"
+  },
+  "homepage": "https://koishi.chat/plugins/develop/server.html",
+  "keywords": [
+    "bot",
+    "adapter",
+    "satori",
+    "protocol",
+    "chatbot",
+    "koishi",
+    "server",
+    "api"
+  ],
+  "koishi": {
+    "description": {
+      "en": "Satori Server",
+      "zh": "Satori 服务器"
+    }
+  },
+  "peerDependencies": {
+    "koishi": "^4.14.6"
+  },
+  "devDependencies": {
+    "koishi": "^4.14.6"
+  },
+  "dependencies": {
+    "@satorijs/server": "^1.0.0-alpha.0"
+  }
+}
