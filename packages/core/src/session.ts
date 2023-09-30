@@ -115,9 +115,7 @@ extend(Session.prototype as Session.Private, {
   get username() {
     const defaultName: string = this.user && this.user['name']
       ? this.user['name']
-      : this.author
-        ? this.author.nickname || this.author.username
-        : this.userId
+      : this.author.name || this.userId
     return this.app.chain('appellation', defaultName, this)
   },
 

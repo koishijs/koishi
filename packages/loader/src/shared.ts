@@ -1,4 +1,4 @@
-import { Context, Dict, EffectScope, ForkScope, interpolate, isNullable, Logger, Plugin, resolveConfig, valueMap, version } from '@koishijs/core'
+import { Context, Dict, EffectScope, ForkScope, interpolate, isNullable, Logger, Plugin, resolveConfig, Universal, valueMap, version } from '@koishijs/core'
 import { constants, promises as fs } from 'fs'
 import * as yaml from 'js-yaml'
 import * as path from 'path'
@@ -376,7 +376,7 @@ export abstract class Loader {
       const { sid, channelId, guildId, content } = app.envData.message
       app.envData.message = null
       const dispose = app.on('bot-status-updated', (bot) => {
-        if (bot.sid !== sid || bot.status !== 'online') return
+        if (bot.sid !== sid || bot.status !== Universal.Status.ONLINE) return
         dispose()
         bot.sendMessage(channelId, content, guildId)
       })

@@ -112,7 +112,7 @@ export class DatabaseService extends Database<Tables> {
       primary: ['id', 'platform'],
     })
 
-    app.on('bot-added', ({ platform }) => {
+    app.on('login-added', ({ platform }) => {
       if (platform in this.tables.user.fields) return
       this.migrate('user', { [platform]: 'string(255)' }, async (db) => {
         const users = await db.get('user', { [platform]: { $exists: true } }, ['id', platform as never])

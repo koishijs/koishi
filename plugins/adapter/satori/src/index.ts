@@ -1,4 +1,4 @@
-import { SatoriBot } from '@satorijs/adapter-satori'
+import { SatoriAdapter } from '@satorijs/adapter-satori'
 
-export default SatoriBot
+export default SatoriAdapter
 export * from '@satorijs/adapter-satori'

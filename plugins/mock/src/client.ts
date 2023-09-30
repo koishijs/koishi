@@ -1,5 +1,5 @@
 import assert from 'assert'
-import { Context, h, hyphenate, isNullable, Messenger, SendOptions, Session, Universal } from 'koishi'
+import { Context, h, hyphenate, isNullable, Messenger, Universal } from 'koishi'
 import { format } from 'util'
 import { MockBot } from './adapter'
 
@@ -12,8 +12,8 @@ const RECEIVED_NTH_OTHERWISE = 'expected "%s" to be replied with %s at index %s 
 export class MockMessenger extends Messenger {
   private buffer = ''
 
-  constructor(private client: MessageClient, options?: SendOptions) {
-    super(client.bot, client.meta.channelId, client.meta.guildId, options)
+  constructor(private client: MessageClient, options?: Universal.SendOptions) {
+    super(client.bot, client.body.channel.id, client.body.guild?.id, options)
   }
 
   async flush() {
@@ -62,38 +62,24 @@ export class MockMessenger extends Messenger {
 
 export class MessageClient {
   public app: Context
-  public meta: Session.Payload & Partial<Session>
-  public resolve: (checkLength?: boolean) => void
+  public body: Partial<Universal.Event>
+  public resolve: (checkLength?: boolean) => void = () => {}
   public replies: string[] = []
 
   constructor(public bot: MockBot, public userId: string, public channelId?: string) {
     this.app = bot.ctx.root
-    this.meta = {
+    this.body = {
       platform: 'mock',
       type: 'message',
       selfId: bot.selfId,
-      userId,
-      author: {
-        userId,
-        username: '' + userId,
-      },
+      user: { id: userId, name: '' + userId },
     }
 
     if (channelId) {
-      this.meta.guildId = channelId
-      this.meta.channelId = channelId
-      this.meta.subtype = 'group'
+      this.body.guild = { id: channelId }
+      this.body.channel = { id: channelId, type: Universal.Channel.Type.TEXT }
     } else {
-      this.meta.channelId = 'private:' + userId
-      this.meta.subtype = 'private'
-      this.meta.isDirect = true
-    }
-
-    const self = this
-    this.resolve = () => {}
-    this.meta.send = function (this: Session, fragment, options = {}) {
-      options.session = this
-      return new MockMessenger(self, options).send(fragment)
+      this.body.channel = { id: 'private:' + userId, type: Universal.Channel.Type.DIRECT }
     }
   }
 
@@ -115,10 +101,10 @@ export class MessageClient {
       const elements = h.parse(content)
       if (elements[0]?.type === 'quote') {
         const { attrs, children } = elements.shift()
-        quote = { messageId: attrs.id, elements: children, content: children.join('') }
+        quote = { id: attrs.id, messageId: attrs.id, elements: children, content: children.join('') }
         content = elements.join('')
       }
-      const uuid = this.bot.receive({ ...this.meta, content, elements, quote })
+      const uuid = this.bot.receive(this, { ...this.body, message: { content, elements, quote } })
     })
   }
 

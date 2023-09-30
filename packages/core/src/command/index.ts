@@ -1,5 +1,5 @@
 import { Awaitable, defineProperty } from 'cosmokit'
-import { Bot, Context, h, Schema, Session } from '@satorijs/core'
+import { Bot, Context, h, Schema, Session, Universal } from '@satorijs/core'
 import { Command } from './command'
 import { Argv } from './parser'
 import validate from './validate'
@@ -61,8 +61,8 @@ export class Commander extends Map<string, Command> {
     })
 
     ctx.on('interaction/command', (session) => {
-      if (session.data?.argv) {
-        const { name, options, arguments: args } = session.data.argv
+      if (session.body?.argv) {
+        const { name, options, arguments: args } = session.body.argv
         session.execute({ name, args, options })
       } else {
         defineProperty(session, 'argv', ctx.bail('before-parse', session.content, session))
@@ -124,12 +124,12 @@ export class Commander extends Map<string, Command> {
     }), 1000)
 
     ctx.on('ready', () => {
-      const bots = ctx.bots.filter(v => v.status === 'online' && v.updateCommands)
+      const bots = ctx.bots.filter(v => v.status === Universal.Status.ONLINE && v.updateCommands)
       bots.forEach(bot => this.updateCommands(bot))
     })
 
     ctx.on('bot-status-updated', async (bot) => {
-      if (bot.status !== 'online' || !bot.updateCommands) return
+      if (bot.status !== Universal.Status.ONLINE || !bot.updateCommands) return
       this.updateCommands(bot)
     })
   }

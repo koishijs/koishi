@@ -1,5 +1,5 @@
-import { Adapter, Bot, Channel, Context, Session, User } from 'koishi'
-import { MessageClient } from './client'
+import { Adapter, Bot, Channel, Context, Session, Universal, User } from 'koishi'
+import { MessageClient, MockMessenger } from './client'
 import { Webhook } from './webhook'
 
 declare module 'koishi' {
@@ -15,7 +15,7 @@ declare module 'koishi' {
 export const DEFAULT_SELF_ID = '514'
 
 export namespace MockBot {
-  export interface Config extends Bot.Config {
+  export interface Config {
     selfId: string
   }
 }
@@ -25,7 +25,7 @@ export class MockBot extends Bot {
     super(ctx, config)
     this.platform = 'mock'
     this.selfId = config.selfId ?? DEFAULT_SELF_ID
-    this.status = 'online'
+    this.status = Universal.Status.ONLINE
     ctx.plugin(MockAdapter, this)
   }
 
@@ -33,27 +33,30 @@ export class MockBot extends Bot {
     return new MessageClient(this, userId, channelId)
   }
 
-  receive(meta: Partial<Session>) {
-    const session = this.session(meta)
+  receive(client: MessageClient, body: Partial<Universal.Event>) {
+    const session = this.session(body)
+    session.send = function (this: Session, fragment, options = {}) {
+      options.session = this
+      return new MockMessenger(client, options).send(fragment)
+    }
     this.dispatch(session)
     return session.id
   }
 
-  async getMessage(channelId: string, messageId: string) {
-    const idDirect = channelId.startsWith('private:')
+  async getMessage(channelId: string, id: string) {
+    const isDirect = channelId.startsWith('private:')
     return {
-      messageId,
-      channelId,
+      id,
+      messageId: id,
+      channel: { id: channelId, type: isDirect ? Universal.Channel.Type.DIRECT : Universal.Channel.Type.TEXT },
       content: '',
       time: 0,
-      idDirect,
-      subtype: idDirect ? 'private' : 'group',
-      author: { userId: this.selfId },
+      user: { id: this.selfId },
     }
   }
 }
 
-export class MockAdapter extends Adapter.Server<MockBot> {
+export class MockAdapter extends Adapter<MockBot> {
   public app: Context
   public webhook: Webhook
 
@@ -76,12 +79,8 @@ export class MockAdapter extends Adapter.Server<MockBot> {
     return new MessageClient(this.bots[0], userId, channelId)
   }
 
-  session(meta: Partial<Session>) {
+  session(meta: Partial<Universal.Event>) {
     return this.bots[0].session(meta)
-  }
-
-  receive(meta: Partial<Session>) {
-    return this.bots[0].receive(meta)
   }
 }
 

@@ -95,15 +95,15 @@ describe('@koishijs/loader', () => {
     expect(bar.mock.calls).to.have.length(0)
     expect(baz.mock.calls).to.have.length(0)
 
-    let { meta } = app.mock.client('123', '456')
-    app.emit(app.mock.session(meta), 'test/bar' as any)
-    app.emit(app.mock.session(meta), 'test/baz' as any)
+    let { body } = app.mock.client('123', '456')
+    app.emit(app.mock.session(body), 'test/bar' as any)
+    app.emit(app.mock.session(body), 'test/baz' as any)
     expect(bar.mock.calls).to.have.length(0)
     expect(baz.mock.calls).to.have.length(1)
 
-    meta = app.mock.client('321', '456').meta
-    app.emit(app.mock.session(meta), 'test/bar' as any)
-    app.emit(app.mock.session(meta), 'test/baz' as any)
+    body = app.mock.client('321', '456').body
+    app.emit(app.mock.session(body), 'test/bar' as any)
+    app.emit(app.mock.session(body), 'test/baz' as any)
     expect(bar.mock.calls).to.have.length(0)
     expect(baz.mock.calls).to.have.length(1)
   })
