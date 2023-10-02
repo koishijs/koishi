@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-adapter-qq",
   "description": "QQ Adapter for Koishi",
-  "version": "4.0.1",
+  "version": "4.0.2",
   "main": "lib/index.js",
   "module": "lib/index.mjs",
   "typings": "lib/index.d.ts",
@@ -30,8 +30,8 @@
   "koishi": {
     "browser": true,
     "description": {
-      "en": "QQ Guild Adapter",
-      "zh": "QQ 频道适配器"
+      "en": "QQ Adapter",
+      "zh": "QQ 适配器"
     },
     "service": {
       "implements": [
@@ -40,12 +40,12 @@
     }
   },
   "peerDependencies": {
-    "koishi": "^4.14.6"
+    "koishi": "^4.15.0"
   },
   "devDependencies": {
-    "koishi": "^4.14.6"
+    "koishi": "^4.15.0"
   },
   "dependencies": {
-    "@satorijs/adapter-qq": "^4.0.1"
+    "@satorijs/adapter-qq": "^4.0.2"
   }
 }
