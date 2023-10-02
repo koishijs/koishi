@@ -1,5 +1,5 @@
 import assert from 'assert'
-import { Context, h, hyphenate, isNullable, Messenger, Universal } from 'koishi'
+import { clone, Context, Dict, h, hyphenate, isNullable, Messenger, Universal } from 'koishi'
 import { format } from 'util'
 import { MockBot } from './adapter'
 
@@ -13,14 +13,13 @@ export class MockMessenger extends Messenger {
   private buffer = ''
 
   constructor(private client: MessageClient, options?: Universal.SendOptions) {
-    super(client.bot, client.body.channel.id, client.body.guild?.id, options)
+    super(client.bot, client.event.channel.id, client.event.guild?.id, options)
   }
 
   async flush() {
     this.buffer = this.buffer.trim()
     if (!this.buffer) return
-    this.client.replies.push(this.buffer)
-    this.client.resolve(true)
+    this.client.flush(this.buffer)
     this.buffer = ''
   }
 
@@ -60,43 +59,61 @@ export class MockMessenger extends Messenger {
   }
 }
 
+interface Hook {
+  count: number
+  done?: boolean
+  resolve?: (replies: string[]) => void
+}
+
 export class MessageClient {
   public app: Context
-  public body: Partial<Universal.Event>
-  public resolve: (checkLength?: boolean) => void = () => {}
-  public replies: string[] = []
+  public event: Universal.Event
+
+  private replies: string[] = []
+  private hooks: Dict<Hook> = {}
 
   constructor(public bot: MockBot, public userId: string, public channelId?: string) {
     this.app = bot.ctx.root
-    this.body = {
+    this.event = {
       platform: 'mock',
       type: 'message',
       selfId: bot.selfId,
       user: { id: userId, name: '' + userId },
-    }
+    } as Universal.Event
 
     if (channelId) {
-      this.body.guild = { id: channelId }
-      this.body.channel = { id: channelId, type: Universal.Channel.Type.TEXT }
+      this.event.guild = { id: channelId }
+      this.event.channel = { id: channelId, type: Universal.Channel.Type.TEXT }
     } else {
-      this.body.channel = { id: 'private:' + userId, type: Universal.Channel.Type.DIRECT }
+      this.event.channel = { id: 'private:' + userId, type: Universal.Channel.Type.DIRECT }
+    }
+
+    this.app.on('middleware', (session) => {
+      const hook = this.hooks[session.id]
+      if (!hook) return
+      hook.done = true
+      if (!hook.resolve) delete this.hooks[session.id]
+      if (Object.values(this.hooks).every(hook => hook.done)) {
+        this.flush()
+        this.hooks = {}
+      }
+    })
+  }
+
+  flush(buffer?: string) {
+    if (buffer) this.replies.push(buffer)
+    for (const id in this.hooks) {
+      const hook = this.hooks[id]
+      if (!hook.resolve || buffer && this.replies.length < hook.count) continue
+      hook.resolve(this.replies)
+      hook.resolve = undefined
+      hook.count = Infinity
+      this.replies = []
     }
   }
 
   async receive(content: string, count = Infinity) {
-    return new Promise<string[]>((resolve) => {
-      let resolved = false
-      this.resolve = (checkLength = false) => {
-        if (resolved) return
-        if (checkLength && this.replies.length < count) return
-        resolved = true
-        dispose()
-        resolve(this.replies)
-        this.replies = []
-      }
-      const dispose = this.app.on('middleware', (session) => {
-        if (session.id === uuid) process.nextTick(this.resolve)
-      })
+    const result = await new Promise<string[]>((resolve) => {
       let quote: Universal.Message
       const elements = h.parse(content)
       if (elements[0]?.type === 'quote') {
@@ -104,8 +121,16 @@ export class MessageClient {
         quote = { id: attrs.id, messageId: attrs.id, elements: children, content: children.join('') }
         content = elements.join('')
       }
-      const uuid = this.bot.receive(this, { ...this.body, message: { content, elements, quote } })
+      const id = this.bot.receive({
+        ...clone(this.event),
+        message: { content, elements, quote },
+      }, this)
+      this.hooks[id] = { resolve, count }
     })
+    // Await for next tick to ensure subsequent operations are executed.
+    // Do not use `setTimeout` because it may break tests with mocked timers.
+    await new Promise(process.nextTick)
+    return result
   }
 
   async shouldReply(message: string, reply?: string | RegExp | (string | RegExp)[]) {

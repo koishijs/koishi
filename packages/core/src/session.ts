@@ -183,6 +183,7 @@ extend(Session.prototype as Session.Private, {
   get stripped() {
     const self = this as Session.Private
     if (self._stripped) return self._stripped
+    if (!self.elements) return {} as Stripped
 
     // strip mentions
     let atSelf = false, appel = false

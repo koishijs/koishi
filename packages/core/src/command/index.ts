@@ -61,8 +61,8 @@ export class Commander extends Map<string, Command> {
     })
 
     ctx.on('interaction/command', (session) => {
-      if (session.body?.argv) {
-        const { name, options, arguments: args } = session.body.argv
+      if (session.event?.argv) {
+        const { name, options, arguments: args } = session.event.argv
         session.execute({ name, args, options })
       } else {
         defineProperty(session, 'argv', ctx.bail('before-parse', session.content, session))

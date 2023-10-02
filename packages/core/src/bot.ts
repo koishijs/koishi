@@ -21,18 +21,18 @@ defineProperty(Adapter, 'filter', false)
 Bot.prototype.getGuildMemberMap = async function getGuildMemberMap(this: Bot, guildId) {
   const result: Dict<string> = {}
   for await (const member of this.getGuildMemberIter(guildId)) {
-    result[member.user.id] = member.nickname || member.user.nick || member.user.name
+    result[member.user.id] = member.name || member.user.name
   }
   return result
 }
 
 Bot.prototype.broadcast = async function broadcast(this: Bot, channels, content, delay = this.ctx.root.config.delay.broadcast) {
-  const messageIds: string[] = []
+  const ids: string[] = []
   for (let index = 0; index < channels.length; index++) {
     if (index && delay) await sleep(delay)
     try {
       const value = channels[index]
-      messageIds.push(...typeof value === 'string'
+      ids.push(...typeof value === 'string'
         ? await this.sendMessage(value, content)
         : Array.isArray(value)
           ? await this.sendMessage(value[0], content, value[1])
@@ -41,5 +41,5 @@ Bot.prototype.broadcast = async function broadcast(this: Bot, channels, content,
       this.ctx.logger('bot').warn(error)
     }
   }
-  return messageIds
+  return ids
 }

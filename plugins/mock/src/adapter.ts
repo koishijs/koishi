@@ -33,11 +33,12 @@ export class MockBot extends Bot {
     return new MessageClient(this, userId, channelId)
   }
 
-  receive(client: MessageClient, body: Partial<Universal.Event>) {
-    const session = this.session(body)
-    session.send = function (this: Session, fragment, options = {}) {
+  receive(event: Partial<Universal.Event>, client?: MessageClient) {
+    const session = this.session(event)
+    session.send = async function (this: Session, fragment, options = {}) {
       options.session = this
-      return new MockMessenger(client, options).send(fragment)
+      const messages = await new MockMessenger(client, options).send(fragment)
+      return messages.map(messages => messages.id)
     }
     this.dispatch(session)
     return session.id
@@ -76,11 +77,15 @@ export class MockAdapter extends Adapter<MockBot> {
   }
 
   client(userId: string, channelId?: string) {
-    return new MessageClient(this.bots[0], userId, channelId)
+    return this.bots[0].client(userId, channelId)
   }
 
-  session(meta: Partial<Universal.Event>) {
-    return this.bots[0].session(meta)
+  receive(event: Partial<Universal.Event>, client?: MessageClient) {
+    return this.bots[0].receive(event, client)
+  }
+
+  session(event: Partial<Universal.Event>) {
+    return this.bots[0].session(event)
   }
 }
 

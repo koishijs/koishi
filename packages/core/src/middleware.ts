@@ -80,7 +80,7 @@ export class Processor {
     defineProperty(this, Context.current, ctx)
 
     // bind built-in event listeners
-    this.middleware(this._process.bind(this), true)
+    this.middleware(this.attach.bind(this), true)
     ctx.on('message', this._handleMessage.bind(this))
 
     ctx.before('attach-user', (session, fields) => {
@@ -203,7 +203,7 @@ export class Processor {
     }
   }
 
-  private async _process(session: Session, next: Next) {
+  private async attach(session: Session, next: Next) {
     this.ctx.emit(session, 'before-attach', session)
 
     if (this.ctx.database) {
