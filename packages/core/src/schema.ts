@@ -61,6 +61,7 @@ export class SchemaService {
   constructor(public ctx: Context) {}
 
   extend(name: string, schema: Schema, order = 0) {
+    const caller = this[Context.current]
     const target = this.get(name)
     const index = target.list.findIndex(a => a[kSchemaOrder] < order)
     schema[kSchemaOrder] = order
@@ -70,7 +71,7 @@ export class SchemaService {
       target.list.push(schema)
     }
     this.ctx.emit('internal/schema', name)
-    this[Context.current]?.on('dispose', () => {
+    caller?.on('dispose', () => {
       remove(target.list, schema)
       this.ctx.emit('internal/schema', name)
     })
@@ -81,9 +82,10 @@ export class SchemaService {
   }
 
   set(name: string, schema: Schema) {
+    const caller = this[Context.current]
     this._data[name] = schema
     this.ctx.emit('internal/schema', name)
-    this[Context.current]?.on('dispose', () => {
+    caller?.on('dispose', () => {
       delete this._data[name]
       this.ctx.emit('internal/schema', name)
     })
