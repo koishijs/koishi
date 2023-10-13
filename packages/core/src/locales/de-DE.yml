@@ -14,6 +14,7 @@ internal:
   $: Interner Text
   error-encountered: Ein unbekannter Fehler ist aufgetreten.
   low-authority: Keine Berechtigung
+  prompt-argument: 请输入参数 {0}：
   insufficient-arguments: Es fehlt ein Parameter. Geben Sie „Hilfe“ ein, um die Verwendung zu sehen.
   redunant-arguments: Es sind zu viele Parameter vorhanden. Geben Sie „Hilfe“ ein, um die Verwendung anzuzeigen.
   invalid-argument: Der Parameter {0} ist ungültig. {1}
