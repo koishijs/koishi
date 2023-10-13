@@ -5,6 +5,7 @@ import { Command } from './command'
 import { Channel, User } from '../database'
 import { Next } from '../middleware'
 import { PermissionConfig } from '../permission'
+import { Disposable } from 'cordis'
 
 export interface Token {
   rest?: string
@@ -397,14 +398,18 @@ export namespace Argv {
 
     public _arguments: Declaration[]
     public _options: OptionDeclarationMap = {}
+    public _disposables?: Disposable[] = []
 
     private _namedOptions: OptionDeclarationMap = {}
     private _symbolicOptions: OptionDeclarationMap = {}
 
     constructor(public readonly name: string, declaration: string, public ctx: Context) {
       if (!name) throw new Error('expect a command name')
-      const decl = this._arguments = parseDecl(declaration)
-      this.declaration = decl.stripped
+      const declList = this._arguments = parseDecl(declaration)
+      this.declaration = declList.stripped
+      for (const decl of declList) {
+        this._disposables.push(this.ctx.i18n.define('', `commands.${this.name}.arguments.${decl.name}`, decl.name))
+      }
     }
 
     _createOption(name: string, def: string, config: OptionConfig) {
@@ -456,7 +461,7 @@ export namespace Argv {
         option.type = fallbackType
       }
 
-      if (desc) this.ctx.i18n.define('', path, desc)
+      this._disposables.push(this.ctx.i18n.define('', path, desc))
       this._assignOption(option, aliases, this._namedOptions)
       this._assignOption(option, symbols, this._symbolicOptions)
       if (!this._namedOptions[param]) {

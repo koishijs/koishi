@@ -1,7 +1,6 @@
 import { Awaitable, camelize, Dict, isNullable, remove } from 'cosmokit'
 import { coerce } from '@koishijs/utils'
 import { Context, Fragment, Logger, Schema, Session, Universal } from '@satorijs/core'
-import { Disposable } from 'cordis'
 import { Argv } from './parser'
 import { Next, SessionError } from '../middleware'
 import { Channel, User } from '../database'
@@ -40,7 +39,6 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
   _aliases: string[] = []
   _examples: string[] = []
   _usage?: Command.Usage
-  _disposables?: Disposable[] = []
 
   private _userFields: FieldCollector<'user'>[] = [['locales']]
   private _channelFields: FieldCollector<'channel'>[] = [['locales']]

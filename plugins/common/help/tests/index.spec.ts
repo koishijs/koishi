@@ -156,7 +156,8 @@ describe('@koishijs/plugin-help', () => {
     await app.start()
 
     const client = app.mock.client('123')
-    await client.shouldReply('test', '缺少参数，输入帮助以查看用法。')
+    await client.shouldReply('test', '请输入参数 arg：')
+    await client.shouldReply('foo', 'pass')
     await client.shouldReply('test -h', '指令：test <arg>')
   })
 })

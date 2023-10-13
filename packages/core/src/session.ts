@@ -478,7 +478,14 @@ extend(Session.prototype as Session.Private, {
   prompt(...args: any[]) {
     const callback: (session: Session) => any = typeof args[0] === 'function'
       ? args.shift()
-      : session => session.content
+      : (session) => {
+        // Trim leading <at> element
+        const elements = session.elements.slice()
+        if (elements[0]?.type === 'at' && elements[0].attrs.id === session.selfId) {
+          elements.shift()
+        }
+        return elements.join('').trim()
+      }
     const options: PromptOptions = typeof args[0] === 'number'
       ? { timeout: args[0] }
       : args[0] ?? {}
