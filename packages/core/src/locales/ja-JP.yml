@@ -14,6 +14,7 @@ internal:
   $: 核心文本
   error-encountered: 不明なエラーが発生しました。
   low-authority: 実行できる権限が付与されていません
+  prompt-argument: 请输入参数 {0}：
   insufficient-arguments: パラメータが不足しています、「help」を送信して使い方を確認してください。
   redunant-arguments: パラメータ数が多すぎます、「help」を送信して使い方を確認してください。
   invalid-argument: 無効なパラメータ「{0}」、{1}
