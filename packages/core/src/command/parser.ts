@@ -167,6 +167,8 @@ export namespace Argv {
 
   // builtin domains
   export interface Domain {
+    el: h[]
+    elements: h[]
     string: string
     number: number
     boolean: boolean
@@ -251,8 +253,10 @@ export namespace Argv {
     builtin[name] = { ...options, transform }
   }
 
-  createDomain('string', source => source)
-  createDomain('text', source => source, { greedy: true })
+  createDomain('el', source => h.parse(source), { greedy: true })
+  createDomain('elements', source => h.parse(source), { greedy: true })
+  createDomain('string', source => h.unescape(source))
+  createDomain('text', source => h.unescape(source), { greedy: true })
   createDomain('rawtext', source => h('', h.parse(source)).toString(true), { greedy: true })
   createDomain('boolean', () => true)
 

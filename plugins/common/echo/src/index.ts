@@ -25,11 +25,12 @@ export function apply(ctx: Context, config: Config) {
     .action(async ({ options, session }, message) => {
       if (!message) return session.text('.expect-text')
 
+      // use Array to prevent unescape
+      let content: any = [message]
       if (options.unescape) {
-        message = h.unescape(message)
-      }
-      if (options.escape) {
-        message = h.escape(message)
+        content = h.parse(message)
+      } else if (options.escape) {
+        content = [h.escape(message)]
       }
 
       const target = options.user || options.channel
@@ -39,13 +40,13 @@ export function apply(ctx: Context, config: Config) {
         if (!bot) {
           return session.text('.platform-not-found')
         } else if (options.user) {
-          await bot.sendPrivateMessage(id, message)
+          await bot.sendPrivateMessage(id, content)
         } else {
-          await bot.sendMessage(id, message, options.guild)
+          await bot.sendMessage(id, content, options.guild)
         }
         return
       }
 
-      return message
+      return content
     })
 }
