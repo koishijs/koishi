@@ -14,7 +14,7 @@ internal:
   $: Internal Text
   error-encountered: An unknown error has occurred.
   low-authority: Low authority.
-  prompt-argument: 请输入参数 {0}：
+  prompt-argument: 请发送{0}。
   insufficient-arguments: Insufficient arguments, type help to see usage.
   redunant-arguments: Redunant arguments, type help to see usage.
   invalid-argument: Invalid argument {0}, {1}
