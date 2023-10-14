@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-adapter-qq",
   "description": "QQ Adapter for Koishi",
-  "version": "4.0.2",
+  "version": "4.1.2",
   "main": "lib/index.js",
   "module": "lib/index.mjs",
   "typings": "lib/index.d.ts",
@@ -40,12 +40,12 @@
     }
   },
   "peerDependencies": {
-    "koishi": "^4.15.0"
+    "koishi": "^4.15.1"
   },
   "devDependencies": {
-    "koishi": "^4.15.0"
+    "koishi": "^4.15.1"
   },
   "dependencies": {
-    "@satorijs/adapter-qq": "^4.0.2"
+    "@satorijs/adapter-qq": "^4.1.2"
   }
 }

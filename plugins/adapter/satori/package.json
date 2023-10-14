@@ -1,14 +1,14 @@
 {
   "name": "@koishijs/plugin-adapter-satori",
   "description": "Satori Protocol Adapter for Koishi",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "main": "lib/index.js",
   "module": "lib/index.mjs",
   "typings": "lib/index.d.ts",
   "files": [
     "lib"
   ],
-  "author": "Shigma <i@shig.ma>",
+  "author": "Shigma <shigma10826@gmail.com>",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -40,12 +40,12 @@
     }
   },
   "peerDependencies": {
-    "koishi": "^4.15.0"
+    "koishi": "^4.15.1"
   },
   "devDependencies": {
-    "koishi": "^4.15.0"
+    "koishi": "^4.15.1"
   },
   "dependencies": {
-    "@satorijs/adapter-satori": "^1.0.0"
+    "@satorijs/adapter-satori": "^1.0.1"
   }
 }

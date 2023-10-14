@@ -11,7 +11,7 @@
   "author": "Anillc <void@anillc.cn>",
   "contributors": [
     "Anillc <void@anillc.cn>",
-    "Shigma <i@shig.ma>",
+    "Shigma <shigma10826@gmail.com>",
     "arily <arily@arily.moe>"
   ],
   "license": "MIT",
@@ -43,10 +43,10 @@
     }
   },
   "peerDependencies": {
-    "koishi": "^4.15.0"
+    "koishi": "^4.15.1"
   },
   "devDependencies": {
-    "koishi": "^4.15.0"
+    "koishi": "^4.15.1"
   },
   "dependencies": {
     "@satorijs/adapter-mail": "^2.0.1"

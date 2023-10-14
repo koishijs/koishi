@@ -40,7 +40,7 @@ export function apply(ctx: Context, config: Config) {
         if (!bot) {
           return session.text('.platform-not-found')
         } else if (options.user) {
-          await bot.sendPrivateMessage(id, content)
+          await bot.sendPrivateMessage(id, content, session.guildId)
         } else {
           await bot.sendMessage(id, content, options.guild)
         }
