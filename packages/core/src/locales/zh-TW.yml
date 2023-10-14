@@ -1,30 +1,34 @@
 general:
+  $: 通用設定
   name: 中文
   paren: '（{0}）'
-  quote: '「{0}」'
-  comma: ，
+  quote: '“{0}”'
+  comma: '，'
   and: 和
   or: 或
   day: 天
   hour: 小時
   minute: 分鐘
   second: 秒
-
 internal:
-  error-encountered: 出現未知錯誤。
+  $: 核心文本
+  error-encountered: 發生未知的錯誤。
   low-authority: 權限不足。
-  insufficient-arguments: 參數個數不足，輸入「help」檢視用法。
-  redunant-arguments: 參數個數冗餘，輸入「help」檢視用法。
-  invalid-argument: 參數 {0} 無效，{1}
-  unknown-option: 存在未知選項 {0}，輸入「help」檢視用法。
-  invalid-option: 選項 {0} 無效，{1}
-  check-syntax: 輸入「help」檢視用法。
-  invalid-number: 請輸入有效數字。
-  invalid-integer: 請輸入有效整數。
-  invalid-posint: 請輸入有效正整數。
-  invalid-natural: 請輸入有效非負整數。
-  invalid-date: 請輸入有效時間。
-  invalid-user: 請指定有效用戶。
-  invalid-channel: 請指定有效頻道。
-  suggest-hint: 你想輸入的是{0}嗎？
-  suggest-command: 發送句號可使用推測的指令。
+  prompt-argument: 请发送{0}。
+  insufficient-arguments: 缺少參數，輸入幫助以查看用法。
+  redunant-arguments: 存在多餘參數，輸入幫助以查看用法。
+  invalid-argument: 參數 {0} 輸入無效，{1}
+  unknown-option: 存在未知選項 {0}，輸入幫助以查看用法。
+  invalid-option: 選項 {0} 輸入無效，{1}
+  check-syntax: 輸入幫助以查看用法。
+  invalid-number: 請提供一個數字。
+  invalid-integer: 請提供一個整數。
+  invalid-posint: 請提供一個正整數。
+  invalid-natural: 請提供一個非負整數。
+  invalid-date: 請輸入合法的時間。
+  invalid-user: 請指定正確的使用者。
+  invalid-channel: 請指定正確的頻道。
+  suggest-hint: 您要找的是不是{0}？
+  suggest-command: 發送句號以使用推測的指令。
+commands:
+  $: 指令系統
