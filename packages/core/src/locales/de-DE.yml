@@ -1,33 +1,34 @@
 general:
-  $: 通用设置
-  name: 中文
-  paren: '（{0}）'
-  quote: '“{0}”'
-  comma: '，'
-  and: 和
-  or: 或
-  day: 天
-  hour: 小时
-  minute: 分钟
-  second: 秒
+  $: Allgemeine Einstellungen
+  name: Deutsch
+  paren: ' ({0}) '
+  quote: '„{0}“'
+  comma: ','
+  and: und
+  or: oder
+  day: Tag(en)
+  hour: Stunde(n)
+  minute: Minute(n)
+  second: Sekunde(n)
 internal:
-  $: 核心文本
-  error-encountered: 发生未知错误。
-  low-authority: 权限不足。
-  insufficient-arguments: 缺少参数，输入帮助以查看用法。
-  redunant-arguments: 存在多余参数，输入帮助以查看用法。
-  invalid-argument: 参数 {0} 输入无效，{1}
-  unknown-option: 存在未知选项 {0}，输入帮助以查看用法。
-  invalid-option: 选项 {0} 输入无效，{1}
-  check-syntax: 输入帮助以查看用法。
-  invalid-number: 请提供一个数字。
-  invalid-integer: 请提供一个整数。
-  invalid-posint: 请提供一个正整数。
-  invalid-natural: 请提供一个非负整数。
-  invalid-date: 请输入合法的时间。
-  invalid-user: 请指定正确的用户。
-  invalid-channel: 请指定正确的频道。
-  suggest-hint: 您要找的是不是{0}？
-  suggest-command: 发送句号以使用推测的指令。
+  $: Interner Text
+  error-encountered: Ein unbekannter Fehler ist aufgetreten.
+  low-authority: Keine Berechtigung
+  prompt-argument: 请发送{0}。
+  insufficient-arguments: Es fehlt ein Parameter. Geben Sie „Hilfe“ ein, um die Verwendung zu sehen.
+  redunant-arguments: Es sind zu viele Parameter vorhanden. Geben Sie „Hilfe“ ein, um die Verwendung anzuzeigen.
+  invalid-argument: Der Parameter {0} ist ungültig. {1}
+  unknown-option: Es sind eine unbekannte Option {0} vorhanden. Geben Sie „Hilfe“ ein, um die Verwendung anzuzeigen.
+  invalid-option: Die Option {0} ist ungültig. {1}
+  check-syntax: Geben Sie „Hilfe“ ein, um die Verwendung anzuzeigen.
+  invalid-number: Bitte geben Sie eine Zahl an.
+  invalid-integer: Bitte geben Sie eine ganzeZahl an.
+  invalid-posint: Bitte geben Sie eine positive Ganzzahl an.
+  invalid-natural: Bitte geben Sie eine nicht negative Ganzzahl an.
+  invalid-date: Bitte geben Sie eine gültige Zeit ein.
+  invalid-user: Bitte geben Sie einen gültigen Benutzer an.
+  invalid-channel: Bitte geben Sie einen gültigen Kanal an.
+  suggest-hint: Ist das, wonach Sie suchen, {0}?
+  suggest-command: Senden Sie einen Punkt, um den Vorschlag anzuwenden.
 commands:
-  $: 指令系统
+  $: Befehlssystem

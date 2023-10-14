@@ -2,11 +2,11 @@ commands:
   echo:
     description: Send messages
     options:
-      escape: 发送转义消息
-      unescape: 发送反转义消息
-      user: 发送到用户
-      channel: 发送到频道
-      guild: 指定群组编号
+      escape: Sending escape messages
+      unescape: Sending of reverse-escaped messages
+      user: Send to user
+      channel: Send to channel
+      guild: Assign guild number
     messages:
       expect-text: Please type to send
-      platform-not-found: 找不到指定的平台。
+      platform-not-found: Can't find the platform you have in mind.

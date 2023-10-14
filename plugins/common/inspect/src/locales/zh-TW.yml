@@ -1,0 +1,18 @@
+commands:
+  inspect:
+    description: 查看使用者、頻道或消息的詳細信息
+    usage: |-
+      inspect @user
+      inspect #channel
+      inspect
+    messages:
+      invalid: 參數無法解析。
+      user: 使用者 ID：{id}
+      channel: 頻道 ID：{id}
+      message: |-
+        平台名：{platform}
+        消息 ID：{messageId}
+        頻道 ID：{channelId}
+        群組 ID：{guildId}
+        使用者 ID：{userId}
+        自身 ID：{selfId}

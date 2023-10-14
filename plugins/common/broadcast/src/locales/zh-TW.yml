@@ -1,0 +1,8 @@
+commands:
+  broadcast:
+    description: 全服廣播
+    options:
+      forced: 無視 silent 標籤進行廣播
+      only: 僅向當前賬號負責的群進行廣播
+    messages:
+      expect-text: 請輸入要傳送的文字。

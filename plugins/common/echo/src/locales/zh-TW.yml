@@ -1,0 +1,12 @@
+commands:
+  echo:
+    description: 發送消息
+    options:
+      escape: 發送轉義消息
+      unescape: 發送反轉義消息
+      user: 發送到使用者
+      channel: 發送到頻道
+      guild: 指定群組編號
+    messages:
+      expect-text: 請輸入要發送的文本。
+      platform-not-found: 找不到指定的平台。

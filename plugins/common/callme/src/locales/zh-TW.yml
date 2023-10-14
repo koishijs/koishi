@@ -1,0 +1,12 @@
+commands:
+  callme:
+    description: 修改自己的稱呼
+    messages:
+      current: 好的呢，{0}！
+      unnamed: 你還沒有給自己起一個稱呼呢~
+      unchanged: 稱呼未發生變化。
+      empty: 稱呼不能為空。
+      invalid: 稱呼中禁止包含純文本以外的內容。
+      duplicate: 禁止與其他使用者重名。
+      updated: 好的，{0}，請多指教！
+      failed: 修改稱呼失敗。

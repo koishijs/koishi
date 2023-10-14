@@ -1,5 +1,5 @@
-host: 要连接到的主机名。
-port: 要连接到的端口号。
-user: 要使用的用户名。
-password: 要使用的密码。
-database: 要访问的数据库名。
+host: The host to connect to.
+port: The port number to be connected.
+user: The username to use.
+password: The password to use.
+database: The database name to use.
