@@ -14,7 +14,7 @@ internal:
   $: 核心文本
   error-encountered: 發生未知的錯誤。
   low-authority: 權限不足。
-  prompt-argument: 请输入参数 {0}：
+  prompt-argument: 请发送{0}。
   insufficient-arguments: 缺少參數，輸入幫助以查看用法。
   redunant-arguments: 存在多餘參數，輸入幫助以查看用法。
   invalid-argument: 參數 {0} 輸入無效，{1}
