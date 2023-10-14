@@ -40,7 +40,6 @@ export class Commander extends Map<string, Command> {
 
   _commandList: Command[] = []
   _commands = this
-  _shortcuts: Command.Shortcut[] = []
 
   constructor(private ctx: Context, private config: Commander.Config = {}) {
     super()
@@ -88,7 +87,7 @@ export class Commander extends Map<string, Command> {
 
     ctx.middleware((session, next) => {
       // execute command
-      if (!session.resolveCommand(session.argv)) return next()
+      if (!this.resolveCommand(session.argv)) return next()
       return session.execute(session.argv, next)
     })
 
@@ -149,7 +148,7 @@ export class Commander extends Map<string, Command> {
   available(session: Session) {
     return this._commandList
       .filter(cmd => cmd.match(session))
-      .flatMap(cmd => cmd._aliases)
+      .flatMap(cmd => Object.keys(cmd._aliases))
   }
 
   protected get caller(): Context {
@@ -157,18 +156,50 @@ export class Commander extends Map<string, Command> {
   }
 
   resolve(key: string) {
-    if (!key) return
-    const segments = key.toLowerCase().split('.')
-    let i = 1, name = segments[0], cmd: Command
-    while ((cmd = this.get(name)) && i < segments.length) {
-      name = cmd.name + '.' + segments[i++]
-    }
-    return cmd
+    return this._resolve(key).command
   }
 
-  /** @deprecated use `.get()` instead */
-  getCommand(name: string) {
-    return this.get(name)
+  _resolve(key: string) {
+    if (!key) return {}
+    const segments = key.toLowerCase().split('.')
+    let i = 1, name = segments[0], command: Command
+    while ((command = this.get(name)) && i < segments.length) {
+      name = command.name + '.' + segments[i++]
+    }
+    return { command, name }
+  }
+
+  inferCommand(argv: Argv) {
+    if (argv.command) return argv.command
+    if (argv.name) return argv.command = this.resolve(argv.name)
+
+    const { stripped, isDirect } = argv.session
+    // guild message should have prefix or appel to be interpreted as a command call
+    if (argv.root && !isDirect && stripped.prefix === null && !stripped.appel) return
+    const segments: string[] = []
+    while (argv.tokens.length) {
+      const { content } = argv.tokens[0]
+      segments.push(content)
+      const { name, command } = this._resolve(segments.join('.'))
+      if (!command) break
+      argv.tokens.shift()
+      argv.command = command
+      argv.args = command._aliases[name].args
+      argv.options = command._aliases[name].options
+      if (command._arguments.length) break
+    }
+    return argv.command
+  }
+
+  resolveCommand(argv: Argv) {
+    if (!this.inferCommand(argv)) return
+    if (argv.tokens?.every(token => !token.inters.length)) {
+      const { options, args, error } = argv.command.parse(argv)
+      argv.options = { ...argv.options, ...options }
+      argv.args = [...argv.args || [], ...args]
+      argv.error = error
+    }
+    return argv.command
   }
 
   command(def: string, ...args: [Command.Config?] | [string, Command.Config?]) {

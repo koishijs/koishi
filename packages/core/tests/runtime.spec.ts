@@ -215,7 +215,7 @@ describe('Runtime', () => {
       cmd1.config.checkArgCount = true
       cmd1.config.showWarning = true
       await client4.shouldReply('cmd1 foo', 'cmd1:foo')
-      await client4.shouldReply('cmd1', '请输入参数 arg1：')
+      await client4.shouldReply('cmd1', '请发送arg1。')
       await client4.shouldReply('bar baz', 'cmd1:bar baz')
       await client4.shouldReply('cmd1 foo bar', '存在多余参数，输入帮助以查看用法。')
       cmd1.config.showWarning = false

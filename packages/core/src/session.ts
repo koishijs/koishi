@@ -37,8 +37,6 @@ declare module '@satorijs/core' {
     i18n(path: string | string[], params?: object): h[]
     text(path: string | string[], params?: object): string
     collect<T extends 'user' | 'channel'>(key: T, argv: Argv, fields?: Set<keyof Tables[T]>): Set<keyof Tables[T]>
-    inferCommand(argv: Argv): Command
-    resolveCommand(argv: Argv): Command
     execute(content: string, next?: true | Next): Promise<string>
     execute(argv: Argv, next?: true | Next): Promise<string>
     middleware(middleware: Middleware): () => boolean
@@ -372,44 +370,13 @@ extend(Session.prototype as Session.Private, {
           inters.forEach(collect)
         }
       }
-      if (!this.resolveCommand(argv)) return
+      if (!this.app.$commander.resolveCommand(argv)) return
       this.app.emit(argv.session, `command/before-attach-${key}` as any, argv, fields)
       collectFields(argv, Command[`_${key}Fields`] as any, fields)
       collectFields(argv, argv.command[`_${key}Fields`] as any, fields)
     }
     collect(argv)
     return fields
-  },
-
-  inferCommand(argv) {
-    if (argv.command) return argv.command
-    if (argv.name) return argv.command = this.app.$commander.resolve(argv.name)
-
-    const { stripped, isDirect } = this
-    // guild message should have prefix or appel to be interpreted as a command call
-    if (argv.root && !isDirect && stripped.prefix === null && !stripped.appel) return
-    const segments: string[] = []
-    while (argv.tokens.length) {
-      const { content } = argv.tokens[0]
-      segments.push(content)
-      const command = this.app.$commander.resolve(segments.join('.'))
-      if (!command) break
-      argv.tokens.shift()
-      argv.command = command
-      if (command._arguments.length) break
-    }
-    return argv.command
-  },
-
-  resolveCommand(argv) {
-    if (!this.inferCommand(argv)) return
-    if (argv.tokens?.every(token => !token.inters.length)) {
-      const { options, args, error } = argv.command.parse(argv)
-      argv.options = { ...argv.options, ...options }
-      argv.args = [...argv.args || [], ...args]
-      argv.error = error
-    }
-    return argv.command
   },
 
   async execute(argv, next) {
@@ -431,7 +398,7 @@ extend(Session.prototype as Session.Private, {
         }
         arg.inters = []
       }
-      if (!this.resolveCommand(argv)) return ''
+      if (!this.app.$commander.resolveCommand(argv)) return ''
     } else {
       argv.command ||= this.app.$commander.get(argv.name)
       if (!argv.command) {

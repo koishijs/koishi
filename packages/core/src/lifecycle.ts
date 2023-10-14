@@ -71,10 +71,10 @@ extend(Context.prototype as Context.Private, {
   createTimerDispose(timer) {
     const dispose = () => {
       clearTimeout(timer)
-      if (!this.state) return
-      return remove(this.state.disposables, dispose)
+      if (!this.scope) return
+      return remove(this.scope.disposables, dispose)
     }
-    this.state.disposables.push(dispose)
+    this.scope.disposables.push(dispose)
     return dispose
   },
 

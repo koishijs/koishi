@@ -14,6 +14,11 @@ export type Extend<O extends {}, K extends string, T> = {
 }
 
 export namespace Command {
+  export interface Alias {
+    options?: Dict
+    args?: string[]
+  }
+
   export interface Shortcut {
     i18n?: boolean
     name?: string | RegExp
@@ -36,7 +41,7 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
   children: Command[] = []
 
   _parent: Command = null
-  _aliases: string[] = []
+  _aliases: Dict<Command.Alias> = {}
   _examples: string[] = []
   _usage?: Command.Usage
 
@@ -82,7 +87,7 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
   }
 
   get displayName() {
-    return this._aliases[0]
+    return Object.keys(this._aliases)[0]
   }
 
   set displayName(name) {
@@ -108,22 +113,21 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
     }
   }
 
-  private _registerAlias(name: string, prepend = false) {
+  private _registerAlias(name: string, prepend = false, options: Command.Alias = {}) {
     name = name.toLowerCase()
     if (name.startsWith('.')) name = this.parent.name + name
 
     // add to list
-    const done = this._aliases.includes(name)
-    if (done) {
+    const existing = this._aliases[name]
+    if (existing) {
       if (prepend) {
-        remove(this._aliases, name)
-        this._aliases.unshift(name)
+        this._aliases = { [name]: existing, ...this._aliases }
       }
       return
     } else if (prepend) {
-      this._aliases.unshift(name)
+      this._aliases = { [name]: options, ...this._aliases }
     } else {
-      this._aliases.push(name)
+      this._aliases[name] = options
     }
 
     // register global
@@ -149,9 +153,15 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
     return this as any
   }
 
-  alias(...names: string[]) {
-    for (const name of names) {
-      this._registerAlias(name)
+  alias(...names: string[]): this
+  alias(name: string, options: Command.Alias): this
+  alias(...args: any[]) {
+    if (typeof args[1] === 'object') {
+      this._registerAlias(args[0], false, args[1])
+    } else {
+      for (const name of args) {
+        this._registerAlias(name)
+      }
     }
     return this
   }
@@ -334,7 +344,7 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
     for (const cmd of this.children.slice()) {
       cmd.dispose()
     }
-    for (const name of this._aliases) {
+    for (const name in this._aliases) {
       this.ctx.$commander.delete(name)
     }
     remove(this.ctx.$commander._commandList, this)
@@ -344,12 +354,11 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
   toJSON(): Universal.Command {
     return {
       name: this.name,
-      aliases: this._aliases,
       description: this.ctx.i18n.get(`commands.${this.name}.description`),
       arguments: this._arguments.map(arg => ({
         name: arg.name,
         type: toStringType(arg.type),
-        description: { '': toStringType(arg.type) },
+        description: this.ctx.i18n.get(`commands.${this.name}.arguments.${arg.name}`),
         required: arg.required,
       })),
       options: Object.entries(this._options).map(([name, option]) => ({

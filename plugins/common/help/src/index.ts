@@ -258,8 +258,8 @@ async function showHelp(command: Command, session: Session<'authority'>, config:
     }
   }
 
-  if (command._aliases.length > 1) {
-    output.push(session.text('.command-aliases', [Array.from(command._aliases.slice(1)).join('，')]))
+  if (Object.keys(command._aliases).length > 1) {
+    output.push(session.text('.command-aliases', [Array.from(Object.keys(command._aliases).slice(1)).join('，')]))
   }
 
   session.app.emit(session, 'help/command', output, command, session)
