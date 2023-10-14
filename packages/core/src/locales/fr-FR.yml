@@ -14,7 +14,7 @@ internal:
   $: Texte interne
   error-encountered: Une erreur inconnue s'est produite.
   low-authority: Permission non accordée,
-  prompt-argument: 请输入参数 {0}：
+  prompt-argument: 请发送{0}。
   insufficient-arguments: Arguments insuffisants, tapez "help" pour afficher l'aide
   redunant-arguments: Arguments redondants, tapez "help" pour afficher l'aide
   invalid-argument: Arguments {0} invalides, {1}
