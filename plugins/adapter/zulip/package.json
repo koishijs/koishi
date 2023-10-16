@@ -1,0 +1,48 @@
+{
+  "name": "@koishijs/plugin-adapter-zulip",
+  "description": "Zulip Adapter for Koishi",
+  "version": "1.0.0",
+  "main": "lib/index.js",
+  "typings": "lib/index.d.ts",
+  "files": [
+    "lib"
+  ],
+  "author": "LittleC <i@ltlec.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/satorijs/satori.git",
+    "directory": "adapters/zulip"
+  },
+  "bugs": {
+    "url": "https://github.com/satorijs/satori/issues"
+  },
+  "homepage": "https://koishi.chat/plugins/adapter/zulip.html",
+  "keywords": [
+    "bot",
+    "adapter",
+    "chatbot",
+    "koishi",
+    "zulip"
+  ],
+  "koishi": {
+    "description": {
+      "en": "Zulip Adapter",
+      "zh": "Zulip 适配器"
+    },
+    "service": {
+      "implements": [
+        "adapter"
+      ]
+    }
+  },
+  "peerDependencies": {
+    "koishi": "^4.14.1"
+  },
+  "devDependencies": {
+    "koishi": "^4.14.1"
+  },
+  "dependencies": {
+    "@satorijs/adapter-zulip": "^1.0.0"
+  }
+}
