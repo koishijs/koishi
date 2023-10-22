@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-server",
   "description": "Satori Protocol Adapter for Koishi",
-  "version": "1.0.4",
+  "version": "2.1.0",
   "main": "lib/index.js",
   "module": "lib/index.mjs",
   "typings": "lib/index.d.ts",
@@ -36,12 +36,12 @@
     }
   },
   "peerDependencies": {
-    "koishi": "^4.15.1"
+    "koishi": "^4.15.2"
   },
   "devDependencies": {
-    "koishi": "^4.15.1"
+    "koishi": "^4.15.2"
   },
   "dependencies": {
-    "@satorijs/server": "^1.0.4"
+    "@satorijs/server": "^2.1.0"
   }
 }

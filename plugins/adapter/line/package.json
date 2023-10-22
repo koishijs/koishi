@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-adapter-line",
   "description": "Line Adapter for Koishi",
-  "version": "2.1.0",
+  "version": "2.1.1",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -37,12 +37,12 @@
     }
   },
   "peerDependencies": {
-    "koishi": "^4.15.1"
+    "koishi": "^4.15.2"
   },
   "devDependencies": {
-    "koishi": "^4.15.1"
+    "koishi": "^4.15.2"
   },
   "dependencies": {
-    "@satorijs/adapter-line": "^2.1.0"
+    "@satorijs/adapter-line": "^2.1.1"
   }
 }

@@ -41,13 +41,13 @@
     }
   },
   "peerDependencies": {
-    "koishi": "^4.15.1"
+    "koishi": "^4.15.2"
   },
   "devDependencies": {
     "@types/babel__code-frame": "^7.0.3",
     "@types/throttle-debounce": "^2.1.0",
     "esbuild": "^0.18.14",
-    "koishi": "^4.15.1"
+    "koishi": "^4.15.2"
   },
   "dependencies": {
     "@babel/code-frame": "^7.22.5",

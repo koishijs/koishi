@@ -31,7 +31,7 @@
   },
   "dependencies": {
     "@koishijs/i18n-utils": "^1.0.0",
-    "@koishijs/utils": "^7.1.0",
+    "@koishijs/utils": "^7.1.1",
     "@minatojs/core": "^2.4.2",
     "@satorijs/core": "^3.0.0",
     "cordis": "^2.10.2",

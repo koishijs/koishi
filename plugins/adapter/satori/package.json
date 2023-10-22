@@ -40,10 +40,10 @@
     }
   },
   "peerDependencies": {
-    "koishi": "^4.15.1"
+    "koishi": "^4.15.2"
   },
   "devDependencies": {
-    "koishi": "^4.15.1"
+    "koishi": "^4.15.2"
   },
   "dependencies": {
     "@satorijs/adapter-satori": "^1.0.1"

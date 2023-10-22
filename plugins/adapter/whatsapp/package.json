@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-adapter-whatsapp",
   "description": "WhatsApp Adapter for Koishi",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "main": "lib/index.js",
   "module": "lib/index.mjs",
   "typings": "lib/index.d.ts",
@@ -37,12 +37,12 @@
     }
   },
   "peerDependencies": {
-    "koishi": "^4.15.1"
+    "koishi": "^4.15.2"
   },
   "devDependencies": {
-    "koishi": "^4.15.1"
+    "koishi": "^4.15.2"
   },
   "dependencies": {
-    "@satorijs/adapter-whatsapp": "^2.0.1"
+    "@satorijs/adapter-whatsapp": "^2.0.2"
   }
 }

@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/utils",
   "description": "Utilities for Koishi",
-  "version": "7.1.0",
+  "version": "7.1.1",
   "main": "lib/index.cjs",
   "module": "lib/index.mjs",
   "typings": "lib/index.d.ts",
@@ -30,7 +30,7 @@
     "@types/supports-color": "^8.1.1"
   },
   "dependencies": {
-    "cosmokit": "^1.5.0",
+    "cosmokit": "^1.5.1",
     "inaba": "^1.1.1"
   }
 }
