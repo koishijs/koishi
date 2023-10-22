@@ -18,7 +18,7 @@ declare module '@satorijs/core' {
   }
 
   interface Events {
-    'before-parse'(content: string, session: Session): Argv
+    'before-parse'(content: string, session: Session<Context>): Argv
     'command-added'(command: Command): void
     'command-removed'(command: Command): void
     'command-error'(argv: Argv, error: any): void
@@ -139,13 +139,13 @@ export class Commander extends Map<string, Command> {
       .map(cmd => cmd.toJSON()))
   }
 
-  private _resolvePrefixes(session: Session) {
+  private _resolvePrefixes(session: Session<Context>) {
     const value = session.resolve(this.config.prefix)
     const result = Array.isArray(value) ? value : [value || '']
     return result.map(source => h.escape(source))
   }
 
-  available(session: Session) {
+  available(session: Session<Context>) {
     return this._commandList
       .filter(cmd => cmd.match(session))
       .flatMap(cmd => Object.keys(cmd._aliases))

@@ -22,7 +22,7 @@ export interface Argv<U extends User.Field = never, G extends Channel.Field = ne
   source?: string
   initiator?: string
   terminator?: string
-  session?: Session<U, G>
+  session?: Session<Context, U, G>
   command?: Command<U, G, A, O>
   rest?: string
   pos?: number
@@ -215,7 +215,7 @@ export namespace Argv {
     required?: boolean
   }
 
-  export type Transform<T> = (source: string, session: Session<never, never>) => T
+  export type Transform<T> = (source: string, session: Session<Context, never, never>) => T
 
   export interface DomainConfig<T> {
     transform?: Transform<T>
@@ -299,7 +299,7 @@ export namespace Argv {
     }
     const code = h.from(source)
     if (code && code.type === 'at') {
-      return `${session.platform}:${code.data.id}`
+      return `${session.platform}:${code.attrs.id}`
     }
     throw new Error('internal.invalid-user')
   })
@@ -312,7 +312,7 @@ export namespace Argv {
     }
     const code = h.from(source)
     if (code && code.type === 'sharp') {
-      return `${session.platform}:${code.data.id}`
+      return `${session.platform}:${code.attrs.id}`
     }
     throw new Error('internal.invalid-channel')
   })

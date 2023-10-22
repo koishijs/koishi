@@ -13,13 +13,13 @@ declare module '@satorijs/core' {
   }
 
   interface Events {
-    'before-attach-channel'(session: Session, fields: Set<Channel.Field>): void
-    'attach-channel'(session: Session): Awaitable<void | boolean>
-    'before-attach-user'(session: Session, fields: Set<User.Field>): void
-    'attach-user'(session: Session): Awaitable<void | boolean>
-    'before-attach'(session: Session): void
-    'attach'(session: Session): void
-    'middleware'(session: Session): void
+    'before-attach-channel'(session: Session<Context>, fields: Set<Channel.Field>): void
+    'attach-channel'(session: Session<Context>): Awaitable<void | boolean>
+    'before-attach-user'(session: Session<Context>, fields: Set<User.Field>): void
+    'attach-user'(session: Session<Context>): Awaitable<void | boolean>
+    'before-attach'(session: Session<Context>): void
+    'attach'(session: Session<Context>): void
+    'middleware'(session: Session<Context>): void
   }
 }
 
@@ -30,7 +30,7 @@ export class SessionError extends Error {
 }
 
 export type Next = (next?: Next.Callback) => Promise<void | Fragment>
-export type Middleware = (session: Session, next: Next) => Awaitable<void | Fragment>
+export type Middleware = (session: Session<Context>, next: Next) => Awaitable<void | Fragment>
 
 export namespace Next {
   export const MAX_DEPTH = 64
@@ -50,7 +50,7 @@ export interface Matcher extends Matcher.Options {
 }
 
 export namespace Matcher {
-  export type Response = Fragment | ((session: Session, params: [string, ...string[]]) => Awaitable<Fragment>)
+  export type Response = Fragment | ((session: Session<Context>, params: [string, ...string[]]) => Awaitable<Fragment>)
 
   export interface Options {
     i18n?: boolean
@@ -156,7 +156,7 @@ export class Processor {
     })
   }
 
-  private _executeMatcher(session: Session, matcher: Matcher) {
+  private _executeMatcher(session: Session<Context>, matcher: Matcher) {
     const { stripped, quote } = session
     const { appel, context, i18n, regex, fuzzy, pattern, response } = matcher
     if ((appel || stripped.hasAt) && !stripped.appel) return
@@ -203,7 +203,7 @@ export class Processor {
     }
   }
 
-  private async attach(session: Session, next: Next) {
+  private async attach(session: Session<Context>, next: Next) {
     this.ctx.emit(session, 'before-attach', session)
 
     if (this.ctx.database) {
@@ -241,7 +241,7 @@ export class Processor {
     return next()
   }
 
-  private async _handleMessage(session: Session) {
+  private async _handleMessage(session: Session<Context>) {
     // ignore self messages
     if (session.selfId === session.userId) return
 

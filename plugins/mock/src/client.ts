@@ -1,5 +1,5 @@
 import assert from 'assert'
-import { clone, Context, Dict, h, hyphenate, isNullable, Messenger, Universal } from 'koishi'
+import { clone, Context, Dict, h, hyphenate, isNullable, MessageEncoder, Universal } from 'koishi'
 import { format } from 'util'
 import { MockBot } from './adapter'
 
@@ -9,7 +9,7 @@ const RECEIVED_OTHERWISE = 'expected "%s" to be replied with %s but received "%s
 const RECEIVED_NTH_NOTHING = 'expected "%s" to be replied at index %s but received nothing'
 const RECEIVED_NTH_OTHERWISE = 'expected "%s" to be replied with %s at index %s but received "%s"'
 
-export class MockMessenger extends Messenger {
+export class MockMessenger extends MessageEncoder<Context, MockBot> {
   private buffer = ''
 
   constructor(private client: MessageClient, options?: Universal.SendOptions) {

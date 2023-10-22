@@ -4,7 +4,7 @@ import { Webhook } from './webhook'
 
 declare module 'koishi' {
   interface Context {
-    mock: MockAdapter
+    mock: MockAdapter<this>
   }
 
   interface User {
@@ -20,8 +20,8 @@ export namespace MockBot {
   }
 }
 
-export class MockBot extends Bot {
-  constructor(ctx: Context, config: MockBot.Config) {
+export class MockBot<C extends Context = Context> extends Bot<C> {
+  constructor(ctx: C, config: MockBot.Config) {
     super(ctx, config)
     this.platform = 'mock'
     this.selfId = config.selfId ?? DEFAULT_SELF_ID
@@ -57,11 +57,11 @@ export class MockBot extends Bot {
   }
 }
 
-export class MockAdapter extends Adapter<MockBot> {
+export class MockAdapter<C extends Context = Context> extends Adapter<C, MockBot<C>> {
   public app: Context
   public webhook: Webhook
 
-  constructor(ctx: Context, bot: MockBot) {
+  constructor(ctx: C, bot: MockBot<C>) {
     super()
     this.app = ctx.root
     this.webhook = new Webhook(ctx.root)

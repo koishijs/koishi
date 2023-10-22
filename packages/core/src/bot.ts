@@ -6,11 +6,11 @@ declare module '@satorijs/core' {
   interface Bot {
     /** @deprecated */
     getGuildMemberMap(guildId: string): Promise<Dict<string>>
-    broadcast(channels: (string | [string, string] | Session)[], content: Fragment, delay?: number): Promise<string[]>
+    broadcast(channels: (string | [string, string] | Session<Context>)[], content: Fragment, delay?: number): Promise<string[]>
   }
 
   interface Events {
-    'appellation'(name: string, session: Session): string
+    'appellation'(name: string, session: Session<Context>): string
   }
 }
 

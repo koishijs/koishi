@@ -89,6 +89,7 @@ export class DatabaseService extends Database<Tables> {
       createdAt: 'timestamp',
     }, {
       autoInc: true,
+      unique: ['name'],
     })
 
     this.extend('binding', {
@@ -234,7 +235,7 @@ export const defineDriver = <T>(constructor: Driver.Constructor<T>, schema?: Sch
     config = { ...config }
     await prepare?.(ctx, config)
     const driver = new constructor(ctx.model, config)
-    const key = ctx.mapping.database || 'default'
+    const key = 'default'
 
     ctx.on('ready', async () => {
       await driver.start()

@@ -33,7 +33,7 @@ export namespace Command {
     = (argv: Argv<U, G, A, O>, ...args: A) => Awaitable<void | Fragment>
 
   export type Usage<U extends User.Field = never, G extends Channel.Field = never>
-    = string | ((session: Session<U, G>) => Awaitable<string>)
+    = string | ((session: Session<Context, U, G>) => Awaitable<string>)
 }
 
 export class Command<U extends User.Field = never, G extends Channel.Field = never, A extends any[] = any[], O extends {} = {}> extends Argv.CommandBase {
@@ -248,7 +248,7 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
     return this
   }
 
-  match(session: Session<never, never>) {
+  match(session: Session<Context, never, never>) {
     return this.ctx.filter(session)
   }
 

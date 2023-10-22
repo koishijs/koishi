@@ -10,7 +10,8 @@ import { CompareOptions } from './i18n'
 const logger = new Logger('session')
 
 declare module '@satorijs/core' {
-  interface Session<U extends User.Field = never, G extends Channel.Field = never> {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  interface Session<C extends Context, U extends User.Field = never, G extends Channel.Field = never> {
     argv?: Argv<U, G>
     user?: User.Observed<U>
     channel?: Channel.Observed<G>
@@ -24,7 +25,7 @@ declare module '@satorijs/core' {
     send(content: Fragment, options?: Universal.SendOptions): Promise<string[]>
     cancelQueued(delay?: number): void
     sendQueued(content: Fragment, delay?: number): Promise<string[]>
-    resolve<T, R extends any[]>(source: T | Eval.Expr | ((session: Session, ...args: R) => T), ...args: R):
+    resolve<T, R extends any[]>(source: T | Eval.Expr | ((session: this, ...args: R) => T), ...args: R):
       | T extends Eval.Expr ? Eval<T>
       : T extends (...args: any[]) => any ? ReturnType<T>
       : T
@@ -41,7 +42,7 @@ declare module '@satorijs/core' {
     execute(argv: Argv, next?: true | Next): Promise<string>
     middleware(middleware: Middleware): () => boolean
     prompt(timeout?: number): Promise<string>
-    prompt<T>(callback: (session: Session) => Awaitable<T>, options?: PromptOptions): Promise<T>
+    prompt<T>(callback: (session: this) => Awaitable<T>, options?: PromptOptions): Promise<T>
     suggest(options: SuggestOptions): Promise<string>
     response?: () => Promise<Fragment>
   }
@@ -113,7 +114,7 @@ extend(Session.prototype as Session.Private, {
   get username() {
     const defaultName: string = this.user && this.user['name']
       ? this.user['name']
-      : this.author.name || this.userId
+      : this.author.nick || this.author.name || this.userId
     return this.app.chain('appellation', defaultName, this)
   },
 
@@ -443,7 +444,7 @@ extend(Session.prototype as Session.Private, {
   },
 
   prompt(...args: any[]) {
-    const callback: (session: Session) => any = typeof args[0] === 'function'
+    const callback: (session: Session<Context>) => any = typeof args[0] === 'function'
       ? args.shift()
       : (session) => {
         // Trim leading <at> element
