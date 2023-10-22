@@ -1,11 +1,12 @@
 import { Awaitable, camelize, Dict, isNullable, remove } from 'cosmokit'
 import { coerce } from '@koishijs/utils'
-import { Context, Fragment, Logger, Schema, Session, Universal } from '@satorijs/core'
+import { Fragment, Logger, Schema, Universal } from '@satorijs/core'
 import { Argv } from './parser'
 import { Next, SessionError } from '../middleware'
 import { Channel, User } from '../database'
-import { FieldCollector } from '../session'
+import { FieldCollector, Session } from '../session'
 import { PermissionConfig } from '../permission'
+import { Context } from '../context'
 
 const logger = new Logger('command')
 
@@ -33,7 +34,7 @@ export namespace Command {
     = (argv: Argv<U, G, A, O>, ...args: A) => Awaitable<void | Fragment>
 
   export type Usage<U extends User.Field = never, G extends Channel.Field = never>
-    = string | ((session: Session<Context, U, G>) => Awaitable<string>)
+    = string | ((session: Session<U, G>) => Awaitable<string>)
 }
 
 export class Command<U extends User.Field = never, G extends Channel.Field = never, A extends any[] = any[], O extends {} = {}> extends Argv.CommandBase {
@@ -248,7 +249,7 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
     return this
   }
 
-  match(session: Session<Context, never, never>) {
+  match(session: Session) {
     return this.ctx.filter(session)
   }
 

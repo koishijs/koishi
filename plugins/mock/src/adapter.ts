@@ -65,7 +65,7 @@ export class MockAdapter<C extends Context = Context> extends Adapter<C, MockBot
     super()
     this.app = ctx.root
     this.webhook = new Webhook(ctx.root)
-    ctx.mock = this
+    this.app.provide('mock', this)
   }
 
   async initUser(id: string, authority = 1, data?: Partial<User>) {
@@ -92,5 +92,3 @@ export class MockAdapter<C extends Context = Context> extends Adapter<C, MockBot
 export namespace MockAdapter {
   export interface Config {}
 }
-
-Context.service('mock')

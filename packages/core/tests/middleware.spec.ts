@@ -22,7 +22,7 @@ describe('Middleware Runtime', () => {
 
   beforeEach(() => {
     midWarn.mockClear()
-    app.$internal._hooks = []
+    app.$processor._hooks = []
     callSequence = []
   })
 

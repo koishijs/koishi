@@ -61,8 +61,6 @@ function separate(source: any, isGroup = false) {
 
 const kUpdate = Symbol('update')
 
-Context.service('loader')
-
 const logger = new Logger('app')
 
 const group: Plugin.Object = {
@@ -340,7 +338,7 @@ export abstract class Loader {
   async createApp() {
     new Logger('app').info('%C', `Koishi/${version}`)
     const app = this.app = new Context(this.interpolate(this.config))
-    app.loader = this
+    app.provide('loader', this)
     app.baseDir = this.baseDir
     app.envData = this.envData
     app.scope[Loader.kRecord] = Object.create(null)

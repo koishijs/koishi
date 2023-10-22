@@ -147,11 +147,11 @@ describe('Command API', () => {
 
     it('basic support', () => {
       expect(app.$commander._commandList).to.have.length(3)
-      expect(app.$internal._matchers).to.have.length(2)
+      expect(app.$processor._matchers).to.have.length(2)
       expect(foo.children).to.have.length(1)
       bar.dispose()
       expect(app.$commander._commandList).to.have.length(1)
-      expect(app.$internal._matchers).to.have.length(0)
+      expect(app.$processor._matchers).to.have.length(0)
       expect(foo.children).to.have.length(0)
     })
   })

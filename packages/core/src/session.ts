@@ -1,66 +1,15 @@
-import { extend, observe } from '@koishijs/utils'
+import { observe } from '@koishijs/utils'
 import { Awaitable, defineProperty, isNullable, makeArray } from 'cosmokit'
-import { Context, Fragment, h, Logger, Session, Universal } from '@satorijs/core'
+import { Fragment, h, Logger, Universal } from '@satorijs/core'
 import { Eval, executeEval, isEvalExpr } from '@minatojs/core'
+import * as satori from '@satorijs/core'
 import { Argv, Command } from './command'
+import { Context } from './context'
 import { Channel, Tables, User } from './database'
 import { Middleware, Next } from './middleware'
 import { CompareOptions } from './i18n'
 
 const logger = new Logger('session')
-
-declare module '@satorijs/core' {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  interface Session<C extends Context, U extends User.Field = never, G extends Channel.Field = never> {
-    argv?: Argv<U, G>
-    user?: User.Observed<U>
-    channel?: Channel.Observed<G>
-    guild?: Channel.Observed<G>
-    permissions?: string[]
-    /** @deprecated */
-    parsed?: Stripped
-    stripped?: Stripped
-    scope?: string
-    username?: string
-    send(content: Fragment, options?: Universal.SendOptions): Promise<string[]>
-    cancelQueued(delay?: number): void
-    sendQueued(content: Fragment, delay?: number): Promise<string[]>
-    resolve<T, R extends any[]>(source: T | Eval.Expr | ((session: this, ...args: R) => T), ...args: R):
-      | T extends Eval.Expr ? Eval<T>
-      : T extends (...args: any[]) => any ? ReturnType<T>
-      : T
-    getChannel<K extends Channel.Field = never>(id?: string, fields?: K[]): Promise<Channel>
-    observeChannel<T extends Channel.Field = never>(fields: Iterable<T>): Promise<Channel.Observed<T | G>>
-    getUser<K extends User.Field = never>(id?: string, fields?: K[]): Promise<User>
-    observeUser<T extends User.Field = never>(fields: Iterable<T>): Promise<User.Observed<T | U>>
-    withScope(scope: string, callback: () => Awaitable<string>): Promise<string>
-    resolveScope(path: string): string
-    i18n(path: string | string[], params?: object): h[]
-    text(path: string | string[], params?: object): string
-    collect<T extends 'user' | 'channel'>(key: T, argv: Argv, fields?: Set<keyof Tables[T]>): Set<keyof Tables[T]>
-    execute(content: string, next?: true | Next): Promise<string>
-    execute(argv: Argv, next?: true | Next): Promise<string>
-    middleware(middleware: Middleware): () => boolean
-    prompt(timeout?: number): Promise<string>
-    prompt<T>(callback: (session: this) => Awaitable<T>, options?: PromptOptions): Promise<T>
-    suggest(options: SuggestOptions): Promise<string>
-    response?: () => Promise<Fragment>
-  }
-
-  namespace Session {
-    export const shadow: unique symbol
-
-    export interface Private extends Session {
-      [Context.filter](ctx: Context): boolean
-      _stripped: Stripped
-      _queuedTasks: Task[]
-      _queuedTimeout: NodeJS.Timeout
-      _next(): void
-      _stripNickname(content: string): string
-      _observeChannelLike<T extends Channel.Field = never>(channelId: string, fields: Iterable<T>): Promise<any>
-    }
-  }
-}
 
 export interface PromptOptions {
   timeout?: number
@@ -90,17 +39,40 @@ interface Task {
   reject(reason: any): void
 }
 
-defineProperty(Session, 'shadow', Symbol.for('session.shadow'))
+export type FieldCollector<T extends keyof Tables, K = keyof Tables[T], A extends any[] = any[], O = {}> =
+  | Iterable<K>
+  | ((argv: Argv<never, never, A, O>, fields: Set<keyof Tables[T]>) => void)
 
-const { initialize } = Session.prototype
+function collectFields<T extends keyof Tables>(argv: Argv, collectors: FieldCollector<T>[], fields: Set<any>) {
+  for (const collector of collectors) {
+    if (typeof collector === 'function') {
+      collector(argv, fields)
+      continue
+    }
+    for (const field of collector) {
+      fields.add(field)
+    }
+  }
+  return fields
+}
 
-extend(Session.prototype as Session.Private, {
-  [Context.filter](ctx: Context) {
-    return ctx.filter(this)
-  },
+export class Session<U extends User.Field = never, G extends Channel.Field = never, C extends Context = Context> extends satori.Session<C> {
+  static shadow = Symbol.for('session.shadow')
 
-  initialize() {
-    initialize.call(this)
+  argv?: Argv<U, G>
+  user?: User.Observed<U>
+  channel?: Channel.Observed<G>
+  guild?: Channel.Observed<G>
+  permissions?: string[]
+  scope?: string
+  response?: () => Promise<Fragment>
+
+  private _stripped: Stripped
+  private _queuedTasks: Task[]
+  private _queuedTimeout: NodeJS.Timeout
+
+  constructor(bot: satori.Bot<C>, event: Partial<Universal.Event>) {
+    super(bot, event)
     defineProperty(this, 'scope', null)
     defineProperty(this, 'user', null)
     defineProperty(this, 'channel', null)
@@ -109,60 +81,20 @@ extend(Session.prototype as Session.Private, {
     defineProperty(this, '_stripped', null)
     defineProperty(this, '_queuedTasks', [])
     defineProperty(this, '_queuedTimeout', null)
-  },
+  }
 
-  get username() {
-    const defaultName: string = this.user && this.user['name']
-      ? this.user['name']
-      : this.author.nick || this.author.name || this.userId
-    return this.app.chain('appellation', defaultName, this)
-  },
+  resolve<T, R extends any[]>(source: T | Eval.Expr | ((session: this, ...args: R) => T), ...args: R):
+    | T extends Eval.Expr ? Eval<T>
+    : T extends (...args: any[]) => any ? ReturnType<T>
+    : T
 
-  async send(fragment, options = {}) {
-    if (!fragment) return
-    options.session = this
-    return this.bot.sendMessage(this.channelId, fragment, this.guildId, options).catch<string[]>((error) => {
-      logger.warn(error)
-      return []
-    })
-  },
-
-  cancelQueued(delay = this.app.config.delay.cancel) {
-    clearTimeout(this._queuedTimeout)
-    this._queuedTasks = []
-    this._queuedTimeout = setTimeout(() => this._next(), delay)
-  },
-
-  _next() {
-    const task = this._queuedTasks.shift()
-    if (!task) {
-      this._queuedTimeout = null
-      return
-    }
-    this.send(task.content).then(task.resolve, task.reject)
-    this._queuedTimeout = setTimeout(() => this._next(), task.delay)
-  },
-
-  async sendQueued(content, delay?: number) {
-    const text = h.normalize(content).join('')
-    if (!text) return
-    if (isNullable(delay)) {
-      const { message, character } = this.app.config.delay
-      delay = Math.max(message, character * text.length)
-    }
-    return new Promise<string[]>((resolve, reject) => {
-      this._queuedTasks.push({ content, delay, resolve, reject })
-      if (!this._queuedTimeout) this._next()
-    })
-  },
-
-  resolve(source, ...params) {
+  resolve(source: any, ...params: any[]) {
     if (typeof source === 'function') {
       return Reflect.apply(source, null, [this, ...params])
     }
     if (!isEvalExpr(source)) return source
     return executeEval({ _: this }, source)
-  },
+  }
 
   _stripNickname(content: string) {
     if (content.startsWith('@')) content = content.slice(1)
@@ -173,28 +105,28 @@ extend(Session.prototype as Session.Private, {
       if (!capture) continue
       return rest.slice(capture[0].length)
     }
-  },
+  }
 
+  /** @deprecated */
   get parsed() {
     return this.stripped
-  },
+  }
 
   get stripped() {
-    const self = this as Session.Private
-    if (self._stripped) return self._stripped
-    if (!self.elements) return {} as Stripped
+    if (this._stripped) return this._stripped
+    if (!this.elements) return {} as Stripped
 
     // strip mentions
     let atSelf = false, appel = false
     let hasAt = false
-    const elements = self.elements.slice()
+    const elements = this.elements.slice()
     while (elements[0]?.type === 'at') {
       const { attrs } = elements.shift()
-      if (attrs.id === self.selfId) {
+      if (attrs.id === this.selfId) {
         atSelf = appel = true
       }
       // quote messages may contain mentions
-      if (self.quote?.user?.id && self.quote.user.id !== attrs.id) {
+      if (this.quote?.user?.id && this.quote.user.id !== attrs.id) {
         hasAt = true
       }
       // @ts-ignore
@@ -206,17 +138,62 @@ extend(Session.prototype as Session.Private, {
     let content = elements.join('').trim()
     if (!hasAt) {
       // strip nickname
-      const result = self._stripNickname(content)
+      const result = this._stripNickname(content)
       if (result) {
         appel = true
         content = result
       }
     }
 
-    return self._stripped = { hasAt, content, appel, atSelf, prefix: null }
-  },
+    return this._stripped = { hasAt, content, appel, atSelf, prefix: null }
+  }
 
-  async getChannel(id = this.channelId, fields = []) {
+  get username() {
+    const defaultName: string = this.user && this.user['name']
+      ? this.user['name']
+      : this.author.nick || this.author.name || this.userId
+    return this.app.chain('appellation', defaultName, this)
+  }
+
+  async send(fragment: Fragment, options: Universal.SendOptions = {}) {
+    if (!fragment) return
+    options.session = this
+    return this.bot.sendMessage(this.channelId, fragment, this.guildId, options).catch<string[]>((error) => {
+      logger.warn(error)
+      return []
+    })
+  }
+
+  cancelQueued(delay = this.app.config.delay.cancel) {
+    clearTimeout(this._queuedTimeout)
+    this._queuedTasks = []
+    this._queuedTimeout = setTimeout(() => this._next(), delay)
+  }
+
+  _next() {
+    const task = this._queuedTasks.shift()
+    if (!task) {
+      this._queuedTimeout = null
+      return
+    }
+    this.send(task.content).then(task.resolve, task.reject)
+    this._queuedTimeout = setTimeout(() => this._next(), task.delay)
+  }
+
+  async sendQueued(content: Fragment, delay?: number) {
+    const text = h.normalize(content).join('')
+    if (!text) return
+    if (isNullable(delay)) {
+      const { message, character } = this.app.config.delay
+      delay = Math.max(message, character * text.length)
+    }
+    return new Promise<string[]>((resolve, reject) => {
+      this._queuedTasks.push({ content, delay, resolve, reject })
+      if (!this._queuedTimeout) this._next()
+    })
+  }
+
+  async getChannel<K extends Channel.Field = never>(id = this.channelId, fields: K[] = []) {
     const { app, platform, guildId } = this
     if (!fields.length) return { platform, id, guildId } as Channel
     const channel = await app.database.getChannel(platform, id, fields)
@@ -229,16 +206,14 @@ extend(Session.prototype as Session.Private, {
       Object.assign(channel, { platform, id, guildId, $detached: true })
       return channel
     }
-  },
+  }
 
-  /** 在当前会话上绑定一个可观测频道实例 */
-  async _observeChannelLike(channelId, fields = []) {
+  async _observeChannelLike<K extends Channel.Field = never>(channelId: string, fields: Iterable<K> = []) {
     const fieldSet = new Set<Channel.Field>(fields)
     const { platform } = this
     const key = `${platform}:${channelId}`
 
-    // 如果存在满足可用的缓存数据，使用缓存代替数据获取
-    let cache = this.app.$internal._channelCache.get(this.id, key)
+    let cache = this.app.$processor._channelCache.get(this.id, key)
     if (cache) {
       for (const key in cache) {
         fieldSet.delete(key as any)
@@ -246,19 +221,18 @@ extend(Session.prototype as Session.Private, {
       if (!fieldSet.size) return cache
     }
 
-    // 绑定一个新的可观测频道实例
     const data = await this.getChannel(channelId, [...fieldSet])
-    cache = this.app.$internal._channelCache.get(this.id, key)
+    cache = this.app.$processor._channelCache.get(this.id, key)
     if (cache) {
       cache.$merge(data)
     } else {
       cache = observe(data, diff => this.app.database.setChannel(platform, channelId, diff as any), `channel ${key}`)
-      this.app.$internal._channelCache.set(this.id, key, cache)
+      this.app.$processor._channelCache.set(this.id, key, cache)
     }
     return cache
-  },
+  }
 
-  async observeChannel(fields: Iterable<keyof Channel>) {
+  async observeChannel<T extends Channel.Field = never>(fields: Iterable<T>): Promise<Channel.Observed<T | G>> {
     const tasks = [this._observeChannelLike(this.channelId, fields)]
     if (this.channelId !== this.guildId) {
       tasks.push(this._observeChannelLike(this.guildId, fields))
@@ -267,9 +241,9 @@ extend(Session.prototype as Session.Private, {
     this.guild = guild
     this.channel = channel
     return channel
-  },
+  }
 
-  async getUser(userId = this.userId, fields = []) {
+  async getUser<K extends User.Field = never>(userId = this.userId, fields: K[] = []) {
     const { app, platform } = this
     if (!fields.length) return {} as User
     const user = await app.database.getUser(platform, userId, fields)
@@ -283,23 +257,20 @@ extend(Session.prototype as Session.Private, {
       Object.assign(user, { ...data, $detached: true })
       return user
     }
-  },
+  }
 
-  /** 在当前会话上绑定一个可观测用户实例 */
-  async observeUser(fields: Iterable<keyof User>) {
+  async observeUser<T extends User.Field = never>(fields: Iterable<T>): Promise<User.Observed<T | U>> {
     const fieldSet = new Set<User.Field>(fields)
     const { userId } = this
 
-    // 如果存在满足可用的缓存数据，使用缓存代替数据获取
-    let cache = this.user || this.app.$internal._userCache.get(this.id, this.uid)
+    let cache = this.user || this.app.$processor._userCache.get(this.id, this.uid)
     if (cache) {
       for (const key in cache) {
         fieldSet.delete(key as any)
       }
-      if (!fieldSet.size) return this.user = cache
+      if (!fieldSet.size) return this.user = cache as any
     }
 
-    // 匿名消息不会写回数据库
     if (this.author?.['anonymous']) {
       const fallback = this.app.model.tables.user.create()
       fallback.authority = this.resolve(this.app.config.autoAuthorize)
@@ -307,19 +278,18 @@ extend(Session.prototype as Session.Private, {
       return this.user = user
     }
 
-    // 绑定一个新的可观测用户实例
     const data = await this.getUser(userId, [...fieldSet])
-    cache = this.user || this.app.$internal._userCache.get(this.id, this.uid)
+    cache = this.user || this.app.$processor._userCache.get(this.id, this.uid)
     if (cache) {
       cache.$merge(data)
     } else {
       cache = observe(data, diff => this.app.database.setUser(this.platform, userId, diff as any), `user ${this.uid}`)
-      this.app.$internal._userCache.set(this.id, this.uid, cache as any)
+      this.app.$processor._userCache.set(this.id, this.uid, cache as any)
     }
     return this.user = cache as any
-  },
+  }
 
-  async withScope(scope, callback: () => any) {
+  async withScope(scope: string, callback: () => Awaitable<string>): Promise<string> {
     const oldScope = this.scope
     try {
       this.scope = scope
@@ -333,22 +303,22 @@ extend(Session.prototype as Session.Private, {
     } finally {
       this.scope = oldScope
     }
-  },
+  }
 
-  resolveScope(path) {
+  resolveScope(path: string) {
     if (!path.startsWith('.')) return path
     if (!this.scope) {
       this.app.logger('i18n').warn(new Error('missing scope'))
       return ''
     }
     return this.scope + path
-  },
+  }
 
-  text(path, params = {}) {
+  text(path: string | string[], params: object = {}) {
     return this.i18n(path, params).join('')
-  },
+  }
 
-  i18n(path, params = {}) {
+  i18n(path: string | string[], params: object = {}) {
     const locales: string[] = [
       ...(this.channel as Channel.Observed)?.locales || [],
       ...(this.guild as Channel.Observed)?.locales || [],
@@ -361,9 +331,9 @@ extend(Session.prototype as Session.Private, {
     locales.unshift(...this.locales || [])
     const paths = makeArray(path).map((path) => this.resolveScope(path))
     return this.app.i18n.render(locales, paths, params)
-  },
+  }
 
-  collect(key: 'user' | 'channel', argv: Argv, fields = new Set()) {
+  collect<T extends 'user' | 'channel'>(key: T, argv: Argv, fields = new Set<keyof Tables[T]>()): Set<keyof Tables[T]> {
     const collect = (argv: Argv) => {
       argv.session = this
       if (argv.tokens) {
@@ -373,14 +343,16 @@ extend(Session.prototype as Session.Private, {
       }
       if (!this.app.$commander.resolveCommand(argv)) return
       this.app.emit(argv.session, `command/before-attach-${key}` as any, argv, fields)
-      collectFields(argv, Command[`_${key}Fields`] as any, fields)
-      collectFields(argv, argv.command[`_${key}Fields`] as any, fields)
+      collectFields(argv, Command[`_${key}Fields` as any], fields)
+      collectFields(argv, argv.command[`_${key}Fields` as any], fields)
     }
     collect(argv)
     return fields
-  },
+  }
 
-  async execute(argv, next) {
+  execute(content: string, next?: true | Next): Promise<string>
+  execute(argv: Argv, next?: true | Next): Promise<string>
+  async execute(argv: any, next?: true | Next) {
     if (typeof argv === 'string') argv = Argv.parse(argv)
 
     argv.session = this
@@ -433,18 +405,20 @@ extend(Session.prototype as Session.Private, {
       await this.send(result)
       return ''
     })
-  },
+  }
 
-  middleware(middleware) {
+  middleware(middleware: Middleware<this>) {
     const id = this.fid
-    return this.app.middleware(async (session, next) => {
+    return this.app.middleware<this>(async (session, next) => {
       if (id && session.fid !== id) return next()
       return middleware(session, next)
     }, true)
-  },
+  }
 
+  prompt(timeout?: number): Promise<string>
+  prompt<T>(callback: (session: this) => Awaitable<T>, options?: PromptOptions): Promise<T>
   prompt(...args: any[]) {
-    const callback: (session: Session<Context>) => any = typeof args[0] === 'function'
+    const callback: (session: this) => any = typeof args[0] === 'function'
       ? args.shift()
       : (session) => {
         // Trim leading <at> element
@@ -470,7 +444,7 @@ extend(Session.prototype as Session.Private, {
         resolve(undefined)
       }, options.timeout ?? this.app.config.delay.prompt)
     })
-  },
+  }
 
   async suggest(options: SuggestOptions) {
     let { expect, filter, prefix = '' } = options
@@ -505,22 +479,5 @@ extend(Session.prototype as Session.Private, {
         return expect[0]
       }
     }, options)
-  },
-})
-
-export type FieldCollector<T extends keyof Tables, K = keyof Tables[T], A extends any[] = any[], O = {}> =
-  | Iterable<K>
-  | ((argv: Argv<never, never, A, O>, fields: Set<keyof Tables[T]>) => void)
-
-function collectFields<T extends keyof Tables>(argv: Argv, collectors: FieldCollector<T>[], fields: Set<any>) {
-  for (const collector of collectors) {
-    if (typeof collector === 'function') {
-      collector(argv, fields)
-      continue
-    }
-    for (const field of collector) {
-      fields.add(field)
-    }
   }
-  return fields
 }

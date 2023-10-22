@@ -1,16 +1,18 @@
 import { Awaitable, defineProperty } from 'cosmokit'
-import { Bot, Context, h, Schema, Session, Universal } from '@satorijs/core'
+import { Bot, h, Schema, Universal } from '@satorijs/core'
 import { Command } from './command'
 import { Argv } from './parser'
 import validate from './validate'
 import { Channel, User } from '../database'
 import { Computed } from '../filter'
+import { Context } from '../context'
+import { Session } from '../session'
 
 export * from './command'
 export * from './parser'
 export * from './validate'
 
-declare module '@satorijs/core' {
+declare module '../context' {
   interface Context {
     $commander: Commander
     command<D extends string>(def: D, config?: Command.Config): Command<never, never, Argv.ArgumentType<D>>
@@ -18,7 +20,7 @@ declare module '@satorijs/core' {
   }
 
   interface Events {
-    'before-parse'(content: string, session: Session<Context>): Argv
+    'before-parse'(content: string, session: Session): Argv
     'command-added'(command: Command): void
     'command-removed'(command: Command): void
     'command-error'(argv: Argv, error: any): void
@@ -35,9 +37,6 @@ export namespace Commander {
 }
 
 export class Commander extends Map<string, Command> {
-  static readonly key = '$commander'
-  static readonly methods = ['command']
-
   _commandList: Command[] = []
   _commands = this
 
@@ -139,13 +138,13 @@ export class Commander extends Map<string, Command> {
       .map(cmd => cmd.toJSON()))
   }
 
-  private _resolvePrefixes(session: Session<Context>) {
+  private _resolvePrefixes(session: Session) {
     const value = session.resolve(this.config.prefix)
     const result = Array.isArray(value) ? value : [value || '']
     return result.map(source => h.escape(source))
   }
 
-  available(session: Session<Context>) {
+  available(session: Session) {
     return this._commandList
       .filter(cmd => cmd.match(session))
       .flatMap(cmd => Object.keys(cmd._aliases))
@@ -256,5 +255,3 @@ export class Commander extends Map<string, Command> {
     return parent
   }
 }
-
-Context.service(Commander.key, Commander)

@@ -40,7 +40,6 @@
     "discord",
     "telegram",
     "koishi",
-    "onebot",
     "framework"
   ],
   "dependencies": {
@@ -49,7 +48,6 @@
     "@koishijs/utils": "^7.1.0",
     "@satorijs/satori": "^3.0.0-rc.1",
     "cac": "^6.7.14",
-    "kleur": "^4.1.5",
-    "ns-require": "^1.1.4"
+    "kleur": "^4.1.5"
   }
 }

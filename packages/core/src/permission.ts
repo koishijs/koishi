@@ -1,6 +1,8 @@
-import { Context, Logger, Session } from '@satorijs/core'
+import { Logger } from '@satorijs/core'
 import { Awaitable, Dict, remove } from 'cosmokit'
 import { Computed } from './filter'
+import { Session } from './session'
+import { Context } from './context'
 
 const logger = new Logger('app')
 
@@ -74,7 +76,7 @@ export class Permissions {
   _providers: Dict<Permissions.ProvideCallback> = Object.create(null)
 
   constructor(public ctx: Context) {
-    this.provide('authority.*', (name, { user }: Partial<Session<Context, 'authority'>>) => {
+    this.provide('authority.*', (name, { user }: Partial<Session<'authority'>>) => {
       const value = +name.slice(10)
       return !user || user.authority >= value
     })
@@ -83,7 +85,7 @@ export class Permissions {
       return session.bot?.checkPermission(name, session)
     })
 
-    this.provide('*', (name, session: Partial<Session<Context, 'permissions', 'permissions'>>) => {
+    this.provide('*', (name, session: Partial<Session<'permissions', 'permissions'>>) => {
       return session.permissions?.includes(name)
         || session.user?.permissions?.includes(name)
         || session.channel?.permissions?.includes(name)
@@ -184,5 +186,3 @@ export class Permissions {
     return true
   }
 }
-
-Context.service('permissions', Permissions)

@@ -1,25 +1,26 @@
 import { coerce, makeArray, Random } from '@koishijs/utils'
 import { Awaitable, defineProperty, Dict, Time } from 'cosmokit'
-import { Context, Fragment, h, Session } from '@satorijs/core'
-import { Computed } from './filter'
+import { Fragment, h } from '@satorijs/core'
+import { Context } from './context'
 import { Channel, User } from './database'
+import { Session } from './session'
 
-declare module '@satorijs/core' {
+declare module './context' {
   interface Context {
-    $internal: Processor
-    middleware(middleware: Middleware, prepend?: boolean): () => boolean
+    $processor: Processor
+    middleware<S extends Session = Session>(middleware: Middleware<S>, prepend?: boolean): () => boolean
     match(pattern: string | RegExp, response: Fragment, options?: Matcher.Options & { i18n?: false }): () => boolean
     match(pattern: string, response: string, options: Matcher.Options & { i18n: true }): () => boolean
   }
 
   interface Events {
-    'before-attach-channel'(session: Session<Context>, fields: Set<Channel.Field>): void
-    'attach-channel'(session: Session<Context>): Awaitable<void | boolean>
-    'before-attach-user'(session: Session<Context>, fields: Set<User.Field>): void
-    'attach-user'(session: Session<Context>): Awaitable<void | boolean>
-    'before-attach'(session: Session<Context>): void
-    'attach'(session: Session<Context>): void
-    'middleware'(session: Session<Context>): void
+    'before-attach-channel'(session: Session, fields: Set<Channel.Field>): void
+    'attach-channel'(session: Session): Awaitable<void | boolean>
+    'before-attach-user'(session: Session, fields: Set<User.Field>): void
+    'attach-user'(session: Session): Awaitable<void | boolean>
+    'before-attach'(session: Session): void
+    'attach'(session: Session): void
+    'middleware'(session: Session): void
   }
 }
 
@@ -30,7 +31,7 @@ export class SessionError extends Error {
 }
 
 export type Next = (next?: Next.Callback) => Promise<void | Fragment>
-export type Middleware = (session: Session<Context>, next: Next) => Awaitable<void | Fragment>
+export type Middleware<S extends Session = Session> = (session: S, next: Next) => Awaitable<void | Fragment>
 
 export namespace Next {
   export const MAX_DEPTH = 64
@@ -50,7 +51,7 @@ export interface Matcher extends Matcher.Options {
 }
 
 export namespace Matcher {
-  export type Response = Fragment | ((session: Session<Context>, params: [string, ...string[]]) => Awaitable<Fragment>)
+  export type Response = Fragment | ((session: Session, params: [string, ...string[]]) => Awaitable<Fragment>)
 
   export interface Options {
     i18n?: boolean
@@ -60,23 +61,14 @@ export namespace Matcher {
   }
 }
 
-export namespace Processor {
-  export interface Config {
-    nickname?: Computed<string[]>
-    prefix?: Computed<string[]>
-  }
-}
-
 export class Processor {
-  static readonly methods = ['middleware', 'match']
-
   _hooks: [Context, Middleware][] = []
   _sessions: Dict<Session> = Object.create(null)
   _userCache = new SharedCache<User.Observed<keyof User>>()
   _channelCache = new SharedCache<Channel.Observed<keyof Channel>>()
   _matchers = new Set<Matcher>()
 
-  constructor(private ctx: Context, private config: Processor.Config) {
+  constructor(private ctx: Context) {
     defineProperty(this, Context.current, ctx)
 
     // bind built-in event listeners
@@ -156,7 +148,7 @@ export class Processor {
     })
   }
 
-  private _executeMatcher(session: Session<Context>, matcher: Matcher) {
+  private _executeMatcher(session: Session, matcher: Matcher) {
     const { stripped, quote } = session
     const { appel, context, i18n, regex, fuzzy, pattern, response } = matcher
     if ((appel || stripped.hasAt) && !stripped.appel) return
@@ -203,7 +195,7 @@ export class Processor {
     }
   }
 
-  private async attach(session: Session<Context>, next: Next) {
+  private async attach(session: Session, next: Next) {
     this.ctx.emit(session, 'before-attach', session)
 
     if (this.ctx.database) {
@@ -241,7 +233,7 @@ export class Processor {
     return next()
   }
 
-  private async _handleMessage(session: Session<Context>) {
+  private async _handleMessage(session: Session) {
     // ignore self messages
     if (session.selfId === session.userId) return
 
@@ -291,8 +283,6 @@ export class Processor {
     }
   }
 }
-
-Context.service('$internal', Processor)
 
 export namespace SharedCache {
   export interface Entry<T> {

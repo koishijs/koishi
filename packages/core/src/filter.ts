@@ -1,7 +1,8 @@
 import { defineProperty } from 'cosmokit'
-import { Context, Session } from '@satorijs/core'
 import { Eval } from '@minatojs/core'
 import { Channel, User } from './database'
+import { Context } from './context'
+import { Session } from './session'
 
 export namespace Computed {
   export interface Options {
@@ -10,10 +11,10 @@ export namespace Computed {
   }
 }
 
-export type Computed<T> = T | Eval.Expr<T> | ((session: Session<Context, never, never>) => T)
-export type Filter = (session: Session<Context, never, never>) => boolean
+export type Computed<T> = T | Eval.Expr<T> | ((session: Session) => T)
+export type Filter = (session: Session) => boolean
 
-declare module '@satorijs/core' {
+declare module './context' {
   interface Context {
     $filter: FilterService
     filter: Filter
@@ -38,11 +39,6 @@ function property<K extends keyof Session>(ctx: Context, key: K, ...values: Sess
 }
 
 export class FilterService {
-  static readonly methods = [
-    'any', 'never', 'union', 'intersect', 'exclude',
-    'user', 'self', 'guild', 'channel', 'platform', 'private',
-  ]
-
   constructor(private app: Context) {
     defineProperty(this, Context.current, app)
 
@@ -109,5 +105,3 @@ export class FilterService {
     return property(this.caller.exclude(property(this.caller, 'guildId')), 'userId', ...values)
   }
 }
-
-Context.service('$filter', FilterService)

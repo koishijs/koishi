@@ -1,16 +1,17 @@
 import { sleep } from '@koishijs/utils'
 import { defineProperty, Dict } from 'cosmokit'
 import { Adapter, Bot, Fragment } from '@satorijs/core'
+import { Context } from './context'
 
 declare module '@satorijs/core' {
   interface Bot {
     /** @deprecated */
     getGuildMemberMap(guildId: string): Promise<Dict<string>>
-    broadcast(channels: (string | [string, string] | Session<Context>)[], content: Fragment, delay?: number): Promise<string[]>
+    broadcast(channels: (string | [string, string] | Session)[], content: Fragment, delay?: number): Promise<string[]>
   }
 
   interface Events {
-    'appellation'(name: string, session: Session<Context>): string
+    'appellation'(name: string, session: Session): string
   }
 }
 
@@ -26,7 +27,7 @@ Bot.prototype.getGuildMemberMap = async function getGuildMemberMap(this: Bot, gu
   return result
 }
 
-Bot.prototype.broadcast = async function broadcast(this: Bot, channels, content, delay = this.ctx.root.config.delay.broadcast) {
+Bot.prototype.broadcast = async function broadcast(this: Bot<Context>, channels, content, delay = this.ctx.root.config.delay.broadcast) {
   const ids: string[] = []
   for (let index = 0; index < channels.length; index++) {
     if (index && delay) await sleep(delay)

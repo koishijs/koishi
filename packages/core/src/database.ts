@@ -1,10 +1,10 @@
 import * as utils from '@koishijs/utils'
 import { defineProperty, Dict, MaybeArray } from 'cosmokit'
 import { Database, Driver, Update } from '@minatojs/core'
-import { Context, Fragment, Schema, Universal } from '@satorijs/core'
-import { Plugin } from './context'
+import { Fragment, Schema, Universal } from '@satorijs/core'
+import { Context, Plugin } from './context'
 
-declare module '@satorijs/core' {
+declare module './context' {
   interface Events {
     'model'(name: keyof Tables): void
   }
@@ -73,8 +73,6 @@ export interface Tables {
 }
 
 export class DatabaseService extends Database<Tables> {
-  static readonly methods = ['getSelfIds', 'broadcast']
-
   constructor(protected app: Context) {
     super()
     defineProperty(this, Context.current, app)
@@ -89,7 +87,6 @@ export class DatabaseService extends Database<Tables> {
       createdAt: 'timestamp',
     }, {
       autoInc: true,
-      unique: ['name'],
     })
 
     this.extend('binding', {
@@ -222,9 +219,6 @@ DatabaseService.prototype.extend = function extend(this: DatabaseService, name, 
   })
   this.app.emit('model', name)
 }
-
-Context.service('database')
-Context.service('model', DatabaseService)
 
 export const defineDriver = <T>(constructor: Driver.Constructor<T>, schema?: Schema, prepare?: Plugin.Function<T>): Plugin.Object<T> => ({
   name: constructor.name,

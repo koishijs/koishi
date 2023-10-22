@@ -1,4 +1,4 @@
-import { Context } from '@satorijs/core'
+import { Context } from '../context'
 import { Argv } from './parser'
 
 export default function validate(ctx: Context) {

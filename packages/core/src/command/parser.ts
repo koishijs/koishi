@@ -1,11 +1,13 @@
 import { camelCase, Dict, paramCase, Time } from 'cosmokit'
 import { escapeRegExp } from '@koishijs/utils'
-import { Context, h, Session } from '@satorijs/core'
+import { h } from '@satorijs/core'
 import { Command } from './command'
 import { Channel, User } from '../database'
 import { Next } from '../middleware'
 import { PermissionConfig } from '../permission'
 import { Disposable } from 'cordis'
+import { Session } from '../session'
+import { Context } from '../context'
 
 export interface Token {
   rest?: string
@@ -22,7 +24,7 @@ export interface Argv<U extends User.Field = never, G extends Channel.Field = ne
   source?: string
   initiator?: string
   terminator?: string
-  session?: Session<Context, U, G>
+  session?: Session<U, G>
   command?: Command<U, G, A, O>
   rest?: string
   pos?: number
@@ -215,7 +217,7 @@ export namespace Argv {
     required?: boolean
   }
 
-  export type Transform<T> = (source: string, session: Session<Context, never, never>) => T
+  export type Transform<T> = (source: string, session: Session) => T
 
   export interface DomainConfig<T> {
     transform?: Transform<T>

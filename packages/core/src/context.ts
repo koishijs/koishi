@@ -1,9 +1,16 @@
-import { defineProperty, Time } from 'cosmokit'
-import { Context, Schema } from '@satorijs/core'
+import { defineProperty, Promisify, remove, Time } from 'cosmokit'
+import { Schema } from '@satorijs/core'
+import { GetEvents } from 'cordis'
+import * as satori from '@satorijs/core'
 import * as cordis from 'cordis'
-import { Computed } from './filter'
+import { Computed, FilterService } from './filter'
 import { Commander } from './command'
 import { I18n } from './i18n'
+import { Session } from './session'
+import { Processor } from './middleware'
+import { SchemaService } from './schema'
+import { Permissions } from './permission'
+import { DatabaseService } from './database'
 
 export type Plugin = cordis.Plugin<Context>
 
@@ -20,6 +27,8 @@ export type Service = cordis.Service<Context>
 
 export const Service = cordis.Service<Context>
 
+export { Adapter, Bot, Component, Element, Fragment, h, Logger, MessageEncoder, Quester, Render, Satori, Schema, segment, Universal, z } from '@satorijs/core'
+
 export { resolveConfig } from 'cordis'
 
 export type { Disposable, ScopeStatus } from 'cordis'
@@ -32,49 +41,151 @@ declare module 'cordis' {
   }
 }
 
-declare module '@satorijs/core' {
-  export interface Context {
-    envData: EnvData
-    baseDir: string
+export interface EnvData {}
+
+type OmitSubstring<S extends string, T extends string> = S extends `${infer L}${T}${infer R}` ? `${L}${R}` : never
+type BeforeEventName = OmitSubstring<keyof Events & string, 'before-'>
+type BeforeEventMap = { [E in keyof Events & string as OmitSubstring<E, 'before-'>]: Events[E] }
+
+export interface Events<C extends Context = Context> extends satori.Events<C> {}
+
+export interface Context {
+  [Context.config]: Context.Config
+  [Context.events]: Events<this>
+  [Context.session]: Session<never, never, this>
+  envData: EnvData
+  baseDir: string
+}
+
+export class Context extends satori.Context {
+  static readonly Session = Session
+
+  constructor(config: Context.Config = {}) {
+    super(config)
+    this.mixin('model', ['getSelfIds', 'broadcast'])
+    this.mixin('$processor', ['match', 'middleware'])
+    this.mixin('$filter', [
+      'any', 'never', 'union', 'intersect', 'exclude',
+      'user', 'self', 'guild', 'channel', 'platform', 'private',
+    ])
+    this.mixin('$commander', ['command'])
+    this.provide('$filter', new FilterService(this))
+    this.provide('$processor', new Processor(this))
+    this.provide('i18n', new I18n(this, this.config.i18n))
+    this.provide('schema', new SchemaService(this))
+    this.provide('permissions', new Permissions(this))
+    this.provide('database')
+    this.provide('model', new DatabaseService(this))
+    this.provide('$commander', new Commander(this, this.config))
   }
 
-  export namespace Context {
-    export interface Config extends Config.Basic, Config.Advanced {
-      i18n?: I18n.Config
-      delay?: Config.Delay
+  /** @deprecated use `ctx.root` instead */
+  get app() {
+    return this.root
+  }
+
+  /** @deprecated use `root.config` instead */
+  get options() {
+    return this.root.config
+  }
+
+  /* eslint-disable max-len */
+  waterfall<K extends keyof GetEvents<this>>(name: K, ...args: Parameters<GetEvents<this>[K]>): Promisify<ReturnType<GetEvents<this>[K]>>
+  waterfall<K extends keyof GetEvents<this>>(thisArg: ThisType<GetEvents<this>[K]>, name: K, ...args: Parameters<GetEvents<this>[K]>): Promisify<ReturnType<GetEvents<this>[K]>>
+  async waterfall(...args: [any, ...any[]]) {
+    const thisArg = typeof args[0] === 'object' ? args.shift() : null
+    const name = args.shift()
+    for (const callback of this.lifecycle.getHooks(name, thisArg)) {
+      const result = await callback.apply(thisArg, args)
+      args[0] = result
     }
+    return args[0]
+  }
 
-    export namespace Config {
-      export interface Basic extends Commander.Config {
-        nickname?: string | string[]
-        autoAssign?: Computed<boolean>
-        autoAuthorize?: Computed<number>
-        minSimilarity?: number
-      }
-
-      export interface Delay {
-        character?: number
-        message?: number
-        cancel?: number
-        broadcast?: number
-        prompt?: number
-      }
-
-      export interface Advanced {
-        maxListeners?: number
-      }
-
-      export interface Static extends Schema<Config> {
-        Basic: Schema<Basic>
-        I18n: Schema<I18n>
-        Delay: Schema<Delay>
-        Advanced: Schema<Advanced>
-      }
+  chain<K extends keyof GetEvents<this>>(name: K, ...args: Parameters<GetEvents<this>[K]>): ReturnType<GetEvents<this>[K]>
+  chain<K extends keyof GetEvents<this>>(thisArg: ThisType<GetEvents<this>[K]>, name: K, ...args: Parameters<GetEvents<this>[K]>): ReturnType<GetEvents<this>[K]>
+  chain(...args: [any, ...any[]]) {
+    const thisArg = typeof args[0] === 'object' ? args.shift() : null
+    const name = args.shift()
+    for (const callback of this.lifecycle.getHooks(name, thisArg)) {
+      const result = callback.apply(thisArg, args)
+      args[0] = result
     }
+    return args[0]
+  }
+  /* eslint-enable max-len */
+
+  before<K extends BeforeEventName>(name: K, listener: BeforeEventMap[K], append = false) {
+    const seg = (name as string).split('/')
+    seg[seg.length - 1] = 'before-' + seg[seg.length - 1]
+    return this.on(seg.join('/') as any, listener, !append)
+  }
+
+  createTimerDispose(timer: NodeJS.Timeout) {
+    const dispose = () => {
+      clearTimeout(timer)
+      if (!this.scope) return
+      return remove(this.scope.disposables, dispose)
+    }
+    this.scope.disposables.push(dispose)
+    return dispose
+  }
+
+  setTimeout(callback: (...args: any[]) => void, ms: number, ...args: any[]) {
+    const dispose = this.createTimerDispose(setTimeout(() => {
+      dispose()
+      callback()
+    }, ms, ...args))
+    return dispose
+  }
+
+  setInterval(callback: (...args: any[]) => void, ms: number, ...args: any[]) {
+    return this.createTimerDispose(setInterval(callback, ms, ...args))
   }
 }
 
-export interface EnvData {}
+Session.prototype[Context.filter] = function (this: Session, ctx: Context) {
+  return ctx.filter(this)
+}
+
+export namespace Context {
+  export interface Config extends Config.Basic, Config.Advanced {
+    i18n?: I18n.Config
+    delay?: Config.Delay
+  }
+
+  export const Config = Schema.intersect([
+    Schema.object({}),
+  ]) as Config.Static
+
+  export namespace Config {
+    export interface Basic extends Commander.Config {
+      nickname?: string | string[]
+      autoAssign?: Computed<boolean>
+      autoAuthorize?: Computed<number>
+      minSimilarity?: number
+    }
+
+    export interface Delay {
+      character?: number
+      message?: number
+      cancel?: number
+      broadcast?: number
+      prompt?: number
+    }
+
+    export interface Advanced {
+      maxListeners?: number
+    }
+
+    export interface Static extends Schema<Config> {
+      Basic: Schema<Basic>
+      I18n: Schema<I18n>
+      Delay: Schema<Delay>
+      Advanced: Schema<Advanced>
+    }
+  }
+}
 
 defineProperty(Context.Config, 'Basic', Schema.object({
   prefix: Schema.union([

@@ -1,7 +1,8 @@
 import { distance } from 'fastest-levenshtein'
 import { Dict, isNullable } from 'cosmokit'
 import { fallback, LocaleTree } from '@koishijs/i18n-utils'
-import { Context, h, Logger, Schema } from '@satorijs/core'
+import { h, Logger, Schema } from '@satorijs/core'
+import { Context } from './context'
 import zhCN from './locales/zh-CN.yml'
 import enUS from './locales/en-US.yml'
 import jaJP from './locales/ja-JP.yml'
@@ -11,7 +12,7 @@ import zhTW from './locales/zh-TW.yml'
 const logger = new Logger('i18n')
 const kTemplate = Symbol('template')
 
-declare module '@satorijs/core' {
+declare module './context' {
   interface Context {
     i18n: I18n
   }
@@ -46,8 +47,6 @@ export namespace I18n {
 }
 
 export class I18n {
-  static readonly [Context.expose] = 'i18n'
-
   _data: Dict<Dict<string>> = {}
   _presets: Dict<I18n.Renderer> = {}
 
@@ -200,5 +199,3 @@ export namespace I18n {
     ]).default('prefer-channel').description('输出语言偏好设置。'),
   }).description('国际化设置')
 }
-
-Context.service('i18n', I18n)

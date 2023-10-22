@@ -1,6 +1,7 @@
 import { Dict, remove } from 'cosmokit'
-import { Context, Schema } from '@satorijs/core'
+import { Schema } from '@satorijs/core'
 import { Computed } from './filter'
+import { Context } from './context'
 
 declare global {
   namespace Schemastery {
@@ -91,5 +92,3 @@ export class SchemaService {
     })
   }
 }
-
-Context.service('schema', SchemaService)
