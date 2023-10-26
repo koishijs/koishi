@@ -71,9 +71,7 @@ const group: Plugin.Object = {
 
     for (const name in plugins || {}) {
       if (name.startsWith('~') || name.startsWith('$')) continue
-      ctx.scope.ensure(async () => {
-        await ctx.loader.reloadPlugin(ctx, name, plugins[name])
-      })
+      ctx.loader.reloadPlugin(ctx, name, plugins[name])
     }
 
     ctx.accept((neo) => {
