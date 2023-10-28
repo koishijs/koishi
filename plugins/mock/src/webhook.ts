@@ -11,6 +11,8 @@ export namespace Webhook {
 }
 
 export class Webhook {
+  static inject = ['router']
+
   constructor(public ctx: Context) {}
 
   async head(path: string, headers?: Dict<any>) {

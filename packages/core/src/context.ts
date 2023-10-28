@@ -1,5 +1,5 @@
 import { defineProperty, Promisify, remove, Time } from 'cosmokit'
-import { Schema } from '@satorijs/core'
+import { Logger, Quester, Schema } from '@satorijs/core'
 import { GetEvents } from 'cordis'
 import * as satori from '@satorijs/core'
 import * as cordis from 'cordis'
@@ -12,26 +12,25 @@ import { SchemaService } from './schema'
 import { Permissions } from './permission'
 import { DatabaseService } from './database'
 
-export type Plugin = cordis.Plugin<Context>
-
-export namespace Plugin {
-  export type Function<T = any> = cordis.Plugin.Function<T, Context>
-  export type Constructor<T = any> = cordis.Plugin.Constructor<T, Context>
-  export type Object<S = any, T = any> = cordis.Plugin.Object<S, T, Context>
-}
-
 export type EffectScope = cordis.EffectScope<Context>
 export type ForkScope = cordis.ForkScope<Context>
 export type MainScope = cordis.MainScope<Context>
-export type Service = cordis.Service<Context>
 
-export const Service = cordis.Service<Context>
+export class Service extends cordis.Service<Context> {
+  protected logger: Logger
 
-export { Adapter, Bot, Component, Element, Fragment, h, Logger, MessageEncoder, Quester, Render, Satori, Schema, segment, Universal, z } from '@satorijs/core'
+  constructor(ctx: Context, name: string, immediate?: boolean) {
+    super(ctx, name, immediate)
+    this.logger = ctx.logger(name)
+  }
+}
+
+export { Adapter, Bot, Element, h, Logger, MessageEncoder, Messenger, Quester, Satori, Schema, segment, Universal, z } from '@satorijs/core'
+export type { Component, Fragment, Render } from '@satorijs/core'
 
 export { resolveConfig } from 'cordis'
 
-export type { Disposable, ScopeStatus } from 'cordis'
+export type { Disposable, ScopeStatus, Plugin } from 'cordis'
 
 declare module 'cordis' {
   namespace Plugin {
@@ -53,6 +52,7 @@ export interface Context {
   [Context.config]: Context.Config
   [Context.events]: Events<this>
   [Context.session]: Session<never, never, this>
+  /** @deprecated use `ctx.loader.envData` instead */
   envData: EnvData
   baseDir: string
 }
@@ -69,14 +69,14 @@ export class Context extends satori.Context {
       'user', 'self', 'guild', 'channel', 'platform', 'private',
     ])
     this.mixin('$commander', ['command'])
-    this.provide('$filter', new FilterService(this))
-    this.provide('$processor', new Processor(this))
-    this.provide('i18n', new I18n(this, this.config.i18n))
-    this.provide('schema', new SchemaService(this))
-    this.provide('permissions', new Permissions(this))
-    this.provide('database')
-    this.provide('model', new DatabaseService(this))
-    this.provide('$commander', new Commander(this, this.config))
+    this.provide('$filter', new FilterService(this), true)
+    this.provide('$processor', new Processor(this), true)
+    this.provide('i18n', new I18n(this, this.config.i18n), true)
+    this.provide('schema', new SchemaService(this), true)
+    this.provide('permissions', new Permissions(this), true)
+    this.provide('database', undefined, true)
+    this.provide('model', new DatabaseService(this), true)
+    this.provide('$commander', new Commander(this, this.config), true)
   }
 
   /** @deprecated use `ctx.root` instead */
@@ -152,6 +152,7 @@ export namespace Context {
   export interface Config extends Config.Basic, Config.Advanced {
     i18n?: I18n.Config
     delay?: Config.Delay
+    request?: Quester.Config
   }
 
   export const Config = Schema.intersect([
@@ -230,6 +231,9 @@ Context.Config.list.push(Schema.object({
   delay: Context.Config.Delay,
 }).description('延迟设置'))
 Context.Config.list.push(Context.Config.Advanced)
+Context.Config.list.push(Schema.object({
+  request: Quester.Config,
+}))
 
 // for backward compatibility
 export { Context as App }

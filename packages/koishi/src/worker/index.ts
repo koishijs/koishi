@@ -2,7 +2,8 @@ import { Context, Dict, Logger, Schema, Time } from '@koishijs/core'
 import Loader from '@koishijs/loader'
 import * as daemon from './daemon'
 import * as logger from './logger'
-import '@satorijs/satori'
+
+export * from 'koishi'
 
 declare module '@koishijs/core' {
   namespace Context {

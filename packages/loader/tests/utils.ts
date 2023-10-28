@@ -9,7 +9,7 @@ export default class TestLoader extends Loader {
     return this.data[name] ||= {
       name,
       apply: (ctx) => {
-        if (name === 'foo') throw new Error()
+        if (name === 'foo') throw new Error('error from plugin')
         ctx.on(`test/${name}` as any, jest.fn())
         ctx.accept()
       },

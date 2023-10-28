@@ -8,7 +8,7 @@ export interface Config {
 }
 
 export const name = 'bind'
-export const using = ['database'] as const
+export const inject = ['database'] as const
 export const Config: Schema<Config> = Schema.object({
   generateToken: Schema.function().hidden(),
 })

@@ -10,7 +10,7 @@ declare module 'koishi' {
 export interface Config {}
 
 export const name = 'callme'
-export const using = ['database'] as const
+export const inject = ['database'] as const
 export const Config: Schema<Config> = Schema.object({})
 
 export function apply(ctx: Context) {

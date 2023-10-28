@@ -1,5 +1,5 @@
 import { observe } from '@koishijs/utils'
-import { Awaitable, defineProperty, isNullable, makeArray } from 'cosmokit'
+import { Awaitable, isNullable, makeArray } from 'cosmokit'
 import { Fragment, h, Logger, Universal } from '@satorijs/core'
 import { Eval, executeEval, isEvalExpr } from '@minatojs/core'
 import * as satori from '@satorijs/core'
@@ -63,25 +63,13 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
   user?: User.Observed<U>
   channel?: Channel.Observed<G>
   guild?: Channel.Observed<G>
-  permissions?: string[]
+  permissions: string[] = []
   scope?: string
   response?: () => Promise<Fragment>
 
   private _stripped: Stripped
-  private _queuedTasks: Task[]
+  private _queuedTasks: Task[] = []
   private _queuedTimeout: NodeJS.Timeout
-
-  constructor(bot: satori.Bot<C>, event: Partial<Universal.Event>) {
-    super(bot, event)
-    defineProperty(this, 'scope', null)
-    defineProperty(this, 'user', null)
-    defineProperty(this, 'channel', null)
-    defineProperty(this, 'guild', null)
-    defineProperty(this, 'permissions', [])
-    defineProperty(this, '_stripped', null)
-    defineProperty(this, '_queuedTasks', [])
-    defineProperty(this, '_queuedTimeout', null)
-  }
 
   resolve<T, R extends any[]>(source: T | Eval.Expr | ((session: this, ...args: R) => T), ...args: R):
     | T extends Eval.Expr ? Eval<T>

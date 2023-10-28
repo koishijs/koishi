@@ -3,6 +3,9 @@
   "compilerOptions": {
     "rootDir": "src",
     "outDir": "lib",
+    "paths": {
+      "koishi": ["./src"],
+    },
   },
   "include": [
     "src",

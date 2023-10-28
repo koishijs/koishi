@@ -63,7 +63,7 @@ const kUpdate = Symbol('update')
 
 const logger = new Logger('app')
 
-const group: Plugin.Object = {
+const group: Plugin.Object<Context> = {
   name: 'group',
   reusable: true,
   apply(ctx, plugins) {
@@ -286,12 +286,6 @@ export abstract class Loader {
     fork.parent.filter = (session) => {
       return parent.filter(session) && (isNullable(filter) || session.resolve(filter))
     }
-    const service = 'plugin:' + name
-    Context.service(service)
-    fork.runtime.ctx[service] = fork.runtime
-    fork.runtime.disposables.push(() => {
-      this.app[service] = null
-    })
     return fork
   }
 
@@ -336,8 +330,8 @@ export abstract class Loader {
   async createApp() {
     new Logger('app').info('%C', `Koishi/${version}`)
     const app = this.app = new Context(this.interpolate(this.config))
-    app.provide('loader', this)
-    app.baseDir = this.baseDir
+    app.provide('loader', this, true)
+    app.provide('baseDir', this.baseDir, true)
     app.envData = this.envData
     app.scope[Loader.kRecord] = Object.create(null)
     const fork = await this.reloadPlugin(app, 'group:entry', this.config.plugins)
@@ -368,9 +362,9 @@ export abstract class Loader {
       this.writeConfig()
     })
 
-    if (app.envData.message) {
-      const { sid, channelId, guildId, content } = app.envData.message
-      app.envData.message = null
+    if (this.envData.message) {
+      const { sid, channelId, guildId, content } = this.envData.message
+      this.envData.message = null
       const dispose = app.on('bot-status-updated', (bot) => {
         if (bot.sid !== sid || bot.status !== Universal.Status.ONLINE) return
         dispose()
