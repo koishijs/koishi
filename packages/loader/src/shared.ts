@@ -61,8 +61,6 @@ function separate(source: any, isGroup = false) {
 
 const kUpdate = Symbol('update')
 
-const logger = new Logger('app')
-
 const group: Plugin.Object<Context> = {
   name: 'group',
   reusable: true,
@@ -101,6 +99,7 @@ const writable = {
 }
 
 export abstract class Loader {
+  static readonly ancestor = Symbol.for('koishi.loader.ancestor')
   static readonly kRecord = Symbol.for('koishi.loader.record')
   static readonly exitCode = 51
   static readonly extensions = new Set(Object.keys(writable))
@@ -126,7 +125,7 @@ export abstract class Loader {
   public cache: Dict<string> = Object.create(null)
   public prolog: Logger.Record[] = []
 
-  private store = new WeakMap<Plugin, string>()
+  private store = new WeakMap<any, string>()
 
   abstract import(name: string): Promise<any>
   abstract fullReload(code?: number): void
@@ -271,7 +270,6 @@ export abstract class Loader {
       fork.update(config)
     } else {
       if (!this.isTruthyLike(meta.$if)) return
-      logger.info(`apply plugin %c`, key)
       const ctx = parent.extend()
       if (name === 'group') {
         fork = ctx.plugin(group, config)
@@ -279,6 +277,8 @@ export abstract class Loader {
         fork = await this.forkPlugin(name, config, ctx)
       }
       if (!fork) return
+      fork.ctx.logger('loader').info(`apply plugin %c`, key)
+      ctx[Loader.ancestor] = fork.uid
       fork.alias = key.slice(name.length + 1)
       parent.scope[Loader.kRecord][key] = fork
     }
@@ -292,9 +292,9 @@ export abstract class Loader {
   unloadPlugin(ctx: Context, key: string) {
     const fork = ctx.scope[Loader.kRecord][key]
     if (fork) {
+      fork.ctx.logger('loader').info(`unload plugin %c`, key)
       fork.dispose()
       delete ctx.scope[Loader.kRecord][key]
-      logger.info(`unload plugin %c`, key)
     }
   }
 
@@ -346,8 +346,8 @@ export abstract class Loader {
     })
 
     app.on('internal/update', (fork) => {
-      const name = this.getRefName(fork)
-      if (name) logger.info(`reload plugin %c`, name)
+      const key = this.getRefName(fork)
+      if (key) fork.ctx.logger('loader').info(`reload plugin %c`, key)
     })
 
     app.on('internal/before-update', (fork, config) => {

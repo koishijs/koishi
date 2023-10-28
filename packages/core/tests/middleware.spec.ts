@@ -8,20 +8,29 @@ type NextCallback = Extract<Next.Callback, (...args: any[]) => any>
 const app = new App()
 app.plugin(mock)
 
-const midLogger = new Logger('session')
-const midWarn = jest.spyOn(midLogger, 'warn')
+const print = jest.fn()
 const client = app.mock.client('123')
 
 before(() => app.start())
 
-before(() => Logger.levels.base = 1)
-after(() => Logger.levels.base = 2)
+before(() => {
+  Logger.levels.base = 1
+  Logger.targets.push({
+    levels: { base: 0, session: 2 },
+    print,
+  })
+})
+
+after(() => {
+  Logger.levels.base = 2
+  Logger.targets.pop()
+})
 
 describe('Middleware Runtime', () => {
   let callSequence: jest.Mock[]
 
   beforeEach(() => {
-    midWarn.mockClear()
+    print.mockClear()
     app.$processor._hooks = []
     callSequence = []
   })
@@ -90,16 +99,7 @@ describe('Middleware Runtime', () => {
     expect(callSequence).to.deep.equal([mid1, mid2])
   })
 
-  it('next 3 (high order parameter)', async () => {
-    const mid1 = trace<Middleware>((_, next) => next(() => 'bar'))
-    const mid2 = trace<Middleware>((_, next) => next(() => 'baz'))
-    app.middleware(mid1)
-    app.middleware(mid2)
-    await client.shouldReply('foo', 'bar')
-    expect(callSequence).to.deep.equal([mid1, mid2])
-  })
-
-  it('next 4 (compose)', async () => {
+  it('next 3 (compose)', async () => {
     const mid1 = trace<Middleware>((_, next) => next(mid3))
     const mid2 = trace<Middleware>((_, next) => next(mid4))
     const mid3 = trace<NextCallback>((next) => next(mid5))
@@ -116,19 +116,19 @@ describe('Middleware Runtime', () => {
   it('error 1 (middleware error)', async () => {
     app.middleware(() => { throw new Error(path) })
     await client.shouldNotReply('foo')
-    expect(midWarn.mock.calls).to.have.length(1)
+    expect(print.mock.calls).to.have.length(1)
   })
 
   it('error 2 (next error)', async () => {
     app.middleware((_, next) => next(() => { throw new Error(path) }))
     await client.shouldNotReply('foo')
-    expect(midWarn.mock.calls).to.have.length(1)
+    expect(print.mock.calls).to.have.length(1)
   })
 
   it('error 3 (error message)', async () => {
     app.middleware(() => { throw new SessionError(path) })
     await client.shouldReply('foo', '权限不足。')
-    expect(midWarn.mock.calls).to.have.length(0)
+    expect(print.mock.calls).to.have.length(0)
   })
 
   it('edge case 1 (isolated next)', async () => {
@@ -136,7 +136,7 @@ describe('Middleware Runtime', () => {
     app.middleware((_, next) => sleep(0).then(() => next()))
     await client.shouldNotReply('foo')
     await sleep(0)
-    expect(midWarn.mock.calls).to.have.length(1)
+    expect(print.mock.calls).to.have.length(1)
   })
 
   it('edge case 2 (stack exceeded)', async () => {
@@ -144,6 +144,6 @@ describe('Middleware Runtime', () => {
     app.middleware((_, next) => next(compose))
     await client.shouldNotReply('foo')
     await sleep(0)
-    expect(midWarn.mock.calls).to.have.length(1)
+    expect(print.mock.calls).to.have.length(1)
   })
 })

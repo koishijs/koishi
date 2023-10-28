@@ -9,10 +9,20 @@ import * as jest from 'jest-mock'
 use(shape)
 use(promise)
 
-const logger = new Logger('command')
+const print = jest.fn()
 
-before(() => logger.level = 1)
-after(() => logger.level = 2)
+before(() => {
+  Logger.levels.base = 1
+  Logger.targets.push({
+    levels: { base: 0, command: 2 },
+    print,
+  })
+})
+
+after(() => {
+  Logger.levels.base = 2
+  Logger.targets.pop()
+})
 
 describe('Command API', () => {
   describe('Register Commands', () => {
@@ -160,13 +170,12 @@ describe('Command API', () => {
     const app = new App()
     app.plugin(mock)
     const session = app.mock.session({})
-    const warn = jest.spyOn(logger, 'warn')
     const next = jest.fn(Next.compose)
 
     let command: Command
     beforeEach(() => {
       command = app.command('test')
-      warn.mockClear()
+      print.mockClear()
       next.mockClear()
     })
     afterEach(() => command?.dispose())
@@ -233,8 +242,8 @@ describe('Command API', () => {
       })
 
       await expect(command.execute({ session }, next)).eventually.to.equal('乌拉！')
-      expect(warn.mock.calls).to.have.length(1)
-      expect(warn.mock.calls[0][0]).to.match(/^test\nError: message 1/)
+      expect(print.mock.calls).to.have.length(1)
+      expect(print.mock.calls[0][0]).to.match(/Error: message 1/)
       expect(next.mock.calls).to.have.length(0)
     })
 
@@ -246,8 +255,8 @@ describe('Command API', () => {
       })
 
       await expect(command.execute({ session }, next)).eventually.to.equal('发生未知错误。')
-      expect(warn.mock.calls).to.have.length(1)
-      expect(warn.mock.calls[0][0]).to.match(/^test\nError: message 2/)
+      expect(print.mock.calls).to.have.length(1)
+      expect(print.mock.calls[0][0]).to.match(/Error: message 2/)
       expect(next.mock.calls).to.have.length(1)
     })
 
@@ -256,7 +265,7 @@ describe('Command API', () => {
       command.action(({ next }) => next())
 
       await expect(command.execute({ session }, next)).to.be.rejected
-      expect(warn.mock.calls).to.have.length(0)
+      expect(print.mock.calls).to.have.length(0)
       expect(next.mock.calls).to.have.length(1)
     })
 
@@ -269,7 +278,7 @@ describe('Command API', () => {
       })
 
       await expect(command.execute({ session }, next)).eventually.to.equal('catched')
-      expect(warn.mock.calls).to.have.length(0)
+      expect(print.mock.calls).to.have.length(0)
       expect(next.mock.calls).to.have.length(0)
     })
   })
