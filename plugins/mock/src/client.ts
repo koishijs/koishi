@@ -65,6 +65,8 @@ interface Hook {
   resolve?: (replies: string[]) => void
 }
 
+let counter = 0
+
 export class MessageClient {
   public app: Context
   public event: Universal.Event
@@ -123,7 +125,7 @@ export class MessageClient {
       }
       const id = this.bot.receive({
         ...clone(this.event),
-        message: { content, elements, quote },
+        message: { id: ++counter + '', content, elements, quote },
       }, this)
       this.hooks[id] = { resolve, count }
     })
