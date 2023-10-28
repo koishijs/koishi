@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/loader",
   "description": "Config Loader for Koishi",
-  "version": "4.2.2",
+  "version": "4.2.3",
   "main": "lib/index.js",
   "module": "lib/shared.mjs",
   "types": "lib/index.d.ts",
@@ -19,7 +19,8 @@
     "./package.json": "./package.json"
   },
   "files": [
-    "lib"
+    "lib",
+    "src"
   ],
   "author": "Shigma <shigma10826@gmail.com>",
   "license": "MIT",
@@ -40,10 +41,10 @@
     "config"
   ],
   "peerDependencies": {
-    "@koishijs/core": "4.15.2"
+    "@koishijs/core": "4.15.3"
   },
   "devDependencies": {
-    "@koishijs/core": "4.15.2",
+    "@koishijs/core": "4.15.3",
     "@types/js-yaml": "^4.0.5"
   },
   "dependencies": {

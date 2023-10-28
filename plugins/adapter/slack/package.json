@@ -1,12 +1,13 @@
 {
   "name": "@koishijs/plugin-adapter-slack",
   "description": "Slack Adapter for Koishi",
-  "version": "2.0.3",
+  "version": "2.0.4",
   "main": "lib/index.js",
   "module": "lib/index.mjs",
   "typings": "lib/index.d.ts",
   "files": [
-    "lib"
+    "lib",
+    "src"
   ],
   "author": "LittleC <i@ltlec.com>",
   "license": "MIT",
@@ -38,12 +39,12 @@
     }
   },
   "peerDependencies": {
-    "koishi": "^4.15.2"
+    "koishi": "^4.15.3"
   },
   "devDependencies": {
-    "koishi": "^4.15.2"
+    "koishi": "^4.15.3"
   },
   "dependencies": {
-    "@satorijs/adapter-slack": "^2.0.3"
+    "@satorijs/adapter-slack": "^2.0.4"
   }
 }

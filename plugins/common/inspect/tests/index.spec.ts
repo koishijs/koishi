@@ -14,14 +14,14 @@ after(() => app.stop())
 
 describe('@koishijs/plugin-inspect', () => {
   it('basic support', async () => {
-    await client.shouldReply('inspect', [
+    await client.shouldReply('inspect', new RegExp([
       '平台名：mock',
-      '消息 ID：',
+      '消息 ID：\\d+',
       '频道 ID：456',
       '群组 ID：456',
       '用户 ID：123',
       '自身 ID：514',
-    ].join('\n'))
+    ].join('\n')))
 
     await client.shouldReply('inspect <at id="321"/>', '用户 ID：321')
     await client.shouldReply('inspect <sharp id="654"/>', '频道 ID：654')
