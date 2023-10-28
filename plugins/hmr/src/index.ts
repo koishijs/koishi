@@ -38,8 +38,6 @@ interface Reload {
   children: Map<ForkScope, string>
 }
 
-const logger = new Logger('watch')
-
 class Watcher {
   private base: string
   private watcher: FSWatcher
@@ -71,9 +69,12 @@ class Watcher {
   /** stashed changes */
   private stashed = new Set<string>()
 
+  private logger: Logger
+
   constructor(private ctx: Context, private config: Watcher.Config) {
-    this.base = resolve(ctx.loader.baseDir, config.base || '')
-    ctx.root.watcher = this
+    this.base = resolve(ctx.baseDir, config.base || '')
+    this.logger = ctx.logger('hmr')
+    ctx.provide('watcher', this)
     ctx.on('ready', () => this.start())
     ctx.on('dispose', () => this.stop())
   }
@@ -104,7 +105,7 @@ class Watcher {
         return
       }
 
-      logger.debug('change detected:', path)
+      this.logger.debug('change detected:', path)
 
       if (isEntry) {
         if (require.cache[filename]) {
@@ -271,7 +272,7 @@ class Watcher {
         attempts[filename] = unwrapExports(this.require(filename))
       }
     } catch (e) {
-      handleError(e)
+      handleError(e, this.logger)
       return rollback()
     }
 
@@ -285,7 +286,7 @@ class Watcher {
         try {
           this.ctx.registry.delete(plugin)
         } catch (err) {
-          logger.warn('failed to dispose plugin at %c\n' + coerce(err), path)
+          this.logger.warn('failed to dispose plugin at %c\n' + coerce(err), path)
         }
 
         // replace loader cache for `keyFor` method
@@ -296,9 +297,9 @@ class Watcher {
             const fork = state.parent.plugin(attempts[filename], state.config)
             if (name) state.parent.scope[Loader.kRecord][name] = fork
           }
-          logger.info('reload plugin at %c', path)
+          this.logger.info('reload plugin at %c', path)
         } catch (err) {
-          logger.warn('failed to reload plugin at %c\n' + coerce(err), path)
+          this.logger.warn('failed to reload plugin at %c\n' + coerce(err), path)
           throw err
         }
       }
@@ -313,7 +314,7 @@ class Watcher {
             if (name) state.parent.scope[Loader.kRecord][name] = fork
           }
         } catch (err) {
-          logger.warn(err)
+          this.logger.warn(err)
         }
       }
       return
@@ -325,8 +326,6 @@ class Watcher {
 }
 
 namespace Watcher {
-  export const using = ['loader']
-
   export interface Config extends WatchOptions {
     base?: string
     root?: string[]

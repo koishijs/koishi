@@ -3,13 +3,11 @@ import { BuildFailure } from 'esbuild'
 import { codeFrameColumns } from '@babel/code-frame'
 import { readFileSync } from 'fs'
 
-const logger = new Logger('watch')
-
 function isBuildFailure(e: any): e is BuildFailure {
   return Array.isArray(e?.errors) && e.errors.every((error: any) => error.text)
 }
 
-export function handleError(e: any) {
+export function handleError(e: any, logger: Logger) {
   if (!isBuildFailure(e)) {
     logger.warn(e)
     return
