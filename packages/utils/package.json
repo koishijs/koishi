@@ -28,7 +28,7 @@
   ],
   "devDependencies": {
     "@sinonjs/fake-timers": "^6.0.1",
-    "@types/supports-color": "^8.1.1"
+    "@types/supports-color": "^8.1.2"
   },
   "dependencies": {
     "cosmokit": "^1.5.1",

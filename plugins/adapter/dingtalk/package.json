@@ -39,10 +39,10 @@
     }
   },
   "peerDependencies": {
-    "koishi": "^4.15.3"
+    "koishi": "^4.15.4"
   },
   "devDependencies": {
-    "koishi": "^4.15.3"
+    "koishi": "^4.15.4"
   },
   "dependencies": {
     "@satorijs/adapter-dingtalk": "^2.0.3"
