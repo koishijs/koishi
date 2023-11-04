@@ -136,11 +136,10 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
     return this._stripped = { hasAt, content, appel, atSelf, prefix: null }
   }
 
-  get username() {
-    const defaultName: string = this.user && this.user['name']
+  get username(): string {
+    return this.user && this.user['name']
       ? this.user['name']
       : this.author.nick || this.author.name || this.userId
-    return this.app.chain('appellation', defaultName, this)
   }
 
   async send(fragment: Fragment, options: Universal.SendOptions = {}) {

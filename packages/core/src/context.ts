@@ -1,6 +1,6 @@
 import { defineProperty, Promisify, remove, Time } from 'cosmokit'
 import { Logger, Quester, Schema } from '@satorijs/core'
-import { GetEvents } from 'cordis'
+import { GetEvents, Parameters, ReturnType, ThisType } from 'cordis'
 import * as satori from '@satorijs/core'
 import * as cordis from 'cordis'
 import { Computed, FilterService } from './filter'

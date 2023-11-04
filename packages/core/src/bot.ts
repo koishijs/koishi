@@ -9,10 +9,6 @@ declare module '@satorijs/core' {
     getGuildMemberMap(guildId: string): Promise<Dict<string>>
     broadcast(channels: (string | [string, string] | Session)[], content: Fragment, delay?: number): Promise<string[]>
   }
-
-  interface Events {
-    'appellation'(name: string, session: Session): string
-  }
 }
 
 // adapter plugins usually do not respect filters

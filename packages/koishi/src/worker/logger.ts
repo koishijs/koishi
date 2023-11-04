@@ -62,5 +62,5 @@ export function prepare(config: Config = {}) {
     }
   }
 
-  Logger.timestamp = Date.now()
+  Logger.targets[0].timestamp = Date.now()
 }
