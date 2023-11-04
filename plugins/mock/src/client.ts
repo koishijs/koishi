@@ -32,11 +32,9 @@ export class MockMessenger extends MessageEncoder<Context, MockBot> {
     } else if (type === 'text') {
       this.buffer += attrs.content
     } else if (type === 'p') {
-      if (!this.buffer.endsWith('\n')) {
-        this.buffer += '\n'
-      }
+      if (!this.buffer.endsWith('\n')) this.buffer += '\n'
       await this.render(children)
-      this.buffer += '\n'
+      if (!this.buffer.endsWith('\n')) this.buffer += '\n'
     } else if (type === 'template' || !type) {
       await this.render(children)
     } else {
