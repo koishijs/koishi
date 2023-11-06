@@ -1,5 +1,5 @@
-# [@koishijs/plugin-adapter-satori](https://koishi.chat/plugins/adapter/satori.html)
+# [@koishijs/plugin-server](https://koishi.chat/plugins/develop/server.html)
 
-Satori protocol adapter for [Koishi](https://koishi.chat).
+Satori server for [Koishi](https://koishi.chat).
 
-- [Documentation](https://koishi.chat/plugins/adapter/satori.html)
+- [Documentation](https://koishi.chat/plugins/develop/server.html)
