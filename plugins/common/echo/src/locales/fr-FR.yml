@@ -1,6 +1,6 @@
 commands:
   echo:
-    description: 发送消息
+    description: Envoi de message
     options:
       escape: 发送转义消息
       unescape: 发送反转义消息
