@@ -8,5 +8,5 @@ commands:
       channel: 发送到频道
       guild: 指定群组编号
     messages:
-      expect-text: 请输入要发送的文本。
+      expect-text: Veuillez entrer le texte à envoyer.
       platform-not-found: 找不到指定的平台。
