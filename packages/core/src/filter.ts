@@ -66,19 +66,19 @@ export class FilterService {
   union(arg: Filter | Context) {
     const caller = this.caller
     const filter = typeof arg === 'function' ? arg : arg.filter
-    return this.caller.extend({ filter: s => caller.filter(s) || filter(s) })
+    return caller.extend({ filter: s => caller.filter(s) || filter(s) })
   }
 
   intersect(arg: Filter | Context) {
     const caller = this.caller
     const filter = typeof arg === 'function' ? arg : arg.filter
-    return this.caller.extend({ filter: s => caller.filter(s) && filter(s) })
+    return caller.extend({ filter: s => caller.filter(s) && filter(s) })
   }
 
   exclude(arg: Filter | Context) {
     const caller = this.caller
     const filter = typeof arg === 'function' ? arg : arg.filter
-    return this.caller.extend({ filter: s => caller.filter(s) && !filter(s) })
+    return caller.extend({ filter: s => caller.filter(s) && !filter(s) })
   }
 
   user(...values: string[]) {

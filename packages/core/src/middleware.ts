@@ -154,7 +154,7 @@ export class Processor {
     if ((appel || stripped.hasAt) && !stripped.appel) return
     if (!context.filter(session)) return
     let content = stripped.content
-    if (quote) content += ' ' + quote.content
+    if (quote?.content) content += ' ' + quote.content
 
     let params: [string, ...string[]] = null
     const match = (pattern: any) => {

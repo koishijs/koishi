@@ -47,7 +47,7 @@ export class Commander extends Map<string, Command> {
 
     ctx.before('parse', (content, session) => {
       const argv = Argv.parse(content)
-      if (session.quote) {
+      if (session.quote?.content) {
         argv.tokens.push({
           content: session.quote.content,
           quoted: true,
@@ -111,7 +111,7 @@ export class Commander extends Map<string, Command> {
           },
         })
         if (!name) return next()
-        const message = name + content.slice(actual.length) + (quote ? ' ' + quote.content : '')
+        const message = name + content.slice(actual.length) + (quote?.content ? ' ' + quote.content : '')
         return session.execute(message, next)
       })
     })
@@ -148,10 +148,6 @@ export class Commander extends Map<string, Command> {
     return this._commandList
       .filter(cmd => cmd.match(session))
       .flatMap(cmd => Object.keys(cmd._aliases))
-  }
-
-  protected get caller(): Context {
-    return this[Context.current]
   }
 
   resolve(key: string) {
@@ -207,7 +203,7 @@ export class Commander extends Map<string, Command> {
     const path = def.split(' ', 1)[0].toLowerCase()
     const decl = def.slice(path.length)
     const segments = path.split(/(?=[./])/g)
-    const caller = this.caller
+    const caller: Context = this[Context.current]
 
     /** parent command in the chain */
     let parent: Command

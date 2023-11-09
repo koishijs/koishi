@@ -17,7 +17,7 @@ export type ForkScope = cordis.ForkScope<Context>
 export type MainScope = cordis.MainScope<Context>
 
 export class Service extends cordis.Service<Context> {
-  protected logger: Logger
+  public logger: Logger
 
   constructor(ctx: Context, name: string, immediate?: boolean) {
     super(ctx, name, immediate)
