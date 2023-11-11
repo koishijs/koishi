@@ -1,9 +1,10 @@
-import { Dict, Plugin } from 'koishi'
+import { Context, Dict, Plugin } from 'koishi'
 import { Loader } from '../src'
 import * as jest from 'jest-mock'
 
 export default class TestLoader extends Loader {
-  data: Dict<Plugin.Object> = Object.create(null)
+  // @ts-ignore
+  data: Dict<Plugin.Object<Context>> = Object.create(null)
 
   async import(name: string) {
     return this.data[name] ||= {
@@ -14,10 +15,6 @@ export default class TestLoader extends Loader {
         ctx.accept()
       },
     }
-  }
-
-  async resolve(name: string) {
-    return name
   }
 
   fullReload() {
