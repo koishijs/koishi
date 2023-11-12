@@ -8,7 +8,7 @@ export interface Config {
 }
 
 export const name = 'bind'
-export const inject = ['database'] as const
+export const inject = ['database']
 export const Config: Schema<Config> = Schema.object({
   generateToken: Schema.function().hidden(),
 })
@@ -21,7 +21,7 @@ export function apply(ctx: Context, config: Config = {}) {
   // 0: private
   // -1: group (2nd step)
   type TokenData = [platform: string, id: string, phase: number]
-  const tokens: Dict<TokenData> = {}
+  const tokens: Dict<TokenData> = Object.create(null)
 
   const { tokenPrefix: prefix = 'koishi/' } = config
   const { generateToken = () => `${prefix}` + Random.id(6, 10) } = config
