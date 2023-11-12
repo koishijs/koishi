@@ -1,7 +1,7 @@
 {
-  "name": "@koishijs/plugin-server",
-  "description": "Satori Server for Koishi",
-  "version": "2.2.2",
+  "name": "@koishijs/plugin-server-proxy",
+  "description": "Proxy service for Koishi",
+  "version": "1.0.0",
   "main": "lib/index.js",
   "module": "lib/index.mjs",
   "typings": "lib/index.d.ts",
@@ -14,26 +14,25 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/satorijs/satori.git",
-    "directory": "packages/server"
+    "directory": "packages/proxy"
   },
   "bugs": {
     "url": "https://github.com/satorijs/satori/issues"
   },
-  "homepage": "https://koishi.chat/plugins/develop/server.html",
+  "homepage": "https://koishi.chat/plugins/develop/proxy.html",
   "keywords": [
     "bot",
     "adapter",
-    "satori",
     "protocol",
     "chatbot",
     "koishi",
-    "server",
-    "api"
+    "proxy",
+    "router"
   ],
   "koishi": {
     "description": {
-      "en": "Satori Server",
-      "zh": "Satori 服务器"
+      "en": "Router Proxy Service",
+      "zh": "路由代理服务"
     }
   },
   "peerDependencies": {
@@ -43,6 +42,6 @@
     "koishi": "^4.15.4"
   },
   "dependencies": {
-    "@satorijs/server": "^2.2.2"
+    "@satorijs/server-proxy": "^1.0.0"
   }
 }
