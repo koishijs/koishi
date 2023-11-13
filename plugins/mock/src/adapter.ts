@@ -62,7 +62,7 @@ export class MockAdapter<C extends Context = Context> extends Adapter<C, MockBot
   public webhook: Webhook
 
   constructor(ctx: C, bot: MockBot<C>) {
-    super()
+    super(ctx)
     this.root = ctx.root
     this.webhook = new Webhook(ctx.root)
     this.root.provide('mock', this, true)

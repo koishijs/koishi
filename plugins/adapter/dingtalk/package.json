@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-adapter-dingtalk",
   "description": "Dingtalk Adapter for Koishi",
-  "version": "2.0.3",
+  "version": "2.0.4",
   "main": "lib/index.js",
   "module": "lib/index.mjs",
   "typings": "lib/index.d.ts",
@@ -39,12 +39,12 @@
     }
   },
   "peerDependencies": {
-    "koishi": "^4.15.4"
+    "koishi": "^4.15.5"
   },
   "devDependencies": {
-    "koishi": "^4.15.4"
+    "koishi": "^4.15.5"
   },
   "dependencies": {
-    "@satorijs/adapter-dingtalk": "^2.0.3"
+    "@satorijs/adapter-dingtalk": "^2.0.4"
   }
 }

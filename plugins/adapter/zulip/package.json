@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-adapter-zulip",
   "description": "Zulip Adapter for Koishi",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -38,12 +38,12 @@
     }
   },
   "peerDependencies": {
-    "koishi": "^4.15.4"
+    "koishi": "^4.15.5"
   },
   "devDependencies": {
-    "koishi": "^4.15.4"
+    "koishi": "^4.15.5"
   },
   "dependencies": {
-    "@satorijs/adapter-zulip": "^1.0.2"
+    "@satorijs/adapter-zulip": "^1.0.3"
   }
 }

@@ -10,11 +10,9 @@ jobs:
 
     steps:
       - name: Check out
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Set up Node
-        uses: actions/setup-node@v3
-        with:
-          node-version: 18
+        uses: actions/setup-node@v4
       - id: cache
         name: Yarn Cache Dir
         run: echo "value=$(yarn cache dir)" >> $GITHUB_OUTPUT
@@ -41,11 +39,9 @@ jobs:
 
     steps:
       - name: Check out
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Set up Node
-        uses: actions/setup-node@v3
-        with:
-          node-version: 18
+        uses: actions/setup-node@v4
       - name: Restore Lockfile
         uses: actions/cache@v3
         with:
@@ -76,11 +72,9 @@ jobs:
 
     steps:
       - name: Check out
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Set up Node
-        uses: actions/setup-node@v3
-        with:
-          node-version: 18
+        uses: actions/setup-node@v4
       - name: Restore Lockfile
         uses: actions/cache@v3
         with:
@@ -109,9 +103,9 @@ jobs:
 
     steps:
       - name: Check out
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Set up Node
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
       - name: Restore Lockfile

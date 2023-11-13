@@ -4,7 +4,7 @@ import zhCN from './locales/zh-CN.yml'
 export interface Config {}
 
 export const name = 'broadcast'
-export const inject = ['database'] as const
+export const inject = ['database']
 export const Config: Schema<Config> = Schema.object({})
 
 export function apply(ctx: Context) {
