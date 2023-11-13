@@ -1,5 +1,8 @@
-host: The host to connect to.
-port: The port number to be connected.
-user: The username to use.
-password: The password to use.
-database: The database name to use.
+host: The hostname of the database you are connecting to.
+port: The port number to connect to.
+user: The MySQL user to authenticate as.
+password: The password of that MySQL user.
+database: Name of the database to use for this connection.
+ssl:
+  $description: SSL options.
+  rejectUnauthorized: Reject clients with invalid certificates.
