@@ -3,3 +3,6 @@ port: 要连接到的端口号。
 user: 要使用的用户名。
 password: 要使用的密码。
 database: 要访问的数据库名。
+ssl:
+  $description: SSL 选项
+  rejectUnauthorized: 拒绝使用无效证书的客户端。
