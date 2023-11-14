@@ -1,4 +1,4 @@
-import ProxyService from '@satorijs/server-proxy'
+import ProxyServer from '@satorijs/server-proxy'
 
-export default ProxyService
+export default ProxyServer
 export * from '@satorijs/server-proxy'
