@@ -7,10 +7,11 @@
     "docs",
     "external/*",
     "external/*/packages/*",
+    "external/upstream/adapter/*",
+    "external/upstream/database/*",
+    "external/upstream/server/*",
     "packages/*",
     "plugins/*",
-    "plugins/adapter/*",
-    "plugins/assets/*",
     "plugins/common/*",
     "plugins/database/*"
   ],
