@@ -8,6 +8,15 @@ export default defineDriver(MongoDriver, Schema.object({
   username: Schema.string(),
   password: Schema.string().role('secret'),
   database: Schema.string().default('koishi'),
+  writeConcern: Schema.object({
+    w: Schema.union([
+      Schema.const(undefined),
+      Schema.number().required(),
+      Schema.const('majority').required(),
+    ]),
+    wtimeoutMS: Schema.number(),
+    journal: Schema.boolean(),
+  }),
 }).i18n({
   'zh-CN': require('./locales/zh-CN'),
 }))
