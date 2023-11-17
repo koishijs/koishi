@@ -6,4 +6,7 @@ database: Name of the database to use for this connection.
 
 ssl:
   $description: SSL options.
-  rejectUnauthorized: Reject clients with invalid certificates.
+  $value:
+    - Default
+    - $description: Custom
+      rejectUnauthorized: Reject clients with invalid certificates.

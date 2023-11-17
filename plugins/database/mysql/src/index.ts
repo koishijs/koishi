@@ -10,9 +10,12 @@ export default defineDriver(MySQLDriver, Schema.intersect([
     database: Schema.string().default('koishi'),
   }),
   Schema.object({
-    ssl: Schema.object({
-      rejectUnauthorized: Schema.boolean().default(true),
-    }),
+    ssl: Schema.union([
+      Schema.const(null),
+      Schema.object({
+        rejectUnauthorized: Schema.boolean().default(true),
+      }),
+    ]),
   }),
 ]).i18n({
   'zh-CN': require('./locales/zh-CN'),
