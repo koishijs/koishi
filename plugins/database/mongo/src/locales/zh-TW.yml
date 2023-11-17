@@ -4,3 +4,13 @@ port: 要連接到的端口號。
 username: 要使用的使用者名。
 password: 要使用的密碼。
 database: 要訪問的數據庫名。
+writeConcern:
+  $description: Write Concern
+  w:
+    $description: The write concern.
+    $value:
+      - Default
+      - Custom
+      - Majority
+  wtimeoutMS: The write concern timeout.
+  journal: The journal write concern.
