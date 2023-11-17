@@ -115,11 +115,12 @@ export class MessageClient {
   async receive(content: string, count = Infinity) {
     const result = await new Promise<string[]>((resolve) => {
       let quote: Universal.Message
-      const elements = h.parse(content)
+      let elements = h.parse(content)
       if (elements[0]?.type === 'quote') {
         const { attrs, children } = elements.shift()
         quote = { id: attrs.id, messageId: attrs.id, elements: children, content: children.join('') }
-        content = elements.join('')
+        content = elements.join('').trimStart()
+        elements = h.parse(content)
       }
       const id = this.bot.receive({
         ...clone(this.event),

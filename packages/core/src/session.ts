@@ -333,7 +333,7 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
       collectFields(argv, Command[`_${key}Fields` as any], fields)
       collectFields(argv, argv.command[`_${key}Fields` as any], fields)
     }
-    collect(argv)
+    if (argv) collect(argv)
     return fields
   }
 

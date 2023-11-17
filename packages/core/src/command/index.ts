@@ -46,10 +46,13 @@ export class Commander extends Map<string, Command> {
     ctx.plugin(validate)
 
     ctx.before('parse', (content, session) => {
+      // we need to make sure that the user truly has the intension to call a command
+      const { quote, isDirect, stripped: { prefix, appel } } = session
+      if (!isDirect && typeof prefix !== 'string' && !appel) return
       const argv = Argv.parse(content)
-      if (session.quote?.content) {
+      if (quote?.content) {
         argv.tokens.push({
-          content: session.quote.content,
+          content: quote.content,
           quoted: true,
           inters: [],
           terminator: '',
@@ -80,6 +83,7 @@ export class Commander extends Map<string, Command> {
         break
       }
       defineProperty(session, 'argv', ctx.bail('before-parse', content, session))
+      if (!session.argv) return
       session.argv.root = true
       session.argv.session = session
     })
@@ -94,7 +98,7 @@ export class Commander extends Map<string, Command> {
       // use `!prefix` instead of `prefix === null` to prevent from blocking other middlewares
       // we need to make sure that the user truly has the intension to call a command
       const { argv, quote, isDirect, stripped: { prefix, appel } } = session
-      if (argv.command || !isDirect && !prefix && !appel) return next()
+      if (argv?.command || !isDirect && !prefix && !appel) return next()
       const content = session.stripped.content.slice((prefix ?? '').length)
       const actual = content.split(/\s/, 1)[0].toLowerCase()
       if (!actual) return next()
@@ -165,6 +169,7 @@ export class Commander extends Map<string, Command> {
   }
 
   inferCommand(argv: Argv) {
+    if (!argv) return
     if (argv.command) return argv.command
     if (argv.name) return argv.command = this.resolve(argv.name)
 

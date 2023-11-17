@@ -111,7 +111,12 @@ describe('Runtime', () => {
       await client4.shouldNotReply('cmd2')
       await client1.shouldReply('-cmd2', 'cmd2:123')
       await client4.shouldReply('-cmd2', 'cmd2:123')
-      await client4.shouldNotReply(`<reply id="123"/> <at id="${DEFAULT_SELF_ID}"/> cmd2`)
+      await client4.shouldReply('<at id="514"/> <at id="999"/> cmd2', 'cmd2:123')
+      await client4.shouldReply('<at id="999"/> <at id="514"/> cmd2', 'cmd2:123')
+      await client4.shouldNotReply('<at id="999"/> cmd2')
+      await client4.shouldNotReply(`<quote id="123"/> cmd2`)
+      await client4.shouldNotReply(`<quote id="123"/> <at id="999"/> cmd2`)
+      await client4.shouldReply('<quote id="123"/> <at id="514"/> cmd2', 'cmd2:123')
     })
 
     it('single nickname', async () => {
