@@ -4,5 +4,9 @@ user: 要使用的使用者名。
 password: 要使用的密碼。
 database: 要訪問的數據庫名。
 ssl:
-  $description: SSL 选项
-  rejectUnauthorized: 拒绝使用无效证书的客户端。
+  $description: SSL 高级选项。
+  $value:
+    - 預設值
+    - 
+      $description: 自定义
+      rejectUnauthorized: 拒绝使用无效证书的客户端。
