@@ -1,4 +1,4 @@
-import { Context, Dict, EffectScope, ForkScope, interpolate, isNullable, Logger, Plugin, resolveConfig, Universal, valueMap, version } from '@koishijs/core'
+import { Context, Dict, EffectScope, ForkScope, interpolate, isNullable, Logger, Plugin, Universal, valueMap, version } from '@koishijs/core'
 import { constants, promises as fs } from 'fs'
 import * as yaml from 'js-yaml'
 import * as path from 'path'
@@ -248,7 +248,6 @@ export abstract class Loader {
     const plugin = await this.resolve(name)
     if (!plugin) return
 
-    resolveConfig(plugin, config)
     return parent.plugin(plugin, this.interpolate(config))
   }
 
@@ -351,7 +350,6 @@ export abstract class Loader {
     const app = this.app = new Context(this.interpolate(this.config))
     app.provide('loader', this, true)
     app.provide('baseDir', this.baseDir, true)
-    app.envData = this.envData
     app.scope[Loader.kRecord] = Object.create(null)
     const fork = await this.reload(app, 'group:entry', this.config.plugins)
     this.entry = fork.ctx
