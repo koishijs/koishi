@@ -189,23 +189,10 @@ export namespace Context {
 }
 
 defineProperty(Context.Config, 'Basic', Schema.object({
-  prefix: Schema.union([
-    Schema.array(Schema.string().default('')).role('table'),
-    Schema.transform(String, (prefix) => [prefix]),
-    Schema.any().hidden(),
-  ]).role('computed').default(['']).description('指令前缀字符构成的数组。将被用于指令的匹配。'),
-  nickname: Schema.union([
-    Schema.array(String).role('table'),
-    Schema.transform(String, (nickname) => [nickname]),
-  ] as const).description('机器人昵称构成的数组。将被用于指令的匹配。'),
-  autoAssign: Schema.union([
-    Schema.boolean(),
-    Schema.any().hidden(),
-  ]).role('computed').default(true).description('当获取不到频道数据时，是否使用接受者作为受理人。'),
-  autoAuthorize: Schema.union([
-    Schema.natural(),
-    Schema.any().hidden(),
-  ]).role('computed').default(1).description('当获取不到用户数据时默认使用的权限等级。'),
+  prefix: Schema.array(Schema.string().default('')).default(['']).role('table').computed().description('指令前缀字符构成的数组。将被用于指令的匹配。'),
+  nickname: Schema.array(String).role('table').computed().description('机器人昵称构成的数组。将被用于指令的匹配。'),
+  autoAssign: Schema.boolean().default(true).computed().description('当获取不到频道数据时，是否使用接受者作为受理人。'),
+  autoAuthorize: Schema.natural().default(1).computed().description('当获取不到用户数据时默认使用的权限等级。'),
   minSimilarity: Schema.percent().default(1).description('用于模糊匹配的相似系数，应该是一个 0 到 1 之间的数值。数值越高，模糊匹配越严格。设置为 1 可以完全禁用模糊匹配。'),
 }).description('基础设置'))
 

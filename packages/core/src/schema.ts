@@ -4,6 +4,10 @@ import { Computed } from './filter'
 import { Context } from './context'
 
 declare global {
+  interface Schemastery<S, T> {
+    computed(options?: Computed.Options): Schema<Computed<S>, Computed<T>>
+  }
+
   namespace Schemastery {
     interface Static {
       path(options?: Path.Options): Schema<string>
@@ -37,11 +41,27 @@ Schema.filter = function filter() {
 }
 
 Schema.computed = function computed(inner, options = {}) {
-  return Schema.union([Schema.from(inner), Schema.any().hidden()]).role('computed', options)
+  return Schema.union([
+    Schema.from(inner),
+    Schema.object({
+      $switch: Schema.object({
+        branches: Schema.array(Schema.object({
+          case: Schema.any(),
+          then: Schema.from(inner),
+        })),
+        default: Schema.from(inner),
+      }),
+    }).hidden(),
+    Schema.any().hidden(),
+  ]).role('computed', options)
 }
 
 Schema.path = function path(options = {}) {
   return Schema.string().role('path', options)
+}
+
+Schema.prototype.computed = function computed(this: Schema, options = {}) {
+  return Schema.computed(this, options).default(this.meta.default)
 }
 
 const kSchemaOrder = Symbol('schema-order')
