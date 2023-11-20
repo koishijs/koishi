@@ -1,0 +1,54 @@
+{
+  "name": "@koishijs/plugin-database-postgres",
+  "description": "PostgreSQL support for Koishi",
+  "version": "1.0.0",
+  "main": "lib/index.js",
+  "typings": "lib/index.d.ts",
+  "files": [
+    "lib",
+    "src"
+  ],
+  "author": "Seidko <seidko.coding@gmail.com>",
+  "contributors": [
+    "Hieuzest <girkirin@hotmail.com>",
+    "Seidko <seidko.coding@gmail.com>"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/koishijs/koishi.git",
+    "directory": "plugins/database/postgres"
+  },
+  "bugs": {
+    "url": "https://github.com/koishijs/koishi/issues"
+  },
+  "homepage": "https://koishi.chat/plugins/database/postgres.html",
+  "keywords": [
+    "bot",
+    "chatbot",
+    "koishi",
+    "database",
+    "postgres"
+  ],
+  "koishi": {
+    "category": "storage",
+    "description": {
+      "en": "PostgreSQL support",
+      "zh": "PostgreSQL 支持"
+    },
+    "service": {
+      "implements": [
+        "database"
+      ]
+    }
+  },
+  "peerDependencies": {
+    "koishi": "^4.15.5"
+  },
+  "devDependencies": {
+    "koishi": "^4.15.5"
+  },
+  "dependencies": {
+    "@minatojs/driver-postgres": "^1.0.0"
+  }
+}
