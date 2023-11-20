@@ -10,7 +10,7 @@ describe('@koishijs/loader', () => {
 
   it('loader.createApp()', async () => {
     loader.config = {
-      prefix: '.',
+      prefix: ['.'],
       plugins: {
         'foo': {},
         'group:qux': {
@@ -33,7 +33,7 @@ describe('@koishijs/loader', () => {
   it('app.scope.update()', async () => {
     const { app } = loader
     loader.config = {
-      prefix: '/',
+      prefix: ['/'],
       plugins: {
         'foo': {
           '$if': false,

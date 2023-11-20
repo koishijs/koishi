@@ -6,6 +6,7 @@
   "workspaces": [
     "docs",
     "external/*",
+    "external/*/external/*",
     "external/*/packages/*",
     "external/upstream/adapter/*",
     "external/upstream/database/*",

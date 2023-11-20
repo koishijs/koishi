@@ -3,35 +3,18 @@
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {
-      "@koishijs/plugin-adapter-*": [
-        "plugins/adapter/*/src",
-        "external/adapter-*/src",
-      ],
       "@koishijs/plugin-database-*": [
         "plugins/database/*/src",
-        "external/database-*/src",
       ],
       "@koishijs/plugin-*": [
-        "plugins/a11y/*/src",
         "plugins/common/*/src",
         "plugins/*/src",
-        "external/console/packages/*/src",
       ],
       "@koishijs/*": [
         "packages/*/src",
-        "plugins/a11y/*/src",
-        "plugins/assets/*/src",
-        "plugins/common/*/src",
-        "external/console/packages/*/src",
-      ],
-      "koishi-plugin-*": [
-        "external/*/src",
-      ],
-      "koishi": [
-        "packages/koishi/src",
       ],
       "*": [
-        "external/*/src",
+        "packages/*/src",
       ],
     },
   },
