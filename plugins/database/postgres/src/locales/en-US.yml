@@ -1,0 +1,5 @@
+host: The host to connect to.
+port: The port number to be connected.
+username: The username used for authentication.
+password: The password used for authentication.
+database: The name of the database we want to use.
