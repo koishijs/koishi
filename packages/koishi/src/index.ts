@@ -12,15 +12,6 @@ export * from '@koishijs/core'
 export * from '@koishijs/loader'
 export * from '@koishijs/utils'
 
-class Patch {
-  constructor(ctx: Context) {
-    // patch for @koishijs/loader
-    ctx.root.envData ??= {}
-    ctx.root.baseDir ??= process.cwd()
-  }
-}
-
-Context.service('$patch', Patch)
 Context.service('router', Router)
 
 declare module '@koishijs/core' {

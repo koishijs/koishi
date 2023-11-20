@@ -58,22 +58,20 @@ export class MockBot<C extends Context = Context> extends Bot<C> {
 }
 
 export class MockAdapter<C extends Context = Context> extends Adapter<C, MockBot<C>> {
-  public root: Context
   public webhook: Webhook
 
   constructor(ctx: C, bot: MockBot<C>) {
     super(ctx)
-    this.root = ctx.root
     this.webhook = new Webhook(ctx.root)
-    this.root.provide('mock', this, true)
+    ctx.provide('mock', this, true)
   }
 
   async initUser(id: string, authority = 1, data?: Partial<User>) {
-    await this.root.database.createUser('mock', id, { authority, ...data })
+    await this.ctx.root.database.createUser('mock', id, { authority, ...data })
   }
 
   async initChannel(id: string, assignee = this.bots[0].selfId, data?: Partial<Channel>) {
-    await this.root.database.createChannel('mock', id, { assignee, ...data })
+    await this.ctx.root.database.createChannel('mock', id, { assignee, ...data })
   }
 
   client(userId: string, channelId?: string) {

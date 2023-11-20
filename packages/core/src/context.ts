@@ -1,5 +1,5 @@
 import { defineProperty, Promisify, remove, Time } from 'cosmokit'
-import { Logger, Quester, Schema } from '@satorijs/core'
+import { Quester, Schema } from '@satorijs/core'
 import { GetEvents, Parameters, ReturnType, ThisType } from 'cordis'
 import * as satori from '@satorijs/core'
 import * as cordis from 'cordis'
@@ -16,14 +16,8 @@ export type EffectScope = cordis.EffectScope<Context>
 export type ForkScope = cordis.ForkScope<Context>
 export type MainScope = cordis.MainScope<Context>
 
-export class Service extends cordis.Service<Context> {
-  public logger: Logger
-
-  constructor(ctx: Context, name: string, immediate?: boolean) {
-    super(ctx, name, immediate)
-    this.logger = ctx.logger(name)
-  }
-}
+export interface Service extends Context.Associate<'service'> {}
+export class Service<C extends Context = Context> extends satori.Service<C> {}
 
 export { Adapter, Bot, Element, h, Logger, MessageEncoder, Messenger, Quester, Satori, Schema, segment, Universal, z } from '@satorijs/core'
 export type { Component, Fragment, Render } from '@satorijs/core'
@@ -52,9 +46,6 @@ export interface Context {
   [Context.config]: Context.Config
   [Context.events]: Events<this>
   [Context.session]: Session<never, never, this>
-  /** @deprecated use `ctx.loader.envData` instead */
-  envData: EnvData
-  baseDir: string
 }
 
 export class Context extends satori.Context {
@@ -149,6 +140,8 @@ Session.prototype[Context.filter] = function (this: Session, ctx: Context) {
 }
 
 export namespace Context {
+  export type Associate<P extends string, C extends Context = Context> = satori.Context.Associate<P, C>
+
   export interface Config extends Config.Basic, Config.Advanced {
     i18n?: I18n.Config
     delay?: Config.Delay

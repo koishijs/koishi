@@ -56,6 +56,8 @@ function collectFields<T extends keyof Tables>(argv: Argv, collectors: FieldColl
   return fields
 }
 
+export interface Session extends Context.Associate<'session'> {}
+
 export class Session<U extends User.Field = never, G extends Channel.Field = never, C extends Context = Context> extends satori.Session<C> {
   static shadow = Symbol.for('session.shadow')
 
