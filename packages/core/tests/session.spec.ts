@@ -1,5 +1,6 @@
 import { App, sleep } from 'koishi'
 import mock from '@koishijs/plugin-mock'
+import memory from '@koishijs/plugin-database-memory'
 
 describe('Session API', () => {
   describe('Command Execution', () => {
@@ -58,5 +59,20 @@ describe('Session API', () => {
       await sleep(0)
       await client.shouldReply('foo', 'received nothing')
     })
+  })
+
+  it('autoAuthorize', async () => {
+    const app = new App({ autoAuthorize: 0 })
+    app.plugin(mock)
+    app.plugin(memory)
+    app.command('foo').action(() => 'foo')
+    app.middleware(async (session, next) => {
+      session.user['name'] = 'bar'
+      return 'bar'
+    })
+    await app.start()
+    const client = app.mock.client('123', '456')
+    await client.shouldReply('foo', '权限不足。')
+    await client.shouldReply('bar', 'bar')
   })
 })

@@ -213,7 +213,11 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
     if (cache) {
       cache.$merge(data)
     } else {
-      cache = observe(data, diff => this.app.database.setChannel(platform, channelId, diff as any), `channel ${key}`)
+      cache = observe(data, async (diff) => {
+        // https://github.com/koishijs/koishi/issues/1267
+        if (data['$detached']) return
+        await this.app.database.setChannel(platform, channelId, diff as any)
+      }, `channel ${key}`)
       this.app.$processor._channelCache.set(this.id, key, cache)
     }
     return cache
@@ -270,7 +274,11 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
     if (cache) {
       cache.$merge(data)
     } else {
-      cache = observe(data, diff => this.app.database.setUser(this.platform, userId, diff as any), `user ${this.uid}`)
+      cache = observe(data, async (diff) => {
+        // https://github.com/koishijs/koishi/issues/1267
+        if (data['$detached']) return
+        await this.app.database.setUser(this.platform, userId, diff as any)
+      }, `user ${this.uid}`)
       this.app.$processor._userCache.set(this.id, this.uid, cache as any)
     }
     return this.user = cache as any
