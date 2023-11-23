@@ -196,7 +196,7 @@ function formatCommands(path: string, session: Session<'authority'>, children: C
 
   const prefix = session.resolve(session.app.config.prefix)[0] ?? ''
   const output = commands.map(({ name, displayName, config }) => {
-    let output = '    ' + prefix + displayName
+    let output = '    ' + prefix + displayName.replace(/\./g, ' ')
     output += '  ' + session.text([`commands.${name}.description`, ''], config.params)
     return output
   })
@@ -243,7 +243,7 @@ function getOptions(command: Command, session: Session<'authority'>, config: Hel
 }
 
 async function showHelp(command: Command, session: Session<'authority'>, config: HelpOptions) {
-  const output = [session.text('.command-title', [command.displayName + command.declaration])]
+  const output = [session.text('.command-title', [command.displayName.replace(/\./g, ' ') + command.declaration])]
 
   const description = session.text([`commands.${command.name}.description`, ''], command.config.params)
   if (description) output.push(description)
