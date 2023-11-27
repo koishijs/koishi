@@ -1,6 +1,7 @@
 import { App, User, Channel, Command, sleep } from 'koishi'
 import mock, { DEFAULT_SELF_ID } from '@koishijs/plugin-mock'
 import memory from '@koishijs/plugin-database-memory'
+import { install } from '@sinonjs/fake-timers'
 
 const app = new App()
 
@@ -224,6 +225,19 @@ describe('Runtime', () => {
       await client4.shouldReply('bar baz', 'cmd1:bar baz')
       await client4.shouldReply('cmd1 foo bar', '存在多余参数，输入帮助以查看用法。')
       cmd1.config.showWarning = false
+      cmd1.config.checkArgCount = false
+    })
+
+    it('check arg count: timeout', async () => {
+      const clock = install()
+      cmd1.config.checkArgCount = true
+      cmd1.config.showWarning = true
+      await client4.shouldReply('cmd1', '请发送arg1。')
+      await clock.runAllAsync()
+      await client4.shouldReply('', '缺少参数，输入帮助以查看用法。')
+      cmd1.config.showWarning = false
+      cmd1.config.checkArgCount = false
+      clock.uninstall()
     })
 
     it('check unknown option', async () => {

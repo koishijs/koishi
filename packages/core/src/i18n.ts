@@ -85,6 +85,7 @@ export class I18n {
   private* set(locale: string, prefix: string, value: I18n.Node): Generator<string> {
     if (typeof value === 'object' && value && !prefix.includes('@')) {
       for (const key in value) {
+        if (key.startsWith('_')) continue
         yield* this.set(locale, prefix + key + '.', value[key])
       }
     } else if (prefix.includes('@')) {

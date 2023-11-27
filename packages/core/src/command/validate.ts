@@ -1,3 +1,4 @@
+import { isNullable } from 'cosmokit'
 import { Context } from '../context'
 import { Argv } from './parser'
 
@@ -39,6 +40,9 @@ export default function validate(ctx: Context) {
           session.text(`commands.${command.name}.arguments.${decl.name}`),
         ]))
         const source = await session.prompt()
+        if (isNullable(source)) {
+          return sendHint('internal.insufficient-arguments', decl.name)
+        }
         args.push(Argv.parseValue(source, 'argument', argv, decl))
         index++
       }
