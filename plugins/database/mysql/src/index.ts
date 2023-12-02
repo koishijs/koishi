@@ -11,7 +11,7 @@ export default defineDriver(MySQLDriver, Schema.intersect([
   }),
   Schema.object({
     ssl: Schema.union([
-      Schema.const(null),
+      Schema.const(undefined),
       Schema.object({
         ca: Schema.string(),
         cert: Schema.string(),

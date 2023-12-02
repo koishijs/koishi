@@ -41,9 +41,9 @@
     }
   },
   "peerDependencies": {
-    "koishi": "^4.15.6"
+    "koishi": "^4.15.7"
   },
   "devDependencies": {
-    "koishi": "^4.15.6"
+    "koishi": "^4.15.7"
   }
 }

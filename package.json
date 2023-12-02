@@ -39,7 +39,7 @@
   "license": "MIT",
   "devDependencies": {
     "@koishijs/eslint-config": "^1.0.4",
-    "@octokit/rest": "^18.12.0",
+    "@octokit/webhooks-types": "^7.3.1",
     "@sinonjs/fake-timers": "^6.0.1",
     "@types/chai": "^4.3.9",
     "@types/chai-as-promised": "^7.1.7",
@@ -73,7 +73,7 @@
     "yakumo-esbuild": "^0.3.26",
     "yakumo-esbuild-yaml": "^0.3.1",
     "yakumo-mocha": "^0.3.1",
-    "yakumo-publish": "^0.3.5",
+    "yakumo-publish": "^0.3.10",
     "yakumo-publish-sync": "^0.3.3",
     "yakumo-tsc": "^0.3.12",
     "yakumo-upgrade": "^0.3.4",
