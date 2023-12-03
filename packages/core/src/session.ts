@@ -471,8 +471,9 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
 
     await this.send(prefix + options.suffix)
     return this.prompt((session) => {
-      const content = session.content.trim()
-      if (!content || content === '.' || content === '。') {
+      const { content, atSelf, hasAt } = session.stripped
+      if (!atSelf && hasAt) return
+      if (content === '.' || content === '。') {
         return expect[0]
       }
     }, options)

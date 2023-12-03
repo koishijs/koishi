@@ -42,7 +42,7 @@ describe('@koishijs/plugin-help', () => {
     ].join('\n'))
 
     await client.shouldReply('help xxxx', '指令未找到。')
-    await client.shouldReply('help heip', '指令未找到。您要找的是不是“help”？发送句号以使用推测的指令。')
+    await client.shouldReply('help heip', '指令未找到。您要找的是不是“help”？回复句号以使用推测的指令。')
     await client.shouldReply('.', message)
     await client.shouldReply('help -h', message)
     await client.shouldReply('help 帮助', message)

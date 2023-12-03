@@ -21,7 +21,7 @@ describe('Command Suggestion', () => {
 
   it('execute command', async () => {
     await client1.shouldReply('foo bar', 'foobar')
-    await client1.shouldNotReply(' ')
+    await client1.shouldNotReply('.')
   })
 
   it('no suggestions', async () => {
@@ -29,34 +29,34 @@ describe('Command Suggestion', () => {
   })
 
   it('apply suggestions 1', async () => {
-    await client1.shouldReply('fo bar', '您要找的是不是“foo”？发送句号以使用推测的指令。')
+    await client1.shouldReply('fo bar', '您要找的是不是“foo”？回复句号以使用推测的指令。')
     await client2.shouldReply('/fooo -t bar', 'fooobar')
-    await client1.shouldReply(' ', 'foobar')
-    await client1.shouldNotReply(' ')
+    await client1.shouldReply('.', 'foobar')
+    await client1.shouldNotReply('.')
   })
 
   it('apply suggestions 2', async () => {
-    await client2.shouldReply('/foooo -t bar', '您要找的是不是“fooo”？发送句号以使用推测的指令。')
+    await client2.shouldReply('/foooo -t bar', '您要找的是不是“fooo”？回复句号以使用推测的指令。')
     await client1.shouldReply('foo bar', 'foobar')
-    await client2.shouldReply(' ', 'fooobar')
-    await client2.shouldNotReply(' ')
+    await client2.shouldReply('.', 'fooobar')
+    await client2.shouldNotReply('.')
   })
 
   it('ignore suggestions 1', async () => {
-    await client1.shouldReply('fo bar', '您要找的是不是“foo”？发送句号以使用推测的指令。')
+    await client1.shouldReply('fo bar', '您要找的是不是“foo”？回复句号以使用推测的指令。')
     await client1.shouldNotReply('bar foo')
-    await client1.shouldNotReply(' ')
+    await client1.shouldNotReply('.')
   })
 
   it('ignore suggestions 2', async () => {
-    await client2.shouldReply('/fo bar', '您要找的是不是“foo”？发送句号以使用推测的指令。')
+    await client2.shouldReply('/fo bar', '您要找的是不是“foo”？回复句号以使用推测的指令。')
     await client2.shouldReply('/foo bar', 'foobar')
-    await client2.shouldNotReply(' ')
+    await client2.shouldNotReply('.')
   })
 
   it('multiple suggestions', async () => {
     await client1.shouldReply('fool bar', '您要找的是不是“foo”或“fooo”或“bool”？')
-    await client1.shouldNotReply(' ')
+    await client1.shouldNotReply('.')
   })
 })
 
@@ -83,16 +83,16 @@ describe('session.suggest()', () => {
   after(() => app.stop())
 
   it('no suggestions', async () => {
-    await client.shouldNotReply(' ')
+    await client.shouldNotReply('.')
     await client.shouldNotReply('find for')
   })
 
   it('show suggestions', async () => {
     await client.shouldReply('.find 111', 'PREFIX')
-    await client.shouldNotReply(' ')
+    await client.shouldNotReply('.')
     await client.shouldReply('.find for', `PREFIX您要找的是不是“foo”？SUFFIX`)
-    await client.shouldReply(' ', 'found:foo')
+    await client.shouldReply('.', 'found:foo')
     await client.shouldReply('.find bax', `PREFIX您要找的是不是“bar”或“baz”？`)
-    await client.shouldNotReply(' ')
+    await client.shouldNotReply('.')
   })
 })
