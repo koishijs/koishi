@@ -29,6 +29,6 @@ internal:
   invalid-user: Entrez un nom d'utilisateur valide.
   invalid-channel: Entrez un nom de canal valide.
   suggest-hint: Voulez-vous dire {0} ?
-  suggest-command: Tapez un point pour appliquer la suggestion.
+  suggest-command: 回复句号以使用推测的指令。
 commands:
   $: Système commande
