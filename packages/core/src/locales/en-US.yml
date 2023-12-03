@@ -29,6 +29,6 @@ internal:
   invalid-user: Expect a valid user.
   invalid-channel: Expect a valid channel.
   suggest-hint: Do you mean {0}?
-  suggest-command: Send a period to apply the suggestion.
+  suggest-command: 回复句号以使用推测的指令。
 commands:
   $: Command System
