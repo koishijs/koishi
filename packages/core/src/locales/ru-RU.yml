@@ -29,6 +29,6 @@ internal:
   invalid-user: 请指定正确的用户。
   invalid-channel: 请指定正确的频道。
   suggest-hint: 您要找的是不是{0}？
-  suggest-command: 发送句号以使用推测的指令。
+  suggest-command: 回复句号以使用推测的指令。
 commands:
   $: 指令系统
