@@ -29,6 +29,6 @@ internal:
   invalid-user: ユーザー名を指定してください。
   invalid-channel: チャンネル名を指定してください。
   suggest-hint: '「{0}」を実行したいですか？'
-  suggest-command: 句点を送信してコマンドを実行します。
+  suggest-command: 回复句号以使用推测的指令。
 commands:
   $: 指令系统
