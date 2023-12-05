@@ -14,7 +14,7 @@ internal:
   $: Internal Text
   error-encountered: An unknown error has occurred.
   low-authority: Low authority.
-  prompt-argument: 请发送{0}。
+  prompt-argument: Please enter {0}
   insufficient-arguments: Insufficient arguments, type help to see usage.
   redunant-arguments: Redunant arguments, type help to see usage.
   invalid-argument: Invalid argument {0}, {1}
@@ -29,6 +29,6 @@ internal:
   invalid-user: Expect a valid user.
   invalid-channel: Expect a valid channel.
   suggest-hint: Do you mean {0}?
-  suggest-command: 回复句号以使用推测的指令。
+  suggest-command: Send a period to apply the suggestion.
 commands:
   $: Command System
