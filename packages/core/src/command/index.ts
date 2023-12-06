@@ -145,7 +145,7 @@ export class Commander extends Map<string, Command> {
   private _resolvePrefixes(session: Session) {
     const value = session.resolve(this.config.prefix)
     const result = Array.isArray(value) ? value : [value || '']
-    return result.map(source => h.escape(source))
+    return result.map(source => h.escape(source)).sort().reverse()
   }
 
   available(session: Session) {

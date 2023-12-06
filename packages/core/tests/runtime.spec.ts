@@ -76,7 +76,7 @@ describe('Runtime', () => {
     })
 
     it('optional prefix', async () => {
-      app.config.prefix = ['.', '']
+      app.config.prefix = ['', '.']
 
       await client1.shouldReply('cmd2', 'cmd2:123')
       await client4.shouldReply('cmd2', 'cmd2:123')
