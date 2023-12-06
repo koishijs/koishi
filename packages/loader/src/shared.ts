@@ -39,7 +39,7 @@ declare module 'cordis' {
   // We define them directly on `EffectScope` for typing convenience.
   interface EffectScope<C> {
     [Loader.kRecord]?: Dict<ForkScope<C>>
-    alias?: string
+    key?: string
   }
 }
 
@@ -122,6 +122,7 @@ export abstract class Loader {
   public mime: string
   public filename: string
   public envFiles: string[]
+  public names = new Set<string>()
   public cache: Dict<string> = Object.create(null)
   public prolog: Logger.Record[] = []
 
@@ -185,6 +186,28 @@ export abstract class Loader {
     throw new Error('config file not found')
   }
 
+  migrate(plugins: Dict) {
+    const backup = { ...plugins }
+    for (const key in backup) delete plugins[key]
+    for (const key in backup) {
+      if (key.startsWith('$')) {
+        plugins[key] = backup[key]
+        continue
+      }
+      const [name] = key.split(':', 1)
+      const isGroup = name === 'group' || name === '~group'
+      if (isGroup) this.migrate(backup[key])
+      let ident = key.slice(name.length + 1)
+      if (ident && !this.names.has(ident)) {
+        this.names.add(ident)
+        plugins[key] = backup[key]
+        continue
+      }
+      ident = Math.random().toString(36).slice(2, 8)
+      plugins[`${name}:${ident}`] = backup[key]
+    }
+  }
+
   async readConfig() {
     if (this.mime === 'application/yaml') {
       this.config = yaml.load(await fs.readFile(this.filename, 'utf8')) as any
@@ -196,6 +219,8 @@ export abstract class Loader {
       this.config = module.default || module
     }
 
+    this.migrate(this.config.plugins)
+    if (this.writable) await this.writeConfig(true)
     return new Context.Config(this.interpolate(this.config))
   }
 
@@ -282,7 +307,7 @@ export abstract class Loader {
       }
       if (!fork) return
       ctx[Loader.ancestor] = fork.uid
-      fork.alias = key.slice(name.length + 1)
+      fork.key = key.slice(name.length + 1)
       parent.scope[Loader.kRecord][key] = fork
     }
     const filter = this.interpolate(meta.$filter)
@@ -325,24 +350,17 @@ export abstract class Loader {
     return this.unload(ctx, key)
   }
 
-  paths(scope: EffectScope, suffix: string[] = []): string[] {
+  paths(scope: EffectScope): string[] {
     // root scope
-    if (scope === scope.parent.scope) {
-      return [suffix.slice(1).join('/')]
-    }
+    if (scope === scope.parent.scope) return []
 
     // runtime scope
     if (scope.runtime === scope) {
-      return [].concat(...scope.runtime.children.map(child => this.paths(child, suffix)))
+      return [].concat(...scope.runtime.children.map(child => this.paths(child)))
     }
 
-    const child = scope
-    scope = scope.parent.scope
-    const record = scope[Loader.kRecord]
-    if (!record) return this.paths(scope, suffix)
-    const entry = Object.entries(record).find(([, value]) => value === child)
-    if (!entry) return []
-    return this.paths(scope, [entry[0], ...suffix])
+    if (scope.key) return [scope.key]
+    return this.paths(scope.parent.scope)
   }
 
   async createApp() {
