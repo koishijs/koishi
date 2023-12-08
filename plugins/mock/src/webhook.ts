@@ -1,4 +1,5 @@
 import { Context, Dict } from 'koishi'
+import {} from '@koishijs/plugin-server'
 import { Socket } from 'net'
 import { IncomingMessage, ServerResponse } from 'http'
 
@@ -11,7 +12,7 @@ export namespace Webhook {
 }
 
 export class Webhook {
-  static inject = ['router']
+  static inject = ['server']
 
   constructor(public ctx: Context) {}
 
@@ -73,7 +74,7 @@ export class Webhook {
         if (typeof callback === 'function') callback()
         return res
       }
-      this.ctx.router._http.emit('request', req, res)
+      this.ctx.server._http.emit('request', req, res)
       req.emit('data', body)
       req.emit('end')
     })

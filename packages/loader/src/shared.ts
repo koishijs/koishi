@@ -186,7 +186,7 @@ export abstract class Loader {
     throw new Error('config file not found')
   }
 
-  migrate(plugins: Dict) {
+  private migrateGroup(plugins: Dict) {
     const backup = { ...plugins }
     for (const key in backup) delete plugins[key]
     for (const key in backup) {
@@ -196,7 +196,7 @@ export abstract class Loader {
       }
       const [name] = key.split(':', 1)
       const isGroup = name === 'group' || name === '~group'
-      if (isGroup) this.migrate(backup[key])
+      if (isGroup) this.migrateGroup(backup[key])
       let ident = key.slice(name.length + 1)
       if (ident && !this.names.has(ident)) {
         this.names.add(ident)
@@ -206,6 +206,10 @@ export abstract class Loader {
       ident = Math.random().toString(36).slice(2, 8)
       plugins[`${name}:${ident}`] = backup[key]
     }
+  }
+
+  async migrate() {
+    this.migrateGroup(this.config.plugins)
   }
 
   async readConfig() {
@@ -219,7 +223,7 @@ export abstract class Loader {
       this.config = module.default || module
     }
 
-    this.migrate(this.config.plugins)
+    await this.migrate()
     if (this.writable) await this.writeConfig(true)
     return new Context.Config(this.interpolate(this.config))
   }

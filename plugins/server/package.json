@@ -1,0 +1,52 @@
+{
+  "name": "@koishijs/plugin-server",
+  "description": "Server service for Koishi",
+  "version": "0.1.2",
+  "main": "lib/index.js",
+  "module": "lib/index.mjs",
+  "typings": "lib/index.d.ts",
+  "files": [
+    "lib",
+    "src"
+  ],
+  "author": "Shigma <shigma10826@gmail.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cordisjs/server.git",
+    "directory": "packages/core"
+  },
+  "bugs": {
+    "url": "https://github.com/satorijs/satori/issues"
+  },
+  "homepage": "https://koishi.chat/plugins/develop/server.html",
+  "keywords": [
+    "bot",
+    "adapter",
+    "protocol",
+    "chatbot",
+    "koishi",
+    "router",
+    "server"
+  ],
+  "koishi": {
+    "service": {
+      "implements": [
+        "server"
+      ]
+    },
+    "description": {
+      "en": "Service & Router Service",
+      "zh": "服务器与路由服务"
+    }
+  },
+  "peerDependencies": {
+    "koishi": "^4.15.7"
+  },
+  "devDependencies": {
+    "koishi": "^4.15.7"
+  },
+  "dependencies": {
+    "@cordisjs/server": "^0.1.2"
+  }
+}
