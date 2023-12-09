@@ -5,9 +5,6 @@ import { h, Logger, Schema } from '@satorijs/core'
 import { Context } from './context'
 import zhCN from './locales/zh-CN.yml'
 import enUS from './locales/en-US.yml'
-import jaJP from './locales/ja-JP.yml'
-import frFR from './locales/fr-FR.yml'
-import zhTW from './locales/zh-TW.yml'
 
 const logger = new Logger('i18n')
 const kTemplate = Symbol('template')
@@ -58,9 +55,6 @@ export class I18n {
     this.define('', { '': '' })
     this.define('zh-CN', zhCN)
     this.define('en-US', enUS)
-    this.define('ja-JP', jaJP)
-    this.define('fr-FR', frFR)
-    this.define('zh-TW', zhTW)
   }
 
   fallback(locales: string[]) {

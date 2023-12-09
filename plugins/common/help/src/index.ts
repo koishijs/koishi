@@ -1,9 +1,6 @@
 import { Argv, Command, Computed, Context, FieldCollector, h, Schema, Session } from 'koishi'
 import zhCN from './locales/zh-CN.yml'
 import enUS from './locales/en-US.yml'
-import jaJP from './locales/ja-JP.yml'
-import frFR from './locales/fr-FR.yml'
-import zhTW from './locales/zh-TW.yml'
 
 declare module 'koishi' {
   interface Events {
@@ -59,9 +56,6 @@ export const name = 'help'
 export function apply(ctx: Context, config: Config) {
   ctx.i18n.define('zh-CN', zhCN)
   ctx.i18n.define('en-US', enUS)
-  ctx.i18n.define('ja-JP', jaJP)
-  ctx.i18n.define('fr-FR', frFR)
-  ctx.i18n.define('zh-TW', zhTW)
 
   function enableHelp(command: Command) {
     command[Context.current] = ctx

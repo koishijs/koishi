@@ -78,9 +78,9 @@ export class DatabaseService extends Database<Tables> {
     defineProperty(this, Context.current, app)
 
     this.extend('user', {
-      id: 'unsigned(20)',
+      id: 'unsigned(8)',
       name: { type: 'string', length: 255 },
-      flag: 'unsigned(20)',
+      flag: 'unsigned(8)',
       authority: 'unsigned(4)',
       locales: 'list(255)',
       permissions: 'list',
@@ -90,8 +90,8 @@ export class DatabaseService extends Database<Tables> {
     })
 
     this.extend('binding', {
-      aid: 'unsigned(20)',
-      bid: 'unsigned(20)',
+      aid: 'unsigned(8)',
+      bid: 'unsigned(8)',
       pid: 'string(255)',
       platform: 'string(255)',
     }, {
@@ -101,7 +101,7 @@ export class DatabaseService extends Database<Tables> {
     this.extend('channel', {
       id: 'string(255)',
       platform: 'string(255)',
-      flag: 'unsigned(20)',
+      flag: 'unsigned(8)',
       assignee: 'string(255)',
       guildId: 'string(255)',
       locales: 'list(255)',
