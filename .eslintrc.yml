@@ -11,7 +11,7 @@ globals:
   KOISHI_CONFIG: true
 
 extends:
-  - '@koishijs/eslint-config'
+  - '@cordisjs/eslint-config'
 
 plugins:
   - mocha
