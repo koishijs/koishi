@@ -46,9 +46,17 @@
   "dependencies": {
     "@koishijs/core": "4.16.0",
     "@koishijs/loader": "4.3.0",
+    "@koishijs/plugin-server": "^3.1.3",
     "@koishijs/utils": "^7.1.1",
     "@satorijs/satori": "^3.3.0",
     "cac": "^6.7.14",
     "kleur": "^4.1.5"
+  },
+  "yakumo": {
+    "tsc": {
+      "ignore": [
+        "@koishijs/plugin-server"
+      ]
+    }
   }
 }

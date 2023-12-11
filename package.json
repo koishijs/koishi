@@ -69,15 +69,12 @@
     "shx": "^0.3.4",
     "source-map-support": "^0.5.21",
     "typescript": "^5.3.2",
-    "yakumo": "^0.3.13",
-    "yakumo-esbuild": "^0.3.26",
-    "yakumo-esbuild-yaml": "^0.3.1",
-    "yakumo-mocha": "^0.3.1",
-    "yakumo-publish": "^0.3.10",
-    "yakumo-publish-sync": "^0.3.3",
-    "yakumo-tsc": "^0.3.12",
-    "yakumo-upgrade": "^0.3.6",
-    "yakumo-version": "^0.3.4",
+    "yakumo": "^1.0.0-alpha.1",
+    "yakumo-esbuild": "^1.0.0-alpha.0",
+    "yakumo-esbuild-yaml": "^1.0.0-alpha.0",
+    "yakumo-mocha": "^1.0.0-alpha.0",
+    "yakumo-publish-sync": "^1.0.0-alpha.0",
+    "yakumo-tsc": "^1.0.0-alpha.1",
     "yml-register": "^1.1.0"
   }
 }

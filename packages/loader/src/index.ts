@@ -1,8 +1,6 @@
 import { Logger } from '@koishijs/core'
 import { Loader } from './shared'
 import { promises as fs } from 'fs'
-// @ts-ignore
-import { dependencies } from '../package.json'
 import * as dotenv from 'dotenv'
 import ns from 'ns-require'
 
@@ -43,13 +41,13 @@ export default class NodeLoader extends Loader {
         ...this.config.plugins,
       }
       try {
-        const version = dependencies['@koishijs/plugin-server']
+        const version = require('koishi/package.json').dependencies['@koishijs/plugin-server']
         const data = JSON.parse(await fs.readFile('package.json', 'utf8'))
         data.dependencies['@koishijs/plugin-server'] = version
         data.dependencies = Object.fromEntries(Object.entries(data.dependencies).sort(([a], [b]) => a.localeCompare(b)))
         await fs.writeFile('package.json', JSON.stringify(data, null, 2) + '\n')
       } catch {
-        logger.warn('cannot find package.json, please install @koishijs/plugin-server manually')
+        logger.warn('please install @koishijs/plugin-server manually')
       }
     }
     await super.migrate()

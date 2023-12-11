@@ -1,9 +1,13 @@
-require:
-  - yakumo-esbuild
-  - yakumo-esbuild-yaml
-  - yakumo-mocha
-  - yakumo-publish
-  - yakumo-publish-sync
-  - yakumo-tsc
-  - yakumo-upgrade
-  - yakumo-version
+- name: yakumo
+  config:
+    pipeline:
+      build:
+        - tsc
+        - esbuild
+      clean:
+        - tsc --clean
+- name: yakumo-esbuild
+- name: yakumo-esbuild-yaml
+- name: yakumo-mocha
+- name: yakumo-publish-sync
+- name: yakumo-tsc
