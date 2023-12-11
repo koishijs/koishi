@@ -6,8 +6,8 @@ const cli = CAC('koishi').help().version(version)
 
 registerStartCommand(cli)
 
-cli.parse()
+const argv = cli.parse()
 
-if (!cli.matchedCommand) {
+if (!cli.matchedCommand && !argv.options.help) {
   cli.outputHelp()
 }

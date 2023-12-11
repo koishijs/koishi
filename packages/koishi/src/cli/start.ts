@@ -109,14 +109,12 @@ export default function (cli: CAC) {
     .option('--debug [namespace]', 'specify debug namespace')
     .option('--log-level [level]', 'specify log level (default: 2)')
     .option('--log-time [format]', 'show timestamp in logs')
-    .option('--watch [path]', 'watch and reload at change')
     .action((file, options) => {
-      const { logLevel, debug, logTime, watch, ...rest } = options
+      const { logLevel, debug, logTime, ...rest } = options
       if (logLevel !== undefined && (!isInteger(logLevel) || logLevel < 0)) {
         console.warn(`${kleur.red('error')} log level should be a positive integer.`)
         process.exit(1)
       }
-      setEnvArg('KOISHI_WATCH_ROOT', watch) // for backward compatibility
       setEnvArg('KOISHI_LOG_TIME', logTime)
       process.env.KOISHI_LOG_LEVEL = logLevel || ''
       process.env.KOISHI_DEBUG = debug || ''
