@@ -70,13 +70,29 @@ function createWorker(options: Dict<any>) {
     }
   })
 
-  function shouldExit(code: number) {
+  // https://nodejs.org/api/process.html#signal-events
+  // https://learn.microsoft.com/en-us/cpp/c-runtime-library/reference/signal
+  const signals: NodeJS.Signals[] = [
+    'SIGABRT',
+    'SIGBREAK',
+    'SIGBUS',
+    'SIGFPE',
+    'SIGHUP',
+    'SIGILL',
+    'SIGINT',
+    'SIGKILL',
+    'SIGSEGV',
+    'SIGSTOP',
+    'SIGTERM',
+  ]
+
+  function shouldExit(code: number, signal: NodeJS.Signals) {
     // start failed
     if (!config) return true
 
-    // exit manually or by signal
-    // https://tldp.org/LDP/abs/html/exitcodes.html
-    if (code === 0 || code >= 128 && code < 128 + 16) return true
+    // exit manually
+    if (code === 0) return true
+    if (signals.includes(signal)) return true
 
     // restart manually
     if (code === 51) return false
@@ -86,8 +102,8 @@ function createWorker(options: Dict<any>) {
     return !config.autoRestart
   }
 
-  child.on('exit', (code) => {
-    if (shouldExit(code)) {
+  child.on('exit', (code, signal) => {
+    if (shouldExit(code, signal)) {
       process.exit(code)
     }
     createWorker(options)
