@@ -395,7 +395,13 @@ export namespace Argv {
 
   type OptionDeclarationMap = Dict<OptionDeclaration>
 
-  export class CommandBase {
+  export namespace CommandBase {
+    export interface Config {
+      strictOptions?: boolean
+    }
+  }
+
+  export class CommandBase<T extends CommandBase.Config = CommandBase.Config> {
     public declaration: string
 
     public _arguments: Declaration[]
@@ -405,7 +411,7 @@ export namespace Argv {
     private _namedOptions: OptionDeclarationMap = {}
     private _symbolicOptions: OptionDeclarationMap = {}
 
-    constructor(public readonly name: string, declaration: string, public ctx: Context) {
+    constructor(public readonly name: string, declaration: string, public ctx: Context, public config: T) {
       if (!name) throw new Error('expect a command name')
       const declList = this._arguments = parseDecl(declaration)
       this.declaration = declList.stripped
@@ -539,14 +545,8 @@ export namespace Argv {
 
           // find -
           let i = 0
-          let name: string
           for (; i < content.length; ++i) {
             if (content.charCodeAt(i) !== 45) break
-          }
-          if (content.slice(i, i + 3) === 'no-' && !this._namedOptions[content.slice(i)]) {
-            name = content.slice(i + 3)
-            options[camelCase(name)] = false
-            continue
           }
 
           // find =
@@ -554,7 +554,15 @@ export namespace Argv {
           for (; j < content.length; j++) {
             if (content.charCodeAt(j) === 61) break
           }
-          name = content.slice(i, j)
+          const name = content.slice(i, j)
+          if (this.config.strictOptions && !this._namedOptions[name]) {
+            args.push(Argv.parseValue(content, 'argument', argv, argDecl))
+            continue
+          }
+          if (i > 1 && name.startsWith('no-') && !this._namedOptions[name]) {
+            options[camelCase(name.slice(3))] = false
+            continue
+          }
           names = i > 1 ? [name] : name
           param = content.slice(++j)
           option = this._namedOptions[names[names.length - 1]]

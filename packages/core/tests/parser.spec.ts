@@ -86,6 +86,15 @@ describe('Parser API', () => {
       expect(cmd.parse('a b -c')).to.have.shape({ args: ['a', 'b -c'] })
     })
 
+    it('strict options', () => {
+      cmd = app.command('test-strict', { strictOptions: true })
+      cmd.option('gamma', '-c', { value: 1 })
+      expect(cmd.parse('-a')).to.have.shape({ options: {}, args: ['-a'] })
+      expect(cmd.parse('--alpha')).to.have.shape({ options: {}, args: ['--alpha'] })
+      expect(cmd.parse('--no-alpha')).to.have.shape({ options: {}, args: ['--no-alpha'] })
+      expect(cmd.parse('-c')).to.have.shape({ options: { gamma: 1 } })
+    })
+
     it('valued options', () => {
       cmd = app.command('cmd2 <foo> [bar:text]')
       cmd.option('alpha', '-A, --no-alpha', { value: false })

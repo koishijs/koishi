@@ -37,8 +37,12 @@ export namespace Command {
     = string | ((session: Session<U, G>) => Awaitable<string>)
 }
 
-export class Command<U extends User.Field = never, G extends Channel.Field = never, A extends any[] = any[], O extends {} = {}> extends Argv.CommandBase {
-  config: Command.Config
+export class Command<
+  U extends User.Field = never,
+  G extends Channel.Field = never,
+  A extends any[] = any[],
+  O extends {} = {},
+> extends Argv.CommandBase<Command.Config> {
   children: Command[] = []
 
   _parent: Command = null
@@ -77,8 +81,7 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
   }
 
   constructor(name: string, decl: string, ctx: Context) {
-    super(name, decl, ctx)
-    this.config = { ...Command.defaultConfig }
+    super(name, decl, ctx, { ...Command.defaultConfig })
     this._registerAlias(name)
     ctx.$commander._commandList.push(this)
   }
@@ -380,7 +383,7 @@ function toStringType(type: Argv.Type) {
 }
 
 export namespace Command {
-  export interface Config extends PermissionConfig {
+  export interface Config extends Argv.CommandBase.Config, PermissionConfig {
     /** disallow unknown options */
     checkUnknown?: boolean
     /** check argument count */
