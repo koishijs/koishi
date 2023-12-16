@@ -69,11 +69,11 @@
     "shx": "^0.3.4",
     "source-map-support": "^0.5.21",
     "typescript": "^5.3.2",
-    "yakumo": "^1.0.0-alpha.3",
+    "yakumo": "^1.0.0-alpha.4",
     "yakumo-esbuild": "^1.0.0-alpha.0",
     "yakumo-esbuild-yaml": "^1.0.0-alpha.0",
     "yakumo-mocha": "^1.0.0-alpha.0",
-    "yakumo-publish-sync": "^1.0.0-alpha.0",
+    "yakumo-publish-sync": "^1.0.0-alpha.1",
     "yakumo-tsc": "^1.0.0-alpha.1",
     "yml-register": "^1.1.0"
   }
