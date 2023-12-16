@@ -189,7 +189,7 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
     if (channel) return channel
     const assignee = this.resolve(app.config.autoAssign) ? this.selfId : ''
     if (assignee) {
-      return app.database.createChannel(platform, id, { assignee, guildId })
+      return app.database.createChannel(platform, id, { assignee, guildId, createdAt: new Date() })
     } else {
       const channel = app.model.tables.channel.create()
       Object.assign(channel, { platform, id, guildId, $detached: true })

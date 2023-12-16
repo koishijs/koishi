@@ -54,6 +54,7 @@ export interface Channel {
   guildId: string
   locales: string[]
   permissions: string[]
+  createdAt: Date
 }
 
 export namespace Channel {
@@ -106,6 +107,7 @@ export class DatabaseService extends Database<Tables> {
       guildId: 'string(255)',
       locales: 'list(255)',
       permissions: 'list',
+      createdAt: 'timestamp',
     }, {
       primary: ['id', 'platform'],
     })
