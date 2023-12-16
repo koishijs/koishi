@@ -209,6 +209,7 @@ export abstract class Loader {
   }
 
   async migrate() {
+    this.names.clear()
     this.migrateGroup(this.config.plugins)
   }
 
