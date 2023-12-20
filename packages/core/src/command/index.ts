@@ -66,7 +66,15 @@ export class Commander extends Map<string, Command> {
         const { name, options, arguments: args } = session.event.argv
         session.execute({ name, args, options })
       } else {
+        session.stripped.hasAt = true
+        session.stripped.appel = true
+        session.stripped.atSelf = true
+        session.stripped.prefix = ''
         defineProperty(session, 'argv', ctx.bail('before-parse', session.content, session))
+        if (!session.argv) {
+          ctx.logger('command').warn('failed to parse interaction command:', session.content)
+          return
+        }
         session.argv.root = true
         session.argv.session = session
         session.execute(session.argv)
