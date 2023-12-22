@@ -82,6 +82,9 @@ export class Commander extends Map<string, Command> {
     })
 
     ctx.before('attach', (session) => {
+      const { hasAt, appel } = session.stripped
+      if (!appel && hasAt) return
+
       // strip prefix
       let content = session.stripped.content
       for (const prefix of this._resolvePrefixes(session)) {

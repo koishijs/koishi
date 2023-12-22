@@ -116,7 +116,7 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
         atSelf = appel = true
       }
       // quote messages may contain mentions
-      if (this.quote?.user?.id && this.quote.user.id !== attrs.id) {
+      if (!this.quote?.user?.id || this.quote.user.id !== attrs.id) {
         hasAt = true
       }
       // @ts-ignore
