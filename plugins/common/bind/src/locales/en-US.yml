@@ -13,6 +13,8 @@ commands.bind:
       Please use your account to send the following text to the bot on the target platform within 5 minutes:
       {0}
       Note: The current platform is your original platform, the user data here will overwrite the data from the target platform.
+    self-1: 请前往原始平台输入。
+    self-2: 请前往目标平台输入。
     success: Account binding has been successful!
     remove-success: Your account has been successfully unbundled!
     remove-original: 'Cannot disconnect: This is your original account.'
