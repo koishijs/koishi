@@ -69,7 +69,9 @@ export function apply(ctx: Context, config: Config = {}) {
     const token = session.stripped.content
     const data = tokens[token]
     if (!data) return next()
-    if (data[0] === session.platform && data[1] === session.userId) return next()
+    if (data[0] === session.platform && data[1] === session.userId) {
+      return session.text('commands.bind.messages.self-' + (data[2] < 0 ? '2' : '1'))
+    }
     delete tokens[token]
     if (data[2] < 0) {
       const [binding] = await ctx.database.get('binding', { platform: data[0], pid: data[1] }, ['aid'])
