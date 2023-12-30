@@ -153,7 +153,7 @@ export function apply(ctx: Context, config: Config) {
       if (!target) {
         const prefix = session.resolve(session.app.config.prefix)[0] ?? ''
         const commands = $._commandList.filter(cmd => cmd.parent === null)
-        const output = formatCommands('.global-prolog', session, commands, options)
+        const output = await formatCommands('.global-prolog', session, commands, options)
         const epilog = session.text('.global-epilog', [prefix])
         if (epilog) output.push(epilog)
         return output.filter(Boolean).join('\n')
@@ -161,8 +161,7 @@ export function apply(ctx: Context, config: Config) {
 
       const command = await inferCommand(target, session)
       if (!command) return
-      const permissions = [`command.${command.name}`]
-      if (!await ctx.permissions.test(permissions, session as any)) {
+      if (!await ctx.permissions.test(`command.${command.name}`, session)) {
         return session.text('internal.low-authority')
       }
       return showHelp(command, session, options)
@@ -182,14 +181,20 @@ function* getCommands(session: Session<'authority'>, commands: Command[], showHi
   }
 }
 
-function formatCommands(path: string, session: Session<'authority'>, children: Command[], options: HelpOptions) {
-  const commands = Array
-    .from(getCommands(session, children, options.showHidden))
-    .sort((a, b) => a.displayName > b.displayName ? 1 : -1)
-  if (!commands.length) return []
+async function formatCommands(path: string, session: Session<'authority'>, children: Command[], options: HelpOptions) {
+  const cache = new Map<string, Promise<boolean>>()
+  // Step 1: filter commands by visibility
+  children = Array.from(getCommands(session, children, options.showHidden))
+  // Step 2: filter commands by permission
+  children = (await Promise.all(children.map(async (command) => {
+    return [command, await session.app.permissions.test(`command.${command.name}`, session, cache)] as const
+  }))).filter(([, result]) => result).map(([command]) => command)
+  // Step 3: sort commands by name
+  children.sort((a, b) => a.displayName > b.displayName ? 1 : -1)
+  if (!children.length) return []
 
   const prefix = session.resolve(session.app.config.prefix)[0] ?? ''
-  const output = commands.map(({ name, displayName, config }) => {
+  const output = children.map(({ name, displayName, config }) => {
     let output = '    ' + prefix + displayName.replace(/\./g, ' ')
     output += '  ' + session.text([`commands.${name}.description`, ''], config.params)
     return output
@@ -274,7 +279,7 @@ async function showHelp(command: Command, session: Session<'authority'>, config:
     if (text) output.push(...text.split('\n').map(line => '    ' + line))
   }
 
-  output.push(...formatCommands('.subcommand-prolog', session, command.children, config))
+  output.push(...await formatCommands('.subcommand-prolog', session, command.children, config))
 
   return output.filter(Boolean).join('\n')
 }

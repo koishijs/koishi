@@ -54,12 +54,14 @@ describe('@koishijs/plugin-help', () => {
     app.command('foo4', 'DESCRIPTION').usage('USAGE TEXT')
     app.command('foo5', 'DESCRIPTION').usage(({ userId }) => '' + userId)
     app.command('foo6', 'DESCRIPTION').example('EXAMPLE TEXT')
+    app.command('foo7', 'DESCRIPTION', { authority: 3 })
 
     await client.shouldReply('help foo1', '指令：foo1\nDESCRIPTION\n别名：foo。')
     await client.shouldReply('help foobar', '指令：foo3\nDESCRIPTION')
     await client.shouldReply('help foo4', '指令：foo4\nDESCRIPTION\nUSAGE TEXT')
     await client.shouldReply('help foo5', '指令：foo5\nDESCRIPTION\n123')
     await client.shouldReply('help foo6', '指令：foo6\nDESCRIPTION\n使用示例：\n    EXAMPLE TEXT')
+    await client.shouldReply('help foo7', '权限不足。')
   })
 
   it('command options', async () => {
