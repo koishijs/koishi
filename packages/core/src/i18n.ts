@@ -19,6 +19,31 @@ declare module './context' {
   }
 }
 
+type GroupNames<P extends string, K extends string = never> =
+  | P extends `${string}(${infer R})${infer S}`
+  ? GroupNames<S, K | R>
+  : K
+
+export type MatchResult<P extends string> = Record<GroupNames<P>, string>
+
+export function createMatch<P extends string>(pattern: P): (string: string) => null | MatchResult<P> {
+  const groups: string[] = []
+  const source = pattern.replace(/\(([^)]+)\)/g, (_, name) => {
+    groups.push(name)
+    return '(.+)'
+  })
+  const regexp = new RegExp(`^${source}$`)
+  return (string: string) => {
+    const capture = regexp.exec(string)
+    if (!capture) return null
+    const data: any = {}
+    for (let i = 0; i < groups.length; i++) {
+      data[groups[i]] = capture[i + 1]
+    }
+    return data
+  }
+}
+
 export interface CompareOptions {
   minSimilarity?: number
 }
@@ -36,9 +61,9 @@ export namespace I18n {
 
   export interface FindOptions extends CompareOptions {}
 
-  export interface FindResult {
+  export interface FindResult<P extends string> {
     locale: string
-    data: Dict
+    data: MatchResult<P>
     similarity: number
   }
 }
@@ -114,27 +139,18 @@ export class I18n {
     })
   }
 
-  find(path: string, actual: string, options: I18n.FindOptions = {}): I18n.FindResult[] {
+  find<P extends string>(pattern: P, actual: string, options: I18n.FindOptions = {}): I18n.FindResult<P>[] {
     if (!actual) return []
-    const groups: string[] = []
-    path = path.replace(/\(([^)]+)\)/g, (_, name) => {
-      groups.push(name)
-      return '([^.]+)'
-    })
-    const pattern = new RegExp(`^${path}$`)
-    const results: I18n.FindResult[] = []
+    const match = createMatch(pattern)
+    const results: I18n.FindResult<P>[] = []
     for (const locale in this._data) {
       for (const path in this._data[locale]) {
-        const capture = pattern.exec(path)
-        if (!capture) continue
+        const data = match(path)
+        if (!data) continue
         const expect = this._data[locale][path]
         if (typeof expect !== 'string') continue
         const similarity = this.compare(expect, actual, options)
         if (!similarity) continue
-        const data = {}
-        for (let i = 0; i < groups.length; i++) {
-          data[groups[i]] = capture[i + 1]
-        }
         results.push({ locale, data, similarity })
       }
     }

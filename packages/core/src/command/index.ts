@@ -251,7 +251,6 @@ export class Commander extends Map<string, Command> {
         [`commands.${command.name}.$`]: '',
         [`commands.${command.name}.description`]: isLast ? desc : '',
       }))
-      command._disposables.push(caller.permissions.config(`command.${name}`, isLast ? config : {}, 1))
       created.push(command)
       root ||= command
       if (parent) {

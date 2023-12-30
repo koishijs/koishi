@@ -3,6 +3,34 @@ import { Context } from '../context'
 import { Argv } from './parser'
 
 export default function validate(ctx: Context) {
+  ctx.perms.define({
+    pattern: 'command.(name)',
+    depends: ({ name }) => {
+      return ctx.$commander.get(name)?.config.dependencies || []
+    },
+    inherits: ({ name }) => {
+      return ctx.$commander.get(name)?.config.permissions || ['authority.1']
+    },
+    list: () => {
+      return ctx.$commander._commandList.map(command => `command.${command.name}`)
+    },
+  })
+
+  ctx.perms.define({
+    pattern: 'command.(name).option.(name2)',
+    depends: ({ name, name2 }) => {
+      return ctx.$commander.get(name)?._options[name2]?.dependencies || []
+    },
+    inherits: ({ name, name2 }) => {
+      return ctx.$commander.get(name)?._options[name2]?.permissions || ['authority.0']
+    },
+    list: () => {
+      return ctx.$commander._commandList.flatMap(command => {
+        return Object.keys(command._options).map(name => `command.${command.name}.option.${name}`)
+      })
+    },
+  })
+
   // check user
   ctx.before('command/execute', async (argv: Argv<'authority'>) => {
     const { session, options, command } = argv

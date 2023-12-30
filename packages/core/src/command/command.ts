@@ -5,7 +5,7 @@ import { Argv } from './parser'
 import { Next, SessionError } from '../middleware'
 import { Channel, User } from '../database'
 import { FieldCollector, Session } from '../session'
-import { PermissionConfig } from '../permission'
+import { Permissions } from '../permission'
 import { Context } from '../context'
 
 const logger = new Logger('command')
@@ -103,17 +103,13 @@ export class Command<
   }
 
   set parent(parent: Command) {
-    // We do not use `ctx.permissions.depend()` here
-    // because the permission `command.${name}` itself is disposable.
     if (this._parent === parent) return
     if (this._parent) {
       remove(this._parent.children, this)
-      this.ctx.permissions._depends.unlink(`command.${this.name}`, `command.${this._parent.name}`, true)
     }
     this._parent = parent
     if (parent) {
       parent.children.push(this)
-      this.ctx.permissions._depends.link(`command.${this.name}`, `command.${parent.name}`, true)
     }
   }
 
@@ -248,7 +244,6 @@ export class Command<
     }
     this._createOption(name, desc, config)
     this.caller.collect('command.option', () => this.removeOption(name))
-    this.caller.permissions.config(`command.${this.name}.option.${name}`, config, 0)
     return this
   }
 
@@ -383,7 +378,7 @@ function toStringType(type: Argv.Type) {
 }
 
 export namespace Command {
-  export interface Config extends Argv.CommandBase.Config, PermissionConfig {
+  export interface Config extends Argv.CommandBase.Config, Permissions.Config {
     /** disallow unknown options */
     checkUnknown?: boolean
     /** check argument count */

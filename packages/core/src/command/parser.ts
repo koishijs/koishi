@@ -4,7 +4,7 @@ import { h } from '@satorijs/core'
 import { Command } from './command'
 import { Channel, User } from '../database'
 import { Next } from '../middleware'
-import { PermissionConfig } from '../permission'
+import { Permissions } from '../permission'
 import { Disposable } from 'cordis'
 import { Session } from '../session'
 import { Context } from '../context'
@@ -369,7 +369,7 @@ export namespace Argv {
     }
   }
 
-  export interface OptionConfig<T extends Type = Type> extends PermissionConfig {
+  export interface OptionConfig<T extends Type = Type> extends Permissions.Config {
     aliases?: string[]
     symbols?: string[]
     value?: any
