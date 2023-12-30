@@ -133,7 +133,8 @@ export class Commander extends Map<string, Command> {
 
     ctx.schema.extend('command', Command.Config, 1000)
     ctx.schema.extend('command-option', Schema.object({
-      authority: Schema.computed(Schema.natural()).description('选项的权限等级。').default(0).hidden(),
+      inherits: Schema.array(String).role('table').default(['authority.0']).description('权限继承。'),
+      depends: Schema.array(String).role('table').description('权限依赖。'),
     }), 1000)
 
     ctx.on('ready', () => {
@@ -246,7 +247,7 @@ export class Commander extends Map<string, Command> {
         return parent = command
       }
       const isLast = index === segments.length - 1
-      command = new Command(name, isLast ? decl : '', caller)
+      command = new Command(name, isLast ? decl : '', caller, isLast ? config : {})
       command._disposables.push(caller.i18n.define('', {
         [`commands.${command.name}.$`]: '',
         [`commands.${command.name}.description`]: isLast ? desc : '',

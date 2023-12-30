@@ -57,14 +57,6 @@ export class Command<
     return this.ctx.serial(argv.session, 'command/before-execute', argv)
   }]
 
-  static defaultConfig: Command.Config = {
-    showWarning: true,
-    handleError: true,
-    slash: true,
-  }
-
-  static defaultOptionConfig: Argv.OptionConfig = {}
-
   private static _userFields: FieldCollector<'user'>[] = []
   private static _channelFields: FieldCollector<'channel'>[] = []
 
@@ -80,8 +72,14 @@ export class Command<
     return this
   }
 
-  constructor(name: string, decl: string, ctx: Context) {
-    super(name, decl, ctx, { ...Command.defaultConfig })
+  constructor(name: string, decl: string, ctx: Context, config: Command.Config) {
+    super(name, decl, ctx, {
+      showWarning: true,
+      handleError: true,
+      slash: true,
+      ...config,
+    })
+    this.config.inherits ??= [`authority.${config?.authority ?? 1}`]
     this._registerAlias(name)
     ctx.$commander._commandList.push(this)
   }
@@ -238,10 +236,8 @@ export class Command<
     if (typeof args[0] === 'string') {
       desc = args.shift() as string
     }
-    const config = {
-      ...Command.defaultOptionConfig,
-      ...args[0] as Argv.OptionConfig,
-    }
+    const config = { ...args[0] as Argv.OptionConfig }
+    config.inherits ??= [`authority.${config.authority ?? 0}`]
     this._createOption(name, desc, config)
     this.caller.collect('command.option', () => this.removeOption(name))
     return this
@@ -392,7 +388,8 @@ export namespace Command {
   }
 
   export const Config: Schema<Config> = Schema.object({
-    authority: Schema.natural().description('指令的权限等级。').default(1).hidden(),
+    inherits: Schema.array(String).role('table').default(['authority.1']).description('权限继承。'),
+    depends: Schema.array(String).role('table').description('权限依赖。'),
     slash: Schema.boolean().description('启用斜线指令功能。').default(true),
     checkUnknown: Schema.boolean().description('是否检查未知选项。').default(false).hidden(),
     checkArgCount: Schema.boolean().description('是否检查参数数量。').default(false).hidden(),

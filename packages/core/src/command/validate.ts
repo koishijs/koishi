@@ -3,26 +3,28 @@ import { Context } from '../context'
 import { Argv } from './parser'
 
 export default function validate(ctx: Context) {
-  ctx.perms.define({
-    pattern: 'command.(name)',
+  ctx.permissions.define('command.(name)', {
     depends: ({ name }) => {
-      return ctx.$commander.get(name)?.config.dependencies || []
+      const command = ctx.$commander.get(name)
+      if (!command) return
+      const depends = [...command.config.depends ?? []]
+      if (command.parent) depends.push(`command.${command.parent.name}`)
+      return depends
     },
     inherits: ({ name }) => {
-      return ctx.$commander.get(name)?.config.permissions || ['authority.1']
+      return ctx.$commander.get(name)?.config.inherits
     },
     list: () => {
       return ctx.$commander._commandList.map(command => `command.${command.name}`)
     },
   })
 
-  ctx.perms.define({
-    pattern: 'command.(name).option.(name2)',
+  ctx.permissions.define('command.(name).option.(name2)', {
     depends: ({ name, name2 }) => {
-      return ctx.$commander.get(name)?._options[name2]?.dependencies || []
+      return ctx.$commander.get(name)?._options[name2]?.depends
     },
     inherits: ({ name, name2 }) => {
-      return ctx.$commander.get(name)?._options[name2]?.permissions || ['authority.0']
+      return ctx.$commander.get(name)?._options[name2]?.inherits
     },
     list: () => {
       return ctx.$commander._commandList.flatMap(command => {
@@ -47,7 +49,7 @@ export default function validate(ctx: Context) {
         permissions.push(`command.${command.name}.option.${option.name}`)
       }
     }
-    if (!await ctx.permissions.test(permissions, session as any)) {
+    if (!await ctx.permissions.test(permissions, session)) {
       return sendHint('internal.low-authority')
     }
   }, true)

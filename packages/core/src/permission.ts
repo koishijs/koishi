@@ -8,7 +8,6 @@ const logger = new Logger('app')
 
 declare module '@satorijs/core' {
   interface Context {
-    perms: Permissions
     permissions: Permissions
   }
 
@@ -21,18 +20,21 @@ export namespace Permissions {
   export type Links<P extends string> = undefined | string[] | ((data: MatchResult<P>) => undefined | string[])
   export type Check<P extends string> = (data: MatchResult<P>, session: Partial<Session>) => Awaitable<boolean>
 
-  export interface Config {
-    authority?: number
-    permissions?: string[]
-    dependencies?: string[]
-  }
-
-  export interface Entry<P extends string = string> {
-    pattern: P
+  export interface Options<P extends string = string> {
     list?: () => string[]
     check?: Check<P>
     depends?: Links<P>
     inherits?: Links<P>
+  }
+
+  export interface Entry extends Options {
+    match: (string: string) => undefined | MatchResult
+  }
+
+  export interface Config {
+    authority?: number
+    inherits?: string[]
+    depends?: string[]
   }
 }
 
@@ -62,7 +64,12 @@ export class Permissions {
     return this[Context.current]
   }
 
-  define<P extends string>(entry: Permissions.Entry<P>) {
+  define<P extends string>(pattern: P, options: Permissions.Options<P>) {
+    const entry: Permissions.Entry = {
+      ...options,
+      match: createMatch(pattern),
+    }
+    if (!pattern.includes('(')) entry.list = () => [pattern]
     return this.caller.effect(() => {
       this.store.push(entry)
       return () => remove(this.store, entry)
@@ -70,15 +77,15 @@ export class Permissions {
   }
 
   provide<P extends string>(pattern: P, check: Permissions.Check<P>) {
-    return this.define({ pattern, check })
+    return this.define(pattern, { check })
   }
 
   inherit<P extends string>(pattern: P, inherits: Permissions.Links<P>) {
-    return this.define({ pattern, inherits })
+    return this.define(pattern, { inherits })
   }
 
   depend<P extends string>(pattern: P, depends: Permissions.Links<P>) {
-    return this.define({ pattern, depends })
+    return this.define(pattern, { depends })
   }
 
   list(result = new Set<string>()) {
@@ -88,13 +95,13 @@ export class Permissions {
         result.add(name)
       }
     }
-    return result
+    return [...result]
   }
 
   async check(name: string, session: Partial<Session>) {
-    const results = await Promise.all(this.store.map(async ({ pattern, check }) => {
+    const results = await Promise.all(this.store.map(async ({ match, check }) => {
       if (!check) return false
-      const data = createMatch(pattern)(name)
+      const data = match(name)
       if (!data) return false
       try {
         return await check(data, session)
@@ -113,7 +120,7 @@ export class Permissions {
       if (result.has(name)) continue
       result.add(name)
       for (const entry of this.store) {
-        const data = createMatch(entry.pattern)(name)
+        const data = entry.match(name)
         if (!data) continue
         let links = entry[type]
         if (typeof links === 'function') links = links(data)

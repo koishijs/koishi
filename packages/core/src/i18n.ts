@@ -24,9 +24,9 @@ type GroupNames<P extends string, K extends string = never> =
   ? GroupNames<S, K | R>
   : K
 
-export type MatchResult<P extends string> = Record<GroupNames<P>, string>
+export type MatchResult<P extends string = never> = Record<GroupNames<P>, string>
 
-export function createMatch<P extends string>(pattern: P): (string: string) => null | MatchResult<P> {
+export function createMatch<P extends string>(pattern: P): (string: string) => undefined | MatchResult<P> {
   const groups: string[] = []
   const source = pattern.replace(/\(([^)]+)\)/g, (_, name) => {
     groups.push(name)
@@ -35,7 +35,7 @@ export function createMatch<P extends string>(pattern: P): (string: string) => n
   const regexp = new RegExp(`^${source}$`)
   return (string: string) => {
     const capture = regexp.exec(string)
-    if (!capture) return null
+    if (!capture) return
     const data: any = {}
     for (let i = 0; i < groups.length; i++) {
       data[groups[i]] = capture[i + 1]
