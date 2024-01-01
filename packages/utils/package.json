@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/utils",
   "description": "Utilities for Koishi",
-  "version": "7.1.1",
+  "version": "7.1.2",
   "main": "lib/index.cjs",
   "module": "lib/index.mjs",
   "typings": "lib/index.d.ts",
@@ -30,7 +30,7 @@
     "@sinonjs/fake-timers": "^6.0.1"
   },
   "dependencies": {
-    "cosmokit": "^1.5.1",
+    "cosmokit": "^1.5.2",
     "inaba": "^1.1.1"
   }
 }

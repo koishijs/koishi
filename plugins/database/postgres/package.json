@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-database-postgres",
   "description": "PostgreSQL support for Koishi",
-  "version": "1.1.1",
+  "version": "1.1.3",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -43,12 +43,12 @@
     }
   },
   "peerDependencies": {
-    "koishi": "^4.16.2"
+    "koishi": "^4.16.3"
   },
   "devDependencies": {
-    "koishi": "^4.16.2"
+    "koishi": "^4.16.3"
   },
   "dependencies": {
-    "@minatojs/driver-postgres": "^1.1.1"
+    "@minatojs/driver-postgres": "^1.1.3"
   }
 }
