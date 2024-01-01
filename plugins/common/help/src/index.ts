@@ -138,7 +138,7 @@ export function apply(ctx: Context, config: Config) {
       suffix: session.text('internal.suggest-command'),
       filter: (name) => {
         name = $.resolve(name)!.name
-        return ctx.permissions.test(`command.${name}`, session, cache)
+        return ctx.permissions.test(`command:${name}`, session, cache)
       },
     })
     return $.resolve(name)
@@ -161,7 +161,7 @@ export function apply(ctx: Context, config: Config) {
 
       const command = await inferCommand(target, session)
       if (!command) return
-      if (!await ctx.permissions.test(`command.${command.name}`, session)) {
+      if (!await ctx.permissions.test(`command:${command.name}`, session)) {
         return session.text('internal.low-authority')
       }
       return showHelp(command, session, options)
@@ -187,7 +187,7 @@ async function formatCommands(path: string, session: Session<'authority'>, child
   children = Array.from(getCommands(session, children, options.showHidden))
   // Step 2: filter commands by permission
   children = (await Promise.all(children.map(async (command) => {
-    return [command, await session.app.permissions.test(`command.${command.name}`, session, cache)] as const
+    return [command, await session.app.permissions.test(`command:${command.name}`, session, cache)] as const
   }))).filter(([, result]) => result).map(([command]) => command)
   // Step 3: sort commands by name
   children.sort((a, b) => a.displayName > b.displayName ? 1 : -1)

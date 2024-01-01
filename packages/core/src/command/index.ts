@@ -122,7 +122,7 @@ export class Commander extends Map<string, Command> {
           suffix: session.text('internal.suggest-command'),
           filter: (name) => {
             name = this.resolve(name)!.name
-            return ctx.permissions.test(`command.${name}`, session, cache)
+            return ctx.permissions.test(`command:${name}`, session, cache)
           },
         })
         if (!name) return next()
@@ -133,8 +133,8 @@ export class Commander extends Map<string, Command> {
 
     ctx.schema.extend('command', Command.Config, 1000)
     ctx.schema.extend('command-option', Schema.object({
-      inherits: Schema.array(String).role('table').default(['authority.0']).description('权限继承。'),
-      depends: Schema.array(String).role('table').description('权限依赖。'),
+      permissions: Schema.array(String).role('perms').default(['authority:0']).description('权限继承。'),
+      dependencies: Schema.array(String).role('perms').description('权限依赖。'),
     }), 1000)
 
     ctx.on('ready', () => {

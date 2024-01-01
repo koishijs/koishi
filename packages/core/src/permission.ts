@@ -33,8 +33,8 @@ export namespace Permissions {
 
   export interface Config {
     authority?: number
-    inherits?: string[]
-    depends?: string[]
+    permissions?: string[]
+    dependencies?: string[]
   }
 }
 
@@ -45,8 +45,11 @@ export class Permissions {
     defineProperty(this, Context.current, ctx)
     ctx.alias('permissions', ['perms'])
 
-    this.provide('authority.(value)', ({ value }, { user }: Partial<Session<'authority'>>) => {
-      return !user || user.authority >= +value
+    this.define('authority:(value)', {
+      check: ({ value }, { user }: Partial<Session<'authority'>>) => {
+        return !user || user.authority >= +value
+      },
+      list: () => Array(5).fill(0).map((_, i) => `authority:${i}`),
     })
 
     this.provide('(name)', ({ name }, session) => {
@@ -69,7 +72,7 @@ export class Permissions {
       ...options,
       match: createMatch(pattern),
     }
-    if (!pattern.includes('(')) entry.list = () => [pattern]
+    if (!pattern.includes('(')) entry.list ||= () => [pattern]
     return this.caller.effect(() => {
       this.store.push(entry)
       return () => remove(this.store, entry)
