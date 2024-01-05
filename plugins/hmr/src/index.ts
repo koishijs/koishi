@@ -295,6 +295,7 @@ class Watcher {
         try {
           for (const [state, name] of children) {
             const fork = state.parent.plugin(attempts[filename], state.config)
+            fork.key = state.key
             if (name) state.parent.scope[Loader.kRecord][name] = fork
           }
           this.logger.info('reload plugin at %c', path)
@@ -311,6 +312,7 @@ class Watcher {
           this.ctx.registry.delete(attempts[filename])
           for (const [state, name] of children) {
             const fork = state.parent.plugin(plugin, state.config)
+            fork.key = state.key
             if (name) state.parent.scope[Loader.kRecord][name] = fork
           }
         } catch (err) {
