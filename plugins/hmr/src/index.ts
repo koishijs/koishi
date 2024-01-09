@@ -1,7 +1,6 @@
 import { coerce, Context, Dict, ForkScope, Logger, MainScope, makeArray, Plugin, Schema } from 'koishi'
 import { FSWatcher, watch, WatchOptions } from 'chokidar'
 import { relative, resolve } from 'path'
-import { debounce } from 'throttle-debounce'
 import { createRequire } from 'module'
 import { Loader, unwrapExports } from '@koishijs/loader'
 import { handleError } from './error'
@@ -39,6 +38,8 @@ interface Reload {
 }
 
 class Watcher {
+  static inject = ['loader']
+
   private base: string
   private watcher: FSWatcher
   private require = createRequire(require.resolve('@koishijs/loader/package.json'))
@@ -95,7 +96,7 @@ class Watcher {
 
     // files independent from any plugins will trigger a full reload
     this.externals = loadDependencies(require.resolve('koishi'), new Set(Object.values(loader.cache)))
-    const triggerLocalReload = debounce(this.config.debounce, () => this.triggerLocalReload())
+    const triggerLocalReload = this.ctx.debounce(() => this.triggerLocalReload(), this.config.debounce)
 
     this.watcher.on('change', async (path) => {
       const filename = resolve(this.base, path)

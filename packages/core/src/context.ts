@@ -1,4 +1,4 @@
-import { defineProperty, Promisify, remove, Time } from 'cosmokit'
+import { defineProperty, Promisify, Time } from 'cosmokit'
 import { Quester, Schema } from '@satorijs/core'
 import { GetEvents, Parameters, ReturnType, ThisType } from 'cordis'
 import * as satori from '@satorijs/core'
@@ -110,28 +110,6 @@ export class Context extends satori.Context {
     const seg = (name as string).split('/')
     seg[seg.length - 1] = 'before-' + seg[seg.length - 1]
     return this.on(seg.join('/') as any, listener, !append)
-  }
-
-  createTimerDispose(timer: NodeJS.Timeout) {
-    const dispose = () => {
-      clearTimeout(timer)
-      if (!this.scope) return
-      return remove(this.scope.disposables, dispose)
-    }
-    this.scope.disposables.push(dispose)
-    return dispose
-  }
-
-  setTimeout(callback: (...args: any[]) => void, ms: number, ...args: any[]) {
-    const dispose = this.createTimerDispose(setTimeout(() => {
-      dispose()
-      callback()
-    }, ms, ...args))
-    return dispose
-  }
-
-  setInterval(callback: (...args: any[]) => void, ms: number, ...args: any[]) {
-    return this.createTimerDispose(setInterval(callback, ms, ...args))
   }
 }
 
