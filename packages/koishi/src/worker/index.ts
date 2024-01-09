@@ -37,7 +37,7 @@ process.on('unhandledRejection', (error) => {
 async function start() {
   const loader = new Loader()
   await loader.init(process.env.KOISHI_CONFIG_FILE)
-  const config = await loader.readConfig()
+  const config = await loader.readConfig(true)
   logger.prepare(config.logger)
 
   if (config.timezoneOffset !== undefined) {

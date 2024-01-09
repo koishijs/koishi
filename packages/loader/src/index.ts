@@ -53,7 +53,7 @@ export default class NodeLoader extends Loader {
     await super.migrate()
   }
 
-  async readConfig() {
+  async readConfig(initial = false) {
     // remove local env variables
     for (const key of this.localKeys) {
       delete process.env[key]
@@ -76,7 +76,7 @@ export default class NodeLoader extends Loader {
       this.localKeys.push(key)
     }
 
-    return await super.readConfig()
+    return await super.readConfig(initial)
   }
 
   async import(name: string) {

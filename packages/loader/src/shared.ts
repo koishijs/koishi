@@ -99,7 +99,6 @@ const writable = {
 }
 
 export abstract class Loader {
-  static readonly ancestor = Symbol.for('koishi.loader.ancestor')
   static readonly kRecord = Symbol.for('koishi.loader.record')
   static readonly exitCode = 51
   static readonly extensions = new Set(Object.keys(writable))
@@ -212,7 +211,7 @@ export abstract class Loader {
     this.migrateGroup(this.config.plugins)
   }
 
-  async readConfig() {
+  async readConfig(initial = false) {
     if (this.mime === 'application/yaml') {
       this.config = yaml.load(await fs.readFile(this.filename, 'utf8')) as any
     } else if (this.mime === 'application/json') {
@@ -223,7 +222,7 @@ export abstract class Loader {
       this.config = module.default || module
     }
 
-    await this.migrate()
+    if (initial) await this.migrate()
     if (this.writable) await this.writeConfig(true)
     return new Context.Config(this.interpolate(this.config))
   }
