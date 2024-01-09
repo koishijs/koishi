@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-hmr",
   "description": "Hot Module Replacement Plugin for Koishi",
-  "version": "1.2.7",
+  "version": "1.2.8",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -42,15 +42,15 @@
     }
   },
   "peerDependencies": {
-    "koishi": "^4.16.3"
+    "koishi": "^4.16.4"
   },
   "devDependencies": {
     "@types/babel__code-frame": "^7.0.6",
     "esbuild": "^0.18.20",
-    "koishi": "^4.16.3"
+    "koishi": "^4.16.4"
   },
   "dependencies": {
     "@babel/code-frame": "^7.23.5",
-    "chokidar": "^3.5.3",
+    "chokidar": "^3.5.3"
   }
 }
