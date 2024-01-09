@@ -28,6 +28,7 @@ internal:
   invalid-date: 日付を指定してください。
   invalid-user: ユーザー名を指定してください。
   invalid-channel: チャンネル名を指定してください。
+  invalid-image: 画像を入力してください。
   suggest-hint: '「{0}」を実行したいですか？'
   suggest-command: 回复句号以使用推测的指令。
 commands:
