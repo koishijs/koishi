@@ -29,6 +29,7 @@ internal:
   invalid-date: 请输入合法的时间。
   invalid-user: 请指定正确的用户。
   invalid-channel: 请指定正确的频道。
+  invalid-image: 请输入图片。
   suggest-hint: 您要找的是不是{0}？
   suggest-command: 回复句号以使用推测的指令。
 

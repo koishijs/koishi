@@ -183,6 +183,9 @@ export namespace Argv {
     posint: number
     natural: number
     date: Date
+    image: {
+      src?: string
+    }
   }
 
   type DomainType = keyof Domain
@@ -317,6 +320,14 @@ export namespace Argv {
       return `${session.platform}:${code.attrs.id}`
     }
     throw new Error('internal.invalid-channel')
+  })
+
+  createDomain('image', (source, session) => {
+    const code = h.from(source)
+    if (code && code.type === 'img') {
+      return code.attrs
+    }
+    throw new Error('internal.invalid-image')
   })
 
   const BRACKET_REGEXP = /<[^>]+>|\[[^\]]+\]/g

@@ -28,6 +28,7 @@ internal:
   invalid-date: Expect a valid date.
   invalid-user: Expect a valid user.
   invalid-channel: Expect a valid channel.
+  invalid-image: Expect an image.
   suggest-hint: Do you mean {0}?
   suggest-command: Send a period to apply the suggestion.
 commands:
