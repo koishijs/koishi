@@ -28,6 +28,7 @@ internal:
   invalid-date: Bitte geben Sie eine gültige Zeit ein.
   invalid-user: Bitte geben Sie einen gültigen Benutzer an.
   invalid-channel: Bitte geben Sie einen gültigen Kanal an.
+  invalid-image: 请输入图片。
   suggest-hint: Ist das, wonach Sie suchen, {0}?
   suggest-command: 回复句号以使用推测的指令。
 commands:
