@@ -92,6 +92,24 @@ const group: Plugin.Object<Context> = {
   },
 }
 
+function insertKey(object: {}, temp: {}, rest: string[]) {
+  for (const key of rest) {
+    temp[key] = object[key]
+    delete object[key]
+  }
+  Object.assign(object, temp)
+}
+
+function rename(object: any, old: string, neo: string, value: any) {
+  const keys = Object.keys(object)
+  const index = keys.findIndex(key => key === old || key === '~' + old)
+  const rest = index < 0 ? [] : keys.slice(index + 1)
+  const temp = { [neo]: value }
+  delete object[old]
+  delete object['~' + old]
+  insertKey(object, temp, rest)
+}
+
 const writable = {
   '.json': 'application/json',
   '.yaml': 'application/yaml',
@@ -126,6 +144,8 @@ export abstract class Loader {
   public prolog: Logger.Record[] = []
 
   private store = new WeakMap<any, string>()
+
+  private _writeTimer: undefined | number | NodeJS.Timeout
 
   abstract import(name: string): Promise<any>
   abstract fullReload(code?: number): void
@@ -227,7 +247,7 @@ export abstract class Loader {
     return new Context.Config(this.interpolate(this.config))
   }
 
-  async writeConfig(silent = false) {
+  private async _writeConfig(silent = false) {
     this.suspend = true
     if (!this.writable) {
       throw new Error(`cannot overwrite readonly config`)
@@ -238,6 +258,15 @@ export abstract class Loader {
       await fs.writeFile(this.filename, JSON.stringify(this.config, null, 2))
     }
     if (!silent) this.app.emit('config')
+  }
+
+  async writeConfig(silent = false) {
+    clearTimeout(this._writeTimer)
+    return new Promise<void>((resolve, reject) => {
+      this._writeTimer = setTimeout(() => {
+        this._writeConfig(silent).then(resolve, reject)
+      }, 0)
+    })
   }
 
   interpolate(source: any) {
@@ -309,7 +338,6 @@ export abstract class Loader {
         fork = await this.forkPlugin(name, config, ctx)
       }
       if (!fork) return
-      ctx[Loader.ancestor] = fork.uid
       fork.key = key.slice(name.length + 1)
       parent.scope[Loader.kRecord][key] = fork
     }
@@ -322,11 +350,7 @@ export abstract class Loader {
 
   unload(ctx: Context, key: string) {
     const fork = ctx.scope[Loader.kRecord][key]
-    if (fork) {
-      this.logUpdate('unload', ctx, key)
-      fork.dispose()
-      delete ctx.scope[Loader.kRecord][key]
-    }
+    if (fork) fork.dispose()
   }
 
   getRefName(fork: ForkScope) {
@@ -381,6 +405,23 @@ export abstract class Loader {
 
     app.on('dispose', () => {
       this.fullReload()
+    })
+
+    // write config with `~` prefix
+    app.on('internal/fork', (fork) => {
+      // fork.uid: fork is created
+      // !fork.parent.scope[Loader.kRecord]: fork is not tracked by loader
+      if (fork.uid || !fork.parent.scope[Loader.kRecord]) return
+      const key = Object.keys(fork.parent.scope[Loader.kRecord]).find(key => {
+        return fork.parent.scope[Loader.kRecord][key] === fork
+      })
+      if (!key) return
+      this.logUpdate('unload', fork.parent, key)
+      delete fork.parent.scope[Loader.kRecord][key]
+      // !fork.runtime.uid: fork is disposed by main scope (e.g. hmr plugin)
+      if (!fork.runtime.uid) return
+      rename(fork.parent.scope.config, key, '~' + key, fork.parent.scope.config[key])
+      this.writeConfig()
     })
 
     app.on('internal/update', (fork) => {
