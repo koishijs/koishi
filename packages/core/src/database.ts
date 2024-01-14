@@ -191,7 +191,7 @@ export class DatabaseService extends Database<Tables> {
     const assignMap: Dict<Dict<Pick<Channel, 'id' | 'guildId' | 'locales'>[]>> = {}
     for (const channel of data) {
       const { platform, id, assignee, flag } = channel
-      if (channels && !channels.includes(`${platform}:${id}`)) continue
+      if (channels && !channels.includes(id)) continue
       if (!forced && (flag & Channel.Flag.silent)) continue
       ((assignMap[platform] ||= {})[assignee] ||= []).push(channel)
     }
