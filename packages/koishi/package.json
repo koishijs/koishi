@@ -17,6 +17,7 @@
     },
     "./lib/cli": "./lib/cli/index.js",
     "./lib/worker": "./lib/worker/index.js",
+    "./src/*": "./src/*",
     "./package.json": "./package.json"
   },
   "files": [

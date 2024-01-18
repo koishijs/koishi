@@ -1,8 +1,8 @@
 import { Logger } from '@koishijs/core'
-import { Loader } from './shared'
 import { promises as fs } from 'fs'
 import * as dotenv from 'dotenv'
 import ns from 'ns-require'
+import Loader from './shared'
 
 export * from './shared'
 

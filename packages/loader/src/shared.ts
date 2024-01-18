@@ -418,8 +418,10 @@ export abstract class Loader {
       if (!key) return
       this.logUpdate('unload', fork.parent, key)
       delete fork.parent.scope[Loader.kRecord][key]
-      // !fork.runtime.uid: fork is disposed by main scope (e.g. hmr plugin)
-      if (!fork.runtime.uid) return
+      // fork is disposed by main scope (e.g. hmr plugin)
+      // normal: ctx.dispose() -> fork / runtime dispose -> delete(plugin)
+      // hmr: delete(plugin) -> runtime dispose -> fork dispose
+      if (!app.registry.has(fork.runtime.plugin)) return
       rename(fork.parent.scope.config, key, '~' + key, fork.parent.scope.config[key])
       this.writeConfig()
     })
@@ -454,3 +456,5 @@ export abstract class Loader {
     return app
   }
 }
+
+export default Loader

@@ -2,18 +2,22 @@
   "name": "@koishijs/loader",
   "description": "Config Loader for Koishi",
   "version": "4.3.4",
-  "main": "lib/index.js",
-  "module": "lib/shared.mjs",
+  "main": "lib/index.cjs",
+  "module": "lib/index.mjs",
   "types": "lib/index.d.ts",
   "exports": {
     ".": {
-      "require": "./lib/index.js",
-      "import": "./lib/shared.mjs",
+      "node": {
+        "import": "./lib/index.mjs",
+        "require": "./lib/index.cjs"
+      },
+      "browser": "./lib/shared.mjs",
       "types": "./lib/index.d.ts"
     },
     "./shared": {
-      "require": "./lib/shared.js",
-      "import": "./lib/shared.mjs"
+      "require": "./lib/shared.cjs",
+      "import": "./lib/shared.mjs",
+      "types": "./lib/shared.d.ts"
     },
     "./src/*": "./src/*",
     "./package.json": "./package.json"
