@@ -1,4 +1,4 @@
-import { Awaitable, defineProperty } from 'cosmokit'
+import { Awaitable, defineProperty, Time } from 'cosmokit'
 import { Bot, h, Schema, Universal } from '@satorijs/core'
 import { Command } from './command'
 import { Argv } from './parser'
@@ -28,6 +28,16 @@ declare module '../context' {
     'command/before-attach-channel'(argv: Argv, fields: Set<Channel.Field>): void
     'command/before-attach-user'(argv: Argv, fields: Set<User.Field>): void
   }
+}
+
+// https://github.com/microsoft/TypeScript/issues/17002
+// it never got fixed so we have to do this
+const isArray = Array.isArray as (arg: any) => arg is readonly any[]
+
+const BRACKET_REGEXP = /<[^>]+>|\[[^\]]+\]/g
+
+interface DeclarationList extends Array<Argv.Declaration> {
+  stripped: string
 }
 
 export namespace Commander {
@@ -145,6 +155,85 @@ export class Commander extends Map<string, Command> {
     ctx.on('bot-status-updated', async (bot) => {
       if (bot.status !== Universal.Status.ONLINE || !bot.updateCommands) return
       this.updateCommands(bot)
+    })
+
+    this.domain('el', source => h.parse(source), { greedy: true })
+    this.domain('elements', source => h.parse(source), { greedy: true })
+    this.domain('string', source => h.unescape(source))
+    this.domain('text', source => h.unescape(source), { greedy: true })
+    this.domain('rawtext', source => h('', h.parse(source)).toString(true), { greedy: true })
+    this.domain('boolean', () => true)
+
+    this.domain('number', (source, session) => {
+      const value = +source
+      if (Number.isFinite(value)) return value
+      throw new Error('internal.invalid-number')
+    }, { numeric: true })
+
+    this.domain('integer', (source, session) => {
+      const value = +source
+      if (value * 0 === 0 && Math.floor(value) === value) return value
+      throw new Error('internal.invalid-integer')
+    }, { numeric: true })
+
+    this.domain('posint', (source, session) => {
+      const value = +source
+      if (value * 0 === 0 && Math.floor(value) === value && value > 0) return value
+      throw new Error('internal.invalid-posint')
+    }, { numeric: true })
+
+    this.domain('natural', (source, session) => {
+      const value = +source
+      if (value * 0 === 0 && Math.floor(value) === value && value >= 0) return value
+      throw new Error('internal.invalid-natural')
+    }, { numeric: true })
+
+    this.domain('date', (source, session) => {
+      const timestamp = Time.parseDate(source)
+      if (+timestamp) return timestamp
+      throw new Error('internal.invalid-date')
+    })
+
+    this.domain('user', (source, session) => {
+      if (source.startsWith('@')) {
+        source = source.slice(1)
+        if (source.includes(':')) return source
+        return `${session.platform}:${source}`
+      }
+      const code = h.from(source)
+      if (code && code.type === 'at') {
+        return `${session.platform}:${code.attrs.id}`
+      }
+      throw new Error('internal.invalid-user')
+    })
+
+    this.domain('channel', (source, session) => {
+      if (source.startsWith('#')) {
+        source = source.slice(1)
+        if (source.includes(':')) return source
+        return `${session.platform}:${source}`
+      }
+      const code = h.from(source)
+      if (code && code.type === 'sharp') {
+        return `${session.platform}:${code.attrs.id}`
+      }
+      throw new Error('internal.invalid-channel')
+    })
+
+    this.defineElementDomain('image', 'image', 'img')
+    this.defineElementDomain('img', 'image', 'img')
+    this.defineElementDomain('audio')
+    this.defineElementDomain('video')
+    this.defineElementDomain('file')
+  }
+
+  private defineElementDomain(name: keyof Argv.Domain, key = name, type = name) {
+    this.domain(name, (source, session) => {
+      const code = h.from(source)
+      if (code && code.type === type) {
+        return code.attrs
+      }
+      throw new Error(`internal.invalid-${key}`)
     })
   }
 
@@ -265,5 +354,83 @@ export class Commander extends Map<string, Command> {
     parent[Context.current] = caller
     if (root) caller.collect(`command <${root.name}>`, () => root.dispose())
     return parent
+  }
+
+  domain<K extends keyof Argv.Domain>(name: K): Argv.DomainConfig<Argv.Domain[K]>
+  domain<K extends keyof Argv.Domain>(name: K, transform: Argv.Transform<Argv.Domain[K]>, options?: Argv.DomainConfig<Argv.Domain[K]>): void
+  domain<K extends keyof Argv.Domain>(name: K, transform?: Argv.Transform<Argv.Domain[K]>, options?: Argv.DomainConfig<Argv.Domain[K]>) {
+    const caller = this[Context.current] as Context
+    const service = 'domain:' + name
+    if (!transform) return caller.get(service)
+    this.ctx.provide(service)
+    return caller.effect(() => {
+      caller[service] = { transform, ...options }
+      return () => caller[service] = null
+    })
+  }
+
+  resolveDomain(type: Argv.Type) {
+    if (typeof type === 'function') {
+      return { transform: type }
+    } else if (type instanceof RegExp) {
+      const transform = (source: string) => {
+        if (type.test(source)) return source
+        throw new Error()
+      }
+      return { transform }
+    } else if (isArray(type)) {
+      const transform = (source: string) => {
+        if (type.includes(source)) return source
+        throw new Error()
+      }
+      return { transform }
+    } else if (typeof type === 'object') {
+      return type ?? {}
+    }
+    return this.ctx.get(`domain:${type}`) ?? {}
+  }
+
+  parseValue(source: string, kind: string, argv: Argv, decl: Argv.Declaration = {}) {
+    const { name, type = 'string' } = decl
+
+    // apply domain callback
+    const domain = this.resolveDomain(type)
+    try {
+      return domain.transform(source, argv.session)
+    } catch (err) {
+      if (!argv.session) {
+        argv.error = `internal.invalid-${kind}`
+      } else {
+        const message = argv.session.text(err['message'] || 'internal.check-syntax')
+        argv.error = argv.session.text(`internal.invalid-${kind}`, [name, message])
+      }
+    }
+  }
+
+  parseDecl(source: string) {
+    let cap: RegExpExecArray
+    const result = [] as DeclarationList
+    // eslint-disable-next-line no-cond-assign
+    while (cap = BRACKET_REGEXP.exec(source)) {
+      let rawName = cap[0].slice(1, -1)
+      let variadic = false
+      if (rawName.startsWith('...')) {
+        rawName = rawName.slice(3)
+        variadic = true
+      }
+      const [name, rawType] = rawName.split(':')
+      const type = rawType ? rawType.trim() as Argv.DomainType : undefined
+      result.push({
+        name,
+        variadic,
+        type,
+        required: cap[0][0] === '<',
+      })
+    }
+    result.stripped = source.replace(/:[\w-]+(?=[>\]])/g, str => {
+      const domain = this.ctx.get(`domain:${str.slice(1)}`)
+      return domain?.greedy ? '...' : ''
+    }).trimEnd()
+    return result
   }
 }

@@ -29,6 +29,9 @@ internal:
   invalid-user: Expect a valid user.
   invalid-channel: Expect a valid channel.
   invalid-image: Expect an image.
+  invalid-audio: Expect an audio.
+  invalid-video: Expect a video.
+  invalid-file: Expect a file.
   suggest-hint: Do you mean {0}?
   suggest-command: Send a period to apply the suggestion.
 commands:

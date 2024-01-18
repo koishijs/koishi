@@ -73,7 +73,7 @@ export default function validate(ctx: Context) {
         if (isNullable(source)) {
           return sendHint('internal.insufficient-arguments', decl.name)
         }
-        args.push(Argv.parseValue(source, 'argument', argv, decl))
+        args.push(ctx.$commander.parseValue(source, 'argument', argv, decl))
         index++
       }
       const finalArg = command._arguments[command._arguments.length - 1] || {}

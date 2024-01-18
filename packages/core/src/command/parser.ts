@@ -1,4 +1,4 @@
-import { camelCase, Dict, paramCase, Time } from 'cosmokit'
+import { camelCase, Dict, paramCase } from 'cosmokit'
 import { escapeRegExp } from '@koishijs/utils'
 import { h } from '@satorijs/core'
 import { Command } from './command'
@@ -183,12 +183,14 @@ export namespace Argv {
     posint: number
     natural: number
     date: Date
-    image: {
-      src?: string
-    }
+    img: JSX.IntrinsicElements['img']
+    image: JSX.IntrinsicElements['img']
+    audio: JSX.IntrinsicElements['audio']
+    video: JSX.IntrinsicElements['video']
+    file: JSX.IntrinsicElements['file']
   }
 
-  type DomainType = keyof Domain
+  export type DomainType = keyof Domain
 
   type ParamType<S extends string, F>
     = S extends `${any}:${infer T}` ? T extends DomainType ? Domain[T] : F : F
@@ -222,162 +224,10 @@ export namespace Argv {
 
   export type Transform<T> = (source: string, session: Session) => T
 
-  export interface DomainConfig<T> {
+  export interface DomainConfig<T = any> {
     transform?: Transform<T>
     greedy?: boolean
     numeric?: boolean
-  }
-
-  // https://github.com/microsoft/TypeScript/issues/17002
-  // it never got fixed so we have to do this
-  const isArray = Array.isArray as (arg: any) => arg is readonly any[]
-
-  function resolveDomain(type: Type) {
-    if (typeof type === 'function') {
-      return { transform: type }
-    } else if (type instanceof RegExp) {
-      const transform = (source: string) => {
-        if (type.test(source)) return source
-        throw new Error()
-      }
-      return { transform }
-    } else if (isArray(type)) {
-      const transform = (source: string) => {
-        if (type.includes(source)) return source
-        throw new Error()
-      }
-      return { transform }
-    } else if (typeof type === 'object') {
-      return type ?? {}
-    }
-    return builtin[type] ?? {}
-  }
-
-  const builtin: Dict<DomainConfig<any>> = {}
-
-  export function createDomain<K extends keyof Domain>(name: K, transform: Transform<Domain[K]>, options?: DomainConfig<Domain[K]>) {
-    builtin[name] = { ...options, transform }
-  }
-
-  createDomain('el', source => h.parse(source), { greedy: true })
-  createDomain('elements', source => h.parse(source), { greedy: true })
-  createDomain('string', source => h.unescape(source))
-  createDomain('text', source => h.unescape(source), { greedy: true })
-  createDomain('rawtext', source => h('', h.parse(source)).toString(true), { greedy: true })
-  createDomain('boolean', () => true)
-
-  createDomain('number', (source, session) => {
-    const value = +source
-    if (Number.isFinite(value)) return value
-    throw new Error('internal.invalid-number')
-  }, { numeric: true })
-
-  createDomain('integer', (source, session) => {
-    const value = +source
-    if (value * 0 === 0 && Math.floor(value) === value) return value
-    throw new Error('internal.invalid-integer')
-  }, { numeric: true })
-
-  createDomain('posint', (source, session) => {
-    const value = +source
-    if (value * 0 === 0 && Math.floor(value) === value && value > 0) return value
-    throw new Error('internal.invalid-posint')
-  }, { numeric: true })
-
-  createDomain('natural', (source, session) => {
-    const value = +source
-    if (value * 0 === 0 && Math.floor(value) === value && value >= 0) return value
-    throw new Error('internal.invalid-natural')
-  }, { numeric: true })
-
-  createDomain('date', (source, session) => {
-    const timestamp = Time.parseDate(source)
-    if (+timestamp) return timestamp
-    throw new Error('internal.invalid-date')
-  })
-
-  createDomain('user', (source, session) => {
-    if (source.startsWith('@')) {
-      source = source.slice(1)
-      if (source.includes(':')) return source
-      return `${session.platform}:${source}`
-    }
-    const code = h.from(source)
-    if (code && code.type === 'at') {
-      return `${session.platform}:${code.attrs.id}`
-    }
-    throw new Error('internal.invalid-user')
-  })
-
-  createDomain('channel', (source, session) => {
-    if (source.startsWith('#')) {
-      source = source.slice(1)
-      if (source.includes(':')) return source
-      return `${session.platform}:${source}`
-    }
-    const code = h.from(source)
-    if (code && code.type === 'sharp') {
-      return `${session.platform}:${code.attrs.id}`
-    }
-    throw new Error('internal.invalid-channel')
-  })
-
-  createDomain('image', (source, session) => {
-    const code = h.from(source)
-    if (code && code.type === 'img') {
-      return code.attrs
-    }
-    throw new Error('internal.invalid-image')
-  })
-
-  const BRACKET_REGEXP = /<[^>]+>|\[[^\]]+\]/g
-
-  interface DeclarationList extends Array<Declaration> {
-    stripped: string
-  }
-
-  function parseDecl(source: string) {
-    let cap: RegExpExecArray
-    const result = [] as DeclarationList
-    // eslint-disable-next-line no-cond-assign
-    while (cap = BRACKET_REGEXP.exec(source)) {
-      let rawName = cap[0].slice(1, -1)
-      let variadic = false
-      if (rawName.startsWith('...')) {
-        rawName = rawName.slice(3)
-        variadic = true
-      }
-      const [name, rawType] = rawName.split(':')
-      const type = rawType ? rawType.trim() as DomainType : undefined
-      result.push({
-        name,
-        variadic,
-        type,
-        required: cap[0][0] === '<',
-      })
-    }
-    result.stripped = source.replace(/:[\w-]+(?=[>\]])/g, str => {
-      const domain = builtin[str.slice(1)]
-      return domain?.greedy ? '...' : ''
-    }).trimEnd()
-    return result
-  }
-
-  export function parseValue(source: string, kind: string, argv: Argv, decl: Declaration = {}) {
-    const { name, type = 'string' } = decl
-
-    // apply domain callback
-    const domain = resolveDomain(type)
-    try {
-      return domain.transform(source, argv.session)
-    } catch (err) {
-      if (!argv.session) {
-        argv.error = `internal.invalid-${kind}`
-      } else {
-        const message = argv.session.text(err['message'] || 'internal.check-syntax')
-        argv.error = argv.session.text(`internal.invalid-${kind}`, [name, message])
-      }
-    }
   }
 
   export interface OptionConfig<T extends Type = Type> extends Permissions.Config {
@@ -424,7 +274,7 @@ export namespace Argv {
 
     constructor(public readonly name: string, declaration: string, public ctx: Context, public config: T) {
       if (!name) throw new Error('expect a command name')
-      const declList = this._arguments = parseDecl(declaration)
+      const declList = this._arguments = ctx.$commander.parseDecl(declaration)
       this.declaration = declList.stripped
       for (const decl of declList) {
         this._disposables.push(this.ctx.i18n.define('', `commands.${this.name}.arguments.${decl.name}`, decl.name))
@@ -455,7 +305,7 @@ export namespace Argv {
         syntax += ', --' + param
       }
 
-      const declList = parseDecl(bracket.trimStart())
+      const declList = this.ctx.$commander.parseDecl(bracket.trimStart())
       if (declList.stripped) syntax += ' ' + declList.stripped
       const option = this._options[name] ||= {
         ...declList[0],
@@ -534,8 +384,8 @@ export namespace Argv {
         }
 
         // greedy argument
-        if (content[0] !== '-' && resolveDomain(argDecl.type).greedy) {
-          args.push(Argv.parseValue(Argv.stringify(argv), 'argument', argv, argDecl))
+        if (content[0] !== '-' && this.ctx.$commander.resolveDomain(argDecl.type).greedy) {
+          args.push(this.ctx.$commander.parseValue(Argv.stringify(argv), 'argument', argv, argDecl))
           break
         }
 
@@ -549,8 +399,8 @@ export namespace Argv {
           names = [paramCase(option.name)]
         } else {
           // normal argument
-          if (content[0] !== '-' || quoted || (+content) * 0 === 0 && resolveDomain(argDecl.type).numeric) {
-            args.push(Argv.parseValue(content, 'argument', argv, argDecl))
+          if (content[0] !== '-' || quoted || (+content) * 0 === 0 && this.ctx.$commander.resolveDomain(argDecl.type).numeric) {
+            args.push(this.ctx.$commander.parseValue(content, 'argument', argv, argDecl))
             continue
           }
 
@@ -567,7 +417,7 @@ export namespace Argv {
           }
           const name = content.slice(i, j)
           if (this.config.strictOptions && !this._namedOptions[name]) {
-            args.push(Argv.parseValue(content, 'argument', argv, argDecl))
+            args.push(this.ctx.$commander.parseValue(content, 'argument', argv, argDecl))
             continue
           }
           if (i > 1 && name.startsWith('no-') && !this._namedOptions[name]) {
@@ -583,7 +433,7 @@ export namespace Argv {
         quoted = false
         if (!param) {
           const { type, values } = option || {}
-          if (resolveDomain(type).greedy) {
+          if (this.ctx.$commander.resolveDomain(type).greedy) {
             param = Argv.stringify(argv)
             quoted = true
             argv.tokens = []
@@ -607,7 +457,7 @@ export namespace Argv {
             options[key] = optDecl.values[name]
           } else {
             const source = j + 1 < names.length ? '' : param
-            options[key] = Argv.parseValue(source, 'option', argv, optDecl)
+            options[key] = this.ctx.$commander.parseValue(source, 'option', argv, optDecl)
           }
           if (argv.error) break
         }
