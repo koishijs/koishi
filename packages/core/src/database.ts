@@ -222,7 +222,8 @@ DatabaseService.prototype.extend = function extend(this: DatabaseService, name, 
   this.app.emit('model', name)
 }
 
-export const defineDriver = <T>(constructor: Driver.Constructor<T>, schema?: Schema, prepare?: Plugin.Function<Context, T>): Plugin.Object<Context, T> => ({
+// https://github.com/microsoft/TypeScript/issues/15713#issuecomment-499474386
+export const defineDriver = <T, >(constructor: Driver.Constructor<T>, schema?: Schema, prepare?: Plugin.Function<Context, T>): Plugin.Object<Context, T> => ({
   name: constructor.name,
   reusable: true,
   Config: schema,
