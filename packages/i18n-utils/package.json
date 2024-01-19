@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/i18n-utils",
   "description": "I18n Utilities for Koishi",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "main": "lib/index.cjs",
   "module": "lib/index.mjs",
   "typings": "lib/index.d.ts",
