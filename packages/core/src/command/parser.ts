@@ -267,7 +267,7 @@ export namespace Argv {
 
     public _arguments: Declaration[]
     public _options: OptionDeclarationMap = {}
-    public _disposables?: Disposable[] = []
+    public _disposables: Disposable[] = []
 
     private _namedOptions: OptionDeclarationMap = {}
     private _symbolicOptions: OptionDeclarationMap = {}

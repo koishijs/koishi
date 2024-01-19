@@ -46,7 +46,7 @@ export class Command<
   children: Command[] = []
 
   _parent: Command = null
-  _aliases: Dict<Command.Alias> = {}
+  _aliases: Dict<Command.Alias> = Object.create(null)
   _examples: string[] = []
   _usage?: Command.Usage
 
@@ -56,21 +56,6 @@ export class Command<
   private _checkers: Command.Action[] = [async (argv) => {
     return this.ctx.serial(argv.session, 'command/before-execute', argv)
   }]
-
-  private static _userFields: FieldCollector<'user'>[] = []
-  private static _channelFields: FieldCollector<'channel'>[] = []
-
-  /** @deprecated use `command-added` event instead */
-  static userFields(fields: FieldCollector<'user'>) {
-    this._userFields.push(fields)
-    return this
-  }
-
-  /** @deprecated use `command-added` event instead */
-  static channelFields(fields: FieldCollector<'channel'>) {
-    this._channelFields.push(fields)
-    return this
-  }
 
   constructor(name: string, decl: string, ctx: Context, config: Command.Config) {
     super(name, decl, ctx, {
@@ -115,25 +100,22 @@ export class Command<
     name = name.toLowerCase()
     if (name.startsWith('.')) name = this.parent.name + name
 
+    // check global
+    const previous = this.ctx.$commander.get(name)
+    if (previous && previous !== this) {
+      throw new Error(`duplicate command names: "${name}"`)
+    }
+
     // add to list
     const existing = this._aliases[name]
     if (existing) {
       if (prepend) {
         this._aliases = { [name]: existing, ...this._aliases }
       }
-      return
     } else if (prepend) {
       this._aliases = { [name]: options, ...this._aliases }
     } else {
       this._aliases[name] = options
-    }
-
-    // register global
-    const previous = this.ctx.$commander.get(name)
-    if (!previous) {
-      this.ctx.$commander.set(name, this)
-    } else if (previous !== this) {
-      throw new Error(`duplicate command names: "${name}"`)
     }
   }
 
@@ -161,6 +143,7 @@ export class Command<
         this._registerAlias(name)
       }
     }
+    this.caller.emit('command-updated', this)
     return this
   }
 
@@ -172,7 +155,9 @@ export class Command<
       .replace(/@@__PLACEHOLDER__@@/g, '$')
   }
 
+  /** @deprecated please use `cmd.alias()` instead */
   shortcut(pattern: string | RegExp, config?: Command.Shortcut & { i18n?: false }): this
+  /** @deprecated please use `cmd.alias()` instead */
   shortcut(pattern: string, config: Command.Shortcut & { i18n: true }): this
   shortcut(pattern: string | RegExp, config: Command.Shortcut = {}) {
     let content = this.displayName
@@ -239,6 +224,7 @@ export class Command<
     const config = { ...args[0] as Argv.OptionConfig }
     config.permissions ??= [`authority:${config.authority ?? 0}`]
     this._createOption(name, desc, config)
+    this.caller.emit('command-updated', this)
     this.caller.collect('option', () => this.removeOption(name))
     return this
   }
@@ -338,9 +324,6 @@ export class Command<
     this.ctx.emit('command-removed', this)
     for (const cmd of this.children.slice()) {
       cmd.dispose()
-    }
-    for (const name in this._aliases) {
-      this.ctx.$commander.delete(name)
     }
     remove(this.ctx.$commander._commandList, this)
     this.parent = null

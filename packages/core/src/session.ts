@@ -3,7 +3,7 @@ import { Awaitable, isNullable, makeArray } from 'cosmokit'
 import { Fragment, h, Logger, Universal } from '@satorijs/core'
 import { Eval, executeEval, isEvalExpr } from '@minatojs/core'
 import * as satori from '@satorijs/core'
-import { Argv, Command } from './command'
+import { Argv } from './command'
 import { Context } from './context'
 import { Channel, Tables, User } from './database'
 import { Middleware, Next } from './middleware'
@@ -340,7 +340,6 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
       }
       if (!this.app.$commander.resolveCommand(argv)) return
       this.app.emit(argv.session, `command/before-attach-${key}` as any, argv, fields)
-      collectFields(argv, Command[`_${key}Fields` as any], fields)
       collectFields(argv, argv.command[`_${key}Fields` as any], fields)
     }
     if (argv) collect(argv)

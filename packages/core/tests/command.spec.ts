@@ -41,9 +41,9 @@ describe('Command API', () => {
 
       // a, b, c
       expect(app.$commander._commandList).to.have.length(3)
-      expect(app.$commander._commands.get('a').ctx).to.equal(app)
-      expect(app.$commander._commands.get('b').ctx).to.equal(ctx1)
-      expect(app.$commander._commands.get('c').ctx).to.equal(ctx2)
+      expect(app.$commander.get('a').ctx).to.equal(app)
+      expect(app.$commander.get('b').ctx).to.equal(ctx1)
+      expect(app.$commander.get('c').ctx).to.equal(ctx2)
     })
 
     it('custom inspect', () => {
@@ -52,10 +52,10 @@ describe('Command API', () => {
 
     it('modify commands', () => {
       const d1 = app.command('d', 'foo', { authority: 1 })
-      expect(app.$commander._commands.get('d').config.authority).to.equal(1)
+      expect(app.$commander.get('d').config.authority).to.equal(1)
 
       const d2 = app.command('d', 'bar', { authority: 2 })
-      expect(app.$commander._commands.get('d').config.authority).to.equal(2)
+      expect(app.$commander.get('d').config.authority).to.equal(2)
 
       expect(d1).to.equal(d2)
     })

@@ -22,6 +22,7 @@ declare module '../context' {
   interface Events {
     'before-parse'(content: string, session: Session): Argv
     'command-added'(command: Command): void
+    'command-updated'(command: Command): void
     'command-removed'(command: Command): void
     'command-error'(argv: Argv, error: any): void
     'command/before-execute'(argv: Argv): Awaitable<void | string>
@@ -46,12 +47,10 @@ export namespace Commander {
   }
 }
 
-export class Commander extends Map<string, Command> {
+export class Commander {
   _commandList: Command[] = []
-  _commands = this
 
   constructor(private ctx: Context, private config: Commander.Config = {}) {
-    super()
     defineProperty(this, Context.current, ctx)
     ctx.plugin(validate)
 
@@ -237,6 +236,10 @@ export class Commander extends Map<string, Command> {
     })
   }
 
+  get(name: string, strict?: boolean) {
+    return this._commandList.find(cmd => strict ? cmd.name === name : cmd._aliases[name])
+  }
+
   updateCommands(bot: Bot) {
     return bot.updateCommands(this._commandList
       .filter(cmd => !cmd.name.includes('.') && cmd.config.slash)
@@ -350,6 +353,7 @@ export class Commander extends Map<string, Command> {
     })
 
     Object.assign(parent.config, config)
+    // Make sure `command.config` is set before emitting any events
     created.forEach(command => caller.emit('command-added', command))
     parent[Context.current] = caller
     if (root) caller.collect(`command <${root.name}>`, () => root.dispose())

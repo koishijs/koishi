@@ -8,9 +8,6 @@ const app = new App()
 app.plugin(memory)
 app.plugin(mock)
 
-// make coverage happy
-Command.channelFields([])
-
 const client1 = app.mock.client('123')
 const client2 = app.mock.client('456')
 const client3 = app.mock.client('789')
