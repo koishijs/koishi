@@ -7,6 +7,7 @@ import { Channel, User } from '../database'
 import { FieldCollector, Session } from '../session'
 import { Permissions } from '../permission'
 import { Context } from '../context'
+import { Computed } from '../filter'
 
 const logger = new Logger('command')
 
@@ -18,6 +19,7 @@ export namespace Command {
   export interface Alias {
     options?: Dict
     args?: string[]
+    filter?: Computed<boolean>
   }
 
   export interface Shortcut {

@@ -236,8 +236,11 @@ export class Commander {
     })
   }
 
-  get(name: string, strict?: boolean) {
-    return this._commandList.find(cmd => strict ? cmd.name === name : cmd._aliases[name])
+  get(name: string, session?: Session) {
+    return this._commandList.find((cmd) => {
+      const alias = cmd._aliases[name]
+      return alias && (session?.resolve(alias.filter) ?? true)
+    })
   }
 
   updateCommands(bot: Bot) {
