@@ -8,4 +8,3 @@ export { Loader }
 
 export * from '@koishijs/core'
 export * from '@koishijs/loader'
-export * from '@koishijs/utils'
