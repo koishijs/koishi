@@ -1,22 +1,23 @@
 {
   "name": "@koishijs/plugin-server",
   "description": "Server service for Koishi",
-  "version": "3.1.6",
+  "version": "3.1.7",
   "type": "module",
-  "main": "lib/index.cjs",
-  "module": "lib/index.mjs",
-  "types": "lib/index.d.ts",
+  "main": "index.cjs",
+  "module": "index.mjs",
+  "types": "index.d.ts",
   "exports": {
     ".": {
-      "require": "./lib/index.cjs",
-      "import": "./lib/index.mjs",
-      "types": "./lib/index.d.ts"
+      "require": "./index.cjs",
+      "import": "./index.mjs",
+      "types": "./index.d.ts"
     },
     "./package.json": "./package.json"
   },
   "files": [
-    "lib",
-    "src"
+    "index.cjs",
+    "index.mjs",
+    "index.d.ts"
   ],
   "author": "Shigma <shigma10826@gmail.com>",
   "license": "MIT",
@@ -56,6 +57,6 @@
     "koishi": "^4.16.7"
   },
   "dependencies": {
-    "@cordisjs/server": "^0.1.6"
+    "@cordisjs/server": "^0.1.7"
   }
 }
