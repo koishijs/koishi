@@ -1,8 +1,10 @@
 import * as utils from '@koishijs/utils'
 import { defineProperty, Dict, MaybeArray } from 'cosmokit'
 import { Database, Driver, Update } from '@minatojs/core'
-import { Fragment, Schema, Universal } from '@satorijs/core'
+import { Fragment, Logger, Schema, Universal } from '@satorijs/core'
 import { Context, Plugin } from './context'
+
+const logger = new Logger('database')
 
 declare module './context' {
   interface Events {
@@ -198,7 +200,12 @@ export class DatabaseService extends Database<Tables> {
 
     return (await Promise.all(this.app.bots.map((bot) => {
       const targets = assignMap[bot.platform]?.[bot.selfId]
-      if (!targets) return Promise.resolve([])
+      if (!targets) {
+        if (channels) logger.warn(
+          `no channel found for ${channels}, see https://koishi.chat/api/core/context.html#ctx-broadcast for more details.`
+        )
+        return Promise.resolve([])
+      }
       const sessions = targets.map(({ id, guildId, locales }) => {
         const session = bot.session({
           type: 'message',
