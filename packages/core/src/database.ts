@@ -12,7 +12,6 @@ declare module './context' {
   interface Context {
     database: DatabaseService
     model: DatabaseService
-    getSelfIds(type?: string, assignees?: string[]): Dict<string[]>
     broadcast(content: Fragment, forced?: boolean): Promise<string[]>
     broadcast(channels: readonly string[], content: Fragment, forced?: boolean): Promise<string[]>
   }
@@ -154,22 +153,19 @@ export class DatabaseService extends Database<Tables> {
     return data[0]
   }
 
-  getSelfIds(type?: string, assignees?: string[]): Dict<string[]> {
-    if (type) {
-      assignees ||= this.app.bots.filter(bot => bot.platform === type).map(bot => bot.selfId)
-      return { [type]: assignees }
-    }
-    const platforms: Dict<string[]> = {}
+  getSelfIds(platforms?: string[]): Dict<string[]> {
+    const selfIdMap: Dict<string[]> = Object.create(null)
     for (const bot of this.app.bots) {
-      (platforms[bot.platform] ||= []).push(bot.selfId)
+      if (platforms && !platforms.includes(bot.platform)) continue
+      (selfIdMap[bot.platform] ||= []).push(bot.selfId)
     }
-    return platforms
+    return selfIdMap
   }
 
-  getAssignedChannels<K extends Channel.Field>(fields?: K[], assignMap?: Dict<string[]>): Promise<Pick<Channel, K>[]>
-  async getAssignedChannels(fields?: Channel.Field[], assignMap: Dict<string[]> = this.getSelfIds()) {
+  getAssignedChannels<K extends Channel.Field>(fields?: K[], selfIdMap?: Dict<string[]>): Promise<Pick<Channel, K>[]>
+  async getAssignedChannels(fields?: Channel.Field[], selfIdMap: Dict<string[]> = this.getSelfIds()) {
     return this.get('channel', {
-      $or: Object.entries(assignMap).map(([platform, assignee]) => ({ platform, assignee })),
+      $or: Object.entries(selfIdMap).map(([platform, assignee]) => ({ platform, assignee })),
     }, fields)
   }
 
@@ -182,18 +178,30 @@ export class DatabaseService extends Database<Tables> {
   }
 
   async broadcast(...args: [Fragment, boolean?] | [readonly string[], Fragment, boolean?]) {
-    let channels: string[]
-    if (Array.isArray(args[0])) channels = args.shift() as any
+    let channels: string[], platforms: string[]
+    if (Array.isArray(args[0])) {
+      channels = args.shift() as any
+      platforms = channels.map(c => c.split(':')[0])
+    }
     const [content, forced] = args as [Fragment, boolean]
     if (!content) return []
 
-    const data = await this.getAssignedChannels(['id', 'assignee', 'flag', 'platform', 'guildId', 'locales'])
+    const selfIdMap = this.getSelfIds(platforms)
+    const data = await this.getAssignedChannels(['id', 'assignee', 'flag', 'platform', 'guildId', 'locales'], selfIdMap)
     const assignMap: Dict<Dict<Pick<Channel, 'id' | 'guildId' | 'locales'>[]>> = {}
     for (const channel of data) {
       const { platform, id, assignee, flag } = channel
-      if (channels && !channels.includes(`${platform}:${id}`)) continue
+      if (channels) {
+        const index = channels?.indexOf(`${platform}:${id}`)
+        if (index < 0) continue
+        channels.splice(index, 1)
+      }
       if (!forced && (flag & Channel.Flag.silent)) continue
       ((assignMap[platform] ||= {})[assignee] ||= []).push(channel)
+    }
+
+    if (channels?.length) {
+      this[Context.current].logger('app').warn('broadcast', 'channel not found: ', channels.join(', '))
     }
 
     return (await Promise.all(this.app.bots.map((bot) => {
