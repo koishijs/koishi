@@ -72,7 +72,7 @@
     "yakumo": "^1.0.0-beta.2",
     "yakumo-esbuild": "^1.0.0-beta.2",
     "yakumo-mocha": "^1.0.0-beta.2",
-    "yakumo-tsc": "^1.0.0-beta.0",
+    "yakumo-tsc": "^1.0.0-beta.1",
     "yml-register": "^1.1.0"
   }
 }
