@@ -23,7 +23,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/cordisjs/server.git",
+    "url": "git+https://github.com/cordiverse/server.git",
     "directory": "packages/core"
   },
   "bugs": {
@@ -51,10 +51,10 @@
     }
   },
   "peerDependencies": {
-    "koishi": "^4.16.8"
+    "koishi": "^4.17.0-alpha.0"
   },
   "devDependencies": {
-    "koishi": "^4.16.8"
+    "koishi": "^4.17.0-alpha.0"
   },
   "dependencies": {
     "@cordisjs/server": "^0.1.7"

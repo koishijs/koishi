@@ -34,7 +34,7 @@ interface StartMessage {
   content: string
 }
 
-declare module 'cordis' {
+declare module '@cordisjs/core' {
   // Theoretically, these properties will only appear on `ForkScope`.
   // We define them directly on `EffectScope` for typing convenience.
   interface EffectScope<C> {
