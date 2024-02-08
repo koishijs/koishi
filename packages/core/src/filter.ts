@@ -1,5 +1,5 @@
 import { defineProperty } from 'cosmokit'
-import { Eval } from '@minatojs/core'
+import { Eval } from 'minato'
 import { Channel, User } from './database'
 import { Context } from './context'
 import { Session } from './session'

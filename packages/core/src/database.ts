@@ -1,8 +1,8 @@
 import * as utils from '@koishijs/utils'
-import { defineProperty, Dict, MaybeArray } from 'cosmokit'
-import { Database, Driver, Update } from '@minatojs/core'
-import { Fragment, Schema, Universal } from '@satorijs/core'
-import { Context, Plugin } from './context'
+import { Dict, MaybeArray } from 'cosmokit'
+import { Database, Driver, Update } from 'minato'
+import { Fragment, Universal } from '@satorijs/core'
+import { Context } from './context'
 
 declare module './context' {
   interface Events {
@@ -72,10 +72,9 @@ export interface Tables {
   channel: Channel
 }
 
-export class DatabaseService extends Database<Tables> {
-  constructor(protected app: Context) {
-    super()
-    defineProperty(this, Context.current, app)
+export class DatabaseService extends Database<Tables, Context> {
+  constructor(ctx: Context) {
+    super(ctx)
 
     this.extend('user', {
       id: 'unsigned(8)',
@@ -111,7 +110,7 @@ export class DatabaseService extends Database<Tables> {
       primary: ['id', 'platform'],
     })
 
-    app.on('login-added', ({ platform }) => {
+    ctx.on('login-added', ({ platform }) => {
       if (platform in this.tables.user.fields) return
       this.migrate('user', { [platform]: 'string(255)' }, async (db) => {
         const users = await db.get('user', { [platform]: { $exists: true } }, ['id', platform as never])
@@ -155,7 +154,7 @@ export class DatabaseService extends Database<Tables> {
 
   getSelfIds(platforms?: string[]): Dict<string[]> {
     const selfIdMap: Dict<string[]> = Object.create(null)
-    for (const bot of this.app.bots) {
+    for (const bot of this.ctx.bots) {
       if (platforms && !platforms.includes(bot.platform)) continue
       (selfIdMap[bot.platform] ||= []).push(bot.selfId)
     }
@@ -204,7 +203,7 @@ export class DatabaseService extends Database<Tables> {
       this[Context.current].logger('app').warn('broadcast', 'channel not found: ', channels.join(', '))
     }
 
-    return (await Promise.all(this.app.bots.map((bot) => {
+    return (await Promise.all(this.ctx.bots.map((bot) => {
       const targets = assignMap[bot.platform]?.[bot.selfId]
       if (!targets) return Promise.resolve([])
       const sessions = targets.map(({ id, guildId, locales }) => {
@@ -220,40 +219,3 @@ export class DatabaseService extends Database<Tables> {
     }))).flat(1)
   }
 }
-
-// workaround typings
-DatabaseService.prototype.extend = function extend(this: DatabaseService, name, fields, config) {
-  Database.prototype.extend.call(this, name, fields, {
-    ...config,
-    // driver: this[Context.current].mapping.database,
-  })
-  this.app.emit('model', name)
-}
-
-// https://github.com/microsoft/TypeScript/issues/15713#issuecomment-499474386
-export const defineDriver = <T, >(constructor: Driver.Constructor<T>, schema?: Schema, prepare?: Plugin.Function<Context, T>): Plugin.Object<Context, T> => ({
-  name: constructor.name,
-  reusable: true,
-  Config: schema,
-  filter: false,
-  async apply(ctx, config) {
-    config = { ...config }
-    await prepare?.(ctx, config)
-    const driver = new constructor(ctx.model, config)
-    const key = 'default'
-
-    ctx.on('ready', async () => {
-      await driver.start()
-      ctx.model.drivers[key] = driver
-      ctx.model.refresh()
-      const database = Object.create(ctx.model)
-      ctx.database = database
-    })
-
-    ctx.on('dispose', async () => {
-      ctx.database = null
-      delete ctx.model.drivers[key]
-      await driver.stop()
-    })
-  },
-})

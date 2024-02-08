@@ -16,9 +16,6 @@ export type EffectScope = cordis.EffectScope<Context>
 export type ForkScope = cordis.ForkScope<Context>
 export type MainScope = cordis.MainScope<Context>
 
-export interface Service extends Context.Associate<'service'> {}
-export class Service<C extends Context = Context> extends satori.Service<C> {}
-
 export { Adapter, Bot, Element, h, Logger, MessageEncoder, Messenger, Quester, Satori, Schema, segment, Universal, z } from '@satorijs/core'
 export type { Component, Fragment, Render } from '@satorijs/core'
 
@@ -43,7 +40,6 @@ type BeforeEventMap = { [E in keyof Events & string as OmitSubstring<E, 'before-
 export interface Events<C extends Context = Context> extends satori.Events<C> {}
 
 export interface Context {
-  [Context.config]: Context.Config
   [Context.events]: Events<this>
   [Context.session]: Session<never, never, this>
 }
@@ -66,8 +62,9 @@ export class Context extends satori.Context {
     this.provide('schema', new SchemaService(this), true)
     this.provide('permissions', new Permissions(this), true)
     this.provide('database', undefined, true)
-    this.provide('model', new DatabaseService(this), true)
+    this.provide('model', undefined, true)
     this.provide('$commander', new Commander(this, this.config), true)
+    this.plugin(DatabaseService)
   }
 
   /** @deprecated use `ctx.root` instead */
@@ -192,6 +189,10 @@ Context.Config.list.push(Context.Config.Advanced)
 Context.Config.list.push(Schema.object({
   request: Quester.Config,
 }))
+
+export class Service<C extends Context = Context> extends satori.Service<C> {
+  static Context = Context
+}
 
 // for backward compatibility
 export { Context as App }

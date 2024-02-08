@@ -205,30 +205,30 @@ export abstract class Loader {
     throw new Error('config file not found')
   }
 
-  private migrateGroup(plugins: Dict) {
-    const backup = { ...plugins }
-    for (const key in backup) delete plugins[key]
-    for (const key in backup) {
+  protected migrateEntry(name: string, config: any): any {
+    if (name !== 'group') return
+    const backup = { ...config }
+    for (const key in backup) delete config[key]
+    for (let key in backup) {
       if (key.startsWith('$')) {
-        plugins[key] = backup[key]
+        config[key] = backup[key]
         continue
       }
-      const [name] = key.split(':', 1)
-      const isGroup = name === 'group' || name === '~group'
-      if (isGroup) this.migrateGroup(backup[key])
-      let ident = key.slice(name.length + 1)
-      if (ident && !this.names.has(ident)) {
-        this.names.add(ident)
-        plugins[key] = backup[key]
-        continue
+      const [prefix] = key.split(':', 1)
+      const name = prefix.replace(/^~/, '')
+      const value = this.migrateEntry(name, backup[key]) ?? backup[key]
+      let ident = key.slice(prefix.length + 1)
+      if (!ident || this.names.has(ident)) {
+        ident = Math.random().toString(36).slice(2, 8)
+        key = `${prefix}:${ident}`
       }
-      ident = Math.random().toString(36).slice(2, 8)
-      plugins[`${name}:${ident}`] = backup[key]
+      this.names.add(ident)
+      config[key] = value
     }
   }
 
   async migrate() {
-    this.migrateGroup(this.config.plugins)
+    this.migrateEntry('group', this.config.plugins)
   }
 
   async readConfig(initial = false) {

@@ -1,4 +1,4 @@
-import { Logger } from '@koishijs/core'
+import { Dict, Logger } from '@koishijs/core'
 import { promises as fs } from 'fs'
 import * as dotenv from 'dotenv'
 import ns from 'ns-require'
@@ -27,6 +27,18 @@ export default class NodeLoader extends Loader {
       official: 'koishijs',
       dirname: this.baseDir,
     })
+  }
+
+  migrateEntry(name: string, config: Dict) {
+    config ??= {}
+    if (['database-mysql', 'database-mongo', 'database-postgres'].includes(name)) {
+      config.database ??= 'koishi'
+    } else if (name === 'database-sqlite') {
+      config.path ??= 'data/koishi.db'
+    } else {
+      return super.migrateEntry(name, config)
+    }
+    return config
   }
 
   async migrate() {
