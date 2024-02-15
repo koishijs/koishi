@@ -42,12 +42,12 @@
     }
   },
   "peerDependencies": {
-    "koishi": "^4.17.0-alpha.0"
+    "koishi": "^4.17.0-beta.0"
   },
   "devDependencies": {
     "@types/babel__code-frame": "^7.0.6",
     "esbuild": "^0.18.20",
-    "koishi": "^4.17.0-alpha.0"
+    "koishi": "^4.17.0-beta.0"
   },
   "dependencies": {
     "@babel/code-frame": "^7.23.5",
