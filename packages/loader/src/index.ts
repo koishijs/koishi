@@ -3,6 +3,7 @@ import { promises as fs } from 'fs'
 import * as dotenv from 'dotenv'
 import ns from 'ns-require'
 import Loader from './shared'
+import { createRequire } from 'module'
 
 export * from './shared'
 
@@ -42,26 +43,46 @@ export default class NodeLoader extends Loader {
   }
 
   async migrate() {
-    if (this.config['port']) {
-      const { port, host, maxPort, selfUrl } = this.config as any
-      delete this.config['port']
-      delete this.config['host']
-      delete this.config['maxPort']
-      delete this.config['selfUrl']
-      this.config.plugins = {
-        server: { port, host, maxPort, selfUrl },
-        ...this.config.plugins,
+    try {
+      let isDirty = false
+      const manifest = JSON.parse(await fs.readFile('package.json', 'utf8'))
+      const require = createRequire(__filename)
+      const deps = require('koishi/package.json').dependencies
+      function addDep(name: string) {
+        manifest.dependencies[name] = deps[name]
+        isDirty = true
       }
-      try {
-        const version = require('koishi/package.json').dependencies['@koishijs/plugin-server']
-        const data = JSON.parse(await fs.readFile('package.json', 'utf8'))
-        data.dependencies['@koishijs/plugin-server'] = version
-        data.dependencies = Object.fromEntries(Object.entries(data.dependencies).sort(([a], [b]) => a.localeCompare(b)))
-        await fs.writeFile('package.json', JSON.stringify(data, null, 2) + '\n')
-      } catch {
-        logger.warn('please install @koishijs/plugin-server manually')
+
+      if (!manifest.dependencies['@koishijs/plugin-proxy-agent']) {
+        this.config.plugins = {
+          'proxy-agent': {},
+          ...this.config.plugins,
+        }
+        addDep('@koishijs/plugin-proxy-agent')
       }
+
+      if (this.config['port']) {
+        const { port, host, maxPort, selfUrl } = this.config as any
+        delete this.config['port']
+        delete this.config['host']
+        delete this.config['maxPort']
+        delete this.config['selfUrl']
+        this.config.plugins = {
+          server: { port, host, maxPort, selfUrl },
+          ...this.config.plugins,
+        }
+        addDep('@koishijs/plugin-server')
+      }
+
+      if (isDirty) {
+        manifest.dependencies = Object.fromEntries(Object.entries(manifest.dependencies).sort(([a], [b]) => a.localeCompare(b)))
+        await fs.writeFile('package.json', JSON.stringify(manifest, null, 2) + '\n')
+      }
+    } catch (error) {
+      logger.warn('failed to migrate manifest')
+      logger.warn(error)
     }
+
     await super.migrate()
   }
 
