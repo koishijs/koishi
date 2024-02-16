@@ -158,6 +158,10 @@ export namespace Context {
 
 defineProperty(Context.Config, 'Basic', Schema.object({
   prefix: Schema.array(Schema.string().default('')).default(['']).role('table').computed().description('指令前缀字符构成的数组。将被用于指令的匹配。'),
+  prefixMode: Schema.union([
+    Schema.const('auto').description('默认：当存在称呼时允许无前缀触发。'),
+    Schema.const('strict').description('严格：只有在指令前缀匹配时才允许触发。'),
+  ]).experimental().role('radio').default('auto').description('指令前缀匹配模式。'),
   nickname: Schema.array(String).role('table').computed().description('机器人昵称构成的数组。将被用于指令的匹配。'),
   autoAssign: Schema.boolean().default(true).computed().description('当获取不到频道数据时，是否使用接受者作为受理人。'),
   autoAuthorize: Schema.natural().default(1).computed().description('当获取不到用户数据时默认使用的权限等级。'),

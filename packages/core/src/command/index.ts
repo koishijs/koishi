@@ -44,6 +44,7 @@ interface DeclarationList extends Array<Argv.Declaration> {
 export namespace Commander {
   export interface Config {
     prefix?: Computed<string | string[]>
+    prefixMode?: 'auto' | 'strict'
   }
 }
 
@@ -282,7 +283,8 @@ export class Commander {
 
     const { stripped, isDirect } = argv.session
     // guild message should have prefix or appel to be interpreted as a command call
-    if (argv.root && !isDirect && stripped.prefix === null && !stripped.appel) return
+    const isStrict = this.config.prefixMode === 'strict' || !isDirect && !stripped.appel
+    if (argv.root && stripped.prefix === null && isStrict) return
     const segments: string[] = []
     while (argv.tokens.length) {
       const { content } = argv.tokens[0]
