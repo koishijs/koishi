@@ -16,7 +16,7 @@ export type EffectScope = cordis.EffectScope<Context>
 export type ForkScope = cordis.ForkScope<Context>
 export type MainScope = cordis.MainScope<Context>
 
-export { Adapter, Bot, Element, h, Logger, MessageEncoder, Messenger, Quester, Satori, Schema, segment, Universal, z } from '@satorijs/core'
+export { Adapter, Bot, Element, h, Logger, MessageEncoder, Messenger, Quester, Schema, segment, Universal, z } from '@satorijs/core'
 export type { Component, Fragment, Render } from '@satorijs/core'
 
 export { resolveConfig } from 'cordis'
@@ -194,8 +194,10 @@ Context.Config.list.push(Schema.object({
   request: Quester.Config,
 }))
 
-export class Service<C extends Context = Context> extends satori.Service<C> {
-  static Context = Context
+export abstract class Service<T = any, C extends Context = Context> extends satori.Service<T, C> {
+  [satori.Service.setup]() {
+    this.ctx = new Context() as C
+  }
 }
 
 // for backward compatibility
