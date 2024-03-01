@@ -17,8 +17,8 @@ export function apply(ctx: Context) {
           platform: session.platform,
           guildId: session.guildId,
           selfId: session.selfId,
-          userId: session.quote.user.id,
-          channelId: session.quote.channel.id,
+          userId: session.quote.user?.id,
+          channelId: session.quote.channel?.id,
         })
       }
 
