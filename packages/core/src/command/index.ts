@@ -366,16 +366,12 @@ export class Commander {
   }
 
   domain<K extends keyof Argv.Domain>(name: K): Argv.DomainConfig<Argv.Domain[K]>
-  domain<K extends keyof Argv.Domain>(name: K, transform: Argv.Transform<Argv.Domain[K]>, options?: Argv.DomainConfig<Argv.Domain[K]>): void
+  domain<K extends keyof Argv.Domain>(name: K, transform: Argv.Transform<Argv.Domain[K]>, options?: Argv.DomainConfig<Argv.Domain[K]>): () => void
   domain<K extends keyof Argv.Domain>(name: K, transform?: Argv.Transform<Argv.Domain[K]>, options?: Argv.DomainConfig<Argv.Domain[K]>) {
     const caller = this[Context.current] as Context
     const service = 'domain:' + name
     if (!transform) return caller.get(service)
-    this.ctx.provide(service)
-    return caller.effect(() => {
-      caller[service] = { transform, ...options }
-      return () => caller[service] = null
-    })
+    return caller.set(service, { transform, ...options })
   }
 
   resolveDomain(type: Argv.Type) {

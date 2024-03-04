@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-inspect",
   "description": "Inspect on any user, channel or message",
-  "version": "1.1.4",
+  "version": "1.1.5",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -47,10 +47,10 @@
     ]
   },
   "peerDependencies": {
-    "koishi": "^4.17.1"
+    "koishi": "^4.17.2"
   },
   "devDependencies": {
     "@koishijs/plugin-mock": "^2.6.5",
-    "koishi": "^4.17.1"
+    "koishi": "^4.17.2"
   }
 }

@@ -39,7 +39,7 @@ interface Task {
   reject(reason: any): void
 }
 
-export type FieldCollector<T extends keyof Tables, K = keyof Tables[T], A extends any[] = any[], O = {}> =
+export type FieldCollector<T extends keyof Tables, K = keyof Tables[T], A extends any[] = any[], O extends {} = {}> =
   | Iterable<K>
   | ((argv: Argv<never, never, A, O>, fields: Set<keyof Tables[T]>) => void)
 
