@@ -305,7 +305,7 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
   resolveScope(path: string) {
     if (!path.startsWith('.')) return path
     if (!this.scope) {
-      this.app.logger('i18n').warn(new Error('missing scope'))
+      this.app.logger('i18n').warn(new Error(`missing scope for "${path}"`))
       return ''
     }
     return this.scope + path
