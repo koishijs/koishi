@@ -51,10 +51,10 @@
     }
   },
   "peerDependencies": {
-    "koishi": "^4.17.3"
+    "koishi": "^4.17.4"
   },
   "devDependencies": {
-    "koishi": "^4.17.3"
+    "koishi": "^4.17.4"
   },
   "dependencies": {
     "@cordisjs/server": "^0.1.8"

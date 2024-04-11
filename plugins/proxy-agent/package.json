@@ -52,10 +52,10 @@
     }
   },
   "peerDependencies": {
-    "koishi": "^4.17.3"
+    "koishi": "^4.17.4"
   },
   "devDependencies": {
-    "koishi": "^4.17.3"
+    "koishi": "^4.17.4"
   },
   "dependencies": {
     "undios-proxy-agent": "^0.2.0"
