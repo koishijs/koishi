@@ -17,9 +17,13 @@ export function defineEnumProperty<T extends object>(object: T, key: keyof T, va
 
 export function merge<T extends object>(head: T, base: T): T {
   Object.entries(base).forEach(([key, value]) => {
-    if (typeof head[key] === 'undefined') return head[key] = base[key]
+    if (typeof head[key] === 'undefined') return head[key] = value
+    // prevent prototype attack
+    if (!Object.hasOwn(head, key)) return
     if (typeof value === 'object' && typeof head[key] === 'object') {
       head[key] = merge(head[key], value)
+    } else {
+      head[key] = value
     }
   })
   return head
