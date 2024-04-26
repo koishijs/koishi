@@ -145,7 +145,8 @@ export abstract class Loader {
 
   private store = new WeakMap<any, string>()
 
-  private _writeTimer: undefined | number | NodeJS.Timeout
+  private _writeTask?: Promise<void>
+  private _writeSlient = true
 
   abstract import(name: string): Promise<any>
   abstract fullReload(code?: number): void
@@ -260,10 +261,13 @@ export abstract class Loader {
     if (!silent) this.app.emit('config')
   }
 
-  async writeConfig(silent = false) {
-    clearTimeout(this._writeTimer)
-    return new Promise<void>((resolve, reject) => {
-      this._writeTimer = setTimeout(() => {
+  writeConfig(silent = false) {
+    this._writeSlient &&= silent
+    if (this._writeTask) return this._writeTask
+    return this._writeTask = new Promise((resolve, reject) => {
+      setTimeout(() => {
+        this._writeSlient = true
+        this._writeTask = undefined
         this._writeConfig(silent).then(resolve, reject)
       }, 0)
     })

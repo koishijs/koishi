@@ -60,6 +60,7 @@ function createWorker(options: Dict<any>) {
     if (message.type === 'start') {
       config = message.body
       timer = config.heartbeatTimeout && setTimeout(() => {
+        // eslint-disable-next-line no-console
         console.log(kleur.red('daemon: heartbeat timeout'))
         child.kill('SIGKILL')
       }, config.heartbeatTimeout)
@@ -128,6 +129,7 @@ export default function (cli: CAC) {
     .action((file, options) => {
       const { logLevel, debug, logTime, ...rest } = options
       if (logLevel !== undefined && (!isInteger(logLevel) || logLevel < 0)) {
+        // eslint-disable-next-line no-console
         console.warn(`${kleur.red('error')} log level should be a positive integer.`)
         process.exit(1)
       }
