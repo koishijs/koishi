@@ -10,7 +10,7 @@ import { Session } from './session'
 import { Processor } from './middleware'
 import { SchemaService } from './schema'
 import { Permissions } from './permission'
-import { DatabaseService } from './database'
+import { KoishiDatabase } from './database'
 
 export type EffectScope = cordis.EffectScope<Context>
 export type ForkScope = cordis.ForkScope<Context>
@@ -49,7 +49,6 @@ export class Context extends satori.Context {
 
   constructor(config: Context.Config = {}) {
     super(config)
-    this.mixin('model', ['getSelfIds', 'broadcast'])
     this.mixin('$processor', ['match', 'middleware'])
     this.mixin('$filter', [
       'any', 'never', 'union', 'intersect', 'exclude',
@@ -64,7 +63,7 @@ export class Context extends satori.Context {
     this.provide('database', undefined, true)
     this.provide('model', undefined, true)
     this.provide('$commander', new Commander(this, this.config), true)
-    this.plugin(DatabaseService)
+    this.provide('koishi.database', new KoishiDatabase(this), true)
   }
 
   /** @deprecated use `ctx.root` instead */
@@ -115,8 +114,6 @@ Session.prototype[Context.filter] = function (this: Session, ctx: Context) {
 }
 
 export namespace Context {
-  export type Associate<P extends string, C extends Context = Context> = satori.Context.Associate<P, C>
-
   export interface Config extends Config.Basic, Config.Advanced {
     i18n?: I18n.Config
     delay?: Config.Delay

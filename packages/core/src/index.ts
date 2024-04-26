@@ -14,4 +14,6 @@ export * from './session'
 export * from './permission'
 export * from './command'
 
+export { Tables, Types } from './database'
+
 export { version }

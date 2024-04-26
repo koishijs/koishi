@@ -79,7 +79,13 @@ declare module '@satorijs/core' {
 export class SchemaService {
   _data: Dict<Schema> = Object.create(null)
 
-  constructor(public ctx: Context) {}
+  constructor(public ctx: Context) {
+    this.extend('intercept.http', Schema.object({
+      timeout: Schema.natural().role('ms').description('等待连接建立的最长时间。'),
+      proxyAgent: Schema.string().description('使用的代理服务器地址。'),
+      keepAlive: Schema.boolean().description('是否保持连接。'),
+    }))
+  }
 
   extend(name: string, schema: Schema, order = 0) {
     const caller = this[Context.current]
