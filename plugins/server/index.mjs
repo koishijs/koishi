@@ -1,4 +1,4 @@
-import Server from '@cordisjs/server'
+import Server from '@cordisjs/plugin-server'
 
 export default Server
-export * from '@cordisjs/server'
+export * from '@cordisjs/plugin-server'

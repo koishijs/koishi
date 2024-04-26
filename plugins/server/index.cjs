@@ -1,1 +1,1 @@
-module.exports = require('@cordisjs/server')
+module.exports = require('@cordisjs/plugin-server')
