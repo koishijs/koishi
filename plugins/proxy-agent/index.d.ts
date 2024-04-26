@@ -1,1 +1,1 @@
-export * from 'undios-proxy-agent'
+export * from '@cordisjs/plugin-proxy-agent'

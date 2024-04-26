@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-proxy-agent",
   "description": "Proxy agent support for Koishi",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "type": "module",
   "main": "index.cjs",
   "module": "index.mjs",
@@ -23,13 +23,13 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/cordiverse/undios.git",
+    "url": "git+https://github.com/cordiverse/http.git",
     "directory": "packages/proxy-agent"
   },
   "bugs": {
-    "url": "https://github.com/cordiverse/undios/issues"
+    "url": "https://github.com/cordiverse/http/issues"
   },
-  "homepage": "https://github.com/cordiverse/undios",
+  "homepage": "https://github.com/cordiverse/http",
   "keywords": [
     "http",
     "client",
@@ -52,12 +52,12 @@
     }
   },
   "peerDependencies": {
-    "koishi": "^4.17.4"
+    "koishi": "^4.17.5"
   },
   "devDependencies": {
-    "koishi": "^4.17.4"
+    "koishi": "^4.17.5"
   },
   "dependencies": {
-    "undios-proxy-agent": "^0.2.0"
+    "@cordisjs/plugin-proxy-agent": "^0.3.0"
   }
 }
