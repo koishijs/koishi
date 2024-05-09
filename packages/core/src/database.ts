@@ -13,11 +13,14 @@ declare module './context' {
   }
 
   namespace Context {
+    // https://github.com/typescript-eslint/typescript-eslint/issues/6720
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     interface Database<C extends Context = Context> {
       getUser<K extends FlatKeys<User>>(platform: string, pid: string, modifier?: Driver.Cursor<K>): Promise<FlatPick<User, K>>
       setUser(platform: string, pid: string, data: Update<User>): Promise<void>
       createUser(platform: string, pid: string, data: Partial<User>): Promise<User>
-      getChannel<K extends FlatKeys<Channel>>(platform: string, id: MaybeArray<string>, modifier?: Driver.Cursor<K>): Promise<FlatPick<Channel, K> | FlatPick<Channel, K>[]>
+      getChannel<K extends FlatKeys<Channel>>(platform: string, id: string, modifier?: Driver.Cursor<K>): Promise<FlatPick<Channel, K | 'id' | 'platform'>>
+      getChannel<K extends FlatKeys<Channel>>(platform: string, ids: string[], modifier?: Driver.Cursor<K>): Promise<FlatPick<Channel, K>[]>
       getAssignedChannels<K extends Channel.Field>(fields?: K[], selfIdMap?: Dict<string[]>): Promise<Pick<Channel, K>[]>
       setChannel(platform: string, id: string, data: Update<Channel>): Promise<void>
       createChannel(platform: string, id: string, data: Partial<Channel>): Promise<Channel>
@@ -88,8 +91,6 @@ export namespace Channel {
 export class KoishiDatabase {
   constructor(public ctx: Context) {
     ctx.plugin(minato.Database)
-
-    ctx.set('koishi.database', this)
 
     ctx.mixin('koishi.database', {
       getUser: 'database.getUser',

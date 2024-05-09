@@ -165,7 +165,9 @@ export class Commander {
     this.domain('boolean', () => true)
 
     this.domain('number', (source, session) => {
-      const value = +source
+      // support `,` and `_` as delimiters
+      // https://github.com/koishijs/koishi/issues/1386
+      const value = +source.replace(/[,_]/g, '')
       if (Number.isFinite(value)) return value
       throw new Error('internal.invalid-number')
     }, { numeric: true })
