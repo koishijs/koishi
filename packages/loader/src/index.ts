@@ -45,15 +45,25 @@ export default class NodeLoader extends Loader {
   async migrate() {
     try {
       let isDirty = false
-      const manifest = JSON.parse(await fs.readFile('package.json', 'utf8'))
+      const meta = JSON.parse(await fs.readFile('package.json', 'utf8'))
       const require = createRequire(__filename)
       const deps = require('koishi/package.json').dependencies
       function addDep(name: string) {
-        manifest.dependencies[name] = deps[name]
+        meta.dependencies[name] = deps[name]
         isDirty = true
       }
 
-      if (!manifest.dependencies['@koishijs/plugin-proxy-agent']) {
+      if (!meta.dependencies['@koishijs/plugin-http']) {
+        const { request = {} } = this.config as any
+        delete this.config['request']
+        this.config.plugins = {
+          http: request,
+          ...this.config.plugins,
+        }
+        addDep('@koishijs/plugin-http')
+      }
+
+      if (!meta.dependencies['@koishijs/plugin-proxy-agent']) {
         this.config.plugins = {
           'proxy-agent': {},
           ...this.config.plugins,
@@ -75,8 +85,8 @@ export default class NodeLoader extends Loader {
       }
 
       if (isDirty) {
-        manifest.dependencies = Object.fromEntries(Object.entries(manifest.dependencies).sort(([a], [b]) => a.localeCompare(b)))
-        await fs.writeFile('package.json', JSON.stringify(manifest, null, 2) + '\n')
+        meta.dependencies = Object.fromEntries(Object.entries(meta.dependencies).sort(([a], [b]) => a.localeCompare(b)))
+        await fs.writeFile('package.json', JSON.stringify(meta, null, 2) + '\n')
       }
     } catch (error) {
       logger.warn('failed to migrate manifest')

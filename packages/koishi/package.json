@@ -47,16 +47,18 @@
   "dependencies": {
     "@koishijs/core": "4.17.5",
     "@koishijs/loader": "4.5.5",
+    "@koishijs/plugin-http": "^0.4.2",
     "@koishijs/plugin-proxy-agent": "^0.3.0",
     "@koishijs/plugin-server": "^3.2.1",
     "@koishijs/utils": "^7.2.1",
-    "@satorijs/satori": "^3.7.0",
+    "@satorijs/core": "^4.0.0",
     "cac": "^6.7.14",
     "kleur": "^4.1.5"
   },
   "yakumo": {
     "tsc": {
       "ignore": [
+        "@koishijs/plugin-http",
         "@koishijs/plugin-proxy-agent",
         "@koishijs/plugin-server"
       ]

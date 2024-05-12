@@ -1,0 +1,59 @@
+{
+  "name": "@koishijs/plugin-http",
+  "description": "HTTP and WebSocket client for Koishi",
+  "version": "0.4.2",
+  "type": "module",
+  "main": "index.cjs",
+  "module": "index.mjs",
+  "types": "index.d.ts",
+  "exports": {
+    ".": {
+      "require": "./index.cjs",
+      "import": "./index.mjs",
+      "types": "./index.d.ts"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "index.cjs",
+    "index.mjs",
+    "index.d.ts"
+  ],
+  "author": "Shigma <shigma10826@gmail.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cordiverse/http.git",
+    "directory": "packages/core"
+  },
+  "bugs": {
+    "url": "https://github.com/cordiverse/http/issues"
+  },
+  "homepage": "https://github.com/cordiverse/http",
+  "keywords": [
+    "http",
+    "fetch",
+    "axios",
+    "http",
+    "undici",
+    "client",
+    "request",
+    "cordis",
+    "plugin"
+  ],
+  "koishi": {
+    "description": {
+      "en": "HTTP and WebSocket client for Koishi",
+      "zh": "HTTP 与 WebSocket 基础服务"
+    }
+  },
+  "peerDependencies": {
+    "koishi": "^4.17.6"
+  },
+  "devDependencies": {
+    "koishi": "^4.17.6"
+  },
+  "dependencies": {
+    "@cordisjs/plugin-http": "^0.4.2"
+  }
+}
