@@ -1,5 +1,5 @@
 import { defineProperty, Promisify, Time } from 'cosmokit'
-import { Quester, Schema } from '@satorijs/core'
+import { HTTP, Schema } from '@satorijs/core'
 import { GetEvents, Parameters, ReturnType, ThisType } from 'cordis'
 import * as satori from '@satorijs/core'
 import * as cordis from 'cordis'
@@ -11,12 +11,13 @@ import { Processor } from './middleware'
 import { SchemaService } from './schema'
 import { Permissions } from './permission'
 import { KoishiDatabase } from './database'
+import { KoishiBot } from './bot'
 
 export type EffectScope = cordis.EffectScope<Context>
 export type ForkScope = cordis.ForkScope<Context>
 export type MainScope = cordis.MainScope<Context>
 
-export { Adapter, Bot, Element, h, Logger, MessageEncoder, Messenger, Quester, Schema, segment, Universal, z } from '@satorijs/core'
+export { Adapter, Bot, Element, h, HTTP, Logger, MessageEncoder, Messenger, Quester, Schema, segment, Universal, z } from '@satorijs/core'
 export type { Component, Fragment, Render } from '@satorijs/core'
 
 export { resolveConfig } from 'cordis'
@@ -60,10 +61,11 @@ export class Context extends satori.Context {
     this.provide('i18n', new I18n(this, this.config.i18n), true)
     this.provide('schema', new SchemaService(this), true)
     this.provide('permissions', new Permissions(this), true)
-    this.provide('database', undefined, true)
     this.provide('model', undefined, true)
+    this.provide('http', undefined, true)
     this.provide('$commander', new Commander(this, this.config), true)
     this.provide('koishi.database', new KoishiDatabase(this), true)
+    this.provide('koishi.bot', new KoishiBot(this), true)
   }
 
   /** @deprecated use `ctx.root` instead */
@@ -117,7 +119,7 @@ export namespace Context {
   export interface Config extends Config.Basic, Config.Advanced {
     i18n?: I18n.Config
     delay?: Config.Delay
-    request?: Quester.Config
+    request?: HTTP.Config
   }
 
   export const Config = Schema.intersect([
@@ -188,7 +190,7 @@ Context.Config.list.push(Schema.object({
 }).description('延迟设置'))
 Context.Config.list.push(Context.Config.Advanced)
 Context.Config.list.push(Schema.object({
-  request: Quester.Config,
+  request: HTTP.Config,
 }))
 
 export abstract class Service<T = any, C extends Context = Context> extends satori.Service<T, C> {

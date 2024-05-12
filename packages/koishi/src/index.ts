@@ -2,8 +2,6 @@
 
 import Loader from '@koishijs/loader'
 
-import '@satorijs/satori'
-
 export { Loader }
 
 export * from '@koishijs/core'
