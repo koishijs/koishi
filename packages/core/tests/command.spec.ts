@@ -4,7 +4,7 @@ import { expect, use } from 'chai'
 import shape from 'chai-shape'
 import promise from 'chai-as-promised'
 import mock from '@koishijs/plugin-mock'
-import * as jest from 'jest-mock'
+import { mock as jest } from 'node:test'
 
 use(shape)
 use(promise)
@@ -175,8 +175,8 @@ describe('Command API', () => {
     let command: Command
     beforeEach(() => {
       command = app.command('test')
-      print.mockClear()
-      next.mockClear()
+      print.mock.resetCalls()
+      next.mock.resetCalls()
     })
     afterEach(() => command?.dispose())
 
@@ -195,7 +195,7 @@ describe('Command API', () => {
     })
 
     it('compose 1 (return in next function)', async () => {
-      next.mockResolvedValueOnce('result')
+      next.mock.mockImplementationOnce(() => Promise.resolve('result'))
       command.action(({ next }) => next())
 
       await expect(command.execute({ session }, next)).eventually.to.equal('result')
@@ -243,7 +243,7 @@ describe('Command API', () => {
 
       await expect(command.execute({ session }, next)).eventually.to.equal('乌拉！')
       expect(print.mock.calls).to.have.length(1)
-      expect(print.mock.calls[0][0]).to.match(/Error: message 1/)
+      expect(print.mock.calls[0].arguments[0]).to.match(/Error: message 1/)
       expect(next.mock.calls).to.have.length(0)
     })
 
@@ -256,12 +256,12 @@ describe('Command API', () => {
 
       await expect(command.execute({ session }, next)).eventually.to.equal('发生未知错误。')
       expect(print.mock.calls).to.have.length(1)
-      expect(print.mock.calls[0][0]).to.match(/Error: message 2/)
+      expect(print.mock.calls[0].arguments[0]).to.match(/Error: message 2/)
       expect(next.mock.calls).to.have.length(1)
     })
 
     it('throw 3 (error in next function)', async () => {
-      next.mockRejectedValueOnce(new Error('message 3'))
+      next.mock.mockImplementationOnce(() => Promise.reject(new Error('message 3')))
       command.action(({ next }) => next())
 
       await expect(command.execute({ session }, next)).to.be.rejected

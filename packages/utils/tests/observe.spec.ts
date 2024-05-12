@@ -1,6 +1,6 @@
 import { observe, noop, Dict } from 'koishi'
 import { expect } from 'chai'
-import * as jest from 'jest-mock'
+import { mock as jest } from 'node:test'
 
 describe('Observer API', () => {
   it('type checks', () => {

@@ -1,6 +1,6 @@
 import { Context, Dict, Plugin } from 'koishi'
 import { Loader } from '../src'
-import * as jest from 'jest-mock'
+import { mock as jest } from 'node:test'
 
 export default class TestLoader extends Loader {
   // @ts-ignore

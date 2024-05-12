@@ -2,7 +2,7 @@ import { App, Bot, Channel } from 'koishi'
 import * as broadcast from '@koishijs/plugin-broadcast'
 import memory from '@koishijs/plugin-database-memory'
 import mock from '@koishijs/plugin-mock'
-import * as jest from 'jest-mock'
+import { mock as jest } from 'node:test'
 import { expect } from 'chai'
 
 const app = new App({
@@ -35,18 +35,18 @@ describe('@koishijs/plugin-broadcast', () => {
 
     await client.shouldNotReply('broadcast foo')
     expect(send.mock.calls).to.have.length(2)
-    expect(send.mock.calls[0][0]).to.equal('222')
-    expect(send.mock.calls[1][0]).to.equal('111')
-    send.mockClear()
+    expect(send.mock.calls[0].arguments[0]).to.equal('222')
+    expect(send.mock.calls[1].arguments[0]).to.equal('111')
+    send.mock.resetCalls()
 
     await client.shouldNotReply('broadcast -o foo')
     expect(send.mock.calls).to.have.length(1)
-    expect(send.mock.calls[0][0]).to.equal('222')
-    send.mockClear()
+    expect(send.mock.calls[0].arguments[0]).to.equal('222')
+    send.mock.resetCalls()
 
     await client.shouldNotReply('broadcast -of foo')
     expect(send.mock.calls).to.have.length(2)
-    expect(send.mock.calls[0][0]).to.equal('222')
-    expect(send.mock.calls[1][0]).to.equal('333')
+    expect(send.mock.calls[0].arguments[0]).to.equal('222')
+    expect(send.mock.calls[1].arguments[0]).to.equal('333')
   })
 })

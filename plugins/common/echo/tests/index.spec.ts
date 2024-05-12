@@ -1,7 +1,7 @@
 import { App, Bot, h } from 'koishi'
 import * as echo from '@koishijs/plugin-echo'
 import mock from '@koishijs/plugin-mock'
-import * as jest from 'jest-mock'
+import { mock as jest } from 'node:test'
 import { expect, use } from 'chai'
 import shape from 'chai-shape'
 

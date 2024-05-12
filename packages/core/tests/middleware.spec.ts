@@ -1,7 +1,7 @@
 import { App, SessionError, Middleware, sleep, noop, Logger, Next } from 'koishi'
 import { expect } from 'chai'
 import mock from '@koishijs/plugin-mock'
-import * as jest from 'jest-mock'
+import { mock as jest, Mock } from 'node:test'
 
 type NextCallback = Extract<Next.Callback, (...args: any[]) => any>
 
@@ -27,10 +27,10 @@ after(() => {
 })
 
 describe('Middleware Runtime', () => {
-  let callSequence: jest.Mock[]
+  let callSequence: Mock<() => void>[]
 
   beforeEach(() => {
-    print.mockClear()
+    print.mock.resetCalls()
     app.$processor._hooks = []
     callSequence = []
   })

@@ -1,6 +1,6 @@
 import { expect } from 'chai'
 import { Context, sleep } from 'koishi'
-import * as jest from 'jest-mock'
+import { Mock } from 'node:test'
 import mock from '@koishijs/plugin-mock'
 import Loader from './utils'
 
@@ -90,8 +90,8 @@ describe('@koishijs/loader', () => {
     app.plugin(mock)
     expect(app.lifecycle._hooks['test/bar']).to.have.length(1)
     expect(app.lifecycle._hooks['test/baz']).to.have.length(1)
-    const bar = app.lifecycle._hooks['test/bar'][0][1] as jest.Mock
-    const baz = app.lifecycle._hooks['test/baz'][0][1] as jest.Mock
+    const bar = app.lifecycle._hooks['test/bar'][0][1] as Mock<() => void>
+    const baz = app.lifecycle._hooks['test/baz'][0][1] as Mock<() => void>
     expect(bar.mock.calls).to.have.length(0)
     expect(baz.mock.calls).to.have.length(0)
 
