@@ -10,6 +10,8 @@ declare module './context' {
     [minato.Types]: Types
     [minato.Tables]: Tables
     [Context.Database]: Context.Database<this>
+    broadcast(content: Fragment, forced?: boolean): Promise<string[]>
+    broadcast(channels: readonly string[], content: Fragment, forced?: boolean): Promise<string[]>
   }
 
   namespace Context {
@@ -24,8 +26,6 @@ declare module './context' {
       getAssignedChannels<K extends Channel.Field>(fields?: K[], selfIdMap?: Dict<string[]>): Promise<Pick<Channel, K>[]>
       setChannel(platform: string, id: string, data: Update<Channel>): Promise<void>
       createChannel(platform: string, id: string, data: Partial<Channel>): Promise<Channel>
-      broadcast(content: Fragment, forced?: boolean): Promise<string[]>
-      broadcast(channels: readonly string[], content: Fragment, forced?: boolean): Promise<string[]>
     }
   }
 }

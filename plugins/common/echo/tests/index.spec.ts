@@ -27,10 +27,12 @@ describe('@koishijs/plugin-echo', () => {
 
     const send1 = app.bots[0].sendPrivateMessage = jest.fn<Bot['sendPrivateMessage']>()
     await client.shouldNotReply('echo -u @100 foo')
-    expect(send1.mock.calls).to.have.shape([['100', ['foo']]])
+    expect(send1.mock.calls).to.have.length(1)
+    expect(send1.mock.calls[0].arguments).to.have.shape(['100', ['foo']])
 
     const send2 = app.bots[0].sendMessage = jest.fn<Bot['sendMessage']>()
     await client.shouldNotReply('echo -c #200 foo')
-    expect(send2.mock.calls).to.have.shape([['200', ['foo']]])
+    expect(send1.mock.calls).to.have.length(1)
+    expect(send2.mock.calls[0].arguments).to.have.shape(['200', ['foo']])
   })
 })

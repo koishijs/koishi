@@ -156,7 +156,7 @@ describe('Observer API', () => {
 
     object.$update()
     expect(flush.mock.calls).to.have.length(1)
-    expect(flush.mock.calls[0]).to.deep.equal([{ b: [] }])
+    expect(flush.mock.calls[0].arguments).to.deep.equal([{ b: [] }])
     expect(object).to.deep.equal({ a: 1, b: [] })
     expect(object.$diff).to.deep.equal({})
 
@@ -166,7 +166,7 @@ describe('Observer API', () => {
 
     object.$update()
     expect(flush.mock.calls).to.have.length(2)
-    expect(flush.mock.calls[1]).to.deep.equal([{ a: 3 }])
+    expect(flush.mock.calls[1].arguments).to.deep.equal([{ a: 3 }])
     expect(object).to.deep.equal({ a: 3, b: [] })
     expect(object.$diff).to.deep.equal({})
   })
