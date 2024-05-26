@@ -3,14 +3,11 @@
   "description": "Server service for Koishi",
   "version": "3.2.2",
   "type": "module",
-  "main": "index.cjs",
-  "module": "index.mjs",
-  "types": "index.d.ts",
   "exports": {
     ".": {
+      "types": "./index.d.ts",
       "require": "./index.cjs",
-      "import": "./index.mjs",
-      "types": "./index.d.ts"
+      "default": "./index.mjs"
     },
     "./package.json": "./package.json"
   },
@@ -51,10 +48,10 @@
     }
   },
   "peerDependencies": {
-    "koishi": "^4.17.6"
+    "koishi": "^4.17.7"
   },
   "devDependencies": {
-    "koishi": "^4.17.6"
+    "koishi": "^4.17.7"
   },
   "dependencies": {
     "@cordisjs/plugin-server": "^0.2.2"
