@@ -6,7 +6,7 @@ import { createMatch, MatchResult } from './i18n'
 
 const logger = new Logger('app')
 
-declare module '@satorijs/core' {
+declare module './context' {
   interface Context {
     permissions: Permissions
   }

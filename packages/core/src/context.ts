@@ -8,7 +8,6 @@ import { Commander } from './command'
 import { I18n } from './i18n'
 import { Session } from './session'
 import { Processor } from './middleware'
-import { SchemaService } from './schema'
 import { Permissions } from './permission'
 import { KoishiDatabase } from './database'
 import { KoishiBot } from './bot'
@@ -38,7 +37,7 @@ type OmitSubstring<S extends string, T extends string> = S extends `${infer L}${
 type BeforeEventName = OmitSubstring<keyof Events & string, 'before-'>
 type BeforeEventMap = { [E in keyof Events & string as OmitSubstring<E, 'before-'>]: Events[E] }
 
-export interface Events<C extends Context = Context> extends satori.Events<C> {}
+export interface Events<C extends Context = Context> extends cordis.Events<C> {}
 
 export interface Context {
   [Context.events]: Events<this>
@@ -59,7 +58,6 @@ export class Context extends satori.Context {
     this.provide('$filter', new FilterService(this), true)
     this.provide('$processor', new Processor(this), true)
     this.provide('i18n', new I18n(this, this.config.i18n), true)
-    this.provide('schema', new SchemaService(this), true)
     this.provide('permissions', new Permissions(this), true)
     this.provide('model', undefined, true)
     this.provide('http', undefined, true)
@@ -79,6 +77,7 @@ export class Context extends satori.Context {
   }
 
   /* eslint-disable max-len */
+  /** @deprecated */
   waterfall<K extends keyof GetEvents<this>>(name: K, ...args: Parameters<GetEvents<this>[K]>): Promisify<ReturnType<GetEvents<this>[K]>>
   waterfall<K extends keyof GetEvents<this>>(thisArg: ThisType<GetEvents<this>[K]>, name: K, ...args: Parameters<GetEvents<this>[K]>): Promisify<ReturnType<GetEvents<this>[K]>>
   async waterfall(...args: [any, ...any[]]) {
@@ -91,6 +90,7 @@ export class Context extends satori.Context {
     return args[0]
   }
 
+  /** @deprecated */
   chain<K extends keyof GetEvents<this>>(name: K, ...args: Parameters<GetEvents<this>[K]>): ReturnType<GetEvents<this>[K]>
   chain<K extends keyof GetEvents<this>>(thisArg: ThisType<GetEvents<this>[K]>, name: K, ...args: Parameters<GetEvents<this>[K]>): ReturnType<GetEvents<this>[K]>
   chain(...args: [any, ...any[]]) {

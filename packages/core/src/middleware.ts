@@ -1,6 +1,6 @@
 import { coerce, makeArray, Random } from '@koishijs/utils'
 import { Awaitable, defineProperty, Dict, Time } from 'cosmokit'
-import { Fragment, h } from '@satorijs/core'
+import { EventOptions, Fragment, h } from '@satorijs/core'
 import { Context } from './context'
 import { Channel, User } from './database'
 import { Session } from './session'
@@ -62,7 +62,7 @@ export namespace Matcher {
 }
 
 export class Processor {
-  _hooks: [Context, Middleware][] = []
+  _hooks: [Context, Middleware, EventOptions][] = []
   _sessions: Dict<Session> = Object.create(null)
   _userCache = new SharedCache<User.Observed<keyof User>>()
   _channelCache = new SharedCache<Channel.Observed<keyof Channel>>()
@@ -136,8 +136,11 @@ export class Processor {
     return this[Context.current] as Context
   }
 
-  middleware(middleware: Middleware, prepend = false) {
-    return this.caller.lifecycle.register('middleware', this._hooks, middleware, prepend)
+  middleware(middleware: Middleware, options?: boolean | EventOptions) {
+    if (typeof options !== 'object') {
+      options = { prepend: options }
+    }
+    return this.caller.lifecycle.register('middleware', this._hooks, middleware, options)
   }
 
   match(pattern: string | RegExp, response: Matcher.Response, options: Matcher.Options) {

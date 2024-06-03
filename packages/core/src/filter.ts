@@ -1,5 +1,6 @@
 import { defineProperty } from 'cosmokit'
 import { Eval } from 'minato'
+import { Schema } from '@satorijs/core'
 import { Channel, User } from './database'
 import { Context } from './context'
 import { Session } from './session'
@@ -104,4 +105,65 @@ export class FilterService {
   private(...values: string[]) {
     return property(this.caller.exclude(property(this.caller, 'guildId')), 'userId', ...values)
   }
+}
+
+declare global {
+  interface Schemastery<S, T> {
+    computed(options?: Computed.Options): Schema<Computed<S>, Computed<T>>
+  }
+
+  namespace Schemastery {
+    interface Static {
+      path(options?: Path.Options): Schema<string>
+      filter(): Schema<Computed<boolean>>
+      computed<X>(inner: X, options?: Computed.Options): Schema<Computed<TypeS<X>>, Computed<TypeT<X>>>
+      dynamic(name: string): Schema
+    }
+
+    namespace Path {
+      interface Options {
+        filters?: Filter[]
+        allowCreate?: boolean
+      }
+
+      type Filter = FileFilter | 'file' | 'directory'
+
+      interface FileFilter {
+        name: string
+        extensions: string[]
+      }
+    }
+  }
+}
+
+Schema.dynamic = function dynamic(name) {
+  return Schema.any().role('dynamic', { name }) as never
+}
+
+Schema.filter = function filter() {
+  return Schema.any().role('filter')
+}
+
+Schema.computed = function computed(inner, options = {}) {
+  return Schema.union([
+    Schema.from(inner),
+    Schema.object({
+      $switch: Schema.object({
+        branches: Schema.array(Schema.object({
+          case: Schema.any(),
+          then: Schema.from(inner),
+        })),
+        default: Schema.from(inner),
+      }),
+    }).hidden(),
+    Schema.any().hidden(),
+  ]).role('computed', options)
+}
+
+Schema.path = function path(options = {}) {
+  return Schema.string().role('path', options)
+}
+
+Schema.prototype.computed = function computed(this: Schema, options = {}) {
+  return Schema.computed(this, options).default(this.meta.default)
 }
