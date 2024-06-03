@@ -71,6 +71,36 @@ export default class NodeLoader extends Loader {
         addDep('@koishijs/plugin-proxy-agent')
       }
 
+      function getProxyAgent(plugins: Dict) {
+        for (const [key, value] of Object.entries(plugins)) {
+          const name = key.replace(/^~/, '').split(':')[0]
+          let result: any
+          if (name === 'http') {
+            result = value?.proxyAgent
+            delete value.proxyAgent
+          } else if (name === 'group') {
+            result = getProxyAgent(value)
+          }
+          if (result) return result
+        }
+      }
+
+      function setProxyAgent(plugins: Dict) {
+        for (const [key, value] of Object.entries(plugins)) {
+          const name = key.replace(/^~/, '').split(':')[0]
+          if (name === 'proxy-agent') {
+            plugins[key] = { ...value, proxyAgent }
+            return true
+          } else if (name === 'group') {
+            const result = setProxyAgent(value)
+            if (result) return result
+          }
+        }
+      }
+
+      const proxyAgent = getProxyAgent(this.config.plugins)
+      if (proxyAgent) setProxyAgent(this.config.plugins)
+
       if (this.config['port']) {
         const { port, host, maxPort, selfUrl } = this.config as any
         delete this.config['port']
