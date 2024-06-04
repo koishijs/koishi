@@ -190,6 +190,14 @@ export class Commander {
       throw new Error('internal.invalid-natural')
     }, { numeric: true })
 
+    this.domain('bigint', (source, session) => {
+      try {
+        return BigInt(source)
+      } catch {
+        throw new Error("internal.invalid-integer")
+      }
+    }, { numeric: true })
+
     this.domain('date', (source, session) => {
       const timestamp = Time.parseDate(source)
       if (+timestamp) return timestamp
