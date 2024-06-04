@@ -182,6 +182,7 @@ export namespace Argv {
     integer: number
     posint: number
     natural: number
+    bigint: bigint
     date: Date
     img: JSX.IntrinsicElements['img']
     image: JSX.IntrinsicElements['img']
