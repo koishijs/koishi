@@ -377,6 +377,13 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
     const { command } = argv
     if (!command.ctx.filter(this)) return ''
 
+    // assign default values
+    for (const { name, fallback } of Object.values(command._options)) {
+      if (fallback !== undefined && !(name in argv.options)) {
+        argv.options[name] = fallback
+      }
+    }
+
     if (this.app.database) {
       if (!this.isDirect) {
         await this.observeChannel(this.collect('channel', argv, new Set(['permissions', 'locales'])))

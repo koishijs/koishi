@@ -463,13 +463,6 @@ export namespace Argv {
         }
       }
 
-      // assign default values
-      for (const { name, fallback } of Object.values(this._options)) {
-        if (fallback !== undefined && !(name in options)) {
-          options[name] = fallback
-        }
-      }
-
       delete argv.tokens
       return { ...argv, options, args, error: argv.error || '', command: this as any }
     }
