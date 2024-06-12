@@ -3,14 +3,15 @@ import { HTTP, Schema } from '@satorijs/core'
 import { GetEvents, Parameters, ReturnType, ThisType } from 'cordis'
 import * as satori from '@satorijs/core'
 import * as cordis from 'cordis'
+import * as minato from 'minato'
 import { Computed, FilterService } from './filter'
 import { Commander } from './command'
 import { I18n } from './i18n'
-import { Session } from './session'
+import SessionMixin, { Session } from './session'
 import { Processor } from './middleware'
 import { Permissions } from './permission'
-import { KoishiDatabase } from './database'
-import { KoishiBot } from './bot'
+import DatabaseMixin from './database'
+import BotMixin from './bot'
 
 export type EffectScope = cordis.EffectScope<Context>
 export type ForkScope = cordis.ForkScope<Context>
@@ -42,10 +43,11 @@ export interface Events<C extends Context = Context> extends cordis.Events<C> {}
 export interface Context {
   [Context.events]: Events<this>
   [Context.session]: Session<never, never, this>
+  koishi: Koishi
 }
 
 export class Context extends satori.Context {
-  static readonly Session = Session
+  static shadow = Symbol.for('session.shadow')
 
   constructor(config: Context.Config = {}) {
     super(config)
@@ -62,8 +64,8 @@ export class Context extends satori.Context {
     this.provide('model', undefined, true)
     this.provide('http', undefined, true)
     this.provide('$commander', new Commander(this, this.config), true)
-    this.provide('koishi.database', new KoishiDatabase(this), true)
-    this.provide('koishi.bot', new KoishiBot(this), true)
+    this.plugin(minato.Database)
+    this.plugin(Koishi, this.config)
   }
 
   /** @deprecated use `ctx.root` instead */
@@ -71,7 +73,7 @@ export class Context extends satori.Context {
     return this.root
   }
 
-  /** @deprecated use `root.config` instead */
+  /** @deprecated use `koishi.config` instead */
   get options() {
     return this.root.config
   }
@@ -111,7 +113,17 @@ export class Context extends satori.Context {
   }
 }
 
-Session.prototype[Context.filter] = function (this: Session, ctx: Context) {
+export default class Koishi extends cordis.Service<Context.Config, Context> {
+  bot = new BotMixin(this.ctx)
+  database = new DatabaseMixin(this.ctx)
+  session = new SessionMixin(this.ctx)
+
+  constructor(ctx: Context, public config: Context.Config) {
+    super(ctx, 'koishi', true)
+  }
+}
+
+satori.Session.prototype[Context.filter] = function (this: Session, ctx: Context) {
   return ctx.filter(this)
 }
 

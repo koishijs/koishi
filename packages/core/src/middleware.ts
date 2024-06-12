@@ -1,9 +1,9 @@
 import { coerce, makeArray, Random } from '@koishijs/utils'
 import { Awaitable, defineProperty, Dict, Time } from 'cosmokit'
-import { EventOptions, Fragment, h } from '@satorijs/core'
+import { EventOptions, Fragment, h, Hook } from '@satorijs/core'
+import { Session } from './session'
 import { Context } from './context'
 import { Channel, User } from './database'
-import { Session } from './session'
 
 declare module './context' {
   interface Context {
@@ -62,7 +62,7 @@ export namespace Matcher {
 }
 
 export class Processor {
-  _hooks: [Context, Middleware, EventOptions][] = []
+  _hooks: Hook[] = []
   _sessions: Dict<Session> = Object.create(null)
   _userCache = new SharedCache<User.Observed<keyof User>>()
   _channelCache = new SharedCache<Channel.Observed<keyof Channel>>()
@@ -132,21 +132,17 @@ export class Processor {
     })
   }
 
-  protected get caller() {
-    return this[Context.current] as Context
-  }
-
   middleware(middleware: Middleware, options?: boolean | EventOptions) {
     if (typeof options !== 'object') {
       options = { prepend: options }
     }
-    return this.caller.lifecycle.register('middleware', this._hooks, middleware, options)
+    return this.ctx.lifecycle.register('middleware', this._hooks, middleware, options)
   }
 
   match(pattern: string | RegExp, response: Matcher.Response, options: Matcher.Options) {
-    const matcher: Matcher = { ...options, context: this.caller, pattern, response }
+    const matcher: Matcher = { ...options, context: this.ctx, pattern, response }
     this._matchers.add(matcher)
-    return this.caller.collect('shortcut', () => {
+    return this.ctx.collect('shortcut', () => {
       return this._matchers.delete(matcher)
     })
   }
@@ -242,9 +238,9 @@ export class Processor {
 
     // preparation
     this._sessions[session.id] = session
-    const queue: Next.Queue = this._hooks
-      .filter(([context]) => context.filter(session))
-      .map(([, middleware]) => middleware.bind(null, session))
+    const queue: Next.Queue = this.ctx.lifecycle
+      .filterHooks(this._hooks, session)
+      .map(({ callback }) => callback.bind(null, session))
 
     // execute middlewares
     let index = 0

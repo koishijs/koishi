@@ -151,7 +151,7 @@ export function apply(ctx: Context, config: Config) {
     .option('showHidden', '-H')
     .action(async ({ session, options }, target) => {
       if (!target) {
-        const prefix = session.resolve(session.app.config.prefix)[0] ?? ''
+        const prefix = session.resolve(session.app.koishi.config.prefix)[0] ?? ''
         const commands = $._commandList.filter(cmd => cmd.parent === null)
         const output = await formatCommands('.global-prolog', session, commands, options)
         const epilog = session.text('.global-epilog', [prefix])
@@ -193,7 +193,7 @@ async function formatCommands(path: string, session: Session<'authority'>, child
   children.sort((a, b) => a.displayName > b.displayName ? 1 : -1)
   if (!children.length) return []
 
-  const prefix = session.resolve(session.app.config.prefix)[0] ?? ''
+  const prefix = session.resolve(session.app.koishi.config.prefix)[0] ?? ''
   const output = children.map(({ name, displayName, config }) => {
     let output = '    ' + prefix + displayName.replace(/\./g, ' ')
     output += '  ' + session.text([`commands.${name}.description`, ''], config.params)

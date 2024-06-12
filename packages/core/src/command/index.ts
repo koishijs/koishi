@@ -194,7 +194,7 @@ export class Commander {
       try {
         return BigInt(source)
       } catch {
-        throw new Error("internal.invalid-integer")
+        throw new Error('internal.invalid-integer')
       }
     }, { numeric: true })
 
@@ -327,7 +327,6 @@ export class Commander {
     const path = def.split(' ', 1)[0].toLowerCase()
     const decl = def.slice(path.length)
     const segments = path.split(/(?=[./])/g)
-    const caller: Context = this[Context.current]
 
     /** parent command in the chain */
     let parent: Command
@@ -354,8 +353,8 @@ export class Commander {
         return parent = command
       }
       const isLast = index === segments.length - 1
-      command = new Command(name, isLast ? decl : '', caller, isLast ? config : {})
-      command._disposables.push(caller.i18n.define('', {
+      command = new Command(name, isLast ? decl : '', this.ctx, isLast ? config : {})
+      command._disposables.push(this.ctx.i18n.define('', {
         [`commands.${command.name}.$`]: '',
         [`commands.${command.name}.description`]: isLast ? desc : '',
       }))
@@ -369,19 +368,18 @@ export class Commander {
 
     Object.assign(parent.config, config)
     // Make sure `command.config` is set before emitting any events
-    created.forEach(command => caller.emit('command-added', command))
-    parent[Context.current] = caller
-    if (root) caller.collect(`command <${root.name}>`, () => root.dispose())
+    created.forEach(command => this.ctx.emit('command-added', command))
+    parent[Context.current] = this.ctx
+    if (root) this.ctx.collect(`command <${root.name}>`, () => root.dispose())
     return parent
   }
 
   domain<K extends keyof Argv.Domain>(name: K): Argv.DomainConfig<Argv.Domain[K]>
   domain<K extends keyof Argv.Domain>(name: K, transform: Argv.Transform<Argv.Domain[K]>, options?: Argv.DomainConfig<Argv.Domain[K]>): () => void
   domain<K extends keyof Argv.Domain>(name: K, transform?: Argv.Transform<Argv.Domain[K]>, options?: Argv.DomainConfig<Argv.Domain[K]>) {
-    const caller = this[Context.current] as Context
     const service = 'domain:' + name
-    if (!transform) return caller.get(service)
-    return caller.set(service, { transform, ...options })
+    if (!transform) return this.ctx.get(service)
+    return this.ctx.set(service, { transform, ...options })
   }
 
   resolveDomain(type: Argv.Type) {

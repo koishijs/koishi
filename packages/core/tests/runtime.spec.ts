@@ -1,4 +1,4 @@
-import { App, User, Channel, Command, sleep } from 'koishi'
+import { App, User, Channel, sleep } from 'koishi'
 import mock, { DEFAULT_SELF_ID } from '@koishijs/plugin-mock'
 import memory from '@koishijs/plugin-database-memory'
 import { install } from '@sinonjs/fake-timers'
@@ -51,7 +51,7 @@ describe('Runtime', () => {
   describe('Command Prefix', () => {
     it('single prefix', async () => {
       // also support functions
-      app.config.prefix = () => '>'
+      app.koishi.config.prefix = () => '>'
 
       await client1.shouldReply('cmd2', 'cmd2:123')
       await client4.shouldNotReply('cmd2')
@@ -62,7 +62,7 @@ describe('Runtime', () => {
     })
 
     it('multiple prefixes', async () => {
-      app.config.prefix = ['!', '.']
+      app.koishi.config.prefix = ['!', '.']
 
       await client1.shouldReply('cmd2', 'cmd2:123')
       await client4.shouldNotReply('cmd2')
@@ -73,7 +73,7 @@ describe('Runtime', () => {
     })
 
     it('optional prefix', async () => {
-      app.config.prefix = ['', '.']
+      app.koishi.config.prefix = ['', '.']
 
       await client1.shouldReply('cmd2', 'cmd2:123')
       await client4.shouldReply('cmd2', 'cmd2:123')
@@ -84,7 +84,7 @@ describe('Runtime', () => {
     })
 
     it('no prefix', async () => {
-      app.config.prefix = null
+      app.koishi.config.prefix = null
 
       await client1.shouldReply('cmd2', 'cmd2:123')
       await client4.shouldReply('cmd2', 'cmd2:123')
@@ -97,11 +97,11 @@ describe('Runtime', () => {
 
   describe('Nickname Prefix', () => {
     before(() => {
-      app.config.prefix = ['-']
+      app.koishi.config.prefix = ['-']
     })
 
     after(() => {
-      app.config.prefix = null
+      app.koishi.config.prefix = null
     })
 
     it('no nickname', async () => {
@@ -118,7 +118,7 @@ describe('Runtime', () => {
     })
 
     it('single nickname', async () => {
-      app.config.nickname = ['koishi']
+      app.koishi.config.nickname = ['koishi']
 
       await client1.shouldReply('koishi, cmd2', 'cmd2:123')
       await client4.shouldReply('koishi, cmd2', 'cmd2:123')
@@ -131,7 +131,7 @@ describe('Runtime', () => {
     })
 
     it('multiple nicknames', async () => {
-      app.config.nickname = ['komeiji', 'koishi']
+      app.koishi.config.nickname = ['komeiji', 'koishi']
 
       await client1.shouldReply('cmd2', 'cmd2:123')
       await client4.shouldNotReply('cmd2')
@@ -146,11 +146,11 @@ describe('Runtime', () => {
 
   describe('Shortcuts', () => {
     before(() => {
-      app.config.prefix = ['#']
+      app.koishi.config.prefix = ['#']
     })
 
     after(() => {
-      app.config.prefix = null
+      app.koishi.config.prefix = null
     })
 
     it('single shortcut', async () => {

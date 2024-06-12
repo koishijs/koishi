@@ -23,7 +23,7 @@ describe('@koishijs/loader', () => {
 
     const app = await loader.createApp()
     expect(app).to.be.instanceof(Context)
-    expect(app.config.prefix).to.deep.equal(['.'])
+    expect(app.koishi.config.prefix).to.deep.equal(['.'])
     expect(app.registry.get(loader.data.foo)).to.be.ok
     expect(app.registry.get(loader.data.foo)?.config).to.deep.equal({})
     expect(app.registry.get(loader.data.bar)).to.be.ok
@@ -54,7 +54,7 @@ describe('@koishijs/loader', () => {
     }
     app.scope.update(loader.config)
     await sleep(0)
-    expect(app.config.prefix).to.deep.equal(['/'])
+    expect(app.koishi.config.prefix).to.deep.equal(['/'])
     expect(app.registry.get(loader.data.foo)).to.be.not.ok
     expect(app.registry.get(loader.data.bar)).to.be.ok
     expect(app.registry.get(loader.data.bar)?.config).to.deep.equal({ a: 2 })
@@ -90,8 +90,8 @@ describe('@koishijs/loader', () => {
     app.plugin(mock)
     expect(app.lifecycle._hooks['test/bar']).to.have.length(1)
     expect(app.lifecycle._hooks['test/baz']).to.have.length(1)
-    const bar = app.lifecycle._hooks['test/bar'][0][1] as Mock<() => void>
-    const baz = app.lifecycle._hooks['test/baz'][0][1] as Mock<() => void>
+    const bar = app.lifecycle._hooks['test/bar'][0].callback as Mock<() => void>
+    const baz = app.lifecycle._hooks['test/baz'][0].callback as Mock<() => void>
     expect(bar.mock.calls).to.have.length(0)
     expect(baz.mock.calls).to.have.length(0)
 

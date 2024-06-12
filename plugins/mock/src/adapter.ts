@@ -1,4 +1,4 @@
-import { Adapter, Bot, Channel, Context, Session, Universal, User } from 'koishi'
+import { Adapter, Bot, Channel, Context, Fragment, Universal, User } from 'koishi'
 import { MessageClient, MockMessenger } from './client'
 import { Webhook } from './webhook'
 
@@ -35,11 +35,7 @@ export class MockBot<C extends Context = Context> extends Bot<C> {
 
   receive(event: Partial<Universal.Event>, client?: MessageClient) {
     const session = this.session(event)
-    session.send = async function (this: Session, fragment, options = {}) {
-      options.session = this
-      const messages = await new MockMessenger(client, options).send(fragment)
-      return messages.map(messages => messages.id)
-    }
+    session['client'] = client
     this.dispatch(session)
     return session.id
   }
@@ -54,6 +50,11 @@ export class MockBot<C extends Context = Context> extends Bot<C> {
       time: 0,
       user: { id: this.selfId },
     }
+  }
+
+  async sendMessage(channelId: string, fragment: Fragment, guildId?: string, options?: Universal.SendOptions) {
+    const messages = await new MockMessenger(options!.session['client'], options).send(fragment)
+    return messages.map(messages => messages.id)
   }
 }
 

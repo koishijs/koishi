@@ -54,7 +54,7 @@ describe('Session API', () => {
     })
 
     it('session.prompt 2', async () => {
-      app.config.delay.prompt = 0
+      app.koishi.config.delay.prompt = 0
       await client.shouldReply('prompt', 'prompt text')
       await sleep(0)
       await client.shouldReply('foo', 'received nothing')
