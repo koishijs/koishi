@@ -99,7 +99,6 @@ class KoishiDatabase {
       getAssignedChannels: 'database.getAssignedChannels',
       setChannel: 'database.setChannel',
       createChannel: 'database.createChannel',
-      getSelfIds: 'database.getSelfIds',
       broadcast: 'broadcast',
     })
 

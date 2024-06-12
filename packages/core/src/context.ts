@@ -12,6 +12,7 @@ import { Processor } from './middleware'
 import { Permissions } from './permission'
 import DatabaseMixin from './database'
 import BotMixin from './bot'
+import { SchemaService } from './schema'
 
 export type EffectScope = cordis.EffectScope<Context>
 export type ForkScope = cordis.ForkScope<Context>
@@ -58,6 +59,7 @@ export class Context extends satori.Context {
     ])
     this.mixin('$commander', ['command'])
     this.provide('$filter', new FilterService(this), true)
+    this.provide('schema', new SchemaService(this), true)
     this.provide('$processor', new Processor(this), true)
     this.provide('i18n', new I18n(this, this.config.i18n), true)
     this.provide('permissions', new Permissions(this), true)
