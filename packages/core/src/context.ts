@@ -85,10 +85,10 @@ export class Context extends satori.Context {
   waterfall<K extends keyof GetEvents<this>>(name: K, ...args: Parameters<GetEvents<this>[K]>): Promisify<ReturnType<GetEvents<this>[K]>>
   waterfall<K extends keyof GetEvents<this>>(thisArg: ThisType<GetEvents<this>[K]>, name: K, ...args: Parameters<GetEvents<this>[K]>): Promisify<ReturnType<GetEvents<this>[K]>>
   async waterfall(...args: [any, ...any[]]) {
-    const thisArg = typeof args[0] === 'object' ? args.shift() : null
+    const thisArg = typeof args[0] === 'object' || typeof args[0] === 'function' ? args.shift() : null
     const name = args.shift()
-    for (const callback of this.lifecycle.getHooks(name, thisArg)) {
-      const result = await callback.apply(thisArg, args)
+    for (const hook of this.lifecycle.filterHooks(this.lifecycle._hooks[name] || [], thisArg)) {
+      const result = await hook.callback.apply(thisArg, args)
       args[0] = result
     }
     return args[0]
@@ -98,10 +98,10 @@ export class Context extends satori.Context {
   chain<K extends keyof GetEvents<this>>(name: K, ...args: Parameters<GetEvents<this>[K]>): ReturnType<GetEvents<this>[K]>
   chain<K extends keyof GetEvents<this>>(thisArg: ThisType<GetEvents<this>[K]>, name: K, ...args: Parameters<GetEvents<this>[K]>): ReturnType<GetEvents<this>[K]>
   chain(...args: [any, ...any[]]) {
-    const thisArg = typeof args[0] === 'object' ? args.shift() : null
+    const thisArg = typeof args[0] === 'object' || typeof args[0] === 'function' ? args.shift() : null
     const name = args.shift()
-    for (const callback of this.lifecycle.getHooks(name, thisArg)) {
-      const result = callback.apply(thisArg, args)
+    for (const hook of this.lifecycle.filterHooks(this.lifecycle._hooks[name] || [], thisArg)) {
+      const result = hook.callback.apply(thisArg, args)
       args[0] = result
     }
     return args[0]

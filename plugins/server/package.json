@@ -48,10 +48,10 @@
     }
   },
   "peerDependencies": {
-    "koishi": "^4.17.8"
+    "koishi": "^4.17.9"
   },
   "devDependencies": {
-    "koishi": "^4.17.8"
+    "koishi": "^4.17.9"
   },
   "dependencies": {
     "@cordisjs/plugin-server": "^0.2.3"
