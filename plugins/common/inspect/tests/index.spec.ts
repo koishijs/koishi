@@ -26,5 +26,14 @@ describe('@koishijs/plugin-inspect', () => {
     await client.shouldReply('inspect <at id="321"/>', '用户 ID：321')
     await client.shouldReply('inspect <sharp id="654"/>', '频道 ID：654')
     await client.shouldReply('inspect foobar', '参数无法解析。')
+
+    await client.shouldReply('<quote id="114514"/> inspect foobar', new RegExp([
+      '平台名：mock',
+      '消息 ID：114514',
+      '频道 ID：.*',
+      '群组 ID：456',
+      '用户 ID：.*',
+      '自身 ID：514',
+    ].join('\n')))
   })
 })

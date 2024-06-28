@@ -15,6 +15,7 @@ export function apply(ctx: Context) {
       if (session.quote) {
         return session.text('.message', {
           platform: session.platform,
+          messageId: session.quote.id,
           guildId: session.guildId,
           selfId: session.selfId,
           userId: session.quote.user?.id,
