@@ -263,6 +263,11 @@ export namespace Argv {
     }
   }
 
+  // do not use lookbehind assertion for Safari compatibility
+  const SYNTAX = /(?:-[\w\x80-\uffff-]*|[^,\s\w\x80-\uffff]+)/.source
+  const BRACKET = /((?:\s*\[[^\]]+?\]|\s*<[^>]+?>)*)/.source
+  const OPTION_REGEXP = new RegExp(`^(${SYNTAX}(?:,\\s*${SYNTAX})*(?=\\s|$))?${BRACKET}(.*)$`)
+
   export class CommandBase<T extends CommandBase.Config = CommandBase.Config> {
     public declaration: string
 
@@ -283,8 +288,7 @@ export namespace Argv {
     }
 
     _createOption(name: string, def: string, config: OptionConfig) {
-      // do not use lookbehind assertion for Safari compatibility
-      const cap = /^((?:-[\w-]*|[^,\s\w\x80-\uffff]+)(?:,\s*(?:-[\w-]*|[^,\s\w\x80-\uffff]+))*(?=\s|$))?((?:\s*\[[^\]]+?\]|\s*<[^>]+?>)*)(.*)$/.exec(def)
+      const cap = OPTION_REGEXP.exec(def)
       const param = paramCase(name)
       let syntax = cap[1] || '--' + param
       const bracket = cap[2] || ''
