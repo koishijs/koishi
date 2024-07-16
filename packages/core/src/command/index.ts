@@ -239,7 +239,7 @@ export class Commander {
 
   private defineElementDomain(name: keyof Argv.Domain, key = name, type = name) {
     this.domain(name, (source, session) => {
-      const code = h.from(source)
+      const code = h.from(source, { type })
       if (code && code.type === type) {
         return code.attrs
       }
