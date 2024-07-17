@@ -9,17 +9,13 @@ const RECEIVED_OTHERWISE = 'expected "%s" to be replied with %s but received "%s
 const RECEIVED_NTH_NOTHING = 'expected "%s" to be replied at index %s but received nothing'
 const RECEIVED_NTH_OTHERWISE = 'expected "%s" to be replied with %s at index %s but received "%s"'
 
-export class MockMessenger extends MessageEncoder<Context, MockBot> {
+export class MockMessageEncoder extends MessageEncoder<Context, MockBot> {
   private buffer = ''
-
-  constructor(private client: MessageClient, options?: Universal.SendOptions) {
-    super(client.bot, client.event.channel.id, client.event.guild?.id, options)
-  }
 
   async flush() {
     this.buffer = this.buffer.trim()
     if (!this.buffer) return
-    this.client.flush(this.buffer)
+    this.options.session?.['client']?.flush(this.buffer)
     this.buffer = ''
   }
 

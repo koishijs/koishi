@@ -1,5 +1,5 @@
-import { Adapter, Bot, Channel, Context, Fragment, Universal, User } from 'koishi'
-import { MessageClient, MockMessenger } from './client'
+import { Adapter, Bot, Channel, Context, Universal, User } from 'koishi'
+import { MessageClient, MockMessageEncoder } from './client'
 import { Webhook } from './webhook'
 
 declare module 'koishi' {
@@ -21,6 +21,8 @@ export namespace MockBot {
 }
 
 export class MockBot<C extends Context = Context> extends Bot<C> {
+  static MessageEncoder = MockMessageEncoder
+
   constructor(ctx: C, config: MockBot.Config) {
     super(ctx, config)
     this.platform = 'mock'
@@ -50,11 +52,6 @@ export class MockBot<C extends Context = Context> extends Bot<C> {
       time: 0,
       user: { id: this.selfId },
     }
-  }
-
-  async sendMessage(channelId: string, fragment: Fragment, guildId?: string, options?: Universal.SendOptions) {
-    const messages = await new MockMessenger(options!.session['client'], options).send(fragment)
-    return messages.map(messages => messages.id)
   }
 }
 
