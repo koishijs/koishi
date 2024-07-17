@@ -99,8 +99,10 @@ class KoishiDatabase {
       getAssignedChannels: 'database.getAssignedChannels',
       setChannel: 'database.setChannel',
       createChannel: 'database.createChannel',
-      broadcast: 'broadcast',
+      broadcast: 'database.broadcast',
     })
+
+    ctx.mixin('database', ['broadcast'] as never[])
 
     ctx.model.extend('user', {
       id: 'unsigned(8)',
