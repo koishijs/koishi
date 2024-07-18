@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-http",
   "description": "HTTP and WebSocket client for Koishi",
-  "version": "0.5.3",
+  "version": "0.6.0",
   "type": "module",
   "main": "index.cjs",
   "module": "index.mjs",
@@ -48,12 +48,12 @@
     }
   },
   "peerDependencies": {
-    "koishi": "^4.17.9"
+    "koishi": "^4.17.10"
   },
   "devDependencies": {
-    "koishi": "^4.17.9"
+    "koishi": "^4.17.10"
   },
   "dependencies": {
-    "@cordisjs/plugin-http": "^0.5.3"
+    "@cordisjs/plugin-http": "^0.6.0"
   }
 }
