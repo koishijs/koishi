@@ -403,6 +403,10 @@ export abstract class Loader {
     const fork = await this.reload(app, 'group:entry', this.config.plugins)
     this.entry = fork.ctx
 
+    app.accept((config) => {
+      app.koishi.config = config
+    })
+
     app.accept(['plugins'], (config) => {
       this.reload(app, 'group:entry', config.plugins)
     }, { passive: true })

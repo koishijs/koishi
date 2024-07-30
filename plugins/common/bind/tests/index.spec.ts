@@ -1,6 +1,6 @@
 import { Context } from 'koishi'
 import * as bind from '@koishijs/plugin-bind'
-import memory from '@koishijs/plugin-database-memory'
+import memory from '@minatojs/driver-memory'
 import mock from '@koishijs/plugin-mock'
 
 const app = new Context()

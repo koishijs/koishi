@@ -10,11 +10,12 @@ export const Config: Schema<Config> = Schema.object({})
 export function apply(ctx: Context) {
   ctx.i18n.define('zh-CN', zhCN)
 
-  ctx.command('inspect')
+  ctx.command('inspect', { captureQuote: false })
     .action(({ session }, target) => {
       if (session.quote) {
         return session.text('.message', {
           platform: session.platform,
+          messageId: session.quote.id,
           guildId: session.guildId,
           selfId: session.selfId,
           userId: session.quote.user?.id,

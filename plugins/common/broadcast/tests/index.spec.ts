@@ -1,6 +1,6 @@
 import { App, Bot, Channel } from 'koishi'
 import * as broadcast from '@koishijs/plugin-broadcast'
-import memory from '@koishijs/plugin-database-memory'
+import memory from '@minatojs/driver-memory'
 import mock from '@koishijs/plugin-mock'
 import { mock as jest } from 'node:test'
 import { expect } from 'chai'
@@ -27,26 +27,28 @@ before(async () => {
 
 describe('@koishijs/plugin-broadcast', () => {
   it('basic support', async () => {
-    const send = jest.fn<Bot['sendMessage']>(async () => [])
-    app.bots.forEach(bot => bot.sendMessage = send)
+    const send1 = jest.method(app.bots.find(bot => bot.selfId === '514')!, 'sendMessage')
+    const send2 = jest.method(app.bots.find(bot => bot.selfId === '114')!, 'sendMessage')
 
     await client.shouldReply('broadcast', '请输入要发送的文本。')
-    expect(send.mock.calls).to.have.length(0)
+    expect(send1.mock.calls).to.have.length(1)
+    send1.mock.resetCalls()
 
     await client.shouldNotReply('broadcast foo')
-    expect(send.mock.calls).to.have.length(2)
-    expect(send.mock.calls[0].arguments[0]).to.equal('222')
-    expect(send.mock.calls[1].arguments[0]).to.equal('111')
-    send.mock.resetCalls()
+    expect(send1.mock.calls).to.have.length(1)
+    expect(send1.mock.calls[0].arguments[0]).to.equal('222')
+    expect(send2.mock.calls).to.have.length(1)
+    expect(send2.mock.calls[0].arguments[0]).to.equal('111')
+    send1.mock.resetCalls()
 
     await client.shouldNotReply('broadcast -o foo')
-    expect(send.mock.calls).to.have.length(1)
-    expect(send.mock.calls[0].arguments[0]).to.equal('222')
-    send.mock.resetCalls()
+    expect(send1.mock.calls).to.have.length(1)
+    expect(send1.mock.calls[0].arguments[0]).to.equal('222')
+    send1.mock.resetCalls()
 
     await client.shouldNotReply('broadcast -of foo')
-    expect(send.mock.calls).to.have.length(2)
-    expect(send.mock.calls[0].arguments[0]).to.equal('222')
-    expect(send.mock.calls[1].arguments[0]).to.equal('333')
+    expect(send1.mock.calls).to.have.length(2)
+    expect(send1.mock.calls[0].arguments[0]).to.equal('222')
+    expect(send1.mock.calls[1].arguments[0]).to.equal('333')
   })
 })

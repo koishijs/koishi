@@ -1,7 +1,7 @@
 import { App } from 'koishi'
 import * as help from '@koishijs/plugin-help'
 import mock from '@koishijs/plugin-mock'
-import memory from '@koishijs/plugin-database-memory'
+import memory from '@minatojs/driver-memory'
 
 const app = new App({
   minSimilarity: 0.64,

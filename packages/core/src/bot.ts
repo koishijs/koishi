@@ -16,13 +16,14 @@ declare module '@satorijs/core' {
 defineProperty(Bot, 'filter', false)
 defineProperty(Adapter, 'filter', false)
 
-export interface KoishiBot extends Bot<Context> {}
+interface KoishiBot extends Bot<Context> {}
 
-export class KoishiBot {
+class KoishiBot {
   constructor(ctx: Context) {
-    ctx.accessor('bot.getGuildMemberMap', { get: () => this.getGuildMemberMap })
-    ctx.accessor('bot.broadcast', { get: () => this.broadcast })
-    ctx.accessor('bot.session', { get: () => this.session })
+    ctx.mixin(this, {
+      getGuildMemberMap: 'bot.getGuildMemberMap',
+      broadcast: 'bot.broadcast',
+    })
   }
 
   async getGuildMemberMap(guildId: string) {
@@ -50,8 +51,6 @@ export class KoishiBot {
     }
     return ids
   }
-
-  session(event: Partial<Event> = {}) {
-    return new Session(this, event)
-  }
 }
+
+export default KoishiBot

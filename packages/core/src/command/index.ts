@@ -57,18 +57,9 @@ export class Commander {
 
     ctx.before('parse', (content, session) => {
       // we need to make sure that the user truly has the intension to call a command
-      const { quote, isDirect, stripped: { prefix, appel } } = session
+      const { isDirect, stripped: { prefix, appel } } = session
       if (!isDirect && typeof prefix !== 'string' && !appel) return
-      const argv = Argv.parse(content)
-      if (quote?.content) {
-        argv.tokens.push({
-          content: quote.content,
-          quoted: true,
-          inters: [],
-          terminator: '',
-        })
-      }
-      return argv
+      return Argv.parse(content)
     })
 
     ctx.on('interaction/command', (session) => {
@@ -173,21 +164,29 @@ export class Commander {
     }, { numeric: true })
 
     this.domain('integer', (source, session) => {
-      const value = +source
+      const value = +source.replace(/[,_]/g, '')
       if (value * 0 === 0 && Math.floor(value) === value) return value
       throw new Error('internal.invalid-integer')
     }, { numeric: true })
 
     this.domain('posint', (source, session) => {
-      const value = +source
+      const value = +source.replace(/[,_]/g, '')
       if (value * 0 === 0 && Math.floor(value) === value && value > 0) return value
       throw new Error('internal.invalid-posint')
     }, { numeric: true })
 
     this.domain('natural', (source, session) => {
-      const value = +source
+      const value = +source.replace(/[,_]/g, '')
       if (value * 0 === 0 && Math.floor(value) === value && value >= 0) return value
       throw new Error('internal.invalid-natural')
+    }, { numeric: true })
+
+    this.domain('bigint', (source, session) => {
+      try {
+        return BigInt(source.replace(/[,_]/g, ''))
+      } catch {
+        throw new Error('internal.invalid-integer')
+      }
     }, { numeric: true })
 
     this.domain('date', (source, session) => {
@@ -231,7 +230,7 @@ export class Commander {
 
   private defineElementDomain(name: keyof Argv.Domain, key = name, type = name) {
     this.domain(name, (source, session) => {
-      const code = h.from(source)
+      const code = h.from(source, { type })
       if (code && code.type === type) {
         return code.attrs
       }
@@ -283,7 +282,7 @@ export class Commander {
     if (argv.command) return argv.command
     if (argv.name) return argv.command = this.resolve(argv.name)
 
-    const { stripped, isDirect } = argv.session
+    const { stripped, isDirect, quote } = argv.session
     // guild message should have prefix or appel to be interpreted as a command call
     const isStrict = this.config.prefixMode === 'strict' || !isDirect && !stripped.appel
     if (argv.root && stripped.prefix === null && isStrict) return
@@ -298,6 +297,14 @@ export class Commander {
       argv.args = command._aliases[name].args
       argv.options = command._aliases[name].options
       if (command._arguments.length) break
+    }
+    if (argv.command?.config.captureQuote !== false && quote?.content) {
+      argv.tokens.push({
+        content: quote.content,
+        quoted: true,
+        inters: [],
+        terminator: '',
+      })
     }
     return argv.command
   }
@@ -319,7 +326,6 @@ export class Commander {
     const path = def.split(' ', 1)[0].toLowerCase()
     const decl = def.slice(path.length)
     const segments = path.split(/(?=[./])/g)
-    const caller: Context = this[Context.current]
 
     /** parent command in the chain */
     let parent: Command
@@ -346,8 +352,8 @@ export class Commander {
         return parent = command
       }
       const isLast = index === segments.length - 1
-      command = new Command(name, isLast ? decl : '', caller, isLast ? config : {})
-      command._disposables.push(caller.i18n.define('', {
+      command = new Command(name, isLast ? decl : '', this.ctx, isLast ? config : {})
+      command._disposables.push(this.ctx.i18n.define('', {
         [`commands.${command.name}.$`]: '',
         [`commands.${command.name}.description`]: isLast ? desc : '',
       }))
@@ -361,19 +367,18 @@ export class Commander {
 
     Object.assign(parent.config, config)
     // Make sure `command.config` is set before emitting any events
-    created.forEach(command => caller.emit('command-added', command))
-    parent[Context.current] = caller
-    if (root) caller.collect(`command <${root.name}>`, () => root.dispose())
+    created.forEach(command => this.ctx.emit('command-added', command))
+    parent[Context.current] = this.ctx
+    if (root) this.ctx.collect(`command <${root.name}>`, () => root.dispose())
     return parent
   }
 
   domain<K extends keyof Argv.Domain>(name: K): Argv.DomainConfig<Argv.Domain[K]>
   domain<K extends keyof Argv.Domain>(name: K, transform: Argv.Transform<Argv.Domain[K]>, options?: Argv.DomainConfig<Argv.Domain[K]>): () => void
   domain<K extends keyof Argv.Domain>(name: K, transform?: Argv.Transform<Argv.Domain[K]>, options?: Argv.DomainConfig<Argv.Domain[K]>) {
-    const caller = this[Context.current] as Context
     const service = 'domain:' + name
-    if (!transform) return caller.get(service)
-    return caller.set(service, { transform, ...options })
+    if (!transform) return this.ctx.get(service)
+    return this.ctx.set(service, { transform, ...options })
   }
 
   resolveDomain(type: Argv.Type) {

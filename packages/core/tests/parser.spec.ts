@@ -163,4 +163,13 @@ describe('Parser API', () => {
       expect(cmd.parse('-- "foo;bar";baz', ';')).to.have.shape({ options: { rest: '"foo;bar"' }, rest: 'baz' })
     })
   })
+
+  describe('Types', () => {
+    it('img', () => {
+      cmd = app.command('img <img:img>')
+      expect(cmd.parse('<img src="/"/>')).to.have.shape({ args: [{ src: '/' }] })
+      expect(cmd.parse('<p></p>')).to.have.shape({ 'error': 'internal.invalid-argument' })
+      expect(cmd.parse('<p><img src="/"/></p>')).to.have.shape({ args: [{ src: '/' }] })
+    })
+  })
 })

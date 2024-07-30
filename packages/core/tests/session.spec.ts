@@ -1,6 +1,6 @@
 import { App, sleep } from 'koishi'
 import mock from '@koishijs/plugin-mock'
-import memory from '@koishijs/plugin-database-memory'
+import memory from '@minatojs/driver-memory'
 
 describe('Session API', () => {
   describe('Command Execution', () => {
@@ -54,7 +54,7 @@ describe('Session API', () => {
     })
 
     it('session.prompt 2', async () => {
-      app.config.delay.prompt = 0
+      app.koishi.config.delay.prompt = 0
       await client.shouldReply('prompt', 'prompt text')
       await sleep(0)
       await client.shouldReply('foo', 'received nothing')

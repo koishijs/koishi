@@ -57,20 +57,72 @@ function collectFields<T extends keyof Tables>(argv: Argv, collectors: FieldColl
   return fields
 }
 
-export class Session<U extends User.Field = never, G extends Channel.Field = never, C extends Context = Context> extends satori.Session<C> {
-  static shadow = Symbol.for('session.shadow')
-
+export interface Session<U extends User.Field = never, G extends Channel.Field = never, C extends Context = Context> extends satori.Session<C> {
   argv?: Argv<U, G>
   user?: User.Observed<U>
   channel?: Channel.Observed<G>
   guild?: Channel.Observed<G>
-  permissions: string[] = []
+  permissions: string[]
   scope?: string
   response?: () => Promise<Fragment>
+  resolve<T, R extends any[]>(source: T | Eval.Expr | ((session: this, ...args: R) => T), ...args: R):
+    | T extends Eval.Expr ? Eval<T>
+    : T extends (...args: any[]) => any ? ReturnType<T>
+    : T
+  stripped: Stripped
+  username: string
+  send(fragment: Fragment, options?: Universal.SendOptions): Promise<string[]>
+  cancelQueued(delay?: number): void
+  sendQueued(content: Fragment, delay?: number): Promise<string[]>
+  getChannel<K extends Channel.Field = never>(id?: string, fields?: K[]): Promise<Channel>
+  observeChannel<T extends Channel.Field = never>(fields: Iterable<T>): Promise<Channel.Observed<T | G>>
+  getUser<K extends User.Field = never>(userId?: string, fields?: K[]): Promise<User>
+  observeUser<T extends User.Field = never>(fields: Iterable<T>): Promise<User.Observed<T | U>>
+  withScope(scope: string, callback: () => Awaitable<string>): Promise<string>
+  resolveScope(path: string): string
+  text(path: string | string[], params?: object): string
+  i18n(path: string | string[], params?: object): satori.Element[]
+  collect<T extends 'user' | 'channel'>(key: T, argv: Argv, fields?: Set<keyof Tables[T]>): Set<keyof Tables[T]>
+  execute(content: string, next?: true | Next): Promise<string>
+  execute(argv: Argv, next?: true | Next): Promise<string>
+  middleware(middleware: Middleware<this>): () => boolean
+  prompt(timeout?: number): Promise<string>
+  prompt<T>(callback: (session: this) => Awaitable<T>, options?: PromptOptions): Promise<T>
+  suggest(options: SuggestOptions): Promise<string>
+}
 
-  private _stripped: Stripped
-  private _queuedTasks: Task[] = []
-  private _queuedTimeout: NodeJS.Timeout
+interface KoishiSession<U extends User.Field, G extends Channel.Field, C extends Context> extends Session<U, G, C> {
+  // DO NOT set class properties here,
+  // because they will override the actual properties in the instance.
+  _stripped: Stripped
+  _queuedTasks: Task[]
+  _queuedTimeout: NodeJS.Timeout
+}
+
+class KoishiSession<U, G, C> {
+  constructor(ctx: C) {
+    ctx.mixin(this, {
+      resolve: 'session.resolve',
+      stripped: 'session.stripped',
+      username: 'session.username',
+      send: 'session.send',
+      cancelQueued: 'session.cancelQueued',
+      sendQueued: 'session.sendQueued',
+      getChannel: 'session.getChannel',
+      observeChannel: 'session.observeChannel',
+      getUser: 'session.getUser',
+      observeUser: 'session.observeUser',
+      withScope: 'session.withScope',
+      resolveScope: 'session.resolveScope',
+      text: 'session.text',
+      i18n: 'session.i18n',
+      collect: 'session.collect',
+      execute: 'session.execute',
+      middleware: 'session.middleware',
+      prompt: 'session.prompt',
+      suggest: 'session.suggest',
+    })
+  }
 
   resolve<T, R extends any[]>(source: T | Eval.Expr | ((session: this, ...args: R) => T), ...args: R):
     | T extends Eval.Expr ? Eval<T>
@@ -87,7 +139,7 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
 
   _stripNickname(content: string) {
     if (content.startsWith('@')) content = content.slice(1)
-    for (const nickname of this.resolve(this.app.config.nickname) ?? []) {
+    for (const nickname of this.resolve(this.app.koishi.config.nickname) ?? []) {
       if (!content.startsWith(nickname)) continue
       const rest = content.slice(nickname.length)
       const capture = /^([,，]\s*|\s+)/.exec(rest)
@@ -152,14 +204,14 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
     })
   }
 
-  cancelQueued(delay = this.app.config.delay.cancel) {
+  cancelQueued(delay = this.app.koishi.config.delay.cancel) {
     clearTimeout(this._queuedTimeout)
     this._queuedTasks = []
     this._queuedTimeout = setTimeout(() => this._next(), delay)
   }
 
   _next() {
-    const task = this._queuedTasks.shift()
+    const task = this._queuedTasks?.shift()
     if (!task) {
       this._queuedTimeout = null
       return
@@ -172,11 +224,11 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
     const text = h.normalize(content).join('')
     if (!text) return
     if (isNullable(delay)) {
-      const { message, character } = this.app.config.delay
+      const { message, character } = this.app.koishi.config.delay
       delay = Math.max(message, character * text.length)
     }
     return new Promise<string[]>((resolve, reject) => {
-      this._queuedTasks.push({ content, delay, options, resolve, reject })
+      (this._queuedTasks ??= []).push({ content, delay, options, resolve, reject })
       if (!this._queuedTimeout) this._next()
     })
   }
@@ -186,7 +238,7 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
     if (!fields.length) return { platform, id, guildId } as Channel
     const channel = await app.database.getChannel(platform, id, fields)
     if (channel) return channel
-    const assignee = this.resolve(app.config.autoAssign) ? this.selfId : ''
+    const assignee = this.resolve(app.koishi.config.autoAssign) ? this.selfId : ''
     if (assignee) {
       return app.database.createChannel(platform, id, { assignee, guildId, createdAt: new Date() })
     } else {
@@ -240,7 +292,7 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
     if (!fields.length) return {} as User
     const user = await app.database.getUser(platform, userId, fields)
     if (user) return user
-    const authority = this.resolve(app.config.autoAuthorize)
+    const authority = this.resolve(app.koishi.config.autoAuthorize)
     const data = { locales: this.locales, authority, createdAt: new Date() }
     if (authority) {
       return app.database.createUser(platform, userId, data)
@@ -265,7 +317,7 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
 
     if (this.author?.['anonymous']) {
       const fallback = this.app.model.tables.user.create()
-      fallback.authority = this.resolve(this.app.config.autoAuthorize)
+      fallback.authority = this.resolve(this.app.koishi.config.autoAuthorize)
       const user = observe(fallback, () => Promise.resolve())
       return this.user = user
     }
@@ -319,7 +371,7 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
       ...(this.channel as Channel.Observed)?.locales || [],
       ...(this.guild as Channel.Observed)?.locales || [],
     ]
-    if (this.app.config.i18n.output === 'prefer-user') {
+    if (this.app.koishi.config.i18n.output === 'prefer-user') {
       locales.unshift(...(this.user as User.Observed)?.locales || [])
     } else {
       locales.push(...(this.user as User.Observed)?.locales || [])
@@ -437,7 +489,7 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
       const timer = setTimeout(() => {
         dispose()
         resolve(undefined)
-      }, options.timeout ?? this.app.config.delay.prompt)
+      }, options.timeout ?? this.app.koishi.config.delay.prompt)
     })
   }
 
@@ -477,3 +529,5 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
     }, options)
   }
 }
+
+export default KoishiSession

@@ -1,8 +1,8 @@
 import { Logger } from '@satorijs/core'
 import { Awaitable, defineProperty, remove } from 'cosmokit'
-import { Session } from './session'
 import { Context } from './context'
 import { createMatch, MatchResult } from './i18n'
+import { Session } from './session'
 
 const logger = new Logger('app')
 
@@ -63,17 +63,13 @@ export class Permissions {
     })
   }
 
-  private get caller(): Context {
-    return this[Context.current]
-  }
-
   define<P extends string>(pattern: P, options: Permissions.Options<P>) {
     const entry: Permissions.Entry = {
       ...options,
       match: createMatch(pattern),
     }
     if (!pattern.includes('(')) entry.list ||= () => [pattern]
-    return this.caller.effect(() => {
+    return this.ctx.effect(() => {
       this.store.push(entry)
       return () => remove(this.store, entry)
     })
@@ -134,7 +130,7 @@ export class Permissions {
   }
 
   async test(names: Iterable<string>, session: Partial<Session> = {}, cache: Map<string, Promise<boolean>> = new Map()) {
-    session = session[Session.shadow] || session
+    session = session[Context.shadow] || session
     if (typeof names === 'string') names = [names]
     for (const name of this.subgraph('depends', names)) {
       const parents = [...this.subgraph('inherits', [name])]

@@ -3,14 +3,16 @@ import { HTTP, Schema } from '@satorijs/core'
 import { GetEvents, Parameters, ReturnType, ThisType } from 'cordis'
 import * as satori from '@satorijs/core'
 import * as cordis from 'cordis'
+import * as minato from 'minato'
 import { Computed, FilterService } from './filter'
 import { Commander } from './command'
 import { I18n } from './i18n'
-import { Session } from './session'
+import SessionMixin, { Session } from './session'
 import { Processor } from './middleware'
 import { Permissions } from './permission'
-import { KoishiDatabase } from './database'
-import { KoishiBot } from './bot'
+import DatabaseMixin from './database'
+import BotMixin from './bot'
+import { SchemaService } from './schema'
 
 export type EffectScope = cordis.EffectScope<Context>
 export type ForkScope = cordis.ForkScope<Context>
@@ -42,10 +44,11 @@ export interface Events<C extends Context = Context> extends cordis.Events<C> {}
 export interface Context {
   [Context.events]: Events<this>
   [Context.session]: Session<never, never, this>
+  koishi: Koishi
 }
 
 export class Context extends satori.Context {
-  static readonly Session = Session
+  static shadow = Symbol.for('session.shadow')
 
   constructor(config: Context.Config = {}) {
     super(config)
@@ -56,14 +59,15 @@ export class Context extends satori.Context {
     ])
     this.mixin('$commander', ['command'])
     this.provide('$filter', new FilterService(this), true)
+    this.provide('schema', new SchemaService(this), true)
     this.provide('$processor', new Processor(this), true)
     this.provide('i18n', new I18n(this, this.config.i18n), true)
     this.provide('permissions', new Permissions(this), true)
     this.provide('model', undefined, true)
     this.provide('http', undefined, true)
     this.provide('$commander', new Commander(this, this.config), true)
-    this.provide('koishi.database', new KoishiDatabase(this), true)
-    this.provide('koishi.bot', new KoishiBot(this), true)
+    this.plugin(minato.Database)
+    this.plugin(Koishi, this.config)
   }
 
   /** @deprecated use `ctx.root` instead */
@@ -71,7 +75,7 @@ export class Context extends satori.Context {
     return this.root
   }
 
-  /** @deprecated use `root.config` instead */
+  /** @deprecated use `koishi.config` instead */
   get options() {
     return this.root.config
   }
@@ -81,10 +85,10 @@ export class Context extends satori.Context {
   waterfall<K extends keyof GetEvents<this>>(name: K, ...args: Parameters<GetEvents<this>[K]>): Promisify<ReturnType<GetEvents<this>[K]>>
   waterfall<K extends keyof GetEvents<this>>(thisArg: ThisType<GetEvents<this>[K]>, name: K, ...args: Parameters<GetEvents<this>[K]>): Promisify<ReturnType<GetEvents<this>[K]>>
   async waterfall(...args: [any, ...any[]]) {
-    const thisArg = typeof args[0] === 'object' ? args.shift() : null
+    const thisArg = typeof args[0] === 'object' || typeof args[0] === 'function' ? args.shift() : null
     const name = args.shift()
-    for (const callback of this.lifecycle.getHooks(name, thisArg)) {
-      const result = await callback.apply(thisArg, args)
+    for (const hook of this.lifecycle.filterHooks(this.lifecycle._hooks[name] || [], thisArg)) {
+      const result = await hook.callback.apply(thisArg, args)
       args[0] = result
     }
     return args[0]
@@ -94,10 +98,10 @@ export class Context extends satori.Context {
   chain<K extends keyof GetEvents<this>>(name: K, ...args: Parameters<GetEvents<this>[K]>): ReturnType<GetEvents<this>[K]>
   chain<K extends keyof GetEvents<this>>(thisArg: ThisType<GetEvents<this>[K]>, name: K, ...args: Parameters<GetEvents<this>[K]>): ReturnType<GetEvents<this>[K]>
   chain(...args: [any, ...any[]]) {
-    const thisArg = typeof args[0] === 'object' ? args.shift() : null
+    const thisArg = typeof args[0] === 'object' || typeof args[0] === 'function' ? args.shift() : null
     const name = args.shift()
-    for (const callback of this.lifecycle.getHooks(name, thisArg)) {
-      const result = callback.apply(thisArg, args)
+    for (const hook of this.lifecycle.filterHooks(this.lifecycle._hooks[name] || [], thisArg)) {
+      const result = hook.callback.apply(thisArg, args)
       args[0] = result
     }
     return args[0]
@@ -111,7 +115,17 @@ export class Context extends satori.Context {
   }
 }
 
-Session.prototype[Context.filter] = function (this: Session, ctx: Context) {
+export default class Koishi extends cordis.Service<Context.Config, Context> {
+  bot = new BotMixin(this.ctx)
+  database = new DatabaseMixin(this.ctx)
+  session = new SessionMixin(this.ctx)
+
+  constructor(ctx: Context, public config: Context.Config) {
+    super(ctx, 'koishi', true)
+  }
+}
+
+satori.Session.prototype[Context.filter] = function (this: Session, ctx: Context) {
   return ctx.filter(this)
 }
 

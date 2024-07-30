@@ -27,26 +27,18 @@ after(() => {
 describe('Command API', () => {
   describe('Register Commands', () => {
     const app = new App()
+    const ctx1 = app.user('10000')
+    const ctx2 = app.guild('10000')
+    app.command('a')
+    ctx1.command('b')
+    ctx2.command('c')
 
     it('constructor checks', () => {
       expect(() => app.command('')).to.throw()
     })
 
-    it('context.prototype.command', () => {
-      const ctx1 = app.user('10000')
-      const ctx2 = app.guild('10000')
-      app.command('a')
-      ctx1.command('b')
-      ctx2.command('c')
-
-      // a, b, c
-      expect(app.$commander._commandList).to.have.length(3)
-      expect(app.$commander.get('a').ctx).to.equal(app)
-      expect(app.$commander.get('b').ctx).to.equal(ctx1)
-      expect(app.$commander.get('c').ctx).to.equal(ctx2)
-    })
-
     it('custom inspect', () => {
+      expect(app.$commander._commandList).to.have.length(3)
       expect(inspect(app.command('a'))).to.equal('Command <a>')
     })
 

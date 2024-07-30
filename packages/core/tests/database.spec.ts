@@ -1,7 +1,7 @@
 import { App } from 'koishi'
 import { expect, use } from 'chai'
 import mock from '@koishijs/plugin-mock'
-import memory from '@koishijs/plugin-database-memory'
+import memory from '@minatojs/driver-memory'
 import shape from 'chai-shape'
 import promise from 'chai-as-promised'
 

@@ -87,12 +87,11 @@ export namespace Channel {
   export type Observed<K extends Field = Field> = utils.Observed<Pick<Channel, K>, Promise<void>>
 }
 
-// Do not set "database" inject for this service.
-export class KoishiDatabase {
-  constructor(public ctx: Context) {
-    ctx.plugin(minato.Database)
+interface KoishiDatabase extends minato.Database<Tables, Types, Context> {}
 
-    ctx.mixin('koishi.database', {
+class KoishiDatabase {
+  constructor(public ctx: Context) {
+    ctx.mixin(this, {
       getUser: 'database.getUser',
       setUser: 'database.setUser',
       createUser: 'database.createUser',
@@ -100,8 +99,10 @@ export class KoishiDatabase {
       getAssignedChannels: 'database.getAssignedChannels',
       setChannel: 'database.setChannel',
       createChannel: 'database.createChannel',
-      broadcast: 'broadcast',
+      broadcast: 'database.broadcast',
     })
+
+    ctx.mixin('database', ['broadcast'] as never[])
 
     ctx.model.extend('user', {
       id: 'unsigned(8)',
@@ -152,28 +153,28 @@ export class KoishiDatabase {
   }
 
   async getUser<K extends FlatKeys<User>>(platform: string, pid: string, modifier?: Driver.Cursor<K>): Promise<FlatPick<User, K>> {
-    const [binding] = await this.ctx.database.get('binding', { platform, pid }, ['aid'])
+    const [binding] = await this.get('binding', { platform, pid }, ['aid'])
     if (!binding) return
-    const [user] = await this.ctx.database.get('user', { id: binding.aid }, modifier)
+    const [user] = await this.get('user', { id: binding.aid }, modifier)
     return user
   }
 
   async setUser(platform: string, pid: string, data: Update<User>) {
-    const [binding] = await this.ctx.database.get('binding', { platform, pid }, ['aid'])
+    const [binding] = await this.get('binding', { platform, pid }, ['aid'])
     if (!binding) throw new Error('user not found')
-    return this.ctx.database.set('user', binding.aid, data)
+    return this.set('user', binding.aid, data)
   }
 
   async createUser(platform: string, pid: string, data: Partial<User>) {
-    const user = await this.ctx.database.create('user', data)
-    await this.ctx.database.create('binding', { aid: user.id, bid: user.id, pid, platform })
+    const user = await this.create('user', data)
+    await this.create('binding', { aid: user.id, bid: user.id, pid, platform })
     return user
   }
 
   getChannel<K extends FlatKeys<Channel>>(platform: string, id: string, modifier?: Driver.Cursor<K>): Promise<FlatPick<Channel, K | 'id' | 'platform'>>
   getChannel<K extends FlatKeys<Channel>>(platform: string, ids: string[], modifier?: Driver.Cursor<K>): Promise<FlatPick<Channel, K>[]>
-  async getChannel(platform: string, id: MaybeArray<string>, modifier?: Driver.Cursor<Channel.Field>) {
-    const data = await this.ctx.database.get('channel', { platform, id }, modifier)
+  async getChannel(platform: string, id: MaybeArray<string>, modifier?: any) {
+    const data = await this.get('channel', { platform, id }, modifier)
     if (Array.isArray(id)) return data
     if (data[0]) Object.assign(data[0], { platform, id })
     return data[0]
@@ -190,17 +191,17 @@ export class KoishiDatabase {
 
   getAssignedChannels<K extends Channel.Field>(fields?: K[], selfIdMap?: Dict<string[]>): Promise<Pick<Channel, K>[]>
   async getAssignedChannels(fields?: Channel.Field[], selfIdMap: Dict<string[]> = this.getSelfIds()) {
-    return this.ctx.database.get('channel', {
+    return this.get('channel', {
       $or: Object.entries(selfIdMap).map(([platform, assignee]) => ({ platform, assignee })),
     }, fields)
   }
 
   setChannel(platform: string, id: string, data: Update<Channel>) {
-    return this.ctx.database.set('channel', { platform, id }, data)
+    return this.set('channel', { platform, id }, data)
   }
 
   createChannel(platform: string, id: string, data: Partial<Channel>) {
-    return this.ctx.database.create('channel', { platform, id, ...data })
+    return this.create('channel', { platform, id, ...data })
   }
 
   async broadcast(...args: [Fragment, boolean?] | [readonly string[], Fragment, boolean?]) {
@@ -227,7 +228,7 @@ export class KoishiDatabase {
     }
 
     if (channels?.length) {
-      this[Context.current].logger('app').warn('broadcast', 'channel not found: ', channels.join(', '))
+      this.ctx.logger('app').warn('broadcast', 'channel not found: ', channels.join(', '))
     }
 
     return (await Promise.all(this.ctx.bots.map((bot) => {
@@ -246,3 +247,5 @@ export class KoishiDatabase {
     }))).flat(1)
   }
 }
+
+export default KoishiDatabase
