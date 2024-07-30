@@ -26,9 +26,12 @@
     "koishi"
   ],
   "devDependencies": {
-    "chai": "^4.4.1",
+    "@minatojs/driver-memory": "^3.4.0",
+    "@types/chai": "^4.3.16",
+    "@types/chai-as-promised": "^7.1.8",
+    "chai": "^5.1.1",
     "chai-as-promised": "^7.1.1",
-    "chai-shape": "^1.0.0"
+    "chai-shape": "^1.1.0"
   },
   "dependencies": {
     "@koishijs/i18n-utils": "^1.0.1",

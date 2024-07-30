@@ -1,6 +1,6 @@
 import { App, Bot, Channel } from 'koishi'
 import * as broadcast from '@koishijs/plugin-broadcast'
-import memory from '@koishijs/plugin-database-memory'
+import memory from '@minatojs/driver-memory'
 import mock from '@koishijs/plugin-mock'
 import { mock as jest } from 'node:test'
 import { expect } from 'chai'

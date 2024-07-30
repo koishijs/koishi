@@ -1,6 +1,6 @@
 import { App, User, Channel, sleep } from 'koishi'
 import mock, { DEFAULT_SELF_ID } from '@koishijs/plugin-mock'
-import memory from '@koishijs/plugin-database-memory'
+import memory from '@minatojs/driver-memory'
 import { install } from '@sinonjs/fake-timers'
 
 const app = new App()

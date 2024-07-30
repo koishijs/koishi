@@ -1,6 +1,6 @@
 import { App, sleep } from 'koishi'
 import mock from '@koishijs/plugin-mock'
-import memory from '@koishijs/plugin-database-memory'
+import memory from '@minatojs/driver-memory'
 
 describe('Session API', () => {
   describe('Command Execution', () => {
