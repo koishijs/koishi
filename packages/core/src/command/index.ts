@@ -57,18 +57,9 @@ export class Commander {
 
     ctx.before('parse', (content, session) => {
       // we need to make sure that the user truly has the intension to call a command
-      const { quote, isDirect, stripped: { prefix, appel } } = session
+      const { isDirect, stripped: { prefix, appel } } = session
       if (!isDirect && typeof prefix !== 'string' && !appel) return
-      const argv = Argv.parse(content)
-      if (quote?.content) {
-        argv.tokens.push({
-          content: quote.content,
-          quoted: true,
-          inters: [],
-          terminator: '',
-        })
-      }
-      return argv
+      return Argv.parse(content)
     })
 
     ctx.on('interaction/command', (session) => {
@@ -173,26 +164,26 @@ export class Commander {
     }, { numeric: true })
 
     this.domain('integer', (source, session) => {
-      const value = +source
+      const value = +source.replace(/[,_]/g, '')
       if (value * 0 === 0 && Math.floor(value) === value) return value
       throw new Error('internal.invalid-integer')
     }, { numeric: true })
 
     this.domain('posint', (source, session) => {
-      const value = +source
+      const value = +source.replace(/[,_]/g, '')
       if (value * 0 === 0 && Math.floor(value) === value && value > 0) return value
       throw new Error('internal.invalid-posint')
     }, { numeric: true })
 
     this.domain('natural', (source, session) => {
-      const value = +source
+      const value = +source.replace(/[,_]/g, '')
       if (value * 0 === 0 && Math.floor(value) === value && value >= 0) return value
       throw new Error('internal.invalid-natural')
     }, { numeric: true })
 
     this.domain('bigint', (source, session) => {
       try {
-        return BigInt(source)
+        return BigInt(source.replace(/[,_]/g, ''))
       } catch {
         throw new Error('internal.invalid-integer')
       }
@@ -291,7 +282,7 @@ export class Commander {
     if (argv.command) return argv.command
     if (argv.name) return argv.command = this.resolve(argv.name)
 
-    const { stripped, isDirect } = argv.session
+    const { stripped, isDirect, quote } = argv.session
     // guild message should have prefix or appel to be interpreted as a command call
     const isStrict = this.config.prefixMode === 'strict' || !isDirect && !stripped.appel
     if (argv.root && stripped.prefix === null && isStrict) return
@@ -306,6 +297,14 @@ export class Commander {
       argv.args = command._aliases[name].args
       argv.options = command._aliases[name].options
       if (command._arguments.length) break
+    }
+    if (argv.command?.config.captureQuote !== false && quote?.content) {
+      argv.tokens.push({
+        content: quote.content,
+        quoted: true,
+        inters: [],
+        terminator: '',
+      })
     }
     return argv.command
   }

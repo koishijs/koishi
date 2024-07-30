@@ -360,6 +360,7 @@ function toStringType(type: Argv.Type) {
 
 export namespace Command {
   export interface Config extends Argv.CommandBase.Config, Permissions.Config {
+    captureQuote?: boolean
     /** disallow unknown options */
     checkUnknown?: boolean
     /** check argument count */
@@ -376,6 +377,7 @@ export namespace Command {
     permissions: Schema.array(String).role('perms').default(['authority:1']).description('权限继承。'),
     dependencies: Schema.array(String).role('perms').description('权限依赖。'),
     slash: Schema.boolean().description('启用斜线指令功能。').default(true),
+    captureQuote: Schema.boolean().description('是否捕获引用文本。').default(true).hidden(),
     checkUnknown: Schema.boolean().description('是否检查未知选项。').default(false).hidden(),
     checkArgCount: Schema.boolean().description('是否检查参数数量。').default(false).hidden(),
     showWarning: Schema.boolean().description('是否显示警告。').default(true).hidden(),
