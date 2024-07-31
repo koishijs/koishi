@@ -445,8 +445,7 @@ class KoishiSession<U, G, C> {
     return this.withScope(`commands.${command.name}.messages`, async () => {
       const result = await command.execute(argv as Argv, next as Next)
       if (!shouldEmit) {
-        if (typeof result === 'string') return result
-        return h(null, result).toString()
+        return (await this.transform(h.normalize(result))).join("")
       }
       await this.send(result)
       return ''
