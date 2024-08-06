@@ -276,7 +276,7 @@ async function showHelp(command: Command, session: Session<'authority'>, config:
     output.push(session.text('.command-examples'), ...command._examples.map(example => '    ' + example))
   } else {
     const text = session.text([`commands.${command.name}.examples`, ''], command.config.params)
-    if (text) output.push(...text.split('\n').map(line => '    ' + line))
+    if (text) output.push(session.text('.command-examples'), ...text.split('\n').map(line => '    ' + line))
   }
 
   output.push(...await formatCommands('.subcommand-prolog', session, command.children, config))
