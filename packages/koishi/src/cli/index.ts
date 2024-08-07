@@ -1,8 +1,8 @@
 import registerStartCommand from './start'
-import CAC from 'cac'
+import { cac } from 'cac'
 
 const { version } = require('../../package.json')
-const cli = CAC('koishi').help().version(version)
+const cli = cac('koishi').help().version(version)
 
 registerStartCommand(cli)
 
