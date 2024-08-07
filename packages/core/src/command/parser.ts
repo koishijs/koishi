@@ -369,8 +369,12 @@ export namespace Argv {
       return true
     }
 
-    parse(argv: string | Argv, terminator?: string, args: any[] = [], options: Dict<any> = {}): Argv {
-      if (typeof argv === 'string') argv = Argv.parse(argv, terminator)
+    parse(argv: string | Argv, terminator?: string): Argv {
+      if (typeof argv === 'string') {
+        argv = Argv.parse(argv, terminator)
+      }
+      const args = argv.args || []
+      const options = { ...argv.options }
 
       if (!argv.source && argv.tokens) {
         argv.source = this.name + ' ' + Argv.stringify(argv)
