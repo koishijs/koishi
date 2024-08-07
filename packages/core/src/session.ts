@@ -77,13 +77,12 @@ export interface Session<U extends User.Field = never, G extends Channel.Field =
   observeChannel<T extends Channel.Field = never>(fields: Iterable<T>): Promise<Channel.Observed<T | G>>
   getUser<K extends User.Field = never>(userId?: string, fields?: K[]): Promise<User>
   observeUser<T extends User.Field = never>(fields: Iterable<T>): Promise<User.Observed<T | U>>
-  withScope(scope: string, callback: () => Awaitable<string>): Promise<string>
+  withScope(scope: string, callback: () => Awaitable<h[]>): Promise<h[]>
   resolveScope(path: string): string
   text(path: string | string[], params?: object): string
-  i18n(path: string | string[], params?: object): satori.Element[]
+  i18n(path: string | string[], params?: object): h[]
   collect<T extends 'user' | 'channel'>(key: T, argv: Argv, fields?: Set<keyof Tables[T]>): Set<keyof Tables[T]>
-  execute(content: string, next?: true | Next): Promise<string>
-  execute(argv: Argv, next?: true | Next): Promise<string>
+  execute(content: string | Argv, next?: true | Next): Promise<h[]>
   middleware(middleware: Middleware<this>): () => boolean
   prompt(timeout?: number): Promise<string>
   prompt<T>(callback: (session: this) => Awaitable<T>, options?: PromptOptions): Promise<T>
@@ -336,7 +335,7 @@ class KoishiSession<U, G, C> {
     return this.user = cache as any
   }
 
-  async withScope(scope: string, callback: () => Awaitable<string>): Promise<string> {
+  async withScope(scope: string, callback: () => Awaitable<h[]>): Promise<h[]> {
     const oldScope = this.scope
     try {
       this.scope = scope
@@ -396,9 +395,7 @@ class KoishiSession<U, G, C> {
     return fields
   }
 
-  execute(content: string, next?: true | Next): Promise<string>
-  execute(argv: Argv, next?: true | Next): Promise<string>
-  async execute(argv: any, next?: true | Next) {
+  async execute(argv: string | Argv, next?: true | Next) {
     if (typeof argv === 'string') argv = Argv.parse(argv)
 
     argv.session = this
@@ -408,7 +405,7 @@ class KoishiSession<U, G, C> {
         const output: string[] = []
         for (let i = 0; i < inters.length; ++i) {
           const execution = await this.execute(inters[i], true)
-          const transformed = await this.transform(h.normalize(execution))
+          const transformed = await this.transform(execution)
           output.push(transformed.join(''))
         }
         for (let i = inters.length - 1; i >= 0; --i) {
@@ -417,17 +414,17 @@ class KoishiSession<U, G, C> {
         }
         arg.inters = []
       }
-      if (!this.app.$commander.resolveCommand(argv)) return ''
+      if (!this.app.$commander.resolveCommand(argv)) return []
     } else {
       argv.command ||= this.app.$commander.get(argv.name)
       if (!argv.command) {
         logger.warn(new Error(`cannot find command ${argv.name}`))
-        return ''
+        return []
       }
     }
 
     const { command } = argv
-    if (!command.ctx.filter(this)) return ''
+    if (!command.ctx.filter(this)) return []
 
     if (this.app.database) {
       if (!this.isDirect) {
@@ -444,12 +441,9 @@ class KoishiSession<U, G, C> {
 
     return this.withScope(`commands.${command.name}.messages`, async () => {
       const result = await command.execute(argv as Argv, next as Next)
-      if (!shouldEmit) {
-        if (typeof result === 'string') return result
-        return h(null, result).toString()
-      }
+      if (!shouldEmit) return h.normalize(result)
       await this.send(result)
-      return ''
+      return []
     })
   }
 
