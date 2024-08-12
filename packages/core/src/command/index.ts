@@ -1,5 +1,5 @@
 import { Awaitable, defineProperty, Time } from 'cosmokit'
-import { Bot, h, Schema, Universal } from '@satorijs/core'
+import { Bot, Fragment, h, Schema, Universal } from '@satorijs/core'
 import { Command } from './command'
 import { Argv } from './parser'
 import validate from './validate'
@@ -25,7 +25,7 @@ declare module '../context' {
     'command-updated'(command: Command): void
     'command-removed'(command: Command): void
     'command-error'(argv: Argv, error: any): void
-    'command/before-execute'(argv: Argv): Awaitable<void | string>
+    'command/before-execute'(argv: Argv): Awaitable<void | Fragment>
     'command/before-attach-channel'(argv: Argv, fields: Set<Channel.Field>): void
     'command/before-attach-user'(argv: Argv, fields: Set<User.Field>): void
   }

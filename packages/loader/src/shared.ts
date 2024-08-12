@@ -254,10 +254,11 @@ export abstract class Loader {
       throw new Error(`cannot overwrite readonly config`)
     }
     if (this.mime === 'application/yaml') {
-      await fs.writeFile(this.filename, yaml.dump(this.config))
+      await fs.writeFile(this.filename + '.tmp', yaml.dump(this.config))
     } else if (this.mime === 'application/json') {
-      await fs.writeFile(this.filename, JSON.stringify(this.config, null, 2))
+      await fs.writeFile(this.filename + '.tmp', JSON.stringify(this.config, null, 2))
     }
+    await fs.rename(this.filename + '.tmp', this.filename)
     if (!silent) this.app.emit('config')
   }
 
