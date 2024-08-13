@@ -98,8 +98,12 @@ export class Command<
     }
   }
 
+  static normalize(name: string) {
+    return name.toLowerCase().replace(/_/g, '-')
+  }
+
   private _registerAlias(name: string, prepend = false, options: Command.Alias = {}) {
-    name = name.toLowerCase()
+    name = Command.normalize(name)
     if (name.startsWith('.')) name = this.parent.name + name
 
     // check global

@@ -269,7 +269,7 @@ export class Commander {
 
   _resolve(key: string) {
     if (!key) return {}
-    const segments = key.toLowerCase().split('.')
+    const segments = Command.normalize(key).split('.')
     let i = 1, name = segments[0], command: Command
     while ((command = this.get(name)) && i < segments.length) {
       name = command.name + '.' + segments[i++]
@@ -325,7 +325,7 @@ export class Commander {
   command(def: string, ...args: [Command.Config?] | [string, Command.Config?]) {
     const desc = typeof args[0] === 'string' ? args.shift() as string : ''
     const config = args[0] as Command.Config
-    const path = def.split(' ', 1)[0].toLowerCase()
+    const path = Command.normalize(def.split(' ', 1)[0])
     const decl = def.slice(path.length)
     const segments = path.split(/(?=[./])/g)
 
