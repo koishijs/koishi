@@ -373,7 +373,7 @@ export namespace Argv {
       if (typeof argv === 'string') {
         argv = Argv.parse(argv, terminator)
       }
-      const args = argv.args || []
+      const args = [...argv.args || []]
       const options = { ...argv.options }
 
       if (!argv.source && argv.tokens) {

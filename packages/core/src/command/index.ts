@@ -315,8 +315,8 @@ export class Commander {
     if (!this.inferCommand(argv)) return
     if (argv.tokens?.every(token => !token.inters.length)) {
       const { options, args, error } = argv.command.parse(argv)
-      argv.options = { ...argv.options, ...options }
-      argv.args = [...argv.args || [], ...args]
+      argv.options = options
+      argv.args = args
       argv.error = error
     }
     return argv.command
