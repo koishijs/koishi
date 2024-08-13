@@ -298,7 +298,9 @@ export class Commander {
       argv.options = command._aliases[name].options
       if (command._arguments.length) break
     }
-    if (argv.command?.config.captureQuote !== false && quote?.content) {
+    // https://github.com/koishijs/koishi/issues/1432
+    // https://github.com/koishijs/koishi/issues/1441
+    if (argv.root && argv.command?.config.captureQuote !== false && quote?.content) {
       argv.tokens.push({
         content: quote.content,
         quoted: true,
