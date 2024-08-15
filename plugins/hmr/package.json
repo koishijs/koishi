@@ -42,13 +42,13 @@
     }
   },
   "peerDependencies": {
-    "@koishijs/loader": "^4.5.11",
-    "koishi": "^4.17.11"
+    "@koishijs/loader": "^4.5.12",
+    "koishi": "^4.17.12"
   },
   "devDependencies": {
     "@types/babel__code-frame": "^7.0.6",
     "esbuild": "^0.23.0",
-    "koishi": "^4.17.11"
+    "koishi": "^4.17.12"
   },
   "dependencies": {
     "@babel/code-frame": "^7.24.2",

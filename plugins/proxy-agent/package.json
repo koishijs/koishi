@@ -52,11 +52,11 @@
     }
   },
   "peerDependencies": {
-    "koishi": "^4.17.11"
+    "koishi": "^4.17.12"
   },
   "devDependencies": {
-    "cordis": "^3.17.8",
-    "koishi": "^4.17.11"
+    "cordis": "^3.18.0",
+    "koishi": "^4.17.12"
   },
   "dependencies": {
     "@cordisjs/plugin-proxy-agent": "^0.3.3"
