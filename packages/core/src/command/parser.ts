@@ -426,6 +426,11 @@ export namespace Argv {
           }
           const name = content.slice(i, j)
           if (this.config.strictOptions && !this._namedOptions[name]) {
+            if (this.ctx.$commander.resolveDomain(argDecl.type).greedy) {
+              argv.tokens.unshift(token)
+              args.push(this.ctx.$commander.parseValue(Argv.stringify(argv), 'argument', argv, argDecl))
+              break
+            }
             args.push(this.ctx.$commander.parseValue(content, 'argument', argv, argDecl))
             continue
           }

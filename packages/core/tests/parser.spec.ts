@@ -95,6 +95,12 @@ describe('Parser API', () => {
       expect(cmd.parse('-c')).to.have.shape({ options: { gamma: 1 } })
     })
 
+    it('greedy + strict options', () => {
+      // https://github.com/koishijs/koishi/issues/1473
+      cmd = app.command('test-greedy-strict [foo:text]', { strictOptions: true })
+      expect(cmd.parse('-a -b -c')).to.have.shape({ args: ['-a -b -c'] })
+    })
+
     it('valued options', () => {
       cmd = app.command('cmd2 <foo> [bar:text]')
       cmd.option('alpha', '-A, --no-alpha', { value: false })
