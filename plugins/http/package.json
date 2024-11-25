@@ -1,16 +1,16 @@
 {
   "name": "@koishijs/plugin-http",
   "description": "HTTP and WebSocket client for Koishi",
-  "version": "0.6.1",
+  "version": "0.6.3",
   "type": "module",
   "main": "index.cjs",
   "module": "index.mjs",
   "types": "index.d.ts",
   "exports": {
     ".": {
+      "types": "./index.d.ts",
       "require": "./index.cjs",
-      "import": "./index.mjs",
-      "types": "./index.d.ts"
+      "import": "./index.mjs"
     },
     "./package.json": "./package.json"
   },
@@ -48,12 +48,12 @@
     }
   },
   "peerDependencies": {
-    "koishi": "^4.17.12"
+    "koishi": "^4.18.2"
   },
   "devDependencies": {
-    "koishi": "^4.17.12"
+    "koishi": "^4.18.2"
   },
   "dependencies": {
-    "@cordisjs/plugin-http": "^0.6.1"
+    "@cordisjs/plugin-http": "^0.6.3"
   }
 }

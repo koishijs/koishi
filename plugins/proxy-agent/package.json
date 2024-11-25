@@ -8,9 +8,9 @@
   "types": "index.d.ts",
   "exports": {
     ".": {
+      "types": "./index.d.ts",
       "require": "./index.cjs",
-      "import": "./index.mjs",
-      "types": "./index.d.ts"
+      "import": "./index.mjs"
     },
     "./package.json": "./package.json"
   },
@@ -52,11 +52,11 @@
     }
   },
   "peerDependencies": {
-    "koishi": "^4.17.12"
+    "koishi": "^4.18.2"
   },
   "devDependencies": {
-    "cordis": "^3.18.0",
-    "koishi": "^4.17.12"
+    "cordis": "^3.18.1",
+    "koishi": "^4.18.2"
   },
   "dependencies": {
     "@cordisjs/plugin-proxy-agent": "^0.3.3"
