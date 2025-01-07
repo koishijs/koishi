@@ -45,12 +45,12 @@
     ]
   },
   "peerDependencies": {
-    "koishi": "^4.18.5"
+    "koishi": "^4.18.6"
   },
   "devDependencies": {
     "@koishijs/plugin-mock": "^2.6.6",
     "@minatojs/driver-memory": "^3.6.0",
-    "koishi": "^4.18.5",
+    "koishi": "^4.18.6",
     "minato": "^3.6.1"
   }
 }
