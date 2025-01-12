@@ -122,8 +122,9 @@ export class Commander {
           expect: this.available(session),
           suffix: session.text('internal.suggest-command'),
           filter: (name) => {
-            name = this.resolve(name)!.name
-            return ctx.permissions.test(`command:${name}`, session, cache)
+            const command = this.resolve(name, session)
+            if (!command) return false
+            return ctx.permissions.test(`command:${command.name}`, session, cache)
           },
         })
         if (!name) return next()
@@ -263,15 +264,15 @@ export class Commander {
       .flatMap(cmd => Object.keys(cmd._aliases))
   }
 
-  resolve(key: string) {
-    return this._resolve(key).command
+  resolve(key: string, session?: Session) {
+    return this._resolve(key, session).command
   }
 
-  _resolve(key: string) {
+  _resolve(key: string, session?: Session) {
     if (!key) return {}
     const segments = Command.normalize(key).split('.')
     let i = 1, name = segments[0], command: Command
-    while ((command = this.get(name)) && i < segments.length) {
+    while ((command = this.get(name, session)) && i < segments.length) {
       name = command.name + '.' + segments[i++]
     }
     return { command, name }
@@ -280,7 +281,7 @@ export class Commander {
   inferCommand(argv: Argv) {
     if (!argv) return
     if (argv.command) return argv.command
-    if (argv.name) return argv.command = this.resolve(argv.name)
+    if (argv.name) return argv.command = this.resolve(argv.name, argv.session)
 
     const { stripped, isDirect, quote } = argv.session
     // guild message should have prefix or appel to be interpreted as a command call
@@ -290,7 +291,7 @@ export class Commander {
     while (argv.tokens.length) {
       const { content } = argv.tokens[0]
       segments.push(content)
-      const { name, command } = this._resolve(segments.join('.'))
+      const { name, command } = this._resolve(segments.join('.'), argv.session)
       if (!command) break
       argv.tokens.shift()
       argv.command = command

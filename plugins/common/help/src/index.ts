@@ -95,13 +95,13 @@ export function apply(ctx: Context, config: Config) {
 
   const $ = ctx.$commander
   function findCommand(target: string, session: Session<never, never>) {
-    const command = $.resolve(target)
+    const command = $.resolve(target, session)
     if (command?.ctx.filter(session)) return command
 
     // shortcuts
     const data = ctx.i18n
       .find('commands.(name).shortcuts.(variant)', target)
-      .map(item => ({ ...item, command: $.resolve(item.data.name) }))
+      .map(item => ({ ...item, command: $.resolve(item.data.name, session) }))
       .filter(item => item.command?.match(session))
     const perfect = data.filter(item => item.similarity === 1)
     if (!perfect.length) return data
@@ -137,11 +137,12 @@ export function apply(ctx: Context, config: Config) {
       prefix: session.text('.not-found'),
       suffix: session.text('internal.suggest-command'),
       filter: (name) => {
-        name = $.resolve(name)!.name
-        return ctx.permissions.test(`command:${name}`, session, cache)
+        const command = $.resolve(name, session)
+        if (!command) return false
+        return ctx.permissions.test(`command:${command.name}`, session, cache)
       },
     })
-    return $.resolve(name)
+    return $.resolve(name, session)
   }
 
   const cmd = ctx.command('help [command:string]', { authority: 0, ...config })
@@ -173,7 +174,7 @@ export function apply(ctx: Context, config: Config) {
 function* getCommands(session: Session<'authority'>, commands: Command[], showHidden = false): Generator<Command> {
   for (const command of commands) {
     if (!showHidden && session.resolve(command.config.hidden)) continue
-    if (command.match(session)) {
+    if (command.match(session) && Object.keys(command._aliases).length) {
       yield command
     } else {
       yield* getCommands(session, command.children, showHidden)
