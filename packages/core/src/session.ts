@@ -194,9 +194,10 @@ class KoishiSession<U, G, C> {
   }
 
   async send(fragment: Fragment, options: Universal.SendOptions = {}) {
-    if (!fragment) return
+    const elements = h.normalize(fragment)
+    if (!elements.length) return
     options.session = this
-    return this.bot.sendMessage(this.channelId, fragment, this.event.referrer, options).catch<string[]>((error) => {
+    return this.bot.sendMessage(this.channelId, elements, this.event.referrer, options).catch<string[]>((error) => {
       logger.warn(error)
       return []
     })
