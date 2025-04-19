@@ -1,0 +1,23 @@
+commands:
+  pollinations:
+    description: Generate images and text with Pollinations.AI
+    options:
+      model: Specify the model to use
+      width: Image width (for image generation)
+      height: Image height (for image generation)
+      max-tokens: Maximum number of tokens (for text generation)
+      temperature: Temperature for text generation (0.0-1.0)
+    messages:
+      expect-prompt: Please enter a prompt for generation.
+      generating: Generating, please wait...
+      error: An error occurred during generation. Please try again.
+  pollinations.image:
+    description: Generate an image with Pollinations.AI
+    messages:
+      generating-image: Generating image, please wait...
+      image-generated: Image generated successfully!
+  pollinations.text:
+    description: Generate text with Pollinations.AI
+    messages:
+      generating-text: Generating text, please wait...
+      text-generated: Text generated successfully!

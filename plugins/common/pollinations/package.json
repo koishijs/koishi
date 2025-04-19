@@ -1,0 +1,55 @@
+{
+  "name": "@koishijs/plugin-pollinations",
+  "description": "Pollinations.AI integration for Koishi",
+  "version": "1.0.0",
+  "main": "lib/index.js",
+  "typings": "lib/index.d.ts",
+  "files": [
+    "lib",
+    "src"
+  ],
+  "author": "Pollinations.AI <info@pollinations.ai>",
+  "license": "MIT",
+  "scripts": {
+    "lint": "eslint src --ext .ts"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/koishijs/koishi.git",
+    "directory": "plugins/common/pollinations"
+  },
+  "bugs": {
+    "url": "https://github.com/koishijs/koishi/issues"
+  },
+  "homepage": "https://pollinations.ai",
+  "keywords": [
+    "bot",
+    "chatbot",
+    "koishi",
+    "plugin",
+    "pollinations",
+    "ai",
+    "image",
+    "text",
+    "generation"
+  ],
+  "koishi": {
+    "browser": true,
+    "category": "ai",
+    "description": {
+      "en": "Generate images and text with Pollinations.AI",
+      "zh": "使用 Pollinations.AI 生成图像和文本"
+    },
+    "locales": [
+      "zh",
+      "en"
+    ]
+  },
+  "peerDependencies": {
+    "koishi": "^4.18.7"
+  },
+  "devDependencies": {
+    "@koishijs/plugin-mock": "^2.6.6",
+    "koishi": "^4.18.7"
+  }
+}

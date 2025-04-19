@@ -1,0 +1,23 @@
+commands:
+  pollinations:
+    description: 使用 Pollinations.AI 生成图像和文本
+    options:
+      model: 指定使用的模型
+      width: 图像宽度（用于图像生成）
+      height: 图像高度（用于图像生成）
+      max-tokens: 最大令牌数（用于文本生成）
+      temperature: 文本生成的温度（0.0-1.0）
+    messages:
+      expect-prompt: 请输入生成提示。
+      generating: 正在生成，请稍候...
+      error: 生成过程中发生错误。请重试。
+  pollinations.image:
+    description: 使用 Pollinations.AI 生成图像
+    messages:
+      generating-image: 正在生成图像，请稍候...
+      image-generated: 图像生成成功！
+  pollinations.text:
+    description: 使用 Pollinations.AI 生成文本
+    messages:
+      generating-text: 正在生成文本，请稍候...
+      text-generated: 文本生成成功！
