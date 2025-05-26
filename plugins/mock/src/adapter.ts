@@ -24,8 +24,7 @@ export class MockBot<C extends Context = Context> extends Bot<C> {
   static MessageEncoder = MockMessageEncoder
 
   constructor(ctx: C, config: MockBot.Config) {
-    super(ctx, config)
-    this.platform = 'mock'
+    super(ctx, config, 'mock')
     this.selfId = config.selfId ?? DEFAULT_SELF_ID
     this.status = Universal.Status.ONLINE
     ctx.plugin(MockAdapter, this)

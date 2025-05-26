@@ -64,8 +64,6 @@ export namespace Matcher {
 export class Processor {
   _hooks: Hook[] = []
   _sessions: Dict<Session> = Object.create(null)
-  _userCache = new SharedCache<User.Observed<keyof User>>()
-  _channelCache = new SharedCache<Channel.Observed<keyof Channel>>()
   _matchers = new Set<Matcher>()
 
   constructor(private ctx: Context) {
@@ -271,8 +269,6 @@ export class Processor {
     } finally {
       // update session map
       delete this._sessions[session.id]
-      this._userCache.delete(session.id)
-      this._channelCache.delete(session.id)
 
       // flush user & group data
       await session.user?.$update()
