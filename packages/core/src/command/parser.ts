@@ -425,7 +425,8 @@ export namespace Argv {
             if (content.charCodeAt(j) === 61) break
           }
           const name = content.slice(i, j)
-          if (this.config.strictOptions && !this._namedOptions[name]) {
+          names = i > 1 ? [name] : name
+          if (this.config.strictOptions && !this._namedOptions[names[0]]) {
             if (this.ctx.$commander.resolveDomain(argDecl.type).greedy) {
               argv.tokens.unshift(token)
               args.push(this.ctx.$commander.parseValue(Argv.stringify(argv), 'argument', argv, argDecl))
@@ -438,7 +439,6 @@ export namespace Argv {
             options[camelCase(name.slice(3))] = false
             continue
           }
-          names = i > 1 ? [name] : name
           param = content.slice(++j)
           option = this._namedOptions[names[names.length - 1]]
         }
