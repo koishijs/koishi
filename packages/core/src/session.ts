@@ -252,12 +252,23 @@ class KoishiSession<U, G, C> {
     const { platform } = this
     const key = `${platform}:${channelId}`
 
+    let cache = this.channel
+    if (cache) {
+      for (const key in cache) {
+        fieldSet.delete(key as any)
+      }
+      if (!fieldSet.size) return cache
+    }
     const data = await this.getChannel(channelId, [...fieldSet])
-    const cache = observe(data, async (diff) => {
-      // https://github.com/koishijs/koishi/issues/1267
-      if (data['$detached']) return
-      await this.app.database.setChannel(platform, channelId, diff as any)
-    }, `channel ${key}`)
+    if (cache) {
+      cache.$merge(data)
+    } else {
+      cache = observe(data, async (diff) => {
+        // https://github.com/koishijs/koishi/issues/1267
+        if (data['$detached']) return
+        await this.app.database.setChannel(platform, channelId, diff as any)
+      }, `channel ${key}`)
+    }
     return cache
   }
 
