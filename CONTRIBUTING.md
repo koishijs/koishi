@@ -35,7 +35,7 @@ Koishi 至今为止的官方插件数量已经非常非常多了，比起创建�
 只要你为自己的插件添加上合适的前缀（如 `koishi-plugin-bar` 或 `@foo/koishi-plugin-bar`），Koishi 的插件市场便会自动收录。
 对于活跃的社区贡献者，我们也会邀请其成为组织 @koishijs 的成员（现在已经有不少了）。
 
-关于发布插件的指南，请参考[这篇文档](https://koishi.chat/guide/plugin/publish.html)。
+关于发布插件的指南，请参考[这篇文档](https://koishi.chat/zh-CN/guide/develop/publish.html)。
 
 ## 如何发送 Pull Request
 
