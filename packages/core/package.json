@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/core",
   "description": "Core Features for Koishi",
-  "version": "4.18.7",
+  "version": "4.18.8",
   "main": "lib/index.cjs",
   "module": "lib/index.mjs",
   "typings": "lib/index.d.ts",
@@ -36,7 +36,7 @@
   "dependencies": {
     "@koishijs/i18n-utils": "^1.0.1",
     "@koishijs/utils": "^7.2.1",
-    "@satorijs/core": "^4.5.0",
+    "@satorijs/core": "^4.5.2",
     "cordis": "^3.18.1",
     "cosmokit": "^1.6.3",
     "fastest-levenshtein": "^1.0.16",

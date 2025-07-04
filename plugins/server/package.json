@@ -1,7 +1,7 @@
 {
   "name": "@koishijs/plugin-server",
   "description": "Server service for Koishi",
-  "version": "3.2.4",
+  "version": "3.2.7",
   "type": "module",
   "exports": {
     ".": {
@@ -48,13 +48,13 @@
     }
   },
   "peerDependencies": {
-    "koishi": "^4.18.7"
+    "koishi": "^4.18.8"
   },
   "devDependencies": {
     "cordis": "^3.18.1",
-    "koishi": "^4.18.7"
+    "koishi": "^4.18.8"
   },
   "dependencies": {
-    "@cordisjs/plugin-server": "^0.2.4"
+    "@cordisjs/plugin-server": "^0.2.7"
   }
 }

@@ -41,10 +41,10 @@
     }
   },
   "peerDependencies": {
-    "koishi": "^4.18.7"
+    "koishi": "^4.18.8"
   },
   "devDependencies": {
-    "@koishijs/plugin-server": "^3.2.4",
-    "koishi": "^4.18.7"
+    "@koishijs/plugin-server": "^3.2.7",
+    "koishi": "^4.18.8"
   }
 }
