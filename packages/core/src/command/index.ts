@@ -241,6 +241,7 @@ export class Commander {
 
   get(name: string, session?: Session) {
     return this._commandList.find((cmd) => {
+      if (!Object.hasOwn(cmd._aliases, name)) return false
       const alias = cmd._aliases[name]
       return alias && (session?.resolve(alias.filter) ?? true)
     })
