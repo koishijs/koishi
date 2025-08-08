@@ -2,7 +2,7 @@ import { Dict, Logger } from '@koishijs/core'
 import { promises as fs } from 'fs'
 import * as dotenv from 'dotenv'
 import ns from 'ns-require'
-import Loader from './shared'
+import { Loader } from './shared'
 import { createRequire } from 'module'
 
 export * from './shared'
