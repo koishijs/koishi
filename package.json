@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "type": "module",
   "private": true,
-  "packageManager": "yarn@1.22.19",
+  "packageManager": "yarn@4.12.0",
   "workspaces": [
     "docs",
     "external/*",

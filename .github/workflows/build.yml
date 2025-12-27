@@ -10,12 +10,16 @@ jobs:
 
     steps:
       - name: Check out
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: Set up Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+      - name: Enable Corepack
+        run: corepack enable
       - id: cache
         name: Yarn Cache Dir
-        run: echo "value=$(yarn cache dir)" >> $GITHUB_OUTPUT
+        run: echo "cache-dir=$(yarn config get cacheFolder)" >> $GITHUB_OUTPUT
       - name: Restore Lockfile
         uses: actions/cache@v3
         with:
@@ -24,13 +28,13 @@ jobs:
       - name: Restore Cache
         uses: actions/cache@v3
         with:
-          path: ${{ steps.cache.outputs.value }}
-          key: yarn-cache-${{ github.sha }}-node-16
+          path: ${{ steps.cache.outputs.cache-dir }}
+          key: yarn-cache-${{ github.sha }}-node-22
       - name: Install
-        run: yarn
+        run: yarn --no-immutable
 
     outputs:
-      cache-dir: ${{ steps.cache.outputs.value }}
+      cache-dir: ${{ steps.cache.outputs.cache-dir }}
 
   build:
     runs-on: ubuntu-latest
@@ -39,9 +43,13 @@ jobs:
 
     steps:
       - name: Check out
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: Set up Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+      - name: Enable Corepack
+        run: corepack enable
       - name: Restore Lockfile
         uses: actions/cache@v3
         with:
@@ -51,9 +59,9 @@ jobs:
         uses: actions/cache@v3
         with:
           path: ${{ needs.prepare.outputs.cache-dir }}
-          key: yarn-cache-${{ github.sha }}-node-16
+          key: yarn-cache-${{ github.sha }}-node-22
       - name: Install
-        run: yarn
+        run: yarn --no-immutable
       - name: Build
         run: yarn build
       - name: Upload Packages
@@ -72,9 +80,13 @@ jobs:
 
     steps:
       - name: Check out
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: Set up Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+      - name: Enable Corepack
+        run: corepack enable
       - name: Restore Lockfile
         uses: actions/cache@v3
         with:
@@ -84,13 +96,13 @@ jobs:
         uses: actions/cache@v3
         with:
           path: ${{ needs.prepare.outputs.cache-dir }}
-          key: yarn-cache-${{ github.sha }}-node-16
+          key: yarn-cache-${{ github.sha }}-node-22
       - name: Install
-        run: yarn
+        run: yarn --no-immutable
       - name: Lint
         run: yarn lint
 
-  unit-test:
+  test:
     if: ${{ github.event_name == 'push' || github.event_name == 'pull_request' }}
     runs-on: ubuntu-latest
     needs:
@@ -99,15 +111,17 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node-version: [18, 20, 22]
+        node-version: [20, 22]
 
     steps:
       - name: Check out
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: Set up Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: ${{ matrix.node-version }}
+      - name: Enable Corepack
+        run: corepack enable
       - name: Restore Lockfile
         uses: actions/cache@v3
         with:
@@ -120,7 +134,7 @@ jobs:
           key: yarn-cache-${{ github.sha }}-node-${{ matrix.node-version }}
           restore-keys: yarn-cache-${{ github.sha }}-node
       - name: Install
-        run: yarn
+        run: yarn --no-immutable
       - name: Unit Test
         run: yarn test:json
       - name: Report Coverage
