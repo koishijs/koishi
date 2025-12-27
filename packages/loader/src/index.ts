@@ -164,7 +164,9 @@ export default class NodeLoader extends Loader {
 
   fullReload(code = Loader.exitCode) {
     const body = JSON.stringify(this.envData)
-    process.send({ type: 'shared', body }, (err: any) => {
+    // Workaround a typing issue in @types/node:
+    // https://github.com/DefinitelyTyped/DefinitelyTyped/discussions/74275
+    process.send({ type: 'shared', body }, undefined, undefined, (err: any) => {
       if (err) logger.error('failed to send shared data')
       logger.info('trigger full reload')
       process.exit(code)
