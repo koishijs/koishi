@@ -21,12 +21,12 @@ jobs:
         name: Yarn Cache Dir
         run: echo "cache-dir=$(yarn config get cacheFolder)" >> $GITHUB_OUTPUT
       - name: Restore Lockfile
-        uses: actions/cache@v3
+        uses: actions/cache@v5
         with:
           path: yarn.lock
           key: yarn-lock-${{ github.sha }}
       - name: Restore Cache
-        uses: actions/cache@v3
+        uses: actions/cache@v5
         with:
           path: ${{ steps.cache.outputs.cache-dir }}
           key: yarn-cache-${{ github.sha }}-node-22
@@ -51,12 +51,12 @@ jobs:
       - name: Enable Corepack
         run: corepack enable
       - name: Restore Lockfile
-        uses: actions/cache@v3
+        uses: actions/cache@v5
         with:
           path: yarn.lock
           key: yarn-lock-${{ github.sha }}
       - name: Restore Cache
-        uses: actions/cache@v3
+        uses: actions/cache@v5
         with:
           path: ${{ needs.prepare.outputs.cache-dir }}
           key: yarn-cache-${{ github.sha }}-node-22
@@ -65,7 +65,7 @@ jobs:
       - name: Build
         run: yarn build
       - name: Upload Packages
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: packages
           path: |
@@ -88,12 +88,12 @@ jobs:
       - name: Enable Corepack
         run: corepack enable
       - name: Restore Lockfile
-        uses: actions/cache@v3
+        uses: actions/cache@v5
         with:
           path: yarn.lock
           key: yarn-lock-${{ github.sha }}
       - name: Restore Cache
-        uses: actions/cache@v3
+        uses: actions/cache@v5
         with:
           path: ${{ needs.prepare.outputs.cache-dir }}
           key: yarn-cache-${{ github.sha }}-node-22
@@ -123,12 +123,12 @@ jobs:
       - name: Enable Corepack
         run: corepack enable
       - name: Restore Lockfile
-        uses: actions/cache@v3
+        uses: actions/cache@v5
         with:
           path: yarn.lock
           key: yarn-lock-${{ github.sha }}
       - name: Restore Cache
-        uses: actions/cache@v3
+        uses: actions/cache@v5
         with:
           path: ${{ needs.prepare.outputs.cache-dir }}
           key: yarn-cache-${{ github.sha }}-node-${{ matrix.node-version }}
@@ -143,3 +143,48 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
           file: ./coverage/coverage-final.json
           name: codecov
+
+  publish:
+    needs: [prepare, build]
+
+    if: |
+      contains(fromJson('[
+        "refs/heads/main",
+        "refs/heads/master",
+        "refs/heads/v4"
+      ]'), github.ref)
+
+    permissions:
+      id-token: write
+      contents: read
+
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out
+        uses: actions/checkout@v6
+      - name: Set up Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+      - name: Enable Corepack
+        run: corepack enable
+      - name: Restore Lockfile
+        uses: actions/cache@v5
+        with:
+          path: yarn.lock
+          key: yarn-lock-${{ github.sha }}
+      - name: Restore Cache
+        uses: actions/cache@v5
+        with:
+          path: ${{ needs.prepare.outputs.cache-dir }}
+          key: yarn-cache-${{ github.sha }}-node-${{ matrix.node-version }}
+          restore-keys: yarn-cache-${{ github.sha }}-node
+      - name: Install
+        run: yarn --no-immutable
+      - name: Build
+        run: yarn build
+      - name: Publish
+        run: |-
+          yarn config set npmPublishProvenance true
+          yarn config set npmRegistryServer https://registry.npmjs.org/
+          yarn pub --debug
