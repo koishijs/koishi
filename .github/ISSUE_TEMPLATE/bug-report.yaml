@@ -25,7 +25,7 @@ body:
   - type: textarea
     attributes:
       label: Screenshots
-      description: 请尽量详细地提供相关截图，可以是聊天记录、Koishi 日志和服务端（如 go-cqhttp）日志等。
+      description: 请尽量详细地提供相关截图，可以是聊天记录、Koishi 日志和关联服务日志等。
   - type: textarea
     attributes:
       label: Versions
