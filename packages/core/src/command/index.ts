@@ -262,7 +262,10 @@ export class Commander {
   available(session: Session) {
     return this._commandList
       .filter(cmd => cmd.match(session))
-      .flatMap(cmd => Object.keys(cmd._aliases))
+      .flatMap(cmd => Object
+        .entries(cmd._aliases)
+        .filter(([, alias]) => session.resolve(alias.filter) ?? true)
+        .map(([name]) => name))
   }
 
   resolve(key: string, session?: Session) {
