@@ -33,8 +33,9 @@ export interface Stripped {
 }
 
 interface Task {
-  delay: number
   content: Fragment
+  delay: number
+  options: Universal.SendOptions
   resolve(ids: string[]): void
   reject(reason: any): void
 }
@@ -215,11 +216,11 @@ class KoishiSession<U, G, C> {
       this._queuedTimeout = null
       return
     }
-    this.send(task.content).then(task.resolve, task.reject)
+    this.send(task.content, task.options).then(task.resolve, task.reject)
     this._queuedTimeout = setTimeout(() => this._next(), task.delay)
   }
 
-  async sendQueued(content: Fragment, delay?: number) {
+  async sendQueued(content: Fragment, delay?: number, options: Universal.SendOptions = {}) {
     const text = h.normalize(content).join('')
     if (!text) return
     if (isNullable(delay)) {
@@ -227,7 +228,7 @@ class KoishiSession<U, G, C> {
       delay = Math.max(message, character * text.length)
     }
     return new Promise<string[]>((resolve, reject) => {
-      (this._queuedTasks ??= []).push({ content, delay, resolve, reject })
+      (this._queuedTasks ??= []).push({ content, delay, options, resolve, reject })
       if (!this._queuedTimeout) this._next()
     })
   }
