@@ -147,7 +147,8 @@ jobs:
   publish:
     needs: [prepare, build]
 
-    if: |
+    if: >-
+      github.event_name == 'push' &&
       contains(fromJson('[
         "refs/heads/main",
         "refs/heads/master",

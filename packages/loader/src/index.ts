@@ -48,6 +48,8 @@ export default class NodeLoader extends Loader {
       const meta = JSON.parse(await fs.readFile('package.json', 'utf8'))
       const require = createRequire(__filename)
       const deps = require('koishi/package.json').dependencies
+
+      meta.dependencies ||= {}
       function addDep(name: string) {
         meta.dependencies[name] = deps[name]
         isDirty = true
@@ -166,7 +168,7 @@ export default class NodeLoader extends Loader {
     const body = JSON.stringify(this.envData)
     // Workaround a typing issue in @types/node:
     // https://github.com/DefinitelyTyped/DefinitelyTyped/discussions/74275
-    process.send({ type: 'shared', body }, undefined, undefined, (err: any) => {
+    process.send({ type: 'shared', body }, (err: any) => {
       if (err) logger.error('failed to send shared data')
       logger.info('trigger full reload')
       process.exit(code)

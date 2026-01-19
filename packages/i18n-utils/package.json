@@ -35,6 +35,6 @@
     "fallback"
   ],
   "dependencies": {
-    "cosmokit": "^1.6.3"
+    "cosmokit": "^1.8.1"
   }
 }

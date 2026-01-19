@@ -63,7 +63,7 @@
     "@koishijs/loader": "4.6.10",
     "@koishijs/plugin-http": "^0.6.3",
     "@koishijs/plugin-proxy-agent": "^0.3.3",
-    "@koishijs/plugin-server": "^3.2.7",
+    "@koishijs/plugin-server": "^3.2.9",
     "@koishijs/utils": "^7.2.1",
     "@satorijs/core": "^4.5.2",
     "cac": "^6.7.14",

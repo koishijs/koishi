@@ -30,7 +30,7 @@
     "@sinonjs/fake-timers": "^6.0.1"
   },
   "dependencies": {
-    "cosmokit": "^1.6.3",
+    "cosmokit": "^1.8.1",
     "inaba": "^1.1.1"
   }
 }
