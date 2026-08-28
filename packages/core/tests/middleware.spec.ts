@@ -21,7 +21,8 @@ before(() => {
   })
 })
 
-after(() => {
+after(async () => {
+  await app.stop()
   Logger.levels.base = 2
   Logger.targets.pop()
 })
