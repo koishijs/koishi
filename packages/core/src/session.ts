@@ -239,7 +239,17 @@ class KoishiSession<U, G, C> {
     if (channel) return channel
     const assignee = this.resolve(app.koishi.config.autoAssign) ? this.selfId : ''
     if (assignee) {
-      return app.database.createChannel(platform, id, { assignee, guildId, createdAt: new Date() })
+      try {
+        return await app.database.createChannel(platform, id, { assignee, guildId, createdAt: new Date() })
+      } catch (error) {
+        // Concurrent get-or-create calls from sibling sessions may lose the
+        // race: the winner's INSERT lands first and ours hits the (id, platform)
+        // primary key. Read back the winner's row instead of surfacing the
+        // unique-constraint error. https://github.com/koishijs/koishi/issues/1545
+        const existing = await app.database.getChannel(platform, id, fields)
+        if (existing) return existing
+        throw error
+      }
     } else {
       const channel = app.model.tables.channel.create()
       Object.assign(channel, { platform, id, guildId, $detached: true })
@@ -280,7 +290,18 @@ class KoishiSession<U, G, C> {
     const authority = this.resolve(app.koishi.config.autoAuthorize)
     const data = { locales: this.locales, authority, createdAt: new Date() }
     if (authority) {
-      return app.database.createUser(platform, userId, data)
+      try {
+        return await app.database.createUser(platform, userId, data)
+      } catch (error) {
+        // Same check-then-act race as getChannel: a sibling session may have
+        // created the user/binding row first, so our INSERT hits the
+        // (pid, platform) primary key. Read back the winner's row instead of
+        // surfacing the unique-constraint error.
+        // https://github.com/koishijs/koishi/issues/1545
+        const existing = await app.database.getUser(platform, userId, fields)
+        if (existing) return existing
+        throw error
+      }
     } else {
       const user = app.model.tables.user.create()
       Object.assign(user, { ...data, $detached: true })
