@@ -1,4 +1,4 @@
-import { Command, Context } from 'koishi'
+import { Argv, Command, Context } from 'koishi'
 import { expect, use } from 'chai'
 import shape from 'chai-shape'
 
@@ -176,6 +176,25 @@ describe('Parser API', () => {
       expect(cmd.parse('<img src="/"/>')).to.have.shape({ args: [{ src: '/' }] })
       expect(cmd.parse('<p></p>')).to.have.shape({ 'error': 'internal.invalid-argument' })
       expect(cmd.parse('<p><img src="/"/></p>')).to.have.shape({ args: [{ src: '/' }] })
+    })
+  })
+
+  describe('Interpolation', () => {
+    // https://github.com/koishijs/koishi/issues/1541
+    const img = '<img src="https://koishi.js.org/QFace/gif/s297.gif"/>'
+
+    it('element inside interpolation', () => {
+      const argv = Argv.parse(`echo $(echo ${img})`)
+      expect(argv.tokens).to.have.length(2)
+      expect(argv.tokens[1].inters[0].tokens[1].content).to.equal(img)
+      expect(argv.tokens[1].inters[0].source).to.equal(`echo ${img}`)
+    })
+
+    it('element after interpolation', () => {
+      const argv = Argv.parse(`echo $(echo foo) ${img}`)
+      expect(argv.tokens).to.have.length(3)
+      expect(argv.tokens[1].inters[0].tokens[1].content).to.equal('foo')
+      expect(argv.tokens[2].content).to.equal(img)
     })
   })
 })

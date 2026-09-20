@@ -93,9 +93,11 @@ export namespace Argv {
         if (capture[0] in this.bracs) {
           source = source.slice(capture.index + capture[0].length).trimStart()
           const { parse, terminator } = this.bracs[capture[0]]
-          const argv = parse?.(source) || this.parse(source, terminator)
+          // hand the child the RAW text (it escapes on its own) and ask it to
+          // hand back a remainder whose element data is still protected
+          const argv = parse?.(source) || this.parse(whitespace.unescape(source), terminator, true)
           source = argv.rest
-          parent.inters.push({ ...argv, pos: content.length, initiator: capture[0] })
+          parent.inters.push({ ...argv, rest: argv.rest && whitespace.unescape(argv.rest), pos: content.length, initiator: capture[0] })
         } else {
           const quoted = capture[0] === quote
           const rest = source.slice(capture.index + +quoted)
@@ -115,7 +117,7 @@ export namespace Argv {
       }
     }
 
-    parse(source: string, terminator = ''): Argv {
+    parse(source: string, terminator = '', nested = false): Argv {
       const tokens: Token[] = []
       source = h.parse(source).map((el) => {
         return el.type === 'text' ? el.toString() : whitespace.escape(el.toString())
@@ -133,6 +135,7 @@ export namespace Argv {
       if (rest.startsWith(terminator)) rest = rest.slice(1)
       source = source.slice(0, -(rest + term).length)
       rest = whitespace.unescape(rest)
+      if (nested) rest = h.parse(rest).map((el) => el.type === 'text' ? el.toString() : whitespace.escape(el.toString())).join('')
       source = whitespace.unescape(source)
       return { tokens, rest, source }
     }
