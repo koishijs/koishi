@@ -204,6 +204,7 @@ class Watcher {
     // that is, reloading them will not cause any other reloads
     for (const filename of Object.values(this.ctx.loader.cache)) {
       const module = require.cache[filename]
+      if (!module) continue
       const plugin = unwrapExports(module.exports)
       if (!plugin || this.declined.has(filename)) continue
       const runtime = this.ctx.registry.get(plugin)
