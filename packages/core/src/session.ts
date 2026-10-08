@@ -247,28 +247,38 @@ class KoishiSession<U, G, C> {
     }
   }
 
-  async _observeChannelLike<K extends Channel.Field = never>(channelId: string, fields: Iterable<K> = []) {
+  async _observeChannelLike<K extends Channel.Field = never>(channelId: string, fields: Iterable<K> = [], type: 'channel' | 'guild' = 'channel') {
     const fieldSet = new Set<Channel.Field>(fields)
     const { platform } = this
     const key = `${platform}:${channelId}`
 
+    let cache = this[type]
+    if (cache) {
+      for (const key in cache) {
+        fieldSet.delete(key as any)
+      }
+      if (!fieldSet.size) return cache
+    }
     const data = await this.getChannel(channelId, [...fieldSet])
-    const cache = observe(data, async (diff) => {
-      // https://github.com/koishijs/koishi/issues/1267
-      if (data['$detached']) return
-      await this.app.database.setChannel(platform, channelId, diff as any)
-    }, `channel ${key}`)
-    return cache
+    cache = this[type]
+    if (cache) {
+      cache.$merge(data)
+    } else {
+      cache = observe(data, async (diff) => {
+        // https://github.com/koishijs/koishi/issues/1267
+        if (data['$detached']) return
+        await this.app.database.setChannel(platform, channelId, diff as any)
+      }, `channel ${key}`)
+    }
+    return this[type] = cache as any
   }
 
   async observeChannel<T extends Channel.Field = never>(fields: Iterable<T>): Promise<Channel.Observed<T | G>> {
-    const tasks = [this._observeChannelLike(this.channelId, fields)]
+    const tasks = [this._observeChannelLike(this.channelId, fields, 'channel')]
     if (this.channelId !== this.guildId) {
-      tasks.push(this._observeChannelLike(this.guildId, fields))
+      tasks.push(this._observeChannelLike(this.guildId, fields, 'guild'))
     }
-    const [channel, guild = channel] = await Promise.all(tasks)
-    this.guild = guild
-    this.channel = channel
+    const [channel] = await Promise.all(tasks)
     return channel
   }
 
