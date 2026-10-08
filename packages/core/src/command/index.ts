@@ -420,8 +420,8 @@ export class Commander {
       if (!argv.session) {
         argv.error = `internal.invalid-${kind}`
       } else {
-        const message = argv.session.text(err['message'] || 'internal.check-syntax')
-        argv.error = argv.session.text(`internal.invalid-${kind}`, [name, message])
+        const message = h.i18n(err['message'] || 'internal.check-syntax')
+        argv.error = h.i18n(`internal.invalid-${kind}`, [name, message])
       }
     }
   }
