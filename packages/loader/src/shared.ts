@@ -455,6 +455,7 @@ export abstract class Loader {
     if (this.envData.message) {
       const { sid, channelId, guildId, content } = this.envData.message
       this.envData.message = null
+      process.send({ type: 'shared', body: JSON.stringify(this.envData) })
       const dispose = app.on('bot-status-updated', (bot) => {
         if (bot.sid !== sid || bot.status !== Universal.Status.ONLINE) return
         dispose()
