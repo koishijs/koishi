@@ -134,8 +134,7 @@ export namespace Argv {
       }
       if (rest.startsWith(terminator)) rest = rest.slice(1)
       source = source.slice(0, -(rest + term).length)
-      rest = whitespace.unescape(rest)
-      if (nested) rest = h.parse(rest).map((el) => el.type === 'text' ? el.toString() : whitespace.escape(el.toString())).join('')
+      if (!nested) rest = whitespace.unescape(rest)
       source = whitespace.unescape(source)
       return { tokens, rest, source }
     }
