@@ -1,4 +1,4 @@
-import { Command, Context } from 'koishi'
+import { Argv, Command, Context } from 'koishi'
 import { expect, use } from 'chai'
 import shape from 'chai-shape'
 
@@ -176,6 +176,66 @@ describe('Parser API', () => {
       expect(cmd.parse('<img src="/"/>')).to.have.shape({ args: [{ src: '/' }] })
       expect(cmd.parse('<p></p>')).to.have.shape({ 'error': 'internal.invalid-argument' })
       expect(cmd.parse('<p><img src="/"/></p>')).to.have.shape({ args: [{ src: '/' }] })
+    })
+  })
+
+  describe('Interpolation', () => {
+    // https://github.com/koishijs/koishi/issues/1541
+    const img = '<img src="https://koishi.js.org/QFace/gif/s297.gif"/>'
+
+    it('element inside interpolation', () => {
+      const argv = Argv.parse(`echo $(echo ${img})`)
+      expect(argv.tokens).to.have.length(2)
+      expect(argv.tokens[1].inters[0].tokens[1].content).to.equal(img)
+      expect(argv.tokens[1].inters[0].source).to.equal(`echo ${img}`)
+    })
+
+    it('element after interpolation', () => {
+      const argv = Argv.parse(`echo $(echo foo) ${img}`)
+      expect(argv.tokens).to.have.length(3)
+      expect(argv.tokens[1].inters[0].tokens[1].content).to.equal('foo')
+      expect(argv.tokens[2].content).to.equal(img)
+      expect(argv.tokens[1].inters[0].rest).to.equal(' ' + img)
+    })
+
+    it('preserves whitespace after interpolation', () => {
+      for (const separator of ['\n', '\r\n', ' \n ', '\t\n\t']) {
+        const argv = Argv.parse('echo $(echo foo)' + separator + 'bar')
+        expect(argv.tokens).to.have.length(3)
+        expect(argv.tokens[1].content).to.equal('')
+        expect(argv.tokens[1].terminator).to.equal(separator)
+        expect(argv.tokens[1].inters[0].rest).to.equal(separator + 'bar')
+        expect(argv.tokens[2].content).to.equal('bar')
+      }
+    })
+
+    it('preserves newlines after interpolation in double quotes', () => {
+      for (const separator of ['\n', '\r\n']) {
+        const argv = Argv.parse('echo "$(echo foo)' + separator + 'bar"')
+        expect(argv.tokens).to.have.length(2)
+        expect(argv.tokens[1].quoted).to.equal(true)
+        expect(argv.tokens[1].content).to.equal(separator + 'bar')
+        expect(argv.tokens[1].inters[0].source).to.equal('echo foo')
+      }
+    })
+
+    it('preserves newlines when reverting interpolation in single quotes', () => {
+      const content = '$(echo foo)\nbar'
+      const argv = Argv.parse("echo '" + content + "'")
+      expect(argv.tokens).to.have.length(2)
+      expect(argv.tokens[1].content).to.equal(content)
+      expect(argv.tokens[1].inters).to.have.length(0)
+    })
+
+    it('preserves whitespace after nested interpolation', () => {
+      const argv = Argv.parse('echo $(echo $(echo foo)\nbar) baz')
+      expect(argv.tokens).to.have.length(3)
+      const inner = argv.tokens[1].inters[0]
+      expect(inner.tokens).to.have.length(3)
+      expect(inner.tokens[1].terminator).to.equal('\n')
+      expect(inner.tokens[2].content).to.equal('bar')
+      expect(inner.source).to.equal('echo $(echo foo)\nbar')
+      expect(inner.rest).to.equal(' baz')
     })
   })
 })
