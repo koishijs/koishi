@@ -110,7 +110,10 @@ export class Commander {
       // use `!prefix` instead of `prefix === null` to prevent from blocking other middlewares
       // we need to make sure that the user truly has the intension to call a command
       const { argv, quote, isDirect, stripped: { prefix, appel } } = session
-      if (argv?.command || !isDirect && !prefix && !appel) return next()
+      // Suggestions must obey the same strict prefix rule as command execution.
+      // A nickname or @-mention alone must not offer an unprefixed command.
+      if (argv?.command || !isDirect && !prefix && !appel
+        || this.config.prefixMode === 'strict' && prefix === null) return next()
       const content = session.stripped.content.slice((prefix ?? '').length)
       const actual = content.split(/\s/, 1)[0].toLowerCase()
       if (!actual) return next()
