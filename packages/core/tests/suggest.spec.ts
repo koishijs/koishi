@@ -58,6 +58,19 @@ describe('Command Suggestion', () => {
     await client1.shouldReply('fool bar', '您要找的是不是“foo”或“fooo”或“bool”？')
     await client1.shouldNotReply('.')
   })
+
+  it('does not suggest without a prefix in strict mode, even after a nickname', async () => {
+    app.koishi.config.prefixMode = 'strict'
+    app.koishi.config.nickname = ['Koishi']
+    try {
+      await client2.shouldNotReply('Koishi, fooo')
+      await client1.shouldNotReply('fooo')
+      await client2.shouldReply('Koishi, /fo', '您要找的是不是“foo”？回复句号以使用推测的指令。')
+    } finally {
+      app.koishi.config.prefixMode = 'auto'
+      app.koishi.config.nickname = []
+    }
+  })
 })
 
 describe('session.suggest()', () => {
