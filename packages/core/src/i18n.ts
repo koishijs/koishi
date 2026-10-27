@@ -95,7 +95,8 @@ export class I18n {
   get(key: string, locales: string[] = []): Dict<string> {
     const result: Dict<string> = {}
     for (const locale of this.fallback(locales)) {
-      const value = this._data[locale]?.[key]
+      // prefer user-defined overrides (`$` prefixed locales), like `render()`
+      const value = this._data['$' + locale]?.[key] || this._data[locale]?.[key]
       if (value) result[locale] = value
     }
     return result

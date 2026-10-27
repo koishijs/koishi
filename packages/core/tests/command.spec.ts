@@ -139,6 +139,37 @@ describe('Command API', () => {
     })
   })
 
+  describe('Serialize Commands', () => {
+    const app = new App()
+    const foo = app.command('foo <bar>').option('qux', '-q', { descPath: 'commands.foo.options.custom' })
+    app.i18n.define('zh-CN', 'commands.foo', {
+      description: 'description',
+      arguments: { bar: 'argument' },
+      options: { qux: 'option', custom: 'custom' },
+    })
+
+    it('basic support', () => {
+      expect(foo.toJSON()).to.have.shape({
+        description: { 'zh-CN': 'description' },
+        arguments: [{ name: 'bar', description: { 'zh-CN': 'argument' } }],
+        options: [{ name: 'qux', description: { 'zh-CN': 'custom' } }],
+      })
+    })
+
+    it('user-defined locales', () => {
+      app.i18n.define('$zh-CN', 'commands.foo', {
+        description: 'description (override)',
+        arguments: { bar: 'argument (override)' },
+        options: { custom: 'custom (override)' },
+      })
+      expect(foo.toJSON()).to.have.shape({
+        description: { 'zh-CN': 'description (override)' },
+        arguments: [{ name: 'bar', description: { 'zh-CN': 'argument (override)' } }],
+        options: [{ name: 'qux', description: { 'zh-CN': 'custom (override)' } }],
+      })
+    })
+  })
+
   describe('Dispose Commands', () => {
     const app = new App()
     const foo = app.command('foo')

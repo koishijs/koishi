@@ -348,7 +348,7 @@ export class Command<
       options: Object.entries(this._options).map(([name, option]) => ({
         name,
         type: toStringType(option.type),
-        description: this.ctx.i18n.get(`commands.${this.name}.options.${name}`),
+        description: this.ctx.i18n.get(option.descPath ?? `commands.${this.name}.options.${name}`),
         required: option.required,
       })),
       children: this.children
