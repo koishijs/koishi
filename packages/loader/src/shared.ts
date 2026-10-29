@@ -297,6 +297,41 @@ export abstract class Loader {
     if (name) return name.replace(/(koishi-|^@koishijs\/)plugin-/, '')
   }
 
+  private nameForScope(scope: EffectScope) {
+    const fallback = scope.runtime.name
+    while (scope) {
+      if (scope.runtime.plugin) {
+        const name = this.keyFor(scope.runtime.plugin)
+        if (name) return name
+      }
+      const parent = scope.parent?.scope
+      if (!parent || parent === scope) break
+      scope = parent
+    }
+    return fallback || 'anonymous'
+  }
+
+  private reportMissingServices() {
+    const pending = new Map<string, string[]>()
+    for (const runtime of this.app.registry.values()) {
+      if (!runtime.plugin) continue
+      for (const scope of runtime.children) {
+        if (scope.ready || scope.error) continue
+        for (const service in runtime.inject) {
+          if (!runtime.inject[service].required) continue
+          if (!isNullable(scope.ctx.get(service))) continue
+          const name = this.nameForScope(scope)
+          const names = pending.get(service) ?? []
+          if (!names.includes(name)) names.push(name)
+          pending.set(service, names)
+        }
+      }
+    }
+    for (const [service, names] of pending) {
+      this.app.logger('loader').warn('service %c is not available, plugins waiting: %c', service, names.join(', '))
+    }
+  }
+
   replace(oldKey: any, newKey: any) {
     oldKey = this.app.registry.resolve(oldKey)
     newKey = this.app.registry.resolve(newKey)
@@ -403,6 +438,12 @@ export abstract class Loader {
     app.scope[Loader.kRecord] = Object.create(null)
     const fork = await this.reload(app, 'group:entry', this.config.plugins)
     this.entry = fork.ctx
+
+    app.on('ready', () => {
+      // wait until all ready callbacks have settled so that services provided
+      // during startup are not reported as missing
+      setTimeout(() => this.reportMissingServices(), 0)
+    })
 
     app.accept((config) => {
       app.koishi.config = config

@@ -1,5 +1,5 @@
 import { expect } from 'chai'
-import { Context, sleep } from 'koishi'
+import { Context, Logger, sleep } from 'koishi'
 import { Mock } from 'node:test'
 import mock from '@koishijs/plugin-mock'
 import Loader from './utils'
@@ -106,5 +106,48 @@ describe('@koishijs/loader', () => {
     app.emit(app.mock.session(event), 'test/baz' as any)
     expect(bar.mock.calls).to.have.length(0)
     expect(baz.mock.calls).to.have.length(1)
+  })
+
+  it('warn about missing services', async () => {
+    const loader = new Loader()
+    loader.writable = true
+    loader.data.missing = {
+      name: 'missing',
+      inject: ['not-provided'],
+      apply: () => {},
+    }
+    loader.data.provider = {
+      name: 'provider',
+      apply: (ctx) => {
+        ctx.provide('provided')
+        ctx.set('provided', {})
+      },
+    }
+    loader.data.consumer = {
+      name: 'consumer',
+      inject: ['provided'],
+      apply: () => {},
+    }
+    loader.config = {
+      plugins: {
+        missing: {},
+        provider: {},
+        consumer: {},
+      },
+    }
+
+    const records: string[] = []
+    // pin the level on the target: other suites change the global level
+    const target = { levels: { base: 3 }, record: (record) => records.push(record.content) }
+    Logger.targets.push(target)
+    try {
+      const app = await loader.createApp()
+      await app.start()
+      await sleep(10)
+      expect(records.some((line) => line.includes('not-provided') && line.includes('missing'))).to.equal(true)
+      expect(records.some((line) => line.includes('provided') && line.includes('consumer'))).to.equal(false)
+    } finally {
+      Logger.targets.splice(Logger.targets.indexOf(target), 1)
+    }
   })
 })
