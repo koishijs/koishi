@@ -39,7 +39,7 @@ export function coerce(val: any) {
   const { message, stack } = val instanceof Error && val.stack ? val : new Error(val as any)
   const lines = stack.split('\n')
   const index = lines.findIndex(line => line.endsWith(message))
-  return lines.slice(index).join('\n')
+  return lines.slice(index < 0 ? 0 : index).join('\n')
 }
 
 export function renameProperty<O extends object, K extends keyof O, T extends string>(config: O, key: K, oldKey: T) {
