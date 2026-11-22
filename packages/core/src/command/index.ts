@@ -113,7 +113,7 @@ export class Commander {
       if (argv?.command || !isDirect && !prefix && !appel) return next()
       const content = session.stripped.content.slice((prefix ?? '').length)
       const actual = content.split(/\s/, 1)[0].toLowerCase()
-      if (!actual) return next()
+      if (!actual || actual.includes('<')) return next()
 
       return next(async (next) => {
         const cache = new Map<string, Promise<boolean>>()
